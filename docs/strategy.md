@@ -1167,15 +1167,18 @@ world (root seed, secret)
 // Node is one point in the seed tree. Its key is 32 bytes.
 type Node struct{ key [32]byte }
 
+// NewRoot derives the root node from the world secret.
+func NewRoot(secret []byte) (Node, error)
+
 // Child derives a child node with HMAC-SHA256. A child key does not reveal
 // its parent key or its siblings' keys.
 func (n Node) Child(label string, idx ...int64) Node
 
-// Stream returns a fast deterministic stream for public generation.
-func (n Node) Stream() *Xoshiro
+// Stream returns a fast deterministic xoshiro256** stream for public generation.
+func (n Node) Stream() *Rand
 
-// SecretStream returns a ChaCha8 stream for secret branches.
-func (n Node) SecretStream() *rand.ChaCha8
+// SecretStream returns a ChaCha8 stream for secret branches. Server only.
+func (n Node) SecretStream() *Rand
 
 // Hash returns a stateless hash for noise and per-cell choices.
 func (n Node) Hash(x, y, z int64) uint64
@@ -1186,7 +1189,7 @@ Properties:
 - **Order does not matter.** Generating region (3,-1) before or after region (0,0) gives the same result. Generation can run lazily and in parallel.
 - **Any part can be regenerated alone.** Changing the decoration generator does not change terrain or loot.
 - **Time-based content** uses the date as an index, such as `dungeon("crypt", date)`. The same dungeon appears for everyone that day.
-- **Specification.** The algorithms below are written down in a spec with test vectors. Go and TinyGo builds must pass the same vectors.
+- **Specification.** The algorithms below are written down in [docs/specs/rng-v1.md](specs/rng-v1.md), with test vectors. Go and TinyGo builds must pass the same vectors.
 
 #### Algorithms
 
@@ -1195,7 +1198,7 @@ Properties:
 | Deriving child nodes | HMAC-SHA256. The key is the parent's 32-byte key. The message is `"wa-seed-v1"`, then the label with a length prefix, then each index as a big-endian `int64`. | One-way, so public seeds do not reveal secret branches. In the Go standard library and supported by TinyGo. Speed does not matter, because derivation happens a few thousand times per world. The length prefix stops `("ab", "c")` and `("a", "bc")` from giving the same message. |
 | Public generation streams | xoshiro256\*\*, seeded with the node's 32-byte key. An all-zero key is replaced by SplitMix64 output, because xoshiro cannot use a zero state. | Fast in Go and WebAssembly. About 15 lines of code in our own package, so it does not depend on standard library internals that TinyGo may not support. Passes the BigCrush statistical tests. |
 | Secret streams | ChaCha8 from Go's `math/rand/v2`, seeded with the node's key. | Players cannot recover the state from outcomes they see. The output is fixed by the C2SP `chacha8rand` spec. Runs on the server only. |
-| Stateless per-cell hashing | SplitMix64 finalizer over `key XOR (x * P1) XOR (y * P2) XOR (z * P3)`, with three fixed odd 64-bit constants. | Noise and per-cell choices need a value for a coordinate, not the next value in a stream. Any cell can be computed alone, in any order, on any thread. |
+| Stateless per-cell hashing | The key folded to 64 bits, then the SplitMix64 finalizer applied once per coordinate: `h = mix(h XOR x * P1)`, then `y * P2`, then `z * P3`, with three fixed odd 64-bit constants. | Noise and per-cell choices need a value for a coordinate, not the next value in a stream. Any cell can be computed alone, in any order, on any thread. |
 | Gameplay randomness | ChaCha8, one stream per zone, seeded from `crypto/rand` at startup. | Not part of the tree (section 8.3). |
 
 Helpers, all in the spec with test vectors:
