@@ -208,3 +208,33 @@ func MapName(grfPath string) (string, bool) {
 func LightmapName(mapName string) string {
 	return "lightmap/" + strings.TrimPrefix(mapName, "map/")
 }
+
+// EffectName returns the asset name for an STR effect in data\texture,
+// such as effect/firewall for data\texture\effect\firewall.str, or
+// effect/texture/x/y for data\texture\x\y.str, and the effect's folder
+// relative to data\texture, where its textures are.
+func EffectName(grfPath string) (name, folder string, ok bool) {
+	key := norm.NFC.String(grf.Normalize(grfPath))
+	rest, ok := strings.CutPrefix(key, "data/texture/")
+	base, ok2 := strings.CutSuffix(rest, ".str")
+	if !ok || !ok2 {
+		return "", "", false
+	}
+	// Effects outside data\texture\effect keep their full path under
+	// effect/texture/, so they cannot clash with effects inside it.
+	name = "effect/texture/" + base
+	if inside, ok := strings.CutPrefix(base, "effect/"); ok {
+		name = "effect/" + inside
+	}
+	if assets.ValidName(name) != nil {
+		return "", "", false
+	}
+	// The folder keeps the GRF's spelling, since texture lookups
+	// normalize it.
+	full := strings.ReplaceAll(grfPath, `\`, "/")
+	full = full[len("data/texture/"):]
+	if i := strings.LastIndexByte(full, '/'); i >= 0 {
+		folder = full[:i]
+	}
+	return name, folder, true
+}

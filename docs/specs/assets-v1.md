@@ -3,7 +3,7 @@
 This spec defines what the web client can load: how assets are named, which formats they use, and how a build publishes them. wAthena ships the runtime and this contract, not art. Any source that produces assets in this form works, including the GRF importer, original art, and mods.
 
 - Version: `assets-v1`. The manifest records it. A client rejects a manifest with a version it does not know.
-- Sections marked **Draft** can still change during phase 1. The other sections are stable within `assets-v1`.
+- The formats are stable within `assets-v1`. A change that breaks readers needs a new contract version.
 
 ## Names
 
@@ -98,7 +98,7 @@ All multi-byte numbers are little-endian. Every binary format starts with a 4-by
 | Texture, UI, icon, image | WebP, lossless, straight alpha, sRGB. | `.webp` | `image/webp` |
 | Model | glTF 2.0 binary, profile below. | `.glb` | `model/gltf-binary` |
 | Map | WMAP binary, below. | `.wmap` | `application/octet-stream` |
-| Effect | WEFF binary. **Draft.** | `.weff` | `application/octet-stream` |
+| Effect | WEFF binary, below. | `.weff` | `application/octet-stream` |
 | Sound | Opus in WebM. | `.webm` | `audio/webm` |
 | Music | Opus in WebM, or MP3. | `.webm`, `.mp3` | `audio/webm`, `audio/mpeg` |
 
@@ -323,9 +323,44 @@ Strings are a u8 length and UTF-8 bytes. Names are asset names.
 - Objects, sounds, and effects with undefined (NaN or infinite) values are left out, since the game cannot show them either. Undefined cell heights take the average of the cell's other corners.
 - GAT cell types map to flags: 0, 2, 4, and 6 are walkable and shootable, 3 is also water, 5 is shootable only, and other types block.
 
-### Effect (WEFF) **Draft**
+### Effect (WEFF)
 
-A keyframed effect, converted from RO's STR format: layers of textured quads with keyframes for position, size, rotation, color, and blend mode. The byte layout will be fixed with the effect converter.
+An effect is layers of textured quads, with each layer's state at every frame. The quads face the camera. Distances are in cells, with X right and Y up from the effect's anchor, such as the center of the cell a skill hits.
+
+```text
+Header
+  magic         "WEFF"
+  version       u16 = 1
+  fps           u16
+  frameCount    u32
+  textureCount  u16
+  textures      textureCount × (u8 length, UTF-8 name)
+  layerCount    u16
+
+Layers, layerCount times
+  Frames, frameCount times, 53 bytes each
+    visible     u8          1 to draw, 0 for a hidden frame, whose other bytes are 0
+    texture     u16         index into textures
+    srcBlend    u8          Direct3D blend code, below
+    dstBlend    u8
+    color       4 × u8      RGBA, multiplies the texture
+    offset      2 × f32     the quad's center
+    angle       f32         degrees, clockwise
+    corners     4 × 2 × f32 top-left, top-right, bottom-right, bottom-left,
+                            relative to offset, before the rotation
+```
+
+- Layers are drawn in order. A corner's texture coordinates are (0, 0), (1, 0), (1, 1), and (0, 1), in the order above.
+- Between two frames, the client interpolates color, offset, angle, and corners linearly, and takes visibility, texture, and blend from the earlier frame.
+- A persistent effect loops over its frames. Others play once.
+- Blend codes: 1 zero, 2 one, 3 source color, 4 one minus source color, 5 source alpha, 6 one minus source alpha, 7 destination alpha, 8 one minus destination alpha, 9 destination color, 10 one minus destination color, 11 source alpha saturate. Other codes blend as 2.
+- As in RO, texels that are fully transparent or pure black are not drawn.
+
+#### Effects from a game client
+
+- `data\texture\effect\<path>.str` becomes `effect/<path>`. STR files elsewhere in `data\texture` become `effect/texture/<path>`. Texture names are relative to the STR file's folder.
+- STR keyframes are baked into frames 0 to the last key frame, following RO's rules: a layer shows the last base key at or before a frame, and a change key right after it at the same frame morphs the values by the frames since. The texture is the truncated animation frame. The baked frames are exact at whole frames, and linear interpolation reproduces RO's morphs between them.
+- STR positions are pixels on a 640 × 640 canvas with Y down. The importer centers them and divides by 35 pixels per cell. Angles are stored in 1024ths of a turn.
 
 ## Builds
 

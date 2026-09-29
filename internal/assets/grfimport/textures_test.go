@@ -76,3 +76,20 @@ func TestTextureResolver(t *testing.T) {
 		t.Error("SoundResolver")
 	}
 }
+
+func TestEffectName(t *testing.T) {
+	for in, want := range map[string][2]string{
+		`data\texture\effect\FireWall.str`:        {"effect/firewall", "effect"},
+		`data\texture\effect\storm\storm_hit.str`: {"effect/storm/storm_hit", "effect/storm"},
+		`data\texture\20th_firework\fiw.str`:      {"effect/texture/20th_firework/fiw", "20th_firework"},
+		`DATA\TEXTURE\effect\x.str`:               {"effect/x", "effect"},
+	} {
+		name, folder, ok := EffectName(in)
+		if !ok || name != want[0] || folder != want[1] {
+			t.Errorf("%s: %q %q %v", in, name, folder, ok)
+		}
+	}
+	if _, _, ok := EffectName(`data\sprite\x.str`); ok {
+		t.Error("EffectName accepted a file outside data\\texture")
+	}
+}

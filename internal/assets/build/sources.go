@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 
 	clientdata "github.com/lxsmnsyc/wathena/client/data"
+	"github.com/lxsmnsyc/wathena/internal/assets/effect"
 	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
 	"github.com/lxsmnsyc/wathena/internal/assets/mapimport"
 	"github.com/lxsmnsyc/wathena/internal/assets/model"
@@ -35,6 +36,7 @@ const (
 	soundConverter       = "grf-sound-1"
 	modelConverter       = "grf-model-3"
 	mapConverter         = "grf-map-1"
+	effectConverter      = "grf-effect-1"
 	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
 )
@@ -145,6 +147,29 @@ func (g *GRF) Items() ([]Item, error) {
 						return nil, err
 					}
 					return model.Convert(m, textureName)
+				},
+			})
+			continue
+		}
+		if name, folder, ok := grfimport.EffectName(s.Entry.Name); ok {
+			items = append(items, Item{
+				Name:     name,
+				Ext:      "weff",
+				CacheKey: effectConverter + "|" + sourceKey(s) + "|" + name + "|" + textureListKey,
+				Produce: func() ([]byte, error) {
+					b, err := c.ReadFile(s)
+					if err != nil {
+						return nil, err
+					}
+					st, err := effect.ParseSTR(b)
+					if err != nil {
+						return nil, err
+					}
+					e, err := effect.Bake(st, func(p string) string { return textureName(folder + `\` + p) })
+					if err != nil {
+						return nil, err
+					}
+					return e.Encode()
 				},
 			})
 			continue
