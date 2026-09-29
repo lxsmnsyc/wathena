@@ -40,3 +40,23 @@ func TestTextureNames(t *testing.T) {
 		}
 	}
 }
+
+func TestTextureResolver(t *testing.T) {
+	r := TextureResolver(TextureNames([]string{`data\texture\effect\Fire.tga`, `data\texture\effect\fire.bmp`}))
+	for in, want := range map[string]string{
+		`effect\FIRE.BMP`: "texture/effect/fire",
+		`effect\fire.tga`: "texture/effect/fire~tga",
+		`프론테라\gone.bmp`:   "texture/프론테라/gone",
+		`..\..\etc\x.bmp`: "texture/missing",
+	} {
+		if got := r(in); got != want {
+			t.Errorf("%s: %q, want %q", in, got, want)
+		}
+	}
+	if got, ok := ModelName(`data\model\프론테라\Fountain.rsm`); !ok || got != "model/프론테라/fountain" {
+		t.Errorf("ModelName = %q, %v", got, ok)
+	}
+	if _, ok := ModelName(`data\model\x.rsm2`); ok {
+		t.Error("ModelName accepted rsm2")
+	}
+}

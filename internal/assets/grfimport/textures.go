@@ -94,3 +94,40 @@ func formatRank(ext string) int {
 	}
 	return len(textureFormats)
 }
+
+// TextureResolver returns a function that maps a texture path as models
+// and maps write it, relative to data\texture, to an asset name. names is
+// the result of TextureNames. A texture that is not in the client still
+// gets the name it would have, so the client shows a placeholder.
+func TextureResolver(names map[string]string) func(string) string {
+	byKey := make(map[string]string, len(names))
+	for p, n := range names {
+		byKey[norm.NFC.String(grf.Normalize(p))] = n
+	}
+	return func(p string) string {
+		full := `data\texture\` + p
+		if n, ok := byKey[norm.NFC.String(grf.Normalize(full))]; ok {
+			return n
+		}
+		if n, _, ok := textureBase(full); ok {
+			return n
+		}
+		return "texture/missing"
+	}
+}
+
+// ModelName returns the asset name for a model in data\model, such as
+// model/prontera/fountain for data\model\prontera\fountain.rsm.
+func ModelName(grfPath string) (string, bool) {
+	key := norm.NFC.String(grf.Normalize(grfPath))
+	rest, ok := strings.CutPrefix(key, "data/model/")
+	if !ok {
+		return "", false
+	}
+	base, ok := strings.CutSuffix(rest, ".rsm")
+	name := "model/" + base
+	if !ok || assets.ValidName(name) != nil {
+		return "", false
+	}
+	return name, true
+}

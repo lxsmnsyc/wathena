@@ -188,10 +188,24 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 ### Model (glTF profile)
 
 - glTF 2.0 binary with one scene.
-- Images point to textures by name, with a URI of the form `asset:texture/...`. The client resolves them through the manifest. Embedded images are not allowed, so shared textures download once.
-- Allowed: meshes, node hierarchy, `KHR_materials_unlit`, alpha masking, double-sided materials, and animations of translation, rotation, and scale.
+- Images point to textures by name, with a URI of the form `asset:texture/...`. Each name segment is percent-encoded, since many names are Korean. The client resolves them through the manifest. Embedded images are not allowed, so shared textures download once. glTF validators warn about these URIs, which is expected.
+- Allowed: meshes, node hierarchy, `KHR_materials_unlit`, alpha masking, alpha blending, double-sided materials, and animations of translation, rotation, and scale.
 - Not allowed: skins, morph targets, cameras, lights, and other extensions. The build rejects them.
-- RO's RSM and RSM2 models convert to this profile. Their per-face textures become one primitive per texture.
+- Y points up. A model stands on y = 0 and is centered on x and z.
+- Primitives have positions, normals, and one set of texture coordinates. The client lights models with the normals, as RO does, so materials are not unlit.
+- An animation can set `extras.loopSeconds`, the length it loops over, which can be longer than its last keyframe.
+- Nodes can have negative scales. As glTF defines, a node whose world transform has a negative determinant has clockwise front faces.
+
+#### RSM conversion
+
+- `data\model\<path>.rsm` becomes `model/<path>`. Versions 1.1 to 1.6 convert now. RSM2 (versions 2.2 and 2.3) will follow. Granny (`.gr2`) models are not supported.
+- RO's model space has Y pointing down. The converter mirrors it through Y with F = diag(1, -1, 1): vertices become F × v, and node transforms become F × X × F, which keeps them as translation, rotation, and scale. Map objects are placed the same way.
+- Each RSM node becomes a glTF node with RO's position, rotation, and scale. The node's offset and 3 × 3 matrix are applied to its vertices.
+- The root node holds RO's centering: the box center on x and z, and the box's lowest point on y.
+- Faces are grouped into one primitive per texture and sidedness. Two-sided faces get double-sided materials.
+- Normals follow the model's shading type: flat face normals, smooth normals averaged within each smoothing group, or, for unshaded models, normals that point up in the world.
+- Materials use alpha masking at 0.5. A model with an alpha below 255 uses alpha blending with that opacity.
+- Rotation keyframes become a rotation animation. Keyframe times are milliseconds.
 
 ### Map (WMAP) **Draft**
 

@@ -1,17 +1,21 @@
 package build
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"golang.org/x/text/unicode/norm"
 
 	clientdata "github.com/lxsmnsyc/wathena/client/data"
 	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
+	"github.com/lxsmnsyc/wathena/internal/assets/model"
 	"github.com/lxsmnsyc/wathena/internal/assets/placeholder"
 	"github.com/lxsmnsyc/wathena/internal/assets/sound"
 	"github.com/lxsmnsyc/wathena/internal/assets/texture"
@@ -26,6 +30,7 @@ const (
 	paletteConverter     = "grf-palette-1"
 	textureConverter     = "grf-texture-1"
 	soundConverter       = "grf-sound-1"
+	modelConverter       = "grf-model-1"
 	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
 )
@@ -92,6 +97,8 @@ func (g *GRF) Items() ([]Item, error) {
 		paths[i] = s.Entry.Name
 	}
 	textures := grfimport.TextureNames(paths)
+	textureName := grfimport.TextureResolver(textures)
+	textureListKey := hashNames(textures)
 	for _, s := range files {
 		if name, ok := grfimport.SoundName(s.Entry.Name); ok {
 			items = append(items, Item{
@@ -104,6 +111,27 @@ func (g *GRF) Items() ([]Item, error) {
 						return nil, err
 					}
 					return sound.ConvertWAV(b)
+				},
+			})
+			continue
+		}
+		if name, ok := grfimport.ModelName(s.Entry.Name); ok {
+			items = append(items, Item{
+				Name: name,
+				Ext:  "glb",
+				// Texture names are part of the output, so the key covers
+				// the converter's view of them through the texture list.
+				CacheKey: modelConverter + "|" + sourceKey(s) + "|" + name + "|" + textureListKey,
+				Produce: func() ([]byte, error) {
+					b, err := c.ReadFile(s)
+					if err != nil {
+						return nil, err
+					}
+					m, err := model.Parse(b)
+					if err != nil {
+						return nil, err
+					}
+					return model.Convert(m, textureName)
 				},
 			})
 			continue
@@ -230,6 +258,20 @@ func (g *GRF) music() ([]Item, error) {
 		})
 	}
 	return items, nil
+}
+
+// hashNames returns a short hash of a path-to-name map.
+func hashNames(m map[string]string) string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	h := sha256.New()
+	for _, k := range keys {
+		_, _ = fmt.Fprintf(h, "%s\x00%s\x00", k, m[k])
+	}
+	return hex.EncodeToString(h.Sum(nil))[:16]
 }
 
 // sourceKey identifies a GRF entry's content without reading it: which
