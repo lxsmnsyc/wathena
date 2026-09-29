@@ -4,9 +4,7 @@
 //
 //	go run .
 //
-// With C Lua 5.4 through cgo (macOS with Homebrew lua@5.4):
-//
-//	CGO_LDFLAGS="-L/opt/homebrew/opt/lua@5.4/lib" go run -tags clua,lua54,llua .
+// With the cgo engines, see README.md.
 package main
 
 import (
@@ -62,25 +60,59 @@ func dialog(e Engine) error {
 	return err
 }
 
+// setup creates an engine with the workloads and one mod loaded.
 func setup(d EngineDef, h *Host) (Engine, error) {
 	e, err := d.New(h, d.Limits)
 	if err != nil {
 		return nil, err
 	}
-	if err := e.Load("workloads", Script(d.Dialect)); err != nil {
+	err = e.Load("workloads", Script(d.Dialect))
+	if err == nil {
+		err = loadMod(e)
+	}
+	if err != nil {
 		e.Close()
 		return nil, err
 	}
 	return e, nil
 }
 
-var items = ItemScripts(itemCount)
+const modItemCount = 200
+
+var (
+	items    = ItemScripts(itemCount)
+	modItems = ModItems(modItemCount)
+)
+
+// loadItems loads the 1,000 plain item scripts.
+func loadItems(e Engine) error {
+	for i, src := range items {
+		if err := e.Load(fmt.Sprintf("item%d", i), src); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// loadMod loads one mod: its setup and 200 items that require its module.
+func loadMod(e Engine) error {
+	if err := e.Load("mod", ModSetup()); err != nil {
+		return err
+	}
+	for i, src := range modItems {
+		if err := e.Load(fmt.Sprintf("moditem%d", i), src); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 var workloads = []workload{
 	{name: "static_equip", run: callN("static_equip", 0)},
 	{name: "computed", run: callN("computed", 0)},
 	{name: "hit_taken", run: callN("hit_taken", 1)},
 	{name: "npc_dialog", run: dialog},
+	{name: "equip_with_require", run: callN("equip_item", 4000)},
 	{name: "compute_1000", run: callN("compute", 1000)},
 	{name: "new_state", fresh: func(d EngineDef) error {
 		e, err := setup(d, newHost())
@@ -89,19 +121,20 @@ var workloads = []workload{
 		}
 		return err
 	}},
-	{name: "load_1000_items", fresh: func(d EngineDef) error {
+	{name: "load_1000_items", fresh: fresh(loadItems)},
+	{name: "mod_state_200_items", fresh: fresh(loadMod)},
+}
+
+// fresh returns a workload that creates an engine and loads into it.
+func fresh(load func(Engine) error) func(EngineDef) error {
+	return func(d EngineDef) error {
 		e, err := d.New(newHost(), d.Limits)
 		if err != nil {
 			return err
 		}
 		defer e.Close()
-		for i, src := range items {
-			if err := e.Load(fmt.Sprintf("item%d", i), src); err != nil {
-				return err
-			}
-		}
-		return nil
-	}},
+		return load(e)
+	}
 }
 
 // verify runs each workload a fixed number of times and returns a checksum
@@ -117,7 +150,7 @@ func verify(d EngineDef) (string, error) {
 	for _, fn := range []struct {
 		name string
 		arg  int64
-	}{{"static_equip", 0}, {"computed", 0}, {"hit_taken", 1}, {"hit_taken", 0}, {"compute", 1000}} {
+	}{{"static_equip", 0}, {"computed", 0}, {"hit_taken", 1}, {"hit_taken", 0}, {"equip_item", 4000}, {"equip_item", 4199}, {"compute", 1000}} {
 		for range 2000 {
 			v, err := e.Call(fn.name, fn.arg)
 			if err != nil {
@@ -172,9 +205,9 @@ func bench(d EngineDef, w workload) (Result, error) {
 	}, nil
 }
 
-// heapPerState measures Go heap growth for 20 engines with 1000 items each.
+// heapPerState measures Go heap growth for 20 engines after load.
 // It does not see memory that C Lua allocates outside the Go heap.
-func heapPerState(d EngineDef) (uint64, error) {
+func heapPerState(d EngineDef, load func(Engine) error) (uint64, error) {
 	const n = 20
 	var before, after runtime.MemStats
 	runtime.GC()
@@ -185,10 +218,8 @@ func heapPerState(d EngineDef) (uint64, error) {
 		if err != nil {
 			return 0, err
 		}
-		for i, src := range items {
-			if err := e.Load(fmt.Sprintf("item%d", i), src); err != nil {
-				return 0, err
-			}
+		if err := load(e); err != nil {
+			return 0, err
 		}
 		es = append(es, e)
 	}
@@ -200,17 +231,15 @@ func heapPerState(d EngineDef) (uint64, error) {
 	return (after.HeapAlloc - before.HeapAlloc) / n, nil
 }
 
-// luaMemory reads collectgarbage("count") after loading 1000 items.
-func luaMemory(d EngineDef) (int64, error) {
+// luaMemory reads collectgarbage("count") after load.
+func luaMemory(d EngineDef, load func(Engine) error) (int64, error) {
 	e, err := d.New(newHost(), d.Limits)
 	if err != nil {
 		return 0, err
 	}
 	defer e.Close()
-	for i, src := range items {
-		if err := e.Load(fmt.Sprintf("item%d", i), src); err != nil {
-			return 0, err
-		}
+	if err := load(e); err != nil {
+		return 0, err
 	}
 	if err := e.Load("mem", `function mem_kb(_) collectgarbage() return math.floor(collectgarbage("count")) end`); err != nil {
 		return 0, err
@@ -249,12 +278,16 @@ func short(msg string) string {
 
 func main() {
 	jsonOut := flag.String("json", "", "write results to this JSON file")
+	only := flag.String("engine", "", "run only engines whose name contains this text")
 	flag.Parse()
 
 	var results []Result
 	var checks []Check
 	var want string
 	for _, d := range engines {
+		if !strings.Contains(d.Name, *only) {
+			continue
+		}
 		sum, err := verify(d)
 		switch {
 		case err != nil:
@@ -275,11 +308,16 @@ func main() {
 			results = append(results, r)
 			fmt.Fprintf(os.Stderr, "%-28s %-16s %12.0f ns/op %6d allocs/op\n", r.Engine, r.Workload, r.NsPerOp, r.AllocsPerOp)
 		}
-		if heap, err := heapPerState(d); err == nil {
-			checks = append(checks, Check{d.Name, "go_heap_per_state_1000_items", fmt.Sprintf("%d KB", heap/1024)})
-		}
-		if kb, err := luaMemory(d); err == nil {
-			checks = append(checks, Check{d.Name, "lua_count_1000_items", fmt.Sprintf("%d KB", kb)})
+		for _, m := range []struct {
+			name string
+			load func(Engine) error
+		}{{"1000_items", loadItems}, {"mod_200_items", loadMod}} {
+			if heap, err := heapPerState(d, m.load); err == nil {
+				checks = append(checks, Check{d.Name, "go_heap_" + m.name, fmt.Sprintf("%d KB", heap/1024)})
+			}
+			if kb, err := luaMemory(d, m.load); err == nil {
+				checks = append(checks, Check{d.Name, "lua_count_" + m.name, fmt.Sprintf("%d KB", kb)})
+			}
 		}
 		checks = append(checks, Check{d.Name, "infinite_loop", stops(d, "spin")})
 		// Only golua has a memory quota. The others would use all memory.

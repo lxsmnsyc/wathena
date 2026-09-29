@@ -1,7 +1,9 @@
 # 0001: Lua Runtime
 
-- Status: accepted.
+- Status: superseded by [0002](0002-lua-runtime-c-lua.md).
 - Date: 2026-09-29.
+
+The benchmark below was run before the harness added our own C Lua binding, C Lua on wazero, and the `require` workloads. Decision 0002 has the full results.
 
 ## Decision
 

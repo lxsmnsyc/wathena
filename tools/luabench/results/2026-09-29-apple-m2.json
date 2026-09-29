@@ -13,13 +13,23 @@
 		},
 		{
 			"engine": "C Lua 5.4 (cgo)",
-			"check": "go_heap_per_state_1000_items",
+			"check": "go_heap_1000_items",
 			"result": "0 KB"
 		},
 		{
 			"engine": "C Lua 5.4 (cgo)",
 			"check": "lua_count_1000_items",
 			"result": "736 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"check": "go_heap_mod_200_items",
+			"result": "0 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"check": "lua_count_mod_200_items",
+			"result": "201 KB"
 		},
 		{
 			"engine": "C Lua 5.4 (cgo)",
@@ -38,7 +48,7 @@
 		},
 		{
 			"engine": "C Lua 5.4 (cgo) + limits",
-			"check": "go_heap_per_state_1000_items",
+			"check": "go_heap_1000_items",
 			"result": "0 KB"
 		},
 		{
@@ -48,18 +58,93 @@
 		},
 		{
 			"engine": "C Lua 5.4 (cgo) + limits",
+			"check": "go_heap_mod_200_items",
+			"result": "0 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"check": "lua_count_mod_200_items",
+			"result": "201 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
 			"check": "infinite_loop",
-			"result": "stopped after 20ms: Lua execution quantum exceeded"
+			"result": "stopped after 21ms: Lua execution quantum exceeded"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"check": "go_heap_1000_items",
+			"result": "0 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"check": "lua_count_1000_items",
+			"result": "605 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"check": "go_heap_mod_200_items",
+			"result": "0 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"check": "lua_count_mod_200_items",
+			"result": "159 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"check": "infinite_loop",
+			"result": "no limits"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"check": "go_heap_1000_items",
+			"result": "0 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"check": "lua_count_1000_items",
+			"result": "605 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"check": "go_heap_mod_200_items",
+			"result": "0 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"check": "lua_count_mod_200_items",
+			"result": "159 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"check": "infinite_loop",
+			"result": "stopped after 20ms: lua error 2: CPU limit exceeded"
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"check": "memory_hog",
+			"result": "stopped after 17ms: lua error 4: not enough memory"
 		},
 		{
 			"engine": "arnodel/golua",
-			"check": "go_heap_per_state_1000_items",
+			"check": "go_heap_1000_items",
 			"result": "1774 KB"
 		},
 		{
 			"engine": "arnodel/golua",
 			"check": "lua_count_1000_items",
-			"result": "2447 KB"
+			"result": "2511 KB"
+		},
+		{
+			"engine": "arnodel/golua",
+			"check": "go_heap_mod_200_items",
+			"result": "523 KB"
+		},
+		{
+			"engine": "arnodel/golua",
+			"check": "lua_count_mod_200_items",
+			"result": "1258 KB"
 		},
 		{
 			"engine": "arnodel/golua",
@@ -78,13 +163,18 @@
 		},
 		{
 			"engine": "arnodel/golua + limits",
-			"check": "go_heap_per_state_1000_items",
-			"result": "1774 KB"
+			"check": "go_heap_1000_items",
+			"result": "1775 KB"
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"check": "go_heap_mod_200_items",
+			"result": "525 KB"
 		},
 		{
 			"engine": "arnodel/golua + limits",
 			"check": "infinite_loop",
-			"result": "stopped after 51ms: CPU limit of 10000000 exceeded"
+			"result": "stopped after 53ms: CPU limit of 10000000 exceeded"
 		},
 		{
 			"engine": "arnodel/golua + limits",
@@ -93,18 +183,28 @@
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
-			"check": "go_heap_per_state_1000_items",
+			"check": "go_heap_1000_items",
 			"result": "1774 KB"
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
+			"check": "go_heap_mod_200_items",
+			"result": "520 KB"
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
 			"check": "infinite_loop",
-			"result": "stopped after 48ms: CPU limit of 10000000 exceeded"
+			"result": "stopped after 49ms: CPU limit of 10000000 exceeded"
 		},
 		{
 			"engine": "yuin/gopher-lua",
-			"check": "go_heap_per_state_1000_items",
+			"check": "go_heap_1000_items",
 			"result": "22481 KB"
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"check": "go_heap_mod_200_items",
+			"result": "4802 KB"
 		},
 		{
 			"engine": "yuin/gopher-lua",
@@ -123,13 +223,73 @@
 		},
 		{
 			"engine": "yuin/gopher-lua + limits",
-			"check": "go_heap_per_state_1000_items",
+			"check": "go_heap_1000_items",
 			"result": "22481 KB"
 		},
 		{
 			"engine": "yuin/gopher-lua + limits",
+			"check": "go_heap_mod_200_items",
+			"result": "4802 KB"
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
 			"check": "infinite_loop",
-			"result": "stopped after 51ms: \u003cstring\u003e:68: context deadline exceeded"
+			"result": "stopped after 50ms: \u003cstring\u003e:68: context deadline exceeded"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"check": "go_heap_1000_items",
+			"result": "1174 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"check": "lua_count_1000_items",
+			"result": "453 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"check": "go_heap_mod_200_items",
+			"result": "546 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"check": "lua_count_mod_200_items",
+			"result": "121 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"check": "infinite_loop",
+			"result": "no limits"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"check": "go_heap_1000_items",
+			"result": "1174 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"check": "lua_count_1000_items",
+			"result": "453 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"check": "go_heap_mod_200_items",
+			"result": "546 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"check": "lua_count_mod_200_items",
+			"result": "121 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"check": "infinite_loop",
+			"result": "stopped after 82ms: lua error 2: CPU limit exceeded"
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"check": "memory_hog",
+			"result": "stopped after 67ms: lua error 4: not enough memory"
 		}
 	],
 	"cpus": 8,
@@ -139,317 +299,667 @@
 		{
 			"engine": "C Lua 5.4 (cgo)",
 			"workload": "static_equip",
-			"ns_per_op": 893.77680231049,
+			"ns_per_op": 910.7364104765334,
 			"allocs_per_op": 0,
 			"bytes_per_op": 0
 		},
 		{
 			"engine": "C Lua 5.4 (cgo)",
 			"workload": "computed",
-			"ns_per_op": 648.7080903286437,
+			"ns_per_op": 607.139831514001,
 			"allocs_per_op": 2,
 			"bytes_per_op": 24
 		},
 		{
 			"engine": "C Lua 5.4 (cgo)",
 			"workload": "hit_taken",
-			"ns_per_op": 701.2085294112567,
+			"ns_per_op": 692.7597124941516,
 			"allocs_per_op": 0,
 			"bytes_per_op": 0
 		},
 		{
 			"engine": "C Lua 5.4 (cgo)",
-			"workload": "compute_1000",
-			"ns_per_op": 263121.2800759814,
-			"allocs_per_op": 0,
-			"bytes_per_op": 0
-		},
-		{
-			"engine": "C Lua 5.4 (cgo)",
-			"workload": "new_state",
-			"ns_per_op": 62259.516346947195,
-			"allocs_per_op": 10,
-			"bytes_per_op": 2224
-		},
-		{
-			"engine": "C Lua 5.4 (cgo)",
-			"workload": "load_1000_items",
-			"ns_per_op": 4210432.239057239,
-			"allocs_per_op": 1753,
-			"bytes_per_op": 14370
-		},
-		{
-			"engine": "C Lua 5.4 (cgo) + limits",
-			"workload": "static_equip",
-			"ns_per_op": 1008.5309529135443,
-			"allocs_per_op": 0,
-			"bytes_per_op": 0
-		},
-		{
-			"engine": "C Lua 5.4 (cgo) + limits",
-			"workload": "computed",
-			"ns_per_op": 896.3925263873372,
+			"workload": "equip_with_require",
+			"ns_per_op": 917.5486923747422,
 			"allocs_per_op": 2,
 			"bytes_per_op": 24
 		},
 		{
-			"engine": "C Lua 5.4 (cgo) + limits",
-			"workload": "hit_taken",
-			"ns_per_op": 772.5909684440992,
-			"allocs_per_op": 0,
-			"bytes_per_op": 0
-		},
-		{
-			"engine": "C Lua 5.4 (cgo) + limits",
+			"engine": "C Lua 5.4 (cgo)",
 			"workload": "compute_1000",
-			"ns_per_op": 257208.13234060403,
+			"ns_per_op": 257168.55485689506,
 			"allocs_per_op": 0,
 			"bytes_per_op": 0
 		},
 		{
-			"engine": "C Lua 5.4 (cgo) + limits",
+			"engine": "C Lua 5.4 (cgo)",
 			"workload": "new_state",
-			"ns_per_op": 58539.92066692898,
-			"allocs_per_op": 10,
-			"bytes_per_op": 2224
+			"ns_per_op": 1140286.0085470085,
+			"allocs_per_op": 221,
+			"bytes_per_op": 20779
 		},
 		{
-			"engine": "C Lua 5.4 (cgo) + limits",
+			"engine": "C Lua 5.4 (cgo)",
 			"workload": "load_1000_items",
-			"ns_per_op": 4204675.658273381,
+			"ns_per_op": 4283845.992932863,
 			"allocs_per_op": 1753,
 			"bytes_per_op": 14371
 		},
 		{
+			"engine": "C Lua 5.4 (cgo)",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 1083860.5326395459,
+			"allocs_per_op": 220,
+			"bytes_per_op": 18988
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "static_equip",
+			"ns_per_op": 913.7523016597488,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "computed",
+			"ns_per_op": 680.8659151987354,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "hit_taken",
+			"ns_per_op": 739.8855901359004,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "equip_with_require",
+			"ns_per_op": 1040.751042,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "compute_1000",
+			"ns_per_op": 258725.18759294666,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "new_state",
+			"ns_per_op": 1118310.6031598514,
+			"allocs_per_op": 221,
+			"bytes_per_op": 20778
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "load_1000_items",
+			"ns_per_op": 4072309.8881355934,
+			"allocs_per_op": 1753,
+			"bytes_per_op": 14371
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 1071346.4342342343,
+			"allocs_per_op": 220,
+			"bytes_per_op": 18987
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "static_equip",
+			"ns_per_op": 208.41000305021225,
+			"allocs_per_op": 1,
+			"bytes_per_op": 8
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "computed",
+			"ns_per_op": 151.31679516002555,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "hit_taken",
+			"ns_per_op": 153.74849929208747,
+			"allocs_per_op": 1,
+			"bytes_per_op": 8
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "npc_dialog",
+			"ns_per_op": 1904.9968587870685,
+			"allocs_per_op": 7,
+			"bytes_per_op": 48
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "equip_with_require",
+			"ns_per_op": 312.41345733951357,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "compute_1000",
+			"ns_per_op": 248394.91823517508,
+			"allocs_per_op": 1,
+			"bytes_per_op": 8
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "new_state",
+			"ns_per_op": 1093161.1114285714,
+			"allocs_per_op": 216,
+			"bytes_per_op": 20506
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "load_1000_items",
+			"ns_per_op": 4249907.360824742,
+			"allocs_per_op": 1749,
+			"bytes_per_op": 14100
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo)",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 1063527.8029739778,
+			"allocs_per_op": 216,
+			"bytes_per_op": 18714
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "static_equip",
+			"ns_per_op": 235.12154478926902,
+			"allocs_per_op": 1,
+			"bytes_per_op": 8
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "computed",
+			"ns_per_op": 173.69134696936308,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "hit_taken",
+			"ns_per_op": 181.1470881100866,
+			"allocs_per_op": 1,
+			"bytes_per_op": 8
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "npc_dialog",
+			"ns_per_op": 2097.8336378106264,
+			"allocs_per_op": 7,
+			"bytes_per_op": 48
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "equip_with_require",
+			"ns_per_op": 366.65996093488457,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "compute_1000",
+			"ns_per_op": 252401.7843436546,
+			"allocs_per_op": 1,
+			"bytes_per_op": 8
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "new_state",
+			"ns_per_op": 1122573.262915129,
+			"allocs_per_op": 217,
+			"bytes_per_op": 20506
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "load_1000_items",
+			"ns_per_op": 4004026.302325581,
+			"allocs_per_op": 1749,
+			"bytes_per_op": 14096
+		},
+		{
+			"engine": "C Lua 5.4 (own cgo) + limits",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 1083882.432034632,
+			"allocs_per_op": 216,
+			"bytes_per_op": 18713
+		},
+		{
 			"engine": "arnodel/golua",
 			"workload": "static_equip",
-			"ns_per_op": 434.9351056876031,
+			"ns_per_op": 407.9482722603376,
 			"allocs_per_op": 2,
 			"bytes_per_op": 88
 		},
 		{
 			"engine": "arnodel/golua",
 			"workload": "computed",
-			"ns_per_op": 330.93560334361496,
+			"ns_per_op": 326.3795834808973,
 			"allocs_per_op": 2,
 			"bytes_per_op": 88
 		},
 		{
 			"engine": "arnodel/golua",
 			"workload": "hit_taken",
-			"ns_per_op": 529.1935614952146,
+			"ns_per_op": 391.0515772430594,
 			"allocs_per_op": 2,
 			"bytes_per_op": 88
 		},
 		{
 			"engine": "arnodel/golua",
 			"workload": "npc_dialog",
-			"ns_per_op": 10977.540986608077,
+			"ns_per_op": 11123.948220236829,
 			"allocs_per_op": 51,
 			"bytes_per_op": 1753
 		},
 		{
 			"engine": "arnodel/golua",
+			"workload": "equip_with_require",
+			"ns_per_op": 979.5002246893999,
+			"allocs_per_op": 6,
+			"bytes_per_op": 184
+		},
+		{
+			"engine": "arnodel/golua",
 			"workload": "compute_1000",
-			"ns_per_op": 462889.8261484099,
+			"ns_per_op": 438169.051590106,
 			"allocs_per_op": 171,
-			"bytes_per_op": 60748
+			"bytes_per_op": 60758
 		},
 		{
 			"engine": "arnodel/golua",
 			"workload": "new_state",
-			"ns_per_op": 205619.15592365863,
-			"allocs_per_op": 4752,
-			"bytes_per_op": 393071
+			"ns_per_op": 5249546.759825327,
+			"allocs_per_op": 144168,
+			"bytes_per_op": 8080520
 		},
 		{
 			"engine": "arnodel/golua",
 			"workload": "load_1000_items",
-			"ns_per_op": 22591014.423076924,
-			"allocs_per_op": 572202,
-			"bytes_per_op": 32391373
+			"ns_per_op": 22500042.51020408,
+			"allocs_per_op": 572197,
+			"bytes_per_op": 32356203
+		},
+		{
+			"engine": "arnodel/golua",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 4979039.0625,
+			"allocs_per_op": 139994,
+			"bytes_per_op": 7834051
 		},
 		{
 			"engine": "arnodel/golua + limits",
 			"workload": "static_equip",
-			"ns_per_op": 815.47063474606,
+			"ns_per_op": 828.6370767314744,
 			"allocs_per_op": 6,
 			"bytes_per_op": 536
 		},
 		{
 			"engine": "arnodel/golua + limits",
 			"workload": "computed",
-			"ns_per_op": 716.7564195740814,
+			"ns_per_op": 690.7961884802259,
 			"allocs_per_op": 6,
 			"bytes_per_op": 536
 		},
 		{
 			"engine": "arnodel/golua + limits",
 			"workload": "hit_taken",
-			"ns_per_op": 773.1264490490469,
+			"ns_per_op": 757.9354336544197,
 			"allocs_per_op": 6,
 			"bytes_per_op": 536
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"workload": "equip_with_require",
+			"ns_per_op": 1531.6999110301488,
+			"allocs_per_op": 10,
+			"bytes_per_op": 632
 		},
 		{
 			"engine": "arnodel/golua + limits",
 			"workload": "compute_1000",
-			"ns_per_op": 515931.68358714046,
+			"ns_per_op": 524132.8301724138,
 			"allocs_per_op": 175,
-			"bytes_per_op": 61199
+			"bytes_per_op": 61202
 		},
 		{
 			"engine": "arnodel/golua + limits",
 			"workload": "new_state",
-			"ns_per_op": 215451.46774193548,
-			"allocs_per_op": 4756,
-			"bytes_per_op": 394283
+			"ns_per_op": 6269832.286432161,
+			"allocs_per_op": 144987,
+			"bytes_per_op": 8210635
 		},
 		{
 			"engine": "arnodel/golua + limits",
 			"workload": "load_1000_items",
-			"ns_per_op": 22347054,
-			"allocs_per_op": 576147,
-			"bytes_per_op": 32556092
+			"ns_per_op": 35196625,
+			"allocs_per_op": 576120,
+			"bytes_per_op": 32498964
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 11085853.75,
+			"allocs_per_op": 140801,
+			"bytes_per_op": 7934467
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
 			"workload": "static_equip",
-			"ns_per_op": 807.1843169886623,
+			"ns_per_op": 878.7974274962222,
 			"allocs_per_op": 6,
 			"bytes_per_op": 536
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
 			"workload": "computed",
-			"ns_per_op": 740.3606397091813,
+			"ns_per_op": 748.2273021150827,
 			"allocs_per_op": 6,
 			"bytes_per_op": 536
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
 			"workload": "hit_taken",
-			"ns_per_op": 870.3621505650564,
+			"ns_per_op": 805.6354384156741,
 			"allocs_per_op": 6,
 			"bytes_per_op": 536
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
 			"workload": "npc_dialog",
-			"ns_per_op": 15640.17408303854,
+			"ns_per_op": 14353.01641912991,
 			"allocs_per_op": 71,
 			"bytes_per_op": 3992
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
+			"workload": "equip_with_require",
+			"ns_per_op": 1671.5822723066333,
+			"allocs_per_op": 10,
+			"bytes_per_op": 632
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
 			"workload": "compute_1000",
-			"ns_per_op": 605056.7841823057,
+			"ns_per_op": 565874.7165320867,
 			"allocs_per_op": 175,
-			"bytes_per_op": 61199
+			"bytes_per_op": 61204
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
 			"workload": "new_state",
-			"ns_per_op": 222558.8180727709,
-			"allocs_per_op": 4756,
-			"bytes_per_op": 393651
+			"ns_per_op": 5928242.328358209,
+			"allocs_per_op": 144990,
+			"bytes_per_op": 8227052
 		},
 		{
 			"engine": "arnodel/golua + CPU limit",
 			"workload": "load_1000_items",
-			"ns_per_op": 22739196.07843137,
-			"allocs_per_op": 576144,
-			"bytes_per_op": 32529975
+			"ns_per_op": 22861697.5,
+			"allocs_per_op": 576126,
+			"bytes_per_op": 32513148
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 5690478.183962264,
+			"allocs_per_op": 140807,
+			"bytes_per_op": 7961680
 		},
 		{
 			"engine": "yuin/gopher-lua",
 			"workload": "static_equip",
-			"ns_per_op": 194.37512201524552,
+			"ns_per_op": 193.76639156677257,
 			"allocs_per_op": 0,
 			"bytes_per_op": 0
 		},
 		{
 			"engine": "yuin/gopher-lua",
 			"workload": "computed",
-			"ns_per_op": 240.7775903162426,
+			"ns_per_op": 244.0392514910829,
 			"allocs_per_op": 2,
 			"bytes_per_op": 24
 		},
 		{
 			"engine": "yuin/gopher-lua",
 			"workload": "hit_taken",
-			"ns_per_op": 289.8388118636323,
+			"ns_per_op": 312.78260813778377,
 			"allocs_per_op": 3,
 			"bytes_per_op": 24
 		},
 		{
 			"engine": "yuin/gopher-lua",
 			"workload": "npc_dialog",
-			"ns_per_op": 15876.120213425662,
+			"ns_per_op": 19595.850225110516,
 			"allocs_per_op": 30,
-			"bytes_per_op": 112169
+			"bytes_per_op": 112168
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "equip_with_require",
+			"ns_per_op": 497.9939863667186,
+			"allocs_per_op": 3,
+			"bytes_per_op": 32
 		},
 		{
 			"engine": "yuin/gopher-lua",
 			"workload": "compute_1000",
-			"ns_per_op": 332026.9972451791,
+			"ns_per_op": 347213.1659646167,
 			"allocs_per_op": 1325,
-			"bytes_per_op": 102839
+			"bytes_per_op": 102801
 		},
 		{
 			"engine": "yuin/gopher-lua",
 			"workload": "new_state",
-			"ns_per_op": 169838.74516527227,
-			"allocs_per_op": 2817,
-			"bytes_per_op": 512677
+			"ns_per_op": 4514428.681647941,
+			"allocs_per_op": 60317,
+			"bytes_per_op": 15415797
 		},
 		{
 			"engine": "yuin/gopher-lua",
 			"workload": "load_1000_items",
-			"ns_per_op": 16485941.924242424,
-			"allocs_per_op": 243249,
-			"bytes_per_op": 71714345
+			"ns_per_op": 17183146.45588235,
+			"allocs_per_op": 243250,
+			"bytes_per_op": 71713982
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 4238662.837455831,
+			"allocs_per_op": 58317,
+			"bytes_per_op": 15081497
 		},
 		{
 			"engine": "yuin/gopher-lua + limits",
 			"workload": "static_equip",
-			"ns_per_op": 652.6636799371662,
+			"ns_per_op": 536.3214193704446,
 			"allocs_per_op": 5,
 			"bytes_per_op": 384
 		},
 		{
 			"engine": "yuin/gopher-lua + limits",
 			"workload": "computed",
-			"ns_per_op": 597.874504803834,
+			"ns_per_op": 598.1497739676603,
 			"allocs_per_op": 7,
 			"bytes_per_op": 408
 		},
 		{
 			"engine": "yuin/gopher-lua + limits",
 			"workload": "hit_taken",
-			"ns_per_op": 748.6966626346674,
+			"ns_per_op": 653.919043797375,
 			"allocs_per_op": 8,
 			"bytes_per_op": 408
 		},
 		{
 			"engine": "yuin/gopher-lua + limits",
+			"workload": "equip_with_require",
+			"ns_per_op": 950.929416016936,
+			"allocs_per_op": 8,
+			"bytes_per_op": 416
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
 			"workload": "compute_1000",
-			"ns_per_op": 395019.02749029757,
+			"ns_per_op": 389860.6883029074,
 			"allocs_per_op": 1330,
-			"bytes_per_op": 103225
+			"bytes_per_op": 103185
 		},
 		{
 			"engine": "yuin/gopher-lua + limits",
 			"workload": "new_state",
-			"ns_per_op": 172536.82204142012,
-			"allocs_per_op": 2822,
-			"bytes_per_op": 513062
+			"ns_per_op": 4692226.595744681,
+			"allocs_per_op": 61328,
+			"bytes_per_op": 15493455
 		},
 		{
 			"engine": "yuin/gopher-lua + limits",
 			"workload": "load_1000_items",
-			"ns_per_op": 26193271.6875,
+			"ns_per_op": 17181536.84057971,
 			"allocs_per_op": 248249,
-			"bytes_per_op": 72098081
+			"bytes_per_op": 72097807
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 4216245.731448763,
+			"allocs_per_op": 59322,
+			"bytes_per_op": 15158677
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "static_equip",
+			"ns_per_op": 1355.782999785536,
+			"allocs_per_op": 1,
+			"bytes_per_op": 10880
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "computed",
+			"ns_per_op": 1289.82558124457,
+			"allocs_per_op": 1,
+			"bytes_per_op": 10880
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "hit_taken",
+			"ns_per_op": 1318.6695,
+			"allocs_per_op": 1,
+			"bytes_per_op": 10880
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "npc_dialog",
+			"ns_per_op": 213807.3166,
+			"allocs_per_op": 18,
+			"bytes_per_op": 3342837
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "equip_with_require",
+			"ns_per_op": 1535.0699222814253,
+			"allocs_per_op": 1,
+			"bytes_per_op": 10880
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "compute_1000",
+			"ns_per_op": 336835.766407119,
+			"allocs_per_op": 1,
+			"bytes_per_op": 11153
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "new_state",
+			"ns_per_op": 3042269.9715025905,
+			"allocs_per_op": 1694,
+			"bytes_per_op": 5589725
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "load_1000_items",
+			"ns_per_op": 12307484.693877552,
+			"allocs_per_op": 6550,
+			"bytes_per_op": 26735149
+		},
+		{
+			"engine": "C Lua 5.4 (wazero)",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 3034068.694871795,
+			"allocs_per_op": 1691,
+			"bytes_per_op": 5998647
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "static_equip",
+			"ns_per_op": 1448.344094375399,
+			"allocs_per_op": 1,
+			"bytes_per_op": 10880
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "computed",
+			"ns_per_op": 1339.6851784296236,
+			"allocs_per_op": 1,
+			"bytes_per_op": 10880
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "hit_taken",
+			"ns_per_op": 1359.334965207599,
+			"allocs_per_op": 1,
+			"bytes_per_op": 10880
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "npc_dialog",
+			"ns_per_op": 211123.6167,
+			"allocs_per_op": 18,
+			"bytes_per_op": 3342837
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "equip_with_require",
+			"ns_per_op": 1732.182631800824,
+			"allocs_per_op": 1,
+			"bytes_per_op": 10880
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "compute_1000",
+			"ns_per_op": 368835.371446041,
+			"allocs_per_op": 1,
+			"bytes_per_op": 11181
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "new_state",
+			"ns_per_op": 3110806.320209974,
+			"allocs_per_op": 1694,
+			"bytes_per_op": 5589663
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "load_1000_items",
+			"ns_per_op": 11738225.41,
+			"allocs_per_op": 6549,
+			"bytes_per_op": 26734940
+		},
+		{
+			"engine": "C Lua 5.4 (wazero) + limits",
+			"workload": "mod_state_200_items",
+			"ns_per_op": 3077001.5782828284,
+			"allocs_per_op": 1690,
+			"bytes_per_op": 5998639
 		}
 	]
 }

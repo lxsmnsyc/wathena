@@ -153,8 +153,8 @@ Naming:
 
 Go was chosen over C#. The deciding points:
 
-- **Builds.** `GOOS` and `GOARCH` cross-compile static binaries for Linux, Windows, macOS, FreeBSD, and ARM from any machine. No runtime install is needed on the server.
-- **Scripting without cgo.** A pure-Go Lua 5.4 runtime exists (section 3.2). Avoiding cgo keeps cross-compiling simple.
+- **Builds.** `GOOS` and `GOARCH` cross-compile binaries for Linux, Windows, macOS, and ARM from any machine. With `zig cc` for the cgo part, Linux builds stay static. No runtime install is needed on the server.
+- **Scripting.** C Lua 5.4 runs through a small cgo binding (section 3.2). Release builds use `zig cc` as the C compiler, so cross-compiling still works from one machine.
 - **Concurrency.** A goroutine per zone with a channel inbox fits the zone model in section 4.
 - **Shared code with the browser.** TinyGo compiles Go packages to small WebAssembly modules, so the map generator runs in the web client too (section 3.3).
 - **Operations.** One binary per service, built-in profiling (`pprof`), and a low-pause garbage collector.
@@ -170,22 +170,22 @@ Go weaknesses and how to handle them:
 
 ### 3.2 Lua runtime
 
-Primary: **arnodel/golua**, a pure-Go implementation of Lua 5.4.
+wAthena runs **C Lua 5.4 through a small cgo binding of its own** ([docs/decisions/0002-lua-runtime-c-lua.md](decisions/0002-lua-runtime-c-lua.md)).
 
 - Native 64-bit integers, which zeny, exp, and IDs need.
 - Coroutines, which NPC dialogs need.
-- CPU and memory limits per execution, which the sandbox needs.
-- No cgo.
+- A memory limit per state, from the binding's allocator.
+- A CPU limit per call, from a count hook that charges a budget. Coroutines inherit it.
+- Item and proc calls cost about 200 ns with limits on. An NPC dialog of 4 steps costs about 2 µs.
 
-It is less mature and slower than the C implementation of Lua. The phase 0b benchmark confirmed the choice ([docs/decisions/0001-lua-runtime.md](decisions/0001-lua-runtime.md)):
+The phase 0b benchmark compared five options. The others:
 
-- A script call costs under 1 µs with limits on.
-- The CPU limit works across coroutine resumes.
-- The memory limit panics when a coroutine is resumed in a later call. It is applied only to calls that do not resume a coroutine until this is fixed upstream.
+- **arnodel/golua** (pure Go) was 3 to 7 times slower, and its memory limit panics when a coroutine is resumed in a later call.
+- **C Lua on wazero** (WebAssembly, pure Go) passed every check, but WebAssembly exceptions made protected calls and yields slow. The same C binding builds for it, so it can be measured again later.
+- **yuin/gopher-lua** implements Lua 5.1 with float numbers, has no memory limit, and its time limit does not follow coroutines across calls.
+- **aarzilli/golua**, an existing C Lua binding, gives Go functions the wrong state inside coroutines.
 
-Fallback: **C Lua 5.4 through our own small cgo binding.** It is fastest for pure Lua work and loading. Host calls cross cgo, and cross-compiling needs a C toolchain per target, built in CI with Docker.
-
-yuin/gopher-lua is not a fallback. It implements Lua 5.1 with float numbers, has no memory limit, and its time limit does not follow coroutines across calls.
+Costs of cgo, and how they are handled, are listed in decision 0002.
 
 All server code talks to Lua through one binding layer (`internal/script`). Game systems never call the Lua library directly. This keeps the runtime replaceable.
 
@@ -217,7 +217,7 @@ Approach:
 | Database | PostgreSQL 18 or later (section 3.5). `jackc/pgx` driver and `pgxpool`. `sqlc` generates typed query code. |
 | Schema migrations | `goose` or Atlas, with migration files in the repository. |
 | Inter-service messages | gRPC (`grpc-go`) or ConnectRPC. |
-| Scripting | Lua 5.4 through `arnodel/golua` (section 3.2). |
+| Scripting | C Lua 5.4 through our own cgo binding (section 3.2). |
 | Game data | YAML files read with `goccy/go-yaml`, validated with JSON Schema. Same layout as `db/*.yml` where possible. |
 | Protocol definition | One schema file set. Codegen produces Go and TypeScript encoders and decoders. |
 | Shared client logic | Go package compiled to WebAssembly with TinyGo. |
@@ -2175,7 +2175,7 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 | Scope | About 350k lines of C++ and 808k lines of scripts. | First release uses procedural mode and one ruleset. Classic mode and full script conversion come later. Tier 3 features are left to mods. |
 | GRF reading fails on some browsers | Players cannot load their game files. | Partial reading and caching (section 10.1). Classic mode can be dropped, since generated worlds need only sprites, textures, models, and sounds. |
 | License or trademark problems | Takedown requests or forced changes. | GPL v3 compatible license (section 2.4). No Gravity trademarks in names or branding. No Gravity assets hosted. |
-| `arnodel/golua` maturity or speed | Slow ticks or runtime bugs. | Benchmarked in phase 0b (decision 0001). The binding layer recovers from runtime panics and allows switching to C Lua. Static bonus tables and computed-bonus caching reduce Lua calls. |
+| cgo and C Lua | Harder cross-compiling. A crash in C stops the process. | `zig cc` for release builds (decision 0002). Scripts cannot load bytecode or C libraries. Fuzz tests on the binding. The binding also builds for wazero, a pure-Go fallback. |
 | Go garbage collector pauses | Uneven tick times in busy zones. | Allocation budgets per tick, buffer pools, `GOMEMLIMIT`, and tick p99 tracking in load tests. |
 | Missing change events for item scripts | Stale bonuses. | Full-recalculation comparison in tests (section 5.3). |
 | Missing client data entries | Wrong or missing sprites and effects. | Placeholder fallbacks, logged missing IDs, and `wactl client-data validate` (section 10.5). |

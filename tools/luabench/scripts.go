@@ -170,3 +170,61 @@ func ItemScripts(n int) []string {
 	}
 	return out
 }
+
+// requireShim replaces require with a loader that reads module sources from
+// the __sources table, so no engine reads files. Modules load once per state.
+const requireShim = `
+__sources = __sources or {}
+local loaded = {}
+local compile = loadstring or load
+function require(name)
+  local m = loaded[name]
+  if m ~= nil then return m end
+  local src = __sources[name]
+  if src == nil then error("module not found: " .. name) end
+  local f = assert(compile(src, "=" .. name, "t"))
+  m = f(name)
+  if m == nil then m = true end
+  loaded[name] = m
+  return m
+end
+`
+
+// utilModule is a shared library module of about 50 functions.
+// It avoids // and &, so it runs on both dialects.
+func utilModule() string {
+	var b strings.Builder
+	b.WriteString("local M = {}\n")
+	b.WriteString("function M.clamp(v, lo, hi) if v < lo then return lo elseif v > hi then return hi end return v end\n")
+	b.WriteString("function M.scale(v, lv) return M.clamp(v + math.floor(lv / 10), 1, 99) end\n")
+	b.WriteString("function M.percent(v, p) return math.floor(v * p / 100) end\n")
+	for i := 1; i <= 48; i++ {
+		fmt.Fprintf(&b, "function M.f%d(a, b) return M.clamp(a * %d + b, 0, 1000) end\n", i, i)
+	}
+	b.WriteString("return M\n")
+	return b.String()
+}
+
+// ModSetup registers the module sources and the equip_item entry point.
+// Loaded alone, it is the start of one mod's state.
+func ModSetup() string {
+	return prelude + requireShim +
+		"__sources[\"mymod.util\"] = [==[\n" + utilModule() + "]==]\n" +
+		"function equip_item(id) items[id].on_equip(nil, nil, nil) return 0 end\n"
+}
+
+// ModItems returns n item scripts that require the shared module.
+func ModItems(n int) []string {
+	out := make([]string, n)
+	for i := range out {
+		out[i] = fmt.Sprintf(`local util = require("mymod.util")
+items = items or {}
+items[%d] = {
+  on_equip = function(pc, it, mods)
+    wa_add(bLuk, util.scale(%d, pc_get("base_level")))
+  end,
+}
+`, 4000+i, 1+i%10)
+	}
+	return out
+}

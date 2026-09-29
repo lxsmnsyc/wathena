@@ -8,4 +8,8 @@ require (
 	github.com/yuin/gopher-lua v1.1.2
 )
 
-require github.com/arnodel/strftime v0.1.6 // indirect
+require (
+	github.com/arnodel/strftime v0.1.6 // indirect
+	github.com/tetratelabs/wazero v1.12.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
+)
