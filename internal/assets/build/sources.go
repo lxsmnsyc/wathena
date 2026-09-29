@@ -35,7 +35,7 @@ const (
 	textureConverter     = "grf-texture-1"
 	soundConverter       = "grf-sound-1"
 	modelConverter       = "grf-model-3"
-	mapConverter         = "grf-map-1"
+	mapConverter         = "grf-map-2"
 	effectConverter      = "grf-effect-1"
 	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
