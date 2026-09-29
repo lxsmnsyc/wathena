@@ -45,6 +45,21 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `music/<name>` | Music | `music/08` | Background music. |
 | `placeholder/<type>` | Any | `placeholder/sprite` | Fallbacks, below. |
 
+### Textures from a game client
+
+The GRF importer names images in `data\texture\` by their path without the extension:
+
+| GRF path | Name |
+|---|---|
+| `data\texture\<path>` | `texture/<path>` |
+| `data\texture\유저인터페이스\item\<name>` | `icon/item/<name>` |
+| `data\texture\유저인터페이스\collection\<name>` | `image/item/<name>` |
+| `data\texture\유저인터페이스\cardbmp\<name>` | `image/card/<name>` |
+| `data\texture\유저인터페이스\illust\<name>` | `image/illust/<name>` |
+| `data\texture\유저인터페이스\<path>` | `ui/<path>` |
+
+Some folders have the same image name in two formats, such as `fire.bmp` and `fire.tga`, and the two images differ. The preferred format gets the plain name, and the other gets `~` and its format appended, as in `texture/effect/fire~tga`. The order of preference is BMP, TGA, PNG, then JPEG, because maps and models refer to BMP files.
+
 ### Placeholders
 
 When a name is missing, the client uses a placeholder and logs the missing name once:
@@ -140,6 +155,14 @@ magic    "WPAL"
 version  u16 = 1
 colors   256 × 4 bytes RGBA. Index 0 is transparent.
 ```
+
+### Texture
+
+- Textures are lossless WebP, so the client gets the source pixels exactly.
+- The color of a fully transparent pixel is not kept. The build sets it to the average of its opaque neighbors, or black, so that filtering does not blend in stray colors at the edges.
+- In BMP sources, magenta and colors close to it (red and blue above 230, green below 20) become transparent, as in the game.
+- Accepted inputs: BMP (uncompressed, 1 to 32 bits per pixel), TGA (uncompressed and run-length encoded), PNG, and JPEG.
+- The build encodes with libwebp at lossless level 6. libwebp is compiled to WebAssembly and run by the build tool, so the build needs no C compiler and makes the same bytes on every platform.
 
 ### Sound and music
 

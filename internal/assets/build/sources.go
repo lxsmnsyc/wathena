@@ -2,11 +2,13 @@ package build
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	clientdata "github.com/lxsmnsyc/wathena/client/data"
 	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
 	"github.com/lxsmnsyc/wathena/internal/assets/placeholder"
+	"github.com/lxsmnsyc/wathena/internal/assets/texture"
 	"github.com/lxsmnsyc/wathena/internal/assets/wpal"
 	"github.com/lxsmnsyc/wathena/internal/grf"
 )
@@ -16,6 +18,7 @@ import (
 const (
 	spriteConverter      = "grf-sprite-1"
 	paletteConverter     = "grf-palette-1"
+	textureConverter     = "grf-texture-1"
 	placeholderConverter = "placeholder-1"
 )
 
@@ -71,7 +74,29 @@ func (g *GRF) Items() ([]Item, error) {
 	}
 	pairs := map[string]*pair{}
 	var items []Item
-	for _, s := range c.Files() {
+	files := c.Files()
+	paths := make([]string, len(files))
+	for i, s := range files {
+		paths[i] = s.Entry.Name
+	}
+	textures := grfimport.TextureNames(paths)
+	for _, s := range files {
+		if name, ok := textures[s.Entry.Name]; ok {
+			f, _ := texture.FormatOf(path.Ext(s.Entry.Key))
+			items = append(items, Item{
+				Name:     name,
+				Ext:      "webp",
+				CacheKey: fmt.Sprintf("%s|%d|%s|%s", textureConverter, texture.Level, sourceKey(s), name),
+				Produce: func() ([]byte, error) {
+					b, err := c.ReadFile(s)
+					if err != nil {
+						return nil, err
+					}
+					return texture.Convert(f, b)
+				},
+			})
+			continue
+		}
 		if names := tables.PaletteNames(s.Entry.Name); len(names) > 0 {
 			produce := func() ([]byte, error) {
 				b, err := c.ReadFile(s)

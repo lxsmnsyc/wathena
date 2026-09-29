@@ -4,6 +4,8 @@
 *.wasm
 # The benchmark's Lua build is committed, so running it needs no C compiler.
 !/tools/luabench/wasm/lua.wasm
+# libwebp's encoder is committed for the same reason.
+!/internal/assets/texture/wasm/webp.wasm
 
 # Go
 /vendor/

@@ -1706,7 +1706,7 @@ The formats are defined in [assets-v1](specs/assets-v1.md). In short:
 
 Measured on the kRO client, the 2,829 monster and NPC sprites are 182 MB in the GRF and 127 MB as WSPR with Brotli, 70% of the original. Brotli's highest level gives files about 16% smaller than level 9, but takes 10 times as long: about 21 minutes for these sprites on an Apple M2. The build uses the highest level by default, since players download every byte and incremental builds only compress changed assets. A fast mode uses a lower level for development.
 
-Binary outputs are stored with a Brotli copy. The server sends it with `Content-Encoding: br`, and the browser decompresses it natively. WebP, Opus, and MP3 are sent as they are.
+Binary outputs are stored only as Brotli. The server sends them with `Content-Encoding: br`, and the browser decompresses them natively. WebP, Opus, and MP3 are sent as they are.
 
 There is no Opus encoder in pure Go. The build runs libopus compiled to WebAssembly in wazero, so `wactl` stays pure Go. libopus does not use setjmp or longjmp, so the slow WebAssembly exceptions found with Lua (decision 0002) do not apply. Encoding happens once per build, so its speed matters little.
 
