@@ -19,6 +19,16 @@ type Look struct {
 	Look      string `yaml:"look"`
 	GRFSprite string `yaml:"grf_sprite"`
 	Race      string `yaml:"race"`
+	// Sex is "m" or "f" for a look that exists for one sex only, or empty.
+	Sex string `yaml:"sex"`
+}
+
+// Sexes returns the sexes a look exists for.
+func (l Look) Sexes() []string {
+	if l.Sex != "" {
+		return []string{l.Sex}
+	}
+	return []string{"m", "f"}
 }
 
 // Job maps a job ID to its looks.
@@ -57,6 +67,9 @@ func ParseJobs(data []byte) (*Jobs, error) {
 		}
 		if l.Race != "human" && l.Race != "doram" {
 			return nil, fmt.Errorf("jobs.yml: look %q has race %q", l.Look, l.Race)
+		}
+		if l.Sex != "" && l.Sex != "m" && l.Sex != "f" {
+			return nil, fmt.Errorf("jobs.yml: look %q has sex %q", l.Look, l.Sex)
 		}
 	}
 	ids := map[int]bool{}

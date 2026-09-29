@@ -35,3 +35,10 @@ func TestSprite(t *testing.T) {
 		}
 	}
 }
+
+func TestTexture(t *testing.T) {
+	img := Texture()
+	if img.Rect.Dx() != 64 || img.NRGBAAt(0, 0) == img.NRGBAAt(8, 0) || img.NRGBAAt(0, 0) != img.NRGBAAt(63, 63) {
+		t.Error("texture is not a tiling checkerboard")
+	}
+}

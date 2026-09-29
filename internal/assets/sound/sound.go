@@ -3,6 +3,7 @@
 package sound
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 )
@@ -57,4 +58,23 @@ func IsMP3(data []byte) bool {
 		return true
 	}
 	return len(data) >= 2 && data[0] == 0xff && data[1]&0xe0 == 0xe0
+}
+
+// CheckWebM checks that data is a WebM file with an Opus track, as the
+// build writes them.
+func CheckWebM(data []byte) error {
+	if len(data) > MaxBytes {
+		return fmt.Errorf("%w: %d bytes", ErrFormat, len(data))
+	}
+	if len(data) < 4 || string(data[:4]) != "\x1a\x45\xdf\xa3" {
+		return fmt.Errorf("%w: not an ebml file", ErrFormat)
+	}
+	head := data[:min(len(data), 64)]
+	if !bytes.Contains(head, []byte("webm")) {
+		return fmt.Errorf("%w: not a webm file", ErrFormat)
+	}
+	if !bytes.Contains(data[:min(len(data), 4096)], []byte("A_OPUS")) {
+		return fmt.Errorf("%w: no opus track", ErrFormat)
+	}
+	return nil
 }

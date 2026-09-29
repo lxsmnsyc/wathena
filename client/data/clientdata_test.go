@@ -30,3 +30,25 @@ func TestParseJobsRejects(t *testing.T) {
 		}
 	}
 }
+
+func TestSexes(t *testing.T) {
+	j, err := LoadJobs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, l := range j.Looks {
+		switch l.Look {
+		case "bard":
+			if s := l.Sexes(); len(s) != 1 || s[0] != "m" {
+				t.Errorf("bard sexes %v", s)
+			}
+		case "novice":
+			if s := l.Sexes(); len(s) != 2 {
+				t.Errorf("novice sexes %v", s)
+			}
+		}
+	}
+	if _, err := ParseJobs([]byte("looks:\n  - look: x\n    grf_sprite: x\n    race: human\n    sex: q\n")); err == nil {
+		t.Error("parsed sex q")
+	}
+}

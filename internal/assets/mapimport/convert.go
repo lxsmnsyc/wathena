@@ -24,7 +24,8 @@ type Names struct {
 	Texture func(string) string
 	// Model maps a path relative to data\model.
 	Model func(string) string
-	// Sound maps a path relative to data\wav.
+	// Sound maps a path relative to data\wav. An empty result leaves the
+	// sound out.
 	Sound func(string) string
 }
 
@@ -219,7 +220,8 @@ func Convert(gat *GAT, gnd *GND, rsw *RSW, names Names, lightmapName string) (*w
 		})
 	}
 	for _, s := range rsw.Sounds {
-		if !defined(s.Pos[:]...) || !defined(s.Volume, s.Range, s.Cycle) {
+		name := names.Sound(s.File)
+		if name == "" || !defined(s.Pos[:]...) || !defined(s.Volume, s.Range, s.Cycle) {
 			continue
 		}
 		cycle := s.Cycle
@@ -228,7 +230,7 @@ func Convert(gat *GAT, gnd *GND, rsw *RSW, names Names, lightmapName string) (*w
 			cycle = 7
 		}
 		m.Sounds = append(m.Sounds, wmap.Sound{
-			Name:   dep(names.Sound(s.File)),
+			Name:   dep(name),
 			Pos:    mapPoint(s.Pos, cx, cz),
 			Volume: s.Volume,
 			Width:  float32(s.Width) / unitsPerCell,

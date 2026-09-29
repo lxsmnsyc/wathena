@@ -98,7 +98,8 @@ func formatRank(ext string) int {
 // TextureResolver returns a function that maps a texture path as models
 // and maps write it, relative to data\texture, to an asset name. names is
 // the result of TextureNames. A texture that is not in the client still
-// gets the name it would have, so the client shows a placeholder.
+// gets the name it would have, so the client shows a placeholder. A path
+// that cannot be a name maps to placeholder/texture.
 func TextureResolver(names map[string]string) func(string) string {
 	byKey := make(map[string]string, len(names))
 	for p, n := range names {
@@ -112,7 +113,7 @@ func TextureResolver(names map[string]string) func(string) string {
 		if n, _, ok := textureBase(full); ok {
 			return n
 		}
-		return "texture/missing"
+		return "placeholder/texture"
 	}
 }
 
@@ -164,7 +165,7 @@ func ModelNames(paths []string) map[string]string {
 // ModelResolver returns a function that maps a model path as maps write
 // it, relative to data\model, to an asset name. names is the result of
 // ModelNames. A model that is not in the client still gets the name it
-// would have.
+// would have. A path that cannot be a name maps to placeholder/model.
 func ModelResolver(names map[string]string) func(string) string {
 	byKey := make(map[string]string, len(names))
 	for p, n := range names {
@@ -178,17 +179,17 @@ func ModelResolver(names map[string]string) func(string) string {
 		if n, _, ok := modelBase(full); ok {
 			return n
 		}
-		return "model/missing"
+		return "placeholder/model"
 	}
 }
 
 // SoundResolver maps a sound path as maps write it, relative to data\wav,
-// to an asset name.
+// to an asset name, or to "" for a path that cannot be a sound name.
 func SoundResolver(p string) string {
 	if n, ok := SoundName(`data\wav\` + p); ok {
 		return n
 	}
-	return "sound/missing"
+	return ""
 }
 
 // MapName returns the asset name for a map's RSW file, such as map/prontera

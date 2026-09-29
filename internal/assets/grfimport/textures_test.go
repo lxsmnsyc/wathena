@@ -47,7 +47,7 @@ func TestTextureResolver(t *testing.T) {
 		`effect\FIRE.BMP`: "texture/effect/fire",
 		`effect\fire.tga`: "texture/effect/fire~tga",
 		`프론테라\gone.bmp`:   "texture/프론테라/gone",
-		`..\..\etc\x.bmp`: "texture/missing",
+		`..\..\etc\x.bmp`: "placeholder/texture",
 	} {
 		if got := r(in); got != want {
 			t.Errorf("%s: %q, want %q", in, got, want)
@@ -59,7 +59,7 @@ func TestTextureResolver(t *testing.T) {
 		`a\TREE.rsm`:  "model/a/tree",
 		`a\tree.rsm2`: "model/a/tree~rsm2",
 		`b.rsm2`:      "model/b",
-		`c.gr2`:       "model/missing",
+		`c.gr2`:       "placeholder/model",
 		`gone.rsm`:    "model/gone",
 	} {
 		if got := mr(in); got != want {
@@ -72,7 +72,7 @@ func TestTextureResolver(t *testing.T) {
 	if _, ok := MapName(`data\sub\x.rsw`); ok {
 		t.Error("MapName accepted a subfolder")
 	}
-	if SoundResolver(`effect\hit.wav`) != "sound/effect/hit" || SoundResolver("") != "sound/missing" {
+	if SoundResolver(`effect\hit.wav`) != "sound/effect/hit" || SoundResolver("") != "" {
 		t.Error("SoundResolver")
 	}
 }

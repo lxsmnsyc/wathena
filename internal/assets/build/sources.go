@@ -34,9 +34,9 @@ const (
 	paletteConverter     = "grf-palette-1"
 	textureConverter     = "grf-texture-1"
 	soundConverter       = "grf-sound-1"
-	modelConverter       = "grf-model-3"
-	mapConverter         = "grf-map-2"
-	effectConverter      = "grf-effect-1"
+	modelConverter       = "grf-model-4"
+	mapConverter         = "grf-map-3"
+	effectConverter      = "grf-effect-2"
 	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
 )
@@ -52,6 +52,11 @@ func (Placeholder) Items() ([]Item, error) {
 		Ext:      "wspr",
 		CacheKey: placeholderConverter + "|sprite",
 		Produce:  func() ([]byte, error) { return placeholder.Sprite().Encode() },
+	}, {
+		Name:     "placeholder/texture",
+		Ext:      "webp",
+		CacheKey: fmt.Sprintf("%s|texture|%d", placeholderConverter, texture.Level),
+		Produce:  func() ([]byte, error) { return texture.Encode(placeholder.Texture()) },
 	}}, nil
 }
 

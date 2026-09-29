@@ -322,3 +322,35 @@ func FuzzConvert(f *testing.F) {
 		}
 	})
 }
+
+func TestInspect(t *testing.T) {
+	m, err := Parse(buildRSM(ShadeFlat, 255, []testNode{floor()}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	glb, err := Convert(m, func(p string) string { return "texture/한국/wall" })
+	if err != nil {
+		t.Fatal(err)
+	}
+	names, err := Inspect(glb)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 1 || names[0] != "texture/한국/wall" {
+		t.Errorf("texture names %q", names)
+	}
+	bad := append([]byte(nil), glb...)
+	bad[8]++
+	if _, err := Inspect(bad); err == nil {
+		t.Error("inspected a glb with a wrong length")
+	}
+}
+
+func FuzzInspect(f *testing.F) {
+	m, _ := Parse(buildRSM(ShadeSmooth, 255, []testNode{floor()}))
+	glb, _ := Convert(m, func(p string) string { return "texture/x" })
+	f.Add(glb)
+	f.Fuzz(func(t *testing.T, data []byte) {
+		_, _ = Inspect(data)
+	})
+}

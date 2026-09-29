@@ -219,3 +219,20 @@ func FuzzParse(f *testing.F) {
 		}
 	})
 }
+
+func TestUnnamedSound(t *testing.T) {
+	gat, _ := ParseGAT(buildGAT())
+	gnd, _ := ParseGND(buildGND())
+	rsw, _ := ParseRSW(buildRSW())
+	m, _, err := Convert(gat, gnd, rsw, Names{
+		Texture: func(p string) string { return "texture/" + p },
+		Model:   func(p string) string { return "model/" + p },
+		Sound:   func(p string) string { return "" },
+	}, "lightmap/t")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Sounds) != 0 {
+		t.Errorf("%d sounds, want the unnamed one left out", len(m.Sounds))
+	}
+}

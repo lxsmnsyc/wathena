@@ -85,7 +85,7 @@ When a name is missing, the client uses a placeholder and logs the missing name 
 | Map | The map cannot be entered, and the client shows an error. |
 | Lightmap | The ground is drawn without baked light. |
 
-wAthena provides a placeholder pack as the `placeholder` build source. Its art is drawn by code in `internal/assets/placeholder`, so it is original and CC0. It will cover every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. Each part is added when its format's converter exists. `placeholder/sprite` exists now.
+wAthena provides a placeholder pack as the `placeholder` build source. Its art is drawn by code in `internal/assets/placeholder`, so it is original and CC0. It will cover every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. Each part is added when its format's converter exists. `placeholder/sprite` and `placeholder/texture` exist now.
 
 ## Formats
 
@@ -421,11 +421,15 @@ our-art/
 
 ## Checks
 
-`wactl assets check --build <folder> --data <client data folder>` lists:
+`wactl assets check --build <folder>` reads a whole build:
 
-- Names the client data tables or maps refer to that no source provides. These will show as placeholders.
-- Names provided but never referred to.
-- Assets over the size limits.
+- Every stored file must exist, match its SHA-256 and size in the manifest, and decode as its type within the limits below. Any failure is an error, and the command exits with status 1.
+- It lists names that something refers to but no source provides, grouped by kind. The client shows placeholders for them. References come from maps' dependency lists, models' textures, sprites' sound events, effects' textures, and the client data tables, such as a body sprite for each look in `jobs.yml` and each sex the look exists for.
+- `--list` shows every missing name, and `--json` prints the report as JSON.
+
+`wactl assets gc --build <folder>` removes stored files the current manifest does not use, such as outputs of older converter versions, and temporary files an interrupted build left. It only removes files named as the build names them, in its two-letter folders. `--dry-run` reports without removing.
+
+A converter must change its version whenever its output changes, or builds with a cache keep the old output. `check` catches the case where the old output no longer decodes.
 
 ## Limits
 

@@ -3,6 +3,9 @@
 package placeholder
 
 import (
+	"image"
+	"image/color"
+
 	"github.com/lxsmnsyc/wathena/internal/assets/wspr"
 )
 
@@ -66,4 +69,21 @@ func Sprite() *wspr.Sprite {
 		actions[i] = wspr.Action{IntervalMs: 150, Frames: []wspr.Frame{frame}}
 	}
 	return &wspr.Sprite{Pages: pages, Palette: &pal, Images: images, Actions: actions}
+}
+
+// Texture returns placeholder/texture: a 64 × 64 grey checkerboard of
+// 8-pixel squares, used for every missing texture. It tiles seamlessly.
+func Texture() *image.NRGBA {
+	const size, square = 64, 8
+	img := image.NewNRGBA(image.Rect(0, 0, size, size))
+	for y := range size {
+		for x := range size {
+			v := uint8(0x70)
+			if (x/square+y/square)%2 == 0 {
+				v = 0x98
+			}
+			img.SetNRGBA(x, y, color.NRGBA{v, v, v, 255})
+		}
+	}
+	return img
 }

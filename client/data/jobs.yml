@@ -3,6 +3,8 @@
 # A look is one body sprite: sprite/body/<look>/<m|f> and palette/body/<look>/<m|f>/<n>.
 # grf_sprite is the sprite's file name in the game client, which the GRF importer uses.
 # race is the sprite folder: human (인간족) or doram (도람족).
+# sex is m or f for looks that exist for one sex only, as RO's bard and
+# dancer lines do. Other looks exist for both.
 #
 # Jobs map rAthena job IDs to a look, and to the look used while riding a mount.
 #
@@ -63,9 +65,11 @@ looks:
   - look: bard
     grf_sprite: "바드"
     race: human
+    sex: m
   - look: bard_h
     grf_sprite: "클라운"
     race: human
+    sex: m
   - look: biolo
     grf_sprite: "biolo"
     race: human
@@ -99,9 +103,11 @@ looks:
   - look: dancer
     grf_sprite: "무희"
     race: human
+    sex: f
   - look: dancer_h
     grf_sprite: "집시"
     race: human
+    sex: f
   - look: do_summoner
     grf_sprite: "summoner"
     race: doram
@@ -270,6 +276,7 @@ looks:
   - look: minstrel
     grf_sprite: "민스트럴"
     race: human
+    sex: m
   - look: monk
     grf_sprite: "몽크"
     race: human
@@ -294,18 +301,22 @@ looks:
   - look: ostrich_bard
     grf_sprite: "타조바드"
     race: human
+    sex: m
   - look: ostrich_crown
     grf_sprite: "타조크라운"
     race: human
+    sex: m
   - look: ostrich_dancer
     grf_sprite: "타조무희"
     race: human
+    sex: f
   - look: ostrich_hunter
     grf_sprite: "타조헌터"
     race: human
   - look: ostrich_minstrel
     grf_sprite: "타조민스트럴"
     race: human
+    sex: m
   - look: ostrich_ranger
     grf_sprite: "타조레인져"
     race: human
@@ -315,9 +326,11 @@ looks:
   - look: ostrich_wander
     grf_sprite: "타조원더러"
     race: human
+    sex: f
   - look: ostrich_zipsi
     grf_sprite: "타조짚시"
     race: human
+    sex: f
   - look: peco_gunner
     grf_sprite: "페코건너"
     race: human
@@ -432,9 +445,11 @@ looks:
   - look: shinkiro
     grf_sprite: "shinkiro"
     race: human
+    sex: m
   - look: shiranui
     grf_sprite: "shiranui"
     race: human
+    sex: f
   - look: sky_emperor
     grf_sprite: "sky_emperor"
     race: human
@@ -492,18 +507,23 @@ looks:
   - look: troubadour
     grf_sprite: "troubadour"
     race: human
+    sex: m
   - look: troubadour_riding
     grf_sprite: "troubadour_riding"
     race: human
+    sex: m
   - look: trouvere
     grf_sprite: "trouvere"
     race: human
+    sex: f
   - look: trouvere_riding
     grf_sprite: "trouvere_riding"
     race: human
+    sex: f
   - look: wanderer
     grf_sprite: "원더러"
     race: human
+    sex: f
   - look: warlock
     grf_sprite: "워록"
     race: human
