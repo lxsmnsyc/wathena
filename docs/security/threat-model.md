@@ -136,6 +136,15 @@ The boundaries are:
 | Malicious guild emblem files. | Size limits, decoding, checks, and re-encoding. The original file is never served. | Decided. | Strategy 7.6 |
 | Cross-site requests. | `SameSite=Strict` cookies and CSRF tokens. The gateway checks the WebSocket `Origin` header. | Decided. | Strategy 7.4, 7.6 |
 
+### Asset build and serving
+
+| Threat | Mitigation | Status | Reference |
+|---|---|---|---|
+| A crafted GRF from the internet exploits a parser. | Length checks before every read, fuzz tests, and the build runs offline as its own command, not in the game server. `lub` files are never run. | Decided. | Strategy 10.1 |
+| Path traversal or wrong content types on the asset server. | Files are served only by valid content hash, with a fixed content type per extension and `nosniff`. No directory listing. | Decided. | Strategy 10.1 |
+| Hotlinking and bandwidth abuse. | Optional signed cookie from the account service. A CDN absorbs traffic. | Decided. | Strategy 10.1 |
+| A stale or poisoned cache in players' browsers. | Names are content hashes, so a cached file always matches its name. The client checks the hash of each file it downloads. | Decided. | Strategy 10.1 |
+
 ### Availability
 
 | Threat | Mitigation | Status | Reference |
@@ -166,4 +175,4 @@ These came up while writing this document.
 
 - Attacks on the player's own device or browser.
 - Attacks on the hosting provider.
-- Gravity's game assets, which each player loads from their own files.
+- Whether an operator has the right to serve the game assets they supply.

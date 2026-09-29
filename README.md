@@ -29,7 +29,9 @@ Early planning. There is no playable build yet.
 
 ## Game files
 
-wAthena does not include or host any Gravity assets. Each player loads sprites, textures, models, and sounds from their own game files in the browser. Mods can ship original assets they have the right to share.
+This repository does not include any Gravity assets. Each server operator supplies the game's `data.grf` files. `wactl assets build` converts them into web formats, and the server streams them to players' browsers. Players only need a browser.
+
+Operators are responsible for the assets they serve. Mods can ship original assets they have the right to share.
 
 ## License
 
