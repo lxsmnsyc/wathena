@@ -1,0 +1,5788 @@
+{
+	"system": "level_penalty",
+	"mode": "renewal",
+	"rathena_git_hash": "e985006171d2eb320ee512a653f4c83aea3d81b6",
+	"data_path": "re/",
+	"circular_area": false,
+	"note": "Rate in percent from pc_level_penalty_mod for each player level and monster.",
+	"cases": [
+		{
+			"player_level": 1,
+			"mob": 1001,
+			"mob_level": 16,
+			"exp": 115,
+			"drop": 60,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1032,
+			"mob_level": 52,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1058,
+			"mob_level": 55,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1084,
+			"mob_level": 1,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1109,
+			"mob_level": 93,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1134,
+			"mob_level": 102,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1159,
+			"mob_level": 71,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1190,
+			"mob_level": 55,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1216,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1251,
+			"mob_level": 92,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1276,
+			"mob_level": 82,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1302,
+			"mob_level": 96,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1327,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1352,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1377,
+			"mob_level": 92,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1402,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1430,
+			"mob_level": 47,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1455,
+			"mob_level": 108,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1480,
+			"mob_level": 89,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1507,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1532,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1557,
+			"mob_level": 48,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1582,
+			"mob_level": 66,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1607,
+			"mob_level": 25,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1632,
+			"mob_level": 118,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1657,
+			"mob_level": 133,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1682,
+			"mob_level": 121,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1707,
+			"mob_level": 129,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1732,
+			"mob_level": 98,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1757,
+			"mob_level": 130,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1782,
+			"mob_level": 95,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1807,
+			"mob_level": 10,
+			"exp": 135,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1832,
+			"mob_level": 146,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1857,
+			"mob_level": 15,
+			"exp": 120,
+			"drop": 60,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1882,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1907,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1932,
+			"mob_level": 80,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1957,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 1982,
+			"mob_level": 78,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2008,
+			"mob_level": 82,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2035,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2070,
+			"mob_level": 75,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2095,
+			"mob_level": 65,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2132,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2157,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2182,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2209,
+			"mob_level": 1,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2234,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2259,
+			"mob_level": 0,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2284,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2309,
+			"mob_level": 121,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2334,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2359,
+			"mob_level": 134,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2403,
+			"mob_level": 30,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2430,
+			"mob_level": 98,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2455,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2481,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2552,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2577,
+			"mob_level": 6,
+			"exp": 115,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2602,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2627,
+			"mob_level": 123,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2652,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2677,
+			"mob_level": 95,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2702,
+			"mob_level": 30,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2727,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2752,
+			"mob_level": 56,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2777,
+			"mob_level": 142,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2802,
+			"mob_level": 63,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2827,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2852,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2877,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2902,
+			"mob_level": 33,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2928,
+			"mob_level": 105,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 2957,
+			"mob_level": 120,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3007,
+			"mob_level": 158,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3070,
+			"mob_level": 126,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3098,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3170,
+			"mob_level": 1,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3212,
+			"mob_level": 177,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3237,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3389,
+			"mob_level": 101,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3414,
+			"mob_level": 107,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3439,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3483,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3513,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3628,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3658,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3749,
+			"mob_level": 152,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 3797,
+			"mob_level": 1,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20264,
+			"mob_level": 155,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20348,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20374,
+			"mob_level": 174,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20602,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20643,
+			"mob_level": 139,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20668,
+			"mob_level": 195,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20693,
+			"mob_level": 193,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20848,
+			"mob_level": 200,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 20941,
+			"mob_level": 253,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 21086,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 21314,
+			"mob_level": 185,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 21866,
+			"mob_level": 250,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 22208,
+			"mob_level": 263,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 22233,
+			"mob_level": 264,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 22569,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 22594,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 22619,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 1,
+			"mob": 22644,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1001,
+			"mob_level": 16,
+			"exp": 90,
+			"drop": 60,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1032,
+			"mob_level": 52,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1058,
+			"mob_level": 55,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1084,
+			"mob_level": 1,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1109,
+			"mob_level": 93,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1134,
+			"mob_level": 102,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1159,
+			"mob_level": 71,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1190,
+			"mob_level": 55,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1216,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1251,
+			"mob_level": 92,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1276,
+			"mob_level": 82,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1302,
+			"mob_level": 96,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1327,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1352,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1377,
+			"mob_level": 92,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1402,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1430,
+			"mob_level": 47,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1455,
+			"mob_level": 108,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1480,
+			"mob_level": 89,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1507,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1532,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1557,
+			"mob_level": 48,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1582,
+			"mob_level": 66,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1607,
+			"mob_level": 25,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1632,
+			"mob_level": 118,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1657,
+			"mob_level": 133,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1682,
+			"mob_level": 121,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1707,
+			"mob_level": 129,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1732,
+			"mob_level": 98,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1757,
+			"mob_level": 130,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1782,
+			"mob_level": 95,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1807,
+			"mob_level": 10,
+			"exp": 85,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1832,
+			"mob_level": 146,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1857,
+			"mob_level": 15,
+			"exp": 90,
+			"drop": 60,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1882,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1907,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1932,
+			"mob_level": 80,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1957,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 1982,
+			"mob_level": 78,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2008,
+			"mob_level": 82,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2035,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2070,
+			"mob_level": 75,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2095,
+			"mob_level": 65,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2132,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2157,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2182,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2209,
+			"mob_level": 1,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2234,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2259,
+			"mob_level": 0,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2284,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2309,
+			"mob_level": 121,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2334,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2359,
+			"mob_level": 134,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2403,
+			"mob_level": 30,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2430,
+			"mob_level": 98,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2455,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2481,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2552,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2577,
+			"mob_level": 6,
+			"exp": 60,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2602,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2627,
+			"mob_level": 123,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2652,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2677,
+			"mob_level": 95,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2702,
+			"mob_level": 30,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2727,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2752,
+			"mob_level": 56,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2777,
+			"mob_level": 142,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2802,
+			"mob_level": 63,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2827,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2852,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2877,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2902,
+			"mob_level": 33,
+			"exp": 105,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2928,
+			"mob_level": 105,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 2957,
+			"mob_level": 120,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3007,
+			"mob_level": 158,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3070,
+			"mob_level": 126,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3098,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3170,
+			"mob_level": 1,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3212,
+			"mob_level": 177,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3237,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3389,
+			"mob_level": 101,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3414,
+			"mob_level": 107,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3439,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3483,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3513,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3628,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3658,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3749,
+			"mob_level": 152,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 3797,
+			"mob_level": 1,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20264,
+			"mob_level": 155,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20348,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20374,
+			"mob_level": 174,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20602,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20643,
+			"mob_level": 139,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20668,
+			"mob_level": 195,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20693,
+			"mob_level": 193,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20848,
+			"mob_level": 200,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 20941,
+			"mob_level": 253,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 21086,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 21314,
+			"mob_level": 185,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 21866,
+			"mob_level": 250,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 22208,
+			"mob_level": 263,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 22233,
+			"mob_level": 264,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 22569,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 22594,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 22619,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 30,
+			"mob": 22644,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1001,
+			"mob_level": 16,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1032,
+			"mob_level": 52,
+			"exp": 95,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1058,
+			"mob_level": 55,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1084,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1109,
+			"mob_level": 93,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1134,
+			"mob_level": 102,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1159,
+			"mob_level": 71,
+			"exp": 135,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1190,
+			"mob_level": 55,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1216,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1251,
+			"mob_level": 92,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1276,
+			"mob_level": 82,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1302,
+			"mob_level": 96,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1327,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1352,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1377,
+			"mob_level": 92,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1402,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1430,
+			"mob_level": 47,
+			"exp": 90,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1455,
+			"mob_level": 108,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1480,
+			"mob_level": 89,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1507,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1532,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1557,
+			"mob_level": 48,
+			"exp": 90,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1582,
+			"mob_level": 66,
+			"exp": 120,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1607,
+			"mob_level": 25,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1632,
+			"mob_level": 118,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1657,
+			"mob_level": 133,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1682,
+			"mob_level": 121,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1707,
+			"mob_level": 129,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1732,
+			"mob_level": 98,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1757,
+			"mob_level": 130,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1782,
+			"mob_level": 95,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1807,
+			"mob_level": 10,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1832,
+			"mob_level": 146,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1857,
+			"mob_level": 15,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1882,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1907,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1932,
+			"mob_level": 80,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1957,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 1982,
+			"mob_level": 78,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2008,
+			"mob_level": 82,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2035,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2070,
+			"mob_level": 75,
+			"exp": 115,
+			"drop": 60,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2095,
+			"mob_level": 65,
+			"exp": 115,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2132,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2157,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2182,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2209,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2234,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2259,
+			"mob_level": 0,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2284,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2309,
+			"mob_level": 121,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2334,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2359,
+			"mob_level": 134,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2403,
+			"mob_level": 30,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2430,
+			"mob_level": 98,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2455,
+			"mob_level": 99,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2481,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2552,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2577,
+			"mob_level": 6,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2602,
+			"mob_level": 90,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2627,
+			"mob_level": 123,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2652,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2677,
+			"mob_level": 95,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2702,
+			"mob_level": 30,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2727,
+			"mob_level": 87,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2752,
+			"mob_level": 56,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2777,
+			"mob_level": 142,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2802,
+			"mob_level": 63,
+			"exp": 105,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2827,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2852,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2877,
+			"mob_level": 103,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2902,
+			"mob_level": 33,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2928,
+			"mob_level": 105,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 2957,
+			"mob_level": 120,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3007,
+			"mob_level": 158,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3070,
+			"mob_level": 126,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3098,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3170,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3212,
+			"mob_level": 177,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3237,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3389,
+			"mob_level": 101,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3414,
+			"mob_level": 107,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3439,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3483,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3513,
+			"mob_level": 85,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3628,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3658,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3749,
+			"mob_level": 152,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 3797,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20264,
+			"mob_level": 155,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20348,
+			"mob_level": 110,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20374,
+			"mob_level": 174,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20602,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20643,
+			"mob_level": 139,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20668,
+			"mob_level": 195,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20693,
+			"mob_level": 193,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20848,
+			"mob_level": 200,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 20941,
+			"mob_level": 253,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 21086,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 21314,
+			"mob_level": 185,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 21866,
+			"mob_level": 250,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 22208,
+			"mob_level": 263,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 22233,
+			"mob_level": 264,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 22569,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 22594,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 22619,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 60,
+			"mob": 22644,
+			"mob_level": 100,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1001,
+			"mob_level": 16,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1032,
+			"mob_level": 52,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1058,
+			"mob_level": 55,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1084,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1109,
+			"mob_level": 93,
+			"exp": 95,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1134,
+			"mob_level": 102,
+			"exp": 105,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1159,
+			"mob_level": 71,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1190,
+			"mob_level": 55,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1216,
+			"mob_level": 85,
+			"exp": 90,
+			"drop": 60,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1251,
+			"mob_level": 92,
+			"exp": 95,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1276,
+			"mob_level": 82,
+			"exp": 85,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1302,
+			"mob_level": 96,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1327,
+			"mob_level": 99,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1352,
+			"mob_level": 99,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1377,
+			"mob_level": 92,
+			"exp": 95,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1402,
+			"mob_level": 87,
+			"exp": 90,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1430,
+			"mob_level": 47,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1455,
+			"mob_level": 108,
+			"exp": 135,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1480,
+			"mob_level": 89,
+			"exp": 95,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1507,
+			"mob_level": 110,
+			"exp": 135,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1532,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1557,
+			"mob_level": 48,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1582,
+			"mob_level": 66,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1607,
+			"mob_level": 25,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1632,
+			"mob_level": 118,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1657,
+			"mob_level": 133,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1682,
+			"mob_level": 121,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1707,
+			"mob_level": 129,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1732,
+			"mob_level": 98,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1757,
+			"mob_level": 130,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1782,
+			"mob_level": 95,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1807,
+			"mob_level": 10,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1832,
+			"mob_level": 146,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1857,
+			"mob_level": 15,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1882,
+			"mob_level": 87,
+			"exp": 90,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1907,
+			"mob_level": 90,
+			"exp": 95,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1932,
+			"mob_level": 80,
+			"exp": 85,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1957,
+			"mob_level": 90,
+			"exp": 95,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 1982,
+			"mob_level": 78,
+			"exp": 60,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2008,
+			"mob_level": 82,
+			"exp": 85,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2035,
+			"mob_level": 90,
+			"exp": 95,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2070,
+			"mob_level": 75,
+			"exp": 60,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2095,
+			"mob_level": 65,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2132,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2157,
+			"mob_level": 85,
+			"exp": 90,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2182,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2209,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2234,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2259,
+			"mob_level": 0,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2284,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2309,
+			"mob_level": 121,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2334,
+			"mob_level": 145,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2359,
+			"mob_level": 134,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2403,
+			"mob_level": 30,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2430,
+			"mob_level": 98,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2455,
+			"mob_level": 99,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2481,
+			"mob_level": 110,
+			"exp": 135,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2552,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2577,
+			"mob_level": 6,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2602,
+			"mob_level": 90,
+			"exp": 95,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2627,
+			"mob_level": 123,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2652,
+			"mob_level": 103,
+			"exp": 110,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2677,
+			"mob_level": 95,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2702,
+			"mob_level": 30,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2727,
+			"mob_level": 87,
+			"exp": 90,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2752,
+			"mob_level": 56,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2777,
+			"mob_level": 142,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2802,
+			"mob_level": 63,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2827,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2852,
+			"mob_level": 103,
+			"exp": 110,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2877,
+			"mob_level": 103,
+			"exp": 110,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2902,
+			"mob_level": 33,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2928,
+			"mob_level": 105,
+			"exp": 120,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 2957,
+			"mob_level": 120,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3007,
+			"mob_level": 158,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3070,
+			"mob_level": 126,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3098,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3170,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3212,
+			"mob_level": 177,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3237,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3389,
+			"mob_level": 101,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3414,
+			"mob_level": 107,
+			"exp": 130,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3439,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3483,
+			"mob_level": 160,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3513,
+			"mob_level": 85,
+			"exp": 90,
+			"drop": 60,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3628,
+			"mob_level": 110,
+			"exp": 135,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3658,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3749,
+			"mob_level": 152,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 3797,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20264,
+			"mob_level": 155,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20348,
+			"mob_level": 110,
+			"exp": 135,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20374,
+			"mob_level": 174,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20602,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20643,
+			"mob_level": 139,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20668,
+			"mob_level": 195,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20693,
+			"mob_level": 193,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20848,
+			"mob_level": 200,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 20941,
+			"mob_level": 253,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 21086,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 21314,
+			"mob_level": 185,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 21866,
+			"mob_level": 250,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 22208,
+			"mob_level": 263,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 22233,
+			"mob_level": 264,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 22569,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 22594,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 22619,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 99,
+			"mob": 22644,
+			"mob_level": 100,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1001,
+			"mob_level": 16,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1032,
+			"mob_level": 52,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1058,
+			"mob_level": 55,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1084,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1109,
+			"mob_level": 93,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1134,
+			"mob_level": 102,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1159,
+			"mob_level": 71,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1190,
+			"mob_level": 55,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1216,
+			"mob_level": 85,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1251,
+			"mob_level": 92,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1276,
+			"mob_level": 82,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1302,
+			"mob_level": 96,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1327,
+			"mob_level": 99,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1352,
+			"mob_level": 99,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1377,
+			"mob_level": 92,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1402,
+			"mob_level": 87,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1430,
+			"mob_level": 47,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1455,
+			"mob_level": 108,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1480,
+			"mob_level": 89,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1507,
+			"mob_level": 110,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1532,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1557,
+			"mob_level": 48,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1582,
+			"mob_level": 66,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1607,
+			"mob_level": 25,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1632,
+			"mob_level": 118,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1657,
+			"mob_level": 133,
+			"exp": 85,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1682,
+			"mob_level": 121,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1707,
+			"mob_level": 129,
+			"exp": 60,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1732,
+			"mob_level": 98,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1757,
+			"mob_level": 130,
+			"exp": 85,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1782,
+			"mob_level": 95,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1807,
+			"mob_level": 10,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1832,
+			"mob_level": 146,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1857,
+			"mob_level": 15,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1882,
+			"mob_level": 87,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1907,
+			"mob_level": 90,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1932,
+			"mob_level": 80,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1957,
+			"mob_level": 90,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 1982,
+			"mob_level": 78,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2008,
+			"mob_level": 82,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2035,
+			"mob_level": 90,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2070,
+			"mob_level": 75,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2095,
+			"mob_level": 65,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2132,
+			"mob_level": 145,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2157,
+			"mob_level": 85,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2182,
+			"mob_level": 145,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2209,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2234,
+			"mob_level": 160,
+			"exp": 140,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2259,
+			"mob_level": 0,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2284,
+			"mob_level": 145,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2309,
+			"mob_level": 121,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2334,
+			"mob_level": 145,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2359,
+			"mob_level": 134,
+			"exp": 85,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2403,
+			"mob_level": 30,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2430,
+			"mob_level": 98,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2455,
+			"mob_level": 99,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2481,
+			"mob_level": 110,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2552,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2577,
+			"mob_level": 6,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2602,
+			"mob_level": 90,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2627,
+			"mob_level": 123,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2652,
+			"mob_level": 103,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2677,
+			"mob_level": 95,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2702,
+			"mob_level": 30,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2727,
+			"mob_level": 87,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2752,
+			"mob_level": 56,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2777,
+			"mob_level": 142,
+			"exp": 95,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2802,
+			"mob_level": 63,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2827,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2852,
+			"mob_level": 103,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2877,
+			"mob_level": 103,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2902,
+			"mob_level": 33,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2928,
+			"mob_level": 105,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 2957,
+			"mob_level": 120,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3007,
+			"mob_level": 158,
+			"exp": 130,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3070,
+			"mob_level": 126,
+			"exp": 60,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3098,
+			"mob_level": 160,
+			"exp": 140,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3170,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3212,
+			"mob_level": 177,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3237,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3389,
+			"mob_level": 101,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3414,
+			"mob_level": 107,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3439,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3483,
+			"mob_level": 160,
+			"exp": 140,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3513,
+			"mob_level": 85,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3628,
+			"mob_level": 110,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3658,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3749,
+			"mob_level": 152,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 3797,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20264,
+			"mob_level": 155,
+			"exp": 115,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20348,
+			"mob_level": 110,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20374,
+			"mob_level": 174,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20602,
+			"mob_level": 188,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20643,
+			"mob_level": 139,
+			"exp": 90,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20668,
+			"mob_level": 195,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20693,
+			"mob_level": 193,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20848,
+			"mob_level": 200,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 20941,
+			"mob_level": 253,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 21086,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 21314,
+			"mob_level": 185,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 21866,
+			"mob_level": 250,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 22208,
+			"mob_level": 263,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 22233,
+			"mob_level": 264,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 22569,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 22594,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 22619,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 150,
+			"mob": 22644,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1001,
+			"mob_level": 16,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1032,
+			"mob_level": 52,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1058,
+			"mob_level": 55,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1084,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1109,
+			"mob_level": 93,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1134,
+			"mob_level": 102,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1159,
+			"mob_level": 71,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1190,
+			"mob_level": 55,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1216,
+			"mob_level": 85,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1251,
+			"mob_level": 92,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1276,
+			"mob_level": 82,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1302,
+			"mob_level": 96,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1327,
+			"mob_level": 99,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1352,
+			"mob_level": 99,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1377,
+			"mob_level": 92,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1402,
+			"mob_level": 87,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1430,
+			"mob_level": 47,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1455,
+			"mob_level": 108,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1480,
+			"mob_level": 89,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1507,
+			"mob_level": 110,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1532,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1557,
+			"mob_level": 48,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1582,
+			"mob_level": 66,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1607,
+			"mob_level": 25,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1632,
+			"mob_level": 118,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1657,
+			"mob_level": 133,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1682,
+			"mob_level": 121,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1707,
+			"mob_level": 129,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1732,
+			"mob_level": 98,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1757,
+			"mob_level": 130,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1782,
+			"mob_level": 95,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1807,
+			"mob_level": 10,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1832,
+			"mob_level": 146,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1857,
+			"mob_level": 15,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1882,
+			"mob_level": 87,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1907,
+			"mob_level": 90,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1932,
+			"mob_level": 80,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1957,
+			"mob_level": 90,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 1982,
+			"mob_level": 78,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2008,
+			"mob_level": 82,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2035,
+			"mob_level": 90,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2070,
+			"mob_level": 75,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2095,
+			"mob_level": 65,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2132,
+			"mob_level": 145,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2157,
+			"mob_level": 85,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2182,
+			"mob_level": 145,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2209,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2234,
+			"mob_level": 160,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2259,
+			"mob_level": 0,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2284,
+			"mob_level": 145,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2309,
+			"mob_level": 121,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2334,
+			"mob_level": 145,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2359,
+			"mob_level": 134,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2403,
+			"mob_level": 30,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2430,
+			"mob_level": 98,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2455,
+			"mob_level": 99,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2481,
+			"mob_level": 110,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2552,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2577,
+			"mob_level": 6,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2602,
+			"mob_level": 90,
+			"exp": 10,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2627,
+			"mob_level": 123,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2652,
+			"mob_level": 103,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2677,
+			"mob_level": 95,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2702,
+			"mob_level": 30,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2727,
+			"mob_level": 87,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2752,
+			"mob_level": 56,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2777,
+			"mob_level": 142,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2802,
+			"mob_level": 63,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2827,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2852,
+			"mob_level": 103,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2877,
+			"mob_level": 103,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2902,
+			"mob_level": 33,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2928,
+			"mob_level": 105,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 2957,
+			"mob_level": 120,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3007,
+			"mob_level": 158,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3070,
+			"mob_level": 126,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3098,
+			"mob_level": 160,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3170,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3212,
+			"mob_level": 177,
+			"exp": 60,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3237,
+			"mob_level": 188,
+			"exp": 90,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3389,
+			"mob_level": 101,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3414,
+			"mob_level": 107,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3439,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3483,
+			"mob_level": 160,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3513,
+			"mob_level": 85,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3628,
+			"mob_level": 110,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3658,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3749,
+			"mob_level": 152,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 3797,
+			"mob_level": 1,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20264,
+			"mob_level": 155,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20348,
+			"mob_level": 110,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20374,
+			"mob_level": 174,
+			"exp": 35,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20602,
+			"mob_level": 188,
+			"exp": 90,
+			"drop": 70,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20643,
+			"mob_level": 139,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20668,
+			"mob_level": 195,
+			"exp": 100,
+			"drop": 90,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20693,
+			"mob_level": 193,
+			"exp": 95,
+			"drop": 80,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20848,
+			"mob_level": 200,
+			"exp": 100,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 20941,
+			"mob_level": 253,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 21086,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 21314,
+			"mob_level": 185,
+			"exp": 90,
+			"drop": 60,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 21866,
+			"mob_level": 250,
+			"exp": 40,
+			"drop": 100,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 22208,
+			"mob_level": 263,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 22233,
+			"mob_level": 264,
+			"exp": 40,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 22569,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 22594,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 22619,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		},
+		{
+			"player_level": 200,
+			"mob": 22644,
+			"mob_level": 100,
+			"exp": 10,
+			"drop": 50,
+			"mvp_exp": 100,
+			"mvp_drop": 100
+		}
+	]
+}

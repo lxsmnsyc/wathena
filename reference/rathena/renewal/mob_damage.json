@@ -1,0 +1,7611 @@
+{
+	"system": "mob_damage",
+	"mode": "renewal",
+	"rathena_git_hash": "e985006171d2eb320ee512a653f4c83aea3d81b6",
+	"data_path": "re/",
+	"circular_area": false,
+	"note": "Normal weapon attacks between monsters. 'forced_min' uses rnd_force_min: every roll is lowest and every chance succeeds. 'rolls' uses a seeded generator and gives statistics only, because std::uniform_int_distribution differs between standard libraries.",
+	"rolls_per_pair": 200,
+	"pairs": [
+		{
+			"attacker": 3642,
+			"target": 2023,
+			"forced_min": {
+				"damage": 1590,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 34,
+				"crits": 0,
+				"min": 1596,
+				"max": 2344,
+				"total": 66580
+			}
+		},
+		{
+			"attacker": 20836,
+			"target": 20375,
+			"forced_min": {
+				"damage": 6,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 6,
+				"max": 6,
+				"total": 78
+			}
+		},
+		{
+			"attacker": 1118,
+			"target": 3391,
+			"forced_min": {
+				"damage": 97,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 97,
+				"max": 138,
+				"total": 1297
+			}
+		},
+		{
+			"attacker": 20620,
+			"target": 22611,
+			"forced_min": {
+				"damage": 112,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 113,
+				"max": 161,
+				"total": 27175
+			}
+		},
+		{
+			"attacker": 1116,
+			"target": 22562,
+			"forced_min": {
+				"damage": 14,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 118,
+				"crits": 0,
+				"min": 14,
+				"max": 18,
+				"total": 1866
+			}
+		},
+		{
+			"attacker": 1969,
+			"target": 1554,
+			"forced_min": {
+				"damage": 100,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 105,
+				"max": 174,
+				"total": 1719
+			}
+		},
+		{
+			"attacker": 20692,
+			"target": 1551,
+			"forced_min": {
+				"damage": 3602,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3615,
+				"max": 5239,
+				"total": 878736
+			}
+		},
+		{
+			"attacker": 1676,
+			"target": 3099,
+			"forced_min": {
+				"damage": 555,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 567,
+				"max": 766,
+				"total": 8795
+			}
+		},
+		{
+			"attacker": 20343,
+			"target": 2737,
+			"forced_min": {
+				"damage": 931,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 931,
+				"max": 1318,
+				"total": 224977
+			}
+		},
+		{
+			"attacker": 3220,
+			"target": 2992,
+			"forced_min": {
+				"damage": 5658,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 5665,
+				"max": 8279,
+				"total": 1411643
+			}
+		},
+		{
+			"attacker": 20597,
+			"target": 1541,
+			"forced_min": {
+				"damage": 2595,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2596,
+				"max": 3773,
+				"total": 631820
+			}
+		},
+		{
+			"attacker": 1931,
+			"target": 2448,
+			"forced_min": {
+				"damage": 5654,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 5706,
+				"max": 8432,
+				"total": 1402078
+			}
+		},
+		{
+			"attacker": 2673,
+			"target": 1764,
+			"forced_min": {
+				"damage": 145,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 146,
+				"max": 209,
+				"total": 1662
+			}
+		},
+		{
+			"attacker": 2847,
+			"target": 1931,
+			"forced_min": {
+				"damage": 74,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 74,
+				"max": 104,
+				"total": 770
+			}
+		},
+		{
+			"attacker": 1338,
+			"target": 1881,
+			"forced_min": {
+				"damage": 20,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 20,
+				"max": 20,
+				"total": 4000
+			}
+		},
+		{
+			"attacker": 3417,
+			"target": 20270,
+			"forced_min": {
+				"damage": 511,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 121,
+				"crits": 0,
+				"min": 511,
+				"max": 730,
+				"total": 74611
+			}
+		},
+		{
+			"attacker": 22578,
+			"target": 20601,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 11
+			}
+		},
+		{
+			"attacker": 21312,
+			"target": 2353,
+			"forced_min": {
+				"damage": 1686,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1700,
+				"max": 2456,
+				"total": 414400
+			}
+		},
+		{
+			"attacker": 1624,
+			"target": 3450,
+			"forced_min": {
+				"damage": 396,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 112,
+				"crits": 0,
+				"min": 396,
+				"max": 555,
+				"total": 53050
+			}
+		},
+		{
+			"attacker": 1727,
+			"target": 1839,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 4,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 4
+			}
+		},
+		{
+			"attacker": 20373,
+			"target": 2753,
+			"forced_min": {
+				"damage": 1461,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1461,
+				"max": 2097,
+				"total": 349928
+			}
+		},
+		{
+			"attacker": 2714,
+			"target": 20375,
+			"forced_min": {
+				"damage": 184,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 186,
+				"max": 283,
+				"total": 3136
+			}
+		},
+		{
+			"attacker": 3749,
+			"target": 1596,
+			"forced_min": {
+				"damage": 1449,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1449,
+				"max": 2061,
+				"total": 349673
+			}
+		},
+		{
+			"attacker": 3405,
+			"target": 2041,
+			"forced_min": {
+				"damage": 610,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 155,
+				"crits": 0,
+				"min": 613,
+				"max": 843,
+				"total": 113552
+			}
+		},
+		{
+			"attacker": 1013,
+			"target": 2196,
+			"forced_min": {
+				"damage": 11,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 13,
+				"max": 37,
+				"total": 356
+			}
+		},
+		{
+			"attacker": 3793,
+			"target": 3523,
+			"forced_min": {
+				"damage": 1174,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1175,
+				"max": 1660,
+				"total": 283711
+			}
+		},
+		{
+			"attacker": 1442,
+			"target": 1342,
+			"forced_min": {
+				"damage": 290,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 182,
+				"crits": 0,
+				"min": 290,
+				"max": 388,
+				"total": 61539
+			}
+		},
+		{
+			"attacker": 3738,
+			"target": 1714,
+			"forced_min": {
+				"damage": 411,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 89,
+				"crits": 0,
+				"min": 412,
+				"max": 593,
+				"total": 44923
+			}
+		},
+		{
+			"attacker": 1297,
+			"target": 1111,
+			"forced_min": {
+				"damage": 716,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 717,
+				"max": 982,
+				"total": 168956
+			}
+		},
+		{
+			"attacker": 2344,
+			"target": 3061,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 2041,
+			"target": 2060,
+			"forced_min": {
+				"damage": 1107,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1109,
+				"max": 1611,
+				"total": 274826
+			}
+		},
+		{
+			"attacker": 2813,
+			"target": 1132,
+			"forced_min": {
+				"damage": 56,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 16,
+				"crits": 0,
+				"min": 56,
+				"max": 89,
+				"total": 1183
+			}
+		},
+		{
+			"attacker": 2605,
+			"target": 21387,
+			"forced_min": {
+				"damage": 563,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 580,
+				"max": 846,
+				"total": 4852
+			}
+		},
+		{
+			"attacker": 21303,
+			"target": 2789,
+			"forced_min": {
+				"damage": 3258,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3282,
+				"max": 4753,
+				"total": 800095
+			}
+		},
+		{
+			"attacker": 3794,
+			"target": 2105,
+			"forced_min": {
+				"damage": 657,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 147,
+				"crits": 0,
+				"min": 657,
+				"max": 964,
+				"total": 120230
+			}
+		},
+		{
+			"attacker": 3074,
+			"target": 1515,
+			"forced_min": {
+				"damage": 3965,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3966,
+				"max": 5809,
+				"total": 974306
+			}
+		},
+		{
+			"attacker": 1508,
+			"target": 1451,
+			"forced_min": {
+				"damage": 401,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 401,
+				"max": 544,
+				"total": 95608
+			}
+		},
+		{
+			"attacker": 1961,
+			"target": 1907,
+			"forced_min": {
+				"damage": 1606,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1610,
+				"max": 2376,
+				"total": 402888
+			}
+		},
+		{
+			"attacker": 3800,
+			"target": 3084,
+			"forced_min": {
+				"damage": 1726,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1732,
+				"max": 2525,
+				"total": 422712
+			}
+		},
+		{
+			"attacker": 1701,
+			"target": 1239,
+			"forced_min": {
+				"damage": 1023,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1023,
+				"max": 1440,
+				"total": 246499
+			}
+		},
+		{
+			"attacker": 21069,
+			"target": 1712,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 11
+			}
+		},
+		{
+			"attacker": 2077,
+			"target": 20666,
+			"forced_min": {
+				"damage": 367,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 372,
+				"max": 572,
+				"total": 3360
+			}
+		},
+		{
+			"attacker": 22228,
+			"target": 1759,
+			"forced_min": {
+				"damage": 13090,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 13126,
+				"max": 19381,
+				"total": 3234493
+			}
+		},
+		{
+			"attacker": 3392,
+			"target": 1898,
+			"forced_min": {
+				"damage": 708,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 708,
+				"max": 955,
+				"total": 166833
+			}
+		},
+		{
+			"attacker": 21316,
+			"target": 2077,
+			"forced_min": {
+				"damage": 3271,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3277,
+				"max": 4785,
+				"total": 803530
+			}
+		},
+		{
+			"attacker": 1662,
+			"target": 22611,
+			"forced_min": {
+				"damage": 114,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 114,
+				"max": 162,
+				"total": 27557
+			}
+		},
+		{
+			"attacker": 1551,
+			"target": 1691,
+			"forced_min": {
+				"damage": 53,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 65,
+				"crits": 0,
+				"min": 53,
+				"max": 73,
+				"total": 4097
+			}
+		},
+		{
+			"attacker": 3203,
+			"target": 1280,
+			"forced_min": {
+				"damage": 27,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 27,
+				"max": 60,
+				"total": 8728
+			}
+		},
+		{
+			"attacker": 3741,
+			"target": 2714,
+			"forced_min": {
+				"damage": 5194,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 5205,
+				"max": 7698,
+				"total": 1299519
+			}
+		},
+		{
+			"attacker": 2752,
+			"target": 3418,
+			"forced_min": {
+				"damage": 60,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 48,
+				"crits": 0,
+				"min": 60,
+				"max": 105,
+				"total": 4041
+			}
+		},
+		{
+			"attacker": 2900,
+			"target": 3158,
+			"forced_min": {
+				"damage": 840,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 840,
+				"max": 1185,
+				"total": 204596
+			}
+		},
+		{
+			"attacker": 1293,
+			"target": 2667,
+			"forced_min": {
+				"damage": 551,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 578,
+				"max": 757,
+				"total": 3882
+			}
+		},
+		{
+			"attacker": 2060,
+			"target": 22622,
+			"forced_min": {
+				"damage": 6,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 6,
+				"max": 9,
+				"total": 1440
+			}
+		},
+		{
+			"attacker": 20353,
+			"target": 20850,
+			"forced_min": {
+				"damage": 289,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 289,
+				"max": 425,
+				"total": 71430
+			}
+		},
+		{
+			"attacker": 1523,
+			"target": 3669,
+			"forced_min": {
+				"damage": 296,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 107,
+				"crits": 0,
+				"min": 296,
+				"max": 415,
+				"total": 38148
+			}
+		},
+		{
+			"attacker": 22178,
+			"target": 3631,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 6
+			}
+		},
+		{
+			"attacker": 3245,
+			"target": 1655,
+			"forced_min": {
+				"damage": 2831,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2831,
+				"max": 4126,
+				"total": 681001
+			}
+		},
+		{
+			"attacker": 2136,
+			"target": 1148,
+			"forced_min": {
+				"damage": 489,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 489,
+				"max": 709,
+				"total": 119203
+			}
+		},
+		{
+			"attacker": 2654,
+			"target": 2150,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 185,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 185
+			}
+		},
+		{
+			"attacker": 1509,
+			"target": 1566,
+			"forced_min": {
+				"damage": 379,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 162,
+				"crits": 0,
+				"min": 379,
+				"max": 519,
+				"total": 72098
+			}
+		},
+		{
+			"attacker": 1769,
+			"target": 2143,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 22228,
+			"target": 3474,
+			"forced_min": {
+				"damage": 11451,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 11619,
+				"max": 16975,
+				"total": 2864986
+			}
+		},
+		{
+			"attacker": 1597,
+			"target": 2106,
+			"forced_min": {
+				"damage": 161,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 173,
+				"max": 259,
+				"total": 1370
+			}
+		},
+		{
+			"attacker": 1079,
+			"target": 21299,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 2373,
+			"target": 2954,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 4,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 4
+			}
+		},
+		{
+			"attacker": 1778,
+			"target": 2267,
+			"forced_min": {
+				"damage": 577,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 579,
+				"max": 759,
+				"total": 133680
+			}
+		},
+		{
+			"attacker": 2818,
+			"target": 2247,
+			"forced_min": {
+				"damage": 1202,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1205,
+				"max": 1734,
+				"total": 294769
+			}
+		},
+		{
+			"attacker": 2297,
+			"target": 2853,
+			"forced_min": {
+				"damage": 0,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 3,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 0,
+				"crits": 0,
+				"min": -1,
+				"max": 0,
+				"total": 0
+			}
+		},
+		{
+			"attacker": 3012,
+			"target": 21390,
+			"forced_min": {
+				"damage": 598,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 74,
+				"crits": 0,
+				"min": 602,
+				"max": 868,
+				"total": 55035
+			}
+		},
+		{
+			"attacker": 21320,
+			"target": 1215,
+			"forced_min": {
+				"damage": 1551,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1553,
+				"max": 2227,
+				"total": 380242
+			}
+		},
+		{
+			"attacker": 3503,
+			"target": 1845,
+			"forced_min": {
+				"damage": 1298,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1300,
+				"max": 1847,
+				"total": 314476
+			}
+		},
+		{
+			"attacker": 1306,
+			"target": 20642,
+			"forced_min": {
+				"damage": 560,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 15,
+				"crits": 0,
+				"min": 573,
+				"max": 843,
+				"total": 10585
+			}
+		},
+		{
+			"attacker": 1149,
+			"target": 2041,
+			"forced_min": {
+				"damage": 145,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 150,
+				"max": 195,
+				"total": 1369
+			}
+		},
+		{
+			"attacker": 2542,
+			"target": 3801,
+			"forced_min": {
+				"damage": 1062,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 114,
+				"crits": 0,
+				"min": 1074,
+				"max": 1583,
+				"total": 151434
+			}
+		},
+		{
+			"attacker": 3639,
+			"target": 2439,
+			"forced_min": {
+				"damage": 420,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 433,
+				"max": 611,
+				"total": 5528
+			}
+		},
+		{
+			"attacker": 1956,
+			"target": 3518,
+			"forced_min": {
+				"damage": 4764,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4777,
+				"max": 7072,
+				"total": 1194869
+			}
+		},
+		{
+			"attacker": 21079,
+			"target": 2700,
+			"forced_min": {
+				"damage": 29,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 43,
+				"crits": 0,
+				"min": 29,
+				"max": 29,
+				"total": 1247
+			}
+		},
+		{
+			"attacker": 1278,
+			"target": 22643,
+			"forced_min": {
+				"damage": 2,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 171,
+				"crits": 0,
+				"min": 2,
+				"max": 3,
+				"total": 431
+			}
+		},
+		{
+			"attacker": 2158,
+			"target": 3242,
+			"forced_min": {
+				"damage": 159,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 173,
+				"max": 263,
+				"total": 1924
+			}
+		},
+		{
+			"attacker": 20592,
+			"target": 2145,
+			"forced_min": {
+				"damage": 1858,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1861,
+				"max": 2746,
+				"total": 456817
+			}
+		},
+		{
+			"attacker": 2764,
+			"target": 1670,
+			"forced_min": {
+				"damage": 166,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 5,
+				"crits": 0,
+				"min": 185,
+				"max": 241,
+				"total": 1111
+			}
+		},
+		{
+			"attacker": 1377,
+			"target": 1232,
+			"forced_min": {
+				"damage": 456,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 456,
+				"max": 609,
+				"total": 105602
+			}
+		},
+		{
+			"attacker": 1868,
+			"target": 1826,
+			"forced_min": {
+				"damage": 895,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 896,
+				"max": 1257,
+				"total": 215095
+			}
+		},
+		{
+			"attacker": 1957,
+			"target": 1818,
+			"forced_min": {
+				"damage": 3780,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3783,
+				"max": 5610,
+				"total": 942063
+			}
+		},
+		{
+			"attacker": 22566,
+			"target": 1111,
+			"forced_min": {
+				"damage": 55,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 138,
+				"crits": 0,
+				"min": 55,
+				"max": 55,
+				"total": 7590
+			}
+		},
+		{
+			"attacker": 3241,
+			"target": 1809,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 1389,
+			"target": 1420,
+			"forced_min": {
+				"damage": 1888,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1895,
+				"max": 2766,
+				"total": 461620
+			}
+		},
+		{
+			"attacker": 1495,
+			"target": 1723,
+			"forced_min": {
+				"damage": 183,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 10,
+				"crits": 0,
+				"min": 186,
+				"max": 228,
+				"total": 2111
+			}
+		},
+		{
+			"attacker": 1555,
+			"target": 21296,
+			"forced_min": {
+				"damage": 54,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 55,
+				"max": 105,
+				"total": 1060
+			}
+		},
+		{
+			"attacker": 1508,
+			"target": 2419,
+			"forced_min": {
+				"damage": 367,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 128,
+				"crits": 0,
+				"min": 368,
+				"max": 507,
+				"total": 55917
+			}
+		},
+		{
+			"attacker": 2316,
+			"target": 1406,
+			"forced_min": {
+				"damage": 468,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 48,
+				"crits": 0,
+				"min": 475,
+				"max": 661,
+				"total": 27010
+			}
+		},
+		{
+			"attacker": 3788,
+			"target": 2761,
+			"forced_min": {
+				"damage": 207,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 159,
+				"crits": 0,
+				"min": 207,
+				"max": 274,
+				"total": 38191
+			}
+		},
+		{
+			"attacker": 2428,
+			"target": 1621,
+			"forced_min": {
+				"damage": 648,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 649,
+				"max": 916,
+				"total": 155726
+			}
+		},
+		{
+			"attacker": 1042,
+			"target": 2572,
+			"forced_min": {
+				"damage": 113,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 113,
+				"max": 142,
+				"total": 25470
+			}
+		},
+		{
+			"attacker": 2849,
+			"target": 2795,
+			"forced_min": {
+				"damage": 859,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 860,
+				"max": 1249,
+				"total": 210539
+			}
+		},
+		{
+			"attacker": 20271,
+			"target": 1590,
+			"forced_min": {
+				"damage": 1890,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1891,
+				"max": 2758,
+				"total": 457461
+			}
+		},
+		{
+			"attacker": 1943,
+			"target": 1315,
+			"forced_min": {
+				"damage": 7,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 7,
+				"max": 7,
+				"total": 1400
+			}
+		},
+		{
+			"attacker": 2557,
+			"target": 1966,
+			"forced_min": {
+				"damage": 662,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 664,
+				"max": 907,
+				"total": 156306
+			}
+		},
+		{
+			"attacker": 1266,
+			"target": 21394,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 11
+			}
+		},
+		{
+			"attacker": 22599,
+			"target": 3804,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 12
+			}
+		},
+		{
+			"attacker": 20419,
+			"target": 3396,
+			"forced_min": {
+				"damage": 3279,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3293,
+				"max": 4812,
+				"total": 817169
+			}
+		},
+		{
+			"attacker": 3090,
+			"target": 2233,
+			"forced_min": {
+				"damage": 1502,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 119,
+				"crits": 0,
+				"min": 1505,
+				"max": 2249,
+				"total": 224974
+			}
+		},
+		{
+			"attacker": 3236,
+			"target": 2111,
+			"forced_min": {
+				"damage": 4068,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4070,
+				"max": 6021,
+				"total": 1017908
+			}
+		},
+		{
+			"attacker": 2583,
+			"target": 2835,
+			"forced_min": {
+				"damage": 101,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 101,
+				"max": 124,
+				"total": 22473
+			}
+		},
+		{
+			"attacker": 2193,
+			"target": 1970,
+			"forced_min": {
+				"damage": 826,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 827,
+				"max": 1135,
+				"total": 194703
+			}
+		},
+		{
+			"attacker": 3629,
+			"target": 3090,
+			"forced_min": {
+				"damage": 566,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 95,
+				"crits": 0,
+				"min": 569,
+				"max": 808,
+				"total": 66386
+			}
+		},
+		{
+			"attacker": 20657,
+			"target": 2047,
+			"forced_min": {
+				"damage": 1332,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1333,
+				"max": 1925,
+				"total": 329024
+			}
+		},
+		{
+			"attacker": 1604,
+			"target": 1088,
+			"forced_min": {
+				"damage": 314,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 314,
+				"max": 417,
+				"total": 73408
+			}
+		},
+		{
+			"attacker": 20937,
+			"target": 2939,
+			"forced_min": {
+				"damage": 5341,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 5352,
+				"max": 7911,
+				"total": 1316479
+			}
+		},
+		{
+			"attacker": 1561,
+			"target": 2711,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 14,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 14
+			}
+		},
+		{
+			"attacker": 1605,
+			"target": 3484,
+			"forced_min": {
+				"damage": 754,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 755,
+				"max": 1106,
+				"total": 186808
+			}
+		},
+		{
+			"attacker": 2304,
+			"target": 3505,
+			"forced_min": {
+				"damage": 0,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 3,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 0,
+				"crits": 0,
+				"min": -1,
+				"max": 0,
+				"total": 0
+			}
+		},
+		{
+			"attacker": 21292,
+			"target": 2104,
+			"forced_min": {
+				"damage": 1017,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 58,
+				"crits": 0,
+				"min": 1017,
+				"max": 1499,
+				"total": 72177
+			}
+		},
+		{
+			"attacker": 3813,
+			"target": 2008,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 13
+			}
+		},
+		{
+			"attacker": 1731,
+			"target": 2848,
+			"forced_min": {
+				"damage": 1380,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1380,
+				"max": 2000,
+				"total": 339683
+			}
+		},
+		{
+			"attacker": 3526,
+			"target": 2256,
+			"forced_min": {
+				"damage": 596,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 128,
+				"crits": 0,
+				"min": 599,
+				"max": 874,
+				"total": 94001
+			}
+		},
+		{
+			"attacker": 3428,
+			"target": 1784,
+			"forced_min": {
+				"damage": 1464,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1465,
+				"max": 2147,
+				"total": 363849
+			}
+		},
+		{
+			"attacker": 20665,
+			"target": 1092,
+			"forced_min": {
+				"damage": 1139,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1139,
+				"max": 1651,
+				"total": 276283
+			}
+		},
+		{
+			"attacker": 3813,
+			"target": 3415,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 7
+			}
+		},
+		{
+			"attacker": 2203,
+			"target": 2050,
+			"forced_min": {
+				"damage": 598,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 599,
+				"max": 801,
+				"total": 139304
+			}
+		},
+		{
+			"attacker": 2804,
+			"target": 2767,
+			"forced_min": {
+				"damage": 443,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 112,
+				"crits": 0,
+				"min": 444,
+				"max": 623,
+				"total": 59784
+			}
+		},
+		{
+			"attacker": 1654,
+			"target": 1310,
+			"forced_min": {
+				"damage": 1015,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1017,
+				"max": 1461,
+				"total": 245119
+			}
+		},
+		{
+			"attacker": 1026,
+			"target": 2875,
+			"forced_min": {
+				"damage": 90,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 97,
+				"max": 131,
+				"total": 1279
+			}
+		},
+		{
+			"attacker": 20277,
+			"target": 3217,
+			"forced_min": {
+				"damage": 1436,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1478,
+				"max": 1894,
+				"total": 14783
+			}
+		},
+		{
+			"attacker": 1726,
+			"target": 1323,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 6
+			}
+		},
+		{
+			"attacker": 2230,
+			"target": 3006,
+			"forced_min": {
+				"damage": 1750,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1751,
+				"max": 2538,
+				"total": 430505
+			}
+		},
+		{
+			"attacker": 21075,
+			"target": 3250,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 14,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 14
+			}
+		},
+		{
+			"attacker": 2922,
+			"target": 2819,
+			"forced_min": {
+				"damage": 1225,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 100,
+				"crits": 0,
+				"min": 1244,
+				"max": 1796,
+				"total": 154123
+			}
+		},
+		{
+			"attacker": 2840,
+			"target": 20633,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 5,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 5
+			}
+		},
+		{
+			"attacker": 2637,
+			"target": 2253,
+			"forced_min": {
+				"damage": 54,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 36,
+				"crits": 0,
+				"min": 55,
+				"max": 82,
+				"total": 2400
+			}
+		},
+		{
+			"attacker": 3228,
+			"target": 1586,
+			"forced_min": {
+				"damage": 1568,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1579,
+				"max": 2235,
+				"total": 381596
+			}
+		},
+		{
+			"attacker": 1806,
+			"target": 20686,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 6
+			}
+		},
+		{
+			"attacker": 1746,
+			"target": 1814,
+			"forced_min": {
+				"damage": 606,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 610,
+				"max": 844,
+				"total": 143579
+			}
+		},
+		{
+			"attacker": 2246,
+			"target": 1059,
+			"forced_min": {
+				"damage": 14,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 14,
+				"max": 20,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 22619,
+			"target": 2425,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 8
+			}
+		},
+		{
+			"attacker": 2735,
+			"target": 1354,
+			"forced_min": {
+				"damage": 872,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 874,
+				"max": 1223,
+				"total": 207794
+			}
+		},
+		{
+			"attacker": 3169,
+			"target": 1932,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 12
+			}
+		},
+		{
+			"attacker": 2010,
+			"target": 2761,
+			"forced_min": {
+				"damage": 997,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 90,
+				"crits": 0,
+				"min": 1003,
+				"max": 1460,
+				"total": 108376
+			}
+		},
+		{
+			"attacker": 1354,
+			"target": 1500,
+			"forced_min": {
+				"damage": 32,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 32,
+				"max": 32,
+				"total": 6400
+			}
+		},
+		{
+			"attacker": 1164,
+			"target": 22566,
+			"forced_min": {
+				"damage": 7,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 142,
+				"crits": 0,
+				"min": 7,
+				"max": 10,
+				"total": 1211
+			}
+		},
+		{
+			"attacker": 20380,
+			"target": 1360,
+			"forced_min": {
+				"damage": 2507,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2511,
+				"max": 3630,
+				"total": 606336
+			}
+		},
+		{
+			"attacker": 2634,
+			"target": 1747,
+			"forced_min": {
+				"damage": 31,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 110,
+				"crits": 0,
+				"min": 31,
+				"max": 35,
+				"total": 3639
+			}
+		},
+		{
+			"attacker": 2364,
+			"target": 1469,
+			"forced_min": {
+				"damage": 646,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 649,
+				"max": 889,
+				"total": 153194
+			}
+		},
+		{
+			"attacker": 2328,
+			"target": 2181,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 8
+			}
+		},
+		{
+			"attacker": 3405,
+			"target": 2090,
+			"forced_min": {
+				"damage": 380,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 380,
+				"max": 553,
+				"total": 93178
+			}
+		},
+		{
+			"attacker": 1036,
+			"target": 2919,
+			"forced_min": {
+				"damage": 106,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 109,
+				"max": 147,
+				"total": 1047
+			}
+		},
+		{
+			"attacker": 2876,
+			"target": 2862,
+			"forced_min": {
+				"damage": 824,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 126,
+				"crits": 0,
+				"min": 824,
+				"max": 1185,
+				"total": 126638
+			}
+		},
+		{
+			"attacker": 2405,
+			"target": 1506,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 1903,
+			"target": 2805,
+			"forced_min": {
+				"damage": 21,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 21,
+				"max": 21,
+				"total": 4200
+			}
+		},
+		{
+			"attacker": 1472,
+			"target": 3124,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 21,
+				"total": 59
+			}
+		},
+		{
+			"attacker": 20926,
+			"target": 2292,
+			"forced_min": {
+				"damage": 6760,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 6778,
+				"max": 9955,
+				"total": 1700450
+			}
+		},
+		{
+			"attacker": 1356,
+			"target": 21887,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 2740,
+			"target": 1389,
+			"forced_min": {
+				"damage": 6,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 6,
+				"max": 10,
+				"total": 96
+			}
+		},
+		{
+			"attacker": 2833,
+			"target": 2346,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 1024,
+			"target": 1038,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 14,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 14
+			}
+		},
+		{
+			"attacker": 1778,
+			"target": 1065,
+			"forced_min": {
+				"damage": 456,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 456,
+				"max": 614,
+				"total": 107596
+			}
+		},
+		{
+			"attacker": 2276,
+			"target": 22617,
+			"forced_min": {
+				"damage": 0,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 3,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 0,
+				"crits": 0,
+				"min": -1,
+				"max": 0,
+				"total": 0
+			}
+		},
+		{
+			"attacker": 2583,
+			"target": 1429,
+			"forced_min": {
+				"damage": 36,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 42,
+				"crits": 0,
+				"min": 36,
+				"max": 56,
+				"total": 1964
+			}
+		},
+		{
+			"attacker": 3181,
+			"target": 2131,
+			"forced_min": {
+				"damage": 723,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 149,
+				"crits": 0,
+				"min": 725,
+				"max": 1030,
+				"total": 131309
+			}
+		},
+		{
+			"attacker": 2913,
+			"target": 2165,
+			"forced_min": {
+				"damage": 71,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 173,
+				"crits": 0,
+				"min": 71,
+				"max": 105,
+				"total": 15081
+			}
+		},
+		{
+			"attacker": 1609,
+			"target": 3011,
+			"forced_min": {
+				"damage": 121,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 125,
+				"max": 189,
+				"total": 1192
+			}
+		},
+		{
+			"attacker": 21080,
+			"target": 2297,
+			"forced_min": {
+				"damage": 100,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 100,
+				"max": 100,
+				"total": 20000
+			}
+		},
+		{
+			"attacker": 20599,
+			"target": 1713,
+			"forced_min": {
+				"damage": 2648,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2651,
+				"max": 3862,
+				"total": 651168
+			}
+		},
+		{
+			"attacker": 2081,
+			"target": 1369,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 16,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 16
+			}
+		},
+		{
+			"attacker": 1402,
+			"target": 2568,
+			"forced_min": {
+				"damage": 333,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 335,
+				"max": 449,
+				"total": 78751
+			}
+		},
+		{
+			"attacker": 3501,
+			"target": 1362,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 2644,
+			"target": 1566,
+			"forced_min": {
+				"damage": 217,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 66,
+				"crits": 0,
+				"min": 217,
+				"max": 304,
+				"total": 17359
+			}
+		},
+		{
+			"attacker": 2317,
+			"target": 2113,
+			"forced_min": {
+				"damage": 1080,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 148,
+				"crits": 0,
+				"min": 1081,
+				"max": 1617,
+				"total": 201457
+			}
+		},
+		{
+			"attacker": 2012,
+			"target": 3423,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 14,
+				"total": 53
+			}
+		},
+		{
+			"attacker": 1391,
+			"target": 2842,
+			"forced_min": {
+				"damage": 66,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 69,
+				"crits": 0,
+				"min": 66,
+				"max": 94,
+				"total": 5455
+			}
+		},
+		{
+			"attacker": 1016,
+			"target": 1383,
+			"forced_min": {
+				"damage": 47,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 49,
+				"max": 68,
+				"total": 660
+			}
+		},
+		{
+			"attacker": 3153,
+			"target": 1363,
+			"forced_min": {
+				"damage": 4044,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4048,
+				"max": 5953,
+				"total": 997707
+			}
+		},
+		{
+			"attacker": 1679,
+			"target": 2797,
+			"forced_min": {
+				"damage": 575,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 576,
+				"max": 783,
+				"total": 135180
+			}
+		},
+		{
+			"attacker": 2327,
+			"target": 1078,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 2435,
+			"target": 1401,
+			"forced_min": {
+				"damage": 519,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 151,
+				"crits": 0,
+				"min": 519,
+				"max": 712,
+				"total": 92835
+			}
+		},
+		{
+			"attacker": 3087,
+			"target": 22211,
+			"forced_min": {
+				"damage": 9,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 9,
+				"max": 25,
+				"total": 177
+			}
+		},
+		{
+			"attacker": 2957,
+			"target": 21078,
+			"forced_min": {
+				"damage": 1054,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1057,
+				"max": 1479,
+				"total": 257928
+			}
+		},
+		{
+			"attacker": 3008,
+			"target": 2435,
+			"forced_min": {
+				"damage": 38,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 38,
+				"max": 38,
+				"total": 7600
+			}
+		},
+		{
+			"attacker": 2107,
+			"target": 3106,
+			"forced_min": {
+				"damage": 2927,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2936,
+				"max": 4311,
+				"total": 731582
+			}
+		},
+		{
+			"attacker": 2334,
+			"target": 1200,
+			"forced_min": {
+				"damage": 1155,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1158,
+				"max": 1668,
+				"total": 284338
+			}
+		},
+		{
+			"attacker": 21081,
+			"target": 1659,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 7
+			}
+		},
+		{
+			"attacker": 2859,
+			"target": 1896,
+			"forced_min": {
+				"damage": 813,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 813,
+				"max": 1159,
+				"total": 198858
+			}
+		},
+		{
+			"attacker": 20687,
+			"target": 2656,
+			"forced_min": {
+				"damage": 1220,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1221,
+				"max": 1766,
+				"total": 301288
+			}
+		},
+		{
+			"attacker": 22653,
+			"target": 2041,
+			"forced_min": {
+				"damage": 12,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 5,
+				"crits": 0,
+				"min": 12,
+				"max": 12,
+				"total": 60
+			}
+		},
+		{
+			"attacker": 1710,
+			"target": 1070,
+			"forced_min": {
+				"damage": 1093,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1093,
+				"max": 1543,
+				"total": 262916
+			}
+		},
+		{
+			"attacker": 20643,
+			"target": 1774,
+			"forced_min": {
+				"damage": 1465,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 161,
+				"crits": 0,
+				"min": 1470,
+				"max": 2125,
+				"total": 290465
+			}
+		},
+		{
+			"attacker": 20342,
+			"target": 22230,
+			"forced_min": {
+				"damage": 7,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 8,
+				"max": 19,
+				"total": 84
+			}
+		},
+		{
+			"attacker": 1642,
+			"target": 1795,
+			"forced_min": {
+				"damage": 3567,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3601,
+				"max": 5221,
+				"total": 881756
+			}
+		},
+		{
+			"attacker": 2086,
+			"target": 1637,
+			"forced_min": {
+				"damage": 1144,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1144,
+				"max": 1671,
+				"total": 282734
+			}
+		},
+		{
+			"attacker": 1804,
+			"target": 20421,
+			"forced_min": {
+				"damage": 72,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 4,
+				"crits": 0,
+				"min": 83,
+				"max": 101,
+				"total": 368
+			}
+		},
+		{
+			"attacker": 2566,
+			"target": 2310,
+			"forced_min": {
+				"damage": 281,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 281,
+				"max": 362,
+				"total": 64598
+			}
+		},
+		{
+			"attacker": 21294,
+			"target": 2238,
+			"forced_min": {
+				"damage": 1111,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1245,
+				"max": 1514,
+				"total": 9796
+			}
+		},
+		{
+			"attacker": 2379,
+			"target": 2802,
+			"forced_min": {
+				"damage": 3,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 155,
+				"crits": 0,
+				"min": 3,
+				"max": 26,
+				"total": 2174
+			}
+		},
+		{
+			"attacker": 3181,
+			"target": 22235,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 6
+			}
+		},
+		{
+			"attacker": 1118,
+			"target": 1369,
+			"forced_min": {
+				"damage": 142,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 70,
+				"crits": 0,
+				"min": 145,
+				"max": 197,
+				"total": 12028
+			}
+		},
+		{
+			"attacker": 1167,
+			"target": 2438,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 1974,
+			"target": 3387,
+			"forced_min": {
+				"damage": 549,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 550,
+				"max": 776,
+				"total": 131923
+			}
+		},
+		{
+			"attacker": 3232,
+			"target": 3454,
+			"forced_min": {
+				"damage": 2114,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2114,
+				"max": 3073,
+				"total": 513396
+			}
+		},
+		{
+			"attacker": 2558,
+			"target": 1913,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 3236,
+			"target": 1678,
+			"forced_min": {
+				"damage": 5521,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 5524,
+				"max": 8126,
+				"total": 1362539
+			}
+		},
+		{
+			"attacker": 1769,
+			"target": 20371,
+			"forced_min": {
+				"damage": 550,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 76,
+				"crits": 0,
+				"min": 556,
+				"max": 813,
+				"total": 51563
+			}
+		},
+		{
+			"attacker": 2990,
+			"target": 2311,
+			"forced_min": {
+				"damage": 1096,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1098,
+				"max": 1601,
+				"total": 269886
+			}
+		},
+		{
+			"attacker": 2870,
+			"target": 2072,
+			"forced_min": {
+				"damage": 367,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 367,
+				"max": 511,
+				"total": 88095
+			}
+		},
+		{
+			"attacker": 1557,
+			"target": 21887,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 8
+			}
+		},
+		{
+			"attacker": 22576,
+			"target": 20675,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 1409,
+			"target": 2107,
+			"forced_min": {
+				"damage": 22,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 22,
+				"max": 55,
+				"total": 413
+			}
+		},
+		{
+			"attacker": 20696,
+			"target": 20560,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 11
+			}
+		},
+		{
+			"attacker": 1803,
+			"target": 2215,
+			"forced_min": {
+				"damage": 4501,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4505,
+				"max": 6730,
+				"total": 1134440
+			}
+		},
+		{
+			"attacker": 2212,
+			"target": 1686,
+			"forced_min": {
+				"damage": 2670,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2675,
+				"max": 3923,
+				"total": 653852
+			}
+		},
+		{
+			"attacker": 3126,
+			"target": 20375,
+			"forced_min": {
+				"damage": 572,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 55,
+				"crits": 0,
+				"min": 572,
+				"max": 842,
+				"total": 38892
+			}
+		},
+		{
+			"attacker": 1290,
+			"target": 3017,
+			"forced_min": {
+				"damage": 730,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 89,
+				"crits": 0,
+				"min": 730,
+				"max": 1091,
+				"total": 79705
+			}
+		},
+		{
+			"attacker": 3072,
+			"target": 1254,
+			"forced_min": {
+				"damage": 1265,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1265,
+				"max": 1791,
+				"total": 304961
+			}
+		},
+		{
+			"attacker": 1998,
+			"target": 22231,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 1,
+				"max": 8,
+				"total": 24
+			}
+		},
+		{
+			"attacker": 2999,
+			"target": 2824,
+			"forced_min": {
+				"damage": 603,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 606,
+				"max": 811,
+				"total": 142274
+			}
+		},
+		{
+			"attacker": 1145,
+			"target": 2143,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 7
+			}
+		},
+		{
+			"attacker": 20847,
+			"target": 1540,
+			"forced_min": {
+				"damage": 127,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 127,
+				"max": 127,
+				"total": 25400
+			}
+		},
+		{
+			"attacker": 3393,
+			"target": 2999,
+			"forced_min": {
+				"damage": 340,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 5,
+				"crits": 0,
+				"min": 355,
+				"max": 486,
+				"total": 2139
+			}
+		},
+		{
+			"attacker": 2180,
+			"target": 20367,
+			"forced_min": {
+				"damage": 486,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 117,
+				"crits": 0,
+				"min": 486,
+				"max": 725,
+				"total": 70350
+			}
+		},
+		{
+			"attacker": 2591,
+			"target": 3507,
+			"forced_min": {
+				"damage": 5,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 13,
+				"max": 43,
+				"total": 162
+			}
+		},
+		{
+			"attacker": 2022,
+			"target": 1965,
+			"forced_min": {
+				"damage": 5416,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 5444,
+				"max": 8061,
+				"total": 1340843
+			}
+		},
+		{
+			"attacker": 22655,
+			"target": 1704,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 1351,
+			"target": 21079,
+			"forced_min": {
+				"damage": 49,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 49,
+				"max": 49,
+				"total": 9800
+			}
+		},
+		{
+			"attacker": 3803,
+			"target": 2743,
+			"forced_min": {
+				"damage": 1962,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1966,
+				"max": 2860,
+				"total": 485410
+			}
+		},
+		{
+			"attacker": 22652,
+			"target": 2083,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 10,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 10
+			}
+		},
+		{
+			"attacker": 1504,
+			"target": 2603,
+			"forced_min": {
+				"damage": 487,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 150,
+				"crits": 0,
+				"min": 488,
+				"max": 685,
+				"total": 87393
+			}
+		},
+		{
+			"attacker": 22209,
+			"target": 2619,
+			"forced_min": {
+				"damage": 17925,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 17985,
+				"max": 26587,
+				"total": 4485778
+			}
+		},
+		{
+			"attacker": 1645,
+			"target": 2217,
+			"forced_min": {
+				"damage": 1556,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1569,
+				"max": 2234,
+				"total": 384019
+			}
+		},
+		{
+			"attacker": 1116,
+			"target": 1915,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 131,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 131
+			}
+		},
+		{
+			"attacker": 22196,
+			"target": 2473,
+			"forced_min": {
+				"damage": 12808,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 12811,
+				"max": 19049,
+				"total": 3217241
+			}
+		},
+		{
+			"attacker": 2144,
+			"target": 1028,
+			"forced_min": {
+				"damage": 1123,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1123,
+				"max": 1630,
+				"total": 273197
+			}
+		},
+		{
+			"attacker": 1004,
+			"target": 3089,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 11,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 11
+			}
+		},
+		{
+			"attacker": 1693,
+			"target": 22596,
+			"forced_min": {
+				"damage": 828,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 828,
+				"max": 1136,
+				"total": 195521
+			}
+		},
+		{
+			"attacker": 20270,
+			"target": 21320,
+			"forced_min": {
+				"damage": 1793,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 191,
+				"crits": 0,
+				"min": 1797,
+				"max": 2626,
+				"total": 419530
+			}
+		},
+		{
+			"attacker": 1193,
+			"target": 2861,
+			"forced_min": {
+				"damage": 317,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 57,
+				"crits": 0,
+				"min": 317,
+				"max": 436,
+				"total": 21410
+			}
+		},
+		{
+			"attacker": 2338,
+			"target": 22216,
+			"forced_min": {
+				"damage": 5,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 4,
+				"crits": 0,
+				"min": 6,
+				"max": 14,
+				"total": 35
+			}
+		},
+		{
+			"attacker": 2597,
+			"target": 2711,
+			"forced_min": {
+				"damage": 47,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 54,
+				"max": 73,
+				"total": 513
+			}
+		},
+		{
+			"attacker": 1231,
+			"target": 1590,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 4,
+				"total": 14
+			}
+		},
+		{
+			"attacker": 1313,
+			"target": 2932,
+			"forced_min": {
+				"damage": 199,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 195,
+				"crits": 0,
+				"min": 199,
+				"max": 250,
+				"total": 43958
+			}
+		},
+		{
+			"attacker": 2825,
+			"target": 1934,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 186,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 186
+			}
+		},
+		{
+			"attacker": 1674,
+			"target": 1387,
+			"forced_min": {
+				"damage": 1711,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1713,
+				"max": 2563,
+				"total": 422748
+			}
+		},
+		{
+			"attacker": 1163,
+			"target": 2360,
+			"forced_min": {
+				"damage": 553,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 111,
+				"crits": 0,
+				"min": 557,
+				"max": 782,
+				"total": 73217
+			}
+		},
+		{
+			"attacker": 2679,
+			"target": 1493,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 12
+			}
+		},
+		{
+			"attacker": 2809,
+			"target": 2577,
+			"forced_min": {
+				"damage": 216,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 216,
+				"max": 273,
+				"total": 48868
+			}
+		},
+		{
+			"attacker": 3811,
+			"target": 1926,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 3525,
+			"target": 1823,
+			"forced_min": {
+				"damage": 227,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 87,
+				"crits": 0,
+				"min": 228,
+				"max": 306,
+				"total": 23531
+			}
+		},
+		{
+			"attacker": 1950,
+			"target": 2708,
+			"forced_min": {
+				"damage": 1393,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1393,
+				"max": 2050,
+				"total": 346094
+			}
+		},
+		{
+			"attacker": 2904,
+			"target": 1077,
+			"forced_min": {
+				"damage": 537,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 537,
+				"max": 735,
+				"total": 128002
+			}
+		},
+		{
+			"attacker": 2584,
+			"target": 3648,
+			"forced_min": {
+				"damage": 309,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 309,
+				"max": 435,
+				"total": 4430
+			}
+		},
+		{
+			"attacker": 3385,
+			"target": 2421,
+			"forced_min": {
+				"damage": 435,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 141,
+				"crits": 0,
+				"min": 436,
+				"max": 619,
+				"total": 73481
+			}
+		},
+		{
+			"attacker": 2357,
+			"target": 3106,
+			"forced_min": {
+				"damage": 931,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 26,
+				"crits": 0,
+				"min": 933,
+				"max": 1356,
+				"total": 28834
+			}
+		},
+		{
+			"attacker": 1154,
+			"target": 3661,
+			"forced_min": {
+				"damage": 188,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 5,
+				"crits": 0,
+				"min": 194,
+				"max": 271,
+				"total": 1244
+			}
+		},
+		{
+			"attacker": 2342,
+			"target": 1584,
+			"forced_min": {
+				"damage": 863,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 863,
+				"max": 1248,
+				"total": 213030
+			}
+		},
+		{
+			"attacker": 2438,
+			"target": 2773,
+			"forced_min": {
+				"damage": 532,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 536,
+				"max": 744,
+				"total": 128810
+			}
+		},
+		{
+			"attacker": 1339,
+			"target": 1628,
+			"forced_min": {
+				"damage": 25,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 25,
+				"max": 25,
+				"total": 5000
+			}
+		},
+		{
+			"attacker": 3388,
+			"target": 20836,
+			"forced_min": {
+				"damage": 60,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 146,
+				"crits": 0,
+				"min": 60,
+				"max": 84,
+				"total": 10593
+			}
+		},
+		{
+			"attacker": 2002,
+			"target": 1902,
+			"forced_min": {
+				"damage": 412,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 148,
+				"crits": 0,
+				"min": 412,
+				"max": 602,
+				"total": 74594
+			}
+		},
+		{
+			"attacker": 3649,
+			"target": 3514,
+			"forced_min": {
+				"damage": 150,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 41,
+				"crits": 0,
+				"min": 151,
+				"max": 213,
+				"total": 7403
+			}
+		},
+		{
+			"attacker": 1232,
+			"target": 2459,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 7
+			}
+		},
+		{
+			"attacker": 1047,
+			"target": 1701,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 8,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 8
+			}
+		},
+		{
+			"attacker": 22660,
+			"target": 20700,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 7
+			}
+		},
+		{
+			"attacker": 3244,
+			"target": 20258,
+			"forced_min": {
+				"damage": 4081,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4082,
+				"max": 6001,
+				"total": 996125
+			}
+		},
+		{
+			"attacker": 1462,
+			"target": 3741,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 12
+			}
+		},
+		{
+			"attacker": 1888,
+			"target": 1133,
+			"forced_min": {
+				"damage": 446,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 25,
+				"crits": 0,
+				"min": 460,
+				"max": 641,
+				"total": 13711
+			}
+		},
+		{
+			"attacker": 20560,
+			"target": 20645,
+			"forced_min": {
+				"damage": 1690,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1693,
+				"max": 2495,
+				"total": 418942
+			}
+		},
+		{
+			"attacker": 1596,
+			"target": 3181,
+			"forced_min": {
+				"damage": 170,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 170,
+				"max": 244,
+				"total": 2670
+			}
+		},
+		{
+			"attacker": 20646,
+			"target": 1533,
+			"forced_min": {
+				"damage": 1508,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1512,
+				"max": 2165,
+				"total": 368879
+			}
+		},
+		{
+			"attacker": 1294,
+			"target": 20848,
+			"forced_min": {
+				"damage": 133,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 145,
+				"crits": 0,
+				"min": 134,
+				"max": 194,
+				"total": 23578
+			}
+		},
+		{
+			"attacker": 22569,
+			"target": 1315,
+			"forced_min": {
+				"damage": 8,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 15,
+				"crits": 0,
+				"min": 8,
+				"max": 8,
+				"total": 120
+			}
+		},
+		{
+			"attacker": 1062,
+			"target": 3227,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 7
+			}
+		},
+		{
+			"attacker": 3499,
+			"target": 1521,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 10,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 10
+			}
+		},
+		{
+			"attacker": 1169,
+			"target": 22652,
+			"forced_min": {
+				"damage": 8,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 50,
+				"crits": 0,
+				"min": 8,
+				"max": 11,
+				"total": 478
+			}
+		},
+		{
+			"attacker": 2466,
+			"target": 2364,
+			"forced_min": {
+				"damage": 2133,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 121,
+				"crits": 0,
+				"min": 2137,
+				"max": 3145,
+				"total": 314503
+			}
+		},
+		{
+			"attacker": 1088,
+			"target": 1420,
+			"forced_min": {
+				"damage": 101,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 86,
+				"crits": 0,
+				"min": 101,
+				"max": 127,
+				"total": 9804
+			}
+		},
+		{
+			"attacker": 3240,
+			"target": 2340,
+			"forced_min": {
+				"damage": 4541,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4549,
+				"max": 6573,
+				"total": 1095553
+			}
+		},
+		{
+			"attacker": 2477,
+			"target": 2828,
+			"forced_min": {
+				"damage": 2067,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2069,
+				"max": 2991,
+				"total": 507667
+			}
+		},
+		{
+			"attacker": 3070,
+			"target": 2937,
+			"forced_min": {
+				"damage": 983,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 984,
+				"max": 1428,
+				"total": 242894
+			}
+		},
+		{
+			"attacker": 3752,
+			"target": 2823,
+			"forced_min": {
+				"damage": 1439,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1440,
+				"max": 2053,
+				"total": 348408
+			}
+		},
+		{
+			"attacker": 1788,
+			"target": 2816,
+			"forced_min": {
+				"damage": 527,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 527,
+				"max": 721,
+				"total": 125623
+			}
+		},
+		{
+			"attacker": 20599,
+			"target": 20543,
+			"forced_min": {
+				"damage": 1935,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1936,
+				"max": 2837,
+				"total": 472744
+			}
+		},
+		{
+			"attacker": 20691,
+			"target": 2404,
+			"forced_min": {
+				"damage": 4052,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4075,
+				"max": 5851,
+				"total": 988366
+			}
+		},
+		{
+			"attacker": 22236,
+			"target": 3429,
+			"forced_min": {
+				"damage": 12654,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 12714,
+				"max": 18830,
+				"total": 3151043
+			}
+		},
+		{
+			"attacker": 1689,
+			"target": 1739,
+			"forced_min": {
+				"damage": 999,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 999,
+				"max": 1450,
+				"total": 245010
+			}
+		},
+		{
+			"attacker": 3816,
+			"target": 3523,
+			"forced_min": {
+				"damage": 29,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 30,
+				"max": 48,
+				"total": 356
+			}
+		},
+		{
+			"attacker": 22653,
+			"target": 2584,
+			"forced_min": {
+				"damage": 10,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 10,
+				"max": 10,
+				"total": 70
+			}
+		},
+		{
+			"attacker": 1794,
+			"target": 1251,
+			"forced_min": {
+				"damage": 18,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 19,
+				"max": 22,
+				"total": 146
+			}
+		},
+		{
+			"attacker": 3006,
+			"target": 2128,
+			"forced_min": {
+				"damage": 255,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 255,
+				"max": 299,
+				"total": 55618
+			}
+		},
+		{
+			"attacker": 3737,
+			"target": 2791,
+			"forced_min": {
+				"damage": 400,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 107,
+				"crits": 0,
+				"min": 401,
+				"max": 564,
+				"total": 50568
+			}
+		},
+		{
+			"attacker": 3429,
+			"target": 3180,
+			"forced_min": {
+				"damage": 2225,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2230,
+				"max": 3283,
+				"total": 553788
+			}
+		},
+		{
+			"attacker": 22218,
+			"target": 1662,
+			"forced_min": {
+				"damage": 13862,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 13897,
+				"max": 20629,
+				"total": 3442030
+			}
+		},
+		{
+			"attacker": 1416,
+			"target": 1816,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 2071,
+			"target": 2310,
+			"forced_min": {
+				"damage": 236,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 61,
+				"crits": 0,
+				"min": 236,
+				"max": 336,
+				"total": 17682
+			}
+		},
+		{
+			"attacker": 2146,
+			"target": 2753,
+			"forced_min": {
+				"damage": 890,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 891,
+				"max": 1294,
+				"total": 219493
+			}
+		},
+		{
+			"attacker": 22644,
+			"target": 3481,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 7
+			}
+		},
+		{
+			"attacker": 1164,
+			"target": 1142,
+			"forced_min": {
+				"damage": 219,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 219,
+				"max": 290,
+				"total": 50918
+			}
+		},
+		{
+			"attacker": 3153,
+			"target": 1356,
+			"forced_min": {
+				"damage": 4044,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4051,
+				"max": 5955,
+				"total": 1016421
+			}
+		},
+		{
+			"attacker": 3229,
+			"target": 1196,
+			"forced_min": {
+				"damage": 3725,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3732,
+				"max": 5486,
+				"total": 929374
+			}
+		},
+		{
+			"attacker": 1018,
+			"target": 1399,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 12
+			}
+		},
+		{
+			"attacker": 3028,
+			"target": 22585,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 7,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 7
+			}
+		},
+		{
+			"attacker": 2722,
+			"target": 2407,
+			"forced_min": {
+				"damage": 137,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 177,
+				"crits": 0,
+				"min": 137,
+				"max": 175,
+				"total": 27752
+			}
+		},
+		{
+			"attacker": 21306,
+			"target": 1424,
+			"forced_min": {
+				"damage": 3829,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3841,
+				"max": 5596,
+				"total": 937416
+			}
+		},
+		{
+			"attacker": 2255,
+			"target": 2435,
+			"forced_min": {
+				"damage": 1559,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1565,
+				"max": 2247,
+				"total": 382540
+			}
+		},
+		{
+			"attacker": 20272,
+			"target": 1480,
+			"forced_min": {
+				"damage": 2076,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2076,
+				"max": 3036,
+				"total": 509853
+			}
+		},
+		{
+			"attacker": 22621,
+			"target": 1083,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 1618,
+			"target": 1337,
+			"forced_min": {
+				"damage": 1152,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1152,
+				"max": 1668,
+				"total": 283012
+			}
+		},
+		{
+			"attacker": 1072,
+			"target": 20930,
+			"forced_min": {
+				"damage": 196,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 201,
+				"max": 253,
+				"total": 1344
+			}
+		},
+		{
+			"attacker": 3224,
+			"target": 1368,
+			"forced_min": {
+				"damage": 1441,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1444,
+				"max": 2032,
+				"total": 347856
+			}
+		},
+		{
+			"attacker": 1570,
+			"target": 3069,
+			"forced_min": {
+				"damage": 208,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 223,
+				"max": 295,
+				"total": 2316
+			}
+		},
+		{
+			"attacker": 1946,
+			"target": 3654,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 22567,
+			"target": 3089,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 15,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 15
+			}
+		},
+		{
+			"attacker": 2821,
+			"target": 2681,
+			"forced_min": {
+				"damage": 783,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 784,
+				"max": 1116,
+				"total": 190718
+			}
+		},
+		{
+			"attacker": 1521,
+			"target": 2789,
+			"forced_min": {
+				"damage": 397,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 400,
+				"max": 547,
+				"total": 95283
+			}
+		},
+		{
+			"attacker": 1111,
+			"target": 2278,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 1,
+				"max": 5,
+				"total": 10
+			}
+		},
+		{
+			"attacker": 1102,
+			"target": 2301,
+			"forced_min": {
+				"damage": 389,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 390,
+				"max": 507,
+				"total": 89462
+			}
+		},
+		{
+			"attacker": 2724,
+			"target": 2140,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 2836,
+			"target": 1241,
+			"forced_min": {
+				"damage": 13,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 125,
+				"crits": 0,
+				"min": 13,
+				"max": 13,
+				"total": 1625
+			}
+		},
+		{
+			"attacker": 21321,
+			"target": 1487,
+			"forced_min": {
+				"damage": 1448,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1450,
+				"max": 2104,
+				"total": 356944
+			}
+		},
+		{
+			"attacker": 3810,
+			"target": 3633,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 1,
+				"max": 5,
+				"total": 36
+			}
+		},
+		{
+			"attacker": 1085,
+			"target": 3236,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 14,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 14
+			}
+		},
+		{
+			"attacker": 2314,
+			"target": 1147,
+			"forced_min": {
+				"damage": 29,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 29,
+				"max": 41,
+				"total": 6973
+			}
+		},
+		{
+			"attacker": 2272,
+			"target": 1088,
+			"forced_min": {
+				"damage": 0,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 3,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 0,
+				"crits": 0,
+				"min": -1,
+				"max": 0,
+				"total": 0
+			}
+		},
+		{
+			"attacker": 3502,
+			"target": 3088,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 13
+			}
+		},
+		{
+			"attacker": 2592,
+			"target": 2721,
+			"forced_min": {
+				"damage": 175,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 125,
+				"crits": 0,
+				"min": 175,
+				"max": 255,
+				"total": 26747
+			}
+		},
+		{
+			"attacker": 2320,
+			"target": 20279,
+			"forced_min": {
+				"damage": 3126,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3134,
+				"max": 4592,
+				"total": 773672
+			}
+		},
+		{
+			"attacker": 20620,
+			"target": 1101,
+			"forced_min": {
+				"damage": 974,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 974,
+				"max": 1394,
+				"total": 238337
+			}
+		},
+		{
+			"attacker": 1121,
+			"target": 2368,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 14,
+				"crits": 0,
+				"min": 1,
+				"max": 15,
+				"total": 81
+			}
+		},
+		{
+			"attacker": 2153,
+			"target": 1734,
+			"forced_min": {
+				"damage": 9,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 6,
+				"crits": 0,
+				"min": 9,
+				"max": 15,
+				"total": 73
+			}
+		},
+		{
+			"attacker": 2863,
+			"target": 1023,
+			"forced_min": {
+				"damage": 14,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 26,
+				"crits": 0,
+				"min": 14,
+				"max": 19,
+				"total": 428
+			}
+		},
+		{
+			"attacker": 2761,
+			"target": 2865,
+			"forced_min": {
+				"damage": 368,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 371,
+				"max": 505,
+				"total": 87045
+			}
+		},
+		{
+			"attacker": 2556,
+			"target": 1074,
+			"forced_min": {
+				"damage": 389,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 389,
+				"max": 498,
+				"total": 88441
+			}
+		},
+		{
+			"attacker": 2658,
+			"target": 3447,
+			"forced_min": {
+				"damage": 1339,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1343,
+				"max": 1939,
+				"total": 325006
+			}
+		},
+		{
+			"attacker": 21360,
+			"target": 3755,
+			"forced_min": {
+				"damage": 3681,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3695,
+				"max": 5459,
+				"total": 916320
+			}
+		},
+		{
+			"attacker": 1820,
+			"target": 2847,
+			"forced_min": {
+				"damage": 43,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 14,
+				"crits": 0,
+				"min": 44,
+				"max": 60,
+				"total": 713
+			}
+		},
+		{
+			"attacker": 1292,
+			"target": 1938,
+			"forced_min": {
+				"damage": 718,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 718,
+				"max": 972,
+				"total": 170991
+			}
+		},
+		{
+			"attacker": 3813,
+			"target": 1018,
+			"forced_min": {
+				"damage": 85,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 160,
+				"crits": 0,
+				"min": 85,
+				"max": 108,
+				"total": 15375
+			}
+		},
+		{
+			"attacker": 20361,
+			"target": 1760,
+			"forced_min": {
+				"damage": 793,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 793,
+				"max": 1152,
+				"total": 195255
+			}
+		},
+		{
+			"attacker": 2620,
+			"target": 3255,
+			"forced_min": {
+				"damage": 781,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 786,
+				"max": 1128,
+				"total": 189421
+			}
+		},
+		{
+			"attacker": 1358,
+			"target": 3421,
+			"forced_min": {
+				"damage": 27,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 27,
+				"max": 27,
+				"total": 5400
+			}
+		},
+		{
+			"attacker": 2262,
+			"target": 2780,
+			"forced_min": {
+				"damage": 0,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 3,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 0,
+				"crits": 0,
+				"min": -1,
+				"max": 0,
+				"total": 0
+			}
+		},
+		{
+			"attacker": 1348,
+			"target": 2769,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 20621,
+			"target": 1737,
+			"forced_min": {
+				"damage": 2718,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2721,
+				"max": 3968,
+				"total": 665252
+			}
+		},
+		{
+			"attacker": 3097,
+			"target": 2258,
+			"forced_min": {
+				"damage": 4715,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4724,
+				"max": 6913,
+				"total": 1157038
+			}
+		},
+		{
+			"attacker": 2745,
+			"target": 2939,
+			"forced_min": {
+				"damage": 319,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 28,
+				"crits": 0,
+				"min": 333,
+				"max": 462,
+				"total": 11322
+			}
+		},
+		{
+			"attacker": 2042,
+			"target": 1867,
+			"forced_min": {
+				"damage": 271,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 127,
+				"crits": 0,
+				"min": 273,
+				"max": 404,
+				"total": 43073
+			}
+		},
+		{
+			"attacker": 1310,
+			"target": 20376,
+			"forced_min": {
+				"damage": 391,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 21,
+				"crits": 0,
+				"min": 392,
+				"max": 563,
+				"total": 9942
+			}
+		},
+		{
+			"attacker": 1582,
+			"target": 2087,
+			"forced_min": {
+				"damage": 10,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 15,
+				"crits": 0,
+				"min": 10,
+				"max": 16,
+				"total": 186
+			}
+		},
+		{
+			"attacker": 2722,
+			"target": 3632,
+			"forced_min": {
+				"damage": 23,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 29,
+				"max": 53,
+				"total": 553
+			}
+		},
+		{
+			"attacker": 1614,
+			"target": 22665,
+			"forced_min": {
+				"damage": 4,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4,
+				"max": 5,
+				"total": 892
+			}
+		},
+		{
+			"attacker": 1028,
+			"target": 1775,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 9
+			}
+		},
+		{
+			"attacker": 1085,
+			"target": 1719,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 4,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 4
+			}
+		},
+		{
+			"attacker": 1826,
+			"target": 21868,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 14,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 14
+			}
+		},
+		{
+			"attacker": 3397,
+			"target": 1457,
+			"forced_min": {
+				"damage": 563,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 567,
+				"max": 772,
+				"total": 133763
+			}
+		},
+		{
+			"attacker": 1651,
+			"target": 1427,
+			"forced_min": {
+				"damage": 1552,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1556,
+				"max": 2220,
+				"total": 376595
+			}
+		},
+		{
+			"attacker": 3501,
+			"target": 1983,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 10,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 10
+			}
+		},
+		{
+			"attacker": 2917,
+			"target": 1290,
+			"forced_min": {
+				"damage": 3261,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3264,
+				"max": 4825,
+				"total": 815487
+			}
+		},
+		{
+			"attacker": 22620,
+			"target": 3232,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 13,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 13
+			}
+		},
+		{
+			"attacker": 1180,
+			"target": 1353,
+			"forced_min": {
+				"damage": 264,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 264,
+				"max": 353,
+				"total": 61900
+			}
+		},
+		{
+			"attacker": 2958,
+			"target": 1008,
+			"forced_min": {
+				"damage": 979,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 984,
+				"max": 1358,
+				"total": 234409
+			}
+		},
+		{
+			"attacker": 21316,
+			"target": 3413,
+			"forced_min": {
+				"damage": 2722,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2723,
+				"max": 3994,
+				"total": 679086
+			}
+		},
+		{
+			"attacker": 1791,
+			"target": 1913,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 21080,
+			"target": 1796,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 12
+			}
+		},
+		{
+			"attacker": 3812,
+			"target": 1047,
+			"forced_min": {
+				"damage": 132,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 132,
+				"max": 169,
+				"total": 29987
+			}
+		},
+		{
+			"attacker": 22553,
+			"target": 1649,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 10,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 10
+			}
+		},
+		{
+			"attacker": 2621,
+			"target": 1786,
+			"forced_min": {
+				"damage": 771,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 773,
+				"max": 1113,
+				"total": 188002
+			}
+		},
+		{
+			"attacker": 20419,
+			"target": 1281,
+			"forced_min": {
+				"damage": 3602,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 3605,
+				"max": 5253,
+				"total": 890286
+			}
+		},
+		{
+			"attacker": 2004,
+			"target": 2774,
+			"forced_min": {
+				"damage": 264,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 130,
+				"crits": 0,
+				"min": 264,
+				"max": 406,
+				"total": 43093
+			}
+		},
+		{
+			"attacker": 2238,
+			"target": 22220,
+			"forced_min": {
+				"damage": 72,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 66,
+				"crits": 0,
+				"min": 73,
+				"max": 115,
+				"total": 6266
+			}
+		},
+		{
+			"attacker": 1328,
+			"target": 1033,
+			"forced_min": {
+				"damage": 60,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 60,
+				"max": 60,
+				"total": 12000
+			}
+		},
+		{
+			"attacker": 3797,
+			"target": 1208,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 12
+			}
+		},
+		{
+			"attacker": 3028,
+			"target": 2376,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 10,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 10
+			}
+		},
+		{
+			"attacker": 1628,
+			"target": 1569,
+			"forced_min": {
+				"damage": 228,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 37,
+				"crits": 0,
+				"min": 229,
+				"max": 331,
+				"total": 10301
+			}
+		},
+		{
+			"attacker": 2058,
+			"target": 2294,
+			"forced_min": {
+				"damage": 735,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 735,
+				"max": 1051,
+				"total": 178427
+			}
+		},
+		{
+			"attacker": 2113,
+			"target": 1142,
+			"forced_min": {
+				"damage": 4755,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4786,
+				"max": 6970,
+				"total": 1178157
+			}
+		},
+		{
+			"attacker": 20660,
+			"target": 1810,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 1836,
+			"target": 1863,
+			"forced_min": {
+				"damage": 635,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 635,
+				"max": 859,
+				"total": 150613
+			}
+		},
+		{
+			"attacker": 2961,
+			"target": 1984,
+			"forced_min": {
+				"damage": 41,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 121,
+				"crits": 0,
+				"min": 41,
+				"max": 41,
+				"total": 4961
+			}
+		},
+		{
+			"attacker": 3085,
+			"target": 3447,
+			"forced_min": {
+				"damage": 6587,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 6608,
+				"max": 9811,
+				"total": 1640561
+			}
+		},
+		{
+			"attacker": 2913,
+			"target": 1096,
+			"forced_min": {
+				"damage": 1173,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1173,
+				"max": 1683,
+				"total": 283505
+			}
+		},
+		{
+			"attacker": 1701,
+			"target": 1652,
+			"forced_min": {
+				"damage": 636,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 165,
+				"crits": 0,
+				"min": 637,
+				"max": 934,
+				"total": 130161
+			}
+		},
+		{
+			"attacker": 22197,
+			"target": 20697,
+			"forced_min": {
+				"damage": 13316,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 13342,
+				"max": 19763,
+				"total": 3317226
+			}
+		},
+		{
+			"attacker": 1041,
+			"target": 3254,
+			"forced_min": {
+				"damage": 69,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 14,
+				"crits": 0,
+				"min": 69,
+				"max": 105,
+				"total": 1249
+			}
+		},
+		{
+			"attacker": 3387,
+			"target": 20691,
+			"forced_min": {
+				"damage": 216,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 12,
+				"crits": 0,
+				"min": 220,
+				"max": 325,
+				"total": 3251
+			}
+		},
+		{
+			"attacker": 2474,
+			"target": 2222,
+			"forced_min": {
+				"damage": 2225,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 2225,
+				"max": 3263,
+				"total": 550482
+			}
+		},
+		{
+			"attacker": 2357,
+			"target": 2226,
+			"forced_min": {
+				"damage": 977,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 16,
+				"crits": 0,
+				"min": 1068,
+				"max": 1428,
+				"total": 20365
+			}
+		},
+		{
+			"attacker": 2191,
+			"target": 1820,
+			"forced_min": {
+				"damage": 72,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 72,
+				"max": 72,
+				"total": 14400
+			}
+		},
+		{
+			"attacker": 20594,
+			"target": 1398,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 200
+			}
+		},
+		{
+			"attacker": 3479,
+			"target": 2710,
+			"forced_min": {
+				"damage": 1851,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1852,
+				"max": 2714,
+				"total": 460022
+			}
+		},
+		{
+			"attacker": 3751,
+			"target": 1019,
+			"forced_min": {
+				"damage": 1830,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1831,
+				"max": 2602,
+				"total": 447260
+			}
+		},
+		{
+			"attacker": 1413,
+			"target": 1026,
+			"forced_min": {
+				"damage": 323,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 323,
+				"max": 433,
+				"total": 76035
+			}
+		},
+		{
+			"attacker": 3397,
+			"target": 20379,
+			"forced_min": {
+				"damage": 276,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 9,
+				"crits": 0,
+				"min": 310,
+				"max": 413,
+				"total": 3295
+			}
+		},
+		{
+			"attacker": 1803,
+			"target": 1508,
+			"forced_min": {
+				"damage": 4207,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 4229,
+				"max": 6299,
+				"total": 1064825
+			}
+		},
+		{
+			"attacker": 22627,
+			"target": 3795,
+			"forced_min": {
+				"damage": 22,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 30,
+				"crits": 0,
+				"min": 22,
+				"max": 22,
+				"total": 660
+			}
+		},
+		{
+			"attacker": 22198,
+			"target": 22207,
+			"forced_min": {
+				"damage": 323,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 95,
+				"crits": 0,
+				"min": 325,
+				"max": 490,
+				"total": 38136
+			}
+		},
+		{
+			"attacker": 1497,
+			"target": 2267,
+			"forced_min": {
+				"damage": 374,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 374,
+				"max": 490,
+				"total": 86240
+			}
+		},
+		{
+			"attacker": 2852,
+			"target": 22604,
+			"forced_min": {
+				"damage": 73,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 73,
+				"max": 102,
+				"total": 17646
+			}
+		},
+		{
+			"attacker": 3479,
+			"target": 1701,
+			"forced_min": {
+				"damage": 1777,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1781,
+				"max": 2607,
+				"total": 435678
+			}
+		},
+		{
+			"attacker": 3744,
+			"target": 3086,
+			"forced_min": {
+				"damage": 1,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 177,
+				"crits": 0,
+				"min": 1,
+				"max": 1,
+				"total": 177
+			}
+		},
+		{
+			"attacker": 1150,
+			"target": 1388,
+			"forced_min": {
+				"damage": 1548,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1549,
+				"max": 2277,
+				"total": 386319
+			}
+		},
+		{
+			"attacker": 1835,
+			"target": 2038,
+			"forced_min": {
+				"damage": 1314,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 1316,
+				"max": 1895,
+				"total": 317425
+			}
+		},
+		{
+			"attacker": 1975,
+			"target": 3421,
+			"forced_min": {
+				"damage": 566,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 566,
+				"max": 782,
+				"total": 135217
+			}
+		},
+		{
+			"attacker": 20700,
+			"target": 1439,
+			"forced_min": {
+				"damage": 916,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 529
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 916,
+				"max": 1316,
+				"total": 223606
+			}
+		}
+	]
+}

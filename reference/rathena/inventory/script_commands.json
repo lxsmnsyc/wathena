@@ -1,0 +1,5382 @@
+{
+	"rathena_git_hash": "c1dfe21b8f4fed5d3bf2c86b84ee85d511cc57f6",
+	"count": 672,
+	"commands": [
+		{
+			"name": "mes",
+			"function": "buildin_mes",
+			"args": "v*",
+			"deprecated": null,
+			"line": 27930,
+			"documented": true
+		},
+		{
+			"name": "next",
+			"function": "buildin_next",
+			"args": "",
+			"deprecated": null,
+			"line": 27931,
+			"documented": true
+		},
+		{
+			"name": "clear",
+			"function": "buildin_clear",
+			"args": "",
+			"deprecated": null,
+			"line": 27932,
+			"documented": true
+		},
+		{
+			"name": "close",
+			"function": "buildin_close",
+			"args": "",
+			"deprecated": null,
+			"line": 27933,
+			"documented": true
+		},
+		{
+			"name": "close2",
+			"function": "buildin_close2",
+			"args": "",
+			"deprecated": null,
+			"line": 27934,
+			"documented": true
+		},
+		{
+			"name": "close3",
+			"function": "buildin_close",
+			"args": "",
+			"deprecated": null,
+			"line": 27935,
+			"documented": true
+		},
+		{
+			"name": "menu",
+			"function": "buildin_menu",
+			"args": "sl*",
+			"deprecated": null,
+			"line": 27936,
+			"documented": true
+		},
+		{
+			"name": "select",
+			"function": "buildin_select",
+			"args": "s*",
+			"deprecated": null,
+			"line": 27937,
+			"documented": true
+		},
+		{
+			"name": "prompt",
+			"function": "buildin_prompt",
+			"args": "s*",
+			"deprecated": null,
+			"line": 27938,
+			"documented": true
+		},
+		{
+			"name": "goto",
+			"function": "buildin_goto",
+			"args": "l",
+			"deprecated": null,
+			"line": 27940,
+			"documented": true
+		},
+		{
+			"name": "callsub",
+			"function": "buildin_callsub",
+			"args": "l*",
+			"deprecated": null,
+			"line": 27941,
+			"documented": true
+		},
+		{
+			"name": "callfunc",
+			"function": "buildin_callfunc",
+			"args": "s*",
+			"deprecated": null,
+			"line": 27942,
+			"documented": true
+		},
+		{
+			"name": "return",
+			"function": "buildin_return",
+			"args": "?",
+			"deprecated": null,
+			"line": 27943,
+			"documented": true
+		},
+		{
+			"name": "getarg",
+			"function": "buildin_getarg",
+			"args": "i?",
+			"deprecated": null,
+			"line": 27944,
+			"documented": true
+		},
+		{
+			"name": "jobchange",
+			"function": "buildin_jobchange",
+			"args": "i??",
+			"deprecated": null,
+			"line": 27945,
+			"documented": true
+		},
+		{
+			"name": "jobname",
+			"function": "buildin_jobname",
+			"args": "i",
+			"deprecated": null,
+			"line": 27946,
+			"documented": true
+		},
+		{
+			"name": "input",
+			"function": "buildin_input",
+			"args": "r??",
+			"deprecated": null,
+			"line": 27947,
+			"documented": true
+		},
+		{
+			"name": "warp",
+			"function": "buildin_warp",
+			"args": "sii?",
+			"deprecated": null,
+			"line": 27948,
+			"documented": true
+		},
+		{
+			"name": "warpchar",
+			"function": "buildin_warp",
+			"args": "sii?",
+			"deprecated": null,
+			"line": 27949,
+			"documented": false
+		},
+		{
+			"name": "areawarp",
+			"function": "buildin_areawarp",
+			"args": "siiiisii??",
+			"deprecated": null,
+			"line": 27950,
+			"documented": true
+		},
+		{
+			"name": "warpparty",
+			"function": "buildin_warpparty",
+			"args": "siii???",
+			"deprecated": null,
+			"line": 27951,
+			"documented": true
+		},
+		{
+			"name": "warpguild",
+			"function": "buildin_warpguild",
+			"args": "siii",
+			"deprecated": null,
+			"line": 27952,
+			"documented": true
+		},
+		{
+			"name": "setlook",
+			"function": "buildin_setlook",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 27953,
+			"documented": true
+		},
+		{
+			"name": "changelook",
+			"function": "buildin_changelook",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 27954,
+			"documented": true
+		},
+		{
+			"name": "set",
+			"function": "buildin_setr",
+			"args": "rv?",
+			"deprecated": null,
+			"line": 27955,
+			"documented": true
+		},
+		{
+			"name": "setr",
+			"function": "buildin_setr",
+			"args": "rv??",
+			"deprecated": null,
+			"line": 27956,
+			"documented": false
+		},
+		{
+			"name": "setarray",
+			"function": "buildin_setarray",
+			"args": "rv*",
+			"deprecated": null,
+			"line": 27957,
+			"documented": true
+		},
+		{
+			"name": "cleararray",
+			"function": "buildin_cleararray",
+			"args": "rvi",
+			"deprecated": null,
+			"line": 27958,
+			"documented": true
+		},
+		{
+			"name": "copyarray",
+			"function": "buildin_copyarray",
+			"args": "rri",
+			"deprecated": null,
+			"line": 27959,
+			"documented": true
+		},
+		{
+			"name": "getarraysize",
+			"function": "buildin_getarraysize",
+			"args": "r",
+			"deprecated": null,
+			"line": 27960,
+			"documented": true
+		},
+		{
+			"name": "deletearray",
+			"function": "buildin_deletearray",
+			"args": "r?",
+			"deprecated": null,
+			"line": 27961,
+			"documented": true
+		},
+		{
+			"name": "getelementofarray",
+			"function": "buildin_getelementofarray",
+			"args": "ri",
+			"deprecated": null,
+			"line": 27962,
+			"documented": true
+		},
+		{
+			"name": "inarray",
+			"function": "buildin_inarray",
+			"args": "rv",
+			"deprecated": null,
+			"line": 27963,
+			"documented": true
+		},
+		{
+			"name": "countinarray",
+			"function": "buildin_countinarray",
+			"args": "rr",
+			"deprecated": null,
+			"line": 27964,
+			"documented": true
+		},
+		{
+			"name": "getitem",
+			"function": "buildin_getitem",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 27965,
+			"documented": true
+		},
+		{
+			"name": "rentitem",
+			"function": "buildin_rentitem",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 27966,
+			"documented": true
+		},
+		{
+			"name": "rentitem2",
+			"function": "buildin_rentitem2",
+			"args": "viiiiiiii?",
+			"deprecated": null,
+			"line": 27967,
+			"documented": true
+		},
+		{
+			"name": "getitem2",
+			"function": "buildin_getitem2",
+			"args": "viiiiiiii?",
+			"deprecated": null,
+			"line": 27968,
+			"documented": true
+		},
+		{
+			"name": "getnameditem",
+			"function": "buildin_getnameditem",
+			"args": "vv",
+			"deprecated": null,
+			"line": 27969,
+			"documented": true
+		},
+		{
+			"name": "groupranditem",
+			"function": "buildin_grouprandomitem",
+			"args": "i?",
+			"deprecated": null,
+			"line": 27970,
+			"documented": true
+		},
+		{
+			"name": "makeitem",
+			"function": "buildin_makeitem",
+			"args": "visii?",
+			"deprecated": null,
+			"line": 27971,
+			"documented": true
+		},
+		{
+			"name": "makeitem2",
+			"function": "buildin_makeitem2",
+			"args": "visiiiiiiiii?",
+			"deprecated": null,
+			"line": 27972,
+			"documented": true
+		},
+		{
+			"name": "delitem",
+			"function": "buildin_delitem",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 27973,
+			"documented": true
+		},
+		{
+			"name": "storagedelitem",
+			"function": "buildin_delitem",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 27974,
+			"documented": true
+		},
+		{
+			"name": "guildstoragedelitem",
+			"function": "buildin_delitem",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 27975,
+			"documented": true
+		},
+		{
+			"name": "cartdelitem",
+			"function": "buildin_delitem",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 27976,
+			"documented": true
+		},
+		{
+			"name": "delitem2",
+			"function": "buildin_delitem2",
+			"args": "viiiiiiii?",
+			"deprecated": null,
+			"line": 27977,
+			"documented": true
+		},
+		{
+			"name": "storagedelitem2",
+			"function": "buildin_delitem2",
+			"args": "viiiiiiii?",
+			"deprecated": null,
+			"line": 27978,
+			"documented": true
+		},
+		{
+			"name": "guildstoragedelitem2",
+			"function": "buildin_delitem2",
+			"args": "viiiiiiii?",
+			"deprecated": null,
+			"line": 27979,
+			"documented": true
+		},
+		{
+			"name": "cartdelitem2",
+			"function": "buildin_delitem2",
+			"args": "viiiiiiii?",
+			"deprecated": null,
+			"line": 27980,
+			"documented": true
+		},
+		{
+			"name": "delitemidx",
+			"function": "buildin_delitemidx",
+			"args": "i??",
+			"deprecated": null,
+			"line": 27981,
+			"documented": true
+		},
+		{
+			"name": "enable_items",
+			"function": "buildin_enableitemuse",
+			"args": "",
+			"deprecated": null,
+			"line": 27982,
+			"documented": true
+		},
+		{
+			"name": "disable_items",
+			"function": "buildin_disableitemuse",
+			"args": "",
+			"deprecated": null,
+			"line": 27983,
+			"documented": true
+		},
+		{
+			"name": "cutin",
+			"function": "buildin_cutin",
+			"args": "si",
+			"deprecated": null,
+			"line": 27984,
+			"documented": true
+		},
+		{
+			"name": "viewpoint",
+			"function": "buildin_viewpoint",
+			"args": "iiiii?",
+			"deprecated": null,
+			"line": 27985,
+			"documented": true
+		},
+		{
+			"name": "viewpointmap",
+			"function": "buildin_viewpointmap",
+			"args": "siiiii",
+			"deprecated": null,
+			"line": 27986,
+			"documented": true
+		},
+		{
+			"name": "heal",
+			"function": "buildin_heal",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 27987,
+			"documented": true
+		},
+		{
+			"name": "healap",
+			"function": "buildin_healap",
+			"args": "i?",
+			"deprecated": null,
+			"line": 27988,
+			"documented": true
+		},
+		{
+			"name": "itemheal",
+			"function": "buildin_itemheal",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 27989,
+			"documented": true
+		},
+		{
+			"name": "percentheal",
+			"function": "buildin_percentheal",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 27990,
+			"documented": true
+		},
+		{
+			"name": "rand",
+			"function": "buildin_rand",
+			"args": "i?",
+			"deprecated": null,
+			"line": 27991,
+			"documented": true
+		},
+		{
+			"name": "countitem",
+			"function": "buildin_countitem",
+			"args": "v?",
+			"deprecated": null,
+			"line": 27992,
+			"documented": true
+		},
+		{
+			"name": "storagecountitem",
+			"function": "buildin_storagecountitem",
+			"args": "v?",
+			"deprecated": null,
+			"line": 27993,
+			"documented": true
+		},
+		{
+			"name": "guildstoragecountitem",
+			"function": "buildin_guildstoragecountitem",
+			"args": "v?",
+			"deprecated": null,
+			"line": 27994,
+			"documented": true
+		},
+		{
+			"name": "cartcountitem",
+			"function": "buildin_cartcountitem",
+			"args": "v?",
+			"deprecated": null,
+			"line": 27995,
+			"documented": true
+		},
+		{
+			"name": "countitem2",
+			"function": "buildin_countitem",
+			"args": "viiiiiii?",
+			"deprecated": null,
+			"line": 27996,
+			"documented": true
+		},
+		{
+			"name": "storagecountitem2",
+			"function": "buildin_storagecountitem",
+			"args": "viiiiiii?",
+			"deprecated": null,
+			"line": 27997,
+			"documented": true
+		},
+		{
+			"name": "guildstoragecountitem2",
+			"function": "buildin_guildstoragecountitem",
+			"args": "viiiiiii?",
+			"deprecated": null,
+			"line": 27998,
+			"documented": true
+		},
+		{
+			"name": "cartcountitem2",
+			"function": "buildin_cartcountitem",
+			"args": "viiiiiii?",
+			"deprecated": null,
+			"line": 27999,
+			"documented": true
+		},
+		{
+			"name": "checkweight",
+			"function": "buildin_checkweight",
+			"args": "vi*",
+			"deprecated": null,
+			"line": 28000,
+			"documented": true
+		},
+		{
+			"name": "checkweight2",
+			"function": "buildin_checkweight2",
+			"args": "rr",
+			"deprecated": null,
+			"line": 28001,
+			"documented": true
+		},
+		{
+			"name": "readparam",
+			"function": "buildin_readparam",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28002,
+			"documented": true
+		},
+		{
+			"name": "getcharid",
+			"function": "buildin_getcharid",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28003,
+			"documented": true
+		},
+		{
+			"name": "getnpcid",
+			"function": "buildin_getnpcid",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28004,
+			"documented": true
+		},
+		{
+			"name": "getpartyname",
+			"function": "buildin_getpartyname",
+			"args": "i",
+			"deprecated": null,
+			"line": 28005,
+			"documented": true
+		},
+		{
+			"name": "getpartymember",
+			"function": "buildin_getpartymember",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28006,
+			"documented": true
+		},
+		{
+			"name": "getpartyleader",
+			"function": "buildin_getpartyleader",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28007,
+			"documented": true
+		},
+		{
+			"name": "getguildname",
+			"function": "buildin_getguildname",
+			"args": "i",
+			"deprecated": null,
+			"line": 28008,
+			"documented": true
+		},
+		{
+			"name": "getguildmaster",
+			"function": "buildin_getguildmaster",
+			"args": "i",
+			"deprecated": null,
+			"line": 28009,
+			"documented": true
+		},
+		{
+			"name": "getguildmasterid",
+			"function": "buildin_getguildmasterid",
+			"args": "i",
+			"deprecated": null,
+			"line": 28010,
+			"documented": true
+		},
+		{
+			"name": "getguildinfo",
+			"function": "buildin_getguildinfo",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28011,
+			"documented": true
+		},
+		{
+			"name": "strcharinfo",
+			"function": "buildin_strcharinfo",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28012,
+			"documented": true
+		},
+		{
+			"name": "strnpcinfo",
+			"function": "buildin_strnpcinfo",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28013,
+			"documented": true
+		},
+		{
+			"name": "getequipid",
+			"function": "buildin_getequipid",
+			"args": "??",
+			"deprecated": null,
+			"line": 28014,
+			"documented": true
+		},
+		{
+			"name": "getequipuniqueid",
+			"function": "buildin_getequipuniqueid",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28015,
+			"documented": true
+		},
+		{
+			"name": "getequipname",
+			"function": "buildin_getequipname",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28016,
+			"documented": true
+		},
+		{
+			"name": "getbrokenid",
+			"function": "buildin_getbrokenid",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28017,
+			"documented": true
+		},
+		{
+			"name": "repair",
+			"function": "buildin_repair",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28018,
+			"documented": true
+		},
+		{
+			"name": "repairall",
+			"function": "buildin_repairall",
+			"args": "?",
+			"deprecated": null,
+			"line": 28019,
+			"documented": true
+		},
+		{
+			"name": "getequipisequiped",
+			"function": "buildin_getequipisequiped",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28020,
+			"documented": true
+		},
+		{
+			"name": "getequipisenableref",
+			"function": "buildin_getequipisenableref",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28021,
+			"documented": true
+		},
+		{
+			"name": "getequiprefinerycnt",
+			"function": "buildin_getequiprefinerycnt",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28022,
+			"documented": true
+		},
+		{
+			"name": "getequipweaponlv",
+			"function": "buildin_getequipweaponlv",
+			"args": "??",
+			"deprecated": null,
+			"line": 28023,
+			"documented": true
+		},
+		{
+			"name": "getequiparmorlv",
+			"function": "buildin_getequiparmorlv",
+			"args": "??",
+			"deprecated": null,
+			"line": 28024,
+			"documented": true
+		},
+		{
+			"name": "getequippercentrefinery",
+			"function": "buildin_getequippercentrefinery",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28025,
+			"documented": true
+		},
+		{
+			"name": "successrefitem",
+			"function": "buildin_successrefitem",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28026,
+			"documented": true
+		},
+		{
+			"name": "failedrefitem",
+			"function": "buildin_failedrefitem",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28027,
+			"documented": true
+		},
+		{
+			"name": "downrefitem",
+			"function": "buildin_downrefitem",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28028,
+			"documented": true
+		},
+		{
+			"name": "statusup",
+			"function": "buildin_statusup",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28029,
+			"documented": true
+		},
+		{
+			"name": "statusup2",
+			"function": "buildin_statusup2",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28030,
+			"documented": true
+		},
+		{
+			"name": "traitstatusup",
+			"function": "buildin_traitstatusup",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28031,
+			"documented": true
+		},
+		{
+			"name": "traitstatusup2",
+			"function": "buildin_traitstatusup2",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28032,
+			"documented": true
+		},
+		{
+			"name": "bonus",
+			"function": "buildin_bonus",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28033,
+			"documented": true
+		},
+		{
+			"name": "bonus2",
+			"function": "buildin_bonus",
+			"args": "ivi",
+			"deprecated": null,
+			"line": 28034,
+			"documented": true
+		},
+		{
+			"name": "bonus3",
+			"function": "buildin_bonus",
+			"args": "ivii",
+			"deprecated": null,
+			"line": 28035,
+			"documented": true
+		},
+		{
+			"name": "bonus4",
+			"function": "buildin_bonus",
+			"args": "ivvii",
+			"deprecated": null,
+			"line": 28036,
+			"documented": true
+		},
+		{
+			"name": "bonus5",
+			"function": "buildin_bonus",
+			"args": "ivviii",
+			"deprecated": null,
+			"line": 28037,
+			"documented": true
+		},
+		{
+			"name": "autobonus",
+			"function": "buildin_autobonus",
+			"args": "sii??",
+			"deprecated": null,
+			"line": 28038,
+			"documented": true
+		},
+		{
+			"name": "autobonus2",
+			"function": "buildin_autobonus2",
+			"args": "sii??",
+			"deprecated": null,
+			"line": 28039,
+			"documented": true
+		},
+		{
+			"name": "autobonus3",
+			"function": "buildin_autobonus3",
+			"args": "siiv?",
+			"deprecated": null,
+			"line": 28040,
+			"documented": true
+		},
+		{
+			"name": "petautobonus",
+			"function": "buildin_petautobonus",
+			"args": "sii??",
+			"deprecated": null,
+			"line": 28041,
+			"documented": true
+		},
+		{
+			"name": "petautobonus2",
+			"function": "buildin_petautobonus",
+			"args": "sii??",
+			"deprecated": null,
+			"line": 28042,
+			"documented": true
+		},
+		{
+			"name": "petautobonus3",
+			"function": "buildin_petautobonus3",
+			"args": "siiv?",
+			"deprecated": null,
+			"line": 28043,
+			"documented": true
+		},
+		{
+			"name": "plagiarizeskill",
+			"function": "buildin_plagiarizeskill",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28044,
+			"documented": true
+		},
+		{
+			"name": "plagiarizeskillreset",
+			"function": "buildin_plagiarizeskillreset",
+			"args": "i",
+			"deprecated": null,
+			"line": 28045,
+			"documented": true
+		},
+		{
+			"name": "skill",
+			"function": "buildin_skill",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 28046,
+			"documented": true
+		},
+		{
+			"name": "addtoskill",
+			"function": "buildin_skill",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 28047,
+			"documented": true
+		},
+		{
+			"name": "guildskill",
+			"function": "buildin_guildskill",
+			"args": "vi",
+			"deprecated": null,
+			"line": 28048,
+			"documented": true
+		},
+		{
+			"name": "getskilllv",
+			"function": "buildin_getskilllv",
+			"args": "v",
+			"deprecated": null,
+			"line": 28049,
+			"documented": true
+		},
+		{
+			"name": "getgdskilllv",
+			"function": "buildin_getgdskilllv",
+			"args": "iv",
+			"deprecated": null,
+			"line": 28050,
+			"documented": true
+		},
+		{
+			"name": "basicskillcheck",
+			"function": "buildin_basicskillcheck",
+			"args": "",
+			"deprecated": null,
+			"line": 28051,
+			"documented": true
+		},
+		{
+			"name": "getgmlevel",
+			"function": "buildin_getgmlevel",
+			"args": "?",
+			"deprecated": null,
+			"line": 28052,
+			"documented": true
+		},
+		{
+			"name": "getgroupid",
+			"function": "buildin_getgroupid",
+			"args": "?",
+			"deprecated": null,
+			"line": 28053,
+			"documented": true
+		},
+		{
+			"name": "end",
+			"function": "buildin_end",
+			"args": "",
+			"deprecated": null,
+			"line": 28054,
+			"documented": true
+		},
+		{
+			"name": "checkoption",
+			"function": "buildin_checkoption",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28055,
+			"documented": true
+		},
+		{
+			"name": "setoption",
+			"function": "buildin_setoption",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28056,
+			"documented": true
+		},
+		{
+			"name": "setcart",
+			"function": "buildin_setcart",
+			"args": "??",
+			"deprecated": null,
+			"line": 28057,
+			"documented": true
+		},
+		{
+			"name": "checkcart",
+			"function": "buildin_checkcart",
+			"args": "?",
+			"deprecated": null,
+			"line": 28058,
+			"documented": true
+		},
+		{
+			"name": "setfalcon",
+			"function": "buildin_setfalcon",
+			"args": "??",
+			"deprecated": null,
+			"line": 28059,
+			"documented": true
+		},
+		{
+			"name": "checkfalcon",
+			"function": "buildin_checkfalcon",
+			"args": "?",
+			"deprecated": null,
+			"line": 28060,
+			"documented": true
+		},
+		{
+			"name": "setriding",
+			"function": "buildin_setriding",
+			"args": "??",
+			"deprecated": null,
+			"line": 28061,
+			"documented": true
+		},
+		{
+			"name": "checkriding",
+			"function": "buildin_checkriding",
+			"args": "?",
+			"deprecated": null,
+			"line": 28062,
+			"documented": true
+		},
+		{
+			"name": "checkwug",
+			"function": "buildin_checkwug",
+			"args": "?",
+			"deprecated": null,
+			"line": 28063,
+			"documented": true
+		},
+		{
+			"name": "checkmadogear",
+			"function": "buildin_checkmadogear",
+			"args": "?",
+			"deprecated": null,
+			"line": 28064,
+			"documented": true
+		},
+		{
+			"name": "setmadogear",
+			"function": "buildin_setmadogear",
+			"args": "???",
+			"deprecated": null,
+			"line": 28065,
+			"documented": true
+		},
+		{
+			"name": "save",
+			"function": "buildin_savepoint",
+			"args": "sii???",
+			"deprecated": null,
+			"line": 28066,
+			"documented": true
+		},
+		{
+			"name": "savepoint",
+			"function": "buildin_savepoint",
+			"args": "sii???",
+			"deprecated": null,
+			"line": 28067,
+			"documented": true
+		},
+		{
+			"name": "gettimetick",
+			"function": "buildin_gettimetick",
+			"args": "i",
+			"deprecated": null,
+			"line": 28068,
+			"documented": true
+		},
+		{
+			"name": "gettime",
+			"function": "buildin_gettime",
+			"args": "i",
+			"deprecated": null,
+			"line": 28069,
+			"documented": true
+		},
+		{
+			"name": "gettimestr",
+			"function": "buildin_gettimestr",
+			"args": "si?",
+			"deprecated": null,
+			"line": 28070,
+			"documented": true
+		},
+		{
+			"name": "openstorage",
+			"function": "buildin_openstorage",
+			"args": "",
+			"deprecated": null,
+			"line": 28071,
+			"documented": true
+		},
+		{
+			"name": "guildopenstorage",
+			"function": "buildin_guildopenstorage",
+			"args": "",
+			"deprecated": null,
+			"line": 28072,
+			"documented": true
+		},
+		{
+			"name": "guildopenstorage_log",
+			"function": "buildin_guildopenstorage_log",
+			"args": "?",
+			"deprecated": null,
+			"line": 28073,
+			"documented": true
+		},
+		{
+			"name": "guild_has_permission",
+			"function": "buildin_guild_has_permission",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28074,
+			"documented": true
+		},
+		{
+			"name": "itemskill",
+			"function": "buildin_itemskill",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 28075,
+			"documented": true
+		},
+		{
+			"name": "produce",
+			"function": "buildin_produce",
+			"args": "i",
+			"deprecated": null,
+			"line": 28076,
+			"documented": true
+		},
+		{
+			"name": "cooking",
+			"function": "buildin_cooking",
+			"args": "i",
+			"deprecated": null,
+			"line": 28077,
+			"documented": true
+		},
+		{
+			"name": "monster",
+			"function": "buildin_monster",
+			"args": "siisvi???",
+			"deprecated": null,
+			"line": 28078,
+			"documented": true
+		},
+		{
+			"name": "getmobdrops",
+			"function": "buildin_getmobdrops",
+			"args": "i",
+			"deprecated": null,
+			"line": 28079,
+			"documented": true
+		},
+		{
+			"name": "areamonster",
+			"function": "buildin_areamonster",
+			"args": "siiiisvi???",
+			"deprecated": null,
+			"line": 28080,
+			"documented": true
+		},
+		{
+			"name": "killmonster",
+			"function": "buildin_killmonster",
+			"args": "ss?",
+			"deprecated": null,
+			"line": 28081,
+			"documented": true
+		},
+		{
+			"name": "killmonsterall",
+			"function": "buildin_killmonsterall",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28082,
+			"documented": true
+		},
+		{
+			"name": "clone",
+			"function": "buildin_clone",
+			"args": "siisi????",
+			"deprecated": null,
+			"line": 28083,
+			"documented": true
+		},
+		{
+			"name": "doevent",
+			"function": "buildin_doevent",
+			"args": "s",
+			"deprecated": null,
+			"line": 28084,
+			"documented": true
+		},
+		{
+			"name": "donpcevent",
+			"function": "buildin_donpcevent",
+			"args": "s",
+			"deprecated": null,
+			"line": 28085,
+			"documented": true
+		},
+		{
+			"name": "cmdothernpc",
+			"function": "buildin_cmdothernpc",
+			"args": "ss",
+			"deprecated": null,
+			"line": 28086,
+			"documented": true
+		},
+		{
+			"name": "addtimer",
+			"function": "buildin_addtimer",
+			"args": "is",
+			"deprecated": null,
+			"line": 28087,
+			"documented": true
+		},
+		{
+			"name": "deltimer",
+			"function": "buildin_deltimer",
+			"args": "s",
+			"deprecated": null,
+			"line": 28088,
+			"documented": true
+		},
+		{
+			"name": "addtimercount",
+			"function": "buildin_addtimercount",
+			"args": "is",
+			"deprecated": null,
+			"line": 28089,
+			"documented": true
+		},
+		{
+			"name": "initnpctimer",
+			"function": "buildin_initnpctimer",
+			"args": "??",
+			"deprecated": null,
+			"line": 28090,
+			"documented": true
+		},
+		{
+			"name": "stopnpctimer",
+			"function": "buildin_stopnpctimer",
+			"args": "??",
+			"deprecated": null,
+			"line": 28091,
+			"documented": true
+		},
+		{
+			"name": "startnpctimer",
+			"function": "buildin_startnpctimer",
+			"args": "??",
+			"deprecated": null,
+			"line": 28092,
+			"documented": true
+		},
+		{
+			"name": "setnpctimer",
+			"function": "buildin_setnpctimer",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28093,
+			"documented": true
+		},
+		{
+			"name": "getnpctimer",
+			"function": "buildin_getnpctimer",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28094,
+			"documented": true
+		},
+		{
+			"name": "attachnpctimer",
+			"function": "buildin_attachnpctimer",
+			"args": "?",
+			"deprecated": null,
+			"line": 28095,
+			"documented": true
+		},
+		{
+			"name": "detachnpctimer",
+			"function": "buildin_detachnpctimer",
+			"args": "?",
+			"deprecated": null,
+			"line": 28096,
+			"documented": true
+		},
+		{
+			"name": "playerattached",
+			"function": "buildin_playerattached",
+			"args": "",
+			"deprecated": null,
+			"line": 28097,
+			"documented": true
+		},
+		{
+			"name": "announce",
+			"function": "buildin_announce",
+			"args": "si??????",
+			"deprecated": null,
+			"line": 28098,
+			"documented": true
+		},
+		{
+			"name": "mapannounce",
+			"function": "buildin_mapannounce",
+			"args": "ssi?????",
+			"deprecated": null,
+			"line": 28099,
+			"documented": true
+		},
+		{
+			"name": "areaannounce",
+			"function": "buildin_areaannounce",
+			"args": "siiiisi?????",
+			"deprecated": null,
+			"line": 28100,
+			"documented": true
+		},
+		{
+			"name": "getusers",
+			"function": "buildin_getusers",
+			"args": "i",
+			"deprecated": null,
+			"line": 28101,
+			"documented": true
+		},
+		{
+			"name": "getmapguildusers",
+			"function": "buildin_getmapguildusers",
+			"args": "si",
+			"deprecated": null,
+			"line": 28102,
+			"documented": true
+		},
+		{
+			"name": "getmapusers",
+			"function": "buildin_getmapusers",
+			"args": "s",
+			"deprecated": null,
+			"line": 28103,
+			"documented": true
+		},
+		{
+			"name": "getareausers",
+			"function": "buildin_getareausers",
+			"args": "siiii",
+			"deprecated": null,
+			"line": 28104,
+			"documented": true
+		},
+		{
+			"name": "getunits",
+			"function": "buildin_getunits",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28105,
+			"documented": true
+		},
+		{
+			"name": "getmapunits",
+			"function": "buildin_getunits",
+			"args": "is?",
+			"deprecated": null,
+			"line": 28106,
+			"documented": true
+		},
+		{
+			"name": "getareaunits",
+			"function": "buildin_getunits",
+			"args": "isiiii?",
+			"deprecated": null,
+			"line": 28107,
+			"documented": true
+		},
+		{
+			"name": "getareadropitem",
+			"function": "buildin_getareadropitem",
+			"args": "siiiiv",
+			"deprecated": null,
+			"line": 28108,
+			"documented": true
+		},
+		{
+			"name": "enablenpc",
+			"function": "buildin_enablenpc",
+			"args": "?",
+			"deprecated": null,
+			"line": 28109,
+			"documented": true
+		},
+		{
+			"name": "disablenpc",
+			"function": "buildin_enablenpc",
+			"args": "?",
+			"deprecated": null,
+			"line": 28110,
+			"documented": true
+		},
+		{
+			"name": "hideoffnpc",
+			"function": "buildin_enablenpc",
+			"args": "?",
+			"deprecated": null,
+			"line": 28111,
+			"documented": true
+		},
+		{
+			"name": "hideonnpc",
+			"function": "buildin_enablenpc",
+			"args": "?",
+			"deprecated": null,
+			"line": 28112,
+			"documented": true
+		},
+		{
+			"name": "cloakoffnpc",
+			"function": "buildin_enablenpc",
+			"args": "??",
+			"deprecated": null,
+			"line": 28113,
+			"documented": true
+		},
+		{
+			"name": "cloakonnpc",
+			"function": "buildin_enablenpc",
+			"args": "??",
+			"deprecated": null,
+			"line": 28114,
+			"documented": true
+		},
+		{
+			"name": "cloakoffnpcself",
+			"function": "buildin_enablenpc",
+			"args": "?",
+			"deprecated": null,
+			"line": 28115,
+			"documented": true
+		},
+		{
+			"name": "cloakonnpcself",
+			"function": "buildin_enablenpc",
+			"args": "?",
+			"deprecated": null,
+			"line": 28116,
+			"documented": true
+		},
+		{
+			"name": "sc_start",
+			"function": "buildin_sc_start",
+			"args": "iii???",
+			"deprecated": null,
+			"line": 28117,
+			"documented": true
+		},
+		{
+			"name": "sc_start2",
+			"function": "buildin_sc_start",
+			"args": "iiii???",
+			"deprecated": null,
+			"line": 28118,
+			"documented": true
+		},
+		{
+			"name": "sc_start4",
+			"function": "buildin_sc_start",
+			"args": "iiiiii???",
+			"deprecated": null,
+			"line": 28119,
+			"documented": true
+		},
+		{
+			"name": "sc_end",
+			"function": "buildin_sc_end",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28120,
+			"documented": true
+		},
+		{
+			"name": "sc_end_class",
+			"function": "buildin_sc_end_class",
+			"args": "??",
+			"deprecated": null,
+			"line": 28121,
+			"documented": true
+		},
+		{
+			"name": "getstatus",
+			"function": "buildin_getstatus",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28122,
+			"documented": true
+		},
+		{
+			"name": "getscrate",
+			"function": "buildin_getscrate",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28123,
+			"documented": true
+		},
+		{
+			"name": "debugmes",
+			"function": "buildin_debugmes",
+			"args": "v",
+			"deprecated": null,
+			"line": 28124,
+			"documented": true
+		},
+		{
+			"name": "errormes",
+			"function": "buildin_errormes",
+			"args": "v",
+			"deprecated": null,
+			"line": 28125,
+			"documented": true
+		},
+		{
+			"name": "pet",
+			"function": "buildin_catchpet",
+			"args": "??",
+			"deprecated": null,
+			"line": 28126,
+			"documented": true
+		},
+		{
+			"name": "bpet",
+			"function": "buildin_birthpet",
+			"args": "",
+			"deprecated": null,
+			"line": 28127,
+			"documented": true
+		},
+		{
+			"name": "catchpet",
+			"function": "buildin_catchpet",
+			"args": "??",
+			"deprecated": null,
+			"line": 28128,
+			"documented": true
+		},
+		{
+			"name": "birthpet",
+			"function": "buildin_birthpet",
+			"args": "",
+			"deprecated": null,
+			"line": 28129,
+			"documented": true
+		},
+		{
+			"name": "resetlvl",
+			"function": "buildin_resetlvl",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28130,
+			"documented": true
+		},
+		{
+			"name": "resetstatus",
+			"function": "buildin_resetstatus",
+			"args": "?",
+			"deprecated": null,
+			"line": 28131,
+			"documented": true
+		},
+		{
+			"name": "resetskill",
+			"function": "buildin_resetskill",
+			"args": "?",
+			"deprecated": null,
+			"line": 28132,
+			"documented": true
+		},
+		{
+			"name": "resetfeel",
+			"function": "buildin_resetfeel",
+			"args": "?",
+			"deprecated": null,
+			"line": 28133,
+			"documented": true
+		},
+		{
+			"name": "resethate",
+			"function": "buildin_resethate",
+			"args": "?",
+			"deprecated": null,
+			"line": 28134,
+			"documented": true
+		},
+		{
+			"name": "skillpointcount",
+			"function": "buildin_skillpointcount",
+			"args": "?",
+			"deprecated": null,
+			"line": 28135,
+			"documented": true
+		},
+		{
+			"name": "changebase",
+			"function": "buildin_changebase",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28136,
+			"documented": true
+		},
+		{
+			"name": "changesex",
+			"function": "buildin_changesex",
+			"args": "?",
+			"deprecated": null,
+			"line": 28137,
+			"documented": true
+		},
+		{
+			"name": "changecharsex",
+			"function": "buildin_changecharsex",
+			"args": "?",
+			"deprecated": null,
+			"line": 28138,
+			"documented": true
+		},
+		{
+			"name": "waitingroom",
+			"function": "buildin_waitingroom",
+			"args": "si?????",
+			"deprecated": null,
+			"line": 28139,
+			"documented": true
+		},
+		{
+			"name": "delwaitingroom",
+			"function": "buildin_delwaitingroom",
+			"args": "?",
+			"deprecated": null,
+			"line": 28140,
+			"documented": true
+		},
+		{
+			"name": "waitingroomkick",
+			"function": "buildin_waitingroomkick",
+			"args": "ss",
+			"deprecated": null,
+			"line": 28141,
+			"documented": true
+		},
+		{
+			"name": "getwaitingroomusers",
+			"function": "buildin_getwaitingroomusers",
+			"args": "?",
+			"deprecated": null,
+			"line": 28142,
+			"documented": true
+		},
+		{
+			"name": "kickwaitingroomall",
+			"function": "buildin_waitingroomkickall",
+			"args": "?",
+			"deprecated": null,
+			"line": 28143,
+			"documented": true
+		},
+		{
+			"name": "enablewaitingroomevent",
+			"function": "buildin_enablewaitingroomevent",
+			"args": "?",
+			"deprecated": null,
+			"line": 28144,
+			"documented": true
+		},
+		{
+			"name": "disablewaitingroomevent",
+			"function": "buildin_disablewaitingroomevent",
+			"args": "?",
+			"deprecated": null,
+			"line": 28145,
+			"documented": true
+		},
+		{
+			"name": "enablearena",
+			"function": "buildin_enablewaitingroomevent",
+			"args": "",
+			"deprecated": null,
+			"line": 28146,
+			"documented": true
+		},
+		{
+			"name": "disablearena",
+			"function": "buildin_disablewaitingroomevent",
+			"args": "",
+			"deprecated": null,
+			"line": 28147,
+			"documented": true
+		},
+		{
+			"name": "getwaitingroomstate",
+			"function": "buildin_getwaitingroomstate",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28148,
+			"documented": true
+		},
+		{
+			"name": "warpwaitingpc",
+			"function": "buildin_warpwaitingpc",
+			"args": "sii?",
+			"deprecated": null,
+			"line": 28149,
+			"documented": true
+		},
+		{
+			"name": "attachrid",
+			"function": "buildin_attachrid",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28150,
+			"documented": true
+		},
+		{
+			"name": "addrid",
+			"function": "buildin_addrid",
+			"args": "i?????",
+			"deprecated": null,
+			"line": 28151,
+			"documented": true
+		},
+		{
+			"name": "detachrid",
+			"function": "buildin_detachrid",
+			"args": "",
+			"deprecated": null,
+			"line": 28152,
+			"documented": true
+		},
+		{
+			"name": "isloggedin",
+			"function": "buildin_isloggedin",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28153,
+			"documented": true
+		},
+		{
+			"name": "setmapflagnosave",
+			"function": "buildin_setmapflagnosave",
+			"args": "ssii",
+			"deprecated": null,
+			"line": 28154,
+			"documented": true
+		},
+		{
+			"name": "getmapflag",
+			"function": "buildin_getmapflag",
+			"args": "si?",
+			"deprecated": null,
+			"line": 28155,
+			"documented": true
+		},
+		{
+			"name": "setmapflag",
+			"function": "buildin_setmapflag",
+			"args": "si??",
+			"deprecated": null,
+			"line": 28156,
+			"documented": true
+		},
+		{
+			"name": "removemapflag",
+			"function": "buildin_removemapflag",
+			"args": "si?",
+			"deprecated": null,
+			"line": 28157,
+			"documented": true
+		},
+		{
+			"name": "pvpon",
+			"function": "buildin_pvpon",
+			"args": "s",
+			"deprecated": null,
+			"line": 28158,
+			"documented": true
+		},
+		{
+			"name": "pvpoff",
+			"function": "buildin_pvpoff",
+			"args": "s",
+			"deprecated": null,
+			"line": 28159,
+			"documented": true
+		},
+		{
+			"name": "gvgon",
+			"function": "buildin_gvgon",
+			"args": "s",
+			"deprecated": null,
+			"line": 28160,
+			"documented": true
+		},
+		{
+			"name": "gvgoff",
+			"function": "buildin_gvgoff",
+			"args": "s",
+			"deprecated": null,
+			"line": 28161,
+			"documented": true
+		},
+		{
+			"name": "emotion",
+			"function": "buildin_emotion",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28162,
+			"documented": true
+		},
+		{
+			"name": "maprespawnguildid",
+			"function": "buildin_maprespawnguildid",
+			"args": "sii",
+			"deprecated": null,
+			"line": 28163,
+			"documented": true
+		},
+		{
+			"name": "agitstart",
+			"function": "buildin_agitstart",
+			"args": "",
+			"deprecated": null,
+			"line": 28164,
+			"documented": true
+		},
+		{
+			"name": "agitend",
+			"function": "buildin_agitend",
+			"args": "",
+			"deprecated": null,
+			"line": 28165,
+			"documented": true
+		},
+		{
+			"name": "agitcheck",
+			"function": "buildin_agitcheck",
+			"args": "",
+			"deprecated": null,
+			"line": 28166,
+			"documented": true
+		},
+		{
+			"name": "flagemblem",
+			"function": "buildin_flagemblem",
+			"args": "i",
+			"deprecated": null,
+			"line": 28167,
+			"documented": true
+		},
+		{
+			"name": "getcastlename",
+			"function": "buildin_getcastlename",
+			"args": "s",
+			"deprecated": null,
+			"line": 28168,
+			"documented": true
+		},
+		{
+			"name": "getcastledata",
+			"function": "buildin_getcastledata",
+			"args": "si",
+			"deprecated": null,
+			"line": 28169,
+			"documented": true
+		},
+		{
+			"name": "setcastledata",
+			"function": "buildin_setcastledata",
+			"args": "sii",
+			"deprecated": null,
+			"line": 28170,
+			"documented": true
+		},
+		{
+			"name": "requestguildinfo",
+			"function": "buildin_requestguildinfo",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28171,
+			"documented": true
+		},
+		{
+			"name": "getequipcardcnt",
+			"function": "buildin_getequipcardcnt",
+			"args": "i",
+			"deprecated": null,
+			"line": 28172,
+			"documented": true
+		},
+		{
+			"name": "successremovecards",
+			"function": "buildin_successremovecards",
+			"args": "i",
+			"deprecated": null,
+			"line": 28173,
+			"documented": true
+		},
+		{
+			"name": "failedremovecards",
+			"function": "buildin_failedremovecards",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28174,
+			"documented": true
+		},
+		{
+			"name": "marriage",
+			"function": "buildin_marriage",
+			"args": "s",
+			"deprecated": null,
+			"line": 28175,
+			"documented": true
+		},
+		{
+			"name": "wedding",
+			"function": "buildin_wedding_effect",
+			"args": "",
+			"deprecated": null,
+			"line": 28176,
+			"documented": true
+		},
+		{
+			"name": "divorce",
+			"function": "buildin_divorce",
+			"args": "?",
+			"deprecated": null,
+			"line": 28177,
+			"documented": true
+		},
+		{
+			"name": "ispartneron",
+			"function": "buildin_ispartneron",
+			"args": "?",
+			"deprecated": null,
+			"line": 28178,
+			"documented": true
+		},
+		{
+			"name": "getpartnerid",
+			"function": "buildin_getpartnerid",
+			"args": "?",
+			"deprecated": null,
+			"line": 28179,
+			"documented": true
+		},
+		{
+			"name": "getchildid",
+			"function": "buildin_getchildid",
+			"args": "?",
+			"deprecated": null,
+			"line": 28180,
+			"documented": true
+		},
+		{
+			"name": "getmotherid",
+			"function": "buildin_getmotherid",
+			"args": "?",
+			"deprecated": null,
+			"line": 28181,
+			"documented": true
+		},
+		{
+			"name": "getfatherid",
+			"function": "buildin_getfatherid",
+			"args": "?",
+			"deprecated": null,
+			"line": 28182,
+			"documented": true
+		},
+		{
+			"name": "warppartner",
+			"function": "buildin_warppartner",
+			"args": "sii",
+			"deprecated": null,
+			"line": 28183,
+			"documented": true
+		},
+		{
+			"name": "getitemname",
+			"function": "buildin_getitemname",
+			"args": "v",
+			"deprecated": null,
+			"line": 28184,
+			"documented": true
+		},
+		{
+			"name": "getitemslots",
+			"function": "buildin_getitemslots",
+			"args": "i",
+			"deprecated": null,
+			"line": 28185,
+			"documented": true
+		},
+		{
+			"name": "makepet",
+			"function": "buildin_makepet",
+			"args": "i",
+			"deprecated": null,
+			"line": 28186,
+			"documented": true
+		},
+		{
+			"name": "getexp",
+			"function": "buildin_getexp",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28187,
+			"documented": true
+		},
+		{
+			"name": "getinventorylist",
+			"function": "buildin_getinventorylist",
+			"args": "?",
+			"deprecated": null,
+			"line": 28188,
+			"documented": true
+		},
+		{
+			"name": "getskilllist",
+			"function": "buildin_getskilllist",
+			"args": "?",
+			"deprecated": null,
+			"line": 28189,
+			"documented": true
+		},
+		{
+			"name": "clearitem",
+			"function": "buildin_clearitem",
+			"args": "?",
+			"deprecated": null,
+			"line": 28190,
+			"documented": true
+		},
+		{
+			"name": "classchange",
+			"function": "buildin_classchange",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28191,
+			"documented": true
+		},
+		{
+			"name": "misceffect",
+			"function": "buildin_misceffect",
+			"args": "i",
+			"deprecated": null,
+			"line": 28192,
+			"documented": true
+		},
+		{
+			"name": "playBGM",
+			"function": "buildin_playBGM",
+			"args": "s",
+			"deprecated": null,
+			"line": 28193,
+			"documented": true
+		},
+		{
+			"name": "playBGMall",
+			"function": "buildin_playBGMall",
+			"args": "s?????",
+			"deprecated": null,
+			"line": 28194,
+			"documented": true
+		},
+		{
+			"name": "soundeffect",
+			"function": "buildin_soundeffect",
+			"args": "si",
+			"deprecated": null,
+			"line": 28195,
+			"documented": true
+		},
+		{
+			"name": "soundeffectall",
+			"function": "buildin_soundeffectall",
+			"args": "si?????",
+			"deprecated": null,
+			"line": 28196,
+			"documented": true
+		},
+		{
+			"name": "getmonsterinfo",
+			"function": "buildin_strmobinfo",
+			"args": "ii",
+			"deprecated": "2025-03-11",
+			"line": 28197,
+			"documented": true
+		},
+		{
+			"name": "guardian",
+			"function": "buildin_guardian",
+			"args": "siisi??",
+			"deprecated": null,
+			"line": 28198,
+			"documented": true
+		},
+		{
+			"name": "guardianinfo",
+			"function": "buildin_guardianinfo",
+			"args": "sii",
+			"deprecated": null,
+			"line": 28199,
+			"documented": true
+		},
+		{
+			"name": "petskillbonus",
+			"function": "buildin_petskillbonus",
+			"args": "iiii",
+			"deprecated": null,
+			"line": 28200,
+			"documented": true
+		},
+		{
+			"name": "petrecovery",
+			"function": "buildin_petrecovery",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28201,
+			"documented": true
+		},
+		{
+			"name": "petloot",
+			"function": "buildin_petloot",
+			"args": "i",
+			"deprecated": null,
+			"line": 28202,
+			"documented": true
+		},
+		{
+			"name": "petskillattack",
+			"function": "buildin_petskillattack",
+			"args": "viii",
+			"deprecated": null,
+			"line": 28203,
+			"documented": true
+		},
+		{
+			"name": "petskillattack2",
+			"function": "buildin_petskillattack2",
+			"args": "viiii",
+			"deprecated": null,
+			"line": 28204,
+			"documented": true
+		},
+		{
+			"name": "petskillsupport",
+			"function": "buildin_petskillsupport",
+			"args": "viiii",
+			"deprecated": null,
+			"line": 28205,
+			"documented": true
+		},
+		{
+			"name": "skilleffect",
+			"function": "buildin_skilleffect",
+			"args": "vi?",
+			"deprecated": null,
+			"line": 28206,
+			"documented": true
+		},
+		{
+			"name": "npcskilleffect",
+			"function": "buildin_npcskilleffect",
+			"args": "viii",
+			"deprecated": null,
+			"line": 28207,
+			"documented": true
+		},
+		{
+			"name": "specialeffect",
+			"function": "buildin_specialeffect",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28208,
+			"documented": true
+		},
+		{
+			"name": "specialeffect2",
+			"function": "buildin_specialeffect2",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28209,
+			"documented": true
+		},
+		{
+			"name": "removespecialeffect",
+			"function": "buildin_removespecialeffect",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28210,
+			"documented": true
+		},
+		{
+			"name": "removespecialeffect2",
+			"function": "buildin_removespecialeffect",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28211,
+			"documented": true
+		},
+		{
+			"name": "nude",
+			"function": "buildin_nude",
+			"args": "?",
+			"deprecated": null,
+			"line": 28212,
+			"documented": true
+		},
+		{
+			"name": "mapwarp",
+			"function": "buildin_mapwarp",
+			"args": "ssii??",
+			"deprecated": null,
+			"line": 28213,
+			"documented": true
+		},
+		{
+			"name": "atcommand",
+			"function": "buildin_atcommand",
+			"args": "s",
+			"deprecated": null,
+			"line": 28214,
+			"documented": true
+		},
+		{
+			"name": "charcommand",
+			"function": "buildin_atcommand",
+			"args": "s",
+			"deprecated": null,
+			"line": 28215,
+			"documented": true
+		},
+		{
+			"name": "movenpc",
+			"function": "buildin_movenpc",
+			"args": "sii?",
+			"deprecated": null,
+			"line": 28216,
+			"documented": true
+		},
+		{
+			"name": "message",
+			"function": "buildin_message",
+			"args": "ss",
+			"deprecated": null,
+			"line": 28217,
+			"documented": true
+		},
+		{
+			"name": "npctalk",
+			"function": "buildin_npctalk",
+			"args": "s???",
+			"deprecated": null,
+			"line": 28218,
+			"documented": true
+		},
+		{
+			"name": "chatmes",
+			"function": "buildin_chatmes",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28219,
+			"documented": true
+		},
+		{
+			"name": "mobcount",
+			"function": "buildin_mobcount",
+			"args": "ss",
+			"deprecated": null,
+			"line": 28220,
+			"documented": true
+		},
+		{
+			"name": "getlook",
+			"function": "buildin_getlook",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28221,
+			"documented": true
+		},
+		{
+			"name": "getsavepoint",
+			"function": "buildin_getsavepoint",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28222,
+			"documented": true
+		},
+		{
+			"name": "npcspeed",
+			"function": "buildin_npcspeed",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28223,
+			"documented": true
+		},
+		{
+			"name": "npcwalkto",
+			"function": "buildin_npcwalkto",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28224,
+			"documented": true
+		},
+		{
+			"name": "npcstop",
+			"function": "buildin_npcstop",
+			"args": "??",
+			"deprecated": null,
+			"line": 28225,
+			"documented": true
+		},
+		{
+			"name": "getmapxy",
+			"function": "buildin_getmapxy",
+			"args": "rrr??",
+			"deprecated": null,
+			"line": 28226,
+			"documented": true
+		},
+		{
+			"name": "mapid2name",
+			"function": "buildin_mapid2name",
+			"args": "i",
+			"deprecated": null,
+			"line": 28227,
+			"documented": true
+		},
+		{
+			"name": "mapname2id",
+			"function": "buildin_mapname2id",
+			"args": "s",
+			"deprecated": null,
+			"line": 28228,
+			"documented": true
+		},
+		{
+			"name": "checkoption1",
+			"function": "buildin_checkoption1",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28229,
+			"documented": true
+		},
+		{
+			"name": "checkoption2",
+			"function": "buildin_checkoption2",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28230,
+			"documented": true
+		},
+		{
+			"name": "guildgetexp",
+			"function": "buildin_guildgetexp",
+			"args": "i",
+			"deprecated": null,
+			"line": 28231,
+			"documented": true
+		},
+		{
+			"name": "guildchangegm",
+			"function": "buildin_guildchangegm",
+			"args": "is",
+			"deprecated": null,
+			"line": 28232,
+			"documented": true
+		},
+		{
+			"name": "logmes",
+			"function": "buildin_logmes",
+			"args": "v",
+			"deprecated": null,
+			"line": 28233,
+			"documented": true
+		},
+		{
+			"name": "summon",
+			"function": "buildin_summon",
+			"args": "si??",
+			"deprecated": null,
+			"line": 28234,
+			"documented": true
+		},
+		{
+			"name": "isnight",
+			"function": "buildin_isnight",
+			"args": "",
+			"deprecated": null,
+			"line": 28235,
+			"documented": true
+		},
+		{
+			"name": "isday",
+			"function": "buildin_isday",
+			"args": "",
+			"deprecated": null,
+			"line": 28236,
+			"documented": true
+		},
+		{
+			"name": "isequipped",
+			"function": "buildin_isequipped",
+			"args": "i*",
+			"deprecated": null,
+			"line": 28237,
+			"documented": true
+		},
+		{
+			"name": "isequippedcnt",
+			"function": "buildin_isequippedcnt",
+			"args": "i*",
+			"deprecated": null,
+			"line": 28238,
+			"documented": true
+		},
+		{
+			"name": "cardscnt",
+			"function": "buildin_cardscnt",
+			"args": "i*",
+			"deprecated": null,
+			"line": 28239,
+			"documented": true
+		},
+		{
+			"name": "getrefine",
+			"function": "buildin_getrefine",
+			"args": "",
+			"deprecated": null,
+			"line": 28240,
+			"documented": true
+		},
+		{
+			"name": "night",
+			"function": "buildin_night",
+			"args": "",
+			"deprecated": null,
+			"line": 28241,
+			"documented": true
+		},
+		{
+			"name": "day",
+			"function": "buildin_day",
+			"args": "",
+			"deprecated": null,
+			"line": 28242,
+			"documented": true
+		},
+		{
+			"name": "defpattern",
+			"function": "buildin_defpattern",
+			"args": "iss",
+			"deprecated": null,
+			"line": 28244,
+			"documented": true
+		},
+		{
+			"name": "activatepset",
+			"function": "buildin_activatepset",
+			"args": "i",
+			"deprecated": null,
+			"line": 28245,
+			"documented": true
+		},
+		{
+			"name": "deactivatepset",
+			"function": "buildin_deactivatepset",
+			"args": "i",
+			"deprecated": null,
+			"line": 28246,
+			"documented": true
+		},
+		{
+			"name": "deletepset",
+			"function": "buildin_deletepset",
+			"args": "i",
+			"deprecated": null,
+			"line": 28247,
+			"documented": true
+		},
+		{
+			"name": "preg_match",
+			"function": "buildin_preg_match",
+			"args": "ss?",
+			"deprecated": null,
+			"line": 28249,
+			"documented": true
+		},
+		{
+			"name": "dispbottom",
+			"function": "buildin_dispbottom",
+			"args": "s??",
+			"deprecated": null,
+			"line": 28250,
+			"documented": true
+		},
+		{
+			"name": "recovery",
+			"function": "buildin_recovery",
+			"args": "i???",
+			"deprecated": null,
+			"line": 28251,
+			"documented": true
+		},
+		{
+			"name": "getpetinfo",
+			"function": "buildin_getpetinfo",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28252,
+			"documented": true
+		},
+		{
+			"name": "gethominfo",
+			"function": "buildin_gethominfo",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28253,
+			"documented": true
+		},
+		{
+			"name": "addhomintimacy",
+			"function": "buildin_addhomintimacy",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28254,
+			"documented": true
+		},
+		{
+			"name": "getmercinfo",
+			"function": "buildin_getmercinfo",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28255,
+			"documented": true
+		},
+		{
+			"name": "checkequipedcard",
+			"function": "buildin_checkequipedcard",
+			"args": "i",
+			"deprecated": null,
+			"line": 28256,
+			"documented": true
+		},
+		{
+			"name": "jump_zero",
+			"function": "buildin_jump_zero",
+			"args": "il",
+			"deprecated": null,
+			"line": 28257,
+			"documented": true
+		},
+		{
+			"name": "globalmes",
+			"function": "buildin_globalmes",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28258,
+			"documented": true
+		},
+		{
+			"name": "unequip",
+			"function": "buildin_unequip",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28259,
+			"documented": true
+		},
+		{
+			"name": "getstrlen",
+			"function": "buildin_getstrlen",
+			"args": "s",
+			"deprecated": null,
+			"line": 28260,
+			"documented": true
+		},
+		{
+			"name": "charisalpha",
+			"function": "buildin_charisalpha",
+			"args": "si",
+			"deprecated": null,
+			"line": 28261,
+			"documented": true
+		},
+		{
+			"name": "charat",
+			"function": "buildin_charat",
+			"args": "si",
+			"deprecated": null,
+			"line": 28262,
+			"documented": true
+		},
+		{
+			"name": "setchar",
+			"function": "buildin_setchar",
+			"args": "ssi",
+			"deprecated": null,
+			"line": 28263,
+			"documented": true
+		},
+		{
+			"name": "insertchar",
+			"function": "buildin_insertchar",
+			"args": "ssi",
+			"deprecated": null,
+			"line": 28264,
+			"documented": true
+		},
+		{
+			"name": "delchar",
+			"function": "buildin_delchar",
+			"args": "si",
+			"deprecated": null,
+			"line": 28265,
+			"documented": true
+		},
+		{
+			"name": "strtoupper",
+			"function": "buildin_strtoupper",
+			"args": "s",
+			"deprecated": null,
+			"line": 28266,
+			"documented": true
+		},
+		{
+			"name": "strtolower",
+			"function": "buildin_strtolower",
+			"args": "s",
+			"deprecated": null,
+			"line": 28267,
+			"documented": true
+		},
+		{
+			"name": "charisupper",
+			"function": "buildin_charisupper",
+			"args": "si",
+			"deprecated": null,
+			"line": 28268,
+			"documented": true
+		},
+		{
+			"name": "charislower",
+			"function": "buildin_charislower",
+			"args": "si",
+			"deprecated": null,
+			"line": 28269,
+			"documented": true
+		},
+		{
+			"name": "substr",
+			"function": "buildin_substr",
+			"args": "sii",
+			"deprecated": null,
+			"line": 28270,
+			"documented": true
+		},
+		{
+			"name": "explode",
+			"function": "buildin_explode",
+			"args": "rss",
+			"deprecated": null,
+			"line": 28271,
+			"documented": true
+		},
+		{
+			"name": "implode",
+			"function": "buildin_implode",
+			"args": "r?",
+			"deprecated": null,
+			"line": 28272,
+			"documented": true
+		},
+		{
+			"name": "sprintf",
+			"function": "buildin_sprintf",
+			"args": "s*",
+			"deprecated": null,
+			"line": 28273,
+			"documented": true
+		},
+		{
+			"name": "sscanf",
+			"function": "buildin_sscanf",
+			"args": "ss*",
+			"deprecated": null,
+			"line": 28274,
+			"documented": true
+		},
+		{
+			"name": "strpos",
+			"function": "buildin_strpos",
+			"args": "ss?",
+			"deprecated": null,
+			"line": 28275,
+			"documented": true
+		},
+		{
+			"name": "replacestr",
+			"function": "buildin_replacestr",
+			"args": "sss??",
+			"deprecated": null,
+			"line": 28276,
+			"documented": true
+		},
+		{
+			"name": "countstr",
+			"function": "buildin_countstr",
+			"args": "ss?",
+			"deprecated": null,
+			"line": 28277,
+			"documented": true
+		},
+		{
+			"name": "setnpcdisplay",
+			"function": "buildin_setnpcdisplay",
+			"args": "sv??",
+			"deprecated": null,
+			"line": 28278,
+			"documented": true
+		},
+		{
+			"name": "compare",
+			"function": "buildin_compare",
+			"args": "ss",
+			"deprecated": null,
+			"line": 28279,
+			"documented": true
+		},
+		{
+			"name": "strcmp",
+			"function": "buildin_strcmp",
+			"args": "ss",
+			"deprecated": null,
+			"line": 28280,
+			"documented": true
+		},
+		{
+			"name": "getiteminfo",
+			"function": "buildin_getiteminfo",
+			"args": "vi",
+			"deprecated": null,
+			"line": 28281,
+			"documented": true
+		},
+		{
+			"name": "setiteminfo",
+			"function": "buildin_setiteminfo",
+			"args": "vii",
+			"deprecated": null,
+			"line": 28282,
+			"documented": true
+		},
+		{
+			"name": "getequipcardid",
+			"function": "buildin_getequipcardid",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28283,
+			"documented": true
+		},
+		{
+			"name": "sqrt",
+			"function": "buildin_sqrt",
+			"args": "i",
+			"deprecated": null,
+			"line": 28285,
+			"documented": true
+		},
+		{
+			"name": "pow",
+			"function": "buildin_pow",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28286,
+			"documented": true
+		},
+		{
+			"name": "distance",
+			"function": "buildin_distance",
+			"args": "iiii",
+			"deprecated": null,
+			"line": 28287,
+			"documented": true
+		},
+		{
+			"name": "min",
+			"function": "buildin_minmax",
+			"args": "*",
+			"deprecated": null,
+			"line": 28288,
+			"documented": true
+		},
+		{
+			"name": "minimum",
+			"function": "buildin_minmax",
+			"args": "*",
+			"deprecated": null,
+			"line": 28289,
+			"documented": true
+		},
+		{
+			"name": "max",
+			"function": "buildin_minmax",
+			"args": "*",
+			"deprecated": null,
+			"line": 28290,
+			"documented": true
+		},
+		{
+			"name": "maximum",
+			"function": "buildin_minmax",
+			"args": "*",
+			"deprecated": null,
+			"line": 28291,
+			"documented": true
+		},
+		{
+			"name": "cap_value",
+			"function": "buildin_cap_value",
+			"args": "iii",
+			"deprecated": null,
+			"line": 28292,
+			"documented": true
+		},
+		{
+			"name": "md5",
+			"function": "buildin_md5",
+			"args": "s",
+			"deprecated": null,
+			"line": 28294,
+			"documented": true
+		},
+		{
+			"name": "getd",
+			"function": "buildin_getd",
+			"args": "s",
+			"deprecated": null,
+			"line": 28296,
+			"documented": true
+		},
+		{
+			"name": "setd",
+			"function": "buildin_setd",
+			"args": "sv?",
+			"deprecated": null,
+			"line": 28297,
+			"documented": true
+		},
+		{
+			"name": "callshop",
+			"function": "buildin_callshop",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28298,
+			"documented": true
+		},
+		{
+			"name": "npcshopitem",
+			"function": "buildin_npcshopitem",
+			"args": "sii*",
+			"deprecated": null,
+			"line": 28299,
+			"documented": true
+		},
+		{
+			"name": "npcshopadditem",
+			"function": "buildin_npcshopadditem",
+			"args": "sii*",
+			"deprecated": null,
+			"line": 28300,
+			"documented": true
+		},
+		{
+			"name": "npcshopdelitem",
+			"function": "buildin_npcshopdelitem",
+			"args": "si*",
+			"deprecated": null,
+			"line": 28301,
+			"documented": true
+		},
+		{
+			"name": "npcshopattach",
+			"function": "buildin_npcshopattach",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28302,
+			"documented": true
+		},
+		{
+			"name": "equip",
+			"function": "buildin_equip",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28303,
+			"documented": true
+		},
+		{
+			"name": "autoequip",
+			"function": "buildin_autoequip",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28304,
+			"documented": true
+		},
+		{
+			"name": "setbattleflag",
+			"function": "buildin_setbattleflag",
+			"args": "si?",
+			"deprecated": null,
+			"line": 28305,
+			"documented": true
+		},
+		{
+			"name": "getbattleflag",
+			"function": "buildin_getbattleflag",
+			"args": "s",
+			"deprecated": null,
+			"line": 28306,
+			"documented": true
+		},
+		{
+			"name": "setitemscript",
+			"function": "buildin_setitemscript",
+			"args": "is?",
+			"deprecated": null,
+			"line": 28307,
+			"documented": true
+		},
+		{
+			"name": "disguise",
+			"function": "buildin_disguise",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28308,
+			"documented": true
+		},
+		{
+			"name": "undisguise",
+			"function": "buildin_undisguise",
+			"args": "?",
+			"deprecated": null,
+			"line": 28309,
+			"documented": true
+		},
+		{
+			"name": "getrandmobid",
+			"function": "buildin_getrandmobid",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28310,
+			"documented": true
+		},
+		{
+			"name": "getmonsterinfo",
+			"function": "buildin_getmonsterinfo",
+			"args": "vi",
+			"deprecated": null,
+			"line": 28311,
+			"documented": true
+		},
+		{
+			"name": "addmonsterdrop",
+			"function": "buildin_addmonsterdrop",
+			"args": "vii??",
+			"deprecated": null,
+			"line": 28312,
+			"documented": true
+		},
+		{
+			"name": "delmonsterdrop",
+			"function": "buildin_delmonsterdrop",
+			"args": "vi",
+			"deprecated": null,
+			"line": 28313,
+			"documented": true
+		},
+		{
+			"name": "axtoi",
+			"function": "buildin_axtoi",
+			"args": "s",
+			"deprecated": null,
+			"line": 28314,
+			"documented": true
+		},
+		{
+			"name": "query_sql",
+			"function": "buildin_query_sql",
+			"args": "s*",
+			"deprecated": null,
+			"line": 28315,
+			"documented": true
+		},
+		{
+			"name": "query_logsql",
+			"function": "buildin_query_logsql",
+			"args": "s*",
+			"deprecated": null,
+			"line": 28316,
+			"documented": true
+		},
+		{
+			"name": "escape_sql",
+			"function": "buildin_escape_sql",
+			"args": "v",
+			"deprecated": null,
+			"line": 28317,
+			"documented": true
+		},
+		{
+			"name": "atoi",
+			"function": "buildin_atoi",
+			"args": "s",
+			"deprecated": null,
+			"line": 28318,
+			"documented": true
+		},
+		{
+			"name": "strtol",
+			"function": "buildin_strtol",
+			"args": "si",
+			"deprecated": null,
+			"line": 28319,
+			"documented": true
+		},
+		{
+			"name": "rid2name",
+			"function": "buildin_rid2name",
+			"args": "i",
+			"deprecated": null,
+			"line": 28321,
+			"documented": true
+		},
+		{
+			"name": "pcfollow",
+			"function": "buildin_pcfollow",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28322,
+			"documented": true
+		},
+		{
+			"name": "pcstopfollow",
+			"function": "buildin_pcstopfollow",
+			"args": "i",
+			"deprecated": null,
+			"line": 28323,
+			"documented": true
+		},
+		{
+			"name": "pcblockmove",
+			"function": "buildin_pcblockmove",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28324,
+			"documented": true
+		},
+		{
+			"name": "unitblockmove",
+			"function": "buildin_pcblockmove",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28325,
+			"documented": true
+		},
+		{
+			"name": "pcblockskill",
+			"function": "buildin_pcblockskill",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28326,
+			"documented": true
+		},
+		{
+			"name": "unitblockskill",
+			"function": "buildin_pcblockskill",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28327,
+			"documented": true
+		},
+		{
+			"name": "setpcblock",
+			"function": "buildin_setpcblock",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28328,
+			"documented": true
+		},
+		{
+			"name": "getpcblock",
+			"function": "buildin_getpcblock",
+			"args": "?",
+			"deprecated": null,
+			"line": 28329,
+			"documented": true
+		},
+		{
+			"name": "unitexists",
+			"function": "buildin_unitexists",
+			"args": "i",
+			"deprecated": null,
+			"line": 28332,
+			"documented": true
+		},
+		{
+			"name": "getunittype",
+			"function": "buildin_getunittype",
+			"args": "i",
+			"deprecated": null,
+			"line": 28333,
+			"documented": true
+		},
+		{
+			"name": "getunitname",
+			"function": "buildin_getunitname",
+			"args": "i",
+			"deprecated": null,
+			"line": 28334,
+			"documented": true
+		},
+		{
+			"name": "setunitname",
+			"function": "buildin_setunitname",
+			"args": "is",
+			"deprecated": null,
+			"line": 28335,
+			"documented": true
+		},
+		{
+			"name": "setunittitle",
+			"function": "buildin_setunittitle",
+			"args": "is",
+			"deprecated": null,
+			"line": 28336,
+			"documented": true
+		},
+		{
+			"name": "getunittitle",
+			"function": "buildin_getunittitle",
+			"args": "i",
+			"deprecated": null,
+			"line": 28337,
+			"documented": true
+		},
+		{
+			"name": "getunitdata",
+			"function": "buildin_getunitdata",
+			"args": "i*",
+			"deprecated": null,
+			"line": 28338,
+			"documented": true
+		},
+		{
+			"name": "setunitdata",
+			"function": "buildin_setunitdata",
+			"args": "iiv",
+			"deprecated": null,
+			"line": 28339,
+			"documented": true
+		},
+		{
+			"name": "unitwalk",
+			"function": "buildin_unitwalk",
+			"args": "iii?",
+			"deprecated": null,
+			"line": 28340,
+			"documented": true
+		},
+		{
+			"name": "unitwalkto",
+			"function": "buildin_unitwalk",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28341,
+			"documented": true
+		},
+		{
+			"name": "unitkill",
+			"function": "buildin_unitkill",
+			"args": "i",
+			"deprecated": null,
+			"line": 28342,
+			"documented": true
+		},
+		{
+			"name": "unitwarp",
+			"function": "buildin_unitwarp",
+			"args": "isii",
+			"deprecated": null,
+			"line": 28343,
+			"documented": true
+		},
+		{
+			"name": "unitattack",
+			"function": "buildin_unitattack",
+			"args": "iv?",
+			"deprecated": null,
+			"line": 28344,
+			"documented": true
+		},
+		{
+			"name": "unitstopattack",
+			"function": "buildin_unitstopattack",
+			"args": "i",
+			"deprecated": null,
+			"line": 28345,
+			"documented": true
+		},
+		{
+			"name": "unitstopwalk",
+			"function": "buildin_unitstopwalk",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28346,
+			"documented": true
+		},
+		{
+			"name": "unittalk",
+			"function": "buildin_unittalk",
+			"args": "is?",
+			"deprecated": null,
+			"line": 28347,
+			"documented": true
+		},
+		{
+			"name": "unitskilluseid",
+			"function": "buildin_unitskilluseid",
+			"args": "ivi?????",
+			"deprecated": null,
+			"line": 28348,
+			"documented": true
+		},
+		{
+			"name": "unitskillusepos",
+			"function": "buildin_unitskillusepos",
+			"args": "iviii????",
+			"deprecated": null,
+			"line": 28349,
+			"documented": true
+		},
+		{
+			"name": "sleep",
+			"function": "buildin_sleep",
+			"args": "i",
+			"deprecated": null,
+			"line": 28351,
+			"documented": true
+		},
+		{
+			"name": "sleep2",
+			"function": "buildin_sleep2",
+			"args": "i",
+			"deprecated": null,
+			"line": 28352,
+			"documented": true
+		},
+		{
+			"name": "awake",
+			"function": "buildin_awake",
+			"args": "s",
+			"deprecated": null,
+			"line": 28353,
+			"documented": true
+		},
+		{
+			"name": "getvariableofnpc",
+			"function": "buildin_getvariableofnpc",
+			"args": "rs",
+			"deprecated": null,
+			"line": 28354,
+			"documented": true
+		},
+		{
+			"name": "warpportal",
+			"function": "buildin_warpportal",
+			"args": "iisii",
+			"deprecated": null,
+			"line": 28355,
+			"documented": true
+		},
+		{
+			"name": "homevolution",
+			"function": "buildin_homunculus_evolution",
+			"args": "",
+			"deprecated": null,
+			"line": 28356,
+			"documented": true
+		},
+		{
+			"name": "hommutate",
+			"function": "buildin_homunculus_mutate",
+			"args": "?",
+			"deprecated": null,
+			"line": 28357,
+			"documented": true
+		},
+		{
+			"name": "morphembryo",
+			"function": "buildin_morphembryo",
+			"args": "",
+			"deprecated": null,
+			"line": 28358,
+			"documented": true
+		},
+		{
+			"name": "homshuffle",
+			"function": "buildin_homunculus_shuffle",
+			"args": "",
+			"deprecated": null,
+			"line": 28359,
+			"documented": true
+		},
+		{
+			"name": "checkhomcall",
+			"function": "buildin_checkhomcall",
+			"args": "",
+			"deprecated": null,
+			"line": 28360,
+			"documented": true
+		},
+		{
+			"name": "eaclass",
+			"function": "buildin_eaclass",
+			"args": "??",
+			"deprecated": null,
+			"line": 28361,
+			"documented": true
+		},
+		{
+			"name": "roclass",
+			"function": "buildin_roclass",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28362,
+			"documented": true
+		},
+		{
+			"name": "checkvending",
+			"function": "buildin_checkvending",
+			"args": "?",
+			"deprecated": null,
+			"line": 28363,
+			"documented": true
+		},
+		{
+			"name": "checkchatting",
+			"function": "buildin_checkchatting",
+			"args": "?",
+			"deprecated": null,
+			"line": 28364,
+			"documented": true
+		},
+		{
+			"name": "checkidle",
+			"function": "buildin_checkidle",
+			"args": "?",
+			"deprecated": null,
+			"line": 28365,
+			"documented": true
+		},
+		{
+			"name": "checkidlehom",
+			"function": "buildin_checkidlehom",
+			"args": "?",
+			"deprecated": null,
+			"line": 28366,
+			"documented": true
+		},
+		{
+			"name": "checkidlemer",
+			"function": "buildin_checkidlemer",
+			"args": "?",
+			"deprecated": null,
+			"line": 28367,
+			"documented": true
+		},
+		{
+			"name": "openmail",
+			"function": "buildin_openmail",
+			"args": "?",
+			"deprecated": null,
+			"line": 28368,
+			"documented": true
+		},
+		{
+			"name": "openauction",
+			"function": "buildin_openauction",
+			"args": "?",
+			"deprecated": null,
+			"line": 28369,
+			"documented": true
+		},
+		{
+			"name": "checkcell",
+			"function": "buildin_checkcell",
+			"args": "siii",
+			"deprecated": null,
+			"line": 28370,
+			"documented": true
+		},
+		{
+			"name": "setcell",
+			"function": "buildin_setcell",
+			"args": "siiiiii",
+			"deprecated": null,
+			"line": 28371,
+			"documented": true
+		},
+		{
+			"name": "getfreecell",
+			"function": "buildin_getfreecell",
+			"args": "srr?????",
+			"deprecated": null,
+			"line": 28372,
+			"documented": true
+		},
+		{
+			"name": "setwall",
+			"function": "buildin_setwall",
+			"args": "siiiiis",
+			"deprecated": null,
+			"line": 28373,
+			"documented": true
+		},
+		{
+			"name": "delwall",
+			"function": "buildin_delwall",
+			"args": "s",
+			"deprecated": null,
+			"line": 28374,
+			"documented": true
+		},
+		{
+			"name": "checkwall",
+			"function": "buildin_checkwall",
+			"args": "s",
+			"deprecated": null,
+			"line": 28375,
+			"documented": true
+		},
+		{
+			"name": "searchitem",
+			"function": "buildin_searchitem",
+			"args": "rs",
+			"deprecated": null,
+			"line": 28376,
+			"documented": true
+		},
+		{
+			"name": "mercenary_create",
+			"function": "buildin_mercenary_create",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28377,
+			"documented": true
+		},
+		{
+			"name": "mercenary_delete",
+			"function": "buildin_mercenary_delete",
+			"args": "??",
+			"deprecated": null,
+			"line": 28378,
+			"documented": true
+		},
+		{
+			"name": "mercenary_heal",
+			"function": "buildin_mercenary_heal",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28379,
+			"documented": true
+		},
+		{
+			"name": "mercenary_sc_start",
+			"function": "buildin_mercenary_sc_start",
+			"args": "iii",
+			"deprecated": null,
+			"line": 28380,
+			"documented": true
+		},
+		{
+			"name": "mercenary_get_calls",
+			"function": "buildin_mercenary_get_calls",
+			"args": "i",
+			"deprecated": null,
+			"line": 28381,
+			"documented": true
+		},
+		{
+			"name": "mercenary_get_faith",
+			"function": "buildin_mercenary_get_faith",
+			"args": "i",
+			"deprecated": null,
+			"line": 28382,
+			"documented": true
+		},
+		{
+			"name": "mercenary_set_calls",
+			"function": "buildin_mercenary_set_calls",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28383,
+			"documented": true
+		},
+		{
+			"name": "mercenary_set_faith",
+			"function": "buildin_mercenary_set_faith",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28384,
+			"documented": true
+		},
+		{
+			"name": "readbook",
+			"function": "buildin_readbook",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28385,
+			"documented": true
+		},
+		{
+			"name": "setfont",
+			"function": "buildin_setfont",
+			"args": "i",
+			"deprecated": null,
+			"line": 28386,
+			"documented": true
+		},
+		{
+			"name": "areamobuseskill",
+			"function": "buildin_areamobuseskill",
+			"args": "siiivviiiii",
+			"deprecated": null,
+			"line": 28387,
+			"documented": true
+		},
+		{
+			"name": "progressbar",
+			"function": "buildin_progressbar",
+			"args": "si",
+			"deprecated": null,
+			"line": 28388,
+			"documented": true
+		},
+		{
+			"name": "progressbar_npc",
+			"function": "buildin_progressbar_npc",
+			"args": "si?",
+			"deprecated": null,
+			"line": 28389,
+			"documented": true
+		},
+		{
+			"name": "pushpc",
+			"function": "buildin_pushpc",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28390,
+			"documented": true
+		},
+		{
+			"name": "kick",
+			"function": "buildin_kick",
+			"args": "?",
+			"deprecated": null,
+			"line": 28391,
+			"documented": true
+		},
+		{
+			"name": "buyingstore",
+			"function": "buildin_buyingstore",
+			"args": "i",
+			"deprecated": null,
+			"line": 28392,
+			"documented": true
+		},
+		{
+			"name": "searchstores",
+			"function": "buildin_searchstores",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28393,
+			"documented": true
+		},
+		{
+			"name": "showdigit",
+			"function": "buildin_showdigit",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28394,
+			"documented": true
+		},
+		{
+			"name": "agitstart2",
+			"function": "buildin_agitstart2",
+			"args": "",
+			"deprecated": null,
+			"line": 28396,
+			"documented": true
+		},
+		{
+			"name": "agitend2",
+			"function": "buildin_agitend2",
+			"args": "",
+			"deprecated": null,
+			"line": 28397,
+			"documented": true
+		},
+		{
+			"name": "agitcheck2",
+			"function": "buildin_agitcheck2",
+			"args": "",
+			"deprecated": null,
+			"line": 28398,
+			"documented": true
+		},
+		{
+			"name": "waitingroom2bg",
+			"function": "buildin_waitingroom2bg",
+			"args": "sii???",
+			"deprecated": null,
+			"line": 28400,
+			"documented": true
+		},
+		{
+			"name": "waitingroom2bg_single",
+			"function": "buildin_waitingroom2bg_single",
+			"args": "i????",
+			"deprecated": null,
+			"line": 28401,
+			"documented": true
+		},
+		{
+			"name": "bg_team_setxy",
+			"function": "buildin_bg_team_setxy",
+			"args": "iii",
+			"deprecated": null,
+			"line": 28402,
+			"documented": true
+		},
+		{
+			"name": "bg_warp",
+			"function": "buildin_bg_warp",
+			"args": "isii",
+			"deprecated": null,
+			"line": 28403,
+			"documented": true
+		},
+		{
+			"name": "bg_monster",
+			"function": "buildin_bg_monster",
+			"args": "isiisi?",
+			"deprecated": null,
+			"line": 28404,
+			"documented": true
+		},
+		{
+			"name": "bg_monster_set_team",
+			"function": "buildin_bg_monster_set_team",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28405,
+			"documented": true
+		},
+		{
+			"name": "bg_leave",
+			"function": "buildin_bg_leave",
+			"args": "?",
+			"deprecated": null,
+			"line": 28406,
+			"documented": true
+		},
+		{
+			"name": "bg_desert",
+			"function": "buildin_bg_leave",
+			"args": "?",
+			"deprecated": null,
+			"line": 28407,
+			"documented": true
+		},
+		{
+			"name": "bg_destroy",
+			"function": "buildin_bg_destroy",
+			"args": "i",
+			"deprecated": null,
+			"line": 28408,
+			"documented": true
+		},
+		{
+			"name": "areapercentheal",
+			"function": "buildin_areapercentheal",
+			"args": "siiiiii",
+			"deprecated": null,
+			"line": 28409,
+			"documented": true
+		},
+		{
+			"name": "bg_get_data",
+			"function": "buildin_bg_get_data",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28410,
+			"documented": true
+		},
+		{
+			"name": "bg_getareausers",
+			"function": "buildin_bg_getareausers",
+			"args": "isiiii",
+			"deprecated": null,
+			"line": 28411,
+			"documented": true
+		},
+		{
+			"name": "bg_updatescore",
+			"function": "buildin_bg_updatescore",
+			"args": "sii",
+			"deprecated": null,
+			"line": 28412,
+			"documented": true
+		},
+		{
+			"name": "bg_join",
+			"function": "buildin_bg_join",
+			"args": "i????",
+			"deprecated": null,
+			"line": 28413,
+			"documented": true
+		},
+		{
+			"name": "bg_create",
+			"function": "buildin_bg_create",
+			"args": "sii??",
+			"deprecated": null,
+			"line": 28414,
+			"documented": true
+		},
+		{
+			"name": "bg_reserve",
+			"function": "buildin_bg_reserve",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28415,
+			"documented": true
+		},
+		{
+			"name": "bg_unbook",
+			"function": "buildin_bg_unbook",
+			"args": "s",
+			"deprecated": null,
+			"line": 28416,
+			"documented": true
+		},
+		{
+			"name": "bg_info",
+			"function": "buildin_bg_info",
+			"args": "si",
+			"deprecated": null,
+			"line": 28417,
+			"documented": true
+		},
+		{
+			"name": "instance_create",
+			"function": "buildin_instance_create",
+			"args": "s??",
+			"deprecated": null,
+			"line": 28420,
+			"documented": true
+		},
+		{
+			"name": "instance_destroy",
+			"function": "buildin_instance_destroy",
+			"args": "?",
+			"deprecated": null,
+			"line": 28421,
+			"documented": true
+		},
+		{
+			"name": "instance_id",
+			"function": "buildin_instance_id",
+			"args": "?",
+			"deprecated": null,
+			"line": 28422,
+			"documented": true
+		},
+		{
+			"name": "instance_enter",
+			"function": "buildin_instance_enter",
+			"args": "s????",
+			"deprecated": null,
+			"line": 28423,
+			"documented": true
+		},
+		{
+			"name": "instance_npcname",
+			"function": "buildin_instance_npcname",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28424,
+			"documented": true
+		},
+		{
+			"name": "instance_mapname",
+			"function": "buildin_instance_mapname",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28425,
+			"documented": true
+		},
+		{
+			"name": "instance_warpall",
+			"function": "buildin_instance_warpall",
+			"args": "sii??",
+			"deprecated": null,
+			"line": 28426,
+			"documented": true
+		},
+		{
+			"name": "instance_announce",
+			"function": "buildin_instance_announce",
+			"args": "isi?????",
+			"deprecated": null,
+			"line": 28427,
+			"documented": true
+		},
+		{
+			"name": "instance_check_party",
+			"function": "buildin_instance_check_party",
+			"args": "i???",
+			"deprecated": null,
+			"line": 28428,
+			"documented": true
+		},
+		{
+			"name": "instance_check_guild",
+			"function": "buildin_instance_check_guild",
+			"args": "i???",
+			"deprecated": null,
+			"line": 28429,
+			"documented": true
+		},
+		{
+			"name": "instance_check_clan",
+			"function": "buildin_instance_check_clan",
+			"args": "i???",
+			"deprecated": null,
+			"line": 28430,
+			"documented": true
+		},
+		{
+			"name": "instance_info",
+			"function": "buildin_instance_info",
+			"args": "si?",
+			"deprecated": null,
+			"line": 28431,
+			"documented": true
+		},
+		{
+			"name": "instance_live_info",
+			"function": "buildin_instance_live_info",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28432,
+			"documented": true
+		},
+		{
+			"name": "instance_list",
+			"function": "buildin_instance_list",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28433,
+			"documented": true
+		},
+		{
+			"name": "makerune",
+			"function": "buildin_makerune",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28437,
+			"documented": true
+		},
+		{
+			"name": "checkdragon",
+			"function": "buildin_checkdragon",
+			"args": "?",
+			"deprecated": null,
+			"line": 28438,
+			"documented": true
+		},
+		{
+			"name": "setdragon",
+			"function": "buildin_setdragon",
+			"args": "??",
+			"deprecated": null,
+			"line": 28439,
+			"documented": true
+		},
+		{
+			"name": "ismounting",
+			"function": "buildin_ismounting",
+			"args": "?",
+			"deprecated": null,
+			"line": 28440,
+			"documented": true
+		},
+		{
+			"name": "setmounting",
+			"function": "buildin_setmounting",
+			"args": "?",
+			"deprecated": null,
+			"line": 28441,
+			"documented": true
+		},
+		{
+			"name": "checkre",
+			"function": "buildin_checkre",
+			"args": "i",
+			"deprecated": null,
+			"line": 28442,
+			"documented": true
+		},
+		{
+			"name": "getargcount",
+			"function": "buildin_getargcount",
+			"args": "",
+			"deprecated": null,
+			"line": 28446,
+			"documented": true
+		},
+		{
+			"name": "getcharip",
+			"function": "buildin_getcharip",
+			"args": "?",
+			"deprecated": null,
+			"line": 28447,
+			"documented": true
+		},
+		{
+			"name": "is_function",
+			"function": "buildin_is_function",
+			"args": "s",
+			"deprecated": null,
+			"line": 28448,
+			"documented": true
+		},
+		{
+			"name": "get_revision",
+			"function": "buildin_get_revision",
+			"args": "",
+			"deprecated": null,
+			"line": 28449,
+			"documented": true
+		},
+		{
+			"name": "get_githash",
+			"function": "buildin_get_githash",
+			"args": "",
+			"deprecated": null,
+			"line": 28450,
+			"documented": true
+		},
+		{
+			"name": "freeloop",
+			"function": "buildin_freeloop",
+			"args": "?",
+			"deprecated": null,
+			"line": 28451,
+			"documented": true
+		},
+		{
+			"name": "getrandgroupitem",
+			"function": "buildin_getrandgroupitem",
+			"args": "i????",
+			"deprecated": null,
+			"line": 28452,
+			"documented": true
+		},
+		{
+			"name": "cleanmap",
+			"function": "buildin_cleanmap",
+			"args": "s",
+			"deprecated": null,
+			"line": 28453,
+			"documented": true
+		},
+		{
+			"name": "cleanarea",
+			"function": "buildin_cleanmap",
+			"args": "siiii",
+			"deprecated": null,
+			"line": 28454,
+			"documented": true
+		},
+		{
+			"name": "npcskill",
+			"function": "buildin_npcskill",
+			"args": "viii",
+			"deprecated": null,
+			"line": 28455,
+			"documented": true
+		},
+		{
+			"name": "consumeitem",
+			"function": "buildin_consumeitem",
+			"args": "v?",
+			"deprecated": null,
+			"line": 28456,
+			"documented": true
+		},
+		{
+			"name": "delequip",
+			"function": "buildin_delequip",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28457,
+			"documented": true
+		},
+		{
+			"name": "breakequip",
+			"function": "buildin_breakequip",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28458,
+			"documented": true
+		},
+		{
+			"name": "sit",
+			"function": "buildin_sit",
+			"args": "?",
+			"deprecated": null,
+			"line": 28459,
+			"documented": true
+		},
+		{
+			"name": "stand",
+			"function": "buildin_stand",
+			"args": "?",
+			"deprecated": null,
+			"line": 28460,
+			"documented": true
+		},
+		{
+			"name": "bindatcmd",
+			"function": "buildin_bindatcmd",
+			"args": "ss??",
+			"deprecated": null,
+			"line": 28462,
+			"documented": true
+		},
+		{
+			"name": "unbindatcmd",
+			"function": "buildin_unbindatcmd",
+			"args": "s",
+			"deprecated": null,
+			"line": 28463,
+			"documented": true
+		},
+		{
+			"name": "useatcmd",
+			"function": "buildin_useatcmd",
+			"args": "s",
+			"deprecated": null,
+			"line": 28464,
+			"documented": true
+		},
+		{
+			"name": "questinfo",
+			"function": "buildin_questinfo",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28467,
+			"documented": true
+		},
+		{
+			"name": "setquest",
+			"function": "buildin_setquest",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28468,
+			"documented": true
+		},
+		{
+			"name": "erasequest",
+			"function": "buildin_erasequest",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28469,
+			"documented": true
+		},
+		{
+			"name": "completequest",
+			"function": "buildin_completequest",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28470,
+			"documented": true
+		},
+		{
+			"name": "checkquest",
+			"function": "buildin_checkquest",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28471,
+			"documented": true
+		},
+		{
+			"name": "isbegin_quest",
+			"function": "buildin_isbegin_quest",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28472,
+			"documented": true
+		},
+		{
+			"name": "changequest",
+			"function": "buildin_changequest",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28473,
+			"documented": true
+		},
+		{
+			"name": "showevent",
+			"function": "buildin_showevent",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28474,
+			"documented": true
+		},
+		{
+			"name": "questinfo_refresh",
+			"function": "buildin_questinfo_refresh",
+			"args": "?",
+			"deprecated": null,
+			"line": 28475,
+			"documented": true
+		},
+		{
+			"name": "getitembound",
+			"function": "buildin_getitem",
+			"args": "vii?",
+			"deprecated": null,
+			"line": 28478,
+			"documented": true
+		},
+		{
+			"name": "getitembound2",
+			"function": "buildin_getitem2",
+			"args": "viiiiiiiii?",
+			"deprecated": null,
+			"line": 28479,
+			"documented": true
+		},
+		{
+			"name": "countbound",
+			"function": "buildin_countbound",
+			"args": "??",
+			"deprecated": null,
+			"line": 28480,
+			"documented": true
+		},
+		{
+			"name": "party_create",
+			"function": "buildin_party_create",
+			"args": "s???",
+			"deprecated": null,
+			"line": 28483,
+			"documented": true
+		},
+		{
+			"name": "party_addmember",
+			"function": "buildin_party_addmember",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28484,
+			"documented": true
+		},
+		{
+			"name": "party_delmember",
+			"function": "buildin_party_delmember",
+			"args": "??",
+			"deprecated": null,
+			"line": 28485,
+			"documented": true
+		},
+		{
+			"name": "party_changeleader",
+			"function": "buildin_party_changeleader",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28486,
+			"documented": true
+		},
+		{
+			"name": "party_changeoption",
+			"function": "buildin_party_changeoption",
+			"args": "iii",
+			"deprecated": null,
+			"line": 28487,
+			"documented": true
+		},
+		{
+			"name": "party_destroy",
+			"function": "buildin_party_destroy",
+			"args": "i",
+			"deprecated": null,
+			"line": 28488,
+			"documented": true
+		},
+		{
+			"name": "clan_join",
+			"function": "buildin_clan_join",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28491,
+			"documented": true
+		},
+		{
+			"name": "clan_leave",
+			"function": "buildin_clan_leave",
+			"args": "?",
+			"deprecated": null,
+			"line": 28492,
+			"documented": true
+		},
+		{
+			"name": "transform",
+			"function": "buildin_montransform",
+			"args": "vi?????",
+			"deprecated": null,
+			"line": 28494,
+			"documented": true
+		},
+		{
+			"name": "active_transform",
+			"function": "buildin_montransform",
+			"args": "vi?????",
+			"deprecated": null,
+			"line": 28495,
+			"documented": true
+		},
+		{
+			"name": "vip_status",
+			"function": "buildin_vip_status",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28496,
+			"documented": true
+		},
+		{
+			"name": "vip_time",
+			"function": "buildin_vip_time",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28497,
+			"documented": true
+		},
+		{
+			"name": "bonus_script",
+			"function": "buildin_bonus_script",
+			"args": "si????",
+			"deprecated": null,
+			"line": 28498,
+			"documented": true
+		},
+		{
+			"name": "bonus_script_clear",
+			"function": "buildin_bonus_script_clear",
+			"args": "??",
+			"deprecated": null,
+			"line": 28499,
+			"documented": true
+		},
+		{
+			"name": "getgroupitem",
+			"function": "buildin_getgroupitem",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28500,
+			"documented": true
+		},
+		{
+			"name": "enable_command",
+			"function": "buildin_enable_command",
+			"args": "",
+			"deprecated": null,
+			"line": 28501,
+			"documented": true
+		},
+		{
+			"name": "disable_command",
+			"function": "buildin_disable_command",
+			"args": "",
+			"deprecated": null,
+			"line": 28502,
+			"documented": true
+		},
+		{
+			"name": "getguildmember",
+			"function": "buildin_getguildmember",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28503,
+			"documented": true
+		},
+		{
+			"name": "addspiritball",
+			"function": "buildin_addspiritball",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28504,
+			"documented": true
+		},
+		{
+			"name": "delspiritball",
+			"function": "buildin_delspiritball",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28505,
+			"documented": true
+		},
+		{
+			"name": "countspiritball",
+			"function": "buildin_countspiritball",
+			"args": "?",
+			"deprecated": null,
+			"line": 28506,
+			"documented": true
+		},
+		{
+			"name": "mergeitem",
+			"function": "buildin_mergeitem",
+			"args": "?",
+			"deprecated": null,
+			"line": 28507,
+			"documented": true
+		},
+		{
+			"name": "mergeitem2",
+			"function": "buildin_mergeitem2",
+			"args": "??",
+			"deprecated": null,
+			"line": 28508,
+			"documented": true
+		},
+		{
+			"name": "npcshopupdate",
+			"function": "buildin_npcshopupdate",
+			"args": "sii?",
+			"deprecated": null,
+			"line": 28509,
+			"documented": true
+		},
+		{
+			"name": "getattachedrid",
+			"function": "buildin_getattachedrid",
+			"args": "",
+			"deprecated": null,
+			"line": 28510,
+			"documented": true
+		},
+		{
+			"name": "getvar",
+			"function": "buildin_getvar",
+			"args": "vi",
+			"deprecated": null,
+			"line": 28511,
+			"documented": true
+		},
+		{
+			"name": "showscript",
+			"function": "buildin_showscript",
+			"args": "s??",
+			"deprecated": null,
+			"line": 28512,
+			"documented": true
+		},
+		{
+			"name": "ignoretimeout",
+			"function": "buildin_ignoretimeout",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28513,
+			"documented": true
+		},
+		{
+			"name": "geteleminfo",
+			"function": "buildin_geteleminfo",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28514,
+			"documented": true
+		},
+		{
+			"name": "opendressroom",
+			"function": "buildin_opendressroom",
+			"args": "?",
+			"deprecated": null,
+			"line": 28515,
+			"documented": true
+		},
+		{
+			"name": "navigateto",
+			"function": "buildin_navigateto",
+			"args": "s???????",
+			"deprecated": null,
+			"line": 28516,
+			"documented": true
+		},
+		{
+			"name": "getguildalliance",
+			"function": "buildin_getguildalliance",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28517,
+			"documented": true
+		},
+		{
+			"name": "adopt",
+			"function": "buildin_adopt",
+			"args": "vv",
+			"deprecated": null,
+			"line": 28518,
+			"documented": true
+		},
+		{
+			"name": "getexp2",
+			"function": "buildin_getexp2",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28519,
+			"documented": true
+		},
+		{
+			"name": "recalculatestat",
+			"function": "buildin_recalculatestat",
+			"args": "",
+			"deprecated": null,
+			"line": 28520,
+			"documented": true
+		},
+		{
+			"name": "hateffect",
+			"function": "buildin_hateffect",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28521,
+			"documented": true
+		},
+		{
+			"name": "has_hateffect",
+			"function": "buildin_has_hateffect",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28522,
+			"documented": true
+		},
+		{
+			"name": "getrandomoptinfo",
+			"function": "buildin_getrandomoptinfo",
+			"args": "i",
+			"deprecated": null,
+			"line": 28523,
+			"documented": true
+		},
+		{
+			"name": "getequiprandomoption",
+			"function": "buildin_getequiprandomoption",
+			"args": "iii?",
+			"deprecated": null,
+			"line": 28524,
+			"documented": true
+		},
+		{
+			"name": "setrandomoption",
+			"function": "buildin_setrandomoption",
+			"args": "iiiii?",
+			"deprecated": null,
+			"line": 28525,
+			"documented": true
+		},
+		{
+			"name": "needed_status_point",
+			"function": "buildin_needed_status_point",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28526,
+			"documented": true
+		},
+		{
+			"name": "needed_trait_point",
+			"function": "buildin_needed_trait_point",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28527,
+			"documented": false
+		},
+		{
+			"name": "jobcanentermap",
+			"function": "buildin_jobcanentermap",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28528,
+			"documented": true
+		},
+		{
+			"name": "openstorage2",
+			"function": "buildin_openstorage2",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28529,
+			"documented": true
+		},
+		{
+			"name": "unloadnpc",
+			"function": "buildin_unloadnpc",
+			"args": "s",
+			"deprecated": null,
+			"line": 28530,
+			"documented": true
+		},
+		{
+			"name": "duplicate",
+			"function": "buildin_duplicate",
+			"args": "ssii?????",
+			"deprecated": null,
+			"line": 28531,
+			"documented": true
+		},
+		{
+			"name": "duplicate_dynamic",
+			"function": "buildin_duplicate_dynamic",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28532,
+			"documented": true
+		},
+		{
+			"name": "agitstart3",
+			"function": "buildin_agitstart3",
+			"args": "",
+			"deprecated": null,
+			"line": 28535,
+			"documented": true
+		},
+		{
+			"name": "agitend3",
+			"function": "buildin_agitend3",
+			"args": "",
+			"deprecated": null,
+			"line": 28536,
+			"documented": true
+		},
+		{
+			"name": "agitcheck3",
+			"function": "buildin_agitcheck3",
+			"args": "",
+			"deprecated": null,
+			"line": 28537,
+			"documented": true
+		},
+		{
+			"name": "gvgon3",
+			"function": "buildin_gvgon3",
+			"args": "s",
+			"deprecated": null,
+			"line": 28538,
+			"documented": true
+		},
+		{
+			"name": "gvgoff3",
+			"function": "buildin_gvgoff3",
+			"args": "s",
+			"deprecated": null,
+			"line": 28539,
+			"documented": true
+		},
+		{
+			"name": "channel_create",
+			"function": "buildin_channel_create",
+			"args": "ss?????",
+			"deprecated": null,
+			"line": 28542,
+			"documented": true
+		},
+		{
+			"name": "channel_join",
+			"function": "buildin_channel_join",
+			"args": "s?",
+			"deprecated": null,
+			"line": 28543,
+			"documented": true
+		},
+		{
+			"name": "channel_setopt",
+			"function": "buildin_channel_setopt",
+			"args": "sii",
+			"deprecated": null,
+			"line": 28544,
+			"documented": true
+		},
+		{
+			"name": "channel_getopt",
+			"function": "buildin_channel_getopt",
+			"args": "si",
+			"deprecated": null,
+			"line": 28545,
+			"documented": true
+		},
+		{
+			"name": "channel_setcolor",
+			"function": "buildin_channel_setcolor",
+			"args": "si",
+			"deprecated": null,
+			"line": 28546,
+			"documented": true
+		},
+		{
+			"name": "channel_setpass",
+			"function": "buildin_channel_setpass",
+			"args": "ss",
+			"deprecated": null,
+			"line": 28547,
+			"documented": true
+		},
+		{
+			"name": "channel_setgroup",
+			"function": "buildin_channel_setgroup",
+			"args": "si*",
+			"deprecated": null,
+			"line": 28548,
+			"documented": true
+		},
+		{
+			"name": "channel_setgroup2",
+			"function": "buildin_channel_setgroup",
+			"args": "sr",
+			"deprecated": null,
+			"line": 28549,
+			"documented": true
+		},
+		{
+			"name": "channel_chat",
+			"function": "buildin_channel_chat",
+			"args": "ss?",
+			"deprecated": null,
+			"line": 28550,
+			"documented": true
+		},
+		{
+			"name": "channel_ban",
+			"function": "buildin_channel_ban",
+			"args": "si",
+			"deprecated": null,
+			"line": 28551,
+			"documented": true
+		},
+		{
+			"name": "channel_unban",
+			"function": "buildin_channel_unban",
+			"args": "si",
+			"deprecated": null,
+			"line": 28552,
+			"documented": true
+		},
+		{
+			"name": "channel_kick",
+			"function": "buildin_channel_kick",
+			"args": "sv",
+			"deprecated": null,
+			"line": 28553,
+			"documented": true
+		},
+		{
+			"name": "channel_delete",
+			"function": "buildin_channel_delete",
+			"args": "s",
+			"deprecated": null,
+			"line": 28554,
+			"documented": true
+		},
+		{
+			"name": "getitem3",
+			"function": "buildin_getitem2",
+			"args": "viiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28557,
+			"documented": true
+		},
+		{
+			"name": "getitembound3",
+			"function": "buildin_getitem2",
+			"args": "viiiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28558,
+			"documented": true
+		},
+		{
+			"name": "rentitem3",
+			"function": "buildin_rentitem2",
+			"args": "viiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28559,
+			"documented": true
+		},
+		{
+			"name": "makeitem3",
+			"function": "buildin_makeitem2",
+			"args": "visiiiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28560,
+			"documented": true
+		},
+		{
+			"name": "delitem3",
+			"function": "buildin_delitem2",
+			"args": "viiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28561,
+			"documented": true
+		},
+		{
+			"name": "countitem3",
+			"function": "buildin_countitem",
+			"args": "viiiiiiirrr?",
+			"deprecated": null,
+			"line": 28562,
+			"documented": true
+		},
+		{
+			"name": "getitem4",
+			"function": "buildin_getitem2",
+			"args": "viiiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28565,
+			"documented": true
+		},
+		{
+			"name": "getitembound4",
+			"function": "buildin_getitem2",
+			"args": "viiiiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28566,
+			"documented": true
+		},
+		{
+			"name": "rentitem4",
+			"function": "buildin_rentitem2",
+			"args": "viiiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28567,
+			"documented": true
+		},
+		{
+			"name": "makeitem4",
+			"function": "buildin_makeitem2",
+			"args": "visiiiiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28568,
+			"documented": true
+		},
+		{
+			"name": "delitem4",
+			"function": "buildin_delitem2",
+			"args": "viiiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28569,
+			"documented": true
+		},
+		{
+			"name": "countitem4",
+			"function": "buildin_countitem",
+			"args": "viiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28570,
+			"documented": true
+		},
+		{
+			"name": "achievementinfo",
+			"function": "buildin_achievementinfo",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28573,
+			"documented": true
+		},
+		{
+			"name": "achievementadd",
+			"function": "buildin_achievementadd",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28574,
+			"documented": true
+		},
+		{
+			"name": "achievementremove",
+			"function": "buildin_achievementremove",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28575,
+			"documented": true
+		},
+		{
+			"name": "achievementcomplete",
+			"function": "buildin_achievementcomplete",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28576,
+			"documented": true
+		},
+		{
+			"name": "achievementexists",
+			"function": "buildin_achievementexists",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28577,
+			"documented": true
+		},
+		{
+			"name": "achievementupdate",
+			"function": "buildin_achievementupdate",
+			"args": "iii?",
+			"deprecated": null,
+			"line": 28578,
+			"documented": true
+		},
+		{
+			"name": "getequiprefinecost",
+			"function": "buildin_getequiprefinecost",
+			"args": "iii?",
+			"deprecated": null,
+			"line": 28580,
+			"documented": true
+		},
+		{
+			"name": "refineui",
+			"function": "buildin_refineui",
+			"args": "?",
+			"deprecated": null,
+			"line": 28581,
+			"documented": true
+		},
+		{
+			"name": "round",
+			"function": "buildin_round",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28583,
+			"documented": true
+		},
+		{
+			"name": "ceil",
+			"function": "buildin_round",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28584,
+			"documented": true
+		},
+		{
+			"name": "floor",
+			"function": "buildin_round",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28585,
+			"documented": true
+		},
+		{
+			"name": "getequiptradability",
+			"function": "buildin_getequiptradability",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28586,
+			"documented": true
+		},
+		{
+			"name": "mail",
+			"function": "buildin_mail",
+			"args": "isss*",
+			"deprecated": null,
+			"line": 28587,
+			"documented": true
+		},
+		{
+			"name": "open_roulette",
+			"function": "buildin_open_roulette",
+			"args": "?",
+			"deprecated": null,
+			"line": 28588,
+			"documented": true
+		},
+		{
+			"name": "identifyall",
+			"function": "buildin_identifyall",
+			"args": "??",
+			"deprecated": null,
+			"line": 28589,
+			"documented": true
+		},
+		{
+			"name": "is_guild_leader",
+			"function": "buildin_is_guild_leader",
+			"args": "?",
+			"deprecated": null,
+			"line": 28590,
+			"documented": true
+		},
+		{
+			"name": "is_party_leader",
+			"function": "buildin_is_party_leader",
+			"args": "?",
+			"deprecated": null,
+			"line": 28591,
+			"documented": true
+		},
+		{
+			"name": "camerainfo",
+			"function": "buildin_camerainfo",
+			"args": "iii?",
+			"deprecated": null,
+			"line": 28592,
+			"documented": true
+		},
+		{
+			"name": "achievement_condition",
+			"function": "buildin_achievement_condition",
+			"args": "i",
+			"deprecated": null,
+			"line": 28594,
+			"documented": false
+		},
+		{
+			"name": "getinstancevar",
+			"function": "buildin_getinstancevar",
+			"args": "ri",
+			"deprecated": null,
+			"line": 28595,
+			"documented": true
+		},
+		{
+			"name": "getvariableofinstance",
+			"function": "buildin_getinstancevar",
+			"args": "ri",
+			"deprecated": "2021-12-13",
+			"line": 28596,
+			"documented": false
+		},
+		{
+			"name": "convertpcinfo",
+			"function": "buildin_convertpcinfo",
+			"args": "vi",
+			"deprecated": null,
+			"line": 28597,
+			"documented": true
+		},
+		{
+			"name": "isnpccloaked",
+			"function": "buildin_isnpccloaked",
+			"args": "??",
+			"deprecated": null,
+			"line": 28598,
+			"documented": true
+		},
+		{
+			"name": "rentalcountitem",
+			"function": "buildin_rentalcountitem",
+			"args": "v?",
+			"deprecated": null,
+			"line": 28600,
+			"documented": true
+		},
+		{
+			"name": "rentalcountitem2",
+			"function": "buildin_rentalcountitem",
+			"args": "viiiiiii?",
+			"deprecated": null,
+			"line": 28601,
+			"documented": true
+		},
+		{
+			"name": "rentalcountitem3",
+			"function": "buildin_rentalcountitem",
+			"args": "viiiiiiirrr?",
+			"deprecated": null,
+			"line": 28602,
+			"documented": true
+		},
+		{
+			"name": "rentalcountitem4",
+			"function": "buildin_rentalcountitem",
+			"args": "viiiiiiiirrr?",
+			"deprecated": null,
+			"line": 28603,
+			"documented": true
+		},
+		{
+			"name": "getenchantgrade",
+			"function": "buildin_getenchantgrade",
+			"args": "??",
+			"deprecated": null,
+			"line": 28605,
+			"documented": true
+		},
+		{
+			"name": "mob_setidleevent",
+			"function": "buildin_mob_setidleevent",
+			"args": "is",
+			"deprecated": null,
+			"line": 28607,
+			"documented": true
+		},
+		{
+			"name": "setinstancevar",
+			"function": "buildin_setinstancevar",
+			"args": "rvi",
+			"deprecated": null,
+			"line": 28609,
+			"documented": true
+		},
+		{
+			"name": "openstylist",
+			"function": "buildin_openstylist",
+			"args": "?",
+			"deprecated": null,
+			"line": 28610,
+			"documented": true
+		},
+		{
+			"name": "naviregisterwarp",
+			"function": "buildin_naviregisterwarp",
+			"args": "ssii",
+			"deprecated": null,
+			"line": 28613,
+			"documented": true
+		},
+		{
+			"name": "navihide",
+			"function": "buildin_navihide",
+			"args": "",
+			"deprecated": null,
+			"line": 28614,
+			"documented": true
+		},
+		{
+			"name": "getitempos",
+			"function": "buildin_getitempos",
+			"args": "",
+			"deprecated": null,
+			"line": 28616,
+			"documented": true
+		},
+		{
+			"name": "laphine_synthesis",
+			"function": "buildin_laphine_synthesis",
+			"args": "?",
+			"deprecated": null,
+			"line": 28617,
+			"documented": true
+		},
+		{
+			"name": "laphine_upgrade",
+			"function": "buildin_laphine_upgrade",
+			"args": "",
+			"deprecated": null,
+			"line": 28618,
+			"documented": true
+		},
+		{
+			"name": "randomoptgroup",
+			"function": "buildin_randomoptgroup",
+			"args": "i",
+			"deprecated": null,
+			"line": 28619,
+			"documented": true
+		},
+		{
+			"name": "open_quest_ui",
+			"function": "buildin_open_quest_ui",
+			"args": "??",
+			"deprecated": null,
+			"line": 28620,
+			"documented": true
+		},
+		{
+			"name": "openbank",
+			"function": "buildin_openbank",
+			"args": "?",
+			"deprecated": null,
+			"line": 28621,
+			"documented": true
+		},
+		{
+			"name": "getbaseexp_ratio",
+			"function": "buildin_getbaseexp_ratio",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28622,
+			"documented": true
+		},
+		{
+			"name": "getjobexp_ratio",
+			"function": "buildin_getjobexp_ratio",
+			"args": "i??",
+			"deprecated": null,
+			"line": 28623,
+			"documented": true
+		},
+		{
+			"name": "enchantgradeui",
+			"function": "buildin_enchantgradeui",
+			"args": "?",
+			"deprecated": null,
+			"line": 28624,
+			"documented": true
+		},
+		{
+			"name": "reputationui",
+			"function": "buildin_reputationui",
+			"args": "???",
+			"deprecated": null,
+			"line": 28626,
+			"documented": true
+		},
+		{
+			"name": "set_reputation_points",
+			"function": "buildin_set_reputation_points",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28627,
+			"documented": true
+		},
+		{
+			"name": "get_reputation_points",
+			"function": "buildin_get_reputation_points",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28628,
+			"documented": true
+		},
+		{
+			"name": "add_reputation_points",
+			"function": "buildin_add_reputation_points",
+			"args": "ii?",
+			"deprecated": null,
+			"line": 28629,
+			"documented": true
+		},
+		{
+			"name": "item_reform",
+			"function": "buildin_item_reform",
+			"args": "??",
+			"deprecated": null,
+			"line": 28630,
+			"documented": true
+		},
+		{
+			"name": "item_enchant",
+			"function": "buildin_item_enchant",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28631,
+			"documented": true
+		},
+		{
+			"name": "itemlink",
+			"function": "buildin_itemlink",
+			"args": "i?????????",
+			"deprecated": null,
+			"line": 28632,
+			"documented": true
+		},
+		{
+			"name": "mesitemlink",
+			"function": "buildin_mesitemlink",
+			"args": "v??",
+			"deprecated": null,
+			"line": 28633,
+			"documented": true
+		},
+		{
+			"name": "addfame",
+			"function": "buildin_addfame",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28634,
+			"documented": true
+		},
+		{
+			"name": "getfame",
+			"function": "buildin_getfame",
+			"args": "?",
+			"deprecated": null,
+			"line": 28635,
+			"documented": true
+		},
+		{
+			"name": "getfamerank",
+			"function": "buildin_getfamerank",
+			"args": "?",
+			"deprecated": null,
+			"line": 28636,
+			"documented": true
+		},
+		{
+			"name": "isdead",
+			"function": "buildin_isdead",
+			"args": "?",
+			"deprecated": null,
+			"line": 28637,
+			"documented": true
+		},
+		{
+			"name": "macro_detector",
+			"function": "buildin_macro_detector",
+			"args": "?",
+			"deprecated": null,
+			"line": 28638,
+			"documented": true
+		},
+		{
+			"name": "has_autoloot",
+			"function": "buildin_has_autoloot",
+			"args": "?",
+			"deprecated": null,
+			"line": 28639,
+			"documented": true
+		},
+		{
+			"name": "autoloot",
+			"function": "buildin_autoloot",
+			"args": "??",
+			"deprecated": null,
+			"line": 28640,
+			"documented": true
+		},
+		{
+			"name": "opentips",
+			"function": "buildin_opentips",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28641,
+			"documented": true
+		},
+		{
+			"name": "specialpopup",
+			"function": "buildin_specialpopup",
+			"args": "i",
+			"deprecated": null,
+			"line": 28642,
+			"documented": true
+		},
+		{
+			"name": "setdialogalign",
+			"function": "buildin_setdialogalign",
+			"args": "i",
+			"deprecated": null,
+			"line": 28644,
+			"documented": true
+		},
+		{
+			"name": "setdialogsize",
+			"function": "buildin_setdialogsize",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28645,
+			"documented": true
+		},
+		{
+			"name": "setdialogpos",
+			"function": "buildin_setdialogpos",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28646,
+			"documented": true
+		},
+		{
+			"name": "setdialogpospercent",
+			"function": "buildin_setdialogpospercent",
+			"args": "ii",
+			"deprecated": null,
+			"line": 28647,
+			"documented": true
+		},
+		{
+			"name": "permission_check",
+			"function": "buildin_permission_check",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28649,
+			"documented": true
+		},
+		{
+			"name": "permission_add",
+			"function": "buildin_permission_add",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28650,
+			"documented": true
+		},
+		{
+			"name": "permission_remove",
+			"function": "buildin_permission_add",
+			"args": "i?",
+			"deprecated": null,
+			"line": 28651,
+			"documented": true
+		},
+		{
+			"name": "mesitemicon",
+			"function": "buildin_mesitemicon",
+			"args": "v??",
+			"deprecated": null,
+			"line": 28653,
+			"documented": true
+		},
+		{
+			"name": "meshyperlink",
+			"function": "buildin_meshyperlink",
+			"args": "ss",
+			"deprecated": null,
+			"line": 28654,
+			"documented": true
+		},
+		{
+			"name": "mesemotion",
+			"function": "buildin_mesemotion",
+			"args": "i",
+			"deprecated": null,
+			"line": 28655,
+			"documented": true
+		}
+	]
+}

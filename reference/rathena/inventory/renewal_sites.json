@@ -1,0 +1,5775 @@
+{
+	"rathena_git_hash": "c1dfe21b8f4fed5d3bf2c86b84ee85d511cc57f6",
+	"total": 720,
+	"by_flag": {
+		"RENEWAL": 664,
+		"RENEWAL_ASPD": 18,
+		"RENEWAL_LVDMG": 2,
+		"RENEWAL_CAST": 17,
+		"PRERE": 1,
+		"RENEWAL_EXP": 10,
+		"RENEWAL_DROP": 11,
+		"RENEWAL_STAT": 1
+	},
+	"files": [
+		{
+			"file": "src/char/char.cpp",
+			"sites": [
+				{
+					"line": 2825,
+					"directive": "#if defined(RENEWAL) && PACKETVER >= 20151001",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3007,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3021,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/char/char_clif.cpp",
+			"sites": [
+				{
+					"line": 42,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/common/database.cpp",
+			"sites": [
+				{
+					"line": 197,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 201,
+					"directive": "#ifndef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/common/mapindex.hpp",
+			"sites": [
+				{
+					"line": 37,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/common/mmo.hpp",
+			"sites": [
+				{
+					"line": 104,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 132,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/config/const.hpp",
+			"sites": [
+				{
+					"line": 37,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 48,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 85,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 94,
+					"directive": "#ifdef RENEWAL_LVDMG",
+					"flags": [
+						"RENEWAL_LVDMG"
+					]
+				},
+				{
+					"line": 112,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 123,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/config/renewal.hpp",
+			"sites": [
+				{
+					"line": 9,
+					"directive": "#ifndef PRERE",
+					"flags": [
+						"PRERE"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/atcommand.cpp",
+			"sites": [
+				{
+					"line": 2119,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2133,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3093,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8122,
+					"directive": "#ifdef RENEWAL_EXP",
+					"flags": [
+						"RENEWAL_EXP"
+					]
+				},
+				{
+					"line": 8148,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8161,
+					"directive": "#ifdef RENEWAL_DROP",
+					"flags": [
+						"RENEWAL_DROP"
+					]
+				},
+				{
+					"line": 8732,
+					"directive": "#ifdef RENEWAL_DROP",
+					"flags": [
+						"RENEWAL_DROP"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/battle.cpp",
+			"sites": [
+				{
+					"line": 435,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 532,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 540,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 548,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 593,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 606,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 612,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 620,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 629,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 637,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 645,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 654,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 663,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 671,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 680,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 689,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 695,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 708,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 813,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 889,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 923,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1055,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1076,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1452,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1476,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1550,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1563,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1609,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1702,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1733,
+					"directive": "#ifdef RENEWAL // Flat +400% damage from melee",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1747,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1753,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1819,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1834,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1880,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1921,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2283,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2308,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2333,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2426,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2527,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2629,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2684,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2860,
+					"directive": "#ifdef RENEWAL // No bonus in renewal",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3082,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3091,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3175,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3259,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3287,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3335,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3410,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3422,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3561,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3581,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3612,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3618,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3671,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3677,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3686,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3705,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3788,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3800,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3805,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3810,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3835,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3840,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3853,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3860,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3866,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3872,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3880,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3972,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3981,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3986,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4066,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4071,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4094,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4107,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4116,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4124,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4140,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4182,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4196,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4225,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4321,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4419,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4430,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4509,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4517,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4546,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4553,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4587,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4614,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4620,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4626,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4700,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4706,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4800,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4808,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4826,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4844,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4901,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4918,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4922,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4933,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5003,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5037,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5256,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5298,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5454,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5463,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5471,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5484,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5492,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5618,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5630,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5645,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5720,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5749,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5772,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5780,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5876,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5903,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5915,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5945,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5953,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5993,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6004,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6024,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6042,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6092,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6120,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6182,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6192,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6200,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6240,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6353,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6382,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6397,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6412,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6437,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6448,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6508,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6607,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6627,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7194,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7245,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7253,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7268,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8274,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8314,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8390,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8685,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8888,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8895,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/battle.hpp",
+			"sites": [
+				{
+					"line": 91,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/clif.cpp",
+			"sites": [
+				{
+					"line": 1854,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3717,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4150,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4176,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7273,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8416,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9859,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10997,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12213,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12234,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12688,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12808,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12859,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12909,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12947,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 13025,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 13063,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 22411,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/elemental.cpp",
+			"sites": [
+				{
+					"line": 784,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 791,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/guild.cpp",
+			"sites": [
+				{
+					"line": 839,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1082,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2264,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/homunculus.cpp",
+			"sites": [
+				{
+					"line": 246,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 286,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1161,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1223,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1326,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/homunculus.hpp",
+			"sites": [
+				{
+					"line": 16,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/itemdb.cpp",
+			"sites": [
+				{
+					"line": 265,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1172,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4312,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4391,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/itemdb.hpp",
+			"sites": [
+				{
+					"line": 227,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3483,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/map.cpp",
+			"sites": [
+				{
+					"line": 74,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4265,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4291,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/mob.cpp",
+			"sites": [
+				{
+					"line": 2874,
+					"directive": "#ifdef RENEWAL_DROP",
+					"flags": [
+						"RENEWAL_DROP"
+					]
+				},
+				{
+					"line": 3086,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3165,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3201,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3211,
+					"directive": "#ifdef RENEWAL_EXP",
+					"flags": [
+						"RENEWAL_EXP"
+					]
+				},
+				{
+					"line": 3259,
+					"directive": "#ifdef RENEWAL_DROP",
+					"flags": [
+						"RENEWAL_DROP"
+					]
+				},
+				{
+					"line": 3448,
+					"directive": "#if defined(RENEWAL_EXP)",
+					"flags": [
+						"RENEWAL_EXP"
+					]
+				},
+				{
+					"line": 3478,
+					"directive": "#if defined(RENEWAL_DROP)",
+					"flags": [
+						"RENEWAL_DROP"
+					]
+				},
+				{
+					"line": 3493,
+					"directive": "#if defined(RENEWAL_DROP)",
+					"flags": [
+						"RENEWAL_DROP"
+					]
+				},
+				{
+					"line": 5113,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5791,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5834,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/party.cpp",
+			"sites": [
+				{
+					"line": 1242,
+					"directive": "#ifdef RENEWAL_EXP",
+					"flags": [
+						"RENEWAL_EXP"
+					]
+				},
+				{
+					"line": 1276,
+					"directive": "#ifdef RENEWAL_EXP",
+					"flags": [
+						"RENEWAL_EXP"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/pc.cpp",
+			"sites": [
+				{
+					"line": 1808,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1912,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1920,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3774,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3785,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3801,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3978,
+					"directive": "#ifndef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 4038,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4415,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 5003,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 6396,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6409,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6471,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6846,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6864,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7331,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7360,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8798,
+					"directive": "#ifdef RENEWAL_STAT",
+					"flags": [
+						"RENEWAL_STAT"
+					]
+				},
+				{
+					"line": 10268,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10295,
+					"directive": "#ifndef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 10310,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10393,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 10767,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10777,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12111,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12213,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12219,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12434,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 13316,
+					"directive": "#if defined(RENEWAL_DROP) || defined(RENEWAL_EXP)",
+					"flags": [
+						"RENEWAL_DROP",
+						"RENEWAL_EXP"
+					]
+				},
+				{
+					"line": 13721,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 13950,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 13990,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 14599,
+					"directive": "#if defined(RENEWAL_DROP) || defined(RENEWAL_EXP)",
+					"flags": [
+						"RENEWAL_DROP",
+						"RENEWAL_EXP"
+					]
+				},
+				{
+					"line": 15214,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/pc.hpp",
+			"sites": [
+				{
+					"line": 1238,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1771,
+					"directive": "#if defined(RENEWAL_DROP) || defined(RENEWAL_EXP)",
+					"flags": [
+						"RENEWAL_DROP",
+						"RENEWAL_EXP"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/script.cpp",
+			"sites": [
+				{
+					"line": 6079,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11177,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 14815,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 14904,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 23107,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 23114,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 23121,
+					"directive": "#ifdef RENEWAL_DROP",
+					"flags": [
+						"RENEWAL_DROP"
+					]
+				},
+				{
+					"line": 23128,
+					"directive": "#ifdef RENEWAL_EXP",
+					"flags": [
+						"RENEWAL_EXP"
+					]
+				},
+				{
+					"line": 23135,
+					"directive": "#ifdef RENEWAL_LVDMG",
+					"flags": [
+						"RENEWAL_LVDMG"
+					]
+				},
+				{
+					"line": 23142,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skill.cpp",
+			"sites": [
+				{
+					"line": 205,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 520,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 532,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 546,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 566,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 580,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 591,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 597,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 612,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 619,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 627,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 634,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 641,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 649,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 658,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 663,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 672,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 678,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 685,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 692,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 757,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 766,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1264,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1324,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1419,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1538,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1547,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2308,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2474,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2746,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2814,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2865,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3016,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3164,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3191,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3394,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3450,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3808,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4481,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4525,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4653,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5091,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5172,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5787,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5811,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5929,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5938,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6109,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6596,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6788,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6823,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6859,
+					"directive": "#ifndef RENEWAL // The storm gust counter was dropped in renewal",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6928,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6964,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6983,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7001,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7154,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7296,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7640,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7724,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8039,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8050,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8438,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8485,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8525,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8559,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8581,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8669,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9480,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9509,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9811,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9882,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9960,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9964,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10002,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10127,
+					"directive": "#ifndef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 10198,
+					"directive": "#ifndef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 10321,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10418,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10506,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10512,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10599,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10719,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11294,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11741,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11804,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11983,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12183,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12229,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12256,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 15222,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skill.hpp",
+			"sites": [
+				{
+					"line": 306,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 614,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/asurastrike.cpp",
+			"sites": [
+				{
+					"line": 20,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 56,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/basilica.cpp",
+			"sites": [
+				{
+					"line": 17,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 23,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/chaincrushcombo.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/glacierfist.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/impositiomanus.cpp",
+			"sites": [
+				{
+					"line": 11,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/impositiomanus.hpp",
+			"sites": [
+				{
+					"line": 10,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/kiexplosion.cpp",
+			"sites": [
+				{
+					"line": 36,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/occultimpaction.cpp",
+			"sites": [
+				{
+					"line": 17,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/ragingpalmstrike.cpp",
+			"sites": [
+				{
+					"line": 22,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/ragingquadrupleblow.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 28,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/ragingthrust.cpp",
+			"sites": [
+				{
+					"line": 27,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/redemptio.cpp",
+			"sites": [
+				{
+					"line": 37,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/suffragium.cpp",
+			"sites": [
+				{
+					"line": 11,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/suffragium.hpp",
+			"sites": [
+				{
+					"line": 10,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/acolyte/throwspiritsphere.cpp",
+			"sites": [
+				{
+					"line": 21,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 40,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/acousticrhythm.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/amp.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/arrowshower.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/battletheme.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/classicalpluck.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/downtempo.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/focusballet.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/focusedarrowstrike.cpp",
+			"sites": [
+				{
+					"line": 21,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 30,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/gypsyskiss.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/harmoniclick.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/hipshaker.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 27,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 33,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/impressiveriff.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/ladyluck.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/longingforfreedom.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/lullaby.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 34,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 40,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/magicstrings.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/melodystrike.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/mentalsensing.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/pangvoice.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/perfecttablature.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/phantasmicarrow.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/powerchord.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/slingingarrow.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/slowgrace.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/songoflutie.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/tarotcardoffate.cpp",
+			"sites": [
+				{
+					"line": 35,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 180,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/unchainedserenade.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 24,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 30,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/vulcanarrow.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/wandofhermode.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 20,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/archer/winkofcharm.cpp",
+			"sites": [
+				{
+					"line": 23,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/gunslinger/grounddrift.cpp",
+			"sites": [
+				{
+					"line": 21,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/gunslinger/piercingshot.cpp",
+			"sites": [
+				{
+					"line": 13,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/gunslinger/skill_factory_gunslinger.cpp",
+			"sites": [
+				{
+					"line": 90,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/gunslinger/spreadattack.cpp",
+			"sites": [
+				{
+					"line": 10,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/homunculus/homunculus_change.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/homunculus/homunculus_silentbreeze.cpp",
+			"sites": [
+				{
+					"line": 19,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/earthspike.cpp",
+			"sites": [
+				{
+					"line": 18,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/endowblaze.cpp",
+			"sites": [
+				{
+					"line": 26,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/endowquake.cpp",
+			"sites": [
+				{
+					"line": 26,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/endowtornado.cpp",
+			"sites": [
+				{
+					"line": 26,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/endowtsunami.cpp",
+			"sites": [
+				{
+					"line": 26,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/fireball.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/frostnova.cpp",
+			"sites": [
+				{
+					"line": 24,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/gravitationfield.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 21,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 35,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/heavensdrive.cpp",
+			"sites": [
+				{
+					"line": 21,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/lordofvermilion.cpp",
+			"sites": [
+				{
+					"line": 22,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 35,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/magicrod.cpp",
+			"sites": [
+				{
+					"line": 17,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/meteorstorm.cpp",
+			"sites": [
+				{
+					"line": 26,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/napalmvulcan.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/release.cpp",
+			"sites": [
+				{
+					"line": 24,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/sightblaster.cpp",
+			"sites": [
+				{
+					"line": 24,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/soulexhale.cpp",
+			"sites": [
+				{
+					"line": 41,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/spellbreaker.cpp",
+			"sites": [
+				{
+					"line": 39,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/stormgust.cpp",
+			"sites": [
+				{
+					"line": 21,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 31,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mage/thunderstorm.cpp",
+			"sites": [
+				{
+					"line": 18,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mercenary/mercenary_arrowshower.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mercenary/mercenary_focusedarrowstrike.cpp",
+			"sites": [
+				{
+					"line": 16,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mercenary/mercenary_magnumbreak.cpp",
+			"sites": [
+				{
+					"line": 40,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/mercenary/mercenary_spiralpierce.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/merchant/aciddemonstration.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 26,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/merchant/acidterror.cpp",
+			"sites": [
+				{
+					"line": 16,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 29,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/merchant/aidberserkpotion.cpp",
+			"sites": [
+				{
+					"line": 133,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 144,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/merchant/aidpotion.cpp",
+			"sites": [
+				{
+					"line": 128,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 139,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/merchant/bomb.cpp",
+			"sites": [
+				{
+					"line": 25,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/merchant/callhomunculus.cpp",
+			"sites": [
+				{
+					"line": 20,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/merchant/crazyuproar.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/merchant/crazyuproar.hpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/finalstrike.cpp",
+			"sites": [
+				{
+					"line": 35,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/improviseddefense.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/lightningstrikeofdestruction.cpp",
+			"sites": [
+				{
+					"line": 16,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/shadowslash.cpp",
+			"sites": [
+				{
+					"line": 17,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/spearofice.cpp",
+			"sites": [
+				{
+					"line": 17,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/throwhuumashuriken.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 22,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/throwkunai.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/throwshuriken.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/vanishingslash.cpp",
+			"sites": [
+				{
+					"line": 18,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/ninja/windblade.cpp",
+			"sites": [
+				{
+					"line": 16,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/npc/grounddrive.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/bowlingbash.cpp",
+			"sites": [
+				{
+					"line": 17,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 36,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/brandishspear.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 48,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 60,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/chargeattack.cpp",
+			"sites": [
+				{
+					"line": 18,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 33,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 43,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/gloriadomini.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 21,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 29,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/holycross.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/magnum.cpp",
+			"sites": [
+				{
+					"line": 53,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/shieldboomerang.cpp",
+			"sites": [
+				{
+					"line": 12,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 20,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/shieldchain.cpp",
+			"sites": [
+				{
+					"line": 17,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/swordman/spiralpierce.cpp",
+			"sites": [
+				{
+					"line": 23,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/backslide.cpp",
+			"sites": [
+				{
+					"line": 20,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/backstab.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 35,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 65,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 75,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 81,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/enchantdeadlypoison.cpp",
+			"sites": [
+				{
+					"line": 17,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/meteorassault.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/sightlessmind.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 35,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/sonicblow.cpp",
+			"sites": [
+				{
+					"line": 15,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 43,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/souldestroyer.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/throwvenomknife.cpp",
+			"sites": [
+				{
+					"line": 14,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/skills/thief/venomsplasher.cpp",
+			"sites": [
+				{
+					"line": 18,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 34,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/status.cpp",
+			"sites": [
+				{
+					"line": 101,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 1185,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1591,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2068,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2157,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2164,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2175,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2186,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2195,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2359,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 2428,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2449,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2455,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2468,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2476,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2485,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2498,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2510,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2617,
+					"directive": "#ifdef RENEWAL // Renewal formulas",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2725,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2902,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3186,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3236,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3357,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3932,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3959,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3970,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4000,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4016,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4339,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4481,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4486,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4528,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4586,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4603,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4616,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 4624,
+					"directive": "#ifndef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 4809,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4817,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4863,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5085,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5155,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5419,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5496,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5595,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5638,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5873,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5906,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5921,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5928,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 5978,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6006,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6013,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6021,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6028,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6043,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6050,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6067,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6074,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6089,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6140,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6240,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6374,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 6393,
+					"directive": "#ifndef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 6399,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 6405,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 6449,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6598,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6606,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6612,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6622,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6630,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6643,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6649,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6663,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6807,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6880,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 6941,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7021,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7094,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7155,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7302,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7318,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7344,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7358,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7443,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7517,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7583,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7665,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7755,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7761,
+					"directive": "#ifndef RENEWAL /// Steel Body does not provide 90 DEF in [RENEWAL]",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7776,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7860,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7875,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7880,
+					"directive": "#ifdef RENEWAL /// The VIT stat bonus is boosted by angelus [RENEWAL]",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7909,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7931,
+					"directive": "#ifndef RENEWAL /// Steel Body does not provide 90 MDEF in [RENEWAL]",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 7984,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8004,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8069,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8227,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 8258,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8290,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8303,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8484,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 8497,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9339,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9657,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9664,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9682,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9692,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9702,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9712,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9722,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9732,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9745,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9756,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9766,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9870,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9886,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9902,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 9959,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10282,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10894,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10925,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10988,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 10999,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11015,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11029,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11059,
+					"directive": "#ifndef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 11075,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11445,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11495,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11596,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11610,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11681,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 11788,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12499,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 12635,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 13378,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 13738,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 14100,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 14416,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 14448,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 14456,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 14472,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 15379,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 15584,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/status.hpp",
+			"sites": [
+				{
+					"line": 33,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3365,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3386,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3397,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 3507,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 3724,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/unit.cpp",
+			"sites": [
+				{
+					"line": 1393,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2381,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2404,
+					"directive": "#ifndef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 2414,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2420,
+					"directive": "#ifndef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 2468,
+					"directive": "#ifndef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 2481,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2489,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 2701,
+					"directive": "#ifndef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 2753,
+					"directive": "#ifndef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4149,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/map/wathena_recorder.cpp",
+			"sites": [
+				{
+					"line": 44,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 385,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 405,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 990,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 1468,
+					"directive": "#if defined(RENEWAL_EXP) || defined(RENEWAL_DROP)",
+					"flags": [
+						"RENEWAL_DROP",
+						"RENEWAL_EXP"
+					]
+				},
+				{
+					"line": 1638,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/tool/csv2yaml.cpp",
+			"sites": [
+				{
+					"line": 344,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 494,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 505,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				},
+				{
+					"line": 1247,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 1852,
+					"directive": "#ifdef RENEWAL_CAST",
+					"flags": [
+						"RENEWAL_CAST"
+					]
+				},
+				{
+					"line": 2773,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 4426,
+					"directive": "#ifdef RENEWAL_ASPD",
+					"flags": [
+						"RENEWAL_ASPD"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/tool/csv2yaml.hpp",
+			"sites": [
+				{
+					"line": 201,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		},
+		{
+			"file": "src/tool/yaml2sql.cpp",
+			"sites": [
+				{
+					"line": 222,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 406,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 440,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 458,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 468,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 474,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 519,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				},
+				{
+					"line": 789,
+					"directive": "#ifdef RENEWAL",
+					"flags": [
+						"RENEWAL"
+					]
+				}
+			]
+		}
+	]
+}

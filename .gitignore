@@ -1,0 +1,23 @@
+# Build output
+/bin/
+/dist/
+*.wasm
+
+# Go
+/vendor/
+coverage.out
+
+# Node
+node_modules/
+.vite/
+
+# Local data
+/generated/
+/data/
+.env
+*.log
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/

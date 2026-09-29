@@ -1,0 +1,9 @@
+{
+	"system": "level_penalty",
+	"mode": "pre-renewal",
+	"rathena_git_hash": "e985006171d2eb320ee512a653f4c83aea3d81b6",
+	"data_path": "pre-re/",
+	"circular_area": false,
+	"note": "This mode has no level penalty. RENEWAL_EXP and RENEWAL_DROP are not defined.",
+	"cases": []
+}

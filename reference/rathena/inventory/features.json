@@ -1,0 +1,6 @@
+{
+	"rathena_git_hash": "c1dfe21b8f4fed5d3bf2c86b84ee85d511cc57f6",
+	"note": "Files in src/map and db that section 11 of doc/wathena/strategy.md does not mention. Each needs a tier or a note that another entry covers it.",
+	"missing_sources": [],
+	"missing_data": []
+}
