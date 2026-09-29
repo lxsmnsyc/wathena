@@ -6,6 +6,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
 	"github.com/lxsmnsyc/wathena/internal/assets/placeholder"
+	"github.com/lxsmnsyc/wathena/internal/assets/wpal"
 	"github.com/lxsmnsyc/wathena/internal/grf"
 )
 
@@ -13,6 +14,7 @@ import (
 // version, so cached outputs from the old converter are not reused.
 const (
 	spriteConverter      = "grf-sprite-1"
+	paletteConverter     = "grf-palette-1"
 	placeholderConverter = "placeholder-1"
 )
 
@@ -52,18 +54,47 @@ func (g *GRF) Items() ([]Item, error) {
 		return nil, err
 	}
 	g.client = c
+	tables, err := grfimport.LoadTables(c)
+	if err != nil {
+		return nil, err
+	}
 
-	type pair struct{ spr, act grf.Source }
+	// Sprites come in spr and act pairs with the same path and names.
+	type pair struct {
+		spr, act grf.Source
+		names    []string
+	}
 	pairs := map[string]*pair{}
+	var items []Item
 	for _, s := range c.Files() {
-		name, ok := grfimport.SpriteName(s.Entry.Name)
-		if !ok {
+		if name, ok := grfimport.PaletteName(s.Entry.Name); ok {
+			items = append(items, Item{
+				Name:     name,
+				Ext:      "wpal",
+				CacheKey: paletteConverter + "|" + sourceKey(s),
+				Produce: func() ([]byte, error) {
+					b, err := c.ReadFile(s)
+					if err != nil {
+						return nil, err
+					}
+					p, err := wpal.FromRO(b)
+					if err != nil {
+						return nil, err
+					}
+					return p.Encode(), nil
+				},
+			})
 			continue
 		}
-		p := pairs[name]
+		names := tables.SpriteNames(s.Entry.Name)
+		if len(names) == 0 {
+			continue
+		}
+		base := strings.TrimSuffix(strings.TrimSuffix(s.Entry.Key, ".spr"), ".act")
+		p := pairs[base]
 		if p == nil {
-			p = &pair{}
-			pairs[name] = p
+			p = &pair{names: names}
+			pairs[base] = p
 		}
 		if strings.HasSuffix(s.Entry.Key, ".spr") {
 			p.spr = s
@@ -71,31 +102,29 @@ func (g *GRF) Items() ([]Item, error) {
 			p.act = s
 		}
 	}
-	var items []Item
-	for name, p := range pairs {
+	for _, p := range pairs {
 		if p.spr.Entry.Key == "" || p.act.Entry.Key == "" {
 			continue
 		}
-		items = append(items, Item{
-			Name:     name,
-			Ext:      "wspr",
-			CacheKey: spriteConverter + "|" + sourceKey(p.spr) + "|" + sourceKey(p.act),
-			Produce: func() ([]byte, error) {
-				sprData, err := c.ReadFile(p.spr)
-				if err != nil {
-					return nil, err
-				}
-				actData, err := c.ReadFile(p.act)
-				if err != nil {
-					return nil, err
-				}
-				s, err := grfimport.ConvertSprite(sprData, actData, grfimport.EventName)
-				if err != nil {
-					return nil, err
-				}
-				return s.Encode()
-			},
-		})
+		produce := func() ([]byte, error) {
+			sprData, err := c.ReadFile(p.spr)
+			if err != nil {
+				return nil, err
+			}
+			actData, err := c.ReadFile(p.act)
+			if err != nil {
+				return nil, err
+			}
+			s, err := grfimport.ConvertSprite(sprData, actData, grfimport.EventName)
+			if err != nil {
+				return nil, err
+			}
+			return s.Encode()
+		}
+		key := spriteConverter + "|" + sourceKey(p.spr) + "|" + sourceKey(p.act)
+		for _, name := range p.names {
+			items = append(items, Item{Name: name, Ext: "wspr", CacheKey: key + "|" + name, Produce: produce})
+		}
 	}
 	return items, nil
 }

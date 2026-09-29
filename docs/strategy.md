@@ -1680,7 +1680,9 @@ Rules:
 - **Incremental.** The build keeps a cache keyed by GRF entry (file name, size, and offset). After a client update, only changed entries are converted again. Unchanged outputs keep their hashes, so players' browsers keep their cached copies.
 - **Converter versions.** Each asset type has a converter version. A new version converts only that type again.
 - **Scope flags.** Operators of procedural-only worlds can leave out classic maps with `--no-classic-maps`, which saves about 0.75 GB.
-- **Parsers are untrusted code paths.** Operators may use GRFs downloaded from the internet. Every parser checks lengths before reading, and has fuzz tests. `lub` files are never run.
+- **Parsers are untrusted code paths.** Operators may use GRFs downloaded from the internet. Every parser checks lengths before reading, and has fuzz tests.
+- **Client tables are read, never run.** Some names come from the client's compiled Lua 5.1 tables in the GRF, such as `AccNameTable`, which maps headgear view IDs to sprite names. The importer reads them with an evaluator that accepts only the instructions that build tables: constants, tables, and globals. A function call, jump, or loop stops it with an error. It has a step limit and fuzz tests.
+- **Player body sprite names are not in the tables.** The official client has them in its program, as a mix of Korean and English names such as `검사_남` and `arch_mage_남`. The importer gets them from `jobs.yml` (section 10.5) instead.
 - **Encrypted entries** use a Go port of rAthena's DES decoder (`src/common/grfio.cpp`).
 - **Damaged entries.** One kRO entry (`data\wav\worm_tail_damage.wav`) records a compressed size 11 bytes too small, so its zlib checksum reads the next entry's bytes. The official client still loads it. The reader retries such entries by reading the deflate stream to its end without the checksum, and accepts the result only if it has exactly the recorded size. The build reports how many entries needed this.
 - **Versions.** GRF version 0x200 is supported, which every current client uses. Version 0x300 (64-bit offsets) can be added when an operator needs it. Other versions stop the build with a clear error.
@@ -1791,9 +1793,9 @@ The official client keeps many tables inside its executable and its Lua files. T
 
 | Table | Content | Source for the minimum set |
 |---|---|---|
-| `jobs.yml` | Job ID to look name, per gender, plus mount and costume looks. Look names form sprite names such as `sprite/body/<look>/<sex>`. | rAthena job constants and roBrowser's job tables. |
+| `jobs.yml` | Job ID to look name, per gender, plus mount and costume looks. Look names form sprite names such as `sprite/body/<look>/<sex>`. Each look also lists its GRF sprite name, such as `검사`, for the GRF importer. | rAthena job constants and roBrowser's job tables. |
 | `weapons.yml` | Weapon type to sprite name, attack sound, and attack motion. | roBrowser's weapon tables. |
-| `headgear.yml` | Headgear view ID to accessory sprite name. | Item `View` values in rAthena's `item_db` and roBrowser's accessory table. |
+| `headgear.yml` | Headgear view IDs used by `core`. Sprites are named by view ID, such as `sprite/headgear/f/1`. The GRF importer reads the sprite file names from the client's `AccNameTable`. | Item `View` values in rAthena's `item_db`. |
 | `monsters.yml` | Monster ID to sprite name, size, and sounds. | `mob_db` `AegisName` values, which match most sprite names. |
 | `npcs.yml` | NPC sprite ID to sprite name. | rAthena NPC sprite constants and roBrowser's NPC table. |
 | `items.yml` | Item ID to icon, illustration, and display name. | `item_db` names and resource names. |

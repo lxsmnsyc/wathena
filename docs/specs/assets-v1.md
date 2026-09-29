@@ -25,7 +25,7 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 |---|---|---|---|
 | `sprite/body/<look>/<sex>` | Sprite | `sprite/body/swordman/f` | Character body. `<look>` is the look name from `jobs.yml`, including mount and costume looks. `<sex>` is `m` or `f`. |
 | `sprite/head/<sex>/<style>` | Sprite | `sprite/head/m/12` | Hairstyle. |
-| `sprite/headgear/<sex>/<name>` | Sprite | `sprite/headgear/f/goggle` | Headgear, by the name in `headgear.yml`. |
+| `sprite/headgear/<sex>/<view>` | Sprite | `sprite/headgear/f/1` | Headgear, by view ID, the number items use in rAthena's `item_db` `View` field. |
 | `sprite/weapon/<look>/<sex>/<name>` | Sprite | `sprite/weapon/swordman/m/sword` | Weapon drawn on a character. |
 | `sprite/shield/<look>/<sex>/<name>` | Sprite | | Shield drawn on a character. |
 | `sprite/garment/<look>/<sex>/<name>` | Sprite | | Garment drawn on a character. |

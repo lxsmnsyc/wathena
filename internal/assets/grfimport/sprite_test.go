@@ -166,6 +166,16 @@ func TestNames(t *testing.T) {
 			t.Errorf("SpriteName(%q) = %q, want no name", in, got)
 		}
 	}
+	if got := (*Tables)(nil).SpriteNames(`data\sprite\인간족\머리통\여\07_여.spr`); len(got) != 1 || got[0] != "sprite/head/f/7" {
+		t.Errorf("head names %v", got)
+	}
+	tb := &Tables{headgear: map[string][]int{"남/남_고글": {1, 5}}}
+	if got := tb.SpriteNames(`data\sprite\악세사리\남\남_고글.act`); len(got) != 2 || got[0] != "sprite/headgear/m/1" || got[1] != "sprite/headgear/m/5" {
+		t.Errorf("headgear names %v", got)
+	}
+	if got, ok := PaletteName(`data\palette\머리\머리6_여_2.pal`); !ok || got != "palette/hair/f/6/2" {
+		t.Errorf("hair palette %q", got)
+	}
 	if got := EventName("atk"); got != "atk" {
 		t.Errorf("EventName(atk) = %q", got)
 	}
