@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	clientdata "github.com/lxsmnsyc/wathena/client/data"
 	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
 	"github.com/lxsmnsyc/wathena/internal/assets/placeholder"
 	"github.com/lxsmnsyc/wathena/internal/assets/wpal"
@@ -54,7 +55,11 @@ func (g *GRF) Items() ([]Item, error) {
 		return nil, err
 	}
 	g.client = c
-	tables, err := grfimport.LoadTables(c)
+	jobs, err := clientdata.LoadJobs()
+	if err != nil {
+		return nil, err
+	}
+	tables, err := grfimport.LoadTables(c, jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -67,23 +72,21 @@ func (g *GRF) Items() ([]Item, error) {
 	pairs := map[string]*pair{}
 	var items []Item
 	for _, s := range c.Files() {
-		if name, ok := grfimport.PaletteName(s.Entry.Name); ok {
-			items = append(items, Item{
-				Name:     name,
-				Ext:      "wpal",
-				CacheKey: paletteConverter + "|" + sourceKey(s),
-				Produce: func() ([]byte, error) {
-					b, err := c.ReadFile(s)
-					if err != nil {
-						return nil, err
-					}
-					p, err := wpal.FromRO(b)
-					if err != nil {
-						return nil, err
-					}
-					return p.Encode(), nil
-				},
-			})
+		if names := tables.PaletteNames(s.Entry.Name); len(names) > 0 {
+			produce := func() ([]byte, error) {
+				b, err := c.ReadFile(s)
+				if err != nil {
+					return nil, err
+				}
+				p, err := wpal.FromRO(b)
+				if err != nil {
+					return nil, err
+				}
+				return p.Encode(), nil
+			}
+			for _, name := range names {
+				items = append(items, Item{Name: name, Ext: "wpal", CacheKey: paletteConverter + "|" + sourceKey(s) + "|" + name, Produce: produce})
+			}
 			continue
 		}
 		names := tables.SpriteNames(s.Entry.Name)

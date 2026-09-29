@@ -6,7 +6,7 @@ Command-line tool for worlds, mods, maps, and assets. See docs/strategy.md, sect
 
 `wactl assets build --source <source> [--source <source> ...] --out <folder> [--fast]`
 
-Builds assets from sources, applied in order, into an output folder with a manifest (docs/specs/assets-v1.md). Sources are `placeholder` and `grf:<client folder>`. The GRF source converts monster, NPC, head, and headgear sprites and hair palettes so far. Rebuilds reuse unchanged assets from the cache in the output folder. `--fast` uses a low Brotli level for development builds.
+Builds assets from sources, applied in order, into an output folder with a manifest (docs/specs/assets-v1.md). Sources are `placeholder` and `grf:<client folder>`. The GRF source converts monster, NPC, body, head, headgear, and weapon sprites, and hair and body palettes, for human and doram characters. Body and weapon names come from `client/data/jobs.yml`. Rebuilds reuse unchanged assets from the cache in the output folder. `--fast` uses a low Brotli level for development builds.
 
 `wactl assets scan --client <folder> [--read]`
 

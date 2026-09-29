@@ -1,0 +1,1239 @@
+# Job looks for the web client (strategy section 10.5, assets-v1).
+#
+# A look is one body sprite: sprite/body/<look>/<m|f> and palette/body/<look>/<m|f>/<n>.
+# grf_sprite is the sprite's file name in the game client, which the GRF importer uses.
+# race is the sprite folder: human (인간족) or doram (도람족).
+#
+# Jobs map rAthena job IDs to a look, and to the look used while riding a mount.
+#
+# Sprite names and mount looks are from roBrowserLegacy (GPL-3.0),
+# src/DB/Jobs/JobNameTable.js and AllMountTable.js at commit 58759ab22d1d56da7f6719ee45cb475f7e851227,
+# by Vincent Thibault, Antares, and contributors.
+# Changes:
+# - elemental_master_riding uses the spelling in Gravity's files, elemetal_master_riding.
+# - Baby, high, and second forms without their own entry use their base job's look.
+# - JOB_ARCHBISHOP_2ND, spelled ARCH_BISHOP_2ND in roBrowser, uses the archbishop look.
+#
+# This file was generated once from those sources. Edit it by hand from now on.
+#
+# Jobs with no player sprite name, left out:
+# - JOB_HANBOK
+# - JOB_OKTOBERFEST
+# - JOB_SUMMER2
+# - JOB_GANGSI
+# - JOB_DEATH_KNIGHT
+# - JOB_DARK_COLLECTOR
+# - JOB_SECOND_JOB_START
+# - JOB_SECOND_JOB_END
+
+looks:
+  - look: abyss_chaser
+    grf_sprite: "abyss_chaser"
+    race: human
+  - look: abyss_chaser_riding
+    grf_sprite: "abyss_chaser_riding"
+    race: human
+  - look: acolyte
+    grf_sprite: "성직자"
+    race: human
+  - look: alchemist
+    grf_sprite: "연금술사"
+    race: human
+  - look: alchemist_h
+    grf_sprite: "크리에이터"
+    race: human
+  - look: arch_mage
+    grf_sprite: "arch_mage"
+    race: human
+  - look: arch_mage_riding
+    grf_sprite: "arch_mage_riding"
+    race: human
+  - look: archbishop
+    grf_sprite: "아크비숍"
+    race: human
+  - look: archer
+    grf_sprite: "궁수"
+    race: human
+  - look: assassin
+    grf_sprite: "어세신"
+    race: human
+  - look: assassin_h
+    grf_sprite: "어쌔신크로스"
+    race: human
+  - look: bard
+    grf_sprite: "바드"
+    race: human
+  - look: bard_h
+    grf_sprite: "클라운"
+    race: human
+  - look: biolo
+    grf_sprite: "biolo"
+    race: human
+  - look: biolo_riding
+    grf_sprite: "biolo_riding"
+    race: human
+  - look: blacksmith
+    grf_sprite: "제철공"
+    race: human
+  - look: blacksmith_h
+    grf_sprite: "화이트스미스"
+    race: human
+  - look: cardinal
+    grf_sprite: "cardinal"
+    race: human
+  - look: cardinal_riding
+    grf_sprite: "cardinal_riding"
+    race: human
+  - look: crusader
+    grf_sprite: "크루세이더"
+    race: human
+  - look: crusader2
+    grf_sprite: "신페코크루세이더"
+    race: human
+  - look: crusader2_h
+    grf_sprite: "페코팔라딘"
+    race: human
+  - look: crusader_h
+    grf_sprite: "팔라딘"
+    race: human
+  - look: dancer
+    grf_sprite: "무희"
+    race: human
+  - look: dancer_h
+    grf_sprite: "집시"
+    race: human
+  - look: do_summoner
+    grf_sprite: "summoner"
+    race: doram
+  - look: dog_assa_x
+    grf_sprite: "켈베로스어쎄신크로스"
+    race: human
+  - look: dog_assassin
+    grf_sprite: "켈베로스어쎄신"
+    race: human
+  - look: dog_chaser
+    grf_sprite: "켈베로스쉐도우체이서"
+    race: human
+  - look: dog_g_cross
+    grf_sprite: "켈베로스길로틴크로스"
+    race: human
+  - look: dog_rogue
+    grf_sprite: "켈베로스로그"
+    race: human
+  - look: dog_stalker
+    grf_sprite: "켈베로스스토커"
+    race: human
+  - look: dog_thief
+    grf_sprite: "켈베로스도둑"
+    race: human
+  - look: dragon_knight
+    grf_sprite: "dragon_knight"
+    race: human
+  - look: dragon_knight2
+    grf_sprite: "dragon_knight_chicken"
+    race: human
+  - look: dragon_knight_riding
+    grf_sprite: "dragon_knight_riding"
+    race: human
+  - look: elemental_master
+    grf_sprite: "elemetal_master"
+    race: human
+  - look: elemental_master_riding
+    grf_sprite: "elemetal_master_riding"
+    race: human
+  - look: fox_hwiz
+    grf_sprite: "여우하이위저드"
+    race: human
+  - look: fox_magician
+    grf_sprite: "여우마법사"
+    race: human
+  - look: fox_prof
+    grf_sprite: "여우프로페서"
+    race: human
+  - look: fox_sage
+    grf_sprite: "여우세이지"
+    race: human
+  - look: fox_sorcerer
+    grf_sprite: "여우소서러"
+    race: human
+  - look: fox_warlock
+    grf_sprite: "여우워록"
+    race: human
+  - look: fox_wiz
+    grf_sprite: "여우위저드"
+    race: human
+  - look: frog_kagerou
+    grf_sprite: "frog_kagerou"
+    race: human
+  - look: frog_linker
+    grf_sprite: "두꺼비소울링커"
+    race: human
+  - look: frog_ninja
+    grf_sprite: "노비스포링"
+    race: human
+  - look: frog_oboro
+    grf_sprite: "frog_oboro"
+    race: human
+  - look: genetic
+    grf_sprite: "제네릭"
+    race: human
+  - look: guillotine_cross
+    grf_sprite: "길로틴크로스"
+    race: human
+  - look: gunslinger
+    grf_sprite: "건너"
+    race: human
+  - look: hunter
+    grf_sprite: "헌터"
+    race: human
+  - look: hunter_h
+    grf_sprite: "스나이퍼"
+    race: human
+  - look: hyper_novice
+    grf_sprite: "hyper_novice"
+    race: human
+  - look: imperial_guard
+    grf_sprite: "imperial_guard"
+    race: human
+  - look: imperial_guard2
+    grf_sprite: "imperial_guard_chicken"
+    race: human
+  - look: imperial_guard_riding
+    grf_sprite: "imperial_guard_riding"
+    race: human
+  - look: inquisitor
+    grf_sprite: "inquisitor"
+    race: human
+  - look: inquisitor_riding
+    grf_sprite: "inquisitor_riding"
+    race: human
+  - look: kagerou
+    grf_sprite: "kagerou"
+    race: human
+  - look: knight
+    grf_sprite: "기사"
+    race: human
+  - look: knight2
+    grf_sprite: "페코페코_기사"
+    race: human
+  - look: knight2_h
+    grf_sprite: "로드페코"
+    race: human
+  - look: knight_h
+    grf_sprite: "로드나이트"
+    race: human
+  - look: linker
+    grf_sprite: "소울링커"
+    race: human
+  - look: lion_crusader
+    grf_sprite: "사자크루세이더"
+    race: human
+  - look: lion_crusader_h
+    grf_sprite: "사자팔라딘"
+    race: human
+  - look: lion_knight
+    grf_sprite: "사자기사"
+    race: human
+  - look: lion_knight_h
+    grf_sprite: "사자로드나이트"
+    race: human
+  - look: lion_royal_guard
+    grf_sprite: "사자로얄가드"
+    race: human
+  - look: lion_rune_knight
+    grf_sprite: "사자룬나이트"
+    race: human
+  - look: magician
+    grf_sprite: "마법사"
+    race: human
+  - look: married
+    grf_sprite: "결혼"
+    race: human
+  - look: mechanic
+    grf_sprite: "미케닉"
+    race: human
+  - look: mechanic2
+    grf_sprite: "마도기어"
+    race: human
+  - look: meister
+    grf_sprite: "meister"
+    race: human
+  - look: meister2
+    grf_sprite: "meister_madogear2"
+    race: human
+  - look: meister_riding
+    grf_sprite: "meister_riding"
+    race: human
+  - look: merchant
+    grf_sprite: "상인"
+    race: human
+  - look: minstrel
+    grf_sprite: "민스트럴"
+    race: human
+  - look: monk
+    grf_sprite: "몽크"
+    race: human
+  - look: monk_h
+    grf_sprite: "챔피온"
+    race: human
+  - look: night_watch
+    grf_sprite: "night_watch"
+    race: human
+  - look: ninja
+    grf_sprite: "닌자"
+    race: human
+  - look: novice
+    grf_sprite: "초보자"
+    race: human
+  - look: oboro
+    grf_sprite: "oboro"
+    race: human
+  - look: ostrich_archer
+    grf_sprite: "타조궁수"
+    race: human
+  - look: ostrich_bard
+    grf_sprite: "타조바드"
+    race: human
+  - look: ostrich_crown
+    grf_sprite: "타조크라운"
+    race: human
+  - look: ostrich_dancer
+    grf_sprite: "타조무희"
+    race: human
+  - look: ostrich_hunter
+    grf_sprite: "타조헌터"
+    race: human
+  - look: ostrich_minstrel
+    grf_sprite: "타조민스트럴"
+    race: human
+  - look: ostrich_ranger
+    grf_sprite: "타조레인져"
+    race: human
+  - look: ostrich_sniper
+    grf_sprite: "타조스나이퍼"
+    race: human
+  - look: ostrich_wander
+    grf_sprite: "타조원더러"
+    race: human
+  - look: ostrich_zipsi
+    grf_sprite: "타조짚시"
+    race: human
+  - look: peco_gunner
+    grf_sprite: "페코건너"
+    race: human
+  - look: peco_rebellion
+    grf_sprite: "peco_rebellion"
+    race: human
+  - look: peco_sword
+    grf_sprite: "페코검사"
+    race: human
+  - look: pig_alche
+    grf_sprite: "연금술사멧돼지"
+    race: human
+  - look: pig_blacksmith
+    grf_sprite: "제철공멧돼지"
+    race: human
+  - look: pig_creator
+    grf_sprite: "크리에이터멧돼지"
+    race: human
+  - look: pig_genetic
+    grf_sprite: "제네릭멧돼지"
+    race: human
+  - look: pig_mechanic
+    grf_sprite: "미케닉멧돼지"
+    race: human
+  - look: pig_merchant
+    grf_sprite: "상인멧돼지"
+    race: human
+  - look: pig_whitesmith
+    grf_sprite: "화이트스미스멧돼지"
+    race: human
+  - look: poring_novice
+    grf_sprite: "노비스포링"
+    race: human
+  - look: poring_snovice
+    grf_sprite: "슈퍼노비스포링"
+    race: human
+  - look: poring_star
+    grf_sprite: "권성포링"
+    race: human
+  - look: poring_taekwon
+    grf_sprite: "태권소년포링"
+    race: human
+  - look: priest
+    grf_sprite: "프리스트"
+    race: human
+  - look: priest_h
+    grf_sprite: "하이프리"
+    race: human
+  - look: ranger
+    grf_sprite: "레인져"
+    race: human
+  - look: ranger2
+    grf_sprite: "레인져늑대"
+    race: human
+  - look: rebellion
+    grf_sprite: "rebellion"
+    race: human
+  - look: rogue
+    grf_sprite: "로그"
+    race: human
+  - look: rogue_h
+    grf_sprite: "스토커"
+    race: human
+  - look: royal_guard
+    grf_sprite: "가드"
+    race: human
+  - look: royal_guard2
+    grf_sprite: "그리폰가드"
+    race: human
+  - look: rune_knight
+    grf_sprite: "룬나이트"
+    race: human
+  - look: rune_knight2
+    grf_sprite: "룬나이트쁘띠"
+    race: human
+  - look: sage
+    grf_sprite: "세이지"
+    race: human
+  - look: sage_h
+    grf_sprite: "프로페서"
+    race: human
+  - look: shadow_chaser
+    grf_sprite: "쉐도우체이서"
+    race: human
+  - look: shadow_cross
+    grf_sprite: "shadow_cross"
+    race: human
+  - look: shadow_cross_riding
+    grf_sprite: "shadow_cross_riding"
+    race: human
+  - look: sheep_aco
+    grf_sprite: "복사알파카"
+    race: human
+  - look: sheep_arcb
+    grf_sprite: "아크비숍알파카"
+    race: human
+  - look: sheep_champ
+    grf_sprite: "챔피온알파카"
+    race: human
+  - look: sheep_hpriest
+    grf_sprite: "하이프리스트알파카"
+    race: human
+  - look: sheep_monk
+    grf_sprite: "몽크알파카"
+    race: human
+  - look: sheep_priest
+    grf_sprite: "프리스트알파카"
+    race: human
+  - look: sheep_sura
+    grf_sprite: "슈라알파카"
+    race: human
+  - look: shinkiro
+    grf_sprite: "shinkiro"
+    race: human
+  - look: shiranui
+    grf_sprite: "shiranui"
+    race: human
+  - look: sky_emperor
+    grf_sprite: "sky_emperor"
+    race: human
+  - look: sky_emperor2
+    grf_sprite: "sky_emperor2"
+    race: human
+  - look: sorcerer
+    grf_sprite: "소서러"
+    race: human
+  - look: soul_ascetic
+    grf_sprite: "soul_ascetic"
+    race: human
+  - look: soul_reaper
+    grf_sprite: "소울리퍼"
+    race: human
+  - look: soul_reaper2
+    grf_sprite: "해태소울리퍼"
+    race: human
+  - look: spirit_handler
+    grf_sprite: "spirit_handler"
+    race: doram
+  - look: star
+    grf_sprite: "권성"
+    race: human
+  - look: star2
+    grf_sprite: "권성융합"
+    race: human
+  - look: star_emperor
+    grf_sprite: "성제"
+    race: human
+  - look: star_emperor2
+    grf_sprite: "해태성제"
+    race: human
+  - look: summer
+    grf_sprite: "여름"
+    race: human
+  - look: supernovice
+    grf_sprite: "슈퍼노비스"
+    race: human
+  - look: supernovice2
+    grf_sprite: "슈퍼노비스"
+    race: human
+  - look: sura
+    grf_sprite: "슈라"
+    race: human
+  - look: swordman
+    grf_sprite: "검사"
+    race: human
+  - look: taekwon
+    grf_sprite: "태권소년"
+    race: human
+  - look: thief
+    grf_sprite: "도둑"
+    race: human
+  - look: troubadour
+    grf_sprite: "troubadour"
+    race: human
+  - look: troubadour_riding
+    grf_sprite: "troubadour_riding"
+    race: human
+  - look: trouvere
+    grf_sprite: "trouvere"
+    race: human
+  - look: trouvere_riding
+    grf_sprite: "trouvere_riding"
+    race: human
+  - look: wanderer
+    grf_sprite: "원더러"
+    race: human
+  - look: warlock
+    grf_sprite: "워록"
+    race: human
+  - look: windhawk
+    grf_sprite: "windhawk"
+    race: human
+  - look: windhawk2
+    grf_sprite: "wolf_windhawk"
+    race: human
+  - look: windhawk_riding
+    grf_sprite: "windhawk_riding"
+    race: human
+  - look: wizard
+    grf_sprite: "위저드"
+    race: human
+  - look: wizard_h
+    grf_sprite: "하이위저드"
+    race: human
+  - look: xmas
+    grf_sprite: "산타"
+    race: human
+
+jobs:
+  - id: 0
+    constant: JOB_NOVICE
+    look: novice
+    mount: poring_novice
+  - id: 1
+    constant: JOB_SWORDMAN
+    look: swordman
+    mount: peco_sword
+  - id: 2
+    constant: JOB_MAGE
+    look: magician
+    mount: fox_magician
+  - id: 3
+    constant: JOB_ARCHER
+    look: archer
+    mount: ostrich_archer
+  - id: 4
+    constant: JOB_ACOLYTE
+    look: acolyte
+    mount: sheep_aco
+  - id: 5
+    constant: JOB_MERCHANT
+    look: merchant
+    mount: pig_merchant
+  - id: 6
+    constant: JOB_THIEF
+    look: thief
+    mount: dog_thief
+  - id: 7
+    constant: JOB_KNIGHT
+    look: knight
+    mount: lion_knight
+  - id: 8
+    constant: JOB_PRIEST
+    look: priest
+    mount: sheep_priest
+  - id: 9
+    constant: JOB_WIZARD
+    look: wizard
+    mount: fox_wiz
+  - id: 10
+    constant: JOB_BLACKSMITH
+    look: blacksmith
+    mount: pig_blacksmith
+  - id: 11
+    constant: JOB_HUNTER
+    look: hunter
+    mount: ostrich_hunter
+  - id: 12
+    constant: JOB_ASSASSIN
+    look: assassin
+    mount: dog_assassin
+  - id: 13
+    constant: JOB_KNIGHT2
+    look: knight2
+  - id: 14
+    constant: JOB_CRUSADER
+    look: crusader
+    mount: lion_crusader
+  - id: 15
+    constant: JOB_MONK
+    look: monk
+    mount: sheep_monk
+  - id: 16
+    constant: JOB_SAGE
+    look: sage
+    mount: fox_sage
+  - id: 17
+    constant: JOB_ROGUE
+    look: rogue
+    mount: dog_rogue
+  - id: 18
+    constant: JOB_ALCHEMIST
+    look: alchemist
+    mount: pig_alche
+  - id: 19
+    constant: JOB_BARD
+    look: bard
+    mount: ostrich_bard
+  - id: 20
+    constant: JOB_DANCER
+    look: dancer
+    mount: ostrich_dancer
+  - id: 21
+    constant: JOB_CRUSADER2
+    look: crusader2
+  - id: 22
+    constant: JOB_WEDDING
+    look: married
+  - id: 23
+    constant: JOB_SUPER_NOVICE
+    look: supernovice
+    mount: poring_snovice
+  - id: 24
+    constant: JOB_GUNSLINGER
+    look: gunslinger
+    mount: peco_gunner
+  - id: 25
+    constant: JOB_NINJA
+    look: ninja
+    mount: frog_ninja
+  - id: 26
+    constant: JOB_XMAS
+    look: xmas
+  - id: 27
+    constant: JOB_SUMMER
+    look: summer
+  - id: 4001
+    constant: JOB_NOVICE_HIGH
+    look: novice
+    mount: poring_novice
+  - id: 4002
+    constant: JOB_SWORDMAN_HIGH
+    look: swordman
+    mount: peco_sword
+  - id: 4003
+    constant: JOB_MAGE_HIGH
+    look: magician
+    mount: fox_magician
+  - id: 4004
+    constant: JOB_ARCHER_HIGH
+    look: archer
+    mount: ostrich_archer
+  - id: 4005
+    constant: JOB_ACOLYTE_HIGH
+    look: acolyte
+    mount: sheep_aco
+  - id: 4006
+    constant: JOB_MERCHANT_HIGH
+    look: merchant
+    mount: pig_merchant
+  - id: 4007
+    constant: JOB_THIEF_HIGH
+    look: thief
+    mount: dog_thief
+  - id: 4008
+    constant: JOB_LORD_KNIGHT
+    look: knight_h
+    mount: lion_knight_h
+  - id: 4009
+    constant: JOB_HIGH_PRIEST
+    look: priest_h
+    mount: sheep_hpriest
+  - id: 4010
+    constant: JOB_HIGH_WIZARD
+    look: wizard_h
+    mount: fox_hwiz
+  - id: 4011
+    constant: JOB_WHITESMITH
+    look: blacksmith_h
+    mount: pig_whitesmith
+  - id: 4012
+    constant: JOB_SNIPER
+    look: hunter_h
+    mount: ostrich_sniper
+  - id: 4013
+    constant: JOB_ASSASSIN_CROSS
+    look: assassin_h
+    mount: dog_assa_x
+  - id: 4014
+    constant: JOB_LORD_KNIGHT2
+    look: knight2_h
+  - id: 4015
+    constant: JOB_PALADIN
+    look: crusader_h
+    mount: lion_crusader_h
+  - id: 4016
+    constant: JOB_CHAMPION
+    look: monk_h
+    mount: sheep_champ
+  - id: 4017
+    constant: JOB_PROFESSOR
+    look: sage_h
+    mount: fox_prof
+  - id: 4018
+    constant: JOB_STALKER
+    look: rogue_h
+    mount: dog_stalker
+  - id: 4019
+    constant: JOB_CREATOR
+    look: alchemist_h
+    mount: pig_creator
+  - id: 4020
+    constant: JOB_CLOWN
+    look: bard_h
+    mount: ostrich_crown
+  - id: 4021
+    constant: JOB_GYPSY
+    look: dancer_h
+    mount: ostrich_zipsi
+  - id: 4022
+    constant: JOB_PALADIN2
+    look: crusader2_h
+  - id: 4023
+    constant: JOB_BABY
+    look: novice
+    mount: poring_novice
+  - id: 4024
+    constant: JOB_BABY_SWORDMAN
+    look: swordman
+    mount: peco_sword
+  - id: 4025
+    constant: JOB_BABY_MAGE
+    look: magician
+    mount: fox_magician
+  - id: 4026
+    constant: JOB_BABY_ARCHER
+    look: archer
+    mount: ostrich_archer
+  - id: 4027
+    constant: JOB_BABY_ACOLYTE
+    look: acolyte
+    mount: sheep_aco
+  - id: 4028
+    constant: JOB_BABY_MERCHANT
+    look: merchant
+    mount: pig_merchant
+  - id: 4029
+    constant: JOB_BABY_THIEF
+    look: thief
+    mount: dog_thief
+  - id: 4030
+    constant: JOB_BABY_KNIGHT
+    look: knight
+    mount: lion_knight
+  - id: 4031
+    constant: JOB_BABY_PRIEST
+    look: priest
+    mount: sheep_priest
+  - id: 4032
+    constant: JOB_BABY_WIZARD
+    look: wizard
+    mount: fox_wiz
+  - id: 4033
+    constant: JOB_BABY_BLACKSMITH
+    look: blacksmith
+    mount: pig_blacksmith
+  - id: 4034
+    constant: JOB_BABY_HUNTER
+    look: hunter
+    mount: ostrich_hunter
+  - id: 4035
+    constant: JOB_BABY_ASSASSIN
+    look: assassin
+    mount: dog_assassin
+  - id: 4036
+    constant: JOB_BABY_KNIGHT2
+    look: knight2
+  - id: 4037
+    constant: JOB_BABY_CRUSADER
+    look: crusader
+    mount: lion_crusader
+  - id: 4038
+    constant: JOB_BABY_MONK
+    look: monk
+    mount: sheep_monk
+  - id: 4039
+    constant: JOB_BABY_SAGE
+    look: sage
+    mount: fox_sage
+  - id: 4040
+    constant: JOB_BABY_ROGUE
+    look: rogue
+    mount: dog_rogue
+  - id: 4041
+    constant: JOB_BABY_ALCHEMIST
+    look: alchemist
+    mount: pig_alche
+  - id: 4042
+    constant: JOB_BABY_BARD
+    look: bard
+    mount: ostrich_bard
+  - id: 4043
+    constant: JOB_BABY_DANCER
+    look: dancer
+    mount: ostrich_dancer
+  - id: 4044
+    constant: JOB_BABY_CRUSADER2
+    look: crusader2
+  - id: 4045
+    constant: JOB_SUPER_BABY
+    look: supernovice
+    mount: poring_snovice
+  - id: 4046
+    constant: JOB_TAEKWON
+    look: taekwon
+    mount: poring_taekwon
+  - id: 4047
+    constant: JOB_STAR_GLADIATOR
+    look: star
+    mount: poring_star
+  - id: 4048
+    constant: JOB_STAR_GLADIATOR2
+    look: star2
+  - id: 4049
+    constant: JOB_SOUL_LINKER
+    look: linker
+    mount: frog_linker
+  - id: 4054
+    constant: JOB_RUNE_KNIGHT
+    look: rune_knight
+    mount: lion_rune_knight
+  - id: 4055
+    constant: JOB_WARLOCK
+    look: warlock
+    mount: fox_warlock
+  - id: 4056
+    constant: JOB_RANGER
+    look: ranger
+    mount: ostrich_ranger
+  - id: 4057
+    constant: JOB_ARCH_BISHOP
+    look: archbishop
+    mount: sheep_arcb
+  - id: 4058
+    constant: JOB_MECHANIC
+    look: mechanic
+    mount: pig_mechanic
+  - id: 4059
+    constant: JOB_GUILLOTINE_CROSS
+    look: guillotine_cross
+    mount: dog_g_cross
+  - id: 4060
+    constant: JOB_RUNE_KNIGHT_T
+    look: rune_knight
+    mount: lion_rune_knight
+  - id: 4061
+    constant: JOB_WARLOCK_T
+    look: warlock
+    mount: fox_warlock
+  - id: 4062
+    constant: JOB_RANGER_T
+    look: ranger
+    mount: ostrich_ranger
+  - id: 4063
+    constant: JOB_ARCH_BISHOP_T
+    look: archbishop
+    mount: sheep_arcb
+  - id: 4064
+    constant: JOB_MECHANIC_T
+    look: mechanic
+    mount: pig_mechanic
+  - id: 4065
+    constant: JOB_GUILLOTINE_CROSS_T
+    look: guillotine_cross
+    mount: dog_g_cross
+  - id: 4066
+    constant: JOB_ROYAL_GUARD
+    look: royal_guard
+    mount: lion_royal_guard
+  - id: 4067
+    constant: JOB_SORCERER
+    look: sorcerer
+    mount: fox_sorcerer
+  - id: 4068
+    constant: JOB_MINSTREL
+    look: minstrel
+    mount: ostrich_minstrel
+  - id: 4069
+    constant: JOB_WANDERER
+    look: wanderer
+    mount: ostrich_wander
+  - id: 4070
+    constant: JOB_SURA
+    look: sura
+    mount: sheep_sura
+  - id: 4071
+    constant: JOB_GENETIC
+    look: genetic
+    mount: pig_genetic
+  - id: 4072
+    constant: JOB_SHADOW_CHASER
+    look: shadow_chaser
+    mount: dog_chaser
+  - id: 4073
+    constant: JOB_ROYAL_GUARD_T
+    look: royal_guard
+    mount: lion_royal_guard
+  - id: 4074
+    constant: JOB_SORCERER_T
+    look: sorcerer
+    mount: fox_sorcerer
+  - id: 4075
+    constant: JOB_MINSTREL_T
+    look: minstrel
+    mount: ostrich_minstrel
+  - id: 4076
+    constant: JOB_WANDERER_T
+    look: wanderer
+    mount: ostrich_wander
+  - id: 4077
+    constant: JOB_SURA_T
+    look: sura
+    mount: sheep_sura
+  - id: 4078
+    constant: JOB_GENETIC_T
+    look: genetic
+    mount: pig_genetic
+  - id: 4079
+    constant: JOB_SHADOW_CHASER_T
+    look: shadow_chaser
+    mount: dog_chaser
+  - id: 4080
+    constant: JOB_RUNE_KNIGHT2
+    look: rune_knight2
+  - id: 4081
+    constant: JOB_RUNE_KNIGHT_T2
+    look: rune_knight2
+  - id: 4082
+    constant: JOB_ROYAL_GUARD2
+    look: royal_guard2
+  - id: 4083
+    constant: JOB_ROYAL_GUARD_T2
+    look: royal_guard2
+  - id: 4084
+    constant: JOB_RANGER2
+    look: ranger2
+  - id: 4085
+    constant: JOB_RANGER_T2
+    look: ranger2
+  - id: 4086
+    constant: JOB_MECHANIC2
+    look: mechanic2
+  - id: 4087
+    constant: JOB_MECHANIC_T2
+    look: mechanic2
+  - id: 4096
+    constant: JOB_BABY_RUNE_KNIGHT
+    look: rune_knight
+    mount: lion_rune_knight
+  - id: 4097
+    constant: JOB_BABY_WARLOCK
+    look: warlock
+    mount: fox_warlock
+  - id: 4098
+    constant: JOB_BABY_RANGER
+    look: ranger
+    mount: ostrich_ranger
+  - id: 4099
+    constant: JOB_BABY_ARCH_BISHOP
+    look: archbishop
+    mount: sheep_arcb
+  - id: 4100
+    constant: JOB_BABY_MECHANIC
+    look: mechanic
+    mount: pig_mechanic
+  - id: 4101
+    constant: JOB_BABY_GUILLOTINE_CROSS
+    look: guillotine_cross
+    mount: dog_g_cross
+  - id: 4102
+    constant: JOB_BABY_ROYAL_GUARD
+    look: royal_guard
+    mount: lion_royal_guard
+  - id: 4103
+    constant: JOB_BABY_SORCERER
+    look: sorcerer
+    mount: fox_sorcerer
+  - id: 4104
+    constant: JOB_BABY_MINSTREL
+    look: minstrel
+    mount: ostrich_minstrel
+  - id: 4105
+    constant: JOB_BABY_WANDERER
+    look: wanderer
+    mount: ostrich_wander
+  - id: 4106
+    constant: JOB_BABY_SURA
+    look: sura
+    mount: sheep_sura
+  - id: 4107
+    constant: JOB_BABY_GENETIC
+    look: genetic
+    mount: pig_genetic
+  - id: 4108
+    constant: JOB_BABY_SHADOW_CHASER
+    look: shadow_chaser
+    mount: dog_chaser
+  - id: 4109
+    constant: JOB_BABY_RUNE_KNIGHT2
+    look: rune_knight2
+  - id: 4110
+    constant: JOB_BABY_ROYAL_GUARD2
+    look: royal_guard2
+  - id: 4111
+    constant: JOB_BABY_RANGER2
+    look: ranger2
+  - id: 4112
+    constant: JOB_BABY_MECHANIC2
+    look: mechanic2
+  - id: 4190
+    constant: JOB_SUPER_NOVICE_E
+    look: supernovice2
+    mount: poring_snovice
+  - id: 4191
+    constant: JOB_SUPER_BABY_E
+    look: supernovice2
+    mount: poring_snovice
+  - id: 4211
+    constant: JOB_KAGEROU
+    look: kagerou
+    mount: frog_kagerou
+  - id: 4212
+    constant: JOB_OBORO
+    look: oboro
+    mount: frog_oboro
+  - id: 4215
+    constant: JOB_REBELLION
+    look: rebellion
+    mount: peco_rebellion
+  - id: 4218
+    constant: JOB_SUMMONER
+    look: do_summoner
+  - id: 4220
+    constant: JOB_BABY_SUMMONER
+    look: do_summoner
+  - id: 4222
+    constant: JOB_BABY_NINJA
+    look: ninja
+    mount: frog_ninja
+  - id: 4223
+    constant: JOB_BABY_KAGEROU
+    look: kagerou
+    mount: frog_kagerou
+  - id: 4224
+    constant: JOB_BABY_OBORO
+    look: oboro
+    mount: frog_oboro
+  - id: 4225
+    constant: JOB_BABY_TAEKWON
+    look: taekwon
+    mount: poring_taekwon
+  - id: 4226
+    constant: JOB_BABY_STAR_GLADIATOR
+    look: star
+    mount: poring_star
+  - id: 4227
+    constant: JOB_BABY_SOUL_LINKER
+    look: linker
+  - id: 4228
+    constant: JOB_BABY_GUNSLINGER
+    look: gunslinger
+  - id: 4229
+    constant: JOB_BABY_REBELLION
+    look: rebellion
+    mount: peco_rebellion
+  - id: 4238
+    constant: JOB_BABY_STAR_GLADIATOR2
+    look: star2
+  - id: 4239
+    constant: JOB_STAR_EMPEROR
+    look: star_emperor
+    mount: star_emperor2
+  - id: 4240
+    constant: JOB_SOUL_REAPER
+    look: soul_reaper
+    mount: soul_reaper2
+  - id: 4241
+    constant: JOB_BABY_STAR_EMPEROR
+    look: star_emperor
+    mount: star_emperor2
+  - id: 4242
+    constant: JOB_BABY_SOUL_REAPER
+    look: soul_reaper
+    mount: soul_reaper2
+  - id: 4243
+    constant: JOB_STAR_EMPEROR2
+    look: star_emperor2
+  - id: 4244
+    constant: JOB_BABY_STAR_EMPEROR2
+    look: star_emperor2
+  - id: 4252
+    constant: JOB_DRAGON_KNIGHT
+    look: dragon_knight
+    mount: dragon_knight_riding
+  - id: 4253
+    constant: JOB_MEISTER
+    look: meister
+    mount: meister_riding
+  - id: 4254
+    constant: JOB_SHADOW_CROSS
+    look: shadow_cross
+    mount: shadow_cross_riding
+  - id: 4255
+    constant: JOB_ARCH_MAGE
+    look: arch_mage
+    mount: arch_mage_riding
+  - id: 4256
+    constant: JOB_CARDINAL
+    look: cardinal
+    mount: cardinal_riding
+  - id: 4257
+    constant: JOB_WINDHAWK
+    look: windhawk
+    mount: windhawk_riding
+  - id: 4258
+    constant: JOB_IMPERIAL_GUARD
+    look: imperial_guard
+    mount: imperial_guard_riding
+  - id: 4259
+    constant: JOB_BIOLO
+    look: biolo
+    mount: biolo_riding
+  - id: 4260
+    constant: JOB_ABYSS_CHASER
+    look: abyss_chaser
+    mount: abyss_chaser_riding
+  - id: 4261
+    constant: JOB_ELEMENTAL_MASTER
+    look: elemental_master
+    mount: elemental_master_riding
+  - id: 4262
+    constant: JOB_INQUISITOR
+    look: inquisitor
+    mount: inquisitor_riding
+  - id: 4263
+    constant: JOB_TROUBADOUR
+    look: troubadour
+    mount: troubadour_riding
+  - id: 4264
+    constant: JOB_TROUVERE
+    look: trouvere
+    mount: trouvere_riding
+  - id: 4278
+    constant: JOB_WINDHAWK2
+    look: windhawk2
+  - id: 4279
+    constant: JOB_MEISTER2
+    look: meister2
+  - id: 4280
+    constant: JOB_DRAGON_KNIGHT2
+    look: dragon_knight2
+  - id: 4281
+    constant: JOB_IMPERIAL_GUARD2
+    look: imperial_guard2
+  - id: 4302
+    constant: JOB_SKY_EMPEROR
+    look: sky_emperor
+  - id: 4303
+    constant: JOB_SOUL_ASCETIC
+    look: soul_ascetic
+  - id: 4304
+    constant: JOB_SHINKIRO
+    look: shinkiro
+  - id: 4305
+    constant: JOB_SHIRANUI
+    look: shiranui
+  - id: 4306
+    constant: JOB_NIGHT_WATCH
+    look: night_watch
+  - id: 4307
+    constant: JOB_HYPER_NOVICE
+    look: hyper_novice
+  - id: 4308
+    constant: JOB_SPIRIT_HANDLER
+    look: spirit_handler
+  - id: 4316
+    constant: JOB_SKY_EMPEROR2
+    look: sky_emperor2
+  - id: 4332
+    constant: JOB_RUNE_KNIGHT_2ND
+    look: rune_knight
+    mount: lion_rune_knight
+  - id: 4333
+    constant: JOB_MECHANIC_2ND
+    look: mechanic
+    mount: pig_mechanic
+  - id: 4334
+    constant: JOB_GUILLOTINE_CROSS_2ND
+    look: guillotine_cross
+    mount: dog_g_cross
+  - id: 4335
+    constant: JOB_WARLOCK_2ND
+    look: warlock
+    mount: fox_warlock
+  - id: 4336
+    constant: JOB_ARCHBISHOP_2ND
+    look: archbishop
+  - id: 4337
+    constant: JOB_RANGER_2ND
+    look: ranger
+    mount: ostrich_ranger
+  - id: 4338
+    constant: JOB_ROYAL_GUARD_2ND
+    look: royal_guard
+    mount: lion_royal_guard
+  - id: 4339
+    constant: JOB_GENETIC_2ND
+    look: genetic
+    mount: pig_genetic
+  - id: 4340
+    constant: JOB_SHADOW_CHASER_2ND
+    look: shadow_chaser
+    mount: dog_chaser
+  - id: 4341
+    constant: JOB_SORCERER_2ND
+    look: sorcerer
+    mount: fox_sorcerer
+  - id: 4342
+    constant: JOB_SURA_2ND
+    look: sura
+    mount: sheep_sura
+  - id: 4343
+    constant: JOB_MINSTREL_2ND
+    look: minstrel
+    mount: ostrich_minstrel
+  - id: 4344
+    constant: JOB_WANDERER_2ND
+    look: wanderer
+    mount: ostrich_wander

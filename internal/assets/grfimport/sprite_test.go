@@ -3,6 +3,7 @@ package grfimport
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/assets/wspr"
@@ -166,15 +167,33 @@ func TestNames(t *testing.T) {
 			t.Errorf("SpriteName(%q) = %q, want no name", in, got)
 		}
 	}
-	if got := (*Tables)(nil).SpriteNames(`data\sprite\인간족\머리통\여\07_여.spr`); len(got) != 1 || got[0] != "sprite/head/f/7" {
+	if got := (*Tables)(nil).SpriteNames(`data\sprite\인간족\머리통\여\07_여.spr`); len(got) != 1 || got[0] != "sprite/head/human/f/7" {
 		t.Errorf("head names %v", got)
 	}
 	tb := &Tables{headgear: map[string][]int{"남/남_고글": {1, 5}}}
 	if got := tb.SpriteNames(`data\sprite\악세사리\남\남_고글.act`); len(got) != 2 || got[0] != "sprite/headgear/m/1" || got[1] != "sprite/headgear/m/5" {
 		t.Errorf("headgear names %v", got)
 	}
-	if got, ok := PaletteName(`data\palette\머리\머리6_여_2.pal`); !ok || got != "palette/hair/f/6/2" {
+	if got, ok := PaletteName(`data\palette\도람족\머리\머리6_여_2.pal`); !ok || got != "palette/hair/doram/f/6/2" {
 		t.Errorf("hair palette %q", got)
+	}
+	ct := &Tables{
+		bodies:  map[string][]string{"검사": {"swordman", "swordman_h"}},
+		races:   map[string]string{"검사": "인간족"},
+		weapons: map[string][]int{"_검": {2}, "_1120": {1120}},
+	}
+	for in, want := range map[string][]string{
+		`data\sprite\인간족\몸통\남\검사_남.spr`:    {"sprite/body/swordman/m", "sprite/body/swordman_h/m"},
+		`data\sprite\인간족\검사\검사_여_검.act`:    {"sprite/weapon/swordman/f/2", "sprite/weapon/swordman_h/f/2"},
+		`data\sprite\인간족\검사\검사_남_1120.spr`: {"sprite/weapon/swordman/m/1120", "sprite/weapon/swordman_h/m/1120"},
+		`data\sprite\도람족\몸통\남\검사_남.spr`:    nil,
+	} {
+		if got := ct.SpriteNames(in); fmt.Sprint(got) != fmt.Sprint(want) {
+			t.Errorf("SpriteNames(%q) = %v, want %v", in, got, want)
+		}
+	}
+	if got := ct.PaletteNames(`data\palette\몸\검사_여_3.pal`); fmt.Sprint(got) != "[palette/body/swordman/f/3 palette/body/swordman_h/f/3]" {
+		t.Errorf("body palettes %v", got)
 	}
 	if got := EventName("atk"); got != "atk" {
 		t.Errorf("EventName(atk) = %q", got)

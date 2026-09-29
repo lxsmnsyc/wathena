@@ -24,7 +24,7 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | Namespace | Type | Example | Use |
 |---|---|---|---|
 | `sprite/body/<look>/<sex>` | Sprite | `sprite/body/swordman/f` | Character body. `<look>` is the look name from `jobs.yml`, including mount and costume looks. `<sex>` is `m` or `f`. |
-| `sprite/head/<sex>/<style>` | Sprite | `sprite/head/m/12` | Hairstyle. |
+| `sprite/head/<race>/<sex>/<style>` | Sprite | `sprite/head/human/m/12` | Hairstyle. `<race>` is `human` or `doram`, from `jobs.yml`. |
 | `sprite/headgear/<sex>/<view>` | Sprite | `sprite/headgear/f/1` | Headgear, by view ID, the number items use in rAthena's `item_db` `View` field. |
 | `sprite/weapon/<look>/<sex>/<name>` | Sprite | `sprite/weapon/swordman/m/sword` | Weapon drawn on a character. |
 | `sprite/shield/<look>/<sex>/<name>` | Sprite | | Shield drawn on a character. |
@@ -32,7 +32,7 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `sprite/mob/<name>` | Sprite | `sprite/mob/poring` | Monster. |
 | `sprite/npc/<name>` | Sprite | `sprite/npc/4_f_kafra1` | NPC. |
 | `sprite/<other>/<name>` | Sprite | `sprite/item/red_potion` | Other sprites: `item` (dropped items), `pet`, `homun`, `merc`, `effect`, `cursor`. |
-| `palette/hair/<sex>/<style>/<color>` | Palette | `palette/hair/f/3/5` | Hair dye. |
+| `palette/hair/<race>/<sex>/<style>/<color>` | Palette | `palette/hair/human/f/3/5` | Hair dye. |
 | `palette/body/<look>/<sex>/<color>` | Palette | | Clothes dye. |
 | `texture/<path>` | Texture | `texture/prontera/ground01` | Textures that maps and models use. |
 | `ui/<path>` | Texture | `ui/login/background` | Interface images. |

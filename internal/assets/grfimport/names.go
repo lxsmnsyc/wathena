@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/encoding/korean"
 	"golang.org/x/text/unicode/norm"
 
+	clientdata "github.com/lxsmnsyc/wathena/client/data"
 	"github.com/lxsmnsyc/wathena/internal/assets"
 	"github.com/lxsmnsyc/wathena/internal/grf"
 )
@@ -24,27 +25,41 @@ var spriteFolders = map[string]string{
 // sexes maps RO's Korean sex markers to assets-v1 names.
 var sexes = map[string]string{"남": "m", "여": "f"}
 
+// races maps RO's sprite race folders to assets-v1 names.
+var races = map[string]string{"인간족": "human", "도람족": "doram"}
+
 var (
-	headPath = regexp.MustCompile(`^data/sprite/인간족/머리통/(남|여)/(\d+)_(남|여)\.(spr|act)$`)
-	hairPath = regexp.MustCompile(`^data/palette/머리/머리(\d+)_(남|여)_(\d+)\.pal$`)
+	headPath    = regexp.MustCompile(`^data/sprite/(인간족|도람족)/머리통/(남|여)/(\d+)_(남|여)\.(spr|act)$`)
+	hairPath    = regexp.MustCompile(`^data/palette/(도람족/)?머리/머리(\d+)_(남|여)_(\d+)\.pal$`)
+	bodyPalPath = regexp.MustCompile(`^data/palette/(몸|도람족/body)/(.+)_(남|여)_(\d+)\.pal$`)
 )
 
 // Tables holds the client tables the importer uses to name assets.
 type Tables struct {
 	// headgear maps "<sex>/<accessory name>", such as "남/_고글", to view IDs.
 	headgear map[string][]int
+	// bodies maps a lowercase GRF body sprite name to its look names.
+	bodies map[string][]string
+	// races maps a lowercase GRF body sprite name to its race folder.
+	races map[string]string
+	// weapons maps a lowercase weapon suffix, such as "_검", to view IDs.
+	weapons map[string][]int
 }
+
+// raceFolders maps jobs.yml races to GRF sprite folders.
+var raceFolders = map[string]string{"human": "인간족", "doram": "도람족"}
 
 // clientTables lists the .lub files to evaluate, in order, since later
 // files use tables from earlier ones.
 var clientTables = []string{
 	`data\luafiles514\lua files\datainfo\accessoryid.lub`,
 	`data\luafiles514\lua files\datainfo\accname.lub`,
+	`data\luafiles514\lua files\datainfo\weapontable.lub`,
 }
 
 // LoadTables evaluates the client's data tables. Missing tables leave the
 // assets that need them unnamed, and are not an error.
-func LoadTables(c *grf.Client) (*Tables, error) {
+func LoadTables(c *grf.Client, jobs *clientdata.Jobs) (*Tables, error) {
 	g := map[string]any{}
 	for _, name := range clientTables {
 		s, ok := c.Lookup(name)
@@ -59,22 +74,42 @@ func LoadTables(c *grf.Client) (*Tables, error) {
 			return nil, fmt.Errorf("%s: %w", name, err)
 		}
 	}
-	t := &Tables{headgear: map[string][]int{}}
-	if acc, ok := g["AccNameTable"].(*LubTable); ok {
-		for k, v := range acc.M {
-			id, ok1 := k.(float64)
-			raw, ok2 := v.(string)
-			if !ok1 || !ok2 || id < 1 || id > 1<<20 || id != float64(int(id)) {
-				continue
-			}
-			name := decodeCP949(raw)
-			for _, sex := range []string{"남", "여"} {
-				key := grf.Normalize(sex + "/" + sex + name)
-				t.headgear[key] = append(t.headgear[key], int(id))
-			}
+	t := &Tables{headgear: map[string][]int{}, bodies: map[string][]string{}, races: map[string]string{}, weapons: map[string][]int{}}
+	forEachName(g["AccNameTable"], func(id int, name string) {
+		for _, sex := range []string{"남", "여"} {
+			key := grf.Normalize(sex + "/" + sex + name)
+			t.headgear[key] = append(t.headgear[key], id)
+		}
+	})
+	forEachName(g["WeaponNameTable"], func(id int, name string) {
+		key := grf.Normalize(name)
+		t.weapons[key] = append(t.weapons[key], id)
+	})
+	if jobs != nil {
+		for _, l := range jobs.Looks {
+			key := norm.NFC.String(grf.Normalize(l.GRFSprite))
+			t.bodies[key] = append(t.bodies[key], l.Look)
+			t.races[key] = raceFolders[l.Race]
 		}
 	}
 	return t, nil
+}
+
+// forEachName calls f for each entry of a table from numeric IDs to
+// CP949 names.
+func forEachName(v any, f func(id int, name string)) {
+	tb, ok := v.(*LubTable)
+	if !ok {
+		return
+	}
+	for k, v := range tb.M {
+		id, ok1 := k.(float64)
+		raw, ok2 := v.(string)
+		if !ok1 || !ok2 || id < 0 || id > 1<<20 || id != float64(int(id)) {
+			continue
+		}
+		f(int(id), decodeCP949(raw))
+	}
 }
 
 func decodeCP949(s string) string {
@@ -105,10 +140,11 @@ func (t *Tables) SpriteNames(grfPath string) []string {
 			add(ns + strings.TrimSuffix(rest, ext))
 		}
 	}
-	if m := headPath.FindStringSubmatch(key); m != nil && m[1] == m[3] {
-		add("sprite/head/" + sexes[m[1]] + "/" + trimZeros(m[2]))
+	if m := headPath.FindStringSubmatch(key); m != nil && m[2] == m[4] {
+		add("sprite/head/" + races[m[1]] + "/" + sexes[m[2]] + "/" + trimZeros(m[3]))
 	}
 	if t != nil {
+		t.characterNames(strings.TrimSuffix(key, ext), add)
 		if rest, ok := strings.CutPrefix(key, "data/sprite/악세사리/"); ok {
 			sex, _, _ := strings.Cut(rest, "/")
 			for _, id := range t.headgear[strings.TrimSuffix(rest, ext)] {
@@ -117,6 +153,53 @@ func (t *Tables) SpriteNames(grfPath string) []string {
 		}
 	}
 	return out
+}
+
+// characterNames adds body and weapon names for a path without extension.
+// Bodies are data/sprite/<race>/몸통/<sex>/<sprite>_<sex>. Weapons are
+// data/sprite/<race>/<sprite>/<sprite>_<sex><weapon suffix>.
+func (t *Tables) characterNames(key string, add func(string)) {
+	rest, ok := strings.CutPrefix(key, "data/sprite/")
+	if !ok {
+		return
+	}
+	race, rest, _ := strings.Cut(rest, "/")
+	if race != "인간족" && race != "도람족" {
+		return
+	}
+	folder, file, ok := strings.Cut(rest, "/")
+	if !ok {
+		return
+	}
+	if folder == "몸통" {
+		sex, file, ok := strings.Cut(file, "/")
+		sprite, ok2 := strings.CutSuffix(file, "_"+sex)
+		if !ok || !ok2 || sexes[sex] == "" {
+			return
+		}
+		if t.races[sprite] != race {
+			return
+		}
+		for _, look := range t.bodies[sprite] {
+			add("sprite/body/" + look + "/" + sexes[sex])
+		}
+		return
+	}
+	looks := t.bodies[folder]
+	if len(looks) == 0 || t.races[folder] != race {
+		return
+	}
+	for _, sex := range []string{"남", "여"} {
+		suffix, ok := strings.CutPrefix(file, folder+"_"+sex)
+		if !ok {
+			continue
+		}
+		for _, id := range t.weapons[suffix] {
+			for _, look := range looks {
+				add(fmt.Sprintf("sprite/weapon/%s/%s/%d", look, sexes[sex], id))
+			}
+		}
+	}
 }
 
 // SpriteName returns the first asset name for a path, for callers that
@@ -129,14 +212,48 @@ func SpriteName(grfPath string) (string, bool) {
 	return names[0], true
 }
 
-// PaletteName returns the asset name for a GRF palette path.
-func PaletteName(grfPath string) (string, bool) {
+// PaletteNames returns the asset names for a GRF palette path. tables may
+// be nil, which leaves out body palettes.
+func (t *Tables) PaletteNames(grfPath string) []string {
 	key := norm.NFC.String(grf.Normalize(grfPath))
-	if m := hairPath.FindStringSubmatch(key); m != nil {
-		name := "palette/hair/" + sexes[m[2]] + "/" + trimZeros(m[1]) + "/" + trimZeros(m[3])
-		return name, assets.ValidName(name) == nil
+	var out []string
+	add := func(name string) {
+		if assets.ValidName(name) == nil {
+			out = append(out, name)
+		}
 	}
-	return "", false
+	if m := hairPath.FindStringSubmatch(key); m != nil {
+		race := "human"
+		if m[1] != "" {
+			race = "doram"
+		}
+		add("palette/hair/" + race + "/" + sexes[m[3]] + "/" + trimZeros(m[2]) + "/" + trimZeros(m[4]))
+		return out
+	}
+	if t == nil {
+		return out
+	}
+	if m := bodyPalPath.FindStringSubmatch(key); m != nil {
+		race := "인간족"
+		if m[1] != "몸" {
+			race = "도람족"
+		}
+		if t.races[m[2]] == race {
+			for _, look := range t.bodies[m[2]] {
+				add("palette/body/" + look + "/" + sexes[m[3]] + "/" + trimZeros(m[4]))
+			}
+		}
+	}
+	return out
+}
+
+// PaletteName returns the first asset name for a GRF palette path.
+func PaletteName(grfPath string) (string, bool) {
+	names := (*Tables)(nil).PaletteNames(grfPath)
+	if len(names) == 0 {
+		return "", false
+	}
+	return names[0], true
 }
 
 func trimZeros(s string) string {

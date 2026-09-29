@@ -101,7 +101,7 @@ func TestRealTables(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = c.Close() }()
-	tb, err := LoadTables(c)
+	tb, err := LoadTables(c, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
