@@ -2,6 +2,10 @@
 
 This folder holds data recorded from rAthena. wAthena's parity tests compare against it.
 
+## Loading
+
+Go code loads these files with the `internal/reference` package. Its tests check that every file decodes and that each mode's files match that mode.
+
 ## Source
 
 - rAthena commit: `e98500617` (full hash in each file's `rathena_git_hash` field).

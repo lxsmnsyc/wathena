@@ -25,6 +25,7 @@ Early planning. There is no playable build yet.
 | `docs/` | Guides, specifications, and design proposals. |
 | `deploy/` | Docker Compose files and example configuration. |
 | `reference/` | Reference data from rAthena, used by parity tests. |
+| `internal/` | Go packages shared by the server and tools, such as the reference data loader. |
 
 ## Game files
 
