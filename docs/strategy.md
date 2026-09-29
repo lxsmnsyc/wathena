@@ -1699,10 +1699,12 @@ The formats are defined in [assets-v1](specs/assets-v1.md). In short:
 | Model | glTF 2.0 binary, with textures referenced by name. | A standard format that three.js loads, and that original art tools export. Shared textures download once. |
 | Map | WMAP: cells, ground mesh, lightmap, objects, sounds, and a dependency list. | Generated and classic maps load the same way. The dependency list lets the client fetch everything in parallel. |
 | Effect | WEFF: keyframe tables with texture names. | Small, and read by the effect player directly. |
-| Sound | WAV or MP3, unchanged. | Small, and every browser decodes both. Go has no pure-Go Opus encoder, so re-encoding would need a C library. |
-| Music | MP3. | Already compressed. Streamed while playing. |
+| Sound | Opus in WebM, 32 kbit/s mono. | The kRO client's 3,383 sounds are 209 MB of WAV, 97% at 22 kHz 16-bit mono. Opus makes them about 20 MB with no audible loss, and loops without gaps. Browsers cannot decode the 4 IMA ADPCM files, so some conversion is needed anyway. |
+| Music | MP3 passed through unchanged. New music in packs uses Opus. | Re-encoding lossy music loses quality. Streamed while playing. |
 
-Binary outputs are stored with a Brotli copy. The server sends it with `Content-Encoding: br`, and the browser decompresses it natively. WebP and MP3 are sent as they are.
+Binary outputs are stored with a Brotli copy. The server sends it with `Content-Encoding: br`, and the browser decompresses it natively. WebP, Opus, and MP3 are sent as they are.
+
+There is no Opus encoder in pure Go. The build runs libopus compiled to WebAssembly in wazero, so `wactl` stays pure Go. libopus does not use setjmp or longjmp, so the slow WebAssembly exceptions found with Lua (decision 0002) do not apply. Encoding happens once per build, so its speed matters little.
 
 GPU texture compression (KTX2 with Basis Universal) can be added later as a second texture output. Encoding runs on the operator's machine, so its slowness does not affect players. RO textures are small, so plain textures fit the memory budget for now.
 
@@ -1747,6 +1749,7 @@ Asset traffic depends on new players more than on players online. With 100 MB pe
 - Real first-visit and per-map sizes, compared with the estimates above.
 - Build time and output size for a full kRO client.
 - Whether palette-indexed atlases stay within the GPU memory budget in a crowded town.
+- Whether `decodeAudioData` decodes Opus in WebM on Chrome, Firefox, and Safari.
 
 ### 10.2 Prior art
 

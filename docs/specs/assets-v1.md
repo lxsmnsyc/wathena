@@ -72,8 +72,8 @@ All multi-byte numbers are little-endian. Every binary format starts with a 4-by
 | Model | glTF 2.0 binary, profile below. | `.glb` | `model/gltf-binary` |
 | Map | WMAP binary. **Draft.** | `.wmap` | `application/octet-stream` |
 | Effect | WEFF binary. **Draft.** | `.weff` | `application/octet-stream` |
-| Sound | WAV (PCM, 8 or 16 bit) or MP3. | `.wav`, `.mp3` | `audio/wav`, `audio/mpeg` |
-| Music | MP3. | `.mp3` | `audio/mpeg` |
+| Sound | Opus in WebM. | `.webm` | `audio/webm` |
+| Music | Opus in WebM, or MP3. | `.webm`, `.mp3` | `audio/webm`, `audio/mpeg` |
 
 ### Sprite (WSPR)
 
@@ -138,6 +138,15 @@ magic    "WPAL"
 version  u16 = 1
 colors   256 × 4 bytes RGBA. Index 0 is transparent.
 ```
+
+### Sound and music
+
+- Sounds are Opus in a WebM container, mono or stereo, at 48 kHz, which is Opus's native rate.
+- The build encodes sounds at 32 kbit/s for mono and 64 kbit/s for stereo. At these rates, 22 kHz game sounds have no audible loss.
+- Opus has no encoder delay padding at the end, so looping sounds loop without gaps.
+- Music can be Opus in WebM, or MP3. The build passes MP3 through unchanged, because re-encoding lossy audio loses quality. New music in packs should be Opus.
+- Accepted inputs: WAV (PCM, IEEE float, and IMA ADPCM), MP3, Ogg Vorbis, and Opus in Ogg or WebM.
+- The container is WebM because browsers have supported Opus in WebM the longest. Phase 1 checks `decodeAudioData` with Opus in WebM on Chrome, Firefox, and Safari. If a browser fails, the container can change to Ogg without re-encoding.
 
 ### Model (glTF profile)
 
@@ -213,7 +222,7 @@ our-art/
   sprite/mob/poring.yaml         frames, actions, anchors, and events
   texture/grass/01.png
   model/tree/pine.glb
-  sound/effect/hit.wav
+  sound/effect/hit.wav             or .ogg, .opus, .mp3
   map/home_village/              map folder, strategy section 8.12
 ```
 
