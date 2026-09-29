@@ -71,6 +71,12 @@ func TestRejects(t *testing.T) {
 			t.Errorf("decoded %d bytes", cut)
 		}
 	}
+	// A ground section with only its size must not allocate that size.
+	header := []byte("WMAP\x01\x00\x01\x00\x01\x00")
+	truncated := append(header, "GRND\x04\x00\x00\x00\xff\xff\xff\xff"...)
+	if _, err := Decode(truncated); err == nil {
+		t.Error("decoded a truncated ground section")
+	}
 	twice := append(append([]byte(nil), b...), b[10:10+8+2*17]...)
 	if _, err := Decode(twice); err == nil {
 		t.Error("decoded a repeated section")

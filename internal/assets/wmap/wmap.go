@@ -446,7 +446,9 @@ func Decode(b []byte) (*Map, error) {
 				t.Lightmap = s.u32()
 				copy(t.Color[:], s.take(4))
 			}
-			if s.err == nil && g.Width*g.Height*28 != len(body)-s.p {
+			// The surfaces fill the rest of the section, which bounds the
+			// allocation below.
+			if s.err != nil || g.Width > MaxCells || g.Height > MaxCells || g.Width*g.Height*28 != len(body)-s.p {
 				return nil, fmt.Errorf("%w: ground section", ErrFormat)
 			}
 			g.Surfaces = make([]Surface, g.Width*g.Height)
@@ -472,7 +474,7 @@ func Decode(b []byte) (*Map, error) {
 			}
 			wa.Zone = zone()
 			wa.SplitWidth, wa.SplitHeight = s.u16(), s.u16()
-			if wa.SplitWidth*wa.SplitHeight*24 > len(body)-s.p {
+			if s.err != nil || wa.SplitWidth*wa.SplitHeight*24 > len(body)-s.p {
 				return nil, fmt.Errorf("%w: water zones", ErrFormat)
 			}
 			for range wa.SplitWidth * wa.SplitHeight {
