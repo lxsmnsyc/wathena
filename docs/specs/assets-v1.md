@@ -40,6 +40,7 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `image/<kind>/<name>` | Texture | `image/card/poring_card` | Larger images: `item`, `card`, `illust`, `emblem`. |
 | `model/<path>` | Model | `model/prontera/fountain` | 3D models. |
 | `map/<name>` | Map | `map/prontera` | Maps. |
+| `lightmap/<name>` | Texture | `lightmap/prontera` | A map's lightmap atlas. |
 | `effect/<name>` | Effect | `effect/firewall` | Keyframed effects. |
 | `sound/<path>` | Sound | `sound/effect/hit_sword` | Short sounds. |
 | `music/<name>` | Music | `music/08` | Background music. |
@@ -82,6 +83,7 @@ When a name is missing, the client uses a placeholder and logs the missing name 
 | Model | `placeholder/model` |
 | Effect or sound | Nothing is shown or played. |
 | Map | The map cannot be entered, and the client shows an error. |
+| Lightmap | The ground is drawn without baked light. |
 
 wAthena provides a placeholder pack as the `placeholder` build source. Its art is drawn by code in `internal/assets/placeholder`, so it is original and CC0. It will cover every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. Each part is added when its format's converter exists. `placeholder/sprite` exists now.
 
@@ -95,7 +97,7 @@ All multi-byte numbers are little-endian. Every binary format starts with a 4-by
 | Palette | WPAL binary, below. | `.wpal` | `application/octet-stream` |
 | Texture, UI, icon, image | WebP, lossless, straight alpha, sRGB. | `.webp` | `image/webp` |
 | Model | glTF 2.0 binary, profile below. | `.glb` | `model/gltf-binary` |
-| Map | WMAP binary. **Draft.** | `.wmap` | `application/octet-stream` |
+| Map | WMAP binary, below. | `.wmap` | `application/octet-stream` |
 | Effect | WEFF binary. **Draft.** | `.weff` | `application/octet-stream` |
 | Sound | Opus in WebM. | `.webm` | `audio/webm` |
 | Music | Opus in WebM, or MP3. | `.webm`, `.mp3` | `audio/webm`, `audio/mpeg` |
@@ -199,7 +201,7 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 #### RSM conversion
 
 - `data\model\<path>.rsm` becomes `model/<path>`. Versions 1.1 to 1.6 convert now. RSM2 (versions 2.2 and 2.3) will follow. Granny (`.gr2`) models are not supported.
-- RO's model space has Y pointing down. The converter mirrors it through Y with F = diag(1, -1, 1): vertices become F × v, and node transforms become F × X × F, which keeps them as translation, rotation, and scale. Map objects are placed the same way.
+- RO's space has X east, Y down, and Z north, which is right-handed. The converter turns it half a turn around X with R = diag(1, -1, -1): vertices become R × v, and node transforms become R × X × R, which keeps them as translation, rotation, and scale. Y points up and north is -Z, glTF's forward direction. R is a rotation, so nothing is mirrored. Map objects are placed the same way.
 - Each RSM node becomes a glTF node with RO's position, rotation, and scale. The node's offset and 3 × 3 matrix are applied to its vertices.
 - The root node holds RO's centering: the box center on x and z, and the box's lowest point on y.
 - Faces are grouped into one primitive per texture and sidedness. Two-sided faces get double-sided materials.
@@ -207,21 +209,108 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 - Materials use alpha masking at 0.5. A model with an alpha below 255 uses alpha blending with that opacity.
 - Rotation keyframes become a rotation animation. Keyframe times are milliseconds.
 
-### Map (WMAP) **Draft**
+### Map (WMAP)
 
-A map holds everything needed to show it, in sections:
+A map holds everything needed to show it and walk on it, except the textures, models, and sounds it names.
 
-| Section | Content |
-|---|---|
-| Header | Size in cells, water level and type, and the format version. |
-| Cells | Cell type and 4 corner heights per cell (strategy section 8.12). The client uses this for pathfinding and ground height. |
-| Ground | Ground mesh vertices, texture coordinates, and texture names. |
-| Lightmap | A lightmap atlas and its coordinates, for classic maps. |
-| Objects | Model names with position, rotation, and scale. |
-| Sounds | Positioned ambient sounds by name. |
-| Dependencies | Every texture, model, and sound name the map uses, so the client can fetch them in parallel. |
+**Map space.** Units are cells. X points east, Y up, and -Z north. Cell (x, y), in the server's coordinates, covers X from x to x + 1 and Z from -(y + 1) to -y. Models are placed in the same space.
 
-The byte layout will be fixed when the first map converter is written in phase 1.
+**Layout.** A header, then sections. Each section is a 4-byte tag, a `u32` length, and its body. A reader skips tags it does not know. Every section below is required except `WATR`, and each appears once.
+
+```text
+Header
+  magic      "WMAP"
+  version    u16 = 1
+  width      u16    cells, at most 1024
+  height     u16
+
+Strings are a u8 length and UTF-8 bytes. Names are asset names.
+
+"CELL"  width × height cells, row by row from y = 0 (the south edge)
+  flags     u8     1 walkable, 2 shootable (projectiles pass), 4 water
+  heights   4 × f32   corners (x, y), (x+1, y), (x, y+1), (x+1, y+1), up positive
+
+"GRND"  the ground, a grid of surfaces of 2 × 2 cells
+  width, height   u16, u16    surfaces
+  textureCount    u16
+  textures        textureCount × string
+  tileCount       u32
+  Tiles, tileCount times
+    u, v          4 × f32, 4 × f32   texture coordinates, corners in cell order
+    texture       u16                index into textures
+    lightmap      u32                lightmap block
+    color         4 × u8             RGBA, multiplies the texture of top tiles
+  Surfaces, width × height, row by row from the south
+    heights       4 × f32            corners, as for cells
+    top, north, east   3 × i32       tile index, or -1 for none
+
+"LMAP"
+  name      string   the lightmap atlas, a texture
+  count     u32      blocks
+  columns   u16      blocks per row
+
+"LGHT"
+  longitude, latitude   2 × i32    degrees, as RO stores them
+  diffuse, ambient      2 × 3 × f32
+  opacity               f32        shadow strength
+  direction             3 × f32    unit vector toward the light
+
+"WATR"
+  zone          the default water zone, below
+  splitWidth, splitHeight   u16, u16
+  zones         splitWidth × splitHeight zones, row by row, overriding the default
+  textureSets   u8
+  Sets, textureSets times
+    type        i32
+    frames      32 × string    the animation frames of this water type
+  A zone is: level f32 (up positive), type i32, waveHeight f32, waveSpeed f32,
+  wavePitch f32, animSpeed i32.
+
+"OBJS"
+  count     u32
+  Objects, count times
+    model       string
+    matrix      16 × f32   column-major, from model space to map space
+    animType, animSpeed, blockType   i32, f32, i32
+
+"SNDS"
+  count     u32
+  Sounds, count times
+    name        string
+    position    3 × f32
+    volume, width, height, range, cycle   5 × f32   range in cells, cycle in seconds
+
+"EFCT"
+  count     u32
+  Effects, count times
+    id          i32    RO effect ID
+    position    3 × f32
+    delay       f32
+    params      4 × f32
+
+"DEPS"
+  count     u32
+  names     count × string    every name the map uses, so the client can fetch them in parallel
+```
+
+**Building the ground.** Surface (i, j) covers X from 2i to 2i + 2 and Z from -(2j + 2) to -2j. Corner k is at X = 2i + 2 × (k & 1), Z = -(2j + 2 × (k >> 1)), at its height. For each surface:
+
+- The top tile, if any, is a quad over the four corners. Tile corner k goes on surface corner k.
+- The north tile, if any, is a wall on the north edge. Tile corners 0, 1, 2, and 3 go on this surface's corners 2 and 3, then the north neighbor's corners 0 and 1. Surfaces on the last row have no north wall.
+- The east tile, if any, is a wall on the east edge. Tile corners 0, 1, 2, and 3 go on this surface's corners 3 and 1, then the east neighbor's corners 2 and 0. Surfaces on the last column have no east wall.
+- Each tile corner k has the tile's texture coordinates (u[k], v[k]). Its lightmap coordinates are texel 1 or 7 of the tile's 8 × 8 block: 7 across when k & 1, 7 down when k >> 1. Block b starts at (b % columns × 8, b / columns × 8) in the atlas.
+
+**Lighting.** A ground texel is: texture × tile color (top tiles only, filtered between neighboring tiles) × clamp(diffuse × max(0, normal · direction) + ambient), then × the lightmap's alpha, then + the lightmap's RGB. Models use the same light without a lightmap.
+
+**Lightmap atlas.** `lightmap/<map>` is a lossless WebP texture of 8 × 8 blocks: RGB is baked light color, alpha is shadow, with 255 for none. Its pixels are exact, with no color key and no edge filling.
+
+#### Maps from a game client
+
+- `data\<name>.rsw`, with `<name>.gnd` and `<name>.gat`, becomes `map/<name>` and `lightmap/<name>`.
+- RO units are 1/5 cell, with X east, Y down, and Z north, relative to the map's center. The importer scales by 1/5, moves the origin to the south-west corner, and turns by R = diag(1, -1, -1), as for models. An object's matrix is R × T(position / 5 + center) × Rz × Rx × Ry × S(scale / 5) × R, with RO's rotations in degrees.
+- Water comes from the GND file from version 1.8, and from the RSW file before that.
+- Objects, sounds, and effects with undefined (NaN or infinite) values are left out, since the game cannot show them either. Undefined cell heights take the average of the cell's other corners.
+- GAT cell types map to flags: 0, 2, 4, and 6 are walkable and shootable, 3 is also water, 5 is shootable only, and other types block.
 
 ### Effect (WEFF) **Draft**
 

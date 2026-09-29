@@ -149,9 +149,9 @@ func TestParse(t *testing.T) {
 func TestConvert(t *testing.T) {
 	_, g := convert(t, buildRSM(ShadeFlat, 255, []testNode{floor()}))
 	// The root centers the model: x and z on the box center, y on the
-	// highest RO point, which is the lowest in glTF.
+	// highest RO point, which is the lowest in glTF. RO's z turns to -z.
 	root := g.doc.Nodes[0]
-	if *root.Translation != [3]float32{-5, 0, -5} {
+	if *root.Translation != [3]float32{-5, 0, 5} {
 		t.Errorf("root translation %v", *root.Translation)
 	}
 	prim := g.doc.Meshes[0].Primitives[0]
@@ -165,6 +165,16 @@ func TestConvert(t *testing.T) {
 	p := func(i int) [3]float64 { return [3]float64{pos[3*idx[i]], pos[3*idx[i]+1], pos[3*idx[i]+2]} }
 	if n, _ := normalize(cross(sub(p(1), p(0)), sub(p(2), p(0)))); n[1] < 0.99 {
 		t.Errorf("winding gives normal %v, want up", n)
+	}
+	// RO's east (+x) stays +x, and RO's north (+z) becomes -z. A mirror
+	// would keep z or negate x.
+	var east, north bool
+	for i := 0; i < len(pos); i += 3 {
+		east = east || (pos[i] == 10 && pos[i+2] == 0)
+		north = north || (pos[i] == 0 && pos[i+2] == -10)
+	}
+	if !east || !north {
+		t.Errorf("positions %v, want (10, 0, 0) and (0, 0, -10)", pos)
 	}
 	mat := g.doc.Materials[prim.Material]
 	if mat.DoubleSided || mat.AlphaMode != "MASK" || g.doc.Images[0].URI != "asset:texture/test%5Cwall.bmp" {
@@ -207,9 +217,9 @@ func TestHierarchyAndAnimation(t *testing.T) {
 		t.Fatalf("nodes %+v", g.doc.Nodes)
 	}
 	arm := g.doc.Nodes[2]
-	// Translations mirror through Y. Rotations around Y keep their
-	// quaternion, since x and z are zero.
-	if *arm.Translation != [3]float32{1, -2, 3} || math.Abs(float64(arm.Rotation[1]-s)) > 1e-6 {
+	// Translations turn with R. A rotation around RO's Y is a rotation the
+	// other way around glTF's Y.
+	if *arm.Translation != [3]float32{1, -2, -3} || math.Abs(float64(arm.Rotation[1]+s)) > 1e-6 {
 		t.Errorf("arm %+v %v", *arm.Translation, *arm.Rotation)
 	}
 	if len(g.doc.Animations) != 1 {
@@ -250,7 +260,7 @@ func TestStableOutput(t *testing.T) {
 	}
 }
 
-const stableHash = "ca95e04166e5bc022416f15ea7aa1353ec6229449b785b0708e27fccc5634f6b"
+const stableHash = "c7f77e6f83f8ab816c68812041fb2906fb240f95d6b05cebad00ffd6f0584f5d"
 
 func TestRender(t *testing.T) {
 	m, err := Parse(buildRSM(ShadeFlat, 255, []testNode{floor()}))

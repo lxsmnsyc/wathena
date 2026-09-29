@@ -53,10 +53,26 @@ func TestTextureResolver(t *testing.T) {
 			t.Errorf("%s: %q, want %q", in, got, want)
 		}
 	}
-	if got, ok := ModelName(`data\model\프론테라\Fountain.rsm`); !ok || got != "model/프론테라/fountain" {
-		t.Errorf("ModelName = %q, %v", got, ok)
+	names := ModelNames([]string{`data\model\a\Tree.rsm`, `data\model\a\tree.rsm2`, `data\model\b.rsm2`, `data\model\c.gr2`})
+	mr := ModelResolver(names)
+	for in, want := range map[string]string{
+		`a\TREE.rsm`:  "model/a/tree",
+		`a\tree.rsm2`: "model/a/tree~rsm2",
+		`b.rsm2`:      "model/b",
+		`c.gr2`:       "model/missing",
+		`gone.rsm`:    "model/gone",
+	} {
+		if got := mr(in); got != want {
+			t.Errorf("model %s: %q, want %q", in, got, want)
+		}
 	}
-	if _, ok := ModelName(`data\model\x.rsm2`); ok {
-		t.Error("ModelName accepted rsm2")
+	if got, ok := MapName(`data\Prontera.rsw`); !ok || got != "map/prontera" || LightmapName(got) != "lightmap/prontera" {
+		t.Errorf("MapName = %q, %v", got, ok)
+	}
+	if _, ok := MapName(`data\sub\x.rsw`); ok {
+		t.Error("MapName accepted a subfolder")
+	}
+	if SoundResolver(`effect\hit.wav`) != "sound/effect/hit" || SoundResolver("") != "sound/missing" {
+		t.Error("SoundResolver")
 	}
 }

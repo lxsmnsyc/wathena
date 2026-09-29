@@ -116,18 +116,95 @@ func TextureResolver(names map[string]string) func(string) string {
 	}
 }
 
-// ModelName returns the asset name for a model in data\model, such as
-// model/prontera/fountain for data\model\prontera\fountain.rsm.
-func ModelName(grfPath string) (string, bool) {
+// modelBase returns the asset name for a model path without the suffix
+// that tells formats apart, and its extension.
+func modelBase(grfPath string) (name, ext string, ok bool) {
 	key := norm.NFC.String(grf.Normalize(grfPath))
 	rest, ok := strings.CutPrefix(key, "data/model/")
-	if !ok {
-		return "", false
+	ext = path.Ext(rest)
+	if !ok || (ext != ".rsm" && ext != ".rsm2") {
+		return "", "", false
 	}
-	base, ok := strings.CutSuffix(rest, ".rsm")
-	name := "model/" + base
-	if !ok || assets.ValidName(name) != nil {
+	name = "model/" + strings.TrimSuffix(rest, ext)
+	if assets.ValidName(name) != nil {
+		return "", "", false
+	}
+	return name, ext, true
+}
+
+// ModelNames returns the asset name for each RSM and RSM2 model in paths,
+// a list of GRF paths. When both formats exist for one name, the RSM model
+// gets the plain name and the RSM2 model gets ~rsm2 appended.
+func ModelNames(paths []string) map[string]string {
+	byName := map[string][]string{}
+	for _, p := range paths {
+		if name, _, ok := modelBase(p); ok {
+			byName[name] = append(byName[name], p)
+		}
+	}
+	out := map[string]string{}
+	for name, ps := range byName {
+		hasRSM := false
+		for _, p := range ps {
+			_, ext, _ := modelBase(p)
+			hasRSM = hasRSM || ext == ".rsm"
+		}
+		for _, p := range ps {
+			_, ext, _ := modelBase(p)
+			if ext == ".rsm2" && hasRSM {
+				out[p] = name + "~rsm2"
+			} else {
+				out[p] = name
+			}
+		}
+	}
+	return out
+}
+
+// ModelResolver returns a function that maps a model path as maps write
+// it, relative to data\model, to an asset name. names is the result of
+// ModelNames. A model that is not in the client still gets the name it
+// would have.
+func ModelResolver(names map[string]string) func(string) string {
+	byKey := make(map[string]string, len(names))
+	for p, n := range names {
+		byKey[norm.NFC.String(grf.Normalize(p))] = n
+	}
+	return func(p string) string {
+		full := `data\model\` + p
+		if n, ok := byKey[norm.NFC.String(grf.Normalize(full))]; ok {
+			return n
+		}
+		if n, _, ok := modelBase(full); ok {
+			return n
+		}
+		return "model/missing"
+	}
+}
+
+// SoundResolver maps a sound path as maps write it, relative to data\wav,
+// to an asset name.
+func SoundResolver(p string) string {
+	if n, ok := SoundName(`data\wav\` + p); ok {
+		return n
+	}
+	return "sound/missing"
+}
+
+// MapName returns the asset name for a map's RSW file, such as map/prontera
+// for data\prontera.rsw.
+func MapName(grfPath string) (string, bool) {
+	key := norm.NFC.String(grf.Normalize(grfPath))
+	rest, ok := strings.CutPrefix(key, "data/")
+	base, ok2 := strings.CutSuffix(rest, ".rsw")
+	name := "map/" + base
+	if !ok || !ok2 || strings.Contains(base, "/") || assets.ValidName(name) != nil {
 		return "", false
 	}
 	return name, true
+}
+
+// LightmapName returns the lightmap atlas name for a map name.
+func LightmapName(mapName string) string {
+	return "lightmap/" + strings.TrimPrefix(mapName, "map/")
 }

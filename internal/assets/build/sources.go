@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"image"
 	"io/fs"
 	"os"
 	"path"
@@ -15,10 +16,12 @@ import (
 
 	clientdata "github.com/lxsmnsyc/wathena/client/data"
 	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
+	"github.com/lxsmnsyc/wathena/internal/assets/mapimport"
 	"github.com/lxsmnsyc/wathena/internal/assets/model"
 	"github.com/lxsmnsyc/wathena/internal/assets/placeholder"
 	"github.com/lxsmnsyc/wathena/internal/assets/sound"
 	"github.com/lxsmnsyc/wathena/internal/assets/texture"
+	"github.com/lxsmnsyc/wathena/internal/assets/wmap"
 	"github.com/lxsmnsyc/wathena/internal/assets/wpal"
 	"github.com/lxsmnsyc/wathena/internal/grf"
 )
@@ -30,7 +33,8 @@ const (
 	paletteConverter     = "grf-palette-1"
 	textureConverter     = "grf-texture-1"
 	soundConverter       = "grf-sound-1"
-	modelConverter       = "grf-model-1"
+	modelConverter       = "grf-model-2"
+	mapConverter         = "grf-map-1"
 	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
 )
@@ -99,6 +103,15 @@ func (g *GRF) Items() ([]Item, error) {
 	textures := grfimport.TextureNames(paths)
 	textureName := grfimport.TextureResolver(textures)
 	textureListKey := hashNames(textures)
+	models := grfimport.ModelNames(paths)
+	modelName := grfimport.ModelResolver(models)
+	names := mapimport.Names{Texture: textureName, Model: modelName, Sound: grfimport.SoundResolver}
+	// Map outputs depend on the texture and model names they refer to.
+	namesKey := textureListKey + "|" + hashNames(models)
+	byKey := make(map[string]grf.Source, len(files))
+	for _, s := range files {
+		byKey[s.Entry.Key] = s
+	}
 	for _, s := range files {
 		if name, ok := grfimport.SoundName(s.Entry.Name); ok {
 			items = append(items, Item{
@@ -115,7 +128,11 @@ func (g *GRF) Items() ([]Item, error) {
 			})
 			continue
 		}
-		if name, ok := grfimport.ModelName(s.Entry.Name); ok {
+		if name, ok := models[s.Entry.Name]; ok {
+			// RSM2 models wait for their converter.
+			if path.Ext(s.Entry.Key) != ".rsm" {
+				continue
+			}
 			items = append(items, Item{
 				Name: name,
 				Ext:  "glb",
@@ -134,6 +151,59 @@ func (g *GRF) Items() ([]Item, error) {
 					return model.Convert(m, textureName)
 				},
 			})
+			continue
+		}
+		if name, ok := grfimport.MapName(s.Entry.Name); ok {
+			base := strings.TrimSuffix(s.Entry.Key, ".rsw")
+			gat, ok1 := byKey[base+".gat"]
+			gnd, ok2 := byKey[base+".gnd"]
+			if !ok1 || !ok2 {
+				continue
+			}
+			rsw := s
+			lightmap := grfimport.LightmapName(name)
+			convert := func() (*wmap.Map, *image.NRGBA, error) {
+				var data [3][]byte
+				for i, src := range []grf.Source{gat, gnd, rsw} {
+					b, err := c.ReadFile(src)
+					if err != nil {
+						return nil, nil, err
+					}
+					data[i] = b
+				}
+				ga, err := mapimport.ParseGAT(data[0])
+				if err != nil {
+					return nil, nil, err
+				}
+				gn, err := mapimport.ParseGND(data[1])
+				if err != nil {
+					return nil, nil, err
+				}
+				rw, err := mapimport.ParseRSW(data[2])
+				if err != nil {
+					return nil, nil, err
+				}
+				return mapimport.Convert(ga, gn, rw, names, lightmap)
+			}
+			key := mapConverter + "|" + sourceKey(gat) + "|" + sourceKey(gnd) + "|" + sourceKey(rsw) + "|" + namesKey
+			items = append(items,
+				Item{Name: name, Ext: "wmap", CacheKey: key + "|" + name, Produce: func() ([]byte, error) {
+					m, _, err := convert()
+					if err != nil {
+						return nil, err
+					}
+					return m.Encode()
+				}},
+				Item{Name: lightmap, Ext: "webp", CacheKey: fmt.Sprintf("%s|%d|%s", key, texture.Level, lightmap), Produce: func() ([]byte, error) {
+					_, atlas, err := convert()
+					if err != nil {
+						return nil, err
+					}
+					// The atlas is data, so its pixels are kept exactly:
+					// no color key and no bleeding.
+					return texture.Encode(atlas)
+				}},
+			)
 			continue
 		}
 		if name, ok := textures[s.Entry.Name]; ok {

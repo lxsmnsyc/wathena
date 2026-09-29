@@ -16,11 +16,12 @@ import (
 // are then moved by T(offset) × M3. A model is centered on its bounding
 // box and set on the ground: T(-center x, -max y, -center z).
 //
-// RO's model space has Y pointing down. The glTF file has Y pointing up,
-// so everything is mirrored through Y by F = diag(1, -1, 1): vertices
-// become F × v, and each node transform X becomes F × X × F, which is
-// still a translation, rotation, and scale. The client multiplies map
-// object placements by F the same way.
+// RO's space has X east, Y down, and Z north, which is right-handed. The
+// glTF file has Y up, so everything is turned half a turn around X by
+// R = diag(1, -1, -1): vertices become R × v, and each node transform X
+// becomes R × X × R, which is still a translation, rotation, and scale.
+// North becomes -Z, as glTF's forward direction. R is a rotation, not a
+// mirror, so nothing is flipped. Map objects are placed the same way.
 //
 // Matrix math uses explicit float64 conversions between steps. Go may
 // otherwise fuse multiply-adds on some platforms, which would change the
@@ -125,9 +126,9 @@ func normalize(v [3]float64) ([3]float64, bool) {
 	return [3]float64{v[0] / n, v[1] / n, v[2] / n}, true
 }
 
-// flip is F = diag(1, -1, 1), the mirror between RO's Y-down model space
-// and glTF's Y-up space.
-var flip = scaling([3]float64{1, -1, 1})
+// turn is R = diag(1, -1, -1), the half turn around X from RO's Y-down
+// space to glTF's Y-up space. It is its own inverse.
+var turn = scaling([3]float64{1, -1, -1})
 
 func finite(v ...float64) bool {
 	for _, x := range v {
@@ -254,9 +255,9 @@ func (c *converter) run() ([]byte, error) {
 	}
 	center := [3]float64{float64(lo[0]+hi[0]) / 2, 0, float64(lo[2]+hi[2]) / 2}
 
-	// The root node holds the centering, mirrored: F × T(-cx, -max y, -cz) × F.
+	// The root node holds the centering, turned: R × T(-cx, -max y, -cz) × R.
 	c.b.doc.Asset = gltfAsset{Version: "2.0", Generator: "wathena"}
-	c.b.doc.Nodes = append(c.b.doc.Nodes, gltfNode{Name: "root", Translation: f32p3([3]float64{-center[0], hi[1], -center[2]})})
+	c.b.doc.Nodes = append(c.b.doc.Nodes, gltfNode{Name: "root", Translation: f32p3([3]float64{-center[0], hi[1], center[2]})})
 	c.gltfNode = map[int]int{}
 	c.materials = map[[2]int]int{}
 	c.textures = map[int]int{}
@@ -291,14 +292,14 @@ func f32p3(v [3]float64) *[3]float32 {
 	return &[3]float32{float32(v[0]), float32(v[1]), float32(v[2])}
 }
 
-// mirrorQuat conjugates a rotation by F: the axis mirrors through Y and
-// the angle changes sign, which negates x and z.
-func mirrorQuat(q [4]float64) [4]float32 {
+// turnQuat conjugates a rotation by R: the axis turns with R and the
+// angle stays, which negates y and z.
+func turnQuat(q [4]float64) [4]float32 {
 	n := math.Sqrt(float64(float64(q[0]*q[0])+float64(q[1]*q[1])) + float64(float64(q[2]*q[2])+float64(q[3]*q[3])))
 	if n == 0 || math.IsNaN(n) || math.IsInf(n, 0) {
 		return [4]float32{0, 0, 0, 1}
 	}
-	return [4]float32{float32(-q[0] / n), float32(q[1] / n), float32(-q[2] / n), float32(q[3] / n)}
+	return [4]float32{float32(q[0] / n), float32(-q[1] / n), float32(-q[2] / n), float32(q[3] / n)}
 }
 
 func (c *converter) addNode(i, parent int) error {
@@ -310,8 +311,8 @@ func (c *converter) addNode(i, parent int) error {
 		if !finite(pos[0], pos[1], pos[2], scale[0], scale[1], scale[2]) {
 			return fmt.Errorf("%w: node transform is out of range", ErrFormat)
 		}
-		gn.Translation = f32p3([3]float64{pos[0], -pos[1], pos[2]})
-		r := mirrorQuat(q)
+		gn.Translation = f32p3([3]float64{pos[0], -pos[1], -pos[2]})
+		r := turnQuat(q)
 		gn.Rotation = &r
 		gn.Scale = f32p3(scale)
 	}
@@ -378,15 +379,15 @@ func (c *converter) material(tex int, twoSide bool) int {
 }
 
 // globalLinear returns the node's glTF world matrix at frame 0:
-// F × C × world × F. Only its linear part is used, so C is left out.
+// R × C × world × R. Only its linear part is used, so C is left out.
 func (c *converter) globalLinear(i int) mat4 {
-	return flip.mul(c.world[i]).mul(flip)
+	return turn.mul(c.world[i]).mul(turn)
 }
 
 func (c *converter) addMesh(i int) (int, error) {
 	n := c.m.Nodes[i]
-	// Vertices are stored as F × T(offset) × M3 × v.
-	toMesh := flip.mul(c.meshMatrix(n))
+	// Vertices are stored as R × T(offset) × M3 × v.
+	toMesh := turn.mul(c.meshMatrix(n))
 	pos := make([][3]float64, len(n.Vertices))
 	for k, v := range n.Vertices {
 		pos[k] = toMesh.point(vec(v))
@@ -544,7 +545,7 @@ func (c *converter) addAnimation(order []int) {
 			if key.Frame < 0 || (k > 0 && key.Frame == sorted[k-1].Frame) {
 				continue
 			}
-			q := mirrorQuat([4]float64{float64(key.Q[0]), float64(key.Q[1]), float64(key.Q[2]), float64(key.Q[3])})
+			q := turnQuat([4]float64{float64(key.Q[0]), float64(key.Q[1]), float64(key.Q[2]), float64(key.Q[3])})
 			times = append(times, float32(key.Frame)/1000)
 			values = append(values, q[:]...)
 		}

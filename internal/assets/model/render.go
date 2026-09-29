@@ -107,9 +107,8 @@ type rtri struct {
 	mirrored bool
 }
 
-// Render draws a GLB file from a fixed camera above and to the south-east,
-// fitted to size × size pixels.
-func Render(glb []byte, size int, textures Texture) (*image.NRGBA, error) {
+// collect returns the triangles of a GLB file placed by parent.
+func collect(glb []byte, parent mat4, textures Texture) ([]rtri, error) {
 	g, err := readGLB(glb)
 	if err != nil {
 		return nil, err
@@ -147,14 +146,13 @@ func Render(glb []byte, size int, textures Texture) (*image.NRGBA, error) {
 					uri := g.doc.Images[g.doc.Textures[bt.Index].Source].URI
 					tex = textures(strings.TrimPrefix(unescapeURI(uri), "asset:"))
 				}
+				origin := m.point([3]float64{})
 				for k := 0; k+2 < len(idx); k += 3 {
 					t := rtri{tex: tex, cull: !mat.DoubleSided, mirrored: mirrored}
 					for c := range 3 {
 						v := idx[k+c]
 						t.p[c] = m.point([3]float64{pos[3*v], pos[3*v+1], pos[3*v+2]})
-						t.n[c] = m.point([3]float64{nrm[3*v], nrm[3*v+1], nrm[3*v+2]})
-						origin := m.point([3]float64{})
-						t.n[c], _ = normalize(sub(t.n[c], origin))
+						t.n[c], _ = normalize(sub(m.point([3]float64{nrm[3*v], nrm[3*v+1], nrm[3*v+2]}), origin))
 						t.uv[c] = [2]float64{uv[2*v], uv[2*v+1]}
 					}
 					tris = append(tris, t)
@@ -169,11 +167,65 @@ func Render(glb []byte, size int, textures Texture) (*image.NRGBA, error) {
 		return nil
 	}
 	for _, n := range g.doc.Scenes[g.doc.Scene].Nodes {
-		if err := walk(n, identity(), 0); err != nil {
+		if err := walk(n, parent, 0); err != nil {
 			return nil, err
 		}
 	}
-	return rasterize(tris, size), nil
+	return tris, nil
+}
+
+// Render draws a GLB file from a fixed camera above and to the south-east,
+// fitted to size × size pixels.
+func Render(glb []byte, size int, textures Texture) (*image.NRGBA, error) {
+	tris, err := collect(glb, identity(), textures)
+	if err != nil {
+		return nil, err
+	}
+	// The camera looks down from the south-east: turn 45° around Y, then
+	// tilt 35° down. Screen X is right, screen Y is down, depth is away.
+	cy, sy := math.Cos(math.Pi/4), math.Sin(math.Pi/4)
+	cx, sx := math.Cos(35*math.Pi/180), math.Sin(35*math.Pi/180)
+	view := func(p [3]float64) [3]float64 {
+		x := p[0]*cy - p[2]*sy
+		z := p[0]*sy + p[2]*cy
+		y := p[1]*cx - z*sx
+		d := p[1]*sx + z*cx
+		return [3]float64{x, -y, -d}
+	}
+	img := image.NewNRGBA(image.Rect(0, 0, size, size))
+	rasterize(img, tris, view, true)
+	return img, nil
+}
+
+// Instance is a model placed by a column-major matrix.
+type Instance struct {
+	GLB    []byte
+	Matrix [16]float32
+}
+
+// RenderTopDown draws models straight down onto img, over what it already
+// holds, such as a ground image. One pixel is 1 / pixelsPerUnit units,
+// with north (-Z) up and X = 0, Z = 0 at the bottom-left corner.
+func RenderTopDown(img *image.NRGBA, instances []Instance, pixelsPerUnit float64, textures Texture) error {
+	var tris []rtri
+	for _, in := range instances {
+		var m mat4
+		for i, v := range in.Matrix {
+			m[i] = float64(v)
+		}
+		t, err := collect(in.GLB, m, textures)
+		if err != nil {
+			return err
+		}
+		tris = append(tris, t...)
+	}
+	h := float64(img.Rect.Dy())
+	// Screen Y grows toward the south, +Z. Depth is -Y: higher is nearer.
+	view := func(p [3]float64) [3]float64 {
+		return [3]float64{p[0] * pixelsPerUnit, h + p[2]*pixelsPerUnit, -p[1]}
+	}
+	rasterize(img, tris, view, false)
+	return nil
 }
 
 func unescapeURI(s string) string {
@@ -192,22 +244,13 @@ func unescapeURI(s string) string {
 	return b.String()
 }
 
-func rasterize(tris []rtri, size int) *image.NRGBA {
-	img := image.NewNRGBA(image.Rect(0, 0, size, size))
-	// The camera looks down from the south-east: turn 45° around Y, then
-	// tilt 35° down. Screen X is right, screen Y is down, depth is away.
-	cy, sy := math.Cos(math.Pi/4), math.Sin(math.Pi/4)
-	cx, sx := math.Cos(35*math.Pi/180), math.Sin(35*math.Pi/180)
-	view := func(p [3]float64) [3]float64 {
-		x := p[0]*cy - p[2]*sy
-		z := p[0]*sy + p[2]*cy
-		y := p[1]*cx - z*sx
-		d := p[1]*sx + z*cx
-		return [3]float64{x, -y, -d}
-	}
+// rasterize draws triangles through view, which maps a point to screen
+// X, screen Y, and depth. With fit, the view is scaled to fill img.
+func rasterize(img *image.NRGBA, tris []rtri, view func([3]float64) [3]float64, fit bool) {
+	size := img.Rect.Dx()
+	vt := make([][3][3]float64, len(tris))
 	lo := [2]float64{math.Inf(1), math.Inf(1)}
 	hi := [2]float64{math.Inf(-1), math.Inf(-1)}
-	vt := make([][3][3]float64, len(tris))
 	for i, t := range tris {
 		for c := range 3 {
 			vt[i][c] = view(t.p[c])
@@ -215,14 +258,18 @@ func rasterize(tris []rtri, size int) *image.NRGBA {
 			hi[0], hi[1] = max(hi[0], vt[i][c][0]), max(hi[1], vt[i][c][1])
 		}
 	}
-	span := max(hi[0]-lo[0], hi[1]-lo[1])
-	if span <= 0 || math.IsInf(span, 0) {
-		return img
+	scale, ox, oy := 1.0, 0.0, 0.0
+	if fit {
+		span := max(hi[0]-lo[0], hi[1]-lo[1])
+		if span <= 0 || math.IsInf(span, 0) {
+			return
+		}
+		scale = float64(size) * 0.9 / span
+		ox = float64(size)/2 - (lo[0]+hi[0])/2*scale
+		oy = float64(img.Rect.Dy())/2 - (lo[1]+hi[1])/2*scale
 	}
-	scale := float64(size) * 0.9 / span
-	ox := float64(size)/2 - (lo[0]+hi[0])/2*scale
-	oy := float64(size)/2 - (lo[1]+hi[1])/2*scale
-	depth := make([]float64, size*size)
+	w, hgt := img.Rect.Dx(), img.Rect.Dy()
+	depth := make([]float64, w*hgt)
 	for i := range depth {
 		depth[i] = math.Inf(1)
 	}
@@ -246,9 +293,9 @@ func rasterize(tris []rtri, size int) *image.NRGBA {
 			continue
 		}
 		x0 := max(0, int(math.Floor(min(sp[0][0], sp[1][0], sp[2][0]))))
-		x1 := min(size-1, int(math.Ceil(max(sp[0][0], sp[1][0], sp[2][0]))))
+		x1 := min(w-1, int(math.Ceil(max(sp[0][0], sp[1][0], sp[2][0]))))
 		y0 := max(0, int(math.Floor(min(sp[0][1], sp[1][1], sp[2][1]))))
-		y1 := min(size-1, int(math.Ceil(max(sp[0][1], sp[1][1], sp[2][1]))))
+		y1 := min(hgt-1, int(math.Ceil(max(sp[0][1], sp[1][1], sp[2][1]))))
 		for y := y0; y <= y1; y++ {
 			for x := x0; x <= x1; x++ {
 				px, py := float64(x)+0.5, float64(y)+0.5
@@ -259,7 +306,7 @@ func rasterize(tris []rtri, size int) *image.NRGBA {
 					continue
 				}
 				d := w0*sp[0][2] + w1*sp[1][2] + w2*sp[2][2]
-				if d >= depth[y*size+x] {
+				if d >= depth[y*w+x] {
 					continue
 				}
 				col := [4]float64{160, 160, 160, 255}
@@ -284,10 +331,9 @@ func rasterize(tris []rtri, size int) *image.NRGBA {
 					n = [3]float64{-n[0], -n[1], -n[2]}
 				}
 				l := 0.45 + 0.55*max(0, n[0]*light[0]+n[1]*light[1]+n[2]*light[2])
-				depth[y*size+x] = d
+				depth[y*w+x] = d
 				img.SetNRGBA(x, y, color.NRGBA{uint8(min(255, col[0]*l)), uint8(min(255, col[1]*l)), uint8(min(255, col[2]*l)), 255})
 			}
 		}
 	}
-	return img
 }
