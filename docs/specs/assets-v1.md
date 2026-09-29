@@ -121,7 +121,8 @@ Actions, actionCount times
 
 Events, eventCount times
   length        u8
-  name          UTF-8 bytes of a sound name, such as "sound/effect/hit_sword"
+  name          UTF-8 bytes of a sound name, such as "sound/effect/hit_sword",
+                or a marker without "/", such as "atk" for the moment a hit lands
 ```
 
 Rules:
@@ -246,7 +247,7 @@ The build rejects assets over these limits, and the client refuses them if a ser
 
 | Type | Limit |
 |---|---|
-| Sprite | 16 MB uncompressed, 64 pages. |
+| Sprite | 32 MB uncompressed, 64 pages. The largest kRO sprite, an event monster with full-color frames, is 21.8 MB. |
 | Texture | 4096 × 4096 pixels. |
 | Model | 16 MB, 65,536 vertices per primitive. |
 | Map | 64 MB uncompressed, 1024 × 1024 cells. |

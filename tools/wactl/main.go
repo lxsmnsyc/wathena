@@ -10,7 +10,8 @@ import (
 const usage = `usage: wactl <command> [arguments]
 
 commands:
-  assets scan   list what a game client folder contains
+  assets scan      list what a game client folder contains
+  assets sprites   convert monster and NPC sprites and report sizes
 `
 
 func main() {
@@ -22,6 +23,8 @@ func main() {
 	switch os.Args[1] + " " + os.Args[2] {
 	case "assets scan":
 		err = assetsScan(os.Args[3:])
+	case "assets sprites":
+		err = assetsSprites(os.Args[3:])
 	default:
 		fmt.Fprint(os.Stderr, usage)
 		os.Exit(2)

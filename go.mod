@@ -6,4 +6,7 @@ tool google.golang.org/protobuf/cmd/protoc-gen-go
 
 require google.golang.org/protobuf v1.36.12
 
-require golang.org/x/text v0.42.0 // indirect
+require (
+	github.com/andybalholm/brotli v1.2.5 // indirect
+	golang.org/x/text v0.42.0 // indirect
+)
