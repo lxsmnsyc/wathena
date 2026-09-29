@@ -2,6 +2,8 @@
 /bin/
 /dist/
 *.wasm
+# The benchmark's Lua build is committed, so running it needs no C compiler.
+!/tools/luabench/wasm/lua.wasm
 
 # Go
 /vendor/
