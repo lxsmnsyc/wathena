@@ -4,6 +4,10 @@ Command-line tool for worlds, mods, maps, and assets. See docs/strategy.md, sect
 
 ## Commands
 
+`wactl assets build --source <source> [--source <source> ...] --out <folder> [--fast]`
+
+Builds assets from sources, applied in order, into an output folder with a manifest (docs/specs/assets-v1.md). Sources are `placeholder` and `grf:<client folder>`. The GRF source converts monster and NPC sprites so far. Rebuilds reuse unchanged assets from the cache in the output folder. `--fast` uses a low Brotli level for development builds.
+
 `wactl assets scan --client <folder> [--read]`
 
 Lists what a game client folder contains, grouped by asset type. The folder needs a `DATA.INI` and the GRF files it names. With `--read`, it also decompresses every file and reports the speed and any damaged entries.

@@ -1,0 +1,107 @@
+package build
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
+	"github.com/lxsmnsyc/wathena/internal/assets/placeholder"
+	"github.com/lxsmnsyc/wathena/internal/grf"
+)
+
+// Converter versions. Changing a converter's output means raising its
+// version, so cached outputs from the old converter are not reused.
+const (
+	spriteConverter      = "grf-sprite-1"
+	placeholderConverter = "placeholder-1"
+)
+
+// Placeholder is the built-in placeholder pack.
+type Placeholder struct{}
+
+func (Placeholder) Name() string { return "placeholder" }
+
+func (Placeholder) Items() ([]Item, error) {
+	return []Item{{
+		Name:     "placeholder/sprite",
+		Ext:      "wspr",
+		CacheKey: placeholderConverter + "|sprite",
+		Produce:  func() ([]byte, error) { return placeholder.Sprite().Encode() },
+	}}, nil
+}
+
+// GRF imports from a game client folder.
+type GRF struct {
+	Dir    string
+	client *grf.Client
+}
+
+func (g *GRF) Name() string { return "grf:" + g.Dir }
+
+// Close closes the client's GRF files.
+func (g *GRF) Close() error {
+	if g.client == nil {
+		return nil
+	}
+	return g.client.Close()
+}
+
+func (g *GRF) Items() ([]Item, error) {
+	c, err := grf.OpenClient(g.Dir)
+	if err != nil {
+		return nil, err
+	}
+	g.client = c
+
+	type pair struct{ spr, act grf.Source }
+	pairs := map[string]*pair{}
+	for _, s := range c.Files() {
+		name, ok := grfimport.SpriteName(s.Entry.Name)
+		if !ok {
+			continue
+		}
+		p := pairs[name]
+		if p == nil {
+			p = &pair{}
+			pairs[name] = p
+		}
+		if strings.HasSuffix(s.Entry.Key, ".spr") {
+			p.spr = s
+		} else {
+			p.act = s
+		}
+	}
+	var items []Item
+	for name, p := range pairs {
+		if p.spr.Entry.Key == "" || p.act.Entry.Key == "" {
+			continue
+		}
+		items = append(items, Item{
+			Name:     name,
+			Ext:      "wspr",
+			CacheKey: spriteConverter + "|" + sourceKey(p.spr) + "|" + sourceKey(p.act),
+			Produce: func() ([]byte, error) {
+				sprData, err := c.ReadFile(p.spr)
+				if err != nil {
+					return nil, err
+				}
+				actData, err := c.ReadFile(p.act)
+				if err != nil {
+					return nil, err
+				}
+				s, err := grfimport.ConvertSprite(sprData, actData, grfimport.EventName)
+				if err != nil {
+					return nil, err
+				}
+				return s.Encode()
+			},
+		})
+	}
+	return items, nil
+}
+
+// sourceKey identifies a GRF entry's content without reading it: which
+// archive, where it is stored, and its sizes.
+func sourceKey(s grf.Source) string {
+	return fmt.Sprintf("%s:%s:%d:%d:%d", s.Archive, s.Entry.Key, s.Entry.Offset, s.Entry.CompressedSize, s.Entry.Size)
+}

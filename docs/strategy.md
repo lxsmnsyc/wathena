@@ -2129,7 +2129,7 @@ Exit criteria:
 - GRF reader in Go: file tables, CP949 names, `DATA.INI` order, and the rare encrypted entry (section 10.1).
 - `wactl assets build` for the asset contract ([assets-v1](specs/assets-v1.md)): layered sources, content-hashed output, and the sharded manifest.
 - GRF importer: converters for sprites, textures, models, effects, sounds, and classic maps.
-- Pack importer for original art, and the placeholder pack in `assets/placeholder/`.
+- Pack importer for original art, and the placeholder pack drawn by code in `internal/assets/placeholder`.
 - `wactl assets check`.
 - Static asset serving with immutable caching.
 - Client asset manager: Service Worker cache, priorities, upload budgets, and placeholders.

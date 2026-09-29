@@ -10,6 +10,7 @@ import (
 const usage = `usage: wactl <command> [arguments]
 
 commands:
+  assets build     build assets from sources into a folder
   assets scan      list what a game client folder contains
   assets sprites   convert monster and NPC sprites and report sizes
 `
@@ -21,6 +22,8 @@ func main() {
 	}
 	var err error
 	switch os.Args[1] + " " + os.Args[2] {
+	case "assets build":
+		err = assetsBuild(os.Args[3:])
 	case "assets scan":
 		err = assetsScan(os.Args[3:])
 	case "assets sprites":

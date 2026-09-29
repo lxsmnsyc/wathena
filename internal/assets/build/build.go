@@ -1,0 +1,329 @@
+// Package build combines asset sources into a build, as described in
+// docs/specs/assets-v1.md, "Builds".
+package build
+
+import (
+	"bytes"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
+	"sync"
+	"time"
+
+	"github.com/andybalholm/brotli"
+
+	"github.com/lxsmnsyc/wathena/internal/assets"
+)
+
+// Item is one asset a source can provide. Produce is only called for items
+// that win the layering and are not in the cache.
+type Item struct {
+	Name string
+	// Ext is the output extension, such as "wspr".
+	Ext string
+	// CacheKey identifies the input and converter version. Two items with
+	// the same key must produce the same bytes. Empty disables caching.
+	CacheKey string
+	Produce  func() ([]byte, error)
+}
+
+// Source lists the items it provides.
+type Source interface {
+	Name() string
+	Items() ([]Item, error)
+}
+
+// Options control a build.
+type Options struct {
+	Out     string
+	Sources []Source
+	// Brotli is the quality for Brotli copies, 0 to 11.
+	Brotli int
+	// Workers is the number of parallel conversions. 0 means one per CPU.
+	Workers int
+}
+
+// SourceReport counts what one source did.
+type SourceReport struct {
+	Name     string
+	Provided int
+	Replaced int
+}
+
+// Report describes a finished build.
+type Report struct {
+	BuildID   string
+	Sources   []SourceReport
+	Assets    int
+	Converted int
+	Cached    int
+	// Bytes is the uncompressed size of all assets.
+	Bytes    int64
+	Rejected []string
+	Duration time.Duration
+}
+
+// types maps output extensions to manifest types, and marks which are
+// binary formats that get a Brotli copy.
+var types = map[string]struct {
+	t      string
+	brotli bool
+}{
+	"wspr": {"sprite", true},
+	"wpal": {"palette", true},
+	"wmap": {"map", true},
+	"weff": {"effect", true},
+	"webp": {"texture", false},
+	"glb":  {"model", true},
+	"webm": {"sound", false},
+	"mp3":  {"music", false},
+}
+
+type entry struct {
+	H string `json:"h"`
+	T string `json:"t"`
+	S int    `json:"s"`
+}
+
+// Manifest is manifest.json.
+type Manifest struct {
+	Contract string   `json:"contract"`
+	Build    string   `json:"build"`
+	Shards   []string `json:"shards"`
+}
+
+const cacheFile = ".cache.json"
+
+// Run builds the assets into opts.Out.
+func Run(opts Options) (*Report, error) {
+	start := time.Now()
+	if opts.Out == "" {
+		return nil, errors.New("build: no output folder")
+	}
+	if err := os.MkdirAll(opts.Out, 0o750); err != nil {
+		return nil, err
+	}
+	root, err := os.OpenRoot(opts.Out)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = root.Close() }()
+
+	rep := &Report{}
+	// Layer the sources. A later source replaces names from earlier ones.
+	winners := map[string]Item{}
+	for _, src := range opts.Sources {
+		items, err := src.Items()
+		if err != nil {
+			return nil, fmt.Errorf("source %s: %w", src.Name(), err)
+		}
+		sr := SourceReport{Name: src.Name()}
+		for _, it := range items {
+			if err := assets.ValidName(it.Name); err != nil {
+				rep.Rejected = append(rep.Rejected, fmt.Sprintf("%s: %q: invalid name", src.Name(), it.Name))
+				continue
+			}
+			if _, ok := types[it.Ext]; !ok {
+				rep.Rejected = append(rep.Rejected, fmt.Sprintf("%s: %s: unknown extension %q", src.Name(), it.Name, it.Ext))
+				continue
+			}
+			if _, ok := winners[it.Name]; ok {
+				sr.Replaced++
+			}
+			winners[it.Name] = it
+			sr.Provided++
+		}
+		rep.Sources = append(rep.Sources, sr)
+	}
+
+	cache := loadCache(root)
+	names := make([]string, 0, len(winners))
+	for n := range winners {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	var mu sync.Mutex
+	entries := make(map[string]entry, len(names))
+	newCache := map[string]entry{}
+	work := make(chan string)
+	var wg sync.WaitGroup
+	workers := opts.Workers
+	if workers <= 0 {
+		workers = runtime.NumCPU()
+	}
+	for range workers {
+		wg.Go(func() {
+			for name := range work {
+				it := winners[name]
+				e, cached, err := produce(root, it, cache, opts.Brotli)
+				mu.Lock()
+				switch {
+				case err != nil:
+					rep.Rejected = append(rep.Rejected, fmt.Sprintf("%s: %v", name, err))
+				default:
+					entries[name] = e
+					if it.CacheKey != "" {
+						newCache[it.CacheKey] = e
+					}
+					rep.Bytes += int64(e.S)
+					if cached {
+						rep.Cached++
+					} else {
+						rep.Converted++
+					}
+				}
+				mu.Unlock()
+			}
+		})
+	}
+	for _, n := range names {
+		work <- n
+	}
+	close(work)
+	wg.Wait()
+	rep.Assets = len(entries)
+	sort.Strings(rep.Rejected)
+
+	id, err := writeManifest(root, entries)
+	if err != nil {
+		return nil, err
+	}
+	rep.BuildID = id
+	if err := saveCache(root, newCache); err != nil {
+		return nil, err
+	}
+	rep.Duration = time.Since(start)
+	return rep, nil
+}
+
+// produce returns the manifest entry for an item, converting it unless the
+// cache has its key and the output file still exists.
+func produce(root *os.Root, it Item, cache map[string]entry, quality int) (entry, bool, error) {
+	info := types[it.Ext]
+	if e, ok := cache[it.CacheKey]; ok && it.CacheKey != "" {
+		if _, err := root.Stat(StoredPath(e.H, it.Ext)); err == nil {
+			return e, true, nil
+		}
+	}
+	data, err := it.Produce()
+	if err != nil {
+		return entry{}, false, err
+	}
+	sum := sha256.Sum256(data)
+	h := hex.EncodeToString(sum[:])
+	stored := data
+	if info.brotli {
+		// Binary formats are stored only as Brotli. The hash is of the
+		// uncompressed content, which the client checks after decoding.
+		var b bytes.Buffer
+		w := brotli.NewWriterLevel(&b, quality)
+		if _, err := w.Write(data); err != nil {
+			return entry{}, false, err
+		}
+		if err := w.Close(); err != nil {
+			return entry{}, false, err
+		}
+		stored = b.Bytes()
+	}
+	if err := writeFile(root, StoredPath(h, it.Ext), stored); err != nil {
+		return entry{}, false, err
+	}
+	return entry{H: h, T: info.t, S: len(data)}, false, nil
+}
+
+// StoredPath is where an asset with a hash and extension is stored.
+// Binary formats end in ".br".
+func StoredPath(h, ext string) string {
+	p := objectPath(h, ext)
+	if types[ext].brotli {
+		p += ".br"
+	}
+	return p
+}
+
+// objectPath is where content with a hash is stored. It uses only the hash
+// and a fixed extension, never the asset name.
+func objectPath(h, ext string) string {
+	return filepath.Join(h[:2], h+"."+ext)
+}
+
+// writeFile writes a file through a temporary name, so a reader never sees
+// a partial file.
+func writeFile(root *os.Root, p string, data []byte) error {
+	if err := root.MkdirAll(filepath.Dir(p), 0o750); err != nil {
+		return err
+	}
+	var suffix [8]byte
+	_, _ = rand.Read(suffix[:])
+	tmp := p + ".tmp" + hex.EncodeToString(suffix[:])
+	if err := root.WriteFile(tmp, data, 0o644); err != nil { // #nosec G306 -- assets are public files.
+		return err
+	}
+	return root.Rename(tmp, p)
+}
+
+// ShardOf returns the manifest shard for a name: the first byte of its SHA-256.
+func ShardOf(name string) int {
+	sum := sha256.Sum256([]byte(name))
+	return int(sum[0])
+}
+
+func writeManifest(root *os.Root, entries map[string]entry) (string, error) {
+	shards := make([]map[string]entry, 256)
+	for i := range shards {
+		shards[i] = map[string]entry{}
+	}
+	for name, e := range entries {
+		shards[ShardOf(name)][name] = e
+	}
+	m := Manifest{Contract: assets.Contract, Shards: make([]string, 256)}
+	all := sha256.New()
+	for i, sh := range shards {
+		// encoding/json sorts map keys, so the bytes are stable.
+		data, err := json.Marshal(sh)
+		if err != nil {
+			return "", err
+		}
+		sum := sha256.Sum256(data)
+		h := hex.EncodeToString(sum[:])
+		if err := writeFile(root, objectPath(h, "json"), data); err != nil {
+			return "", err
+		}
+		m.Shards[i] = h
+		all.Write(sum[:])
+	}
+	m.Build = time.Now().UTC().Format("20060102T150405Z") + "-" + hex.EncodeToString(all.Sum(nil))[:12]
+	data, err := json.MarshalIndent(m, "", "\t")
+	if err != nil {
+		return "", err
+	}
+	return m.Build, writeFile(root, "manifest.json", append(data, '\n'))
+}
+
+func loadCache(root *os.Root) map[string]entry {
+	c := map[string]entry{}
+	data, err := root.ReadFile(cacheFile)
+	if err != nil {
+		return c
+	}
+	if json.Unmarshal(data, &c) != nil {
+		return map[string]entry{}
+	}
+	return c
+}
+
+func saveCache(root *os.Root, c map[string]entry) error {
+	data, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return writeFile(root, cacheFile, data)
+}

@@ -58,7 +58,7 @@ When a name is missing, the client uses a placeholder and logs the missing name 
 | Effect or sound | Nothing is shown or played. |
 | Map | The map cannot be entered, and the client shows an error. |
 
-The repository ships a placeholder pack under CC0 in `assets/placeholder/`. It covers every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. It is original art made for the project.
+wAthena provides a placeholder pack as the `placeholder` build source. Its art is drawn by code in `internal/assets/placeholder`, so it is original and CC0. It will cover every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. Each part is added when its format's converter exists. `placeholder/sprite` exists now.
 
 ## Formats
 
@@ -191,10 +191,11 @@ wactl assets build \
 
 - **Layering.** Sources are applied in order. A later source replaces names an earlier one provides. Mods are applied after all `--source` values, in mod load order.
 - **Sources.** Each source is an importer:
-  - `placeholder`: the pack in `assets/placeholder/`.
+  - `placeholder`: the placeholder pack, drawn by code.
   - `grf:<folder>`: a game client folder with `DATA.INI` (strategy section 10.1). The importer maps game paths to names with its own rules, such as `data\sprite\몬스터\poring.spr` to `sprite/mob/poring`.
   - `pack:<folder>`: original art in authoring formats (below).
-- **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats also get a Brotli copy, `<hash>.<extension>.br`, which the server sends with `Content-Encoding: br`. The hash is of the uncompressed content, so the client can check it after the browser decompresses.
+- **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses.
+- **Cache.** The build keeps `.cache.json` in the output folder, keyed by each input's identity and converter version. A later build reuses an asset whose key and stored file are unchanged, so slow compression happens once per changed asset.
 - **Report.** The build prints how many names each source provided and replaced, and every asset it rejected, with the reason.
 
 ### Manifest
