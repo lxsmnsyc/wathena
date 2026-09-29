@@ -1652,6 +1652,7 @@ Single assets are small:
 
 Other findings:
 
+- `internal/grf` opens both files in 0.2 seconds and decompresses all 174,959 distinct files (13.8 GB) in 13 seconds on an Apple M2, using all cores. Reading is not the slow part of the build.
 - Both files are GRF version 0x200 with zlib entries. Only 1 of 196,463 entries is encrypted.
 - All file names decode as CP949.
 - Music is outside the GRF, as `BGM/*.mp3`. The converter takes it from the client folder.
@@ -1665,7 +1666,7 @@ The operator runs the converter once per client update:
 wactl assets build --client /path/to/client --out /srv/wathena/assets
 ```
 
-1. **Read.** Read `DATA.INI` for the GRF order, read each GRF's file table, and merge them. Later GRFs override earlier ones, as in the official client. A loose `data` folder overrides all GRFs.
+1. **Read.** Read `DATA.INI` for the GRF order, read each GRF's file table, and merge them. As in the official client, a GRF with a lower number in `DATA.INI` wins over one with a higher number, and a loose `data` folder wins over all GRFs. The kRO client lists `1=rdata.grf` and `2=data.grf`, so `rdata.grf` wins.
 2. **Convert.** Convert each entry into the web format for its type (below). Conversion runs in parallel on all CPU cores.
 3. **Store.** Write each output file under the hash of its content, such as `ab/cd/abcd1234….tex`. Identical outputs are stored once.
 4. **Index.** Write the manifest, which maps each logical name, such as a sprite or texture name, to its content hash.
@@ -1677,6 +1678,8 @@ Rules:
 - **Scope flags.** Operators of procedural-only worlds can leave out classic maps with `--no-classic-maps`, which saves about 0.75 GB.
 - **Parsers are untrusted code paths.** Operators may use GRFs downloaded from the internet. Every parser checks lengths before reading, and has fuzz tests. `lub` files are never run.
 - **Encrypted entries** use a Go port of rAthena's DES decoder (`src/common/grfio.cpp`).
+- **Damaged entries.** One kRO entry (`data\wav\worm_tail_damage.wav`) records a compressed size 11 bytes too small, so its zlib checksum reads the next entry's bytes. The official client still loads it. The reader retries such entries by reading the deflate stream to its end without the checksum, and accepts the result only if it has exactly the recorded size. The build reports how many entries needed this.
+- **Versions.** GRF version 0x200 is supported, which every current client uses. Version 0x300 (64-bit offsets) can be added when an operator needs it. Other versions stop the build with a clear error.
 - **Offline only.** The build runs as a command, not inside the game server. A crash in a parser cannot affect players.
 - The converter is Go, so it shares the GRF and format code with `wactl map import` and the test tools.
 

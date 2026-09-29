@@ -5,6 +5,6 @@ fuzztime="${1:-10s}"
 for pkg in $(go list ./...); do
 	for name in $(go test -list '^Fuzz' "$pkg" | grep '^Fuzz' || true); do
 		echo "== $pkg $name"
-		go test -run '^$' -fuzz "^${name}\$" -fuzztime "$fuzztime" "$pkg"
+		go test -run '^$' -fuzz "^${name}\$" -fuzztime "$fuzztime" -fuzzminimizetime 5s "$pkg"
 	done
 done

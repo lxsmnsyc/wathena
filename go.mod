@@ -5,3 +5,5 @@ go 1.27.1
 tool google.golang.org/protobuf/cmd/protoc-gen-go
 
 require google.golang.org/protobuf v1.36.12
+
+require golang.org/x/text v0.42.0 // indirect
