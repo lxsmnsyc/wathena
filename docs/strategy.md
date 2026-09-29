@@ -177,12 +177,15 @@ Primary: **arnodel/golua**, a pure-Go implementation of Lua 5.4.
 - CPU and memory limits per execution, which the sandbox needs.
 - No cgo.
 
-It is less mature and slower than the C implementation of Lua. Phase 0 must benchmark it against the target workload before the choice is final.
+It is less mature and slower than the C implementation of Lua. The phase 0b benchmark confirmed the choice ([docs/decisions/0001-lua-runtime.md](decisions/0001-lua-runtime.md)):
 
-Fallbacks, in order:
+- A script call costs under 1 µs with limits on.
+- The CPU limit works across coroutine resumes.
+- The memory limit panics when a coroutine is resumed in a later call. It is applied only to calls that do not resume a coroutine until this is fixed upstream.
 
-1. **yuin/gopher-lua.** Pure Go and widely used. It implements Lua 5.1, so numbers are float64 and there is no `//` or bitwise operators. The converter would emit helper functions for integer division and bit flags.
-2. **C Lua 5.4 through cgo.** Fastest and most complete. Cross-compiling then needs a C toolchain per target, built in CI with Docker.
+Fallback: **C Lua 5.4 through our own small cgo binding.** It is fastest for pure Lua work and loading. Host calls cross cgo, and cross-compiling needs a C toolchain per target, built in CI with Docker.
+
+yuin/gopher-lua is not a fallback. It implements Lua 5.1 with float numbers, has no memory limit, and its time limit does not follow coroutines across calls.
 
 All server code talks to Lua through one binding layer (`internal/script`). Game systems never call the Lua library directly. This keeps the runtime replaceable.
 
@@ -2172,7 +2175,7 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 | Scope | About 350k lines of C++ and 808k lines of scripts. | First release uses procedural mode and one ruleset. Classic mode and full script conversion come later. Tier 3 features are left to mods. |
 | GRF reading fails on some browsers | Players cannot load their game files. | Partial reading and caching (section 10.1). Classic mode can be dropped, since generated worlds need only sprites, textures, models, and sounds. |
 | License or trademark problems | Takedown requests or forced changes. | GPL v3 compatible license (section 2.4). No Gravity trademarks in names or branding. No Gravity assets hosted. |
-| `arnodel/golua` maturity or speed | Slow ticks or runtime bugs. | Benchmark in phase 0. Binding layer allows switching to `gopher-lua` or C Lua. Static bonus tables and computed-bonus caching reduce Lua calls. |
+| `arnodel/golua` maturity or speed | Slow ticks or runtime bugs. | Benchmarked in phase 0b (decision 0001). The binding layer recovers from runtime panics and allows switching to C Lua. Static bonus tables and computed-bonus caching reduce Lua calls. |
 | Go garbage collector pauses | Uneven tick times in busy zones. | Allocation budgets per tick, buffer pools, `GOMEMLIMIT`, and tick p99 tracking in load tests. |
 | Missing change events for item scripts | Stale bonuses. | Full-recalculation comparison in tests (section 5.3). |
 | Missing client data entries | Wrong or missing sprites and effects. | Placeholder fallbacks, logged missing IDs, and `wactl client-data validate` (section 10.5). |
@@ -2190,4 +2193,4 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 
 ## 17. Open questions
 
-None at this time.
+- **Lua API design.** The API in section 5 is a sketch. It will be redesigned before the binding layer is built, for example so that mods do not define custom globals. The redesign needs a design proposal.

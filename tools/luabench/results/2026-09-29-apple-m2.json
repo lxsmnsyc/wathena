@@ -1,0 +1,455 @@
+{
+	"arch": "arm64",
+	"checks": [
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"check": "verify",
+			"result": "failed: npc_dialog: [string \"...\"]:59: [string \"...\"]:50: attempt to compare string with"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"check": "npc_dialog",
+			"result": "failed: C Lua 5.4 (cgo) npc_dialog: [string \"...\"]:59: [string \"...\"]:50: attempt to com"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"check": "go_heap_per_state_1000_items",
+			"result": "0 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"check": "lua_count_1000_items",
+			"result": "736 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"check": "infinite_loop",
+			"result": "no limits"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"check": "verify",
+			"result": "failed: npc_dialog: [string \"...\"]:59: [string \"...\"]:50: attempt to compare string with"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"check": "npc_dialog",
+			"result": "failed: C Lua 5.4 (cgo) + limits npc_dialog: [string \"...\"]:59: [string \"...\"]:50: attem"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"check": "go_heap_per_state_1000_items",
+			"result": "0 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"check": "lua_count_1000_items",
+			"result": "736 KB"
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"check": "infinite_loop",
+			"result": "stopped after 20ms: Lua execution quantum exceeded"
+		},
+		{
+			"engine": "arnodel/golua",
+			"check": "go_heap_per_state_1000_items",
+			"result": "1774 KB"
+		},
+		{
+			"engine": "arnodel/golua",
+			"check": "lua_count_1000_items",
+			"result": "2447 KB"
+		},
+		{
+			"engine": "arnodel/golua",
+			"check": "infinite_loop",
+			"result": "no limits"
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"check": "verify",
+			"result": "failed: npc_dialog: golua panic: Too much mem released"
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"check": "npc_dialog",
+			"result": "failed: arnodel/golua + limits npc_dialog: golua panic: Too much mem released"
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"check": "go_heap_per_state_1000_items",
+			"result": "1774 KB"
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"check": "infinite_loop",
+			"result": "stopped after 51ms: CPU limit of 10000000 exceeded"
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"check": "memory_hog",
+			"result": "stopped after 103ms: memory limit of 16777216 exceeded"
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"check": "go_heap_per_state_1000_items",
+			"result": "1774 KB"
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"check": "infinite_loop",
+			"result": "stopped after 48ms: CPU limit of 10000000 exceeded"
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"check": "go_heap_per_state_1000_items",
+			"result": "22481 KB"
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"check": "infinite_loop",
+			"result": "no limits"
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"check": "verify",
+			"result": "failed: npc_dialog: \u003cstring\u003e:55: \u003cstring\u003e:39: context canceled"
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"check": "npc_dialog",
+			"result": "failed: yuin/gopher-lua + limits npc_dialog: \u003cstring\u003e:55: \u003cstring\u003e:39: context canceled"
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"check": "go_heap_per_state_1000_items",
+			"result": "22481 KB"
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"check": "infinite_loop",
+			"result": "stopped after 51ms: \u003cstring\u003e:68: context deadline exceeded"
+		}
+	],
+	"cpus": 8,
+	"go": "go1.27.1",
+	"os": "darwin",
+	"results": [
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"workload": "static_equip",
+			"ns_per_op": 893.77680231049,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"workload": "computed",
+			"ns_per_op": 648.7080903286437,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"workload": "hit_taken",
+			"ns_per_op": 701.2085294112567,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"workload": "compute_1000",
+			"ns_per_op": 263121.2800759814,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"workload": "new_state",
+			"ns_per_op": 62259.516346947195,
+			"allocs_per_op": 10,
+			"bytes_per_op": 2224
+		},
+		{
+			"engine": "C Lua 5.4 (cgo)",
+			"workload": "load_1000_items",
+			"ns_per_op": 4210432.239057239,
+			"allocs_per_op": 1753,
+			"bytes_per_op": 14370
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "static_equip",
+			"ns_per_op": 1008.5309529135443,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "computed",
+			"ns_per_op": 896.3925263873372,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "hit_taken",
+			"ns_per_op": 772.5909684440992,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "compute_1000",
+			"ns_per_op": 257208.13234060403,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "new_state",
+			"ns_per_op": 58539.92066692898,
+			"allocs_per_op": 10,
+			"bytes_per_op": 2224
+		},
+		{
+			"engine": "C Lua 5.4 (cgo) + limits",
+			"workload": "load_1000_items",
+			"ns_per_op": 4204675.658273381,
+			"allocs_per_op": 1753,
+			"bytes_per_op": 14371
+		},
+		{
+			"engine": "arnodel/golua",
+			"workload": "static_equip",
+			"ns_per_op": 434.9351056876031,
+			"allocs_per_op": 2,
+			"bytes_per_op": 88
+		},
+		{
+			"engine": "arnodel/golua",
+			"workload": "computed",
+			"ns_per_op": 330.93560334361496,
+			"allocs_per_op": 2,
+			"bytes_per_op": 88
+		},
+		{
+			"engine": "arnodel/golua",
+			"workload": "hit_taken",
+			"ns_per_op": 529.1935614952146,
+			"allocs_per_op": 2,
+			"bytes_per_op": 88
+		},
+		{
+			"engine": "arnodel/golua",
+			"workload": "npc_dialog",
+			"ns_per_op": 10977.540986608077,
+			"allocs_per_op": 51,
+			"bytes_per_op": 1753
+		},
+		{
+			"engine": "arnodel/golua",
+			"workload": "compute_1000",
+			"ns_per_op": 462889.8261484099,
+			"allocs_per_op": 171,
+			"bytes_per_op": 60748
+		},
+		{
+			"engine": "arnodel/golua",
+			"workload": "new_state",
+			"ns_per_op": 205619.15592365863,
+			"allocs_per_op": 4752,
+			"bytes_per_op": 393071
+		},
+		{
+			"engine": "arnodel/golua",
+			"workload": "load_1000_items",
+			"ns_per_op": 22591014.423076924,
+			"allocs_per_op": 572202,
+			"bytes_per_op": 32391373
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"workload": "static_equip",
+			"ns_per_op": 815.47063474606,
+			"allocs_per_op": 6,
+			"bytes_per_op": 536
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"workload": "computed",
+			"ns_per_op": 716.7564195740814,
+			"allocs_per_op": 6,
+			"bytes_per_op": 536
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"workload": "hit_taken",
+			"ns_per_op": 773.1264490490469,
+			"allocs_per_op": 6,
+			"bytes_per_op": 536
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"workload": "compute_1000",
+			"ns_per_op": 515931.68358714046,
+			"allocs_per_op": 175,
+			"bytes_per_op": 61199
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"workload": "new_state",
+			"ns_per_op": 215451.46774193548,
+			"allocs_per_op": 4756,
+			"bytes_per_op": 394283
+		},
+		{
+			"engine": "arnodel/golua + limits",
+			"workload": "load_1000_items",
+			"ns_per_op": 22347054,
+			"allocs_per_op": 576147,
+			"bytes_per_op": 32556092
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"workload": "static_equip",
+			"ns_per_op": 807.1843169886623,
+			"allocs_per_op": 6,
+			"bytes_per_op": 536
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"workload": "computed",
+			"ns_per_op": 740.3606397091813,
+			"allocs_per_op": 6,
+			"bytes_per_op": 536
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"workload": "hit_taken",
+			"ns_per_op": 870.3621505650564,
+			"allocs_per_op": 6,
+			"bytes_per_op": 536
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"workload": "npc_dialog",
+			"ns_per_op": 15640.17408303854,
+			"allocs_per_op": 71,
+			"bytes_per_op": 3992
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"workload": "compute_1000",
+			"ns_per_op": 605056.7841823057,
+			"allocs_per_op": 175,
+			"bytes_per_op": 61199
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"workload": "new_state",
+			"ns_per_op": 222558.8180727709,
+			"allocs_per_op": 4756,
+			"bytes_per_op": 393651
+		},
+		{
+			"engine": "arnodel/golua + CPU limit",
+			"workload": "load_1000_items",
+			"ns_per_op": 22739196.07843137,
+			"allocs_per_op": 576144,
+			"bytes_per_op": 32529975
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "static_equip",
+			"ns_per_op": 194.37512201524552,
+			"allocs_per_op": 0,
+			"bytes_per_op": 0
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "computed",
+			"ns_per_op": 240.7775903162426,
+			"allocs_per_op": 2,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "hit_taken",
+			"ns_per_op": 289.8388118636323,
+			"allocs_per_op": 3,
+			"bytes_per_op": 24
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "npc_dialog",
+			"ns_per_op": 15876.120213425662,
+			"allocs_per_op": 30,
+			"bytes_per_op": 112169
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "compute_1000",
+			"ns_per_op": 332026.9972451791,
+			"allocs_per_op": 1325,
+			"bytes_per_op": 102839
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "new_state",
+			"ns_per_op": 169838.74516527227,
+			"allocs_per_op": 2817,
+			"bytes_per_op": 512677
+		},
+		{
+			"engine": "yuin/gopher-lua",
+			"workload": "load_1000_items",
+			"ns_per_op": 16485941.924242424,
+			"allocs_per_op": 243249,
+			"bytes_per_op": 71714345
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"workload": "static_equip",
+			"ns_per_op": 652.6636799371662,
+			"allocs_per_op": 5,
+			"bytes_per_op": 384
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"workload": "computed",
+			"ns_per_op": 597.874504803834,
+			"allocs_per_op": 7,
+			"bytes_per_op": 408
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"workload": "hit_taken",
+			"ns_per_op": 748.6966626346674,
+			"allocs_per_op": 8,
+			"bytes_per_op": 408
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"workload": "compute_1000",
+			"ns_per_op": 395019.02749029757,
+			"allocs_per_op": 1330,
+			"bytes_per_op": 103225
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"workload": "new_state",
+			"ns_per_op": 172536.82204142012,
+			"allocs_per_op": 2822,
+			"bytes_per_op": 513062
+		},
+		{
+			"engine": "yuin/gopher-lua + limits",
+			"workload": "load_1000_items",
+			"ns_per_op": 26193271.6875,
+			"allocs_per_op": 248249,
+			"bytes_per_op": 72098081
+		}
+	]
+}
