@@ -999,6 +999,8 @@ The rAthena community has many custom scripts on forums and in private repositor
 
 ### 7.1 Threat model
 
+The full threat model, with assets, trust boundaries, and the status of each mitigation, is in [docs/security/threat-model.md](security/threat-model.md).
+
 | Attacker | Goal | Main entry points |
 |---|---|---|
 | Cheating player | Items, zeny, speed, or information they should not have. | Modified web client, bots, injected messages, replayed messages, predicting random outcomes. |
@@ -1988,10 +1990,12 @@ The recorder stays in the rAthena fork. The wAthena repository keeps only its ou
 
 ### Phase 0b: Foundations in the wAthena repository
 
+Status: done on 2026-09-29. Results: [rng-v1 spec](specs/rng-v1.md), [decision 0002](decisions/0002-lua-runtime-c-lua.md) on the Lua runtime, [proposal 0001](proposals/0001-protocol.md) on the protocol, and the [threat model](security/threat-model.md).
+
 - Create the wAthena repository with the layout in section 13.1, the license and mod exception (section 2.4), `SECURITY.md`, and the code of conduct.
 - Import the reference data, inventories, and extracts from phase 0a. Add tests that load the reference data, so later phases can check against it.
 - Design the message schema for the web client protocol.
-- Benchmark `arnodel/golua` against `gopher-lua` and C Lua on converted item and NPC scripts. Pick the Lua runtime.
+- Benchmark Lua runtimes on item and NPC scripts, and pick one.
 - Write the threat model (section 7.1).
 - Set up CI with security checks (section 7.9).
 - Write the seed tree spec with test vectors (section 8.2).
@@ -2194,3 +2198,5 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 ## 17. Open questions
 
 - **Lua API design.** The API in section 5 is a sketch. It will be redesigned before the binding layer is built, for example so that mods do not define custom globals. The redesign needs a design proposal.
+- **One Lua state per mod.** Per-mod memory limits need a separate state for each mod in each zone, instead of shared environment tables (threat model, finding 1). Decide this in the Lua API redesign.
+- **Crash recovery for zone processes.** A crash in C Lua stops the process. The save interval and restart behavior need numbers (threat model, finding 3).
