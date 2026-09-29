@@ -1796,6 +1796,7 @@ The official client keeps many tables inside its executable and its Lua files. T
 | `jobs.yml` | Job ID to look name, per gender, plus mount and costume looks. Look names form sprite names such as `sprite/body/<look>/<sex>`. Each look also lists its GRF sprite name, such as `검사`, for the GRF importer. | rAthena job constants and roBrowser's job tables. |
 | `weapons.yml` | Weapon type to sprite name, attack sound, and attack motion. | roBrowser's weapon tables. |
 | `headgear.yml` | Headgear view IDs used by `core`. Sprites are named by view ID, such as `sprite/headgear/f/1`. The GRF importer reads the sprite file names from the client's `AccNameTable`. | Item `View` values in rAthena's `item_db`. |
+| `garments.yml` | Garment view IDs used by `core`, and which garments are drawn over the body when the character faces away. Sprites are named by view ID, such as `sprite/garment/<look>/<sex>/1`. The GRF importer reads the sprite folder names from the client's `RobeNameTable`. Shields use the client's built-in names for views 1 to 6 and the view ID in the file name for others. | Item `View` values in rAthena's `item_db`, and the client's `RobeTopLayer` table. |
 | `monsters.yml` | Monster ID to sprite name, size, and sounds. | `mob_db` `AegisName` values, which match most sprite names. |
 | `npcs.yml` | NPC sprite ID to sprite name. | rAthena NPC sprite constants and roBrowser's NPC table. |
 | `items.yml` | Item ID to icon, illustration, and display name. | `item_db` names and resource names. |

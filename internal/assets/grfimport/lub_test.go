@@ -108,5 +108,8 @@ func TestRealTables(t *testing.T) {
 	if ids := tb.headgear["남/남_고글"]; len(ids) == 0 {
 		t.Error("no view ID for the goggles")
 	}
-	t.Logf("%d headgear sprite names", len(tb.headgear))
+	if ids := tb.garments["천사날개"]; len(ids) != 1 || ids[0] != 1 {
+		t.Errorf("angel wing garment views %v, want [1]", ids)
+	}
+	t.Logf("%d headgear, %d weapon, %d garment sprite names", len(tb.headgear), len(tb.weapons), len(tb.garments))
 }

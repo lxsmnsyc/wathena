@@ -178,15 +178,25 @@ func TestNames(t *testing.T) {
 		t.Errorf("hair palette %q", got)
 	}
 	ct := &Tables{
-		bodies:  map[string][]string{"검사": {"swordman", "swordman_h"}},
-		races:   map[string]string{"검사": "인간족"},
-		weapons: map[string][]int{"_검": {2}, "_1120": {1120}},
+		bodies:   map[string][]string{"검사": {"swordman", "swordman_h"}},
+		races:    map[string]string{"검사": "인간족"},
+		weapons:  map[string][]int{"_검": {2}, "_1120": {1120}},
+		garments: map[string][]int{"천사날개": {1}, "c_wings_of_gabriel": {37, 38}},
 	}
 	for in, want := range map[string][]string{
-		`data\sprite\인간족\몸통\남\검사_남.spr`:    {"sprite/body/swordman/m", "sprite/body/swordman_h/m"},
-		`data\sprite\인간족\검사\검사_여_검.act`:    {"sprite/weapon/swordman/f/2", "sprite/weapon/swordman_h/f/2"},
-		`data\sprite\인간족\검사\검사_남_1120.spr`: {"sprite/weapon/swordman/m/1120", "sprite/weapon/swordman_h/m/1120"},
-		`data\sprite\도람족\몸통\남\검사_남.spr`:    nil,
+		`data\sprite\인간족\몸통\남\검사_남.spr`:       {"sprite/body/swordman/m", "sprite/body/swordman_h/m"},
+		`data\sprite\인간족\검사\검사_여_검.act`:       {"sprite/weapon/swordman/f/2", "sprite/weapon/swordman_h/f/2"},
+		`data\sprite\인간족\검사\검사_남_1120.spr`:    {"sprite/weapon/swordman/m/1120", "sprite/weapon/swordman_h/m/1120"},
+		`data\sprite\도람족\몸통\남\검사_남.spr`:       nil,
+		`data\sprite\방패\검사\검사_남_가드.spr`:       {"sprite/shield/swordman/m/1", "sprite/shield/swordman_h/m/1"},
+		`data\sprite\방패\검사\검사_여_28901_방패.act`: {"sprite/shield/swordman/f/28901", "sprite/shield/swordman_h/f/28901"},
+		`data\sprite\방패\검사\검사_여_2189.act`:     nil,
+		`data\sprite\로브\천사날개\남\검사_남.spr`:      {"sprite/garment/swordman/m/1", "sprite/garment/swordman_h/m/1"},
+		`data\sprite\로브\C_Wings_of_Gabriel\여\검사_여.spr`: {
+			"sprite/garment/swordman/f/37", "sprite/garment/swordman_h/f/37",
+			"sprite/garment/swordman/f/38", "sprite/garment/swordman_h/f/38",
+		},
+		`data\sprite\로브\천사날개\천사날개.spr`: nil,
 	} {
 		if got := ct.SpriteNames(in); fmt.Sprint(got) != fmt.Sprint(want) {
 			t.Errorf("SpriteNames(%q) = %v, want %v", in, got, want)

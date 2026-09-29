@@ -44,7 +44,22 @@ type Tables struct {
 	races map[string]string
 	// weapons maps a lowercase weapon suffix, such as "_검", to view IDs.
 	weapons map[string][]int
+	// garments maps a lowercase garment folder name, such as "천사날개",
+	// to view IDs.
+	garments map[string][]int
 }
+
+// shieldViews is the client's built-in table of named shield sprites.
+// Other shields use their view ID in the file name, as "_<view>_방패".
+var shieldViews = map[string]int{
+	"_가드":   1,
+	"_버클러":  2,
+	"_쉴드":   3,
+	"_미러쉴드": 4,
+	"_매드바니": 6,
+}
+
+var shieldIDPath = regexp.MustCompile(`^_([1-9]\d{0,6})_방패$`)
 
 // raceFolders maps jobs.yml races to GRF sprite folders.
 var raceFolders = map[string]string{"human": "인간족", "doram": "도람족"}
@@ -55,6 +70,8 @@ var clientTables = []string{
 	`data\luafiles514\lua files\datainfo\accessoryid.lub`,
 	`data\luafiles514\lua files\datainfo\accname.lub`,
 	`data\luafiles514\lua files\datainfo\weapontable.lub`,
+	`data\luafiles514\lua files\datainfo\spriterobeid.lub`,
+	`data\luafiles514\lua files\datainfo\spriterobename.lub`,
 }
 
 // LoadTables evaluates the client's data tables. Missing tables leave the
@@ -74,7 +91,7 @@ func LoadTables(c *grf.Client, jobs *clientdata.Jobs) (*Tables, error) {
 			return nil, fmt.Errorf("%s: %w", name, err)
 		}
 	}
-	t := &Tables{headgear: map[string][]int{}, bodies: map[string][]string{}, races: map[string]string{}, weapons: map[string][]int{}}
+	t := &Tables{headgear: map[string][]int{}, bodies: map[string][]string{}, races: map[string]string{}, weapons: map[string][]int{}, garments: map[string][]int{}}
 	forEachName(g["AccNameTable"], func(id int, name string) {
 		for _, sex := range []string{"남", "여"} {
 			key := grf.Normalize(sex + "/" + sex + name)
@@ -84,6 +101,10 @@ func LoadTables(c *grf.Client, jobs *clientdata.Jobs) (*Tables, error) {
 	forEachName(g["WeaponNameTable"], func(id int, name string) {
 		key := grf.Normalize(name)
 		t.weapons[key] = append(t.weapons[key], id)
+	})
+	forEachName(g["RobeNameTable"], func(id int, name string) {
+		key := grf.Normalize(name)
+		t.garments[key] = append(t.garments[key], id)
 	})
 	if jobs != nil {
 		for _, l := range jobs.Looks {
@@ -155,15 +176,27 @@ func (t *Tables) SpriteNames(grfPath string) []string {
 	return out
 }
 
-// characterNames adds body and weapon names for a path without extension.
-// Bodies are data/sprite/<race>/몸통/<sex>/<sprite>_<sex>. Weapons are
-// data/sprite/<race>/<sprite>/<sprite>_<sex><weapon suffix>.
+// characterNames adds body, weapon, shield, and garment names for a path
+// without extension:
+//
+//	bodies    data/sprite/<race>/몸통/<sex>/<sprite>_<sex>
+//	weapons   data/sprite/<race>/<sprite>/<sprite>_<sex><weapon suffix>
+//	shields   data/sprite/방패/<sprite>/<sprite>_<sex><shield suffix>
+//	garments  data/sprite/로브/<garment>/<sex>/<sprite>_<sex>
 func (t *Tables) characterNames(key string, add func(string)) {
 	rest, ok := strings.CutPrefix(key, "data/sprite/")
 	if !ok {
 		return
 	}
 	race, rest, _ := strings.Cut(rest, "/")
+	switch race {
+	case "방패":
+		t.shieldNames(rest, add)
+		return
+	case "로브":
+		t.garmentNames(rest, add)
+		return
+	}
 	if race != "인간족" && race != "도람족" {
 		return
 	}
@@ -198,6 +231,49 @@ func (t *Tables) characterNames(key string, add func(string)) {
 			for _, look := range looks {
 				add(fmt.Sprintf("sprite/weapon/%s/%s/%d", look, sexes[sex], id))
 			}
+		}
+	}
+}
+
+// shieldNames adds names for rest, a path below data/sprite/방패/.
+// Shields are not split by race, so any look with the sprite name matches.
+func (t *Tables) shieldNames(rest string, add func(string)) {
+	folder, file, ok := strings.Cut(rest, "/")
+	if !ok || strings.Contains(file, "/") {
+		return
+	}
+	for _, sex := range []string{"남", "여"} {
+		suffix, ok := strings.CutPrefix(file, folder+"_"+sex)
+		if !ok {
+			continue
+		}
+		view, ok := shieldViews[suffix]
+		if m := shieldIDPath.FindStringSubmatch(suffix); m != nil {
+			view, _ = strconv.Atoi(m[1])
+			ok = true
+		}
+		if !ok {
+			continue
+		}
+		for _, look := range t.bodies[folder] {
+			add(fmt.Sprintf("sprite/shield/%s/%s/%d", look, sexes[sex], view))
+		}
+	}
+}
+
+// garmentNames adds names for rest, a path below data/sprite/로브/.
+func (t *Tables) garmentNames(rest string, add func(string)) {
+	parts := strings.Split(rest, "/")
+	if len(parts) != 3 || sexes[parts[1]] == "" {
+		return
+	}
+	sprite, ok := strings.CutSuffix(parts[2], "_"+parts[1])
+	if !ok {
+		return
+	}
+	for _, id := range t.garments[parts[0]] {
+		for _, look := range t.bodies[sprite] {
+			add(fmt.Sprintf("sprite/garment/%s/%s/%d", look, sexes[parts[1]], id))
 		}
 	}
 }

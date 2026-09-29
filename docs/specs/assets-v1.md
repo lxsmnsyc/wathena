@@ -26,9 +26,9 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `sprite/body/<look>/<sex>` | Sprite | `sprite/body/swordman/f` | Character body. `<look>` is the look name from `jobs.yml`, including mount and costume looks. `<sex>` is `m` or `f`. |
 | `sprite/head/<race>/<sex>/<style>` | Sprite | `sprite/head/human/m/12` | Hairstyle. `<race>` is `human` or `doram`, from `jobs.yml`. |
 | `sprite/headgear/<sex>/<view>` | Sprite | `sprite/headgear/f/1` | Headgear, by view ID, the number items use in rAthena's `item_db` `View` field. |
-| `sprite/weapon/<look>/<sex>/<name>` | Sprite | `sprite/weapon/swordman/m/sword` | Weapon drawn on a character. |
-| `sprite/shield/<look>/<sex>/<name>` | Sprite | | Shield drawn on a character. |
-| `sprite/garment/<look>/<sex>/<name>` | Sprite | | Garment drawn on a character. |
+| `sprite/weapon/<look>/<sex>/<view>` | Sprite | `sprite/weapon/swordman/m/2` | Weapon drawn on a character, by weapon view ID. |
+| `sprite/shield/<look>/<sex>/<view>` | Sprite | `sprite/shield/knight/f/1` | Shield drawn on a character, by shield view ID. |
+| `sprite/garment/<look>/<sex>/<view>` | Sprite | `sprite/garment/archer/m/1` | Garment drawn on a character, by garment view ID. |
 | `sprite/mob/<name>` | Sprite | `sprite/mob/poring` | Monster. |
 | `sprite/npc/<name>` | Sprite | `sprite/npc/4_f_kafra1` | NPC. |
 | `sprite/<other>/<name>` | Sprite | `sprite/item/red_potion` | Other sprites: `item` (dropped items), `pet`, `homun`, `merc`, `effect`, `cursor`. |
@@ -51,7 +51,8 @@ When a name is missing, the client uses a placeholder and logs the missing name 
 
 | Missing | Replaced by |
 |---|---|
-| Any sprite | `placeholder/sprite` |
+| Weapon, shield, garment, or headgear sprite | Nothing is drawn. |
+| Any other sprite | `placeholder/sprite` |
 | Palette | The sprite's own default palette. |
 | Texture, UI image, icon, or image | `placeholder/texture` |
 | Model | `placeholder/model` |
