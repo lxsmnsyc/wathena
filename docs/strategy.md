@@ -96,7 +96,7 @@ One refactor is already going the right way. Skills are moving from large `switc
 | Ruleset | Feature flags with a Renewal or pre-Renewal base. Rulesets are mods, so modders define their own mixes. `core` ships one ruleset mod per mode (section 3.6). |
 | Default ruleset | `core.ruleset.renewal` is the default choice when creating a world. |
 | Clients | Only the web client. The official client is not supported. |
-| Assets | Each server operator supplies `data.grf`. The repository provides the extractor and converter, and the server streams converted assets to players. Mods can add their own original assets. |
+| Assets | wAthena ships the runtime and an asset contract ([assets-v1](specs/assets-v1.md)), not art. Operators fill the contract from any sources: their `data.grf` through the GRF importer, original art, and mods. The server streams the built assets to players. |
 | Capacity target | 5,000 concurrent players per world. |
 | Login | Username and password at signup. Players can turn on TOTP and passkeys later. |
 | Client customization | The web client is open source. The community changes it by forking or with plugins. |
@@ -991,7 +991,7 @@ The rAthena community has many custom scripts on forums and in private repositor
 ### 6.14 Mod assets
 
 - Mods can ship original sprites, textures, models, and sounds in `assets/`.
-- `wactl mod build` converts them into the client's asset format (section 10.1). The web client downloads them from the server when needed and caches them.
+- A mod's assets are a pack in the format from [assets-v1](specs/assets-v1.md). The asset build applies mod packs after the operator's sources, so mods can add or replace names. The web client downloads them from the server when needed and caches them.
 - Mods must only ship assets they have the right to share.
 - Content from mods that reuses existing sprites refers to them by name. Those files come from the operator's converted game files (section 10.1).
 
@@ -1559,8 +1559,8 @@ maps/home_village/
 ```
 
 - `cells.bin` and `materials.bin` start with a small header (format version, width, height) and store one fixed-size record per cell. They compress well and load fast.
-- Models referenced in `objects.yaml` are glTF 2.0 files from a mod, or RSM model names from the operator's game files.
-- Textures are PNG or KTX2 files from a mod, or texture names from the operator's game files.
+- Models in `objects.yaml` are asset names, such as `model/tree/pine`. Any source can provide them.
+- Textures are asset names too. The asset contract is in [assets-v1](specs/assets-v1.md).
 - The format has a version number. Readers reject versions they do not know.
 
 Tools:
@@ -1623,10 +1623,12 @@ The server streams game assets to the web client over HTTP, the way any web game
 
 Who provides what:
 
-- **The wAthena repository** provides code only: the GRF extractor, the converters, the asset server, and the client loader. It never contains Gravity's assets, and the project's own infrastructure never hosts them.
-- **Each server operator** supplies the `data.grf` files for their own server. The operator runs the converter and serves the result. Operators are responsible for the assets they serve, as they are today when they hand out a client.
-- **Mods** ship their own original assets, which go through the same converter (section 6.14).
+- **The wAthena repository** provides the runtime and the asset contract ([docs/specs/assets-v1.md](specs/assets-v1.md)): asset names, formats, the build, and the manifest. It also provides importers, including the GRF importer, and a small placeholder pack of original CC0 art so the client runs with no other assets. It never contains Gravity's assets, and the project's own infrastructure never hosts them.
+- **Each server operator** chooses the sources for their server: their `data.grf` through the GRF importer, original art packs, or both. Operators are responsible for the assets they serve, as they are today when they hand out a client.
+- **Mods** ship their own original assets as packs (section 6.14).
 - **Players** need nothing but a browser. They open the server's URL and play.
+
+Game data never refers to GRF paths or files. It refers to asset names such as `sprite/mob/poring`, and the client data tables map game IDs to those names (section 10.5). A missing name shows a placeholder.
 
 #### What a full client contains
 
@@ -1660,16 +1662,18 @@ Other findings:
 
 #### Asset build
 
-The operator runs the converter once per client update:
+The operator runs the build once per change to its sources:
 
 ```text
-wactl assets build --client /path/to/client --out /srv/wathena/assets
+wactl assets build --source placeholder --source grf:/path/to/client --out /srv/wathena/assets
 ```
+
+Sources are applied in order, and a later source replaces names an earlier one provides (assets-v1, "Builds"). The steps below describe the GRF importer.
 
 1. **Read.** Read `DATA.INI` for the GRF order, read each GRF's file table, and merge them. As in the official client, a GRF with a lower number in `DATA.INI` wins over one with a higher number, and a loose `data` folder wins over all GRFs. The kRO client lists `1=rdata.grf` and `2=data.grf`, so `rdata.grf` wins.
 2. **Convert.** Convert each entry into the web format for its type (below). Conversion runs in parallel on all CPU cores.
 3. **Store.** Write each output file under the hash of its content, such as `ab/cd/abcd1234….tex`. Identical outputs are stored once.
-4. **Index.** Write the manifest, which maps each logical name, such as a sprite or texture name, to its content hash.
+4. **Index.** Write the manifest, which maps each asset name, such as `sprite/mob/poring`, to its content hash. The importer maps game paths to names with its own rules, such as `data\sprite\몬스터\poring.spr` to `sprite/mob/poring`.
 
 Rules:
 
@@ -1685,19 +1689,20 @@ Rules:
 
 #### Web formats
 
-Each type is converted into a form that is small on the network and needs little work in the browser.
+The formats are defined in [assets-v1](specs/assets-v1.md). In short:
 
-| Type | Source | Output | Why |
-|---|---|---|---|
-| Sprite | `spr` and `act` | Frames packed into atlas pages as 8-bit palette indexes, plus the palette and the animation table, in one binary file. RGBA frames go into separate RGBA pages. | Hair, clothing, and dye colors are palette swaps. Keeping indexes makes a swap a shader uniform change, and uses a quarter of the GPU memory and bandwidth of RGBA. |
-| Texture | `bmp`, `tga`, `png`, `jpg` | WebP, lossless. The magenta color key (`#FF00FF`) becomes alpha. | Much smaller than BMP on the network. Browsers decode WebP off the main thread with `createImageBitmap`. |
-| Model | `rsm`, `rsm2` | Vertex and index buffers per node, with texture references and animation keys. | Uploads straight to the GPU. |
-| Map | Classic `gnd`, `gat`, `rsw`, or the project map format (section 8.12) | Ground mesh buffers, lightmap atlas, cell grid, object placements, and the list of textures and models it uses. | Generated and classic maps load the same way. The dependency list lets the client fetch everything in parallel. |
-| Effect | `str` | Keyframe tables with texture references. | Small, and read by the effect player directly. |
-| Sound | `wav` | Opus in WebM. | About a tenth of the size. All current browsers play it. |
-| Music | `BGM/*.mp3` | Unchanged. | Already compressed. Streamed while playing. |
+| Type | Format | Why |
+|---|---|---|
+| Sprite | WSPR: frames packed into pages as 8-bit palette indexes, plus the palette and RO's animation table. RGBA frames go into RGBA pages. | Hair, clothing, and dye colors are palette swaps. Keeping indexes makes a swap a shader uniform change, and uses a quarter of the GPU memory and bandwidth of RGBA. |
+| Palette | WPAL: 256 colors. | Dyes. |
+| Texture | WebP, lossless. The GRF importer turns the magenta color key (`#FF00FF`) into alpha. | Much smaller than BMP on the network. Browsers decode WebP off the main thread with `createImageBitmap`. |
+| Model | glTF 2.0 binary, with textures referenced by name. | A standard format that three.js loads, and that original art tools export. Shared textures download once. |
+| Map | WMAP: cells, ground mesh, lightmap, objects, sounds, and a dependency list. | Generated and classic maps load the same way. The dependency list lets the client fetch everything in parallel. |
+| Effect | WEFF: keyframe tables with texture names. | Small, and read by the effect player directly. |
+| Sound | WAV or MP3, unchanged. | Small, and every browser decodes both. Go has no pure-Go Opus encoder, so re-encoding would need a C library. |
+| Music | MP3. | Already compressed. Streamed while playing. |
 
-Binary outputs are stored precompressed with Brotli. The server sends them with `Content-Encoding: br`, and the browser decompresses them natively. WebP and Opus are sent as they are.
+Binary outputs are stored with a Brotli copy. The server sends it with `Content-Encoding: br`, and the browser decompresses it natively. WebP and MP3 are sent as they are.
 
 GPU texture compression (KTX2 with Basis Universal) can be added later as a second texture output. Encoding runs on the operator's machine, so its slowness does not affect players. RO textures are small, so plain textures fit the memory budget for now.
 
@@ -1705,7 +1710,7 @@ GPU texture compression (KTX2 with Basis Universal) can be added later as a seco
 
 - Asset files are static and never change, because their names are content hashes. They are served with `Cache-Control: public, max-age=31536000, immutable`.
 - `waserver` serves the asset folder itself. Operators can instead put it behind any static host or CDN. This is recommended for large servers, since asset traffic is much larger than game traffic.
-- **Manifest.** The manifest is split into shards of about 50 KB by a hash of the logical name. The client loads a small root file with the shard hashes, then only the shards it needs. The full manifest for a kRO client would be several MB, too large for a first visit.
+- **Manifest.** The manifest is split into 256 shards by the first byte of the SHA-256 of each name. The client loads a small root file with the shard hashes, then only the shards it needs. The full manifest for a kRO client would be several MB, too large for a first visit.
 - **Access.** Assets are public by default, like any website's images. Operators can require a signed cookie from the account service, which stops simple hotlinking. It does not stop a logged-in player from saving files.
 - **Security.** The server only serves files named by a valid hash, with a fixed content type per extension, `X-Content-Type-Options: nosniff`, and no directory listing. A CDN on another origin is listed in the client's Content Security Policy.
 
@@ -1732,7 +1737,8 @@ Asset traffic depends on new players more than on players online. With 100 MB pe
 
 #### Testing
 
-- CI builds small synthetic GRF files with a GRF writer, covering every entry flag, version, and CP949 names. The repository never contains real game files, and CI never uses them.
+- CI builds small synthetic GRF files with a GRF writer, covering every entry flag and CP949 names. The repository never contains real game files, and CI never uses them.
+- CI builds the placeholder pack and renders a test scene from it, so the whole path from build to screen is tested without game files.
 - Each parser and converter has fuzz tests.
 - A local benchmark builds assets from a full client and records build time, output size, first-visit bytes, and map load times per browser.
 
@@ -1780,7 +1786,7 @@ The official client keeps many tables inside its executable and its Lua files. T
 
 | Table | Content | Source for the minimum set |
 |---|---|---|
-| `jobs.yml` | Job ID to body sprite name, per gender, plus mount and costume variants. | rAthena job constants and roBrowser's job tables. |
+| `jobs.yml` | Job ID to look name, per gender, plus mount and costume looks. Look names form sprite names such as `sprite/body/<look>/<sex>`. | rAthena job constants and roBrowser's job tables. |
 | `weapons.yml` | Weapon type to sprite name, attack sound, and attack motion. | roBrowser's weapon tables. |
 | `headgear.yml` | Headgear view ID to accessory sprite name. | Item `View` values in rAthena's `item_db` and roBrowser's accessory table. |
 | `monsters.yml` | Monster ID to sprite name, size, and sounds. | `mob_db` `AegisName` values, which match most sprite names. |
@@ -1790,13 +1796,16 @@ The official client keeps many tables inside its executable and its Lua files. T
 | `skill_effects.yml` | Skill ID to cast, hit, and ground effects. | roBrowser's skill effect table, limited to skills `core` ships. |
 | `maps.yml` | Classic map name to display name, music, and minimap. | rAthena map index and roBrowser's map tables. |
 
+Every table refers to assets by name ([assets-v1](specs/assets-v1.md)), never by file path. The GRF importer produces names that match these tables.
+
 The minimum set covers what `core` uses and no more. Missing entries fall back to a placeholder sprite or no effect, and the client logs the missing ID once.
 
 Guide and template:
 
 - `docs/client-data.md` explains each table, how to find the right sprite or effect in a GRF, and how to test a change.
 - A template repository shows how to ship replacement tables as a mod. Tables in a mod override matching entries in `client/data/`.
-- `wactl client-data validate` checks tables against the schema and against the files in a given GRF, and lists missing files.
+- `wactl client-data validate` checks tables against the schema.
+- `wactl assets check` lists names the tables refer to that the asset build does not provide.
 
 ### 10.6 Admin tools
 
@@ -2113,7 +2122,10 @@ Exit criteria:
 ### Phase 1: Web client foundation
 
 - GRF reader in Go: file tables, CP949 names, `DATA.INI` order, and the rare encrypted entry (section 10.1).
-- `wactl assets build`: converters for sprites, textures, models, effects, sounds, and classic maps, with content-hashed output and a sharded manifest.
+- `wactl assets build` for the asset contract ([assets-v1](specs/assets-v1.md)): layered sources, content-hashed output, and the sharded manifest.
+- GRF importer: converters for sprites, textures, models, effects, sounds, and classic maps.
+- Pack importer for original art, and the placeholder pack in `assets/placeholder/`.
+- `wactl assets check`.
 - Static asset serving with immutable caching.
 - Client asset manager: Service Worker cache, priorities, upload budgets, and placeholders.
 - Map format reader (section 8.12).
@@ -2122,7 +2134,9 @@ Exit criteria:
 
 Exit criteria:
 
+- With only the placeholder pack, the client renders a test map in CI.
 - An operator can build assets from a full client, and a player can open the client URL and walk around Prontera without a game server.
+- The Draft sections of assets-v1 (maps and effects) are fixed.
 - First-visit size, map load times, build time, and output size from section 10.1 are measured on Chrome, Firefox, and Safari.
 - The WebAssembly pathfinding module passes the shared test vectors.
 - The client meets the frame rate budget in section 3.8 on the test map.

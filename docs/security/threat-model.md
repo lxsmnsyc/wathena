@@ -140,7 +140,8 @@ The boundaries are:
 
 | Threat | Mitigation | Status | Reference |
 |---|---|---|---|
-| A crafted GRF from the internet exploits a parser. | Length checks before every read, fuzz tests, and the build runs offline as its own command, not in the game server. `lub` files are never run. | Decided. | Strategy 10.1 |
+| A crafted GRF, art pack, or mod pack exploits a parser. | Length checks before every read, fuzz tests, and the build runs offline as its own command, not in the game server. `lub` files are never run. | Decided. | Strategy 10.1 |
+| A crafted asset name escapes the build's output folder. | Names are checked against the rules in [assets-v1](../specs/assets-v1.md) before use. Output files are named by content hash, not by asset name. | Decided. | assets-v1 |
 | Path traversal or wrong content types on the asset server. | Files are served only by valid content hash, with a fixed content type per extension and `nosniff`. No directory listing. | Decided. | Strategy 10.1 |
 | Hotlinking and bandwidth abuse. | Optional signed cookie from the account service. A CDN absorbs traffic. | Decided. | Strategy 10.1 |
 | A stale or poisoned cache in players' browsers. | Names are content hashes, so a cached file always matches its name. The client checks the hash of each file it downloads. | Decided. | Strategy 10.1 |
