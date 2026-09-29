@@ -1,0 +1,45 @@
+// The web client protocol. See docs/proposals/0001-protocol.md.
+//
+// Each WebSocket binary frame holds one ClientMessage or one ServerMessage.
+syntax = "proto3";
+
+package wathena.v1;
+
+import "wathena/v1/command.proto";
+import "wathena/v1/event.proto";
+import "wathena/v1/session.proto";
+
+option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1";
+
+// ClientMessage is one message from the client.
+message ClientMessage {
+  // seq increases by 1 for each message the client sends, starting at 1.
+  // The server echoes the last one it processed in Frame.ack_seq.
+  uint32 seq = 1;
+
+  oneof body {
+    Hello hello = 2;
+    Ping ping = 3;
+    Command command = 4;
+  }
+}
+
+// ServerMessage is one message from the server.
+message ServerMessage {
+  oneof body {
+    Welcome welcome = 1;
+    Pong pong = 2;
+    Frame frame = 3;
+    Disconnect disconnect = 4;
+  }
+}
+
+// Frame holds everything that happened in one zone tick that the player can see.
+// The server sends at most one Frame per player per tick.
+message Frame {
+  // tick is the zone tick number. Ticks are 50 ms apart.
+  uint32 tick = 1;
+  // ack_seq is the last ClientMessage.seq the server processed.
+  uint32 ack_seq = 2;
+  repeated Event events = 3;
+}

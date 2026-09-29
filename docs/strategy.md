@@ -488,7 +488,7 @@ flowchart LR
    - No build tags or compile-time switches for game rules. The only build tag is `procedural`, which includes or leaves out a whole feature (section 8.1).
 
 4. **Protocol layer.**
-   - One protocol, designed for the web client. Messages are defined in schema files and code is generated from them.
+   - One protocol, designed for the web client. Messages are Protocol Buffers, and code is generated from the schema ([proposal 0001](proposals/0001-protocol.md)).
    - The protocol has an explicit version. The client sends its version at login, and the server rejects versions it does not support.
    - Related updates are grouped into one message per tick to reduce message count.
    - The gateway translates messages into typed game commands and translates game events back into messages. It contains no game logic.
@@ -1658,7 +1658,7 @@ Server-side prior art:
 | Asset decoding | Web Workers, so decoding does not block rendering. |
 | UI | HTML and CSS overlay on the canvas, using a small framework such as Solid or Svelte. This gives text input, accessibility, and styling for free. |
 | Audio | Web Audio API. |
-| Network | One WebSocket per session. Binary frames. Codec generated from the shared schema. |
+| Network | One WebSocket per session. Binary frames of Protocol Buffers, generated from the shared schema ([proposal 0001](proposals/0001-protocol.md)). |
 | Auth | Login on the account service's page, which returns a short-lived session token. The token opens the game WebSocket. |
 
 ### 10.4 Community changes to the client

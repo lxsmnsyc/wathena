@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package wathena.v1;
+
+option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1";
+
+// Hello is the first client message on a new connection.
+message Hello {
+  // protocol_version is PROTOCOL_VERSION from the client's schema build.
+  uint32 protocol_version = 1;
+  // session_token comes from the account service's login page.
+  // It is sent here, not in the URL, so it does not appear in access logs.
+  bytes session_token = 2;
+  // client_name identifies the client build, such as "wathena-web/0.1.0".
+  // It is for logs and support only. The server never trusts it.
+  string client_name = 3;
+  // language is a BCP 47 tag, such as "en" or "pt-BR".
+  string language = 4;
+}
+
+// Welcome accepts a Hello.
+message Welcome {
+  uint32 protocol_version = 1;
+  // server_time_ms is Unix time in milliseconds, for clock offset.
+  uint64 server_time_ms = 2;
+  // tick is the current tick of the player's zone.
+  uint32 tick = 3;
+  // net_id is the player's own entity ID for this connection.
+  uint32 net_id = 4;
+}
+
+message Ping {
+  uint32 nonce = 1;
+}
+
+message Pong {
+  uint32 nonce = 1;
+  uint64 server_time_ms = 2;
+}
+
+// Disconnect is the last message before the server closes the connection.
+message Disconnect {
+  DisconnectReason reason = 1;
+  // message is shown to the player, in their language.
+  string message = 2;
+}
+
+enum DisconnectReason {
+  DISCONNECT_REASON_UNSPECIFIED = 0;
+  DISCONNECT_REASON_VERSION_UNSUPPORTED = 1;
+  DISCONNECT_REASON_SESSION_INVALID = 2;
+  DISCONNECT_REASON_LOGGED_IN_ELSEWHERE = 3;
+  DISCONNECT_REASON_RATE_LIMITED = 4;
+  DISCONNECT_REASON_BAD_MESSAGE = 5;
+  DISCONNECT_REASON_BANNED = 6;
+  DISCONNECT_REASON_SERVER_SHUTDOWN = 7;
+}

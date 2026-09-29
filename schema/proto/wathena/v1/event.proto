@@ -1,0 +1,213 @@
+syntax = "proto3";
+
+package wathena.v1;
+
+import "wathena/v1/command.proto";
+
+option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1";
+
+// Event is one thing the player sees change.
+// Clients must skip Event cases they do not know, so new cases can be added.
+message Event {
+  oneof body {
+    EntityAppear appear = 1;
+    EntityVanish vanish = 2;
+    EntityMove move = 3;
+    EntityStop stop = 4;
+    StatUpdate stats = 5;
+    Damage damage = 6;
+    SkillCast skill_cast = 7;
+    ChatMessage chat = 8;
+    NpcDialog npc_dialog = 9;
+    EffectPlay effect = 10;
+  }
+}
+
+// EntityKind is what an entity is.
+enum EntityKind {
+  ENTITY_KIND_UNSPECIFIED = 0;
+  ENTITY_KIND_PLAYER = 1;
+  ENTITY_KIND_MONSTER = 2;
+  ENTITY_KIND_NPC = 3;
+  ENTITY_KIND_PET = 4;
+  ENTITY_KIND_HOMUNCULUS = 5;
+  ENTITY_KIND_MERCENARY = 6;
+  ENTITY_KIND_ITEM = 7;
+  ENTITY_KIND_SKILL_UNIT = 8;
+}
+
+// EntityAppear adds an entity to the player's view.
+// Entity IDs are per connection. They are never database IDs.
+message EntityAppear {
+  uint32 id = 1;
+  EntityKind kind = 2;
+  uint32 x = 3;
+  uint32 y = 4;
+  // dir is 0 to 7, starting south and turning clockwise, as in RO.
+  uint32 dir = 5;
+  // look is the entity's appearance. Its meaning depends on kind.
+  Look look = 6;
+  string name = 7;
+  // walk_ms is the time to walk one cell straight.
+  uint32 walk_ms = 8;
+  // hp_permille is HP as a fraction of max HP, from 0 to 1000.
+  // Exact HP is only sent for the player, party members, and homunculi.
+  uint32 hp_permille = 9;
+}
+
+// Look lists sprite and palette IDs from the client data tables.
+message Look {
+  uint32 body = 1;
+  uint32 hair = 2;
+  uint32 hair_color = 3;
+  uint32 cloth_color = 4;
+  uint32 weapon = 5;
+  uint32 shield = 6;
+  uint32 head_top = 7;
+  uint32 head_mid = 8;
+  uint32 head_bottom = 9;
+  uint32 robe = 10;
+  uint32 sex = 11;
+}
+
+message EntityVanish {
+  uint32 id = 1;
+  VanishReason reason = 2;
+}
+
+enum VanishReason {
+  VANISH_REASON_UNSPECIFIED = 0;
+  VANISH_REASON_OUT_OF_SIGHT = 1;
+  VANISH_REASON_DIED = 2;
+  VANISH_REASON_LOGGED_OUT = 3;
+  VANISH_REASON_TELEPORTED = 4;
+}
+
+// EntityMove starts a walk. The client times each step from walk_ms.
+message EntityMove {
+  uint32 id = 1;
+  uint32 from_x = 2;
+  uint32 from_y = 3;
+  // steps holds one direction (0 to 7) per 4 bits, low bits first.
+  // A trailing 0xF fills the last byte when the step count is odd.
+  bytes steps = 4;
+  // start_ms is when the walk starts, relative to the start of the frame's tick.
+  sint32 start_ms = 5;
+  uint32 walk_ms = 6;
+}
+
+// EntityStop ends a walk early at a cell.
+message EntityStop {
+  uint32 id = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+}
+
+// StatUpdate sends changed values of the player's own stats.
+message StatUpdate {
+  repeated Stat stats = 1;
+}
+
+message Stat {
+  StatId id = 1;
+  int64 value = 2;
+}
+
+enum StatId {
+  STAT_ID_UNSPECIFIED = 0;
+  STAT_ID_HP = 1;
+  STAT_ID_MAX_HP = 2;
+  STAT_ID_SP = 3;
+  STAT_ID_MAX_SP = 4;
+  STAT_ID_BASE_LEVEL = 5;
+  STAT_ID_JOB_LEVEL = 6;
+  STAT_ID_BASE_EXP = 7;
+  STAT_ID_JOB_EXP = 8;
+  STAT_ID_ZENY = 9;
+  STAT_ID_WEIGHT = 10;
+  STAT_ID_MAX_WEIGHT = 11;
+  STAT_ID_STR = 12;
+  STAT_ID_AGI = 13;
+  STAT_ID_VIT = 14;
+  STAT_ID_INT = 15;
+  STAT_ID_DEX = 16;
+  STAT_ID_LUK = 17;
+  STAT_ID_ATK = 18;
+  STAT_ID_MATK = 19;
+  STAT_ID_DEF = 20;
+  STAT_ID_MDEF = 21;
+  STAT_ID_HIT = 22;
+  STAT_ID_FLEE = 23;
+  STAT_ID_CRITICAL = 24;
+  STAT_ID_ASPD = 25;
+  STAT_ID_STATUS_POINTS = 26;
+  STAT_ID_SKILL_POINTS = 27;
+}
+
+message Damage {
+  uint32 source = 1;
+  uint32 target = 2;
+  // amount is 0 for a miss.
+  int64 amount = 3;
+  uint32 hits = 4;
+  DamageKind kind = 5;
+  // delay_ms is when the hit shows, relative to the start of the frame's tick.
+  uint32 delay_ms = 6;
+  // skill_id is 0 for normal attacks.
+  uint32 skill_id = 7;
+}
+
+enum DamageKind {
+  DAMAGE_KIND_UNSPECIFIED = 0;
+  DAMAGE_KIND_NORMAL = 1;
+  DAMAGE_KIND_CRITICAL = 2;
+  DAMAGE_KIND_MISS = 3;
+  DAMAGE_KIND_LUCKY_DODGE = 4;
+  DAMAGE_KIND_HEAL = 5;
+}
+
+message SkillCast {
+  uint32 source = 1;
+  uint32 skill_id = 2;
+  uint32 level = 3;
+  uint32 cast_ms = 4;
+  oneof target {
+    uint32 entity = 5;
+    Cell cell = 6;
+  }
+}
+
+message ChatMessage {
+  ChatChannel channel = 1;
+  // from is the speaker's entity ID for local chat, 0 otherwise.
+  uint32 from = 2;
+  string from_name = 3;
+  string text = 4;
+}
+
+// NpcDialog is one step of an NPC dialog. Text is in the player's language.
+message NpcDialog {
+  uint32 npc = 1;
+  // dialog identifies this step. NpcReply must quote it.
+  uint32 dialog = 2;
+  repeated string lines = 3;
+  oneof prompt {
+    bool next = 4;
+    NpcMenu menu = 5;
+    bool input_text = 6;
+    bool input_number = 7;
+    bool close = 8;
+  }
+}
+
+message NpcMenu {
+  repeated string options = 1;
+}
+
+message EffectPlay {
+  uint32 effect_id = 1;
+  oneof at {
+    uint32 entity = 2;
+    Cell cell = 3;
+  }
+}

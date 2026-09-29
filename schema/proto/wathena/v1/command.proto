@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package wathena.v1;
+
+option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1";
+
+// Command is a player action. The server checks every command against its
+// own state before it runs (strategy section 4.1, item 9).
+message Command {
+  oneof body {
+    WalkTo walk_to = 1;
+    Attack attack = 2;
+    UseSkill use_skill = 3;
+    Chat chat = 4;
+    NpcClick npc_click = 5;
+    NpcReply npc_reply = 6;
+    UseItem use_item = 7;
+  }
+}
+
+message WalkTo {
+  uint32 x = 1;
+  uint32 y = 2;
+}
+
+message Attack {
+  uint32 target = 1;
+  // repeat keeps attacking until the target dies or leaves range.
+  bool repeat = 2;
+}
+
+message UseSkill {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  // A skill targets an entity or a cell. Leave both empty for self skills.
+  oneof target {
+    uint32 entity = 3;
+    Cell cell = 4;
+  }
+}
+
+message Cell {
+  uint32 x = 1;
+  uint32 y = 2;
+}
+
+message Chat {
+  ChatChannel channel = 1;
+  string text = 2;
+  // to is a character name for whispers.
+  string to = 3;
+}
+
+enum ChatChannel {
+  CHAT_CHANNEL_UNSPECIFIED = 0;
+  CHAT_CHANNEL_LOCAL = 1;
+  CHAT_CHANNEL_PARTY = 2;
+  CHAT_CHANNEL_GUILD = 3;
+  CHAT_CHANNEL_WHISPER = 4;
+  CHAT_CHANNEL_WORLD = 5;
+}
+
+message NpcClick {
+  uint32 npc = 1;
+}
+
+// NpcReply answers the open NPC dialog step.
+message NpcReply {
+  // dialog is NpcDialog.dialog from the step being answered.
+  uint32 dialog = 1;
+  oneof answer {
+    bool next = 2;
+    uint32 menu = 3;
+    string input_text = 4;
+    int64 input_number = 5;
+    bool close = 6;
+  }
+}
+
+message UseItem {
+  // slot is the inventory slot the server sent in InventoryUpdate.
+  uint32 slot = 1;
+}
