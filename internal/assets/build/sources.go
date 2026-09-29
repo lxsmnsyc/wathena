@@ -1,13 +1,19 @@
 package build
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"path"
 	"strings"
+
+	"golang.org/x/text/unicode/norm"
 
 	clientdata "github.com/lxsmnsyc/wathena/client/data"
 	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
 	"github.com/lxsmnsyc/wathena/internal/assets/placeholder"
+	"github.com/lxsmnsyc/wathena/internal/assets/sound"
 	"github.com/lxsmnsyc/wathena/internal/assets/texture"
 	"github.com/lxsmnsyc/wathena/internal/assets/wpal"
 	"github.com/lxsmnsyc/wathena/internal/grf"
@@ -19,6 +25,8 @@ const (
 	spriteConverter      = "grf-sprite-1"
 	paletteConverter     = "grf-palette-1"
 	textureConverter     = "grf-texture-1"
+	soundConverter       = "grf-sound-1"
+	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
 )
 
@@ -40,12 +48,16 @@ func (Placeholder) Items() ([]Item, error) {
 type GRF struct {
 	Dir    string
 	client *grf.Client
+	root   *os.Root
 }
 
 func (g *GRF) Name() string { return "grf:" + g.Dir }
 
 // Close closes the client's GRF files.
 func (g *GRF) Close() error {
+	if g.root != nil {
+		_ = g.root.Close()
+	}
 	if g.client == nil {
 		return nil
 	}
@@ -81,6 +93,21 @@ func (g *GRF) Items() ([]Item, error) {
 	}
 	textures := grfimport.TextureNames(paths)
 	for _, s := range files {
+		if name, ok := grfimport.SoundName(s.Entry.Name); ok {
+			items = append(items, Item{
+				Name:     name,
+				Ext:      "webm",
+				CacheKey: soundConverter + "|" + sourceKey(s) + "|" + name,
+				Produce: func() ([]byte, error) {
+					b, err := c.ReadFile(s)
+					if err != nil {
+						return nil, err
+					}
+					return sound.ConvertWAV(b)
+				},
+			})
+			continue
+		}
 		if name, ok := textures[s.Entry.Name]; ok {
 			f, _ := texture.FormatOf(path.Ext(s.Entry.Key))
 			items = append(items, Item{
@@ -153,6 +180,54 @@ func (g *GRF) Items() ([]Item, error) {
 		for _, name := range p.names {
 			items = append(items, Item{Name: name, Ext: "wspr", CacheKey: key + "|" + name, Produce: produce})
 		}
+	}
+	music, err := g.music()
+	if err != nil {
+		return nil, err
+	}
+	return append(items, music...), nil
+}
+
+// music lists the MP3 files in the client's BGM folder, such as BGM\01.mp3,
+// which become music/01. They are passed through unchanged.
+func (g *GRF) music() ([]Item, error) {
+	root, err := os.OpenRoot(g.Dir)
+	if err != nil {
+		return nil, err
+	}
+	entries, err := fs.ReadDir(root.FS(), "BGM")
+	if err != nil {
+		_ = root.Close()
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	g.root = root
+	var items []Item
+	for _, e := range entries {
+		base, ok := strings.CutSuffix(strings.ToLower(e.Name()), ".mp3")
+		info, err := e.Info()
+		if !ok || !e.Type().IsRegular() || err != nil {
+			continue
+		}
+		name := norm.NFC.String("music/" + base)
+		file := "BGM/" + e.Name()
+		items = append(items, Item{
+			Name:     name,
+			Ext:      "mp3",
+			CacheKey: fmt.Sprintf("%s|%s|%d|%d|%s", musicConverter, file, info.Size(), info.ModTime().UnixNano(), name),
+			Produce: func() ([]byte, error) {
+				b, err := root.ReadFile(file)
+				if err != nil {
+					return nil, err
+				}
+				if !sound.IsMP3(b) {
+					return nil, fmt.Errorf("%s is not an mp3 file", file)
+				}
+				return b, nil
+			},
+		})
 	}
 	return items, nil
 }

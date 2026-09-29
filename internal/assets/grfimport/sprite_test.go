@@ -205,6 +205,12 @@ func TestNames(t *testing.T) {
 	if got := ct.PaletteNames(`data\palette\몸\검사_여_3.pal`); fmt.Sprint(got) != "[palette/body/swordman/f/3 palette/body/swordman_h/f/3]" {
 		t.Errorf("body palettes %v", got)
 	}
+	if got, ok := SoundName(`data\wav\Effect\ef_hit1.wav`); !ok || got != "sound/effect/ef_hit1" {
+		t.Errorf("SoundName = %q, %v", got, ok)
+	}
+	if _, ok := SoundName(`data\wav\bgm.mp3`); ok {
+		t.Error("SoundName accepted an mp3")
+	}
 	if got := EventName("atk"); got != "atk" {
 		t.Errorf("EventName(atk) = %q", got)
 	}

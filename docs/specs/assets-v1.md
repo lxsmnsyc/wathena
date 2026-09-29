@@ -60,6 +60,15 @@ The GRF importer names images in `data\texture\` by their path without the exten
 
 Some folders have the same image name in two formats, such as `fire.bmp` and `fire.tga`, and the two images differ. The preferred format gets the plain name, and the other gets `~` and its format appended, as in `texture/effect/fire~tga`. The order of preference is BMP, TGA, PNG, then JPEG, because maps and models refer to BMP files.
 
+### Sounds and music from a game client
+
+| Client path | Name |
+|---|---|
+| `data\wav\<path>.wav` in the GRF | `sound/<path>` |
+| `BGM\<name>.mp3` in the client folder | `music/<name>` |
+
+Sprite events that name a sound file, such as `ef_hit1.wav`, become the same sound names.
+
 ### Placeholders
 
 When a name is missing, the client uses a placeholder and logs the missing name once:
@@ -168,9 +177,12 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 
 - Sounds are Opus in a WebM container, mono or stereo, at 48 kHz, which is Opus's native rate.
 - The build encodes sounds at 32 kbit/s for mono and 64 kbit/s for stereo. At these rates, 22 kHz game sounds have no audible loss.
-- Opus has no encoder delay padding at the end, so looping sounds loop without gaps.
+- Sources at other rates are resampled to 48 kHz with the speexdsp resampler at its highest quality.
+- The decoded sound has exactly the source's length. The track's `CodecDelay` holds the encoder's pre-skip, and the last block's `DiscardPadding` removes the padding in the last packet. Phase 1 checks that browsers apply both, so looping sounds loop without gaps.
 - Music can be Opus in WebM, or MP3. The build passes MP3 through unchanged, because re-encoding lossy audio loses quality. New music in packs should be Opus.
-- Accepted inputs: WAV (PCM, IEEE float, and IMA ADPCM), MP3, Ogg Vorbis, and Opus in Ogg or WebM.
+- Accepted inputs: WAV (8- to 32-bit PCM, IEEE float, IMA ADPCM, and Microsoft ADPCM), MP3, Ogg Vorbis, and Opus in Ogg or WebM. The GRF importer reads WAV now. The other inputs come with the pack importer.
+- For ADPCM WAV files, the `fact` chunk gives the length, since the last block is usually only partly filled.
+- libopus and the resampler are compiled to WebAssembly and run by the build tool, like libwebp. Tests pin the encoder's output bytes, so a platform or build change that alters them fails.
 - The container is WebM because browsers have supported Opus in WebM the longest. Phase 1 checks `decodeAudioData` with Opus in WebM on Chrome, Firefox, and Safari. If a browser fails, the container can change to Ogg without re-encoding.
 
 ### Model (glTF profile)

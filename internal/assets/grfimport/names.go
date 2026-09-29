@@ -340,16 +340,28 @@ func trimZeros(s string) string {
 	return strconv.Itoa(n)
 }
 
+// SoundName returns the asset name for a WAV file in data\wav, such as
+// sound/effect/ef_hit1 for data\wav\effect\ef_hit1.wav.
+func SoundName(grfPath string) (string, bool) {
+	key := norm.NFC.String(grf.Normalize(grfPath))
+	rest, ok := strings.CutPrefix(key, "data/wav/")
+	if !ok {
+		return "", false
+	}
+	base, ok := strings.CutSuffix(rest, ".wav")
+	name := "sound/" + base
+	if !ok || assets.ValidName(name) != nil {
+		return "", false
+	}
+	return name, true
+}
+
 // EventName maps an act event to the name stored in WSPR. Sound files,
 // relative to data\wav, become sound names. Other events, such as the
 // "atk" hit marker, are kept in lowercase.
 func EventName(event string) string {
-	e := norm.NFC.String(grf.Normalize(event))
-	if base, ok := strings.CutSuffix(e, ".wav"); ok {
-		name := "sound/" + base
-		if assets.ValidName(name) == nil {
-			return name
-		}
+	if name, ok := SoundName("data/wav/" + event); ok {
+		return name
 	}
-	return e
+	return norm.NFC.String(grf.Normalize(event))
 }
