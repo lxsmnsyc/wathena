@@ -991,7 +991,7 @@ The rAthena community has many custom scripts on forums and in private repositor
 ### 6.14 Mod assets
 
 - Mods can ship original sprites, textures, models, and sounds in `assets/`.
-- The web client downloads them from the server when needed and caches them.
+- `wactl mod build` converts them into the client's asset format (section 10.1). The web client downloads them from the server when needed and caches them.
 - Mods must only ship assets they have the right to share.
 - Content from mods that reuses existing sprites refers to them by name. Those files come from each player's own game files (section 10.1).
 
@@ -1543,7 +1543,7 @@ All maps use one project format:
 
 - Generated maps.
 - Pre-made maps shipped by mods, such as a home area.
-- Classic maps, which the web client converts from the player's GRF files on first use.
+- Classic maps, which the web client converts from the player's imported game files when first entered (section 10.1).
 
 Mod authors never need to produce RO's `.gat`, `.gnd`, or `.rsw` files.
 
@@ -1621,22 +1621,101 @@ The server never trusts the client on range, cooldown, cast completion, weight, 
 
 Ragnarok Online sprites, maps, textures, and sounds belong to Gravity. The project never hosts them.
 
-- **Player files.** Each player selects their own installed game folder or GRF file. The browser reads it locally and caches converted assets in the Origin Private File System. No game assets pass through the project's servers.
-- **Mod assets.** Mods can ship their own original assets (section 6.14).
+- **Player files.** Each player imports their own installed game files once. The browser converts them into the client's own asset format and stores the result locally. No game assets pass through the project's servers.
+- **Mod assets.** Mods ship their own original assets in the same format, downloaded from the server (section 6.14).
 
-#### Reading GRF files
+The renderer only reads the client's own format. It never reads a GRF. The GRF importer is one source that feeds that format, and mods are another.
 
-GRF files are workable in the browser. roBrowser already reads them. The details to handle:
+#### What a full client contains
 
-- **Size.** A full install has several GB of GRF data. The client never loads a whole file. It reads the file table, then reads single entries with `Blob.slice` when needed.
-- **Encryption.** Some entries use DES encryption, either on the header only or mixed with a shuffle (`FILELIST_TYPE_ENCRYPT_HEADER` and `FILELIST_TYPE_ENCRYPT_MIXED` in `src/common/grfio.cpp`). The client ports rAthena's decoder.
-- **Compression.** Entries use zlib. The browser's `DecompressionStream` handles it in a Web Worker.
-- **Filenames.** Names in the file table are Korean text in CP949. `TextDecoder("euc-kr")` decodes them. The client stores a normalized lowercase name for lookups.
-- **Versions.** GRF versions 0x200 and 0x300 are supported. Other versions show a clear error.
-- **Storage limits.** The client converts and caches only the files it uses, not the whole GRF. Browsers limit storage differently, and Safari has the tightest limits. When the quota is low, the client removes the least recently used converted files.
-- **Several files.** Players can add several GRF files and a `data` folder. Later entries override earlier ones, like the official client's `DATA.INI` order.
+Measured on the kRO full client from 2023-04-04 (`data.grf` and `rdata.grf`, 196,463 files):
 
-If GRF reading turns out unreliable on some browsers, classic world mode is the part that depends on it most. It can be dropped, and the rest of the game still needs only sprites, textures, models, and sounds.
+| Group | Files | Compressed | Uncompressed | Needed |
+|---|---:|---:|---:|---|
+| Sprites (`spr`, `act`, `pal`) | ~110,000 | ~0.8 GB | ~4.7 GB | Always. |
+| Textures (`bmp`, `tga`, `png`, `jpg`) | ~65,000 | ~1.9 GB | ~4.4 GB | Always. Includes map, model, effect, and UI textures. |
+| Classic maps (`gnd`, `gat`, `rsw`) | 3,032 | ~0.75 GB | ~5.3 GB | Classic world mode only. |
+| Models (`rsm`, `rsm2`) | ~9,400 | ~40 MB | ~120 MB | Always. |
+| Sounds (`wav`) | 3,383 | ~190 MB | ~210 MB | Always. |
+| Effects (`str`) | 3,485 | ~3 MB | ~34 MB | Always. |
+
+Other findings:
+
+- Both files are GRF version 0x200 with zlib entries. Only 1 of 196,463 entries is encrypted.
+- All file names decode as CP949.
+- The compressed file table of `data.grf` is 2.9 MB for 171,707 entries, so reading it takes well under a second.
+- Music is outside the GRF, as `BGM/*.mp3`.
+- Item and job tables are in `System/*.lub`, compiled Lua. The client uses its own data tables instead (section 10.5), so these are not imported.
+
+#### Import
+
+The first time a player opens the client, they select their game folder. The import then runs in Web Workers:
+
+1. **Index.** Read `DATA.INI` for the GRF order, read each GRF's file table, and merge them. Later GRFs override earlier ones, as in the official client. A loose `data` folder overrides all GRFs.
+2. **Essential assets.** Convert what the first screens need: login and character select UI, the player's own character sprites, the starting map, and common effects. The game can start when this finishes. Target: under 30 seconds.
+3. **Everything else, in the background.** Convert the rest in priority order: sprites of monsters and NPCs near the player, then all other sprites, textures, models, sounds, and effects. A progress bar shows the remaining work. Target: under 10 minutes on a mid-range laptop.
+4. **On demand.** If the game needs an asset that is not converted yet, it moves to the front of the queue.
+
+Rules:
+
+- **The GRF is not needed after the import.** Firefox and Safari cannot keep access to a local file between sessions, so depending on the GRF would make players select it every time. If the tab closes during an import, the next session asks for the folder again to finish it. Chromium browsers remember the folder, so they skip that step.
+- **Classic maps are converted when first entered**, and only in classic world mode. Procedural mode never needs them. This saves about 0.75 GB.
+- **Updates import only changes.** Each converted asset records the GRF entry it came from, by file name, size, and offset. When the player imports a newer client, only entries that changed are converted again.
+- **Converter versions.** Each asset type has a converter version. When a client release changes a converter, assets of that type are converted again at the next import. Until then the old version keeps working.
+- **Parsers are untrusted code paths.** GRFs downloaded from the internet can be crafted. Every parser checks lengths before reading, runs in a worker, and has fuzz tests. `lub` files are never run.
+- **Encrypted entries** use rAthena's DES decoder (`src/common/grfio.cpp`), ported to the worker. They are rare, so they do not slow the import.
+
+#### Runtime asset format
+
+Each asset type is converted into the form the GPU or audio system uses, so loading needs no decoding beyond decompression.
+
+| Type | Source | Stored as | Why |
+|---|---|---|---|
+| Sprite | `spr` and `act` | Frames packed into atlas pages, as 8-bit palette indexes, plus a palette and the animation table. RGBA frames go into separate RGBA pages. | Hair, clothing, and dye colors are palette swaps. Keeping indexes makes a swap a shader uniform change, and uses a quarter of the GPU memory of RGBA. |
+| Texture | `bmp`, `tga`, `png`, `jpg` | RGBA8 pixels with a small header. The magenta color key (`#FF00FF`) becomes alpha during conversion. | Uploads straight to the GPU. No image decoding at load. |
+| Model | `rsm`, `rsm2` | Vertex and index buffers per node, with texture references and animation keys. | Uploads straight to the GPU. |
+| Map | Classic `gnd`, `gat`, `rsw`, or the project map format (section 8.12) | Ground mesh buffers, lightmap atlas, cell grid, and object placements. | Generated and classic maps load the same way. |
+| Effect | `str` | Keyframe tables with texture references. | Small, and read by the effect player directly. |
+| Sound | `wav` | Unchanged. | Small. The browser decodes it with `decodeAudioData`. |
+
+Every stored asset is compressed with deflate through the browser's own `CompressionStream` and `DecompressionStream`. These are fast and need no WebAssembly. Compressed size is close to the GRF's own zlib size.
+
+GPU texture compression (KTX2 with Basis Universal) was considered. It saves GPU memory, but encoding tens of thousands of textures in the browser would take hours. RO textures are small, so plain RGBA fits the memory budget. This can be revisited if phones run out of memory.
+
+#### Storage
+
+- Converted assets live in the Origin Private File System, in pack files of about 64 MB, with one index that maps each asset key to a pack, offset, and length. Tens of thousands of small files would be slow to open.
+- Workers read packs with `FileSystemSyncAccessHandle`, which gives fast synchronous reads off the main thread.
+- The client asks for persistent storage (`navigator.storage.persist()`) before the import, so the browser does not clear the cache under storage pressure.
+- Expected size: about 2 GB for procedural mode, about 2.8 GB with all classic maps.
+- If the browser refuses the space, the client says so before starting, and offers a smaller import without classic maps.
+- Mod assets use the same pack format in a separate area. They are removed when least recently used, since they can be downloaded again. Imported game assets are never removed automatically.
+
+#### Loading while playing
+
+- **One asset manager, in a worker.** Requests carry a priority: needed on screen now, needed soon, or prefetch. Repeated requests for the same asset share one load. Requests that are no longer needed are cancelled.
+- **Upload budget per frame.** Workers decompress and send buffers to the main thread as transferable objects. The main thread uploads to the GPU for at most 4 ms per frame, so loading never causes a visible stutter.
+- **Placeholders.** An entity whose sprite is not loaded yet is drawn as a shadow, then swapped when ready. Gameplay never waits for assets.
+- **Map loading.** On a warp, the client loads the map's ground, models, and textures before showing it. Target: under 1.5 seconds from the cache (section 3.8).
+- **Prefetch.** When the player enters a map, the server sends the list of sprite IDs used on that map, without positions. The client loads them in the background. In procedural worlds this list is sent after the map is entered, so it does not reveal spawns ahead of time.
+- **Memory limits.** GPU resources are counted and removed when least recently used, once the total passes the budget: 512 MB on desktops and 256 MB on phones. This keeps the client under the 1.5 GB browser memory budget in section 3.8.
+- **Drawing.** Characters are drawn from separate layers (body, head, headgear, weapon, shield, garment) in RO's layer order. Sprites that share an atlas page are drawn together in one instanced call.
+
+#### App code
+
+The client's own code is served with content-hashed file names and cached by a Service Worker. After the first visit, the client starts without network access to its code. This is separate from the game asset cache.
+
+#### Testing
+
+- CI builds small synthetic GRF files with a GRF writer, covering every entry flag, version, and CP949 names. Real game files are never used in CI.
+- Each parser has fuzz tests.
+- A local benchmark imports a full client and records import time, storage size, and map load time per browser.
+
+#### Unknowns to measure in phase 1
+
+- Import time on Chrome, Firefox, and Safari, and whether any browser limits worker speed in background tabs.
+- How much storage each browser actually grants after `persist()`, especially Safari.
+- Whether palette-indexed atlases stay within the GPU memory budget in a crowded town.
 
 ### 10.2 Prior art
 
@@ -1655,9 +1734,9 @@ Server-side prior art:
 | Build | Vite. |
 | Rendering | WebGL2 through three.js first. Move to WebGPU when browser support allows. |
 | Sprites | Characters and mobs are 2D sprites drawn in a 3D map. Pack sprite frames into texture atlases and draw them in batches. |
-| Maps | Convert GND, RSW, and RSM into GPU-ready meshes once, then cache them. Generated maps use the same mesh format. |
+| Maps | Classic maps are converted into GPU-ready buffers when first entered (section 10.1). Generated maps use the same format. |
 | Shared logic | WebAssembly module built from the Go shared package (section 3.3). |
-| Asset decoding | Web Workers, so decoding does not block rendering. |
+| Asset loading | Import and conversion in Web Workers. Assets are stored in the Origin Private File System in the client's own format (section 10.1). |
 | UI | HTML and CSS overlay on the canvas, using a small framework such as Solid or Svelte. This gives text input, accessibility, and styling for free. |
 | Audio | Web Audio API. |
 | Network | One WebSocket per session. Binary frames of Protocol Buffers, generated from the shared schema ([proposal 0001](proposals/0001-protocol.md)). |
@@ -2008,14 +2087,17 @@ Exit criteria:
 
 ### Phase 1: Web client foundation
 
-- GRF reader with encryption, CP949 names, and partial caching (section 10.1).
+- GRF importer: file tables, CP949 names, `DATA.INI` order, and the rare encrypted entry (section 10.1).
+- Runtime asset format, pack storage in the Origin Private File System, and the asset manager with upload budgets.
+- Converters for sprites, textures, models, effects, and classic maps.
 - Map format reader (section 8.12), and conversion of a classic map from the player's GRF for testing.
 - Sprite, model, and effect rendering, driven by the minimum client data tables (section 10.5).
 - Walk around a map offline, using the shared pathfinding module compiled with TinyGo.
 
 Exit criteria:
 
-- A player can load their own game files and walk around a converted Prontera in the browser without a server.
+- A player can import their own game files and walk around a converted Prontera in the browser without a server.
+- The import and map load times from section 10.1 are measured on Chrome, Firefox, and Safari.
 - The WebAssembly pathfinding module passes the shared test vectors.
 - The client meets the frame rate budget in section 3.8 on the test map.
 
