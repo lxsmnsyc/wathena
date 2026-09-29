@@ -84,6 +84,13 @@ func (g *glbFile) indices(i int) ([]int, error) {
 }
 
 func trs(n gltfNode) mat4 {
+	if n.Matrix != nil {
+		var m mat4
+		for i, v := range n.Matrix {
+			m[i] = float64(v)
+		}
+		return m
+	}
 	m := identity()
 	if n.Translation != nil {
 		m = m.mul(translation([3]float64{float64(n.Translation[0]), float64(n.Translation[1]), float64(n.Translation[2])}))

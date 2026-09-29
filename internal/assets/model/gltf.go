@@ -48,12 +48,13 @@ type gltfScene struct {
 }
 
 type gltfNode struct {
-	Name        string      `json:"name,omitempty"`
-	Children    []int       `json:"children,omitempty"`
-	Mesh        *int        `json:"mesh,omitempty"`
-	Translation *[3]float32 `json:"translation,omitempty"`
-	Rotation    *[4]float32 `json:"rotation,omitempty"`
-	Scale       *[3]float32 `json:"scale,omitempty"`
+	Name        string       `json:"name,omitempty"`
+	Children    []int        `json:"children,omitempty"`
+	Mesh        *int         `json:"mesh,omitempty"`
+	Matrix      *[16]float32 `json:"matrix,omitempty"`
+	Translation *[3]float32  `json:"translation,omitempty"`
+	Rotation    *[4]float32  `json:"rotation,omitempty"`
+	Scale       *[3]float32  `json:"scale,omitempty"`
 }
 
 type gltfMesh struct {

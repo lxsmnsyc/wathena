@@ -302,6 +302,12 @@ func FuzzConvert(f *testing.F) {
 	child.name, child.parent = "b", "floor"
 	child.rotKeys = []RotKey{{0, [4]float32{0, 0, 0, 1}}, {10, [4]float32{1, 0, 0, 0}}}
 	f.Add(buildRSM(ShadeNone, 1, []testNode{floor(), child}))
+	arm := floor2()
+	arm.name, arm.parent = "arm", "base"
+	arm.rotKeys = []RotKey{{5, [4]float32{0, 1, 0, 0}}}
+	arm.scaleKeys = []ScaleKey{{0, [3]float32{1, 2, 1}}, {9, [3]float32{2, 1, 1}}}
+	arm.posKeys = []PosKey{{3, [3]float32{1, 1, 1}}, {7, [3]float32{1, 2, 1}}}
+	f.Add(buildRSM2([]testNode2{floor2(), arm}))
 	f.Fuzz(func(t *testing.T, data []byte) {
 		m, err := Parse(data)
 		if err != nil {

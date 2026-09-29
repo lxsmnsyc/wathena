@@ -148,13 +148,13 @@ func TextureURI(name string) string {
 	return "asset:" + strings.Join(parts, "/")
 }
 
-// Convert converts a version 1 model to glTF binary. textureName maps a
+// Convert converts a model to glTF binary. textureName maps a
 // texture path from the model, relative to data\texture, to an asset name.
 func Convert(m *RSM, textureName func(string) string) ([]byte, error) {
-	if m.Version >= 20 {
-		return nil, ErrUnsupported
-	}
 	c := &converter{m: m, textureName: textureName}
+	if m.Version >= 20 {
+		return c.runV2()
+	}
 	return c.run()
 }
 
@@ -316,7 +316,7 @@ func (c *converter) addNode(i, parent int) error {
 		gn.Rotation = &r
 		gn.Scale = f32p3(scale)
 	}
-	mesh, err := c.addMesh(i)
+	mesh, err := c.addMesh(n, turn.mul(c.meshMatrix(n)), c.globalLinear(i))
 	if err != nil {
 		return err
 	}
@@ -384,10 +384,10 @@ func (c *converter) globalLinear(i int) mat4 {
 	return turn.mul(c.world[i]).mul(turn)
 }
 
-func (c *converter) addMesh(i int) (int, error) {
-	n := c.m.Nodes[i]
-	// Vertices are stored as R × T(offset) × M3 × v.
-	toMesh := turn.mul(c.meshMatrix(n))
+// addMesh adds a node's faces as a mesh. toMesh transforms its vertices
+// into the mesh's space, and global is the mesh's world matrix in glTF at
+// frame 0, whose linear part points unshaded normals up.
+func (c *converter) addMesh(n *Node, toMesh, global mat4) (int, error) {
 	pos := make([][3]float64, len(n.Vertices))
 	for k, v := range n.Vertices {
 		pos[k] = toMesh.point(vec(v))
@@ -455,8 +455,7 @@ func (c *converter) addMesh(i int) (int, error) {
 	if c.m.ShadeType != ShadeFlat && c.m.ShadeType != ShadeSmooth {
 		// The normal whose transform is world up: the transposed linear
 		// part of the node's world matrix, times up.
-		g := c.globalLinear(i)
-		up, _ = normalize([3]float64{g[1], g[5], g[9]})
+		up, _ = normalize([3]float64{global[1], global[5], global[9]})
 	}
 
 	// One primitive per texture and sidedness, in a stable order.

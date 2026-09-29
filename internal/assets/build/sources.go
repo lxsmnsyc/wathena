@@ -33,7 +33,7 @@ const (
 	paletteConverter     = "grf-palette-1"
 	textureConverter     = "grf-texture-1"
 	soundConverter       = "grf-sound-1"
-	modelConverter       = "grf-model-2"
+	modelConverter       = "grf-model-3"
 	mapConverter         = "grf-map-1"
 	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
@@ -129,10 +129,6 @@ func (g *GRF) Items() ([]Item, error) {
 			continue
 		}
 		if name, ok := models[s.Entry.Name]; ok {
-			// RSM2 models wait for their converter.
-			if path.Ext(s.Entry.Key) != ".rsm" {
-				continue
-			}
 			items = append(items, Item{
 				Name: name,
 				Ext:  "glb",

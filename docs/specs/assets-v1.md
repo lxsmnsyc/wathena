@@ -200,7 +200,7 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 
 #### RSM conversion
 
-- `data\model\<path>.rsm` becomes `model/<path>`. Versions 1.1 to 1.6 convert now. RSM2 (versions 2.2 and 2.3) will follow. Granny (`.gr2`) models are not supported.
+- `data\model\<path>.rsm` and `.rsm2` become `model/<path>`. When both exist, the RSM2 model gets `~rsm2` appended. Granny (`.gr2`) models are not supported.
 - RO's space has X east, Y down, and Z north, which is right-handed. The converter turns it half a turn around X with R = diag(1, -1, -1): vertices become R × v, and node transforms become R × X × R, which keeps them as translation, rotation, and scale. Y points up and north is -Z, glTF's forward direction. R is a rotation, so nothing is mirrored. Map objects are placed the same way.
 - Each RSM node becomes a glTF node with RO's position, rotation, and scale. The node's offset and 3 × 3 matrix are applied to its vertices.
 - The root node holds RO's centering: the box center on x and z, and the box's lowest point on y.
@@ -208,6 +208,17 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 - Normals follow the model's shading type: flat face normals, smooth normals averaged within each smoothing group, or, for unshaded models, normals that point up in the world.
 - Materials use alpha masking at 0.5. A model with an alpha below 255 uses alpha blending with that opacity.
 - Rotation keyframes become a rotation animation. Keyframe times are milliseconds.
+
+#### RSM2 conversion
+
+RSM2 (versions 2.2 and 2.3) differs from RSM, following BrowEdit3's reading of the format:
+
+- Model space has X east, Y up, and Z north, which is left-handed, and models are not centered. The converter mirrors through Z with Q = diag(1, 1, -1): vertices become Q × v, node transforms become Q × X × Q, and triangles swap two corners.
+- Nodes store their matrix and position in model space. A node's transform relative to its parent is T(position) × M × S. Position is the position keyframe, or the parent's inverse matrix times (position - parent position). M is the rotation keyframe, or the parent's inverse matrix times the node's matrix. S is the scale keyframe, or none.
+- Before a node's first keyframe, rotation starts from none, scale from 1, and position from the stored position. After its last keyframe, the last value holds.
+- Keyframe times are frames at the model's frame rate, usually 30 per second. `loopSeconds` is the animation length in frames divided by the frame rate.
+- A node whose subtree does not move is baked into its vertices, since an RSM2 matrix can shear and a glTF node matrix cannot. A node above a moving node keeps a matrix node. In the kRO client, one model (`model/ilusion/bathwall_s_01`) has a shearing matrix there, which glTF validators report.
+- Texture animations in version 2.3 are not converted yet. The glTF profile has no way to express them.
 
 ### Map (WMAP)
 
