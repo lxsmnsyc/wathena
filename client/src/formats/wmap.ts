@@ -367,3 +367,28 @@ function validate(m: WMap): void {
     }
   }
 }
+
+/** Whether a cell, in server coordinates, is walkable. */
+export function walkable(m: WMap, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= m.width || y >= m.height) {
+    return false;
+  }
+  return ((m.cellFlags[y * m.width + x] ?? 0) & WALKABLE) !== 0;
+}
+
+/**
+ * The ground height at a point, in cells, from the cell corner heights.
+ * x and y are server coordinates, so the point is (x, height, -y) in map
+ * space.
+ */
+export function cellHeight(m: WMap, x: number, y: number): number {
+  const cx = Math.min(Math.max(Math.floor(x), 0), m.width - 1);
+  const cy = Math.min(Math.max(Math.floor(y), 0), m.height - 1);
+  const fx = Math.min(Math.max(x - cx, 0), 1);
+  const fy = Math.min(Math.max(y - cy, 0), 1);
+  const h = m.cellHeights;
+  const i = (cy * m.width + cx) * 4;
+  const south = (h[i] ?? 0) * (1 - fx) + (h[i + 1] ?? 0) * fx;
+  const north = (h[i + 2] ?? 0) * (1 - fx) + (h[i + 3] ?? 0) * fx;
+  return south * (1 - fy) + north * fy;
+}

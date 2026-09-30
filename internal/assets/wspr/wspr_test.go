@@ -2,9 +2,15 @@ package wspr
 
 import (
 	"bytes"
+	"encoding/json"
+	"flag"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+var update = flag.Bool("update", false, "rewrite the web client's test files")
 
 func sample(t testing.TB) *Sprite {
 	t.Helper()
@@ -97,4 +103,40 @@ func FuzzDecode(f *testing.F) {
 			t.Fatal("re-encoded bytes differ")
 		}
 	})
+}
+
+// TestClientFixture keeps the web client's decoder test in step with this
+// encoder. The client reads sample.wspr and checks it against
+// sample.json. Run with -update after changing the format.
+func TestClientFixture(t *testing.T) {
+	s := sample(t)
+	// An RGBA page as well, with one image.
+	s.Pages = append(s.Pages, Page{Kind: RGBA, Width: 2, Height: 1, Pix: []byte{1, 2, 3, 4, 5, 6, 7, 8}})
+	s.Images = append(s.Images, Image{Page: uint16(len(s.Pages) - 1), Width: 2, Height: 1}) // #nosec G115 -- small.
+	s.Actions = append(s.Actions, Action{IntervalMs: 75, Frames: []Frame{{Event: -1, Layers: []Layer{{Image: 3, Color: [4]byte{1, 2, 3, 4}, ScaleX: 2, ScaleY: 2}}}}})
+	b, err := s.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	j, err := json.MarshalIndent(s, "", "\t")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join("..", "..", "..", "client", "src", "formats", "testdata")
+	for name, want := range map[string][]byte{"sample.wspr": b, "sample-wspr.json": append(j, '\n')} {
+		p := filepath.Join(dir, name)
+		if *update {
+			if err := os.WriteFile(p, want, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			continue
+		}
+		got, err := os.ReadFile(p) // #nosec G304 -- fixed test path.
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, want) {
+			t.Errorf("%s is out of date. Run go test ./internal/assets/wspr -update", p)
+		}
+	}
 }

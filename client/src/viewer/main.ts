@@ -4,7 +4,10 @@
 import { Color, ColorManagement, PerspectiveCamera, Scene, Timer, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { AssetStore } from '../assets/store';
+import { cellHeight } from '../formats/wmap';
 import MapScene from '../render/map';
+import { SpriteCache } from '../render/sprites';
+import Walkers from './walkers';
 
 // Shaders work on stored color values directly, as RO does.
 ColorManagement.enabled = false;
@@ -40,6 +43,15 @@ resize();
 
 const store = await AssetStore.open(base);
 let current: MapScene | undefined;
+let walkers: Walkers | undefined;
+const sprites = new SpriteCache(store);
+
+// Sprites to scatter on the map, as asset names without "sprite/".
+const DEFAULT_SPRITES = 'mob/poring,mob/lunatic,mob/fabre,mob/drops,mob/pupa,npc/4_f_kafra1';
+const spriteNames = (new URL(location.href).searchParams.get('sprites') ?? DEFAULT_SPRITES)
+  .split(',')
+  .filter((n) => n !== '')
+  .map((n) => `sprite/${n}`);
 let loading = 0;
 
 // The default buffer holds 250 entries, fewer than a map's files.
@@ -85,16 +97,24 @@ async function show(name: string): Promise<void> {
     if (current !== undefined) {
       scene.remove(current.group);
     }
+    if (walkers !== undefined) {
+      scene.remove(walkers.group);
+    }
     current = next;
-    scene.add(next.group);
+    walkers = new Walkers(next.map);
+    scene.add(next.group, walkers.group);
     // Look at the map's center from the south, as RO's camera does.
     const cx = next.map.width / 2;
     const cz = -next.map.height / 2;
     const size = Math.max(next.map.width, next.map.height);
     controls.target.set(cx, 0, cz);
-    camera.position.set(cx, size * 0.6, cz + size * 0.6);
+    // ?distance= sets the camera's distance from the center, in cells.
+    const distance = Number(new URL(location.href).searchParams.get('distance')) || size * 0.85;
+    const y = cellHeight(next.map, cx, -cz);
+    controls.target.set(cx, y, cz);
+    camera.position.set(cx, y + distance * 0.7, cz + distance * 0.7);
     controls.update();
-    await ready;
+    await Promise.all([ready, walkers.add(sprites, spriteNames, 40)]);
     progress('done');
   } catch (error) {
     status!.value = String(error);
@@ -121,6 +141,9 @@ const timer = new Timer();
 renderer.setAnimationLoop((time) => {
   timer.update(time);
   current?.update(timer.getElapsed(), timer.getDelta());
+  // Sprites face the camera, so their shown direction follows its turn.
+  const steps = Math.round(controls.getAzimuthalAngle() / (Math.PI / 4));
+  walkers?.update(timer.getDelta() * 1000, steps);
   controls.update();
   renderer.render(scene, camera);
 });

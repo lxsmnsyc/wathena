@@ -48,6 +48,10 @@ export class Reader {
     return this.view.getUint16(this.need(2), true);
   }
 
+  i16(): number {
+    return this.view.getInt16(this.need(2), true);
+  }
+
   u32(): number {
     return this.view.getUint32(this.need(4), true);
   }
