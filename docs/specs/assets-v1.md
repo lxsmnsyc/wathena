@@ -379,7 +379,7 @@ wactl assets build \
   - `placeholder`: the placeholder pack, drawn by code.
   - `grf:<folder>`: a game client folder with `DATA.INI` (strategy section 10.1). The importer maps game paths to names with its own rules, such as `data\sprite\몬스터\poring.spr` to `sprite/mob/poring`.
   - `pack:<folder>`: original art in authoring formats (below).
-- **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses. Clients request every file by its path without `.br`, as `<first 2 hex digits>/<hash>.<extension>`, and manifest shards as `<first 2 hex digits>/<hash>.json`.
+- **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses. Shards and dependency indexes (below) are JSON, also stored only as Brotli, as `<hash>.json.br`. Clients request every file by its path without `.br`, as `<first 2 hex digits>/<hash>.<extension>`, or `<first 2 hex digits>/<hash>.json`.
 - **Cache.** The build keeps `.cache.json` in the output folder, keyed by each input's identity and converter version. A later build reuses an asset whose key and stored file are unchanged, so slow compression happens once per changed asset.
 - **Report.** The build prints how many names each source provided and replaced, and every asset it rejected, with the reason.
 
@@ -392,11 +392,21 @@ manifest.json
   shards     256 shard file hashes, one per value of the first byte of SHA-256(name)
 
 <shard hash>.json
-  { "<name>": { "h": "<content hash>", "t": "<type>", "s": <size in bytes> }, ... }
+  { "<name>": { "h": "<content hash>", "t": "<type>", "s": <size in bytes>, "d": "<index hash>" }, ... }
 ```
 
 - The client loads `manifest.json` first. It is small, and is the only file served without long caching.
 - The client loads a shard only when it needs a name in it.
+- `d` is present when the asset has a dependency index.
+
+### Dependency indexes
+
+An asset that refers to other names has a dependency index: a JSON file in the same form as a shard, listing the entries of every name the asset uses that the build has. It includes names used through other assets, such as the textures of a map's models. Entries in an index have no `d`.
+
+- The client loads an asset's index together with the asset, and resolves the names it lists without loading shards. A name the asset uses but its index leaves out is missing from the build.
+- References come from maps' dependency lists, models' textures, sprites' sound events, and effects' textures.
+- Without indexes, a map's 100 to 400 names spread over most of the 256 shards. For Izlude in the kRO build, that was 120 shards and 6.1 MB, more than the map's own files. With its index, Izlude needs one shard and one index, 60 KB.
+- An index is stored under the hash of its content, so assets with the same dependencies share one file. A texture that changes changes the indexes that list it, but not the map file.
 
 ### Pack format for original art
 
@@ -424,7 +434,7 @@ our-art/
 `wactl assets check --build <folder>` reads a whole build:
 
 - Every stored file must exist, match its SHA-256 and size in the manifest, and decode as its type within the limits below. Any failure is an error, and the command exits with status 1.
-- It lists names that something refers to but no source provides, grouped by kind. The client shows placeholders for them. References come from maps' dependency lists, models' textures, sprites' sound events, effects' textures, and the client data tables, such as a body sprite for each look in `jobs.yml` and each sex the look exists for.
+- It lists names that something refers to but no source provides, grouped by kind. The client shows placeholders for them. It also checks that each dependency index lists exactly the names its asset uses. References come from maps' dependency lists, models' textures, sprites' sound events, effects' textures, and the client data tables, such as a body sprite for each look in `jobs.yml` and each sex the look exists for.
 - `--list` shows every missing name, and `--json` prints the report as JSON.
 
 `wactl assets gc --build <folder>` removes stored files the current manifest does not use, such as outputs of older converter versions, and temporary files an interrupted build left. It only removes files named as the build names them, in its two-letter folders. `--dry-run` reports without removing.

@@ -4,14 +4,29 @@ import { AssetError, AssetStore, type Entry, type Fetch, sha256, shardOf } from 
 const encoder = new TextEncoder();
 
 /** An in-memory build, served by a fake fetch that counts requests. */
-async function fakeBuild(assets: Record<string, { t: Entry['t']; data: Uint8Array<ArrayBuffer> }>) {
+async function fakeBuild(
+  assets: Record<string, { t: Entry['t']; data: Uint8Array<ArrayBuffer>; deps?: string[] }>,
+) {
   const files = new Map<string, Uint8Array<ArrayBuffer>>();
   const shards: Record<string, Entry>[] = Array.from({ length: 256 }, () => ({}));
   const ext: Record<string, string> = { sprite: 'wspr', texture: 'webp', map: 'wmap' };
+  const entries: Record<string, Entry> = {};
   for (const [name, a] of Object.entries(assets)) {
     const h = await sha256(a.data);
-    shards[await shardOf(name)]![name] = { h, t: a.t, s: a.data.byteLength };
+    entries[name] = { h, t: a.t, s: a.data.byteLength };
     files.set(`${h.slice(0, 2)}/${h}.${ext[a.t]}`, a.data);
+  }
+  for (const [name, a] of Object.entries(assets)) {
+    if (a.deps !== undefined) {
+      const index = Object.fromEntries(a.deps.map((d) => [d, entries[d]]));
+      const data = encoder.encode(JSON.stringify(index));
+      const h = await sha256(data);
+      files.set(`${h.slice(0, 2)}/${h}.json`, data);
+      entries[name]!.d = h;
+    }
+  }
+  for (const [name, e] of Object.entries(entries)) {
+    shards[await shardOf(name)]![name] = e;
   }
   const hashes: string[] = [];
   for (const s of shards) {
@@ -58,6 +73,24 @@ describe('AssetStore', () => {
     await store.bytes('sprite/mob/poring2', 'sprite');
     expect(b.requests.filter((r) => r.endsWith('.wspr'))).toHaveLength(1);
     expect(store.stats).toEqual({ files: 1, bytes: sprite.byteLength });
+  });
+
+  it("resolves an asset's dependencies from its index", async () => {
+    const b = await fakeBuild({
+      'map/town': { t: 'map', data: encoder.encode('WMAP'), deps: ['texture/a', 'texture/b'] },
+      'texture/a': { t: 'texture', data: encoder.encode('a') },
+      'texture/b': { t: 'texture', data: encoder.encode('b') },
+    });
+    const store = await AssetStore.open('/b/', b.fetcher);
+    await store.bytes('map/town', 'map');
+    const entryFiles = () =>
+      b.requests.filter((r) => r.endsWith('.json') && !r.endsWith('manifest.json'));
+    const shardRequests = entryFiles().length;
+    expect(await store.bytes('texture/a', 'texture')).toEqual(encoder.encode('a'));
+    expect(await store.bytes('texture/b', 'texture')).toEqual(encoder.encode('b'));
+    // The map's shard and its index, and no shard for the textures.
+    expect(shardRequests).toBe(2);
+    expect(entryFiles()).toHaveLength(2);
   });
 
   it('reports missing names once', async () => {

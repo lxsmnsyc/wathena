@@ -17,7 +17,7 @@ func checkBuild(t *testing.T) string {
 		Width: 1, Height: 1,
 		Cells:  []wmap.Cell{{Flags: wmap.Walkable}},
 		Ground: wmap.Ground{Lightmap: "lightmap/tiny"},
-		Deps:   []string{"placeholder/sprite", "texture/gone"},
+		Deps:   []string{"placeholder/sprite", "placeholder/texture", "texture/gone"},
 	}
 	out := t.TempDir()
 	_, err := Run(Options{Out: out, Brotli: 1, Sources: []Source{Placeholder{}, fakeSource{"maps", []Item{{

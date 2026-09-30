@@ -90,6 +90,8 @@ type entry struct {
 	H string `json:"h"`
 	T string `json:"t"`
 	S int    `json:"s"`
+	// D is the hash of the asset's dependency index, if it has one.
+	D string `json:"d,omitempty"`
 }
 
 // Manifest is manifest.json.
@@ -152,7 +154,8 @@ func Run(opts Options) (*Report, error) {
 
 	var mu sync.Mutex
 	entries := make(map[string]entry, len(names))
-	newCache := map[string]entry{}
+	refs := map[string][]string{}
+	newCache := map[string]cacheEntry{}
 	work := make(chan string)
 	var wg sync.WaitGroup
 	workers := opts.Workers
@@ -163,15 +166,17 @@ func Run(opts Options) (*Report, error) {
 		wg.Go(func() {
 			for name := range work {
 				it := winners[name]
-				e, cached, err := produce(root, it, cache, opts.Brotli)
+				ce, cached, err := produce(root, it, cache, opts.Brotli)
+				e := ce.entry
 				mu.Lock()
 				switch {
 				case err != nil:
 					rep.Rejected = append(rep.Rejected, fmt.Sprintf("%s: %v", name, err))
 				default:
 					entries[name] = e
+					refs[name] = ce.Refs
 					if it.CacheKey != "" {
-						newCache[it.CacheKey] = e
+						newCache[it.CacheKey] = ce
 					}
 					rep.Bytes += int64(e.S)
 					if cached {
@@ -192,7 +197,10 @@ func Run(opts Options) (*Report, error) {
 	rep.Assets = len(entries)
 	sort.Strings(rep.Rejected)
 
-	id, err := writeManifest(root, entries)
+	if err := writeIndexes(root, entries, refs, opts.Brotli, workers); err != nil {
+		return nil, err
+	}
+	id, err := writeManifest(root, entries, opts.Brotli)
 	if err != nil {
 		return nil, err
 	}
@@ -204,18 +212,29 @@ func Run(opts Options) (*Report, error) {
 	return rep, nil
 }
 
-// produce returns the manifest entry for an item, converting it unless the
-// cache has its key and the output file still exists.
-func produce(root *os.Root, it Item, cache map[string]entry, quality int) (entry, bool, error) {
+// produce returns the manifest entry for an item and the names it refers
+// to, converting it unless the cache has its key and the output file still
+// exists.
+func produce(root *os.Root, it Item, cache map[string]cacheEntry, quality int) (cacheEntry, bool, error) {
 	info := types[it.Ext]
-	if e, ok := cache[it.CacheKey]; ok && it.CacheKey != "" {
-		if _, err := root.Stat(StoredPath(e.H, it.Ext)); err == nil {
-			return e, true, nil
+	if ce, ok := cache[it.CacheKey]; ok && it.CacheKey != "" && ce.T == info.t {
+		if _, err := root.Stat(StoredPath(ce.H, it.Ext)); err == nil {
+			if !ce.HasRefs {
+				// Builds before dependency indexes did not record
+				// references.
+				data, err := readStored(root, ce.entry)
+				if err != nil {
+					return cacheEntry{}, false, err
+				}
+				ce.Refs, ce.HasRefs = fileRefs(ce.T, data), true
+			}
+			ce.D = ""
+			return ce, true, nil
 		}
 	}
 	data, err := it.Produce()
 	if err != nil {
-		return entry{}, false, err
+		return cacheEntry{}, false, err
 	}
 	sum := sha256.Sum256(data)
 	h := hex.EncodeToString(sum[:])
@@ -226,17 +245,18 @@ func produce(root *os.Root, it Item, cache map[string]entry, quality int) (entry
 		var b bytes.Buffer
 		w := brotli.NewWriterLevel(&b, quality)
 		if _, err := w.Write(data); err != nil {
-			return entry{}, false, err
+			return cacheEntry{}, false, err
 		}
 		if err := w.Close(); err != nil {
-			return entry{}, false, err
+			return cacheEntry{}, false, err
 		}
 		stored = b.Bytes()
 	}
 	if err := writeFile(root, StoredPath(h, it.Ext), stored); err != nil {
-		return entry{}, false, err
+		return cacheEntry{}, false, err
 	}
-	return entry{H: h, T: info.t, S: len(data)}, false, nil
+	e := entry{H: h, T: info.t, S: len(data)}
+	return cacheEntry{entry: e, Refs: fileRefs(info.t, data), HasRefs: true}, false, nil
 }
 
 // StoredPath is where an asset with a hash and extension is stored.
@@ -250,10 +270,14 @@ func StoredPath(h, ext string) string {
 }
 
 // Stored reports whether ext is an extension a build stores, and whether
-// files with it are stored as Brotli.
+// files with it are stored as Brotli. Shards and indexes are JSON, stored
+// as Brotli.
 func Stored(ext string) (known, brotli bool) {
+	if ext == "json" {
+		return true, true
+	}
 	t, ok := types[ext]
-	return ok || ext == "json", t.brotli
+	return ok, t.brotli
 }
 
 // objectPath is where content with a hash is stored. It uses only the hash
@@ -283,7 +307,7 @@ func ShardOf(name string) int {
 	return int(sum[0])
 }
 
-func writeManifest(root *os.Root, entries map[string]entry) (string, error) {
+func writeManifest(root *os.Root, entries map[string]entry, quality int) (string, error) {
 	shards := make([]map[string]entry, 256)
 	for i := range shards {
 		shards[i] = map[string]entry{}
@@ -299,13 +323,12 @@ func writeManifest(root *os.Root, entries map[string]entry) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		sum := sha256.Sum256(data)
-		h := hex.EncodeToString(sum[:])
-		if err := writeFile(root, objectPath(h, "json"), data); err != nil {
+		h, err := storeJSON(root, data, quality)
+		if err != nil {
 			return "", err
 		}
 		m.Shards[i] = h
-		all.Write(sum[:])
+		all.Write([]byte(h))
 	}
 	m.Build = time.Now().UTC().Format("20060102T150405Z") + "-" + hex.EncodeToString(all.Sum(nil))[:12]
 	data, err := json.MarshalIndent(m, "", "\t")
@@ -315,19 +338,19 @@ func writeManifest(root *os.Root, entries map[string]entry) (string, error) {
 	return m.Build, writeFile(root, "manifest.json", append(data, '\n'))
 }
 
-func loadCache(root *os.Root) map[string]entry {
-	c := map[string]entry{}
+func loadCache(root *os.Root) map[string]cacheEntry {
+	c := map[string]cacheEntry{}
 	data, err := root.ReadFile(cacheFile)
 	if err != nil {
 		return c
 	}
 	if json.Unmarshal(data, &c) != nil {
-		return map[string]entry{}
+		return map[string]cacheEntry{}
 	}
 	return c
 }
 
-func saveCache(root *os.Root, c map[string]entry) error {
+func saveCache(root *os.Root, c map[string]cacheEntry) error {
 	data, err := json.Marshal(c)
 	if err != nil {
 		return err

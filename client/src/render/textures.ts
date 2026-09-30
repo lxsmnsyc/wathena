@@ -43,6 +43,7 @@ export interface TextureSource {
 export class TextureCache implements TextureSource {
   private readonly uniforms = new Map<string, TextureUniform>();
   private readonly pending = new WeakMap<TextureUniform, Promise<void>>();
+  private readonly loading = new Set<Promise<void>>();
   private readonly fallback = grey();
   private placeholder: Promise<Texture | undefined> | undefined;
 
@@ -54,9 +55,23 @@ export class TextureCache implements TextureSource {
     if (u === undefined) {
       u = { value: this.fallback };
       this.uniforms.set(key, u);
-      this.pending.set(u, this.fill(u, name, options));
+      const fill = this.fill(u, name, options);
+      this.pending.set(u, fill);
+      this.loading.add(fill);
     }
     return u;
+  }
+
+  /** Resolves when no texture is loading. */
+  async idle(): Promise<void> {
+    while (this.loading.size > 0) {
+      const batch = [...this.loading];
+      // Loads never reject. They log their own errors.
+      await Promise.all(batch);
+      for (const p of batch) {
+        this.loading.delete(p);
+      }
+    }
   }
 
   /** Resolves when a texture has loaded, or is known to be missing. */

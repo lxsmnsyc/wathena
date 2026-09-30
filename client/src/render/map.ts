@@ -63,7 +63,8 @@ export default class MapScene {
         }),
       );
     }
-    const ready = Promise.allSettled(pending).then(() => undefined);
+    // Models ask for their textures as they load, so textures finish last.
+    const ready = Promise.allSettled(pending).then(async () => textures.idle());
     return { scene, ready };
   }
 

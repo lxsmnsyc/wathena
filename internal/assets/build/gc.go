@@ -34,10 +34,13 @@ func GC(dir string, dryRun bool) (*GCReport, error) {
 	keep := map[string]bool{}
 	// Paths from fs.WalkDir use slashes on every system.
 	for _, h := range m.Shards {
-		keep[filepath.ToSlash(objectPath(h, "json"))] = true
+		keep[filepath.ToSlash(jsonPath(h))] = true
 	}
 	for _, e := range all {
 		keep[filepath.ToSlash(StoredPath(e.H, extOf[e.T]))] = true
+		if e.D != "" {
+			keep[filepath.ToSlash(jsonPath(e.D))] = true
+		}
 	}
 
 	rep := &GCReport{}
@@ -74,7 +77,7 @@ func GC(dir string, dryRun bool) (*GCReport, error) {
 	// Cache entries whose file is gone can never be reused. After a
 	// collection, only files the manifest uses remain.
 	cache := loadCache(root)
-	kept := map[string]entry{}
+	kept := map[string]cacheEntry{}
 	for k, e := range cache {
 		p := filepath.ToSlash(StoredPath(e.H, extOf[e.T]))
 		if _, err := root.Stat(p); err == nil && keep[p] {

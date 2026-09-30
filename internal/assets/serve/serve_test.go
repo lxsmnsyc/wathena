@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -30,7 +31,7 @@ func placeholderBuild(t *testing.T) (dir, sprite, texture string) {
 	find := func(name string) string {
 		h := m.Shards[build.ShardOf(name)]
 		var shard map[string]struct{ H string }
-		readJSON(t, filepath.Join(dir, h[:2], h+".json"), &shard)
+		readJSON(t, filepath.Join(dir, h[:2], h+".json.br"), &shard)
 		return shard[name].H
 	}
 	return dir, find("placeholder/sprite"), find("placeholder/texture")
@@ -41,6 +42,11 @@ func readJSON(t *testing.T, p string, v any) {
 	b, err := os.ReadFile(p) // #nosec G304 -- test file.
 	if err != nil {
 		t.Fatal(err)
+	}
+	if strings.HasSuffix(p, ".br") {
+		if b, err = io.ReadAll(brotli.NewReader(bytes.NewReader(b))); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := json.Unmarshal(b, v); err != nil {
 		t.Fatal(err)

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"runtime"
 	"sort"
@@ -69,19 +70,16 @@ func loadEntries(root *os.Root) (*Manifest, map[string]entry, error) {
 		if !validHash(h) {
 			return nil, nil, fmt.Errorf("manifest.json: shard %d hash %q", i, h)
 		}
-		sb, err := root.ReadFile(objectPath(h, "json"))
+		sb, err := readJSON(root, h)
 		if err != nil {
 			return nil, nil, fmt.Errorf("shard %d: %w", i, err)
-		}
-		if sum := sha256.Sum256(sb); hex.EncodeToString(sum[:]) != h {
-			return nil, nil, fmt.Errorf("shard %d does not match its hash", i)
 		}
 		var sh map[string]entry
 		if err := json.Unmarshal(sb, &sh); err != nil {
 			return nil, nil, fmt.Errorf("shard %d: %w", i, err)
 		}
 		for n, e := range sh {
-			if ShardOf(n) != i || !validHash(e.H) {
+			if ShardOf(n) != i || !validHash(e.H) || (e.D != "" && !validHash(e.D)) {
 				return nil, nil, fmt.Errorf("shard %d: entry %q", i, n)
 			}
 			all[n] = e
@@ -166,12 +164,15 @@ func Check(dir string, refs []Reference) (*CheckReport, error) {
 	wg.Wait()
 
 	// Every name shares its file's references.
+	refsOf := map[string][]string{}
 	for _, n := range names {
 		e := all[n]
-		for _, to := range found[e.H+e.T] {
+		refsOf[n] = found[e.H+e.T]
+		for _, to := range refsOf[n] {
 			refs = append(refs, Reference{From: n, Name: to})
 		}
 	}
+	rep.Broken = append(rep.Broken, checkIndexes(root, names, all, refsOf)...)
 	for _, r := range refs {
 		if _, ok := all[r.Name]; !ok {
 			rep.Missing[r.Name] = append(rep.Missing[r.Name], r.From)
@@ -212,7 +213,13 @@ func checkFile(root *os.Root, e entry) ([]string, error) {
 	if sum := sha256.Sum256(data); hex.EncodeToString(sum[:]) != e.H {
 		return nil, fmt.Errorf("content does not match its hash")
 	}
-	switch e.T {
+	return decodeRefs(e.T, data)
+}
+
+// decodeRefs decodes an asset of a manifest type and returns the names it
+// refers to.
+func decodeRefs(t string, data []byte) ([]string, error) {
+	switch t {
 	case "sprite":
 		s, err := wspr.Decode(data)
 		if err != nil {
@@ -263,5 +270,38 @@ func checkFile(root *os.Root, e entry) ([]string, error) {
 		}
 		return nil, nil
 	}
-	return nil, fmt.Errorf("unknown type %q", e.T)
+	return nil, fmt.Errorf("unknown type %q", t)
+}
+
+// checkIndexes checks that each asset's dependency index lists exactly the
+// entries of the names it uses.
+func checkIndexes(root *os.Root, names []string, all map[string]entry, refsOf map[string][]string) []string {
+	var broken []string
+	indexes := map[string]map[string]entry{}
+	for _, n := range names {
+		e := all[n]
+		want := closure(n, refsOf, all)
+		if e.D == "" {
+			if len(want) > 0 {
+				broken = append(broken, n+": no dependency index")
+			}
+			continue
+		}
+		got, ok := indexes[e.D]
+		if !ok {
+			data, err := readJSON(root, e.D)
+			if err == nil {
+				err = json.Unmarshal(data, &got)
+			}
+			if err != nil {
+				broken = append(broken, fmt.Sprintf("%s: dependency index: %v", n, err))
+				continue
+			}
+			indexes[e.D] = got
+		}
+		if !maps.Equal(got, want) {
+			broken = append(broken, n+": dependency index does not match the manifest")
+		}
+	}
+	return broken
 }

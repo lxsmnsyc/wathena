@@ -1716,7 +1716,8 @@ GPU texture compression (KTX2 with Basis Universal) can be added later as a seco
 
 - Asset files are static and never change, because their names are content hashes. They are served with `Cache-Control: public, max-age=31536000, immutable`.
 - `waserver` serves the asset folder itself. Operators can instead put it behind any static host or CDN. This is recommended for large servers, since asset traffic is much larger than game traffic.
-- **Manifest.** The manifest is split into 256 shards by the first byte of the SHA-256 of each name. The client loads a small root file with the shard hashes, then only the shards it needs. The full manifest for a kRO client would be several MB, too large for a first visit.
+- **Manifest.** The manifest is split into 256 shards by the first byte of the SHA-256 of each name. The client loads a small root file with the shard hashes, then only the shards it needs. The full manifest for a kRO client is 13 MB, or 5.8 MB compressed, too large for a first visit.
+- **Dependency indexes.** A map's names spread over most shards, so loading shards for them cost more than the map itself. Each asset that uses other names instead has a small index of their entries, which loads with the asset (assets-v1, "Dependency indexes").
 - **Access.** Assets are public by default, like any website's images. Operators can require a signed cookie from the account service, which stops simple hotlinking. It does not stop a logged-in player from saving files.
 - **Security.** The server only serves files named by a valid hash, with a fixed content type per extension, `X-Content-Type-Options: nosniff`, and no directory listing. A CDN on another origin is listed in the client's Content Security Policy.
 
@@ -1750,7 +1751,7 @@ Asset traffic depends on new players more than on players online. With 100 MB pe
 
 #### Unknowns to measure in phase 1
 
-- Real first-visit and per-map sizes, compared with the estimates above.
+- Real first-visit and per-map sizes, compared with the estimates above. Measured so far, with the development build (fast Brotli) in the map viewer, the bytes sent for a map with its ground, water, models, and all their textures: Prontera 7.5 MB (315 files), Izlude 8.9 MB, Payon 12.4 MB, Geffen 5.6 MB, Morocc 4.5 MB, Alberta 5.7 MB, prt_fild08 3.5 MB. Textures are about 85% of it.
 - Build time and output size for a full kRO client.
 - Whether palette-indexed atlases stay within the GPU memory budget in a crowded town.
 - Whether `decodeAudioData` decodes Opus in WebM on Chrome, Firefox, and Safari.

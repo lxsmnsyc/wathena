@@ -20,6 +20,8 @@ export interface Entry {
   t: AssetType;
   /** Size in bytes, before any transfer encoding. */
   s: number;
+  /** Hash of the asset's dependency index, if it uses other names. */
+  d?: string;
 }
 
 interface Manifest {
@@ -70,7 +72,9 @@ function isEntry(v: unknown): v is Entry {
     return false;
   }
   const { h, t, s } = v;
+  const d: unknown = 'd' in v ? v.d : undefined;
   return (
+    (d === undefined || (typeof d === 'string' && HASH.test(d))) &&
     typeof h === 'string' &&
     HASH.test(h) &&
     typeof t === 'string' &&
@@ -135,6 +139,9 @@ export class AssetStore {
   readonly stats: StoreStats = { files: 0, bytes: 0 };
 
   private readonly shards = new Map<number, Promise<Map<string, Entry>>>();
+  private readonly indexes = new Map<string, Promise<void>>();
+  /** Entries learned from dependency indexes. */
+  private readonly known = new Map<string, Entry>();
   private readonly files = new Map<string, Promise<Uint8Array<ArrayBuffer>>>();
   private readonly missing = new Set<string>();
 
@@ -167,6 +174,10 @@ export class AssetStore {
 
   /** Looks up a name. Undefined means the build does not have it. */
   async entry(name: string): Promise<Entry | undefined> {
+    const known = this.known.get(name);
+    if (known !== undefined) {
+      return known;
+    }
     const shard = await this.shard(await shardOf(name));
     return shard.get(name);
   }
@@ -174,7 +185,8 @@ export class AssetStore {
   /**
    * Downloads an asset and checks it. Undefined means the build does not
    * have it, which is logged once per name. A type other than expected
-   * is an error.
+   * is an error. An asset's dependency index loads with it, so the names
+   * it uses resolve without manifest shards.
    */
   async bytes(name: string, expected: AssetType): Promise<Uint8Array<ArrayBuffer> | undefined> {
     const e = await this.entry(name);
@@ -195,6 +207,9 @@ export class AssetStore {
       this.files.set(e.h, file);
       // A failed download can be tried again.
       file.catch(() => this.files.delete(e.h));
+    }
+    if (e.d !== undefined) {
+      await this.index(e.d);
     }
     return file;
   }
@@ -225,18 +240,39 @@ export class AssetStore {
   }
 
   private async loadShard(index: number): Promise<Map<string, Entry>> {
-    const h = this.manifest.shards[index] ?? '';
+    return this.loadEntries(this.manifest.shards[index] ?? '');
+  }
+
+  private async index(h: string): Promise<void> {
+    let index = this.indexes.get(h);
+    if (index === undefined) {
+      index = this.loadEntries(h).then((entries) => {
+        for (const [name, e] of entries) {
+          this.known.set(name, e);
+        }
+      });
+      this.indexes.set(h, index);
+      index.catch(() => this.indexes.delete(h));
+    }
+    return index;
+  }
+
+  /** Loads a manifest shard or a dependency index. Both map names to entries. */
+  private async loadEntries(h: string): Promise<Map<string, Entry>> {
     const data = await this.fetchChecked(`${this.base}${h.slice(0, 2)}/${h}.json`, h, undefined);
     const raw: unknown = JSON.parse(new TextDecoder().decode(data));
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-      throw new AssetError(`shard ${index}: invalid`);
+      throw new AssetError(`${h}.json: invalid`);
     }
     const out = new Map<string, Entry>();
     for (const [name, e] of Object.entries(raw)) {
       if (!isEntry(e)) {
-        throw new AssetError(`shard ${index}: invalid entry ${name}`);
+        throw new AssetError(`${h}.json: invalid entry ${name}`);
       }
-      out.set(name, { h: e.h, t: e.t, s: e.s });
+      out.set(
+        name,
+        e.d === undefined ? { h: e.h, t: e.t, s: e.s } : { h: e.h, t: e.t, s: e.s, d: e.d },
+      );
     }
     return out;
   }

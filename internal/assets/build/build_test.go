@@ -43,13 +43,14 @@ func readManifest(t *testing.T, out string) (Manifest, map[string]entry) {
 	}
 	all := map[string]entry{}
 	for i, h := range m.Shards {
-		raw, err := os.ReadFile(filepath.Join(out, h[:2], h+".json"))
+		root, err := os.OpenRoot(out)
 		if err != nil {
 			t.Fatal(err)
 		}
-		sum := sha256.Sum256(raw)
-		if hex.EncodeToString(sum[:]) != h {
-			t.Fatalf("shard %d hash mismatch", i)
+		raw, err := readJSON(root, h)
+		_ = root.Close()
+		if err != nil {
+			t.Fatalf("shard %d: %v", i, err)
 		}
 		var sh map[string]entry
 		if err := json.Unmarshal(raw, &sh); err != nil {
