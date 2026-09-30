@@ -107,8 +107,8 @@ func TestPlaceholderAndGRF(t *testing.T) {
 	spr, act := testSprite()
 	var buf bytes.Buffer
 	if err := grf.Write(&buf, []grf.WriteEntry{
-		{Name: `data\sprite\몬스터\poring.spr`, Data: spr},
-		{Name: `data\sprite\몬스터\poring.act`, Data: act},
+		{Name: `data\sprite\npc\poring.spr`, Data: spr},
+		{Name: `data\sprite\npc\poring.act`, Data: act},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestPlaceholderAndGRF(t *testing.T) {
 		t.Fatalf("rejected %v", rep.Rejected)
 	}
 	_, all := readManifest(t, out)
-	for _, name := range []string{"placeholder/sprite", "sprite/mob/poring"} {
+	for _, name := range []string{"placeholder/sprite", "sprite/npc/poring"} {
 		e, ok := all[name]
 		if !ok {
 			t.Fatalf("%s missing from manifest", name)

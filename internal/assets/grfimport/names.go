@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -18,9 +19,12 @@ import (
 // spriteFolders maps GRF sprite folders to asset namespaces, for folders
 // where the file name is the asset name.
 var spriteFolders = map[string]string{
-	"data/sprite/몬스터/": "sprite/mob/",
 	"data/sprite/npc/": "sprite/npc/",
 }
+
+// monsterFolder holds monster sprites, which are named by monster ID
+// through the client's JobNameTable, as sprite/mob/<id>.
+const monsterFolder = "data/sprite/몬스터/"
 
 // sexes maps RO's Korean sex markers to assets-v1 names.
 var sexes = map[string]string{"남": "m", "여": "f"}
@@ -47,6 +51,9 @@ type Tables struct {
 	// garments maps a lowercase garment folder name, such as "천사날개",
 	// to view IDs.
 	garments map[string][]int
+	// monsters maps a lowercase sprite name, such as "poring", to monster
+	// IDs, from JobNameTable.
+	monsters map[string][]int
 }
 
 // shieldViews is the client's built-in table of named shield sprites.
@@ -72,6 +79,9 @@ var clientTables = []string{
 	`data\luafiles514\lua files\datainfo\weapontable.lub`,
 	`data\luafiles514\lua files\datainfo\spriterobeid.lub`,
 	`data\luafiles514\lua files\datainfo\spriterobename.lub`,
+	// jobname.lub names its keys with constants from npcidentity.lub.
+	`data\luafiles514\lua files\datainfo\npcidentity.lub`,
+	`data\luafiles514\lua files\datainfo\jobname.lub`,
 }
 
 // LoadTables evaluates the client's data tables. Missing tables leave the
@@ -91,7 +101,7 @@ func LoadTables(c *grf.Client, jobs *clientdata.Jobs) (*Tables, error) {
 			return nil, fmt.Errorf("%s: %w", name, err)
 		}
 	}
-	t := &Tables{headgear: map[string][]int{}, bodies: map[string][]string{}, races: map[string]string{}, weapons: map[string][]int{}, garments: map[string][]int{}}
+	t := &Tables{headgear: map[string][]int{}, bodies: map[string][]string{}, races: map[string]string{}, weapons: map[string][]int{}, garments: map[string][]int{}, monsters: map[string][]int{}}
 	forEachName(g["AccNameTable"], func(id int, name string) {
 		for _, sex := range []string{"남", "여"} {
 			key := grf.Normalize(sex + "/" + sex + name)
@@ -101,6 +111,10 @@ func LoadTables(c *grf.Client, jobs *clientdata.Jobs) (*Tables, error) {
 	forEachName(g["WeaponNameTable"], func(id int, name string) {
 		key := grf.Normalize(name)
 		t.weapons[key] = append(t.weapons[key], id)
+	})
+	forEachName(g["JobNameTable"], func(id int, name string) {
+		key := strings.ToLower(norm.NFC.String(name))
+		t.monsters[key] = append(t.monsters[key], id)
 	})
 	forEachName(g["RobeNameTable"], func(id int, name string) {
 		key := grf.Normalize(name)
@@ -159,6 +173,13 @@ func (t *Tables) SpriteNames(grfPath string) []string {
 	for folder, ns := range spriteFolders {
 		if rest, ok := strings.CutPrefix(key, folder); ok && !strings.Contains(rest, "/") {
 			add(ns + strings.TrimSuffix(rest, ext))
+		}
+	}
+	if rest, ok := strings.CutPrefix(key, monsterFolder); ok && t != nil && !strings.Contains(rest, "/") {
+		ids := t.monsters[strings.TrimSuffix(rest, ext)]
+		sort.Ints(ids)
+		for _, id := range ids {
+			add(fmt.Sprintf("sprite/mob/%d", id))
 		}
 	}
 	if m := headPath.FindStringSubmatch(key); m != nil && m[2] == m[4] {
@@ -280,7 +301,15 @@ func (t *Tables) garmentNames(rest string, add func(string)) {
 
 // SpriteName returns the first asset name for a path, for callers that
 // only need one.
+//
+// Monster sprites get sprite/mob/<file name> here, for reports and
+// previews. Builds name them by monster ID instead, with SpriteNames.
 func SpriteName(grfPath string) (string, bool) {
+	key := norm.NFC.String(grf.Normalize(grfPath))
+	if rest, ok := strings.CutPrefix(key, monsterFolder); ok && !strings.Contains(rest, "/") {
+		name := "sprite/mob/" + strings.TrimSuffix(rest, path.Ext(rest))
+		return name, assets.ValidName(name) == nil && path.Ext(rest) != ""
+	}
 	names := (*Tables)(nil).SpriteNames(grfPath)
 	if len(names) == 0 {
 		return "", false

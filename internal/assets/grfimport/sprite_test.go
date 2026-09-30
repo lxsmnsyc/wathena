@@ -170,6 +170,14 @@ func TestNames(t *testing.T) {
 	if got := (*Tables)(nil).SpriteNames(`data\sprite\인간족\머리통\여\07_여.spr`); len(got) != 1 || got[0] != "sprite/head/human/f/7" {
 		t.Errorf("head names %v", got)
 	}
+	// Monster sprites are named by ID, through JobNameTable.
+	mobs := &Tables{monsters: map[string][]int{"poring": {1002, 1113}}}
+	if got := mobs.SpriteNames(`data\sprite\몬스터\PORING.spr`); len(got) != 2 || got[0] != "sprite/mob/1002" || got[1] != "sprite/mob/1113" {
+		t.Errorf("monster names %v", got)
+	}
+	if got := mobs.SpriteNames(`data\sprite\몬스터\unknown.spr`); len(got) != 0 {
+		t.Errorf("unlisted monster names %v", got)
+	}
 	tb := &Tables{headgear: map[string][]int{"남/남_고글": {1, 5}}}
 	if got := tb.SpriteNames(`data\sprite\악세사리\남\남_고글.act`); len(got) != 2 || got[0] != "sprite/headgear/m/1" || got[1] != "sprite/headgear/m/5" {
 		t.Errorf("headgear names %v", got)

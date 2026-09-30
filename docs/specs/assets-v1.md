@@ -29,7 +29,7 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `sprite/weapon/<look>/<sex>/<view>` | Sprite | `sprite/weapon/swordman/m/2` | Weapon drawn on a character, by weapon view ID. |
 | `sprite/shield/<look>/<sex>/<view>` | Sprite | `sprite/shield/knight/f/1` | Shield drawn on a character, by shield view ID. |
 | `sprite/garment/<look>/<sex>/<view>` | Sprite | `sprite/garment/archer/m/1` | Garment drawn on a character, by garment view ID. |
-| `sprite/mob/<name>` | Sprite | `sprite/mob/poring` | Monster. |
+| `sprite/mob/<id>` | Sprite | `sprite/mob/1002` | Monster, by monster ID. |
 | `sprite/npc/<name>` | Sprite | `sprite/npc/4_f_kafra1` | NPC. |
 | `sprite/item/<id>` | Sprite | `sprite/item/501` | A dropped item, by item ID. |
 | `sprite/<other>/<name>` | Sprite | `sprite/pet/<name>` | Other sprites: `pet`, `homun`, `merc`, `effect`, `cursor`. |
@@ -74,6 +74,10 @@ Item assets are named by item ID, so game data and the client refer to an item b
 | `num2cardillustnametable.txt` | `data\texture\유저인터페이스\cardbmp\<name>.bmp` | `image/card/<id>` |
 
 Many items share one file, such as the icon every card uses. The build converts each file once, and stores it once.
+
+### Monsters from a game client
+
+Monster sprites are named by monster ID, the ID game data and the protocol use. The GRF importer finds each ID's sprite through the client's `JobNameTable` (in `datainfo\jobname.lub`, whose keys come from `datainfo\npcidentity.lub`): `data\sprite\몬스터\<name>.spr` and `.act` become `sprite/mob/<id>` for every ID that names them. Sprites no ID names are left out.
 
 ### Sounds and music from a game client
 

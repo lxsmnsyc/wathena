@@ -123,9 +123,7 @@ const sprites = new SpriteCache(store);
 const params = new URL(location.href).searchParams;
 const serverURL = params.get('server');
 const online = serverURL !== null;
-const DEFAULT_SPRITES = online
-  ? ''
-  : 'mob/poring,mob/lunatic,mob/fabre,mob/drops,mob/pupa,npc/4_f_kafra1';
+const DEFAULT_SPRITES = online ? '' : 'mob/1002,mob/1063,mob/1007,mob/1113,mob/1008,npc/4_f_kafra1';
 // Effects to play in a row near the center, such as effect/firewall.
 const effectNames = (new URL(location.href).searchParams.get('effect') ?? '')
   .split(',')
@@ -268,12 +266,15 @@ async function show(name: string): Promise<void> {
     };
     await Promise.all([
       ready,
-      walkers.add(async (i) => {
-        const asset = await sprites.get(
-          spriteNames[i % spriteNames.length] ?? 'placeholder/sprite',
-        );
-        return asset === undefined ? undefined : new SpriteView(asset);
-      }, 20),
+      walkers.add(
+        async (i) => {
+          const asset = await sprites.get(
+            spriteNames[i % spriteNames.length] ?? 'placeholder/sprite',
+          );
+          return asset === undefined ? undefined : new SpriteView(asset);
+        },
+        spriteNames.length > 0 ? 20 : 0,
+      ),
       walkers.add(async () => Character.load(sprites, randomLook(random)), characterCount),
       walkers.add(
         async (i) => {

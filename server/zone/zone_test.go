@@ -5,6 +5,7 @@ import (
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/shared/path"
+	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
 // open returns a size × size grid with every cell open.
@@ -41,7 +42,7 @@ func events(p *Player) []*wathenav1.Event {
 }
 
 func TestSeeAndWalk(t *testing.T) {
-	z := New("map/test", open(40))
+	z := New("map/test", open(40), rng.FromKey([32]byte{}).Stream(), nil)
 	a := add(z, "a")
 	b := add(z, "b")
 	z.stepAt(50)
@@ -85,7 +86,7 @@ func TestSeeAndWalk(t *testing.T) {
 }
 
 func TestViewRangeAndLeave(t *testing.T) {
-	z := New("map/test", open(80))
+	z := New("map/test", open(80), rng.FromKey([32]byte{}).Stream(), nil)
 	a := add(z, "a")
 	b := add(z, "b")
 	z.stepAt(50)
@@ -119,7 +120,7 @@ func TestViewRangeAndLeave(t *testing.T) {
 }
 
 func TestSlowPlayerIsDropped(t *testing.T) {
-	z := New("map/test", open(40))
+	z := New("map/test", open(40), rng.FromKey([32]byte{}).Stream(), nil)
 	a := add(z, "a")
 	for range outBuffer + 1 {
 		a.queue(&wathenav1.ServerMessage{})
@@ -133,5 +134,85 @@ func TestPackSteps(t *testing.T) {
 	// North is facing 4, south-west 1.
 	if got := PackSteps([]path.Dir{path.North, path.SouthWest}); len(got) != 1 || got[0] != 0x14 {
 		t.Errorf("%x", got)
+	}
+}
+
+func TestMonsters(t *testing.T) {
+	spawns := []Spawn{
+		{Mob: 1002, Name: "Poring", Amount: 5, X: 20, Y: 20, W: 3, H: 3, Speed: 400, CanMove: true},
+		{Mob: 1078, Name: "Red Plant", Amount: 2, Speed: 2000},
+	}
+	z := New("map/test", open(40), rng.FromKey([32]byte{1}).Stream(), spawns)
+	var porings, plants []*entity
+	for e := range z.entities {
+		switch e.monster.spawn.Mob {
+		case 1002:
+			porings = append(porings, e)
+			if e.x < 17 || e.x > 23 || e.y < 17 || e.y > 23 {
+				t.Errorf("poring spawned at (%d, %d), outside its area", e.x, e.y)
+			}
+		case 1078:
+			plants = append(plants, e)
+		}
+	}
+	if len(porings) != 5 || len(plants) != 2 {
+		t.Fatalf("%d porings, %d plants", len(porings), len(plants))
+	}
+
+	// A player near the porings sees them as monsters.
+	p := add(z, "a")
+	p.entity.x, p.entity.y = 20, 20
+	z.stepAt(50)
+	seen := 0
+	for _, e := range events(p) {
+		if e.GetAppear().GetKind() == wathenav1.EntityKind_ENTITY_KIND_MONSTER && e.GetAppear().GetLook().GetBody() == 1002 {
+			seen++
+		}
+	}
+	if seen != 5 {
+		t.Errorf("sees %d porings", seen)
+	}
+
+	// Within 5 seconds of the first think, every poring starts wandering,
+	// at most 7 cells away. Plants cannot move.
+	start := map[*entity][2]int{}
+	for _, e := range porings {
+		start[e] = [2]int{e.x, e.y}
+	}
+	walked := map[*entity]bool{}
+	for now := int64(100); now <= 5200; now += 50 {
+		z.stepAt(now)
+		for _, e := range porings {
+			if len(e.path) > 0 {
+				walked[e] = true
+				tx, ty := e.x, e.y
+				for _, d := range e.path {
+					dx, dy := d.Step()
+					tx += dx
+					ty += dy
+				}
+				if abs(tx-start[e][0]) > 7+1 || abs(ty-start[e][1]) > 7+1 {
+					t.Errorf("poring walks to (%d, %d) from %v", tx, ty, start[e])
+				}
+			}
+		}
+	}
+	if len(walked) != 5 {
+		t.Errorf("%d of 5 porings wandered", len(walked))
+	}
+	for _, e := range plants {
+		if len(e.path) > 0 || e.monster.nextWalk != -1 && e.monster.spawn.CanMove {
+			t.Error("a plant moved")
+		}
+	}
+	// The player saw the walks as moves.
+	moves := 0
+	for _, e := range events(p) {
+		if e.HasMove() {
+			moves++
+		}
+	}
+	if moves < 5 {
+		t.Errorf("saw %d monster moves", moves)
 	}
 }

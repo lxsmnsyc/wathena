@@ -14,6 +14,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
+	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
 func server(t *testing.T) string {
@@ -22,7 +23,7 @@ func server(t *testing.T) string {
 	for i := range g.Cells {
 		g.Cells[i] = path.Walkable | path.Shootable
 	}
-	z := zone.New("map/test", g)
+	z := zone.New("map/test", g, rng.FromKey([32]byte{}).Stream(), nil)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	go z.Run(ctx)

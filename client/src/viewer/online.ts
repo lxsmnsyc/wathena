@@ -1,12 +1,12 @@
 import { Group, type Vector3 } from 'three';
 import { jobs, looks } from '../data/tables';
 import type { WMap } from '../formats/wmap';
-import type { Event, Look as LookMessage } from '../gen/wathena/v1/event_pb';
+import { EntityKind, type Event, type Look as LookMessage } from '../gen/wathena/v1/event_pb';
 import { unpackSteps } from '../net/connection';
 import { Character, type Look } from '../render/characters';
-import type { SpriteCache } from '../render/sprites';
+import { type SpriteCache, SpriteView } from '../render/sprites';
 import type { Pathfinder } from '../world/pathfinder';
-import Player from './player';
+import Player, { type Body } from './player';
 
 // Shows the entities a server sends: players appear, walk the paths the
 // server gives, and vanish.
@@ -73,7 +73,15 @@ export default class Online {
             walk: undefined as Parameters<Player['follow']> | undefined,
           };
           this.pending.set(a.id, pending);
-          Character.load(this.sprites, lookOf(a.look))
+          // Monsters are one sprite, named by monster ID. Players are
+          // characters built from their look.
+          const body: Promise<Body | undefined> =
+            a.kind === EntityKind.MONSTER
+              ? this.sprites
+                  .get(`sprite/mob/${a.look?.body ?? 0}`)
+                  .then((s) => (s === undefined ? undefined : new SpriteView(s)))
+              : Character.load(this.sprites, lookOf(a.look));
+          body
             .then((c) => {
               if (c === undefined || this.pending.get(a.id) !== pending) {
                 return;

@@ -9,6 +9,7 @@ import (
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/shared/path"
+	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
 const (
@@ -49,8 +50,10 @@ type Player struct {
 }
 
 type entity struct {
-	player *Player
-	x, y   int
+	// player is set for players. Monsters have monster instead.
+	player  *Player
+	monster *monster
+	x, y    int
 	// dir is the facing, 0 south, clockwise.
 	dir   int
 	speed int
@@ -78,6 +81,7 @@ type Zone struct {
 	now      int64
 	tick     uint32
 	entities map[*entity]bool
+	rand     *rng.Rand
 
 	joins    chan joinRequest
 	leaves   chan *Player
@@ -94,16 +98,21 @@ type joinResult struct {
 	tick  uint32
 }
 
-// New makes a zone for a map, given its asset name and cells.
-func New(mapName string, grid *path.Grid) *Zone {
-	return &Zone{
+// New makes a zone for a map, given its asset name and cells. rand is the
+// zone's random stream, which must be secret, since it decides where
+// monsters go. spawns are the map's monsters.
+func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone {
+	z := &Zone{
 		Map:      mapName,
 		grid:     grid,
+		rand:     rand,
 		entities: map[*entity]bool{},
 		joins:    make(chan joinRequest),
 		leaves:   make(chan *Player, 16),
 		commands: make(chan command, 1024),
 	}
+	z.spawn(spawns)
+	return z
 }
 
 // Run advances the zone until ctx ends.
@@ -115,7 +124,9 @@ func (z *Zone) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			for e := range z.entities {
-				z.drop(e.player)
+				if e.player != nil {
+					z.drop(e.player)
+				}
 			}
 			return
 		case j := <-z.joins:
@@ -210,6 +221,9 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 	}
 	delete(z.entities, p.entity)
 	for e := range z.entities {
+		if e.player == nil {
+			continue
+		}
 		if id, ok := e.player.netIDs[p.entity]; ok {
 			delete(e.player.netIDs, p.entity)
 			e.player.queue(wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
@@ -284,8 +298,11 @@ func (z *Zone) stepAt(now int64) {
 			e.stepStart = end
 		}
 	}
+	z.think()
 	for e := range z.entities {
-		z.update(e.player)
+		if e.player != nil {
+			z.update(e.player)
+		}
 	}
 	for e := range z.entities {
 		e.walkChanged = false
@@ -323,6 +340,19 @@ func (z *Zone) update(p *Player) {
 }
 
 func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
+	if m := e.monster; m != nil {
+		return wathenav1.Event_builder{Appear: wathenav1.EntityAppear_builder{
+			Id:         id,
+			Kind:       wathenav1.EntityKind_ENTITY_KIND_MONSTER,
+			X:          uint32(e.x),   // #nosec G115 -- map cells are at most 1024.
+			Y:          uint32(e.y),   // #nosec G115 -- as above.
+			Dir:        uint32(e.dir), // #nosec G115 -- 0 to 7.
+			Look:       wathenav1.Look_builder{Body: m.spawn.Mob}.Build(),
+			Name:       m.spawn.Name,
+			WalkMs:     uint32(e.speed), // #nosec G115 -- a small speed.
+			HpPermille: 1000,
+		}.Build()}.Build()
+	}
 	p := e.player
 	return wathenav1.Event_builder{Appear: wathenav1.EntityAppear_builder{
 		Id:   id,

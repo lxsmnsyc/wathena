@@ -1,6 +1,5 @@
-import type { Vector3 } from 'three';
+import type { Group, Vector3 } from 'three';
 import { type WMap, cellHeight, walkable } from '../formats/wmap';
-import type { Character } from '../render/characters';
 import {
   DEFAULT_SPEED,
   type Dir,
@@ -14,6 +13,14 @@ import {
 // pathfinding and rAthena's step timing. The game will move it from
 // server messages instead.
 
+/** What a walker draws: a character, or a sprite such as a monster's. */
+export interface Body {
+  readonly group: Group;
+  direction: number;
+  play(action: number): void;
+  update(deltaMs: number, cameraSteps: number, towardCamera: Vector3): void;
+}
+
 export default class Player {
   /** The cell the player stands on, or is stepping from. */
   x: number;
@@ -24,7 +31,7 @@ export default class Player {
   private next: [number, number] | undefined;
 
   constructor(
-    readonly character: Character,
+    readonly character: Body,
     private readonly map: WMap,
     private readonly pathfinder: Pathfinder,
     x: number,
