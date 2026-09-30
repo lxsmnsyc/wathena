@@ -38,6 +38,8 @@ interface Walker {
   path: [number, number][];
   wait: number;
   progress: number;
+  /** Stays on its cell, as dropped items do. */
+  fixed: boolean;
 }
 
 export default class Walkers {
@@ -56,7 +58,11 @@ export default class Walkers {
   }
 
   /** Places count actors on walkable cells near the map's center. */
-  async add(make: (i: number) => Promise<Actor | undefined>, count: number): Promise<void> {
+  async add(
+    make: (i: number) => Promise<Actor | undefined>,
+    count: number,
+    fixed = false,
+  ): Promise<void> {
     const m = this.map;
     const spots: [number, number][] = [];
     for (let tries = 0; spots.length < count && tries < count * 50; tries++) {
@@ -72,8 +78,8 @@ export default class Walkers {
       if (view === undefined) {
         return;
       }
-      view.direction = this.random(8);
-      const w: Walker = { view, x, y, path: [], wait: this.random(3000), progress: 0 };
+      view.direction = fixed ? 0 : this.random(8);
+      const w: Walker = { view, x, y, path: [], wait: this.random(3000), progress: 0, fixed };
       this.place(w, x + 0.5, y + 0.5);
       this.group.add(view.group);
       this.walkers.push(w);
@@ -88,6 +94,9 @@ export default class Walkers {
   }
 
   private step(w: Walker, deltaMs: number): void {
+    if (w.fixed) {
+      return;
+    }
     if (w.path.length === 0) {
       w.view.play(0);
       w.wait -= deltaMs;

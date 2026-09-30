@@ -69,6 +69,12 @@ let playing: EffectView[] = [];
 const effectGroup = new Group();
 scene.add(effectGroup);
 
+// Dropped items, as item IDs. Their sprites are sprite/item/<id>.
+const DEFAULT_DROPS = '501,502,503,504,505,506,507,508,512,601,602,909,914,938,1201,2301,4001';
+const dropIDs = (new URL(location.href).searchParams.get('drops') ?? DEFAULT_DROPS)
+  .split(',')
+  .filter((n) => /^\d+$/.test(n));
+
 const characterCount = Number(new URL(location.href).searchParams.get('characters') ?? 30);
 const spriteNames = (new URL(location.href).searchParams.get('sprites') ?? DEFAULT_SPRITES)
   .split(',')
@@ -165,6 +171,14 @@ async function show(name: string): Promise<void> {
         return asset === undefined ? undefined : new SpriteView(asset);
       }, 20),
       walkers.add(async () => Character.load(sprites, randomLook(random)), characterCount),
+      walkers.add(
+        async (i) => {
+          const asset = await sprites.get(`sprite/item/${dropIDs[i % dropIDs.length] ?? 0}`);
+          return asset === undefined ? undefined : new SpriteView(asset);
+        },
+        dropIDs.length > 0 ? 40 : 0,
+        true,
+      ),
     ]);
     progress('done');
   } catch (error) {

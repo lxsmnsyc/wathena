@@ -24,12 +24,10 @@ func TestTextureNames(t *testing.T) {
 		`data\texture\effect\fire.bmp`:                "texture/effect/fire",
 		`data\texture\effect\glow.png`:                "texture/effect/glow~png",
 		`data\texture\effect\glow.tga`:                "texture/effect/glow",
-		`data\texture\유저인터페이스\item\빨간포션.bmp`:          "icon/item/빨간포션",
-		`data\texture\유저인터페이스\collection\빨간포션.bmp`:    "image/item/빨간포션",
-		`data\texture\유저인터페이스\cardbmp\포링카드.bmp`:       "image/card/포링카드",
 		`data\texture\유저인터페이스\illust\kafra.bmp`:       "image/illust/kafra",
 		`data\texture\유저인터페이스\login_interface\bg.bmp`: "ui/login_interface/bg",
 		`data\texture\유저인터페이스\item.bmp`:               "ui/item",
+		// Item images are named by item ID, in items.go.
 	}
 	if len(got) != len(want) {
 		t.Errorf("got %d names, want %d: %v", len(got), len(want), got)

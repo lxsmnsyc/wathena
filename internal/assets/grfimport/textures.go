@@ -13,11 +13,12 @@ import (
 // uiFolders maps folders below data/texture/유저인터페이스/ to namespaces
 // other than ui/.
 var uiFolders = map[string]string{
-	"item":       "icon/item/",
-	"collection": "image/item/",
-	"illust":     "image/illust/",
-	"cardbmp":    "image/card/",
+	"illust": "image/illust/",
 }
+
+// itemFolders below data/texture/유저인터페이스/ hold item images, which are
+// named by item ID instead (see items.go), so their paths get no name.
+var itemFolders = map[string]bool{"item": true, "collection": true, "cardbmp": true}
 
 // textureFormats lists image extensions in order of preference. When a
 // folder has the same image name in several formats, the first gets the
@@ -41,6 +42,9 @@ func textureBase(grfPath string) (name, ext string, ok bool) {
 	if ui, ok := strings.CutPrefix(rest, "유저인터페이스/"); ok {
 		name = "ui/" + ui
 		folder, file, _ := strings.Cut(ui, "/")
+		if itemFolders[folder] && file != "" {
+			return "", "", false
+		}
 		if ns, ok := uiFolders[folder]; ok && file != "" {
 			name = ns + file
 		}

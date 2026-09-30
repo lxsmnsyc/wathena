@@ -31,13 +31,15 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `sprite/garment/<look>/<sex>/<view>` | Sprite | `sprite/garment/archer/m/1` | Garment drawn on a character, by garment view ID. |
 | `sprite/mob/<name>` | Sprite | `sprite/mob/poring` | Monster. |
 | `sprite/npc/<name>` | Sprite | `sprite/npc/4_f_kafra1` | NPC. |
-| `sprite/<other>/<name>` | Sprite | `sprite/item/red_potion` | Other sprites: `item` (dropped items), `pet`, `homun`, `merc`, `effect`, `cursor`. |
+| `sprite/item/<id>` | Sprite | `sprite/item/501` | A dropped item, by item ID. |
+| `sprite/<other>/<name>` | Sprite | `sprite/pet/<name>` | Other sprites: `pet`, `homun`, `merc`, `effect`, `cursor`. |
 | `palette/hair/<race>/<sex>/<style>/<color>` | Palette | `palette/hair/human/f/3/5` | Hair dye. |
 | `palette/body/<look>/<sex>/<color>` | Palette | | Clothes dye. |
 | `texture/<path>` | Texture | `texture/prontera/ground01` | Textures that maps and models use. |
 | `ui/<path>` | Texture | `ui/login/background` | Interface images. |
-| `icon/item/<name>` | Texture | `icon/item/red_potion` | Item icons. |
-| `image/<kind>/<name>` | Texture | `image/card/poring_card` | Larger images: `item`, `card`, `illust`, `emblem`. |
+| `icon/item/<id>` | Texture | `icon/item/501` | Item icons, by item ID. |
+| `image/item/<id>`, `image/card/<id>` | Texture | `image/card/4001` | An item's large image and a card's art, by item ID. |
+| `image/<kind>/<name>` | Texture | `image/illust/kafra` | Other large images: `illust` (NPC illustrations) and `emblem`. |
 | `model/<path>` | Model | `model/prontera/fountain` | 3D models. |
 | `map/<name>` | Map | `map/prontera` | Maps. |
 | `lightmap/<name>` | Texture | `lightmap/prontera` | A map's lightmap atlas. |
@@ -53,13 +55,25 @@ The GRF importer names images in `data\texture\` by their path without the exten
 | GRF path | Name |
 |---|---|
 | `data\texture\<path>` | `texture/<path>` |
-| `data\texture\유저인터페이스\item\<name>` | `icon/item/<name>` |
-| `data\texture\유저인터페이스\collection\<name>` | `image/item/<name>` |
-| `data\texture\유저인터페이스\cardbmp\<name>` | `image/card/<name>` |
 | `data\texture\유저인터페이스\illust\<name>` | `image/illust/<name>` |
 | `data\texture\유저인터페이스\<path>` | `ui/<path>` |
 
+Item images in `item`, `collection`, and `cardbmp` are named by item ID instead, below.
+
 Some folders have the same image name in two formats, such as `fire.bmp` and `fire.tga`, and the two images differ. The preferred format gets the plain name, and the other gets `~` and its format appended, as in `texture/effect/fire~tga`. The order of preference is BMP, TGA, PNG, then JPEG, because maps and models refer to BMP files.
+
+### Items from a game client
+
+Item assets are named by item ID, so game data and the client refer to an item by its ID alone. The GRF importer finds each item's files through the client's own tables:
+
+| Client table | Files | Names |
+|---|---|---|
+| `iteminfo.lub` (`identifiedResourceName`), or `idnum2itemresnametable.txt` for IDs it lacks | `data\texture\유저인터페이스\item\<name>.bmp` | `icon/item/<id>` |
+| | `data\texture\유저인터페이스\collection\<name>.bmp` | `image/item/<id>` |
+| | `data\sprite\아이템\<name>.spr` and `.act` | `sprite/item/<id>` |
+| `num2cardillustnametable.txt` | `data\texture\유저인터페이스\cardbmp\<name>.bmp` | `image/card/<id>` |
+
+Many items share one file, such as the icon every card uses. The build converts each file once, and stores it once.
 
 ### Sounds and music from a game client
 

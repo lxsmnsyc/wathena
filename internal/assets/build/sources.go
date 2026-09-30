@@ -11,6 +11,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"sync"
 
 	"golang.org/x/text/unicode/norm"
 
@@ -305,11 +306,76 @@ func (g *GRF) Items() ([]Item, error) {
 			items = append(items, Item{Name: name, Ext: "wspr", CacheKey: key + "|" + name, Produce: produce})
 		}
 	}
+	itemItems, err := g.items(c)
+	if err != nil {
+		return nil, err
+	}
+	items = append(items, itemItems...)
 	music, err := g.music()
 	if err != nil {
 		return nil, err
 	}
 	return append(items, music...), nil
+}
+
+// items lists item images and dropped-item sprites, named by item ID.
+// Many items share one file, such as the icon every card uses, so each
+// file converts once however many names use it.
+func (g *GRF) items(c *grf.Client) ([]Item, error) {
+	textures, sprites, err := grfimport.ItemAssets(c)
+	if err != nil {
+		return nil, err
+	}
+	var items []Item
+	converted := map[string]func() ([]byte, error){}
+	once := func(key string, f func() ([]byte, error)) func() ([]byte, error) {
+		if p, ok := converted[key]; ok {
+			return p
+		}
+		p := sync.OnceValues(f)
+		converted[key] = p
+		return p
+	}
+	for _, t := range textures {
+		f, _ := texture.FormatOf(path.Ext(t.Source.Entry.Key))
+		key := fmt.Sprintf("%s|%d|%s", textureConverter, texture.Level, sourceKey(t.Source))
+		items = append(items, Item{
+			Name:     t.Name,
+			Ext:      "webp",
+			CacheKey: key + "|" + t.Name,
+			Produce: once(key, func() ([]byte, error) {
+				b, err := c.ReadFile(t.Source)
+				if err != nil {
+					return nil, err
+				}
+				return texture.Convert(f, b)
+			}),
+		})
+	}
+	for _, sp := range sprites {
+		key := spriteConverter + "|" + sourceKey(sp.Spr) + "|" + sourceKey(sp.Act)
+		items = append(items, Item{
+			Name:     sp.Name,
+			Ext:      "wspr",
+			CacheKey: key + "|" + sp.Name,
+			Produce: once(key, func() ([]byte, error) {
+				sprData, err := c.ReadFile(sp.Spr)
+				if err != nil {
+					return nil, err
+				}
+				actData, err := c.ReadFile(sp.Act)
+				if err != nil {
+					return nil, err
+				}
+				s, err := grfimport.ConvertSprite(sprData, actData, grfimport.EventName)
+				if err != nil {
+					return nil, err
+				}
+				return s.Encode()
+			}),
+		})
+	}
+	return items, nil
 }
 
 // music lists the MP3 files in the client's BGM folder, such as BGM\01.mp3,
