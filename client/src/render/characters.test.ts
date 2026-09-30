@@ -40,6 +40,7 @@ const assets: Record<string, SpriteAsset> = {
   body: part([10, -40]),
   head: part([0, -5]),
   shield: part([3, 3]),
+  garment: part([0, 0]),
 };
 const source: SpriteSource = {
   get: async (name) => Promise.resolve(assets[name]),
@@ -72,5 +73,19 @@ describe('Character', () => {
     c.direction = 4;
     c.update(0, 0, toward);
     expect(shield!.position.z).toBeLessThan(body!.position.z);
+  });
+
+  it('covers the body with the garment only when facing away', async () => {
+    const c = (await Character.load(source, { body: 'body', garment: 'garment' }))!;
+    const toward = new Vector3(0, 0, 1);
+    const [body, garment] = c.group.children;
+    c.update(0, 0, toward);
+    expect(garment!.position.z).toBeLessThan(body!.position.z);
+    c.direction = 2;
+    c.update(0, 0, toward);
+    expect(garment!.position.z).toBeLessThan(body!.position.z);
+    c.direction = 3;
+    c.update(0, 0, toward);
+    expect(garment!.position.z).toBeGreaterThan(body!.position.z);
   });
 });

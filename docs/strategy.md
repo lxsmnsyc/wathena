@@ -1801,7 +1801,7 @@ The official client keeps many tables inside its executable and its Lua files. T
 | `monsters.yml` | Monster ID to sprite name, size, and sounds. | `mob_db` `AegisName` values, which match most sprite names. |
 | `npcs.yml` | NPC sprite ID to sprite name. | rAthena NPC sprite constants and roBrowser's NPC table. |
 | `items.yml` | Item ID to icon, illustration, and display name. | `item_db` names and resource names. |
-| `effects.yml` | Effect ID to effect type (sprite, STR animation, particle, or sound), files, and timing. | roBrowser's effect table, limited to the effects `core` uses. |
+| `effects.yml` | Effect ID to effect type (sprite, STR animation, particle, or sound), files, and timing. Maps place effects by these IDs too. In the kRO maps, the most used IDs are sprite particles, such as emitters (974), torches (47), and fireflies (45), which roBrowser's table mostly leaves out. They need a particle system in the client. | roBrowser's effect table, limited to the effects `core` uses. |
 | `skill_effects.yml` | Skill ID to cast, hit, and ground effects. | roBrowser's skill effect table, limited to skills `core` ships. |
 | `maps.yml` | Classic map name to display name, music, and minimap. | rAthena map index and roBrowser's map tables. |
 

@@ -1,0 +1,28 @@
+# Effects by RO effect ID for the web client (strategy section 10.5,
+# assets-v1). Maps place effects by these IDs, and skills will too.
+#
+# Each entry lists what the effect shows. A part is one of:
+# - effect: a baked STR effect, effect/<name>. With variants, one of the
+#   listed effects is chosen at random each time the effect starts.
+#
+# Only the map effects whose parts are STR effects are listed so far. The
+# most common map effects, such as torches (47) and emitters (974), are
+# sprite particles, which need a particle system in the client first.
+#
+# Entries are from roBrowserLegacy (GPL-3.0), src/DB/Effects/EffectTable.js
+# at commit 58759ab22d1d56da7f6719ee45cb475f7e851227, by Vincent Thibault,
+# Antares, and contributors.
+
+effects:
+  - id: 109
+    constant: EF_BUBBLE
+    parts:
+      - variants: [effect/bubble1, effect/bubble2, effect/bubble3, effect/bubble4]
+  - id: 110
+    constant: EF_GASPUSH
+    parts:
+      - effect: effect/gaspush
+  - id: 199
+    constant: EF_PONG
+    parts:
+      - variants: [effect/pong1, effect/pong2, effect/pong3]

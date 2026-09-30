@@ -1,0 +1,160 @@
+# Weapon types for the web client (strategy section 10.5, assets-v1).
+#
+# Each rAthena weapon type (item_db SubType, the W_ constants) has:
+# - view: the weapon sprite drawn for items of this type without their own
+#   view, sprite/weapon/<look>/<sex>/<view>. 0 draws no weapon.
+# - attack: sounds played when an attack starts, one chosen at random.
+# - hit: sounds played when the attack lands, one chosen at random.
+#
+# Sounds are from roBrowserLegacy (GPL-3.0), src/DB/Items/WeaponSoundTable.js
+# and WeaponHitSoundTable.js at commit 58759ab22d1d56da7f6719ee45cb475f7e851227,
+# by Vincent Thibault, Antares, and contributors.
+# Changes:
+# - File names are asset names: data\wav\attack_sword.wav is sound/attack_sword.
+# - Dual-wield combinations are left out. The client draws both weapons.
+
+weapons:
+  - id: 0
+    constant: W_FIST
+    name: fist
+    view: 0
+    attack: [sound/attack_fist]
+    hit: [sound/_hit_fist1, sound/_hit_fist2, sound/_hit_fist3, sound/_hit_fist4]
+  - id: 1
+    constant: W_DAGGER
+    name: dagger
+    view: 1
+    attack: [sound/attack_short_sword, sound/attack_short_sword_]
+    hit: [sound/_hit_sword]
+  - id: 2
+    constant: W_1HSWORD
+    name: one-handed sword
+    view: 2
+    attack: [sound/attack_sword]
+    hit: [sound/_hit_sword]
+  - id: 3
+    constant: W_2HSWORD
+    name: two-handed sword
+    view: 3
+    attack: [sound/attack_twohand_sword]
+    hit: [sound/_hit_sword]
+  - id: 4
+    constant: W_1HSPEAR
+    name: one-handed spear
+    view: 4
+    attack: [sound/attack_spear]
+    hit: [sound/_hit_spear]
+  - id: 5
+    constant: W_2HSPEAR
+    name: two-handed spear
+    view: 5
+    attack: [sound/attack_spear]
+    hit: [sound/_hit_spear]
+  - id: 6
+    constant: W_1HAXE
+    name: one-handed axe
+    view: 6
+    attack: [sound/attack_axe]
+    hit: [sound/_hit_axe]
+  - id: 7
+    constant: W_2HAXE
+    name: two-handed axe
+    view: 7
+    attack: [sound/attack_axe]
+    hit: [sound/_hit_axe]
+  - id: 8
+    constant: W_MACE
+    name: mace
+    view: 8
+    attack: [sound/attack_mace]
+    hit: [sound/_hit_mace]
+  - id: 9
+    constant: W_2HMACE
+    name: two-handed mace
+    view: 9
+    attack: [sound/attack_mace]
+    hit: [sound/_hit_mace]
+  - id: 10
+    constant: W_STAFF
+    name: staff
+    view: 10
+    attack: [sound/attack_rod]
+    hit: [sound/_hit_rod]
+  - id: 11
+    constant: W_BOW
+    name: bow
+    view: 11
+    attack: [sound/attack_bow1, sound/attack_bow2]
+    hit: [sound/_hit_arrow]
+  - id: 12
+    constant: W_KNUCKLE
+    name: knuckle
+    view: 12
+    attack: [sound/attack_fist]
+    hit: [sound/_hit_fist2]
+  - id: 13
+    constant: W_MUSICAL
+    name: musical instrument
+    view: 13
+    attack: [sound/attack_mace]
+    hit: [sound/_hit_mace]
+  - id: 14
+    constant: W_WHIP
+    name: whip
+    view: 14
+    attack: [sound/attack_whip]
+    hit: [sound/_hit_mace]
+  - id: 15
+    constant: W_BOOK
+    name: book
+    view: 15
+    attack: [sound/attack_book]
+    hit: [sound/_hit_mace]
+  - id: 16
+    constant: W_KATAR
+    name: katar
+    view: 16
+    attack: [sound/attack_katar]
+    hit: [sound/_hit_mace]
+  - id: 17
+    constant: W_REVOLVER
+    name: revolver
+    view: 17
+    attack: []
+    hit: [sound/_hit_권총]
+  - id: 18
+    constant: W_RIFLE
+    name: rifle
+    view: 18
+    attack: []
+    hit: [sound/_hit_라이플]
+  - id: 19
+    constant: W_GATLING
+    name: gatling gun
+    view: 19
+    attack: []
+    hit: [sound/_hit_개틀링한발]
+  - id: 20
+    constant: W_SHOTGUN
+    name: shotgun
+    view: 20
+    attack: []
+    hit: [sound/_hit_샷건]
+  - id: 21
+    constant: W_GRENADE
+    name: grenade launcher
+    view: 21
+    attack: []
+    hit: [sound/_hit_그레네이드런쳐]
+  - id: 22
+    constant: W_HUUMA
+    name: huuma shuriken
+    view: 22
+    attack: [sound/attack_sword]
+    hit: [sound/_hit_mace]
+  - id: 23
+    constant: W_2HSTAFF
+    name: two-handed staff
+    view: 23
+    attack: [sound/attack_rod]
+    hit: [sound/_hit_rod]

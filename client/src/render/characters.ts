@@ -17,8 +17,10 @@ export interface SpriteSource {
 export interface Look {
   body: string;
   head?: string;
-  /** Headgear from the bottom slot to the top. */
-  headgear?: string[];
+  /** Headgear by slot. */
+  headgearTop?: string;
+  headgearMid?: string;
+  headgearBottom?: string;
   weapon?: string;
   shield?: string;
   garment?: string;
@@ -30,13 +32,48 @@ export interface Look {
 const IDLE = 0;
 const SIT = 2;
 
+type Part =
+  | 'body'
+  | 'head'
+  | 'headgearTop'
+  | 'headgearMid'
+  | 'headgearBottom'
+  | 'weapon'
+  | 'shield'
+  | 'garment';
+
 /**
- * Parts in a character's draw order, first to last. Facing away, the
- * shield goes behind the body and the garment in front of it.
+ * Parts in draw order, first to last, for a direction the character is
+ * shown facing, following roBrowser's EntityRender. The shield goes behind
+ * the body when facing west through north-east. The garment goes behind
+ * the body unless facing north-west through north-east, when it covers it.
  */
-type Part = 'body' | 'head' | 'headgear' | 'weapon' | 'shield' | 'garment';
-const FRONT: Part[] = ['garment', 'body', 'head', 'headgear', 'weapon', 'shield'];
-const BACK: Part[] = ['shield', 'body', 'head', 'headgear', 'weapon', 'garment'];
+function drawOrder(dir: number): Part[] {
+  const behind = dir >= 2 && dir <= 5;
+  const away = dir >= 3 && dir <= 5;
+  const order: Part[] = [];
+  if (behind) {
+    order.push('shield');
+  }
+  if (!away) {
+    order.push('garment');
+  }
+  order.push('body', 'head', 'headgearMid', 'headgearTop', 'weapon', 'headgearBottom');
+  if (away) {
+    order.push('garment');
+  }
+  if (!behind) {
+    order.push('shield');
+  }
+  return order;
+}
+
+const ATTACHED: ReadonlySet<Part> = new Set([
+  'head',
+  'headgearTop',
+  'headgearMid',
+  'headgearBottom',
+]);
 
 /** How far apart parts sit toward the camera, in cells, so they sort in order. */
 const LAYER_GAP = 0.002;
@@ -69,11 +106,13 @@ export class Character {
     };
     const palette = async (name: string | undefined): Promise<Texture | undefined> =>
       name === undefined ? undefined : sprites.palette(name);
-    const [bodyAsset, head, headgear, weapon, shield, garment, bodyPalette, hairPalette] =
+    const [bodyAsset, head, top, mid, bottom, weapon, shield, garment, bodyPalette, hairPalette] =
       await Promise.all([
         sprites.get(look.body),
         optional(look.head),
-        Promise.all((look.headgear ?? []).map(optional)).then((v) => v.flat()),
+        optional(look.headgearTop),
+        optional(look.headgearMid),
+        optional(look.headgearBottom),
         optional(look.weapon),
         optional(look.shield),
         optional(look.garment),
@@ -91,7 +130,9 @@ export class Character {
     const parts = new Map<Part, SpriteView[]>([
       ['body', [body]],
       ['head', head],
-      ['headgear', headgear],
+      ['headgearTop', top],
+      ['headgearMid', mid],
+      ['headgearBottom', bottom],
       ['weapon', weapon],
       ['shield', shield],
       ['garment', garment],
@@ -127,10 +168,8 @@ export class Character {
     const bodyFrame = this.body.draw(actionIndex, frame, 0, 0);
     const anchor = bodyFrame?.anchors[0];
 
-    const dir = actionIndex % 8;
-    const order = dir >= 2 && dir <= 5 ? BACK : FRONT;
     let depth = 0;
-    for (const part of order) {
+    for (const part of drawOrder(actionIndex % 8)) {
       for (const v of this.parts.get(part) ?? []) {
         v.group.position.copy(towardCamera).multiplyScalar(depth++ * LAYER_GAP);
         if (v === this.body) {
@@ -140,7 +179,7 @@ export class Character {
         const frames = v.asset.sprite.actions[index]?.frames ?? [];
         const f = frames[((frame % frames.length) + frames.length) % frames.length];
         // Heads and headgear attach at the body's anchor.
-        const [dx, dy] = attach(anchor, part === 'head' || part === 'headgear' ? f : undefined);
+        const [dx, dy] = attach(anchor, ATTACHED.has(part) ? f : undefined);
         v.draw(index, frame, dx, dy);
       }
     }

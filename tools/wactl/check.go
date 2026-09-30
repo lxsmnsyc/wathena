@@ -22,17 +22,14 @@ func assetsCheck(args []string) error {
 		return errors.New("--build is required")
 	}
 
-	// Client data tables refer to assets too. Every look needs a body
-	// sprite for each sex it exists for.
-	jobs, err := clientdata.LoadJobs()
+	// Client data tables refer to assets too.
+	tableRefs, err := clientdata.References()
 	if err != nil {
 		return err
 	}
-	var refs []build.Reference
-	for _, l := range jobs.Looks {
-		for _, sex := range l.Sexes() {
-			refs = append(refs, build.Reference{From: "client/data/jobs.yml", Name: "sprite/body/" + l.Look + "/" + sex})
-		}
+	refs := make([]build.Reference, 0, len(tableRefs))
+	for _, r := range tableRefs {
+		refs = append(refs, build.Reference{From: r.Table, Name: r.Name})
 	}
 
 	rep, err := build.Check(*dir, refs)

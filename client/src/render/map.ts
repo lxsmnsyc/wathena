@@ -1,8 +1,10 @@
 import { Group } from 'three';
 import type { AssetStore } from '../assets/store';
 import { type WMap, decodeWMap } from '../formats/wmap';
+import { EffectCache } from './effects';
 import buildGround from './ground';
 import { lightUniforms } from './light';
+import MapEffects from './mapEffects';
 import { ModelCache } from './models';
 import { TextureCache } from './textures';
 import Water from './water';
@@ -17,6 +19,7 @@ export default class MapScene {
     readonly textures: TextureCache,
     private readonly models: ModelCache,
     private readonly water: Water,
+    private readonly effects: MapEffects,
   ) {}
 
   /**
@@ -37,9 +40,10 @@ export default class MapScene {
     const light = lightUniforms(map.light);
     const models = new ModelCache(store, textures, light);
     const water = new Water(map, textures);
-    const scene = new MapScene(map, textures, models, water);
+    const effects = new MapEffects();
+    const scene = new MapScene(map, textures, models, water, effects);
     scene.group.add(buildGround(map, textures, light));
-    scene.group.add(water.group);
+    scene.group.add(water.group, effects.group);
 
     const objects = new Group();
     objects.name = 'objects';
@@ -65,6 +69,7 @@ export default class MapScene {
         }),
       );
     }
+    pending.push(effects.load(map, new EffectCache(store), textures));
     // Models ask for their textures as they load, so textures finish last.
     const ready = Promise.allSettled(pending).then(async () => textures.idle());
     return { scene, ready };
@@ -73,5 +78,6 @@ export default class MapScene {
   update(seconds: number, delta: number): void {
     this.models.update(delta);
     this.water.update(seconds);
+    this.effects.update(delta * 1000);
   }
 }

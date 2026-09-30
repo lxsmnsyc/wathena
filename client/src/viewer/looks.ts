@@ -1,9 +1,10 @@
+import { weapons } from '../data/tables';
 import type { Look } from '../render/characters';
 
 // Random character looks for the viewer, from names the asset contract
 // defines. Missing names draw nothing, so guesses are safe.
 
-/** Looks with a typical weapon view (rAthena weapon type) and shield. */
+/** Looks with a typical weapon type (rAthena W_ ID) and whether they carry a shield. */
 const JOBS: { look: string; weapon: number; shield?: boolean; sex?: 'm' | 'f' }[] = [
   { look: 'novice', weapon: 1 },
   { look: 'swordman', weapon: 2, shield: true },
@@ -29,8 +30,8 @@ export default function randomLook(random: (n: number) => number): Look {
     body: `sprite/body/${job.look}/${sex}`,
     head: `sprite/head/human/${sex}/${style}`,
     hairPalette: `palette/hair/human/${sex}/${style}/${random(9)}`,
-    weapon: `sprite/weapon/${job.look}/${sex}/${job.weapon}`,
-    headgear: [`sprite/headgear/${sex}/${1 + random(60)}`],
+    weapon: `sprite/weapon/${job.look}/${sex}/${weapons.get(job.weapon)?.view ?? 0}`,
+    headgearTop: `sprite/headgear/${sex}/${1 + random(60)}`,
   };
   if (random(3) === 0) {
     look.bodyPalette = `palette/body/${job.look}/${sex}/${1 + random(3)}`;
