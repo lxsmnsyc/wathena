@@ -35,3 +35,21 @@ func TestLoadSpawnsWithRewards(t *testing.T) {
 		}
 	}
 }
+
+func TestStartCharacter(t *testing.T) {
+	for _, mode := range reference.Modes {
+		for build := range builds {
+			tables, c, err := startCharacter(mode, build)
+			if err != nil {
+				t.Fatalf("%s %s: %v", mode, build, err)
+			}
+			r, err := tables.Calc(c)
+			if err != nil || r.Battle.MaxHP == 0 || r.Battle.Player == nil {
+				t.Errorf("%s %s: %+v, %v", mode, build, r.Battle, err)
+			}
+		}
+	}
+	if _, _, err := startCharacter(reference.Renewal, "nope"); err == nil {
+		t.Error("an unknown build loads")
+	}
+}

@@ -27,6 +27,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -46,8 +47,7 @@ func run() error {
 	dev := flag.Bool("dev", false, "accept any name as a session token, for development")
 	origins := flag.String("origins", "localhost:*,127.0.0.1:*", "hosts pages may connect from, comma-separated")
 	mode := flag.String("mode", "renewal", "rAthena mode whose recorded spawns to use: renewal or pre-renewal, or none")
-	build := flag.String("build", "all_1", "recorded novice stat build players fight with: all_1, melee, critical, magic, ranged, or tank")
-	level := flag.Int("level", 1, "recorded novice base level whose stats players fight with: 1, 50, or 99")
+	build := flag.String("build", "all_1", "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank")
 	flag.Parse()
 	if *assets == "" {
 		return errors.New("--assets is required")
@@ -88,12 +88,12 @@ func run() error {
 	}
 	z := zone.New(name, grid, root.Child("zone", 0).SecretStream(), spawns)
 	z.Progress = tables
-	if *mode != "none" {
-		if z.PlayerStatus, err = playerStatus(reference.Mode(*mode), *level, *build); err != nil {
-			return err
-		}
-	} else {
-		z.PlayerStatus = battle.Status{MaxHP: 40, ADelay: 880, AMotion: 440, DMotion: 796, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
+	statusMode := reference.Mode(*mode)
+	if *mode == "none" {
+		statusMode = reference.Renewal
+	}
+	if z.Status, z.Start, err = startCharacter(statusMode, *build); err != nil {
+		return err
 	}
 	go z.Run(ctx)
 
@@ -261,31 +261,38 @@ func secret() []byte {
 	return b
 }
 
-// playerStatus is a novice with no equipment and no skills, as the
-// reference recorded, until characters have their own. The level and
-// build pick a recorded novice. Only its battle stats are used, so a
-// player still starts at level 1.
-func playerStatus(mode reference.Mode, level int, build string) (battle.Status, error) {
-	var pcs struct {
-		Players []struct {
-			Job         int           `json:"job"`
-			BaseLevel   int           `json:"base_level"`
-			Build       string        `json:"build"`
-			AllSkills   bool          `json:"all_skills"`
-			BattleState battle.Status `json:"battle_status"`
-		} `json:"players"`
+// builds are the raised stats of the recorder's PC_SAMPLE_BUILDS in the
+// rAthena fork's wathena_recorder.cpp: STR, AGI, VIT, INT, DEX and LUK
+// before job bonuses.
+var builds = map[string]status.Stats{
+	"all_1":    {Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1},
+	"melee":    {Str: 90, Agi: 50, Vit: 30, Int: 1, Dex: 40, Luk: 1},
+	"critical": {Str: 70, Agi: 90, Vit: 1, Int: 1, Dex: 40, Luk: 50},
+	"magic":    {Str: 1, Agi: 1, Vit: 30, Int: 99, Dex: 80, Luk: 1},
+	"ranged":   {Str: 30, Agi: 40, Vit: 1, Int: 1, Dex: 99, Luk: 30},
+	"tank":     {Str: 60, Agi: 1, Vit: 99, Int: 1, Dex: 30, Luk: 1},
+}
+
+// startCharacter loads the mode's job tables and makes the character
+// every player starts as, until characters are stored: a male novice
+// with no equipment and no skills, and the raised stats of a build.
+func startCharacter(mode reference.Mode, build string) (*status.Tables, status.Character, error) {
+	stats, ok := builds[build]
+	if !ok {
+		return nil, status.Character{}, fmt.Errorf("unknown build %q", build)
 	}
-	if err := reference.Load(mode, "pc_status", &pcs); err != nil {
-		return battle.Status{}, err
+	var d status.Data
+	if err := reference.LoadFile("extracts/"+string(mode)+"/job_stats.json", &d); err != nil {
+		return nil, status.Character{}, err
 	}
-	for _, p := range pcs.Players {
-		if p.Job == 0 && p.BaseLevel == level && p.Build == build && !p.AllSkills {
-			st := p.BattleState
-			st.Level = level
-			// Bare hands and no skills.
-			st.Player = &battle.Player{}
-			return st, nil
-		}
+	tables, err := status.New(&d)
+	if err != nil {
+		return nil, status.Character{}, err
 	}
-	return battle.Status{}, fmt.Errorf("reference: no level %d %s novice in pc_status", level, build)
+	c := status.Character{Job: 0, Male: true, BaseLevel: 1, JobLevel: 1, Stats: stats}
+	// Check that the tables have the job.
+	if _, err := tables.Calc(c); err != nil {
+		return nil, status.Character{}, err
+	}
+	return tables, c, nil
 }

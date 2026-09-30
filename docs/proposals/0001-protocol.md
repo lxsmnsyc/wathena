@@ -77,6 +77,13 @@ Server to client, in `ServerMessage`:
 - **Other players' HP is a fraction.** `EntityAppear.hp_permille` is HP out of 1000, and `Damage.target_hp_permille` updates it after each hit. Exact HP goes only to the player, their party, and their homunculus.
 - **Text is already translated.** NPC dialog and messages arrive in the player's language, chosen from `Hello.language` (strategy section 6.13).
 - **Ground items are entities.** They appear with `ENTITY_KIND_ITEM` and a `GroundItem` holding the item ID, amount, and place inside the cell. `PickUp` names the item's entity ID. Everyone in view gets `ItemTaken` and then a vanish with `VANISH_REASON_PICKED_UP`. The picker also gets `InventoryAdd`, or `PickUpFailed` when nothing happened.
+- **Own stats are single numbers.** `StatUpdate` sends each changed stat once. HP and MAX_HP go together after damage, healing, or a new maximum. The others follow rAthena's status window (`clif_updatestatus`):
+  - STR to LUK are totals, with job bonuses.
+  - ATK, DEF and MDEF are the sum of the window's two numbers (`pc_leftside_*` plus `pc_rightside_*`). In renewal, ATK is status ATK plus weapon ATK.
+  - MATK is the sum of both numbers in renewal. In pre-renewal the window shows a range, and MATK is its maximum.
+  - HIT and FLEE are hit and flee. CRITICAL is critical rate in whole points (rAthena's value divided by 10).
+  - ASPD is the displayed ASPD, `(2000 - amotion) / 10` rounded down: amotion 440 is ASPD 156.
+  - MAX_WEIGHT is in tenths of a weight unit, as rAthena's `max_weight`.
 - **Appearance uses table IDs.** `Look` holds sprite and palette IDs from the client data tables (strategy section 10.5).
 
 ### Limits

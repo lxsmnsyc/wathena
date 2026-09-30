@@ -127,7 +127,9 @@ func (z *Zone) reward(e, killer *entity) {
 }
 
 // gainExp gives a player exp, levels it up, and sends what changed. A
-// base level up heals fully, as pc_checkbaselevelup.
+// level up computes the player's stats again, as pc_checkbaselevelup and
+// pc_checkjoblevelup call status_calc_pc. A base level up then heals HP
+// and SP fully, as status_percent_heal.
 func (z *Zone) gainExp(p *Player, base, job int64) {
 	before := z.progressStats(p, nil)
 	g := z.Progress.GainExp(&p.progress, base, job)
@@ -135,9 +137,16 @@ func (z *Zone) gainExp(p *Player, base, job int64) {
 		p.pending = append(p.pending, changed)
 	}
 	e := p.entity
+	if g.BaseLevels > 0 || g.JobLevels > 0 {
+		z.recalc(p)
+	}
 	if g.BaseLevels > 0 {
 		e.hp, e.hpChanged = int64(e.status.MaxHP), true
+		p.sp = int64(e.status.MaxSP)
 		z.effects = append(z.effects, effect{e, effectBaseLevelUp})
+	}
+	if s := z.battleStats(p); s != nil {
+		p.pending = append(p.pending, s)
 	}
 	if g.JobLevels > 0 {
 		z.effects = append(z.effects, effect{e, effectJobLevelUp})

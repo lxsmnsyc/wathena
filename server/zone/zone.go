@@ -10,6 +10,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -56,6 +57,16 @@ type Player struct {
 	// progress is the player's levels and exp. It is only used when the
 	// zone has progression tables.
 	progress progression.Character
+	// char is what the player's stats come from. Its levels are unused:
+	// they come from progress.
+	char status.Character
+	// sp is the player's SP. HP is on its entity.
+	sp int64
+	// maxWeight and window are from the last stat calculation.
+	maxWeight int
+	window    status.Window
+	// sent holds the stat values last sent to the player.
+	sent map[wathenav1.StatId]int64
 	// inventory maps item IDs to amounts.
 	inventory map[uint32]int
 	// pending are events for the player alone, sent with the next frame.
@@ -109,8 +120,14 @@ type Zone struct {
 	rand     *rng.Rand
 	combat
 
-	// PlayerStatus is every player's battle status, until characters
-	// have their own. Set it before Run.
+	// Status holds the job tables players' stats come from. Set it before
+	// Run. Without it, every player has PlayerStatus.
+	Status *status.Tables
+	// Start is the character every player starts as, until characters
+	// are stored: its job, sex, raised stats and skills. Its levels are
+	// unused, since players start at level 1. Set it before Run.
+	Start status.Character
+	// PlayerStatus is every player's battle status when Status is nil.
 	PlayerStatus battle.Status
 	// Progress holds the exp tables and drop settings. Without it, kills
 	// give no exp and no items. Set it before Run.
@@ -224,23 +241,31 @@ func (z *Zone) Ack(p *Player, seq uint32) bool {
 
 func (z *Zone) join(p *Player) joinResult {
 	x, y := z.startCell()
-	st := z.PlayerStatus
 	e := &entity{player: p, x: x, y: y, speed: WalkSpeed}
-	// hpChanged sends the player its HP in the first frame.
-	e.status, e.hp, e.hpChanged = &st, int64(st.MaxHP), st.MaxHP > 0
-	if st.Speed > 0 {
-		e.speed = st.Speed
-	}
 	p.entity = e
 	z.entities[e] = true
 	z.nextChar++
 	p.charID = z.nextChar
 	z.players[p.charID] = p
 	p.inventory = map[uint32]int{}
+	p.sent = map[wathenav1.StatId]int64{}
+	p.char = z.Start
 	if t := z.Progress; t != nil {
-		// A new novice. The first frame carries its levels and exp.
-		p.progress = t.NewCharacter(0)
+		// A new character at level 1. The first frame carries its levels
+		// and exp.
+		p.progress = t.NewCharacter(p.char.Job)
 		p.pending = append(p.pending, z.progressStats(p, nil))
+	}
+	z.recalc(p)
+	// A new character has full HP and SP. hpChanged sends the player its
+	// HP in the first frame.
+	e.hp, p.sp = int64(e.status.MaxHP), int64(e.status.MaxSP)
+	e.hpChanged = e.status.MaxHP > 0
+	if e.status.Speed > 0 {
+		e.speed = e.status.Speed
+	}
+	if s := z.battleStats(p); s != nil {
+		p.pending = append(p.pending, s)
 	}
 	// The player sees itself from the first frame.
 	return joinResult{netID: p.netID(e), tick: z.tick}
