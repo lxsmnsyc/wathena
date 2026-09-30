@@ -6,8 +6,10 @@ import {
   ColorManagement,
   Group,
   PerspectiveCamera,
+  Raycaster,
   Scene,
   Timer,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -20,7 +22,9 @@ import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
+import { Pathfinder } from '../world/pathfinder';
 import randomLook from './looks';
+import Player from './player';
 import Walkers from './walkers';
 
 // Shaders work on stored color values directly, as RO does.
@@ -88,6 +92,10 @@ if ('serviceWorker' in navigator && !new URL(location.href).searchParams.has('no
 
 const store = await AssetStore.open(base);
 let current: MapScene | undefined;
+const pathfinder = await Pathfinder.load();
+let player: Player | undefined;
+const playerGroup = new Group();
+scene.add(playerGroup);
 const audio = new AudioSystem(store);
 let soundscape: Soundscape | undefined;
 
@@ -204,11 +212,27 @@ async function show(name: string): Promise<void> {
     soundscape = new Soundscape(next.map.sounds, audio);
     audio.playMusic(next.map.music).catch(reportError);
     scene.add(next.group, walkers.group);
-    // Look at the map's center from the south, as RO's camera does.
-    const cx = next.map.width / 2;
-    const cz = -next.map.height / 2;
+    // The player starts at the walkable cell nearest the center, and the
+    // camera looks at it from the south, as RO's camera does.
+    pathfinder.setMap(next.map);
+    player = undefined;
+    playerGroup.clear();
+    const [px, py] = Player.start(next.map);
+    const cx = px + 0.5;
+    const cz = -(py + 0.5);
     const size = Math.max(next.map.width, next.map.height);
-    controls.target.set(cx, 0, cz);
+    Character.load(sprites, {
+      body: 'sprite/body/novice/f',
+      head: 'sprite/head/human/f/2',
+      hairPalette: 'palette/hair/human/f/2/1',
+    })
+      .then((c) => {
+        if (c !== undefined && current === next) {
+          player = new Player(c, next.map, pathfinder, px, py);
+          playerGroup.add(c.group);
+        }
+      })
+      .catch(reportError);
     // ?distance= sets the camera's distance from the center, in cells.
     const distance = Number(new URL(location.href).searchParams.get('distance')) || size * 0.85;
     const y = cellHeight(next.map, cx, -cz);
@@ -263,7 +287,13 @@ show(input.value).catch(reportError);
 
 // Lets browser tests inspect the scene in development builds.
 if (import.meta.env.DEV) {
-  Reflect.set(globalThis, 'viewer', { scene, camera, audio, playing: () => playing });
+  Reflect.set(globalThis, 'viewer', {
+    scene,
+    camera,
+    audio,
+    playing: () => playing,
+    player: () => player,
+  });
 }
 
 const right = new Vector3();
@@ -274,6 +304,36 @@ function pan(p: Vector3): number {
   return Math.max(-1, Math.min(1, p.clone().sub(controls.target).dot(right) / SPRITE_SOUND_RANGE));
 }
 
+// A click on the ground walks the player there. A drag turns the camera
+// instead.
+const raycaster = new Raycaster();
+const pointer = new Vector2();
+let pressed: [number, number] | undefined;
+canvas.addEventListener('pointerdown', (e) => {
+  pressed = [e.clientX, e.clientY];
+});
+canvas.addEventListener('pointerup', (e) => {
+  if (pressed === undefined || Math.hypot(e.clientX - pressed[0], e.clientY - pressed[1]) > 5) {
+    return;
+  }
+  const ground = current?.group.getObjectByName('ground');
+  if (ground === undefined || player === undefined) {
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  pointer.set(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1,
+  );
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObject(ground, true)[0];
+  if (hit !== undefined) {
+    player.moveTo(Math.floor(hit.point.x), Math.floor(-hit.point.z));
+  }
+});
+
+const follow = new Vector3();
+
 const timer = new Timer();
 const toward = new Vector3();
 renderer.setAnimationLoop((time) => {
@@ -283,6 +343,15 @@ renderer.setAnimationLoop((time) => {
   const steps = Math.round(controls.getAzimuthalAngle() / (Math.PI / 4));
   toward.subVectors(camera.position, controls.target).normalize();
   walkers?.update(timer.getDelta() * 1000, steps, toward);
+  if (player !== undefined) {
+    player.update(timer.getDelta() * 1000, steps, toward);
+    // The camera follows the player, keeping its angle and distance.
+    follow
+      .subVectors(player.character.group.position, controls.target)
+      .multiplyScalar(Math.min(1, timer.getDelta() * 8));
+    controls.target.add(follow);
+    camera.position.add(follow);
+  }
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });
   for (const e of playing) {

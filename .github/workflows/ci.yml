@@ -152,3 +152,9 @@ jobs:
       # same tests under TinyGo, both natively and as WebAssembly.
       - run: tinygo test ./shared/...
       - run: tinygo test -target=wasip1 ./shared/...
+      # The client's pathfinding module is committed, so it must match its
+      # source.
+      - name: Check the client's path.wasm
+        run: |
+          tinygo build -o client/src/world/path.wasm -target=wasm-unknown -opt=2 -no-debug ./shared/path/wasm
+          git diff --exit-code -- client/src/world/path.wasm
