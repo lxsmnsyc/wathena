@@ -47,7 +47,7 @@ func run() error {
 	dev := flag.Bool("dev", false, "accept any name as a session token, for development")
 	origins := flag.String("origins", "localhost:*,127.0.0.1:*", "hosts pages may connect from, comma-separated")
 	mode := flag.String("mode", "renewal", "rAthena mode whose recorded spawns to use: renewal or pre-renewal, or none")
-	build := flag.String("build", "all_1", "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank")
+	build := flag.String("build", "all_1", "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank. Other builds than all_1 are for testing")
 	flag.Parse()
 	if *assets == "" {
 		return errors.New("--assets is required")
@@ -275,7 +275,10 @@ var builds = map[string]status.Stats{
 
 // startCharacter loads the mode's job tables and makes the character
 // every player starts as, until characters are stored: a male novice
-// with no equipment and no skills, and the raised stats of a build.
+// with no equipment and no skills, and the raised stats of a build. The
+// default, all_1, is a new character as rAthena makes one for recent
+// clients: every stat at 1 and the level 1 status points to spend. The
+// other builds keep the same status points, for testing.
 func startCharacter(mode reference.Mode, build string) (*status.Tables, status.Character, error) {
 	stats, ok := builds[build]
 	if !ok {

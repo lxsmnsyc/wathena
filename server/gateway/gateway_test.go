@@ -10,8 +10,11 @@ import (
 	"github.com/coder/websocket"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/schema"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -19,11 +22,18 @@ import (
 
 func server(t *testing.T) string {
 	t.Helper()
+	return serverWith(t, func(*zone.Zone) {})
+}
+
+// serverWith runs a zone that setup prepares.
+func serverWith(t *testing.T, setup func(*zone.Zone)) string {
+	t.Helper()
 	g := &path.Grid{Width: 40, Height: 40, Cells: make([]uint8, 1600)}
 	for i := range g.Cells {
 		g.Cells[i] = path.Walkable | path.Shootable
 	}
 	z := zone.New("map/test", g, rng.FromKey([32]byte{}).Stream(), nil)
+	setup(z)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	go z.Run(ctx)
@@ -151,6 +161,58 @@ func TestPlayersSeeEachOtherWalk(t *testing.T) {
 	a.next(hasEvent(func(e *wathenav1.Event) bool {
 		return e.GetVanish().GetReason() == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT
 	}))
+}
+
+// TestRaiseStat checks that the gateway passes valid raises to the zone
+// and drops the others.
+func TestRaiseStat(t *testing.T) {
+	var jobs status.Data
+	if err := reference.LoadFile("extracts/renewal/job_stats.json", &jobs); err != nil {
+		t.Fatal(err)
+	}
+	tables, err := status.New(&jobs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var prog progression.Data
+	if err := reference.LoadFile("extracts/renewal/progression.json", &prog); err != nil {
+		t.Fatal(err)
+	}
+	url := serverWith(t, func(z *zone.Zone) {
+		z.Status = tables
+		z.Start = status.Character{Job: 0, Male: true, Stats: status.Stats{Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1}}
+		z.Progress = progression.New(&prog, nil, progression.DefaultConfig)
+	})
+	a := dial(t, url)
+	a.hello("Alice", schema.Version)
+	a.next((*wathenav1.ServerMessage).HasWelcome)
+	raise := func(st wathenav1.BaseStat, amount uint32) {
+		a.send(wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{
+			RaiseStat: wathenav1.RaiseStat_builder{Stat: st, Amount: amount}.Build(),
+		}.Build()}.Build())
+	}
+	raise(wathenav1.BaseStat_BASE_STAT_UNSPECIFIED, 1)
+	raise(wathenav1.BaseStat(7), 1)
+	raise(wathenav1.BaseStat_BASE_STAT_STR, 0)
+	raise(wathenav1.BaseStat_BASE_STAT_STR, MaxRaise+1)
+	raise(wathenav1.BaseStat_BASE_STAT_STR, 2)
+	m := a.next(hasEvent(func(e *wathenav1.Event) bool {
+		for _, s := range e.GetStats().GetStats() {
+			if s.GetId() == wathenav1.StatId_STAT_ID_STR && s.GetValue() != 1 {
+				return true
+			}
+		}
+		return false
+	}))
+	got := map[wathenav1.StatId]int64{}
+	for _, e := range m.GetFrame().GetEvents() {
+		for _, s := range e.GetStats().GetStats() {
+			got[s.GetId()] = s.GetValue()
+		}
+	}
+	if got[wathenav1.StatId_STAT_ID_STR] != 3 || got[wathenav1.StatId_STAT_ID_STATUS_POINTS] != 44 || m.GetFrame().GetAckSeq() != 6 {
+		t.Errorf("STR %d, status points %d, ack %d; want 3, 44 and 6", got[wathenav1.StatId_STAT_ID_STR], got[wathenav1.StatId_STAT_ID_STATUS_POINTS], m.GetFrame().GetAckSeq())
+	}
 }
 
 func TestRejects(t *testing.T) {

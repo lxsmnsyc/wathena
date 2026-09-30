@@ -168,6 +168,15 @@ enum StatId {
   // They are 0 at the maximum level.
   STAT_ID_NEXT_BASE_EXP = 28;
   STAT_ID_NEXT_JOB_EXP = 29;
+  // STR_COST to LUK_COST are the status points that raising each stat by
+  // 1 costs, as rAthena's SP_USTR to SP_ULUK. They are 0 at the stat's
+  // maximum.
+  STAT_ID_STR_COST = 30;
+  STAT_ID_AGI_COST = 31;
+  STAT_ID_VIT_COST = 32;
+  STAT_ID_INT_COST = 33;
+  STAT_ID_DEX_COST = 34;
+  STAT_ID_LUK_COST = 35;
 }
 
 message Damage {

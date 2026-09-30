@@ -7,8 +7,42 @@ import (
 
 // Stats: a player's battle status comes from its character through
 // server/status, as rAthena's status_calc_pc, and is computed again when
-// its base or job level changes. The player gets its stats in the first
-// frame and the ones that changed after each calculation.
+// its base or job level changes or it raises a stat. The player gets its
+// stats in the first frame and the ones that changed after each
+// calculation.
+
+// costIDs are the stats that carry each raise cost, in status.Stat order.
+var costIDs = [...]wathenav1.StatId{
+	wathenav1.StatId_STAT_ID_STR_COST,
+	wathenav1.StatId_STAT_ID_AGI_COST,
+	wathenav1.StatId_STAT_ID_VIT_COST,
+	wathenav1.StatId_STAT_ID_INT_COST,
+	wathenav1.StatId_STAT_ID_DEX_COST,
+	wathenav1.StatId_STAT_ID_LUK_COST,
+}
+
+// raiseStat is pc_statusup for a player. The status points are the
+// progression's, which hold the points left to spend, as rAthena's
+// status_point. After a raise, the player's stats are computed again,
+// and the next frame carries the changed stats, raise costs and status
+// points, as clif_updatestatus does. A raise that fails sends nothing.
+// Without job or exp tables, there are no status points to spend.
+func (z *Zone) raiseStat(p *Player, st status.Stat, amount int) {
+	if z.Status == nil || z.Progress == nil {
+		return
+	}
+	before := z.progressStats(p, nil)
+	if !z.Status.StatusUp(&p.char, &p.progress.StatusPoints, st, amount) {
+		return
+	}
+	z.recalc(p)
+	if s := z.progressStats(p, before); s != nil {
+		p.pending = append(p.pending, s)
+	}
+	if s := z.battleStats(p); s != nil {
+		p.pending = append(p.pending, s)
+	}
+}
 
 // recalc computes a player's stats, as status_calc_pc. HP and SP above
 // their new maximum drop to it, as status_calc_bl_main. Without job
@@ -97,6 +131,12 @@ func (z *Zone) battleStats(p *Player) *wathenav1.Event {
 		stat(wathenav1.StatId_STAT_ID_MAX_SP, int64(st.MaxSP)),
 		stat(wathenav1.StatId_STAT_ID_SP, p.sp),
 		stat(wathenav1.StatId_STAT_ID_MAX_WEIGHT, int64(p.maxWeight)),
+	}
+	if z.Status != nil {
+		// The raise costs, as clif_updatestatus sends SP_USTR to SP_ULUK.
+		for i, id := range costIDs {
+			all = append(all, stat(id, int64(z.Status.NeedStatusPoint(&p.char, status.Stat(i), 1))))
+		}
 	}
 	var changed []*wathenav1.Stat
 	for _, s := range all {

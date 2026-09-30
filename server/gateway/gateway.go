@@ -18,11 +18,16 @@ import (
 
 	"github.com/lxsmnsyc/wathena/schema"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
 
 // HelloTimeout is how long a new connection has to send Hello.
 const HelloTimeout = 10 * time.Second
+
+// MaxRaise is the most a RaiseStat may ask for at once. rAthena's
+// clif_parse_StatusUp reads the amount as one byte.
+const MaxRaise = 255
 
 // Sessions checks session tokens. It returns the player's name and look.
 type Sessions interface {
@@ -167,6 +172,16 @@ func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Player, s
 			queued = g.Zone.Attack(p, seq, a.GetTarget(), a.GetRepeat())
 		case m.GetCommand().HasPickUp():
 			queued = g.Zone.PickUp(p, seq, m.GetCommand().GetPickUp().GetItem())
+		case m.GetCommand().HasRaiseStat():
+			r := m.GetCommand().GetRaiseStat()
+			st, amount := r.GetStat(), r.GetAmount()
+			if st < wathenav1.BaseStat_BASE_STAT_STR || st > wathenav1.BaseStat_BASE_STAT_LUK || amount < 1 || amount > MaxRaise {
+				// A stat or amount out of range raises nothing, as
+				// pc_statusup refuses it.
+				queued = g.Zone.Ack(p, seq)
+				break
+			}
+			queued = g.Zone.RaiseStat(p, seq, status.Stat(st-wathenav1.BaseStat_BASE_STAT_STR), int(amount))
 		case m.GetCommand().HasWalkTo():
 			w := m.GetCommand().GetWalkTo()
 			queued = g.Zone.WalkTo(p, seq, int(w.GetX()), int(w.GetY()))

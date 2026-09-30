@@ -27,6 +27,7 @@ import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import { Inventory, expLine, hpLine, pickUpMessage } from './hud';
 import randomLook from './looks';
+import { StatusWindow } from './statusWindow';
 import Online from './online';
 import Player from './player';
 import Walkers from './walkers';
@@ -103,6 +104,7 @@ const playerGroup = new Group();
 scene.add(playerGroup);
 const audio = new AudioSystem(store);
 let soundscape: Soundscape | undefined;
+let statusWindow: StatusWindow | undefined;
 
 // Browsers allow audio only after a click.
 soundButton.addEventListener('click', () => {
@@ -367,6 +369,30 @@ if (serverURL === null) {
       audio.play(sound, 1 - d / SPRITE_SOUND_RANGE, pan(position));
     }
   };
+  // The status window opens with its button or Alt+A, as in RO. Its "+"
+  // buttons raise a stat by 1.
+  const statusRoot = document.querySelector<HTMLElement>('#status-window');
+  const statusToggle = document.querySelector<HTMLButtonElement>('#status-toggle');
+  if (statusRoot !== null) {
+    statusWindow = new StatusWindow(statusRoot, (stat) => {
+      connection.raiseStat(stat);
+    });
+    const toggle = (): void => {
+      statusWindow?.toggle();
+      statusWindow?.update(view.stats);
+    };
+    if (statusToggle !== null) {
+      statusToggle.hidden = false;
+      statusToggle.addEventListener('click', toggle);
+    }
+    addEventListener('keydown', (e) => {
+      // e.code, since Alt changes e.key on some layouts, such as macOS.
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyA') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  }
   session = { connection, online: view };
   scene.add(view.group);
   input.value = connection.welcome.map;
@@ -479,6 +505,9 @@ renderer.setAnimationLoop((time) => {
     const exp = expLine(stats);
     if (exp !== undefined && expOutput !== null && expOutput.value !== exp) {
       expOutput.value = exp;
+    }
+    if (statusWindow?.open === true) {
+      statusWindow.update(stats);
     }
   }
   right.setFromMatrixColumn(camera.matrixWorld, 0);

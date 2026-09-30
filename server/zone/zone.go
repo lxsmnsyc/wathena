@@ -101,6 +101,12 @@ type command struct {
 	walkTo *[2]int
 	attack *attackCommand
 	pickUp *uint32
+	raise  *raiseCommand
+}
+
+type raiseCommand struct {
+	stat   status.Stat
+	amount int
 }
 
 type attackCommand struct {
@@ -331,6 +337,10 @@ func (z *Zone) handle(c command) {
 	if c.seq > p.ackSeq {
 		p.ackSeq = c.seq
 	}
+	if c.raise != nil {
+		// rAthena lets a dead player raise stats.
+		z.raiseStat(p, c.raise.stat, c.raise.amount)
+	}
 	me := p.entity
 	if me.dead {
 		return
@@ -369,6 +379,17 @@ func (z *Zone) Attack(p *Player, seq, target uint32, repeat bool) bool {
 func (z *Zone) PickUp(p *Player, seq, item uint32) bool {
 	select {
 	case z.commands <- command{player: p, seq: seq, pickUp: &item}:
+		return true
+	default:
+		return false
+	}
+}
+
+// RaiseStat asks to spend status points on a stat, as rAthena's
+// pc_statusup. It returns false when the zone's queue is full.
+func (z *Zone) RaiseStat(p *Player, seq uint32, stat status.Stat, amount int) bool {
+	select {
+	case z.commands <- command{player: p, seq: seq, raise: &raiseCommand{stat, amount}}:
 		return true
 	default:
 		return false

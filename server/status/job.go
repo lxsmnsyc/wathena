@@ -121,7 +121,9 @@ type job struct {
 	maxWeight    int
 	maxBaseLevel int
 	maxJobLevel  int
-	aspdBase     []int
+	// maxParam is max_param for STR to LUK.
+	maxParam int
+	aspdBase []int
 	// bonus is the total job bonus at each job level.
 	bonus  []traits
 	baseHP []uint32
@@ -140,6 +142,7 @@ func newJob(d *JobData, renewal bool) *job {
 		maxJobLevel:  d.MaxJobLevel,
 		aspdBase:     d.ASPDBase,
 	}
+	j.maxParam = maxParam(j.mapID)
 	j.baseHP = make([]uint32, j.maxBaseLevel)
 	for _, r := range d.BaseHP {
 		if r.Level >= 1 && r.Level <= j.maxBaseLevel {

@@ -115,3 +115,39 @@ body {
 #inventory img {
   image-rendering: pixelated;
 }
+
+#status-window {
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  display: flex;
+  gap: 16px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+  font-variant-numeric: tabular-nums;
+}
+
+#status-window[hidden] {
+  display: none;
+}
+
+#status-window td {
+  padding: 1px 4px;
+}
+
+#status-window .value {
+  text-align: right;
+}
+
+#status-window .cost {
+  min-width: 2ch;
+  color: #b8c8ff;
+}
+
+#status-window button {
+  width: 22px;
+  height: 20px;
+  padding: 0;
+  line-height: 1;
+}

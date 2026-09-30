@@ -31,6 +31,7 @@ Open `http://localhost:5173/?map=prontera`. Monsters, an NPC, and player charact
 - Click a unit to attack it, and click the ground to walk.
 - Items on the ground show their sprite, `sprite/item/<id>`, and jump and bounce when they drop. Click an item to pick it up. The inventory list shows its icon, `icon/item/<id>`, its ID, and the amount.
 - The top bar shows HP, base and job levels, and exp as a percent of the next level.
+- The Status button or Alt+A opens the status window: STR to LUK with the cost of the next point and a "+" button that raises the stat by 1, and ATK, MATK, DEF, MDEF, HIT, FLEE, CRIT, ASPD, status points and weight. "+" is enabled when the status points pay for the raise.
 - Effects the server sends, such as level ups, play from `data/effects.yml`. An effect part can also be a sound.
 
 ## Checks

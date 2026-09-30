@@ -3,7 +3,7 @@
 // first.
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
-import { CommandSchema } from '../gen/wathena/v1/command_pb';
+import { type BaseStat, CommandSchema } from '../gen/wathena/v1/command_pb';
 import {
   type ClientMessage,
   ClientMessageSchema,
@@ -113,6 +113,14 @@ export class Connection {
     this.send({
       case: 'command',
       value: create(CommandSchema, { body: { case: 'pickUp', value: { item } } }),
+    });
+  }
+
+  /** Spends status points to raise a stat by up to amount, 1 to 255. */
+  raiseStat(stat: BaseStat, amount = 1): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'raiseStat', value: { stat, amount } } }),
     });
   }
 

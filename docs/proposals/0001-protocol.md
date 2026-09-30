@@ -51,7 +51,7 @@ Client to server, in `ClientMessage`:
 |---|---|
 | `hello` | Session start. |
 | `ping` | Latency and keepalive. |
-| `command` | A player action: walk, attack, skill, chat, NPC click or reply, use item. |
+| `command` | A player action: walk, attack, skill, chat, NPC click or reply, use item, pick up, raise a stat. |
 
 Server to client, in `ServerMessage`:
 
@@ -84,6 +84,8 @@ Server to client, in `ServerMessage`:
   - HIT and FLEE are hit and flee. CRITICAL is critical rate in whole points (rAthena's value divided by 10).
   - ASPD is the displayed ASPD, `(2000 - amotion) / 10` rounded down: amotion 440 is ASPD 156.
   - MAX_WEIGHT is in tenths of a weight unit, as rAthena's `max_weight`.
+  - STR_COST to LUK_COST are the status points that raising each stat by 1 costs, as rAthena's `SP_USTR` to `SP_ULUK`. They are 0 at the stat's maximum.
+- **Raising a stat spends status points.** `RaiseStat` names one of STR to LUK and an amount from 1 to 255. The server raises the stat as far as the points and the job's maximum allow, as rAthena's `pc_statusup`, and sends the changed stats, costs and STATUS_POINTS. A raise that fails changes nothing and sends nothing. The gateway drops a `RaiseStat` with another stat or amount.
 - **Appearance uses table IDs.** `Look` holds sprite and palette IDs from the client data tables (strategy section 10.5).
 
 ### Limits

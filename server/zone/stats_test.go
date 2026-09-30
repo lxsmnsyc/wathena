@@ -129,3 +129,100 @@ func TestStatsClampHP(t *testing.T) {
 		t.Errorf("HP %d of %d, SP %d of %d", p.entity.hp, p.entity.status.MaxHP, p.sp, p.entity.status.MaxSP)
 	}
 }
+
+// TestRaiseStat checks pc_statusup in the zone: the points, the stats
+// computed again, and what the player gets.
+func TestRaiseStat(t *testing.T) {
+	tb := jobTables(t)
+	start := status.Character{Job: 0, Male: true, Stats: status.Stats{Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1}}
+	z := New("map/test", open(40), rng.FromKey([32]byte{6}).Stream(), nil)
+	z.Progress = testTables()
+	z.Status, z.Start = tb, start
+	p := add(z, "a")
+	z.stepAt(50)
+
+	// The first frame has the level 1 status points and every raise cost.
+	got := stats(events(p))
+	want := map[wathenav1.StatId]int64{wathenav1.StatId_STAT_ID_STATUS_POINTS: 48}
+	for _, id := range costIDs {
+		want[id] = 2
+	}
+	for id, v := range want {
+		if g, ok := got[id]; !ok || g != v {
+			t.Errorf("join %v: %d (sent %v), want %d", id, g, ok, v)
+		}
+	}
+
+	// Raising STR by 10 costs 20 points and makes the next raise cost 3.
+	z.handle(command{player: p, seq: 1, raise: &raiseCommand{status.Str, 10}})
+	z.stepAt(100)
+	c := start
+	c.Stats.Str = 11
+	c.BaseLevel, c.JobLevel = 1, 1
+	res, err := tb.Calc(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got = stats(events(p))
+	for id, v := range map[wathenav1.StatId]int64{
+		wathenav1.StatId_STAT_ID_STR:           11,
+		wathenav1.StatId_STAT_ID_STR_COST:      3,
+		wathenav1.StatId_STAT_ID_STATUS_POINTS: 28,
+		wathenav1.StatId_STAT_ID_ATK:           int64(res.Window.ATK + res.Window.ATK2),
+		wathenav1.StatId_STAT_ID_MAX_WEIGHT:    20000 + 11*300,
+	} {
+		if g, ok := got[id]; !ok || g != v {
+			t.Errorf("after STR %v: %d (sent %v), want %d", id, g, ok, v)
+		}
+	}
+	for _, id := range []wathenav1.StatId{wathenav1.StatId_STAT_ID_AGI, wathenav1.StatId_STAT_ID_AGI_COST, wathenav1.StatId_STAT_ID_HIT} {
+		if _, ok := got[id]; ok {
+			t.Errorf("%v sent without a change", id)
+		}
+	}
+	if got, want := withoutPlayer(*p.entity.status), withoutPlayer(res.Battle); got != want {
+		t.Errorf("status %+v, want %+v", got, want)
+	}
+
+	// VIT 3 raises max HP from 40 to 41, which the player gets with HP.
+	// A dead player may raise stats, as in rAthena.
+	p.entity.dead = true
+	z.handle(command{player: p, seq: 2, raise: &raiseCommand{status.Vit, 2}})
+	z.stepAt(150)
+	got = stats(events(p))
+	if got[wathenav1.StatId_STAT_ID_VIT] != 3 || got[wathenav1.StatId_STAT_ID_STATUS_POINTS] != 24 {
+		t.Errorf("after VIT: %v", got)
+	}
+	if _, ok := got[wathenav1.StatId_STAT_ID_MAX_HP]; !ok {
+		t.Error("max HP not sent after VIT")
+	}
+	p.entity.dead = false
+
+	// 24 points raise AGI from 1 to 11 for 20, and then to 12 for 3.
+	// 1 point is left, which pays for nothing, so a raise sends nothing.
+	z.handle(command{player: p, seq: 3, raise: &raiseCommand{status.Agi, 255}})
+	z.stepAt(200)
+	if got := stats(events(p)); got[wathenav1.StatId_STAT_ID_AGI] != 12 || got[wathenav1.StatId_STAT_ID_STATUS_POINTS] != 1 {
+		t.Errorf("after AGI: %v", got)
+	}
+	z.handle(command{player: p, seq: 4, raise: &raiseCommand{status.Luk, 1}})
+	z.stepAt(250)
+	if got := stats(events(p)); len(got) != 0 {
+		t.Errorf("a failed raise sent %v", got)
+	}
+	if p.char.Stats.Luk != 1 || p.progress.StatusPoints != 1 {
+		t.Errorf("a failed raise changed LUK to %d and points to %d", p.char.Stats.Luk, p.progress.StatusPoints)
+	}
+}
+
+// TestRaiseStatNeedsTables checks that a zone without job or exp tables
+// has no status points to spend.
+func TestRaiseStatNeedsTables(t *testing.T) {
+	z := New("map/test", open(40), rng.FromKey([32]byte{7}).Stream(), nil)
+	z.Status, z.Start = jobTables(t), status.Character{Job: 0, Stats: status.Stats{Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1}}
+	p := add(z, "a")
+	z.handle(command{player: p, seq: 1, raise: &raiseCommand{status.Str, 1}})
+	if p.char.Stats.Str != 1 {
+		t.Errorf("STR %d without exp tables", p.char.Stats.Str)
+	}
+}

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi0QIKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJKCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkiFwoITnBjQ2xpY2sSCwoDbnBjGAEgASgNIoMBCghOcGNSZXBseRIOCgZkaWFsb2cYASABKA0SDgoEbmV4dBgCIAEoCEgAEg4KBG1lbnUYAyABKA1IABIUCgppbnB1dF90ZXh0GAQgASgJSAASFgoMaW5wdXRfbnVtYmVyGAUgASgDSAASDwoFY2xvc2UYBiABKAhIAEIICgZhbnN3ZXIiFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNKqUBCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi/gIKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJKCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkiFwoITnBjQ2xpY2sSCwoDbnBjGAEgASgNIoMBCghOcGNSZXBseRIOCgZkaWFsb2cYASABKA0SDgoEbmV4dBgCIAEoCEgAEg4KBG1lbnUYAyABKA1IABIUCgppbnB1dF90ZXh0GAQgASgJSAASFgoMaW5wdXRfbnVtYmVyGAUgASgDSAASDwoFY2xvc2UYBiABKAhIAEIICgZhbnN3ZXIiFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0qpQEKC0NoYXRDaGFubmVsEhwKGENIQVRfQ0hBTk5FTF9VTlNQRUNJRklFRBAAEhYKEkNIQVRfQ0hBTk5FTF9MT0NBTBABEhYKEkNIQVRfQ0hBTk5FTF9QQVJUWRACEhYKEkNIQVRfQ0hBTk5FTF9HVUlMRBADEhgKFENIQVRfQ0hBTk5FTF9XSElTUEVSEAQSFgoSQ0hBVF9DSEFOTkVMX1dPUkxEEAUqlwEKCEJhc2VTdGF0EhkKFUJBU0VfU1RBVF9VTlNQRUNJRklFRBAAEhEKDUJBU0VfU1RBVF9TVFIQARIRCg1CQVNFX1NUQVRfQUdJEAISEQoNQkFTRV9TVEFUX1ZJVBADEhEKDUJBU0VfU1RBVF9JTlQQBBIRCg1CQVNFX1NUQVRfREVYEAUSEQoNQkFTRV9TVEFUX0xVSxAGQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -70,6 +70,12 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: PickUp;
     case: "pickUp";
+  } | {
+    /**
+     * @generated from field: wathena.v1.RaiseStat raise_stat = 9;
+     */
+    value: RaiseStat;
+    case: "raiseStat";
   } | { case: undefined; value?: undefined };
 };
 
@@ -330,6 +336,34 @@ export const PickUpSchema: GenMessage<PickUp> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 9);
 
 /**
+ * RaiseStat spends status points to raise a stat, as rAthena's
+ * pc_statusup. The stat rises by up to amount, as far as the points and
+ * the job's maximum allow. When it cannot rise, nothing changes.
+ *
+ * @generated from message wathena.v1.RaiseStat
+ */
+export type RaiseStat = Message<"wathena.v1.RaiseStat"> & {
+  /**
+   * @generated from field: wathena.v1.BaseStat stat = 1;
+   */
+  stat: BaseStat;
+
+  /**
+   * amount is 1 to 255.
+   *
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.v1.RaiseStat.
+ * Use `create(RaiseStatSchema)` to create a new message.
+ */
+export const RaiseStatSchema: GenMessage<RaiseStat> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 10);
+
+/**
  * @generated from enum wathena.v1.ChatChannel
  */
 export enum ChatChannel {
@@ -369,4 +403,52 @@ export enum ChatChannel {
  */
 export const ChatChannelSchema: GenEnum<ChatChannel> = /*@__PURE__*/
   enumDesc(file_wathena_v1_command, 0);
+
+/**
+ * BaseStat is a stat that status points raise.
+ *
+ * @generated from enum wathena.v1.BaseStat
+ */
+export enum BaseStat {
+  /**
+   * @generated from enum value: BASE_STAT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: BASE_STAT_STR = 1;
+   */
+  STR = 1,
+
+  /**
+   * @generated from enum value: BASE_STAT_AGI = 2;
+   */
+  AGI = 2,
+
+  /**
+   * @generated from enum value: BASE_STAT_VIT = 3;
+   */
+  VIT = 3,
+
+  /**
+   * @generated from enum value: BASE_STAT_INT = 4;
+   */
+  INT = 4,
+
+  /**
+   * @generated from enum value: BASE_STAT_DEX = 5;
+   */
+  DEX = 5,
+
+  /**
+   * @generated from enum value: BASE_STAT_LUK = 6;
+   */
+  LUK = 6,
+}
+
+/**
+ * Describes the enum wathena.v1.BaseStat.
+ */
+export const BaseStatSchema: GenEnum<BaseStat> = /*@__PURE__*/
+  enumDesc(file_wathena_v1_command, 1);
 

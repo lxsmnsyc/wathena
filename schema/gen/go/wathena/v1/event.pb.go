@@ -176,6 +176,15 @@ const (
 	// They are 0 at the maximum level.
 	StatId_STAT_ID_NEXT_BASE_EXP StatId = 28
 	StatId_STAT_ID_NEXT_JOB_EXP  StatId = 29
+	// STR_COST to LUK_COST are the status points that raising each stat by
+	// 1 costs, as rAthena's SP_USTR to SP_ULUK. They are 0 at the stat's
+	// maximum.
+	StatId_STAT_ID_STR_COST StatId = 30
+	StatId_STAT_ID_AGI_COST StatId = 31
+	StatId_STAT_ID_VIT_COST StatId = 32
+	StatId_STAT_ID_INT_COST StatId = 33
+	StatId_STAT_ID_DEX_COST StatId = 34
+	StatId_STAT_ID_LUK_COST StatId = 35
 )
 
 // Enum value maps for StatId.
@@ -211,6 +220,12 @@ var (
 		27: "STAT_ID_SKILL_POINTS",
 		28: "STAT_ID_NEXT_BASE_EXP",
 		29: "STAT_ID_NEXT_JOB_EXP",
+		30: "STAT_ID_STR_COST",
+		31: "STAT_ID_AGI_COST",
+		32: "STAT_ID_VIT_COST",
+		33: "STAT_ID_INT_COST",
+		34: "STAT_ID_DEX_COST",
+		35: "STAT_ID_LUK_COST",
 	}
 	StatId_value = map[string]int32{
 		"STAT_ID_UNSPECIFIED":   0,
@@ -243,6 +258,12 @@ var (
 		"STAT_ID_SKILL_POINTS":  27,
 		"STAT_ID_NEXT_BASE_EXP": 28,
 		"STAT_ID_NEXT_JOB_EXP":  29,
+		"STAT_ID_STR_COST":      30,
+		"STAT_ID_AGI_COST":      31,
+		"STAT_ID_VIT_COST":      32,
+		"STAT_ID_INT_COST":      33,
+		"STAT_ID_DEX_COST":      34,
+		"STAT_ID_LUK_COST":      35,
 	}
 )
 
@@ -3393,7 +3414,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x18VANISH_REASON_LOGGED_OUT\x10\x03\x12\x1c\n" +
 	"\x18VANISH_REASON_TELEPORTED\x10\x04\x12\x1b\n" +
 	"\x17VANISH_REASON_PICKED_UP\x10\x05\x12\x19\n" +
-	"\x15VANISH_REASON_EXPIRED\x10\x06*\xe2\x04\n" +
+	"\x15VANISH_REASON_EXPIRED\x10\x06*\xe6\x05\n" +
 	"\x06StatId\x12\x17\n" +
 	"\x13STAT_ID_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -3427,7 +3448,13 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x15STAT_ID_STATUS_POINTS\x10\x1a\x12\x18\n" +
 	"\x14STAT_ID_SKILL_POINTS\x10\x1b\x12\x19\n" +
 	"\x15STAT_ID_NEXT_BASE_EXP\x10\x1c\x12\x18\n" +
-	"\x14STAT_ID_NEXT_JOB_EXP\x10\x1d*\xa4\x01\n" +
+	"\x14STAT_ID_NEXT_JOB_EXP\x10\x1d\x12\x14\n" +
+	"\x10STAT_ID_STR_COST\x10\x1e\x12\x14\n" +
+	"\x10STAT_ID_AGI_COST\x10\x1f\x12\x14\n" +
+	"\x10STAT_ID_VIT_COST\x10 \x12\x14\n" +
+	"\x10STAT_ID_INT_COST\x10!\x12\x14\n" +
+	"\x10STAT_ID_DEX_COST\x10\"\x12\x14\n" +
+	"\x10STAT_ID_LUK_COST\x10#*\xa4\x01\n" +
 	"\n" +
 	"DamageKind\x12\x1b\n" +
 	"\x17DAMAGE_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +

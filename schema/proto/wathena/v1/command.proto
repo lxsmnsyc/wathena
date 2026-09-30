@@ -16,6 +16,7 @@ message Command {
     NpcReply npc_reply = 6;
     UseItem use_item = 7;
     PickUp pick_up = 8;
+    RaiseStat raise_stat = 9;
   }
 }
 
@@ -86,4 +87,24 @@ message UseItem {
 // PickUp walks next to a ground item and picks it up.
 message PickUp {
   uint32 item = 1;
+}
+
+// RaiseStat spends status points to raise a stat, as rAthena's
+// pc_statusup. The stat rises by up to amount, as far as the points and
+// the job's maximum allow. When it cannot rise, nothing changes.
+message RaiseStat {
+  BaseStat stat = 1;
+  // amount is 1 to 255.
+  uint32 amount = 2;
+}
+
+// BaseStat is a stat that status points raise.
+enum BaseStat {
+  BASE_STAT_UNSPECIFIED = 0;
+  BASE_STAT_STR = 1;
+  BASE_STAT_AGI = 2;
+  BASE_STAT_VIT = 3;
+  BASE_STAT_INT = 4;
+  BASE_STAT_DEX = 5;
+  BASE_STAT_LUK = 6;
 }
