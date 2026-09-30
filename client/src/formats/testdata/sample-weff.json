@@ -1,0 +1,224 @@
+{
+	"FPS": 60,
+	"Frames": 3,
+	"Textures": [
+		"texture/effect/fire",
+		"texture/effect/불꽃"
+	],
+	"Layers": [
+		[
+			{
+				"Visible": true,
+				"Texture": 0,
+				"SrcBlend": 5,
+				"DstBlend": 2,
+				"Color": [
+					255,
+					128,
+					64,
+					200
+				],
+				"Offset": [
+					0,
+					0.5
+				],
+				"Angle": 30,
+				"Corners": [
+					[
+						-1,
+						1
+					],
+					[
+						1,
+						1
+					],
+					[
+						1,
+						-1
+					],
+					[
+						-1,
+						-1
+					]
+				]
+			},
+			{
+				"Visible": true,
+				"Texture": 1,
+				"SrcBlend": 5,
+				"DstBlend": 2,
+				"Color": [
+					255,
+					128,
+					64,
+					200
+				],
+				"Offset": [
+					0.25,
+					0.5
+				],
+				"Angle": 30,
+				"Corners": [
+					[
+						-1,
+						1
+					],
+					[
+						1,
+						1
+					],
+					[
+						1,
+						-1
+					],
+					[
+						-1,
+						-1
+					]
+				]
+			},
+			{
+				"Visible": false,
+				"Texture": 0,
+				"SrcBlend": 0,
+				"DstBlend": 0,
+				"Color": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Offset": [
+					0,
+					0
+				],
+				"Angle": 0,
+				"Corners": [
+					[
+						0,
+						0
+					],
+					[
+						0,
+						0
+					],
+					[
+						0,
+						0
+					],
+					[
+						0,
+						0
+					]
+				]
+			}
+		],
+		[
+			{
+				"Visible": false,
+				"Texture": 0,
+				"SrcBlend": 0,
+				"DstBlend": 0,
+				"Color": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Offset": [
+					0,
+					0
+				],
+				"Angle": 0,
+				"Corners": [
+					[
+						0,
+						0
+					],
+					[
+						0,
+						0
+					],
+					[
+						0,
+						0
+					],
+					[
+						0,
+						0
+					]
+				]
+			},
+			{
+				"Visible": true,
+				"Texture": 0,
+				"SrcBlend": 5,
+				"DstBlend": 2,
+				"Color": [
+					255,
+					128,
+					64,
+					200
+				],
+				"Offset": [
+					-1,
+					0.5
+				],
+				"Angle": 30,
+				"Corners": [
+					[
+						-1,
+						1
+					],
+					[
+						1,
+						1
+					],
+					[
+						1,
+						-1
+					],
+					[
+						-1,
+						-1
+					]
+				]
+			},
+			{
+				"Visible": true,
+				"Texture": 1,
+				"SrcBlend": 5,
+				"DstBlend": 2,
+				"Color": [
+					255,
+					128,
+					64,
+					200
+				],
+				"Offset": [
+					-2,
+					0.5
+				],
+				"Angle": 30,
+				"Corners": [
+					[
+						-1,
+						1
+					],
+					[
+						1,
+						1
+					],
+					[
+						1,
+						-1
+					],
+					[
+						-1,
+						-1
+					]
+				]
+			}
+		]
+	]
+}

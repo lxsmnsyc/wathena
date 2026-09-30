@@ -4,6 +4,7 @@
 import {
   Color,
   ColorManagement,
+  Group,
   PerspectiveCamera,
   Scene,
   Timer,
@@ -16,6 +17,7 @@ import { cellHeight } from '../formats/wmap';
 import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
+import { EffectCache, EffectView } from '../render/effects';
 import randomLook from './looks';
 import Walkers from './walkers';
 
@@ -58,6 +60,15 @@ const sprites = new SpriteCache(store);
 
 // Sprites to scatter on the map, as asset names without "sprite/".
 const DEFAULT_SPRITES = 'mob/poring,mob/lunatic,mob/fabre,mob/drops,mob/pupa,npc/4_f_kafra1';
+// Effects to play in a row near the center, such as effect/firewall.
+const effectNames = (new URL(location.href).searchParams.get('effect') ?? '')
+  .split(',')
+  .filter((n) => n !== '');
+const effects = new EffectCache(store);
+let playing: EffectView[] = [];
+const effectGroup = new Group();
+scene.add(effectGroup);
+
 const characterCount = Number(new URL(location.href).searchParams.get('characters') ?? 30);
 const spriteNames = (new URL(location.href).searchParams.get('sprites') ?? DEFAULT_SPRITES)
   .split(',')
@@ -112,6 +123,20 @@ async function show(name: string): Promise<void> {
       scene.remove(walkers.group);
     }
     current = next;
+    effectGroup.clear();
+    playing = [];
+    const views = await Promise.all(effectNames.map(async (n) => effects.get(n)));
+    views.forEach((effect, i) => {
+      if (effect === undefined) {
+        return;
+      }
+      const v = new EffectView(effect, next.textures);
+      const x = next.map.width / 2 + (i - (views.length - 1) / 2) * 6;
+      const y = next.map.height / 2;
+      v.group.position.set(x, cellHeight(next.map, x, y), -y);
+      effectGroup.add(v.group);
+      playing.push(v);
+    });
     walkers = new Walkers(next.map);
     scene.add(next.group, walkers.group);
     // Look at the map's center from the south, as RO's camera does.
@@ -163,6 +188,11 @@ form.addEventListener('submit', (e) => {
 input.value = new URL(location.href).searchParams.get('map') ?? 'prontera';
 show(input.value).catch(reportError);
 
+// Lets browser tests inspect the scene in development builds.
+if (import.meta.env.DEV) {
+  Reflect.set(globalThis, 'viewer', { scene, camera, playing: () => playing });
+}
+
 const timer = new Timer();
 const toward = new Vector3();
 renderer.setAnimationLoop((time) => {
@@ -172,6 +202,9 @@ renderer.setAnimationLoop((time) => {
   const steps = Math.round(controls.getAzimuthalAngle() / (Math.PI / 4));
   toward.subVectors(camera.position, controls.target).normalize();
   walkers?.update(timer.getDelta() * 1000, steps, toward);
+  for (const e of playing) {
+    e.update(timer.getDelta() * 1000);
+  }
   controls.update();
   renderer.render(scene, camera);
 });

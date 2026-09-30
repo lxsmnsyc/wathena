@@ -13,6 +13,8 @@ export default class MapScene {
 
   private constructor(
     readonly map: WMap,
+    /** The map's textures, which effects and other scenes can share. */
+    readonly textures: TextureCache,
     private readonly models: ModelCache,
     private readonly water: Water,
   ) {}
@@ -35,7 +37,7 @@ export default class MapScene {
     const light = lightUniforms(map.light);
     const models = new ModelCache(store, textures, light);
     const water = new Water(map, textures);
-    const scene = new MapScene(map, models, water);
+    const scene = new MapScene(map, textures, models, water);
     scene.group.add(buildGround(map, textures, light));
     scene.group.add(water.group);
 
