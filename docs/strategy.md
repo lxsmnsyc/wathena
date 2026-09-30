@@ -1763,7 +1763,8 @@ Asset traffic depends on new players more than on players online. With 100 MB pe
 #### Unknowns to measure in phase 1
 
 - Real first-visit and per-map sizes, compared with the estimates above. Measured so far, with the development build (fast Brotli) in the map viewer, the bytes sent for a map with its ground, water, models, and all their textures: Prontera 7.5 MB (315 files), Izlude 8.9 MB, Payon 12.4 MB, Geffen 5.6 MB, Morocc 4.5 MB, Alberta 5.7 MB, prt_fild08 3.5 MB. Textures are about 85% of it.
-- Build time and output size for a full kRO client.
+- ~~Build time and output size for a full kRO client.~~ Measured on an Apple M2 with 8 GB, in fast mode with an empty cache: 112,322 assets in 21 minutes 18 seconds, using up to 1.4 GB of memory. The output is 88,019 files and 2.4 GB on disk, because assets with the same content share one file. 2 assets were rejected as broken in the client. The default mode uses Brotli's highest level and takes longer. Later builds convert only changed assets.
+- ~~Frame rate against the budget in section 3.8.~~ Measured on the same M2 in Prontera, at the play camera distance, with 0, 100, and 300 walking characters. Chrome 154, Firefox 153, and WebKit 26.5 hold 60 FPS, the display's limit, in every case. With the limit off, Chrome takes 2.6 ms per frame for the empty town and 4.5 ms with 300 characters (95th percentile). Chrome with the CPU slowed 6 times at phone size gives 141, 70, and 39 FPS. This still uses the M2's GPU, so real phones need their own check.
 - Whether palette-indexed atlases stay within the GPU memory budget in a crowded town.
 - ~~Whether `decodeAudioData` decodes Opus in WebM on Chrome, Firefox, and Safari.~~ Measured: Chrome 154, Firefox 153, and WebKit 26.5 decode it to the exact length, aligned with the source, so looping sounds loop without gaps.
 
@@ -2084,6 +2085,41 @@ Total to the first release: about 28 months. The largest risk is phase 4 (sectio
 
 Phases run in order, because one developer does them (section 14). Each phase ends with exit criteria. Estimates are in section 14.3.
 
+### Current status and order
+
+Status on 2026-10-01:
+
+- Phases 0a, 0b, and 1 are done.
+- Phase 2 is partly done:
+  - Done: the gateway, one zone per map, walking, local chat, and per-zone secret random streams.
+  - Not started: accounts, the database, saving, map changes, bots, and all-in-one mode.
+- Some phase 4 work was done early:
+  - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen.
+  - All of it is ported from rAthena and checked against the phase 0a reference data.
+  - It keeps its state in memory until phase 2 adds the database.
+
+The order from here:
+
+1. Database and saving. The PostgreSQL schema and migrations for accounts, characters, inventory, progress, and stats. Item writes must not allow duplication.
+2. Account service. Signup, login, Argon2id, session tokens, and rate limits, then two-factor login and passkeys. It replaces the `--dev` sessions.
+3. More than one map. Several zones in one process, map changes, and warps.
+4. Bots and load test. The headless bot client and the 500-bot tick budget test.
+5. All-in-one mode and the Docker Compose file. This ends phase 2.
+6. Phase 3. The Lua runtime and mod loader. Skills, item scripts, and NPCs need it.
+7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.
+
+Reasons for this order:
+
+- Gameplay built on in-memory state has to change when the database arrives. Building the database first avoids that work.
+- The riskiest parts are login, saving, map changes, and the tick budget. Problems there are cheaper to find early.
+- Most of phase 4 needs Lua. For example, in renewal only 254 item scripts that heal are plain heals. The other 307 also start effects or cast skills, and cannot run yet.
+
+Work that can run beside this order, because it is self-contained and checked against reference data:
+
+- Fixing the recorder so ranged attacks use ammunition, then recording again.
+- Porting monster AI as a package with its own tests.
+- Porting equipment stat bonuses, checked against `item_bonuses.json`.
+
 ### Phase 0a: Work in the rAthena repository
 
 Some phase 0 work needs rAthena's code to run or be read. It happens in a fork of rAthena, on a branch named `wathena-reference`, before the wAthena repository has any game code. Nothing here is sent upstream to rAthena, and the rAthena `master` branch is not changed.
@@ -2140,6 +2176,16 @@ Exit criteria:
 - CI runs `govulncheck`, `gosec`, the race detector, and fuzz tests on every pull request.
 
 ### Phase 1: Web client foundation
+
+Status: done on 2026-10-01. Every exit criterion is met:
+
+- The placeholder pack renders a test map in CI (the browsers job).
+- The kRO client builds, and a player walks around Prontera in the viewer with no game server.
+- assets-v1 has no Draft sections left.
+- Sizes, load times, build time, and frame rate are in section 10.1, for Chrome, Firefox, and WebKit.
+- The TinyGo pathfinding module is checked in CI.
+
+GPU memory for palette-indexed atlases in a crowded town is not measured yet. It moves to phase 6, where the client adds its tier 1 windows.
 
 - GRF reader in Go: file tables, CP949 names, `DATA.INI` order, and the rare encrypted entry (section 10.1).
 - `wactl assets build` for the asset contract ([assets-v1](specs/assets-v1.md)): layered sources, content-hashed output, and the sharded manifest.
