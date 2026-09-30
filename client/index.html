@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>wAthena map viewer</title>
+    <link rel="stylesheet" href="/src/viewer/viewer.css" />
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <form id="controls">
+      <label>
+        Map
+        <input id="map" name="map" autocomplete="off" spellcheck="false" />
+      </label>
+      <button type="submit">Load</button>
+      <output id="status"></output>
+    </form>
+    <script type="module" src="/src/viewer/main.ts"></script>
+  </body>
+</html>

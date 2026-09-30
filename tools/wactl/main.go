@@ -13,6 +13,7 @@ commands:
   assets build     build assets from sources into a folder
   assets check     verify a build's files and list missing names
   assets gc        remove files a build no longer uses
+  assets serve     serve a build over HTTP for development
   assets scan      list what a game client folder contains
   assets sprites   convert monster and NPC sprites and report sizes
 `
@@ -30,6 +31,8 @@ func main() {
 		err = assetsCheck(os.Args[3:])
 	case "assets gc":
 		err = assetsGC(os.Args[3:])
+	case "assets serve":
+		err = assetsServe(os.Args[3:])
 	case "assets scan":
 		err = assetsScan(os.Args[3:])
 	case "assets sprites":

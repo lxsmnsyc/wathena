@@ -1,0 +1,37 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #1b1d22;
+  color: #e8e8e8;
+  font:
+    14px system-ui,
+    sans-serif;
+}
+
+#view {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#controls {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+}
+
+#controls input {
+  width: 12em;
+}
+
+#status {
+  font-variant-numeric: tabular-nums;
+}

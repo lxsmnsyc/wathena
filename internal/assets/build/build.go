@@ -249,6 +249,13 @@ func StoredPath(h, ext string) string {
 	return p
 }
 
+// Stored reports whether ext is an extension a build stores, and whether
+// files with it are stored as Brotli.
+func Stored(ext string) (known, brotli bool) {
+	t, ok := types[ext]
+	return ok || ext == "json", t.brotli
+}
+
 // objectPath is where content with a hash is stored. It uses only the hash
 // and a fixed extension, never the asset name.
 func objectPath(h, ext string) string {

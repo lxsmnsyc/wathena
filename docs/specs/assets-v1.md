@@ -379,7 +379,7 @@ wactl assets build \
   - `placeholder`: the placeholder pack, drawn by code.
   - `grf:<folder>`: a game client folder with `DATA.INI` (strategy section 10.1). The importer maps game paths to names with its own rules, such as `data\sprite\몬스터\poring.spr` to `sprite/mob/poring`.
   - `pack:<folder>`: original art in authoring formats (below).
-- **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses.
+- **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses. Clients request every file by its path without `.br`, as `<first 2 hex digits>/<hash>.<extension>`, and manifest shards as `<first 2 hex digits>/<hash>.json`.
 - **Cache.** The build keeps `.cache.json` in the output folder, keyed by each input's identity and converter version. A later build reuses an asset whose key and stored file are unchanged, so slow compression happens once per changed asset.
 - **Report.** The build prints how many names each source provided and replaced, and every asset it rejected, with the reason.
 

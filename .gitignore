@@ -1,6 +1,7 @@
 # Build output
 /bin/
 /dist/
+/client/dist/
 *.wasm
 # The benchmark's Lua build is committed, so running it needs no C compiler.
 !/tools/luabench/wasm/lua.wasm

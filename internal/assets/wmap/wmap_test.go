@@ -1,9 +1,16 @@
 package wmap
 
 import (
+	"bytes"
+	"encoding/json"
+	"flag"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+var update = flag.Bool("update", false, "rewrite the web client's test files")
 
 func sample() *Map {
 	m := &Map{Width: 2, Height: 1}
@@ -95,4 +102,36 @@ func FuzzDecode(f *testing.F) {
 			t.Fatalf("decoded map does not encode: %v", err)
 		}
 	})
+}
+
+// TestClientFixture keeps the web client's decoder test in step with this
+// encoder. The client reads sample.wmap and checks it against sample.json.
+// Run with -update after changing the format.
+func TestClientFixture(t *testing.T) {
+	dir := filepath.Join("..", "..", "..", "client", "src", "formats", "testdata")
+	b, err := sample().Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	j, err := json.MarshalIndent(sample(), "", "\t")
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := map[string][]byte{"sample.wmap": b, "sample.json": append(j, '\n')}
+	for name, want := range files {
+		p := filepath.Join(dir, name)
+		if *update {
+			if err := os.WriteFile(p, want, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			continue
+		}
+		got, err := os.ReadFile(p) // #nosec G304 -- fixed test path.
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, want) {
+			t.Errorf("%s is out of date. Run go test ./internal/assets/wmap -update", p)
+		}
+	}
 }
