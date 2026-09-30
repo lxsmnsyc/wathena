@@ -79,8 +79,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	hd.Set("Vary", "Accept-Encoding")
 	if acceptsBrotli(r.Header.Get("Accept-Encoding")) {
-		hd.Set("Content-Encoding", "br")
-		h.serveFile(w, r, p+".br", ext)
+		h.serveEncoded(w, r, p+".br", ext)
 		return
 	}
 	// Few clients lack Brotli, so decompressing for them is fine.
@@ -116,6 +115,34 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, p, ext strin
 	w.Header().Set("Content-Type", contentTypes[ext])
 	// Hashed files never change, so their modification time says nothing.
 	http.ServeContent(w, r, "", time.Time{}, f)
+}
+
+// serveEncoded sends a stored Brotli file as it is. http.ServeContent
+// leaves out Content-Length when Content-Encoding is set, which would
+// send it in chunks and hide its size from download progress, so this
+// sends the whole file with its length. Range requests get the whole
+// file, which HTTP allows. Only music needs ranges, and it is not stored
+// as Brotli.
+func (h *Handler) serveEncoded(w http.ResponseWriter, r *http.Request, p, ext string) {
+	f, err := h.root.Open(p)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	info, err := f.Stat()
+	if err != nil || info.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+	hd := w.Header()
+	hd.Set("Content-Encoding", "br")
+	hd.Set("Content-Type", contentTypes[ext])
+	hd.Set("Content-Length", strconv.FormatInt(info.Size(), 10))
+	if r.Method == http.MethodHead {
+		return
+	}
+	_, _ = io.Copy(w, f)
 }
 
 // hashPath checks that p is "<2 hex>/<64 hex>.<ext>" with the first two

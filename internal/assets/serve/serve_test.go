@@ -87,7 +87,7 @@ func TestServe(t *testing.T) {
 	if sum := sha256.Sum256(body); hex.EncodeToString(sum[:]) != sprite {
 		t.Error("sprite does not match its hash")
 	}
-	if res.Header.Get("X-Content-Type-Options") != "nosniff" || res.Header.Get("Vary") != "Accept-Encoding" {
+	if res.Header.Get("X-Content-Type-Options") != "nosniff" || res.Header.Get("Vary") != "Accept-Encoding" || res.ContentLength <= 0 {
 		t.Errorf("sprite headers %v", res.Header)
 	}
 

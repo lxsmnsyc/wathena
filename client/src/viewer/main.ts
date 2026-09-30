@@ -56,6 +56,36 @@ function resize(): void {
 addEventListener('resize', resize);
 resize();
 
+let workerBytes = 0;
+
+// The Service Worker caches assets across visits. ?nosw turns it off,
+// for measuring downloads. Nothing waits for it: until it controls the
+// page, assets come from the network as usual.
+if ('serviceWorker' in navigator && !new URL(location.href).searchParams.has('nosw')) {
+  const url = `/sw.js?assets=${encodeURIComponent(new URL(base, location.href).href)}`;
+  // The worker reports the bytes it downloads, which the page's own
+  // timing entries show as zero.
+  navigator.serviceWorker.addEventListener('message', (event: MessageEvent<unknown>) => {
+    const d = event.data;
+    if (
+      typeof d === 'object' &&
+      d !== null &&
+      'type' in d &&
+      d.type === 'wathena-downloaded' &&
+      'bytes' in d &&
+      typeof d.bytes === 'number'
+    ) {
+      workerBytes += d.bytes;
+    }
+  });
+  navigator.serviceWorker.register(url).catch((error: unknown) => {
+    console.error('service worker:', error);
+  });
+  // Ask the browser to keep the cache when space runs low. Firefox asks
+  // the user, so this can stay pending.
+  navigator.storage.persist().catch(() => false);
+}
+
 const store = await AssetStore.open(base);
 let current: MapScene | undefined;
 const audio = new AudioSystem(store);
@@ -120,6 +150,7 @@ function mb(bytes: number): string {
 async function show(name: string): Promise<void> {
   const id = ++loading;
   const start = performance.now();
+  const workerStart = workerBytes;
   const before = { ...store.stats };
   const progress = (label: string): void => {
     if (id !== loading) {
@@ -128,7 +159,7 @@ async function show(name: string): Promise<void> {
     const files = store.stats.files - before.files;
     const bytes = store.stats.bytes - before.bytes;
     const seconds = ((performance.now() - start) / 1000).toFixed(1);
-    status!.value = `${label}: ${files} files, ${mb(transferred(start))} sent (${mb(bytes)} decoded), ${seconds} s`;
+    status!.value = `${label}: ${files} files, ${mb(transferred(start) + workerBytes - workerStart)} sent (${mb(bytes)} decoded), ${seconds} s`;
   };
   progress('loading');
   const timer = setInterval(() => {
