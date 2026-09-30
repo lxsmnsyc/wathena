@@ -36,7 +36,8 @@ func TestCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rep.Assets != 3 || rep.Files != 3 || len(rep.Broken) != 0 {
+	// The placeholder pack has four assets, and the test adds one map.
+	if rep.Assets != 5 || rep.Files != 5 || len(rep.Broken) != 0 {
 		t.Fatalf("report %+v", rep)
 	}
 	if len(rep.Missing) != 2 || rep.Missing["texture/gone"][0] != "map/tiny" || rep.Missing["sprite/body/novice/m"][0] != "jobs.yml" {

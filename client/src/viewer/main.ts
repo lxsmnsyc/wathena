@@ -166,7 +166,10 @@ async function show(name: string): Promise<void> {
     progress('loading');
   }, 200);
   try {
-    const { scene: next, ready } = await MapScene.load(store, `map/${name}`);
+    const { scene: next, ready } = await MapScene.load(
+      store,
+      name.includes('/') ? name : `map/${name}`,
+    );
     if (id !== loading) {
       return;
     }

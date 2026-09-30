@@ -99,7 +99,7 @@ When a name is missing, the client uses a placeholder and logs the missing name 
 | Map | The map cannot be entered, and the client shows an error. |
 | Lightmap | The ground is drawn without baked light. |
 
-wAthena provides a placeholder pack as the `placeholder` build source. Its art is drawn by code in `internal/assets/placeholder`, so it is original and CC0. It will cover every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. Each part is added when its format's converter exists. `placeholder/sprite` and `placeholder/texture` exist now.
+wAthena provides a placeholder pack as the `placeholder` build source. Its art is drawn by code in `internal/assets/placeholder`, so it is original and CC0. It will cover every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. Each part is added when its format's converter exists. `placeholder/sprite`, `placeholder/texture`, and `placeholder/map` with its lightmap, `placeholder/lightmap`, exist now. The map is 24 × 24 walkable cells of the placeholder texture with a low hill, and CI renders it.
 
 ## Formats
 

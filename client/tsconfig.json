@@ -1,5 +1,5 @@
 {
-  "include": ["src", "vite.config.ts", "oxlint.config.ts", "oxfmt.config.ts"],
+  "include": ["src", "scripts", "vite.config.ts", "oxlint.config.ts", "oxfmt.config.ts"],
   "exclude": ["src/sw"],
   "compilerOptions": {
     "target": "ES2024",

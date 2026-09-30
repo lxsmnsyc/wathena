@@ -1,6 +1,7 @@
 package placeholder
 
 import (
+	"github.com/lxsmnsyc/wathena/internal/assets/wmap"
 	"image/png"
 	"os"
 	"testing"
@@ -40,5 +41,27 @@ func TestTexture(t *testing.T) {
 	img := Texture()
 	if img.Rect.Dx() != 64 || img.NRGBAAt(0, 0) == img.NRGBAAt(8, 0) || img.NRGBAAt(0, 0) != img.NRGBAAt(63, 63) {
 		t.Error("texture is not a tiling checkerboard")
+	}
+}
+
+func TestMap(t *testing.T) {
+	m, lm := Map()
+	b, err := m.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := wmap.Decode(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The ground and the cells agree on heights, and the hill is in the
+	// middle.
+	center := got.Cells[12*mapSize+12].Heights[0]
+	surface := got.Ground.Surfaces[6*mapSize/2+6].Heights[0]
+	if center != surface || center < 1 || got.Cells[0].Heights[0] > 0.1 {
+		t.Errorf("heights: center %v, surface %v, corner %v", center, surface, got.Cells[0].Heights[0])
+	}
+	if lm.Rect.Dx() != 8 || lm.NRGBAAt(3, 3).A != 255 {
+		t.Error("lightmap is not one neutral block")
 	}
 }

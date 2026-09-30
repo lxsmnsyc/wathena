@@ -5,7 +5,9 @@ package placeholder
 import (
 	"image"
 	"image/color"
+	"math"
 
+	"github.com/lxsmnsyc/wathena/internal/assets/wmap"
 	"github.com/lxsmnsyc/wathena/internal/assets/wspr"
 )
 
@@ -86,4 +88,65 @@ func Texture() *image.NRGBA {
 		}
 	}
 	return img
+}
+
+// mapSize is the placeholder map's width and height in cells.
+const mapSize = 24
+
+// hill is the placeholder map's height at a point in cells, a low hill in
+// the middle so the ground's lighting shows.
+func hill(x, y float64) float32 {
+	dx, dy := x-mapSize/2, y-mapSize/2
+	return float32(1.5 * math.Exp(-(dx*dx+dy*dy)/40))
+}
+
+// Map returns placeholder/map and its lightmap, placeholder/lightmap: 24 ×
+// 24 walkable cells of the placeholder texture, with a low hill. The
+// client can run with it and no other assets, and CI renders it.
+func Map() (*wmap.Map, *image.NRGBA) {
+	m := &wmap.Map{Width: mapSize, Height: mapSize}
+	m.Cells = make([]wmap.Cell, mapSize*mapSize)
+	for y := range mapSize {
+		for x := range mapSize {
+			c := &m.Cells[y*mapSize+x]
+			c.Flags = wmap.Walkable | wmap.Shootable
+			for k := range 4 {
+				c.Heights[k] = hill(float64(x+k&1), float64(y+k>>1))
+			}
+		}
+	}
+	const n = mapSize / 2
+	g := &m.Ground
+	g.Width, g.Height = n, n
+	g.Textures = []string{"placeholder/texture"}
+	g.Tiles = []wmap.Tile{{
+		U:     [4]float32{0, 1, 0, 1},
+		V:     [4]float32{1, 1, 0, 0},
+		Color: [4]uint8{255, 255, 255, 255},
+	}}
+	g.Surfaces = make([]wmap.Surface, n*n)
+	for j := range n {
+		for i := range n {
+			s := &g.Surfaces[j*n+i]
+			s.Top, s.North, s.East = 0, -1, -1
+			for k := range 4 {
+				s.Heights[k] = hill(float64(2*i+2*(k&1)), float64(2*j+2*(k>>1)))
+			}
+		}
+	}
+	g.Lightmap, g.LightmapCount, g.LightmapColumns = "placeholder/lightmap", 1, 1
+	m.Light = wmap.Light{
+		Longitude: 45, Latitude: 45,
+		Diffuse:   [3]float32{1, 1, 1},
+		Ambient:   [3]float32{0.3, 0.3, 0.3},
+		Opacity:   1,
+		Direction: [3]float32{-0.5, 0.7071, 0.5},
+	}
+	m.Deps = []string{"placeholder/lightmap", "placeholder/texture"}
+	// One lightmap block with no baked light and no shadow.
+	lm := image.NewNRGBA(image.Rect(0, 0, 8, 8))
+	for i := 3; i < len(lm.Pix); i += 4 {
+		lm.Pix[i] = 255
+	}
+	return m, lm
 }

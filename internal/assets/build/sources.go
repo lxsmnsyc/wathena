@@ -58,6 +58,22 @@ func (Placeholder) Items() ([]Item, error) {
 		Ext:      "webp",
 		CacheKey: fmt.Sprintf("%s|texture|%d", placeholderConverter, texture.Level),
 		Produce:  func() ([]byte, error) { return texture.Encode(placeholder.Texture()) },
+	}, {
+		Name:     "placeholder/map",
+		Ext:      "wmap",
+		CacheKey: placeholderConverter + "|map",
+		Produce: func() ([]byte, error) {
+			m, _ := placeholder.Map()
+			return m.Encode()
+		},
+	}, {
+		Name:     "placeholder/lightmap",
+		Ext:      "webp",
+		CacheKey: fmt.Sprintf("%s|lightmap|%d", placeholderConverter, texture.Level),
+		Produce: func() ([]byte, error) {
+			_, lm := placeholder.Map()
+			return texture.Encode(lm)
+		},
 	}}, nil
 }
 
