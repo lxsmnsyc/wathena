@@ -4,7 +4,8 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 
 | Package | Content |
 |---|---|
-| `zone` | One map: its players and monsters, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. |
+| `zone` | One map: its players and monsters, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. A monster that can attack strikes back. Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. |
+| `battle` | Attacks, ported from rAthena's `battle.cpp` in renewal mode and checked against the recorded reference. |
 | `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, version and size checks, and commands to the zone. |
 | `cmd/waserver` | A development server in one process: an asset build over HTTP and one zone over WebSocket. |
 
@@ -24,4 +25,6 @@ It serves the build at `http://127.0.0.1:8300/assets/` and the game at `ws://127
 WATHENA_ASSETS=http://127.0.0.1:8300/assets pnpm dev
 ```
 
-then open `http://localhost:5173/?server=ws://127.0.0.1:8300/ws&name=Alice` in two tabs with different names. Click the ground to walk. Each tab sees the other walk.
+then open `http://localhost:5173/?server=ws://127.0.0.1:8300/ws&name=Alice` in two tabs with different names. Click the ground to walk, and a monster to attack it. Each tab sees the other walk and fight.
+
+Players are level 1 novices with no equipment, from the reference's `pc_status`, until characters have their own.

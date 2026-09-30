@@ -24,6 +24,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/assets/serve"
 	"github.com/lxsmnsyc/wathena/internal/assets/wmap"
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -76,6 +77,13 @@ func run() error {
 		return err
 	}
 	z := zone.New(name, grid, root.Child("zone", 0).SecretStream(), spawns)
+	if *mode != "none" {
+		if z.PlayerStatus, err = playerStatus(reference.Mode(*mode)); err != nil {
+			return err
+		}
+	} else {
+		z.PlayerStatus = battle.Status{MaxHP: 40, ADelay: 880, AMotion: 440, DMotion: 796, RHW: battle.Weapon{Range: 1}}
+	}
 	go z.Run(ctx)
 
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
@@ -126,10 +134,11 @@ func loadSpawns(mode reference.Mode, mapName string) ([]zone.Spawn, error) {
 		Maps []struct {
 			Map    string `json:"map"`
 			Spawns []struct {
-				Mob    uint32 `json:"mob"`
-				Name   string `json:"name"`
-				Amount int    `json:"amount"`
-				Area   [4]int `json:"area"`
+				Mob       uint32 `json:"mob"`
+				Name      string `json:"name"`
+				Amount    int    `json:"amount"`
+				Area      [4]int `json:"area"`
+				RespawnMs int    `json:"respawn_ms"`
 			} `json:"spawns"`
 		} `json:"maps"`
 	}
@@ -138,24 +147,19 @@ func loadSpawns(mode reference.Mode, mapName string) ([]zone.Spawn, error) {
 	}
 	var mobs struct {
 		Mobs []struct {
-			ID     uint32 `json:"id"`
-			Status struct {
-				Speed int    `json:"speed"`
-				Mode  uint32 `json:"mode"`
-			} `json:"status"`
+			ID     uint32        `json:"id"`
+			Level  int           `json:"level"`
+			Status battle.Status `json:"status"`
 		} `json:"mobs"`
 	}
 	if err := reference.Load(mode, "mob_status", &mobs); err != nil {
 		return nil, err
 	}
-	type stats struct {
-		speed   int
-		canMove bool
-	}
-	byID := map[uint32]stats{}
+	byID := map[uint32]*battle.Status{}
 	for _, m := range mobs.Mobs {
-		// Mode bit 1 is MD_CANMOVE.
-		byID[m.ID] = stats{m.Status.Speed, m.Status.Mode&1 != 0}
+		st := m.Status
+		st.Level = m.Level
+		byID[m.ID] = &st
 	}
 	var out []zone.Spawn
 	for _, m := range spawns.Maps {
@@ -164,11 +168,16 @@ func loadSpawns(mode reference.Mode, mapName string) ([]zone.Spawn, error) {
 		}
 		for _, s := range m.Spawns {
 			st := byID[s.Mob]
+			if st == nil {
+				continue
+			}
 			out = append(out, zone.Spawn{
 				Mob: s.Mob, Name: s.Name, Amount: s.Amount,
 				// rAthena searches up to xs - 1 cells from the center.
 				X: s.Area[0], Y: s.Area[1], W: max(s.Area[2]-1, 0), H: max(s.Area[3]-1, 0),
-				Speed: st.speed, CanMove: st.canMove,
+				// Mode bit 1 is MD_CANMOVE.
+				Speed: st.Speed, CanMove: st.Mode&1 != 0,
+				Status: st, RespawnMs: s.RespawnMs,
 			})
 		}
 	}
@@ -191,4 +200,29 @@ func secret() []byte {
 		panic(err)
 	}
 	return b
+}
+
+// playerStatus is a level 1 novice with every stat at 1 and no equipment,
+// as the reference recorded, until characters have their own.
+func playerStatus(mode reference.Mode) (battle.Status, error) {
+	var pcs struct {
+		Players []struct {
+			Job         int           `json:"job"`
+			BaseLevel   int           `json:"base_level"`
+			Build       string        `json:"build"`
+			AllSkills   bool          `json:"all_skills"`
+			BattleState battle.Status `json:"battle_status"`
+		} `json:"players"`
+	}
+	if err := reference.Load(mode, "pc_status", &pcs); err != nil {
+		return battle.Status{}, err
+	}
+	for _, p := range pcs.Players {
+		if p.Job == 0 && p.BaseLevel == 1 && p.Build == "all_1" && !p.AllSkills {
+			st := p.BattleState
+			st.Level = 1
+			return st, nil
+		}
+	}
+	return battle.Status{}, errors.New("reference: no level 1 novice in pc_status")
 }

@@ -1,6 +1,9 @@
 package zone
 
-import "github.com/lxsmnsyc/wathena/shared/path"
+import (
+	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/shared/path"
+)
 
 // Spawn places monsters of one kind on the map.
 type Spawn struct {
@@ -14,6 +17,11 @@ type Spawn struct {
 	Speed int
 	// CanMove is rAthena's MD_CANMOVE mode flag.
 	CanMove bool
+	// Status is the monster's battle status. Monsters without one cannot
+	// be attacked.
+	Status *battle.Status
+	// RespawnMs is how long after dying a monster comes back.
+	RespawnMs int
 }
 
 type monster struct {
@@ -36,25 +44,32 @@ const (
 
 func (z *Zone) spawn(spawns []Spawn) {
 	for i := range spawns {
-		s := &spawns[i]
-		for range s.Amount {
-			x, y, ok := z.spawnCell(s)
-			if !ok {
-				continue
-			}
-			speed := s.Speed
-			if speed <= 0 {
-				speed = WalkSpeed
-			}
-			e := &entity{
-				monster: &monster{spawn: s, nextWalk: -1},
-				x:       x, y: y,
-				dir:   z.rand.IntN(8),
-				speed: speed,
-			}
-			z.entities[e] = true
+		for range spawns[i].Amount {
+			z.spawnOne(&spawns[i])
 		}
 	}
+}
+
+// spawnOne places one monster of a spawn.
+func (z *Zone) spawnOne(s *Spawn) {
+	x, y, ok := z.spawnCell(s)
+	if !ok {
+		return
+	}
+	speed := s.Speed
+	if speed <= 0 {
+		speed = WalkSpeed
+	}
+	e := &entity{
+		monster: &monster{spawn: s, nextWalk: -1},
+		x:       x, y: y,
+		dir:   z.rand.IntN(8),
+		speed: speed,
+	}
+	if s.Status != nil {
+		e.status, e.hp = s.Status, int64(s.Status.MaxHP)
+	}
+	z.entities[e] = true
 }
 
 // spawnCell picks a random walkable cell in a spawn's area, or anywhere
@@ -82,7 +97,7 @@ func (z *Zone) spawnCell(s *Spawn) (int, int, bool) {
 func (z *Zone) think() {
 	for e := range z.entities {
 		m := e.monster
-		if m == nil || !m.spawn.CanMove || len(e.path) > 0 {
+		if m == nil || !m.spawn.CanMove || len(e.path) > 0 || e.target != nil {
 			continue
 		}
 		if m.nextWalk < 0 {

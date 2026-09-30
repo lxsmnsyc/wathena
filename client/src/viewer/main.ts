@@ -22,6 +22,7 @@ import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
+import { DamageKind } from '../gen/wathena/v1/event_pb';
 import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import randomLook from './looks';
@@ -321,6 +322,24 @@ if (serverURL === null) {
     },
   });
   view.self = connection.welcome.netId;
+  const hits = document.querySelector<HTMLDivElement>('#hits');
+  view.onHit = (h) => {
+    if (hits === null) {
+      return;
+    }
+    const p = h.position.clone();
+    p.y += 2;
+    p.project(camera);
+    const div = document.createElement('div');
+    div.className = `hit${h.mine ? ' mine' : ''}${h.kind === DamageKind.CRITICAL ? ' critical' : ''}${h.amount === 0 ? ' miss' : ''}`;
+    div.textContent = h.amount === 0 ? 'Miss' : String(h.amount);
+    div.style.left = `${((p.x + 1) / 2) * 100}%`;
+    div.style.top = `${((1 - p.y) / 2) * 100}%`;
+    hits.append(div);
+    setTimeout(() => {
+      div.remove();
+    }, 1000);
+  };
   session = { connection, online: view };
   scene.add(view.group);
   input.value = connection.welcome.map;
@@ -336,6 +355,7 @@ if (import.meta.env.DEV) {
     audio,
     playing: () => playing,
     player: () => player,
+    session: () => session,
   });
 }
 
@@ -370,10 +390,22 @@ canvas.addEventListener('pointerup', (e) => {
   );
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObject(ground, true)[0];
+  // Online, a click on a unit attacks it, and a click on the ground walks
+  // there. The server decides the path and sends it back.
+  const target = session?.online.pick(
+    e.clientX - rect.left,
+    e.clientY - rect.top,
+    camera,
+    rect.width,
+    rect.height,
+  );
+  if (session !== undefined && target !== undefined) {
+    session.connection.attack(target, true);
+    return;
+  }
   if (hit !== undefined) {
     const x = Math.floor(hit.point.x);
     const y = Math.floor(-hit.point.z);
-    // Online, the server decides the path and sends it back.
     if (session === undefined) {
       player?.moveTo(x, y);
     } else {
@@ -383,6 +415,7 @@ canvas.addEventListener('pointerup', (e) => {
 });
 
 const follow = new Vector3();
+const hpOutput = document.querySelector<HTMLOutputElement>('#hp');
 
 const timer = new Timer();
 const toward = new Vector3();
@@ -403,6 +436,10 @@ renderer.setAnimationLoop((time) => {
       .multiplyScalar(Math.min(1, timer.getDelta() * 8));
     controls.target.add(follow);
     camera.position.add(follow);
+  }
+  const hp = session?.online.hp;
+  if (hp !== undefined && hpOutput !== null) {
+    hpOutput.value = `HP ${Math.max(hp[0], 0)} / ${hp[1]}`;
   }
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });

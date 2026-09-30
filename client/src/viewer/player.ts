@@ -29,6 +29,9 @@ export default class Player {
   private elapsed = 0;
   /** A destination to take once the current step ends. */
   private next: [number, number] | undefined;
+  /** An action that plays over walking and standing, until a time. */
+  private override: { action: number; until: number } | undefined;
+  private clock = 0;
 
   constructor(
     readonly character: Body,
@@ -87,6 +90,7 @@ export default class Player {
     this.x = x;
     this.y = y;
     this.path = [];
+    this.override = undefined;
     this.character.direction = dir;
     this.place(x + 0.5, y + 0.5);
   }
@@ -101,7 +105,36 @@ export default class Player {
     return true;
   }
 
+  /**
+   * Plays an action, such as an attack, for a time in milliseconds.
+   * Infinity holds it, as for a death.
+   */
+  act(action: number, ms: number): void {
+    this.override = { action, until: this.clock + ms };
+  }
+
+  /** Faces a cell. */
+  face(x: number, y: number): void {
+    const dx = Math.sign(x - this.x);
+    const dy = Math.sign(y - this.y);
+    const dirs: Record<string, number> = {
+      '0,-1': 0,
+      '-1,-1': 1,
+      '-1,0': 2,
+      '-1,1': 3,
+      '0,1': 4,
+      '1,1': 5,
+      '1,0': 6,
+      '1,-1': 7,
+    };
+    const f = dirs[`${dx},${dy}`];
+    if (f !== undefined) {
+      this.character.direction = f;
+    }
+  }
+
   update(deltaMs: number, cameraSteps: number, towardCamera: Vector3): void {
+    this.clock += deltaMs;
     let d = this.path[0];
     if (d !== undefined) {
       this.elapsed += deltaMs;
@@ -130,7 +163,13 @@ export default class Player {
         this.character.direction = facing(d);
       }
     }
-    this.character.play(this.path.length > 0 ? 1 : 0);
+    if (
+      this.override !== undefined &&
+      (this.clock >= this.override.until || this.path.length > 0)
+    ) {
+      this.override = undefined;
+    }
+    this.character.play(this.override?.action ?? (this.path.length > 0 ? 1 : 0));
     this.character.update(deltaMs, cameraSteps, towardCamera);
   }
 

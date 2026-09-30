@@ -32,6 +32,47 @@ body {
   width: 12em;
 }
 
+#hits {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hit {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font:
+    bold 20px system-ui,
+    sans-serif;
+  color: #fff;
+  text-shadow:
+    0 0 3px #000,
+    0 0 3px #000;
+  animation: rise 1s ease-out forwards;
+}
+
+.hit.mine {
+  color: #ff6060;
+}
+
+.hit.critical {
+  color: #ffd84a;
+  font-size: 26px;
+}
+
+.hit.miss {
+  color: #b8c8ff;
+  font-size: 16px;
+}
+
+@keyframes rise {
+  to {
+    transform: translate(-50%, -250%);
+    opacity: 0;
+  }
+}
+
 #status {
   font-variant-numeric: tabular-nums;
 }

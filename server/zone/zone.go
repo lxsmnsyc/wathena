@@ -8,6 +8,7 @@ import (
 	"time"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -62,14 +63,22 @@ type entity struct {
 	path      []path.Dir
 	stepStart int64
 	// walkChanged is set when a walk starts or changes, so viewers get a
-	// move event.
+	// move event. stopped is set when a walk ends early.
 	walkChanged bool
+	stopped     bool
+	fight
 }
 
 type command struct {
 	player *Player
 	seq    uint32
 	walkTo *[2]int
+	attack *attackCommand
+}
+
+type attackCommand struct {
+	target uint32
+	repeat bool
 }
 
 // Zone is one running map.
@@ -82,6 +91,11 @@ type Zone struct {
 	tick     uint32
 	entities map[*entity]bool
 	rand     *rng.Rand
+	combat
+
+	// PlayerStatus is every player's battle status, until characters
+	// have their own. Set it before Run.
+	PlayerStatus battle.Status
 
 	joins    chan joinRequest
 	leaves   chan *Player
@@ -185,7 +199,12 @@ func (z *Zone) Ack(p *Player, seq uint32) bool {
 
 func (z *Zone) join(p *Player) joinResult {
 	x, y := z.startCell()
+	st := z.PlayerStatus
 	e := &entity{player: p, x: x, y: y, speed: WalkSpeed}
+	e.status, e.hp = &st, int64(st.MaxHP)
+	if st.Speed > 0 {
+		e.speed = st.Speed
+	}
 	p.entity = e
 	z.entities[e] = true
 	// The player sees itself from the first frame.
@@ -220,6 +239,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		return
 	}
 	delete(z.entities, p.entity)
+	z.forget(p.entity)
 	for e := range z.entities {
 		if e.player == nil {
 			continue
@@ -250,8 +270,32 @@ func (z *Zone) handle(c command) {
 	if c.seq > p.ackSeq {
 		p.ackSeq = c.seq
 	}
+	me := p.entity
+	if me.dead {
+		return
+	}
 	if c.walkTo != nil {
-		z.walk(p.entity, c.walkTo[0], c.walkTo[1])
+		me.target = nil
+		z.walk(me, c.walkTo[0], c.walkTo[1])
+	}
+	if c.attack != nil {
+		for e, id := range p.netIDs {
+			if id == c.attack.target && e != me && e.status != nil && !e.dead {
+				me.target, me.repeat = e, c.attack.repeat
+			}
+		}
+	}
+}
+
+// Attack asks for the player to attack an entity, by the connection's ID
+// for it, once or until the target dies or leaves. It returns false when
+// the zone's queue is full.
+func (z *Zone) Attack(p *Player, seq, target uint32, repeat bool) bool {
+	select {
+	case z.commands <- command{player: p, seq: seq, attack: &attackCommand{target, repeat}}:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -298,7 +342,9 @@ func (z *Zone) stepAt(now int64) {
 			e.stepStart = end
 		}
 	}
+	z.revive()
 	z.think()
+	z.fight()
 	for e := range z.entities {
 		if e.player != nil {
 			z.update(e.player)
@@ -306,7 +352,11 @@ func (z *Zone) stepAt(now int64) {
 	}
 	for e := range z.entities {
 		e.walkChanged = false
+		e.stopped = false
+		e.hpChanged = false
 	}
+	z.hits = z.hits[:0]
+	z.removed = z.removed[:0]
 }
 
 // update sends a player what changed in view this tick.
@@ -325,11 +375,14 @@ func (z *Zone) update(p *Player) {
 			}
 		case visible && e.walkChanged:
 			events = append(events, z.move(id, e))
+		case visible && e.stopped:
+			events = append(events, stop(id, e))
 		case !visible && known:
 			delete(p.netIDs, e)
 			events = append(events, vanish(id, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT))
 		}
 	}
+	events = append(events, z.combatEvents(p)...)
 	if len(events) == 0 {
 		return
 	}
@@ -350,7 +403,7 @@ func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
 			Look:       wathenav1.Look_builder{Body: m.spawn.Mob}.Build(),
 			Name:       m.spawn.Name,
 			WalkMs:     uint32(e.speed), // #nosec G115 -- a small speed.
-			HpPermille: 1000,
+			HpPermille: e.hpPermille(),
 		}.Build()}.Build()
 	}
 	p := e.player
@@ -365,7 +418,7 @@ func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
 		}.Build(),
 		Name:       p.Name,
 		WalkMs:     uint32(e.speed), // #nosec G115 -- a small speed.
-		HpPermille: 1000,
+		HpPermille: e.hpPermille(),
 	}.Build()}.Build()
 }
 

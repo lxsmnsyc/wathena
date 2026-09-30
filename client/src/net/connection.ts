@@ -100,6 +100,14 @@ export class Connection {
     });
   }
 
+  /** Attacks an entity, once or until it dies or leaves. */
+  attack(target: number, repeat: boolean): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'attack', value: { target, repeat } } }),
+    });
+  }
+
   close(): void {
     this.socket.close();
   }

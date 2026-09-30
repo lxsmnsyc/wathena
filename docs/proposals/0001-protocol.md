@@ -74,7 +74,7 @@ Server to client, in `ServerMessage`:
 
 - **Entity IDs are per connection.** The server gives each visible entity a 32-bit `net_id` for that connection. Database IDs for accounts, characters, and items are never sent. This stops clients from tracking players across sessions by ID.
 - **Movement sends a path, not positions.** `EntityMove` holds the start cell, the walk speed, and the steps as 4-bit directions, numbered as `EntityAppear.dir`: 0 south, turning clockwise. The client animates the walk. The server only sends a new message when a walk starts, changes, or stops. A unit in the middle of a step finishes it, so a changed walk starts with that step.
-- **Other players' HP is a fraction.** `EntityAppear.hp_permille` is HP out of 1000. Exact HP goes only to the player, their party, and their homunculus.
+- **Other players' HP is a fraction.** `EntityAppear.hp_permille` is HP out of 1000, and `Damage.target_hp_permille` updates it after each hit. Exact HP goes only to the player, their party, and their homunculus.
 - **Text is already translated.** NPC dialog and messages arrive in the player's language, chosen from `Hello.language` (strategy section 6.13).
 - **Appearance uses table IDs.** `Look` holds sprite and palette IDs from the client data tables (strategy section 10.5).
 

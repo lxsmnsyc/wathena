@@ -1639,16 +1639,17 @@ func (b0 Stat_builder) Build() *Stat {
 }
 
 type Damage struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Source  uint32                 `protobuf:"varint,1,opt,name=source,proto3"`
-	xxx_hidden_Target  uint32                 `protobuf:"varint,2,opt,name=target,proto3"`
-	xxx_hidden_Amount  int64                  `protobuf:"varint,3,opt,name=amount,proto3"`
-	xxx_hidden_Hits    uint32                 `protobuf:"varint,4,opt,name=hits,proto3"`
-	xxx_hidden_Kind    DamageKind             `protobuf:"varint,5,opt,name=kind,proto3,enum=wathena.v1.DamageKind"`
-	xxx_hidden_DelayMs uint32                 `protobuf:"varint,6,opt,name=delay_ms,json=delayMs,proto3"`
-	xxx_hidden_SkillId uint32                 `protobuf:"varint,7,opt,name=skill_id,json=skillId,proto3"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Source           uint32                 `protobuf:"varint,1,opt,name=source,proto3"`
+	xxx_hidden_Target           uint32                 `protobuf:"varint,2,opt,name=target,proto3"`
+	xxx_hidden_Amount           int64                  `protobuf:"varint,3,opt,name=amount,proto3"`
+	xxx_hidden_Hits             uint32                 `protobuf:"varint,4,opt,name=hits,proto3"`
+	xxx_hidden_Kind             DamageKind             `protobuf:"varint,5,opt,name=kind,proto3,enum=wathena.v1.DamageKind"`
+	xxx_hidden_DelayMs          uint32                 `protobuf:"varint,6,opt,name=delay_ms,json=delayMs,proto3"`
+	xxx_hidden_SkillId          uint32                 `protobuf:"varint,7,opt,name=skill_id,json=skillId,proto3"`
+	xxx_hidden_TargetHpPermille uint32                 `protobuf:"varint,8,opt,name=target_hp_permille,json=targetHpPermille,proto3"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *Damage) Reset() {
@@ -1725,6 +1726,13 @@ func (x *Damage) GetSkillId() uint32 {
 	return 0
 }
 
+func (x *Damage) GetTargetHpPermille() uint32 {
+	if x != nil {
+		return x.xxx_hidden_TargetHpPermille
+	}
+	return 0
+}
+
 func (x *Damage) SetSource(v uint32) {
 	x.xxx_hidden_Source = v
 }
@@ -1753,6 +1761,10 @@ func (x *Damage) SetSkillId(v uint32) {
 	x.xxx_hidden_SkillId = v
 }
 
+func (x *Damage) SetTargetHpPermille(v uint32) {
+	x.xxx_hidden_TargetHpPermille = v
+}
+
 type Damage_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -1766,6 +1778,8 @@ type Damage_builder struct {
 	DelayMs uint32
 	// skill_id is 0 for normal attacks.
 	SkillId uint32
+	// target_hp_permille is the target's HP after the hit, from 0 to 1000.
+	TargetHpPermille uint32
 }
 
 func (b0 Damage_builder) Build() *Damage {
@@ -1779,6 +1793,7 @@ func (b0 Damage_builder) Build() *Damage {
 	x.xxx_hidden_Kind = b.Kind
 	x.xxx_hidden_DelayMs = b.DelayMs
 	x.xxx_hidden_SkillId = b.SkillId
+	x.xxx_hidden_TargetHpPermille = b.TargetHpPermille
 	return m0
 }
 
@@ -2743,7 +2758,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x05stats\x18\x01 \x03(\v2\x10.wathena.v1.StatR\x05stats\"@\n" +
 	"\x04Stat\x12\"\n" +
 	"\x02id\x18\x01 \x01(\x0e2\x12.wathena.v1.StatIdR\x02id\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value\"\xc6\x01\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value\"\xf4\x01\n" +
 	"\x06Damage\x12\x16\n" +
 	"\x06source\x18\x01 \x01(\rR\x06source\x12\x16\n" +
 	"\x06target\x18\x02 \x01(\rR\x06target\x12\x16\n" +
@@ -2751,7 +2766,8 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x04hits\x18\x04 \x01(\rR\x04hits\x12*\n" +
 	"\x04kind\x18\x05 \x01(\x0e2\x16.wathena.v1.DamageKindR\x04kind\x12\x19\n" +
 	"\bdelay_ms\x18\x06 \x01(\rR\adelayMs\x12\x19\n" +
-	"\bskill_id\x18\a \x01(\rR\askillId\"\xb9\x01\n" +
+	"\bskill_id\x18\a \x01(\rR\askillId\x12,\n" +
+	"\x12target_hp_permille\x18\b \x01(\rR\x10targetHpPermille\"\xb9\x01\n" +
 	"\tSkillCast\x12\x16\n" +
 	"\x06source\x18\x01 \x01(\rR\x06source\x12\x19\n" +
 	"\bskill_id\x18\x02 \x01(\rR\askillId\x12\x14\n" +
