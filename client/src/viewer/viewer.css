@@ -39,6 +39,21 @@ body {
   width: 12em;
 }
 
+#loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 55%);
+  font-size: 20px;
+  color: #fff;
+}
+
+#loading[hidden] {
+  display: none;
+}
+
 #hits {
   position: fixed;
   inset: 0;

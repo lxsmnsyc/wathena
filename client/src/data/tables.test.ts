@@ -14,9 +14,20 @@ describe('tables', () => {
     expect(effects.get(158)?.parts).toEqual([{ effect: 'effect/joblvup' }]);
   });
 
+  it('lists the warp portal as two cylinders', () => {
+    const parts = effects.get(321)?.parts ?? [];
+    expect(parts).toHaveLength(2);
+    for (const p of parts) {
+      expect('cylinder' in p && p.cylinder.texture).toBe('texture/effect/ring_blue');
+      expect('cylinder' in p && p.cylinder.repeat).toBe(true);
+    }
+  });
+
   it('names the effect a part shows', () => {
     expect(partEffect({ effect: 'effect/a' }, () => 0)).toBe('effect/a');
     expect(partEffect({ variants: ['effect/a', 'effect/b'] }, () => 1)).toBe('effect/b');
     expect(partEffect({ sound: 'sound/a' }, () => 0)).toBeUndefined();
+    const cylinder = effects.get(321)?.parts[0];
+    expect(cylinder === undefined ? 'none' : partEffect(cylinder, () => 0)).toBeUndefined();
   });
 });

@@ -5,6 +5,7 @@ package zone
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -35,8 +36,8 @@ type Look struct {
 	Job, Sex, Hair, HairColor uint32
 }
 
-// Player is one connected player. Its Out channel carries messages to
-// the connection, and closes when the zone drops the player.
+// Player is one connected player in one zone. Its Out channel is its
+// session's, which carries messages to the connection.
 type Player struct {
 	Name string
 	Look Look
@@ -94,25 +95,33 @@ type Player struct {
 	// record holds the saved fields the zone does not change, such as
 	// the database IDs and zeny.
 	record character.Info
-	// saver saves the player's character. It is nil for a player that
-	// only lives in memory.
-	saver Saver
-	// saved is the last character handed to saver. nextSave is when the
-	// next autosave runs, in zone milliseconds.
+	// sess is the player's session, which holds its saver. It is nil for
+	// players that tests add directly.
+	sess *Session
+	// saved is the last character handed to the saver. nextSave is when
+	// the next autosave runs, in zone milliseconds.
 	saved    *character.Character
 	nextSave int64
-	// left closes once the zone has removed the player and handed its
-	// last save to saver.
-	left chan struct{}
-	gone bool
+
+	// arrival is set while a player that warped from another zone joins.
+	arrival *handoff
+	// mapChange is set until the first frame after a warp from another
+	// zone, which starts with MapChange.
+	mapChange bool
+	// touchOnEnter is set until the zone checks the cell the player
+	// entered on for warps, as clif_parse_LoadEndAck does.
+	touchOnEnter bool
+	// rewarp is rAthena's count_rewarp: warps in a row onto warp areas.
+	rewarp int
 }
 
 type entity struct {
-	// player is set for players. Monsters have monster instead, and items
-	// on the ground have item.
+	// player is set for players. Monsters have monster instead, items
+	// on the ground have item, and warp portals have warp.
 	player  *Player
 	monster *monster
 	item    *groundItem
+	warp    *Warp
 	x, y    int
 	// dir is the facing, 0 south, clockwise.
 	dir   int
@@ -185,6 +194,14 @@ type Zone struct {
 	// SaveInterval is how often a player's changed character is saved.
 	// It is DefaultSaveInterval when 0. Set it before Run.
 	SaveInterval time.Duration
+	// World finds the zones that warps lead to. Without it, only warps
+	// within the map work. Set it before Run.
+	World Directory
+
+	// warps are the map's warps, in load order.
+	warps []Warp
+	// asleep is set while the zone has no players and its ticker is off.
+	asleep bool
 
 	// players maps charID to the players in the zone.
 	players  map[uint32]*Player
@@ -201,6 +218,10 @@ type Zone struct {
 	joins    chan joinRequest
 	leaves   chan *Player
 	commands chan command
+	// arrivals get players that warped from other zones. incoming counts
+	// the sends to it that have not finished.
+	arrivals chan *handoff
+	incoming sync.WaitGroup
 	// stale gets players whose saver lost the character to a newer
 	// session.
 	stale chan *Player
@@ -231,6 +252,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		joins:    make(chan joinRequest),
 		leaves:   make(chan *Player, 16),
 		commands: make(chan command, 1024),
+		arrivals: make(chan *handoff),
 		stale:    make(chan *Player),
 		stopped:  make(chan struct{}),
 	}
@@ -240,12 +262,32 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 
 // Run advances the zone until ctx ends. It then hands every player's
 // character to its saver and drops the players.
+//
+// A zone without players sleeps: its ticker stops, so its monsters stand
+// still and it costs no CPU. It wakes when a player joins or arrives.
+// rAthena similarly runs full monster AI only near players, and lets
+// monsters no player has seen stand still (mob_ai_sub_lazy).
 func (z *Zone) Run(ctx context.Context) {
 	defer close(z.stopped)
 	z.start = time.Now()
-	t := time.NewTicker(Tick)
-	defer t.Stop()
+	var t *time.Ticker
+	var ticks <-chan time.Time
+	defer func() {
+		if t != nil {
+			t.Stop()
+		}
+	}()
+	z.asleep = true
 	for {
+		switch {
+		case len(z.players) > 0 && ticks == nil:
+			t = time.NewTicker(Tick)
+			ticks = t.C
+		case len(z.players) == 0 && ticks != nil:
+			t.Stop()
+			t, ticks = nil, nil
+			z.asleep = true
+		}
 		select {
 		case <-ctx.Done():
 			for _, p := range z.players {
@@ -254,89 +296,74 @@ func (z *Zone) Run(ctx context.Context) {
 			}
 			return
 		case j := <-z.joins:
+			z.wake()
 			j.done <- z.join(j.player)
+		case h := <-z.arrivals:
+			z.wake()
+			z.arrive(h)
 		case p := <-z.leaves:
 			z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
 		case p := <-z.stale:
 			z.loggedInElsewhere(p)
 		case c := <-z.commands:
 			z.handle(c)
-		case <-t.C:
+		case <-ticks:
 			z.step()
 		}
 	}
 }
 
+// wake brings a sleeping zone's clock to now before a player enters.
+// Monsters pick new wander times, and natural regen starts again, so the
+// time asleep does not count.
+func (z *Zone) wake() {
+	if !z.asleep {
+		return
+	}
+	z.asleep = false
+	z.now = time.Since(z.start).Milliseconds()
+	z.prevHeal, z.nextHeal = z.now, z.now+naturalHealInterval
+	for e := range z.entities {
+		if e.monster != nil && len(e.path) == 0 {
+			e.monster.nextWalk = -1
+		}
+	}
+}
+
+// WaitIncoming waits until no player is on its way to the zone. Call it
+// after every zone of the world has stopped: players on their way to a
+// stopped zone get their last save then.
+func (z *Zone) WaitIncoming() { z.incoming.Wait() }
+
 // Join adds a new character that only lives in memory, at the walkable
-// cell nearest the map's center. It returns the player's own entity ID
-// and the current tick.
-func (z *Zone) Join(ctx context.Context, name string, look Look) (*Player, uint32, uint32, error) {
+// cell nearest the map's center.
+func (z *Zone) Join(ctx context.Context, name string, look Look) (*Session, error) {
 	c := z.NewCharacter(name, look)
 	return z.JoinCharacter(ctx, &c, nil)
 }
 
-// JoinCharacter adds a player as a loaded character, and returns the
-// player's own entity ID and the current tick. saver, when not nil,
-// saves the character while the player is in the zone and when it
-// leaves. The zone never waits on saver.
-func (z *Zone) JoinCharacter(ctx context.Context, c *character.Character, saver Saver) (*Player, uint32, uint32, error) {
-	out := make(chan *wathenav1.ServerMessage, outBuffer)
-	p := &Player{
-		Name: c.Name, Out: out, out: out, netIDs: map[*entity]uint32{}, fresh: true,
-		load: c, saver: saver, left: make(chan struct{}),
-	}
+// JoinCharacter adds a player as a loaded character, and returns its
+// session, which holds the player's own entity ID and the current tick.
+// saver, when not nil, saves the character while the player is in the
+// world and when it leaves. Zones never wait on saver.
+func (z *Zone) JoinCharacter(ctx context.Context, c *character.Character, saver Saver) (*Session, error) {
+	s := newSession(saver)
+	p := newPlayer(s, c)
+	s.zone, s.player = z, p
 	if n, ok := saver.(StaleNotifier); ok {
-		n.OnStale(func() { z.staleSave(p) })
+		n.OnStale(s.stale)
 	}
 	done := make(chan joinResult, 1)
 	select {
 	case z.joins <- joinRequest{p, done}:
 	case <-ctx.Done():
-		return nil, 0, 0, ctx.Err()
+		return nil, ctx.Err()
 	case <-z.stopped:
-		return nil, 0, 0, ErrStopped
+		return nil, ErrStopped
 	}
 	r := <-done
-	return p, r.netID, r.tick, nil
-}
-
-// Leave removes a player. The player's Out channel closes. Leave returns
-// once the zone has handed the player's last save to its saver, or has
-// stopped.
-func (z *Zone) Leave(p *Player) {
-	select {
-	case z.leaves <- p:
-	case <-z.stopped:
-		return
-	}
-	select {
-	case <-p.left:
-	case <-z.stopped:
-	}
-}
-
-// WalkTo asks for the player to walk to a cell. seq is the client
-// message's sequence number, which frames acknowledge. It returns false
-// when the zone's queue is full, which the caller should treat as too
-// many commands.
-func (z *Zone) WalkTo(p *Player, seq uint32, x, y int) bool {
-	select {
-	case z.commands <- command{player: p, seq: seq, walkTo: &[2]int{x, y}}:
-		return true
-	default:
-		return false
-	}
-}
-
-// Ack records a processed message that needs no game action, such as a
-// ping.
-func (z *Zone) Ack(p *Player, seq uint32) bool {
-	select {
-	case z.commands <- command{player: p, seq: seq}:
-		return true
-	default:
-		return false
-	}
+	s.Map, s.NetID, s.Tick = z.Map, r.netID, r.tick
+	return s, nil
 }
 
 func (z *Zone) join(p *Player) joinResult {
@@ -349,7 +376,14 @@ func (z *Zone) join(p *Player) joinResult {
 	p.record = c.Info
 	p.Look = Look{Job: uint32(c.Job), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
-	if c.Map != z.Map || c.HP <= 0 || z.grid.NoPass(x, y) {
+	h := p.arrival
+	p.arrival = nil
+	switch {
+	case h != nil:
+		// A warp places the player as pc_setpos does.
+		x, y = z.arrivalCell(x, y)
+		p.ackSeq, p.rewarp, p.mapChange = h.ackSeq, h.rewarp, true
+	case c.Map != z.Map || c.HP <= 0 || z.grid.NoPass(x, y):
 		// A character from another map, one that logged out dead, or
 		// one on a cell that is no longer walkable starts at the start
 		// cell, as a revived player does.
@@ -366,6 +400,16 @@ func (z *Zone) join(p *Player) joinResult {
 	p.regenTicks = regenState{hp: z.now, sp: z.now}
 	p.itemDelays = map[uint32]int64{}
 	p.statusDelays = map[string]int64{}
+	if h != nil {
+		// Item waits go on across the map change.
+		p.canUseItem = z.now + h.canUseItem
+		for id, left := range h.itemDelays {
+			p.itemDelays[id] = z.now + left
+		}
+		for st, left := range h.statusDelays {
+			p.statusDelays[st] = z.now + left
+		}
+	}
 	p.sent = map[wathenav1.StatId]int64{}
 	p.char = z.Start
 	p.char.Job, p.char.Male, p.char.Stats = c.Job, c.Male, c.Stats
@@ -395,11 +439,22 @@ func (z *Zone) join(p *Player) joinResult {
 	if s := z.battleStats(p); s != nil {
 		p.pending = append(p.pending, s)
 	}
-	// The first save comes one interval after the player enters.
-	if p.saver != nil {
+	// The first save comes one interval after the player enters. A
+	// warp saves at once, as the map change checkpoint of strategy
+	// section 3.8.
+	if s := p.sess; s != nil && s.saver != nil {
 		p.saved = z.snapshot(p)
+		if h != nil {
+			s.saver.Save(p.saved, false)
+		}
 	}
 	p.nextSave = z.now + z.saveInterval().Milliseconds()
+	if h == nil {
+		p.rewarp = 0
+		p.touchOnEnter = true
+	} else {
+		z.entered(p)
+	}
 	// The player sees itself from the first frame.
 	return joinResult{netID: p.netID(e), tick: z.tick}
 }
@@ -432,6 +487,13 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		return
 	}
 	z.save(p, true)
+	z.remove(p, reason)
+	z.drop(p)
+}
+
+// remove takes a player out of the zone. Viewers see it vanish for a
+// reason.
+func (z *Zone) remove(p *Player, reason wathenav1.VanishReason) {
 	delete(z.entities, p.entity)
 	delete(z.players, p.charID)
 	z.forget(p.entity)
@@ -446,7 +508,6 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 			}.Build()}.Build())
 		}
 	}
-	z.drop(p)
 }
 
 // drop closes a player's messages. Its connection then closes.
@@ -502,77 +563,6 @@ func (z *Zone) handle(c command) {
 	}
 }
 
-// Attack asks for the player to attack an entity, by the connection's ID
-// for it, once or until the target dies or leaves. It returns false when
-// the zone's queue is full.
-func (z *Zone) Attack(p *Player, seq, target uint32, repeat bool) bool {
-	select {
-	case z.commands <- command{player: p, seq: seq, attack: &attackCommand{target, repeat}}:
-		return true
-	default:
-		return false
-	}
-}
-
-// PickUp asks for the player to walk to a ground item, by the
-// connection's ID for it, and pick it up. It returns false when the zone's
-// queue is full.
-func (z *Zone) PickUp(p *Player, seq, item uint32) bool {
-	select {
-	case z.commands <- command{player: p, seq: seq, pickUp: &item}:
-		return true
-	default:
-		return false
-	}
-}
-
-// RaiseStat asks to spend status points on a stat, as rAthena's
-// pc_statusup. It returns false when the zone's queue is full.
-func (z *Zone) RaiseStat(p *Player, seq uint32, stat status.Stat, amount int) bool {
-	select {
-	case z.commands <- command{player: p, seq: seq, raise: &raiseCommand{stat, amount}}:
-		return true
-	default:
-		return false
-	}
-}
-
-// Chat says a line of local chat, as rAthena's clif_parse_GlobalMessage.
-// The gateway has checked the text. It returns false when the zone's
-// queue is full.
-func (z *Zone) Chat(p *Player, seq uint32, text string) bool {
-	select {
-	case z.commands <- command{player: p, seq: seq, chat: &text}:
-		return true
-	default:
-		return false
-	}
-}
-
-// UseItem asks to use the item in an inventory slot, as rAthena's
-// clif_parse_UseItem. The gateway has checked the slot is below
-// item.MaxInventory. It returns false when the zone's queue is full.
-func (z *Zone) UseItem(p *Player, seq uint32, slot int) bool {
-	select {
-	case z.commands <- command{player: p, seq: seq, use: &slot}:
-		return true
-	default:
-		return false
-	}
-}
-
-// DropItem asks to drop an amount from an inventory slot, as rAthena's
-// clif_parse_DropItem. The gateway has checked the slot is below
-// item.MaxInventory. It returns false when the zone's queue is full.
-func (z *Zone) DropItem(p *Player, seq uint32, slot, amount int) bool {
-	select {
-	case z.commands <- command{player: p, seq: seq, drop: &dropCommand{slot, amount}}:
-		return true
-	default:
-		return false
-	}
-}
-
 // walk starts or changes a walk. A unit in the middle of a step finishes
 // it first, so the new path starts from the cell it is stepping into.
 func (z *Zone) walk(e *entity, x, y int) {
@@ -601,7 +591,9 @@ func (z *Zone) step() { z.stepAt(time.Since(z.start).Milliseconds()) }
 func (z *Zone) stepAt(now int64) {
 	z.tick++
 	z.now = now
+	var warped []warpTouch
 	for e := range z.entities {
+		touched := false
 		for len(e.path) > 0 {
 			d := e.path[0]
 			end := e.stepStart + int64(path.StepTime(d, e.speed))
@@ -614,7 +606,28 @@ func (z *Zone) stepAt(now int64) {
 			e.dir = facing(d)
 			e.path = e.path[1:]
 			e.stepStart = end
+			// unit_walktoxy_timer touches the warp on each cell a
+			// player enters. A warp that takes the player ends the
+			// walk.
+			if p := e.player; p != nil {
+				if w := z.warpAt(e.x, e.y); w != nil && z.target(p, w) != nil {
+					e.path = e.path[:0]
+					warped = append(warped, warpTouch{p, w})
+					touched = true
+				}
+			}
 		}
+		// clif_parse_LoadEndAck touches the cell a player entered on,
+		// once its first frame went out.
+		if p := e.player; p != nil && p.touchOnEnter && !p.fresh {
+			p.touchOnEnter = false
+			if w := z.warpAt(e.x, e.y); w != nil && !touched && len(e.path) == 0 && z.target(p, w) != nil {
+				warped = append(warped, warpTouch{p, w})
+			}
+		}
+	}
+	for _, t := range warped {
+		z.warp(t.p, t.w)
 	}
 	z.revive()
 	z.think()
@@ -646,10 +659,20 @@ func (z *Zone) stepAt(now int64) {
 	z.chats = z.chats[:0]
 }
 
+// warpTouch is a player that stepped onto a warp this tick.
+type warpTouch struct {
+	p *Player
+	w *Warp
+}
+
 // update sends a player what changed in view this tick.
 func (z *Zone) update(p *Player) {
 	var events []*wathenav1.Event
 	me := p.entity
+	if p.mapChange {
+		p.mapChange = false
+		events = append(events, z.mapChange(p))
+	}
 	for e := range z.entities {
 		visible := abs(e.x-me.x) <= ViewRange && abs(e.y-me.y) <= ViewRange
 		id, known := p.netIDs[e]
@@ -685,6 +708,17 @@ func (z *Zone) update(p *Player) {
 }
 
 func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
+	if e.warp != nil {
+		// A warp portal is an NPC with the warp sprite, as rAthena's
+		// JT_WARPNPC. It has no name to show.
+		return wathenav1.Event_builder{Appear: wathenav1.EntityAppear_builder{
+			Id:   id,
+			Kind: wathenav1.EntityKind_ENTITY_KIND_NPC,
+			X:    uint32(e.x), // #nosec G115 -- map cells are at most 1024.
+			Y:    uint32(e.y), // #nosec G115 -- as above.
+			Look: wathenav1.Look_builder{Body: WarpSprite}.Build(),
+		}.Build()}.Build()
+	}
 	if it := e.item; it != nil {
 		return wathenav1.Event_builder{Appear: wathenav1.EntityAppear_builder{
 			Id:   id,

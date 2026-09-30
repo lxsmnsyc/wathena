@@ -54,6 +54,7 @@ Labels are part of the spec, because changing one changes every key below it. Ne
 | `floor` | floor number | A dungeon floor. |
 | `terrain`, `layout`, `decoration` | none | Public generation steps. |
 | `secret` | none | The root of a secret branch. |
+| `zone:<map ID>` | none | The secret stream of a classic map's zone, such as `zone:prontera`. It places and moves the map's monsters and rolls its drops and hits. Only the server uses it. |
 | `spawns`, `loot`, `puzzles`, `npcs`, `quests` | none | Steps under `secret`. |
 
 ## Streams

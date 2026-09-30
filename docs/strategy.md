@@ -2095,8 +2095,8 @@ Status on 2026-10-01:
 
 - Phases 0a, 0b, and 1 are done.
 - Phase 2 is partly done:
-  - Done: the gateway, one zone per map, walking, local chat, per-zone secret random streams, the database, saving, and the account service with two-factor login and passkeys.
-  - Not started: map changes, bots, and all-in-one mode.
+  - Done: the gateway, one zone per map, several zones in one process, walking, warps and map changes, local chat, per-zone secret random streams, the database, saving, and the account service with two-factor login and passkeys.
+  - Not started: bots and all-in-one mode.
 - Some phase 4 work was done early:
   - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen.
   - All of it is ported from rAthena and checked against the phase 0a reference data.
@@ -2108,7 +2108,7 @@ The order from here:
    - goose migrations for accounts, characters and inventory, with CHECK constraints and item serials. `wactl migrate` applies them, and `waserver` refuses to start while any are pending.
    - sqlc queries, a pool of save workers, saves every 30 seconds and at logout and shutdown, a save version against stale saves, and one session per character.
    - A migrator role and a game role without DDL rights.
-   - Left for later steps: saving at map changes (step 3), the item log that records serials (with trades, in phase 5), and the account service's own tables and role (step 2).
+   - Left for later steps: the item log that records serials (with trades, in phase 5), and the account service's own tables and role (step 2).
 2. Account service. The first part is done on 2026-10-01 ([decision 0004](decisions/0004-account-service-and-game-tickets.md)):
    - Signup, login and logout on plain HTML pages, Argon2id with rehashing, login sessions stored as hashes, CSRF tokens, a strict Content Security Policy, rate limits per address and per account name, and a captcha hook.
    - A character list with character creation, and Play, which hands the web client a one-time game ticket. The gateway uses the ticket up in one statement.
@@ -2120,8 +2120,15 @@ The order from here:
      - A second login step, a re-check before changing login methods, and sessions that record their factors.
      - A logout closes the game connection its session opened.
    - Left: password change and recovery, the player's list of sessions, a real captcha provider, and required two-factor login for staff.
-3. More than one map. Several zones in one process, map changes, and warps.
-4. Bots and load test. The headless bot client and the 500-bot tick budget test.
+3. More than one map. Done on 2026-10-01 (server/README.md, "Maps and warps"):
+   - A world runs one zone goroutine per map, for a list of maps or every map in the asset build. Each zone has its own secret random stream.
+   - Warps come from rAthena's warp NPCs, extracted in rAthena's load order (reference/rathena/README.md, "Warps"). A player who walks into one changes map as rAthena's `npc_touch_areanpc` and `pc_setpos` do.
+   - A map change is a message from the old zone to the new one, which saves the character at its new cell. The gateway keeps one session per character, and sends commands to the zone the player is in.
+   - The protocol gained `MapChange`, and warp portals appear as NPCs with sprite 45 ([proposal 0001](proposals/0001-protocol.md)). The web client clears the view, loads the new map, and draws portals as roBrowser does.
+   - A zone without players sleeps. All 988 maps of a kRO build start in 2.1 seconds, take 186 MB of heap, and use no CPU while empty. Kept awake, they would use 59% of a core.
+   - Map ready after a warp: 102 to 283 ms from the Service Worker cache, against the 1.5 second budget.
+   - Left: warps for hidden players (`warp2`), job limits on maps (`job_noenter_map`), script NPCs that warp, and zones in other processes.
+4. Bots and load test. The headless bot client and the 500-bot tick budget test. Bots can walk between maps through `zone.Session`, as players do.
 5. All-in-one mode and the Docker Compose file. This ends phase 2.
 6. Phase 3. The Lua runtime and mod loader. Skills, item scripts, and NPCs need it.
 7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.

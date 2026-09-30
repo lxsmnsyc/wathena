@@ -69,7 +69,7 @@ func TestSecondLoginKicksFirst(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	go z.Run(ctx)
-	s := httptest.NewServer(&Gateway{Zone: z, Sessions: DevSessions{}, Characters: chars})
+	s := httptest.NewServer(&Gateway{World: z, Sessions: DevSessions{}, Characters: chars})
 	t.Cleanup(s.Close)
 	url := "ws" + strings.TrimPrefix(s.URL, "http")
 
@@ -128,7 +128,7 @@ func TestEndLoginSessions(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	go z.Run(ctx)
-	gw := &Gateway{Zone: z, Sessions: sessionTokens{}}
+	gw := &Gateway{World: z, Sessions: sessionTokens{}}
 	s := httptest.NewServer(gw)
 	t.Cleanup(s.Close)
 	url := "ws" + strings.TrimPrefix(s.URL, "http")

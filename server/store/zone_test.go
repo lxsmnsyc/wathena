@@ -14,6 +14,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
+	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -24,11 +25,19 @@ import (
 // it.
 func testZone(t *testing.T, ctx context.Context, interval time.Duration) *zone.Zone {
 	t.Helper()
+	z := newTestZone(t, "map/test", interval)
+	go z.Run(ctx)
+	return z
+}
+
+// newTestZone makes a zone as testZone does, without running it.
+func newTestZone(t *testing.T, name string, interval time.Duration) *zone.Zone {
+	t.Helper()
 	g := &path.Grid{Width: 40, Height: 40, Cells: make([]uint8, 1600)}
 	for i := range g.Cells {
 		g.Cells[i] = path.Walkable | path.Shootable
 	}
-	z := zone.New("map/test", g, rng.FromKey([32]byte{9}).Stream(), nil)
+	z := zone.New(name, g, rng.FromKey([32]byte{9}).Stream(), nil)
 	var jobs status.Data
 	if err := reference.LoadFile("extracts/renewal/job_stats.json", &jobs); err != nil {
 		t.Fatal(err)
@@ -51,13 +60,12 @@ func testZone(t *testing.T, ctx context.Context, interval time.Duration) *zone.Z
 	z.Items = item.New(&items)
 	z.StartItems = []zone.StartItem{{ID: 501, Amount: 2}, {ID: 512, Amount: 1}}
 	z.SaveInterval = interval
-	go z.Run(ctx)
 	return z
 }
 
 // join loads a character from the store into the zone, as the gateway
 // does, making it first when it does not exist.
-func join(t *testing.T, ctx context.Context, s *store.Store, z *zone.Zone, name string) (*zone.Player, *character.Character) {
+func join(t *testing.T, ctx context.Context, s *store.Store, z *zone.Zone, name string) (*zone.Session, *character.Character) {
 	t.Helper()
 	fresh := z.NewCharacter(name, zone.Look{Sex: 1, Hair: 2})
 	id, err := s.DevCharacter(ctx, &fresh)
@@ -68,7 +76,7 @@ func join(t *testing.T, ctx context.Context, s *store.Store, z *zone.Zone, name 
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, _, _, err := z.JoinCharacter(ctx, c, sess)
+	p, err := z.JoinCharacter(ctx, c, sess)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +84,7 @@ func join(t *testing.T, ctx context.Context, s *store.Store, z *zone.Zone, name 
 }
 
 // waitFor reads a player's messages until an event matches.
-func waitFor(t *testing.T, p *zone.Player, match func(*wathenav1.Event) bool) {
+func waitFor(t *testing.T, p *zone.Session, match func(*wathenav1.Event) bool) {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
 	for {
@@ -109,12 +117,12 @@ func TestProgressSurvivesReconnect(t *testing.T) {
 		t.Fatalf("new character %+v", first)
 	}
 	// Raise STR by 2, use a Red Potion, and walk away from the start.
-	z.RaiseStat(p, 2, status.Str, 2)
-	z.UseItem(p, 3, 0)
-	z.WalkTo(p, 4, first.X+3, first.Y)
+	p.RaiseStat(2, status.Str, 2)
+	p.UseItem(3, 0)
+	p.WalkTo(4, first.X+3, first.Y)
 	waitFor(t, p, func(e *wathenav1.Event) bool { return e.HasInventoryRemove() })
 	time.Sleep(time.Second)
-	z.Leave(p)
+	p.Leave()
 
 	got, sess, err := s.Load(ctx, first.ID)
 	if err != nil {
@@ -166,7 +174,7 @@ func TestAutosaveAndShutdownSave(t *testing.T) {
 	z := testZone(t, zctx, 300*time.Millisecond)
 
 	p, c := join(t, ctx, s, z, "Fay")
-	z.RaiseStat(p, 2, status.Str, 4)
+	p.RaiseStat(2, status.Str, 4)
 	// The autosave writes the change while the player stays.
 	deadline := time.Now().Add(5 * time.Second)
 	for readStr(t, admin, c.ID) != 5 {
@@ -176,8 +184,8 @@ func TestAutosaveAndShutdownSave(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 	}
 	// A change right before shutdown is saved by the shutdown.
-	z.RaiseStat(p, 3, status.Agi, 1)
-	z.Ack(p, 4)
+	p.RaiseStat(3, status.Agi, 1)
+	p.Ack(4)
 	waitFor(t, p, func(e *wathenav1.Event) bool {
 		for _, st := range e.GetStats().GetStats() {
 			if st.GetId() == wathenav1.StatId_STAT_ID_AGI && st.GetValue() == 2 {
@@ -216,7 +224,7 @@ func TestStaleSessionIsDisconnected(t *testing.T) {
 	}
 	// The next autosave is rejected as stale, and the zone drops the
 	// player with the reason.
-	z.RaiseStat(p, 2, status.Str, 1)
+	p.RaiseStat(2, status.Str, 1)
 	var reason wathenav1.DisconnectReason
 	deadline := time.After(5 * time.Second)
 	for open := true; open; {
@@ -235,5 +243,68 @@ func TestStaleSessionIsDisconnected(t *testing.T) {
 	}
 	if got := readStr(t, game, c.ID); got != 1 {
 		t.Errorf("STR %d in the database, want the stale raise not saved", got)
+	}
+}
+
+func TestMapChangeSavesTheNewMap(t *testing.T) {
+	admin, game := migrated(t)
+	ctx := timeout(t)
+	s := newStore(t, game, store.Options{})
+	// Autosaves wait an hour, so only the map change saves.
+	a := newTestZone(t, "map/test", time.Hour)
+	b := newTestZone(t, "map/field", time.Hour)
+	c0 := a.NewCharacter("Hana", zone.Look{Sex: 1})
+	a.SetWarps([]zone.Warp{{Name: "out", X: c0.X + 3, Y: c0.Y, To: "map/field", ToX: 7, ToY: 9}})
+	w, err := world.New("map/test", a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wctx, stop := context.WithCancel(ctx)
+	defer stop()
+	go w.Run(wctx)
+
+	fresh := w.NewCharacter("Hana", zone.Look{Sex: 1})
+	id, err := s.DevCharacter(ctx, &fresh)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, sess, err := s.Load(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := w.JoinCharacter(ctx, c, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.UseItem(2, 0)
+	waitFor(t, p, func(e *wathenav1.Event) bool { return e.HasInventoryRemove() })
+	p.WalkTo(3, c.X+5, c.Y)
+	waitFor(t, p, func(e *wathenav1.Event) bool { return e.GetMapChange().GetMap() == "map/field" })
+	// The save at the map change reaches the database while the player
+	// stays, with the new map and cell and the potion used on the old map.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		var m string
+		var x, y, potions int
+		err := admin.QueryRow(ctx, `SELECT c.map, c.x, c.y, coalesce((SELECT amount FROM inventory i WHERE i.character_id = c.id AND i.item_id = 501), 0)
+			FROM characters c WHERE c.id = $1`, id).Scan(&m, &x, &y, &potions)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if m == "map/field" && x == 7 && y == 9 && potions == 1 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("saved %s %d,%d with %d potions, want map/field 7,9 with 1", m, x, y, potions)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	p.Leave()
+	got, _, err := s.Load(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Map != "map/field" || got.X != 7 || got.Y != 9 {
+		t.Errorf("after logout at %s %d,%d", got.Map, got.X, got.Y)
 	}
 }

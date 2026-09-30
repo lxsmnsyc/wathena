@@ -25,7 +25,7 @@ func TestLoadTables(t *testing.T) {
 	for _, r := range refs {
 		seen[r.Name] = true
 	}
-	for _, n := range []string{"sprite/body/novice/f", "sound/attack_bow1", "effect/pong3", "effect/angel", "sound/levelup"} {
+	for _, n := range []string{"sprite/body/novice/f", "sound/attack_bow1", "effect/pong3", "effect/angel", "sound/levelup", "texture/effect/ring_blue"} {
 		if !seen[n] {
 			t.Errorf("references lack %s", n)
 		}
@@ -43,11 +43,15 @@ func TestTablesReject(t *testing.T) {
 		}
 	}
 	for name, y := range map[string]string{
-		"no parts":  "effects:\n  - {id: 1, constant: A, parts: []}\n",
-		"both":      "effects:\n  - {id: 1, constant: A, parts: [{effect: effect/a, variants: [effect/b]}]}\n",
-		"bad name":  "effects:\n  - {id: 1, constant: A, parts: [{effect: texture/a}]}\n",
-		"sound too": "effects:\n  - {id: 1, constant: A, parts: [{effect: effect/a, sound: sound/b}]}\n",
-		"bad sound": "effects:\n  - {id: 1, constant: A, parts: [{sound: effect/b}]}\n",
+		"no parts":         "effects:\n  - {id: 1, constant: A, parts: []}\n",
+		"both":             "effects:\n  - {id: 1, constant: A, parts: [{effect: effect/a, variants: [effect/b]}]}\n",
+		"bad name":         "effects:\n  - {id: 1, constant: A, parts: [{effect: texture/a}]}\n",
+		"sound too":        "effects:\n  - {id: 1, constant: A, parts: [{effect: effect/a, sound: sound/b}]}\n",
+		"bad sound":        "effects:\n  - {id: 1, constant: A, parts: [{sound: effect/b}]}\n",
+		"cylinder texture": "effects:\n  - {id: 1, constant: A, parts: [{cylinder: {texture: effect/a, duration_ms: 1, copies: 1}}]}\n",
+		"cylinder time":    "effects:\n  - {id: 1, constant: A, parts: [{cylinder: {texture: texture/a, duration_ms: 0, copies: 1}}]}\n",
+		"cylinder color":   "effects:\n  - {id: 1, constant: A, parts: [{cylinder: {texture: texture/a, duration_ms: 1, copies: 1, color: [2, 0, 0]}}]}\n",
+		"cylinder too":     "effects:\n  - {id: 1, constant: A, parts: [{sound: sound/a, cylinder: {texture: texture/a, duration_ms: 1, copies: 1}}]}\n",
 	} {
 		if _, err := ParseEffects([]byte(y)); err == nil {
 			t.Errorf("effects, %s: accepted", name)

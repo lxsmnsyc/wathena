@@ -26,8 +26,9 @@ func (s *saves) Save(c *character.Character, final bool) {
 
 // addCharacter joins a loaded character directly, as Run would.
 func addCharacter(z *Zone, c *character.Character, s Saver) *Player {
-	out := make(chan *wathenav1.ServerMessage, outBuffer)
-	p := &Player{Name: c.Name, Out: out, out: out, netIDs: map[*entity]uint32{}, fresh: true, load: c, saver: s, left: make(chan struct{})}
+	sess := newSession(s)
+	p := newPlayer(sess, c)
+	sess.zone, sess.player = z, p
 	z.join(p)
 	return p
 }
@@ -144,7 +145,7 @@ func TestAutosaveOnlyWhenChanged(t *testing.T) {
 		t.Fatalf("saves %v, want a final save at logout", s.final)
 	}
 	select {
-	case <-p.left:
+	case <-p.sess.left:
 	default:
 		t.Error("left is still open after the last save")
 	}
@@ -213,7 +214,7 @@ func TestStaleSaveDisconnects(t *testing.T) {
 	defer cancel()
 	go z.Run(ctx)
 	s := &staleSaver{onStale: make(chan func(), 1)}
-	p, _, _, err := z.JoinCharacter(ctx, savedCharacter(), s)
+	p, err := z.JoinCharacter(ctx, savedCharacter(), s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,5 +241,5 @@ func TestStaleSaveDisconnects(t *testing.T) {
 		t.Errorf("disconnect reason %v", reason)
 	}
 	// The player left the zone. Leave returns at once.
-	z.Leave(p)
+	p.Leave()
 }

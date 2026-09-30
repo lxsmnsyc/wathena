@@ -4,7 +4,8 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 
 | Package | Content |
 |---|---|
-| `zone` | One map: its players and monsters, local chat to every player within 9 cells of the speaker, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. A monster that can attack strikes back. Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. A kill gives exp to the players who fought the monster and drops items around it. Items lie on the ground for a minute, and players pick them up with the looter rights rAthena gives the top attackers. Each player has rAthena's inventory: 100 slots, stacks up to 30000, and a weight limit that pick-ups respect. Players use healing items, and drop items at their feet with no looter rights. HP and SP regenerate as rAthena's natural regen, which stops from 70% weight in renewal (50% in pre-renewal). From 90% weight, attacks stop. |
+| `zone` | One map: its players and monsters, local chat to every player within 9 cells of the speaker, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. A monster that can attack strikes back. Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. A kill gives exp to the players who fought the monster and drops items around it. Items lie on the ground for a minute, and players pick them up with the looter rights rAthena gives the top attackers. Each player has rAthena's inventory: 100 slots, stacks up to 30000, and a weight limit that pick-ups respect. Players use healing items, and drop items at their feet with no looter rights. HP and SP regenerate as rAthena's natural regen, which stops from 70% weight in renewal (50% in pre-renewal). From 90% weight, attacks stop. Warps send a player who steps into their area to their target, as rAthena's `npc_touch_areanpc` and `pc_setpos`: to another map as a message to that map's zone, or within the map. A zone without players sleeps. |
+| `world` | Several zones in one process, one goroutine per map. It finds zones by map name, puts a joining character in the zone of its saved map, and waits at shutdown for every zone and every player between zones. `LoadWarps` reads `reference/rathena/extracts/<mode>/warps.json`. |
 | `item` | The inventory, ported from rAthena's `pc_additem`, `pc_delitem` and `pc_inventoryblank`, the overweight levels of `pc_updateweightstatus`, and the heal of `pc_itemheal` and `pc_percentheal`, with the item data from `reference/rathena/extracts/<mode>/items.json`. |
 | `battle` | Attacks, ported from rAthena's `battle.cpp` in renewal mode and checked against the recorded reference. |
 | `status` | Player stats from job, levels, raised stats and skills, ported from rAthena's `status_calc_pc` for a player with no equipment, in both modes, and checked against every recorded player. Raising stats with status points, ported from `pc_statusup`, `pc_need_status_point` and `pc_maxparameter`, with the costs of both modes and the job limits from `conf/battle/player.conf`. |
@@ -12,8 +13,8 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `character` | A saved character as plain data: what the zone loads and hands to the store. |
 | `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
 | `account` | The account service under `/account/`: signup, login, logout, login sessions, account settings with TOTP codes, recovery codes and passkeys, the character list with character creation, Play, and one-time game tickets. Argon2id passwords, CSRF tokens, a strict Content Security Policy, rate limits and a captcha hook. `GameTickets` checks the ticket in `Hello` for the gateway. See decisions [0004](../docs/decisions/0004-account-service-and-game-tickets.md) and [0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). |
-| `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. |
-| `cmd/waserver` | A server in one process: an asset build over HTTP, the account pages, and one zone over WebSocket, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. |
+| `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone the player is in, through its `zone.Session`, which stays the same across map changes. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. |
+| `cmd/waserver` | A server in one process: an asset build over HTTP, the account pages, and a world of zones over WebSocket, one per map, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. |
 
 ## Development server
 
@@ -21,9 +22,12 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 
 ```text
 go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev
+go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev \
+  --maps prontera,prt_fild08,prt_in,prt_fild05,prt_fild06,prt_fild07,prt_church,izlude
+go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev --maps all
 ```
 
-It spawns the map's monsters from the spawns that `reference/rathena` recorded (`--mode renewal` or `pre-renewal`, or `none`), until the core mod has its own.
+It spawns each map's monsters from the spawns that `reference/rathena` recorded (`--mode renewal` or `pre-renewal`, or `none`), until the core mod has its own.
 
 Players are novices with no equipment. With `--dev`, their sex and hair come from a hash of their name. With accounts, the player picks them on the character page. They start as a new rAthena character does: every stat at 1 and 48 status points to spend. `--build` picks other raised stats for testing, from the reference recorder's builds (STR, AGI, VIT, INT, DEX, LUK, before job bonuses), with the same 48 points:
 
@@ -46,6 +50,48 @@ WATHENA_ASSETS=http://127.0.0.1:8300/assets pnpm dev
 
 then open `http://localhost:5173/?server=ws://localhost:8300/ws&name=Alice` in two tabs with different names. Click the ground to walk, a monster to attack it, and an item to pick it up. Each tab sees the other walk and fight.
 
+## Maps and warps
+
+`--maps` lists the maps to run, comma-separated, or `all` for every map in the asset build. Without it, only `--map` runs. `--map` is where new characters start, and where characters enter when their saved map does not run. It must be one of the maps.
+
+Each map runs in its own zone goroutine, which owns all of the map's state (strategy section 4.1):
+
+- Zones share no mutable state. They read the same data tables, which never change after startup.
+- Each zone has its own secret random stream from the world's root, under the label `zone:<map ID>` (docs/specs/rng-v1.md).
+- The warps come from `reference/rathena/extracts/<mode>/warps.json`, in rAthena's load order. Only enabled warps run.
+
+A warp works as in rAthena:
+
+- A player who steps onto a cell within `xs` and `ys` of a warp goes to its target (`npc_touch_areanpc`). The walk stops there. When warp areas overlap, the warp loaded first wins.
+- Dead players do not warp. A warp to a map that does not run does nothing, and the walk goes on, as `pc_setpos` without a map server.
+- A target cell outside the map, or 0,0, becomes a random walkable cell away from warps. A target cell inside the map is used even when it is not walkable, as `pc_setpos` does. The player can walk off it.
+- A player who arrives on a warp area is warped again once its first frame is sent, as `clif_parse_LoadEndAck`. After 10 warps in a row, `count_rewarp` stops it.
+- A warp within the same map moves the player there. Others see it go out of sight.
+
+A map change is a message between zones:
+
+1. The old zone copies the character, with its target map and cell, and its item waits. It removes the player (others see `VANISH_REASON_OUT_OF_SIGHT`) and sends the copy to the new zone's inbox from a new goroutine, so two zones never wait on each other.
+2. The session, which the gateway holds, points at no zone while the player moves. Commands sent then are dropped.
+3. The new zone places the player, saves the character at once (the map change checkpoint of strategy section 3.8), and points the session at itself. Its first frame to the player starts with `MapChange`.
+4. A logout while the player moves ends the session at the new zone, with one final save. A player moving to a zone that stopped gets its final save at shutdown.
+
+The character is in one zone at a time, so its items and exp are never copied. Chat and visibility stay within a map.
+
+A zone without players sleeps: its ticker stops and its monsters stand still. rAthena runs full monster AI only near players, and monsters no player has seen stand still (`mob_ai_sub_lazy`). A zone wakes when a player joins or arrives, and its monsters pick new wander times then.
+
+Measured with the kRO asset build of 988 maps, in renewal, on an Apple M2 with 8 cores:
+
+| Setup | Startup | Heap after startup | CPU while idle |
+|---|---:|---:|---:|
+| `--maps prontera` | 9 ms | 11 MB | 0 |
+| 8 maps around Prontera, 1,415 monsters | 28 ms | 12 MB | 0 |
+| `--maps all`: 988 maps, 59,374 monsters, 3,855 warps | 2.1 s | 186 MB | 0 while asleep |
+| `--maps all` with every zone kept awake | 2.1 s | 186 MB | 59% of one core |
+
+- An idle map costs about 180 KB of heap, mostly its cells and monsters.
+- One tick of a map with no players takes 10 µs with 60 monsters (the average over all maps) and 18 µs with 215 (the average field), from `BenchmarkIdleTick` in `server/zone`. Kept awake at 20 ticks a second, all 988 maps cost 0.6 CPU seconds a second, which sleeping saves.
+- Startup reads only each map's cells (`wmap.DecodeCells`), several maps at once.
+
 Players gain exp and levels from kills, with the exp tables, drops and level penalty from `reference/rathena/extracts/<mode>/progression.json`. Each base or job level up computes their stats again, and a base level up heals HP and SP fully. Players spend status points from the client's status window, and each raise computes their stats again. Local chat reaches every player within view, the speaker included; other channels are ignored for now. Without a database, characters and the inventory only live in memory. See "Running with PostgreSQL".
 
 `--start-items` gives every new character items, for development only, such as `--start-items 501:5,512:10` for 5 Red Potions and 10 Apples. Without it, characters start with nothing and get items from drops. With a database, a character only gets them when it is made.
@@ -61,7 +107,8 @@ With a database:
 - It refuses to start while migrations are pending.
 - With `--dev`, a token that is a new name makes an account and a character of that name, marked as a dev account. Dev accounts have no password and cannot log in on the account pages.
 - Characters load when they log in and are saved every 30 seconds when they changed, when they log out, and when the server stops (Ctrl+C or SIGTERM).
-- The level, exp, status and skill points, raised stats, HP, SP, position, look, zeny and inventory are saved. Items keep their serial numbers.
+- Characters are also saved when they arrive on another map, at their new cell.
+- The level, exp, status and skill points, raised stats, HP, SP, map and position, look, zeny and inventory are saved. Items keep their serial numbers.
 
 A local database in Docker:
 

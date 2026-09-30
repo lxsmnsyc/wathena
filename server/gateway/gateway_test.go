@@ -15,6 +15,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -37,7 +38,7 @@ func serverWith(t *testing.T, setup func(*zone.Zone)) string {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	go z.Run(ctx)
-	s := httptest.NewServer(&Gateway{Zone: z, Sessions: DevSessions{}})
+	s := httptest.NewServer(&Gateway{World: z, Sessions: DevSessions{}})
 	t.Cleanup(s.Close)
 	return "ws" + strings.TrimPrefix(s.URL, "http")
 }
@@ -329,4 +330,63 @@ func TestOriginAllowed(t *testing.T) {
 			t.Errorf("%q: %v", origin, got)
 		}
 	}
+}
+
+func TestWarpKeepsConnection(t *testing.T) {
+	open := func() *path.Grid {
+		g := &path.Grid{Width: 40, Height: 40, Cells: make([]uint8, 1600)}
+		for i := range g.Cells {
+			g.Cells[i] = path.Walkable | path.Shootable
+		}
+		return g
+	}
+	a := zone.New("map/test", open(), rng.FromKey([32]byte{1}).Stream(), nil)
+	b := zone.New("map/other", open(), rng.FromKey([32]byte{2}).Stream(), nil)
+	a.SetWarps([]zone.Warp{{Name: "east", X: 25, Y: 20, XS: 1, YS: 1, To: "map/other", ToX: 5, ToY: 5}})
+	w, err := world.New("map/test", a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(func() {
+		cancel()
+		<-w.Stopped()
+	})
+	go w.Run(ctx)
+	s := httptest.NewServer(&Gateway{World: w, Sessions: DevSessions{}})
+	t.Cleanup(s.Close)
+	url := "ws" + strings.TrimPrefix(s.URL, "http")
+
+	alice := dial(t, url)
+	alice.hello("Alice", schema.Version)
+	welcome := alice.next((*wathenav1.ServerMessage).HasWelcome).GetWelcome()
+	bob := dial(t, url)
+	bob.hello("Bob", schema.Version)
+	bob.next((*wathenav1.ServerMessage).HasWelcome)
+	bob.next(hasEvent(func(e *wathenav1.Event) bool { return e.GetAppear().GetName() == "Alice" }))
+
+	// Alice walks east through the warp. Her connection stays open, and
+	// the next map's first frame starts with MapChange.
+	alice.send(wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{
+		WalkTo: wathenav1.WalkTo_builder{X: 30, Y: 20}.Build(),
+	}.Build()}.Build())
+	m := alice.next(hasEvent(func(e *wathenav1.Event) bool { return e.HasMapChange() }))
+	mc := m.GetFrame().GetEvents()[0].GetMapChange()
+	if mc.GetMap() != "map/other" || mc.GetX() != 5 || mc.GetY() != 5 || mc.GetNetId() == 0 {
+		t.Fatalf("map change %v", mc)
+	}
+	if welcome.GetMap() != "map/test" {
+		t.Errorf("welcome map %s", welcome.GetMap())
+	}
+	// Bob sees Alice leave his map.
+	bob.next(hasEvent(func(e *wathenav1.Event) bool {
+		return e.GetVanish().GetReason() == wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT
+	}))
+	// Commands now go to map/other: Alice walks there.
+	alice.send(wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{
+		WalkTo: wathenav1.WalkTo_builder{X: 8, Y: 5}.Build(),
+	}.Build()}.Build())
+	alice.next(hasEvent(func(e *wathenav1.Event) bool {
+		return e.GetMove().GetId() == mc.GetNetId() && e.GetMove().GetFromX() == 5
+	}))
 }

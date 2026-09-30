@@ -69,6 +69,22 @@ func TestRoundTrip(t *testing.T) {
 	}
 }
 
+func TestDecodeCells(t *testing.T) {
+	m := sample()
+	b, err := m.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, h, flags, err := DecodeCells(b)
+	if err != nil || w != 2 || h != 1 || !bytes.Equal(flags, []uint8{Walkable | Shootable, 0}) {
+		t.Errorf("DecodeCells: %d × %d, %v, %v", w, h, flags, err)
+	}
+	// The header alone: 2 × 1 cells and no sections.
+	if _, _, _, err := DecodeCells([]byte("WMAP\x01\x00\x02\x00\x01\x00")); err == nil {
+		t.Error("a map without cells decoded")
+	}
+}
+
 func TestRejects(t *testing.T) {
 	bad := sample()
 	bad.Ground.Surfaces[0].East = 5

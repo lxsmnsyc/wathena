@@ -6,13 +6,26 @@
 #   listed effects is chosen at random each time the effect starts.
 # - sound: a sound to play when the effect starts, sound/<path>, from
 #   data\wav\<path>.wav. roBrowser calls it wav.
+# - cylinder: a textured cone that the client draws, as roBrowser's
+#   CYLINDER type. Its fields are roBrowser's, renamed:
+#   - texture: textureName, as texture/effect/<name>.
+#   - bottom, top and height: bottomSize, topSize and height, in cells.
+#   - color and alpha: red, green, blue and alphaMax.
+#   - duration_ms: duration.
+#   - copies and copy_ms: duplicate and timeBetweenDupli. Each copy
+#     starts copy_ms after the one before.
+#   - animation: how the size changes over the duration, 0 to 5.
+#   - fade: fades in over the first quarter and out over the last.
+#   - repeat: starts again at the end, for effects that stay, such as
+#     warp portals.
+#   Cylinders add their colors to the scene, as roBrowser's blendMode 2.
 #
 # Effects that attach to an entity, such as level ups, play at its feet
 # and follow it.
 #
-# Besides level ups (158, 371) and the potion effects that play when a
-# player uses a potion or herb (204 to 209), only the map effects whose
-# parts are STR effects are listed so far. The
+# Besides level ups (158, 371), the potion effects that play when a
+# player uses a potion or herb (204 to 209), and the warp portal (321),
+# only the map effects whose parts are STR effects are listed so far. The
 # most common map effects, such as torches (47) and emitters (974), are
 # sprite particles, which need a particle system in the client first.
 #
@@ -62,6 +75,38 @@ effects:
     constant: EF_POTION6
     parts:
       - effect: effect/초록포션
+  - id: 321
+    constant: EF_WARPZONE2
+    # Warp portals, which roBrowser plays on NPCs with sprite 45
+    # (JT_WARPNPC). roBrowser's third part, pok1.tga sparks, is a sprite
+    # particle, which the client does not draw yet.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 2
+          top: 3.3
+          height: 1.1
+          color: [0.5, 0.5, 1]
+          alpha: 0.4
+          duration_ms: 4000
+          copies: 4
+          copy_ms: 1000
+          animation: 3
+          fade: true
+          repeat: true
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 1.9
+          top: 3.2
+          height: 1.1
+          color: [0.5, 0.5, 1]
+          alpha: 0.4
+          duration_ms: 4000
+          copies: 4
+          copy_ms: 1000
+          animation: 3
+          fade: true
+          repeat: true
   - id: 371
     constant: EF_ANGEL
     parts:

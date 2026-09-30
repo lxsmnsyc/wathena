@@ -28,7 +28,23 @@ message Event {
     ItemUsed item_used = 16;
     UseItemFailed use_item_failed = 17;
     DropItemFailed drop_item_failed = 18;
+    MapChange map_change = 19;
   }
+}
+
+// MapChange moves the player to another map, after a warp. It is the
+// first event of the first frame from the new map. The client clears
+// every entity it shows, loads the map, and goes on. The player's own
+// EntityAppear follows, as after Welcome, and entity IDs start again for
+// the new map.
+message MapChange {
+  // map is the asset name of the new map, such as "map/prt_fild08".
+  string map = 1;
+  // x and y are the player's cell on the new map.
+  uint32 x = 2;
+  uint32 y = 3;
+  // net_id is the player's own entity ID on the new map.
+  uint32 net_id = 4;
 }
 
 // EntityKind is what an entity is.
@@ -46,6 +62,9 @@ enum EntityKind {
 
 // EntityAppear adds an entity to the player's view.
 // Entity IDs are per connection. They are never database IDs.
+//
+// A warp portal is ENTITY_KIND_NPC with look.body 45, rAthena's
+// JT_WARPNPC sprite, and no name.
 message EntityAppear {
   uint32 id = 1;
   EntityKind kind = 2;

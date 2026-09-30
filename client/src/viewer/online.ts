@@ -19,6 +19,7 @@ import {
 import { ChatChannel } from '../gen/wathena/v1/command_pb';
 import { unpackSteps } from '../net/connection';
 import { Character, type Look } from '../render/characters';
+import { CylinderView } from '../render/cylinder';
 import { type EffectCache, EffectView } from '../render/effects';
 import { type SpriteCache, SpriteView } from '../render/sprites';
 import type { TextureSource } from '../render/textures';
@@ -30,7 +31,21 @@ import Player, { type Body } from './player';
 
 // Shows the entities a server sends: players appear, walk the paths the
 // server gives, and vanish. Items lie on the ground until someone picks
-// them up. Effects play on entities or cells.
+// them up. Effects play on entities or cells. Warp portals are NPCs with
+// the warp sprite, drawn as the warp effect. A map change clears
+// everything, and events wait until the new map has loaded.
+
+/** JT_WARPNPC, the NPC sprite of warp portals. */
+export const WARP_SPRITE = 45;
+/** EF_WARPZONE2, the effect roBrowser plays on warp portals. */
+export const WARP_EFFECT = 321;
+
+/** Something that plays until it is done. */
+interface Playing {
+  group: Group;
+  update(deltaMs: number): void;
+  readonly done: boolean;
+}
 
 /** A character's sprites from the protocol's table IDs. */
 export function lookOf(m: LookMessage | undefined): Look {
@@ -98,10 +113,17 @@ export default class Online {
   onChat: ((from: number, name: string, text: string) => void) | undefined;
   /** Called when an effect plays a sound, with where it plays. */
   onSound: ((name: string, position: Vector3) => void) | undefined;
+  /**
+   * Called when the server moves the player to another map, with the
+   * map's asset name and the player's cell. Events wait until setMap.
+   */
+  onMapChange: ((map: string, x: number, y: number) => void) | undefined;
   /** Where effects come from. Set it when a map loads. */
   effects: { cache: EffectCache; textures: TextureSource } | undefined;
   /** Effects playing once, until they end. */
-  private playing: EffectView[] = [];
+  private playing: Playing[] = [];
+  /** Warp portals by entity ID, with the effect parts they show. */
+  private readonly portals = new Map<number, { group: Group; parts: CylinderView[] }>();
   /** The player's own stats, as the server last sent them. */
   readonly stats = new Map<StatId, bigint>();
   /** Events that arrived before the map loaded. */
@@ -131,6 +153,16 @@ export default class Online {
     return this.units.get(this.self);
   }
 
+  /** The player's own cell, once it has appeared, even while its sprites load. */
+  get selfCell(): [number, number] | undefined {
+    const me = this.units.get(this.self);
+    if (me !== undefined) {
+      return [me.x, me.y];
+    }
+    const p = this.pending.get(this.self);
+    return p === undefined ? undefined : [p.x, p.y];
+  }
+
   /** A ground item's item ID, amount, and position, while it is shown. */
   groundItem(id: number): { itemId: number; amount: number; position: Vector3 } | undefined {
     return this.items.info(id);
@@ -149,12 +181,23 @@ export default class Online {
   }
 
   handle(events: Event[]): void {
-    if (this.map === undefined) {
-      this.waiting.push(...events);
-      return;
-    }
-    for (const e of events) {
+    for (let n = 0; n < events.length; n++) {
+      if (this.map === undefined) {
+        this.waiting.push(...events.slice(n));
+        return;
+      }
+      const e = events[n]!;
       switch (e.body.case) {
+        case 'mapChange': {
+          // Everything shown belongs to the old map. Entity IDs start
+          // again on the new one.
+          const c = e.body.value;
+          this.clear();
+          this.self = c.netId;
+          this.map = undefined;
+          this.onMapChange?.(c.map, c.x, c.y);
+          break;
+        }
         case 'appear': {
           const a = e.body.value;
           this.remove(a.id);
@@ -162,6 +205,10 @@ export default class Online {
             if (a.item !== undefined) {
               this.items.add(a.id, this.map, a.x, a.y, a.item);
             }
+            break;
+          }
+          if (a.kind === EntityKind.NPC && a.look?.body === WARP_SPRITE) {
+            this.addPortal(a.id, a.x, a.y, this.map);
             break;
           }
           this.kinds.set(a.id, a.kind === EntityKind.MONSTER ? 'monster' : 'player');
@@ -366,11 +413,59 @@ export default class Online {
   private remove(id: number): void {
     this.pending.delete(id);
     this.items.remove(id);
+    const portal = this.portals.get(id);
+    if (portal !== undefined) {
+      this.group.remove(portal.group);
+      this.portals.delete(id);
+    }
     const unit = this.units.get(id);
     if (unit !== undefined) {
       this.group.remove(unit.character.group);
       this.units.delete(id);
     }
+  }
+
+  /**
+   * Shows a warp portal on a cell: the parts of the warp effect that the
+   * client draws, repeating while the portal is in view.
+   */
+  private addPortal(id: number, x: number, y: number, map: WMap): void {
+    const g = new Group();
+    g.name = 'portal';
+    const cx = x + 0.5;
+    const cy = y + 0.5;
+    g.position.set(cx, cellHeight(map, cx, cy), -cy);
+    const textures = this.effects?.textures;
+    const parts: CylinderView[] = [];
+    for (const part of effectTable.get(WARP_EFFECT)?.parts ?? []) {
+      if ('cylinder' in part && textures !== undefined) {
+        const v = new CylinderView(part.cylinder, textures);
+        g.add(v.group);
+        parts.push(v);
+      }
+    }
+    this.portals.set(id, { group: g, parts });
+    this.group.add(g);
+  }
+
+  /** Removes everything shown, for a map change. */
+  private clear(): void {
+    for (const id of [...this.units.keys(), ...this.pending.keys(), ...this.portals.keys()]) {
+      this.remove(id);
+    }
+    for (const [id] of this.items.shown()) {
+      this.items.remove(id);
+    }
+    for (const unit of this.dying) {
+      this.group.remove(unit.character.group);
+    }
+    this.dying = [];
+    for (const v of this.playing) {
+      v.group.removeFromParent();
+    }
+    this.playing = [];
+    this.kinds.clear();
+    this.waiting = [];
   }
 
   /** Units playing their death before they go. */
@@ -409,6 +504,16 @@ export default class Online {
     for (const part of entry?.parts ?? []) {
       if ('sound' in part) {
         this.onSound?.(part.sound, parent === this.group ? at.clone() : parent.position.clone());
+        continue;
+      }
+      if ('cylinder' in part) {
+        const textures = this.effects?.textures;
+        if (textures !== undefined) {
+          const v = new CylinderView({ ...part.cylinder, repeat: false }, textures);
+          v.group.position.copy(at);
+          parent.add(v.group);
+          this.playing.push(v);
+        }
         continue;
       }
       const name = partEffect(part, (n) => Math.floor(Math.random() * n));
@@ -486,6 +591,11 @@ export default class Online {
       unit.update(deltaMs, cameraSteps, towardCamera);
     }
     this.items.update(deltaMs);
+    for (const portal of this.portals.values()) {
+      for (const v of portal.parts) {
+        v.update(deltaMs);
+      }
+    }
     for (const v of this.playing) {
       v.update(deltaMs);
       if (v.done) {

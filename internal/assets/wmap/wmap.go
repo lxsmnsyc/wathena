@@ -470,6 +470,39 @@ func (r *reader) f32s(dst []float32) {
 	}
 }
 
+// DecodeCells reads only a map's size and the flags of its cells, which
+// is what the game server needs. It skips the other sections, so it is
+// much faster than Decode. A map without a cell section is an error.
+func DecodeCells(b []byte) (width, height int, flags []uint8, err error) {
+	if len(b) > MaxBytes {
+		return 0, 0, nil, ErrFormat
+	}
+	r := &reader{b: b}
+	if string(r.take(4)) != magic || r.u16() != version {
+		return 0, 0, nil, fmt.Errorf("%w: header", ErrFormat)
+	}
+	width, height = r.u16(), r.u16()
+	if r.err != nil || width < 1 || height < 1 || width > MaxCells || height > MaxCells {
+		return 0, 0, nil, fmt.Errorf("%w: size", ErrFormat)
+	}
+	for r.err == nil && r.p < len(b) {
+		tag := string(r.take(4))
+		body := r.take(int(r.u32()))
+		if r.err != nil || tag != "CELL" {
+			continue
+		}
+		if len(body) != width*height*17 {
+			return 0, 0, nil, fmt.Errorf("%w: cell section", ErrFormat)
+		}
+		flags = make([]uint8, width*height)
+		for i := range flags {
+			flags[i] = body[i*17]
+		}
+		return width, height, flags, nil
+	}
+	return 0, 0, nil, fmt.Errorf("%w: no cell section", ErrFormat)
+}
+
 // Decode reads a map. Unknown sections are skipped.
 func Decode(b []byte) (*Map, error) {
 	if len(b) > MaxBytes {

@@ -643,7 +643,7 @@ func TestLogoutClosesGame(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	go z.Run(ctx)
-	gw := &gateway.Gateway{Zone: z, Origins: []string{clientOrigin}}
+	gw := &gateway.Gateway{World: z, Origins: []string{clientOrigin}}
 	e := setup(t, func(c *account.Config) { c.Ended = gw })
 	gw.Sessions = account.GameTickets{Store: e.store}
 	gw.Characters = storeCharacters{e.store}

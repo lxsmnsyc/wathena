@@ -41,11 +41,47 @@ type EffectPart struct {
 	Variants []string `yaml:"variants"`
 	// Sound is a sound played when the effect starts.
 	Sound string `yaml:"sound"`
+	// Cylinder is a textured cone the client draws.
+	Cylinder *Cylinder `yaml:"cylinder"`
+}
+
+// Cylinder is roBrowser's CYLINDER effect type. effects.yml explains the
+// fields.
+type Cylinder struct {
+	Texture    string     `yaml:"texture"`
+	Bottom     float64    `yaml:"bottom"`
+	Top        float64    `yaml:"top"`
+	Height     float64    `yaml:"height"`
+	Color      [3]float64 `yaml:"color"`
+	Alpha      float64    `yaml:"alpha"`
+	DurationMs int        `yaml:"duration_ms"`
+	Copies     int        `yaml:"copies"`
+	CopyMs     int        `yaml:"copy_ms"`
+	Animation  int        `yaml:"animation"`
+	Fade       bool       `yaml:"fade"`
+	Repeat     bool       `yaml:"repeat"`
+}
+
+// check checks a cylinder's values.
+func (c *Cylinder) check() error {
+	if c.Bottom < 0 || c.Top < 0 || c.Height < 0 || c.Alpha < 0 || c.Alpha > 1 || c.DurationMs <= 0 ||
+		c.Copies < 1 || c.CopyMs < 0 || c.Animation < 0 || c.Animation > 5 {
+		return fmt.Errorf("effects.yml: cylinder %s has values out of range", c.Texture)
+	}
+	for _, v := range c.Color {
+		if v < 0 || v > 1 {
+			return fmt.Errorf("effects.yml: cylinder %s has a color out of range", c.Texture)
+		}
+	}
+	return checkName("effects.yml", c.Texture, "texture/")
 }
 
 // names returns the asset names a part refers to.
 func (p EffectPart) names() []string {
 	var out []string
+	if p.Cylinder != nil {
+		out = append(out, p.Cylinder.Texture)
+	}
 	for _, n := range append([]string{p.Effect, p.Sound}, p.Variants...) {
 		if n != "" {
 			out = append(out, n)
@@ -115,13 +151,18 @@ func ParseEffects(data []byte) (*Effects, error) {
 		ids[ef.ID] = true
 		for _, p := range ef.Parts {
 			set := 0
-			for _, ok := range []bool{p.Effect != "", len(p.Variants) > 0, p.Sound != ""} {
+			for _, ok := range []bool{p.Effect != "", len(p.Variants) > 0, p.Sound != "", p.Cylinder != nil} {
 				if ok {
 					set++
 				}
 			}
 			if set != 1 {
-				return nil, fmt.Errorf("effects.yml: effect %d: a part needs exactly one of effect, variants, and sound", ef.ID)
+				return nil, fmt.Errorf("effects.yml: effect %d: a part needs exactly one of effect, variants, sound, and cylinder", ef.ID)
+			}
+			if p.Cylinder != nil {
+				if err := p.Cylinder.check(); err != nil {
+					return nil, err
+				}
 			}
 			for _, n := range append([]string{p.Effect}, p.Variants...) {
 				if n == "" {

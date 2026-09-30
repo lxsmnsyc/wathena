@@ -764,6 +764,15 @@ func (x *Event) GetDropItemFailed() *DropItemFailed {
 	return nil
 }
 
+func (x *Event) GetMapChange() *MapChange {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_MapChange); ok {
+			return x.MapChange
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -906,6 +915,14 @@ func (x *Event) SetDropItemFailed(v *DropItemFailed) {
 		return
 	}
 	x.xxx_hidden_Body = &event_DropItemFailed{v}
+}
+
+func (x *Event) SetMapChange(v *MapChange) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_MapChange{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -1059,6 +1076,14 @@ func (x *Event) HasDropItemFailed() bool {
 	return ok
 }
 
+func (x *Event) HasMapChange() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_MapChange)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -1171,6 +1196,12 @@ func (x *Event) ClearDropItemFailed() {
 	}
 }
 
+func (x *Event) ClearMapChange() {
+	if _, ok := x.xxx_hidden_Body.(*event_MapChange); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -1190,6 +1221,7 @@ const Event_InventoryRemove_case case_Event_Body = 15
 const Event_ItemUsed_case case_Event_Body = 16
 const Event_UseItemFailed_case case_Event_Body = 17
 const Event_DropItemFailed_case case_Event_Body = 18
+const Event_MapChange_case case_Event_Body = 19
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -1232,6 +1264,8 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_UseItemFailed_case
 	case *event_DropItemFailed:
 		return Event_DropItemFailed_case
+	case *event_MapChange:
+		return Event_MapChange_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -1259,6 +1293,7 @@ type Event_builder struct {
 	ItemUsed        *ItemUsed
 	UseItemFailed   *UseItemFailed
 	DropItemFailed  *DropItemFailed
+	MapChange       *MapChange
 	// -- end of xxx_hidden_Body
 }
 
@@ -1319,6 +1354,9 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.DropItemFailed != nil {
 		x.xxx_hidden_Body = &event_DropItemFailed{b.DropItemFailed}
+	}
+	if b.MapChange != nil {
+		x.xxx_hidden_Body = &event_MapChange{b.MapChange}
 	}
 	return m0
 }
@@ -1409,6 +1447,10 @@ type event_DropItemFailed struct {
 	DropItemFailed *DropItemFailed `protobuf:"bytes,18,opt,name=drop_item_failed,json=dropItemFailed,proto3,oneof"`
 }
 
+type event_MapChange struct {
+	MapChange *MapChange `protobuf:"bytes,19,opt,name=map_change,json=mapChange,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -1445,8 +1487,120 @@ func (*event_UseItemFailed) isEvent_Body() {}
 
 func (*event_DropItemFailed) isEvent_Body() {}
 
+func (*event_MapChange) isEvent_Body() {}
+
+// MapChange moves the player to another map, after a warp. It is the
+// first event of the first frame from the new map. The client clears
+// every entity it shows, loads the map, and goes on. The player's own
+// EntityAppear follows, as after Welcome, and entity IDs start again for
+// the new map.
+type MapChange struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Map   string                 `protobuf:"bytes,1,opt,name=map,proto3"`
+	xxx_hidden_X     uint32                 `protobuf:"varint,2,opt,name=x,proto3"`
+	xxx_hidden_Y     uint32                 `protobuf:"varint,3,opt,name=y,proto3"`
+	xxx_hidden_NetId uint32                 `protobuf:"varint,4,opt,name=net_id,json=netId,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *MapChange) Reset() {
+	*x = MapChange{}
+	mi := &file_wathena_v1_event_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MapChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MapChange) ProtoMessage() {}
+
+func (x *MapChange) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *MapChange) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *MapChange) GetX() uint32 {
+	if x != nil {
+		return x.xxx_hidden_X
+	}
+	return 0
+}
+
+func (x *MapChange) GetY() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Y
+	}
+	return 0
+}
+
+func (x *MapChange) GetNetId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_NetId
+	}
+	return 0
+}
+
+func (x *MapChange) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *MapChange) SetX(v uint32) {
+	x.xxx_hidden_X = v
+}
+
+func (x *MapChange) SetY(v uint32) {
+	x.xxx_hidden_Y = v
+}
+
+func (x *MapChange) SetNetId(v uint32) {
+	x.xxx_hidden_NetId = v
+}
+
+type MapChange_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// map is the asset name of the new map, such as "map/prt_fild08".
+	Map string
+	// x and y are the player's cell on the new map.
+	X uint32
+	Y uint32
+	// net_id is the player's own entity ID on the new map.
+	NetId uint32
+}
+
+func (b0 MapChange_builder) Build() *MapChange {
+	m0 := &MapChange{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_X = b.X
+	x.xxx_hidden_Y = b.Y
+	x.xxx_hidden_NetId = b.NetId
+	return m0
+}
+
 // EntityAppear adds an entity to the player's view.
 // Entity IDs are per connection. They are never database IDs.
+//
+// A warp portal is ENTITY_KIND_NPC with look.body 45, rAthena's
+// JT_WARPNPC sprite, and no name.
 type EntityAppear struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Id         uint32                 `protobuf:"varint,1,opt,name=id,proto3"`
@@ -1465,7 +1619,7 @@ type EntityAppear struct {
 
 func (x *EntityAppear) Reset() {
 	*x = EntityAppear{}
-	mi := &file_wathena_v1_event_proto_msgTypes[1]
+	mi := &file_wathena_v1_event_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1477,7 +1631,7 @@ func (x *EntityAppear) String() string {
 func (*EntityAppear) ProtoMessage() {}
 
 func (x *EntityAppear) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[1]
+	mi := &file_wathena_v1_event_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1672,7 +1826,7 @@ type GroundItem struct {
 
 func (x *GroundItem) Reset() {
 	*x = GroundItem{}
-	mi := &file_wathena_v1_event_proto_msgTypes[2]
+	mi := &file_wathena_v1_event_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1684,7 +1838,7 @@ func (x *GroundItem) String() string {
 func (*GroundItem) ProtoMessage() {}
 
 func (x *GroundItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[2]
+	mi := &file_wathena_v1_event_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1795,7 +1949,7 @@ type Look struct {
 
 func (x *Look) Reset() {
 	*x = Look{}
-	mi := &file_wathena_v1_event_proto_msgTypes[3]
+	mi := &file_wathena_v1_event_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1807,7 +1961,7 @@ func (x *Look) String() string {
 func (*Look) ProtoMessage() {}
 
 func (x *Look) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[3]
+	mi := &file_wathena_v1_event_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1983,7 +2137,7 @@ type EntityVanish struct {
 
 func (x *EntityVanish) Reset() {
 	*x = EntityVanish{}
-	mi := &file_wathena_v1_event_proto_msgTypes[4]
+	mi := &file_wathena_v1_event_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1995,7 +2149,7 @@ func (x *EntityVanish) String() string {
 func (*EntityVanish) ProtoMessage() {}
 
 func (x *EntityVanish) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[4]
+	mi := &file_wathena_v1_event_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2059,7 +2213,7 @@ type EntityMove struct {
 
 func (x *EntityMove) Reset() {
 	*x = EntityMove{}
-	mi := &file_wathena_v1_event_proto_msgTypes[5]
+	mi := &file_wathena_v1_event_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2071,7 +2225,7 @@ func (x *EntityMove) String() string {
 func (*EntityMove) ProtoMessage() {}
 
 func (x *EntityMove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[5]
+	mi := &file_wathena_v1_event_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2191,7 +2345,7 @@ type EntityStop struct {
 
 func (x *EntityStop) Reset() {
 	*x = EntityStop{}
-	mi := &file_wathena_v1_event_proto_msgTypes[6]
+	mi := &file_wathena_v1_event_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2203,7 +2357,7 @@ func (x *EntityStop) String() string {
 func (*EntityStop) ProtoMessage() {}
 
 func (x *EntityStop) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[6]
+	mi := &file_wathena_v1_event_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2275,7 +2429,7 @@ type StatUpdate struct {
 
 func (x *StatUpdate) Reset() {
 	*x = StatUpdate{}
-	mi := &file_wathena_v1_event_proto_msgTypes[7]
+	mi := &file_wathena_v1_event_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2287,7 +2441,7 @@ func (x *StatUpdate) String() string {
 func (*StatUpdate) ProtoMessage() {}
 
 func (x *StatUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[7]
+	mi := &file_wathena_v1_event_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2335,7 +2489,7 @@ type Stat struct {
 
 func (x *Stat) Reset() {
 	*x = Stat{}
-	mi := &file_wathena_v1_event_proto_msgTypes[8]
+	mi := &file_wathena_v1_event_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2347,7 +2501,7 @@ func (x *Stat) String() string {
 func (*Stat) ProtoMessage() {}
 
 func (x *Stat) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[8]
+	mi := &file_wathena_v1_event_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2412,7 +2566,7 @@ type Damage struct {
 
 func (x *Damage) Reset() {
 	*x = Damage{}
-	mi := &file_wathena_v1_event_proto_msgTypes[9]
+	mi := &file_wathena_v1_event_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2424,7 +2578,7 @@ func (x *Damage) String() string {
 func (*Damage) ProtoMessage() {}
 
 func (x *Damage) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[9]
+	mi := &file_wathena_v1_event_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2568,7 +2722,7 @@ type SkillCast struct {
 
 func (x *SkillCast) Reset() {
 	*x = SkillCast{}
-	mi := &file_wathena_v1_event_proto_msgTypes[10]
+	mi := &file_wathena_v1_event_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2580,7 +2734,7 @@ func (x *SkillCast) String() string {
 func (*SkillCast) ProtoMessage() {}
 
 func (x *SkillCast) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[10]
+	mi := &file_wathena_v1_event_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2755,7 +2909,7 @@ func (b0 SkillCast_builder) Build() *SkillCast {
 type case_SkillCast_Target protoreflect.FieldNumber
 
 func (x case_SkillCast_Target) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[10].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[11].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -2790,7 +2944,7 @@ type ChatMessage struct {
 
 func (x *ChatMessage) Reset() {
 	*x = ChatMessage{}
-	mi := &file_wathena_v1_event_proto_msgTypes[11]
+	mi := &file_wathena_v1_event_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2802,7 +2956,7 @@ func (x *ChatMessage) String() string {
 func (*ChatMessage) ProtoMessage() {}
 
 func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[11]
+	mi := &file_wathena_v1_event_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2891,7 +3045,7 @@ type NpcDialog struct {
 
 func (x *NpcDialog) Reset() {
 	*x = NpcDialog{}
-	mi := &file_wathena_v1_event_proto_msgTypes[12]
+	mi := &file_wathena_v1_event_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2903,7 +3057,7 @@ func (x *NpcDialog) String() string {
 func (*NpcDialog) ProtoMessage() {}
 
 func (x *NpcDialog) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[12]
+	mi := &file_wathena_v1_event_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3168,7 +3322,7 @@ func (b0 NpcDialog_builder) Build() *NpcDialog {
 type case_NpcDialog_Prompt protoreflect.FieldNumber
 
 func (x case_NpcDialog_Prompt) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[12].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[13].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -3218,7 +3372,7 @@ type NpcMenu struct {
 
 func (x *NpcMenu) Reset() {
 	*x = NpcMenu{}
-	mi := &file_wathena_v1_event_proto_msgTypes[13]
+	mi := &file_wathena_v1_event_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3230,7 +3384,7 @@ func (x *NpcMenu) String() string {
 func (*NpcMenu) ProtoMessage() {}
 
 func (x *NpcMenu) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[13]
+	mi := &file_wathena_v1_event_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3276,7 +3430,7 @@ type EffectPlay struct {
 
 func (x *EffectPlay) Reset() {
 	*x = EffectPlay{}
-	mi := &file_wathena_v1_event_proto_msgTypes[14]
+	mi := &file_wathena_v1_event_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3288,7 +3442,7 @@ func (x *EffectPlay) String() string {
 func (*EffectPlay) ProtoMessage() {}
 
 func (x *EffectPlay) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[14]
+	mi := &file_wathena_v1_event_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3424,7 +3578,7 @@ func (b0 EffectPlay_builder) Build() *EffectPlay {
 type case_EffectPlay_At protoreflect.FieldNumber
 
 func (x case_EffectPlay_At) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[14].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[15].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -3458,7 +3612,7 @@ type ItemTaken struct {
 
 func (x *ItemTaken) Reset() {
 	*x = ItemTaken{}
-	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	mi := &file_wathena_v1_event_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3470,7 +3624,7 @@ func (x *ItemTaken) String() string {
 func (*ItemTaken) ProtoMessage() {}
 
 func (x *ItemTaken) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	mi := &file_wathena_v1_event_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3531,7 +3685,7 @@ type InventoryUpdate struct {
 
 func (x *InventoryUpdate) Reset() {
 	*x = InventoryUpdate{}
-	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	mi := &file_wathena_v1_event_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3543,7 +3697,7 @@ func (x *InventoryUpdate) String() string {
 func (*InventoryUpdate) ProtoMessage() {}
 
 func (x *InventoryUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	mi := &file_wathena_v1_event_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3608,7 +3762,7 @@ type InventoryItem struct {
 
 func (x *InventoryItem) Reset() {
 	*x = InventoryItem{}
-	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	mi := &file_wathena_v1_event_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3620,7 +3774,7 @@ func (x *InventoryItem) String() string {
 func (*InventoryItem) ProtoMessage() {}
 
 func (x *InventoryItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	mi := &file_wathena_v1_event_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3696,7 +3850,7 @@ type InventoryAdd struct {
 
 func (x *InventoryAdd) Reset() {
 	*x = InventoryAdd{}
-	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	mi := &file_wathena_v1_event_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3708,7 +3862,7 @@ func (x *InventoryAdd) String() string {
 func (*InventoryAdd) ProtoMessage() {}
 
 func (x *InventoryAdd) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	mi := &file_wathena_v1_event_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3784,7 +3938,7 @@ type InventoryRemove struct {
 
 func (x *InventoryRemove) Reset() {
 	*x = InventoryRemove{}
-	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	mi := &file_wathena_v1_event_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3796,7 +3950,7 @@ func (x *InventoryRemove) String() string {
 func (*InventoryRemove) ProtoMessage() {}
 
 func (x *InventoryRemove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	mi := &file_wathena_v1_event_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3870,7 +4024,7 @@ type ItemUsed struct {
 
 func (x *ItemUsed) Reset() {
 	*x = ItemUsed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	mi := &file_wathena_v1_event_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3882,7 +4036,7 @@ func (x *ItemUsed) String() string {
 func (*ItemUsed) ProtoMessage() {}
 
 func (x *ItemUsed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	mi := &file_wathena_v1_event_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3942,7 +4096,7 @@ type UseItemFailed struct {
 
 func (x *UseItemFailed) Reset() {
 	*x = UseItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3954,7 +4108,7 @@ func (x *UseItemFailed) String() string {
 func (*UseItemFailed) ProtoMessage() {}
 
 func (x *UseItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4014,7 +4168,7 @@ type DropItemFailed struct {
 
 func (x *DropItemFailed) Reset() {
 	*x = DropItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4026,7 +4180,7 @@ func (x *DropItemFailed) String() string {
 func (*DropItemFailed) ProtoMessage() {}
 
 func (x *DropItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4086,7 +4240,7 @@ type PickUpFailed struct {
 
 func (x *PickUpFailed) Reset() {
 	*x = PickUpFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	mi := &file_wathena_v1_event_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4098,7 +4252,7 @@ func (x *PickUpFailed) String() string {
 func (*PickUpFailed) ProtoMessage() {}
 
 func (x *PickUpFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	mi := &file_wathena_v1_event_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4152,7 +4306,7 @@ var File_wathena_v1_event_proto protoreflect.FileDescriptor
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\x86\b\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xbe\b\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -4175,8 +4329,15 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x10inventory_remove\x18\x0f \x01(\v2\x1b.wathena.v1.InventoryRemoveH\x00R\x0finventoryRemove\x123\n" +
 	"\titem_used\x18\x10 \x01(\v2\x14.wathena.v1.ItemUsedH\x00R\bitemUsed\x12C\n" +
 	"\x0fuse_item_failed\x18\x11 \x01(\v2\x19.wathena.v1.UseItemFailedH\x00R\ruseItemFailed\x12F\n" +
-	"\x10drop_item_failed\x18\x12 \x01(\v2\x1a.wathena.v1.DropItemFailedH\x00R\x0edropItemFailedB\x06\n" +
-	"\x04body\"\x98\x02\n" +
+	"\x10drop_item_failed\x18\x12 \x01(\v2\x1a.wathena.v1.DropItemFailedH\x00R\x0edropItemFailed\x126\n" +
+	"\n" +
+	"map_change\x18\x13 \x01(\v2\x15.wathena.v1.MapChangeH\x00R\tmapChangeB\x06\n" +
+	"\x04body\"P\n" +
+	"\tMapChange\x12\x10\n" +
+	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
+	"\x01x\x18\x02 \x01(\rR\x01x\x12\f\n" +
+	"\x01y\x18\x03 \x01(\rR\x01y\x12\x15\n" +
+	"\x06net_id\x18\x04 \x01(\rR\x05netId\"\x98\x02\n" +
 	"\fEntityAppear\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12*\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x16.wathena.v1.EntityKindR\x04kind\x12\f\n" +
@@ -4401,7 +4562,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x18PICK_UP_FAILURE_TOO_MANY\x10\x05B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),            // 0: wathena.v1.EntityKind
 	(VanishReason)(0),          // 1: wathena.v1.VanishReason
@@ -4412,72 +4573,74 @@ var file_wathena_v1_event_proto_goTypes = []any{
 	(DropItemFailure)(0),       // 6: wathena.v1.DropItemFailure
 	(PickUpFailure)(0),         // 7: wathena.v1.PickUpFailure
 	(*Event)(nil),              // 8: wathena.v1.Event
-	(*EntityAppear)(nil),       // 9: wathena.v1.EntityAppear
-	(*GroundItem)(nil),         // 10: wathena.v1.GroundItem
-	(*Look)(nil),               // 11: wathena.v1.Look
-	(*EntityVanish)(nil),       // 12: wathena.v1.EntityVanish
-	(*EntityMove)(nil),         // 13: wathena.v1.EntityMove
-	(*EntityStop)(nil),         // 14: wathena.v1.EntityStop
-	(*StatUpdate)(nil),         // 15: wathena.v1.StatUpdate
-	(*Stat)(nil),               // 16: wathena.v1.Stat
-	(*Damage)(nil),             // 17: wathena.v1.Damage
-	(*SkillCast)(nil),          // 18: wathena.v1.SkillCast
-	(*ChatMessage)(nil),        // 19: wathena.v1.ChatMessage
-	(*NpcDialog)(nil),          // 20: wathena.v1.NpcDialog
-	(*NpcMenu)(nil),            // 21: wathena.v1.NpcMenu
-	(*EffectPlay)(nil),         // 22: wathena.v1.EffectPlay
-	(*ItemTaken)(nil),          // 23: wathena.v1.ItemTaken
-	(*InventoryUpdate)(nil),    // 24: wathena.v1.InventoryUpdate
-	(*InventoryItem)(nil),      // 25: wathena.v1.InventoryItem
-	(*InventoryAdd)(nil),       // 26: wathena.v1.InventoryAdd
-	(*InventoryRemove)(nil),    // 27: wathena.v1.InventoryRemove
-	(*ItemUsed)(nil),           // 28: wathena.v1.ItemUsed
-	(*UseItemFailed)(nil),      // 29: wathena.v1.UseItemFailed
-	(*DropItemFailed)(nil),     // 30: wathena.v1.DropItemFailed
-	(*PickUpFailed)(nil),       // 31: wathena.v1.PickUpFailed
-	(*Cell)(nil),               // 32: wathena.v1.Cell
-	(ChatChannel)(0),           // 33: wathena.v1.ChatChannel
+	(*MapChange)(nil),          // 9: wathena.v1.MapChange
+	(*EntityAppear)(nil),       // 10: wathena.v1.EntityAppear
+	(*GroundItem)(nil),         // 11: wathena.v1.GroundItem
+	(*Look)(nil),               // 12: wathena.v1.Look
+	(*EntityVanish)(nil),       // 13: wathena.v1.EntityVanish
+	(*EntityMove)(nil),         // 14: wathena.v1.EntityMove
+	(*EntityStop)(nil),         // 15: wathena.v1.EntityStop
+	(*StatUpdate)(nil),         // 16: wathena.v1.StatUpdate
+	(*Stat)(nil),               // 17: wathena.v1.Stat
+	(*Damage)(nil),             // 18: wathena.v1.Damage
+	(*SkillCast)(nil),          // 19: wathena.v1.SkillCast
+	(*ChatMessage)(nil),        // 20: wathena.v1.ChatMessage
+	(*NpcDialog)(nil),          // 21: wathena.v1.NpcDialog
+	(*NpcMenu)(nil),            // 22: wathena.v1.NpcMenu
+	(*EffectPlay)(nil),         // 23: wathena.v1.EffectPlay
+	(*ItemTaken)(nil),          // 24: wathena.v1.ItemTaken
+	(*InventoryUpdate)(nil),    // 25: wathena.v1.InventoryUpdate
+	(*InventoryItem)(nil),      // 26: wathena.v1.InventoryItem
+	(*InventoryAdd)(nil),       // 27: wathena.v1.InventoryAdd
+	(*InventoryRemove)(nil),    // 28: wathena.v1.InventoryRemove
+	(*ItemUsed)(nil),           // 29: wathena.v1.ItemUsed
+	(*UseItemFailed)(nil),      // 30: wathena.v1.UseItemFailed
+	(*DropItemFailed)(nil),     // 31: wathena.v1.DropItemFailed
+	(*PickUpFailed)(nil),       // 32: wathena.v1.PickUpFailed
+	(*Cell)(nil),               // 33: wathena.v1.Cell
+	(ChatChannel)(0),           // 34: wathena.v1.ChatChannel
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
-	9,  // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
-	12, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
-	13, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
-	14, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
-	15, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
-	17, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
-	18, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
-	19, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
-	20, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
-	22, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
-	23, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
-	26, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
-	31, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
-	24, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
-	27, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
-	28, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
-	29, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
-	30, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
-	0,  // 18: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	11, // 19: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	10, // 20: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	1,  // 21: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	16, // 22: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 23: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 24: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	32, // 25: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	33, // 26: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	21, // 27: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	32, // 28: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	25, // 29: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	4,  // 30: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	5,  // 31: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	6,  // 32: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	7,  // 33: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	34, // [34:34] is the sub-list for method output_type
-	34, // [34:34] is the sub-list for method input_type
-	34, // [34:34] is the sub-list for extension type_name
-	34, // [34:34] is the sub-list for extension extendee
-	0,  // [0:34] is the sub-list for field type_name
+	10, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
+	13, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
+	14, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
+	15, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
+	16, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
+	18, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
+	19, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
+	20, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
+	21, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
+	23, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
+	24, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
+	27, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
+	32, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
+	25, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
+	28, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
+	29, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
+	30, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
+	31, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
+	9,  // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
+	0,  // 19: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	12, // 20: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	11, // 21: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	1,  // 22: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	17, // 23: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,  // 24: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,  // 25: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	33, // 26: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	34, // 27: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	22, // 28: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	33, // 29: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	26, // 30: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	4,  // 31: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	5,  // 32: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	6,  // 33: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	7,  // 34: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	35, // [35:35] is the sub-list for method output_type
+	35, // [35:35] is the sub-list for method input_type
+	35, // [35:35] is the sub-list for extension type_name
+	35, // [35:35] is the sub-list for extension extendee
+	0,  // [0:35] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -4505,19 +4668,20 @@ func file_wathena_v1_event_proto_init() {
 		(*event_ItemUsed)(nil),
 		(*event_UseItemFailed)(nil),
 		(*event_DropItemFailed)(nil),
+		(*event_MapChange)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[10].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[11].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
 		(*skillCast_Cell)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[12].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[13].OneofWrappers = []any{
 		(*npcDialog_Next)(nil),
 		(*npcDialog_Menu)(nil),
 		(*npcDialog_InputText)(nil),
 		(*npcDialog_InputNumber)(nil),
 		(*npcDialog_Close)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[14].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[15].OneofWrappers = []any{
 		(*effectPlay_Entity)(nil),
 		(*effectPlay_Cell)(nil),
 	}
@@ -4527,7 +4691,7 @@ func file_wathena_v1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
 			NumEnums:      8,
-			NumMessages:   24,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -16,10 +16,33 @@ export interface Weapon {
 }
 
 /**
- * One thing an effect shows: an STR effect, one of several STR effects at
- * random, or a sound.
+ * A textured cone the client draws, as roBrowser's CYLINDER effects.
+ * data/effects.yml explains the fields.
  */
-export type EffectPart = { effect: string } | { variants: string[] } | { sound: string };
+export interface Cylinder {
+  texture: string;
+  bottom: number;
+  top: number;
+  height: number;
+  color: [number, number, number];
+  alpha: number;
+  duration_ms: number;
+  copies: number;
+  copy_ms: number;
+  animation: number;
+  fade: boolean;
+  repeat: boolean;
+}
+
+/**
+ * One thing an effect shows: an STR effect, one of several STR effects at
+ * random, a sound, or a cylinder.
+ */
+export type EffectPart =
+  | { effect: string }
+  | { variants: string[] }
+  | { sound: string }
+  | { cylinder: Cylinder };
 
 /**
  * The STR effect a part shows, or undefined for a sound. random(n) picks
@@ -61,10 +84,28 @@ function isWeapon(v: unknown): v is Weapon {
   );
 }
 
+function isCylinder(v: unknown): v is Cylinder {
+  return (
+    isObject(v) &&
+    typeof v.texture === 'string' &&
+    ['bottom', 'top', 'height', 'alpha', 'duration_ms', 'copies', 'copy_ms', 'animation'].every(
+      (k) => typeof v[k] === 'number',
+    ) &&
+    Array.isArray(v.color) &&
+    v.color.length === 3 &&
+    v.color.every((c) => typeof c === 'number') &&
+    typeof v.fade === 'boolean' &&
+    typeof v.repeat === 'boolean'
+  );
+}
+
 function isPart(v: unknown): v is EffectPart {
   return (
     isObject(v) &&
-    (typeof v.effect === 'string' || strings(v.variants) || typeof v.sound === 'string')
+    (typeof v.effect === 'string' ||
+      strings(v.variants) ||
+      typeof v.sound === 'string' ||
+      isCylinder(v.cylinder))
   );
 }
 

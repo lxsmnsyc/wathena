@@ -200,7 +200,13 @@ function mb(bytes: number): string {
   return `${(bytes / 1e6).toFixed(1)} MB`;
 }
 
-async function show(name: string): Promise<void> {
+/**
+ * Loads a map and shows it. at is the cell the camera starts on; without
+ * it, the camera starts on the player or the map's center. It resolves
+ * true once the map is ready, or false when a newer load replaced it or
+ * it failed.
+ */
+async function show(name: string, at?: [number, number]): Promise<boolean> {
   const id = ++loading;
   const start = performance.now();
   const workerStart = workerBytes;
@@ -224,7 +230,7 @@ async function show(name: string): Promise<void> {
       name.includes('/') ? name : `map/${name}`,
     );
     if (id !== loading) {
-      return;
+      return false;
     }
     if (current !== undefined) {
       scene.remove(current.group);
@@ -236,6 +242,9 @@ async function show(name: string): Promise<void> {
     effectGroup.clear();
     playing = [];
     const views = await Promise.all(effectNames.map(async (n) => effects.get(n)));
+    if (id !== loading) {
+      return false;
+    }
     views.forEach((effect, i) => {
       if (effect === undefined) {
         return;
@@ -266,10 +275,9 @@ async function show(name: string): Promise<void> {
       session.online.effects = { cache: effects, textures: next.textures };
       session.online.setMap(next.map);
     }
-    const [px, py] =
-      session?.online.me === undefined
-        ? Player.start(next.map)
-        : [session.online.me.x, session.online.me.y];
+    // Online, the player's own cell comes in the first frame, which
+    // setMap has just shown.
+    const [px, py] = at ?? session?.online.selfCell ?? Player.start(next.map);
     const cx = px + 0.5;
     const cz = -(py + 0.5);
     const size = Math.max(next.map.width, next.map.height);
@@ -323,12 +331,27 @@ async function show(name: string): Promise<void> {
       ),
     ]);
     progress('done');
+    return id === loading;
   } catch (error) {
     status!.value = String(error);
+    return false;
   } finally {
     clearInterval(timer);
   }
 }
+
+/** A map load after a warp, for the budget of strategy section 3.8. */
+interface MapLoad {
+  map: string;
+  /** Milliseconds from MapChange to the map being ready. */
+  ms: number;
+  /** Asset files and decoded bytes the load read. */
+  files: number;
+  bytes: number;
+}
+const mapLoads: MapLoad[] = [];
+/** Set while a map change loads. Clicks do nothing then. */
+let changingMap = false;
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -595,6 +618,38 @@ if (serverURL === null) {
       }
     });
   }
+  // A warp moves the player to another map: the view clears, a loading
+  // screen shows, and the new map loads from the asset store, which the
+  // Service Worker caches.
+  const loadingView = document.querySelector<HTMLDivElement>('#loading');
+  view.onMapChange = (map, x, y) => {
+    const started = performance.now();
+    const before = { ...store.stats };
+    changingMap = true;
+    if (loadingView !== null) {
+      loadingView.textContent = `Loading ${map.replace(/^map\//, '')}…`;
+      loadingView.hidden = false;
+    }
+    input.value = map;
+    show(map, [x, y])
+      .then((shown) => {
+        if (!shown) {
+          return;
+        }
+        const ms = performance.now() - started;
+        mapLoads.push({
+          map,
+          ms,
+          files: store.stats.files - before.files,
+          bytes: store.stats.bytes - before.bytes,
+        });
+        changingMap = false;
+        if (loadingView !== null) {
+          loadingView.hidden = true;
+        }
+      })
+      .catch(reportError);
+  };
   session = { connection, online: view };
   scene.add(view.group);
   input.value = connection.welcome.map;
@@ -611,6 +666,8 @@ if (import.meta.env.DEV) {
     playing: () => playing,
     player: () => player,
     session: () => session,
+    mapLoads: () => mapLoads,
+    map: () => current?.map,
   });
 }
 
@@ -635,7 +692,7 @@ canvas.addEventListener('pointerup', (e) => {
     return;
   }
   const ground = current?.group.getObjectByName('ground');
-  if (ground === undefined || (player === undefined && session === undefined)) {
+  if (ground === undefined || (player === undefined && session === undefined) || changingMap) {
     return;
   }
   const rect = canvas.getBoundingClientRect();

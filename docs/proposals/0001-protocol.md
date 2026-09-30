@@ -74,7 +74,7 @@ Server to client, in `ServerMessage`:
 ### Tick frames
 
 - The server sends at most one `Frame` per player per tick (50 ms). Ticks with nothing visible send nothing.
-- A `Frame` holds a list of `Event` values: entities appearing, vanishing, moving, and stopping, stat changes, damage, skill casts, chat, NPC dialog steps, and effects.
+- A `Frame` holds a list of `Event` values: entities appearing, vanishing, moving, and stopping, stat changes, damage, skill casts, chat, NPC dialog steps, effects, and map changes.
 - Times inside a frame are milliseconds from the start of that tick, so events keep their exact timing within the 50 ms.
 
 ### Encoding rules
@@ -102,6 +102,14 @@ Server to client, in `ServerMessage`:
   - Spaces at both ends are trimmed. A line that is then empty, or longer than 255 characters, is dropped. A character is a Unicode code point.
   - Clients show chat with `textContent`, never as HTML (strategy section 7.5).
 - **Appearance uses table IDs.** `Look` holds sprite and palette IDs from the client data tables (strategy section 10.5).
+- **Warp portals are NPCs.** A warp appears as `ENTITY_KIND_NPC` with `look.body` 45, rAthena's `JT_WARPNPC` sprite, and no name. The client draws effect 321 (`EF_WARPZONE2`) on it, as roBrowser does for job 45. Hidden warps (rAthena's `JT_HIDDEN_WARP_NPC`, 139) never appear. A player who walks into a warp's area goes to its target, as rAthena's `npc_touch_areanpc`. Warps are NPCs rather than a kind of their own, because rAthena's script NPCs with the warp sprite will show the same way once scripts run.
+- **A warp to another map is a map change, on the same connection.** The first frame from the new map starts with `MapChange`: the new map's asset name, the player's cell, and the player's own entity ID there. Then, as after `Welcome`:
+  - The player's own `EntityAppear` follows, and then the inventory and stats again.
+  - Entity IDs start again on the new map. The client removes every entity it showed before the change.
+  - The client loads the new map, and applies the events after `MapChange`, in order, once it has loaded.
+  - Frames from the old map can arrive before the change. Commands sent while the player moves between maps are dropped, as rAthena ignores them during a map change, and `Frame.ack_seq` continues from the old map.
+  - Other players on the old map see the player vanish with `VANISH_REASON_OUT_OF_SIGHT`, as rAthena's `pc_setpos` with `CLR_OUTSIGHT`.
+  - A warp within the same map sends no `MapChange`. The player's own `EntityAppear` comes again at the new cell, as after a revive.
 
 ### Limits
 
@@ -129,7 +137,7 @@ Encoded sizes: a 10-step walk is 26 bytes, a player appearing is 68 bytes, and a
 
 ## Breaks
 
-Nothing is deployed yet, so nothing breaks. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.
+Nothing is deployed yet, so nothing breaks. `MapChange` is a new `Event` case, and warp portals are a new use of `ENTITY_KIND_NPC`, so the protocol version stays 1. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.
 
 ## Alternatives
 
@@ -145,5 +153,4 @@ Nothing is deployed yet, so nothing breaks. The inventory changed messages that 
 ## Open points for later proposals
 
 - Messages for equipment, item scripts other than heals, skills lists, party, guild, trade, vending, storage, and mail.
-- Map changes and zone handoff during warps.
 - Admin tool messages (strategy section 10.6), which may use a separate endpoint.

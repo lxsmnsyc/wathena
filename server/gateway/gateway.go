@@ -106,14 +106,29 @@ type Characters interface {
 	Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error)
 }
 
+// World is where sessions play. A single *zone.Zone is one, and so is a
+// world of several zones, which puts each character in the zone of its
+// map.
+type World interface {
+	// JoinCharacter adds a loaded character to the world and returns its
+	// session. saver, when not nil, saves the character.
+	JoinCharacter(ctx context.Context, c *character.Character, saver zone.Saver) (*zone.Session, error)
+	// NewCharacter is a new character, on the map where new characters
+	// start.
+	NewCharacter(name string, look zone.Look) character.Character
+}
+
 // Gateway serves the protocol over WebSocket.
+//
+// A session keeps its connection when the player changes maps: commands
+// go to the zone the player is in, through its zone.Session.
 //
 // One character has at most one session. A login for a character that
 // is already playing kicks the older session, as rAthena does, and waits
 // until the older session's last save is queued before loading the
 // character. The older connection gets DISCONNECT_REASON_LOGGED_IN_ELSEWHERE.
 type Gateway struct {
-	Zone     *zone.Zone
+	World    World
 	Sessions Sessions
 	// Characters loads characters. When nil, every session plays a new
 	// character that only lives in memory.
@@ -310,7 +325,7 @@ func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
 	if err != nil {
 		return g.loadFailed(ctx, c, err)
 	}
-	p, netID, tick, err := g.Zone.JoinCharacter(ctx, char, saver)
+	p, err := g.World.JoinCharacter(ctx, char, saver)
 	if err != nil {
 		if saver != nil {
 			// The session ends before it started. Its character is
@@ -319,18 +334,18 @@ func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
 		}
 		return err
 	}
-	defer g.Zone.Leave(p)
+	defer p.Leave()
 	welcome := wathenav1.ServerMessage_builder{Welcome: wathenav1.Welcome_builder{
 		ProtocolVersion: schema.Version,
 		ServerTimeMs:    uint64(time.Now().UnixMilli()), // #nosec G115 -- the clock is after 1970.
-		Tick:            tick,
-		NetId:           netID,
-		Map:             g.Zone.Map,
+		Tick:            p.Tick,
+		NetId:           p.NetID,
+		Map:             p.Map,
 	}.Build()}.Build()
 	if err := write(ctx, c, welcome); err != nil {
 		return err
 	}
-	g.Zone.Ack(p, seq)
+	p.Ack(seq)
 
 	// Messages from the zone go out on their own goroutine, so a client
 	// that stops reading cannot block the reader.
@@ -356,13 +371,14 @@ func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
 				return
 			}
 		}
-		// The zone dropped the player, such as for falling behind.
+		// The zone dropped the player, such as for falling behind, or
+		// the player left the world.
 		_ = c.Close(websocket.StatusNormalClosure, "")
 	}()
 	return g.read(ctx, c, p, seq)
 }
 
-func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Player, seq uint32) error {
+func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Session, seq uint32) error {
 	chat := newChatLimit(time.Now())
 	for {
 		m, err := readMessage(ctx, c)
@@ -387,10 +403,10 @@ func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Player, s
 			if err := write(ctx, c, pong); err != nil {
 				return err
 			}
-			queued = g.Zone.Ack(p, seq)
+			queued = p.Ack(seq)
 		case m.GetCommand().HasAttack():
 			a := m.GetCommand().GetAttack()
-			queued = g.Zone.Attack(p, seq, a.GetTarget(), a.GetRepeat())
+			queued = p.Attack(seq, a.GetTarget(), a.GetRepeat())
 		case m.GetCommand().HasChat():
 			ok, over := chat.allow(time.Now())
 			if over {
@@ -402,44 +418,44 @@ func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Player, s
 			// rAthena's min_chat_delay does. Only local chat exists so
 			// far, so other channels are ignored.
 			if !ok || !valid || ch.GetChannel() != wathenav1.ChatChannel_CHAT_CHANNEL_LOCAL {
-				queued = g.Zone.Ack(p, seq)
+				queued = p.Ack(seq)
 				break
 			}
-			queued = g.Zone.Chat(p, seq, text)
+			queued = p.Chat(seq, text)
 		case m.GetCommand().HasPickUp():
-			queued = g.Zone.PickUp(p, seq, m.GetCommand().GetPickUp().GetItem())
+			queued = p.PickUp(seq, m.GetCommand().GetPickUp().GetItem())
 		case m.GetCommand().HasRaiseStat():
 			r := m.GetCommand().GetRaiseStat()
 			st, amount := r.GetStat(), r.GetAmount()
 			if st < wathenav1.BaseStat_BASE_STAT_STR || st > wathenav1.BaseStat_BASE_STAT_LUK || amount < 1 || amount > MaxRaise {
 				// A stat or amount out of range raises nothing, as
 				// pc_statusup refuses it.
-				queued = g.Zone.Ack(p, seq)
+				queued = p.Ack(seq)
 				break
 			}
-			queued = g.Zone.RaiseStat(p, seq, status.Stat(st-wathenav1.BaseStat_BASE_STAT_STR), int(amount))
+			queued = p.RaiseStat(seq, status.Stat(st-wathenav1.BaseStat_BASE_STAT_STR), int(amount))
 		case m.GetCommand().HasUseItem():
 			slot := m.GetCommand().GetUseItem().GetSlot()
 			if slot >= item.MaxInventory {
 				// clif_parse_UseItem ignores an index past MAX_INVENTORY.
-				queued = g.Zone.Ack(p, seq)
+				queued = p.Ack(seq)
 				break
 			}
-			queued = g.Zone.UseItem(p, seq, int(slot))
+			queued = p.UseItem(seq, int(slot))
 		case m.GetCommand().HasDropItem():
 			d := m.GetCommand().GetDropItem()
 			if d.GetSlot() >= item.MaxInventory || d.GetAmount() > item.MaxAmount {
 				// No slot or stack is that large, so nothing drops.
-				queued = g.Zone.Ack(p, seq)
+				queued = p.Ack(seq)
 				break
 			}
-			queued = g.Zone.DropItem(p, seq, int(d.GetSlot()), int(d.GetAmount()))
+			queued = p.DropItem(seq, int(d.GetSlot()), int(d.GetAmount()))
 		case m.GetCommand().HasWalkTo():
 			w := m.GetCommand().GetWalkTo()
-			queued = g.Zone.WalkTo(p, seq, int(w.GetX()), int(w.GetY()))
+			queued = p.WalkTo(seq, int(w.GetX()), int(w.GetY()))
 		default:
 			// Unknown commands are ignored, so newer clients still work.
-			queued = g.Zone.Ack(p, seq)
+			queued = p.Ack(seq)
 		}
 		if !queued {
 			return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_RATE_LIMITED, "Too many actions at once.")
@@ -498,7 +514,7 @@ func (g *Gateway) characters() Characters {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if g.memory == nil {
-		g.memory = &memoryCharacters{zone: g.Zone, ids: map[string]int64{}, looks: map[int64]memoryCharacter{}}
+		g.memory = &memoryCharacters{world: g.World, ids: map[string]int64{}, looks: map[int64]memoryCharacter{}}
 	}
 	return g.memory
 }
@@ -514,7 +530,7 @@ func (g *Gateway) loadFailed(ctx context.Context, c *websocket.Conn, err error) 
 // in memory. Names that differ only in case are the same character, as
 // in the database.
 type memoryCharacters struct {
-	zone  *zone.Zone
+	world World
 	mu    sync.Mutex
 	ids   map[string]int64
 	looks map[int64]memoryCharacter
@@ -542,7 +558,7 @@ func (m *memoryCharacters) Load(_ context.Context, id int64) (*character.Charact
 	m.mu.Lock()
 	mc := m.looks[id]
 	m.mu.Unlock()
-	c := m.zone.NewCharacter(mc.name, mc.look)
+	c := m.world.NewCharacter(mc.name, mc.look)
 	return &c, nil, nil
 }
 

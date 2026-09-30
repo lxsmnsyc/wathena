@@ -1,8 +1,12 @@
 // Command waserver runs a game server in one process: it serves an asset
-// build over HTTP, the account service's pages under /account/, and one
-// zone over WebSocket.
+// build over HTTP, the account service's pages under /account/, and a
+// world of zones over WebSocket, one zone per map.
 //
-//	waserver --assets <build> --map prontera
+//	waserver --assets <build> --map prontera --maps prontera,prt_fild08,prt_in
+//
+// --maps lists the maps to run, or is "all" for every map in the asset
+// build. Warps between running maps work. --map is where new characters
+// start, and must be one of them.
 //
 // With accounts, the default, waserver needs two PostgreSQL URLs, from
 // environment variables so the passwords do not show in process lists:
@@ -40,8 +44,11 @@ import (
 	"net/netip"
 	"os"
 	"os/signal"
+	"runtime"
+	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -59,6 +66,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
+	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -73,7 +81,8 @@ func main() {
 
 func run() error {
 	assets := flag.String("assets", "", "asset build folder")
-	mapName := flag.String("map", "prontera", "map to run, such as prontera or placeholder/map")
+	mapName := flag.String("map", "prontera", "map where new characters start, such as prontera or placeholder/map")
+	mapList := flag.String("maps", "", "maps to run, comma-separated, or all for every map in the asset build; empty runs --map only")
 	addr := flag.String("addr", "127.0.0.1:8300", "address to listen on")
 	dev := flag.Bool("dev", false, "accept any name as a session token, for development only; needs a loopback --addr")
 	origins := flag.String("origins", "http://localhost:5173,http://127.0.0.1:5173", "trusted web client origins, as scheme://host[:port], comma-separated. They may open the WebSocket and fetch game tickets")
@@ -114,11 +123,8 @@ func run() error {
 	default:
 		return fmt.Errorf("unknown --captcha %q", *captcha)
 	}
-	name := *mapName
-	if !strings.Contains(name, "/") {
-		name = "map/" + name
-	}
-	grid, err := loadGrid(*assets, name)
+	name := assetName(*mapName)
+	names, err := selectMaps(*assets, name, *mapList)
 	if err != nil {
 		return err
 	}
@@ -137,7 +143,15 @@ func run() error {
 			return err
 		}
 	}
-	spawns, err := loadSpawns(reference.Mode(*mode), strings.TrimPrefix(name, "map/"), tables, data)
+	spawns, err := loadSpawns(reference.Mode(*mode), tables, data)
+	if err != nil {
+		return err
+	}
+	statusMode := reference.Mode(*mode)
+	if *mode == "none" {
+		statusMode = reference.Renewal
+	}
+	warps, err := world.LoadWarps(statusMode)
 	if err != nil {
 		return err
 	}
@@ -145,23 +159,43 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	z := zone.New(name, grid, root.Child("zone", 0).SecretStream(), spawns)
-	z.Progress = tables
-	statusMode := reference.Mode(*mode)
-	if *mode == "none" {
-		statusMode = reference.Renewal
-	}
-	if z.Status, z.Start, err = startCharacter(statusMode, *build); err != nil {
+	jobs, start, err := startCharacter(statusMode, *build)
+	if err != nil {
 		return err
 	}
-	if z.Items, err = loadItems(statusMode); err != nil {
+	items, err := loadItems(statusMode)
+	if err != nil {
 		return err
 	}
-	if z.StartItems, err = parseStartItems(*startItems); err != nil {
+	given, err := parseStartItems(*startItems)
+	if err != nil {
 		return err
 	}
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	gw := &gateway.Gateway{Zone: z, Sessions: gateway.DevSessions{}, Origins: clientOrigins, Log: log}
+	started := time.Now()
+	grids, err := loadGrids(*assets, names)
+	if err != nil {
+		return err
+	}
+	zones := make([]*zone.Zone, len(names))
+	monsters, warpCount := 0, 0
+	for i, n := range names {
+		id := strings.TrimPrefix(n, "map/")
+		// Each zone has its own secret stream from the world's root, so
+		// no zone's randomness depends on another's (rng-v1, label
+		// zone:<map ID>).
+		z := zone.New(n, grids[i], root.Child("zone:"+id).SecretStream(), spawns[id])
+		z.Progress, z.Status, z.Start, z.Items, z.StartItems = tables, jobs, start, items, given
+		z.SetWarps(warps[n])
+		zones[i] = z
+		monsters += count(spawns[id])
+		warpCount += len(warps[n])
+	}
+	w, err := world.New(name, zones...)
+	if err != nil {
+		return err
+	}
+	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: clientOrigins, Log: log}
 	var st *store.Store
 	if *database != "" {
 		pool, err := openDatabase(ctx, *database, "waserver")
@@ -170,7 +204,7 @@ func run() error {
 		}
 		defer pool.Close()
 		st = store.New(pool, store.Options{Log: log})
-		gw.Characters = dbCharacters{store: st, zone: z}
+		gw.Characters = dbCharacters{store: st, world: w}
 	}
 	var accounts *account.Service
 	if !*dev {
@@ -193,7 +227,7 @@ func run() error {
 				if look.Male {
 					sex = 1
 				}
-				return z.NewCharacter(name, zone.Look{Sex: sex, Hair: uint32(look.Hair), HairColor: uint32(look.HairColor)}) // #nosec G115 -- the account service keeps hair values small.
+				return w.NewCharacter(name, zone.Look{Sex: sex, Hair: uint32(look.Hair), HairColor: uint32(look.HairColor)}) // #nosec G115 -- the account service keeps hair values small.
 			},
 			Captcha: captchaProvider, TrustedProxies: trustedProxies, Log: log,
 			Sealer: sealer,
@@ -206,12 +240,12 @@ func run() error {
 		gw.Sessions = account.GameTickets{Store: st}
 		go accounts.Run(ctx)
 	}
-	go z.Run(ctx)
+	go w.Run(ctx)
 	if st != nil {
-		// On shutdown the zone hands every player's last save to the
+		// On shutdown every zone hands its players' last saves to the
 		// store, which then gets 10 seconds to write them.
 		defer func() {
-			<-z.Stopped()
+			<-w.Stopped()
 			drain, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			if err := st.Close(drain); err != nil {
@@ -233,7 +267,11 @@ func run() error {
 		defer cancel()
 		_ = srv.Shutdown(shutdown)
 	}()
-	log.Info("serving", "map", name, "monsters", count(spawns), "database", st != nil, "accounts", accounts != nil, "assets", "http://"+*addr+"/assets/", "websocket", "ws://"+*addr+"/ws")
+	var mem runtime.MemStats
+	runtime.GC()
+	runtime.ReadMemStats(&mem)
+	log.Info("serving", "maps", len(names), "start", name, "monsters", monsters, "warps", warpCount,
+		"startup", time.Since(started).Round(time.Millisecond), "heap_mb", mem.HeapAlloc>>20, "database", st != nil, "accounts", accounts != nil, "assets", "http://"+*addr+"/assets/", "websocket", "ws://"+*addr+"/ws")
 	if accounts != nil {
 		base := *accountURL
 		if base == "" {
@@ -354,11 +392,11 @@ func openDatabase(ctx context.Context, url, app string) (*pgxpool.Pool, error) {
 // character of that name.
 type dbCharacters struct {
 	store *store.Store
-	zone  *zone.Zone
+	world *world.World
 }
 
 func (d dbCharacters) Find(ctx context.Context, name string, look zone.Look) (int64, error) {
-	c := d.zone.NewCharacter(name, look)
+	c := d.world.NewCharacter(name, look)
 	return d.store.DevCharacter(ctx, &c)
 }
 
@@ -370,6 +408,67 @@ func (d dbCharacters) Load(ctx context.Context, id int64) (*character.Character,
 	return c, s, nil
 }
 
+// assetName turns a map name such as prontera into its asset name,
+// map/prontera. Names with a folder, such as placeholder/map, stay.
+func assetName(n string) string {
+	if strings.Contains(n, "/") {
+		return n
+	}
+	return "map/" + n
+}
+
+// selectMaps returns the asset names of the maps to run, sorted: the
+// --maps list, or every map in the asset build for "all". The start map
+// must be one of them.
+func selectMaps(dir, start, list string) ([]string, error) {
+	var names []string
+	switch list {
+	case "":
+		names = []string{start}
+	case "all":
+		all, err := build.List(dir)
+		if err != nil {
+			return nil, err
+		}
+		for n, e := range all {
+			if e.Type == "map" {
+				names = append(names, n)
+			}
+		}
+	default:
+		for _, n := range splitList(list) {
+			names = append(names, assetName(n))
+		}
+	}
+	slices.Sort(names)
+	names = slices.Compact(names)
+	if !slices.Contains(names, start) {
+		return nil, fmt.Errorf("the start map %s is not in --maps", start)
+	}
+	return names, nil
+}
+
+// loadGrids reads the maps' cells from the asset build, several at once.
+func loadGrids(dir string, names []string) ([]*path.Grid, error) {
+	grids := make([]*path.Grid, len(names))
+	errs := make([]error, len(names))
+	next := make(chan int)
+	var wg sync.WaitGroup
+	for range runtime.GOMAXPROCS(0) {
+		wg.Go(func() {
+			for i := range next {
+				grids[i], errs[i] = loadGrid(dir, names[i])
+			}
+		})
+	}
+	for i := range names {
+		next <- i
+	}
+	close(next)
+	wg.Wait()
+	return grids, errors.Join(errs...)
+}
+
 // loadGrid reads a map's cells from the asset build.
 func loadGrid(dir, name string) (*path.Grid, error) {
 	data, typ, err := build.ReadAsset(dir, name)
@@ -379,15 +478,14 @@ func loadGrid(dir, name string) (*path.Grid, error) {
 	if typ != "map" {
 		return nil, fmt.Errorf("%s is a %s, not a map", name, typ)
 	}
-	m, err := wmap.Decode(data)
+	w, h, flags, err := wmap.DecodeCells(data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", name, err)
 	}
-	g := &path.Grid{Width: m.Width, Height: m.Height, Cells: make([]uint8, len(m.Cells))}
-	for i, c := range m.Cells {
-		g.Cells[i] = c.Flags & (path.Walkable | path.Shootable)
+	for i := range flags {
+		flags[i] &= path.Walkable | path.Shootable
 	}
-	return g, nil
+	return &path.Grid{Width: w, Height: h, Cells: flags}, nil
 }
 
 // loadProgression reads the exp tables, level penalty, monster drops and
@@ -441,10 +539,11 @@ func parseStartItems(s string) ([]zone.StartItem, error) {
 	return out, nil
 }
 
-// loadSpawns reads a map's monsters from the spawns and monster stats that
-// reference/rathena recorded from rAthena, until the core mod has its own.
-// With tables, monsters also get their DamageTaken, exp and drops.
-func loadSpawns(mode reference.Mode, mapName string, tables *progression.Tables, data *progression.Data) ([]zone.Spawn, error) {
+// loadSpawns reads every map's monsters, by map name such as prontera,
+// from the spawns and monster stats that reference/rathena recorded from
+// rAthena, until the core mod has its own. With tables, monsters also get
+// their DamageTaken, exp and drops.
+func loadSpawns(mode reference.Mode, tables *progression.Tables, data *progression.Data) (map[string][]zone.Spawn, error) {
 	if mode == "none" {
 		return nil, nil
 	}
@@ -502,17 +601,14 @@ func loadSpawns(mode reference.Mode, mapName string, tables *progression.Tables,
 		r.Drops = tables.AdjustDrops(r.Boss(), x.Drops)
 		rewards[m.ID] = r
 	}
-	var out []zone.Spawn
+	out := map[string][]zone.Spawn{}
 	for _, m := range spawns.Maps {
-		if m.Map != mapName {
-			continue
-		}
 		for _, s := range m.Spawns {
 			st := byID[s.Mob]
 			if st == nil {
 				continue
 			}
-			out = append(out, zone.Spawn{
+			out[m.Map] = append(out[m.Map], zone.Spawn{
 				Mob: s.Mob, Name: s.Name, Amount: s.Amount,
 				// rAthena searches up to xs - 1 cells from the center.
 				X: s.Area[0], Y: s.Area[1], W: max(s.Area[2]-1, 0), H: max(s.Area[3]-1, 0),

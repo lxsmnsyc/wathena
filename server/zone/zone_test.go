@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"fmt"
 	"testing"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -214,5 +215,22 @@ func TestMonsters(t *testing.T) {
 	}
 	if moves < 5 {
 		t.Errorf("saw %d monster moves", moves)
+	}
+}
+
+// BenchmarkIdleTick is one tick of a map with monsters and no players,
+// which a sleeping zone skips. 60 is the average count of monsters per
+// map over all maps with spawns in renewal, and 215 the average per field.
+func BenchmarkIdleTick(b *testing.B) {
+	for _, n := range []int{60, 215} {
+		b.Run(fmt.Sprintf("monsters=%d", n), func(b *testing.B) {
+			spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: n, Speed: 400, CanMove: true}}
+			z := New("map/test", open(300), rng.FromKey([32]byte{4}).Stream(), spawns)
+			now := int64(0)
+			for b.Loop() {
+				now += 50
+				z.stepAt(now)
+			}
+		})
 	}
 }

@@ -545,7 +545,7 @@ func TestGatewayRedeemsTicket(t *testing.T) {
 	t.Cleanup(cancel)
 	go z.Run(ctx)
 	gw := httptest.NewServer(&gateway.Gateway{
-		Zone: z, Sessions: account.GameTickets{Store: e.store}, Characters: storeCharacters{e.store},
+		World: z, Sessions: account.GameTickets{Store: e.store}, Characters: storeCharacters{e.store},
 		Origins: []string{clientOrigin},
 	})
 	t.Cleanup(gw.Close)

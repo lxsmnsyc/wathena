@@ -14,6 +14,7 @@ import (
 // Saver, which writes it on its own goroutines, so the zone never waits
 // on the database (strategy section 4.1, item 5). It saves:
 //   - every SaveInterval, when the character changed since the last save,
+//   - when the player arrives from another map, at the new cell,
 //   - when the player leaves, and
 //   - for every player when the zone stops.
 
@@ -43,16 +44,6 @@ type StaleNotifier interface {
 	OnStale(f func())
 }
 
-// staleSave hands a player whose saves went stale to the zone goroutine.
-// It blocks until the zone takes it or stops, so it must not run on the
-// zone goroutine or a save worker.
-func (z *Zone) staleSave(p *Player) {
-	select {
-	case z.stale <- p:
-	case <-z.stopped:
-	}
-}
-
 // loggedInElsewhere disconnects a player whose character a newer session
 // owns: the reason goes out, then the player leaves. Its last save is
 // ignored by the saver.
@@ -60,10 +51,7 @@ func (z *Zone) loggedInElsewhere(p *Player) {
 	if p.dropped || p.entity == nil || !z.entities[p.entity] {
 		return
 	}
-	p.queue(wathenav1.ServerMessage_builder{Disconnect: wathenav1.Disconnect_builder{
-		Reason:  wathenav1.DisconnectReason_DISCONNECT_REASON_LOGGED_IN_ELSEWHERE,
-		Message: "Your character logged in somewhere else.",
-	}.Build()}.Build())
+	p.queue(loggedInElsewhereMessage())
 	z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
 }
 
@@ -160,18 +148,22 @@ func (z *Zone) snapshot(p *Player) *character.Character {
 }
 
 // save hands a player's character to its saver. A save that is not final
-// is skipped when nothing changed since the last one.
+// is skipped when nothing changed since the last one. After the final
+// save, the session's Leave returns.
 func (z *Zone) save(p *Player, final bool) {
-	if p.saver != nil {
+	s := p.sess
+	if s == nil {
+		return
+	}
+	if s.saver != nil {
 		c := z.snapshot(p)
 		if final || p.saved == nil || !c.Equal(p.saved) {
 			p.saved = c
-			p.saver.Save(c, final)
+			s.saver.Save(c, final)
 		}
 	}
-	if final && p.left != nil && !p.gone {
-		p.gone = true
-		close(p.left)
+	if final {
+		s.done()
 	}
 }
 

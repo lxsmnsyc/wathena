@@ -8,7 +8,7 @@ It is at an early stage: a map viewer for development, built on the parts the ga
 |---|---|
 | `src/assets/` | Loads assets by name from a build. Checks every file against its SHA-256 from the manifest. |
 | `src/formats/` | Decoders for the binary asset formats in docs/specs/assets-v1.md. |
-| `src/render/` | three.js scenes: the ground, water, and models of a map, lit as RO lights them, sprites that face the camera, and characters built from body, head, and equipment sprites, and baked effects. |
+| `src/render/` | three.js scenes: the ground, water, and models of a map, lit as RO lights them, sprites that face the camera, and characters built from body, head, and equipment sprites, baked effects, and cylinder effects such as warp portals. |
 | `src/sw/` | The Service Worker, which caches assets by hash and checks them before caching. |
 | `src/world/` | Game rules the client shares with the server, such as pathfinding, from `shared/` compiled to WebAssembly. |
 | `src/viewer/` | The map viewer page. |
@@ -43,7 +43,17 @@ The server places every character and item:
 - The Status button or Alt+A opens the status window: STR to LUK with the cost of the next point and a "+" button that raises the stat by 1, and ATK, MATK, DEF, MDEF, HIT, FLEE, CRIT, ASPD, status points and weight. "+" is enabled when the status points pay for the raise.
 - Enter opens the chat input, Enter sends the line and clears it, and Escape leaves the input. Enter on an empty line also leaves it. While the input has focus, game shortcuts such as Alt+A do nothing. The log keeps the last 100 lines as "Name : text", and each line shows above the speaker for 5 seconds. Lines are cleaned as the server cleans them and cut to 255 code points. The client keeps the server's rate (5 lines, then 1 per second) and says so in the log instead of sending more. Chat is only ever shown as text.
 - Item names come from the build's `table/items`, loaded the first time an item shows, with the slot count as "Knife [3]". Descriptions come from `table/itemdesc`, loaded the first time one shows (docs/specs/assets-v1.md, "Table (JSON)"). An item the build does not name shows as "Item 501". Names from a Korean client are Hangul, so the page lists Korean fonts after `system-ui`. Items show their identified name, since the server does not send whether an item is identified yet.
-- Effects the server sends, such as level ups, play from `data/effects.yml`. An effect part can also be a sound.
+- Effects the server sends, such as level ups, play from `data/effects.yml`. An effect part can also be a sound, or a cylinder that the client draws, as roBrowser's `CYLINDER` effects (`src/render/cylinder.ts`).
+- Warp portals are NPCs with sprite 45. They show effect 321, `EF_WARPZONE2`: two blue rings of `texture/effect/ring_blue` that rise and shrink, four copies each, one second apart, as roBrowser draws them. roBrowser's sparks are sprite particles and do not show yet.
+- Walking into a warp changes the map. On `MapChange`, the client clears every entity, shows a loading screen, and loads the new map from the asset store, which the Service Worker caches. Events after `MapChange` wait until the map has loaded. Clicks do nothing while it loads. In development builds, `viewer.mapLoads()` lists each map change with its time, from `MapChange` to the map being ready, and the files and bytes it read.
+
+Map ready after a warp, measured in Chrome on an Apple M2 with `waserver` and the Vite dev server on the same machine (budget: 1.5 s when cached, strategy section 3.8):
+
+| Load | prt_in | prt_fild08 | prontera |
+|---|---:|---:|---:|
+| First visit, from the network | 387 to 445 ms | 288 to 352 ms | |
+| Map already in the page's memory | | | 167 to 183 ms |
+| After a reload, from the Service Worker cache | | 102 to 153 ms | 246 to 283 ms |
 
 ## Checks
 

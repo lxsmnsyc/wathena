@@ -18,7 +18,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -39,6 +39,22 @@ Each file starts with `system`, `mode`, `rathena_git_hash`, `data_path`, and `ci
 | `status_effects.json` | Chance, duration, and whether ten common ailments start, for many sources and targets. |
 | `level_penalty.json` | Renewal exp and drop modifiers by level difference. Empty in pre-renewal. |
 
+## Warps
+
+`extracts/<mode>/warps.json` lists every `warp` and `warp2` NPC rAthena loads in the mode, and the duplicates of them, with their map, cell, touch span (`xs`, `ys`), target map and cell, kind and state. The extract follows rAthena's own loading:
+
+- It reads the NPC files in the order `npc/<mode>/scripts_main.conf` lists them, with its `npc:`, `delnpc:` and `import:` lines, as `map_reloadnpc_sub`. Pre-renewal removes the Brasilis files this way.
+- It skips lines on maps that are not in `db/map_index.txt`, `conf/maps_athena.conf` and the map cache, and lines whose cell is outside the map (`npc_parsesrcfile`). It skips warps whose target map is not in the map index (`npc_parse_warp`).
+- It gives names as `npc_parsename`: the part after `::`, cut to 24 characters, and a new name when the name is taken. `duplicate(<name>)` copies the first NPC that took the name (`npc_parse_duplicate`), with the span of the duplicate line.
+- The list keeps the load order, which decides which warp wins where areas overlap (`npc_touch_area_allnpc`).
+- `state` is `enabled` unless the line sets `warp(DISABLED)`, `warp(HIDDEN)` or `warp(CLOAKED)`. Only enabled warps show and work, so `visible` is true for them.
+- Script NPCs with a warp sprite (`WARPNPC` or `HIDDEN_WARP_NPC`) run an `OnTouch` script. They need the script engine, so the summary only counts them.
+
+| Mode | Warps | Maps with warps | Script NPCs with a warp sprite |
+|---|---:|---:|---:|
+| renewal | 4,138 | 674 | 1,710 |
+| pre-renewal | 3,085 | 488 | 621 |
+
 ## How random rolls are recorded
 
 rAthena's random number output depends on the C++ standard library, so wAthena cannot reproduce the exact rolls. The recorder uses three methods instead:
@@ -57,4 +73,4 @@ tools/wathena/inventory.py
 tools/wathena/extract.py
 ```
 
-Then copy `generated/wathena/*` into this folder.
+Then copy `generated/wathena/*` into this folder. `warps.json` was first extracted at rAthena fork commit `27ad000bc`, from the same rAthena data as the other files.

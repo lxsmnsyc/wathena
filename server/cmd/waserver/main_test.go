@@ -14,12 +14,12 @@ func TestLoadSpawnsWithRewards(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		spawns, err := loadSpawns(mode, "prt_fild08", tables, data)
+		all, err := loadSpawns(mode, tables, data)
 		if err != nil {
 			t.Fatal(err)
 		}
 		found := false
-		for _, s := range spawns {
+		for _, s := range all["prt_fild08"] {
 			if s.Mob != 1002 {
 				continue
 			}
@@ -35,6 +35,19 @@ func TestLoadSpawnsWithRewards(t *testing.T) {
 		if !found {
 			t.Errorf("%s: no poring on prt_fild08", mode)
 		}
+	}
+}
+
+func TestSelectMaps(t *testing.T) {
+	if got, err := selectMaps("", "map/prontera", ""); err != nil || len(got) != 1 || got[0] != "map/prontera" {
+		t.Errorf("no list: %v, %v", got, err)
+	}
+	got, err := selectMaps("", "map/prontera", "prt_fild08, prontera,prt_in,prontera")
+	if err != nil || strings.Join(got, " ") != "map/prontera map/prt_fild08 map/prt_in" {
+		t.Errorf("list: %v, %v", got, err)
+	}
+	if _, err := selectMaps("", "map/prontera", "prt_in"); err == nil {
+		t.Error("a list without the start map is accepted")
 	}
 }
 
