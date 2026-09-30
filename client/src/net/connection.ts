@@ -116,6 +116,22 @@ export class Connection {
     });
   }
 
+  /** Uses the item in an inventory slot. */
+  useItem(slot: number): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'useItem', value: { slot } } }),
+    });
+  }
+
+  /** Drops an amount from an inventory slot near the player. */
+  dropItem(slot: number, amount: number): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'dropItem', value: { slot, amount } } }),
+    });
+  }
+
   /** Spends status points to raise a stat by up to amount, 1 to 255. */
   raiseStat(stat: BaseStat, amount = 1): void {
     this.send({

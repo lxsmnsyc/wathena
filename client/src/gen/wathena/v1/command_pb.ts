@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi/gIKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJKCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkiFwoITnBjQ2xpY2sSCwoDbnBjGAEgASgNIoMBCghOcGNSZXBseRIOCgZkaWFsb2cYASABKA0SDgoEbmV4dBgCIAEoCEgAEg4KBG1lbnUYAyABKA1IABIUCgppbnB1dF90ZXh0GAQgASgJSAASFgoMaW5wdXRfbnVtYmVyGAUgASgDSAASDwoFY2xvc2UYBiABKAhIAEIICgZhbnN3ZXIiFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0qpQEKC0NoYXRDaGFubmVsEhwKGENIQVRfQ0hBTk5FTF9VTlNQRUNJRklFRBAAEhYKEkNIQVRfQ0hBTk5FTF9MT0NBTBABEhYKEkNIQVRfQ0hBTk5FTF9QQVJUWRACEhYKEkNIQVRfQ0hBTk5FTF9HVUlMRBADEhgKFENIQVRfQ0hBTk5FTF9XSElTUEVSEAQSFgoSQ0hBVF9DSEFOTkVMX1dPUkxEEAUqlwEKCEJhc2VTdGF0EhkKFUJBU0VfU1RBVF9VTlNQRUNJRklFRBAAEhEKDUJBU0VfU1RBVF9TVFIQARIRCg1CQVNFX1NUQVRfQUdJEAISEQoNQkFTRV9TVEFUX1ZJVBADEhEKDUJBU0VfU1RBVF9JTlQQBBIRCg1CQVNFX1NUQVRfREVYEAUSEQoNQkFTRV9TVEFUX0xVSxAGQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEiqQMKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHAoEQ2VsbBIJCgF4GAEgASgNEgkKAXkYAiABKA0iSgoEQ2hhdBIoCgdjaGFubmVsGAEgASgOMhcud2F0aGVuYS52MS5DaGF0Q2hhbm5lbBIMCgR0ZXh0GAIgASgJEgoKAnRvGAMgASgJIhcKCE5wY0NsaWNrEgsKA25wYxgBIAEoDSKDAQoITnBjUmVwbHkSDgoGZGlhbG9nGAEgASgNEg4KBG5leHQYAiABKAhIABIOCgRtZW51GAMgASgNSAASFAoKaW5wdXRfdGV4dBgEIAEoCUgAEhYKDGlucHV0X251bWJlchgFIAEoA0gAEg8KBWNsb3NlGAYgASgISABCCAoGYW5zd2VyIhcKB1VzZUl0ZW0SDAoEc2xvdBgBIAEoDSIoCghEcm9wSXRlbRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDSIWCgZQaWNrVXASDAoEaXRlbRgBIAEoDSI/CglSYWlzZVN0YXQSIgoEc3RhdBgBIAEoDjIULndhdGhlbmEudjEuQmFzZVN0YXQSDgoGYW1vdW50GAIgASgNKqUBCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFKpcBCghCYXNlU3RhdBIZChVCQVNFX1NUQVRfVU5TUEVDSUZJRUQQABIRCg1CQVNFX1NUQVRfU1RSEAESEQoNQkFTRV9TVEFUX0FHSRACEhEKDUJBU0VfU1RBVF9WSVQQAxIRCg1CQVNFX1NUQVRfSU5UEAQSEQoNQkFTRV9TVEFUX0RFWBAFEhEKDUJBU0VfU1RBVF9MVUsQBkJAWj5naXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL3YxO3dhdGhlbmF2MWIGcHJvdG8z");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -76,6 +76,12 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: RaiseStat;
     case: "raiseStat";
+  } | {
+    /**
+     * @generated from field: wathena.v1.DropItem drop_item = 10;
+     */
+    value: DropItem;
+    case: "dropItem";
   } | { case: undefined; value?: undefined };
 };
 
@@ -298,11 +304,15 @@ export const NpcReplySchema: GenMessage<NpcReply> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 7);
 
 /**
+ * UseItem uses the item in an inventory slot, as rAthena's pc_useitem.
+ * The server answers with ItemUsed and InventoryRemove, or UseItemFailed.
+ *
  * @generated from message wathena.v1.UseItem
  */
 export type UseItem = Message<"wathena.v1.UseItem"> & {
   /**
-   * slot is the inventory slot the server sent in InventoryUpdate.
+   * slot is an inventory slot from InventoryUpdate or InventoryAdd, below
+   * 200.
    *
    * @generated from field: uint32 slot = 1;
    */
@@ -315,6 +325,36 @@ export type UseItem = Message<"wathena.v1.UseItem"> & {
  */
 export const UseItemSchema: GenMessage<UseItem> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 8);
+
+/**
+ * DropItem drops an amount from an inventory slot on the ground near the
+ * player, as rAthena's pc_dropitem. The server answers with
+ * InventoryRemove, or DropItemFailed.
+ *
+ * @generated from message wathena.v1.DropItem
+ */
+export type DropItem = Message<"wathena.v1.DropItem"> & {
+  /**
+   * slot is below 200, as in UseItem.
+   *
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * amount is 1 to 30000, and at most the slot's amount.
+   *
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.v1.DropItem.
+ * Use `create(DropItemSchema)` to create a new message.
+ */
+export const DropItemSchema: GenMessage<DropItem> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 9);
 
 /**
  * PickUp walks next to a ground item and picks it up.
@@ -333,7 +373,7 @@ export type PickUp = Message<"wathena.v1.PickUp"> & {
  * Use `create(PickUpSchema)` to create a new message.
  */
 export const PickUpSchema: GenMessage<PickUp> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 9);
+  messageDesc(file_wathena_v1_command, 10);
 
 /**
  * RaiseStat spends status points to raise a stat, as rAthena's
@@ -361,7 +401,7 @@ export type RaiseStat = Message<"wathena.v1.RaiseStat"> & {
  * Use `create(RaiseStatSchema)` to create a new message.
  */
 export const RaiseStatSchema: GenMessage<RaiseStat> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 10);
+  messageDesc(file_wathena_v1_command, 11);
 
 /**
  * @generated from enum wathena.v1.ChatChannel

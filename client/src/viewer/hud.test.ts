@@ -54,5 +54,10 @@ describe('pickUpMessage', () => {
   it('explains why a pick up failed', () => {
     expect(pickUpMessage(PickUpFailure.NOT_YOURS)).toBe('You cannot pick up this item yet.');
     expect(pickUpMessage(PickUpFailure.GONE)).toBe('The item is no longer there.');
+    expect(pickUpMessage(PickUpFailure.OVERWEIGHT)).toBe(
+      'You are carrying too much to pick this up.',
+    );
+    expect(pickUpMessage(PickUpFailure.INVENTORY_FULL)).toBe('Your inventory is full.');
+    expect(pickUpMessage(PickUpFailure.TOO_MANY)).toBe('You cannot carry more of this item.');
   });
 });

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/event.proto.
  */
 export const file_wathena_v1_event: GenFile = /*@__PURE__*/
-  fileDesc("ChZ3YXRoZW5hL3YxL2V2ZW50LnByb3RvEgp3YXRoZW5hLnYxIscECgVFdmVudBIqCgZhcHBlYXIYASABKAsyGC53YXRoZW5hLnYxLkVudGl0eUFwcGVhckgAEioKBnZhbmlzaBgCIAEoCzIYLndhdGhlbmEudjEuRW50aXR5VmFuaXNoSAASJgoEbW92ZRgDIAEoCzIWLndhdGhlbmEudjEuRW50aXR5TW92ZUgAEiYKBHN0b3AYBCABKAsyFi53YXRoZW5hLnYxLkVudGl0eVN0b3BIABInCgVzdGF0cxgFIAEoCzIWLndhdGhlbmEudjEuU3RhdFVwZGF0ZUgAEiQKBmRhbWFnZRgGIAEoCzISLndhdGhlbmEudjEuRGFtYWdlSAASKwoKc2tpbGxfY2FzdBgHIAEoCzIVLndhdGhlbmEudjEuU2tpbGxDYXN0SAASJwoEY2hhdBgIIAEoCzIXLndhdGhlbmEudjEuQ2hhdE1lc3NhZ2VIABIrCgpucGNfZGlhbG9nGAkgASgLMhUud2F0aGVuYS52MS5OcGNEaWFsb2dIABIoCgZlZmZlY3QYCiABKAsyFi53YXRoZW5hLnYxLkVmZmVjdFBsYXlIABIrCgppdGVtX3Rha2VuGAsgASgLMhUud2F0aGVuYS52MS5JdGVtVGFrZW5IABIxCg1pbnZlbnRvcnlfYWRkGAwgASgLMhgud2F0aGVuYS52MS5JbnZlbnRvcnlBZGRIABIyCg5waWNrX3VwX2ZhaWxlZBgNIAEoCzIYLndhdGhlbmEudjEuUGlja1VwRmFpbGVkSABCBgoEYm9keSLdAQoMRW50aXR5QXBwZWFyEgoKAmlkGAEgASgNEiQKBGtpbmQYAiABKA4yFi53YXRoZW5hLnYxLkVudGl0eUtpbmQSCQoBeBgDIAEoDRIJCgF5GAQgASgNEgsKA2RpchgFIAEoDRIeCgRsb29rGAYgASgLMhAud2F0aGVuYS52MS5Mb29rEgwKBG5hbWUYByABKAkSDwoHd2Fsa19tcxgIIAEoDRITCgtocF9wZXJtaWxsZRgJIAEoDRIkCgRpdGVtGAogASgLMhYud2F0aGVuYS52MS5Hcm91bmRJdGVtIlwKCkdyb3VuZEl0ZW0SDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0SDQoFc3ViX3gYAyABKA0SDQoFc3ViX3kYBCABKA0SDwoHZHJvcHBlZBgFIAEoCCK/AQoETG9vaxIMCgRib2R5GAEgASgNEgwKBGhhaXIYAiABKA0SEgoKaGFpcl9jb2xvchgDIAEoDRITCgtjbG90aF9jb2xvchgEIAEoDRIOCgZ3ZWFwb24YBSABKA0SDgoGc2hpZWxkGAYgASgNEhAKCGhlYWRfdG9wGAcgASgNEhAKCGhlYWRfbWlkGAggASgNEhMKC2hlYWRfYm90dG9tGAkgASgNEgwKBHJvYmUYCiABKA0SCwoDc2V4GAsgASgNIkQKDEVudGl0eVZhbmlzaBIKCgJpZBgBIAEoDRIoCgZyZWFzb24YAiABKA4yGC53YXRoZW5hLnYxLlZhbmlzaFJlYXNvbiJqCgpFbnRpdHlNb3ZlEgoKAmlkGAEgASgNEg4KBmZyb21feBgCIAEoDRIOCgZmcm9tX3kYAyABKA0SDQoFc3RlcHMYBCABKAwSEAoIc3RhcnRfbXMYBSABKBESDwoHd2Fsa19tcxgGIAEoDSIuCgpFbnRpdHlTdG9wEgoKAmlkGAEgASgNEgkKAXgYAiABKA0SCQoBeRgDIAEoDSItCgpTdGF0VXBkYXRlEh8KBXN0YXRzGAEgAygLMhAud2F0aGVuYS52MS5TdGF0IjUKBFN0YXQSHgoCaWQYASABKA4yEi53YXRoZW5hLnYxLlN0YXRJZBINCgV2YWx1ZRgCIAEoAyKsAQoGRGFtYWdlEg4KBnNvdXJjZRgBIAEoDRIOCgZ0YXJnZXQYAiABKA0SDgoGYW1vdW50GAMgASgDEgwKBGhpdHMYBCABKA0SJAoEa2luZBgFIAEoDjIWLndhdGhlbmEudjEuRGFtYWdlS2luZBIQCghkZWxheV9tcxgGIAEoDRIQCghza2lsbF9pZBgHIAEoDRIaChJ0YXJnZXRfaHBfcGVybWlsbGUYCCABKA0iiwEKCVNraWxsQ2FzdBIOCgZzb3VyY2UYASABKA0SEAoIc2tpbGxfaWQYAiABKA0SDQoFbGV2ZWwYAyABKA0SDwoHY2FzdF9tcxgEIAEoDRIQCgZlbnRpdHkYBSABKA1IABIgCgRjZWxsGAYgASgLMhAud2F0aGVuYS52MS5DZWxsSABCCAoGdGFyZ2V0ImYKC0NoYXRNZXNzYWdlEigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBGZyb20YAiABKA0SEQoJZnJvbV9uYW1lGAMgASgJEgwKBHRleHQYBCABKAkitQEKCU5wY0RpYWxvZxILCgNucGMYASABKA0SDgoGZGlhbG9nGAIgASgNEg0KBWxpbmVzGAMgAygJEg4KBG5leHQYBCABKAhIABIjCgRtZW51GAUgASgLMhMud2F0aGVuYS52MS5OcGNNZW51SAASFAoKaW5wdXRfdGV4dBgGIAEoCEgAEhYKDGlucHV0X251bWJlchgHIAEoCEgAEg8KBWNsb3NlGAggASgISABCCAoGcHJvbXB0IhoKB05wY01lbnUSDwoHb3B0aW9ucxgBIAMoCSJZCgpFZmZlY3RQbGF5EhEKCWVmZmVjdF9pZBgBIAEoDRIQCgZlbnRpdHkYAiABKA1IABIgCgRjZWxsGAMgASgLMhAud2F0aGVuYS52MS5DZWxsSABCBAoCYXQiKQoJSXRlbVRha2VuEg4KBnNvdXJjZRgBIAEoDRIMCgRpdGVtGAIgASgNIi8KDEludmVudG9yeUFkZBIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDSJHCgxQaWNrVXBGYWlsZWQSDAoEaXRlbRgBIAEoDRIpCgZyZWFzb24YAiABKA4yGS53YXRoZW5hLnYxLlBpY2tVcEZhaWx1cmUq7QEKCkVudGl0eUtpbmQSGwoXRU5USVRZX0tJTkRfVU5TUEVDSUZJRUQQABIWChJFTlRJVFlfS0lORF9QTEFZRVIQARIXChNFTlRJVFlfS0lORF9NT05TVEVSEAISEwoPRU5USVRZX0tJTkRfTlBDEAMSEwoPRU5USVRZX0tJTkRfUEVUEAQSGgoWRU5USVRZX0tJTkRfSE9NVU5DVUxVUxAFEhkKFUVOVElUWV9LSU5EX01FUkNFTkFSWRAGEhQKEEVOVElUWV9LSU5EX0lURU0QBxIaChZFTlRJVFlfS0lORF9TS0lMTF9VTklUEAgq2QEKDFZhbmlzaFJlYXNvbhIdChlWQU5JU0hfUkVBU09OX1VOU1BFQ0lGSUVEEAASHgoaVkFOSVNIX1JFQVNPTl9PVVRfT0ZfU0lHSFQQARIWChJWQU5JU0hfUkVBU09OX0RJRUQQAhIcChhWQU5JU0hfUkVBU09OX0xPR0dFRF9PVVQQAxIcChhWQU5JU0hfUkVBU09OX1RFTEVQT1JURUQQBBIbChdWQU5JU0hfUkVBU09OX1BJQ0tFRF9VUBAFEhkKFVZBTklTSF9SRUFTT05fRVhQSVJFRBAGKuYFCgZTdGF0SWQSFwoTU1RBVF9JRF9VTlNQRUNJRklFRBAAEg4KClNUQVRfSURfSFAQARISCg5TVEFUX0lEX01BWF9IUBACEg4KClNUQVRfSURfU1AQAxISCg5TVEFUX0lEX01BWF9TUBAEEhYKElNUQVRfSURfQkFTRV9MRVZFTBAFEhUKEVNUQVRfSURfSk9CX0xFVkVMEAYSFAoQU1RBVF9JRF9CQVNFX0VYUBAHEhMKD1NUQVRfSURfSk9CX0VYUBAIEhAKDFNUQVRfSURfWkVOWRAJEhIKDlNUQVRfSURfV0VJR0hUEAoSFgoSU1RBVF9JRF9NQVhfV0VJR0hUEAsSDwoLU1RBVF9JRF9TVFIQDBIPCgtTVEFUX0lEX0FHSRANEg8KC1NUQVRfSURfVklUEA4SDwoLU1RBVF9JRF9JTlQQDxIPCgtTVEFUX0lEX0RFWBAQEg8KC1NUQVRfSURfTFVLEBESDwoLU1RBVF9JRF9BVEsQEhIQCgxTVEFUX0lEX01BVEsQExIPCgtTVEFUX0lEX0RFRhAUEhAKDFNUQVRfSURfTURFRhAVEg8KC1NUQVRfSURfSElUEBYSEAoMU1RBVF9JRF9GTEVFEBcSFAoQU1RBVF9JRF9DUklUSUNBTBAYEhAKDFNUQVRfSURfQVNQRBAZEhkKFVNUQVRfSURfU1RBVFVTX1BPSU5UUxAaEhgKFFNUQVRfSURfU0tJTExfUE9JTlRTEBsSGQoVU1RBVF9JRF9ORVhUX0JBU0VfRVhQEBwSGAoUU1RBVF9JRF9ORVhUX0pPQl9FWFAQHRIUChBTVEFUX0lEX1NUUl9DT1NUEB4SFAoQU1RBVF9JRF9BR0lfQ09TVBAfEhQKEFNUQVRfSURfVklUX0NPU1QQIBIUChBTVEFUX0lEX0lOVF9DT1NUECESFAoQU1RBVF9JRF9ERVhfQ09TVBAiEhQKEFNUQVRfSURfTFVLX0NPU1QQIyqkAQoKRGFtYWdlS2luZBIbChdEQU1BR0VfS0lORF9VTlNQRUNJRklFRBAAEhYKEkRBTUFHRV9LSU5EX05PUk1BTBABEhgKFERBTUFHRV9LSU5EX0NSSVRJQ0FMEAISFAoQREFNQUdFX0tJTkRfTUlTUxADEhsKF0RBTUFHRV9LSU5EX0xVQ0tZX0RPREdFEAQSFAoQREFNQUdFX0tJTkRfSEVBTBAFKmkKDVBpY2tVcEZhaWx1cmUSHwobUElDS19VUF9GQUlMVVJFX1VOU1BFQ0lGSUVEEAASGAoUUElDS19VUF9GQUlMVVJFX0dPTkUQARIdChlQSUNLX1VQX0ZBSUxVUkVfTk9UX1lPVVJTEAJCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw", [file_wathena_v1_command]);
+  fileDesc("ChZ3YXRoZW5hL3YxL2V2ZW50LnByb3RvEgp3YXRoZW5hLnYxIssGCgVFdmVudBIqCgZhcHBlYXIYASABKAsyGC53YXRoZW5hLnYxLkVudGl0eUFwcGVhckgAEioKBnZhbmlzaBgCIAEoCzIYLndhdGhlbmEudjEuRW50aXR5VmFuaXNoSAASJgoEbW92ZRgDIAEoCzIWLndhdGhlbmEudjEuRW50aXR5TW92ZUgAEiYKBHN0b3AYBCABKAsyFi53YXRoZW5hLnYxLkVudGl0eVN0b3BIABInCgVzdGF0cxgFIAEoCzIWLndhdGhlbmEudjEuU3RhdFVwZGF0ZUgAEiQKBmRhbWFnZRgGIAEoCzISLndhdGhlbmEudjEuRGFtYWdlSAASKwoKc2tpbGxfY2FzdBgHIAEoCzIVLndhdGhlbmEudjEuU2tpbGxDYXN0SAASJwoEY2hhdBgIIAEoCzIXLndhdGhlbmEudjEuQ2hhdE1lc3NhZ2VIABIrCgpucGNfZGlhbG9nGAkgASgLMhUud2F0aGVuYS52MS5OcGNEaWFsb2dIABIoCgZlZmZlY3QYCiABKAsyFi53YXRoZW5hLnYxLkVmZmVjdFBsYXlIABIrCgppdGVtX3Rha2VuGAsgASgLMhUud2F0aGVuYS52MS5JdGVtVGFrZW5IABIxCg1pbnZlbnRvcnlfYWRkGAwgASgLMhgud2F0aGVuYS52MS5JbnZlbnRvcnlBZGRIABIyCg5waWNrX3VwX2ZhaWxlZBgNIAEoCzIYLndhdGhlbmEudjEuUGlja1VwRmFpbGVkSAASMAoJaW52ZW50b3J5GA4gASgLMhsud2F0aGVuYS52MS5JbnZlbnRvcnlVcGRhdGVIABI3ChBpbnZlbnRvcnlfcmVtb3ZlGA8gASgLMhsud2F0aGVuYS52MS5JbnZlbnRvcnlSZW1vdmVIABIpCglpdGVtX3VzZWQYECABKAsyFC53YXRoZW5hLnYxLkl0ZW1Vc2VkSAASNAoPdXNlX2l0ZW1fZmFpbGVkGBEgASgLMhkud2F0aGVuYS52MS5Vc2VJdGVtRmFpbGVkSAASNgoQZHJvcF9pdGVtX2ZhaWxlZBgSIAEoCzIaLndhdGhlbmEudjEuRHJvcEl0ZW1GYWlsZWRIAEIGCgRib2R5It0BCgxFbnRpdHlBcHBlYXIS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dG9yeVJlbW92ZRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDRIxCgZyZWFzb24YAyABKA4yIS53YXRoZW5hLnYxLkludmVudG9yeVJlbW92ZVJlYXNvbiIrCghJdGVtVXNlZBIOCgZzb3VyY2UYASABKA0SDwoHaXRlbV9pZBgCIAEoDSJJCg1Vc2VJdGVtRmFpbGVkEgwKBHNsb3QYASABKA0SKgoGcmVhc29uGAIgASgOMhoud2F0aGVuYS52MS5Vc2VJdGVtRmFpbHVyZSJLCg5Ecm9wSXRlbUZhaWxlZBIMCgRzbG90GAEgASgNEisKBnJlYXNvbhgCIAEoDjIbLndhdGhlbmEudjEuRHJvcEl0ZW1GYWlsdXJlIkcKDFBpY2tVcEZhaWxlZBIMCgRpdGVtGAEgASgNEikKBnJlYXNvbhgCIAEoDjIZLndhdGhlbmEudjEuUGlja1VwRmFpbHVyZSrtAQoKRW50aXR5S2luZBIbChdFTlRJVFlfS0lORF9VTlNQRUNJRklFRBAAEhYKEkVOVElUWV9LSU5EX1BMQVlFUhABEhcKE0VOVElUWV9LSU5EX01PTlNURVIQAhITCg9FTlRJVFlfS0lORF9OUEMQAxITCg9FTlRJVFlfS0lORF9QRVQQBBIaChZFTlRJVFlfS0lORF9IT01VTkNVTFVTEAUSGQoVRU5USVRZX0tJTkRfTUVSQ0VOQVJZEAYSFAoQRU5USVRZX0tJTkRfSVRFTRAHEhoKFkVOVElUWV9LSU5EX1NLSUxMX1VOSVQQCCrZAQoMVmFuaXNoUmVhc29uEh0KGVZBTklTSF9SRUFTT05fVU5TUEVDSUZJRUQQABIeChpWQU5JU0hfUkVBU09OX09VVF9PRl9TSUdIVBABEhYKElZBTklTSF9SRUFTT05fRElFRBACEhwKGFZBTklTSF9SRUFTT05fTE9HR0VEX09VVBADEhwKGFZBTklTSF9SRUFTT05fVEVMRVBPUlRFRBAEEhsKF1ZBTklTSF9SRUFTT05fUElDS0VEX1VQEAUSGQoVVkFOSVNIX1JFQVNPTl9FWFBJUkVEEAYq5gUKBlN0YXRJZBIXChNTVEFUX0lEX1VOU1BFQ0lGSUVEEAASDgoKU1RBVF9JRF9IUBABEhIKDlNUQVRfSURfTUFYX0hQEAISDgoKU1RBVF9JRF9TUBADEhIKDlNUQVRfSURfTUFYX1NQEAQSFgoSU1RBVF9JRF9CQVNFX0xFVkVMEAUSFQoRU1RBVF9JRF9KT0JfTEVWRUwQBhIUChBTVEFUX0lEX0JBU0VfRVhQEAcSEwoPU1RBVF9JRF9KT0JfRVhQEAgSEAoMU1RBVF9JRF9aRU5ZEAkSEgoOU1RBVF9JRF9XRUlHSFQQChIWChJTVEFUX0lEX01BWF9XRUlHSFQQCxIPCgtTVEFUX0lEX1NUUhAMEg8KC1NUQVRfSURfQUdJEA0SDwoLU1RBVF9JRF9WSVQQDhIPCgtTVEFUX0lEX0lOVBAPEg8KC1NUQVRfSURfREVYEBASDwoLU1RBVF9JRF9MVUsQERIPCgtTVEFUX0lEX0FUSxASEhAKDFNUQVRfSURfTUFUSxATEg8KC1NUQVRfSURfREVGEBQSEAoMU1RBVF9JRF9NREVGEBUSDwoLU1RBVF9JRF9ISVQQFhIQCgxTVEFUX0lEX0ZMRUUQFxIUChBTVEFUX0lEX0NSSVRJQ0FMEBgSEAoMU1RBVF9JRF9BU1BEEBkSGQoVU1RBVF9JRF9TVEFUVVNfUE9JTlRTEBoSGAoUU1RBVF9JRF9TS0lMTF9QT0lOVFMQGxIZChVTVEFUX0lEX05FWFRfQkFTRV9FWFAQHBIYChRTVEFUX0lEX05FWFRfSk9CX0VYUBAdEhQKEFNUQVRfSURfU1RSX0NPU1QQHhIUChBTVEFUX0lEX0FHSV9DT1NUEB8SFAoQU1RBVF9JRF9WSVRfQ09TVBAgEhQKEFNUQVRfSURfSU5UX0NPU1QQIRIUChBTVEFUX0lEX0RFWF9DT1NUECISFAoQU1RBVF9JRF9MVUtfQ09TVBAjKqQBCgpEYW1hZ2VLaW5kEhsKF0RBTUFHRV9LSU5EX1VOU1BFQ0lGSUVEEAASFgoSREFNQUdFX0tJTkRfTk9STUFMEAESGAoUREFNQUdFX0tJTkRfQ1JJVElDQUwQAhIUChBEQU1BR0VfS0lORF9NSVNTEAMSGwoXREFNQUdFX0tJTkRfTFVDS1lfRE9ER0UQBBIUChBEQU1BR0VfS0lORF9IRUFMEAUqhwEKFUludmVudG9yeVJlbW92ZVJlYXNvbhInCiNJTlZFTlRPUllfUkVNT1ZFX1JFQVNPTl9VTlNQRUNJRklFRBAAEiAKHElOVkVOVE9SWV9SRU1PVkVfUkVBU09OX1VTRUQQARIjCh9JTlZFTlRPUllfUkVNT1ZFX1JFQVNPTl9EUk9QUEVEEAIqvQIKDlVzZUl0ZW1GYWlsdXJlEiAKHFVTRV9JVEVNX0ZBSUxVUkVfVU5TUEVDSUZJRUQQABIfChtVU0VfSVRFTV9GQUlMVVJFX0VNUFRZX1NMT1QQARIfChtVU0VfSVRFTV9GQUlMVVJFX05PVF9VU0FCTEUQAhIiCh5VU0VfSVRFTV9GQUlMVVJFX05PVF9TVVBQT1JURUQQAxIdChlVU0VfSVRFTV9GQUlMVVJFX1RPT19TT09OEAQSHQoZVVNFX0lURU1fRkFJTFVSRV9DT09MRE9XThAFEh8KG1VTRV9JVEVNX0ZBSUxVUkVfQ0FOTk9UX1VTRRAGEh8KG1VTRV9JVEVNX0ZBSUxVUkVfT1ZFUldFSUdIVBAHEiMKH1VTRV9JVEVNX0ZBSUxVUkVfSU5WRU5UT1JZX0ZVTEwQCCqbAQoPRHJvcEl0ZW1GYWlsdXJlEiEKHURST1BfSVRFTV9GQUlMVVJFX1VOU1BFQ0lGSUVEEAASIAocRFJPUF9JVEVNX0ZBSUxVUkVfRU1QVFlfU0xPVBABEiAKHERST1BfSVRFTV9GQUlMVVJFX0JBRF9BTU9VTlQQAhIhCh1EUk9QX0lURU1fRkFJTFVSRV9DQU5OT1RfRFJPUBADKssBCg1QaWNrVXBGYWlsdXJlEh8KG1BJQ0tfVVBfRkFJTFVSRV9VTlNQRUNJRklFRBAAEhgKFFBJQ0tfVVBfRkFJTFVSRV9HT05FEAESHQoZUElDS19VUF9GQUlMVVJFX05PVF9ZT1VSUxACEh4KGlBJQ0tfVVBfRkFJTFVSRV9PVkVSV0VJR0hUEAMSIgoeUElDS19VUF9GQUlMVVJFX0lOVkVOVE9SWV9GVUxMEAQSHAoYUElDS19VUF9GQUlMVVJFX1RPT19NQU5ZEAVCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw", [file_wathena_v1_command]);
 
 /**
  * Event is one thing the player sees change.
@@ -102,6 +102,36 @@ export type Event = Message<"wathena.v1.Event"> & {
      */
     value: PickUpFailed;
     case: "pickUpFailed";
+  } | {
+    /**
+     * @generated from field: wathena.v1.InventoryUpdate inventory = 14;
+     */
+    value: InventoryUpdate;
+    case: "inventory";
+  } | {
+    /**
+     * @generated from field: wathena.v1.InventoryRemove inventory_remove = 15;
+     */
+    value: InventoryRemove;
+    case: "inventoryRemove";
+  } | {
+    /**
+     * @generated from field: wathena.v1.ItemUsed item_used = 16;
+     */
+    value: ItemUsed;
+    case: "itemUsed";
+  } | {
+    /**
+     * @generated from field: wathena.v1.UseItemFailed use_item_failed = 17;
+     */
+    value: UseItemFailed;
+    case: "useItemFailed";
+  } | {
+    /**
+     * @generated from field: wathena.v1.DropItemFailed drop_item_failed = 18;
+     */
+    value: DropItemFailed;
+    case: "dropItemFailed";
   } | { case: undefined; value?: undefined };
 };
 
@@ -728,7 +758,68 @@ export const ItemTakenSchema: GenMessage<ItemTaken> = /*@__PURE__*/
   messageDesc(file_wathena_v1_event, 15);
 
 /**
- * InventoryAdd tells the player an item entered their inventory.
+ * InventoryUpdate is the player's whole inventory. It replaces what the
+ * client had. The first frame carries it.
+ *
+ * @generated from message wathena.v1.InventoryUpdate
+ */
+export type InventoryUpdate = Message<"wathena.v1.InventoryUpdate"> & {
+  /**
+   * items lists the slots that hold an item.
+   *
+   * @generated from field: repeated wathena.v1.InventoryItem items = 1;
+   */
+  items: InventoryItem[];
+
+  /**
+   * size is how many slots take new items, as rAthena's inventory_slots.
+   *
+   * @generated from field: uint32 size = 2;
+   */
+  size: number;
+};
+
+/**
+ * Describes the message wathena.v1.InventoryUpdate.
+ * Use `create(InventoryUpdateSchema)` to create a new message.
+ */
+export const InventoryUpdateSchema: GenMessage<InventoryUpdate> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 16);
+
+/**
+ * InventoryItem is one inventory slot.
+ *
+ * @generated from message wathena.v1.InventoryItem
+ */
+export type InventoryItem = Message<"wathena.v1.InventoryItem"> & {
+  /**
+   * slot is the slot's index, from 0, as rAthena's inventory index.
+   *
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * @generated from field: uint32 item_id = 2;
+   */
+  itemId: number;
+
+  /**
+   * @generated from field: uint32 amount = 3;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.v1.InventoryItem.
+ * Use `create(InventoryItemSchema)` to create a new message.
+ */
+export const InventoryItemSchema: GenMessage<InventoryItem> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 17);
+
+/**
+ * InventoryAdd tells the player an amount of an item entered a slot. The
+ * slot was empty or held the same item.
  *
  * @generated from message wathena.v1.InventoryAdd
  */
@@ -739,9 +830,16 @@ export type InventoryAdd = Message<"wathena.v1.InventoryAdd"> & {
   itemId: number;
 
   /**
+   * amount is the amount added, not the slot's new total.
+   *
    * @generated from field: uint32 amount = 2;
    */
   amount: number;
+
+  /**
+   * @generated from field: uint32 slot = 3;
+   */
+  slot: number;
 };
 
 /**
@@ -749,7 +847,110 @@ export type InventoryAdd = Message<"wathena.v1.InventoryAdd"> & {
  * Use `create(InventoryAddSchema)` to create a new message.
  */
 export const InventoryAddSchema: GenMessage<InventoryAdd> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 16);
+  messageDesc(file_wathena_v1_event, 18);
+
+/**
+ * InventoryRemove tells the player an amount left a slot. A slot left
+ * with nothing is empty.
+ *
+ * @generated from message wathena.v1.InventoryRemove
+ */
+export type InventoryRemove = Message<"wathena.v1.InventoryRemove"> & {
+  /**
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+
+  /**
+   * @generated from field: wathena.v1.InventoryRemoveReason reason = 3;
+   */
+  reason: InventoryRemoveReason;
+};
+
+/**
+ * Describes the message wathena.v1.InventoryRemove.
+ * Use `create(InventoryRemoveSchema)` to create a new message.
+ */
+export const InventoryRemoveSchema: GenMessage<InventoryRemove> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 19);
+
+/**
+ * ItemUsed shows an entity using an item, as rAthena's clif_useitemack
+ * to the area. The user gets it too.
+ *
+ * @generated from message wathena.v1.ItemUsed
+ */
+export type ItemUsed = Message<"wathena.v1.ItemUsed"> & {
+  /**
+   * @generated from field: uint32 source = 1;
+   */
+  source: number;
+
+  /**
+   * @generated from field: uint32 item_id = 2;
+   */
+  itemId: number;
+};
+
+/**
+ * Describes the message wathena.v1.ItemUsed.
+ * Use `create(ItemUsedSchema)` to create a new message.
+ */
+export const ItemUsedSchema: GenMessage<ItemUsed> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 20);
+
+/**
+ * UseItemFailed tells the player why a UseItem did nothing.
+ *
+ * @generated from message wathena.v1.UseItemFailed
+ */
+export type UseItemFailed = Message<"wathena.v1.UseItemFailed"> & {
+  /**
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * @generated from field: wathena.v1.UseItemFailure reason = 2;
+   */
+  reason: UseItemFailure;
+};
+
+/**
+ * Describes the message wathena.v1.UseItemFailed.
+ * Use `create(UseItemFailedSchema)` to create a new message.
+ */
+export const UseItemFailedSchema: GenMessage<UseItemFailed> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 21);
+
+/**
+ * DropItemFailed tells the player why a DropItem did nothing.
+ *
+ * @generated from message wathena.v1.DropItemFailed
+ */
+export type DropItemFailed = Message<"wathena.v1.DropItemFailed"> & {
+  /**
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * @generated from field: wathena.v1.DropItemFailure reason = 2;
+   */
+  reason: DropItemFailure;
+};
+
+/**
+ * Describes the message wathena.v1.DropItemFailed.
+ * Use `create(DropItemFailedSchema)` to create a new message.
+ */
+export const DropItemFailedSchema: GenMessage<DropItemFailed> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 22);
 
 /**
  * PickUpFailed tells the player why a PickUp did nothing.
@@ -773,7 +974,7 @@ export type PickUpFailed = Message<"wathena.v1.PickUpFailed"> & {
  * Use `create(PickUpFailedSchema)` to create a new message.
  */
 export const PickUpFailedSchema: GenMessage<PickUpFailed> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 17);
+  messageDesc(file_wathena_v1_event, 23);
 
 /**
  * EntityKind is what an entity is.
@@ -1111,6 +1312,9 @@ export enum DamageKind {
   LUCKY_DODGE = 4,
 
   /**
+   * A heal: amount is the HP healed. For an item heal, source and target
+   * are the player, and only the player gets it.
+   *
    * @generated from enum value: DAMAGE_KIND_HEAL = 5;
    */
   HEAL = 5,
@@ -1121,6 +1325,145 @@ export enum DamageKind {
  */
 export const DamageKindSchema: GenEnum<DamageKind> = /*@__PURE__*/
   enumDesc(file_wathena_v1_event, 3);
+
+/**
+ * @generated from enum wathena.v1.InventoryRemoveReason
+ */
+export enum InventoryRemoveReason {
+  /**
+   * @generated from enum value: INVENTORY_REMOVE_REASON_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The player used the item.
+   *
+   * @generated from enum value: INVENTORY_REMOVE_REASON_USED = 1;
+   */
+  USED = 1,
+
+  /**
+   * The player dropped the item on the ground.
+   *
+   * @generated from enum value: INVENTORY_REMOVE_REASON_DROPPED = 2;
+   */
+  DROPPED = 2,
+}
+
+/**
+ * Describes the enum wathena.v1.InventoryRemoveReason.
+ */
+export const InventoryRemoveReasonSchema: GenEnum<InventoryRemoveReason> = /*@__PURE__*/
+  enumDesc(file_wathena_v1_event, 4);
+
+/**
+ * @generated from enum wathena.v1.UseItemFailure
+ */
+export enum UseItemFailure {
+  /**
+   * @generated from enum value: USE_ITEM_FAILURE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The slot holds nothing.
+   *
+   * @generated from enum value: USE_ITEM_FAILURE_EMPTY_SLOT = 1;
+   */
+  EMPTY_SLOT = 1,
+
+  /**
+   * The item is not a healing, usable or cash item.
+   *
+   * @generated from enum value: USE_ITEM_FAILURE_NOT_USABLE = 2;
+   */
+  NOT_USABLE = 2,
+
+  /**
+   * The server cannot run the item's script yet. Only plain heals run.
+   *
+   * @generated from enum value: USE_ITEM_FAILURE_NOT_SUPPORTED = 3;
+   */
+  NOT_SUPPORTED = 3,
+
+  /**
+   * The last item use was less than item_use_interval ago.
+   *
+   * @generated from enum value: USE_ITEM_FAILURE_TOO_SOON = 4;
+   */
+  TOO_SOON = 4,
+
+  /**
+   * The item's reuse delay has not ended.
+   *
+   * @generated from enum value: USE_ITEM_FAILURE_COOLDOWN = 5;
+   */
+  COOLDOWN = 5,
+
+  /**
+   * The player's level, sex or job may not use the item.
+   *
+   * @generated from enum value: USE_ITEM_FAILURE_CANNOT_USE = 6;
+   */
+  CANNOT_USE = 6,
+
+  /**
+   * A cash item needs a weight below open_box_weight_rate.
+   *
+   * @generated from enum value: USE_ITEM_FAILURE_OVERWEIGHT = 7;
+   */
+  OVERWEIGHT = 7,
+
+  /**
+   * A cash item needs more than 10 empty slots.
+   *
+   * @generated from enum value: USE_ITEM_FAILURE_INVENTORY_FULL = 8;
+   */
+  INVENTORY_FULL = 8,
+}
+
+/**
+ * Describes the enum wathena.v1.UseItemFailure.
+ */
+export const UseItemFailureSchema: GenEnum<UseItemFailure> = /*@__PURE__*/
+  enumDesc(file_wathena_v1_event, 5);
+
+/**
+ * @generated from enum wathena.v1.DropItemFailure
+ */
+export enum DropItemFailure {
+  /**
+   * @generated from enum value: DROP_ITEM_FAILURE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The slot holds nothing.
+   *
+   * @generated from enum value: DROP_ITEM_FAILURE_EMPTY_SLOT = 1;
+   */
+  EMPTY_SLOT = 1,
+
+  /**
+   * The amount is 0 or more than the slot holds.
+   *
+   * @generated from enum value: DROP_ITEM_FAILURE_BAD_AMOUNT = 2;
+   */
+  BAD_AMOUNT = 2,
+
+  /**
+   * The item may not be dropped.
+   *
+   * @generated from enum value: DROP_ITEM_FAILURE_CANNOT_DROP = 3;
+   */
+  CANNOT_DROP = 3,
+}
+
+/**
+ * Describes the enum wathena.v1.DropItemFailure.
+ */
+export const DropItemFailureSchema: GenEnum<DropItemFailure> = /*@__PURE__*/
+  enumDesc(file_wathena_v1_event, 6);
 
 /**
  * @generated from enum wathena.v1.PickUpFailure
@@ -1144,11 +1487,32 @@ export enum PickUpFailure {
    * @generated from enum value: PICK_UP_FAILURE_NOT_YOURS = 2;
    */
   NOT_YOURS = 2,
+
+  /**
+   * The item would pass the player's maximum weight.
+   *
+   * @generated from enum value: PICK_UP_FAILURE_OVERWEIGHT = 3;
+   */
+  OVERWEIGHT = 3,
+
+  /**
+   * The inventory has no free slot.
+   *
+   * @generated from enum value: PICK_UP_FAILURE_INVENTORY_FULL = 4;
+   */
+  INVENTORY_FULL = 4,
+
+  /**
+   * The player's stack of the item would pass 30000 or its stack limit.
+   *
+   * @generated from enum value: PICK_UP_FAILURE_TOO_MANY = 5;
+   */
+  TOO_MANY = 5,
 }
 
 /**
  * Describes the enum wathena.v1.PickUpFailure.
  */
 export const PickUpFailureSchema: GenEnum<PickUpFailure> = /*@__PURE__*/
-  enumDesc(file_wathena_v1_event, 4);
+  enumDesc(file_wathena_v1_event, 7);
 

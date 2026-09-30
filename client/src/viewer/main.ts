@@ -26,7 +26,16 @@ import { DamageKind } from '../gen/wathena/v1/event_pb';
 import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import { Bubbles, ChatLog, ChatRate, chatLine, cleanChat, isTyping } from './chat';
-import { Inventory, expLine, hpLine, pickUpMessage } from './hud';
+import { expLine, hpLine, pickUpMessage } from './hud';
+import {
+  InventoryModel,
+  InventoryWindow,
+  MAJOR_OVERWEIGHT,
+  SLOT_DRAG_TYPE,
+  dropItemMessage,
+  useItemMessage,
+  weightPercent,
+} from './inventory';
 import randomLook from './looks';
 import { StatusWindow } from './statusWindow';
 import Online from './online';
@@ -106,6 +115,9 @@ scene.add(playerGroup);
 const audio = new AudioSystem(store);
 let soundscape: Soundscape | undefined;
 let statusWindow: StatusWindow | undefined;
+let inventoryWindow: InventoryWindow | undefined;
+/** Shows a short message to the player, such as why an action failed. */
+let showMessage: (text: string) => void = () => {};
 const bubbles = new Bubbles();
 const bubbleRoot = document.querySelector<HTMLDivElement>('#bubbles');
 const bubbleViews = new Map<number, HTMLDivElement>();
@@ -341,8 +353,11 @@ if (serverURL === null) {
     p.y += 2;
     p.project(camera);
     const div = document.createElement('div');
-    div.className = `hit${h.mine ? ' mine' : ''}${h.kind === DamageKind.CRITICAL ? ' critical' : ''}${h.amount === 0 ? ' miss' : ''}`;
-    div.textContent = h.amount === 0 ? 'Miss' : String(h.amount);
+    const heal = h.kind === DamageKind.HEAL;
+    div.className = heal
+      ? 'hit heal'
+      : `hit${h.mine ? ' mine' : ''}${h.kind === DamageKind.CRITICAL ? ' critical' : ''}${h.amount === 0 ? ' miss' : ''}`;
+    div.textContent = h.amount === 0 && !heal ? 'Miss' : String(h.amount);
     div.style.left = `${((p.x + 1) / 2) * 100}%`;
     div.style.top = `${((1 - p.y) / 2) * 100}%`;
     hits.append(div);
@@ -350,23 +365,81 @@ if (serverURL === null) {
       div.remove();
     }, 1000);
   };
-  const inventoryList = document.querySelector<HTMLUListElement>('#inventory');
-  const inventory = inventoryList === null ? undefined : new Inventory(inventoryList, store);
-  view.onInventoryAdd = (id, amount) => {
-    inventory?.add(id, amount);
-  };
   const message = document.querySelector<HTMLOutputElement>('#message');
   let messageTimer: ReturnType<typeof setTimeout> | undefined;
-  view.onPickUpFailed = (reason) => {
+  showMessage = (text) => {
     if (message === null) {
       return;
     }
-    message.value = pickUpMessage(reason);
+    message.value = text;
     clearTimeout(messageTimer);
     messageTimer = setTimeout(() => {
       message.value = '';
     }, 3000);
   };
+  view.onPickUpFailed = (reason) => {
+    showMessage(pickUpMessage(reason));
+  };
+  view.onUseItemFailed = (reason) => {
+    showMessage(useItemMessage(reason));
+  };
+  view.onDropItemFailed = (reason) => {
+    showMessage(dropItemMessage(reason));
+  };
+  // The inventory window opens with its button or Alt+E, as in RO.
+  const inventory = new InventoryModel();
+  view.onInventory = (items, size) => {
+    inventory.reset(items, size);
+  };
+  view.onInventoryAdd = (slot, id, amount) => {
+    inventory.add(slot, id, amount);
+  };
+  view.onInventoryRemove = (slot, amount) => {
+    inventory.remove(slot, amount);
+  };
+  const inventoryRoot = document.querySelector<HTMLElement>('#inventory-window');
+  const inventoryToggle = document.querySelector<HTMLButtonElement>('#inventory-toggle');
+  if (inventoryRoot !== null) {
+    inventoryWindow = new InventoryWindow(inventoryRoot, store, inventory, {
+      use: (slot) => {
+        connection.useItem(slot);
+      },
+      drop: (slot, amount) => {
+        connection.dropItem(slot, amount);
+      },
+    });
+    const toggle = (): void => {
+      inventoryWindow?.toggle();
+      inventoryWindow?.update(view.stats);
+    };
+    if (inventoryToggle !== null) {
+      inventoryToggle.hidden = false;
+      inventoryToggle.addEventListener('click', toggle);
+    }
+    addEventListener('keydown', (e) => {
+      if (isTyping(e.target)) {
+        return;
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyE') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+    // A row dragged onto the game view drops the item.
+    canvas.addEventListener('dragover', (e) => {
+      if (e.dataTransfer?.types.includes(SLOT_DRAG_TYPE) === true) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      }
+    });
+    canvas.addEventListener('drop', (e) => {
+      const slot = Number(e.dataTransfer?.getData(SLOT_DRAG_TYPE) ?? '');
+      if (e.dataTransfer?.types.includes(SLOT_DRAG_TYPE) === true && Number.isInteger(slot)) {
+        e.preventDefault();
+        inventoryWindow?.requestDrop(slot);
+      }
+    });
+  }
   view.onSound = (sound, position) => {
     const d = position.distanceTo(controls.target);
     if (d < SPRITE_SOUND_RANGE) {
@@ -509,6 +582,9 @@ canvas.addEventListener('pointerup', (e) => {
   if (session !== undefined && target !== undefined) {
     if (target.item) {
       session.connection.pickUp(target.id);
+    } else if ((weightPercent(session.online.stats) ?? 0) >= MAJOR_OVERWEIGHT) {
+      // The server refuses attacks from 90% weight, as the game client.
+      showMessage('You are carrying too much to attack.');
     } else {
       session.connection.attack(target.id, true);
     }
@@ -598,6 +674,9 @@ renderer.setAnimationLoop((time) => {
     }
     if (statusWindow?.open === true) {
       statusWindow.update(stats);
+    }
+    if (inventoryWindow?.open === true) {
+      inventoryWindow.update(stats);
     }
   }
   showBubbles(performance.now());

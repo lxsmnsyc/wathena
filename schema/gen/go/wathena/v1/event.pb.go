@@ -297,7 +297,9 @@ const (
 	DamageKind_DAMAGE_KIND_CRITICAL    DamageKind = 2
 	DamageKind_DAMAGE_KIND_MISS        DamageKind = 3
 	DamageKind_DAMAGE_KIND_LUCKY_DODGE DamageKind = 4
-	DamageKind_DAMAGE_KIND_HEAL        DamageKind = 5
+	// A heal: amount is the HP healed. For an item heal, source and target
+	// are the player, and only the player gets it.
+	DamageKind_DAMAGE_KIND_HEAL DamageKind = 5
 )
 
 // Enum value maps for DamageKind.
@@ -342,6 +344,172 @@ func (x DamageKind) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+type InventoryRemoveReason int32
+
+const (
+	InventoryRemoveReason_INVENTORY_REMOVE_REASON_UNSPECIFIED InventoryRemoveReason = 0
+	// The player used the item.
+	InventoryRemoveReason_INVENTORY_REMOVE_REASON_USED InventoryRemoveReason = 1
+	// The player dropped the item on the ground.
+	InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED InventoryRemoveReason = 2
+)
+
+// Enum value maps for InventoryRemoveReason.
+var (
+	InventoryRemoveReason_name = map[int32]string{
+		0: "INVENTORY_REMOVE_REASON_UNSPECIFIED",
+		1: "INVENTORY_REMOVE_REASON_USED",
+		2: "INVENTORY_REMOVE_REASON_DROPPED",
+	}
+	InventoryRemoveReason_value = map[string]int32{
+		"INVENTORY_REMOVE_REASON_UNSPECIFIED": 0,
+		"INVENTORY_REMOVE_REASON_USED":        1,
+		"INVENTORY_REMOVE_REASON_DROPPED":     2,
+	}
+)
+
+func (x InventoryRemoveReason) Enum() *InventoryRemoveReason {
+	p := new(InventoryRemoveReason)
+	*p = x
+	return p
+}
+
+func (x InventoryRemoveReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (InventoryRemoveReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[4].Descriptor()
+}
+
+func (InventoryRemoveReason) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[4]
+}
+
+func (x InventoryRemoveReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type UseItemFailure int32
+
+const (
+	UseItemFailure_USE_ITEM_FAILURE_UNSPECIFIED UseItemFailure = 0
+	// The slot holds nothing.
+	UseItemFailure_USE_ITEM_FAILURE_EMPTY_SLOT UseItemFailure = 1
+	// The item is not a healing, usable or cash item.
+	UseItemFailure_USE_ITEM_FAILURE_NOT_USABLE UseItemFailure = 2
+	// The server cannot run the item's script yet. Only plain heals run.
+	UseItemFailure_USE_ITEM_FAILURE_NOT_SUPPORTED UseItemFailure = 3
+	// The last item use was less than item_use_interval ago.
+	UseItemFailure_USE_ITEM_FAILURE_TOO_SOON UseItemFailure = 4
+	// The item's reuse delay has not ended.
+	UseItemFailure_USE_ITEM_FAILURE_COOLDOWN UseItemFailure = 5
+	// The player's level, sex or job may not use the item.
+	UseItemFailure_USE_ITEM_FAILURE_CANNOT_USE UseItemFailure = 6
+	// A cash item needs a weight below open_box_weight_rate.
+	UseItemFailure_USE_ITEM_FAILURE_OVERWEIGHT UseItemFailure = 7
+	// A cash item needs more than 10 empty slots.
+	UseItemFailure_USE_ITEM_FAILURE_INVENTORY_FULL UseItemFailure = 8
+)
+
+// Enum value maps for UseItemFailure.
+var (
+	UseItemFailure_name = map[int32]string{
+		0: "USE_ITEM_FAILURE_UNSPECIFIED",
+		1: "USE_ITEM_FAILURE_EMPTY_SLOT",
+		2: "USE_ITEM_FAILURE_NOT_USABLE",
+		3: "USE_ITEM_FAILURE_NOT_SUPPORTED",
+		4: "USE_ITEM_FAILURE_TOO_SOON",
+		5: "USE_ITEM_FAILURE_COOLDOWN",
+		6: "USE_ITEM_FAILURE_CANNOT_USE",
+		7: "USE_ITEM_FAILURE_OVERWEIGHT",
+		8: "USE_ITEM_FAILURE_INVENTORY_FULL",
+	}
+	UseItemFailure_value = map[string]int32{
+		"USE_ITEM_FAILURE_UNSPECIFIED":    0,
+		"USE_ITEM_FAILURE_EMPTY_SLOT":     1,
+		"USE_ITEM_FAILURE_NOT_USABLE":     2,
+		"USE_ITEM_FAILURE_NOT_SUPPORTED":  3,
+		"USE_ITEM_FAILURE_TOO_SOON":       4,
+		"USE_ITEM_FAILURE_COOLDOWN":       5,
+		"USE_ITEM_FAILURE_CANNOT_USE":     6,
+		"USE_ITEM_FAILURE_OVERWEIGHT":     7,
+		"USE_ITEM_FAILURE_INVENTORY_FULL": 8,
+	}
+)
+
+func (x UseItemFailure) Enum() *UseItemFailure {
+	p := new(UseItemFailure)
+	*p = x
+	return p
+}
+
+func (x UseItemFailure) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (UseItemFailure) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[5].Descriptor()
+}
+
+func (UseItemFailure) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[5]
+}
+
+func (x UseItemFailure) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type DropItemFailure int32
+
+const (
+	DropItemFailure_DROP_ITEM_FAILURE_UNSPECIFIED DropItemFailure = 0
+	// The slot holds nothing.
+	DropItemFailure_DROP_ITEM_FAILURE_EMPTY_SLOT DropItemFailure = 1
+	// The amount is 0 or more than the slot holds.
+	DropItemFailure_DROP_ITEM_FAILURE_BAD_AMOUNT DropItemFailure = 2
+	// The item may not be dropped.
+	DropItemFailure_DROP_ITEM_FAILURE_CANNOT_DROP DropItemFailure = 3
+)
+
+// Enum value maps for DropItemFailure.
+var (
+	DropItemFailure_name = map[int32]string{
+		0: "DROP_ITEM_FAILURE_UNSPECIFIED",
+		1: "DROP_ITEM_FAILURE_EMPTY_SLOT",
+		2: "DROP_ITEM_FAILURE_BAD_AMOUNT",
+		3: "DROP_ITEM_FAILURE_CANNOT_DROP",
+	}
+	DropItemFailure_value = map[string]int32{
+		"DROP_ITEM_FAILURE_UNSPECIFIED": 0,
+		"DROP_ITEM_FAILURE_EMPTY_SLOT":  1,
+		"DROP_ITEM_FAILURE_BAD_AMOUNT":  2,
+		"DROP_ITEM_FAILURE_CANNOT_DROP": 3,
+	}
+)
+
+func (x DropItemFailure) Enum() *DropItemFailure {
+	p := new(DropItemFailure)
+	*p = x
+	return p
+}
+
+func (x DropItemFailure) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DropItemFailure) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[6].Descriptor()
+}
+
+func (DropItemFailure) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[6]
+}
+
+func (x DropItemFailure) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type PickUpFailure int32
 
 const (
@@ -350,6 +518,12 @@ const (
 	PickUpFailure_PICK_UP_FAILURE_GONE PickUpFailure = 1
 	// Another player has the right to it for now.
 	PickUpFailure_PICK_UP_FAILURE_NOT_YOURS PickUpFailure = 2
+	// The item would pass the player's maximum weight.
+	PickUpFailure_PICK_UP_FAILURE_OVERWEIGHT PickUpFailure = 3
+	// The inventory has no free slot.
+	PickUpFailure_PICK_UP_FAILURE_INVENTORY_FULL PickUpFailure = 4
+	// The player's stack of the item would pass 30000 or its stack limit.
+	PickUpFailure_PICK_UP_FAILURE_TOO_MANY PickUpFailure = 5
 )
 
 // Enum value maps for PickUpFailure.
@@ -358,11 +532,17 @@ var (
 		0: "PICK_UP_FAILURE_UNSPECIFIED",
 		1: "PICK_UP_FAILURE_GONE",
 		2: "PICK_UP_FAILURE_NOT_YOURS",
+		3: "PICK_UP_FAILURE_OVERWEIGHT",
+		4: "PICK_UP_FAILURE_INVENTORY_FULL",
+		5: "PICK_UP_FAILURE_TOO_MANY",
 	}
 	PickUpFailure_value = map[string]int32{
-		"PICK_UP_FAILURE_UNSPECIFIED": 0,
-		"PICK_UP_FAILURE_GONE":        1,
-		"PICK_UP_FAILURE_NOT_YOURS":   2,
+		"PICK_UP_FAILURE_UNSPECIFIED":    0,
+		"PICK_UP_FAILURE_GONE":           1,
+		"PICK_UP_FAILURE_NOT_YOURS":      2,
+		"PICK_UP_FAILURE_OVERWEIGHT":     3,
+		"PICK_UP_FAILURE_INVENTORY_FULL": 4,
+		"PICK_UP_FAILURE_TOO_MANY":       5,
 	}
 )
 
@@ -377,11 +557,11 @@ func (x PickUpFailure) String() string {
 }
 
 func (PickUpFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[4].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[7].Descriptor()
 }
 
 func (PickUpFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[4]
+	return &file_wathena_v1_event_proto_enumTypes[7]
 }
 
 func (x PickUpFailure) Number() protoreflect.EnumNumber {
@@ -539,6 +719,51 @@ func (x *Event) GetPickUpFailed() *PickUpFailed {
 	return nil
 }
 
+func (x *Event) GetInventory() *InventoryUpdate {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_Inventory); ok {
+			return x.Inventory
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetInventoryRemove() *InventoryRemove {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_InventoryRemove); ok {
+			return x.InventoryRemove
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetItemUsed() *ItemUsed {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ItemUsed); ok {
+			return x.ItemUsed
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetUseItemFailed() *UseItemFailed {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_UseItemFailed); ok {
+			return x.UseItemFailed
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetDropItemFailed() *DropItemFailed {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_DropItemFailed); ok {
+			return x.DropItemFailed
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -641,6 +866,46 @@ func (x *Event) SetPickUpFailed(v *PickUpFailed) {
 		return
 	}
 	x.xxx_hidden_Body = &event_PickUpFailed{v}
+}
+
+func (x *Event) SetInventory(v *InventoryUpdate) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_Inventory{v}
+}
+
+func (x *Event) SetInventoryRemove(v *InventoryRemove) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_InventoryRemove{v}
+}
+
+func (x *Event) SetItemUsed(v *ItemUsed) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ItemUsed{v}
+}
+
+func (x *Event) SetUseItemFailed(v *UseItemFailed) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_UseItemFailed{v}
+}
+
+func (x *Event) SetDropItemFailed(v *DropItemFailed) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_DropItemFailed{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -754,6 +1019,46 @@ func (x *Event) HasPickUpFailed() bool {
 	return ok
 }
 
+func (x *Event) HasInventory() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_Inventory)
+	return ok
+}
+
+func (x *Event) HasInventoryRemove() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_InventoryRemove)
+	return ok
+}
+
+func (x *Event) HasItemUsed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ItemUsed)
+	return ok
+}
+
+func (x *Event) HasUseItemFailed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_UseItemFailed)
+	return ok
+}
+
+func (x *Event) HasDropItemFailed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_DropItemFailed)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -836,6 +1141,36 @@ func (x *Event) ClearPickUpFailed() {
 	}
 }
 
+func (x *Event) ClearInventory() {
+	if _, ok := x.xxx_hidden_Body.(*event_Inventory); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearInventoryRemove() {
+	if _, ok := x.xxx_hidden_Body.(*event_InventoryRemove); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearItemUsed() {
+	if _, ok := x.xxx_hidden_Body.(*event_ItemUsed); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearUseItemFailed() {
+	if _, ok := x.xxx_hidden_Body.(*event_UseItemFailed); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearDropItemFailed() {
+	if _, ok := x.xxx_hidden_Body.(*event_DropItemFailed); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -850,6 +1185,11 @@ const Event_Effect_case case_Event_Body = 10
 const Event_ItemTaken_case case_Event_Body = 11
 const Event_InventoryAdd_case case_Event_Body = 12
 const Event_PickUpFailed_case case_Event_Body = 13
+const Event_Inventory_case case_Event_Body = 14
+const Event_InventoryRemove_case case_Event_Body = 15
+const Event_ItemUsed_case case_Event_Body = 16
+const Event_UseItemFailed_case case_Event_Body = 17
+const Event_DropItemFailed_case case_Event_Body = 18
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -882,6 +1222,16 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_InventoryAdd_case
 	case *event_PickUpFailed:
 		return Event_PickUpFailed_case
+	case *event_Inventory:
+		return Event_Inventory_case
+	case *event_InventoryRemove:
+		return Event_InventoryRemove_case
+	case *event_ItemUsed:
+		return Event_ItemUsed_case
+	case *event_UseItemFailed:
+		return Event_UseItemFailed_case
+	case *event_DropItemFailed:
+		return Event_DropItemFailed_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -891,19 +1241,24 @@ type Event_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Fields of oneof xxx_hidden_Body:
-	Appear       *EntityAppear
-	Vanish       *EntityVanish
-	Move         *EntityMove
-	Stop         *EntityStop
-	Stats        *StatUpdate
-	Damage       *Damage
-	SkillCast    *SkillCast
-	Chat         *ChatMessage
-	NpcDialog    *NpcDialog
-	Effect       *EffectPlay
-	ItemTaken    *ItemTaken
-	InventoryAdd *InventoryAdd
-	PickUpFailed *PickUpFailed
+	Appear          *EntityAppear
+	Vanish          *EntityVanish
+	Move            *EntityMove
+	Stop            *EntityStop
+	Stats           *StatUpdate
+	Damage          *Damage
+	SkillCast       *SkillCast
+	Chat            *ChatMessage
+	NpcDialog       *NpcDialog
+	Effect          *EffectPlay
+	ItemTaken       *ItemTaken
+	InventoryAdd    *InventoryAdd
+	PickUpFailed    *PickUpFailed
+	Inventory       *InventoryUpdate
+	InventoryRemove *InventoryRemove
+	ItemUsed        *ItemUsed
+	UseItemFailed   *UseItemFailed
+	DropItemFailed  *DropItemFailed
 	// -- end of xxx_hidden_Body
 }
 
@@ -949,6 +1304,21 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.PickUpFailed != nil {
 		x.xxx_hidden_Body = &event_PickUpFailed{b.PickUpFailed}
+	}
+	if b.Inventory != nil {
+		x.xxx_hidden_Body = &event_Inventory{b.Inventory}
+	}
+	if b.InventoryRemove != nil {
+		x.xxx_hidden_Body = &event_InventoryRemove{b.InventoryRemove}
+	}
+	if b.ItemUsed != nil {
+		x.xxx_hidden_Body = &event_ItemUsed{b.ItemUsed}
+	}
+	if b.UseItemFailed != nil {
+		x.xxx_hidden_Body = &event_UseItemFailed{b.UseItemFailed}
+	}
+	if b.DropItemFailed != nil {
+		x.xxx_hidden_Body = &event_DropItemFailed{b.DropItemFailed}
 	}
 	return m0
 }
@@ -1019,6 +1389,26 @@ type event_PickUpFailed struct {
 	PickUpFailed *PickUpFailed `protobuf:"bytes,13,opt,name=pick_up_failed,json=pickUpFailed,proto3,oneof"`
 }
 
+type event_Inventory struct {
+	Inventory *InventoryUpdate `protobuf:"bytes,14,opt,name=inventory,proto3,oneof"`
+}
+
+type event_InventoryRemove struct {
+	InventoryRemove *InventoryRemove `protobuf:"bytes,15,opt,name=inventory_remove,json=inventoryRemove,proto3,oneof"`
+}
+
+type event_ItemUsed struct {
+	ItemUsed *ItemUsed `protobuf:"bytes,16,opt,name=item_used,json=itemUsed,proto3,oneof"`
+}
+
+type event_UseItemFailed struct {
+	UseItemFailed *UseItemFailed `protobuf:"bytes,17,opt,name=use_item_failed,json=useItemFailed,proto3,oneof"`
+}
+
+type event_DropItemFailed struct {
+	DropItemFailed *DropItemFailed `protobuf:"bytes,18,opt,name=drop_item_failed,json=dropItemFailed,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -1044,6 +1434,16 @@ func (*event_ItemTaken) isEvent_Body() {}
 func (*event_InventoryAdd) isEvent_Body() {}
 
 func (*event_PickUpFailed) isEvent_Body() {}
+
+func (*event_Inventory) isEvent_Body() {}
+
+func (*event_InventoryRemove) isEvent_Body() {}
+
+func (*event_ItemUsed) isEvent_Body() {}
+
+func (*event_UseItemFailed) isEvent_Body() {}
+
+func (*event_DropItemFailed) isEvent_Body() {}
 
 // EntityAppear adds an entity to the player's view.
 // Entity IDs are per connection. They are never database IDs.
@@ -3119,18 +3519,184 @@ func (b0 ItemTaken_builder) Build() *ItemTaken {
 	return m0
 }
 
-// InventoryAdd tells the player an item entered their inventory.
+// InventoryUpdate is the player's whole inventory. It replaces what the
+// client had. The first frame carries it.
+type InventoryUpdate struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Items *[]*InventoryItem      `protobuf:"bytes,1,rep,name=items,proto3"`
+	xxx_hidden_Size  uint32                 `protobuf:"varint,2,opt,name=size,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *InventoryUpdate) Reset() {
+	*x = InventoryUpdate{}
+	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InventoryUpdate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InventoryUpdate) ProtoMessage() {}
+
+func (x *InventoryUpdate) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *InventoryUpdate) GetItems() []*InventoryItem {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *InventoryUpdate) GetSize() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Size
+	}
+	return 0
+}
+
+func (x *InventoryUpdate) SetItems(v []*InventoryItem) {
+	x.xxx_hidden_Items = &v
+}
+
+func (x *InventoryUpdate) SetSize(v uint32) {
+	x.xxx_hidden_Size = v
+}
+
+type InventoryUpdate_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// items lists the slots that hold an item.
+	Items []*InventoryItem
+	// size is how many slots take new items, as rAthena's inventory_slots.
+	Size uint32
+}
+
+func (b0 InventoryUpdate_builder) Build() *InventoryUpdate {
+	m0 := &InventoryUpdate{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Items = &b.Items
+	x.xxx_hidden_Size = b.Size
+	return m0
+}
+
+// InventoryItem is one inventory slot.
+type InventoryItem struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_ItemId uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,3,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *InventoryItem) Reset() {
+	*x = InventoryItem{}
+	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InventoryItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InventoryItem) ProtoMessage() {}
+
+func (x *InventoryItem) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *InventoryItem) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *InventoryItem) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *InventoryItem) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *InventoryItem) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *InventoryItem) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *InventoryItem) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+type InventoryItem_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// slot is the slot's index, from 0, as rAthena's inventory index.
+	Slot   uint32
+	ItemId uint32
+	Amount uint32
+}
+
+func (b0 InventoryItem_builder) Build() *InventoryItem {
+	m0 := &InventoryItem{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_Amount = b.Amount
+	return m0
+}
+
+// InventoryAdd tells the player an amount of an item entered a slot. The
+// slot was empty or held the same item.
 type InventoryAdd struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_ItemId uint32                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3"`
 	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,3,opt,name=slot,proto3"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
 
 func (x *InventoryAdd) Reset() {
 	*x = InventoryAdd{}
-	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	mi := &file_wathena_v1_event_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3142,7 +3708,7 @@ func (x *InventoryAdd) String() string {
 func (*InventoryAdd) ProtoMessage() {}
 
 func (x *InventoryAdd) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	mi := &file_wathena_v1_event_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3167,6 +3733,13 @@ func (x *InventoryAdd) GetAmount() uint32 {
 	return 0
 }
 
+func (x *InventoryAdd) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
 func (x *InventoryAdd) SetItemId(v uint32) {
 	x.xxx_hidden_ItemId = v
 }
@@ -3175,11 +3748,17 @@ func (x *InventoryAdd) SetAmount(v uint32) {
 	x.xxx_hidden_Amount = v
 }
 
+func (x *InventoryAdd) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
 type InventoryAdd_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	ItemId uint32
+	// amount is the amount added, not the slot's new total.
 	Amount uint32
+	Slot   uint32
 }
 
 func (b0 InventoryAdd_builder) Build() *InventoryAdd {
@@ -3188,6 +3767,311 @@ func (b0 InventoryAdd_builder) Build() *InventoryAdd {
 	_, _ = b, x
 	x.xxx_hidden_ItemId = b.ItemId
 	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Slot = b.Slot
+	return m0
+}
+
+// InventoryRemove tells the player an amount left a slot. A slot left
+// with nothing is empty.
+type InventoryRemove struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	xxx_hidden_Reason InventoryRemoveReason  `protobuf:"varint,3,opt,name=reason,proto3,enum=wathena.v1.InventoryRemoveReason"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *InventoryRemove) Reset() {
+	*x = InventoryRemove{}
+	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InventoryRemove) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InventoryRemove) ProtoMessage() {}
+
+func (x *InventoryRemove) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *InventoryRemove) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *InventoryRemove) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *InventoryRemove) GetReason() InventoryRemoveReason {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return InventoryRemoveReason_INVENTORY_REMOVE_REASON_UNSPECIFIED
+}
+
+func (x *InventoryRemove) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *InventoryRemove) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+func (x *InventoryRemove) SetReason(v InventoryRemoveReason) {
+	x.xxx_hidden_Reason = v
+}
+
+type InventoryRemove_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot   uint32
+	Amount uint32
+	Reason InventoryRemoveReason
+}
+
+func (b0 InventoryRemove_builder) Build() *InventoryRemove {
+	m0 := &InventoryRemove{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// ItemUsed shows an entity using an item, as rAthena's clif_useitemack
+// to the area. The user gets it too.
+type ItemUsed struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Source uint32                 `protobuf:"varint,1,opt,name=source,proto3"`
+	xxx_hidden_ItemId uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ItemUsed) Reset() {
+	*x = ItemUsed{}
+	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemUsed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemUsed) ProtoMessage() {}
+
+func (x *ItemUsed) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ItemUsed) GetSource() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Source
+	}
+	return 0
+}
+
+func (x *ItemUsed) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *ItemUsed) SetSource(v uint32) {
+	x.xxx_hidden_Source = v
+}
+
+func (x *ItemUsed) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+type ItemUsed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Source uint32
+	ItemId uint32
+}
+
+func (b0 ItemUsed_builder) Build() *ItemUsed {
+	m0 := &ItemUsed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Source = b.Source
+	x.xxx_hidden_ItemId = b.ItemId
+	return m0
+}
+
+// UseItemFailed tells the player why a UseItem did nothing.
+type UseItemFailed struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Reason UseItemFailure         `protobuf:"varint,2,opt,name=reason,proto3,enum=wathena.v1.UseItemFailure"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *UseItemFailed) Reset() {
+	*x = UseItemFailed{}
+	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UseItemFailed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UseItemFailed) ProtoMessage() {}
+
+func (x *UseItemFailed) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UseItemFailed) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *UseItemFailed) GetReason() UseItemFailure {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return UseItemFailure_USE_ITEM_FAILURE_UNSPECIFIED
+}
+
+func (x *UseItemFailed) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *UseItemFailed) SetReason(v UseItemFailure) {
+	x.xxx_hidden_Reason = v
+}
+
+type UseItemFailed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot   uint32
+	Reason UseItemFailure
+}
+
+func (b0 UseItemFailed_builder) Build() *UseItemFailed {
+	m0 := &UseItemFailed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// DropItemFailed tells the player why a DropItem did nothing.
+type DropItemFailed struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Reason DropItemFailure        `protobuf:"varint,2,opt,name=reason,proto3,enum=wathena.v1.DropItemFailure"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *DropItemFailed) Reset() {
+	*x = DropItemFailed{}
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DropItemFailed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DropItemFailed) ProtoMessage() {}
+
+func (x *DropItemFailed) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *DropItemFailed) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *DropItemFailed) GetReason() DropItemFailure {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return DropItemFailure_DROP_ITEM_FAILURE_UNSPECIFIED
+}
+
+func (x *DropItemFailed) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *DropItemFailed) SetReason(v DropItemFailure) {
+	x.xxx_hidden_Reason = v
+}
+
+type DropItemFailed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot   uint32
+	Reason DropItemFailure
+}
+
+func (b0 DropItemFailed_builder) Build() *DropItemFailed {
+	m0 := &DropItemFailed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Reason = b.Reason
 	return m0
 }
 
@@ -3202,7 +4086,7 @@ type PickUpFailed struct {
 
 func (x *PickUpFailed) Reset() {
 	*x = PickUpFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3214,7 +4098,7 @@ func (x *PickUpFailed) String() string {
 func (*PickUpFailed) ProtoMessage() {}
 
 func (x *PickUpFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3268,7 +4152,7 @@ var File_wathena_v1_event_proto protoreflect.FileDescriptor
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xbd\x05\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\x86\b\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -3286,7 +4170,12 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"item_taken\x18\v \x01(\v2\x15.wathena.v1.ItemTakenH\x00R\titemTaken\x12?\n" +
 	"\rinventory_add\x18\f \x01(\v2\x18.wathena.v1.InventoryAddH\x00R\finventoryAdd\x12@\n" +
-	"\x0epick_up_failed\x18\r \x01(\v2\x18.wathena.v1.PickUpFailedH\x00R\fpickUpFailedB\x06\n" +
+	"\x0epick_up_failed\x18\r \x01(\v2\x18.wathena.v1.PickUpFailedH\x00R\fpickUpFailed\x12;\n" +
+	"\tinventory\x18\x0e \x01(\v2\x1b.wathena.v1.InventoryUpdateH\x00R\tinventory\x12H\n" +
+	"\x10inventory_remove\x18\x0f \x01(\v2\x1b.wathena.v1.InventoryRemoveH\x00R\x0finventoryRemove\x123\n" +
+	"\titem_used\x18\x10 \x01(\v2\x14.wathena.v1.ItemUsedH\x00R\bitemUsed\x12C\n" +
+	"\x0fuse_item_failed\x18\x11 \x01(\v2\x19.wathena.v1.UseItemFailedH\x00R\ruseItemFailed\x12F\n" +
+	"\x10drop_item_failed\x18\x12 \x01(\v2\x1a.wathena.v1.DropItemFailedH\x00R\x0edropItemFailedB\x06\n" +
 	"\x04body\"\x98\x02\n" +
 	"\fEntityAppear\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12*\n" +
@@ -3389,10 +4278,31 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x02at\"7\n" +
 	"\tItemTaken\x12\x16\n" +
 	"\x06source\x18\x01 \x01(\rR\x06source\x12\x12\n" +
-	"\x04item\x18\x02 \x01(\rR\x04item\"?\n" +
+	"\x04item\x18\x02 \x01(\rR\x04item\"V\n" +
+	"\x0fInventoryUpdate\x12/\n" +
+	"\x05items\x18\x01 \x03(\v2\x19.wathena.v1.InventoryItemR\x05items\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\rR\x04size\"T\n" +
+	"\rInventoryItem\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\rR\x06itemId\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\rR\x06amount\"S\n" +
 	"\fInventoryAdd\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\rR\x06itemId\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\rR\x06amount\"U\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\x12\x12\n" +
+	"\x04slot\x18\x03 \x01(\rR\x04slot\"x\n" +
+	"\x0fInventoryRemove\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\x129\n" +
+	"\x06reason\x18\x03 \x01(\x0e2!.wathena.v1.InventoryRemoveReasonR\x06reason\";\n" +
+	"\bItemUsed\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\rR\x06source\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\rR\x06itemId\"W\n" +
+	"\rUseItemFailed\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x122\n" +
+	"\x06reason\x18\x02 \x01(\x0e2\x1a.wathena.v1.UseItemFailureR\x06reason\"Y\n" +
+	"\x0eDropItemFailed\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x123\n" +
+	"\x06reason\x18\x02 \x01(\x0e2\x1b.wathena.v1.DropItemFailureR\x06reason\"U\n" +
 	"\fPickUpFailed\x12\x12\n" +
 	"\x04item\x18\x01 \x01(\rR\x04item\x121\n" +
 	"\x06reason\x18\x02 \x01(\x0e2\x19.wathena.v1.PickUpFailureR\x06reason*\xed\x01\n" +
@@ -3462,72 +4372,112 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x14DAMAGE_KIND_CRITICAL\x10\x02\x12\x14\n" +
 	"\x10DAMAGE_KIND_MISS\x10\x03\x12\x1b\n" +
 	"\x17DAMAGE_KIND_LUCKY_DODGE\x10\x04\x12\x14\n" +
-	"\x10DAMAGE_KIND_HEAL\x10\x05*i\n" +
+	"\x10DAMAGE_KIND_HEAL\x10\x05*\x87\x01\n" +
+	"\x15InventoryRemoveReason\x12'\n" +
+	"#INVENTORY_REMOVE_REASON_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cINVENTORY_REMOVE_REASON_USED\x10\x01\x12#\n" +
+	"\x1fINVENTORY_REMOVE_REASON_DROPPED\x10\x02*\xbd\x02\n" +
+	"\x0eUseItemFailure\x12 \n" +
+	"\x1cUSE_ITEM_FAILURE_UNSPECIFIED\x10\x00\x12\x1f\n" +
+	"\x1bUSE_ITEM_FAILURE_EMPTY_SLOT\x10\x01\x12\x1f\n" +
+	"\x1bUSE_ITEM_FAILURE_NOT_USABLE\x10\x02\x12\"\n" +
+	"\x1eUSE_ITEM_FAILURE_NOT_SUPPORTED\x10\x03\x12\x1d\n" +
+	"\x19USE_ITEM_FAILURE_TOO_SOON\x10\x04\x12\x1d\n" +
+	"\x19USE_ITEM_FAILURE_COOLDOWN\x10\x05\x12\x1f\n" +
+	"\x1bUSE_ITEM_FAILURE_CANNOT_USE\x10\x06\x12\x1f\n" +
+	"\x1bUSE_ITEM_FAILURE_OVERWEIGHT\x10\a\x12#\n" +
+	"\x1fUSE_ITEM_FAILURE_INVENTORY_FULL\x10\b*\x9b\x01\n" +
+	"\x0fDropItemFailure\x12!\n" +
+	"\x1dDROP_ITEM_FAILURE_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cDROP_ITEM_FAILURE_EMPTY_SLOT\x10\x01\x12 \n" +
+	"\x1cDROP_ITEM_FAILURE_BAD_AMOUNT\x10\x02\x12!\n" +
+	"\x1dDROP_ITEM_FAILURE_CANNOT_DROP\x10\x03*\xcb\x01\n" +
 	"\rPickUpFailure\x12\x1f\n" +
 	"\x1bPICK_UP_FAILURE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14PICK_UP_FAILURE_GONE\x10\x01\x12\x1d\n" +
-	"\x19PICK_UP_FAILURE_NOT_YOURS\x10\x02B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
+	"\x19PICK_UP_FAILURE_NOT_YOURS\x10\x02\x12\x1e\n" +
+	"\x1aPICK_UP_FAILURE_OVERWEIGHT\x10\x03\x12\"\n" +
+	"\x1ePICK_UP_FAILURE_INVENTORY_FULL\x10\x04\x12\x1c\n" +
+	"\x18PICK_UP_FAILURE_TOO_MANY\x10\x05B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
-var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_wathena_v1_event_proto_goTypes = []any{
-	(EntityKind)(0),      // 0: wathena.v1.EntityKind
-	(VanishReason)(0),    // 1: wathena.v1.VanishReason
-	(StatId)(0),          // 2: wathena.v1.StatId
-	(DamageKind)(0),      // 3: wathena.v1.DamageKind
-	(PickUpFailure)(0),   // 4: wathena.v1.PickUpFailure
-	(*Event)(nil),        // 5: wathena.v1.Event
-	(*EntityAppear)(nil), // 6: wathena.v1.EntityAppear
-	(*GroundItem)(nil),   // 7: wathena.v1.GroundItem
-	(*Look)(nil),         // 8: wathena.v1.Look
-	(*EntityVanish)(nil), // 9: wathena.v1.EntityVanish
-	(*EntityMove)(nil),   // 10: wathena.v1.EntityMove
-	(*EntityStop)(nil),   // 11: wathena.v1.EntityStop
-	(*StatUpdate)(nil),   // 12: wathena.v1.StatUpdate
-	(*Stat)(nil),         // 13: wathena.v1.Stat
-	(*Damage)(nil),       // 14: wathena.v1.Damage
-	(*SkillCast)(nil),    // 15: wathena.v1.SkillCast
-	(*ChatMessage)(nil),  // 16: wathena.v1.ChatMessage
-	(*NpcDialog)(nil),    // 17: wathena.v1.NpcDialog
-	(*NpcMenu)(nil),      // 18: wathena.v1.NpcMenu
-	(*EffectPlay)(nil),   // 19: wathena.v1.EffectPlay
-	(*ItemTaken)(nil),    // 20: wathena.v1.ItemTaken
-	(*InventoryAdd)(nil), // 21: wathena.v1.InventoryAdd
-	(*PickUpFailed)(nil), // 22: wathena.v1.PickUpFailed
-	(*Cell)(nil),         // 23: wathena.v1.Cell
-	(ChatChannel)(0),     // 24: wathena.v1.ChatChannel
+	(EntityKind)(0),            // 0: wathena.v1.EntityKind
+	(VanishReason)(0),          // 1: wathena.v1.VanishReason
+	(StatId)(0),                // 2: wathena.v1.StatId
+	(DamageKind)(0),            // 3: wathena.v1.DamageKind
+	(InventoryRemoveReason)(0), // 4: wathena.v1.InventoryRemoveReason
+	(UseItemFailure)(0),        // 5: wathena.v1.UseItemFailure
+	(DropItemFailure)(0),       // 6: wathena.v1.DropItemFailure
+	(PickUpFailure)(0),         // 7: wathena.v1.PickUpFailure
+	(*Event)(nil),              // 8: wathena.v1.Event
+	(*EntityAppear)(nil),       // 9: wathena.v1.EntityAppear
+	(*GroundItem)(nil),         // 10: wathena.v1.GroundItem
+	(*Look)(nil),               // 11: wathena.v1.Look
+	(*EntityVanish)(nil),       // 12: wathena.v1.EntityVanish
+	(*EntityMove)(nil),         // 13: wathena.v1.EntityMove
+	(*EntityStop)(nil),         // 14: wathena.v1.EntityStop
+	(*StatUpdate)(nil),         // 15: wathena.v1.StatUpdate
+	(*Stat)(nil),               // 16: wathena.v1.Stat
+	(*Damage)(nil),             // 17: wathena.v1.Damage
+	(*SkillCast)(nil),          // 18: wathena.v1.SkillCast
+	(*ChatMessage)(nil),        // 19: wathena.v1.ChatMessage
+	(*NpcDialog)(nil),          // 20: wathena.v1.NpcDialog
+	(*NpcMenu)(nil),            // 21: wathena.v1.NpcMenu
+	(*EffectPlay)(nil),         // 22: wathena.v1.EffectPlay
+	(*ItemTaken)(nil),          // 23: wathena.v1.ItemTaken
+	(*InventoryUpdate)(nil),    // 24: wathena.v1.InventoryUpdate
+	(*InventoryItem)(nil),      // 25: wathena.v1.InventoryItem
+	(*InventoryAdd)(nil),       // 26: wathena.v1.InventoryAdd
+	(*InventoryRemove)(nil),    // 27: wathena.v1.InventoryRemove
+	(*ItemUsed)(nil),           // 28: wathena.v1.ItemUsed
+	(*UseItemFailed)(nil),      // 29: wathena.v1.UseItemFailed
+	(*DropItemFailed)(nil),     // 30: wathena.v1.DropItemFailed
+	(*PickUpFailed)(nil),       // 31: wathena.v1.PickUpFailed
+	(*Cell)(nil),               // 32: wathena.v1.Cell
+	(ChatChannel)(0),           // 33: wathena.v1.ChatChannel
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
-	6,  // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
-	9,  // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
-	10, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
-	11, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
-	12, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
-	14, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
-	15, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
-	16, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
-	17, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
-	19, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
-	20, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
-	21, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
-	22, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
-	0,  // 13: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	8,  // 14: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	7,  // 15: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	1,  // 16: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	13, // 17: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 18: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 19: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	23, // 20: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	24, // 21: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	18, // 22: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	23, // 23: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	4,  // 24: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	25, // [25:25] is the sub-list for method output_type
-	25, // [25:25] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	9,  // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
+	12, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
+	13, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
+	14, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
+	15, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
+	17, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
+	18, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
+	19, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
+	20, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
+	22, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
+	23, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
+	26, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
+	31, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
+	24, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
+	27, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
+	28, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
+	29, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
+	30, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
+	0,  // 18: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	11, // 19: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	10, // 20: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	1,  // 21: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	16, // 22: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,  // 23: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,  // 24: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	32, // 25: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	33, // 26: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	21, // 27: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	32, // 28: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	25, // 29: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	4,  // 30: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	5,  // 31: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	6,  // 32: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	7,  // 33: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	34, // [34:34] is the sub-list for method output_type
+	34, // [34:34] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -3550,6 +4500,11 @@ func file_wathena_v1_event_proto_init() {
 		(*event_ItemTaken)(nil),
 		(*event_InventoryAdd)(nil),
 		(*event_PickUpFailed)(nil),
+		(*event_Inventory)(nil),
+		(*event_InventoryRemove)(nil),
+		(*event_ItemUsed)(nil),
+		(*event_UseItemFailed)(nil),
+		(*event_DropItemFailed)(nil),
 	}
 	file_wathena_v1_event_proto_msgTypes[10].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
@@ -3571,8 +4526,8 @@ func file_wathena_v1_event_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
-			NumEnums:      5,
-			NumMessages:   18,
+			NumEnums:      8,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

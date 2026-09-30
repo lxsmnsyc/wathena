@@ -23,6 +23,11 @@ message Event {
     ItemTaken item_taken = 11;
     InventoryAdd inventory_add = 12;
     PickUpFailed pick_up_failed = 13;
+    InventoryUpdate inventory = 14;
+    InventoryRemove inventory_remove = 15;
+    ItemUsed item_used = 16;
+    UseItemFailed use_item_failed = 17;
+    DropItemFailed drop_item_failed = 18;
   }
 }
 
@@ -200,6 +205,8 @@ enum DamageKind {
   DAMAGE_KIND_CRITICAL = 2;
   DAMAGE_KIND_MISS = 3;
   DAMAGE_KIND_LUCKY_DODGE = 4;
+  // A heal: amount is the HP healed. For an item heal, source and target
+  // are the player, and only the player gets it.
   DAMAGE_KIND_HEAL = 5;
 }
 
@@ -255,10 +262,95 @@ message ItemTaken {
   uint32 item = 2;
 }
 
-// InventoryAdd tells the player an item entered their inventory.
+// InventoryUpdate is the player's whole inventory. It replaces what the
+// client had. The first frame carries it.
+message InventoryUpdate {
+  // items lists the slots that hold an item.
+  repeated InventoryItem items = 1;
+  // size is how many slots take new items, as rAthena's inventory_slots.
+  uint32 size = 2;
+}
+
+// InventoryItem is one inventory slot.
+message InventoryItem {
+  // slot is the slot's index, from 0, as rAthena's inventory index.
+  uint32 slot = 1;
+  uint32 item_id = 2;
+  uint32 amount = 3;
+}
+
+// InventoryAdd tells the player an amount of an item entered a slot. The
+// slot was empty or held the same item.
 message InventoryAdd {
   uint32 item_id = 1;
+  // amount is the amount added, not the slot's new total.
   uint32 amount = 2;
+  uint32 slot = 3;
+}
+
+// InventoryRemove tells the player an amount left a slot. A slot left
+// with nothing is empty.
+message InventoryRemove {
+  uint32 slot = 1;
+  uint32 amount = 2;
+  InventoryRemoveReason reason = 3;
+}
+
+enum InventoryRemoveReason {
+  INVENTORY_REMOVE_REASON_UNSPECIFIED = 0;
+  // The player used the item.
+  INVENTORY_REMOVE_REASON_USED = 1;
+  // The player dropped the item on the ground.
+  INVENTORY_REMOVE_REASON_DROPPED = 2;
+}
+
+// ItemUsed shows an entity using an item, as rAthena's clif_useitemack
+// to the area. The user gets it too.
+message ItemUsed {
+  uint32 source = 1;
+  uint32 item_id = 2;
+}
+
+// UseItemFailed tells the player why a UseItem did nothing.
+message UseItemFailed {
+  uint32 slot = 1;
+  UseItemFailure reason = 2;
+}
+
+enum UseItemFailure {
+  USE_ITEM_FAILURE_UNSPECIFIED = 0;
+  // The slot holds nothing.
+  USE_ITEM_FAILURE_EMPTY_SLOT = 1;
+  // The item is not a healing, usable or cash item.
+  USE_ITEM_FAILURE_NOT_USABLE = 2;
+  // The server cannot run the item's script yet. Only plain heals run.
+  USE_ITEM_FAILURE_NOT_SUPPORTED = 3;
+  // The last item use was less than item_use_interval ago.
+  USE_ITEM_FAILURE_TOO_SOON = 4;
+  // The item's reuse delay has not ended.
+  USE_ITEM_FAILURE_COOLDOWN = 5;
+  // The player's level, sex or job may not use the item.
+  USE_ITEM_FAILURE_CANNOT_USE = 6;
+  // A cash item needs a weight below open_box_weight_rate.
+  USE_ITEM_FAILURE_OVERWEIGHT = 7;
+  // A cash item needs more than 10 empty slots.
+  USE_ITEM_FAILURE_INVENTORY_FULL = 8;
+}
+
+// DropItemFailed tells the player why a DropItem did nothing.
+message DropItemFailed {
+  uint32 slot = 1;
+  DropItemFailure reason = 2;
+}
+
+enum DropItemFailure {
+  DROP_ITEM_FAILURE_UNSPECIFIED = 0;
+  // The slot holds nothing.
+  DROP_ITEM_FAILURE_EMPTY_SLOT = 1;
+  // The amount is 0 or more than the slot holds.
+  DROP_ITEM_FAILURE_BAD_AMOUNT = 2;
+  // The item may not be dropped.
+  DROP_ITEM_FAILURE_CANNOT_DROP = 3;
 }
 
 // PickUpFailed tells the player why a PickUp did nothing.
@@ -273,4 +365,10 @@ enum PickUpFailure {
   PICK_UP_FAILURE_GONE = 1;
   // Another player has the right to it for now.
   PICK_UP_FAILURE_NOT_YOURS = 2;
+  // The item would pass the player's maximum weight.
+  PICK_UP_FAILURE_OVERWEIGHT = 3;
+  // The inventory has no free slot.
+  PICK_UP_FAILURE_INVENTORY_FULL = 4;
+  // The player's stack of the item would pass 30000 or its stack limit.
+  PICK_UP_FAILURE_TOO_MANY = 5;
 }

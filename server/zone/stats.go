@@ -54,6 +54,7 @@ func (z *Zone) recalc(p *Player) {
 			st := z.PlayerStatus
 			e.status = &st
 			p.sp = int64(st.MaxSP)
+			p.regen = status.RegenOf(e.status, p.char.Skills)
 		}
 		return
 	}
@@ -89,6 +90,9 @@ func (z *Zone) recalc(p *Player) {
 		e.hp, e.hpChanged = int64(st.MaxHP), true
 	}
 	p.sp = min(p.sp, int64(st.MaxSP))
+	p.regen = status.RegenOf(&st, p.char.Skills)
+	// status_calc_pc calls pc_updateweightstatus.
+	z.updateWeight(p)
 }
 
 // battleStats is a StatUpdate of the player's stats other than HP, which
@@ -131,6 +135,9 @@ func (z *Zone) battleStats(p *Player) *wathenav1.Event {
 		stat(wathenav1.StatId_STAT_ID_MAX_SP, int64(st.MaxSP)),
 		stat(wathenav1.StatId_STAT_ID_SP, p.sp),
 		stat(wathenav1.StatId_STAT_ID_MAX_WEIGHT, int64(p.maxWeight)),
+	}
+	if p.inventory != nil {
+		all = append(all, stat(wathenav1.StatId_STAT_ID_WEIGHT, int64(p.inventory.Weight)))
 	}
 	if z.Status != nil {
 		// The raise costs, as clif_updatestatus sends SP_USTR to SP_ULUK.

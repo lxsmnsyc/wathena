@@ -2,6 +2,7 @@ package zone
 
 import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/progression"
 )
 
@@ -115,8 +116,11 @@ func (z *Zone) reward(e, killer *entity) {
 	f := fall{x: e.x, y: e.y, first: kill.First, second: kill.Second, third: kill.Third, boss: mob.Boss(), at: z.now + t.DropDelay}
 	for _, d := range t.RollDrops(mob, kill.DropModifier, k, kill.First != 0, z.rand) {
 		if p := z.players[kill.First]; d.Egg && p != nil {
-			// pet_create_egg puts the egg in the inventory.
-			z.addItem(p, d.Item, 1)
+			// pet_create_egg puts the egg in the inventory when a slot
+			// is free. The egg is lost otherwise.
+			if p.inventory.Blank() > 0 {
+				z.addItem(p, d.Item, 1)
+			}
 			continue
 		}
 		f.items = append(f.items, d.Item)
@@ -193,15 +197,6 @@ func (z *Zone) progressStats(p *Player, before *wathenav1.Event) *wathenav1.Even
 
 func stat(id wathenav1.StatId, v int64) *wathenav1.Stat {
 	return wathenav1.Stat_builder{Id: id, Value: v}.Build()
-}
-
-// addItem puts items in a player's inventory. Weight is not checked yet.
-func (z *Zone) addItem(p *Player, id uint32, amount int) {
-	p.inventory[id] += amount
-	p.pending = append(p.pending, wathenav1.Event_builder{InventoryAdd: wathenav1.InventoryAdd_builder{
-		ItemId: id,
-		Amount: uint32(amount), // #nosec G115 -- a stack of at most 30000.
-	}.Build()}.Build())
 }
 
 // dropItems places the items of kills whose drop time has come, as
@@ -321,12 +316,17 @@ func (z *Zone) take(p *Player, it *entity, net uint32) {
 		p.pending = append(p.pending, pickUpFailed(net, wathenav1.PickUpFailure_PICK_UP_FAILURE_NOT_YOURS))
 		return
 	}
+	// party_share_loot gives the item with pc_additem. When it fails,
+	// the item stays and the player learns why.
+	if r := z.addItem(p, g.id, g.amount); r != item.AddSuccess {
+		p.pending = append(p.pending, pickUpFailed(net, pickUpFailure(r)))
+		return
+	}
 	// unit_stop_attack.
 	p.entity.target = nil
 	delete(z.entities, it)
 	z.takes = append(z.takes, take{p.entity, it})
 	z.removed = append(z.removed, removal{it, wathenav1.VanishReason_VANISH_REASON_PICKED_UP})
-	z.addItem(p, g.id, g.amount)
 }
 
 func pickUpFailed(item uint32, reason wathenav1.PickUpFailure) *wathenav1.Event {

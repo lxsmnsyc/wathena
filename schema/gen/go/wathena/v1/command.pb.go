@@ -245,6 +245,15 @@ func (x *Command) GetRaiseStat() *RaiseStat {
 	return nil
 }
 
+func (x *Command) GetDropItem() *DropItem {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_DropItem); ok {
+			return x.DropItem
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -315,6 +324,14 @@ func (x *Command) SetRaiseStat(v *RaiseStat) {
 		return
 	}
 	x.xxx_hidden_Body = &command_RaiseStat{v}
+}
+
+func (x *Command) SetDropItem(v *DropItem) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_DropItem{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -396,6 +413,14 @@ func (x *Command) HasRaiseStat() bool {
 	return ok
 }
 
+func (x *Command) HasDropItem() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_DropItem)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -454,6 +479,12 @@ func (x *Command) ClearRaiseStat() {
 	}
 }
 
+func (x *Command) ClearDropItem() {
+	if _, ok := x.xxx_hidden_Body.(*command_DropItem); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -464,6 +495,7 @@ const Command_NpcReply_case case_Command_Body = 6
 const Command_UseItem_case case_Command_Body = 7
 const Command_PickUp_case case_Command_Body = 8
 const Command_RaiseStat_case case_Command_Body = 9
+const Command_DropItem_case case_Command_Body = 10
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -488,6 +520,8 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_PickUp_case
 	case *command_RaiseStat:
 		return Command_RaiseStat_case
+	case *command_DropItem:
+		return Command_DropItem_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -506,6 +540,7 @@ type Command_builder struct {
 	UseItem   *UseItem
 	PickUp    *PickUp
 	RaiseStat *RaiseStat
+	DropItem  *DropItem
 	// -- end of xxx_hidden_Body
 }
 
@@ -539,6 +574,9 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.RaiseStat != nil {
 		x.xxx_hidden_Body = &command_RaiseStat{b.RaiseStat}
+	}
+	if b.DropItem != nil {
+		x.xxx_hidden_Body = &command_DropItem{b.DropItem}
 	}
 	return m0
 }
@@ -593,6 +631,10 @@ type command_RaiseStat struct {
 	RaiseStat *RaiseStat `protobuf:"bytes,9,opt,name=raise_stat,json=raiseStat,proto3,oneof"`
 }
 
+type command_DropItem struct {
+	DropItem *DropItem `protobuf:"bytes,10,opt,name=drop_item,json=dropItem,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -610,6 +652,8 @@ func (*command_UseItem) isCommand_Body() {}
 func (*command_PickUp) isCommand_Body() {}
 
 func (*command_RaiseStat) isCommand_Body() {}
+
+func (*command_DropItem) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -1464,6 +1508,8 @@ func (*npcReply_InputNumber) isNpcReply_Answer() {}
 
 func (*npcReply_Close) isNpcReply_Answer() {}
 
+// UseItem uses the item in an inventory slot, as rAthena's pc_useitem.
+// The server answers with ItemUsed and InventoryRemove, or UseItemFailed.
 type UseItem struct {
 	state           protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Slot uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
@@ -1510,7 +1556,8 @@ func (x *UseItem) SetSlot(v uint32) {
 type UseItem_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// slot is the inventory slot the server sent in InventoryUpdate.
+	// slot is an inventory slot from InventoryUpdate or InventoryAdd, below
+	// 200.
 	Slot uint32
 }
 
@@ -1519,6 +1566,82 @@ func (b0 UseItem_builder) Build() *UseItem {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Slot = b.Slot
+	return m0
+}
+
+// DropItem drops an amount from an inventory slot on the ground near the
+// player, as rAthena's pc_dropitem. The server answers with
+// InventoryRemove, or DropItemFailed.
+type DropItem struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *DropItem) Reset() {
+	*x = DropItem{}
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DropItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DropItem) ProtoMessage() {}
+
+func (x *DropItem) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *DropItem) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *DropItem) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *DropItem) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *DropItem) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+type DropItem_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// slot is below 200, as in UseItem.
+	Slot uint32
+	// amount is 1 to 30000, and at most the slot's amount.
+	Amount uint32
+}
+
+func (b0 DropItem_builder) Build() *DropItem {
+	m0 := &DropItem{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Amount = b.Amount
 	return m0
 }
 
@@ -1532,7 +1655,7 @@ type PickUp struct {
 
 func (x *PickUp) Reset() {
 	*x = PickUp{}
-	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	mi := &file_wathena_v1_command_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1544,7 +1667,7 @@ func (x *PickUp) String() string {
 func (*PickUp) ProtoMessage() {}
 
 func (x *PickUp) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	mi := &file_wathena_v1_command_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1593,7 +1716,7 @@ type RaiseStat struct {
 
 func (x *RaiseStat) Reset() {
 	*x = RaiseStat{}
-	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	mi := &file_wathena_v1_command_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1605,7 +1728,7 @@ func (x *RaiseStat) String() string {
 func (*RaiseStat) ProtoMessage() {}
 
 func (x *RaiseStat) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	mi := &file_wathena_v1_command_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1660,7 +1783,7 @@ var File_wathena_v1_command_proto protoreflect.FileDescriptor
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\xce\x03\n" +
+	"wathena.v1\"\x83\x04\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -1671,7 +1794,9 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\buse_item\x18\a \x01(\v2\x13.wathena.v1.UseItemH\x00R\auseItem\x12-\n" +
 	"\apick_up\x18\b \x01(\v2\x12.wathena.v1.PickUpH\x00R\x06pickUp\x126\n" +
 	"\n" +
-	"raise_stat\x18\t \x01(\v2\x15.wathena.v1.RaiseStatH\x00R\traiseStatB\x06\n" +
+	"raise_stat\x18\t \x01(\v2\x15.wathena.v1.RaiseStatH\x00R\traiseStat\x123\n" +
+	"\tdrop_item\x18\n" +
+	" \x01(\v2\x14.wathena.v1.DropItemH\x00R\bdropItemB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -1704,7 +1829,10 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x05close\x18\x06 \x01(\bH\x00R\x05closeB\b\n" +
 	"\x06answer\"\x1d\n" +
 	"\aUseItem\x12\x12\n" +
-	"\x04slot\x18\x01 \x01(\rR\x04slot\"\x1c\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\"6\n" +
+	"\bDropItem\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\"\x1c\n" +
 	"\x06PickUp\x12\x12\n" +
 	"\x04item\x18\x01 \x01(\rR\x04item\"M\n" +
 	"\tRaiseStat\x12(\n" +
@@ -1727,7 +1855,7 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_wathena_v1_command_proto_goTypes = []any{
 	(ChatChannel)(0),  // 0: wathena.v1.ChatChannel
 	(BaseStat)(0),     // 1: wathena.v1.BaseStat
@@ -1740,8 +1868,9 @@ var file_wathena_v1_command_proto_goTypes = []any{
 	(*NpcClick)(nil),  // 8: wathena.v1.NpcClick
 	(*NpcReply)(nil),  // 9: wathena.v1.NpcReply
 	(*UseItem)(nil),   // 10: wathena.v1.UseItem
-	(*PickUp)(nil),    // 11: wathena.v1.PickUp
-	(*RaiseStat)(nil), // 12: wathena.v1.RaiseStat
+	(*DropItem)(nil),  // 11: wathena.v1.DropItem
+	(*PickUp)(nil),    // 12: wathena.v1.PickUp
+	(*RaiseStat)(nil), // 13: wathena.v1.RaiseStat
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
 	3,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
@@ -1751,16 +1880,17 @@ var file_wathena_v1_command_proto_depIdxs = []int32{
 	8,  // 4: wathena.v1.Command.npc_click:type_name -> wathena.v1.NpcClick
 	9,  // 5: wathena.v1.Command.npc_reply:type_name -> wathena.v1.NpcReply
 	10, // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
-	11, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
-	12, // 8: wathena.v1.Command.raise_stat:type_name -> wathena.v1.RaiseStat
-	6,  // 9: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 10: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	1,  // 11: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	12, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
+	13, // 8: wathena.v1.Command.raise_stat:type_name -> wathena.v1.RaiseStat
+	11, // 9: wathena.v1.Command.drop_item:type_name -> wathena.v1.DropItem
+	6,  // 10: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 11: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	1,  // 12: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -1778,6 +1908,7 @@ func file_wathena_v1_command_proto_init() {
 		(*command_UseItem)(nil),
 		(*command_PickUp)(nil),
 		(*command_RaiseStat)(nil),
+		(*command_DropItem)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
@@ -1796,7 +1927,7 @@ func file_wathena_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

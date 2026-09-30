@@ -63,6 +63,10 @@ body {
   font-size: 26px;
 }
 
+.hit.heal {
+  color: #7dff7d;
+}
+
 .hit.miss {
   color: #b8c8ff;
   font-size: 16px;
@@ -104,31 +108,6 @@ body {
 
 #dock > * {
   pointer-events: auto;
-}
-
-#inventory {
-  max-height: 30vh;
-  overflow-y: auto;
-  margin: 0;
-  padding: 8px 10px;
-  list-style: none;
-  border-radius: 6px;
-  background: rgb(0 0 0 / 60%);
-  font-variant-numeric: tabular-nums;
-}
-
-#inventory:empty {
-  display: none;
-}
-
-#inventory li {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-#inventory img {
-  image-rendering: pixelated;
 }
 
 #status-window {
@@ -234,4 +213,88 @@ body {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   unicode-bidi: isolate;
+}
+
+#inventory-window {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(300px, calc(100% - 24px));
+  max-height: calc(100% - 120px);
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+  font-variant-numeric: tabular-nums;
+}
+
+#inventory-window[hidden] {
+  display: none;
+}
+
+#inventory-window .inventory-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#inventory-window .heavy {
+  color: #ff8a8a;
+}
+
+#inventory-window ul {
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+#inventory-window li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 1px 2px;
+  border-radius: 3px;
+  cursor: grab;
+  user-select: none;
+}
+
+#inventory-window li:hover,
+#inventory-window li:focus-visible {
+  background: rgb(255 255 255 / 12%);
+  outline: none;
+}
+
+#inventory-window img {
+  image-rendering: pixelated;
+}
+
+#inventory-window .name {
+  flex: 1;
+}
+
+#inventory-window .amount {
+  color: #b8c8ff;
+}
+
+#inventory-window li button {
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+#inventory-window .drop-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+#inventory-window .drop-form[hidden] {
+  display: none;
+}
+
+#inventory-window .drop-form input {
+  width: 6em;
 }

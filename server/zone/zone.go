@@ -9,6 +9,7 @@ import (
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -67,8 +68,22 @@ type Player struct {
 	window    status.Window
 	// sent holds the stat values last sent to the player.
 	sent map[wathenav1.StatId]int64
-	// inventory maps item IDs to amounts.
-	inventory map[uint32]int
+	// inventory is the player's items and their weight.
+	inventory *item.Inventory
+	// overweight is the level pc_updateweightstatus last set, from
+	// item.WeightNormal to item.Weight90.
+	overweight int
+	// canUseItem is canuseitem_tick: when the player may use an item
+	// again, in zone milliseconds.
+	canUseItem int64
+	// itemDelays and statusDelays are when item reuse delays end, by
+	// item ID and by delay status, as item_delay and the Reuse_Limit
+	// statuses.
+	itemDelays   map[uint32]int64
+	statusDelays map[string]int64
+	// regen is what natural regen heals, from the last stat calculation.
+	regen      status.Regen
+	regenTicks regenState
 	// pending are events for the player alone, sent with the next frame.
 	pending []*wathenav1.Event
 }
@@ -103,6 +118,8 @@ type command struct {
 	pickUp *uint32
 	raise  *raiseCommand
 	chat   *string
+	use    *int
+	drop   *dropCommand
 }
 
 type raiseCommand struct {
@@ -139,6 +156,12 @@ type Zone struct {
 	// Progress holds the exp tables and drop settings. Without it, kills
 	// give no exp and no items. Set it before Run.
 	Progress *progression.Tables
+	// Items is the item database. Without it, every item is an Etc item
+	// with no weight. Set it before Run.
+	Items *item.Table
+	// StartItems are items every player starts with, for development.
+	// Set it before Run.
+	StartItems []StartItem
 
 	// players maps charID to the players in the zone.
 	players  map[uint32]*Player
@@ -146,6 +169,11 @@ type Zone struct {
 	loot
 	// chats are this tick's local chat lines.
 	chats []chatLine
+	// used are this tick's item uses.
+	used []used
+	// prevHeal and nextHeal are when natural regen last ran and next
+	// runs, in zone milliseconds.
+	prevHeal, nextHeal int64
 
 	joins    chan joinRequest
 	leaves   chan *Player
@@ -256,7 +284,11 @@ func (z *Zone) join(p *Player) joinResult {
 	z.nextChar++
 	p.charID = z.nextChar
 	z.players[p.charID] = p
-	p.inventory = map[uint32]int{}
+	p.inventory = item.NewInventory()
+	// pc_authok starts the regen waits at login.
+	p.regenTicks = regenState{hp: z.now, sp: z.now}
+	p.itemDelays = map[uint32]int64{}
+	p.statusDelays = map[string]int64{}
 	p.sent = map[wathenav1.StatId]int64{}
 	p.char = z.Start
 	if t := z.Progress; t != nil {
@@ -273,6 +305,8 @@ func (z *Zone) join(p *Player) joinResult {
 	if e.status.Speed > 0 {
 		e.speed = e.status.Speed
 	}
+	z.giveStartItems(p)
+	p.pending = append(p.pending, inventoryList(p))
 	if s := z.battleStats(p); s != nil {
 		p.pending = append(p.pending, s)
 	}
@@ -357,7 +391,15 @@ func (z *Zone) handle(c command) {
 		me.target, me.pickItem = nil, nil
 		z.walk(me, c.walkTo[0], c.walkTo[1])
 	}
-	if c.attack != nil {
+	if c.use != nil {
+		z.useItem(p, *c.use)
+	}
+	if c.drop != nil {
+		z.dropItem(p, c.drop.slot, c.drop.amount)
+	}
+	// The game client does not attack while SC_WEIGHT90 is on, which
+	// rAthena relies on. The zone checks it itself.
+	if c.attack != nil && p.overweight != item.Weight90 {
 		for e, id := range p.netIDs {
 			if id == c.attack.target && e != me && e.status != nil && !e.dead {
 				me.target, me.repeat, me.pickItem = e, c.attack.repeat, nil
@@ -416,6 +458,30 @@ func (z *Zone) Chat(p *Player, seq uint32, text string) bool {
 	}
 }
 
+// UseItem asks to use the item in an inventory slot, as rAthena's
+// clif_parse_UseItem. The gateway has checked the slot is below
+// item.MaxInventory. It returns false when the zone's queue is full.
+func (z *Zone) UseItem(p *Player, seq uint32, slot int) bool {
+	select {
+	case z.commands <- command{player: p, seq: seq, use: &slot}:
+		return true
+	default:
+		return false
+	}
+}
+
+// DropItem asks to drop an amount from an inventory slot, as rAthena's
+// clif_parse_DropItem. The gateway has checked the slot is below
+// item.MaxInventory. It returns false when the zone's queue is full.
+func (z *Zone) DropItem(p *Player, seq uint32, slot, amount int) bool {
+	select {
+	case z.commands <- command{player: p, seq: seq, drop: &dropCommand{slot, amount}}:
+		return true
+	default:
+		return false
+	}
+}
+
 // walk starts or changes a walk. A unit in the middle of a step finishes
 // it first, so the new path starts from the cell it is stepping into.
 func (z *Zone) walk(e *entity, x, y int) {
@@ -465,6 +531,7 @@ func (z *Zone) stepAt(now int64) {
 	z.pickUps()
 	z.dropItems()
 	z.expireItems()
+	z.naturalHeal()
 	for e := range z.entities {
 		if e.player != nil {
 			z.update(e.player)
@@ -482,6 +549,7 @@ func (z *Zone) stepAt(now int64) {
 	z.removed = z.removed[:0]
 	z.takes = z.takes[:0]
 	z.effects = z.effects[:0]
+	z.used = z.used[:0]
 	clear(z.chats)
 	z.chats = z.chats[:0]
 }
@@ -511,6 +579,7 @@ func (z *Zone) update(p *Player) {
 	}
 	events = append(events, z.combatEvents(p)...)
 	events = append(events, z.effectEvents(p)...)
+	events = append(events, z.usedEvents(p)...)
 	events = append(events, z.chatEvents(p)...)
 	events = append(events, p.pending...)
 	p.pending = nil

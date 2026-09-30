@@ -74,7 +74,7 @@ func TestLevelPenalty(t *testing.T) {
 
 func TestExtracts(t *testing.T) {
 	for _, mode := range Modes {
-		for _, name := range []string{"spawns", "client_tables", "progression", "job_stats"} {
+		for _, name := range []string{"spawns", "client_tables", "progression", "job_stats", "items"} {
 			var h struct {
 				Mode Mode `json:"mode"`
 			}

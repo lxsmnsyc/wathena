@@ -18,13 +18,13 @@
       <button type="submit">Load</button>
       <button id="sound" type="button">Sound off</button>
       <button id="status-toggle" type="button" title="Status (Alt+A)" hidden>Status</button>
+      <button id="inventory-toggle" type="button" title="Items (Alt+E)" hidden>Items</button>
       <output id="status"></output>
       <output id="hp"></output>
       <output id="exp"></output>
       <output id="message"></output>
     </form>
     <div id="dock">
-      <ul id="inventory"></ul>
       <section id="chat" aria-label="Chat" hidden>
         <ol id="chat-log" aria-live="polite"></ol>
         <input
@@ -38,6 +38,7 @@
       </section>
     </div>
     <section id="status-window" aria-label="Status" hidden></section>
+    <section id="inventory-window" aria-label="Items" hidden></section>
     <script type="module" src="/src/viewer/main.ts"></script>
   </body>
 </html>

@@ -155,7 +155,7 @@ func TestDropsAppearAndExpire(t *testing.T) {
 
 	// The pet egg goes to the inventory. The other two fall: the first
 	// on the monster's cell, the second south-east or next to it.
-	if p.inventory[9001] != 1 {
+	if p.inventory.Count(9001) != 1 {
 		t.Errorf("inventory %v", p.inventory)
 	}
 	seen := items(ev)
@@ -238,7 +238,7 @@ func TestPickUp(t *testing.T) {
 			break
 		}
 	}
-	if z.entities[it] || p.inventory[909] != 1 {
+	if z.entities[it] || p.inventory.Count(909) != 1 {
 		t.Fatalf("item still there: %v, inventory %v", z.entities[it], p.inventory)
 	}
 	// Both see the pick-up, then the item vanish. The picker gets it.
@@ -302,7 +302,7 @@ func TestPickUpNotYours(t *testing.T) {
 	if f := failures(b); len(f) != 1 || f[0] != wathenav1.PickUpFailure_PICK_UP_FAILURE_NOT_YOURS {
 		t.Fatalf("failures %v", f)
 	}
-	if !z.entities[it] || b.inventory[909] != 0 {
+	if !z.entities[it] || b.inventory.Count(909) != 0 {
 		t.Fatal("b took the item")
 	}
 	for now := z.now + 50; now < dropped+7000; now += 50 {
@@ -310,7 +310,7 @@ func TestPickUpNotYours(t *testing.T) {
 	}
 	z.handle(command{player: b, seq: 2, pickUp: new(b.netIDs[it])})
 	z.stepAt(dropped + 7050)
-	if z.entities[it] || b.inventory[909] != 1 {
+	if z.entities[it] || b.inventory.Count(909) != 1 {
 		t.Errorf("b could not take the item after 7 seconds")
 	}
 }
@@ -321,7 +321,7 @@ func TestPickUpGone(t *testing.T) {
 	// p takes the item first.
 	z.handle(command{player: p, seq: 2, pickUp: new(p.netIDs[it])})
 	z.stepAt(z.now + 50)
-	if p.inventory[909] != 1 {
+	if p.inventory.Count(909) != 1 {
 		t.Fatal("p did not take the item")
 	}
 	// b asks in the same tick, before it sees the item vanish.

@@ -51,7 +51,7 @@ Client to server, in `ClientMessage`:
 |---|---|
 | `hello` | Session start. |
 | `ping` | Latency and keepalive. |
-| `command` | A player action: walk, attack, skill, chat, NPC click or reply, use item, pick up, raise a stat. |
+| `command` | A player action: walk, attack, skill, chat, NPC click or reply, use item, drop item, pick up, raise a stat. |
 
 Server to client, in `ServerMessage`:
 
@@ -76,14 +76,16 @@ Server to client, in `ServerMessage`:
 - **Movement sends a path, not positions.** `EntityMove` holds the start cell, the walk speed, and the steps as 4-bit directions, numbered as `EntityAppear.dir`: 0 south, turning clockwise. The client animates the walk. The server only sends a new message when a walk starts, changes, or stops. A unit in the middle of a step finishes it, so a changed walk starts with that step.
 - **Other players' HP is a fraction.** `EntityAppear.hp_permille` is HP out of 1000, and `Damage.target_hp_permille` updates it after each hit. Exact HP goes only to the player, their party, and their homunculus.
 - **Text is already translated.** NPC dialog and messages arrive in the player's language, chosen from `Hello.language` (strategy section 6.13).
-- **Ground items are entities.** They appear with `ENTITY_KIND_ITEM` and a `GroundItem` holding the item ID, amount, and place inside the cell. `PickUp` names the item's entity ID. Everyone in view gets `ItemTaken` and then a vanish with `VANISH_REASON_PICKED_UP`. The picker also gets `InventoryAdd`, or `PickUpFailed` when nothing happened.
+- **Ground items are entities.** They appear with `ENTITY_KIND_ITEM` and a `GroundItem` holding the item ID, amount, and place inside the cell. `PickUp` names the item's entity ID. Everyone in view gets `ItemTaken` and then a vanish with `VANISH_REASON_PICKED_UP`. The picker also gets `InventoryAdd`, or `PickUpFailed` when nothing happened. The reasons follow rAthena's `pc_takeitem` and `pc_additem`: the item is gone, another player has the right to it for now, it would pass the maximum weight (`OVERWEIGHT`), the inventory has no free slot (`INVENTORY_FULL`), or the stack would pass 30000 or the item's stack limit (`TOO_MANY`). An item that cannot be taken stays on the ground.
+- **The inventory is slots.** The first frame carries `InventoryUpdate`: every slot that holds an item, with its index from 0, the item ID and the amount, and `size`, the slots that take new items (100, rAthena's `inventory_slots`). Slots are rAthena's inventory indexes, so a stack keeps its slot. `InventoryAdd` names the slot an amount entered, and `InventoryRemove` the slot an amount left, with the reason (used or dropped). A slot left with nothing is empty. Slots go up to 199, rAthena's `MAX_INVENTORY`.
+- **Using and dropping items name a slot.** `UseItem` uses one item from a slot, as rAthena's `pc_useitem`. Everyone in view, the user included, gets `ItemUsed` with the user and the item ID, as `clif_useitemack` goes to the area. The user also gets `InventoryRemove`, the new HP and SP, and, for HP, a `Damage` with `DAMAGE_KIND_HEAL` whose source and target are the user and whose amount is the HP healed. Only the user gets the heal number. Only items whose script is a plain heal run for now; others fail with `USE_ITEM_FAILURE_NOT_SUPPORTED` and are not spent. `DropItem` drops an amount from a slot on a free cell 1 or 2 cells from the player, as rAthena's `pc_dropitem`. The item appears as a ground item that anyone may take at once. Failures come as `UseItemFailed` or `DropItemFailed` with a reason. The gateway drops a `UseItem` or `DropItem` whose slot is 200 or more, or whose amount is over 30000, without a reply.
 - **Own stats are single numbers.** `StatUpdate` sends each changed stat once. HP and MAX_HP go together after damage, healing, or a new maximum. The others follow rAthena's status window (`clif_updatestatus`):
   - STR to LUK are totals, with job bonuses.
   - ATK, DEF and MDEF are the sum of the window's two numbers (`pc_leftside_*` plus `pc_rightside_*`). In renewal, ATK is status ATK plus weapon ATK.
   - MATK is the sum of both numbers in renewal. In pre-renewal the window shows a range, and MATK is its maximum.
   - HIT and FLEE are hit and flee. CRITICAL is critical rate in whole points (rAthena's value divided by 10).
   - ASPD is the displayed ASPD, `(2000 - amotion) / 10` rounded down: amotion 440 is ASPD 156.
-  - MAX_WEIGHT is in tenths of a weight unit, as rAthena's `max_weight`.
+  - WEIGHT and MAX_WEIGHT are in tenths of a weight unit, as rAthena's `weight` and `max_weight`. WEIGHT is sent on join and after every inventory change.
   - STR_COST to LUK_COST are the status points that raising each stat by 1 costs, as rAthena's `SP_USTR` to `SP_ULUK`. They are 0 at the stat's maximum.
 - **Raising a stat spends status points.** `RaiseStat` names one of STR to LUK and an amount from 1 to 255. The server raises the stat as far as the points and the job's maximum allow, as rAthena's `pc_statusup`, and sends the changed stats, costs and STATUS_POINTS. A raise that fails changes nothing and sends nothing. The gateway drops a `RaiseStat` with another stat or amount.
 - **Local chat reaches 9 cells.** `Chat` with `CHAT_CHANNEL_LOCAL` goes to every player within 9 cells of the speaker on both axes, as rAthena's `AREA_CHAT_WOC` does, the speaker included, as a `ChatMessage` with `from` set to that connection's ID for the speaker and `from_name` set to the speaker's name. Dead players can talk, as in rAthena. The other channels are accepted and ignored until they exist. The gateway checks the text before the zone sees it:
@@ -120,7 +122,7 @@ Encoded sizes: a 10-step walk is 26 bytes, a player appearing is 68 bytes, and a
 
 ## Breaks
 
-Nothing exists yet, so nothing breaks.
+Nothing is deployed yet, so nothing breaks. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.
 
 ## Alternatives
 
@@ -135,6 +137,6 @@ Nothing exists yet, so nothing breaks.
 
 ## Open points for later proposals
 
-- Messages for the full inventory (listing, removing, and using items), equipment, skills lists, party, guild, trade, vending, storage, and mail.
+- Messages for equipment, item scripts other than heals, skills lists, party, guild, trade, vending, storage, and mail.
 - Map changes and zone handoff during warps.
 - Admin tool messages (strategy section 10.6), which may use a separate endpoint.

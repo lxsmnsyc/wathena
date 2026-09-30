@@ -10,8 +10,9 @@
 # Effects that attach to an entity, such as level ups, play at its feet
 # and follow it.
 #
-# Besides level ups (158, 371), only the map effects whose parts are STR
-# effects are listed so far. The
+# Besides level ups (158, 371) and the potion effects that play when a
+# player uses a potion or herb (204 to 209), only the map effects whose
+# parts are STR effects are listed so far. The
 # most common map effects, such as torches (47) and emitters (974), are
 # sprite particles, which need a particle system in the client first.
 #
@@ -36,6 +37,31 @@ effects:
     constant: EF_PONG
     parts:
       - variants: [effect/pong1, effect/pong2, effect/pong3]
+  - id: 204
+    constant: EF_POTION1
+    parts:
+      - effect: effect/빨간포션
+  - id: 205
+    constant: EF_POTION2
+    parts:
+      - effect: effect/주홍포션
+  - id: 206
+    constant: EF_POTION3
+    parts:
+      - effect: effect/노란포션
+  - id: 207
+    constant: EF_POTION4
+    parts:
+      - effect: effect/하얀포션
+  - id: 208
+    constant: EF_POTION5
+    parts:
+      - effect: effect/파란포션
+      - sound: sound/effect/흡기
+  - id: 209
+    constant: EF_POTION6
+    parts:
+      - effect: effect/초록포션
   - id: 371
     constant: EF_ANGEL
     parts:

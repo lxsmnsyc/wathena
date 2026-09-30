@@ -18,6 +18,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/schema"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
@@ -198,6 +199,22 @@ func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Player, s
 				break
 			}
 			queued = g.Zone.RaiseStat(p, seq, status.Stat(st-wathenav1.BaseStat_BASE_STAT_STR), int(amount))
+		case m.GetCommand().HasUseItem():
+			slot := m.GetCommand().GetUseItem().GetSlot()
+			if slot >= item.MaxInventory {
+				// clif_parse_UseItem ignores an index past MAX_INVENTORY.
+				queued = g.Zone.Ack(p, seq)
+				break
+			}
+			queued = g.Zone.UseItem(p, seq, int(slot))
+		case m.GetCommand().HasDropItem():
+			d := m.GetCommand().GetDropItem()
+			if d.GetSlot() >= item.MaxInventory || d.GetAmount() > item.MaxAmount {
+				// No slot or stack is that large, so nothing drops.
+				queued = g.Zone.Ack(p, seq)
+				break
+			}
+			queued = g.Zone.DropItem(p, seq, int(d.GetSlot()), int(d.GetAmount()))
 		case m.GetCommand().HasWalkTo():
 			w := m.GetCommand().GetWalkTo()
 			queued = g.Zone.WalkTo(p, seq, int(w.GetX()), int(w.GetY()))

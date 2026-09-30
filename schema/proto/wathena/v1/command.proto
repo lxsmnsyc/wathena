@@ -17,6 +17,7 @@ message Command {
     UseItem use_item = 7;
     PickUp pick_up = 8;
     RaiseStat raise_stat = 9;
+    DropItem drop_item = 10;
   }
 }
 
@@ -79,9 +80,22 @@ message NpcReply {
   }
 }
 
+// UseItem uses the item in an inventory slot, as rAthena's pc_useitem.
+// The server answers with ItemUsed and InventoryRemove, or UseItemFailed.
 message UseItem {
-  // slot is the inventory slot the server sent in InventoryUpdate.
+  // slot is an inventory slot from InventoryUpdate or InventoryAdd, below
+  // 200.
   uint32 slot = 1;
+}
+
+// DropItem drops an amount from an inventory slot on the ground near the
+// player, as rAthena's pc_dropitem. The server answers with
+// InventoryRemove, or DropItemFailed.
+message DropItem {
+  // slot is below 200, as in UseItem.
+  uint32 slot = 1;
+  // amount is 1 to 30000, and at most the slot's amount.
+  uint32 amount = 2;
 }
 
 // PickUp walks next to a ground item and picks it up.

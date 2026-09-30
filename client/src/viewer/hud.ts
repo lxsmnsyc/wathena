@@ -1,7 +1,6 @@
-import type { AssetStore } from '../assets/store';
 import { PickUpFailure, StatId } from '../gen/wathena/v1/event_pb';
 
-// The player's status on the page: HP, levels, exp, and inventory.
+// The player's status on the page: HP, levels, and exp.
 
 /**
  * Exp toward the next level as a percent with one decimal, rounded down,
@@ -52,58 +51,16 @@ export function expLine(stats: ReadonlyMap<StatId, bigint>): string | undefined 
 
 /** What to tell the player when a pick up fails. */
 export function pickUpMessage(reason: PickUpFailure): string {
-  return reason === PickUpFailure.NOT_YOURS
-    ? 'You cannot pick up this item yet.'
-    : 'The item is no longer there.';
-}
-
-/** The inventory list on the page: an icon, the item ID, and the amount. */
-export class Inventory {
-  private readonly amounts = new Map<number, number>();
-  private readonly rows = new Map<number, HTMLLIElement>();
-
-  constructor(
-    private readonly list: HTMLElement,
-    private readonly store: AssetStore,
-  ) {}
-
-  /** Adds an amount of an item, as InventoryAdd says. */
-  add(id: number, amount: number): void {
-    const total = (this.amounts.get(id) ?? 0) + amount;
-    this.amounts.set(id, total);
-    let row = this.rows.get(id);
-    if (row === undefined) {
-      row = document.createElement('li');
-      const icon = document.createElement('img');
-      icon.alt = '';
-      icon.width = 24;
-      icon.height = 24;
-      const label = document.createElement('span');
-      row.append(icon, label);
-      this.rows.set(id, row);
-      this.list.append(row);
-      this.icon(id, icon);
-    }
-    const label = row.querySelector('span');
-    if (label !== null) {
-      label.textContent = `${id} × ${total}`;
-    }
-  }
-
-  /** Loads an item's icon, icon/item/<id>. Items without one show none. */
-  private icon(id: number, img: HTMLImageElement): void {
-    this.store
-      .bytes(`icon/item/${id}`, 'texture')
-      .then((data) => {
-        if (data === undefined) {
-          img.style.visibility = 'hidden';
-          return;
-        }
-        img.src = URL.createObjectURL(new Blob([data], { type: 'image/webp' }));
-      })
-      .catch((error: unknown) => {
-        img.style.visibility = 'hidden';
-        console.error(`icon ${id}:`, error);
-      });
+  switch (reason) {
+    case PickUpFailure.NOT_YOURS:
+      return 'You cannot pick up this item yet.';
+    case PickUpFailure.OVERWEIGHT:
+      return 'You are carrying too much to pick this up.';
+    case PickUpFailure.INVENTORY_FULL:
+      return 'Your inventory is full.';
+    case PickUpFailure.TOO_MANY:
+      return 'You cannot carry more of this item.';
+    default:
+      return 'The item is no longer there.';
   }
 }

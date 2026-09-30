@@ -261,3 +261,52 @@ func TestValidName(t *testing.T) {
 		}
 	}
 }
+
+// TestItemCommands checks that the gateway passes item commands with a
+// slot and amount in range to the zone, and drops the others.
+func TestItemCommands(t *testing.T) {
+	url := serverWith(t, func(z *zone.Zone) {
+		z.StartItems = []zone.StartItem{{ID: 909, Amount: 3}}
+	})
+	a := dial(t, url)
+	a.hello("Alice", schema.Version)
+	a.next((*wathenav1.ServerMessage).HasWelcome)
+	inv := a.next(hasEvent((*wathenav1.Event).HasInventory))
+	for _, e := range inv.GetFrame().GetEvents() {
+		if l := e.GetInventory(); l != nil {
+			if it := l.GetItems(); len(it) != 1 || it[0].GetSlot() != 0 || it[0].GetItemId() != 909 || it[0].GetAmount() != 3 || l.GetSize() != 100 {
+				t.Errorf("inventory %v", l)
+			}
+		}
+	}
+	command := func(c *wathenav1.Command) {
+		a.send(wathenav1.ClientMessage_builder{Command: c}.Build())
+	}
+	use := func(slot uint32) {
+		command(wathenav1.Command_builder{UseItem: wathenav1.UseItem_builder{Slot: slot}.Build()}.Build())
+	}
+	drop := func(slot, amount uint32) {
+		command(wathenav1.Command_builder{DropItem: wathenav1.DropItem_builder{Slot: slot, Amount: amount}.Build()}.Build())
+	}
+	use(200)
+	drop(200, 1)
+	drop(0, 30001)
+	// Jellopy is an Etc item.
+	use(0)
+	m := a.next(hasEvent((*wathenav1.Event).HasUseItemFailed))
+	if m.GetFrame().GetAckSeq() != 5 {
+		t.Errorf("ack %d, want 5", m.GetFrame().GetAckSeq())
+	}
+	for _, e := range m.GetFrame().GetEvents() {
+		if f := e.GetUseItemFailed(); f != nil && (f.GetSlot() != 0 || f.GetReason() != wathenav1.UseItemFailure_USE_ITEM_FAILURE_NOT_USABLE) {
+			t.Errorf("use failed %v", f)
+		}
+	}
+	drop(0, 2)
+	m = a.next(hasEvent((*wathenav1.Event).HasInventoryRemove))
+	for _, e := range m.GetFrame().GetEvents() {
+		if r := e.GetInventoryRemove(); r != nil && (r.GetSlot() != 0 || r.GetAmount() != 2 || r.GetReason() != wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED) {
+			t.Errorf("remove %v", r)
+		}
+	}
+}

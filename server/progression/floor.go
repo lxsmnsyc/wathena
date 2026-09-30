@@ -64,6 +64,17 @@ func PlaceItem(free func(x, y int) bool, x, y int, dir Dir, r Rand) Placement {
 	return Placement{X: x, Y: y, SubX: subX, SubY: subY}
 }
 
+// PlaceDrop is the placement part of map_addflooritem for an item a
+// player drops at (x, y), as pc_dropitem calls it: DIR_MAX with flag 2,
+// so a random free cell 1 or 2 cells away. With item_stacking on, as by
+// default, the item stays on the player's cell when none is free.
+func PlaceDrop(free func(x, y int) bool, x, y int, r Rand) Placement {
+	x, y, _ = searchFreeCellDist(free, x, y, 1, 2, r)
+	subX := rndValue(r, 1, 4) * 3
+	subY := rndValue(r, 1, 4) * 3
+	return Placement{X: x, Y: y, SubX: subX, SubY: subY}
+}
+
 // searchFreeCellDist is map_search_freecell_dist: it tries each of the 8
 // directions once, each at a random distance, starting from a random
 // quadrant. It returns the cell unchanged when none is free.

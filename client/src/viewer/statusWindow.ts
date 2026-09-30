@@ -1,5 +1,6 @@
 import { BaseStat } from '../gen/wathena/v1/command_pb';
 import { StatId } from '../gen/wathena/v1/event_pb';
+import { weightText } from './inventory';
 
 // The status window, as RO's Alt+A window: the six stats with their raise
 // cost and a "+" button, and the battle stats the server computes. The
@@ -57,14 +58,9 @@ export function raiseRows(stats: ReadonlyMap<StatId, bigint>): RaiseRow[] {
 
 /**
  * The battle stats, status points, and weight, as label and value pairs.
- * Weight is in tenths on the wire, and shows in whole units. The server
- * does not send the current weight yet, so it shows "-" until it does.
+ * Weight is in tenths on the wire, and shows in whole units.
  */
 export function detailRows(stats: ReadonlyMap<StatId, bigint>): [string, string][] {
-  const weight = (id: StatId): string => {
-    const v = stats.get(id);
-    return v === undefined ? '-' : String(v / 10n);
-  };
   return [
     ['ATK', show(stats.get(StatId.ATK))],
     ['MATK', show(stats.get(StatId.MATK))],
@@ -75,7 +71,7 @@ export function detailRows(stats: ReadonlyMap<StatId, bigint>): [string, string]
     ['CRIT', show(stats.get(StatId.CRITICAL))],
     ['ASPD', show(stats.get(StatId.ASPD))],
     ['Status Point', show(stats.get(StatId.STATUS_POINTS))],
-    ['Weight', `${weight(StatId.WEIGHT)} / ${weight(StatId.MAX_WEIGHT)}`],
+    ['Weight', weightText(stats)],
   ];
 }
 

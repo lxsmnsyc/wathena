@@ -1,14 +1,18 @@
+import { create } from '@bufbuild/protobuf';
 import { type Camera, Group, Vector3 } from 'three';
 import { effects as effectTable, jobs, looks, partEffect } from '../data/tables';
 import { type WMap, cellHeight } from '../formats/wmap';
 import {
   DamageKind,
+  type DropItemFailure,
   type EffectPlay,
+  EffectPlaySchema,
   EntityKind,
   type Event,
   type Look as LookMessage,
   type PickUpFailure,
   StatId,
+  type UseItemFailure,
   VanishReason,
 } from '../gen/wathena/v1/event_pb';
 import { ChatChannel } from '../gen/wathena/v1/command_pb';
@@ -19,6 +23,7 @@ import { type SpriteCache, SpriteView } from '../render/sprites';
 import type { TextureSource } from '../render/textures';
 import type { Pathfinder } from '../world/pathfinder';
 import GroundItems from './groundItems';
+import { type Stack, USE_EFFECTS } from './inventory';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
 
@@ -74,8 +79,16 @@ export default class Online {
   private readonly items: GroundItems;
   /** Called for every hit, at the moment it lands. */
   onHit: ((hit: Hit) => void) | undefined;
-  /** Called when an item enters the player's inventory. */
-  onInventoryAdd: ((itemId: number, amount: number) => void) | undefined;
+  /** Called with the player's whole inventory. */
+  onInventory: ((items: Stack[], size: number) => void) | undefined;
+  /** Called when an item enters a slot of the player's inventory. */
+  onInventoryAdd: ((slot: number, itemId: number, amount: number) => void) | undefined;
+  /** Called when an amount leaves a slot of the player's inventory. */
+  onInventoryRemove: ((slot: number, amount: number) => void) | undefined;
+  /** Called when using an item fails. */
+  onUseItemFailed: ((reason: UseItemFailure) => void) | undefined;
+  /** Called when dropping an item fails. */
+  onDropItemFailed: ((reason: DropItemFailure) => void) | undefined;
   /** Called when the player's pick up fails. */
   onPickUpFailed: ((reason: PickUpFailure) => void) | undefined;
   /** Called for every local chat line, with the speaker's entity ID. */
@@ -230,6 +243,18 @@ export default class Online {
           const d = e.body.value;
           const source = this.units.get(d.source);
           const target = this.units.get(d.target);
+          if (d.kind === DamageKind.HEAL) {
+            // A heal shows its number and nothing else.
+            if (target !== undefined) {
+              this.onHit?.({
+                position: target.character.group.position.clone(),
+                amount: Number(d.amount),
+                kind: d.kind,
+                mine: d.target === this.self,
+              });
+            }
+            break;
+          }
           if (source !== undefined && target !== undefined) {
             source.face(target.x, target.y);
             source.act(this.actions(d.source).attack, Math.max(d.delayMs, 300));
@@ -272,8 +297,38 @@ export default class Online {
           }
           break;
         }
+        case 'inventory':
+          this.onInventory?.(
+            e.body.value.items.map((i) => ({ slot: i.slot, itemId: i.itemId, amount: i.amount })),
+            e.body.value.size,
+          );
+          break;
         case 'inventoryAdd':
-          this.onInventoryAdd?.(e.body.value.itemId, e.body.value.amount);
+          this.onInventoryAdd?.(e.body.value.slot, e.body.value.itemId, e.body.value.amount);
+          break;
+        case 'inventoryRemove':
+          this.onInventoryRemove?.(e.body.value.slot, e.body.value.amount);
+          break;
+        case 'itemUsed': {
+          // The potion effects play on the user, as the game client
+          // does for clif_useitemack.
+          const effectId = USE_EFFECTS.get(e.body.value.itemId);
+          if (effectId !== undefined) {
+            this.playEffect(
+              create(EffectPlaySchema, {
+                effectId,
+                at: { case: 'entity', value: e.body.value.source },
+              }),
+              this.map,
+            );
+          }
+          break;
+        }
+        case 'useItemFailed':
+          this.onUseItemFailed?.(e.body.value.reason);
+          break;
+        case 'dropItemFailed':
+          this.onDropItemFailed?.(e.body.value.reason);
           break;
         case 'pickUpFailed':
           this.onPickUpFailed?.(e.body.value.reason);

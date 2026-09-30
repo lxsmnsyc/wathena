@@ -5,6 +5,9 @@
 //
 // There is no account service yet, so --dev accepts any valid name as a
 // session token. Never expose a --dev server to the internet.
+//
+// --start-items gives every player items, such as 501:10,512:20 for 10
+// Red Potions and 20 Apples. It is for development only.
 package main
 
 import (
@@ -17,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,6 +30,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/gateway"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
@@ -48,6 +53,7 @@ func run() error {
 	origins := flag.String("origins", "localhost:*,127.0.0.1:*", "hosts pages may connect from, comma-separated")
 	mode := flag.String("mode", "renewal", "rAthena mode whose recorded spawns to use: renewal or pre-renewal, or none")
 	build := flag.String("build", "all_1", "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank. Other builds than all_1 are for testing")
+	startItems := flag.String("start-items", "", "items every player starts with, as id:amount pairs such as 501:10,512:20, for development")
 	flag.Parse()
 	if *assets == "" {
 		return errors.New("--assets is required")
@@ -93,6 +99,12 @@ func run() error {
 		statusMode = reference.Renewal
 	}
 	if z.Status, z.Start, err = startCharacter(statusMode, *build); err != nil {
+		return err
+	}
+	if z.Items, err = loadItems(statusMode); err != nil {
+		return err
+	}
+	if z.StartItems, err = parseStartItems(*startItems); err != nil {
 		return err
 	}
 	go z.Run(ctx)
@@ -156,6 +168,34 @@ func loadProgression(mode reference.Mode) (*progression.Tables, *progression.Dat
 		items[it.ID] = it.Type
 	}
 	return progression.New(&d, items, progression.DefaultConfig), &d, nil
+}
+
+// loadItems reads the item database that reference/rathena extracted
+// from rAthena's item_db.
+func loadItems(mode reference.Mode) (*item.Table, error) {
+	var d item.Data
+	if err := reference.LoadFile("extracts/"+string(mode)+"/items.json", &d); err != nil {
+		return nil, err
+	}
+	return item.New(&d), nil
+}
+
+// parseStartItems reads --start-items: id:amount pairs, comma-separated.
+func parseStartItems(s string) ([]zone.StartItem, error) {
+	var out []zone.StartItem
+	for pair := range strings.SplitSeq(s, ",") {
+		if pair == "" {
+			continue
+		}
+		id, amount, ok := strings.Cut(pair, ":")
+		n, err1 := strconv.ParseUint(id, 10, 32)
+		a, err2 := strconv.Atoi(amount)
+		if !ok || err1 != nil || err2 != nil || n == 0 || a < 1 || a > item.MaxAmount {
+			return nil, fmt.Errorf("--start-items: %q is not id:amount", pair)
+		}
+		out = append(out, zone.StartItem{ID: uint32(n), Amount: a})
+	}
+	return out, nil
 }
 
 // loadSpawns reads a map's monsters from the spawns and monster stats that

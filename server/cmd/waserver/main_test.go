@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/zone"
 )
 
 func TestLoadSpawnsWithRewards(t *testing.T) {
@@ -51,5 +52,34 @@ func TestStartCharacter(t *testing.T) {
 	}
 	if _, _, err := startCharacter(reference.Renewal, "nope"); err == nil {
 		t.Error("an unknown build loads")
+	}
+}
+
+func TestLoadItems(t *testing.T) {
+	for _, mode := range []reference.Mode{reference.Renewal, reference.PreRenewal} {
+		items, err := loadItems(mode)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Red Potion: 7 weight, itemheal rand(45,65),0.
+		d := items.Get(501)
+		if d.Weight != 70 || d.Heal == nil || d.Heal.HP != [2]int{45, 65} || d.Heal.SP != [2]int{0, 0} {
+			t.Errorf("%s: Red Potion %+v", mode, d)
+		}
+		if want := map[reference.Mode]int{reference.Renewal: 70, reference.PreRenewal: 50}[mode]; items.NaturalHealWeightRate != want {
+			t.Errorf("%s: natural_heal_weight_rate %d", mode, items.NaturalHealWeightRate)
+		}
+	}
+}
+
+func TestParseStartItems(t *testing.T) {
+	got, err := parseStartItems("501:10,512:2")
+	if err != nil || len(got) != 2 || got[0] != (zone.StartItem{ID: 501, Amount: 10}) || got[1] != (zone.StartItem{ID: 512, Amount: 2}) {
+		t.Errorf("%v %v", got, err)
+	}
+	for _, bad := range []string{"501", "0:1", "501:0", "501:30001", "x:1"} {
+		if _, err := parseStartItems(bad); err == nil {
+			t.Errorf("%q parsed", bad)
+		}
 	}
 }

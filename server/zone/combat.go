@@ -161,6 +161,8 @@ func (z *Zone) die(e, killer *entity) {
 	if e.player != nil {
 		// Players lie where they fell, then return to the start.
 		e.diedAt = z.now
+		// status_damage resets the regen waits on death.
+		e.player.regenTicks = regenState{}
 		return
 	}
 	delete(z.entities, e)

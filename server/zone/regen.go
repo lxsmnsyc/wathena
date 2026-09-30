@@ -1,0 +1,144 @@
+package zone
+
+import "github.com/lxsmnsyc/wathena/server/item"
+
+// Regen: players heal HP and SP over time, as rAthena's
+// status_natural_heal, which a timer runs every NATURAL_HEAL_INTERVAL
+// for every unit. Heals from regen show no number, as status_heal with
+// flag 1.
+
+const (
+	// naturalHealInterval is NATURAL_HEAL_INTERVAL.
+	naturalHealInterval = 500
+	// Default intervals from conf/battle/player.conf: natural_healhp_interval,
+	// natural_healsp_interval, and natural_heal_skill_interval.
+	healHPInterval    = 6000
+	healSPInterval    = 8000
+	healSkillInterval = 10000
+)
+
+// Regen flags, as rAthena's e_regen.
+const (
+	regenHP = 1 << iota
+	regenSP
+	regenSkillHP
+	regenSkillSP
+)
+
+// regenState is a player's regen timing, as regen_data's tick and
+// regen_data_sub's tick.
+type regenState struct {
+	// hp and sp are when HP and SP last healed or were blocked.
+	hp, sp int64
+	// skillHP and skillSP add up time toward the next skill heal.
+	skillHP, skillSP int64
+}
+
+// naturalHeal is status_natural_heal_timer: every naturalHealInterval, it
+// runs status_natural_heal for each player.
+func (z *Zone) naturalHeal() {
+	if z.now < z.nextHeal {
+		return
+	}
+	diff := z.now - z.prevHeal
+	z.prevHeal = z.now
+	z.nextHeal += naturalHealInterval
+	if z.nextHeal <= z.now {
+		z.nextHeal = z.now + naturalHealInterval
+	}
+	for e := range z.entities {
+		if p := e.player; p != nil && e.status != nil {
+			z.naturalHealOne(p, diff)
+		}
+	}
+}
+
+// naturalHealOne is status_natural_heal for a standing player with no
+// status changes:
+//
+//   - Nothing heals for the dead, or for an overweight player.
+//   - A walking player heals SP only.
+//   - HP heals every natural_healhp_interval and SP every
+//     natural_healsp_interval, less half of NATURAL_HEAL_INTERVAL, since
+//     the timer is not exact. The wait starts again while regen is
+//     blocked or the value is full.
+//   - Skill regen adds up time and heals every
+//     natural_heal_skill_interval while the value is not full.
+func (z *Zone) naturalHealOne(p *Player, diff int64) {
+	e := p.entity
+	r := p.regen
+	flag := regenHP | regenSP
+	if r.SkillHP > 0 {
+		flag |= regenSkillHP
+	}
+	if r.SkillSP > 0 {
+		flag |= regenSkillSP
+	}
+	// Only skill regen stops at max HP and SP.
+	if e.hp >= int64(e.status.MaxHP) {
+		flag &^= regenSkillHP
+	}
+	if p.sp >= int64(e.status.MaxSP) {
+		flag &^= regenSkillSP
+	}
+	if e.dead {
+		flag = 0
+	}
+	if flag != 0 && p.overweight != item.WeightNormal {
+		flag = 0
+	}
+	if len(e.path) > 0 {
+		flag &^= regenSkillHP | regenSkillSP | regenHP
+	}
+	spBefore := p.sp
+	s := &p.regenTicks
+	if flag&regenHP != 0 {
+		rate := int64(healHPInterval - naturalHealInterval/2)
+		if s.hp+rate <= z.now {
+			s.hp = z.now
+			if e.hp >= int64(e.status.MaxHP) {
+				flag &^= regenHP | regenSkillHP
+			} else if h, _ := z.statusHeal(p, int64(r.HP), 0); h < int64(r.HP) {
+				flag &^= regenSkillHP
+			}
+		}
+	} else {
+		s.hp = z.now
+	}
+	if flag&regenSP != 0 {
+		rate := int64(healSPInterval - naturalHealInterval/2)
+		if s.sp+rate <= z.now {
+			s.sp = z.now
+			if p.sp >= int64(e.status.MaxSP) {
+				flag &^= regenSP | regenSkillSP
+			} else if _, h := z.statusHeal(p, 0, int64(r.SP)); h < int64(r.SP) {
+				flag &^= regenSkillSP
+			}
+		}
+	} else {
+		s.sp = z.now
+	}
+	if flag&regenSkillHP != 0 {
+		s.skillHP += diff
+		for s.skillHP >= healSkillInterval {
+			s.skillHP -= healSkillInterval
+			if h, _ := z.statusHeal(p, int64(r.SkillHP), 0); h < int64(r.SkillHP) {
+				break
+			}
+		}
+	}
+	if flag&regenSkillSP != 0 {
+		s.skillSP += diff
+		for s.skillSP >= healSkillInterval {
+			s.skillSP -= healSkillInterval
+			if _, h := z.statusHeal(p, 0, int64(r.SkillSP)); h < int64(r.SkillSP) {
+				break
+			}
+		}
+	}
+	if p.sp != spBefore {
+		if st := z.battleStats(p); st != nil {
+			p.pending = append(p.pending, st)
+		}
+	}
+}
