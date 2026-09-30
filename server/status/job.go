@@ -182,7 +182,11 @@ func calcBaseHP(level int, d *JobData, mapID uint64, renewal bool) uint32 {
 	hp := 35.0
 	hp += math.Floor(float64(level) * (float64(d.HPIncrease) / 100))
 	for i := 2; i <= level; i++ {
-		hp += math.Floor(float64(d.HPFactor)/100*float64(i) + 0.5)
+		// The reference was recorded on arm64, where the compiler fuses
+		// a multiply and an add in one expression. math.FMA does the same
+		// on every platform, so results do not depend on where the
+		// server runs. An x86 build of rAthena does not fuse them.
+		hp += math.Floor(math.FMA(float64(d.HPFactor)/100, float64(i), 0.5))
 	}
 	if !renewal {
 		if first := mapID & mapidFirstMask; (first == mapidNinja || first == mapidGunslinger) && level >= 10 {
@@ -208,7 +212,8 @@ func calcBaseSP(level int, d *JobData, mapID uint64) uint32 {
 	sp := 10.0
 	sp += math.Floor(float64(level) * (float64(d.SPIncrease) / 100))
 	for i := 2; i <= level; i++ {
-		sp += math.Floor(float64(d.SPFactor)/100*float64(i) + 0.5)
+		// Fused as in calcBaseHP.
+		sp += math.Floor(math.FMA(float64(d.SPFactor)/100, float64(i), 0.5))
 	}
 	switch mapID & mapidFirstMask {
 	case mapidNinja:

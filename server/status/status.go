@@ -433,7 +433,8 @@ func (p *pc) maxASPD() int {
 func (p *pc) calcMaxHP(vit int) int {
 	dmax := float64(p.job.baseHP[max(p.c.BaseLevel, 1)-1])
 	if vit > 0 {
-		dmax *= 1.0 + float64(vit)*0.01
+		// Fused as the arm64 recording is. See calcBaseHP.
+		dmax *= math.FMA(float64(vit), 0.01, 1.0)
 	}
 	if p.mapID&joblUpper != 0 || isPrimaryFourth(p.mapID) {
 		dmax *= 1.25
@@ -472,7 +473,8 @@ func (p *pc) hpBonus() int {
 func (p *pc) calcMaxSP(intel int) int {
 	dmax := float64(p.job.baseSP[max(p.c.BaseLevel, 1)-1])
 	if intel > 0 {
-		dmax *= 1.0 + float64(intel)*0.01
+		// Fused as in calcMaxHP.
+		dmax *= math.FMA(float64(intel), 0.01, 1.0)
 	}
 	if p.mapID&joblUpper != 0 || isPrimaryFourth(p.mapID) {
 		dmax *= 1.25
