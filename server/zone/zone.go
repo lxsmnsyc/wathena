@@ -102,6 +102,7 @@ type command struct {
 	attack *attackCommand
 	pickUp *uint32
 	raise  *raiseCommand
+	chat   *string
 }
 
 type raiseCommand struct {
@@ -143,6 +144,8 @@ type Zone struct {
 	players  map[uint32]*Player
 	nextChar uint32
 	loot
+	// chats are this tick's local chat lines.
+	chats []chatLine
 
 	joins    chan joinRequest
 	leaves   chan *Player
@@ -341,6 +344,11 @@ func (z *Zone) handle(c command) {
 		// rAthena lets a dead player raise stats.
 		z.raiseStat(p, c.raise.stat, c.raise.amount)
 	}
+	if c.chat != nil {
+		// Dead players can talk too: clif_process_message only checks
+		// for mutes.
+		z.chats = append(z.chats, chatLine{p.entity, *c.chat})
+	}
 	me := p.entity
 	if me.dead {
 		return
@@ -390,6 +398,18 @@ func (z *Zone) PickUp(p *Player, seq, item uint32) bool {
 func (z *Zone) RaiseStat(p *Player, seq uint32, stat status.Stat, amount int) bool {
 	select {
 	case z.commands <- command{player: p, seq: seq, raise: &raiseCommand{stat, amount}}:
+		return true
+	default:
+		return false
+	}
+}
+
+// Chat says a line of local chat, as rAthena's clif_parse_GlobalMessage.
+// The gateway has checked the text. It returns false when the zone's
+// queue is full.
+func (z *Zone) Chat(p *Player, seq uint32, text string) bool {
+	select {
+	case z.commands <- command{player: p, seq: seq, chat: &text}:
 		return true
 	default:
 		return false
@@ -462,6 +482,8 @@ func (z *Zone) stepAt(now int64) {
 	z.removed = z.removed[:0]
 	z.takes = z.takes[:0]
 	z.effects = z.effects[:0]
+	clear(z.chats)
+	z.chats = z.chats[:0]
 }
 
 // update sends a player what changed in view this tick.
@@ -489,6 +511,7 @@ func (z *Zone) update(p *Player) {
 	}
 	events = append(events, z.combatEvents(p)...)
 	events = append(events, z.effectEvents(p)...)
+	events = append(events, z.chatEvents(p)...)
 	events = append(events, p.pending...)
 	p.pending = nil
 	if len(events) == 0 {

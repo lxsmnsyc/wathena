@@ -11,6 +11,7 @@ import {
   StatId,
   VanishReason,
 } from '../gen/wathena/v1/event_pb';
+import { ChatChannel } from '../gen/wathena/v1/command_pb';
 import { unpackSteps } from '../net/connection';
 import { Character, type Look } from '../render/characters';
 import { type EffectCache, EffectView } from '../render/effects';
@@ -77,6 +78,8 @@ export default class Online {
   onInventoryAdd: ((itemId: number, amount: number) => void) | undefined;
   /** Called when the player's pick up fails. */
   onPickUpFailed: ((reason: PickUpFailure) => void) | undefined;
+  /** Called for every local chat line, with the speaker's entity ID. */
+  onChat: ((from: number, name: string, text: string) => void) | undefined;
   /** Called when an effect plays a sound, with where it plays. */
   onSound: ((name: string, position: Vector3) => void) | undefined;
   /** Where effects come from. Set it when a map loads. */
@@ -110,6 +113,11 @@ export default class Online {
   /** The player's own character, once it has appeared. */
   get me(): Player | undefined {
     return this.units.get(this.self);
+  }
+
+  /** Where a unit's feet are, while it is shown. */
+  position(id: number): Vector3 | undefined {
+    return this.units.get(id)?.character.group.position;
   }
 
   setMap(map: WMap): void {
@@ -273,6 +281,13 @@ export default class Online {
         case 'effect':
           this.playEffect(e.body.value, this.map);
           break;
+        case 'chat': {
+          const c = e.body.value;
+          if (c.channel === ChatChannel.LOCAL) {
+            this.onChat?.(c.from, c.fromName, c.text);
+          }
+          break;
+        }
         default:
           // Events this client does not show yet.
           break;

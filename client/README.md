@@ -32,6 +32,7 @@ Open `http://localhost:5173/?map=prontera`. Monsters, an NPC, and player charact
 - Items on the ground show their sprite, `sprite/item/<id>`, and jump and bounce when they drop. Click an item to pick it up. The inventory list shows its icon, `icon/item/<id>`, its ID, and the amount.
 - The top bar shows HP, base and job levels, and exp as a percent of the next level.
 - The Status button or Alt+A opens the status window: STR to LUK with the cost of the next point and a "+" button that raises the stat by 1, and ATK, MATK, DEF, MDEF, HIT, FLEE, CRIT, ASPD, status points and weight. "+" is enabled when the status points pay for the raise.
+- Enter opens the chat input, Enter sends the line and clears it, and Escape leaves the input. Enter on an empty line also leaves it. While the input has focus, game shortcuts such as Alt+A do nothing. The log above the inventory keeps the last 100 lines as "Name : text", and each line shows above the speaker for 5 seconds. Lines are cleaned as the server cleans them and cut to 255 code points. The client keeps the server's rate (5 lines, then 1 per second) and says so in the log instead of sending more. Chat is only ever shown as text.
 - Effects the server sends, such as level ups, play from `data/effects.yml`. An effect part can also be a sound.
 
 ## Checks

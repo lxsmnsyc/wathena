@@ -25,6 +25,7 @@ import { EffectCache, EffectView } from '../render/effects';
 import { DamageKind } from '../gen/wathena/v1/event_pb';
 import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
+import { Bubbles, ChatLog, ChatRate, chatLine, cleanChat, isTyping } from './chat';
 import { Inventory, expLine, hpLine, pickUpMessage } from './hud';
 import randomLook from './looks';
 import { StatusWindow } from './statusWindow';
@@ -105,6 +106,9 @@ scene.add(playerGroup);
 const audio = new AudioSystem(store);
 let soundscape: Soundscape | undefined;
 let statusWindow: StatusWindow | undefined;
+const bubbles = new Bubbles();
+const bubbleRoot = document.querySelector<HTMLDivElement>('#bubbles');
+const bubbleViews = new Map<number, HTMLDivElement>();
 
 // Browsers allow audio only after a click.
 soundButton.addEventListener('click', () => {
@@ -386,10 +390,59 @@ if (serverURL === null) {
       statusToggle.addEventListener('click', toggle);
     }
     addEventListener('keydown', (e) => {
+      if (isTyping(e.target)) {
+        return;
+      }
       // e.code, since Alt changes e.key on some layouts, such as macOS.
       if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyA') {
         e.preventDefault();
         toggle();
+      }
+    });
+  }
+  // Local chat. Enter opens the input, Enter sends the line, and Escape
+  // leaves the input. Lines show in the log and above the speaker.
+  const chatRoot = document.querySelector<HTMLElement>('#chat');
+  const chatList = document.querySelector<HTMLOListElement>('#chat-log');
+  const chatInput = document.querySelector<HTMLInputElement>('#chat-input');
+  if (chatRoot !== null && chatList !== null && chatInput !== null) {
+    chatRoot.hidden = false;
+    const log = new ChatLog(chatList);
+    const rate = new ChatRate(performance.now());
+    view.onChat = (from, speaker, text) => {
+      log.add(speaker, text, from === view.self);
+      bubbles.say(from, chatLine(speaker, text), performance.now());
+    };
+    chatInput.addEventListener('keydown', (e) => {
+      // Keys typed here are text, not game shortcuts.
+      e.stopPropagation();
+      if (e.key === 'Escape') {
+        chatInput.blur();
+        return;
+      }
+      if (e.key !== 'Enter' || e.isComposing) {
+        return;
+      }
+      e.preventDefault();
+      const text = cleanChat(chatInput.value);
+      if (text === undefined) {
+        // Enter on an empty line leaves the input, as in RO.
+        chatInput.value = '';
+        chatInput.blur();
+        return;
+      }
+      if (!rate.take(performance.now())) {
+        // The line stays in the input, to send again later.
+        log.notice('You are sending messages too fast.');
+        return;
+      }
+      connection.chat(text);
+      chatInput.value = '';
+    });
+    addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !isTyping(e.target) && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        chatInput.focus();
       }
     });
   }
@@ -472,6 +525,43 @@ canvas.addEventListener('pointerup', (e) => {
   }
 });
 
+const bubbleAt = new Vector3();
+
+/** Places the chat bubbles above their speakers. */
+function showBubbles(now: number): void {
+  if (bubbleRoot === null || session === undefined) {
+    return;
+  }
+  for (const id of bubbles.expire(now)) {
+    bubbleViews.get(id)?.remove();
+    bubbleViews.delete(id);
+  }
+  for (const [id, text] of bubbles.active(now)) {
+    let div = bubbleViews.get(id);
+    if (div === undefined) {
+      div = document.createElement('div');
+      div.className = 'bubble';
+      bubbleRoot.append(div);
+      bubbleViews.set(id, div);
+    }
+    if (div.textContent !== text) {
+      div.textContent = text;
+    }
+    // A speaker out of view keeps its bubble hidden until it ends.
+    const p = session.online.position(id);
+    if (p === undefined) {
+      div.hidden = true;
+      continue;
+    }
+    bubbleAt.copy(p);
+    bubbleAt.y += 3;
+    bubbleAt.project(camera);
+    div.hidden = bubbleAt.z > 1;
+    div.style.left = `${((bubbleAt.x + 1) / 2) * 100}%`;
+    div.style.top = `${((1 - bubbleAt.y) / 2) * 100}%`;
+  }
+}
+
 const follow = new Vector3();
 const hpOutput = document.querySelector<HTMLOutputElement>('#hp');
 const expOutput = document.querySelector<HTMLOutputElement>('#exp');
@@ -510,6 +600,7 @@ renderer.setAnimationLoop((time) => {
       statusWindow.update(stats);
     }
   }
+  showBubbles(performance.now());
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });
   for (const e of playing) {

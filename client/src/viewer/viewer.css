@@ -90,10 +90,25 @@ body {
   color: #ffd84a;
 }
 
-#inventory {
+#dock {
   position: fixed;
   bottom: 12px;
   left: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: min(440px, calc(100% - 24px));
+  pointer-events: none;
+}
+
+#dock > * {
+  pointer-events: auto;
+}
+
+#inventory {
+  max-height: 30vh;
+  overflow-y: auto;
   margin: 0;
   padding: 8px 10px;
   list-style: none;
@@ -150,4 +165,73 @@ body {
   height: 20px;
   padding: 0;
   line-height: 1;
+}
+
+#chat {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+}
+
+#chat[hidden] {
+  display: none;
+}
+
+#chat-log {
+  height: 8.5em;
+  margin: 0;
+  padding: 6px 10px 2px;
+  overflow-y: auto;
+  list-style: none;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+#chat-log .mine {
+  color: #c8ffc8;
+}
+
+#chat-log .notice {
+  color: #ffd84a;
+}
+
+#chat-input {
+  margin: 4px 6px 6px;
+  padding: 3px 6px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 4px;
+  background: rgb(0 0 0 / 40%);
+  color: inherit;
+  font: inherit;
+}
+
+#chat-input:focus {
+  border-color: rgb(255 255 255 / 60%);
+  outline: none;
+}
+
+#bubbles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bubble {
+  position: absolute;
+  max-width: 220px;
+  padding: 2px 6px;
+  transform: translate(-50%, -100%);
+  border-radius: 4px;
+  background: rgb(255 255 255 / 85%);
+  color: #111;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  unicode-bidi: isolate;
 }

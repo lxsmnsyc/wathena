@@ -143,6 +143,7 @@ func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
 }
 
 func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Player, seq uint32) error {
+	chat := newChatLimit(time.Now())
 	for {
 		m, err := readMessage(ctx, c)
 		if err != nil {
@@ -170,6 +171,21 @@ func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Player, s
 		case m.GetCommand().HasAttack():
 			a := m.GetCommand().GetAttack()
 			queued = g.Zone.Attack(p, seq, a.GetTarget(), a.GetRepeat())
+		case m.GetCommand().HasChat():
+			ok, over := chat.allow(time.Now())
+			if over {
+				return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_RATE_LIMITED, "Too many chat messages.")
+			}
+			ch := m.GetCommand().GetChat()
+			text, valid := CleanChat(ch.GetText())
+			// Lines over the rate are dropped without a reply, as
+			// rAthena's min_chat_delay does. Only local chat exists so
+			// far, so other channels are ignored.
+			if !ok || !valid || ch.GetChannel() != wathenav1.ChatChannel_CHAT_CHANNEL_LOCAL {
+				queued = g.Zone.Ack(p, seq)
+				break
+			}
+			queued = g.Zone.Chat(p, seq, text)
 		case m.GetCommand().HasPickUp():
 			queued = g.Zone.PickUp(p, seq, m.GetCommand().GetPickUp().GetItem())
 		case m.GetCommand().HasRaiseStat():

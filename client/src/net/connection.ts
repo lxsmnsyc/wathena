@@ -3,7 +3,7 @@
 // first.
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
-import { type BaseStat, CommandSchema } from '../gen/wathena/v1/command_pb';
+import { type BaseStat, ChatChannel, CommandSchema } from '../gen/wathena/v1/command_pb';
 import {
   type ClientMessage,
   ClientMessageSchema,
@@ -121,6 +121,16 @@ export class Connection {
     this.send({
       case: 'command',
       value: create(CommandSchema, { body: { case: 'raiseStat', value: { stat, amount } } }),
+    });
+  }
+
+  /** Says a line in local chat. The caller cleans it with cleanChat. */
+  chat(text: string): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.LOCAL, text } },
+      }),
     });
   }
 

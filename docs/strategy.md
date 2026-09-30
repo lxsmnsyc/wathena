@@ -1034,7 +1034,7 @@ The full threat model, with assets, trust boundaries, and the status of each mit
 
 ### 7.4 Network and protocol
 
-- The gateway sets a maximum message size, a per-connection message rate, and a per-message-type rate. Clients that exceed them are disconnected.
+- The gateway sets a maximum message size, a per-connection message rate, and a per-message-type rate. Clients that exceed them are disconnected. Chat is gentler: lines over its rate are dropped, and only a sustained flood disconnects (0001-protocol.md).
 - Connections per IP address are limited, which replaces rAthena's `ddos_*` settings in `conf/packet_athena.conf`.
 - Decoders never panic on bad input. A decode error closes that one connection. Each connection goroutine also recovers from panics, so one bad client cannot stop the server.
 - The gateway checks the WebSocket `Origin` header. Server owners list the client domains they allow, including community forks they trust.

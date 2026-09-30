@@ -86,6 +86,12 @@ Server to client, in `ServerMessage`:
   - MAX_WEIGHT is in tenths of a weight unit, as rAthena's `max_weight`.
   - STR_COST to LUK_COST are the status points that raising each stat by 1 costs, as rAthena's `SP_USTR` to `SP_ULUK`. They are 0 at the stat's maximum.
 - **Raising a stat spends status points.** `RaiseStat` names one of STR to LUK and an amount from 1 to 255. The server raises the stat as far as the points and the job's maximum allow, as rAthena's `pc_statusup`, and sends the changed stats, costs and STATUS_POINTS. A raise that fails changes nothing and sends nothing. The gateway drops a `RaiseStat` with another stat or amount.
+- **Local chat reaches 9 cells.** `Chat` with `CHAT_CHANNEL_LOCAL` goes to every player within 9 cells of the speaker on both axes, as rAthena's `AREA_CHAT_WOC` does, the speaker included, as a `ChatMessage` with `from` set to that connection's ID for the speaker and `from_name` set to the speaker's name. Dead players can talk, as in rAthena. The other channels are accepted and ignored until they exist. The gateway checks the text before the zone sees it:
+  - Text that is not valid UTF-8 is dropped.
+  - Control characters (Unicode category Cc, such as tab and newline) become spaces.
+  - Bidirectional formatting characters are removed: U+061C, U+200E, U+200F, U+202A to U+202E, and U+2066 to U+2069. They could reorder the line or the name next to it.
+  - Spaces at both ends are trimmed. A line that is then empty, or longer than 255 characters, is dropped. A character is a Unicode code point.
+  - Clients show chat with `textContent`, never as HTML (strategy section 7.5).
 - **Appearance uses table IDs.** `Look` holds sprite and palette IDs from the client data tables (strategy section 10.5).
 
 ### Limits
@@ -94,7 +100,8 @@ Server to client, in `ServerMessage`:
 |---|---|
 | Largest server message | 64 KB (`schema.MaxMessageBytes`). Larger data, such as maps, uses HTTP. |
 | Largest client message | 2 KB (`schema.MaxClientMessageBytes`). |
-| Chat line | 255 characters. |
+| Chat line | 255 characters, as Unicode code points, after cleaning. |
+| Chat rate | Per connection: a burst of 5 lines, then 1 per second. Lines over the rate are dropped without a reply, as rAthena's `min_chat_delay`. Over 60 dropped lines, less 1 per second, close the connection with `DISCONNECT_REASON_RATE_LIMITED`. |
 | Rates | Per connection and per command type, set in the gateway (strategy section 7.4). |
 
 A message over its limit, or one that fails to decode, closes the connection with `DISCONNECT_REASON_BAD_MESSAGE`.

@@ -8,6 +8,7 @@
   </head>
   <body>
     <canvas id="view"></canvas>
+    <div id="bubbles"></div>
     <div id="hits"></div>
     <form id="controls">
       <label>
@@ -22,7 +23,20 @@
       <output id="exp"></output>
       <output id="message"></output>
     </form>
-    <ul id="inventory"></ul>
+    <div id="dock">
+      <ul id="inventory"></ul>
+      <section id="chat" aria-label="Chat" hidden>
+        <ol id="chat-log" aria-live="polite"></ol>
+        <input
+          id="chat-input"
+          maxlength="255"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Press Enter to chat"
+          aria-label="Chat message"
+        />
+      </section>
+    </div>
     <section id="status-window" aria-label="Status" hidden></section>
     <script type="module" src="/src/viewer/main.ts"></script>
   </body>
