@@ -2,6 +2,7 @@
 // in data/ checks them, and the build imports them as JSON.
 
 import effectsTable from '../../data/effects.yml';
+import jobsTable from '../../data/jobs.yml';
 import weaponsTable from '../../data/weapons.yml';
 
 export interface Weapon {
@@ -70,6 +71,45 @@ function table<T extends { id: number }>(
   }
   return new Map(list.map((v) => [v.id, v]));
 }
+
+export interface JobLook {
+  look: string;
+  race: 'human' | 'doram';
+  /** Set for looks that exist for one sex only. */
+  sex?: 'm' | 'f';
+}
+
+export interface Job {
+  id: number;
+  constant: string;
+  look: string;
+  mount?: string;
+}
+
+function isJobLook(v: unknown): v is JobLook & { id: string } {
+  return (
+    isObject(v) &&
+    typeof v.look === 'string' &&
+    (v.race === 'human' || v.race === 'doram') &&
+    (v.sex === undefined || v.sex === 'm' || v.sex === 'f')
+  );
+}
+
+function isJob(v: unknown): v is Job {
+  return isObject(v) && typeof v.id === 'number' && typeof v.constant === 'string' && typeof v.look === 'string';
+}
+
+function looksTable(data: unknown): ReadonlyMap<string, JobLook> {
+  const list = isObject(data) ? data.looks : undefined;
+  if (!Array.isArray(list) || !list.every(isJobLook)) {
+    throw new Error('jobs.yml: invalid looks');
+  }
+  return new Map(list.map((l) => [l.look, l]));
+}
+
+/** Job looks by name, and jobs by rAthena job ID. */
+export const looks = looksTable(jobsTable);
+export const jobs = table('jobs.yml', jobsTable, 'jobs', isJob);
 
 /** Weapon types by rAthena ID. */
 export const weapons = table('weapons.yml', weaponsTable, 'weapons', isWeapon);

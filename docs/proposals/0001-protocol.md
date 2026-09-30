@@ -18,7 +18,7 @@ The web client and the server need one message format. It must be:
 
 - Messages are Protocol Buffers (proto3), in the `wathena.v1` package.
 - Go code is generated with `protoc-gen-go` and committed under `schema/gen/go`. It uses the opaque API, so fields are read and set through methods.
-- TypeScript code will be generated with `protobuf-es` in phase 1.
+- TypeScript code is generated with `protobuf-es` and committed under `client/src/gen`.
 - `buf lint` checks the schema. CI regenerates the Go code and fails if it differs from the committed code.
 
 ### Transport
@@ -57,7 +57,7 @@ Server to client, in `ServerMessage`:
 
 | Case | Use |
 |---|---|
-| `welcome` | Session accepted, with server time, tick, and the player's own entity ID. |
+| `welcome` | Session accepted, with server time, tick, the player's own entity ID, and the map's asset name. |
 | `pong` | Reply to `ping`, with server time. |
 | `frame` | Everything visible that happened in one tick. |
 | `disconnect` | Reason for closing, shown to the player. |
@@ -73,7 +73,7 @@ Server to client, in `ServerMessage`:
 ### Encoding rules
 
 - **Entity IDs are per connection.** The server gives each visible entity a 32-bit `net_id` for that connection. Database IDs for accounts, characters, and items are never sent. This stops clients from tracking players across sessions by ID.
-- **Movement sends a path, not positions.** `EntityMove` holds the start cell, the walk speed, and the steps as 4-bit directions. The client animates the walk. The server only sends a new message when a walk starts, changes, or stops.
+- **Movement sends a path, not positions.** `EntityMove` holds the start cell, the walk speed, and the steps as 4-bit directions, numbered as `EntityAppear.dir`: 0 south, turning clockwise. The client animates the walk. The server only sends a new message when a walk starts, changes, or stops. A unit in the middle of a step finishes it, so a changed walk starts with that step.
 - **Other players' HP is a fraction.** `EntityAppear.hp_permille` is HP out of 1000. Exact HP goes only to the player, their party, and their homunculus.
 - **Text is already translated.** NPC dialog and messages arrive in the player's language, chosen from `Hello.language` (strategy section 6.13).
 - **Appearance uses table IDs.** `Look` holds sprite and palette IDs from the client data tables (strategy section 10.5).

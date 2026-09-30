@@ -62,6 +62,28 @@ export default class Player {
     return this.plan(x, y);
   }
 
+  /**
+   * Follows a walk the server sent: from a cell, the steps in rAthena's
+   * directions, starting startMs from now (negative if already under way).
+   */
+  follow(fromX: number, fromY: number, steps: Dir[], startMs: number): void {
+    this.x = fromX;
+    this.y = fromY;
+    this.path = [...steps];
+    this.next = undefined;
+    this.elapsed = -startMs;
+    this.place(fromX + 0.5, fromY + 0.5);
+  }
+
+  /** Stands on a cell, facing a direction (0 south, clockwise). */
+  stand(x: number, y: number, dir: number): void {
+    this.x = x;
+    this.y = y;
+    this.path = [];
+    this.character.direction = dir;
+    this.place(x + 0.5, y + 0.5);
+  }
+
   private plan(x: number, y: number): boolean {
     const path = this.pathfinder.search(this.x, this.y, x, y);
     if (path === undefined || path.length === 0) {
@@ -96,7 +118,7 @@ export default class Player {
         this.place(this.x + 0.5, this.y + 0.5);
       } else {
         const [dx, dy] = step(d);
-        const t = this.elapsed / stepTime(d, this.speed);
+        const t = Math.max(0, this.elapsed) / stepTime(d, this.speed);
         this.place(this.x + 0.5 + dx * t, this.y + 0.5 + dy * t);
         this.character.direction = facing(d);
       }

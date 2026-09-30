@@ -195,6 +195,7 @@ type Welcome struct {
 	xxx_hidden_ServerTimeMs    uint64                 `protobuf:"varint,2,opt,name=server_time_ms,json=serverTimeMs,proto3"`
 	xxx_hidden_Tick            uint32                 `protobuf:"varint,3,opt,name=tick,proto3"`
 	xxx_hidden_NetId           uint32                 `protobuf:"varint,4,opt,name=net_id,json=netId,proto3"`
+	xxx_hidden_Map             string                 `protobuf:"bytes,5,opt,name=map,proto3"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -252,6 +253,13 @@ func (x *Welcome) GetNetId() uint32 {
 	return 0
 }
 
+func (x *Welcome) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
 func (x *Welcome) SetProtocolVersion(v uint32) {
 	x.xxx_hidden_ProtocolVersion = v
 }
@@ -268,6 +276,10 @@ func (x *Welcome) SetNetId(v uint32) {
 	x.xxx_hidden_NetId = v
 }
 
+func (x *Welcome) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
 type Welcome_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -278,6 +290,9 @@ type Welcome_builder struct {
 	Tick uint32
 	// net_id is the player's own entity ID for this connection.
 	NetId uint32
+	// map is the asset name of the player's map, such as "map/prontera".
+	// The player's own EntityAppear follows in the first Frame.
+	Map string
 }
 
 func (b0 Welcome_builder) Build() *Welcome {
@@ -288,6 +303,7 @@ func (b0 Welcome_builder) Build() *Welcome {
 	x.xxx_hidden_ServerTimeMs = b.ServerTimeMs
 	x.xxx_hidden_Tick = b.Tick
 	x.xxx_hidden_NetId = b.NetId
+	x.xxx_hidden_Map = b.Map
 	return m0
 }
 
@@ -503,12 +519,13 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\rsession_token\x18\x02 \x01(\fR\fsessionToken\x12\x1f\n" +
 	"\vclient_name\x18\x03 \x01(\tR\n" +
 	"clientName\x12\x1a\n" +
-	"\blanguage\x18\x04 \x01(\tR\blanguage\"\x85\x01\n" +
+	"\blanguage\x18\x04 \x01(\tR\blanguage\"\x97\x01\n" +
 	"\aWelcome\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\rR\x0fprotocolVersion\x12$\n" +
 	"\x0eserver_time_ms\x18\x02 \x01(\x04R\fserverTimeMs\x12\x12\n" +
 	"\x04tick\x18\x03 \x01(\rR\x04tick\x12\x15\n" +
-	"\x06net_id\x18\x04 \x01(\rR\x05netId\"\x1c\n" +
+	"\x06net_id\x18\x04 \x01(\rR\x05netId\x12\x10\n" +
+	"\x03map\x18\x05 \x01(\tR\x03map\"\x1c\n" +
 	"\x04Ping\x12\x14\n" +
 	"\x05nonce\x18\x01 \x01(\rR\x05nonce\"B\n" +
 	"\x04Pong\x12\x14\n" +

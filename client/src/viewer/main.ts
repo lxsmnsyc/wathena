@@ -22,8 +22,10 @@ import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
+import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import randomLook from './looks';
+import Online from './online';
 import Player from './player';
 import Walkers from './walkers';
 
@@ -92,6 +94,7 @@ if ('serviceWorker' in navigator && !new URL(location.href).searchParams.has('no
 
 const store = await AssetStore.open(base);
 let current: MapScene | undefined;
+let session: { connection: Connection; online: Online } | undefined;
 const pathfinder = await Pathfinder.load();
 let player: Player | undefined;
 const playerGroup = new Group();
@@ -114,7 +117,15 @@ let walkers: Walkers | undefined;
 const sprites = new SpriteCache(store);
 
 // Sprites to scatter on the map, as asset names without "sprite/".
-const DEFAULT_SPRITES = 'mob/poring,mob/lunatic,mob/fabre,mob/drops,mob/pupa,npc/4_f_kafra1';
+// ?server= connects to a game server, such as ws://127.0.0.1:8300/ws, as
+// ?name=. The server then chooses the map and moves every character, and
+// the demo sprites are off unless asked for.
+const params = new URL(location.href).searchParams;
+const serverURL = params.get('server');
+const online = serverURL !== null;
+const DEFAULT_SPRITES = online
+  ? ''
+  : 'mob/poring,mob/lunatic,mob/fabre,mob/drops,mob/pupa,npc/4_f_kafra1';
 // Effects to play in a row near the center, such as effect/firewall.
 const effectNames = (new URL(location.href).searchParams.get('effect') ?? '')
   .split(',')
@@ -125,12 +136,14 @@ const effectGroup = new Group();
 scene.add(effectGroup);
 
 // Dropped items, as item IDs. Their sprites are sprite/item/<id>.
-const DEFAULT_DROPS = '501,502,503,504,505,506,507,508,512,601,602,909,914,938,1201,2301,4001';
+const DEFAULT_DROPS = online
+  ? ''
+  : '501,502,503,504,505,506,507,508,512,601,602,909,914,938,1201,2301,4001';
 const dropIDs = (new URL(location.href).searchParams.get('drops') ?? DEFAULT_DROPS)
   .split(',')
   .filter((n) => /^\d+$/.test(n));
 
-const characterCount = Number(new URL(location.href).searchParams.get('characters') ?? 30);
+const characterCount = Number(params.get('characters') ?? (online ? 0 : 30));
 const spriteNames = (new URL(location.href).searchParams.get('sprites') ?? DEFAULT_SPRITES)
   .split(',')
   .filter((n) => n !== '')
@@ -217,15 +230,23 @@ async function show(name: string): Promise<void> {
     pathfinder.setMap(next.map);
     player = undefined;
     playerGroup.clear();
-    const [px, py] = Player.start(next.map);
+    session?.online.setMap(next.map);
+    const [px, py] =
+      session?.online.me === undefined
+        ? Player.start(next.map)
+        : [session.online.me.x, session.online.me.y];
     const cx = px + 0.5;
     const cz = -(py + 0.5);
     const size = Math.max(next.map.width, next.map.height);
-    Character.load(sprites, {
-      body: 'sprite/body/novice/f',
-      head: 'sprite/head/human/f/2',
-      hairPalette: 'palette/hair/human/f/2/1',
-    })
+    // Online, the server's events place every character.
+    (session === undefined
+      ? Character.load(sprites, {
+          body: 'sprite/body/novice/f',
+          head: 'sprite/head/human/f/2',
+          hairPalette: 'palette/hair/human/f/2/1',
+        })
+      : Promise.resolve(undefined)
+    )
       .then((c) => {
         if (c !== undefined && current === next) {
           player = new Player(c, next.map, pathfinder, px, py);
@@ -282,8 +303,29 @@ form.addEventListener('submit', (e) => {
   }
 });
 
-input.value = new URL(location.href).searchParams.get('map') ?? 'prontera';
-show(input.value).catch(reportError);
+if (serverURL === null) {
+  input.value = params.get('map') ?? 'prontera';
+  show(input.value).catch(reportError);
+} else {
+  const name = params.get('name') ?? `Player${Math.floor(Math.random() * 10000)}`;
+  // Events can follow Welcome at once, so the view exists first. It learns
+  // the player's own ID from Welcome.
+  const view = new Online(0, sprites, pathfinder);
+  const connection = await Connection.open(serverURL, name, {
+    events: (events) => {
+      view.handle(events);
+    },
+    closed: (reason) => {
+      status.value = reason;
+    },
+  });
+  view.self = connection.welcome.netId;
+  session = { connection, online: view };
+  scene.add(view.group);
+  input.value = connection.welcome.map;
+  input.disabled = true;
+  show(connection.welcome.map).catch(reportError);
+}
 
 // Lets browser tests inspect the scene in development builds.
 if (import.meta.env.DEV) {
@@ -317,7 +359,7 @@ canvas.addEventListener('pointerup', (e) => {
     return;
   }
   const ground = current?.group.getObjectByName('ground');
-  if (ground === undefined || player === undefined) {
+  if (ground === undefined || (player === undefined && session === undefined)) {
     return;
   }
   const rect = canvas.getBoundingClientRect();
@@ -328,7 +370,14 @@ canvas.addEventListener('pointerup', (e) => {
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObject(ground, true)[0];
   if (hit !== undefined) {
-    player.moveTo(Math.floor(hit.point.x), Math.floor(-hit.point.z));
+    const x = Math.floor(hit.point.x);
+    const y = Math.floor(-hit.point.z);
+    // Online, the server decides the path and sends it back.
+    if (session === undefined) {
+      player?.moveTo(x, y);
+    } else {
+      session.connection.walkTo(x, y);
+    }
   }
 });
 
@@ -343,11 +392,13 @@ renderer.setAnimationLoop((time) => {
   const steps = Math.round(controls.getAzimuthalAngle() / (Math.PI / 4));
   toward.subVectors(camera.position, controls.target).normalize();
   walkers?.update(timer.getDelta() * 1000, steps, toward);
-  if (player !== undefined) {
-    player.update(timer.getDelta() * 1000, steps, toward);
+  player?.update(timer.getDelta() * 1000, steps, toward);
+  session?.online.update(timer.getDelta() * 1000, steps, toward);
+  const me = session?.online.me ?? player;
+  if (me !== undefined) {
     // The camera follows the player, keeping its angle and distance.
     follow
-      .subVectors(player.character.group.position, controls.target)
+      .subVectors(me.character.group.position, controls.target)
       .multiplyScalar(Math.min(1, timer.getDelta() * 8));
     controls.target.add(follow);
     camera.position.add(follow);

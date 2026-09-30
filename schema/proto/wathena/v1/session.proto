@@ -27,6 +27,9 @@ message Welcome {
   uint32 tick = 3;
   // net_id is the player's own entity ID for this connection.
   uint32 net_id = 4;
+  // map is the asset name of the player's map, such as "map/prontera".
+  // The player's own EntityAppear follows in the first Frame.
+  string map = 5;
 }
 
 message Ping {

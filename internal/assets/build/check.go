@@ -330,3 +330,42 @@ func List(dir string) (map[string]Listed, error) {
 	}
 	return out, nil
 }
+
+// ReadAsset reads one asset from a build by name, checks it against its
+// hash, and returns its content and manifest type.
+func ReadAsset(dir, name string) ([]byte, string, error) {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, "", err
+	}
+	defer func() { _ = root.Close() }()
+	h := sha256.Sum256([]byte(name))
+	m, err := root.ReadFile("manifest.json")
+	if err != nil {
+		return nil, "", err
+	}
+	var man Manifest
+	if err := json.Unmarshal(m, &man); err != nil || len(man.Shards) != 256 {
+		return nil, "", fmt.Errorf("manifest.json: invalid")
+	}
+	data, err := readJSON(root, man.Shards[h[0]])
+	if err != nil {
+		return nil, "", err
+	}
+	var shard map[string]entry
+	if err := json.Unmarshal(data, &shard); err != nil {
+		return nil, "", err
+	}
+	e, ok := shard[name]
+	if !ok {
+		return nil, "", fmt.Errorf("%s is not in the build", name)
+	}
+	content, err := readStored(root, e)
+	if err != nil {
+		return nil, "", err
+	}
+	if sum := sha256.Sum256(content); hex.EncodeToString(sum[:]) != e.H || len(content) != e.S {
+		return nil, "", fmt.Errorf("%s does not match its hash", name)
+	}
+	return content, e.T, nil
+}

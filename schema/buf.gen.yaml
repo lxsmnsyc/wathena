@@ -6,3 +6,8 @@ plugins:
     opt:
       - paths=source_relative
       - default_api_level=API_OPAQUE
+  # TypeScript for the web client. Run `pnpm install` in client/ first.
+  - local: ["../client/node_modules/.bin/protoc-gen-es"]
+    out: ../client/src/gen
+    opt:
+      - target=ts

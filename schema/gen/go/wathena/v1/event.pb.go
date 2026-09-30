@@ -1399,8 +1399,9 @@ type EntityMove_builder struct {
 	Id    uint32
 	FromX uint32
 	FromY uint32
-	// steps holds one direction (0 to 7) per 4 bits, low bits first.
-	// A trailing 0xF fills the last byte when the step count is odd.
+	// steps holds one direction (0 to 7) per 4 bits, low bits first,
+	// numbered as EntityAppear.dir. A trailing 0xF fills the last byte when
+	// the step count is odd.
 	Steps []byte
 	// start_ms is when the walk starts, relative to the start of the frame's tick.
 	StartMs int32

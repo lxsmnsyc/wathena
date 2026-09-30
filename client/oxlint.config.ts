@@ -3,7 +3,7 @@ import { defineConfig } from 'oxlint';
 
 export default defineConfig({
   extends: [config],
-  ignorePatterns: ['dist'],
+  ignorePatterns: ['dist', 'src/gen'],
   overrides: [
     {
       // Tests read fixtures and inspect three.js objects, whose types are

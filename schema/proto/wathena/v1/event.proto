@@ -88,8 +88,9 @@ message EntityMove {
   uint32 id = 1;
   uint32 from_x = 2;
   uint32 from_y = 3;
-  // steps holds one direction (0 to 7) per 4 bits, low bits first.
-  // A trailing 0xF fills the last byte when the step count is odd.
+  // steps holds one direction (0 to 7) per 4 bits, low bits first,
+  // numbered as EntityAppear.dir. A trailing 0xF fills the last byte when
+  // the step count is odd.
   bytes steps = 4;
   // start_ms is when the walk starts, relative to the start of the frame's tick.
   sint32 start_ms = 5;
