@@ -42,27 +42,32 @@ const (
 	bdmgMagic = 0x0004
 )
 
-// damage is rAthena's Damage struct, with the fields a normal monster
-// attack uses. The renewal parts (statusAtk, weaponAtk and so on) are
-// only used by players, so they are left out.
+// damage is rAthena's Damage struct, with the fields a normal attack
+// uses. The renewal ATK parts (statusAtk, weaponAtk and so on) are only
+// used by players. Monsters get their damage directly.
 type damage struct {
 	damage, damage2 int64
 	typ             damageType
 	div             int
 	dmgLv           damageLevel
 	flag            int
+
+	statusAtk, statusAtk2   int64
+	weaponAtk, weaponAtk2   int64
+	equipAtk, equipAtk2     int64
+	masteryAtk, masteryAtk2 int64
+	percentAtk, percentAtk2 int64
 }
 
-// calcWeaponAttack is battle_calc_weapon_attack for a normal attack by a
-// monster. The random draws happen in rAthena's order: lucky dodge,
-// critical, hit, then the damage roll.
+// calcWeaponAttack is battle_calc_weapon_attack for a normal attack. The
+// random draws happen in rAthena's order: lucky dodge, double attack,
+// critical, hit, then the damage rolls.
 func calcWeaponAttack(src, target *Status, r Rand) damage {
+	sd := src.Player
 	wd := initializeWeaponData(src)
 
-	// battle_get_weapon_element: a normal attack uses the weapon's
-	// element.
-	rightElement := src.RHW.Ele
-	leftElement := src.LHW.Ele
+	rightElement := weaponElement(src, handRight)
+	leftElement := weaponElement(src, handLeft)
 
 	// Check for Lucky Dodge.
 	if target.Flee2 != 0 && r.IntN(1000) < target.Flee2 {
@@ -71,23 +76,45 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 		return wd
 	}
 
-	// battle_calc_multi_attack only applies to players (double attack,
-	// chain action).
+	// Multiple hits come first, so a double attack can override a
+	// critical hit.
+	calcMultiAttack(&wd, src, r)
 
-	// Critical hits always hit, so the critical check comes first.
-	if isAttackCritical(src, target, r) {
-		wd.typ = dmgCritical
+	// Critical hits always hit, so the critical check comes next.
+	if isAttackCritical(&wd, src, target, r) {
+		if wd.typ == dmgMultiHit {
+			wd.typ = dmgMultiHitCritical
+		} else {
+			wd.typ = dmgCritical
+		}
 	}
 	critical := wd.typ == dmgCritical || wd.typ == dmgMultiHitCritical
 
 	infdef := false
-	if !isAttackHitting(src, target, critical, r) {
+	if !isAttackHitting(&wd, src, target, critical, r) {
 		wd.dmgLv = atkFlee
 	} else if infdef = isInfiniteDefense(target, wd.flag); !infdef {
 		calcSkillBaseDamage(&wd, src, target, critical, r)
 
-		// Players add card bonuses and battle_attack_sc_bonus here, and
-		// sum their ATK parts. Monsters have their damage already.
+		if sd != nil {
+			// Renewal applies the attacker's cards to weapon and
+			// equipment ATK only.
+			wd.weaponAtk += cardfixAttacker(src, target, wd.weaponAtk)
+			wd.equipAtk += cardfixAttacker(src, target, wd.equipAtk)
+			// The left hand gets no change: left_cardfix_to_right moves
+			// its bonuses to the right hand.
+		}
+
+		// battle_attack_sc_bonus only changes damage through status
+		// changes, spirit charms, Star Gladiator's anger against a marked
+		// monster and the Summoner's Power of Life. None of them are
+		// ported.
+
+		// Players sum their ATK parts. Monsters already have their
+		// damage from battle_calc_base_damage.
+		if sd != nil {
+			sumPlayerDamage(&wd, src)
+		}
 
 		// Skill ratio: battle_calc_attack_skill_ratio is 100 with no
 		// skill and no status changes.
@@ -95,9 +122,15 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 
 		// battle_calc_skill_constant_addition is 0 with no skill.
 
+		// Advanced Katar Mastery applies after the skill ratio.
+		if lv := src.skill(skillAdvKatarMastery); sd != nil && sd.Weapon == WeaponKatar && lv > 0 {
+			atkAddRate(src, &wd.damage, &wd.damage2, int64(10+2*lv))
+		}
+
 		// Res reduces physical damage by a percent before DEF.
 		if wd.damage+wd.damage2 != 0 && target.Res > 0 {
-			// Players can ignore part of Res. Monsters cannot.
+			// Players can ignore part of Res with bonuses that are not
+			// ported.
 			res := float64(target.Res)
 			part := float64(float32(res / (res + 400.0)))
 			wd.damage -= int64(part * 80.0 / 100.0 * float64(wd.damage))
@@ -105,7 +138,8 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 		}
 
 		if wd.damage+wd.damage2 != 0 {
-			// attack_ignores_def is false for a monster's normal attack.
+			// attack_ignores_def is false for a normal attack without
+			// bIgnoreDefEle and similar bonuses.
 			calcDefenseReduction(&wd, src, target)
 			calcAttackPostDefense(&wd, src)
 		}
@@ -113,12 +147,23 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 
 	calcElementDamage(&wd, src, target, rightElement, leftElement)
 
-	// Renewal critical damage. Monsters have no critical damage bonus.
+	// Renewal critical damage.
 	if critical {
-		wd.damage = int64(math.Floor(float64(float32(wd.damage) * 1.4)))
+		if sd != nil {
+			// bCritAtkRate (crate) is not ported, so the rate is 1.4.
+			rate := float32(1.4)
+			wd.damage = int64(math.Floor(float64(float32(wd.damage) * rate)))
+			if isAttackLeftHanded(src) {
+				wd.damage2 = int64(math.Floor(float64(float32(wd.damage2) * rate)))
+			}
+		} else {
+			wd.damage = int64(math.Floor(float64(float32(wd.damage) * 1.4)))
+		}
+		// A player target's bCritDefRate is not ported.
 	}
 
-	// Card fixes only apply when a player attacks or is attacked.
+	// Renewal applies the target's cards only when a monster attacks a
+	// player. Player targets are not ported.
 
 	// A target that takes 1 damage from every hit.
 	if infdef {
@@ -148,47 +193,107 @@ func initializeWeaponData(src *Status) damage {
 	return wd
 }
 
-// isSkillUsingArrow is is_skill_using_arrow for a monster's normal
-// attack: attacks with a range over 3 cells count as ranged.
+// isSkillUsingArrow is is_skill_using_arrow for a normal attack. A player
+// uses ammunition when ArrowAttack is set. For other units, attacks with a
+// range over 3 cells count as ranged.
 func isSkillUsingArrow(src *Status) bool {
+	if src.Player != nil {
+		return src.Player.ArrowAttack
+	}
 	return src.RHW.Range > 3
 }
 
 // isAttackRightHanded is is_attack_right_handed. It is only false for
 // players with a weapon in the left hand only.
-func isAttackRightHanded(*Status) bool { return true }
+func isAttackRightHanded(src *Status) bool {
+	if sd := src.Player; sd != nil && sd.RightWeapon == WeaponFist && sd.LeftWeapon != WeaponFist {
+		return false
+	}
+	return true
+}
 
-// isAttackLeftHanded is is_attack_left_handed for a normal attack by a
-// unit that is not a player.
-func isAttackLeftHanded(src *Status) bool { return src.LHW.Atk != 0 }
+// isAttackLeftHanded is is_attack_left_handed for a normal attack: a
+// player with a weapon in the left hand only or with a katar, or any unit
+// with left-hand ATK.
+func isAttackLeftHanded(src *Status) bool {
+	if sd := src.Player; sd != nil {
+		if sd.RightWeapon == WeaponFist && sd.LeftWeapon != WeaponFist {
+			return true
+		}
+		if sd.Weapon == WeaponKatar {
+			return true
+		}
+	}
+	return src.LHW.Atk != 0
+}
 
 // isAttackCritical is is_attack_critical on its first call, for a normal
-// attack by a monster on a monster. Later calls in rAthena only read the
-// damage type.
-func isAttackCritical(src, target *Status, r Rand) bool {
+// attack. Later calls in rAthena only read the damage type.
+func isAttackCritical(wd *damage, src, target *Status, r Rand) bool {
 	if src.Cri == 0 {
 		return false
 	}
+	// Double hits can only be critical when the skill has the Critical
+	// damage flag.
+	if wd.typ == dmgMultiHit {
+		if src.skill(skillChainAction) > 0 && !chainActionCanCrit {
+			return false
+		}
+		if src.skill(skillDoubleAttack) > 0 && !doubleAttackCanCrit {
+			return false
+		}
+	}
 	cri := src.Cri
-	// The official factor is 2. rAthena uses 3 when a monster attacks a
-	// player, which Status cannot tell apart, so this uses 2.
-	cri -= target.Luk * 2
-	// Status changes (Sleep, Auto Counter, Camouflage) do not apply.
+	// Players add bCriticalAddRace, and bows add bCriticalLong and the
+	// arrow's critical bonus. These bonuses are not ported.
+
+	// The official factor is 2. rAthena uses 3 when a unit that is not a
+	// player attacks a player.
+	factor := 2
+	if src.Player == nil && target.Player != nil {
+		factor = 3
+	}
+	cri -= target.Luk * factor
+	// Status changes (Sleep, Auto Counter, Camouflage) and a player
+	// target's bCriticalDef are not ported.
 	return r.IntN(1000) < cri
 }
 
 // isAttackHitting is is_attack_hitting on its first call, for a normal
-// attack by a monster.
-func isAttackHitting(src, target *Status, critical bool, r Rand) bool {
+// attack.
+func isAttackHitting(wd *damage, src, target *Status, critical bool, r Rand) bool {
 	if critical {
 		return true
 	}
+	// bPerfectHitRate is not ported.
+
 	flee := target.Flee
 	// The flee penalty for many attackers (agi_penalty_target) only
-	// applies to players.
+	// applies to player targets, which are not ported.
 
 	// Renewal has no base hit rate.
 	hitrate := src.Hit - flee
+
+	if src.Player != nil {
+		// The arrow's bHit bonus (bonus.arrow_hit) is not ported.
+
+		// Renewal: Vulture's Eye adds hit that the status does not show.
+		hitrate += src.skill(skillVultureEye)
+
+		// A double attack gets 1 hit per Double Attack level.
+		if wd.typ&dmgMultiHit != 0 && wd.div == 2 {
+			hitrate += src.skill(skillDoubleAttack)
+		}
+
+		// Weapon Research adds a hidden 2% per level.
+		if lv := src.skill(skillWeaponResearch); lv > 0 {
+			hitrate += hitrate * 2 * lv / 100
+		}
+		if lv := src.skill(skillTrainingSword); lv > 0 && (src.Player.Weapon == Weapon1HSword || src.Player.Weapon == WeaponDagger) {
+			hitrate += 3 * lv
+		}
+	}
+
 	hitrate = min(max(hitrate, minHitrate), maxHitrate)
 	return r.IntN(100) < hitrate
 }
@@ -209,16 +314,31 @@ func isInfiniteDefense(target *Status, flag int) bool {
 }
 
 // calcSkillBaseDamage is the default case of
-// battle_calc_skill_base_damage. In renewal, units that are not players
-// use battle_calc_base_damage.
+// battle_calc_skill_base_damage. In renewal, players use
+// battle_calc_damage_parts, and other units use battle_calc_base_damage.
 func calcSkillBaseDamage(wd *damage, src, target *Status, critical bool, r Rand) {
 	bflag := 0
 	if critical {
 		bflag |= bdmgCrit
 	}
-	wd.damage = calcBaseDamage(src, &src.RHW, target.Size, bflag, r)
-	if isAttackLeftHanded(src) {
-		wd.damage2 = calcBaseDamage(src, &src.LHW, target.Size, bflag, r)
+	if src.Player == nil {
+		wd.damage = calcBaseDamage(src, &src.RHW, target.Size, bflag, r)
+		if isAttackLeftHanded(src) {
+			wd.damage2 = calcBaseDamage(src, &src.LHW, target.Size, bflag, r)
+		}
+		return
+	}
+	calcDamageParts(wd, src, target, critical, r)
+
+	// Renewal: Taekwon Mission (TK_POWER) adds 20% per level to every ATK
+	// part, with or without a party.
+	if lv := src.skill(skillTKPower); lv > 0 {
+		pct := int64(20 * lv)
+		atkAddRate(src, &wd.damage, &wd.damage2, pct)
+		atkAddRate(src, &wd.statusAtk, &wd.statusAtk2, pct)
+		atkAddRate(src, &wd.weaponAtk, &wd.weaponAtk2, pct)
+		atkAddRate(src, &wd.equipAtk, &wd.equipAtk2, pct)
+		atkAddRate(src, &wd.masteryAtk, &wd.masteryAtk2, pct)
 	}
 }
 
@@ -265,6 +385,16 @@ func calcDefenseReduction(wd *damage, src, target *Status) {
 	def1 := int64(target.Def)
 	def2 := int64(target.Def2)
 
+	if sd := src.Player; sd != nil {
+		// bIgnoreDefRaceRate ignores a percent of both DEF values. The
+		// class version is not ported.
+		if i := int64(sd.IgnoreDefRace[target.Race] + sd.IgnoreDefRace[RaceAll]); i != 0 {
+			i = min(i, 100)
+			def1 -= def1 * i / 100
+			def2 -= def2 * i / 100
+		}
+	}
+
 	// The defense penalty for many attackers (vit_penalty_target) only
 	// applies to players.
 
@@ -280,7 +410,8 @@ func calcDefenseReduction(wd *damage, src, target *Status) {
 	if def1 == -400 {
 		def1 = -399
 	}
-	// Monsters' attacks never pierce defense (is_attack_piercing).
+	// Normal attacks only pierce defense with bDefRatioAtkRace and
+	// similar bonuses (is_attack_piercing), which are not ported.
 	wd.damage = wd.damage*(4000+def1)/(4000+10*def1) - vitDef
 	if isAttackLeftHanded(src) {
 		wd.damage2 = wd.damage2*(4000+def1)/(4000+10*def1) - vitDef
@@ -306,7 +437,9 @@ func minDamage(wd *damage, src *Status, minimum int64) {
 
 // calcElementDamage is battle_calc_element_damage for a normal attack.
 func calcElementDamage(wd *damage, src, target *Status, rightElement, leftElement int) {
-	if wd.damage > 0 || wd.damage2 > 0 {
+	// Renewal players apply the element table to each ATK part in
+	// battle_calc_damage_parts instead.
+	if (wd.damage > 0 || wd.damage2 > 0) && src.Player == nil {
 		// Normal attacks by monsters are non-elemental and deal 100%
 		// against every defense element (attack_attr_none).
 		if monsterAttackAttrNone {
@@ -331,7 +464,12 @@ func calcAttackPlant(wd *damage, src *Status) {
 	// Only a hit reaches here, so the attack always counts as hitting.
 	wd.damage = 1
 	if isAttackLeftHanded(src) {
-		wd.damage2 = 1
+		if sd := src.Player; sd != nil && sd.Weapon == WeaponKatar {
+			// Katars deal no second hit to plants.
+			wd.damage2 = 0
+		} else {
+			wd.damage2 = 1
+		}
 	}
 	// Status changes that block damage do not apply.
 
@@ -364,6 +502,9 @@ func applyDivFix(wd *damage) {
 // calcAttackLeftRightHands is battle_calc_attack_left_right_hands. The
 // dual-wield and katar rates only apply to players.
 func calcAttackLeftRightHands(wd *damage, src *Status) {
+	if src.Player != nil {
+		calcLeftRightHands(wd, src)
+	}
 	if !isAttackRightHanded(src) && !isAttackLeftHanded(src) && wd.damage != 0 {
 		wd.damage = 0
 	}
@@ -417,5 +558,23 @@ func (wd *damage) rate(src *Status, pct int64) {
 	wd.damage = wd.damage * pct / 100
 	if isAttackLeftHanded(src) {
 		wd.damage2 = wd.damage2 * pct / 100
+	}
+}
+
+// atkAddRate is rAthena's ATK_ADDRATE macro: adds a percent to a value and
+// to its left-hand value.
+func atkAddRate(src *Status, v, v2 *int64, pct int64) {
+	*v += *v * pct / 100
+	if isAttackLeftHanded(src) {
+		*v2 += *v2 * pct / 100
+	}
+}
+
+// atkAdd is rAthena's ATK_ADD macro: adds an amount to a value and to its
+// left-hand value.
+func atkAdd(src *Status, v, v2 *int64, n int64) {
+	*v += n
+	if isAttackLeftHanded(src) {
+		*v2 += n
 	}
 }

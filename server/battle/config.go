@@ -22,6 +22,12 @@ const (
 	skillMinDamage = 0
 )
 
+// Two more defaults are built into the player formula:
+//   - left_cardfix_to_right is yes, so both hands' card bonuses count on
+//     the right hand (cardfixAttacker).
+//   - undead_detect_type is 0, so only the Undead element counts as undead
+//     for Demon Bane (isUndead).
+
 // The settings below only apply to cases that Attack does not handle.
 //   - agi_penalty_target and vit_penalty_target are players only, so the
 //     flee and defense penalties for many attackers never apply to a

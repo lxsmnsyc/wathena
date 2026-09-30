@@ -82,7 +82,7 @@ func run() error {
 			return err
 		}
 	} else {
-		z.PlayerStatus = battle.Status{MaxHP: 40, ADelay: 880, AMotion: 440, DMotion: 796, RHW: battle.Weapon{Range: 1}}
+		z.PlayerStatus = battle.Status{MaxHP: 40, ADelay: 880, AMotion: 440, DMotion: 796, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	}
 	go z.Run(ctx)
 
@@ -221,6 +221,8 @@ func playerStatus(mode reference.Mode) (battle.Status, error) {
 		if p.Job == 0 && p.BaseLevel == 1 && p.Build == "all_1" && !p.AllSkills {
 			st := p.BattleState
 			st.Level = 1
+			// Bare hands and no skills.
+			st.Player = &battle.Player{}
 			return st, nil
 		}
 	}

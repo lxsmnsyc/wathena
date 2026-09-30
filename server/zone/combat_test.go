@@ -11,11 +11,12 @@ import (
 // fighters makes a zone with one player and one monster two cells apart.
 func fighters(t *testing.T, mobHP int, mode uint32) (*Zone, *Player, *entity) {
 	t.Helper()
-	// Both sides always hit for 10.
+	// Both sides always hit for 10. The bare-handed player deals twice its
+	// status ATK.
 	mob := &battle.Status{MaxHP: mobHP, Hit: 200, ADelay: 1000, AMotion: 500, DMotion: 300, Mode: mode, RHW: battle.Weapon{Atk: 10, Atk2: 10, Range: 1}}
 	spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, Status: mob, RespawnMs: 5000}}
 	z := New("map/test", open(40), rng.FromKey([32]byte{2}).Stream(), spawns)
-	z.PlayerStatus = battle.Status{MaxHP: 100, Hit: 200, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Atk: 10, Atk2: 10, Range: 1}}
+	z.PlayerStatus = battle.Status{MaxHP: 100, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	p := add(z, "a")
 	var m *entity
 	for e := range z.entities {

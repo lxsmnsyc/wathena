@@ -3,8 +3,8 @@
 // reference/rathena/renewal.
 //
 // This is a port of rAthena's battle.cpp (GPL-3.0). It covers a normal
-// weapon attack by a monster, with no skill, status changes, cards or
-// equipment. Function comments name the rAthena functions they port.
+// weapon attack by a monster or a player, with no skill and no status
+// changes. Function comments name the rAthena functions they port.
 package battle
 
 // Weapon is a unit's weapon attack, as rAthena's weapon_atk.
@@ -19,8 +19,8 @@ type Weapon struct {
 
 // Status is a unit's battle status, as rAthena's status_data. The field
 // names and JSON keys follow the reference's JSON, so a "status" object
-// from mob_status.json decodes into it. Level and DamageTaken are not in
-// that object.
+// from mob_status.json decodes into it. Level, EAtk, DamageTaken and
+// Player are not in that object.
 type Status struct {
 	Level   int    `json:"level"`
 	MaxHP   int    `json:"max_hp"`
@@ -59,9 +59,14 @@ type Status struct {
 	RHW     Weapon `json:"rhw"`
 	// LHW is the left-hand weapon. Monsters have none.
 	LHW Weapon `json:"lhw"`
+	// EAtk is the equipment ATK from bonus bBaseAtk, as status_data's
+	// eatk. Only players have it.
+	EAtk int `json:"eatk"`
 	// DamageTaken is the percent of damage a monster takes, from
 	// DamageTaken in rAthena's mob_db.yml. 0 counts as 100.
 	DamageTaken int `json:"damage_taken"`
+	// Player holds what only players have. It is nil for monsters.
+	Player *Player `json:"-"`
 }
 
 // Monster modes that attacks read, as rAthena's e_mode.
@@ -91,7 +96,7 @@ type Result struct {
 	// Damage is the total damage of both hands.
 	Damage int64
 	// Left is the part of Damage dealt by the left hand, as rAthena's
-	// damage2. It is 0 for monsters.
+	// damage2. Players have it with a katar or a weapon in the left hand.
 	Left int64
 	// Hits is how many hits the damage shows as, such as 2 for a double
 	// attack.
@@ -107,8 +112,9 @@ type Rand interface {
 	IntN(n int) int
 }
 
-// Attack is a normal weapon attack by a monster on a target, as
-// battle_calc_attack with BF_WEAPON, no skill and no status changes.
+// Attack is a normal weapon attack on a target, as battle_calc_attack
+// with BF_WEAPON, no skill and no status changes. The attacker is a player
+// when its Player is set, and a monster otherwise.
 func Attack(attacker, target *Status, r Rand) Result {
 	wd := calcWeaponAttack(attacker, target, r)
 
@@ -117,6 +123,16 @@ func Attack(attacker, target *Status, r Rand) Result {
 		// A hit that deals no damage counts as a miss.
 		if wd.dmgLv == atkDef {
 			wd.dmgLv = atkMiss
+		}
+		if attacker.Player != nil {
+			wd.div = 1
+		}
+		// With a weapon in the left hand only, rAthena does not raise the
+		// right hand's damage to 1, so it can stay negative after DEF.
+		// rAthena keeps the negative total, and status_damage would heal
+		// the target by it. Attack reports no damage instead.
+		if wd.damage+wd.damage2 < 0 {
+			wd.damage, wd.damage2 = 0, 0
 		}
 	} else {
 		// Some damage lands even when the attack was dodged.

@@ -1,0 +1,17 @@
+{
+	"source": "rAthena db/re/item_db_equip.yml and db/re/item_db_etc.yml (GPL-3.0) at commit e985006171d2eb320ee512a653f4c83aea3d81b6",
+	"note": "Item bonuses that pc_damage.json's attacker_status does not hold, for the weapons and ammunition it uses, at refine 0 on a base level 99 player that is not a third class. 'eatk' is bonus bBaseAtk. 'atk_rate' is bonus bAtkRate. 'add_race' and 'ignore_def_race' are bonus2 bAddRace and bIgnoreDefRaceRate, by race ID. 'two_handed' lists weapons whose location is Both_Hand. 'ammo' holds each ammunition's Attack and bonus bAtkEle element.",
+	"weapons": {
+		"1100": { "eatk": 149 },
+		"1597": {
+			"add_race": { "7": 35, "10": 35 },
+			"ignore_def_race": { "7": 10, "10": 10 }
+		}
+	},
+	"two_handed": [1116, 1161, 1250, 1314, 1339, 1410, 1472, 1701, 2001, 2002, 2019, 13100, 13150, 13154, 13157, 13160],
+	"ammo": {
+		"1750": { "atk": 25, "ele": 0 },
+		"13200": { "atk": 25, "ele": 0 },
+		"13203": { "atk": 50, "ele": 3 }
+	}
+}
