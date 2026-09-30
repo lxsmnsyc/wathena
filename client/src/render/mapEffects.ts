@@ -1,5 +1,5 @@
 import { Group } from 'three';
-import { effects as table } from '../data/tables';
+import { partEffect, effects as table } from '../data/tables';
 import type { WMap } from '../formats/wmap';
 import { type EffectCache, EffectView } from './effects';
 import ParticleEmitter from './particles';
@@ -27,11 +27,11 @@ export default class MapEffects {
       this.group.add(p.mesh);
       this.emitters.push(p);
     }
+    // Placed effects play no sounds. Map sounds come from the map's own list.
     const placed = map.effects.flatMap((e) =>
-      (table.get(e.id)?.parts ?? []).map((part) => {
-        const name =
-          'effect' in part ? part.effect : (part.variants[this.random(part.variants.length)] ?? '');
-        return { name, position: e.position };
+      (table.get(e.id)?.parts ?? []).flatMap((part) => {
+        const name = partEffect(part, (n) => this.random(n));
+        return name === undefined ? [] : [{ name, position: e.position }];
       }),
     );
     await Promise.all(

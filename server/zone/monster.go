@@ -2,6 +2,7 @@ package zone
 
 import (
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/shared/path"
 )
 
@@ -22,6 +23,9 @@ type Spawn struct {
 	Status *battle.Status
 	// RespawnMs is how long after dying a monster comes back.
 	RespawnMs int
+	// Reward is the monster's level, exp and drops. Monsters without one
+	// give nothing when they die.
+	Reward *progression.Mob
 }
 
 type monster struct {
@@ -29,6 +33,8 @@ type monster struct {
 	// nextWalk is when the monster next tries to wander, in zone
 	// milliseconds, or -1 before its first try.
 	nextWalk int64
+	// dmglog is who fought the monster, for exp shares and loot.
+	dmglog progression.DamageLog
 }
 
 // Random walk timing, as rAthena's mob.cpp.

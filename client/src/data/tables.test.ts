@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { effects, weapons } from './tables';
+import { effects, partEffect, weapons } from './tables';
 
 describe('tables', () => {
   it('loads the YAML tables', () => {
@@ -7,5 +7,16 @@ describe('tables', () => {
     expect(effects.get(109)?.parts[0]).toEqual({
       variants: ['effect/bubble1', 'effect/bubble2', 'effect/bubble3', 'effect/bubble4'],
     });
+  });
+
+  it('lists level up effects with their sound', () => {
+    expect(effects.get(371)?.parts).toEqual([{ effect: 'effect/angel' }, { sound: 'sound/levelup' }]);
+    expect(effects.get(158)?.parts).toEqual([{ effect: 'effect/joblvup' }]);
+  });
+
+  it('names the effect a part shows', () => {
+    expect(partEffect({ effect: 'effect/a' }, () => 0)).toBe('effect/a');
+    expect(partEffect({ variants: ['effect/a', 'effect/b'] }, () => 1)).toBe('effect/b');
+    expect(partEffect({ sound: 'sound/a' }, () => 0)).toBeUndefined();
   });
 });

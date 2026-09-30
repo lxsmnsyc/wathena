@@ -129,13 +129,14 @@ func (z *Zone) chase(e, t *entity) {
 // strike runs one attack and applies its damage.
 func (z *Zone) strike(e, t *entity) {
 	r := battle.Attack(e.status, t.status, z.rand)
+	z.logDamage(e, t, r.Damage)
 	if r.Damage > 0 {
 		t.hp -= r.Damage
 		t.hpChanged = true
 	}
 	z.hits = append(z.hits, hit{source: e, target: t, result: r, delay: e.status.AMotion, hpPermille: t.hpPermille()})
 	if t.hp <= 0 {
-		z.die(t)
+		z.die(t, e)
 		return
 	}
 	// A monster that can attack strikes back.
@@ -146,9 +147,11 @@ func (z *Zone) strike(e, t *entity) {
 	}
 }
 
-func (z *Zone) die(e *entity) {
+// die ends a unit killed by another.
+func (z *Zone) die(e, killer *entity) {
 	e.dead = true
 	e.target = nil
+	e.pickItem = nil
 	e.path = e.path[:0]
 	for o := range z.entities {
 		if o.target == e {
@@ -162,6 +165,7 @@ func (z *Zone) die(e *entity) {
 	}
 	delete(z.entities, e)
 	z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_DIED})
+	z.reward(e, killer)
 	s := e.monster.spawn
 	z.respawns = append(z.respawns, respawn{spawn: s, at: z.now + int64(max(s.RespawnMs, 1000))})
 }
@@ -229,6 +233,8 @@ func (z *Zone) combatEvents(p *Player) []*wathenav1.Event {
 			TargetHpPermille: h.hpPermille,
 		}.Build()}.Build())
 	}
+	// A pick-up shows before the item vanishes.
+	events = append(events, z.takeEvents(p)...)
 	for _, r := range z.removed {
 		if id, ok := p.netIDs[r.e]; ok {
 			delete(p.netIDs, r.e)

@@ -15,8 +15,25 @@ export interface Weapon {
   hit: string[];
 }
 
-/** One thing an effect shows: an STR effect, or one of several at random. */
-export type EffectPart = { effect: string } | { variants: string[] };
+/**
+ * One thing an effect shows: an STR effect, one of several STR effects at
+ * random, or a sound.
+ */
+export type EffectPart = { effect: string } | { variants: string[] } | { sound: string };
+
+/**
+ * The STR effect a part shows, or undefined for a sound. random(n) picks
+ * one of n variants.
+ */
+export function partEffect(part: EffectPart, random: (n: number) => number): string | undefined {
+  if ('effect' in part) {
+    return part.effect;
+  }
+  if ('variants' in part) {
+    return part.variants[random(part.variants.length)];
+  }
+  return undefined;
+}
 
 export interface EffectEntry {
   id: number;
@@ -45,7 +62,10 @@ function isWeapon(v: unknown): v is Weapon {
 }
 
 function isPart(v: unknown): v is EffectPart {
-  return isObject(v) && (typeof v.effect === 'string' || strings(v.variants));
+  return (
+    isObject(v) &&
+    (typeof v.effect === 'string' || strings(v.variants) || typeof v.sound === 'string')
+  );
 }
 
 function isEffect(v: unknown): v is EffectEntry {

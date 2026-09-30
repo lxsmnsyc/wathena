@@ -4,8 +4,14 @@
 # Each entry lists what the effect shows. A part is one of:
 # - effect: a baked STR effect, effect/<name>. With variants, one of the
 #   listed effects is chosen at random each time the effect starts.
+# - sound: a sound to play when the effect starts, sound/<path>, from
+#   data\wav\<path>.wav. roBrowser calls it wav.
 #
-# Only the map effects whose parts are STR effects are listed so far. The
+# Effects that attach to an entity, such as level ups, play at its feet
+# and follow it.
+#
+# Besides level ups (158, 371), only the map effects whose parts are STR
+# effects are listed so far. The
 # most common map effects, such as torches (47) and emitters (974), are
 # sprite particles, which need a particle system in the client first.
 #
@@ -22,7 +28,16 @@ effects:
     constant: EF_GASPUSH
     parts:
       - effect: effect/gaspush
+  - id: 158
+    constant: EF_JOBLVUP
+    parts:
+      - effect: effect/joblvup
   - id: 199
     constant: EF_PONG
     parts:
       - variants: [effect/pong1, effect/pong2, effect/pong3]
+  - id: 371
+    constant: EF_ANGEL
+    parts:
+      - effect: effect/angel
+      - sound: sound/levelup

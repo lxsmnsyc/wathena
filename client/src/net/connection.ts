@@ -108,6 +108,14 @@ export class Connection {
     });
   }
 
+  /** Walks next to a ground item, by entity ID, and picks it up. */
+  pickUp(item: number): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'pickUp', value: { item } } }),
+    });
+  }
+
   close(): void {
     this.socket.close();
   }

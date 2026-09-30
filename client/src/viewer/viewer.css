@@ -21,8 +21,10 @@ body {
   top: 12px;
   left: 12px;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  max-width: calc(100% - 44px);
   padding: 8px 10px;
   border-radius: 6px;
   background: rgb(0 0 0 / 60%);
@@ -75,4 +77,41 @@ body {
 
 #status {
   font-variant-numeric: tabular-nums;
+}
+
+#hp,
+#exp,
+#message {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+#message {
+  color: #ffd84a;
+}
+
+#inventory {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+  font-variant-numeric: tabular-nums;
+}
+
+#inventory:empty {
+  display: none;
+}
+
+#inventory li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+#inventory img {
+  image-rendering: pixelated;
 }

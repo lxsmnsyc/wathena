@@ -170,6 +170,15 @@ func (x *Command) GetUseItem() *UseItem {
 	return nil
 }
 
+func (x *Command) GetPickUp() *PickUp {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_PickUp); ok {
+			return x.PickUp
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -224,6 +233,14 @@ func (x *Command) SetUseItem(v *UseItem) {
 		return
 	}
 	x.xxx_hidden_Body = &command_UseItem{v}
+}
+
+func (x *Command) SetPickUp(v *PickUp) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_PickUp{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -289,6 +306,14 @@ func (x *Command) HasUseItem() bool {
 	return ok
 }
 
+func (x *Command) HasPickUp() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_PickUp)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -335,6 +360,12 @@ func (x *Command) ClearUseItem() {
 	}
 }
 
+func (x *Command) ClearPickUp() {
+	if _, ok := x.xxx_hidden_Body.(*command_PickUp); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -343,6 +374,7 @@ const Command_Chat_case case_Command_Body = 4
 const Command_NpcClick_case case_Command_Body = 5
 const Command_NpcReply_case case_Command_Body = 6
 const Command_UseItem_case case_Command_Body = 7
+const Command_PickUp_case case_Command_Body = 8
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -363,6 +395,8 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_NpcReply_case
 	case *command_UseItem:
 		return Command_UseItem_case
+	case *command_PickUp:
+		return Command_PickUp_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -379,6 +413,7 @@ type Command_builder struct {
 	NpcClick *NpcClick
 	NpcReply *NpcReply
 	UseItem  *UseItem
+	PickUp   *PickUp
 	// -- end of xxx_hidden_Body
 }
 
@@ -406,6 +441,9 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.UseItem != nil {
 		x.xxx_hidden_Body = &command_UseItem{b.UseItem}
+	}
+	if b.PickUp != nil {
+		x.xxx_hidden_Body = &command_PickUp{b.PickUp}
 	}
 	return m0
 }
@@ -452,6 +490,10 @@ type command_UseItem struct {
 	UseItem *UseItem `protobuf:"bytes,7,opt,name=use_item,json=useItem,proto3,oneof"`
 }
 
+type command_PickUp struct {
+	PickUp *PickUp `protobuf:"bytes,8,opt,name=pick_up,json=pickUp,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -465,6 +507,8 @@ func (*command_NpcClick) isCommand_Body() {}
 func (*command_NpcReply) isCommand_Body() {}
 
 func (*command_UseItem) isCommand_Body() {}
+
+func (*command_PickUp) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -1377,12 +1421,70 @@ func (b0 UseItem_builder) Build() *UseItem {
 	return m0
 }
 
+// PickUp walks next to a ground item and picks it up.
+type PickUp struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Item uint32                 `protobuf:"varint,1,opt,name=item,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *PickUp) Reset() {
+	*x = PickUp{}
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PickUp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PickUp) ProtoMessage() {}
+
+func (x *PickUp) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PickUp) GetItem() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Item
+	}
+	return 0
+}
+
+func (x *PickUp) SetItem(v uint32) {
+	x.xxx_hidden_Item = v
+}
+
+type PickUp_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Item uint32
+}
+
+func (b0 PickUp_builder) Build() *PickUp {
+	m0 := &PickUp{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Item = b.Item
+	return m0
+}
+
 var File_wathena_v1_command_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\xe7\x02\n" +
+	"wathena.v1\"\x96\x03\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -1390,7 +1492,8 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x04chat\x18\x04 \x01(\v2\x10.wathena.v1.ChatH\x00R\x04chat\x123\n" +
 	"\tnpc_click\x18\x05 \x01(\v2\x14.wathena.v1.NpcClickH\x00R\bnpcClick\x123\n" +
 	"\tnpc_reply\x18\x06 \x01(\v2\x14.wathena.v1.NpcReplyH\x00R\bnpcReply\x120\n" +
-	"\buse_item\x18\a \x01(\v2\x13.wathena.v1.UseItemH\x00R\auseItemB\x06\n" +
+	"\buse_item\x18\a \x01(\v2\x13.wathena.v1.UseItemH\x00R\auseItem\x12-\n" +
+	"\apick_up\x18\b \x01(\v2\x12.wathena.v1.PickUpH\x00R\x06pickUpB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -1423,7 +1526,9 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x05close\x18\x06 \x01(\bH\x00R\x05closeB\b\n" +
 	"\x06answer\"\x1d\n" +
 	"\aUseItem\x12\x12\n" +
-	"\x04slot\x18\x01 \x01(\rR\x04slot*\xa5\x01\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\"\x1c\n" +
+	"\x06PickUp\x12\x12\n" +
+	"\x04item\x18\x01 \x01(\rR\x04item*\xa5\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
@@ -1433,7 +1538,7 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x12CHAT_CHANNEL_WORLD\x10\x05B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_wathena_v1_command_proto_goTypes = []any{
 	(ChatChannel)(0), // 0: wathena.v1.ChatChannel
 	(*Command)(nil),  // 1: wathena.v1.Command
@@ -1445,22 +1550,24 @@ var file_wathena_v1_command_proto_goTypes = []any{
 	(*NpcClick)(nil), // 7: wathena.v1.NpcClick
 	(*NpcReply)(nil), // 8: wathena.v1.NpcReply
 	(*UseItem)(nil),  // 9: wathena.v1.UseItem
+	(*PickUp)(nil),   // 10: wathena.v1.PickUp
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
-	2, // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
-	3, // 1: wathena.v1.Command.attack:type_name -> wathena.v1.Attack
-	4, // 2: wathena.v1.Command.use_skill:type_name -> wathena.v1.UseSkill
-	6, // 3: wathena.v1.Command.chat:type_name -> wathena.v1.Chat
-	7, // 4: wathena.v1.Command.npc_click:type_name -> wathena.v1.NpcClick
-	8, // 5: wathena.v1.Command.npc_reply:type_name -> wathena.v1.NpcReply
-	9, // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
-	5, // 7: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0, // 8: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	2,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
+	3,  // 1: wathena.v1.Command.attack:type_name -> wathena.v1.Attack
+	4,  // 2: wathena.v1.Command.use_skill:type_name -> wathena.v1.UseSkill
+	6,  // 3: wathena.v1.Command.chat:type_name -> wathena.v1.Chat
+	7,  // 4: wathena.v1.Command.npc_click:type_name -> wathena.v1.NpcClick
+	8,  // 5: wathena.v1.Command.npc_reply:type_name -> wathena.v1.NpcReply
+	9,  // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
+	10, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
+	5,  // 8: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 9: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -1476,6 +1583,7 @@ func file_wathena_v1_command_proto_init() {
 		(*command_NpcClick)(nil),
 		(*command_NpcReply)(nil),
 		(*command_UseItem)(nil),
+		(*command_PickUp)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
@@ -1494,7 +1602,7 @@ func file_wathena_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

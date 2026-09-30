@@ -15,6 +15,7 @@ message Command {
     NpcClick npc_click = 5;
     NpcReply npc_reply = 6;
     UseItem use_item = 7;
+    PickUp pick_up = 8;
   }
 }
 
@@ -80,4 +81,9 @@ message NpcReply {
 message UseItem {
   // slot is the inventory slot the server sent in InventoryUpdate.
   uint32 slot = 1;
+}
+
+// PickUp walks next to a ground item and picks it up.
+message PickUp {
+  uint32 item = 1;
 }

@@ -25,6 +25,7 @@ import { EffectCache, EffectView } from '../render/effects';
 import { DamageKind } from '../gen/wathena/v1/event_pb';
 import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
+import { Inventory, expLine, hpLine, pickUpMessage } from './hud';
 import randomLook from './looks';
 import Online from './online';
 import Player from './player';
@@ -229,7 +230,10 @@ async function show(name: string): Promise<void> {
     pathfinder.setMap(next.map);
     player = undefined;
     playerGroup.clear();
-    session?.online.setMap(next.map);
+    if (session !== undefined) {
+      session.online.effects = { cache: effects, textures: next.textures };
+      session.online.setMap(next.map);
+    }
     const [px, py] =
       session?.online.me === undefined
         ? Player.start(next.map)
@@ -340,6 +344,29 @@ if (serverURL === null) {
       div.remove();
     }, 1000);
   };
+  const inventoryList = document.querySelector<HTMLUListElement>('#inventory');
+  const inventory = inventoryList === null ? undefined : new Inventory(inventoryList, store);
+  view.onInventoryAdd = (id, amount) => {
+    inventory?.add(id, amount);
+  };
+  const message = document.querySelector<HTMLOutputElement>('#message');
+  let messageTimer: ReturnType<typeof setTimeout> | undefined;
+  view.onPickUpFailed = (reason) => {
+    if (message === null) {
+      return;
+    }
+    message.value = pickUpMessage(reason);
+    clearTimeout(messageTimer);
+    messageTimer = setTimeout(() => {
+      message.value = '';
+    }, 3000);
+  };
+  view.onSound = (sound, position) => {
+    const d = position.distanceTo(controls.target);
+    if (d < SPRITE_SOUND_RANGE) {
+      audio.play(sound, 1 - d / SPRITE_SOUND_RANGE, pan(position));
+    }
+  };
   session = { connection, online: view };
   scene.add(view.group);
   input.value = connection.welcome.map;
@@ -390,8 +417,9 @@ canvas.addEventListener('pointerup', (e) => {
   );
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObject(ground, true)[0];
-  // Online, a click on a unit attacks it, and a click on the ground walks
-  // there. The server decides the path and sends it back.
+  // Online, a click on a unit attacks it, a click on an item picks it up,
+  // and a click on the ground walks there. The server decides the path and
+  // sends it back.
   const target = session?.online.pick(
     e.clientX - rect.left,
     e.clientY - rect.top,
@@ -400,7 +428,11 @@ canvas.addEventListener('pointerup', (e) => {
     rect.height,
   );
   if (session !== undefined && target !== undefined) {
-    session.connection.attack(target, true);
+    if (target.item) {
+      session.connection.pickUp(target.id);
+    } else {
+      session.connection.attack(target.id, true);
+    }
     return;
   }
   if (hit !== undefined) {
@@ -416,6 +448,7 @@ canvas.addEventListener('pointerup', (e) => {
 
 const follow = new Vector3();
 const hpOutput = document.querySelector<HTMLOutputElement>('#hp');
+const expOutput = document.querySelector<HTMLOutputElement>('#exp');
 
 const timer = new Timer();
 const toward = new Vector3();
@@ -437,9 +470,16 @@ renderer.setAnimationLoop((time) => {
     controls.target.add(follow);
     camera.position.add(follow);
   }
-  const hp = session?.online.hp;
-  if (hp !== undefined && hpOutput !== null) {
-    hpOutput.value = `HP ${Math.max(hp[0], 0)} / ${hp[1]}`;
+  const stats = session?.online.stats;
+  if (stats !== undefined) {
+    const hp = hpLine(stats);
+    if (hp !== undefined && hpOutput !== null && hpOutput.value !== hp) {
+      hpOutput.value = hp;
+    }
+    const exp = expLine(stats);
+    if (exp !== undefined && expOutput !== null && expOutput.value !== exp) {
+      expOutput.value = exp;
+    }
   }
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });

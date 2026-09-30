@@ -39,6 +39,19 @@ type EffectPart struct {
 	Effect string `yaml:"effect"`
 	// Variants are STR effects, one chosen at random each time.
 	Variants []string `yaml:"variants"`
+	// Sound is a sound played when the effect starts.
+	Sound string `yaml:"sound"`
+}
+
+// names returns the asset names a part refers to.
+func (p EffectPart) names() []string {
+	var out []string
+	for _, n := range append([]string{p.Effect, p.Sound}, p.Variants...) {
+		if n != "" {
+			out = append(out, n)
+		}
+	}
+	return out
 }
 
 // Effect is one RO effect ID.
@@ -101,14 +114,25 @@ func ParseEffects(data []byte) (*Effects, error) {
 		}
 		ids[ef.ID] = true
 		for _, p := range ef.Parts {
-			if (p.Effect == "") == (len(p.Variants) == 0) {
-				return nil, fmt.Errorf("effects.yml: effect %d: a part needs exactly one of effect and variants", ef.ID)
+			set := 0
+			for _, ok := range []bool{p.Effect != "", len(p.Variants) > 0, p.Sound != ""} {
+				if ok {
+					set++
+				}
+			}
+			if set != 1 {
+				return nil, fmt.Errorf("effects.yml: effect %d: a part needs exactly one of effect, variants, and sound", ef.ID)
 			}
 			for _, n := range append([]string{p.Effect}, p.Variants...) {
 				if n == "" {
 					continue
 				}
 				if err := checkName("effects.yml", n, "effect/"); err != nil {
+					return nil, err
+				}
+			}
+			if p.Sound != "" {
+				if err := checkName("effects.yml", p.Sound, "sound/"); err != nil {
 					return nil, err
 				}
 			}
@@ -160,10 +184,8 @@ func References() ([]Reference, error) {
 	}
 	for _, e := range effects.Effects {
 		for _, p := range e.Parts {
-			for _, n := range append([]string{p.Effect}, p.Variants...) {
-				if n != "" {
-					refs = append(refs, Reference{"client/data/effects.yml", n})
-				}
+			for _, n := range p.names() {
+				refs = append(refs, Reference{"client/data/effects.yml", n})
 			}
 		}
 	}

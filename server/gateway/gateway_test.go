@@ -135,6 +135,17 @@ func TestPlayersSeeEachOtherWalk(t *testing.T) {
 		t.Errorf("pong %v", p)
 	}
 
+	// Picking up an item that is not there fails.
+	a.send(wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{
+		PickUp: wathenav1.PickUp_builder{Item: 999}.Build(),
+	}.Build()}.Build())
+	f := a.next(hasEvent(func(e *wathenav1.Event) bool { return e.HasPickUpFailed() }))
+	for _, e := range f.GetFrame().GetEvents() {
+		if pf := e.GetPickUpFailed(); pf != nil && (pf.GetItem() != 999 || pf.GetReason() != wathenav1.PickUpFailure_PICK_UP_FAILURE_GONE) {
+			t.Errorf("pick up failed %v", pf)
+		}
+	}
+
 	// Bob leaves, and Alice sees him go.
 	_ = b.c.Close(websocket.StatusNormalClosure, "")
 	a.next(hasEvent(func(e *wathenav1.Event) bool {

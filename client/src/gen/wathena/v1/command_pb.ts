@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEiqgIKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJKCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkiFwoITnBjQ2xpY2sSCwoDbnBjGAEgASgNIoMBCghOcGNSZXBseRIOCgZkaWFsb2cYASABKA0SDgoEbmV4dBgCIAEoCEgAEg4KBG1lbnUYAyABKA1IABIUCgppbnB1dF90ZXh0GAQgASgJSAASFgoMaW5wdXRfbnVtYmVyGAUgASgDSAASDwoFY2xvc2UYBiABKAhIAEIICgZhbnN3ZXIiFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNKqUBCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi0QIKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJKCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkiFwoITnBjQ2xpY2sSCwoDbnBjGAEgASgNIoMBCghOcGNSZXBseRIOCgZkaWFsb2cYASABKA0SDgoEbmV4dBgCIAEoCEgAEg4KBG1lbnUYAyABKA1IABIUCgppbnB1dF90ZXh0GAQgASgJSAASFgoMaW5wdXRfbnVtYmVyGAUgASgDSAASDwoFY2xvc2UYBiABKAhIAEIICgZhbnN3ZXIiFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNKqUBCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -64,6 +64,12 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: UseItem;
     case: "useItem";
+  } | {
+    /**
+     * @generated from field: wathena.v1.PickUp pick_up = 8;
+     */
+    value: PickUp;
+    case: "pickUp";
   } | { case: undefined; value?: undefined };
 };
 
@@ -303,6 +309,25 @@ export type UseItem = Message<"wathena.v1.UseItem"> & {
  */
 export const UseItemSchema: GenMessage<UseItem> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 8);
+
+/**
+ * PickUp walks next to a ground item and picks it up.
+ *
+ * @generated from message wathena.v1.PickUp
+ */
+export type PickUp = Message<"wathena.v1.PickUp"> & {
+  /**
+   * @generated from field: uint32 item = 1;
+   */
+  item: number;
+};
+
+/**
+ * Describes the message wathena.v1.PickUp.
+ * Use `create(PickUpSchema)` to create a new message.
+ */
+export const PickUpSchema: GenMessage<PickUp> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 9);
 
 /**
  * @generated from enum wathena.v1.ChatChannel

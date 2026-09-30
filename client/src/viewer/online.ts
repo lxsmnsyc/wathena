@@ -1,22 +1,29 @@
 import { type Camera, Group, Vector3 } from 'three';
-import { jobs, looks } from '../data/tables';
-import type { WMap } from '../formats/wmap';
+import { effects as effectTable, jobs, looks, partEffect } from '../data/tables';
+import { type WMap, cellHeight } from '../formats/wmap';
 import {
   DamageKind,
+  type EffectPlay,
   EntityKind,
   type Event,
   type Look as LookMessage,
+  type PickUpFailure,
   StatId,
   VanishReason,
 } from '../gen/wathena/v1/event_pb';
 import { unpackSteps } from '../net/connection';
 import { Character, type Look } from '../render/characters';
+import { type EffectCache, EffectView } from '../render/effects';
 import { type SpriteCache, SpriteView } from '../render/sprites';
+import type { TextureSource } from '../render/textures';
 import type { Pathfinder } from '../world/pathfinder';
+import GroundItems from './groundItems';
+import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
 
 // Shows the entities a server sends: players appear, walk the paths the
-// server gives, and vanish.
+// server gives, and vanish. Items lie on the ground until someone picks
+// them up. Effects play on entities or cells.
 
 /** A character's sprites from the protocol's table IDs. */
 export function lookOf(m: LookMessage | undefined): Look {
@@ -33,11 +40,22 @@ export function lookOf(m: LookMessage | undefined): Look {
   };
 }
 
-/** RO action numbers by entity kind: attack, hurt, and death. */
-const ACTIONS = {
-  player: { attack: 10, hurt: 6, dead: 8 },
-  monster: { attack: 2, hurt: 3, dead: 4 },
-} as const;
+interface Actions {
+  attack: number;
+  hurt: number;
+  dead: number;
+  /** Undefined for sprites without a pick up action. */
+  pickUp: number | undefined;
+}
+
+/** RO action numbers by entity kind. */
+const ACTIONS: Record<'player' | 'monster', Actions> = {
+  player: { attack: 10, hurt: 6, dead: 8, pickUp: 3 },
+  monster: { attack: 2, hurt: 3, dead: 4, pickUp: undefined },
+};
+
+/** How long the pick up action plays, in milliseconds. */
+const PICK_UP_MS = 500;
 
 /** A hit to show: where, how much, and what kind. */
 export interface Hit {
@@ -52,10 +70,21 @@ export default class Online {
   readonly group = new Group();
   private readonly units = new Map<number, Player>();
   private readonly kinds = new Map<number, keyof typeof ACTIONS>();
+  private readonly items: GroundItems;
   /** Called for every hit, at the moment it lands. */
   onHit: ((hit: Hit) => void) | undefined;
-  /** The player's own HP and max HP, once the server sends them. */
-  hp: [number, number] | undefined;
+  /** Called when an item enters the player's inventory. */
+  onInventoryAdd: ((itemId: number, amount: number) => void) | undefined;
+  /** Called when the player's pick up fails. */
+  onPickUpFailed: ((reason: PickUpFailure) => void) | undefined;
+  /** Called when an effect plays a sound, with where it plays. */
+  onSound: ((name: string, position: Vector3) => void) | undefined;
+  /** Where effects come from. Set it when a map loads. */
+  effects: { cache: EffectCache; textures: TextureSource } | undefined;
+  /** Effects playing once, until they end. */
+  private playing: EffectView[] = [];
+  /** The player's own stats, as the server last sent them. */
+  readonly stats = new Map<StatId, bigint>();
   /** Events that arrived before the map loaded. */
   private waiting: Event[] = [];
   private map: WMap | undefined;
@@ -67,6 +96,15 @@ export default class Online {
     private readonly pathfinder: Pathfinder,
   ) {
     this.group.name = 'online';
+    this.items = new GroundItems(sprites);
+    this.group.add(this.items.group);
+  }
+
+  /** The player's own HP and max HP, once the server sends them. */
+  get hp(): [number, number] | undefined {
+    const hp = this.stats.get(StatId.HP);
+    const max = this.stats.get(StatId.MAX_HP);
+    return hp === undefined || max === undefined ? undefined : [Number(hp), Number(max)];
   }
 
   /** The player's own character, once it has appeared. */
@@ -91,6 +129,12 @@ export default class Online {
         case 'appear': {
           const a = e.body.value;
           this.remove(a.id);
+          if (a.kind === EntityKind.ITEM) {
+            if (a.item !== undefined) {
+              this.items.add(a.id, this.map, a.x, a.y, a.item);
+            }
+            break;
+          }
           this.kinds.set(a.id, a.kind === EntityKind.MONSTER ? 'monster' : 'player');
           const map = this.map;
           // A placeholder holds the entity's place until its sprites load.
@@ -156,6 +200,10 @@ export default class Online {
         }
         case 'vanish': {
           const v = e.body.value;
+          if (this.items.has(v.id)) {
+            this.items.remove(v.id);
+            break;
+          }
           const unit = this.units.get(v.id);
           if (v.reason === VanishReason.DIED && unit !== undefined) {
             // The body plays its death, then goes.
@@ -197,13 +245,34 @@ export default class Online {
           break;
         }
         case 'stats': {
-          const hp = e.body.value.stats.find((s) => s.id === StatId.HP)?.value;
-          const max = e.body.value.stats.find((s) => s.id === StatId.MAX_HP)?.value;
-          if (hp !== undefined && max !== undefined) {
-            this.hp = [Number(hp), Number(max)];
+          // Updates can carry some stats only, so they merge.
+          for (const stat of e.body.value.stats) {
+            this.stats.set(stat.id, stat.value);
           }
           break;
         }
+        case 'itemTaken': {
+          const t = e.body.value;
+          const source = this.units.get(t.source);
+          const cell = this.items.cell(t.item);
+          const action = this.actions(t.source).pickUp;
+          if (source !== undefined && action !== undefined) {
+            if (cell !== undefined) {
+              source.face(...cell);
+            }
+            source.act(action, PICK_UP_MS);
+          }
+          break;
+        }
+        case 'inventoryAdd':
+          this.onInventoryAdd?.(e.body.value.itemId, e.body.value.amount);
+          break;
+        case 'pickUpFailed':
+          this.onPickUpFailed?.(e.body.value.reason);
+          break;
+        case 'effect':
+          this.playEffect(e.body.value, this.map);
+          break;
         default:
           // Events this client does not show yet.
           break;
@@ -218,6 +287,7 @@ export default class Online {
 
   private remove(id: number): void {
     this.pending.delete(id);
+    this.items.remove(id);
     const unit = this.units.get(id);
     if (unit !== undefined) {
       this.group.remove(unit.character.group);
@@ -228,14 +298,67 @@ export default class Online {
   /** Units playing their death before they go. */
   private dying: Player[] = [];
 
-  private actions(id: number): (typeof ACTIONS)[keyof typeof ACTIONS] {
+  private actions(id: number): Actions {
     return ACTIONS[this.kinds.get(id) ?? 'player'];
   }
 
   /**
-   * The entity nearest a point on the screen, within 40 pixels, other than
-   * the player. Sprites face the camera, so this compares screen positions
-   * a cell above each unit's feet.
+   * Plays an effect from effects.yml. On an entity, it follows the entity.
+   * Effects the table lacks, and entities not shown, show nothing.
+   */
+  private playEffect(e: EffectPlay, map: WMap): void {
+    const entry = effectTable.get(e.effectId);
+    let parent: Group;
+    const at = new Vector3();
+    // An entity whose sprites are still loading gets the effect on its cell.
+    let cell: { x: number; y: number } | undefined;
+    const unit = e.at.case === 'entity' ? this.units.get(e.at.value) : undefined;
+    if (e.at.case === 'cell') {
+      cell = e.at.value;
+    } else if (e.at.case === 'entity') {
+      cell = this.pending.get(e.at.value);
+    }
+    if (unit !== undefined) {
+      parent = unit.character.group;
+    } else if (cell === undefined) {
+      return;
+    } else {
+      const x = cell.x + 0.5;
+      const y = cell.y + 0.5;
+      at.set(x, cellHeight(map, x, y), -y);
+      parent = this.group;
+    }
+    for (const part of entry?.parts ?? []) {
+      if ('sound' in part) {
+        this.onSound?.(part.sound, parent === this.group ? at.clone() : parent.position.clone());
+        continue;
+      }
+      const name = partEffect(part, (n) => Math.floor(Math.random() * n));
+      const source = this.effects;
+      if (name === undefined || source === undefined) {
+        continue;
+      }
+      source.cache
+        .get(name)
+        .then((effect) => {
+          if (effect === undefined) {
+            return;
+          }
+          const v = new EffectView(effect, source.textures);
+          v.loop = false;
+          v.group.position.copy(at);
+          parent.add(v.group);
+          this.playing.push(v);
+        })
+        .catch(reportError);
+    }
+  }
+
+  /**
+   * The unit or ground item nearest a point on the screen, other than the
+   * player. Sprites face the camera, so this compares screen positions: a
+   * cell above each unit's feet, within 40 pixels, and each item's center,
+   * within 20 pixels.
    */
   pick(
     screenX: number,
@@ -243,24 +366,37 @@ export default class Online {
     camera: Camera,
     width: number,
     height: number,
-  ): number | undefined {
-    let best: number | undefined;
-    let bestDistance = 40;
+  ): { id: number; item: boolean } | undefined {
+    const targets: Target[] = [];
     const p = new Vector3();
-    for (const [id, unit] of this.units) {
-      if (id === this.self) {
-        continue;
-      }
-      p.copy(unit.character.group.position);
-      p.y += 1;
+    const add = (
+      id: number,
+      position: Vector3,
+      lift: number,
+      item: boolean,
+      radius: number,
+    ): void => {
+      p.copy(position);
+      p.y += lift;
       p.project(camera);
-      const d = Math.hypot(((p.x + 1) / 2) * width - screenX, ((1 - p.y) / 2) * height - screenY);
-      if (d < bestDistance) {
-        best = id;
-        bestDistance = d;
+      targets.push({
+        id,
+        item,
+        x: ((p.x + 1) / 2) * width,
+        y: ((1 - p.y) / 2) * height,
+        radius,
+      });
+    };
+    for (const [id, unit] of this.units) {
+      if (id !== this.self) {
+        add(id, unit.character.group.position, 1, false, 40);
       }
     }
-    return best;
+    for (const [id, position] of this.items.shown()) {
+      add(id, position, 0, true, 20);
+    }
+    const t = nearest(targets, screenX, screenY);
+    return t === undefined ? undefined : { id: t.id, item: t.item };
   }
 
   update(deltaMs: number, cameraSteps: number, towardCamera: Vector3): void {
@@ -271,5 +407,13 @@ export default class Online {
     for (const unit of this.dying) {
       unit.update(deltaMs, cameraSteps, towardCamera);
     }
+    this.items.update(deltaMs);
+    for (const v of this.playing) {
+      v.update(deltaMs);
+      if (v.done) {
+        v.group.removeFromParent();
+      }
+    }
+    this.playing = this.playing.filter((v) => !v.done);
   }
 }

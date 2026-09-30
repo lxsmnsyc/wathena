@@ -25,7 +25,7 @@ func TestLoadTables(t *testing.T) {
 	for _, r := range refs {
 		seen[r.Name] = true
 	}
-	for _, n := range []string{"sprite/body/novice/f", "sound/attack_bow1", "effect/pong3"} {
+	for _, n := range []string{"sprite/body/novice/f", "sound/attack_bow1", "effect/pong3", "effect/angel", "sound/levelup"} {
 		if !seen[n] {
 			t.Errorf("references lack %s", n)
 		}
@@ -43,9 +43,11 @@ func TestTablesReject(t *testing.T) {
 		}
 	}
 	for name, y := range map[string]string{
-		"no parts": "effects:\n  - {id: 1, constant: A, parts: []}\n",
-		"both":     "effects:\n  - {id: 1, constant: A, parts: [{effect: effect/a, variants: [effect/b]}]}\n",
-		"bad name": "effects:\n  - {id: 1, constant: A, parts: [{effect: texture/a}]}\n",
+		"no parts":  "effects:\n  - {id: 1, constant: A, parts: []}\n",
+		"both":      "effects:\n  - {id: 1, constant: A, parts: [{effect: effect/a, variants: [effect/b]}]}\n",
+		"bad name":  "effects:\n  - {id: 1, constant: A, parts: [{effect: texture/a}]}\n",
+		"sound too": "effects:\n  - {id: 1, constant: A, parts: [{effect: effect/a, sound: sound/b}]}\n",
+		"bad sound": "effects:\n  - {id: 1, constant: A, parts: [{sound: effect/b}]}\n",
 	} {
 		if _, err := ParseEffects([]byte(y)); err == nil {
 			t.Errorf("effects, %s: accepted", name)

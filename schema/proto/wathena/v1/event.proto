@@ -20,6 +20,9 @@ message Event {
     ChatMessage chat = 8;
     NpcDialog npc_dialog = 9;
     EffectPlay effect = 10;
+    ItemTaken item_taken = 11;
+    InventoryAdd inventory_add = 12;
+    PickUpFailed pick_up_failed = 13;
   }
 }
 
@@ -53,6 +56,20 @@ message EntityAppear {
   // hp_permille is HP as a fraction of max HP, from 0 to 1000.
   // Exact HP is only sent for the player, party members, and homunculi.
   uint32 hp_permille = 9;
+  // item is set for ENTITY_KIND_ITEM.
+  GroundItem item = 10;
+}
+
+// GroundItem is an item lying on a cell.
+message GroundItem {
+  uint32 item_id = 1;
+  uint32 amount = 2;
+  // sub_x and sub_y place the item inside its cell, from 0 to 15.
+  uint32 sub_x = 3;
+  uint32 sub_y = 4;
+  // dropped is true when the item has just fallen, so the client plays the
+  // drop. It is false for items that were already on the ground.
+  bool dropped = 5;
 }
 
 // Look lists sprite and palette IDs from the client data tables.
@@ -81,6 +98,10 @@ enum VanishReason {
   VANISH_REASON_DIED = 2;
   VANISH_REASON_LOGGED_OUT = 3;
   VANISH_REASON_TELEPORTED = 4;
+  // An item was picked up. ItemTaken comes before it.
+  VANISH_REASON_PICKED_UP = 5;
+  // An item lay on the ground too long.
+  VANISH_REASON_EXPIRED = 6;
 }
 
 // EntityMove starts a walk. The client times each step from walk_ms.
@@ -143,6 +164,10 @@ enum StatId {
   STAT_ID_ASPD = 25;
   STAT_ID_STATUS_POINTS = 26;
   STAT_ID_SKILL_POINTS = 27;
+  // NEXT_BASE_EXP and NEXT_JOB_EXP are the exp the current level needs.
+  // They are 0 at the maximum level.
+  STAT_ID_NEXT_BASE_EXP = 28;
+  STAT_ID_NEXT_JOB_EXP = 29;
 }
 
 message Damage {
@@ -213,4 +238,30 @@ message EffectPlay {
     uint32 entity = 2;
     Cell cell = 3;
   }
+}
+
+// ItemTaken shows an entity picking up a ground item.
+message ItemTaken {
+  uint32 source = 1;
+  uint32 item = 2;
+}
+
+// InventoryAdd tells the player an item entered their inventory.
+message InventoryAdd {
+  uint32 item_id = 1;
+  uint32 amount = 2;
+}
+
+// PickUpFailed tells the player why a PickUp did nothing.
+message PickUpFailed {
+  uint32 item = 1;
+  PickUpFailure reason = 2;
+}
+
+enum PickUpFailure {
+  PICK_UP_FAILURE_UNSPECIFIED = 0;
+  // The item is gone or out of sight.
+  PICK_UP_FAILURE_GONE = 1;
+  // Another player has the right to it for now.
+  PICK_UP_FAILURE_NOT_YOURS = 2;
 }

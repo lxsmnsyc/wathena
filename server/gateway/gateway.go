@@ -165,6 +165,8 @@ func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Player, s
 		case m.GetCommand().HasAttack():
 			a := m.GetCommand().GetAttack()
 			queued = g.Zone.Attack(p, seq, a.GetTarget(), a.GetRepeat())
+		case m.GetCommand().HasPickUp():
+			queued = g.Zone.PickUp(p, seq, m.GetCommand().GetPickUp().GetItem())
 		case m.GetCommand().HasWalkTo():
 			w := m.GetCommand().GetWalkTo()
 			queued = g.Zone.WalkTo(p, seq, int(w.GetX()), int(w.GetY()))

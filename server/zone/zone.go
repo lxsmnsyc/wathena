@@ -9,6 +9,7 @@ import (
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -48,12 +49,25 @@ type Player struct {
 	// to itself.
 	fresh   bool
 	dropped bool
+
+	// charID stands for rAthena's char_id in damage logs and pick-up
+	// rights, until characters are stored. It is unique within the zone.
+	charID uint32
+	// progress is the player's levels and exp. It is only used when the
+	// zone has progression tables.
+	progress progression.Character
+	// inventory maps item IDs to amounts.
+	inventory map[uint32]int
+	// pending are events for the player alone, sent with the next frame.
+	pending []*wathenav1.Event
 }
 
 type entity struct {
-	// player is set for players. Monsters have monster instead.
+	// player is set for players. Monsters have monster instead, and items
+	// on the ground have item.
 	player  *Player
 	monster *monster
+	item    *groundItem
 	x, y    int
 	// dir is the facing, 0 south, clockwise.
 	dir   int
@@ -67,6 +81,7 @@ type entity struct {
 	walkChanged bool
 	stopped     bool
 	fight
+	pickUp
 }
 
 type command struct {
@@ -74,6 +89,7 @@ type command struct {
 	seq    uint32
 	walkTo *[2]int
 	attack *attackCommand
+	pickUp *uint32
 }
 
 type attackCommand struct {
@@ -96,6 +112,14 @@ type Zone struct {
 	// PlayerStatus is every player's battle status, until characters
 	// have their own. Set it before Run.
 	PlayerStatus battle.Status
+	// Progress holds the exp tables and drop settings. Without it, kills
+	// give no exp and no items. Set it before Run.
+	Progress *progression.Tables
+
+	// players maps charID to the players in the zone.
+	players  map[uint32]*Player
+	nextChar uint32
+	loot
 
 	joins    chan joinRequest
 	leaves   chan *Player
@@ -121,6 +145,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		grid:     grid,
 		rand:     rand,
 		entities: map[*entity]bool{},
+		players:  map[uint32]*Player{},
 		joins:    make(chan joinRequest),
 		leaves:   make(chan *Player, 16),
 		commands: make(chan command, 1024),
@@ -201,12 +226,22 @@ func (z *Zone) join(p *Player) joinResult {
 	x, y := z.startCell()
 	st := z.PlayerStatus
 	e := &entity{player: p, x: x, y: y, speed: WalkSpeed}
-	e.status, e.hp = &st, int64(st.MaxHP)
+	// hpChanged sends the player its HP in the first frame.
+	e.status, e.hp, e.hpChanged = &st, int64(st.MaxHP), st.MaxHP > 0
 	if st.Speed > 0 {
 		e.speed = st.Speed
 	}
 	p.entity = e
 	z.entities[e] = true
+	z.nextChar++
+	p.charID = z.nextChar
+	z.players[p.charID] = p
+	p.inventory = map[uint32]int{}
+	if t := z.Progress; t != nil {
+		// A new novice. The first frame carries its levels and exp.
+		p.progress = t.NewCharacter(0)
+		p.pending = append(p.pending, z.progressStats(p, nil))
+	}
 	// The player sees itself from the first frame.
 	return joinResult{netID: p.netID(e), tick: z.tick}
 }
@@ -239,6 +274,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		return
 	}
 	delete(z.entities, p.entity)
+	delete(z.players, p.charID)
 	z.forget(p.entity)
 	for e := range z.entities {
 		if e.player == nil {
@@ -275,15 +311,18 @@ func (z *Zone) handle(c command) {
 		return
 	}
 	if c.walkTo != nil {
-		me.target = nil
+		me.target, me.pickItem = nil, nil
 		z.walk(me, c.walkTo[0], c.walkTo[1])
 	}
 	if c.attack != nil {
 		for e, id := range p.netIDs {
 			if id == c.attack.target && e != me && e.status != nil && !e.dead {
-				me.target, me.repeat = e, c.attack.repeat
+				me.target, me.repeat, me.pickItem = e, c.attack.repeat, nil
 			}
 		}
+	}
+	if c.pickUp != nil {
+		z.startPickUp(p, *c.pickUp)
 	}
 }
 
@@ -293,6 +332,18 @@ func (z *Zone) handle(c command) {
 func (z *Zone) Attack(p *Player, seq, target uint32, repeat bool) bool {
 	select {
 	case z.commands <- command{player: p, seq: seq, attack: &attackCommand{target, repeat}}:
+		return true
+	default:
+		return false
+	}
+}
+
+// PickUp asks for the player to walk to a ground item, by the
+// connection's ID for it, and pick it up. It returns false when the zone's
+// queue is full.
+func (z *Zone) PickUp(p *Player, seq, item uint32) bool {
+	select {
+	case z.commands <- command{player: p, seq: seq, pickUp: &item}:
 		return true
 	default:
 		return false
@@ -345,6 +396,9 @@ func (z *Zone) stepAt(now int64) {
 	z.revive()
 	z.think()
 	z.fight()
+	z.pickUps()
+	z.dropItems()
+	z.expireItems()
 	for e := range z.entities {
 		if e.player != nil {
 			z.update(e.player)
@@ -354,9 +408,14 @@ func (z *Zone) stepAt(now int64) {
 		e.walkChanged = false
 		e.stopped = false
 		e.hpChanged = false
+		if e.item != nil {
+			e.item.fresh = false
+		}
 	}
 	z.hits = z.hits[:0]
 	z.removed = z.removed[:0]
+	z.takes = z.takes[:0]
+	z.effects = z.effects[:0]
 }
 
 // update sends a player what changed in view this tick.
@@ -383,6 +442,9 @@ func (z *Zone) update(p *Player) {
 		}
 	}
 	events = append(events, z.combatEvents(p)...)
+	events = append(events, z.effectEvents(p)...)
+	events = append(events, p.pending...)
+	p.pending = nil
 	if len(events) == 0 {
 		return
 	}
@@ -393,6 +455,21 @@ func (z *Zone) update(p *Player) {
 }
 
 func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
+	if it := e.item; it != nil {
+		return wathenav1.Event_builder{Appear: wathenav1.EntityAppear_builder{
+			Id:   id,
+			Kind: wathenav1.EntityKind_ENTITY_KIND_ITEM,
+			X:    uint32(e.x), // #nosec G115 -- map cells are at most 1024.
+			Y:    uint32(e.y), // #nosec G115 -- as above.
+			Item: wathenav1.GroundItem_builder{
+				ItemId:  it.id,
+				Amount:  uint32(it.amount), // #nosec G115 -- a stack of at most 30000.
+				SubX:    uint32(it.subX),   // #nosec G115 -- 0 to 15.
+				SubY:    uint32(it.subY),   // #nosec G115 -- as above.
+				Dropped: it.fresh,
+			}.Build(),
+		}.Build()}.Build()
+	}
 	if m := e.monster; m != nil {
 		return wathenav1.Event_builder{Appear: wathenav1.EntityAppear_builder{
 			Id:         id,
