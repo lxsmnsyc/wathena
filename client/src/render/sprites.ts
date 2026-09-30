@@ -13,7 +13,8 @@ import {
   Vector4,
 } from 'three';
 import type { AssetStore } from '../assets/store';
-import { INDEXED, type Sprite, decodeWSPR } from '../formats/wspr';
+import decodeWPAL from '../formats/wpal';
+import { type Frame, INDEXED, type Sprite, decodeWSPR } from '../formats/wspr';
 
 // Draws WSPR sprites as quads that face the camera. Indexed pages stay as
 // palette indexes on the GPU, and the shader looks colors up in a palette
@@ -106,18 +107,43 @@ export class SpriteAsset {
   }
 }
 
-/** Sprites by asset name. A missing sprite uses placeholder/sprite. */
+/** Sprites and palettes by asset name. */
 export class SpriteCache {
   private readonly sprites = new Map<string, Promise<SpriteAsset | undefined>>();
+  private readonly palettes = new Map<string, Promise<Texture | undefined>>();
 
   constructor(private readonly store: AssetStore) {}
 
-  async get(name: string): Promise<SpriteAsset | undefined> {
+  /**
+   * A sprite. A missing sprite uses placeholder/sprite, unless placeholder
+   * is false: missing equipment draws nothing.
+   */
+  async get(name: string, placeholder = true): Promise<SpriteAsset | undefined> {
     const s = await this.load(name);
-    if (s === undefined && name !== 'placeholder/sprite') {
+    if (s === undefined && placeholder && name !== 'placeholder/sprite') {
       return this.load('placeholder/sprite');
     }
     return s;
+  }
+
+  /** A palette as a 256 × 1 texture. A missing palette is undefined, and the sprite keeps its own. */
+  async palette(name: string): Promise<Texture | undefined> {
+    let p = this.palettes.get(name);
+    if (p === undefined) {
+      p = this.decodePalette(name);
+      this.palettes.set(name, p);
+    }
+    return p;
+  }
+
+  private async decodePalette(name: string): Promise<Texture | undefined> {
+    try {
+      const data = await this.store.bytes(name, 'palette');
+      return data === undefined ? undefined : dataTexture(decodeWPAL(data), 256, 1, false);
+    } catch (error) {
+      console.error(`palette ${name}:`, error);
+      return undefined;
+    }
   }
 
   private async load(name: string): Promise<SpriteAsset | undefined> {
@@ -164,10 +190,13 @@ export class SpriteView {
   /** Facing, 0 to 7: 0 is south, turning clockwise. */
   direction = 0;
   private time = 0;
-  private shown = -1;
+  private shown = '';
+  private palette: Texture;
   private readonly layers: { mesh: Mesh; u: LayerUniforms }[] = [];
 
-  constructor(readonly asset: SpriteAsset) {}
+  constructor(readonly asset: SpriteAsset) {
+    this.palette = asset.palette;
+  }
 
   /** Changes the action and starts it from its first frame. */
   play(action: number): void {
@@ -183,23 +212,57 @@ export class SpriteView {
    */
   update(deltaMs: number, cameraSteps: number): void {
     this.time += deltaMs;
-    const s = this.asset.sprite;
-    const dir = (((this.direction + cameraSteps) % 8) + 8) % 8;
-    const a = s.actions[this.action * 8 + dir] ?? s.actions[dir] ?? s.actions[0];
+    const index = this.actionIndex(this.action, this.direction, cameraSteps);
+    const a = this.asset.sprite.actions[index];
     if (a === undefined || a.frames.length === 0) {
       this.hide(0);
       return;
     }
     const interval = a.intervalMs > 0 ? a.intervalMs : 100;
-    const index = Math.floor(this.time / interval) % a.frames.length;
-    const key = (this.action * 8 + dir) * 65536 + index;
+    this.draw(index, Math.floor(this.time / interval), 0, 0);
+  }
+
+  /**
+   * The action to show for an RO action number and facing, seen by a
+   * camera turned cameraSteps eighths. Falls back to the first action for
+   * sprites that lack it.
+   */
+  actionIndex(action: number, direction: number, cameraSteps: number): number {
+    const dir = (((direction + cameraSteps) % 8) + 8) % 8;
+    const n = this.asset.sprite.actions.length;
+    if (action * 8 + dir < n) {
+      return action * 8 + dir;
+    }
+    return dir < n ? dir : 0;
+  }
+
+  /** Sets the palette for indexed pages, such as a dye. Undefined restores the sprite's own. */
+  setPalette(palette: Texture | undefined): void {
+    this.palette = palette ?? this.asset.palette;
+    this.shown = '';
+  }
+
+  /**
+   * Draws a frame of an action, moved by (dx, dy) pixels with Y down.
+   * The frame number wraps around the action's frames. Returns the frame,
+   * or undefined if the action has none.
+   */
+  draw(action: number, frame: number, dx: number, dy: number): Frame | undefined {
+    const s = this.asset.sprite;
+    const a = s.actions[action];
+    if (a === undefined || a.frames.length === 0) {
+      this.hide(0);
+      return undefined;
+    }
+    const index = ((frame % a.frames.length) + a.frames.length) % a.frames.length;
+    const f = a.frames[index]!;
+    const key = `${action},${index},${dx},${dy}`;
     if (key === this.shown) {
-      return;
+      return f;
     }
     this.shown = key;
-    const frame = a.frames[index]!;
     let n = 0;
-    for (const l of frame.layers) {
+    for (const l of f.layers) {
       const im = l.image >= 0 ? s.images[l.image] : undefined;
       const page = im === undefined ? undefined : this.asset.pages[im.page];
       if (im === undefined || page === undefined || im.width === 0 || im.height === 0) {
@@ -208,16 +271,23 @@ export class SpriteView {
       const u = this.layer(n++).u;
       u.uvRect.value.set(im.x, im.y, im.width, im.height);
       u.pageSize.value.set(page.image.width, page.image.height);
-      u.offset.value.set(l.x, l.y);
+      u.offset.value.set(l.x + dx, l.y + dy);
       u.size.value.set(im.width * l.scaleX, im.height * l.scaleY);
       u.angle.value = (l.rotation * Math.PI) / 180;
       u.mirror.value = l.mirror ? 1 : 0;
       u.page.value = page;
-      u.palette.value = this.asset.palette;
+      u.palette.value = this.palette;
       u.indexed.value = s.pages[im.page]?.kind === INDEXED ? 1 : 0;
       u.color.value.set(l.color[0] / 255, l.color[1] / 255, l.color[2] / 255, l.color[3] / 255);
     }
     this.hide(n);
+    return f;
+  }
+
+  /** Hides the sprite until the next draw. */
+  clear(): void {
+    this.shown = '';
+    this.hide(0);
   }
 
   private hide(from: number): void {

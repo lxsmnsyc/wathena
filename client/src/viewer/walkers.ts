@@ -1,6 +1,13 @@
-import { Group } from 'three';
+import { Group, type Vector3 } from 'three';
 import { type WMap, cellHeight, walkable } from '../formats/wmap';
-import { type SpriteCache, SpriteView } from '../render/sprites';
+
+/** Something that can walk: a sprite or a character. */
+export interface Actor {
+  readonly group: Group;
+  direction: number;
+  play(action: number): void;
+  update(deltaMs: number, cameraSteps: number, towardCamera: Vector3): void;
+}
 
 // Monsters that wander a map, to test sprites in the viewer. The game
 // moves entities from server messages instead.
@@ -25,7 +32,7 @@ function facing(dx: number, dy: number): number | undefined {
 }
 
 interface Walker {
-  view: SpriteView;
+  view: Actor;
   x: number;
   y: number;
   path: [number, number][];
@@ -48,8 +55,8 @@ export default class Walkers {
     return this.seed % n;
   }
 
-  /** Places count sprites on walkable cells near the map's center. */
-  async add(sprites: SpriteCache, names: string[], count: number): Promise<void> {
+  /** Places count actors on walkable cells near the map's center. */
+  async add(make: (i: number) => Promise<Actor | undefined>, count: number): Promise<void> {
     const m = this.map;
     const spots: [number, number][] = [];
     for (let tries = 0; spots.length < count && tries < count * 50; tries++) {
@@ -59,13 +66,12 @@ export default class Walkers {
         spots.push([x, y]);
       }
     }
-    const assets = await Promise.all(names.map(async (n) => sprites.get(n)));
+    const actors = await Promise.all(spots.map(async (_, i) => make(i)));
     spots.forEach(([x, y], i) => {
-      const asset = assets[i % assets.length];
-      if (asset === undefined) {
+      const view = actors[i];
+      if (view === undefined) {
         return;
       }
-      const view = new SpriteView(asset);
       view.direction = this.random(8);
       const w: Walker = { view, x, y, path: [], wait: this.random(3000), progress: 0 };
       this.place(w, x + 0.5, y + 0.5);
@@ -74,10 +80,10 @@ export default class Walkers {
     });
   }
 
-  update(deltaMs: number, cameraSteps: number): void {
+  update(deltaMs: number, cameraSteps: number, towardCamera: Vector3): void {
     for (const w of this.walkers) {
       this.step(w, deltaMs);
-      w.view.update(deltaMs, cameraSteps);
+      w.view.update(deltaMs, cameraSteps, towardCamera);
     }
   }
 

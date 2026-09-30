@@ -305,3 +305,28 @@ func checkIndexes(root *os.Root, names []string, all map[string]entry, refsOf ma
 	}
 	return broken
 }
+
+// Listed is one manifest entry, as List returns it.
+type Listed struct {
+	Hash string
+	Type string
+	Size int
+}
+
+// List reads a build's manifest and returns every name in it.
+func List(dir string) (map[string]Listed, error) {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = root.Close() }()
+	_, all, err := loadEntries(root)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]Listed, len(all))
+	for n, e := range all {
+		out[n] = Listed{Hash: e.H, Type: e.T, Size: e.S}
+	}
+	return out, nil
+}

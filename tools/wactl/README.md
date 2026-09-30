@@ -16,6 +16,10 @@ Verifies every file in a build against its hash and decodes it, and lists names 
 
 Removes files the current build no longer uses, such as outputs of older converter versions.
 
+`wactl assets ls --build <folder> [<prefix> ...]`
+
+Lists the names in a build with their type and size, optionally only those that start with a prefix, such as `sprite/head/`.
+
 `wactl assets serve --build <folder> [--addr <host:port>]`
 
 Serves a build over HTTP as the game server will: `manifest.json` without caching, and files named by their hash with long caching, a fixed content type, and Brotli for binary formats. The web client's dev server forwards `/assets` to it. The default address is `127.0.0.1:8200`.

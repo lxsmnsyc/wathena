@@ -1,12 +1,22 @@
 // A map viewer for development. It loads a map from the build that
 // `wactl assets serve` serves, and shows download progress.
 
-import { Color, ColorManagement, PerspectiveCamera, Scene, Timer, WebGLRenderer } from 'three';
+import {
+  Color,
+  ColorManagement,
+  PerspectiveCamera,
+  Scene,
+  Timer,
+  Vector3,
+  WebGLRenderer,
+} from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { AssetStore } from '../assets/store';
 import { cellHeight } from '../formats/wmap';
 import MapScene from '../render/map';
-import { SpriteCache } from '../render/sprites';
+import { SpriteCache, SpriteView } from '../render/sprites';
+import { Character } from '../render/characters';
+import randomLook from './looks';
 import Walkers from './walkers';
 
 // Shaders work on stored color values directly, as RO does.
@@ -48,6 +58,7 @@ const sprites = new SpriteCache(store);
 
 // Sprites to scatter on the map, as asset names without "sprite/".
 const DEFAULT_SPRITES = 'mob/poring,mob/lunatic,mob/fabre,mob/drops,mob/pupa,npc/4_f_kafra1';
+const characterCount = Number(new URL(location.href).searchParams.get('characters') ?? 30);
 const spriteNames = (new URL(location.href).searchParams.get('sprites') ?? DEFAULT_SPRITES)
   .split(',')
   .filter((n) => n !== '')
@@ -114,7 +125,22 @@ async function show(name: string): Promise<void> {
     controls.target.set(cx, y, cz);
     camera.position.set(cx, y + distance * 0.7, cz + distance * 0.7);
     controls.update();
-    await Promise.all([ready, walkers.add(sprites, spriteNames, 40)]);
+    // A fixed generator gives the same characters on every load.
+    let seed = 7;
+    const random = (n: number): number => {
+      seed = (seed * 1103515245 + 12345) % 2 ** 31;
+      return seed % n;
+    };
+    await Promise.all([
+      ready,
+      walkers.add(async (i) => {
+        const asset = await sprites.get(
+          spriteNames[i % spriteNames.length] ?? 'placeholder/sprite',
+        );
+        return asset === undefined ? undefined : new SpriteView(asset);
+      }, 20),
+      walkers.add(async () => Character.load(sprites, randomLook(random)), characterCount),
+    ]);
     progress('done');
   } catch (error) {
     status!.value = String(error);
@@ -138,12 +164,14 @@ input.value = new URL(location.href).searchParams.get('map') ?? 'prontera';
 show(input.value).catch(reportError);
 
 const timer = new Timer();
+const toward = new Vector3();
 renderer.setAnimationLoop((time) => {
   timer.update(time);
   current?.update(timer.getElapsed(), timer.getDelta());
   // Sprites face the camera, so their shown direction follows its turn.
   const steps = Math.round(controls.getAzimuthalAngle() / (Math.PI / 4));
-  walkers?.update(timer.getDelta() * 1000, steps);
+  toward.subVectors(camera.position, controls.target).normalize();
+  walkers?.update(timer.getDelta() * 1000, steps, toward);
   controls.update();
   renderer.render(scene, camera);
 });
