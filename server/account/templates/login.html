@@ -1,0 +1,10 @@
+{{define "login.html"}}{{template "head" .}}
+<form method="post" action="/account/login">
+{{template "hidden" .}}
+<label>Account name <input name="name" value="{{.Name}}" autocomplete="username" required maxlength="24" autofocus></label>
+<label>Password <input type="password" name="password" autocomplete="current-password" required maxlength="256"></label>
+{{.Captcha}}
+<button type="submit">Log in</button>
+</form>
+<p>No account yet? <a href="/account/signup{{if .Return}}?return={{.Return}}{{end}}">Sign up</a>.</p>
+{{template "foot" .}}{{end}}

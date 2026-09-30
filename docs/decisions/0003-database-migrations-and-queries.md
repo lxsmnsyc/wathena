@@ -77,11 +77,12 @@ rAthena refuses the second login and asks the player to try again. wAthena lets 
 
 ## Database roles
 
-Strategy section 7.8 asks for one role per service with only the rights it needs. [deploy/postgres/roles.sql](../../deploy/postgres/roles.sql) makes two:
+Strategy section 7.8 asks for one role per service with only the rights it needs. [deploy/postgres/roles.sql](../../deploy/postgres/roles.sql) makes three:
 
 | Role | Rights |
 |---|---|
 | `wathena_migrator` | Owns the database and its schema. Only `wactl migrate` uses it. |
-| `wathena_game` | Connects, reads the applied migrations, reads and inserts accounts, reads, inserts and updates characters, and reads and writes inventory rows. No DDL, and it cannot delete accounts or characters. |
+| `wathena_game` | Connects, reads the applied migrations, reads and inserts accounts, reads, inserts and updates characters, reads and writes inventory rows, and reads and deletes game tickets. No DDL, it cannot delete accounts or characters, and it cannot read passwords or login sessions. |
+| `wathena_account` | The account service. Reads and writes passwords, login sessions and game tickets, makes accounts and characters, and inserts new characters' start items. No DDL, and it cannot change or delete characters. See [decision 0004](0004-account-service-and-game-tickets.md). |
 
-The migrations grant the game role its table rights when the role exists. The account service (roadmap step 2) will get its own role for its password and session tables.
+The migrations grant each role its table rights when the role exists.

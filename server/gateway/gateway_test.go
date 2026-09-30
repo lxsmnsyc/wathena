@@ -310,3 +310,23 @@ func TestItemCommands(t *testing.T) {
 		}
 	}
 }
+
+func TestOriginAllowed(t *testing.T) {
+	g := &Gateway{Origins: []string{"https://play.example.com"}}
+	for origin, want := range map[string]bool{
+		"":                                      true, // not a browser page
+		"https://play.example.com":              true,
+		"http://play.example.com":               false, // the scheme counts
+		"https://play.example.com.evil.example": false,
+		"https://evil.example":                  false,
+		"http://game.example.com":               true, // the server's own host
+	} {
+		r := httptest.NewRequest("GET", "http://game.example.com/ws", nil)
+		if origin != "" {
+			r.Header.Set("Origin", origin)
+		}
+		if got := g.originAllowed(r); got != want {
+			t.Errorf("%q: %v", origin, got)
+		}
+	}
+}

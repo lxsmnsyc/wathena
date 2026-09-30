@@ -1,19 +1,26 @@
-// Command waserver runs a development game server in one process: it
-// serves an asset build over HTTP and one zone over WebSocket.
+// Command waserver runs a game server in one process: it serves an asset
+// build over HTTP, the account service's pages under /account/, and one
+// zone over WebSocket.
 //
-//	waserver --assets <build> --map prontera --dev
+//	waserver --assets <build> --map prontera
 //
-// There is no account service yet, so --dev accepts any valid name as a
-// session token. Never expose a --dev server to the internet.
+// With accounts, the default, waserver needs two PostgreSQL URLs, from
+// environment variables so the passwords do not show in process lists:
+//   - WATHENA_DATABASE_URL (or --database) connects as the game role.
+//     Characters are loaded and saved there, and game tickets are used
+//     up there.
+//   - WATHENA_ACCOUNT_DATABASE_URL connects as the account role, which
+//     alone can read password hashes and sessions.
+//
+// waserver refuses to start while migrations are pending.
+//
+// --dev replaces accounts with development sessions: any valid name is a
+// session token, and plays the character of that name. It only listens
+// on a loopback address. With --dev, the database is optional, and
+// characters only live in memory without it.
 //
 // --start-items gives every new character items, such as 501:10,512:20
 // for 10 Red Potions and 20 Apples. It is for development only.
-//
-// --database, or the WATHENA_DATABASE_URL environment variable, is a
-// PostgreSQL URL. With it, characters are loaded and saved there, and
-// waserver refuses to start while migrations are pending. Without it,
-// characters only live in memory. Prefer the environment variable, so
-// the password does not show in process lists.
 package main
 
 import (
@@ -23,7 +30,9 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"strconv"
@@ -37,6 +46,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/assets/serve"
 	"github.com/lxsmnsyc/wathena/internal/assets/wmap"
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/gateway"
@@ -60,8 +70,12 @@ func run() error {
 	assets := flag.String("assets", "", "asset build folder")
 	mapName := flag.String("map", "prontera", "map to run, such as prontera or placeholder/map")
 	addr := flag.String("addr", "127.0.0.1:8300", "address to listen on")
-	dev := flag.Bool("dev", false, "accept any name as a session token, for development")
-	origins := flag.String("origins", "localhost:*,127.0.0.1:*", "hosts pages may connect from, comma-separated")
+	dev := flag.Bool("dev", false, "accept any name as a session token, for development only; needs a loopback --addr")
+	origins := flag.String("origins", "http://localhost:5173,http://127.0.0.1:5173", "trusted web client origins, as scheme://host[:port], comma-separated. They may open the WebSocket and fetch game tickets")
+	accountURL := flag.String("account-url", "", "the account service's public URL, such as https://play.example.com. Its scheme decides Secure cookies. Empty takes the origin from each request")
+	playURL := flag.String("play-url", "", "the web client URL that Play opens when the account page was not opened from a client")
+	proxies := flag.String("trusted-proxies", "", "proxy addresses or CIDR blocks whose X-Forwarded-For is believed, comma-separated")
+	captcha := flag.String("captcha", "none", "captcha after repeated failed logins: none, or dev for a development checkbox")
 	mode := flag.String("mode", "renewal", "rAthena mode whose recorded spawns to use: renewal or pre-renewal, or none")
 	build := flag.String("build", "all_1", "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank. Other builds than all_1 are for testing")
 	startItems := flag.String("start-items", "", "items every new character starts with, as id:amount pairs such as 501:10,512:20, for development")
@@ -70,11 +84,30 @@ func run() error {
 	if *database == "" {
 		*database = os.Getenv(databaseEnv)
 	}
+	accountDatabase := os.Getenv(accountDatabaseEnv)
 	if *assets == "" {
 		return errors.New("--assets is required")
 	}
-	if !*dev {
-		return errors.New("only --dev is supported until the account service exists")
+	if *dev {
+		if !loopback(*addr) {
+			return errors.New("--dev lets anyone play any character, so it only listens on a loopback address such as 127.0.0.1:8300")
+		}
+	} else if *database == "" || accountDatabase == "" {
+		return errors.New("accounts need " + databaseEnv + " (the game role) and " + accountDatabaseEnv + " (the account role); use --dev for development without accounts")
+	}
+	clientOrigins := splitList(*origins)
+	trustedProxies, err := parseProxies(*proxies)
+	if err != nil {
+		return err
+	}
+	var captchaProvider account.Captcha
+	switch *captcha {
+	case "none":
+		captchaProvider = account.NoCaptcha{}
+	case "dev":
+		captchaProvider = account.DevCaptcha{}
+	default:
+		return fmt.Errorf("unknown --captcha %q", *captcha)
 	}
 	name := *mapName
 	if !strings.Contains(name, "/") {
@@ -123,16 +156,40 @@ func run() error {
 		return err
 	}
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	gw := &gateway.Gateway{Zone: z, Sessions: gateway.DevSessions{}, Origins: strings.Split(*origins, ","), Log: log}
+	gw := &gateway.Gateway{Zone: z, Sessions: gateway.DevSessions{}, Origins: clientOrigins, Log: log}
 	var st *store.Store
 	if *database != "" {
-		pool, err := openDatabase(ctx, *database)
+		pool, err := openDatabase(ctx, *database, "waserver")
 		if err != nil {
 			return err
 		}
 		defer pool.Close()
 		st = store.New(pool, store.Options{Log: log})
-		gw.Characters = devCharacters{store: st, zone: z}
+		gw.Characters = dbCharacters{store: st, zone: z}
+	}
+	var accounts *account.Service
+	if !*dev {
+		pool, err := openDatabase(ctx, accountDatabase, "waserver-account")
+		if err != nil {
+			return err
+		}
+		defer pool.Close()
+		accounts, err = account.New(account.Config{
+			Pool: pool, PublicURL: *accountURL, ClientOrigins: clientOrigins, PlayURL: *playURL,
+			NewCharacter: func(name string, look account.Look) character.Character {
+				sex := uint32(0)
+				if look.Male {
+					sex = 1
+				}
+				return z.NewCharacter(name, zone.Look{Sex: sex, Hair: uint32(look.Hair), HairColor: uint32(look.HairColor)}) // #nosec G115 -- the account service keeps hair values small.
+			},
+			Captcha: captchaProvider, TrustedProxies: trustedProxies, Log: log,
+		})
+		if err != nil {
+			return err
+		}
+		gw.Sessions = account.GameTickets{Store: st}
+		go accounts.Run(ctx)
 	}
 	go z.Run(ctx)
 	if st != nil {
@@ -151,6 +208,9 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", http.StripPrefix("/assets", files))
 	mux.Handle("/ws", gw)
+	if accounts != nil {
+		mux.Handle(account.Prefix, accounts)
+	}
 	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		<-ctx.Done()
@@ -158,25 +218,79 @@ func run() error {
 		defer cancel()
 		_ = srv.Shutdown(shutdown)
 	}()
-	log.Info("serving", "map", name, "monsters", count(spawns), "database", st != nil, "assets", "http://"+*addr+"/assets/", "websocket", "ws://"+*addr+"/ws")
+	log.Info("serving", "map", name, "monsters", count(spawns), "database", st != nil, "accounts", accounts != nil, "assets", "http://"+*addr+"/assets/", "websocket", "ws://"+*addr+"/ws")
+	if accounts != nil {
+		base := *accountURL
+		if base == "" {
+			base = "http://" + *addr
+		}
+		log.Info("account pages", "login", strings.TrimSuffix(base, "/")+account.Prefix+"login")
+	} else {
+		log.Warn("development sessions: any name plays the character of that name")
+	}
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil
 }
 
-// databaseEnv holds the database URL when --database is not given.
-const databaseEnv = "WATHENA_DATABASE_URL"
+// databaseEnv holds the game role's database URL when --database is not
+// given. accountDatabaseEnv holds the account role's.
+const (
+	databaseEnv        = "WATHENA_DATABASE_URL"
+	accountDatabaseEnv = "WATHENA_ACCOUNT_DATABASE_URL"
+)
+
+// loopback reports whether a listen address only accepts connections
+// from this machine.
+func loopback(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip, err := netip.ParseAddr(host)
+	return err == nil && ip.IsLoopback()
+}
+
+func splitList(s string) []string {
+	var out []string
+	for v := range strings.SplitSeq(s, ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// parseProxies reads --trusted-proxies: addresses or CIDR blocks.
+func parseProxies(s string) ([]netip.Prefix, error) {
+	var out []netip.Prefix
+	for _, v := range splitList(s) {
+		if p, err := netip.ParsePrefix(v); err == nil {
+			out = append(out, p.Masked())
+			continue
+		}
+		a, err := netip.ParseAddr(v)
+		if err != nil {
+			return nil, fmt.Errorf("--trusted-proxies: %q is not an address or CIDR block", v)
+		}
+		out = append(out, netip.PrefixFrom(a, a.BitLen()))
+	}
+	return out, nil
+}
 
 // openDatabase connects to PostgreSQL and checks that no migrations are
 // pending. The URL is never logged, since it may hold a password.
-func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
+func openDatabase(ctx context.Context, url, app string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		// pgx's parse errors can quote the URL, password included.
 		return nil, errors.New("the database URL is not valid")
 	}
-	cfg.ConnConfig.RuntimeParams["application_name"] = "waserver"
+	cfg.ConnConfig.RuntimeParams["application_name"] = app
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
@@ -190,21 +304,21 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// devCharacters loads characters from the database for --dev sessions,
-// whose token is the character name. The first login with a name makes
-// an account and a character of that name. This is for development only:
-// the account service replaces it.
-type devCharacters struct {
+// dbCharacters loads characters from the database. Game tickets name the
+// character's ID. Find is only for --dev sessions, whose token is the
+// character name: the first login with a name makes an account and a
+// character of that name.
+type dbCharacters struct {
 	store *store.Store
 	zone  *zone.Zone
 }
 
-func (d devCharacters) Find(ctx context.Context, name string, look zone.Look) (int64, error) {
+func (d dbCharacters) Find(ctx context.Context, name string, look zone.Look) (int64, error) {
 	c := d.zone.NewCharacter(name, look)
 	return d.store.DevCharacter(ctx, &c)
 }
 
-func (d devCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {
+func (d dbCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {
 	c, s, err := d.store.Load(ctx, id)
 	if err != nil {
 		return nil, nil, err

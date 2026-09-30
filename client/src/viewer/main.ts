@@ -23,6 +23,8 @@ import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
 import { DamageKind, InventoryRemoveReason } from '../gen/wathena/v1/event_pb';
+import { DisconnectReason } from '../gen/wathena/v1/session_pb';
+import { accountPage, accountURL, fetchTicket } from '../net/account';
 import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import { Bubbles, ChatLog, ChatRate, chatLine, cleanChat, isTyping } from './chat';
@@ -147,9 +149,11 @@ let walkers: Walkers | undefined;
 const sprites = new SpriteCache(store);
 
 // Sprites to scatter on the map, as asset names without "sprite/".
-// ?server= connects to a game server, such as ws://127.0.0.1:8300/ws, as
-// ?name=. The server then chooses the map and moves every character, and
-// the demo sprites are off unless asked for.
+// ?server= connects to a game server, such as ws://localhost:8300/ws, with
+// a game ticket from the account service (?account=, by default the game
+// server's /account/), or as ?name= on a --dev server. The server then
+// chooses the map and moves every character, and the demo sprites are
+// off unless asked for.
 const params = new URL(location.href).searchParams;
 const serverURL = params.get('server');
 const online = serverURL !== null;
@@ -341,16 +345,55 @@ if (serverURL === null) {
   input.value = params.get('map') ?? 'prontera';
   show(input.value).catch(reportError);
 } else {
-  const name = params.get('name') ?? `Player${Math.floor(Math.random() * 10000)}`;
+  // ?name= plays the character of that name on a --dev server. Without
+  // it, the account service gives a one-time game ticket for the
+  // character the player chose there.
+  const devName = params.get('name');
+  const account = devName === null ? accountURL(serverURL, params.get('account')) : undefined;
+  let token = devName ?? '';
+  if (account !== undefined) {
+    const got = await fetchTicket(account, location.href);
+    if (got.kind !== 'ticket') {
+      if (got.kind === 'redirect') {
+        location.assign(got.url);
+      } else {
+        status.value = got.message;
+      }
+      // Nothing more runs on this page.
+      await new Promise(() => {});
+      throw new Error('unreachable');
+    }
+    token = got.ticket;
+    const back = document.querySelector<HTMLButtonElement>('#characters');
+    if (back !== null) {
+      back.hidden = false;
+      back.addEventListener('click', () => {
+        location.assign(accountPage(account, 'characters', location.href));
+      });
+    }
+  }
   // Events can follow Welcome at once, so the view exists first. It learns
   // the player's own ID from Welcome.
   const view = new Online(0, sprites, pathfinder);
-  const connection = await Connection.open(serverURL, name, {
+  const connection = await Connection.open(serverURL, token, {
     events: (events) => {
       view.handle(events);
     },
-    closed: (reason) => {
-      status.value = reason;
+    closed: (message, reason) => {
+      status.value = message;
+      if (account === undefined) {
+        return;
+      }
+      // Back to the character list, which sends a player whose login
+      // ended on to the login page. A used or expired ticket goes at
+      // once. Other endings wait so the message can be read.
+      const back = accountPage(account, 'characters', location.href);
+      setTimeout(
+        () => {
+          location.assign(back);
+        },
+        reason === DisconnectReason.SESSION_INVALID ? 0 : 3000,
+      );
     },
   });
   view.self = connection.welcome.netId;

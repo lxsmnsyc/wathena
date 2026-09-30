@@ -1,0 +1,13 @@
+{{define "signup.html"}}{{template "head" .}}
+<form method="post" action="/account/signup">
+{{template "hidden" .}}
+<label>Account name <input name="name" value="{{.Name}}" autocomplete="username" required minlength="4" maxlength="24" pattern="[A-Za-z][A-Za-z0-9_]{3,23}" autofocus></label>
+<p class="hint">4 to 24 letters, digits or underscores, starting with a letter. Others see only your character names.</p>
+<label>Password <input type="password" name="password" autocomplete="new-password" required minlength="8" maxlength="256"></label>
+<label>Password again <input type="password" name="confirm" autocomplete="new-password" required minlength="8" maxlength="256"></label>
+<p class="hint">At least 8 characters. Use a password you do not use anywhere else.</p>
+{{.Captcha}}
+<button type="submit">Sign up</button>
+</form>
+<p>Have an account? <a href="/account/login{{if .Return}}?return={{.Return}}{{end}}">Log in</a>.</p>
+{{template "foot" .}}{{end}}

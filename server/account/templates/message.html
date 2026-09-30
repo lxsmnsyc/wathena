@@ -1,0 +1,3 @@
+{{define "message.html"}}{{template "head" .}}
+<p><a href="/account/{{if .Return}}?return={{.Return}}{{end}}">Back to your account</a></p>
+{{template "foot" .}}{{end}}

@@ -1,0 +1,39 @@
+{{define "characters.html"}}{{template "head" .}}
+<p class="account">Logged in as <strong>{{.Account}}</strong>.</p>
+{{if .Characters}}
+<ul class="characters">
+{{range .Characters}}
+<li>
+<form method="post" action="/account/play">
+{{template "hidden" $}}
+<input type="hidden" name="slot" value="{{.Slot}}">
+<span class="name">{{.Name}}</span>
+<span class="info">{{.Job}}, base level {{.BaseLevel}}, job level {{.JobLevel}}, {{.Map}}</span>
+<button type="submit">Play</button>
+</form>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>You have no characters yet. Make one below.</p>
+{{end}}
+{{if .FreeSlots}}
+<h2>New character</h2>
+<form method="post" action="/account/characters" class="create">
+{{template "hidden" .}}
+<label>Name <input name="name" value="{{.Name}}" required minlength="4" maxlength="24" pattern="[A-Za-z0-9]+( [A-Za-z0-9]+)*"></label>
+<label>Slot <select name="slot">{{range .FreeSlots}}<option value="{{.}}">{{.}}</option>{{end}}</select></label>
+<fieldset><legend>Sex</legend>
+<label><input type="radio" name="sex" value="f" checked> Female</label>
+<label><input type="radio" name="sex" value="m"> Male</label>
+</fieldset>
+<label>Hair style <select name="hair">{{range .Hairs}}<option value="{{.}}">{{.}}</option>{{end}}</select></label>
+<label>Hair color <select name="hair_color">{{range .HairColors}}<option value="{{.}}">{{.}}</option>{{end}}</select></label>
+<button type="submit">Make character</button>
+</form>
+{{end}}
+<form method="post" action="/account/logout" class="logout">
+{{template "hidden" .}}
+<button type="submit">Log out</button>
+</form>
+{{template "foot" .}}{{end}}

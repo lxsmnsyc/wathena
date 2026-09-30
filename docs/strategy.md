@@ -1795,7 +1795,7 @@ Server-side prior art:
 | UI | HTML and CSS overlay on the canvas, using a small framework such as Solid or Svelte. This gives text input, accessibility, and styling for free. |
 | Audio | Web Audio API. |
 | Network | One WebSocket per session. Binary frames of Protocol Buffers, generated from the shared schema ([proposal 0001](proposals/0001-protocol.md)). |
-| Auth | Login on the account service's page, which returns a short-lived session token. The token opens the game WebSocket. |
+| Auth | Login on the account service's page. The client then fetches a one-time game ticket, valid for 60 seconds, and sends it in `Hello` to open the game WebSocket ([decision 0004](decisions/0004-account-service-and-game-tickets.md)). |
 
 ### 10.4 Community changes to the client
 
@@ -2095,8 +2095,8 @@ Status on 2026-10-01:
 
 - Phases 0a, 0b, and 1 are done.
 - Phase 2 is partly done:
-  - Done: the gateway, one zone per map, walking, local chat, per-zone secret random streams, the database, and saving.
-  - Not started: accounts, map changes, bots, and all-in-one mode.
+  - Done: the gateway, one zone per map, walking, local chat, per-zone secret random streams, the database, saving, and the first part of the account service.
+  - Not started: two-factor login and passkeys, map changes, bots, and all-in-one mode.
 - Some phase 4 work was done early:
   - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen.
   - All of it is ported from rAthena and checked against the phase 0a reference data.
@@ -2109,7 +2109,12 @@ The order from here:
    - sqlc queries, a pool of save workers, saves every 30 seconds and at logout and shutdown, a save version against stale saves, and one session per character.
    - A migrator role and a game role without DDL rights.
    - Left for later steps: saving at map changes (step 3), the item log that records serials (with trades, in phase 5), and the account service's own tables and role (step 2).
-2. Account service. Signup, login, Argon2id, session tokens, and rate limits, then two-factor login and passkeys. It replaces the `--dev` sessions.
+2. Account service. The first part is done on 2026-10-01 ([decision 0004](decisions/0004-account-service-and-game-tickets.md)):
+   - Signup, login and logout on plain HTML pages, Argon2id with rehashing, login sessions stored as hashes, CSRF tokens, a strict Content Security Policy, rate limits per address and per account name, and a captcha hook.
+   - A character list with character creation, and Play, which hands the web client a one-time game ticket. The gateway uses the ticket up in one statement.
+   - A `wathena_account` role, the only one that can read password hashes.
+   - It replaces the `--dev` sessions, which now only run on a loopback address.
+   - Left: two-factor login (TOTP) and passkeys, password change and recovery, a real captcha provider, and closing an open game connection at logout.
 3. More than one map. Several zones in one process, map changes, and warps.
 4. Bots and load test. The headless bot client and the 500-bot tick budget test.
 5. All-in-one mode and the Docker Compose file. This ends phase 2.

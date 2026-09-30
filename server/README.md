@@ -10,13 +10,14 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `status` | Player stats from job, levels, raised stats and skills, ported from rAthena's `status_calc_pc` for a player with no equipment, in both modes, and checked against every recorded player. Raising stats with status points, ported from `pc_statusup`, `pc_need_status_point` and `pc_maxparameter`, with the costs of both modes and the job limits from `conf/battle/player.conf`. |
 | `progression` | Exp tables, level ups, status and skill points, the renewal level penalty, exp shares, drop rates and rolls, where drops land, and pick-up rights, ported from rAthena's `pc.cpp`, `mob.cpp` and `map.cpp` with the default `conf/battle` settings. |
 | `character` | A saved character as plain data: what the zone loads and hands to the store. |
-| `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, and a pool of save workers. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
-| `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, version and size checks, and commands to the zone. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. |
-| `cmd/waserver` | A development server in one process: an asset build over HTTP and one zone over WebSocket, with characters in PostgreSQL or in memory. |
+| `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
+| `account` | The account service under `/account/`: signup, login, logout, login sessions, the character list with character creation, Play, and one-time game tickets. Argon2id passwords, CSRF tokens, a strict Content Security Policy, rate limits and a captcha hook. `GameTickets` checks the ticket in `Hello` for the gateway. See [decision 0004](../docs/decisions/0004-account-service-and-game-tickets.md). |
+| `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. |
+| `cmd/waserver` | A server in one process: an asset build over HTTP, the account pages, and one zone over WebSocket, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. |
 
 ## Development server
 
-There is no account service yet, so `--dev` takes any valid character name as the session token. Never expose a `--dev` server to the internet.
+`--dev` takes any valid character name as the session token, instead of accounts. Anyone who reaches it can play any character, so it refuses to start unless `--addr` is a loopback address, such as the default `127.0.0.1:8300`. See "Running with accounts" for the real login.
 
 ```text
 go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev
@@ -24,7 +25,7 @@ go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev
 
 It spawns the map's monsters from the spawns that `reference/rathena` recorded (`--mode renewal` or `pre-renewal`, or `none`), until the core mod has its own.
 
-Players are novices with no equipment. Their sex and hair come from a hash of their name. They start as a new rAthena character does: every stat at 1 and 48 status points to spend. `--build` picks other raised stats for testing, from the reference recorder's builds (STR, AGI, VIT, INT, DEX, LUK, before job bonuses), with the same 48 points:
+Players are novices with no equipment. With `--dev`, their sex and hair come from a hash of their name. With accounts, the player picks them on the character page. They start as a new rAthena character does: every stat at 1 and 48 status points to spend. `--build` picks other raised stats for testing, from the reference recorder's builds (STR, AGI, VIT, INT, DEX, LUK, before job bonuses), with the same 48 points:
 
 | Build | Stats |
 |---|---|
@@ -43,7 +44,7 @@ It serves the build at `http://127.0.0.1:8300/assets/` and the game at `ws://127
 WATHENA_ASSETS=http://127.0.0.1:8300/assets pnpm dev
 ```
 
-then open `http://localhost:5173/?server=ws://127.0.0.1:8300/ws&name=Alice` in two tabs with different names. Click the ground to walk, a monster to attack it, and an item to pick it up. Each tab sees the other walk and fight.
+then open `http://localhost:5173/?server=ws://localhost:8300/ws&name=Alice` in two tabs with different names. Click the ground to walk, a monster to attack it, and an item to pick it up. Each tab sees the other walk and fight.
 
 Players gain exp and levels from kills, with the exp tables, drops and level penalty from `reference/rathena/extracts/<mode>/progression.json`. Each base or job level up computes their stats again, and a base level up heals HP and SP fully. Players spend status points from the client's status window, and each raise computes their stats again. Local chat reaches every player within view, the speaker included; other channels are ignored for now. Without a database, characters and the inventory only live in memory. See "Running with PostgreSQL".
 
@@ -53,12 +54,12 @@ One character has one session. A second login with the same name, in any case, k
 
 ## Running with PostgreSQL
 
-`waserver` keeps characters in PostgreSQL 18 or later when it gets a database URL, from `--database` or the `WATHENA_DATABASE_URL` environment variable. Use the environment variable, so the password does not show in process lists.
+`waserver` keeps characters in PostgreSQL 18 or later when it gets a database URL, from `--database` or the `WATHENA_DATABASE_URL` environment variable. Use the environment variable, so the password does not show in process lists. Accounts need a second URL, for the account role, in `WATHENA_ACCOUNT_DATABASE_URL`.
 
 With a database:
 
 - It refuses to start while migrations are pending.
-- A `--dev` token that is a new name makes an account and a character of that name, marked as a dev account. This is only for development, until the account service exists.
+- With `--dev`, a token that is a new name makes an account and a character of that name, marked as a dev account. Dev accounts have no password and cannot log in on the account pages.
 - Characters load when they log in and are saved every 30 seconds when they changed, when they log out, and when the server stops (Ctrl+C or SIGTERM).
 - The level, exp, status and skill points, raised stats, HP, SP, position, look, zeny and inventory are saved. Items keep their serial numbers.
 
@@ -70,23 +71,48 @@ docker exec -i wathena-pg psql -U postgres < deploy/postgres/roles.sql
 docker exec -it wathena-pg psql -U postgres -c '\password wathena_migrator' -c '\password wathena_game'
 ```
 
-`deploy/postgres/roles.sql` makes the `wathena` database and two roles:
+`deploy/postgres/roles.sql` makes the `wathena` database and three roles:
 
 - `wathena_migrator` owns the schema. Only `wactl migrate` uses it.
-- `wathena_game` is what `waserver` uses. It reads and writes rows, and cannot change the schema or delete accounts and characters.
+- `wathena_game` is what the game side of `waserver` uses. It reads and writes rows, and cannot change the schema, delete accounts and characters, or read passwords and login sessions. It only reads and deletes game tickets.
+- `wathena_account` is what the account service uses. It alone reads password hashes and login sessions. It makes accounts and characters, and cannot change or delete characters.
 
-Apply the migrations as the migrator, then start the server as the game role:
+Set the passwords of all three with `\password` in psql, as the header of `roles.sql` shows. Apply the migrations as the migrator:
 
 ```text
 export WATHENA_MIGRATE_DATABASE_URL='postgres://wathena_migrator:PASSWORD@127.0.0.1:5432/wathena?sslmode=disable'
 go run ./tools/wactl migrate status
 go run ./tools/wactl migrate up
-
-export WATHENA_DATABASE_URL='postgres://wathena_game:PASSWORD@127.0.0.1:5432/wathena?sslmode=disable'
-go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev
 ```
 
 Use `sslmode=disable` only for a database on the same machine.
+
+### Running with accounts
+
+Without `--dev`, `waserver` needs both database URLs. It serves the account pages under `/account/` and accepts only game tickets:
+
+```text
+export WATHENA_DATABASE_URL='postgres://wathena_game:PASSWORD@127.0.0.1:5432/wathena?sslmode=disable'
+export WATHENA_ACCOUNT_DATABASE_URL='postgres://wathena_account:PASSWORD@127.0.0.1:5432/wathena?sslmode=disable'
+go run ./server/cmd/waserver --assets /path/to/build --map prontera \
+  --account-url http://localhost:8300 --origins http://localhost:5173
+```
+
+With the web client's dev server running, open `http://localhost:5173/?server=ws://localhost:8300/ws`. The client sends you to the login page. Sign up, make a character, and press Play: the page returns to the client, which fetches a game ticket and connects. The Characters button, or the end of the game, goes back to the character list.
+
+Use the same host name, such as `localhost`, for the client and the account service. The login cookie is `SameSite=Strict`, so the browser only sends it with the ticket request when both are on the same site. `localhost` and `127.0.0.1` are different sites.
+
+Flags:
+
+| Flag | Use |
+|---|---|
+| `--origins` | Trusted web client origins, as `scheme://host[:port]`, comma-separated. They may fetch tickets and open the WebSocket, and Play may send players to them. Default `http://localhost:5173,http://127.0.0.1:5173`. |
+| `--account-url` | The public URL of the account pages, such as `https://play.example.com`. With https, cookies are `Secure` with the `__Host-` prefix, and HSTS is sent. Empty takes the origin from each request, for development. |
+| `--play-url` | Where Play goes when the account pages were not opened from a client. Its origin must be in `--origins`. |
+| `--trusted-proxies` | Proxy addresses or CIDR blocks whose `X-Forwarded-For` gives the client address, for rate limits. |
+| `--captcha` | `none` (default), or `dev` for a checkbox that shows where a real captcha goes. A real provider is not built yet. |
+
+Rate limits, session lifetimes and Argon2id parameters are in [decision 0004](../docs/decisions/0004-account-service-and-game-tickets.md). The rate limits live in the memory of the process.
 
 ### Changing the schema or queries
 
@@ -102,11 +128,11 @@ sqlc needs a C compiler for its PostgreSQL parser. CI generates the code again a
 
 ### Tests
 
-The store's integration tests need a PostgreSQL 18 server and a role that can create databases and roles. Each test makes its own database and drops it afterwards. Without `WATHENA_TEST_DATABASE_URL`, they are skipped.
+The integration tests of `store` and `account` need a PostgreSQL 18 server and a role that can create databases and roles. Each test makes its own database and drops it afterwards, and acts as the service roles with `SET ROLE`. Without `WATHENA_TEST_DATABASE_URL`, they are skipped.
 
 ```text
 docker run -d --name wathena-test-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:18
-WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' go test ./server/store/
+WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' go test ./server/store/ ./server/account/
 ```
 
 CI's `test` job runs them against a `postgres:18` service container.

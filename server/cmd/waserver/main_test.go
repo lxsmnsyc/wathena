@@ -83,3 +83,30 @@ func TestParseStartItems(t *testing.T) {
 		}
 	}
 }
+
+func TestLoopback(t *testing.T) {
+	for addr, want := range map[string]bool{
+		"127.0.0.1:8300": true,
+		"[::1]:8300":     true,
+		"localhost:8300": true,
+		"0.0.0.0:8300":   false,
+		":8300":          false,
+		"10.0.0.5:8300":  false,
+		"example.com:80": false,
+		"127.0.0.1":      false,
+	} {
+		if got := loopback(addr); got != want {
+			t.Errorf("loopback(%q) = %v", addr, got)
+		}
+	}
+}
+
+func TestParseProxies(t *testing.T) {
+	got, err := parseProxies("10.0.0.0/8, 192.0.2.7,2001:db8::/32")
+	if err != nil || len(got) != 3 || got[1].String() != "192.0.2.7/32" {
+		t.Errorf("%v %v", got, err)
+	}
+	if _, err := parseProxies("nope"); err == nil {
+		t.Error("nope parsed")
+	}
+}

@@ -7,12 +7,14 @@
 #   - Raw query calls (Exec, Query, QueryRow, SendBatch, CopyFrom) are
 #     rejected. Queries go in server/store/queries and through sqlc.
 # It is a text check. It does not follow values across files.
+# server/store/storetest is skipped: it only makes throwaway test
+# databases, with names it generates.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 fail=0
 while IFS= read -r f; do
 	case "$f" in
-	*_test.go | server/store/db/*) continue ;;
+	*_test.go | server/store/db/* | server/store/storetest/*) continue ;;
 	esac
 	grep -qE '"(github\.com/jackc/pgx/v5[^"]*|database/sql)"' "$f" || continue
 	if grep -nE 'fmt\.Sprint' "$f"; then

@@ -8,6 +8,8 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -32,26 +34,43 @@ const HelloTimeout = 10 * time.Second
 // clif_parse_StatusUp reads the amount as one byte.
 const MaxRaise = 255
 
-// Sessions checks session tokens. It returns the player's name and look.
+// Sessions checks the session token of Hello.
 type Sessions interface {
-	Check(token []byte) (name string, look zone.Look, ok bool)
+	// Check returns who a token names. It returns ErrSessionInvalid for
+	// a token that is not valid, and other errors when it cannot tell,
+	// such as when the database is down.
+	Check(ctx context.Context, token []byte) (Login, error)
 }
 
-// DevSessions accepts any token that is a valid name, for development
-// before the account service exists. Never use it on a public server.
+// Login is who a session token names.
+type Login struct {
+	// CharacterID is the character's database ID when the token names
+	// one, as a game ticket does. It is 0 for a dev token, whose
+	// character Characters.Find finds by name.
+	CharacterID int64
+	Name        string
+	Look        zone.Look
+}
+
+// ErrSessionInvalid is a session token that is not valid, used, or
+// expired. The client gets DISCONNECT_REASON_SESSION_INVALID.
+var ErrSessionInvalid = errors.New("gateway: the session token is not valid")
+
+// DevSessions accepts any token that is a valid name, for development.
+// Never use it on a public server: anyone can play any character.
 type DevSessions struct{}
 
 // Check takes the token as the name and derives a look from it.
-func (DevSessions) Check(token []byte) (string, zone.Look, bool) {
+func (DevSessions) Check(_ context.Context, token []byte) (Login, error) {
 	name := string(token)
 	if !ValidName(name) {
-		return "", zone.Look{}, false
+		return Login{}, ErrSessionInvalid
 	}
 	h := uint32(2166136261)
 	for _, b := range token {
 		h = (h ^ uint32(b)) * 16777619
 	}
-	return name, zone.Look{Job: 0, Sex: h & 1, Hair: 1 + h>>1%20, HairColor: h >> 6 % 9}, true
+	return Login{Name: name, Look: zone.Look{Job: 0, Sex: h & 1, Hair: 1 + h>>1%20, HairColor: h >> 6 % 9}}, nil
 }
 
 // ValidName reports whether a character name is 1 to 24 printable
@@ -95,8 +114,11 @@ type Gateway struct {
 	// Characters loads characters. When nil, every session plays a new
 	// character that only lives in memory.
 	Characters Characters
-	// Origins lists hosts pages may connect from, as coder/websocket's
-	// OriginPatterns. Empty allows only the server's own origin.
+	// Origins lists the web client origins pages may connect from, as
+	// scheme://host[:port], such as https://play.example.com. Pages on
+	// the server's own host may always connect. A request without an
+	// Origin header does not come from a browser page, and is accepted:
+	// the session token is what lets it in.
 	Origins []string
 	Log     *slog.Logger
 
@@ -117,8 +139,14 @@ type online struct {
 func (o *online) end() { o.kickOnce.Do(func() { close(o.kick) }) }
 
 func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !g.originAllowed(r) {
+		http.Error(w, "origin not allowed", http.StatusForbidden)
+		return
+	}
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		OriginPatterns: g.Origins,
+		// originAllowed checked the origin, with the scheme, which
+		// OriginPatterns does not look at.
+		InsecureSkipVerify: true,
 		// Compression off: compressing chat alongside private data lets
 		// an observer guess the data from message sizes.
 		CompressionMode: websocket.CompressionDisabled,
@@ -133,6 +161,19 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// originAllowed checks the Origin header against Origins.
+func (g *Gateway) originAllowed(r *http.Request) bool {
+	o := r.Header.Get("Origin")
+	if o == "" {
+		return true
+	}
+	if slices.Contains(g.Origins, o) {
+		return true
+	}
+	u, err := url.Parse(o)
+	return err == nil && strings.EqualFold(u.Host, r.Host)
+}
+
 // errClosed ends a session that the server closed on purpose.
 var errClosed = errors.New("closed")
 
@@ -145,14 +186,21 @@ func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
 	if v := hello.GetProtocolVersion(); v < schema.MinVersion || v > schema.Version {
 		return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_VERSION_UNSUPPORTED, "This client is too old or too new for the server.")
 	}
-	name, look, ok := g.Sessions.Check(hello.GetSessionToken())
-	if !ok {
+	login, err := g.Sessions.Check(ctx, hello.GetSessionToken())
+	if errors.Is(err, ErrSessionInvalid) {
 		return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_SESSION_INVALID, "Your session has ended. Log in again.")
 	}
-	chars := g.characters()
-	id, err := chars.Find(ctx, name, look)
 	if err != nil {
 		return g.loadFailed(ctx, c, err)
+	}
+	chars := g.characters()
+	id := login.CharacterID
+	if id == 0 {
+		if id, err = chars.Find(ctx, login.Name, login.Look); err != nil {
+			return g.loadFailed(ctx, c, err)
+		}
+	} else if g.Characters == nil {
+		return g.loadFailed(ctx, c, errors.New("gateway: a session names a saved character, and there is no database"))
 	}
 	me := g.claim(id)
 	defer g.release(id, me)

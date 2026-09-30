@@ -29,10 +29,15 @@ The web client and the server need one message format. It must be:
 
 ### Session start
 
-1. The player logs in on the account service's page and receives a short-lived session token (strategy section 7.6).
-2. The client opens the WebSocket and sends `Hello` as its first message. The token is in `Hello`, not in the URL, so it never appears in access logs.
-3. The server checks the token and the protocol version, then sends `Welcome`, or `Disconnect` with a reason.
+1. The player logs in on the account service's page and chooses a character there. The client then fetches a one-time **game ticket** from the account service, with the login cookie, which the client never sees (strategy section 7.6, [decision 0004](../decisions/0004-account-service-and-game-tickets.md)).
+2. The client opens the WebSocket and sends `Hello` as its first message. `Hello.session_token` holds the ticket as its text: 43 characters of unpadded base64url for 32 random bytes. The ticket is in `Hello`, not in the URL, so it never appears in access logs.
+3. The server checks the protocol version, then uses up the ticket: it deletes the ticket and reads its character in one statement, so a ticket works once. It then sends `Welcome`, or `Disconnect` with a reason:
+   - `DISCONNECT_REASON_SESSION_INVALID` for a ticket that does not exist, was used, or expired. Tickets expire 60 seconds after they are made. The client sends the player back to the account pages.
+   - `DISCONNECT_REASON_VERSION_UNSUPPORTED` for a client outside the supported versions.
 4. The server closes a connection that sends anything other than `Hello` first, or no `Hello` within 10 seconds.
+5. The gateway accepts the WebSocket only from the trusted client origins the server owner lists, from pages on its own host, or without an `Origin` header (not a browser page).
+
+A `waserver --dev` server, which only listens on a loopback address, instead takes the character's name as the token.
 
 ### Versions
 

@@ -79,7 +79,8 @@ The boundaries are:
 | Threat | Mitigation | Status | Reference |
 |---|---|---|---|
 | Crafted messages crash the server. | Generated Protocol Buffers decoders. Size limits before decoding. A decode error closes that connection only. Fuzz tests on client messages. | Decided. The fuzz test exists. | Proposal 0001, strategy 7.4 |
-| Session token leaks through logs. | The token is sent in `Hello`, not in the URL. Logs never contain tokens. | Decided. | Proposal 0001, strategy 7.8 |
+| Session token leaks through logs. | The game ticket is sent in `Hello`, not in the URL, and the client gets it in a response body. Logs never contain passwords, tokens or tickets. | Done. | Proposal 0001, decision 0004, strategy 7.8 |
+| A game ticket is stolen or replayed. | Tickets are 256-bit random values, stored as SHA-256 hashes, used up by one `DELETE ... RETURNING`, and expire after 60 seconds. Logout deletes a session's unused tickets. | Done. | Decision 0004 |
 | Traffic analysis of compressed frames reveals whispers. | WebSocket compression is off. | Decided. | Proposal 0001 |
 | Tracking players across sessions by ID. | Entity IDs are per connection. Database IDs are never sent. | Decided. | Proposal 0001 |
 | Speed hacks and teleporting. | The server checks every move against walk speed and path. | Decided. | Strategy 7.5 |
@@ -93,9 +94,11 @@ The boundaries are:
 
 | Threat | Mitigation | Status | Reference |
 |---|---|---|---|
-| Password reuse and brute force. | Argon2id hashes. Rate limits per account and IP. Captcha after repeated failures. Optional TOTP and passkeys. | Decided. | Strategy 7.3 |
-| A client fork collects passwords. | Login happens on the account service's own page. Forks receive a session token, never the password. Passkeys are bound to the account service's domain. | Decided. | Strategy 7.6 |
-| Stolen session tokens. | 256-bit random tokens. The database stores only hashes. Tokens expire. Password change revokes all sessions. | Decided. | Strategy 7.3 |
+| Password reuse and brute force. | Argon2id hashes (64 MiB, 3 passes, 4 threads, about 50 ms), rehashed on login when the parameters change. Common passwords are refused. Rate limits per address and per account name, with waits that double up to 15 minutes. A captcha hook after 3 failures for a name or 10 from an address. Optional TOTP and passkeys. | Done, except TOTP, passkeys and a real captcha provider, which are decided. The limits are per process. | Strategy 7.3, decision 0004 |
+| Learning which accounts exist. | Login gives one message for a wrong name or password, and hashes once for unknown names, so timing matches. Signup says a name is taken, which cannot be avoided, and is rate limited. | Done. | Decision 0004 |
+| Locking a player out with failed logins. | The per-name wait is capped at 15 minutes and forgotten after an hour. The captcha and address limits make many failures costly. | Done. Accepted risk. | Decision 0004 |
+| A client fork collects passwords. | Login happens on the account service's own page. The client receives a one-time game ticket, never the password or the login cookie. Tickets go only to trusted client origins, through CORS. Passkeys are bound to the account service's domain. | Done for the login page and tickets. Passkeys are decided. | Strategy 7.6, decision 0004 |
+| Stolen session tokens. | 256-bit random tokens in an `HttpOnly`, `SameSite=Strict` cookie, `Secure` with the `__Host-` prefix over https. The database stores only hashes. Sessions end after 30 days, 7 days unused, or logout. A login replaces the browser's older session. Password change revokes all sessions. | Done, except password change, which does not exist yet. An open game connection is not closed at logout yet. | Strategy 7.3, decision 0004 |
 | Staff account takeover. | Staff must use TOTP or a passkey before GM commands or admin tools work. | Decided. | Strategy 7.3, 10.6 |
 
 ### Game integrity
@@ -126,7 +129,7 @@ The boundaries are:
 | Threat | Mitigation | Status | Reference |
 |---|---|---|---|
 | A staff member creates items or reads data without cause. | Role-based permissions per command. An audit log of every action. A reason is required for item and zeny creation. | Decided. | Strategy 7.8, 10.6 |
-| A compromised service reaches all data. | One PostgreSQL role per service, with only the tables and rights it needs. Mutual TLS between services. | Done for the game role: `wathena_game` has no DDL rights and cannot delete accounts or characters, and migrations run as `wathena_migrator`. Other services' roles and mutual TLS are decided. | Strategy 7.8, decision 0003 |
+| A compromised service reaches all data. | One PostgreSQL role per service, with only the tables and rights it needs. Mutual TLS between services. | Done for the game and account roles: `wathena_game` has no DDL rights, cannot delete accounts or characters, and cannot read passwords or sessions. `wathena_account` alone reads passwords, and cannot change or delete characters. Migrations run as `wathena_migrator`. Other services' roles and mutual TLS are decided. | Strategy 7.8, decisions 0003 and 0004 |
 | The database password leaks through process lists or logs. | `waserver` and `wactl migrate` read the database URL from an environment variable. The URL is never logged, and parse errors do not quote it. | Done. | Decision 0003 |
 | Secrets committed to the repository. | Secrets come from environment variables or a secret manager. | Decided. | Strategy 7.8 |
 | Lost data. | Encrypted backups and scheduled restore tests. | Decided. | Strategy 7.8 |
@@ -137,7 +140,9 @@ The boundaries are:
 |---|---|---|---|
 | Script injection through chat, names, or NPC text. | Text is shown with `textContent`, never `innerHTML`. A strict Content Security Policy. | Decided. | Strategy 7.6 |
 | Malicious guild emblem files. | Size limits, decoding, checks, and re-encoding. The original file is never served. | Decided. | Strategy 7.6 |
-| Cross-site requests. | `SameSite=Strict` cookies and CSRF tokens. The gateway checks the WebSocket `Origin` header. | Decided. | Strategy 7.4, 7.6 |
+| Cross-site requests. | `SameSite=Strict` cookies. Every account form has a CSRF token bound to the session, and posts with a foreign `Origin` or `Sec-Fetch-Site` are refused. The ticket endpoint answers only trusted origins. The gateway checks the WebSocket `Origin` against the trusted client origins, with the scheme. | Done. | Strategy 7.4, 7.6, decision 0004 |
+| Script injection or framing on the account pages. | The pages have no scripts. `Content-Security-Policy` allows no scripts, no frames, and no framing, and forms only post to the service. Templates escape every value. | Done. | Decision 0004 |
+| Anyone plays any character on a development server. | `waserver --dev` refuses a listen address other than loopback. | Done. | Decision 0004 |
 
 ### Asset build and serving
 

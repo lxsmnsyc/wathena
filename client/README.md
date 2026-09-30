@@ -26,7 +26,15 @@ pnpm dev
 
 Open `http://localhost:5173/?map=prontera`. Monsters, an NPC, and player characters with random jobs, hair, dyes, and equipment wander near the map's center. `sprites=mob/1002,npc/4_f_kafra1` picks the sprites, as names without `sprite/`, `characters=30` sets how many characters appear, `effect=effect/firewall` plays effects in a row at the center, and `distance=20` moves the camera closer. Click the ground to walk: the player follows the shared pathfinding module, which gives rAthena's paths. A Service Worker caches assets across visits, and `nosw` turns it off, for measuring first visits. The Sound button plays the map's music, its placed sounds, and the sounds sprites make. The status line shows how many files the map needed, the bytes sent over the network, and the load time. `WATHENA_ASSETS` changes where the dev server forwards `/assets` (default `http://127.0.0.1:8200`).
 
-`server=ws://127.0.0.1:8300/ws&name=Tester` plays online against `waserver` (`server/cmd/waserver`). The server places every character and item:
+`server=ws://localhost:8300/ws` plays online against `waserver` (`server/cmd/waserver`). The client gets a one-time game ticket from the account service and sends it in `Hello` (docs/decisions/0004-account-service-and-game-tickets.md):
+
+- `account=` names the account service. By default it is the game server's `/account/`, such as `http://localhost:8300/account/`.
+- A player who is not logged in, or has not chosen a character, goes to the account pages, and comes back after Play.
+- The Characters button leaves the game for the character list. When the game ends, the page goes back there after 3 seconds, or at once when the ticket was not valid.
+- The client and the account service must be on the same site, such as both on `localhost`. The browser only sends the login cookie with the ticket request then.
+- `name=Tester` instead plays the character of that name on a `waserver --dev` server.
+
+The server places every character and item:
 
 - Click a unit to attack it, and click the ground to walk. From 90% weight, the client says the player is carrying too much instead of attacking.
 - Items on the ground show their sprite, `sprite/item/<id>`, and jump and bounce when they drop. Hover an item to see its name and amount under it. Click an item to pick it up. The chat log says what the player got and used.

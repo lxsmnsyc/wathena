@@ -5,6 +5,8 @@
 package db
 
 import (
+	"net/netip"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -13,6 +15,25 @@ type Account struct {
 	Name      string
 	CreatedAt pgtype.Timestamptz
 	Dev       bool
+}
+
+type AccountPassword struct {
+	AccountID int64
+	Hash      string
+	ChangedAt pgtype.Timestamptz
+}
+
+type AccountSession struct {
+	ID          int64
+	TokenHash   []byte
+	AccountID   int64
+	CreatedAt   pgtype.Timestamptz
+	LastUsedAt  pgtype.Timestamptz
+	ExpiresAt   pgtype.Timestamptz
+	RevokedAt   pgtype.Timestamptz
+	UserAgent   string
+	Ip          *netip.Addr
+	CharacterID pgtype.Int8
 }
 
 type Character struct {
@@ -48,6 +69,15 @@ type Character struct {
 	CreatedAt     pgtype.Timestamptz
 	LoginAt       pgtype.Timestamptz
 	SavedAt       pgtype.Timestamptz
+}
+
+type GameTicket struct {
+	TokenHash   []byte
+	SessionID   int64
+	AccountID   int64
+	CharacterID int64
+	CreatedAt   pgtype.Timestamptz
+	ExpiresAt   pgtype.Timestamptz
 }
 
 type Inventory struct {

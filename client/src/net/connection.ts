@@ -10,7 +10,7 @@ import {
   ServerMessageSchema,
 } from '../gen/wathena/v1/envelope_pb';
 import type { Event } from '../gen/wathena/v1/event_pb';
-import type { Welcome } from '../gen/wathena/v1/session_pb';
+import type { DisconnectReason, Welcome } from '../gen/wathena/v1/session_pb';
 
 /** The protocol version, schema.Version on the server. */
 export const PROTOCOL_VERSION = 1;
@@ -21,8 +21,11 @@ const MAX_MESSAGE_BYTES = 64 * 1024;
 export interface Handlers {
   /** Events from one tick. ackSeq is the last command the server processed. */
   events: (events: Event[], ackSeq: number) => void;
-  /** The session ended. reason is shown to the player. */
-  closed: (reason: string) => void;
+  /**
+   * The session ended. message is shown to the player. reason is the
+   * server's reason, when it sent one.
+   */
+  closed: (message: string, reason?: DisconnectReason) => void;
 }
 
 export class Connection {
@@ -34,8 +37,9 @@ export class Connection {
   ) {}
 
   /**
-   * Connects and says hello. token is the session token, which during
-   * development is the character name.
+   * Connects and says hello. token is the session token: a one-time game
+   * ticket from the account service, or the character name on a --dev
+   * server. It goes in Hello, never in the URL.
    */
   static async open(url: string, token: string, handlers: Handlers): Promise<Connection> {
     const socket = new WebSocket(url);
@@ -77,7 +81,7 @@ export class Connection {
             break;
           case 'disconnect':
             reason = m.body.value.message;
-            handlers.closed(reason);
+            handlers.closed(reason, m.body.value.reason);
             if (connection === undefined) {
               reject(new Error(m.body.value.message));
             }
