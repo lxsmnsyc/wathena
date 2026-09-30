@@ -1,0 +1,10 @@
+{{define "code.html"}}{{template "head" .}}
+<p>Open your authenticator app and enter the 6-digit code it shows for this account.</p>
+<form method="post" action="/account/login/code">
+{{template "hidden" .}}
+<label>Code <input name="code" autocomplete="one-time-code" required maxlength="24" autofocus spellcheck="false" autocapitalize="off"></label>
+<p class="hint">No phone? Enter one of your recovery codes instead. Each works once.{{if .AttemptsLeft}} {{.AttemptsLeft}} tries left.{{end}}</p>
+<button type="submit">Log in</button>
+</form>
+<p><a href="/account/login{{if .Return}}?return={{.Return}}{{end}}">Start over</a></p>
+{{template "foot" .}}{{end}}

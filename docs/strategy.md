@@ -2095,8 +2095,8 @@ Status on 2026-10-01:
 
 - Phases 0a, 0b, and 1 are done.
 - Phase 2 is partly done:
-  - Done: the gateway, one zone per map, walking, local chat, per-zone secret random streams, the database, saving, and the first part of the account service.
-  - Not started: two-factor login and passkeys, map changes, bots, and all-in-one mode.
+  - Done: the gateway, one zone per map, walking, local chat, per-zone secret random streams, the database, saving, and the account service with two-factor login and passkeys.
+  - Not started: map changes, bots, and all-in-one mode.
 - Some phase 4 work was done early:
   - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen.
   - All of it is ported from rAthena and checked against the phase 0a reference data.
@@ -2114,7 +2114,12 @@ The order from here:
    - A character list with character creation, and Play, which hands the web client a one-time game ticket. The gateway uses the ticket up in one statement.
    - A `wathena_account` role, the only one that can read password hashes.
    - It replaces the `--dev` sessions, which now only run on a loopback address.
-   - Left: two-factor login (TOTP) and passkeys, password change and recovery, a real captcha provider, and closing an open game connection at logout.
+   - Two-factor login and passkeys, done on 2026-10-01 ([decision 0005](decisions/0005-two-factor-login-and-passkeys.md)):
+     - TOTP codes with encrypted secrets, replay protection, and 10 single-use recovery codes.
+     - Passkeys bound to the account service's domain, with usernameless login.
+     - A second login step, a re-check before changing login methods, and sessions that record their factors.
+     - A logout closes the game connection its session opened.
+   - Left: password change and recovery, the player's list of sessions, a real captcha provider, and required two-factor login for staff.
 3. More than one map. Several zones in one process, map changes, and warps.
 4. Bots and load test. The headless bot client and the 500-bot tick budget test.
 5. All-in-one mode and the Docker Compose file. This ends phase 2.

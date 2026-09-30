@@ -6,7 +6,8 @@
 <meta name="referrer" content="no-referrer">
 <title>{{.Title}} - wAthena</title>
 <link rel="stylesheet" href="/account/style.css">
-</head>
+{{if .Script}}<script src="/account/passkey.js" defer></script>
+{{end}}</head>
 <body>
 <main>
 <h1>{{.Title}}</h1>
@@ -20,3 +21,13 @@
 {{end}}
 
 {{define "hidden"}}<input type="hidden" name="csrf" value="{{.CSRF}}">{{if .Return}}<input type="hidden" name="return" value="{{.Return}}">{{end}}{{end}}
+
+{{define "passkey"}}{{if .Passkey}}<div class="passkey" data-passkey="{{.Passkey}}" data-csrf="{{.CSRF}}"{{if .Return}} data-return="{{.Return}}"{{end}}{{if .Next}} data-next="{{.Next}}"{{end}} hidden>
+{{if eq .Passkey "login"}}<p class="or">Or, without a name and password:</p>
+<button type="button">Log in with a passkey</button>
+{{else if eq .Passkey "reauth"}}<p class="or">Or:</p>
+<button type="button">Use a passkey</button>
+{{else}}<label>Passkey name <input name="passkey_name" maxlength="64" placeholder="Such as Phone or Laptop"></label>
+<button type="button">Add a passkey</button>
+{{end}}<p class="error passkey-error" role="alert" hidden></p>
+</div>{{end}}{{end}}

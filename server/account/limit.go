@@ -253,6 +253,14 @@ func bump[K comparable](l *limiter, m map[K]*failures, k K, now time.Time) bool 
 	return true
 }
 
+// failAddr records a failure for an address only, such as a passkey
+// that did not work, whose account is not known.
+func (l *limiter) failAddr(addr netip.Addr, now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return bump(l, l.addrs, addrKey(addr), now)
+}
+
 // succeed forgets a name's failures after a successful login.
 func (l *limiter) succeed(name string) {
 	l.mu.Lock()

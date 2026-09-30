@@ -93,8 +93,8 @@ func (q *Queries) CreateAccountWithPassword(ctx context.Context, arg CreateAccou
 }
 
 const createSession = `-- name: CreateSession :one
-INSERT INTO account_sessions (token_hash, account_id, expires_at, user_agent, ip)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO account_sessions (token_hash, account_id, expires_at, user_agent, ip, factors)
+VALUES ($1, $2, $3, $4, $5, $6::text[])
 RETURNING id
 `
 
@@ -104,8 +104,11 @@ type CreateSessionParams struct {
 	ExpiresAt pgtype.Timestamptz
 	UserAgent string
 	Ip        *netip.Addr
+	Factors   []string
 }
 
+// CreateSession makes a login session. factors names what the player
+// proved to open it, such as {password,totp} or {passkey}.
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createSession,
 		arg.TokenHash,
@@ -113,6 +116,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (i
 		arg.ExpiresAt,
 		arg.UserAgent,
 		arg.Ip,
+		arg.Factors,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -146,6 +150,10 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 const deleteExpired = `-- name: DeleteExpired :one
 WITH t AS (
     DELETE FROM game_tickets WHERE expires_at <= now()
+), p AS (
+    DELETE FROM account_pending_logins WHERE expires_at <= now()
+), w AS (
+    DELETE FROM account_webauthn_ceremonies WHERE expires_at <= now()
 ), s AS (
     DELETE FROM account_sessions
     WHERE expires_at <= now() OR revoked_at IS NOT NULL
@@ -155,8 +163,9 @@ WITH t AS (
 SELECT count(*) FROM s
 `
 
-// DeleteExpired removes expired tickets, and sessions that expired or
-// were revoked. It returns how many sessions went.
+// DeleteExpired removes expired tickets, pending logins and passkey
+// ceremonies, and sessions that expired or were revoked. It returns how
+// many sessions went.
 func (q *Queries) DeleteExpired(ctx context.Context, idle pgtype.Interval) (int64, error) {
 	row := q.db.QueryRow(ctx, deleteExpired, idle)
 	var count int64
@@ -173,6 +182,19 @@ WHERE session_id = (SELECT s.id FROM account_sessions s WHERE s.token_hash = $1)
 func (q *Queries) DeleteSessionTickets(ctx context.Context, tokenHash []byte) error {
 	_, err := q.db.Exec(ctx, deleteSessionTickets, tokenHash)
 	return err
+}
+
+const passwordByAccount = `-- name: PasswordByAccount :one
+SELECT hash FROM account_passwords WHERE account_id = $1
+`
+
+// PasswordByAccount returns an account's password hash, for pages that
+// ask for the password again.
+func (q *Queries) PasswordByAccount(ctx context.Context, accountID int64) (string, error) {
+	row := q.db.QueryRow(ctx, passwordByAccount, accountID)
+	var hash string
+	err := row.Scan(&hash)
+	return hash, err
 }
 
 const passwordByName = `-- name: PasswordByName :one
@@ -197,18 +219,31 @@ func (q *Queries) PasswordByName(ctx context.Context, name string) (PasswordByNa
 	return i, err
 }
 
+const reauthenticate = `-- name: Reauthenticate :exec
+UPDATE account_sessions SET authenticated_at = now()
+WHERE id = $1 AND revoked_at IS NULL
+`
+
+// Reauthenticate records that the player of a session proved who they
+// are again, just now.
+func (q *Queries) Reauthenticate(ctx context.Context, sessionID int64) error {
+	_, err := q.db.Exec(ctx, reauthenticate, sessionID)
+	return err
+}
+
 const redeemTicket = `-- name: RedeemTicket :one
 WITH t AS (
     DELETE FROM game_tickets WHERE token_hash = $1
-    RETURNING account_id, character_id, expires_at
+    RETURNING session_id, account_id, character_id, expires_at
 )
-SELECT t.account_id, t.character_id, t.expires_at > now() AS live,
+SELECT t.session_id, t.account_id, t.character_id, t.expires_at > now() AS live,
     c.name, c.job, c.sex, c.hair, c.hair_color
 FROM t
 JOIN characters c ON c.id = t.character_id AND c.account_id = t.account_id
 `
 
 type RedeemTicketRow struct {
+	SessionID   int64
 	AccountID   int64
 	CharacterID int64
 	Live        bool
@@ -227,6 +262,7 @@ func (q *Queries) RedeemTicket(ctx context.Context, tokenHash []byte) (RedeemTic
 	row := q.db.QueryRow(ctx, redeemTicket, tokenHash)
 	var i RedeemTicketRow
 	err := row.Scan(
+		&i.SessionID,
 		&i.AccountID,
 		&i.CharacterID,
 		&i.Live,
@@ -239,14 +275,33 @@ func (q *Queries) RedeemTicket(ctx context.Context, tokenHash []byte) (RedeemTic
 	return i, err
 }
 
-const revokeSession = `-- name: RevokeSession :exec
+const revokeSession = `-- name: RevokeSession :many
 UPDATE account_sessions SET revoked_at = now()
 WHERE token_hash = $1 AND revoked_at IS NULL
+RETURNING id
 `
 
-func (q *Queries) RevokeSession(ctx context.Context, tokenHash []byte) error {
-	_, err := q.db.Exec(ctx, revokeSession, tokenHash)
-	return err
+// RevokeSession ends a session and returns its ID, so the game
+// connections it opened can be closed. It returns no row when the
+// session was already revoked.
+func (q *Queries) RevokeSession(ctx context.Context, tokenHash []byte) ([]int64, error) {
+	rows, err := q.db.Query(ctx, revokeSession, tokenHash)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const selectCharacter = `-- name: SelectCharacter :execrows
@@ -294,7 +349,8 @@ FROM accounts a
 WHERE s.token_hash = $1 AND a.id = s.account_id
     AND s.revoked_at IS NULL AND s.expires_at > now()
     AND s.last_used_at > now() - $2::interval
-RETURNING s.id, s.account_id, a.name AS account_name, s.character_id
+RETURNING s.id, s.account_id, a.name AS account_name, s.character_id,
+    s.authenticated_at, s.factors
 `
 
 type UseSessionParams struct {
@@ -303,10 +359,12 @@ type UseSessionParams struct {
 }
 
 type UseSessionRow struct {
-	ID          int64
-	AccountID   int64
-	AccountName string
-	CharacterID pgtype.Int8
+	ID              int64
+	AccountID       int64
+	AccountName     string
+	CharacterID     pgtype.Int8
+	AuthenticatedAt pgtype.Timestamptz
+	Factors         []string
 }
 
 // UseSession finds a live session by its token hash and marks it used.
@@ -320,6 +378,8 @@ func (q *Queries) UseSession(ctx context.Context, arg UseSessionParams) (UseSess
 		&i.AccountID,
 		&i.AccountName,
 		&i.CharacterID,
+		&i.AuthenticatedAt,
+		&i.Factors,
 	)
 	return i, err
 }

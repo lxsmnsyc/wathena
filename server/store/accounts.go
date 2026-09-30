@@ -45,8 +45,11 @@ func CreateCharacter(ctx context.Context, pool *pgxpool.Pool, account int64, c *
 	return id, err
 }
 
-// Ticket is a used game ticket: the character it opens.
+// Ticket is a used game ticket: the character it opens, and the login
+// session that made it. The gateway closes the connection when that
+// session ends.
 type Ticket struct {
+	SessionID              int64
 	AccountID, CharacterID int64
 	Name                   string
 	Job, Sex               int
@@ -72,7 +75,7 @@ func (s *Store) RedeemTicket(ctx context.Context, hash []byte) (Ticket, error) {
 		return Ticket{}, ErrTicketInvalid
 	}
 	return Ticket{
-		AccountID: row.AccountID, CharacterID: row.CharacterID, Name: row.Name,
+		SessionID: row.SessionID, AccountID: row.AccountID, CharacterID: row.CharacterID, Name: row.Name,
 		Job: row.Job, Sex: row.Sex, Hair: row.Hair, HairColor: row.HairColor,
 	}, nil
 }

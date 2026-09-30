@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/schema"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -97,5 +98,83 @@ func TestSecondLoginKicksFirst(t *testing.T) {
 	// The first session's last save came before the second load.
 	if got := strings.Join(chars.log, ", "); got != "load, final save, load" {
 		t.Errorf("order: %s", got)
+	}
+}
+
+// sessionTokens gives each name its own login session: "name/42" is the
+// character name with login session 42.
+type sessionTokens struct{}
+
+func (sessionTokens) Check(ctx context.Context, token []byte) (Login, error) {
+	name, id, ok := strings.Cut(string(token), "/")
+	if !ok {
+		return Login{}, ErrSessionInvalid
+	}
+	l, err := DevSessions{}.Check(ctx, []byte(name))
+	n := int64(0)
+	for _, c := range id {
+		n = n*10 + int64(c-'0')
+	}
+	l.SessionID = n
+	return l, err
+}
+
+func TestEndLoginSessions(t *testing.T) {
+	g := &path.Grid{Width: 40, Height: 40, Cells: make([]uint8, 1600)}
+	for i := range g.Cells {
+		g.Cells[i] = path.Walkable | path.Shootable
+	}
+	z := zone.New("map/test", g, rng.FromKey([32]byte{}).Stream(), nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go z.Run(ctx)
+	gw := &Gateway{Zone: z, Sessions: sessionTokens{}}
+	s := httptest.NewServer(gw)
+	t.Cleanup(s.Close)
+	url := "ws" + strings.TrimPrefix(s.URL, "http")
+
+	a := dial(t, url)
+	a.hello("Alice/1", schema.Version)
+	a.next((*wathenav1.ServerMessage).HasWelcome)
+	b := dial(t, url)
+	b.hello("Bob/2", schema.Version)
+	b.next((*wathenav1.ServerMessage).HasWelcome)
+
+	// Ending session 1 closes Alice's connection only.
+	gw.EndLoginSessions(1)
+	d := a.next((*wathenav1.ServerMessage).HasDisconnect).GetDisconnect()
+	if d.GetReason() != wathenav1.DisconnectReason_DISCONNECT_REASON_LOGGED_OUT {
+		t.Errorf("Alice ended with %v", d.GetReason())
+	}
+	b.send(wathenav1.ClientMessage_builder{Ping: wathenav1.Ping_builder{Nonce: 7}.Build()}.Build())
+	if p := b.next((*wathenav1.ServerMessage).HasPong).GetPong(); p.GetNonce() != 7 {
+		t.Errorf("Bob's pong %v", p)
+	}
+
+	// A connection from a session that already ended is closed as soon
+	// as it arrives, as when its ticket was used just before the logout.
+	late := dial(t, url)
+	late.hello("Carol/1", schema.Version)
+	d = late.next((*wathenav1.ServerMessage).HasDisconnect).GetDisconnect()
+	if d.GetReason() != wathenav1.DisconnectReason_DISCONNECT_REASON_LOGGED_OUT {
+		t.Errorf("late connection ended with %v", d.GetReason())
+	}
+	// The clients hang up, so the server does not wait for their close
+	// frames.
+	_ = a.c.CloseNow()
+	_ = late.c.CloseNow()
+	// The closed connections stop being watched. Only Bob's is left.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		gw.mu.Lock()
+		n := len(gw.logins)
+		gw.mu.Unlock()
+		if n == 1 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%d login sessions still watched", n)
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }

@@ -11,9 +11,11 @@
 --     the schema. It cannot read password hashes or login sessions. It
 --     only reads and deletes game tickets.
 --   - wathena_account is what the account service connects as. It
---     reads and writes passwords, login sessions and game tickets, and
---     makes accounts and characters. It cannot change or delete
---     characters, or change the schema.
+--     reads and writes passwords, login sessions, game tickets, TOTP
+--     secrets, recovery codes and passkeys, and makes accounts and
+--     characters. It cannot change or delete characters, or change the
+--     schema. The game role has no rights on TOTP secrets, recovery
+--     codes or passkeys.
 --
 -- The migrations grant the table rights of both.
 --
@@ -29,7 +31,8 @@
 --
 --   WATHENA_MIGRATE_DATABASE_URL=postgres://wathena_migrator:...@host/wathena wactl migrate up
 --   WATHENA_DATABASE_URL=postgres://wathena_game:...@host/wathena \
---   WATHENA_ACCOUNT_DATABASE_URL=postgres://wathena_account:...@host/wathena waserver ...
+--   WATHENA_ACCOUNT_DATABASE_URL=postgres://wathena_account:...@host/wathena \
+--   WATHENA_ACCOUNT_SECRET_KEY=<32 random bytes in base64> waserver ...
 
 \set ON_ERROR_STOP on
 

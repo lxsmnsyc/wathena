@@ -12,6 +12,11 @@
 //   - WATHENA_ACCOUNT_DATABASE_URL connects as the account role, which
 //     alone can read password hashes and sessions.
 //
+// Two-factor login needs WATHENA_ACCOUNT_SECRET_KEY: 32 random bytes in
+// base64, which encrypt TOTP secrets in the database. After a key
+// change, WATHENA_ACCOUNT_OLD_SECRET_KEYS lists the older keys,
+// comma-separated. Passkeys need --account-url with a domain name.
+//
 // waserver refuses to start while migrations are pending.
 //
 // --dev replaces accounts with development sessions: any valid name is a
@@ -174,6 +179,13 @@ func run() error {
 			return err
 		}
 		defer pool.Close()
+		sealer, err := loadSealer()
+		if err != nil {
+			return err
+		}
+		if sealer == nil {
+			log.Warn("two-factor codes are off: " + secretKeyEnv + " is not set")
+		}
 		accounts, err = account.New(account.Config{
 			Pool: pool, PublicURL: *accountURL, ClientOrigins: clientOrigins, PlayURL: *playURL,
 			NewCharacter: func(name string, look account.Look) character.Character {
@@ -184,6 +196,9 @@ func run() error {
 				return z.NewCharacter(name, zone.Look{Sex: sex, Hair: uint32(look.Hair), HairColor: uint32(look.HairColor)}) // #nosec G115 -- the account service keeps hair values small.
 			},
 			Captcha: captchaProvider, TrustedProxies: trustedProxies, Log: log,
+			Sealer: sealer,
+			// A logout closes the game connections of its session.
+			Ended: gw,
 		})
 		if err != nil {
 			return err
@@ -235,11 +250,40 @@ func run() error {
 }
 
 // databaseEnv holds the game role's database URL when --database is not
-// given. accountDatabaseEnv holds the account role's.
+// given. accountDatabaseEnv holds the account role's. secretKeyEnv holds
+// the key that seals TOTP secrets, and oldSecretKeysEnv the keys it
+// replaced.
 const (
 	databaseEnv        = "WATHENA_DATABASE_URL"
 	accountDatabaseEnv = "WATHENA_ACCOUNT_DATABASE_URL"
+	secretKeyEnv       = "WATHENA_ACCOUNT_SECRET_KEY"
+	oldSecretKeysEnv   = "WATHENA_ACCOUNT_OLD_SECRET_KEYS"
 )
+
+// loadSealer reads the TOTP sealing keys from the environment. It
+// returns nil when no key is set. Its errors never quote a key.
+func loadSealer() (*account.Sealer, error) {
+	text := os.Getenv(secretKeyEnv)
+	if text == "" {
+		if os.Getenv(oldSecretKeysEnv) != "" {
+			return nil, errors.New(oldSecretKeysEnv + " is set without " + secretKeyEnv)
+		}
+		return nil, nil
+	}
+	current, err := account.ParseSecretKey(text)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", secretKeyEnv, err)
+	}
+	var old [][]byte
+	for i, v := range splitList(os.Getenv(oldSecretKeysEnv)) {
+		k, err := account.ParseSecretKey(v)
+		if err != nil {
+			return nil, fmt.Errorf("%s, key %d: %w", oldSecretKeysEnv, i+1, err)
+		}
+		old = append(old, k)
+	}
+	return account.NewSealer(current, old...)
+}
 
 // loopback reports whether a listen address only accepts connections
 // from this machine.

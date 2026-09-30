@@ -1,0 +1,8 @@
+{{define "recovery.html"}}{{template "head" .}}
+<p>These are your recovery codes. Each one logs you in once, in place of a code from your app. Keep them somewhere safe, such as a password manager or on paper.</p>
+<p><strong>This is the only time they are shown.</strong> Older recovery codes no longer work.</p>
+<ul class="codes">
+{{range .Codes}}<li><code>{{.}}</code></li>
+{{end}}</ul>
+<p><a href="/account/settings">I saved them. Back to settings</a></p>
+{{template "foot" .}}{{end}}

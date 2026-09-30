@@ -28,9 +28,16 @@ WHERE lower(a.name) = lower(@name);
 UPDATE account_passwords SET hash = @new_hash
 WHERE account_id = @account_id AND hash = @old_hash;
 
+-- name: PasswordByAccount :one
+-- PasswordByAccount returns an account's password hash, for pages that
+-- ask for the password again.
+SELECT hash FROM account_passwords WHERE account_id = @account_id;
+
 -- name: CreateSession :one
-INSERT INTO account_sessions (token_hash, account_id, expires_at, user_agent, ip)
-VALUES (@token_hash, @account_id, @expires_at, @user_agent, @ip)
+-- CreateSession makes a login session. factors names what the player
+-- proved to open it, such as {password,totp} or {passkey}.
+INSERT INTO account_sessions (token_hash, account_id, expires_at, user_agent, ip, factors)
+VALUES (@token_hash, @account_id, @expires_at, @user_agent, @ip, @factors::text[])
 RETURNING id;
 
 -- name: UseSession :one
@@ -42,11 +49,22 @@ FROM accounts a
 WHERE s.token_hash = @token_hash AND a.id = s.account_id
     AND s.revoked_at IS NULL AND s.expires_at > now()
     AND s.last_used_at > now() - @idle::interval
-RETURNING s.id, s.account_id, a.name AS account_name, s.character_id;
+RETURNING s.id, s.account_id, a.name AS account_name, s.character_id,
+    s.authenticated_at, s.factors;
 
--- name: RevokeSession :exec
+-- name: Reauthenticate :exec
+-- Reauthenticate records that the player of a session proved who they
+-- are again, just now.
+UPDATE account_sessions SET authenticated_at = now()
+WHERE id = @session_id AND revoked_at IS NULL;
+
+-- name: RevokeSession :many
+-- RevokeSession ends a session and returns its ID, so the game
+-- connections it opened can be closed. It returns no row when the
+-- session was already revoked.
 UPDATE account_sessions SET revoked_at = now()
-WHERE token_hash = @token_hash AND revoked_at IS NULL;
+WHERE token_hash = @token_hash AND revoked_at IS NULL
+RETURNING id;
 
 -- name: DeleteSessionTickets :exec
 -- DeleteSessionTickets removes tickets a session made and nobody used.
@@ -71,18 +89,23 @@ VALUES (@token_hash, @session_id, @account_id, @character_id, @expires_at);
 -- No row comes back when the character left the ticket's account.
 WITH t AS (
     DELETE FROM game_tickets WHERE token_hash = @token_hash
-    RETURNING account_id, character_id, expires_at
+    RETURNING session_id, account_id, character_id, expires_at
 )
-SELECT t.account_id, t.character_id, t.expires_at > now() AS live,
+SELECT t.session_id, t.account_id, t.character_id, t.expires_at > now() AS live,
     c.name, c.job, c.sex, c.hair, c.hair_color
 FROM t
 JOIN characters c ON c.id = t.character_id AND c.account_id = t.account_id;
 
 -- name: DeleteExpired :one
--- DeleteExpired removes expired tickets, and sessions that expired or
--- were revoked. It returns how many sessions went.
+-- DeleteExpired removes expired tickets, pending logins and passkey
+-- ceremonies, and sessions that expired or were revoked. It returns how
+-- many sessions went.
 WITH t AS (
     DELETE FROM game_tickets WHERE expires_at <= now()
+), p AS (
+    DELETE FROM account_pending_logins WHERE expires_at <= now()
+), w AS (
+    DELETE FROM account_webauthn_ceremonies WHERE expires_at <= now()
 ), s AS (
     DELETE FROM account_sessions
     WHERE expires_at <= now() OR revoked_at IS NOT NULL

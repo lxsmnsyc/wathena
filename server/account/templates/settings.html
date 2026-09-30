@@ -1,0 +1,55 @@
+{{define "settings.html"}}{{template "head" .}}
+<p class="account">Logged in as <strong>{{.Account}}</strong>{{if .Factors}} with {{.Factors}}{{end}}. <a href="/account/characters{{if .Return}}?return={{.Return}}{{end}}">Characters</a></p>
+
+<h2>Two-factor login</h2>
+{{if .TOTPOn}}
+<p>On. Logging in with your password also asks for a code from your authenticator app.</p>
+<p>{{.RecoveryLeft}} of 10 recovery codes left.</p>
+<form method="post" action="/account/settings/recovery">
+{{template "hidden" .}}
+<button type="submit">Make new recovery codes</button>
+</form>
+<h3>Turn it off</h3>
+<form method="post" action="/account/settings/totp/disable" class="disable">
+{{template "hidden" .}}
+<label>Password <input type="password" name="password" autocomplete="current-password" required maxlength="256"></label>
+<label>Code from your app, or a recovery code <input name="code" autocomplete="one-time-code" required maxlength="24" spellcheck="false" autocapitalize="off"></label>
+<button type="submit">Turn off two-factor login</button>
+</form>
+{{else if .TOTPAvailable}}
+<p>Off. With it on, logging in with your password also asks for a code from an authenticator app on your phone.</p>
+{{if .TOTPPending}}<p><a href="/account/settings/totp">Continue the setup you started</a>, or start again.</p>{{end}}
+<form method="post" action="/account/settings/totp/start">
+{{template "hidden" .}}
+<button type="submit">Turn on two-factor login</button>
+</form>
+{{else}}
+<p>Two-factor codes are not set up on this server.</p>
+{{end}}
+
+<h2>Passkeys</h2>
+{{if .Passkeys}}
+<ul class="passkeys">
+{{range .Passkeys}}
+<li>
+<form method="post" action="/account/settings/passkeys/remove">
+{{template "hidden" $}}
+<input type="hidden" name="id" value="{{.ID}}">
+<span class="name">{{.Name}}</span>
+<span class="info">Added {{.Created}}, last used {{.LastUsed}}</span>
+<button type="submit">Remove</button>
+</form>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>No passkeys yet. A passkey logs you in with your phone, computer or security key, without a password.</p>
+{{end}}
+{{if .PasskeysAvailable}}{{template "passkey" .}}<noscript><p>Adding a passkey needs JavaScript.</p></noscript>
+{{else}}<p>Passkeys are not set up on this server.</p>{{end}}
+
+<form method="post" action="/account/logout" class="logout">
+{{template "hidden" .}}
+<button type="submit">Log out</button>
+</form>
+{{template "foot" .}}{{end}}

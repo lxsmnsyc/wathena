@@ -40,15 +40,29 @@ var csrfField = regexp.MustCompile(`name="csrf" value="([^"]+)"`)
 
 func TestSecurityHeaders(t *testing.T) {
 	s := offlineService(t, "https://account.example.com")
-	for _, path := range []string{"/account/login", "/account/signup", "/account/style.css", "/account/nope"} {
+	for _, path := range []string{"/account/login", "/account/signup", "/account/style.css", "/account/passkey.js", "/account/nope"} {
 		w := httptest.NewRecorder()
 		s.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
 		h := w.Header()
 		csp := h.Get("Content-Security-Policy")
-		for _, part := range []string{"default-src 'none'", "script-src 'none'", "frame-ancestors 'none'", "form-action 'self' https://play.example.com", "base-uri 'none'", "style-src 'self'"} {
+		// Only the login page, with its passkey button, may load a
+		// script, and only the service's own script file.
+		script := "script-src 'none'"
+		if path == "/account/login" {
+			script = "script-src 'self';"
+		}
+		for _, part := range []string{"default-src 'none'", script, "frame-ancestors 'none'", "form-action 'self' https://play.example.com", "base-uri 'none'", "style-src 'self'"} {
 			if !strings.Contains(csp, part) {
 				t.Errorf("%s: CSP %q lacks %q", path, csp, part)
 			}
+		}
+		for _, bad := range []string{"unsafe-inline", "unsafe-eval", "data:", "*"} {
+			if strings.Contains(csp, bad) {
+				t.Errorf("%s: CSP %q has %q", path, csp, bad)
+			}
+		}
+		if path == "/account/passkey.js" && h.Get("Content-Type") != "text/javascript; charset=utf-8" {
+			t.Errorf("passkey.js: Content-Type %q", h.Get("Content-Type"))
 		}
 		for k, v := range map[string]string{
 			"X-Content-Type-Options":    "nosniff",
@@ -60,7 +74,7 @@ func TestSecurityHeaders(t *testing.T) {
 				t.Errorf("%s: %s = %q", path, k, h.Get(k))
 			}
 		}
-		if path != "/account/style.css" && h.Get("Cache-Control") != "no-store" {
+		if path != "/account/style.css" && path != "/account/passkey.js" && h.Get("Cache-Control") != "no-store" {
 			t.Errorf("%s: Cache-Control %q", path, h.Get("Cache-Control"))
 		}
 	}

@@ -1,6 +1,6 @@
 # 0004: Account Service, Login Sessions, and Game Tickets
 
-- Status: accepted.
+- Status: accepted. Two-factor login, passkeys, and closing the game at logout are in [decision 0005](0005-two-factor-login-and-passkeys.md).
 - Date: 2026-10-01.
 - Code: [server/account](../../server/account), [migration 00002](../../server/store/migrations/00002_account_service.sql).
 
@@ -49,7 +49,7 @@
 ## Forms and pages
 
 - **CSRF.** Every form carries a token: an HMAC-SHA256, under a key made at startup, of a random CSRF cookie and the session cookie. A token from before a login stops working after it. A post is also refused when `Sec-Fetch-Site` is sent and is not `same-origin`, or when `Origin` is sent and is not the service's own. Tokens are compared in constant time. A restart makes open forms fail once.
-- **Headers.** `Content-Security-Policy: default-src 'none'; script-src 'none'; frame-src 'none'; connect-src 'none'; style-src 'self'; img-src 'self'; form-action 'self' <client origins>; frame-ancestors 'none'; base-uri 'none'`, and `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cross-Origin-Opener-Policy: same-origin`, `Cache-Control: no-store`, and `Strict-Transport-Security` over https. The pages have no scripts. A captcha provider adds its own origins to the policy.
+- **Headers.** `Content-Security-Policy: default-src 'none'; script-src 'none'; frame-src 'none'; connect-src 'none'; style-src 'self'; img-src 'self'; form-action 'self' <client origins>; frame-ancestors 'none'; base-uri 'none'`, and `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cross-Origin-Opener-Policy: same-origin`, `Cache-Control: no-store`, and `Strict-Transport-Security` over https. The pages have no scripts, except the passkey script of decision 0005 on three pages. A captcha provider adds its own origins to the policy.
 - **Messages.** A wrong name and a wrong password give the same message. Signup does say "That account name is taken", since the player needs to pick another name. Anyone can learn whether a name exists that way, as on most sites. The signup rate limit slows collecting names in bulk.
 - Form bodies are limited to 16 KB.
 
@@ -120,12 +120,12 @@ Same-site requirement:
 
 ## Two-factor login and passkeys
 
-Both come in a later step. They fit this way:
+[Decision 0005](0005-two-factor-login-and-passkeys.md) adds them, as planned here:
 
-- Tables `account_totp` and `account_passkeys` next to `account_passwords`, with the same role rights.
-- After the password passes, an account with a second factor gets a short pending login (a hashed token, a few minutes) and the second factor's page. `startSession` runs only after that factor passes. The hook is marked in `postLogin`.
-- Passkeys use the account service's domain as the relying party ID, from `--account-url`, so a fork on another domain cannot use them.
-- Game tickets and the gateway do not change.
+- Tables `account_totp` and `account_passkeys`, and others, next to `account_passwords`. Only `wathena_account` has rights on them.
+- After the password passes, an account with TOTP gets a short pending login and the code page. `startSession` runs after the code passes.
+- Passkeys use the account service's domain as the relying party ID, from `--account-url`.
+- Game tickets now record their login session, so the gateway can close a connection when its session ends.
 
 ## Alternatives
 
@@ -139,9 +139,8 @@ Both come in a later step. They fit this way:
 
 ## Left for later
 
-- A logout or password change does not yet close a game connection that is already open. It ends when the player leaves. `LISTEN`/`NOTIFY` from the account service to the gateway can close it.
+- A logout now closes the game connections of its session ([decision 0005](0005-two-factor-login-and-passkeys.md)). Password change must do the same for all sessions.
 - Password change, email, account recovery, and the player's list of their own sessions.
-- Two-factor login and passkeys, as above.
 - A real captcha provider.
 - Rate limit counts shared between processes.
 - A handoff for trusted forks on other sites.

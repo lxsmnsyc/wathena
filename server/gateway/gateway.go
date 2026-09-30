@@ -48,8 +48,12 @@ type Login struct {
 	// one, as a game ticket does. It is 0 for a dev token, whose
 	// character Characters.Find finds by name.
 	CharacterID int64
-	Name        string
-	Look        zone.Look
+	// SessionID is the account service's login session that made the
+	// token, or 0 for a dev token. EndLoginSessions closes the
+	// connections of a session.
+	SessionID int64
+	Name      string
+	Look      zone.Look
 }
 
 // ErrSessionInvalid is a session token that is not valid, used, or
@@ -125,18 +129,109 @@ type Gateway struct {
 	mu     sync.Mutex
 	online map[int64]*online
 	memory *memoryCharacters
+	// logins holds the connections of each login session, and ended the
+	// login sessions that ended recently, by when.
+	logins map[int64]map[*online]struct{}
+	ended  map[int64]time.Time
 }
 
 // online is a character's live session.
 type online struct {
 	// kick closes to end the session. done closes once the session has
-	// left the zone.
+	// left the zone. reason and text are set before kick closes, and
+	// say why.
 	kick     chan struct{}
 	kickOnce sync.Once
 	done     chan struct{}
+	reason   wathenav1.DisconnectReason
+	text     string
 }
 
-func (o *online) end() { o.kickOnce.Do(func() { close(o.kick) }) }
+// Why a connection is kicked.
+const (
+	elsewhereText = "Your character logged in somewhere else."
+	loggedOutText = "You logged out. Log in again to play."
+)
+
+func (o *online) end(reason wathenav1.DisconnectReason, text string) {
+	o.kickOnce.Do(func() {
+		o.reason, o.text = reason, text
+		close(o.kick)
+	})
+}
+
+// endedFor is how long EndLoginSessions remembers a login session. A
+// connection whose ticket was used just before its session ended, and
+// that registers just after, is still closed.
+const endedFor = 5 * time.Minute
+
+// EndLoginSessions closes the game connections that the given login
+// sessions opened. The account service calls it when it revokes a
+// session, such as at logout. The client gets
+// DISCONNECT_REASON_LOGGED_OUT.
+//
+// In one process the account service calls it directly. With several
+// processes, a PostgreSQL NOTIFY from the revoking transaction can call
+// it in each gateway process.
+func (g *Gateway) EndLoginSessions(ids ...int64) {
+	now := time.Now()
+	var kick []*online
+	g.mu.Lock()
+	if g.ended == nil {
+		g.ended = map[int64]time.Time{}
+	}
+	for id, at := range g.ended {
+		if now.Sub(at) > endedFor {
+			delete(g.ended, id)
+		}
+	}
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		g.ended[id] = now
+		for o := range g.logins[id] {
+			kick = append(kick, o)
+		}
+	}
+	g.mu.Unlock()
+	for _, o := range kick {
+		o.end(wathenav1.DisconnectReason_DISCONNECT_REASON_LOGGED_OUT, loggedOutText)
+	}
+}
+
+// watch records that a connection belongs to a login session. It kicks
+// the connection at once when the session already ended.
+func (g *Gateway) watch(session int64, me *online) {
+	if session == 0 {
+		return
+	}
+	g.mu.Lock()
+	if g.logins == nil {
+		g.logins = map[int64]map[*online]struct{}{}
+	}
+	if g.logins[session] == nil {
+		g.logins[session] = map[*online]struct{}{}
+	}
+	g.logins[session][me] = struct{}{}
+	_, ended := g.ended[session]
+	g.mu.Unlock()
+	if ended {
+		me.end(wathenav1.DisconnectReason_DISCONNECT_REASON_LOGGED_OUT, loggedOutText)
+	}
+}
+
+func (g *Gateway) unwatch(session int64, me *online) {
+	if session == 0 {
+		return
+	}
+	g.mu.Lock()
+	delete(g.logins[session], me)
+	if len(g.logins[session]) == 0 {
+		delete(g.logins, session)
+	}
+	g.mu.Unlock()
+}
 
 func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !g.originAllowed(r) {
@@ -204,9 +299,11 @@ func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
 	}
 	me := g.claim(id)
 	defer g.release(id, me)
+	g.watch(login.SessionID, me)
+	defer g.unwatch(login.SessionID, me)
 	select {
 	case <-me.kick:
-		return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_LOGGED_IN_ELSEWHERE, "Your character logged in somewhere else.")
+		return disconnect(ctx, c, me.reason, me.text)
 	default:
 	}
 	char, saver, err := chars.Load(ctx, id)
@@ -246,8 +343,7 @@ func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
 			// waiting for the client's close frame, so the new login
 			// does not wait on this client.
 			_ = write(ctx, c, wathenav1.ServerMessage_builder{Disconnect: wathenav1.Disconnect_builder{
-				Reason:  wathenav1.DisconnectReason_DISCONNECT_REASON_LOGGED_IN_ELSEWHERE,
-				Message: "Your character logged in somewhere else.",
+				Reason: me.reason, Message: me.text,
 			}.Build()}.Build())
 			cancel()
 		case <-ctx.Done():
@@ -368,7 +464,7 @@ func (g *Gateway) claim(id int64) *online {
 	if old == nil {
 		return me
 	}
-	old.end()
+	old.end(wathenav1.DisconnectReason_DISCONNECT_REASON_LOGGED_IN_ELSEWHERE, elsewhereText)
 	t := time.NewTimer(KickWait)
 	defer t.Stop()
 	select {

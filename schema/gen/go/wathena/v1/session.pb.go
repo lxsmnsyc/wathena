@@ -31,6 +31,9 @@ const (
 	DisconnectReason_DISCONNECT_REASON_BAD_MESSAGE         DisconnectReason = 5
 	DisconnectReason_DISCONNECT_REASON_BANNED              DisconnectReason = 6
 	DisconnectReason_DISCONNECT_REASON_SERVER_SHUTDOWN     DisconnectReason = 7
+	// The login session that opened this connection ended, such as at
+	// logout or when a new login in the same browser replaced it.
+	DisconnectReason_DISCONNECT_REASON_LOGGED_OUT DisconnectReason = 8
 )
 
 // Enum value maps for DisconnectReason.
@@ -44,6 +47,7 @@ var (
 		5: "DISCONNECT_REASON_BAD_MESSAGE",
 		6: "DISCONNECT_REASON_BANNED",
 		7: "DISCONNECT_REASON_SERVER_SHUTDOWN",
+		8: "DISCONNECT_REASON_LOGGED_OUT",
 	}
 	DisconnectReason_value = map[string]int32{
 		"DISCONNECT_REASON_UNSPECIFIED":         0,
@@ -54,6 +58,7 @@ var (
 		"DISCONNECT_REASON_BAD_MESSAGE":         5,
 		"DISCONNECT_REASON_BANNED":              6,
 		"DISCONNECT_REASON_SERVER_SHUTDOWN":     7,
+		"DISCONNECT_REASON_LOGGED_OUT":          8,
 	}
 )
 
@@ -534,7 +539,7 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"Disconnect\x124\n" +
 	"\x06reason\x18\x01 \x01(\x0e2\x1c.wathena.v1.DisconnectReasonR\x06reason\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage*\xbe\x02\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*\xe0\x02\n" +
 	"\x10DisconnectReason\x12!\n" +
 	"\x1dDISCONNECT_REASON_UNSPECIFIED\x10\x00\x12)\n" +
 	"%DISCONNECT_REASON_VERSION_UNSUPPORTED\x10\x01\x12%\n" +
@@ -543,7 +548,8 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\x1eDISCONNECT_REASON_RATE_LIMITED\x10\x04\x12!\n" +
 	"\x1dDISCONNECT_REASON_BAD_MESSAGE\x10\x05\x12\x1c\n" +
 	"\x18DISCONNECT_REASON_BANNED\x10\x06\x12%\n" +
-	"!DISCONNECT_REASON_SERVER_SHUTDOWN\x10\aB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
+	"!DISCONNECT_REASON_SERVER_SHUTDOWN\x10\a\x12 \n" +
+	"\x1cDISCONNECT_REASON_LOGGED_OUT\x10\bB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_wathena_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 5)

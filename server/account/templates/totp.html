@@ -1,0 +1,16 @@
+{{define "totp.html"}}{{template "head" .}}
+<ol>
+<li>Open an authenticator app on your phone, such as Aegis, FreeOTP, Google Authenticator or 1Password.</li>
+<li>Scan this QR code with it.
+<div class="qr-box">{{.QR}}</div>
+Or type in this key by hand:
+<p class="key"><code>{{.Key}}</code></p></li>
+<li>Enter the 6-digit code the app shows now.</li>
+</ol>
+<form method="post" action="/account/settings/totp">
+{{template "hidden" .}}
+<label>Code <input name="code" autocomplete="one-time-code" inputmode="numeric" required maxlength="8" autofocus></label>
+<button type="submit">Turn on</button>
+</form>
+<p><a href="/account/settings">Cancel</a></p>
+{{template "foot" .}}{{end}}

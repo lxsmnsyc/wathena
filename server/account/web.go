@@ -17,7 +17,11 @@ import (
 const (
 	sessionCookie = "wa_session"
 	csrfCookie    = "wa_csrf"
-	hostPrefix    = "__Host-"
+	// pendingCookie holds a login that waits for its second factor.
+	pendingCookie = "wa_pending"
+	// ceremonyCookie holds a passkey ceremony between its two steps.
+	ceremonyCookie = "wa_webauthn"
+	hostPrefix     = "__Host-"
 )
 
 func (s *Service) cookieName(base string) string {
@@ -70,25 +74,32 @@ func (s *Service) securityHeaders(w http.ResponseWriter) {
 }
 
 // buildCSP returns the pages' Content-Security-Policy:
-//   - No scripts, except a captcha provider's.
+//   - No scripts, except a captcha provider's. With self, also the
+//     service's own script files, for the pages with passkey buttons.
+//     Inline scripts and eval stay off either way.
 //   - Styles and images from the service's own origin only.
 //   - Forms post to the service, and Play's redirect may go to the
 //     trusted client origins.
 //   - No framing, no <base>, no plugins.
-func buildCSP(clients, captcha []string) string {
+func buildCSP(clients, captcha []string, self bool) string {
 	src := func(list []string) string {
 		if len(list) == 0 {
 			return ""
 		}
 		return " " + strings.Join(list, " ")
 	}
+	var scripts []string
+	if self {
+		scripts = append(scripts, "'self'")
+	}
+	scripts = append(scripts, captcha...)
 	script := "'none'"
-	if len(captcha) > 0 {
-		script = strings.Join(captcha, " ")
+	if len(scripts) > 0 {
+		script = strings.Join(scripts, " ")
 	}
 	return "default-src 'none'; script-src " + script +
 		"; frame-src" + orNone(src(captcha)) +
-		"; connect-src" + orNone(src(captcha)) +
+		"; connect-src" + orNone(src(scripts)) +
 		"; style-src 'self'; img-src 'self'" +
 		"; form-action 'self'" + src(clients) +
 		"; frame-ancestors 'none'; base-uri 'none'"
@@ -133,6 +144,12 @@ func (s *Service) ensureCSRF(w http.ResponseWriter, r *http.Request) string {
 //   - The form's csrf field must match the cookies, compared in
 //     constant time.
 func (s *Service) checkCSRF(r *http.Request) bool {
+	return s.checkCSRFValue(r, r.PostFormValue("csrf"))
+}
+
+// checkCSRFValue checks a post as checkCSRF does, with the token given
+// directly, such as from the X-CSRF-Token header of a script's fetch.
+func (s *Service) checkCSRFValue(r *http.Request, token string) bool {
 	if site := r.Header.Get("Sec-Fetch-Site"); site != "" {
 		if site != "same-origin" {
 			return false
@@ -145,7 +162,7 @@ func (s *Service) checkCSRF(r *http.Request) bool {
 		return false
 	}
 	want := s.csrfToken(csrf, s.cookie(r, sessionCookie))
-	return hmac.Equal([]byte(r.PostFormValue("csrf")), []byte(want))
+	return hmac.Equal([]byte(token), []byte(want))
 }
 
 // ownOrigin is the origin pages are served from: PublicURL's, or the

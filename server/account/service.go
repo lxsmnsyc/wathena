@@ -1,10 +1,14 @@
 // Package account is the account service: signup, login and logout,
-// login sessions, the character list with character creation, and the
-// one-time game tickets that open a game connection. See
-// docs/decisions/0004-account-service-and-game-tickets.md.
+// two-factor login with TOTP codes, passkeys, login sessions, the
+// character list with character creation, and the one-time game tickets
+// that open a game connection. See
+// docs/decisions/0004-account-service-and-game-tickets.md and
+// docs/decisions/0005-two-factor-login-and-passkeys.md.
 //
-// Its pages are plain HTML forms with no scripts. It runs its queries as
-// the wathena_account role, the only role that can read password hashes.
+// Its pages are plain HTML forms. Only the pages with passkey buttons
+// load a script, from the service's own origin. It runs its queries as
+// the wathena_account role, the only role that can read password hashes,
+// TOTP secrets and passkeys.
 package account
 
 import (
@@ -22,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -55,7 +60,14 @@ const (
 	DefaultTicketLifetime  = 60 * time.Second
 	DefaultSlots           = 9
 	DefaultHashers         = 4
-	cleanupEvery           = 10 * time.Minute
+	DefaultReauthWindow    = 10 * time.Minute
+	DefaultPendingLifetime = 5 * time.Minute
+	DefaultCodeAttempts    = 5
+	// ceremonyLifetime is how long a passkey prompt may take.
+	ceremonyLifetime = 5 * time.Minute
+	// MaxPasskeys is how many passkeys an account may have.
+	MaxPasskeys  = 10
+	cleanupEvery = 10 * time.Minute
 	// requestTimeout bounds the database and hashing work of one page.
 	requestTimeout = 10 * time.Second
 	// maxForm is the largest form body read.
@@ -100,6 +112,36 @@ type Config struct {
 	// Slots is how many characters an account may have, at most 15.
 	Slots int
 	Log   *slog.Logger
+
+	// Sealer encrypts TOTP secrets in the database. Without it, players
+	// cannot turn TOTP on, and accounts that have it on cannot log in
+	// until it is given.
+	Sealer *Sealer
+	// Issuer names the server in authenticator apps. "wAthena" when
+	// empty.
+	Issuer string
+	// Ended is told which login sessions ended, such as at logout, so it
+	// can close the game connections they opened. The gateway is one.
+	Ended SessionEnder
+	// ReauthWindow is how long after logging in, or proving who they are
+	// again, a player may change their login methods without being asked
+	// again. DefaultReauthWindow when 0.
+	ReauthWindow time.Duration
+	// PendingLifetime is how long a login waits for its TOTP code, and
+	// MaxCodeAttempts how many codes it may try. DefaultPendingLifetime
+	// and DefaultCodeAttempts when 0.
+	PendingLifetime time.Duration
+	MaxCodeAttempts int
+	// Clock gives the time that TOTP codes are checked against. time.Now
+	// when nil. Tests set it.
+	Clock func() time.Time
+}
+
+// SessionEnder closes what a login session opened when the session
+// ends. *gateway.Gateway is one. A PostgreSQL LISTEN/NOTIFY bridge can
+// be one when the gateway runs in another process.
+type SessionEnder interface {
+	EndLoginSessions(ids ...int64)
 }
 
 // Service serves the account pages. It is an http.Handler for the paths
@@ -113,11 +155,16 @@ type Service struct {
 	mux     *http.ServeMux
 	log     *slog.Logger
 
-	secure  bool
-	origin  string
-	clients map[string]bool
-	csp     string
-	csrfKey []byte
+	secure    bool
+	origin    string
+	clients   map[string]bool
+	csp       string
+	cspScript string
+	csrfKey   []byte
+	// wa runs passkey ceremonies. It is nil when PublicURL is not set,
+	// since a passkey needs a fixed relying party ID.
+	wa   *webauthn.WebAuthn
+	rpID string
 }
 
 // New makes a service.
@@ -152,11 +199,29 @@ func New(cfg Config) (*Service, error) {
 		s.cfg.Slots = DefaultSlots
 	}
 	s.cfg.Slots = min(s.cfg.Slots, 15)
+	if s.cfg.ReauthWindow <= 0 {
+		s.cfg.ReauthWindow = DefaultReauthWindow
+	}
+	if s.cfg.PendingLifetime <= 0 {
+		s.cfg.PendingLifetime = DefaultPendingLifetime
+	}
+	if s.cfg.MaxCodeAttempts <= 0 {
+		s.cfg.MaxCodeAttempts = DefaultCodeAttempts
+	}
+	if s.cfg.Issuer == "" {
+		s.cfg.Issuer = "wAthena"
+	}
+	if s.cfg.Clock == nil {
+		s.cfg.Clock = time.Now
+	}
 	if cfg.PublicURL != "" {
 		if s.origin = originOf(cfg.PublicURL); s.origin == "" {
 			return nil, errors.New("account: PublicURL is not an http or https URL")
 		}
 		s.secure = strings.HasPrefix(s.origin, "https://")
+		if err := s.setupWebAuthn(); err != nil {
+			return nil, err
+		}
 	}
 	var clients []string
 	for _, o := range cfg.ClientOrigins {
@@ -169,7 +234,8 @@ func New(cfg Config) (*Service, error) {
 	if cfg.PlayURL != "" && !s.clients[originOf(cfg.PlayURL)] {
 		return nil, errors.New("account: PlayURL's origin is not in ClientOrigins")
 	}
-	s.csp = buildCSP(clients, s.captcha.Sources())
+	s.csp = buildCSP(clients, s.captcha.Sources(), false)
+	s.cspScript = buildCSP(clients, s.captcha.Sources(), true)
 	s.csrfKey = make([]byte, 32)
 	if _, err := rand.Read(s.csrfKey); err != nil {
 		return nil, err
@@ -182,8 +248,24 @@ func (s *Service) routes() {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /account/{$}", s.index)
 	m.HandleFunc("GET /account/style.css", s.style)
+	m.HandleFunc("GET /account/passkey.js", s.script)
 	m.HandleFunc("GET /account/login", s.getLogin)
 	m.HandleFunc("POST /account/login", s.postLogin)
+	m.HandleFunc("GET /account/login/code", s.getLoginCode)
+	m.HandleFunc("POST /account/login/code", s.postLoginCode)
+	m.HandleFunc("GET /account/reauth", s.getReauth)
+	m.HandleFunc("POST /account/reauth", s.postReauth)
+	m.HandleFunc("GET /account/settings", s.getSettings)
+	m.HandleFunc("POST /account/settings/totp/start", s.startTOTP)
+	m.HandleFunc("GET /account/settings/totp", s.getTOTP)
+	m.HandleFunc("POST /account/settings/totp", s.confirmTOTP)
+	m.HandleFunc("POST /account/settings/totp/disable", s.disableTOTP)
+	m.HandleFunc("POST /account/settings/recovery", s.newRecovery)
+	m.HandleFunc("POST /account/settings/passkeys/remove", s.removePasskey)
+	m.HandleFunc("POST /account/passkeys/register/begin", s.beginRegister)
+	m.HandleFunc("POST /account/passkeys/register/finish", s.finishRegister)
+	m.HandleFunc("POST /account/passkeys/login/begin", s.beginPasskeyLogin)
+	m.HandleFunc("POST /account/passkeys/login/finish", s.finishPasskeyLogin)
 	m.HandleFunc("GET /account/signup", s.getSignup)
 	m.HandleFunc("POST /account/signup", s.postSignup)
 	m.HandleFunc("POST /account/logout", s.logout)
@@ -236,7 +318,7 @@ func interval(d time.Duration) pgtype.Interval {
 	return pgtype.Interval{Microseconds: d.Microseconds(), Valid: true}
 }
 
-//go:embed templates/*.html static/style.css
+//go:embed templates/*.html static/style.css static/passkey.js
 var files embed.FS
 
 var pages = template.Must(template.ParseFS(files, "templates/*.html"))
@@ -251,6 +333,26 @@ type page struct {
 	Name    string
 	Captcha template.HTML
 	Account string
+	// Script loads passkey.js, and allows same-origin scripts in the
+	// page's Content-Security-Policy. Only pages with passkey buttons
+	// set it.
+	Script bool
+	// Passkey is what the page's passkey button does: login, reauth or
+	// register. Empty hides it.
+	Passkey string
+	// Next is where the reauth page goes afterwards.
+	Next string
+
+	// The code and settings pages.
+	TOTPOn, TOTPPending, TOTPAvailable bool
+	PasskeysAvailable                  bool
+	RecoveryLeft                       int64
+	Passkeys                           []passkeyView
+	Factors                            string
+	QR                                 template.HTML
+	Key                                string
+	Codes                              []string
+	AttemptsLeft                       int
 
 	Characters []characterView
 	FreeSlots  []int
@@ -273,6 +375,9 @@ func (s *Service) newPage(w http.ResponseWriter, r *http.Request, title string) 
 }
 
 func (s *Service) render(w http.ResponseWriter, status int, name string, p *page) {
+	if p.Script {
+		w.Header().Set("Content-Security-Policy", s.cspScript)
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if err := pages.ExecuteTemplate(w, name, p); err != nil {
@@ -288,6 +393,18 @@ func (s *Service) style(w http.ResponseWriter, _ *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	w.Header().Set("Cache-Control", "max-age=3600")
+	_, _ = w.Write(b)
+}
+
+// script serves passkey.js, the one script of the account pages.
+func (s *Service) script(w http.ResponseWriter, _ *http.Request) {
+	b, err := files.ReadFile("static/passkey.js")
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
 	_, _ = w.Write(b)
 }
 
@@ -356,11 +473,29 @@ func (s *Service) index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) getLogin(w http.ResponseWriter, r *http.Request) {
-	p := s.newPage(w, r, "Log in")
+	p := s.loginPage(w, r)
 	if s.limit.captchaFor(s.clientAddr(r), time.Now()) {
 		p.Captcha = s.captcha.Field()
 	}
+	if msg, ok := loginNotices[r.FormValue("notice")]; ok {
+		p.Notice = msg
+	}
 	s.render(w, http.StatusOK, "login.html", p)
+}
+
+// loginPage starts the login page, with its passkey button when
+// passkeys are set up.
+func (s *Service) loginPage(w http.ResponseWriter, r *http.Request) *page {
+	p := s.newPage(w, r, "Log in")
+	if s.wa != nil {
+		p.Script, p.Passkey = true, "login"
+	}
+	return p
+}
+
+// loginNotices are the messages the login page shows for ?notice=.
+var loginNotices = map[string]string{
+	"expired": "The login took too long or had too many wrong codes. Log in again.",
 }
 
 // errLogin is the one message for a wrong name or a wrong password, so
@@ -376,7 +511,7 @@ func (s *Service) postLogin(w http.ResponseWriter, r *http.Request) {
 	addr, now := s.clientAddr(r), time.Now()
 	name := strings.TrimSpace(r.PostForm.Get("name"))
 	password := r.PostForm.Get("password")
-	p := s.newPage(w, r, "Log in")
+	p := s.loginPage(w, r)
 	p.Name = shorten(name, MaxAccountName)
 	if ok, wait := s.limit.allow(actLogin, addr, now); !ok {
 		p.Error = "Too many login attempts from your network. Try again in " + seconds(wait) + "."
@@ -419,11 +554,23 @@ func (s *Service) postLogin(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusBadRequest, "login.html", p)
 		return
 	}
+	// An account with TOTP gets a pending login and the code page. Its
+	// failure count for the name is only reset once the code passes.
+	on, err := s.totpOn(ctx, account)
+	if err != nil {
+		s.unavailable(w, r, err)
+		return
+	}
+	if on {
+		if err := s.startPending(ctx, w, account, factorPassword); err != nil {
+			s.unavailable(w, r, err)
+			return
+		}
+		s.redirect(w, r, withReturn(Prefix+"login/code", p.Return))
+		return
+	}
 	s.limit.succeed(name)
-	// Two-factor login goes here: an account with a second factor gets
-	// a short pending login and the second factor's page, and
-	// startSession runs after that factor passes.
-	if err := s.startSession(ctx, w, r, account); err != nil {
+	if err := s.startSession(ctx, w, r, account, []string{factorPassword}); err != nil {
 		s.unavailable(w, r, err)
 		return
 	}
@@ -469,8 +616,9 @@ func (s *Service) checkPassword(ctx context.Context, name, password string) (int
 
 // startSession makes a login session, sets its cookie, and ends the
 // session the request came with, if any, so an old cookie cannot be
-// fixed on the player.
-func (s *Service) startSession(ctx context.Context, w http.ResponseWriter, r *http.Request, account int64) error {
+// fixed on the player. factors are what the player proved, and are kept
+// with the session.
+func (s *Service) startSession(ctx context.Context, w http.ResponseWriter, r *http.Request, account int64, factors []string) error {
 	if old, ok := tokenHash(s.cookie(r, sessionCookie)); ok {
 		if err := s.revoke(ctx, old); err != nil {
 			return err
@@ -484,7 +632,7 @@ func (s *Service) startSession(ctx context.Context, w http.ResponseWriter, r *ht
 	_, err := s.q.CreateSession(ctx, db.CreateSessionParams{
 		TokenHash: hash, AccountID: account,
 		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(s.cfg.SessionLifetime), Valid: true},
-		UserAgent: userAgent(r), Ip: ip,
+		UserAgent: userAgent(r), Ip: ip, Factors: factors,
 	})
 	if err != nil {
 		return err
@@ -494,15 +642,23 @@ func (s *Service) startSession(ctx context.Context, w http.ResponseWriter, r *ht
 }
 
 // revoke ends a session and deletes the game tickets it made and nobody
-// used, in one transaction.
+// used, in one transaction. After the commit, Config.Ended closes the
+// game connections the session opened.
 func (s *Service) revoke(ctx context.Context, hash []byte) error {
-	return pgx.BeginFunc(ctx, s.cfg.Pool, func(tx pgx.Tx) error {
+	var ids []int64
+	err := pgx.BeginFunc(ctx, s.cfg.Pool, func(tx pgx.Tx) error {
 		q := s.q.WithTx(tx)
 		if err := q.DeleteSessionTickets(ctx, hash); err != nil {
 			return err
 		}
-		return q.RevokeSession(ctx, hash)
+		var err error
+		ids, err = q.RevokeSession(ctx, hash)
+		return err
 	})
+	if err == nil && len(ids) > 0 && s.cfg.Ended != nil {
+		s.cfg.Ended.EndLoginSessions(ids...)
+	}
+	return err
 }
 
 func (s *Service) getSignup(w http.ResponseWriter, r *http.Request) {
@@ -567,7 +723,7 @@ func (s *Service) postSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("account made", "account", account)
-	if err := s.startSession(ctx, w, r, account); err != nil {
+	if err := s.startSession(ctx, w, r, account, []string{factorPassword}); err != nil {
 		s.unavailable(w, r, err)
 		return
 	}

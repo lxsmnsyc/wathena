@@ -17,23 +17,84 @@ type Account struct {
 	Dev       bool
 }
 
+type AccountPasskey struct {
+	ID                int64
+	AccountID         int64
+	RpID              string
+	CredentialID      []byte
+	PublicKey         []byte
+	AttestationType   string
+	AttestationFormat string
+	Aaguid            []byte
+	Transports        []string
+	Attachment        string
+	Flags             int
+	SignCount         int64
+	CloneWarning      bool
+	Name              string
+	CreatedAt         pgtype.Timestamptz
+	LastUsedAt        pgtype.Timestamptz
+}
+
 type AccountPassword struct {
 	AccountID int64
 	Hash      string
 	ChangedAt pgtype.Timestamptz
 }
 
+type AccountPendingLogin struct {
+	TokenHash []byte
+	AccountID int64
+	Factor    string
+	CreatedAt pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+	Attempts  int
+}
+
+type AccountRecoveryCode struct {
+	AccountID int64
+	CodeHash  []byte
+	CreatedAt pgtype.Timestamptz
+	UsedAt    pgtype.Timestamptz
+}
+
 type AccountSession struct {
-	ID          int64
-	TokenHash   []byte
-	AccountID   int64
-	CreatedAt   pgtype.Timestamptz
-	LastUsedAt  pgtype.Timestamptz
-	ExpiresAt   pgtype.Timestamptz
-	RevokedAt   pgtype.Timestamptz
-	UserAgent   string
-	Ip          *netip.Addr
-	CharacterID pgtype.Int8
+	ID              int64
+	TokenHash       []byte
+	AccountID       int64
+	CreatedAt       pgtype.Timestamptz
+	LastUsedAt      pgtype.Timestamptz
+	ExpiresAt       pgtype.Timestamptz
+	RevokedAt       pgtype.Timestamptz
+	UserAgent       string
+	Ip              *netip.Addr
+	CharacterID     pgtype.Int8
+	AuthenticatedAt pgtype.Timestamptz
+	Factors         []string
+}
+
+type AccountTotp struct {
+	AccountID int64
+	Secret    []byte
+	CreatedAt pgtype.Timestamptz
+	EnabledAt pgtype.Timestamptz
+	LastStep  int64
+}
+
+type AccountWebauthnCeremony struct {
+	TokenHash []byte
+	Kind      string
+	SessionID pgtype.Int8
+	Name      string
+	Data      []byte
+	CreatedAt pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+}
+
+type AccountWebauthnUser struct {
+	AccountID  int64
+	UserHandle []byte
+	CreatedAt  pgtype.Timestamptz
 }
 
 type Character struct {

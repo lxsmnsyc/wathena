@@ -37,6 +37,8 @@ The web client and the server need one message format. It must be:
 4. The server closes a connection that sends anything other than `Hello` first, or no `Hello` within 10 seconds.
 5. The gateway accepts the WebSocket only from the trusted client origins the server owner lists, from pages on its own host, or without an `Origin` header (not a browser page).
 
+A connection belongs to the login session that made its ticket. When that session ends, at logout or when a new login in the same browser replaces it, the server sends `DISCONNECT_REASON_LOGGED_OUT` and closes the connection ([decision 0005](../decisions/0005-two-factor-login-and-passkeys.md)).
+
 A `waserver --dev` server, which only listens on a loopback address, instead takes the character's name as the token.
 
 ### Versions

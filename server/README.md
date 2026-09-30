@@ -11,7 +11,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `progression` | Exp tables, level ups, status and skill points, the renewal level penalty, exp shares, drop rates and rolls, where drops land, and pick-up rights, ported from rAthena's `pc.cpp`, `mob.cpp` and `map.cpp` with the default `conf/battle` settings. |
 | `character` | A saved character as plain data: what the zone loads and hands to the store. |
 | `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
-| `account` | The account service under `/account/`: signup, login, logout, login sessions, the character list with character creation, Play, and one-time game tickets. Argon2id passwords, CSRF tokens, a strict Content Security Policy, rate limits and a captcha hook. `GameTickets` checks the ticket in `Hello` for the gateway. See [decision 0004](../docs/decisions/0004-account-service-and-game-tickets.md). |
+| `account` | The account service under `/account/`: signup, login, logout, login sessions, account settings with TOTP codes, recovery codes and passkeys, the character list with character creation, Play, and one-time game tickets. Argon2id passwords, CSRF tokens, a strict Content Security Policy, rate limits and a captcha hook. `GameTickets` checks the ticket in `Hello` for the gateway. See decisions [0004](../docs/decisions/0004-account-service-and-game-tickets.md) and [0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). |
 | `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. |
 | `cmd/waserver` | A server in one process: an asset build over HTTP, the account pages, and one zone over WebSocket, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. |
 
@@ -75,7 +75,7 @@ docker exec -it wathena-pg psql -U postgres -c '\password wathena_migrator' -c '
 
 - `wathena_migrator` owns the schema. Only `wactl migrate` uses it.
 - `wathena_game` is what the game side of `waserver` uses. It reads and writes rows, and cannot change the schema, delete accounts and characters, or read passwords and login sessions. It only reads and deletes game tickets.
-- `wathena_account` is what the account service uses. It alone reads password hashes and login sessions. It makes accounts and characters, and cannot change or delete characters.
+- `wathena_account` is what the account service uses. It alone reads password hashes, login sessions, TOTP secrets, recovery codes and passkeys. It makes accounts and characters, and cannot change or delete characters.
 
 Set the passwords of all three with `\password` in psql, as the header of `roles.sql` shows. Apply the migrations as the migrator:
 
@@ -94,6 +94,7 @@ Without `--dev`, `waserver` needs both database URLs. It serves the account page
 ```text
 export WATHENA_DATABASE_URL='postgres://wathena_game:PASSWORD@127.0.0.1:5432/wathena?sslmode=disable'
 export WATHENA_ACCOUNT_DATABASE_URL='postgres://wathena_account:PASSWORD@127.0.0.1:5432/wathena?sslmode=disable'
+export WATHENA_ACCOUNT_SECRET_KEY="$(openssl rand -base64 32)"
 go run ./server/cmd/waserver --assets /path/to/build --map prontera \
   --account-url http://localhost:8300 --origins http://localhost:5173
 ```
@@ -102,17 +103,26 @@ With the web client's dev server running, open `http://localhost:5173/?server=ws
 
 Use the same host name, such as `localhost`, for the client and the account service. The login cookie is `SameSite=Strict`, so the browser only sends it with the ticket request when both are on the same site. `localhost` and `127.0.0.1` are different sites.
 
+`WATHENA_ACCOUNT_SECRET_KEY` encrypts TOTP secrets in the database. Keep the same key across restarts, or players with TOTP must use recovery codes. Without it, TOTP setup is off. `WATHENA_ACCOUNT_OLD_SECRET_KEYS` lists older keys after a key change. See [deploy/README.md](../deploy/README.md).
+
+Two-factor login and passkeys:
+
+- `/account/settings` turns TOTP on and off, makes new recovery codes, and adds and removes passkeys. The characters page links to it.
+- Turning TOTP on, new recovery codes, and passkey changes need a login from the last 10 minutes. Otherwise the player confirms the password (and code) or a passkey first.
+- Passkeys need `--account-url` with a domain name, such as `http://localhost:8300`. The browser only allows passkeys on https pages and on `localhost`.
+- A logout, or a new login in the same browser, closes the game connection that its session opened, with `DISCONNECT_REASON_LOGGED_OUT`.
+
 Flags:
 
 | Flag | Use |
 |---|---|
 | `--origins` | Trusted web client origins, as `scheme://host[:port]`, comma-separated. They may fetch tickets and open the WebSocket, and Play may send players to them. Default `http://localhost:5173,http://127.0.0.1:5173`. |
-| `--account-url` | The public URL of the account pages, such as `https://play.example.com`. With https, cookies are `Secure` with the `__Host-` prefix, and HSTS is sent. Empty takes the origin from each request, for development. |
+| `--account-url` | The public URL of the account pages, such as `https://play.example.com`. With https, cookies are `Secure` with the `__Host-` prefix, and HSTS is sent. Its host is the passkeys' relying party ID. Empty takes the origin from each request, for development, and turns passkeys off. |
 | `--play-url` | Where Play goes when the account pages were not opened from a client. Its origin must be in `--origins`. |
 | `--trusted-proxies` | Proxy addresses or CIDR blocks whose `X-Forwarded-For` gives the client address, for rate limits. |
 | `--captcha` | `none` (default), or `dev` for a checkbox that shows where a real captcha goes. A real provider is not built yet. |
 
-Rate limits, session lifetimes and Argon2id parameters are in [decision 0004](../docs/decisions/0004-account-service-and-game-tickets.md). The rate limits live in the memory of the process.
+Rate limits, session lifetimes and Argon2id parameters are in [decision 0004](../docs/decisions/0004-account-service-and-game-tickets.md). TOTP, recovery code, pending login and passkey parameters are in [decision 0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). The rate limits live in the memory of the process.
 
 ### Changing the schema or queries
 

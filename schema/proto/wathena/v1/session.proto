@@ -57,4 +57,7 @@ enum DisconnectReason {
   DISCONNECT_REASON_BAD_MESSAGE = 5;
   DISCONNECT_REASON_BANNED = 6;
   DISCONNECT_REASON_SERVER_SHUTDOWN = 7;
+  // The login session that opened this connection ended, such as at
+  // logout or when a new login in the same browser replaced it.
+  DISCONNECT_REASON_LOGGED_OUT = 8;
 }

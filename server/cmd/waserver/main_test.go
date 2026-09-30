@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
@@ -108,5 +109,31 @@ func TestParseProxies(t *testing.T) {
 	}
 	if _, err := parseProxies("nope"); err == nil {
 		t.Error("nope parsed")
+	}
+}
+
+func TestLoadSealer(t *testing.T) {
+	const key = "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
+	t.Setenv(secretKeyEnv, "")
+	t.Setenv(oldSecretKeysEnv, "")
+	if s, err := loadSealer(); s != nil || err != nil {
+		t.Errorf("no key: %v %v", s, err)
+	}
+	t.Setenv(secretKeyEnv, key)
+	if s, err := loadSealer(); s == nil || err != nil {
+		t.Errorf("a key: %v", err)
+	}
+	t.Setenv(oldSecretKeysEnv, key+", "+key)
+	if s, err := loadSealer(); s == nil || err != nil {
+		t.Errorf("old keys: %v", err)
+	}
+	t.Setenv(secretKeyEnv, "too short")
+	_, err := loadSealer()
+	if err == nil || strings.Contains(err.Error(), "too short") {
+		t.Errorf("a bad key: %v", err)
+	}
+	t.Setenv(secretKeyEnv, "")
+	if _, err := loadSealer(); err == nil {
+		t.Error("old keys without a key were taken")
 	}
 }

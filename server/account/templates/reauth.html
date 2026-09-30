@@ -1,0 +1,12 @@
+{{define "reauth.html"}}{{template "head" .}}
+<p>You are changing how <strong>{{.Account}}</strong> logs in. Enter your password{{if .TOTPOn}} and a code{{end}} again first.</p>
+<form method="post" action="/account/reauth">
+{{template "hidden" .}}
+<input type="hidden" name="next" value="{{.Next}}">
+<label>Password <input type="password" name="password" autocomplete="current-password" required maxlength="256" autofocus></label>
+{{if .TOTPOn}}<label>Code from your app, or a recovery code <input name="code" autocomplete="one-time-code" required maxlength="24" spellcheck="false" autocapitalize="off"></label>
+{{end}}<button type="submit">Continue</button>
+</form>
+{{template "passkey" .}}
+<p><a href="/account/settings">Back to settings</a></p>
+{{template "foot" .}}{{end}}

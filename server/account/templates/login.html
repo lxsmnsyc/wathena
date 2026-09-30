@@ -6,5 +6,6 @@
 {{.Captcha}}
 <button type="submit">Log in</button>
 </form>
+{{template "passkey" .}}
 <p>No account yet? <a href="/account/signup{{if .Return}}?return={{.Return}}{{end}}">Sign up</a>.</p>
 {{template "foot" .}}{{end}}
