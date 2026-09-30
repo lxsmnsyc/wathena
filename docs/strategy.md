@@ -215,7 +215,7 @@ Approach:
 | Server language | Go, current stable release. |
 | Networking | `coder/websocket` behind TLS. There is no raw TCP game port. |
 | Database | PostgreSQL 18 or later (section 3.5). `jackc/pgx` driver and `pgxpool`. `sqlc` generates typed query code. |
-| Schema migrations | `goose` or Atlas, with migration files in the repository. |
+| Schema migrations | `goose`, with SQL migration files in the repository ([decision 0003](decisions/0003-database-migrations-and-queries.md)). |
 | Inter-service messages | gRPC (`grpc-go`) or ConnectRPC. |
 | Scripting | C Lua 5.4 through our own cgo binding (section 3.2). |
 | Game data | YAML files read with `goccy/go-yaml`, validated with JSON Schema. Same layout as `db/*.yml` where possible. |
@@ -2095,16 +2095,20 @@ Status on 2026-10-01:
 
 - Phases 0a, 0b, and 1 are done.
 - Phase 2 is partly done:
-  - Done: the gateway, one zone per map, walking, local chat, and per-zone secret random streams.
-  - Not started: accounts, the database, saving, map changes, bots, and all-in-one mode.
+  - Done: the gateway, one zone per map, walking, local chat, per-zone secret random streams, the database, and saving.
+  - Not started: accounts, map changes, bots, and all-in-one mode.
 - Some phase 4 work was done early:
   - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen.
   - All of it is ported from rAthena and checked against the phase 0a reference data.
-  - It keeps its state in memory until phase 2 adds the database.
+  - Characters, their progress and their inventory are saved in PostgreSQL.
 
 The order from here:
 
-1. Database and saving. The PostgreSQL schema and migrations for accounts, characters, inventory, progress, and stats. Item writes must not allow duplication.
+1. Database and saving. Done on 2026-10-01 ([decision 0003](decisions/0003-database-migrations-and-queries.md)):
+   - goose migrations for accounts, characters and inventory, with CHECK constraints and item serials. `wactl migrate` applies them, and `waserver` refuses to start while any are pending.
+   - sqlc queries, a pool of save workers, saves every 30 seconds and at logout and shutdown, a save version against stale saves, and one session per character.
+   - A migrator role and a game role without DDL rights.
+   - Left for later steps: saving at map changes (step 3), the item log that records serials (with trades, in phase 5), and the account service's own tables and role (step 2).
 2. Account service. Signup, login, Argon2id, session tokens, and rate limits, then two-factor login and passkeys. It replaces the `--dev` sessions.
 3. More than one map. Several zones in one process, map changes, and warps.
 4. Bots and load test. The headless bot client and the 500-bot tick budget test.

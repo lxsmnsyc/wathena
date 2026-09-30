@@ -102,8 +102,10 @@ The boundaries are:
 
 | Threat | Mitigation | Status | Reference |
 |---|---|---|---|
-| Item duplication. | Transactions for trades, storage, mail, and vending. Serial numbers on every item, with a job that flags duplicates. Database constraints on amounts. | Decided. | Strategy 3.5, 7.5 |
-| Zeny overflow. | Checked math, and database constraints that reject negative or overflowing amounts. | Decided. | Strategy 7.5 |
+| Item duplication. | Transactions for trades, storage, mail, and vending. Serial numbers on every item, with a job that flags duplicates. Database constraints on amounts. | Done for saving: every inventory row has a UUIDv7 serial as its primary key, one stack per slot, amounts of 1 to 30000, and a character and its inventory are saved in one transaction. Trades, the item log, and the duplicate job are decided. | Strategy 3.5, 7.5, decision 0003 |
+| Zeny overflow. | Checked math, and database constraints that reject negative or overflowing amounts. | Database constraints done: zeny is 0 to 2147483647, exp and points are 0 or more. Checked math is decided. | Strategy 7.5, decision 0003 |
+| A stale session overwrites newer progress, such as after a second login. | One session per character: a second login kicks the first and waits for its last save. A save version on each character rejects saves from an older session, and the zone then disconnects that session's player. | Done. | Decision 0003 |
+| SQL injection. | Game code only runs queries that sqlc generates, which bind every parameter. A CI check rejects `fmt.Sprintf` and raw query calls in database code. | Done. | Strategy 7.2, decision 0003 |
 | Predicting drops and critical hits. | Gameplay randomness uses ChaCha8 per zone, seeded from `crypto/rand`. | Decided. | Strategy 8.3 |
 | Predicting secret generation, such as loot or quest answers. | The world secret never leaves the server. Child keys come from HMAC-SHA256, so public seeds reveal nothing about secret branches. Secret branches use ChaCha8. | Done for the seed tree, with test vectors. | [rng-v1](../specs/rng-v1.md) |
 | Leaking the world secret through logs. | `rng.Node` prints as redacted. Keys are only readable through `Key()`. | Done. | `shared/rng` |
@@ -124,7 +126,8 @@ The boundaries are:
 | Threat | Mitigation | Status | Reference |
 |---|---|---|---|
 | A staff member creates items or reads data without cause. | Role-based permissions per command. An audit log of every action. A reason is required for item and zeny creation. | Decided. | Strategy 7.8, 10.6 |
-| A compromised service reaches all data. | One PostgreSQL role per service, with only the tables and rights it needs. Mutual TLS between services. | Decided. | Strategy 7.8 |
+| A compromised service reaches all data. | One PostgreSQL role per service, with only the tables and rights it needs. Mutual TLS between services. | Done for the game role: `wathena_game` has no DDL rights and cannot delete accounts or characters, and migrations run as `wathena_migrator`. Other services' roles and mutual TLS are decided. | Strategy 7.8, decision 0003 |
+| The database password leaks through process lists or logs. | `waserver` and `wactl migrate` read the database URL from an environment variable. The URL is never logged, and parse errors do not quote it. | Done. | Decision 0003 |
 | Secrets committed to the repository. | Secrets come from environment variables or a secret manager. | Decided. | Strategy 7.8 |
 | Lost data. | Encrypted backups and scheduled restore tests. | Decided. | Strategy 7.8 |
 

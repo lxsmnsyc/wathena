@@ -41,7 +41,7 @@ func TestAddStacks(t *testing.T) {
 			t.Errorf("add %d × %d: slot %d, %d; want slot %d", c.id, c.amount, slot, r, c.slot)
 		}
 	}
-	if inv.Slots[0] != (Slot{501, 8}) || inv.Count(123456) != 4 {
+	if inv.Slots[0] != (Slot{ID: 501, Amount: 8}) || inv.Count(123456) != 4 {
 		t.Errorf("slots %v", inv.Slots[:7])
 	}
 	// 8 × 7 + 10 + 2 × 40 + 2 × 0.1.
@@ -128,7 +128,7 @@ func TestAddFull(t *testing.T) {
 		t.Errorf("stack: slot %d, %d", slot, r)
 	}
 	// A stack in a slot past inventory_slots does not.
-	inv.Slots[150] = Slot{501, 1}
+	inv.Slots[150] = Slot{ID: 501, Amount: 1}
 	if _, r := inv.Add(tb.Get(501), 1, 1000); r != AddOverAmount {
 		t.Errorf("stack past the size: %d", r)
 	}

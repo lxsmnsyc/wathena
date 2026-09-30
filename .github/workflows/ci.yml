@@ -11,6 +11,23 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # The store's integration tests run against PostgreSQL 18, the minimum
+    # version (strategy section 3.5). They are skipped when
+    # WATHENA_TEST_DATABASE_URL is unset.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      WATHENA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -49,6 +66,23 @@ jobs:
           go run github.com/bufbuild/buf/cmd/buf@v1.73.0 generate
           git diff --exit-code -- gen ../client/src/gen
 
+  # The query code sqlc generates is committed, so it must match the
+  # migrations and queries. sqlc is pinned here, as buf is above.
+  queries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.mod
+      - name: Check generated code
+        working-directory: server/store
+        run: |
+          go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate
+          git diff --exit-code -- db
+          test -z "$(git status --porcelain -- db)"
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -71,6 +105,8 @@ jobs:
           cache-dependency-path: go.mod
       - run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
       - run: go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -exclude-generated ./...
+      # Game code uses only sqlc's queries, never SQL built with fmt.Sprintf.
+      - run: .github/scripts/sqlcheck.sh
 
   fuzz:
     runs-on: ubuntu-latest

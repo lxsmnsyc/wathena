@@ -1,0 +1,17 @@
+version: "2"
+sql:
+  - engine: postgresql
+    schema: migrations
+    queries: queries
+    gen:
+      go:
+        package: db
+        out: db
+        sql_package: pgx/v5
+        # int columns become Go ints. pgx refuses a value that does not
+        # fit the column, so no conversion can overflow silently.
+        overrides:
+          - db_type: pg_catalog.int4
+            go_type: int
+          - db_type: pg_catalog.int2
+            go_type: int

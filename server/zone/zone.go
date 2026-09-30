@@ -9,6 +9,7 @@ import (
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -86,6 +87,24 @@ type Player struct {
 	regenTicks regenState
 	// pending are events for the player alone, sent with the next frame.
 	pending []*wathenav1.Event
+
+	// load is the character the player enters as. When it is nil, the
+	// player enters as a new character.
+	load *character.Character
+	// record holds the saved fields the zone does not change, such as
+	// the database IDs and zeny.
+	record character.Info
+	// saver saves the player's character. It is nil for a player that
+	// only lives in memory.
+	saver Saver
+	// saved is the last character handed to saver. nextSave is when the
+	// next autosave runs, in zone milliseconds.
+	saved    *character.Character
+	nextSave int64
+	// left closes once the zone has removed the player and handed its
+	// last save to saver.
+	left chan struct{}
+	gone bool
 }
 
 type entity struct {
@@ -147,9 +166,10 @@ type Zone struct {
 	// Status holds the job tables players' stats come from. Set it before
 	// Run. Without it, every player has PlayerStatus.
 	Status *status.Tables
-	// Start is the character every player starts as, until characters
-	// are stored: its job, sex, raised stats and skills. Its levels are
-	// unused, since players start at level 1. Set it before Run.
+	// Start is the character every new character starts as: its job,
+	// raised stats and skills. Its levels and sex are unused, since new
+	// characters start at level 1 with the sex of their look. Set it
+	// before Run.
 	Start status.Character
 	// PlayerStatus is every player's battle status when Status is nil.
 	PlayerStatus battle.Status
@@ -159,9 +179,12 @@ type Zone struct {
 	// Items is the item database. Without it, every item is an Etc item
 	// with no weight. Set it before Run.
 	Items *item.Table
-	// StartItems are items every player starts with, for development.
-	// Set it before Run.
+	// StartItems are items every new character starts with, for
+	// development. Set it before Run.
 	StartItems []StartItem
+	// SaveInterval is how often a player's changed character is saved.
+	// It is DefaultSaveInterval when 0. Set it before Run.
+	SaveInterval time.Duration
 
 	// players maps charID to the players in the zone.
 	players  map[uint32]*Player
@@ -178,6 +201,11 @@ type Zone struct {
 	joins    chan joinRequest
 	leaves   chan *Player
 	commands chan command
+	// stale gets players whose saver lost the character to a newer
+	// session.
+	stale chan *Player
+	// stopped closes when Run returns, after the last saves.
+	stopped chan struct{}
 }
 
 type joinRequest struct {
@@ -203,29 +231,34 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		joins:    make(chan joinRequest),
 		leaves:   make(chan *Player, 16),
 		commands: make(chan command, 1024),
+		stale:    make(chan *Player),
+		stopped:  make(chan struct{}),
 	}
 	z.spawn(spawns)
 	return z
 }
 
-// Run advances the zone until ctx ends.
+// Run advances the zone until ctx ends. It then hands every player's
+// character to its saver and drops the players.
 func (z *Zone) Run(ctx context.Context) {
+	defer close(z.stopped)
 	z.start = time.Now()
 	t := time.NewTicker(Tick)
 	defer t.Stop()
 	for {
 		select {
 		case <-ctx.Done():
-			for e := range z.entities {
-				if e.player != nil {
-					z.drop(e.player)
-				}
+			for _, p := range z.players {
+				z.save(p, true)
+				z.drop(p)
 			}
 			return
 		case j := <-z.joins:
 			j.done <- z.join(j.player)
 		case p := <-z.leaves:
 			z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+		case p := <-z.stale:
+			z.loggedInElsewhere(p)
 		case c := <-z.commands:
 			z.handle(c)
 		case <-t.C:
@@ -234,23 +267,53 @@ func (z *Zone) Run(ctx context.Context) {
 	}
 }
 
-// Join adds a player at the walkable cell nearest the map's center, and
-// returns the player's own entity ID and the current tick.
+// Join adds a new character that only lives in memory, at the walkable
+// cell nearest the map's center. It returns the player's own entity ID
+// and the current tick.
 func (z *Zone) Join(ctx context.Context, name string, look Look) (*Player, uint32, uint32, error) {
+	c := z.NewCharacter(name, look)
+	return z.JoinCharacter(ctx, &c, nil)
+}
+
+// JoinCharacter adds a player as a loaded character, and returns the
+// player's own entity ID and the current tick. saver, when not nil,
+// saves the character while the player is in the zone and when it
+// leaves. The zone never waits on saver.
+func (z *Zone) JoinCharacter(ctx context.Context, c *character.Character, saver Saver) (*Player, uint32, uint32, error) {
 	out := make(chan *wathenav1.ServerMessage, outBuffer)
-	p := &Player{Name: name, Look: look, Out: out, out: out, netIDs: map[*entity]uint32{}, fresh: true}
+	p := &Player{
+		Name: c.Name, Out: out, out: out, netIDs: map[*entity]uint32{}, fresh: true,
+		load: c, saver: saver, left: make(chan struct{}),
+	}
+	if n, ok := saver.(StaleNotifier); ok {
+		n.OnStale(func() { z.staleSave(p) })
+	}
 	done := make(chan joinResult, 1)
 	select {
 	case z.joins <- joinRequest{p, done}:
 	case <-ctx.Done():
 		return nil, 0, 0, ctx.Err()
+	case <-z.stopped:
+		return nil, 0, 0, ErrStopped
 	}
 	r := <-done
 	return p, r.netID, r.tick, nil
 }
 
-// Leave removes a player. The player's Out channel closes.
-func (z *Zone) Leave(p *Player) { z.leaves <- p }
+// Leave removes a player. The player's Out channel closes. Leave returns
+// once the zone has handed the player's last save to its saver, or has
+// stopped.
+func (z *Zone) Leave(p *Player) {
+	select {
+	case z.leaves <- p:
+	case <-z.stopped:
+		return
+	}
+	select {
+	case <-p.left:
+	case <-z.stopped:
+	}
+}
 
 // WalkTo asks for the player to walk to a cell. seq is the client
 // message's sequence number, which frames acknowledge. It returns false
@@ -277,39 +340,66 @@ func (z *Zone) Ack(p *Player, seq uint32) bool {
 }
 
 func (z *Zone) join(p *Player) joinResult {
-	x, y := z.startCell()
+	c := p.load
+	if c == nil {
+		n := z.NewCharacter(p.Name, p.Look)
+		c = &n
+	}
+	p.load = nil
+	p.record = c.Info
+	p.Look = Look{Job: uint32(c.Job), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
+	x, y := c.X, c.Y
+	if c.Map != z.Map || c.HP <= 0 || z.grid.NoPass(x, y) {
+		// A character from another map, one that logged out dead, or
+		// one on a cell that is no longer walkable starts at the start
+		// cell, as a revived player does.
+		x, y = z.startCell()
+	}
 	e := &entity{player: p, x: x, y: y, speed: WalkSpeed}
 	p.entity = e
 	z.entities[e] = true
 	z.nextChar++
 	p.charID = z.nextChar
 	z.players[p.charID] = p
-	p.inventory = item.NewInventory()
+	p.inventory = restoreInventory(z.Items, c)
 	// pc_authok starts the regen waits at login.
 	p.regenTicks = regenState{hp: z.now, sp: z.now}
 	p.itemDelays = map[uint32]int64{}
 	p.statusDelays = map[string]int64{}
 	p.sent = map[wathenav1.StatId]int64{}
 	p.char = z.Start
-	if t := z.Progress; t != nil {
-		// A new character at level 1. The first frame carries its levels
-		// and exp.
-		p.progress = t.NewCharacter(p.char.Job)
+	p.char.Job, p.char.Male, p.char.Stats = c.Job, c.Male, c.Stats
+	if z.Progress != nil {
+		p.progress = progression.Character{
+			Job: c.Job, BaseLevel: c.BaseLevel, JobLevel: c.JobLevel,
+			BaseExp: c.BaseExp, JobExp: c.JobExp,
+			StatusPoints: c.StatusPoints, SkillPoints: c.SkillPoints,
+		}
+		// The first frame carries the levels and exp.
 		p.pending = append(p.pending, z.progressStats(p, nil))
 	}
 	z.recalc(p)
-	// A new character has full HP and SP. hpChanged sends the player its
-	// HP in the first frame.
-	e.hp, p.sp = int64(e.status.MaxHP), int64(e.status.MaxSP)
+	// HP and SP are the saved ones, up to their maximum. A character that
+	// logged out dead comes back with full HP, as a revived player does.
+	// hpChanged sends the player its HP in the first frame.
+	e.hp, p.sp = min(c.HP, int64(e.status.MaxHP)), min(c.SP, int64(e.status.MaxSP))
+	if c.HP <= 0 {
+		e.hp = int64(e.status.MaxHP)
+	}
 	e.hpChanged = e.status.MaxHP > 0
 	if e.status.Speed > 0 {
 		e.speed = e.status.Speed
 	}
-	z.giveStartItems(p)
+	z.updateWeight(p)
 	p.pending = append(p.pending, inventoryList(p))
 	if s := z.battleStats(p); s != nil {
 		p.pending = append(p.pending, s)
 	}
+	// The first save comes one interval after the player enters.
+	if p.saver != nil {
+		p.saved = z.snapshot(p)
+	}
+	p.nextSave = z.now + z.saveInterval().Milliseconds()
 	// The player sees itself from the first frame.
 	return joinResult{netID: p.netID(e), tick: z.tick}
 }
@@ -341,6 +431,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 	if p.entity == nil || !z.entities[p.entity] {
 		return
 	}
+	z.save(p, true)
 	delete(z.entities, p.entity)
 	delete(z.players, p.charID)
 	z.forget(p.entity)
@@ -532,6 +623,7 @@ func (z *Zone) stepAt(now int64) {
 	z.dropItems()
 	z.expireItems()
 	z.naturalHeal()
+	z.autosave()
 	for e := range z.entities {
 		if e.player != nil {
 			z.update(e.player)

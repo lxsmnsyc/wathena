@@ -42,6 +42,9 @@ export class Connection {
     socket.binaryType = 'arraybuffer';
     return new Promise((resolve, reject) => {
       let connection: Connection | undefined;
+      // The server's reason, when it gave one, stays shown after the
+      // socket closes.
+      let reason: string | undefined;
       socket.addEventListener('open', () => {
         const hello = create(ClientMessageSchema, {
           seq: 1,
@@ -73,7 +76,8 @@ export class Connection {
             handlers.events(m.body.value.events, m.body.value.ackSeq);
             break;
           case 'disconnect':
-            handlers.closed(m.body.value.message);
+            reason = m.body.value.message;
+            handlers.closed(reason);
             if (connection === undefined) {
               reject(new Error(m.body.value.message));
             }
@@ -87,7 +91,9 @@ export class Connection {
         if (connection === undefined) {
           reject(new Error('the server closed the connection'));
         }
-        handlers.closed('Disconnected from the server.');
+        if (reason === undefined) {
+          handlers.closed('Disconnected from the server.');
+        }
       });
     });
   }

@@ -5,6 +5,9 @@ package item
 type Slot struct {
 	ID     uint32
 	Amount int
+	// Serial identifies the stack or item instance. Add leaves it zero in
+	// a slot it fills, for the caller to set.
+	Serial Serial
 }
 
 // Inventory is a player's inventory, as mmo_charstatus's inventory with

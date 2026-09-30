@@ -17,6 +17,8 @@ commands:
   assets serve     serve a build over HTTP for development
   assets scan      list what a game client folder contains
   assets sprites   convert monster and NPC sprites and report sizes
+  migrate status   list the database migrations and which are applied
+  migrate up       apply pending database migrations
 `
 
 func main() {
@@ -40,6 +42,10 @@ func main() {
 		err = assetsScan(os.Args[3:])
 	case "assets sprites":
 		err = assetsSprites(os.Args[3:])
+	case "migrate status":
+		err = migrate(os.Args[3:], false)
+	case "migrate up":
+		err = migrate(os.Args[3:], true)
 	default:
 		fmt.Fprint(os.Stderr, usage)
 		os.Exit(2)

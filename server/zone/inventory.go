@@ -40,15 +40,6 @@ func (z *Zone) itemConfig() item.Config {
 	return item.DefaultConfig(true)
 }
 
-// giveStartItems adds the zone's start items to a new player. Items the
-// inventory cannot take are left out.
-func (z *Zone) giveStartItems(p *Player) {
-	for _, s := range z.StartItems {
-		p.inventory.Add(z.Items.Get(s.ID), s.Amount, p.maxWeight)
-	}
-	z.updateWeight(p)
-}
-
 // inventoryList is the full inventory, for the first frame.
 func inventoryList(p *Player) *wathenav1.Event {
 	var slots []*wathenav1.InventoryItem
@@ -74,6 +65,11 @@ func (z *Zone) addItem(p *Player, id uint32, amount int) item.AddResult {
 	slot, res := p.inventory.Add(z.Items.Get(id), amount, p.maxWeight)
 	if res != item.AddSuccess {
 		return res
+	}
+	// A new stack or instance gets its own serial. Items picked up from
+	// the ground get a new one too, since ground items are not saved.
+	if s := &p.inventory.Slots[slot]; s.Serial.IsZero() {
+		s.Serial = item.NewSerial()
 	}
 	p.pending = append(p.pending, wathenav1.Event_builder{InventoryAdd: wathenav1.InventoryAdd_builder{
 		ItemId: id,

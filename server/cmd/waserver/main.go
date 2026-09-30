@@ -6,8 +6,14 @@
 // There is no account service yet, so --dev accepts any valid name as a
 // session token. Never expose a --dev server to the internet.
 //
-// --start-items gives every player items, such as 501:10,512:20 for 10
-// Red Potions and 20 Apples. It is for development only.
+// --start-items gives every new character items, such as 501:10,512:20
+// for 10 Red Potions and 20 Apples. It is for development only.
+//
+// --database, or the WATHENA_DATABASE_URL environment variable, is a
+// PostgreSQL URL. With it, characters are loaded and saved there, and
+// waserver refuses to start while migrations are pending. Without it,
+// characters only live in memory. Prefer the environment variable, so
+// the password does not show in process lists.
 package main
 
 import (
@@ -22,17 +28,22 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/lxsmnsyc/wathena/internal/assets/build"
 	"github.com/lxsmnsyc/wathena/internal/assets/serve"
 	"github.com/lxsmnsyc/wathena/internal/assets/wmap"
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -53,8 +64,12 @@ func run() error {
 	origins := flag.String("origins", "localhost:*,127.0.0.1:*", "hosts pages may connect from, comma-separated")
 	mode := flag.String("mode", "renewal", "rAthena mode whose recorded spawns to use: renewal or pre-renewal, or none")
 	build := flag.String("build", "all_1", "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank. Other builds than all_1 are for testing")
-	startItems := flag.String("start-items", "", "items every player starts with, as id:amount pairs such as 501:10,512:20, for development")
+	startItems := flag.String("start-items", "", "items every new character starts with, as id:amount pairs such as 501:10,512:20, for development")
+	database := flag.String("database", "", "PostgreSQL URL to keep characters in; prefer the "+databaseEnv+" environment variable. Without either, characters only live in memory")
 	flag.Parse()
+	if *database == "" {
+		*database = os.Getenv(databaseEnv)
+	}
 	if *assets == "" {
 		return errors.New("--assets is required")
 	}
@@ -75,7 +90,7 @@ func run() error {
 	}
 	defer func() { _ = files.Close() }()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	var tables *progression.Tables
 	var data *progression.Data
@@ -107,12 +122,35 @@ func run() error {
 	if z.StartItems, err = parseStartItems(*startItems); err != nil {
 		return err
 	}
-	go z.Run(ctx)
-
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	gw := &gateway.Gateway{Zone: z, Sessions: gateway.DevSessions{}, Origins: strings.Split(*origins, ","), Log: log}
+	var st *store.Store
+	if *database != "" {
+		pool, err := openDatabase(ctx, *database)
+		if err != nil {
+			return err
+		}
+		defer pool.Close()
+		st = store.New(pool, store.Options{Log: log})
+		gw.Characters = devCharacters{store: st, zone: z}
+	}
+	go z.Run(ctx)
+	if st != nil {
+		// On shutdown the zone hands every player's last save to the
+		// store, which then gets 10 seconds to write them.
+		defer func() {
+			<-z.Stopped()
+			drain, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := st.Close(drain); err != nil {
+				log.Error("saves lost at shutdown", "err", err)
+			}
+		}()
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", http.StripPrefix("/assets", files))
-	mux.Handle("/ws", &gateway.Gateway{Zone: z, Sessions: gateway.DevSessions{}, Origins: strings.Split(*origins, ","), Log: log})
+	mux.Handle("/ws", gw)
 	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		<-ctx.Done()
@@ -120,11 +158,58 @@ func run() error {
 		defer cancel()
 		_ = srv.Shutdown(shutdown)
 	}()
-	log.Info("serving", "map", name, "monsters", count(spawns), "assets", "http://"+*addr+"/assets/", "websocket", "ws://"+*addr+"/ws")
+	log.Info("serving", "map", name, "monsters", count(spawns), "database", st != nil, "assets", "http://"+*addr+"/assets/", "websocket", "ws://"+*addr+"/ws")
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil
+}
+
+// databaseEnv holds the database URL when --database is not given.
+const databaseEnv = "WATHENA_DATABASE_URL"
+
+// openDatabase connects to PostgreSQL and checks that no migrations are
+// pending. The URL is never logged, since it may hold a password.
+func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	cfg, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		// pgx's parse errors can quote the URL, password included.
+		return nil, errors.New("the database URL is not valid")
+	}
+	cfg.ConnConfig.RuntimeParams["application_name"] = "waserver"
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	check, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	if err := store.CheckMigrations(check, pool); err != nil {
+		pool.Close()
+		return nil, err
+	}
+	return pool, nil
+}
+
+// devCharacters loads characters from the database for --dev sessions,
+// whose token is the character name. The first login with a name makes
+// an account and a character of that name. This is for development only:
+// the account service replaces it.
+type devCharacters struct {
+	store *store.Store
+	zone  *zone.Zone
+}
+
+func (d devCharacters) Find(ctx context.Context, name string, look zone.Look) (int64, error) {
+	c := d.zone.NewCharacter(name, look)
+	return d.store.DevCharacter(ctx, &c)
+}
+
+func (d devCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {
+	c, s, err := d.store.Load(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	return c, s, nil
 }
 
 // loadGrid reads a map's cells from the asset build.
@@ -314,8 +399,9 @@ var builds = map[string]status.Stats{
 }
 
 // startCharacter loads the mode's job tables and makes the character
-// every player starts as, until characters are stored: a male novice
-// with no equipment and no skills, and the raised stats of a build. The
+// every new character starts as: a novice with no equipment and no
+// skills, and the raised stats of a build. The sex comes from the
+// session's look. The
 // default, all_1, is a new character as rAthena makes one for recent
 // clients: every stat at 1 and the level 1 status points to spend. The
 // other builds keep the same status points, for testing.

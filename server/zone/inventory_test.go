@@ -49,6 +49,16 @@ func invZone(t *testing.T, start ...StartItem) (*Zone, *Player, *Player) {
 	return z, a, b
 }
 
+// giveStartItems adds the zone's start items to a player that is
+// already in the zone, as a new character gets them.
+func (z *Zone) giveStartItems(p *Player) {
+	for _, s := range z.StartItems {
+		z.addItem(p, s.ID, s.Amount)
+	}
+	p.pending = nil
+	z.updateWeight(p)
+}
+
 func use(z *Zone, p *Player, slot int) {
 	z.handle(command{player: p, use: &slot})
 }
