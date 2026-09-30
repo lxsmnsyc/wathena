@@ -36,7 +36,7 @@ const (
 	textureConverter     = "grf-texture-1"
 	soundConverter       = "grf-sound-1"
 	modelConverter       = "grf-model-4"
-	mapConverter         = "grf-map-3"
+	mapConverter         = "grf-map-4"
 	effectConverter      = "grf-effect-2"
 	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
@@ -189,6 +189,11 @@ func (g *GRF) Items() ([]Item, error) {
 			}
 			rsw := s
 			lightmap := grfimport.LightmapName(name)
+			mapBase := strings.TrimPrefix(name, "map/")
+			toolKey := "none"
+			if tool, ok := grfimport.EmitterSource(c, mapBase); ok {
+				toolKey = sourceKey(tool)
+			}
 			convert := func() (*wmap.Map, *image.NRGBA, error) {
 				var data [3][]byte
 				for i, src := range []grf.Source{gat, gnd, rsw} {
@@ -210,9 +215,13 @@ func (g *GRF) Items() ([]Item, error) {
 				if err != nil {
 					return nil, nil, err
 				}
-				return mapimport.Convert(ga, gn, rw, names, lightmap)
+				emitters, err := grfimport.MapEmitters(c, mapBase)
+				if err != nil {
+					return nil, nil, err
+				}
+				return mapimport.Convert(ga, gn, rw, names, lightmap, emitters)
 			}
-			key := mapConverter + "|" + sourceKey(gat) + "|" + sourceKey(gnd) + "|" + sourceKey(rsw) + "|" + namesKey
+			key := mapConverter + "|" + sourceKey(gat) + "|" + sourceKey(gnd) + "|" + sourceKey(rsw) + "|" + toolKey + "|" + namesKey
 			items = append(items,
 				Item{Name: name, Ext: "wmap", CacheKey: key + "|" + name, Produce: func() ([]byte, error) {
 					m, _, err := convert()

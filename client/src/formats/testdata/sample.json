@@ -205,10 +205,73 @@
 			]
 		}
 	],
+	"Emitters": [
+		{
+			"Pos": [
+				1,
+				2,
+				-3
+			],
+			"Texture": "texture/effect/smoke1",
+			"SrcBlend": 5,
+			"DstBlend": 2,
+			"Color": [
+				5,
+				15,
+				20,
+				50
+			],
+			"Dir1": [
+				-0.6,
+				0,
+				-1
+			],
+			"Dir2": [
+				1,
+				1,
+				0.6
+			],
+			"Gravity": [
+				0.14,
+				0.4,
+				-0.14
+			],
+			"Radius": [
+				0.5,
+				0,
+				0.5
+			],
+			"Life": [
+				3,
+				4
+			],
+			"Rate": [
+				3,
+				4
+			],
+			"Size": [
+				3,
+				4
+			],
+			"Speed": 1,
+			"MaxCount": 20,
+			"Flags": 1,
+			"Scale": [
+				1,
+				1
+			],
+			"Rotate": [
+				0,
+				0,
+				0
+			]
+		}
+	],
 	"Deps": [
 		"lightmap/test",
 		"model/tree",
 		"sound/bird",
+		"texture/effect/smoke1",
 		"texture/grass",
 		"texture/water"
 	]

@@ -70,9 +70,33 @@ func finite(v ...float32) bool {
 	return true
 }
 
+// EmitterEffect is the RSW effect ID of particle emitters. The nth such
+// effect in a map uses the nth entry of the map's emitter table.
+const EmitterEffect = 974
+
+// Emitter is a particle emitter from the client's effect tool files, in
+// RO units: 1/5 cell, Y down.
+type Emitter struct {
+	Texture           string
+	SrcMode, DestMode int
+	Color             [4]float32
+	Dir1, Dir2        [3]float32
+	Gravity           [3]float32
+	Radius            [3]float32
+	Life, Rate, Size  [2]float32
+	Speed             float32
+	MaxCount          int
+	ZEnable           bool
+	Eternity          bool
+	BillboardOff      bool
+	Scale             [2]float32
+	RotateAngle       [3]float32
+}
+
 // Convert builds a map and its lightmap atlas. lightmapName is the asset
-// name the map uses for the atlas.
-func Convert(gat *GAT, gnd *GND, rsw *RSW, names Names, lightmapName string) (*wmap.Map, *image.NRGBA, error) {
+// name the map uses for the atlas. emitters are the map's particle
+// emitters by index, and may be nil.
+func Convert(gat *GAT, gnd *GND, rsw *RSW, names Names, lightmapName string, emitters map[int]Emitter) (*wmap.Map, *image.NRGBA, error) {
 	m := &wmap.Map{Width: gat.Width, Height: gat.Height}
 	deps := map[string]bool{}
 	dep := func(n string) string {
@@ -239,9 +263,24 @@ func Convert(gat *GAT, gnd *GND, rsw *RSW, names Names, lightmapName string) (*w
 			Cycle:  cycle,
 		})
 	}
+	emitterIndex := 0
 	for _, e := range rsw.Effects {
+		var em Emitter
+		hasEmitter := false
+		if e.ID == EmitterEffect {
+			// Count every emitter effect, even ones left out below, so the
+			// rest keep their table entries.
+			em, hasEmitter = emitters[emitterIndex]
+			emitterIndex++
+		}
 		if !defined(e.Pos[:]...) || !defined(e.Delay) || !defined(e.Param[:]...) {
 			continue
+		}
+		if hasEmitter {
+			if w, ok := convertEmitter(em, mapPoint(e.Pos, cx, cz), names); ok {
+				dep(w.Texture)
+				m.Emitters = append(m.Emitters, w)
+			}
 		}
 		m.Effects = append(m.Effects, wmap.Effect{ID: e.ID, Pos: mapPoint(e.Pos, cx, cz), Delay: e.Delay, Param: e.Param})
 	}
@@ -355,4 +394,61 @@ func rotY(a float64) mat4 {
 func rotZ(a float64) mat4 {
 	c, s := math.Cos(a), math.Sin(a)
 	return mat4{0: c, 1: s, 4: -s, 5: c, 10: 1, 15: 1}
+}
+
+// convertEmitter converts an emitter to map space: cells, Y up, and north
+// toward -Z. Emitters with undefined values or no texture are left out.
+func convertEmitter(e Emitter, pos [3]float32, names Names) (wmap.Emitter, bool) {
+	vals := []float32{e.Speed}
+	for _, v := range [][]float32{e.Color[:], e.Dir1[:], e.Dir2[:], e.Gravity[:], e.Radius[:], e.Life[:], e.Rate[:], e.Size[:], e.Scale[:], e.RotateAngle[:]} {
+		vals = append(vals, v...)
+	}
+	if !finite(vals...) || e.Texture == "" {
+		return wmap.Emitter{}, false
+	}
+	// RO's Y points down and its Z north, the opposite of map space.
+	vec := func(v [3]float32) [3]float32 {
+		return [3]float32{v[0] / unitsPerCell, -v[1] / unitsPerCell, -v[2] / unitsPerCell}
+	}
+	abs := func(v [3]float32) [3]float32 {
+		for i := range v {
+			v[i] = float32(math.Abs(float64(v[i])))
+		}
+		return v
+	}
+	u8 := func(f float32) uint8 { return uint8(math.Max(0, math.Min(255, math.Round(float64(f))))) }
+	blend := func(mode int) uint8 {
+		if mode < 1 || mode > 15 {
+			return 2
+		}
+		return uint8(mode) // #nosec G115 -- 1 to 15.
+	}
+	w := wmap.Emitter{
+		Pos:      pos,
+		Texture:  names.Texture(e.Texture),
+		SrcBlend: blend(e.SrcMode),
+		DstBlend: blend(e.DestMode),
+		Color:    [4]uint8{u8(e.Color[0]), u8(e.Color[1]), u8(e.Color[2]), u8(e.Color[3])},
+		Dir1:     vec(e.Dir1),
+		Dir2:     vec(e.Dir2),
+		Gravity:  vec(e.Gravity),
+		Radius:   abs(vec(e.Radius)),
+		Life:     e.Life,
+		Rate:     e.Rate,
+		Size:     [2]float32{e.Size[0] / unitsPerCell, e.Size[1] / unitsPerCell},
+		Speed:    e.Speed,
+		MaxCount: uint16(min(max(e.MaxCount, 0), wmap.MaxParticles)), // #nosec G115 -- clamped.
+		Scale:    e.Scale,
+		Rotate:   e.RotateAngle,
+	}
+	if e.ZEnable {
+		w.Flags |= wmap.DepthTest
+	}
+	if e.Eternity {
+		w.Flags |= wmap.Eternal
+	}
+	if e.BillboardOff {
+		w.Flags |= wmap.Flat
+	}
+	return w, true
 }

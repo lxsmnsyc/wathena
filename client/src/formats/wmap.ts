@@ -25,6 +25,7 @@ export interface WMap {
   objects: MapObject[];
   sounds: MapSound[];
   effects: MapEffect[];
+  emitters: Emitter[];
   /** Every asset name the map uses. */
   deps: string[];
 }
@@ -111,6 +112,40 @@ export interface MapEffect {
   params: [number, number, number, number];
 }
 
+export const DEPTH_TEST = 1;
+export const ETERNAL = 2;
+export const FLAT = 4;
+
+/**
+ * A particle emitter. Distances are in cells and times in seconds. A
+ * particle starts at position plus a random offset within ±radius, with
+ * a direction between dir1 and dir2 on each axis, and is at start + dir ×
+ * speed × t + gravity × speed × t² / 2 after t seconds.
+ */
+export interface Emitter {
+  position: [number, number, number];
+  texture: string;
+  srcBlend: number;
+  dstBlend: number;
+  /** RGBA, 0 to 255. */
+  color: [number, number, number, number];
+  dir1: [number, number, number];
+  dir2: [number, number, number];
+  gravity: [number, number, number];
+  radius: [number, number, number];
+  /** Ranges: seconds, particles per second, and half the width. */
+  life: [number, number];
+  rate: [number, number];
+  size: [number, number];
+  speed: number;
+  maxCount: number;
+  /** DEPTH_TEST, ETERNAL, and FLAT. */
+  flags: number;
+  scale: [number, number];
+  /** The plane of flat particles, in degrees about X, Y, and Z. */
+  rotate: [number, number, number];
+}
+
 const REQUIRED = ['CELL', 'GRND', 'LMAP', 'LGHT', 'OBJS', 'SNDS', 'EFCT', 'DEPS'];
 
 function vec3(r: Reader): [number, number, number] {
@@ -167,6 +202,7 @@ export function decodeWMap(data: Uint8Array): WMap {
     objects: [],
     sounds: [],
     effects: [],
+    emitters: [],
     deps: [],
   };
   const seen = new Set<string>();
@@ -233,6 +269,34 @@ export function decodeWMap(data: Uint8Array): WMap {
             position: vec3(s),
             delay: s.f32(),
             params: [s.f32(), s.f32(), s.f32(), s.f32()],
+          });
+        }
+        break;
+      case 'EMIT':
+        for (let i = s.count(130); i > 0; i--) {
+          const position = vec3(s);
+          const texture = s.str();
+          const srcBlend = s.u8();
+          const dstBlend = s.u8();
+          const c = s.take(4);
+          m.emitters.push({
+            position,
+            texture,
+            srcBlend,
+            dstBlend,
+            color: [c[0]!, c[1]!, c[2]!, c[3]!],
+            dir1: vec3(s),
+            dir2: vec3(s),
+            gravity: vec3(s),
+            radius: vec3(s),
+            life: [s.f32(), s.f32()],
+            rate: [s.f32(), s.f32()],
+            size: [s.f32(), s.f32()],
+            speed: s.f32(),
+            maxCount: s.u16(),
+            flags: s.u8(),
+            scale: [s.f32(), s.f32()],
+            rotate: vec3(s),
           });
         }
         break;
@@ -352,6 +416,11 @@ function readWater(s: Reader): Water {
 }
 
 function validate(m: WMap): void {
+  for (const e of m.emitters) {
+    if (e.maxCount > 1000) {
+      throw new FormatError('wmap: emitter particles');
+    }
+  }
   const g = m.ground;
   const t = g.tiles;
   for (let i = 0; i < t.count; i++) {

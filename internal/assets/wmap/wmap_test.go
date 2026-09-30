@@ -37,7 +37,14 @@ func sample() *Map {
 	m.Objects = []Object{{Model: "model/tree", Matrix: [16]float32{0: 1, 5: 1, 10: 1, 12: 3, 15: 1}, AnimType: 1, AnimSpeed: 2, BlockType: 3}}
 	m.Sounds = []Sound{{Name: "sound/bird", Pos: [3]float32{1, 2, -3}, Volume: 0.5, Width: 1, Height: 2, Range: 10, Cycle: 7}}
 	m.Effects = []Effect{{ID: 47, Pos: [3]float32{4, 5, -6}, Delay: 1, Param: [4]float32{1, 2, 3, 4}}}
-	m.Deps = []string{"lightmap/test", "model/tree", "sound/bird", "texture/grass", "texture/water"}
+	m.Emitters = []Emitter{{
+		Pos: [3]float32{1, 2, -3}, Texture: "texture/effect/smoke1", SrcBlend: 5, DstBlend: 2,
+		Color: [4]uint8{5, 15, 20, 50}, Dir1: [3]float32{-0.6, 0, -1}, Dir2: [3]float32{1, 1, 0.6},
+		Gravity: [3]float32{0.14, 0.4, -0.14}, Radius: [3]float32{0.5, 0, 0.5},
+		Life: [2]float32{3, 4}, Rate: [2]float32{3, 4}, Size: [2]float32{3, 4}, Speed: 1,
+		MaxCount: 20, Flags: DepthTest, Scale: [2]float32{1, 1},
+	}}
+	m.Deps = []string{"lightmap/test", "model/tree", "sound/bird", "texture/effect/smoke1", "texture/grass", "texture/water"}
 	return m
 }
 

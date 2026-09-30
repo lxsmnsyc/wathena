@@ -43,6 +43,8 @@ type Map struct {
 	Objects []Object
 	Sounds  []Sound
 	Effects []Effect
+	// Emitters are particle emitters, from the client's effect tool files.
+	Emitters []Emitter
 	// Deps lists every asset name the map uses.
 	Deps []string
 }
@@ -150,6 +152,43 @@ type Effect struct {
 	Param [4]float32
 }
 
+// MaxParticles is the most particles one emitter can have alive.
+const MaxParticles = 1000
+
+// Emitter flags.
+const (
+	// DepthTest hides particles behind the ground and models.
+	DepthTest = 1
+	// Eternal particles never fade or die.
+	Eternal = 2
+	// Flat particles lie in the plane given by Rotate instead of facing
+	// the camera.
+	Flat = 4
+)
+
+// Emitter spawns textured particles. Distances are in cells and times in
+// seconds. A particle starts at Pos plus a random offset within ±Radius,
+// with a direction between Dir1 and Dir2 on each axis, and is at
+// start + dir × Speed × t + Gravity × Speed × t² / 2 after t seconds.
+type Emitter struct {
+	Pos                [3]float32
+	Texture            string
+	SrcBlend, DstBlend uint8
+	Color              [4]uint8
+	Dir1, Dir2         [3]float32
+	Gravity            [3]float32
+	Radius             [3]float32
+	// Life, Rate, and Size are ranges: seconds, particles per second, and
+	// half the particle's width.
+	Life, Rate, Size [2]float32
+	Speed            float32
+	MaxCount         uint16
+	Flags            uint8
+	Scale            [2]float32
+	// Rotate is the plane of flat particles, in degrees about X, Y, and Z.
+	Rotate [3]float32
+}
+
 type writer struct{ b []byte }
 
 func (w *writer) u8(v uint8)    { w.b = append(w.b, v) }
@@ -191,6 +230,12 @@ func (m *Map) Validate() error {
 	}
 	for _, s := range m.Sounds {
 		names = append(names, s.Name)
+	}
+	for _, e := range m.Emitters {
+		names = append(names, e.Texture)
+		if e.MaxCount > MaxParticles {
+			return fmt.Errorf("%w: emitter with %d particles", ErrFormat, e.MaxCount)
+		}
 	}
 	if m.Water != nil {
 		if m.Water.SplitWidth < 0 || m.Water.SplitHeight < 0 || len(m.Water.Zones) != m.Water.SplitWidth*m.Water.SplitHeight || m.Water.SplitWidth > math.MaxUint16 || m.Water.SplitHeight > math.MaxUint16 || len(m.Water.Textures) > math.MaxUint8 {
@@ -322,6 +367,30 @@ func (m *Map) Encode() ([]byte, error) {
 			w.f32s(e.Param[:]...)
 		}
 	})
+	if len(m.Emitters) > 0 {
+		w.section("EMIT", func(w *writer) {
+			w.u32(len(m.Emitters))
+			for _, e := range m.Emitters {
+				w.f32s(e.Pos[:]...)
+				w.str(e.Texture)
+				w.u8(e.SrcBlend)
+				w.u8(e.DstBlend)
+				w.b = append(w.b, e.Color[:]...)
+				w.f32s(e.Dir1[:]...)
+				w.f32s(e.Dir2[:]...)
+				w.f32s(e.Gravity[:]...)
+				w.f32s(e.Radius[:]...)
+				w.f32s(e.Life[:]...)
+				w.f32s(e.Rate[:]...)
+				w.f32s(e.Size[:]...)
+				w.f32(e.Speed)
+				w.u16(int(e.MaxCount))
+				w.u8(e.Flags)
+				w.f32s(e.Scale[:]...)
+				w.f32s(e.Rotate[:]...)
+			}
+		})
+	}
 	w.section("DEPS", func(w *writer) {
 		w.u32(len(m.Deps))
 		for _, d := range m.Deps {
@@ -509,6 +578,27 @@ func Decode(b []byte) (*Map, error) {
 				e.Delay = s.f32()
 				s.f32s(e.Param[:])
 				m.Effects = append(m.Effects, e)
+			}
+		case "EMIT":
+			for range s.count(130) {
+				e := Emitter{}
+				s.f32s(e.Pos[:])
+				e.Texture = s.str()
+				e.SrcBlend, e.DstBlend = s.u8(), s.u8()
+				copy(e.Color[:], s.take(4))
+				s.f32s(e.Dir1[:])
+				s.f32s(e.Dir2[:])
+				s.f32s(e.Gravity[:])
+				s.f32s(e.Radius[:])
+				s.f32s(e.Life[:])
+				s.f32s(e.Rate[:])
+				s.f32s(e.Size[:])
+				e.Speed = s.f32()
+				e.MaxCount = uint16(s.u16()) // #nosec G115 -- read as 16 bits.
+				e.Flags = s.u8()
+				s.f32s(e.Scale[:])
+				s.f32s(e.Rotate[:])
+				m.Emitters = append(m.Emitters, e)
 			}
 		case "DEPS":
 			for range s.count(1) {

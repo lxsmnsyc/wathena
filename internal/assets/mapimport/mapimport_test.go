@@ -116,7 +116,7 @@ func convertTest(t *testing.T) (*wmap.Map, []byte) {
 		Texture: func(p string) string { return "texture/" + p },
 		Model:   func(p string) string { return "model/" + p },
 		Sound:   func(p string) string { return "sound/" + p },
-	}, "lightmap/t")
+	}, "lightmap/t", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,11 +228,39 @@ func TestUnnamedSound(t *testing.T) {
 		Texture: func(p string) string { return "texture/" + p },
 		Model:   func(p string) string { return "model/" + p },
 		Sound:   func(p string) string { return "" },
-	}, "lightmap/t")
+	}, "lightmap/t", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(m.Sounds) != 0 {
 		t.Errorf("%d sounds, want the unnamed one left out", len(m.Sounds))
+	}
+}
+
+func TestConvertEmitter(t *testing.T) {
+	names := Names{Texture: func(p string) string { return "texture/" + p }}
+	e := Emitter{
+		Texture: `effect\smoke1.bmp`, SrcMode: 9, DestMode: 2, Color: [4]float32{5, 15, 20, 300},
+		Dir1: [3]float32{-3, -5, -3}, Dir2: [3]float32{5, 0, 5}, Gravity: [3]float32{0.7, -2, 0.7},
+		Radius: [3]float32{-5, 0, 10}, Life: [2]float32{4, 4}, Rate: [2]float32{3, 4},
+		Size: [2]float32{15, 20}, MaxCount: 5000, ZEnable: true, Scale: [2]float32{1, 1},
+	}
+	w, ok := convertEmitter(e, [3]float32{1, 2, -3}, names)
+	if !ok {
+		t.Fatal("left out")
+	}
+	// Y and Z flip, units become cells, and radii become sizes.
+	if w.Dir1 != [3]float32{-0.6, 1, 0.6} || w.Gravity != [3]float32{0.14, 0.4, -0.14} || w.Radius != [3]float32{1, 0, 2} {
+		t.Errorf("vectors %v %v %v", w.Dir1, w.Gravity, w.Radius)
+	}
+	if w.Size != [2]float32{3, 4} || w.Color != [4]uint8{5, 15, 20, 255} || w.MaxCount != 1000 || w.Flags != wmap.DepthTest {
+		t.Errorf("emitter %+v", w)
+	}
+	if w.Texture != `texture/effect\smoke1.bmp` || w.SrcBlend != 9 || w.DstBlend != 2 {
+		t.Errorf("texture %q, blend %d %d", w.Texture, w.SrcBlend, w.DstBlend)
+	}
+	e.Texture = ""
+	if _, ok := convertEmitter(e, [3]float32{}, names); ok {
+		t.Error("kept an emitter without a texture")
 	}
 }

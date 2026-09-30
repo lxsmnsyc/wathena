@@ -61,6 +61,25 @@ interface GoMap {
     Cycle: number;
   }[];
   Effects: { ID: number; Pos: number[]; Delay: number; Param: number[] }[];
+  Emitters: {
+    Pos: number[];
+    Texture: string;
+    SrcBlend: number;
+    DstBlend: number;
+    Color: number[];
+    Dir1: number[];
+    Dir2: number[];
+    Gravity: number[];
+    Radius: number[];
+    Life: number[];
+    Rate: number[];
+    Size: number[];
+    Speed: number;
+    MaxCount: number;
+    Flags: number;
+    Scale: number[];
+    Rotate: number[];
+  }[];
   Deps: string[];
 }
 
@@ -150,6 +169,27 @@ describe('decodeWMap', () => {
         position: f32(e.Pos),
         delay: Math.fround(e.Delay),
         params: f32(e.Param),
+      })),
+    );
+    expect(m.emitters).toEqual(
+      want.Emitters.map((e) => ({
+        position: f32(e.Pos),
+        texture: e.Texture,
+        srcBlend: e.SrcBlend,
+        dstBlend: e.DstBlend,
+        color: e.Color,
+        dir1: f32(e.Dir1),
+        dir2: f32(e.Dir2),
+        gravity: f32(e.Gravity),
+        radius: f32(e.Radius),
+        life: f32(e.Life),
+        rate: f32(e.Rate),
+        size: f32(e.Size),
+        speed: Math.fround(e.Speed),
+        maxCount: e.MaxCount,
+        flags: e.Flags,
+        scale: f32(e.Scale),
+        rotate: f32(e.Rotate),
       })),
     );
     expect(m.deps).toEqual(want.Deps);

@@ -46,6 +46,7 @@ function ground(): WMap {
     objects: [],
     sounds: [],
     effects: [],
+    emitters: [],
     deps: [],
   };
 }

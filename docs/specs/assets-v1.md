@@ -240,7 +240,7 @@ A map holds everything needed to show it and walk on it, except the textures, mo
 
 **Map space.** Units are cells. X points east, Y up, and -Z north. Cell (x, y), in the server's coordinates, covers X from x to x + 1 and Z from -(y + 1) to -y. Models are placed in the same space.
 
-**Layout.** A header, then sections. Each section is a 4-byte tag, a `u32` length, and its body. A reader skips tags it does not know. Every section below is required except `WATR`, and each appears once.
+**Layout.** A header, then sections. Each section is a 4-byte tag, a `u32` length, and its body. A reader skips tags it does not know. Every section below is required except `WATR` and `EMIT`, and each appears once.
 
 ```text
 Header
@@ -313,10 +313,31 @@ Strings are a u8 length and UTF-8 bytes. Names are asset names.
     delay       f32
     params      4 × f32
 
+"EMIT"  particle emitters
+  count     u32
+  Emitters, count times
+    position        3 × f32
+    texture         string
+    srcBlend, dstBlend   2 × u8   Direct3D blend codes, as in effects
+    color           4 × u8        RGBA
+    dir1, dir2      2 × 3 × f32   direction range, cells per second
+    gravity         3 × f32       cells per second squared
+    radius          3 × f32       spawn offset range, ± on each axis
+    life            2 × f32       seconds, a range
+    rate            2 × f32       particles per second, a range
+    size            2 × f32       half the particle's width in cells, a range
+    speed           f32           multiplies dir and gravity
+    maxCount        u16           most live particles, at most 1000
+    flags           u8            1 depth test, 2 eternal, 4 flat
+    scale           2 × f32       multiplies the particle's width and height
+    rotate          3 × f32       degrees, the plane of flat particles
+
 "DEPS"
   count     u32
   names     count × string    every name the map uses, so the client can fetch them in parallel
 ```
+
+**Particles.** An emitter spawns a particle whenever the time passes its next spawn time, until maxCount are alive. The next spawn is 1 / rate seconds later, with rate picked at random in its range. A particle starts at the emitter's position plus a random offset in ±radius, and picks a direction between dir1 and dir2 on each axis, a life, and a size. After t seconds it is at start + dir × speed × t + gravity × speed × t² / 2. It faces the camera, fades in over its first second and out over its last (or over half its life if that is shorter), and dies after its life. Eternal particles never fade or die. The client may simulate an emitter for one life before showing it, so a map starts with its particles in place.
 
 **Building the ground.** Surface (i, j) covers X from 2i to 2i + 2 and Z from -(2j + 2) to -2j. Corner k is at X = 2i + 2 × (k & 1), Z = -(2j + 2 × (k >> 1)), at its height. For each surface:
 
@@ -335,6 +356,7 @@ Strings are a u8 length and UTF-8 bytes. Names are asset names.
 - RO units are 1/5 cell, with X east, Y down, and Z north, relative to the map's center. The importer scales by 1/5, moves the origin to the south-west corner, and turns by R = diag(1, -1, -1), as for models. An object's matrix is R × T(position / 5 + center) × Rz × Rx × Ry × S(scale / 5) × R, with RO's rotations in degrees.
 - Water comes from the GND file from version 1.8, and from the RSW file before that.
 - Objects, sounds, and effects with undefined (NaN or infinite) values are left out, since the game cannot show them either. Undefined cell heights take the average of the cell's other corners.
+- RSW effect 974 is a particle emitter. The nth such effect uses entry n of the table `_<map>_emitterInfo` in `data\luafiles514\lua files\effecttool\<map>.lub`, with `@` left out of the table's name. The importer converts it to an `EMIT` entry at the effect's position. Values are in RO units with Y down, so the importer divides distances by 5 and flips Y and Z. Tables stored as Lua source instead of a compiled chunk are not read yet.
 - GAT cell types map to flags: 0, 2, 4, and 6 are walkable and shootable, 3 is also water, 5 is shootable only, and other types block.
 
 ### Effect (WEFF)

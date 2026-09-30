@@ -1801,7 +1801,7 @@ The official client keeps many tables inside its executable and its Lua files. T
 | `monsters.yml` | Monster ID to sprite name, size, and sounds. | `mob_db` `AegisName` values, which match most sprite names. |
 | `npcs.yml` | NPC sprite ID to sprite name. | rAthena NPC sprite constants and roBrowser's NPC table. |
 | `items.yml` | Item ID to display name, type, and view. Icons, item images, card art, and dropped-item sprites need no table: they are named by item ID (assets-v1, "Items from a game client"). | `item_db` names, types, and views. |
-| `effects.yml` | Effect ID to effect type (sprite, STR animation, particle, or sound), files, and timing. Maps place effects by these IDs too. In the kRO maps, the most used IDs are sprite particles, such as emitters (974), torches (47), and fireflies (45), which roBrowser's table mostly leaves out. They need a particle system in the client. | roBrowser's effect table, limited to the effects `core` uses. |
+| `effects.yml` | Effect ID to effect type (sprite, STR animation, particle, or sound), files, and timing. Maps place effects by these IDs too. In the kRO maps, the most used ID is 974, a particle emitter defined per map in the client's effect tool files, which the asset build converts into the map (assets-v1, "Map (WMAP)"). Other common IDs, such as torches (47) and fireflies (45), are sprite particles that roBrowser's table mostly leaves out. | roBrowser's effect table, limited to the effects `core` uses. |
 | `skill_effects.yml` | Skill ID to cast, hit, and ground effects. | roBrowser's skill effect table, limited to skills `core` ships. |
 | `maps.yml` | Classic map name to display name, music, and minimap. | rAthena map index and roBrowser's map tables. |
 

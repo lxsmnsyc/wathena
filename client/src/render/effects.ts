@@ -82,12 +82,12 @@ const FACTORS: BlendingDstFactor[] = [
   OneMinusDstColorFactor,
 ];
 
-function srcFactor(code: number): BlendingSrcFactor {
+export function srcFactor(code: number): BlendingSrcFactor {
   return code === 11 ? SrcAlphaSaturateFactor : (FACTORS[code] ?? OneFactor);
 }
 
 // Source alpha saturate only works as a source factor.
-function dstFactor(code: number): BlendingDstFactor {
+export function dstFactor(code: number): BlendingDstFactor {
   return FACTORS[code] ?? OneFactor;
 }
 
