@@ -1703,8 +1703,19 @@ The formats are defined in [assets-v1](specs/assets-v1.md). In short:
 | Effect | WEFF: keyframe tables with texture names. | Small, and read by the effect player directly. |
 | Sound | Opus in WebM, 32 kbit/s mono. | The kRO client's 3,383 sounds are 209 MB of WAV, 97% at 22 kHz 16-bit mono. Opus makes them about 20 MB with no audible loss, and loops without gaps. Browsers cannot decode the 4 IMA ADPCM files, so some conversion is needed anyway. |
 | Music | MP3 passed through unchanged. New music in packs uses Opus. | Re-encoding lossy music loses quality. Streamed while playing. |
+| Table | JSON, stored as Brotli. | Item names and descriptions from the client's text tables. JSON is what the browser parses fastest, and Brotli removes its repetition. |
 
 Measured on the kRO client, the 2,829 monster and NPC sprites are 182 MB in the GRF and 127 MB as WSPR with Brotli, 70% of the original. Brotli's highest level gives files about 16% smaller than level 9, but takes 10 times as long: about 21 minutes for these sprites on an Apple M2. The build uses the highest level by default, since players download every byte and incremental builds only compress changed assets. A fast mode uses a lower level for development.
+
+Item text is split in two tables, so the first screen that shows an item name does not download every description. Measured on the kRO client, 9,649 items:
+
+| Table | Raw | Brotli 11 | Brotli 5 (`--fast`) |
+|---|---|---|---|
+| `table/items`: names, unidentified names, slots | 584 KB | 83 KB | 102 KB |
+| `table/itemdesc`: description lines | 3,136 KB | 276 KB | 320 KB |
+| Both in one file | 3,742 KB | 338 KB | 395 KB |
+
+Newer clients list about three times as many items, so descriptions would be near 1 MB compressed. The client loads `table/items` when it first shows an item, and `table/itemdesc` when it first shows a description.
 
 Binary outputs are stored only as Brotli. The server sends them with `Content-Encoding: br`, and the browser decompresses them natively. WebP, Opus, and MP3 are sent as they are.
 
@@ -1800,7 +1811,7 @@ The official client keeps many tables inside its executable and its Lua files. T
 | `garments.yml` | Garment view IDs used by `core`, and which garments are drawn over the body when the character faces away. Sprites are named by view ID, such as `sprite/garment/<look>/<sex>/1`. The GRF importer reads the sprite folder names from the client's `RobeNameTable`. Shields use the client's built-in names for views 1 to 6 and the view ID in the file name for others. | Item `View` values in rAthena's `item_db`, and the client's `RobeTopLayer` table. |
 | `monsters.yml` | Monster ID to size and sounds. Sprites need no table: they are named by monster ID (assets-v1, "Monsters from a game client"). AegisName values match only 630 of the 1,184 monsters rAthena spawns to a kRO sprite, while the client's own table names 1,061. | `mob_db` sizes. |
 | `npcs.yml` | NPC sprite ID to sprite name. | rAthena NPC sprite constants and roBrowser's NPC table. |
-| `items.yml` | Item ID to display name, type, and view. Icons, item images, card art, and dropped-item sprites need no table: they are named by item ID (assets-v1, "Items from a game client"). | `item_db` names, types, and views. |
+| `items.yml` | Item ID to type and view. Icons, item images, card art, and dropped-item sprites need no table: they are named by item ID (assets-v1, "Items from a game client"). Display names and descriptions come from the asset build's item tables, `table/items` and `table/itemdesc`, which the GRF importer reads from the client. | `item_db` names, types, and views. |
 | `effects.yml` | Effect ID to effect type (sprite, STR animation, particle, or sound), files, and timing. Maps place effects by these IDs too. In the kRO maps, the most used ID is 974, a particle emitter defined per map in the client's effect tool files, which the asset build converts into the map (assets-v1, "Map (WMAP)"). Other common IDs, such as torches (47) and fireflies (45), are sprite particles that roBrowser's table mostly leaves out. | roBrowser's effect table, limited to the effects `core` uses. |
 | `skill_effects.yml` | Skill ID to cast, hit, and ground effects. | roBrowser's skill effect table, limited to skills `core` ships. |
 | `maps.yml` | Classic map name to display name, music, and minimap. | rAthena map index and roBrowser's map tables. |

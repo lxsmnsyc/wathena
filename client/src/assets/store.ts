@@ -12,7 +12,8 @@ export type AssetType =
   | 'map'
   | 'effect'
   | 'sound'
-  | 'music';
+  | 'music'
+  | 'table';
 
 export interface Entry {
   /** SHA-256 of the content, lowercase hex. */
@@ -39,6 +40,7 @@ const EXTENSIONS: Record<AssetType, string> = {
   effect: 'weff',
   sound: 'webm',
   music: 'mp3',
+  table: 'json',
 };
 
 const MB = 1024 * 1024;
@@ -53,6 +55,7 @@ const LIMITS: Record<AssetType, number> = {
   effect: 8 * MB,
   sound: 8 * MB,
   music: 32 * MB,
+  table: 16 * MB,
 };
 
 /** The largest manifest shard the client accepts. */
@@ -212,6 +215,15 @@ export class AssetStore {
       await this.index(e.d);
     }
     return file;
+  }
+
+  /**
+   * Downloads a table, such as table/items, and parses its JSON. Undefined
+   * means the build does not have it.
+   */
+  async table(name: string): Promise<unknown> {
+    const data = await this.bytes(name, 'table');
+    return data === undefined ? undefined : JSON.parse(new TextDecoder().decode(data));
   }
 
   /** The URL of a stored file. */

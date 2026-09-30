@@ -9,6 +9,7 @@ import {
   EffectPlaySchema,
   EntityKind,
   type Event,
+  type InventoryRemoveReason,
   type Look as LookMessage,
   type PickUpFailure,
   StatId,
@@ -84,7 +85,9 @@ export default class Online {
   /** Called when an item enters a slot of the player's inventory. */
   onInventoryAdd: ((slot: number, itemId: number, amount: number) => void) | undefined;
   /** Called when an amount leaves a slot of the player's inventory. */
-  onInventoryRemove: ((slot: number, amount: number) => void) | undefined;
+  onInventoryRemove:
+    | ((slot: number, amount: number, reason: InventoryRemoveReason) => void)
+    | undefined;
   /** Called when using an item fails. */
   onUseItemFailed: ((reason: UseItemFailure) => void) | undefined;
   /** Called when dropping an item fails. */
@@ -126,6 +129,11 @@ export default class Online {
   /** The player's own character, once it has appeared. */
   get me(): Player | undefined {
     return this.units.get(this.self);
+  }
+
+  /** A ground item's item ID, amount, and position, while it is shown. */
+  groundItem(id: number): { itemId: number; amount: number; position: Vector3 } | undefined {
+    return this.items.info(id);
   }
 
   /** Where a unit's feet are, while it is shown. */
@@ -307,7 +315,7 @@ export default class Online {
           this.onInventoryAdd?.(e.body.value.slot, e.body.value.itemId, e.body.value.amount);
           break;
         case 'inventoryRemove':
-          this.onInventoryRemove?.(e.body.value.slot, e.body.value.amount);
+          this.onInventoryRemove?.(e.body.value.slot, e.body.value.amount, e.body.value.reason);
           break;
         case 'itemUsed': {
           // The potion effects play on the user, as the game client

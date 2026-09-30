@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/assets/build"
+	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
 )
 
 // sourceList collects repeated --source flags.
@@ -22,9 +23,13 @@ func assetsBuild(args []string) error {
 	fs.Var(&sources, "source", "a source, applied in order: placeholder, or grf:<client folder>")
 	out := fs.String("out", "", "output folder")
 	fast := fs.Bool("fast", false, "use a low Brotli level, for development builds")
+	codePage := fs.String("codepage", grfimport.DefaultCodePage, "code page of the text in grf sources, such as cp949 or cp1252")
 	_ = fs.Parse(args)
 	if *out == "" || len(sources) == 0 {
 		return errors.New("--out and at least one --source are required")
+	}
+	if _, err := grfimport.NewTextDecoder(*codePage); err != nil {
+		return err
 	}
 
 	var srcs []build.Source
@@ -40,7 +45,7 @@ func assetsBuild(args []string) error {
 		case "placeholder":
 			srcs = append(srcs, build.Placeholder{})
 		case "grf":
-			g := &build.GRF{Dir: arg}
+			g := &build.GRF{Dir: arg, CodePage: *codePage}
 			srcs = append(srcs, g)
 			closers = append(closers, g)
 		default:

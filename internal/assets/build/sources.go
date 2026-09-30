@@ -1,8 +1,10 @@
 package build
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -10,6 +12,7 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -39,6 +42,7 @@ const (
 	mapConverter         = "grf-map-5"
 	effectConverter      = "grf-effect-2"
 	musicConverter       = "grf-music-1"
+	itemTextConverter    = "grf-itemtext-1"
 	placeholderConverter = "placeholder-1"
 )
 
@@ -79,9 +83,12 @@ func (Placeholder) Items() ([]Item, error) {
 
 // GRF imports from a game client folder.
 type GRF struct {
-	Dir    string
-	client *grf.Client
-	root   *os.Root
+	Dir string
+	// CodePage is the code page of the client's text, a key of
+	// grfimport.CodePages. Empty means grfimport.DefaultCodePage.
+	CodePage string
+	client   *grf.Client
+	root     *os.Root
 }
 
 func (g *GRF) Name() string { return "grf:" + g.Dir }
@@ -340,6 +347,11 @@ func (g *GRF) Items() ([]Item, error) {
 		return nil, err
 	}
 	items = append(items, itemItems...)
+	texts, err := g.itemTexts(c)
+	if err != nil {
+		return nil, err
+	}
+	items = append(items, texts...)
 	tracks, err := g.music()
 	if err != nil {
 		return nil, err
@@ -405,6 +417,101 @@ func (g *GRF) items(c *grf.Client) ([]Item, error) {
 		})
 	}
 	return items, nil
+}
+
+// Item text tables. Names are small and most screens need them, so they
+// are apart from descriptions, which the client loads on demand.
+const (
+	ItemNamesTable = "table/items"
+	ItemDescTable  = "table/itemdesc"
+)
+
+// itemName is an item's entry in table/items.
+type itemName struct {
+	Name         string `json:"n,omitempty"`
+	Unidentified string `json:"u,omitempty"`
+	Slots        int    `json:"s,omitempty"`
+}
+
+// itemTexts lists the item text tables, table/items and table/itemdesc.
+// Both come from one read of the client's tables.
+func (g *GRF) itemTexts(c *grf.Client) ([]Item, error) {
+	cp := g.CodePage
+	if cp == "" {
+		cp = grfimport.DefaultCodePage
+	}
+	dec, err := grfimport.NewTextDecoder(cp)
+	if err != nil {
+		return nil, err
+	}
+	key := itemTextConverter + "|" + strings.ToLower(cp)
+	found := false
+	for _, p := range grfimport.ItemTextSources {
+		if s, ok := c.Lookup(p); ok {
+			key += "|" + sourceKey(s)
+			found = true
+		}
+	}
+	if !found {
+		return nil, nil
+	}
+	type tables struct{ names, desc []byte }
+	read := sync.OnceValues(func() (tables, error) {
+		texts, err := grfimport.ItemTexts(c, dec)
+		if err != nil {
+			return tables{}, err
+		}
+		names := make(map[string]itemName, len(texts))
+		desc := map[string][]string{}
+		for id, t := range texts {
+			k := strconv.Itoa(id)
+			names[k] = itemName{Name: t.Name, Unidentified: t.Unidentified, Slots: t.Slots}
+			if len(t.Desc) > 0 {
+				desc[k] = t.Desc
+			}
+		}
+		var out tables
+		if out.names, err = tableJSON(names); err != nil {
+			return tables{}, err
+		}
+		if out.desc, err = tableJSON(desc); err != nil {
+			return tables{}, err
+		}
+		return out, nil
+	})
+	return []Item{{
+		Name:     ItemNamesTable,
+		Ext:      "json",
+		CacheKey: key + "|" + ItemNamesTable,
+		Produce: func() ([]byte, error) {
+			t, err := read()
+			return t.names, err
+		},
+	}, {
+		Name:     ItemDescTable,
+		Ext:      "json",
+		CacheKey: key + "|" + ItemDescTable,
+		Produce: func() ([]byte, error) {
+			t, err := read()
+			return t.desc, err
+		},
+	}}, nil
+}
+
+// tableJSON encodes a table. Map keys are sorted, so the bytes are
+// stable. Tables over the limit are an error.
+func tableJSON(v any) ([]byte, error) {
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	out := bytes.TrimSuffix(b.Bytes(), []byte("\n"))
+	if len(out) > maxTableBytes {
+		return nil, fmt.Errorf("table is %d bytes, over the limit of %d", len(out), maxTableBytes)
+	}
+	return out, nil
 }
 
 // music lists the MP3 files in the client's BGM folder, such as BGM\01.mp3,

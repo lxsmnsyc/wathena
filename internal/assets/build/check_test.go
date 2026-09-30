@@ -98,3 +98,25 @@ func TestGC(t *testing.T) {
 		t.Errorf("check after gc: %v %v", err, rep2)
 	}
 }
+
+func TestCheckTable(t *testing.T) {
+	out := t.TempDir()
+	table := func(name, body string) Item {
+		return Item{Name: name, Ext: "json", CacheKey: name, Produce: func() ([]byte, error) { return []byte(body), nil }}
+	}
+	if _, err := Run(Options{Out: out, Brotli: 1, Sources: []Source{fakeSource{"t", []Item{
+		table("table/good", `{"1":{"n":"x"}}`),
+		table("table/list", `[1]`),
+		table("table/bad", `{"1":`),
+	}}}}); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Check(out, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A table must be a JSON object.
+	if len(rep.Broken) != 2 || !strings.HasPrefix(rep.Broken[0], "table/bad:") || !strings.HasPrefix(rep.Broken[1], "table/list:") {
+		t.Errorf("broken %v", rep.Broken)
+	}
+}

@@ -9,7 +9,12 @@ async function fakeBuild(
 ) {
   const files = new Map<string, Uint8Array<ArrayBuffer>>();
   const shards: Record<string, Entry>[] = Array.from({ length: 256 }, () => ({}));
-  const ext: Record<string, string> = { sprite: 'wspr', texture: 'webp', map: 'wmap' };
+  const ext: Record<string, string> = {
+    sprite: 'wspr',
+    texture: 'webp',
+    map: 'wmap',
+    table: 'json',
+  };
   const entries: Record<string, Entry> = {};
   for (const [name, a] of Object.entries(assets)) {
     const h = await sha256(a.data);
@@ -91,6 +96,17 @@ describe('AssetStore', () => {
     // The map's shard and its index, and no shard for the textures.
     expect(shardRequests).toBe(2);
     expect(entryFiles()).toHaveLength(2);
+  });
+
+  it('loads tables as JSON', async () => {
+    const b = await fakeBuild({
+      'table/items': { t: 'table', data: encoder.encode('{"501":{"n":"빨간포션"}}') },
+    });
+    const store = await AssetStore.open('/b/', b.fetcher);
+    expect(await store.table('table/items')).toEqual({ '501': { n: '빨간포션' } });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(await store.table('table/itemdesc')).toBeUndefined();
+    warn.mockRestore();
   });
 
   it('reports missing names once', async () => {

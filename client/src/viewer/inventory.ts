@@ -1,13 +1,13 @@
 import type { AssetStore } from '../assets/store';
 import { DropItemFailure, StatId, UseItemFailure } from '../gen/wathena/v1/event_pb';
+import { type ItemTexts, renderDescription } from './itemText';
 
 // The inventory window, as RO's Alt+E window: each slot's icon, item and
 // amount, and the weight. A double click or Enter uses an item. The Drop
 // button, the Delete key, or dragging a row onto the game view drops it,
-// after asking how many when the slot holds more than one.
-//
-// The asset build has no item names, since the client's iteminfo is not
-// imported yet, so items show by ID.
+// after asking how many when the slot holds more than one. Items show by
+// name from the build's item table, and a selected item shows its
+// description below the list.
 
 /** One inventory slot the server described. */
 export interface Stack {
@@ -65,11 +65,6 @@ export class InventoryModel {
   }
 }
 
-/** How an item shows: by ID, since the build has no names. */
-export function itemLabel(itemId: number): string {
-  return `Item ${itemId}`;
-}
-
 /**
  * Weight as RO shows it, in whole units: "12 / 2000". The server sends
  * tenths. Values not sent yet show as "-".
@@ -94,6 +89,16 @@ export function weightPercent(stats: ReadonlyMap<StatId, bigint>): number | unde
 
 /** From this weight percent, the player cannot attack. */
 export const MAJOR_OVERWEIGHT = 90;
+
+/** The chat log line for items entering the inventory, as RO's pick up message. */
+export function gotItemMessage(name: string, amount: number): string {
+  return amount === 1 ? `You got ${name}.` : `You got ${name} (${amount}).`;
+}
+
+/** The chat log line for a used item. */
+export function usedItemMessage(name: string): string {
+  return `You used ${name}.`;
+}
 
 /** What to tell the player when using an item fails. */
 export function useItemMessage(reason: UseItemFailure): string {
@@ -187,6 +192,11 @@ export class InventoryWindow {
   private readonly count: HTMLOutputElement;
   private readonly form: HTMLFormElement;
   private readonly prompt: HTMLSpanElement;
+  private readonly detail: HTMLDivElement;
+  private readonly detailName: HTMLDivElement;
+  private readonly detailText: HTMLDivElement;
+  /** The slot whose description shows. */
+  private selected: number | undefined;
   private readonly amountInput: HTMLInputElement;
   private readonly rows = new Map<number, Row>();
   private readonly icons = new Map<number, Promise<string | undefined>>();
@@ -198,6 +208,7 @@ export class InventoryWindow {
     private readonly store: AssetStore,
     private readonly model: InventoryModel,
     private readonly actions: InventoryActions,
+    private readonly texts: ItemTexts,
   ) {
     const head = document.createElement('div');
     head.className = 'inventory-head';
@@ -253,7 +264,17 @@ export class InventoryWindow {
         this.closeDrop();
       }
     });
-    root.append(head, this.list, this.form);
+    this.detail = document.createElement('div');
+    this.detail.className = 'item-detail';
+    this.detail.hidden = true;
+    this.detailName = document.createElement('div');
+    this.detailName.className = 'item-detail-name';
+    this.detailText = document.createElement('div');
+    this.detail.append(this.detailName, this.detailText);
+    root.append(head, this.list, this.form, this.detail);
+    texts.onLoad(() => {
+      this.relabel();
+    });
   }
 
   get open(): boolean {
@@ -284,7 +305,7 @@ export class InventoryWindow {
       this.toggle();
     }
     this.dropping = slot;
-    this.prompt.textContent = `Drop how many ${itemLabel(s.itemId)}? (1 to ${s.amount}) `;
+    this.prompt.textContent = `Drop how many ${this.texts.label(s.itemId)}? (1 to ${s.amount}) `;
     this.amountInput.max = String(s.amount);
     this.amountInput.value = String(s.amount);
     this.form.hidden = false;
@@ -335,13 +356,56 @@ export class InventoryWindow {
     if (this.dropping !== undefined && !seen.has(this.dropping)) {
       this.closeDrop();
     }
+    if (this.selected !== undefined && !seen.has(this.selected)) {
+      this.select(undefined);
+    }
+  }
+
+  /** Writes every row's name again, such as when the names load. */
+  private relabel(): void {
+    for (const row of this.rows.values()) {
+      this.label(row);
+    }
+    if (this.selected !== undefined) {
+      this.select(this.selected);
+    }
+  }
+
+  private label(row: Row): void {
+    const name = this.texts.label(row.itemId);
+    set(row.label, name);
+    row.li.title = `${name}: double-click to use, drag out to drop`;
+    row.drop.setAttribute('aria-label', `Drop ${name}`);
+  }
+
+  /** Shows the description of the item in a slot, or hides it. */
+  private select(slot: number | undefined): void {
+    this.selected = slot;
+    const s = slot === undefined ? undefined : this.model.get(slot);
+    if (slot === undefined || s === undefined) {
+      this.detail.hidden = true;
+      return;
+    }
+    const id = s.itemId;
+    this.detailName.textContent = this.texts.label(id);
+    this.detail.hidden = false;
+    this.texts
+      .description(id)
+      .then((lines) => {
+        // Another item may be selected by now.
+        if (this.selected === slot && this.model.get(slot)?.itemId === id) {
+          renderDescription(this.detailText, lines ?? []);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(`description ${id}:`, error);
+      });
   }
 
   private row(slot: number, itemId: number): Row {
     const li = document.createElement('li');
     li.tabIndex = 0;
     li.draggable = true;
-    li.title = `${itemLabel(itemId)}: double-click to use, drag out to drop`;
     const icon = document.createElement('img');
     icon.alt = '';
     icon.width = 24;
@@ -349,17 +413,18 @@ export class InventoryWindow {
     icon.draggable = false;
     const label = document.createElement('span');
     label.className = 'name';
-    label.textContent = itemLabel(itemId);
     const amount = document.createElement('span');
     amount.className = 'amount';
     const drop = document.createElement('button');
     drop.type = 'button';
     drop.textContent = 'Drop';
-    drop.setAttribute('aria-label', `Drop ${itemLabel(itemId)}`);
     drop.addEventListener('click', () => {
       this.requestDrop(slot);
     });
     li.append(icon, label, amount, drop);
+    li.addEventListener('focus', () => {
+      this.select(slot);
+    });
     li.addEventListener('dblclick', () => {
       this.actions.use(slot);
     });
@@ -383,7 +448,9 @@ export class InventoryWindow {
       }
     });
     this.icon(itemId, icon);
-    return { li, icon, label, amount, drop, itemId };
+    const row = { li, icon, label, amount, drop, itemId };
+    this.label(row);
+    return row;
   }
 
   /** Loads an item's icon, icon/item/<id>. Items without one show none. */

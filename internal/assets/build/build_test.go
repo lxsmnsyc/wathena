@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/andybalholm/brotli"
+	"golang.org/x/text/encoding/korean"
 
 	"github.com/lxsmnsyc/wathena/internal/assets"
 	"github.com/lxsmnsyc/wathena/internal/assets/wspr"
@@ -182,4 +183,70 @@ func testSprite() ([]byte, []byte) {
 	_ = binary.Write(&a, binary.LittleEndian, uint32(0))  // event names
 	_ = binary.Write(&a, binary.LittleEndian, float32(4)) // frame interval
 	return s.Bytes(), a.Bytes()
+}
+
+// TestItemTextTables builds the item text tables from a synthetic client
+// in CP949, and checks that the code page is part of the cache key.
+func TestItemTextTables(t *testing.T) {
+	dir := t.TempDir()
+	enc := func(s string) []byte {
+		b, err := korean.EUCKR.NewEncoder().Bytes([]byte(s))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+	var buf bytes.Buffer
+	if err := grf.Write(&buf, []grf.WriteEntry{
+		{Name: `data\idnum2itemdisplaynametable.txt`, Data: enc("501#빨간_포션#\r\n1201#나이프#\r\n")},
+		{Name: `data\num2itemdisplaynametable.txt`, Data: enc("1201#단검#\r\n")},
+		{Name: `data\itemslotcounttable.txt`, Data: enc("1201#3#\r\n")},
+		{Name: `data\idnum2itemdesctable.txt`, Data: enc("501#\r\n^000088HP^000000 회복\r\n#\r\n")},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "data.grf"), buf.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "DATA.INI"), []byte("[Data]\n1=data.grf\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out := t.TempDir()
+	build := func(cp string) map[string]entry {
+		g := &GRF{Dir: dir, CodePage: cp}
+		defer func() { _ = g.Close() }()
+		rep, err := Run(Options{Out: out, Brotli: 5, Sources: []Source{g}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(rep.Rejected) != 0 {
+			t.Fatalf("rejected %v", rep.Rejected)
+		}
+		_, all := readManifest(t, out)
+		return all
+	}
+	all := build("")
+	names, desc := all[ItemNamesTable], all[ItemDescTable]
+	if names.T != "table" || desc.T != "table" {
+		t.Fatalf("entries %+v %+v", names, desc)
+	}
+	want := `{"1201":{"n":"나이프","u":"단검","s":3},"501":{"n":"빨간 포션"}}`
+	if got := string(readAsset(t, out, names.H, "json")); got != want {
+		t.Errorf("names %s, want %s", got, want)
+	}
+	want = `{"501":["^000088HP^000000 회복"]}`
+	if got := string(readAsset(t, out, desc.H, "json")); got != want {
+		t.Errorf("descriptions %s, want %s", got, want)
+	}
+	rep, err := Check(out, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rep.Broken) != 0 {
+		t.Errorf("broken %v", rep.Broken)
+	}
+	// Read as CP1252, the same bytes are different text, not a cached copy.
+	if again := build("cp1252"); again[ItemNamesTable].H == names.H {
+		t.Error("the code page did not change the output")
+	}
 }

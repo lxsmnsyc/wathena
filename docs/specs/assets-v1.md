@@ -46,6 +46,7 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `effect/<name>` | Effect | `effect/firewall` | Keyframed effects. |
 | `sound/<path>` | Sound | `sound/effect/hit_sword` | Short sounds. |
 | `music/<name>` | Music | `music/08` | Background music. |
+| `table/<name>` | Table | `table/items` | Data tables in JSON, such as item names and descriptions. |
 | `placeholder/<type>` | Any | `placeholder/sprite` | Fallbacks, below. |
 
 ### Textures from a game client
@@ -75,6 +76,30 @@ Item assets are named by item ID, so game data and the client refer to an item b
 
 Many items share one file, such as the icon every card uses. The build converts each file once, and stores it once.
 
+### Item text from a game client
+
+The GRF importer reads each item's names, slot count, and description into two tables, `table/items` and `table/itemdesc` (format below):
+
+| Client table | Field |
+|---|---|
+| `iteminfo.lub`: `identifiedDisplayName` | name |
+| `iteminfo.lub`: `unidentifiedDisplayName` | unidentified name |
+| `iteminfo.lub`: `slotCount` | slots |
+| `iteminfo.lub`: `identifiedDescriptionName` | description |
+| `idnum2itemdisplaynametable.txt` | name, for IDs `iteminfo.lub` lacks |
+| `num2itemdisplaynametable.txt` | unidentified name, the same way |
+| `itemslotcounttable.txt` | slots, the same way |
+| `idnum2itemdesctable.txt` | description, the same way |
+
+Rules:
+
+- `iteminfo.lub` is newer, so a field it has replaces the same field from a text table.
+- The text tables write spaces as `_`. The importer turns `_` into a space in names, after decoding.
+- Text is in the client's code page. The importer decodes it to UTF-8 in form NFC. The code page is a build option, `cp949` by default, which is the Korean client's. Others are `cp932`, `cp936`, `cp950`, `cp874`, `cp1250`, `cp1251`, `cp1252`, `cp1254`, `cp1258`, and `utf-8`. Bytes the code page does not map, and invalid UTF-8, are dropped.
+- Control characters become spaces, and ends of lines are trimmed. A line is cut at 1,024 characters, and a description at 64 lines. Empty lines at the end of a description are dropped.
+- Slots are clamped to 0 to 4.
+- Items with no name, no unidentified name, and no description are left out.
+
 ### Monsters from a game client
 
 Monster sprites are named by monster ID, the ID game data and the protocol use. The GRF importer finds each ID's sprite through the client's `JobNameTable` (in `datainfo\jobname.lub`, whose keys come from `datainfo\npcidentity.lub`): `data\sprite\몬스터\<name>.spr` and `.act` become `sprite/mob/<id>` for every ID that names them. Sprites no ID names are left out.
@@ -101,6 +126,8 @@ When a name is missing, the client uses a placeholder and logs the missing name 
 | Model | `placeholder/model` |
 | Effect or sound | Nothing is shown or played. |
 | Map | The map cannot be entered, and the client shows an error. |
+| `table/items` | Items show as `Item <id>`. |
+| `table/itemdesc` | Items show no description. |
 | Lightmap | The ground is drawn without baked light. |
 
 wAthena provides a placeholder pack as the `placeholder` build source. Its art is drawn by code in `internal/assets/placeholder`, so it is original and CC0. It will cover every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. Each part is added when its format's converter exists. `placeholder/sprite`, `placeholder/texture`, and `placeholder/map` with its lightmap, `placeholder/lightmap`, exist now. The map is 24 × 24 walkable cells of the placeholder texture with a low hill, and CI renders it.
@@ -119,6 +146,7 @@ All multi-byte numbers are little-endian. Every binary format starts with a 4-by
 | Effect | WEFF binary, below. | `.weff` | `application/octet-stream` |
 | Sound | Opus in WebM. | `.webm` | `audio/webm` |
 | Music | Opus in WebM, or MP3. | `.webm`, `.mp3` | `audio/webm`, `audio/mpeg` |
+| Table | JSON object, UTF-8. | `.json` | `application/json` |
 
 ### Sprite (WSPR)
 
@@ -204,6 +232,33 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 - For ADPCM WAV files, the `fact` chunk gives the length, since the last block is usually only partly filled.
 - libopus and the resampler are compiled to WebAssembly and run by the build tool, like libwebp. Tests pin the encoder's output bytes, so a platform or build change that alters them fails.
 - The container is WebM because browsers have supported Opus in WebM the longest. If a browser fails, the container can change to Ogg without re-encoding.
+
+### Table (JSON)
+
+A table is one JSON object, in UTF-8. Its fields depend on the table. A reader ignores fields it does not know, so fields can be added within `assets-v1`.
+
+`table/items` maps item IDs, as decimal strings, to names:
+
+```json
+{ "501": { "n": "빨간포션", "u": "빨간포션" }, "1201": { "n": "나이프", "u": "단검", "s": 3 } }
+```
+
+| Field | Meaning |
+|---|---|
+| `n` | The identified name. Left out when empty. |
+| `u` | The unidentified name. Left out when empty. |
+| `s` | Card slots, 1 to 4. Left out when 0. |
+
+`table/itemdesc` maps item IDs to the identified description, one string per line:
+
+```json
+{ "501": ["빨간허브를 잘 갈아 만든 체력회복제 ^000088HP 를 45 가량 회복^000000 시켜 준다.", "^ffffff_^000000", "무게 : ^7777777^000000"] }
+```
+
+- Descriptions keep RO's color codes. `^` and six hex digits, `^rrggbb`, set the color of the text after them, until the next code. `^000000` is black, the default on RO's white description window. A `^` without six hex digits is text.
+- A client can draw the colors, as RO does, or strip the codes. RO's descriptions are written for a white background, so a line such as `^ffffff_^000000` is a blank line.
+- A client shows the text as text, never as markup.
+- The names are small and most screens need them, so they are apart from the descriptions, which a client loads when it first shows one.
 
 ### Model (glTF profile)
 
@@ -423,7 +478,7 @@ wactl assets build \
   - `placeholder`: the placeholder pack, drawn by code.
   - `grf:<folder>`: a game client folder with `DATA.INI` (strategy section 10.1). The importer maps game paths to names with its own rules, such as `data\sprite\몬스터\poring.spr` to `sprite/mob/poring`.
   - `pack:<folder>`: original art in authoring formats (below).
-- **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses. Shards and dependency indexes (below) are JSON, also stored only as Brotli, as `<hash>.json.br`. Clients request every file by its path without `.br`, as `<first 2 hex digits>/<hash>.<extension>`, or `<first 2 hex digits>/<hash>.json`.
+- **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) and tables are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses. Shards and dependency indexes (below) are JSON, also stored only as Brotli, as `<hash>.json.br`. Clients request every file by its path without `.br`, as `<first 2 hex digits>/<hash>.<extension>`, or `<first 2 hex digits>/<hash>.json`.
 - **Cache.** The build keeps `.cache.json` in the output folder, keyed by each input's identity and converter version. A later build reuses an asset whose key and stored file are unchanged, so slow compression happens once per changed asset.
 - **Report.** The build prints how many names each source provided and replaced, and every asset it rejected, with the reason.
 
@@ -477,7 +532,7 @@ our-art/
 
 `wactl assets check --build <folder>` reads a whole build:
 
-- Every stored file must exist, match its SHA-256 and size in the manifest, and decode as its type within the limits below. Any failure is an error, and the command exits with status 1.
+- Every stored file must exist, match its SHA-256 and size in the manifest, and decode as its type within the limits below. A table must be a JSON object. Any failure is an error, and the command exits with status 1.
 - It lists names that something refers to but no source provides, grouped by kind. The client shows placeholders for them. It also checks that each dependency index lists exactly the names its asset uses. References come from maps' dependency lists, models' textures, sprites' sound events, effects' textures, and the client data tables, such as a body sprite for each look in `jobs.yml` and each sex the look exists for.
 - `--list` shows every missing name, and `--json` prints the report as JSON.
 
@@ -497,6 +552,7 @@ The build rejects assets over these limits, and the client refuses them if a ser
 | Map | 64 MB uncompressed, 1024 × 1024 cells. |
 | Sound | 8 MB. |
 | Music | 32 MB. |
+| Table | 16 MB uncompressed. |
 
 ## Security
 

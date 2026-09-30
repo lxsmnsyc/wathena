@@ -22,7 +22,7 @@ import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
-import { DamageKind } from '../gen/wathena/v1/event_pb';
+import { DamageKind, InventoryRemoveReason } from '../gen/wathena/v1/event_pb';
 import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import { Bubbles, ChatLog, ChatRate, chatLine, cleanChat, isTyping } from './chat';
@@ -33,9 +33,13 @@ import {
   MAJOR_OVERWEIGHT,
   SLOT_DRAG_TYPE,
   dropItemMessage,
+  gotItemMessage,
   useItemMessage,
+  usedItemMessage,
   weightPercent,
 } from './inventory';
+import { ItemTexts } from './itemText';
+import { groundItemLabel } from './groundItems';
 import randomLook from './looks';
 import { StatusWindow } from './statusWindow';
 import Online from './online';
@@ -106,6 +110,8 @@ if ('serviceWorker' in navigator && !new URL(location.href).searchParams.has('no
 }
 
 const store = await AssetStore.open(base);
+// Item names load on first need, and descriptions when first shown.
+const itemTexts = new ItemTexts(store);
 let current: MapScene | undefined;
 let session: { connection: Connection; online: Online } | undefined;
 const pathfinder = await Pathfinder.load();
@@ -118,6 +124,10 @@ let statusWindow: StatusWindow | undefined;
 let inventoryWindow: InventoryWindow | undefined;
 /** Shows a short message to the player, such as why an action failed. */
 let showMessage: (text: string) => void = () => {};
+/** Adds a line from the game to the chat log, once the log exists. */
+let logNotice: (text: string) => void = () => {};
+/** The ground item under the pointer, whose name shows. */
+let hoveredItem: number | undefined;
 const bubbles = new Bubbles();
 const bubbleRoot = document.querySelector<HTMLDivElement>('#bubbles');
 const bubbleViews = new Map<number, HTMLDivElement>();
@@ -391,23 +401,43 @@ if (serverURL === null) {
   view.onInventory = (items, size) => {
     inventory.reset(items, size);
   };
+  // Item lines wait for the names, so the first one is not shown by ID.
+  const logItem = (text: () => string): void => {
+    itemTexts
+      .loadNames()
+      .then(() => {
+        logNotice(text());
+      })
+      .catch(reportError);
+  };
   view.onInventoryAdd = (slot, id, amount) => {
     inventory.add(slot, id, amount);
+    logItem(() => gotItemMessage(itemTexts.label(id), amount));
   };
-  view.onInventoryRemove = (slot, amount) => {
+  view.onInventoryRemove = (slot, amount, reason) => {
+    const id = inventory.get(slot)?.itemId;
     inventory.remove(slot, amount);
+    if (reason === InventoryRemoveReason.USED && id !== undefined) {
+      logItem(() => usedItemMessage(itemTexts.label(id)));
+    }
   };
   const inventoryRoot = document.querySelector<HTMLElement>('#inventory-window');
   const inventoryToggle = document.querySelector<HTMLButtonElement>('#inventory-toggle');
   if (inventoryRoot !== null) {
-    inventoryWindow = new InventoryWindow(inventoryRoot, store, inventory, {
-      use: (slot) => {
-        connection.useItem(slot);
+    inventoryWindow = new InventoryWindow(
+      inventoryRoot,
+      store,
+      inventory,
+      {
+        use: (slot) => {
+          connection.useItem(slot);
+        },
+        drop: (slot, amount) => {
+          connection.dropItem(slot, amount);
+        },
       },
-      drop: (slot, amount) => {
-        connection.dropItem(slot, amount);
-      },
-    });
+      itemTexts,
+    );
     const toggle = (): void => {
       inventoryWindow?.toggle();
       inventoryWindow?.update(view.stats);
@@ -481,6 +511,9 @@ if (serverURL === null) {
   if (chatRoot !== null && chatList !== null && chatInput !== null) {
     chatRoot.hidden = false;
     const log = new ChatLog(chatList);
+    logNotice = (text) => {
+      log.notice(text);
+    };
     const rate = new ChatRate(performance.now());
     view.onChat = (from, speaker, text) => {
       log.add(speaker, text, from === view.self);
@@ -601,6 +634,49 @@ canvas.addEventListener('pointerup', (e) => {
   }
 });
 
+// The name of the ground item under the pointer shows under it, as in RO.
+canvas.addEventListener('pointermove', (e) => {
+  if (session === undefined) {
+    hoveredItem = undefined;
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const target = session.online.pick(
+    e.clientX - rect.left,
+    e.clientY - rect.top,
+    camera,
+    rect.width,
+    rect.height,
+  );
+  hoveredItem = target?.item === true ? target.id : undefined;
+});
+canvas.addEventListener('pointerleave', () => {
+  hoveredItem = undefined;
+});
+
+const itemLabelView = document.querySelector<HTMLDivElement>('#item-label');
+const itemLabelAt = new Vector3();
+
+/** Places the hovered ground item's name under it. */
+function showItemLabel(): void {
+  if (itemLabelView === null) {
+    return;
+  }
+  const g = hoveredItem === undefined ? undefined : session?.online.groundItem(hoveredItem);
+  if (g === undefined) {
+    itemLabelView.hidden = true;
+    return;
+  }
+  const text = groundItemLabel(itemTexts.label(g.itemId), g.amount);
+  if (itemLabelView.textContent !== text) {
+    itemLabelView.textContent = text;
+  }
+  itemLabelAt.copy(g.position).project(camera);
+  itemLabelView.hidden = itemLabelAt.z > 1;
+  itemLabelView.style.left = `${((itemLabelAt.x + 1) / 2) * 100}%`;
+  itemLabelView.style.top = `${((1 - itemLabelAt.y) / 2) * 100}%`;
+}
+
 const bubbleAt = new Vector3();
 
 /** Places the chat bubbles above their speakers. */
@@ -680,6 +756,7 @@ renderer.setAnimationLoop((time) => {
     }
   }
   showBubbles(performance.now());
+  showItemLabel();
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });
   for (const e of playing) {

@@ -19,6 +19,11 @@ export function itemPosition(x: number, y: number, subX: number, subY: number): 
   return [x + sub(subX), y + sub(subY)];
 }
 
+/** The label under a ground item, as RO shows it on hover: "Red Potion: 5 ea." */
+export function groundItemLabel(name: string, amount: number): string {
+  return amount > 1 ? `${name}: ${amount} ea.` : name;
+}
+
 /** How long a drop takes, in milliseconds. */
 export const DROP_MS = 600;
 /** The first jump's time, and its height in cells. The bounce takes the rest. */
@@ -41,6 +46,8 @@ export function dropHeight(ms: number): number {
 }
 
 interface Item {
+  itemId: number;
+  amount: number;
   /** The cell. */
   x: number;
   y: number;
@@ -65,7 +72,16 @@ export default class GroundItems {
     this.remove(id);
     const [px, py] = itemPosition(x, y, g.subX, g.subY);
     const position = new Vector3(px, cellHeight(map, px, py), -py);
-    const item: Item = { x, y, position, age: 0, dropped: g.dropped, view: undefined };
+    const item: Item = {
+      itemId: g.itemId,
+      amount: g.amount,
+      x,
+      y,
+      position,
+      age: 0,
+      dropped: g.dropped,
+      view: undefined,
+    };
     this.items.set(id, item);
     // A missing item sprite shows the placeholder sprite.
     this.sprites
@@ -85,6 +101,15 @@ export default class GroundItems {
 
   has(id: number): boolean {
     return this.items.has(id);
+  }
+
+  /** What lies on the ground, and where it is drawn, while its sprite shows. */
+  info(id: number): { itemId: number; amount: number; position: Vector3 } | undefined {
+    const item = this.items.get(id);
+    if (item?.view === undefined) {
+      return undefined;
+    }
+    return { itemId: item.itemId, amount: item.amount, position: item.view.group.position };
   }
 
   /** An item's cell. */

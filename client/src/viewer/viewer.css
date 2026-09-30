@@ -5,8 +5,13 @@ body {
   overflow: hidden;
   background: #1b1d22;
   color: #e8e8e8;
+  /* Item names from a Korean client are Hangul, which some system UI
+     fonts lack. */
   font:
     14px system-ui,
+    'Apple SD Gothic Neo',
+    'Malgun Gothic',
+    'Noto Sans CJK KR',
     sans-serif;
 }
 
@@ -215,6 +220,23 @@ body {
   unicode-bidi: isolate;
 }
 
+#item-label {
+  position: fixed;
+  padding: 1px 6px;
+  transform: translate(-50%, 10px);
+  border-radius: 3px;
+  background: rgb(0 0 0 / 70%);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  unicode-bidi: isolate;
+}
+
+#item-label[hidden] {
+  display: none;
+}
+
 #inventory-window {
   position: fixed;
   right: 12px;
@@ -297,4 +319,32 @@ body {
 
 #inventory-window .drop-form input {
   width: 6em;
+}
+
+/* An item's description, on a light background as in RO, since its
+   color codes are chosen for one. It sits beside the window, so showing
+   it does not move the rows under the pointer. */
+#inventory-window .item-detail {
+  position: absolute;
+  right: calc(100% + 8px);
+  bottom: 0;
+  width: min(260px, max(160px, calc(100vw - 340px)));
+  max-height: 20em;
+  padding: 6px 8px;
+  overflow-y: auto;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+#inventory-window .item-detail[hidden] {
+  display: none;
+}
+
+#inventory-window .item-detail-name {
+  margin-bottom: 4px;
+  font-weight: 600;
 }

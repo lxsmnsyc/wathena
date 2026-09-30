@@ -30,6 +30,7 @@ import (
 const (
 	maxTextureSize = 4096
 	maxMusicBytes  = 32 << 20
+	maxTableBytes  = 16 << 20
 )
 
 // Reference is a name that something refers to.
@@ -261,6 +262,16 @@ func decodeRefs(t string, data []byte) ([]string, error) {
 		return ef.Textures, nil
 	case "sound":
 		return nil, sound.CheckWebM(data)
+	case "table":
+		// A table is a JSON object. Its fields depend on the table.
+		if len(data) > maxTableBytes {
+			return nil, fmt.Errorf("table is %d bytes", len(data))
+		}
+		var obj map[string]json.RawMessage
+		if err := json.Unmarshal(data, &obj); err != nil {
+			return nil, fmt.Errorf("table: %w", err)
+		}
+		return nil, nil
 	case "music":
 		if len(data) > maxMusicBytes {
 			return nil, fmt.Errorf("music is %d bytes", len(data))

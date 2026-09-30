@@ -84,6 +84,7 @@ var types = map[string]struct {
 	"glb":  {"model", true},
 	"webm": {"sound", false},
 	"mp3":  {"music", false},
+	"json": {"table", true},
 }
 
 type entry struct {
@@ -270,12 +271,9 @@ func StoredPath(h, ext string) string {
 }
 
 // Stored reports whether ext is an extension a build stores, and whether
-// files with it are stored as Brotli. Shards and indexes are JSON, stored
-// as Brotli.
+// files with it are stored as Brotli. Tables, shards, and indexes are
+// JSON, stored as Brotli.
 func Stored(ext string) (known, brotli bool) {
-	if ext == "json" {
-		return true, true
-	}
 	t, ok := types[ext]
 	return ok, t.brotli
 }

@@ -4,9 +4,10 @@ import {
   InventoryModel,
   USE_EFFECTS,
   dropItemMessage,
-  itemLabel,
+  gotItemMessage,
   parseDropAmount,
   useItemMessage,
+  usedItemMessage,
   weightPercent,
   weightText,
 } from './inventory';
@@ -83,8 +84,10 @@ describe('messages', () => {
     expect(dropItemMessage(DropItemFailure.UNSPECIFIED)).toBe('The item was not dropped.');
   });
 
-  it('labels items by ID', () => {
-    expect(itemLabel(501)).toBe('Item 501');
+  it('names items that were picked up or used', () => {
+    expect(gotItemMessage('빨간포션', 5)).toBe('You got 빨간포션 (5).');
+    expect(gotItemMessage('나이프 [3]', 1)).toBe('You got 나이프 [3].');
+    expect(usedItemMessage('사과')).toBe('You used 사과.');
   });
 });
 

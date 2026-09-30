@@ -4,7 +4,7 @@ import type { WMap } from '../formats/wmap';
 import type { Sprite } from '../formats/wspr';
 import { GroundItemSchema } from '../gen/wathena/v1/event_pb';
 import { SpriteAsset, type SpriteCache } from '../render/sprites';
-import GroundItems, { DROP_MS, dropHeight, itemPosition } from './groundItems';
+import GroundItems, { DROP_MS, dropHeight, groundItemLabel, itemPosition } from './groundItems';
 
 describe('itemPosition', () => {
   it('places items inside their cell', () => {
@@ -79,6 +79,13 @@ function items(): { items: GroundItems; asked: string[] } {
   return { items: new GroundItems(cache), asked };
 }
 
+describe('groundItemLabel', () => {
+  it('shows the amount of a stack', () => {
+    expect(groundItemLabel('빨간포션', 1)).toBe('빨간포션');
+    expect(groundItemLabel('빨간포션', 5)).toBe('빨간포션: 5 ea.');
+  });
+});
+
 describe('GroundItems', () => {
   it('draws an item sprite by item ID inside its cell', async () => {
     const { items: g, asked } = items();
@@ -88,6 +95,7 @@ describe('GroundItems', () => {
     expect(g.cell(7)).toEqual([5, 6]);
     const shown = [...g.shown()];
     expect(shown.map(([id, p]) => [id, p.x, p.y, p.z])).toEqual([[7, 5.53125, 0, -6.53125]]);
+    expect(g.info(7)).toMatchObject({ itemId: 501, amount: 1 });
     g.remove(7);
     expect(g.has(7)).toBe(false);
     expect(g.group.children).toHaveLength(0);

@@ -4,9 +4,9 @@ Command-line tool for worlds, mods, maps, and assets. See docs/strategy.md, sect
 
 ## Commands
 
-`wactl assets build --source <source> [--source <source> ...] --out <folder> [--fast]`
+`wactl assets build --source <source> [--source <source> ...] --out <folder> [--fast] [--codepage <code page>]`
 
-Builds assets from sources, applied in order, into an output folder with a manifest (docs/specs/assets-v1.md). Sources are `placeholder` and `grf:<client folder>`. The GRF source converts monster, NPC, body, head, headgear, weapon, shield, and garment sprites, hair and body palettes for human and doram characters, textures, UI images, and illustrations, item icons, images, card art, and dropped-item sprites named by item ID, sounds, RSM models, maps with their lightmaps, STR effects, and the MP3 music in the client's `BGM` folder. Body, weapon, shield, and garment names use the looks in `client/data/jobs.yml`. Rebuilds reuse unchanged assets from the cache in the output folder. `--fast` uses a low Brotli level for development builds.
+Builds assets from sources, applied in order, into an output folder with a manifest (docs/specs/assets-v1.md). Sources are `placeholder` and `grf:<client folder>`. The GRF source converts monster, NPC, body, head, headgear, weapon, shield, and garment sprites, hair and body palettes for human and doram characters, textures, UI images, and illustrations, item icons, images, card art, and dropped-item sprites named by item ID, sounds, RSM models, maps with their lightmaps, STR effects, the MP3 music in the client's `BGM` folder, and the item text tables `table/items` and `table/itemdesc`. Body, weapon, shield, and garment names use the looks in `client/data/jobs.yml`. Rebuilds reuse unchanged assets from the cache in the output folder. `--fast` uses a low Brotli level for development builds. `--codepage` is the code page of the client's text, such as item names: `cp949` by default, for the Korean client, or `cp1252` and others for translated clients (docs/specs/assets-v1.md, "Item text from a game client").
 
 `wactl assets check --build <folder> [--list] [--json]`
 
