@@ -80,6 +80,7 @@ interface GoMap {
     Scale: number[];
     Rotate: number[];
   }[];
+  Music: string;
   Deps: string[];
 }
 
@@ -192,6 +193,7 @@ describe('decodeWMap', () => {
         rotate: f32(e.Rotate),
       })),
     );
+    expect(m.music).toBe(want.Music);
     expect(m.deps).toEqual(want.Deps);
   });
 

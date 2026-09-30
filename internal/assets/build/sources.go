@@ -36,7 +36,7 @@ const (
 	textureConverter     = "grf-texture-1"
 	soundConverter       = "grf-sound-1"
 	modelConverter       = "grf-model-4"
-	mapConverter         = "grf-map-4"
+	mapConverter         = "grf-map-5"
 	effectConverter      = "grf-effect-2"
 	musicConverter       = "grf-music-1"
 	placeholderConverter = "placeholder-1"
@@ -116,6 +116,10 @@ func (g *GRF) Items() ([]Item, error) {
 	names := mapimport.Names{Texture: textureName, Model: modelName, Sound: grfimport.SoundResolver}
 	// Map outputs depend on the texture and model names they refer to.
 	namesKey := textureListKey + "|" + hashNames(models)
+	music, err := grfimport.MapMusic(c)
+	if err != nil {
+		return nil, err
+	}
 	byKey := make(map[string]grf.Source, len(files))
 	for _, s := range files {
 		byKey[s.Entry.Key] = s
@@ -219,9 +223,9 @@ func (g *GRF) Items() ([]Item, error) {
 				if err != nil {
 					return nil, nil, err
 				}
-				return mapimport.Convert(ga, gn, rw, names, lightmap, emitters)
+				return mapimport.Convert(ga, gn, rw, names, lightmap, mapimport.Extras{Emitters: emitters, Music: music[mapBase]})
 			}
-			key := mapConverter + "|" + sourceKey(gat) + "|" + sourceKey(gnd) + "|" + sourceKey(rsw) + "|" + toolKey + "|" + namesKey
+			key := mapConverter + "|" + sourceKey(gat) + "|" + sourceKey(gnd) + "|" + sourceKey(rsw) + "|" + toolKey + "|" + music[mapBase] + "|" + namesKey
 			items = append(items,
 				Item{Name: name, Ext: "wmap", CacheKey: key + "|" + name, Produce: func() ([]byte, error) {
 					m, _, err := convert()
@@ -320,11 +324,11 @@ func (g *GRF) Items() ([]Item, error) {
 		return nil, err
 	}
 	items = append(items, itemItems...)
-	music, err := g.music()
+	tracks, err := g.music()
 	if err != nil {
 		return nil, err
 	}
-	return append(items, music...), nil
+	return append(items, tracks...), nil
 }
 
 // items lists item images and dropped-item sprites, named by item ID.

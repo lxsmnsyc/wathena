@@ -45,6 +45,8 @@ type Map struct {
 	Effects []Effect
 	// Emitters are particle emitters, from the client's effect tool files.
 	Emitters []Emitter
+	// Music is the background music's asset name, or empty.
+	Music string
 	// Deps lists every asset name the map uses.
 	Deps []string
 }
@@ -223,7 +225,7 @@ func (m *Map) Validate() error {
 	if len(g.Textures) > math.MaxUint16 || g.LightmapColumns < 0 || g.LightmapColumns > math.MaxUint16 || g.LightmapCount < 0 {
 		return fmt.Errorf("%w: ground limits", ErrFormat)
 	}
-	names := append([]string{g.Lightmap}, g.Textures...)
+	names := append([]string{g.Lightmap, m.Music}, g.Textures...)
 	names = append(names, m.Deps...)
 	for _, o := range m.Objects {
 		names = append(names, o.Model)
@@ -367,6 +369,9 @@ func (m *Map) Encode() ([]byte, error) {
 			w.f32s(e.Param[:]...)
 		}
 	})
+	if m.Music != "" {
+		w.section("MUSC", func(w *writer) { w.str(m.Music) })
+	}
 	if len(m.Emitters) > 0 {
 		w.section("EMIT", func(w *writer) {
 			w.u32(len(m.Emitters))
@@ -579,6 +584,8 @@ func Decode(b []byte) (*Map, error) {
 				s.f32s(e.Param[:])
 				m.Effects = append(m.Effects, e)
 			}
+		case "MUSC":
+			m.Music = s.str()
 		case "EMIT":
 			for range s.count(130) {
 				e := Emitter{}

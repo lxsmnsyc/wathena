@@ -142,3 +142,33 @@ func readIDTable(c *grf.Client, path string) (map[int]string, error) {
 	}
 	return out, nil
 }
+
+// MapMusic reads the client's music table, data\mp3nametable.txt, whose
+// lines are like "prontera.rsw#bgm\\08.mp3#", and returns music asset
+// names by map name, such as music/08 for prontera.
+func MapMusic(c *grf.Client) (map[string]string, error) {
+	out := map[string]string{}
+	s, ok := c.Lookup(`data\mp3nametable.txt`)
+	if !ok {
+		return out, nil
+	}
+	b, err := c.ReadFile(s)
+	if err != nil {
+		return nil, err
+	}
+	for line := range strings.SplitSeq(decodeCP949(string(b)), "\n") {
+		parts := strings.Split(strings.TrimSpace(line), "#")
+		if len(parts) < 2 || strings.HasPrefix(parts[0], "//") {
+			continue
+		}
+		mapName, ok1 := strings.CutSuffix(strings.ToLower(strings.TrimSpace(parts[0])), ".rsw")
+		file := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(parts[1]), `\\`, `\`))
+		file, ok2 := strings.CutPrefix(file, `bgm\`)
+		file, ok3 := strings.CutSuffix(file, ".mp3")
+		if !ok1 || !ok2 || !ok3 || mapName == "" || file == "" || strings.ContainsAny(file, `\/`) {
+			continue
+		}
+		out[mapName] = "music/" + file
+	}
+	return out, nil
+}

@@ -5,6 +5,7 @@ import { type WMap, cellHeight, walkable } from '../formats/wmap';
 export interface Actor {
   readonly group: Group;
   direction: number;
+  onSound: ((name: string) => void) | undefined;
   play(action: number): void;
   update(deltaMs: number, cameraSteps: number, towardCamera: Vector3): void;
 }
@@ -48,6 +49,9 @@ export default class Walkers {
   // A fixed generator keeps each map's placement the same between loads.
   private seed = 1;
 
+  /** Plays a sound an actor makes, at the actor's position. */
+  onSound: ((name: string, position: Vector3) => void) | undefined;
+
   constructor(private readonly map: WMap) {
     this.group.name = 'walkers';
   }
@@ -79,6 +83,9 @@ export default class Walkers {
         return;
       }
       view.direction = fixed ? 0 : this.random(8);
+      view.onSound = (name) => {
+        this.onSound?.(name, view.group.position);
+      };
       const w: Walker = { view, x, y, path: [], wait: this.random(3000), progress: 0, fixed };
       this.place(w, x + 0.5, y + 0.5);
       this.group.add(view.group);

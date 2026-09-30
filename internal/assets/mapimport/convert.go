@@ -93,10 +93,18 @@ type Emitter struct {
 	RotateAngle       [3]float32
 }
 
+// Extras are map data from outside the map's own files.
+type Extras struct {
+	// Emitters are the map's particle emitters by index.
+	Emitters map[int]Emitter
+	// Music is the background music's asset name, or empty.
+	Music string
+}
+
 // Convert builds a map and its lightmap atlas. lightmapName is the asset
-// name the map uses for the atlas. emitters are the map's particle
-// emitters by index, and may be nil.
-func Convert(gat *GAT, gnd *GND, rsw *RSW, names Names, lightmapName string, emitters map[int]Emitter) (*wmap.Map, *image.NRGBA, error) {
+// name the map uses for the atlas.
+func Convert(gat *GAT, gnd *GND, rsw *RSW, names Names, lightmapName string, extras Extras) (*wmap.Map, *image.NRGBA, error) {
+	emitters := extras.Emitters
 	m := &wmap.Map{Width: gat.Width, Height: gat.Height}
 	deps := map[string]bool{}
 	dep := func(n string) string {
@@ -285,6 +293,9 @@ func Convert(gat *GAT, gnd *GND, rsw *RSW, names Names, lightmapName string, emi
 		m.Effects = append(m.Effects, wmap.Effect{ID: e.ID, Pos: mapPoint(e.Pos, cx, cz), Delay: e.Delay, Param: e.Param})
 	}
 
+	if extras.Music != "" {
+		m.Music = dep(extras.Music)
+	}
 	for n := range deps {
 		m.Deps = append(m.Deps, n)
 	}

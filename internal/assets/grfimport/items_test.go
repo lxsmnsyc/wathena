@@ -26,6 +26,7 @@ func itemClient(t *testing.T) *grf.Client {
 	err := grf.Write(&buf, []grf.WriteEntry{
 		{Name: `data\idnum2itemresnametable.txt`, Data: cp949("// comment\n501#빨간포션#\n502#주황포션#\n4001#이름없는카드#\nbad line\n")},
 		{Name: `data\num2cardillustnametable.txt`, Data: cp949("4001#포링카드#\n")},
+		{Name: `data\mp3nametable.txt`, Data: cp949("//맵이름.rsw#bgm\\\\음악번호#\r\nprontera.rsw#bgm\\\\08.mp3#\r\nIzlude.RSW#BGM\\\\26.mp3#\r\nbad.rsw#other\\\\1.mp3#\r\n")},
 		{Name: `data\texture\유저인터페이스\item\빨간포션.bmp`, Data: []byte("x")},
 		{Name: `data\texture\유저인터페이스\collection\빨간포션.bmp`, Data: []byte("x")},
 		{Name: `data\texture\유저인터페이스\item\이름없는카드.bmp`, Data: []byte("x")},
@@ -78,5 +79,15 @@ func TestItemAssets(t *testing.T) {
 	// Item images are named by ID only, not by path.
 	if n := TextureNames([]string{`data\texture\유저인터페이스\item\빨간포션.bmp`}); len(n) != 0 {
 		t.Errorf("path names %v", n)
+	}
+}
+
+func TestMapMusic(t *testing.T) {
+	m, err := MapMusic(itemClient(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m) != 2 || m["prontera"] != "music/08" || m["izlude"] != "music/26" {
+		t.Errorf("music %v", m)
 	}
 }

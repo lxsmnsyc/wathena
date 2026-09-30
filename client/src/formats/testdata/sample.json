@@ -267,9 +267,11 @@
 			]
 		}
 	],
+	"Music": "music/08",
 	"Deps": [
 		"lightmap/test",
 		"model/tree",
+		"music/08",
 		"sound/bird",
 		"texture/effect/smoke1",
 		"texture/grass",

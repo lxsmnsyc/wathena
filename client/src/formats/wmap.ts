@@ -26,6 +26,8 @@ export interface WMap {
   sounds: MapSound[];
   effects: MapEffect[];
   emitters: Emitter[];
+  /** The background music's asset name, or empty. */
+  music: string;
   /** Every asset name the map uses. */
   deps: string[];
 }
@@ -203,6 +205,7 @@ export function decodeWMap(data: Uint8Array): WMap {
     sounds: [],
     effects: [],
     emitters: [],
+    music: '',
     deps: [],
   };
   const seen = new Set<string>();
@@ -271,6 +274,9 @@ export function decodeWMap(data: Uint8Array): WMap {
             params: [s.f32(), s.f32(), s.f32(), s.f32()],
           });
         }
+        break;
+      case 'MUSC':
+        m.music = s.str();
         break;
       case 'EMIT':
         for (let i = s.count(130); i > 0; i--) {

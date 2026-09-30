@@ -194,12 +194,12 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 - Sounds are Opus in a WebM container, mono or stereo, at 48 kHz, which is Opus's native rate.
 - The build encodes sounds at 32 kbit/s for mono and 64 kbit/s for stereo. At these rates, 22 kHz game sounds have no audible loss.
 - Sources at other rates are resampled to 48 kHz with the speexdsp resampler at its highest quality.
-- The decoded sound has exactly the source's length. The track's `CodecDelay` holds the encoder's pre-skip, and the last block's `DiscardPadding` removes the padding in the last packet. Phase 1 checks that browsers apply both, so looping sounds loop without gaps.
+- The decoded sound has exactly the source's length. The track's `CodecDelay` holds the encoder's pre-skip, and the last block's `DiscardPadding` removes the padding in the last packet. Chrome 154, Firefox 153, and WebKit 26.5 apply both: `decodeAudioData` returns the exact length, aligned with the source, for the test sounds in `client/src/audio/testdata`, which the encoder's tests write.
 - Music can be Opus in WebM, or MP3. The build passes MP3 through unchanged, because re-encoding lossy audio loses quality. New music in packs should be Opus.
 - Accepted inputs: WAV (8- to 32-bit PCM, IEEE float, IMA ADPCM, and Microsoft ADPCM), MP3, Ogg Vorbis, and Opus in Ogg or WebM. The GRF importer reads WAV now. The other inputs come with the pack importer.
 - For ADPCM WAV files, the `fact` chunk gives the length, since the last block is usually only partly filled.
 - libopus and the resampler are compiled to WebAssembly and run by the build tool, like libwebp. Tests pin the encoder's output bytes, so a platform or build change that alters them fails.
-- The container is WebM because browsers have supported Opus in WebM the longest. Phase 1 checks `decodeAudioData` with Opus in WebM on Chrome, Firefox, and Safari. If a browser fails, the container can change to Ogg without re-encoding.
+- The container is WebM because browsers have supported Opus in WebM the longest. If a browser fails, the container can change to Ogg without re-encoding.
 
 ### Model (glTF profile)
 
@@ -240,7 +240,7 @@ A map holds everything needed to show it and walk on it, except the textures, mo
 
 **Map space.** Units are cells. X points east, Y up, and -Z north. Cell (x, y), in the server's coordinates, covers X from x to x + 1 and Z from -(y + 1) to -y. Models are placed in the same space.
 
-**Layout.** A header, then sections. Each section is a 4-byte tag, a `u32` length, and its body. A reader skips tags it does not know. Every section below is required except `WATR` and `EMIT`, and each appears once.
+**Layout.** A header, then sections. Each section is a 4-byte tag, a `u32` length, and its body. A reader skips tags it does not know. Every section below is required except `WATR`, `EMIT`, and `MUSC`, and each appears once.
 
 ```text
 Header
@@ -313,6 +313,9 @@ Strings are a u8 length and UTF-8 bytes. Names are asset names.
     delay       f32
     params      4 × f32
 
+"MUSC"
+  name      string   the background music, a music asset
+
 "EMIT"  particle emitters
   count     u32
   Emitters, count times
@@ -356,6 +359,7 @@ Strings are a u8 length and UTF-8 bytes. Names are asset names.
 - RO units are 1/5 cell, with X east, Y down, and Z north, relative to the map's center. The importer scales by 1/5, moves the origin to the south-west corner, and turns by R = diag(1, -1, -1), as for models. An object's matrix is R × T(position / 5 + center) × Rz × Rx × Ry × S(scale / 5) × R, with RO's rotations in degrees.
 - Water comes from the GND file from version 1.8, and from the RSW file before that.
 - Objects, sounds, and effects with undefined (NaN or infinite) values are left out, since the game cannot show them either. Undefined cell heights take the average of the cell's other corners.
+- The music comes from the client's `data\mp3nametable.txt`, whose lines are like `prontera.rsw#bgm\\08.mp3#`, giving `music/08`.
 - RSW effect 974 is a particle emitter. The nth such effect uses entry n of the table `_<map>_emitterInfo` in `data\luafiles514\lua files\effecttool\<map>.lub`, with `@` left out of the table's name. The importer converts it to an `EMIT` entry at the effect's position. Values are in RO units with Y down, so the importer divides distances by 5 and flips Y and Z. Tables stored as Lua source instead of a compiled chunk are not read yet.
 - GAT cell types map to flags: 0, 2, 4, and 6 are walkable and shootable, 3 is also water, 5 is shootable only, and other types block.
 

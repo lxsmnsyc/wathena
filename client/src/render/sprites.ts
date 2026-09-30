@@ -192,6 +192,11 @@ export class SpriteView {
   private time = 0;
   private shown = '';
   private palette: Texture;
+  /**
+   * Called when a frame with a sound event starts, with the event's
+   * sound name, such as sound/effect/hit_sword.
+   */
+  onSound: ((name: string) => void) | undefined;
   private readonly layers: { mesh: Mesh; u: LayerUniforms }[] = [];
 
   constructor(readonly asset: SpriteAsset) {
@@ -260,7 +265,14 @@ export class SpriteView {
     if (key === this.shown) {
       return f;
     }
+    const newFrame = !this.shown.startsWith(`${action},${index},`);
     this.shown = key;
+    // Events with a slash name sounds. Others are markers, such as the
+    // moment a hit lands.
+    const event = f.event >= 0 ? s.events[f.event] : undefined;
+    if (newFrame && event?.includes('/') === true) {
+      this.onSound?.(event);
+    }
     let n = 0;
     for (const l of f.layers) {
       const im = l.image >= 0 ? s.images[l.image] : undefined;

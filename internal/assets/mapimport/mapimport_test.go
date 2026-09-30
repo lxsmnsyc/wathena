@@ -116,7 +116,7 @@ func convertTest(t *testing.T) (*wmap.Map, []byte) {
 		Texture: func(p string) string { return "texture/" + p },
 		Model:   func(p string) string { return "model/" + p },
 		Sound:   func(p string) string { return "sound/" + p },
-	}, "lightmap/t", nil)
+	}, "lightmap/t", Extras{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestUnnamedSound(t *testing.T) {
 		Texture: func(p string) string { return "texture/" + p },
 		Model:   func(p string) string { return "model/" + p },
 		Sound:   func(p string) string { return "" },
-	}, "lightmap/t", nil)
+	}, "lightmap/t", Extras{})
 	if err != nil {
 		t.Fatal(err)
 	}

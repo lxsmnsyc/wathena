@@ -13,6 +13,8 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { AssetStore } from '../assets/store';
+import { AudioSystem } from '../audio/audio';
+import Soundscape from '../audio/soundscape';
 import { cellHeight } from '../formats/wmap';
 import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
@@ -30,7 +32,8 @@ const canvas = document.querySelector<HTMLCanvasElement>('#view');
 const form = document.querySelector<HTMLFormElement>('#controls');
 const input = document.querySelector<HTMLInputElement>('#map');
 const status = document.querySelector<HTMLOutputElement>('#status');
-if (canvas === null || form === null || input === null || status === null) {
+const soundButton = document.querySelector<HTMLButtonElement>('#sound');
+if (canvas === null || form === null || input === null || status === null || soundButton === null) {
   throw new Error('viewer: page is missing elements');
 }
 
@@ -55,6 +58,20 @@ resize();
 
 const store = await AssetStore.open(base);
 let current: MapScene | undefined;
+const audio = new AudioSystem(store);
+let soundscape: Soundscape | undefined;
+
+// Browsers allow audio only after a click.
+soundButton.addEventListener('click', () => {
+  (audio.on ? audio.suspend() : audio.resume())
+    .then(() => {
+      soundButton.textContent = audio.on ? 'Sound on' : 'Sound off';
+    })
+    .catch(reportError);
+});
+
+/** Sounds from sprites carry this far, in cells. */
+const SPRITE_SOUND_RANGE = 20;
 let walkers: Walkers | undefined;
 const sprites = new SpriteCache(store);
 
@@ -144,6 +161,14 @@ async function show(name: string): Promise<void> {
       playing.push(v);
     });
     walkers = new Walkers(next.map);
+    walkers.onSound = (sound, position) => {
+      const d = position.distanceTo(controls.target);
+      if (d < SPRITE_SOUND_RANGE) {
+        audio.play(sound, 1 - d / SPRITE_SOUND_RANGE, pan(position));
+      }
+    };
+    soundscape = new Soundscape(next.map.sounds, audio);
+    audio.playMusic(next.map.music).catch(reportError);
     scene.add(next.group, walkers.group);
     // Look at the map's center from the south, as RO's camera does.
     const cx = next.map.width / 2;
@@ -204,7 +229,15 @@ show(input.value).catch(reportError);
 
 // Lets browser tests inspect the scene in development builds.
 if (import.meta.env.DEV) {
-  Reflect.set(globalThis, 'viewer', { scene, camera, playing: () => playing });
+  Reflect.set(globalThis, 'viewer', { scene, camera, audio, playing: () => playing });
+}
+
+const right = new Vector3();
+
+/** Where a point is left or right of the listener, from -1 to 1. */
+function pan(p: Vector3): number {
+  right.setFromMatrixColumn(camera.matrixWorld, 0);
+  return Math.max(-1, Math.min(1, p.clone().sub(controls.target).dot(right) / SPRITE_SOUND_RANGE));
 }
 
 const timer = new Timer();
@@ -216,6 +249,8 @@ renderer.setAnimationLoop((time) => {
   const steps = Math.round(controls.getAzimuthalAngle() / (Math.PI / 4));
   toward.subVectors(camera.position, controls.target).normalize();
   walkers?.update(timer.getDelta() * 1000, steps, toward);
+  right.setFromMatrixColumn(camera.matrixWorld, 0);
+  soundscape?.update(timer.getDelta(), { position: controls.target, right });
   for (const e of playing) {
     e.update(timer.getDelta() * 1000);
   }

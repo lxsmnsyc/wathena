@@ -1,0 +1,17 @@
+[
+	{
+		"file": "mono.webm",
+		"channels": 1,
+		"frames": 4801
+	},
+	{
+		"file": "stereo.webm",
+		"channels": 2,
+		"frames": 12345
+	},
+	{
+		"file": "resampled.webm",
+		"channels": 1,
+		"frames": 24000
+	}
+]

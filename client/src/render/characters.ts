@@ -140,6 +140,15 @@ export class Character {
     return new Character(body, parts);
   }
 
+  /** Called when the body starts a frame with a sound event. */
+  get onSound(): ((name: string) => void) | undefined {
+    return this.body.onSound;
+  }
+
+  set onSound(f: ((name: string) => void) | undefined) {
+    this.body.onSound = f;
+  }
+
   /** Changes the action and starts it from its first frame. */
   play(action: number): void {
     if (action !== this.action) {

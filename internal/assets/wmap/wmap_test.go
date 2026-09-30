@@ -44,7 +44,8 @@ func sample() *Map {
 		Life: [2]float32{3, 4}, Rate: [2]float32{3, 4}, Size: [2]float32{3, 4}, Speed: 1,
 		MaxCount: 20, Flags: DepthTest, Scale: [2]float32{1, 1},
 	}}
-	m.Deps = []string{"lightmap/test", "model/tree", "sound/bird", "texture/effect/smoke1", "texture/grass", "texture/water"}
+	m.Music = "music/08"
+	m.Deps = []string{"lightmap/test", "model/tree", "music/08", "sound/bird", "texture/effect/smoke1", "texture/grass", "texture/water"}
 	return m
 }
 

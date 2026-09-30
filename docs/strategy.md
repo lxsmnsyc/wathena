@@ -1754,7 +1754,7 @@ Asset traffic depends on new players more than on players online. With 100 MB pe
 - Real first-visit and per-map sizes, compared with the estimates above. Measured so far, with the development build (fast Brotli) in the map viewer, the bytes sent for a map with its ground, water, models, and all their textures: Prontera 7.5 MB (315 files), Izlude 8.9 MB, Payon 12.4 MB, Geffen 5.6 MB, Morocc 4.5 MB, Alberta 5.7 MB, prt_fild08 3.5 MB. Textures are about 85% of it.
 - Build time and output size for a full kRO client.
 - Whether palette-indexed atlases stay within the GPU memory budget in a crowded town.
-- Whether `decodeAudioData` decodes Opus in WebM on Chrome, Firefox, and Safari.
+- ~~Whether `decodeAudioData` decodes Opus in WebM on Chrome, Firefox, and Safari.~~ Measured: Chrome 154, Firefox 153, and WebKit 26.5 decode it to the exact length, aligned with the source, so looping sounds loop without gaps.
 
 ### 10.2 Prior art
 
