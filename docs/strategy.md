@@ -140,7 +140,7 @@ Other content:
 Naming:
 
 - The project is named **wAthena**, for "web Athena". It follows the naming pattern of jAthena, eAthena, and rAthena. "Athena" is a Greek goddess, not a Gravity name.
-- Tools and namespaces: `waserver` for the server binary, `wactl` for the command-line tool, and `wa` for the Lua API table.
+- Tools and namespaces: `waserver` for the server binary, `wactl` for the command-line tool, and `wa` for the Lua API modules, such as `require "wa.events"`.
 - The name must not suggest that the rAthena team endorses the project. The project tells the rAthena team about wAthena as a courtesy, since it converts their GPL code and data.
 - The name avoids `goAthena` and `pAthena`, which other projects already use.
 - The project name, domains, logo, and client branding do not use "Ragnarok", "Ragnarok Online", "RO", "Gravity", or names of Gravity characters and places.
@@ -362,7 +362,7 @@ Implementation:
 - In Go, `Ruleset` is a struct of small interfaces, one per flag, such as `CastTimeModel` and `ASPDModel`. Each interface has a Renewal and a pre-Renewal implementation.
 - Each flag declares the data files it needs. The data loader picks each file from the Renewal or pre-Renewal set to match.
 - The loader rejects combinations that break a dependency, with an error naming the flag.
-- Scripts check flags with `wa.rules.is("cast_time", "renewal")`. This replaces rAthena's `checkre()`.
+- Scripts check flags with `rules.is("cast_time", "renewal")`, from `require "wa.rules"`. This replaces rAthena's `checkre()`.
 - Settings in `conf/battle` whose defaults depend on the mode today, such as `default_fixed_castrate` and `max_def`, become settings of the matching flag.
 
 Testing:
@@ -628,105 +628,122 @@ flowchart LR
 
 ### 5.1 Public API shape
 
-- Functions live under the `wa` table, for example `wa.npc`, `wa.rand`, `wa.chance`.
-- Game constants such as `bLuk`, `Size_All`, and `EF_WIND` are global and read-only. Their names match rAthena's `db/const.yml` and `src/map/script_constants.hpp`, so converted scripts and forum knowledge still apply.
-- Entities (`pc`, `mob`, `npc`, `it`) are userdata holding an entity ID. Each access looks up the entity again. A player who logs out during a dialog causes a Lua error, not a crash.
+The API is specified in [proposal 0002](proposals/0002-lua-api.md). In short:
+
+- There are no globals. Scripts get every part of the API with `require`, such as `require "wa.events"`. Constants are read-only modules with readable names, such as `statuses.stun` and `races.demi_human`.
+- Entry scripts, the files wAthena loads itself, return a setup function. The runtime calls it once per instance, such as each placed NPC or each equipped copy of an item, with a hidden context. Helper modules a mod requires can return any value.
+- The context owns everything the setup function creates: event handlers, timers, bonuses, and spawned monsters. They are removed when the context ends. Scripts read it with `context:get_instance()` from `wa.context`. The context never holds a player.
+- Events and hooks are registered by name, with `events.on("click", handler)`. The name is checked when the handler is registered.
+- Entities (players, monsters, NPCs, items) are handles holding an entity ID. Each access looks the entity up again. A player who logs out during a conversation causes a Lua error, not a crash.
+- Fields are read-only. Every change is a method, such as `player:pay_zeny(500)`, which can return failure and checks permissions.
+- Names are readable full words. rAthena's names, such as `bLuk` and `SC_STUN`, appear only in the converter's table and the API reference.
 
 ### 5.2 NPC scripts
 
-NPC dialogs pause while they wait for the player. Each dialog runs as a Lua coroutine.
+NPC conversations pause while they wait for the player. Each conversation runs as a Lua coroutine.
 
-- `mes`, `next`, `menu`, `input`, and `sleep` yield the coroutine.
+- `say`, `wait_for_next`, `choose`, `ask_number`, `ask_text`, and `wait` pause the coroutine.
 - The zone resumes the coroutine when the matching client response arrives.
 - If the player disconnects, the coroutine is closed.
 
 Example:
 
 ```lua
-wa.npc {
-  name = "Healer", map = "prontera", x = 150, y = 180, sprite = "4_F_KAFRA1",
-  on_click = function(pc)
-    pc:mes("[Healer]", wa.t("healer.greeting"))
-    if pc:menu(wa.t("common.yes"), wa.t("common.no")) == 1 then
-      if pc.zeny < 500 then
-        pc:mes(wa.t("common.not_enough_zeny"))
-        return pc:close()
+local events = require "wa.events"
+local text = require "wa.text"
+
+return function()
+  events.on("click", function(player, conversation)
+    conversation:say("[Healer]", text "healer.greeting")
+    if conversation:choose(text "common.yes", text "common.no") == 1 then
+      if not player:pay_zeny(500) then
+        conversation:say(text "common.not_enough_zeny")
+        return conversation:close()
       end
-      pc.zeny = pc.zeny - 500
-      pc:heal_full()
+      player:heal_fully()
     end
-    pc:close()
-  end,
-}
+    conversation:close()
+  end)
+end
 ```
 
-In procedural mode, NPCs are placed at named places instead of fixed coordinates (section 8.6).
+NPC placement lives in the mod's data (`data/npcs.yml`), which names the script. In procedural mode, NPCs are placed at named places instead of fixed coordinates (section 8.6).
 
 Other rules:
 
-- **Events.** Scripts register callbacks such as `on_login`, `on_mob_kill`, `on_timer`, and `on_map_enter`. These replace label names like `OnPCLoginEvent:`.
-- **Variables.** A typed API (`pc.vars`, `account.vars`, `server.vars`, and Lua locals) replaces the `#`, `##`, `$`, and `.@` prefixes. Each mod's variables are stored under its own namespace (section 6.7).
+- **Events.** Scripts register handlers such as `"login"`, `"monster_killed"`, and `"map_enter"` with `events.on`. Timers come from `wa.timers`. These replace label names like `OnPCLoginEvent:` and `OnTimer5000:`.
+- **Variables.** Variables are declared with a scope and a type, such as `variables.character_integer "quest_step"` from `wa.variables`. They replace the `@`, `#`, `##`, `$`, and `.@` prefixes. Per-NPC and per-call state are Lua locals. Each mod's variables are stored under its own namespace (section 6.7).
 - **Reloading.** Each script file can be reloaded alone. Running coroutines finish on the old version.
 
 ### 5.3 Item scripts
 
-Item and card scripts are event-driven. Each item file is loaded once and returns a table of handlers.
-
-Equipping an item creates a modifier set (`mods`) owned by that equipped copy. Unequipping the item deletes the set. This removes all its bonuses, listeners, and timers at once.
+Item and card scripts are event-driven. An equip script's setup function runs when a copy is equipped. Its context is that copy, and the bonuses, handlers, and timers it adds belong to the copy. Unequipping the item ends the context, which removes all of them at once.
 
 Static bonus. Runs once, on equip.
 
 ```lua
 -- Poring Card
-return {
-  on_equip = function(pc, it, mods)
-    mods:add(bLuk, 2)
-    mods:add(bFlee2, 1)
-  end,
-}
+local bonuses = require "wa.bonuses"
+
+return function()
+  bonuses.add("luck", 2)
+  bonuses.add("perfect_dodge", 1)
+end
 ```
 
 Computed bonus. The function reruns only when a value it read changes.
 
 ```lua
-return {
-  on_equip = function(pc, it, mods)
-    mods:add(bBaseAtk, function()
-      local lv = pc.base_level
-      return lv > 70 and (lv - 70) // 10 * 10 or 0
-    end)
-    mods:add(bAspdRate, function() return 4 + it.refine end)
-    mods:add(bBaseAtk, function() return pc.base_luk >= 90 and 20 or 0 end)
-  end,
-}
+local bonuses = require "wa.bonuses"
+local context = require "wa.context"
+
+return function()
+  local equipped = context:get_instance()
+  local player = equipped.wearer
+  bonuses.add("base_attack", function()
+    local level = player.base_level
+    return level > 70 and (level - 70) // 10 * 10 or 0
+  end)
+  bonuses.add("attack_speed_percent", function() return 4 + equipped.refine end)
+  bonuses.add("base_attack", function() return player.base_luck >= 90 and 20 or 0 end)
+end
 ```
 
-While a computed function runs, `pc` and `it` record which fields it reads. A level up recomputes only the modifiers that read `base_level`.
+While a computed function runs, the handles record which fields it reads. A level up recomputes only the bonuses that read `base_level`.
 
 Proc on being hit.
 
 ```lua
-return {
-  on_equip = function(pc, it, mods)
-    mods:add(bSubSize, Size_All, 15)
-    mods:on("hit_taken", function(ev)
-      if ev.flag & (BF_WEAPON | BF_MAGIC) ~= 0 and wa.chance(3, 1000) then
-        mods:timed(10000, function(t) t:add(bFlee2, 30) end)
-        pc:specialeffect(EF_WIND)
-      end
-    end)
-  end,
-}
+local bonuses = require "wa.bonuses"
+local events = require "wa.events"
+local random = require "wa.random"
+local timers = require "wa.timers"
+local effects = require "wa.effects"
+local sizes = require "wa.sizes"
+local context = require "wa.context"
+
+return function()
+  local player = context:get_instance().wearer
+  bonuses.add("damage_taken_from_size_percent", sizes.all, -15)
+  events.on("hit_taken", function(hit)
+    if (hit.is_weapon or hit.is_magic) and random.chance(3, 1000) then
+      timers.with_bonuses(10000, function() bonuses.add("perfect_dodge", 30) end)
+      player:show_effect(effects.wind)
+    end
+  end)
+end
 ```
 
 Consumable.
 
 ```lua
-return {
-  on_use = function(pc, it)
-    pc:itemheal(wa.rand(45, 65), 0)
-  end,
-}
+local events = require "wa.events"
+
+return function()
+  events.on("use", function(player)
+    player:item_heal { hp = { 45, 65 } }
+  end)
+end
 ```
 
 Rules:
@@ -734,7 +751,7 @@ Rules:
 1. **Conditions read base stats only.** This matches rAthena. `readparam(bLuk)` returns `sd->status.luk`, the allocated points without bonuses (`src/map/pc.cpp`, `pc_readparam`). Item conditions cannot form cycles.
 2. **Every value a script can read sends a change event.** This includes base and job level, base stats, job class, refine, enchants, grade, map and map flags, other equipped items, learned skill levels, active status effects, and time of day.
 3. **Computed functions have no side effects.** They only return a value. The runtime blocks calls that change game state while a computed function runs.
-4. **Results do not depend on equip order.** The final formula applies modifiers in a fixed order.
+4. **Results do not depend on equip order.** The final formula applies bonuses in a fixed order.
 5. **Scripts using only constants become static tables.** The converter detects them, and the server applies them without calling Lua.
 
 A debug mode used in tests runs a full recalculation after every change and compares it with the event-driven totals. A mismatch fails the test and names the item.
@@ -756,17 +773,20 @@ The Abysmal Knight Card gives +25% damage against bosses in rAthena (`bonus2 bAd
 ```
 
 ```lua
-return {
-  on_equip = function(pc, it, mods)
-    mods:add(bAddClass, Class_Boss, it.roll.boss_damage)
-  end,
-}
+local bonuses = require "wa.bonuses"
+local classes = require "wa.monster_classes"
+local context = require "wa.context"
+
+return function()
+  local equipped = context:get_instance()
+  bonuses.add("damage_against_class", classes.boss, equipped.rolls.boss_damage)
+end
 ```
 
 When values are rolled:
 
 - On monster drops, crafting, and quest rewards.
-- Scripts choose per call, for example `pc:getitem(id, 1, { roll = "random" })` or `{ roll = "default" }`.
+- Scripts choose per call, for example `player:give_item(id, 1, { roll = "random" })` or `{ roll = "default" }`.
 - NPC shops sell items with default values unless the shop's data says otherwise.
 - With the `item_rolls` flag set to `off`, every roll uses `Default`. This keeps parity with rAthena (section 3.6).
 
@@ -804,9 +824,9 @@ rAthena's random options (`db/re/item_randomopt_db.yml` with 249 options, `item_
 ### 5.5 Integer rules
 
 - `/` always returns a float. Use `//` for integer division.
-- `//` rounds toward negative infinity. C truncates toward zero. The results differ for negative numbers. The converter emits `wa.div(a, b)` wherever an operand can be negative.
+- `//` rounds toward negative infinity. C truncates toward zero. The results differ for negative numbers. The converter emits `integers.divide_truncated(a, b)` from `wa.integers` wherever an operand can be negative.
 - Integers are 64-bit and wrap on overflow.
-- Scripts use `wa.rand` and `wa.chance`, not `math.random`, so tests with a fixed seed are repeatable.
+- Scripts use `random.integer` and `random.chance` from `wa.random`, not `math.random`, so tests with a fixed seed are repeatable.
 
 ### 5.6 Converting existing scripts
 
@@ -858,7 +878,7 @@ Rules:
 | NPCs | Lua scripts (section 5.2). |
 | Monsters | YAML records plus optional Lua AI hooks. Sprites come from the mod's assets or reuse existing sprites. |
 | Items | YAML records plus Lua item scripts (section 5.3). |
-| Skills | YAML records for targeting, range, cast, and cooldown, plus Lua handlers for effects. Damage uses ruleset helpers such as `wa.battle.weapon_damage`, so custom skills follow the server's flags. |
+| Skills | YAML records for targeting, range, cast, and cooldown, plus Lua handlers for effects. Damage uses ruleset helpers such as `battle.weapon_damage` from `wa.battle`, so custom skills follow the server's flags. |
 | Jobs | YAML records for stats, HP and SP tables, ASPD, skill tree, and sprite references, plus a Lua job change script. |
 | Pre-made maps | Map files in the mod's `maps/` folder, such as a starting town or home area. In procedural mode they are placed into the generated world (section 8.6). |
 | Generation layers | Lua layers for procedural mode (section 8.7). |
@@ -962,7 +982,7 @@ Assignment:
 ### 6.6 Sandbox and permissions
 
 - Each mod runs in its own Lua environment table inside the zone's Lua state. Mods cannot read or change each other's globals.
-- Shared tables such as `wa` and the constants are read-only.
+- The API modules, such as `wa.events` and the constants modules, are read-only.
 - The standard libraries `io`, `os`, `debug`, `package`, and bytecode loading are removed.
 - Each call into a mod has CPU and memory limits. A call that exceeds them is stopped and logged.
 - If a mod's handler fails too often, it is disabled in that zone and the server owner is alerted. A failed dialog closes cleanly for the player.
@@ -986,7 +1006,7 @@ There is no permission for raw SQL, the file system, or other mods' data.
 
 ### 6.7 Mod data storage
 
-- `wa.store` gives each mod key-value and table storage under its own namespace. Values are stored as PostgreSQL `JSONB` rows keyed by mod ID.
+- `wa.storage` gives each mod key-value and table storage under its own namespace. Values are stored as PostgreSQL `JSONB` rows keyed by mod ID.
 - Player and account variables set by a mod are stored under that mod's namespace.
 - Each mod has a storage size limit set by the server owner.
 - A mod can ship migration scripts that run when its version changes.
@@ -1000,16 +1020,20 @@ Mods change behavior through events and hooks, not by replacing internal functio
 - **Hooks** let a mod change a result, such as the drop rate or the damage of one skill. Hooks run in a chain ordered by priority. Each hook calls `next()` to get the result of the rest of the chain.
 
 ```lua
-wa.hooks.drop_rate(function(ctx, next)
-  local rate = next(ctx)
-  if ctx.map.flags.event_zone then
-    return rate * 2
-  end
-  return rate
-end)
+local hooks = require "wa.hooks"
+
+return function()
+  hooks.on("drop_rate", function(drop, next)
+    local rate = next(drop)
+    if drop.map.flags.event_zone then
+      return rate * 2
+    end
+    return rate
+  end)
+end
 ```
 
-- **Exports** let one mod offer functions to other mods. A mod reads them with `wa.mods.get("example.seasonal-lib").api`. The dependency must be listed in `depends`.
+- **Exports** let one mod offer functions to other mods. A mod offers them with `exports.provide(name, function)` and reads them with `exports.get("example.seasonal-lib", name)`, from `wa.exports`. The dependency must be listed in `depends`.
 
 ### 6.9 Tooling
 
@@ -1027,20 +1051,23 @@ The `wactl` tool covers the mod workflow.
 
 Editor support:
 
-- The binding layer generates type definitions for the Lua Language Server (`---@class` annotations). Editors then show autocomplete and type warnings for the whole `wa` API.
+- The binding layer generates type definitions for the Lua Language Server (`---@class` annotations). Editors then show autocomplete and type warnings for every `wa.*` module.
 - The API reference website is generated from the same definitions, so it always matches the code.
 
 Test example:
 
 ```lua
-local t = wa.test
+local testing = require "wa.testing"
+local items = require "wa.items"
 
-t.case("pumpkin king gives a hat once", function()
-  local pc = t.player { map = "prontera", x = 150, y = 150 }
-  t.talk(pc, "Pumpkin King", { 1 })
-  t.expect(pc:count_item("example.halloween-event:Pumpkin_Hat")).to_be(1)
-  t.talk(pc, "Pumpkin King", { 1 })
-  t.expect(pc:count_item("example.halloween-event:Pumpkin_Hat")).to_be(1)
+local PUMPKIN_HAT = items.id "example.halloween-event:Pumpkin_Hat"
+
+testing.case("pumpkin king gives a hat once", function()
+  local player = testing.new_player { map = "prontera", x = 150, y = 150 }
+  testing.talk(player, "Pumpkin King", { 1 })
+  testing.expect(player:count_item(PUMPKIN_HAT)).to_be(1)
+  testing.talk(player, "Pumpkin King", { 1 })
+  testing.expect(player:count_item(PUMPKIN_HAT)).to_be(1)
 end)
 ```
 
@@ -1081,7 +1108,7 @@ The rAthena community has many custom scripts on forums and in private repositor
 ### 6.13 Localization
 
 - Mods store player-facing text in `locales/<language>.yml`.
-- Scripts use `wa.t("key")`. The server picks the player's language, with English as the fallback.
+- Scripts use `text "key"` from `wa.text`. The server picks the player's language, with English as the fallback.
 - The converter moves literal strings from `mes` commands into the English locale file.
 
 ### 6.14 Mod assets
@@ -1114,7 +1141,7 @@ The full threat model, with assets, trust boundaries, and the status of each mit
 | Plain-text or unsalted MD5 passwords. | Argon2id hashes with a per-account salt. |
 | Default `s1` / `p1` server account. | No shared passwords between services. Services use mutual TLS with certificates from a private certificate authority. There is no game account for services. |
 | SQL built with string formatting. | Only `sqlc`-generated queries with bound parameters. A CI check rejects `fmt.Sprintf` next to query calls. |
-| `query_sql` script command. | Not provided. Mods use `wa.store` (section 6.7). The converter reports `query_sql` uses for manual rewrite. |
+| `query_sql` script command. | Not provided. Mods use `wa.storage` (section 6.7). The converter reports `query_sql` uses for manual rewrite. |
 | No protocol encryption. | All traffic uses TLS. The web client is the only client, so no unencrypted game traffic remains. |
 | Unchecked packet parsing. | Go bounds checks on every slice access. Generated decoders check lengths before reading. Fuzz tests for every decoder. |
 
@@ -1230,7 +1257,7 @@ The web client can generate or download new terrain at any time, so both modes u
 
 Procedural mode is included with the Go build tag `procedural`.
 
-- Builds with the tag contain the generator, `wa.gen`, and rotating dungeons. New worlds default to `procedural`.
+- Builds with the tag contain the generator, `wa.generation`, and rotating dungeons. New worlds default to `procedural`.
 - Builds without the tag contain only `classic` mode. New worlds default to `classic`.
 - The mode is still chosen per world at creation time, in builds that include both.
 - The server tells the web client which modes it supports at login. The client loads the generator WebAssembly module only for procedural worlds.
@@ -1428,14 +1455,14 @@ Every part of the world is generated in procedural mode.
 - **Fields.** Terrain from biome rules. Monster spawns come from biome spawn tables, scaled by the region's level band.
 - **Dungeons.** Room and corridor layouts or caves. Floors get harder with depth. Bosses spawn in generated boss rooms.
 - **Towns.** Layout, buildings, and roads come from town templates. Service NPCs (storage, shops, inns, job changes) are placed at named places in each town.
-- **Named places.** Content refers to places by tag, not coordinates. A script asks for `wa.place("town:any", "blacksmith")`, and the generator resolves it for the current world.
+- **Named places.** Content refers to places by tag, not coordinates. A script asks for `places.find("town:any", "blacksmith")` from `wa.places`, and the generator resolves it for the current world.
 - **Quests.** Quest templates pick targets, items, and places from the generated world. Examples are hunt quests for monsters in nearby fields and delivery quests between towns.
 - **Pre-made maps from mods.** A mod map with the `home` tag becomes the starting area. The generator connects it to the nearest generated town.
 - **Classic `core` content.** Scripts that depend on fixed rAthena maps do not run in procedural mode. Their shops and services are reused through templates.
 
 ### 8.7 Mods and generation
 
-- Mods can add generation layers through `wa.gen`, such as biomes, town templates, structures, spawn tables, loot rules, and quest templates.
+- Mods can add generation layers through `wa.generation`, such as biomes, town templates, structures, spawn tables, loot rules, and quest templates.
 - A mod layer receives a tree node, such as `node:child("chests"):rand()`. Mods have no other source of randomness during generation.
 - Lua layers run on the server only. The server sends their results to the web client as object lists. Only the Go terrain generator runs on both sides.
 
@@ -1529,7 +1556,7 @@ Warp services use the graph:
 - Save points store a map ID and a cell.
 - Warp Portal memo points store map IDs. Maps that can be removed, such as rotating dungeons, have the `nomemo` flag.
 - The `@go` command lists towns by display name. `@warp` accepts a map ID or a display name.
-- Scripts find places with `wa.towns()`, `wa.town_nearest(pc)`, `town.name`, and `wa.place(...)` (section 8.6).
+- Scripts find places with `towns.list()`, `towns.nearest(player)`, and `town.name` from `wa.towns`, and `places.find(...)` from `wa.places` (section 8.6).
 - The client's world map is drawn from the parts of the graph the player has discovered.
 
 When a map is removed or regenerated, for example by a world change event or when a rotating dungeon expires:
@@ -1605,7 +1632,7 @@ The generator runs these steps with the field's secret spawn node (section 8.3),
    - **Fields next to towns** (one warp away from a town in the map graph) can get a `mini_boss`. The boss is drawn from boss monsters no more than 20 levels above the band's highest level. rAthena does the same today. Eclipse (level 31) spawns on `prt_fild02` next to Prontera, and Toad (level 27) spawns on `cmd_fild03` near Comodo. Both respawn after 30 to 60 minutes.
    - **Other fields.** In each region, 1 or 2 fields get a `field_boss`. The boss is drawn from boss monsters at or above the band's level.
    - **Placement.** A boss never spawns within 30 cells of a portal that leads to a town, so new players leaving town do not walk into it.
-   - **Settings.** `spawns.town_field_boss_chance` sets the chance that a field next to a town gets a `mini_boss` (default 50%). `spawns.town_field_boss_role` can be set to `field_boss` to allow stronger bosses there. Mods can also place bosses on chosen fields through `wa.gen` layers.
+   - **Settings.** `spawns.town_field_boss_chance` sets the chance that a field next to a town gets a `mini_boss` (default 50%). `spawns.town_field_boss_role` can be set to `field_boss` to allow stronger bosses there. Mods can also place bosses on chosen fields through `wa.generation` layers.
 
 Example result:
 
@@ -1629,7 +1656,7 @@ spawns:
 - **Dungeons use the same steps.** Dungeon biomes, such as crypt, cave, and tower, have their own tags. Floor depth raises the level band.
 - **Level coverage.** The generator checks that every level band from 1 to the level cap has enough fields. It retries the layout if a band has fewer than 3 fields.
 - **Rolled drops.** Monsters in higher bands can give better roll ranges on their drops (section 5.4).
-- **Mods.** Mods change spawns with `wa.gen` layers or the `spawn_table` hook. Mods that add monsters give them spawn tags so the generator can pick them.
+- **Mods.** Mods change spawns with `wa.generation` layers or the `spawn_table` hook. Mods that add monsters give them spawn tags so the generator can pick them.
 - **Events.** Invasions and boss events add spawns on top of the stored list (section 8.8). They do not change it.
 - **Density scaling (optional).** A server setting can raise or lower counts in a region based on how many players are there. It is off by default.
 
@@ -1664,7 +1691,7 @@ Tools:
 - `wactl map import <gat> <gnd> <rsw>` converts a classic map for testing.
 - `wactl map validate` checks connectivity, portals, and named places, the same checks the generator runs (section 8.5).
 - `wactl map preview` renders a top-down image of the cell grid and materials.
-- A visual map editor is not planned. Mod authors write `places.yaml` by hand or generate maps with `wa.gen` and save the result.
+- A visual map editor is not planned. Mod authors write `places.yaml` by hand or generate maps with `wa.generation` and save the result.
 
 ### 8.13 Economy balance
 
@@ -2301,7 +2328,7 @@ The order from here:
    4. NPCs. Dialogs, shops, and services, with events, variables, and hooks.
    5. Mod tools. `wactl mod new`, `validate`, `test`, `dev`, and `install`, and Lua Language Server type definitions.
    6. Event scheduler, and the phase 3 exit check with a sample mod.
-   The public Lua API (section 5.1) will be redesigned before it is called stable. Until then it can change between steps.
+   The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. It stays `wa.experimental` until the phase 3 exit check passes, then becomes `api: 1.0`.
 7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.
 
 Reasons for this order:
@@ -2503,7 +2530,7 @@ All code in this phase sits behind the `procedural` build tag.
 - Named places, town templates, spawn tables, and quest templates.
 - Procedural replacements for job changes and rebirth (section 11.4).
 - Home area placement from mod maps (section 8.12).
-- `wa.gen` API for mod generation layers.
+- `wa.generation` API for mod generation layers.
 - Rotating dungeons and world change events.
 - Town naming styles, map IDs, the map graph, and warp services (section 8.10).
 - Monster spawn tags, field and dungeon spawn selection, mini bosses, and field bosses (section 8.11).
