@@ -35,7 +35,7 @@ A state is used by one goroutine at a time, as each zone owns its own (strategy 
 - `collectgarbage` only accepts `"count"`.
 - `getmetatable("")` returns `false`, so scripts cannot change string methods for others.
 
-The environment of each mod, and read-only shared tables (strategy section 6.6), belong to the mod loader. Until then all chunks share the globals.
+The environment of each mod, and read-only shared tables (strategy section 6.6), are built on top of this package by [server/modscript](../../server/modscript), with `load` and an environment table ([decision 0006](../../docs/decisions/0006-mod-loader.md)). Chunks that `Load` and this package's `require` run share the globals.
 
 ## Limits
 

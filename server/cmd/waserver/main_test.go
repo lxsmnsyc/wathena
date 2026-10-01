@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
 
@@ -71,10 +72,11 @@ func TestStartCharacter(t *testing.T) {
 
 func TestLoadItems(t *testing.T) {
 	for _, mode := range []reference.Mode{reference.Renewal, reference.PreRenewal} {
-		items, err := loadItems(mode)
+		data, err := loadItemData(mode)
 		if err != nil {
 			t.Fatal(err)
 		}
+		items := item.New(data)
 		// Red Potion: 7 weight, itemheal rand(45,65),0.
 		d := items.Get(501)
 		if d.Weight != 70 || d.Heal == nil || d.Heal.HP != [2]int{45, 65} || d.Heal.SP != [2]int{0, 0} {

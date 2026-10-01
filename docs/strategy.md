@@ -976,7 +976,7 @@ Assignment:
 
 - Mods name new records with namespaced strings, such as `example.halloween-event:Pumpkin_Hat`.
 - The server assigns the next free ID in the mod range on first load.
-- Assigned IDs are saved in `ids.lock` on each server. The server never reuses an ID.
+- Assigned IDs are saved in the world's database, in the `mod_ids` table ([decision 0006](decisions/0006-mod-loader.md)). The server never reuses an ID.
 - If a mod is removed, its items stay in the database, hidden from players. They return if the mod is installed again.
 
 ### 6.6 Sandbox and permissions
@@ -2322,8 +2322,19 @@ The order from here:
       - Fuzz tests on random source, random call sequences, and raw values into `glue.c`.
       - The image builds `waserver` with `zig cc` against musl. It stays static and 12 MB compressed. CI cross-builds Linux amd64 and arm64, Windows amd64, and macOS arm64, the last on a macOS runner.
       - Item and proc calls cost 250 to 320 ns, and the NPC dialog 2.3 µs.
-      - Left: environments per mod and read-only shared tables (step 2), the public API (section 5.1), and tests on Windows, which CI only builds.
-   2. Mod loader. Manifests, dependencies, load order, data overlays, ID ranges, permissions, and the ruleset loader moved from phase 2.
+      - Left: the public API (section 5.1), and tests on Windows, which CI only builds. Environments per mod and read-only shared tables came with step 2.
+   2. Mod loader. Done on 2026-10-01 ([decision 0006](decisions/0006-mod-loader.md), [mods/README.md](../mods/README.md), and server/README.md, "Mods"):
+      - `mod.yaml` manifests, checked field by field. Mods are folders or `.zip` files in `mods.dir`.
+      - The built-in `core` mod and its two ruleset mods. Dependencies with version ranges, `load_after`, a load order that is the same on every start, and cycles shown in the error.
+      - The ruleset loader: the world's ruleset mod, flags from the core ruleset up, flag dependencies, and refusal of mods whose `supports.rulesets` does not match. `--mode` stays the rAthena data mode, and must be the ruleset's base.
+      - Permissions with the defaults of section 6.6. The owner approves the others in the config, or the server does not start. Calls check them when they run.
+      - A data overlay engine for any kind of record, used for items over the item extract and for NPC placements. NPCs show in zones.
+      - IDs for new records from the mod ranges, kept in the `mod_ids` table and never reused.
+      - One Lua state per zone, an environment per mod, read-only API modules, and `require` of `wa.*`, the mod's own files, and its dependencies' files.
+      - `wa.context`, `wa.events` (login, logout, map_enter, monster_killed, level_up), `wa.timers` on the zone clock, `wa.items.id`, and player handles. Contexts own their handlers and timers.
+      - Reloading one mod's scripts in every zone, for development.
+      - A sample mod in `mods/examples/greeter`, checked in Chrome: its NPC shows, its login handler and timer send chat lines, and a reload replaces its handler.
+      - Left: overlays for monsters, skills, jobs, spawns, quests, achievements and events; the other API modules of proposal 0002; keeping the ruleset mod in the world row; and the provisional parts listed in mods/README.md, which need review.
    3. Item scripts. The converter for item scripts, run on the Lua runtime. It replaces the Go code that reads plain heal scripts.
    4. NPCs. Dialogs, shops, and services, with events, variables, and hooks.
    5. Mod tools. `wactl mod new`, `validate`, `test`, `dev`, and `install`, and Lua Language Server type definitions.

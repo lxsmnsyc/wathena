@@ -150,6 +150,14 @@ type Inventory struct {
 	Amount      int
 }
 
+type ModID struct {
+	Kind       string
+	Name       string
+	ID         int64
+	ModID      string
+	AssignedAt pgtype.Timestamptz
+}
+
 type World struct {
 	ID               int
 	Name             string

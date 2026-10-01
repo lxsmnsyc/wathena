@@ -1,8 +1,10 @@
 package zone
 
 import (
+	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/modscript"
 )
 
 // Combat: units attack a target in range at their attack delay, and walk
@@ -167,6 +169,21 @@ func (z *Zone) die(e, killer *entity) {
 	}
 	z.entities.remove(e)
 	z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_DIED})
+	if killer != nil && killer.player != nil {
+		// The monster is gone, so handlers get what it was.
+		m := e.monster.spawn
+		level := 0
+		if m.Status != nil {
+			level = m.Status.Level
+		}
+		z.scriptEventFor("monster_killed", modscript.Player(int64(killer.player.charID)), modscript.Record(
+			script.KV("id", script.Int(int64(m.Mob))),
+			script.KV("name", script.String(m.Name)),
+			script.KV("level", script.Int(int64(level))),
+			script.KV("x", script.Int(int64(e.x))),
+			script.KV("y", script.Int(int64(e.y))),
+		))
+	}
 	z.reward(e, killer)
 	s := e.monster.spawn
 	z.respawns = append(z.respawns, respawn{spawn: s, at: z.now + int64(max(s.RespawnMs, 1000))})

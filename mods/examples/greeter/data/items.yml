@@ -1,0 +1,10 @@
+# A new item. Its name has the mod's ID, and the server gives it an ID
+# in the mod range (from 2,000,000) the first time it loads.
+- name: example.greeter:Welcome_Cookie
+  type: Healing
+  weight: 10
+  stackable: true
+  heal:
+    command: itemheal
+    hp: [20, 30]
+    sp: [0, 0]

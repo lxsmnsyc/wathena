@@ -1,0 +1,21 @@
+# A small sample mod: an item, an NPC, and a script that greets players.
+# mods/README.md explains each field.
+id: example.greeter
+name: Greeter
+version: 0.1.0
+api: experimental
+description: Greets players when they log in, and places a greeter NPC.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read
+scripts:
+  - scripts/main.lua

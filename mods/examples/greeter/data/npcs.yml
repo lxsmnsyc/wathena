@@ -1,0 +1,15 @@
+# NPC placements. A name without a prefix is this mod's own NPC, so
+# Greeter#prontera is example.greeter:Greeter#prontera. Players see the
+# part before "#". Clicking an NPC does nothing until NPC scripts arrive.
+- name: Greeter#prontera
+  map: prontera
+  x: 158
+  y: 200
+  direction: south
+  sprite: 4_F_KAFRA1
+- name: Greeter#prt_fild08
+  map: prt_fild08
+  x: 203
+  y: 204
+  direction: south
+  sprite: 4_F_KAFRA1

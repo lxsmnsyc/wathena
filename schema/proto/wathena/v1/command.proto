@@ -61,6 +61,10 @@ enum ChatChannel {
   CHAT_CHANNEL_GUILD = 3;
   CHAT_CHANNEL_WHISPER = 4;
   CHAT_CHANNEL_WORLD = 5;
+  // SYSTEM is text from the server to one player, such as a mod
+  // script's player:send_message. from is 0 and from_name is empty.
+  // Clients never send it.
+  CHAT_CHANNEL_SYSTEM = 6;
 }
 
 message NpcClick {

@@ -202,3 +202,40 @@ func TestDispatch(t *testing.T) {
 		t.Errorf("legacy flags: %d %v", code, err)
 	}
 }
+
+func TestModsConfig(t *testing.T) {
+	assets := assetDir(t)
+	mods := t.TempDir()
+	p := writeConfig(t, `
+assets: `+assets+`
+dev: true
+mods:
+  dir: `+mods+`
+  ruleset: example.classic-plus
+  strict: true
+  approve:
+    example.a: [player.give_items]
+  disable: [example.b]
+`)
+	o, _, err := parseOptions("waserver all", []string{"--config", p, "--ruleset", "core.ruleset.pre_renewal"}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := o.Mods
+	if m.Dir != mods || m.Ruleset != "core.ruleset.pre_renewal" || !m.Strict || !slices.Equal(m.Approve["example.a"], []string{"player.give_items"}) || !slices.Equal(m.Disable, []string{"example.b"}) {
+		t.Errorf("mods %+v", m)
+	}
+	if _, err := validate(o, secrets{}); err != nil {
+		t.Error(err)
+	}
+	o.Mods.Dir = filepath.Join(mods, "missing")
+	if _, err := validate(o, secrets{}); err == nil || !strings.Contains(err.Error(), "mods.dir") {
+		t.Errorf("a missing mods folder: %v", err)
+	}
+	if got := rulesetBase("none", "pre-renewal"); got != "pre_renewal" {
+		t.Errorf("base from the world row: %q", got)
+	}
+	if got := rulesetBase("renewal", ""); got != "renewal" {
+		t.Errorf("base from the mode: %q", got)
+	}
+}

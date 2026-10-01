@@ -1,7 +1,8 @@
 import { create } from '@bufbuild/protobuf';
 import { Texture } from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { WMap } from '../formats/wmap';
+import { ChatChannel } from '../gen/wathena/v1/command_pb';
 import { EntityKind, type Event, EventSchema } from '../gen/wathena/v1/event_pb';
 import type { EffectCache } from '../render/effects';
 import type { SpriteCache } from '../render/sprites';
@@ -78,5 +79,61 @@ describe('Online', () => {
     expect(portals(o)).toBe(0);
     o.setMap(map());
     expect(portals(o)).toBe(2);
+  });
+
+  it('loads an NPC sprite by its name in npc_sprites.yml', () => {
+    // Node has no reportError, which the browser has.
+    vi.stubGlobal('reportError', () => {});
+    const asked: string[] = [];
+    const sprites = {
+      get: async (name: string) => {
+        asked.push(name);
+        await Promise.resolve();
+        return undefined;
+      },
+    } as unknown as SpriteCache;
+    const o = new Online(1, sprites, {} as Pathfinder);
+    o.setMap(map());
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 7, kind: EntityKind.NPC, x: 1, y: 1, look: { body: 112 } },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 8, kind: EntityKind.NPC, x: 2, y: 2, look: { body: 999999 } },
+        },
+      }),
+    ]);
+    expect(asked).toEqual(['sprite/npc/4_f_kafra6']);
+  });
+
+  it('passes server text on, and local chat to onChat', () => {
+    const o = online();
+    o.setMap(map());
+    const server: string[] = [];
+    const local: string[] = [];
+    o.onServerText = (text) => {
+      server.push(text);
+    };
+    o.onChat = (_from, name, text) => {
+      local.push(`${name}: ${text}`);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.SYSTEM, text: 'Welcome' } },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'chat',
+          value: { channel: ChatChannel.LOCAL, from: 3, fromName: 'Bob', text: 'hi' },
+        },
+      }),
+    ]);
+    expect(server).toEqual(['Welcome']);
+    expect(local).toEqual(['Bob: hi']);
   });
 });

@@ -587,6 +587,9 @@ if (serverURL === null) {
       log.add(speaker, text, from === view.self);
       bubbles.say(from, chatLine(speaker, text), performance.now());
     };
+    view.onServerText = (text) => {
+      log.server(text);
+    };
     chatInput.addEventListener('keydown', (e) => {
       // Keys typed here are text, not game shortcuts.
       e.stopPropagation();

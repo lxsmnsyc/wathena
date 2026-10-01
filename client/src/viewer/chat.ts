@@ -175,6 +175,14 @@ export class ChatLog {
     this.append(row);
   }
 
+  /** Adds text the server sent to this player alone, such as a mod's message. */
+  server(text: string): void {
+    const row = document.createElement('li');
+    row.className = 'server';
+    row.textContent = text;
+    this.append(row);
+  }
+
   /** Adds a notice from the client itself. */
   notice(text: string): void {
     const row = document.createElement('li');

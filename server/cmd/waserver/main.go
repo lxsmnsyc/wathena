@@ -79,6 +79,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
@@ -213,8 +214,9 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return fmt.Errorf("the configuration has problems:\n%w", indent(err))
 	}
-	// No game code uses Lua yet. Checking the runtime at startup proves
-	// that this build's binding works, including the C stack it needs.
+	// Checking the Lua runtime at startup proves that this build's
+	// binding works, including the C stack it needs, before any mod
+	// script runs.
 	if err := script.SelfTest(); err != nil {
 		return fmt.Errorf("lua runtime: %w", err)
 	}
@@ -270,10 +272,32 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
-	items, err := loadItems(statusMode)
+	// The database opens before the zones, since the IDs of mod items
+	// are kept there, and the world row fixes the ruleset's base.
+	var pool *pgxpool.Pool
+	var worldRow store.World
+	if cfg.Secrets.Database != "" {
+		if pool, err = openDatabase(ctx, cfg.Secrets.Database, "waserver"); err != nil {
+			return err
+		}
+		defer pool.Close()
+		if worldRow, err = checkWorld(ctx, pool, cfg); err != nil {
+			return err
+		}
+	}
+	itemData, err := loadItemData(statusMode)
 	if err != nil {
 		return err
 	}
+	var ids mod.IDStore = &mod.MemoryIDs{}
+	if pool != nil {
+		ids = store.NewModIDs(pool)
+	}
+	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, ids, log)
+	if err != nil {
+		return fmt.Errorf("mods:\n%w", indent(err))
+	}
+	items := item.New(loaded.items.Data)
 	given, err := parseStartItems(cfg.StartItems)
 	if err != nil {
 		return err
@@ -286,7 +310,7 @@ func runAll(name string, args []string) error {
 		return err
 	}
 	zones := make([]*zone.Zone, len(names))
-	monsters, warpCount := 0, 0
+	monsters, warpCount, npcCount := 0, 0, 0
 	for i, n := range names {
 		id := strings.TrimPrefix(n, "map/")
 		// Each zone has its own secret stream from the world's root, so
@@ -295,6 +319,9 @@ func runAll(name string, args []string) error {
 		z := zone.New(n, grids[i], root.Child("zone:"+id).SecretStream(), spawns[id])
 		z.Progress, z.Status, z.Start, z.Items, z.StartItems = tables, jobs, start, items, given
 		z.SetWarps(warps[n])
+		z.SetNPCs(loaded.npcs[n])
+		z.Mods = loaded.zone
+		npcCount += len(loaded.npcs[n])
 		reg.AddZone(z.Metrics)
 		zones[i] = z
 		monsters += count(spawns[id])
@@ -308,16 +335,8 @@ func runAll(name string, args []string) error {
 	go reg.Conns.Run(ctx)
 	hc := &health{}
 	var st *store.Store
-	worldName := ""
-	if cfg.Secrets.Database != "" {
-		pool, err := openDatabase(ctx, cfg.Secrets.Database, "waserver")
-		if err != nil {
-			return err
-		}
-		defer pool.Close()
-		if worldName, err = checkWorld(ctx, pool, cfg); err != nil {
-			return err
-		}
+	worldName := worldRow.Name
+	if pool != nil {
 		st = store.New(pool, store.Options{Log: log})
 		gw.Characters = dbCharacters{store: st, world: w}
 		hc.checks = append(hc.checks, pool.Ping)
@@ -390,7 +409,13 @@ func runAll(name string, args []string) error {
 	srv := &http.Server{Addr: cfg.Listen, Handler: mux, ReadHeaderTimeout: 10 * time.Second, IdleTimeout: 2 * time.Minute}
 	servers := []*http.Server{srv}
 	if cfg.DebugAddr != "" {
-		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: reg.Handler(), ReadHeaderTimeout: 10 * time.Second})
+		dbg := http.NewServeMux()
+		dbg.Handle("/", reg.Handler())
+		if cfg.Dev {
+			// Mod reloads are for development only.
+			dbg.Handle("POST /debug/wathena/mods/reload", reloadHandler(loaded.set, w, log))
+		}
+		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
 	}
 	go func() {
 		<-ctx.Done()
@@ -431,7 +456,7 @@ func runAll(name string, args []string) error {
 		base = "http://" + cfg.Listen
 	}
 	log.Info("serving", "version", version(), "world", worldName, "listen", cfg.Listen, "public_url", base, "client", clientFrom,
-		"maps", len(names), "start", name, "monsters", monsters, "warps", warpCount,
+		"maps", len(names), "start", name, "monsters", monsters, "warps", warpCount, "npcs", npcCount,
 		"startup", time.Since(started).Round(time.Millisecond), "heap_mb", mem.HeapAlloc>>20, "database", st != nil, "accounts", accounts != nil)
 	if accounts != nil {
 		log.Info("account pages", "login", base+account.Prefix+"login")
@@ -524,20 +549,30 @@ func openDatabase(ctx context.Context, url, app string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// checkWorld reads the world that `wactl world new` made, and returns
-// its name. Outside dev, a database without a world is an error. The
-// world's ruleset must match the mode, unless the mode is none.
-func checkWorld(ctx context.Context, pool *pgxpool.Pool, cfg settings) (string, error) {
+// checkWorld reads the world that `wactl world new` made. Outside dev, a
+// database without a world is an error. The world's ruleset base must
+// match the mode, unless the mode is none.
+func checkWorld(ctx context.Context, pool *pgxpool.Pool, cfg settings) (store.World, error) {
 	w, err := store.LoadWorld(ctx, pool)
 	switch {
 	case errors.Is(err, store.ErrNoWorld) && cfg.Dev:
-		return "", nil
+		return store.World{}, nil
 	case err != nil:
-		return "", err
+		return store.World{}, err
 	case cfg.Mode != "none" && w.Ruleset != cfg.Mode:
-		return "", fmt.Errorf("the world %q uses the %s ruleset, but mode is %s", w.Name, w.Ruleset, cfg.Mode)
+		return store.World{}, fmt.Errorf("the world %q uses the %s ruleset, but mode is %s", w.Name, w.Ruleset, cfg.Mode)
 	}
-	return w.Name, nil
+	return w, nil
+}
+
+// rulesetBase is the ruleset base that the mode or the world row fixes:
+// --mode renewal or pre-renewal, else the world row's, else none.
+func rulesetBase(mode, worldRuleset string) string {
+	if b, ok := mod.ModeBase(mode); ok {
+		return b
+	}
+	b, _ := mod.ModeBase(worldRuleset)
+	return b
 }
 
 // dbCharacters loads characters from the database. Game tickets name the
@@ -625,14 +660,14 @@ func loadProgression(mode reference.Mode) (*progression.Tables, *progression.Dat
 	return progression.New(&d, items, progression.DefaultConfig), &d, nil
 }
 
-// loadItems reads the item database that reference/rathena extracted
-// from rAthena's item_db.
-func loadItems(mode reference.Mode) (*item.Table, error) {
+// loadItemData reads the item database that reference/rathena
+// extracted from rAthena's item_db. Mods' item overlays apply over it.
+func loadItemData(mode reference.Mode) (*item.Data, error) {
 	var d item.Data
 	if err := reference.LoadFile("extracts/"+string(mode)+"/items.json", &d); err != nil {
 		return nil, err
 	}
-	return item.New(&d), nil
+	return &d, nil
 }
 
 // parseStartItems reads --start-items: id:amount pairs, comma-separated.

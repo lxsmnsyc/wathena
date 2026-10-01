@@ -27,20 +27,37 @@ type options struct {
 	Listen    string `yaml:"listen"`
 	PublicURL string `yaml:"public_url"`
 	// Origins is nil when neither the file nor a flag set it.
-	Origins        *list  `yaml:"origins"`
-	PlayURL        string `yaml:"play_url"`
-	TrustedProxies list   `yaml:"trusted_proxies"`
-	Assets         string `yaml:"assets"`
-	ClientDir      string `yaml:"client_dir"`
-	StartMap       string `yaml:"start_map"`
-	Maps           list   `yaml:"maps"`
-	Mode           string `yaml:"mode"`
-	Captcha        string `yaml:"captcha"`
-	Dev            bool   `yaml:"dev"`
-	Build          string `yaml:"build"`
-	StartItems     string `yaml:"start_items"`
-	DebugAddr      string `yaml:"debug_addr"`
-	ProfileDir     string `yaml:"profile_dir"`
+	Origins        *list      `yaml:"origins"`
+	PlayURL        string     `yaml:"play_url"`
+	TrustedProxies list       `yaml:"trusted_proxies"`
+	Assets         string     `yaml:"assets"`
+	ClientDir      string     `yaml:"client_dir"`
+	StartMap       string     `yaml:"start_map"`
+	Maps           list       `yaml:"maps"`
+	Mode           string     `yaml:"mode"`
+	Captcha        string     `yaml:"captcha"`
+	Dev            bool       `yaml:"dev"`
+	Build          string     `yaml:"build"`
+	StartItems     string     `yaml:"start_items"`
+	DebugAddr      string     `yaml:"debug_addr"`
+	ProfileDir     string     `yaml:"profile_dir"`
+	Mods           modOptions `yaml:"mods"`
+}
+
+// modOptions are the mods settings (server/README.md, "Mods").
+type modOptions struct {
+	// Dir is the folder of installed mods. Empty loads only the built-in
+	// core mods.
+	Dir string `yaml:"dir"`
+	// Ruleset is the world's ruleset mod. Empty picks the core ruleset of
+	// the mode.
+	Ruleset string `yaml:"ruleset"`
+	// Strict turns data overlay warnings into errors.
+	Strict bool `yaml:"strict"`
+	// Approve lists the permissions the owner approved, by mod ID.
+	Approve map[string][]string `yaml:"approve"`
+	// Disable lists installed mods that must not load.
+	Disable []string `yaml:"disable"`
 }
 
 // list is a list of strings. In the config file it is a YAML sequence
@@ -144,6 +161,9 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.StringVar(&f.StartItems, "start-items", "", "items every new character starts with, as id:amount pairs such as 501:10,512:20, for development (start_items)")
 	flags.StringVar(&f.DebugAddr, "debug-addr", "", "loopback address to serve measurements and profiles on, such as 127.0.0.1:8301; empty serves none (debug_addr)")
 	flags.StringVar(&f.ProfileDir, "profile-dir", "", "folder for the CPU profiles taken when a zone is over the tick budget; empty takes none (profile_dir)")
+	flags.StringVar(&f.Mods.Dir, "mods", "", "folder of installed mods; empty loads only the built-in core mods (mods.dir)")
+	flags.StringVar(&f.Mods.Ruleset, "ruleset", "", "the world's ruleset mod, such as core.ruleset.renewal; empty picks the core ruleset of --mode (mods.ruleset)")
+	flags.BoolVar(&f.Mods.Strict, "mods-strict", false, "make data overlay warnings errors, such as two mods setting the same field (mods.strict)")
 	flags.StringVar(&database, "database", "", "PostgreSQL URL of the game role; prefer the "+databaseEnv+" environment variable, which keeps the password out of process lists")
 	if err := flags.Parse(args); err != nil {
 		return o, "", err
@@ -191,6 +211,12 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.DebugAddr = f.DebugAddr
 		case "profile-dir":
 			o.ProfileDir = f.ProfileDir
+		case "mods":
+			o.Mods.Dir = f.Mods.Dir
+		case "ruleset":
+			o.Mods.Ruleset = f.Mods.Ruleset
+		case "mods-strict":
+			o.Mods.Strict = f.Mods.Strict
 		}
 	})
 	return o, database, nil
@@ -324,6 +350,11 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if _, err := parseStartItems(o.StartItems); err != nil {
 		bad("start_items", "%v", err)
+	}
+	if o.Mods.Dir != "" {
+		if fi, err := os.Stat(o.Mods.Dir); err != nil || !fi.IsDir() {
+			bad("mods.dir", "%s is not a folder", o.Mods.Dir)
+		}
 	}
 
 	if !o.Dev && (s.Database == "" || s.AccountDatabase == "") {

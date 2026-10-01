@@ -13,6 +13,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
+	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -125,11 +126,13 @@ type entity struct {
 	// idx and slot are the entity's place in the zone's entitySet.
 	idx, slot int32
 	// player is set for players. Monsters have monster instead, items
-	// on the ground have item, and warp portals have warp.
+	// on the ground have item, warp portals have warp, and NPCs that
+	// mods place have npc.
 	player  *Player
 	monster *monster
 	item    *groundItem
 	warp    *Warp
+	npc     *npc
 	x, y    int
 	// dir is the facing, 0 south, clockwise.
 	dir   int
@@ -216,6 +219,17 @@ type Zone struct {
 	World Directory
 	// Metrics measures the zone's ticks. New makes it.
 	Metrics *metrics.Zone
+	// Mods are the mods' scripts and item names. Without them, no
+	// scripts run. Set it before Run.
+	Mods *Mods
+
+	// scripts runs the mods' Lua in the zone's own state, made by Run.
+	// scriptEvents wait for a point where scripts may run.
+	scripts      *modscript.Runtime
+	scriptEvents []scriptEvent
+	// control gets work that must run on the zone's goroutine, such as a
+	// mod reload.
+	control chan func()
 
 	// warps are the map's warps, in load order.
 	warps []Warp
@@ -279,6 +293,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		commands: make(chan command, 1024),
 		arrivals: make(chan *handoff),
 		stale:    make(chan *Player),
+		control:  make(chan func()),
 		stopped:  make(chan struct{}),
 		Metrics:  &metrics.Zone{Name: mapName},
 	}
@@ -297,6 +312,8 @@ func (z *Zone) Run(ctx context.Context) {
 	defer close(z.stopped)
 	z.start = time.Now()
 	z.startSender()
+	z.startScripts()
+	defer z.stopScripts()
 	var t *time.Ticker
 	var ticks <-chan time.Time
 	defer func() {
@@ -316,7 +333,9 @@ func (z *Zone) Run(ctx context.Context) {
 			z.asleep = true
 			z.Metrics.Asleep()
 		}
-		// What the last event queued goes to the sender in one batch.
+		// Handlers of what the last event did run now, and what they
+		// queued goes to the sender in one batch.
+		z.runScripts()
 		z.flush()
 		select {
 		case <-ctx.Done():
@@ -342,6 +361,8 @@ func (z *Zone) Run(ctx context.Context) {
 			z.Metrics.Handled(time.Since(began))
 		case p := <-z.stale:
 			z.loggedInElsewhere(p)
+		case f := <-z.control:
+			f()
 		case c := <-z.commands:
 			began := time.Now()
 			z.handle(c)
@@ -362,7 +383,12 @@ func (z *Zone) wake() {
 		return
 	}
 	z.asleep = false
-	z.now = time.Since(z.start).Milliseconds()
+	now := time.Since(z.start).Milliseconds()
+	if z.scripts != nil {
+		// Mod timers follow the zone clock, which stood still.
+		z.scripts.Shift(now - z.now)
+	}
+	z.now = now
 	z.prevHeal, z.nextHeal = z.now, z.now+naturalHealInterval
 	for e := range z.entities.all() {
 		if e.monster != nil && len(e.path) == 0 {
@@ -493,9 +519,11 @@ func (z *Zone) join(p *Player) joinResult {
 	if h == nil {
 		p.rewarp = 0
 		p.touchOnEnter = true
+		z.scriptEventFor("login", modscript.Player(int64(p.charID)))
 	} else {
 		z.entered(p)
 	}
+	z.scriptEventFor("map_enter", modscript.Player(int64(p.charID)))
 	// The player sees itself from the first frame.
 	return joinResult{netID: p.netID(e), tick: z.tick}
 }
@@ -526,6 +554,11 @@ func (p *Player) netID(e *entity) uint32 {
 func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 	if p.entity == nil || !z.entities.has(p.entity) {
 		return
+	}
+	if reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT {
+		// Handlers see the player before it goes.
+		z.scriptEventFor("logout", modscript.Player(int64(p.charID)))
+		z.runScripts()
 	}
 	z.save(p, true)
 	z.remove(p, reason)
@@ -682,6 +715,10 @@ func (z *Zone) stepAt(now int64) {
 	z.expireItems()
 	z.naturalHeal()
 	z.autosave()
+	z.runScripts()
+	if z.scripts != nil {
+		z.scripts.Advance(z.now)
+	}
 	acted := time.Now()
 	z.Metrics.Phase(metrics.PhaseAct, acted.Sub(moved))
 	if len(z.players) > 0 {
@@ -791,6 +828,9 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 }
 
 func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
+	if e.npc != nil {
+		return z.npcAppear(id, e)
+	}
 	if e.warp != nil {
 		// A warp portal is an NPC with the warp sprite, as rAthena's
 		// JT_WARPNPC. It has no name to show.

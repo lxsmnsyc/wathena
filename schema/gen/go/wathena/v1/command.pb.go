@@ -29,6 +29,10 @@ const (
 	ChatChannel_CHAT_CHANNEL_GUILD       ChatChannel = 3
 	ChatChannel_CHAT_CHANNEL_WHISPER     ChatChannel = 4
 	ChatChannel_CHAT_CHANNEL_WORLD       ChatChannel = 5
+	// SYSTEM is text from the server to one player, such as a mod
+	// script's player:send_message. from is 0 and from_name is empty.
+	// Clients never send it.
+	ChatChannel_CHAT_CHANNEL_SYSTEM ChatChannel = 6
 )
 
 // Enum value maps for ChatChannel.
@@ -40,6 +44,7 @@ var (
 		3: "CHAT_CHANNEL_GUILD",
 		4: "CHAT_CHANNEL_WHISPER",
 		5: "CHAT_CHANNEL_WORLD",
+		6: "CHAT_CHANNEL_SYSTEM",
 	}
 	ChatChannel_value = map[string]int32{
 		"CHAT_CHANNEL_UNSPECIFIED": 0,
@@ -48,6 +53,7 @@ var (
 		"CHAT_CHANNEL_GUILD":       3,
 		"CHAT_CHANNEL_WHISPER":     4,
 		"CHAT_CHANNEL_WORLD":       5,
+		"CHAT_CHANNEL_SYSTEM":      6,
 	}
 )
 
@@ -1837,14 +1843,15 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x04item\x18\x01 \x01(\rR\x04item\"M\n" +
 	"\tRaiseStat\x12(\n" +
 	"\x04stat\x18\x01 \x01(\x0e2\x14.wathena.v1.BaseStatR\x04stat\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\rR\x06amount*\xa5\x01\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount*\xbe\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
 	"\x12CHAT_CHANNEL_PARTY\x10\x02\x12\x16\n" +
 	"\x12CHAT_CHANNEL_GUILD\x10\x03\x12\x18\n" +
 	"\x14CHAT_CHANNEL_WHISPER\x10\x04\x12\x16\n" +
-	"\x12CHAT_CHANNEL_WORLD\x10\x05*\x97\x01\n" +
+	"\x12CHAT_CHANNEL_WORLD\x10\x05\x12\x17\n" +
+	"\x13CHAT_CHANNEL_SYSTEM\x10\x06*\x97\x01\n" +
 	"\bBaseStat\x12\x19\n" +
 	"\x15BASE_STAT_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rBASE_STAT_STR\x10\x01\x12\x11\n" +

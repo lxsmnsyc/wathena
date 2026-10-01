@@ -21,8 +21,8 @@ func TestCheckWorld(t *testing.T) {
 		t.Errorf("no world: %v", err)
 	}
 	cfg.Dev = true
-	if name, err := checkWorld(ctx, game, cfg); err != nil || name != "" {
-		t.Errorf("no world with dev: %q, %v", name, err)
+	if w, err := checkWorld(ctx, game, cfg); err != nil || w.Name != "" {
+		t.Errorf("no world with dev: %q, %v", w.Name, err)
 	}
 	cfg.Dev = false
 
@@ -30,8 +30,8 @@ func TestCheckWorld(t *testing.T) {
 	if _, err := store.NewWorld(ctx, admin, store.World{Name: "Test", Ruleset: "renewal", Seed: seed}, store.Admin{Name: "Admin1", Hash: "x"}); err != nil {
 		t.Fatal(err)
 	}
-	if name, err := checkWorld(ctx, game, cfg); err != nil || name != "Test" {
-		t.Errorf("world: %q, %v", name, err)
+	if w, err := checkWorld(ctx, game, cfg); err != nil || w.Name != "Test" || w.Ruleset != "renewal" {
+		t.Errorf("world: %+v, %v", w, err)
 	}
 	cfg.Mode = "pre-renewal"
 	if _, err := checkWorld(ctx, game, cfg); err == nil {

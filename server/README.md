@@ -241,12 +241,18 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `start_items` | `--start-items` | none | Items of new characters, for development. |
 | `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. |
 | `profile_dir` | `--profile-dir` | none | Folder for CPU profiles of slow ticks. |
+| `mods.dir` | `--mods` | none | The folder of installed mods. See "Mods". |
+| `mods.ruleset` | `--ruleset` | the core ruleset of `mode` | The world's ruleset mod. |
+| `mods.strict` | `--mods-strict` | `false` | Data overlay warnings become errors. |
+| `mods.approve` | none | none | Approved permissions, by mod ID. |
+| `mods.disable` | none | none | Installed mods that must not load. |
 
 `waserver` checks everything before it starts, and lists every problem by key. With a database it also refuses to start:
 
 - while migrations are pending (`wactl migrate up`),
 - before `wactl world new` made the world, except with `--dev`,
-- when `mode` is not the world's ruleset, except `none`.
+- when `mode` is not the world's ruleset, except `none`,
+- when a mod cannot load (see "Mods").
 
 The web client:
 
@@ -264,6 +270,58 @@ Health checks:
 - `waserver health` fetches `/readyz` and exits with status 1 when it is not ready, for container images without curl.
 
 On SIGTERM or Ctrl+C, `waserver` stops being ready, ends every game connection with `DISCONNECT_REASON_SERVER_SHUTDOWN`, saves every character, stops its zones, and gives the save workers 10 seconds to finish.
+
+## Mods
+
+`waserver` loads the mods in `mods.dir` at startup (strategy section 6, [decision 0006](../docs/decisions/0006-mod-loader.md)). [mods/README.md](../mods/README.md) is the guide for mod authors. `mods/examples/greeter` is a small sample.
+
+```yaml
+mods:
+  dir: /srv/mods
+  ruleset: core.ruleset.renewal
+  approve:
+    example.halloween-event: [player.give_items]
+  disable: [example.old-event]
+```
+
+What it does:
+
+- Each folder in `mods.dir` with a `mod.yaml`, and each `.zip` file with one, is a mod. Other entries are skipped.
+- The built-in `core` mod stands for the base game. `core.ruleset.renewal` and `core.ruleset.pre_renewal` are its ruleset mods.
+- Mods load after their `depends`, their `load_after` that are installed, and `core`. Ties go by mod ID, so the order is the same on every start.
+- The world's ruleset is `mods.ruleset`, or the core ruleset of `mode`. Ruleset mods that are not the world's ruleset, or what it extends, are skipped.
+- Items from mods get IDs from 2,000,000 the first time they load. With a database the IDs are kept in the `mod_ids` table, and never change or go to another item. Without a database they live in memory, like the characters.
+- Each zone runs the mods' scripts in its own Lua state. A mod whose scripts fail is logged and left off in that zone. A mod whose handlers fail 10 times in a minute is turned off in that zone.
+
+Any of these stop the start, with every problem listed:
+
+- A manifest with a missing or wrong field. The error names the file and the field.
+- A missing dependency, a dependency at a version outside the range, or a load order cycle, which the error shows as `a -> b -> a`.
+- A mod whose `supports.rulesets` does not match the world's ruleset.
+- A permission that needs approval and is not in `mods.approve`. A mod either runs with every permission it asked for or not at all, so a player never meets half a mod. The error names the permissions to review.
+- A data overlay error. With `mods.strict`, also two mods setting the same field.
+
+Flagged permissions, such as `rules.override`, are logged as warnings at each start.
+
+`mode` and the ruleset:
+
+- `mode` picks the rAthena reference data: monsters, drops, items and tables. The world row pins it, and `waserver` refuses another.
+- The ruleset's base must be the same as `mode`: `renewal` with `renewal`, `pre_renewal` with `pre-renewal`.
+- Until the ruleset flags drive the game code (phase 4), flags only decide which mods may load.
+
+Reloading a mod's scripts, for development:
+
+```text
+curl -X POST 'http://127.0.0.1:8301/debug/wathena/mods/reload?mod=example.greeter'
+```
+
+- It needs `dev` and `debug_addr`. It is served on the debug address only.
+- It reads the mod's Lua files again, ends the mod's context in every zone, which removes its handlers and timers, and runs the new entry scripts.
+- It does not read `mod.yaml` or data files again. Those need a restart.
+- Other mods that required the mod's helper modules keep the versions they loaded.
+- A reload that fails in a zone leaves the mod off there until a reload succeeds.
+
+Cost: each zone's Lua state holds about 50 KB for the sample mod. All 988 maps of a kRO build start in 2.1 seconds with it, against 2.0 without mods.
 
 ## Load tests and metrics
 

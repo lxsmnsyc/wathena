@@ -1,6 +1,6 @@
 import { create } from '@bufbuild/protobuf';
 import { type Camera, Group, Vector3 } from 'three';
-import { effects as effectTable, jobs, looks, partEffect } from '../data/tables';
+import { effects as effectTable, jobs, looks, npcSprites, partEffect } from '../data/tables';
 import { type WMap, cellHeight } from '../formats/wmap';
 import {
   DamageKind,
@@ -32,7 +32,8 @@ import Player, { type Body } from './player';
 // Shows the entities a server sends: players appear, walk the paths the
 // server gives, and vanish. Items lie on the ground until someone picks
 // them up. Effects play on entities or cells. Warp portals are NPCs with
-// the warp sprite, drawn as the warp effect. A map change clears
+// the warp sprite, drawn as the warp effect. Other NPCs are one sprite,
+// named by npc_sprites.yml. A map change clears
 // everything, and events wait until the new map has loaded.
 
 /** JT_WARPNPC, the NPC sprite of warp portals. */
@@ -70,11 +71,29 @@ interface Actions {
   pickUp: number | undefined;
 }
 
-/** RO action numbers by entity kind. */
-const ACTIONS: Record<'player' | 'monster', Actions> = {
+/** RO action numbers by entity kind. NPCs only stand. */
+const ACTIONS: Record<'player' | 'monster' | 'npc', Actions> = {
   player: { attack: 10, hurt: 6, dead: 8, pickUp: 3 },
   monster: { attack: 2, hurt: 3, dead: 4, pickUp: undefined },
+  npc: { attack: 0, hurt: 0, dead: 0, pickUp: undefined },
 };
+
+/** The actions an entity kind uses. */
+function kindOf(kind: EntityKind): keyof typeof ACTIONS {
+  if (kind === EntityKind.MONSTER) {
+    return 'monster';
+  }
+  return kind === EntityKind.NPC ? 'npc' : 'player';
+}
+
+/** The asset an entity's single sprite comes from: monsters by ID, NPCs by name. */
+function spriteOf(kind: EntityKind, body: number): string | undefined {
+  if (kind === EntityKind.MONSTER) {
+    return `sprite/mob/${body}`;
+  }
+  const npc = npcSprites.get(body);
+  return npc === undefined ? undefined : `sprite/npc/${npc.sprite}`;
+}
 
 /** How long the pick up action plays, in milliseconds. */
 const PICK_UP_MS = 500;
@@ -111,6 +130,8 @@ export default class Online {
   onPickUpFailed: ((reason: PickUpFailure) => void) | undefined;
   /** Called for every local chat line, with the speaker's entity ID. */
   onChat: ((from: number, name: string, text: string) => void) | undefined;
+  /** Called for text the server sends to this player alone, such as a mod's message. */
+  onServerText: ((text: string) => void) | undefined;
   /** Called when an effect plays a sound, with where it plays. */
   onSound: ((name: string, position: Vector3) => void) | undefined;
   /**
@@ -211,7 +232,7 @@ export default class Online {
             this.addPortal(a.id, a.x, a.y, this.map);
             break;
           }
-          this.kinds.set(a.id, a.kind === EntityKind.MONSTER ? 'monster' : 'player');
+          this.kinds.set(a.id, kindOf(a.kind));
           const map = this.map;
           // A placeholder holds the entity's place until its sprites load.
           const pending = {
@@ -221,14 +242,18 @@ export default class Online {
             walk: undefined as Parameters<Player['follow']> | undefined,
           };
           this.pending.set(a.id, pending);
-          // Monsters are one sprite, named by monster ID. Players are
-          // characters built from their look.
-          const body: Promise<Body | undefined> =
-            a.kind === EntityKind.MONSTER
-              ? this.sprites
-                  .get(`sprite/mob/${a.look?.body ?? 0}`)
-                  .then((s) => (s === undefined ? undefined : new SpriteView(s)))
-              : Character.load(this.sprites, lookOf(a.look));
+          // Monsters and NPCs are one sprite. Players are characters
+          // built from their look.
+          const single = a.kind === EntityKind.MONSTER || a.kind === EntityKind.NPC;
+          const sprite = single ? spriteOf(a.kind, a.look?.body ?? 0) : undefined;
+          let body: Promise<Body | undefined> = Promise.resolve(undefined);
+          if (!single) {
+            body = Character.load(this.sprites, lookOf(a.look));
+          } else if (sprite !== undefined) {
+            body = this.sprites
+              .get(sprite)
+              .then((s) => (s === undefined ? undefined : new SpriteView(s)));
+          }
           body
             .then((c) => {
               if (c === undefined || this.pending.get(a.id) !== pending) {
@@ -395,6 +420,8 @@ export default class Online {
           const c = e.body.value;
           if (c.channel === ChatChannel.LOCAL) {
             this.onChat?.(c.from, c.fromName, c.text);
+          } else if (c.channel === ChatChannel.SYSTEM) {
+            this.onServerText?.(c.text);
           }
           break;
         }

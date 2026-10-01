@@ -101,8 +101,10 @@ Server to client, in `ServerMessage`:
   - Bidirectional formatting characters are removed: U+061C, U+200E, U+200F, U+202A to U+202E, and U+2066 to U+2069. They could reorder the line or the name next to it.
   - Spaces at both ends are trimmed. A line that is then empty, or longer than 255 characters, is dropped. A character is a Unicode code point.
   - Clients show chat with `textContent`, never as HTML (strategy section 7.5).
+- **Server text to one player.** A `ChatMessage` with `CHAT_CHANNEL_SYSTEM` is text from the server to one player alone, such as a mod script's `player:send_message`. `from` is 0 and `from_name` is empty. Clients show it in the chat log, never above a speaker. A client never sends it: the gateway drops chat on any channel but local.
 - **Appearance uses table IDs.** `Look` holds sprite and palette IDs from the client data tables (strategy section 10.5).
 - **Warp portals are NPCs.** A warp appears as `ENTITY_KIND_NPC` with `look.body` 45, rAthena's `JT_WARPNPC` sprite, and no name. The client draws effect 321 (`EF_WARPZONE2`) on it, as roBrowser does for job 45. Hidden warps (rAthena's `JT_HIDDEN_WARP_NPC`, 139) never appear. A player who walks into a warp's area goes to its target, as rAthena's `npc_touch_areanpc`. Warps are NPCs rather than a kind of their own, because rAthena's script NPCs with the warp sprite will show the same way once scripts run.
+- **Other NPCs show their sprite.** An NPC that a mod places appears as `ENTITY_KIND_NPC` with `look.body` set to its NPC sprite ID, its facing in `dir`, and its name. The client finds the sprite's name in `client/data/npc_sprites.yml`.
 - **A warp to another map is a map change, on the same connection.** The first frame from the new map starts with `MapChange`: the new map's asset name, the player's cell, and the player's own entity ID there. Then, as after `Welcome`:
   - The player's own `EntityAppear` follows, and then the inventory and stats again.
   - Entity IDs start again on the new map. The client removes every entity it showed before the change.
@@ -139,7 +141,7 @@ The 500-bot load tests measured the real traffic (strategy section 3.8, "Load te
 
 ## Breaks
 
-Nothing is deployed yet, so nothing breaks. `MapChange` is a new `Event` case, and warp portals are a new use of `ENTITY_KIND_NPC`, so the protocol version stays 1. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.
+Nothing is deployed yet, so nothing breaks. `CHAT_CHANNEL_SYSTEM` is a new enum value that older clients ignore. `MapChange` is a new `Event` case, and warp portals are a new use of `ENTITY_KIND_NPC`, so the protocol version stays 1. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.
 
 ## Alternatives
 

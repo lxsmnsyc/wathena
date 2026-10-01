@@ -6,11 +6,13 @@ package world
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"sync"
 
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
 
@@ -78,6 +80,20 @@ func (w *World) Run(ctx context.Context) {
 	for _, z := range w.zones {
 		z.WaitIncoming()
 	}
+}
+
+// ReloadMod loads a mod's scripts again in every zone, from a new
+// snapshot, for development. Each zone ends the mod's old context, which
+// removes its handlers and timers, and runs the new scripts. It returns
+// the errors of every zone, by map.
+func (w *World) ReloadMod(ctx context.Context, sc *mod.Scripts) error {
+	var errs []error
+	for _, z := range w.Zones() {
+		if err := z.ReloadMod(ctx, sc); err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", z.Map, err))
+		}
+	}
+	return errors.Join(errs...)
 }
 
 // Stopped closes when Run has returned.
