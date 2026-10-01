@@ -81,7 +81,7 @@ describe('Online', () => {
     expect(portals(o)).toBe(2);
   });
 
-  it('loads an NPC sprite by its name in npc_sprites.yml', () => {
+  it('loads an NPC sprite by its sprite ID', () => {
     // Node has no reportError, which the browser has.
     vi.stubGlobal('reportError', () => {});
     const asked: string[] = [];
@@ -108,7 +108,7 @@ describe('Online', () => {
         },
       }),
     ]);
-    expect(asked).toEqual(['sprite/npc/4_f_kafra6']);
+    expect(asked).toEqual(['sprite/npc/112', 'sprite/npc/999999']);
   });
 
   it('passes server text on, and local chat to onChat', () => {

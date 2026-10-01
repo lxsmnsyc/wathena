@@ -3,7 +3,6 @@
 
 import effectsTable from '../../data/effects.yml';
 import jobsTable from '../../data/jobs.yml';
-import npcSpritesTable from '../../data/npc_sprites.yml';
 import weaponsTable from '../../data/weapons.yml';
 
 export interface Weapon {
@@ -178,16 +177,3 @@ export const weapons = table('weapons.yml', weaponsTable, 'weapons', isWeapon);
 
 /** Effects by RO effect ID. */
 export const effects = table('effects.yml', effectsTable, 'effects', isEffect);
-
-export interface NpcSprite {
-  id: number;
-  /** The sprite's asset name is sprite/npc/<sprite>. */
-  sprite: string;
-}
-
-function isNpcSprite(v: unknown): v is NpcSprite {
-  return isObject(v) && typeof v.id === 'number' && typeof v.sprite === 'string';
-}
-
-/** NPC sprites by the ID the server sends as an NPC's Look.body. */
-export const npcSprites = table('npc_sprites.yml', npcSpritesTable, 'sprites', isNpcSprite);

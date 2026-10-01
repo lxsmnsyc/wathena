@@ -30,7 +30,7 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `sprite/shield/<look>/<sex>/<view>` | Sprite | `sprite/shield/knight/f/1` | Shield drawn on a character, by shield view ID. |
 | `sprite/garment/<look>/<sex>/<view>` | Sprite | `sprite/garment/archer/m/1` | Garment drawn on a character, by garment view ID. |
 | `sprite/mob/<id>` | Sprite | `sprite/mob/1002` | Monster, by monster ID. |
-| `sprite/npc/<name>` | Sprite | `sprite/npc/4_f_kafra1` | NPC. |
+| `sprite/npc/<id>` | Sprite | `sprite/npc/117` | NPC, by NPC sprite ID. |
 | `sprite/item/<id>` | Sprite | `sprite/item/501` | A dropped item, by item ID. |
 | `sprite/<other>/<name>` | Sprite | `sprite/pet/<name>` | Other sprites: `pet`, `homun`, `merc`, `effect`, `cursor`. |
 | `palette/hair/<race>/<sex>/<style>/<color>` | Palette | `palette/hair/human/f/3/5` | Hair dye. |
@@ -100,9 +100,18 @@ Rules:
 - Slots are clamped to 0 to 4.
 - Items with no name, no unidentified name, and no description are left out.
 
-### Monsters from a game client
+### Monsters and NPCs from a game client
 
-Monster sprites are named by monster ID, the ID game data and the protocol use. The GRF importer finds each ID's sprite through the client's `JobNameTable` (in `datainfo\jobname.lub`, whose keys come from `datainfo\npcidentity.lub`): `data\sprite\몬스터\<name>.spr` and `.act` become `sprite/mob/<id>` for every ID that names them. Sprites no ID names are left out.
+Monster and NPC sprites are named by ID, the ID game data and the protocol use. The GRF importer finds each ID's sprite through the client's `JobNameTable` (in `datainfo\jobname.lub`, whose keys come from `datainfo\npcidentity.lub`). Like the client, it picks the folder by ID:
+
+| IDs | Client path | Name |
+|---|---|---|
+| 45 to 999, and 10,000 to 19,999 (NPCs) | `data\sprite\npc\<name>.spr` and `.act` | `sprite/npc/<id>` |
+| Other IDs (monsters) | `data\sprite\몬스터\<name>.spr` and `.act` | `sprite/mob/<id>` |
+
+- A sprite gets a name for every ID that names it.
+- Sprites no ID names are left out.
+- 45 is the warp portal. The web client draws it as an effect, not as its sprite.
 
 ### Sounds and music from a game client
 
@@ -476,7 +485,7 @@ wactl assets build \
 - **Layering.** Sources are applied in order. A later source replaces names an earlier one provides. Mods are applied after all `--source` values, in mod load order.
 - **Sources.** Each source is an importer:
   - `placeholder`: the placeholder pack, drawn by code.
-  - `grf:<folder>`: a game client folder with `DATA.INI` (strategy section 10.1). The importer maps game paths to names with its own rules, such as `data\sprite\몬스터\poring.spr` to `sprite/mob/poring`.
+  - `grf:<folder>`: a game client folder with `DATA.INI` (strategy section 10.1). The importer maps game paths to names with its own rules, such as `data\sprite\몬스터\poring.spr` to `sprite/mob/1002`.
   - `pack:<folder>`: original art in authoring formats (below).
 - **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) and tables are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses. Shards and dependency indexes (below) are JSON, also stored only as Brotli, as `<hash>.json.br`. Clients request every file by its path without `.br`, as `<first 2 hex digits>/<hash>.<extension>`, or `<first 2 hex digits>/<hash>.json`.
 - **Cache.** The build keeps `.cache.json` in the output folder, keyed by each input's identity and converter version. A later build reuses an asset whose key and stored file are unchanged, so slow compression happens once per changed asset.

@@ -178,6 +178,22 @@ func TestNames(t *testing.T) {
 	if got := mobs.SpriteNames(`data\sprite\몬스터\unknown.spr`); len(got) != 0 {
 		t.Errorf("unlisted monster names %v", got)
 	}
+	// NPC sprites are named by ID too, from the client's NPC ranges.
+	npcs := &Tables{npcs: map[string][]int{"4_f_kafra1": {114, 10100}}}
+	if got := npcs.SpriteNames(`data\sprite\npc\4_F_KAFRA1.act`); len(got) != 2 || got[0] != "sprite/npc/114" || got[1] != "sprite/npc/10100" {
+		t.Errorf("NPC names %v", got)
+	}
+	if got := npcs.SpriteNames(`data\sprite\npc\unknown.spr`); len(got) != 0 {
+		t.Errorf("unlisted NPC names %v", got)
+	}
+	if got := (*Tables)(nil).SpriteNames(`data\sprite\npc\4_F_KAFRA1.act`); len(got) != 0 {
+		t.Errorf("NPC names without tables %v", got)
+	}
+	for id, want := range map[int]bool{44: false, 45: true, 114: true, 999: true, 1000: false, 1002: false, 9999: false, 10000: true, 19999: true, 20000: false} {
+		if IsNPCID(id) != want {
+			t.Errorf("IsNPCID(%d) = %v", id, !want)
+		}
+	}
 	tb := &Tables{headgear: map[string][]int{"남/남_고글": {1, 5}}}
 	if got := tb.SpriteNames(`data\sprite\악세사리\남\남_고글.act`); len(got) != 2 || got[0] != "sprite/headgear/m/1" || got[1] != "sprite/headgear/m/5" {
 		t.Errorf("headgear names %v", got)

@@ -87,15 +87,22 @@ func systemLines(ev []*wathenav1.Event) []string {
 
 const recordEvents = `
 local events = require "wa.events"
+local timers = require "wa.timers"
 return function()
-  for _, name in ipairs { "login", "map_enter", "level_up", "monster_killed" } do
-    events.on(name, function(player, extra)
-      local text = name .. " " .. player.name
-      if name == "level_up" then text = text .. " " .. extra end
-      if name == "monster_killed" then text = text .. " " .. extra.name .. " " .. extra.id .. " level " .. extra.level end
-      player:send_message(text)
+  for _, name in ipairs { "login", "map_enter", "base_level_up", "job_level_up" } do
+    events.on(name, function(player)
+      player:send_message(name .. " " .. player.name)
     end)
   end
+  events.on("monster_killed", function(player, monster)
+    player:send_message("monster_killed " .. player.name .. " " .. monster.name .. " " .. monster.id ..
+      " level " .. monster.level .. " hp " .. monster.hp .. "/" .. monster.max_hp ..
+      " alive " .. tostring(monster.is_alive) .. " on " .. monster.map)
+    timers.after(0, function()
+      local ok, err = pcall(function() return monster.name end)
+      player:send_message("after the event: " .. tostring(ok) .. " " .. tostring(err):match("the monster is gone.*"))
+    end)
+  end)
 end`
 
 func TestModEventsFromZoneActions(t *testing.T) {
@@ -105,8 +112,14 @@ func TestModEventsFromZoneActions(t *testing.T) {
 		t.Fatalf("after joining: %q, logs: %s", got, logs)
 	}
 	got := strings.Join(systemLines(kill(t, z, p, m)), "|")
-	if got != "monster_killed a Poring 1002 level 3|level_up a base|level_up a job" {
+	// The timer runs after the event, when the handle no longer reads.
+	want := "monster_killed a Poring 1002 level 3 hp 0/30 alive false on test|base_level_up a|job_level_up a|" +
+		"after the event: false the monster is gone from this map"
+	if got != want {
 		t.Fatalf("after the kill: %q, logs: %s", got, logs)
+	}
+	if len(z.monsterHandles) != 0 {
+		t.Errorf("%d monster handles left", len(z.monsterHandles))
 	}
 }
 

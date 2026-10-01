@@ -159,7 +159,7 @@ const sprites = new SpriteCache(store);
 const params = new URL(location.href).searchParams;
 const serverURL = gameServerURL(params, location.href, import.meta.env.PROD);
 const online = serverURL !== null;
-const DEFAULT_SPRITES = online ? '' : 'mob/1002,mob/1063,mob/1007,mob/1113,mob/1008,npc/4_f_kafra1';
+const DEFAULT_SPRITES = online ? '' : 'mob/1002,mob/1063,mob/1007,mob/1113,mob/1008,npc/117';
 // Effects to play in a row near the center, such as effect/firewall.
 const effectNames = (new URL(location.href).searchParams.get('effect') ?? '')
   .split(',')

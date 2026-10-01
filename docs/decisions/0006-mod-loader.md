@@ -47,7 +47,7 @@ The runtime's `require` (decision 0002) loads modules into the shared globals. P
 
 - `load` with an environment table already gives each chunk its own globals. Nothing new is needed in C, so `lua.wasm` did not need a rebuild.
 - The prelude keeps the real globals, the host functions and the API modules' tables in its own locals. Mod code only gets an environment table with copies of the safe base functions and of the standard library tables.
-- API modules, handles, and records are empty tables with a protected metatable. Writing raises an error. `rawset` in a mod's environment refuses them. `pairs` walks them without handing out the table behind.
+- API modules and handles are empty tables with a protected metatable. Writing raises an error. `rawset` in a mod's environment refuses them. `pairs` walks them without handing out the table behind.
 - The context is tracked in Go, which sets it before each call it makes. Host functions read it. A limit that stops a call cannot leave it set.
 
 Tests in [server/modscript](../../server/modscript/runtime_test.go) check that a mod cannot read another's globals, change a shared library, or change an API module with assignment, `rawset` or `setmetatable`.

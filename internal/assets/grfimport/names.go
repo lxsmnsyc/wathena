@@ -16,15 +16,22 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/grf"
 )
 
-// spriteFolders maps GRF sprite folders to asset namespaces, for folders
-// where the file name is the asset name.
-var spriteFolders = map[string]string{
-	"data/sprite/npc/": "sprite/npc/",
-}
+// Monster and NPC sprites are named by ID through the client's
+// JobNameTable. The client picks the folder by ID, as IsNPCID says:
+//
+//   - NPC IDs use data/sprite/npc/ and become sprite/npc/<id>.
+//   - Other IDs use data/sprite/몬스터/ and become sprite/mob/<id>.
+const (
+	monsterFolder = "data/sprite/몬스터/"
+	npcFolder     = "data/sprite/npc/"
+)
 
-// monsterFolder holds monster sprites, which are named by monster ID
-// through the client's JobNameTable, as sprite/mob/<id>.
-const monsterFolder = "data/sprite/몬스터/"
+// IsNPCID reports whether a JobNameTable ID is an NPC sprite ID. These
+// are the client's NPC ranges: 45 to 999, and 10,000 to 19,999. 45 is the
+// warp portal.
+func IsNPCID(id int) bool {
+	return (id >= 45 && id < 1000) || (id >= 10000 && id < 20000)
+}
 
 // sexes maps RO's Korean sex markers to assets-v1 names.
 var sexes = map[string]string{"남": "m", "여": "f"}
@@ -54,6 +61,9 @@ type Tables struct {
 	// monsters maps a lowercase sprite name, such as "poring", to monster
 	// IDs, from JobNameTable.
 	monsters map[string][]int
+	// npcs maps a lowercase sprite name, such as "4_f_kafra1", to NPC
+	// sprite IDs, from JobNameTable.
+	npcs map[string][]int
 }
 
 // shieldViews is the client's built-in table of named shield sprites.
@@ -101,7 +111,7 @@ func LoadTables(c *grf.Client, jobs *clientdata.Jobs) (*Tables, error) {
 			return nil, fmt.Errorf("%s: %w", name, err)
 		}
 	}
-	t := &Tables{headgear: map[string][]int{}, bodies: map[string][]string{}, races: map[string]string{}, weapons: map[string][]int{}, garments: map[string][]int{}, monsters: map[string][]int{}}
+	t := &Tables{headgear: map[string][]int{}, bodies: map[string][]string{}, races: map[string]string{}, weapons: map[string][]int{}, garments: map[string][]int{}, monsters: map[string][]int{}, npcs: map[string][]int{}}
 	forEachName(g["AccNameTable"], func(id int, name string) {
 		for _, sex := range []string{"남", "여"} {
 			key := grf.Normalize(sex + "/" + sex + name)
@@ -114,7 +124,11 @@ func LoadTables(c *grf.Client, jobs *clientdata.Jobs) (*Tables, error) {
 	})
 	forEachName(g["JobNameTable"], func(id int, name string) {
 		key := strings.ToLower(norm.NFC.String(name))
-		t.monsters[key] = append(t.monsters[key], id)
+		if IsNPCID(id) {
+			t.npcs[key] = append(t.npcs[key], id)
+		} else {
+			t.monsters[key] = append(t.monsters[key], id)
+		}
 	})
 	forEachName(g["RobeNameTable"], func(id int, name string) {
 		key := grf.Normalize(name)
@@ -170,16 +184,18 @@ func (t *Tables) SpriteNames(grfPath string) []string {
 			out = append(out, name)
 		}
 	}
-	for folder, ns := range spriteFolders {
-		if rest, ok := strings.CutPrefix(key, folder); ok && !strings.Contains(rest, "/") {
-			add(ns + strings.TrimSuffix(rest, ext))
+	for _, f := range []struct {
+		folder, ns string
+		ids        map[string][]int
+	}{{monsterFolder, "sprite/mob/", t.monsterIDs()}, {npcFolder, "sprite/npc/", t.npcIDs()}} {
+		rest, ok := strings.CutPrefix(key, f.folder)
+		if !ok || strings.Contains(rest, "/") {
+			continue
 		}
-	}
-	if rest, ok := strings.CutPrefix(key, monsterFolder); ok && t != nil && !strings.Contains(rest, "/") {
-		ids := t.monsters[strings.TrimSuffix(rest, ext)]
+		ids := f.ids[strings.TrimSuffix(rest, ext)]
 		sort.Ints(ids)
 		for _, id := range ids {
-			add(fmt.Sprintf("sprite/mob/%d", id))
+			add(fmt.Sprintf("%s%d", f.ns, id))
 		}
 	}
 	if m := headPath.FindStringSubmatch(key); m != nil && m[2] == m[4] {
@@ -195,6 +211,20 @@ func (t *Tables) SpriteNames(grfPath string) []string {
 		}
 	}
 	return out
+}
+
+func (t *Tables) monsterIDs() map[string][]int {
+	if t == nil {
+		return nil
+	}
+	return t.monsters
+}
+
+func (t *Tables) npcIDs() map[string][]int {
+	if t == nil {
+		return nil
+	}
+	return t.npcs
 }
 
 // characterNames adds body, weapon, shield, and garment names for a path
@@ -302,13 +332,17 @@ func (t *Tables) garmentNames(rest string, add func(string)) {
 // SpriteName returns the first asset name for a path, for callers that
 // only need one.
 //
-// Monster sprites get sprite/mob/<file name> here, for reports and
-// previews. Builds name them by monster ID instead, with SpriteNames.
+// Monster and NPC sprites get sprite/mob/<file name> and
+// sprite/npc/<file name> here, for reports and previews. Builds name them
+// by ID instead, with SpriteNames.
 func SpriteName(grfPath string) (string, bool) {
 	key := norm.NFC.String(grf.Normalize(grfPath))
-	if rest, ok := strings.CutPrefix(key, monsterFolder); ok && !strings.Contains(rest, "/") {
-		name := "sprite/mob/" + strings.TrimSuffix(rest, path.Ext(rest))
-		return name, assets.ValidName(name) == nil && path.Ext(rest) != ""
+	for folder, ns := range map[string]string{monsterFolder: "sprite/mob/", npcFolder: "sprite/npc/"} {
+		if rest, ok := strings.CutPrefix(key, folder); ok && !strings.Contains(rest, "/") {
+			ext := path.Ext(rest)
+			name := ns + strings.TrimSuffix(rest, ext)
+			return name, assets.ValidName(name) == nil && (ext == ".spr" || ext == ".act")
+		}
 	}
 	names := (*Tables)(nil).SpriteNames(grfPath)
 	if len(names) == 0 {

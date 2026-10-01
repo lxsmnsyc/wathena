@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -108,8 +109,9 @@ func TestPlaceholderAndGRF(t *testing.T) {
 	spr, act := testSprite()
 	var buf bytes.Buffer
 	if err := grf.Write(&buf, []grf.WriteEntry{
-		{Name: `data\sprite\npc\poring.spr`, Data: spr},
-		{Name: `data\sprite\npc\poring.act`, Data: act},
+		{Name: `data\sprite\npc\4_f_kafra1.spr`, Data: spr},
+		{Name: `data\sprite\npc\4_f_kafra1.act`, Data: act},
+		{Name: `data\luafiles514\lua files\datainfo\jobname.lub`, Data: jobNameLub(114, "4_F_KAFRA1")},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +132,7 @@ func TestPlaceholderAndGRF(t *testing.T) {
 		t.Fatalf("rejected %v", rep.Rejected)
 	}
 	_, all := readManifest(t, out)
-	for _, name := range []string{"placeholder/sprite", "sprite/npc/poring"} {
+	for _, name := range []string{"placeholder/sprite", "sprite/npc/114"} {
 		e, ok := all[name]
 		if !ok {
 			t.Fatalf("%s missing from manifest", name)
@@ -139,6 +141,35 @@ func TestPlaceholderAndGRF(t *testing.T) {
 			t.Errorf("%s: %v", name, err)
 		}
 	}
+}
+
+// jobNameLub builds a compiled Lua 5.1 chunk for
+// JobNameTable = { [id] = name }.
+func jobNameLub(id float64, name string) []byte {
+	var b bytes.Buffer
+	w := func(v any) { _ = binary.Write(&b, binary.LittleEndian, v) }
+	b.Write([]byte{0x1b, 'L', 'u', 'a', 0x51, 0, 1, 4, 4, 4, 8, 0})
+	w([]uint32{0, 0, 0})         // source name, line defined, last line defined
+	b.Write([]byte{0, 0, 2, 10}) // upvalues, params, vararg, max stack
+	const rkK = 0x100
+	w([]uint32{
+		4,                             // instructions
+		10,                            // NEWTABLE 0
+		9 | (rkK|1)<<23 | (rkK|2)<<14, // SETTABLE 0 K1 K2
+		7,                             // SETGLOBAL 0 K0
+		30 | 1<<23,                    // RETURN 0 1
+	})
+	w(uint32(3)) // constants
+	b.WriteByte(4)
+	w(uint32(len("JobNameTable") + 1))
+	b.WriteString("JobNameTable\x00")
+	b.WriteByte(3)
+	w(math.Float64bits(id))
+	b.WriteByte(4)
+	w(uint32(len(name) + 1))
+	b.WriteString(name + "\x00")
+	w([]uint32{0, 0, 0, 0}) // protos, line info, locals, upvalue names
+	return b.Bytes()
 }
 
 // readAsset reads a stored asset, decompresses it, and checks its hash.

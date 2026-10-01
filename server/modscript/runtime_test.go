@@ -17,6 +17,7 @@ import (
 type fakeHost struct {
 	now      int64
 	players  map[int64]string
+	monsters map[int64]string
 	messages []string
 	items    map[string]uint32
 	given    map[int64]int
@@ -24,9 +25,10 @@ type fakeHost struct {
 
 func newHost() *fakeHost {
 	return &fakeHost{
-		players: map[int64]string{1: "Alice", 2: "Bob"},
-		items:   map[string]uint32{"Red_Potion": 501, "example.a:Cookie": 2_000_000},
-		given:   map[int64]int{},
+		players:  map[int64]string{1: "Alice", 2: "Bob"},
+		monsters: map[int64]string{7: "Poring"},
+		items:    map[string]uint32{"Red_Potion": 501, "example.a:Cookie": 2_000_000},
+		given:    map[int64]int{},
 	}
 }
 
@@ -52,6 +54,20 @@ func (h *fakeHost) PlayerField(id int64, field string) (script.Value, error) {
 		return script.Int(1), nil
 	}
 	return script.Nil, fmt.Errorf("player has no field %q", field)
+}
+
+func (h *fakeHost) MonsterField(id int64, field string) (script.Value, error) {
+	name, ok := h.monsters[id]
+	if !ok {
+		return script.Nil, errors.New("the monster is gone")
+	}
+	switch field {
+	case "name":
+		return script.String(name), nil
+	case "is_alive":
+		return script.Bool(false), nil
+	}
+	return script.Nil, fmt.Errorf("monster has no field %q", field)
 }
 
 func (h *fakeHost) SendMessage(id int64, text string) error {
@@ -124,6 +140,31 @@ return function()
 end`))
 	r.Fire("login", Player(1))
 	if got := strings.Join(h.messages, "|"); got != "1:hello Alice from example.a on prontera" {
+		t.Fatalf("messages = %q, logs: %s", got, logs)
+	}
+}
+
+func TestMonsterHandle(t *testing.T) {
+	h := newHost()
+	r, logs := newRuntime(t, h, modScripts("example.a", nil, nil, "scripts/main.lua", `
+local events = require "wa.events"
+local timers = require "wa.timers"
+return function()
+  events.on("monster_killed", function(player, monster)
+    player:send_message(monster.name .. " alive " .. tostring(monster.is_alive))
+    local ok = pcall(function() monster.name = "x" end)
+    player:send_message("writable " .. tostring(ok))
+    timers.after(10, function()
+      local ok, err = pcall(function() return monster.name end)
+      player:send_message("later " .. tostring(ok) .. " " .. tostring(err):match("the monster is gone") )
+    end)
+  end)
+end`))
+	r.Fire("monster_killed", Player(1), Monster(7))
+	delete(h.monsters, 7)
+	advance(h, r, 10)
+	want := "1:Poring alive false|1:writable false|1:later false the monster is gone"
+	if got := strings.Join(h.messages, "|"); got != want {
 		t.Fatalf("messages = %q, logs: %s", got, logs)
 	}
 }
@@ -260,7 +301,7 @@ end`))
 
 func TestEventNamesChecked(t *testing.T) {
 	cases := map[string]string{
-		`events.on("logn", function() end)`:  `there is no event "logn"; a mod context can listen to level_up, login, logout, map_enter, monster_killed`,
+		`events.on("logn", function() end)`:  `there is no event "logn"; a mod context can listen to base_level_up, job_level_up, login, logout, map_enter, monster_killed`,
 		`events.on("click", function() end)`: `"click" is an event of npc contexts, and this is a mod context`,
 		`events.on("login", 3)`:              "the handler must be a function",
 	}

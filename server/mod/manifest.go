@@ -41,8 +41,7 @@ type Manifest struct {
 	Permissions []string `yaml:"permissions"`
 	// Scripts are the mod's own entry scripts, which run once per zone
 	// with a mod context. Paths are relative to the mod's folder, under
-	// scripts/. This field is provisional: proposal 0002 says the
-	// manifest points to entry scripts without naming the field.
+	// scripts/.
 	Scripts []string `yaml:"scripts"`
 
 	version Version

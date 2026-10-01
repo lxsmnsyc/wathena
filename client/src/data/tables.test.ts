@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { effects, npcSprites, partEffect, weapons } from './tables';
+import { effects, partEffect, weapons } from './tables';
 
 describe('tables', () => {
   it('loads the YAML tables', () => {
@@ -21,10 +21,6 @@ describe('tables', () => {
       expect('cylinder' in p && p.cylinder.texture).toBe('texture/effect/ring_blue');
       expect('cylinder' in p && p.cylinder.repeat).toBe(true);
     }
-  });
-
-  it('maps NPC sprite IDs to sprite names', () => {
-    expect(npcSprites.get(112)?.sprite).toBe('4_f_kafra6');
   });
 
   it('names the effect a part shows', () => {

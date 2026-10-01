@@ -61,7 +61,7 @@ scripts:
 | `supports.rulesets` | no | The ruleset bases the mod works with, and values flags must have. A flag can list several values. Without it, the mod loads on any ruleset. |
 | `provides.ruleset` | no | Makes the mod a ruleset mod (below). |
 | `permissions` | no | What the mod needs (below). |
-| `scripts` | no | Entry scripts that run once per zone, in the mod's context. Paths are under `scripts/`. This field is provisional. |
+| `scripts` | no | Entry scripts that run once per zone, in the mod's context. Paths are under `scripts/`. |
 
 Unknown fields are errors, so a typo does not pass. Every error names the file and the field.
 
@@ -220,8 +220,9 @@ end
 | `login` | `player` | A player logs in, in the zone it enters. |
 | `logout` | `player` | A player logs out, before it leaves. |
 | `map_enter` | `player` | A player enters the zone: at login and after a warp. |
-| `monster_killed` | `player`, `monster` | The player killed a monster. `monster` is a read-only table of what it was: `id`, `name`, `level`, `x`, `y`. |
-| `level_up` | `player`, `kind` | The player gained a level. `kind` is `"base"` or `"job"`. |
+| `monster_killed` | `player`, `monster` | The player killed a monster. `monster` is a monster handle. |
+| `base_level_up` | `player` | The player gained a base level. |
+| `job_level_up` | `player` | The player gained a job level. |
 
 - `events.on` checks the name. An unknown name, or an event of another context kind, such as `click`, raises an error during setup.
 - Handlers run in registration order. A failing handler is logged and does not stop the others.
@@ -258,26 +259,28 @@ Handlers get players as read-only handles. Each access looks the player up again
 
 | Method | Permission |
 |---|---|
-| `player:send_message(text)` | None. Provisional. |
+| `player:send_message(text)` | None. Shows a line in the player's chat log, sent as `CHAT_CHANNEL_SYSTEM`. |
 | `player:give_item(item, amount)` | `player.give_items`. Returns `false` when the items do not fit. |
 | `player:count_item(item)` | `game.read`. |
+
+### Monsters
+
+`monster_killed` gives the handler a read-only monster handle. It works like a player handle.
+
+| Field | Meaning |
+|---|---|
+| `id`, `name`, `level` | The monster's ID, such as 1002, its name and level. |
+| `hp`, `max_hp` | Current and maximum HP. |
+| `map`, `x`, `y` | The zone's map name and the cell. |
+| `is_alive` | `false` for a killed monster. |
+
+- The killed monster is gone from the map, but its handle stays readable until the event's handlers have run.
+- After that, reading the handle raises an error, like a handle to a player who left. A timer that the handler starts cannot read it.
+- Reading needs `game.read`.
 
 ### Items
 
 `items.id(name)` from `wa.items` returns an item's ID by name, and raises an error for an unknown name. It needs `game.read`.
-
-## Provisional parts
-
-These are not in proposal 0002, or go further than it. They can change:
-
-- The `scripts` field of mod.yaml, for a mod's own entry scripts.
-- `api: experimental`.
-- `player:send_message(text)`, which shows a line in the player's chat log, sent as `CHAT_CHANNEL_SYSTEM`.
-- The fields of a mod context's instance: `id` and `map`.
-- The `monster` argument of `monster_killed`, a read-only table instead of a handle, since the monster is gone.
-- The `kind` argument of `level_up`: `"base"` or `"job"`.
-- The NPC fields `direction`, `display_name`, and `sprite` names.
-- The player fields `max_sp`, `character_id` and `account_id`.
 
 ## Testing a mod
 

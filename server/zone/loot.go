@@ -1,7 +1,6 @@
 package zone
 
 import (
-	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
@@ -158,10 +157,10 @@ func (z *Zone) gainExp(p *Player, base, job int64) {
 		z.effects = append(z.effects, effect{e, effectJobLevelUp})
 	}
 	if g.BaseLevels > 0 {
-		z.scriptEventFor("level_up", modscript.Player(int64(p.charID)), modscript.Value(script.String("base")))
+		z.scriptEventFor("base_level_up", modscript.Player(int64(p.charID)))
 	}
 	if g.JobLevels > 0 {
-		z.scriptEventFor("level_up", modscript.Player(int64(p.charID)), modscript.Value(script.String("job")))
+		z.scriptEventFor("job_level_up", modscript.Player(int64(p.charID)))
 	}
 }
 

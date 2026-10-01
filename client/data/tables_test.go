@@ -58,25 +58,3 @@ func TestTablesReject(t *testing.T) {
 		}
 	}
 }
-
-func TestNPCSprites(t *testing.T) {
-	n, err := LoadNPCSprites()
-	if err != nil {
-		t.Fatal(err)
-	}
-	found := false
-	for _, s := range n.Sprites {
-		if s.ID == 112 && s.Sprite == "4_f_kafra6" {
-			found = true
-		}
-	}
-	if len(n.Sprites) < 1000 || !found {
-		t.Errorf("%d sprites, 112 found: %v", len(n.Sprites), found)
-	}
-	if _, err := ParseNPCSprites([]byte("sprites:\n  - {id: 1, sprite: a}\n  - {id: 1, sprite: b}\n")); err == nil {
-		t.Error("a repeated ID passed")
-	}
-	if _, err := ParseNPCSprites([]byte("sprites:\n  - {id: 1, sprite: \"A B\"}\n")); err == nil {
-		t.Error("an invalid name passed")
-	}
-}

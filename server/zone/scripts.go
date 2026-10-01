@@ -77,6 +77,8 @@ func (z *Zone) npcAppear(id uint32, e *entity) *wathenav1.Event {
 type scriptEvent struct {
 	name string
 	args []modscript.Arg
+	// release are monster handles that end after the event runs.
+	release []int64
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -109,7 +111,26 @@ func (z *Zone) scriptEventFor(name string, args ...modscript.Arg) {
 	if z.scripts == nil {
 		return
 	}
-	z.scriptEvents = append(z.scriptEvents, scriptEvent{name, args})
+	z.scriptEvents = append(z.scriptEvents, scriptEvent{name: name, args: args})
+}
+
+// monsterKilled queues monster_killed. The handle to the dead monster
+// stays readable until the event has run.
+func (z *Zone) monsterKilled(killer *Player, e *entity) {
+	if z.scripts == nil {
+		return
+	}
+	if z.monsterHandles == nil {
+		z.monsterHandles = map[int64]*entity{}
+	}
+	z.nextMonsterHandle++
+	h := z.nextMonsterHandle
+	z.monsterHandles[h] = e
+	z.scriptEvents = append(z.scriptEvents, scriptEvent{
+		name:    "monster_killed",
+		args:    []modscript.Arg{modscript.Player(int64(killer.charID)), modscript.Monster(h)},
+		release: []int64{h},
+	})
 }
 
 // runScripts runs the queued events' handlers. Handlers may queue more
@@ -120,6 +141,9 @@ func (z *Zone) runScripts() {
 		z.scriptEvents = z.scriptEvents[1:]
 		if z.scripts != nil {
 			z.scripts.Fire(ev.name, ev.args...)
+		}
+		for _, h := range ev.release {
+			delete(z.monsterHandles, h)
 		}
 	}
 	z.scriptEvents = z.scriptEvents[:0]
@@ -219,8 +243,45 @@ func (h scriptHost) PlayerField(id int64, field string) (script.Value, error) {
 	return script.Nil, fmt.Errorf("player has no field %q", field)
 }
 
+// MonsterField reads a field of a monster handle. A killed monster is
+// readable until its monster_killed event has run, with is_alive false.
+func (h scriptHost) MonsterField(id int64, field string) (script.Value, error) {
+	e := h.z.monsterHandles[id]
+	if e == nil {
+		return script.Nil, errors.New("the monster is gone from this map")
+	}
+	m := e.monster.spawn
+	switch field {
+	case "id":
+		return script.Int(int64(m.Mob)), nil
+	case "name":
+		return script.String(m.Name), nil
+	case "level":
+		if m.Status == nil {
+			return script.Int(0), nil
+		}
+		return script.Int(int64(m.Status.Level)), nil
+	case "hp":
+		return script.Int(max(e.hp, 0)), nil
+	case "max_hp":
+		if e.status == nil {
+			return script.Int(0), nil
+		}
+		return script.Int(int64(e.status.MaxHP)), nil
+	case "map":
+		return script.String(h.Map()), nil
+	case "x":
+		return script.Int(int64(e.x)), nil
+	case "y":
+		return script.Int(int64(e.y)), nil
+	case "is_alive":
+		return script.Bool(!e.dead && h.z.entities.has(e)), nil
+	}
+	return script.Nil, fmt.Errorf("monster has no field %q", field)
+}
+
 // SendMessage shows a line to one player in the chat log, as server
-// text. It is provisional: proposal 0002 has no method for it.
+// text (CHAT_CHANNEL_SYSTEM).
 func (h scriptHost) SendMessage(id int64, text string) error {
 	p, err := h.player(id)
 	if err != nil {

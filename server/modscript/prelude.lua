@@ -4,7 +4,7 @@
 --     other's globals,
 --   - read-only API modules, which every mod shares,
 --   - require, which finds wa.* modules and mod files,
---   - read-only handles for players and records.
+--   - read-only handles for players and monsters.
 -- Mod code never sees the real globals or the host functions in H.
 -- mods/README.md describes the rules for mod authors.
 
@@ -116,6 +116,16 @@ new_player, player_ids = handle_type("player", {
 }, function(id, key)
 	-- Level 3 is the script line that read the field.
 	local ok, value = pcall(H.player_field, id, key)
+	if not ok then
+		error(value, 3)
+	end
+	return value
+end)
+
+-- Monsters are handles too. A killed monster's handle stays readable
+-- while its monster_killed event runs, and fails after.
+local new_monster = handle_type("monster", {}, function(id, key)
+	local ok, value = pcall(H.monster_field, id, key)
 	if not ok then
 		error(value, 3)
 	end
@@ -309,7 +319,7 @@ function R.load_entry(mod_id, path, source)
 end
 
 -- invoke calls a handler. Arguments come in pairs: a kind and a value.
--- "player" makes a player handle, "record" a read-only table, and
+-- "player" makes a player handle, "monster" a monster handle, and
 -- "value" passes the value as it is.
 function R.invoke(fn, ...)
 	local n = select("#", ...)
@@ -318,8 +328,8 @@ function R.invoke(fn, ...)
 		local kind, value = select(i, ...)
 		if kind == "player" then
 			value = new_player(value)
-		elseif kind == "record" then
-			value = readonly("record", value)
+		elseif kind == "monster" then
+			value = new_monster(value)
 		end
 		args[#args + 1] = value
 	end

@@ -34,7 +34,7 @@ import (
 // Converter versions. Changing a converter's output means raising its
 // version, so cached outputs from the old converter are not reused.
 const (
-	spriteConverter      = "grf-sprite-1"
+	spriteConverter      = "grf-sprite-2"
 	paletteConverter     = "grf-palette-1"
 	textureConverter     = "grf-texture-1"
 	soundConverter       = "grf-sound-1"

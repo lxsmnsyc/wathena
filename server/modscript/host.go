@@ -249,6 +249,22 @@ func (r *Runtime) playerField(c *script.Call) error {
 	return nil
 }
 
+func (r *Runtime) monsterField(c *script.Call) error {
+	id, ok := c.Arg(0).AsInt()
+	if !ok {
+		return errors.New("not a monster: read fields of a monster handle, such as monster.name")
+	}
+	if err := r.need("reading a monster", "game.read"); err != nil {
+		return err
+	}
+	v, err := r.host.MonsterField(id, c.String(1))
+	if err != nil {
+		return err
+	}
+	c.Return(v)
+	return nil
+}
+
 func (r *Runtime) playerSendMessage(c *script.Call) error {
 	id, err := playerID(c)
 	if err != nil {

@@ -28,6 +28,8 @@ type Host interface {
 	Map() string
 	// PlayerField returns a field of a player handle, such as name.
 	PlayerField(player int64, field string) (script.Value, error)
+	// MonsterField returns a field of a monster handle, such as name.
+	MonsterField(monster int64, field string) (script.Value, error)
 	// SendMessage shows a line of text to one player.
 	SendMessage(player int64, text string) error
 	// GiveItem gives a player items. It returns false when they do not
@@ -171,6 +173,7 @@ func (r *Runtime) init() error {
 		{"timers_cancel", r.timersCancel},
 		{"items_id", r.itemsID},
 		{"player_field", r.playerField},
+		{"monster_field", r.monsterField},
 		{"player_send_message", r.playerSendMessage},
 		{"player_give_item", r.playerGiveItem},
 		{"player_count_item", r.playerCountItem},
@@ -380,8 +383,9 @@ func Player(id int64) Arg { return Arg{"player", script.Int(id)} }
 // Value is an argument passed as it is.
 func Value(v script.Value) Arg { return Arg{"value", v} }
 
-// Record is an argument that becomes a read-only table.
-func Record(fields ...script.Field) Arg { return Arg{"record", script.NewTable(fields...)} }
+// Monster is an argument that becomes a monster handle. id is the
+// zone's handle ID for the monster.
+func Monster(id int64) Arg { return Arg{"monster", script.Int(id)} }
 
 // Fire runs every handler of an event, in registration order. A handler
 // that fails is logged and does not stop the others. Handlers added
@@ -480,7 +484,8 @@ var Events = map[string][]string{
 	"logout":         {KindMod},
 	"map_enter":      {KindMod},
 	"monster_killed": {KindMod},
-	"level_up":       {KindMod},
+	"base_level_up":  {KindMod},
+	"job_level_up":   {KindMod},
 	"click":          {KindNPC},
 	"touch":          {KindNPC},
 	"use":            {KindItem},

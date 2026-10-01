@@ -20,7 +20,7 @@ The API should also fix the problems of rAthena's script language. They are list
 
 There are two kinds of Lua files in a mod:
 
-- **Entry scripts** are the files wAthena loads itself: the scripts that NPCs, items, skills, monsters, and the mod manifest point to. They must return a setup function.
+- **Entry scripts** are the files wAthena loads itself: the scripts that NPCs, items, skills, monsters, and the mod manifest point to. They must return a setup function. The manifest lists a mod's own entry scripts in its `scripts` field, as paths under `scripts/`.
 - **Helper modules** are any other files the mod loads with `require`, such as `scripts/lib/rewards.lua`. They can return any value: a table of functions, a single function, or data. They have no rules of their own.
 
 An entry script:
@@ -80,7 +80,7 @@ return function()
 end
 ```
 
-- `context:get_instance()` returns the instance object. Its fields depend on the kind: an equipped item has `item`, `wearer`, and `refine`, and an NPC has `name`, `map`, `x`, and `y`.
+- `context:get_instance()` returns the instance object. Its fields depend on the kind: an equipped item has `item`, `wearer`, and `refine`, an NPC has `name`, `map`, `x`, and `y`, and a mod has `id` (the mod ID) and `map` (the zone's map).
 - `context:get_kind()` returns the kind as a string: `"mod"`, `"npc"`, `"item"`, `"skill"`, `"monster"`, or `"event"`.
 - `context:get_mod()` returns the mod's ID.
 - Calling these outside a setup function or a handler raises an error.
@@ -101,9 +101,13 @@ return function()
   events.on("touch", function(player) ... end)                 -- walked into the NPC's area
   events.on("login", function(player) ... end)                 -- mod context only
   events.on("monster_killed", function(player, monster) ... end)
-  events.on("level_up", function(player, kind) ... end)
+  events.on("base_level_up", function(player) ... end)
+  events.on("job_level_up", function(player) ... end)
 end
 ```
+
+- `monster_killed` gets a monster handle, like the handles in "Players and other entities". The monster is gone, but the handle stays readable while the event's handlers run, and its `is_alive` field is `false`. After the event, reading it raises an error, as for any handle to a removed entity.
+- `base_level_up` and `job_level_up` are separate events. Each gets the player.
 
 - `events.on` checks the name when it is called. An unknown name, or a name the context's kind cannot use, raises an error during setup, so a typo still fails before the event ever fires.
 - Which events a context can register depends on its kind. `"click"` exists only for NPCs, and `"hit_taken"` only for equipped items.
@@ -137,9 +141,13 @@ Entities are handles: userdata holding an entity ID. Each access looks the entit
 ```lua
 player.name        player.base_level    player.job_level    player.job
 player.zeny        player.hp            player.max_hp       player.sp
-player.map         player.x             player.y            player.party   -- nil without a party
+player.max_sp      player.map           player.x            player.y
+player.party       -- nil without a party
+player.character_id                     player.account_id   -- database IDs
 player.strength    player.base_strength -- total, and allocated points only
 ```
+
+Monster handles have `id`, `name`, `level`, `hp`, `max_hp`, `map`, `x`, `y`, and `is_alive`.
 
 HP, SP, and zeny keep their names, since they are the game's own terms and not shortened words.
 
@@ -155,6 +163,7 @@ player:warp("prontera", 156, 191)
 player:heal_fully()
 player:item_heal { hp = { 45, 65 } }   -- pc_itemheal, with its bonuses
 player:show_effect(effect.heal)
+player:send_message("Welcome!")   -- a line in the chat log, as CHAT_CHANNEL_SYSTEM
 ```
 
 Fields are always read-only, on every object. Writing to a field raises an error. Every change is a method call, so it can report failure, check permissions, and run as one step.
@@ -200,13 +209,20 @@ NPC placement lives in data, not in the script:
 
 ```yaml
 # data/npcs.yml
-- name: Healer
+- name: Healer#prontera
   map: prontera
   x: 150
   y: 180
+  direction: south
+  display_name: Healer
   sprite: 4_F_KAFRA1
   script: scripts/npc/healer.lua
 ```
+
+- A name without a mod ID is the mod's own NPC: `Healer#prontera` in `example.town` is `example.town:Healer#prontera`.
+- Players see `display_name`, or the name up to `#` without it.
+- `direction` is a named direction: `south` (the default), `southwest`, `west`, `northwest`, `north`, `northeast`, `east`, or `southeast`.
+- `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, or its number.
 
 Placing the same script twice replaces rAthena's `duplicate`.
 
@@ -486,10 +502,18 @@ Methods on player handles check their own permissions, such as `player.give_item
    - A method can return failure. `player.zeny = player.zeny - 300` cannot say that the player has too little.
    - A method shows that a permission is needed. An assignment looks like plain arithmetic.
    - A method changes a value in one step. Reading a field and writing it back can undo a change made in between, such as a trade.
+6. The mod loader (phase 3 step 2) added parts that this proposal did not name. They are accepted:
+   - The manifest's `scripts` field, and `api: experimental` until API 1.0.
+   - `player:send_message(text)`, sent as `CHAT_CHANNEL_SYSTEM`.
+   - The mod context's instance fields `id` and `map`.
+   - The NPC fields `direction` (a named direction), `display_name`, and `sprite`, and the mod ID prefix on NPC names.
+   - The player fields `max_sp`, `character_id`, and `account_id`.
+7. `monster_killed` passes a monster handle, not a table of what the monster was. The handle reads while the event runs, with `is_alive` false, and raises an error after it, like any handle to a removed entity. Mods use one kind of object for monsters.
+8. `level_up` with a kind argument is split into `base_level_up` and `job_level_up`, each `function(player)`. A handler listens to the level it needs, without a check on a string.
 
 ## Version
 
-The API stays `wa.experimental` (strategy section 6.12) until the phase 3 exit check passes with a sample mod. It then becomes `api: 1.0`.
+A mod's manifest says `api: experimental` (strategy section 6.12) until the phase 3 exit check passes with a sample mod. It then becomes `api: 1.0`.
 
 ## Next steps
 

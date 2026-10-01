@@ -227,6 +227,10 @@ type Zone struct {
 	// scriptEvents wait for a point where scripts may run.
 	scripts      *modscript.Runtime
 	scriptEvents []scriptEvent
+	// monsterHandles are the monsters that script handles point to, by
+	// handle ID. A killed monster stays here until its event has run.
+	monsterHandles    map[int64]*entity
+	nextMonsterHandle int64
 	// control gets work that must run on the zone's goroutine, such as a
 	// mod reload.
 	control chan func()
