@@ -157,6 +157,11 @@ func decodeHash(s string) (p Params, salt, key []byte, err error) {
 	if err1 != nil || err2 != nil || len(salt) < minSaltLen || len(salt) > maxSaltLen || len(key) < minKeyLen || len(key) > maxKeyLen {
 		return p, nil, nil, errBadHash
 	}
+	// The decoder skips \r and \n even in strict mode, so a stored hash
+	// must also encode back to exactly the same text.
+	if b64.EncodeToString(salt) != parts[4] || b64.EncodeToString(key) != parts[5] {
+		return p, nil, nil, errBadHash
+	}
 	p = Params{Memory: m, Time: t, Threads: uint8(th), SaltLen: uint32(len(salt)), KeyLen: uint32(len(key))} // #nosec G115 -- th is at most 255, and the lengths at most 64.
 	return p, salt, key, nil
 }
