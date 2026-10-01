@@ -636,7 +636,7 @@ The API is specified in [proposal 0002](proposals/0002-lua-api.md). In short:
 - Events and hooks are registered by name, with `events.on("click", handler)`. The name is checked when the handler is registered.
 - Entities (players, monsters, NPCs, items) are handles holding an entity ID. Each access looks the entity up again. A player who logs out during a conversation causes a Lua error, not a crash.
 - Fields are read-only. Every change is a method, such as `player:pay_zeny(500)`, which can return failure and checks permissions.
-- Names are readable full words. rAthena's names, such as `bLuk` and `SC_STUN`, appear only in the converter's table and the API reference.
+- Names are readable full words, except the stat abbreviations players know, such as `str`, `luk`, `atk`, and `aspd` ([0002a](proposals/0002a-bonus-names.md)). rAthena's names, such as `bFlee2` and `SC_STUN`, appear only in the converter's table and the API reference.
 
 ### 5.2 NPC scripts
 
@@ -686,7 +686,7 @@ Static bonus. Runs once, on equip.
 local bonuses = require "wa.bonuses"
 
 return function()
-  bonuses.add("luck", 2)
+  bonuses.add("luk", 2)
   bonuses.add("perfect_dodge", 1)
 end
 ```
@@ -700,12 +700,12 @@ local context = require "wa.context"
 return function()
   local equipped = context:get_instance()
   local player = equipped.wearer
-  bonuses.add("base_attack", function()
+  bonuses.add("atk", function()
     local level = player.base_level
     return level > 70 and (level - 70) // 10 * 10 or 0
   end)
-  bonuses.add("attack_speed_percent", function() return 4 + equipped.refine end)
-  bonuses.add("base_attack", function() return player.base_luck >= 90 and 20 or 0 end)
+  bonuses.add("aspd_percent", function() return 4 + equipped.refine end)
+  bonuses.add("atk", function() return player.base_luk >= 90 and 20 or 0 end)
 end
 ```
 
@@ -724,9 +724,10 @@ local context = require "wa.context"
 
 return function()
   local player = context:get_instance().wearer
-  bonuses.add("damage_taken_from_size_percent", sizes.all, -15)
-  events.on("hit_taken", function(hit)
-    if (hit.is_weapon or hit.is_magic) and random.chance(3, 1000) then
+  bonuses.add("damage_taken", -15, { from = { size = sizes.all } })
+  events.on("damage", function(hit)
+    if not hit.wearer_is_source and (hit.kind == "physical" or hit.kind == "magic")
+        and random.chance(3, 1000) then
       timers.with_bonuses(10000, function() bonuses.add("perfect_dodge", 30) end)
       player:show_effect(effects.wind)
     end
@@ -754,6 +755,8 @@ Rules:
 4. **Results do not depend on equip order.** The final formula applies bonuses in a fixed order.
 5. **Scripts using only constants become static tables.** The converter detects them, and the server applies them without calling Lua.
 
+Every bonus name, the options of `"damage"` and `"damage_taken"`, and the `"damage"` event are listed in [proposal 0002a](proposals/0002a-bonus-names.md).
+
 A debug mode used in tests runs a full recalculation after every change and compares it with the event-driven totals. A mismatch fails the test and names the item.
 
 ### 5.4 Rolled item values
@@ -779,7 +782,8 @@ local context = require "wa.context"
 
 return function()
   local equipped = context:get_instance()
-  bonuses.add("damage_against_class", classes.boss, equipped.rolls.boss_damage)
+  bonuses.add("damage", equipped.rolls.boss_damage,
+    { kind = "physical", against = { class = classes.boss } })
 end
 ```
 

@@ -10,7 +10,7 @@ Scripts for NPCs, items, skills, events, and mods need an API. Strategy section 
 
 1. **No globals.** The API is not placed in the global table. Scripts get every part of it with `require`.
 2. **Entry scripts return a function, not a table.** The runtime calls that function with a hidden context. Scripts register for events by calling an internal module, not by returning handlers.
-3. **Readable names.** Every name in the API is written out in full words. There are no short or obscure names, such as `bLuk`, `SC_STUN`, or `FLEE2`.
+3. **Readable names.** Every name in the API is written out in full words, except the stat abbreviations players know from the status window, such as `str`, `luk`, `atk`, and `aspd` ([0002a](0002a-bonus-names.md), rule 1). There are no obscure names, such as `bFlee2`, `SC_STUN`, or `EQI_HAND_R`.
 
 The API should also fix the problems of rAthena's script language. They are listed in the comparison at the end.
 
@@ -110,7 +110,7 @@ end
 - `base_level_up` and `job_level_up` are separate events. Each gets the player.
 
 - `events.on` checks the name when it is called. An unknown name, or a name the context's kind cannot use, raises an error during setup, so a typo still fails before the event ever fires.
-- Which events a context can register depends on its kind. `"click"` exists only for NPCs, and `"hit_taken"` only for equipped items.
+- Which events a context can register depends on its kind. `"click"` exists only for NPCs, and `"damage"` only for equipped items.
 - Many handlers can listen to the same event. They run in registration order, and a failing handler does not stop the others.
 - A handler returns nothing. Changing a result is the job of hooks.
 - `events.on` returns a handle with a `remove` method, for handlers that should stop before their context ends.
@@ -144,12 +144,13 @@ player.zeny        player.hp            player.max_hp       player.sp
 player.max_sp      player.map           player.x            player.y
 player.party       -- nil without a party
 player.character_id                     player.account_id   -- database IDs
-player.strength    player.base_strength -- total, and allocated points only
+player.str        player.base_str      -- total, and allocated points only
+-- The same for agi, vit, int, dex, and luk.
 ```
 
 Monster handles have `id`, `name`, `level`, `hp`, `max_hp`, `map`, `x`, `y`, and `is_alive`.
 
-HP, SP, and zeny keep their names, since they are the game's own terms and not shortened words.
+HP, SP, zeny, and the stats keep the names players know from the game, such as `hp`, `str`, and `luk` ([0002a](0002a-bonus-names.md), rule 1).
 
 **Changing** uses methods:
 
@@ -232,21 +233,22 @@ An equip script's setup function runs when a copy is equipped. Bonuses it adds b
 
 ```lua
 local bonuses = require "wa.bonuses"
-local races = require "wa.races"
+local classes = require "wa.monster_classes"
 local context = require "wa.context"
 
 return function()
   local equipped = context:get_instance()
   local player = equipped.wearer
-  bonuses.add("luck", 2)
+  bonuses.add("luk", 2)
   bonuses.add("perfect_dodge", 1)
   -- Computed: reruns only when a value it read changes.
-  bonuses.add("base_attack", function()
+  bonuses.add("atk", function()
     local level = player.base_level
     return level > 70 and (level - 70) // 10 * 10 or 0
   end)
-  bonuses.add("attack_speed_percent", function() return 4 + equipped.refine end)
-  bonuses.add("damage_against_race", races.demi_human, equipped.rolls.boss_damage)
+  bonuses.add("aspd_percent", function() return 4 + equipped.refine end)
+  bonuses.add("damage", equipped.rolls.boss_damage,
+    { kind = "physical", against = { class = classes.boss } })
 end
 ```
 
@@ -263,9 +265,9 @@ local context = require "wa.context"
 
 return function()
   local player = context:get_instance().wearer
-  bonuses.add("damage_taken_from_size_percent", sizes.all, -15)
-  events.on("hit_taken", function(hit)
-    if hit.is_weapon or hit.is_magic then
+  bonuses.add("damage_taken", -15, { from = { size = sizes.all } })
+  events.on("damage", function(hit)
+    if not hit.wearer_is_source and (hit.kind == "physical" or hit.kind == "magic") then
       if random.chance(3, 1000) then
         timers.with_bonuses(10000, function() bonuses.add("perfect_dodge", 30) end)
         player:show_effect(effects.wind)
@@ -275,7 +277,12 @@ return function()
 end
 ```
 
-- Bonus types are names, checked by `bonuses.add` like event names. rAthena's 241 bonus types each get a readable name, such as `bLuk` to `"luck"` and `bFlee2` to `"perfect_dodge"`. The full list is in [0002a](0002a-bonus-names.md).
+- Bonus types are names, checked by `bonuses.add` like event names. rAthena's 241 bonus types each get a name, such as `bLuk` to `"luk"` and `bFlee2` to `"perfect_dodge"`. The full list is in [0002a](0002a-bonus-names.md).
+- Damage dealt and taken by percent are two bonuses, `"damage"` and `"damage_taken"`. An options table says which hits they apply to: `kind`, `range`, `element`, `skill`, and `against` or `from` with a `race`, `element`, `size`, `class`, `monster_group`, `monster`, or `job`. Values are summed in rAthena's own groups, so results match rAthena.
+- The last argument of `bonuses.add` can be an options table. It holds trigger flags and `stacking = "highest"` for bonuses where only the highest value counts.
+- Arguments come in a fixed order: what the bonus applies to, then the chance, then the amount, then other numbers, then the options table. Chances are whole numbers per 10,000.
+- Equipped items get the `"damage"` event for every hit the wearer deals or takes. Its object has `source`, `target`, `kind`, `range`, `skill`, `element`, `is_critical`, `amount`, and `wearer_is_source`.
+- `player:add_timed_bonuses(key, ms, bonuses, options)` gives a player bonuses for a time, saved across logout. It replaces rAthena's `bonus_script`.
 - The rules from strategy section 5.3 stay: conditions read base stats only, computed functions have no side effects, results do not depend on equip order, and scripts with only constants become static data.
 
 ### Timers and schedules
@@ -293,6 +300,8 @@ end
 ```
 
 Timers belong to the context, so they stop when it ends.
+
+`timers.with_bonuses(ms, function() ... end)` adds bonuses that end after `ms`. It returns a timer. The option `{ restart = timer }` cancels that timer first, if it still runs, so a proc that triggers again restarts its duration instead of stacking.
 
 ### Variables
 
@@ -332,10 +341,12 @@ local jobs = require "wa.jobs"           -- jobs.knight, jobs.high_priest
 local sizes = require "wa.sizes"         -- sizes.small, sizes.all
 local elements = require "wa.elements"   -- elements.fire, elements.holy
 local classes = require "wa.monster_classes"   -- classes.boss, classes.normal
+local weapon_types = require "wa.weapon_types"  -- weapon_types.bow, weapon_types.dagger
+local monster_groups = require "wa.monster_groups"  -- monster_groups.goblin, monster_groups.orc
 ```
 
 - Writing to a constants module raises an error.
-- Game records are found by their database name when the file loads: `items.id "Red_Potion"`, `skills.id "SM_BASH"`, `monsters.id "PORING"`. An unknown name fails the load, with the file and line. Record names come from the game data and stay as they are.
+- Game records are found by their database name when the file loads: `items.id "Red_Potion"`, `skills.id "SM_BASH"`, `monsters.id "PORING"`, and item groups with `items.group "Potion"`. An unknown name fails the load, with the file and line. Record names come from the game data and stay as they are.
 - There is no module with rAthena's constant names. The generated API reference has a table from each rAthena name to its new name, and the converter uses the same table.
 
 ### Mod exports
@@ -376,7 +387,7 @@ local current_season = exports.get("example.seasonal-lib", "current_season")
 | `wa.integers` | `divide_truncated` and `remainder_truncated` with C rounding, for converted scripts | None |
 | `wa.text` | Translated text for the player's language | None |
 | `wa.exports` | Functions shared between mods | None |
-| `wa.effects`, `wa.races`, `wa.statuses`, `wa.jobs`, `wa.sizes`, `wa.elements`, `wa.monster_classes` | Constants | None |
+| `wa.effects`, `wa.races`, `wa.statuses`, `wa.jobs`, `wa.sizes`, `wa.elements`, `wa.monster_classes`, `wa.weapon_types`, `wa.monster_groups` | Constants | None |
 | `wa.testing` | Test players and conversations, in `wactl mod test` only | None |
 
 Methods on player handles check their own permissions, such as `player.give_items` for `player:give_item`. A mod without a permission can still `require` the module. The call fails with an error that names the missing permission.
@@ -397,7 +408,7 @@ Methods on player handles check their own permissions, such as `player.give_item
 |---|---|
 | `BaseLevel`, `Zeny`, `Hp` (magic parameters) | `player.base_level`, `player.zeny`, `player.hp` |
 | `Zeny -= 500;` | `player:pay_zeny(500)`, which returns false if the player has too little |
-| `readparam(bStr)` | `player.base_strength` (allocated) or `player.strength` (total) |
+| `readparam(bStr)` | `player.base_str` (allocated) or `player.str` (total) |
 | `strcharinfo(0)`, `strcharinfo(1)` | `player.name`, `player.party and player.party.name` |
 | `getcharid(0)`, `getcharid(3)` | `player.character_id`, `player.account_id` |
 | `getequipid(EQI_HAND_R)` | `player:get_equipped("right_hand")` |
@@ -463,10 +474,14 @@ Methods on player handles check their own permissions, such as `player.give_item
 
 | rAthena | wAthena |
 |---|---|
-| `Script:` with `bonus bStr,5;` | Equip setup: `bonuses.add("strength", 5)` |
-| `bonus2 bAddRace,RC_DemiHuman,10;` | `bonuses.add("damage_against_race", races.demi_human, 10)` |
-| `if (getrefine() >= 7) bonus bAtk,10;` | `bonuses.add("attack", function() return equipped.refine >= 7 and 10 or 0 end)` |
-| `autobonus "{...}",50,5000,BF_WEAPON;` | `events.on("attack", ...)` with `random.chance` and `timers.with_bonuses` |
+| `Script:` with `bonus bStr,5;` | Equip setup: `bonuses.add("str", 5)` |
+| `bonus2 bAddRace,RC_DemiHuman,10;` | `bonuses.add("damage", 10, { kind = "physical", against = { race = races.demi_human } })` |
+| `bonus2 bSubSize,Size_All,15;` | `bonuses.add("damage_taken", -15, { from = { size = sizes.all } })` |
+| `if (getrefine() >= 7) bonus bBaseAtk,10;` | `bonuses.add("atk", function() return equipped.refine >= 7 and 10 or 0 end)` |
+| `bonus bSpeedRate,25;` | `bonuses.add("move_speed_percent", 25, { stacking = "highest" })` |
+| `autobonus "{...}",50,5000,BF_WEAPON;` | `events.on("damage", ...)` with `hit.wearer_is_source`, `random.chance`, and `timers.with_bonuses` |
+| `autobonus2` / `autobonus3` | The same `"damage"` event, with `not hit.wearer_is_source` or a check on `hit.skill` |
+| `bonus_script "{...}",60;` | `player:add_timed_bonuses(key, 60000, { ... })` |
 | `OnEquipScript:` / `OnUnequipScript:` | The equip setup function, and the context's end |
 | Every equipped script reruns on each stat recalculation. | Bonuses are added once. Computed ones rerun only when a value they read changes. |
 
@@ -497,7 +512,7 @@ Methods on player handles check their own permissions, such as `player.give_item
 1. Entry scripts return a setup function. Helper modules a mod loads with `require` can return any value.
 2. Scripts read the context with `wa.context` (`context:get_instance()`).
 3. Events, hooks, and bonus types are registered by name with `events.on("name", handler)`. The name is checked when the handler is registered.
-4. Names are readable full words. rAthena's names exist only in the converter's table and the API reference.
+4. Names are readable full words, except the stat abbreviations of decision 10. rAthena's names exist only in the converter's table and the API reference.
 5. Fields are read-only on every object, including the NPC or monster the context owns. Changes are methods, such as `npc:set_name("Night Merchant")` and `player:pay_zeny(300)`. Reasons:
    - A method can return failure. `player.zeny = player.zeny - 300` cannot say that the player has too little.
    - A method shows that a permission is needed. An assignment looks like plain arithmetic.
@@ -523,7 +538,19 @@ Methods on player handles check their own permissions, such as `player.give_item
    | `hateffect` | `player:show_headgear_effect(effect)` |
    | `rentitem` | `player:give_item(item, 1, { rent_seconds = 3600 })` |
 
-   The readable names of rAthena's bonus types are listed in [0002a](0002a-bonus-names.md).
+   The names of rAthena's bonus types are listed in [0002a](0002a-bonus-names.md).
+10. Bonus names and item events ([0002a](0002a-bonus-names.md), accepted):
+    - **Stat abbreviations.** Stats keep the short forms players know, everywhere in the API: `str`, `agi`, `vit`, `int`, `dex`, `luk`; `atk`, `matk`, `def`, `mdef`, `hit`, `flee`, `crit`, `aspd`, `hp`, `sp`, `ap`; and the trait stats `pow`, `sta`, `wis`, `spl`, `con`, `crt`, `patk`, `smatk`, `res`, `mres`, `hplus`, `crate`. So `"luk"`, `player.str`, `player.base_str`, `"atk"` (rAthena's `bBaseAtk`), `"weapon_atk"` (`bAtk`), and `"aspd_percent"`. Other words stay full, such as `perfect_dodge`.
+    - **One name per quantity.** Per-skill and per-item variants have their own names, such as `skill_cooldown`.
+    - **Damage.** Damage dealt and taken by percent are the bonuses `"damage"` and `"damage_taken"`, with an options table (`kind`, `range`, `attack`, `element`, `skill`, `weapon_type`, and `against` or `from`). Values are summed in rAthena's own groups, so results match rAthena. 33 rAthena types map onto them.
+    - **`_percent`** marks only a percent of a normally flat quantity, such as `max_hp_percent`.
+    - **Signs.** A positive value raises the named quantity. Reductions such as `bSubRace` flip their sign.
+    - **Chances** are whole numbers per 10,000.
+    - **Options table.** Trigger flags go in the last argument. `{ stacking = "highest" }` replaces rAthena's non-stacking types, and any bonus with an amount can use it.
+    - **Argument order.** What the bonus applies to, then the chance, then the amount, then other numbers, then the options table.
+    - **Constants.** `wa.weapon_types`, `wa.monster_groups`, and `items.group`.
+    - **The `"damage"` event** replaces `"attack"` and `"hit_taken"`. No `"skill_used"` event is added. The damage object has `source`, `target`, `kind` (which replaces `is_weapon` and `is_magic`), `range`, `skill`, `element`, `is_critical`, `amount`, and `wearer_is_source`. `autobonus`, `autobonus2`, and `autobonus3` convert to it.
+    - **Timed bonuses.** `timers.with_bonuses` takes the option `{ restart = timer }`. `player:add_timed_bonuses(key, ms, bonuses, options)` replaces `bonus_script`.
 
 ## Version
 
