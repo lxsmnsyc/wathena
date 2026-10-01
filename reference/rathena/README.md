@@ -18,7 +18,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -54,6 +54,16 @@ Each file starts with `system`, `mode`, `rathena_git_hash`, `data_path`, and `ci
 |---|---:|---:|---:|
 | renewal | 4,138 | 674 | 1,710 |
 | pre-renewal | 3,085 | 488 | 621 |
+
+## Item scripts
+
+wAthena's converter (tools/convert) reads three extracts per mode:
+
+- `script_constants.json`: every constant and parameter that `src/map/script_constants.hpp` exports, with its value, and the skill names of `skill_db.yml`. The extractor computes the values from the enums, `#define`s and constants of rAthena's headers, with `RENEWAL` or `PRERE` as in the mode and `PACKETVER` 20211103, as `record.sh` builds. Its job IDs and NPC sprite IDs match those of `client_tables.json`.
+- `item_scripts.json`: `Script`, `EquipScript` and `UnEquipScript` of every item that has one.
+- `item_groups.json`: `item_group_db.yml` as `ItemGroupDatabase` loads it, with `Clear` applied and entries without a rate skipped. rAthena keeps subgroups and entries in unordered maps, whose order depends on the C++ library. The file sorts them by subgroup number and index.
+
+They were first extracted at rAthena fork commit `f4641e37b`, from the same rAthena data as the other files.
 
 ## How random rolls are recorded
 

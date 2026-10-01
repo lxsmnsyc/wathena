@@ -120,6 +120,9 @@ type Player struct {
 	touchOnEnter bool
 	// rewarp is rAthena's count_rewarp: warps in a row onto warp areas.
 	rewarp int
+	// warpTo is a warp a script asked for. It happens once the script's
+	// event has run.
+	warpTo *scriptWarp
 }
 
 type entity struct {
@@ -217,6 +220,11 @@ type Zone struct {
 	// World finds the zones that warps lead to. Without it, only warps
 	// within the map work. Set it before Run.
 	World Directory
+	// SaveMap is the asset name of the map where players' save point is,
+	// such as map/prontera: characters have no save point of their own
+	// yet, so it is the start map. Butterfly Wings go to its start cell.
+	// Set it before Run.
+	SaveMap string
 	// Metrics measures the zone's ticks. New makes it.
 	Metrics *metrics.Zone
 	// Mods are the mods' scripts and item names. Without them, no
@@ -227,6 +235,11 @@ type Zone struct {
 	// scriptEvents wait for a point where scripts may run.
 	scripts      *modscript.Runtime
 	scriptEvents []scriptEvent
+	// scriptsFailed is set when the Lua state could not be made, so it
+	// is not tried on every item use.
+	scriptsFailed bool
+	// pool is the shared pool state of item groups in this zone.
+	pool *item.Pool
 	// monsterHandles are the monsters that script handles point to, by
 	// handle ID. A killed monster stays here until its event has run.
 	monsterHandles    map[int64]*entity

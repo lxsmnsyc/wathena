@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/item"
 )
 
@@ -322,6 +323,9 @@ func TestAPIRange(t *testing.T) {
 	wantError(t, err, `api ">=1.0 <2.0" does not include this server's API, which is experimental`)
 }
 
+// testNames resolve the names of static bonuses in tests.
+var testNames = &bonus.Tables{Constants: map[string]map[string]int64{"races": {"demi_human": 7}}}
+
 var baseItems = &item.Data{Mode: "renewal", Items: []item.Def{
 	{ID: 501, AegisName: "Red_Potion", Type: "Healing", Weight: 70, Stackable: true},
 	{ID: 909, AegisName: "Jellopy", Type: "Etc", Weight: 10, Stackable: true},
@@ -335,9 +339,11 @@ func TestItemOverlay(t *testing.T) {
 - name: example.a:Cookie
   type: Healing
   weight: 5
-  heal: { command: itemheal, hp: [10, 20], sp: [0, 0] }
+  script: scripts/items/cookie.lua
 - name: Red_Potion
   weight: 50
+- name: Jellopy
+  bonuses: [[luk, 2], [damage, 10, {kind: physical, against: {race: demi_human}}]]
 `,
 	})
 	writeMod(t, dir, "b", map[string]string{
@@ -356,16 +362,19 @@ func TestItemOverlay(t *testing.T) {
 	}
 	store := &MemoryIDs{}
 	ids, _ := LoadIDs(context.Background(), store)
-	got, err := s.Items(context.Background(), baseItems, ids)
+	got, err := s.Items(context.Background(), baseItems, ids, testNames)
 	if err != nil {
 		t.Fatal(err)
 	}
 	table := item.New(got.Data)
+	if jellopy := table.Get(909); len(jellopy.Bonuses) != 2 {
+		t.Errorf("Jellopy bonuses %v", jellopy.Bonuses)
+	}
 	if red := table.Get(501); red.Weight != 60 || red.Type != "Healing" || !red.Stackable {
 		t.Errorf("Red_Potion %+v", red)
 	}
 	cookie := table.Get(got.IDs["example.a:Cookie"])
-	if cookie.ID != 2_000_000 || cookie.Weight != 5 || !cookie.Stackable || cookie.Heal == nil || cookie.Heal.HP != [2]int{10, 20} {
+	if cookie.ID != 2_000_000 || cookie.Weight != 5 || !cookie.Stackable || cookie.Script != "example.a:scripts/items/cookie.lua" {
 		t.Errorf("cookie %+v", cookie)
 	}
 	if candy := table.Get(got.IDs["example.b:Candy"]); candy.ID != 2_000_001 || candy.Type != "Etc" {
@@ -379,24 +388,27 @@ func TestItemOverlay(t *testing.T) {
 	}
 	// Strict mode makes the same overlay an error.
 	s.Strict = true
-	_, err = s.Items(context.Background(), baseItems, ids)
+	_, err = s.Items(context.Background(), baseItems, ids, testNames)
 	wantError(t, err, "b/data/items.yml: line 3", "strict mode makes this an error")
 }
 
 func TestItemOverlayErrors(t *testing.T) {
 	cases := map[string][]string{
-		"- name: Red_Potoin\n  weight: 1":              {`Red_Potoin is not a core record of items; a new record is named with the mod's ID, such as example.a:Red_Potoin`},
-		"- name: example.z:Thing":                      {"example.z has not added this record"},
-		"- name: Red_Potion\n  id: 5":                  {"id cannot be changed on a record the mod did not add"},
-		"- name: Red_Potion\n  colour: red":            {`"colour" is not a field`},
-		"- name: Red_Potion\n  weight: heavy":          {"weight: want int, got string"},
-		"- name: Red_Potion\n  weight: -1":             {"cannot be negative"},
-		"- name: example.a:X\n  type: Magic":           {`type "Magic" is not one of`},
-		"- name: Jellopy\n- name: Jellopy":             {"Jellopy is listed twice"},
-		"- weight: 1":                                  {"the record has no name"},
-		"name: Red_Potion":                             {"want a list of records"},
-		"- name: Red_Potion\n  weight: 1\n  weight: 2": {"weight is set twice"},
-		"- name: example.a:X\n  heal: {command: cast}": {`heal.command "cast" is not itemheal or percentheal`},
+		"- name: Red_Potoin\n  weight: 1":                                     {`Red_Potoin is not a core record of items; a new record is named with the mod's ID, such as example.a:Red_Potoin`},
+		"- name: example.z:Thing":                                             {"example.z has not added this record"},
+		"- name: Red_Potion\n  id: 5":                                         {"id cannot be changed on a record the mod did not add"},
+		"- name: Red_Potion\n  colour: red":                                   {`"colour" is not a field`},
+		"- name: Red_Potion\n  weight: heavy":                                 {"weight: want int, got string"},
+		"- name: Red_Potion\n  weight: -1":                                    {"cannot be negative"},
+		"- name: example.a:X\n  type: Magic":                                  {`type "Magic" is not one of`},
+		"- name: Jellopy\n- name: Jellopy":                                    {"Jellopy is listed twice"},
+		"- weight: 1":                                                         {"the record has no name"},
+		"name: Red_Potion":                                                    {"want a list of records"},
+		"- name: Red_Potion\n  weight: 1\n  weight: 2":                        {"weight is set twice"},
+		"- name: example.a:X\n  script: main.lua":                             {`script: "main.lua" is not a .lua file under scripts/`},
+		"- name: Jellopy\n  bonuses: [[lucky, 1]]":                            {`there is no bonus "lucky"`},
+		"- name: Jellopy\n  bonuses: [[luk, 1, {percent: true}]]":             {`takes no percent option`},
+		"- name: Jellopy\n  bonuses: [[damage, 5, {against: {race: elves}}]]": {`there is no race "elves"`},
 	}
 	for text, parts := range cases {
 		dir := t.TempDir()
@@ -406,7 +418,7 @@ func TestItemOverlayErrors(t *testing.T) {
 			t.Fatal(err)
 		}
 		ids, _ := LoadIDs(context.Background(), &MemoryIDs{})
-		_, err = s.Items(context.Background(), baseItems, ids)
+		_, err = s.Items(context.Background(), baseItems, ids, testNames)
 		wantError(t, err, append(parts, "a/data/items.yml")...)
 	}
 }
@@ -546,7 +558,7 @@ func TestSampleMod(t *testing.T) {
 		t.Fatal(err)
 	}
 	ids, _ := LoadIDs(context.Background(), &MemoryIDs{})
-	items, err := s.Items(context.Background(), baseItems, ids)
+	items, err := s.Items(context.Background(), baseItems, ids, testNames)
 	if err != nil {
 		t.Fatal(err)
 	}

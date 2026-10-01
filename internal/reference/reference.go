@@ -93,31 +93,34 @@ var source fs.FS
 // before any load.
 func UseFS(fsys fs.FS) { source = fsys }
 
-// LoadFile decodes the JSON file at a path relative to Root into v.
-func LoadFile(rel string, v any) error {
+// ReadFile reads the file at a path relative to Root.
+func ReadFile(rel string) ([]byte, error) {
 	if source != nil {
 		data, err := fs.ReadFile(source, rel)
 		if err != nil {
-			return fmt.Errorf("reference: %w", err)
+			return nil, fmt.Errorf("reference: %w", err)
 		}
-		if err := json.Unmarshal(data, v); err != nil {
-			return fmt.Errorf("reference: %s: %w", rel, err)
-		}
-		return nil
+		return data, nil
 	}
 	root, err := Root()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// os.Root keeps reads inside the reference folder.
 	dir, err := os.OpenRoot(root)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	data, err := dir.ReadFile(filepath.FromSlash(rel))
 	if cerr := dir.Close(); err == nil {
 		err = cerr
 	}
+	return data, err
+}
+
+// LoadFile decodes the JSON file at a path relative to Root into v.
+func LoadFile(rel string, v any) error {
+	data, err := ReadFile(rel)
 	if err != nil {
 		return err
 	}

@@ -17,6 +17,7 @@ commands:
   assets serve     serve a build over HTTP for development
   assets scan      list what a game client folder contains
   assets sprites   convert monster and NPC sprites and report sizes
+  convert items    convert rAthena item scripts to Lua and item data
   migrate status   list the database migrations and which are applied
   migrate up       apply pending database migrations
   world new        apply migrations, make the world and its first staff account
@@ -45,6 +46,8 @@ func main() {
 		err = assetsScan(os.Args[3:])
 	case "assets sprites":
 		err = assetsSprites(os.Args[3:])
+	case "convert items":
+		err = convertItems(os.Args[3:])
 	case "migrate status":
 		err = migrate(os.Args[3:], false)
 	case "migrate up":

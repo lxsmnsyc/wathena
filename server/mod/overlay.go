@@ -159,7 +159,9 @@ func (o *Overlay) merge(m *Mod, data []byte, core func(string) bool, strict bool
 				bad(fields[key].Line, "%s: %v", key, err)
 				continue
 			}
-			if prev, ok := r.SetBy[key]; ok && prev != m.ID() {
+			// Changing what core set is what mods are for, so only a
+			// field another mod set gets a note.
+			if prev, ok := r.SetBy[key]; ok && prev != m.ID() && prev != Core {
 				msg := fmt.Sprintf("%s %s: %s sets %s, which %s set before; %s wins, as it loads later", o.Kind.Name, full, m.ID(), key, prev, m.ID())
 				if strict {
 					bad(fields[key].Line, "%s (strict mode makes this an error)", msg)

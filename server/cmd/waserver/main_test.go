@@ -77,9 +77,10 @@ func TestLoadItems(t *testing.T) {
 			t.Fatal(err)
 		}
 		items := item.New(data)
-		// Red Potion: 7 weight, itemheal rand(45,65),0.
+		// Red Potion: 7 weight. Its script comes from core's converted
+		// item data, which loadMods applies.
 		d := items.Get(501)
-		if d.Weight != 70 || d.Heal == nil || d.Heal.HP != [2]int{45, 65} || d.Heal.SP != [2]int{0, 0} {
+		if d.Weight != 70 || d.AegisName != "Red_Potion" {
 			t.Errorf("%s: Red Potion %+v", mode, d)
 		}
 		if want := map[reference.Mode]int{reference.Renewal: 70, reference.PreRenewal: 50}[mode]; items.NaturalHealWeightRate != want {

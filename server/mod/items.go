@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/item"
 )
 
 // ItemKind is the item overlay: data/items.yml. Fields are the names of
-// the item extract (server/item.Def), such as weight and stackable. A
-// record's name is its AegisName.
+// the item extract (server/item.Def), such as weight and stackable, and
+// script, bonuses and unsupported. A record's name is its AegisName.
 var ItemKind = Kind{Name: "items", File: "data/items.yml", Fixed: []string{"id", "aegis_name"}}
 
 // itemTypes are item_db's types, in lower case.
@@ -30,8 +31,9 @@ type Items struct {
 }
 
 // Items applies the mods' item overlays to the core items. New items get
-// IDs in the mod range from ids. base is not changed.
-func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs) (*Items, error) {
+// IDs in the mod range from ids. base is not changed. bonusNames resolves the
+// names in static bonuses, which are checked when it is set.
+func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames bonus.Names) (*Items, error) {
 	byName := make(map[string]int, len(base.Items))
 	for i := range base.Items {
 		byName[base.Items[i].AegisName] = i
@@ -57,9 +59,24 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs) (*Items, err
 			errs = append(errs, fmt.Errorf("%s: items %s: %w", r.Where, r.Name, err))
 			continue
 		}
+		if _, ok := r.Fields["script"]; ok {
+			// A script path belongs to the mod that set it.
+			if err := checkScriptPath(d.Script); err != nil {
+				errs = append(errs, fmt.Errorf("%s: items %s: script: %w", r.Where, r.Name, err))
+				continue
+			}
+			d.Script = r.SetBy["script"] + ":" + d.Script
+		}
 		if err := checkItem(&d); err != nil {
 			errs = append(errs, fmt.Errorf("%s: items %s: %w", r.Where, r.Name, err))
 			continue
+		}
+		if bonusNames != nil {
+			for i, entry := range d.Bonuses {
+				if _, err := bonus.FromData(entry, bonusNames); err != nil {
+					errs = append(errs, fmt.Errorf("%s: items %s: bonuses[%d]: %w", r.Where, r.Name, i, err))
+				}
+			}
 		}
 		if i, ok := byName[r.Name]; ok {
 			out.Items[i] = d
@@ -128,16 +145,6 @@ func checkItem(d *item.Def) error {
 	case "", "Male", "Female":
 	default:
 		errs = append(errs, fmt.Sprintf("gender %q is not Male, Female, or empty", d.Gender))
-	}
-	if h := d.Heal; h != nil {
-		if h.Command != "itemheal" && h.Command != "percentheal" {
-			errs = append(errs, fmt.Sprintf("heal.command %q is not itemheal or percentheal", h.Command))
-		}
-		for _, a := range [][2]int{h.HP, h.SP} {
-			if a[0] > a[1] {
-				errs = append(errs, "heal ranges are [minimum, maximum]")
-			}
-		}
 	}
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, "; "))

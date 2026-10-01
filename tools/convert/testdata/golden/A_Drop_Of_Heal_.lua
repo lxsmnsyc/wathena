@@ -1,0 +1,3 @@
+-- status: none
+-- unsupported: script parts that do not convert yet
+-- details: getarraysize

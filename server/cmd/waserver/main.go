@@ -86,6 +86,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/rng"
+	"github.com/lxsmnsyc/wathena/tools/convert"
 )
 
 func main() {
@@ -293,7 +294,13 @@ func runAll(name string, args []string) error {
 	if pool != nil {
 		ids = store.NewModIDs(pool)
 	}
-	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, ids, log)
+	converted := time.Now()
+	core, err := convert.LoadCore(statusMode)
+	if err != nil {
+		return fmt.Errorf("item scripts: %w", err)
+	}
+	log.Info("item scripts converted", "mode", statusMode, "items", len(core.Result.Items), "took", time.Since(converted).Round(time.Millisecond))
+	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, ids, core, log)
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
@@ -318,6 +325,7 @@ func runAll(name string, args []string) error {
 		// zone:<map ID>).
 		z := zone.New(n, grids[i], root.Child("zone:"+id).SecretStream(), spawns[id])
 		z.Progress, z.Status, z.Start, z.Items, z.StartItems = tables, jobs, start, items, given
+		z.SaveMap = name
 		z.SetWarps(warps[n])
 		z.SetNPCs(loaded.npcs[n])
 		z.Mods = loaded.zone

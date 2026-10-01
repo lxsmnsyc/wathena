@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
+	"github.com/lxsmnsyc/wathena/tools/convert"
 )
 
 // mods is what the loaded mods bring to the world.
@@ -29,7 +31,11 @@ type mods struct {
 // the config, and merges their data over the core data. base is the
 // world's ruleset base, or "" when nothing fixes it. ids keeps the IDs
 // of the records mods add.
-func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mode, items *item.Data, ids mod.IDStore, log *slog.Logger) (*mods, error) {
+//
+// core is the mode's item scripts, converted from rAthena when the
+// server starts (docs/decisions/0007-converted-item-scripts.md). They
+// are core's files.
+func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mode, items *item.Data, ids mod.IDStore, core *convert.Core, log *slog.Logger) (*mods, error) {
 	var found []*mod.Mod
 	if o.Dir != "" {
 		var err error
@@ -37,7 +43,7 @@ func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mod
 			return nil, err
 		}
 	}
-	set, err := mod.Resolve(found, mod.Config{Ruleset: o.Ruleset, Base: base, Approve: o.Approve, Disable: o.Disable, Strict: o.Strict})
+	set, err := mod.Resolve(found, mod.Config{Ruleset: o.Ruleset, Base: base, Approve: o.Approve, Disable: o.Disable, Strict: o.Strict, Core: core.Files})
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +62,11 @@ func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mod
 	if err != nil {
 		return nil, err
 	}
-	merged, err := set.Items(ctx, items, assigned)
+	byName := make(map[string]uint32, len(items.Items))
+	for _, d := range items.Items {
+		byName[d.AegisName] = d.ID
+	}
+	merged, err := set.Items(ctx, items, assigned, core.Names(byName))
 	if err != nil {
 		return nil, err
 	}
@@ -87,12 +97,41 @@ func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mod
 	if err != nil {
 		return nil, err
 	}
+	if err := checkItemScripts(merged.Data, scripts); err != nil {
+		return nil, err
+	}
+	groups, err := item.NewGroups(core.Groups, func(name string) (uint32, bool) {
+		id, ok := merged.IDs[name]
+		return id, ok
+	})
+	if err != nil {
+		return nil, err
+	}
 	var all []string
 	for _, m := range set.Mods {
 		all = append(all, m.ID())
 	}
-	out.zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log}
+	out.zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
+		Constants: core.Constants, Groups: groups, MonsterIDs: core.Monsters}
 	return out, nil
+}
+
+// checkItemScripts checks that every item's script exists, so a typo in
+// a mod's script field fails at start and not at the first use.
+func checkItemScripts(items *item.Data, scripts []*mod.Scripts) error {
+	files := map[string]bool{}
+	for _, sc := range scripts {
+		for p := range sc.Files {
+			files[sc.Mod+":"+p] = true
+		}
+	}
+	var errs []error
+	for _, d := range items.Items {
+		if d.Script != "" && !files[d.Script] {
+			errs = append(errs, fmt.Errorf("items %s: script %s does not exist", d.AegisName, d.Script))
+		}
+	}
+	return errors.Join(errs...)
 }
 
 // npcSprites reads the NPC sprite IDs of the client tables that

@@ -178,6 +178,10 @@ type Config struct {
 	Disable []string
 	// Strict turns overlay warnings into errors.
 	Strict bool
+	// Core holds core's files: the item data and scripts converted from
+	// rAthena when the server starts (mods/README.md, "Item scripts").
+	// Without it, core has no files.
+	Core fs.FS
 }
 
 // Set is the mods that load, in load order, with the world's ruleset.
@@ -206,6 +210,10 @@ func Resolve(found []*Mod, cfg Config) (*Set, error) {
 	s := &Set{byID: map[string]*Mod{}, Strict: cfg.Strict}
 	all := map[string]*Mod{}
 	for _, m := range builtins() {
+		if m.ID() == Core && cfg.Core != nil {
+			core := cfg.Core
+			m.open = func() (fs.FS, func() error, error) { return core, func() error { return nil }, nil }
+		}
 		all[m.ID()] = m
 	}
 	for _, m := range found {
@@ -280,6 +288,13 @@ func Resolve(found []*Mod, cfg Config) (*Set, error) {
 			}
 		}
 		g, missing := grant(man.Permissions, cfg.Approve[id])
+		if m.Builtin {
+			// The built-in mods are the base game, which the server
+			// trusts: core's item scripts give items, heal and warp.
+			for _, p := range Permissions {
+				g[p.Name] = true
+			}
+		}
 		m.Grants = g
 		if len(missing) > 0 {
 			fail("%s requests permissions the server owner has not approved: %s. Review them, then approve them in the config under mods.approve.%s",

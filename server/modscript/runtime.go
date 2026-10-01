@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
@@ -32,15 +33,51 @@ type Host interface {
 	MonsterField(monster int64, field string) (script.Value, error)
 	// SendMessage shows a line of text to one player.
 	SendMessage(player int64, text string) error
-	// GiveItem gives a player items. It returns false when they do not
-	// fit.
-	GiveItem(player int64, item uint32, amount int) (bool, error)
+	// GiveItem gives a player items, as getitem. rentSeconds above 0
+	// makes them rentals. It returns false when they do not fit.
+	GiveItem(player int64, item uint32, amount int, rentSeconds int64) (bool, error)
+	// GiveGroup gives a player the items of one use of an item group,
+	// as getgroupitem.
+	GiveGroup(player int64, group int64) error
 	// CountItem counts the items of an ID a player has.
 	CountItem(player int64, item uint32) (int, error)
+	// Heal heals a player as itemheal, or as percentheal when percent is
+	// set. HP and SP are [min, max], drawn as rand when they differ.
+	Heal(player int64, percent bool, hp, sp [2]int) error
+	// Warp moves a player after the script's event: to a map and cell
+	// (where "map"), to a random cell of its map ("random"), or to its
+	// save point ("save_point"). It returns false when the warp cannot
+	// happen.
+	Warp(player int64, where, mapName string, x, y int) (bool, error)
+	// ShowEffect plays an effect on a player for everyone near, or a
+	// headgear effect when headgear is set.
+	ShowEffect(player int64, effect int64, headgear bool) error
+	// SkillLevel is the level of a skill the player has, or 0.
+	SkillLevel(player int64, skill int64) (int, error)
+	// Equipped returns the copy a player has in an equipment slot, such
+	// as right_hand, as an equipped handle ID. ok is false for an empty
+	// slot.
+	Equipped(player int64, slot string) (id int64, ok bool, err error)
+	// EquippedField reads a field of an equipped copy, such as refine.
+	EquippedField(id int64, field string) (script.Value, error)
+	// RandomN returns a number in [0, n) from the zone's secret stream.
+	RandomN(n int64) int64
 	// ItemID finds an item by name: an AegisName or a mod's full name.
 	ItemID(name string) (uint32, bool)
+	// ItemGroupID finds an item group by its item_group_db name.
+	ItemGroupID(name string) (int64, bool)
+	// MonsterID finds a monster by its AegisName, such as PORING.
+	MonsterID(name string) (int64, bool)
 	// Now is the zone clock, in milliseconds. Timers start from it.
 	Now() int64
+}
+
+// Jobs answers the job tests of wa.jobs from rAthena's map job IDs.
+type Jobs interface {
+	// MapID is pc_jobid2mapid.
+	MapID(job int) (uint64, bool)
+	// JobOf is pc_mapid2jobid.
+	JobOf(mapID uint64, male bool) (int, bool)
 }
 
 // Options configure a zone's Runtime.
@@ -51,11 +88,20 @@ type Options struct {
 	// Mods are every loaded mod's ID, so require can tell a mod that is
 	// not a dependency from one that does not exist.
 	Mods []string
+	// Constants are rAthena's script constants, for the constant modules
+	// and skills.id. Without them, those modules are empty.
+	Constants *constants.Data
+	// Jobs answers the job tests. Without it, they raise an error.
+	Jobs Jobs
 }
 
 // Limits of what one context can hold, so a script cannot fill the
 // zone's memory from Go.
 const (
+	// MaxItemScripts is the most item entry scripts a zone keeps loaded.
+	// Loading one more drops the one loaded first. Contexts that run keep
+	// what they use, so this only frees scripts nothing uses.
+	MaxItemScripts = 256
 	// MaxRegistrations is the most handlers and timers one context may
 	// have at once.
 	MaxRegistrations = 10_000
@@ -71,7 +117,7 @@ type Runtime struct {
 	s      *script.State
 	host   Host
 	log    *slog.Logger
-	fns    struct{ loadEntry, invoke, dropMod, resetLoading, isProtected *script.Ref }
+	fns    struct{ loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected *script.Ref }
 	nextID int64
 
 	scripts  map[string]*mod.Scripts
@@ -86,6 +132,18 @@ type Runtime struct {
 	// whose file loads now, outside any context.
 	current *Context
 	loading string
+	// computing is set while a computed bonus runs: calls that change
+	// the game are refused (strategy section 5.3, rule 3).
+	computing bool
+	// group is the with_bonuses timer whose function runs now, or nil.
+	group *timer
+	// setups are the setup functions of item entry scripts, by
+	// <mod>:<path>, loaded on first use. setupOrder is their load order,
+	// for dropping the oldest past MaxItemScripts.
+	setups     map[string]*script.Ref
+	setupOrder []string
+	// constants are the constant modules, made once.
+	constants script.Value
 }
 
 // Context owns what a setup function and its handlers create
@@ -102,6 +160,12 @@ type Context struct {
 	timers   map[int64]*timer
 	ended    bool
 	failures []int64
+	// sink gets the bonuses of an equip context. bonuses are those it
+	// owns.
+	sink    BonusSink
+	bonuses []*Bonus
+	// player is the player of an item context: the user or the wearer.
+	player int64
 }
 
 // Ended reports whether the context has ended.
@@ -122,6 +186,9 @@ type timer struct {
 	every    int64
 	fn       *script.Ref
 	canceled bool
+	// bonuses are the bonuses of a with_bonuses timer, which end when it
+	// is due or canceled. fn is nil for such a timer.
+	bonuses []*Bonus
 }
 
 // New makes a zone's Lua state and loads every mod's entry scripts in
@@ -135,6 +202,7 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		opts: opts, host: opts.Host, log: opts.Log,
 		scripts: map[string]*mod.Scripts{}, contexts: map[string]*Context{},
 		handlers: map[string][]*handler{}, byID: map[int64]*handler{}, timers: map[int64]*timer{},
+		setups: map[string]*script.Ref{},
 	}
 	s, err := script.New(script.Options{Limits: opts.Limits})
 	if err != nil {
@@ -177,6 +245,25 @@ func (r *Runtime) init() error {
 		{"player_send_message", r.playerSendMessage},
 		{"player_give_item", r.playerGiveItem},
 		{"player_count_item", r.playerCountItem},
+		{"player_give_group", r.playerGiveGroup},
+		{"player_heal", r.playerHeal},
+		{"player_warp", r.playerWarp},
+		{"player_show_effect", r.playerShowEffect},
+		{"player_skill_level", r.playerSkillLevel},
+		{"player_equipped", r.playerEquipped},
+		{"player_start_status", r.playerStartStatus},
+		{"player_add_timed_bonuses", r.playerAddTimedBonuses},
+		{"equipped_field", r.equippedField},
+		{"items_group", r.itemsGroup},
+		{"skills_id", r.skillsID},
+		{"monsters_id", r.monstersID},
+		{"random_integer", r.randomInteger},
+		{"random_chance", r.randomChance},
+		{"bonuses_add", r.bonusesAdd},
+		{"timers_bonus_start", r.timersBonusStart},
+		{"timers_bonus_done", r.timersBonusDone},
+		{"jobs_test", r.jobsTest},
+		{"constants", r.constantsTable},
 	}
 	var fields []script.Field
 	for _, h := range host {
@@ -205,6 +292,7 @@ func (r *Runtime) init() error {
 		{"load_entry", &r.fns.loadEntry},
 		{"invoke", &r.fns.invoke},
 		{"drop_mod", &r.fns.dropMod},
+		{"drop_file", &r.fns.dropFile},
 		{"reset_loading", &r.fns.resetLoading},
 		{"is_protected", &r.fns.isProtected},
 	} {
@@ -223,6 +311,10 @@ func (r *Runtime) Close() {
 		if c := r.contexts[id]; c != nil {
 			r.end(c)
 		}
+	}
+	for k, s := range r.setups {
+		s.Release()
+		delete(r.setups, k)
 	}
 	r.s.Close()
 }
@@ -289,6 +381,13 @@ func (r *Runtime) Reload(sc *mod.Scripts) error {
 	if _, err := r.s.Call(r.fns.dropMod.Value(), script.String(sc.Mod)); err != nil {
 		return err
 	}
+	for k, s := range r.setups {
+		if strings.HasPrefix(k, sc.Mod+":") {
+			s.Release()
+			delete(r.setups, k)
+		}
+	}
+	r.setupOrder = slices.DeleteFunc(r.setupOrder, func(k string) bool { return strings.HasPrefix(k, sc.Mod+":") })
 	if _, ok := r.scripts[sc.Mod]; !ok {
 		r.order = append(r.order, sc.Mod)
 	}
@@ -308,10 +407,17 @@ func (r *Runtime) end(c *Context) {
 	c.handlers = nil
 	for _, t := range c.timers {
 		t.canceled = true
-		t.fn.Release()
+		r.endTimerBonuses(t)
+		if t.fn != nil {
+			t.fn.Release()
+		}
 		delete(r.timers, t.id)
 	}
 	c.timers = nil
+	for _, b := range c.bonuses {
+		r.dropBonus(b)
+	}
+	c.bonuses = nil
 	if r.contexts[c.Mod] == c {
 		delete(r.contexts, c.Mod)
 	}
@@ -342,6 +448,13 @@ func (r *Runtime) run(c *Context, fn script.Value, args ...script.Value) error {
 	r.current = c
 	_, err := r.s.Call(fn, args...)
 	r.current = prev
+	if t := r.group; t != nil {
+		// A limit stopped a with_bonuses function, which pcall cannot
+		// catch: its bonuses end.
+		r.group = nil
+		r.dropTimer(t)
+		r.endTimerBonuses(t)
+	}
 	if err != nil {
 		r.afterError()
 	}
@@ -433,6 +546,12 @@ func (r *Runtime) Advance(now int64) {
 		if t.canceled || t.ctx.ended {
 			continue
 		}
+		if t.fn == nil {
+			// A with_bonuses timer: its bonuses end.
+			r.dropTimer(t)
+			r.endTimerBonuses(t)
+			continue
+		}
 		if t.every > 0 {
 			// A repeating timer keeps its rhythm, and skips runs it
 			// missed rather than running them all at once.
@@ -466,7 +585,7 @@ func (r *Runtime) dropTimer(t *timer) {
 	delete(t.ctx.timers, t.id)
 }
 
-// Kinds of context (proposal 0002). Only mod contexts exist yet.
+// Kinds of context (proposal 0002). Mod and item contexts exist.
 const (
 	KindMod     = "mod"
 	KindNPC     = "npc"
@@ -477,8 +596,10 @@ const (
 )
 
 // Events lists every event name and the context kinds that can listen
-// to it. Mod events fire today. The others are names the next steps
-// fire, listed so a typo is told apart from an event of another kind.
+// to it. Mod events and use fire in zones today; damage, skill_used and
+// unequip fire in tests until equipment exists (phase 4). The others are
+// names the next steps fire, listed so a typo is told apart from an
+// event of another kind.
 var Events = map[string][]string{
 	"login":          {KindMod},
 	"logout":         {KindMod},
@@ -489,8 +610,10 @@ var Events = map[string][]string{
 	"click":          {KindNPC},
 	"touch":          {KindNPC},
 	"use":            {KindItem},
-	"hit_taken":      {KindItem},
-	"attack":         {KindItem},
+	"damage":         {KindItem},
+	"skill_used":     {KindItem},
+	// unequip is provisional: converted UnEquipScripts run on it.
+	"unequip": {KindItem},
 }
 
 // checkEvent checks an event name for a context kind.

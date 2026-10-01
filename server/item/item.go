@@ -83,12 +83,20 @@ type Def struct {
 	Gender string `json:"gender"`
 	// JobRestricted is set when Jobs or Classes leave some jobs out.
 	JobRestricted bool `json:"job_restricted"`
-	// Heal is the item's script when it only heals.
-	Heal *Heal `json:"heal"`
+	// Script is the item's entry script, as <mod ID>:<path>, such as
+	// core:scripts/items/Red_Potion.lua. The mod loader sets it from the
+	// script field of an item overlay.
+	Script string `json:"script"`
+	// Bonuses are static bonuses of an equipment item, as item data
+	// entries: a bonus name followed by its arguments (server/bonus).
+	Bonuses []any `json:"bonuses"`
+	// Unsupported says why the server cannot run the item's script yet.
+	// Using such an item is refused before it is spent.
+	Unsupported string `json:"unsupported"`
 }
 
-// Heal is an item script that is only itemheal or percentheal. HP and SP
-// are [min, max]. When they differ, the script draws with rand.
+// Heal is the amounts of an itemheal or percentheal: HP and SP are
+// [min, max]. When they differ, the script draws with rand.
 type Heal struct {
 	Command string `json:"command"`
 	HP      [2]int `json:"hp"`

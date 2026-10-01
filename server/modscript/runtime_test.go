@@ -21,6 +21,18 @@ type fakeHost struct {
 	messages []string
 	items    map[string]uint32
 	given    map[int64]int
+	// calls logs the item API calls, and draws the random ranges.
+	calls    []string
+	draws    []int64
+	skills   map[int64]int
+	slots    map[string]int64
+	equipped map[int64]fakeEquipped
+}
+
+type fakeEquipped struct {
+	item   uint32
+	refine int64
+	wearer int64
 }
 
 func newHost() *fakeHost {
@@ -29,6 +41,9 @@ func newHost() *fakeHost {
 		monsters: map[int64]string{7: "Poring"},
 		items:    map[string]uint32{"Red_Potion": 501, "example.a:Cookie": 2_000_000},
 		given:    map[int64]int{},
+		skills:   map[int64]int{},
+		slots:    map[string]int64{},
+		equipped: map[int64]fakeEquipped{},
 	}
 }
 
@@ -78,9 +93,74 @@ func (h *fakeHost) SendMessage(id int64, text string) error {
 	return nil
 }
 
-func (h *fakeHost) GiveItem(id int64, item uint32, amount int) (bool, error) {
+func (h *fakeHost) GiveItem(id int64, item uint32, amount int, rent int64) (bool, error) {
 	h.given[id] += amount
+	h.calls = append(h.calls, fmt.Sprintf("give %d %d x%d rent %d", id, item, amount, rent))
 	return true, nil
+}
+
+func (h *fakeHost) GiveGroup(id int64, group int64) error {
+	h.calls = append(h.calls, fmt.Sprintf("group %d %d", id, group))
+	return nil
+}
+
+func (h *fakeHost) Heal(id int64, percent bool, hp, sp [2]int) error {
+	h.calls = append(h.calls, fmt.Sprintf("heal %d %v %v %v", id, percent, hp, sp))
+	return nil
+}
+
+func (h *fakeHost) Warp(id int64, where, mapName string, x, y int) (bool, error) {
+	h.calls = append(h.calls, fmt.Sprintf("warp %d %s %s %d %d", id, where, mapName, x, y))
+	return true, nil
+}
+
+func (h *fakeHost) ShowEffect(id int64, effect int64, headgear bool) error {
+	h.calls = append(h.calls, fmt.Sprintf("effect %d %d %v", id, effect, headgear))
+	return nil
+}
+
+func (h *fakeHost) SkillLevel(id int64, skill int64) (int, error) { return h.skills[skill], nil }
+
+func (h *fakeHost) Equipped(id int64, slot string) (int64, bool, error) {
+	e, ok := h.slots[slot]
+	return e, ok, nil
+}
+
+func (h *fakeHost) EquippedField(id int64, field string) (script.Value, error) {
+	e, ok := h.equipped[id]
+	if !ok {
+		return script.Nil, errors.New("the item is no longer equipped")
+	}
+	switch field {
+	case "item":
+		return script.Int(int64(e.item)), nil
+	case "refine":
+		return script.Int(e.refine), nil
+	case "enchant_grade":
+		return script.Int(0), nil
+	case "wearer":
+		return script.Int(e.wearer), nil
+	}
+	return script.Nil, fmt.Errorf("equipped item has no field %q", field)
+}
+
+func (h *fakeHost) RandomN(n int64) int64 {
+	h.draws = append(h.draws, n)
+	return n - 1
+}
+
+func (h *fakeHost) ItemGroupID(name string) (int64, bool) {
+	if name == "BLUEBOX" {
+		return 1, true
+	}
+	return 0, false
+}
+
+func (h *fakeHost) MonsterID(name string) (int64, bool) {
+	if name == "PORING" {
+		return 1002, true
+	}
+	return 0, false
 }
 
 func (h *fakeHost) CountItem(id int64, item uint32) (int, error) { return h.given[id], nil }

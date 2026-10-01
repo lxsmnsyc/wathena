@@ -9,6 +9,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
@@ -27,6 +28,13 @@ type Mods struct {
 	Limits script.Limits
 	// Log gets script errors.
 	Log *slog.Logger
+	// Constants are rAthena's script constants: the constant modules and
+	// skills.id.
+	Constants *constants.Data
+	// Groups are the item groups that boxes open.
+	Groups *item.Groups
+	// MonsterIDs maps monster AegisNames, such as PORING, to IDs.
+	MonsterIDs map[string]int64
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -82,21 +90,44 @@ type scriptEvent struct {
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
-// scripts. It runs on the zone's goroutine.
+// scripts, when a mod has any. A zone whose mods only have item scripts
+// makes its state when a player first uses an item, so the hundreds of
+// zones nobody visits hold no Lua state. It runs on the zone's
+// goroutine.
 func (z *Zone) startScripts() {
-	if z.Mods == nil || len(z.Mods.Scripts) == 0 {
+	if z.Mods == nil {
 		return
+	}
+	for _, sc := range z.Mods.Scripts {
+		if len(sc.Entries) > 0 {
+			z.itemScripts()
+			return
+		}
+	}
+}
+
+// itemScripts returns the zone's Lua state, made on first use, or nil
+// when the zone runs no scripts.
+func (z *Zone) itemScripts() *modscript.Runtime {
+	if z.scripts != nil || z.scriptsFailed || z.Mods == nil || len(z.Mods.Scripts) == 0 {
+		return z.scripts
 	}
 	log := z.Mods.Log
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
-	r, err := modscript.New(modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs}, z.Mods.Scripts)
+	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants}
+	if z.Status != nil {
+		opts.Jobs = z.Status
+	}
+	r, err := modscript.New(opts, z.Mods.Scripts)
 	if err != nil {
 		log.Error("mod scripts cannot run in this zone", "map", z.Map, "err", err)
-		return
+		z.scriptsFailed = true
+		return nil
 	}
 	z.scripts = r
+	return r
 }
 
 func (z *Zone) stopScripts() {
@@ -239,6 +270,27 @@ func (h scriptHost) PlayerField(id int64, field string) (script.Value, error) {
 	case "party":
 		// Parties do not exist yet.
 		return script.Nil, nil
+	case "base_str":
+		return script.Int(int64(p.char.Stats.Str)), nil
+	case "base_agi":
+		return script.Int(int64(p.char.Stats.Agi)), nil
+	case "base_vit":
+		return script.Int(int64(p.char.Stats.Vit)), nil
+	case "base_int":
+		return script.Int(int64(p.char.Stats.Int)), nil
+	case "base_dex":
+		return script.Int(int64(p.char.Stats.Dex)), nil
+	case "base_luk":
+		return script.Int(int64(p.char.Stats.Luk)), nil
+	case "base_pow", "base_sta", "base_wis", "base_spl", "base_con", "base_crt":
+		// Trait stats cannot be raised yet.
+		return script.Int(0), nil
+	case "job_class":
+		if h.z.Status == nil {
+			return script.Int(0), nil
+		}
+		m, _ := h.z.Status.MapID(p.char.Job)
+		return script.Int(int64(m)), nil // #nosec G115 -- map job IDs fit in 32 bits.
 	}
 	return script.Nil, fmt.Errorf("player has no field %q", field)
 }
@@ -294,14 +346,16 @@ func (h scriptHost) SendMessage(id int64, text string) error {
 	return nil
 }
 
-// GiveItem gives a player items, as getitem. It returns false when they
-// do not fit.
-func (h scriptHost) GiveItem(id int64, itemID uint32, amount int) (bool, error) {
+// GiveItem gives a player items, as getitem: a stackable item in one
+// add, anything else one at a time. It stops at the first that does not
+// fit, as getitem does, and the player sees why. Rentals are given as
+// normal items: items have no expiry yet.
+func (h scriptHost) GiveItem(id int64, itemID uint32, amount int, rentSeconds int64) (bool, error) {
 	p, err := h.player(id)
 	if err != nil {
 		return false, err
 	}
-	return h.z.addItem(p, itemID, amount) == item.AddSuccess, nil
+	return h.z.giveItem(p, itemID, amount, h.z.Items.Get(itemID).Stackable), nil
 }
 
 // CountItem is countitem.

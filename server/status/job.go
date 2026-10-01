@@ -263,3 +263,19 @@ func (t *Tables) mapIDToJob(mapID uint64, male bool) (int, bool) {
 	}
 	return s[0], true
 }
+
+// MapID is pc_jobid2mapid: a job's map job ID, which holds its class
+// bits, such as transcendent or third job.
+func (t *Tables) MapID(job int) (uint64, bool) {
+	j := t.jobs[job]
+	if j == nil {
+		return 0, false
+	}
+	return j.mapID, true
+}
+
+// JobOf is pc_mapid2jobid: the job of a map job ID. Bard and Dancer
+// style jobs share a map job ID, so male picks one.
+func (t *Tables) JobOf(mapID uint64, male bool) (int, bool) {
+	return t.mapIDToJob(mapID, male)
+}

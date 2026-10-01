@@ -342,7 +342,8 @@ enum UseItemFailure {
   USE_ITEM_FAILURE_EMPTY_SLOT = 1;
   // The item is not a healing, usable or cash item.
   USE_ITEM_FAILURE_NOT_USABLE = 2;
-  // The server cannot run the item's script yet. Only plain heals run.
+  // The item's script needs a feature the server does not have yet. A
+  // system chat line says which, when the server knows.
   USE_ITEM_FAILURE_NOT_SUPPORTED = 3;
   // The last item use was less than item_use_interval ago.
   USE_ITEM_FAILURE_TOO_SOON = 4;

@@ -1,0 +1,2 @@
+-- status: full
+-- bonuses: [[damage, 25, {kind: physical, against: {class: boss}}]]

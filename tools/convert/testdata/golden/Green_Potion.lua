@@ -1,0 +1,3 @@
+-- status: none
+-- unsupported: status effects
+-- details: sc_end: status effects: sc_end; sc_end: status effects: sc_end; sc_end: status effects: sc_end; sc_end: status effects: sc_end; sc_end: status effects: sc_end

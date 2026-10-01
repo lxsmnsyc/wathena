@@ -56,7 +56,9 @@ func (s *Set) Scripts(id string) (*Scripts, error) {
 			return err
 		}
 		total += len(b)
-		if total > MaxScriptBytes {
+		// Core's converted item scripts are larger, and the server makes
+		// them itself.
+		if total > MaxScriptBytes && !m.Builtin {
 			return fmt.Errorf("the scripts are larger than %d MB", MaxScriptBytes>>20)
 		}
 		out.Files[p] = string(b)
@@ -73,11 +75,12 @@ func (s *Set) Scripts(id string) (*Scripts, error) {
 	return out, nil
 }
 
-// AllScripts reads the Lua files of every loaded mod that has any.
+// AllScripts reads the Lua files of every loaded mod that has any,
+// core's converted item scripts included.
 func (s *Set) AllScripts() ([]*Scripts, error) {
 	var out []*Scripts
 	for _, m := range s.Mods {
-		if m.Builtin {
+		if m.Builtin && m.open == nil {
 			continue
 		}
 		sc, err := s.Scripts(m.ID())

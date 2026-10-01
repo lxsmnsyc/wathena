@@ -1,26 +1,78 @@
 package zone
 
 import (
+	"io/fs"
+	"sync"
 	"testing"
 
+	"github.com/lxsmnsyc/wathena/internal/reference"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/shared/rng"
+	"github.com/lxsmnsyc/wathena/tools/convert"
 )
 
-// testItems are items as rAthena's renewal item_db has them, and one that
+// testItems are items as rAthena's renewal item_db has them, with core's
+// converted scripts, one whose script needs status effects, and one that
 // may not be dropped.
 func testItems() *item.Table {
 	return item.New(&item.Data{Mode: "renewal", Items: []item.Def{
-		{ID: 501, Type: "Healing", Weight: 70, Stackable: true, Heal: &item.Heal{Command: "itemheal", HP: [2]int{45, 65}}},
-		{ID: 505, Type: "Healing", Weight: 150, Stackable: true, Heal: &item.Heal{Command: "itemheal", SP: [2]int{40, 60}}},
-		{ID: 601, Type: "DelayConsume", Weight: 50, Stackable: true},
-		{ID: 607, Type: "Healing", Weight: 300, Stackable: true, DelayMs: 5000, DelayStatus: "Reuse_Limit_F", Heal: &item.Heal{Command: "percentheal", HP: [2]int{100, 100}, SP: [2]int{100, 100}}},
-		{ID: 909, Type: "Etc", Weight: 10, Stackable: true},
-		{ID: 1201, Type: "Weapon", Weight: 400},
-		{ID: 7777, Type: "Etc", Weight: 1, Stackable: true, NoDrop: true},
+		{ID: 501, AegisName: "Red_Potion", Type: "Healing", Weight: 70, Stackable: true, Script: "core:scripts/items/Red_Potion.lua"},
+		{ID: 505, AegisName: "Blue_Potion", Type: "Healing", Weight: 150, Stackable: true, Script: "core:scripts/items/Blue_Potion.lua"},
+		{ID: 506, AegisName: "Green_Potion", Type: "Healing", Weight: 70, Stackable: true, Unsupported: "status effects"},
+		{ID: 601, AegisName: "Wing_Of_Fly", Type: "DelayConsume", Weight: 50, Stackable: true, Script: "core:scripts/items/Wing_Of_Fly.lua"},
+		{ID: 602, AegisName: "Wing_Of_Butterfly", Type: "DelayConsume", Weight: 50, Stackable: true, Script: "core:scripts/items/Wing_Of_Butterfly.lua"},
+		{ID: 603, AegisName: "Old_Blue_Box", Type: "Usable", Weight: 200, Stackable: true, Script: "core:scripts/items/Old_Blue_Box.lua"},
+		{ID: 607, AegisName: "Yggdrasilberry", Type: "Healing", Weight: 300, Stackable: true, DelayMs: 5000, DelayStatus: "Reuse_Limit_F", Script: "core:scripts/items/Yggdrasilberry.lua"},
+		{ID: 909, AegisName: "Jellopy", Type: "Etc", Weight: 10, Stackable: true},
+		{ID: 1201, AegisName: "Knife", Type: "Weapon", Weight: 400},
+		{ID: 7777, AegisName: "Untradable", Type: "Etc", Weight: 1, Stackable: true, NoDrop: true},
 	}})
+}
+
+// testCore is core's converted renewal item scripts, made once.
+var testCore = sync.OnceValues(func() (*convert.Core, error) { return convert.LoadCore(reference.Renewal) })
+
+// coreMods gives a zone core's item scripts, with every permission, as
+// waserver does.
+func coreMods(t *testing.T, z *Zone) {
+	t.Helper()
+	core, err := testCore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sc := &mod.Scripts{Mod: mod.Core, Files: map[string]string{}, Grants: mod.Grants{}, Visible: []string{mod.Core}}
+	for _, p := range mod.Permissions {
+		sc.Grants[p.Name] = true
+	}
+	err = fs.WalkDir(core.Files, "scripts", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := fs.ReadFile(core.Files, p)
+		sc.Files[p] = string(b)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	groups, err := item.NewGroups(core.Groups, func(name string) (uint32, bool) {
+		for _, n := range []struct {
+			name string
+			id   uint32
+		}{{"Red_Potion", 501}, {"Blue_Potion", 505}, {"Jellopy", 909}} {
+			if n.name == name {
+				return n.id, true
+			}
+		}
+		return 999_999, true
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	z.Mods = &Mods{Scripts: []*mod.Scripts{sc}, IDs: []string{mod.Core}, Constants: core.Constants, Groups: groups, MonsterIDs: core.Monsters}
 }
 
 // maxWeight is the test players' maximum weight: 100.0.
@@ -33,6 +85,8 @@ func invZone(t *testing.T, start ...StartItem) (*Zone, *Player, *Player) {
 	t.Helper()
 	z := New("map/test", open(40), rng.FromKey([32]byte{5}).Stream(), nil)
 	z.Items = testItems()
+	z.SaveMap = "map/test"
+	coreMods(t, z)
 	z.PlayerStatus = battle.Status{MaxHP: 200, MaxSP: 50, Vit: 10, Int: 5, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	// Without job tables, the maximum weight is set by hand before the
 	// start items go in.
@@ -188,13 +242,13 @@ func TestUseHealingItem(t *testing.T) {
 }
 
 func TestUseItemRules(t *testing.T) {
-	z, a, _ := invZone(t, StartItem{501, 3}, StartItem{909, 1}, StartItem{601, 1}, StartItem{607, 2})
+	z, a, _ := invZone(t, StartItem{501, 3}, StartItem{909, 1}, StartItem{506, 1}, StartItem{607, 2})
 	a.entity.hp = 10
 	// Two uses in one tick: item_use_interval refuses the second.
 	use(z, a, 0)
 	use(z, a, 0)
-	// An Etc item cannot be used. A Fly Wing's script does not run yet,
-	// and it is not spent.
+	// An Etc item cannot be used. A Green Potion's script needs status
+	// effects, so it is refused and not spent.
 	z.stepAt(z.now + 100)
 	use(z, a, 1)
 	use(z, a, 2)
@@ -209,10 +263,14 @@ func TestUseItemRules(t *testing.T) {
 		wathenav1.UseItemFailure_USE_ITEM_FAILURE_NOT_SUPPORTED,
 		wathenav1.UseItemFailure_USE_ITEM_FAILURE_EMPTY_SLOT,
 	}
-	if got := useFailures(events(a)); len(got) != len(want) || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] || got[3] != want[3] {
+	ev := events(a)
+	if got := useFailures(ev); len(got) != len(want) || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] || got[3] != want[3] {
 		t.Errorf("failures %v, want %v", got, want)
 	}
-	if a.inventory.Count(501) != 2 || a.inventory.Count(601) != 1 || a.inventory.Count(909) != 1 {
+	if !hasSystemLine(ev, "This item needs a feature the server does not have yet: status effects.") {
+		t.Error("no message says what the Green Potion needs")
+	}
+	if a.inventory.Count(501) != 2 || a.inventory.Count(506) != 1 || a.inventory.Count(909) != 1 {
 		t.Errorf("inventory %v", a.inventory.Slots[:4])
 	}
 
@@ -242,6 +300,16 @@ func TestUseItemRules(t *testing.T) {
 	if a.inventory.Count(501) != 2 {
 		t.Error("a dead player used a potion")
 	}
+}
+
+// hasSystemLine reports whether events hold a line of server text.
+func hasSystemLine(ev []*wathenav1.Event, text string) bool {
+	for _, e := range ev {
+		if c := e.GetChat(); c != nil && c.GetChannel() == wathenav1.ChatChannel_CHAT_CHANNEL_SYSTEM && c.GetText() == text {
+			return true
+		}
+	}
+	return false
 }
 
 func TestDropAndPickUpAgain(t *testing.T) {

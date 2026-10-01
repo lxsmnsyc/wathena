@@ -1,0 +1,2 @@
+-- status: full
+-- bonuses: [[attack_element, dark], [damage, 7, {kind: physical, against: {element: water}}], [damage, 7, {kind: physical, against: {element: earth}}], [damage, 7, {kind: physical, against: {element: fire}}], [damage, 7, {kind: physical, against: {element: wind}}], [damage_taken, 5, {element: holy}]]

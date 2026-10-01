@@ -1039,6 +1039,23 @@ end
 
 - **Exports** let one mod offer functions to other mods. A mod offers them with `exports.provide(name, function)` and reads them with `exports.get("example.seasonal-lib", name)`, from `wa.exports`. The dependency must be listed in `depends`.
 
+Planned work to give mods more control than rAthena's scripts have:
+
+- **Wider auto-cast.** rAthena's auto-cast bonuses (`bAutoSpell` and its variants) cast a skill on the attacker, the target, or the wearer. Mods should be able to choose other targets:
+  - party members, such as the lowest-HP member in range;
+  - a random enemy in range;
+  - a random cell in range, for ground skills;
+  - a target chosen by a Lua function.
+  This becomes a `target` option on the `cast` bonus ([0002a](proposals/0002a-bonus-names.md)). The default stays rAthena's behaviour.
+- **More events and hooks.** Today's events report what happened, and hooks change a few results such as drop rates. More of the game should be open to change through hooks, each with rAthena's behaviour as the default. Examples:
+  - skill casting: cast time, delay, cost, range, and whether a cast may start;
+  - status effects: chance, duration, and whether one may start or end;
+  - movement and warps: whether a move or a map change may happen;
+  - experience, drops, and zeny from kills;
+  - healing, regeneration, and item use;
+  - monster AI decisions, such as target choice.
+  Each new event or hook goes through the API review in proposal 0002 before it is built.
+
 ### 6.9 Tooling
 
 The `wactl` tool covers the mod workflow.
@@ -2263,7 +2280,7 @@ Status on 2026-10-01:
   - The ruleset loader moves to phase 3, since ruleset mods load through the mod loader. Until then, `waserver --mode` picks the rAthena mode, and the world records its ruleset.
   - The distributed mode, and tests that run the service interfaces both in one process and over the network (section 3.9), wait for a world that needs more than one machine.
 - Some phase 4 work was done early:
-  - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen.
+  - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen. Since phase 3 step 3, items run their converted scripts in Lua.
   - All of it is ported from rAthena and checked against the phase 0a reference data.
   - Characters, their progress and their inventory are saved in PostgreSQL.
 
@@ -2338,7 +2355,15 @@ The order from here:
       - Reloading one mod's scripts in every zone, for development.
       - A sample mod in `mods/examples/greeter`, checked in Chrome: its NPC shows, its login handler and timer send chat lines, and a reload replaces its handler.
       - Left: overlays for monsters, skills, jobs, spawns, quests, achievements and events; the other API modules of proposal 0002; keeping the ruleset mod in the world row; and the provisional parts listed in mods/README.md, which need review.
-   3. Item scripts. The converter for item scripts, run on the Lua runtime. It replaces the Go code that reads plain heal scripts.
+   3. Item scripts. Done on 2026-10-01 ([decision 0007](decisions/0007-converted-item-scripts.md), [mods/README.md](../mods/README.md), "Item scripts", and [tools/convert](../tools/convert/README.md)):
+      - A converter for rAthena's item scripts, with a parser that follows `script.cpp`. Equipment scripts run symbolically, so a condition on the refine level or the base level becomes a computed bonus. Every bonus form maps to a `bonuses.add` call of [0002a](proposals/0002a-bonus-names.md), with its sign flips, chance units, argument order and options.
+      - `waserver` converts the item scripts when it starts, in 0.7 s for renewal. They are core's files: `data/items.yml` and one Lua file per item that needs one. Equipment with only constant bonuses becomes item data, 6,125 items in renewal. `wactl convert items` writes the files and the coverage reports in [docs/generated](generated).
+      - Renewal coverage: equipment and cards 13,759 of 14,108 fully (97.5%), usable items 4,418 of 5,280 (83.7%), delayed use items 11 of 665. Most of the rest need status effects, the Laphine windows, item reform, pets or mercenaries.
+      - Usable items run through Lua: heals with `pc_itemheal`'s bonuses, item boxes with rAthena's group rules, `getitem`, `rentitem`, Fly Wings, Butterfly Wings and effects. The Go heal path is gone; its tests pass through the converted scripts. An item that needs a missing feature is refused and kept, and the player is told what it needs.
+      - Item contexts, `wa.bonuses`, `timers.with_bonuses`, the `damage` and `skill_used` events, `wa.random`, `wa.integers`, the constant modules, and the player calls of proposal 0002, decision 9.
+      - Every converted script of both modes loads and runs in tests, equipment against a recording bonus sink. The base stats of 7,630 fully converted equipment items match rAthena's `item_bonuses.json`, 1,764 of them with a stat change.
+      - Checked in Chrome: a Red Potion healed, an Old Blue Box gave an item, a Fly Wing and a Butterfly Wing warped, and a Green Potion was refused with its message.
+      - Left: status effects, timed bonuses, rentals that expire, a save point per character, headgear effects on the client, map flags such as `noteleport`, and the provisional API in mods/README.md, which needs review.
    4. NPCs. Dialogs, shops, and services, with events, variables, and hooks.
    5. Mod tools. `wactl mod new`, `validate`, `test`, `dev`, and `install`, and Lua Language Server type definitions.
    6. Event scheduler, and the phase 3 exit check with a sample mod.
@@ -2349,7 +2374,7 @@ Reasons for this order:
 
 - Gameplay built on in-memory state has to change when the database arrives. Building the database first avoids that work.
 - The riskiest parts are login, saving, map changes, and the tick budget. Problems there are cheaper to find early.
-- Most of phase 4 needs Lua. For example, in renewal only 254 item scripts that heal are plain heals. The other 307 also start effects or cast skills, and cannot run yet.
+- Most of phase 4 needs Lua. For example, item scripts that start status effects or cast skills run once status effects and skills exist.
 
 Work that can run beside this order, because it is self-contained and checked against reference data:
 

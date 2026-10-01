@@ -1,0 +1,2 @@
+-- status: full
+-- bonuses: [[luk, 2], [perfect_dodge, 1]]

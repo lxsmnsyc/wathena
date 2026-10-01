@@ -108,7 +108,7 @@ export function useItemMessage(reason: UseItemFailure): string {
     case UseItemFailure.NOT_USABLE:
       return 'This item cannot be used.';
     case UseItemFailure.NOT_SUPPORTED:
-      return 'This item does nothing yet. Only healing items work for now.';
+      return 'This item does not work yet.';
     case UseItemFailure.TOO_SOON:
       return 'You are using items too fast.';
     case UseItemFailure.COOLDOWN:

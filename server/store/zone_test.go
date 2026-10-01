@@ -11,6 +11,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
@@ -57,7 +58,21 @@ func newTestZone(t *testing.T, name string, interval time.Duration) *zone.Zone {
 	z.Status = tables
 	z.Start = status.Character{Job: 0, Male: true, Stats: status.Stats{Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1}}
 	z.Progress = progression.New(&prog, nil, progression.DefaultConfig)
+	// The Red Potion runs its script as core's converted one does.
+	for i := range items.Items {
+		if items.Items[i].ID == 501 {
+			items.Items[i].Script = "core:scripts/items/Red_Potion.lua"
+		}
+	}
 	z.Items = item.New(&items)
+	z.Mods = &zone.Mods{IDs: []string{mod.Core}, Scripts: []*mod.Scripts{{
+		Mod: mod.Core, Grants: mod.Grants{}, Visible: []string{mod.Core},
+		Files: map[string]string{"scripts/items/Red_Potion.lua": `
+local events = require "wa.events"
+return function()
+  events.on("use", function(player) player:item_heal { hp = { 45, 65 } } end)
+end`},
+	}}}
 	z.StartItems = []zone.StartItem{{ID: 501, Amount: 2}, {ID: 512, Amount: 1}}
 	z.SaveInterval = interval
 	return z

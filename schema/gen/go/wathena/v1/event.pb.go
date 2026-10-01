@@ -398,7 +398,8 @@ const (
 	UseItemFailure_USE_ITEM_FAILURE_EMPTY_SLOT UseItemFailure = 1
 	// The item is not a healing, usable or cash item.
 	UseItemFailure_USE_ITEM_FAILURE_NOT_USABLE UseItemFailure = 2
-	// The server cannot run the item's script yet. Only plain heals run.
+	// The item's script needs a feature the server does not have yet. A
+	// system chat line says which, when the server knows.
 	UseItemFailure_USE_ITEM_FAILURE_NOT_SUPPORTED UseItemFailure = 3
 	// The last item use was less than item_use_interval ago.
 	UseItemFailure_USE_ITEM_FAILURE_TOO_SOON UseItemFailure = 4

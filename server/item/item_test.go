@@ -9,7 +9,7 @@ import (
 // knife with no weight, for filling slots.
 func testTable() *Table {
 	return New(&Data{Mode: "renewal", Items: []Def{
-		{ID: 501, Type: "Healing", Weight: 70, Stackable: true, Heal: &Heal{Command: "itemheal", HP: [2]int{45, 65}}},
+		{ID: 501, Type: "Healing", Weight: 70, Stackable: true},
 		{ID: 909, Type: "Etc", Weight: 10, Stackable: true},
 		{ID: 1201, Type: "Weapon", Weight: 400},
 		{ID: 1202, Type: "Weapon"},

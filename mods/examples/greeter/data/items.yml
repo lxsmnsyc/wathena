@@ -4,7 +4,4 @@
   type: Healing
   weight: 10
   stackable: true
-  heal:
-    command: itemheal
-    hp: [20, 30]
-    sp: [0, 0]
+  script: scripts/items/welcome_cookie.lua

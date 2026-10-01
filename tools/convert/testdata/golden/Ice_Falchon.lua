@@ -1,0 +1,2 @@
+-- status: full
+-- bonuses: [[attack_element, water], [cause_status, freeze, {chance: 500}], [cause_status, freeze, {chance: 100, target: self}], [skill, MG_COLDBOLT, 3], [cast, MG_COLDBOLT, 3, {chance: 1000}]]

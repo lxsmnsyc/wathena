@@ -115,6 +115,9 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	if err != nil {
 		return err
 	}
+	if err := r.mutating("events.on"); err != nil {
+		return err
+	}
 	if err := r.need("events.on", "event.listen"); err != nil {
 		return err
 	}
@@ -175,6 +178,9 @@ func (r *Runtime) timersStart(c *script.Call) error {
 	if err != nil {
 		return err
 	}
+	if err := r.mutating(what); err != nil {
+		return err
+	}
 	ms := c.Int(0)
 	switch {
 	case repeat && ms <= 0:
@@ -206,8 +212,14 @@ func (r *Runtime) timersCancel(c *script.Call) error {
 	if t == nil {
 		return nil
 	}
+	if err := r.mutating("timer:cancel"); err != nil {
+		return err
+	}
 	r.dropTimer(t)
-	t.fn.Release()
+	r.endTimerBonuses(t)
+	if t.fn != nil {
+		t.fn.Release()
+	}
 	return nil
 }
 
@@ -270,6 +282,9 @@ func (r *Runtime) playerSendMessage(c *script.Call) error {
 	if err != nil {
 		return err
 	}
+	if err := r.mutating("player:send_message"); err != nil {
+		return err
+	}
 	text := c.String(1)
 	if text == "" || len(text) > MaxMessage {
 		return fmt.Errorf("player:send_message: the text must be 1 to %d bytes", MaxMessage)
@@ -286,6 +301,9 @@ func (r *Runtime) playerGiveItem(c *script.Call) error {
 	if err != nil {
 		return err
 	}
+	if err := r.mutating("player:give_item"); err != nil {
+		return err
+	}
 	if err := r.need("player:give_item", "player.give_items"); err != nil {
 		return err
 	}
@@ -296,11 +314,341 @@ func (r *Runtime) playerGiveItem(c *script.Call) error {
 	if item <= 0 || item > 1<<32-1 || amount < 1 || amount > 30000 {
 		return errors.New("player:give_item: want an item ID from items.id and an amount from 1 to 30000")
 	}
-	ok, err := r.host.GiveItem(id, uint32(item), int(amount)) // #nosec G115 -- checked above.
+	rent := c.Int(3)
+	if rent < 0 || rent > 1<<31 {
+		return errors.New("player:give_item: rent_seconds must be from 0 to 2^31")
+	}
+	ok, err := r.host.GiveItem(id, uint32(item), int(amount), rent) // #nosec G115 -- checked above.
 	if err != nil {
 		return err
 	}
 	c.Return(script.Bool(ok))
+	return nil
+}
+
+func (r *Runtime) playerGiveGroup(c *script.Call) error {
+	id, err := playerID(c)
+	if err != nil {
+		return err
+	}
+	if err := r.mutating("player:give_item_from_group"); err != nil {
+		return err
+	}
+	if err := r.need("player:give_item_from_group", "player.give_items"); err != nil {
+		return err
+	}
+	group, ok := c.Arg(1).AsInt()
+	if !ok {
+		// A group may be named directly.
+		name, isName := c.Arg(1).AsString()
+		if !isName {
+			return errors.New("player:give_item_from_group: want a group from items.group")
+		}
+		if group, ok = r.host.ItemGroupID(name); !ok {
+			return fmt.Errorf("player:give_item_from_group: there is no item group %q", name)
+		}
+	}
+	return r.host.GiveGroup(id, group)
+}
+
+func (r *Runtime) playerHeal(c *script.Call) error {
+	id, err := playerID(c)
+	if err != nil {
+		return err
+	}
+	percent := c.Bool(1)
+	what := "player:item_heal"
+	if percent {
+		what = "player:heal_percent"
+	}
+	// Heals need no approved permission: a healing item or a healer is
+	// a common part of a mod. This is provisional.
+	if err := r.mutating(what); err != nil {
+		return err
+	}
+	var v [4]int
+	for i := range v {
+		n := c.Int(2 + i)
+		if n < -1<<31 || n > 1<<31-1 {
+			return fmt.Errorf("%s: amounts must fit in 32 bits", what)
+		}
+		v[i] = int(n)
+	}
+	return r.host.Heal(id, percent, [2]int{v[0], v[1]}, [2]int{v[2], v[3]})
+}
+
+func (r *Runtime) playerWarp(c *script.Call) error {
+	id, err := playerID(c)
+	if err != nil {
+		return err
+	}
+	where := c.String(1)
+	what := map[string]string{"map": "player:warp", "random": "player:warp_to_random_cell", "save_point": "player:warp_to_save_point"}[where]
+	if what == "" {
+		return fmt.Errorf("player warp: unknown target %q", where)
+	}
+	if err := r.mutating(what); err != nil {
+		return err
+	}
+	if err := r.need(what, "player.warp"); err != nil {
+		return err
+	}
+	var mapName string
+	var x, y int64
+	if where == "map" {
+		mapName, x, y = c.String(2), c.Int(3), c.Int(4)
+		if mapName == "" || x < 0 || y < 0 || x > 1<<16 || y > 1<<16 {
+			return errors.New("player:warp: want a map name and a cell")
+		}
+	}
+	ok, err := r.host.Warp(id, where, mapName, int(x), int(y))
+	if err != nil {
+		return err
+	}
+	c.Return(script.Bool(ok))
+	return nil
+}
+
+func (r *Runtime) playerShowEffect(c *script.Call) error {
+	id, err := playerID(c)
+	if err != nil {
+		return err
+	}
+	headgear := c.Bool(2)
+	what := "player:show_effect"
+	if headgear {
+		what = "player:show_headgear_effect"
+	}
+	if err := r.mutating(what); err != nil {
+		return err
+	}
+	effect, ok := c.Arg(1).AsInt()
+	if !ok || effect < 0 || effect > 1<<20 {
+		return fmt.Errorf("%s: want an effect from wa.effects", what)
+	}
+	return r.host.ShowEffect(id, effect, headgear)
+}
+
+func (r *Runtime) playerSkillLevel(c *script.Call) error {
+	id, err := playerID(c)
+	if err != nil {
+		return err
+	}
+	if err := r.need("player:get_skill_level", "game.read"); err != nil {
+		return err
+	}
+	skill, ok := c.Arg(1).AsInt()
+	if !ok || skill <= 0 {
+		return errors.New("player:get_skill_level: want a skill from skills.id")
+	}
+	lv, err := r.host.SkillLevel(id, skill)
+	if err != nil {
+		return err
+	}
+	c.Return(script.Int(int64(lv)))
+	return nil
+}
+
+// Equipment slot names of player:get_equipped.
+var equipSlots = map[string]bool{
+	"head_top": true, "head_middle": true, "head_low": true, "armor": true, "left_hand": true, "right_hand": true,
+	"garment": true, "shoes": true, "left_accessory": true, "right_accessory": true, "ammo": true,
+	"costume_head_top": true, "costume_head_middle": true, "costume_head_low": true, "costume_garment": true,
+	"shadow_armor": true, "shadow_weapon": true, "shadow_shield": true, "shadow_shoes": true,
+	"shadow_right_accessory": true, "shadow_left_accessory": true,
+}
+
+func (r *Runtime) playerEquipped(c *script.Call) error {
+	id, err := playerID(c)
+	if err != nil {
+		return err
+	}
+	if err := r.need("player:get_equipped", "game.read"); err != nil {
+		return err
+	}
+	slot := c.String(1)
+	if !equipSlots[slot] {
+		return fmt.Errorf("player:get_equipped: there is no slot %q", slot)
+	}
+	e, ok, err := r.host.Equipped(id, slot)
+	if err != nil {
+		return err
+	}
+	if ok {
+		c.Return(script.Int(e))
+	} else {
+		c.Return(script.Nil)
+	}
+	return nil
+}
+
+// playerStartStatus is player:start_status. Status effects come with
+// phase 4, so it refuses for now.
+func (r *Runtime) playerStartStatus(c *script.Call) error {
+	if err := r.mutating("player:start_status"); err != nil {
+		return err
+	}
+	return errors.New("player:start_status: status effects are not supported yet (phase 4)")
+}
+
+// playerAddTimedBonuses is player:add_timed_bonuses. Its bonuses need
+// equipment stats and saving, which come with phase 4.
+func (r *Runtime) playerAddTimedBonuses(c *script.Call) error {
+	if err := r.mutating("player:add_timed_bonuses"); err != nil {
+		return err
+	}
+	return errors.New("player:add_timed_bonuses: timed bonuses are not supported yet (phase 4)")
+}
+
+func (r *Runtime) equippedField(c *script.Call) error {
+	if err := r.need("reading an equipped item", "game.read"); err != nil {
+		return err
+	}
+	v, err := r.host.EquippedField(c.Int(0), c.String(1))
+	if err != nil {
+		return err
+	}
+	c.Return(v)
+	return nil
+}
+
+func (r *Runtime) itemsGroup(c *script.Call) error {
+	if err := r.need("items.group", "game.read"); err != nil {
+		return err
+	}
+	name := c.String(0)
+	id, ok := r.host.ItemGroupID(name)
+	if !ok {
+		return fmt.Errorf("items.group: there is no item group %q", name)
+	}
+	c.Return(script.Int(id))
+	return nil
+}
+
+func (r *Runtime) skillsID(c *script.Call) error {
+	if err := r.need("skills.id", "game.read"); err != nil {
+		return err
+	}
+	name := c.String(0)
+	if r.opts.Constants != nil {
+		if id, ok := r.opts.Constants.Skill(name); ok {
+			c.Return(script.Int(id))
+			return nil
+		}
+	}
+	return fmt.Errorf("skills.id: there is no skill %q", name)
+}
+
+func (r *Runtime) monstersID(c *script.Call) error {
+	if err := r.need("monsters.id", "game.read"); err != nil {
+		return err
+	}
+	name := c.String(0)
+	id, ok := r.host.MonsterID(name)
+	if !ok {
+		return fmt.Errorf("monsters.id: there is no monster %q", name)
+	}
+	c.Return(script.Int(id))
+	return nil
+}
+
+func (r *Runtime) randomInteger(c *script.Call) error {
+	if err := r.mutating("random.integer"); err != nil {
+		return err
+	}
+	lo, hi := c.Int(0), c.Int(1)
+	if hi-lo < 0 || hi-lo >= 1<<62 {
+		return errors.New("random.integer: the range is too large")
+	}
+	c.Return(script.Int(lo + r.host.RandomN(hi-lo+1)))
+	return nil
+}
+
+func (r *Runtime) randomChance(c *script.Call) error {
+	if err := r.mutating("random.chance"); err != nil {
+		return err
+	}
+	num, den := c.Int(0), c.Int(1)
+	if den <= 0 || den >= 1<<62 {
+		return errors.New("random.chance: the denominator must be from 1 to 2^62")
+	}
+	// rnd() % den < num, as rAthena's rate checks.
+	c.Return(script.Bool(r.host.RandomN(den) < num))
+	return nil
+}
+
+// Job flags of rAthena's map job IDs.
+const (
+	mapidUpper     = 0x100000
+	mapidBaby      = 0x200000
+	mapidThird     = 0x1000
+	mapidFourth    = 0x10000
+	mapidBaseMask  = 0xff
+	mapidUpperMask = 0xfff
+)
+
+// jobsTest runs a job test of wa.jobs.
+func (r *Runtime) jobsTest(c *script.Call) error {
+	test, job := c.String(0), c.Int(1)
+	if r.opts.Jobs == nil {
+		return fmt.Errorf("jobs.%s: the job tables are not loaded", test)
+	}
+	if job < 0 || job > 1<<20 {
+		return fmt.Errorf("jobs.%s: %d is not a job", test, job)
+	}
+	m, ok := r.opts.Jobs.MapID(int(job))
+	if !ok {
+		return fmt.Errorf("jobs.%s: %d is not a job", test, job)
+	}
+	switch test {
+	case "is_transcendent":
+		c.Return(script.Bool(m&mapidUpper != 0))
+	case "is_baby":
+		c.Return(script.Bool(m&mapidBaby != 0))
+	case "is_third":
+		c.Return(script.Bool(m&mapidThird != 0))
+	case "is_fourth":
+		c.Return(script.Bool(m&mapidFourth != 0))
+	case "base_job", "first_job":
+		mask := uint64(mapidUpperMask)
+		if test == "first_job" {
+			mask = mapidBaseMask
+		}
+		// Jobs that differ by sex share a map job ID: keep the sex of
+		// the job asked about.
+		male := true
+		if j, ok := r.opts.Jobs.JobOf(m, true); ok && j != int(job) {
+			male = false
+		}
+		out, ok := r.opts.Jobs.JobOf(m&mask, male)
+		if !ok {
+			return fmt.Errorf("jobs.%s: %d has no base job", test, job)
+		}
+		c.Return(script.Int(int64(out)))
+	default:
+		return fmt.Errorf("jobs: no test %q", test)
+	}
+	return nil
+}
+
+// constantsTable returns the constant modules, as { races = { ... } }.
+func (r *Runtime) constantsTable(c *script.Call) error {
+	if !r.constants.IsNil() {
+		c.Return(r.constants)
+		return nil
+	}
+	var mods []script.Field
+	if r.opts.Constants != nil {
+		for name, m := range r.opts.Constants.Modules() {
+			fields := make([]script.Field, 0, len(m.Values))
+			for k, v := range m.Values {
+				fields = append(fields, script.KV(k, script.Int(v)))
+			}
+			mods = append(mods, script.KV(name, script.NewTable(fields...)))
+		}
+	}
+	r.constants = script.NewTable(mods...)
+	c.Return(r.constants)
 	return nil
 }
 

@@ -1,6 +1,8 @@
 package zone
 
 import (
+	"strings"
+
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/progression"
@@ -206,9 +208,10 @@ func (z *Zone) itemDelay(p *Player, d *item.Def) bool {
 	return true
 }
 
-// useItem is clif_parse_UseItem and pc_useitem for a slot. Only items
-// whose script is a plain heal run, since wAthena has no script engine
-// yet. Others are refused before anything is spent.
+// useItem is clif_parse_UseItem and pc_useitem for a slot. The item's
+// script runs in Lua (server/modscript). An item whose script needs
+// something the server cannot do yet is refused before anything is
+// spent, and the player is told what is missing.
 func (z *Zone) useItem(p *Player, slot int) {
 	if slot < 0 || slot >= item.MaxInventory {
 		return
@@ -223,7 +226,15 @@ func (z *Zone) useItem(p *Player, slot int) {
 		p.pending = append(p.pending, useItemFailed(slot, r))
 		return
 	}
-	if d.Heal == nil {
+	if d.Script == "" || d.Unsupported != "" {
+		p.pending = append(p.pending, useItemFailed(slot, wathenav1.UseItemFailure_USE_ITEM_FAILURE_NOT_SUPPORTED))
+		if d.Unsupported != "" {
+			p.pending = append(p.pending, systemMessage("This item needs a feature the server does not have yet: "+d.Unsupported+"."))
+		}
+		return
+	}
+	r := z.itemScripts()
+	if r == nil {
 		p.pending = append(p.pending, useItemFailed(slot, wathenav1.UseItemFailure_USE_ITEM_FAILURE_NOT_SUPPORTED))
 		return
 	}
@@ -231,24 +242,35 @@ func (z *Zone) useItem(p *Player, slot int) {
 		p.pending = append(p.pending, useItemFailed(slot, wathenav1.UseItemFailure_USE_ITEM_FAILURE_COOLDOWN))
 		return
 	}
-	// clif_useitemack goes to the area, then the item is spent, unless
-	// its NoConsume flag keeps it.
+	// clif_useitemack goes to the area. The item is spent before its
+	// script runs, unless its NoConsume flag keeps it. A DelayConsume
+	// item, such as a Fly Wing, is spent once its script has done its
+	// work, as rAthena spends it when the skill it casts succeeds.
 	z.used = append(z.used, used{p.entity, s.ID})
-	if !d.NoConsume {
+	delayed := strings.EqualFold(d.Type, "DelayConsume")
+	if !d.NoConsume && !delayed {
 		z.deleteItem(p, slot, 1, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_USED)
 	}
 	p.canUseItem = z.now + z.itemConfig().ItemUseInterval
-	z.heal(p, d)
+	err := r.UseItem(int64(p.charID), s.ID, d.Script)
+	if err != nil && z.Mods.Log != nil {
+		z.Mods.Log.Warn("item script failed", "map", z.Map, "item", d.AegisName, "script", d.Script, "err", err)
+	}
+	if delayed && !d.NoConsume && err == nil && p.inventory.Slots[slot].ID == s.ID {
+		z.deleteItem(p, slot, 1, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_USED)
+	}
+	z.finishWarp(p)
 }
 
-// heal runs a heal script: itemheal through pc_itemheal, or percentheal
-// through pc_percentheal, then status_heal. The player sees the HP it
-// gained as a heal number.
-func (z *Zone) heal(p *Player, d *item.Def) {
+// heal runs a heal: itemheal through pc_itemheal, or percentheal
+// through pc_percentheal, then status_heal. Amounts that are ranges are
+// drawn as rand, HP before SP. The player sees the HP it gained as a
+// heal number.
+func (z *Zone) heal(p *Player, h *item.Heal) {
 	e := p.entity
 	st := e.status
-	hp, sp := d.Heal.Roll(z.rand)
-	if d.Heal.Command == "percentheal" {
+	hp, sp := h.Roll(z.rand)
+	if h.Command == "percentheal" {
 		hp, sp = item.PercentHeal(hp, sp, st.MaxHP, st.MaxSP)
 	} else {
 		hp, sp = item.ItemHeal(hp, sp, st.Vit, st.Int, p.char.Skills)

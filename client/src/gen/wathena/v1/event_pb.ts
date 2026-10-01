@@ -1433,7 +1433,8 @@ export enum UseItemFailure {
   NOT_USABLE = 2,
 
   /**
-   * The server cannot run the item's script yet. Only plain heals run.
+   * The item's script needs a feature the server does not have yet. A
+   * system chat line says which, when the server knows.
    *
    * @generated from enum value: USE_ITEM_FAILURE_NOT_SUPPORTED = 3;
    */

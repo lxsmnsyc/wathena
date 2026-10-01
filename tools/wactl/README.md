@@ -32,6 +32,10 @@ Lists what a game client folder contains, grouped by asset type. The folder need
 
 Converts every monster and NPC sprite into WSPR and reports sizes and failures. With `--preview`, it writes a PNG of the first idle frame of each listed sprite. This checks the sprite importer. The full build comes later.
 
+`wactl convert items [--mode renewal|pre-renewal] [--out <folder>] [--report <file>]`
+
+Converts rAthena's item scripts from the extracts in `reference/rathena`, as `waserver` does when it starts. `--out` writes core's `data/items.yml` and `scripts/items/*.lua` for reading. `--report` writes the coverage report, such as `docs/generated/item-scripts-renewal.md`. Without either, it prints a summary. See tools/convert/README.md.
+
 `wactl migrate status`, `wactl migrate up`
 
 Lists the database migrations, or applies the pending ones. They need the migrator role's URL in `WATHENA_MIGRATE_DATABASE_URL`, or in a file that `WATHENA_MIGRATE_DATABASE_URL_FILE` names, such as a Docker secret. `--database` also takes it, but shows the password in process lists. See server/README.md, "Running with PostgreSQL".

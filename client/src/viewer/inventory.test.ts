@@ -80,6 +80,7 @@ describe('messages', () => {
   it('explains failures', () => {
     expect(useItemMessage(UseItemFailure.NOT_USABLE)).toBe('This item cannot be used.');
     expect(useItemMessage(UseItemFailure.TOO_SOON)).toBe('You are using items too fast.');
+    expect(useItemMessage(UseItemFailure.NOT_SUPPORTED)).toBe('This item does not work yet.');
     expect(dropItemMessage(DropItemFailure.CANNOT_DROP)).toBe('This item cannot be dropped.');
     expect(dropItemMessage(DropItemFailure.UNSPECIFIED)).toBe('The item was not dropped.');
   });
