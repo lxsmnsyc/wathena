@@ -283,7 +283,9 @@ end
   - `{ percent = true }` for a percent instead of a flat value: `bonuses.add("max_hp", 10, { percent = true })`;
   - `skill`, `item`, or `item_group` for one skill or item: `bonuses.add("sp_cost", -10, { percent = true, skill = BASH })`;
   - `against` or `from` for one kind of target or source.
-- Procs are named after their effect. The chance (a whole number per 10,000) and the trigger are options: `bonuses.add("cause_status", statuses.stun, { chance = 300, when = "hit_taken" })`. `when` is `"attack"` (the default), `"hit_taken"`, or `"skill_used"`.
+- Procs are named after their effect. The chance (a whole number per 10,000) and the trigger are options: `bonuses.add("cause_status", statuses.stun, { chance = 300, on = "hit_taken" })`. `on` is `"attack"` (the default), `"hit_taken"`, or `"skill_used"`.
+- The `when` option is a condition: a function, tracked like a computed bonus. The bonus applies while it returns true: `bonuses.add("unbreakable_weapon", { when = function() return equipped.refine >= 10 end })`. Every bonus takes it.
+- `bonuses.add` returns a handle. `handle:remove()` removes that one bonus, for a mod that adds a bonus in one handler and removes it in another. The context still removes it when it ends, and a second `remove()` does nothing.
 - The `stacking` option says how bonuses of one name combine: `"sum"` (the default), `"highest"`, or `"lowest"`. Six bonuses keep one value, such as `attack_element`: their default `"last"` follows rAthena's order, and `{ stacking = "priority", priority = n }` lets a mod choose.
 - Arguments come in a fixed order: what the bonus produces or applies to, then the amount, then other numbers, then the options table.
 - Equipped items get two events. `"damage"` fires for every hit the wearer deals or takes. Its object has `source`, `target`, `kind`, `range`, `skill`, `element`, `is_critical`, `amount`, and `wearer_is_source`. `"skill_used"` fires for every skill the wearer uses, also skills that deal no damage. Its object has `skill`, `level`, `target`, `x`, and `y`.
@@ -537,7 +539,7 @@ Methods on player handles check their own permissions, such as `player.give_item
 
    | rAthena | wAthena |
    |---|---|
-   | `getgroupitem` (item boxes) | `player:give_item_from_group("Old_Blue_Box")` |
+   | `getgroupitem(IG_BlueBox)` (item boxes) | `player:give_item_from_group(items.group "BLUEBOX")` |
    | `warp "Random",0,0;` (Fly Wing) | `player:warp_to_random_cell()` |
    | `warp "SavePoint",0,0;` (Butterfly Wing) | `player:warp_to_save_point()` |
    | `getenchantgrade()` | `equipped.enchant_grade`, next to `equipped.refine` |
@@ -560,11 +562,26 @@ Methods on player handles check their own permissions, such as `player.give_item
 11. Bonus names, second round ([0002a](0002a-bonus-names.md), review decisions 11 to 17):
     - **`"skill_used"`** is an item event, fired for every skill the wearer uses, also skills that deal no damage. `autobonus3` converts to it.
     - **One-value bonuses.** `attack_element`, `defense_element`, `set_def`, `set_mdef`, `block_healing`, and `transform_monster` keep one value. Their default, `stacking = "last"`, follows rAthena's order: equipment by slot, then combos, then cards, then timed bonuses. `{ stacking = "priority", priority = n }` lets a mod choose: the highest priority wins, and ties fall back to that order. `"highest"` and `"lowest"` stay for the other bonuses.
-    - **Procs.** No name starts with `chance_to_`. The name is the effect (`cause_status`, `cast`, `coma`, `drain_hp`, `break_weapon`, and others). The chance goes in the `chance` option, with `when` (`"attack"`, `"hit_taken"`, or `"skill_used"`), `against`, and `from`.
+    - **Procs.** No name starts with `chance_to_`. The name is the effect (`cause_status`, `cast`, `coma`, `drain_hp`, `break_weapon`, and others). The chance goes in the `chance` option, with `on` (`"attack"`, `"hit_taken"`, or `"skill_used"`; named `when` in this round and renamed in decision 12), `against`, and `from`.
     - **Percent.** No name ends in `_percent`. Flat and percent share a name, with `{ percent = true }`. A name that rAthena has only as a percent requires it, and a name that rAthena has only as flat refuses it.
     - **Variants.** Per-skill and per-item variants are the options `skill`, `item`, and `item_group` on the shared name, such as `bonuses.add("sp_cost", -10, { percent = true, skill = BASH })`. A separate name stays only where the meaning differs.
     - **Argument order.** What the bonus produces or applies to, then the amount, then other numbers, then the options table. The chance is always an option.
     - **Conversion.** The converter maps every rAthena bonus form to a call in 0002a.
+
+12. Item scripts (phase 3 step 3), review of what the converter needed:
+    - **`on` and `when`.** The trigger of a proc is the option `on`: `{ chance = 300, on = "hit_taken" }`. The option `when` is a condition, a function tracked like a computed bonus: it reruns only when a value it read changes, and switches the bonus on or off. Every bonus takes it: flags, granted skills, one-value bonuses, amounts, and highest or lowest stacking. The converter writes `when` for every bonus that an rAthena script adds under a condition.
+    - **Bonus handles.** `bonuses.add` returns a handle with `remove()`, which removes that one bonus. The handle belongs to the context, which removes the bonus anyway when it ends. A second `remove()` does nothing. Bonuses added in `timers.with_bonuses` have handles too: `remove()` ends one early, and the timer ends the rest.
+    - **Computed levels and chances.** The level of `"skill"` and `"cast"` and the `chance` option can be functions. A granted skill at level 0 grants nothing.
+    - **`"unequip"`** is an item event: `function(player)`, before the copy's context ends. Converted `UnEquipScript`s run on it.
+    - **`wa.headgear_effects`** holds the constants of `player:show_headgear_effect`, which have IDs of their own.
+    - **Readable constant names** come from rAthena's by a fixed rule, with a short list of spelled-out names ([0002a](0002a-bonus-names.md), "Constants used in arguments").
+    - **Job tests.** `jobs.is_baby`, `jobs.is_third`, `jobs.is_fourth`, `jobs.base_job` (rAthena's `BaseJob`: a Lord Knight is a Knight) and `jobs.first_job` (`BaseClass`: a Knight is a Swordman), next to `jobs.is_transcendent`.
+    - **Equipped copies.** `player:get_equipped(slot)` returns the copy in a slot as a handle, or nil. Equipped handles have `item`, `refine`, `enchant_grade` (0 for none, 1 to 4 for D to A), `wearer`, `weapon_type`, `weapon_level` and `armor_level`.
+    - **Trait stats.** Player handles have `base_pow` to `base_crt`, next to `base_str` to `base_luk`.
+    - **Item data.** Item records take `script` (the entry script), `bonuses` (static bonuses as data), and `unsupported` (what the item needs that the server does not have; a usable item with it is refused).
+    - **Heals** (`player:item_heal`, `player:heal_percent`) need no approved permission.
+    - **`player:start_status` and `player:add_timed_bonuses`** raise "not supported yet" until phase 4.
+    - **Item groups.** `player:give_item_from_group` takes a group from `items.group`, such as `items.group "BLUEBOX"`, the group's name in item_group_db.
 
 ## Version
 

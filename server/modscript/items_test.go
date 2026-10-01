@@ -155,7 +155,7 @@ return function()
   bonuses.add("damage", 10, { kind = "physical", against = { race = races.demi_human } })
   bonuses.add("atk", function() return equipped.refine * 5 end)
   bonuses.add("damage", function() return player:get_skill_level(BASH) end, { skill = BASH })
-  bonuses.add_when(function() return equipped.refine >= 9 end, "unbreakable_weapon")
+  bonuses.add("unbreakable_weapon", { when = function() return equipped.refine >= 9 end })
   bonuses.add("skill", BASH, function() return equipped.refine >= 7 and 3 or 0 end)
   bonuses.add("cause_status", 2, { chance = function() return equipped.refine * 10 end })
 end`)
@@ -367,5 +367,75 @@ return function() events.on("use", function(player) player:send_message("used " 
 	}
 	if last := h.messages[len(h.messages)-1]; last != fmt.Sprintf("1:used %d", MaxItemScripts+3) {
 		t.Errorf("the dropped script did not load again: %s", last)
+	}
+}
+
+// bonuses.add returns a handle. remove ends that one bonus, a second
+// remove does nothing, and the context's end removes what is left.
+func TestBonusHandles(t *testing.T) {
+	h := newHost()
+	h.equipped[10] = fakeEquipped{item: 1, refine: 4, wearer: 1}
+	r := newItemRuntime(t, h, "scripts/items/x.lua", `
+local bonuses = require "wa.bonuses"
+local context = require "wa.context"
+local events = require "wa.events"
+local timers = require "wa.timers"
+return function()
+  local equipped = context:get_instance()
+  local str = bonuses.add("str", 1)
+  local atk = bonuses.add("atk", function() return equipped.refine * 2 end)
+  local flag = bonuses.add("see_hidden", { when = function() return equipped.refine > 0 end })
+  local kept = bonuses.add("agi", 2)
+  local timed
+  events.on("skill_used", function(use)
+    if use.level == 1 then
+      str:remove()
+      str:remove()
+      atk:remove()
+    elseif use.level == 2 then
+      flag:remove()
+      timers.with_bonuses(1000, function() timed = bonuses.add("luk", 3) bonuses.add("dex", 4) end)
+    elseif use.level == 3 then
+      timed:remove()
+    end
+  end)
+  events.on("unequip", function() kept:remove() end)
+end`)
+	sink := &recorder{r: r}
+	c, err := r.Equip("core:scripts/items/x.lua", 10, 1, sink)
+	if err != nil {
+		t.Fatal(err)
+	}
+	step := func(level int64, want string) {
+		t.Helper()
+		if err := r.FireSkillUse(c, SkillUse{Skill: 1, Level: level}); err != nil {
+			t.Fatal(err)
+		}
+		if got := sink.values(t); got != want {
+			t.Errorf("after %d: %q, want %q", level, got, want)
+		}
+	}
+	if got := sink.values(t); got != "str=[1] atk=[8] see_hidden=[] agi=[2]" {
+		t.Errorf("start: %q", got)
+	}
+	step(1, "see_hidden=[] agi=[2]")
+	step(2, "agi=[2] luk=[3] dex=[4]")
+	// A bonus of with_bonuses can end early by its handle. The timer
+	// still ends the rest.
+	step(3, "agi=[2] dex=[4]")
+	advance(h, r, 1000)
+	if got := sink.values(t); got != "agi=[2]" {
+		t.Errorf("after the timer: %q", got)
+	}
+	// The unequip handler removes a bonus the context would remove
+	// anyway. Neither fails.
+	if err := r.Unequip(c); err != nil {
+		t.Fatal(err)
+	}
+	if len(sink.active) != 0 || len(r.bonuses) != 0 {
+		t.Errorf("%d active, %d handles", len(sink.active), len(r.bonuses))
+	}
+	if !slices.Equal(sink.log[len(sink.log)-1:], []string{"-agi"}) {
+		t.Errorf("log %v", sink.log)
 	}
 }

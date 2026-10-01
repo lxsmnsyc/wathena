@@ -133,7 +133,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 - Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`.
 - `script` is the item's entry script, a path under the mod's `scripts/`. It belongs to the mod that sets it.
 - `bonuses` are static bonuses of an equipment item ("Static bonuses" below).
-- `unsupported` says what the item's script needs that the server does not have yet. A usable item with it is refused, and the player sees the text. Core sets it on converted items. These three fields are provisional.
+- `unsupported` says what the item's script needs that the server does not have yet. A usable item with it is refused, and the player sees the text. Core sets it on converted items.
 - `id` and `aegis_name` cannot be set.
 - A new item is an `Etc` item until `type` says otherwise.
 
@@ -337,7 +337,7 @@ end
 | `use` | `player` | The item is used. |
 | `damage` | `hit` | A hit the wearer deals or takes. `hit` has `source`, `target`, `kind`, `range`, `skill`, `element`, `is_critical`, `amount` and `wearer_is_source` (0002a, "Item events"). |
 | `skill_used` | `use` | The wearer uses a skill. `use` has `skill`, `level`, `target`, `x` and `y`. |
-| `unequip` | `player` | The copy is unequipped, before its context ends. Provisional: converted `UnEquipScript`s run on it. |
+| `unequip` | `player` | The copy is unequipped, before its context ends. Converted `UnEquipScript`s run on it. |
 
 `damage`, `skill_used` and `unequip` fire in tests until phase 4.
 
@@ -345,13 +345,30 @@ end
 
 `wa.bonuses` follows proposal 0002a. `bonuses.add(name, ..., options)` checks the name, the arguments and the options when it is called.
 
-- The amount can be a function: a computed bonus. It runs again when the server recalculates, and cannot change the game: calls such as `player:give_item` or `random.integer` fail inside it.
-- A computed bonus that returns 0 adds nothing to a sum. Converted scripts use this for bonuses under a condition.
-- Provisional additions, for converted scripts:
-  - `bonuses.add_when(condition, name, ...)` adds a bonus while `condition()` returns true. It is for flags, granted skills, one-value bonuses, and highest or lowest stacking, which no amount turns off.
-  - A skill level, as in `bonuses.add("skill", BASH, function() ... end)`, can be computed. 0 grants nothing.
-  - The `chance` option can be computed.
-- `timers.with_bonuses(ms, fn, { restart = timer })` adds the bonuses `fn` adds for `ms` milliseconds.
+- The amount can be a function: a computed bonus. It runs again when a value it read changes, and cannot change the game: calls such as `player:give_item` or `random.integer` fail inside it.
+- A skill level, as in `bonuses.add("skill", BASH, function() ... end)`, and the `chance` option can be functions too. A granted skill at level 0 grants nothing.
+- The trigger of a proc is the `on` option: `bonuses.add("cause_status", statuses.stun, { chance = 300, on = "hit_taken" })`.
+- The `when` option is a condition. The bonus applies while the function returns true. It is tracked like a computed bonus, and every bonus takes it:
+
+  ```lua
+  bonuses.add("unbreakable_weapon", { when = function() return equipped.refine >= 10 end })
+  bonuses.add("skill", TELEPORT, 1, { when = function() return player.base_level >= 99 end })
+  ```
+
+  Converted scripts use `when` for every bonus that rAthena adds under a condition.
+- `bonuses.add` returns a handle. `handle:remove()` removes that one bonus, for a bonus added in one handler and removed in another:
+
+  ```lua
+  local granted
+  events.on("base_level_up", function(player)
+    if player.base_level >= 99 and not granted then
+      granted = bonuses.add("skill", TELEPORT, 1)
+    end
+  end)
+  ```
+
+  The context still removes the bonus when it ends. A second `remove()` does nothing.
+- `timers.with_bonuses(ms, fn, { restart = timer })` adds the bonuses `fn` adds for `ms` milliseconds. Their handles work too: `remove()` ends one early.
 - Bonuses only exist in the context of an equipped copy. `bonuses.add` in a use handler raises an error.
 
 ### Static bonuses
@@ -365,10 +382,10 @@ Equipment whose bonuses never change needs no Lua. Its `bonuses` field lists the
     - [luk, 3]
     - [damage, 10, {kind: physical, against: {race: demi_human}}]
     - [cause_status, stun, {chance: 300}]
-    - [cast, MG_FIREBOLT, 3, {chance: 500, when: hit_taken}]
+    - [cast, MG_FIREBOLT, 3, {chance: 500, on: hit_taken}]
 ```
 
-The server checks every entry at start with the rules of `bonuses.add`. [Decision 0007](../docs/decisions/0007-converted-item-scripts.md) explains the format.
+The server checks every entry at start with the rules of `bonuses.add`. `when` is a function, so static bonuses cannot have it. [Decision 0007](../docs/decisions/0007-converted-item-scripts.md) explains the format.
 
 ### Item API
 
@@ -384,14 +401,14 @@ The server checks every entry at start with the rules of `bonuses.add`. [Decisio
 | `player:show_effect(effect)` | None | rAthena's `specialeffect2`: everyone near sees it. |
 | `player:show_headgear_effect(effect)` | None | rAthena's `hateffect`. It shows nothing yet: the protocol has no message for it. |
 | `player:get_skill_level(skill)` | `game.read` | rAthena's `getskilllv`. |
-| `player:get_equipped(slot)` | `game.read` | The copy in a slot, such as `right_hand`, as an equipped handle, or nil. Provisional: what it returns. |
+| `player:get_equipped(slot)` | `game.read` | The copy in a slot, such as `right_hand`, as an equipped handle, or nil. |
 | `player:start_status(...)`, `player:add_timed_bonuses(...)` | | Raise an error until status effects and timed bonuses exist (phase 4). |
 
-Heals need no approved permission. This is provisional.
+Heals need no approved permission.
 
-Equipped handles, from `context:get_instance()` in an equip script or from `player:get_equipped`, have `item`, `refine`, `enchant_grade` (0 for none, 1 to 4 for D to A), and `wearer`. `weapon_type`, `weapon_level` and `armor_level` are provisional.
+Equipped handles, from `context:get_instance()` in an equip script or from `player:get_equipped`, have `item`, `refine`, `enchant_grade` (0 for none, 1 to 4 for D to A), `wearer`, `weapon_type`, `weapon_level` and `armor_level`.
 
-Player handles gained `base_str` to `base_luk` (allocated points), and `job_class` (rAthena's `eaclass()`). `base_pow` to `base_crt` are provisional, and 0 until trait stats exist.
+Player handles gained `base_str` to `base_luk` (allocated points), and `job_class` (rAthena's `eaclass()`). `base_pow` to `base_crt` are 0 until trait stats exist.
 
 Modules:
 
@@ -401,11 +418,11 @@ Modules:
 | `wa.integers` | `divide_truncated` and `remainder_truncated`, which round as C does. |
 | `wa.skills`, `wa.monsters` | `skills.id "SM_BASH"`, `monsters.id "PORING"`. |
 | `wa.races`, `wa.elements`, `wa.sizes`, `wa.monster_classes`, `wa.monster_groups`, `wa.weapon_types`, `wa.statuses`, `wa.effects`, `wa.jobs` | Constants. |
-| `wa.headgear_effects` | Provisional: the constants of `show_headgear_effect`. |
+| `wa.headgear_effects` | The constants of `show_headgear_effect`. |
 
-Constant names come from rAthena's by a provisional rule: the prefix goes, the rest is in lower case, and a few names are spelled out. So `RC_DemiHuman` is `races.demi_human`, `SC_STUN` is `statuses.stun`, `EF_HEAL` is `effects.heal`, and `W_2HSWORD` is `weapon_types.two_handed_sword`. A name that starts with a digit gets an `n`: `statuses.n2011rwc_scroll`.
+Constant names come from rAthena's by a fixed rule (0002a, "Constants used in arguments", lists the spelled-out names): the prefix goes, the rest is in lower case, and a few names are spelled out. So `RC_DemiHuman` is `races.demi_human`, `SC_STUN` is `statuses.stun`, `EF_HEAL` is `effects.heal`, and `W_2HSWORD` is `weapon_types.two_handed_sword`. A name that starts with a digit gets an `n`: `statuses.n2011rwc_scroll`.
 
-`wa.jobs` also has job tests. `jobs.is_transcendent(job)` is from proposal 0002. `jobs.is_baby`, `jobs.is_third`, `jobs.is_fourth`, `jobs.base_job` (rAthena's `BaseJob`: a Lord Knight is a Knight) and `jobs.first_job` (rAthena's `BaseClass`: a Knight is a Swordman) are provisional.
+`wa.jobs` also has job tests: `jobs.is_transcendent`, `jobs.is_baby`, `jobs.is_third`, `jobs.is_fourth`, `jobs.base_job` (rAthena's `BaseJob`: a Lord Knight is a Knight) and `jobs.first_job` (rAthena's `BaseClass`: a Knight is a Swordman). Each takes a job, such as `player.job`.
 
 ### Core's item scripts
 

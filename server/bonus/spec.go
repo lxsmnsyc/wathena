@@ -133,11 +133,11 @@ var Specs = []*Spec{
 
 	// Procs.
 	{Name: "cause_status", Subject: []Arg{ArgStatus}, Proc: true,
-		Options: []string{"chance", "when", "target", "kind", "range", "attack", "skill", "duration"}},
+		Options: []string{"chance", "on", "target", "kind", "range", "attack", "skill", "duration"}},
 	proc("coma", "attack", "against"),
 	{Name: "block_healing", Proc: true, OneValue: true, Options: []string{"chance", "attack", "against", "duration"}},
 	{Name: "cast", Subject: []Arg{ArgSkill, ArgLevel}, Proc: true,
-		Options: []string{"chance", "when", "skill", "target", "random_level", "kind", "range", "attack"}},
+		Options: []string{"chance", "on", "skill", "target", "random_level", "kind", "range", "attack"}},
 	{Name: "drain_hp", Amount: true, Percent: Scaled, Proc: true, Options: []string{"chance"}},
 	{Name: "drain_sp", Amount: true, Percent: Scaled, Proc: true, Options: []string{"chance"}},
 	{Name: "remove_hp", Amount: true, Percent: Scaled, Proc: true, Options: []string{"chance", "kind", "range", "attack"}},
@@ -148,7 +148,7 @@ var Specs = []*Spec{
 	{Name: "set_mdef", Amount: true, Proc: true, OneValue: true, Options: []string{"chance", "against", "attack", "duration"}},
 	proc("break_weapon"), proc("break_armor"),
 	{Name: "transform_monster", Proc: true, OneValue: true, Options: []string{"chance", "kind"}},
-	proc("reflect_magic", "when"),
+	proc("reflect_magic", "on"),
 	{Name: "gain_zeny_on_kill", Amount: true, Proc: true, Options: []string{"chance"}},
 
 	// Status.

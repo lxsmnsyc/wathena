@@ -142,6 +142,8 @@ type Runtime struct {
 	// for dropping the oldest past MaxItemScripts.
 	setups     map[string]*script.Ref
 	setupOrder []string
+	// bonuses are the bonuses that have not ended, by handle ID.
+	bonuses map[int64]*Bonus
 	// constants are the constant modules, made once.
 	constants script.Value
 }
@@ -202,7 +204,7 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		opts: opts, host: opts.Host, log: opts.Log,
 		scripts: map[string]*mod.Scripts{}, contexts: map[string]*Context{},
 		handlers: map[string][]*handler{}, byID: map[int64]*handler{}, timers: map[int64]*timer{},
-		setups: map[string]*script.Ref{},
+		setups: map[string]*script.Ref{}, bonuses: map[int64]*Bonus{},
 	}
 	s, err := script.New(script.Options{Limits: opts.Limits})
 	if err != nil {
@@ -260,6 +262,7 @@ func (r *Runtime) init() error {
 		{"random_integer", r.randomInteger},
 		{"random_chance", r.randomChance},
 		{"bonuses_add", r.bonusesAdd},
+		{"bonuses_remove", r.bonusesRemove},
 		{"timers_bonus_start", r.timersBonusStart},
 		{"timers_bonus_done", r.timersBonusDone},
 		{"jobs_test", r.jobsTest},
@@ -612,7 +615,7 @@ var Events = map[string][]string{
 	"use":            {KindItem},
 	"damage":         {KindItem},
 	"skill_used":     {KindItem},
-	// unequip is provisional: converted UnEquipScripts run on it.
+	// Converted UnEquipScripts run on unequip.
 	"unequip": {KindItem},
 }
 

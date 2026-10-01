@@ -14,9 +14,10 @@ import (
 //     that differ become Ternary.
 //   - Loops with static bounds are unrolled.
 //   - Each bonus is recorded with the guard it ran under.
-// The result is a list of bonuses whose amounts are expressions. Those
-// with game values become computed bonuses, which rerun when a value
-// they read changes (proposal 0002, "Item scripts").
+// The result is a list of bonuses whose amounts are expressions. A guard
+// becomes the bonus's when option, and a game value in an amount becomes
+// a computed bonus. Both rerun when a value they read changes (proposal
+// 0002, "Item scripts").
 
 // maxLoop is the most iterations an unrolled loop may take.
 const maxLoop = 1000

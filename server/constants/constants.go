@@ -4,8 +4,7 @@
 // names into wAthena's, and the Lua runtime builds its constant modules
 // from it.
 //
-// Readable names are made by a fixed rule, which is provisional until
-// the generated API reference is reviewed:
+// Readable names are made by a fixed rule (proposal 0002, decision 12):
 //   - The rAthena prefix is removed, such as RC_ or SC_.
 //   - The rest is written in lower case. Underscores stay.
 //   - A few names get a word split or a spelled-out word, listed in
@@ -76,9 +75,7 @@ var moduleSpecs = []moduleSpec{
 	{"weapon_types", "W_", nil},
 	{"statuses", "SC_", []string{"SC_NONE", "SC_MAX"}},
 	{"effects", "EF_", []string{"EF_NONE", "EF_MAX"}},
-	// Headgear effects (hateffect) have IDs of their own. The module is
-	// provisional: proposal 0002 names player:show_headgear_effect but
-	// not where its constants live.
+	// Headgear effects (hateffect) have IDs of their own.
 	{"headgear_effects", "HAT_EF_", []string{"HAT_EF_MAX"}},
 	{"jobs", "JOB_", []string{"JOB_MAX", "JOB_MAX_BASIC"}},
 }

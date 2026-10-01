@@ -407,6 +407,7 @@ func TestItemOverlayErrors(t *testing.T) {
 		"- name: Red_Potion\n  weight: 1\n  weight: 2":                        {"weight is set twice"},
 		"- name: example.a:X\n  script: main.lua":                             {`script: "main.lua" is not a .lua file under scripts/`},
 		"- name: Jellopy\n  bonuses: [[lucky, 1]]":                            {`there is no bonus "lucky"`},
+		"- name: Jellopy\n  bonuses: [[luk, 1, {when: x}]]":                   {`when is a function, so it only works in Lua`},
 		"- name: Jellopy\n  bonuses: [[luk, 1, {percent: true}]]":             {`takes no percent option`},
 		"- name: Jellopy\n  bonuses: [[damage, 5, {against: {race: elves}}]]": {`there is no race "elves"`},
 	}

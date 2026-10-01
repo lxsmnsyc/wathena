@@ -146,8 +146,10 @@ func readOptions(o *Options, m map[string]any, names Names) error {
 			o.Range, err = str(key, v)
 		case "attack":
 			o.Attack, err = str(key, v)
+		case "on":
+			o.On, err = str(key, v)
 		case "when":
-			o.When, err = str(key, v)
+			return fmt.Errorf("when is a function, so it only works in Lua: a static bonus always applies")
 		case "target":
 			o.Target, err = str(key, v)
 		case "stacking":

@@ -29,30 +29,24 @@ return function()
   bonuses.add("damage", 70, { kind = "physical", against = { race = races.player_human } })
   bonuses.add("crit_damage", 20)
   bonuses.add("unbreakable_weapon")
-  bonuses.add("damage", function()
-    if equipped.refine > 5 then
-      return (math.min(14, equipped.refine) - 4) * (math.min(14, equipped.refine) - 4)
-    end
-    return 0
-  end, { kind = "physical", against = { race = races.demi_human } })
-  bonuses.add("damage", function()
-    if equipped.refine > 5 then
-      return (math.min(14, equipped.refine) - 4) * (math.min(14, equipped.refine) - 4)
-    end
-    return 0
-  end, { kind = "physical", against = { race = races.player_human } })
-  bonuses.add("crit", function()
-    if equipped.refine > 5 then
-      return 5
-    end
-    return 0
-  end, { against = { race = races.demi_human } })
-  bonuses.add("crit", function()
-    if equipped.refine > 5 then
-      return 5
-    end
-    return 0
-  end, { against = { race = races.player_human } })
+  bonuses.add("damage", function() return (math.min(14, equipped.refine) - 4) * (math.min(14, equipped.refine) - 4) end, {
+    kind = "physical",
+    against = { race = races.demi_human },
+    when = function() return equipped.refine > 5 end,
+  })
+  bonuses.add("damage", function() return (math.min(14, equipped.refine) - 4) * (math.min(14, equipped.refine) - 4) end, {
+    kind = "physical",
+    against = { race = races.player_human },
+    when = function() return equipped.refine > 5 end,
+  })
+  bonuses.add("crit", 5, {
+    against = { race = races.demi_human },
+    when = function() return equipped.refine > 5 end,
+  })
+  bonuses.add("crit", 5, {
+    against = { race = races.player_human },
+    when = function() return equipped.refine > 5 end,
+  })
   local active
   events.on("damage", function(hit)
     if hit.wearer_is_source and hit.kind == "physical" and (equipped.refine > 8) and random.chance(70, 1000) then

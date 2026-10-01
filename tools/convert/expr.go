@@ -57,7 +57,7 @@ var paramReads = map[string]string{
 }
 
 // statReads are the stats readparam can read, as player fields. The six
-// trait stats are provisional fields.
+// trait stats read 0 until trait stats can be raised.
 var statReads = map[string]string{
 	"bstr": "base_str", "bagi": "base_agi", "bvit": "base_vit", "bint": "base_int", "bdex": "base_dex", "bluk": "base_luk",
 	"bpow": "base_pow", "bsta": "base_sta", "bwis": "base_wis", "bspl": "base_spl", "bcon": "base_con", "bcrt": "base_crt",

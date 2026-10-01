@@ -1,7 +1,6 @@
 package convert
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -39,8 +38,8 @@ func (c *itemConv) toBonus(w *wcall) (*bonus.Bonus, error) {
 				o.Range = op.enum
 			case "attack":
 				o.Attack = op.enum
-			case "when":
-				o.When = op.enum
+			case "on":
+				o.On = op.enum
 			case "target":
 				o.Target = op.enum
 			case "stacking":
@@ -288,56 +287,36 @@ func isStaticValue(e Expr) bool {
 }
 
 // luaBonus writes a bonuses.add call. guard is the condition on game
-// values it ran under, or nil. A bonus under a guard, or with a game
-// value, becomes computed:
-//   - The amount is a function. Under a guard it returns 0 when the
-//     guard is false, which adds nothing to a sum.
-//   - A proc without an amount gets a computed chance, 0 when the guard
-//     is false, so it never triggers.
-//   - Flags, one-value bonuses, and bonuses with highest or lowest
-//     stacking cannot be turned off this way. They are not converted
-//     under a guard.
+// values it ran under, or nil. A bonus under a guard gets the when
+// option, a function that switches it on and off. A game value in the
+// amount, a level or the chance becomes a computed function.
 func (c *itemConv) luaBonus(w *wcall, guard Expr) (string, error) {
 	b, err := c.toBonus(w)
 	if err != nil {
 		return "", err
 	}
 	spec, _ := bonus.Lookup(w.name)
-	stacking := b.Options.Stacking
-	sum := stacking == "" || stacking == "sum"
 	amountAt := -1
 	if bonus.HasAmount(spec, b) {
 		amountAt = len(spec.Subject)
 	}
-	var g, when string
+	var when string
 	if guard != nil {
-		if g, err = c.cond(guard); err != nil {
+		if when, err = c.cond(guard); err != nil {
 			return "", err
 		}
-		switch {
-		case amountAt >= 0 && sum && !spec.OneValue:
-		case amountAt < 0 && spec.Proc && sum && !spec.OneValue:
-		default:
-			// Flags, one-value bonuses, granted skills, and highest or
-			// lowest stacking have no value that turns them off. They
-			// use bonuses.add_when, which is provisional.
-			when, g = g, ""
-		}
 	}
-	computed := func(v Expr, withGuard bool) (string, error) {
+	computed := func(v Expr) (string, error) {
 		val, err := c.num(v)
 		if err != nil {
 			return "", err
-		}
-		if withGuard && g != "" {
-			return fmt.Sprintf("function()\n  if %s then\n    return %s\n  end\n  return 0\nend", g, val), nil
 		}
 		return "function() return " + val + " end", nil
 	}
 	parts := []string{luaString(w.name)}
 	for i, a := range w.args {
-		if i == amountAt && (!isStaticValue(a.v) || g != "") {
-			s, err := computed(a.v, true)
+		if i == amountAt && !isStaticValue(a.v) {
+			s, err := computed(a.v)
 			if err != nil {
 				return "", err
 			}
@@ -345,7 +324,7 @@ func (c *itemConv) luaBonus(w *wcall, guard Expr) (string, error) {
 			continue
 		}
 		if a.kind == kLevel && !isStaticValue(a.v) {
-			s, err := computed(a.v, false)
+			s, err := computed(a.v)
 			if err != nil {
 				return "", err
 			}
@@ -372,8 +351,8 @@ func (c *itemConv) luaBonus(w *wcall, guard Expr) (string, error) {
 				return "", err
 			}
 			s = "{ " + o.tkey + " = " + r + " }"
-		case o.key == "chance" && (!isStaticValue(o.v) || g != "" && amountAt < 0):
-			s, err = computed(o.v, amountAt < 0)
+		case o.key == "chance" && !isStaticValue(o.v):
+			s, err = computed(o.v)
 			if err != nil {
 				return "", err
 			}
@@ -385,13 +364,15 @@ func (c *itemConv) luaBonus(w *wcall, guard Expr) (string, error) {
 		}
 		opts = append(opts, o.key+" = "+s)
 	}
-	if len(opts) > 0 {
+	switch {
+	case when != "":
+		// A condition gets one option per line, so it reads as a whole.
+		opts = append(opts, "when = function() return "+when+" end")
+		parts = append(parts, "{\n  "+strings.Join(opts, ",\n  ")+",\n}")
+	case len(opts) > 0:
 		parts = append(parts, "{ "+strings.Join(opts, ", ")+" }")
 	}
 	c.file.need("bonuses")
-	if when != "" {
-		return "bonuses.add_when(function() return " + when + " end, " + strings.Join(parts, ", ") + ")", nil
-	}
 	return "bonuses.add(" + strings.Join(parts, ", ") + ")", nil
 }
 

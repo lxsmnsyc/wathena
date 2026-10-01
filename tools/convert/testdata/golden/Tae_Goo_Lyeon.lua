@@ -29,16 +29,12 @@ return function()
       player:show_effect(effects.potion_berserk)
     end
   end)
-  bonuses.add("after_cast_delay", function()
-    if equipped.refine > 8 then
-      return -20
-    end
-    return 0
-  end, { percent = true })
-  bonuses.add("sp_cost", function()
-    if equipped.refine > 8 then
-      return -20
-    end
-    return 0
-  end, { percent = true })
+  bonuses.add("after_cast_delay", -20, {
+    percent = true,
+    when = function() return equipped.refine > 8 end,
+  })
+  bonuses.add("sp_cost", -20, {
+    percent = true,
+    when = function() return equipped.refine > 8 end,
+  })
 end

@@ -3,6 +3,7 @@ package modscript
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
@@ -25,11 +26,14 @@ type Bonus struct {
 	Context *Context
 	Timer   int64
 	// computed holds the functions of computed arguments, by index;
-	// chance a computed chance; and when the condition of add_when.
+	// chance a computed chance; and when the condition of the when
+	// option.
 	computed map[int]*script.Ref
 	chance   *script.Ref
 	when     *script.Ref
 	dropped  bool
+	// id is the bonus's handle ID.
+	id int64
 }
 
 // Computed reports whether the bonus has a function to run: a computed
@@ -216,7 +220,7 @@ func (r *Runtime) fireContext(c *Context, event string, args ...Arg) error {
 }
 
 // Values runs a bonus's computed parts: the numbers, the chance, and
-// whether an add_when condition holds. They run in the bonus's context,
+// whether the when condition holds. They run in the bonus's context,
 // and calls that change the game are refused while they run.
 func (r *Runtime) Values(b *Bonus) (args []int64, chance int64, active bool, err error) {
 	if b.dropped {
@@ -273,6 +277,7 @@ func (r *Runtime) dropBonus(b *Bonus) {
 		return
 	}
 	b.dropped = true
+	delete(r.bonuses, b.id)
 	if s := b.Context.sink; s != nil {
 		s.BonusRemoved(b)
 	}
@@ -303,9 +308,9 @@ func (r *Runtime) mutating(what string) error {
 	return nil
 }
 
-// bonusesAdd is bonuses.add and bonuses.add_when. Arguments: the name,
+// bonusesAdd is bonuses.add. Arguments: the name,
 // the options without a computed chance, the computed chance, the
-// add_when condition, the count of values, then the values.
+// when condition, the count of values, then the values.
 func (r *Runtime) bonusesAdd(c *script.Call) error {
 	name := c.String(0)
 	what := fmt.Sprintf("bonuses.add(%q)", name)
@@ -368,6 +373,8 @@ func (r *Runtime) bonusesAdd(c *script.Call) error {
 			return err
 		}
 		b.when = ref
+		b.Options.When = true
+		b.Options.Set["when"] = true
 	}
 	if err := bonus.Check(&b.Bonus); err != nil {
 		release()
@@ -379,7 +386,30 @@ func (r *Runtime) bonusesAdd(c *script.Call) error {
 	} else {
 		ctx.bonuses = append(ctx.bonuses, b)
 	}
+	b.id = r.newID()
+	r.bonuses[b.id] = b
 	ctx.sink.BonusAdded(b)
+	c.Return(script.Int(b.id))
+	return nil
+}
+
+// bonusesRemove is the remove method of the handle bonuses.add returns.
+// It removes that one bonus. A bonus that has already ended, by an
+// earlier remove, its timer, or its context, is left as it is.
+func (r *Runtime) bonusesRemove(c *script.Call) error {
+	if err := r.mutating("bonus:remove"); err != nil {
+		return err
+	}
+	b := r.bonuses[c.Int(0)]
+	if b == nil || b.dropped {
+		return nil
+	}
+	if t := r.timers[b.Timer]; b.Timer != 0 && t != nil {
+		t.bonuses = slices.DeleteFunc(t.bonuses, func(x *Bonus) bool { return x == b })
+	} else {
+		b.Context.bonuses = slices.DeleteFunc(b.Context.bonuses, func(x *Bonus) bool { return x == b })
+	}
+	r.dropBonus(b)
 	return nil
 }
 
@@ -423,8 +453,8 @@ func readOptions(o *bonus.Options, t *script.Table) error {
 			o.Range, err = str(key, v)
 		case "attack":
 			o.Attack, err = str(key, v)
-		case "when":
-			o.When, err = str(key, v)
+		case "on":
+			o.On, err = str(key, v)
 		case "target":
 			o.Target, err = str(key, v)
 		case "stacking":

@@ -24,22 +24,14 @@ return function()
     end
     return copy[field]
   end
-  bonuses.add("hit", function()
-    if (equipped_info("right_hand", "weapon_type") == weapon_types.one_handed_sword) or (equipped_info("right_hand", "weapon_type") == weapon_types.two_handed_sword) then
-      return 5
-    end
-    return 0
-  end)
-  bonuses.add("crit", function()
-    if (equipped_info("right_hand", "weapon_type") == weapon_types.one_handed_sword) or (equipped_info("right_hand", "weapon_type") == weapon_types.two_handed_sword) then
-      return 5
-    end
-    return 0
-  end)
-  bonuses.add("damage", function()
-    if (equipped_info("right_hand", "weapon_type") == weapon_types.one_handed_sword) or (equipped_info("right_hand", "weapon_type") == weapon_types.two_handed_sword) then
-      return 25
-    end
-    return 0
-  end, { skill = KN_BOWLINGBASH })
+  bonuses.add("hit", 5, {
+    when = function() return (equipped_info("right_hand", "weapon_type") == weapon_types.one_handed_sword) or (equipped_info("right_hand", "weapon_type") == weapon_types.two_handed_sword) end,
+  })
+  bonuses.add("crit", 5, {
+    when = function() return (equipped_info("right_hand", "weapon_type") == weapon_types.one_handed_sword) or (equipped_info("right_hand", "weapon_type") == weapon_types.two_handed_sword) end,
+  })
+  bonuses.add("damage", 25, {
+    skill = KN_BOWLINGBASH,
+    when = function() return (equipped_info("right_hand", "weapon_type") == weapon_types.one_handed_sword) or (equipped_info("right_hand", "weapon_type") == weapon_types.two_handed_sword) end,
+  })
 end

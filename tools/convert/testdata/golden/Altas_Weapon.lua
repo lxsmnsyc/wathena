@@ -11,10 +11,8 @@ return function()
   local equipped = context:get_instance()
   local player = equipped.wearer
   bonuses.add("crit", 10)
-  bonuses.add("break_armor", { chance = function()
-    if player.base_str >= 80 then
-      return 500
-    end
-    return 0
-  end })
+  bonuses.add("break_armor", {
+    chance = 500,
+    when = function() return player.base_str >= 80 end,
+  })
 end

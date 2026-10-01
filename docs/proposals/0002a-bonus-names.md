@@ -46,7 +46,7 @@ Counts:
    - all skills or one skill: `{ skill = ... }`;
    - all items or one item: `{ item = ... }` or `{ item_group = ... }`;
    - all targets or one kind of target: `{ against = ... }` or `{ from = ... }`;
-   - the trigger of a proc: `{ when = ... }`.
+   - the trigger of a proc: `{ on = ... }`.
 
    A separate name is kept only where the meaning differs. The table says why in each case.
 3. **Damage dealt and damage taken by percent are two bonuses**, `"damage"` and `"damage_taken"`. See "Damage and damage taken".
@@ -59,7 +59,7 @@ Counts:
    - per 10,000: `chance = n`;
    - per mille: `chance = n * 10`;
    - percent: `chance = n * 100`.
-6. **Procs are named after their effect.** The chance and the trigger are options: `bonuses.add("cause_status", statuses.stun, { chance = 300, when = "hit_taken" })`. See "Procs".
+6. **Procs are named after their effect.** The chance and the trigger are options: `bonuses.add("cause_status", statuses.stun, { chance = 300, on = "hit_taken" })`. See "Procs".
 7. **Arguments have a fixed order.** The converter reorders rAthena's arguments to fit:
    1. what the bonus produces or applies to, if the name needs it: a status for `cause_status`, a skill and level for `cast` and `skill`, an element for `attack_element`;
    2. the amount;
@@ -79,7 +79,7 @@ The last argument of `bonuses.add` can be a table. Each row of the table lists w
 | Option | Values | Meaning |
 |---|---|---|
 | `percent` | `true` | The amount is a percent of the quantity (rule 4). |
-| `skill` | A skill | The skill the bonus applies to. On `"damage"` and `"damage_taken"` it is the skill of the hit. On a proc with `when = "skill_used"`, it is the skill that triggers the proc. |
+| `skill` | A skill | The skill the bonus applies to. On `"damage"` and `"damage_taken"` it is the skill of the hit. On a proc with `on = "skill_used"`, it is the skill that triggers the proc. |
 | `item` | An item | The item the bonus applies to. |
 | `item_group` | An item group | The item group the bonus applies to. |
 | `kind` | `"physical"`, `"magic"`, or `"misc"` | The kind of hit. Omitted means every kind. rAthena's `BF_WEAPON`, `BF_MAGIC`, `BF_MISC`, and the `ATF_` equivalents. |
@@ -90,12 +90,13 @@ The last argument of `bonuses.add` can be a table. Each row of the table lists w
 | `against` | A table with one key | The target. See the keys below. |
 | `from` | A table with one key | The source. See the keys below. |
 | `chance` | Integer per 10,000 | The chance of a proc. Required on every proc. |
-| `when` | `"attack"` (default), `"hit_taken"`, or `"skill_used"` | The trigger of a proc. |
+| `on` | `"attack"` (default), `"hit_taken"`, or `"skill_used"` | The trigger of a proc. |
 | `target` | `"self"` or `"enemy"` | Who gets a proc's effect. rAthena's `ATF_SELF`, `ATF_TARGET`, and autospell `i & 1`. |
 | `duration` | Milliseconds | How long a proc's effect lasts. |
 | `random_level` | `true` | `cast` picks a level from 1 to the given level. rAthena's autospell `i & 2`. |
 | `stacking` | `"sum"`, `"highest"`, `"lowest"`, `"last"`, or `"priority"` | See "Stacking". |
 | `priority` | Integer | Used with `stacking = "priority"`. |
+| `when` | A function | A condition. The bonus applies while it returns true. Every bonus takes it. See "Conditions". |
 
 Keys of `against` and `from`:
 
@@ -200,22 +201,58 @@ A proc is a bonus whose effect happens with a chance, on a trigger. Its name is 
 
 ```lua
 bonuses.add("cause_status", statuses.stun, { chance = 300 })
-bonuses.add("cause_status", statuses.stun, { chance = 300, when = "hit_taken" })
-bonuses.add("cast", FIREBOLT, 3, { chance = 500, when = "hit_taken" })
+bonuses.add("cause_status", statuses.stun, { chance = 300, on = "hit_taken" })
+bonuses.add("cast", FIREBOLT, 3, { chance = 500, on = "hit_taken" })
 bonuses.add("coma", { chance = 10, against = { race = races.demi_human } })
 bonuses.add("drain_hp", 5, { chance = 100 })
 bonuses.add("break_weapon", { chance = 10 })
 ```
 
-`when` values:
+`on` values:
 
-| `when` | The proc rolls | Target options |
+| `on` | The proc rolls | Target options |
 |---|---|---|
 | `"attack"` (default) | When the wearer's hit lands. With `skill`, only hits of that skill. | `against` |
 | `"hit_taken"` | When a hit lands on the wearer. | `from` |
 | `"skill_used"` | When the wearer uses the skill in `skill`, also for skills that deal no damage. | `against` |
 
-Each proc row in the table lists the `when` values and options it accepts, following rAthena's forms. rAthena has no proc that rolls on a kill. Rewards for a kill are separate bonuses (`hp_per_kill`, `sp_per_kill`, `gain_zeny_on_kill`).
+Each proc row in the table lists the `on` values and options it accepts, following rAthena's forms. rAthena has no proc that rolls on a kill. Rewards for a kill are separate bonuses (`hp_per_kill`, `sp_per_kill`, `gain_zeny_on_kill`).
+
+## Conditions
+
+The `when` option is a function. The bonus applies while it returns true:
+
+```lua
+bonuses.add("unbreakable_weapon", { when = function() return equipped.refine >= 10 end })
+bonuses.add("skill", TELEPORT, 1, { when = function() return player.base_level >= 99 end })
+bonuses.add("atk", 20, { percent = true, when = function() return jobs.base_job(player.job) == jobs.crusader end })
+```
+
+- It follows the rules of computed bonuses: it reruns only when a value it read changes, and it cannot change the game.
+- It works on every bonus: flags, granted skills, one-value bonuses, amounts, and highest or lowest stacking.
+- It is not part of a set's key, so a bonus with a condition stacks with the same bonus without one.
+- Static bonuses in item data have no `when`: a function cannot be data.
+
+The converter writes `when` for every bonus that an rAthena script adds under a condition.
+
+## Removing a bonus
+
+`bonuses.add` returns a handle with a `remove` method:
+
+```lua
+local granted
+events.on("base_level_up", function(player)
+  if player.base_level >= 99 and not granted then
+    granted = bonuses.add("skill", TELEPORT, 1)
+  end
+end)
+```
+
+- `remove()` removes that one bonus. A bonus that has already ended stays ended, and a second `remove()` does nothing.
+- The bonus still belongs to its context, which removes it when it ends.
+- Static, computed and conditional bonuses all return a handle.
+- A bonus added in `timers.with_bonuses` returns a handle too. `remove()` ends it early. The timer ends the others.
+- The converter does not use handles. It writes `when` for conditions.
 
 ## Stacking
 
@@ -231,7 +268,7 @@ The `stacking` option says how several bonuses of one name combine.
 
 Flag bonuses take no `stacking` option.
 
-**Sets.** Bonuses form a set when they have the same name, the same arguments before the amount, the same options other than `stacking`, `priority`, and `chance`, and a `stacking` value of the same group (`"sum"`, `"highest"`, and `"lowest"` form one group; `"last"` and `"priority"` the other).
+**Sets.** Bonuses form a set when they have the same name, the same arguments before the amount, the same options other than `stacking`, `priority`, `chance`, and `when`, and a `stacking` value of the same group (`"sum"`, `"highest"`, and `"lowest"` form one group; `"last"` and `"priority"` the other).
 
 **`"highest"` and `"lowest"`.**
 
@@ -380,6 +417,25 @@ end)
 - The options `icon` and `kind` (`"buff"` or `"debuff"`) cover rAthena's icon and type.
 
 ## Constants used in arguments
+
+Constant names come from rAthena's by a fixed rule:
+
+- The prefix is removed, such as `RC_`, `SC_`, `EF_`, `HAT_EF_` or `JOB_`.
+- The rest is written in lower case. Underscores stay.
+- A name that would start with a digit gets an `n`: `SC_2011RWC_SCROLL` is `statuses.n2011rwc_scroll`.
+- These names are spelled out:
+
+  | rAthena | wAthena |
+  |---|---|
+  | `RC_DEMIHUMAN` | `races.demi_human` |
+  | `W_1HSWORD`, `W_2HSWORD` | `weapon_types.one_handed_sword`, `two_handed_sword` |
+  | `W_1HSPEAR`, `W_2HSPEAR` | `weapon_types.one_handed_spear`, `two_handed_spear` |
+  | `W_1HAXE`, `W_2HAXE` | `weapon_types.one_handed_axe`, `two_handed_axe` |
+  | `W_2HMACE`, `W_2HSTAFF` | `weapon_types.two_handed_mace`, `two_handed_staff` |
+  | `W_DOUBLE_DD`, `W_DOUBLE_SS`, `W_DOUBLE_AA` | `weapon_types.dual_daggers`, `dual_swords`, `dual_axes` |
+  | `W_DOUBLE_DS`, `W_DOUBLE_DA`, `W_DOUBLE_SA` | `weapon_types.dagger_and_sword`, `dagger_and_axe`, `sword_and_axe` |
+
+The modules and their rAthena prefixes: `races` (`RC_`), `monster_groups` (`RC2_`), `elements` (`ELE_`), `sizes` (`Size_`), `monster_classes` (`CLASS_`), `weapon_types` (`W_`), `statuses` (`SC_`), `effects` (`EF_`), `headgear_effects` (`HAT_EF_`), and `jobs` (`JOB_`).
 
 Arguments use the constant modules from proposal 0002 (`races`, `monster_classes`, `sizes`, `elements`, `statuses`, `jobs`) and record lookups (`items.id`, `skills.id`, `monsters.id`). This document adds:
 
@@ -559,7 +615,7 @@ All amounts are percents of damage taken. A negative value means less damage.
 | `bonus bNoWeaponDamage,n`<br>`bonus bNoMagicDamage,n`<br>`bonus bNoMiscDamage,n` | `"immunity", n, { kind = "physical" }`<br>`"immunity", n, { kind = "magic" }`<br>`"immunity", n, { kind = "misc" }` | Blocks n% of hits of that kind, before other reductions. Magic immunity also blocks heals and support skills. `kind` is required. | 0<br>3<br>0 | |
 | `bonus bAbsorbDmgMaxHP2,n`<br>`bonus bAbsorbDmgMaxHP,n` | `"damage_taken_cap", n, { stacking = "highest" }`<br>The same | A hit above n% of max HP is reduced to n% of max HP. The second form is rAthena's old, unofficial cap. | 1<br>0 | |
 | `bonus bShortWeaponDamageReturn,n`<br>`bonus bLongWeaponDamageReturn,n` | `"damage_reflected", n, { kind = "physical", range = "melee" }`<br>`"damage_reflected", n, { kind = "physical", range = "ranged" }` | Reflects n% of melee or ranged physical damage taken. `range` is required. | 45<br>0 | |
-| `bonus bMagicDamageReturn,n` | `"reflect_magic", { chance = n * 100, when = "hit_taken" }` | Proc: may reflect a targeted spell back to its caster. | 11 | |
+| `bonus bMagicDamageReturn,n` | `"reflect_magic", { chance = n * 100, on = "hit_taken" }` | Proc: may reflect a targeted spell back to its caster. | 11 | |
 | `bonus bReduceDamageReturn,n` | `"reflected_damage_taken", -n` | Damage taken from reflection changes by n%. | 39 | flipped |
 
 ### Elements
@@ -577,15 +633,15 @@ Every row here is a proc: `chance` is required (rule 5).
 |---|---|---|---|
 | `bonus2 bAddEff,eff,n`<br>`bonus3 bAddEff,eff,n,atf`<br>`bonus4 bAddEff,eff,n,atf,t` | `"cause_status", eff, { chance = n }`<br>The same, with `target`, `kind`, and `range` from atf<br>The same, with `duration = t` | Attacks may cause status eff. | 163<br>50<br>2 |
 | `bonus2 bAddEff2,eff,n` | `"cause_status", eff, { chance = n, target = "self" }` | Attacks may cause status eff on the wearer. | 25 |
-| `bonus2 bAddEffWhenHit,eff,n`<br>`bonus3 bAddEffWhenHit,eff,n,atf`<br>`bonus4 bAddEffWhenHit,eff,n,atf,t` | `"cause_status", eff, { chance = n, when = "hit_taken", kind = "physical" }`<br>The same, with `target`, `kind`, and `range` from atf<br>The same, with `duration = t` | Being hit may cause status eff on the attacker. | 61<br>23<br>0 |
+| `bonus2 bAddEffWhenHit,eff,n`<br>`bonus3 bAddEffWhenHit,eff,n,atf`<br>`bonus4 bAddEffWhenHit,eff,n,atf,t` | `"cause_status", eff, { chance = n, on = "hit_taken", kind = "physical" }`<br>The same, with `target`, `kind`, and `range` from atf<br>The same, with `duration = t` | Being hit may cause status eff on the attacker. | 61<br>23<br>0 |
 | `bonus3 bAddEffOnSkill,sk,eff,n`<br>`bonus4 bAddEffOnSkill,sk,eff,n,atf`<br>`bonus5 bAddEffOnSkill,sk,eff,n,atf,t` | `"cause_status", eff, { chance = n, skill = sk }`<br>The same, with `target` from atf<br>The same, with `duration = t` | Hits of skill sk may cause status eff. | 24<br>0<br>0 |
 | `bonus2 bResEff,eff,n` | `"status_resistance", eff, n` | The chance to resist status eff rises by n per 10,000. Not a proc: an amount, with no `chance` option. | 379 |
 | `bonus2 bComaRace,r,n`<br>`bonus2 bComaClass,c,n` | `"coma", { chance = n, against = { race = r } }`<br>`"coma", { chance = n, against = { class = c } }` | Any attack on race r or class c may cause Coma. | 10<br>3 |
 | `bonus2 bWeaponComaRace,r,n`<br>`bonus2 bWeaponComaClass,c,n`<br>`bonus2 bWeaponComaEle,e,n` | `"coma", { chance = n, attack = "normal", against = { race = r } }`<br>The same, with `against = { class = c }`<br>The same, with `against = { element = e }` | Normal attacks on race r, class c, or element e may cause Coma. | 0<br>0<br>0 |
 | `bonus3 bStateNoRecoverRace,r,x,t` | `"block_healing", { chance = x, attack = "normal", against = { race = r }, duration = t }` | Normal attacks on race r may stop the target's healing for t ms. One-value bonus. | 2 |
 | `bonus3 bAutoSpell,sk,y,n`<br>`bonus4 bAutoSpell,sk,y,n,i`<br>`bonus5 bAutoSpell,sk,y,n,bf,i` | `"cast", sk, y, { chance = n * 10 }`<br>The same, with `target` and `random_level` from i<br>The same, with `kind`, `range`, and `attack` from bf | Attacks may cast skill sk at level y. | 375<br>25<br>90 |
-| `bonus3 bAutoSpellWhenHit,sk,y,n`<br>`bonus4 bAutoSpellWhenHit,sk,y,n,i`<br>`bonus5 bAutoSpellWhenHit,sk,y,n,bf,i` | `"cast", sk, y, { chance = n * 10, when = "hit_taken" }`<br>The same, with `target` and `random_level` from i<br>The same, with `kind`, `range`, and `attack` from bf | Being hit by a direct attack may cast skill sk at level y. | 145<br>35<br>60 |
-| `bonus4 bAutoSpellOnSkill,sk,x,y,n`<br>`bonus5 bAutoSpellOnSkill,sk,x,y,n,i` | `"cast", x, y, { chance = n * 10, when = "skill_used", skill = sk }`<br>The same, with `target` and `random_level` from i | Using skill sk may cast skill x at level y. | 71<br>10 |
+| `bonus3 bAutoSpellWhenHit,sk,y,n`<br>`bonus4 bAutoSpellWhenHit,sk,y,n,i`<br>`bonus5 bAutoSpellWhenHit,sk,y,n,bf,i` | `"cast", sk, y, { chance = n * 10, on = "hit_taken" }`<br>The same, with `target` and `random_level` from i<br>The same, with `kind`, `range`, and `attack` from bf | Being hit by a direct attack may cast skill sk at level y. | 145<br>35<br>60 |
+| `bonus4 bAutoSpellOnSkill,sk,x,y,n`<br>`bonus5 bAutoSpellOnSkill,sk,x,y,n,i` | `"cast", x, y, { chance = n * 10, on = "skill_used", skill = sk }`<br>The same, with `target` and `random_level` from i | Using skill sk may cast skill x at level y. | 71<br>10 |
 | `bonus2 bHPDrainRate,x,n` | `"drain_hp", n, { chance = x * 10 }` | Physical hits may heal n% of the damage dealt as HP. | 92 |
 | `bonus2 bSPDrainRate,x,n` | `"drain_sp", n, { chance = x * 10 }` | The same, as SP. | 66 |
 | `bonus2 bHPVanishRate,x,n`<br>`bonus3 bHPVanishRate,x,n,bf` | `"remove_hp", n, { chance = x * 10, attack = "normal" }`<br>`"remove_hp", n, { chance = x * 10 }`, with `kind`, `range`, and `attack` from bf | Hits may remove n% of the target's current HP. | 1<br>0 |
@@ -708,7 +764,7 @@ Second round:
 
 11. A `"skill_used"` item event fires for every skill use, including skills that deal no damage. `autobonus3` maps onto it.
 12. Bonuses where rAthena keeps the last value use `stacking = "last"` by default, which follows rAthena's order. A mod can use `{ stacking = "priority", priority = n }`. `"highest"` and `"lowest"` stay.
-13. No name starts with `chance_to_`. The name is the effect, and the chance goes in the `chance` option, with `when`, `against`, and `from`.
+13. No name starts with `chance_to_`. The name is the effect, and the chance goes in the `chance` option, with `on`, `against`, and `from`.
 14. No name ends in `_percent`. Flat and percent share a name, with `{ percent = true }`. Names that rAthena has only as a percent require it; names that rAthena has only as flat refuse it.
 15. Per-skill and per-item variants are options (`skill`, `item`, `item_group`) on the shared name. Separate names stay only where the meaning differs, and the table says why.
 16. Arguments have a fixed order: what the bonus produces or applies to, then the amount, then other numbers, then the options table. The chance is always an option.

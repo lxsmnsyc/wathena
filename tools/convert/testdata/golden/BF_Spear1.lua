@@ -23,10 +23,8 @@ return function()
   bonuses.add("ignore_def", 20, { percent = true, against = { race = races.demi_human } })
   bonuses.add("ignore_def", 20, { percent = true, against = { race = races.player_human } })
   bonuses.add("unbreakable_weapon")
-  bonuses.add("aspd", function()
-    if jobs.base_job(player.job) == jobs.crusader then
-      return 20
-    end
-    return 0
-  end, { percent = true })
+  bonuses.add("aspd", 20, {
+    percent = true,
+    when = function() return jobs.base_job(player.job) == jobs.crusader end,
+  })
 end

@@ -23,19 +23,23 @@ type Target struct {
 // Options are the options table of bonuses.add (0002a, "Options table").
 // Set lists the options that were given.
 type Options struct {
-	Percent     bool
-	Skill       int64
-	Item        int64
-	ItemGroup   int64
-	Kind        string
-	Range       string
-	Attack      string
-	Element     int64
-	WeaponType  int64
-	Against     *Target
-	From        *Target
-	Chance      Num
-	When        string
+	Percent    bool
+	Skill      int64
+	Item       int64
+	ItemGroup  int64
+	Kind       string
+	Range      string
+	Attack     string
+	Element    int64
+	WeaponType int64
+	Against    *Target
+	From       *Target
+	Chance     Num
+	// On is the trigger of a proc: attack, hit_taken or skill_used.
+	On string
+	// When is set when the bonus has a condition: a function the caller
+	// keeps, which switches the bonus on and off. Every bonus takes it.
+	When        bool
 	Target      string
 	Duration    int64
 	RandomLevel bool
@@ -57,7 +61,7 @@ type Bonus struct {
 
 // OptionNames are every option, in the order of 0002a's table.
 var OptionNames = []string{"percent", "skill", "item", "item_group", "kind", "range", "attack", "element",
-	"weapon_type", "against", "from", "chance", "when", "target", "duration", "random_level", "stacking", "priority"}
+	"weapon_type", "against", "from", "chance", "on", "target", "duration", "random_level", "stacking", "priority", "when"}
 
 // TargetKeys are the keys of against and from.
 var TargetKeys = []string{"race", "element", "size", "class", "monster_group", "monster", "job"}
@@ -127,7 +131,7 @@ func checkArgs(s *Spec, b *Bonus) error {
 		a := b.Args[i]
 		if a.Computed {
 			// A level may be computed, as rAthena's autospell levels
-			// that depend on the refine. This is provisional.
+			// that depend on the refine (proposal 0002, decision 12).
 			if kind != ArgLevel {
 				return fmt.Errorf("argument %d must be a value, not a function", i+1)
 			}
@@ -180,7 +184,7 @@ var enumValues = map[string][]string{
 	"kind":     {"physical", "magic", "misc"},
 	"range":    {"melee", "ranged"},
 	"attack":   {"normal", "skill"},
-	"when":     {"attack", "hit_taken", "skill_used"},
+	"on":       {"attack", "hit_taken", "skill_used"},
 	"target":   {"self", "enemy"},
 	"stacking": {"sum", "highest", "lowest", "last", "priority"},
 }
@@ -203,6 +207,8 @@ func checkOptions(s *Spec, b *Bonus) error {
 			if !amount && !s.Proc && !s.OneValue {
 				return fmt.Errorf("takes no stacking option: it has no amount or chance")
 			}
+		case "when":
+			// A condition: every bonus takes one.
 		case "priority":
 			if o.Stacking != "priority" {
 				return fmt.Errorf("priority needs stacking = \"priority\"")
@@ -216,7 +222,7 @@ func checkOptions(s *Spec, b *Bonus) error {
 			}
 		}
 		if vals, ok := enumValues[n]; ok {
-			v := map[string]string{"kind": o.Kind, "range": o.Range, "attack": o.Attack, "when": o.When, "target": o.Target, "stacking": o.Stacking}[n]
+			v := map[string]string{"kind": o.Kind, "range": o.Range, "attack": o.Attack, "on": o.On, "target": o.Target, "stacking": o.Stacking}[n]
 			if !slices.Contains(vals, v) {
 				return fmt.Errorf("%s must be %s, not %q", n, quoteList(vals), v)
 			}
@@ -242,8 +248,8 @@ func checkOptions(s *Spec, b *Bonus) error {
 	if o.Has("range") && o.Kind != "physical" {
 		return fmt.Errorf("range needs kind = \"physical\"")
 	}
-	if o.When == "skill_used" && !o.Has("skill") {
-		return fmt.Errorf("when = \"skill_used\" needs the skill option")
+	if o.On == "skill_used" && !o.Has("skill") {
+		return fmt.Errorf("on = \"skill_used\" needs the skill option")
 	}
 	if err := checkPercent(s, b, amount); err != nil {
 		return err
@@ -326,7 +332,7 @@ func DamageGroup(name string, o *Options) string {
 	flags := o.Has("range") || o.Has("attack")
 	only := func(names ...string) bool {
 		for n := range o.Set {
-			if n == "stacking" || n == "priority" {
+			if n == "stacking" || n == "priority" || n == "when" {
 				continue
 			}
 			if !slices.Contains(names, n) {

@@ -23,5 +23,7 @@ return function()
       end, { restart = active })
     end
   end)
-  bonuses.add_when(function() return equipped.refine >= 10 end, "unbreakable_weapon")
+  bonuses.add("unbreakable_weapon", {
+    when = function() return equipped.refine >= 10 end,
+  })
 end

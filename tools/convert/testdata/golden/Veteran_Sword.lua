@@ -19,18 +19,14 @@ local KN_BOWLINGBASH = skills.id "KN_BOWLINGBASH"
 return function()
   local equipped = context:get_instance()
   local player = equipped.wearer
-  bonuses.add("damage", function()
-    if player:get_skill_level(SM_BASH) == 10 then
-      return 50
-    end
-    return 0
-  end, { skill = SM_BASH })
-  bonuses.add("damage", function()
-    if player:get_skill_level(KN_BOWLINGBASH) == 10 then
-      return 50
-    end
-    return 0
-  end, { skill = KN_BOWLINGBASH })
+  bonuses.add("damage", 50, {
+    skill = SM_BASH,
+    when = function() return player:get_skill_level(SM_BASH) == 10 end,
+  })
+  bonuses.add("damage", 50, {
+    skill = KN_BOWLINGBASH,
+    when = function() return player:get_skill_level(KN_BOWLINGBASH) == 10 end,
+  })
   bonuses.add("str", 1)
   bonuses.add("dex", 1)
 end

@@ -86,9 +86,12 @@ func TestWalkAndChat(t *testing.T) {
 	if err := a.WalkTo(ctx, v.X+3, v.Y+2); err != nil {
 		t.Fatal(err)
 	}
-	// Alice follows her own walk, and Bob sees where it ends.
+	// Alice follows her own walk, and Bob sees where it ends. Bob's frame
+	// can arrive before Alice's own, so the wait is for Alice to reach the
+	// cell, not only for her to stop walking.
 	eventually(t, "the walk", func() bool {
-		return bobSees(b, "Alice").DestX == v.X+3 && !a.View().Walking
+		end := a.View()
+		return bobSees(b, "Alice").DestX == v.X+3 && !end.Walking && end.X == v.X+3 && end.Y == v.Y+2
 	})
 	end := a.View()
 	if end.X != v.X+3 || end.Y != v.Y+2 {

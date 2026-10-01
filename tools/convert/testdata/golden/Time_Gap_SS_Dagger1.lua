@@ -24,28 +24,19 @@ local SS_KUNAIKAITEN = skills.id "SS_KUNAIKAITEN"
 return function()
   local equipped = context:get_instance()
   bonuses.add("damage", 15, { skill = SS_KUNAIKAITEN })
-  bonuses.add("patk", function()
-    if equipped.enchant_grade >= 1 --[[ ENCHANTGRADE_D ]] then
-      return 5
-    end
-    return 0
-  end)
-  bonuses.add("damage", function()
-    if (equipped.enchant_grade >= 1 --[[ ENCHANTGRADE_D ]]) and (equipped.enchant_grade >= 2 --[[ ENCHANTGRADE_C ]]) then
-      return 15
-    end
-    return 0
-  end, { skill = SS_KUNAIKAITEN })
-  bonuses.add("damage", function()
-    if ((equipped.enchant_grade >= 1 --[[ ENCHANTGRADE_D ]]) and (equipped.enchant_grade >= 2 --[[ ENCHANTGRADE_C ]])) and (equipped.enchant_grade >= 3 --[[ ENCHANTGRADE_B ]]) then
-      return 10
-    end
-    return 0
-  end, { kind = "physical", range = "ranged" })
-  bonuses.add("patk", function()
-    if (((equipped.enchant_grade >= 1 --[[ ENCHANTGRADE_D ]]) and (equipped.enchant_grade >= 2 --[[ ENCHANTGRADE_C ]])) and (equipped.enchant_grade >= 3 --[[ ENCHANTGRADE_B ]])) and (equipped.enchant_grade >= 4 --[[ ENCHANTGRADE_A ]]) then
-      return 3 * (equipped.refine // 2)
-    end
-    return 0
-  end)
+  bonuses.add("patk", 5, {
+    when = function() return equipped.enchant_grade >= 1 --[[ ENCHANTGRADE_D ]] end,
+  })
+  bonuses.add("damage", 15, {
+    skill = SS_KUNAIKAITEN,
+    when = function() return (equipped.enchant_grade >= 1 --[[ ENCHANTGRADE_D ]]) and (equipped.enchant_grade >= 2 --[[ ENCHANTGRADE_C ]]) end,
+  })
+  bonuses.add("damage", 10, {
+    kind = "physical",
+    range = "ranged",
+    when = function() return ((equipped.enchant_grade >= 1 --[[ ENCHANTGRADE_D ]]) and (equipped.enchant_grade >= 2 --[[ ENCHANTGRADE_C ]])) and (equipped.enchant_grade >= 3 --[[ ENCHANTGRADE_B ]]) end,
+  })
+  bonuses.add("patk", function() return 3 * (equipped.refine // 2) end, {
+    when = function() return (((equipped.enchant_grade >= 1 --[[ ENCHANTGRADE_D ]]) and (equipped.enchant_grade >= 2 --[[ ENCHANTGRADE_C ]])) and (equipped.enchant_grade >= 3 --[[ ENCHANTGRADE_B ]])) and (equipped.enchant_grade >= 4 --[[ ENCHANTGRADE_A ]]) end,
+  })
 end

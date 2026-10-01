@@ -379,10 +379,19 @@ api["wa.integers"] = readonly("wa.integers", {
 	end,
 })
 
--- add_bonus is bonuses.add and bonuses.add_when. Numbers and functions
--- go to Go as separate arguments, so Go can keep the functions. A chance
--- option that is a function goes on its own.
-local function add_bonus(condition, name, ...)
+-- Bonus handles: bonuses.add returns one, with a remove method.
+local bonus_ids
+local new_bonus
+new_bonus, bonus_ids = handle_type("bonus", {
+	remove = function(self)
+		return (call(H.bonuses_remove, bonus_ids[self]))
+	end,
+})
+
+-- add_bonus is bonuses.add. Numbers and functions go to Go as separate
+-- arguments, so Go can keep the functions. The chance and when options,
+-- when they are functions, go on their own.
+local function add_bonus(name, ...)
 	local n = select("#", ...)
 	local options
 	if n > 0 and type(select(n, ...)) == "table" then
@@ -397,7 +406,7 @@ local function add_bonus(condition, name, ...)
 		end
 		values[i] = v
 	end
-	local plain, chance
+	local plain, chance, condition
 	if options ~= nil then
 		plain = {}
 		for k, v in pairs(options) do
@@ -406,28 +415,25 @@ local function add_bonus(condition, name, ...)
 			end
 			if k == "chance" and type(v) == "function" then
 				chance = v
+			elseif k == "when" then
+				if type(v) ~= "function" then
+					error("bonuses.add(" .. tostring(name) .. "): when must be a function that returns true or false", 3)
+				end
+				condition = v
 			elseif type(v) == "function" then
-				error("bonuses.add(" .. tostring(name) .. "): only the amount, a level and the chance can be functions", 3)
+				error("bonuses.add(" .. tostring(name) .. "): only the amount, a level, the chance and when can be functions", 3)
 			else
 				plain[k] = v
 			end
 		end
 	end
-	return (call(H.bonuses_add, name, plain, chance, condition, n, unpack(values, 1, n)))
+	return new_bonus(call(H.bonuses_add, name, plain, chance, condition, n, unpack(values, 1, n)))
 end
 
 api["wa.bonuses"] = readonly("wa.bonuses", {
 	add = function(name, ...)
 		check(type(name) == "string", "bonuses.add: the bonus name must be a string")
-		return add_bonus(nil, name, ...)
-	end,
-	-- add_when adds a bonus while condition returns true. It is
-	-- provisional: converted scripts use it for flags and other bonuses
-	-- that no amount can turn off.
-	add_when = function(condition, name, ...)
-		check(type(condition) == "function", "bonuses.add_when: the condition must be a function")
-		check(type(name) == "string", "bonuses.add_when: the bonus name must be a string")
-		return add_bonus(condition, name, ...)
+		return add_bonus(name, ...)
 	end,
 })
 

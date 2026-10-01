@@ -47,4 +47,4 @@ Startup conversion costs about a second, and the repository stays small. `wactl 
 
 - A zone makes its Lua state when a player first uses an item, unless a mod has entry scripts. The 988 maps of a kRO build hold no state until someone uses an item there.
 - A zone keeps at most 256 item scripts loaded. Loading one more drops the oldest. Contexts that run keep what they use.
-- Converted equipment scripts run symbolically. A condition on a game value becomes a computed bonus, so the bonus follows the value without rerunning the script.
+- Converted equipment scripts run symbolically. A condition on a game value becomes the bonus's `when` option, and a game value in an amount becomes a computed bonus, so the bonus follows the value without rerunning the script.

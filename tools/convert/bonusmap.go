@@ -211,7 +211,7 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 	case "1:blongweapondamagereturn":
 		return one(call("damage_reflected", num(a[0])).with(physical, ranged))
 	case "1:bmagicdamagereturn":
-		return one(call("reflect_magic").with(numOpt("chance", c.times(a[0], 100)), enum("when", "hit_taken")))
+		return one(call("reflect_magic").with(numOpt("chance", c.times(a[0], 100)), enum("on", "hit_taken")))
 	case "1:breducedamagereturn":
 		return one(call("reflected_damage_taken", num(c.neg(a[0]))))
 	case "1:batkele":
@@ -344,7 +344,7 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 	case "2:baddeff2":
 		return one(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1]), enum("target", "self")))
 	case "2:baddeffwhenhit":
-		return one(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1]), enum("when", "hit_taken"), physical))
+		return one(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1]), enum("on", "hit_taken"), physical))
 	case "2:breseff":
 		return one(call("status_resistance", of(kStatus, a[0]), num(a[1])))
 	case "2:bcomarace":
@@ -415,7 +415,7 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 	case "3:baddeff":
 		return c.splitATF(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1])), a[2], false)
 	case "3:baddeffwhenhit":
-		return c.splitATF(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1]), enum("when", "hit_taken")), a[2], true)
+		return c.splitATF(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1]), enum("on", "hit_taken")), a[2], true)
 	case "3:baddeffonskill":
 		return one(call("cause_status", of(kStatus, a[1])).with(numOpt("chance", a[2]), refOpt("skill", kSkill, a[0])))
 	case "3:bstatenorecoverrace":
@@ -423,7 +423,7 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 	case "3:bautospell":
 		return one(call("cast", of(kSkill, a[0]), of(kLevel, a[1])).with(numOpt("chance", c.times(a[2], 10))))
 	case "3:bautospellwhenhit":
-		return one(call("cast", of(kSkill, a[0]), of(kLevel, a[1])).with(numOpt("chance", c.times(a[2], 10)), enum("when", "hit_taken")))
+		return one(call("cast", of(kSkill, a[0]), of(kLevel, a[1])).with(numOpt("chance", c.times(a[2], 10)), enum("on", "hit_taken")))
 	case "3:bhpvanishrate":
 		return c.splitBF(call("remove_hp", num(a[1])).with(numOpt("chance", c.times(a[0], 10))), a[2], bfDamage)
 	case "3:bspvanishrate":
@@ -449,24 +449,24 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 	case "4:baddeff":
 		return c.splitATF(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1]), numOpt("duration", a[3])), a[2], false)
 	case "4:baddeffwhenhit":
-		return c.splitATF(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1]), enum("when", "hit_taken"), numOpt("duration", a[3])), a[2], true)
+		return c.splitATF(call("cause_status", of(kStatus, a[0])).with(numOpt("chance", a[1]), enum("on", "hit_taken"), numOpt("duration", a[3])), a[2], true)
 	case "4:baddeffonskill":
 		return c.splitTarget(call("cause_status", of(kStatus, a[1])).with(numOpt("chance", a[2]), refOpt("skill", kSkill, a[0])), a[3])
 	case "4:bautospell", "4:bautospellwhenhit":
 		w := call("cast", of(kSkill, a[0]), of(kLevel, a[1])).with(numOpt("chance", c.times(a[2], 10)))
 		if typ == "bautospellwhenhit" {
-			w.with(enum("when", "hit_taken"))
+			w.with(enum("on", "hit_taken"))
 		}
 		return c.autospellFlag(w, a[3])
 	case "4:bautospellonskill":
-		return one(call("cast", of(kSkill, a[1]), of(kLevel, a[2])).with(numOpt("chance", c.times(a[3], 10)), enum("when", "skill_used"), refOpt("skill", kSkill, a[0])))
+		return one(call("cast", of(kSkill, a[1]), of(kLevel, a[2])).with(numOpt("chance", c.times(a[3], 10)), enum("on", "skill_used"), refOpt("skill", kSkill, a[0])))
 
 	case "5:baddeffonskill":
 		return c.splitTarget(call("cause_status", of(kStatus, a[1])).with(numOpt("chance", a[2]), refOpt("skill", kSkill, a[0]), numOpt("duration", a[4])), a[3])
 	case "5:bautospell", "5:bautospellwhenhit":
 		w := call("cast", of(kSkill, a[0]), of(kLevel, a[1])).with(numOpt("chance", c.times(a[2], 10)))
 		if typ == "bautospellwhenhit" {
-			w.with(enum("when", "hit_taken"))
+			w.with(enum("on", "hit_taken"))
 		}
 		calls, err := c.splitBF(w, a[3], bfAutospell)
 		if err != nil {
@@ -482,7 +482,7 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 		}
 		return out, nil
 	case "5:bautospellonskill":
-		return c.autospellFlag(call("cast", of(kSkill, a[1]), of(kLevel, a[2])).with(numOpt("chance", c.times(a[3], 10)), enum("when", "skill_used"), refOpt("skill", kSkill, a[0])), a[4])
+		return c.autospellFlag(call("cast", of(kSkill, a[1]), of(kLevel, a[2])).with(numOpt("chance", c.times(a[3], 10)), enum("on", "skill_used"), refOpt("skill", kSkill, a[0])), a[4])
 	}
 	return nil, unsupported(fmt.Sprintf("bonus%s %s", map[int]string{1: "", 2: "2", 3: "3", 4: "4", 5: "5"}[n], typ), "not in the 0002a table")
 }

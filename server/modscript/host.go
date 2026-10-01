@@ -362,7 +362,7 @@ func (r *Runtime) playerHeal(c *script.Call) error {
 		what = "player:heal_percent"
 	}
 	// Heals need no approved permission: a healing item or a healer is
-	// a common part of a mod. This is provisional.
+	// a common part of a mod.
 	if err := r.mutating(what); err != nil {
 		return err
 	}

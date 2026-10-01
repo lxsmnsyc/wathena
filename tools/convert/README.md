@@ -3,7 +3,7 @@
 Converter from rAthena scripts to wAthena Lua and data (strategy section 5.6). It converts item scripts today.
 
 - `parse.go` reads rAthena's script language, following `src/map/script.cpp`.
-- `equip.go` runs equipment scripts symbolically. A condition on a game value, such as the refine level, becomes a computed bonus.
+- `equip.go` runs equipment scripts symbolically. A condition on a game value, such as the refine level, becomes the `when` option of the bonus. A game value in an amount becomes a computed bonus.
 - `use.go` translates scripts that run once: use handlers, equip and unequip scripts, and the effects of `autobonus`.
 - `bonusmap.go` maps every bonus form to a `bonuses.add` call of [proposal 0002a](../../docs/proposals/0002a-bonus-names.md): names, sign flips, chance units, argument order, and options.
 - `output.go` writes core's `data/items.yml` and `scripts/items/*.lua`. Equipment with only constant bonuses becomes item data.
