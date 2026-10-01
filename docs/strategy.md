@@ -2283,7 +2283,14 @@ The order from here:
    - Checked on an Apple M2 with Docker Desktop, from new volumes and secrets: the images built, migrations ran, `waserver` started all 988 maps of the kRO build (an existing build copied into the volume) in 3.3 seconds and became healthy, and Chrome loaded the client through Caddy over HTTPS with Caddy's local authority. Two players signed up, turned on TOTP, made characters, and played. One spent status points, and its chat line came back from the server. Their progress was the same after a restart, after a stop while a player was in the game, and after a backup restored into a new database.
    - CI's `compose` job builds both images and runs `.github/scripts/compose-smoke.sh`: the stack with the placeholder pack, HTTPS through Caddy, and a backup and restore.
    - Left: a countdown announced to players before a restart, which needs a world chat channel, and staff tools for staff accounts.
-6. Phase 3. The Lua runtime and mod loader. Skills, item scripts, and NPCs need it.
+6. Phase 3. The Lua runtime and mod loader. Skills, item scripts, and NPCs need it. It runs in these steps:
+   1. Lua runtime. The production binding from [decision 0002](decisions/0002-lua-runtime-c-lua.md): pinned Lua 5.4 sources, the sandbox, memory and CPU limits per call, coroutines that pause for the player, host functions, and `require` from mod sources. Fuzz tests, and release builds with `zig cc`.
+   2. Mod loader. Manifests, dependencies, load order, data overlays, ID ranges, permissions, and the ruleset loader moved from phase 2.
+   3. Item scripts. The converter for item scripts, run on the Lua runtime. It replaces the Go code that reads plain heal scripts.
+   4. NPCs. Dialogs, shops, and services, with events, variables, and hooks.
+   5. Mod tools. `wactl mod new`, `validate`, `test`, `dev`, and `install`, and Lua Language Server type definitions.
+   6. Event scheduler, and the phase 3 exit check with a sample mod.
+   The public Lua API (section 5.1) will be redesigned before it is called stable. Until then it can change between steps.
 7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.
 
 Reasons for this order:
