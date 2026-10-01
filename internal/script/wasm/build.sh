@@ -26,4 +26,7 @@ cd "$(dirname "$0")/.."
 	-I lua/src -I csrc \
 	-o wasm/lua.wasm csrc/all.c \
 	-lsetjmp -lwasi-emulated-process-clocks
+# The linker marks its output executable. The file is data, so it is
+# kept as 0644 to match the committed file.
+chmod 0644 wasm/lua.wasm
 ls -l wasm/lua.wasm
