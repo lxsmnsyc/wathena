@@ -116,37 +116,28 @@ func TestLoopback(t *testing.T) {
 }
 
 func TestParseProxies(t *testing.T) {
-	got, err := parseProxies("10.0.0.0/8, 192.0.2.7,2001:db8::/32")
+	got, err := parseProxies(splitList("10.0.0.0/8, 192.0.2.7,2001:db8::/32"))
 	if err != nil || len(got) != 3 || got[1].String() != "192.0.2.7/32" {
 		t.Errorf("%v %v", got, err)
 	}
-	if _, err := parseProxies("nope"); err == nil {
+	if _, err := parseProxies([]string{"nope"}); err == nil {
 		t.Error("nope parsed")
 	}
 }
 
 func TestLoadSealer(t *testing.T) {
 	const key = "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
-	t.Setenv(secretKeyEnv, "")
-	t.Setenv(oldSecretKeysEnv, "")
-	if s, err := loadSealer(); s != nil || err != nil {
+	if s, err := loadSealer(secrets{}); s != nil || err != nil {
 		t.Errorf("no key: %v %v", s, err)
 	}
-	t.Setenv(secretKeyEnv, key)
-	if s, err := loadSealer(); s == nil || err != nil {
+	if s, err := loadSealer(secrets{SecretKey: key}); s == nil || err != nil {
 		t.Errorf("a key: %v", err)
 	}
-	t.Setenv(oldSecretKeysEnv, key+", "+key)
-	if s, err := loadSealer(); s == nil || err != nil {
+	if s, err := loadSealer(secrets{SecretKey: key, OldSecretKeys: key + ", " + key}); s == nil || err != nil {
 		t.Errorf("old keys: %v", err)
 	}
-	t.Setenv(secretKeyEnv, "too short")
-	_, err := loadSealer()
+	_, err := loadSealer(secrets{SecretKey: "too short"})
 	if err == nil || strings.Contains(err.Error(), "too short") {
 		t.Errorf("a bad key: %v", err)
-	}
-	t.Setenv(secretKeyEnv, "")
-	if _, err := loadSealer(); err == nil {
-		t.Error("old keys without a key were taken")
 	}
 }

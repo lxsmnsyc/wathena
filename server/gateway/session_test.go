@@ -178,3 +178,48 @@ func TestEndLoginSessions(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 }
+
+func TestShutdownEndsEverySession(t *testing.T) {
+	g := &path.Grid{Width: 40, Height: 40, Cells: make([]uint8, 1600)}
+	for i := range g.Cells {
+		g.Cells[i] = path.Walkable | path.Shootable
+	}
+	z := zone.New("map/test", g, rng.FromKey([32]byte{}).Stream(), nil)
+	chars := &fakeCharacters{z: z, ids: map[string]int64{}, db: map[int64]*character.Character{}}
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go z.Run(ctx)
+	gw := &Gateway{World: z, Sessions: DevSessions{}, Characters: chars}
+	s := httptest.NewServer(gw)
+	t.Cleanup(s.Close)
+	url := "ws" + strings.TrimPrefix(s.URL, "http")
+
+	a := dial(t, url)
+	a.hello("Alice", schema.Version)
+	a.next((*wathenav1.ServerMessage).HasWelcome)
+	b := dial(t, url)
+	b.hello("Bob", schema.Version)
+	b.next((*wathenav1.ServerMessage).HasWelcome)
+
+	gw.Shutdown()
+	for _, c := range []*client{a, b} {
+		d := c.next((*wathenav1.ServerMessage).HasDisconnect).GetDisconnect()
+		if d.GetReason() != wathenav1.DisconnectReason_DISCONNECT_REASON_SERVER_SHUTDOWN {
+			t.Errorf("ended with %v", d.GetReason())
+		}
+	}
+	// Both sessions leave the zone, which saves their characters.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		chars.mu.Lock()
+		got := strings.Count(strings.Join(chars.log, ","), "final save")
+		chars.mu.Unlock()
+		if got == 2 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%d final saves", got)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}

@@ -1,0 +1,32 @@
+# Caddy in front of waserver. It gets and renews certificates for
+# WATHENA_DOMAIN by itself: from Let's Encrypt or ZeroSSL for a public
+# name, and from its own local authority for localhost.
+{
+	# The config never changes while Caddy runs, so the admin API is off.
+	admin off
+}
+
+{$WATHENA_DOMAIN} {
+	# waserver compresses the client and assets itself. Caddy keeps
+	# responses that already have an encoding as they are.
+	encode zstd gzip
+
+	# Health checks are for Docker, not for the internet.
+	respond /healthz 404
+	respond /readyz 404
+
+	# One origin: the client at /, the account pages at /account/, the
+	# game at /ws, the assets at /assets/. WebSockets pass through.
+	# Caddy replaces any X-Forwarded-For from the client with the
+	# client's address.
+	reverse_proxy waserver:8300
+
+	header -Server
+}
+
+# Caddy's own health check, for Docker. Only reachable inside the
+# container.
+http://:8081 {
+	bind 127.0.0.1
+	respond "ok" 200
+}

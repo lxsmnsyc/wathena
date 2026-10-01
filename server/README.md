@@ -15,7 +15,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
 | `account` | The account service under `/account/`: signup, login, logout, login sessions, account settings with TOTP codes, recovery codes and passkeys, the character list with character creation, Play, and one-time game tickets. Argon2id passwords, CSRF tokens, a strict Content Security Policy, rate limits and a captcha hook. `GameTickets` checks the ticket in `Hello` for the gateway. See decisions [0004](../docs/decisions/0004-account-service-and-game-tickets.md) and [0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). |
 | `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone the player is in, through its `zone.Session`, which stays the same across map changes. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. |
-| `cmd/waserver` | A server in one process: an asset build over HTTP, the account pages, and a world of zones over WebSocket, one per map, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. |
+| `cmd/waserver` | The all-in-one server: the web client, an asset build over HTTP, the account pages, and a world of zones over WebSocket, one per map, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. See "All-in-one". |
 
 ## Development server
 
@@ -135,6 +135,15 @@ go run ./tools/wactl migrate up
 
 Use `sslmode=disable` only for a database on the same machine.
 
+Without `--dev`, `waserver` also needs a world. `wactl world new` applies pending migrations, then makes the world's row with its secret seed and the first staff account:
+
+```text
+read -rs PASSWORD
+printf '%s\n' "$PASSWORD" | go run ./tools/wactl world new --admin Admin --admin-password-file -
+```
+
+`--ruleset` is `renewal` by default, and must match `waserver`'s `--mode`. Staff accounts have no staff tools yet.
+
 ### Running with accounts
 
 Without `--dev`, `waserver` needs both database URLs. It serves the account pages under `/account/` and accepts only game tickets:
@@ -144,7 +153,7 @@ export WATHENA_DATABASE_URL='postgres://wathena_game:PASSWORD@127.0.0.1:5432/wat
 export WATHENA_ACCOUNT_DATABASE_URL='postgres://wathena_account:PASSWORD@127.0.0.1:5432/wathena?sslmode=disable'
 export WATHENA_ACCOUNT_SECRET_KEY="$(openssl rand -base64 32)"
 go run ./server/cmd/waserver --assets /path/to/build --map prontera \
-  --account-url http://localhost:8300 --origins http://localhost:5173
+  --public-url http://localhost:8300 --origins http://localhost:5173
 ```
 
 With the web client's dev server running, open `http://localhost:5173/?server=ws://localhost:8300/ws`. The client sends you to the login page. Sign up, make a character, and press Play: the page returns to the client, which fetches a game ticket and connects. The Characters button, or the end of the game, goes back to the character list.
@@ -157,18 +166,16 @@ Two-factor login and passkeys:
 
 - `/account/settings` turns TOTP on and off, makes new recovery codes, and adds and removes passkeys. The characters page links to it.
 - Turning TOTP on, new recovery codes, and passkey changes need a login from the last 10 minutes. Otherwise the player confirms the password (and code) or a passkey first.
-- Passkeys need `--account-url` with a domain name, such as `http://localhost:8300`. The browser only allows passkeys on https pages and on `localhost`.
+- Passkeys need `--public-url` with a domain name, such as `http://localhost:8300`. The browser only allows passkeys on https pages and on `localhost`.
 - A logout, or a new login in the same browser, closes the game connection that its session opened, with `DISCONNECT_REASON_LOGGED_OUT`.
 
-Flags:
+Flags of the account service, all in "All-in-one" with their config keys:
 
-| Flag | Use |
-|---|---|
-| `--origins` | Trusted web client origins, as `scheme://host[:port]`, comma-separated. They may fetch tickets and open the WebSocket, and Play may send players to them. Default `http://localhost:5173,http://127.0.0.1:5173`. |
-| `--account-url` | The public URL of the account pages, such as `https://play.example.com`. With https, cookies are `Secure` with the `__Host-` prefix, and HSTS is sent. Its host is the passkeys' relying party ID. Empty takes the origin from each request, for development, and turns passkeys off. |
-| `--play-url` | Where Play goes when the account pages were not opened from a client. Its origin must be in `--origins`. |
-| `--trusted-proxies` | Proxy addresses or CIDR blocks whose `X-Forwarded-For` gives the client address, for rate limits. |
-| `--captcha` | `none` (default), or `dev` for a checkbox that shows where a real captcha goes. A real provider is not built yet. |
+- `--public-url` (or its old name `--account-url`): the public URL, such as `https://play.example.com`. With https, cookies are `Secure` with the `__Host-` prefix, and HSTS is sent. Its host is the passkeys' relying party ID. Empty takes the origin from each request, for development, and turns passkeys off.
+- `--origins`: more trusted web client origins, as `scheme://host[:port]`, comma-separated. They may fetch tickets and open the WebSocket, and Play may send players to them. The public URL's origin is always trusted. Without `--origins` and without a public URL, the default is the Vite dev server, `http://localhost:5173,http://127.0.0.1:5173`.
+- `--play-url`: where Play goes when the account pages were not opened from a client. Its origin must be trusted. Without it, Play opens the client that `waserver` serves at the public URL.
+- `--trusted-proxies`: proxy addresses or CIDR blocks whose `X-Forwarded-For` gives the client address, for rate limits.
+- `--captcha`: `none` (default), or `dev` for a checkbox that shows where a real captcha goes. A real provider is not built yet.
 
 Rate limits, session lifetimes and Argon2id parameters are in [decision 0004](../docs/decisions/0004-account-service-and-game-tickets.md). TOTP, recovery code, pending login and passkey parameters are in [decision 0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). The rate limits live in the memory of the process.
 
@@ -194,6 +201,60 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
 ```
 
 CI's `test` job runs them against a `postgres:18` service container.
+
+## All-in-one
+
+`waserver all` runs every service in one process (strategy section 3.9): the gateway and the world's zones at `/ws`, the account pages at `/account/`, the asset build at `/assets/`, and the web client at `/`. `waserver` with flags and no command does the same. deploy/README.md runs it with PostgreSQL and Caddy in Docker Compose.
+
+```text
+waserver all --config waserver.yml
+waserver health [--url http://127.0.0.1:8300/readyz]
+waserver version
+```
+
+Settings come from the defaults, then the YAML file that `--config` names, then the flags given on the command line. An unknown key in the file is an error. Secrets are refused in the file: they come from the environment (deploy/README.md, "Environment").
+
+| Key | Flag | Default | Use |
+|---|---|---|---|
+| `listen` | `--addr` | `127.0.0.1:8300` | Address to listen on. |
+| `public_url` | `--public-url`, `--account-url` | none | The public URL, the root of an origin. https, or http on a loopback host. Required when `listen` is not a loopback address. |
+| `origins` | `--origins` | see "Running with accounts" | More trusted web client origins. |
+| `play_url` | `--play-url` | the public URL | Where Play goes. |
+| `trusted_proxies` | `--trusted-proxies` | none | Proxies whose `X-Forwarded-For` is believed. |
+| `assets` | `--assets` | none, required | The asset build folder, with its `manifest.json`. |
+| `client_dir` | `--client-dir` | the built-in client | A web client build to serve at `/` instead. |
+| `start_map` | `--map` | `prontera` | Where new characters start. |
+| `maps` | `--maps` | the start map | Maps to run, or `all`. See "Maps and warps". |
+| `mode` | `--mode` | `renewal` | The rAthena mode of the reference data: `renewal`, `pre-renewal`, or `none` for no monsters. It must match the world's ruleset. |
+| `captcha` | `--captcha` | `none` | `none` or `dev`. |
+| `dev` | `--dev` | `false` | Development sessions instead of accounts. Needs a loopback `listen`. |
+| `build` | `--build` | `all_1` | Raised stats of new characters, for testing. |
+| `start_items` | `--start-items` | none | Items of new characters, for development. |
+| `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. |
+| `profile_dir` | `--profile-dir` | none | Folder for CPU profiles of slow ticks. |
+
+`waserver` checks everything before it starts, and lists every problem by key. With a database it also refuses to start:
+
+- while migrations are pending (`wactl migrate up`),
+- before `wactl world new` made the world, except with `--dev`,
+- when `mode` is not the world's ruleset, except `none`.
+
+The web client:
+
+- A binary built with the `webclient` build tag embeds `client/dist`, which `pnpm build` makes first. The container image is built this way. Without the tag, `go build ./...` needs no Node.js, and `waserver` serves no client unless `client_dir` names one.
+- `waserver` serves it from memory, compressed with Brotli and gzip at startup. Files under `app/` have hashed names and are cached for a year. `index.html` and `sw.js` are checked on each visit.
+- Every client response has a strict Content Security Policy that allows only this origin and its WebSocket, and HSTS with an https public URL.
+- A production build plays on `/ws` of its own origin. `?server=` names another server, and `?viewer` opens the map viewer.
+
+The reference data that `waserver` reads at startup (`reference/rathena/extracts` and `mob_status.json` of both modes) is embedded in the binary by `reference/rathena/embed.go`, so it runs outside the repository. It adds 24 MB to the binary, about half of its 46 MB, and compresses to about 2 MB in the image. The client adds 0.9 MB.
+
+Health checks:
+
+- `/healthz` answers `ok` while the process serves HTTP.
+- `/readyz` answers `ok` once the world runs and both databases answer, until shutdown starts. Otherwise it answers 503.
+- `waserver health` fetches `/readyz` and exits with status 1 when it is not ready, for container images without curl.
+
+On SIGTERM or Ctrl+C, `waserver` stops being ready, ends every game connection with `DISCONNECT_REASON_SERVER_SHUTDOWN`, saves every character, stops its zones, and gives the save workers 10 seconds to finish.
 
 ## Load tests and metrics
 

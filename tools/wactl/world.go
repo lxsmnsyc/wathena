@@ -1,0 +1,256 @@
+package main
+
+import (
+	"bufio"
+	"crypto/rand"
+	"errors"
+	"fmt"
+	"io"
+	"net/url"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/lxsmnsyc/wathena/server/account"
+	"github.com/lxsmnsyc/wathena/server/store"
+)
+
+// worldNew makes a world in a database that roles.sql prepared:
+//  1. It applies pending migrations.
+//  2. It makes the world row with a new secret root seed.
+//  3. It makes the first staff account with a password.
+//
+// Steps 2 and 3 run in one transaction, so a failure leaves no world.
+func worldNew(args []string) error {
+	fs := newFlags("world new")
+	database := fs.String("database", "", "PostgreSQL URL of the migrator role; prefer the "+migrateEnv+" environment variable")
+	name := fs.String("name", "wAthena", "the world's name, 1 to 64 characters")
+	ruleset := fs.String("ruleset", "renewal", "the base ruleset: renewal or pre-renewal. waserver's mode must match it")
+	admin := fs.String("admin", "", "name of the first staff account: 4 to 24 ASCII letters, digits and underscores, starting with a letter")
+	passwordFile := fs.String("admin-password-file", "", "file with the staff account's password on its first line, or - for standard input")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if n := len([]rune(*name)); n < 1 || n > 64 {
+		return errors.New("--name must be 1 to 64 characters")
+	}
+	if *ruleset != "renewal" && *ruleset != "pre-renewal" {
+		return fmt.Errorf("--ruleset %q is not renewal or pre-renewal", *ruleset)
+	}
+	if !account.ValidAccountName(*admin) {
+		return errors.New("--admin must be 4 to 24 ASCII letters, digits and underscores, starting with a letter")
+	}
+	if *passwordFile == "" {
+		return errors.New("--admin-password-file is required: a file, or - for standard input")
+	}
+	password, err := readPassword(*passwordFile)
+	if err != nil {
+		return err
+	}
+	if p := account.PasswordProblem(*admin, password); p != "" {
+		return errors.New("the admin password is refused: " + p)
+	}
+	dsn, err := migratorURL(*database)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := commandContext(5 * time.Minute)
+	defer cancel()
+	pool, err := connect(ctx, dsn)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	if err := migrateUp(ctx, pool); err != nil {
+		return err
+	}
+	if _, err := store.LoadWorld(ctx, pool); err == nil {
+		return store.ErrWorldExists
+	} else if !errors.Is(err, store.ErrNoWorld) {
+		return err
+	}
+	hash, err := account.NewHasher(account.DefaultParams, 1).Hash(ctx, password)
+	if err != nil {
+		return err
+	}
+	seed := make([]byte, 32)
+	if _, err := rand.Read(seed); err != nil {
+		return err
+	}
+	id, err := store.NewWorld(ctx, pool, store.World{Name: *name, Ruleset: *ruleset, Seed: seed}, store.Admin{Name: *admin, Hash: hash})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("made the world %q (%s) and the staff account %s (id %d)\n", *name, *ruleset, *admin, id)
+	return nil
+}
+
+// readPassword reads the first line of a file, or of standard input for
+// "-". A password file from Docker secrets ends with a line break.
+func readPassword(path string) (string, error) {
+	var r io.Reader = os.Stdin
+	if path != "-" {
+		f, err := os.Open(path) // #nosec G304 -- the file the operator named.
+		if err != nil {
+			return "", fmt.Errorf("--admin-password-file: %w", err)
+		}
+		defer func() { _ = f.Close() }()
+		r = f
+	}
+	line, err := bufio.NewReader(io.LimitReader(r, account.MaxPassword+2)).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return "", fmt.Errorf("--admin-password-file: %w", err)
+	}
+	return strings.TrimRight(line, "\r\n"), nil
+}
+
+// worldBackup writes the whole database with pg_dump, in its custom
+// format. The backup holds password hashes, sealed TOTP secrets and the
+// world seed, so the file is made readable by its owner only.
+func worldBackup(args []string) error {
+	fs := newFlags("world backup")
+	database := fs.String("database", "", "PostgreSQL URL of the migrator role; prefer the "+migrateEnv+" environment variable")
+	out := fs.String("out", "", "the backup file to make, or - for standard output")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *out == "" {
+		return errors.New("--out is required: a new file, or - for standard output")
+	}
+	raw, err := migratorURL(*database)
+	if err != nil {
+		return err
+	}
+	cmd, err := pgCommand("pg_dump", raw, "--format=custom", "--no-password")
+	if err != nil {
+		return err
+	}
+	if *out == "-" {
+		cmd.Stdout = os.Stdout
+		return runPG(cmd)
+	}
+	// pg_dump writes into the file made here, which keeps mode 0600.
+	f, err := os.OpenFile(*out, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) // #nosec G304 -- the file the operator named.
+	if err != nil {
+		return err
+	}
+	cmd.Stdout = f
+	err = runPG(cmd)
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		_ = os.Remove(*out)
+		return err
+	}
+	st, err := os.Stat(*out)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "wrote %s, %.1f MB\n", *out, float64(st.Size())/(1<<20))
+	return nil
+}
+
+// worldRestore loads a backup from worldBackup into an empty database
+// that roles.sql made, in one transaction. A backup from an older
+// release then needs `wactl migrate up`.
+func worldRestore(args []string) error {
+	fs := newFlags("world restore")
+	database := fs.String("database", "", "PostgreSQL URL of the migrator role; prefer the "+migrateEnv+" environment variable")
+	in := fs.String("in", "", "the backup file, or - for standard input")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *in == "" {
+		return errors.New("--in is required: a backup file, or - for standard input")
+	}
+	raw, err := migratorURL(*database)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := commandContext(time.Hour)
+	defer cancel()
+	pool, err := connect(ctx, raw)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	has, err := store.HasSchema(ctx, pool)
+	if err != nil {
+		return err
+	}
+	if has {
+		return errors.New("the database is not empty; restore into a new database made with deploy/postgres/roles.sql")
+	}
+	cmd, err := pgCommand("pg_restore", raw, "--exit-on-error", "--single-transaction", "--no-password")
+	if err != nil {
+		return err
+	}
+	if *in == "-" {
+		cmd.Stdin = os.Stdin
+	} else {
+		f, err := os.Open(*in) // #nosec G304 -- the file the operator named.
+		if err != nil {
+			return err
+		}
+		defer func() { _ = f.Close() }()
+		cmd.Stdin = f
+	}
+	if err := runPG(cmd); err != nil {
+		return err
+	}
+	if err := store.CheckMigrations(ctx, pool); errors.Is(err, store.ErrPending) {
+		fmt.Fprintln(os.Stderr, "restored; the backup is from an older release, so run wactl migrate up")
+		return nil
+	} else if err != nil {
+		return err
+	}
+	fmt.Fprintln(os.Stderr, "restored")
+	return nil
+}
+
+// pgCommand makes a pg_dump or pg_restore command for a database URL.
+// The password moves from the URL to PGPASSWORD, so it never shows in
+// process lists.
+func pgCommand(tool, raw string, args ...string) (*exec.Cmd, error) {
+	path, err := exec.LookPath(tool)
+	if err != nil {
+		return nil, fmt.Errorf("%s is not installed; install the PostgreSQL 18 client tools, or run wactl from the tools image (deploy/README.md)", tool)
+	}
+	dbname, password, err := splitPassword(raw)
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(path, append(args, "--dbname="+dbname)...) // #nosec G204 -- a PostgreSQL tool with fixed flags.
+	cmd.Env = append(os.Environ(), "PGPASSWORD="+password, "PGAPPNAME=wactl")
+	cmd.Stderr = os.Stderr
+	return cmd, nil
+}
+
+// splitPassword takes the password out of a postgres:// URL, from its
+// user part or its password parameter. Other parts, such as sslmode,
+// stay.
+func splitPassword(raw string) (dbname, password string, err error) {
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") || u.User == nil {
+		return "", "", errors.New("the database URL must be a postgres:// URL with a user name")
+	}
+	password, _ = u.User.Password()
+	q := u.Query()
+	if p := q.Get("password"); p != "" {
+		password = p
+		q.Del("password")
+		u.RawQuery = q.Encode()
+	}
+	u.User = url.User(u.User.Username())
+	return u.String(), password, nil
+}
+
+// runPG runs a PostgreSQL tool and names it in errors.
+func runPG(cmd *exec.Cmd) error {
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s: %w", cmd.Args[0], err)
+	}
+	return nil
+}

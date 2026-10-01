@@ -25,6 +25,7 @@ import { EffectCache, EffectView } from '../render/effects';
 import { DamageKind, InventoryRemoveReason } from '../gen/wathena/v1/event_pb';
 import { DisconnectReason } from '../gen/wathena/v1/session_pb';
 import { accountPage, accountURL, fetchTicket } from '../net/account';
+import gameServerURL from '../net/server';
 import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import { Bubbles, ChatLog, ChatRate, chatLine, cleanChat, isTyping } from './chat';
@@ -151,11 +152,12 @@ const sprites = new SpriteCache(store);
 // Sprites to scatter on the map, as asset names without "sprite/".
 // ?server= connects to a game server, such as ws://localhost:8300/ws, with
 // a game ticket from the account service (?account=, by default the game
-// server's /account/), or as ?name= on a --dev server. The server then
-// chooses the map and moves every character, and the demo sprites are
-// off unless asked for.
+// server's /account/), or as ?name= on a --dev server. A production build
+// without ?server= plays on its own origin's /ws (gameServerURL). The
+// server then chooses the map and moves every character, and the demo
+// sprites are off unless asked for.
 const params = new URL(location.href).searchParams;
-const serverURL = params.get('server');
+const serverURL = gameServerURL(params, location.href, import.meta.env.PROD);
 const online = serverURL !== null;
 const DEFAULT_SPRITES = online ? '' : 'mob/1002,mob/1063,mob/1007,mob/1113,mob/1008,npc/4_f_kafra1';
 // Effects to play in a row near the center, such as effect/firewall.

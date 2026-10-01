@@ -1,0 +1,192 @@
+# wAthena all-in-one deployment: waserver, PostgreSQL 18, and Caddy for
+# TLS (strategy section 3.9). deploy/README.md has the steps.
+#
+# Services:
+#   - postgres: the database. Only reachable on the internal db network.
+#   - db-init: runs once per `up`. Makes the database and roles from
+#     ../postgres/roles.sql on the first run, and sets the roles'
+#     passwords from the secrets on every run.
+#   - migrate: runs once per `up`, after db-init. Applies pending
+#     migrations with `wactl migrate up` as the migrator role.
+#   - waserver: the game, the account pages, the assets and the web
+#     client, on one origin. Starts after migrate succeeds.
+#   - caddy: the only public service. Gets certificates for
+#     WATHENA_DOMAIN and proxies everything to waserver.
+#   - wactl: only for `docker compose run`. Makes the world, builds
+#     assets into the assets volume, and makes and restores backups.
+
+name: wathena
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+# wactl with the PostgreSQL client tools, as the migrator role.
+x-tools: &tools
+  image: ${WATHENA_TOOLS_IMAGE:-wathena/wactl:local}
+  build:
+    context: ../..
+    target: tools
+  environment:
+    WATHENA_MIGRATE_DATABASE_URL_FILE: /run/secrets/migrate_database_url
+  secrets: [migrate_database_url]
+  networks: [db]
+  depends_on:
+    db-init:
+      condition: service_completed_successfully
+  restart: "no"
+
+services:
+  postgres:
+    image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks: [db]
+    shm_size: 256mb
+    read_only: true
+    tmpfs: [/var/run/postgresql, /tmp]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 1m
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  db-init:
+    image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+    <<: *hardening
+    user: postgres
+    entrypoint: ["sh", "/deploy/init-db.sh"]
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGDATABASE: postgres
+    secrets: [postgres_password, migrator_password, game_password, account_password]
+    volumes:
+      - ../postgres/roles.sql:/deploy/roles.sql:ro
+      - ./init-db.sh:/deploy/init-db.sh:ro
+    networks: [db]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  migrate:
+    <<: [*tools, *hardening]
+    command: [migrate, up]
+
+  wactl:
+    <<: [*tools, *hardening]
+    profiles: [tools]
+    command: []
+    volumes:
+      - ${WATHENA_ASSETS:-assets}:/srv/assets
+    tmpfs: [/tmp]
+
+  waserver:
+    <<: *hardening
+    image: ${WATHENA_IMAGE:-wathena/waserver:local}
+    build:
+      context: ../..
+      args:
+        VERSION: ${WATHENA_VERSION:-local}
+    restart: unless-stopped
+    command:
+      - all
+      - --config=/etc/wathena/waserver.yml
+      - --public-url=https://${WATHENA_DOMAIN:?set WATHENA_DOMAIN in .env}:${WATHENA_HTTPS_PORT:-443}
+      - --trusted-proxies=${WATHENA_PROXY_IP:-172.30.80.10}
+    environment:
+      WATHENA_DATABASE_URL_FILE: /run/secrets/game_database_url
+      WATHENA_ACCOUNT_DATABASE_URL_FILE: /run/secrets/account_database_url
+      WATHENA_ACCOUNT_SECRET_KEY_FILE: /run/secrets/account_secret_key
+    secrets: [game_database_url, account_database_url, account_secret_key]
+    volumes:
+      - ${WATHENA_ASSETS:-assets}:/srv/assets:ro
+      - ${WATHENA_CONFIG:-./waserver.yml}:/etc/wathena/waserver.yml:ro
+    networks: [edge, db]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # SIGTERM saves every player. Give the saves time.
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/waserver", "health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 2m
+      retries: 3
+
+  caddy:
+    image: caddy:2@sha256:0c994536bddb66445885237f1a5dcc1916bccea922661c76b4e9fc24061f9b52
+    <<: *hardening
+    cap_add: [NET_BIND_SERVICE]
+    restart: unless-stopped
+    environment:
+      WATHENA_DOMAIN: ${WATHENA_DOMAIN}
+    ports:
+      - ${WATHENA_HTTP_PORT:-80}:80
+      - ${WATHENA_HTTPS_PORT:-443}:443
+      - ${WATHENA_HTTPS_PORT:-443}:443/udp
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    tmpfs: [/tmp]
+    networks:
+      edge:
+        ipv4_address: ${WATHENA_PROXY_IP:-172.30.80.10}
+    depends_on:
+      waserver:
+        condition: service_healthy
+    healthcheck:
+      # The Caddyfile answers on this port inside the container only.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  # Caddy and waserver. waserver believes X-Forwarded-For only from
+  # Caddy's fixed address.
+  edge:
+    ipam:
+      config:
+        - subnet: ${WATHENA_EDGE_SUBNET:-172.30.80.0/24}
+  # The database network has no route out.
+  db:
+    internal: true
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+  # The asset build, unless WATHENA_ASSETS names a folder instead.
+  assets:
+
+# ./secrets.sh makes these files. Each service only gets the ones it needs.
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password
+  migrator_password:
+    file: ./secrets/migrator_password
+  game_password:
+    file: ./secrets/game_password
+  account_password:
+    file: ./secrets/account_password
+  migrate_database_url:
+    file: ./secrets/migrate_database_url
+  game_database_url:
+    file: ./secrets/game_database_url
+  account_database_url:
+    file: ./secrets/account_database_url
+  account_secret_key:
+    file: ./secrets/account_secret_key

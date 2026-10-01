@@ -170,6 +170,7 @@ type online struct {
 const (
 	elsewhereText = "Your character logged in somewhere else."
 	loggedOutText = "You logged out. Log in again to play."
+	shutdownText  = "The server is restarting. Try again in a minute."
 )
 
 func (o *online) end(reason wathenav1.DisconnectReason, text string) {
@@ -475,6 +476,22 @@ var errBadMessage = errors.New("bad message")
 type conn struct {
 	*websocket.Conn
 	stats *metrics.Conn
+}
+
+// Shutdown ends every session with DISCONNECT_REASON_SERVER_SHUTDOWN,
+// so players see why the game stopped. Each session then leaves its
+// zone, which saves its character. waserver calls it on SIGTERM, before
+// it stops the zones.
+func (g *Gateway) Shutdown() {
+	g.mu.Lock()
+	all := make([]*online, 0, len(g.online))
+	for _, o := range g.online {
+		all = append(all, o)
+	}
+	g.mu.Unlock()
+	for _, o := range all {
+		o.end(wathenav1.DisconnectReason_DISCONNECT_REASON_SERVER_SHUTDOWN, shutdownText)
+	}
 }
 
 // claim makes a session the character's live one. It kicks the session

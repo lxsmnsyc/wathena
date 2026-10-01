@@ -1,0 +1,26 @@
+# waserver settings for the Compose stack (`waserver all --config`).
+# Flags in docker-compose.yml set public_url and trusted_proxies from
+# .env. Secrets never go here: they come from Docker secrets.
+#
+# Every key, with its flag, is in server/README.md, "All-in-one".
+
+listen: 0.0.0.0:8300
+assets: /srv/assets
+
+# Where new characters start, and the maps to run: a list, or all for
+# every map in the asset build. The start map must be one of them.
+start_map: prontera
+maps: all
+
+# The rAthena mode whose monsters, drops and tables to use: renewal or
+# pre-renewal.
+mode: renewal
+
+# A captcha after repeated failed logins. Only none is ready for
+# production: a real provider is not built yet.
+captcha: none
+
+# More web client origins that may use this server, such as a community
+# client on another host. The public URL's origin is always trusted.
+# origins:
+#   - https://client.example.com

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -83,8 +84,27 @@ func Root() (string, error) {
 	}
 }
 
+// source, when set, replaces the folder on disk. UseFS sets it.
+var source fs.FS
+
+// UseFS makes LoadFile read from fsys instead of the reference folder on
+// disk. Paths in fsys are relative to reference/rathena. waserver uses
+// the files embedded in it, so it runs outside the repository. Call it
+// before any load.
+func UseFS(fsys fs.FS) { source = fsys }
+
 // LoadFile decodes the JSON file at a path relative to Root into v.
 func LoadFile(rel string, v any) error {
+	if source != nil {
+		data, err := fs.ReadFile(source, rel)
+		if err != nil {
+			return fmt.Errorf("reference: %w", err)
+		}
+		if err := json.Unmarshal(data, v); err != nil {
+			return fmt.Errorf("reference: %s: %w", rel, err)
+		}
+		return nil
+	}
 	root, err := Root()
 	if err != nil {
 		return err

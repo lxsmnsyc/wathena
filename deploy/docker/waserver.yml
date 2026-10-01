@@ -1,0 +1,5 @@
+# Default settings of the container image. Mount your own file over
+# /etc/wathena/waserver.yml, or give flags after `all`, which win over
+# this file. Secrets never go here: see deploy/README.md.
+listen: 0.0.0.0:8300
+assets: /srv/assets

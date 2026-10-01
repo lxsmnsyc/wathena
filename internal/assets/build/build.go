@@ -110,7 +110,9 @@ func Run(opts Options) (*Report, error) {
 	if opts.Out == "" {
 		return nil, errors.New("build: no output folder")
 	}
-	if err := os.MkdirAll(opts.Out, 0o750); err != nil {
+	// Assets are public files, and the server may run as another user,
+	// such as the container image's.
+	if err := os.MkdirAll(opts.Out, 0o755); err != nil { // #nosec G301 -- assets are public files.
 		return nil, err
 	}
 	root, err := os.OpenRoot(opts.Out)
@@ -287,7 +289,7 @@ func objectPath(h, ext string) string {
 // writeFile writes a file through a temporary name, so a reader never sees
 // a partial file.
 func writeFile(root *os.Root, p string, data []byte) error {
-	if err := root.MkdirAll(filepath.Dir(p), 0o750); err != nil {
+	if err := root.MkdirAll(filepath.Dir(p), 0o755); err != nil { // #nosec G301 -- assets are public files.
 		return err
 	}
 	var suffix [8]byte

@@ -15,6 +15,7 @@ type Account struct {
 	Name      string
 	CreatedAt pgtype.Timestamptz
 	Dev       bool
+	Staff     bool
 }
 
 type AccountPasskey struct {
@@ -147,4 +148,13 @@ type Inventory struct {
 	Slot        int
 	ItemID      int
 	Amount      int
+}
+
+type World struct {
+	ID               int
+	Name             string
+	Ruleset          string
+	Seed             []byte
+	GeneratorVersion int
+	CreatedAt        pgtype.Timestamptz
 }

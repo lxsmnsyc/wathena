@@ -1,6 +1,6 @@
 # wactl
 
-Command-line tool for worlds, mods, maps, and assets. See docs/strategy.md, sections 6.9 and 10.1.
+Command-line tool for worlds, mods, maps, and assets. See docs/strategy.md, sections 3.9, 6.9 and 10.1.
 
 ## Commands
 
@@ -31,3 +31,20 @@ Lists what a game client folder contains, grouped by asset type. The folder need
 `wactl assets sprites --client <folder> [--preview <folder> --names <names>] [--brotli <0-11>] [--every <n>]`
 
 Converts every monster and NPC sprite into WSPR and reports sizes and failures. With `--preview`, it writes a PNG of the first idle frame of each listed sprite. This checks the sprite importer. The full build comes later.
+
+`wactl migrate status`, `wactl migrate up`
+
+Lists the database migrations, or applies the pending ones. They need the migrator role's URL in `WATHENA_MIGRATE_DATABASE_URL`, or in a file that `WATHENA_MIGRATE_DATABASE_URL_FILE` names, such as a Docker secret. `--database` also takes it, but shows the password in process lists. See server/README.md, "Running with PostgreSQL".
+
+`wactl world new --admin <name> --admin-password-file <file or -> [--name <world name>] [--ruleset renewal|pre-renewal]`
+
+Makes a world in a database that `deploy/postgres/roles.sql` prepared. It applies pending migrations, then makes the world's row and the first staff account in one transaction:
+
+- The world row has the name, the ruleset, and a secret 32-byte root seed from `crypto/rand` (docs/specs/rng-v1.md). `waserver` refuses to start without it, and when its `--mode` is not the ruleset.
+- The staff account has the given name and password, with the account service's rules. The password is the first line of the file, or of standard input for `-`. Staff accounts have no staff tools yet.
+
+It refuses a database that already has a world. It needs the migrator role, as `wactl migrate` does.
+
+`wactl world backup --out <file or ->`, `wactl world restore --in <file or ->`
+
+Write the whole database with `pg_dump` in its custom format, or load such a backup with `pg_restore` in one transaction. They run as the migrator role, and pass its password to the PostgreSQL tools in `PGPASSWORD`, not on the command line. A backup file is made readable by its owner only. Restore refuses a database that has any migration applied, so it only loads into a new database made with `roles.sql`. They need `pg_dump` and `pg_restore` 18, which the `wathena/wactl` image has (deploy/README.md, "Backups").

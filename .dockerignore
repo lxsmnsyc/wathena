@@ -1,0 +1,13 @@
+# Only what the image build needs is sent to Docker.
+.git
+.github
+**/node_modules
+client/dist
+**/.vite
+docs
+deploy/compose/secrets
+deploy/compose/smoke.*
+deploy/compose/.env
+**/*.log
+**/.DS_Store
+.env

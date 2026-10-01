@@ -1,5 +1,5 @@
 -- Makes the wAthena database and its three roles. Run it once as a
--- PostgreSQL superuser, before the first `wactl migrate up`:
+-- PostgreSQL superuser, before `wactl world new` or `wactl migrate up`:
 --
 --   psql -U postgres -f deploy/postgres/roles.sql
 --

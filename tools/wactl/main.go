@@ -19,6 +19,9 @@ commands:
   assets sprites   convert monster and NPC sprites and report sizes
   migrate status   list the database migrations and which are applied
   migrate up       apply pending database migrations
+  world new        apply migrations, make the world and its first staff account
+  world backup     write the database to a file with pg_dump
+  world restore    load a backup into an empty database with pg_restore
 `
 
 func main() {
@@ -46,6 +49,12 @@ func main() {
 		err = migrate(os.Args[3:], false)
 	case "migrate up":
 		err = migrate(os.Args[3:], true)
+	case "world new":
+		err = worldNew(os.Args[3:])
+	case "world backup":
+		err = worldBackup(os.Args[3:])
+	case "world restore":
+		err = worldRestore(os.Args[3:])
 	default:
 		fmt.Fprint(os.Stderr, usage)
 		os.Exit(2)

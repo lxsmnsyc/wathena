@@ -109,3 +109,10 @@ func CheckMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 	return nil
 }
+
+// HasSchema reports whether any migration ran on the database, which
+// makes goose's table. `wactl world restore` only restores into a
+// database without it.
+func HasSchema(ctx context.Context, pool *pgxpool.Pool) (bool, error) {
+	return db.New(pool).HasMigrationTable(ctx)
+}

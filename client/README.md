@@ -34,6 +34,8 @@ Open `http://localhost:5173/?map=prontera`. Monsters, an NPC, and player charact
 - The client and the account service must be on the same site, such as both on `localhost`. The browser only sends the login cookie with the ticket request then.
 - `name=Tester` instead plays the character of that name on a `waserver --dev` server.
 
+A production build (`pnpm build`) that `waserver all` serves plays on `/ws` of its own origin without `server=`, so players open the server's URL alone. `viewer` opens the map viewer instead. `waserver` embeds `dist/` when built with the `webclient` tag (server/README.md, "All-in-one").
+
 The server places every character and item:
 
 - Click a unit to attack it, and click the ground to walk. From 90% weight, the client says the player is carrying too much instead of attacking.

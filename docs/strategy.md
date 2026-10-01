@@ -2189,10 +2189,10 @@ Phases run in order, because one developer does them (section 14). Each phase en
 
 Status on 2026-10-01:
 
-- Phases 0a, 0b, and 1 are done.
-- Phase 2 is partly done:
-  - Done: the gateway, one zone per map, several zones in one process, walking, warps and map changes, local chat, per-zone secret random streams, the database, saving, the account service with two-factor login and passkeys, the headless bot client, and the 500-bot load test.
-  - Not started: all-in-one mode.
+- Phases 0a, 0b, 1, and 2 are done.
+- Phase 2 left two items for later phases, which no exit criterion needs:
+  - The ruleset loader moves to phase 3, since ruleset mods load through the mod loader. Until then, `waserver --mode` picks the rAthena mode, and the world records its ruleset.
+  - The distributed mode, and tests that run the service interfaces both in one process and over the network (section 3.9), wait for a world that needs more than one machine.
 - Some phase 4 work was done early:
   - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen.
   - All of it is ported from rAthena and checked against the phase 0a reference data.
@@ -2231,7 +2231,19 @@ The order from here:
    - 500 bots walk and chat in Prontera with tick work at 1.3 ms p50 and 3.4 ms p99, and p99 stays within 10 ms in a crowd, across 8 maps, in a fight, and with PostgreSQL. Before the fixes to the zone, the same test ran at 10.5 ms p50, and a crowd or a fight overloaded the zone. This meets the phase 2 exit criterion on one `waserver` process. The Docker Compose packaging is step 5.
    - CI's `loadtest` job runs 50 bots for 20 seconds on every pull request.
    - Left: rare ticks over the 25 ms maximum (section 3.8), nightly runs at 7,500 bots on Linux machines, and bots that trade and talk to NPCs.
-5. All-in-one mode and the Docker Compose file. This ends phase 2.
+5. All-in-one mode and the Docker Compose file. Done on 2026-10-01, which ends phase 2 (deploy/README.md, and server/README.md, "All-in-one"):
+   - `waserver all` runs the gateway, the account service, the world with its zones, the asset build, and the web client on one origin. It reads a YAML config file and flags, and checks every setting before it starts. Secrets come only from environment variables or files (`NAME_FILE`), never from flags or the config file.
+   - The web client build and the reference data are embedded in the binary. The reference data adds 24 MB of the binary's 46 MB, and about 2 MB to the compressed image. The client adds 0.9 MB.
+   - The Dockerfile builds a distroless `waserver` image (12 MB compressed) and a `wactl` image on `postgres:18` for `pg_dump`. Both run as user 65532 with a read-only root filesystem. Base images are pinned by digest.
+   - `deploy/compose` runs PostgreSQL 18, a one-shot database setup with the three roles, a one-shot `wactl migrate up` as the migrator, `waserver`, and Caddy, which gets certificates by itself or uses its local authority for `localhost`. Every service has a health check. Only Caddy publishes ports, and the database network is internal.
+   - Secrets are Docker secrets from files that `secrets.sh` makes. Each service gets only its own.
+   - Game assets go into a Docker volume with `wactl assets build` run through the `wactl` image, or come from a folder the operator names.
+   - `wactl world new` applies the migrations, and makes the world row with its secret seed and the first staff account in one transaction. `waserver` refuses to start without a world, or with a mode that is not the world's ruleset. Only the migrator can make staff accounts.
+   - `wactl world backup` and `restore` wrap `pg_dump` and `pg_restore`. Restore only loads into an empty database, in one transaction.
+   - On SIGTERM, `waserver` stops being ready, ends each game connection with `DISCONNECT_REASON_SERVER_SHUTDOWN`, saves every character, and stops its zones.
+   - Checked on an Apple M2 with Docker Desktop, from new volumes and secrets: the images built, migrations ran, `waserver` started all 988 maps of the kRO build (an existing build copied into the volume) in 3.3 seconds and became healthy, and Chrome loaded the client through Caddy over HTTPS with Caddy's local authority. Two players signed up, turned on TOTP, made characters, and played. One spent status points, and its chat line came back from the server. Their progress was the same after a restart, after a stop while a player was in the game, and after a backup restored into a new database.
+   - CI's `compose` job builds both images and runs `.github/scripts/compose-smoke.sh`: the stack with the placeholder pack, HTTPS through Caddy, and a backup and restore.
+   - Left: a countdown announced to players before a restart, which needs a world chat channel, and staff tools for staff accounts.
 6. Phase 3. The Lua runtime and mod loader. Skills, item scripts, and NPCs need it.
 7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.
 
@@ -2335,6 +2347,16 @@ Exit criteria:
 - The client meets the frame rate budget in section 3.8 on the test map.
 
 ### Phase 2: Server core skeleton
+
+Status: done on 2026-10-01. Every exit criterion is met:
+
+- Players sign up, log in, walk, change maps, and chat in the web client. Steps 2 and 3 checked this in Chrome, and step 5 checked it again through the Compose stack, except map changes.
+- Paths match rAthena for every one of over 9,000 recorded queries in both modes (`TestReference` in `shared/path`). Walk timing uses rAthena's step costs of 10 and 14 (`TestTime`). The recorded reference has paths and costs, not walk times.
+- The seed tree matches the rng-v1 test vectors in Go, TinyGo, and TinyGo as WebAssembly (CI's `tinygo` job).
+- Passwords are Argon2id hashes, TOTP secrets are encrypted, and tokens are stored as hashes. Each service has its own database role and password. The Compose stack keeps every secret in a Docker secret file.
+- 500 bots walk and chat on one `waserver` process within the tick budget (section 3.8, "Load test results"). That process is the all-in-one mode. The load test ran on the binary, not inside the container.
+
+Two items of the list below moved: the ruleset loader to phase 3, and the distributed mode with its tests to later (see "Current status and order").
 
 - Account service with signup, login, session tokens, and rate limits (section 7.3).
 - TOTP and passkey setup in account settings.
