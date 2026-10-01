@@ -8,6 +8,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/tools/convert"
 )
 
@@ -48,9 +49,35 @@ func TestLoadSampleMod(t *testing.T) {
 	if m.zone.Groups == nil || m.zone.Constants == nil || m.zone.MonsterIDs["PORING"] != 1002 {
 		t.Error("zone mods lack the groups, constants or monsters")
 	}
-	npcs := m.npcs["map/prt_fild08"]
-	if len(npcs) != 1 || npcs[0].DisplayName != "Greeter" || npcs[0].Sprite == 0 {
-		t.Errorf("npcs %+v", npcs)
+	// Core's converted NPCs and the mod's NPC share the map.
+	var greeter *zone.NPC
+	for i, n := range m.npcs["map/prt_fild08"] {
+		if n.Name == "example.greeter:Greeter#prt_fild08" {
+			greeter = &m.npcs["map/prt_fild08"][i]
+		}
+	}
+	if greeter == nil || greeter.DisplayName != "Greeter" || greeter.Sprite == 0 || greeter.Script != "example.greeter:scripts/npc/greeter.lua" {
+		t.Errorf("greeter %+v", greeter)
+	}
+	// A converted Kafra with her script, and a converted shop. The
+	// cookie stand sells Red Potions at their buy price, 10 in renewal.
+	var kafra, shop *zone.NPC
+	for i, n := range m.npcs["map/prontera"] {
+		switch n.Name {
+		case "core:kaf_prontera":
+			kafra = &m.npcs["map/prontera"][i]
+		case "core:Fruit Gardener#prt":
+			shop = &m.npcs["map/prontera"][i]
+		}
+	}
+	if kafra == nil || kafra.Script != "core:scripts/npcs/kaf_prontera.lua" || kafra.DisplayName != "Kafra Employee" {
+		t.Errorf("kafra %+v", kafra)
+	}
+	if shop == nil || shop.Shop == nil || len(shop.Shop.Items) != 2 || shop.Shop.Items[0].Price != 15 || !shop.Shop.Discount {
+		t.Errorf("fruit shop %+v", shop)
+	}
+	if s := m.zone.Shops["example.greeter:Cookie Stand"]; s == nil || len(s.Items) != 2 || s.Items[1].Price != 10 {
+		t.Errorf("cookie stand %+v", s)
 	}
 	if len(m.zone.Scripts) != 2 || m.zone.ItemIDs["Red_Potion"] != 501 {
 		t.Errorf("zone mods %+v", m.zone)

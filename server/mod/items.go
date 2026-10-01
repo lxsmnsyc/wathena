@@ -138,6 +138,12 @@ func checkItem(d *item.Def) error {
 	if d.Weight < 0 || d.StackLimit < 0 || d.DelayMs < 0 || d.MinLevel < 0 || d.MaxLevel < 0 {
 		errs = append(errs, "weight, stack_limit, delay_ms, min_level and max_level cannot be negative")
 	}
+	if d.Buy < 0 || d.Sell < 0 || d.Buy > item.MaxZeny || d.Sell > item.MaxZeny {
+		errs = append(errs, fmt.Sprintf("buy and sell are 0 to %d zeny", item.MaxZeny))
+	}
+	if len(d.Name) > 255 {
+		errs = append(errs, "name is at most 255 bytes")
+	}
 	if d.StackLimit > item.MaxAmount {
 		errs = append(errs, fmt.Sprintf("stack_limit is above %d", item.MaxAmount))
 	}

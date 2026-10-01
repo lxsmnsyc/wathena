@@ -142,6 +142,9 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 
 // room checks that a context can own one more registration.
 func (r *Runtime) room(ctx *Context) error {
+	if ctx.retiring {
+		return errors.New("the NPC's script was reloaded: a conversation of the old version cannot add handlers or timers")
+	}
 	if n := len(ctx.handlers) + len(ctx.timers); n >= MaxRegistrations {
 		return fmt.Errorf("the context has %d handlers and timers, the most it may have", n)
 	}

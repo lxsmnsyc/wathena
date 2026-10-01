@@ -344,6 +344,113 @@ func (x DamageKind) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+type ImagePosition int32
+
+const (
+	ImagePosition_IMAGE_POSITION_UNSPECIFIED ImagePosition = 0
+	ImagePosition_IMAGE_POSITION_LEFT        ImagePosition = 1
+	ImagePosition_IMAGE_POSITION_CENTER      ImagePosition = 2
+	ImagePosition_IMAGE_POSITION_RIGHT       ImagePosition = 3
+)
+
+// Enum value maps for ImagePosition.
+var (
+	ImagePosition_name = map[int32]string{
+		0: "IMAGE_POSITION_UNSPECIFIED",
+		1: "IMAGE_POSITION_LEFT",
+		2: "IMAGE_POSITION_CENTER",
+		3: "IMAGE_POSITION_RIGHT",
+	}
+	ImagePosition_value = map[string]int32{
+		"IMAGE_POSITION_UNSPECIFIED": 0,
+		"IMAGE_POSITION_LEFT":        1,
+		"IMAGE_POSITION_CENTER":      2,
+		"IMAGE_POSITION_RIGHT":       3,
+	}
+)
+
+func (x ImagePosition) Enum() *ImagePosition {
+	p := new(ImagePosition)
+	*p = x
+	return p
+}
+
+func (x ImagePosition) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ImagePosition) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[4].Descriptor()
+}
+
+func (ImagePosition) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[4]
+}
+
+func (x ImagePosition) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type ShopOutcome int32
+
+const (
+	ShopOutcome_SHOP_OUTCOME_UNSPECIFIED ShopOutcome = 0
+	ShopOutcome_SHOP_OUTCOME_BOUGHT      ShopOutcome = 1
+	ShopOutcome_SHOP_OUTCOME_SOLD        ShopOutcome = 2
+	// The player has too little zeny for the purchase.
+	ShopOutcome_SHOP_OUTCOME_NOT_ENOUGH_ZENY ShopOutcome = 3
+	// The items would pass the player's maximum weight, or a stack would
+	// pass its limit.
+	ShopOutcome_SHOP_OUTCOME_OVERWEIGHT ShopOutcome = 4
+	// The inventory has too few free slots, or the list was not valid.
+	ShopOutcome_SHOP_OUTCOME_FAILED ShopOutcome = 5
+	ShopOutcome_SHOP_OUTCOME_CLOSED ShopOutcome = 6
+)
+
+// Enum value maps for ShopOutcome.
+var (
+	ShopOutcome_name = map[int32]string{
+		0: "SHOP_OUTCOME_UNSPECIFIED",
+		1: "SHOP_OUTCOME_BOUGHT",
+		2: "SHOP_OUTCOME_SOLD",
+		3: "SHOP_OUTCOME_NOT_ENOUGH_ZENY",
+		4: "SHOP_OUTCOME_OVERWEIGHT",
+		5: "SHOP_OUTCOME_FAILED",
+		6: "SHOP_OUTCOME_CLOSED",
+	}
+	ShopOutcome_value = map[string]int32{
+		"SHOP_OUTCOME_UNSPECIFIED":     0,
+		"SHOP_OUTCOME_BOUGHT":          1,
+		"SHOP_OUTCOME_SOLD":            2,
+		"SHOP_OUTCOME_NOT_ENOUGH_ZENY": 3,
+		"SHOP_OUTCOME_OVERWEIGHT":      4,
+		"SHOP_OUTCOME_FAILED":          5,
+		"SHOP_OUTCOME_CLOSED":          6,
+	}
+)
+
+func (x ShopOutcome) Enum() *ShopOutcome {
+	p := new(ShopOutcome)
+	*p = x
+	return p
+}
+
+func (x ShopOutcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ShopOutcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[5].Descriptor()
+}
+
+func (ShopOutcome) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[5]
+}
+
+func (x ShopOutcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type InventoryRemoveReason int32
 
 const (
@@ -352,6 +459,10 @@ const (
 	InventoryRemoveReason_INVENTORY_REMOVE_REASON_USED InventoryRemoveReason = 1
 	// The player dropped the item on the ground.
 	InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED InventoryRemoveReason = 2
+	// A script took the item, as rAthena's delitem.
+	InventoryRemoveReason_INVENTORY_REMOVE_REASON_TAKEN InventoryRemoveReason = 3
+	// The player sold the item to a shop.
+	InventoryRemoveReason_INVENTORY_REMOVE_REASON_SOLD InventoryRemoveReason = 4
 )
 
 // Enum value maps for InventoryRemoveReason.
@@ -360,11 +471,15 @@ var (
 		0: "INVENTORY_REMOVE_REASON_UNSPECIFIED",
 		1: "INVENTORY_REMOVE_REASON_USED",
 		2: "INVENTORY_REMOVE_REASON_DROPPED",
+		3: "INVENTORY_REMOVE_REASON_TAKEN",
+		4: "INVENTORY_REMOVE_REASON_SOLD",
 	}
 	InventoryRemoveReason_value = map[string]int32{
 		"INVENTORY_REMOVE_REASON_UNSPECIFIED": 0,
 		"INVENTORY_REMOVE_REASON_USED":        1,
 		"INVENTORY_REMOVE_REASON_DROPPED":     2,
+		"INVENTORY_REMOVE_REASON_TAKEN":       3,
+		"INVENTORY_REMOVE_REASON_SOLD":        4,
 	}
 )
 
@@ -379,11 +494,11 @@ func (x InventoryRemoveReason) String() string {
 }
 
 func (InventoryRemoveReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[4].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[6].Descriptor()
 }
 
 func (InventoryRemoveReason) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[4]
+	return &file_wathena_v1_event_proto_enumTypes[6]
 }
 
 func (x InventoryRemoveReason) Number() protoreflect.EnumNumber {
@@ -450,11 +565,11 @@ func (x UseItemFailure) String() string {
 }
 
 func (UseItemFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[5].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[7].Descriptor()
 }
 
 func (UseItemFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[5]
+	return &file_wathena_v1_event_proto_enumTypes[7]
 }
 
 func (x UseItemFailure) Number() protoreflect.EnumNumber {
@@ -500,11 +615,11 @@ func (x DropItemFailure) String() string {
 }
 
 func (DropItemFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[6].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[8].Descriptor()
 }
 
 func (DropItemFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[6]
+	return &file_wathena_v1_event_proto_enumTypes[8]
 }
 
 func (x DropItemFailure) Number() protoreflect.EnumNumber {
@@ -558,11 +673,11 @@ func (x PickUpFailure) String() string {
 }
 
 func (PickUpFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[7].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[9].Descriptor()
 }
 
 func (PickUpFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[7]
+	return &file_wathena_v1_event_proto_enumTypes[9]
 }
 
 func (x PickUpFailure) Number() protoreflect.EnumNumber {
@@ -774,6 +889,60 @@ func (x *Event) GetMapChange() *MapChange {
 	return nil
 }
 
+func (x *Event) GetNpcImage() *NpcImage {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_NpcImage); ok {
+			return x.NpcImage
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetNpcProgress() *NpcProgress {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_NpcProgress); ok {
+			return x.NpcProgress
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetEmotion() *Emotion {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_Emotion); ok {
+			return x.Emotion
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetMinimapMark() *MinimapMark {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_MinimapMark); ok {
+			return x.MinimapMark
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetShopOpen() *ShopOpen {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ShopOpen); ok {
+			return x.ShopOpen
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetShopResult() *ShopResult {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ShopResult); ok {
+			return x.ShopResult
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -924,6 +1093,54 @@ func (x *Event) SetMapChange(v *MapChange) {
 		return
 	}
 	x.xxx_hidden_Body = &event_MapChange{v}
+}
+
+func (x *Event) SetNpcImage(v *NpcImage) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_NpcImage{v}
+}
+
+func (x *Event) SetNpcProgress(v *NpcProgress) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_NpcProgress{v}
+}
+
+func (x *Event) SetEmotion(v *Emotion) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_Emotion{v}
+}
+
+func (x *Event) SetMinimapMark(v *MinimapMark) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_MinimapMark{v}
+}
+
+func (x *Event) SetShopOpen(v *ShopOpen) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ShopOpen{v}
+}
+
+func (x *Event) SetShopResult(v *ShopResult) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ShopResult{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -1085,6 +1302,54 @@ func (x *Event) HasMapChange() bool {
 	return ok
 }
 
+func (x *Event) HasNpcImage() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_NpcImage)
+	return ok
+}
+
+func (x *Event) HasNpcProgress() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_NpcProgress)
+	return ok
+}
+
+func (x *Event) HasEmotion() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_Emotion)
+	return ok
+}
+
+func (x *Event) HasMinimapMark() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_MinimapMark)
+	return ok
+}
+
+func (x *Event) HasShopOpen() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ShopOpen)
+	return ok
+}
+
+func (x *Event) HasShopResult() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ShopResult)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -1203,6 +1468,42 @@ func (x *Event) ClearMapChange() {
 	}
 }
 
+func (x *Event) ClearNpcImage() {
+	if _, ok := x.xxx_hidden_Body.(*event_NpcImage); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearNpcProgress() {
+	if _, ok := x.xxx_hidden_Body.(*event_NpcProgress); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearEmotion() {
+	if _, ok := x.xxx_hidden_Body.(*event_Emotion); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearMinimapMark() {
+	if _, ok := x.xxx_hidden_Body.(*event_MinimapMark); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearShopOpen() {
+	if _, ok := x.xxx_hidden_Body.(*event_ShopOpen); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearShopResult() {
+	if _, ok := x.xxx_hidden_Body.(*event_ShopResult); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -1223,6 +1524,12 @@ const Event_ItemUsed_case case_Event_Body = 16
 const Event_UseItemFailed_case case_Event_Body = 17
 const Event_DropItemFailed_case case_Event_Body = 18
 const Event_MapChange_case case_Event_Body = 19
+const Event_NpcImage_case case_Event_Body = 20
+const Event_NpcProgress_case case_Event_Body = 21
+const Event_Emotion_case case_Event_Body = 22
+const Event_MinimapMark_case case_Event_Body = 23
+const Event_ShopOpen_case case_Event_Body = 24
+const Event_ShopResult_case case_Event_Body = 25
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -1267,6 +1574,18 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_DropItemFailed_case
 	case *event_MapChange:
 		return Event_MapChange_case
+	case *event_NpcImage:
+		return Event_NpcImage_case
+	case *event_NpcProgress:
+		return Event_NpcProgress_case
+	case *event_Emotion:
+		return Event_Emotion_case
+	case *event_MinimapMark:
+		return Event_MinimapMark_case
+	case *event_ShopOpen:
+		return Event_ShopOpen_case
+	case *event_ShopResult:
+		return Event_ShopResult_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -1295,6 +1614,12 @@ type Event_builder struct {
 	UseItemFailed   *UseItemFailed
 	DropItemFailed  *DropItemFailed
 	MapChange       *MapChange
+	NpcImage        *NpcImage
+	NpcProgress     *NpcProgress
+	Emotion         *Emotion
+	MinimapMark     *MinimapMark
+	ShopOpen        *ShopOpen
+	ShopResult      *ShopResult
 	// -- end of xxx_hidden_Body
 }
 
@@ -1358,6 +1683,24 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.MapChange != nil {
 		x.xxx_hidden_Body = &event_MapChange{b.MapChange}
+	}
+	if b.NpcImage != nil {
+		x.xxx_hidden_Body = &event_NpcImage{b.NpcImage}
+	}
+	if b.NpcProgress != nil {
+		x.xxx_hidden_Body = &event_NpcProgress{b.NpcProgress}
+	}
+	if b.Emotion != nil {
+		x.xxx_hidden_Body = &event_Emotion{b.Emotion}
+	}
+	if b.MinimapMark != nil {
+		x.xxx_hidden_Body = &event_MinimapMark{b.MinimapMark}
+	}
+	if b.ShopOpen != nil {
+		x.xxx_hidden_Body = &event_ShopOpen{b.ShopOpen}
+	}
+	if b.ShopResult != nil {
+		x.xxx_hidden_Body = &event_ShopResult{b.ShopResult}
 	}
 	return m0
 }
@@ -1452,6 +1795,30 @@ type event_MapChange struct {
 	MapChange *MapChange `protobuf:"bytes,19,opt,name=map_change,json=mapChange,proto3,oneof"`
 }
 
+type event_NpcImage struct {
+	NpcImage *NpcImage `protobuf:"bytes,20,opt,name=npc_image,json=npcImage,proto3,oneof"`
+}
+
+type event_NpcProgress struct {
+	NpcProgress *NpcProgress `protobuf:"bytes,21,opt,name=npc_progress,json=npcProgress,proto3,oneof"`
+}
+
+type event_Emotion struct {
+	Emotion *Emotion `protobuf:"bytes,22,opt,name=emotion,proto3,oneof"`
+}
+
+type event_MinimapMark struct {
+	MinimapMark *MinimapMark `protobuf:"bytes,23,opt,name=minimap_mark,json=minimapMark,proto3,oneof"`
+}
+
+type event_ShopOpen struct {
+	ShopOpen *ShopOpen `protobuf:"bytes,24,opt,name=shop_open,json=shopOpen,proto3,oneof"`
+}
+
+type event_ShopResult struct {
+	ShopResult *ShopResult `protobuf:"bytes,25,opt,name=shop_result,json=shopResult,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -1489,6 +1856,18 @@ func (*event_UseItemFailed) isEvent_Body() {}
 func (*event_DropItemFailed) isEvent_Body() {}
 
 func (*event_MapChange) isEvent_Body() {}
+
+func (*event_NpcImage) isEvent_Body() {}
+
+func (*event_NpcProgress) isEvent_Body() {}
+
+func (*event_Emotion) isEvent_Body() {}
+
+func (*event_MinimapMark) isEvent_Body() {}
+
+func (*event_ShopOpen) isEvent_Body() {}
+
+func (*event_ShopResult) isEvent_Body() {}
 
 // MapChange moves the player to another map, after a warp. It is the
 // first event of the first frame from the new map. The client clears
@@ -2939,6 +3318,7 @@ type ChatMessage struct {
 	xxx_hidden_From     uint32                 `protobuf:"varint,2,opt,name=from,proto3"`
 	xxx_hidden_FromName string                 `protobuf:"bytes,3,opt,name=from_name,json=fromName,proto3"`
 	xxx_hidden_Text     string                 `protobuf:"bytes,4,opt,name=text,proto3"`
+	xxx_hidden_Color    uint32                 `protobuf:"varint,5,opt,name=color,proto3"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -2996,6 +3376,13 @@ func (x *ChatMessage) GetText() string {
 	return ""
 }
 
+func (x *ChatMessage) GetColor() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Color
+	}
+	return 0
+}
+
 func (x *ChatMessage) SetChannel(v ChatChannel) {
 	x.xxx_hidden_Channel = v
 }
@@ -3012,14 +3399,22 @@ func (x *ChatMessage) SetText(v string) {
 	x.xxx_hidden_Text = v
 }
 
+func (x *ChatMessage) SetColor(v uint32) {
+	x.xxx_hidden_Color = v
+}
+
 type ChatMessage_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Channel ChatChannel
-	// from is the speaker's entity ID for local chat, 0 otherwise.
+	// from is the speaker's entity ID for local chat, 0 otherwise. An NPC
+	// that speaks aloud, as rAthena's npctalk, is a speaker too.
 	From     uint32
 	FromName string
 	Text     string
+	// color is the text's color as 0xRRGGBB for an announcement, or 0 for
+	// the channel's own color.
+	Color uint32
 }
 
 func (b0 ChatMessage_builder) Build() *ChatMessage {
@@ -3030,18 +3425,30 @@ func (b0 ChatMessage_builder) Build() *ChatMessage {
 	x.xxx_hidden_From = b.From
 	x.xxx_hidden_FromName = b.FromName
 	x.xxx_hidden_Text = b.Text
+	x.xxx_hidden_Color = b.Color
 	return m0
 }
 
 // NpcDialog is one step of an NPC dialog. Text is in the player's language.
+//
+// The client keeps one dialog window per player. Lines add to the
+// window, which opens when it is closed. A step without a prompt only
+// adds lines. A step with a prompt shows it, and the player's answer
+// quotes the step's dialog in NpcReply. Lines may hold RO color codes,
+// such as ^FF0000, and item links as
+// <ITEMLINK>name<INFO>item ID</INFO></ITEMLINK>. Clients show them as
+// text, never as HTML.
 type NpcDialog struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Npc    uint32                 `protobuf:"varint,1,opt,name=npc,proto3"`
-	xxx_hidden_Dialog uint32                 `protobuf:"varint,2,opt,name=dialog,proto3"`
-	xxx_hidden_Lines  []string               `protobuf:"bytes,3,rep,name=lines,proto3"`
-	xxx_hidden_Prompt isNpcDialog_Prompt     `protobuf_oneof:"prompt"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Npc       uint32                 `protobuf:"varint,1,opt,name=npc,proto3"`
+	xxx_hidden_Dialog    uint32                 `protobuf:"varint,2,opt,name=dialog,proto3"`
+	xxx_hidden_Lines     []string               `protobuf:"bytes,3,rep,name=lines,proto3"`
+	xxx_hidden_Prompt    isNpcDialog_Prompt     `protobuf_oneof:"prompt"`
+	xxx_hidden_TextMax   uint32                 `protobuf:"varint,10,opt,name=text_max,json=textMax,proto3"`
+	xxx_hidden_NumberMin int64                  `protobuf:"varint,11,opt,name=number_min,json=numberMin,proto3"`
+	xxx_hidden_NumberMax int64                  `protobuf:"varint,12,opt,name=number_max,json=numberMax,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *NpcDialog) Reset() {
@@ -3135,6 +3542,36 @@ func (x *NpcDialog) GetClose() bool {
 	return false
 }
 
+func (x *NpcDialog) GetEnd() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Prompt.(*npcDialog_End); ok {
+			return x.End
+		}
+	}
+	return false
+}
+
+func (x *NpcDialog) GetTextMax() uint32 {
+	if x != nil {
+		return x.xxx_hidden_TextMax
+	}
+	return 0
+}
+
+func (x *NpcDialog) GetNumberMin() int64 {
+	if x != nil {
+		return x.xxx_hidden_NumberMin
+	}
+	return 0
+}
+
+func (x *NpcDialog) GetNumberMax() int64 {
+	if x != nil {
+		return x.xxx_hidden_NumberMax
+	}
+	return 0
+}
+
 func (x *NpcDialog) SetNpc(v uint32) {
 	x.xxx_hidden_Npc = v
 }
@@ -3169,6 +3606,22 @@ func (x *NpcDialog) SetInputNumber(v bool) {
 
 func (x *NpcDialog) SetClose(v bool) {
 	x.xxx_hidden_Prompt = &npcDialog_Close{v}
+}
+
+func (x *NpcDialog) SetEnd(v bool) {
+	x.xxx_hidden_Prompt = &npcDialog_End{v}
+}
+
+func (x *NpcDialog) SetTextMax(v uint32) {
+	x.xxx_hidden_TextMax = v
+}
+
+func (x *NpcDialog) SetNumberMin(v int64) {
+	x.xxx_hidden_NumberMin = v
+}
+
+func (x *NpcDialog) SetNumberMax(v int64) {
+	x.xxx_hidden_NumberMax = v
 }
 
 func (x *NpcDialog) HasPrompt() bool {
@@ -3218,6 +3671,14 @@ func (x *NpcDialog) HasClose() bool {
 	return ok
 }
 
+func (x *NpcDialog) HasEnd() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Prompt.(*npcDialog_End)
+	return ok
+}
+
 func (x *NpcDialog) ClearPrompt() {
 	x.xxx_hidden_Prompt = nil
 }
@@ -3252,12 +3713,19 @@ func (x *NpcDialog) ClearClose() {
 	}
 }
 
+func (x *NpcDialog) ClearEnd() {
+	if _, ok := x.xxx_hidden_Prompt.(*npcDialog_End); ok {
+		x.xxx_hidden_Prompt = nil
+	}
+}
+
 const NpcDialog_Prompt_not_set_case case_NpcDialog_Prompt = 0
 const NpcDialog_Next_case case_NpcDialog_Prompt = 4
 const NpcDialog_Menu_case case_NpcDialog_Prompt = 5
 const NpcDialog_InputText_case case_NpcDialog_Prompt = 6
 const NpcDialog_InputNumber_case case_NpcDialog_Prompt = 7
 const NpcDialog_Close_case case_NpcDialog_Prompt = 8
+const NpcDialog_End_case case_NpcDialog_Prompt = 9
 
 func (x *NpcDialog) WhichPrompt() case_NpcDialog_Prompt {
 	if x == nil {
@@ -3274,6 +3742,8 @@ func (x *NpcDialog) WhichPrompt() case_NpcDialog_Prompt {
 		return NpcDialog_InputNumber_case
 	case *npcDialog_Close:
 		return NpcDialog_Close_case
+	case *npcDialog_End:
+		return NpcDialog_End_case
 	default:
 		return NpcDialog_Prompt_not_set_case
 	}
@@ -3287,12 +3757,24 @@ type NpcDialog_builder struct {
 	Dialog uint32
 	Lines  []string
 	// Fields of oneof xxx_hidden_Prompt:
-	Next        *bool
-	Menu        *NpcMenu
-	InputText   *bool
+	// next shows a Next button. Its answer clears the window's lines.
+	Next *bool
+	// menu shows options. The answer is the chosen option, from 1, or
+	// close to cancel.
+	Menu *NpcMenu
+	// input_text asks for text of at most text_max characters.
+	InputText *bool
+	// input_number asks for a number from number_min to number_max.
 	InputNumber *bool
-	Close       *bool
+	// close shows a Close button. Its answer closes the window.
+	Close *bool
+	// end closes the window at once: the conversation ended without a
+	// Close button, such as after a timeout.
+	End *bool
 	// -- end of xxx_hidden_Prompt
+	TextMax   uint32
+	NumberMin int64
+	NumberMax int64
 }
 
 func (b0 NpcDialog_builder) Build() *NpcDialog {
@@ -3317,6 +3799,12 @@ func (b0 NpcDialog_builder) Build() *NpcDialog {
 	if b.Close != nil {
 		x.xxx_hidden_Prompt = &npcDialog_Close{*b.Close}
 	}
+	if b.End != nil {
+		x.xxx_hidden_Prompt = &npcDialog_End{*b.End}
+	}
+	x.xxx_hidden_TextMax = b.TextMax
+	x.xxx_hidden_NumberMin = b.NumberMin
+	x.xxx_hidden_NumberMax = b.NumberMax
 	return m0
 }
 
@@ -3335,23 +3823,35 @@ type isNpcDialog_Prompt interface {
 }
 
 type npcDialog_Next struct {
+	// next shows a Next button. Its answer clears the window's lines.
 	Next bool `protobuf:"varint,4,opt,name=next,proto3,oneof"`
 }
 
 type npcDialog_Menu struct {
+	// menu shows options. The answer is the chosen option, from 1, or
+	// close to cancel.
 	Menu *NpcMenu `protobuf:"bytes,5,opt,name=menu,proto3,oneof"`
 }
 
 type npcDialog_InputText struct {
+	// input_text asks for text of at most text_max characters.
 	InputText bool `protobuf:"varint,6,opt,name=input_text,json=inputText,proto3,oneof"`
 }
 
 type npcDialog_InputNumber struct {
+	// input_number asks for a number from number_min to number_max.
 	InputNumber bool `protobuf:"varint,7,opt,name=input_number,json=inputNumber,proto3,oneof"`
 }
 
 type npcDialog_Close struct {
+	// close shows a Close button. Its answer closes the window.
 	Close bool `protobuf:"varint,8,opt,name=close,proto3,oneof"`
+}
+
+type npcDialog_End struct {
+	// end closes the window at once: the conversation ended without a
+	// Close button, such as after a timeout.
+	End bool `protobuf:"varint,9,opt,name=end,proto3,oneof"`
 }
 
 func (*npcDialog_Next) isNpcDialog_Prompt() {}
@@ -3363,6 +3863,8 @@ func (*npcDialog_InputText) isNpcDialog_Prompt() {}
 func (*npcDialog_InputNumber) isNpcDialog_Prompt() {}
 
 func (*npcDialog_Close) isNpcDialog_Prompt() {}
+
+func (*npcDialog_End) isNpcDialog_Prompt() {}
 
 type NpcMenu struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
@@ -3421,6 +3923,656 @@ func (b0 NpcMenu_builder) Build() *NpcMenu {
 	return m0
 }
 
+// NpcImage shows an NPC illustration, as rAthena's cutin. The asset is
+// image/illust/<name>. An empty name hides the image. The client also
+// hides it when the dialog window closes.
+type NpcImage struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name     string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Position ImagePosition          `protobuf:"varint,2,opt,name=position,proto3,enum=wathena.v1.ImagePosition"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *NpcImage) Reset() {
+	*x = NpcImage{}
+	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NpcImage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NpcImage) ProtoMessage() {}
+
+func (x *NpcImage) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *NpcImage) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *NpcImage) GetPosition() ImagePosition {
+	if x != nil {
+		return x.xxx_hidden_Position
+	}
+	return ImagePosition_IMAGE_POSITION_UNSPECIFIED
+}
+
+func (x *NpcImage) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *NpcImage) SetPosition(v ImagePosition) {
+	x.xxx_hidden_Position = v
+}
+
+type NpcImage_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name     string
+	Position ImagePosition
+}
+
+func (b0 NpcImage_builder) Build() *NpcImage {
+	m0 := &NpcImage{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Position = b.Position
+	return m0
+}
+
+// NpcProgress shows a progress bar over the player for duration_ms, as
+// rAthena's progressbar. The conversation goes on when it is full. A
+// walk command cancels it, and ends the conversation.
+type NpcProgress struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_DurationMs uint32                 `protobuf:"varint,1,opt,name=duration_ms,json=durationMs,proto3"`
+	xxx_hidden_Color      uint32                 `protobuf:"varint,2,opt,name=color,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *NpcProgress) Reset() {
+	*x = NpcProgress{}
+	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NpcProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NpcProgress) ProtoMessage() {}
+
+func (x *NpcProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *NpcProgress) GetDurationMs() uint32 {
+	if x != nil {
+		return x.xxx_hidden_DurationMs
+	}
+	return 0
+}
+
+func (x *NpcProgress) GetColor() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Color
+	}
+	return 0
+}
+
+func (x *NpcProgress) SetDurationMs(v uint32) {
+	x.xxx_hidden_DurationMs = v
+}
+
+func (x *NpcProgress) SetColor(v uint32) {
+	x.xxx_hidden_Color = v
+}
+
+type NpcProgress_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	DurationMs uint32
+	// color is 0xRRGGBB.
+	Color uint32
+}
+
+func (b0 NpcProgress_builder) Build() *NpcProgress {
+	m0 := &NpcProgress{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_DurationMs = b.DurationMs
+	x.xxx_hidden_Color = b.Color
+	return m0
+}
+
+// Emotion shows an emotion icon over an entity, as rAthena's emotion.
+// emotion is an ET_ value, from 0, which is the action of the client's
+// emotion sprite.
+type Emotion struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Entity  uint32                 `protobuf:"varint,1,opt,name=entity,proto3"`
+	xxx_hidden_Emotion uint32                 `protobuf:"varint,2,opt,name=emotion,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *Emotion) Reset() {
+	*x = Emotion{}
+	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Emotion) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Emotion) ProtoMessage() {}
+
+func (x *Emotion) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Emotion) GetEntity() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Entity
+	}
+	return 0
+}
+
+func (x *Emotion) GetEmotion() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Emotion
+	}
+	return 0
+}
+
+func (x *Emotion) SetEntity(v uint32) {
+	x.xxx_hidden_Entity = v
+}
+
+func (x *Emotion) SetEmotion(v uint32) {
+	x.xxx_hidden_Emotion = v
+}
+
+type Emotion_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Entity  uint32
+	Emotion uint32
+}
+
+func (b0 Emotion_builder) Build() *Emotion {
+	m0 := &Emotion{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Entity = b.Entity
+	x.xxx_hidden_Emotion = b.Emotion
+	return m0
+}
+
+// MinimapMark marks a cell on the player's minimap, as rAthena's
+// viewpoint. A mark with the same id replaces the last one. remove
+// takes the mark away. Marks end with a map change.
+type MinimapMark struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id     uint32                 `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_X      uint32                 `protobuf:"varint,2,opt,name=x,proto3"`
+	xxx_hidden_Y      uint32                 `protobuf:"varint,3,opt,name=y,proto3"`
+	xxx_hidden_Color  uint32                 `protobuf:"varint,4,opt,name=color,proto3"`
+	xxx_hidden_Remove bool                   `protobuf:"varint,5,opt,name=remove,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *MinimapMark) Reset() {
+	*x = MinimapMark{}
+	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MinimapMark) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MinimapMark) ProtoMessage() {}
+
+func (x *MinimapMark) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *MinimapMark) GetId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *MinimapMark) GetX() uint32 {
+	if x != nil {
+		return x.xxx_hidden_X
+	}
+	return 0
+}
+
+func (x *MinimapMark) GetY() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Y
+	}
+	return 0
+}
+
+func (x *MinimapMark) GetColor() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Color
+	}
+	return 0
+}
+
+func (x *MinimapMark) GetRemove() bool {
+	if x != nil {
+		return x.xxx_hidden_Remove
+	}
+	return false
+}
+
+func (x *MinimapMark) SetId(v uint32) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *MinimapMark) SetX(v uint32) {
+	x.xxx_hidden_X = v
+}
+
+func (x *MinimapMark) SetY(v uint32) {
+	x.xxx_hidden_Y = v
+}
+
+func (x *MinimapMark) SetColor(v uint32) {
+	x.xxx_hidden_Color = v
+}
+
+func (x *MinimapMark) SetRemove(v bool) {
+	x.xxx_hidden_Remove = v
+}
+
+type MinimapMark_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id uint32
+	X  uint32
+	Y  uint32
+	// color is 0xRRGGBB.
+	Color  uint32
+	Remove bool
+}
+
+func (b0 MinimapMark_builder) Build() *MinimapMark {
+	m0 := &MinimapMark{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_X = b.X
+	x.xxx_hidden_Y = b.Y
+	x.xxx_hidden_Color = b.Color
+	x.xxx_hidden_Remove = b.Remove
+	return m0
+}
+
+// ShopOpen opens a shop window: what the NPC sells, with the prices
+// for this player after Discount, and the inventory slots the player
+// may sell, with the prices after Overcharge.
+type ShopOpen struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Npc      uint32                 `protobuf:"varint,1,opt,name=npc,proto3"`
+	xxx_hidden_Items    *[]*ShopItem           `protobuf:"bytes,2,rep,name=items,proto3"`
+	xxx_hidden_Sellable *[]*ShopSellable       `protobuf:"bytes,3,rep,name=sellable,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ShopOpen) Reset() {
+	*x = ShopOpen{}
+	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopOpen) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopOpen) ProtoMessage() {}
+
+func (x *ShopOpen) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopOpen) GetNpc() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Npc
+	}
+	return 0
+}
+
+func (x *ShopOpen) GetItems() []*ShopItem {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *ShopOpen) GetSellable() []*ShopSellable {
+	if x != nil {
+		if x.xxx_hidden_Sellable != nil {
+			return *x.xxx_hidden_Sellable
+		}
+	}
+	return nil
+}
+
+func (x *ShopOpen) SetNpc(v uint32) {
+	x.xxx_hidden_Npc = v
+}
+
+func (x *ShopOpen) SetItems(v []*ShopItem) {
+	x.xxx_hidden_Items = &v
+}
+
+func (x *ShopOpen) SetSellable(v []*ShopSellable) {
+	x.xxx_hidden_Sellable = &v
+}
+
+type ShopOpen_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Npc      uint32
+	Items    []*ShopItem
+	Sellable []*ShopSellable
+}
+
+func (b0 ShopOpen_builder) Build() *ShopOpen {
+	m0 := &ShopOpen{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Npc = b.Npc
+	x.xxx_hidden_Items = &b.Items
+	x.xxx_hidden_Sellable = &b.Sellable
+	return m0
+}
+
+type ShopItem struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ItemId uint32                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Price  uint32                 `protobuf:"varint,2,opt,name=price,proto3"`
+	xxx_hidden_Weight uint32                 `protobuf:"varint,3,opt,name=weight,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ShopItem) Reset() {
+	*x = ShopItem{}
+	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopItem) ProtoMessage() {}
+
+func (x *ShopItem) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopItem) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *ShopItem) GetPrice() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Price
+	}
+	return 0
+}
+
+func (x *ShopItem) GetWeight() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Weight
+	}
+	return 0
+}
+
+func (x *ShopItem) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *ShopItem) SetPrice(v uint32) {
+	x.xxx_hidden_Price = v
+}
+
+func (x *ShopItem) SetWeight(v uint32) {
+	x.xxx_hidden_Weight = v
+}
+
+type ShopItem_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	ItemId uint32
+	// price is in zeny, for one.
+	Price uint32
+	// weight is the weight of one, in tenths, for the window's weight
+	// check.
+	Weight uint32
+}
+
+func (b0 ShopItem_builder) Build() *ShopItem {
+	m0 := &ShopItem{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_Price = b.Price
+	x.xxx_hidden_Weight = b.Weight
+	return m0
+}
+
+type ShopSellable struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot  uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Price uint32                 `protobuf:"varint,2,opt,name=price,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ShopSellable) Reset() {
+	*x = ShopSellable{}
+	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopSellable) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopSellable) ProtoMessage() {}
+
+func (x *ShopSellable) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopSellable) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *ShopSellable) GetPrice() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Price
+	}
+	return 0
+}
+
+func (x *ShopSellable) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *ShopSellable) SetPrice(v uint32) {
+	x.xxx_hidden_Price = v
+}
+
+type ShopSellable_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot  uint32
+	Price uint32
+}
+
+func (b0 ShopSellable_builder) Build() *ShopSellable {
+	m0 := &ShopSellable{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Price = b.Price
+	return m0
+}
+
+// ShopResult answers ShopBuy, ShopSell or ShopClose. The shop window
+// closes after it. Inventory and zeny changes come as their own events.
+type ShopResult struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Outcome ShopOutcome            `protobuf:"varint,1,opt,name=outcome,proto3,enum=wathena.v1.ShopOutcome"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ShopResult) Reset() {
+	*x = ShopResult{}
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopResult) ProtoMessage() {}
+
+func (x *ShopResult) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopResult) GetOutcome() ShopOutcome {
+	if x != nil {
+		return x.xxx_hidden_Outcome
+	}
+	return ShopOutcome_SHOP_OUTCOME_UNSPECIFIED
+}
+
+func (x *ShopResult) SetOutcome(v ShopOutcome) {
+	x.xxx_hidden_Outcome = v
+}
+
+type ShopResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Outcome ShopOutcome
+}
+
+func (b0 ShopResult_builder) Build() *ShopResult {
+	m0 := &ShopResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Outcome = b.Outcome
+	return m0
+}
+
 type EffectPlay struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_EffectId uint32                 `protobuf:"varint,1,opt,name=effect_id,json=effectId,proto3"`
@@ -3431,7 +4583,7 @@ type EffectPlay struct {
 
 func (x *EffectPlay) Reset() {
 	*x = EffectPlay{}
-	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3443,7 +4595,7 @@ func (x *EffectPlay) String() string {
 func (*EffectPlay) ProtoMessage() {}
 
 func (x *EffectPlay) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3579,7 +4731,7 @@ func (b0 EffectPlay_builder) Build() *EffectPlay {
 type case_EffectPlay_At protoreflect.FieldNumber
 
 func (x case_EffectPlay_At) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[15].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[23].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -3613,7 +4765,7 @@ type ItemTaken struct {
 
 func (x *ItemTaken) Reset() {
 	*x = ItemTaken{}
-	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	mi := &file_wathena_v1_event_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3625,7 +4777,7 @@ func (x *ItemTaken) String() string {
 func (*ItemTaken) ProtoMessage() {}
 
 func (x *ItemTaken) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	mi := &file_wathena_v1_event_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3686,7 +4838,7 @@ type InventoryUpdate struct {
 
 func (x *InventoryUpdate) Reset() {
 	*x = InventoryUpdate{}
-	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	mi := &file_wathena_v1_event_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3698,7 +4850,7 @@ func (x *InventoryUpdate) String() string {
 func (*InventoryUpdate) ProtoMessage() {}
 
 func (x *InventoryUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	mi := &file_wathena_v1_event_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3763,7 +4915,7 @@ type InventoryItem struct {
 
 func (x *InventoryItem) Reset() {
 	*x = InventoryItem{}
-	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	mi := &file_wathena_v1_event_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3775,7 +4927,7 @@ func (x *InventoryItem) String() string {
 func (*InventoryItem) ProtoMessage() {}
 
 func (x *InventoryItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	mi := &file_wathena_v1_event_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3851,7 +5003,7 @@ type InventoryAdd struct {
 
 func (x *InventoryAdd) Reset() {
 	*x = InventoryAdd{}
-	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	mi := &file_wathena_v1_event_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3863,7 +5015,7 @@ func (x *InventoryAdd) String() string {
 func (*InventoryAdd) ProtoMessage() {}
 
 func (x *InventoryAdd) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	mi := &file_wathena_v1_event_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3939,7 +5091,7 @@ type InventoryRemove struct {
 
 func (x *InventoryRemove) Reset() {
 	*x = InventoryRemove{}
-	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	mi := &file_wathena_v1_event_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3951,7 +5103,7 @@ func (x *InventoryRemove) String() string {
 func (*InventoryRemove) ProtoMessage() {}
 
 func (x *InventoryRemove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	mi := &file_wathena_v1_event_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4025,7 +5177,7 @@ type ItemUsed struct {
 
 func (x *ItemUsed) Reset() {
 	*x = ItemUsed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	mi := &file_wathena_v1_event_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4037,7 +5189,7 @@ func (x *ItemUsed) String() string {
 func (*ItemUsed) ProtoMessage() {}
 
 func (x *ItemUsed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	mi := &file_wathena_v1_event_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4097,7 +5249,7 @@ type UseItemFailed struct {
 
 func (x *UseItemFailed) Reset() {
 	*x = UseItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	mi := &file_wathena_v1_event_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4109,7 +5261,7 @@ func (x *UseItemFailed) String() string {
 func (*UseItemFailed) ProtoMessage() {}
 
 func (x *UseItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	mi := &file_wathena_v1_event_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4169,7 +5321,7 @@ type DropItemFailed struct {
 
 func (x *DropItemFailed) Reset() {
 	*x = DropItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	mi := &file_wathena_v1_event_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4181,7 +5333,7 @@ func (x *DropItemFailed) String() string {
 func (*DropItemFailed) ProtoMessage() {}
 
 func (x *DropItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	mi := &file_wathena_v1_event_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4241,7 +5393,7 @@ type PickUpFailed struct {
 
 func (x *PickUpFailed) Reset() {
 	*x = PickUpFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[24]
+	mi := &file_wathena_v1_event_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4253,7 +5405,7 @@ func (x *PickUpFailed) String() string {
 func (*PickUpFailed) ProtoMessage() {}
 
 func (x *PickUpFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[24]
+	mi := &file_wathena_v1_event_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4307,7 +5459,7 @@ var File_wathena_v1_event_proto protoreflect.FileDescriptor
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xbe\b\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\x90\v\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -4332,7 +5484,14 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x0fuse_item_failed\x18\x11 \x01(\v2\x19.wathena.v1.UseItemFailedH\x00R\ruseItemFailed\x12F\n" +
 	"\x10drop_item_failed\x18\x12 \x01(\v2\x1a.wathena.v1.DropItemFailedH\x00R\x0edropItemFailed\x126\n" +
 	"\n" +
-	"map_change\x18\x13 \x01(\v2\x15.wathena.v1.MapChangeH\x00R\tmapChangeB\x06\n" +
+	"map_change\x18\x13 \x01(\v2\x15.wathena.v1.MapChangeH\x00R\tmapChange\x123\n" +
+	"\tnpc_image\x18\x14 \x01(\v2\x14.wathena.v1.NpcImageH\x00R\bnpcImage\x12<\n" +
+	"\fnpc_progress\x18\x15 \x01(\v2\x17.wathena.v1.NpcProgressH\x00R\vnpcProgress\x12/\n" +
+	"\aemotion\x18\x16 \x01(\v2\x13.wathena.v1.EmotionH\x00R\aemotion\x12<\n" +
+	"\fminimap_mark\x18\x17 \x01(\v2\x17.wathena.v1.MinimapMarkH\x00R\vminimapMark\x123\n" +
+	"\tshop_open\x18\x18 \x01(\v2\x14.wathena.v1.ShopOpenH\x00R\bshopOpen\x129\n" +
+	"\vshop_result\x18\x19 \x01(\v2\x16.wathena.v1.ShopResultH\x00R\n" +
+	"shopResultB\x06\n" +
 	"\x04body\"P\n" +
 	"\tMapChange\x12\x10\n" +
 	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
@@ -4413,12 +5572,13 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\acast_ms\x18\x04 \x01(\rR\x06castMs\x12\x18\n" +
 	"\x06entity\x18\x05 \x01(\rH\x00R\x06entity\x12&\n" +
 	"\x04cell\x18\x06 \x01(\v2\x10.wathena.v1.CellH\x00R\x04cellB\b\n" +
-	"\x06target\"\x85\x01\n" +
+	"\x06target\"\x9b\x01\n" +
 	"\vChatMessage\x121\n" +
 	"\achannel\x18\x01 \x01(\x0e2\x17.wathena.v1.ChatChannelR\achannel\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\rR\x04from\x12\x1b\n" +
 	"\tfrom_name\x18\x03 \x01(\tR\bfromName\x12\x12\n" +
-	"\x04text\x18\x04 \x01(\tR\x04text\"\xf4\x01\n" +
+	"\x04text\x18\x04 \x01(\tR\x04text\x12\x14\n" +
+	"\x05color\x18\x05 \x01(\rR\x05color\"\xe1\x02\n" +
 	"\tNpcDialog\x12\x10\n" +
 	"\x03npc\x18\x01 \x01(\rR\x03npc\x12\x16\n" +
 	"\x06dialog\x18\x02 \x01(\rR\x06dialog\x12\x14\n" +
@@ -4428,10 +5588,47 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"input_text\x18\x06 \x01(\bH\x00R\tinputText\x12#\n" +
 	"\finput_number\x18\a \x01(\bH\x00R\vinputNumber\x12\x16\n" +
-	"\x05close\x18\b \x01(\bH\x00R\x05closeB\b\n" +
+	"\x05close\x18\b \x01(\bH\x00R\x05close\x12\x12\n" +
+	"\x03end\x18\t \x01(\bH\x00R\x03end\x12\x19\n" +
+	"\btext_max\x18\n" +
+	" \x01(\rR\atextMax\x12\x1d\n" +
+	"\n" +
+	"number_min\x18\v \x01(\x03R\tnumberMin\x12\x1d\n" +
+	"\n" +
+	"number_max\x18\f \x01(\x03R\tnumberMaxB\b\n" +
 	"\x06prompt\"#\n" +
 	"\aNpcMenu\x12\x18\n" +
-	"\aoptions\x18\x01 \x03(\tR\aoptions\"q\n" +
+	"\aoptions\x18\x01 \x03(\tR\aoptions\"U\n" +
+	"\bNpcImage\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
+	"\bposition\x18\x02 \x01(\x0e2\x19.wathena.v1.ImagePositionR\bposition\"D\n" +
+	"\vNpcProgress\x12\x1f\n" +
+	"\vduration_ms\x18\x01 \x01(\rR\n" +
+	"durationMs\x12\x14\n" +
+	"\x05color\x18\x02 \x01(\rR\x05color\";\n" +
+	"\aEmotion\x12\x16\n" +
+	"\x06entity\x18\x01 \x01(\rR\x06entity\x12\x18\n" +
+	"\aemotion\x18\x02 \x01(\rR\aemotion\"g\n" +
+	"\vMinimapMark\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\f\n" +
+	"\x01x\x18\x02 \x01(\rR\x01x\x12\f\n" +
+	"\x01y\x18\x03 \x01(\rR\x01y\x12\x14\n" +
+	"\x05color\x18\x04 \x01(\rR\x05color\x12\x16\n" +
+	"\x06remove\x18\x05 \x01(\bR\x06remove\"~\n" +
+	"\bShopOpen\x12\x10\n" +
+	"\x03npc\x18\x01 \x01(\rR\x03npc\x12*\n" +
+	"\x05items\x18\x02 \x03(\v2\x14.wathena.v1.ShopItemR\x05items\x124\n" +
+	"\bsellable\x18\x03 \x03(\v2\x18.wathena.v1.ShopSellableR\bsellable\"Q\n" +
+	"\bShopItem\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\rR\x06itemId\x12\x14\n" +
+	"\x05price\x18\x02 \x01(\rR\x05price\x12\x16\n" +
+	"\x06weight\x18\x03 \x01(\rR\x06weight\"8\n" +
+	"\fShopSellable\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x14\n" +
+	"\x05price\x18\x02 \x01(\rR\x05price\"?\n" +
+	"\n" +
+	"ShopResult\x121\n" +
+	"\aoutcome\x18\x01 \x01(\x0e2\x17.wathena.v1.ShopOutcomeR\aoutcome\"q\n" +
 	"\n" +
 	"EffectPlay\x12\x1b\n" +
 	"\teffect_id\x18\x01 \x01(\rR\beffectId\x12\x18\n" +
@@ -4534,11 +5731,26 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x14DAMAGE_KIND_CRITICAL\x10\x02\x12\x14\n" +
 	"\x10DAMAGE_KIND_MISS\x10\x03\x12\x1b\n" +
 	"\x17DAMAGE_KIND_LUCKY_DODGE\x10\x04\x12\x14\n" +
-	"\x10DAMAGE_KIND_HEAL\x10\x05*\x87\x01\n" +
+	"\x10DAMAGE_KIND_HEAL\x10\x05*}\n" +
+	"\rImagePosition\x12\x1e\n" +
+	"\x1aIMAGE_POSITION_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13IMAGE_POSITION_LEFT\x10\x01\x12\x19\n" +
+	"\x15IMAGE_POSITION_CENTER\x10\x02\x12\x18\n" +
+	"\x14IMAGE_POSITION_RIGHT\x10\x03*\xcc\x01\n" +
+	"\vShopOutcome\x12\x1c\n" +
+	"\x18SHOP_OUTCOME_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13SHOP_OUTCOME_BOUGHT\x10\x01\x12\x15\n" +
+	"\x11SHOP_OUTCOME_SOLD\x10\x02\x12 \n" +
+	"\x1cSHOP_OUTCOME_NOT_ENOUGH_ZENY\x10\x03\x12\x1b\n" +
+	"\x17SHOP_OUTCOME_OVERWEIGHT\x10\x04\x12\x17\n" +
+	"\x13SHOP_OUTCOME_FAILED\x10\x05\x12\x17\n" +
+	"\x13SHOP_OUTCOME_CLOSED\x10\x06*\xcc\x01\n" +
 	"\x15InventoryRemoveReason\x12'\n" +
 	"#INVENTORY_REMOVE_REASON_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cINVENTORY_REMOVE_REASON_USED\x10\x01\x12#\n" +
-	"\x1fINVENTORY_REMOVE_REASON_DROPPED\x10\x02*\xbd\x02\n" +
+	"\x1fINVENTORY_REMOVE_REASON_DROPPED\x10\x02\x12!\n" +
+	"\x1dINVENTORY_REMOVE_REASON_TAKEN\x10\x03\x12 \n" +
+	"\x1cINVENTORY_REMOVE_REASON_SOLD\x10\x04*\xbd\x02\n" +
 	"\x0eUseItemFailure\x12 \n" +
 	"\x1cUSE_ITEM_FAILURE_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bUSE_ITEM_FAILURE_EMPTY_SLOT\x10\x01\x12\x1f\n" +
@@ -4562,86 +5774,106 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x1ePICK_UP_FAILURE_INVENTORY_FULL\x10\x04\x12\x1c\n" +
 	"\x18PICK_UP_FAILURE_TOO_MANY\x10\x05B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
-var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),            // 0: wathena.v1.EntityKind
 	(VanishReason)(0),          // 1: wathena.v1.VanishReason
 	(StatId)(0),                // 2: wathena.v1.StatId
 	(DamageKind)(0),            // 3: wathena.v1.DamageKind
-	(InventoryRemoveReason)(0), // 4: wathena.v1.InventoryRemoveReason
-	(UseItemFailure)(0),        // 5: wathena.v1.UseItemFailure
-	(DropItemFailure)(0),       // 6: wathena.v1.DropItemFailure
-	(PickUpFailure)(0),         // 7: wathena.v1.PickUpFailure
-	(*Event)(nil),              // 8: wathena.v1.Event
-	(*MapChange)(nil),          // 9: wathena.v1.MapChange
-	(*EntityAppear)(nil),       // 10: wathena.v1.EntityAppear
-	(*GroundItem)(nil),         // 11: wathena.v1.GroundItem
-	(*Look)(nil),               // 12: wathena.v1.Look
-	(*EntityVanish)(nil),       // 13: wathena.v1.EntityVanish
-	(*EntityMove)(nil),         // 14: wathena.v1.EntityMove
-	(*EntityStop)(nil),         // 15: wathena.v1.EntityStop
-	(*StatUpdate)(nil),         // 16: wathena.v1.StatUpdate
-	(*Stat)(nil),               // 17: wathena.v1.Stat
-	(*Damage)(nil),             // 18: wathena.v1.Damage
-	(*SkillCast)(nil),          // 19: wathena.v1.SkillCast
-	(*ChatMessage)(nil),        // 20: wathena.v1.ChatMessage
-	(*NpcDialog)(nil),          // 21: wathena.v1.NpcDialog
-	(*NpcMenu)(nil),            // 22: wathena.v1.NpcMenu
-	(*EffectPlay)(nil),         // 23: wathena.v1.EffectPlay
-	(*ItemTaken)(nil),          // 24: wathena.v1.ItemTaken
-	(*InventoryUpdate)(nil),    // 25: wathena.v1.InventoryUpdate
-	(*InventoryItem)(nil),      // 26: wathena.v1.InventoryItem
-	(*InventoryAdd)(nil),       // 27: wathena.v1.InventoryAdd
-	(*InventoryRemove)(nil),    // 28: wathena.v1.InventoryRemove
-	(*ItemUsed)(nil),           // 29: wathena.v1.ItemUsed
-	(*UseItemFailed)(nil),      // 30: wathena.v1.UseItemFailed
-	(*DropItemFailed)(nil),     // 31: wathena.v1.DropItemFailed
-	(*PickUpFailed)(nil),       // 32: wathena.v1.PickUpFailed
-	(*Cell)(nil),               // 33: wathena.v1.Cell
-	(ChatChannel)(0),           // 34: wathena.v1.ChatChannel
+	(ImagePosition)(0),         // 4: wathena.v1.ImagePosition
+	(ShopOutcome)(0),           // 5: wathena.v1.ShopOutcome
+	(InventoryRemoveReason)(0), // 6: wathena.v1.InventoryRemoveReason
+	(UseItemFailure)(0),        // 7: wathena.v1.UseItemFailure
+	(DropItemFailure)(0),       // 8: wathena.v1.DropItemFailure
+	(PickUpFailure)(0),         // 9: wathena.v1.PickUpFailure
+	(*Event)(nil),              // 10: wathena.v1.Event
+	(*MapChange)(nil),          // 11: wathena.v1.MapChange
+	(*EntityAppear)(nil),       // 12: wathena.v1.EntityAppear
+	(*GroundItem)(nil),         // 13: wathena.v1.GroundItem
+	(*Look)(nil),               // 14: wathena.v1.Look
+	(*EntityVanish)(nil),       // 15: wathena.v1.EntityVanish
+	(*EntityMove)(nil),         // 16: wathena.v1.EntityMove
+	(*EntityStop)(nil),         // 17: wathena.v1.EntityStop
+	(*StatUpdate)(nil),         // 18: wathena.v1.StatUpdate
+	(*Stat)(nil),               // 19: wathena.v1.Stat
+	(*Damage)(nil),             // 20: wathena.v1.Damage
+	(*SkillCast)(nil),          // 21: wathena.v1.SkillCast
+	(*ChatMessage)(nil),        // 22: wathena.v1.ChatMessage
+	(*NpcDialog)(nil),          // 23: wathena.v1.NpcDialog
+	(*NpcMenu)(nil),            // 24: wathena.v1.NpcMenu
+	(*NpcImage)(nil),           // 25: wathena.v1.NpcImage
+	(*NpcProgress)(nil),        // 26: wathena.v1.NpcProgress
+	(*Emotion)(nil),            // 27: wathena.v1.Emotion
+	(*MinimapMark)(nil),        // 28: wathena.v1.MinimapMark
+	(*ShopOpen)(nil),           // 29: wathena.v1.ShopOpen
+	(*ShopItem)(nil),           // 30: wathena.v1.ShopItem
+	(*ShopSellable)(nil),       // 31: wathena.v1.ShopSellable
+	(*ShopResult)(nil),         // 32: wathena.v1.ShopResult
+	(*EffectPlay)(nil),         // 33: wathena.v1.EffectPlay
+	(*ItemTaken)(nil),          // 34: wathena.v1.ItemTaken
+	(*InventoryUpdate)(nil),    // 35: wathena.v1.InventoryUpdate
+	(*InventoryItem)(nil),      // 36: wathena.v1.InventoryItem
+	(*InventoryAdd)(nil),       // 37: wathena.v1.InventoryAdd
+	(*InventoryRemove)(nil),    // 38: wathena.v1.InventoryRemove
+	(*ItemUsed)(nil),           // 39: wathena.v1.ItemUsed
+	(*UseItemFailed)(nil),      // 40: wathena.v1.UseItemFailed
+	(*DropItemFailed)(nil),     // 41: wathena.v1.DropItemFailed
+	(*PickUpFailed)(nil),       // 42: wathena.v1.PickUpFailed
+	(*Cell)(nil),               // 43: wathena.v1.Cell
+	(ChatChannel)(0),           // 44: wathena.v1.ChatChannel
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
-	10, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
-	13, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
-	14, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
-	15, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
-	16, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
-	18, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
-	19, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
-	20, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
-	21, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
-	23, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
-	24, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
-	27, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
-	32, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
-	25, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
-	28, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
-	29, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
-	30, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
-	31, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
-	9,  // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
-	0,  // 19: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	12, // 20: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	11, // 21: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	1,  // 22: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	17, // 23: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 24: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 25: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	33, // 26: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	34, // 27: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	22, // 28: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	33, // 29: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	26, // 30: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	4,  // 31: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	5,  // 32: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	6,  // 33: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	7,  // 34: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	35, // [35:35] is the sub-list for method output_type
-	35, // [35:35] is the sub-list for method input_type
-	35, // [35:35] is the sub-list for extension type_name
-	35, // [35:35] is the sub-list for extension extendee
-	0,  // [0:35] is the sub-list for field type_name
+	12, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
+	15, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
+	16, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
+	17, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
+	18, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
+	20, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
+	21, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
+	22, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
+	23, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
+	33, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
+	34, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
+	37, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
+	42, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
+	35, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
+	38, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
+	39, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
+	40, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
+	41, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
+	11, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
+	25, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
+	26, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
+	27, // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
+	28, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
+	29, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
+	32, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
+	0,  // 25: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	14, // 26: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	13, // 27: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	1,  // 28: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	19, // 29: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,  // 30: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,  // 31: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	43, // 32: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	44, // 33: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	24, // 34: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	4,  // 35: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
+	30, // 36: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
+	31, // 37: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
+	5,  // 38: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
+	43, // 39: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	36, // 40: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	6,  // 41: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	7,  // 42: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	8,  // 43: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	9,  // 44: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	45, // [45:45] is the sub-list for method output_type
+	45, // [45:45] is the sub-list for method input_type
+	45, // [45:45] is the sub-list for extension type_name
+	45, // [45:45] is the sub-list for extension extendee
+	0,  // [0:45] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -4670,6 +5902,12 @@ func file_wathena_v1_event_proto_init() {
 		(*event_UseItemFailed)(nil),
 		(*event_DropItemFailed)(nil),
 		(*event_MapChange)(nil),
+		(*event_NpcImage)(nil),
+		(*event_NpcProgress)(nil),
+		(*event_Emotion)(nil),
+		(*event_MinimapMark)(nil),
+		(*event_ShopOpen)(nil),
+		(*event_ShopResult)(nil),
 	}
 	file_wathena_v1_event_proto_msgTypes[11].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
@@ -4681,8 +5919,9 @@ func file_wathena_v1_event_proto_init() {
 		(*npcDialog_InputText)(nil),
 		(*npcDialog_InputNumber)(nil),
 		(*npcDialog_Close)(nil),
+		(*npcDialog_End)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[15].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[23].OneofWrappers = []any{
 		(*effectPlay_Entity)(nil),
 		(*effectPlay_Cell)(nil),
 	}
@@ -4691,8 +5930,8 @@ func file_wathena_v1_event_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
-			NumEnums:      8,
-			NumMessages:   25,
+			NumEnums:      10,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

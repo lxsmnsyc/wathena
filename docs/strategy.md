@@ -2364,7 +2364,17 @@ The order from here:
       - Every converted script of both modes loads and runs in tests, equipment against a recording bonus sink. The base stats of 7,630 fully converted equipment items match rAthena's `item_bonuses.json`, 1,764 of them with a stat change.
       - Checked in Chrome: a Red Potion healed, an Old Blue Box gave an item, a Fly Wing and a Butterfly Wing warped, and a Green Potion was refused with its message.
       - Left: status effects, timed bonuses, rentals that expire, a save point per character, headgear effects on the client, and map flags such as `noteleport`.
-   4. NPCs. Dialogs, shops, and services, with events, variables, and hooks.
+   4. NPCs. Done on 2026-10-02 ([decision 0008](decisions/0008-converted-npcs.md), [proposal 0002](proposals/0002-lua-api.md), decision 13, [proposal 0001](proposals/0001-protocol.md), and [mods/README.md](../mods/README.md), "NPC scripts"):
+      - Conversations: the `click` event, one conversation per player, 15 cells of reach, answers checked against the step, rAthena's timeouts, and no actions while a player talks. Leaving, dying and changing map end a conversation.
+      - The conversation methods of proposal 0002 and decision 13: say, next, menus, number and text input, close, wait, NPC images, a progress bar, NPC emotions and speech, minimap marks, item links, and announcements to a map or the world.
+      - `wa.variables`: character, temporary, account and server variables of integers, booleans, strings and tables. Character and account variables save with the character. Server variables save right after they change. All of them work without a database, in memory.
+      - Shops as `data/npcs.yml` data, with rAthena's buy and sell rules: Discount and Overcharge, weight, zeny overflow, and the price rules of `item_prices.json`.
+      - Save points in PostgreSQL. Butterfly Wings and respawn use them, and a dead character is saved at its save point.
+      - The server announces a countdown before it stops on SIGTERM.
+      - A converter for NPC scripts, run when `waserver` starts, in 0.17 s for renewal. Renewal: 282 shops placed, 947 of 1,933 script NPCs (839 fully), 49 of 55 Kafras with save, teleport and heal, and 720 of 2,043 dialog NPCs. Pre-renewal: 185 shops and 750 of 1,387 script NPCs. Every converted NPC of both modes starts in tests.
+      - The client shows the dialog window, NPC images, emotions, speech over heads, the progress bar, the shop window and announcements.
+      - Checked in Chrome: the sample greeter, a dialog NPC, buying and selling at a Prontera Tool Dealer, a Kafra's save and teleport, a Butterfly Wing to the save point, variables after a reconnect, and the shutdown countdown.
+      - Left: hooks, the `touch` event and timer events, instance variables, a minimap on the client, languages other than English for `wa.text`, cash, item, point and market shops, storage and pushcarts, and the NPC folders the extract leaves out, such as quests and instances. The provisional API in proposal 0002 needs review.
    5. Mod tools. `wactl mod new`, `validate`, `test`, `dev`, and `install`, and Lua Language Server type definitions.
    6. Event scheduler, and the phase 3 exit check with a sample mod.
    The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. It stays `wa.experimental` until the phase 3 exit check passes, then becomes `api: 1.0`.

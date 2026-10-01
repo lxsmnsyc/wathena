@@ -78,6 +78,8 @@ var moduleSpecs = []moduleSpec{
 	// Headgear effects (hateffect) have IDs of their own.
 	{"headgear_effects", "HAT_EF_", []string{"HAT_EF_MAX"}},
 	{"jobs", "JOB_", []string{"JOB_MAX", "JOB_MAX_BASIC"}},
+	// Emotions (rAthena's emotion), shown with npc:show_emotion.
+	{"emotions", "ET_", nil},
 }
 
 // renames are readable names that the rule alone does not give.

@@ -113,6 +113,15 @@ Monster and NPC sprites are named by ID, the ID game data and the protocol use. 
 - Sprites no ID names are left out.
 - 45 is the warp portal. The web client draws it as an effect, not as its sprite.
 
+### Effect sprites from a game client
+
+| Client path | Name |
+|---|---|
+| `data\sprite\이팩트\<name>.spr` and `.act` | `sprite/effect/<name>` |
+
+- `sprite/effect/emotion` holds the emotion icons. Its action number is the emotion's `ET_` value from rAthena, such as 15 for thanks.
+- Names that are not valid asset names, such as names in Hangul, are left out.
+
 ### Sounds and music from a game client
 
 | Client path | Name |

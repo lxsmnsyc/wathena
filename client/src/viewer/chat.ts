@@ -183,6 +183,20 @@ export class ChatLog {
     this.append(row);
   }
 
+  /**
+   * Adds an announcement to the map or the world, in its color as
+   * 0xrrggbb, or the announcement color for 0.
+   */
+  announce(text: string, color: number): void {
+    const row = document.createElement('li');
+    row.className = 'announcement';
+    row.textContent = text;
+    if (color > 0 && color <= 0xffffff) {
+      row.style.color = `#${color.toString(16).padStart(6, '0')}`;
+    }
+    this.append(row);
+  }
+
   /** Adds a notice from the client itself. */
   notice(text: string): void {
     const row = document.createElement('li');

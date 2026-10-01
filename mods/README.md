@@ -1,9 +1,9 @@
 # Making a mod
 
-A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader supports today, in phase 3 step 3. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md). It is experimental and can change in any release until API 1.0.
+A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader supports today, in phase 3 step 4. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md). It is experimental and can change in any release until API 1.0.
 
-- [core](core) is the base game as a mod. It is built into the server. Its files are rAthena's item scripts, which the server converts when it starts ("Item scripts" below).
-- [examples/greeter](examples/greeter) is a small sample: an item, an NPC, and a script that greets players.
+- [core](core) is the base game as a mod. It is built into the server. Its files are rAthena's item scripts, NPCs and shops, which the server converts when it starts ("Item scripts" and "Core's NPCs" below).
+- [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a shop, and a script that greets players.
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
 
@@ -16,9 +16,12 @@ greeter/
   mod.yaml              the manifest
   data/
     items.yml           item overlay
-    npcs.yml            NPC placements
+    npcs.yml            NPC placements and shops
+  locales/
+    en.yml              text for players, read with wa.text
   scripts/
     main.lua            an entry script that mod.yaml lists
+    npc/greeter.lua     an NPC's entry script, which npcs.yml names
     lib/messages.lua    a helper module
 ```
 
@@ -130,7 +133,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 ```
 
 - Names are AegisNames, such as `Red_Potion`.
-- Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`.
+- Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`, and `name`, `buy`, `sell` and `no_sell`: the name `items.name` gives, the prices of NPC shops in zeny, and whether shops buy the item.
 - `script` is the item's entry script, a path under the mod's `scripts/`. It belongs to the mod that sets it.
 - `bonuses` are static bonuses of an equipment item ("Static bonuses" below).
 - `unsupported` says what the item's script needs that the server does not have yet. A usable item with it is refused, and the player sees the text. Core sets it on converted items.
@@ -148,13 +151,41 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
   sprite: 4_F_KAFRA1
 ```
 
-- A name without a prefix is the mod's own NPC: `Greeter#prontera` in `example.greeter` is `example.greeter:Greeter#prontera`. Core has no NPCs yet.
-- Players see the name up to `#`, or `display_name` when it is set.
+- A name without a prefix is the mod's own NPC: `Greeter#prontera` in `example.greeter` is `example.greeter:Greeter#prontera`. Core's NPCs are named `core:<rAthena's unique name>`, such as `core:kaf_prontera`.
+- Players see the name up to `#`, or `display_name` when it is set. An empty `display_name` shows no name.
 - `map`, `x`, `y` and `sprite` are required. `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, or its number.
 - `direction` is `south` (the default), `southwest`, `west`, `northwest`, `north`, `northeast`, `east` or `southeast`.
-- `script` names the NPC's entry script. It must exist. Clicking NPCs comes in phase 3 step 4, so the script does not run yet.
+- `script` names the NPC's entry script. It must exist. Its setup function runs once for each NPC that names it ("NPC scripts" below).
+- `shop` makes the NPC a shop: a list of `{item, price}`. A price left out, or -1, is the item's `buy` price. A click on a shop without a click handler opens the shop.
+- `discount: false` keeps Discount and Compulsion Discount from lowering the shop's prices, as rAthena's `shop` line with `no`. It is on by default, as in rAthena.
+- A record with `shop` and no `map` is a shop that only scripts open, with `player:open_shop`.
+
+```yaml
+- name: Tool Dealer#prt1
+  map: prt_in
+  x: 126
+  y: 76
+  sprite: "53"
+  shop:
+    - {item: Red_Potion}
+    - {item: Fly_Wing, price: 60}
+- name: Cookie Stand
+  shop:
+    - {item: "example.greeter:Welcome_Cookie", price: 25}
+```
 
 Kinds not overlaid yet: monsters, skills, jobs, spawns, quests, achievements, and events.
+
+## Text: locales/en.yml
+
+Text for players lives in `locales/en.yml`, a mapping of keys to text. Nested keys are joined with dots:
+
+```yaml
+greeter:
+  hello: Hello! Welcome to Prontera.
+```
+
+`text "greeter.hello"` from `wa.text` reads it. Players have no language setting yet, so the English file is the only one read. A key the file lacks raises an error.
 
 ## IDs
 
@@ -228,6 +259,9 @@ end
 | `monster_killed` | `player`, `monster` | The player killed a monster. `monster` is a monster handle. |
 | `base_level_up` | `player` | The player gained a base level. |
 | `job_level_up` | `player` | The player gained a job level. |
+| `click` | `player`, `conversation` | NPC contexts only: a player talks to the NPC ("NPC scripts" below). |
+
+`touch`, for NPCs whose area a player walks into, is a name that registers and does not fire yet.
 
 - `events.on` checks the name. An unknown name, or an event of another context kind, such as `click`, raises an error during setup.
 - Handlers run in registration order. A failing handler is logged and does not stop the others.
@@ -267,6 +301,109 @@ Handlers get players as read-only handles. Each access looks the player up again
 | `player:send_message(text)` | None. Shows a line in the player's chat log, sent as `CHAT_CHANNEL_SYSTEM`. |
 | `player:give_item(item, amount)` | `player.give_items`. Returns `false` when the items do not fit. |
 | `player:count_item(item)` | `game.read`. |
+
+### NPC scripts
+
+An NPC's entry script runs its setup function once for each placed NPC that names it, in an NPC context. The NPC is `context:get_instance()`. Locals of the setup function belong to that NPC, as rAthena's `.variables`. A zone starts its NPCs' scripts when the first player enters it.
+
+```lua
+local events = require "wa.events"
+local emotions = require "wa.emotions"
+local context = require "wa.context"
+
+return function()
+  local npc = context:get_instance()   -- name, map, x and y
+  events.on("click", function(player, conversation)
+    conversation:show_image("kafra_01", "right")
+    npc:show_emotion(emotions.thanks)
+    conversation:say("[" .. npc.name .. "]", "Hello!")
+    conversation:wait_for_next()
+    if conversation:choose("Save", "Cancel") == 1 then
+      player:set_save_point("prontera", 156, 191)
+    end
+  end)
+end
+```
+
+A click starts a conversation: the NPC's click handlers run in a thread of their own, which pauses while it waits for the player.
+
+| Call | Meaning |
+|---|---|
+| `conversation:say(...)` | Shows lines: strings or numbers, up to 64, each at most 1,024 bytes. RO color codes, such as `^FF0000`, color them. |
+| `conversation:wait_for_next()` | Waits for the Next button. The next lines replace the shown ones. |
+| `conversation:choose(...)` | Shows options and returns the chosen one, from 1. An empty option is hidden and keeps its number. |
+| `conversation:ask_number(minimum, maximum)` | Waits for a number in the range, from -2147483648 to 2147483647. |
+| `conversation:ask_text(maximum_length)` | Waits for text of 1 to 255 characters at most. It is cleaned as chat is. |
+| `conversation:close()` | Shows the Close button and waits for it, as rAthena's `close2`. The handler goes on after it, and later dialog calls raise an error. |
+| `conversation:wait(milliseconds)` | Waits up to 10 minutes, as `sleep2`. |
+| `conversation:show_image(name, position)` | Shows `image/illust/<name>`, as `cutin`, at `"left"`, `"center"` or `"right"`. |
+| `conversation:hide_image()` | Hides it. The client also hides it when the window closes. |
+| `conversation:show_progress(seconds)` | Shows a progress bar over the player and waits until it is full, up to 600 seconds. A walk cancels it and ends the conversation. |
+| `npc:show_emotion(emotion)` | Shows an emotion over the NPC, from `wa.emotions`, such as `emotions.thanks`. |
+| `npc:say_aloud(text)` | Says a line of local chat as the NPC, as `npctalk`. Players within 9 cells hear it. |
+
+Rules, as rAthena's:
+
+- A player clicks NPCs within 15 cells. A dead player, or one already talking, clicks nothing.
+- While a player talks, it cannot walk, attack, pick up, use or drop items.
+- A step times out after 60 seconds, or 180 seconds for input, and the conversation ends.
+- A handler that returns with lines on show leaves the Close button. One that returns without showing anything closes the window.
+- When the player leaves, dies, changes map, or the conversation times out, the waiting call raises the error "the conversation was closed". A handler may catch it with `pcall`, but cannot talk any more, and the player is gone when it left. The runtime does not log it as a failure.
+- A warp asked for in a conversation happens when the conversation pauses or ends, and ends it.
+- A reload ends the mod's NPC contexts, and starts them again with the new files. Conversations that run finish on the old version.
+
+### Saved variables: wa.variables
+
+```lua
+local variables = require "wa.variables"
+
+local visits = variables.character_integer "visits"     -- saved with the character
+local met = variables.account_boolean "met"             -- shared by the account's characters
+local busy = variables.character_temporary_integer "busy" -- until logout
+local greetings = variables.server_integer "greetings"  -- the whole world, saved soon after a change
+local notes = variables.character_table "notes"         -- plain data
+
+return function()
+  events.on("click", function(player, conversation)
+    local n = visits:add(player, 1)
+    met:set(player, true)
+    greetings:add(1)
+    notes:set(player, { last = n, seen = { 1, 2, 3 } })
+  end)
+end
+```
+
+- Scopes: `character`, `character_temporary`, `account`, `server`, and `instance`, which raises an error until instances exist. Types: `integer`, `boolean`, `string`, and `table`.
+- A declaration names a variable of the running mod. Two mods can use the same name. One mod declares a name with one type.
+- `get(player)` and `set(player, value)`, or `get()` and `set(value)` for a server variable. `add(player, amount)` changes an integer in one step and returns the new value.
+- Defaults: 0, false, "", and nil for a table. Setting nil, or the default, removes the stored value.
+- A string is at most 4,096 bytes. A table holds numbers, booleans, strings and tables, with keys that are all strings, or 1 to n, and is at most 64 KB as JSON. `get` returns a copy.
+- Names are 1 to 64 letters, digits and `_`, not starting with a digit.
+- Character and account variables are saved with the character, in the same transaction. Two characters of one account that change the same account variable at once: the last save wins.
+- Without a database, variables live in memory until the server stops.
+- Declaring needs `storage.mod`, which every mod has.
+
+### Shops, save points and announcements
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `player:open_shop(name)` | None | Opens a shop of `data/npcs.yml` by record name, as `callshop`. A name without a mod ID is the running mod's. |
+| `player:set_save_point(map, x, y)` | `player.warp` | Sets the save point, as `savepoint`. Butterfly Wings and death take the player there. Returns false when the map does not run or the cell is not walkable. |
+| `player:can_carry(item, amount)` | `game.read` | `checkweight`: whether the items fit, by weight and slots. |
+| `player:pay_zeny(amount)` | None | Takes zeny. Returns false, and takes nothing, when the player has too little. |
+| `player:give_zeny(amount)` | `player.give_zeny` | Gives zeny. Zeny over 2,147,483,647 is lost. |
+| `player:take_item(item, amount)` | None | `delitem`. Returns false, and takes nothing, when the player has too few. An amount of 0 takes nothing. |
+| `player:heal_fully()` | None | Heals all HP and SP. |
+| `player:mark_minimap(id, x, y, color)` | None | Marks a cell on the minimap, as `viewpoint`. A mark with the same ID replaces it. |
+| `player:unmark_minimap(id)` | None | Removes a mark. |
+| `items.name(item)` | `game.read` | The item's name from rAthena's item database. |
+| `text.item_link(item)` | None | A link `say` shows as the item's name, as `mesitemlink`. |
+| `maps.announce(map, text)` | None | A line for every player of a map, as `mapannounce`. |
+| `world.announce(text)` | None | A line for every player of the world, as `announce`. |
+
+Player handles also have `sex`: `"male"` or `"female"`.
+
+Shops follow rAthena's `npc_buylist` and `npc_selllist`: a purchase checks the zeny, the weight and the free slots, and a sale checks every slot, before anything changes. Then zeny and items change in one step. Discount and Compulsion Discount lower what the player pays, and Overcharge raises what the player gets.
 
 ### Monsters
 
@@ -397,7 +534,7 @@ The server checks every entry at start with the rules of `bonuses.add`. `when` i
 | `player:give_item_from_group(group)` | `player.give_items` | rAthena's `getgroupitem`: one use of an item group from `items.group "BLUEBOX"`, with rAthena's group rules. |
 | `player:warp(map, x, y)` | `player.warp` | Moves the player after the event. Returns false when the map does not run. |
 | `player:warp_to_random_cell()` | `player.warp` | A Fly Wing: a random walkable cell of the map, as `pc_randomwarp`. |
-| `player:warp_to_save_point()` | `player.warp` | A Butterfly Wing. Characters have no save point yet, so it is the start map's start cell. |
+| `player:warp_to_save_point()` | `player.warp` | A Butterfly Wing: the save point, or the start map's start cell without one. |
 | `player:show_effect(effect)` | None | rAthena's `specialeffect2`: everyone near sees it. |
 | `player:show_headgear_effect(effect)` | None | rAthena's `hateffect`. It shows nothing yet: the protocol has no message for it. |
 | `player:get_skill_level(skill)` | `game.read` | rAthena's `getskilllv`. |
@@ -419,6 +556,8 @@ Modules:
 | `wa.skills`, `wa.monsters` | `skills.id "SM_BASH"`, `monsters.id "PORING"`. |
 | `wa.races`, `wa.elements`, `wa.sizes`, `wa.monster_classes`, `wa.monster_groups`, `wa.weapon_types`, `wa.statuses`, `wa.effects`, `wa.jobs` | Constants. |
 | `wa.headgear_effects` | The constants of `show_headgear_effect`. |
+| `wa.emotions` | The constants of `npc:show_emotion`, from rAthena's `ET_` names, such as `emotions.thanks`. |
+| `wa.variables`, `wa.text`, `wa.maps`, `wa.world` | Saved variables, text, and announcements ("NPC scripts"). |
 
 Constant names come from rAthena's by a fixed rule (0002a, "Constants used in arguments", lists the spelled-out names): the prefix goes, the rest is in lower case, and a few names are spelled out. So `RC_DemiHuman` is `races.demi_human`, `SC_STUN` is `statuses.stun`, `EF_HEAL` is `effects.heal`, and `W_2HSWORD` is `weapon_types.two_handed_sword`. A name that starts with a digit gets an `n`: `statuses.n2011rwc_scroll`.
 
@@ -441,6 +580,23 @@ go run ./tools/wactl convert items --mode renewal --out /tmp/core-items
 To change a core item, set its `script` or `bonuses` in a mod's `data/items.yml`. The coverage report of each mode is in [docs/generated](../docs/generated).
 
 A zone loads an item's script the first time a player uses it there, and keeps at most 256 loaded.
+
+## Core's NPCs
+
+`waserver` converts rAthena's NPC scripts and shops when it starts, from the mode's `npcs.json` and `item_prices.json` in `reference/rathena/extracts` ([decision 0008](../docs/decisions/0008-converted-npcs.md)):
+
+- `data/npcs.yml` places every NPC that converts and every zeny shop.
+- `scripts/npcs/<name>.lua` is the entry script of a script NPC. Its duplicates name the same file.
+- `scripts/functions/<name>.lua` is an rAthena function, which scripts load when they first call it.
+- `scripts/lib/rathena.lua` has helpers the converted scripts share: arrays from 0, menus written as `"A:B"`, and `end` from inside a function.
+
+To read them:
+
+```text
+go run ./tools/wactl convert npcs --mode renewal --out /tmp/core-npcs
+```
+
+To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`. Kafra storage and pushcart rental say they are not available yet. The coverage report of each mode is in [docs/generated](../docs/generated).
 
 ## Testing a mod
 

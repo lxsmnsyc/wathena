@@ -18,6 +18,9 @@ message Command {
     PickUp pick_up = 8;
     RaiseStat raise_stat = 9;
     DropItem drop_item = 10;
+    ShopBuy shop_buy = 11;
+    ShopSell shop_sell = 12;
+    ShopClose shop_close = 13;
   }
 }
 
@@ -65,8 +68,14 @@ enum ChatChannel {
   // script's player:send_message. from is 0 and from_name is empty.
   // Clients never send it.
   CHAT_CHANNEL_SYSTEM = 6;
+  // ANNOUNCEMENT is a broadcast to every player of a map or of the
+  // world, as rAthena's announce and mapannounce. from is 0 and
+  // from_name is empty. Clients never send it.
+  CHAT_CHANNEL_ANNOUNCEMENT = 7;
 }
 
+// NpcClick talks to an NPC, or opens its shop, as rAthena's npc_click.
+// The NPC must be within 15 cells on both axes.
 message NpcClick {
   uint32 npc = 1;
 }
@@ -76,12 +85,56 @@ message NpcReply {
   // dialog is NpcDialog.dialog from the step being answered.
   uint32 dialog = 1;
   oneof answer {
+    // next answers a next prompt.
     bool next = 2;
+    // menu is the chosen option of a menu prompt, from 1.
     uint32 menu = 3;
+    // input_text answers an input_text prompt: at most text_max
+    // characters, cleaned as chat is.
     string input_text = 4;
+    // input_number answers an input_number prompt, from number_min to
+    // number_max.
     int64 input_number = 5;
+    // close answers a close prompt, or cancels a menu or an input. It
+    // ends the conversation.
     bool close = 6;
   }
+}
+
+// ShopBuy buys items from the shop that ShopOpen showed, in one step,
+// as rAthena's npc_buylist. The server answers with ShopResult.
+message ShopBuy {
+  // npc is ShopOpen.npc.
+  uint32 npc = 1;
+  // items are 1 to 100 lines. Each item must be in the shop.
+  repeated ShopBuyLine items = 2;
+}
+
+message ShopBuyLine {
+  uint32 item_id = 1;
+  // amount is 1 to 30000. Items that do not stack are bought one at a
+  // time, so their amount is 1.
+  uint32 amount = 2;
+}
+
+// ShopSell sells inventory slots to the shop that ShopOpen showed, as
+// rAthena's npc_selllist. The server answers with ShopResult.
+message ShopSell {
+  uint32 npc = 1;
+  // items are 1 to 100 lines, each slot at most once.
+  repeated ShopSellLine items = 2;
+}
+
+message ShopSellLine {
+  // slot is an inventory slot, below 200.
+  uint32 slot = 1;
+  // amount is 1 to 30000, and at most the slot's amount.
+  uint32 amount = 2;
+}
+
+// ShopClose closes the shop window without buying or selling.
+message ShopClose {
+  uint32 npc = 1;
 }
 
 // UseItem uses the item in an inventory slot, as rAthena's pc_useitem.

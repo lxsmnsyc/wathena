@@ -241,6 +241,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `start_items` | `--start-items` | none | Items of new characters, for development. |
 | `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. |
 | `profile_dir` | `--profile-dir` | none | Folder for CPU profiles of slow ticks. |
+| `shutdown_countdown` | `--shutdown-countdown` | `10s` | The countdown players see before the server stops, up to `10m`. `0s` turns it off. See "NPCs". |
 | `mods.dir` | `--mods` | none | The folder of installed mods. See "Mods". |
 | `mods.ruleset` | `--ruleset` | the core ruleset of `mode` | The world's ruleset mod. |
 | `mods.strict` | `--mods-strict` | `false` | Data overlay warnings become errors. |
@@ -296,11 +297,11 @@ What it does:
 
 ## Item scripts
 
-`waserver` converts rAthena's item scripts for its `mode` when it starts, and logs `item scripts converted` with the time it took, about 0.7 s for renewal ([decision 0007](../docs/decisions/0007-converted-item-scripts.md), mods/README.md, "Core's item scripts"). They are the files of the `core` mod.
+`waserver` converts rAthena's item scripts for its `mode` when it starts, and logs `item and npc scripts converted` with the time it took, about 0.9 s for renewal ([decision 0007](../docs/decisions/0007-converted-item-scripts.md), mods/README.md, "Core's item scripts"). They are the files of the `core` mod.
 
 - A used item runs its Lua `use` handler: heals, items, item boxes, effects and warps.
 - An item whose script needs what the server does not have yet, such as status effects, is refused and kept. The player sees a chat line that says what it needs.
-- Butterfly Wings and `player:warp_to_save_point()` go to the start cell of the start map (`--map`), since characters have no save point yet.
+- Butterfly Wings and `player:warp_to_save_point()` go to the character's save point. A new character's save point is the start cell of the start map (`--map`).
 - Rentals are given as normal items, since items do not expire yet.
 
 To try them, give a new character some items:
@@ -341,6 +342,29 @@ curl -X POST 'http://127.0.0.1:8301/debug/wathena/mods/reload?mod=example.greete
 - A reload that fails in a zone leaves the mod off there until a reload succeeds.
 
 Cost: each zone's Lua state holds about 50 KB for the sample mod. All 988 maps of a kRO build start in 2.1 seconds with it, against 2.0 without mods.
+
+## NPCs
+
+`waserver` also converts rAthena's NPC scripts and shops when it starts, in the same step ([decision 0008](../docs/decisions/0008-converted-npcs.md), mods/README.md, "Core's NPCs"). It takes about 0.17 s for renewal.
+
+- Clicking an NPC within 15 cells starts its `click` handler, or opens its shop. A player has one conversation at a time, and cannot act while it lasts.
+- A conversation ends when its script ends, when the player cancels it, leaves, dies, or changes map, and after rAthena's timeouts: 60 seconds for next, menus and close, and 180 seconds for text and number input.
+- Shops follow rAthena's buy and sell rules: Discount and Overcharge, weight, and zeny up to 2,147,483,647.
+- Kafras save, teleport and heal. Storage and pushcarts say they are not available yet.
+- The save point is kept in the `characters` table. A dead character is saved at its save point, and a player who dies goes back there.
+- Character and account variables of `wa.variables` save with the character. Server variables save right after they change, and again when the server stops. Without a database they live in memory.
+
+To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing:
+
+```text
+go run ./server/cmd/waserver --assets /path/to/build --maps prontera,prt_in,izlude --dev \
+  --mods mods/examples --start-items 909:300,602:1
+```
+
+Stopping:
+
+- On SIGTERM or Ctrl+C the server announces a countdown to every player, at 30, 10, 5, 3, 2 and 1 seconds, then saves and stops. A second signal stops it at once.
+- `shutdown_countdown` (`--shutdown-countdown`) sets the countdown. The default is 10 seconds, the most is 10 minutes, and 0 turns it off.
 
 ## Load tests and metrics
 

@@ -48,6 +48,12 @@ The server places every character and item:
 - Effects the server sends, such as level ups, play from `data/effects.yml`. An effect part can also be a sound, or a cylinder that the client draws, as roBrowser's `CYLINDER` effects (`src/render/cylinder.ts`).
 - Warp portals are NPCs with sprite 45. They show effect 321, `EF_WARPZONE2`: two blue rings of `texture/effect/ring_blue` that rise and shrink, four copies each, one second apart, as roBrowser draws them. roBrowser's sparks are sprite particles and do not show yet.
 - Walking into a warp changes the map. On `MapChange`, the client clears every entity, shows a loading screen, and loads the new map from the asset store, which the Service Worker caches. Events after `MapChange` wait until the map has loaded. Clicks do nothing while it loads. In development builds, `viewer.mapLoads()` lists each map change with its time, from `MapChange` to the map being ready, and the files and bytes it read.
+- Click an NPC to talk to it. The dialog window opens beside the player, with the NPC's name and its lines. RO's color codes, such as `^FF0000`, are drawn as colors, and the text is only ever shown as text. Next, Close, menus, and number and text inputs answer the server, and Escape cancels. Clicks on the game view do nothing while the window is open, except during a progress bar.
+- NPC images (`cutin`) show at the left, center or right of the screen from `image/illust/<name>`, and hide when the dialog window closes.
+- Emotions play over a unit from `sprite/effect/emotion`, one action per emotion. NPC speech shows over the NPC and in the chat log. Announcements show in the chat log in their color.
+- The progress bar shows over the player for the time the server sends.
+- Clicking a shop NPC, or a script's `open_shop`, opens the shop window: a Buy list with prices, a Sell list with the items the shop buys and their prices, an amount for each row, and the zeny, the totals and the weight. The window checks zeny and weight first, as the server does, and shows the server's answer.
+- The client has no minimap yet, so it ignores minimap marks.
 
 Map ready after a warp, measured in Chrome on an Apple M2 with `waserver` and the Vite dev server on the same machine (budget: 1.5 s when cached, strategy section 3.8):
 

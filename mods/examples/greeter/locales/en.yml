@@ -1,0 +1,8 @@
+# Text for players, in English. Scripts read it with text "key" from
+# wa.text. Nested keys are joined with dots: greeter.hello.
+greeter:
+  hello: Hello! Welcome to Prontera.
+  account: I have met someone from your account before.
+  shout: Welcome to Prontera, everyone!
+  done: There. Everyone heard that.
+  bye: Come back any time.

@@ -460,6 +460,33 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 		case m.GetCommand().HasWalkTo():
 			w := m.GetCommand().GetWalkTo()
 			queued = p.WalkTo(seq, int(w.GetX()), int(w.GetY()))
+		case m.GetCommand().HasNpcClick():
+			queued = p.NpcClick(seq, m.GetCommand().GetNpcClick().GetNpc())
+		case m.GetCommand().HasNpcReply():
+			r := m.GetCommand().GetNpcReply()
+			if !validReply(r) {
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.NpcReply(seq, r)
+		case m.GetCommand().HasShopBuy():
+			b := m.GetCommand().GetShopBuy()
+			lines, ok := buyLines(b)
+			if !ok {
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.ShopBuy(seq, b.GetNpc(), lines)
+		case m.GetCommand().HasShopSell():
+			b := m.GetCommand().GetShopSell()
+			lines, ok := sellLines(b)
+			if !ok {
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.ShopSell(seq, b.GetNpc(), lines)
+		case m.GetCommand().HasShopClose():
+			queued = p.ShopClose(seq, m.GetCommand().GetShopClose().GetNpc())
 		default:
 			// Unknown commands are ignored, so newer clients still work.
 			queued = p.Ack(seq)

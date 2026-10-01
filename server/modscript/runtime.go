@@ -17,6 +17,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/variables"
 )
 
 //go:embed prelude.lua
@@ -93,6 +94,9 @@ type Options struct {
 	Constants *constants.Data
 	// Jobs answers the job tests. Without it, they raise an error.
 	Jobs Jobs
+	// Server holds the server variables that every zone shares. Without
+	// it, server variables raise an error.
+	Server *variables.Server
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -117,7 +121,7 @@ type Runtime struct {
 	s      *script.State
 	host   Host
 	log    *slog.Logger
-	fns    struct{ loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected *script.Ref }
+	fns    struct{ loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref }
 	nextID int64
 
 	scripts  map[string]*mod.Scripts
@@ -146,6 +150,16 @@ type Runtime struct {
 	bonuses map[int64]*Bonus
 	// constants are the constant modules, made once.
 	constants script.Value
+	// npcs are the NPC instances, in the order they started.
+	npcs []*NPC
+	// conversations are the conversations that have not ended, by ID.
+	conversations map[int64]*Conversation
+	// closed is the error a closed conversation raises.
+	closed string
+	// variables are the declared variables, by handle ID. declared maps
+	// "<mod> <scope> <name>" to the type, so a name keeps one type.
+	variables []*variable
+	declared  map[string]string
 }
 
 // Context owns what a setup function and its handlers create
@@ -168,6 +182,13 @@ type Context struct {
 	bonuses []*Bonus
 	// player is the player of an item context: the user or the wearer.
 	player int64
+	// npc is the NPC handle of an NPC context.
+	npc int64
+	// conversations are those that run in an NPC context. retiring is
+	// set when the context ended while some still run: its handlers and
+	// timers are gone, and it ends with the last conversation.
+	conversations map[int64]*Conversation
+	retiring      bool
 }
 
 // Ended reports whether the context has ended.
@@ -205,6 +226,7 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		scripts: map[string]*mod.Scripts{}, contexts: map[string]*Context{},
 		handlers: map[string][]*handler{}, byID: map[int64]*handler{}, timers: map[int64]*timer{},
 		setups: map[string]*script.Ref{}, bonuses: map[int64]*Bonus{},
+		conversations: map[int64]*Conversation{}, declared: map[string]string{},
 	}
 	s, err := script.New(script.Options{Limits: opts.Limits})
 	if err != nil {
@@ -267,6 +289,33 @@ func (r *Runtime) init() error {
 		{"timers_bonus_done", r.timersBonusDone},
 		{"jobs_test", r.jobsTest},
 		{"constants", r.constantsTable},
+		{"npc_field", r.npcField},
+		{"npc_emotion", r.npcEmotion},
+		{"npc_say", r.npcSay},
+		{"conversation_say", r.conversationSay},
+		{"conversation_next", r.conversationNext},
+		{"conversation_choose", r.conversationChoose},
+		{"conversation_ask_number", r.conversationAskNumber},
+		{"conversation_ask_text", r.conversationAskText},
+		{"conversation_close", r.conversationClose},
+		{"conversation_wait", r.conversationWait},
+		{"conversation_image", r.conversationImage},
+		{"conversation_progress", r.conversationProgress},
+		{"player_pay_zeny", r.playerPayZeny},
+		{"player_give_zeny", r.playerGiveZeny},
+		{"player_take_item", r.playerTakeItem},
+		{"player_can_carry", r.playerCanCarry},
+		{"player_set_save_point", r.playerSetSavePoint},
+		{"player_mark_minimap", r.playerMarkMinimap},
+		{"player_open_shop", r.playerOpenShop},
+		{"items_name", r.itemsName},
+		{"text", r.text},
+		{"text_item_link", r.textItemLink},
+		{"announce", r.announce},
+		{"variables_declare", r.variablesDeclare},
+		{"variable_get", r.variableGet},
+		{"variable_set", r.variableSet},
+		{"variable_add", r.variableAdd},
 	}
 	var fields []script.Field
 	for _, h := range host {
@@ -298,6 +347,7 @@ func (r *Runtime) init() error {
 		{"drop_file", &r.fns.dropFile},
 		{"reset_loading", &r.fns.resetLoading},
 		{"is_protected", &r.fns.isProtected},
+		{"converse", &r.fns.converse},
 	} {
 		ref, err := r.s.Keep(tab.Get(f.name))
 		if err != nil {
@@ -305,11 +355,25 @@ func (r *Runtime) init() error {
 		}
 		*f.to = ref
 	}
+	msg, err := r.s.Call1(tab.Get("closed_message"))
+	if err != nil {
+		return fmt.Errorf("modscript prelude: %w", err)
+	}
+	r.closed, _ = msg.AsString()
 	return nil
 }
 
 // Close ends every context and frees the Lua state.
 func (r *Runtime) Close() {
+	for _, conv := range r.conversations {
+		conv.Done = true
+	}
+	for _, n := range r.npcs {
+		if n.ctx != nil {
+			n.ctx.conversations = nil
+			r.end(n.ctx)
+		}
+	}
 	for _, id := range r.order {
 		if c := r.contexts[id]; c != nil {
 			r.end(c)
@@ -395,15 +459,22 @@ func (r *Runtime) Reload(sc *mod.Scripts) error {
 		r.order = append(r.order, sc.Mod)
 	}
 	r.scripts[sc.Mod] = sc
-	return r.start(sc)
+	err := r.start(sc)
+	return errors.Join(err, r.reloadNPCs(sc.Mod))
 }
 
-// end removes everything a context owns.
+// end removes everything a context owns. An NPC context with
+// conversations that still run retires instead: it ends with the last
+// of them.
 func (r *Runtime) end(c *Context) {
 	if c.ended {
 		return
 	}
-	c.ended = true
+	if len(c.conversations) > 0 {
+		c.retiring = true
+	} else {
+		c.ended = true
+	}
 	for _, h := range c.handlers {
 		r.removeHandler(h)
 	}

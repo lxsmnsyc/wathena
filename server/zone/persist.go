@@ -2,6 +2,7 @@ package zone
 
 import (
 	"errors"
+	"maps"
 	"math"
 	"time"
 
@@ -142,8 +143,18 @@ func (z *Zone) snapshot(p *Player) *character.Character {
 	e := p.entity
 	c.HP, c.SP = max(e.hp, 0), max(p.sp, 0)
 	c.Map, c.X, c.Y = z.Map, e.x, e.y
+	if e.dead {
+		// pc_makesavestatus: a dead character is saved at its save
+		// point, where it comes back.
+		if to, x, y := z.savePoint(p); to != nil {
+			c.Map, c.X, c.Y = to.Map, x, y
+		}
+	}
 	c.InventorySize = p.inventory.Size
 	c.Items = savedItems(p.inventory)
+	if len(p.vars) > 0 {
+		c.Variables = maps.Clone(p.vars)
+	}
 	return c
 }
 

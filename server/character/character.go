@@ -4,6 +4,7 @@
 package character
 
 import (
+	"maps"
 	"slices"
 
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -15,6 +16,18 @@ type Character struct {
 	Info
 	// Items are the filled inventory slots, in slot order.
 	Items []Item
+	// Variables are the mods' saved variables of the character and of
+	// its account (proposal 0002, "Variables"), as JSON. A variable at
+	// its default value is not in the map.
+	Variables map[Variable]string
+}
+
+// Variable names one saved variable of a mod.
+type Variable struct {
+	Mod, Name string
+	// Account is set for an account variable, which every character of
+	// the account shares.
+	Account bool
 }
 
 // Info is a character's state other than its items.
@@ -43,6 +56,10 @@ type Info struct {
 	Zeny int64
 	// InventorySize is inventory_slots, the slots the character may fill.
 	InventorySize int
+	// SaveMap is the map of the save point, as rAthena's save_point,
+	// such as map/prontera. Empty is the world's start point.
+	SaveMap      string
+	SaveX, SaveY int
 }
 
 // Item is one filled inventory slot.
@@ -55,7 +72,7 @@ type Item struct {
 
 // Equal reports whether two characters hold the same data.
 func (c *Character) Equal(o *Character) bool {
-	return c.Info == o.Info && slices.Equal(c.Items, o.Items)
+	return c.Info == o.Info && slices.Equal(c.Items, o.Items) && maps.Equal(c.Variables, o.Variables)
 }
 
 // Sex is the protocol's and rAthena's sex: 1 for male, 0 for female.
@@ -65,3 +82,6 @@ func (c *Character) Sex() uint32 {
 	}
 	return 0
 }
+
+// MaxZeny is MAX_ZENY.
+const MaxZeny = 2_147_483_647

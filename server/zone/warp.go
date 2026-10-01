@@ -49,6 +49,9 @@ func (w *Warp) covers(x, y int) bool {
 type Directory interface {
 	// Zone returns the zone that runs a map, by asset name, or nil.
 	Zone(mapName string) *Zone
+	// Announce shows a line to every player of every zone. It never
+	// waits on a zone.
+	Announce(text string, color uint32)
 }
 
 // SetWarps sets the map's warps, in rAthena's load order: when areas
@@ -130,6 +133,9 @@ type handoff struct {
 	statusDelays map[string]int64
 	// rewarp is count_rewarp.
 	rewarp int
+	// temp are the player's temporary variables, which last until
+	// logout.
+	temp map[character.Variable]string
 }
 
 // warp sends a player through a warp, as npc_touch_areanpc and
@@ -161,7 +167,10 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	s.zone, s.player = nil, nil
 	s.mu.Unlock()
 
-	h := &handoff{sess: s, char: z.snapshot(p), ackSeq: p.ackSeq, rewarp: p.rewarp,
+	// The conversation and the shop window stay behind.
+	z.closeTalk(p)
+	p.shop = nil
+	h := &handoff{sess: s, char: z.snapshot(p), ackSeq: p.ackSeq, rewarp: p.rewarp, temp: p.temp,
 		canUseItem:   max(p.canUseItem-z.now, 0),
 		itemDelays:   map[uint32]int64{},
 		statusDelays: map[string]int64{},
@@ -258,6 +267,8 @@ func (z *Zone) arrivalCell(x, y int) (int, int) {
 // the same map. Viewers see it go out of sight and appear at the new
 // cell. The player sees itself appear there, as after a revive.
 func (z *Zone) teleport(p *Player, x, y int) {
+	z.closeTalk(p)
+	p.shop = nil
 	e := p.entity
 	x, y = z.arrivalCell(x, y)
 	e.x, e.y = x, y

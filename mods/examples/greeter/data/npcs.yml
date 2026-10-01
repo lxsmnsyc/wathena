@@ -1,15 +1,22 @@
 # NPC placements. A name without a prefix is this mod's own NPC, so
 # Greeter#prontera is example.greeter:Greeter#prontera. Players see the
-# part before "#". Clicking an NPC does nothing until NPC scripts arrive.
+# part before "#". script names the NPC's entry script.
 - name: Greeter#prontera
   map: prontera
   x: 158
   y: 200
   direction: south
   sprite: 4_F_KAFRA1
+  script: scripts/npc/greeter.lua
 - name: Greeter#prt_fild08
   map: prt_fild08
   x: 203
   y: 204
   direction: south
   sprite: 4_F_KAFRA1
+  script: scripts/npc/greeter.lua
+# A shop that only scripts open, with player:open_shop. It has no map.
+- name: Cookie Stand
+  shop:
+    - {item: "example.greeter:Welcome_Cookie", price: 25}
+    - {item: Red_Potion}

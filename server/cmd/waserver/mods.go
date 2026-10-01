@@ -88,10 +88,22 @@ func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mod
 		log.Warn("mods: " + n)
 	}
 	out := &mods{set: set, items: merged, npcs: map[string][]zone.NPC{}}
+	shops, err := npcShops(placed, merged)
+	if err != nil {
+		return nil, err
+	}
 	for _, n := range placed {
-		out.npcs[n.Map] = append(out.npcs[n.Map], zone.NPC{
+		if !n.Placed {
+			continue
+		}
+		zn := zone.NPC{
 			Name: n.Name, DisplayName: n.DisplayName, X: n.X, Y: n.Y, Direction: n.Direction, Sprite: n.Sprite,
-		})
+			Shop: shops[n.Name],
+		}
+		if n.Script != "" {
+			zn.Script = n.ScriptMod + ":" + n.Script
+		}
+		out.npcs[n.Map] = append(out.npcs[n.Map], zn)
 	}
 	scripts, err := set.AllScripts()
 	if err != nil {
@@ -112,8 +124,39 @@ func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mod
 		all = append(all, m.ID())
 	}
 	out.zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
-		Constants: core.Constants, Groups: groups, MonsterIDs: core.Monsters}
+		Constants: core.Constants, Groups: groups, MonsterIDs: core.Monsters, Shops: shops}
 	return out, nil
+}
+
+// npcShops makes the shops of NPC records, by record name. A price of -1
+// is the item's buy price. An item that does not exist is an error.
+func npcShops(npcs []mod.NPC, items *mod.Items) (map[string]*zone.Shop, error) {
+	byID := make(map[uint32]*item.Def, len(items.Data.Items))
+	for i := range items.Data.Items {
+		byID[items.Data.Items[i].ID] = &items.Data.Items[i]
+	}
+	out := map[string]*zone.Shop{}
+	var errs []error
+	for _, n := range npcs {
+		if n.Shop == nil {
+			continue
+		}
+		s := &zone.Shop{Name: n.Name, Discount: n.Discount}
+		for _, it := range n.Shop {
+			id, ok := items.IDs[it.Item]
+			if !ok {
+				errs = append(errs, fmt.Errorf("npcs %s: shop: there is no item %q", n.Name, it.Item))
+				continue
+			}
+			price := it.Price
+			if price < 0 {
+				price = byID[id].Buy
+			}
+			s.Items = append(s.Items, zone.ShopItem{ID: id, Price: price})
+		}
+		out[n.Name] = s
+	}
+	return out, errors.Join(errs...)
 }
 
 // checkItemScripts checks that every item's script exists, so a typo in

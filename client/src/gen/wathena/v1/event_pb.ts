@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/event.proto.
  */
 export const file_wathena_v1_event: GenFile = /*@__PURE__*/
-  fileDesc("ChZ3YXRoZW5hL3YxL2V2ZW50LnByb3RvEgp3YXRoZW5hLnYxIvgGCgVFdmVudBIqCgZhcHBlYXIYASABKAsyGC53YXRoZW5hLnYxLkVudGl0eUFwcGVhckgAEioKBnZhbmlzaBgCIAEoCzIYLndhdGhlbmEudjEuRW50aXR5VmFuaXNoSAASJgoEbW92ZRgDIAEoCzIWLndhdGhlbmEudjEuRW50aXR5TW92ZUgAEiYKBHN0b3AYBCABKAsyFi53YXRoZW5hLnYxLkVudGl0eVN0b3BIABInCgVzdGF0cxgFIAEoCzIWLndhdGhlbmEudjEuU3RhdFVwZGF0ZUgAEiQKBmRhbWFnZRgGIAEoCzISLndhdGhlbmEudjEuRGFtYWdlSAASKwoKc2tpbGxfY2FzdBgHIAEoCzIVLndhdGhlbmEudjEuU2tpbGxDYXN0SAASJwoEY2hhdBgIIAEoCzIXLndhdGhlbmEudjEuQ2hhdE1lc3NhZ2VIABIrCgpucGNfZGlhbG9nGAkgASgLMhUud2F0aGVuYS52MS5OcGNEaWFsb2dIABIoCgZlZmZlY3QYCiABKAsyFi53YXRoZW5hLnYxLkVmZmVjdFBsYXlIABIrCgppdGVtX3Rha2VuGAsgASgLMhUud2F0aGVuYS52MS5JdGVtVGFrZW5IABIxCg1pbnZlbnRvcnlfYWRkGAwgASgLMhgud2F0aGVuYS52MS5JbnZlbnRvcnlBZGRIABIyCg5waWNrX3VwX2ZhaWxlZBgNIAEoCzIYLndhdGhlbmEudjEuUGlja1VwRmFpbGVkSAASMAoJaW52ZW50b3J5GA4gASgLMhsud2F0aGVuYS52MS5JbnZlbnRvcnlVcGRhdGVIABI3ChBpbnZlbnRvcnlfcmVtb3ZlGA8gASgLMhsud2F0aGVuYS52MS5JbnZlbnRvcnlSZW1vdmVIABIpCglpdGVtX3VzZWQYECABKAsyFC53YXRoZW5hLnYxLkl0ZW1Vc2VkSAASNAoPdXNlX2l0ZW1fZmFpbGVkGBEgASgLMhkud2F0aGVuYS52MS5Vc2VJdGVtRmFpbGVkSAASNgoQZHJvcF9pdGVtX2ZhaWxlZBgSIAEoCzIaLndhdGhlbmEudjEuRHJvcEl0ZW1GYWlsZWRIABIrCgptYXBfY2hhbmdlGBMgASgLMhUud2F0aGVuYS52MS5NYXBDaGFuZ2VIAEIGCgRib2R5Ij4KCU1hcENoYW5nZRILCgNtYXAYASABKAkSCQoBeBgCIAEoDRIJCgF5GAMgASgNEg4KBm5ldF9pZBgEIAEoDSLdAQoMRW50aXR5QXBwZWFyEgoKAmlkGAEgASgNEiQKBGtpbmQYAiABKA4yFi53YXRoZW5hLnYxLkVudGl0eUtpbmQSCQoBeBgDIAEoDRIJCgF5GAQgASgNEgsKA2RpchgFIAEoDRIeCgRsb29rGAYgASgLMhAud2F0aGVuYS52MS5Mb29rEgwKBG5hbWUYByABKAkSDwoHd2Fsa19tcxgIIAEoDRITCgtocF9wZXJtaWxsZRgJIAEoDRIkCgRpdGVtGAogASgLMhYud2F0aGVuYS52MS5Hcm91bmRJdGVtIlwKCkdyb3VuZEl0ZW0SDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0SDQoFc3ViX3gYAyABKA0SDQoFc3ViX3kYBCABKA0SDwoHZHJvcHBlZBgFIAEoCCK/AQoETG9vaxIMCgRib2R5GAEgASgNEgwKBGhhaXIYAiABKA0SEgoKaGFpcl9jb2xvchgDIAEoDRITCgtjbG90aF9jb2xvchgEIAEoDRIOCgZ3ZWFwb24YBSABKA0SDgoGc2hpZWxkGAYgASgNEhAKCGhlYWRfdG9wGAcgASgNEhAKCGhlYWRfbWlkGAggASgNEhMKC2hlYWRfYm90dG9tGAkgASgNEgwKBHJvYmUYCiABKA0SCwoDc2V4GAsgASgNIkQKDEVudGl0eVZhbmlzaBIKCgJpZBgBIAEoDRIoCgZyZWFzb24YAiABKA4yGC53YXRoZW5hLnYxLlZhbmlzaFJlYXNvbiJqCgpFbnRpdHlNb3ZlEgoKAmlkGAEgASgNEg4KBmZyb21feBgCIAEoDRIOCgZmcm9tX3kYAyABKA0SDQoFc3RlcHMYBCABKAwSEAoIc3RhcnRfbXMYBSABKBESDwoHd2Fsa19tcxgGIAEoDSIuCgpFbnRpdHlTdG9wEgoKAmlkGAEgASgNEgkKAXgYAiABKA0SCQoBeRgDIAEoDSItCgpTdGF0VXBkYXRlEh8KBXN0YXRzGAEgAygLMhAud2F0aGVuYS52MS5TdGF0IjUKBFN0YXQSHgoCaWQYASABKA4yEi53YXRoZW5hLnYxLlN0YXRJZBINCgV2YWx1ZRgCIAEoAyKsAQoGRGFtYWdlEg4KBnNvdXJjZRgBIAEoDRIOCgZ0YXJnZXQYAiABKA0SDgoGYW1vdW50GAMgASgDEgwKBGhpdHMYBCABKA0SJAoEa2luZBgFIAEoDjIWLndhdGhlbmEudjEuRGFtYWdlS2luZBIQCghkZWxheV9tcxgGIAEoDRIQCghza2lsbF9pZBgHIAEoDRIaChJ0YXJnZXRfaHBfcGVybWlsbGUYCCABKA0iiwEKCVNraWxsQ2FzdBIOCgZzb3VyY2UYASABKA0SEAoIc2tpbGxfaWQYAiABKA0SDQoFbGV2ZWwYAyABKA0SDwoHY2FzdF9tcxgEIAEoDRIQCgZlbnRpdHkYBSABKA1IABIgCgRjZWxsGAYgASgLMhAud2F0aGVuYS52MS5DZWxsSABCCAoGdGFyZ2V0ImYKC0NoYXRNZXNzYWdlEigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBGZyb20YAiABKA0SEQoJZnJvbV9uYW1lGAMgASgJEgwKBHRleHQYBCABKAkitQEKCU5wY0RpYWxvZxILCgNucGMYASABKA0SDgoGZGlhbG9nGAIgASgNEg0KBWxpbmVzGAMgAygJEg4KBG5leHQYBCABKAhIABIjCgRtZW51GAUgASgLMhMud2F0aGVuYS52MS5OcGNNZW51SAASFAoKaW5wdXRfdGV4dBgGIAEoCEgAEhYKDGlucHV0X251bWJlchgHIAEoCEgAEg8KBWNsb3NlGAggASgISABCCAoGcHJvbXB0IhoKB05wY01lbnUSDwoHb3B0aW9ucxgBIAMoCSJZCgpFZmZlY3RQbGF5EhEKCWVmZmVjdF9pZBgBIAEoDRIQCgZlbnRpdHkYAiABKA1IABIgCgRjZWxsGAMgASgLMhAud2F0aGVuYS52MS5DZWxsSABCBAoCYXQiKQoJSXRlbVRha2VuEg4KBnNvdXJjZRgBIAEoDRIMCgRpdGVtGAIgASgNIkkKD0ludmVudG9yeVVwZGF0ZRIoCgVpdGVtcxgBIAMoCzIZLndhdGhlbmEudjEuSW52ZW50b3J5SXRlbRIMCgRzaXplGAIgASgNIj4KDUludmVudG9yeUl0ZW0SDAoEc2xvdBgBIAEoDRIPCgdpdGVtX2lkGAIgASgNEg4KBmFtb3VudBgDIAEoDSI9CgxJbnZlbnRvcnlBZGQSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0SDAoEc2xvdBgDIAEoDSJiCg9JbnZlbnRvcnlSZW1vdmUSDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0SMQoGcmVhc29uGAMgASgOMiEud2F0aGVuYS52MS5JbnZlbnRvcnlSZW1vdmVSZWFzb24iKwoISXRlbVVzZWQSDgoGc291cmNlGAEgASgNEg8KB2l0ZW1faWQYAiABKA0iSQoNVXNlSXRlbUZhaWxlZBIMCgRzbG90GAEgASgNEioKBnJlYXNvbhgCIAEoDjIaLndhdGhlbmEudjEuVXNlSXRlbUZhaWx1cmUiSwoORHJvcEl0ZW1GYWlsZWQSDAoEc2xvdBgBIAEoDRIrCgZyZWFzb24YAiABKA4yGy53YXRoZW5hLnYxLkRyb3BJdGVtRmFpbHVyZSJHCgxQaWNrVXBGYWlsZWQSDAoEaXRlbRgBIAEoDRIpCgZyZWFzb24YAiABKA4yGS53YXRoZW5hLnYxLlBpY2tVcEZhaWx1cmUq7QEKCkVudGl0eUtpbmQSGwoXRU5USVRZX0tJTkRfVU5TUEVDSUZJRUQQABIWChJFTlRJVFlfS0lORF9QTEFZRVIQARIXChNFTlRJVFlfS0lORF9NT05TVEVSEAISEwoPRU5USVRZX0tJTkRfTlBDEAMSEwoPRU5USVRZX0tJTkRfUEVUEAQSGgoWRU5USVRZX0tJTkRfSE9NVU5DVUxVUxAFEhkKFUVOVElUWV9LSU5EX01FUkNFTkFSWRAGEhQKEEVOVElUWV9LSU5EX0lURU0QBxIaChZFTlRJVFlfS0lORF9TS0lMTF9VTklUEAgq2QEKDFZhbmlzaFJlYXNvbhIdChlWQU5JU0hfUkVBU09OX1VOU1BFQ0lGSUVEEAASHgoaVkFOSVNIX1JFQVNPTl9PVVRfT0ZfU0lHSFQQARIWChJWQU5JU0hfUkVBU09OX0RJRUQQAhIcChhWQU5JU0hfUkVBU09OX0xPR0dFRF9PVVQQAxIcChhWQU5JU0hfUkVBU09OX1RFTEVQT1JURUQQBBIbChdWQU5JU0hfUkVBU09OX1BJQ0tFRF9VUBAFEhkKFVZBTklTSF9SRUFTT05fRVhQSVJFRBAGKuYFCgZTdGF0SWQSFwoTU1RBVF9JRF9VTlNQRUNJRklFRBAAEg4KClNUQVRfSURfSFAQARISCg5TVEFUX0lEX01BWF9IUBACEg4KClNUQVRfSURfU1AQAxISCg5TVEFUX0lEX01BWF9TUBAEEhYKElNUQVRfSURfQkFTRV9MRVZFTBAFEhUKEVNUQVRfSURfSk9CX0xFVkVMEAYSFAoQU1RBVF9JRF9CQVNFX0VYUBAHEhMKD1NUQVRfSURfSk9CX0VYUBAIEhAKDFNUQVRfSURfWkVOWRAJEhIKDlNUQVRfSURfV0VJR0hUEAoSFgoSU1RBVF9JRF9NQVhfV0VJR0hUEAsSDwoLU1RBVF9JRF9TVFIQDBIPCgtTVEFUX0lEX0FHSRANEg8KC1NUQVRfSURfVklUEA4SDwoLU1RBVF9JRF9JTlQQDxIPCgtTVEFUX0lEX0RFWBAQEg8KC1NUQVRfSURfTFVLEBESDwoLU1RBVF9JRF9BVEsQEhIQCgxTVEFUX0lEX01BVEsQExIPCgtTVEFUX0lEX0RFRhAUEhAKDFNUQVRfSURfTURFRhAVEg8KC1NUQVRfSURfSElUEBYSEAoMU1RBVF9JRF9GTEVFEBcSFAoQU1RBVF9JRF9DUklUSUNBTBAYEhAKDFNUQVRfSURfQVNQRBAZEhkKFVNUQVRfSURfU1RBVFVTX1BPSU5UUxAaEhgKFFNUQVRfSURfU0tJTExfUE9JTlRTEBsSGQoVU1RBVF9JRF9ORVhUX0JBU0VfRVhQEBwSGAoUU1RBVF9JRF9ORVhUX0pPQl9FWFAQHRIUChBTVEFUX0lEX1NUUl9DT1NUEB4SFAoQU1RBVF9JRF9BR0lfQ09TVBAfEhQKEFNUQVRfSURfVklUX0NPU1QQIBIUChBTVEFUX0lEX0lOVF9DT1NUECESFAoQU1RBVF9JRF9ERVhfQ09TVBAiEhQKEFNUQVRfSURfTFVLX0NPU1QQIyqkAQoKRGFtYWdlS2luZBIbChdEQU1BR0VfS0lORF9VTlNQRUNJRklFRBAAEhYKEkRBTUFHRV9LSU5EX05PUk1BTBABEhgKFERBTUFHRV9LSU5EX0NSSVRJQ0FMEAISFAoQREFNQUdFX0tJTkRfTUlTUxADEhsKF0RBTUFHRV9LSU5EX0xVQ0tZX0RPREdFEAQSFAoQREFNQUdFX0tJTkRfSEVBTBAFKocBChVJbnZlbnRvcnlSZW1vdmVSZWFzb24SJwojSU5WRU5UT1JZX1JFTU9WRV9SRUFTT05fVU5TUEVDSUZJRUQQABIgChxJTlZFTlRPUllfUkVNT1ZFX1JFQVNPTl9VU0VEEAESIwofSU5WRU5UT1JZX1JFTU9WRV9SRUFTT05fRFJPUFBFRBACKr0CCg5Vc2VJdGVtRmFpbHVyZRIgChxVU0VfSVRFTV9GQUlMVVJFX1VOU1BFQ0lGSUVEEAASHwobVVNFX0lURU1fRkFJTFVSRV9FTVBUWV9TTE9UEAESHwobVVNFX0lURU1fRkFJTFVSRV9OT1RfVVNBQkxFEAISIgoeVVNFX0lURU1fRkFJTFVSRV9OT1RfU1VQUE9SVEVEEAMSHQoZVVNFX0lURU1fRkFJTFVSRV9UT09fU09PThAEEh0KGVVTRV9JVEVNX0ZBSUxVUkVfQ09PTERPV04QBRIfChtVU0VfSVRFTV9GQUlMVVJFX0NBTk5PVF9VU0UQBhIfChtVU0VfSVRFTV9GQUlMVVJFX09WRVJXRUlHSFQQBxIjCh9VU0VfSVRFTV9GQUlMVVJFX0lOVkVOVE9SWV9GVUxMEAgqmwEKD0Ryb3BJdGVtRmFpbHVyZRIhCh1EUk9QX0lURU1fRkFJTFVSRV9VTlNQRUNJRklFRBAAEiAKHERST1BfSVRFTV9GQUlMVVJFX0VNUFRZX1NMT1QQARIgChxEUk9QX0lURU1fRkFJTFVSRV9CQURfQU1PVU5UEAISIQodRFJPUF9JVEVNX0ZBSUxVUkVfQ0FOTk9UX0RST1AQAyrLAQoNUGlja1VwRmFpbHVyZRIfChtQSUNLX1VQX0ZBSUxVUkVfVU5TUEVDSUZJRUQQABIYChRQSUNLX1VQX0ZBSUxVUkVfR09ORRABEh0KGVBJQ0tfVVBfRkFJTFVSRV9OT1RfWU9VUlMQAhIeChpQSUNLX1VQX0ZBSUxVUkVfT1ZFUldFSUdIVBADEiIKHlBJQ0tfVVBfRkFJTFVSRV9JTlZFTlRPUllfRlVMTBAEEhwKGFBJQ0tfVVBfRkFJTFVSRV9UT09fTUFOWRAFQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM", [file_wathena_v1_command]);
+  fileDesc("ChZ3YXRoZW5hL3YxL2V2ZW50LnByb3RvEgp3YXRoZW5hLnYxIocJCgVFdmVudBIqCgZhcHBlYXIYASABKAsyGC53YXRoZW5hLnYxLkVudGl0eUFwcGVhckgAEioKBnZhbmlzaBgCIAEoCzIYLndhdGhlbmEudjEuRW50aXR5VmFuaXNoSAASJgoEbW92ZRgDIAEoCzIWLndhdGhlbmEudjEuRW50aXR5TW92ZUgAEiYKBHN0b3AYBCABKAsyFi53YXRoZW5hLnYxLkVudGl0eVN0b3BIABInCgVzdGF0cxgFIAEoCzIWLndhdGhlbmEudjEuU3RhdFVwZGF0ZUgAEiQKBmRhbWFnZRgGIAEoCzISLndhdGhlbmEudjEuRGFtYWdlSAASKwoKc2tpbGxfY2FzdBgHIAEoCzIVLndhdGhlbmEudjEuU2tpbGxDYXN0SAASJwoEY2hhdBgIIAEoCzIXLndhdGhlbmEudjEuQ2hhdE1lc3NhZ2VIABIrCgpucGNfZGlhbG9nGAkgASgLMhUud2F0aGVuYS52MS5OcGNEaWFsb2dIABIoCgZlZmZlY3QYCiABKAsyFi53YXRoZW5hLnYxLkVmZmVjdFBsYXlIABIrCgppdGVtX3Rha2VuGAsgASgLMhUud2F0aGVuYS52MS5JdGVtVGFrZW5IABIxCg1pbnZlbnRvcnlfYWRkGAwgASgLMhgud2F0aGVuYS52MS5JbnZlbnRvcnlBZGRIABIyCg5waWNrX3VwX2ZhaWxlZBgNIAEoCzIYLndhdGhlbmEudjEuUGlja1VwRmFpbGVkSAASMAoJaW52ZW50b3J5GA4gASgLMhsud2F0aGVuYS52MS5JbnZlbnRvcnlVcGRhdGVIABI3ChBpbnZlbnRvcnlfcmVtb3ZlGA8gASgLMhsud2F0aGVuYS52MS5JbnZlbnRvcnlSZW1vdmVIABIpCglpdGVtX3VzZWQYECABKAsyFC53YXRoZW5hLnYxLkl0ZW1Vc2VkSAASNAoPdXNlX2l0ZW1fZmFpbGVkGBEgASgLMhkud2F0aGVuYS52MS5Vc2VJdGVtRmFpbGVkSAASNgoQZHJvcF9pdGVtX2ZhaWxlZBgSIAEoCzIaLndhdGhlbmEudjEuRHJvcEl0ZW1GYWlsZWRIABIrCgptYXBfY2hhbmdlGBMgASgLMhUud2F0aGVuYS52MS5NYXBDaGFuZ2VIABIpCglucGNfaW1hZ2UYFCABKAsyFC53YXRoZW5hLnYxLk5wY0ltYWdlSAASLwoMbnBjX3Byb2dyZXNzGBUgASgLMhcud2F0aGVuYS52MS5OcGNQcm9ncmVzc0gAEiYKB2Vtb3Rpb24YFiABKAsyEy53YXRoZW5hLnYxLkVtb3Rpb25IABIvCgxtaW5pbWFwX21hcmsYFyABKAsyFy53YXRoZW5hLnYxLk1pbmltYXBNYXJrSAASKQoJc2hvcF9vcGVuGBggASgLMhQud2F0aGVuYS52MS5TaG9wT3BlbkgAEi0KC3Nob3BfcmVzdWx0GBkgASgLMhYud2F0aGVuYS52MS5TaG9wUmVzdWx0SABCBgoEYm9keSI+CglNYXBDaGFuZ2USCwoDbWFwGAEgASgJEgkKAXgYAiABKA0SCQoBeRgDIAEoDRIOCgZuZXRfaWQYBCABKA0i3QEKDEVudGl0eUFwcGVhchIKCgJpZBgBIAEoDRIkCgRraW5kGAIgASgOMhYud2F0aGVuYS52MS5FbnRpdHlLaW5kEgkKAXgYAyABKA0SCQoBeRgEIAEoDRILCgNkaXIYBSABKA0SHgoEbG9vaxgGIAEoCzIQLndhdGhlbmEudjEuTG9vaxIMCgRuYW1lGAcgASgJEg8KB3dhbGtfbXMYCCABKA0SEwoLaHBfcGVybWlsbGUYCSABKA0SJAoEaXRlbRgKIAEoCzIWLndhdGhlbmEudjEuR3JvdW5kSXRlbSJcCgpHcm91bmRJdGVtEg8KB2l0ZW1faWQYASABKA0SDgoGYW1vdW50GAIgASgNEg0KBXN1Yl94GAMgASgNEg0KBXN1Yl95GAQgASgNEg8KB2Ryb3BwZWQYBSABKAgivwEKBExvb2sSDAoEYm9keRgBIAEoDRIMCgRoYWlyGAIgASgNEhIKCmhhaXJfY29sb3IYAyABKA0SEwoLY2xvdGhfY29sb3IYBCABKA0SDgoGd2VhcG9uGAUgASgNEg4KBnNoaWVsZBgGIAEoDRIQCghoZWFkX3RvcBgHIAEoDRIQCghoZWFkX21pZBgIIAEoDRITCgtoZWFkX2JvdHRvbRgJIAEoDRIMCgRyb2JlGAogASgNEgsKA3NleBgLIAEoDSJECgxFbnRpdHlWYW5pc2gSCgoCaWQYASAB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dW50GAMgASgNIj0KDEludmVudG9yeUFkZBIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDRIMCgRzbG90GAMgASgNImIKD0ludmVudG9yeVJlbW92ZRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDRIxCgZyZWFzb24YAyABKA4yIS53YXRoZW5hLnYxLkludmVudG9yeVJlbW92ZVJlYXNvbiIrCghJdGVtVXNlZBIOCgZzb3VyY2UYASABKA0SDwoHaXRlbV9pZBgCIAEoDSJJCg1Vc2VJdGVtRmFpbGVkEgwKBHNsb3QYASABKA0SKgoGcmVhc29uGAIgASgOMhoud2F0aGVuYS52MS5Vc2VJdGVtRmFpbHVyZSJLCg5Ecm9wSXRlbUZhaWxlZBIMCgRzbG90GAEgASgNEisKBnJlYXNvbhgCIAEoDjIbLndhdGhlbmEudjEuRHJvcEl0ZW1GYWlsdXJlIkcKDFBpY2tVcEZhaWxlZBIMCgRpdGVtGAEgASgNEikKBnJlYXNvbhgCIAEoDjIZLndhdGhlbmEudjEuUGlja1VwRmFpbHVyZSrtAQoKRW50aXR5S2luZBIbChdFTlRJVFlfS0lORF9VTlNQRUNJRklFRBAAEhYKEkVOVElUWV9LSU5EX1BMQVlFUhABEhcKE0VOVElUWV9LSU5EX01PTlNURVIQAhITCg9FTlRJVFlfS0lORF9OUEMQAxITCg9FTlRJVFlfS0lORF9QRVQQBBIaChZFTlRJVFlfS0lORF9IT01VTkNVTFVTEAUSGQoVRU5USVRZX0tJTkRfTUVSQ0VOQVJZEAYSFAoQRU5USVRZX0tJTkRfSVRFTRAHEhoKFkVOVElUWV9LSU5EX1NLSUxMX1VOSVQQCCrZAQoMVmFuaXNoUmVhc29uEh0KGVZBTklTSF9SRUFTT05fVU5TUEVDSUZJRUQQABIeChpWQU5JU0hfUkVBU09OX09VVF9PRl9TSUdIVBABEhYKElZBTklTSF9SRUFTT05fRElFRBACEhwKGFZBTklTSF9SRUFTT05fTE9HR0VEX09VVBADEhwKGFZBTklTSF9SRUFTT05fVEVMRVBPUlRFRBAEEhsKF1ZBTklTSF9SRUFTT05fUElDS0VEX1VQEAUSGQoVVkFOSVNIX1JFQVNPTl9FWFBJUkVEEAYq5gUKBlN0YXRJZBIXChNTVEFUX0lEX1VOU1BFQ0lGSUVEEAASDgoKU1RBVF9JRF9IUBABEhIKDlNUQVRfSURfTUFYX0hQEAISDgoKU1RBVF9JRF9TUBADEhIKDlNUQVRfSURfTUFYX1NQEAQSFgoSU1RBVF9JRF9CQVNFX0xFVkVMEAUSFQoRU1RBVF9JRF9KT0JfTEVWRUwQBhIUChBTVEFUX0lEX0JBU0VfRVhQEAcSEwoPU1RBVF9JRF9KT0JfRVhQEAgSEAoMU1RBVF9JRF9aRU5ZEAkSEgoOU1RBVF9JRF9XRUlHSFQQChIWChJTVEFUX0lEX01BWF9XRUlHSFQQCxIPCgtTVEFUX0lEX1NUUhAMEg8KC1NUQVRfSURfQUdJEA0SDwoLU1RBVF9JRF9WSVQQDhIPCgtTVEFUX0lEX0lOVBAPEg8KC1NUQVRfSURfREVYEBASDwoLU1RBVF9JRF9MVUsQERIPCgtTVEFUX0lEX0FUSxASEhAKDFNUQVRfSURfTUFUSxATEg8KC1NUQVRfSURfREVGEBQSEAoMU1RBVF9JRF9NREVGEBUSDwoLU1RBVF9JRF9ISVQQFhIQCgxTVEFUX0lEX0ZMRUUQFxIUChBTVEFUX0lEX0NSSVRJQ0FMEBgSEAoMU1RBVF9JRF9BU1BEEBkSGQoVU1RBVF9JRF9TVEFUVVNfUE9JTlRTEBoSGAoUU1RBVF9JRF9TS0lMTF9QT0lOVFMQGxIZChVTVEFUX0lEX05FWFRfQkFTRV9FWFAQHBIYChRTVEFUX0lEX05FWFRfSk9CX0VYUBAdEhQKEFNUQVRfSURfU1RSX0NPU1QQHhIUChBTVEFUX0lEX0FHSV9DT1NUEB8SFAoQU1RBVF9JRF9WSVRfQ09TVBAgEhQKEFNUQVRfSURfSU5UX0NPU1QQIRIUChBTVEFUX0lEX0RFWF9DT1NUECISFAoQU1RBVF9JRF9MVUtfQ09TVBAjKqQBCgpEYW1hZ2VLaW5kEhsKF0RBTUFHRV9LSU5EX1VOU1BFQ0lGSUVEEAASFgoSREFNQUdFX0tJTkRfTk9STUFMEAESGAoUREFNQUdFX0tJTkRfQ1JJVElDQUwQAhIUChBEQU1BR0VfS0lORF9NSVNTEAMSGwoXREFNQUdFX0tJTkRfTFVDS1lfRE9ER0UQBBIUChBEQU1BR0VfS0lORF9IRUFMEAUqfQoNSW1hZ2VQb3NpdGlvbhIeChpJTUFHRV9QT1NJVElPTl9VTlNQRUNJRklFRBAAEhcKE0lNQUdFX1BPU0lUSU9OX0xFRlQQARIZChVJTUFHRV9QT1NJVElPTl9DRU5URVIQAhIYChRJTUFHRV9QT1NJVElPTl9SSUdIVBADKswBCgtTaG9wT3V0Y29tZRIcChhTSE9QX09VVENPTUVfVU5TUEVDSUZJRUQQABIXChNTSE9QX09VVENPTUVfQk9VR0hUEAESFQoRU0hPUF9PVVRDT01FX1NPTEQQAhIgChxTSE9QX09VVENPTUVfTk9UX0VOT1VHSF9aRU5ZEAMSGwoXU0hPUF9PVVRDT01FX09WRVJXRUlHSFQQBBIXChNTSE9QX09VVENPTUVfRkFJTEVEEAUSFwoTU0hPUF9PVVRDT01FX0NMT1NFRBAGKswBChVJbnZlbnRvcnlSZW1vdmVSZWFzb24SJwojSU5WRU5UT1JZX1JFTU9WRV9SRUFTT05fVU5TUEVDSUZJRUQQABIgChxJTlZFTlRPUllfUkVNT1ZFX1JFQVNPTl9VU0VEEAESIwofSU5WRU5UT1JZX1JFTU9WRV9SRUFTT05fRFJPUFBFRBACEiEKHUlOVkVOVE9SWV9SRU1PVkVfUkVBU09OX1RBS0VOEAMSIAocSU5WRU5UT1JZX1JFTU9WRV9SRUFTT05fU09MRBAEKr0CCg5Vc2VJdGVtRmFpbHVyZRIgChxVU0VfSVRFTV9GQUlMVVJFX1VOU1BFQ0lGSUVEEAASHwobVVNFX0lURU1fRkFJTFVSRV9FTVBUWV9TTE9UEAESHwobVVNFX0lURU1fRkFJTFVSRV9OT1RfVVNBQkxFEAISIgoeVVNFX0lURU1fRkFJTFVSRV9OT1RfU1VQUE9SVEVEEAMSHQoZVVNFX0lURU1fRkFJTFVSRV9UT09fU09PThAEEh0KGVVTRV9JVEVNX0ZBSUxVUkVfQ09PTERPV04QBRIfChtVU0VfSVRFTV9GQUlMVVJFX0NBTk5PVF9VU0UQBhIfChtVU0VfSVRFTV9GQUlMVVJFX09WRVJXRUlHSFQQBxIjCh9VU0VfSVRFTV9GQUlMVVJFX0lOVkVOVE9SWV9GVUxMEAgqmwEKD0Ryb3BJdGVtRmFpbHVyZRIhCh1EUk9QX0lURU1fRkFJTFVSRV9VTlNQRUNJRklFRBAAEiAKHERST1BfSVRFTV9GQUlMVVJFX0VNUFRZX1NMT1QQARIgChxEUk9QX0lURU1fRkFJTFVSRV9CQURfQU1PVU5UEAISIQodRFJPUF9JVEVNX0ZBSUxVUkVfQ0FOTk9UX0RST1AQAyrLAQoNUGlja1VwRmFpbHVyZRIfChtQSUNLX1VQX0ZBSUxVUkVfVU5TUEVDSUZJRUQQABIYChRQSUNLX1VQX0ZBSUxVUkVfR09ORRABEh0KGVBJQ0tfVVBfRkFJTFVSRV9OT1RfWU9VUlMQAhIeChpQSUNLX1VQX0ZBSUxVUkVfT1ZFUldFSUdIVBADEiIKHlBJQ0tfVVBfRkFJTFVSRV9JTlZFTlRPUllfRlVMTBAEEhwKGFBJQ0tfVVBfRkFJTFVSRV9UT09fTUFOWRAFQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM", [file_wathena_v1_command]);
 
 /**
  * Event is one thing the player sees change.
@@ -138,6 +138,42 @@ export type Event = Message<"wathena.v1.Event"> & {
      */
     value: MapChange;
     case: "mapChange";
+  } | {
+    /**
+     * @generated from field: wathena.v1.NpcImage npc_image = 20;
+     */
+    value: NpcImage;
+    case: "npcImage";
+  } | {
+    /**
+     * @generated from field: wathena.v1.NpcProgress npc_progress = 21;
+     */
+    value: NpcProgress;
+    case: "npcProgress";
+  } | {
+    /**
+     * @generated from field: wathena.v1.Emotion emotion = 22;
+     */
+    value: Emotion;
+    case: "emotion";
+  } | {
+    /**
+     * @generated from field: wathena.v1.MinimapMark minimap_mark = 23;
+     */
+    value: MinimapMark;
+    case: "minimapMark";
+  } | {
+    /**
+     * @generated from field: wathena.v1.ShopOpen shop_open = 24;
+     */
+    value: ShopOpen;
+    case: "shopOpen";
+  } | {
+    /**
+     * @generated from field: wathena.v1.ShopResult shop_result = 25;
+     */
+    value: ShopResult;
+    case: "shopResult";
   } | { case: undefined; value?: undefined };
 };
 
@@ -645,7 +681,8 @@ export type ChatMessage = Message<"wathena.v1.ChatMessage"> & {
   channel: ChatChannel;
 
   /**
-   * from is the speaker's entity ID for local chat, 0 otherwise.
+   * from is the speaker's entity ID for local chat, 0 otherwise. An NPC
+   * that speaks aloud, as rAthena's npctalk, is a speaker too.
    *
    * @generated from field: uint32 from = 2;
    */
@@ -660,6 +697,14 @@ export type ChatMessage = Message<"wathena.v1.ChatMessage"> & {
    * @generated from field: string text = 4;
    */
   text: string;
+
+  /**
+   * color is the text's color as 0xRRGGBB for an announcement, or 0 for
+   * the channel's own color.
+   *
+   * @generated from field: uint32 color = 5;
+   */
+  color: number;
 };
 
 /**
@@ -671,6 +716,14 @@ export const ChatMessageSchema: GenMessage<ChatMessage> = /*@__PURE__*/
 
 /**
  * NpcDialog is one step of an NPC dialog. Text is in the player's language.
+ *
+ * The client keeps one dialog window per player. Lines add to the
+ * window, which opens when it is closed. A step without a prompt only
+ * adds lines. A step with a prompt shows it, and the player's answer
+ * quotes the step's dialog in NpcReply. Lines may hold RO color codes,
+ * such as ^FF0000, and item links as
+ * <ITEMLINK>name<INFO>item ID</INFO></ITEMLINK>. Clients show them as
+ * text, never as HTML.
  *
  * @generated from message wathena.v1.NpcDialog
  */
@@ -697,35 +750,70 @@ export type NpcDialog = Message<"wathena.v1.NpcDialog"> & {
    */
   prompt: {
     /**
+     * next shows a Next button. Its answer clears the window's lines.
+     *
      * @generated from field: bool next = 4;
      */
     value: boolean;
     case: "next";
   } | {
     /**
+     * menu shows options. The answer is the chosen option, from 1, or
+     * close to cancel.
+     *
      * @generated from field: wathena.v1.NpcMenu menu = 5;
      */
     value: NpcMenu;
     case: "menu";
   } | {
     /**
+     * input_text asks for text of at most text_max characters.
+     *
      * @generated from field: bool input_text = 6;
      */
     value: boolean;
     case: "inputText";
   } | {
     /**
+     * input_number asks for a number from number_min to number_max.
+     *
      * @generated from field: bool input_number = 7;
      */
     value: boolean;
     case: "inputNumber";
   } | {
     /**
+     * close shows a Close button. Its answer closes the window.
+     *
      * @generated from field: bool close = 8;
      */
     value: boolean;
     case: "close";
+  } | {
+    /**
+     * end closes the window at once: the conversation ended without a
+     * Close button, such as after a timeout.
+     *
+     * @generated from field: bool end = 9;
+     */
+    value: boolean;
+    case: "end";
   } | { case: undefined; value?: undefined };
+
+  /**
+   * @generated from field: uint32 text_max = 10;
+   */
+  textMax: number;
+
+  /**
+   * @generated from field: int64 number_min = 11;
+   */
+  numberMin: bigint;
+
+  /**
+   * @generated from field: int64 number_max = 12;
+   */
+  numberMax: bigint;
 };
 
 /**
@@ -751,6 +839,234 @@ export type NpcMenu = Message<"wathena.v1.NpcMenu"> & {
  */
 export const NpcMenuSchema: GenMessage<NpcMenu> = /*@__PURE__*/
   messageDesc(file_wathena_v1_event, 14);
+
+/**
+ * NpcImage shows an NPC illustration, as rAthena's cutin. The asset is
+ * image/illust/<name>. An empty name hides the image. The client also
+ * hides it when the dialog window closes.
+ *
+ * @generated from message wathena.v1.NpcImage
+ */
+export type NpcImage = Message<"wathena.v1.NpcImage"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: wathena.v1.ImagePosition position = 2;
+   */
+  position: ImagePosition;
+};
+
+/**
+ * Describes the message wathena.v1.NpcImage.
+ * Use `create(NpcImageSchema)` to create a new message.
+ */
+export const NpcImageSchema: GenMessage<NpcImage> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 15);
+
+/**
+ * NpcProgress shows a progress bar over the player for duration_ms, as
+ * rAthena's progressbar. The conversation goes on when it is full. A
+ * walk command cancels it, and ends the conversation.
+ *
+ * @generated from message wathena.v1.NpcProgress
+ */
+export type NpcProgress = Message<"wathena.v1.NpcProgress"> & {
+  /**
+   * @generated from field: uint32 duration_ms = 1;
+   */
+  durationMs: number;
+
+  /**
+   * color is 0xRRGGBB.
+   *
+   * @generated from field: uint32 color = 2;
+   */
+  color: number;
+};
+
+/**
+ * Describes the message wathena.v1.NpcProgress.
+ * Use `create(NpcProgressSchema)` to create a new message.
+ */
+export const NpcProgressSchema: GenMessage<NpcProgress> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 16);
+
+/**
+ * Emotion shows an emotion icon over an entity, as rAthena's emotion.
+ * emotion is an ET_ value, from 0, which is the action of the client's
+ * emotion sprite.
+ *
+ * @generated from message wathena.v1.Emotion
+ */
+export type Emotion = Message<"wathena.v1.Emotion"> & {
+  /**
+   * @generated from field: uint32 entity = 1;
+   */
+  entity: number;
+
+  /**
+   * @generated from field: uint32 emotion = 2;
+   */
+  emotion: number;
+};
+
+/**
+ * Describes the message wathena.v1.Emotion.
+ * Use `create(EmotionSchema)` to create a new message.
+ */
+export const EmotionSchema: GenMessage<Emotion> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 17);
+
+/**
+ * MinimapMark marks a cell on the player's minimap, as rAthena's
+ * viewpoint. A mark with the same id replaces the last one. remove
+ * takes the mark away. Marks end with a map change.
+ *
+ * @generated from message wathena.v1.MinimapMark
+ */
+export type MinimapMark = Message<"wathena.v1.MinimapMark"> & {
+  /**
+   * @generated from field: uint32 id = 1;
+   */
+  id: number;
+
+  /**
+   * @generated from field: uint32 x = 2;
+   */
+  x: number;
+
+  /**
+   * @generated from field: uint32 y = 3;
+   */
+  y: number;
+
+  /**
+   * color is 0xRRGGBB.
+   *
+   * @generated from field: uint32 color = 4;
+   */
+  color: number;
+
+  /**
+   * @generated from field: bool remove = 5;
+   */
+  remove: boolean;
+};
+
+/**
+ * Describes the message wathena.v1.MinimapMark.
+ * Use `create(MinimapMarkSchema)` to create a new message.
+ */
+export const MinimapMarkSchema: GenMessage<MinimapMark> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 18);
+
+/**
+ * ShopOpen opens a shop window: what the NPC sells, with the prices
+ * for this player after Discount, and the inventory slots the player
+ * may sell, with the prices after Overcharge.
+ *
+ * @generated from message wathena.v1.ShopOpen
+ */
+export type ShopOpen = Message<"wathena.v1.ShopOpen"> & {
+  /**
+   * @generated from field: uint32 npc = 1;
+   */
+  npc: number;
+
+  /**
+   * @generated from field: repeated wathena.v1.ShopItem items = 2;
+   */
+  items: ShopItem[];
+
+  /**
+   * @generated from field: repeated wathena.v1.ShopSellable sellable = 3;
+   */
+  sellable: ShopSellable[];
+};
+
+/**
+ * Describes the message wathena.v1.ShopOpen.
+ * Use `create(ShopOpenSchema)` to create a new message.
+ */
+export const ShopOpenSchema: GenMessage<ShopOpen> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 19);
+
+/**
+ * @generated from message wathena.v1.ShopItem
+ */
+export type ShopItem = Message<"wathena.v1.ShopItem"> & {
+  /**
+   * @generated from field: uint32 item_id = 1;
+   */
+  itemId: number;
+
+  /**
+   * price is in zeny, for one.
+   *
+   * @generated from field: uint32 price = 2;
+   */
+  price: number;
+
+  /**
+   * weight is the weight of one, in tenths, for the window's weight
+   * check.
+   *
+   * @generated from field: uint32 weight = 3;
+   */
+  weight: number;
+};
+
+/**
+ * Describes the message wathena.v1.ShopItem.
+ * Use `create(ShopItemSchema)` to create a new message.
+ */
+export const ShopItemSchema: GenMessage<ShopItem> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 20);
+
+/**
+ * @generated from message wathena.v1.ShopSellable
+ */
+export type ShopSellable = Message<"wathena.v1.ShopSellable"> & {
+  /**
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * @generated from field: uint32 price = 2;
+   */
+  price: number;
+};
+
+/**
+ * Describes the message wathena.v1.ShopSellable.
+ * Use `create(ShopSellableSchema)` to create a new message.
+ */
+export const ShopSellableSchema: GenMessage<ShopSellable> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 21);
+
+/**
+ * ShopResult answers ShopBuy, ShopSell or ShopClose. The shop window
+ * closes after it. Inventory and zeny changes come as their own events.
+ *
+ * @generated from message wathena.v1.ShopResult
+ */
+export type ShopResult = Message<"wathena.v1.ShopResult"> & {
+  /**
+   * @generated from field: wathena.v1.ShopOutcome outcome = 1;
+   */
+  outcome: ShopOutcome;
+};
+
+/**
+ * Describes the message wathena.v1.ShopResult.
+ * Use `create(ShopResultSchema)` to create a new message.
+ */
+export const ShopResultSchema: GenMessage<ShopResult> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_event, 22);
 
 /**
  * @generated from message wathena.v1.EffectPlay
@@ -784,7 +1100,7 @@ export type EffectPlay = Message<"wathena.v1.EffectPlay"> & {
  * Use `create(EffectPlaySchema)` to create a new message.
  */
 export const EffectPlaySchema: GenMessage<EffectPlay> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 15);
+  messageDesc(file_wathena_v1_event, 23);
 
 /**
  * ItemTaken shows an entity picking up a ground item.
@@ -808,7 +1124,7 @@ export type ItemTaken = Message<"wathena.v1.ItemTaken"> & {
  * Use `create(ItemTakenSchema)` to create a new message.
  */
 export const ItemTakenSchema: GenMessage<ItemTaken> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 16);
+  messageDesc(file_wathena_v1_event, 24);
 
 /**
  * InventoryUpdate is the player's whole inventory. It replaces what the
@@ -837,7 +1153,7 @@ export type InventoryUpdate = Message<"wathena.v1.InventoryUpdate"> & {
  * Use `create(InventoryUpdateSchema)` to create a new message.
  */
 export const InventoryUpdateSchema: GenMessage<InventoryUpdate> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 17);
+  messageDesc(file_wathena_v1_event, 25);
 
 /**
  * InventoryItem is one inventory slot.
@@ -868,7 +1184,7 @@ export type InventoryItem = Message<"wathena.v1.InventoryItem"> & {
  * Use `create(InventoryItemSchema)` to create a new message.
  */
 export const InventoryItemSchema: GenMessage<InventoryItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 18);
+  messageDesc(file_wathena_v1_event, 26);
 
 /**
  * InventoryAdd tells the player an amount of an item entered a slot. The
@@ -900,7 +1216,7 @@ export type InventoryAdd = Message<"wathena.v1.InventoryAdd"> & {
  * Use `create(InventoryAddSchema)` to create a new message.
  */
 export const InventoryAddSchema: GenMessage<InventoryAdd> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 19);
+  messageDesc(file_wathena_v1_event, 27);
 
 /**
  * InventoryRemove tells the player an amount left a slot. A slot left
@@ -930,7 +1246,7 @@ export type InventoryRemove = Message<"wathena.v1.InventoryRemove"> & {
  * Use `create(InventoryRemoveSchema)` to create a new message.
  */
 export const InventoryRemoveSchema: GenMessage<InventoryRemove> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 20);
+  messageDesc(file_wathena_v1_event, 28);
 
 /**
  * ItemUsed shows an entity using an item, as rAthena's clif_useitemack
@@ -955,7 +1271,7 @@ export type ItemUsed = Message<"wathena.v1.ItemUsed"> & {
  * Use `create(ItemUsedSchema)` to create a new message.
  */
 export const ItemUsedSchema: GenMessage<ItemUsed> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 21);
+  messageDesc(file_wathena_v1_event, 29);
 
 /**
  * UseItemFailed tells the player why a UseItem did nothing.
@@ -979,7 +1295,7 @@ export type UseItemFailed = Message<"wathena.v1.UseItemFailed"> & {
  * Use `create(UseItemFailedSchema)` to create a new message.
  */
 export const UseItemFailedSchema: GenMessage<UseItemFailed> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 22);
+  messageDesc(file_wathena_v1_event, 30);
 
 /**
  * DropItemFailed tells the player why a DropItem did nothing.
@@ -1003,7 +1319,7 @@ export type DropItemFailed = Message<"wathena.v1.DropItemFailed"> & {
  * Use `create(DropItemFailedSchema)` to create a new message.
  */
 export const DropItemFailedSchema: GenMessage<DropItemFailed> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 23);
+  messageDesc(file_wathena_v1_event, 31);
 
 /**
  * PickUpFailed tells the player why a PickUp did nothing.
@@ -1027,7 +1343,7 @@ export type PickUpFailed = Message<"wathena.v1.PickUpFailed"> & {
  * Use `create(PickUpFailedSchema)` to create a new message.
  */
 export const PickUpFailedSchema: GenMessage<PickUpFailed> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_event, 24);
+  messageDesc(file_wathena_v1_event, 32);
 
 /**
  * EntityKind is what an entity is.
@@ -1380,6 +1696,90 @@ export const DamageKindSchema: GenEnum<DamageKind> = /*@__PURE__*/
   enumDesc(file_wathena_v1_event, 3);
 
 /**
+ * @generated from enum wathena.v1.ImagePosition
+ */
+export enum ImagePosition {
+  /**
+   * @generated from enum value: IMAGE_POSITION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: IMAGE_POSITION_LEFT = 1;
+   */
+  LEFT = 1,
+
+  /**
+   * @generated from enum value: IMAGE_POSITION_CENTER = 2;
+   */
+  CENTER = 2,
+
+  /**
+   * @generated from enum value: IMAGE_POSITION_RIGHT = 3;
+   */
+  RIGHT = 3,
+}
+
+/**
+ * Describes the enum wathena.v1.ImagePosition.
+ */
+export const ImagePositionSchema: GenEnum<ImagePosition> = /*@__PURE__*/
+  enumDesc(file_wathena_v1_event, 4);
+
+/**
+ * @generated from enum wathena.v1.ShopOutcome
+ */
+export enum ShopOutcome {
+  /**
+   * @generated from enum value: SHOP_OUTCOME_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SHOP_OUTCOME_BOUGHT = 1;
+   */
+  BOUGHT = 1,
+
+  /**
+   * @generated from enum value: SHOP_OUTCOME_SOLD = 2;
+   */
+  SOLD = 2,
+
+  /**
+   * The player has too little zeny for the purchase.
+   *
+   * @generated from enum value: SHOP_OUTCOME_NOT_ENOUGH_ZENY = 3;
+   */
+  NOT_ENOUGH_ZENY = 3,
+
+  /**
+   * The items would pass the player's maximum weight, or a stack would
+   * pass its limit.
+   *
+   * @generated from enum value: SHOP_OUTCOME_OVERWEIGHT = 4;
+   */
+  OVERWEIGHT = 4,
+
+  /**
+   * The inventory has too few free slots, or the list was not valid.
+   *
+   * @generated from enum value: SHOP_OUTCOME_FAILED = 5;
+   */
+  FAILED = 5,
+
+  /**
+   * @generated from enum value: SHOP_OUTCOME_CLOSED = 6;
+   */
+  CLOSED = 6,
+}
+
+/**
+ * Describes the enum wathena.v1.ShopOutcome.
+ */
+export const ShopOutcomeSchema: GenEnum<ShopOutcome> = /*@__PURE__*/
+  enumDesc(file_wathena_v1_event, 5);
+
+/**
  * @generated from enum wathena.v1.InventoryRemoveReason
  */
 export enum InventoryRemoveReason {
@@ -1401,13 +1801,27 @@ export enum InventoryRemoveReason {
    * @generated from enum value: INVENTORY_REMOVE_REASON_DROPPED = 2;
    */
   DROPPED = 2,
+
+  /**
+   * A script took the item, as rAthena's delitem.
+   *
+   * @generated from enum value: INVENTORY_REMOVE_REASON_TAKEN = 3;
+   */
+  TAKEN = 3,
+
+  /**
+   * The player sold the item to a shop.
+   *
+   * @generated from enum value: INVENTORY_REMOVE_REASON_SOLD = 4;
+   */
+  SOLD = 4,
 }
 
 /**
  * Describes the enum wathena.v1.InventoryRemoveReason.
  */
 export const InventoryRemoveReasonSchema: GenEnum<InventoryRemoveReason> = /*@__PURE__*/
-  enumDesc(file_wathena_v1_event, 4);
+  enumDesc(file_wathena_v1_event, 6);
 
 /**
  * @generated from enum wathena.v1.UseItemFailure
@@ -1480,7 +1894,7 @@ export enum UseItemFailure {
  * Describes the enum wathena.v1.UseItemFailure.
  */
 export const UseItemFailureSchema: GenEnum<UseItemFailure> = /*@__PURE__*/
-  enumDesc(file_wathena_v1_event, 5);
+  enumDesc(file_wathena_v1_event, 7);
 
 /**
  * @generated from enum wathena.v1.DropItemFailure
@@ -1517,7 +1931,7 @@ export enum DropItemFailure {
  * Describes the enum wathena.v1.DropItemFailure.
  */
 export const DropItemFailureSchema: GenEnum<DropItemFailure> = /*@__PURE__*/
-  enumDesc(file_wathena_v1_event, 6);
+  enumDesc(file_wathena_v1_event, 8);
 
 /**
  * @generated from enum wathena.v1.PickUpFailure
@@ -1568,5 +1982,5 @@ export enum PickUpFailure {
  * Describes the enum wathena.v1.PickUpFailure.
  */
 export const PickUpFailureSchema: GenEnum<PickUpFailure> = /*@__PURE__*/
-  enumDesc(file_wathena_v1_event, 7);
+  enumDesc(file_wathena_v1_event, 9);
 

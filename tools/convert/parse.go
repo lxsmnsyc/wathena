@@ -144,15 +144,37 @@ func isVariable(name string) bool { return strings.IndexByte(".@$#'", name[0]) >
 type parser struct {
 	toks []token
 	i    int
+	// npc is set for NPC scripts, which may use labels, goto, callsub,
+	// menu and local functions. Item scripts read them as Unsupported.
+	npc bool
 }
 
-// Parse reads a whole script.
+// Parse reads a whole item script.
 func Parse(src string) (*Block, error) {
+	return parse(src, false)
+}
+
+// ParseNPC reads an NPC script or a function: its body without the
+// outer braces, or with them.
+func ParseNPC(src string) (*Block, error) {
+	b, err := parse(src, true)
+	if err != nil {
+		return nil, err
+	}
+	if len(b.Stmts) == 1 {
+		if inner, ok := b.Stmts[0].(*Block); ok {
+			return inner, nil
+		}
+	}
+	return b, nil
+}
+
+func parse(src string, npc bool) (*Block, error) {
 	toks, err := lex(src)
 	if err != nil {
 		return nil, err
 	}
-	p := &parser{toks: toks}
+	p := &parser{toks: toks, npc: npc}
 	b := &Block{}
 	for p.peek().kind != tokEOF {
 		s, err := p.stmt()
@@ -354,12 +376,18 @@ func (p *parser) stmt() (Stmt, error) {
 		}
 		return &Assign{Target: v, Op: "=", Value: val}, nil
 	case "function", "goto", "callsub", "menu":
+		if p.npc {
+			return p.npcStmt(word)
+		}
 		return p.skipUnsupported()
 	}
 	// A label.
 	if n := p.peekAt(1); n.kind == tokOp && n.text == ":" {
 		p.next()
 		p.next()
+		if p.npc {
+			return &Label{Name: t.text}, nil
+		}
 		return &Unsupported{Text: t.text + ":"}, nil
 	}
 	// An assignment to a permanent variable or parameter, such as
@@ -372,6 +400,99 @@ func (p *parser) stmt() (Stmt, error) {
 		return p.endStmt(e)
 	}
 	return p.command()
+}
+
+// npcStmt reads the statements only NPC scripts use:
+//   - function Name; declares a local function, and function Name {...}
+//     defines one.
+//   - goto Label;
+//   - callsub Label, args...; which is a Command whose first argument is
+//     the label as an Ident.
+//   - menu "A", L_A, "B", -; which is a Command of option and label
+//     pairs, where - is the Ident "-".
+func (p *parser) npcStmt(word string) (Stmt, error) {
+	p.next()
+	switch word {
+	case "function":
+		name := p.next()
+		if name.kind != tokName {
+			return nil, p.errorf("want a function name")
+		}
+		if p.isOp(";") {
+			p.next()
+			return &FuncDecl{Name: name.text}, nil
+		}
+		body, err := p.stmt()
+		if err != nil {
+			return nil, err
+		}
+		b, ok := body.(*Block)
+		if !ok {
+			return nil, p.errorf("want the function's body in braces")
+		}
+		return &FuncDecl{Name: name.text, Body: b}, nil
+	case "goto":
+		label := p.next()
+		if label.kind != tokName {
+			return nil, p.errorf("want a label after goto")
+		}
+		if p.isOp(";") {
+			p.next()
+		}
+		return &Goto{Label: label.text}, nil
+	case "callsub":
+		paren := p.isOp("(")
+		if paren {
+			p.next()
+		}
+		end := ";"
+		if paren {
+			end = ")"
+		}
+		args, err := p.args(end)
+		if err != nil {
+			return nil, err
+		}
+		if paren && p.isOp(";") {
+			p.next()
+		}
+		if len(args) == 0 {
+			return nil, p.errorf("callsub needs a label")
+		}
+		return &Command{Name: "callsub", Args: args}, nil
+	case "menu":
+		var args []Expr
+		for {
+			opt, err := p.expr()
+			if err != nil {
+				return nil, err
+			}
+			if err := p.expect(","); err != nil {
+				return nil, err
+			}
+			var label Expr
+			if p.isOp("-") {
+				p.next()
+				label = &Ident{Name: "-"}
+			} else {
+				t := p.next()
+				if t.kind != tokName {
+					return nil, p.errorf("want a label in menu")
+				}
+				label = &Ident{Name: t.text}
+			}
+			args = append(args, opt, label)
+			if p.isOp(",") {
+				p.next()
+				continue
+			}
+			if p.isOp(";") {
+				p.next()
+			}
+			return &Command{Name: "menu", Args: args}, nil
+		}
+	}
+	return nil, p.errorf("unknown statement %s", word)
 }
 
 // endStmt makes a statement from an expression statement.

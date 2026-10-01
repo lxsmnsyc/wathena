@@ -5,6 +5,7 @@ package zone
 
 import (
 	"context"
+	"maps"
 	"sync"
 	"time"
 
@@ -123,6 +124,20 @@ type Player struct {
 	// warpTo is a warp a script asked for. It happens once the script's
 	// event has run.
 	warpTo *scriptWarp
+	// talk is the player's conversation with an NPC, or nil, and
+	// dialogSeq the last dialog step ID it was sent.
+	talk      *talk
+	dialogSeq uint32
+	// shop is the shop window the player has open, or nil.
+	shop *openShop
+	// endTalk is set when the player's conversation must close at the
+	// next point where scripts may run, such as after its death.
+	endTalk bool
+	// vars are the player's saved variables of mods, as JSON: its
+	// character's and its account's. temp are the temporary ones, which
+	// last until logout.
+	vars map[character.Variable]string
+	temp map[character.Variable]string
 }
 
 type entity struct {
@@ -157,15 +172,31 @@ type entity struct {
 }
 
 type command struct {
-	player *Player
-	seq    uint32
-	walkTo *[2]int
-	attack *attackCommand
-	pickUp *uint32
-	raise  *raiseCommand
-	chat   *string
-	use    *int
-	drop   *dropCommand
+	player   *Player
+	seq      uint32
+	walkTo   *[2]int
+	attack   *attackCommand
+	pickUp   *uint32
+	raise    *raiseCommand
+	chat     *string
+	use      *int
+	drop     *dropCommand
+	npcClick *uint32
+	npcReply *wathenav1.NpcReply
+	shopBuy  *shopBuyCommand
+	shopSell *shopSellCommand
+	// shopClose names the NPC of the shop window the player closed.
+	shopClose *uint32
+}
+
+type shopBuyCommand struct {
+	npc   uint32
+	lines []buyLine
+}
+
+type shopSellCommand struct {
+	npc   uint32
+	lines []sellLine
 }
 
 type raiseCommand struct {
@@ -247,6 +278,14 @@ type Zone struct {
 	// control gets work that must run on the zone's goroutine, such as a
 	// mod reload.
 	control chan func()
+	// announces get announcements from other zones and the world.
+	announces chan announcement
+	// npcHandles are the NPCs by script handle. npcsStarted is set once
+	// their scripts run.
+	npcHandles  map[int64]*entity
+	npcsStarted bool
+	// emotions are this tick's emotions over NPCs.
+	emotions []npcEmotion
 
 	// warps are the map's warps, in load order.
 	warps []Warp
@@ -301,18 +340,19 @@ type joinResult struct {
 // monsters go. spawns are the map's monsters.
 func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone {
 	z := &Zone{
-		Map:      mapName,
-		grid:     grid,
-		rand:     rand,
-		players:  map[uint32]*Player{},
-		joins:    make(chan joinRequest),
-		leaves:   make(chan *Player, 16),
-		commands: make(chan command, 1024),
-		arrivals: make(chan *handoff),
-		stale:    make(chan *Player),
-		control:  make(chan func()),
-		stopped:  make(chan struct{}),
-		Metrics:  &metrics.Zone{Name: mapName},
+		Map:       mapName,
+		grid:      grid,
+		rand:      rand,
+		players:   map[uint32]*Player{},
+		joins:     make(chan joinRequest),
+		leaves:    make(chan *Player, 16),
+		commands:  make(chan command, 1024),
+		arrivals:  make(chan *handoff),
+		stale:     make(chan *Player),
+		control:   make(chan func()),
+		announces: make(chan announcement, 256),
+		stopped:   make(chan struct{}),
+		Metrics:   &metrics.Zone{Name: mapName},
 	}
 	z.spawn(spawns)
 	return z
@@ -380,6 +420,8 @@ func (z *Zone) Run(ctx context.Context) {
 			z.loggedInElsewhere(p)
 		case f := <-z.control:
 			f()
+		case a := <-z.announces:
+			z.announce(a)
 		case c := <-z.commands:
 			began := time.Now()
 			z.handle(c)
@@ -467,10 +509,10 @@ func (z *Zone) join(p *Player) joinResult {
 		// A warp places the player as pc_setpos does.
 		x, y = z.arrivalCell(x, y)
 		p.ackSeq, p.rewarp, p.mapChange = h.ackSeq, h.rewarp, true
-	case c.Map != z.Map || c.HP <= 0 || z.grid.NoPass(x, y):
-		// A character from another map, one that logged out dead, or
-		// one on a cell that is no longer walkable starts at the start
-		// cell, as a revived player does.
+	case c.Map != z.Map || z.grid.NoPass(x, y):
+		// A character from another map, or one on a cell that is no
+		// longer walkable, starts at the start cell. A character that
+		// logged out dead was saved at its save point.
 		x, y = z.startCell()
 	}
 	e := &entity{player: p, x: x, y: y, speed: WalkSpeed}
@@ -533,13 +575,18 @@ func (z *Zone) join(p *Player) joinResult {
 		}
 	}
 	p.nextSave = z.now + z.saveInterval().Milliseconds()
+	if len(c.Variables) > 0 {
+		p.vars = maps.Clone(c.Variables)
+	}
 	if h == nil {
 		p.rewarp = 0
 		p.touchOnEnter = true
 		z.scriptEventFor("login", modscript.Player(int64(p.charID)))
 	} else {
+		p.temp = h.temp
 		z.entered(p)
 	}
+	z.startNPCs()
 	z.scriptEventFor("map_enter", modscript.Player(int64(p.charID)))
 	// The player sees itself from the first frame.
 	return joinResult{netID: p.netID(e), tick: z.tick}
@@ -579,6 +626,9 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 	}
 	z.save(p, true)
 	z.remove(p, reason)
+	// A conversation's pending call fails once the player is gone, so a
+	// script that goes on cannot change the saved character.
+	z.closeTalk(p)
 	z.drop(p)
 }
 
@@ -624,10 +674,36 @@ func (z *Zone) handle(c command) {
 	if c.chat != nil {
 		// Dead players can talk too: clif_process_message only checks
 		// for mutes.
-		z.chats = append(z.chats, chatLine{p.entity, *c.chat})
+		z.chats = append(z.chats, chatLine{speaker: p.entity, name: p.Name, text: *c.chat})
+	}
+	if c.npcReply != nil {
+		z.reply(p, c.npcReply)
+	}
+	if c.shopClose != nil {
+		if z.shopFor(p, *c.shopClose) != nil {
+			z.closeShop(p, true)
+		}
+	}
+	if c.shopBuy != nil {
+		z.buy(p, c.shopBuy.npc, c.shopBuy.lines)
+	}
+	if c.shopSell != nil {
+		z.sell(p, c.shopSell.npc, c.shopSell.lines)
 	}
 	me := p.entity
 	if me.dead {
+		return
+	}
+	if c.npcClick != nil {
+		z.click(p, *c.npcClick)
+	}
+	if p.talk != nil {
+		// pc_cant_act: a player who talks to an NPC cannot walk,
+		// attack, pick up, use or drop items. A walk cancels a
+		// progress bar.
+		if c.walkTo != nil {
+			z.walkDuringTalk(p)
+		}
 		return
 	}
 	if c.walkTo != nil {
@@ -733,6 +809,7 @@ func (z *Zone) stepAt(now int64) {
 	z.naturalHeal()
 	z.autosave()
 	z.runScripts()
+	z.talkTimers()
 	if z.scripts != nil {
 		z.scripts.Advance(z.now)
 	}
@@ -759,6 +836,7 @@ func (z *Zone) stepAt(now int64) {
 	z.removed = z.removed[:0]
 	z.takes = z.takes[:0]
 	z.effects = z.effects[:0]
+	z.emotions = z.emotions[:0]
 	z.used = z.used[:0]
 	clear(z.chats)
 	z.chats = z.chats[:0]
@@ -784,6 +862,7 @@ func (z *Zone) update(p *Player) {
 	}
 	events = append(events, z.combatEvents(p)...)
 	events = append(events, z.effectEvents(p)...)
+	events = append(events, z.emotionEvents(p)...)
 	events = append(events, z.usedEvents(p)...)
 	events = append(events, z.chatEvents(p)...)
 	events = append(events, p.pending...)

@@ -113,9 +113,7 @@ func (h scriptHost) Warp(id int64, where, mapName string, x, y int) (bool, error
 			w = &scriptWarp{to: z, x: x, y: y}
 		}
 	case "save_point":
-		to := z.zoneOf(z.SaveMap)
-		if to != nil {
-			sx, sy := to.StartCell()
+		if to, sx, sy := z.savePoint(p); to != nil {
 			w = &scriptWarp{to: to, x: sx, y: sy}
 		}
 	case "map":
@@ -128,6 +126,24 @@ func (h scriptHost) Warp(id int64, where, mapName string, x, y int) (bool, error
 	}
 	p.warpTo = w
 	return true, nil
+}
+
+// savePoint is where a player's save point is: its zone and cell, as
+// rAthena's save_point. A character without one, or whose save map does
+// not run, goes to the start map's start cell. It is nil when even the
+// start map does not run, as in tests without a world.
+func (z *Zone) savePoint(p *Player) (*Zone, int, int) {
+	if m := p.record.SaveMap; m != "" {
+		if to := z.zoneOf(m); to != nil {
+			return to, p.record.SaveX, p.record.SaveY
+		}
+	}
+	to := z.zoneOf(z.SaveMap)
+	if to == nil {
+		return nil, 0, 0
+	}
+	x, y := to.StartCell()
+	return to, x, y
 }
 
 // zoneOf finds the zone of a map by asset name: this zone, or another

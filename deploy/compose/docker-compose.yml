@@ -116,7 +116,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    # SIGTERM saves every player. Give the saves time.
+    # SIGTERM announces a 10 second countdown, then saves every player.
+    # Give both time. A longer shutdown_countdown needs a longer grace.
     stop_grace_period: 30s
     healthcheck:
       test: ["CMD", "/usr/local/bin/waserver", "health"]

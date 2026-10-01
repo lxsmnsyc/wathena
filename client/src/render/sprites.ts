@@ -189,6 +189,11 @@ export class SpriteView {
   action = 0;
   /** Facing, 0 to 7: 0 is south, turning clockwise. */
   direction = 0;
+  /**
+   * An action index to show as it is, without a facing, for sprites
+   * whose actions are not by direction, such as the emotion icons.
+   */
+  fixed: number | undefined;
   private time = 0;
   private shown = '';
   private palette: Texture;
@@ -217,7 +222,7 @@ export class SpriteView {
    */
   update(deltaMs: number, cameraSteps: number): void {
     this.time += deltaMs;
-    const index = this.actionIndex(this.action, this.direction, cameraSteps);
+    const index = this.fixed ?? this.actionIndex(this.action, this.direction, cameraSteps);
     const a = this.asset.sprite.actions[index];
     if (a === undefined || a.frames.length === 0) {
       this.hide(0);
@@ -225,6 +230,15 @@ export class SpriteView {
     }
     const interval = a.intervalMs > 0 ? a.intervalMs : 100;
     this.draw(index, Math.floor(this.time / interval), 0, 0);
+  }
+
+  /** How long an action index plays once, in milliseconds. */
+  duration(index: number): number {
+    const a = this.asset.sprite.actions[index];
+    if (a === undefined) {
+      return 0;
+    }
+    return a.frames.length * (a.intervalMs > 0 ? a.intervalMs : 100);
   }
 
   /**

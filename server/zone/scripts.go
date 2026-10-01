@@ -13,6 +13,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/variables"
 )
 
 // Mods is what mods bring to a zone: their scripts and the names of
@@ -35,10 +36,16 @@ type Mods struct {
 	Groups *item.Groups
 	// MonsterIDs maps monster AegisNames, such as PORING, to IDs.
 	MonsterIDs map[string]int64
+	// Shops are the shops of mods' data, by full record name, for
+	// player:open_shop. Placed shop NPCs carry their own.
+	Shops map[string]*Shop
+	// Server holds the server variables. Without it, server variables
+	// raise an error.
+	Server *variables.Server
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
-// Clicking it does nothing yet (phase 3 step 4).
+// A click runs its script's click handlers, or opens its shop.
 type NPC struct {
 	// Name is the full record name, such as example.town:Healer.
 	Name string
@@ -49,10 +56,18 @@ type NPC struct {
 	Direction int
 	// Sprite is the NPC sprite ID.
 	Sprite uint32
+	// Script is the NPC's entry script, as <mod>:<path>, or "".
+	Script string
+	// Shop is the NPC's shop, or nil.
+	Shop *Shop
 }
 
 type npc struct {
 	NPC
+	// handle is the NPC's ID for scripts, and script its running
+	// instance, once the zone started it.
+	handle int64
+	script *modscript.NPC
 }
 
 // SetNPCs places NPCs on the map. It replaces the NPCs set before. Call
@@ -63,8 +78,11 @@ func (z *Zone) SetNPCs(npcs []NPC) {
 			z.entities.remove(e)
 		}
 	}
-	for _, n := range npcs {
-		z.entities.add(&entity{npc: &npc{n}, x: n.X, y: n.Y, dir: n.Direction})
+	z.npcHandles = map[int64]*entity{}
+	for i, n := range npcs {
+		e := &entity{npc: &npc{NPC: n, handle: int64(i + 1)}, x: n.X, y: n.Y, dir: n.Direction}
+		z.entities.add(e)
+		z.npcHandles[e.npc.handle] = e
 	}
 }
 
@@ -116,7 +134,7 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
-	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants}
+	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server}
 	if z.Status != nil {
 		opts.Jobs = z.Status
 	}
@@ -270,6 +288,11 @@ func (h scriptHost) PlayerField(id int64, field string) (script.Value, error) {
 	case "party":
 		// Parties do not exist yet.
 		return script.Nil, nil
+	case "sex":
+		if p.char.Male {
+			return script.String("male"), nil
+		}
+		return script.String("female"), nil
 	case "base_str":
 		return script.Int(int64(p.char.Stats.Str)), nil
 	case "base_agi":

@@ -42,6 +42,8 @@ import {
   weightPercent,
 } from './inventory';
 import { ItemTexts } from './itemText';
+import { DialogWindow } from './dialog';
+import { ShopWindow, shopMessage } from './shop';
 import { groundItemLabel } from './groundItems';
 import randomLook from './looks';
 import { StatusWindow } from './statusWindow';
@@ -125,6 +127,10 @@ const audio = new AudioSystem(store);
 let soundscape: Soundscape | undefined;
 let statusWindow: StatusWindow | undefined;
 let inventoryWindow: InventoryWindow | undefined;
+let dialogWindow: DialogWindow | undefined;
+let shopWindow: ShopWindow | undefined;
+/** A progress bar over the player: when it started and how long it lasts. */
+let progressBar: { start: number; ms: number } | undefined;
 /** Shows a short message to the player, such as why an action failed. */
 let showMessage: (text: string) => void = () => {};
 /** Adds a line from the game to the chat log, once the log exists. */
@@ -590,6 +596,9 @@ if (serverURL === null) {
     view.onServerText = (text) => {
       log.server(text);
     };
+    view.onAnnouncement = (text, color) => {
+      log.announce(text, color);
+    };
     chatInput.addEventListener('keydown', (e) => {
       // Keys typed here are text, not game shortcuts.
       e.stopPropagation();
@@ -622,6 +631,73 @@ if (serverURL === null) {
         chatInput.focus();
       }
     });
+  }
+  // NPC dialogs, illustrations, progress bars and shops.
+  const dialogRoot = document.querySelector<HTMLElement>('#dialog-window');
+  const cutinRoot = document.querySelector<HTMLElement>('#cutins');
+  if (dialogRoot !== null && cutinRoot !== null) {
+    const d = new DialogWindow(dialogRoot, cutinRoot, store, {
+      next: (dialog) => {
+        connection.npcReply(dialog, { case: 'next', value: true });
+      },
+      menu: (dialog, option) => {
+        connection.npcReply(dialog, { case: 'menu', value: option });
+      },
+      number: (dialog, value) => {
+        connection.npcReply(dialog, { case: 'inputNumber', value });
+      },
+      text: (dialog, value) => {
+        connection.npcReply(dialog, { case: 'inputText', value });
+      },
+      close: (dialog) => {
+        connection.npcReply(dialog, { case: 'close', value: true });
+      },
+    });
+    d.label = (id) => itemTexts.label(id);
+    itemTexts.loadNames().catch(reportError);
+    dialogWindow = d;
+    view.onNpcDialog = (dialog, name) => {
+      d.show(dialog, name);
+    };
+    view.onNpcImage = (name, position) => {
+      d.showImage(name, position);
+    };
+  }
+  view.onProgress = (ms) => {
+    progressBar = { start: performance.now(), ms };
+  };
+  view.onMinimapMark = () => {
+    // The client has no minimap yet. Marks are ignored.
+  };
+  const shopRoot = document.querySelector<HTMLElement>('#shop-window');
+  if (shopRoot !== null) {
+    const w = new ShopWindow(shopRoot, inventory, itemTexts, {
+      buy: (npc, lines) => {
+        connection.shopBuy(npc, lines);
+      },
+      sell: (npc, lines) => {
+        connection.shopSell(npc, lines);
+      },
+      close: (npc) => {
+        connection.shopClose(npc);
+      },
+    });
+    shopWindow = w;
+    view.onShopOpen = (shop) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          w.stats = view.stats;
+          w.show(shop);
+        })
+        .catch(reportError);
+    };
+    view.onShopResult = (outcome) => {
+      const text = shopMessage(outcome);
+      if (text !== undefined) {
+        logNotice(text);
+      }
+    };
   }
   // A warp moves the player to another map: the view clears, a loading
   // screen shows, and the new map loads from the asset store, which the
@@ -671,6 +747,8 @@ if (import.meta.env.DEV) {
     playing: () => playing,
     player: () => player,
     session: () => session,
+    dialog: () => dialogWindow,
+    shop: () => shopWindow,
     mapLoads: () => mapLoads,
     map: () => current?.map,
   });
@@ -717,9 +795,16 @@ canvas.addEventListener('pointerup', (e) => {
     rect.width,
     rect.height,
   );
+  // While the player talks to an NPC, the game does nothing on a click,
+  // as the server ignores it (pc_cant_act).
+  if (dialogWindow?.open === true && progressBar === undefined) {
+    return;
+  }
   if (session !== undefined && target !== undefined) {
     if (target.item) {
       session.connection.pickUp(target.id);
+    } else if (session.online.isNpc(target.id)) {
+      session.connection.npcClick(target.id);
     } else if ((weightPercent(session.online.stats) ?? 0) >= MAJOR_OVERWEIGHT) {
       // The server refuses attacks from 90% weight, as the game client.
       showMessage('You are carrying too much to attack.');
@@ -819,6 +904,32 @@ function showBubbles(now: number): void {
   }
 }
 
+const progressView = document.querySelector<HTMLDivElement>('#progress');
+const progressAt = new Vector3();
+
+/** Places the progress bar over the player and fills it. */
+function showProgress(now: number): void {
+  if (progressView === null) {
+    return;
+  }
+  const me = session?.online.me;
+  if (progressBar === undefined || me === undefined || now - progressBar.start >= progressBar.ms) {
+    progressBar = undefined;
+    progressView.hidden = true;
+    return;
+  }
+  progressAt.copy(me.character.group.position);
+  progressAt.y += 3.5;
+  progressAt.project(camera);
+  progressView.hidden = progressAt.z > 1;
+  progressView.style.left = `${((progressAt.x + 1) / 2) * 100}%`;
+  progressView.style.top = `${((1 - progressAt.y) / 2) * 100}%`;
+  const bar = progressView.firstElementChild;
+  if (bar instanceof HTMLElement) {
+    bar.style.width = `${Math.min(100, ((now - progressBar.start) / progressBar.ms) * 100)}%`;
+  }
+}
+
 const follow = new Vector3();
 const hpOutput = document.querySelector<HTMLOutputElement>('#hp');
 const expOutput = document.querySelector<HTMLOutputElement>('#exp');
@@ -859,9 +970,13 @@ renderer.setAnimationLoop((time) => {
     if (inventoryWindow?.open === true) {
       inventoryWindow.update(stats);
     }
+    if (shopWindow !== undefined) {
+      shopWindow.stats = stats;
+    }
   }
   showBubbles(performance.now());
   showItemLabel();
+  showProgress(performance.now());
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });
   for (const e of playing) {

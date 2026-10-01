@@ -131,6 +131,9 @@ type Character struct {
 	CreatedAt     pgtype.Timestamptz
 	LoginAt       pgtype.Timestamptz
 	SavedAt       pgtype.Timestamptz
+	SaveMap       string
+	SaveX         int
+	SaveY         int
 }
 
 type GameTicket struct {
@@ -150,12 +153,33 @@ type Inventory struct {
 	Amount      int
 }
 
+type ModAccountVariable struct {
+	AccountID int64
+	ModID     string
+	Name      string
+	Value     []byte
+}
+
+type ModCharacterVariable struct {
+	CharacterID int64
+	ModID       string
+	Name        string
+	Value       []byte
+}
+
 type ModID struct {
 	Kind       string
 	Name       string
 	ID         int64
 	ModID      string
 	AssignedAt pgtype.Timestamptz
+}
+
+type ModServerVariable struct {
+	ModID     string
+	Name      string
+	Value     []byte
+	UpdatedAt pgtype.Timestamptz
 }
 
 type World struct {

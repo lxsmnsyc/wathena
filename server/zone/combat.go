@@ -159,10 +159,15 @@ func (z *Zone) die(e, killer *entity) {
 		}
 	}
 	if e.player != nil {
-		// Players lie where they fell, then return to the start.
+		// Players lie where they fell, then return to their save point.
 		e.diedAt = z.now
 		// status_damage resets the regen waits on death.
 		e.player.regenTicks = regenState{}
+		// pc_dead closes the conversation. The zone does it once no
+		// entity list is walked.
+		if e.player.talk != nil {
+			e.player.endTalk = true
+		}
 		return
 	}
 	z.entities.remove(e)
@@ -196,26 +201,47 @@ func (z *Zone) revive() {
 		}
 	}
 	z.respawns = kept
+	var back []*Player
 	for e := range z.entities.all() {
 		if e.player == nil || !e.dead || z.now < e.diedAt+reviveMs {
 			continue
 		}
-		e.dead = false
-		e.hp, e.hpChanged = int64(e.status.MaxHP), true
-		e.x, e.y = z.startCell()
-		// Everyone who saw the player sees it leave and appear again at
-		// the start. The player keeps its own ID.
-		for o := range z.entities.all() {
-			if o.player == nil {
-				continue
-			}
-			if id, ok := o.player.netIDs.get(e); ok && o != e {
-				o.player.netIDs.del(e)
-				z.queue(o.player, frame(z.tick, o.player.ackSeq, vanish(id, wathenav1.VanishReason_VANISH_REASON_TELEPORTED)))
-			}
-		}
-		e.player.fresh = true
+		back = append(back, e.player)
 	}
+	for _, p := range back {
+		z.respawn(p)
+	}
+}
+
+// respawn is pc_respawn after the respawn wait: the player stands with
+// full HP and goes to its save point, as pc_setpos. A save point on
+// another map hands it to that map's zone.
+func (z *Zone) respawn(p *Player) {
+	e := p.entity
+	e.dead = false
+	e.hp, e.hpChanged = int64(e.status.MaxHP), true
+	to, x, y := z.savePoint(p)
+	if to != nil && to != z && p.sess != nil && z.depart(p, to, x, y) {
+		return
+	}
+	if to != z {
+		x, y = z.startCell()
+	}
+	z.closeTalk(p)
+	e.x, e.y = z.arrivalCell(x, y)
+	e.path = e.path[:0]
+	// Everyone who saw the player sees it leave and appear again at the
+	// save point. The player keeps its own ID.
+	for o := range z.entities.all() {
+		if o.player == nil {
+			continue
+		}
+		if id, ok := o.player.netIDs.get(e); ok && o != e {
+			o.player.netIDs.del(e)
+			z.queue(o.player, frame(z.tick, o.player.ackSeq, vanish(id, wathenav1.VanishReason_VANISH_REASON_TELEPORTED)))
+		}
+	}
+	p.fresh = true
 }
 
 // combatEvents are the attacks, deaths, and own HP a player sees this

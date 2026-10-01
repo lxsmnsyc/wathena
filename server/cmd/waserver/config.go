@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"go.yaml.in/yaml/v3"
 
@@ -42,6 +43,9 @@ type options struct {
 	DebugAddr      string     `yaml:"debug_addr"`
 	ProfileDir     string     `yaml:"profile_dir"`
 	Mods           modOptions `yaml:"mods"`
+	// ShutdownCountdown is how long players are warned before the server
+	// stops on SIGTERM or an interrupt. 0 stops at once.
+	ShutdownCountdown time.Duration `yaml:"shutdown_countdown"`
 }
 
 // modOptions are the mods settings (server/README.md, "Mods").
@@ -90,6 +94,8 @@ func defaultOptions() options {
 		Mode:     "renewal",
 		Captcha:  "none",
 		Build:    "all_1",
+
+		ShutdownCountdown: 10 * time.Second,
 	}
 }
 
@@ -164,6 +170,7 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.StringVar(&f.Mods.Dir, "mods", "", "folder of installed mods; empty loads only the built-in core mods (mods.dir)")
 	flags.StringVar(&f.Mods.Ruleset, "ruleset", "", "the world's ruleset mod, such as core.ruleset.renewal; empty picks the core ruleset of --mode (mods.ruleset)")
 	flags.BoolVar(&f.Mods.Strict, "mods-strict", false, "make data overlay warnings errors, such as two mods setting the same field (mods.strict)")
+	flags.DurationVar(&f.ShutdownCountdown, "shutdown-countdown", o.ShutdownCountdown, "how long players are warned before the server stops on SIGTERM, such as 10s; 0 stops at once, and a second signal skips the rest (shutdown_countdown)")
 	flags.StringVar(&database, "database", "", "PostgreSQL URL of the game role; prefer the "+databaseEnv+" environment variable, which keeps the password out of process lists")
 	if err := flags.Parse(args); err != nil {
 		return o, "", err
@@ -217,6 +224,8 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.Mods.Ruleset = f.Mods.Ruleset
 		case "mods-strict":
 			o.Mods.Strict = f.Mods.Strict
+		case "shutdown-countdown":
+			o.ShutdownCountdown = f.ShutdownCountdown
 		}
 	})
 	return o, database, nil
@@ -297,6 +306,9 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if o.Dev && !loopback(o.Listen) {
 		bad("dev", "lets anyone play any character, so listen must be a loopback address such as 127.0.0.1:8300")
+	}
+	if o.ShutdownCountdown < 0 || o.ShutdownCountdown > 10*time.Minute {
+		bad("shutdown_countdown", "is 0 to 10m")
 	}
 	if o.DebugAddr != "" && !loopback(o.DebugAddr) {
 		bad("debug_addr", "has no access control, so it must be a loopback address such as 127.0.0.1:8301")

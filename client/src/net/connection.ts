@@ -3,7 +3,12 @@
 // first.
 
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
-import { type BaseStat, ChatChannel, CommandSchema } from '../gen/wathena/v1/command_pb';
+import {
+  type BaseStat,
+  ChatChannel,
+  CommandSchema,
+  type NpcReply,
+} from '../gen/wathena/v1/command_pb';
 import {
   type ClientMessage,
   ClientMessageSchema,
@@ -11,6 +16,9 @@ import {
 } from '../gen/wathena/v1/envelope_pb';
 import type { Event } from '../gen/wathena/v1/event_pb';
 import type { DisconnectReason, Welcome } from '../gen/wathena/v1/session_pb';
+
+/** An answer to an NPC dialog step. */
+export type NpcAnswer = NpcReply['answer'];
 
 /** The protocol version, schema.Version on the server. */
 export const PROTOCOL_VERSION = 1;
@@ -157,6 +165,46 @@ export class Connection {
       value: create(CommandSchema, {
         body: { case: 'chat', value: { channel: ChatChannel.LOCAL, text } },
       }),
+    });
+  }
+
+  /** Talks to an NPC, or opens its shop. */
+  npcClick(npc: number): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'npcClick', value: { npc } } }),
+    });
+  }
+
+  /** Answers the open NPC dialog step. */
+  npcReply(dialog: number, answer: NpcAnswer): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'npcReply', value: { dialog, answer } } }),
+    });
+  }
+
+  /** Buys items from the open shop. */
+  shopBuy(npc: number, items: { itemId: number; amount: number }[]): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'shopBuy', value: { npc, items } } }),
+    });
+  }
+
+  /** Sells inventory slots to the open shop. */
+  shopSell(npc: number, items: { slot: number; amount: number }[]): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'shopSell', value: { npc, items } } }),
+    });
+  }
+
+  /** Closes the open shop window. */
+  shopClose(npc: number): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'shopClose', value: { npc } } }),
     });
   }
 

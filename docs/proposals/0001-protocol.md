@@ -58,7 +58,7 @@ Client to server, in `ClientMessage`:
 |---|---|
 | `hello` | Session start. |
 | `ping` | Latency and keepalive. |
-| `command` | A player action: walk, attack, skill, chat, NPC click or reply, use item, drop item, pick up, raise a stat. |
+| `command` | A player action: walk, attack, skill, chat, NPC click or reply, buy from or sell to a shop, use item, drop item, pick up, raise a stat. |
 
 Server to client, in `ServerMessage`:
 
@@ -105,6 +105,24 @@ Server to client, in `ServerMessage`:
 - **Appearance uses table IDs.** `Look` holds sprite and palette IDs from the client data tables (strategy section 10.5).
 - **Warp portals are NPCs.** A warp appears as `ENTITY_KIND_NPC` with `look.body` 45, rAthena's `JT_WARPNPC` sprite, and no name. The client draws effect 321 (`EF_WARPZONE2`) on it, as roBrowser does for job 45. Hidden warps (rAthena's `JT_HIDDEN_WARP_NPC`, 139) never appear. A player who walks into a warp's area goes to its target, as rAthena's `npc_touch_areanpc`. Warps are NPCs rather than a kind of their own, because rAthena's script NPCs with the warp sprite will show the same way once scripts run.
 - **Other NPCs show their sprite.** An NPC that a mod places appears as `ENTITY_KIND_NPC` with `look.body` set to its NPC sprite ID, its facing in `dir`, and its name. The client loads the sprite `sprite/npc/<look.body>`.
+- **NPC conversations.** `NpcClick` names an NPC by its entity ID. It reaches NPCs within 15 cells on both axes, rAthena's `AREA_SIZE + 1` (`npc_checknear`). A dead player, or one already talking, clicks nothing. An NPC with a script starts a conversation. An NPC with a shop and no script opens the shop.
+  - The server sends `NpcDialog` steps. A step's lines add to the dialog window, which opens when it is closed. A step with a prompt waits for an answer: `next`, a `menu` of options, `input_number` from `number_min` to `number_max`, `input_text` of at most `text_max` characters, or `close`. `end` closes the window at once.
+  - Every step that waits has a new `dialog` ID. `NpcReply` quotes it. The server drops an answer that quotes another ID, does not fit the prompt (a menu option out of range or hidden, a number out of range, text too long), or comes from more than 15 cells away, as `npc_scriptcont` drops it.
+  - A menu option is answered from 1. An empty option is hidden and keeps its number. `close` cancels a menu or an input, and ends the conversation, as `select`'s 255.
+  - A script that ends with lines on show leaves a Close button. The player still talks until it presses it.
+  - While a player talks, the server ignores its walks, attacks, pick ups, item uses and drops (`pc_cant_act`). Chat and stat raises still work.
+  - A step times out as rAthena's `SECURE_NPCTIMEOUT`: 60 seconds for next, menus and close, and 180 seconds for input. The window then ends.
+  - A conversation ends when the player leaves, dies, or changes map.
+  - Lines may hold RO color codes, `^RRGGBB`, and item links, `<ITEMLINK>name<INFO>item ID</INFO></ITEMLINK>`. Clients show them as text, never as HTML.
+- **NPC illustrations, progress bars, emotions and marks.** `NpcImage` shows `image/illust/<name>` at the left, center or right of the screen, or hides it for an empty name. The client also hides it when the dialog window closes. `NpcProgress` shows a progress bar over the player for `duration_ms`; the conversation goes on when it is full, and a walk command cancels it and ends the conversation, as `clif_progressbar_abort`. `Emotion` shows an emotion icon over an entity, from `sprite/effect/emotion`, whose action number is the emotion's `ET_` value. `MinimapMark` marks a cell on the minimap, or removes the mark with the same `id`.
+- **NPC speech and announcements.** An NPC that speaks aloud sends local chat: a `ChatMessage` with `CHAT_CHANNEL_LOCAL`, `from` set to the NPC's ID and `from_name` to its name, to players within 9 cells. `CHAT_CHANNEL_ANNOUNCEMENT` is a line for every player of a map or of the world, with an optional `color` as 0xRRGGBB. The server sends a countdown this way before it stops.
+- **Shops.** `ShopOpen` lists what the NPC sells, with the price for this player and the weight of one, and the inventory slots the shop buys, with their price. Prices follow `pc_modifybuyvalue` and `pc_modifysellvalue`: Discount and Compulsion Discount lower what the player pays when the shop allows it, and Overcharge raises what the player gets.
+  - `ShopBuy` names the shop's NPC and 1 to 100 lines of an item and an amount. The server checks the lines in `npc_buylist`'s order: an item the shop sells, a stack within its limit, the zeny, the weight, then the free slots. Equipment is bought one at a time. Then zeny and items change in one step, or nothing changes.
+  - `ShopSell` names 1 to 100 slots with amounts. The server checks every line, each slot at most once, before anything changes. Zeny over 2,147,483,647 is lost, as `pc_getzeny`.
+  - `ShopClose` closes the window without trading. The server answers each with `ShopResult`, and the window closes. Items leave with `INVENTORY_REMOVE_REASON_SOLD`, and zeny comes as `STAT_ID_ZENY`.
+  - A shop opened by a click needs its NPC within 15 cells. A shop a script opened has no NPC: its `npc` is 0.
+  - The gateway drops a `ShopBuy` or `ShopSell` with no lines, more than 100, a slot of 200 or more, an amount of 0 or over 30000, or item 0, without a reply. It drops an `NpcReply` without an answer, and cleans `input_text` as chat.
+- **Items a script takes.** `InventoryRemove` has `INVENTORY_REMOVE_REASON_TAKEN` for items a script took, as `delitem`.
 - **A warp to another map is a map change, on the same connection.** The first frame from the new map starts with `MapChange`: the new map's asset name, the player's cell, and the player's own entity ID there. Then, as after `Welcome`:
   - The player's own `EntityAppear` follows, and then the inventory and stats again.
   - Entity IDs start again on the new map. The client removes every entity it showed before the change.
@@ -141,7 +159,7 @@ The 500-bot load tests measured the real traffic (strategy section 3.8, "Load te
 
 ## Breaks
 
-Nothing is deployed yet, so nothing breaks. `CHAT_CHANNEL_SYSTEM` is a new enum value that older clients ignore. `MapChange` is a new `Event` case, and warp portals are a new use of `ENTITY_KIND_NPC`, so the protocol version stays 1. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.
+Nothing is deployed yet, so nothing breaks. Phase 3 step 4 added `ShopBuy`, `ShopSell`, `ShopClose`, `NpcImage`, `NpcProgress`, `Emotion`, `MinimapMark`, `ShopOpen` and `ShopResult`, the `end` prompt and the input limits of `NpcDialog`, `ChatMessage.color`, `CHAT_CHANNEL_ANNOUNCEMENT`, and two remove reasons. All are additive. `CHAT_CHANNEL_SYSTEM` is a new enum value that older clients ignore. `MapChange` is a new `Event` case, and warp portals are a new use of `ENTITY_KIND_NPC`, so the protocol version stays 1. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.
 
 ## Alternatives
 
@@ -156,5 +174,5 @@ Nothing is deployed yet, so nothing breaks. `CHAT_CHANNEL_SYSTEM` is a new enum 
 
 ## Open points for later proposals
 
-- Messages for equipment, item scripts other than heals, skills lists, party, guild, trade, vending, storage, and mail.
+- Messages for equipment, skills lists, party, guild, trade, vending, storage, mail, and cash, item, point and market shops.
 - Admin tool messages (strategy section 10.6), which may use a separate endpoint.

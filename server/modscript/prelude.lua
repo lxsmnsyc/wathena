@@ -44,8 +44,9 @@ end
 
 -- readonly returns a read-only view of impl. Writing raises an error, and
 -- pairs walks impl without handing impl out.
-local function readonly(name, impl)
+local function readonly(name, impl, callable)
 	local proxy = setmetatable({}, {
+		__call = callable,
 		__index = impl,
 		__newindex = readonly_error(name),
 		__pairs = function()
@@ -197,6 +198,33 @@ new_player, player_ids = handle_type("player", {
 	add_timed_bonuses = function(self, key, milliseconds, list, options)
 		return (call(H.player_add_timed_bonuses, player_ids[self], key, milliseconds))
 	end,
+	pay_zeny = function(self, amount)
+		return (call(H.player_pay_zeny, player_ids[self], amount))
+	end,
+	give_zeny = function(self, amount)
+		return (call(H.player_give_zeny, player_ids[self], amount))
+	end,
+	take_item = function(self, item, amount)
+		return (call(H.player_take_item, player_ids[self], item, amount))
+	end,
+	heal_fully = function(self)
+		return (call(H.player_heal, player_ids[self], true, 100, 100, 100, 100))
+	end,
+	set_save_point = function(self, map, x, y)
+		return (call(H.player_set_save_point, player_ids[self], map, x, y))
+	end,
+	can_carry = function(self, item, amount)
+		return (call(H.player_can_carry, player_ids[self], item, amount))
+	end,
+	mark_minimap = function(self, id, x, y, color)
+		return (call(H.player_mark_minimap, player_ids[self], id, x, y, color))
+	end,
+	unmark_minimap = function(self, id)
+		return (call(H.player_mark_minimap, player_ids[self], id))
+	end,
+	open_shop = function(self, shop)
+		return (call(H.player_open_shop, player_ids[self], shop))
+	end,
 }, function(id, key)
 	-- Level 3 is the script line that read the field.
 	local ok, value = pcall(H.player_field, id, key)
@@ -229,6 +257,85 @@ local new_monster = handle_type("monster", {}, function(id, key)
 	return value
 end)
 
+-- NPCs are handles too: the instance of an NPC context.
+local npc_ids
+local new_npc
+new_npc, npc_ids = handle_type("npc", {
+	show_emotion = function(self, emotion)
+		return (call(H.npc_emotion, npc_ids[self], emotion))
+	end,
+	say_aloud = function(self, text)
+		return (call(H.npc_say, npc_ids[self], text))
+	end,
+}, function(id, key)
+	local ok, value = pcall(H.npc_field, id, key)
+	if not ok then
+		error(value, 3)
+	end
+	return value
+end)
+
+-- Conversations: the methods that wait for the player pause the
+-- conversation's thread. Go resumes it with "ok" and the answer, or with
+-- "closed" when the conversation ends without the script, such as when
+-- the player leaves. A closed conversation raises CLOSED, which the
+-- runtime does not log as a failure.
+local CLOSED = "the conversation was closed"
+local conversation_ids
+local new_conversation
+
+local function answer(status, value)
+	if status == "closed" then
+		error(CLOSED, 0)
+	end
+	return value
+end
+
+local function strings_of(what, ...)
+	local n = select("#", ...)
+	for i = 1, n do
+		local v = select(i, ...)
+		if type(v) ~= "string" and math_type(v) == nil then
+			error(what .. ": argument " .. i .. " must be a string", 3)
+		end
+	end
+end
+
+new_conversation, conversation_ids = handle_type("conversation", {
+	say = function(self, ...)
+		strings_of("conversation:say", ...)
+		return (call(H.conversation_say, conversation_ids[self], ...))
+	end,
+	wait_for_next = function(self)
+		return (answer(call(H.conversation_next, conversation_ids[self])))
+	end,
+	choose = function(self, ...)
+		strings_of("conversation:choose", ...)
+		return (answer(call(H.conversation_choose, conversation_ids[self], ...)))
+	end,
+	ask_number = function(self, minimum, maximum)
+		return (answer(call(H.conversation_ask_number, conversation_ids[self], minimum, maximum)))
+	end,
+	ask_text = function(self, maximum_length)
+		return (answer(call(H.conversation_ask_text, conversation_ids[self], maximum_length)))
+	end,
+	close = function(self)
+		return (answer(call(H.conversation_close, conversation_ids[self])))
+	end,
+	wait = function(self, milliseconds)
+		return (answer(call(H.conversation_wait, conversation_ids[self], milliseconds)))
+	end,
+	show_image = function(self, name, position)
+		return (call(H.conversation_image, conversation_ids[self], name, position))
+	end,
+	hide_image = function(self)
+		return (call(H.conversation_image, conversation_ids[self], "", "center"))
+	end,
+	show_progress = function(self, seconds)
+		return (answer(call(H.conversation_progress, conversation_ids[self], seconds)))
+	end,
+})
+
 local event_ids
 local new_event_handle
 new_event_handle, event_ids = handle_type("event handle", {
@@ -258,6 +365,9 @@ api["wa.context"] = readonly("wa.context", {
 		local fields = call(H.context_instance)
 		if fields.equipped ~= nil then
 			return new_equipped(fields.equipped)
+		end
+		if fields.npc ~= nil then
+			return new_npc(fields.npc)
 		end
 		return readonly("instance", fields)
 	end,
@@ -325,7 +435,84 @@ api["wa.items"] = readonly("wa.items", {
 		check(type(name) == "string", "items.group: the group name must be a string")
 		return (call(H.items_group, name))
 	end,
+	name = function(item)
+		check(math_type(item) == "integer", "items.name: want an item from items.id")
+		return (call(H.items_name, item))
+	end,
 })
+
+-- Text for players (strategy section 6.13). text "key" reads the mod's
+-- locales/en.yml.
+api["wa.text"] = readonly("wa.text", {
+	item_link = function(item)
+		check(math_type(item) == "integer", "text.item_link: want an item from items.id")
+		return (call(H.text_item_link, item))
+	end,
+}, function(_, key)
+	check(type(key) == "string", "text: the key must be a string")
+	return (call(H.text, key))
+end)
+
+api["wa.maps"] = readonly("wa.maps", {
+	announce = function(map, text)
+		check(type(map) == "string", "maps.announce: the map must be a name, such as prontera")
+		check(type(text) == "string", "maps.announce: the text must be a string")
+		return (call(H.announce, map, text))
+	end,
+})
+
+api["wa.world"] = readonly("wa.world", {
+	announce = function(text)
+		check(type(text) == "string", "world.announce: the text must be a string")
+		return (call(H.announce, nil, text))
+	end,
+})
+
+-- Saved variables (proposal 0002, "Variables"). A declaration names the
+-- scope and the type. Go checks the name and keeps the declaration.
+local variable_ids
+local new_variable
+new_variable, variable_ids = handle_type("variable", {
+	get = function(self, player)
+		return (call(H.variable_get, variable_ids[self], player_ids[player]))
+	end,
+	set = function(self, player, value)
+		return (call(H.variable_set, variable_ids[self], player_ids[player], value))
+	end,
+	add = function(self, player, amount)
+		return (call(H.variable_add, variable_ids[self], player_ids[player], amount))
+	end,
+})
+
+local server_variable_ids
+local new_server_variable
+new_server_variable, server_variable_ids = handle_type("server variable", {
+	get = function(self)
+		return (call(H.variable_get, server_variable_ids[self]))
+	end,
+	set = function(self, value)
+		return (call(H.variable_set, server_variable_ids[self], nil, value))
+	end,
+	add = function(self, amount)
+		return (call(H.variable_add, server_variable_ids[self], nil, amount))
+	end,
+})
+
+local variable_api = {}
+for _, scope in ipairs({ "character", "character_temporary", "account", "server", "instance" }) do
+	for _, kind in ipairs({ "integer", "boolean", "string", "table" }) do
+		local what = "variables." .. scope .. "_" .. kind
+		variable_api[scope .. "_" .. kind] = function(name)
+			check(type(name) == "string", what .. ": the name must be a string")
+			local id = call(H.variables_declare, scope, kind, name)
+			if scope == "server" then
+				return new_server_variable(id)
+			end
+			return new_variable(id)
+		end
+	end
+end
+api["wa.variables"] = readonly("wa.variables", variable_api)
 
 api["wa.skills"] = readonly("wa.skills", {
 	id = function(name)
@@ -613,6 +800,21 @@ function R.invoke(fn, ...)
 		args[#args + 1] = value
 	end
 	return fn(unpack(args, 1, n // 2))
+end
+
+-- converse runs the click handlers of an NPC in a conversation's
+-- thread, one after the other.
+function R.converse(player_id, conversation_id, ...)
+	local p = new_player(player_id)
+	local c = new_conversation(conversation_id)
+	for i = 1, select("#", ...) do
+		(select(i, ...))(p, c)
+	end
+end
+
+-- closed_message is the error a closed conversation raises.
+function R.closed_message()
+	return CLOSED
 end
 
 -- drop_mod forgets a mod's environment and loaded files, before a reload.

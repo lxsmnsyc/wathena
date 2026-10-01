@@ -9,9 +9,14 @@ import {
   EffectPlaySchema,
   EntityKind,
   type Event,
+  type ImagePosition,
   type InventoryRemoveReason,
   type Look as LookMessage,
+  type MinimapMark,
+  type NpcDialog,
   type PickUpFailure,
+  type ShopOpen,
+  type ShopOutcome,
   StatId,
   type UseItemFailure,
   VanishReason,
@@ -94,6 +99,12 @@ function spriteOf(kind: EntityKind, body: number): string {
 /** How long the pick up action plays, in milliseconds. */
 const PICK_UP_MS = 500;
 
+/** The emotion icons, one action per emotion (docs/specs/assets-v1.md). */
+export const EMOTION_SPRITE = 'sprite/effect/emotion';
+
+/** How high an emotion shows over an entity's feet, in cells. */
+const EMOTION_HEIGHT = 3;
+
 /** A hit to show: where, how much, and what kind. */
 export interface Hit {
   position: Vector3;
@@ -128,6 +139,20 @@ export default class Online {
   onChat: ((from: number, name: string, text: string) => void) | undefined;
   /** Called for text the server sends to this player alone, such as a mod's message. */
   onServerText: ((text: string) => void) | undefined;
+  /** Called for an announcement to the map or the world, with its color or 0. */
+  onAnnouncement: ((text: string, color: number) => void) | undefined;
+  /** Called for each NPC dialog step, with the NPC's name. */
+  onNpcDialog: ((dialog: NpcDialog, name: string) => void) | undefined;
+  /** Called to show or hide an NPC illustration. */
+  onNpcImage: ((name: string, position: ImagePosition) => void) | undefined;
+  /** Called when a progress bar starts over the player. */
+  onProgress: ((durationMs: number, color: number) => void) | undefined;
+  /** Called for a minimap mark. */
+  onMinimapMark: ((mark: MinimapMark) => void) | undefined;
+  /** Called when a shop window opens. */
+  onShopOpen: ((shop: ShopOpen) => void) | undefined;
+  /** Called with a shop's answer. */
+  onShopResult: ((outcome: ShopOutcome) => void) | undefined;
   /** Called when an effect plays a sound, with where it plays. */
   onSound: ((name: string, position: Vector3) => void) | undefined;
   /**
@@ -145,6 +170,8 @@ export default class Online {
   readonly stats = new Map<StatId, bigint>();
   /** Events that arrived before the map loaded. */
   private waiting: Event[] = [];
+  /** Entity names, by ID, from EntityAppear. */
+  private readonly names = new Map<number, string>();
   private map: WMap | undefined;
 
   constructor(
@@ -229,6 +256,7 @@ export default class Online {
             break;
           }
           this.kinds.set(a.id, kindOf(a.kind));
+          this.names.set(a.id, a.name);
           const map = this.map;
           // A placeholder holds the entity's place until its sprites load.
           const pending = {
@@ -414,9 +442,34 @@ export default class Online {
             this.onChat?.(c.from, c.fromName, c.text);
           } else if (c.channel === ChatChannel.SYSTEM) {
             this.onServerText?.(c.text);
+          } else if (c.channel === ChatChannel.ANNOUNCEMENT) {
+            this.onAnnouncement?.(c.text, c.color);
           }
           break;
         }
+        case 'npcDialog': {
+          const d = e.body.value;
+          this.onNpcDialog?.(d, this.names.get(d.npc) ?? '');
+          break;
+        }
+        case 'npcImage':
+          this.onNpcImage?.(e.body.value.name, e.body.value.position);
+          break;
+        case 'npcProgress':
+          this.onProgress?.(e.body.value.durationMs, e.body.value.color);
+          break;
+        case 'emotion':
+          this.showEmotion(e.body.value.entity, e.body.value.emotion);
+          break;
+        case 'minimapMark':
+          this.onMinimapMark?.(e.body.value);
+          break;
+        case 'shopOpen':
+          this.onShopOpen?.(e.body.value);
+          break;
+        case 'shopResult':
+          this.onShopResult?.(e.body.value.outcome);
+          break;
         default:
           // Events this client does not show yet.
           break;
@@ -429,8 +482,48 @@ export default class Online {
     { x: number; y: number; dir: number; walk: Parameters<Player['follow']> | undefined }
   >();
 
+  /**
+   * Shows an emotion icon over a unit: the action of the emotion sprite
+   * with the emotion's number, played once.
+   */
+  private showEmotion(id: number, emotion: number): void {
+    const unit = this.units.get(id);
+    if (unit === undefined) {
+      return;
+    }
+    this.sprites
+      .get(EMOTION_SPRITE)
+      .then((asset) => {
+        if (asset === undefined || this.units.get(id) !== unit) {
+          return;
+        }
+        const v = new SpriteView(asset);
+        v.fixed = emotion;
+        v.group.position.y = EMOTION_HEIGHT;
+        unit.character.group.add(v.group);
+        let left = Math.max(v.duration(emotion), 1000);
+        this.playing.push({
+          group: v.group,
+          update: (deltaMs: number) => {
+            v.update(deltaMs, 0);
+            left -= deltaMs;
+          },
+          get done() {
+            return left <= 0;
+          },
+        });
+      })
+      .catch(reportError);
+  }
+
+  /** Whether an entity is an NPC, which a click talks to. */
+  isNpc(id: number): boolean {
+    return this.kinds.get(id) === 'npc';
+  }
+
   private remove(id: number): void {
     this.pending.delete(id);
+    this.names.delete(id);
     this.items.remove(id);
     const portal = this.portals.get(id);
     if (portal !== undefined) {

@@ -14,6 +14,12 @@ type zones map[string]*Zone
 
 func (d zones) Zone(name string) *Zone { return d[name] }
 
+func (d zones) Announce(text string, color uint32) {
+	for _, z := range d {
+		z.Announce(text, color)
+	}
+}
+
 // twoMaps makes map/a and map/b, 40 × 40 cells each, with the item and
 // exp tables of saveZone. A warp on map/a at 20,20 with a span of 1 leads
 // to map/b at 5,6.

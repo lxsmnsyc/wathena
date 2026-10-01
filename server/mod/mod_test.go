@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -500,10 +501,10 @@ func TestNPCs(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []NPC{
-		{Name: "example.a:Healer#1", Mod: "example.a", DisplayName: "Healer", Map: "map/prontera", X: 150, Y: 180, Direction: 2, Sprite: 112, Script: "scripts/npc.lua", ScriptMod: "example.a"},
-		{Name: "example.a:Guide", Mod: "example.a", DisplayName: "Field Guide", Map: "map/prt_fild08", X: 12, Y: 11, Sprite: 112},
+		{Name: "example.a:Healer#1", Mod: "example.a", DisplayName: "Healer", Map: "map/prontera", X: 150, Y: 180, Direction: 2, Sprite: 112, Script: "scripts/npc.lua", ScriptMod: "example.a", Placed: true},
+		{Name: "example.a:Guide", Mod: "example.a", DisplayName: "Field Guide", Map: "map/prt_fild08", X: 12, Y: 11, Sprite: 112, Placed: true},
 	}
-	if !slices.Equal(npcs, want) {
+	if !reflect.DeepEqual(npcs, want) {
 		t.Errorf("npcs\n%+v\nwant\n%+v", npcs, want)
 	}
 
@@ -567,11 +568,15 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("cookie ID %d", items.IDs["example.greeter:Welcome_Cookie"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 2 || npcs[0].DisplayName != "Greeter" {
+	if err != nil || len(npcs) != 3 || npcs[0].DisplayName != "Greeter" || npcs[0].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
+	// The cookie stand is a shop that only scripts open.
+	if shop := npcs[2]; shop.Placed || len(shop.Shop) != 2 || !shop.Discount || shop.Shop[1].Price != -1 {
+		t.Errorf("shop %+v", shop)
+	}
 	sc, err := s.Scripts("example.greeter")
-	if err != nil || len(sc.Entries) != 1 {
+	if err != nil || len(sc.Entries) != 1 || sc.Texts["greeter.hello"] == "" {
 		t.Errorf("scripts %+v, %v", sc, err)
 	}
 }

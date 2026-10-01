@@ -96,6 +96,14 @@ func (w *World) ReloadMod(ctx context.Context, sc *mod.Scripts) error {
 	return errors.Join(errs...)
 }
 
+// Announce shows a line to every player of every zone, as rAthena's
+// announce. It never waits on a zone.
+func (w *World) Announce(text string, color uint32) {
+	for _, z := range w.zones {
+		z.Announce(text, color)
+	}
+}
+
 // Stopped closes when Run has returned.
 func (w *World) Stopped() <-chan struct{} { return w.stopped }
 

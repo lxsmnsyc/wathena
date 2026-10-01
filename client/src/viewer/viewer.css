@@ -367,3 +367,157 @@ body {
   margin-bottom: 4px;
   font-weight: 600;
 }
+
+#chat-log .announcement {
+  color: #ffff63;
+}
+
+#cutins {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cutin {
+  position: absolute;
+  bottom: 0;
+  max-height: 70vh;
+}
+
+.cutin.left {
+  left: 0;
+}
+
+.cutin.center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cutin.right {
+  right: 0;
+}
+
+.cutin[hidden] {
+  display: none;
+}
+
+/* Right of the player, as RO places it, so the NPC stays in view. */
+#dialog-window {
+  position: fixed;
+  top: 22vh;
+  left: min(calc(50% + 90px), calc(100% - 312px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(300px, calc(100% - 24px));
+  padding: 8px 10px;
+  border: 1px solid rgb(0 0 0 / 30%);
+  border-radius: 6px;
+  background: rgb(250 250 250 / 95%);
+  color: #000;
+}
+
+#dialog-window[hidden] {
+  display: none;
+}
+
+.dialog-title {
+  font-weight: bold;
+  font-size: 12px;
+  color: #444;
+}
+
+.dialog-body {
+  max-height: 40vh;
+  overflow-y: auto;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  unicode-bidi: plaintext;
+}
+
+.dialog-body .item-link {
+  color: #2058c8;
+  text-decoration: underline dotted;
+}
+
+.dialog-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.dialog-menu {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 2px;
+}
+
+.dialog-menu button {
+  text-align: left;
+}
+
+.dialog-input {
+  display: flex;
+  gap: 6px;
+}
+
+#shop-window {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: calc(100% - 140px);
+  overflow-y: auto;
+  padding: 8px 10px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 75%);
+  font-variant-numeric: tabular-nums;
+}
+
+#shop-window[hidden] {
+  display: none;
+}
+
+#shop-window caption {
+  text-align: left;
+  font-weight: bold;
+}
+
+#shop-window td,
+#shop-window th {
+  padding: 1px 6px;
+}
+
+#shop-window .value {
+  text-align: right;
+}
+
+.shop-problem {
+  color: #ffd84a;
+}
+
+#progress {
+  position: fixed;
+  width: 80px;
+  height: 8px;
+  transform: translate(-50%, -100%);
+  border: 1px solid #000;
+  background: rgb(0 0 0 / 50%);
+  pointer-events: none;
+}
+
+#progress[hidden] {
+  display: none;
+}
+
+#progress div {
+  width: 0;
+  height: 100%;
+  background: #4ad04a;
+}

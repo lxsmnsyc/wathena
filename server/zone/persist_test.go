@@ -87,20 +87,20 @@ func TestLoadedCharacterEntersAsSaved(t *testing.T) {
 func TestDeadOrMovedCharacterStartsAtStart(t *testing.T) {
 	z := saveZone()
 	x, y := z.startCell()
-	dead := savedCharacter()
-	dead.HP = 0
 	other := savedCharacter()
 	other.Name, other.Map = "Other", "map/elsewhere"
-	for _, c := range []*character.Character{dead, other} {
-		p := addCharacter(z, c, &saves{})
-		if p.entity.x != x || p.entity.y != y {
-			t.Errorf("%s at %d,%d, want the start %d,%d", c.Name, p.entity.x, p.entity.y, x, y)
-		}
+	p := addCharacter(z, other, &saves{})
+	if p.entity.x != x || p.entity.y != y {
+		t.Errorf("%s at %d,%d, want the start %d,%d", other.Name, p.entity.x, p.entity.y, x, y)
 	}
-	for _, p := range z.players {
-		if p.Name == "Saved" && p.entity.hp != 200 {
-			t.Errorf("a character that logged out dead has %d HP, want full", p.entity.hp)
-		}
+	// A character that logged out dead was saved at its save point
+	// (pc_makesavestatus), and comes back there with full HP.
+	dead := savedCharacter()
+	dead.HP = 0
+	p = addCharacter(z, dead, &saves{})
+	if p.entity.x != dead.X || p.entity.y != dead.Y || p.entity.hp != 200 {
+		t.Errorf("a character that logged out dead is at %d,%d with %d HP, want %d,%d with full HP",
+			p.entity.x, p.entity.y, p.entity.hp, dead.X, dead.Y)
 	}
 }
 

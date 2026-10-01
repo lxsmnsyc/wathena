@@ -74,8 +74,21 @@ type Jump struct{ Kind string }
 type Return struct{ Value Expr }
 
 // Unsupported is a statement the converter cannot read, such as a label
-// or goto. Text is what it found.
+// or goto in an item script. Text is what it found.
 type Unsupported struct{ Text string }
+
+// Label is Name: in an NPC script.
+type Label struct{ Name string }
+
+// Goto is goto Label; in an NPC script.
+type Goto struct{ Label string }
+
+// FuncDecl is a local function of an NPC script: function Name { ... },
+// or function Name; which only declares it and has no Body.
+type FuncDecl struct {
+	Name string
+	Body *Block
+}
 
 // Num is an integer literal.
 type Num struct{ Value int64 }
@@ -125,6 +138,9 @@ func (*IncDec) stmt()      {}
 func (*Jump) stmt()        {}
 func (*Return) stmt()      {}
 func (*Unsupported) stmt() {}
+func (*Label) stmt()       {}
+func (*Goto) stmt()        {}
+func (*FuncDecl) stmt()    {}
 
 func (*Num) expr()     {}
 func (*Str) expr()     {}

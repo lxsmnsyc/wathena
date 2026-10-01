@@ -24,6 +24,9 @@ import (
 const (
 	monsterFolder = "data/sprite/몬스터/"
 	npcFolder     = "data/sprite/npc/"
+	// effectFolder holds effect sprites, such as emotion, the icons of
+	// emotions. They become sprite/effect/<name>.
+	effectFolder = "data/sprite/이팩트/"
 )
 
 // IsNPCID reports whether a JobNameTable ID is an NPC sprite ID. These
@@ -200,6 +203,9 @@ func (t *Tables) SpriteNames(grfPath string) []string {
 	}
 	if m := headPath.FindStringSubmatch(key); m != nil && m[2] == m[4] {
 		add("sprite/head/" + races[m[1]] + "/" + sexes[m[2]] + "/" + trimZeros(m[3]))
+	}
+	if rest, ok := strings.CutPrefix(key, effectFolder); ok && !strings.Contains(rest, "/") {
+		add("sprite/effect/" + strings.TrimSuffix(rest, ext))
 	}
 	if t != nil {
 		t.characterNames(strings.TrimSuffix(key, ext), add)

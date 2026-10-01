@@ -189,8 +189,11 @@ func (s *Store) Load(ctx context.Context, id int64) (*character.Character, *Sess
 			return err
 		}
 		c, err = fromRow(&row, items)
+		if err != nil {
+			return err
+		}
 		version = row.SaveVersion
-		return err
+		return loadVariables(ctx, q, c)
 	})
 	if err != nil {
 		return nil, nil, err
@@ -377,10 +380,84 @@ func (s *Store) write(ctx context.Context, id, version int64, base, c *character
 			}
 		}
 		if len(ins) > 0 {
-			return q.InsertInventory(ctx, insertParams(id, ins))
+			if err := q.InsertInventory(ctx, insertParams(id, ins)); err != nil {
+				return err
+			}
 		}
-		return nil
+		return writeVariables(ctx, q, c, base.Variables, c.Variables)
 	})
+}
+
+// loadVariables reads a character's variables and its account's.
+func loadVariables(ctx context.Context, q *db.Queries, c *character.Character) error {
+	chars, err := q.CharacterVariables(ctx, c.ID)
+	if err != nil {
+		return err
+	}
+	accounts, err := q.AccountVariables(ctx, c.AccountID)
+	if err != nil {
+		return err
+	}
+	if len(chars)+len(accounts) == 0 {
+		return nil
+	}
+	c.Variables = make(map[character.Variable]string, len(chars)+len(accounts))
+	for _, v := range chars {
+		c.Variables[character.Variable{Mod: v.ModID, Name: v.Name}] = string(v.Value)
+	}
+	for _, v := range accounts {
+		c.Variables[character.Variable{Mod: v.ModID, Name: v.Name, Account: true}] = string(v.Value)
+	}
+	return nil
+}
+
+// writeVariables writes the variables that changed from old to cur: new
+// and changed values, and deletions of those that went back to their
+// default. Account variables only change in the rows this character
+// changed, so two characters of an account write different names.
+func writeVariables(ctx context.Context, q *db.Queries, c *character.Character, old, cur map[character.Variable]string) error {
+	var set, del [2]struct {
+		mods, names []string
+		vals        [][]byte
+	}
+	idx := func(v character.Variable) int {
+		if v.Account {
+			return 1
+		}
+		return 0
+	}
+	for k, v := range cur {
+		if prev, ok := old[k]; ok && prev == v {
+			continue
+		}
+		s := &set[idx(k)]
+		s.mods, s.names, s.vals = append(s.mods, k.Mod), append(s.names, k.Name), append(s.vals, []byte(v))
+	}
+	for k := range old {
+		if _, ok := cur[k]; !ok {
+			d := &del[idx(k)]
+			d.mods, d.names = append(d.mods, k.Mod), append(d.names, k.Name)
+		}
+	}
+	if len(del[0].mods) > 0 {
+		if err := q.DeleteCharacterVariables(ctx, db.DeleteCharacterVariablesParams{CharacterID: c.ID, ModIds: del[0].mods, Names: del[0].names}); err != nil {
+			return err
+		}
+	}
+	if len(set[0].mods) > 0 {
+		if err := q.UpsertCharacterVariables(ctx, db.UpsertCharacterVariablesParams{CharacterID: c.ID, ModIds: set[0].mods, Names: set[0].names, Vals: set[0].vals}); err != nil {
+			return err
+		}
+	}
+	if len(del[1].mods) > 0 {
+		if err := q.DeleteAccountVariables(ctx, db.DeleteAccountVariablesParams{AccountID: c.AccountID, ModIds: del[1].mods, Names: del[1].names}); err != nil {
+			return err
+		}
+	}
+	if len(set[1].mods) > 0 {
+		return q.UpsertAccountVariables(ctx, db.UpsertAccountVariablesParams{AccountID: c.AccountID, ModIds: set[1].mods, Names: set[1].names, Vals: set[1].vals})
+	}
+	return nil
 }
 
 // diffItems returns the slots whose rows must go and the items whose rows
@@ -433,6 +510,7 @@ func saveParams(c *character.Character, version int64) db.SaveCharacterParams {
 		Str: c.Stats.Str, Agi: c.Stats.Agi, Vit: c.Stats.Vit, Int: c.Stats.Int, Dex: c.Stats.Dex, Luk: c.Stats.Luk,
 		Hp: int(c.HP), Sp: int(c.SP), Map: c.Map, X: c.X, Y: c.Y, Zeny: c.Zeny,
 		InventorySize: c.InventorySize,
+		SaveMap:       c.SaveMap, SaveX: c.SaveX, SaveY: c.SaveY,
 	}
 }
 
@@ -446,6 +524,7 @@ func fromRow(r *db.Character, items []db.InventoryRow) (*character.Character, er
 		HP: int64(r.Hp), SP: int64(r.Sp), Map: r.Map, X: r.X, Y: r.Y, Zeny: r.Zeny,
 		InventorySize: r.InventorySize,
 		Stats:         status.Stats{Str: r.Str, Agi: r.Agi, Vit: r.Vit, Int: r.Int, Dex: r.Dex, Luk: r.Luk},
+		SaveMap:       r.SaveMap, SaveX: r.SaveX, SaveY: r.SaveY,
 	}}
 	for _, it := range items {
 		id, err := itemID(it.ItemID)

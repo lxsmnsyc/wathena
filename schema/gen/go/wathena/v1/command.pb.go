@@ -33,6 +33,10 @@ const (
 	// script's player:send_message. from is 0 and from_name is empty.
 	// Clients never send it.
 	ChatChannel_CHAT_CHANNEL_SYSTEM ChatChannel = 6
+	// ANNOUNCEMENT is a broadcast to every player of a map or of the
+	// world, as rAthena's announce and mapannounce. from is 0 and
+	// from_name is empty. Clients never send it.
+	ChatChannel_CHAT_CHANNEL_ANNOUNCEMENT ChatChannel = 7
 )
 
 // Enum value maps for ChatChannel.
@@ -45,15 +49,17 @@ var (
 		4: "CHAT_CHANNEL_WHISPER",
 		5: "CHAT_CHANNEL_WORLD",
 		6: "CHAT_CHANNEL_SYSTEM",
+		7: "CHAT_CHANNEL_ANNOUNCEMENT",
 	}
 	ChatChannel_value = map[string]int32{
-		"CHAT_CHANNEL_UNSPECIFIED": 0,
-		"CHAT_CHANNEL_LOCAL":       1,
-		"CHAT_CHANNEL_PARTY":       2,
-		"CHAT_CHANNEL_GUILD":       3,
-		"CHAT_CHANNEL_WHISPER":     4,
-		"CHAT_CHANNEL_WORLD":       5,
-		"CHAT_CHANNEL_SYSTEM":      6,
+		"CHAT_CHANNEL_UNSPECIFIED":  0,
+		"CHAT_CHANNEL_LOCAL":        1,
+		"CHAT_CHANNEL_PARTY":        2,
+		"CHAT_CHANNEL_GUILD":        3,
+		"CHAT_CHANNEL_WHISPER":      4,
+		"CHAT_CHANNEL_WORLD":        5,
+		"CHAT_CHANNEL_SYSTEM":       6,
+		"CHAT_CHANNEL_ANNOUNCEMENT": 7,
 	}
 )
 
@@ -260,6 +266,33 @@ func (x *Command) GetDropItem() *DropItem {
 	return nil
 }
 
+func (x *Command) GetShopBuy() *ShopBuy {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_ShopBuy); ok {
+			return x.ShopBuy
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetShopSell() *ShopSell {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_ShopSell); ok {
+			return x.ShopSell
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetShopClose() *ShopClose {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_ShopClose); ok {
+			return x.ShopClose
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -338,6 +371,30 @@ func (x *Command) SetDropItem(v *DropItem) {
 		return
 	}
 	x.xxx_hidden_Body = &command_DropItem{v}
+}
+
+func (x *Command) SetShopBuy(v *ShopBuy) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_ShopBuy{v}
+}
+
+func (x *Command) SetShopSell(v *ShopSell) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_ShopSell{v}
+}
+
+func (x *Command) SetShopClose(v *ShopClose) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_ShopClose{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -427,6 +484,30 @@ func (x *Command) HasDropItem() bool {
 	return ok
 }
 
+func (x *Command) HasShopBuy() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_ShopBuy)
+	return ok
+}
+
+func (x *Command) HasShopSell() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_ShopSell)
+	return ok
+}
+
+func (x *Command) HasShopClose() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_ShopClose)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -491,6 +572,24 @@ func (x *Command) ClearDropItem() {
 	}
 }
 
+func (x *Command) ClearShopBuy() {
+	if _, ok := x.xxx_hidden_Body.(*command_ShopBuy); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearShopSell() {
+	if _, ok := x.xxx_hidden_Body.(*command_ShopSell); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearShopClose() {
+	if _, ok := x.xxx_hidden_Body.(*command_ShopClose); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -502,6 +601,9 @@ const Command_UseItem_case case_Command_Body = 7
 const Command_PickUp_case case_Command_Body = 8
 const Command_RaiseStat_case case_Command_Body = 9
 const Command_DropItem_case case_Command_Body = 10
+const Command_ShopBuy_case case_Command_Body = 11
+const Command_ShopSell_case case_Command_Body = 12
+const Command_ShopClose_case case_Command_Body = 13
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -528,6 +630,12 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_RaiseStat_case
 	case *command_DropItem:
 		return Command_DropItem_case
+	case *command_ShopBuy:
+		return Command_ShopBuy_case
+	case *command_ShopSell:
+		return Command_ShopSell_case
+	case *command_ShopClose:
+		return Command_ShopClose_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -547,6 +655,9 @@ type Command_builder struct {
 	PickUp    *PickUp
 	RaiseStat *RaiseStat
 	DropItem  *DropItem
+	ShopBuy   *ShopBuy
+	ShopSell  *ShopSell
+	ShopClose *ShopClose
 	// -- end of xxx_hidden_Body
 }
 
@@ -583,6 +694,15 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.DropItem != nil {
 		x.xxx_hidden_Body = &command_DropItem{b.DropItem}
+	}
+	if b.ShopBuy != nil {
+		x.xxx_hidden_Body = &command_ShopBuy{b.ShopBuy}
+	}
+	if b.ShopSell != nil {
+		x.xxx_hidden_Body = &command_ShopSell{b.ShopSell}
+	}
+	if b.ShopClose != nil {
+		x.xxx_hidden_Body = &command_ShopClose{b.ShopClose}
 	}
 	return m0
 }
@@ -641,6 +761,18 @@ type command_DropItem struct {
 	DropItem *DropItem `protobuf:"bytes,10,opt,name=drop_item,json=dropItem,proto3,oneof"`
 }
 
+type command_ShopBuy struct {
+	ShopBuy *ShopBuy `protobuf:"bytes,11,opt,name=shop_buy,json=shopBuy,proto3,oneof"`
+}
+
+type command_ShopSell struct {
+	ShopSell *ShopSell `protobuf:"bytes,12,opt,name=shop_sell,json=shopSell,proto3,oneof"`
+}
+
+type command_ShopClose struct {
+	ShopClose *ShopClose `protobuf:"bytes,13,opt,name=shop_close,json=shopClose,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -660,6 +792,12 @@ func (*command_PickUp) isCommand_Body() {}
 func (*command_RaiseStat) isCommand_Body() {}
 
 func (*command_DropItem) isCommand_Body() {}
+
+func (*command_ShopBuy) isCommand_Body() {}
+
+func (*command_ShopSell) isCommand_Body() {}
+
+func (*command_ShopClose) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -1158,6 +1296,8 @@ func (b0 Chat_builder) Build() *Chat {
 	return m0
 }
 
+// NpcClick talks to an NPC, or opens its shop, as rAthena's npc_click.
+// The NPC must be within 15 cells on both axes.
 type NpcClick struct {
 	state          protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Npc uint32                 `protobuf:"varint,1,opt,name=npc,proto3"`
@@ -1439,11 +1579,19 @@ type NpcReply_builder struct {
 	// dialog is NpcDialog.dialog from the step being answered.
 	Dialog uint32
 	// Fields of oneof xxx_hidden_Answer:
-	Next        *bool
-	Menu        *uint32
-	InputText   *string
+	// next answers a next prompt.
+	Next *bool
+	// menu is the chosen option of a menu prompt, from 1.
+	Menu *uint32
+	// input_text answers an input_text prompt: at most text_max
+	// characters, cleaned as chat is.
+	InputText *string
+	// input_number answers an input_number prompt, from number_min to
+	// number_max.
 	InputNumber *int64
-	Close       *bool
+	// close answers a close prompt, or cancels a menu or an input. It
+	// ends the conversation.
+	Close *bool
 	// -- end of xxx_hidden_Answer
 }
 
@@ -1485,22 +1633,30 @@ type isNpcReply_Answer interface {
 }
 
 type npcReply_Next struct {
+	// next answers a next prompt.
 	Next bool `protobuf:"varint,2,opt,name=next,proto3,oneof"`
 }
 
 type npcReply_Menu struct {
+	// menu is the chosen option of a menu prompt, from 1.
 	Menu uint32 `protobuf:"varint,3,opt,name=menu,proto3,oneof"`
 }
 
 type npcReply_InputText struct {
+	// input_text answers an input_text prompt: at most text_max
+	// characters, cleaned as chat is.
 	InputText string `protobuf:"bytes,4,opt,name=input_text,json=inputText,proto3,oneof"`
 }
 
 type npcReply_InputNumber struct {
+	// input_number answers an input_number prompt, from number_min to
+	// number_max.
 	InputNumber int64 `protobuf:"varint,5,opt,name=input_number,json=inputNumber,proto3,oneof"`
 }
 
 type npcReply_Close struct {
+	// close answers a close prompt, or cancels a menu or an input. It
+	// ends the conversation.
 	Close bool `protobuf:"varint,6,opt,name=close,proto3,oneof"`
 }
 
@@ -1514,6 +1670,363 @@ func (*npcReply_InputNumber) isNpcReply_Answer() {}
 
 func (*npcReply_Close) isNpcReply_Answer() {}
 
+// ShopBuy buys items from the shop that ShopOpen showed, in one step,
+// as rAthena's npc_buylist. The server answers with ShopResult.
+type ShopBuy struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Npc   uint32                 `protobuf:"varint,1,opt,name=npc,proto3"`
+	xxx_hidden_Items *[]*ShopBuyLine        `protobuf:"bytes,2,rep,name=items,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ShopBuy) Reset() {
+	*x = ShopBuy{}
+	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopBuy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopBuy) ProtoMessage() {}
+
+func (x *ShopBuy) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopBuy) GetNpc() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Npc
+	}
+	return 0
+}
+
+func (x *ShopBuy) GetItems() []*ShopBuyLine {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *ShopBuy) SetNpc(v uint32) {
+	x.xxx_hidden_Npc = v
+}
+
+func (x *ShopBuy) SetItems(v []*ShopBuyLine) {
+	x.xxx_hidden_Items = &v
+}
+
+type ShopBuy_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// npc is ShopOpen.npc.
+	Npc uint32
+	// items are 1 to 100 lines. Each item must be in the shop.
+	Items []*ShopBuyLine
+}
+
+func (b0 ShopBuy_builder) Build() *ShopBuy {
+	m0 := &ShopBuy{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Npc = b.Npc
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+type ShopBuyLine struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ItemId uint32                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ShopBuyLine) Reset() {
+	*x = ShopBuyLine{}
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopBuyLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopBuyLine) ProtoMessage() {}
+
+func (x *ShopBuyLine) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopBuyLine) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *ShopBuyLine) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *ShopBuyLine) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *ShopBuyLine) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+type ShopBuyLine_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	ItemId uint32
+	// amount is 1 to 30000. Items that do not stack are bought one at a
+	// time, so their amount is 1.
+	Amount uint32
+}
+
+func (b0 ShopBuyLine_builder) Build() *ShopBuyLine {
+	m0 := &ShopBuyLine{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_Amount = b.Amount
+	return m0
+}
+
+// ShopSell sells inventory slots to the shop that ShopOpen showed, as
+// rAthena's npc_selllist. The server answers with ShopResult.
+type ShopSell struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Npc   uint32                 `protobuf:"varint,1,opt,name=npc,proto3"`
+	xxx_hidden_Items *[]*ShopSellLine       `protobuf:"bytes,2,rep,name=items,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ShopSell) Reset() {
+	*x = ShopSell{}
+	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopSell) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopSell) ProtoMessage() {}
+
+func (x *ShopSell) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopSell) GetNpc() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Npc
+	}
+	return 0
+}
+
+func (x *ShopSell) GetItems() []*ShopSellLine {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *ShopSell) SetNpc(v uint32) {
+	x.xxx_hidden_Npc = v
+}
+
+func (x *ShopSell) SetItems(v []*ShopSellLine) {
+	x.xxx_hidden_Items = &v
+}
+
+type ShopSell_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Npc uint32
+	// items are 1 to 100 lines, each slot at most once.
+	Items []*ShopSellLine
+}
+
+func (b0 ShopSell_builder) Build() *ShopSell {
+	m0 := &ShopSell{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Npc = b.Npc
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+type ShopSellLine struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ShopSellLine) Reset() {
+	*x = ShopSellLine{}
+	mi := &file_wathena_v1_command_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopSellLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopSellLine) ProtoMessage() {}
+
+func (x *ShopSellLine) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopSellLine) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *ShopSellLine) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *ShopSellLine) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *ShopSellLine) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+type ShopSellLine_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// slot is an inventory slot, below 200.
+	Slot uint32
+	// amount is 1 to 30000, and at most the slot's amount.
+	Amount uint32
+}
+
+func (b0 ShopSellLine_builder) Build() *ShopSellLine {
+	m0 := &ShopSellLine{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Amount = b.Amount
+	return m0
+}
+
+// ShopClose closes the shop window without buying or selling.
+type ShopClose struct {
+	state          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Npc uint32                 `protobuf:"varint,1,opt,name=npc,proto3"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ShopClose) Reset() {
+	*x = ShopClose{}
+	mi := &file_wathena_v1_command_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShopClose) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShopClose) ProtoMessage() {}
+
+func (x *ShopClose) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ShopClose) GetNpc() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Npc
+	}
+	return 0
+}
+
+func (x *ShopClose) SetNpc(v uint32) {
+	x.xxx_hidden_Npc = v
+}
+
+type ShopClose_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Npc uint32
+}
+
+func (b0 ShopClose_builder) Build() *ShopClose {
+	m0 := &ShopClose{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Npc = b.Npc
+	return m0
+}
+
 // UseItem uses the item in an inventory slot, as rAthena's pc_useitem.
 // The server answers with ItemUsed and InventoryRemove, or UseItemFailed.
 type UseItem struct {
@@ -1525,7 +2038,7 @@ type UseItem struct {
 
 func (x *UseItem) Reset() {
 	*x = UseItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	mi := &file_wathena_v1_command_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1537,7 +2050,7 @@ func (x *UseItem) String() string {
 func (*UseItem) ProtoMessage() {}
 
 func (x *UseItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	mi := &file_wathena_v1_command_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1588,7 +2101,7 @@ type DropItem struct {
 
 func (x *DropItem) Reset() {
 	*x = DropItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	mi := &file_wathena_v1_command_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1600,7 +2113,7 @@ func (x *DropItem) String() string {
 func (*DropItem) ProtoMessage() {}
 
 func (x *DropItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	mi := &file_wathena_v1_command_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1661,7 +2174,7 @@ type PickUp struct {
 
 func (x *PickUp) Reset() {
 	*x = PickUp{}
-	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	mi := &file_wathena_v1_command_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1673,7 +2186,7 @@ func (x *PickUp) String() string {
 func (*PickUp) ProtoMessage() {}
 
 func (x *PickUp) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	mi := &file_wathena_v1_command_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1722,7 +2235,7 @@ type RaiseStat struct {
 
 func (x *RaiseStat) Reset() {
 	*x = RaiseStat{}
-	mi := &file_wathena_v1_command_proto_msgTypes[11]
+	mi := &file_wathena_v1_command_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1734,7 +2247,7 @@ func (x *RaiseStat) String() string {
 func (*RaiseStat) ProtoMessage() {}
 
 func (x *RaiseStat) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[11]
+	mi := &file_wathena_v1_command_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1789,7 +2302,7 @@ var File_wathena_v1_command_proto protoreflect.FileDescriptor
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\x83\x04\n" +
+	"wathena.v1\"\xa2\x05\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -1802,7 +2315,11 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"raise_stat\x18\t \x01(\v2\x15.wathena.v1.RaiseStatH\x00R\traiseStat\x123\n" +
 	"\tdrop_item\x18\n" +
-	" \x01(\v2\x14.wathena.v1.DropItemH\x00R\bdropItemB\x06\n" +
+	" \x01(\v2\x14.wathena.v1.DropItemH\x00R\bdropItem\x120\n" +
+	"\bshop_buy\x18\v \x01(\v2\x13.wathena.v1.ShopBuyH\x00R\ashopBuy\x123\n" +
+	"\tshop_sell\x18\f \x01(\v2\x14.wathena.v1.ShopSellH\x00R\bshopSell\x126\n" +
+	"\n" +
+	"shop_close\x18\r \x01(\v2\x15.wathena.v1.ShopCloseH\x00R\tshopCloseB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -1833,7 +2350,21 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"input_text\x18\x04 \x01(\tH\x00R\tinputText\x12#\n" +
 	"\finput_number\x18\x05 \x01(\x03H\x00R\vinputNumber\x12\x16\n" +
 	"\x05close\x18\x06 \x01(\bH\x00R\x05closeB\b\n" +
-	"\x06answer\"\x1d\n" +
+	"\x06answer\"J\n" +
+	"\aShopBuy\x12\x10\n" +
+	"\x03npc\x18\x01 \x01(\rR\x03npc\x12-\n" +
+	"\x05items\x18\x02 \x03(\v2\x17.wathena.v1.ShopBuyLineR\x05items\">\n" +
+	"\vShopBuyLine\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\rR\x06itemId\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\"L\n" +
+	"\bShopSell\x12\x10\n" +
+	"\x03npc\x18\x01 \x01(\rR\x03npc\x12.\n" +
+	"\x05items\x18\x02 \x03(\v2\x18.wathena.v1.ShopSellLineR\x05items\":\n" +
+	"\fShopSellLine\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\"\x1d\n" +
+	"\tShopClose\x12\x10\n" +
+	"\x03npc\x18\x01 \x01(\rR\x03npc\"\x1d\n" +
 	"\aUseItem\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\rR\x04slot\"6\n" +
 	"\bDropItem\x12\x12\n" +
@@ -1843,7 +2374,7 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x04item\x18\x01 \x01(\rR\x04item\"M\n" +
 	"\tRaiseStat\x12(\n" +
 	"\x04stat\x18\x01 \x01(\x0e2\x14.wathena.v1.BaseStatR\x04stat\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\rR\x06amount*\xbe\x01\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount*\xdd\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
@@ -1851,7 +2382,8 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x12CHAT_CHANNEL_GUILD\x10\x03\x12\x18\n" +
 	"\x14CHAT_CHANNEL_WHISPER\x10\x04\x12\x16\n" +
 	"\x12CHAT_CHANNEL_WORLD\x10\x05\x12\x17\n" +
-	"\x13CHAT_CHANNEL_SYSTEM\x10\x06*\x97\x01\n" +
+	"\x13CHAT_CHANNEL_SYSTEM\x10\x06\x12\x1d\n" +
+	"\x19CHAT_CHANNEL_ANNOUNCEMENT\x10\a*\x97\x01\n" +
 	"\bBaseStat\x12\x19\n" +
 	"\x15BASE_STAT_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rBASE_STAT_STR\x10\x01\x12\x11\n" +
@@ -1862,22 +2394,27 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_wathena_v1_command_proto_goTypes = []any{
-	(ChatChannel)(0),  // 0: wathena.v1.ChatChannel
-	(BaseStat)(0),     // 1: wathena.v1.BaseStat
-	(*Command)(nil),   // 2: wathena.v1.Command
-	(*WalkTo)(nil),    // 3: wathena.v1.WalkTo
-	(*Attack)(nil),    // 4: wathena.v1.Attack
-	(*UseSkill)(nil),  // 5: wathena.v1.UseSkill
-	(*Cell)(nil),      // 6: wathena.v1.Cell
-	(*Chat)(nil),      // 7: wathena.v1.Chat
-	(*NpcClick)(nil),  // 8: wathena.v1.NpcClick
-	(*NpcReply)(nil),  // 9: wathena.v1.NpcReply
-	(*UseItem)(nil),   // 10: wathena.v1.UseItem
-	(*DropItem)(nil),  // 11: wathena.v1.DropItem
-	(*PickUp)(nil),    // 12: wathena.v1.PickUp
-	(*RaiseStat)(nil), // 13: wathena.v1.RaiseStat
+	(ChatChannel)(0),     // 0: wathena.v1.ChatChannel
+	(BaseStat)(0),        // 1: wathena.v1.BaseStat
+	(*Command)(nil),      // 2: wathena.v1.Command
+	(*WalkTo)(nil),       // 3: wathena.v1.WalkTo
+	(*Attack)(nil),       // 4: wathena.v1.Attack
+	(*UseSkill)(nil),     // 5: wathena.v1.UseSkill
+	(*Cell)(nil),         // 6: wathena.v1.Cell
+	(*Chat)(nil),         // 7: wathena.v1.Chat
+	(*NpcClick)(nil),     // 8: wathena.v1.NpcClick
+	(*NpcReply)(nil),     // 9: wathena.v1.NpcReply
+	(*ShopBuy)(nil),      // 10: wathena.v1.ShopBuy
+	(*ShopBuyLine)(nil),  // 11: wathena.v1.ShopBuyLine
+	(*ShopSell)(nil),     // 12: wathena.v1.ShopSell
+	(*ShopSellLine)(nil), // 13: wathena.v1.ShopSellLine
+	(*ShopClose)(nil),    // 14: wathena.v1.ShopClose
+	(*UseItem)(nil),      // 15: wathena.v1.UseItem
+	(*DropItem)(nil),     // 16: wathena.v1.DropItem
+	(*PickUp)(nil),       // 17: wathena.v1.PickUp
+	(*RaiseStat)(nil),    // 18: wathena.v1.RaiseStat
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
 	3,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
@@ -1886,18 +2423,23 @@ var file_wathena_v1_command_proto_depIdxs = []int32{
 	7,  // 3: wathena.v1.Command.chat:type_name -> wathena.v1.Chat
 	8,  // 4: wathena.v1.Command.npc_click:type_name -> wathena.v1.NpcClick
 	9,  // 5: wathena.v1.Command.npc_reply:type_name -> wathena.v1.NpcReply
-	10, // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
-	12, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
-	13, // 8: wathena.v1.Command.raise_stat:type_name -> wathena.v1.RaiseStat
-	11, // 9: wathena.v1.Command.drop_item:type_name -> wathena.v1.DropItem
-	6,  // 10: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 11: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	1,  // 12: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	15, // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
+	17, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
+	18, // 8: wathena.v1.Command.raise_stat:type_name -> wathena.v1.RaiseStat
+	16, // 9: wathena.v1.Command.drop_item:type_name -> wathena.v1.DropItem
+	10, // 10: wathena.v1.Command.shop_buy:type_name -> wathena.v1.ShopBuy
+	12, // 11: wathena.v1.Command.shop_sell:type_name -> wathena.v1.ShopSell
+	14, // 12: wathena.v1.Command.shop_close:type_name -> wathena.v1.ShopClose
+	6,  // 13: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 14: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	11, // 15: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
+	13, // 16: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
+	1,  // 17: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -1916,6 +2458,9 @@ func file_wathena_v1_command_proto_init() {
 		(*command_PickUp)(nil),
 		(*command_RaiseStat)(nil),
 		(*command_DropItem)(nil),
+		(*command_ShopBuy)(nil),
+		(*command_ShopSell)(nil),
+		(*command_ShopClose)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
@@ -1934,7 +2479,7 @@ func file_wathena_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   12,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

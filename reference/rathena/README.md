@@ -65,6 +65,22 @@ wAthena's converter (tools/convert) reads three extracts per mode:
 
 They were first extracted at rAthena fork commit `f4641e37b`, from the same rAthena data as the other files.
 
+## NPCs
+
+The converter also reads two extracts per mode for NPCs ([decision 0008](../../docs/decisions/0008-converted-npcs.md)):
+
+- `npcs.json`: script NPCs, functions, shops and their duplicates, in the order `npc/<mode>/scripts_main.conf` loads them, with the names, map checks and duplicate rules of `warps.json`. Each NPC is one line of the file.
+- Script NPCs are kept from the folders the first release needs: `kafras`, `merchants`, `cities`, `airports`, `guides` and `other`, below `npc/`, `npc/re/` and `npc/pre-re/`. `left_out` counts the others by folder, such as `quests` and `instances`. Shops and functions are kept from every folder.
+- Shops have their items, with a price below 0 in the line replaced by the item's buy price, as `npc_parse_shop`. `discount` says whether Discount lowers the prices (`npc_shop_discount`). Item and point shops name their currency, and market shops give a stock.
+- `item_prices.json`: the buy and sell price of every item, with `ItemDatabase::loadingFinished`'s rules: a missing Buy is Sell * 2, a missing Sell is Buy / 2, and a Sell above what Discount and Overcharge allow becomes 1. `no_sell` is `Trade.NoSell`.
+
+| Mode | NPC lines | Shops | `npcs.json` | `item_prices.json` |
+|---|---:|---:|---:|---:|
+| renewal | 6,870 | 358 | 5.3 MB | 2.0 MB |
+| pre-renewal | 4,190 | 185 | 3.2 MB | 0.4 MB |
+
+They were first extracted at rAthena fork commit `003599e1c`.
+
 ## How random rolls are recorded
 
 rAthena's random number output depends on the C++ standard library, so wAthena cannot reproduce the exact rolls. The recorder uses three methods instead:

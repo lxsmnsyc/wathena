@@ -83,6 +83,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
+	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -244,7 +245,13 @@ func runAll(name string, args []string) error {
 		return err
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	// A signal starts the shutdown countdown. ctx ends after it, which
+	// stops the zones and saves every character. A second signal skips
+	// the rest of the countdown.
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(signals)
+	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 	var tables *progression.Tables
 	var data *progression.Data
@@ -297,14 +304,31 @@ func runAll(name string, args []string) error {
 	converted := time.Now()
 	core, err := convert.LoadCore(statusMode)
 	if err != nil {
-		return fmt.Errorf("item scripts: %w", err)
+		return fmt.Errorf("item and NPC scripts: %w", err)
 	}
-	log.Info("item scripts converted", "mode", statusMode, "items", len(core.Result.Items), "took", time.Since(converted).Round(time.Millisecond))
+	log.Info("item and npc scripts converted", "mode", statusMode, "items", len(core.Result.Items), "npcs", len(core.NPCs.NPCs), "took", time.Since(converted).Round(time.Millisecond))
 	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, ids, core, log)
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
 	items := item.New(loaded.items.Data)
+	// Server variables are shared by every zone, and written soon after
+	// they change.
+	var varStore variables.Store
+	if pool != nil {
+		varStore = store.NewServerVariables(pool)
+	}
+	serverVars := variables.NewServer(varStore, log)
+	if err := serverVars.Load(ctx); err != nil {
+		return fmt.Errorf("server variables: %w", err)
+	}
+	loaded.zone.Server = serverVars
+	varsDone := make(chan struct{})
+	go func() {
+		defer close(varsDone)
+		serverVars.Run(ctx)
+	}()
+	defer func() { <-varsDone }()
 	given, err := parseStartItems(cfg.StartItems)
 	if err != nil {
 		return err
@@ -426,9 +450,14 @@ func runAll(name string, args []string) error {
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
 	}
 	go func() {
-		<-ctx.Done()
+		select {
+		case <-signals:
+		case <-ctx.Done():
+		}
 		// Not ready from now, so a proxy stops sending new players.
 		hc.ready.Store(false)
+		countdown(cfg.ShutdownCountdown, func(text string) { w.Announce(text, 0xFFFF00) }, signals, log)
+		stop()
 		log.Info("shutting down: saving characters")
 		// Players see why the game stopped, and each session's last
 		// save is queued as it leaves its zone.
@@ -669,11 +698,47 @@ func loadProgression(mode reference.Mode) (*progression.Tables, *progression.Dat
 }
 
 // loadItemData reads the item database that reference/rathena
-// extracted from rAthena's item_db. Mods' item overlays apply over it.
+// extracted from rAthena's item_db: items.json, with the names of
+// client_tables.json and the prices of item_prices.json. Mods' item
+// overlays apply over it.
 func loadItemData(mode reference.Mode) (*item.Data, error) {
 	var d item.Data
 	if err := reference.LoadFile("extracts/"+string(mode)+"/items.json", &d); err != nil {
 		return nil, err
+	}
+	var names struct {
+		Items []struct {
+			ID   uint32 `json:"id"`
+			Name string `json:"name"`
+		} `json:"items"`
+	}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/client_tables.json", &names); err != nil {
+		return nil, err
+	}
+	var prices struct {
+		Items []struct {
+			ID     uint32 `json:"id"`
+			Buy    int    `json:"buy"`
+			Sell   int    `json:"sell"`
+			NoSell bool   `json:"no_sell"`
+		} `json:"items"`
+	}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/item_prices.json", &prices); err != nil {
+		return nil, err
+	}
+	byID := make(map[uint32]*item.Def, len(d.Items))
+	for i := range d.Items {
+		byID[d.Items[i].ID] = &d.Items[i]
+	}
+	for _, n := range names.Items {
+		if def := byID[n.ID]; def != nil {
+			def.Name = n.Name
+		}
+	}
+	for _, p := range prices.Items {
+		if def := byID[p.ID]; def != nil {
+			def.Buy, def.Sell, def.NoSell = p.Buy, p.Sell, p.NoSell
+		}
 	}
 	return &d, nil
 }

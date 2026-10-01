@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEiqQMKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHAoEQ2VsbBIJCgF4GAEgASgNEgkKAXkYAiABKA0iSgoEQ2hhdBIoCgdjaGFubmVsGAEgASgOMhcud2F0aGVuYS52MS5DaGF0Q2hhbm5lbBIMCgR0ZXh0GAIgASgJEgoKAnRvGAMgASgJIhcKCE5wY0NsaWNrEgsKA25wYxgBIAEoDSKDAQoITnBjUmVwbHkSDgoGZGlhbG9nGAEgASgNEg4KBG5leHQYAiABKAhIABIOCgRtZW51GAMgASgNSAASFAoKaW5wdXRfdGV4dBgEIAEoCUgAEhYKDGlucHV0X251bWJlchgFIAEoA0gAEg8KBWNsb3NlGAYgASgISABCCAoGYW5zd2VyIhcKB1VzZUl0ZW0SDAoEc2xvdBgBIAEoDSIoCghEcm9wSXRlbRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDSIWCgZQaWNrVXASDAoEaXRlbRgBIAEoDSI/CglSYWlzZVN0YXQSIgoEc3RhdBgBIAEoDjIULndhdGhlbmEudjEuQmFzZVN0YXQSDgoGYW1vdW50GAIgASgNKr4BCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFEhcKE0NIQVRfQ0hBTk5FTF9TWVNURU0QBiqXAQoIQmFzZVN0YXQSGQoVQkFTRV9TVEFUX1VOU1BFQ0lGSUVEEAASEQoNQkFTRV9TVEFUX1NUUhABEhEKDUJBU0VfU1RBVF9BR0kQAhIRCg1CQVNFX1NUQVRfVklUEAMSEQoNQkFTRV9TVEFUX0lOVBAEEhEKDUJBU0VfU1RBVF9ERVgQBRIRCg1CQVNFX1NUQVRfTFVLEAZCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEiqgQKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHAoEQ2VsbBIJCgF4GAEgASgNEgkKAXkYAiABKA0iSgoEQ2hhdBIoCgdjaGFubmVsGAEgASgOMhcud2F0aGVuYS52MS5DaGF0Q2hhbm5lbBIMCgR0ZXh0GAIgASgJEgoKAnRvGAMgASgJIhcKCE5wY0NsaWNrEgsKA25wYxgBIAEoDSKDAQoITnBjUmVwbHkSDgoGZGlhbG9nGAEgASgNEg4KBG5leHQYAiABKAhIABIOCgRtZW51GAMgASgNSAASFAoKaW5wdXRfdGV4dBgEIAEoCUgAEhYKDGlucHV0X251bWJlchgFIAEoA0gAEg8KBWNsb3NlGAYgASgISABCCAoGYW5zd2VyIj4KB1Nob3BCdXkSCwoDbnBjGAEgASgNEiYKBWl0ZW1zGAIgAygLMhcud2F0aGVuYS52MS5TaG9wQnV5TGluZSIuCgtTaG9wQnV5TGluZRIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDSJACghTaG9wU2VsbBILCgNucGMYASABKA0SJwoFaXRlbXMYAiADKAsyGC53YXRoZW5hLnYxLlNob3BTZWxsTGluZSIsCgxTaG9wU2VsbExpbmUSDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iGAoJU2hvcENsb3NlEgsKA25wYxgBIAEoDSIXCgdVc2VJdGVtEgwKBHNsb3QYASABKA0iKAoIRHJvcEl0ZW0SDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iFgoGUGlja1VwEgwKBGl0ZW0YASABKA0iPwoJUmFpc2VTdGF0EiIKBHN0YXQYASABKA4yFC53YXRoZW5hLnYxLkJhc2VTdGF0Eg4KBmFtb3VudBgCIAEoDSrdAQoLQ2hhdENoYW5uZWwSHAoYQ0hBVF9DSEFOTkVMX1VOU1BFQ0lGSUVEEAASFgoSQ0hBVF9DSEFOTkVMX0xPQ0FMEAESFgoSQ0hBVF9DSEFOTkVMX1BBUlRZEAISFgoSQ0hBVF9DSEFOTkVMX0dVSUxEEAMSGAoUQ0hBVF9DSEFOTkVMX1dISVNQRVIQBBIWChJDSEFUX0NIQU5ORUxfV09STEQQBRIXChNDSEFUX0NIQU5ORUxfU1lTVEVNEAYSHQoZQ0hBVF9DSEFOTkVMX0FOTk9VTkNFTUVOVBAHKpcBCghCYXNlU3RhdBIZChVCQVNFX1NUQVRfVU5TUEVDSUZJRUQQABIRCg1CQVNFX1NUQVRfU1RSEAESEQoNQkFTRV9TVEFUX0FHSRACEhEKDUJBU0VfU1RBVF9WSVQQAxIRCg1CQVNFX1NUQVRfSU5UEAQSEQoNQkFTRV9TVEFUX0RFWBAFEhEKDUJBU0VfU1RBVF9MVUsQBkJAWj5naXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL3YxO3dhdGhlbmF2MWIGcHJvdG8z");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -82,6 +82,24 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: DropItem;
     case: "dropItem";
+  } | {
+    /**
+     * @generated from field: wathena.v1.ShopBuy shop_buy = 11;
+     */
+    value: ShopBuy;
+    case: "shopBuy";
+  } | {
+    /**
+     * @generated from field: wathena.v1.ShopSell shop_sell = 12;
+     */
+    value: ShopSell;
+    case: "shopSell";
+  } | {
+    /**
+     * @generated from field: wathena.v1.ShopClose shop_close = 13;
+     */
+    value: ShopClose;
+    case: "shopClose";
   } | { case: undefined; value?: undefined };
 };
 
@@ -231,6 +249,9 @@ export const ChatSchema: GenMessage<Chat> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 5);
 
 /**
+ * NpcClick talks to an NPC, or opens its shop, as rAthena's npc_click.
+ * The NPC must be within 15 cells on both axes.
+ *
  * @generated from message wathena.v1.NpcClick
  */
 export type NpcClick = Message<"wathena.v1.NpcClick"> & {
@@ -265,30 +286,43 @@ export type NpcReply = Message<"wathena.v1.NpcReply"> & {
    */
   answer: {
     /**
+     * next answers a next prompt.
+     *
      * @generated from field: bool next = 2;
      */
     value: boolean;
     case: "next";
   } | {
     /**
+     * menu is the chosen option of a menu prompt, from 1.
+     *
      * @generated from field: uint32 menu = 3;
      */
     value: number;
     case: "menu";
   } | {
     /**
+     * input_text answers an input_text prompt: at most text_max
+     * characters, cleaned as chat is.
+     *
      * @generated from field: string input_text = 4;
      */
     value: string;
     case: "inputText";
   } | {
     /**
+     * input_number answers an input_number prompt, from number_min to
+     * number_max.
+     *
      * @generated from field: int64 input_number = 5;
      */
     value: bigint;
     case: "inputNumber";
   } | {
     /**
+     * close answers a close prompt, or cancels a menu or an input. It
+     * ends the conversation.
+     *
      * @generated from field: bool close = 6;
      */
     value: boolean;
@@ -302,6 +336,132 @@ export type NpcReply = Message<"wathena.v1.NpcReply"> & {
  */
 export const NpcReplySchema: GenMessage<NpcReply> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 7);
+
+/**
+ * ShopBuy buys items from the shop that ShopOpen showed, in one step,
+ * as rAthena's npc_buylist. The server answers with ShopResult.
+ *
+ * @generated from message wathena.v1.ShopBuy
+ */
+export type ShopBuy = Message<"wathena.v1.ShopBuy"> & {
+  /**
+   * npc is ShopOpen.npc.
+   *
+   * @generated from field: uint32 npc = 1;
+   */
+  npc: number;
+
+  /**
+   * items are 1 to 100 lines. Each item must be in the shop.
+   *
+   * @generated from field: repeated wathena.v1.ShopBuyLine items = 2;
+   */
+  items: ShopBuyLine[];
+};
+
+/**
+ * Describes the message wathena.v1.ShopBuy.
+ * Use `create(ShopBuySchema)` to create a new message.
+ */
+export const ShopBuySchema: GenMessage<ShopBuy> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 8);
+
+/**
+ * @generated from message wathena.v1.ShopBuyLine
+ */
+export type ShopBuyLine = Message<"wathena.v1.ShopBuyLine"> & {
+  /**
+   * @generated from field: uint32 item_id = 1;
+   */
+  itemId: number;
+
+  /**
+   * amount is 1 to 30000. Items that do not stack are bought one at a
+   * time, so their amount is 1.
+   *
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.v1.ShopBuyLine.
+ * Use `create(ShopBuyLineSchema)` to create a new message.
+ */
+export const ShopBuyLineSchema: GenMessage<ShopBuyLine> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 9);
+
+/**
+ * ShopSell sells inventory slots to the shop that ShopOpen showed, as
+ * rAthena's npc_selllist. The server answers with ShopResult.
+ *
+ * @generated from message wathena.v1.ShopSell
+ */
+export type ShopSell = Message<"wathena.v1.ShopSell"> & {
+  /**
+   * @generated from field: uint32 npc = 1;
+   */
+  npc: number;
+
+  /**
+   * items are 1 to 100 lines, each slot at most once.
+   *
+   * @generated from field: repeated wathena.v1.ShopSellLine items = 2;
+   */
+  items: ShopSellLine[];
+};
+
+/**
+ * Describes the message wathena.v1.ShopSell.
+ * Use `create(ShopSellSchema)` to create a new message.
+ */
+export const ShopSellSchema: GenMessage<ShopSell> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 10);
+
+/**
+ * @generated from message wathena.v1.ShopSellLine
+ */
+export type ShopSellLine = Message<"wathena.v1.ShopSellLine"> & {
+  /**
+   * slot is an inventory slot, below 200.
+   *
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * amount is 1 to 30000, and at most the slot's amount.
+   *
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.v1.ShopSellLine.
+ * Use `create(ShopSellLineSchema)` to create a new message.
+ */
+export const ShopSellLineSchema: GenMessage<ShopSellLine> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 11);
+
+/**
+ * ShopClose closes the shop window without buying or selling.
+ *
+ * @generated from message wathena.v1.ShopClose
+ */
+export type ShopClose = Message<"wathena.v1.ShopClose"> & {
+  /**
+   * @generated from field: uint32 npc = 1;
+   */
+  npc: number;
+};
+
+/**
+ * Describes the message wathena.v1.ShopClose.
+ * Use `create(ShopCloseSchema)` to create a new message.
+ */
+export const ShopCloseSchema: GenMessage<ShopClose> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 12);
 
 /**
  * UseItem uses the item in an inventory slot, as rAthena's pc_useitem.
@@ -324,7 +484,7 @@ export type UseItem = Message<"wathena.v1.UseItem"> & {
  * Use `create(UseItemSchema)` to create a new message.
  */
 export const UseItemSchema: GenMessage<UseItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 8);
+  messageDesc(file_wathena_v1_command, 13);
 
 /**
  * DropItem drops an amount from an inventory slot on the ground near the
@@ -354,7 +514,7 @@ export type DropItem = Message<"wathena.v1.DropItem"> & {
  * Use `create(DropItemSchema)` to create a new message.
  */
 export const DropItemSchema: GenMessage<DropItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 9);
+  messageDesc(file_wathena_v1_command, 14);
 
 /**
  * PickUp walks next to a ground item and picks it up.
@@ -373,7 +533,7 @@ export type PickUp = Message<"wathena.v1.PickUp"> & {
  * Use `create(PickUpSchema)` to create a new message.
  */
 export const PickUpSchema: GenMessage<PickUp> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 10);
+  messageDesc(file_wathena_v1_command, 15);
 
 /**
  * RaiseStat spends status points to raise a stat, as rAthena's
@@ -401,7 +561,7 @@ export type RaiseStat = Message<"wathena.v1.RaiseStat"> & {
  * Use `create(RaiseStatSchema)` to create a new message.
  */
 export const RaiseStatSchema: GenMessage<RaiseStat> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 11);
+  messageDesc(file_wathena_v1_command, 16);
 
 /**
  * @generated from enum wathena.v1.ChatChannel
@@ -445,6 +605,15 @@ export enum ChatChannel {
    * @generated from enum value: CHAT_CHANNEL_SYSTEM = 6;
    */
   SYSTEM = 6,
+
+  /**
+   * ANNOUNCEMENT is a broadcast to every player of a map or of the
+   * world, as rAthena's announce and mapannounce. from is 0 and
+   * from_name is empty. Clients never send it.
+   *
+   * @generated from enum value: CHAT_CHANNEL_ANNOUNCEMENT = 7;
+   */
+  ANNOUNCEMENT = 7,
 }
 
 /**

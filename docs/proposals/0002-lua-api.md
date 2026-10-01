@@ -165,6 +165,10 @@ player:heal_fully()
 player:item_heal { hp = { 45, 65 } }   -- pc_itemheal, with its bonuses
 player:show_effect(effect.heal)
 player:send_message("Welcome!")   -- a line in the chat log, as CHAT_CHANNEL_SYSTEM
+player:set_save_point("prontera", 156, 191)   -- savepoint
+player:can_carry(RED_POTION, 3)   -- checkweight
+player:mark_minimap(1, 150, 180, 0xFF0000)    -- viewpoint
+player:open_shop("Tool Dealer#prt1")          -- callshop
 ```
 
 Fields are always read-only, on every object. Writing to a field raises an error. Every change is a method call, so it can report failure, check permissions, and run as one step.
@@ -203,8 +207,16 @@ end
 - `conversation:say(...)` shows lines. `conversation:wait_for_next()` waits for the player to press next.
 - `conversation:choose(...)` returns the 1-based index of the chosen option.
 - `conversation:ask_number(minimum, maximum)` and `conversation:ask_text(maximum_length)` read input.
-- `conversation:close()` ends the conversation. A handler that returns without closing closes it.
+- `conversation:close()` shows the Close button and waits for it, as rAthena's `close2`. The handler goes on after it, and later dialog calls raise an error. A handler that returns with lines on show leaves the Close button. A handler that returns without showing anything closes the window.
+- `conversation:wait(milliseconds)` pauses, as rAthena's `sleep2`.
+- `conversation:show_image(name, position)` shows an NPC illustration, as rAthena's `cutin`. The position is `"left"`, `"center"` or `"right"`. `conversation:hide_image()` hides it, and the client hides it when the window closes.
+- `conversation:show_progress(seconds)` shows a progress bar over the player and waits until it is full, as rAthena's `progressbar`. A walk cancels it and ends the conversation.
 - If the player leaves, the conversation's coroutine is closed. Its pending call raises a Lua error that the runtime does not log as a failure.
+
+The NPC from `context:get_instance()` has `name`, `map`, `x` and `y`, and two methods:
+
+- `npc:show_emotion(emotions.thanks)` shows an emotion over the NPC, as rAthena's `emotion`. `wa.emotions` holds the constants, named from rAthena's `ET_` names.
+- `npc:say_aloud(text)` says a line of local chat as the NPC, as rAthena's `npctalk`.
 
 NPC placement lives in data, not in the script:
 
@@ -226,6 +238,21 @@ NPC placement lives in data, not in the script:
 - `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, or its number.
 
 Placing the same script twice replaces rAthena's `duplicate`.
+
+Shops are data too:
+
+```yaml
+- name: Tool Dealer#prt1
+  map: prt_in
+  x: 126
+  y: 76
+  sprite: "53"
+  shop:
+    - {item: Red_Potion}             # the item's buy price
+    - {item: Fly_Wing, price: 60}
+```
+
+A click on an NPC with a shop and no click handler opens the shop. A script opens a shop with `player:open_shop("Tool Dealer#prt1")`. Prices follow rAthena's rules: Discount lowers the buy price, Overcharge raises the sell price, and zeny over the maximum is lost.
 
 ### Item scripts
 
@@ -392,7 +419,9 @@ local current_season = exports.get("example.seasonal-lib", "current_season")
 | `wa.spawning` | Monsters and NPCs owned by the context | `npc.create` |
 | `wa.random` | `random.integer(minimum, maximum)` and `random.chance(numerator, denominator)` from the zone's secret stream | None |
 | `wa.integers` | `divide_truncated` and `remainder_truncated` with C rounding, for converted scripts | None |
-| `wa.text` | Translated text for the player's language | None |
+| `wa.text` | Translated text for the player's language, and `text.item_link(item)` | None |
+| `wa.maps`, `wa.world` | `maps.announce(map, text)` and `world.announce(text)` | None |
+| `wa.emotions` | Constants of `npc:show_emotion` | None |
 | `wa.exports` | Functions shared between mods | None |
 | `wa.effects`, `wa.races`, `wa.statuses`, `wa.jobs`, `wa.sizes`, `wa.elements`, `wa.monster_classes`, `wa.weapon_types`, `wa.monster_groups` | Constants | None |
 | `wa.testing` | Test players and conversations, in `wactl mod test` only | None |
@@ -462,7 +491,19 @@ Methods on player handles check their own permissions, such as `player.give_item
 | `select("A:B:C")` | `conversation:choose("A", "B", "C")` |
 | `menu "A",L_A,"B",L_B;` | `conversation:choose` with an `if`, or a table of functions |
 | `input .@n;` | `local amount = conversation:ask_number(0, 100)` |
-| `close;` / `end;` | `conversation:close()` / `return` |
+| `close;` / `end;` | `return`: the Close button stays while lines show |
+| `close2;` | `conversation:close()`, and the handler goes on |
+| `cutin "kafra_01",2;` / `cutin "",255;` | `conversation:show_image("kafra_01", "right")` / `conversation:hide_image()` |
+| `emotion ET_THANKS;` | `npc:show_emotion(emotions.thanks)` |
+| `npctalk "Hello";` | `npc:say_aloud("Hello")` |
+| `mesitemlink(501)` | `text.item_link(RED_POTION)` |
+| `progressbar "ffff00",3;` | `conversation:show_progress(3)` |
+| `viewpoint 1,150,180,1,0xFF0000;` | `player:mark_minimap(1, 150, 180, 0xFF0000)` |
+| `savepoint "prontera",156,191;` | `player:set_save_point("prontera", 156, 191)` |
+| `checkweight(501,3)` | `player:can_carry(RED_POTION, 3)` |
+| `getitemname(501)` | `items.name(RED_POTION)` |
+| `announce "Hi",bc_all;` / `mapannounce "prontera","Hi",bc_all;` | `world.announce("Hi")` / `maps.announce("prontera", "Hi")` |
+| `callshop "Tool Dealer#prt1",1;` | `player:open_shop("Tool Dealer#prt1")` |
 
 ### Events
 
@@ -583,6 +624,41 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **`player:start_status` and `player:add_timed_bonuses`** raise "not supported yet" until phase 4.
     - **Item groups.** `player:give_item_from_group` takes a group from `items.group`, such as `items.group "BLUEBOX"`, the group's name in item_group_db.
 
+13. NPCs (phase 3 step 4). The user approved these, for the rAthena commands that NPC scripts use most:
+
+    | rAthena | wAthena |
+    |---|---|
+    | `cutin` | `conversation:show_image(name, position)`, with `"left"`, `"center"` or `"right"`, and `conversation:hide_image()` to clear it |
+    | `close2` | `conversation:close()`, which does not end the handler |
+    | `emotion` | `npc:show_emotion(emotions.thanks)`, with the constants in `wa.emotions` |
+    | `npctalk` | `npc:say_aloud(text)` |
+    | `mesitemlink` | `text.item_link(item)`, which `say` shows as the item's name |
+    | `progressbar` | `conversation:show_progress(seconds)` |
+    | `viewpoint` | `player:mark_minimap(id, x, y, color)` |
+    | `savepoint` | `player:set_save_point(map, x, y)`. Each character keeps its save point in PostgreSQL. Butterfly Wings and death take the player there, as rAthena's `pc_respawn`. |
+    | `checkweight` | `player:can_carry(item, amount)` |
+    | `getitemname` | `items.name(item)`: the item's name from rAthena's item database. Translated names come with player languages, from locale files. |
+    | `announce`, `mapannounce` | `world.announce(text)`, `maps.announce(map, text)`. waserver also counts down with `world.announce` before it stops. |
+    | `callshop` and shop NPCs | A `shop` list of `{item, price}` in `data/npcs.yml`, and `player:open_shop(shop)`. Purchases and sales follow `npc_buylist` and `npc_selllist`, with Discount and Overcharge. |
+
+    `hide_image` is the way to clear an illustration that this decision left open.
+
+## Provisional API
+
+These parts came with phase 3 step 4 and are not settled. Each is the smallest form that the converted scripts or the step needed. They wait for review:
+
+- `player:unmark_minimap(id)` removes a minimap mark, as `viewpoint` with action 2.
+- `player.sex` is `"male"` or `"female"`, for rAthena's `Sex`.
+- `variable:add(player, amount)`, and `variable:add(amount)` for server variables, change an integer in one step and return the new value. `x += n` converts to it, so a change made in between is not lost.
+- `variable:set(player, nil)` resets a variable to its default: 0, false, "", or nil for a table. A table is stored when its keys are all strings, or 1 to n.
+- `player:take_item(item, 0)` takes nothing and returns true, as `delitem` with 0.
+- `player:open_shop(name)` takes a record name. A name without a mod ID is the running mod's own.
+- `player:set_save_point` needs the permission `player.warp`, and returns false when the map does not run or the cell is not walkable.
+- Announcements need no permission. They are at most 255 bytes.
+- `text "key"` reads the mod's `locales/en.yml` only, until players have a language.
+- `data/npcs.yml`: `discount: false` turns Discount off for a shop, a record with a `shop` and no `map` is only opened by scripts, a shop item without a `price` costs its buy price, and `display_name` may be empty.
+- `data/items.yml`: `name`, `buy`, `sell` and `no_sell` set an item's name and prices.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the phase 3 exit check passes with a sample mod. It then becomes `api: 1.0`.
@@ -590,4 +666,5 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the phas
 ## Next steps
 
 1. Build phase 3 step 2, the mod loader, with this context model. Done.
-2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, and `wa.variables` with NPCs.
+2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, and `wa.variables` with NPCs. Done for these steps. `wa.hooks`, `wa.storage`, `wa.spawning`, `wa.schedules` and `wa.exports` come with the next steps.
+3. Review the provisional API above.

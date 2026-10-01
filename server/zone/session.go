@@ -184,3 +184,51 @@ func (s *Session) markEnd(why ending) (*Zone, *Player) {
 	}
 	return s.zone, s.player
 }
+
+// NpcClick talks to an NPC, or opens its shop, by the connection's ID
+// for it, as rAthena's npc_click.
+func (s *Session) NpcClick(seq, npc uint32) bool {
+	return s.send(command{seq: seq, npcClick: &npc})
+}
+
+// NpcReply answers the player's open NPC dialog step, as rAthena's
+// npc_scriptcont. The zone owns r afterwards.
+func (s *Session) NpcReply(seq uint32, r *wathenav1.NpcReply) bool {
+	return s.send(command{seq: seq, npcReply: r})
+}
+
+// BuyLine is one line of ShopBuy: an item ID and an amount.
+type BuyLine struct {
+	Item   uint32
+	Amount int
+}
+
+// SellLine is one line of ShopSell: an inventory slot and an amount.
+type SellLine struct {
+	Slot, Amount int
+}
+
+// ShopBuy buys from the open shop, as rAthena's npc_buylist. The
+// gateway has checked the line count and amounts.
+func (s *Session) ShopBuy(seq, npc uint32, lines []BuyLine) bool {
+	c := &shopBuyCommand{npc: npc}
+	for _, l := range lines {
+		c.lines = append(c.lines, buyLine{id: l.Item, amount: l.Amount})
+	}
+	return s.send(command{seq: seq, shopBuy: c})
+}
+
+// ShopSell sells to the open shop, as rAthena's npc_selllist. The
+// gateway has checked the line count, slots and amounts.
+func (s *Session) ShopSell(seq, npc uint32, lines []SellLine) bool {
+	c := &shopSellCommand{npc: npc}
+	for _, l := range lines {
+		c.lines = append(c.lines, sellLine{slot: l.Slot, amount: l.Amount})
+	}
+	return s.send(command{seq: seq, shopSell: c})
+}
+
+// ShopClose closes the open shop window.
+func (s *Session) ShopClose(seq, npc uint32) bool {
+	return s.send(command{seq: seq, shopClose: &npc})
+}

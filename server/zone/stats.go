@@ -135,6 +135,7 @@ func (z *Zone) battleStats(p *Player) *wathenav1.Event {
 		stat(wathenav1.StatId_STAT_ID_MAX_SP, int64(st.MaxSP)),
 		stat(wathenav1.StatId_STAT_ID_SP, p.sp),
 		stat(wathenav1.StatId_STAT_ID_MAX_WEIGHT, int64(p.maxWeight)),
+		stat(wathenav1.StatId_STAT_ID_ZENY, p.record.Zeny),
 	}
 	if p.inventory != nil {
 		all = append(all, stat(wathenav1.StatId_STAT_ID_WEIGHT, int64(p.inventory.Weight)))

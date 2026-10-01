@@ -93,6 +93,15 @@ type Def struct {
 	// Unsupported says why the server cannot run the item's script yet.
 	// Using such an item is refused before it is spent.
 	Unsupported string `json:"unsupported"`
+	// Name is the item's name in the server's language, from item_db's
+	// Name. Scripts read it with items.name.
+	Name string `json:"name"`
+	// Buy and Sell are the prices NPC shops sell and buy the item for,
+	// in zeny, before Discount and Overcharge (item_prices.json).
+	Buy  int `json:"buy"`
+	Sell int `json:"sell"`
+	// NoSell is Trade.NoSell: NPC shops do not buy the item.
+	NoSell bool `json:"no_sell"`
 }
 
 // Heal is the amounts of an itemheal or percentheal: HP and SP are
@@ -122,6 +131,19 @@ func New(d *Data) *Table {
 // unknown is itemdb's dummy item for IDs the database lacks: an Etc item
 // with no weight.
 var unknown = Def{Type: "Etc", Stackable: true}
+
+// MaxZeny is MAX_ZENY, the most zeny a character holds, and the most a
+// price may be.
+const MaxZeny = 2_147_483_647
+
+// Lookup returns an item the database has.
+func (t *Table) Lookup(id uint32) (*Def, bool) {
+	if t == nil {
+		return nil, false
+	}
+	d, ok := t.items[id]
+	return d, ok
+}
 
 // Get is itemdb_search: the item, or the dummy item. A nil table knows no
 // items.

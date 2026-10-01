@@ -80,6 +80,14 @@ func (h *testHost) PlayerField(id int64, field string) (script.Value, error) {
 		return script.Int(int64(m)), nil
 	case "name":
 		return script.String("Tester"), nil
+	case "sex":
+		return script.String("male"), nil
+	case "map":
+		return script.String("prontera"), nil
+	case "character_id", "account_id", "x", "y":
+		return script.Int(1), nil
+	case "party":
+		return script.Nil, nil
 	}
 	return script.Nil, fmt.Errorf("player has no field %q", field)
 }
@@ -144,11 +152,23 @@ func testRuntime(t *testing.T, mode reference.Mode) (*modscript.Runtime, *testHo
 	for _, g := range core.Groups.Groups {
 		h.groups[g.Name] = g.ID
 	}
+	r, err := modscript.New(modscript.Options{Host: h, Mods: []string{mod.Core}, Constants: core.Constants, Jobs: jobs}, coreScripts(t, core))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(r.Close)
+	return r, h, core
+}
+
+// coreScripts are core's converted files as a mod's scripts, with every
+// permission.
+func coreScripts(t *testing.T, core *Core) []*mod.Scripts {
+	t.Helper()
 	sc := &mod.Scripts{Mod: mod.Core, Files: map[string]string{}, Grants: mod.Grants{}, Visible: []string{mod.Core}}
 	for _, p := range mod.Permissions {
 		sc.Grants[p.Name] = true
 	}
-	err = fs.WalkDir(core.Files, "scripts", func(p string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(core.Files, "scripts", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
@@ -159,12 +179,7 @@ func testRuntime(t *testing.T, mode reference.Mode) (*modscript.Runtime, *testHo
 	if err != nil {
 		t.Fatal(err)
 	}
-	r, err := modscript.New(modscript.Options{Host: h, Mods: []string{mod.Core}, Constants: core.Constants, Jobs: jobs}, []*mod.Scripts{sc})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(r.Close)
-	return r, h, core
+	return []*mod.Scripts{sc}
 }
 
 func itemNames(t *testing.T, mode reference.Mode) map[uint32]string {

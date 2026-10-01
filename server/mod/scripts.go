@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"path"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 )
 
 // MaxScriptBytes is the most Lua source one mod may have, in bytes. It
@@ -26,7 +28,16 @@ type Scripts struct {
 	// Visible are the mods whose files the mod may require: itself and
 	// its depends.
 	Visible []string
+	// Texts are the lines of the mod's English locale, LocaleFile, by
+	// key. Nested keys are joined with dots: healer.greeting.
+	Texts map[string]string
 }
+
+// LocaleFile is the English locale of a mod (strategy section 6.13).
+const LocaleFile = "locales/en.yml"
+
+// MaxLocaleBytes is the largest locale file.
+const MaxLocaleBytes = 4 << 20
 
 // Scripts reads a mod's Lua files now.
 func (s *Set) Scripts(id string) (*Scripts, error) {
@@ -72,7 +83,50 @@ func (s *Set) Scripts(id string) (*Scripts, error) {
 			return nil, fmt.Errorf("%s: scripts lists %s, which does not exist", m.file(ManifestFile), e)
 		}
 	}
+	data, err := fs.ReadFile(fsys, LocaleFile)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+	case err != nil:
+		return nil, fmt.Errorf("%s: %w", m.file(LocaleFile), err)
+	case len(data) > MaxLocaleBytes:
+		return nil, fmt.Errorf("%s: larger than %d MB", m.file(LocaleFile), MaxLocaleBytes>>20)
+	default:
+		if out.Texts, err = readLocale(data); err != nil {
+			return nil, fmt.Errorf("%s: %w", m.file(LocaleFile), err)
+		}
+	}
 	return out, nil
+}
+
+// readLocale reads a locale file: a mapping of keys to text, where a
+// value may be a mapping of more keys.
+func readLocale(data []byte) (map[string]string, error) {
+	var root map[string]any
+	if err := yaml.Unmarshal(data, &root); err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	var walk func(prefix string, m map[string]any) error
+	walk = func(prefix string, m map[string]any) error {
+		for k, v := range m {
+			key := k
+			if prefix != "" {
+				key = prefix + "." + k
+			}
+			switch v := v.(type) {
+			case string:
+				out[key] = v
+			case map[string]any:
+				if err := walk(key, v); err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("%s: want text or a mapping of keys", key)
+			}
+		}
+		return nil
+	}
+	return out, walk("", root)
 }
 
 // AllScripts reads the Lua files of every loaded mod that has any,

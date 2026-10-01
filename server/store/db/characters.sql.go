@@ -45,7 +45,7 @@ const claimCharacter = `-- name: ClaimCharacter :one
 UPDATE characters
 SET save_version = save_version + 1, login_at = now()
 WHERE id = $1
-RETURNING id, account_id, slot, name, job, sex, hair, hair_color, cloth_color, base_level, job_level, base_exp, job_exp, status_points, skill_points, str, agi, vit, int, dex, luk, hp, sp, map, x, y, zeny, inventory_size, save_version, created_at, login_at, saved_at
+RETURNING id, account_id, slot, name, job, sex, hair, hair_color, cloth_color, base_level, job_level, base_exp, job_exp, status_points, skill_points, str, agi, vit, int, dex, luk, hp, sp, map, x, y, zeny, inventory_size, save_version, created_at, login_at, saved_at, save_map, save_x, save_y
 `
 
 // ClaimCharacter starts a session: it raises the save version, so saves
@@ -86,6 +86,9 @@ func (q *Queries) ClaimCharacter(ctx context.Context, id int64) (Character, erro
 		&i.CreatedAt,
 		&i.LoginAt,
 		&i.SavedAt,
+		&i.SaveMap,
+		&i.SaveX,
+		&i.SaveY,
 	)
 	return i, err
 }
@@ -274,8 +277,9 @@ UPDATE characters SET
     str = $12, agi = $13, vit = $14, int = $15, dex = $16, luk = $17,
     hp = $18, sp = $19, map = $20, x = $21, y = $22, zeny = $23,
     inventory_size = $24,
+    save_map = $25, save_x = $26, save_y = $27,
     save_version = save_version + 1, saved_at = now()
-WHERE id = $25 AND save_version = $26
+WHERE id = $28 AND save_version = $29
 `
 
 type SaveCharacterParams struct {
@@ -303,6 +307,9 @@ type SaveCharacterParams struct {
 	Y             int
 	Zeny          int64
 	InventorySize int
+	SaveMap       string
+	SaveX         int
+	SaveY         int
 	ID            int64
 	SaveVersion   int64
 }
@@ -335,6 +342,9 @@ func (q *Queries) SaveCharacter(ctx context.Context, arg SaveCharacterParams) (i
 		arg.Y,
 		arg.Zeny,
 		arg.InventorySize,
+		arg.SaveMap,
+		arg.SaveX,
+		arg.SaveY,
 		arg.ID,
 		arg.SaveVersion,
 	)

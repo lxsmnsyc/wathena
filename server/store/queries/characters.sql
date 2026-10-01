@@ -44,6 +44,7 @@ UPDATE characters SET
     str = @str, agi = @agi, vit = @vit, int = @int, dex = @dex, luk = @luk,
     hp = @hp, sp = @sp, map = @map, x = @x, y = @y, zeny = @zeny,
     inventory_size = @inventory_size,
+    save_map = @save_map, save_x = @save_x, save_y = @save_y,
     save_version = save_version + 1, saved_at = now()
 WHERE id = @id AND save_version = @save_version;
 

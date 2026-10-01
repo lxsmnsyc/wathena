@@ -29,6 +29,12 @@ message Event {
     UseItemFailed use_item_failed = 17;
     DropItemFailed drop_item_failed = 18;
     MapChange map_change = 19;
+    NpcImage npc_image = 20;
+    NpcProgress npc_progress = 21;
+    Emotion emotion = 22;
+    MinimapMark minimap_mark = 23;
+    ShopOpen shop_open = 24;
+    ShopResult shop_result = 25;
   }
 }
 
@@ -242,29 +248,140 @@ message SkillCast {
 
 message ChatMessage {
   ChatChannel channel = 1;
-  // from is the speaker's entity ID for local chat, 0 otherwise.
+  // from is the speaker's entity ID for local chat, 0 otherwise. An NPC
+  // that speaks aloud, as rAthena's npctalk, is a speaker too.
   uint32 from = 2;
   string from_name = 3;
   string text = 4;
+  // color is the text's color as 0xRRGGBB for an announcement, or 0 for
+  // the channel's own color.
+  uint32 color = 5;
 }
 
 // NpcDialog is one step of an NPC dialog. Text is in the player's language.
+//
+// The client keeps one dialog window per player. Lines add to the
+// window, which opens when it is closed. A step without a prompt only
+// adds lines. A step with a prompt shows it, and the player's answer
+// quotes the step's dialog in NpcReply. Lines may hold RO color codes,
+// such as ^FF0000, and item links as
+// <ITEMLINK>name<INFO>item ID</INFO></ITEMLINK>. Clients show them as
+// text, never as HTML.
 message NpcDialog {
   uint32 npc = 1;
   // dialog identifies this step. NpcReply must quote it.
   uint32 dialog = 2;
   repeated string lines = 3;
   oneof prompt {
+    // next shows a Next button. Its answer clears the window's lines.
     bool next = 4;
+    // menu shows options. The answer is the chosen option, from 1, or
+    // close to cancel.
     NpcMenu menu = 5;
+    // input_text asks for text of at most text_max characters.
     bool input_text = 6;
+    // input_number asks for a number from number_min to number_max.
     bool input_number = 7;
+    // close shows a Close button. Its answer closes the window.
     bool close = 8;
+    // end closes the window at once: the conversation ended without a
+    // Close button, such as after a timeout.
+    bool end = 9;
   }
+  uint32 text_max = 10;
+  int64 number_min = 11;
+  int64 number_max = 12;
 }
 
 message NpcMenu {
   repeated string options = 1;
+}
+
+// NpcImage shows an NPC illustration, as rAthena's cutin. The asset is
+// image/illust/<name>. An empty name hides the image. The client also
+// hides it when the dialog window closes.
+message NpcImage {
+  string name = 1;
+  ImagePosition position = 2;
+}
+
+enum ImagePosition {
+  IMAGE_POSITION_UNSPECIFIED = 0;
+  IMAGE_POSITION_LEFT = 1;
+  IMAGE_POSITION_CENTER = 2;
+  IMAGE_POSITION_RIGHT = 3;
+}
+
+// NpcProgress shows a progress bar over the player for duration_ms, as
+// rAthena's progressbar. The conversation goes on when it is full. A
+// walk command cancels it, and ends the conversation.
+message NpcProgress {
+  uint32 duration_ms = 1;
+  // color is 0xRRGGBB.
+  uint32 color = 2;
+}
+
+// Emotion shows an emotion icon over an entity, as rAthena's emotion.
+// emotion is an ET_ value, from 0, which is the action of the client's
+// emotion sprite.
+message Emotion {
+  uint32 entity = 1;
+  uint32 emotion = 2;
+}
+
+// MinimapMark marks a cell on the player's minimap, as rAthena's
+// viewpoint. A mark with the same id replaces the last one. remove
+// takes the mark away. Marks end with a map change.
+message MinimapMark {
+  uint32 id = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+  // color is 0xRRGGBB.
+  uint32 color = 4;
+  bool remove = 5;
+}
+
+// ShopOpen opens a shop window: what the NPC sells, with the prices
+// for this player after Discount, and the inventory slots the player
+// may sell, with the prices after Overcharge.
+message ShopOpen {
+  uint32 npc = 1;
+  repeated ShopItem items = 2;
+  repeated ShopSellable sellable = 3;
+}
+
+message ShopItem {
+  uint32 item_id = 1;
+  // price is in zeny, for one.
+  uint32 price = 2;
+  // weight is the weight of one, in tenths, for the window's weight
+  // check.
+  uint32 weight = 3;
+}
+
+message ShopSellable {
+  uint32 slot = 1;
+  uint32 price = 2;
+}
+
+// ShopResult answers ShopBuy, ShopSell or ShopClose. The shop window
+// closes after it. Inventory and zeny changes come as their own events.
+message ShopResult {
+  ShopOutcome outcome = 1;
+}
+
+enum ShopOutcome {
+  SHOP_OUTCOME_UNSPECIFIED = 0;
+  SHOP_OUTCOME_BOUGHT = 1;
+  SHOP_OUTCOME_SOLD = 2;
+  // The player has too little zeny for the purchase.
+  SHOP_OUTCOME_NOT_ENOUGH_ZENY = 3;
+  // The items would pass the player's maximum weight, or a stack would
+  // pass its limit.
+  SHOP_OUTCOME_OVERWEIGHT = 4;
+  // The inventory has too few free slots, or the list was not valid.
+  SHOP_OUTCOME_FAILED = 5;
+  SHOP_OUTCOME_CLOSED = 6;
 }
 
 message EffectPlay {
@@ -321,6 +438,10 @@ enum InventoryRemoveReason {
   INVENTORY_REMOVE_REASON_USED = 1;
   // The player dropped the item on the ground.
   INVENTORY_REMOVE_REASON_DROPPED = 2;
+  // A script took the item, as rAthena's delitem.
+  INVENTORY_REMOVE_REASON_TAKEN = 3;
+  // The player sold the item to a shop.
+  INVENTORY_REMOVE_REASON_SOLD = 4;
 }
 
 // ItemUsed shows an entity using an item, as rAthena's clif_useitemack
