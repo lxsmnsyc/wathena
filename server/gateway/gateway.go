@@ -23,6 +23,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
@@ -140,6 +141,9 @@ type Gateway struct {
 	// the session token is what lets it in.
 	Origins []string
 	Log     *slog.Logger
+	// Metrics counts each connection's bytes and messages. It may be
+	// nil.
+	Metrics *metrics.Conns
 
 	mu     sync.Mutex
 	online map[int64]*online
@@ -253,7 +257,7 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "origin not allowed", http.StatusForbidden)
 		return
 	}
-	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+	ws, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		// originAllowed checked the origin, with the scheme, which
 		// OriginPatterns does not look at.
 		InsecureSkipVerify: true,
@@ -264,6 +268,8 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	c := &conn{Conn: ws, stats: g.Metrics.Open()}
+	defer g.Metrics.Close(c.stats)
 	c.SetReadLimit(schema.MaxClientMessageBytes)
 	ctx := r.Context()
 	if err := g.session(ctx, c); err != nil && g.Log != nil {
@@ -287,7 +293,7 @@ func (g *Gateway) originAllowed(r *http.Request) bool {
 // errClosed ends a session that the server closed on purpose.
 var errClosed = errors.New("closed")
 
-func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
+func (g *Gateway) session(ctx context.Context, c *conn) error {
 	defer func() { _ = c.CloseNow() }()
 	hello, seq, err := readHello(ctx, c)
 	if err != nil {
@@ -378,7 +384,7 @@ func (g *Gateway) session(ctx context.Context, c *websocket.Conn) error {
 	return g.read(ctx, c, p, seq)
 }
 
-func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Session, seq uint32) error {
+func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32) error {
 	chat := newChatLimit(time.Now())
 	for {
 		m, err := readMessage(ctx, c)
@@ -465,6 +471,12 @@ func (g *Gateway) read(ctx context.Context, c *websocket.Conn, p *zone.Session, 
 
 var errBadMessage = errors.New("bad message")
 
+// conn is a WebSocket connection and its counts.
+type conn struct {
+	*websocket.Conn
+	stats *metrics.Conn
+}
+
 // claim makes a session the character's live one. It kicks the session
 // it replaces and waits, up to KickWait, until that session left the
 // zone, so its last save is queued before the character loads.
@@ -519,7 +531,7 @@ func (g *Gateway) characters() Characters {
 	return g.memory
 }
 
-func (g *Gateway) loadFailed(ctx context.Context, c *websocket.Conn, err error) error {
+func (g *Gateway) loadFailed(ctx context.Context, c *conn, err error) error {
 	if g.Log != nil {
 		g.Log.Error("cannot load a character", "err", err)
 	}
@@ -562,8 +574,11 @@ func (m *memoryCharacters) Load(_ context.Context, id int64) (*character.Charact
 	return &c, nil, nil
 }
 
-func readMessage(ctx context.Context, c *websocket.Conn) (*wathenav1.ClientMessage, error) {
+func readMessage(ctx context.Context, c *conn) (*wathenav1.ClientMessage, error) {
 	typ, data, err := c.Read(ctx)
+	if err == nil {
+		c.stats.Received(len(data))
+	}
 	if err != nil {
 		var ce websocket.CloseError
 		if errors.As(err, &ce) && ce.Code == websocket.StatusMessageTooBig {
@@ -578,7 +593,7 @@ func readMessage(ctx context.Context, c *websocket.Conn) (*wathenav1.ClientMessa
 	return m, nil
 }
 
-func readHello(ctx context.Context, c *websocket.Conn) (*wathenav1.Hello, uint32, error) {
+func readHello(ctx context.Context, c *conn) (*wathenav1.Hello, uint32, error) {
 	ctx, cancel := context.WithTimeout(ctx, HelloTimeout)
 	defer cancel()
 	m, err := readMessage(ctx, c)
@@ -594,7 +609,7 @@ func readHello(ctx context.Context, c *websocket.Conn) (*wathenav1.Hello, uint32
 	return m.GetHello(), m.GetSeq(), nil
 }
 
-func write(ctx context.Context, c *websocket.Conn, m *wathenav1.ServerMessage) error {
+func write(ctx context.Context, c *conn, m *wathenav1.ServerMessage) error {
 	data, err := proto.Marshal(m)
 	if err != nil {
 		return err
@@ -604,11 +619,15 @@ func write(ctx context.Context, c *websocket.Conn, m *wathenav1.ServerMessage) e
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	return c.Write(ctx, websocket.MessageBinary, data)
+	if err := c.Write(ctx, websocket.MessageBinary, data); err != nil {
+		return err
+	}
+	c.stats.Sent(len(data))
+	return nil
 }
 
 // disconnect sends the reason and closes the connection.
-func disconnect(ctx context.Context, c *websocket.Conn, reason wathenav1.DisconnectReason, text string) error {
+func disconnect(ctx context.Context, c *conn, reason wathenav1.DisconnectReason, text string) error {
 	_ = write(ctx, c, wathenav1.ServerMessage_builder{Disconnect: wathenav1.Disconnect_builder{
 		Reason: reason, Message: text,
 	}.Build()}.Build())

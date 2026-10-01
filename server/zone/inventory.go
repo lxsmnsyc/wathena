@@ -315,11 +315,11 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 	}
 	e := p.entity
 	pl := progression.PlaceDrop(z.cellFree, e.x, e.y, z.rand)
-	z.entities[&entity{x: pl.X, y: pl.Y, item: &groundItem{
+	z.entities.add(&entity{x: pl.X, y: pl.Y, item: &groundItem{
 		id: s.ID, amount: amount, subX: pl.SubX, subY: pl.SubY,
 		expires: z.now + lifetime,
 		fresh:   true,
-	}}] = true
+	}})
 	z.deleteItem(p, slot, amount, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED)
 }
 
@@ -327,7 +327,7 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 func (z *Zone) usedEvents(p *Player) []*wathenav1.Event {
 	var events []*wathenav1.Event
 	for _, u := range z.used {
-		if id, ok := p.netIDs[u.e]; ok {
+		if id, ok := p.netIDs.get(u.e); ok {
 			events = append(events, wathenav1.Event_builder{ItemUsed: wathenav1.ItemUsed_builder{Source: id, ItemId: u.id}.Build()}.Build())
 		}
 	}

@@ -4,7 +4,8 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 
 | Package | Content |
 |---|---|
-| `zone` | One map: its players and monsters, local chat to every player within 9 cells of the speaker, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. A monster that can attack strikes back. Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. A kill gives exp to the players who fought the monster and drops items around it. Items lie on the ground for a minute, and players pick them up with the looter rights rAthena gives the top attackers. Each player has rAthena's inventory: 100 slots, stacks up to 30000, and a weight limit that pick-ups respect. Players use healing items, and drop items at their feet with no looter rights. HP and SP regenerate as rAthena's natural regen, which stops from 70% weight in renewal (50% in pre-renewal). From 90% weight, attacks stop. Warps send a player who steps into their area to their target, as rAthena's `npc_touch_areanpc` and `pc_setpos`: to another map as a message to that map's zone, or within the map. A zone without players sleeps. |
+| `zone` | One map: its players and monsters, local chat to every player within 9 cells of the speaker, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. A monster that can attack strikes back. Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. A kill gives exp to the players who fought the monster and drops items around it. Items lie on the ground for a minute, and players pick them up with the looter rights rAthena gives the top attackers. Each player has rAthena's inventory: 100 slots, stacks up to 30000, and a weight limit that pick-ups respect. Players use healing items, and drop items at their feet with no looter rights. HP and SP regenerate as rAthena's natural regen, which stops from 70% weight in renewal (50% in pre-renewal). From 90% weight, attacks stop. Warps send a player who steps into their area to their target, as rAthena's `npc_touch_areanpc` and `pc_setpos`: to another map as a message to that map's zone, or within the map. A zone without players sleeps. Each tick finds what a player sees through an index of 8 × 8 cell blocks, as rAthena's `BLOCK_SIZE`, and hands its messages to a sender goroutine in one batch (see "Load tests and metrics"). |
+| `metrics` | Measurements for the budgets in strategy section 3.8: tick work per zone, garbage collector pauses, CPU, memory, goroutines, and bytes per connection. A zone over its tick budget for 10 ticks in a row logs a warning and can write a CPU profile. See "Load tests and metrics". |
 | `world` | Several zones in one process, one goroutine per map. It finds zones by map name, puts a joining character in the zone of its saved map, and waits at shutdown for every zone and every player between zones. `LoadWarps` reads `reference/rathena/extracts/<mode>/warps.json`. |
 | `item` | The inventory, ported from rAthena's `pc_additem`, `pc_delitem` and `pc_inventoryblank`, the overweight levels of `pc_updateweightstatus`, and the heal of `pc_itemheal` and `pc_percentheal`, with the item data from `reference/rathena/extracts/<mode>/items.json`. |
 | `battle` | Attacks, ported from rAthena's `battle.cpp` in renewal mode and checked against the recorded reference. |
@@ -193,3 +194,93 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
 ```
 
 CI's `test` job runs them against a `postgres:18` service container.
+
+## Load tests and metrics
+
+### Metrics
+
+`--debug-addr` serves the server's measurements and Go's profiles. It has no access control, so `waserver` refuses an address that is not a loopback address.
+
+```text
+go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev \
+  --debug-addr 127.0.0.1:8301 --profile-dir /tmp/wathena-profiles
+curl 'http://127.0.0.1:8301/debug/wathena/metrics?format=text'
+```
+
+| Endpoint | Use |
+|---|---|
+| `GET /debug/wathena/metrics` | Every measurement since the start or the last reset, as JSON. `?format=text` gives tables. |
+| `POST /debug/wathena/reset` | Starts every count again, such as after the bots of a load test have joined. |
+| `/debug/pprof/` | Go's CPU, heap, goroutine and trace profiles. |
+
+`waserver` also prints the tables when it stops.
+
+What it measures:
+
+- Per zone, the work of each tick: the tick itself, plus the commands, joins and leaves the zone goroutine handled since the tick before. It shows p50, p99, p99.9 and the maximum, ticks over 10 ms (the p99 budget) and over 25 ms (the maximum), and the mean time of each part of a tick: `move` (walks and warps), `act` (monsters, combat, items, regen, saves) and `send` (each player's frame). `step` is the tick alone. Quantiles are within 12.5%.
+- A zone over 10 ms for 10 ticks in a row logs a warning with its last 10 tick times. With `--profile-dir`, it also records a 10-second CPU profile there. Warnings for one zone come at most once a minute, and profiles at most once every 5 minutes.
+- For the process: CPU in cores, garbage collector CPU, cycles and pause times, scheduler latency, allocation rate, heap, total memory, the `GOMEMLIMIT` in effect, and goroutines.
+- Per connection: WebSocket bytes and messages each way, as averages since the connection opened or the last reset, and as the most bytes in one second. Bytes include the WebSocket frame header and the client's mask key. TCP, IP and TLS headers are not counted. TLS adds about 22 bytes per message.
+
+Set `GOMEMLIMIT` to the memory the server may use, such as `GOMEMLIMIT=2GiB`, so the garbage collector works to keep the process under it. The load tests ran without it. Raising `GOGC` did not help in them (strategy section 3.8).
+
+### Bots
+
+`tools/botclient` is a headless client (strategy section 12.1). It lives under `tools` because it is a test tool that the server never imports. It speaks the protocol with the generated message code:
+
+- `Dial` connects, says hello with a session token (a character name for `--dev`), and returns once the bot sees itself.
+- A bot tracks its map, its cell (following its own walk over time), its HP, and the entities in view, from the events it gets. It counts its bytes and messages as the server does, and the time from each walk or chat command to the frame that acknowledges it.
+- `Play` runs a `Behaviour`: walks to random cells that a path reaches (with an asset build) at a set interval, chat lines at random times, attacks on the nearest monster in view, and walks to warp portals in view, which take the bot to other maps.
+- `Scenario.Run` runs many bots: they join at a ramp rate, play for a warmup, and are measured for a duration. With the server's `--debug-addr`, it resets the server's counts when measuring starts and adds the server's measurements to the report.
+
+`tools/wabots` runs a scenario and prints the report. Run it in its own process, so its CPU is not counted as tick work, and at a low priority, so it does not slow the server it measures:
+
+```text
+GOMAXPROCS=4 nice -n 15 go run ./tools/wabots --scenario town \
+  --assets /path/to/build --metrics http://127.0.0.1:8301
+```
+
+The scenarios are in `tools/botclient/scenarios.go`. Each needs the server started as below. The rates follow the busy town estimate in `schema/protocol_test.go`.
+
+| Scenario | Bots | What they do | Server |
+|---|---:|---|---|
+| `town` | 500 | Walk to a cell within 8 every 3 seconds on average, and say 2 chat lines a second together. | `--map prontera` |
+| `crowd` | 500 | Stay within 10 cells of the start cell, so most see each other, as at an event. A walk every 2 seconds and 10 chat lines a second together. | `--map prontera` |
+| `spread` | 500 | As `town`, but a third of their walks go to a warp portal in view, so they spread over the maps. | `--map prontera --maps prontera,prt_fild08,prt_in,prt_fild05,prt_fild06,prt_fild07,prt_church,izlude` |
+| `fight` | 500 | Attack the nearest monster in view until it dies, walk on to find more, and say 0.5 chat lines a second together. | `--map prt_fild08 --build melee` |
+| `smoke` | 50 | A walk every second and 5 chat lines a second together, on the 24 × 24 placeholder map. | `--map placeholder/map --mode none` |
+
+The 500-bot scenarios join 50 bots a second, warm up for 15 seconds (60 for `spread`), and measure for 3 minutes. `smoke` joins 25 a second, warms up for 3 seconds, and measures for 20. Flags change them: `--bots`, `--ramp`, `--warmup`, `--duration`, `--walk-every`, `--walk-radius`, `--chat-rate` (lines a second of all bots together), `--fight`, `--stay`, `--warp-chance`, `--prefix` and `--seed`. `--file` reads a scenario from YAML instead:
+
+```yaml
+name: market
+bots: 200
+ramp: 20
+warmup: 10s
+duration: 2m
+chat_rate: 4
+behaviour:
+  walk_every: 5s
+  walk_radius: 6
+  stay: true
+```
+
+`--json` writes the report as JSON. `--check` exits with status 1 when a budget is broken: tick work p99 over 10 ms or maximum over 25 ms, or a bot over 8 KB/s from the server on average, 32 KB/s in its busiest second, or 1 KB/s to the server.
+
+Scenario bots use `--dev` sessions, so with a database each bot name becomes a dev account and character, which keeps its map and cell between runs. `botclient.Account` signs up, makes a character and gets a game ticket on the account pages instead, as `TestAccountFlow` does with `WATHENA_TEST_DATABASE_URL`. Scenarios do not use it yet, since the account service limits signups per address.
+
+The bots join at the server's `--map`, or at their saved map with a database. To load other maps, use `spread`, whose bots walk through warps.
+
+### Messages to connections
+
+A zone does not wake each connection's goroutine itself. While a zone runs, its tick collects every message in an outbox and hands it to the zone's sender goroutine in one batch. The sender puts each message on its connection's channel, in order, and closes the channel of a connection that has 64 messages waiting. Before this, the zone goroutine woke 500 connection goroutines one by one each tick. Each wake can enter the kernel, and a trace of the 500-bot test showed the zone goroutine stalled for up to 9 ms between two wakes. A map change waits until the old zone's messages to the player went out, so they come before the new zone's.
+
+### CI
+
+CI's `loadtest` job runs `TestLoadSmoke` in `tools/botclient`: it builds `waserver` and the placeholder assets, starts the server in its own process, and runs the `smoke` scenario for 20 seconds. No bot may fail. Tick work must stay under 25 ms at p99 and 100 ms at most, 2.5 and 4 times the budgets, since CI runners are shared. Bandwidth keeps its budgets. The test is skipped unless `WATHENA_LOAD_TEST=1`:
+
+```text
+WATHENA_LOAD_TEST=1 go test -count=1 -run TestLoadSmoke -v ./tools/botclient
+```
+
+The results of the 500-bot tests are in strategy section 3.8.

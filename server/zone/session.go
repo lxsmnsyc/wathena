@@ -27,6 +27,9 @@ type Session struct {
 
 	out   chan *wathenav1.ServerMessage
 	saver Saver
+	// outClosed closes out once, from whichever zone or handoff ends
+	// the session.
+	outClosed outClosed
 
 	mu sync.Mutex
 	// zone and player are where the session is. Both are nil while the
@@ -60,7 +63,7 @@ func newSession(saver Saver) *Session {
 
 // newPlayer makes the player a session plays in one zone, entering as c.
 func newPlayer(s *Session, c *character.Character) *Player {
-	return &Player{Name: c.Name, Out: s.Out, out: s.out, netIDs: map[*entity]uint32{}, fresh: true, load: c, sess: s}
+	return &Player{Name: c.Name, Out: s.Out, out: s.out, fresh: true, load: c, sess: s}
 }
 
 // done records that the session's last save went to its saver.

@@ -35,12 +35,12 @@ func TestChat(t *testing.T) {
 	z.handle(command{player: a, seq: 1, chat: new("hello")})
 	z.stepAt(100)
 	self := chats(a)
-	if len(self) != 1 || self[0].GetFrom() != a.netIDs[a.entity] || self[0].GetFromName() != "Alice" ||
+	if len(self) != 1 || self[0].GetFrom() != a.netIDs.id(a.entity) || self[0].GetFromName() != "Alice" ||
 		self[0].GetText() != "hello" || self[0].GetChannel() != wathenav1.ChatChannel_CHAT_CHANNEL_LOCAL {
 		t.Errorf("Alice hears %v", self)
 	}
 	heard := chats(b)
-	if len(heard) != 1 || heard[0].GetFrom() != b.netIDs[a.entity] || heard[0].GetText() != "hello" {
+	if len(heard) != 1 || heard[0].GetFrom() != b.netIDs.id(a.entity) || heard[0].GetText() != "hello" {
 		t.Errorf("Bob hears %v", heard)
 	}
 	if got := chats(c); len(got) != 0 {

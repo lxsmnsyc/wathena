@@ -20,7 +20,7 @@ func (z *Zone) chatEvents(p *Player) []*wathenav1.Event {
 	var events []*wathenav1.Event
 	me := p.entity
 	for _, c := range z.chats {
-		id, ok := p.netIDs[c.speaker]
+		id, ok := p.netIDs.get(c.speaker)
 		if !ok || max(abs(c.speaker.x-me.x), abs(c.speaker.y-me.y)) > ChatRange {
 			continue
 		}

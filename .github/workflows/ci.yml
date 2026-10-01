@@ -37,6 +37,23 @@ jobs:
       - run: go vet ./...
       - run: go test -race ./...
 
+  # 50 bots against a server in its own process, on the placeholder map,
+  # for 20 seconds (server/README.md, "Load tests and metrics"). It checks
+  # that no bot fails and that the server stays within the budgets of
+  # strategy section 3.8, with slack for shared runners.
+  loadtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WATHENA_LOAD_TEST: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.mod
+      - run: go test -count=1 -run TestLoadSmoke -v ./tools/botclient
+
   schema:
     runs-on: ubuntu-latest
     steps:

@@ -84,7 +84,7 @@ func TestJoinSendsInventoryAndWeight(t *testing.T) {
 	z.PlayerStatus = battle.Status{MaxHP: 100}
 	// Without job tables, the maximum weight is set by hand.
 	out := make(chan *wathenav1.ServerMessage, outBuffer)
-	p := &Player{Name: "a", Out: out, out: out, netIDs: map[*entity]uint32{}, fresh: true, maxWeight: maxWeight}
+	p := &Player{Name: "a", Out: out, out: out, fresh: true, maxWeight: maxWeight}
 	z.join(p)
 	z.stepAt(50)
 	ev := events(p)
@@ -129,7 +129,7 @@ func TestUseHealingItem(t *testing.T) {
 			removed = r
 		}
 	}
-	me := a.netIDs[a.entity]
+	me := a.netIDs.id(a.entity)
 	if heal.GetAmount() != healed || heal.GetSource() != me || heal.GetTarget() != me {
 		t.Errorf("heal %v", heal)
 	}
@@ -147,7 +147,7 @@ func TestUseHealingItem(t *testing.T) {
 	}{{a, ev}, {b, events(b)}} {
 		seen := 0
 		for _, e := range viewer.ev {
-			if u := e.GetItemUsed(); u != nil && u.GetSource() == viewer.p.netIDs[a.entity] && u.GetItemId() == 501 {
+			if u := e.GetItemUsed(); u != nil && u.GetSource() == viewer.p.netIDs.id(a.entity) && u.GetItemId() == 501 {
 				seen++
 			}
 			if viewer.p == b && e.GetDamage().GetKind() == wathenav1.DamageKind_DAMAGE_KIND_HEAL {
@@ -270,13 +270,13 @@ func TestDropAndPickUpAgain(t *testing.T) {
 
 	// Dropped items have no looter, so anyone takes them at once.
 	var it *entity
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.item != nil {
 			it = e
 		}
 	}
-	z.handle(command{player: b, pickUp: new(b.netIDs[it])})
-	for start := z.now; z.entities[it] && z.now < start+2000; {
+	z.handle(command{player: b, pickUp: new(b.netIDs.id(it))})
+	for start := z.now; z.entities.has(it) && z.now < start+2000; {
 		z.stepAt(z.now + 50)
 	}
 	if b.inventory.Count(909) != 7 {
@@ -317,7 +317,7 @@ func TestDropFailures(t *testing.T) {
 	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] || got[3] != want[3] {
 		t.Errorf("failures %v, want %v", got, want)
 	}
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.item != nil {
 			t.Error("something fell")
 		}
@@ -327,7 +327,7 @@ func TestDropFailures(t *testing.T) {
 // groundAt puts an item next to a player, and lets the player see it.
 func groundAt(z *Zone, p *Player, id uint32, amount int) *entity {
 	it := &entity{x: p.entity.x, y: p.entity.y + 1, item: &groundItem{id: id, amount: amount, subX: 6, subY: 6, expires: z.now + 60000}}
-	z.entities[it] = true
+	z.entities.add(it)
 	z.stepAt(z.now + 50)
 	events(p)
 	return it
@@ -337,12 +337,12 @@ func TestPickUpOverweightOrFull(t *testing.T) {
 	// 13 potions weigh 91.0 of 100.0: 3 more would pass the maximum.
 	z, a, _ := invZone(t, StartItem{501, 13})
 	it := groundAt(z, a, 505, 1)
-	z.handle(command{player: a, pickUp: new(a.netIDs[it])})
+	z.handle(command{player: a, pickUp: new(a.netIDs.id(it))})
 	z.stepAt(z.now + 50)
 	if f := failures(a); len(f) != 1 || f[0] != wathenav1.PickUpFailure_PICK_UP_FAILURE_OVERWEIGHT {
 		t.Errorf("failures %v", f)
 	}
-	if !z.entities[it] || a.inventory.Count(505) != 0 {
+	if !z.entities.has(it) || a.inventory.Count(505) != 0 {
 		t.Error("the item was taken")
 	}
 
@@ -353,15 +353,15 @@ func TestPickUpOverweightOrFull(t *testing.T) {
 	}
 	a.inventory.Slots[0] = item.Slot{ID: 909, Amount: 1}
 	it = groundAt(z, a, 505, 1)
-	z.handle(command{player: a, pickUp: new(a.netIDs[it])})
+	z.handle(command{player: a, pickUp: new(a.netIDs.id(it))})
 	z.stepAt(z.now + 50)
 	if f := failures(a); len(f) != 1 || f[0] != wathenav1.PickUpFailure_PICK_UP_FAILURE_INVENTORY_FULL {
 		t.Errorf("failures %v", f)
 	}
 	it = groundAt(z, a, 909, 3)
-	z.handle(command{player: a, pickUp: new(a.netIDs[it])})
+	z.handle(command{player: a, pickUp: new(a.netIDs.id(it))})
 	z.stepAt(z.now + 50)
-	if z.entities[it] || a.inventory.Slots[0].Amount != 4 {
+	if z.entities.has(it) || a.inventory.Slots[0].Amount != 4 {
 		t.Errorf("stack %v", a.inventory.Slots[0])
 	}
 }
@@ -381,19 +381,19 @@ func TestOverweightRules(t *testing.T) {
 		t.Errorf("HP %d, SP %d while overweight", a.entity.hp, a.sp)
 	}
 	// Attacks still work at 76%.
-	z.handle(command{player: a, attack: &attackCommand{target: a.netIDs[b.entity], repeat: true}})
+	z.handle(command{player: a, attack: &attackCommand{target: a.netIDs.id(b.entity), repeat: true}})
 	if a.entity.target != b.entity {
 		t.Error("no attack at 76%")
 	}
 	// 14 more Jellopy make 90.0: the attack stops, and new ones are
 	// refused.
 	it := groundAt(z, a, 909, 14)
-	z.handle(command{player: a, pickUp: new(a.netIDs[it])})
+	z.handle(command{player: a, pickUp: new(a.netIDs.id(it))})
 	z.stepAt(z.now + 50)
 	if a.overweight != item.Weight90 || a.entity.target != nil {
 		t.Fatalf("level %d, target %v", a.overweight, a.entity.target)
 	}
-	z.handle(command{player: a, attack: &attackCommand{target: a.netIDs[b.entity], repeat: true}})
+	z.handle(command{player: a, attack: &attackCommand{target: a.netIDs.id(b.entity), repeat: true}})
 	if a.entity.target != nil {
 		t.Error("attacked at 90%")
 	}

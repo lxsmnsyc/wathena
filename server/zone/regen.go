@@ -46,7 +46,7 @@ func (z *Zone) naturalHeal() {
 	if z.nextHeal <= z.now {
 		z.nextHeal = z.now + naturalHealInterval
 	}
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if p := e.player; p != nil && e.status != nil {
 			z.naturalHealOne(p, diff)
 		}

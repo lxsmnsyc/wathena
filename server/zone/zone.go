@@ -12,6 +12,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -46,13 +47,18 @@ type Player struct {
 	out    chan *wathenav1.ServerMessage
 	entity *entity
 	// netIDs are this connection's IDs for the entities it sees.
-	netIDs  map[*entity]uint32
+	netIDs  netIDs
 	nextNet uint32
 	ackSeq  uint32
 	// fresh is set until the player's first frame, which shows the player
 	// to itself.
-	fresh   bool
+	fresh bool
+	// dropped is set once the zone closed the player's messages, or saw
+	// that the sender closed them. Read it through gone.
 	dropped bool
+	// ownClosed is the closing state of out for a player without a
+	// session, as in tests.
+	ownClosed outClosed
 
 	// charID stands for rAthena's char_id in damage logs and pick-up
 	// rights, until characters are stored. It is unique within the zone.
@@ -116,6 +122,8 @@ type Player struct {
 }
 
 type entity struct {
+	// idx and slot are the entity's place in the zone's entitySet.
+	idx, slot int32
 	// player is set for players. Monsters have monster instead, items
 	// on the ground have item, and warp portals have warp.
 	player  *Player
@@ -134,6 +142,10 @@ type entity struct {
 	// move event. stopped is set when a walk ends early.
 	walkChanged bool
 	stopped     bool
+	// packed is path in the protocol's steps, made for tick packedTick.
+	// Every viewer's move event shares it.
+	packed     []byte
+	packedTick uint32
 	fight
 	pickUp
 }
@@ -168,8 +180,13 @@ type Zone struct {
 	start    time.Time
 	now      int64
 	tick     uint32
-	entities map[*entity]bool
-	rand     *rng.Rand
+	entities entitySet
+	// blocks finds the entities near a player during updates.
+	blocks blockIndex
+	// viewsForTest, when set, replaces viewEvents. A test checks
+	// viewEvents against a scan of every entity with it.
+	viewsForTest func(p *Player, events []*wathenav1.Event) []*wathenav1.Event
+	rand         *rng.Rand
 	combat
 
 	// Status holds the job tables players' stats come from. Set it before
@@ -197,6 +214,8 @@ type Zone struct {
 	// World finds the zones that warps lead to. Without it, only warps
 	// within the map work. Set it before Run.
 	World Directory
+	// Metrics measures the zone's ticks. New makes it.
+	Metrics *metrics.Zone
 
 	// warps are the map's warps, in load order.
 	warps []Warp
@@ -227,6 +246,13 @@ type Zone struct {
 	stale chan *Player
 	// stopped closes when Run returns, after the last saves.
 	stopped chan struct{}
+
+	// outbox holds messages for the sender, which runs while Run runs.
+	// See outbox.go.
+	outbox     []outMsg
+	sends      chan []outMsg
+	spare      chan []outMsg
+	senderDone chan struct{}
 }
 
 type joinRequest struct {
@@ -247,7 +273,6 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		Map:      mapName,
 		grid:     grid,
 		rand:     rand,
-		entities: map[*entity]bool{},
 		players:  map[uint32]*Player{},
 		joins:    make(chan joinRequest),
 		leaves:   make(chan *Player, 16),
@@ -255,6 +280,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		arrivals: make(chan *handoff),
 		stale:    make(chan *Player),
 		stopped:  make(chan struct{}),
+		Metrics:  &metrics.Zone{Name: mapName},
 	}
 	z.spawn(spawns)
 	return z
@@ -270,6 +296,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 func (z *Zone) Run(ctx context.Context) {
 	defer close(z.stopped)
 	z.start = time.Now()
+	z.startSender()
 	var t *time.Ticker
 	var ticks <-chan time.Time
 	defer func() {
@@ -287,28 +314,42 @@ func (z *Zone) Run(ctx context.Context) {
 			t.Stop()
 			t, ticks = nil, nil
 			z.asleep = true
+			z.Metrics.Asleep()
 		}
+		// What the last event queued goes to the sender in one batch.
+		z.flush()
 		select {
 		case <-ctx.Done():
 			for _, p := range z.players {
 				z.save(p, true)
 				z.drop(p)
 			}
+			z.stopSender()
 			return
 		case j := <-z.joins:
+			began := time.Now()
 			z.wake()
 			j.done <- z.join(j.player)
+			z.Metrics.Handled(time.Since(began))
 		case h := <-z.arrivals:
+			began := time.Now()
 			z.wake()
 			z.arrive(h)
+			z.Metrics.Handled(time.Since(began))
 		case p := <-z.leaves:
+			began := time.Now()
 			z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+			z.Metrics.Handled(time.Since(began))
 		case p := <-z.stale:
 			z.loggedInElsewhere(p)
 		case c := <-z.commands:
+			began := time.Now()
 			z.handle(c)
+			z.Metrics.Handled(time.Since(began))
 		case <-ticks:
+			began := time.Now()
 			z.step()
+			z.Metrics.Tick(time.Since(began), len(z.players))
 		}
 	}
 }
@@ -323,7 +364,7 @@ func (z *Zone) wake() {
 	z.asleep = false
 	z.now = time.Since(z.start).Milliseconds()
 	z.prevHeal, z.nextHeal = z.now, z.now+naturalHealInterval
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.monster != nil && len(e.path) == 0 {
 			e.monster.nextWalk = -1
 		}
@@ -391,7 +432,7 @@ func (z *Zone) join(p *Player) joinResult {
 	}
 	e := &entity{player: p, x: x, y: y, speed: WalkSpeed}
 	p.entity = e
-	z.entities[e] = true
+	z.entities.add(e)
 	z.nextChar++
 	p.charID = z.nextChar
 	z.players[p.charID] = p
@@ -474,16 +515,16 @@ func (z *Zone) startCell() (int, int) {
 }
 
 func (p *Player) netID(e *entity) uint32 {
-	if id, ok := p.netIDs[e]; ok {
+	if id, ok := p.netIDs.get(e); ok {
 		return id
 	}
 	p.nextNet++
-	p.netIDs[e] = p.nextNet
+	p.netIDs.set(e, p.nextNet)
 	return p.nextNet
 }
 
 func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
-	if p.entity == nil || !z.entities[p.entity] {
+	if p.entity == nil || !z.entities.has(p.entity) {
 		return
 	}
 	z.save(p, true)
@@ -494,16 +535,16 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 // remove takes a player out of the zone. Viewers see it vanish for a
 // reason.
 func (z *Zone) remove(p *Player, reason wathenav1.VanishReason) {
-	delete(z.entities, p.entity)
+	z.entities.remove(p.entity)
 	delete(z.players, p.charID)
 	z.forget(p.entity)
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.player == nil {
 			continue
 		}
-		if id, ok := e.player.netIDs[p.entity]; ok {
-			delete(e.player.netIDs, p.entity)
-			e.player.queue(wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
+		if id, ok := e.player.netIDs.get(p.entity); ok {
+			e.player.netIDs.del(p.entity)
+			z.queue(e.player, wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
 				Tick: z.tick, AckSeq: e.player.ackSeq, Events: []*wathenav1.Event{vanish(id, reason)},
 			}.Build()}.Build())
 		}
@@ -514,13 +555,13 @@ func (z *Zone) remove(p *Player, reason wathenav1.VanishReason) {
 func (z *Zone) drop(p *Player) {
 	if !p.dropped {
 		p.dropped = true
-		close(p.out)
+		z.closeOut(p)
 	}
 }
 
 func (z *Zone) handle(c command) {
 	p := c.player
-	if p.dropped || !z.entities[p.entity] {
+	if p.gone() || !z.entities.has(p.entity) {
 		return
 	}
 	if c.seq > p.ackSeq {
@@ -552,7 +593,7 @@ func (z *Zone) handle(c command) {
 	// The game client does not attack while SC_WEIGHT90 is on, which
 	// rAthena relies on. The zone checks it itself.
 	if c.attack != nil && p.overweight != item.Weight90 {
-		for e, id := range p.netIDs {
+		for e, id := range p.netIDs.all() {
 			if id == c.attack.target && e != me && e.status != nil && !e.dead {
 				me.target, me.repeat, me.pickItem = e, c.attack.repeat, nil
 			}
@@ -589,10 +630,12 @@ func (z *Zone) step() { z.stepAt(time.Since(z.start).Milliseconds()) }
 
 // stepAt advances one tick to a time in zone milliseconds.
 func (z *Zone) stepAt(now int64) {
+	began := time.Now()
+	z.entities.compact()
 	z.tick++
 	z.now = now
 	var warped []warpTouch
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		touched := false
 		for len(e.path) > 0 {
 			d := e.path[0]
@@ -629,6 +672,8 @@ func (z *Zone) stepAt(now int64) {
 	for _, t := range warped {
 		z.warp(t.p, t.w)
 	}
+	moved := time.Now()
+	z.Metrics.Phase(metrics.PhaseMove, moved.Sub(began))
 	z.revive()
 	z.think()
 	z.fight()
@@ -637,12 +682,18 @@ func (z *Zone) stepAt(now int64) {
 	z.expireItems()
 	z.naturalHeal()
 	z.autosave()
-	for e := range z.entities {
+	acted := time.Now()
+	z.Metrics.Phase(metrics.PhaseAct, acted.Sub(moved))
+	if len(z.players) > 0 {
+		z.blocks.build(z.grid.Width, z.grid.Height, &z.entities)
+	}
+	for e := range z.entities.all() {
 		if e.player != nil {
 			z.update(e.player)
 		}
 	}
-	for e := range z.entities {
+	z.Metrics.Phase(metrics.PhaseSend, time.Since(acted))
+	for e := range z.entities.all() {
 		e.walkChanged = false
 		e.stopped = false
 		e.hpChanged = false
@@ -668,29 +719,14 @@ type warpTouch struct {
 // update sends a player what changed in view this tick.
 func (z *Zone) update(p *Player) {
 	var events []*wathenav1.Event
-	me := p.entity
 	if p.mapChange {
 		p.mapChange = false
 		events = append(events, z.mapChange(p))
 	}
-	for e := range z.entities {
-		visible := abs(e.x-me.x) <= ViewRange && abs(e.y-me.y) <= ViewRange
-		id, known := p.netIDs[e]
-		switch {
-		case visible && (!known || e == me && p.fresh):
-			id = p.netID(e)
-			events = append(events, z.appear(id, e))
-			if len(e.path) > 0 {
-				events = append(events, z.move(id, e))
-			}
-		case visible && e.walkChanged:
-			events = append(events, z.move(id, e))
-		case visible && e.stopped:
-			events = append(events, stop(id, e))
-		case !visible && known:
-			delete(p.netIDs, e)
-			events = append(events, vanish(id, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT))
-		}
+	if z.viewsForTest != nil {
+		events = z.viewsForTest(p, events)
+	} else {
+		events = z.viewEvents(p, events)
 	}
 	events = append(events, z.combatEvents(p)...)
 	events = append(events, z.effectEvents(p)...)
@@ -701,10 +737,57 @@ func (z *Zone) update(p *Player) {
 	if len(events) == 0 {
 		return
 	}
-	p.queue(wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
+	z.queue(p, wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
 		Tick: z.tick, AckSeq: p.ackSeq, Events: events,
 	}.Build()}.Build())
 	p.fresh = false
+}
+
+// viewEvents adds the appear, move, stop and vanish events of what the
+// player sees this tick.
+func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Event {
+	me := p.entity
+	// Entities in view: those of the blocks the view touches. No entity
+	// moves while players update, so the blocks built for this tick
+	// hold every entity where it is.
+	bx0, bx1 := span(me.x, ViewRange, z.blocks.w)
+	by0, by1 := span(me.y, ViewRange, z.blocks.h)
+	for by := by0; by <= by1; by++ {
+		for _, block := range z.blocks.blocks[by*z.blocks.w+bx0 : by*z.blocks.w+bx1+1] {
+			for _, e := range block {
+				if abs(e.x-me.x) > ViewRange || abs(e.y-me.y) > ViewRange {
+					continue
+				}
+				id, known := p.netIDs.get(e)
+				switch {
+				case !known || e == me && p.fresh:
+					id = p.netID(e)
+					events = append(events, z.appear(id, e))
+					if len(e.path) > 0 {
+						events = append(events, z.move(id, e))
+					}
+				case e.walkChanged:
+					events = append(events, z.move(id, e))
+				case e.stopped:
+					events = append(events, stop(id, e))
+				}
+			}
+		}
+	}
+	// Entities the player knew that are still in the zone and went out
+	// of view.
+	for i := 0; i < len(p.netIDs.known); {
+		e := p.netIDs.known[i]
+		if (abs(e.x-me.x) <= ViewRange && abs(e.y-me.y) <= ViewRange) || !z.entities.has(e) {
+			i++
+			continue
+		}
+		// del moves the last known entity to i.
+		id := p.netIDs.id(e)
+		p.netIDs.del(e)
+		events = append(events, vanish(id, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT))
+	}
+	return events
 }
 
 func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
@@ -764,12 +847,17 @@ func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
 }
 
 func (z *Zone) move(id uint32, e *entity) *wathenav1.Event {
+	// Paths do not change while players update, so the steps are packed
+	// once per tick. Messages only read them.
+	if e.packed == nil || e.packedTick != z.tick {
+		e.packed, e.packedTick = PackSteps(e.path), z.tick
+	}
 	tickStart := z.now
 	return wathenav1.Event_builder{Move: wathenav1.EntityMove_builder{
 		Id:      id,
 		FromX:   uint32(e.x), // #nosec G115 -- map cells are at most 1024.
 		FromY:   uint32(e.y), // #nosec G115 -- as above.
-		Steps:   PackSteps(e.path),
+		Steps:   e.packed,
 		StartMs: int32(e.stepStart - tickStart), // #nosec G115 -- within one step of now.
 		WalkMs:  uint32(e.speed),                // #nosec G115 -- a small speed.
 	}.Build()}.Build()
@@ -777,20 +865,6 @@ func (z *Zone) move(id uint32, e *entity) *wathenav1.Event {
 
 func vanish(id uint32, reason wathenav1.VanishReason) *wathenav1.Event {
 	return wathenav1.Event_builder{Vanish: wathenav1.EntityVanish_builder{Id: id, Reason: reason}.Build()}.Build()
-}
-
-// queue sends a message to the player's connection. A connection that
-// falls behind is dropped, so one slow client cannot stall the zone.
-func (p *Player) queue(m *wathenav1.ServerMessage) {
-	if p.dropped {
-		return
-	}
-	select {
-	case p.out <- m:
-	default:
-		p.dropped = true
-		close(p.out)
-	}
 }
 
 // facing turns a walk direction (0 north, counterclockwise) into the

@@ -21,7 +21,7 @@ func open(size int) *path.Grid {
 // add joins a player directly, as Run would.
 func add(z *Zone, name string) *Player {
 	out := make(chan *wathenav1.ServerMessage, outBuffer)
-	p := &Player{Name: name, Out: out, out: out, netIDs: map[*entity]uint32{}, fresh: true}
+	p := &Player{Name: name, Out: out, out: out, fresh: true}
 	z.join(p)
 	return p
 }
@@ -124,10 +124,58 @@ func TestSlowPlayerIsDropped(t *testing.T) {
 	z := New("map/test", open(40), rng.FromKey([32]byte{}).Stream(), nil)
 	a := add(z, "a")
 	for range outBuffer + 1 {
-		a.queue(&wathenav1.ServerMessage{})
+		z.queue(a, &wathenav1.ServerMessage{})
 	}
 	if !a.dropped {
 		t.Error("a full queue did not drop the player")
+	}
+
+	// With the sender, as in Run, the zone sees the drop once the
+	// sender delivered the batch.
+	b := add(z, "b")
+	z.startSender()
+	for range outBuffer + 1 {
+		z.queue(b, &wathenav1.ServerMessage{})
+	}
+	if b.gone() {
+		t.Error("b was dropped before the batch went out")
+	}
+	z.stopSender()
+	if !b.gone() {
+		t.Error("a full queue did not drop b")
+	}
+	n := 0
+	for range b.Out {
+		n++
+	}
+	if n != outBuffer {
+		t.Errorf("b got %d messages, want %d", n, outBuffer)
+	}
+}
+
+// TestSenderOrder checks that the sender keeps a batch in order, steps
+// included.
+func TestSenderOrder(t *testing.T) {
+	z := New("map/test", open(40), rng.FromKey([32]byte{}).Stream(), nil)
+	a := add(z, "a")
+	events(a)
+	z.startSender()
+	var got []uint32
+	for i := range uint32(3) {
+		z.queue(a, frame(i, 0))
+	}
+	z.then(func() {
+		for range 3 {
+			got = append(got, (<-a.Out).GetFrame().GetTick())
+		}
+	})
+	z.drop(a)
+	z.stopSender()
+	if len(got) != 3 || got[0] != 0 || got[2] != 2 {
+		t.Errorf("frames in the order %v", got)
+	}
+	if _, open := <-a.Out; open {
+		t.Error("the channel is open after drop")
 	}
 }
 
@@ -145,7 +193,7 @@ func TestMonsters(t *testing.T) {
 	}
 	z := New("map/test", open(40), rng.FromKey([32]byte{1}).Stream(), spawns)
 	var porings, plants []*entity
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		switch e.monster.spawn.Mob {
 		case 1002:
 			porings = append(porings, e)

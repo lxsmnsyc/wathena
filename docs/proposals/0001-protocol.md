@@ -135,6 +135,8 @@ A message over its limit, or one that fails to decode, closes the connection wit
 
 Encoded sizes: a 10-step walk is 26 bytes, a player appearing is 68 bytes, and a hit is 21 bytes. The test fails if an estimate goes over its budget.
 
+The 500-bot load tests measured the real traffic (strategy section 3.8, "Load test results"). Without TLS, a bot in a busy town got 1.2 KB/s on average, and a bot in a crowd of up to 500 players in view got 8.5 KB/s.
+
 ## Breaks
 
 Nothing is deployed yet, so nothing breaks. `MapChange` is a new `Event` case, and warp portals are a new use of `ENTITY_KIND_NPC`, so the protocol version stays 1. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.

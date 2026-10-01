@@ -19,7 +19,7 @@ func fighters(t *testing.T, mobHP int, mode uint32) (*Zone, *Player, *entity) {
 	z.PlayerStatus = battle.Status{MaxHP: 100, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	p := add(z, "a")
 	var m *entity
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.monster != nil {
 			m = e
 		}
@@ -32,7 +32,7 @@ func fighters(t *testing.T, mobHP int, mode uint32) (*Zone, *Player, *entity) {
 
 func TestAttackUntilDeathAndRespawn(t *testing.T) {
 	z, p, m := fighters(t, 30, 0)
-	id := p.netIDs[m]
+	id := p.netIDs.id(m)
 	z.handle(command{player: p, seq: 1, attack: &attackCommand{target: id, repeat: true}})
 
 	// The player walks next to the monster, then hits it for 10 once per
@@ -43,7 +43,7 @@ func TestAttackUntilDeathAndRespawn(t *testing.T) {
 		for _, e := range events(p) {
 			if d := e.GetDamage(); d != nil {
 				damage++
-				if d.GetSource() != p.netIDs[p.entity] && d.GetSource() != 1 {
+				if d.GetSource() != p.netIDs.id(p.entity) && d.GetSource() != 1 {
 					t.Errorf("damage from %d", d.GetSource())
 				}
 			}
@@ -55,14 +55,14 @@ func TestAttackUntilDeathAndRespawn(t *testing.T) {
 	if damage != 3 || died != 1 {
 		t.Fatalf("%d hits, %d deaths", damage, died)
 	}
-	if z.entities[m] || p.entity.target != nil {
+	if z.entities.has(m) || p.entity.target != nil {
 		t.Error("the dead monster is still in the zone or targeted")
 	}
 	// It comes back 5 seconds after dying.
 	back := false
 	for now := int64(5050); now <= 12000; now += 50 {
 		z.stepAt(now)
-		for e := range z.entities {
+		for e := range z.entities.all() {
 			if e.monster != nil {
 				back = true
 			}
@@ -75,7 +75,7 @@ func TestAttackUntilDeathAndRespawn(t *testing.T) {
 
 func TestMonsterStrikesBackAndPlayerRevives(t *testing.T) {
 	z, p, m := fighters(t, 1000, modeCanAttack)
-	id := p.netIDs[m]
+	id := p.netIDs.id(m)
 	z.handle(command{player: p, seq: 1, attack: &attackCommand{target: id, repeat: false}})
 	for now := int64(100); now <= 2000; now += 50 {
 		z.stepAt(now)

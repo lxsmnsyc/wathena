@@ -75,7 +75,7 @@ func (z *Zone) spawnOne(s *Spawn) {
 	if s.Status != nil {
 		e.status, e.hp = s.Status, int64(s.Status.MaxHP)
 	}
-	z.entities[e] = true
+	z.entities.add(e)
 }
 
 // spawnCell picks a random walkable cell in a spawn's area, or anywhere
@@ -101,7 +101,7 @@ func (z *Zone) spawnCell(s *Spawn) (int, int, bool) {
 
 // think runs monster AI for this tick: for now, wandering.
 func (z *Zone) think() {
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		m := e.monster
 		if m == nil || !m.spawn.CanMove || len(e.path) > 0 || e.target != nil {
 			continue

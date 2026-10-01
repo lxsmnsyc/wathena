@@ -426,6 +426,102 @@ Web client:
 
 CI runs the server budgets in load tests (section 12). A change that breaks a budget fails the nightly run.
 
+#### Load test results
+
+The 500-bot tests of phase 2, on 2026-10-01. How to run them is in server/README.md, "Load tests and metrics".
+
+Setup:
+
+- One `waserver` with `--dev` sessions and the kRO asset build. There is no database, except in the PostgreSQL run. Each zone runs in its own goroutine in that process.
+- `tools/wabots` in a separate process, at `nice 15` with `GOMAXPROCS=4`, so the bots' CPU does not count as tick work.
+- An Apple M2 (4 performance and 4 efficiency cores) with 8 GB, shared with a browser and Docker Desktop. Memory was tight: 6 to 9 GB of swap were in use, and the kernel was compressing memory throughout.
+- 500 bots join at 50 a second and play for 15 seconds (60 for Spread) before 3 minutes of measurement.
+
+Scenarios and rates, from the busy town estimate in `schema/protocol_test.go`:
+
+| Scenario | Map | What each bot does |
+|---|---|---|
+| Town | `prontera` | A walk to a cell within 8 every 3 s on average. 2 chat lines a second in the whole town. |
+| Crowd | `prontera` | Stays within 10 cells of the start cell, so most bots see each other. A walk every 2 s. 10 chat lines a second in total. |
+| Spread | 8 maps around Prontera | As Town, but a third of the walks go to a warp portal in view. Most bots end up in `prt_in` and `prontera`, with about 32 map changes a second. |
+| Fight | `prt_fild08`, `--build melee` | Attacks the nearest monster in view until it dies, then walks on. 0.5 chat lines a second in total. |
+| Town with PostgreSQL | `prontera` | As Town, with characters loaded from and saved to PostgreSQL 18 in Docker every 30 seconds. They start where an earlier run saved them, so they are more spread out. |
+
+Tick work per zone, in ms. Quantiles are rounded up to their bucket, which is at most 12.5% wide.
+
+| Scenario | p50 | p99 | p99.9 | Max | Ticks over 10 ms | Ticks over 25 ms | Server CPU |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Town | 1.3 | 3.4 | 6.3 | 33.5 | 2 of 3,600 | 1 | 0.17 cores |
+| Town, second run | 1.2 | 5.8 | 33.6 | 70.1 | 13 of 3,600 | 7 | 0.16 cores |
+| Crowd | 2.9 | 10.5 | 75.5 | 234 | 36 of 3,590 | 16 | 0.28 cores |
+| Spread, `prontera` (216 bots) | 0.4 | 2.6 | 9.4 | 11.7 | 1 of 3,600 | 0 | 0.16 cores |
+| Spread, `prt_in` (282 bots) | 0.6 | 3.9 | 11.5 | 35.6 | 5 of 3,600 | 1 | (same process) |
+| Fight | 1.6 | 9.4 | 37.8 | 63.9 | 26 of 3,600 | 5 | 0.15 cores |
+| Town with PostgreSQL | 0.7 | 3.4 | 50.3 | 109 | 14 of 3,599 | 6 | 0.11 cores |
+
+Bandwidth per bot, in KB/s, counted as WebSocket bytes without TCP, IP or TLS headers. TLS adds about 22 bytes per message, so 0.2 to 0.45 KB/s at these frame rates.
+
+| Scenario | Server to client, average (mean, max) | Busiest second (mean, max) | Client to server, average (max) | Frames per second |
+|---|---:|---:|---:|---:|
+| Town | 1.20, 1.95 | 4.7, 8.1 | 0.01 | 13.9 |
+| Crowd | 8.51, 8.92 | 15.0, 18.5 | 0.01 | 19.9 |
+| Spread | 0.82, 1.46 | 3.9, 7.6 | 0.01 | 13.8 |
+| Fight | 1.00, 2.14 | 4.0, 8.5 | 0.02 | 10.7 |
+| Town with PostgreSQL | 0.35, 0.72 | 1.0, 2.4 | 0.01 | 7.4 |
+
+Process:
+
+| Scenario | Heap | Total memory | GC pause p99, max | GC cycles in 3 min | Allocation |
+|---|---:|---:|---:|---:|---:|
+| Town | 43 MB | 96 MB | 1.8, 1.8 ms | 69 | 12 MB/s |
+| Crowd | 41 MB | 105 MB | 1.6, 4.2 ms | 261 | 45 MB/s |
+| Spread | 49 MB | 129 MB | 1.8, 10.5 ms | 66 | 11 MB/s |
+| Fight | 71 MB | 165 MB | 7.3, 7.3 ms | 41 | 11 MB/s |
+| Town with PostgreSQL | 43 MB | 96 MB | 34, 34 ms | 31 | 5 MB/s |
+
+Against the budgets:
+
+- Tick work p99 is within 10 ms in every scenario. Crowd is at the limit: its p99 bucket ends at 10.5 ms.
+- The maximum of 25 ms is broken by rare ticks, at most 16 of 3,600 in a run. They come from the machine, not from the zone's work. A diagnostic build, not kept in the code, pinned each zone goroutine to its thread and read the thread's CPU time per tick:
+
+  | Scenario | Wall time p99, max | Thread CPU time p99, max |
+  |---|---:|---:|
+  | Town | 2.6 to 10.5, 28.3 ms | 2.6 to 3.4, 4.4 ms |
+  | Crowd | 7.3 to 13.6, 78.7 ms | 5.2 to 6.3, 10.3 ms |
+  | Fight | 5.8 to 8.4, 158 ms | 3.4 to 4.2, 10.0 ms |
+
+  The ranges are over 30-second windows. In the long ticks, the zone thread waited for a core. In one 30-second window of a Fight run, the thread's own CPU time rose to 51 ms per tick, together with a 42 ms GC pause, which fits the kernel decompressing memory on page faults. Runs at a lower priority (`nice 5`, by mistake) had GC pauses up to 100 ms and ticks over 100 ms in the same code. The maximum needs nightly runs on a dedicated Linux machine to confirm.
+- Bandwidth is within budget in every scenario but Crowd. There, the average from the server, 8.5 KB/s, is just over the 8 KB/s budget for a busy town. Crowd puts up to 500 players in view, more than the town peak estimate of 300, and its busiest second, 18.5 KB/s, is within the 32 KB/s peak budget. Fight is a field: its average, 1.0 KB/s, is within the 2 KB/s field budget, though the busiest bots reach 2.14 KB/s.
+- Memory per online player is about 200 KB of total process memory in Town, under the 256 KB budget.
+- Joining, from opening the WebSocket to the first frame, took about 30 ms at p50 and at most 245 ms, also with PostgreSQL, where it makes a dev account and character. The budget is 2 seconds.
+- With PostgreSQL, every character was saved every 30 seconds: 3,995 rows were updated in the 3.5 minutes the bots played, 500 loads and about 3,500 autosaves. The zone only makes the snapshots, and the `act` part of a tick stayed at 0.04 ms on average.
+- Setting `GOGC=400` did not help on this machine. In one Crowd run, memory rose to 221 MB and the tick work p99 was 38 ms.
+
+Fixes made to reach these numbers, with the same bots and machine. "Before" is the code before the fixes, with only the measurements added.
+
+| Scenario | Before: p50, p99, max | After: p50, p99, max | Before: bots disconnected |
+|---|---|---|---:|
+| Town | 10.5, 21.0, 113 ms | 1.3, 3.4, 33.5 ms | 0 |
+| Crowd | 9.4, 168, 565 ms | 2.9, 10.5, 234 ms | 349 |
+| Fight | 31.5, 185, 2,083 ms | 1.6, 9.4, 63.9 ms | 447 |
+
+Before the fixes, the Crowd and Fight zones fell so far behind that their command queues filled, and the gateway closed most connections with "Too many actions at once". The fixes, each with tests that check the old behavior is kept:
+
+1. Entities and each connection's IDs for them were maps. They are now slices indexed by a slot per entity.
+2. The zone goroutine woke each connection's goroutine with its own channel send. Each wake can enter the kernel, and a trace showed the zone goroutine stalled for up to 9 ms between two sends. A tick now hands all of its messages to a sender goroutine in one batch.
+3. Each player's view checked every entity in the zone. After many kills, a field holds thousands of dropped items. The zone now builds an index of 8 × 8 cell blocks once per tick, as rAthena's `BLOCK_SIZE`, and each player checks only the blocks its view touches and the entities it already knows. `TestViewsMatchFullScan` runs a random game with walks, fights, deaths, warps and logouts in two zones, one with a full scan, and checks that every frame is the same.
+4. Walk steps are packed once per tick and shared by every viewer's move event.
+
+One tick of 500 players in `BenchmarkLoadTick`, with the bots' commands and the draining of their messages:
+
+| Case | Before | After |
+|---|---:|---:|
+| Crowd: 500 players within 20 cells | 6.0 ms | 1.4 ms |
+| Town: spread over 120 × 120 cells | 5.1 ms | 0.3 ms |
+| Field: spread over the map with 5,000 still entities | 53 ms | 0.7 ms |
+
+CI's `loadtest` job runs 50 bots for 20 seconds on the placeholder map on every pull request (server/README.md, "CI").
+
 ### 3.9 Deployment modes
 
 | Mode | For | Setup |
@@ -1982,7 +2078,7 @@ Data files that the tables above do not name directly. `tools/wathena/inventory.
 
 ### 12.1 Headless bot clients
 
-A Go package, `botclient`, speaks the same protocol as the web client. It uses the generated message code, so it stays in sync with the schema.
+A Go package, `botclient` (`tools/botclient`), speaks the same protocol as the web client. It uses the generated message code, so it stays in sync with the schema.
 
 - A bot can sign up, log in, walk, fight, chat, trade, and talk to NPCs.
 - Scenarios are written in Go or YAML, for example "100 bots walk around town and chat" or "20 bots trade the same item back and forth".
@@ -2095,8 +2191,8 @@ Status on 2026-10-01:
 
 - Phases 0a, 0b, and 1 are done.
 - Phase 2 is partly done:
-  - Done: the gateway, one zone per map, several zones in one process, walking, warps and map changes, local chat, per-zone secret random streams, the database, saving, and the account service with two-factor login and passkeys.
-  - Not started: bots and all-in-one mode.
+  - Done: the gateway, one zone per map, several zones in one process, walking, warps and map changes, local chat, per-zone secret random streams, the database, saving, the account service with two-factor login and passkeys, the headless bot client, and the 500-bot load test.
+  - Not started: all-in-one mode.
 - Some phase 4 work was done early:
   - Normal attacks, player stats, exp, drops, inventory, healing items, and natural regen.
   - All of it is ported from rAthena and checked against the phase 0a reference data.
@@ -2128,7 +2224,13 @@ The order from here:
    - A zone without players sleeps. All 988 maps of a kRO build start in 2.1 seconds, take 186 MB of heap, and use no CPU while empty. Kept awake, they would use 59% of a core.
    - Map ready after a warp: 102 to 283 ms from the Service Worker cache, against the 1.5 second budget.
    - Left: warps for hidden players (`warp2`), job limits on maps (`job_noenter_map`), script NPCs that warp, and zones in other processes.
-4. Bots and load test. The headless bot client and the 500-bot tick budget test. Bots can walk between maps through `zone.Session`, as players do.
+4. Bots and load test. Done on 2026-10-01 (section 3.8, "Load test results", and server/README.md, "Load tests and metrics"):
+   - `tools/botclient` speaks the protocol with the generated code. Bots join with `--dev` names or through the account pages with a game ticket, track what they see, walk to cells a path reaches, chat, fight monsters, and take warps. They count their bytes and the time until a frame acknowledges each command.
+   - `tools/wabots` runs scenarios written in Go or YAML: town, crowd, spread over 8 maps, fight on `prt_fild08`, and a CI smoke test.
+   - `server/metrics` measures tick work per zone, GC pauses, CPU, memory and bytes per connection. `--debug-addr` serves them on a loopback address. A zone over 10 ms for 10 ticks in a row logs a warning and can write a CPU profile.
+   - 500 bots walk and chat in Prontera with tick work at 1.3 ms p50 and 3.4 ms p99, and p99 stays within 10 ms in a crowd, across 8 maps, in a fight, and with PostgreSQL. Before the fixes to the zone, the same test ran at 10.5 ms p50, and a crowd or a fight overloaded the zone. This meets the phase 2 exit criterion on one `waserver` process. The Docker Compose packaging is step 5.
+   - CI's `loadtest` job runs 50 bots for 20 seconds on every pull request.
+   - Left: rare ticks over the 25 ms maximum (section 3.8), nightly runs at 7,500 bots on Linux machines, and bots that trade and talk to NPCs.
 5. All-in-one mode and the Docker Compose file. This ends phase 2.
 6. Phase 3. The Lua runtime and mod loader. Skills, item scripts, and NPCs need it.
 7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.

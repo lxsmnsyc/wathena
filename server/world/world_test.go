@@ -177,33 +177,59 @@ func TestPlayersCrossMapsConcurrently(t *testing.T) {
 			}
 		}()
 	}
-	// Everyone walks north through the center, on whichever map they
-	// are, again and again.
-	stop := time.Now().Add(2 * time.Second)
-	for seq := uint32(2); time.Now().Before(stop); seq++ {
-		for _, s := range sessions {
-			s.WalkTo(seq, 15, 10)
+	// Each round, everyone walks back and forth through the center of
+	// whichever map they are on, and so crosses to the other map. New
+	// characters start on the center, where walking off the warp does
+	// not trigger it, so the walks alternate north and south. Each walk
+	// gets 1 second, longer than the 5 cells between the warp and either
+	// end take, so it crosses the warp before it turns back. A round ends when
+	// every player has changed maps once more. Waiting for that, rather
+	// than for a fixed time, keeps the test stable on a busy machine.
+	saves := func(i int) int {
+		savers[i].mu.Lock()
+		defer savers[i].mu.Unlock()
+		return savers[i].saves
+	}
+	const rounds = 3
+	seq := uint32(2)
+	for round := 1; round <= rounds; round++ {
+		// A command can be dropped while a player is still arriving on a
+		// map, so walks are sent until that player changes maps.
+		deadline := time.Now().Add(30 * time.Second)
+		for try := 0; ; try++ {
+			y := 10
+			if try%2 == 1 {
+				y = 20
+			}
+			waiting := 0
+			for i, s := range sessions {
+				if saves(i) < round {
+					s.WalkTo(seq, 15, y)
+					waiting++
+				}
+			}
+			seq++
+			if waiting == 0 {
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("round %d: %d players did not change maps", round, waiting)
+			}
+			time.Sleep(time.Second)
 		}
-		time.Sleep(100 * time.Millisecond)
-		for _, s := range sessions {
-			s.WalkTo(seq, 15, 20)
-		}
-		time.Sleep(100 * time.Millisecond)
 	}
 	for _, s := range sessions {
 		s.Leave()
 	}
-	changes := 0
 	for i, c := range savers {
 		c.mu.Lock()
 		if c.last != 1 {
 			t.Errorf("player %d: %d final saves", i, c.last)
 		}
-		changes += c.saves
+		if c.saves != rounds {
+			t.Errorf("player %d: %d map changes, want %d", i, c.saves, rounds)
+		}
 		c.mu.Unlock()
-	}
-	if changes < n {
-		t.Errorf("%d map changes for %d players", changes, n)
 	}
 	cancel()
 	<-w.Stopped()

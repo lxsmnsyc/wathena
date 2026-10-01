@@ -79,12 +79,12 @@ func chebyshev(a, b *entity) int { return max(abs(a.x-b.x), abs(a.y-b.y)) }
 
 // fight runs every unit's attack for this tick.
 func (z *Zone) fight() {
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		t := e.target
 		if t == nil {
 			continue
 		}
-		if e.dead || t.dead || !z.entities[t] || chebyshev(e, t) > ViewRange {
+		if e.dead || t.dead || !z.entities.has(t) || chebyshev(e, t) > ViewRange {
 			e.target = nil
 			continue
 		}
@@ -153,7 +153,7 @@ func (z *Zone) die(e, killer *entity) {
 	e.target = nil
 	e.pickItem = nil
 	e.path = e.path[:0]
-	for o := range z.entities {
+	for o := range z.entities.all() {
 		if o.target == e {
 			o.target = nil
 		}
@@ -165,7 +165,7 @@ func (z *Zone) die(e, killer *entity) {
 		e.player.regenTicks = regenState{}
 		return
 	}
-	delete(z.entities, e)
+	z.entities.remove(e)
 	z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_DIED})
 	z.reward(e, killer)
 	s := e.monster.spawn
@@ -174,7 +174,7 @@ func (z *Zone) die(e, killer *entity) {
 
 // forget removes an entity from every target.
 func (z *Zone) forget(e *entity) {
-	for o := range z.entities {
+	for o := range z.entities.all() {
 		if o.target == e {
 			o.target = nil
 		}
@@ -193,7 +193,7 @@ func (z *Zone) revive() {
 		}
 	}
 	z.respawns = kept
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.player == nil || !e.dead || z.now < e.diedAt+reviveMs {
 			continue
 		}
@@ -202,13 +202,13 @@ func (z *Zone) revive() {
 		e.x, e.y = z.startCell()
 		// Everyone who saw the player sees it leave and appear again at
 		// the start. The player keeps its own ID.
-		for o := range z.entities {
+		for o := range z.entities.all() {
 			if o.player == nil {
 				continue
 			}
-			if id, ok := o.player.netIDs[e]; ok && o != e {
-				delete(o.player.netIDs, e)
-				o.player.queue(frame(z.tick, o.player.ackSeq, vanish(id, wathenav1.VanishReason_VANISH_REASON_TELEPORTED)))
+			if id, ok := o.player.netIDs.get(e); ok && o != e {
+				o.player.netIDs.del(e)
+				z.queue(o.player, frame(z.tick, o.player.ackSeq, vanish(id, wathenav1.VanishReason_VANISH_REASON_TELEPORTED)))
 			}
 		}
 		e.player.fresh = true
@@ -220,8 +220,8 @@ func (z *Zone) revive() {
 func (z *Zone) combatEvents(p *Player) []*wathenav1.Event {
 	var events []*wathenav1.Event
 	for _, h := range z.hits {
-		src, ok1 := p.netIDs[h.source]
-		tgt, ok2 := p.netIDs[h.target]
+		src, ok1 := p.netIDs.get(h.source)
+		tgt, ok2 := p.netIDs.get(h.target)
 		if !ok1 || !ok2 {
 			continue
 		}
@@ -238,8 +238,8 @@ func (z *Zone) combatEvents(p *Player) []*wathenav1.Event {
 	// A pick-up shows before the item vanishes.
 	events = append(events, z.takeEvents(p)...)
 	for _, r := range z.removed {
-		if id, ok := p.netIDs[r.e]; ok {
-			delete(p.netIDs, r.e)
+		if id, ok := p.netIDs.get(r.e); ok {
+			p.netIDs.del(r.e)
 			events = append(events, vanish(id, r.reason))
 		}
 	}

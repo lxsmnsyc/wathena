@@ -63,7 +63,7 @@ func TestWalkOntoWarpChangesMap(t *testing.T) {
 	// The fifth step enters x 19, in the area. The walk ends there, and
 	// the player leaves map/a.
 	a.stepAt(100 + 5*WalkSpeed)
-	if a.entities[p.entity] || len(a.players) != 0 {
+	if a.entities.has(p.entity) || len(a.players) != 0 {
 		t.Fatal("the player is still on map/a")
 	}
 	if len(s.got) != 0 {
@@ -119,7 +119,7 @@ func TestHandoffKeepsCharacterOnce(t *testing.T) {
 	if len(a.players) != 0 || len(b.players) != 1 {
 		t.Errorf("%d players on map/a, %d on map/b", len(a.players), len(b.players))
 	}
-	for e := range a.entities {
+	for e := range a.entities.all() {
 		if e.player != nil {
 			t.Error("map/a still has a player entity")
 		}
@@ -223,7 +223,7 @@ func TestWarpRules(t *testing.T) {
 	for now := int64(100); now <= 100+12*WalkSpeed; now += 50 {
 		a.stepAt(now)
 	}
-	if !a.entities[p.entity] || p.entity.x != 25 {
+	if !a.entities.has(p.entity) || p.entity.x != 25 {
 		t.Errorf("the player is at %d, want 25 on map/a", p.entity.x)
 	}
 	_ = b
@@ -339,7 +339,7 @@ func TestSameMapWarpTeleports(t *testing.T) {
 	for now := int64(100); now < 1000; now += 50 {
 		z.stepAt(now)
 	}
-	if p.entity.x != 30 || p.entity.y != 31 || !z.entities[p.entity] {
+	if p.entity.x != 30 || p.entity.y != 31 || !z.entities.has(p.entity) {
 		t.Fatalf("at %d,%d", p.entity.x, p.entity.y)
 	}
 	gone := false
@@ -362,7 +362,7 @@ func TestWakeResetsClock(t *testing.T) {
 	spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: 3, Speed: 400, CanMove: true}}
 	z := New("map/test", open(40), rng.FromKey([32]byte{2}).Stream(), spawns)
 	z.asleep = true
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		e.monster.nextWalk = 5
 	}
 	z.start = time.Now().Add(-time.Minute)
@@ -370,7 +370,7 @@ func TestWakeResetsClock(t *testing.T) {
 	if z.asleep || z.now < 60000 || z.prevHeal != z.now {
 		t.Errorf("after wake: asleep %v, now %d, prevHeal %d", z.asleep, z.now, z.prevHeal)
 	}
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.monster.nextWalk != -1 {
 			t.Error("a monster kept its old wander time")
 		}

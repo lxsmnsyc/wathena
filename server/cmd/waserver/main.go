@@ -28,6 +28,12 @@
 // on a loopback address. With --dev, the database is optional, and
 // characters only live in memory without it.
 //
+// --debug-addr serves the server's measurements and Go's profiles on a
+// loopback address, such as 127.0.0.1:8301 (server/README.md, "Load
+// tests and metrics"). --profile-dir is where a CPU profile is written
+// when a zone is over the tick budget. waserver prints the measurements
+// when it stops.
+//
 // --start-items gives every new character items, such as 501:10,512:20
 // for 10 Red Potions and 20 Apples. It is for development only.
 package main
@@ -48,7 +54,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -56,19 +61,18 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/assets/build"
 	"github.com/lxsmnsyc/wathena/internal/assets/serve"
-	"github.com/lxsmnsyc/wathena/internal/assets/wmap"
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
-	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
@@ -93,6 +97,8 @@ func run() error {
 	mode := flag.String("mode", "renewal", "rAthena mode whose recorded spawns to use: renewal or pre-renewal, or none")
 	build := flag.String("build", "all_1", "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank. Other builds than all_1 are for testing")
 	startItems := flag.String("start-items", "", "items every new character starts with, as id:amount pairs such as 501:10,512:20, for development")
+	debugAddr := flag.String("debug-addr", "", "loopback address to serve measurements and profiles on, such as 127.0.0.1:8301; empty serves none")
+	profileDir := flag.String("profile-dir", "", "folder for the CPU profiles taken when a zone is over the tick budget; empty takes none")
 	database := flag.String("database", "", "PostgreSQL URL to keep characters in; prefer the "+databaseEnv+" environment variable. Without either, characters only live in memory")
 	flag.Parse()
 	if *database == "" {
@@ -108,6 +114,9 @@ func run() error {
 		}
 	} else if *database == "" || accountDatabase == "" {
 		return errors.New("accounts need " + databaseEnv + " (the game role) and " + accountDatabaseEnv + " (the account role); use --dev for development without accounts")
+	}
+	if *debugAddr != "" && !loopback(*debugAddr) {
+		return errors.New("--debug-addr has no access control, so it only listens on a loopback address such as 127.0.0.1:8301")
 	}
 	clientOrigins := splitList(*origins)
 	trustedProxies, err := parseProxies(*proxies)
@@ -172,8 +181,10 @@ func run() error {
 		return err
 	}
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	reg := metrics.NewRegistry()
+	reg.Log, reg.ProfileDir = log, *profileDir
 	started := time.Now()
-	grids, err := loadGrids(*assets, names)
+	grids, err := world.LoadGrids(*assets, names)
 	if err != nil {
 		return err
 	}
@@ -187,6 +198,7 @@ func run() error {
 		z := zone.New(n, grids[i], root.Child("zone:"+id).SecretStream(), spawns[id])
 		z.Progress, z.Status, z.Start, z.Items, z.StartItems = tables, jobs, start, items, given
 		z.SetWarps(warps[n])
+		reg.AddZone(z.Metrics)
 		zones[i] = z
 		monsters += count(spawns[id])
 		warpCount += len(warps[n])
@@ -195,7 +207,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: clientOrigins, Log: log}
+	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: clientOrigins, Log: log, Metrics: &reg.Conns}
+	go reg.Conns.Run(ctx)
 	var st *store.Store
 	if *database != "" {
 		pool, err := openDatabase(ctx, *database, "waserver")
@@ -261,12 +274,31 @@ func run() error {
 		mux.Handle(account.Prefix, accounts)
 	}
 	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
+	servers := []*http.Server{srv}
+	if *debugAddr != "" {
+		servers = append(servers, &http.Server{Addr: *debugAddr, Handler: reg.Handler(), ReadHeaderTimeout: 10 * time.Second})
+	}
 	go func() {
 		<-ctx.Done()
 		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_ = srv.Shutdown(shutdown)
+		for _, s := range servers {
+			_ = s.Shutdown(shutdown)
+		}
 	}()
+	if *debugAddr != "" {
+		debug := servers[1]
+		ln, err := net.Listen("tcp", *debugAddr)
+		if err != nil {
+			return err
+		}
+		go func() {
+			if err := debug.Serve(ln); !errors.Is(err, http.ErrServerClosed) {
+				log.Error("debug server stopped", "err", err)
+			}
+		}()
+		log.Info("measurements", "metrics", "http://"+*debugAddr+"/debug/wathena/metrics", "profiles", "http://"+*debugAddr+"/debug/pprof/")
+	}
 	var mem runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&mem)
@@ -284,6 +316,7 @@ func run() error {
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
+	fmt.Fprint(os.Stderr, "\nmeasurements since the start or the last reset:\n", reg.Snapshot().Text())
 	return nil
 }
 
@@ -446,46 +479,6 @@ func selectMaps(dir, start, list string) ([]string, error) {
 		return nil, fmt.Errorf("the start map %s is not in --maps", start)
 	}
 	return names, nil
-}
-
-// loadGrids reads the maps' cells from the asset build, several at once.
-func loadGrids(dir string, names []string) ([]*path.Grid, error) {
-	grids := make([]*path.Grid, len(names))
-	errs := make([]error, len(names))
-	next := make(chan int)
-	var wg sync.WaitGroup
-	for range runtime.GOMAXPROCS(0) {
-		wg.Go(func() {
-			for i := range next {
-				grids[i], errs[i] = loadGrid(dir, names[i])
-			}
-		})
-	}
-	for i := range names {
-		next <- i
-	}
-	close(next)
-	wg.Wait()
-	return grids, errors.Join(errs...)
-}
-
-// loadGrid reads a map's cells from the asset build.
-func loadGrid(dir, name string) (*path.Grid, error) {
-	data, typ, err := build.ReadAsset(dir, name)
-	if err != nil {
-		return nil, err
-	}
-	if typ != "map" {
-		return nil, fmt.Errorf("%s is a %s, not a map", name, typ)
-	}
-	w, h, flags, err := wmap.DecodeCells(data)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", name, err)
-	}
-	for i := range flags {
-		flags[i] &= path.Walkable | path.Shootable
-	}
-	return &path.Grid{Width: w, Height: h, Cells: flags}, nil
 }
 
 // loadProgression reads the exp tables, level penalty, monster drops and

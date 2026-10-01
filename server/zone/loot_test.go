@@ -31,7 +31,7 @@ func lootZone(t *testing.T, reward *progression.Mob) (*Zone, *Player, *entity) {
 	z.PlayerStatus = battle.Status{MaxHP: 100, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	p := add(z, "a")
 	var m *entity
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.monster != nil {
 			m = e
 		}
@@ -44,13 +44,13 @@ func lootZone(t *testing.T, reward *progression.Mob) (*Zone, *Player, *entity) {
 // player saw.
 func kill(t *testing.T, z *Zone, p *Player, m *entity) []*wathenav1.Event {
 	t.Helper()
-	z.handle(command{player: p, seq: 1, attack: &attackCommand{target: p.netIDs[m], repeat: true}})
+	z.handle(command{player: p, seq: 1, attack: &attackCommand{target: p.netIDs.id(m), repeat: true}})
 	var seen []*wathenav1.Event
-	for start, now := z.now, z.now+50; now <= start+5000 && z.entities[m]; now += 50 {
+	for start, now := z.now, z.now+50; now <= start+5000 && z.entities.has(m); now += 50 {
 		z.stepAt(now)
 		seen = append(seen, events(p)...)
 	}
-	if z.entities[m] {
+	if z.entities.has(m) {
 		t.Fatal("the monster did not die")
 	}
 	// One more tick, so the items that fell show.
@@ -122,7 +122,7 @@ func TestKillGivesExpAndLevels(t *testing.T) {
 	}{{p, ev}, {b, events(b)}} {
 		var effects []uint32
 		for _, e := range viewer.ev {
-			if ef := e.GetEffect(); ef != nil && ef.GetEntity() == viewer.p.netIDs[p.entity] {
+			if ef := e.GetEffect(); ef != nil && ef.GetEntity() == viewer.p.netIDs.id(p.entity) {
 				effects = append(effects, ef.GetEffectId())
 			}
 		}
@@ -218,7 +218,7 @@ func dropOne(t *testing.T) (*Zone, *Player, *Player, *entity) {
 	kill(t, z, p, m)
 	events(b)
 	var it *entity
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.item != nil {
 			it = e
 		}
@@ -231,15 +231,15 @@ func dropOne(t *testing.T) (*Zone, *Player, *Player, *entity) {
 
 func TestPickUp(t *testing.T) {
 	z, p, b, it := dropOne(t)
-	z.handle(command{player: p, seq: 2, pickUp: new(p.netIDs[it])})
+	z.handle(command{player: p, seq: 2, pickUp: new(p.netIDs.id(it))})
 	for start, now := z.now, z.now+50; now <= start+1000; now += 50 {
 		z.stepAt(now)
-		if !z.entities[it] {
+		if !z.entities.has(it) {
 			break
 		}
 	}
-	if z.entities[it] || p.inventory.Count(909) != 1 {
-		t.Fatalf("item still there: %v, inventory %v", z.entities[it], p.inventory)
+	if z.entities.has(it) || p.inventory.Count(909) != 1 {
+		t.Fatalf("item still there: %v, inventory %v", z.entities.has(it), p.inventory)
 	}
 	// Both see the pick-up, then the item vanish. The picker gets it.
 	for _, viewer := range []*Player{p, b} {
@@ -247,7 +247,7 @@ func TestPickUp(t *testing.T) {
 		for _, e := range events(viewer) {
 			switch {
 			case e.HasItemTaken():
-				if e.GetItemTaken().GetSource() != viewer.netIDs[p.entity] {
+				if e.GetItemTaken().GetSource() != viewer.netIDs.id(p.entity) {
 					t.Errorf("%s: taken by %d", viewer.Name, e.GetItemTaken().GetSource())
 				}
 				order = append(order, "taken")
@@ -295,31 +295,31 @@ func TestPickUpNotYours(t *testing.T) {
 	z, _, b, it := dropOne(t)
 	// b did not fight, so it waits for all three looter times: 7 seconds.
 	dropped := z.now
-	z.handle(command{player: b, seq: 1, pickUp: new(b.netIDs[it])})
+	z.handle(command{player: b, seq: 1, pickUp: new(b.netIDs.id(it))})
 	for start, now := z.now, z.now+50; now <= start+1000; now += 50 {
 		z.stepAt(now)
 	}
 	if f := failures(b); len(f) != 1 || f[0] != wathenav1.PickUpFailure_PICK_UP_FAILURE_NOT_YOURS {
 		t.Fatalf("failures %v", f)
 	}
-	if !z.entities[it] || b.inventory.Count(909) != 0 {
+	if !z.entities.has(it) || b.inventory.Count(909) != 0 {
 		t.Fatal("b took the item")
 	}
 	for now := z.now + 50; now < dropped+7000; now += 50 {
 		z.stepAt(now)
 	}
-	z.handle(command{player: b, seq: 2, pickUp: new(b.netIDs[it])})
+	z.handle(command{player: b, seq: 2, pickUp: new(b.netIDs.id(it))})
 	z.stepAt(dropped + 7050)
-	if z.entities[it] || b.inventory.Count(909) != 1 {
+	if z.entities.has(it) || b.inventory.Count(909) != 1 {
 		t.Errorf("b could not take the item after 7 seconds")
 	}
 }
 
 func TestPickUpGone(t *testing.T) {
 	z, p, b, it := dropOne(t)
-	id := b.netIDs[it]
+	id := b.netIDs.id(it)
 	// p takes the item first.
-	z.handle(command{player: p, seq: 2, pickUp: new(p.netIDs[it])})
+	z.handle(command{player: p, seq: 2, pickUp: new(p.netIDs.id(it))})
 	z.stepAt(z.now + 50)
 	if p.inventory.Count(909) != 1 {
 		t.Fatal("p did not take the item")

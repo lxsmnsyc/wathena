@@ -89,7 +89,7 @@ func (z *Zone) logDamage(src, target *entity, damage int64) {
 // attacker reports on a player in a damage log.
 func (z *Zone) attacker(charID uint32) progression.Attacker {
 	p := z.players[charID]
-	if p == nil || !z.entities[p.entity] {
+	if p == nil || !z.entities.has(p.entity) {
 		return progression.Attacker{}
 	}
 	return progression.Attacker{Online: true, Dead: p.entity.dead, BaseLevel: p.progress.BaseLevel}
@@ -212,12 +212,12 @@ func (z *Zone) dropItems() {
 		dir := progression.DirCenter
 		for _, id := range f.items {
 			pl := progression.PlaceItem(z.cellFree, f.x, f.y, dir, z.rand)
-			z.entities[&entity{x: pl.X, y: pl.Y, item: &groundItem{
+			z.entities.add(&entity{x: pl.X, y: pl.Y, item: &groundItem{
 				id: id, amount: 1, subX: pl.SubX, subY: pl.SubY,
 				rights:  z.Progress.NewRights(f.first, f.second, f.third, z.now, f.boss),
 				expires: z.now + z.Progress.FloorItemLifetime,
 				fresh:   true,
-			}}] = true
+			}})
 			dir = progression.NextDropDir(dir)
 		}
 	}
@@ -230,7 +230,7 @@ func (z *Zone) cellFree(x, y int) bool {
 	if x < edgeCells || x > z.grid.Width-edgeCells || y < edgeCells || y > z.grid.Height-edgeCells || z.grid.NoPass(x, y) {
 		return false
 	}
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if (e.player != nil || e.monster != nil) && e.x == x && e.y == y {
 			return false
 		}
@@ -241,9 +241,9 @@ func (z *Zone) cellFree(x, y int) bool {
 // expireItems removes items that lay on the ground too long, as
 // map_clearflooritem_timer.
 func (z *Zone) expireItems() {
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.item != nil && z.now >= e.item.expires {
-			delete(z.entities, e)
+			z.entities.remove(e)
 			z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_EXPIRED})
 		}
 	}
@@ -255,8 +255,8 @@ func (z *Zone) expireItems() {
 func (z *Zone) startPickUp(p *Player, net uint32) {
 	me := p.entity
 	var it *entity
-	for e, id := range p.netIDs {
-		if id == net && e.item != nil && z.entities[e] {
+	for e, id := range p.netIDs.all() {
+		if id == net && e.item != nil && z.entities.has(e) {
 			it = e
 		}
 	}
@@ -280,13 +280,13 @@ func (z *Zone) startPickUp(p *Player, net uint32) {
 // pickUps moves players toward the items they want and takes the items
 // in reach.
 func (z *Zone) pickUps() {
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		it := e.pickItem
 		if it == nil {
 			continue
 		}
 		p := e.player
-		if !z.entities[it] {
+		if !z.entities.has(it) {
 			e.pickItem = nil
 			p.pending = append(p.pending, pickUpFailed(e.pickNet, wathenav1.PickUpFailure_PICK_UP_FAILURE_GONE))
 			continue
@@ -324,7 +324,7 @@ func (z *Zone) take(p *Player, it *entity, net uint32) {
 	}
 	// unit_stop_attack.
 	p.entity.target = nil
-	delete(z.entities, it)
+	z.entities.remove(it)
 	z.takes = append(z.takes, take{p.entity, it})
 	z.removed = append(z.removed, removal{it, wathenav1.VanishReason_VANISH_REASON_PICKED_UP})
 }
@@ -337,8 +337,8 @@ func pickUpFailed(item uint32, reason wathenav1.PickUpFailure) *wathenav1.Event 
 func (z *Zone) takeEvents(p *Player) []*wathenav1.Event {
 	var events []*wathenav1.Event
 	for _, t := range z.takes {
-		src, ok1 := p.netIDs[t.source]
-		item, ok2 := p.netIDs[t.item]
+		src, ok1 := p.netIDs.get(t.source)
+		item, ok2 := p.netIDs.get(t.item)
 		if ok1 && ok2 {
 			events = append(events, wathenav1.Event_builder{ItemTaken: wathenav1.ItemTaken_builder{Source: src, Item: item}.Build()}.Build())
 		}
@@ -350,7 +350,7 @@ func (z *Zone) takeEvents(p *Player) []*wathenav1.Event {
 func (z *Zone) effectEvents(p *Player) []*wathenav1.Event {
 	var events []*wathenav1.Event
 	for _, ef := range z.effects {
-		if id, ok := p.netIDs[ef.e]; ok {
+		if id, ok := p.netIDs.get(ef.e); ok {
 			events = append(events, wathenav1.Event_builder{Effect: wathenav1.EffectPlay_builder{EffectId: ef.id, Entity: &id}.Build()}.Build())
 		}
 	}

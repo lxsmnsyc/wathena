@@ -48,10 +48,10 @@ type StaleNotifier interface {
 // owns: the reason goes out, then the player leaves. Its last save is
 // ignored by the saver.
 func (z *Zone) loggedInElsewhere(p *Player) {
-	if p.dropped || p.entity == nil || !z.entities[p.entity] {
+	if p.gone() || p.entity == nil || !z.entities.has(p.entity) {
 		return
 	}
-	p.queue(loggedInElsewhereMessage())
+	z.queue(p, loggedInElsewhereMessage())
 	z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
 }
 

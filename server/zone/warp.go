@@ -55,16 +55,16 @@ type Directory interface {
 // overlap, the first warp wins. Visible warps become entities that
 // players see. It replaces the warps set before. Call it before Run.
 func (z *Zone) SetWarps(warps []Warp) {
-	for e := range z.entities {
+	for e := range z.entities.all() {
 		if e.warp != nil {
-			delete(z.entities, e)
+			z.entities.remove(e)
 		}
 	}
 	z.warps = warps
 	for i := range warps {
 		w := &warps[i]
 		if !w.Hidden {
-			z.entities[&entity{warp: w, x: w.X, y: w.Y}] = true
+			z.entities.add(&entity{warp: w, x: w.X, y: w.Y})
 		}
 	}
 }
@@ -100,7 +100,7 @@ func (z *Zone) warpNear(x, y, r int) bool {
 //   - The target map does not run in this world (SETPOS_NO_MAPSERVER).
 //   - The session is ending.
 func (z *Zone) target(p *Player, w *Warp) *Zone {
-	if p.entity.dead || p.dropped || p.sess == nil {
+	if p.entity.dead || p.gone() || p.sess == nil {
 		return nil
 	}
 	if p.rewarp > maxRewarp {
@@ -179,16 +179,20 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	}
 	z.remove(p, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT)
 	// The send runs on its own goroutine, so two zones that hand players
-	// to each other never wait on each other.
+	// to each other never wait on each other. It starts once this zone's
+	// messages to the player went out, so they come before the new
+	// zone's.
 	to.incoming.Add(1)
-	go func() {
-		defer to.incoming.Done()
-		select {
-		case to.arrivals <- h:
-		case <-to.stopped:
-			h.finish(endLeave)
-		}
-	}()
+	z.then(func() {
+		go func() {
+			defer to.incoming.Done()
+			select {
+			case to.arrivals <- h:
+			case <-to.stopped:
+				h.finish(endLeave)
+			}
+		}()
+	})
 	return true
 }
 
@@ -214,7 +218,7 @@ func (z *Zone) arrive(h *handoff) {
 // then the connection closes. A stale session gets its reason first.
 func (h *handoff) finish(why ending) {
 	s := h.sess
-	if why == endStale {
+	if why == endStale && !s.outClosed.closed.Load() {
 		select {
 		case s.out <- loggedInElsewhereMessage():
 		default:
@@ -223,7 +227,7 @@ func (h *handoff) finish(why ending) {
 	if s.saver != nil {
 		s.saver.Save(h.char, true)
 	}
-	close(s.out)
+	s.outClosed.close(s.out)
 	s.done()
 }
 
@@ -260,13 +264,13 @@ func (z *Zone) teleport(p *Player, x, y int) {
 	e.path = e.path[:0]
 	e.target, e.pickItem = nil, nil
 	z.forget(e)
-	for o := range z.entities {
+	for o := range z.entities.all() {
 		if o.player == nil || o == e {
 			continue
 		}
-		if id, ok := o.player.netIDs[e]; ok {
-			delete(o.player.netIDs, e)
-			o.player.queue(frame(z.tick, o.player.ackSeq, vanish(id, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT)))
+		if id, ok := o.player.netIDs.get(e); ok {
+			o.player.netIDs.del(e)
+			z.queue(o.player, frame(z.tick, o.player.ackSeq, vanish(id, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT)))
 		}
 	}
 	p.fresh = true
