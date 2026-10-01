@@ -1950,6 +1950,45 @@ Rules:
 - Actions that create items or zeny need a reason and are marked for review.
 - Admin UI code is loaded only after the server confirms the staff role, so normal players do not download it.
 
+### 10.7 Other clients
+
+The web client is the main client, but the protocol is open. Other clients can connect to the same servers. Planned work:
+
+1. **A guide to writing your own client.** It covers desktop apps, mobile apps, and other native clients.
+2. **A Go client.** A desktop client written in Go.
+3. **A Lua client.** A desktop client written in Lua with LÖVE (LOVE2D).
+
+#### Local game files
+
+Native clients keep the game data on the player's device instead of downloading it from the server.
+
+- On first start, the client asks the player for their RO client folder, such as the kRO client used for testing, or for one `data.grf` file.
+- A single `data.grf` must be complete. The client checks that it holds what the game needs, such as maps, sprites, textures, models, sounds, and the item and monster tables. It lists what is missing and refuses an incomplete file.
+- The client converts the files into the asset contract ([assets-v1](specs/assets-v1.md)) on the device, with the same converters `wactl assets build` uses. The result is cached, so the conversion runs once per client version.
+- The server never sends Gravity assets to these clients. This keeps the rule in the risks table that project infrastructure holds no Gravity assets.
+- Servers can still offer their own assets, such as mod assets, over HTTP as they do for the web client.
+
+#### What the guide covers
+
+- The protocol ([proposal 0001](proposals/0001-protocol.md)): connecting, `Hello`, frames, events, commands, and version checks. The schema in `schema/proto` generates code for most languages.
+- Login. The account service's cookies are `SameSite=Strict`, so a native client cannot fetch game tickets the way the web client does. Native clients need a login flow of their own, such as the authorization code flow with PKCE through the system browser and a loopback or app redirect. The player still types the password only on the account service's page (section 7.6). This flow is designed and built before the first native client ships.
+- Reading local game files: the GRF format, `DATA.INI` order, CP949 names, and the client's Lua tables, with the Go packages in `internal/grf` and `internal/assets` as the reference.
+- Rendering and timing: maps, sprites, effects, walk timing, and the shared pathfinding module (`shared/path`), which matches rAthena.
+- What the server trusts. It trusts nothing a client sends (section 4.1, item 9), so a native client gains no game advantage.
+
+#### Go client
+
+- Reuses the Go code that already exists: the GRF reader and converters, the generated protocol code, `shared/path`, and the bot client in `tools/botclient`.
+- Draws with a Go game library, chosen when the work starts. Ebitengine and raylib-go are candidates.
+- Runs on Windows, macOS, and Linux. Mobile builds are a later goal.
+
+#### Lua client
+
+- Uses LÖVE for windows, drawing, input, and audio.
+- Needs a Protocol Buffers library for Lua, a WebSocket library, and code to read the converted assets. The converted assets avoid reading GRF files in Lua.
+- Shows that the protocol and asset contract work without any of the project's Go code on the client side. The conversion can run through the `wactl` binary.
+- Gives modders who already know Lua a client they can change.
+
 ## 11. Feature inventory
 
 This list covers the systems in rAthena and what happens to each. Tiers:
@@ -2504,6 +2543,7 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 4. Classic mode: full `npc/` conversion, classic maps from player GRF files, and fixed spawns.
 5. Distributed deployment mode and load tests at 7,500 bots (section 3.7).
 6. Web client plugin API (section 10.4).
+7. Other clients (section 10.7): the guide to writing a client with local game files and the native login flow it needs, then the Go client, then the Lua client with LÖVE.
 
 ## 16. Risks
 
