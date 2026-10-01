@@ -5,21 +5,27 @@
 
 ## Purpose
 
-Item scripts add bonuses by name, such as `bonuses.add("luk", 2)`. This document gives a name to every rAthena bonus type, and defines the `"damage"` and `"damage_taken"` bonuses and the `"damage"` event. The converter and the generated API reference use the same table.
+Item scripts add bonuses by name, such as `bonuses.add("luk", 2)`. This document:
+
+- gives a name to every rAthena bonus type;
+- defines the options table that every bonus shares;
+- defines the `"damage"` and `"skill_used"` item events.
+
+The converter maps every rAthena bonus form to a `bonuses.add` call in this document. The generated API reference uses the same table.
 
 Sources:
 
 - `doc/item_bonus.txt` for the documented forms.
 - `src/map/pc.cpp` (`pc_bonus` to `pc_bonus5`) for the exact behavior, units, and signs.
+- `src/map/status.cpp` (`status_calc_pc`) for the order in which item scripts run.
 - `src/map/script_constants.hpp` for the full list of `b...` constants.
 - `db/re/item_db_*.yml` for the use counts. A count is the number of times the form appears in script text, including bonuses inside `autobonus` and combo scripts. rAthena matches bonus names without case, so `bHealpower2` counts as `bHealPower2`.
 
 Counts:
 
 - rAthena exports 242 `b...` constants. One of them, `bFame`, is not a bonus. That leaves 241 bonus types.
-- 33 types become the `"damage"` bonus (17 types) or the `"damage_taken"` bonus (16 types).
-- 8 types have no wAthena name of their own. The converter rewrites them into other names.
-- The other 200 types each map to a name of their own. Some share a name, with the `stacking` option or a different form.
+- wAthena has 127 bonus names, plus the `skill` bonus that grants a skill.
+- 33 rAthena types map to `"damage"` (17) or `"damage_taken"` (16).
 - 54 of the 242 constants have no use in renewal item data. The renewal data has 60,805 bonus calls in total.
 
 ## Naming rules
@@ -32,52 +38,64 @@ Counts:
    | Status window | `atk`, `matk`, `def`, `mdef`, `hit`, `flee`, `crit`, `aspd`, `hp`, `sp`, `ap` |
    | Trait stats | `pow`, `sta`, `wis`, `spl`, `con`, `crt`, `patk`, `smatk`, `res`, `mres`, `hplus`, `crate` |
 
-   - They appear alone (`"luk"`, `player.str`) or inside longer names (`"weapon_atk"`, `"aspd_percent"`, `player.base_str`).
-   - Every other word is written in full: `perfect_dodge`, `move_speed_percent`, `attack_range`, `zeny`.
+   - They appear alone (`"luk"`, `player.str`) or inside longer names (`"weapon_atk"`, `player.base_str`).
+   - Every other word is written in full: `perfect_dodge`, `move_speed`, `attack_range`, `zeny`.
    - Every name in this document is a valid Lua identifier, and none is a reserved word. `int`, `def`, `con`, and `res` are not reserved, so `player.int` and `bonuses.add("int", 1)` both work.
-2. **One name per quantity.** The `bonus2` to `bonus5` forms of one rAthena type share one name. Per-skill and per-item variants have their own names (`skill_cooldown`, `hp_recovery_from_item`).
-3. **Damage dealt and damage taken by percent are two bonuses**, `"damage"` and `"damage_taken"`. An options table says which hits they apply to. See "Damage and damage taken".
-4. **`_percent` marks a percent of a normally flat quantity.**
-   - It is used for stats, HP, SP, attack, defense, hit, flee, crit, speed, cast time, delay, and SP cost. So `max_hp` adds points and `max_hp_percent` adds a percent.
-   - Damage, healing, experience, and drop bonuses always scale a result. They never take the suffix, and their values are always percents.
-   - The suffix follows the quantity it qualifies: `ignore_def_percent_against_race`.
-5. **Chances are whole numbers per 10,000.** 10000 is 100%, and 1 is 0.01%. rAthena uses three units, so each row gives the rAthena unit and the conversion:
-   - "per 10,000": the converter copies the value.
-   - "per mille" (1000 is 100%): the converter multiplies by 10.
-   - "percent": the converter multiplies by 100.
-6. **Trigger flags go in the options table.** rAthena's `bf`, `atf`, and autospell `i` flags become fields of an optional last argument. See "Options table".
+2. **One name per quantity.** Variants of one quantity share its name, and options say which variant is meant:
+   - flat or percent: `{ percent = true }` (rule 4);
+   - all skills or one skill: `{ skill = ... }`;
+   - all items or one item: `{ item = ... }` or `{ item_group = ... }`;
+   - all targets or one kind of target: `{ against = ... }` or `{ from = ... }`;
+   - the trigger of a proc: `{ when = ... }`.
+
+   A separate name is kept only where the meaning differs. The table says why in each case.
+3. **Damage dealt and damage taken by percent are two bonuses**, `"damage"` and `"damage_taken"`. See "Damage and damage taken".
+4. **Flat and percent share a name.** `{ percent = true }` makes the amount a percent of the quantity: `bonuses.add("max_hp", 10, { percent = true })`.
+   - Each name allows one or both modes. The "Modes" column of the table lists them.
+   - A name that rAthena has only as a percent requires `percent = true`. Leaving it out raises an error.
+   - A name that rAthena has only as a flat value refuses `percent = true`.
+   - Some bonuses always scale a result: damage, healing, experience, drop rate, drain, and reflection. Their amount is always a percent of that result, as the table says. They take no `percent` option.
+5. **Chances are whole numbers per 10,000,** in the `chance` option. 10000 is 100%, and 1 is 0.01%. rAthena uses three units, so the table shows the conversion in each call:
+   - per 10,000: `chance = n`;
+   - per mille: `chance = n * 10`;
+   - percent: `chance = n * 100`.
+6. **Procs are named after their effect.** The chance and the trigger are options: `bonuses.add("cause_status", statuses.stun, { chance = 300, when = "hit_taken" })`. See "Procs".
 7. **Arguments have a fixed order.** The converter reorders rAthena's arguments to fit:
-   1. What the bonus applies to or acts with: records and constants such as a status, skill, item, item group, race, class, element, size, monster, monster group, or weapon type.
-   2. The chance, if the bonus has one.
-   3. The amount.
-   4. Other numbers, such as a skill level, a duration, an interval, or a DEF value, in rAthena's order.
-   5. The options table.
-8. **The value is the change to the named quantity.** A positive value raises the quantity, and a negative value lowers it. `"damage_taken"` with `-15` means 15% less damage taken. This flips the sign of rAthena's reduction bonuses. The "Sign" column marks the 22 flipped types, and the converter negates them.
-9. **Non-stacking bonuses use the `stacking` option.** See "Stacking".
+   1. what the bonus produces or applies to, if the name needs it: a status for `cause_status`, a skill and level for `cast` and `skill`, an element for `attack_element`;
+   2. the amount;
+   3. other numbers, such as the interval of `hp_gain_over_time`;
+   4. the options table.
+8. **The value is the change to the named quantity.** A positive value raises the quantity, and a negative value lowers it. `"damage_taken"` with `-15` means 15% less damage taken. This flips the sign of rAthena's reduction bonuses. The calls in the table show the flip as `-n`, and the "Sign" column marks the 22 flipped types.
+9. **Stacking is an option.** See "Stacking".
 10. **Other conventions.**
-    - Procs are `chance_to_<effect>`, such as `chance_to_cause_status`. A chance that is a property of an attack roll is `<thing>_chance`, such as `double_attack_chance`.
-    - In names that stay separate, `_against_<kind>` is used when the bonus changes the wearer's actions on that target, and `_from_<kind>` when it changes what that kind gives the wearer (experience, drops, rewards for a kill).
     - Times are milliseconds. Distances are cells. Weight is in tenths, as in wAthena's item weights (a Red Potion weighs 70).
-    - Flag bonuses take no value and are named after the state they give: `bonuses.add("no_knockback")`.
+    - Flag bonuses take no amount and are named after the state they give: `bonuses.add("no_knockback")`.
+    - An unknown option, an option the name does not accept, or a missing required option raises an error in `bonuses.add`.
 
 ## Options table
 
-The last argument of `bonuses.add` can be a table. A bonus accepts only the fields its row lists. An unknown field, or a field the bonus does not accept, raises an error in `bonuses.add`.
+The last argument of `bonuses.add` can be a table. Each row of the table lists which options its name accepts.
 
-| Field | Values | Used by | rAthena |
-|---|---|---|---|
-| `kind` | `"physical"`, `"magic"`, or `"misc"`. Omitted means every kind. | `damage`, `damage_taken`, procs | `BF_WEAPON`, `BF_MAGIC`, `BF_MISC`, `ATF_WEAPON`, `ATF_MAGIC`, `ATF_MISC` |
-| `range` | `"melee"` or `"ranged"`. Omitted means both. On `damage` and `damage_taken` it needs `kind = "physical"`. | `damage`, `damage_taken`, procs | `BF_SHORT`, `BF_LONG`, `ATF_SHORT`, `ATF_LONG` |
-| `attack` | `"normal"` (normal attacks) or `"skill"`. Omitted means both. | `damage` and `damage_taken` (element and race groups), procs | `BF_NORMAL`, `BF_SKILL` |
-| `element` | An element: the element of the hit. | `damage`, `damage_taken` | |
-| `skill` | A skill: the skill of the hit. | `damage`, `damage_taken` | |
-| `weapon_type` | A weapon type: the wearer's equipped weapon. | `damage` | |
-| `against` | A table with one key: the target of the hit. | `damage` | |
-| `from` | A table with one key: the source of the hit. | `damage_taken` | |
-| `target` | `"self"` or `"enemy"`: who gets the effect. | procs | `ATF_SELF`, `ATF_TARGET`, autospell `i & 1` |
-| `duration` | Milliseconds. | status procs | The `t` argument of `bonus4 bAddEff` and similar |
-| `random_level` | `true` picks a level from 1 to the given level. | autospell procs | Autospell `i & 2` |
-| `stacking` | `"highest"` or `"lowest"`. | Any bonus with an amount | See "Stacking" |
+| Option | Values | Meaning |
+|---|---|---|
+| `percent` | `true` | The amount is a percent of the quantity (rule 4). |
+| `skill` | A skill | The skill the bonus applies to. On `"damage"` and `"damage_taken"` it is the skill of the hit. On a proc with `when = "skill_used"`, it is the skill that triggers the proc. |
+| `item` | An item | The item the bonus applies to. |
+| `item_group` | An item group | The item group the bonus applies to. |
+| `kind` | `"physical"`, `"magic"`, or `"misc"` | The kind of hit. Omitted means every kind. rAthena's `BF_WEAPON`, `BF_MAGIC`, `BF_MISC`, and the `ATF_` equivalents. |
+| `range` | `"melee"` or `"ranged"` | The range of a physical hit. Omitted means both. It needs `kind = "physical"`. rAthena's `BF_SHORT`, `BF_LONG`, `ATF_SHORT`, `ATF_LONG`. |
+| `attack` | `"normal"` or `"skill"` | Normal attacks or skills. Omitted means both. rAthena's `BF_NORMAL`, `BF_SKILL`. |
+| `element` | An element | The element of the hit. |
+| `weapon_type` | A weapon type | The wearer's equipped weapon. |
+| `against` | A table with one key | The target. See the keys below. |
+| `from` | A table with one key | The source. See the keys below. |
+| `chance` | Integer per 10,000 | The chance of a proc. Required on every proc. |
+| `when` | `"attack"` (default), `"hit_taken"`, or `"skill_used"` | The trigger of a proc. |
+| `target` | `"self"` or `"enemy"` | Who gets a proc's effect. rAthena's `ATF_SELF`, `ATF_TARGET`, and autospell `i & 1`. |
+| `duration` | Milliseconds | How long a proc's effect lasts. |
+| `random_level` | `true` | `cast` picks a level from 1 to the given level. rAthena's autospell `i & 2`. |
+| `stacking` | `"sum"`, `"highest"`, `"lowest"`, `"last"`, or `"priority"` | See "Stacking". |
+| `priority` | Integer | Used with `stacking = "priority"`. |
 
 Keys of `against` and `from`:
 
@@ -91,18 +109,16 @@ Keys of `against` and `from`:
 | `monster` | A monster, from `monsters.id` | A monster ID in `bAddDamageClass` and similar |
 | `job` | A job from `wa.jobs`, when the other side is a player | The same argument. rAthena reads the number as a job ID when the other side is a player. |
 
-Examples:
-
-```lua
-bonuses.add("chance_to_cause_status", statuses.stun, 500, { range = "melee", duration = 3000 })
-bonuses.add("chance_to_cast", skills.id "MG_FIREBOLT", 50, 3, { kind = "magic", random_level = true })
-bonuses.add("damage", 10, { kind = "physical", against = { race = races.demi_human } })
-bonuses.add("damage_taken", -15, { from = { size = sizes.all } })
-```
+`against` names the target of the wearer's action: a hit, a skill, or a kill. `from` names the other side when the wearer is hit, and the monster that gives experience, drops, or a reward for a kill.
 
 ## Damage and damage taken
 
 `"damage"` changes damage the wearer deals by a percent. `"damage_taken"` changes damage the wearer takes by a percent. Both take the amount, then an options table.
+
+```lua
+bonuses.add("damage", 10, { kind = "physical", against = { race = races.demi_human } })
+bonuses.add("damage_taken", -15, { from = { size = sizes.all } })
+```
 
 ### Groups
 
@@ -113,7 +129,6 @@ rAthena keeps one sum per bonus type, such as one sum per race for `bAddRace`. I
 3. Each sum is applied as its own factor, at the step where rAthena applies it.
 4. A combination that is not in the tables raises an error in `bonuses.add`, since it has no rAthena sum. For example, `damage_taken` with `kind = "magic"` and `from = { race = ... }` fails.
 5. rAthena has no sum for damage of every kind against a target. On `"damage"`, an omitted `kind` with an `against` key adds the value to the physical sum and to the magic sum.
-6. Bonuses are kept as data. A computed value (a function) is allowed, as for any bonus.
 
 `"damage"` combinations:
 
@@ -161,7 +176,7 @@ rAthena keeps one sum per bonus type, such as one sum per race for `bAddRace`. I
 | `kind = "misc"` | `bMiscAtkDef` |
 | `skill` | `bSubSkill` |
 
-The `element` field is the element of the hit. The `element` key of `against` or `from` is the other entity's own element. So `bSubEle` (hits of element e) is `{ element = e }`, and `bSubDefEle` (attackers whose body has element e) is `{ from = { element = e } }`.
+The `element` option is the element of the hit. The `element` key of `against` or `from` is the other entity's own element. So `bSubEle` (hits of element e) is `{ element = e }`, and `bSubDefEle` (attackers whose body has element e) is `{ from = { element = e } }`.
 
 ### Bonuses that stay separate
 
@@ -171,47 +186,99 @@ These change damage too, but they are not a percent of damage dealt or taken in 
 |---|---|
 | `crit_damage`, `non_crit_damage`, `crit_damage_taken` | They depend on whether the hit is critical, which rAthena checks at the critical step, not in the sums. |
 | `skill_ratio` | It adds percentage points to a skill's ratio. It is not a percent of the damage. |
-| `physical_immunity`, `magic_immunity`, `misc_immunity` | They block part of a hit before every other reduction. The magic one also blocks heals and support skills. |
+| `immunity` | It blocks part of a hit before every other reduction. With `kind = "magic"` it also blocks heals and support skills. |
 | `damage_taken_cap` | It caps one hit at a percent of max HP. |
-| `melee_damage_reflected`, `ranged_damage_reflected`, `chance_to_reflect_magic`, `reflected_damage_taken` | They act on reflected damage, which has no kind or source in rAthena's sums. |
-| `ignore_def_...`, `ignore_mdef_...`, `ignore_res_...`, `ignore_mres_...`, `def_as_damage_...` | They change the target's defense, not the damage. |
-| `chance_to_set_def_against_race`, `chance_to_set_mdef_against_race` | Procs that change the target's defense. |
-| `chance_to_drain_hp`, `chance_to_drain_sp`, `hp_per_normal_attack...`, `sp_per_normal_attack...` | They heal the wearer. |
-| `chance_to_remove_hp`, `chance_to_remove_sp`, `chance_to_deal_max_hp_percent_against_race`, `chance_to_deal_max_sp_percent_against_race` | Procs that remove HP or SP by a percent of the target's pool, not of the damage. |
+| `damage_reflected`, `reflect_magic`, `reflected_damage_taken` | They act on reflected damage, which has no kind or source in rAthena's sums. |
+| `ignore_def`, `ignore_mdef`, `ignore_res`, `ignore_mres`, `def_as_damage`, `set_def`, `set_mdef` | They change the target's defense, not the damage. |
+| `drain_hp`, `drain_sp`, `hp_per_hit`, `sp_per_hit` | They heal the wearer. |
+| `remove_hp`, `remove_sp`, `deal_max_hp`, `deal_max_sp` | They remove HP or SP by a percent of the target's pool, not of the damage. |
 | `ignore_size_penalty` | A flag that turns off the weapon size table. |
+
+## Procs
+
+A proc is a bonus whose effect happens with a chance, on a trigger. Its name is the effect. The `chance` option is required.
+
+```lua
+bonuses.add("cause_status", statuses.stun, { chance = 300 })
+bonuses.add("cause_status", statuses.stun, { chance = 300, when = "hit_taken" })
+bonuses.add("cast", FIREBOLT, 3, { chance = 500, when = "hit_taken" })
+bonuses.add("coma", { chance = 10, against = { race = races.demi_human } })
+bonuses.add("drain_hp", 5, { chance = 100 })
+bonuses.add("break_weapon", { chance = 10 })
+```
+
+`when` values:
+
+| `when` | The proc rolls | Target options |
+|---|---|---|
+| `"attack"` (default) | When the wearer's hit lands. With `skill`, only hits of that skill. | `against` |
+| `"hit_taken"` | When a hit lands on the wearer. | `from` |
+| `"skill_used"` | When the wearer uses the skill in `skill`, also for skills that deal no damage. | `against` |
+
+Each proc row in the table lists the `when` values and options it accepts, following rAthena's forms. rAthena has no proc that rolls on a kill. Rewards for a kill are separate bonuses (`hp_per_kill`, `sp_per_kill`, `gain_zeny_on_kill`).
 
 ## Stacking
 
-`{ stacking = "highest" }` or `{ stacking = "lowest" }` stops a bonus from adding up with others of its kind. The rule:
+The `stacking` option says how several bonuses of one name combine.
 
-1. Bonuses with the same name, the same subjects (the arguments before the chance or amount), the same options other than `stacking`, and the same `stacking` value form a set.
-2. From the set, only one bonus counts: the one with the highest value for `"highest"`, or the lowest for `"lowest"`. The value compared is the chance if the bonus has one, or else the amount. "Highest" means the largest number, so of -10 and -20 it keeps -10.
-3. That one value is then added to the sum of the bonuses with the same name, subjects, and options that have no `stacking` option.
-4. Flag bonuses take no `stacking` option, since they have no value.
+| Value | Rule | Allowed on |
+|---|---|---|
+| `"sum"` | All values add up. | Default for every bonus with an amount or a chance, except the six one-value bonuses. |
+| `"highest"` | Only the highest value of the set counts. | Every bonus with an amount or a chance, except the six one-value bonuses. |
+| `"lowest"` | Only the lowest value of the set counts. | The same as `"highest"`. |
+| `"last"` | The bonus that comes last in rAthena's order wins. | Default for the six one-value bonuses. |
+| `"priority"` | The bonus with the highest `priority` wins. | The six one-value bonuses. |
 
-rAthena has seven types that keep only one value. The converter writes the option for them:
+Flag bonuses take no `stacking` option.
+
+**Sets.** Bonuses form a set when they have the same name, the same arguments before the amount, the same options other than `stacking`, `priority`, and `chance`, and a `stacking` value of the same group (`"sum"`, `"highest"`, and `"lowest"` form one group; `"last"` and `"priority"` the other).
+
+**`"highest"` and `"lowest"`.**
+
+1. Within a set, the bonuses with `"highest"` give one value: the largest. The bonuses with `"lowest"` give the smallest. The value compared is the chance on a proc, and the amount on any other bonus. "Highest" means the largest number, so of -10 and -20 it keeps -10.
+2. That value is added to the sum of the set's `"sum"` bonuses.
+3. On a proc, the kept bonus brings its other values with it. For `gain_zeny_on_kill`, the bonus with the highest chance brings its maximum zeny, as in rAthena.
+
+**The one-value bonuses.** Six bonuses keep a single value, because rAthena overwrites them instead of adding: `attack_element`, `defense_element`, `set_def`, `set_mdef`, `block_healing`, and `transform_monster`. Within a set:
+
+1. Each bonus has a priority: its `priority` option with `"priority"`, or 0 with `"last"`.
+2. The bonus with the highest priority wins.
+3. Among equal priorities, the bonus that comes last in rAthena's order wins.
+
+**rAthena's order** is the order in which `status_calc_pc` runs item scripts. It does not depend on when items were equipped:
+
+1. Equipment scripts, by slot: left accessory, right accessory, shoes, garment, lower head, middle head, upper head, armor, left hand, right hand, the four costume slots, ammo, and the six shadow slots.
+2. Combo scripts.
+3. Card scripts, by the slot of the item that holds the card, in the same order.
+4. Timed bonuses (`timers.with_bonuses` and `player:add_timed_bonuses`), in the order they started.
+
+Within one script, a later `bonuses.add` comes after an earlier one.
+
+rAthena's seven types that keep only one value of a sum map to these options:
 
 | rAthena | wAthena |
 |---|---|
-| `bonus bSpeedRate,n` | `move_speed_percent` with `{ stacking = "highest" }` |
-| `bonus bDoubleRate,n` | `double_attack_chance` with `{ stacking = "highest" }` |
-| `bonus bSplashRange,n` | `splash_range` with `{ stacking = "highest" }` |
-| `bonus bPerfectHitRate,n` | `perfect_hit_chance` with `{ stacking = "highest" }` |
-| `bonus2 bGetZenyNum,x,n` | `chance_to_gain_zeny_on_kill` with `{ stacking = "highest" }`. The kept bonus brings its maximum zeny, as in rAthena. |
-| `bonus bFixedCastrate,n` | `fixed_cast_time_percent` with `{ stacking = "lowest" }`. rAthena keeps the lowest value, which is the largest reduction. |
-| `bonus bAbsorbDmgMaxHP2,n` | `damage_taken_cap` with `{ stacking = "highest" }` |
+| `bonus bSpeedRate,n` | `"move_speed", n, { percent = true, stacking = "highest" }` |
+| `bonus bDoubleRate,n` | `"double_attack_chance", n * 100, { stacking = "highest" }` |
+| `bonus bSplashRange,n` | `"splash_range", n, { stacking = "highest" }` |
+| `bonus bPerfectHitRate,n` | `"perfect_hit_chance", n * 100, { stacking = "highest" }` |
+| `bonus2 bGetZenyNum,x,n` | `"gain_zeny_on_kill", x, { chance = n * 100, stacking = "highest" }` |
+| `bonus bFixedCastrate,n` | `"fixed_cast_time", n, { percent = true, stacking = "lowest" }`. rAthena keeps the lowest value, which is the largest reduction. |
+| `bonus bAbsorbDmgMaxHP2,n` | `"damage_taken_cap", n, { stacking = "highest" }` |
 
-Mods can use the option on any bonus with an amount.
+Mods can use `"highest"` and `"lowest"` on any bonus with an amount or a chance.
 
-## The damage event
+## Item events
 
-One event, `"damage"`, replaces `"attack"` and `"hit_taken"`. The `"skill_used"` event of the draft is not added. An item context gets the event for every hit where the wearer is the source or the target.
+An item context has three events: `"use"` (usable items), `"damage"`, and `"skill_used"`.
+
+### damage
+
+`"damage"` fires for every hit where the wearer is the source or the target.
 
 ```lua
 events.on("damage", function(hit) ... end)
 ```
-
-The handler gets one damage object:
 
 | Field | Meaning |
 |---|---|
@@ -226,8 +293,24 @@ The handler gets one damage object:
 | `wearer_is_source` | `true` when the wearer dealt the hit, `false` when the wearer took it. |
 
 - The event fires once per hit, after its damage is computed. A miss does not fire it.
-- The object is read-only, like every other API object. A handler cannot change the damage. That is the job of hooks.
 - The event name `"damage"` and the bonus name `"damage"` are in separate lists, so they do not clash.
+
+### skill_used
+
+`"skill_used"` fires every time the wearer uses a skill, also for skills that deal no damage, such as buffs. It fires once per use, when the skill takes effect, before its hits.
+
+```lua
+events.on("skill_used", function(use) ... end)
+```
+
+| Field | Meaning |
+|---|---|
+| `skill` | The skill. |
+| `level` | The level used. |
+| `target` | Handle of the target, or `nil` for a ground skill. |
+| `x`, `y` | The target cell. |
+
+Both event objects are read-only. A handler cannot change the damage or the skill. That is the job of hooks.
 
 ### autobonus, autobonus2, autobonus3
 
@@ -259,11 +342,11 @@ return function()
 end
 ```
 
-| rAthena | Condition in the `"damage"` handler | Uses in renewal data |
+| rAthena | wAthena | Uses in renewal data |
 |---|---|---|
-| `autobonus` | `hit.wearer_is_source` | 422 |
-| `autobonus2` | `not hit.wearer_is_source` | 52 |
-| `autobonus3` with skill sk | `hit.wearer_is_source and hit.skill == sk` | 158 |
+| `autobonus` | `"damage"` with `hit.wearer_is_source` | 422 |
+| `autobonus2` | `"damage"` with `not hit.wearer_is_source` | 52 |
+| `autobonus3` with skill sk | `"skill_used"` with `use.skill == sk` | 158 |
 
 - The `bf` flag becomes checks on `hit.kind`, `hit.range`, and `hit.skill`. `BF_NORMAL` is `hit.skill == nil`.
 - `timers.with_bonuses(ms, fn, { restart = handle })` cancels the given timer, if it still runs, before it starts the new one. This keeps rAthena's restart behavior.
@@ -286,7 +369,7 @@ wAthena: a consumable's `use` context ends at once, so the bonuses need the play
 ```lua
 events.on("use", function(player)
   player:add_timed_bonuses("hp_recovery_food", 1800000, {
-    { "natural_hp_recovery_percent", random.integer(11, 33) },
+    { "natural_hp_recovery", random.integer(11, 33), { percent = true } },
   }, { ends_on = { "death" } })
 end)
 ```
@@ -309,389 +392,332 @@ Arguments use the constant modules from proposal 0002 (`races`, `monster_classes
 Columns:
 
 - **rAthena**: the bonus command and its arguments. Several forms of one type are listed together.
-- **wAthena**: the name, or the `bonuses.add` call for damage bonuses.
-- **Arguments**: in wAthena's order, with units and the conversion.
+- **wAthena**: the arguments of `bonuses.add`, with the conversion written in. `sk`, `r`, `e`, and the other letters are rAthena's arguments, converted to wAthena constants.
+- **Modes**: for names with an amount, whether the amount is `flat`, `percent`, or both (rule 4). A flag has none.
 - **Meaning**: one line.
 - **Uses**: count in renewal item data, per form.
 - **Sign**: "flipped" if the converter negates the value.
 
 ### Base stats
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
+| rAthena | wAthena | Modes | Meaning | Uses |
 |---|---|---|---|---|
-| `bonus bStr,n` | `str` | points | STR + n. | 507 |
-| `bonus bAgi,n` | `agi` | points | AGI + n. | 442 |
-| `bonus bVit,n` | `vit` | points | VIT + n. | 389 |
-| `bonus bInt,n` | `int` | points | INT + n. | 780 |
-| `bonus bDex,n` | `dex` | points | DEX + n. | 643 |
-| `bonus bLuk,n` | `luk` | points | LUK + n. | 332 |
-| `bonus bAllStats,n` | `all_stats` | points | All six base stats + n. | 525 |
-| `bonus bAgiVit,n` | none | | AGI and VIT + n. The converter writes `agi` and `vit`. | 5 |
-| `bonus bAgiDexStr,n` | none | | STR, AGI, and DEX + n. The converter writes three bonuses. | 0 |
+| `bonus bStr,n` | `"str", n` | flat | STR + n. | 507 |
+| `bonus bAgi,n` | `"agi", n` | flat | AGI + n. | 442 |
+| `bonus bVit,n` | `"vit", n` | flat | VIT + n. | 389 |
+| `bonus bInt,n` | `"int", n` | flat | INT + n. | 780 |
+| `bonus bDex,n` | `"dex", n` | flat | DEX + n. | 643 |
+| `bonus bLuk,n` | `"luk", n` | flat | LUK + n. | 332 |
+| `bonus bAllStats,n` | `"all_stats", n` | flat | All six base stats + n. | 525 |
+| `bonus bAgiVit,n` | `"agi", n` and `"vit", n` | | AGI and VIT + n. | 5 |
+| `bonus bAgiDexStr,n` | `"str", n`, `"agi", n`, and `"dex", n` | | STR, AGI, and DEX + n. | 0 |
 
 ### Trait stats (fourth jobs)
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
+| rAthena | wAthena | Modes | Meaning | Uses |
 |---|---|---|---|---|
-| `bonus bPow,n` | `pow` | points | POW + n. | 407 |
-| `bonus bSta,n` | `sta` | points | STA + n. | 42 |
-| `bonus bWis,n` | `wis` | points | WIS + n. | 33 |
-| `bonus bSpl,n` | `spl` | points | SPL + n. | 306 |
-| `bonus bCon,n` | `con` | points | CON + n. | 281 |
-| `bonus bCrt,n` | `crt` | points | CRT + n. | 74 |
-| `bonus bAllTraitStats,n` | `all_trait_stats` | points | All six trait stats + n. | 18 |
-| `bonus bPatk,n` | `patk` | points | P.ATK + n. | 1203 |
-| `bonus bPAtkRate,n` | `patk_percent` | percent | P.ATK + n%. | 0 |
-| `bonus bSmatk,n` | `smatk` | points | S.MATK + n. | 752 |
-| `bonus bSMatkRate,n` | `smatk_percent` | percent | S.MATK + n%. | 0 |
-| `bonus bRes,n` | `res` | points | RES + n. | 217 |
-| `bonus bResRate,n` | `res_percent` | percent | RES + n%. | 0 |
-| `bonus bMres,n` | `mres` | points | MRES + n. | 151 |
-| `bonus bMResRate,n` | `mres_percent` | percent | MRES + n%. | 0 |
-| `bonus bHplus,n` | `hplus` | points | H.PLUS + n. | 21 |
-| `bonus bHPlusRate,n` | `hplus_percent` | percent | H.PLUS + n%. | 0 |
-| `bonus bCrate,n` | `crate` | points | C.RATE + n. | 125 |
-| `bonus bCRateRate,n` | `crate_percent` | percent | C.RATE + n%. | 0 |
+| `bonus bPow,n` | `"pow", n` | flat | POW + n. | 407 |
+| `bonus bSta,n` | `"sta", n` | flat | STA + n. | 42 |
+| `bonus bWis,n` | `"wis", n` | flat | WIS + n. | 33 |
+| `bonus bSpl,n` | `"spl", n` | flat | SPL + n. | 306 |
+| `bonus bCon,n` | `"con", n` | flat | CON + n. | 281 |
+| `bonus bCrt,n` | `"crt", n` | flat | CRT + n. | 74 |
+| `bonus bAllTraitStats,n` | `"all_trait_stats", n` | flat | All six trait stats + n. | 18 |
+| `bonus bPatk,n`<br>`bonus bPAtkRate,n` | `"patk", n`<br>`"patk", n, { percent = true }` | flat, percent | P.ATK + n, or + n%. | 1203<br>0 |
+| `bonus bSmatk,n`<br>`bonus bSMatkRate,n` | `"smatk", n`<br>`"smatk", n, { percent = true }` | flat, percent | S.MATK + n, or + n%. | 752<br>0 |
+| `bonus bRes,n`<br>`bonus bResRate,n` | `"res", n`<br>`"res", n, { percent = true }` | flat, percent | RES + n, or + n%. | 217<br>0 |
+| `bonus bMres,n`<br>`bonus bMResRate,n` | `"mres", n`<br>`"mres", n, { percent = true }` | flat, percent | MRES + n, or + n%. | 151<br>0 |
+| `bonus bHplus,n`<br>`bonus bHPlusRate,n` | `"hplus", n`<br>`"hplus", n, { percent = true }` | flat, percent | H.PLUS + n, or + n%. | 21<br>0 |
+| `bonus bCrate,n`<br>`bonus bCRateRate,n` | `"crate", n`<br>`"crate", n, { percent = true }` | flat, percent | C.RATE + n, or + n%. | 125<br>0 |
 
 ### HP, SP, and AP
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
+| rAthena | wAthena | Modes | Meaning | Uses |
 |---|---|---|---|---|
-| `bonus bMaxHP,n` | `max_hp` | points | Max HP + n. | 1565 |
-| `bonus bMaxHPrate,n` | `max_hp_percent` | percent | Max HP + n%. | 1579 |
-| `bonus bMaxSP,n` | `max_sp` | points | Max SP + n. | 581 |
-| `bonus bMaxSPrate,n` | `max_sp_percent` | percent | Max SP + n%. | 1042 |
-| `bonus bMaxAP,n` | `max_ap` | points | Max AP + n. | 0 |
-| `bonus bMaxAPrate,n` | `max_ap_percent` | percent | Max AP + n%. | 0 |
-| `bonus bHPrecovRate,n` | `natural_hp_recovery_percent` | percent | Natural HP recovery + n%. | 106 |
-| `bonus bSPrecovRate,n` | `natural_sp_recovery_percent` | percent | Natural SP recovery + n%. | 138 |
-| `bonus2 bHPRegenRate,n,t` | `hp_gain_over_time` | HP, interval in ms | Gain n HP every t ms. | 100 |
-| `bonus2 bHPLossRate,n,t` | `hp_loss_over_time` | HP, interval in ms | Lose n HP every t ms. | 48 |
-| `bonus2 bSPRegenRate,n,t` | `sp_gain_over_time` | SP, interval in ms | Gain n SP every t ms. | 132 |
-| `bonus2 bSPLossRate,n,t` | `sp_loss_over_time` | SP, interval in ms | Lose n SP every t ms. | 27 |
-| `bonus2 bRegenPercentHP,n,t` | `hp_gain_percent_over_time` | percent of max HP, interval in ms | Gain n% of max HP every t ms. | 4 |
-| `bonus2 bRegenPercentSP,n,t` | `sp_gain_percent_over_time` | percent of max SP, interval in ms | Gain n% of max SP every t ms. | 6 |
-| `bonus bNoRegen,x` | `no_hp_recovery`, `no_sp_recovery` | flag | Stops natural HP (x = 1) or SP (x = 2) recovery. The converter picks the name from x. | 17 |
-| `bonus bUseSPrate,n` | `sp_cost_percent` | percent | SP cost of all skills + n%. | 269 |
+| `bonus bMaxHP,n`<br>`bonus bMaxHPrate,n` | `"max_hp", n`<br>`"max_hp", n, { percent = true }` | flat, percent | Max HP + n, or + n%. | 1565<br>1579 |
+| `bonus bMaxSP,n`<br>`bonus bMaxSPrate,n` | `"max_sp", n`<br>`"max_sp", n, { percent = true }` | flat, percent | Max SP + n, or + n%. | 581<br>1042 |
+| `bonus bMaxAP,n`<br>`bonus bMaxAPrate,n` | `"max_ap", n`<br>`"max_ap", n, { percent = true }` | flat, percent | Max AP + n, or + n%. | 0<br>0 |
+| `bonus bHPrecovRate,n` | `"natural_hp_recovery", n, { percent = true }` | percent | Natural HP recovery + n%. | 106 |
+| `bonus bSPrecovRate,n` | `"natural_sp_recovery", n, { percent = true }` | percent | Natural SP recovery + n%. | 138 |
+| `bonus2 bHPRegenRate,n,t`<br>`bonus2 bRegenPercentHP,n,t` | `"hp_gain_over_time", n, t`<br>`"hp_gain_over_time", n, t, { percent = true }` | flat, percent (of max HP) | Gain n HP, or n% of max HP, every t ms. | 100<br>4 |
+| `bonus2 bSPRegenRate,n,t`<br>`bonus2 bRegenPercentSP,n,t` | `"sp_gain_over_time", n, t`<br>`"sp_gain_over_time", n, t, { percent = true }` | flat, percent (of max SP) | Gain n SP, or n% of max SP, every t ms. | 132<br>6 |
+| `bonus2 bHPLossRate,n,t` | `"hp_loss_over_time", n, t` | flat | Lose n HP every t ms. A separate name: rAthena keeps losses in their own list, apart from gains. | 48 |
+| `bonus2 bSPLossRate,n,t` | `"sp_loss_over_time", n, t` | flat | Lose n SP every t ms. Separate for the same reason. | 27 |
+| `bonus bNoRegen,1`<br>`bonus bNoRegen,2` | `"no_hp_recovery"`<br>`"no_sp_recovery"` | | Stops natural HP or SP recovery. | 17 |
 
 ### ATK and DEF
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
+| rAthena | wAthena | Modes | Meaning | Uses |
 |---|---|---|---|---|
-| `bonus bBaseAtk,n` | `atk` | points | Equipment ATK + n. This is the "ATK + n" of renewal items. | 2623 |
-| `bonus bAtk,n` | `weapon_atk` | points | Weapon ATK + n. rAthena marks it unofficial. | 1 |
-| `bonus bAtk2,n` | `refine_atk` | points | ATK that counts like refine ATK + n. | 1 |
-| `bonus bAtkRate,n` | `atk_percent` | percent | ATK + n%. | 1619 |
-| `bonus bWeaponAtkRate,n` | `weapon_atk_percent` | percent | Weapon ATK + n%. | 7 |
-| `bonus2 bWeaponAtk,w,n` | `atk_with_weapon_type` | weapon type, points | ATK + n while a weapon of type w is equipped. | 0 |
-| `bonus bMatk,n` | `matk` | points | MATK + n. | 1767 |
-| `bonus bMatk2,n` | `hidden_matk` | points | MATK + n, not shown in the status window. | 0 |
-| `bonus bMatkRate,n` | `matk_percent` | percent | MATK + n%. | 1495 |
-| `bonus bWeaponMatkRate,n` | `weapon_matk_percent` | percent | Weapon MATK + n%. | 0 |
-| `bonus bDef,n` | `def` | points | Equipment DEF + n. | 641 |
-| `bonus bDefRate,n` | `def_percent` | percent | Equipment DEF + n%. | 9 |
-| `bonus bDef2,n` | `status_def` | points | DEF from stats (VIT) + n. | 0 |
-| `bonus bDef2Rate,n` | `status_def_percent` | percent | DEF from stats + n%. | 5 |
-| `bonus bMdef,n` | `mdef` | points | Equipment MDEF + n. | 1346 |
-| `bonus bMdefRate,n` | `mdef_percent` | percent | Equipment MDEF + n%. | 5 |
-| `bonus bMdef2,n` | `status_mdef` | points | MDEF from stats (INT) + n. | 0 |
-| `bonus bMdef2Rate,n` | `status_mdef_percent` | percent | MDEF from stats + n%. | 0 |
-| `bonus bAtkRange,n` | `attack_range` | cells | Attack range + n. | 1 |
+| `bonus bBaseAtk,n`<br>`bonus bAtkRate,n`<br>`bonus2 bWeaponAtk,w,n` | `"atk", n`<br>`"atk", n, { percent = true }`<br>`"atk", n, { weapon_type = w }` | flat, percent | Equipment ATK + n (the "ATK + n" of renewal items), ATK + n%, or ATK + n while a weapon of type w is equipped. | 2623<br>1619<br>0 |
+| `bonus bAtk,n`<br>`bonus bWeaponAtkRate,n` | `"weapon_atk", n`<br>`"weapon_atk", n, { percent = true }` | flat, percent | Weapon ATK + n, or + n%. rAthena marks the flat form unofficial. | 1<br>7 |
+| `bonus bAtk2,n` | `"refine_atk", n` | flat | ATK that counts like refine ATK + n. | 1 |
+| `bonus bMatk,n`<br>`bonus bMatkRate,n` | `"matk", n`<br>`"matk", n, { percent = true }` | flat, percent | MATK + n, or + n%. | 1767<br>1495 |
+| `bonus bMatk2,n` | `"hidden_matk", n` | flat | MATK + n, not shown in the status window. A separate name: the status window shows `matk` but not this. | 0 |
+| `bonus bWeaponMatkRate,n` | `"weapon_matk", n, { percent = true }` | percent | Weapon MATK + n%. | 0 |
+| `bonus bDef,n`<br>`bonus bDefRate,n` | `"def", n`<br>`"def", n, { percent = true }` | flat, percent | Equipment DEF + n, or + n%. | 641<br>9 |
+| `bonus bDef2,n`<br>`bonus bDef2Rate,n` | `"status_def", n`<br>`"status_def", n, { percent = true }` | flat, percent | DEF from stats (VIT) + n, or + n%. | 0<br>5 |
+| `bonus bMdef,n`<br>`bonus bMdefRate,n` | `"mdef", n`<br>`"mdef", n, { percent = true }` | flat, percent | Equipment MDEF + n, or + n%. | 1346<br>5 |
+| `bonus bMdef2,n`<br>`bonus bMdef2Rate,n` | `"status_mdef", n`<br>`"status_mdef", n, { percent = true }` | flat, percent | MDEF from stats (INT) + n, or + n%. | 0<br>0 |
+| `bonus bAtkRange,n` | `"attack_range", n` | flat | Attack range + n cells. | 1 |
 
 ### HIT, FLEE, and CRIT
 
-| rAthena | wAthena | Arguments | Meaning | Uses | Sign |
+| rAthena | wAthena | Modes | Meaning | Uses | Sign |
 |---|---|---|---|---|---|
-| `bonus bHit,n` | `hit` | points | HIT + n. | 531 | |
-| `bonus bHitRate,n` | `hit_percent` | percent | HIT + n%. | 1 | |
-| `bonus bFlee,n` | `flee` | points | FLEE + n. | 426 | |
-| `bonus bFleeRate,n` | `flee_percent` | percent | FLEE + n%. | 1 | |
-| `bonus bFlee2,n` | `perfect_dodge` | points | Perfect Dodge + n. | 155 | |
-| `bonus bFlee2Rate,n` | `perfect_dodge_percent` | percent | Perfect Dodge + n%. | 0 | |
-| `bonus bCritical,n` | `crit` | points | CRIT + n. | 757 | |
-| `bonus bCriticalRate,n` | `crit_percent` | percent | CRIT + n%. | 4 | |
-| `bonus bCriticalLong,n` | `ranged_crit` | points | CRIT + n for ranged normal attacks only. Not shown in the status window. | 14 | |
-| `bonus2 bCriticalAddRace,r,n` | `crit_against_race` | race, points | CRIT + n against race r. | 41 | |
-| `bonus bCriticalDef,n` | `crit_chance_taken` | percent | The chance of being hit by a critical changes by n%. A relative change, not a chance, so it stays a percent. | 0 | flipped |
-| `bonus bPerfectHitRate,n` | `perfect_hit_chance` with `{ stacking = "highest" }` | chance (rAthena percent, × 100) | An attack always hits with this chance. | 1 | |
-| `bonus bPerfectHitAddRate,n` | `perfect_hit_chance` | chance (rAthena percent, × 100) | More chance that an attack always hits. | 193 | |
-| `bonus bDoubleRate,n` | `double_attack_chance` with `{ stacking = "highest" }` | chance (rAthena percent, × 100) | Chance of a double attack, with any weapon. | 0 | |
-| `bonus bDoubleAddRate,n` | `double_attack_chance` | chance (rAthena percent, × 100) | More chance of a double attack, with any weapon. | 0 | |
+| `bonus bHit,n`<br>`bonus bHitRate,n` | `"hit", n`<br>`"hit", n, { percent = true }` | flat, percent | HIT + n, or + n%. | 531<br>1 | |
+| `bonus bFlee,n`<br>`bonus bFleeRate,n` | `"flee", n`<br>`"flee", n, { percent = true }` | flat, percent | FLEE + n, or + n%. | 426<br>1 | |
+| `bonus bFlee2,n`<br>`bonus bFlee2Rate,n` | `"perfect_dodge", n`<br>`"perfect_dodge", n, { percent = true }` | flat, percent | Perfect Dodge + n, or + n%. | 155<br>0 | |
+| `bonus bCritical,n`<br>`bonus bCriticalRate,n`<br>`bonus bCriticalLong,n`<br>`bonus2 bCriticalAddRace,r,n` | `"crit", n`<br>`"crit", n, { percent = true }`<br>`"crit", n, { kind = "physical", range = "ranged", attack = "normal" }`<br>`"crit", n, { against = { race = r } }` | flat, percent | CRIT + n or + n%; CRIT + n for ranged normal attacks (not shown in the status window); CRIT + n against race r. | 757<br>4<br>14<br>41 | |
+| `bonus bCriticalDef,n` | `"crit_chance_taken", -n` | percent | The chance of being hit by a critical changes by n%. A relative change, so it is a percent, not a chance per 10,000. | 0 | flipped |
+| `bonus bPerfectHitRate,n`<br>`bonus bPerfectHitAddRate,n` | `"perfect_hit_chance", n * 100, { stacking = "highest" }`<br>`"perfect_hit_chance", n * 100` | per 10,000 | Chance that an attack always hits. | 1<br>193 | |
+| `bonus bDoubleRate,n`<br>`bonus bDoubleAddRate,n` | `"double_attack_chance", n * 100, { stacking = "highest" }`<br>`"double_attack_chance", n * 100` | per 10,000 | Chance of a double attack, with any weapon. | 0<br>0 | |
 
-### Speed and cast
+### Speed, cast, and delay
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
-|---|---|---|---|---|
-| `bonus bSpeedRate,n` | `move_speed_percent` with `{ stacking = "highest" }` | percent | Move speed + n%. It does not stack with speed potions. | 73 |
-| `bonus bSpeedAddRate,n` | `move_speed_percent` | percent | Move speed + n%. | 0 |
-| `bonus bAspd,n` | `aspd` | points | ASPD + n. | 296 |
-| `bonus bAspdRate,n` | `aspd_percent` | percent | ASPD + n%. | 1291 |
-| `bonus bVariableCastrate,n`<br>`bonus2 bVariableCastrate,sk,n` | `variable_cast_time_percent`<br>`skill_variable_cast_time_percent` | percent<br>skill, percent | Variable cast time + n%, for all skills or for skill sk. | 1209<br>229 |
-| `bonus bCastrate,n`<br>`bonus2 bCastrate,sk,n` | none | | Same as `bVariableCastrate` in renewal. The converter writes the variable cast names. | 1<br>0 |
-| `bonus bFixedCastrate,n`<br>`bonus2 bFixedCastrate,sk,n` | `fixed_cast_time_percent` with `{ stacking = "lowest" }`<br>`skill_fixed_cast_time_percent` | percent<br>skill, percent | Fixed cast time + n%, for all skills or for skill sk. | 67<br>61 |
-| `bonus bVariableCast,t` | `variable_cast_time` | ms | Variable cast time of all skills + t. | 1 |
-| `bonus2 bSkillVariableCast,sk,t` | `skill_variable_cast_time` | skill, ms | Variable cast time of skill sk + t. | 30 |
-| `bonus bFixedCast,t` | `fixed_cast_time` | ms | Fixed cast time of all skills + t. | 501 |
-| `bonus2 bSkillFixedCast,sk,t` | `skill_fixed_cast_time` | skill, ms | Fixed cast time of skill sk + t. | 28 |
-| `bonus bDelayrate,n` | `after_cast_delay_percent` | percent | After-cast delay of all skills + n%. | 1227 |
-| `bonus2 bSkillDelay,sk,t` | `skill_after_cast_delay` | skill, ms | After-cast delay of skill sk + t. | 0 |
-| `bonus bNoCastCancel` | `uninterruptible_cast` | flag | Casting is not interrupted by hits, except in guild wars. | 54 |
-| `bonus bNoCastCancel2` | `uninterruptible_cast_everywhere` | flag | Casting is not interrupted by hits, also in guild wars. | 3 |
-| `bonus bNoWalkDelay` | `always_endure` | flag | Hits never stop the wearer (permanent Endure). | 11 |
+| rAthena | wAthena | Modes | Meaning | Uses | Sign |
+|---|---|---|---|---|---|
+| `bonus bSpeedRate,n`<br>`bonus bSpeedAddRate,n` | `"move_speed", n, { percent = true, stacking = "highest" }`<br>`"move_speed", n, { percent = true }` | percent | Move speed + n%. The first form does not stack with speed potions. | 73<br>0 | |
+| `bonus bAspd,n`<br>`bonus bAspdRate,n` | `"aspd", n`<br>`"aspd", n, { percent = true }` | flat, percent | ASPD + n, or + n%. | 296<br>1291 | |
+| `bonus bVariableCast,t`<br>`bonus2 bSkillVariableCast,sk,t`<br>`bonus bVariableCastrate,n`<br>`bonus2 bVariableCastrate,sk,n` | `"variable_cast_time", t`<br>`"variable_cast_time", t, { skill = sk }`<br>`"variable_cast_time", n, { percent = true }`<br>`"variable_cast_time", n, { percent = true, skill = sk }` | flat (ms), percent | Variable cast time of all skills or of skill sk + t ms, or + n%. | 1<br>30<br>1209<br>229 | |
+| `bonus bCastrate,n`<br>`bonus2 bCastrate,sk,n` | `"variable_cast_time", n, { percent = true }`<br>`"variable_cast_time", n, { percent = true, skill = sk }` | | The same as `bVariableCastrate` in renewal. | 1<br>0 | |
+| `bonus bFixedCast,t`<br>`bonus2 bSkillFixedCast,sk,t`<br>`bonus bFixedCastrate,n`<br>`bonus2 bFixedCastrate,sk,n` | `"fixed_cast_time", t`<br>`"fixed_cast_time", t, { skill = sk }`<br>`"fixed_cast_time", n, { percent = true, stacking = "lowest" }`<br>`"fixed_cast_time", n, { percent = true, skill = sk }` | flat (ms), percent | Fixed cast time of all skills or of skill sk + t ms, or + n%. | 501<br>28<br>67<br>61 | |
+| `bonus bDelayrate,n`<br>`bonus2 bSkillDelay,sk,t` | `"after_cast_delay", n, { percent = true }`<br>`"after_cast_delay", t, { skill = sk }` | percent for all skills, flat (ms) with `skill` | After-cast delay of all skills + n%, or of skill sk + t ms. | 1227<br>0 | |
+| `bonus2 bSkillCooldown,sk,t` | `"cooldown", t, { skill = sk }` | flat (ms); `skill` required | Cooldown of skill sk + t. | 618 | |
+| `bonus bUseSPrate,n`<br>`bonus2 bSkillUseSP,sk,n`<br>`bonus2 bSkillUseSPrate,sk,n` | `"sp_cost", n, { percent = true }`<br>`"sp_cost", -n, { skill = sk }`<br>`"sp_cost", -n, { percent = true, skill = sk }` | percent for all skills; flat and percent with `skill` | SP cost of all skills + n%, or of skill sk + n SP or + n%. | 269<br>269<br>75 | flipped (both skill forms) |
+| `bonus bNoCastCancel` | `"uninterruptible_cast"` | | Casting is not interrupted by hits, except in guild wars. | 54 | |
+| `bonus bNoCastCancel2` | `"uninterruptible_cast_everywhere"` | | Casting is not interrupted by hits, also in guild wars. A separate name: the guild war rule differs, and both can be worn. | 3 | |
+| `bonus bNoWalkDelay` | `"always_endure"` | | Hits never stop the wearer (permanent Endure). | 11 | |
 
 ### Damage dealt
 
-All values are percents of damage dealt.
+All amounts are percents of damage dealt.
 
 | rAthena | wAthena | Meaning | Uses |
 |---|---|---|---|
-| `bonus2 bAddRace,r,x` | `bonuses.add("damage", x, { kind = "physical", against = { race = r } })` | Physical damage + x% against race r. | 1980 |
-| `bonus2 bMagicAddRace,r,x` | `bonuses.add("damage", x, { kind = "magic", against = { race = r } })` | Magic damage + x% against race r. | 1046 |
-| `bonus2 bAddClass,c,x` | `bonuses.add("damage", x, { kind = "physical", against = { class = c } })` | Physical damage + x% against class c. | 384 |
-| `bonus2 bMagicAddClass,c,x` | `bonuses.add("damage", x, { kind = "magic", against = { class = c } })` | Magic damage + x% against class c. | 91 |
-| `bonus2 bAddSize,s,x` | `bonuses.add("damage", x, { kind = "physical", against = { size = s } })` | Physical damage + x% against size s. | 867 |
-| `bonus2 bMagicAddSize,s,x` | `bonuses.add("damage", x, { kind = "magic", against = { size = s } })` | Magic damage + x% against size s. | 487 |
-| `bonus2 bAddEle,e,x`<br>`bonus3 bAddEle,e,x,bf` | `bonuses.add("damage", x, { kind = "physical", against = { element = e } })`<br>The same, with `kind`, `range`, and `attack` from bf | Physical damage + x% against targets of element e. | 1154<br>0 |
-| `bonus2 bMagicAddEle,e,x` | `bonuses.add("damage", x, { kind = "magic", against = { element = e } })` | Magic damage + x% against targets of element e. | 866 |
-| `bonus2 bAddRace2,mr,x` | `bonuses.add("damage", x, { kind = "physical", against = { monster_group = mr } })` | Physical damage + x% against monster group mr. | 59 |
-| `bonus2 bMagicAddRace2,mr,x` | `bonuses.add("damage", x, { kind = "magic", against = { monster_group = mr } })` | Magic damage + x% against monster group mr. | 46 |
-| `bonus2 bAddDamageClass,mid,x` | `bonuses.add("damage", x, { kind = "physical", against = { monster = mid } })` | Physical damage + x% against monster mid. For a job, `against = { job = ... }`. | 60 |
-| `bonus2 bAddMagicDamageClass,mid,x` | `bonuses.add("damage", x, { kind = "magic", against = { monster = mid } })` | Magic damage + x% against monster mid. | 24 |
-| `bonus2 bMagicAtkEle,e,x` | `bonuses.add("damage", x, { kind = "magic", element = e })` | Damage of the wearer's element e magic + x%. | 2531 |
-| `bonus bShortAtkRate,n` | `bonuses.add("damage", n, { kind = "physical", range = "melee" })` | Melee physical damage + n%. | 951 |
-| `bonus bLongAtkRate,n` | `bonuses.add("damage", n, { kind = "physical", range = "ranged" })` | Ranged physical damage + n%. | 1637 |
-| `bonus2 bWeaponDamageRate,w,n` | `bonuses.add("damage", n, { kind = "physical", weapon_type = w })` | Physical damage + n% while a weapon of type w is equipped. | 20 |
-| `bonus2 bSkillAtk,sk,n` | `bonuses.add("damage", n, { skill = sk })` | Damage of skill sk + n%. | 7893 |
-| `bonus bCritAtkRate,n` | `crit_damage` (percent) | Critical damage + n%. | 732 |
-| `bonus bNonCritAtkRate,n` | `non_crit_damage` (percent) | Non-critical damage + n%. | 79 |
-| `bonus bSkillRatio,n` | `skill_ratio` (percentage points) | Adds n to the damage ratio of every attack and skill. | 0 |
-| `bonus bNoSizeFix` | `ignore_size_penalty` (flag) | Weapon size penalties do not apply. | 29 |
+| `bonus2 bAddRace,r,x` | `"damage", x, { kind = "physical", against = { race = r } }` | Physical damage + x% against race r. | 1980 |
+| `bonus2 bMagicAddRace,r,x` | `"damage", x, { kind = "magic", against = { race = r } }` | Magic damage + x% against race r. | 1046 |
+| `bonus2 bAddClass,c,x` | `"damage", x, { kind = "physical", against = { class = c } }` | Physical damage + x% against class c. | 384 |
+| `bonus2 bMagicAddClass,c,x` | `"damage", x, { kind = "magic", against = { class = c } }` | Magic damage + x% against class c. | 91 |
+| `bonus2 bAddSize,s,x` | `"damage", x, { kind = "physical", against = { size = s } }` | Physical damage + x% against size s. | 867 |
+| `bonus2 bMagicAddSize,s,x` | `"damage", x, { kind = "magic", against = { size = s } }` | Magic damage + x% against size s. | 487 |
+| `bonus2 bAddEle,e,x`<br>`bonus3 bAddEle,e,x,bf` | `"damage", x, { kind = "physical", against = { element = e } }`<br>The same, with `kind`, `range`, and `attack` from bf | Physical damage + x% against targets of element e. | 1154<br>0 |
+| `bonus2 bMagicAddEle,e,x` | `"damage", x, { kind = "magic", against = { element = e } }` | Magic damage + x% against targets of element e. | 866 |
+| `bonus2 bAddRace2,mr,x` | `"damage", x, { kind = "physical", against = { monster_group = mr } }` | Physical damage + x% against monster group mr. | 59 |
+| `bonus2 bMagicAddRace2,mr,x` | `"damage", x, { kind = "magic", against = { monster_group = mr } }` | Magic damage + x% against monster group mr. | 46 |
+| `bonus2 bAddDamageClass,mid,x` | `"damage", x, { kind = "physical", against = { monster = mid } }` | Physical damage + x% against monster mid. For a job, `against = { job = ... }`. | 60 |
+| `bonus2 bAddMagicDamageClass,mid,x` | `"damage", x, { kind = "magic", against = { monster = mid } }` | Magic damage + x% against monster mid. | 24 |
+| `bonus2 bMagicAtkEle,e,x` | `"damage", x, { kind = "magic", element = e }` | Damage of the wearer's element e magic + x%. | 2531 |
+| `bonus bShortAtkRate,n` | `"damage", n, { kind = "physical", range = "melee" }` | Melee physical damage + n%. | 951 |
+| `bonus bLongAtkRate,n` | `"damage", n, { kind = "physical", range = "ranged" }` | Ranged physical damage + n%. | 1637 |
+| `bonus2 bWeaponDamageRate,w,n` | `"damage", n, { kind = "physical", weapon_type = w }` | Physical damage + n% while a weapon of type w is equipped. | 20 |
+| `bonus2 bSkillAtk,sk,n` | `"damage", n, { skill = sk }` | Damage of skill sk + n%. | 7893 |
+| `bonus bCritAtkRate,n` | `"crit_damage", n` | Critical damage + n%. | 732 |
+| `bonus bNonCritAtkRate,n` | `"non_crit_damage", n` | Non-critical damage + n%. | 79 |
+| `bonus bSkillRatio,n` | `"skill_ratio", n` | Adds n percentage points to the damage ratio of every attack and skill. | 0 |
+| `bonus bNoSizeFix` | `"ignore_size_penalty"` | Weapon size penalties do not apply. | 29 |
 
 ### Ignoring and changing defense
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
+`ignore_def` and `ignore_mdef` have two modes. Without an amount, they ignore all of the target's DEF or MDEF. With an amount and `percent = true`, they ignore that percent.
+
+| rAthena | wAthena | Modes | Meaning | Uses |
 |---|---|---|---|---|
-| `bonus bIgnoreDefRace,r` | `ignore_def_against_race` | race | Ignore DEF of race r. | 47 |
-| `bonus bIgnoreDefEle,e` | `ignore_def_against_element` | element | Ignore DEF of element e. | 0 |
-| `bonus bIgnoreDefClass,c` | `ignore_def_against_class` | class | Ignore DEF of class c. | 20 |
-| `bonus bIgnoreMdefRace,r` | `ignore_mdef_against_race` | race | Ignore MDEF of race r. | 1 |
-| `bonus bIgnoreMdefEle,e` | `ignore_mdef_against_element` | element | Ignore MDEF of element e. | 0 |
-| `bonus2 bIgnoreDefRaceRate,r,n` | `ignore_def_percent_against_race` | race, percent | Ignore n% of DEF of race r. | 656 |
-| `bonus2 bIgnoreDefClassRate,c,n` | `ignore_def_percent_against_class` | class, percent | Ignore n% of DEF of class c. | 32 |
-| `bonus2 bIgnoreMdefRaceRate,r,n` | `ignore_mdef_percent_against_race` | race, percent | Ignore n% of MDEF of race r. | 308 |
-| `bonus2 bIgnoreMdefClassRate,c,n` | `ignore_mdef_percent_against_class` | class, percent | Ignore n% of MDEF of class c. | 58 |
-| `bonus2 bIgnoreMdefRace2Rate,mr,n` | `ignore_mdef_percent_against_monster_group` | monster group, percent | Ignore n% of MDEF of monster group mr. | 1 |
-| `bonus2 bIgnoreResRaceRate,r,n` | `ignore_res_percent_against_race` | race, percent | Ignore n% of RES of race r. | 18 |
-| `bonus2 bIgnoreMResRaceRate,r,n` | `ignore_mres_percent_against_race` | race, percent | Ignore n% of MRES of race r. | 18 |
-| `bonus bDefRatioAtkRace,r` | `def_as_damage_against_race` | race | Against race r, ignore DEF and deal more damage the higher the DEF. | 0 |
-| `bonus bDefRatioAtkEle,e` | `def_as_damage_against_element` | element | The same, against element e. | 0 |
-| `bonus bDefRatioAtkClass,c` | `def_as_damage_against_class` | class | The same, against class c. | 14 |
-| `bonus4 bSetDefRace,r,n,t,y` | `chance_to_set_def_against_race` | race, chance (rAthena per 10,000, copied), DEF value, duration in ms | Normal attacks have this chance to set the DEF of race r to y for t ms. | 5 |
-| `bonus4 bSetMDefRace,r,n,t,y` | `chance_to_set_mdef_against_race` | race, chance (rAthena per 10,000, copied), MDEF value, duration in ms | The same for MDEF. | 5 |
+| `bonus bIgnoreDefRace,r`<br>`bonus bIgnoreDefEle,e`<br>`bonus bIgnoreDefClass,c` | `"ignore_def", { against = { race = r } }`<br>`"ignore_def", { against = { element = e } }`<br>`"ignore_def", { against = { class = c } }` | full | Ignore DEF of race r, element e, or class c. | 47<br>0<br>20 |
+| `bonus2 bIgnoreDefRaceRate,r,n`<br>`bonus2 bIgnoreDefClassRate,c,n` | `"ignore_def", n, { percent = true, against = { race = r } }`<br>`"ignore_def", n, { percent = true, against = { class = c } }` | percent | Ignore n% of DEF of race r or class c. | 656<br>32 |
+| `bonus bIgnoreMdefRace,r`<br>`bonus bIgnoreMdefEle,e` | `"ignore_mdef", { against = { race = r } }`<br>`"ignore_mdef", { against = { element = e } }` | full | Ignore MDEF of race r or element e. | 1<br>0 |
+| `bonus2 bIgnoreMdefRaceRate,r,n`<br>`bonus2 bIgnoreMdefClassRate,c,n`<br>`bonus2 bIgnoreMdefRace2Rate,mr,n` | `"ignore_mdef", n, { percent = true, against = { race = r } }`<br>`"ignore_mdef", n, { percent = true, against = { class = c } }`<br>`"ignore_mdef", n, { percent = true, against = { monster_group = mr } }` | percent | Ignore n% of MDEF of race r, class c, or monster group mr. | 308<br>58<br>1 |
+| `bonus2 bIgnoreResRaceRate,r,n` | `"ignore_res", n, { percent = true, against = { race = r } }` | percent | Ignore n% of RES of race r. | 18 |
+| `bonus2 bIgnoreMResRaceRate,r,n` | `"ignore_mres", n, { percent = true, against = { race = r } }` | percent | Ignore n% of MRES of race r. | 18 |
+| `bonus bDefRatioAtkRace,r`<br>`bonus bDefRatioAtkEle,e`<br>`bonus bDefRatioAtkClass,c` | `"def_as_damage", { against = { race = r } }`<br>`"def_as_damage", { against = { element = e } }`<br>`"def_as_damage", { against = { class = c } }` | | Ignore DEF and deal more damage the higher the DEF of race r, element e, or class c. | 0<br>0<br>14 |
+| `bonus4 bSetDefRace,r,n,t,y` | `"set_def", y, { chance = n, against = { race = r }, attack = "normal", duration = t }` | flat | Normal attacks may set the DEF of race r to y for t ms. Proc; one-value bonus. | 5 |
+| `bonus4 bSetMDefRace,r,n,t,y` | `"set_mdef", y, { chance = n, against = { race = r }, attack = "normal", duration = t }` | flat | The same for MDEF. | 5 |
 
 ### Damage taken
 
-All values are percents of damage taken. A negative value means less damage.
+All amounts are percents of damage taken. A negative value means less damage.
 
 | rAthena | wAthena | Meaning | Uses | Sign |
 |---|---|---|---|---|
-| `bonus2 bSubRace,r,x`<br>`bonus3 bSubRace,r,x,bf` | `bonuses.add("damage_taken", -x, { from = { race = r } })`<br>The same, with `kind`, `range`, and `attack` from bf | Damage taken from race r changes. | 1631<br>1 | flipped |
-| `bonus2 bSubClass,c,x` | `bonuses.add("damage_taken", -x, { from = { class = c } })` | Damage taken from class c changes. | 281 | flipped |
-| `bonus2 bSubSize,s,x` | `bonuses.add("damage_taken", -x, { from = { size = s } })` | Damage taken from size s changes. | 147 | flipped |
-| `bonus2 bWeaponSubSize,s,x` | `bonuses.add("damage_taken", -x, { kind = "physical", from = { size = s } })` | Physical damage taken from size s changes. | 0 | flipped |
-| `bonus2 bMagicSubSize,s,x` | `bonuses.add("damage_taken", -x, { kind = "magic", from = { size = s } })` | Magic damage taken from size s changes. | 2 | flipped |
-| `bonus2 bSubEle,e,x`<br>`bonus3 bSubEle,e,x,bf` | `bonuses.add("damage_taken", -x, { element = e })`<br>The same, with `kind`, `range`, and `attack` from bf | Damage taken from hits of element e changes. | 931<br>12 | flipped |
-| `bonus2 bSubDefEle,e,x` | `bonuses.add("damage_taken", -x, { kind = "physical", from = { element = e } })` | Physical damage taken from attackers whose own element is e changes. | 8 | flipped |
-| `bonus2 bMagicSubDefEle,e,x` | `bonuses.add("damage_taken", -x, { kind = "magic", from = { element = e } })` | The same for magic damage. | 3 | flipped |
-| `bonus2 bSubRace2,mr,x` | `bonuses.add("damage_taken", -x, { from = { monster_group = mr } })` | Damage taken from monster group mr changes. | 30 | flipped |
-| `bonus2 bAddDefMonster,mid,x` | `bonuses.add("damage_taken", -x, { kind = "physical", from = { monster = mid } })` | Physical damage taken from monster mid changes. For a job, `from = { job = ... }`. | 33 | flipped |
-| `bonus2 bAddMdefMonster,mid,x` | `bonuses.add("damage_taken", -x, { kind = "magic", from = { monster = mid } })` | Magic damage taken from monster mid changes. | 3 | flipped |
-| `bonus bNearAtkDef,n` | `bonuses.add("damage_taken", -n, { kind = "physical", range = "melee" })` | Melee physical damage taken changes. | 11 | flipped |
-| `bonus bLongAtkDef,n` | `bonuses.add("damage_taken", -n, { kind = "physical", range = "ranged" })` | Ranged physical damage taken changes. | 83 | flipped |
-| `bonus bMagicAtkDef,n` | `bonuses.add("damage_taken", -n, { kind = "magic" })` | Magic damage taken changes. | 2 | flipped |
-| `bonus bMiscAtkDef,n` | `bonuses.add("damage_taken", -n, { kind = "misc" })` | Misc damage taken (traps, falcon) changes. | 0 | flipped |
-| `bonus2 bSubSkill,sk,n` | `bonuses.add("damage_taken", -n, { skill = sk })` | Damage taken from skill sk changes. | 24 | flipped |
-| `bonus bCritDefRate,n` | `crit_damage_taken` (percent) | Critical damage taken changes by n%. | 0 | flipped |
-| `bonus bNoWeaponDamage,n` | `physical_immunity` (percent) | Blocks n% of physical damage, before other reductions. | 0 | |
-| `bonus bNoMagicDamage,n` | `magic_immunity` (percent) | Blocks n% of magic. This also blocks heals and support skills. | 3 | |
-| `bonus bNoMiscDamage,n` | `misc_immunity` (percent) | Blocks n% of misc damage. | 0 | |
-| `bonus bAbsorbDmgMaxHP2,n` | `damage_taken_cap` with `{ stacking = "highest" }` (percent of max HP) | A hit above n% of max HP is reduced to n% of max HP. | 1 | |
-| `bonus bAbsorbDmgMaxHP,n` | none | Old rAthena form of the cap. Not official. The converter writes `damage_taken_cap`. | 0 | |
-| `bonus bShortWeaponDamageReturn,n` | `melee_damage_reflected` (percent) | Reflects n% of melee damage taken. | 45 | |
-| `bonus bLongWeaponDamageReturn,n` | `ranged_damage_reflected` (percent) | Reflects n% of ranged damage taken. | 0 | |
-| `bonus bMagicDamageReturn,n` | `chance_to_reflect_magic` (chance; rAthena percent, × 100) | Chance to reflect a targeted spell back to its caster. | 11 | |
-| `bonus bReduceDamageReturn,n` | `reflected_damage_taken` (percent) | Damage taken from reflection changes by n%. | 39 | flipped |
+| `bonus2 bSubRace,r,x`<br>`bonus3 bSubRace,r,x,bf` | `"damage_taken", -x, { from = { race = r } }`<br>The same, with `kind`, `range`, and `attack` from bf | Damage taken from race r changes. | 1631<br>1 | flipped |
+| `bonus2 bSubClass,c,x` | `"damage_taken", -x, { from = { class = c } }` | Damage taken from class c changes. | 281 | flipped |
+| `bonus2 bSubSize,s,x` | `"damage_taken", -x, { from = { size = s } }` | Damage taken from size s changes. | 147 | flipped |
+| `bonus2 bWeaponSubSize,s,x` | `"damage_taken", -x, { kind = "physical", from = { size = s } }` | Physical damage taken from size s changes. | 0 | flipped |
+| `bonus2 bMagicSubSize,s,x` | `"damage_taken", -x, { kind = "magic", from = { size = s } }` | Magic damage taken from size s changes. | 2 | flipped |
+| `bonus2 bSubEle,e,x`<br>`bonus3 bSubEle,e,x,bf` | `"damage_taken", -x, { element = e }`<br>The same, with `kind`, `range`, and `attack` from bf | Damage taken from hits of element e changes. | 931<br>12 | flipped |
+| `bonus2 bSubDefEle,e,x` | `"damage_taken", -x, { kind = "physical", from = { element = e } }` | Physical damage taken from attackers whose own element is e changes. | 8 | flipped |
+| `bonus2 bMagicSubDefEle,e,x` | `"damage_taken", -x, { kind = "magic", from = { element = e } }` | The same for magic damage. | 3 | flipped |
+| `bonus2 bSubRace2,mr,x` | `"damage_taken", -x, { from = { monster_group = mr } }` | Damage taken from monster group mr changes. | 30 | flipped |
+| `bonus2 bAddDefMonster,mid,x` | `"damage_taken", -x, { kind = "physical", from = { monster = mid } }` | Physical damage taken from monster mid changes. For a job, `from = { job = ... }`. | 33 | flipped |
+| `bonus2 bAddMdefMonster,mid,x` | `"damage_taken", -x, { kind = "magic", from = { monster = mid } }` | Magic damage taken from monster mid changes. | 3 | flipped |
+| `bonus bNearAtkDef,n` | `"damage_taken", -n, { kind = "physical", range = "melee" }` | Melee physical damage taken changes. | 11 | flipped |
+| `bonus bLongAtkDef,n` | `"damage_taken", -n, { kind = "physical", range = "ranged" }` | Ranged physical damage taken changes. | 83 | flipped |
+| `bonus bMagicAtkDef,n` | `"damage_taken", -n, { kind = "magic" }` | Magic damage taken changes. | 2 | flipped |
+| `bonus bMiscAtkDef,n` | `"damage_taken", -n, { kind = "misc" }` | Misc damage taken (traps, falcon) changes. | 0 | flipped |
+| `bonus2 bSubSkill,sk,n` | `"damage_taken", -n, { skill = sk }` | Damage taken from skill sk changes. | 24 | flipped |
+| `bonus bCritDefRate,n` | `"crit_damage_taken", -n` | Critical damage taken changes by n%. | 0 | flipped |
+| `bonus bNoWeaponDamage,n`<br>`bonus bNoMagicDamage,n`<br>`bonus bNoMiscDamage,n` | `"immunity", n, { kind = "physical" }`<br>`"immunity", n, { kind = "magic" }`<br>`"immunity", n, { kind = "misc" }` | Blocks n% of hits of that kind, before other reductions. Magic immunity also blocks heals and support skills. `kind` is required. | 0<br>3<br>0 | |
+| `bonus bAbsorbDmgMaxHP2,n`<br>`bonus bAbsorbDmgMaxHP,n` | `"damage_taken_cap", n, { stacking = "highest" }`<br>The same | A hit above n% of max HP is reduced to n% of max HP. The second form is rAthena's old, unofficial cap. | 1<br>0 | |
+| `bonus bShortWeaponDamageReturn,n`<br>`bonus bLongWeaponDamageReturn,n` | `"damage_reflected", n, { kind = "physical", range = "melee" }`<br>`"damage_reflected", n, { kind = "physical", range = "ranged" }` | Reflects n% of melee or ranged physical damage taken. `range` is required. | 45<br>0 | |
+| `bonus bMagicDamageReturn,n` | `"reflect_magic", { chance = n * 100, when = "hit_taken" }` | Proc: may reflect a targeted spell back to its caster. | 11 | |
+| `bonus bReduceDamageReturn,n` | `"reflected_damage_taken", -n` | Damage taken from reflection changes by n%. | 39 | flipped |
 
 ### Elements
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
-|---|---|---|---|---|
-| `bonus bAtkEle,e` | `attack_element` | element | Attacks have element e. | 266 |
-| `bonus bDefEle,e` | `defense_element` | element | The wearer's body has element e. | 60 |
+| rAthena | wAthena | Meaning | Uses |
+|---|---|---|---|
+| `bonus bAtkEle,e` | `"attack_element", e` | Attacks have element e. One-value bonus. | 266 |
+| `bonus bDefEle,e` | `"defense_element", e` | The wearer's body has element e. One-value bonus. | 60 |
 
-### Status effects
+### Status effects and other procs
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
-|---|---|---|---|---|
-| `bonus2 bAddEff,eff,n`<br>`bonus3 bAddEff,eff,n,atf`<br>`bonus4 bAddEff,eff,n,atf,t` | `chance_to_cause_status` | status, chance (rAthena per 10,000, copied), [options: `target`, `range`, `kind`, `duration`] | Attacks have this chance to cause status eff. | 163<br>50<br>2 |
-| `bonus2 bAddEff2,eff,n` | none | | Status eff on the wearer when attacking. The converter writes `chance_to_cause_status` with `{ target = "self" }`. | 25 |
-| `bonus2 bAddEffWhenHit,eff,n`<br>`bonus3 bAddEffWhenHit,eff,n,atf`<br>`bonus4 bAddEffWhenHit,eff,n,atf,t` | `chance_to_cause_status_when_hit` | status, chance (rAthena per 10,000, copied), [options] | Being hit by physical damage has this chance to cause status eff on the attacker. | 61<br>23<br>0 |
-| `bonus3 bAddEffOnSkill,sk,eff,n`<br>`bonus4 bAddEffOnSkill,sk,eff,n,atf`<br>`bonus5 bAddEffOnSkill,sk,eff,n,atf,t` | `chance_to_cause_status_on_skill` | skill, status, chance (rAthena per 10,000, copied), [options] | Using skill sk has this chance to cause status eff. | 24<br>0<br>0 |
-| `bonus2 bResEff,eff,n` | `status_resistance` | status, chance (rAthena per 10,000, copied) | The chance to resist status eff rises by n. | 379 |
-| `bonus2 bComaRace,r,n` | `chance_to_cause_coma_against_race` | race, chance (rAthena per 10,000, copied), [options: `attack`] | Any attack on race r has this chance to cause Coma. | 10 |
-| `bonus2 bComaClass,c,n` | `chance_to_cause_coma_against_class` | class, chance (rAthena per 10,000, copied), [options: `attack`] | Any attack on class c has this chance to cause Coma. | 3 |
-| `bonus2 bWeaponComaRace,r,n` | none | | Coma on normal attacks only. The converter writes `chance_to_cause_coma_against_race` with `{ attack = "normal" }`. | 0 |
-| `bonus2 bWeaponComaClass,c,n` | none | | The same for class: `chance_to_cause_coma_against_class` with `{ attack = "normal" }`. | 0 |
-| `bonus2 bWeaponComaEle,e,n` | `chance_to_cause_coma_against_element` | element, chance (rAthena per 10,000, copied), [options: `attack`] | Attacks on element e have this chance to cause Coma. The converter adds `{ attack = "normal" }`. | 0 |
-| `bonus3 bStateNoRecoverRace,r,x,t` | `chance_to_block_healing_against_race` | race, chance (rAthena per 10,000, copied), duration in ms | Normal attacks on race r have this chance to stop the target's healing for t ms. | 2 |
+Every row here is a proc: `chance` is required (rule 5).
+
+| rAthena | wAthena | Meaning | Uses |
+|---|---|---|---|
+| `bonus2 bAddEff,eff,n`<br>`bonus3 bAddEff,eff,n,atf`<br>`bonus4 bAddEff,eff,n,atf,t` | `"cause_status", eff, { chance = n }`<br>The same, with `target`, `kind`, and `range` from atf<br>The same, with `duration = t` | Attacks may cause status eff. | 163<br>50<br>2 |
+| `bonus2 bAddEff2,eff,n` | `"cause_status", eff, { chance = n, target = "self" }` | Attacks may cause status eff on the wearer. | 25 |
+| `bonus2 bAddEffWhenHit,eff,n`<br>`bonus3 bAddEffWhenHit,eff,n,atf`<br>`bonus4 bAddEffWhenHit,eff,n,atf,t` | `"cause_status", eff, { chance = n, when = "hit_taken", kind = "physical" }`<br>The same, with `target`, `kind`, and `range` from atf<br>The same, with `duration = t` | Being hit may cause status eff on the attacker. | 61<br>23<br>0 |
+| `bonus3 bAddEffOnSkill,sk,eff,n`<br>`bonus4 bAddEffOnSkill,sk,eff,n,atf`<br>`bonus5 bAddEffOnSkill,sk,eff,n,atf,t` | `"cause_status", eff, { chance = n, skill = sk }`<br>The same, with `target` from atf<br>The same, with `duration = t` | Hits of skill sk may cause status eff. | 24<br>0<br>0 |
+| `bonus2 bResEff,eff,n` | `"status_resistance", eff, n` | The chance to resist status eff rises by n per 10,000. Not a proc: an amount, with no `chance` option. | 379 |
+| `bonus2 bComaRace,r,n`<br>`bonus2 bComaClass,c,n` | `"coma", { chance = n, against = { race = r } }`<br>`"coma", { chance = n, against = { class = c } }` | Any attack on race r or class c may cause Coma. | 10<br>3 |
+| `bonus2 bWeaponComaRace,r,n`<br>`bonus2 bWeaponComaClass,c,n`<br>`bonus2 bWeaponComaEle,e,n` | `"coma", { chance = n, attack = "normal", against = { race = r } }`<br>The same, with `against = { class = c }`<br>The same, with `against = { element = e }` | Normal attacks on race r, class c, or element e may cause Coma. | 0<br>0<br>0 |
+| `bonus3 bStateNoRecoverRace,r,x,t` | `"block_healing", { chance = x, attack = "normal", against = { race = r }, duration = t }` | Normal attacks on race r may stop the target's healing for t ms. One-value bonus. | 2 |
+| `bonus3 bAutoSpell,sk,y,n`<br>`bonus4 bAutoSpell,sk,y,n,i`<br>`bonus5 bAutoSpell,sk,y,n,bf,i` | `"cast", sk, y, { chance = n * 10 }`<br>The same, with `target` and `random_level` from i<br>The same, with `kind`, `range`, and `attack` from bf | Attacks may cast skill sk at level y. | 375<br>25<br>90 |
+| `bonus3 bAutoSpellWhenHit,sk,y,n`<br>`bonus4 bAutoSpellWhenHit,sk,y,n,i`<br>`bonus5 bAutoSpellWhenHit,sk,y,n,bf,i` | `"cast", sk, y, { chance = n * 10, when = "hit_taken" }`<br>The same, with `target` and `random_level` from i<br>The same, with `kind`, `range`, and `attack` from bf | Being hit by a direct attack may cast skill sk at level y. | 145<br>35<br>60 |
+| `bonus4 bAutoSpellOnSkill,sk,x,y,n`<br>`bonus5 bAutoSpellOnSkill,sk,x,y,n,i` | `"cast", x, y, { chance = n * 10, when = "skill_used", skill = sk }`<br>The same, with `target` and `random_level` from i | Using skill sk may cast skill x at level y. | 71<br>10 |
+| `bonus2 bHPDrainRate,x,n` | `"drain_hp", n, { chance = x * 10 }` | Physical hits may heal n% of the damage dealt as HP. | 92 |
+| `bonus2 bSPDrainRate,x,n` | `"drain_sp", n, { chance = x * 10 }` | The same, as SP. | 66 |
+| `bonus2 bHPVanishRate,x,n`<br>`bonus3 bHPVanishRate,x,n,bf` | `"remove_hp", n, { chance = x * 10, attack = "normal" }`<br>`"remove_hp", n, { chance = x * 10 }`, with `kind`, `range`, and `attack` from bf | Hits may remove n% of the target's current HP. | 1<br>0 |
+| `bonus2 bSPVanishRate,x,n`<br>`bonus3 bSPVanishRate,x,n,bf` | `"remove_sp", n, { chance = x * 10, attack = "normal" }`<br>`"remove_sp", n, { chance = x * 10 }`, with `kind`, `range`, and `attack` from bf | The same for SP. | 1<br>5 |
+| `bonus3 bHPVanishRaceRate,r,x,n` | `"deal_max_hp", n, { chance = x * 10, kind = "physical", against = { race = r } }` | Physical hits on race r may deal n% of the target's max HP instead of their damage. | 2 |
+| `bonus3 bSPVanishRaceRate,r,x,n` | `"deal_max_sp", n, { chance = x * 10, kind = "physical", against = { race = r } }` | The same, as SP damage. | 5 |
+| `bonus bBreakWeaponRate,n` | `"break_weapon", { chance = n }` | Hits may break the target's weapon. | 12 |
+| `bonus bBreakArmorRate,n` | `"break_armor", { chance = n }` | Hits may break the target's armor. | 17 |
+| `bonus bClassChange,n` | `"transform_monster", { chance = n, kind = "physical" }` | Physical hits may turn the monster into a random other monster. One-value bonus. | 2 |
+
+The set-defense and reflect-magic procs are in "Ignoring and changing defense" and "Damage taken".
 
 ### Skills
 
-| rAthena | wAthena | Arguments | Meaning | Uses | Sign |
-|---|---|---|---|---|---|
-| `skill sk,lv` (a command) | `skill` | skill, level | Grants skill sk at level lv while equipped. | 633 | |
-| `bonus2 bSkillUseSP,sk,n` | `skill_sp_cost` | skill, SP | SP cost of skill sk changes by n. | 269 | flipped |
-| `bonus2 bSkillUseSPrate,sk,n` | `skill_sp_cost_percent` | skill, percent | SP cost of skill sk changes by n%. | 75 | flipped |
-| `bonus2 bSkillCooldown,sk,t` | `skill_cooldown` | skill, ms | Cooldown of skill sk + t. | 618 | |
-| `bonus2 bAddSkillBlow,sk,n` | `skill_knockback` | skill, cells | Skill sk knocks the target back n cells. | 8 | |
-| `bonus bNoGemStone` | `no_gemstone_cost` | flag | Skills need no gemstones. Hocus Pocus and Ganbantein keep their cost. | 16 | |
-| `bonus bNoMadoFuel` | `no_magic_gear_fuel_cost` | flag | Skills need no Magic Gear Fuel. | 9 | |
+| rAthena | wAthena | Meaning | Uses |
+|---|---|---|---|
+| `skill sk,lv` (a command) | `"skill", sk, lv` | Grants skill sk at level lv while equipped. | 633 |
+| `bonus2 bAddSkillBlow,sk,n` | `"knockback", n, { skill = sk }` | Skill sk knocks the target back n more cells. `skill` is required. | 8 |
+| `bonus bNoGemStone` | `"no_gemstone_cost"` | Skills need no gemstones. Hocus Pocus and Ganbantein keep their cost. | 16 |
+| `bonus bNoMadoFuel` | `"no_magic_gear_fuel_cost"` | Skills need no Magic Gear Fuel. | 9 |
 
-Skill damage and damage taken from a skill are `"damage"` and `"damage_taken"` with the `skill` option. Per-skill cast time and delay are in "Speed and cast". Per-skill healing is in "Healing and rewards for a kill".
+Skill damage, damage taken from a skill, cast time, delay, cooldown, SP cost, and healing take the `skill` option on their own names.
 
-### Autospell and other procs
+### HP and SP from hits and kills
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
-|---|---|---|---|---|
-| `bonus3 bAutoSpell,sk,y,n`<br>`bonus4 bAutoSpell,sk,y,n,i`<br>`bonus5 bAutoSpell,sk,y,n,bf,i` | `chance_to_cast` | skill, chance (rAthena per mille, × 10), level, [options] | Attacks have this chance to cast skill sk at level y. | 375<br>25<br>90 |
-| `bonus3 bAutoSpellWhenHit,sk,y,n`<br>`bonus4 bAutoSpellWhenHit,sk,y,n,i`<br>`bonus5 bAutoSpellWhenHit,sk,y,n,bf,i` | `chance_to_cast_when_hit` | skill, chance (rAthena per mille, × 10), level, [options] | Being hit by a direct attack has this chance to cast skill sk at level y. | 145<br>35<br>60 |
-| `bonus4 bAutoSpellOnSkill,sk,x,y,n`<br>`bonus5 bAutoSpellOnSkill,sk,x,y,n,i` | `chance_to_cast_on_skill` | trigger skill, skill, chance (rAthena per mille, × 10), level, [options] | Using skill sk has this chance to cast skill x at level y. | 71<br>10 |
-| `bonus2 bHPDrainRate,x,n` | `chance_to_drain_hp` | chance (rAthena per mille, × 10), percent of damage | Physical attacks have this chance to heal n% of the damage dealt as HP. | 92 |
-| `bonus2 bSPDrainRate,x,n` | `chance_to_drain_sp` | chance (rAthena per mille, × 10), percent of damage | The same, as SP. | 66 |
-| `bonus bHPDrainValue,n` | `hp_per_normal_attack` | HP | Each normal attack heals n HP. | 1 |
-| `bonus2 bHPDrainValueRace,r,n` | `hp_per_normal_attack_against_race` | race, HP | The same, against race r. | 0 |
-| `bonus2 bHPDrainValueClass,c,n` | `hp_per_normal_attack_against_class` | class, HP | The same, against class c. | 0 |
-| `bonus bSPDrainValue,n` | `sp_per_normal_attack` | SP | Each normal attack restores n SP. | 39 |
-| `bonus2 bSPDrainValueRace,r,n` | `sp_per_normal_attack_against_race` | race, SP | The same, against race r. | 5 |
-| `bonus2 bSPDrainValueClass,c,n` | `sp_per_normal_attack_against_class` | class, SP | The same, against class c. | 0 |
-| `bonus2 bHPVanishRate,x,n`<br>`bonus3 bHPVanishRate,x,n,bf` | `chance_to_remove_hp` | chance (rAthena per mille, × 10), percent of the target's HP, [options] | Attacks have this chance to remove n% of the target's current HP. The two-argument form is `{ attack = "normal" }`. | 1<br>0 |
-| `bonus2 bSPVanishRate,x,n`<br>`bonus3 bSPVanishRate,x,n,bf` | `chance_to_remove_sp` | chance (rAthena per mille, × 10), percent of the target's SP, [options] | The same for SP. | 1<br>5 |
-| `bonus3 bHPVanishRaceRate,r,x,n` | `chance_to_deal_max_hp_percent_against_race` | race, chance (rAthena per mille, × 10), percent of max HP | Against race r, a physical hit has this chance to deal n% of the target's max HP instead of its damage. | 2 |
-| `bonus3 bSPVanishRaceRate,r,x,n` | `chance_to_deal_max_sp_percent_against_race` | race, chance (rAthena per mille, × 10), percent of max SP | The same, as SP damage. | 5 |
-| `bonus bBreakWeaponRate,n` | `chance_to_break_weapon` | chance (rAthena per 10,000, copied) | Attacks have this chance to break the target's weapon. | 12 |
-| `bonus bBreakArmorRate,n` | `chance_to_break_armor` | chance (rAthena per 10,000, copied) | Attacks have this chance to break the target's armor. | 17 |
-| `bonus bClassChange,n` | `chance_to_transform_monster` | chance (rAthena per 10,000, copied) | Physical attacks have this chance to turn the monster into a random other monster. | 2 |
+| rAthena | wAthena | Meaning | Uses |
+|---|---|---|---|
+| `bonus bHPDrainValue,n`<br>`bonus2 bHPDrainValueRace,r,n`<br>`bonus2 bHPDrainValueClass,c,n` | `"hp_per_hit", n`<br>`"hp_per_hit", n, { against = { race = r } }`<br>`"hp_per_hit", n, { against = { class = c } }` | Each normal attack heals n HP. A separate name from `drain_hp`: a fixed amount on every normal attack, with no chance. | 1<br>0<br>0 |
+| `bonus bSPDrainValue,n`<br>`bonus2 bSPDrainValueRace,r,n`<br>`bonus2 bSPDrainValueClass,c,n` | `"sp_per_hit", n`<br>`"sp_per_hit", n, { against = { race = r } }`<br>`"sp_per_hit", n, { against = { class = c } }` | Each normal attack restores n SP. | 39<br>5<br>0 |
+| `bonus bHPGainValue,n`<br>`bonus bLongHPGainValue,n`<br>`bonus bMagicHPGainValue,n` | `"hp_per_kill", n, { kind = "physical", range = "melee" }`<br>`"hp_per_kill", n, { kind = "physical", range = "ranged" }`<br>`"hp_per_kill", n, { kind = "magic" }` | A kill by that kind of hit heals n HP. `kind` is required. | 68<br>3<br>38 |
+| `bonus bSPGainValue,n`<br>`bonus2 bSPGainRace,r,n`<br>`bonus bLongSPGainValue,n`<br>`bonus bMagicSPGainValue,n` | `"sp_per_kill", n, { kind = "physical", range = "melee" }`<br>`"sp_per_kill", n, { kind = "physical", range = "melee", against = { race = r } }`<br>`"sp_per_kill", n, { kind = "physical", range = "ranged" }`<br>`"sp_per_kill", n, { kind = "magic" }` | A kill by that kind of hit restores n SP. `kind` is required. | 90<br>28<br>19<br>49 |
 
 ### Drops, zeny, and experience
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
-|---|---|---|---|---|
-| `bonus2 bExpAddRace,r,x` | `experience_from_race` | race, percent | Experience from race r + x%. | 295 |
-| `bonus2 bExpAddClass,c,x` | `experience_from_class` | class, percent | Experience from class c + x%. | 12 |
-| `bonus2 bDropAddRace,r,x` | `drop_rate_from_race` | race, percent | Drop rates of race r + x%. | 55 |
-| `bonus2 bDropAddClass,c,x` | `drop_rate_from_class` | class, percent | Drop rates of class c + x%. | 2 |
-| `bonus2 bAddMonsterDropItem,iid,n`<br>`bonus3 bAddMonsterDropItem,iid,r,n` | `extra_drop_from_race` | item, race, chance (rAthena per 10,000, copied) | Killing a monster of race r has this chance to drop item iid. The two-argument form uses `races.all`. A negative chance means -n × level / 10 + 1, as in rAthena. | 215<br>77 |
-| `bonus3 bAddClassDropItem,iid,c,n` | `extra_drop_from_class` | item, class, chance (rAthena per 10,000, copied) | The same, for class c. | 0 |
-| `bonus3 bAddMonsterIdDropItem,iid,mid,n` | `extra_drop_from_monster` | item, monster, chance (rAthena per 10,000, copied) | The same, for monster mid. | 62 |
-| `bonus2 bAddMonsterDropItemGroup,ig,n`<br>`bonus3 bAddMonsterDropItemGroup,ig,r,n` | `extra_group_drop_from_race` | item group, race, chance (rAthena per 10,000, copied) | Killing a monster of race r has this chance to drop an item from group ig. | 8<br>0 |
-| `bonus3 bAddClassDropItemGroup,ig,c,n` | `extra_group_drop_from_class` | item group, class, chance (rAthena per 10,000, copied) | The same, for class c. | 0 |
-| `bonus2 bGetZenyNum,x,n` | `chance_to_gain_zeny_on_kill` with `{ stacking = "highest" }` | chance (rAthena percent, × 100), maximum zeny | A kill has this chance to give 1 to x zeny. A negative x means x × monster level. | 3 |
-| `bonus2 bAddGetZenyNum,x,n` | `chance_to_gain_zeny_on_kill` | chance (rAthena percent, × 100), maximum zeny | The same, stacking. | 0 |
-| `bonus bAddStealRate,n` | `steal_chance` | chance (rAthena per 10,000, copied) | Steal success chance + n. | 0 |
+| rAthena | wAthena | Meaning | Uses |
+|---|---|---|---|
+| `bonus2 bExpAddRace,r,x`<br>`bonus2 bExpAddClass,c,x` | `"experience", x, { from = { race = r } }`<br>`"experience", x, { from = { class = c } }` | Experience from race r or class c + x%. | 295<br>12 |
+| `bonus2 bDropAddRace,r,x`<br>`bonus2 bDropAddClass,c,x` | `"drop_rate", x, { from = { race = r } }`<br>`"drop_rate", x, { from = { class = c } }` | Drop rates of race r or class c + x%. | 55<br>2 |
+| `bonus2 bAddMonsterDropItem,iid,n`<br>`bonus3 bAddMonsterDropItem,iid,r,n`<br>`bonus3 bAddClassDropItem,iid,c,n`<br>`bonus3 bAddMonsterIdDropItem,iid,mid,n` | `"extra_drop", { item = iid, chance = n }`<br>`"extra_drop", { item = iid, chance = n, from = { race = r } }`<br>`"extra_drop", { item = iid, chance = n, from = { class = c } }`<br>`"extra_drop", { item = iid, chance = n, from = { monster = mid } }` | A kill may drop item iid. A negative chance means -n × level / 10 + 1, as in rAthena. | 215<br>77<br>0<br>62 |
+| `bonus2 bAddMonsterDropItemGroup,ig,n`<br>`bonus3 bAddMonsterDropItemGroup,ig,r,n`<br>`bonus3 bAddClassDropItemGroup,ig,c,n` | `"extra_drop", { item_group = ig, chance = n }`<br>`"extra_drop", { item_group = ig, chance = n, from = { race = r } }`<br>`"extra_drop", { item_group = ig, chance = n, from = { class = c } }` | A kill may drop an item from group ig. `extra_drop` needs exactly one of `item` and `item_group`. | 8<br>0<br>0 |
+| `bonus2 bGetZenyNum,x,n`<br>`bonus2 bAddGetZenyNum,x,n` | `"gain_zeny_on_kill", x, { chance = n * 100, stacking = "highest" }`<br>`"gain_zeny_on_kill", x, { chance = n * 100 }` | A kill may give 1 to x zeny. A negative x means x × monster level. | 3<br>0 |
+| `bonus bAddStealRate,n` | `"steal_chance", n` | Steal success chance + n per 10,000. An amount, not a proc. | 0 |
 
-### Healing and rewards for a kill
+### Healing
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
-|---|---|---|---|---|
-| `bonus bHealPower,n` | `healing_done` | percent | Healing from the wearer's heal skills + n%. | 359 |
-| `bonus bHealPower2,n` | `healing_received` | percent | Healing the wearer receives from skills + n%. | 80 |
-| `bonus2 bSkillHeal,sk,n` | `skill_healing_done` | skill, percent | Healing from the wearer's skill sk + n%. | 7 |
-| `bonus2 bSkillHeal2,sk,n` | `skill_healing_received` | skill, percent | Healing the wearer receives from skill sk + n%. | 2 |
-| `bonus bAddItemHealRate,n`<br>`bonus2 bAddItemHealRate,iid,n` | `hp_recovery_from_items`<br>`hp_recovery_from_item` | percent<br>item, percent | HP from healing items + n%, for all items or for item iid. | 63<br>73 |
-| `bonus2 bAddItemGroupHealRate,ig,n` | `hp_recovery_from_item_group` | item group, percent | HP from items of group ig + n%. | 18 |
-| `bonus bAddItemSPHealRate,n`<br>`bonus2 bAddItemSPHealRate,iid,n` | `sp_recovery_from_items`<br>`sp_recovery_from_item` | percent<br>item, percent | SP from healing items + n%, for all items or for item iid. | 0<br>1 |
-| `bonus2 bAddItemGroupSPHealRate,ig,n` | `sp_recovery_from_item_group` | item group, percent | SP from items of group ig + n%. | 0 |
-| `bonus bHPGainValue,n` | `hp_per_melee_kill` | HP | A kill by a melee physical attack heals n HP. | 68 |
-| `bonus bSPGainValue,n` | `sp_per_melee_kill` | SP | A kill by a melee physical attack restores n SP. | 90 |
-| `bonus2 bSPGainRace,r,n` | `sp_per_melee_kill_from_race` | race, SP | The same, for a monster of race r. | 28 |
-| `bonus bLongHPGainValue,n` | `hp_per_ranged_kill` | HP | A kill by a ranged physical attack heals n HP. | 3 |
-| `bonus bLongSPGainValue,n` | `sp_per_ranged_kill` | SP | A kill by a ranged physical attack restores n SP. | 19 |
-| `bonus bMagicHPGainValue,n` | `hp_per_magic_kill` | HP | A kill by magic heals n HP. | 38 |
-| `bonus bMagicSPGainValue,n` | `sp_per_magic_kill` | SP | A kill by magic restores n SP. | 49 |
-| `bonus bRestartFullRecover` | `full_recovery_on_revive` | flag | Revival restores full HP and SP. | 27 |
+| rAthena | wAthena | Meaning | Uses |
+|---|---|---|---|
+| `bonus bHealPower,n`<br>`bonus2 bSkillHeal,sk,n` | `"healing_done", n`<br>`"healing_done", n, { skill = sk }` | Healing from the wearer's heal skills, or from skill sk, + n%. | 359<br>7 |
+| `bonus bHealPower2,n`<br>`bonus2 bSkillHeal2,sk,n` | `"healing_received", n`<br>`"healing_received", n, { skill = sk }` | Healing the wearer receives from skills, or from skill sk, + n%. A separate name from `healing_done`: the wearer is the target, not the caster. | 80<br>2 |
+| `bonus bAddItemHealRate,n`<br>`bonus2 bAddItemHealRate,iid,n`<br>`bonus2 bAddItemGroupHealRate,ig,n` | `"item_hp_recovery", n`<br>`"item_hp_recovery", n, { item = iid }`<br>`"item_hp_recovery", n, { item_group = ig }` | HP from healing items, from item iid, or from group ig + n%. | 63<br>73<br>18 |
+| `bonus bAddItemSPHealRate,n`<br>`bonus2 bAddItemSPHealRate,iid,n`<br>`bonus2 bAddItemGroupSPHealRate,ig,n` | `"item_sp_recovery", n`<br>`"item_sp_recovery", n, { item = iid }`<br>`"item_sp_recovery", n, { item_group = ig }` | SP from healing items, from item iid, or from group ig + n%. | 0<br>1<br>0 |
+| `bonus bRestartFullRecover` | `"full_recovery_on_revive"` | Revival restores full HP and SP. | 27 |
 
 ### Equipment protection
 
-| rAthena | wAthena | Arguments | Meaning | Uses | Sign |
-|---|---|---|---|---|---|
-| `bonus bUnbreakableWeapon` | `unbreakable_weapon` | flag | The weapon cannot break. | 597 | |
-| `bonus bUnbreakableArmor` | `unbreakable_armor` | flag | The armor cannot break. | 105 | |
-| `bonus bUnbreakableHelm` | `unbreakable_helm` | flag | The helm cannot break. | 149 | |
-| `bonus bUnbreakableShield` | `unbreakable_shield` | flag | The shield cannot break. | 21 | |
-| `bonus bUnbreakableGarment` | `unbreakable_garment` | flag | The garment cannot break. | 17 | |
-| `bonus bUnbreakableShoes` | `unbreakable_shoes` | flag | The shoes cannot break. | 11 | |
-| `bonus bUnbreakable,n` | `equipment_break_chance` | percent | The chance that any equipped item breaks changes by n%. A relative change, not a chance, so it stays a percent. | 0 | flipped |
-| `bonus bUnstripableWeapon` | `unstrippable_weapon` | flag | Strip skills cannot remove the weapon. | 0 | |
-| `bonus bUnstripableArmor` | `unstrippable_armor` | flag | Strip skills cannot remove the armor. | 0 | |
-| `bonus bUnstripableHelm` | `unstrippable_helm` | flag | Strip skills cannot remove the helm. | 0 | |
-| `bonus bUnstripableShield` | `unstrippable_shield` | flag | Strip skills cannot remove the shield. | 0 | |
-| `bonus bUnstripable` | none | | The documentation says "all equipment", but `pc_bonus` protects only the armor. The converter writes `unstrippable_armor`, which keeps rAthena's behavior. | 0 | |
+| rAthena | wAthena | Meaning | Uses | Sign |
+|---|---|---|---|---|
+| `bonus bUnbreakableWeapon` | `"unbreakable_weapon"` | The weapon cannot break. | 597 | |
+| `bonus bUnbreakableArmor` | `"unbreakable_armor"` | The armor cannot break. | 105 | |
+| `bonus bUnbreakableHelm` | `"unbreakable_helm"` | The helm cannot break. | 149 | |
+| `bonus bUnbreakableShield` | `"unbreakable_shield"` | The shield cannot break. | 21 | |
+| `bonus bUnbreakableGarment` | `"unbreakable_garment"` | The garment cannot break. | 17 | |
+| `bonus bUnbreakableShoes` | `"unbreakable_shoes"` | The shoes cannot break. | 11 | |
+| `bonus bUnbreakable,n` | `"equipment_break_chance", -n` | The chance that any equipped item breaks changes by n%. A relative change, so it is a percent, not a chance per 10,000. | 0 | flipped |
+| `bonus bUnstripableWeapon` | `"unstrippable_weapon"` | Strip skills cannot remove the weapon. | 0 | |
+| `bonus bUnstripableArmor`<br>`bonus bUnstripable` | `"unstrippable_armor"`<br>The same | Strip skills cannot remove the armor. rAthena's documentation says `bUnstripable` covers all equipment, but `pc_bonus` protects only the armor. | 0<br>0 | |
+| `bonus bUnstripableHelm` | `"unstrippable_helm"` | Strip skills cannot remove the helm. | 0 | |
+| `bonus bUnstripableShield` | `"unstrippable_shield"` | Strip skills cannot remove the shield. | 0 | |
 
 ### Other
 
-| rAthena | wAthena | Arguments | Meaning | Uses |
+| rAthena | wAthena | Modes | Meaning | Uses |
 |---|---|---|---|---|
-| `bonus bSplashRange,n` | `splash_range` with `{ stacking = "highest" }` | cells | Normal attacks hit an area of radius n (1 is 3×3). | 52 |
-| `bonus bSplashAddRange,n` | `splash_range` | cells | Splash radius + n. | 0 |
-| `bonus bNoKnockback` | `no_knockback` | flag | Skills cannot knock the wearer back. | 52 |
-| `bonus bIntravision` | `see_hidden` | flag | The wearer sees hidden and cloaked characters. | 12 |
-| `bonus bPerfectHide` | `hidden_from_detectors` | flag | While hidden or cloaked, monsters that detect hidden characters do not see the wearer. | 0 |
-| `bonus bAddMaxWeight,n` | `max_weight` | tenths of weight | Weight limit + n. | 0 |
+| `bonus bSplashRange,n`<br>`bonus bSplashAddRange,n` | `"splash_range", n, { stacking = "highest" }`<br>`"splash_range", n` | flat | Normal attacks hit an area of radius n (1 is 3×3). | 52<br>0 |
+| `bonus bNoKnockback` | `"no_knockback"` | | Skills cannot knock the wearer back. | 52 |
+| `bonus bIntravision` | `"see_hidden"` | | The wearer sees hidden and cloaked characters. | 12 |
+| `bonus bPerfectHide` | `"hidden_from_detectors"` | | While hidden or cloaked, monsters that detect hidden characters do not see the wearer. | 0 |
+| `bonus bAddMaxWeight,n` | `"max_weight", n` | flat | Weight limit + n tenths. | 0 |
 | `bFame` | none | | Not a bonus. It is a value `readparam` reads, and `pc_bonus` rejects it. | 0 |
 
-## Types without a wAthena name
+## Names
 
-The converter rewrites each one:
+The 127 bonus names. The `skill` bonus, which grants a skill, comes in addition.
 
-| rAthena | Converter writes | Reason |
-|---|---|---|
-| `bAgiVit`, `bAgiDexStr` | One bonus per stat | Shortcuts. |
-| `bCastrate` (both forms) | `variable_cast_time_percent`, `skill_variable_cast_time_percent` | The same as `bVariableCastrate` in renewal. |
-| `bAddEff2` | `chance_to_cause_status` with `{ target = "self" }` | The same as `bAddEff` with `ATF_SELF`. |
-| `bWeaponComaRace`, `bWeaponComaClass` | The coma names with `{ attack = "normal" }` | Only the trigger differs. |
-| `bAbsorbDmgMaxHP` | `damage_taken_cap` | rAthena calls it legacy and not official. Unused in renewal data. |
-| `bUnstripable` | `unstrippable_armor` | Its code protects only the armor. |
-| `bFame` | Nothing | Not a bonus. |
+- Stats: `str`, `agi`, `vit`, `int`, `dex`, `luk`, `all_stats`, `pow`, `sta`, `wis`, `spl`, `con`, `crt`, `all_trait_stats`, `patk`, `smatk`, `res`, `mres`, `hplus`, `crate`.
+- HP, SP, and AP: `max_hp`, `max_sp`, `max_ap`, `natural_hp_recovery`, `natural_sp_recovery`, `hp_gain_over_time`, `sp_gain_over_time`, `hp_loss_over_time`, `sp_loss_over_time`, `no_hp_recovery`, `no_sp_recovery`.
+- ATK and DEF: `atk`, `weapon_atk`, `refine_atk`, `matk`, `hidden_matk`, `weapon_matk`, `def`, `status_def`, `mdef`, `status_mdef`, `attack_range`.
+- HIT, FLEE, and CRIT: `hit`, `flee`, `perfect_dodge`, `crit`, `crit_chance_taken`, `perfect_hit_chance`, `double_attack_chance`.
+- Speed, cast, and delay: `move_speed`, `aspd`, `variable_cast_time`, `fixed_cast_time`, `after_cast_delay`, `cooldown`, `sp_cost`, `uninterruptible_cast`, `uninterruptible_cast_everywhere`, `always_endure`.
+- Damage: `damage`, `damage_taken`, `crit_damage`, `non_crit_damage`, `crit_damage_taken`, `skill_ratio`, `ignore_size_penalty`, `immunity`, `damage_taken_cap`, `damage_reflected`, `reflected_damage_taken`.
+- Defense: `ignore_def`, `ignore_mdef`, `ignore_res`, `ignore_mres`, `def_as_damage`.
+- Elements: `attack_element`, `defense_element`.
+- Procs: `cause_status`, `coma`, `block_healing`, `cast`, `drain_hp`, `drain_sp`, `remove_hp`, `remove_sp`, `deal_max_hp`, `deal_max_sp`, `set_def`, `set_mdef`, `break_weapon`, `break_armor`, `transform_monster`, `reflect_magic`, `gain_zeny_on_kill`.
+- Status: `status_resistance`.
+- Skills: `knockback`, `no_gemstone_cost`, `no_magic_gear_fuel_cost`.
+- HP and SP from hits and kills: `hp_per_hit`, `sp_per_hit`, `hp_per_kill`, `sp_per_kill`.
+- Drops and experience: `experience`, `drop_rate`, `extra_drop`, `steal_chance`.
+- Healing: `healing_done`, `healing_received`, `item_hp_recovery`, `item_sp_recovery`, `full_recovery_on_revive`.
+- Equipment: `unbreakable_weapon`, `unbreakable_armor`, `unbreakable_helm`, `unbreakable_shield`, `unbreakable_garment`, `unbreakable_shoes`, `equipment_break_chance`, `unstrippable_weapon`, `unstrippable_armor`, `unstrippable_helm`, `unstrippable_shield`.
+- Other: `splash_range`, `no_knockback`, `see_hidden`, `hidden_from_detectors`, `max_weight`.
 
 Types with no use in renewal data are kept. Pre-renewal data and other servers' items use some of them, and mods may want them.
 
 ## Review decisions
 
-The draft's questions were answered in review:
+First round:
 
 1. Stats use the abbreviations of rule 1 everywhere in the API, including trait stats. So `bBaseAtk` is `"atk"` and `bAtk` is `"weapon_atk"`.
-2. Damage dealt and taken by percent are the `"damage"` and `"damage_taken"` bonuses with an options table, summed in rAthena's groups. This replaces the draft's per-kind and per-target names.
+2. Damage dealt and taken by percent are the `"damage"` and `"damage_taken"` bonuses with an options table, summed in rAthena's groups.
 3. Reductions flip their sign. A positive value raises the named quantity.
-4. `_percent` marks only percents of normally flat quantities.
-5. Chances are whole numbers per 10,000.
-6. Trigger flags go in the options table.
-7. Per-skill and per-item variants keep separate names.
-8. Non-stacking types use the normal name with `{ stacking = "highest" }`. There is no suffix.
-9. Trait stats use their abbreviations.
-10. rAthena's "monster race" is `monster_group`, with `wa.monster_groups`.
-11. The draft's hard names are accepted, with the abbreviations of rule 1: `status_def`, `misc`, `def_as_damage_against_race`, `chance_to_remove_hp`, `always_endure`, and `see_hidden`.
-12. Unused types are kept.
-13. The question of `against` and `from` in names is answered by the damage design: the damage object has `source` and `target`, and the options have `against` and `from`.
-14. Approved API additions: the single `"damage"` event (it replaces `"attack"`, `"hit_taken"`, and the draft's `"skill_used"`, and its `kind` field replaces `is_weapon`), `player:add_timed_bonuses`, the `restart` option of `timers.with_bonuses`, `wa.weapon_types`, `wa.monster_groups`, and `items.group`.
-15. Arguments have a fixed order (rule 7). The converter reorders rAthena's arguments.
+4. Chances are whole numbers per 10,000.
+5. Trigger flags go in the options table.
+6. rAthena's "monster race" is `monster_group`, with `wa.monster_groups`.
+7. The draft's hard names are accepted, with the abbreviations of rule 1: `status_def`, `misc`, `def_as_damage`, `remove_hp`, `always_endure`, and `see_hidden`.
+8. Unused types are kept.
+9. The damage object has `source` and `target`, and the options have `against` and `from`.
+10. Approved API additions: the `"damage"` event (its `kind` field replaces `is_weapon`), `player:add_timed_bonuses`, the `restart` option of `timers.with_bonuses`, `wa.weapon_types`, `wa.monster_groups`, and `items.group`.
+
+Second round:
+
+11. A `"skill_used"` item event fires for every skill use, including skills that deal no damage. `autobonus3` maps onto it.
+12. Bonuses where rAthena keeps the last value use `stacking = "last"` by default, which follows rAthena's order. A mod can use `{ stacking = "priority", priority = n }`. `"highest"` and `"lowest"` stay.
+13. No name starts with `chance_to_`. The name is the effect, and the chance goes in the `chance` option, with `when`, `against`, and `from`.
+14. No name ends in `_percent`. Flat and percent share a name, with `{ percent = true }`. Names that rAthena has only as a percent require it; names that rAthena has only as flat refuse it.
+15. Per-skill and per-item variants are options (`skill`, `item`, `item_group`) on the shared name. Separate names stay only where the meaning differs, and the table says why.
+16. Arguments have a fixed order: what the bonus produces or applies to, then the amount, then other numbers, then the options table. The chance is always an option.
+17. The converter maps every rAthena bonus form to a call in this document.
 
 ## Open points
 
-These follow from the decisions, but their details were not reviewed:
-
-1. **`stacking = "lowest"`.** Review approved `"highest"`. rAthena's `bFixedCastrate` keeps the lowest value, so the converter also needs `"lowest"`.
-2. **autobonus3 on skills without damage.** rAthena runs `autobonus3` when the skill is used (`skill_onskillusage`), also for skills that deal no damage, such as buffs. The `"damage"` event does not fire for those. Converted items that trigger on a support skill lose the trigger, unless another event covers skill use.
-3. **Misses.** rAthena's autobonus runs from `skill_additional_effect`, after a hit. This document says `"damage"` does not fire on a miss. The parity tests should confirm it.
-4. **Bonuses where rAthena keeps the last value.** `attack_element`, `defense_element`, `chance_to_set_def_against_race`, `chance_to_set_mdef_against_race`, `chance_to_block_healing_against_race`, and `chance_to_transform_monster` keep the last one set, so the result depends on equip order. Strategy section 5.3 forbids that. They need a fixed rule, such as the item in the lowest equip slot.
-5. **Two percents that are not chances.** `crit_chance_taken` and `equipment_break_chance` change a chance by a relative percent. They stay percents, not per 10,000.
-6. **The `job` key.** rAthena reads the monster ID of `bAddDamageClass` and similar as a job ID when the other side is a player. wAthena splits this into the `monster` and `job` keys. The converter writes `monster`, since renewal data uses monster IDs there.
+1. **rAthena's order is not equip time.** `status_calc_pc` runs item scripts in a fixed order: equipment by slot, then combos, then cards. So `"last"` follows rAthena without depending on when items were equipped. Strategy 5.3 rule 4 still holds. The only order wAthena adds is that of timed bonuses, by the time they started.
+2. **Misses.** rAthena's autobonus runs from `skill_additional_effect`, after a hit. This document says `"damage"` does not fire on a miss. The parity tests should confirm it.
+3. **Two percents that are not chances.** `crit_chance_taken` and `equipment_break_chance` change a chance by a relative percent. They stay percents, not per 10,000.
+4. **The `job` key.** rAthena reads the monster ID of `bAddDamageClass` and similar as a job ID when the other side is a player. wAthena splits this into the `monster` and `job` keys. The converter writes `monster`, since renewal data uses monster IDs there.
+5. **`skill_used` timing.** This document fires `"skill_used"` once per use, before its hits, where rAthena runs `skill_onskillusage`. The parity tests should confirm the order against `"damage"`.

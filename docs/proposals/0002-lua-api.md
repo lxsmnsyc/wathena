@@ -110,7 +110,7 @@ end
 - `base_level_up` and `job_level_up` are separate events. Each gets the player.
 
 - `events.on` checks the name when it is called. An unknown name, or a name the context's kind cannot use, raises an error during setup, so a typo still fails before the event ever fires.
-- Which events a context can register depends on its kind. `"click"` exists only for NPCs, and `"damage"` only for equipped items.
+- Which events a context can register depends on its kind. `"click"` exists only for NPCs, and `"damage"` and `"skill_used"` only for equipped items.
 - Many handlers can listen to the same event. They run in registration order, and a failing handler does not stop the others.
 - A handler returns nothing. Changing a result is the job of hooks.
 - `events.on` returns a handle with a `remove` method, for handlers that should stop before their context ends.
@@ -246,7 +246,7 @@ return function()
     local level = player.base_level
     return level > 70 and (level - 70) // 10 * 10 or 0
   end)
-  bonuses.add("aspd_percent", function() return 4 + equipped.refine end)
+  bonuses.add("aspd", function() return 4 + equipped.refine end, { percent = true })
   bonuses.add("damage", equipped.rolls.boss_damage,
     { kind = "physical", against = { class = classes.boss } })
 end
@@ -279,9 +279,14 @@ end
 
 - Bonus types are names, checked by `bonuses.add` like event names. rAthena's 241 bonus types each get a name, such as `bLuk` to `"luk"` and `bFlee2` to `"perfect_dodge"`. The full list is in [0002a](0002a-bonus-names.md).
 - Damage dealt and taken by percent are two bonuses, `"damage"` and `"damage_taken"`. An options table says which hits they apply to: `kind`, `range`, `element`, `skill`, and `against` or `from` with a `race`, `element`, `size`, `class`, `monster_group`, `monster`, or `job`. Values are summed in rAthena's own groups, so results match rAthena.
-- The last argument of `bonuses.add` can be an options table. It holds trigger flags and `stacking = "highest"` for bonuses where only the highest value counts.
-- Arguments come in a fixed order: what the bonus applies to, then the chance, then the amount, then other numbers, then the options table. Chances are whole numbers per 10,000.
-- Equipped items get the `"damage"` event for every hit the wearer deals or takes. Its object has `source`, `target`, `kind`, `range`, `skill`, `element`, `is_critical`, `amount`, and `wearer_is_source`.
+- The last argument of `bonuses.add` can be an options table. Variants of one quantity share its name and differ by option:
+  - `{ percent = true }` for a percent instead of a flat value: `bonuses.add("max_hp", 10, { percent = true })`;
+  - `skill`, `item`, or `item_group` for one skill or item: `bonuses.add("sp_cost", -10, { percent = true, skill = BASH })`;
+  - `against` or `from` for one kind of target or source.
+- Procs are named after their effect. The chance (a whole number per 10,000) and the trigger are options: `bonuses.add("cause_status", statuses.stun, { chance = 300, when = "hit_taken" })`. `when` is `"attack"` (the default), `"hit_taken"`, or `"skill_used"`.
+- The `stacking` option says how bonuses of one name combine: `"sum"` (the default), `"highest"`, or `"lowest"`. Six bonuses keep one value, such as `attack_element`: their default `"last"` follows rAthena's order, and `{ stacking = "priority", priority = n }` lets a mod choose.
+- Arguments come in a fixed order: what the bonus produces or applies to, then the amount, then other numbers, then the options table.
+- Equipped items get two events. `"damage"` fires for every hit the wearer deals or takes. Its object has `source`, `target`, `kind`, `range`, `skill`, `element`, `is_critical`, `amount`, and `wearer_is_source`. `"skill_used"` fires for every skill the wearer uses, also skills that deal no damage. Its object has `skill`, `level`, `target`, `x`, and `y`.
 - `player:add_timed_bonuses(key, ms, bonuses, options)` gives a player bonuses for a time, saved across logout. It replaces rAthena's `bonus_script`.
 - The rules from strategy section 5.3 stay: conditions read base stats only, computed functions have no side effects, results do not depend on equip order, and scripts with only constants become static data.
 
@@ -478,9 +483,12 @@ Methods on player handles check their own permissions, such as `player.give_item
 | `bonus2 bAddRace,RC_DemiHuman,10;` | `bonuses.add("damage", 10, { kind = "physical", against = { race = races.demi_human } })` |
 | `bonus2 bSubSize,Size_All,15;` | `bonuses.add("damage_taken", -15, { from = { size = sizes.all } })` |
 | `if (getrefine() >= 7) bonus bBaseAtk,10;` | `bonuses.add("atk", function() return equipped.refine >= 7 and 10 or 0 end)` |
-| `bonus bSpeedRate,25;` | `bonuses.add("move_speed_percent", 25, { stacking = "highest" })` |
+| `bonus bSpeedRate,25;` | `bonuses.add("move_speed", 25, { percent = true, stacking = "highest" })` |
+| `bonus2 bSkillUseSPrate,"SM_BASH",10;` | `bonuses.add("sp_cost", -10, { percent = true, skill = BASH })` |
+| `bonus2 bAddEff,Eff_Stun,300;` | `bonuses.add("cause_status", statuses.stun, { chance = 300 })` |
 | `autobonus "{...}",50,5000,BF_WEAPON;` | `events.on("damage", ...)` with `hit.wearer_is_source`, `random.chance`, and `timers.with_bonuses` |
-| `autobonus2` / `autobonus3` | The same `"damage"` event, with `not hit.wearer_is_source` or a check on `hit.skill` |
+| `autobonus2` | The same `"damage"` event, with `not hit.wearer_is_source` |
+| `autobonus3` | `events.on("skill_used", ...)` with a check on `use.skill` |
 | `bonus_script "{...}",60;` | `player:add_timed_bonuses(key, 60000, { ... })` |
 | `OnEquipScript:` / `OnUnequipScript:` | The equip setup function, and the context's end |
 | Every equipped script reruns on each stat recalculation. | Bonuses are added once. Computed ones rerun only when a value they read changes. |
@@ -540,17 +548,23 @@ Methods on player handles check their own permissions, such as `player.give_item
 
    The names of rAthena's bonus types are listed in [0002a](0002a-bonus-names.md).
 10. Bonus names and item events ([0002a](0002a-bonus-names.md), accepted):
-    - **Stat abbreviations.** Stats keep the short forms players know, everywhere in the API: `str`, `agi`, `vit`, `int`, `dex`, `luk`; `atk`, `matk`, `def`, `mdef`, `hit`, `flee`, `crit`, `aspd`, `hp`, `sp`, `ap`; and the trait stats `pow`, `sta`, `wis`, `spl`, `con`, `crt`, `patk`, `smatk`, `res`, `mres`, `hplus`, `crate`. So `"luk"`, `player.str`, `player.base_str`, `"atk"` (rAthena's `bBaseAtk`), `"weapon_atk"` (`bAtk`), and `"aspd_percent"`. Other words stay full, such as `perfect_dodge`.
-    - **One name per quantity.** Per-skill and per-item variants have their own names, such as `skill_cooldown`.
+    - **Stat abbreviations.** Stats keep the short forms players know, everywhere in the API: `str`, `agi`, `vit`, `int`, `dex`, `luk`; `atk`, `matk`, `def`, `mdef`, `hit`, `flee`, `crit`, `aspd`, `hp`, `sp`, `ap`; and the trait stats `pow`, `sta`, `wis`, `spl`, `con`, `crt`, `patk`, `smatk`, `res`, `mres`, `hplus`, `crate`. So `"luk"`, `player.str`, `player.base_str`, `"atk"` (rAthena's `bBaseAtk`), and `"weapon_atk"` (`bAtk`). Other words stay full, such as `perfect_dodge`.
+    - **One name per quantity.**
     - **Damage.** Damage dealt and taken by percent are the bonuses `"damage"` and `"damage_taken"`, with an options table (`kind`, `range`, `attack`, `element`, `skill`, `weapon_type`, and `against` or `from`). Values are summed in rAthena's own groups, so results match rAthena. 33 rAthena types map onto them.
-    - **`_percent`** marks only a percent of a normally flat quantity, such as `max_hp_percent`.
     - **Signs.** A positive value raises the named quantity. Reductions such as `bSubRace` flip their sign.
     - **Chances** are whole numbers per 10,000.
     - **Options table.** Trigger flags go in the last argument. `{ stacking = "highest" }` replaces rAthena's non-stacking types, and any bonus with an amount can use it.
-    - **Argument order.** What the bonus applies to, then the chance, then the amount, then other numbers, then the options table.
     - **Constants.** `wa.weapon_types`, `wa.monster_groups`, and `items.group`.
-    - **The `"damage"` event** replaces `"attack"` and `"hit_taken"`. No `"skill_used"` event is added. The damage object has `source`, `target`, `kind` (which replaces `is_weapon` and `is_magic`), `range`, `skill`, `element`, `is_critical`, `amount`, and `wearer_is_source`. `autobonus`, `autobonus2`, and `autobonus3` convert to it.
+    - **The `"damage"` event** replaces `"attack"` and `"hit_taken"`. The damage object has `source`, `target`, `kind` (which replaces `is_weapon` and `is_magic`), `range`, `skill`, `element`, `is_critical`, `amount`, and `wearer_is_source`. `autobonus` and `autobonus2` convert to it.
     - **Timed bonuses.** `timers.with_bonuses` takes the option `{ restart = timer }`. `player:add_timed_bonuses(key, ms, bonuses, options)` replaces `bonus_script`.
+11. Bonus names, second round ([0002a](0002a-bonus-names.md), review decisions 11 to 17):
+    - **`"skill_used"`** is an item event, fired for every skill the wearer uses, also skills that deal no damage. `autobonus3` converts to it.
+    - **One-value bonuses.** `attack_element`, `defense_element`, `set_def`, `set_mdef`, `block_healing`, and `transform_monster` keep one value. Their default, `stacking = "last"`, follows rAthena's order: equipment by slot, then combos, then cards, then timed bonuses. `{ stacking = "priority", priority = n }` lets a mod choose: the highest priority wins, and ties fall back to that order. `"highest"` and `"lowest"` stay for the other bonuses.
+    - **Procs.** No name starts with `chance_to_`. The name is the effect (`cause_status`, `cast`, `coma`, `drain_hp`, `break_weapon`, and others). The chance goes in the `chance` option, with `when` (`"attack"`, `"hit_taken"`, or `"skill_used"`), `against`, and `from`.
+    - **Percent.** No name ends in `_percent`. Flat and percent share a name, with `{ percent = true }`. A name that rAthena has only as a percent requires it, and a name that rAthena has only as flat refuses it.
+    - **Variants.** Per-skill and per-item variants are the options `skill`, `item`, and `item_group` on the shared name, such as `bonuses.add("sp_cost", -10, { percent = true, skill = BASH })`. A separate name stays only where the meaning differs.
+    - **Argument order.** What the bonus produces or applies to, then the amount, then other numbers, then the options table. The chance is always an option.
+    - **Conversion.** The converter maps every rAthena bonus form to a call in 0002a.
 
 ## Version
 

@@ -704,7 +704,7 @@ return function()
     local level = player.base_level
     return level > 70 and (level - 70) // 10 * 10 or 0
   end)
-  bonuses.add("aspd_percent", function() return 4 + equipped.refine end)
+  bonuses.add("aspd", function() return 4 + equipped.refine end, { percent = true })
   bonuses.add("atk", function() return player.base_luk >= 90 and 20 or 0 end)
 end
 ```
@@ -752,7 +752,7 @@ Rules:
 1. **Conditions read base stats only.** This matches rAthena. `readparam(bLuk)` returns `sd->status.luk`, the allocated points without bonuses (`src/map/pc.cpp`, `pc_readparam`). Item conditions cannot form cycles.
 2. **Every value a script can read sends a change event.** This includes base and job level, base stats, job class, refine, enchants, grade, map and map flags, other equipped items, learned skill levels, active status effects, and time of day.
 3. **Computed functions have no side effects.** They only return a value. The runtime blocks calls that change game state while a computed function runs.
-4. **Results do not depend on equip order.** The final formula applies bonuses in a fixed order.
+4. **Results do not depend on equip order.** The final formula applies bonuses in a fixed order. Six bonuses keep a single value, such as `attack_element`, because rAthena overwrites them. By default the last one wins in rAthena's own fixed order: equipment by slot, then combos, then cards, then timed bonuses by start time. So the result still does not depend on when an item was equipped. A mod can pick the winner with `{ stacking = "priority", priority = n }` ([0002a](proposals/0002a-bonus-names.md), "Stacking").
 5. **Scripts using only constants become static tables.** The converter detects them, and the server applies them without calling Lua.
 
 Every bonus name, the options of `"damage"` and `"damage_taken"`, and the `"damage"` event are listed in [proposal 0002a](proposals/0002a-bonus-names.md).
