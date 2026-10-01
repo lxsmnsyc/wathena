@@ -29,20 +29,45 @@ RUN --mount=type=cache,target=/root/.cache/pnpm-store \
 COPY client/ ./
 RUN pnpm build
 
-# Builds static Go binaries. Nothing needs cgo.
+# Builds static binaries. waserver runs Lua through cgo (internal/script).
+# zig cc compiles the C code and links waserver against musl, so it stays
+# static and runs on the distroless image. wactl needs no cgo.
 FROM golang:1.27.1-trixie@sha256:3b77fc618ec235a1ab412de7737f120dd507c57e8d87de4cbb7994fb94275ed5 AS server
+# zig 0.16.0, pinned by SHA-256. Update it together with ZIG_VERSION and
+# the ZIG_SHA256_* values in .github/workflows/ci.yml.
+RUN apt-get update && apt-get install -y --no-install-recommends xz-utils && \
+    rm -rf /var/lib/apt/lists/* && \
+    arch="$(uname -m)" && \
+    case "$arch" in \
+      x86_64) sha256=70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00 ;; \
+      aarch64) sha256=ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17 ;; \
+      *) echo "no pinned zig for $arch" >&2; exit 1 ;; \
+    esac && \
+    curl -fsSLo /tmp/zig.tar.xz "https://ziglang.org/download/0.16.0/zig-${arch}-linux-0.16.0.tar.xz" && \
+    echo "${sha256}  /tmp/zig.tar.xz" | sha256sum -c - && \
+    mkdir /opt/zig && tar -xJf /tmp/zig.tar.xz -C /opt/zig --strip-components=1 && \
+    rm /tmp/zig.tar.xz
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY . .
 COPY --from=client /src/client/dist client/dist
 ARG VERSION=dev
-ENV CGO_ENABLED=0
+# Flags for waserver:
+#   - netgo and osusergo keep the resolver and user lookups in Go.
+#   - -static links musl into the binary, and -s strips it. With external
+#     linking, Go's own -s does not strip what zig links.
+#   - stack-size sets musl's default thread stack to 8 MB. Threads that run
+#     Lua need about 512 KB of C stack, and musl's own default is 128 KB.
+ENV ZIG_GLOBAL_CACHE_DIR=/root/.cache/zig
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    go build -trimpath -buildvcs=false -tags webclient \
-      -ldflags "-s -w -X main.buildVersion=${VERSION}" \
+    --mount=type=cache,target=/root/.cache/zig \
+    CGO_ENABLED=1 CC="/opt/zig/zig cc -target $(uname -m)-linux-musl" \
+    go build -trimpath -buildvcs=false -tags webclient,netgo,osusergo \
+      -ldflags "-s -w -X main.buildVersion=${VERSION} -linkmode external -extldflags '-static -s -Wl,-z,stack-size=8388608'" \
       -o /out/waserver ./server/cmd/waserver && \
-    go build -trimpath -buildvcs=false -ldflags "-s -w" -o /out/wactl ./tools/wactl && \
+    CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags "-s -w" -o /out/wactl ./tools/wactl && \
+    /out/waserver version && \
     mkdir -p /out/srv/assets
 
 # wactl with the PostgreSQL 18 client tools.

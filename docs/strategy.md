@@ -176,7 +176,7 @@ wAthena runs **C Lua 5.4 through a small cgo binding of its own** ([docs/decisio
 - Coroutines, which NPC dialogs need.
 - A memory limit per state, from the binding's allocator.
 - A CPU limit per call, from a count hook that charges a budget. Coroutines inherit it.
-- Item and proc calls cost about 200 ns with limits on. An NPC dialog of 4 steps costs about 2 µs.
+- Item and proc calls cost 250 to 320 ns with limits on. An NPC dialog of 4 steps costs about 2.5 µs.
 
 The phase 0b benchmark compared five options. The others:
 
@@ -2284,7 +2284,18 @@ The order from here:
    - CI's `compose` job builds both images and runs `.github/scripts/compose-smoke.sh`: the stack with the placeholder pack, HTTPS through Caddy, and a backup and restore.
    - Left: a countdown announced to players before a restart, which needs a world chat channel, and staff tools for staff accounts.
 6. Phase 3. The Lua runtime and mod loader. Skills, item scripts, and NPCs need it. It runs in these steps:
-   1. Lua runtime. The production binding from [decision 0002](decisions/0002-lua-runtime-c-lua.md): pinned Lua 5.4 sources, the sandbox, memory and CPU limits per call, coroutines that pause for the player, host functions, and `require` from mod sources. Fuzz tests, and release builds with `zig cc`.
+   1. Lua runtime. Done on 2026-10-01 ([internal/script](../internal/script/README.md), and [decision 0002](decisions/0002-lua-runtime-c-lua.md), "Production binding"):
+      - Lua 5.4.9 vendored and checked against the release tarball's SHA-256, compiled with the binding through cgo.
+      - The sandbox: no files, output, bytecode, `__gc`, or `math.random`, and a protected string metatable.
+      - A memory limit per state, and a CPU budget and time limit per call and per resume. The budget charges work in C too, such as pattern matching. `pcall` cannot catch a hit limit, and the state stays usable.
+      - Host functions registered from Go, with one cgo crossing per call. Errors and panics in them become Lua errors.
+      - Threads that host functions pause and Go resumes, for NPC dialogs. Abandoned threads and refs are freed.
+      - `require` from sources that Go gives, loaded once per state.
+      - The same API on `lua.wasm` in wazero for builds without cgo, with the same tests.
+      - Fuzz tests on random source, random call sequences, and raw values into `glue.c`.
+      - The image builds `waserver` with `zig cc` against musl. It stays static and 12 MB compressed. CI cross-builds Linux amd64 and arm64, Windows amd64, and macOS arm64, the last on a macOS runner.
+      - Item and proc calls cost 250 to 320 ns, and the NPC dialog 2.3 µs.
+      - Left: environments per mod and read-only shared tables (step 2), the public API (section 5.1), and tests on Windows, which CI only builds.
    2. Mod loader. Manifests, dependencies, load order, data overlays, ID ranges, permissions, and the ruleset loader moved from phase 2.
    3. Item scripts. The converter for item scripts, run on the Lua runtime. It replaces the Go code that reads plain heal scripts.
    4. NPCs. Dialogs, shops, and services, with events, variables, and hooks.

@@ -17,6 +17,15 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone the player is in, through its `zone.Session`, which stays the same across map changes. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. |
 | `cmd/waserver` | The all-in-one server: the web client, an asset build over HTTP, the account pages, and a world of zones over WebSocket, one per map, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. See "All-in-one". |
 
+## Building
+
+`waserver` runs Lua through cgo ([internal/script](../internal/script/README.md)).
+
+- `go build ./server/cmd/waserver` and `go test ./...` need a C compiler. Go uses the system one: clang on macOS, gcc on Linux.
+- Without a C compiler, or with `CGO_ENABLED=0`, the same code runs Lua compiled to WebAssembly in wazero. It is slower, and meant for development.
+- Release builds use `zig cc`: static musl binaries for Linux, and binaries for Windows and macOS. The Dockerfile and CI's `lua` and `lua-macos` jobs have the commands. Static Linux builds need `-Wl,-z,stack-size=8388608`, since Lua needs more C stack than musl's default.
+- At startup, `waserver` runs a self-test of the Lua runtime and refuses to start when it fails.
+
 ## Development server
 
 `--dev` takes any valid character name as the session token, instead of accounts. Anyone who reaches it can play any character, so it refuses to start unless `--addr` is a loopback address, such as the default `127.0.0.1:8300`. See "Running with accounts" for the real login.
@@ -246,7 +255,7 @@ The web client:
 - Every client response has a strict Content Security Policy that allows only this origin and its WebSocket, and HSTS with an https public URL.
 - A production build plays on `/ws` of its own origin. `?server=` names another server, and `?viewer` opens the map viewer.
 
-The reference data that `waserver` reads at startup (`reference/rathena/extracts` and `mob_status.json` of both modes) is embedded in the binary by `reference/rathena/embed.go`, so it runs outside the repository. It adds 24 MB to the binary, about half of its 46 MB, and compresses to about 2 MB in the image. The client adds 0.9 MB.
+The reference data that `waserver` reads at startup (`reference/rathena/extracts` and `mob_status.json` of both modes) is embedded in the binary by `reference/rathena/embed.go`, so it runs outside the repository. It adds 24 MB to the binary, about half of its 48 MB, and compresses to about 2 MB in the image. The client adds 0.9 MB.
 
 Health checks:
 

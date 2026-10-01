@@ -71,6 +71,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/assets/build"
 	"github.com/lxsmnsyc/wathena/internal/assets/serve"
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/reference/rathena"
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/battle"
@@ -212,6 +213,11 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return fmt.Errorf("the configuration has problems:\n%w", indent(err))
 	}
+	// No game code uses Lua yet. Checking the runtime at startup proves
+	// that this build's binding works, including the C stack it needs.
+	if err := script.SelfTest(); err != nil {
+		return fmt.Errorf("lua runtime: %w", err)
+	}
 	// The reference data built into the binary, so it runs anywhere.
 	reference.UseFS(rathena.Files)
 	captchaProvider := account.Captcha(account.NoCaptcha{})
@@ -229,6 +235,7 @@ func runAll(name string, args []string) error {
 	}
 	defer func() { _ = files.Close() }()
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	log.Info("lua runtime ready", "lua", script.LuaVersion, "backend", script.Backend)
 	web, clientFrom, err := loadClient(cfg)
 	if err != nil {
 		return err

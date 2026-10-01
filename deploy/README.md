@@ -24,7 +24,7 @@ The stack:
 
 The two wAthena images come from the repository's `Dockerfile`:
 
-- `wathena/waserver` is distroless (no shell), with one static binary: `waserver` with the web client and the reference data built in. 12 MB compressed, 46 MB on disk.
+- `wathena/waserver` is distroless (no shell), with one static binary: `waserver` with the web client and the reference data built in. 12 MB compressed, 48 MB on disk. The build compiles Lua with `zig cc` and links the binary against musl, so it stays static. zig is downloaded in the build and checked against a pinned SHA-256.
 - `wathena/wactl` is `wactl` on the `postgres:18` image, for `pg_dump` and `pg_restore`. 170 MB compressed, mostly the PostgreSQL image, which the stack pulls anyway.
 
 You need Docker Engine with Compose 2.20 or later. For about 500 players, section 3.9 suggests 4 CPU cores, 8 GB of memory and 50 GB of SSD. Building assets from a full game client takes 4 GB of memory.

@@ -8,6 +8,8 @@
 # The asset encoders are committed for the same reason.
 !/internal/assets/texture/wasm/webp.wasm
 !/internal/assets/sound/wasm/opus.wasm
+# Lua for builds without cgo. CI rebuilds it and checks that it matches.
+!/internal/script/wasm/lua.wasm
 # The client's pathfinding module, built from shared/path with TinyGo. CI
 # rebuilds it and checks that it matches.
 !/client/src/world/path.wasm

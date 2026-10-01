@@ -37,6 +37,98 @@ jobs:
       - run: go vet ./...
       - run: go test -race ./...
 
+  # The Lua runtime in internal/script (decision 0002). The test job above
+  # runs its cgo build with -race. This job checks the rest:
+  #   - the vendored Lua sources against the pinned release tarball,
+  #   - lua.wasm against a fresh build from the same C sources,
+  #   - the same tests on the WebAssembly build, which builds without cgo,
+  #   - the tests as a static musl binary, the way the image builds,
+  #   - waserver for the release targets, cross-compiled with zig cc.
+  lua:
+    runs-on: ubuntu-latest
+    env:
+      ZIG_VERSION: 0.16.0
+      ZIG_SHA256_LINUX_X86_64: 70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
+      WASI_SDK_SHA256: b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.mod
+      - name: Install zig and wasi-sdk
+        run: |
+          curl -fsSLo zig.tar.xz "https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz"
+          echo "${ZIG_SHA256_LINUX_X86_64}  zig.tar.xz" | sha256sum -c
+          mkdir "$RUNNER_TEMP/zig"
+          tar -xJf zig.tar.xz -C "$RUNNER_TEMP/zig" --strip-components=1
+          echo "$RUNNER_TEMP/zig" >> "$GITHUB_PATH"
+          curl -fsSLo wasi-sdk.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.tar.gz
+          echo "${WASI_SDK_SHA256}  wasi-sdk.tar.gz" | sha256sum -c
+          tar -xzf wasi-sdk.tar.gz -C "$RUNNER_TEMP"
+          echo "WASI_SDK=$RUNNER_TEMP/wasi-sdk-34.0-x86_64-linux" >> "$GITHUB_ENV"
+          rm zig.tar.xz wasi-sdk.tar.gz
+      - name: Check the vendored Lua sources
+        run: internal/script/lua/update.sh --check
+      - name: Check lua.wasm
+        run: |
+          internal/script/wasm/build.sh
+          git diff --exit-code -- internal/script/wasm/lua.wasm
+      - name: Test the WebAssembly build
+        run: |
+          CGO_ENABLED=0 go test -count=1 ./internal/script/...
+          go test -count=1 -tags luawasm ./internal/script/...
+      - name: Test as a static musl binary
+        env:
+          CGO_ENABLED: "1"
+          CC: zig cc -target x86_64-linux-musl
+        run: |
+          go test -c -o "$RUNNER_TEMP/script.test" -tags netgo,osusergo \
+            -ldflags "-linkmode external -extldflags '-static -Wl,-z,stack-size=8388608'" ./internal/script
+          cd internal/script && "$RUNNER_TEMP/script.test" -test.count=1
+      - name: Build waserver for the release targets
+        run: |
+          static="-linkmode external -extldflags '-static -s -Wl,-z,stack-size=8388608'"
+          build() {
+            echo "== $1/$2"
+            CGO_ENABLED=1 GOOS=$1 GOARCH=$2 CC="zig cc -target $3" go build -trimpath -tags netgo,osusergo \
+              -ldflags "-s -w $4" -o "$RUNNER_TEMP/waserver-$1-$2" ./server/cmd/waserver
+          }
+          build linux amd64 x86_64-linux-musl "$static"
+          build linux arm64 aarch64-linux-musl "$static"
+          build windows amd64 x86_64-windows-gnu ""
+          file "$RUNNER_TEMP"/waserver-*
+          "$RUNNER_TEMP/waserver-linux-amd64" version
+
+  # zig cc links macOS binaries against the SDK, which only a macOS machine
+  # has, so darwin/arm64 builds on a macOS runner. The tests run natively.
+  lua-macos:
+    runs-on: macos-latest
+    env:
+      ZIG_VERSION: 0.16.0
+      ZIG_SHA256_MACOS_AARCH64: b23d70deaa879b5c2d486ed3316f7eaa53e84acf6fc9cc747de152450d401489
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.mod
+      - name: Install zig
+        run: |
+          curl -fsSLo zig.tar.xz "https://ziglang.org/download/${ZIG_VERSION}/zig-aarch64-macos-${ZIG_VERSION}.tar.xz"
+          echo "${ZIG_SHA256_MACOS_AARCH64}  zig.tar.xz" | shasum -a 256 -c
+          mkdir "$RUNNER_TEMP/zig"
+          tar -xJf zig.tar.xz -C "$RUNNER_TEMP/zig" --strip-components=1
+          echo "$RUNNER_TEMP/zig" >> "$GITHUB_PATH"
+      - run: go test -race -count=1 ./internal/script/...
+      - name: Build waserver for darwin/arm64
+        run: |
+          sdk=$(xcrun --show-sdk-path)
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
+            CC="zig cc -target aarch64-macos --sysroot $sdk -L/usr/lib -F$sdk/System/Library/Frameworks" \
+            go build -trimpath -tags netgo,osusergo -ldflags "-s -w" -o "$RUNNER_TEMP/waserver-darwin-arm64" ./server/cmd/waserver
+          "$RUNNER_TEMP/waserver-darwin-arm64" version
+
   # 50 bots against a server in its own process, on the placeholder map,
   # for 20 seconds (server/README.md, "Load tests and metrics"). It checks
   # that no bot fails and that the server stays within the budgets of

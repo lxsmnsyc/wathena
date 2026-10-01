@@ -1,7 +1,7 @@
 # 0002: C Lua Through Our Own cgo Binding
 
 - Status: accepted.
-- Date: 2026-09-29.
+- Date: 2026-09-29. Updated on 2026-10-01 with the production binding (see "Production binding").
 - Supersedes: [0001](0001-lua-runtime.md).
 
 ## Decision
@@ -115,8 +115,48 @@ wazero is worth measuring again when its exception support improves. `glue.c` is
 - Host functions are typed C functions, not a Go function registry looked up on each call.
 - Limits live in `glue.c`: an allocator with a byte limit, and a hook every 1,000 instructions that charges a per-call budget. New coroutines inherit the hook.
 
+## Production binding
+
+Phase 3 step 1 built the binding into [internal/script](../../internal/script). The decision stands. These parts differ from the prototype, for the reasons given.
+
+- **Lua is vendored.** Lua 5.4.9 is in `internal/script/lua/src`, checked against the SHA-256 of the release tarball, and compiled in one translation unit with the binding. The prototype linked Homebrew's library.
+- **Lua uses `_setjmp`.** Plain `setjmp` saves the signal mask with a system call on macOS. It made an empty call cost 300 ns instead of 75 ns. Homebrew builds Lua with `LUA_USE_POSIX`, so the prototype did not have this problem.
+- **Host functions are generic.** Go registers any number of host functions. Each is a C closure with an ID. Arguments and results pass through an array in C memory, so each call still crosses cgo once. A call with no arguments costs 66 ns, as before. Two integer arguments add about 30 ns, for decoding and a deferred `recover` that turns Go panics into Lua errors.
+- **The CPU budget sees work in C.** The count hook only counts instructions. One `string.find` with a backtracking pattern, or a loop over `table.sort`, could run for hours inside the prototype's budget. Now:
+  - Allocations cost 1 unit per 64 bytes, and the allocator refuses once the budget is gone.
+  - A patched copy of `lstrlib.c` charges pattern matching and plain `find`. The patch is 8 lines, and a test checks it against the original file.
+  - `table.sort`, `table.insert`, `table.unpack`, `string.byte`, `tonumber`, `utf8.len`, `load`, and others are charged for the work they do in C.
+- **Limits cannot be caught.** `pcall`, `xpcall`, `coroutine.resume`, and `require` raise a hit limit again. The prototype's `pcall` could catch the CPU error and loop. An error from the count hook runs the `xpcall` message handler while Lua has hooks off, so the handler does not run once a limit is hit.
+- **A time limit backs up the budget.** It is 1 second per call by default. Comparing two long strings is one instruction that does not allocate, so only the clock stops a loop of them. The hook reads a cheap clock: `mach_absolute_time` on macOS and the coarse monotonic clock on Linux.
+- **Memory is limited per state.** The decision said "per call", but the allocator limits what the state holds. What one call allocates in total is bounded by the CPU budget.
+- **Static Linux builds set an 8 MB thread stack.** Lua's limit of 200 nested C calls needs up to 512 KB of C stack, in `string.gsub`. musl's default thread stack is 128 KB. zig's linker happens to set 16 MB, which musl caps at 8 MB, and the build flags now set 8 MB on purpose. `waserver` checks deep recursion at startup.
+- **macOS builds need the SDK.** `zig cc` links macOS binaries against system frameworks that Go's packages use. CI builds darwin/arm64 with `zig cc` on a macOS runner. Linux and Windows cross-compile from Linux.
+- **`lua.wasm` is built without `wasm-opt`.** clang runs `wasm-opt` when it finds one on PATH. Without it the output is the same on every machine, so CI rebuilds it and compares.
+
+Time per operation on the same Apple M2, with default limits. The prototype was run again on the same day, and matched the table above within 5%.
+
+| Workload | Prototype | Production, cgo | Production, wazero |
+|---|---:|---:|---:|
+| `static_equip` | 224 ns | 316 ns | 1.54 µs |
+| `computed` | 168 ns | 246 ns | 1.72 µs |
+| `hit_taken` | 171 ns | 256 ns | 1.48 µs |
+| `npc_dialog` | 2.07 µs | 2.32 µs | 137 µs |
+| `npc_dialog`, paused by host functions | none | 2.72 µs | 110 µs |
+| `equip_with_require` | 361 ns | 449 ns | 2.40 µs |
+| `compute_1000` | 262 µs | 146 µs | 344 µs |
+| `new_state` | 1.10 ms | 0.95 ms | 3.26 ms |
+| `load_1000_items` | 4.03 ms | 3.66 ms | 11.3 ms |
+| `mod_state_200_items` | 1.05 ms | 0.91 ms | 3.09 ms |
+| Empty call | 73 ns | 84 ns | 1.12 µs |
+| Call from Lua into Go | 66 ns | 66 ns | 121 ns |
+
+- Item and proc calls cost 80 to 90 ns more than the prototype's, because of the generic host functions. They are still cheaper than every other runtime measured above: golua took 748 to 879 ns, and gopher-lua 536 to 654 ns.
+- Loading and pure Lua work are faster, since Lua is compiled in one unit with the binding instead of linked as a shared library.
+- `npc_dialog`, paused by host functions, is the dialog as NPC scripts will run it: a thread that Go resumes, with `mes` and `menu` as host functions that pause it.
+- The infinite loop stops after 21 ms and the 1 GB table after 18 ms, as with the prototype.
+- A state with 1,000 items uses 606 KB, and one mod of 200 items 155 KB.
+
 ## Follow-up
 
-- Move the binding into `internal/script` with fuzz tests on `glue.c`.
-- Add `zig cc` cross-compiling for release targets to CI.
+- Done in phase 3 step 1: the binding in `internal/script`, fuzz tests on `glue.c`, and `zig cc` release builds in CI.
 - Report golua's memory accounting panic upstream anyway, since other Go projects use it.
