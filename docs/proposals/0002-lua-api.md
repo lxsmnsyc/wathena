@@ -275,7 +275,7 @@ return function()
 end
 ```
 
-- Bonus types are names, checked by `bonuses.add` like event names. rAthena's 248 bonus types each get a readable name, such as `bLuk` to `"luck"`, `bFlee2` to `"perfect_dodge"`, and `bSubSize` to `"damage_taken_from_size_percent"`.
+- Bonus types are names, checked by `bonuses.add` like event names. rAthena's 241 bonus types each get a readable name, such as `bLuk` to `"luck"` and `bFlee2` to `"perfect_dodge"`. The full list is in [0002a](0002a-bonus-names.md).
 - The rules from strategy section 5.3 stay: conditions read base stats only, computed functions have no side effects, results do not depend on equip order, and scripts with only constants become static data.
 
 ### Timers and schedules
@@ -510,6 +510,20 @@ Methods on player handles check their own permissions, such as `player.give_item
    - The player fields `max_sp`, `character_id`, and `account_id`.
 7. `monster_killed` passes a monster handle, not a table of what the monster was. The handle reads while the event runs, with `is_alive` false, and raises an error after it, like any handle to a removed entity. Mods use one kind of object for monsters.
 8. `level_up` with a kind argument is split into `base_level_up` and `job_level_up`, each `function(player)`. A handler listens to the level it needs, without a check on a string.
+9. Item scripts (phase 3 step 3) add these, for the commands rAthena's item scripts use most:
+
+   | rAthena | wAthena |
+   |---|---|
+   | `getgroupitem` (item boxes) | `player:give_item_from_group("Old_Blue_Box")` |
+   | `warp "Random",0,0;` (Fly Wing) | `player:warp_to_random_cell()` |
+   | `warp "SavePoint",0,0;` (Butterfly Wing) | `player:warp_to_save_point()` |
+   | `getenchantgrade()` | `equipped.enchant_grade`, next to `equipped.refine` |
+   | `skill` (equipment that grants a skill) | `bonuses.add("skill", BASH, 3)` |
+   | `eaclass()` | `player.job_class`, and tests such as `jobs.is_transcendent(player.job)` |
+   | `hateffect` | `player:show_headgear_effect(effect)` |
+   | `rentitem` | `player:give_item(item, 1, { rent_seconds = 3600 })` |
+
+   The readable names of rAthena's bonus types are listed in [0002a](0002a-bonus-names.md).
 
 ## Version
 
@@ -517,5 +531,5 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the phas
 
 ## Next steps
 
-1. Build phase 3 step 2, the mod loader, with this context model.
+1. Build phase 3 step 2, the mod loader, with this context model. Done.
 2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, and `wa.variables` with NPCs.
