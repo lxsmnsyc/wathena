@@ -420,7 +420,7 @@ local current_season = exports.get("example.seasonal-lib", "current_season")
 | `wa.random` | `random.integer(minimum, maximum)` and `random.chance(numerator, denominator)` from the zone's secret stream | None |
 | `wa.integers` | `divide_truncated` and `remainder_truncated` with C rounding, for converted scripts | None |
 | `wa.text` | Translated text for the player's language, and `text.item_link(item)` | None |
-| `wa.maps`, `wa.world` | `maps.announce(map, text)` and `world.announce(text)` | None |
+| `wa.maps`, `wa.world` | `maps.announce(map, text)` and `world.announce(text)` | None for `maps.announce`; `world.announce` for `world.announce` |
 | `wa.emotions` | Constants of `npc:show_emotion` | None |
 | `wa.exports` | Functions shared between mods | None |
 | `wa.effects`, `wa.races`, `wa.statuses`, `wa.jobs`, `wa.sizes`, `wa.elements`, `wa.monster_classes`, `wa.weapon_types`, `wa.monster_groups` | Constants | None |
@@ -643,21 +643,22 @@ Methods on player handles check their own permissions, such as `player.give_item
 
     `hide_image` is the way to clear an illustration that this decision left open.
 
-## Provisional API
+14. NPCs, review of what phase 3 step 4 added. The user accepted these as they are:
 
-These parts came with phase 3 step 4 and are not settled. Each is the smallest form that the converted scripts or the step needed. They wait for review:
+    - `player:unmark_minimap(id)` removes a minimap mark, as `viewpoint` with action 2.
+    - `player.sex` is `"male"` or `"female"`, for rAthena's `Sex`.
+    - `variable:add(player, amount)`, and `variable:add(amount)` for server variables, change an integer in one step and return the new value. `x += n` converts to it, so a change made in between is not lost.
+    - `variable:set(player, nil)` resets a variable to its default: 0, false, "", or nil for a table. A table is stored when its keys are all strings, or 1 to n.
+    - `player:open_shop(name)` takes a record name: the mod's own shop name, or `mod:Name` for another mod's shop.
+    - `player:set_save_point` needs the permission `player.warp`, and returns false when the map does not run or the cell is not walkable.
+    - `text "key"` reads the mod's `locales/en.yml` only, until players have a language.
+    - `data/npcs.yml`: `discount: false` turns Discount off for a shop, a record with a `shop` and no `map` is only opened by scripts, a shop item without a `price` costs its buy price, and `display_name` may be empty.
+    - `data/items.yml`: `name`, `buy`, `sell` and `no_sell` set an item's name and prices.
 
-- `player:unmark_minimap(id)` removes a minimap mark, as `viewpoint` with action 2.
-- `player.sex` is `"male"` or `"female"`, for rAthena's `Sex`.
-- `variable:add(player, amount)`, and `variable:add(amount)` for server variables, change an integer in one step and return the new value. `x += n` converts to it, so a change made in between is not lost.
-- `variable:set(player, nil)` resets a variable to its default: 0, false, "", or nil for a table. A table is stored when its keys are all strings, or 1 to n.
-- `player:take_item(item, 0)` takes nothing and returns true, as `delitem` with 0.
-- `player:open_shop(name)` takes a record name. A name without a mod ID is the running mod's own.
-- `player:set_save_point` needs the permission `player.warp`, and returns false when the map does not run or the cell is not walkable.
-- Announcements need no permission. They are at most 255 bytes.
-- `text "key"` reads the mod's `locales/en.yml` only, until players have a language.
-- `data/npcs.yml`: `discount: false` turns Discount off for a shop, a record with a `shop` and no `map` is only opened by scripts, a shop item without a `price` costs its buy price, and `display_name` may be empty.
-- `data/items.yml`: `name`, `buy`, `sell` and `no_sell` set an item's name and prices.
+    The user changed these:
+
+    - `player:take_item(item, 0)` raises an error: the amount must be at least 1, so a script's bug shows. rAthena's `getitem` and `delitem` do nothing for an amount of 0 or less. The converter leaves out a call with a fixed amount of 0 or less, and sends a computed amount through `R.give_item` or `R.take_item`, which check it. The coverage reports count both.
+    - `world.announce` needs the permission `world.announce`, which the owner approves. `maps.announce` needs none. Both take at most 255 bytes. The built-in mods hold every permission, so converted NPCs keep their announcements. waserver's countdown before it stops is server code, and needs no permission.
 
 ## Version
 
@@ -667,4 +668,4 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the phas
 
 1. Build phase 3 step 2, the mod loader, with this context model. Done.
 2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, and `wa.variables` with NPCs. Done for these steps. `wa.hooks`, `wa.storage`, `wa.spawning`, `wa.schedules` and `wa.exports` come with the next steps.
-3. Review the provisional API above.
+3. Review the API that step 4 added. Done: review decision 14.

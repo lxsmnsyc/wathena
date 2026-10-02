@@ -98,14 +98,11 @@ func (r *Runtime) playerTakeItem(c *script.Call) error {
 	if err := r.mutating("player:take_item"); err != nil {
 		return err
 	}
-	// An amount of 0 takes nothing, as delitem with 0.
-	item, amount, err := itemAmount(c, "player:take_item", 0)
+	// An amount of 0 is an error, so a script's bug shows instead of
+	// taking nothing (proposal 0002, decision 14).
+	item, amount, err := itemAmount(c, "player:take_item", 1)
 	if err != nil {
 		return err
-	}
-	if amount == 0 {
-		c.Return(script.Bool(true))
-		return nil
 	}
 	ok, err := h.TakeItem(id, item, amount)
 	if err != nil {
@@ -292,6 +289,13 @@ func (r *Runtime) announce(c *script.Call) error {
 	}
 	if err := r.mutating(what); err != nil {
 		return err
+	}
+	// A world announcement reaches every player, so the owner approves
+	// it. A map announcement needs no permission.
+	if what == "world.announce" {
+		if err := r.need(what, "world.announce"); err != nil {
+			return err
+		}
 	}
 	text, ok := c.Arg(1).AsString()
 	if !ok || text == "" || len(text) > MaxMessage || !utf8.ValidString(text) {

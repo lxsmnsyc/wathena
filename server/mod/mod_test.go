@@ -317,6 +317,25 @@ func TestPermissions(t *testing.T) {
 	}
 }
 
+// TestWorldAnnouncePermission checks that world.announce needs the
+// owner's approval, and that the built-in mods hold it.
+func TestWorldAnnouncePermission(t *testing.T) {
+	if p, ok := LookupPermission("world.announce"); !ok || !p.Approval || p.Flagged {
+		t.Fatalf("world.announce %+v %v", p, ok)
+	}
+	dir := t.TempDir()
+	writeMod(t, dir, "a", map[string]string{"mod.yaml": manifest("example.a", "permissions: [world.announce]")})
+	_, err := resolve(t, dir, Config{})
+	wantError(t, err, "example.a requests permissions the server owner has not approved: world.announce")
+	s, err := resolve(t, dir, Config{Approve: map[string][]string{"example.a": {"world.announce"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.Mod("example.a").Grants.Has("world.announce") || !s.Mod("core").Grants.Has("world.announce") {
+		t.Error("world.announce not granted")
+	}
+}
+
 func TestAPIRange(t *testing.T) {
 	dir := t.TempDir()
 	writeMod(t, dir, "a", map[string]string{"mod.yaml": "id: example.a\nname: A\nversion: 1.0.0\napi: '>=1.0 <2.0'\n"})

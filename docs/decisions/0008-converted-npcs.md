@@ -39,6 +39,7 @@ rAthena's `npc/` folder is 29 MB, mostly quests and instances that need features
 | `callfunc "F", ...` | `require("core.functions.F")(player, conversation, npc, ...)`, loaded on first call, so functions can call each other. |
 | `switch` | `goto` to each case, so a case without `break` runs on into the next, as in C. |
 | `end` or `close` in a function | `R.stop()`, which `R.run` in the handler catches. |
+| `getitem` and `delitem` | `player:give_item` and `player:take_item`. A fixed amount of 0 or less, which does nothing in rAthena, converts to nothing. A computed amount goes through `R.give_item` or `R.take_item`, which skip it when it is 0 or less. |
 | `checkre()` | Folded per mode, as rAthena's `RENEWAL` define is. |
 | `F_KafStor`, `F_KafCart`, `openstorage`, `setcart` | `R.not_available`: "Storage is not available yet." |
 | `F_ClearGarbage` | Nothing: it clears variables of old rAthena versions. |

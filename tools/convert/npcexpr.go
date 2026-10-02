@@ -851,7 +851,19 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		method := map[string]string{"getitem": "give_item", "delitem": "take_item"}[name]
-		b.line("player:%s(%s, %s)", method, it, n.asInt())
+		// rAthena's getitem and delitem do nothing for an amount of 0 or
+		// less. wAthena's calls raise an error then, so such a call is
+		// left out, and a computed amount goes through R, which checks it.
+		switch {
+		case n.static != nil && *n.static <= 0:
+			b.n.c.zeroAmounts[b.n.line.Name] = true
+			b.line("-- %s with an amount of %d does nothing in rAthena.", name, *n.static)
+		case n.static != nil:
+			b.line("player:%s(%s, %s)", method, it, n.asInt())
+		default:
+			b.n.c.checkedAmounts[b.n.line.Name] = true
+			b.line("R.%s(player, %s, %s)", method, it, n.asInt())
+		}
 	case "specialeffect2":
 		if len(args) != 1 {
 			return unsupported(name, "on another character")

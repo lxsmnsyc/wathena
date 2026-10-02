@@ -100,7 +100,7 @@ provides:
 | Permission | Default |
 |---|---|
 | `game.read`, `npc.create`, `event.listen`, `storage.mod` | Granted to every mod. |
-| `player.give_items`, `player.give_zeny`, `player.give_exp`, `player.warp`, `player.status`, `events.schedule` | Needs the owner's approval. |
+| `player.give_items`, `player.give_zeny`, `player.give_exp`, `player.warp`, `player.status`, `world.announce`, `events.schedule` | Needs the owner's approval. |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls` | Needs approval, and is logged as a warning at each start. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -387,19 +387,19 @@ end
 
 | Call | Permission | Meaning |
 |---|---|---|
-| `player:open_shop(name)` | None | Opens a shop of `data/npcs.yml` by record name, as `callshop`. A name without a mod ID is the running mod's. |
+| `player:open_shop(name)` | None | Opens a shop of `data/npcs.yml` by record name, as `callshop`. A name without a mod ID is the running mod's own shop. `mod:Name` opens another mod's shop. |
 | `player:set_save_point(map, x, y)` | `player.warp` | Sets the save point, as `savepoint`. Butterfly Wings and death take the player there. Returns false when the map does not run or the cell is not walkable. |
 | `player:can_carry(item, amount)` | `game.read` | `checkweight`: whether the items fit, by weight and slots. |
 | `player:pay_zeny(amount)` | None | Takes zeny. Returns false, and takes nothing, when the player has too little. |
 | `player:give_zeny(amount)` | `player.give_zeny` | Gives zeny. Zeny over 2,147,483,647 is lost. |
-| `player:take_item(item, amount)` | None | `delitem`. Returns false, and takes nothing, when the player has too few. An amount of 0 takes nothing. |
+| `player:take_item(item, amount)` | None | `delitem`. Returns false, and takes nothing, when the player has too few. The amount must be 1 or more, or the call raises an error. |
 | `player:heal_fully()` | None | Heals all HP and SP. |
 | `player:mark_minimap(id, x, y, color)` | None | Marks a cell on the minimap, as `viewpoint`. A mark with the same ID replaces it. |
 | `player:unmark_minimap(id)` | None | Removes a mark. |
 | `items.name(item)` | `game.read` | The item's name from rAthena's item database. |
 | `text.item_link(item)` | None | A link `say` shows as the item's name, as `mesitemlink`. |
 | `maps.announce(map, text)` | None | A line for every player of a map, as `mapannounce`. |
-| `world.announce(text)` | None | A line for every player of the world, as `announce`. |
+| `world.announce(text)` | `world.announce` | A line for every player of the world, as `announce`. |
 
 Player handles also have `sex`: `"male"` or `"female"`.
 

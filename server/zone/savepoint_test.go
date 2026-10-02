@@ -2,6 +2,7 @@ package zone
 
 import (
 	"log/slog"
+	"strings"
 	"testing"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -178,5 +179,51 @@ end`)
 	}
 	if !heard {
 		t.Error("the other player did not hear the NPC")
+	}
+}
+
+// TestAnnouncePermissionAndTakeZero checks the review of proposal 0002,
+// decision 14: world.announce needs the permission world.announce, which
+// the owner approves, maps.announce needs none, and take_item with an
+// amount of 0 raises an error.
+func TestAnnouncePermissionAndTakeZero(t *testing.T) {
+	z, p, n, _ := npcZone(t, `
+local events = require "wa.events"
+local items = require "wa.items"
+local maps = require "wa.maps"
+local world = require "wa.world"
+return function()
+  events.on("click", function(player, conversation)
+    local w, werr = pcall(world.announce, "to everyone")
+    local m, merr = pcall(maps.announce, "test", "to map test")
+    local took, terr = pcall(player.take_item, player, items.id "Red_Potion", 0)
+    conversation:say(tostring(w), tostring(m), tostring(took), tostring(werr), tostring(merr), tostring(terr))
+  end)
+end`)
+	delete(z.Mods.Scripts[0].Grants, "world.announce")
+	ev := click(z, p, n)
+	got := strings.Split(lines(ev), "|")
+	if len(got) != 6 || got[0] != "false" || got[1] != "true" || got[2] != "false" {
+		t.Fatalf("results %q", got)
+	}
+	if !strings.Contains(got[3], "needs the permission world.announce") {
+		t.Errorf("world.announce error: %s", got[3])
+	}
+	if !strings.Contains(got[5], "an amount from 1 to 30000") {
+		t.Errorf("take_item error: %s", got[5])
+	}
+	answer(z, p, reply(lastDialog(ev).GetDialog(), func(b *wathenav1.NpcReply_builder) { b.Close = new(true) }))
+	for len(z.announces) > 0 {
+		z.announce(<-z.announces)
+	}
+	z.stepAt(z.now + 50)
+	var heard []string
+	for _, e := range events(p) {
+		if c := e.GetChat(); c != nil && c.GetChannel() == wathenav1.ChatChannel_CHAT_CHANNEL_ANNOUNCEMENT {
+			heard = append(heard, c.GetText())
+		}
+	}
+	if len(heard) != 1 || heard[0] != "to map test" {
+		t.Errorf("heard %q", heard)
 	}
 }

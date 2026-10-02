@@ -194,6 +194,23 @@ function R.aimplode(var, player, sep)
 	return R.implode(load(var, player), sep)
 end
 
+-- give_item and take_item are getitem and delitem with a computed
+-- amount. rAthena does nothing for an amount of 0 or less, where
+-- wAthena's calls raise an error.
+function R.give_item(player, item, amount)
+	if amount <= 0 then
+		return true
+	end
+	return player:give_item(item, amount)
+end
+
+function R.take_item(player, item, amount)
+	if amount <= 0 then
+		return true
+	end
+	return player:take_item(item, amount)
+end
+
 -- input is rAthena's input for a number: the player may enter any
 -- number. One above max becomes max and returns 1, one below min
 -- becomes min and returns 2, as buildin_input does.

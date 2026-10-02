@@ -1000,6 +1000,7 @@ Permissions:
 | `player.give_items`, `player.give_zeny`, `player.give_exp` | Needs approval | Change a player's economy state. |
 | `player.warp`, `player.status` | Needs approval | Move players and apply status effects. |
 | `storage.mod` | Granted | Read and write the mod's own saved data. |
+| `world.announce` | Needs approval | Send a line to every player of the world. Announcements to one map need no permission. |
 | `events.schedule` | Needs approval | Add world events to the scheduler. |
 | `rules.override` | Needs approval, flagged | Replace formulas such as damage or drop rates. |
 | `admin.commands` | Needs approval, flagged | Add GM commands. |
@@ -1948,6 +1949,15 @@ Server-side prior art:
 - A plugin API comes later. Plugins run in sandboxed iframes and talk to the client through a message API.
 - Forks must use the account service's login page (section 7.6). The protocol version check rejects forks that fall too far behind.
 
+Planned: a headless web client, so modders can build their own UI.
+
+- The headless client is a TypeScript package with everything except the UI: the connection and protocol, login and game tickets, game state (the player, entities in view, inventory, stats, conversations, shops), the asset store, and commands such as walk, attack, and use item.
+- It exposes this state and its changes through a documented API, so a UI can be written in any web framework or in plain HTML.
+- Rendering of the map, sprites, and effects is a separate package, so a UI can use the standard 3D view or draw its own.
+- The web client's own UI is rebuilt on top of the headless client. It then serves as the reference UI and the example for modders.
+- A mod can ship its own UI as assets ([assets-v1](specs/assets-v1.md)), such as windows for its NPCs or systems. Server owners choose which UI their players load.
+- The headless client also gives the bot client and tests a second implementation of the protocol to check against.
+
 ### 10.5 Client data tables
 
 The official client keeps many tables inside its executable and its Lua files. The web client needs its own copies. The project ships a minimum set as YAML files in `client/data/`, each with a JSON Schema.
@@ -2374,7 +2384,8 @@ The order from here:
       - A converter for NPC scripts, run when `waserver` starts, in 0.17 s for renewal. Renewal: 282 shops placed, 947 of 1,933 script NPCs (839 fully), 49 of 55 Kafras with save, teleport and heal, and 720 of 2,043 dialog NPCs. Pre-renewal: 185 shops and 750 of 1,387 script NPCs. Every converted NPC of both modes starts in tests.
       - The client shows the dialog window, NPC images, emotions, speech over heads, the progress bar, the shop window and announcements.
       - Checked in Chrome: the sample greeter, a dialog NPC, buying and selling at a Prontera Tool Dealer, a Kafra's save and teleport, a Butterfly Wing to the save point, variables after a reconnect, and the shutdown countdown.
-      - Left: hooks, the `touch` event and timer events, instance variables, a minimap on the client, languages other than English for `wa.text`, cash, item, point and market shops, storage and pushcarts, and the NPC folders the extract leaves out, such as quests and instances. The provisional API in proposal 0002 needs review.
+      - Left: hooks, the `touch` event and timer events, instance variables, a minimap on the client, languages other than English for `wa.text`, cash, item, point and market shops, storage and pushcarts, and the NPC folders the extract leaves out, such as quests and instances.
+      - The API that step 4 added was reviewed on 2026-10-02 (proposal 0002, review decision 14). `player:take_item` with an amount of 0 now raises an error, and `world.announce` needs the owner's approval.
    5. Mod tools. `wactl mod new`, `validate`, `test`, `dev`, and `install`, and Lua Language Server type definitions.
    6. Event scheduler, and the phase 3 exit check with a sample mod.
    The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. It stays `wa.experimental` until the phase 3 exit check passes, then becomes `api: 1.0`.
@@ -2637,7 +2648,8 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 4. Classic mode: full `npc/` conversion, classic maps from player GRF files, and fixed spawns.
 5. Distributed deployment mode and load tests at 7,500 bots (section 3.7).
 6. Web client plugin API (section 10.4).
-7. Other clients (section 10.7): the guide to writing a client with local game files and the native login flow it needs, then the Go client, then the Lua client with LÖVE.
+7. The headless web client, with the web client's UI rebuilt on it (section 10.4).
+8. Other clients (section 10.7): the guide to writing a client with local game files and the native login flow it needs, then the Go client, then the Lua client with LÖVE.
 
 ## 16. Risks
 

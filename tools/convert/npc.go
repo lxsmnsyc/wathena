@@ -147,6 +147,11 @@ type npcConverter struct {
 	functions map[string]*npcLine
 	converted map[string]*Function
 	paths     map[string]bool
+	// zeroAmounts and checkedAmounts are the lines with a getitem or
+	// delitem of a fixed amount of 0 or less, which convert to nothing,
+	// and of a computed amount, which R checks.
+	zeroAmounts    map[string]bool
+	checkedAmounts map[string]bool
 }
 
 // unavailableFunctions are rAthena functions for services wAthena does
@@ -192,6 +197,7 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		mode: extract.Mode, consts: consts, modules: consts.Modules(),
 		items: map[uint32]string{}, itemIDs: map[string]uint32{}, sprites: map[string]uint32{}, spriteID: map[uint32]bool{},
 		jobs: map[string]string{}, functions: map[string]*npcLine{}, converted: map[string]*Function{}, paths: map[string]bool{},
+		zeroAmounts: map[string]bool{}, checkedAmounts: map[string]bool{},
 	}
 	for _, it := range tables.Items {
 		c.items[it.ID] = it.AegisName
