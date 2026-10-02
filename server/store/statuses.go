@@ -24,7 +24,7 @@ func loadStatuses(ctx context.Context, q *db.Queries, c *character.Character) er
 	}
 	for _, r := range timed {
 		c.TimedBonuses = append(c.TimedBonuses, character.TimedBonus{Key: r.Key, Remaining: r.RemainingMs, Bonuses: string(r.Bonuses),
-			EndsOn: r.EndsOn, Stack: r.Stack, Icon: r.Icon, Kind: r.Kind})
+			EndsOn: r.EndsOn, Icon: r.Icon, Kind: r.Kind})
 	}
 	return nil
 }
@@ -67,7 +67,7 @@ func writeStatuses(ctx context.Context, q *db.Queries, id int64, old, cur *chara
 			ends = []string{}
 		}
 		err := q.InsertTimedBonus(ctx, db.InsertTimedBonusParams{CharacterID: id, Position: i, Key: t.Key, RemainingMs: t.Remaining,
-			Bonuses: []byte(t.Bonuses), EndsOn: ends, Stack: t.Stack, Icon: t.Icon, Kind: t.Kind})
+			Bonuses: []byte(t.Bonuses), EndsOn: ends, Icon: t.Icon, Kind: t.Kind})
 		if err != nil {
 			return err
 		}

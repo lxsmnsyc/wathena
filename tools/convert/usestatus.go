@@ -131,11 +131,12 @@ var bonusScriptEnds = []struct {
 }
 
 // bonusScript converts bonus_script (buildin_bonus_script) to
-// player:add_timed_bonuses. The key is made from the script's text, so
-// the same script replaces itself, as rAthena checks for duplicates by
-// the script's text. rAthena keeps the first copy unless
-// BSF_FORCE_REPLACE is set; the API always replaces, and
-// BSF_FORCE_DUPLICATE becomes stack.
+// player:add_timed_bonuses. The key is made from the script's text, as
+// rAthena tells copies apart by the script's text. The flags of a second
+// use become the option on_repeat, as pc_bonus_script_add reads them:
+//   - None keeps the first copy, the API's default.
+//   - BSF_FORCE_REPLACE (0x400) becomes on_repeat = "extend".
+//   - BSF_FORCE_DUPLICATE (0x800) becomes on_repeat = "add".
 func (t *imperative) bonusScript(args []Expr) error {
 	const name = "bonus_script"
 	if len(args) < 2 || len(args) > 5 {
@@ -214,9 +215,13 @@ func (t *imperative) bonusScript(args []Expr) error {
 	if len(ends) > 0 {
 		opts = append(opts, "ends_on = { "+strings.Join(ends, ", ")+" }")
 	}
-	// BSF_FORCE_REPLACE wins when both are set (pc_bonus_script_add).
-	if flag&0x800 != 0 && flag&0x400 == 0 {
-		opts = append(opts, "stack = true")
+	// BSF_FORCE_REPLACE comes first when both are set, as in
+	// pc_bonus_script_add.
+	switch {
+	case flag&0x400 != 0:
+		opts = append(opts, `on_repeat = "extend"`)
+	case flag&0x800 != 0:
+		opts = append(opts, `on_repeat = "add"`)
 	}
 	if icon > 0 {
 		// wAthena has no constants for icons: the EFST_ ID stays a

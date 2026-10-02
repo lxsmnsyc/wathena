@@ -628,8 +628,14 @@ func (r *Runtime) run(c *Context, fn script.Value, args ...script.Value) error {
 	return err
 }
 
-// afterError clears files a stopped call left half loaded.
+// afterError clears files a stopped call left half loaded. It does
+// nothing after a nested call, since the outer call still runs. A limit
+// that stops a nested call stops the outer call too, and the outer
+// call's error clears them.
 func (r *Runtime) afterError() {
+	if r.s.InHost() {
+		return
+	}
 	if _, err := r.s.Call(r.fns.resetLoading.Value()); err != nil {
 		r.log.Error("modscript: reset after an error failed", "err", err)
 	}

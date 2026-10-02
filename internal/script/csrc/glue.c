@@ -12,6 +12,9 @@
  *   - Each state has a memory limit (the allocator) and a CPU budget per
  *     call (a count hook, allocations, and costly library functions).
  *     pcall and coroutine.resume cannot catch a call that hit a limit.
+ *   - A host function may make a nested call (GLUE_ONESTED). It runs inside
+ *     the outer call, with its limits, and cannot yield. Its errors are
+ *     caught inside it, so none crosses the Go frame of the host function.
  */
 #include "glue.h"
 
@@ -127,10 +130,15 @@ static void *glue_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
  */
 static void glue_stop(lua_State *L, int level) {
 	glue_state *st = glue_of(L);
+	const char *msg = "CPU limit exceeded";
 	if (st->h.fatal == GLUE_FNONE)
 		st->h.fatal = GLUE_FCPU;
+	if (st->h.fatal == GLUE_FTIME)
+		msg = "time limit exceeded";
+	else if (st->h.fatal == GLUE_FMEM)
+		msg = "not enough memory";
 	luaL_where(L, level);
-	lua_pushstring(L, st->h.fatal == GLUE_FTIME ? "time limit exceeded" : "CPU limit exceeded");
+	lua_pushstring(L, msg);
 	lua_concat(L, 2);
 	lua_error(L);
 }
@@ -420,6 +428,10 @@ static void glue_get(glue_state *st, lua_State *L, int64_t *pos, int depth) {
 static int glue_host_result(glue_state *st, lua_State *L, int32_t r) {
 	int64_t pos = 0;
 	int i, n = (int)st->h.nres;
+	/* A nested call hit a limit. The outer call stops too, whatever the
+	 * host function returned. */
+	if (st->h.fatal != GLUE_FNONE)
+		glue_stop(L, 1);
 	if (r == GLUE_HERROR) {
 		luaL_where(L, 1);
 		glue_get(st, L, &pos, 0);
@@ -438,7 +450,7 @@ static int glue_host_result(glue_state *st, lua_State *L, int32_t r) {
 
 static int glue_call_host(glue_state *st, lua_State *L, int32_t id, int first, int nargs) {
 	int64_t pos = 0;
-	int i, r, flags = 0;
+	int i, r, flags = 0, prevtop;
 	lua_State *prev;
 	st->ntmp = 0;
 	for (i = 0; i < nargs; i++) {
@@ -449,9 +461,12 @@ static int glue_call_host(glue_state *st, lua_State *L, int32_t id, int first, i
 	if (L == st->resumed && lua_isyieldable(L))
 		flags |= GLUE_CANYIELD;
 	prev = st->cur;
+	prevtop = st->host_top;
 	st->cur = L;
+	st->host_top = lua_gettop(L);
 	r = host_call(st->handle, id, nargs, flags);
 	st->cur = prev;
+	st->host_top = prevtop;
 	return r;
 }
 
@@ -955,6 +970,71 @@ static int32_t glue_load(glue_state *st) {
 	return glue_put_results(st, L, lua_gettop(L) - 1);
 }
 
+/* glue_nested_body runs a nested call in protected mode: argument 1 is the
+ * number of arguments that follow the function in the exchange. Errors in
+ * reading them, such as running out of memory, stay inside the call. */
+static int glue_nested_body(lua_State *L) {
+	glue_state *st = glue_of(L);
+	int64_t pos = 0;
+	int i, nargs = (int)lua_tointeger(L, 1);
+	lua_settop(L, 0);
+	luaL_checkstack(L, nargs + LUA_MINSTACK, "too many arguments");
+	glue_function(st, L, &pos);
+	for (i = 0; i < nargs; i++)
+		glue_get(st, L, &pos, 0);
+	lua_call(L, nargs, LUA_MULTRET);
+	return lua_gettop(L);
+}
+
+/*
+ * glue_nested calls value 0 with nargs arguments from inside a host call,
+ * on the thread that called the host function. It does not start a new
+ * call: the CPU budget, the time limit and the memory limit of the outer
+ * call apply, and a hit limit stops the outer call when the host function
+ * returns. lua_pcall makes the thread unable to yield, so a yield inside
+ * raises an error. The results stay on the stack until the next nested
+ * call or the end of the host call, so Go can read them.
+ */
+static int32_t glue_nested(glue_state *st, int nargs) {
+	lua_State *L = st->cur;
+	int status, base, was, r;
+	if (L == NULL) {
+		glue_put_msg(st, "not inside a host call");
+		return GLUE_EARG;
+	}
+	if (nargs < 0 || lua_gettop(L) < st->host_top) {
+		glue_put_msg(st, "not a valid nested call");
+		return GLUE_EARG;
+	}
+	/* Results of an earlier nested call go. */
+	lua_settop(L, st->host_top);
+	if (st->h.fatal != GLUE_FNONE) {
+		glue_put_msg(st, "a limit stopped the call");
+		return LUA_ERRRUN;
+	}
+	if (!lua_checkstack(L, 2 + LUA_MINSTACK)) {
+		glue_put_msg(st, "stack overflow");
+		return LUA_ERRRUN;
+	}
+	base = lua_gettop(L);
+	lua_pushcfunction(L, glue_nested_body);
+	lua_pushinteger(L, nargs);
+	status = lua_pcall(L, 1, LUA_MULTRET, 0);
+	if (status != LUA_OK)
+		glue_fatal(st, status);
+	/* Passing results or an error to Go is not charged, as at the end of a
+	 * call, so it cannot raise an error here. */
+	was = st->limited;
+	st->limited = 0;
+	if (status != LUA_OK) {
+		glue_put_error(st, L);
+		r = status;
+	} else
+		r = glue_put_results(st, L, lua_gettop(L) - base);
+	st->limited = was;
+	return r;
+}
+
 /* glue_target is the thread for operations that Go runs during a host call. */
 static lua_State *glue_target(glue_state *st) {
 	return st->cur != NULL ? st->cur : st->L;
@@ -1061,6 +1141,8 @@ EXPORT(glue_op) int32_t glue_op(glue_hdr *h, int32_t op, int64_t a, int64_t b) {
 	case GLUE_OGC:
 		lua_gc(st->L, LUA_GCCOLLECT);
 		return 0;
+	case GLUE_ONESTED:
+		return glue_nested(st, (int)a);
 	}
 	return -1;
 }

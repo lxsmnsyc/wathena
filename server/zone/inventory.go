@@ -318,8 +318,6 @@ func (z *Zone) useItem(p *Player, slot int) {
 	if err != nil && z.Mods.Log != nil {
 		z.Mods.Log.Warn("item script failed", "map", z.Map, "item", d.AegisName, "script", d.Script, "err", err)
 	}
-	// Statuses the script started change stats once it returns.
-	z.refreshStats()
 	if delayed && !d.NoConsume && err == nil && p.inventory.Slots[slot].ID == s.ID {
 		z.deleteItem(p, slot, 1, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_USED)
 	}

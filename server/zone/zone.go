@@ -156,7 +156,7 @@ type Player struct {
 	// handles and equip contexts.
 	worn map[int]*wornSlot
 	// statsDirty is set when the player's bonuses changed since its last
-	// stat calculation.
+	// stat calculation. The player is then in the zone's dirtyStats.
 	statsDirty bool
 	// base and bonuses are base_status and the bonuses outside the
 	// battle status, from the last stat calculation.
@@ -314,11 +314,17 @@ type Zone struct {
 	// quietStatuses is set while statuses that never ended come back,
 	// such as after a map change: no status event fires for them.
 	quietStatuses bool
-	// inScriptCall is set while a script's call into the zone runs, so
-	// nothing calls back into Lua. hookOverride holds what the script's
-	// own run of the status hooks gave.
+	// inScriptCall is set while a script starts or ends a status, so the
+	// status hooks and the bonuses of mod statuses do not run Lua inside
+	// the script's host call: the prelude ran them first. hookOverride
+	// holds what the script's own run of the status hooks gave.
 	inScriptCall bool
 	hookOverride *hookOverride
+	// dirtyStats are the players whose stats wait for flushStats.
+	// holdStats is above 0 while equipment changes or a player joins:
+	// stats wait for the end of that change, which computes them once.
+	dirtyStats []*Player
+	holdStats  int
 
 	// equippedRefs are the equipped slots that script handles point to,
 	// by handle ID.
@@ -626,7 +632,9 @@ func (z *Zone) join(p *Player) joinResult {
 	p.char = z.Start
 	p.char.Job, p.char.Male, p.char.Stats = c.Job, c.Male, c.Stats
 	// Equipped items start their scripts before the first stat
-	// calculation, as status_calc_pc with SCO_FIRST.
+	// calculation, as status_calc_pc with SCO_FIRST. Changes to stats
+	// wait until the saved statuses and timed bonuses are back too.
+	z.holdStats++
 	if z.Items != nil {
 		z.wearAll(p)
 	}
@@ -659,6 +667,7 @@ func (z *Zone) join(p *Player) joinResult {
 	// does not, since they never ended.
 	z.restoreStatuses(p, c.Statuses, h == nil)
 	z.restoreTimedBonuses(p, c.TimedBonuses)
+	z.holdStats--
 	if p.statsDirty {
 		z.recalc(p)
 	}
@@ -939,7 +948,9 @@ func (z *Zone) stepAt(now int64) {
 		z.runSchedules()
 		z.runScripts()
 	}
-	z.refreshStats()
+	// Changes that no script's call made, such as a timer's bonuses that
+	// end, are computed here.
+	z.flushStats()
 	acted := time.Now()
 	z.Metrics.Phase(metrics.PhaseAct, acted.Sub(moved))
 	if len(z.players) > 0 {

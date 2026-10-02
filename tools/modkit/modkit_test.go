@@ -239,6 +239,15 @@ return function()
   events.on("status_tick", function(ev)
     note("tick " .. ev.level)
   end, { status = statuses.glow })
+  -- A handler reads the stats a status changes in the same call.
+  events.on("status_start", function(ev)
+    local player = ev.target
+    local sp = player.max_sp
+    player:start_status(statuses.glow, { milliseconds = 60000, level = 3 })
+    local glowing = player.max_sp - sp
+    player:end_status(statuses.glow)
+    note("glow +" .. glowing .. " then +" .. (player.max_sp - sp))
+  end, { status = statuses.increaseagi, target_kind = "player" })
   hooks.on("status_duration", function(h, next)
     if h.status == statuses.decreaseagi then
       return 1234
@@ -256,6 +265,7 @@ end`,
 local testing = require "wa.testing"
 local statuses = require "wa.statuses"
 local monsters = require "wa.monsters"
+local random = require "wa.random"
 local variables = require "wa.variables"
 local log = variables.server_string "log"
 
@@ -310,29 +320,72 @@ return function()
     local player = world:new_player { map = "prontera", x = 150, y = 150 }
     local sp = player.max_sp
     player:start_status(statuses.glow, { milliseconds = 3500, level = 2 })
-    -- Stats follow at the end of the server tick.
-    world:advance(50)
+    -- Stats change before start_status returns.
     testing.expect(player.max_sp).to_be(sp + 20)
-    world:advance(3450)
+    world:advance(3500)
     -- Ticks at 1, 2 and 3 seconds, and the last one at the end.
     testing.expect(log:get()).to_be("tick 2;tick 2;tick 2;tick 2;")
     testing.expect(player:has_status(statuses.glow)).to_be_false()
     testing.expect(player.max_sp).to_be(sp)
   end)
 
-  testing.case("timed bonuses replace or stack by key", function(world)
+  testing.case("an event handler reads the stats of its statuses", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    player:start_status(statuses.increaseagi, { milliseconds = 10000, level = 1 })
+    -- The handler runs after this call.
+    testing.expect(log:get()).to_be("")
+    world:advance(50)
+    testing.expect(log:get()).to_be("glow +30 then +0;")
+  end)
+
+  testing.case("timed bonuses keep the first copy by default", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    local hp = player.max_hp
+    testing.expect(player:add_timed_bonuses("tonic", 5000, { { "max_hp", 100 } })).to_be_true()
+    -- Stats change before the call returns.
+    testing.expect(player.max_hp).to_be(hp + 100)
+    -- A second use does not draw its value again, as rAthena's bonus_script.
+    local roll = random.integer(200, 300)
+    testing.expect(player:add_timed_bonuses("tonic", 9000, { { "max_hp", roll } })).to_be_false()
+    testing.expect(player.max_hp).to_be(hp + 100)
+    world:advance(5000)
+    testing.expect(player.max_hp).to_be(hp)
+  end)
+
+  testing.case("timed bonuses extend: the first values, the longer time", function(world)
     local player = world:new_player { map = "prontera", x = 150, y = 150 }
     local hp = player.max_hp
     player:add_timed_bonuses("tonic", 5000, { { "max_hp", 100 } })
-    player:add_timed_bonuses("tonic", 5000, { { "max_hp", 100 } })
-    world:advance(50)
+    testing.expect(player:add_timed_bonuses("tonic", 9000, { { "max_hp", 300 } }, { on_repeat = "extend" })).to_be_true()
     testing.expect(player.max_hp).to_be(hp + 100)
-    player:add_timed_bonuses("tonic", 2000, { { "max_hp", 50 } }, { stack = true, kind = "buff" })
-    world:advance(50)
+    -- A shorter time is ignored.
+    testing.expect(player:add_timed_bonuses("tonic", 1000, { { "max_hp", 300 } }, { on_repeat = "extend" })).to_be_false()
+    world:advance(5000)
+    testing.expect(player.max_hp).to_be(hp + 100)
+    world:advance(4000)
+    testing.expect(player.max_hp).to_be(hp)
+  end)
+
+  testing.case("timed bonuses add a second copy", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    local hp = player.max_hp
+    player:add_timed_bonuses("tonic", 5000, { { "max_hp", 100 } })
+    testing.expect(player:add_timed_bonuses("tonic", 2000, { { "max_hp", 50 } }, { on_repeat = "add", kind = "buff" })).to_be_true()
     testing.expect(player.max_hp).to_be(hp + 150)
     world:advance(2000)
     testing.expect(player.max_hp).to_be(hp + 100)
-    world:advance(2950)
+    world:advance(3000)
+    testing.expect(player.max_hp).to_be(hp)
+  end)
+
+  testing.case("timed bonuses replace: the new values and time", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    local hp = player.max_hp
+    player:add_timed_bonuses("tonic", 5000, { { "max_hp", 100 } })
+    player:add_timed_bonuses("tonic", 5000, { { "max_hp", 100 } }, { on_repeat = "add" })
+    testing.expect(player:add_timed_bonuses("tonic", 2000, { { "max_hp", 50 } }, { on_repeat = "replace" })).to_be_true()
+    testing.expect(player.max_hp).to_be(hp + 50)
+    world:advance(2000)
     testing.expect(player.max_hp).to_be(hp)
   end)
 
@@ -344,6 +397,9 @@ return function()
     testing.expect(function() player:start_status(99999999) end).to_fail_with("there is no status")
     testing.expect(function() player:add_timed_bonuses("k", 1000, { { "no_such_bonus", 1 } }) end).to_fail_with("no_such_bonus")
     testing.expect(function() player:add_timed_bonuses("k", 1000, {}, { ends_on = { "sunrise" } }) end).to_fail_with("sunrise")
+    testing.expect(function() player:add_timed_bonuses("k", 1000, {}, { on_repeat = "twice" }) end).to_fail_with("on_repeat is")
+    testing.expect(function() player:add_timed_bonuses("k", 1000, {}, { stack = true }) end).to_fail_with("on_repeat replaces it")
+    testing.expect(function() player:add_timed_bonuses("k", 1000, {}, { ["repeat"] = "add" }) end).to_fail_with("on_repeat replaces it")
   end)
 end`,
 	})
@@ -356,7 +412,7 @@ end`,
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(results) != 7 {
+	if len(results) != 11 {
 		t.Errorf("%d results", len(results))
 	}
 	for _, r := range results {

@@ -346,11 +346,12 @@ function wa_Player:get_skill_level(skill) end
 ---@return wa.EquippedItem?
 function wa_Player:get_equipped(slot) end
 
----Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout.
----@param key string 1 to 64 bytes. Timed bonuses with the same key replace each other, unless stack is set.
+---Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout. The player's stats change before it returns. Returns true when the bonuses were added or extended, and false when on_repeat ignored them.
+---@param key string 1 to 64 bytes. The option on_repeat says what a second call with the same key does.
 ---@param milliseconds integer 1 or more.
 ---@param bonuses table A list of entries: a bonus name, its arguments, and its options, as in bonuses.add, such as { { "str", 5 } }.
 ---@param options? wa.TimedBonusOptions
+---@return boolean
 function wa_Player:add_timed_bonuses(key, milliseconds, bonuses, options) end
 
 ---Marks a cell on the minimap, as viewpoint. A mark with the same ID replaces it.
@@ -368,13 +369,13 @@ function wa_Player:unmark_minimap(id) end
 ---@param shop string A shop record of data/npcs.yml: the mod's own name, or mod:Name.
 function wa_Player:open_shop(shop) end
 
----Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
 ---@return boolean
 function wa_Player:start_status(status, options) end
 
----Ends a status, as sc_end. Returns true when it was active.
+---Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
 ---@param status integer
 ---@return boolean
 function wa_Player:end_status(status) end
@@ -413,13 +414,13 @@ function wa_Player:get_statuses() end
 ---@field is_alive boolean
 local wa_Monster = {}
 
----Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
 ---@return boolean
 function wa_Monster:start_status(status, options) end
 
----Ends a status, as sc_end. Returns true when it was active.
+---Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
 ---@param status integer
 ---@return boolean
 function wa_Monster:end_status(status) end
@@ -461,13 +462,13 @@ function wa_Npc:show_emotion(emotion) end
 ---@param text string
 function wa_Npc:say_aloud(text) end
 
----Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
 ---@return boolean
 function wa_Npc:start_status(status, options) end
 
----Ends a status, as sc_end. Returns true when it was active.
+---Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
 ---@param status integer
 ---@return boolean
 function wa_Npc:end_status(status) end
@@ -884,7 +885,7 @@ local wa_StatusDefinition = {}
 ---Options of player:add_timed_bonuses.
 ---@class wa.TimedBonusOptions
 ---@field ends_on string[]? What ends the bonuses besides their time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage.
----@field stack boolean? Adds the bonuses next to others with the same key, instead of replacing them.
+---@field on_repeat "keep"|"extend"|"add"|"replace"|nil What happens when the player has timed bonuses with the same key. "keep", the default and rAthena's: the new ones are ignored. "extend", rAthena's BSF_FORCE_REPLACE: the first copy keeps its values and takes the new duration when it ends later. "add", rAthena's BSF_FORCE_DUPLICATE: both copies apply. "replace": every copy ends and the new one starts, with its values and duration.
 ---@field icon integer? A status icon (EFST_ ID) to show while they last.
 ---@field kind "buff"|"debuff"|nil
 local wa_TimedBonusOptions = {}

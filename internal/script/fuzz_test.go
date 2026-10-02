@@ -12,7 +12,8 @@ import (
 // fuzzLimits keep each fuzz input fast.
 var fuzzLimits = Limits{CPU: 200_000, Memory: 4 << 20, Timeout: time.Second}
 
-// fuzzState has host functions that return, fail, panic, and pause.
+// fuzzState has host functions that return, fail, panic, pause, and make
+// nested calls.
 func fuzzState(t testing.TB) *State {
 	s := newState(t, Options{Limits: fuzzLimits, Modules: func(name string) (string, bool) {
 		switch name {
@@ -27,6 +28,14 @@ func fuzzState(t testing.TB) *State {
 	must(t, s.Register("fail", func(c *Call) error { return errors.New("failed: " + c.Arg(0).String()) }))
 	must(t, s.Register("boom", func(c *Call) error { panic(c.Arg(0).String()) }))
 	must(t, s.Register("pause", func(c *Call) error { return c.Yield(c.args...) }))
+	must(t, s.Register("nest", func(c *Call) error {
+		v, err := c.State().Call1Nested(c.Arg(0), c.args[min(1, len(c.args)):]...)
+		if err != nil {
+			return err
+		}
+		c.Return(v)
+		return nil
+	}))
 	must(t, s.Register("keep", func(c *Call) error {
 		for _, a := range c.args {
 			if a.Kind() == KindFunction {
@@ -73,6 +82,14 @@ var sourceSeeds = []string{
 	`local co = coroutine.create(function() pause() end) return coroutine.resume(co)`,
 	`return table.concat({1, 2, 3}, ","), utf8.char(72, 228, 8364)`,
 	`return string.format("%q %5.2f %d", "a\0b", 1.5, math.mininteger)`,
+	`return nest(function(x) return x, 2 end, {1})`,
+	`return nest(function() while true do end end)`,
+	`return pcall(nest, function() local t = {} for i = 1, 1e9 do t[i] = {i} end end)`,
+	`return nest(function() return pause() end)`,
+	`return nest(coroutine.yield)`,
+	`return nest(nest, nest, nest, function() return 1 end)`,
+	`return nest(error, "x")`,
+	`return nest(load, "return 1")`,
 }
 
 // FuzzSource runs random Lua source, alone and as a thread that pauses.
@@ -173,7 +190,7 @@ func FuzzHostCalls(f *testing.F) {
 		var threads []*Thread
 		var refs []*Ref
 		for steps := 0; len(g.data) > 0 && steps < 64; steps++ {
-			switch g.byte() % 9 {
+			switch g.byte() % 10 {
 			case 0, 1: // Values through Lua and back.
 				var args []Value
 				for range int(g.byte() % 5) {
@@ -237,6 +254,10 @@ func FuzzHostCalls(f *testing.F) {
 						refs = append(refs[:i], refs[i+1:]...)
 					}
 				}
+			case 9: // A nested call from a host function.
+				src := []string{`return nest(id, 1, "a")`, `return nest(function() while true do end end)`,
+					`return pcall(nest, function() return pause() end)`, `return nest(nest, error, "e")`, `return nest(talk)`}[g.byte()%5]
+				_, _ = s.Load("nest", src)
 			case 8: // Globals.
 				v := g.value(0)
 				must(t, s.SetGlobal("g", v))

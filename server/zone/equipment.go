@@ -45,21 +45,23 @@ type equipScript struct {
 }
 
 // bonusSink keeps an equip context's active bonuses. A change, such as a
-// timed bonus that starts or ends, marks the wearer's stats for a new
-// calculation in the same tick.
+// timed bonus that starts or ends, marks the wearer's stats. The host
+// call that made it computes them before it returns (FlushStats), and
+// the end of the tick computes those of changes that no call made.
 type bonusSink struct {
+	z      *Zone
 	p      *Player
 	active []*modscript.Bonus
 }
 
 func (s *bonusSink) BonusAdded(b *modscript.Bonus) {
 	s.active = append(s.active, b)
-	s.p.statsDirty = true
+	s.z.markStats(s.p)
 }
 
 func (s *bonusSink) BonusRemoved(b *modscript.Bonus) {
 	s.active = slices.DeleteFunc(s.active, func(x *modscript.Bonus) bool { return x == b })
-	s.p.statsDirty = true
+	s.z.markStats(s.p)
 }
 
 // equippedRef is what an equipped handle points at.
@@ -199,7 +201,10 @@ func (z *Zone) equipmentChanged(p *Player) {
 
 // wear starts an equipped slot: its handle, and the equip contexts of its
 // item and cards. Throwing weapons run no script, as status_calc_pc.
+// Stats wait for the caller, which computes them once.
 func (z *Zone) wear(p *Player, slot int) {
+	z.holdStats++
+	defer func() { z.holdStats-- }()
 	s := &p.inventory.Slots[slot]
 	if p.worn == nil {
 		p.worn = map[int]*wornSlot{}
@@ -237,7 +242,7 @@ func (z *Zone) startEquipScript(p *Player, handle int64, d *item.Def) *equipScri
 	if r == nil {
 		return nil
 	}
-	sink := &bonusSink{p: p}
+	sink := &bonusSink{z: z, p: p}
 	ctx, err := r.Equip(d.Script, handle, int64(p.charID), sink)
 	if err != nil {
 		if z.Mods != nil && z.Mods.Log != nil {
@@ -256,6 +261,8 @@ func (z *Zone) unwear(p *Player, slot int, unequip bool) {
 	if ws == nil {
 		return
 	}
+	z.holdStats++
+	defer func() { z.holdStats-- }()
 	delete(p.worn, slot)
 	delete(z.equippedRefs, ws.handle)
 	r := z.scripts
@@ -271,7 +278,7 @@ func (z *Zone) unwear(p *Player, slot int, unequip bool) {
 			r.EndEquip(es.ctx)
 		}
 	}
-	p.statsDirty = true
+	z.markStats(p)
 }
 
 // wearAll starts every equipped slot of a player who enters the zone.
@@ -328,19 +335,49 @@ func (z *Zone) equipment(p *Player) *status.Equipment {
 	return status.Wear(p.inventory, z.Items, src)
 }
 
-// refreshStats computes again the stats of players whose bonuses changed
-// this tick, such as by a timed bonus.
-func (z *Zone) refreshStats() {
-	for _, p := range z.players {
-		if !p.statsDirty || p.entity == nil {
+// markStats marks a player's stats for flushStats.
+func (z *Zone) markStats(p *Player) {
+	if !p.statsDirty {
+		p.statsDirty = true
+		z.dirtyStats = append(z.dirtyStats, p)
+	}
+}
+
+// statsChanged computes a player's stats again at once, as rAthena's
+// status_calc_pc, unless a change of equipment or a join holds them.
+func (z *Zone) statsChanged(p *Player) {
+	z.markStats(p)
+	z.flushStats()
+}
+
+// flushStats computes again the stats of the players marked, and sends
+// what changed. Computed bonuses and when conditions run in Lua, as
+// nested calls when a script's host call got here (internal/script,
+// "Nested calls").
+func (z *Zone) flushStats() {
+	for z.holdStats == 0 && len(z.dirtyStats) > 0 {
+		p := z.dirtyStats[0]
+		z.dirtyStats = z.dirtyStats[1:]
+		if !p.statsDirty || p.entity == nil || z.players[p.charID] != p {
 			continue
 		}
+		p.statsDirty = false
+		e := p.entity
+		speed := e.speed
 		z.recalc(p)
 		if s := z.battleStats(p); s != nil {
 			p.pending = append(p.pending, s)
 		}
+		z.speedChanged(e, speed)
+	}
+	if len(z.dirtyStats) == 0 {
+		z.dirtyStats = nil
 	}
 }
+
+// FlushStats computes the stats that a script's bonuses changed, before
+// its host call returns (modscript.StatsHost).
+func (h scriptHost) FlushStats() { h.z.flushStats() }
 
 // updateLook sets a player's look from its equipment, as
 // clif_changelook, and marks it for viewers when it changed.

@@ -23,7 +23,19 @@ The Lua runtime: C Lua 5.4 through wAthena's own binding ([decision 0002](../../
 - Values are `Value`: nil, booleans, integers, floats, strings, tables (copied, up to 16 levels deep), and handles to functions, threads, and userdata. A handle from a call is valid until the next call. `Keep` turns it into a `Ref` that lasts until `Release`.
 - Refs and threads that are garbage collected without `Release` or `Close` are freed at a later call.
 
-A state is used by one goroutine at a time, as each zone owns its own (strategy section 4.1). A second goroutine that enters while Lua runs makes the state panic. A host function cannot call `Call`, `Load`, or `Resume` on its own state. It gets `ErrReentrant`. It can call `Keep`, `Release`, `SetGlobal`, `Func`, and `Register`.
+A state is used by one goroutine at a time, as each zone owns its own (strategy section 4.1). A second goroutine that enters while Lua runs makes the state panic. A host function cannot call `Call`, `Load`, or `Resume` on its own state. It gets `ErrReentrant`. It can call `Keep`, `Release`, `SetGlobal`, `Func`, `Register`, and `Call1Nested`.
+
+## Nested calls
+
+`Call1Nested` lets a host function call Lua on its own state. wAthena uses it for one thing: computing a player's stats again, which runs computed bonuses and `when` conditions, inside a script's call that changed them (decision 0010). Every other call from a host function still gets `ErrReentrant`. Rules:
+
+- It runs on the thread that called the host function, inside the outer call. It is not a new call.
+- The outer call's CPU budget, time limit, and memory limit apply to it.
+- When it hits a limit, it returns the error. The outer call then stops with that limit when the host function returns, even if the host function ignores the error. `pcall` cannot catch it.
+- It cannot pause. `Call.Yield` and `coroutine.yield` on the outer thread raise a Lua error inside it. Coroutines it creates itself can yield.
+- Handles from the host function's arguments expire after it, since its host calls reuse the same slots. Keep them first.
+- At most `MaxNested` (8) nested calls can be open at once.
+- Lua errors inside it, even running out of memory while it reads its arguments, are caught inside it. None crosses the Go frame of the host function, which matters for `lua.wasm`.
 
 ## Sandbox
 
@@ -79,4 +91,5 @@ To update Lua, follow the steps at the top of `lua/update.sh`.
 
 - `go test ./internal/script` runs the cgo build, and `go test -tags luawasm ./internal/script` runs the same tests on `lua.wasm`.
 - `luabench_test.go` runs the workloads of `tools/luabench`, checks that their results match what every engine gave in decision 0002, and has the benchmarks.
-- `FuzzSource` runs random Lua source. `FuzzHostCalls` runs random sequences of calls, host functions, threads, and refs. `FuzzExchange` writes random values straight into the memory C reads.
+- `nested_test.go` checks nested calls: values, threads, yields, limits, depth, and handles.
+- `FuzzSource` runs random Lua source. `FuzzHostCalls` runs random sequences of calls, host functions, nested calls, threads, and refs. `FuzzExchange` writes random values straight into the memory C reads.

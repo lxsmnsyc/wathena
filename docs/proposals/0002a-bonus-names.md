@@ -399,7 +399,7 @@ bonus_script "{ bonus bHPRecovRate,rand(11,33); }",1800,1;
 - It attaches bonuses to the player for a duration in seconds. It is used by consumables (17 uses in renewal data).
 - It is saved at logout and restored at login.
 - Its flags say what removes it: death, Dispell, Clearance, logout, damage, and others. It can show a status icon.
-- A second use replaces or adds to the first one, depending on flags.
+- A second use of the same script text is ignored by default: the first copy stays, with its values and time. `BSF_FORCE_REPLACE` (0x400) gives the first copy the new duration when it is longer. `BSF_FORCE_DUPLICATE` (0x800) adds a second copy (`pc_bonus_script_add`).
 
 wAthena: a consumable's `use` context ends at once, so the bonuses need the player as owner, and they must be saved. A Lua function cannot be saved, so the bonuses are data, computed when the item is used:
 
@@ -412,7 +412,12 @@ end)
 ```
 
 - Each entry is a bonus name followed by its arguments, as in `bonuses.add`.
-- The key (`"hp_recovery_food"`) replaces an older copy with the same key. This is rAthena's default. rAthena's "add a duplicate" flag (2048) is the option `stack = true`.
+- The key (`"hp_recovery_food"`) tells copies apart, as rAthena compares the script's text. The option `on_repeat` says what a call does when the player has a copy with that key:
+  - `"keep"`, the default and rAthena's: the new bonuses are ignored.
+  - `"extend"`, rAthena's `BSF_FORCE_REPLACE` (0x400): the first copy keeps its values and takes the new duration when it is longer.
+  - `"add"`, rAthena's `BSF_FORCE_DUPLICATE` (0x800): both copies apply.
+  - `"replace"`, for mods: the copies end, and the new one starts with its values and duration.
+- The method returns true when the bonuses were added or extended, and false when they were ignored. A second use with a random value does not draw it again under the default.
 - `ends_on` lists the removal flags by name: `"death"`, `"dispell"`, `"clearance"`, `"logout"`, `"banishing_buster"`, `"refresh"`, `"lux_anima"`, `"magic_gear_change"`, `"damage"`.
 - The options `icon` and `kind` (`"buff"` or `"debuff"`) cover rAthena's icon and type.
 

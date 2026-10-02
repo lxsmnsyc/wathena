@@ -778,6 +778,22 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Hooks** `status_chance` (per 10,000) and `status_duration` (milliseconds). The object has `target`, `status`, `level` and `source`. Without hooks the results are rAthena's.
     - **`statuses.define`** adds a status in a mod script: `name`, `icon`, `kind` (`"buff"` or `"debuff"`), `ends_on`, `bonuses` (a function of the level that returns bonus entries, as `add_timed_bonuses`), and `tick_milliseconds`. The status gets a constant in `statuses` named after it.
 
+    The user changed these after the build, on 2026-10-02 ([decision 0010](../decisions/0010-status-effects.md), "Changes after the build"):
+
+    - **Stats change inside the call.** `start_status`, `end_status`, `add_timed_bonuses` and the other calls that change a player's stats compute them before they return, as rAthena's `sc_start` and `sc_end` do. A host call may run Lua again only for this. The events still run after the script's call, so a `status_start` handler that starts a status cannot loop inside one call. rAthena has no events, so this changes no rAthena behavior.
+    - **Repeated timed bonuses follow rAthena.** The option `on_repeat` replaces `stack`. It is named `on_repeat` because `repeat` is a Lua keyword. Copies match by key:
+
+      ```lua
+      player:add_timed_bonuses(key, ms, bonuses, {
+        on_repeat = "keep",  -- the default, rAthena's: the first copy stays, the new one is ignored
+        -- "extend": BSF_FORCE_REPLACE, the old values with the longer duration
+        -- "add": BSF_FORCE_DUPLICATE, both copies apply
+        -- "replace": for mods, the new values and the new duration
+      })
+      ```
+
+      The method returns true when the bonuses were added or extended, and false when they were ignored. The converter maps `bonus_script`'s flags 0x400 and 0x800 to `"extend"` and `"add"`.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
@@ -791,5 +807,5 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the end 
 5. Review the provisional details that step 6 added. Done: review decision 17. `respawn_milliseconds` stays provisional.
 6. Build the status API of phase 4 step 2 (review decision 19). Done on 2026-10-02 ([decision 0010](../decisions/0010-status-effects.md)). Details to review:
    - The objects of the `status_chance` and `status_duration` hooks also carry rAthena's value, as `chance` and `milliseconds`, as the `drop_rate` object carries `rate`.
-   - A player's stats change once an item's use script returns, or else at the end of the server tick, and the events of a script call's starts and ends run after the call. The Lua runtime cannot run Lua inside a host call.
+   - The events of a script call's starts and ends run after the call. Stats change inside the call since the change of 2026-10-02 in review decision 19.
    - `tick_milliseconds` ticks once more when the status runs out, as rAthena's statuses that tick.

@@ -154,7 +154,6 @@ type CharacterTimedBonuse struct {
 	RemainingMs int64
 	Bonuses     []byte
 	EndsOn      []string
-	Stack       bool
 	Icon        int
 	Kind        string
 }

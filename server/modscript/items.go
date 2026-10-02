@@ -47,6 +47,20 @@ type BonusSink interface {
 	BonusRemoved(b *Bonus)
 }
 
+// StatsHost computes stats again. The host calls that add or remove
+// bonuses call FlushStats before they return, so the script reads the
+// new stats after the call, as rAthena's status_calc_pc runs at once.
+type StatsHost interface {
+	FlushStats()
+}
+
+// flushStats computes again the stats that the call's bonuses changed.
+func (r *Runtime) flushStats() {
+	if h, ok := r.host.(StatsHost); ok {
+		h.FlushStats()
+	}
+}
+
 // UseItem runs a usable item's script for a player. script is the item's
 // entry script as <mod>:<path>. It returns an error when the script
 // fails, after its effects so far stay.
@@ -252,8 +266,10 @@ func (r *Runtime) Values(b *Bonus) (args []int64, chance int64, active bool, err
 	prev, prevComputing := r.current, r.computing
 	r.current, r.computing = b.Context, true
 	defer func() { r.current, r.computing = prev, prevComputing }()
+	// Inside a script's host call, such as start_status, these are
+	// nested calls (internal/script, "Nested calls").
 	num := func(ref *script.Ref, what string) (int64, error) {
-		v, err := r.s.Call1(ref.Value())
+		v, err := r.s.Call1Nested(ref.Value())
 		if err != nil {
 			r.afterError()
 			return 0, err
@@ -266,7 +282,7 @@ func (r *Runtime) Values(b *Bonus) (args []int64, chance int64, active bool, err
 	}
 	active = true
 	if b.when != nil {
-		v, err := r.s.Call1(b.when.Value())
+		v, err := r.s.Call1Nested(b.when.Value())
 		if err != nil {
 			r.afterError()
 			return nil, 0, false, err
@@ -412,6 +428,7 @@ func (r *Runtime) bonusesAdd(c *script.Call) error {
 	b.id = r.newID()
 	r.bonuses[b.id] = b
 	ctx.sink.BonusAdded(b)
+	r.flushStats()
 	c.Return(script.Int(b.id))
 	return nil
 }
@@ -433,6 +450,7 @@ func (r *Runtime) bonusesRemove(c *script.Call) error {
 		b.Context.bonuses = slices.DeleteFunc(b.Context.bonuses, func(x *Bonus) bool { return x == b })
 	}
 	r.dropBonus(b)
+	r.flushStats()
 	return nil
 }
 
@@ -543,6 +561,7 @@ func (r *Runtime) timersBonusStart(c *script.Call) error {
 		if t := r.timers[id]; t != nil && t.ctx == ctx {
 			r.dropTimer(t)
 			r.endTimerBonuses(t)
+			r.flushStats()
 		}
 	}
 	if err := r.room(ctx); err != nil {
@@ -570,6 +589,7 @@ func (r *Runtime) timersBonusDone(c *script.Call) error {
 	if !c.Bool(1) {
 		r.dropTimer(t)
 		r.endTimerBonuses(t)
+		r.flushStats()
 	}
 	return nil
 }

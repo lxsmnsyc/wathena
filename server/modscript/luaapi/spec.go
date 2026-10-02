@@ -363,10 +363,10 @@ var Classes = []Class{
 			{Name: "show_headgear_effect", Params: []Param{{"effect", "integer", "An effect from wa.headgear_effects."}}, Doc: "rAthena's hateffect. It shows nothing yet."},
 			{Name: "get_skill_level", Params: []Param{{"skill", "integer", "A skill from skills.id."}}, Returns: "integer", Doc: "The level of a skill the player has, or 0, as getskilllv.", Permission: "game.read"},
 			{Name: "get_equipped", Params: []Param{{"slot", "wa.EquipSlot", ""}}, Returns: "wa.EquippedItem?", Doc: "The copy in a slot, or nil.", Permission: "game.read"},
-			{Name: "add_timed_bonuses", Params: []Param{{"key", "string", "1 to 64 bytes. Timed bonuses with the same key replace each other, unless stack is set."},
+			{Name: "add_timed_bonuses", Params: []Param{{"key", "string", "1 to 64 bytes. The option on_repeat says what a second call with the same key does."},
 				{"milliseconds", "integer", "1 or more."}, {"bonuses", "table", "A list of entries: a bonus name, its arguments, and its options, as in bonuses.add, such as { { \"str\", 5 } }."},
-				{"options", "wa.TimedBonusOptions?", ""}},
-				Doc: "Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout."},
+				{"options", "wa.TimedBonusOptions?", ""}}, Returns: "boolean",
+				Doc: "Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout. The player's stats change before it returns. Returns true when the bonuses were added or extended, and false when on_repeat ignored them."},
 			{Name: "mark_minimap", Params: []Param{{"id", "integer", ""}, {"x", "integer", ""}, {"y", "integer", ""}, {"color", "integer", "0xRRGGBB."}}, Doc: "Marks a cell on the minimap, as viewpoint. A mark with the same ID replaces it."},
 			{Name: "unmark_minimap", Params: []Param{{"id", "integer", ""}}, Doc: "Removes a minimap mark."},
 			{Name: "open_shop", Params: []Param{{"shop", "string", "A shop record of data/npcs.yml: the mod's own name, or mod:Name."}}, Doc: "Opens a shop, as callshop."},
@@ -678,7 +678,7 @@ var Classes = []Class{
 		Name: "wa.TimedBonusOptions", Doc: "Options of player:add_timed_bonuses.",
 		Fields: []Field{
 			{"ends_on", "string[]?", "What ends the bonuses besides their time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage."},
-			{"stack", "boolean?", "Adds the bonuses next to others with the same key, instead of replacing them."},
+			{"on_repeat", `"keep"|"extend"|"add"|"replace"|nil`, `What happens when the player has timed bonuses with the same key. "keep", the default and rAthena's: the new ones are ignored. "extend", rAthena's BSF_FORCE_REPLACE: the first copy keeps its values and takes the new duration when it ends later. "add", rAthena's BSF_FORCE_DUPLICATE: both copies apply. "replace": every copy ends and the new one starts, with its values and duration.`},
 			{"icon", "integer?", "A status icon (EFST_ ID) to show while they last."},
 			{"kind", `"buff"|"debuff"|nil`, ""},
 		},
@@ -708,8 +708,8 @@ var Classes = []Class{
 // 0002, review decision 19).
 var statusMethods = []Func{
 	{Name: "start_status", Params: []Param{{"status", "integer", "A status from wa.statuses."}, {"options", "wa.StatusOptions?", ""}}, Returns: "boolean",
-		Doc: "Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick."},
-	{Name: "end_status", Params: []Param{{"status", "integer", ""}}, Returns: "boolean", Doc: "Ends a status, as sc_end. Returns true when it was active."},
+		Doc: "Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns."},
+	{Name: "end_status", Params: []Param{{"status", "integer", ""}}, Returns: "boolean", Doc: "Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns."},
 	{Name: "has_status", Params: []Param{{"status", "integer", ""}}, Returns: "boolean", Doc: "Whether a status is active, as getstatus.", Permission: "game.read"},
 	{Name: "get_status", Params: []Param{{"status", "integer", ""}}, Returns: "wa.Status?", Doc: "An active status, or nil.", Permission: "game.read"},
 	{Name: "get_statuses", Returns: "wa.Status[]", Doc: "The active statuses, by status.", Permission: "game.read"},

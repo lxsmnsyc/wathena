@@ -16,9 +16,10 @@ import (
 // status_tick, the hooks status_chance and status_duration,
 // statuses.define, and player:add_timed_bonuses.
 //
-// A host function cannot call back into Lua. So when a script starts a
-// status, the prelude runs what needs Lua first: the bonuses function of
-// a mod status, and the hooks, with the chance and duration that
+// A host function may call back into Lua only to compute stats again
+// (internal/script, "Nested calls"). So when a script starts a status,
+// the prelude runs the other Lua first: the bonuses function of a mod
+// status, and the hooks, with the chance and duration that
 // PreviewStatus gives. StartStatus then uses their results.
 
 // StatusHost runs statuses for scripts. A Host without it raises an
@@ -38,8 +39,9 @@ type StatusHost interface {
 	Statuses(target Entity, status int64) ([]StatusInfo, error)
 	// DefineStatus adds a mod's status and returns its ID.
 	DefineStatus(d StatusDefinition) (int64, error)
-	// AddTimedBonuses gives a player timed bonuses.
-	AddTimedBonuses(player int64, t TimedBonuses) error
+	// AddTimedBonuses gives a player timed bonuses. It reports whether
+	// they were added or extended, and not ignored by on_repeat.
+	AddTimedBonuses(player int64, t TimedBonuses) (bool, error)
 }
 
 // Entity names an entity handle: its kind, "player", "monster" or
@@ -113,11 +115,29 @@ type TimedBonuses struct {
 	Bonuses []bonus.Bonus
 	Data    []any
 	EndsOn  []string
-	Stack   bool
+	// Repeat is what happens when the player has timed bonuses with the
+	// same key: RepeatKeep, RepeatExtend, RepeatAdd or RepeatReplace.
+	Repeat string
 	// Icon is the EFST_ icon, or -1. Kind is "buff", "debuff" or "".
 	Icon int64
 	Kind string
 }
+
+// The modes of the option on_repeat of add_timed_bonuses, for a key the player already
+// has. The first three are pc_bonus_script_add's.
+const (
+	// RepeatKeep keeps the first copy and ignores the new one. It is
+	// rAthena's default.
+	RepeatKeep = "keep"
+	// RepeatExtend keeps the first copy's values and takes the new
+	// duration when it ends later: BSF_FORCE_REPLACE.
+	RepeatExtend = "extend"
+	// RepeatAdd adds a second copy: BSF_FORCE_DUPLICATE.
+	RepeatAdd = "add"
+	// RepeatReplace ends every copy and adds the new one, with its values
+	// and duration. rAthena has no such flag.
+	RepeatReplace = "replace"
+)
 
 // Limits of the status calls.
 const (
@@ -696,7 +716,7 @@ func (r *Runtime) playerAddTimedBonuses(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	t := TimedBonuses{Key: c.String(1), Icon: -1}
+	t := TimedBonuses{Key: c.String(1), Icon: -1, Repeat: RepeatKeep}
 	if t.Key == "" || len(t.Key) > 64 {
 		return fmt.Errorf("%s: the key must be 1 to 64 bytes", what)
 	}
@@ -728,12 +748,14 @@ func (r *Runtime) playerAddTimedBonuses(c *script.Call) error {
 					}
 					t.EndsOn = append(t.EndsOn, s)
 				}
-			case "stack":
-				b, ok := f.Value.AsBool()
-				if !ok {
-					return fmt.Errorf("%s: stack must be true or false", what)
+			case "on_repeat":
+				s, _ := f.Value.AsString()
+				if s != RepeatKeep && s != RepeatExtend && s != RepeatAdd && s != RepeatReplace {
+					return fmt.Errorf(`%s: on_repeat is "keep", "extend", "add" or "replace"`, what)
 				}
-				t.Stack = b
+				t.Repeat = s
+			case "stack", "repeat":
+				return fmt.Errorf("%s: the option %s is gone; on_repeat replaces it", what, k)
 			case "icon":
 				n, ok := f.Value.AsInt()
 				if !ok || n < 0 || n > 1<<16 {
@@ -747,11 +769,16 @@ func (r *Runtime) playerAddTimedBonuses(c *script.Call) error {
 				}
 				t.Kind = s
 			default:
-				return fmt.Errorf("%s: %q is not an option; the options are ends_on, stack, icon and kind", what, k)
+				return fmt.Errorf("%s: %q is not an option; the options are ends_on, on_repeat, icon and kind", what, k)
 			}
 		}
 	}
-	return h.AddTimedBonuses(id, t)
+	added, err := h.AddTimedBonuses(id, t)
+	if err != nil {
+		return err
+	}
+	c.Return(script.Bool(added))
+	return nil
 }
 
 // hookChainBegin starts a hook chain that the prelude runs itself, for a

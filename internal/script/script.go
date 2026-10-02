@@ -91,6 +91,7 @@ const (
 	opHostFn
 	opReserve
 	opGC
+	opNested
 )
 
 // Lua status codes and glue results.
@@ -126,11 +127,16 @@ const (
 	inHost
 )
 
+// MaxNested is the most nested calls (Call1Nested) that can be open at
+// once.
+const MaxNested = 8
+
 // State is one Lua state. Each zone has its own.
 //
 // A State is used by one goroutine at a time. Using it from two goroutines
 // at once panics. A host function may call Keep, Ref.Release, SetGlobal,
-// and Register on its own state, but not Call, Load, or Resume.
+// Register, and Call1Nested on its own state, but not Call, Load, or
+// Resume.
 type State struct {
 	e       *engine
 	handle  int64
@@ -138,8 +144,12 @@ type State struct {
 	gen     uint32
 	funcs   []hostFunc
 	modules func(string) (string, bool)
-	call    Call
 	hostErr error
+	// calls holds the context of each host call that runs, one per
+	// depth: a nested call can run host functions while one runs.
+	calls  []*Call
+	depth  int
+	nested int
 
 	pendingMu  sync.Mutex
 	pending    []int32
@@ -155,7 +165,6 @@ type hostFunc struct {
 // utf8 libraries, and the sandbox described in README.md.
 func New(opts Options) (*State, error) {
 	s := &State{modules: opts.Modules}
-	s.call.s = s
 	s.funcs = []hostFunc{{name: "require", fn: s.require}}
 	s.handle = handles.add(s)
 	cpu, mem, timeout := opts.Limits.values()
@@ -297,6 +306,61 @@ func (s *State) Call1(fn Value, args ...Value) (Value, error) {
 	}
 	defer s.leave()
 	status, err := s.callOp(fn, args)
+	if err != nil {
+		return Nil, err
+	}
+	if err := s.statusError(status); err != nil {
+		return Nil, err
+	}
+	if s.e.hdr(hNres) == 0 {
+		return Nil, nil
+	}
+	pos := 0
+	return s.decode(&pos, 0), nil
+}
+
+// InHost reports whether a host function runs now.
+func (s *State) InHost() bool {
+	return s.busy.Load() == inHost
+}
+
+// Call1Nested is Call1 for code that only computes a value, such as a
+// computed bonus. Outside a host function it is Call1. Inside one, it is
+// a nested call on the thread that called the host function:
+//   - The CPU budget, time limit, and memory limit of the outer call apply
+//     to it. When it hits one, it returns the error, and the outer call
+//     stops with that error once the host function returns.
+//   - It cannot pause. Call.Yield and coroutine.yield on that thread raise
+//     a Lua error inside it.
+//   - Handles from the host function's arguments expire after it. Keep
+//     them first to use them later.
+//   - At most MaxNested nested calls can be open at once.
+//
+// wAthena only uses it to compute stats again (decision 0010). Every other
+// call from a host function into its own state gets ErrReentrant.
+func (s *State) Call1Nested(fn Value, args ...Value) (Value, error) {
+	if s.busy.Load() != inHost {
+		return s.Call1(fn, args...)
+	}
+	if s.e == nil {
+		return Nil, ErrClosed
+	}
+	if s.nested >= MaxNested {
+		return Nil, errors.New("script: too many nested calls")
+	}
+	s.nested++
+	prevErr := s.hostErr
+	s.hostErr = nil
+	s.busy.Store(running)
+	defer func() {
+		s.busy.Store(inHost)
+		s.hostErr = prevErr
+		s.nested--
+	}()
+	if err := s.write([]Value{fn}, args); err != nil {
+		return Nil, err
+	}
+	status, err := s.e.op(opNested, int64(len(args)), 0)
 	if err != nil {
 		return Nil, err
 	}

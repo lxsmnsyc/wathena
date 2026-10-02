@@ -25,6 +25,7 @@ typedef struct glue_state {
 	int memhit;         /* the last allocation was refused for the memory limit */
 	lua_State *resumed; /* the thread Go resumed, if any */
 	lua_State *cur;     /* the thread that called Go, during a host call */
+	int host_top;       /* the top of cur's stack when the host call began */
 	int tmp_ref;        /* registry reference of the temporary table */
 	int ntmp;           /* entries used in it since the last reset */
 	int maxtmp;         /* highest entry used since the operation began */

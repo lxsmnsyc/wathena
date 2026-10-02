@@ -651,7 +651,7 @@ local s = player:get_status(statuses.blessing)
 
 - `start_status` returns true when the status starts. rAthena's rules apply: a weaker copy of an active status does nothing and returns true, and a status that fails its roll returns false.
 - `end_status` returns true when the status was active. `get_statuses()` lists every active status, by status.
-- A player's stats change once an item's use script returns, or else at the end of the server tick.
+- A player's stats change before `start_status` or `end_status` returns, so the script reads the new values. Events of the status run after the script's call.
 - Converted item scripts set `keep_duration`, as rAthena's `sc_start` does in item scripts. Converted NPC scripts set `cannot_be_avoided`.
 
 Events of mod and event contexts, with the options `status`, `target_kind` and `map`:
@@ -698,10 +698,16 @@ player:add_timed_bonuses("tonic", 60000, { { "str", 5 }, { "max_hp", 100 } },
   { ends_on = { "death" }, icon = 241, kind = "buff" })
 ```
 
-- The bonuses last the time given. A second call with the same key replaces them, unless `stack` is set.
+- The bonuses last the time given. The player's stats change before the call returns.
+- The option `on_repeat` says what a call does when the player has timed bonuses with the same key:
+  - `"keep"`, the default and rAthena's: the new bonuses are ignored.
+  - `"extend"`: the first copy keeps its values and takes the new duration when it is longer.
+  - `"add"`: both copies apply.
+  - `"replace"`: the copies end, and the new one starts with its values and duration.
+- The method returns true when the bonuses were added or extended, and false when they were ignored.
 - `ends_on` lists what also ends them: `death`, `dispell`, `clearance`, `logout`, `banishing_buster`, `refresh`, `lux_anima`, `magic_gear_change` and `damage`.
 - They are saved across logout, unless `ends_on` has `logout`.
-- Converted `bonus_script` lines key the bonuses by the script's text.
+- Converted `bonus_script` lines key the bonuses by the script's text. Their flags 0x400 and 0x800 become `"extend"` and `"add"`.
 
 ### Items
 

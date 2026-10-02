@@ -44,8 +44,8 @@ type Status struct {
 
 // TimedBonus is one saved timed bonus.
 type TimedBonus struct {
-	// Key names it: a new one with the same key replaces it, unless
-	// Stack is set.
+	// Key names it. A character may have several with one key, as the
+	// on_repeat mode "add" of player:add_timed_bonuses gives.
 	Key string
 	// Remaining is the time left, in milliseconds.
 	Remaining int64
@@ -54,7 +54,6 @@ type TimedBonus struct {
 	Bonuses string
 	// EndsOn are the names of what ends it, such as death.
 	EndsOn []string
-	Stack  bool
 	// Icon is the EFST_ icon, or -1 for none. Kind is "buff", "debuff"
 	// or "" for neither.
 	Icon int
@@ -64,7 +63,7 @@ type TimedBonus struct {
 // Equal reports whether two timed bonuses are the same.
 func (t *TimedBonus) Equal(o *TimedBonus) bool {
 	return t.Key == o.Key && t.Remaining == o.Remaining && t.Bonuses == o.Bonuses && slices.Equal(t.EndsOn, o.EndsOn) &&
-		t.Stack == o.Stack && t.Icon == o.Icon && t.Kind == o.Kind
+		t.Icon == o.Icon && t.Kind == o.Kind
 }
 
 // Variable names one saved variable of a mod.

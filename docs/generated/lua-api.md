@@ -1010,13 +1010,13 @@ Permission: `game.read`.
 |---|---|---|
 | `slot` | `wa.EquipSlot` |  |
 
-#### `player:add_timed_bonuses(key, milliseconds, bonuses, options?)`
+#### `player:add_timed_bonuses(key, milliseconds, bonuses, options?) → boolean`
 
-Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout.
+Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout. The player's stats change before it returns. Returns true when the bonuses were added or extended, and false when on_repeat ignored them.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `key` | `string` | 1 to 64 bytes. Timed bonuses with the same key replace each other, unless stack is set. |
+| `key` | `string` | 1 to 64 bytes. The option on_repeat says what a second call with the same key does. |
 | `milliseconds` | `integer` | 1 or more. |
 | `bonuses` | `table` | A list of entries: a bonus name, its arguments, and its options, as in bonuses.add, such as { { "str", 5 } }. |
 | `options` | `wa.TimedBonusOptions?` |  |
@@ -1050,7 +1050,7 @@ Opens a shop, as callshop.
 
 #### `player:start_status(status, options?) → boolean`
 
-Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1059,7 +1059,7 @@ Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance
 
 #### `player:end_status(status) → boolean`
 
-Ends a status, as sc_end. Returns true when it was active.
+Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1110,7 +1110,7 @@ A monster. A killed monster's handle reads while its death event runs, with is_a
 
 #### `monster:start_status(status, options?) → boolean`
 
-Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1119,7 +1119,7 @@ Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance
 
 #### `monster:end_status(status) → boolean`
 
-Ends a status, as sc_end. Returns true when it was active.
+Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1181,7 +1181,7 @@ Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it
 
 #### `npc:start_status(status, options?) → boolean`
 
-Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1190,7 +1190,7 @@ Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance
 
 #### `npc:end_status(status) → boolean`
 
-Ends a status, as sc_end. Returns true when it was active.
+Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1773,7 +1773,7 @@ Options of player:add_timed_bonuses.
 | Field | Type | Meaning |
 |---|---|---|
 | `ends_on` | `string[]?` | What ends the bonuses besides their time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage. |
-| `stack` | `boolean?` | Adds the bonuses next to others with the same key, instead of replacing them. |
+| `on_repeat` | `"keep"\|"extend"\|"add"\|"replace"\|nil` | What happens when the player has timed bonuses with the same key. "keep", the default and rAthena's: the new ones are ignored. "extend", rAthena's BSF_FORCE_REPLACE: the first copy keeps its values and takes the new duration when it ends later. "add", rAthena's BSF_FORCE_DUPLICATE: both copies apply. "replace": every copy ends and the new one starts, with its values and duration. |
 | `icon` | `integer?` | A status icon (EFST_ ID) to show while they last. |
 | `kind` | `"buff"\|"debuff"\|nil` |  |
 

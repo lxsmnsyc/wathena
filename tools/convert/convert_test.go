@@ -197,7 +197,10 @@ func TestConvertUse(t *testing.T) {
 		{"sc_start4 SC_STRFOOD,1200000,10,0,0,0;", "player:start_status(statuses.strfood, { milliseconds = 1200000, level = 10, keep_duration = true })"},
 		{"sc_start2 SC_POISON,-1,1,30;", `player:start_status(statuses.poison, { milliseconds = "forever", values = { 30 }, keep_duration = true })`},
 		{"sc_end SC_POISON;", "player:end_status(statuses.poison)"},
-		{`bonus_script "{ bonus bStr,5; }",60,1025,0,EFST_ATTACK_PROPERTY_FIRE;`, "{ \"str\", 5 },\n    }, { ends_on = { \"death\" }, icon = "},
+		{`bonus_script "{ bonus bStr,5; }",60,1025,0,EFST_ATTACK_PROPERTY_FIRE;`, "{ \"str\", 5 },\n    }, { ends_on = { \"death\" }, on_repeat = \"extend\", icon = "},
+		{`bonus_script "{ bonus bStr,5; }",60,2049;`, "{ \"str\", 5 },\n    }, { ends_on = { \"death\" }, on_repeat = \"add\" })"},
+		{`bonus_script "{ bonus bStr,5; }",60,3072;`, "{ \"str\", 5 },\n    }, { on_repeat = \"extend\" })"},
+		{`bonus_script "{ bonus bStr,5; }",60,1;`, "{ \"str\", 5 },\n    }, { ends_on = { \"death\" } })"},
 		{".@r = rand(1,3); if (.@r == 1) getitem 501,1; else if (.@r == 2) getitem 502,1; else getitem 503,1;",
 			"r = random.integer(1, 3)\n    if r == 1 then"},
 	} {

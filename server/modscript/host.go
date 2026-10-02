@@ -240,6 +240,7 @@ func (r *Runtime) timersCancel(c *script.Call) error {
 	if t.fn != nil {
 		t.fn.Release()
 	}
+	r.flushStats()
 	return nil
 }
 

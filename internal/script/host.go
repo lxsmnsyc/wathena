@@ -150,7 +150,10 @@ func hostCall(handle int64, id, nargs, flags int32) int32 {
 
 func (s *State) dispatch(id, nargs, flags int32) (r int32) {
 	s.gen++
-	c := &s.call
+	if s.depth == len(s.calls) {
+		s.calls = append(s.calls, &Call{s: s})
+	}
+	c := s.calls[s.depth]
 	c.flags = flags
 	c.res = c.res[:0]
 	c.args = c.args[:0]
@@ -166,7 +169,9 @@ func (s *State) dispatch(id, nargs, flags int32) (r int32) {
 	f := s.funcs[id]
 	c.name = f.name
 	prev := s.busy.Swap(inHost)
+	s.depth++
 	defer func() {
+		s.depth--
 		s.busy.Store(prev)
 		if p := recover(); p != nil {
 			if ae, ok := p.(argError); ok {

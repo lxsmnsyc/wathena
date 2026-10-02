@@ -59,7 +59,8 @@ enum {
 	GLUE_OGETGLOBAL = 9,   /* Returns global value 0. */
 	GLUE_OHOSTFN = 10,     /* a: host function ID. Returns a reference. */
 	GLUE_ORESERVE = 11,    /* a: values, b: bytes the exchange must hold. */
-	GLUE_OGC = 12          /* Runs a full garbage collection. */
+	GLUE_OGC = 12,         /* Runs a full garbage collection. */
+	GLUE_ONESTED = 13      /* a: arguments. Calls value 0 inside a host call. */
 };
 
 /* Results of glue_op besides Lua's status codes and references. */

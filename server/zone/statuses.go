@@ -170,24 +170,15 @@ func (v scEnv) RandN(n int) int {
 	return v.z.rand.IntN(n)
 }
 
-// Recalc is status_calc_bl: stats come again from the statuses. During
-// a script's call, a player's stats wait for the end of the tick, since
-// computed bonuses run Lua, which cannot run inside a host call.
+// Recalc is status_calc_bl: stats come again from the statuses, at
+// once, as rAthena computes them inside status_change_start and
+// status_change_end. A script that starts or ends a status reads the new
+// stats after the call.
 func (v scEnv) Recalc(u sc.Unit) {
 	z, e := v.z, u.(scUnit).e
 	switch {
 	case e.player != nil:
-		p := e.player
-		if z.inScriptCall {
-			p.statsDirty = true
-			return
-		}
-		speed := e.speed
-		z.recalc(p)
-		if s := z.battleStats(p); s != nil {
-			p.pending = append(p.pending, s)
-		}
-		z.speedChanged(e, speed)
+		z.statsChanged(e.player)
 	case e.monster != nil && e.monster.spawn.Status != nil:
 		z.recalcMonster(e)
 	}
@@ -316,7 +307,12 @@ func (v scEnv) Ticked(u sc.Unit, e *sc.Entry) {
 	v.z.statusEvent("status_tick", u.(scUnit), e, e.Remaining(v.z.now), "")
 }
 
-// statusEvent queues a status event for mod scripts.
+// statusEvent queues a status event for mod scripts. Events run after
+// the script call that started or ended the status returns, not inside
+// it:
+//   - A handler that starts a status from status_start cannot loop
+//     inside one call.
+//   - rAthena has no such events, so the order matches no rAthena rule.
 func (z *Zone) statusEvent(name string, u scUnit, e *sc.Entry, ms int64, reason string) {
 	if z.scripts == nil {
 		return
@@ -584,30 +580,59 @@ type timedBonus struct {
 	// data is the entries as JSON, for saving.
 	data   string
 	endsOn map[string]bool
-	stack  bool
 	icon   int
 	kind   string
 }
 
 // addTimedBonuses is pc_bonus_script_add and pc_bonus_script: the
-// bonuses start, with their icon, and stats are computed again. A timed
-// bonus with the same key ends first, unless stack is set.
-func (z *Zone) addTimedBonuses(p *Player, t modscript.TimedBonuses) error {
+// bonuses start, with their icon, and stats are computed again at once.
+// When the player has timed bonuses with the same key, t.Repeat decides,
+// as pc_bonus_script_add's flags do for the same script text:
+//   - RepeatKeep, rAthena's default: the new ones are ignored.
+//   - RepeatExtend, BSF_FORCE_REPLACE: the first copy keeps its values
+//     and takes the new end when it is later. Otherwise the new ones are
+//     ignored.
+//   - RepeatAdd, BSF_FORCE_DUPLICATE: a second copy starts.
+//   - RepeatReplace: every copy ends, and the new one starts.
+//
+// It reports whether the bonuses were added or extended.
+func (z *Zone) addTimedBonuses(p *Player, t modscript.TimedBonuses) (bool, error) {
 	ends := map[string]bool{}
 	for _, e := range t.EndsOn {
 		if !slices.Contains(sc.EndsOnNames, e) {
-			return fmt.Errorf("player:add_timed_bonuses: ends_on has no %q", e)
+			return false, fmt.Errorf("player:add_timed_bonuses: ends_on has no %q", e)
 		}
 		ends[e] = true
 	}
 	data, err := json.Marshal(t.Data)
 	if err != nil {
-		return err
+		return false, err
 	}
-	if !t.Stack {
-		z.removeTimedBonuses(p, func(x *timedBonus) bool { return x.key == t.Key })
+	end := z.now + t.Milliseconds
+	// pc_bonus_script_add looks at the first copy only.
+	if i := slices.IndexFunc(p.timed, func(x *timedBonus) bool { return x.key == t.Key }); i >= 0 {
+		switch t.Repeat {
+		case modscript.RepeatAdd:
+		case modscript.RepeatReplace:
+			// Stats are computed once, after the new copy starts.
+			z.holdStats++
+			z.removeTimedBonuses(p, func(x *timedBonus) bool { return x.key == t.Key })
+			z.holdStats--
+		case modscript.RepeatExtend:
+			x := p.timed[i]
+			if x.end >= end {
+				return false, nil
+			}
+			x.end = end
+			if x.icon >= 0 {
+				scEnv{z}.Icon(z.unit(p.entity), x.icon, true, t.Milliseconds, 1, 0, 0)
+			}
+			return true, nil
+		default:
+			return false, nil
+		}
 	}
-	tb := &timedBonus{key: t.Key, end: z.now + t.Milliseconds, data: string(data), endsOn: ends, stack: t.Stack, icon: int(t.Icon), kind: t.Kind}
+	tb := &timedBonus{key: t.Key, end: end, data: string(data), endsOn: ends, icon: int(t.Icon), kind: t.Kind}
 	for i := range t.Bonuses {
 		tb.bonuses = append(tb.bonuses, status.FromBonus(&t.Bonuses[i]))
 	}
@@ -615,31 +640,36 @@ func (z *Zone) addTimedBonuses(p *Player, t modscript.TimedBonuses) error {
 	if tb.icon >= 0 {
 		scEnv{z}.Icon(z.unit(p.entity), tb.icon, true, t.Milliseconds, 1, 0, 0)
 	}
-	p.statsDirty = true
-	return nil
+	z.statsChanged(p)
+	return true, nil
 }
 
 // removeTimedBonuses ends the timed bonuses that match, with their
-// icons. It reports whether any ended.
+// icons, and computes stats again. An icon stays while another timed
+// bonus shows it. It reports whether any ended.
 func (z *Zone) removeTimedBonuses(p *Player, match func(*timedBonus) bool) bool {
 	kept := p.timed[:0]
-	ended := false
+	var icons []int
 	for _, t := range p.timed {
 		if !match(t) {
 			kept = append(kept, t)
 			continue
 		}
-		ended = true
-		if t.icon >= 0 && !slices.ContainsFunc(kept, func(x *timedBonus) bool { return x.icon == t.icon }) {
-			scEnv{z}.Icon(z.unit(p.entity), t.icon, false, 0, 0, 0, 0)
-		}
+		icons = append(icons, t.icon)
 	}
 	clear(p.timed[len(kept):])
 	p.timed = kept
-	if ended {
-		p.statsDirty = true
+	if len(icons) == 0 {
+		return false
 	}
-	return ended
+	slices.Sort(icons)
+	for _, icon := range slices.Compact(icons) {
+		if icon >= 0 && !slices.ContainsFunc(kept, func(x *timedBonus) bool { return x.icon == icon }) {
+			scEnv{z}.Icon(z.unit(p.entity), icon, false, 0, 0, 0, 0)
+		}
+	}
+	z.statsChanged(p)
+	return true
 }
 
 // endTimedBonuses is pc_bonus_script_clear for one removal: the timed
@@ -682,7 +712,7 @@ func (z *Zone) savedTimedBonuses(p *Player) []character.TimedBonus {
 			}
 		}
 		out = append(out, character.TimedBonus{Key: t.key, Remaining: max(t.end-z.now, 0), Bonuses: t.data,
-			EndsOn: ends, Stack: t.stack, Icon: t.icon, Kind: t.kind})
+			EndsOn: ends, Icon: t.icon, Kind: t.kind})
 	}
 	return out
 }
@@ -697,7 +727,9 @@ func (z *Zone) restoreTimedBonuses(p *Player, saved []character.TimedBonus) {
 		if err := json.Unmarshal([]byte(s.Bonuses), &entries); err != nil {
 			continue
 		}
-		t := modscript.TimedBonuses{Key: s.Key, Milliseconds: max(s.Remaining, 1), Data: entries, EndsOn: s.EndsOn, Stack: s.Stack, Icon: int64(s.Icon), Kind: s.Kind}
+		// Each saved copy comes back, even several with one key.
+		t := modscript.TimedBonuses{Key: s.Key, Milliseconds: max(s.Remaining, 1), Data: entries, EndsOn: s.EndsOn,
+			Repeat: modscript.RepeatAdd, Icon: int64(s.Icon), Kind: s.Kind}
 		ok := true
 		for _, e := range entries {
 			b, err := bonus.FromData(e, names)
@@ -713,9 +745,7 @@ func (z *Zone) restoreTimedBonuses(p *Player, saved []character.TimedBonus) {
 			}
 			continue
 		}
-		t.Stack = true // Saved copies keep their own entries.
-		_ = z.addTimedBonuses(p, t)
-		p.timed[len(p.timed)-1].stack = s.Stack
+		_, _ = z.addTimedBonuses(p, t)
 	}
 }
 
@@ -1015,10 +1045,10 @@ func (h scriptHost) DefineStatus(d modscript.StatusDefinition) (int64, error) {
 }
 
 // AddTimedBonuses is player:add_timed_bonuses.
-func (h scriptHost) AddTimedBonuses(id int64, t modscript.TimedBonuses) error {
+func (h scriptHost) AddTimedBonuses(id int64, t modscript.TimedBonuses) (bool, error) {
 	p, err := h.player(id)
 	if err != nil {
-		return err
+		return false, err
 	}
 	return h.z.addTimedBonuses(p, t)
 }

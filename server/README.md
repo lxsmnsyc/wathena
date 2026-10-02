@@ -400,13 +400,13 @@ Players, monsters and NPCs have status effects, as rAthena's `status_change` ([d
 
 - Starting a status checks immunities, the `Fail` list, boss resistance, and resistance from VIT, INT, LUK, level and `bResEff`, then rolls the chance on the zone's random stream. `start_status` options and `sc_start` flags skip parts of it, as rAthena's `SCSTART_` flags.
 - Each status lasts its duration and ends with the reason `"expired"`. Poison, bleeding, stone and the other statuses that tick do their work on rAthena's intervals.
-- Statuses change stats: the zone computes stats again when a status starts or ends, with the `status_calc_*` changes of rAthena and the converted status scripts (such as `bonus bStr` of SC_INCSTR). Monsters' stats follow their statuses too.
+- Statuses change stats: the zone computes stats again when a status starts or ends, with the `status_calc_*` changes of rAthena and the converted status scripts (such as `bonus bStr` of SC_INCSTR). Monsters' stats follow their statuses too. A script that starts or ends a status reads the new stats in the same call, as in rAthena.
 - The common ailments work in full: stone, freeze, stun, sleep, poison, deadly poison, curse, silence, confusion, blind and bleeding. A stunned, frozen, stoned or sleeping unit cannot walk, attack or use items, and its HP regen follows rAthena. Damage ends sleep, freeze and stone. Confusion walks to random cells.
 - Death ends the statuses without `NoRemoveOnDead`, and logout ends those with `NoSave`.
 - Procs: `cause_status` bonuses on equipment and timed bonuses roll on each normal attack that lands, with the target's resistance and rAthena's 100 ms delay. `on = "hit_taken"` rolls on the attacker.
 - The player sees a status icon with the time left (`StatusIcon`). Everyone near sees the status options: stone, freeze, stun, poison, curse, hiding and the rest (`OptionChange`, and the `options` of `EntityAppear`).
 
-Statuses are saved with the character, as `chrif_save_scdata`: every status without `NoSave`, with its values and the time to its next timer. Login restores them with the reason `"login"`. Timed bonuses (`player:add_timed_bonuses`, rAthena's `bonus_script`) are saved too, unless `ends_on` has `logout`. Migration 00009 adds `character_statuses` and `character_timed_bonuses`.
+Statuses are saved with the character, as `chrif_save_scdata`: every status without `NoSave`, with its values and the time to its next timer. Login restores them with the reason `"login"`. Timed bonuses (`player:add_timed_bonuses`, rAthena's `bonus_script`) are saved too, unless `ends_on` has `logout`. A second use of a key keeps the first copy by default, as `bonus_script` does, and the option `on_repeat` can extend it, add a copy, or replace it. Migration 00009 adds `character_statuses` and `character_timed_bonuses`, and migration 00010 drops their `stack` column.
 
 To try them, give a new character STR Dishes, Green Potions and Concentration Potions:
 

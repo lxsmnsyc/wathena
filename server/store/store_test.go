@@ -275,15 +275,17 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 			{Slot: 7, ID: 1201, Amount: 1, Serial: item.NewSerial()},
 			{Slot: 199, ID: 909, Amount: 3, Serial: item.NewSerial()},
 		},
-		// Statuses come back by name, and timed bonuses in their order.
+		// Statuses come back by name, and timed bonuses in their order,
+		// with two copies of one key, as the on_repeat mode "add" gives.
 		Statuses: []character.Status{
 			{Name: "blessing", Values: [4]int{10, 0, 0, 0}, Tick: 59000},
 			{Name: "example.glow:glow", Values: [4]int{1, -2, 2147483647, -2147483648}, Tick: 1000, End: 30000},
 			{Name: "strfood", Values: [4]int{10}, Tick: -1},
 		},
 		TimedBonuses: []character.TimedBonus{
-			{Key: "b", Remaining: 5000, Bonuses: `[["str", 5]]`, EndsOn: []string{"death", "dispell"}, Stack: true, Icon: 925, Kind: "buff"},
+			{Key: "b", Remaining: 5000, Bonuses: `[["str", 5]]`, EndsOn: []string{"death", "dispell"}, Icon: 925, Kind: "buff"},
 			{Key: "a", Remaining: 1, Bonuses: `[]`, EndsOn: []string{}, Icon: -1},
+			{Key: "b", Remaining: 3000, Bonuses: `[["str", 7]]`, EndsOn: []string{"death", "dispell"}, Icon: 925, Kind: "buff"},
 		},
 	}
 	sess.Save(next, true)

@@ -1,7 +1,7 @@
 # 0002: C Lua Through Our Own cgo Binding
 
 - Status: accepted.
-- Date: 2026-09-29. Updated on 2026-10-01 with the production binding (see "Production binding").
+- Date: 2026-09-29. Updated on 2026-10-01 with the production binding (see "Production binding"), and on 2026-10-02 with nested calls (see "Nested calls").
 - Supersedes: [0001](0001-lua-runtime.md).
 
 ## Decision
@@ -155,6 +155,20 @@ Time per operation on the same Apple M2, with default limits. The prototype was 
 - `npc_dialog`, paused by host functions, is the dialog as NPC scripts will run it: a thread that Go resumes, with `mes` and `menu` as host functions that pause it.
 - The infinite loop stops after 21 ms and the 1 GB table after 18 ms, as with the prototype.
 - A state with 1,000 items uses 606 KB, and one mod of 200 items 155 KB.
+
+## Nested calls
+
+Added on 2026-10-02 for status effects ([decision 0010](0010-status-effects.md)).
+
+When a script starts or ends a status, rAthena computes the player's stats at once, inside `status_change_start` and `status_change_end`. In wAthena that runs computed bonuses and `when` conditions, which are Lua, from inside the script's host call. A host function may now make that one kind of call:
+
+- `State.Call1Nested` runs on the thread that called the host function, inside the outer call. wAthena uses it only to compute stats.
+- It shares the outer call's CPU budget, time limit, and memory limit. A limit it hits stops the outer call when the host function returns.
+- It cannot yield: it runs under `lua_pcall`, so a yield raises an error instead of pausing the outer thread.
+- Errors stay inside it, so no Lua error crosses a Go frame. This keeps it safe in wazero, which cannot unwind through a host function.
+- Every other call into the state from a host function still gets `ErrReentrant`.
+
+The rules are in [internal/script/README.md](../../internal/script/README.md), "Nested calls". The cgo build and `lua.wasm` run the same tests.
 
 ## Follow-up
 

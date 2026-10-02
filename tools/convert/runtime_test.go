@@ -84,7 +84,7 @@ func (h *testHost) DefineStatus(modscript.StatusDefinition) (int64, error) {
 	return 0, fmt.Errorf("core defines no statuses")
 }
 
-func (h *testHost) AddTimedBonuses(int64, modscript.TimedBonuses) error { return nil }
+func (h *testHost) AddTimedBonuses(int64, modscript.TimedBonuses) (bool, error) { return true, nil }
 
 func (h *testHost) Map() string { return "prontera" }
 func (h *testHost) PlayerField(id int64, field string) (script.Value, error) {

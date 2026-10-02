@@ -7,5 +7,5 @@
 // file, and cgo compiles again. TestSourcesDigest checks it; run
 // go test -run TestSourcesDigest -update after editing C sources.
 //
-// sources sha256: 259cbe870c9109b65253886ac2f5101e8077706a2aca1a70ad903033ba2569bb
+// sources sha256: e7271426709740cff7ff86c982673523834a038c0b67591688d3be56f6d0d464
 #include "csrc/all.c"

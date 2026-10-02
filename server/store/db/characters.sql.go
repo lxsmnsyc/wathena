@@ -291,8 +291,8 @@ func (q *Queries) InsertStatuses(ctx context.Context, arg InsertStatusesParams) 
 }
 
 const insertTimedBonus = `-- name: InsertTimedBonus :exec
-INSERT INTO character_timed_bonuses (character_id, position, key, remaining_ms, bonuses, ends_on, stack, icon, kind)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO character_timed_bonuses (character_id, position, key, remaining_ms, bonuses, ends_on, icon, kind)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type InsertTimedBonusParams struct {
@@ -302,7 +302,6 @@ type InsertTimedBonusParams struct {
 	RemainingMs int64
 	Bonuses     []byte
 	EndsOn      []string
-	Stack       bool
 	Icon        int
 	Kind        string
 }
@@ -315,7 +314,6 @@ func (q *Queries) InsertTimedBonus(ctx context.Context, arg InsertTimedBonusPara
 		arg.RemainingMs,
 		arg.Bonuses,
 		arg.EndsOn,
-		arg.Stack,
 		arg.Icon,
 		arg.Kind,
 	)
@@ -497,7 +495,7 @@ func (q *Queries) Statuses(ctx context.Context, characterID int64) ([]StatusesRo
 }
 
 const timedBonuses = `-- name: TimedBonuses :many
-SELECT key, remaining_ms, bonuses, ends_on, stack, icon, kind FROM character_timed_bonuses
+SELECT key, remaining_ms, bonuses, ends_on, icon, kind FROM character_timed_bonuses
 WHERE character_id = $1
 ORDER BY position
 `
@@ -507,7 +505,6 @@ type TimedBonusesRow struct {
 	RemainingMs int64
 	Bonuses     []byte
 	EndsOn      []string
-	Stack       bool
 	Icon        int
 	Kind        string
 }
@@ -526,7 +523,6 @@ func (q *Queries) TimedBonuses(ctx context.Context, characterID int64) ([]TimedB
 			&i.RemainingMs,
 			&i.Bonuses,
 			&i.EndsOn,
-			&i.Stack,
 			&i.Icon,
 			&i.Kind,
 		); err != nil {

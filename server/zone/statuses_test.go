@@ -1,6 +1,9 @@
 package zone
 
 import (
+	"fmt"
+	"log/slog"
+	"strings"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
@@ -11,6 +14,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/status"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
+	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
@@ -88,7 +92,7 @@ func timed(t *testing.T, z *Zone, p *Player, tb modscript.TimedBonuses, entries 
 		tb.Bonuses = append(tb.Bonuses, *b)
 	}
 	tb.Data = entries
-	if err := z.addTimedBonuses(p, tb); err != nil {
+	if _, err := z.addTimedBonuses(p, tb); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -248,5 +252,167 @@ func TestCauseStatusOnHit(t *testing.T) {
 	}
 	if !stunned {
 		t.Errorf("monster HP %d of %d, not stunned", m.hp, m.status.MaxHP)
+	}
+}
+
+// scriptStatusZone is a zone with job tables, renewal's statuses, the
+// equipment items, and core's scripts with two more: the NPC Guide at
+// 20,20 runs npc on click, and the hat (2220) runs hat when worn. The
+// player stands next to the NPC.
+func scriptStatusZone(t *testing.T, npc, hat string) (*Zone, *Player, *entity, *syncBuffer) {
+	t.Helper()
+	z := New("map/test", open(40), rng.FromKey([32]byte{9}).Stream(), nil)
+	z.Items = equipItems(t)
+	z.Items.Get(2220).Script = "core:scripts/items/test_hat.lua"
+	z.Progress = testTables()
+	z.Status, z.Start = jobTables(t), status.Character{Job: 0, Male: true, Stats: status.Stats{Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1}}
+	z.Statuses = testStatuses(t)
+	coreMods(t, z)
+	logs := &syncBuffer{}
+	z.Mods.Log = slog.New(slog.NewTextHandler(logs, nil))
+	z.Mods.Server = variables.NewServer(nil, nil)
+	z.Mods.Shops = map[string]*Shop{}
+	z.Mods.Scripts[0].Files["scripts/test_npc.lua"] = npc
+	z.Mods.Scripts[0].Files["scripts/items/test_hat.lua"] = hat
+	z.SetNPCs([]NPC{{Name: "core:Guide", DisplayName: "Guide", X: 20, Y: 20, Sprite: 112, Script: "core:scripts/test_npc.lua"}})
+	t.Cleanup(z.stopScripts)
+	p := add(z, "a")
+	p.maxWeight = maxWeight
+	p.entity.x, p.entity.y = 21, 20
+	z.stepAt(50)
+	events(p)
+	var n *entity
+	for e := range z.entities.all() {
+		if e.npc != nil {
+			n = e
+		}
+	}
+	if n == nil || n.npc.script == nil {
+		t.Fatalf("the NPC did not start: %s", logs)
+	}
+	return z, p, n, logs
+}
+
+// A script that starts or ends a status reads the new stats in the same
+// call, as rAthena computes them inside sc_start and sc_end. Blessing
+// raises INT, and with it max SP.
+func TestScriptReadsStatsAfterStatus(t *testing.T) {
+	z, p, n, logs := scriptStatusZone(t, `
+local events = require "wa.events"
+local statuses = require "wa.statuses"
+return function()
+  events.on("click", function(player, conversation)
+    local sp = player.max_sp
+    player:start_status(statuses.blessing, { milliseconds = 60000, level = 10 })
+    local blessed = player.max_sp
+    player:end_status(statuses.blessing)
+    conversation:say(sp .. " " .. blessed .. " " .. player.max_sp)
+  end)
+end`, "return function() end")
+	sp := p.entity.status.MaxSP
+	got := lines(click(z, p, n))
+	var before, blessed, after int
+	if _, err := fmt.Sscanf(got, "%d %d %d", &before, &blessed, &after); err != nil {
+		t.Fatalf("lines %q: %v, logs %s", got, err, logs)
+	}
+	if before != sp || blessed <= sp || after != sp {
+		t.Errorf("max SP %d, blessed %d, after the end %d; want %d, more, %d", before, blessed, after, sp, sp)
+	}
+}
+
+// An equip condition runs again inside the script's call when a status
+// changes stats. It reads the stats of the last calculation, as
+// rAthena's readparam reads battle_status during status_calc_pc. So the
+// calculation of a second status in the same call sees what Blessing did.
+func TestEquipConditionInsideStatusCall(t *testing.T) {
+	z, p, n, logs := scriptStatusZone(t, `
+local events = require "wa.events"
+local statuses = require "wa.statuses"
+return function()
+  events.on("click", function(player, conversation)
+    local hp = player.max_hp
+    player:start_status(statuses.blessing, { milliseconds = 60000, level = 10 })
+    local first = player.max_hp
+    player:start_status(statuses.increaseagi, { milliseconds = 60000, level = 10 })
+    conversation:say((first - hp) .. " " .. (player.max_hp - hp))
+  end)
+end`, `
+local bonuses = require "wa.bonuses"
+local context = require "wa.context"
+return function()
+  local player = context:get_instance().wearer
+  local base = player.max_sp
+  bonuses.add("max_hp", 1000, { when = function() return player.max_sp > base end })
+end`)
+	z.equipItem(p, give(t, z, p, 2220, 1), 0)
+	if got := lines(click(z, p, n)); got != "0 1000" {
+		t.Errorf("max HP gained %q, want \"0 1000\"; logs %s", got, logs)
+	}
+}
+
+// A computed bonus that loops uses the budget of the script's call that
+// started the status. The call stops with the CPU limit, and the zone
+// goes on.
+func TestNestedCallBudget(t *testing.T) {
+	z, p, n, logs := scriptStatusZone(t, `
+local events = require "wa.events"
+local statuses = require "wa.statuses"
+return function()
+  events.on("click", function(player, conversation)
+    player:start_status(statuses.blessing, { milliseconds = 60000, level = 10 })
+    conversation:say("after the start")
+  end)
+end`, `
+local bonuses = require "wa.bonuses"
+return function()
+  bonuses.add("max_hp", function() while true do end end)
+end`)
+	z.equipItem(p, give(t, z, p, 2220, 1), 0)
+	if got := lines(click(z, p, n)); got != "" {
+		t.Errorf("lines %q", got)
+	}
+	if !strings.Contains(logs.String(), "CPU limit exceeded") {
+		t.Errorf("logs %s", logs)
+	}
+	if !p.entity.sc.Has(sc.SCBlessing) {
+		t.Error("Blessing did not start")
+	}
+	z.stepAt(z.now + 50)
+	if p.talk != nil {
+		t.Error("the conversation goes on")
+	}
+}
+
+// Copies that on_repeat = "add" gives are saved one by one and all come
+// back at login, while a copy that "keep" ignored is not saved.
+func TestAddedTimedBonusesSurviveRelog(t *testing.T) {
+	z, _, _ := statusZone(t)
+	s := &saves{}
+	c := savedCharacter()
+	c.Items = nil
+	p := addCharacter(z, c, s)
+	str := p.entity.status.Str
+	timed(t, z, p, modscript.TimedBonuses{Key: "k", Milliseconds: 30000, Icon: -1}, []any{"str", int64(5)})
+	timed(t, z, p, modscript.TimedBonuses{Key: "k", Milliseconds: 20000, Icon: -1, Repeat: modscript.RepeatAdd}, []any{"str", int64(3)})
+	timed(t, z, p, modscript.TimedBonuses{Key: "k", Milliseconds: 90000, Icon: -1, Repeat: modscript.RepeatKeep}, []any{"str", int64(50)})
+	if p.entity.status.Str != str+8 {
+		t.Fatalf("STR %d, want %d", p.entity.status.Str, str+8)
+	}
+	z.stepAt(z.now + 1000)
+	z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+	saved := s.got[len(s.got)-1]
+	if len(saved.TimedBonuses) != 2 || saved.TimedBonuses[0].Bonuses != `[["str",5]]` || saved.TimedBonuses[1].Bonuses != `[["str",3]]` ||
+		saved.TimedBonuses[1].Remaining != 19000 {
+		t.Fatalf("saved timed bonuses %+v", saved.TimedBonuses)
+	}
+
+	z2, _, _ := statusZone(t)
+	q := addCharacter(z2, saved, &saves{})
+	if len(q.timed) != 2 || q.entity.status.Str != str+8 {
+		t.Fatalf("after login: %d copies, STR %d, want 2 and %d", len(q.timed), q.entity.status.Str, str+8)
+	}
+	z2.stepAt(z2.now + 19000)
+	if len(q.timed) != 1 || q.entity.status.Str != str+5 {
+		t.Errorf("after the second copy ran out: %d copies, STR %d", len(q.timed), q.entity.status.Str)
 	}
 }

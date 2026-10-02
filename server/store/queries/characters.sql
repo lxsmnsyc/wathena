@@ -81,7 +81,7 @@ SELECT @character_id, unnest(@names::text[]), unnest(@val1s::integer[]),
     unnest(@ticks::bigint[]), unnest(@ends::bigint[]);
 
 -- name: TimedBonuses :many
-SELECT key, remaining_ms, bonuses, ends_on, stack, icon, kind FROM character_timed_bonuses
+SELECT key, remaining_ms, bonuses, ends_on, icon, kind FROM character_timed_bonuses
 WHERE character_id = @character_id
 ORDER BY position;
 
@@ -89,5 +89,5 @@ ORDER BY position;
 DELETE FROM character_timed_bonuses WHERE character_id = @character_id;
 
 -- name: InsertTimedBonus :exec
-INSERT INTO character_timed_bonuses (character_id, position, key, remaining_ms, bonuses, ends_on, stack, icon, kind)
-VALUES (@character_id, @position, @key, @remaining_ms, @bonuses, @ends_on, @stack, @icon, @kind);
+INSERT INTO character_timed_bonuses (character_id, position, key, remaining_ms, bonuses, ends_on, icon, kind)
+VALUES (@character_id, @position, @key, @remaining_ms, @bonuses, @ends_on, @icon, @kind);
