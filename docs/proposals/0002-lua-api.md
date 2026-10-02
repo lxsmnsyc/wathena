@@ -762,6 +762,22 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **The `skill_used` event** opens to mod and event contexts, which the user asked for as a cast event. It keeps the item event's name, so one name means one thing everywhere. Its object has `caster`, `skill`, `level`, `target`, `x` and `y`. Options narrow it: `skill`, `caster_kind` and `map`. It fires when the skill takes effect, after the cast time. A cast that is interrupted does not fire it.
     - A sample mod adds a chain lightning skill with these queries, once the skill definition API exists. Its shape gets its own review in step 3.
 
+19. Status effects (phase 4 step 2). The user approved these on 2026-10-02:
+    - **Every entity handle** has the status methods: players, monsters, NPCs, and later kinds.
+    - **`entity:start_status(status, options)`** replaces `sc_start`, `sc_start2` and `sc_start4`. It returns true when the status starts. Options:
+      - `milliseconds`, or `"forever"` for rAthena's `INFINITE_TICK`;
+      - `level` (val1), and `values`, a list of val2 to val4 for the statuses that read them;
+      - `chance`, per 10,000, always by default;
+      - `source`, the entity that caused it, for resistance and kill credit;
+      - `cannot_be_avoided`, `keep_duration`, `keep_chance` and `hide_icon`, for rAthena's `SCSTART_NOAVOID`, `SCSTART_NOTICKDEF`, `SCSTART_NORATEDEF` and `SCSTART_NOICON`.
+    - **Reading and ending.** `entity:end_status(status)` replaces `sc_end` and returns true if the status was active. `entity:has_status(status)` replaces `getstatus`. `entity:get_status(status)` returns an object with `status`, `level`, `values`, `remaining_milliseconds` and `source`, or nil. `entity:get_statuses()` returns a list of them.
+    - **Events** for mod and event contexts, with the options `status`, `target_kind` and `map`. The object has `target`, `status`, `level`, `source`, `milliseconds` and `reason`:
+      - `status_start`. `reason` is `"skill"`, `"item"`, `"bonus"` (a proc such as `cause_status`), `"script"`, or `"login"` for a status restored from a save.
+      - `status_end`. `reason` is `"expired"`, `"removed"` (by `end_status` or a skill), `"replaced"`, `"death"`, `"dispell"`, `"clearance"`, `"logout"` or `"damage"`.
+      - `status_tick`, for each tick of a status that ticks, such as poison. Ticks of mod statuses run here, not in a function of the definition.
+    - **Hooks** `status_chance` (per 10,000) and `status_duration` (milliseconds). The object has `target`, `status`, `level` and `source`. Without hooks the results are rAthena's.
+    - **`statuses.define`** adds a status in a mod script: `name`, `icon`, `kind` (`"buff"` or `"debuff"`), `ends_on`, `bonuses` (a function of the level that returns bonus entries, as `add_timed_bonuses`), and `tick_milliseconds`. The status gets a constant in `statuses` named after it.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
