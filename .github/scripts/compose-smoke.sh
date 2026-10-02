@@ -72,5 +72,8 @@ docker volume rm "${COMPOSE_PROJECT_NAME}_pgdata"
 compose run --rm -T wactl world restore --in - <"$work/world.dump"
 compose up -d --wait --wait-timeout 300
 check
-compose logs --no-color waserver | grep -q 'world=Smoke'
+# grep -q stops reading at the first match, which makes compose logs fail
+# on a closed pipe under pipefail. Read the logs from a file instead.
+compose logs --no-color waserver >"$work/waserver.log"
+grep -q 'world=Smoke' "$work/waserver.log"
 echo "compose smoke test passed"
