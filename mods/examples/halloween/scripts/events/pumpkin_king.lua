@@ -15,7 +15,9 @@ return function()
   local king = spawning.monsters { monster = PUMPKIN_KING, x = 200, y = 200, area = 20 }[1]
   world.announce(text "king.risen")
   events.on("death", function(death)
-    local who = death.killer and death.killer.name or "Someone"
+    -- killer.kind is "player" or "monster", and killer is nil when
+    -- nothing killed the king.
+    local who = death.killer and death.killer.kind == "player" and death.killer.name or "Someone"
     world.announce(who .. " defeated the Pumpkin King at " .. death.x .. "," .. death.y .. "!")
   end, { victim = king })
 end

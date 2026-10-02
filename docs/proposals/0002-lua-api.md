@@ -106,7 +106,7 @@ return function()
 end
 ```
 
-- `death` gets one death object, with the victim and the killer as handles, like the handles in "Players and other entities". A dead monster is gone, but its handle stays readable while the event's handlers run, and its `is_alive` field is `false`. After the event, reading it raises an error, as for any handle to a removed entity. Options narrow which deaths run the handler (review decision 16).
+- `death` gets one death object, with the victim and the killer as handles, whose `kind` field says what each is, like the handles in "Players and other entities". A dead monster is gone, but its handle stays readable while the event's handlers run, and its `is_alive` field is `false`. After the event, reading it raises an error, as for any handle to a removed entity. Options narrow which deaths run the handler (review decision 16).
 - `base_level_up` and `job_level_up` are separate events. Each gets the player.
 
 - `events.on` checks the name when it is called. An unknown name, or a name the context's kind cannot use, raises an error during setup, so a typo still fails before the event ever fires.
@@ -148,7 +148,7 @@ player.str        player.base_str      -- total, and allocated points only
 -- The same for agi, vit, int, dex, and luk.
 ```
 
-Monster handles have `id`, `name`, `level`, `hp`, `max_hp`, `map`, `x`, `y`, and `is_alive`.
+Monster handles have `id`, `name`, `level`, `hp`, `max_hp`, `map`, `x`, `y`, and `is_alive`. Every entity handle has `kind`: `"player"`, `"monster"` or `"npc"` (review decision 17).
 
 HP, SP, zeny, and the stats keep the names players know from the game, such as `hp`, `str`, and `luk` ([0002a](0002a-bonus-names.md), rule 1).
 
@@ -721,19 +721,33 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Monster records.** `data/monsters.yml` adds and changes monsters. A new monster, named with the mod's ID, starts from the stats of the monster its `sprite` names and shows that sprite. IDs come from the mod range, from 100,000. The fields set what combat reads directly (`hp`, `attack`, `defense`, `hit`, `flee`), since the server has no monster status calculation yet. `class: boss` adds rAthena's boss modes.
     - **Handles compare.** Two handles to one player or monster are equal with `==`, so `death.victim == boss` works.
 
-    Provisional, until reviewed:
+    The details that step 6 left provisional were reviewed in decision 17.
 
-    - `schedules.*` return a schedule handle with `cancel()`, and `hooks.on` returns a hook handle with `remove()`, like `timers` and `events.on`.
-    - `context:get_instance()` of an event context is `{ name, map }`.
-    - `display_name` sets the name players see of an item or a monster in `data/items.yml` and `data/monsters.yml`. `name` is the record's key, so review decision 14's item `name` field cannot be written; `display_name` replaces it, as for NPCs.
-    - The monster fields of `data/monsters.yml`: `display_name`, `sprite`, `level`, `hp`, `sp`, `attack`, `magic_attack`, `defense`, `magic_defense`, `hit`, `flee`, `speed`, `attack_range`, `attack_delay`, `attack_motion`, `damage_motion`, `element`, `element_level`, `race`, `size`, `class`, `modes`, `base_exp`, `job_exp` and `drops`.
-    - A monster with `respawn = true` comes back 5 seconds after it dies.
+17. Review of step 6 (review decision 16). The user accepted these as they are:
+
+    - `schedules.daily`, `weekly`, `hourly` and `when` return a schedule handle with `cancel()`. `hooks.on` returns a hook handle with `remove()`. A second call does nothing.
+    - `context:get_instance()` of an event context is `{ name, map }`: the event's full name and the map of its zone.
+    - Event contexts listen to the events of mod contexts: `login`, `logout`, `map_enter`, `death`, `base_level_up` and `job_level_up`. NPC contexts listen to `death`.
+    - `display_name` sets the name players see of an item or a monster, as for NPCs. `name` is the record's key. It replaces the item `name` field of decision 14, which could not be written.
+    - The fields of `data/monsters.yml` set what combat reads directly: `display_name`, `sprite`, `level`, `hp`, `sp`, `attack`, `magic_attack`, `defense`, `magic_defense`, `hit`, `flee`, `speed`, `attack_range`, `attack_delay`, `attack_motion`, `damage_motion`, `element`, `element_level`, `race`, `size`, `class`, `modes`, `base_exp`, `job_exp` and `drops`. This holds until phase 4 has monster stats: then the server computes the combat values from the base stats, as rAthena's `status_calc_mob`, and these fields change.
     - The config's `time_zone` (UTC by default) and `mods.events`.
-    - `wa.testing`: `world:set_time(time, time_zone)`, `world:get_time()`, `world:get_monsters(monster)`, `world:get_announcements()`, and `world:count_floor_items(item)`. A test world runs the world events of its map, and of no map, on its clock. `world:kill` takes any living monster handle. After a kill, the monster's handle raises an error, as after any death event.
+    - The `wa.testing` calls `world:set_time(time, time_zone)`, `world:get_time()`, `world:get_monsters(monster)`, `world:get_announcements()` and `world:count_floor_items(item)`, and world events in test worlds.
+    - `world:kill` takes any living monster handle. After a kill, the monster's handle raises an error, as after any death event.
+
+    The user changed these:
+
+    - **Respawn time.** `respawn = true` makes a monster come back as a spawn line's monster does in rAthena. rAthena keeps the delay on the spawn line, not in the monster data (`npc_parse_mob`, `mob_setdelayspawn`):
+      - The line's first delay is the base time. Without one it is 5,000 ms, and a delay below `mob_respawn_time` (1,000 ms) becomes 5,000 ms.
+      - The second delay adds a random variance, which rAthena keeps only for `boss_monster` lines by default (`mob_spawn_variance: 1`).
+      - `boss_spawn_delay`, `plant_spawn_delay` and `mob_spawn_delay` scale the time for status immune monsters, plant monsters and the rest. They are 100% by default.
+      - A monster never comes back faster than 1 second.
+
+      Since monster data has no respawn time, `spawning.monsters` takes `respawn_milliseconds`, from 1,000, and uses 5,000 ms without it, as a spawn line without a delay. `respawn_milliseconds` is provisional. There is no variance option, as for a normal spawn line.
+    - **Kind.** Every entity handle has a read-only `kind` field: `"player"`, `"monster"` or `"npc"`, and later kinds such as pets. The death object has no `victim_kind` field any more: scripts read `death.victim.kind` and `death.killer.kind` (the killer may be nil). The option `victim_kind` of `events.on("death", ...)` stays. The damage object's `source` and `target` have `kind` too.
 
 ## Version
 
-A mod's manifest says `api: experimental` (strategy section 6.12) until the phase 3 exit check passes with a sample mod. It then becomes `api: 1.0`.
+A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
 
 ## Next steps
 
@@ -741,4 +755,4 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the phas
 2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, `wa.variables` with NPCs, and `wa.hooks`, `wa.spawning` and `wa.schedules` with world events. Done for these steps. `wa.storage` and `wa.exports` come later.
 3. Review the API that step 4 added. Done: review decision 14.
 4. Review the provisional details of `wa.testing` that step 5 added (review decision 15).
-5. Review the provisional details that step 6 added (review decision 16, "Provisional").
+5. Review the provisional details that step 6 added. Done: review decision 17. `respawn_milliseconds` stays provisional.

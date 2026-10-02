@@ -8,6 +8,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -147,15 +148,35 @@ end`)
 		t.Fatalf("%d pumpkins, logs: %s", len(pumpkins), logs)
 	}
 	z.die(pumpkins[0], nil)
-	z.stepAt(scriptRespawnMs + 100)
+	z.stepAt(modscript.DefaultRespawnMs + 100)
 	if n := len(monstersOf(z, 100_000)); n != 2 {
 		t.Fatalf("%d pumpkins after the respawn time", n)
 	}
 	z.die(monstersOf(z, 100_000)[0], nil)
+	if err := z.reloadScripts(testModFiles(`
+local spawning = require "wa.spawning"
+return function()
+  spawning.monsters { monster = 100000, respawn = true, respawn_milliseconds = 20000 }
+end`)); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(monstersOf(z, 100_000)); n != 1 {
+		t.Fatalf("%d pumpkins after the reload", n)
+	}
+	start := z.now
+	z.die(monstersOf(z, 100_000)[0], nil)
+	z.stepAt(start + modscript.DefaultRespawnMs + 100)
+	if n := len(monstersOf(z, 100_000)); n != 0 {
+		t.Fatalf("a pumpkin with a 20 second respawn came back after 5")
+	}
+	z.stepAt(start + 20_100)
+	if n := len(monstersOf(z, 100_000)); n != 1 {
+		t.Fatalf("%d pumpkins after 20 seconds", n)
+	}
 	if err := z.reloadScripts(testModFiles("return function() end")); err != nil {
 		t.Fatal(err)
 	}
-	z.stepAt(2*scriptRespawnMs + 200)
+	z.stepAt(z.now + 30_000)
 	if n := len(monstersOf(z, 100_000)); n != 0 {
 		t.Fatalf("%d pumpkins came back after the context ended", n)
 	}

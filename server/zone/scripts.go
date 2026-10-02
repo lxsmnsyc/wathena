@@ -291,6 +291,7 @@ func intValue[T int | int64 | uint32](v T) script.Value { return script.Int(int6
 // playerFields are the fields of player handles. server/modscript/luaapi
 // defines the same names, and a test checks both.
 var playerFields = map[string]func(h scriptHost, p *Player) script.Value{
+	"kind":         func(scriptHost, *Player) script.Value { return script.String("player") },
 	"name":         func(_ scriptHost, p *Player) script.Value { return script.String(p.Name) },
 	"base_level":   func(_ scriptHost, p *Player) script.Value { return intValue(p.progress.BaseLevel) },
 	"job_level":    func(_ scriptHost, p *Player) script.Value { return intValue(p.progress.JobLevel) },
@@ -361,6 +362,7 @@ func (h scriptHost) MonsterField(id int64, field string) (script.Value, error) {
 // monsterFields are the fields of monster handles. server/modscript/luaapi
 // defines the same names, and a test checks both.
 var monsterFields = map[string]func(h scriptHost, e *entity) script.Value{
+	"kind": func(scriptHost, *entity) script.Value { return script.String("monster") },
 	"id":   func(_ scriptHost, e *entity) script.Value { return intValue(e.monster.spawn.Mob) },
 	"name": func(_ scriptHost, e *entity) script.Value { return script.String(e.monster.spawn.Name) },
 	"level": func(_ scriptHost, e *entity) script.Value {

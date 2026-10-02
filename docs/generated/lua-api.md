@@ -801,6 +801,7 @@ A player. Each access looks the player up again. A handle to a player who left t
 
 | Field | Type | Meaning |
 |---|---|---|
+| `kind` | `"player"` | The entity's kind. |
 | `name` | `string` | The character's name. |
 | `job` | `integer` | The job, such as jobs.knight. |
 | `job_class` | `integer` | rAthena's eaclass(): the job's class flags. |
@@ -1054,6 +1055,7 @@ A monster. A killed monster's handle reads while its death event runs, with is_a
 
 | Field | Type | Meaning |
 |---|---|---|
+| `kind` | `"monster"` | The entity's kind. |
 | `id` | `integer` | The monster's ID, such as 1002. |
 | `name` | `string` |  |
 | `level` | `integer` |  |
@@ -1070,6 +1072,7 @@ An NPC: the instance of an NPC context.
 
 | Field | Type | Meaning |
 |---|---|---|
+| `kind` | `"npc"` | The entity's kind. |
 | `name` | `string` | The name players see. |
 | `map` | `string` |  |
 | `x` | `integer` |  |
@@ -1265,8 +1268,6 @@ The player kills the monster at once: the death event fires, and the player gets
 
 Sets the server time and time zone the world starts at. Call it before the world has a map. Without it, the world starts at 2026-01-05 12:00 UTC.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `time` | `string` | Such as "2026-10-31 19:58". |
@@ -1276,13 +1277,9 @@ Provisional: not reviewed in proposal 0002 yet.
 
 The server time in the world's time zone, as "2026-10-31 20:00".
 
-Provisional: not reviewed in proposal 0002 yet.
-
 #### `testWorld:get_monsters(monster?) → wa.Monster[]`
 
 The living monsters of the map, in the order they spawned.
-
-Provisional: not reviewed in proposal 0002 yet.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1292,13 +1289,9 @@ Provisional: not reviewed in proposal 0002 yet.
 
 Every line announced to the world or the map so far, in order.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 #### `testWorld:count_floor_items(item) → integer`
 
 How many of the item lie on the map, with drops about to fall.
-
-Provisional: not reviewed in proposal 0002 yet.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1386,9 +1379,8 @@ The object of the death event.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `victim` | `wa.Player\|wa.Monster` | Readable while the event runs, with is_alive false for a monster. |
-| `victim_kind` | `"player"\|"monster"` |  |
-| `killer` | `wa.Player\|wa.Monster\|nil` | nil when nothing killed the unit. |
+| `victim` | `wa.Player\|wa.Monster` | Readable while the event runs, with is_alive false for a monster. victim.kind says which. |
+| `killer` | `wa.Player\|wa.Monster\|nil` | nil when nothing killed the unit. killer.kind says which. |
 | `map` | `string` |  |
 | `x` | `integer` |  |
 | `y` | `integer` |  |
@@ -1473,7 +1465,8 @@ The monsters of spawning.monsters.
 | `x` | `integer?` | With y, the cell. Without them, a random walkable cell for each monster. |
 | `y` | `integer?` |  |
 | `area` | `integer?` | Spreads the monsters within this many cells of x and y. |
-| `respawn` | `boolean?` | true: a dead monster comes back after 5 seconds while the context lives, as a normal spawn. false by default: dead stays dead. |
+| `respawn` | `boolean?` | true: a dead monster comes back while the context lives, as a spawn line's monster. false by default: dead stays dead. |
+| `respawn_milliseconds` | `integer?` | With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay. Provisional. |
 
 ### wa.Damage
 
@@ -1481,8 +1474,8 @@ The object of the damage event (0002a, "Item events").
 
 | Field | Type | Meaning |
 |---|---|---|
-| `source` | `wa.Player\|wa.Monster` |  |
-| `target` | `wa.Player\|wa.Monster` |  |
+| `source` | `wa.Player\|wa.Monster` | source.kind says which. |
+| `target` | `wa.Player\|wa.Monster` | target.kind says which. |
 | `kind` | `"physical"\|"magic"\|"misc"` |  |
 | `range` | `"melee"\|"ranged"\|nil` |  |
 | `skill` | `integer?` | nil for a normal attack. |

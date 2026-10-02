@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -15,10 +16,6 @@ import (
 // The world calls of mod scripts in a zone: monsters that scripts
 // spawn, the death event, the drop_rate and experience hooks, schedules
 // on the server clock, and runs of world events.
-
-// scriptRespawnMs is how long a monster of spawning.monsters with
-// respawn takes to come back, as a spawn line with no delay of its own.
-const scriptRespawnMs = 5000
 
 // wallClock is the server clock: Clock, or the system clock.
 func (z *Zone) wallClock() time.Time {
@@ -122,7 +119,10 @@ func (h scriptHost) SpawnMonsters(owner int64, s modscript.SpawnSpec) ([]int64, 
 		}
 	}
 	if s.Respawn {
-		sp.RespawnMs = scriptRespawnMs
+		// As a spawn line: its delay, or rAthena's default of 5 seconds.
+		// mob_setdelayspawn's spawn delay rates are 100% by default, and
+		// die keeps the 1 second floor.
+		sp.RespawnMs = cmp.Or(s.RespawnMs, modscript.DefaultRespawnMs)
 	} else {
 		sp.noRespawn = true
 	}

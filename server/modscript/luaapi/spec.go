@@ -302,6 +302,7 @@ var stats = []string{"str", "agi", "vit", "int", "dex", "luk", "pow", "sta", "wi
 
 func playerFields() []Field {
 	f := []Field{
+		{"kind", `"player"`, "The entity's kind."},
 		{"name", "string", "The character's name."},
 		{"job", "integer", "The job, such as jobs.knight."},
 		{"job_class", "integer", "rAthena's eaclass(): the job's class flags."},
@@ -367,6 +368,7 @@ var Classes = []Class{
 		Name: "wa.Monster", Handle: "monster",
 		Doc: "A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.",
 		Fields: []Field{
+			{"kind", `"monster"`, "The entity's kind."},
 			{"id", "integer", "The monster's ID, such as 1002."},
 			{"name", "string", ""},
 			{"level", "integer", ""},
@@ -382,6 +384,7 @@ var Classes = []Class{
 		Name: "wa.Npc", Handle: "npc",
 		Doc: "An NPC: the instance of an NPC context.",
 		Fields: []Field{
+			{"kind", `"npc"`, "The entity's kind."},
 			{"name", "string", "The name players see."},
 			{"map", "string", ""},
 			{"x", "integer", ""},
@@ -445,11 +448,11 @@ var Classes = []Class{
 			{Name: "spawn_monster", Params: []Param{{"spec", "wa.SpawnMonsterSpec", ""}}, Returns: "wa.Monster", Doc: "Places a monster on a cell. It does not come back after it dies."},
 			{Name: "kill", Params: []Param{playerParam, {"monster", "wa.Monster", "A living monster: from spawn_monster, get_monsters or spawning.monsters."}}, Doc: "The player kills the monster at once: the death event fires, and the player gets its exp and drops."},
 			{Name: "set_time", Params: []Param{{"time", "string", "Such as \"2026-10-31 19:58\"."}, {"time_zone", "string?", "An IANA name, such as Asia/Manila. UTC by default."}},
-				Doc: "Sets the server time and time zone the world starts at. Call it before the world has a map. Without it, the world starts at 2026-01-05 12:00 UTC.", Provisional: true},
-			{Name: "get_time", Returns: "string", Doc: "The server time in the world's time zone, as \"2026-10-31 20:00\".", Provisional: true},
-			{Name: "get_monsters", Params: []Param{{"monster", "integer?", "From monsters.id. Every monster without it."}}, Returns: "wa.Monster[]", Doc: "The living monsters of the map, in the order they spawned.", Provisional: true},
-			{Name: "get_announcements", Returns: "string[]", Doc: "Every line announced to the world or the map so far, in order.", Provisional: true},
-			{Name: "count_floor_items", Params: []Param{itemParam}, Returns: "integer", Doc: "How many of the item lie on the map, with drops about to fall.", Provisional: true},
+				Doc: "Sets the server time and time zone the world starts at. Call it before the world has a map. Without it, the world starts at 2026-01-05 12:00 UTC."},
+			{Name: "get_time", Returns: "string", Doc: "The server time in the world's time zone, as \"2026-10-31 20:00\"."},
+			{Name: "get_monsters", Params: []Param{{"monster", "integer?", "From monsters.id. Every monster without it."}}, Returns: "wa.Monster[]", Doc: "The living monsters of the map, in the order they spawned."},
+			{Name: "get_announcements", Returns: "string[]", Doc: "Every line announced to the world or the map so far, in order."},
+			{Name: "count_floor_items", Params: []Param{itemParam}, Returns: "integer", Doc: "How many of the item lie on the map, with drops about to fall."},
 		},
 	},
 	{
@@ -474,15 +477,14 @@ var Classes = []Class{
 		Fields: []Field{{"item", "integer", "The used item's ID."}},
 	},
 	{
-		Name: "wa.EventInstance", Doc: "The instance of an event context: one run of a world event.", Provisional: true,
+		Name: "wa.EventInstance", Doc: "The instance of an event context: one run of a world event.",
 		Fields: []Field{{"name", "string", "The event's full name, such as example.halloween:Pumpkin_King."}, {"map", "string", "The map of the zone that runs it."}},
 	},
 	{
 		Name: "wa.Death", Doc: "The object of the death event.",
 		Fields: []Field{
-			{"victim", "wa.Player|wa.Monster", "Readable while the event runs, with is_alive false for a monster."},
-			{"victim_kind", `"player"|"monster"`, ""},
-			{"killer", "wa.Player|wa.Monster|nil", "nil when nothing killed the unit."},
+			{"victim", "wa.Player|wa.Monster", "Readable while the event runs, with is_alive false for a monster. victim.kind says which."},
+			{"killer", "wa.Player|wa.Monster|nil", "nil when nothing killed the unit. killer.kind says which."},
 			{"map", "string", ""},
 			{"x", "integer", ""},
 			{"y", "integer", ""},
@@ -523,11 +525,11 @@ var Classes = []Class{
 		Fields: []Field{{"priority", "integer?", "Higher runs first. 0 by default."}},
 	},
 	{
-		Name: "wa.HookHandle", Handle: "hook handle", Doc: "What hooks.on returns.", Provisional: true,
+		Name: "wa.HookHandle", Handle: "hook handle", Doc: "What hooks.on returns.",
 		Methods: []Func{{Name: "remove", Doc: "Removes the hook. A second call does nothing."}},
 	},
 	{
-		Name: "wa.Schedule", Handle: "schedule", Doc: "What wa.schedules returns.", Provisional: true,
+		Name: "wa.Schedule", Handle: "schedule", Doc: "What wa.schedules returns.",
 		Methods: []Func{{Name: "cancel", Doc: "Stops the schedule. A second call does nothing."}},
 	},
 	{
@@ -543,14 +545,15 @@ var Classes = []Class{
 			{"x", "integer?", "With y, the cell. Without them, a random walkable cell for each monster."},
 			{"y", "integer?", ""},
 			{"area", "integer?", "Spreads the monsters within this many cells of x and y."},
-			{"respawn", "boolean?", "true: a dead monster comes back after 5 seconds while the context lives, as a normal spawn. false by default: dead stays dead."},
+			{"respawn", "boolean?", "true: a dead monster comes back while the context lives, as a spawn line's monster. false by default: dead stays dead."},
+			{"respawn_milliseconds", "integer?", "With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay. Provisional."},
 		},
 	},
 	{
 		Name: "wa.Damage", Doc: "The object of the damage event (0002a, \"Item events\").",
 		Fields: []Field{
-			{"source", "wa.Player|wa.Monster", ""},
-			{"target", "wa.Player|wa.Monster", ""},
+			{"source", "wa.Player|wa.Monster", "source.kind says which."},
+			{"target", "wa.Player|wa.Monster", "target.kind says which."},
 			{"kind", `"physical"|"magic"|"misc"`, ""},
 			{"range", `"melee"|"ranged"|nil`, ""},
 			{"skill", "integer?", "nil for a normal attack."},

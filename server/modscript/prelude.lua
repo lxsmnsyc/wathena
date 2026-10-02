@@ -75,8 +75,9 @@ local handle_methods = {}
 
 -- handle makes a read-only object with methods and an ID kept outside it.
 -- With cached set, one ID gives the same object while a script holds it,
--- so two handles to one entity are equal with ==.
-local function handle_type(name, methods, index, cached)
+-- so two handles to one entity are equal with ==. An entity handle has
+-- the read-only field kind, such as "player".
+local function handle_type(name, methods, index, cached, kind)
 	handle_methods[name] = methods
 	local ids = setmetatable({}, { __mode = "k" })
 	local cache = cached and setmetatable({}, { __mode = "v" }) or nil
@@ -85,6 +86,9 @@ local function handle_type(name, methods, index, cached)
 			local m = methods[key]
 			if m ~= nil then
 				return m
+			end
+			if kind ~= nil and key == "kind" then
+				return kind
 			end
 			if index ~= nil then
 				return (index(ids[self], key))
@@ -249,7 +253,7 @@ new_player, player_ids = handle_type("player", {
 		error(value, 3)
 	end
 	return value
-end, true)
+end, true, "player")
 
 -- Equipped copies are handles too: the context instance of an equip
 -- script, and what player:get_equipped returns.
@@ -272,7 +276,7 @@ local new_monster, monster_ids = handle_type("monster", {}, function(id, key)
 		error(value, 3)
 	end
 	return value
-end, true)
+end, true, "monster")
 
 -- handle_key names a player or monster handle for Go, as "<kind>:<id>",
 -- or returns nil for anything else.
@@ -304,7 +308,7 @@ new_npc, npc_ids = handle_type("npc", {
 		error(value, 3)
 	end
 	return value
-end)
+end, false, "npc")
 
 -- Conversations: the methods that wait for the player pause the
 -- conversation's thread. Go resumes it with "ok" and the answer, or with
@@ -1170,7 +1174,7 @@ function R.invoke(fn, ...)
 			if value.killer ~= nil then
 				fields.killer = value.killer_kind == "player" and new_player(value.killer) or new_monster(value.killer)
 			end
-			fields.killer_kind = nil
+			fields.victim_kind, fields.killer_kind = nil, nil
 			value = readonly("death", fields)
 		end
 		args[#args + 1] = value

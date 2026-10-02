@@ -44,8 +44,10 @@ type SpawnSpec struct {
 	HasCell bool
 	X, Y    int
 	Area    int
-	// Respawn makes dead monsters come back while the context lives.
-	Respawn bool
+	// Respawn makes dead monsters come back while the context lives,
+	// after RespawnMs, or DefaultRespawnMs when it is 0.
+	Respawn   bool
+	RespawnMs int
 }
 
 // Limits of the world calls.
@@ -56,6 +58,15 @@ const (
 	MaxSpawnArea = 512
 	// MaxLasting is the longest lasting_minutes of schedules.when.
 	MaxLasting = 7 * 24 * 60
+	// DefaultRespawnMs is the respawn time of a spawn line that gives
+	// none in rAthena (npc_parse_mob), and of spawning.monsters without
+	// respawn_milliseconds. Monster data has no respawn time of its own.
+	DefaultRespawnMs = 5000
+	// MinRespawnMs is mob_respawn_time: rAthena refuses a shorter delay,
+	// and a monster never comes back faster (mob_setdelayspawn).
+	MinRespawnMs = 1000
+	// MaxRespawnMs is the longest delay a spawn line may have.
+	MaxRespawnMs = 0xfffffff
 )
 
 type hook struct {
@@ -701,12 +712,24 @@ func (r *Runtime) spawningMonsters(c *script.Call) error {
 				return fmt.Errorf("%s: respawn must be true or false", what)
 			}
 			s.Respawn = b
+		case "respawn_milliseconds":
+			n, err := num()
+			if err != nil {
+				return err
+			}
+			if n < MinRespawnMs || n > MaxRespawnMs {
+				return fmt.Errorf("%s: respawn_milliseconds is %d to %d", what, MinRespawnMs, MaxRespawnMs)
+			}
+			s.RespawnMs = int(n)
 		default:
-			return fmt.Errorf("%s: %q is not a field; the fields are map, monster, amount, x, y, area and respawn", what, k)
+			return fmt.Errorf("%s: %q is not a field; the fields are map, monster, amount, x, y, area, respawn and respawn_milliseconds", what, k)
 		}
 	}
 	if s.Monster == 0 {
 		return fmt.Errorf("%s: monster is required", what)
+	}
+	if s.RespawnMs != 0 && !s.Respawn {
+		return fmt.Errorf("%s: respawn_milliseconds needs respawn = true", what)
 	}
 	if hasX != hasY {
 		return fmt.Errorf("%s: give both x and y, or neither for a random cell", what)

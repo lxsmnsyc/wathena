@@ -213,15 +213,16 @@ local events = require "wa.events"
 local spawning = require "wa.spawning"
 return function()
   local list = spawning.monsters { monster = 1002, amount = 2, x = 150, y = 150, area = 3 }
-  local boss = spawning.monsters { monster = 1039, respawn = true }[1]
+  local boss = spawning.monsters { monster = 1039, respawn = true, respawn_milliseconds = 3600000 }[1]
   events.on("death", function(death)
-    death.killer:send_message("boss " .. death.victim.name .. " " .. tostring(death.victim == boss) .. " " .. death.map)
+    death.killer:send_message("boss " .. death.victim.name .. " " .. tostring(death.victim == boss) .. " " .. death.map ..
+      " " .. death.victim.kind .. " by " .. death.killer.kind .. " " .. tostring(death.victim_kind))
   end, { victim = boss })
   events.on("death", function(death)
     death.killer:send_message("one of two at " .. death.x .. "," .. death.y)
   end, { victims = list })
   events.on("death", function(death)
-    death.victim:send_message("you died")
+    death.victim:send_message("you died, " .. death.victim.kind .. " by " .. death.killer.kind)
   end, { victim_kind = "player" })
   events.on("death", function(death)
     death.killer:send_message("a poring")
@@ -232,6 +233,8 @@ return function()
     function() spawning.monsters { monster = 1002, x = 3 } end,
     function() spawning.monsters { monster = 1002, amount = 0 } end,
     function() spawning.monsters { monster = 1002, colour = "red" } end,
+    function() spawning.monsters { monster = 1002, respawn_milliseconds = 20000 } end,
+    function() spawning.monsters { monster = 1002, respawn = true, respawn_milliseconds = 10 } end,
     function() events.on("login", function() end, { victim_kind = "player" }) end,
     function() events.on("death", function() end, { victim_kind = "npc" }) end,
   }) do
@@ -239,7 +242,7 @@ return function()
     if ok then error("passed") end
   end
 end`))
-	if len(h.spawned) != 2 || h.spawned[0].Area != 3 || !h.spawned[0].HasCell || !h.spawned[1].Respawn || h.spawned[1].HasCell {
+	if len(h.spawned) != 2 || h.spawned[0].Area != 3 || !h.spawned[0].HasCell || !h.spawned[1].Respawn || h.spawned[1].RespawnMs != 3_600_000 || h.spawned[1].HasCell {
 		t.Fatalf("spawned %+v, logs: %s", h.spawned, logs)
 	}
 	ids := slices.Sorted(func(yield func(int64) bool) {
@@ -253,7 +256,7 @@ end`))
 	r.FireDeath(Death{Victim: 103, VictimKind: "monster", Monster: 1039, Killer: 1, KillerKind: "player"})
 	r.FireDeath(Death{Victim: 101, VictimKind: "monster", Monster: 1002, Killer: 1, KillerKind: "player", X: 151, Y: 149})
 	r.FireDeath(Death{Victim: 2, VictimKind: "player", Killer: 103, KillerKind: "monster"})
-	want := "1:boss Spawned 1039 true prontera|1:one of two at 151,149|1:a poring|2:you died"
+	want := "1:boss Spawned 1039 true prontera monster by player nil|1:one of two at 151,149|1:a poring|2:you died, player by monster"
 	if got := strings.Join(h.messages, "|"); got != want || len(ids) != 3 {
 		t.Fatalf("messages = %q, want %q, ids %v, logs: %s", got, want, ids, logs)
 	}

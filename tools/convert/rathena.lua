@@ -258,10 +258,9 @@ function R.monster(npc, map, x, y, mob, amount, label, on_death)
 		if left == 0 then
 			handle:remove()
 		end
-		-- The death object has no killer kind: a handle's text starts
-		-- with its kind.
+		-- Only a player is attached to the event, as rAthena's RID.
 		local killer = death.killer
-		if killer ~= nil and tostring(killer):sub(1, 7) ~= "player " then
+		if killer ~= nil and killer.kind ~= "player" then
 			killer = nil
 		end
 		on_death(killer)

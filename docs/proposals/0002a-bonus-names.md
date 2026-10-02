@@ -319,9 +319,9 @@ events.on("damage", function(hit) ... end)
 
 | Field | Meaning |
 |---|---|
-| `source` | Handle of the attacker. |
-| `target` | Handle of the one hit. |
-| `kind` | `"physical"`, `"magic"`, or `"misc"`. |
+| `source` | Handle of the attacker. `source.kind` is `"player"` or `"monster"` (0002, review decision 17). |
+| `target` | Handle of the one hit. `target.kind` says the same. |
+| `kind` | `"physical"`, `"magic"`, or `"misc"`: the kind of the hit, not of a handle. |
 | `range` | `"melee"` or `"ranged"`. |
 | `skill` | The skill, or `nil` for a normal attack. |
 | `element` | The element of the hit. |

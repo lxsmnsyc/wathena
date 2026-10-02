@@ -96,7 +96,7 @@ return function()
   end
   events.on("death", function(death)
     local player, monster = death.killer, death.victim
-    player:send_message("death " .. death.victim_kind .. " " .. player.name .. " " .. monster.name .. " " .. monster.id ..
+    player:send_message("death " .. death.victim.kind .. " " .. player.name .. " " .. monster.name .. " " .. monster.id ..
       " level " .. monster.level .. " hp " .. monster.hp .. "/" .. monster.max_hp ..
       " alive " .. tostring(monster.is_alive) .. " on " .. monster.map)
     timers.after(0, function()

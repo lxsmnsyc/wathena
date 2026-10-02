@@ -204,7 +204,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 
 - Names are AegisNames in upper case, such as `PORING`. A new monster is named with the mod's ID.
 - `sprite` names the monster whose sprite players see. A new monster needs it, and starts from that monster's stats, with no exp and no drops.
-- The server has no monster status calculation yet (phase 4), so the fields set what combat reads: `hp`, `sp`, `level`, `attack` and `magic_attack` as `[minimum, maximum]`, `defense`, `magic_defense`, `hit`, `flee`, `speed` (milliseconds per cell), `attack_range`, `attack_delay`, `attack_motion` and `damage_motion`.
+- The server has no monster status calculation yet, so the fields set what combat reads. Phase 4 adds monster stats: the server then computes these values from the base stats, as rAthena does, and the fields change. The fields are: `hp`, `sp`, `level`, `attack` and `magic_attack` as `[minimum, maximum]`, `defense`, `magic_defense`, `hit`, `flee`, `speed` (milliseconds per cell), `attack_range`, `attack_delay`, `attack_motion` and `damage_motion`.
 - `element` (from `wa.elements`, with `element_level` 1 to 4), `race` (from `wa.races`) and `size` (from `wa.sizes`) are names.
 - `class` is `normal`, `boss`, `guardian`, `battlefield` or `event`. As in rAthena, `boss` adds the modes `detector`, `status_immune` and `knockback_immune`.
 - `modes` is a list of rAthena's modes in lower case, such as `can_move`, `can_attack`, `aggressive` and `mvp`. It replaces the monster's modes.
@@ -386,6 +386,7 @@ Handlers get players as read-only handles. Each access looks the player up again
 
 | Field | Meaning |
 |---|---|
+| `kind` | `"player"`. Every entity handle has `kind`. |
 | `name`, `job`, `base_level`, `job_level` | The character's name, job ID and levels. |
 | `hp`, `max_hp`, `sp`, `max_sp`, `zeny` | Current and maximum HP and SP, and zeny. |
 | `map`, `x`, `y` | The zone's map name, such as `prontera`, and the cell. |
@@ -503,10 +504,11 @@ Shops follow rAthena's `npc_buylist` and `npc_selllist`: a purchase checks the z
 
 ### Monsters
 
-Monster handles, from `death` and `spawning.monsters`, are read-only. They work like player handles.
+Monster handles, from `death` and `spawning.monsters`, are read-only. They work like player handles. Every entity handle has a `kind` field: `"player"`, `"monster"` or `"npc"`, so `death.victim.kind` and `death.killer.kind` say what died and what killed it.
 
 | Field | Meaning |
 |---|---|
+| `kind` | `"monster"`. |
 | `id`, `name`, `level` | The monster's ID, such as 1002, its name and level. |
 | `hp`, `max_hp` | Current and maximum HP. |
 | `map`, `x`, `y` | The zone's map name and the cell. |
@@ -531,7 +533,7 @@ return function()
 end
 ```
 
-The death object has `victim` (a player or monster handle), `victim_kind` (`"player"` or `"monster"`), `killer` (a handle, or nil when nothing killed it), `map`, `x`, `y`, and `skill` (nil for a normal attack). It fires for deaths on the context's map. Options narrow it:
+The death object has `victim` (a player or monster handle), `killer` (a handle, or nil when nothing killed it), `map`, `x`, `y`, and `skill` (nil for a normal attack). It fires for deaths on the context's map. Options narrow it:
 
 | Option | The handler runs for |
 |---|---|
@@ -556,7 +558,7 @@ end
 
 - `spawning.monsters { map, monster, amount, x, y, area, respawn }` places monsters on the context's map and returns their handles. `map` may be left out. Another map raises an error, so a mod script, which runs in every zone, checks `context:get_instance().map` first.
 - Without `x` and `y`, each monster lands on a random walkable cell. `area` spreads them within that many cells of `x`, `y`.
-- `amount` is 1 to 1,000. `respawn = true` brings a dead monster back after 5 seconds, as a normal spawn. By default a dead monster stays dead.
+- `amount` is 1 to 1,000. By default a dead monster stays dead. `respawn = true` makes it come back as a spawn line's monster does in rAthena: after `respawn_milliseconds` (1,000 or more), or after 5,000 ms without it, rAthena's delay for a spawn line that gives none. Monster data has no respawn time, so the delay belongs to the call. `respawn_milliseconds` is provisional.
 - The context owns the monsters: they go when it ends, such as when an event's run ends or the mod reloads.
 - It needs `npc.create`, which every mod has.
 
@@ -659,7 +661,7 @@ end
 | Event | Handler arguments | When |
 |---|---|---|
 | `use` | `player` | The item is used. |
-| `damage` | `hit` | A hit the wearer deals or takes. `hit` has `source`, `target`, `kind`, `range`, `skill`, `element`, `is_critical`, `amount` and `wearer_is_source` (0002a, "Item events"). |
+| `damage` | `hit` | A hit the wearer deals or takes. `hit` has `source`, `target`, `kind`, `range`, `skill`, `element`, `is_critical`, `amount` and `wearer_is_source` (0002a, "Item events"). `source.kind` and `target.kind` say whether each is a player or a monster. |
 | `skill_used` | `use` | The wearer uses a skill. `use` has `skill`, `level`, `target`, `x` and `y`. |
 | `unequip` | `player` | The copy is unequipped, before its context ends. Converted `UnEquipScript`s run on it. |
 
@@ -876,7 +878,7 @@ end
 | `world:get_announcements()` | Every line announced to the world or the map so far. |
 | `world:count_floor_items(item)` | How many of an item lie on the map. |
 
-The last five, and world events in test worlds, are provisional (proposal 0002, review decision 16). A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
+The last five, and world events in test worlds, were added in phase 3 step 6 (proposal 0002, review decisions 16 and 17). A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
 | `testing.expect(value)` | Checks a value with `.to_be(x)`, `.to_equal(table)` (deep), `.to_contain(text_or_value)`, `.to_be_true()`, `.to_be_false()`, `.to_be_nil()`, or `.to_fail_with(text)` for a function that should raise an error containing the text. |
 
 A failed check stops the case and prints the file and line of the check. A case also fails when the server logs a warning that names the mod, such as a handler that failed. `wactl mod test` exits with status 1 when any case fails, so CI can run it.
