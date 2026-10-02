@@ -265,7 +265,6 @@ func TestPendingLoginLimits(t *testing.T) {
 	e := setup(t, func(c *account.Config) {
 		twoFactor(t, clock)(c)
 		c.MaxCodeAttempts = 3
-		c.PendingLifetime = time.Second
 	})
 	e.signup(e.c, "Pending", password)
 	secret, _ := e.enableTOTP(e.c, clock)
@@ -293,10 +292,14 @@ func TestPendingLoginLimits(t *testing.T) {
 		t.Errorf("right code after the attempts: %d %s", resp.StatusCode, resp.Header.Get("Location"))
 	}
 
-	// A pending login expires.
+	// A pending login expires. The test moves its expiry into the past
+	// instead of sleeping, since a short PendingLifetime could run out
+	// during the attempts above on a busy machine.
 	c = e.newClient()
 	e.login(c, "Pending", password, nil)
-	time.Sleep(1200 * time.Millisecond)
+	if _, err := e.admin.Exec(context.Background(), "UPDATE account_pending_logins SET created_at = now() - interval '2 seconds', expires_at = now() - interval '1 second'"); err != nil {
+		t.Fatal(err)
+	}
 	resp, _ = e.submit(c, "/account/login", "/account/login/code", url.Values{"code": {code(secret, clock.Now())}})
 	if resp.StatusCode != http.StatusSeeOther || !strings.Contains(resp.Header.Get("Location"), "notice=expired") {
 		t.Errorf("expired: %d %s", resp.StatusCode, resp.Header.Get("Location"))
