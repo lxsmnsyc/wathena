@@ -1056,6 +1056,11 @@ Planned work to give mods more control than rAthena's scripts have:
   - healing, regeneration, and item use;
   - monster AI decisions, such as target choice.
   Each new event or hook goes through the API review in proposal 0002 before it is built.
+- **Entity queries.** Mods and skills need to find entities by place, not only by name. A query takes an area and filters, and returns entity handles:
+  - areas: a radius around a cell or an entity, a rectangle, a line between two cells with a width, or a list of cells;
+  - filters: entity kind, alive, enemies or allies of an entity, line of sight, and handles to leave out;
+  - order and count: nearest first, lowest HP first, or random from the zone's secret stream, with a limit.
+  The default area shape follows rAthena's square range. Skills in Go use the same query. A sample skill shows it: chain lightning hits its target, then jumps to the nearest enemy it has not hit, a set number of times. This is built in phase 4 step 3.
 - **Fewer hard-coded limits.** rAthena fixes many limits at compile time. wAthena makes them settings with rAthena's values as defaults, so server owners and ruleset mods can raise them. Examples, with rAthena's value and source:
   - card slots per item: 4 (`MAX_SLOTS`);
   - storage size: 600 (`MAX_STORAGE`), and guild storage;
@@ -2419,7 +2424,15 @@ The order from here:
       - Checked in Chrome: see "Phase 3 exit check" below.
       - Left: a yearly schedule for `OnDay`, a way to remove one spawned monster (`killmonster`), mod item and monster names in the client's data tables (phase 6), `data/spawns.yml`, built-in event types of section 8.8, rewards in event data, and the review of `respawn_milliseconds`.
    The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. The phase 3 exit check passed. Manifests stay `api: experimental` until the end of phase 4, which changes parts of the API such as monster stats; then the API becomes `api: 1.0`. The step 6 API was reviewed on 2026-10-02 (proposal 0002, review decision 17): handles gained `kind`, and `respawn = true` follows rAthena's spawn line delays.
-7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.
+7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua. It runs in these steps, approved on 2026-10-02:
+   1. Equipment and modifiers. Equipping and unequipping, equipment slots, refines, and cards. Stats become totals of modifiers, and the converted item bonuses apply to players. The ruleset flags that equipment needs. Checked against `item_bonuses.json` and `refine.json`.
+   2. Status effects. Starting and ending them, durations, resistance, effects that tick, and status icons in the protocol and the client. About 525 usable items that start a status effect run after this step. Checked against `status_effects.json`.
+   3. The skill framework and first class skills. Skill data, casting with cast time, delay, cooldown and interruption, targeting, the skill list, the skill tree and skill points, and casting in the client. Go types for the common skill patterns, then every first class skill. Entity queries by area (section 6.8), which skills and mods share. Skill definitions through the mod API, with a sample mod that adds a chain lightning skill. The recorder fix for ranged attacks, and a new recording. Checked against `skill_damage.json` and golden tests per skill.
+   4. Second and transcendent class skills, in batches with golden tests, and job changes.
+   5. Monster AI and monster skills. Aggressive monsters, chasing and giving up, assisting, looting, monster skills, and monster stats computed from data. Checked against rAthena's AI rules and `mob_status.json`.
+   6. Rolled item values. The `item_rolls` flag and rolled stats on drops, with rAthena's values when the flag is off. Checked with range and distribution tests.
+   7. Job definitions through the mod API, and the phase 4 exit check. Then the API becomes 1.0.
+   Steps 2, 3, 5, and 7 add Lua API. Each step's API goes to review before it is built.
 
 Reasons for this order:
 
