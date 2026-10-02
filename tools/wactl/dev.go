@@ -50,7 +50,7 @@ func dev(args []string) error {
 	if o.modPath, err = modkit.ModPath(arg); err != nil {
 		return err
 	}
-	if fi, err := os.Stat(o.modPath); err != nil || !fi.IsDir() {
+	if fi, err := os.Stat(o.modPath); err != nil || !fi.IsDir() { // #nosec G703 -- a path the user gave on the command line.
 		return errors.New("wactl dev runs a mod's folder")
 	}
 	if o.assets == "" {

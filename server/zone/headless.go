@@ -298,7 +298,7 @@ func (h *Headless) Talk(player int64, npcName, modID string, answers []script.Va
 					if !ok || n < 1 || int(n) > len(t.step.Options) || t.step.Options[n-1] == "" {
 						return stop("answer %d is %s, and the conversation asks for %s", used, a, what)
 					}
-					r.Menu = new(uint32(n))
+					r.Menu = new(uint32(n)) // #nosec G115 -- n is checked to be 1 to len(t.step.Options) above.
 				case modscript.StepNumber:
 					n, ok := a.AsInt()
 					if !ok || n < t.step.Min || n > t.step.Max {

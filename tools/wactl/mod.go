@@ -258,7 +258,7 @@ func modPack(args []string) error {
 	if err != nil {
 		return err
 	}
-	if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+	if fi, err := os.Stat(p); err == nil && !fi.IsDir() { // #nosec G703 -- a path the user gave on the command line.
 		return errors.New("wactl mod pack packs a mod's folder")
 	}
 	env, err := loadEnv("renewal", "")

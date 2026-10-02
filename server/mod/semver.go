@@ -31,7 +31,12 @@ func ParseVersion(s string) (Version, error) {
 // it had. Ranges use the short forms: ">=1.0" means ">=1.0.0".
 func parseVersion(s string) (Version, int, error) {
 	bad := fmt.Errorf("%q is not a semantic version such as 1.2.0", s)
-	s, _, _ = strings.Cut(s, "+")
+	// Build metadata is ignored for ordering, but it must still use only
+	// semver's characters, since tools put versions in file names.
+	s, build, hasBuild := strings.Cut(s, "+")
+	if hasBuild && !validPre(build) {
+		return Version{}, 0, bad
+	}
 	core, pre, hasPre := strings.Cut(s, "-")
 	if hasPre && !validPre(pre) {
 		return Version{}, 0, bad

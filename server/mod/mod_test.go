@@ -599,3 +599,18 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("scripts %+v, %v", sc, err)
 	}
 }
+
+// Build metadata must use semver's characters, since tools put versions
+// in file names.
+func TestVersionBuildMetadata(t *testing.T) {
+	for _, v := range []string{"1.0.0+build.7", "1.0.0-rc.1+sha-abc"} {
+		if _, err := ParseVersion(v); err != nil {
+			t.Errorf("%s: %v", v, err)
+		}
+	}
+	for _, v := range []string{"1.0.0+/../../x", "1.0.0+a/b", "1.0.0+", "1.0.0+a..b"} {
+		if _, err := ParseVersion(v); err == nil {
+			t.Errorf("%s is accepted", v)
+		}
+	}
+}

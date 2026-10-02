@@ -200,11 +200,17 @@ func (e *Env) installFrom(ctx context.Context, o InstallOptions, src string, isZ
 	var dest string
 	if isZip {
 		dest = filepath.Join(o.ModsDir, m.ID+"-"+m.Version+".zip")
+		// The ID and version come from the mod's manifest. Validation keeps
+		// them to safe characters, and this check keeps the file in the
+		// mods folder even if that ever changes.
+		if filepath.Dir(dest) != filepath.Clean(o.ModsDir) {
+			return fmt.Errorf("%s: the mod's ID and version do not make a file name", m.ID)
+		}
 		data, err := os.ReadFile(src) // #nosec G304 -- the file the owner named.
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(dest, data, 0o600); err != nil {
+		if err := os.WriteFile(dest, data, 0o600); err != nil { // #nosec G703 -- dest is checked to be in the mods folder above.
 			return err
 		}
 	} else {

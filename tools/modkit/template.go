@@ -85,5 +85,5 @@ func writeFile(p string, data []byte) error {
 	if err := os.MkdirAll(filepath.Dir(p), 0o750); err != nil {
 		return err
 	}
-	return os.WriteFile(p, data, 0o600)
+	return os.WriteFile(p, data, 0o600) // #nosec G703 -- a path under the folder the user named for the new mod.
 }
