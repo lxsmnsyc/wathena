@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/item"
 )
@@ -222,20 +221,6 @@ func (h scriptHost) SkillLevel(id int64, skill int64) (int, error) {
 		return 0, err
 	}
 	return p.char.Skills[int(skill)], nil
-}
-
-// Equipped finds a player's equipped copy. Equipment does not exist yet
-// (phase 4), so every slot is empty.
-func (h scriptHost) Equipped(id int64, slot string) (int64, bool, error) {
-	if _, err := h.player(id); err != nil {
-		return 0, false, err
-	}
-	return 0, false, nil
-}
-
-// EquippedField reads an equipped copy. There are none yet.
-func (h scriptHost) EquippedField(id int64, field string) (script.Value, error) {
-	return script.Nil, errors.New("equipment does not exist yet")
 }
 
 // RandomN draws from the zone's secret stream.

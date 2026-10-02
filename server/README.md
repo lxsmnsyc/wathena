@@ -7,9 +7,9 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `zone` | One map: its players and monsters, local chat to every player within 9 cells of the speaker, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. A monster that can attack strikes back. Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. A kill gives exp to the players who fought the monster and drops items around it. Items lie on the ground for a minute, and players pick them up with the looter rights rAthena gives the top attackers. Each player has rAthena's inventory: 100 slots, stacks up to 30000, and a weight limit that pick-ups respect. Players use items, whose scripts run in Lua (see "Item scripts"), and drop items at their feet with no looter rights. HP and SP regenerate as rAthena's natural regen, which stops from 70% weight in renewal (50% in pre-renewal). From 90% weight, attacks stop. Warps send a player who steps into their area to their target, as rAthena's `npc_touch_areanpc` and `pc_setpos`: to another map as a message to that map's zone, or within the map. A zone without players sleeps. Each tick finds what a player sees through an index of 8 × 8 cell blocks, as rAthena's `BLOCK_SIZE`, and hands its messages to a sender goroutine in one batch (see "Load tests and metrics"). |
 | `metrics` | Measurements for the budgets in strategy section 3.8: tick work per zone, garbage collector pauses, CPU, memory, goroutines, and bytes per connection. A zone over its tick budget for 10 ticks in a row logs a warning and can write a CPU profile. See "Load tests and metrics". |
 | `world` | Several zones in one process, one goroutine per map. It finds zones by map name, puts a joining character in the zone of its saved map, and waits at shutdown for every zone and every player between zones. `LoadWarps` reads `reference/rathena/extracts/<mode>/warps.json`. |
-| `item` | The inventory, ported from rAthena's `pc_additem`, `pc_delitem` and `pc_inventoryblank`, the overweight levels of `pc_updateweightstatus`, the heal of `pc_itemheal` and `pc_percentheal`, and the item groups of `getgroupitem`, with the item data from `reference/rathena/extracts/<mode>/items.json` and `item_groups.json`. |
-| `battle` | Attacks, ported from rAthena's `battle.cpp` in renewal mode and checked against the recorded reference. |
-| `status` | Player stats from job, levels, raised stats and skills, ported from rAthena's `status_calc_pc` for a player with no equipment, in both modes, and checked against every recorded player. Raising stats with status points, ported from `pc_statusup`, `pc_need_status_point` and `pc_maxparameter`, with the costs of both modes and the job limits from `conf/battle/player.conf`. |
+| `item` | The inventory, ported from rAthena's `pc_additem`, `pc_delitem` and `pc_inventoryblank`, the overweight levels of `pc_updateweightstatus`, the heal of `pc_itemheal` and `pc_percentheal`, and the item groups of `getgroupitem`, with the item data from `reference/rathena/extracts/<mode>/items.json`, `equipment.json` and `item_groups.json`. Equipping, ported from `pc_equippoint`, `pc_isequip`, `pc_equipitem`, `pc_unequipitem`, `pc_setequipindex`, `pc_calcweapontype` and `pc_insert_card` (see "Equipment"). |
+| `battle` | Attacks, ported from rAthena's `battle.cpp` in renewal mode and checked against the recorded reference, with the equipment bonuses of both sides (`battle_calc_cardfix`, `battle_absorb_damage` and the player target's defense). |
+| `status` | Player stats from job, levels, raised stats, skills and equipment, ported from rAthena's `status_calc_pc` and `pc_bonus`, in both modes, and checked against every recorded player, every equipment item and card of `item_bonuses.json`, and every level of `refine.json`. Raising stats with status points, ported from `pc_statusup`, `pc_need_status_point` and `pc_maxparameter`, with the costs of both modes and the job limits from `conf/battle/player.conf`. |
 | `progression` | Exp tables, level ups, status and skill points, the renewal level penalty, exp shares, drop rates and rolls, where drops land, and pick-up rights, ported from rAthena's `pc.cpp`, `mob.cpp` and `map.cpp` with the default `conf/battle` settings. |
 | `character` | A saved character as plain data: what the zone loads and hands to the store. |
 | `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
@@ -39,7 +39,7 @@ go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev --maps
 
 It spawns each map's monsters from the spawns that `reference/rathena` recorded (`--mode renewal` or `pre-renewal`, or `none`), until the core mod has its own.
 
-Players are novices with no equipment. With `--dev`, their sex and hair come from a hash of their name. With accounts, the player picks them on the character page. They start as a new rAthena character does: every stat at 1 and 48 status points to spend. `--build` picks other raised stats for testing, from the reference recorder's builds (STR, AGI, VIT, INT, DEX, LUK, before job bonuses), with the same 48 points:
+Players start as novices with no equipment. With `--dev`, their sex and hair come from a hash of their name. With accounts, the player picks them on the character page. They start as a new rAthena character does: every stat at 1 and 48 status points to spend. `--build` picks other raised stats for testing, from the reference recorder's builds (STR, AGI, VIT, INT, DEX, LUK, before job bonuses), with the same 48 points:
 
 | Build | Stats |
 |---|---|
@@ -347,6 +347,51 @@ curl -X POST 'http://127.0.0.1:8301/debug/wathena/mods/reload?mod=example.greete
 - `wactl dev` runs a server with one mod and calls the endpoint when the mod's Lua files change (mods/README.md, "Tools").
 
 Cost: each zone's Lua state holds about 50 KB for the sample mod. All 988 maps of a kRO build start in 2.1 seconds with it, against 2.0 without mods.
+
+## Equipment
+
+Players wear items from their inventory, as rAthena's `pc_equipitem` and `pc_unequipitem` ([decision 0009](../docs/decisions/0009-stats-as-totals-of-modifiers.md)).
+
+- Positions are rAthena's `EQP_` bits: three headgear positions, armor, both hands, garment, shoes, two accessories, ammunition, four costume positions and six shadow gear positions.
+- An item goes on when the player's job, class (`Jobs` and `Classes`), sex and base level allow it (`pc_isequip`). Ammunition needs a weapon that fires it: arrows a bow, an instrument or a whip, bullets a gun.
+- What is in the way comes off first. A two-handed weapon takes both hands, so the shield comes off too. Accessories go right first, then left. Classes that dual wield (Assassins, Kagerou and Oboro, and anyone with Left Hand Mastery) put a second dagger, one-handed sword or one-handed axe in the left hand.
+- Ammunition that does not fit a new weapon comes off, and so does the ammunition of a bow or gun that comes off (`ammo_unequip`).
+- `InsertCard` puts a card into the first free card slot of an item that is not worn, as `pc_insert_card`: the card's location must match the item's, a shield card cannot go into a weapon, and a card for one accessory side only goes into that side. Items hold at most `MaxCardSlots` cards (rAthena's `MAX_SLOTS`, 4).
+- Worn items cannot be used or sold. An item that leaves the inventory comes off first. A dropped item keeps its refine and cards on the ground.
+
+Each worn slot has a handle that scripts read through `player:get_equipped` and the equipped item's fields. Its item and each card run their converted script in an equip context. A worn item that is still on when its player leaves the map ends quietly, and starts again where the player arrives. Taking it off runs its `unequip` handlers. Each normal attack that lands fires the `damage` event of the equipped items on both sides.
+
+Stats come from `status.Calc` with every worn item, its refine, its cards and their bonuses, in rAthena's order:
+
+- weapon ATK, MATK, range, weapon level and element, armor DEF, and refine bonuses from `refine_db.json`;
+- static bonuses of item data, and the bonuses of Lua scripts whose `when` condition holds, with computed values run at that moment;
+- the stacking options of 0002a, then a port of `pc_bonus` by bonus name.
+
+The zone computes stats again after an equip or unequip, a level up, a raised stat, and a bonus that starts or ends. A calculation with ten items and 30 bonuses takes 5.4 µs (`BenchmarkCalcEquipped`).
+
+The player's look follows its equipment: the weapon type, the shield's view, the views of its headgear and garment, and costumes over them. Viewers get `LookChange`.
+
+Items with an `item_noequip.txt` restriction keep their DEF and ATK, but their scripts do not run: every map is a normal map until PvP and GvG maps exist.
+
+To try it, give a new character a Knife, a Hat, a Cotton Shirt with a card slot and a Poring Card, and open the equipment window (Alt+Q) in the web client:
+
+```text
+go run ./server/cmd/waserver --assets /path/to/build --map prt_fild08 --dev --build melee \
+  --start-items 1201:1,2220:1,2302:1,4001:1
+```
+
+Equipment is saved with the inventory: the `equip`, `refine` and `cards` columns of migration 00008. Cards are a list, and the database allows up to 16 cards and refine 255, so a ruleset can raise the limits without a migration.
+
+The ruleset's `aspd` and `size_table` flags pick the ASPD formula and table, and the size table of knuckles and whips (strategy section 3.6). A flag set to the other mode loads that mode's job table.
+
+Parity with rAthena is in `tools/convert/testdata/equipment_parity_<mode>.md`, made by `go test ./tools/convert -run TestEquipmentParity`:
+
+| Mode | Equipment items | Cards | Refine levels |
+|---|---|---|---|
+| renewal | 9,939 of 9,939 compared, stats and damage | 1,496 of 1,496, stats and damage | 105 of 105, stats and damage |
+| pre-renewal | 1,867 of 1,867, stats | 427 of 427, stats | 55 of 55, stats |
+
+Compared items are those whose scripts convert fully: 230 renewal items and 49 cards, and 18 pre-renewal items and 25 cards, are left out. Pre-renewal damage is not compared, since `battle` has renewal's formula only.
 
 ## NPCs
 

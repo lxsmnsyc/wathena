@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"slices"
 	"strings"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -42,17 +43,32 @@ func (z *Zone) itemConfig() item.Config {
 	return item.DefaultConfig(true)
 }
 
+// wornLocation is the location the client shows for an item: where
+// equipment is worn and where a card goes, or 0.
+func wornLocation(d *item.Def) uint32 {
+	if d.IsEquipment() || d.IsCard() {
+		return uint32(d.Location)
+	}
+	return 0
+}
+
 // inventoryList is the full inventory, for the first frame.
-func inventoryList(p *Player) *wathenav1.Event {
+func (z *Zone) inventoryList(p *Player) *wathenav1.Event {
 	var slots []*wathenav1.InventoryItem
 	for i, s := range p.inventory.Slots {
 		if s.ID == 0 {
 			continue
 		}
+		d := z.Items.Get(s.ID)
 		slots = append(slots, wathenav1.InventoryItem_builder{
-			Slot:   uint32(i), // #nosec G115 -- below MaxInventory.
-			ItemId: s.ID,
-			Amount: uint32(s.Amount), // #nosec G115 -- at most MaxAmount.
+			Slot:     uint32(i), // #nosec G115 -- below MaxInventory.
+			ItemId:   s.ID,
+			Amount:   uint32(s.Amount), // #nosec G115 -- at most MaxAmount.
+			Equip:    s.Equip,
+			Refine:   uint32(max(s.Refine, 0)), // #nosec G115 -- at most the refine limit.
+			Cards:    s.Cards,
+			Location: wornLocation(d),
+			Card:     d.IsCard(),
 		}.Build())
 	}
 	return wathenav1.Event_builder{Inventory: wathenav1.InventoryUpdate_builder{
@@ -64,27 +80,49 @@ func inventoryList(p *Player) *wathenav1.Event {
 // addItem is pc_additem: it puts items in a player's inventory and sends
 // the slot and the new weight, or returns why it could not.
 func (z *Zone) addItem(p *Player, id uint32, amount int) item.AddResult {
+	return z.addInstance(p, id, amount, 0, nil)
+}
+
+// addInstance is addItem for an item with a refine and cards, such as
+// equipment picked up from the ground. Equipment never stacks, so it
+// keeps them in its own slot.
+func (z *Zone) addInstance(p *Player, id uint32, amount, refine int, cards []uint32) item.AddResult {
 	slot, res := p.inventory.Add(z.Items.Get(id), amount, p.maxWeight)
 	if res != item.AddSuccess {
 		return res
 	}
+	s := &p.inventory.Slots[slot]
 	// A new stack or instance gets its own serial. Items picked up from
 	// the ground get a new one too, since ground items are not saved.
-	if s := &p.inventory.Slots[slot]; s.Serial.IsZero() {
+	if s.Serial.IsZero() {
 		s.Serial = item.NewSerial()
 	}
+	if s.Amount == amount && (refine != 0 || len(cards) > 0) {
+		s.Refine, s.Cards = refine, slices.Clone(cards)
+	}
+	d := z.Items.Get(id)
 	p.pending = append(p.pending, wathenav1.Event_builder{InventoryAdd: wathenav1.InventoryAdd_builder{
-		ItemId: id,
-		Amount: uint32(amount), // #nosec G115 -- at most MaxAmount.
-		Slot:   uint32(slot),   // #nosec G115 -- below MaxInventory.
+		ItemId:   id,
+		Amount:   uint32(amount),           // #nosec G115 -- at most MaxAmount.
+		Slot:     uint32(slot),             // #nosec G115 -- below MaxInventory.
+		Refine:   uint32(max(s.Refine, 0)), // #nosec G115 -- at most the refine limit.
+		Cards:    s.Cards,
+		Location: wornLocation(d),
+		Card:     d.IsCard(),
 	}.Build()}.Build())
 	z.updateWeight(p)
 	return res
 }
 
 // deleteItem is pc_delitem: it takes an amount from a slot and sends the
-// removal and the new weight.
+// removal and the new weight. An equipped item that leaves comes off
+// first, as pc_delitem unequips it.
 func (z *Zone) deleteItem(p *Player, slot, amount int, reason wathenav1.InventoryRemoveReason) bool {
+	if slot >= 0 && slot < item.MaxInventory {
+		if s := &p.inventory.Slots[slot]; s.Equip != 0 && s.Amount <= amount && s.Amount > 0 {
+			z.unequipItem(p, slot)
+		}
+	}
 	if !p.inventory.Delete(z.Items, slot, amount) {
 		return false
 	}
@@ -175,10 +213,16 @@ func (z *Zone) canUse(p *Player, d *item.Def) wathenav1.UseItemFailure {
 	if d.MinLevel > 0 && level < d.MinLevel || d.MaxLevel > 0 && level > d.MaxLevel {
 		return wathenav1.UseItemFailure_USE_ITEM_FAILURE_CANNOT_USE
 	}
-	// pc_job_can_use_item is not ported, so items that leave jobs out
-	// are refused.
+	// pc_job_can_use_item and pc_isItemClass. Without the equipment
+	// data's job lists, items that leave jobs out are refused.
 	if d.JobRestricted {
-		return wathenav1.UseItemFailure_USE_ITEM_FAILURE_CANNOT_USE
+		mapID, ok := uint64(0), false
+		if z.Status != nil {
+			mapID, ok = z.Status.MapID(p.char.Job)
+		}
+		if !ok || d.Jobs == nil || !item.JobCanUse(d, mapID, z.Status.Renewal()) {
+			return wathenav1.UseItemFailure_USE_ITEM_FAILURE_CANNOT_USE
+		}
 	}
 	return wathenav1.UseItemFailure_USE_ITEM_FAILURE_UNSPECIFIED
 }
@@ -219,6 +263,11 @@ func (z *Zone) useItem(p *Player, slot int) {
 	s := p.inventory.Slots[slot]
 	if s.ID == 0 || s.Amount <= 0 {
 		p.pending = append(p.pending, useItemFailed(slot, wathenav1.UseItemFailure_USE_ITEM_FAILURE_EMPTY_SLOT))
+		return
+	}
+	if s.Equip != 0 {
+		// pc_useitem: an equipped item is not used.
+		p.pending = append(p.pending, useItemFailed(slot, wathenav1.UseItemFailure_USE_ITEM_FAILURE_NOT_USABLE))
 		return
 	}
 	d := z.Items.Get(s.ID)
@@ -337,8 +386,10 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 	}
 	e := p.entity
 	pl := progression.PlaceDrop(z.cellFree, e.x, e.y, z.rand)
+	// map_addflooritem copies the item, with its refine and cards.
 	z.entities.add(&entity{x: pl.X, y: pl.Y, item: &groundItem{
 		id: s.ID, amount: amount, subX: pl.SubX, subY: pl.SubY,
+		refine: s.Refine, cards: slices.Clone(s.Cards),
 		expires: z.now + lifetime,
 		fresh:   true,
 	}})

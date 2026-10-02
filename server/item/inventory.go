@@ -1,5 +1,7 @@
 package item
 
+import "slices"
+
 // Slot is one inventory slot, as rAthena's item in items_inventory. An
 // empty slot has ID 0.
 type Slot struct {
@@ -8,6 +10,14 @@ type Slot struct {
 	// Serial identifies the stack or item instance. Add leaves it zero in
 	// a slot it fills, for the caller to set.
 	Serial Serial
+	// Equip holds the positions the item is equipped in (EQP_ bits), or 0,
+	// as rAthena's item.equip.
+	Equip uint32
+	// Refine is the refine level.
+	Refine int
+	// Cards are the card IDs in the item's slots, in slot order. Only
+	// filled slots are listed (strategy section 6.8: slots are a list).
+	Cards []uint32
 }
 
 // Inventory is a player's inventory, as mmo_charstatus's inventory with
@@ -171,4 +181,10 @@ func (c Config) Overweight(weight, maxWeight int) int {
 		return Weight50
 	}
 	return WeightNormal
+}
+
+// Equal reports whether two slots hold the same item instance.
+func (s *Slot) Equal(o *Slot) bool {
+	return s.ID == o.ID && s.Amount == o.Amount && s.Serial == o.Serial && s.Equip == o.Equip &&
+		s.Refine == o.Refine && slices.Equal(s.Cards, o.Cards)
 }

@@ -1769,8 +1769,8 @@ Changes the value.
 | `click` | npc | `player: wa.Player, conversation: wa.Conversation` | A player talks to the NPC. |
 | `touch` | npc | `player: wa.Player` | A player walks into the NPC's area. It does not fire yet. |
 | `use` | item | `player: wa.Player` | The item is used. |
-| `damage` | item | `hit: wa.Damage` | A hit the wearer deals or takes. It fires in tests until equipment exists. |
-| `skill_used` | item | `use: wa.SkillUse` | The wearer uses a skill. It fires in tests until equipment exists. |
+| `damage` | item | `hit: wa.Damage` | A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3). |
+| `skill_used` | item | `use: wa.SkillUse` | The wearer uses a skill. It fires in tests until skills exist (phase 4 step 3). |
 | `unequip` | item | `player: wa.Player` | The copy is unequipped, before its context ends. |
 
 ## Named types

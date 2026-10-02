@@ -663,8 +663,8 @@ var Events = []Event{
 	{Name: "click", Kinds: []string{"npc"}, Params: []Param{playerParam, {"conversation", "wa.Conversation", ""}}, Doc: "A player talks to the NPC."},
 	{Name: "touch", Kinds: []string{"npc"}, Params: []Param{playerParam}, Doc: "A player walks into the NPC's area. It does not fire yet."},
 	{Name: "use", Kinds: []string{"item"}, Params: []Param{playerParam}, Doc: "The item is used."},
-	{Name: "damage", Kinds: []string{"item"}, Params: []Param{{"hit", "wa.Damage", ""}}, Doc: "A hit the wearer deals or takes. It fires in tests until equipment exists."},
-	{Name: "skill_used", Kinds: []string{"item"}, Params: []Param{{"use", "wa.SkillUse", ""}}, Doc: "The wearer uses a skill. It fires in tests until equipment exists."},
+	{Name: "damage", Kinds: []string{"item"}, Params: []Param{{"hit", "wa.Damage", ""}}, Doc: "A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3)."},
+	{Name: "skill_used", Kinds: []string{"item"}, Params: []Param{{"use", "wa.SkillUse", ""}}, Doc: "The wearer uses a skill. It fires in tests until skills exist (phase 4 step 3)."},
 	{Name: "unequip", Kinds: []string{"item"}, Params: []Param{playerParam}, Doc: "The copy is unequipped, before its context ends."},
 }
 

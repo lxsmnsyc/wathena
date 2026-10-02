@@ -151,6 +151,9 @@ type Inventory struct {
 	Slot        int
 	ItemID      int
 	Amount      int
+	Equip       int
+	Refine      int
+	Cards       []int
 }
 
 type ModAccountVariable struct {

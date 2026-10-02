@@ -65,6 +65,14 @@ type Status struct {
 	// DamageTaken is the percent of damage a monster takes, from
 	// DamageTaken in rAthena's mob_db.yml. 0 counts as 100.
 	DamageTaken int `json:"damage_taken"`
+	// ID is status_get_class: a monster's ID, or a player's job.
+	ID int `json:"-"`
+	// Race2 are a monster's race groups (RC2_), as status_get_race2.
+	Race2 []int `json:"-"`
+	// CRate is a player's C.Rate trait stat: percent more critical damage.
+	// PAtk is its P.Atk: percent more damage.
+	CRate int `json:"-"`
+	PAtk  int `json:"-"`
 	// Player holds what only players have. It is nil for monsters.
 	Player *Player `json:"-"`
 }

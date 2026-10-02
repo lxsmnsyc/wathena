@@ -1,6 +1,6 @@
 import { create } from '@bufbuild/protobuf';
 import { type Camera, Group, Vector3 } from 'three';
-import { effects as effectTable, jobs, looks, partEffect } from '../data/tables';
+import { effects as effectTable, jobs, looks, partEffect, weapons } from '../data/tables';
 import { type WMap, cellHeight } from '../formats/wmap';
 import {
   DamageKind,
@@ -8,6 +8,7 @@ import {
   type EffectPlay,
   EffectPlaySchema,
   EntityKind,
+  type EquipFailure,
   type Event,
   type ImagePosition,
   type InventoryRemoveReason,
@@ -30,7 +31,7 @@ import { type SpriteCache, SpriteView } from '../render/sprites';
 import type { TextureSource } from '../render/textures';
 import type { Pathfinder } from '../world/pathfinder';
 import GroundItems from './groundItems';
-import { type Stack, USE_EFFECTS } from './inventory';
+import { type StackDetails, type StackInput, USE_EFFECTS } from './inventory';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
 
@@ -53,7 +54,16 @@ interface Playing {
   readonly done: boolean;
 }
 
-/** A character's sprites from the protocol's table IDs. */
+/**
+ * A character's sprites from the protocol's table IDs. Equipment shows as
+ * looks.ts names it:
+ * - The weapon type's view from data/weapons.yml, sprite/weapon/<job>/<sex>/<view>.
+ * - The shield, sprite/shield/<job>/<sex>/<view>.
+ * - Headgear, sprite/headgear/<sex>/<view>.
+ * - The garment, sprite/garment/<job>/<sex>/<view>.
+ *
+ * A view of 0 draws nothing.
+ */
 export function lookOf(m: LookMessage | undefined): Look {
   const job = jobs.get(m?.body ?? 0) ?? jobs.get(0);
   const name = job?.look ?? 'novice';
@@ -61,11 +71,34 @@ export function lookOf(m: LookMessage | undefined): Look {
   const sex = info?.sex ?? (m?.sex === 1 ? 'm' : 'f');
   const race = info?.race ?? 'human';
   const hair = Math.max(m?.hair ?? 1, 1);
-  return {
+  const look: Look = {
     body: `sprite/body/${name}/${sex}`,
     head: `sprite/head/${race}/${sex}/${hair}`,
     hairPalette: `palette/hair/${race}/${sex}/${hair}/${m?.hairColor ?? 0}`,
   };
+  if (m === undefined) {
+    return look;
+  }
+  const weapon = m.weapon === 0 ? 0 : (weapons.get(m.weapon)?.view ?? 0);
+  if (weapon !== 0) {
+    look.weapon = `sprite/weapon/${name}/${sex}/${weapon}`;
+  }
+  if (m.shield !== 0) {
+    look.shield = `sprite/shield/${name}/${sex}/${m.shield}`;
+  }
+  if (m.headTop !== 0) {
+    look.headgearTop = `sprite/headgear/${sex}/${m.headTop}`;
+  }
+  if (m.headMid !== 0) {
+    look.headgearMid = `sprite/headgear/${sex}/${m.headMid}`;
+  }
+  if (m.headBottom !== 0) {
+    look.headgearBottom = `sprite/headgear/${sex}/${m.headBottom}`;
+  }
+  if (m.robe !== 0) {
+    look.garment = `sprite/garment/${name}/${sex}/${m.robe}`;
+  }
+  return look;
 }
 
 interface Actions {
@@ -96,6 +129,16 @@ function spriteOf(kind: EntityKind, body: number): string {
   return kind === EntityKind.MONSTER ? `sprite/mob/${body}` : `sprite/npc/${body}`;
 }
 
+/** An entity whose sprites are still loading, and what happened to it meanwhile. */
+interface Pending {
+  x: number;
+  y: number;
+  dir: number;
+  walk: Parameters<Player['follow']> | undefined;
+  /** The newest look, for a player. */
+  look: LookMessage | undefined;
+}
+
 /** How long the pick up action plays, in milliseconds. */
 const PICK_UP_MS = 500;
 
@@ -122,9 +165,21 @@ export default class Online {
   /** Called for every hit, at the moment it lands. */
   onHit: ((hit: Hit) => void) | undefined;
   /** Called with the player's whole inventory. */
-  onInventory: ((items: Stack[], size: number) => void) | undefined;
+  onInventory: ((items: StackInput[], size: number) => void) | undefined;
   /** Called when an item enters a slot of the player's inventory. */
-  onInventoryAdd: ((slot: number, itemId: number, amount: number) => void) | undefined;
+  onInventoryAdd:
+    | ((slot: number, itemId: number, amount: number, details: StackDetails) => void)
+    | undefined;
+  /** Called when an item goes on, with the EQP_ bits it now takes. */
+  onItemEquipped: ((slot: number, position: number) => void) | undefined;
+  /** Called when an item comes off. */
+  onItemUnequipped: ((slot: number, position: number) => void) | undefined;
+  /** Called when putting an item on fails. */
+  onEquipFailed: ((slot: number, reason: EquipFailure) => void) | undefined;
+  /** Called when a card went into an item. */
+  onCardInserted: ((cardSlot: number, equipSlot: number, cardId: number) => void) | undefined;
+  /** Called when a card did not go into an item. */
+  onInsertCardFailed: ((cardSlot: number, equipSlot: number) => void) | undefined;
   /** Called when an amount leaves a slot of the player's inventory. */
   onInventoryRemove:
     | ((slot: number, amount: number, reason: InventoryRemoveReason) => void)
@@ -259,11 +314,12 @@ export default class Online {
           this.names.set(a.id, a.name);
           const map = this.map;
           // A placeholder holds the entity's place until its sprites load.
-          const pending = {
+          const pending: Pending = {
             x: a.x,
             y: a.y,
             dir: a.dir,
-            walk: undefined as Parameters<Player['follow']> | undefined,
+            walk: undefined,
+            look: a.look,
           };
           this.pending.set(a.id, pending);
           // Monsters and NPCs are one sprite. Players are characters
@@ -294,6 +350,10 @@ export default class Online {
               }
               this.units.set(a.id, unit);
               this.group.add(c.group);
+              // The look changed while the sprites loaded.
+              if (pending.look !== a.look) {
+                this.changeLook(a.id, pending.look);
+              }
             })
             .catch(reportError);
           break;
@@ -399,12 +459,48 @@ export default class Online {
         }
         case 'inventory':
           this.onInventory?.(
-            e.body.value.items.map((i) => ({ slot: i.slot, itemId: i.itemId, amount: i.amount })),
+            e.body.value.items.map((i) => ({
+              slot: i.slot,
+              itemId: i.itemId,
+              amount: i.amount,
+              equip: i.equip,
+              refine: i.refine,
+              cards: [...i.cards],
+              location: i.location,
+              card: i.card,
+            })),
             e.body.value.size,
           );
           break;
-        case 'inventoryAdd':
-          this.onInventoryAdd?.(e.body.value.slot, e.body.value.itemId, e.body.value.amount);
+        case 'inventoryAdd': {
+          const a = e.body.value;
+          this.onInventoryAdd?.(a.slot, a.itemId, a.amount, {
+            refine: a.refine,
+            cards: [...a.cards],
+            location: a.location,
+            card: a.card,
+          });
+          break;
+        }
+        case 'itemEquipped':
+          this.onItemEquipped?.(e.body.value.slot, e.body.value.position);
+          break;
+        case 'itemUnequipped':
+          this.onItemUnequipped?.(e.body.value.slot, e.body.value.position);
+          break;
+        case 'equipFailed':
+          this.onEquipFailed?.(e.body.value.slot, e.body.value.reason);
+          break;
+        case 'cardInserted': {
+          const c = e.body.value;
+          this.onCardInserted?.(c.cardSlot, c.equipSlot, c.cardId);
+          break;
+        }
+        case 'insertCardFailed':
+          this.onInsertCardFailed?.(e.body.value.cardSlot, e.body.value.equipSlot);
+          break;
+        case 'lookChange':
+          this.changeLook(e.body.value.id, e.body.value.look);
           break;
         case 'inventoryRemove':
           this.onInventoryRemove?.(e.body.value.slot, e.body.value.amount, e.body.value.reason);
@@ -477,10 +573,53 @@ export default class Online {
     }
   }
 
-  private readonly pending = new Map<
-    number,
-    { x: number; y: number; dir: number; walk: Parameters<Player['follow']> | undefined }
-  >();
+  private readonly pending = new Map<number, Pending>();
+
+  /** The look each player's newest LookChange loads, until it shows. */
+  private readonly lookLoads = new Map<number, LookMessage | undefined>();
+
+  /**
+   * Shows a player's new look, such as after it put on a hat. The new
+   * character takes the old one's place, direction and action once its
+   * sprites load. A player still loading takes the new look after it has
+   * loaded. Monsters and NPCs keep their sprite.
+   */
+  private changeLook(id: number, look: LookMessage | undefined): void {
+    if (this.kinds.get(id) !== 'player') {
+      return;
+    }
+    const pending = this.pending.get(id);
+    if (pending !== undefined) {
+      pending.look = look;
+      return;
+    }
+    const unit = this.units.get(id);
+    if (unit === undefined) {
+      return;
+    }
+    this.lookLoads.set(id, look);
+    Character.load(this.sprites, lookOf(look))
+      .then((c) => {
+        // A later change, a vanish, or a death replaces this one.
+        if (c === undefined || this.units.get(id) !== unit || this.lookLoads.get(id) !== look) {
+          return;
+        }
+        this.lookLoads.delete(id);
+        const old = unit.character;
+        unit.replace(c);
+        // Effects and emotions on the old character move to the new one.
+        if (old instanceof Character) {
+          // Adding a child takes it from the old group, so the list is taken first.
+          const added = old.group.children.filter((child) => !old.isPart(child));
+          for (const child of added) {
+            c.group.add(child);
+          }
+        }
+        this.group.remove(old.group);
+        this.group.add(c.group);
+      })
+      .catch(reportError);
+  }
 
   /**
    * Shows an emotion icon over a unit: the action of the emotion sprite
@@ -523,6 +662,7 @@ export default class Online {
 
   private remove(id: number): void {
     this.pending.delete(id);
+    this.lookLoads.delete(id);
     this.names.delete(id);
     this.items.remove(id);
     const portal = this.portals.get(id);

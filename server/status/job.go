@@ -279,3 +279,12 @@ func (t *Tables) MapID(job int) (uint64, bool) {
 func (t *Tables) JobOf(mapID uint64, male bool) (int, bool) {
 	return t.mapIDToJob(mapID, male)
 }
+
+// MaxJobLevel is pc_maxjoblv: a job's highest job level, or 0 for a job
+// the tables lack.
+func (t *Tables) MaxJobLevel(job int) int {
+	if j := t.jobs[job]; j != nil {
+		return j.maxJobLevel
+	}
+	return 0
+}

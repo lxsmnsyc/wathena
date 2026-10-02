@@ -7,8 +7,16 @@ import {
   itemLabel,
   parseItemDescriptions,
   parseItemNames,
+  refinedLabel,
   stripColors,
 } from './itemText';
+
+describe('refinedLabel', () => {
+  it('puts the refine level in front', () => {
+    expect(refinedLabel('Knife [3]', 7)).toBe('+7 Knife [3]');
+    expect(refinedLabel('Knife [3]', 0)).toBe('Knife [3]');
+  });
+});
 
 describe('parseItemNames', () => {
   it('reads entries and skips what does not fit', () => {

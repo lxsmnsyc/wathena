@@ -39,6 +39,17 @@ const (
 // Look is a player's appearance, as IDs from the client data tables.
 type Look struct {
 	Job, Sex, Hair, HairColor uint32
+	// Weapon is the weapon type, Shield the shield's view, and the rest
+	// the views of headgear and garment (rAthena's view_data).
+	Weapon, Shield, HeadTop, HeadMid, HeadBottom, Robe uint32
+}
+
+// message is the protocol's Look.
+func (l Look) message() *wathenav1.Look {
+	return wathenav1.Look_builder{
+		Body: l.Job, Sex: l.Sex, Hair: l.Hair, HairColor: l.HairColor,
+		Weapon: l.Weapon, Shield: l.Shield, HeadTop: l.HeadTop, HeadMid: l.HeadMid, HeadBottom: l.HeadBottom, Robe: l.Robe,
+	}.Build()
 }
 
 // Player is one connected player in one zone. Its Out channel is its
@@ -140,6 +151,12 @@ type Player struct {
 	// last until logout.
 	vars map[character.Variable]string
 	temp map[character.Variable]string
+	// worn are the player's equipped slots, by inventory slot, with their
+	// handles and equip contexts.
+	worn map[int]*wornSlot
+	// statsDirty is set when the player's bonuses changed since its last
+	// stat calculation.
+	statsDirty bool
 }
 
 type entity struct {
@@ -162,9 +179,11 @@ type entity struct {
 	path      []path.Dir
 	stepStart int64
 	// walkChanged is set when a walk starts or changes, so viewers get a
-	// move event. stopped is set when a walk ends early.
+	// move event. stopped is set when a walk ends early. lookChanged is
+	// set when a player's look changed, so viewers get LookChange.
 	walkChanged bool
 	stopped     bool
+	lookChanged bool
 	// packed is path in the protocol's steps, made for tick packedTick.
 	// Every viewer's move event shares it.
 	packed     []byte
@@ -189,6 +208,10 @@ type command struct {
 	shopSell *shopSellCommand
 	// shopClose names the NPC of the shop window the player closed.
 	shopClose *uint32
+	// equip, unequip and insertCard are equipment commands, by slot.
+	equip      *equipCommand
+	unequip    *int
+	insertCard *insertCardCommand
 }
 
 type shopBuyCommand struct {
@@ -266,6 +289,14 @@ type Zone struct {
 	// Clock is the server clock, which schedules and world events
 	// follow. It is the system clock when nil. Set it before Run.
 	Clock func() time.Time
+	// MaxCardSlots is MAX_SLOTS, the most cards an item holds. It is
+	// DefaultMaxCardSlots when 0. Set it before Run.
+	MaxCardSlots int
+
+	// equippedRefs are the equipped slots that script handles point to,
+	// by handle ID.
+	equippedRefs map[int64]equippedRef
+	nextEquipped int64
 
 	// scripts runs the mods' Lua in the zone's own state, made by Run.
 	// scriptEvents wait for a point where scripts may run.
@@ -563,6 +594,12 @@ func (z *Zone) join(p *Player) joinResult {
 	p.sent = map[wathenav1.StatId]int64{}
 	p.char = z.Start
 	p.char.Job, p.char.Male, p.char.Stats = c.Job, c.Male, c.Stats
+	// Equipped items start their scripts before the first stat
+	// calculation, as status_calc_pc with SCO_FIRST.
+	if z.Items != nil {
+		z.wearAll(p)
+	}
+	p.Look = z.lookOf(p)
 	if z.Progress != nil {
 		p.progress = progression.Character{
 			Job: c.Job, BaseLevel: c.BaseLevel, JobLevel: c.JobLevel,
@@ -585,7 +622,7 @@ func (z *Zone) join(p *Player) joinResult {
 		e.speed = e.status.Speed
 	}
 	z.updateWeight(p)
-	p.pending = append(p.pending, inventoryList(p))
+	p.pending = append(p.pending, z.inventoryList(p))
 	if s := z.battleStats(p); s != nil {
 		p.pending = append(p.pending, s)
 	}
@@ -650,6 +687,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 	}
 	z.save(p, true)
 	z.remove(p, reason)
+	z.unwearAll(p)
 	// A conversation's pending call fails once the player is gone, so a
 	// script that goes on cannot change the saved character.
 	z.closeTalk(p)
@@ -739,6 +777,15 @@ func (z *Zone) handle(c command) {
 	}
 	if c.drop != nil {
 		z.dropItem(p, c.drop.slot, c.drop.amount)
+	}
+	if c.equip != nil {
+		z.equipItem(p, c.equip.slot, c.equip.position)
+	}
+	if c.unequip != nil {
+		z.unequipItem(p, *c.unequip)
+	}
+	if c.insertCard != nil {
+		z.insertCard(p, c.insertCard.card, c.insertCard.equip)
 	}
 	// The game client does not attack while SC_WEIGHT90 is on, which
 	// rAthena relies on. The zone checks it itself.
@@ -839,6 +886,7 @@ func (z *Zone) stepAt(now int64) {
 		z.runSchedules()
 		z.runScripts()
 	}
+	z.refreshStats()
 	acted := time.Now()
 	z.Metrics.Phase(metrics.PhaseAct, acted.Sub(moved))
 	if len(z.players) > 0 {
@@ -853,6 +901,7 @@ func (z *Zone) stepAt(now int64) {
 	for e := range z.entities.all() {
 		e.walkChanged = false
 		e.stopped = false
+		e.lookChanged = false
 		e.hpChanged = false
 		if e.item != nil {
 			e.item.fresh = false
@@ -930,6 +979,9 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				case e.stopped:
 					events = append(events, stop(id, e))
 				}
+				if known && e.lookChanged && e.player != nil {
+					events = append(events, lookChange(id, e.player))
+				}
 			}
 		}
 	}
@@ -994,14 +1046,12 @@ func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
 	}
 	p := e.player
 	return wathenav1.Event_builder{Appear: wathenav1.EntityAppear_builder{
-		Id:   id,
-		Kind: wathenav1.EntityKind_ENTITY_KIND_PLAYER,
-		X:    uint32(e.x),   // #nosec G115 -- map cells are at most 1024.
-		Y:    uint32(e.y),   // #nosec G115 -- as above.
-		Dir:  uint32(e.dir), // #nosec G115 -- 0 to 7.
-		Look: wathenav1.Look_builder{
-			Body: p.Look.Job, Sex: p.Look.Sex, Hair: p.Look.Hair, HairColor: p.Look.HairColor,
-		}.Build(),
+		Id:         id,
+		Kind:       wathenav1.EntityKind_ENTITY_KIND_PLAYER,
+		X:          uint32(e.x),   // #nosec G115 -- map cells are at most 1024.
+		Y:          uint32(e.y),   // #nosec G115 -- as above.
+		Dir:        uint32(e.dir), // #nosec G115 -- 0 to 7.
+		Look:       p.Look.message(),
 		Name:       p.Name,
 		WalkMs:     uint32(e.speed), // #nosec G115 -- a small speed.
 		HpPermille: e.hpPermille(),

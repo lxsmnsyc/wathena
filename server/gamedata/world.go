@@ -97,6 +97,11 @@ func monsterOverlay(ctx context.Context, set *mod.Set, base map[uint32]Monster, 
 			}
 			m = out[from].clone()
 			m.AegisName, m.Name = r.Name, mod.Local(r.Name)
+			if m.Status != nil {
+				// A new monster is its own class for bAddDamageClass,
+				// and has no race groups of its own.
+				m.Status.ID, m.Status.Race2 = int(id), nil
+			}
 			if m.Reward != nil {
 				m.Reward.BaseExp, m.Reward.JobExp, m.Reward.Drops = 0, 0, nil
 			}

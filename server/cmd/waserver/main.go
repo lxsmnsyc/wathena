@@ -317,6 +317,10 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
+	// The ruleset's flags pick the formulas that player stats use.
+	if err := gamedata.ApplyRuleset(jobs, loaded.set.Ruleset); err != nil {
+		return fmt.Errorf("ruleset: %w", err)
+	}
 	// Monsters and drops come with the mods' overlays.
 	tables = loaded.all.Tables
 	spawns, err := gamedata.SpawnsOf(reference.Mode(cfg.Mode), loaded.all.Monsters)

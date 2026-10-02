@@ -42,6 +42,7 @@ import {
   weightPercent,
 } from './inventory';
 import { ItemTexts } from './itemText';
+import { EquipmentWindow, INSERT_CARD_FAILED, equipMessage } from './equipment';
 import { DialogWindow } from './dialog';
 import { ShopWindow, shopMessage } from './shop';
 import { groundItemLabel } from './groundItems';
@@ -127,6 +128,7 @@ const audio = new AudioSystem(store);
 let soundscape: Soundscape | undefined;
 let statusWindow: StatusWindow | undefined;
 let inventoryWindow: InventoryWindow | undefined;
+let equipmentWindow: EquipmentWindow | undefined;
 let dialogWindow: DialogWindow | undefined;
 let shopWindow: ShopWindow | undefined;
 /** A progress bar over the player: when it started and how long it lasts. */
@@ -484,9 +486,25 @@ if (serverURL === null) {
       })
       .catch(reportError);
   };
-  view.onInventoryAdd = (slot, id, amount) => {
-    inventory.add(slot, id, amount);
+  view.onInventoryAdd = (slot, id, amount, details) => {
+    inventory.add(slot, id, amount, details);
     logItem(() => gotItemMessage(itemTexts.label(id), amount));
+  };
+  view.onItemEquipped = (slot, position) => {
+    inventory.equipped(slot, position);
+  };
+  view.onItemUnequipped = (slot) => {
+    inventory.unequipped(slot);
+  };
+  view.onCardInserted = (_cardSlot, equipSlot, cardId) => {
+    inventory.cardInserted(equipSlot, cardId);
+  };
+  // Equipment and card failures go to the chat log as notices.
+  view.onEquipFailed = (_slot, reason) => {
+    logNotice(equipMessage(reason));
+  };
+  view.onInsertCardFailed = () => {
+    logNotice(INSERT_CARD_FAILED);
   };
   view.onInventoryRemove = (slot, amount, reason) => {
     const id = inventory.get(slot)?.itemId;
@@ -508,6 +526,15 @@ if (serverURL === null) {
         },
         drop: (slot, amount) => {
           connection.dropItem(slot, amount);
+        },
+        equip: (slot) => {
+          connection.equipItem(slot);
+        },
+        insertCard: (cardSlot, equipSlot) => {
+          connection.insertCard(cardSlot, equipSlot);
+        },
+        message: (text) => {
+          showMessage(text);
         },
       },
       itemTexts,
@@ -541,6 +568,39 @@ if (serverURL === null) {
       if (e.dataTransfer?.types.includes(SLOT_DRAG_TYPE) === true && Number.isInteger(slot)) {
         e.preventDefault();
         inventoryWindow?.requestDrop(slot);
+      }
+    });
+  }
+  // The equipment window opens with its button or Alt+Q, as in RO.
+  // Clicking a worn item takes it off.
+  const equipmentRoot = document.querySelector<HTMLElement>('#equipment-window');
+  const equipmentToggle = document.querySelector<HTMLButtonElement>('#equipment-toggle');
+  if (equipmentRoot !== null) {
+    equipmentWindow = new EquipmentWindow(
+      equipmentRoot,
+      inventory,
+      {
+        unequip: (slot) => {
+          connection.unequipItem(slot);
+        },
+      },
+      itemTexts,
+    );
+    const toggle = (): void => {
+      equipmentWindow?.toggle();
+      equipmentWindow?.update();
+    };
+    if (equipmentToggle !== null) {
+      equipmentToggle.hidden = false;
+      equipmentToggle.addEventListener('click', toggle);
+    }
+    addEventListener('keydown', (e) => {
+      if (isTyping(e.target)) {
+        return;
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyQ') {
+        e.preventDefault();
+        toggle();
       }
     });
   }
@@ -969,6 +1029,9 @@ renderer.setAnimationLoop((time) => {
     }
     if (inventoryWindow?.open === true) {
       inventoryWindow.update(stats);
+    }
+    if (equipmentWindow?.open === true) {
+      equipmentWindow.update();
     }
     if (shopWindow !== undefined) {
       shopWindow.stats = stats;

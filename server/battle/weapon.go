@@ -25,6 +25,9 @@ const (
 	atkDef
 )
 
+// FlagLong is BF_LONG in Result.Flag: the attack was ranged.
+const FlagLong = bfLong
+
 // Attack flags, as rAthena's e_battle_flag.
 const (
 	bfWeapon = 0x0001
@@ -99,11 +102,17 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 		if sd != nil {
 			// Renewal applies the attacker's cards to weapon and
 			// equipment ATK only.
-			wd.weaponAtk += cardfixAttacker(src, target, wd.weaponAtk)
-			wd.equipAtk += cardfixAttacker(src, target, wd.equipAtk)
-			// The left hand gets no change: left_cardfix_to_right moves
-			// its bonuses to the right hand.
+			wd.weaponAtk += cardfixAttacker(src, target, wd.weaponAtk, 2, wd.flag)
+			wd.equipAtk += cardfixAttacker(src, target, wd.equipAtk, 2, wd.flag)
+			// left_cardfix_to_right moves the left hand's bonuses to the
+			// right hand, so the left hand only gets bAddDamageClass.
+			if isAttackLeftHanded(src) {
+				wd.weaponAtk2 += cardfixAttacker(src, target, wd.weaponAtk2, 3, wd.flag)
+				wd.equipAtk2 += cardfixAttacker(src, target, wd.equipAtk2, 3, wd.flag)
+			}
 		}
+		// A player target's cards apply to the ATK parts when a player
+		// attacks a player. Players attacking players is not ported.
 
 		// battle_attack_sc_bonus only changes damage through status
 		// changes, spirit charms, Star Gladiator's anger against a marked
@@ -138,20 +147,19 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 		}
 
 		if wd.damage+wd.damage2 != 0 {
-			// attack_ignores_def is false for a normal attack without
-			// bIgnoreDefEle and similar bonuses.
-			calcDefenseReduction(&wd, src, target)
+			if !attackIgnoresDef(src, target, handLeft) || !attackIgnoresDef(src, target, handRight) {
+				calcDefenseReduction(&wd, src, target)
+			}
 			calcAttackPostDefense(&wd, src)
 		}
 	}
 
 	calcElementDamage(&wd, src, target, rightElement, leftElement)
 
-	// Renewal critical damage.
+	// Renewal critical damage, with the attacker's C.Rate.
 	if critical {
 		if sd != nil {
-			// bCritAtkRate (crate) is not ported, so the rate is 1.4.
-			rate := float32(1.4)
+			rate := float32(1.4) + float32(0.01)*float32(src.CRate)
 			wd.damage = int64(math.Floor(float64(float32(wd.damage) * rate)))
 			if isAttackLeftHanded(src) {
 				wd.damage2 = int64(math.Floor(float64(float32(wd.damage2) * rate)))
@@ -159,11 +167,19 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 		} else {
 			wd.damage = int64(math.Floor(float64(float32(wd.damage) * 1.4)))
 		}
-		// A player target's bCritDefRate is not ported.
+		if tsd := target.Player; tsd != nil && tsd.CritDefRate != 0 {
+			atkAddRate(src, &wd.damage, &wd.damage2, int64(-tsd.CritDefRate))
+		}
 	}
 
-	// Renewal applies the target's cards only when a monster attacks a
-	// player. Player targets are not ported.
+	// Renewal applies the target's cards here only when a monster
+	// attacks a player.
+	if target.Player != nil && sd == nil {
+		wd.damage += cardfixTarget(src, target, wd.damage, rightElement, wd.flag)
+		if isAttackLeftHanded(src) {
+			wd.damage2 += cardfixTarget(src, target, wd.damage2, rightElement, wd.flag)
+		}
+	}
 
 	// A target that takes 1 damage from every hit.
 	if infdef {
@@ -177,9 +193,33 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 
 	// battle_calc_weapon_final_atk_modifiers only changes damage through
 	// status changes and skill damage adjustments, which do not apply.
-	// battle_absorb_damage only applies to players, and battle_do_reflect
-	// does not change the attacker's damage.
+	// battle_do_reflect does not change the attacker's damage.
+	absorbDamage(&wd, target)
 	return wd
+}
+
+// absorbDamage is battle_absorb_damage: a player target's
+// bAbsorbDmgMaxHP2 caps a hit at a percent of its max HP.
+func absorbDamage(wd *damage, target *Status) {
+	tsd := target.Player
+	if tsd == nil || tsd.DamageTakenCap == 0 || wd.damage+wd.damage2 == 0 {
+		return
+	}
+	orig := wd.damage + wd.damage2
+	hp := int64(int32(int64(tsd.DamageTakenCap) * int64(target.MaxHP) / 100)) // #nosec G115 -- rAthena keeps the cap in an int32.
+	if orig <= hp {
+		return
+	}
+	switch {
+	case wd.damage2 == 0:
+		wd.damage = hp
+	case wd.damage == 0:
+		wd.damage2 = hp
+	default:
+		wd.damage = hp
+		wd.damage2 = max(hp*wd.damage2/orig/100, 1)
+		wd.damage -= wd.damage2
+	}
 }
 
 // initializeWeaponData is initialize_weapon_data for a normal attack.
@@ -244,8 +284,12 @@ func isAttackCritical(wd *damage, src, target *Status, r Rand) bool {
 		}
 	}
 	cri := src.Cri
-	// Players add bCriticalAddRace, and bows add bCriticalLong and the
-	// arrow's critical bonus. These bonuses are not ported.
+	if sd := src.Player; sd != nil {
+		cri += sd.CritAddRace[target.Race] + sd.CritAddRace[RaceAll]
+		if isSkillUsingArrow(src) {
+			cri += sd.Arrow.Cri + sd.CriticalRangeAtk
+		}
+	}
 
 	// The official factor is 2. rAthena uses 3 when a unit that is not a
 	// player attacks a player.
@@ -254,8 +298,10 @@ func isAttackCritical(wd *damage, src, target *Status, r Rand) bool {
 		factor = 3
 	}
 	cri -= target.Luk * factor
-	// Status changes (Sleep, Auto Counter, Camouflage) and a player
-	// target's bCriticalDef are not ported.
+	// Status changes (Sleep, Auto Counter, Camouflage) are not ported.
+	if tsd := target.Player; tsd != nil && tsd.CriticalDef != 0 {
+		cri = cri * (100 - tsd.CriticalDef) / 100
+	}
 	return r.IntN(1000) < cri
 }
 
@@ -265,7 +311,9 @@ func isAttackHitting(wd *damage, src, target *Status, critical bool, r Rand) boo
 	if critical {
 		return true
 	}
-	// bPerfectHitRate is not ported.
+	if sd := src.Player; sd != nil && sd.PerfectHit > 0 && r.IntN(100) < sd.PerfectHit {
+		return true
+	}
 
 	flee := target.Flee
 	// The flee penalty for many attackers (agi_penalty_target) only
@@ -275,7 +323,9 @@ func isAttackHitting(wd *damage, src, target *Status, critical bool, r Rand) boo
 	hitrate := src.Hit - flee
 
 	if src.Player != nil {
-		// The arrow's bHit bonus (bonus.arrow_hit) is not ported.
+		if isSkillUsingArrow(src) {
+			hitrate += src.Player.Arrow.Hit
+		}
 
 		// Renewal: Vulture's Eye adds hit that the status does not show.
 		hitrate += src.skill(skillVultureEye)
@@ -376,9 +426,9 @@ func calcBaseDamage(st *Status, wa *Weapon, _ int, flag int, r Rand) int64 {
 	return dmg
 }
 
-// calcDefenseReduction is battle_calc_defense_reduction in renewal, for
-// a target that is not a player: damage * (4000 + DEF) / (4000 + DEF * 10)
-// minus soft DEF.
+// calcDefenseReduction is battle_calc_defense_reduction in renewal:
+// damage * (4000 + DEF) / (4000 + DEF * 10) minus soft DEF. A hand that
+// ignores DEF keeps its damage, and a hand that pierces DEF gains DEF / 2.
 func calcDefenseReduction(wd *damage, src, target *Status) {
 	// status_get_def lowers DEF while the target casts. Sample monsters
 	// do not cast.
@@ -386,20 +436,36 @@ func calcDefenseReduction(wd *damage, src, target *Status) {
 	def2 := int64(target.Def2)
 
 	if sd := src.Player; sd != nil {
-		// bIgnoreDefRaceRate ignores a percent of both DEF values. The
-		// class version is not ported.
-		if i := int64(sd.IgnoreDefRace[target.Race] + sd.IgnoreDefRace[RaceAll]); i != 0 {
+		// bIgnoreDefRaceRate and bIgnoreDefClassRate ignore a percent of
+		// both DEF values.
+		i := int64(sd.IgnoreDefRace[target.Race] + sd.IgnoreDefRace[RaceAll])
+		i += int64(sd.IgnoreDefClass[target.Class] + sd.IgnoreDefClass[ClassAll])
+		if i != 0 {
 			i = min(i, 100)
 			def1 -= def1 * i / 100
 			def2 -= def2 * i / 100
 		}
 	}
 
-	// The defense penalty for many attackers (vit_penalty_target) only
-	// applies to players.
+	// The defense penalty for many attackers (vit_penalty_target) counts
+	// the units that target the player, which the recorder's direct
+	// attacks do not.
 
-	// A monster's soft DEF is its def2.
+	// Soft DEF is def2 for players and monsters in renewal.
 	vitDef := def2
+	if tsd := target.Player; tsd != nil && src.Player == nil {
+		// Divine Protection, Ranger Main and Research Fire/Earth add soft
+		// DEF against monsters.
+		if lv := target.skill(skillDivineProtection); lv > 0 && (isUndead(src.DefEle) || src.Race == RaceDemon) {
+			vitDef += int64((float32(target.Level)/25.0+3.0)*float32(lv) + 0.5)
+		}
+		if lv := target.skill(skillRangerMain); lv > 0 && (src.Race == RaceBrute || src.Race == RacePlayerDoram || src.Race == RaceFish || src.Race == RacePlant) {
+			vitDef += int64(lv) * 5
+		}
+		if lv := target.skill(skillResearchFE); lv > 0 && (src.DefEle == Fire || src.DefEle == Earth) {
+			vitDef += int64(lv) * 10
+		}
+	}
 
 	if weaponDefenseType != 0 {
 		vitDef += def1 * weaponDefenseType
@@ -410,12 +476,67 @@ func calcDefenseReduction(wd *damage, src, target *Status) {
 	if def1 == -400 {
 		def1 = -399
 	}
-	// Normal attacks only pierce defense with bDefRatioAtkRace and
-	// similar bonuses (is_attack_piercing), which are not ported.
-	wd.damage = wd.damage*(4000+def1)/(4000+10*def1) - vitDef
-	if isAttackLeftHanded(src) {
+	// A piercing hand gains DEF * skill ratio / 200, with a ratio of 100.
+	if isAttackPiercing(src, target, handRight) {
+		wd.damage += def1 * 100 / 200
+	}
+	if isAttackLeftHanded(src) && isAttackPiercing(src, target, handLeft) {
+		wd.damage2 += def1 * 100 / 200
+	}
+	if !attackIgnoresDef(src, target, handRight) && !isAttackPiercing(src, target, handRight) {
+		wd.damage = wd.damage*(4000+def1)/(4000+10*def1) - vitDef
+	}
+	if isAttackLeftHanded(src) && !attackIgnoresDef(src, target, handLeft) && !isAttackPiercing(src, target, handLeft) {
 		wd.damage2 = wd.damage2*(4000+def1)/(4000+10*def1) - vitDef
 	}
+}
+
+// handBits is a hand's flag test for attackIgnoresDef and
+// isAttackPiercing: whether its bits name the target's element, race or
+// class, or every one.
+func handBits(ele, race, class uint32, target *Status) bool {
+	return ele&(1<<target.DefEle) != 0 || ele&(1<<AllElements) != 0 ||
+		race&(1<<target.Race) != 0 || race&(1<<RaceAll) != 0 ||
+		class&(1<<target.Class) != 0 || class&(1<<ClassAll) != 0
+}
+
+// attackIgnoresDef is attack_ignores_def for a normal attack in renewal:
+// bIgnoreDefEle, bIgnoreDefRace and bIgnoreDefClass. With
+// left_cardfix_to_right, the left hand's flags count for the right hand.
+func attackIgnoresDef(src, target *Status, h hand) bool {
+	sd := src.Player
+	if sd == nil {
+		return false
+	}
+	if h == handRight && handBits(sd.Right.IgnoreDefEle, sd.Right.IgnoreDefRace, sd.Right.IgnoreDefClass, target) {
+		return true
+	}
+	if handBits(sd.Left.IgnoreDefEle, sd.Left.IgnoreDefRace, sd.Left.IgnoreDefClass, target) {
+		if isAttackRightHanded(src) {
+			return h == handRight
+		}
+		return h == handLeft
+	}
+	return false
+}
+
+// isAttackPiercing is is_attack_piercing for a normal attack in renewal:
+// bDefRatioAtkEle, bDefRatioAtkRace and bDefRatioAtkClass.
+func isAttackPiercing(src, target *Status, h hand) bool {
+	sd := src.Player
+	if sd == nil {
+		return false
+	}
+	if h == handRight && handBits(sd.Right.DefRatioEle, sd.Right.DefRatioRace, sd.Right.DefRatioClass, target) {
+		return true
+	}
+	if handBits(sd.Left.DefRatioEle, sd.Left.DefRatioRace, sd.Left.DefRatioClass, target) {
+		if isAttackRightHanded(src) {
+			return h == handRight
+		}
+		return h == handLeft
+	}
+	return false
 }
 
 // calcAttackPostDefense is battle_calc_attack_post_defense in renewal.

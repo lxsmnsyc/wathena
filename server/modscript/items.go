@@ -15,8 +15,8 @@ import (
 //     its "use" handlers with the player, then the context ends.
 //   - An equipped copy runs the setup function when it is equipped. The
 //     context lives until the copy is unequipped. Its bonuses go to a
-//     BonusSink. Equipment does not exist yet (phase 4), so only tests
-//     equip items.
+//     BonusSink, which the zone reads when it computes the wearer's
+//     stats.
 
 // Bonus is one bonus that an item context added.
 type Bonus struct {
@@ -92,6 +92,29 @@ func (r *Runtime) Unequip(c *Context) error {
 	err := r.fireContext(c, "unequip", Player(c.player))
 	r.end(c)
 	return err
+}
+
+// EndEquip ends an equip context without its unequip handlers, as when
+// the wearer leaves the map: the copy is not unequipped, so a new context
+// starts where the wearer arrives.
+func (r *Runtime) EndEquip(c *Context) {
+	if !c.ended {
+		r.end(c)
+	}
+}
+
+// Listens reports whether a context has handlers for an event, so the
+// zone builds an event's object only when a handler will read it.
+func (r *Runtime) Listens(c *Context, event string) bool {
+	if c.ended {
+		return false
+	}
+	for _, h := range c.handlers {
+		if !h.removed && h.event == event {
+			return true
+		}
+	}
+	return false
 }
 
 // Hit is the damage object of the "damage" item event (0002a, "Item

@@ -10,6 +10,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
@@ -39,9 +40,9 @@ func LoadProgression(mode reference.Mode) (*progression.Tables, *progression.Dat
 }
 
 // LoadItemData reads the item database that reference/rathena
-// extracted from rAthena's item_db: items.json, with the names of
-// client_tables.json and the prices of item_prices.json. Mods' item
-// overlays apply over it.
+// extracted from rAthena's item_db: items.json, with the equipment data
+// of equipment.json, the names of client_tables.json and the prices of
+// item_prices.json. Mods' item overlays apply over it.
 func LoadItemData(mode reference.Mode) (*item.Data, error) {
 	var d item.Data
 	if err := reference.LoadFile("extracts/"+string(mode)+"/items.json", &d); err != nil {
@@ -67,6 +68,11 @@ func LoadItemData(mode reference.Mode) (*item.Data, error) {
 	if err := reference.LoadFile("extracts/"+string(mode)+"/item_prices.json", &prices); err != nil {
 		return nil, err
 	}
+	var equip item.EquipData
+	if err := reference.LoadFile("extracts/"+string(mode)+"/equipment.json", &equip); err != nil {
+		return nil, err
+	}
+	d.MergeEquipment(&equip)
 	byID := make(map[uint32]*item.Def, len(d.Items))
 	for i := range d.Items {
 		byID[d.Items[i].ID] = &d.Items[i]
@@ -124,6 +130,19 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 	if err := reference.LoadFile("extracts/"+string(mode)+"/client_tables.json", &client); err != nil {
 		return nil, err
 	}
+	var groups struct {
+		Monsters []struct {
+			ID     uint32 `json:"id"`
+			Groups []int  `json:"groups"`
+		} `json:"monsters"`
+	}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/monster_groups.json", &groups); err != nil {
+		return nil, err
+	}
+	race2 := make(map[uint32][]int, len(groups.Monsters))
+	for _, m := range groups.Monsters {
+		race2[m.ID] = m.Groups
+	}
 	type naming struct{ aegis, name string }
 	names := make(map[uint32]naming, len(client.Monsters))
 	for _, m := range client.Monsters {
@@ -138,7 +157,7 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 	out := make(map[uint32]Monster, len(mobs.Mobs))
 	for _, m := range mobs.Mobs {
 		st := m.Status
-		st.Level = m.Level
+		st.Level, st.ID, st.Race2 = m.Level, int(m.ID), race2[m.ID]
 		x := extra[m.ID]
 		n := names[m.ID]
 		if tables == nil || x == nil {
@@ -235,13 +254,13 @@ var Builds = map[string]status.Stats{
 	"tank":     {Str: 60, Agi: 1, Vit: 99, Int: 1, Dex: 30, Luk: 1},
 }
 
-// StartCharacter loads the mode's job tables and makes the character
-// every new character starts as: a novice with no equipment and no
-// skills, and the raised stats of a build. The sex comes from the
-// session's look. The
-// default, all_1, is a new character as rAthena makes one for recent
-// clients: every stat at 1 and the level 1 status points to spend. The
-// other builds keep the same status points, for testing.
+// StartCharacter loads the mode's job and refine tables and makes the
+// character every new character starts as: a novice with no equipment
+// and no skills, and the raised stats of a build. The sex comes from the
+// session's look. The default, all_1, is a new character as rAthena
+// makes one for recent clients: every stat at 1 and the level 1 status
+// points to spend. The other builds keep the same status points, for
+// testing.
 func StartCharacter(mode reference.Mode, build string) (*status.Tables, status.Character, error) {
 	stats, ok := Builds[build]
 	if !ok {
@@ -255,10 +274,41 @@ func StartCharacter(mode reference.Mode, build string) (*status.Tables, status.C
 	if err != nil {
 		return nil, status.Character{}, err
 	}
+	var refine status.RefineData
+	if err := reference.LoadFile("extracts/"+string(mode)+"/refine_db.json", &refine); err != nil {
+		return nil, status.Character{}, err
+	}
+	if err := tables.SetRefine(&refine); err != nil {
+		return nil, status.Character{}, err
+	}
 	c := status.Character{Job: 0, Male: true, BaseLevel: 1, JobLevel: 1, Stats: stats}
 	// Check that the tables have the job.
 	if _, err := tables.Calc(c); err != nil {
 		return nil, status.Character{}, err
 	}
 	return tables, c, nil
+}
+
+// ApplyRuleset sets the ruleset flags that equipment and player stats
+// read (strategy section 3.6): aspd, the ASPD formula, shield penalty
+// and bonus stacking; and size_table, the size table of knuckles and
+// whips. The aspd flag of the other mode needs that mode's job table.
+func ApplyRuleset(jobs *status.Tables, r *mod.Ruleset) error {
+	aspd := r.Flag("aspd") == mod.Renewal
+	var other *status.Data
+	if aspd != jobs.Renewal() {
+		mode := reference.PreRenewal
+		if aspd {
+			mode = reference.Renewal
+		}
+		other = &status.Data{}
+		if err := reference.LoadFile("extracts/"+string(mode)+"/job_stats.json", other); err != nil {
+			return err
+		}
+	}
+	if err := jobs.SetASPD(aspd, other); err != nil {
+		return err
+	}
+	jobs.SetSizeTable(r.Flag("size_table") == mod.PreRenewal)
+	return nil
 }

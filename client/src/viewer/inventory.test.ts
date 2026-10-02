@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { DropItemFailure, StatId, UseItemFailure } from '../gen/wathena/v1/event_pb';
 import {
   InventoryModel,
+  type Stack,
   USE_EFFECTS,
+  actionWord,
   dropItemMessage,
   gotItemMessage,
   parseDropAmount,
@@ -11,6 +13,11 @@ import {
   weightPercent,
   weightText,
 } from './inventory';
+
+/** A slot with no equipment details. */
+function plain(slot: number, itemId: number, amount: number): Stack {
+  return { slot, itemId, amount, equip: 0, refine: 0, cards: [], location: 0, card: false };
+}
 
 describe('InventoryModel', () => {
   it('follows the server', () => {
@@ -30,10 +37,7 @@ describe('InventoryModel', () => {
     m.remove(0, 7);
     m.remove(3, 1);
     m.remove(9, 1);
-    expect(m.list()).toEqual([
-      { slot: 1, itemId: 1201, amount: 1 },
-      { slot: 3, itemId: 909, amount: 1 },
-    ]);
+    expect(m.list()).toEqual([plain(1, 1201, 1), plain(3, 909, 1)]);
     // A list replaces everything.
     m.reset([], 100);
     expect(m.list()).toEqual([]);
@@ -44,7 +48,71 @@ describe('InventoryModel', () => {
     m.add(0, 501, 1);
     m.remove(0, 1);
     m.add(0, 909, 3);
-    expect(m.get(0)).toEqual({ slot: 0, itemId: 909, amount: 3 });
+    expect(m.get(0)).toEqual(plain(0, 909, 3));
+  });
+
+  it('keeps equipment details', () => {
+    const m = new InventoryModel();
+    const cards = [4001];
+    m.reset(
+      [{ slot: 2, itemId: 1201, amount: 1, equip: 0x2, refine: 7, cards, location: 0x2 }],
+      100,
+    );
+    // The model keeps its own copy of the cards.
+    cards.push(4002);
+    expect(m.get(2)).toEqual({
+      slot: 2,
+      itemId: 1201,
+      amount: 1,
+      equip: 0x2,
+      refine: 7,
+      cards: [4001],
+      location: 0x2,
+      card: false,
+    });
+    m.add(3, 4001, 1, { location: 0x2, card: true });
+    expect(m.get(3)?.card).toBe(true);
+    expect(m.get(3)?.location).toBe(0x2);
+    m.add(4, 2301, 1, { refine: 4, cards: [4003] });
+    expect(m.get(4)).toMatchObject({ equip: 0, refine: 4, cards: [4003] });
+  });
+
+  it('follows equips, unequips and inserted cards', () => {
+    const m = new InventoryModel();
+    m.reset(
+      [
+        { slot: 0, itemId: 1201, amount: 1, location: 0x2 },
+        { slot: 1, itemId: 1116, amount: 1, location: 0x22 },
+        { slot: 2, itemId: 4001, amount: 2, location: 0x2, card: true },
+      ],
+      100,
+    );
+    m.equipped(0, 0x2);
+    expect(m.get(0)?.equip).toBe(0x2);
+    // A two-handed weapon takes both hands. The knife comes off even if
+    // its ItemUnequipped was missed.
+    m.equipped(1, 0x22);
+    expect(m.get(1)?.equip).toBe(0x22);
+    expect(m.get(0)?.equip).toBe(0);
+    m.unequipped(1);
+    expect(m.get(1)?.equip).toBe(0);
+    m.cardInserted(0, 4001);
+    m.remove(2, 1);
+    expect(m.get(0)?.cards).toEqual([4001]);
+    expect(m.get(2)?.amount).toBe(1);
+    // Slots that are empty change nothing.
+    m.equipped(9, 0x2);
+    m.unequipped(9);
+    m.cardInserted(9, 4001);
+    expect(m.list()).toHaveLength(3);
+  });
+});
+
+describe('actionWord', () => {
+  it('names what a double click does', () => {
+    expect(actionWord(plain(0, 501, 1))).toBe('use');
+    expect(actionWord({ ...plain(0, 1201, 1), location: 0x2 })).toBe('equip');
+    expect(actionWord({ ...plain(0, 4001, 1), location: 0x2, card: true })).toBe('insert');
   });
 });
 

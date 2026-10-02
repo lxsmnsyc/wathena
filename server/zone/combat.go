@@ -3,6 +3,7 @@ package zone
 import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/modscript"
 )
 
 // Combat: units attack a target in range at their attack delay, and walk
@@ -135,6 +136,7 @@ func (z *Zone) strike(e, t *entity) {
 		t.hpChanged = true
 	}
 	z.hits = append(z.hits, hit{source: e, target: t, result: r, delay: e.status.AMotion, hpPermille: t.hpPermille()})
+	z.itemHitEvents(e, t, r)
 	if t.hp <= 0 {
 		z.die(t, e)
 		return
@@ -144,6 +146,38 @@ func (z *Zone) strike(e, t *entity) {
 		t.target, t.repeat = e, true
 		t.path = t.path[:0]
 		t.nextAttack = z.now + int64(t.status.DMotion)
+	}
+}
+
+// itemHitEvents runs the "damage" handlers of the equipped items of the
+// players on both sides of a hit that landed (0002a, "Item events").
+func (z *Zone) itemHitEvents(e, t *entity, r battle.Result) {
+	if z.scripts == nil || r.Kind == battle.Miss || r.Kind == battle.LuckyDodge {
+		return
+	}
+	if e.player == nil && t.player == nil {
+		return
+	}
+	h := modscript.Hit{Kind: "physical", Range: "melee", Element: int64(e.status.RHW.Ele),
+		Critical: r.Kind == battle.Critical, Amount: r.Damage}
+	if r.Flag&battle.FlagLong != 0 {
+		h.Range = "ranged"
+	}
+	handle := func(x *entity) (int64, string) {
+		if x.player != nil {
+			return int64(x.player.charID), "player"
+		}
+		return z.monsterHandle(x), "monster"
+	}
+	h.Source, h.SourceKind = handle(e)
+	h.Target, h.TargetKind = handle(t)
+	if p := e.player; p != nil {
+		h.WearerIsSource = true
+		z.fireHit(p, h)
+	}
+	if p := t.player; p != nil {
+		h.WearerIsSource = false
+		z.fireHit(p, h)
 	}
 }
 

@@ -368,6 +368,102 @@ body {
   font-weight: 600;
 }
 
+/* The list of items a card can go into, in place of the drop form. */
+#inventory-window .card-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#inventory-window .card-picker[hidden] {
+  display: none;
+}
+
+#inventory-window .card-picker ul {
+  max-height: 10em;
+}
+
+#inventory-window .card-picker li {
+  cursor: default;
+}
+
+#inventory-window .card-picker li button {
+  flex: 1;
+  padding: 1px 6px;
+  font-size: 13px;
+  text-align: left;
+}
+
+#inventory-window .card-picker > button {
+  align-self: flex-end;
+}
+
+#inventory-window .item-detail-cards {
+  margin-bottom: 4px;
+  color: #3050a0;
+}
+
+#inventory-window .item-detail-cards[hidden] {
+  display: none;
+}
+
+#equipment-window {
+  position: fixed;
+  top: 64px;
+  left: 12px;
+  width: min(320px, calc(100% - 24px));
+  max-height: calc(100% - 300px);
+  padding: 8px 10px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+}
+
+#equipment-window[hidden] {
+  display: none;
+}
+
+#equipment-window table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#equipment-window td {
+  padding: 1px 4px;
+  vertical-align: top;
+}
+
+#equipment-window .position {
+  width: 9em;
+  color: #b8c8ff;
+  white-space: nowrap;
+}
+
+#equipment-window .worn {
+  display: block;
+  width: 100%;
+  padding: 0 4px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+#equipment-window .worn:hover,
+#equipment-window .worn:focus-visible {
+  background: rgb(255 255 255 / 12%);
+  outline: none;
+}
+
+#equipment-window .cards {
+  padding: 0 4px;
+  color: #b8c8ff;
+  font-size: 12px;
+}
+
 #chat-log .announcement {
   color: #ffff63;
 }

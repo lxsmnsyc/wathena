@@ -751,9 +751,9 @@ const (
 )
 
 // Events lists every event name and the context kinds that can listen
-// to it. Mod events and use fire in zones today; damage, skill_used and
-// unequip fire in tests until equipment exists (phase 4). touch is a
-// name the next steps fire, listed so a typo is told apart from an
+// to it. Mod events, use, damage and unequip fire in zones today;
+// skill_used fires in tests until skills exist (phase 4 step 3). touch
+// is a name the next steps fire, listed so a typo is told apart from an
 // event of another kind.
 var Events = map[string][]string{
 	"login":         {KindMod, KindEvent},

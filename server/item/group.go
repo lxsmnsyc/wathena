@@ -237,3 +237,20 @@ func pickShared(group int64, s int, sub *Subgroup, r Rand, pool *Pool) int {
 	}
 	return -1
 }
+
+// Contains is itemdb_group.item_exists: whether a group of a name lists
+// an item in any subgroup.
+func (g *Groups) Contains(name string, id uint32) bool {
+	gr, ok := g.ByName(name)
+	if !ok {
+		return false
+	}
+	for _, sub := range g.items[gr.ID] {
+		for _, it := range sub {
+			if it == id {
+				return true
+			}
+		}
+	}
+	return false
+}

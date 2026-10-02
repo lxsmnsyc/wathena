@@ -21,6 +21,9 @@ message Command {
     ShopBuy shop_buy = 11;
     ShopSell shop_sell = 12;
     ShopClose shop_close = 13;
+    EquipItem equip_item = 14;
+    UnequipItem unequip_item = 15;
+    InsertCard insert_card = 16;
   }
 }
 
@@ -178,4 +181,28 @@ enum BaseStat {
   BASE_STAT_INT = 4;
   BASE_STAT_DEX = 5;
   BASE_STAT_LUK = 6;
+}
+
+// EquipItem puts on the item in an inventory slot, as rAthena's
+// pc_equipitem. The server answers with ItemEquipped, or EquipFailed.
+message EquipItem {
+  uint32 slot = 1;
+  // position holds the equipment positions the player asks for, as
+  // rAthena's EQP_ bits, such as 0x80 for the left accessory. 0 asks for
+  // every position the item can take.
+  uint32 position = 2;
+}
+
+// UnequipItem takes off the item in an inventory slot, as rAthena's
+// pc_unequipitem. The server answers with ItemUnequipped.
+message UnequipItem {
+  uint32 slot = 1;
+}
+
+// InsertCard puts one card from a slot into the first free card slot of
+// the item in another slot, as rAthena's pc_insert_card. The server
+// answers with CardInserted, or InsertCardFailed.
+message InsertCard {
+  uint32 card_slot = 1;
+  uint32 equip_slot = 2;
 }

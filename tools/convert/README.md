@@ -19,7 +19,7 @@ go run ./tools/wactl convert items --mode renewal --report docs/generated/item-s
 Tests:
 
 - `TestRunConvertedScripts` loads and runs every converted script of both modes, with equipment against a recording bonus sink.
-- `TestItemBonusesParity` compares the base stats of converted equipment with rAthena's `item_bonuses.json`. The result is `testdata/item_bonuses_parity.md`.
+- `TestEquipmentParity` equips every fully converted equipment item and card, with its static bonuses and its Lua script, on the recorder's sample player, and compares the stats and the damage with rAthena's `item_bonuses.json`, and every refine level with `refine.json`, in both modes. The results are `testdata/equipment_parity_<mode>.md` (server/README.md, "Equipment").
 - `TestHealParity` checks that every plain heal converts to the amounts the items extract read.
 - `TestGolden` keeps the output of sample items in `testdata/golden`.
 - `TestReportsCurrent` checks the reports in `docs/generated`.

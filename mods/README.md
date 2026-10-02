@@ -145,6 +145,13 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 - Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`, and `display_name`, `buy`, `sell` and `no_sell`: the name `items.name` gives, the prices of NPC shops in zeny, and whether shops buy the item. `name` is the record's key, so the name players see is `display_name`, as for NPCs.
 - `script` is the item's entry script, a path under the mod's `scripts/`. It belongs to the mod that sets it.
 - `bonuses` are static bonuses of an equipment item ("Static bonuses" below).
+- Equipment has the fields of the equipment extract, as rAthena's item_db names them:
+  - `location`: the positions the item is worn in, as a list such as `[head_top, head_middle]`. The names are the slot names of `player:get_equipped`, and `both_hand` and `both_accessory`. A card's location is where it can be put.
+  - `subtype`: the weapon type of a weapon, or the ammunition type of ammunition, as rAthena's `W_` and `AMMO_` numbers.
+  - `atk`, `matk` (renewal only), `def`, `range`, `slots` (up to 16; the world uses at most 4, rAthena's `MAX_SLOTS`), `weapon_level`, `armor_level` and `refineable`.
+  - `view`: the sprite the item shows on a character, as item_db's `View`.
+  - `jobs` and `classes`: who may wear it, as three decimal strings of rAthena's job bit masks and the `ITEMJ_` bits. Leave them out for everyone.
+  - `no_equip`: the map types where its script does not run, as `item_noequip.txt`: 1 normal maps, 2 PvP, 4 GvG, 8 battlegrounds.
 - `unsupported` says what the item's script needs that the server does not have yet. A usable item with it is refused, and the player sees the text. Core sets it on converted items.
 - `id` and `aegis_name` cannot be set.
 - A new item is an `Etc` item until `type` says otherwise.
@@ -618,7 +625,8 @@ end
 An item's `script` field names its entry script. The setup function runs in an item context (proposal 0002, "Item scripts"):
 
 - A usable item runs its setup on each use, then its `use` handlers with the player. The context ends after the use.
-- An equipment item or card runs its setup when a copy is equipped. Its bonuses, handlers and timers last until the copy is unequipped. Equipment comes with phase 4, so today only tests equip items.
+- An equipment item or card runs its setup when a copy is equipped. Its bonuses, handlers and timers last until the copy is unequipped. A copy that is still worn when its player leaves the map ends without `unequip`, and starts again where the player arrives.
+- The wearer's stats are computed again from every worn item when equipment, levels or raised stats change, and when a timed bonus starts or ends. Computed bonuses and `when` conditions run at each calculation (server/README.md, "Equipment").
 
 ```lua
 -- A usable item.
@@ -665,7 +673,7 @@ end
 | `skill_used` | `use` | The wearer uses a skill. `use` has `skill`, `level`, `target`, `x` and `y`. |
 | `unequip` | `player` | The copy is unequipped, before its context ends. Converted `UnEquipScript`s run on it. |
 
-`damage`, `skill_used` and `unequip` fire in tests until phase 4.
+`damage` fires for each normal attack that lands, and `unequip` when a player takes the copy off. `skill_used` fires in tests until skills exist (phase 4 step 3).
 
 ### Bonuses
 

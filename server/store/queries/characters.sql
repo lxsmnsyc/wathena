@@ -49,7 +49,7 @@ UPDATE characters SET
 WHERE id = @id AND save_version = @save_version;
 
 -- name: Inventory :many
-SELECT slot, item_id, amount, serial FROM inventory
+SELECT slot, item_id, amount, serial, equip, refine, cards FROM inventory
 WHERE character_id = @character_id
 ORDER BY slot;
 
@@ -58,6 +58,10 @@ DELETE FROM inventory
 WHERE character_id = @character_id AND slot = ANY(@slots::smallint[]);
 
 -- name: InsertInventory :exec
-INSERT INTO inventory (character_id, slot, item_id, amount, serial)
+-- InsertInventory writes items in one statement. Each item's cards come
+-- as an array literal, such as {4001,4002}, since PostgreSQL arrays of
+-- arrays must all have the same length.
+INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards)
 SELECT @character_id, unnest(@slots::smallint[]), unnest(@item_ids::integer[]),
-    unnest(@amounts::integer[]), unnest(@serials::uuid[]);
+    unnest(@amounts::integer[]), unnest(@serials::uuid[]), unnest(@equips::integer[]),
+    unnest(@refines::smallint[]), unnest(@cards::text[])::integer[];

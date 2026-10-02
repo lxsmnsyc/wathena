@@ -25,8 +25,11 @@ const (
 
 // groundItem is an item lying on a cell, as rAthena's flooritem_data.
 type groundItem struct {
-	id         uint32
-	amount     int
+	id     uint32
+	amount int
+	// refine and cards are a dropped equipment item's.
+	refine     int
+	cards      []uint32
 	subX, subY int
 	rights     progression.Rights
 	// expires is when the item vanishes, in zone milliseconds.
@@ -326,7 +329,7 @@ func (z *Zone) take(p *Player, it *entity, net uint32) {
 	}
 	// party_share_loot gives the item with pc_additem. When it fails,
 	// the item stays and the player learns why.
-	if r := z.addItem(p, g.id, g.amount); r != item.AddSuccess {
+	if r := z.addInstance(p, g.id, g.amount, g.refine, g.cards); r != item.AddSuccess {
 		p.pending = append(p.pending, pickUpFailed(net, pickUpFailure(r)))
 		return
 	}

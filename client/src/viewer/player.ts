@@ -32,18 +32,37 @@ export default class Player {
   /** An action that plays over walking and standing, until a time. */
   private override: { action: number; until: number } | undefined;
   private clock = 0;
+  private body: Body;
 
   constructor(
-    readonly character: Body,
+    character: Body,
     private readonly map: WMap,
     private readonly pathfinder: Pathfinder,
     x: number,
     y: number,
     private readonly speed = DEFAULT_SPEED,
   ) {
+    this.body = character;
     this.x = x;
     this.y = y;
     this.place(x + 0.5, y + 0.5);
+  }
+
+  /** What the player draws. */
+  get character(): Body {
+    return this.body;
+  }
+
+  /**
+   * Draws the player with another body, such as after a change of
+   * equipment. The new body takes the old one's place and direction. The
+   * action carries over, since update sets it on every frame. The caller
+   * moves the body's group in the scene.
+   */
+  replace(body: Body): void {
+    body.direction = this.body.direction;
+    body.group.position.copy(this.body.group.position);
+    this.body = body;
   }
 
   /** The walkable cell nearest the map's center. */

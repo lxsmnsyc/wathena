@@ -1,4 +1,4 @@
-import { Group, type Texture, type Vector3 } from 'three';
+import { Group, type Object3D, type Texture, type Vector3 } from 'three';
 import type { Frame } from '../formats/wspr';
 import { type SpriteAsset, SpriteView } from './sprites';
 
@@ -138,6 +138,16 @@ export class Character {
       ['garment', garment],
     ]);
     return new Character(body, parts);
+  }
+
+  /** Whether an object is one of the character's own sprites, not something added to its group. */
+  isPart(o: Object3D): boolean {
+    for (const views of this.parts.values()) {
+      if (views.some((v) => v.group === o)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Called when the body starts a frame with a sound event. */

@@ -81,10 +81,14 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 			continue
 		}
 		if bonusNames != nil {
+			d.Static = nil
 			for i, entry := range d.Bonuses {
-				if _, err := bonus.FromData(entry, bonusNames); err != nil {
+				b, err := bonus.FromData(entry, bonusNames)
+				if err != nil {
 					errs = append(errs, fmt.Errorf("%s: items %s: bonuses[%d]: %w", r.Where, r.Name, i, err))
+					continue
 				}
+				d.Static = append(d.Static, b)
 			}
 		}
 		if i, ok := byName[r.Name]; ok {
@@ -138,6 +142,11 @@ func applyFields[T any](rec *T, fields map[string]any) error {
 	return nil
 }
 
+// maxItemSlots is the most card slots item data may give: the most the
+// database stores (strategy section 6.8). The world's MAX_SLOTS, 4 by
+// default, limits how many are used.
+const maxItemSlots = 16
+
 // checkItem checks the values of an item.
 func checkItem(d *item.Def) error {
 	var errs []string
@@ -160,6 +169,18 @@ func checkItem(d *item.Def) error {
 	case "", "Male", "Female":
 	default:
 		errs = append(errs, fmt.Sprintf("gender %q is not Male, Female, or empty", d.Gender))
+	}
+	if d.Atk < 0 || d.Matk < 0 || d.Defense < 0 || d.Range < 0 || d.View < 0 || d.Subtype < 0 {
+		errs = append(errs, "atk, matk, def, range, view and subtype cannot be negative")
+	}
+	if d.Slots < 0 || d.Slots > maxItemSlots {
+		errs = append(errs, fmt.Sprintf("slots is 0 to %d", maxItemSlots))
+	}
+	if d.WeaponLevel < 0 || d.WeaponLevel > 5 || d.ArmorLevel < 0 || d.ArmorLevel > 2 {
+		errs = append(errs, "weapon_level is 0 to 5, and armor_level 0 to 2")
+	}
+	if uint32(d.Location) > item.EqpShadowGear|item.EqpAmmo|0x3fff {
+		errs = append(errs, "location has a position that does not exist")
 	}
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, "; "))

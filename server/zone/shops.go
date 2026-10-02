@@ -118,7 +118,8 @@ func (z *Zone) openShop(p *Player, s *Shop, npc *entity) {
 	}
 	var sellable []*wathenav1.ShopSellable
 	for slot, st := range p.inventory.Slots {
-		if st.ID == 0 || st.Amount <= 0 {
+		// pc_can_sell_item: equipped items are not sold.
+		if st.ID == 0 || st.Amount <= 0 || st.Equip != 0 {
 			continue
 		}
 		d := z.Items.Get(st.ID)
@@ -297,7 +298,7 @@ func (z *Zone) sell(p *Player, npc uint32, lines []sellLine) {
 		}
 		seen[l.slot] = true
 		s := p.inventory.Slots[l.slot]
-		if s.ID == 0 || s.Amount < l.amount {
+		if s.ID == 0 || s.Amount < l.amount || s.Equip != 0 {
 			fail()
 			return
 		}

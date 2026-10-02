@@ -6,7 +6,11 @@
 // settings are the defaults from rAthena's conf/battle files.
 package item
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/lxsmnsyc/wathena/server/bonus"
+)
 
 // Limits from rAthena's mmo.hpp for recent clients.
 const (
@@ -90,6 +94,9 @@ type Def struct {
 	// Bonuses are static bonuses of an equipment item, as item data
 	// entries: a bonus name followed by its arguments (server/bonus).
 	Bonuses []any `json:"bonuses"`
+	// Static are Bonuses read and checked, in order. The mod loader sets
+	// them.
+	Static []*bonus.Bonus `json:"-"`
 	// Unsupported says why the server cannot run the item's script yet.
 	// Using such an item is refused before it is spent.
 	Unsupported string `json:"unsupported"`
@@ -102,7 +109,48 @@ type Def struct {
 	Sell int `json:"sell"`
 	// NoSell is Trade.NoSell: NPC shops do not buy the item.
 	NoSell bool `json:"no_sell"`
+
+	// The equipment fields come from equipment.json (MergeEquipment).
+
+	// Subtype is the weapon type (W_*) of a weapon, the ammunition type
+	// (AMMO_*) of ammunition, and the card type of a card.
+	Subtype int `json:"subtype"`
+	// Location is item_data's equip: the positions the item goes in. A
+	// card's location is where it can be compounded.
+	Location Locations `json:"location"`
+	// Atk, Matk and Defense are the weapon ATK, the weapon MATK (renewal)
+	// and the armor DEF. Range is a weapon's attack range in cells.
+	Atk     int `json:"atk"`
+	Matk    int `json:"matk"`
+	Defense int `json:"def"`
+	Range   int `json:"range"`
+	// Slots is how many cards the item holds.
+	Slots       int  `json:"slots"`
+	WeaponLevel int  `json:"weapon_level"`
+	ArmorLevel  int  `json:"armor_level"`
+	Refineable  bool `json:"refineable"`
+	// View is the sprite the item shows on a character, as item_data's
+	// look.
+	View int `json:"view"`
+	// Jobs is item_data's class_base. nil is every job.
+	Jobs *JobMask `json:"jobs"`
+	// Classes is item_data's class_upper: the ITEMJ_ bits of the classes
+	// that may use the item. 0 is every class.
+	Classes uint32 `json:"classes"`
+	// NoEquip is item_data's flag.no_equip, from item_noequip.txt: the
+	// map types where the item's script does not run (MapNormal and the
+	// others).
+	NoEquip uint32 `json:"no_equip"`
 }
+
+// Map types of NoEquip, as item_noequip.txt's flags.
+const (
+	MapNormal       uint32 = 1
+	MapPvP          uint32 = 2
+	MapGvG          uint32 = 4
+	MapBattleground uint32 = 8
+	MapWoETE        uint32 = 16
+)
 
 // Heal is the amounts of an itemheal or percentheal: HP and SP are
 // [min, max]. When they differ, the script draws with rand.

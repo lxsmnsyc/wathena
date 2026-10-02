@@ -35,6 +35,8 @@ func newCharacter(name string) *character.Character {
 		Items: []character.Item{
 			{Slot: 0, ID: 501, Amount: 5, Serial: item.NewSerial()},
 			{Slot: 1, ID: 512, Amount: 10, Serial: item.NewSerial()},
+			// An equipped, refined sword with two cards.
+			{Slot: 2, ID: 1101, Amount: 1, Serial: item.NewSerial(), Equip: item.EqpHandR, Refine: 7, Cards: []uint32{4001, 4002}},
 		},
 	}
 }
@@ -157,10 +159,14 @@ func TestConstraints(t *testing.T) {
 	}
 
 	serial := pgtype.UUID{Bytes: item.NewSerial(), Valid: true}
-	insert := func(slot, itemID, amount int, s pgtype.UUID) error {
+	insertItem := func(slot, itemID, amount int, s pgtype.UUID, equip, refine int, cards string) error {
 		return q.InsertInventory(ctx, db.InsertInventoryParams{
 			CharacterID: id, Slots: []int{slot}, ItemIds: []int{itemID}, Amounts: []int{amount}, Serials: []pgtype.UUID{s},
+			Equips: []int{equip}, Refines: []int{refine}, Cards: []string{cards},
 		})
+	}
+	insert := func(slot, itemID, amount int, s pgtype.UUID) error {
+		return insertItem(slot, itemID, amount, s, 0, 0, "{}")
 	}
 	fresh := func() pgtype.UUID { return pgtype.UUID{Bytes: item.NewSerial(), Valid: true} }
 	if err := insert(0, 501, 30000, serial); err != nil {
@@ -171,6 +177,12 @@ func TestConstraints(t *testing.T) {
 		"amount 30001": insert(1, 501, 30001, fresh()),
 		"slot 200":     insert(200, 501, 1, fresh()),
 		"item 0":       insert(1, 0, 1, fresh()),
+		"refine -1":    insertItem(1, 1101, 1, fresh(), 0, -1, "{}"),
+		"refine 256":   insertItem(1, 1101, 1, fresh(), 0, 256, "{}"),
+		"equip -1":     insertItem(1, 1101, 1, fresh(), -1, 0, "{}"),
+		"card 0":       insertItem(1, 1101, 1, fresh(), 0, 0, "{4001,0}"),
+		"17 cards":     insertItem(1, 1101, 1, fresh(), 0, 0, "{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}"),
+		"null card":    insertItem(1, 1101, 1, fresh(), 0, 0, "{4001,NULL}"),
 	} {
 		if !isCode(err, checkViolation) {
 			t.Errorf("%s: %v, want a check violation", name, err)

@@ -1,9 +1,12 @@
 import type { AssetStore } from '../assets/store';
 import { DropItemFailure, StatId, UseItemFailure } from '../gen/wathena/v1/event_pb';
+import { NO_CARD_TARGET, canEquip, cardNames, cardTargets, stackLabel } from './equipment';
 import { type ItemTexts, renderDescription } from './itemText';
 
 // The inventory window, as RO's Alt+E window: each slot's icon, item and
-// amount, and the weight. A double click or Enter uses an item. The Drop
+// amount, and the weight. Worn items show in the equipment window
+// instead. A double click or Enter uses an item, puts on equipment, or,
+// for a card, asks which item to put it into. The Drop
 // button, the Delete key, or dragging a row onto the game view drops it,
 // after asking how many when the slot holds more than one. Items show by
 // name from the build's item table, and a selected item shows its
@@ -14,6 +17,37 @@ export interface Stack {
   slot: number;
   itemId: number;
   amount: number;
+  /** The positions the item is worn in, as rAthena's EQP_ bits, or 0. */
+  equip: number;
+  refine: number;
+  /** The card IDs in the item's slots, in slot order. Only filled slots are listed. */
+  cards: number[];
+  /**
+   * The positions the item can be worn in, as EQP_ bits, or 0 for an item
+   * that is not worn. For a card, the positions of the items it goes into.
+   */
+  location: number;
+  /** Whether the item is a card. */
+  card: boolean;
+}
+
+/** The parts of a stack the server can leave out. They default to none. */
+export type StackDetails = Partial<Pick<Stack, 'equip' | 'refine' | 'cards' | 'location' | 'card'>>;
+
+/** A slot as the server sends it: slot, item and amount, and the details it has. */
+export type StackInput = Pick<Stack, 'slot' | 'itemId' | 'amount'> & StackDetails;
+
+function stack(s: StackInput): Stack {
+  return {
+    slot: s.slot,
+    itemId: s.itemId,
+    amount: s.amount,
+    equip: s.equip ?? 0,
+    refine: s.refine ?? 0,
+    cards: [...(s.cards ?? [])],
+    location: s.location ?? 0,
+    card: s.card ?? false,
+  };
 }
 
 /** The inventory as the server last described it. */
@@ -23,23 +57,23 @@ export class InventoryModel {
   size = 0;
 
   /** Replaces everything, as InventoryUpdate. */
-  reset(items: readonly Stack[], size: number): void {
+  reset(items: readonly StackInput[], size: number): void {
     this.slots.clear();
     for (const s of items) {
       if (s.amount > 0) {
-        this.slots.set(s.slot, { slot: s.slot, itemId: s.itemId, amount: s.amount });
+        this.slots.set(s.slot, stack(s));
       }
     }
     this.size = size;
   }
 
   /** Adds an amount to a slot, as InventoryAdd. */
-  add(slot: number, itemId: number, amount: number): void {
+  add(slot: number, itemId: number, amount: number, details: StackDetails = {}): void {
     const s = this.slots.get(slot);
     if (s?.itemId === itemId) {
       s.amount += amount;
     } else {
-      this.slots.set(slot, { slot, itemId, amount });
+      this.slots.set(slot, stack({ ...details, slot, itemId, amount, equip: 0 }));
     }
   }
 
@@ -53,6 +87,39 @@ export class InventoryModel {
     if (s.amount <= 0) {
       this.slots.delete(slot);
     }
+  }
+
+  /**
+   * Marks a slot as worn in positions, as ItemEquipped. Other items lose
+   * those positions, in case their ItemUnequipped was missed.
+   */
+  equipped(slot: number, position: number): void {
+    const s = this.slots.get(slot);
+    if (s === undefined) {
+      return;
+    }
+    for (const other of this.slots.values()) {
+      if (other !== s) {
+        other.equip &= ~position;
+      }
+    }
+    s.equip = position;
+  }
+
+  /** Marks a slot as not worn, as ItemUnequipped. */
+  unequipped(slot: number): void {
+    const s = this.slots.get(slot);
+    if (s !== undefined) {
+      s.equip = 0;
+    }
+  }
+
+  /**
+   * Adds a card to an item's cards, as CardInserted. The card leaves its
+   * own slot with an InventoryRemove.
+   */
+  cardInserted(equipSlot: number, cardId: number): void {
+    this.slots.get(equipSlot)?.cards.push(cardId);
   }
 
   get(slot: number): Stack | undefined {
@@ -174,9 +241,15 @@ export const SLOT_DRAG_TYPE = 'application/x-wathena-slot';
 export interface InventoryActions {
   use: (slot: number) => void;
   drop: (slot: number, amount: number) => void;
+  /** Puts on the item in a slot, in every position it takes. */
+  equip: (slot: number) => void;
+  insertCard: (cardSlot: number, equipSlot: number) => void;
+  /** Shows a short message, such as when no item can take a card. */
+  message: (text: string) => void;
 }
 
 interface Row {
+  slot: number;
   li: HTMLLIElement;
   icon: HTMLImageElement;
   label: HTMLSpanElement;
@@ -194,7 +267,13 @@ export class InventoryWindow {
   private readonly prompt: HTMLSpanElement;
   private readonly detail: HTMLDivElement;
   private readonly detailName: HTMLDivElement;
+  private readonly detailCards: HTMLDivElement;
   private readonly detailText: HTMLDivElement;
+  private readonly picker: HTMLDivElement;
+  private readonly pickerPrompt: HTMLDivElement;
+  private readonly pickerList: HTMLUListElement;
+  /** The card slot the picker asks about. */
+  private carding: number | undefined;
   /** The slot whose description shows. */
   private selected: number | undefined;
   private readonly amountInput: HTMLInputElement;
@@ -269,9 +348,30 @@ export class InventoryWindow {
     this.detail.hidden = true;
     this.detailName = document.createElement('div');
     this.detailName.className = 'item-detail-name';
+    this.detailCards = document.createElement('div');
+    this.detailCards.className = 'item-detail-cards';
     this.detailText = document.createElement('div');
-    this.detail.append(this.detailName, this.detailText);
-    root.append(head, this.list, this.form, this.detail);
+    this.detail.append(this.detailName, this.detailCards, this.detailText);
+    this.picker = document.createElement('div');
+    this.picker.className = 'card-picker';
+    this.picker.hidden = true;
+    this.pickerPrompt = document.createElement('div');
+    this.pickerList = document.createElement('ul');
+    this.pickerList.setAttribute('aria-label', 'Items that can take the card');
+    const pickerCancel = document.createElement('button');
+    pickerCancel.type = 'button';
+    pickerCancel.textContent = 'Cancel';
+    pickerCancel.addEventListener('click', () => {
+      this.closeCards();
+    });
+    this.picker.append(this.pickerPrompt, this.pickerList, pickerCancel);
+    this.picker.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        this.closeCards();
+      }
+    });
+    root.append(head, this.list, this.form, this.picker, this.detail);
     texts.onLoad(() => {
       this.relabel();
     });
@@ -285,7 +385,69 @@ export class InventoryWindow {
     this.root.hidden = !this.root.hidden;
     if (this.root.hidden) {
       this.closeDrop();
+      this.closeCards();
     }
+  }
+
+  /**
+   * Acts on a slot as a double click does: a card asks which item to go
+   * into, equipment goes on, and other items are used.
+   */
+  activate(slot: number): void {
+    const s = this.model.get(slot);
+    if (s === undefined) {
+      return;
+    }
+    if (s.card) {
+      this.requestCard(slot);
+    } else if (canEquip(s)) {
+      this.actions.equip(slot);
+    } else {
+      this.actions.use(slot);
+    }
+  }
+
+  /**
+   * Starts putting a card into an item: lists the items that can take it.
+   * When none can, it says so instead.
+   */
+  requestCard(slot: number): void {
+    const card = this.model.get(slot);
+    if (card === undefined) {
+      return;
+    }
+    const targets = cardTargets(this.model.list(), card, (id) => this.texts.info(id)?.slots ?? 0);
+    if (targets.length === 0) {
+      this.closeCards();
+      this.actions.message(NO_CARD_TARGET);
+      return;
+    }
+    if (this.root.hidden) {
+      this.toggle();
+    }
+    this.carding = slot;
+    this.pickerPrompt.textContent = `Put ${this.texts.label(card.itemId)} into:`;
+    const items = targets.map((t) => {
+      const li = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = stackLabel(t, (id) => this.texts.label(id));
+      button.addEventListener('click', () => {
+        this.actions.insertCard(slot, t.slot);
+        this.closeCards();
+      });
+      li.append(button);
+      return li;
+    });
+    this.pickerList.replaceChildren(...items);
+    this.picker.hidden = false;
+    items[0]?.querySelector('button')?.focus();
+  }
+
+  private closeCards(): void {
+    this.carding = undefined;
+    this.picker.hidden = true;
+    this.pickerList.replaceChildren();
   }
 
   /**
@@ -320,8 +482,10 @@ export class InventoryWindow {
 
   /** Shows the inventory and weight. Only changed parts are written. */
   update(stats: ReadonlyMap<StatId, bigint>): void {
-    const stacks = this.model.list();
-    set(this.count, `${stacks.length} / ${this.model.size}`);
+    const all = this.model.list();
+    set(this.count, `${all.length} / ${this.model.size}`);
+    // Worn items take a slot but show in the equipment window.
+    const stacks = all.filter((s) => s.equip === 0);
     const percent = weightPercent(stats);
     set(this.weight, `Weight ${weightText(stats)}${percent === undefined ? '' : ` (${percent}%)`}`);
     this.weight.classList.toggle('heavy', percent !== undefined && percent >= MAJOR_OVERWEIGHT);
@@ -339,6 +503,8 @@ export class InventoryWindow {
         row = this.row(s.slot, s.itemId);
         this.rows.set(s.slot, row);
       }
+      // The refine level and cards can change.
+      this.label(row);
       set(row.amount, `× ${s.amount}`);
       // Rows stay in slot order.
       const next = previous === undefined ? this.list.firstChild : previous.nextSibling;
@@ -356,6 +522,9 @@ export class InventoryWindow {
     if (this.dropping !== undefined && !seen.has(this.dropping)) {
       this.closeDrop();
     }
+    if (this.carding !== undefined && !seen.has(this.carding)) {
+      this.closeCards();
+    }
     if (this.selected !== undefined && !seen.has(this.selected)) {
       this.select(undefined);
     }
@@ -372,10 +541,20 @@ export class InventoryWindow {
   }
 
   private label(row: Row): void {
-    const name = this.texts.label(row.itemId);
+    const s = this.model.get(row.slot);
+    const label = (id: number): string => this.texts.label(id);
+    const name = s === undefined ? label(row.itemId) : stackLabel(s, label);
     set(row.label, name);
-    row.li.title = `${name}: double-click to use, drag out to drop`;
-    row.drop.setAttribute('aria-label', `Drop ${name}`);
+    const cards = s === undefined ? [] : cardNames(s, label);
+    const action = s === undefined ? 'use' : actionWord(s);
+    const title = `${name}${cards.length > 0 ? ` (${cards.join(', ')})` : ''}: double-click to ${action}, drag out to drop`;
+    if (row.li.title !== title) {
+      row.li.title = title;
+    }
+    const drop = `Drop ${name}`;
+    if (row.drop.getAttribute('aria-label') !== drop) {
+      row.drop.setAttribute('aria-label', drop);
+    }
   }
 
   /** Shows the description of the item in a slot, or hides it. */
@@ -387,7 +566,11 @@ export class InventoryWindow {
       return;
     }
     const id = s.itemId;
-    this.detailName.textContent = this.texts.label(id);
+    const label = (n: number): string => this.texts.label(n);
+    this.detailName.textContent = stackLabel(s, label);
+    const cards = cardNames(s, label);
+    this.detailCards.textContent = cards.length > 0 ? `Cards: ${cards.join(', ')}` : '';
+    this.detailCards.hidden = cards.length === 0;
     this.detail.hidden = false;
     this.texts
       .description(id)
@@ -426,7 +609,7 @@ export class InventoryWindow {
       this.select(slot);
     });
     li.addEventListener('dblclick', () => {
-      this.actions.use(slot);
+      this.activate(slot);
     });
     li.addEventListener('keydown', (e) => {
       if (e.target !== li) {
@@ -435,7 +618,7 @@ export class InventoryWindow {
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
-        this.actions.use(slot);
+        this.activate(slot);
       } else if (e.key === 'Delete') {
         e.preventDefault();
         this.requestDrop(slot);
@@ -448,7 +631,7 @@ export class InventoryWindow {
       }
     });
     this.icon(itemId, icon);
-    const row = { li, icon, label, amount, drop, itemId };
+    const row = { slot, li, icon, label, amount, drop, itemId };
     this.label(row);
     return row;
   }
@@ -479,6 +662,14 @@ export class InventoryWindow {
         console.error(`icon ${id}:`, error);
       });
   }
+}
+
+/** What a double click does to an item, for its tooltip. */
+export function actionWord(s: Stack): string {
+  if (s.card) {
+    return 'insert';
+  }
+  return canEquip(s) ? 'equip' : 'use';
 }
 
 function set(el: HTMLElement, text: string): void {

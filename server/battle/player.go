@@ -17,6 +17,9 @@ type Player struct {
 	RightWeapon, LeftWeapon int
 	// Skills maps a learned skill ID to its level, as pc_checkskill reads.
 	Skills map[int]int
+	// Granted marks the skills whose level an item grants, as
+	// pc_checkskill_flag's SKILL_FLAG_TEMPORARY and replaced flags.
+	Granted map[int]bool
 	// ArrowAttack is sd->state.arrow_atk: the attack uses ammunition.
 	// rAthena sets it in battle_weapon_attack for bows and guns.
 	ArrowAttack bool
@@ -27,12 +30,65 @@ type Player struct {
 	AmmoAtk, AmmoEle int
 	// AtkRate is bonus bAtkRate, in percent of weapon and equipment ATK.
 	AtkRate int
-	// AddRace is bonus2 bAddRace from both hands, in percent by race.
-	// rAthena merges both hands because left_cardfix_to_right is on.
-	AddRace map[int]int
-	// IgnoreDefRace is bonus2 bIgnoreDefRaceRate, in percent of DEF
-	// ignored by race.
-	IgnoreDefRace map[int]int
+	// Right and Left are each hand's weapon bonuses. rAthena counts both
+	// on the right hand because left_cardfix_to_right is on. Arrow holds
+	// the ammunition's.
+	Right, Left Hand
+	Arrow       Arrow
+	// IgnoreDefRace and IgnoreDefClass are bonus2 bIgnoreDefRaceRate and
+	// bIgnoreDefClassRate, in percent of DEF ignored by race and class.
+	IgnoreDefRace, IgnoreDefClass map[int]int
+	// IgnoreResRace is bIgnoreResRaceRate, in percent of Res ignored by
+	// race.
+	IgnoreResRace map[int]int
+	// WeaponDamageRate is bWeaponDamageRate, in percent by weapon type.
+	WeaponDamageRate map[int]int
+	// CritAtkRate and NonCritAtkRate are bCritAtkRate and
+	// bNonCritAtkRate. ShortAtkRate and LongAtkRate are bShortAtkRate and
+	// bLongAtkRate. All are percents of damage.
+	CritAtkRate, NonCritAtkRate, ShortAtkRate, LongAtkRate int
+	// CritAddRace is bCriticalAddRace, in tenths of a percent of critical
+	// chance by race. CriticalRangeAtk is bCriticalLong, in tenths.
+	CritAddRace      map[int]int
+	CriticalRangeAtk int
+	// PerfectHit is the chance of perfect hit, in percent: the highest
+	// bPerfectHitRate plus bPerfectHitAddRate.
+	PerfectHit int
+	// DoubleRate is the chance of a double attack with any weapon, in
+	// percent: the highest bDoubleRate plus bDoubleAddRate.
+	DoubleRate int
+	// NoSizeFix is bNoSizeFix: the weapon size table does not apply.
+	NoSizeFix bool
+	// PreRenewalSizes picks the pre-renewal size table for knuckles and
+	// whips: the size_table ruleset flag set to pre_renewal.
+	PreRenewalSizes bool
+
+	// Bonuses that reduce damage the player takes, as indexed_bonus.
+
+	// SubEle is bSubEle, by the hit's element. SubEle2 is bonus3 bSubEle.
+	SubEle  map[int]int
+	SubEle2 []FlaggedRate
+	// SubRace, SubSize, SubClass and SubRace2 are bSubRace, bSubSize,
+	// bSubClass and bSubRace2, by the attacker's race, size, class and
+	// monster group. SubRace3 is bonus3 bSubRace.
+	SubRace, SubSize, SubClass, SubRace2 map[int]int
+	SubRace3                             []FlaggedRate
+	// WeaponSubSize is bWeaponSubSize, by the attacker's size.
+	WeaponSubSize map[int]int
+	// SubDefEle is bSubDefEle, by the attacker's own element.
+	SubDefEle map[int]int
+	// AddDef is bAddDefMonster, by the attacker's monster ID.
+	AddDef map[int]int
+	// NearAtkDef and LongAtkDef are bNearAtkDef and bLongAtkDef: percent
+	// less damage from melee and ranged physical hits.
+	NearAtkDef, LongAtkDef int
+	// CritDefRate is bCritDefRate: percent less damage from critical
+	// hits. CriticalDef is bCriticalDef: percent less chance to be hit
+	// critically.
+	CritDefRate, CriticalDef int
+	// DamageTakenCap is bAbsorbDmgMaxHP2: one hit deals at most this
+	// percent of max HP.
+	DamageTakenCap int
 	// DualWield is the class rule for attacks with a weapon in each hand.
 	DualWield DualWield
 }
@@ -89,12 +145,21 @@ const (
 	weaponTypeCount
 )
 
-// Sizes, as rAthena's e_size.
+// Sizes, as rAthena's e_size. SizeAll is SZ_ALL, which item bonuses use
+// for every size.
 const (
 	SizeSmall = iota
 	SizeMedium
 	SizeLarge
 	sizeCount
+	SizeAll = sizeCount
+)
+
+// Monster classes, as rAthena's e_classAjust. ClassAll is CLASS_ALL.
+const (
+	ClassNormal = 0
+	ClassBoss   = 1
+	ClassAll    = 6
 )
 
 // Races that attacks read, as rAthena's e_race.
@@ -115,6 +180,7 @@ const (
 const (
 	skillSwordMastery       = 2    // SM_SWORD
 	skillTwoHandMastery     = 3    // SM_TWOHAND
+	skillDivineProtection   = 22   // AL_DP
 	skillDemonBane          = 23   // AL_DEMONBANE
 	skillVultureEye         = 44   // AC_VULTURE
 	skillDoubleAttack       = 48   // TF_DOUBLE
@@ -186,6 +252,20 @@ var sizeFixTable = [weaponTypeCount][sizeCount]int{
 	Weapon2HStaff:  {100, 100, 100},
 }
 
+// PreRenewalSizeFix is SizeFix with pre-renewal's size table: rAthena's
+// db/size_fix.yml with the changes in db/pre-re/size_fix.yml, which make
+// knuckles 75% against medium and 50% against large targets, and whips
+// 50% against large targets.
+func PreRenewalSizeFix(weaponType, size int) int {
+	switch {
+	case weaponType == WeaponKnuckle && size == SizeMedium:
+		return 75
+	case (weaponType == WeaponKnuckle || weaponType == WeaponWhip) && size == SizeLarge:
+		return 50
+	}
+	return SizeFix(weaponType, size)
+}
+
 // SizeFix returns a weapon type's damage percent against a target size, as
 // the atkmods that status_calc_pc sets from size_fix_db. It returns 100 for
 // values outside the table.
@@ -213,17 +293,22 @@ func (p *Player) weapon(h hand) int {
 }
 
 // calcMultiAttack is battle_calc_multi_attack for a normal attack by a
-// player: Double Attack with a dagger, and Chain Action with a revolver.
+// player: Double Attack with a dagger, or with any weapon when an item
+// grants it or with bDoubleRate, and Chain Action with a revolver.
 //
-// Fear Breeze, Shadow Warrior and the bDoubleRate bonus are not ported.
+// Fear Breeze and Shadow Warrior are not ported.
 func calcMultiAttack(wd *damage, src *Status, r Rand) {
 	sd := src.Player
 	if sd == nil {
 		return
 	}
-	if lv := src.skill(skillDoubleAttack); wd.div == 1 && lv > 0 && sd.RightWeapon == WeaponDagger {
-		// Renewal: 7% per level.
-		if r.IntN(100) < 7*lv {
+	lv := src.skill(skillDoubleAttack)
+	// Double Attack from an item works with any weapon.
+	granted := sd.Granted[skillDoubleAttack] && sd.RightWeapon != WeaponFist
+	if wd.div == 1 && (lv > 0 && sd.RightWeapon == WeaponDagger || granted || sd.DoubleRate > 0 && sd.RightWeapon != WeaponFist) {
+		// Renewal: 7% per level, or bDoubleRate when it is higher. The
+		// rates are not added.
+		if r.IntN(100) < max(7*lv, sd.DoubleRate) {
 			wd.div = doubleAttackHits
 			wd.typ = dmgMultiHit
 		}
@@ -316,12 +401,28 @@ func calcBaseWeaponAttack(src, target *Status, h hand, critical bool, r Rand) in
 		}
 	}
 
-	// battle_add_weapon_damage adds the over-refine bonus and the
-	// bWeaponDamageRate bonus. Neither is ported.
+	// battle_add_weapon_damage: the over-refine bonus and
+	// bWeaponDamageRate.
+	hd := &sd.Right
+	if h == handLeft {
+		hd = &sd.Left
+	}
+	if hd.Overrefine > 0 {
+		dmg += int64(r.IntN(hd.Overrefine) + 1)
+	}
+	if rate := sd.WeaponDamageRate[sd.weapon(h)]; rate != 0 {
+		dmg += dmg * int64(rate) / 100
+	}
 
-	// Weapon Perfection skips the size penalty. Status changes are not
-	// ported.
-	dmg = dmg * int64(SizeFix(sd.weapon(h), target.Size)) / 100
+	// battle_calc_sizefix. Weapon Perfection also skips the size penalty.
+	// Status changes are not ported.
+	if !sd.NoSizeFix {
+		fix := SizeFix(sd.weapon(h), target.Size)
+		if sd.PreRenewalSizes {
+			fix = PreRenewalSizeFix(sd.weapon(h), target.Size)
+		}
+		dmg = dmg * int64(fix) / 100
+	}
 	return min(max(dmg, math.MinInt32), math.MaxInt32)
 }
 
@@ -458,42 +559,129 @@ func weaponElement(src *Status, h hand) int {
 }
 
 // cardfixAttacker is battle_calc_cardfix for BF_WEAPON with the attacker's
-// bonuses on the right hand (left flag 2). It returns the damage to add.
-// With left_cardfix_to_right on, both hands' bonuses count together, and
-// the left hand (left flag 3) gets no change.
-//
-// Only bAddRace is ported. Element, size, class and monster bonuses are
-// not.
-func cardfixAttacker(src, target *Status, dmg int64) int64 {
+// bonuses, for a normal attack. It returns the damage to add. left is the
+// left flag: 2 for the right hand, and 3 for the left hand. With
+// left_cardfix_to_right on, both hands' bonuses count on the right hand,
+// and the left hand only gets its bAddDamageClass.
+func cardfixAttacker(src, target *Status, dmg int64, left, flag int) int64 {
 	if dmg == 0 {
 		return 0
 	}
 	sd := src.Player
+	r, l := &sd.Right, &sd.Left
+	cardfix, cardfixLeft := int64(1000), int64(1000)
+	if sd.ArrowAttack {
+		a := &sd.Arrow
+		cardfix = cardfix * int64(100+r.AddRace[target.Race]+a.AddRace[target.Race]+r.AddRace[RaceAll]+a.AddRace[RaceAll]) / 100
+		ele := r.AddEle[target.DefEle] + a.AddEle[target.DefEle] + r.AddEle[AllElements] + a.AddEle[AllElements]
+		ele += sumFlagged(r.AddEle2, target.DefEle, AllElements, flag)
+		cardfix = cardfix * int64(100+ele) / 100
+		cardfix = cardfix * int64(100+r.AddSize[target.Size]+a.AddSize[target.Size]+r.AddSize[SizeAll]+a.AddSize[SizeAll]) / 100
+		race2 := 0
+		for _, g := range target.Race2 {
+			race2 += r.AddRace2[g]
+		}
+		cardfix = cardfix * int64(100+race2) / 100
+		cardfix = cardfix * int64(100+r.AddClass[target.Class]+a.AddClass[target.Class]+r.AddClass[ClassAll]+a.AddClass[ClassAll]) / 100
+	} else {
+		ele := r.AddEle[target.DefEle] + l.AddEle[target.DefEle] + r.AddEle[AllElements] + l.AddEle[AllElements]
+		ele += sumFlagged(r.AddEle2, target.DefEle, AllElements, flag)
+		ele += sumFlagged(l.AddEle2, target.DefEle, AllElements, flag)
+		cardfix = cardfix * int64(100+ele) / 100
+		cardfix = cardfix * int64(100+r.AddRace[target.Race]+l.AddRace[target.Race]+r.AddRace[RaceAll]+l.AddRace[RaceAll]) / 100
+		cardfix = cardfix * int64(100+r.AddSize[target.Size]+l.AddSize[target.Size]+r.AddSize[SizeAll]+l.AddSize[SizeAll]) / 100
+		for _, g := range target.Race2 {
+			cardfix = cardfix * int64(100+r.AddRace2[g]+l.AddRace2[g]) / 100
+		}
+		cardfix = cardfix * int64(100+r.AddClass[target.Class]+l.AddClass[target.Class]+r.AddClass[ClassAll]+l.AddClass[ClassAll]) / 100
+	}
+	// bAddDamageClass is by the target's monster ID, or job for a player.
+	if v, ok := r.AddDamage[target.ID]; ok {
+		cardfix = cardfix * int64(100+v) / 100
+	}
+	if left&1 != 0 {
+		if v, ok := l.AddDamage[target.ID]; ok {
+			cardfixLeft = cardfixLeft * int64(100+v) / 100
+		}
+		cardfix = cardfixLeft
+	}
+	return applyCardfix(dmg, cardfix)
+}
+
+// cardfixTarget is battle_calc_cardfix for BF_WEAPON with the target's
+// bonuses (left flag 0), for a normal attack by a monster on a player.
+// It returns the damage to add. rhEle is the attack's element.
+func cardfixTarget(src, target *Status, dmg int64, rhEle, flag int) int64 {
+	if dmg == 0 {
+		return 0
+	}
+	tsd := target.Player
 	cardfix := int64(1000)
-	cardfix = cardfix * int64(100+sd.AddRace[target.Race]+sd.AddRace[RaceAll]) / 100
+	ele := tsd.SubEle[rhEle] + tsd.SubEle[AllElements] + sumFlagged(tsd.SubEle2, rhEle, AllElements, flag)
+	cardfix = cardfix * int64(100-ele) / 100
+	// s_defele is the attacker's own element when the target is a player.
+	cardfix = cardfix * int64(100-tsd.SubDefEle[src.DefEle]-tsd.SubDefEle[AllElements]) / 100
+	cardfix = cardfix * int64(100-tsd.SubSize[src.Size]-tsd.SubSize[SizeAll]) / 100
+	cardfix = cardfix * int64(100-tsd.WeaponSubSize[src.Size]-tsd.WeaponSubSize[SizeAll]) / 100
+	race2 := 0
+	for _, g := range src.Race2 {
+		race2 += tsd.SubRace2[g]
+	}
+	cardfix = cardfix * int64(100-race2) / 100
+	race := tsd.SubRace[src.Race] + tsd.SubRace[RaceAll] + sumFlagged(tsd.SubRace3, src.Race, RaceAll, flag)
+	cardfix = cardfix * int64(100-race) / 100
+	cardfix = cardfix * int64(100-tsd.SubClass[src.Class]-tsd.SubClass[ClassAll]) / 100
+	if v, ok := tsd.AddDef[src.ID]; ok {
+		cardfix = cardfix * int64(100-v) / 100
+	}
+	if flag&bfShort != 0 {
+		cardfix = cardfix * int64(100-tsd.NearAtkDef) / 100
+	} else {
+		cardfix = cardfix * int64(100-tsd.LongAtkDef) / 100
+	}
+	return applyCardfix(dmg, cardfix)
+}
+
+// applyCardfix is rAthena's APPLY_CARDFIX, returning the damage to add.
+func applyCardfix(dmg, cardfix int64) int64 {
 	fixed := dmg - dmg*(1000-max(0, cardfix))/1000
 	return min(max(fixed-dmg, math.MinInt32), math.MaxInt32)
 }
 
 // sumPlayerDamage is the part of the renewal battle_calc_weapon_attack
-// that sums a player's ATK parts into damage.
+// that sums a player's ATK parts into damage, with the critical and
+// range rates.
 func sumPlayerDamage(wd *damage, src *Status) {
+	sd := src.Player
 	wd.damage = wd.statusAtk + wd.weaponAtk + wd.equipAtk + wd.percentAtk
 	if isAttackLeftHanded(src) {
 		wd.damage2 = wd.statusAtk2 + wd.weaponAtk2 + wd.equipAtk2 + wd.percentAtk2
 	}
-	// P.ATK is 0 before the fourth classes, which are not ported. rAthena
-	// still rounds through float here.
-	wd.damage = int64(math.Floor(float64(float32(wd.damage))))
+	// P.ATK, rounded through float as rAthena does.
+	patk := int64(100 + src.PAtk)
+	wd.damage = int64(math.Floor(float64(float32(wd.damage * patk / 100))))
 	if isAttackLeftHanded(src) {
-		wd.damage2 = int64(math.Floor(float64(float32(wd.damage2))))
+		wd.damage2 = int64(math.Floor(float64(float32(wd.damage2 * patk / 100))))
 	}
 	wd.damage += wd.masteryAtk
 	if isAttackLeftHanded(src) {
 		wd.damage2 += wd.masteryAtk2
 	}
-	// bCritAtkRate, bNonCritAtkRate, bShortAtkRate and bLongAtkRate are
-	// not ported.
+	if wd.typ == dmgCritical || wd.typ == dmgMultiHitCritical {
+		// bCritAtkRate, in full on a normal attack.
+		wd.damage += int64(math.Floor(float64(float32(wd.damage * int64(sd.CritAtkRate) / 100))))
+		if isAttackLeftHanded(src) {
+			wd.damage2 += int64(math.Floor(float64(float32(wd.damage2 * int64(sd.CritAtkRate) / 100))))
+		}
+	} else {
+		atkAddRate(src, &wd.damage, &wd.damage2, int64(sd.NonCritAtkRate))
+	}
+	if wd.flag&bfShort != 0 {
+		atkAddRate(src, &wd.damage, &wd.damage2, int64(sd.ShortAtkRate))
+	}
+	if wd.flag&bfLong != 0 {
+		atkAddRate(src, &wd.damage, &wd.damage2, int64(sd.LongAtkRate))
+	}
 }
 
 // calcLeftRightHands is the player part of

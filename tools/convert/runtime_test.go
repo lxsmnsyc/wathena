@@ -15,6 +15,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/bonus"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -48,6 +49,11 @@ type testHost struct {
 	groups                   map[string]int64
 	monsters                 map[string]int64
 	equipped                 map[int64]uint32
+	// refine and defs give the refine and item data of equipped copies,
+	// and slots the copy in each equipment slot.
+	refine map[int64]int
+	defs   map[uint32]*item.Def
+	slots  map[string]int64
 }
 
 func (h *testHost) Map() string { return "prontera" }
@@ -102,12 +108,15 @@ func (h *testHost) Heal(int64, bool, [2]int, [2]int) error             { return 
 func (h *testHost) Warp(int64, string, string, int, int) (bool, error) { return true, nil }
 func (h *testHost) ShowEffect(int64, int64, bool) error                { return nil }
 func (h *testHost) SkillLevel(int64, int64) (int, error)               { return 0, nil }
-func (h *testHost) Equipped(int64, string) (int64, bool, error)        { return 0, false, nil }
-func (h *testHost) RandomN(int64) int64                                { return 0 }
-func (h *testHost) Now() int64                                         { return 0 }
-func (h *testHost) ItemID(name string) (uint32, bool)                  { id, ok := h.items[name]; return id, ok }
-func (h *testHost) ItemGroupID(name string) (int64, bool)              { id, ok := h.groups[name]; return id, ok }
-func (h *testHost) MonsterID(name string) (int64, bool)                { id, ok := h.monsters[name]; return id, ok }
+func (h *testHost) Equipped(_ int64, slot string) (int64, bool, error) {
+	id, ok := h.slots[slot]
+	return id, ok, nil
+}
+func (h *testHost) RandomN(int64) int64                   { return 0 }
+func (h *testHost) Now() int64                            { return 0 }
+func (h *testHost) ItemID(name string) (uint32, bool)     { id, ok := h.items[name]; return id, ok }
+func (h *testHost) ItemGroupID(name string) (int64, bool) { id, ok := h.groups[name]; return id, ok }
+func (h *testHost) MonsterID(name string) (int64, bool)   { id, ok := h.monsters[name]; return id, ok }
 func (h *testHost) EquippedField(id int64, field string) (script.Value, error) {
 	item, ok := h.equipped[id]
 	if !ok {
@@ -118,7 +127,19 @@ func (h *testHost) EquippedField(id int64, field string) (script.Value, error) {
 		return script.Int(int64(item)), nil
 	case "wearer":
 		return script.Int(1), nil
-	case "refine", "enchant_grade", "weapon_level", "armor_level", "weapon_type":
+	case "refine":
+		return script.Int(int64(h.refine[id])), nil
+	case "weapon_level", "armor_level", "weapon_type":
+		d := h.defs[item]
+		if d == nil {
+			return script.Int(0), nil
+		}
+		v := map[string]int{"weapon_level": d.WeaponLevel, "armor_level": d.ArmorLevel, "weapon_type": d.Subtype}[field]
+		if field == "weapon_type" && !d.IsWeapon() {
+			v = 0
+		}
+		return script.Int(int64(v)), nil
+	case "enchant_grade":
 		return script.Int(0), nil
 	}
 	return script.Nil, fmt.Errorf("equipped item has no field %q", field)
@@ -145,7 +166,8 @@ func testRuntime(t *testing.T, mode reference.Mode) (*modscript.Runtime, *testHo
 		t.Fatal(err)
 	}
 	h := &testHost{jobs: jobs, baseLevel: 99, jobLevel: 50, stats: status.Stats{Str: 90, Agi: 50, Vit: 30, Int: 1, Dex: 40, Luk: 1},
-		items: map[string]uint32{}, groups: map[string]int64{}, monsters: core.Monsters, equipped: map[int64]uint32{}}
+		items: map[string]uint32{}, groups: map[string]int64{}, monsters: core.Monsters, equipped: map[int64]uint32{},
+		refine: map[int64]int{}, defs: map[uint32]*item.Def{}, slots: map[string]int64{}}
 	for id, name := range itemNames(t, mode) {
 		h.items[name] = id
 	}
@@ -315,169 +337,3 @@ func TestReportsCurrent(t *testing.T) {
 }
 
 func yamlUnmarshal(s string, v any) error { return yaml.Unmarshal([]byte(s), v) }
-
-// baseStats are the six stats item_bonuses.json compares: the status
-// fields it records, and the bonus names that add to them.
-var baseStats = []struct{ field, name string }{
-	{"status.str", "str"}, {"status.agi", "agi"}, {"status.vit", "vit"},
-	{"status.int", "int"}, {"status.dex", "dex"}, {"status.luk", "luk"},
-}
-
-// TestItemBonusesParity compares the base stats that converted equipment
-// gives with rAthena's item_bonuses.json, which records each equipment
-// item, and each card in a base item, equipped alone on a sample player
-// (Novice or the first job that can wear it, base level from the record,
-// the melee build, refine 0). Only items whose scripts convert fully are
-// compared. The counts and the mismatches are a golden file, so a change
-// shows in review.
-func TestItemBonusesParity(t *testing.T) {
-	var data struct {
-		Items []struct {
-			Item    uint32         `json:"item"`
-			Job     int            `json:"job"`
-			Level   int            `json:"level"`
-			Changes map[string]any `json:"changes"`
-		} `json:"items"`
-		Cards []struct {
-			Card    uint32         `json:"card"`
-			Job     int            `json:"job"`
-			Level   int            `json:"level"`
-			Changes map[string]any `json:"changes"`
-		} `json:"cards"`
-	}
-	if err := reference.Load(reference.Renewal, "item_bonuses", &data); err != nil {
-		t.Fatal(err)
-	}
-	r, h, core := testRuntime(t, reference.Renewal)
-	names := core.Names(h.items)
-	byID := map[uint32]*Item{}
-	for _, it := range core.Result.Items {
-		byID[it.ID] = it
-	}
-	paths := scriptPaths(core.Result)
-
-	type record struct {
-		id         uint32
-		job, level int
-		changes    map[string]any
-	}
-	var records []record
-	for _, it := range data.Items {
-		records = append(records, record{it.Item, it.Job, it.Level, it.Changes})
-	}
-	for _, c := range data.Cards {
-		records = append(records, record{c.Card, c.Job, c.Level, c.Changes})
-	}
-	var compared, matched, noScript, notFull, changing int
-	var mismatches []string
-	for _, rec := range records {
-		it := byID[rec.id]
-		if it == nil {
-			noScript++
-			continue
-		}
-		if it.Status != Full {
-			notFull++
-			continue
-		}
-		h.job, h.baseLevel = rec.job, rec.level
-		predicted := map[string]int64{}
-		add := func(name string, v int64) {
-			switch name {
-			case "all_stats":
-				for _, s := range baseStats {
-					predicted[s.name] += v
-				}
-			case "str", "agi", "vit", "int", "dex", "luk":
-				predicted[name] += v
-			}
-		}
-		for _, entry := range it.Bonuses {
-			var v any
-			if err := yamlUnmarshal(entry, &v); err != nil {
-				t.Fatal(err)
-			}
-			b, err := bonus.FromData(v, names)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(b.Args) > 0 {
-				add(b.Name, b.Args[0].Value)
-			}
-		}
-		if path := paths[rec.id]; path != "" {
-			h.equipped[int64(rec.id)] = rec.id
-			sink := &recorder{}
-			c, err := r.Equip(path, int64(rec.id), 1, sink)
-			if err != nil {
-				t.Fatalf("%s: %v", it.AegisName, err)
-			}
-			for _, b := range sink.active {
-				args, _, active, err := r.Values(b)
-				if err != nil {
-					t.Fatalf("%s: %v", it.AegisName, err)
-				}
-				if active && len(args) > 0 {
-					add(b.Name, args[0])
-				}
-			}
-			if err := r.Unequip(c); err != nil {
-				t.Fatal(err)
-			}
-		}
-		compared++
-		for _, s := range baseStats {
-			if _, ok := rec.changes[s.field]; ok {
-				changing++
-				break
-			}
-		}
-		var diffs []string
-		for _, s := range baseStats {
-			var recorded int64
-			want := predicted[s.name]
-			if pair, ok := rec.changes[s.field].([]any); ok && len(pair) == 2 {
-				before, _ := pair[0].(float64)
-				after, _ := pair[1].(float64)
-				recorded = int64(after - before)
-				// status_calc_pc keeps a stat at 0 or more.
-				if int64(before)+want < 0 {
-					want = -int64(before)
-				}
-			}
-			if recorded != want {
-				diffs = append(diffs, fmt.Sprintf("%s %d, rAthena %d", s.name, want, recorded))
-			}
-		}
-		if len(diffs) == 0 {
-			matched++
-			continue
-		}
-		mismatches = append(mismatches, fmt.Sprintf("- %s (%d): %s", it.AegisName, it.ID, strings.Join(diffs, "; ")))
-	}
-	sort.Strings(mismatches)
-	var b strings.Builder
-	fmt.Fprintf(&b, "# Base stats of converted equipment against rAthena's item_bonuses.json (renewal)\n\n")
-	fmt.Fprintf(&b, "Records: %d. Without a script: %d. Not fully converted: %d.\n", len(records), noScript, notFull)
-	fmt.Fprintf(&b, "Compared: %d, of which %d change a base stat in rAthena. Same STR, AGI, VIT, INT, DEX and LUK: %d. Different: %d.\n\n", compared, changing, matched, len(mismatches))
-	b.WriteString("A stat that a bonus would take below 0 stays at 0, as status_calc_pc keeps it.\n\n")
-	b.WriteString("Different:\n\n")
-	for _, m := range mismatches {
-		b.WriteString(m + "\n")
-	}
-	got := b.String()
-	path := "testdata/item_bonuses_parity.md"
-	if *update {
-		if err := os.WriteFile(path, []byte(got), 0o600); err != nil {
-			t.Fatal(err)
-		}
-		return
-	}
-	want, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(want) != got {
-		t.Errorf("%s changed; run go test ./tools/convert -run TestItemBonusesParity -update and review the diff:\n%s", path, got[:min(len(got), 600)])
-	}
-}

@@ -146,6 +146,25 @@ func (s *Session) DropItem(seq uint32, slot, amount int) bool {
 	return s.send(command{seq: seq, drop: &dropCommand{slot, amount}})
 }
 
+// EquipItem asks to put on the item in an inventory slot, as rAthena's
+// clif_parse_EquipItem. position holds the EQP_ bits asked for, or 0 for
+// every position the item takes. The gateway has checked the slot is
+// below item.MaxInventory.
+func (s *Session) EquipItem(seq uint32, slot int, position uint32) bool {
+	return s.send(command{seq: seq, equip: &equipCommand{slot, position}})
+}
+
+// UnequipItem asks to take off the item in an inventory slot, as
+// clif_parse_UnequipItem.
+func (s *Session) UnequipItem(seq uint32, slot int) bool {
+	return s.send(command{seq: seq, unequip: &slot})
+}
+
+// InsertCard asks to put a card into an item, as clif_parse_InsertCard.
+func (s *Session) InsertCard(seq uint32, cardSlot, equipSlot int) bool {
+	return s.send(command{seq: seq, insertCard: &insertCardCommand{cardSlot, equipSlot}})
+}
+
 // Leave removes the player from the world. Out closes. Leave returns once
 // the player's last save went to its saver: from the zone the player is
 // in, from the zone it was moving to, or at shutdown.

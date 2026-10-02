@@ -206,9 +206,10 @@ func (q *Queries) DeleteInventorySlots(ctx context.Context, arg DeleteInventoryS
 }
 
 const insertInventory = `-- name: InsertInventory :exec
-INSERT INTO inventory (character_id, slot, item_id, amount, serial)
+INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards)
 SELECT $1, unnest($2::smallint[]), unnest($3::integer[]),
-    unnest($4::integer[]), unnest($5::uuid[])
+    unnest($4::integer[]), unnest($5::uuid[]), unnest($6::integer[]),
+    unnest($7::smallint[]), unnest($8::text[])::integer[]
 `
 
 type InsertInventoryParams struct {
@@ -217,8 +218,14 @@ type InsertInventoryParams struct {
 	ItemIds     []int
 	Amounts     []int
 	Serials     []pgtype.UUID
+	Equips      []int
+	Refines     []int
+	Cards       []string
 }
 
+// InsertInventory writes items in one statement. Each item's cards come
+// as an array literal, such as {4001,4002}, since PostgreSQL arrays of
+// arrays must all have the same length.
 func (q *Queries) InsertInventory(ctx context.Context, arg InsertInventoryParams) error {
 	_, err := q.db.Exec(ctx, insertInventory,
 		arg.CharacterID,
@@ -226,12 +233,15 @@ func (q *Queries) InsertInventory(ctx context.Context, arg InsertInventoryParams
 		arg.ItemIds,
 		arg.Amounts,
 		arg.Serials,
+		arg.Equips,
+		arg.Refines,
+		arg.Cards,
 	)
 	return err
 }
 
 const inventory = `-- name: Inventory :many
-SELECT slot, item_id, amount, serial FROM inventory
+SELECT slot, item_id, amount, serial, equip, refine, cards FROM inventory
 WHERE character_id = $1
 ORDER BY slot
 `
@@ -241,6 +251,9 @@ type InventoryRow struct {
 	ItemID int
 	Amount int
 	Serial pgtype.UUID
+	Equip  int
+	Refine int
+	Cards  []int
 }
 
 func (q *Queries) Inventory(ctx context.Context, characterID int64) ([]InventoryRow, error) {
@@ -257,6 +270,9 @@ func (q *Queries) Inventory(ctx context.Context, characterID int64) ([]Inventory
 			&i.ItemID,
 			&i.Amount,
 			&i.Serial,
+			&i.Equip,
+			&i.Refine,
+			&i.Cards,
 		); err != nil {
 			return nil, err
 		}

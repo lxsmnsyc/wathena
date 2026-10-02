@@ -128,7 +128,7 @@ func TestCalcErrors(t *testing.T) {
 		{Job: 99999, BaseLevel: 1, JobLevel: 1},
 		{Job: 0, BaseLevel: 1, JobLevel: 11},
 		{Job: 0, BaseLevel: 0, JobLevel: 1},
-		{Job: 0, BaseLevel: 100, JobLevel: 1},
+		{Job: 0, BaseLevel: 276, JobLevel: 1},
 		{Job: 4218, BaseLevel: 1, JobLevel: 1},
 	} {
 		if _, err := tb.Calc(c); err == nil {

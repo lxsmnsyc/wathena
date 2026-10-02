@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEiqgQKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHAoEQ2VsbBIJCgF4GAEgASgNEgkKAXkYAiABKA0iSgoEQ2hhdBIoCgdjaGFubmVsGAEgASgOMhcud2F0aGVuYS52MS5DaGF0Q2hhbm5lbBIMCgR0ZXh0GAIgASgJEgoKAnRvGAMgASgJIhcKCE5wY0NsaWNrEgsKA25wYxgBIAEoDSKDAQoITnBjUmVwbHkSDgoGZGlhbG9nGAEgASgNEg4KBG5leHQYAiABKAhIABIOCgRtZW51GAMgASgNSAASFAoKaW5wdXRfdGV4dBgEIAEoCUgAEhYKDGlucHV0X251bWJlchgFIAEoA0gAEg8KBWNsb3NlGAYgASgISABCCAoGYW5zd2VyIj4KB1Nob3BCdXkSCwoDbnBjGAEgASgNEiYKBWl0ZW1zGAIgAygLMhcud2F0aGVuYS52MS5TaG9wQnV5TGluZSIuCgtTaG9wQnV5TGluZRIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDSJACghTaG9wU2VsbBILCgNucGMYASABKA0SJwoFaXRlbXMYAiADKAsyGC53YXRoZW5hLnYxLlNob3BTZWxsTGluZSIsCgxTaG9wU2VsbExpbmUSDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iGAoJU2hvcENsb3NlEgsKA25wYxgBIAEoDSIXCgdVc2VJdGVtEgwKBHNsb3QYASABKA0iKAoIRHJvcEl0ZW0SDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iFgoGUGlja1VwEgwKBGl0ZW0YASABKA0iPwoJUmFpc2VTdGF0EiIKBHN0YXQYASABKA4yFC53YXRoZW5hLnYxLkJhc2VTdGF0Eg4KBmFtb3VudBgCIAEoDSrdAQoLQ2hhdENoYW5uZWwSHAoYQ0hBVF9DSEFOTkVMX1VOU1BFQ0lGSUVEEAASFgoSQ0hBVF9DSEFOTkVMX0xPQ0FMEAESFgoSQ0hBVF9DSEFOTkVMX1BBUlRZEAISFgoSQ0hBVF9DSEFOTkVMX0dVSUxEEAMSGAoUQ0hBVF9DSEFOTkVMX1dISVNQRVIQBBIWChJDSEFUX0NIQU5ORUxfV09STEQQBRIXChNDSEFUX0NIQU5ORUxfU1lTVEVNEAYSHQoZQ0hBVF9DSEFOTkVMX0FOTk9VTkNFTUVOVBAHKpcBCghCYXNlU3RhdBIZChVCQVNFX1NUQVRfVU5TUEVDSUZJRUQQABIRCg1CQVNFX1NUQVRfU1RSEAESEQoNQkFTRV9TVEFUX0FHSRACEhEKDUJBU0VfU1RBVF9WSVQQAxIRCg1CQVNFX1NUQVRfSU5UEAQSEQoNQkFTRV9TVEFUX0RFWBAFEhEKDUJBU0VfU1RBVF9MVUsQBkJAWj5naXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL3YxO3dhdGhlbmF2MWIGcHJvdG8z");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEitwUKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHAoEQ2VsbBIJCgF4GAEgASgNEgkKAXkYAiABKA0iSgoEQ2hhdBIoCgdjaGFubmVsGAEgASgOMhcud2F0aGVuYS52MS5DaGF0Q2hhbm5lbBIMCgR0ZXh0GAIgASgJEgoKAnRvGAMgASgJIhcKCE5wY0NsaWNrEgsKA25wYxgBIAEoDSKDAQoITnBjUmVwbHkSDgoGZGlhbG9nGAEgASgNEg4KBG5leHQYAiABKAhIABIOCgRtZW51GAMgASgNSAASFAoKaW5wdXRfdGV4dBgEIAEoCUgAEhYKDGlucHV0X251bWJlchgFIAEoA0gAEg8KBWNsb3NlGAYgASgISABCCAoGYW5zd2VyIj4KB1Nob3BCdXkSCwoDbnBjGAEgASgNEiYKBWl0ZW1zGAIgAygLMhcud2F0aGVuYS52MS5TaG9wQnV5TGluZSIuCgtTaG9wQnV5TGluZRIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDSJACghTaG9wU2VsbBILCgNucGMYASABKA0SJwoFaXRlbXMYAiADKAsyGC53YXRoZW5hLnYxLlNob3BTZWxsTGluZSIsCgxTaG9wU2VsbExpbmUSDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iGAoJU2hvcENsb3NlEgsKA25wYxgBIAEoDSIXCgdVc2VJdGVtEgwKBHNsb3QYASABKA0iKAoIRHJvcEl0ZW0SDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iFgoGUGlja1VwEgwKBGl0ZW0YASABKA0iPwoJUmFpc2VTdGF0EiIKBHN0YXQYASABKA4yFC53YXRoZW5hLnYxLkJhc2VTdGF0Eg4KBmFtb3VudBgCIAEoDSIrCglFcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDRIQCghwb3NpdGlvbhgCIAEoDSIbCgtVbmVxdWlwSXRlbRIMCgRzbG90GAEgASgNIjMKCkluc2VydENhcmQSEQoJY2FyZF9zbG90GAEgASgNEhIKCmVxdWlwX3Nsb3QYAiABKA0q3QEKC0NoYXRDaGFubmVsEhwKGENIQVRfQ0hBTk5FTF9VTlNQRUNJRklFRBAAEhYKEkNIQVRfQ0hBTk5FTF9MT0NBTBABEhYKEkNIQVRfQ0hBTk5FTF9QQVJUWRACEhYKEkNIQVRfQ0hBTk5FTF9HVUlMRBADEhgKFENIQVRfQ0hBTk5FTF9XSElTUEVSEAQSFgoSQ0hBVF9DSEFOTkVMX1dPUkxEEAUSFwoTQ0hBVF9DSEFOTkVMX1NZU1RFTRAGEh0KGUNIQVRfQ0hBTk5FTF9BTk5PVU5DRU1FTlQQByqXAQoIQmFzZVN0YXQSGQoVQkFTRV9TVEFUX1VOU1BFQ0lGSUVEEAASEQoNQkFTRV9TVEFUX1NUUhABEhEKDUJBU0VfU1RBVF9BR0kQAhIRCg1CQVNFX1NUQVRfVklUEAMSEQoNQkFTRV9TVEFUX0lOVBAEEhEKDUJBU0VfU1RBVF9ERVgQBRIRCg1CQVNFX1NUQVRfTFVLEAZCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -100,6 +100,24 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: ShopClose;
     case: "shopClose";
+  } | {
+    /**
+     * @generated from field: wathena.v1.EquipItem equip_item = 14;
+     */
+    value: EquipItem;
+    case: "equipItem";
+  } | {
+    /**
+     * @generated from field: wathena.v1.UnequipItem unequip_item = 15;
+     */
+    value: UnequipItem;
+    case: "unequipItem";
+  } | {
+    /**
+     * @generated from field: wathena.v1.InsertCard insert_card = 16;
+     */
+    value: InsertCard;
+    case: "insertCard";
   } | { case: undefined; value?: undefined };
 };
 
@@ -562,6 +580,81 @@ export type RaiseStat = Message<"wathena.v1.RaiseStat"> & {
  */
 export const RaiseStatSchema: GenMessage<RaiseStat> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 16);
+
+/**
+ * EquipItem puts on the item in an inventory slot, as rAthena's
+ * pc_equipitem. The server answers with ItemEquipped, or EquipFailed.
+ *
+ * @generated from message wathena.v1.EquipItem
+ */
+export type EquipItem = Message<"wathena.v1.EquipItem"> & {
+  /**
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * position holds the equipment positions the player asks for, as
+   * rAthena's EQP_ bits, such as 0x80 for the left accessory. 0 asks for
+   * every position the item can take.
+   *
+   * @generated from field: uint32 position = 2;
+   */
+  position: number;
+};
+
+/**
+ * Describes the message wathena.v1.EquipItem.
+ * Use `create(EquipItemSchema)` to create a new message.
+ */
+export const EquipItemSchema: GenMessage<EquipItem> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 17);
+
+/**
+ * UnequipItem takes off the item in an inventory slot, as rAthena's
+ * pc_unequipitem. The server answers with ItemUnequipped.
+ *
+ * @generated from message wathena.v1.UnequipItem
+ */
+export type UnequipItem = Message<"wathena.v1.UnequipItem"> & {
+  /**
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+};
+
+/**
+ * Describes the message wathena.v1.UnequipItem.
+ * Use `create(UnequipItemSchema)` to create a new message.
+ */
+export const UnequipItemSchema: GenMessage<UnequipItem> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 18);
+
+/**
+ * InsertCard puts one card from a slot into the first free card slot of
+ * the item in another slot, as rAthena's pc_insert_card. The server
+ * answers with CardInserted, or InsertCardFailed.
+ *
+ * @generated from message wathena.v1.InsertCard
+ */
+export type InsertCard = Message<"wathena.v1.InsertCard"> & {
+  /**
+   * @generated from field: uint32 card_slot = 1;
+   */
+  cardSlot: number;
+
+  /**
+   * @generated from field: uint32 equip_slot = 2;
+   */
+  equipSlot: number;
+};
+
+/**
+ * Describes the message wathena.v1.InsertCard.
+ * Use `create(InsertCardSchema)` to create a new message.
+ */
+export const InsertCardSchema: GenMessage<InsertCard> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 19);
 
 /**
  * @generated from enum wathena.v1.ChatChannel

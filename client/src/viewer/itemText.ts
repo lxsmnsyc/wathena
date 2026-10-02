@@ -90,6 +90,11 @@ export function itemLabel(id: number, info: ItemName | undefined): string {
   return info !== undefined && info.slots > 0 ? `${name} [${info.slots}]` : name;
 }
 
+/** An item's label with its refine level in front, as RO shows it: "+7 Knife [3]". */
+export function refinedLabel(label: string, refine: number): string {
+  return refine > 0 ? `+${refine} ${label}` : label;
+}
+
 /** A part of a line in one color. color is "#rrggbb", or undefined before any code. */
 export interface ColorRun {
   text: string;

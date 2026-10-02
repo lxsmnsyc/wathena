@@ -5,6 +5,11 @@
   display_name: Pumpkin Hat
   weight: 200
   sell: 500
+  # Worn on the head, with the sprite of core's Pumpkin_Hat (view 206).
+  location: [head_top]
+  def: 3
+  armor_level: 1
+  view: 206
   bonuses:
     - [luk, 3]
     - [perfect_dodge, 1]

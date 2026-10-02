@@ -35,6 +35,12 @@ message Event {
     MinimapMark minimap_mark = 23;
     ShopOpen shop_open = 24;
     ShopResult shop_result = 25;
+    ItemEquipped item_equipped = 26;
+    ItemUnequipped item_unequipped = 27;
+    EquipFailed equip_failed = 28;
+    CardInserted card_inserted = 29;
+    InsertCardFailed insert_card_failed = 30;
+    LookChange look_change = 31;
   }
 }
 
@@ -102,7 +108,11 @@ message GroundItem {
   bool dropped = 5;
 }
 
-// Look lists sprite and palette IDs from the client data tables.
+// Look lists sprite and palette IDs from the client data tables. For a
+// player, weapon is the weapon type of its attacks (rAthena's W_ types),
+// shield the view of its shield, and head_top, head_mid, head_bottom and
+// robe the views of its headgear and garment, as rAthena's view_data. 0
+// is none.
 message Look {
   uint32 body = 1;
   uint32 hair = 2;
@@ -413,6 +423,19 @@ message InventoryItem {
   uint32 slot = 1;
   uint32 item_id = 2;
   uint32 amount = 3;
+  // equip holds the positions the item is equipped in, as rAthena's EQP_
+  // bits, or 0.
+  uint32 equip = 4;
+  uint32 refine = 5;
+  // cards are the card IDs in the item's slots, in slot order. Only filled
+  // slots are listed.
+  repeated uint32 cards = 6;
+  // location holds the positions the item can be worn in, as rAthena's
+  // EQP_ bits, or 0 for an item that is not worn. For a card, it holds
+  // the positions of the items it can go into.
+  uint32 location = 7;
+  // card is set for a card, which InsertCard puts into an item.
+  bool card = 8;
 }
 
 // InventoryAdd tells the player an amount of an item entered a slot. The
@@ -422,6 +445,12 @@ message InventoryAdd {
   // amount is the amount added, not the slot's new total.
   uint32 amount = 2;
   uint32 slot = 3;
+  // refine and cards are those of an equipment item that was picked up.
+  uint32 refine = 4;
+  repeated uint32 cards = 5;
+  // location and card are as in InventoryItem.
+  uint32 location = 6;
+  bool card = 7;
 }
 
 // InventoryRemove tells the player an amount left a slot. A slot left
@@ -442,6 +471,8 @@ enum InventoryRemoveReason {
   INVENTORY_REMOVE_REASON_TAKEN = 3;
   // The player sold the item to a shop.
   INVENTORY_REMOVE_REASON_SOLD = 4;
+  // The player put the card into an item.
+  INVENTORY_REMOVE_REASON_CARD_INSERTED = 5;
 }
 
 // ItemUsed shows an entity using an item, as rAthena's clif_useitemack
@@ -512,4 +543,63 @@ enum PickUpFailure {
   PICK_UP_FAILURE_INVENTORY_FULL = 4;
   // The player's stack of the item would pass 30000 or its stack limit.
   PICK_UP_FAILURE_TOO_MANY = 5;
+}
+
+// ItemEquipped tells the player an item went on. position holds the
+// positions it now takes, as rAthena's EQP_ bits. Items that were there
+// come off first, each with ItemUnequipped.
+message ItemEquipped {
+  uint32 slot = 1;
+  uint32 position = 2;
+}
+
+// ItemUnequipped tells the player an item came off. position holds the
+// positions it took.
+message ItemUnequipped {
+  uint32 slot = 1;
+  uint32 position = 2;
+}
+
+// EquipFailed tells the player why an EquipItem did nothing, as rAthena's
+// clif_equipitemack.
+message EquipFailed {
+  uint32 slot = 1;
+  EquipFailure reason = 2;
+}
+
+enum EquipFailure {
+  EQUIP_FAILURE_UNSPECIFIED = 0;
+  // The slot holds nothing.
+  EQUIP_FAILURE_EMPTY_SLOT = 1;
+  // The player's job, class or sex may not wear the item, the item does
+  // not go in the asked position, or it is already worn
+  // (ITEM_EQUIP_ACK_FAIL).
+  EQUIP_FAILURE_CANNOT_EQUIP = 2;
+  // The player's base level is outside the item's range
+  // (ITEM_EQUIP_ACK_FAILLEVEL).
+  EQUIP_FAILURE_LEVEL = 3;
+  // Ammunition that does not fit the player's weapon.
+  EQUIP_FAILURE_WRONG_AMMUNITION = 4;
+}
+
+// CardInserted tells the player a card went into an item. The card slot
+// loses one card with INVENTORY_REMOVE_REASON_CARD_INSERTED.
+message CardInserted {
+  uint32 card_slot = 1;
+  uint32 equip_slot = 2;
+  uint32 card_id = 3;
+}
+
+// InsertCardFailed tells the player an InsertCard did nothing, as
+// clif_insert_card with its failure flag.
+message InsertCardFailed {
+  uint32 card_slot = 1;
+  uint32 equip_slot = 2;
+}
+
+// LookChange tells the players who see an entity that its look changed,
+// such as a player who put on a weapon or a hat, as clif_changelook.
+message LookChange {
+  uint32 id = 1;
+  Look look = 2;
 }

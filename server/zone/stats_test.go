@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
@@ -94,7 +95,7 @@ func TestStatsFollowLevels(t *testing.T) {
 	if _, ok := got[wathenav1.StatId_STAT_ID_STR]; ok {
 		t.Error("STR sent again without a change")
 	}
-	if got, want := withoutPlayer(*p.entity.status), withoutPlayer(lv2.Battle); got != want {
+	if got, want := withoutPlayer(*p.entity.status), withoutPlayer(lv2.Battle); !reflect.DeepEqual(got, want) {
 		t.Errorf("status %+v, want %+v", got, want)
 	}
 
@@ -180,7 +181,7 @@ func TestRaiseStat(t *testing.T) {
 			t.Errorf("%v sent without a change", id)
 		}
 	}
-	if got, want := withoutPlayer(*p.entity.status), withoutPlayer(res.Battle); got != want {
+	if got, want := withoutPlayer(*p.entity.status), withoutPlayer(res.Battle); !reflect.DeepEqual(got, want) {
 		t.Errorf("status %+v, want %+v", got, want)
 	}
 

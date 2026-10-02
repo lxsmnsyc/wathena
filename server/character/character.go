@@ -68,11 +68,25 @@ type Item struct {
 	ID     uint32
 	Amount int
 	Serial item.Serial
+	// Equip holds the positions the item is equipped in, as EQP_ bits, or
+	// 0.
+	Equip uint32
+	// Refine is the refine level.
+	Refine int
+	// Cards are the cards in the item's slots, in slot order.
+	Cards []uint32
+}
+
+// Equal reports whether two items are the same.
+func (it *Item) Equal(o *Item) bool {
+	return it.Slot == o.Slot && it.ID == o.ID && it.Amount == o.Amount && it.Serial == o.Serial &&
+		it.Equip == o.Equip && it.Refine == o.Refine && slices.Equal(it.Cards, o.Cards)
 }
 
 // Equal reports whether two characters hold the same data.
 func (c *Character) Equal(o *Character) bool {
-	return c.Info == o.Info && slices.Equal(c.Items, o.Items) && maps.Equal(c.Variables, o.Variables)
+	return c.Info == o.Info && slices.EqualFunc(c.Items, o.Items, func(a, b Item) bool { return a.Equal(&b) }) &&
+		maps.Equal(c.Variables, o.Variables)
 }
 
 // Sex is the protocol's and rAthena's sex: 1 for male, 0 for female.

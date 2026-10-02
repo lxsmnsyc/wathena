@@ -18,7 +18,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -80,6 +80,21 @@ The converter also reads two extracts per mode for NPCs ([decision 0008](../../d
 | pre-renewal | 4,190 | 185 | 3.2 MB | 0.4 MB |
 
 They were first extracted at rAthena fork commit `003599e1c`.
+
+## Equipment
+
+Equipment reads three extracts per mode ([decision 0009](../../docs/decisions/0009-stats-as-totals-of-modifiers.md)):
+
+- `equipment.json`: the equipment fields of every weapon, armor, ammunition, shadow gear and card in `item_db_*.yml`, with `ItemDatabase::parseBodyNode`'s defaults and caps and `loadingFinished`'s fixes: type and subtype, location (`EQP_` bits), ATK, MATK, DEF, range, card slots, weapon and armor level, level range, refineable, view, `class_base` from `Jobs` through `itemdb_jobid2mapid`, `class_upper` from `Classes`, sex after `defaultGender`, and the `item_noequip.txt` restriction. Type names are read without case, as rAthena reads them through script constants.
+- `refine_db.json`: `refine.yml` as `RefineDatabase` loads it, without costs and chances: the bonus and random bonus of each refine level, by group and item level.
+- `monster_groups.json`: each monster's `RaceGroups` as `RC2_` values.
+
+| Mode | Equipment items | Refine levels | Monsters with race groups |
+|---|---:|---:|---:|
+| renewal | 18,504 | 160 | 454 |
+| pre-renewal | 2,539 | 70 | 93 |
+
+They were extracted at rAthena fork commit `003599e1c`, with three functions that the fork's `tools/wathena/extract.py` does not have yet: `build_equipment`, `build_refine` and `build_monster_groups`. Their output was checked byte for byte against these files. Until the fork gains them, regenerating with `extract.py` leaves these three files as they are.
 
 ## How random rolls are recorded
 

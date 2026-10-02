@@ -27,6 +27,8 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -470,7 +472,7 @@ func diffItems(old, cur []character.Item) (del []int, ins []character.Item) {
 	for _, it := range cur {
 		prev, ok := was[it.Slot]
 		delete(was, it.Slot)
-		if ok && prev == it {
+		if ok && prev.Equal(&it) {
 			continue
 		}
 		if ok {
@@ -497,8 +499,26 @@ func insertParams(id int64, items []character.Item) db.InsertInventoryParams {
 			serial = item.NewSerial()
 		}
 		p.Serials = append(p.Serials, pgtype.UUID{Bytes: serial, Valid: true})
+		p.Equips = append(p.Equips, int(it.Equip))
+		p.Refines = append(p.Refines, it.Refine)
+		p.Cards = append(p.Cards, cardsLiteral(it.Cards))
 	}
 	return p
+}
+
+// cardsLiteral writes cards as a PostgreSQL array literal, such as
+// {4001,4002}, which InsertInventory casts to integer[].
+func cardsLiteral(cards []uint32) string {
+	var b strings.Builder
+	b.WriteByte('{')
+	for i, c := range cards {
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(strconv.FormatUint(uint64(c), 10))
+	}
+	b.WriteByte('}')
+	return b.String()
 }
 
 func saveParams(c *character.Character, version int64) db.SaveCharacterParams {
@@ -531,7 +551,19 @@ func fromRow(r *db.Character, items []db.InventoryRow) (*character.Character, er
 		if err != nil {
 			return nil, err
 		}
-		c.Items = append(c.Items, character.Item{Slot: it.Slot, ID: id, Amount: it.Amount, Serial: it.Serial.Bytes})
+		ci := character.Item{Slot: it.Slot, ID: id, Amount: it.Amount, Serial: it.Serial.Bytes, Refine: it.Refine}
+		if it.Equip < 0 || it.Equip > math.MaxUint32 {
+			return nil, fmt.Errorf("store: equip %d out of range", it.Equip)
+		}
+		ci.Equip = uint32(it.Equip) // #nosec G115 -- checked above, and the CHECK constraint keeps it below 2^22.
+		for _, card := range it.Cards {
+			cid, err := itemID(card)
+			if err != nil {
+				return nil, err
+			}
+			ci.Cards = append(ci.Cards, cid)
+		}
+		c.Items = append(c.Items, ci)
 	}
 	return c, nil
 }

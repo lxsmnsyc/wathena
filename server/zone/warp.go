@@ -187,6 +187,9 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 		}
 	}
 	z.remove(p, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT)
+	// Worn items end their equip contexts here, and start them again in
+	// the new zone.
+	z.unwearAll(p)
 	// The send runs on its own goroutine, so two zones that hand players
 	// to each other never wait on each other. It starts once this zone's
 	// messages to the player went out, so they come before the new

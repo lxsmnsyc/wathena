@@ -141,7 +141,7 @@ func (f *pcFixture) attacker(t testing.TB, c *pcCase) *Status {
 	if w, ok := f.weapons.Weapons[strconv.Itoa(c.Weapon)]; ok {
 		st.EAtk = w.EAtk
 		p.AtkRate = w.AtkRate
-		p.AddRace = w.AddRace
+		p.Right.AddRace = w.AddRace
 		p.IgnoreDefRace = w.IgnoreDefRace
 	}
 	ammo := 0
@@ -350,7 +350,7 @@ func TestPlayerAttackTable(t *testing.T) {
 		// 145 * 50%.
 		{"ATK rate", func(s *Status) { s.Player.AtkRate = 50 }, nil, forcedMin{}, Result{Kind: Hit, Damage: 317, Hits: 1, Flag: short}},
 		// 145 * 120%.
-		{"race bonus", func(s *Status) { s.Player.AddRace = map[int]int{RaceDemiHuman: 20} },
+		{"race bonus", func(s *Status) { s.Player.Right.AddRace = map[int]int{RaceDemiHuman: 20} },
 			func(d *Status) { d.Race = RaceDemiHuman }, forcedMin{}, Result{Kind: Hit, Damage: 274, Hits: 1, Flag: short}},
 		// DEF 100 and 20 become 50 and 10: 245 * 4050 / 4500 - 10.
 		{"ignore DEF", func(s *Status) { s.Player.IgnoreDefRace = map[int]int{RaceAll: 50} },
@@ -445,7 +445,7 @@ func FuzzPlayerAttack(f *testing.F) {
 			Weapon: int(right), RightWeapon: int(right), LeftWeapon: int(left),
 			Skills:      map[int]int{skillDoubleAttack: int(lv), skillChainAction: int(lv), skillKatarMastery: int(lv), skillTKPower: int(lv)},
 			ArrowAttack: arrow, AmmoAtk: int(stat), AmmoEle: int(lv) % elementCount,
-			AtkRate: int(rate), AddRace: map[int]int{RaceAll: int(rate)}, IgnoreDefRace: map[int]int{RaceAll: int(rate)},
+			AtkRate: int(rate), Right: Hand{AddRace: map[int]int{RaceAll: int(rate)}}, IgnoreDefRace: map[int]int{RaceAll: int(rate)},
 			DualWield: DualWield(lv % 3),
 		}
 		src := &Status{
@@ -464,4 +464,100 @@ func FuzzPlayerAttack(f *testing.F) {
 			t.Fatalf("negative damage with forced minimum: %+v", res)
 		}
 	})
+}
+
+// TestEquipmentBonuses checks the item bonuses that normal attacks read,
+// for a player attacker and for a player target.
+func TestEquipmentBonuses(t *testing.T) {
+	const short = bfWeapon | bfNormal | bfShort
+	// The plain hit of TestPlayerAttackTable: 100 status ATK and 145
+	// weapon ATK.
+	base := func() Status {
+		return Status{
+			Level: 99, Hit: 300, Str: 100, Dex: 50, BAtk: 50, WAtk: 100,
+			RHW:    Weapon{Atk: 100, Wlv: 1, Range: 1},
+			Player: &Player{Weapon: WeaponMace, RightWeapon: WeaponMace},
+		}
+	}
+	hit := func(d int64) Result { return Result{Kind: Hit, Damage: d, Hits: 1, Flag: short} }
+	all := bfWeapon | bfShort | bfLong | bfNormal | bfSkill
+	tests := []struct {
+		name string
+		src  func(*Status)
+		dst  func(*Status)
+		want Result
+	}{
+		// Cards change weapon ATK only: 145 * 120%.
+		{"element", func(s *Status) { s.Player.Right.AddEle = map[int]int{Water: 20} }, func(d *Status) { d.DefEle = Water }, hit(274)},
+		{"element with flags", func(s *Status) { s.Player.Right.AddEle2 = []FlaggedRate{{Key: Water, Rate: 20, Flag: all}} },
+			func(d *Status) { d.DefEle = Water }, hit(274)},
+		{"element for magic", func(s *Status) {
+			s.Player.Right.AddEle2 = []FlaggedRate{{Key: Water, Rate: 20, Flag: bfMagic | bfShort | bfLong | bfSkill}}
+		}, func(d *Status) { d.DefEle = Water }, hit(245)},
+		{"class", func(s *Status) { s.Player.Right.AddClass = map[int]int{ClassAll: 10} }, nil, hit(259)},
+		{"left hand counts on the right", func(s *Status) { s.Player.Left.AddSize = map[int]int{SizeMedium: 10} }, nil, hit(259)},
+		{"monster group", func(s *Status) { s.Player.Right.AddRace2 = map[int]int{3: 10} }, func(d *Status) { d.Race2 = []int{3} }, hit(259)},
+		{"monster", func(s *Status) { s.Player.Right.AddDamage = map[int]int{1002: 50} }, func(d *Status) { d.ID = 1002 }, hit(317)},
+		{"P.ATK", func(s *Status) { s.PAtk = 10 }, nil, hit(269)},
+		// 100 + 155, plus 20%, then * 1.4.
+		{"critical damage", func(s *Status) { s.Cri, s.Player.CritAtkRate = 1000, 20 }, nil, Result{Kind: Critical, Damage: 428, Hits: 1, Flag: short}},
+		{"non-critical damage", func(s *Status) { s.Player.NonCritAtkRate = 10 }, nil, hit(269)},
+		{"melee damage", func(s *Status) { s.Player.ShortAtkRate = 10 }, nil, hit(269)},
+		{"weapon type damage", func(s *Status) { s.Player.WeaponDamageRate = map[int]int{WeaponMace: 10} }, nil, hit(259)},
+		// The over-refine roll adds 1 to 5, and 1 with forced rolls.
+		{"over-refine", func(s *Status) { s.Player.Right.Overrefine = 5 }, nil, hit(246)},
+		{"no size penalty", func(s *Status) { s.Player.NoSizeFix = true }, func(d *Status) { d.Size = SizeSmall }, hit(245)},
+		{"ignore DEF", func(s *Status) { s.Player.Right.IgnoreDefRace = 1 << RaceAll }, func(d *Status) { d.Def, d.Def2 = 100, 20 }, hit(245)},
+		// Piercing adds DEF / 2 and skips the reduction.
+		{"pierce DEF", func(s *Status) { s.Player.Right.DefRatioRace = 1 << RaceAll }, func(d *Status) { d.Def, d.Def2 = 100, 20 }, hit(295)},
+		{"double attack rate", func(s *Status) { s.Player.DoubleRate = 50 }, nil, Result{Kind: Hit, Damage: 490, Hits: 2, Flag: short}},
+		{"granted double attack", func(s *Status) {
+			s.Player.Skills, s.Player.Granted = map[int]int{skillDoubleAttack: 10}, map[int]bool{skillDoubleAttack: true}
+		}, nil, Result{Kind: Hit, Damage: 490, Hits: 2, Flag: short}},
+		{"perfect hit", func(s *Status) { s.Hit, s.Player.PerfectHit = 0, 20 }, func(d *Status) { d.Flee = 1000 }, hit(245)},
+	}
+	for _, tt := range tests {
+		src, dst := base(), Status{Size: SizeMedium, EleLv: 1}
+		if tt.src != nil {
+			tt.src(&src)
+		}
+		if tt.dst != nil {
+			tt.dst(&dst)
+		}
+		if got := Attack(&src, &dst, forcedMin{}); got != tt.want {
+			t.Errorf("%s: got %+v, want %+v", tt.name, got, tt.want)
+		}
+	}
+
+	// A monster's normal attack of 100 on a player.
+	mob := func() Status {
+		return Status{Hit: 300, RHW: Weapon{Atk: 100, Atk2: 100, Range: 1}, Race: RaceDemiHuman, Size: SizeMedium, ID: 1023, Race2: []int{20}}
+	}
+	taken := []struct {
+		name string
+		dst  func(*Status)
+		want int64
+	}{
+		{"plain", nil, 100},
+		{"race", func(d *Status) { d.Player.SubRace = map[int]int{RaceDemiHuman: 20} }, 80},
+		{"size", func(d *Status) { d.Player.SubSize = map[int]int{SizeAll: 10} }, 90},
+		{"element of the hit", func(d *Status) { d.Player.SubEle = map[int]int{Neutral: 10} }, 90},
+		{"attacker's element", func(d *Status) { d.Player.SubDefEle = map[int]int{Neutral: 10} }, 90},
+		{"class", func(d *Status) { d.Player.SubClass = map[int]int{ClassAll: 10} }, 90},
+		{"monster group", func(d *Status) { d.Player.SubRace2 = map[int]int{20: 25} }, 75},
+		{"monster", func(d *Status) { d.Player.AddDef = map[int]int{1023: 30} }, 70},
+		{"melee", func(d *Status) { d.Player.NearAtkDef = 10 }, 90},
+		{"ranged only", func(d *Status) { d.Player.LongAtkDef = 10 }, 100},
+		{"soft DEF", func(d *Status) { d.Def2 = 30 }, 70},
+		{"damage cap", func(d *Status) { d.Player.DamageTakenCap = 40 }, 80},
+	}
+	for _, tt := range taken {
+		src, dst := mob(), Status{Level: 50, MaxHP: 200, Size: SizeMedium, EleLv: 1, Player: &Player{}}
+		if tt.dst != nil {
+			tt.dst(&dst)
+		}
+		if got := Attack(&src, &dst, forcedMin{}); got.Damage != tt.want {
+			t.Errorf("taken, %s: got %+v, want damage %d", tt.name, got, tt.want)
+		}
+	}
 }

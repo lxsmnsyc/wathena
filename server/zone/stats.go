@@ -7,9 +7,9 @@ import (
 
 // Stats: a player's battle status comes from its character through
 // server/status, as rAthena's status_calc_pc, and is computed again when
-// its base or job level changes or it raises a stat. The player gets its
-// stats in the first frame and the ones that changed after each
-// calculation.
+// its base or job level changes, it raises a stat, or its equipment or
+// bonuses change. The player gets its stats in the first frame and the
+// ones that changed after each calculation.
 
 // costIDs are the stats that carry each raise cost, in status.Stat order.
 var costIDs = [...]wathenav1.StatId{
@@ -44,9 +44,10 @@ func (z *Zone) raiseStat(p *Player, st status.Stat, amount int) {
 	}
 }
 
-// recalc computes a player's stats, as status_calc_pc. HP and SP above
-// their new maximum drop to it, as status_calc_bl_main. Without job
-// tables, the player keeps PlayerStatus.
+// recalc computes a player's stats, as status_calc_pc, from its job,
+// levels, raised stats and equipment. HP and SP above their new maximum
+// drop to it, as status_calc_bl_main. Without job tables, the player
+// keeps PlayerStatus.
 func (z *Zone) recalc(p *Player) {
 	e := p.entity
 	if z.Status == nil {
@@ -62,6 +63,10 @@ func (z *Zone) recalc(p *Player) {
 	c.BaseLevel, c.JobLevel = 1, 1
 	if z.Progress != nil {
 		c.BaseLevel, c.JobLevel = p.progress.BaseLevel, p.progress.JobLevel
+	}
+	p.statsDirty = false
+	if z.Items != nil && p.inventory != nil {
+		c.Equipment = z.equipment(p)
 	}
 	res, err := z.Status.Calc(c)
 	if err != nil {

@@ -150,6 +150,35 @@ export class Connection {
     });
   }
 
+  /**
+   * Puts on the item in an inventory slot. position holds rAthena's EQP_
+   * bits the player asks for, and 0 asks for every position the item takes.
+   */
+  equipItem(slot: number, position = 0): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'equipItem', value: { slot, position } } }),
+    });
+  }
+
+  /** Takes off the item in an inventory slot. */
+  unequipItem(slot: number): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'unequipItem', value: { slot } } }),
+    });
+  }
+
+  /** Puts one card from a slot into the first free card slot of another slot's item. */
+  insertCard(cardSlot: number, equipSlot: number): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'insertCard', value: { cardSlot, equipSlot } },
+      }),
+    });
+  }
+
   /** Spends status points to raise a stat by up to amount, 1 to 255. */
   raiseStat(stat: BaseStat, amount = 1): void {
     this.send({

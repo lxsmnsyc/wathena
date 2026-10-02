@@ -1,0 +1,862 @@
+{
+	"rathena_git_hash": "003599e1c09c31c1bb123cb5b7b0278055eddcc0",
+	"mode": "renewal",
+	"max_refine": 20,
+	"note": "refine.yml as RefineDatabase loads it, without costs and chances. group is the refine type: Armor, Weapon, Shadow_Armor or Shadow_Weapon. level is the item's armor level or weapon level (1 for shadow gear). Each refine level has bonus and random_bonus in hundredths, as s_refine_level_info; status_calc_pc adds bonus / 100 to weapon ATK and bonus to the refine DEF sum, and random_bonus / 100 is the overrefine maximum. A refine level the file does not list has no entry.",
+	"groups": [
+		{
+			"group": "Armor",
+			"level": 1,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 100,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 200,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 300,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 400,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 600,
+					"random_bonus": 0
+				},
+				{
+					"level": 6,
+					"bonus": 800,
+					"random_bonus": 0
+				},
+				{
+					"level": 7,
+					"bonus": 1000,
+					"random_bonus": 0
+				},
+				{
+					"level": 8,
+					"bonus": 1200,
+					"random_bonus": 0
+				},
+				{
+					"level": 9,
+					"bonus": 1500,
+					"random_bonus": 0
+				},
+				{
+					"level": 10,
+					"bonus": 1800,
+					"random_bonus": 0
+				},
+				{
+					"level": 11,
+					"bonus": 2100,
+					"random_bonus": 0
+				},
+				{
+					"level": 12,
+					"bonus": 2400,
+					"random_bonus": 0
+				},
+				{
+					"level": 13,
+					"bonus": 2800,
+					"random_bonus": 0
+				},
+				{
+					"level": 14,
+					"bonus": 3200,
+					"random_bonus": 0
+				},
+				{
+					"level": 15,
+					"bonus": 3600,
+					"random_bonus": 0
+				},
+				{
+					"level": 16,
+					"bonus": 4000,
+					"random_bonus": 0
+				},
+				{
+					"level": 17,
+					"bonus": 4500,
+					"random_bonus": 0
+				},
+				{
+					"level": 18,
+					"bonus": 5000,
+					"random_bonus": 0
+				},
+				{
+					"level": 19,
+					"bonus": 5500,
+					"random_bonus": 0
+				},
+				{
+					"level": 20,
+					"bonus": 6000,
+					"random_bonus": 0
+				}
+			]
+		},
+		{
+			"group": "Armor",
+			"level": 2,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 120,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 240,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 360,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 480,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 720,
+					"random_bonus": 0
+				},
+				{
+					"level": 6,
+					"bonus": 960,
+					"random_bonus": 0
+				},
+				{
+					"level": 7,
+					"bonus": 1200,
+					"random_bonus": 0
+				},
+				{
+					"level": 8,
+					"bonus": 1440,
+					"random_bonus": 0
+				},
+				{
+					"level": 9,
+					"bonus": 1800,
+					"random_bonus": 0
+				},
+				{
+					"level": 10,
+					"bonus": 2160,
+					"random_bonus": 0
+				},
+				{
+					"level": 11,
+					"bonus": 2520,
+					"random_bonus": 0
+				},
+				{
+					"level": 12,
+					"bonus": 2880,
+					"random_bonus": 0
+				},
+				{
+					"level": 13,
+					"bonus": 3360,
+					"random_bonus": 0
+				},
+				{
+					"level": 14,
+					"bonus": 3840,
+					"random_bonus": 0
+				},
+				{
+					"level": 15,
+					"bonus": 4320,
+					"random_bonus": 0
+				},
+				{
+					"level": 16,
+					"bonus": 4800,
+					"random_bonus": 0
+				},
+				{
+					"level": 17,
+					"bonus": 5400,
+					"random_bonus": 0
+				},
+				{
+					"level": 18,
+					"bonus": 6000,
+					"random_bonus": 0
+				},
+				{
+					"level": 19,
+					"bonus": 6600,
+					"random_bonus": 0
+				},
+				{
+					"level": 20,
+					"bonus": 7200,
+					"random_bonus": 0
+				}
+			]
+		},
+		{
+			"group": "Weapon",
+			"level": 1,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 200,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 400,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 600,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 800,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 1000,
+					"random_bonus": 0
+				},
+				{
+					"level": 6,
+					"bonus": 1200,
+					"random_bonus": 0
+				},
+				{
+					"level": 7,
+					"bonus": 1400,
+					"random_bonus": 0
+				},
+				{
+					"level": 8,
+					"bonus": 1600,
+					"random_bonus": 300
+				},
+				{
+					"level": 9,
+					"bonus": 1800,
+					"random_bonus": 600
+				},
+				{
+					"level": 10,
+					"bonus": 2000,
+					"random_bonus": 900
+				},
+				{
+					"level": 11,
+					"bonus": 2200,
+					"random_bonus": 1200
+				},
+				{
+					"level": 12,
+					"bonus": 2400,
+					"random_bonus": 1500
+				},
+				{
+					"level": 13,
+					"bonus": 2600,
+					"random_bonus": 1800
+				},
+				{
+					"level": 14,
+					"bonus": 2800,
+					"random_bonus": 2100
+				},
+				{
+					"level": 15,
+					"bonus": 3000,
+					"random_bonus": 2400
+				},
+				{
+					"level": 16,
+					"bonus": 4800,
+					"random_bonus": 2700
+				},
+				{
+					"level": 17,
+					"bonus": 5100,
+					"random_bonus": 3000
+				},
+				{
+					"level": 18,
+					"bonus": 5400,
+					"random_bonus": 3300
+				},
+				{
+					"level": 19,
+					"bonus": 5700,
+					"random_bonus": 3600
+				},
+				{
+					"level": 20,
+					"bonus": 6000,
+					"random_bonus": 3900
+				}
+			]
+		},
+		{
+			"group": "Weapon",
+			"level": 2,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 300,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 600,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 900,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 1200,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 1500,
+					"random_bonus": 0
+				},
+				{
+					"level": 6,
+					"bonus": 1800,
+					"random_bonus": 0
+				},
+				{
+					"level": 7,
+					"bonus": 2100,
+					"random_bonus": 500
+				},
+				{
+					"level": 8,
+					"bonus": 2400,
+					"random_bonus": 1000
+				},
+				{
+					"level": 9,
+					"bonus": 2700,
+					"random_bonus": 1500
+				},
+				{
+					"level": 10,
+					"bonus": 3000,
+					"random_bonus": 2000
+				},
+				{
+					"level": 11,
+					"bonus": 3300,
+					"random_bonus": 2500
+				},
+				{
+					"level": 12,
+					"bonus": 3600,
+					"random_bonus": 3000
+				},
+				{
+					"level": 13,
+					"bonus": 3900,
+					"random_bonus": 3500
+				},
+				{
+					"level": 14,
+					"bonus": 4200,
+					"random_bonus": 4000
+				},
+				{
+					"level": 15,
+					"bonus": 4500,
+					"random_bonus": 4500
+				},
+				{
+					"level": 16,
+					"bonus": 8000,
+					"random_bonus": 5000
+				},
+				{
+					"level": 17,
+					"bonus": 8500,
+					"random_bonus": 5500
+				},
+				{
+					"level": 18,
+					"bonus": 9000,
+					"random_bonus": 6000
+				},
+				{
+					"level": 19,
+					"bonus": 9500,
+					"random_bonus": 6500
+				},
+				{
+					"level": 20,
+					"bonus": 10000,
+					"random_bonus": 7000
+				}
+			]
+		},
+		{
+			"group": "Weapon",
+			"level": 3,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 500,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 1000,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 1500,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 2000,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 2500,
+					"random_bonus": 0
+				},
+				{
+					"level": 6,
+					"bonus": 3000,
+					"random_bonus": 800
+				},
+				{
+					"level": 7,
+					"bonus": 3500,
+					"random_bonus": 1600
+				},
+				{
+					"level": 8,
+					"bonus": 4000,
+					"random_bonus": 2400
+				},
+				{
+					"level": 9,
+					"bonus": 4500,
+					"random_bonus": 3200
+				},
+				{
+					"level": 10,
+					"bonus": 5000,
+					"random_bonus": 4000
+				},
+				{
+					"level": 11,
+					"bonus": 5500,
+					"random_bonus": 4800
+				},
+				{
+					"level": 12,
+					"bonus": 6000,
+					"random_bonus": 5600
+				},
+				{
+					"level": 13,
+					"bonus": 6500,
+					"random_bonus": 6400
+				},
+				{
+					"level": 14,
+					"bonus": 7000,
+					"random_bonus": 7200
+				},
+				{
+					"level": 15,
+					"bonus": 7500,
+					"random_bonus": 8000
+				},
+				{
+					"level": 16,
+					"bonus": 11200,
+					"random_bonus": 8800
+				},
+				{
+					"level": 17,
+					"bonus": 11900,
+					"random_bonus": 9600
+				},
+				{
+					"level": 18,
+					"bonus": 12600,
+					"random_bonus": 10400
+				},
+				{
+					"level": 19,
+					"bonus": 13300,
+					"random_bonus": 11200
+				},
+				{
+					"level": 20,
+					"bonus": 14000,
+					"random_bonus": 12000
+				}
+			]
+		},
+		{
+			"group": "Weapon",
+			"level": 4,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 700,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 1400,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 2100,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 2800,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 3500,
+					"random_bonus": 1400
+				},
+				{
+					"level": 6,
+					"bonus": 4200,
+					"random_bonus": 2800
+				},
+				{
+					"level": 7,
+					"bonus": 4900,
+					"random_bonus": 4200
+				},
+				{
+					"level": 8,
+					"bonus": 5600,
+					"random_bonus": 5600
+				},
+				{
+					"level": 9,
+					"bonus": 6300,
+					"random_bonus": 7000
+				},
+				{
+					"level": 10,
+					"bonus": 7000,
+					"random_bonus": 8400
+				},
+				{
+					"level": 11,
+					"bonus": 7700,
+					"random_bonus": 9800
+				},
+				{
+					"level": 12,
+					"bonus": 8400,
+					"random_bonus": 11200
+				},
+				{
+					"level": 13,
+					"bonus": 9100,
+					"random_bonus": 12600
+				},
+				{
+					"level": 14,
+					"bonus": 9800,
+					"random_bonus": 14000
+				},
+				{
+					"level": 15,
+					"bonus": 10500,
+					"random_bonus": 15400
+				},
+				{
+					"level": 16,
+					"bonus": 16000,
+					"random_bonus": 16800
+				},
+				{
+					"level": 17,
+					"bonus": 17000,
+					"random_bonus": 18200
+				},
+				{
+					"level": 18,
+					"bonus": 18000,
+					"random_bonus": 19600
+				},
+				{
+					"level": 19,
+					"bonus": 19000,
+					"random_bonus": 21000
+				},
+				{
+					"level": 20,
+					"bonus": 20000,
+					"random_bonus": 22400
+				}
+			]
+		},
+		{
+			"group": "Weapon",
+			"level": 5,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 800,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 1600,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 2400,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 3200,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 4000,
+					"random_bonus": 0
+				},
+				{
+					"level": 6,
+					"bonus": 4800,
+					"random_bonus": 0
+				},
+				{
+					"level": 7,
+					"bonus": 5600,
+					"random_bonus": 0
+				},
+				{
+					"level": 8,
+					"bonus": 6400,
+					"random_bonus": 0
+				},
+				{
+					"level": 9,
+					"bonus": 7200,
+					"random_bonus": 0
+				},
+				{
+					"level": 10,
+					"bonus": 8000,
+					"random_bonus": 0
+				},
+				{
+					"level": 11,
+					"bonus": 8800,
+					"random_bonus": 0
+				},
+				{
+					"level": 12,
+					"bonus": 9600,
+					"random_bonus": 0
+				},
+				{
+					"level": 13,
+					"bonus": 10400,
+					"random_bonus": 0
+				},
+				{
+					"level": 14,
+					"bonus": 11200,
+					"random_bonus": 0
+				},
+				{
+					"level": 15,
+					"bonus": 12000,
+					"random_bonus": 0
+				},
+				{
+					"level": 16,
+					"bonus": 12800,
+					"random_bonus": 0
+				},
+				{
+					"level": 17,
+					"bonus": 13600,
+					"random_bonus": 0
+				},
+				{
+					"level": 18,
+					"bonus": 14400,
+					"random_bonus": 0
+				},
+				{
+					"level": 19,
+					"bonus": 15200,
+					"random_bonus": 0
+				},
+				{
+					"level": 20,
+					"bonus": 16000,
+					"random_bonus": 0
+				}
+			]
+		},
+		{
+			"group": "Shadow_Armor",
+			"level": 1,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 6,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 7,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 8,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 9,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 10,
+					"bonus": 0,
+					"random_bonus": 0
+				}
+			]
+		},
+		{
+			"group": "Shadow_Weapon",
+			"level": 1,
+			"refine_levels": [
+				{
+					"level": 1,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 2,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 3,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 4,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 5,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 6,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 7,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 8,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 9,
+					"bonus": 0,
+					"random_bonus": 0
+				},
+				{
+					"level": 10,
+					"bonus": 0,
+					"random_bonus": 0
+				}
+			]
+		}
+	]
+}

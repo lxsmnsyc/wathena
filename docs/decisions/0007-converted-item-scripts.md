@@ -12,7 +12,7 @@
 - What is checked in, and checked by `go test ./tools/convert`:
   - the coverage reports, `docs/generated/item-scripts-<mode>.md`;
   - the converted output of 23 sample items, `tools/convert/testdata/golden`;
-  - the comparison with rAthena's `item_bonuses.json`, `tools/convert/testdata/item_bonuses_parity.md`.
+  - the comparison with rAthena's `item_bonuses.json` and `refine.json`, `tools/convert/testdata/equipment_parity_<mode>.md` (decision 0009).
 - Equipment whose scripts are only constant bonuses becomes item data, not Lua (strategy section 5.3, rule 5). Each bonus is a list: the name, then the arguments of `bonuses.add`, with constants and records by name.
 
 ## Where the converted scripts live

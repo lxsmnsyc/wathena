@@ -1,13 +1,14 @@
 import { create } from '@bufbuild/protobuf';
 import { Texture } from 'three';
 import { describe, expect, it, vi } from 'vitest';
+import type { Sprite } from '../formats/wspr';
 import type { WMap } from '../formats/wmap';
 import { ChatChannel } from '../gen/wathena/v1/command_pb';
-import { EntityKind, type Event, EventSchema } from '../gen/wathena/v1/event_pb';
+import { EntityKind, type Event, EventSchema, LookSchema } from '../gen/wathena/v1/event_pb';
 import type { EffectCache } from '../render/effects';
-import type { SpriteCache } from '../render/sprites';
+import { SpriteAsset, type SpriteCache } from '../render/sprites';
 import type { Pathfinder } from '../world/pathfinder';
-import Online, { WARP_SPRITE } from './online';
+import Online, { WARP_SPRITE, lookOf } from './online';
 
 function map(): WMap {
   const n = 10;
@@ -135,5 +136,119 @@ describe('Online', () => {
     ]);
     expect(server).toEqual(['Welcome']);
     expect(local).toEqual(['Bob: hi']);
+  });
+});
+
+describe('lookOf', () => {
+  it('draws no equipment for a bare look', () => {
+    expect(lookOf(create(LookSchema, { body: 0, hair: 2, sex: 1 }))).toEqual({
+      body: 'sprite/body/novice/m',
+      head: 'sprite/head/human/m/2',
+      hairPalette: 'palette/hair/human/m/2/0',
+    });
+  });
+
+  it('draws the weapon type view, shield, headgear and garment', () => {
+    const look = lookOf(
+      create(LookSchema, {
+        body: 1,
+        hair: 3,
+        sex: 0,
+        weapon: 2,
+        shield: 4,
+        headTop: 17,
+        headMid: 12,
+        headBottom: 5,
+        robe: 9,
+      }),
+    );
+    expect(look).toMatchObject({
+      body: 'sprite/body/swordman/f',
+      weapon: 'sprite/weapon/swordman/f/2',
+      shield: 'sprite/shield/swordman/f/4',
+      headgearTop: 'sprite/headgear/f/17',
+      headgearMid: 'sprite/headgear/f/12',
+      headgearBottom: 'sprite/headgear/f/5',
+      garment: 'sprite/garment/swordman/f/9',
+    });
+  });
+
+  it('draws no weapon for bare hands or an unknown type', () => {
+    expect(lookOf(create(LookSchema, { weapon: 0 })).weapon).toBeUndefined();
+    expect(lookOf(create(LookSchema, { weapon: 9999 })).weapon).toBeUndefined();
+  });
+});
+
+/** A sprite of one frame per action, for characters that load. */
+function sprite(): SpriteAsset {
+  const s: Sprite = {
+    pages: [{ kind: 0, width: 1, height: 1, pixels: new Uint8Array([1]) }],
+    palette: new Uint8Array(1024),
+    images: [{ page: 0, x: 0, y: 0, width: 1, height: 1 }],
+    actions: Array.from({ length: 16 }, () => ({
+      intervalMs: 100,
+      frames: [{ event: -1, anchors: [[0, 0] as [number, number]], layers: [] }],
+    })),
+    events: [],
+  };
+  return new SpriteAsset(s);
+}
+
+async function settle(): Promise<void> {
+  for (let i = 0; i < 5; i++) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  }
+}
+
+describe('LookChange', () => {
+  it('loads the new look and keeps the player in place', async () => {
+    vi.stubGlobal('reportError', () => {});
+    const asked: string[] = [];
+    const sprites = {
+      get: async (name: string) => {
+        asked.push(name);
+        await Promise.resolve();
+        return name.startsWith('sprite/body/') || name.startsWith('sprite/headgear/')
+          ? sprite()
+          : undefined;
+      },
+      palette: async () => {
+        await Promise.resolve();
+        return undefined;
+      },
+    } as unknown as SpriteCache;
+    const o = new Online(1, sprites, {} as Pathfinder);
+    o.setMap(map());
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 1, kind: EntityKind.PLAYER, x: 4, y: 5, dir: 3, look: { body: 0, sex: 1 } },
+        },
+      }),
+    ]);
+    await settle();
+    const before = o.me?.character;
+    expect(before).toBeDefined();
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'lookChange',
+          value: { id: 1, look: { body: 0, sex: 1, headTop: 17, weapon: 1 } },
+        },
+      }),
+    ]);
+    await settle();
+    expect(asked).toContain('sprite/headgear/m/17');
+    expect(asked).toContain('sprite/weapon/novice/m/1');
+    const after = o.me?.character;
+    expect(after).toBeDefined();
+    expect(after).not.toBe(before);
+    expect(after?.direction).toBe(3);
+    expect(o.position(1)?.x).toBe(4.5);
+    expect(o.group.children).toContain(after?.group);
+    expect(o.group.children).not.toContain(before?.group);
   });
 });

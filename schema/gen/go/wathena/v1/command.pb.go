@@ -293,6 +293,33 @@ func (x *Command) GetShopClose() *ShopClose {
 	return nil
 }
 
+func (x *Command) GetEquipItem() *EquipItem {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_EquipItem); ok {
+			return x.EquipItem
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetUnequipItem() *UnequipItem {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_UnequipItem); ok {
+			return x.UnequipItem
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetInsertCard() *InsertCard {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_InsertCard); ok {
+			return x.InsertCard
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -395,6 +422,30 @@ func (x *Command) SetShopClose(v *ShopClose) {
 		return
 	}
 	x.xxx_hidden_Body = &command_ShopClose{v}
+}
+
+func (x *Command) SetEquipItem(v *EquipItem) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_EquipItem{v}
+}
+
+func (x *Command) SetUnequipItem(v *UnequipItem) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_UnequipItem{v}
+}
+
+func (x *Command) SetInsertCard(v *InsertCard) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_InsertCard{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -508,6 +559,30 @@ func (x *Command) HasShopClose() bool {
 	return ok
 }
 
+func (x *Command) HasEquipItem() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_EquipItem)
+	return ok
+}
+
+func (x *Command) HasUnequipItem() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_UnequipItem)
+	return ok
+}
+
+func (x *Command) HasInsertCard() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_InsertCard)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -590,6 +665,24 @@ func (x *Command) ClearShopClose() {
 	}
 }
 
+func (x *Command) ClearEquipItem() {
+	if _, ok := x.xxx_hidden_Body.(*command_EquipItem); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearUnequipItem() {
+	if _, ok := x.xxx_hidden_Body.(*command_UnequipItem); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearInsertCard() {
+	if _, ok := x.xxx_hidden_Body.(*command_InsertCard); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -604,6 +697,9 @@ const Command_DropItem_case case_Command_Body = 10
 const Command_ShopBuy_case case_Command_Body = 11
 const Command_ShopSell_case case_Command_Body = 12
 const Command_ShopClose_case case_Command_Body = 13
+const Command_EquipItem_case case_Command_Body = 14
+const Command_UnequipItem_case case_Command_Body = 15
+const Command_InsertCard_case case_Command_Body = 16
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -636,6 +732,12 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_ShopSell_case
 	case *command_ShopClose:
 		return Command_ShopClose_case
+	case *command_EquipItem:
+		return Command_EquipItem_case
+	case *command_UnequipItem:
+		return Command_UnequipItem_case
+	case *command_InsertCard:
+		return Command_InsertCard_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -645,19 +747,22 @@ type Command_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Fields of oneof xxx_hidden_Body:
-	WalkTo    *WalkTo
-	Attack    *Attack
-	UseSkill  *UseSkill
-	Chat      *Chat
-	NpcClick  *NpcClick
-	NpcReply  *NpcReply
-	UseItem   *UseItem
-	PickUp    *PickUp
-	RaiseStat *RaiseStat
-	DropItem  *DropItem
-	ShopBuy   *ShopBuy
-	ShopSell  *ShopSell
-	ShopClose *ShopClose
+	WalkTo      *WalkTo
+	Attack      *Attack
+	UseSkill    *UseSkill
+	Chat        *Chat
+	NpcClick    *NpcClick
+	NpcReply    *NpcReply
+	UseItem     *UseItem
+	PickUp      *PickUp
+	RaiseStat   *RaiseStat
+	DropItem    *DropItem
+	ShopBuy     *ShopBuy
+	ShopSell    *ShopSell
+	ShopClose   *ShopClose
+	EquipItem   *EquipItem
+	UnequipItem *UnequipItem
+	InsertCard  *InsertCard
 	// -- end of xxx_hidden_Body
 }
 
@@ -703,6 +808,15 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.ShopClose != nil {
 		x.xxx_hidden_Body = &command_ShopClose{b.ShopClose}
+	}
+	if b.EquipItem != nil {
+		x.xxx_hidden_Body = &command_EquipItem{b.EquipItem}
+	}
+	if b.UnequipItem != nil {
+		x.xxx_hidden_Body = &command_UnequipItem{b.UnequipItem}
+	}
+	if b.InsertCard != nil {
+		x.xxx_hidden_Body = &command_InsertCard{b.InsertCard}
 	}
 	return m0
 }
@@ -773,6 +887,18 @@ type command_ShopClose struct {
 	ShopClose *ShopClose `protobuf:"bytes,13,opt,name=shop_close,json=shopClose,proto3,oneof"`
 }
 
+type command_EquipItem struct {
+	EquipItem *EquipItem `protobuf:"bytes,14,opt,name=equip_item,json=equipItem,proto3,oneof"`
+}
+
+type command_UnequipItem struct {
+	UnequipItem *UnequipItem `protobuf:"bytes,15,opt,name=unequip_item,json=unequipItem,proto3,oneof"`
+}
+
+type command_InsertCard struct {
+	InsertCard *InsertCard `protobuf:"bytes,16,opt,name=insert_card,json=insertCard,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -798,6 +924,12 @@ func (*command_ShopBuy) isCommand_Body() {}
 func (*command_ShopSell) isCommand_Body() {}
 
 func (*command_ShopClose) isCommand_Body() {}
+
+func (*command_EquipItem) isCommand_Body() {}
+
+func (*command_UnequipItem) isCommand_Body() {}
+
+func (*command_InsertCard) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -2297,12 +2429,221 @@ func (b0 RaiseStat_builder) Build() *RaiseStat {
 	return m0
 }
 
+// EquipItem puts on the item in an inventory slot, as rAthena's
+// pc_equipitem. The server answers with ItemEquipped, or EquipFailed.
+type EquipItem struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot     uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Position uint32                 `protobuf:"varint,2,opt,name=position,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *EquipItem) Reset() {
+	*x = EquipItem{}
+	mi := &file_wathena_v1_command_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipItem) ProtoMessage() {}
+
+func (x *EquipItem) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EquipItem) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *EquipItem) GetPosition() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Position
+	}
+	return 0
+}
+
+func (x *EquipItem) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *EquipItem) SetPosition(v uint32) {
+	x.xxx_hidden_Position = v
+}
+
+type EquipItem_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot uint32
+	// position holds the equipment positions the player asks for, as
+	// rAthena's EQP_ bits, such as 0x80 for the left accessory. 0 asks for
+	// every position the item can take.
+	Position uint32
+}
+
+func (b0 EquipItem_builder) Build() *EquipItem {
+	m0 := &EquipItem{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Position = b.Position
+	return m0
+}
+
+// UnequipItem takes off the item in an inventory slot, as rAthena's
+// pc_unequipitem. The server answers with ItemUnequipped.
+type UnequipItem struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *UnequipItem) Reset() {
+	*x = UnequipItem{}
+	mi := &file_wathena_v1_command_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnequipItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnequipItem) ProtoMessage() {}
+
+func (x *UnequipItem) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UnequipItem) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *UnequipItem) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+type UnequipItem_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot uint32
+}
+
+func (b0 UnequipItem_builder) Build() *UnequipItem {
+	m0 := &UnequipItem{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	return m0
+}
+
+// InsertCard puts one card from a slot into the first free card slot of
+// the item in another slot, as rAthena's pc_insert_card. The server
+// answers with CardInserted, or InsertCardFailed.
+type InsertCard struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CardSlot  uint32                 `protobuf:"varint,1,opt,name=card_slot,json=cardSlot,proto3"`
+	xxx_hidden_EquipSlot uint32                 `protobuf:"varint,2,opt,name=equip_slot,json=equipSlot,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *InsertCard) Reset() {
+	*x = InsertCard{}
+	mi := &file_wathena_v1_command_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InsertCard) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InsertCard) ProtoMessage() {}
+
+func (x *InsertCard) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *InsertCard) GetCardSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_CardSlot
+	}
+	return 0
+}
+
+func (x *InsertCard) GetEquipSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_EquipSlot
+	}
+	return 0
+}
+
+func (x *InsertCard) SetCardSlot(v uint32) {
+	x.xxx_hidden_CardSlot = v
+}
+
+func (x *InsertCard) SetEquipSlot(v uint32) {
+	x.xxx_hidden_EquipSlot = v
+}
+
+type InsertCard_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	CardSlot  uint32
+	EquipSlot uint32
+}
+
+func (b0 InsertCard_builder) Build() *InsertCard {
+	m0 := &InsertCard{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CardSlot = b.CardSlot
+	x.xxx_hidden_EquipSlot = b.EquipSlot
+	return m0
+}
+
 var File_wathena_v1_command_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\xa2\x05\n" +
+	"wathena.v1\"\xd3\x06\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -2319,7 +2660,12 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\bshop_buy\x18\v \x01(\v2\x13.wathena.v1.ShopBuyH\x00R\ashopBuy\x123\n" +
 	"\tshop_sell\x18\f \x01(\v2\x14.wathena.v1.ShopSellH\x00R\bshopSell\x126\n" +
 	"\n" +
-	"shop_close\x18\r \x01(\v2\x15.wathena.v1.ShopCloseH\x00R\tshopCloseB\x06\n" +
+	"shop_close\x18\r \x01(\v2\x15.wathena.v1.ShopCloseH\x00R\tshopClose\x126\n" +
+	"\n" +
+	"equip_item\x18\x0e \x01(\v2\x15.wathena.v1.EquipItemH\x00R\tequipItem\x12<\n" +
+	"\funequip_item\x18\x0f \x01(\v2\x17.wathena.v1.UnequipItemH\x00R\vunequipItem\x129\n" +
+	"\vinsert_card\x18\x10 \x01(\v2\x16.wathena.v1.InsertCardH\x00R\n" +
+	"insertCardB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -2374,7 +2720,17 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x04item\x18\x01 \x01(\rR\x04item\"M\n" +
 	"\tRaiseStat\x12(\n" +
 	"\x04stat\x18\x01 \x01(\x0e2\x14.wathena.v1.BaseStatR\x04stat\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\rR\x06amount*\xdd\x01\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\";\n" +
+	"\tEquipItem\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x1a\n" +
+	"\bposition\x18\x02 \x01(\rR\bposition\"!\n" +
+	"\vUnequipItem\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\"H\n" +
+	"\n" +
+	"InsertCard\x12\x1b\n" +
+	"\tcard_slot\x18\x01 \x01(\rR\bcardSlot\x12\x1d\n" +
+	"\n" +
+	"equip_slot\x18\x02 \x01(\rR\tequipSlot*\xdd\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
@@ -2394,7 +2750,7 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_wathena_v1_command_proto_goTypes = []any{
 	(ChatChannel)(0),     // 0: wathena.v1.ChatChannel
 	(BaseStat)(0),        // 1: wathena.v1.BaseStat
@@ -2415,6 +2771,9 @@ var file_wathena_v1_command_proto_goTypes = []any{
 	(*DropItem)(nil),     // 16: wathena.v1.DropItem
 	(*PickUp)(nil),       // 17: wathena.v1.PickUp
 	(*RaiseStat)(nil),    // 18: wathena.v1.RaiseStat
+	(*EquipItem)(nil),    // 19: wathena.v1.EquipItem
+	(*UnequipItem)(nil),  // 20: wathena.v1.UnequipItem
+	(*InsertCard)(nil),   // 21: wathena.v1.InsertCard
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
 	3,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
@@ -2430,16 +2789,19 @@ var file_wathena_v1_command_proto_depIdxs = []int32{
 	10, // 10: wathena.v1.Command.shop_buy:type_name -> wathena.v1.ShopBuy
 	12, // 11: wathena.v1.Command.shop_sell:type_name -> wathena.v1.ShopSell
 	14, // 12: wathena.v1.Command.shop_close:type_name -> wathena.v1.ShopClose
-	6,  // 13: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 14: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	11, // 15: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
-	13, // 16: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
-	1,  // 17: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	19, // 13: wathena.v1.Command.equip_item:type_name -> wathena.v1.EquipItem
+	20, // 14: wathena.v1.Command.unequip_item:type_name -> wathena.v1.UnequipItem
+	21, // 15: wathena.v1.Command.insert_card:type_name -> wathena.v1.InsertCard
+	6,  // 16: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 17: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	11, // 18: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
+	13, // 19: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
+	1,  // 20: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -2461,6 +2823,9 @@ func file_wathena_v1_command_proto_init() {
 		(*command_ShopBuy)(nil),
 		(*command_ShopSell)(nil),
 		(*command_ShopClose)(nil),
+		(*command_EquipItem)(nil),
+		(*command_UnequipItem)(nil),
+		(*command_InsertCard)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
@@ -2479,7 +2844,7 @@ func file_wathena_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   17,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -463,6 +463,8 @@ const (
 	InventoryRemoveReason_INVENTORY_REMOVE_REASON_TAKEN InventoryRemoveReason = 3
 	// The player sold the item to a shop.
 	InventoryRemoveReason_INVENTORY_REMOVE_REASON_SOLD InventoryRemoveReason = 4
+	// The player put the card into an item.
+	InventoryRemoveReason_INVENTORY_REMOVE_REASON_CARD_INSERTED InventoryRemoveReason = 5
 )
 
 // Enum value maps for InventoryRemoveReason.
@@ -473,13 +475,15 @@ var (
 		2: "INVENTORY_REMOVE_REASON_DROPPED",
 		3: "INVENTORY_REMOVE_REASON_TAKEN",
 		4: "INVENTORY_REMOVE_REASON_SOLD",
+		5: "INVENTORY_REMOVE_REASON_CARD_INSERTED",
 	}
 	InventoryRemoveReason_value = map[string]int32{
-		"INVENTORY_REMOVE_REASON_UNSPECIFIED": 0,
-		"INVENTORY_REMOVE_REASON_USED":        1,
-		"INVENTORY_REMOVE_REASON_DROPPED":     2,
-		"INVENTORY_REMOVE_REASON_TAKEN":       3,
-		"INVENTORY_REMOVE_REASON_SOLD":        4,
+		"INVENTORY_REMOVE_REASON_UNSPECIFIED":   0,
+		"INVENTORY_REMOVE_REASON_USED":          1,
+		"INVENTORY_REMOVE_REASON_DROPPED":       2,
+		"INVENTORY_REMOVE_REASON_TAKEN":         3,
+		"INVENTORY_REMOVE_REASON_SOLD":          4,
+		"INVENTORY_REMOVE_REASON_CARD_INSERTED": 5,
 	}
 )
 
@@ -681,6 +685,63 @@ func (PickUpFailure) Type() protoreflect.EnumType {
 }
 
 func (x PickUpFailure) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type EquipFailure int32
+
+const (
+	EquipFailure_EQUIP_FAILURE_UNSPECIFIED EquipFailure = 0
+	// The slot holds nothing.
+	EquipFailure_EQUIP_FAILURE_EMPTY_SLOT EquipFailure = 1
+	// The player's job, class or sex may not wear the item, the item does
+	// not go in the asked position, or it is already worn
+	// (ITEM_EQUIP_ACK_FAIL).
+	EquipFailure_EQUIP_FAILURE_CANNOT_EQUIP EquipFailure = 2
+	// The player's base level is outside the item's range
+	// (ITEM_EQUIP_ACK_FAILLEVEL).
+	EquipFailure_EQUIP_FAILURE_LEVEL EquipFailure = 3
+	// Ammunition that does not fit the player's weapon.
+	EquipFailure_EQUIP_FAILURE_WRONG_AMMUNITION EquipFailure = 4
+)
+
+// Enum value maps for EquipFailure.
+var (
+	EquipFailure_name = map[int32]string{
+		0: "EQUIP_FAILURE_UNSPECIFIED",
+		1: "EQUIP_FAILURE_EMPTY_SLOT",
+		2: "EQUIP_FAILURE_CANNOT_EQUIP",
+		3: "EQUIP_FAILURE_LEVEL",
+		4: "EQUIP_FAILURE_WRONG_AMMUNITION",
+	}
+	EquipFailure_value = map[string]int32{
+		"EQUIP_FAILURE_UNSPECIFIED":      0,
+		"EQUIP_FAILURE_EMPTY_SLOT":       1,
+		"EQUIP_FAILURE_CANNOT_EQUIP":     2,
+		"EQUIP_FAILURE_LEVEL":            3,
+		"EQUIP_FAILURE_WRONG_AMMUNITION": 4,
+	}
+)
+
+func (x EquipFailure) Enum() *EquipFailure {
+	p := new(EquipFailure)
+	*p = x
+	return p
+}
+
+func (x EquipFailure) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EquipFailure) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[10].Descriptor()
+}
+
+func (EquipFailure) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[10]
+}
+
+func (x EquipFailure) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
@@ -943,6 +1004,60 @@ func (x *Event) GetShopResult() *ShopResult {
 	return nil
 }
 
+func (x *Event) GetItemEquipped() *ItemEquipped {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ItemEquipped); ok {
+			return x.ItemEquipped
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetItemUnequipped() *ItemUnequipped {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ItemUnequipped); ok {
+			return x.ItemUnequipped
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetEquipFailed() *EquipFailed {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_EquipFailed); ok {
+			return x.EquipFailed
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetCardInserted() *CardInserted {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_CardInserted); ok {
+			return x.CardInserted
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetInsertCardFailed() *InsertCardFailed {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_InsertCardFailed); ok {
+			return x.InsertCardFailed
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetLookChange() *LookChange {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_LookChange); ok {
+			return x.LookChange
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -1141,6 +1256,54 @@ func (x *Event) SetShopResult(v *ShopResult) {
 		return
 	}
 	x.xxx_hidden_Body = &event_ShopResult{v}
+}
+
+func (x *Event) SetItemEquipped(v *ItemEquipped) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ItemEquipped{v}
+}
+
+func (x *Event) SetItemUnequipped(v *ItemUnequipped) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ItemUnequipped{v}
+}
+
+func (x *Event) SetEquipFailed(v *EquipFailed) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_EquipFailed{v}
+}
+
+func (x *Event) SetCardInserted(v *CardInserted) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_CardInserted{v}
+}
+
+func (x *Event) SetInsertCardFailed(v *InsertCardFailed) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_InsertCardFailed{v}
+}
+
+func (x *Event) SetLookChange(v *LookChange) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_LookChange{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -1350,6 +1513,54 @@ func (x *Event) HasShopResult() bool {
 	return ok
 }
 
+func (x *Event) HasItemEquipped() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ItemEquipped)
+	return ok
+}
+
+func (x *Event) HasItemUnequipped() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ItemUnequipped)
+	return ok
+}
+
+func (x *Event) HasEquipFailed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_EquipFailed)
+	return ok
+}
+
+func (x *Event) HasCardInserted() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_CardInserted)
+	return ok
+}
+
+func (x *Event) HasInsertCardFailed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_InsertCardFailed)
+	return ok
+}
+
+func (x *Event) HasLookChange() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_LookChange)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -1504,6 +1715,42 @@ func (x *Event) ClearShopResult() {
 	}
 }
 
+func (x *Event) ClearItemEquipped() {
+	if _, ok := x.xxx_hidden_Body.(*event_ItemEquipped); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearItemUnequipped() {
+	if _, ok := x.xxx_hidden_Body.(*event_ItemUnequipped); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearEquipFailed() {
+	if _, ok := x.xxx_hidden_Body.(*event_EquipFailed); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearCardInserted() {
+	if _, ok := x.xxx_hidden_Body.(*event_CardInserted); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearInsertCardFailed() {
+	if _, ok := x.xxx_hidden_Body.(*event_InsertCardFailed); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearLookChange() {
+	if _, ok := x.xxx_hidden_Body.(*event_LookChange); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -1530,6 +1777,12 @@ const Event_Emotion_case case_Event_Body = 22
 const Event_MinimapMark_case case_Event_Body = 23
 const Event_ShopOpen_case case_Event_Body = 24
 const Event_ShopResult_case case_Event_Body = 25
+const Event_ItemEquipped_case case_Event_Body = 26
+const Event_ItemUnequipped_case case_Event_Body = 27
+const Event_EquipFailed_case case_Event_Body = 28
+const Event_CardInserted_case case_Event_Body = 29
+const Event_InsertCardFailed_case case_Event_Body = 30
+const Event_LookChange_case case_Event_Body = 31
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -1586,6 +1839,18 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_ShopOpen_case
 	case *event_ShopResult:
 		return Event_ShopResult_case
+	case *event_ItemEquipped:
+		return Event_ItemEquipped_case
+	case *event_ItemUnequipped:
+		return Event_ItemUnequipped_case
+	case *event_EquipFailed:
+		return Event_EquipFailed_case
+	case *event_CardInserted:
+		return Event_CardInserted_case
+	case *event_InsertCardFailed:
+		return Event_InsertCardFailed_case
+	case *event_LookChange:
+		return Event_LookChange_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -1595,31 +1860,37 @@ type Event_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Fields of oneof xxx_hidden_Body:
-	Appear          *EntityAppear
-	Vanish          *EntityVanish
-	Move            *EntityMove
-	Stop            *EntityStop
-	Stats           *StatUpdate
-	Damage          *Damage
-	SkillCast       *SkillCast
-	Chat            *ChatMessage
-	NpcDialog       *NpcDialog
-	Effect          *EffectPlay
-	ItemTaken       *ItemTaken
-	InventoryAdd    *InventoryAdd
-	PickUpFailed    *PickUpFailed
-	Inventory       *InventoryUpdate
-	InventoryRemove *InventoryRemove
-	ItemUsed        *ItemUsed
-	UseItemFailed   *UseItemFailed
-	DropItemFailed  *DropItemFailed
-	MapChange       *MapChange
-	NpcImage        *NpcImage
-	NpcProgress     *NpcProgress
-	Emotion         *Emotion
-	MinimapMark     *MinimapMark
-	ShopOpen        *ShopOpen
-	ShopResult      *ShopResult
+	Appear           *EntityAppear
+	Vanish           *EntityVanish
+	Move             *EntityMove
+	Stop             *EntityStop
+	Stats            *StatUpdate
+	Damage           *Damage
+	SkillCast        *SkillCast
+	Chat             *ChatMessage
+	NpcDialog        *NpcDialog
+	Effect           *EffectPlay
+	ItemTaken        *ItemTaken
+	InventoryAdd     *InventoryAdd
+	PickUpFailed     *PickUpFailed
+	Inventory        *InventoryUpdate
+	InventoryRemove  *InventoryRemove
+	ItemUsed         *ItemUsed
+	UseItemFailed    *UseItemFailed
+	DropItemFailed   *DropItemFailed
+	MapChange        *MapChange
+	NpcImage         *NpcImage
+	NpcProgress      *NpcProgress
+	Emotion          *Emotion
+	MinimapMark      *MinimapMark
+	ShopOpen         *ShopOpen
+	ShopResult       *ShopResult
+	ItemEquipped     *ItemEquipped
+	ItemUnequipped   *ItemUnequipped
+	EquipFailed      *EquipFailed
+	CardInserted     *CardInserted
+	InsertCardFailed *InsertCardFailed
+	LookChange       *LookChange
 	// -- end of xxx_hidden_Body
 }
 
@@ -1701,6 +1972,24 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.ShopResult != nil {
 		x.xxx_hidden_Body = &event_ShopResult{b.ShopResult}
+	}
+	if b.ItemEquipped != nil {
+		x.xxx_hidden_Body = &event_ItemEquipped{b.ItemEquipped}
+	}
+	if b.ItemUnequipped != nil {
+		x.xxx_hidden_Body = &event_ItemUnequipped{b.ItemUnequipped}
+	}
+	if b.EquipFailed != nil {
+		x.xxx_hidden_Body = &event_EquipFailed{b.EquipFailed}
+	}
+	if b.CardInserted != nil {
+		x.xxx_hidden_Body = &event_CardInserted{b.CardInserted}
+	}
+	if b.InsertCardFailed != nil {
+		x.xxx_hidden_Body = &event_InsertCardFailed{b.InsertCardFailed}
+	}
+	if b.LookChange != nil {
+		x.xxx_hidden_Body = &event_LookChange{b.LookChange}
 	}
 	return m0
 }
@@ -1819,6 +2108,30 @@ type event_ShopResult struct {
 	ShopResult *ShopResult `protobuf:"bytes,25,opt,name=shop_result,json=shopResult,proto3,oneof"`
 }
 
+type event_ItemEquipped struct {
+	ItemEquipped *ItemEquipped `protobuf:"bytes,26,opt,name=item_equipped,json=itemEquipped,proto3,oneof"`
+}
+
+type event_ItemUnequipped struct {
+	ItemUnequipped *ItemUnequipped `protobuf:"bytes,27,opt,name=item_unequipped,json=itemUnequipped,proto3,oneof"`
+}
+
+type event_EquipFailed struct {
+	EquipFailed *EquipFailed `protobuf:"bytes,28,opt,name=equip_failed,json=equipFailed,proto3,oneof"`
+}
+
+type event_CardInserted struct {
+	CardInserted *CardInserted `protobuf:"bytes,29,opt,name=card_inserted,json=cardInserted,proto3,oneof"`
+}
+
+type event_InsertCardFailed struct {
+	InsertCardFailed *InsertCardFailed `protobuf:"bytes,30,opt,name=insert_card_failed,json=insertCardFailed,proto3,oneof"`
+}
+
+type event_LookChange struct {
+	LookChange *LookChange `protobuf:"bytes,31,opt,name=look_change,json=lookChange,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -1868,6 +2181,18 @@ func (*event_MinimapMark) isEvent_Body() {}
 func (*event_ShopOpen) isEvent_Body() {}
 
 func (*event_ShopResult) isEvent_Body() {}
+
+func (*event_ItemEquipped) isEvent_Body() {}
+
+func (*event_ItemUnequipped) isEvent_Body() {}
+
+func (*event_EquipFailed) isEvent_Body() {}
+
+func (*event_CardInserted) isEvent_Body() {}
+
+func (*event_InsertCardFailed) isEvent_Body() {}
+
+func (*event_LookChange) isEvent_Body() {}
 
 // MapChange moves the player to another map, after a warp. It is the
 // first event of the first frame from the new map. The client clears
@@ -2309,7 +2634,11 @@ func (b0 GroundItem_builder) Build() *GroundItem {
 	return m0
 }
 
-// Look lists sprite and palette IDs from the client data tables.
+// Look lists sprite and palette IDs from the client data tables. For a
+// player, weapon is the weapon type of its attacks (rAthena's W_ types),
+// shield the view of its shield, and head_top, head_mid, head_bottom and
+// robe the views of its headgear and garment, as rAthena's view_data. 0
+// is none.
 type Look struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Body       uint32                 `protobuf:"varint,1,opt,name=body,proto3"`
@@ -4905,12 +5234,17 @@ func (b0 InventoryUpdate_builder) Build() *InventoryUpdate {
 
 // InventoryItem is one inventory slot.
 type InventoryItem struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
-	xxx_hidden_ItemId uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
-	xxx_hidden_Amount uint32                 `protobuf:"varint,3,opt,name=amount,proto3"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot     uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_ItemId   uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount   uint32                 `protobuf:"varint,3,opt,name=amount,proto3"`
+	xxx_hidden_Equip    uint32                 `protobuf:"varint,4,opt,name=equip,proto3"`
+	xxx_hidden_Refine   uint32                 `protobuf:"varint,5,opt,name=refine,proto3"`
+	xxx_hidden_Cards    []uint32               `protobuf:"varint,6,rep,packed,name=cards,proto3"`
+	xxx_hidden_Location uint32                 `protobuf:"varint,7,opt,name=location,proto3"`
+	xxx_hidden_Card     bool                   `protobuf:"varint,8,opt,name=card,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *InventoryItem) Reset() {
@@ -4959,6 +5293,41 @@ func (x *InventoryItem) GetAmount() uint32 {
 	return 0
 }
 
+func (x *InventoryItem) GetEquip() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Equip
+	}
+	return 0
+}
+
+func (x *InventoryItem) GetRefine() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Refine
+	}
+	return 0
+}
+
+func (x *InventoryItem) GetCards() []uint32 {
+	if x != nil {
+		return x.xxx_hidden_Cards
+	}
+	return nil
+}
+
+func (x *InventoryItem) GetLocation() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Location
+	}
+	return 0
+}
+
+func (x *InventoryItem) GetCard() bool {
+	if x != nil {
+		return x.xxx_hidden_Card
+	}
+	return false
+}
+
 func (x *InventoryItem) SetSlot(v uint32) {
 	x.xxx_hidden_Slot = v
 }
@@ -4971,6 +5340,26 @@ func (x *InventoryItem) SetAmount(v uint32) {
 	x.xxx_hidden_Amount = v
 }
 
+func (x *InventoryItem) SetEquip(v uint32) {
+	x.xxx_hidden_Equip = v
+}
+
+func (x *InventoryItem) SetRefine(v uint32) {
+	x.xxx_hidden_Refine = v
+}
+
+func (x *InventoryItem) SetCards(v []uint32) {
+	x.xxx_hidden_Cards = v
+}
+
+func (x *InventoryItem) SetLocation(v uint32) {
+	x.xxx_hidden_Location = v
+}
+
+func (x *InventoryItem) SetCard(v bool) {
+	x.xxx_hidden_Card = v
+}
+
 type InventoryItem_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -4978,6 +5367,19 @@ type InventoryItem_builder struct {
 	Slot   uint32
 	ItemId uint32
 	Amount uint32
+	// equip holds the positions the item is equipped in, as rAthena's EQP_
+	// bits, or 0.
+	Equip  uint32
+	Refine uint32
+	// cards are the card IDs in the item's slots, in slot order. Only filled
+	// slots are listed.
+	Cards []uint32
+	// location holds the positions the item can be worn in, as rAthena's
+	// EQP_ bits, or 0 for an item that is not worn. For a card, it holds
+	// the positions of the items it can go into.
+	Location uint32
+	// card is set for a card, which InsertCard puts into an item.
+	Card bool
 }
 
 func (b0 InventoryItem_builder) Build() *InventoryItem {
@@ -4987,18 +5389,27 @@ func (b0 InventoryItem_builder) Build() *InventoryItem {
 	x.xxx_hidden_Slot = b.Slot
 	x.xxx_hidden_ItemId = b.ItemId
 	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Equip = b.Equip
+	x.xxx_hidden_Refine = b.Refine
+	x.xxx_hidden_Cards = b.Cards
+	x.xxx_hidden_Location = b.Location
+	x.xxx_hidden_Card = b.Card
 	return m0
 }
 
 // InventoryAdd tells the player an amount of an item entered a slot. The
 // slot was empty or held the same item.
 type InventoryAdd struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ItemId uint32                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3"`
-	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
-	xxx_hidden_Slot   uint32                 `protobuf:"varint,3,opt,name=slot,proto3"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ItemId   uint32                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount   uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	xxx_hidden_Slot     uint32                 `protobuf:"varint,3,opt,name=slot,proto3"`
+	xxx_hidden_Refine   uint32                 `protobuf:"varint,4,opt,name=refine,proto3"`
+	xxx_hidden_Cards    []uint32               `protobuf:"varint,5,rep,packed,name=cards,proto3"`
+	xxx_hidden_Location uint32                 `protobuf:"varint,6,opt,name=location,proto3"`
+	xxx_hidden_Card     bool                   `protobuf:"varint,7,opt,name=card,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *InventoryAdd) Reset() {
@@ -5047,6 +5458,34 @@ func (x *InventoryAdd) GetSlot() uint32 {
 	return 0
 }
 
+func (x *InventoryAdd) GetRefine() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Refine
+	}
+	return 0
+}
+
+func (x *InventoryAdd) GetCards() []uint32 {
+	if x != nil {
+		return x.xxx_hidden_Cards
+	}
+	return nil
+}
+
+func (x *InventoryAdd) GetLocation() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Location
+	}
+	return 0
+}
+
+func (x *InventoryAdd) GetCard() bool {
+	if x != nil {
+		return x.xxx_hidden_Card
+	}
+	return false
+}
+
 func (x *InventoryAdd) SetItemId(v uint32) {
 	x.xxx_hidden_ItemId = v
 }
@@ -5059,6 +5498,22 @@ func (x *InventoryAdd) SetSlot(v uint32) {
 	x.xxx_hidden_Slot = v
 }
 
+func (x *InventoryAdd) SetRefine(v uint32) {
+	x.xxx_hidden_Refine = v
+}
+
+func (x *InventoryAdd) SetCards(v []uint32) {
+	x.xxx_hidden_Cards = v
+}
+
+func (x *InventoryAdd) SetLocation(v uint32) {
+	x.xxx_hidden_Location = v
+}
+
+func (x *InventoryAdd) SetCard(v bool) {
+	x.xxx_hidden_Card = v
+}
+
 type InventoryAdd_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -5066,6 +5521,12 @@ type InventoryAdd_builder struct {
 	// amount is the amount added, not the slot's new total.
 	Amount uint32
 	Slot   uint32
+	// refine and cards are those of an equipment item that was picked up.
+	Refine uint32
+	Cards  []uint32
+	// location and card are as in InventoryItem.
+	Location uint32
+	Card     bool
 }
 
 func (b0 InventoryAdd_builder) Build() *InventoryAdd {
@@ -5075,6 +5536,10 @@ func (b0 InventoryAdd_builder) Build() *InventoryAdd {
 	x.xxx_hidden_ItemId = b.ItemId
 	x.xxx_hidden_Amount = b.Amount
 	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Refine = b.Refine
+	x.xxx_hidden_Cards = b.Cards
+	x.xxx_hidden_Location = b.Location
+	x.xxx_hidden_Card = b.Card
 	return m0
 }
 
@@ -5454,12 +5919,476 @@ func (b0 PickUpFailed_builder) Build() *PickUpFailed {
 	return m0
 }
 
+// ItemEquipped tells the player an item went on. position holds the
+// positions it now takes, as rAthena's EQP_ bits. Items that were there
+// come off first, each with ItemUnequipped.
+type ItemEquipped struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot     uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Position uint32                 `protobuf:"varint,2,opt,name=position,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ItemEquipped) Reset() {
+	*x = ItemEquipped{}
+	mi := &file_wathena_v1_event_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemEquipped) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemEquipped) ProtoMessage() {}
+
+func (x *ItemEquipped) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ItemEquipped) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *ItemEquipped) GetPosition() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Position
+	}
+	return 0
+}
+
+func (x *ItemEquipped) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *ItemEquipped) SetPosition(v uint32) {
+	x.xxx_hidden_Position = v
+}
+
+type ItemEquipped_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot     uint32
+	Position uint32
+}
+
+func (b0 ItemEquipped_builder) Build() *ItemEquipped {
+	m0 := &ItemEquipped{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Position = b.Position
+	return m0
+}
+
+// ItemUnequipped tells the player an item came off. position holds the
+// positions it took.
+type ItemUnequipped struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot     uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Position uint32                 `protobuf:"varint,2,opt,name=position,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ItemUnequipped) Reset() {
+	*x = ItemUnequipped{}
+	mi := &file_wathena_v1_event_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemUnequipped) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemUnequipped) ProtoMessage() {}
+
+func (x *ItemUnequipped) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ItemUnequipped) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *ItemUnequipped) GetPosition() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Position
+	}
+	return 0
+}
+
+func (x *ItemUnequipped) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *ItemUnequipped) SetPosition(v uint32) {
+	x.xxx_hidden_Position = v
+}
+
+type ItemUnequipped_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot     uint32
+	Position uint32
+}
+
+func (b0 ItemUnequipped_builder) Build() *ItemUnequipped {
+	m0 := &ItemUnequipped{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Position = b.Position
+	return m0
+}
+
+// EquipFailed tells the player why an EquipItem did nothing, as rAthena's
+// clif_equipitemack.
+type EquipFailed struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Reason EquipFailure           `protobuf:"varint,2,opt,name=reason,proto3,enum=wathena.v1.EquipFailure"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *EquipFailed) Reset() {
+	*x = EquipFailed{}
+	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipFailed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipFailed) ProtoMessage() {}
+
+func (x *EquipFailed) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EquipFailed) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *EquipFailed) GetReason() EquipFailure {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return EquipFailure_EQUIP_FAILURE_UNSPECIFIED
+}
+
+func (x *EquipFailed) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *EquipFailed) SetReason(v EquipFailure) {
+	x.xxx_hidden_Reason = v
+}
+
+type EquipFailed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot   uint32
+	Reason EquipFailure
+}
+
+func (b0 EquipFailed_builder) Build() *EquipFailed {
+	m0 := &EquipFailed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// CardInserted tells the player a card went into an item. The card slot
+// loses one card with INVENTORY_REMOVE_REASON_CARD_INSERTED.
+type CardInserted struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CardSlot  uint32                 `protobuf:"varint,1,opt,name=card_slot,json=cardSlot,proto3"`
+	xxx_hidden_EquipSlot uint32                 `protobuf:"varint,2,opt,name=equip_slot,json=equipSlot,proto3"`
+	xxx_hidden_CardId    uint32                 `protobuf:"varint,3,opt,name=card_id,json=cardId,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *CardInserted) Reset() {
+	*x = CardInserted{}
+	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CardInserted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CardInserted) ProtoMessage() {}
+
+func (x *CardInserted) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CardInserted) GetCardSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_CardSlot
+	}
+	return 0
+}
+
+func (x *CardInserted) GetEquipSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_EquipSlot
+	}
+	return 0
+}
+
+func (x *CardInserted) GetCardId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_CardId
+	}
+	return 0
+}
+
+func (x *CardInserted) SetCardSlot(v uint32) {
+	x.xxx_hidden_CardSlot = v
+}
+
+func (x *CardInserted) SetEquipSlot(v uint32) {
+	x.xxx_hidden_EquipSlot = v
+}
+
+func (x *CardInserted) SetCardId(v uint32) {
+	x.xxx_hidden_CardId = v
+}
+
+type CardInserted_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	CardSlot  uint32
+	EquipSlot uint32
+	CardId    uint32
+}
+
+func (b0 CardInserted_builder) Build() *CardInserted {
+	m0 := &CardInserted{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CardSlot = b.CardSlot
+	x.xxx_hidden_EquipSlot = b.EquipSlot
+	x.xxx_hidden_CardId = b.CardId
+	return m0
+}
+
+// InsertCardFailed tells the player an InsertCard did nothing, as
+// clif_insert_card with its failure flag.
+type InsertCardFailed struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CardSlot  uint32                 `protobuf:"varint,1,opt,name=card_slot,json=cardSlot,proto3"`
+	xxx_hidden_EquipSlot uint32                 `protobuf:"varint,2,opt,name=equip_slot,json=equipSlot,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *InsertCardFailed) Reset() {
+	*x = InsertCardFailed{}
+	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InsertCardFailed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InsertCardFailed) ProtoMessage() {}
+
+func (x *InsertCardFailed) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *InsertCardFailed) GetCardSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_CardSlot
+	}
+	return 0
+}
+
+func (x *InsertCardFailed) GetEquipSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_EquipSlot
+	}
+	return 0
+}
+
+func (x *InsertCardFailed) SetCardSlot(v uint32) {
+	x.xxx_hidden_CardSlot = v
+}
+
+func (x *InsertCardFailed) SetEquipSlot(v uint32) {
+	x.xxx_hidden_EquipSlot = v
+}
+
+type InsertCardFailed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	CardSlot  uint32
+	EquipSlot uint32
+}
+
+func (b0 InsertCardFailed_builder) Build() *InsertCardFailed {
+	m0 := &InsertCardFailed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CardSlot = b.CardSlot
+	x.xxx_hidden_EquipSlot = b.EquipSlot
+	return m0
+}
+
+// LookChange tells the players who see an entity that its look changed,
+// such as a player who put on a weapon or a hat, as clif_changelook.
+type LookChange struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id   uint32                 `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_Look *Look                  `protobuf:"bytes,2,opt,name=look,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *LookChange) Reset() {
+	*x = LookChange{}
+	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LookChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LookChange) ProtoMessage() {}
+
+func (x *LookChange) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *LookChange) GetId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *LookChange) GetLook() *Look {
+	if x != nil {
+		return x.xxx_hidden_Look
+	}
+	return nil
+}
+
+func (x *LookChange) SetId(v uint32) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *LookChange) SetLook(v *Look) {
+	x.xxx_hidden_Look = v
+}
+
+func (x *LookChange) HasLook() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Look != nil
+}
+
+func (x *LookChange) ClearLook() {
+	x.xxx_hidden_Look = nil
+}
+
+type LookChange_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id   uint32
+	Look *Look
+}
+
+func (b0 LookChange_builder) Build() *LookChange {
+	m0 := &LookChange{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Look = b.Look
+	return m0
+}
+
 var File_wathena_v1_event_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\x90\v\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xa0\x0e\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -5491,7 +6420,14 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\fminimap_mark\x18\x17 \x01(\v2\x17.wathena.v1.MinimapMarkH\x00R\vminimapMark\x123\n" +
 	"\tshop_open\x18\x18 \x01(\v2\x14.wathena.v1.ShopOpenH\x00R\bshopOpen\x129\n" +
 	"\vshop_result\x18\x19 \x01(\v2\x16.wathena.v1.ShopResultH\x00R\n" +
-	"shopResultB\x06\n" +
+	"shopResult\x12?\n" +
+	"\ritem_equipped\x18\x1a \x01(\v2\x18.wathena.v1.ItemEquippedH\x00R\fitemEquipped\x12E\n" +
+	"\x0fitem_unequipped\x18\x1b \x01(\v2\x1a.wathena.v1.ItemUnequippedH\x00R\x0eitemUnequipped\x12<\n" +
+	"\fequip_failed\x18\x1c \x01(\v2\x17.wathena.v1.EquipFailedH\x00R\vequipFailed\x12?\n" +
+	"\rcard_inserted\x18\x1d \x01(\v2\x18.wathena.v1.CardInsertedH\x00R\fcardInserted\x12L\n" +
+	"\x12insert_card_failed\x18\x1e \x01(\v2\x1c.wathena.v1.InsertCardFailedH\x00R\x10insertCardFailed\x129\n" +
+	"\vlook_change\x18\x1f \x01(\v2\x16.wathena.v1.LookChangeH\x00R\n" +
+	"lookChangeB\x06\n" +
 	"\x04body\"P\n" +
 	"\tMapChange\x12\x10\n" +
 	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
@@ -5640,15 +6576,24 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x04item\x18\x02 \x01(\rR\x04item\"V\n" +
 	"\x0fInventoryUpdate\x12/\n" +
 	"\x05items\x18\x01 \x03(\v2\x19.wathena.v1.InventoryItemR\x05items\x12\x12\n" +
-	"\x04size\x18\x02 \x01(\rR\x04size\"T\n" +
+	"\x04size\x18\x02 \x01(\rR\x04size\"\xc8\x01\n" +
 	"\rInventoryItem\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x17\n" +
 	"\aitem_id\x18\x02 \x01(\rR\x06itemId\x12\x16\n" +
-	"\x06amount\x18\x03 \x01(\rR\x06amount\"S\n" +
+	"\x06amount\x18\x03 \x01(\rR\x06amount\x12\x14\n" +
+	"\x05equip\x18\x04 \x01(\rR\x05equip\x12\x16\n" +
+	"\x06refine\x18\x05 \x01(\rR\x06refine\x12\x14\n" +
+	"\x05cards\x18\x06 \x03(\rR\x05cards\x12\x1a\n" +
+	"\blocation\x18\a \x01(\rR\blocation\x12\x12\n" +
+	"\x04card\x18\b \x01(\bR\x04card\"\xb1\x01\n" +
 	"\fInventoryAdd\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\rR\x06itemId\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\rR\x06amount\x12\x12\n" +
-	"\x04slot\x18\x03 \x01(\rR\x04slot\"x\n" +
+	"\x04slot\x18\x03 \x01(\rR\x04slot\x12\x16\n" +
+	"\x06refine\x18\x04 \x01(\rR\x06refine\x12\x14\n" +
+	"\x05cards\x18\x05 \x03(\rR\x05cards\x12\x1a\n" +
+	"\blocation\x18\x06 \x01(\rR\blocation\x12\x12\n" +
+	"\x04card\x18\a \x01(\bR\x04card\"x\n" +
 	"\x0fInventoryRemove\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\rR\x06amount\x129\n" +
@@ -5664,7 +6609,29 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x06reason\x18\x02 \x01(\x0e2\x1b.wathena.v1.DropItemFailureR\x06reason\"U\n" +
 	"\fPickUpFailed\x12\x12\n" +
 	"\x04item\x18\x01 \x01(\rR\x04item\x121\n" +
-	"\x06reason\x18\x02 \x01(\x0e2\x19.wathena.v1.PickUpFailureR\x06reason*\xed\x01\n" +
+	"\x06reason\x18\x02 \x01(\x0e2\x19.wathena.v1.PickUpFailureR\x06reason\">\n" +
+	"\fItemEquipped\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x1a\n" +
+	"\bposition\x18\x02 \x01(\rR\bposition\"@\n" +
+	"\x0eItemUnequipped\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x1a\n" +
+	"\bposition\x18\x02 \x01(\rR\bposition\"S\n" +
+	"\vEquipFailed\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x120\n" +
+	"\x06reason\x18\x02 \x01(\x0e2\x18.wathena.v1.EquipFailureR\x06reason\"c\n" +
+	"\fCardInserted\x12\x1b\n" +
+	"\tcard_slot\x18\x01 \x01(\rR\bcardSlot\x12\x1d\n" +
+	"\n" +
+	"equip_slot\x18\x02 \x01(\rR\tequipSlot\x12\x17\n" +
+	"\acard_id\x18\x03 \x01(\rR\x06cardId\"N\n" +
+	"\x10InsertCardFailed\x12\x1b\n" +
+	"\tcard_slot\x18\x01 \x01(\rR\bcardSlot\x12\x1d\n" +
+	"\n" +
+	"equip_slot\x18\x02 \x01(\rR\tequipSlot\"B\n" +
+	"\n" +
+	"LookChange\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12$\n" +
+	"\x04look\x18\x02 \x01(\v2\x10.wathena.v1.LookR\x04look*\xed\x01\n" +
 	"\n" +
 	"EntityKind\x12\x1b\n" +
 	"\x17ENTITY_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
@@ -5744,13 +6711,14 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x1cSHOP_OUTCOME_NOT_ENOUGH_ZENY\x10\x03\x12\x1b\n" +
 	"\x17SHOP_OUTCOME_OVERWEIGHT\x10\x04\x12\x17\n" +
 	"\x13SHOP_OUTCOME_FAILED\x10\x05\x12\x17\n" +
-	"\x13SHOP_OUTCOME_CLOSED\x10\x06*\xcc\x01\n" +
+	"\x13SHOP_OUTCOME_CLOSED\x10\x06*\xf7\x01\n" +
 	"\x15InventoryRemoveReason\x12'\n" +
 	"#INVENTORY_REMOVE_REASON_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cINVENTORY_REMOVE_REASON_USED\x10\x01\x12#\n" +
 	"\x1fINVENTORY_REMOVE_REASON_DROPPED\x10\x02\x12!\n" +
 	"\x1dINVENTORY_REMOVE_REASON_TAKEN\x10\x03\x12 \n" +
-	"\x1cINVENTORY_REMOVE_REASON_SOLD\x10\x04*\xbd\x02\n" +
+	"\x1cINVENTORY_REMOVE_REASON_SOLD\x10\x04\x12)\n" +
+	"%INVENTORY_REMOVE_REASON_CARD_INSERTED\x10\x05*\xbd\x02\n" +
 	"\x0eUseItemFailure\x12 \n" +
 	"\x1cUSE_ITEM_FAILURE_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bUSE_ITEM_FAILURE_EMPTY_SLOT\x10\x01\x12\x1f\n" +
@@ -5772,10 +6740,16 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x19PICK_UP_FAILURE_NOT_YOURS\x10\x02\x12\x1e\n" +
 	"\x1aPICK_UP_FAILURE_OVERWEIGHT\x10\x03\x12\"\n" +
 	"\x1ePICK_UP_FAILURE_INVENTORY_FULL\x10\x04\x12\x1c\n" +
-	"\x18PICK_UP_FAILURE_TOO_MANY\x10\x05B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
+	"\x18PICK_UP_FAILURE_TOO_MANY\x10\x05*\xa8\x01\n" +
+	"\fEquipFailure\x12\x1d\n" +
+	"\x19EQUIP_FAILURE_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18EQUIP_FAILURE_EMPTY_SLOT\x10\x01\x12\x1e\n" +
+	"\x1aEQUIP_FAILURE_CANNOT_EQUIP\x10\x02\x12\x17\n" +
+	"\x13EQUIP_FAILURE_LEVEL\x10\x03\x12\"\n" +
+	"\x1eEQUIP_FAILURE_WRONG_AMMUNITION\x10\x04B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
-var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),            // 0: wathena.v1.EntityKind
 	(VanishReason)(0),          // 1: wathena.v1.VanishReason
@@ -5787,93 +6761,108 @@ var file_wathena_v1_event_proto_goTypes = []any{
 	(UseItemFailure)(0),        // 7: wathena.v1.UseItemFailure
 	(DropItemFailure)(0),       // 8: wathena.v1.DropItemFailure
 	(PickUpFailure)(0),         // 9: wathena.v1.PickUpFailure
-	(*Event)(nil),              // 10: wathena.v1.Event
-	(*MapChange)(nil),          // 11: wathena.v1.MapChange
-	(*EntityAppear)(nil),       // 12: wathena.v1.EntityAppear
-	(*GroundItem)(nil),         // 13: wathena.v1.GroundItem
-	(*Look)(nil),               // 14: wathena.v1.Look
-	(*EntityVanish)(nil),       // 15: wathena.v1.EntityVanish
-	(*EntityMove)(nil),         // 16: wathena.v1.EntityMove
-	(*EntityStop)(nil),         // 17: wathena.v1.EntityStop
-	(*StatUpdate)(nil),         // 18: wathena.v1.StatUpdate
-	(*Stat)(nil),               // 19: wathena.v1.Stat
-	(*Damage)(nil),             // 20: wathena.v1.Damage
-	(*SkillCast)(nil),          // 21: wathena.v1.SkillCast
-	(*ChatMessage)(nil),        // 22: wathena.v1.ChatMessage
-	(*NpcDialog)(nil),          // 23: wathena.v1.NpcDialog
-	(*NpcMenu)(nil),            // 24: wathena.v1.NpcMenu
-	(*NpcImage)(nil),           // 25: wathena.v1.NpcImage
-	(*NpcProgress)(nil),        // 26: wathena.v1.NpcProgress
-	(*Emotion)(nil),            // 27: wathena.v1.Emotion
-	(*MinimapMark)(nil),        // 28: wathena.v1.MinimapMark
-	(*ShopOpen)(nil),           // 29: wathena.v1.ShopOpen
-	(*ShopItem)(nil),           // 30: wathena.v1.ShopItem
-	(*ShopSellable)(nil),       // 31: wathena.v1.ShopSellable
-	(*ShopResult)(nil),         // 32: wathena.v1.ShopResult
-	(*EffectPlay)(nil),         // 33: wathena.v1.EffectPlay
-	(*ItemTaken)(nil),          // 34: wathena.v1.ItemTaken
-	(*InventoryUpdate)(nil),    // 35: wathena.v1.InventoryUpdate
-	(*InventoryItem)(nil),      // 36: wathena.v1.InventoryItem
-	(*InventoryAdd)(nil),       // 37: wathena.v1.InventoryAdd
-	(*InventoryRemove)(nil),    // 38: wathena.v1.InventoryRemove
-	(*ItemUsed)(nil),           // 39: wathena.v1.ItemUsed
-	(*UseItemFailed)(nil),      // 40: wathena.v1.UseItemFailed
-	(*DropItemFailed)(nil),     // 41: wathena.v1.DropItemFailed
-	(*PickUpFailed)(nil),       // 42: wathena.v1.PickUpFailed
-	(*Cell)(nil),               // 43: wathena.v1.Cell
-	(ChatChannel)(0),           // 44: wathena.v1.ChatChannel
+	(EquipFailure)(0),          // 10: wathena.v1.EquipFailure
+	(*Event)(nil),              // 11: wathena.v1.Event
+	(*MapChange)(nil),          // 12: wathena.v1.MapChange
+	(*EntityAppear)(nil),       // 13: wathena.v1.EntityAppear
+	(*GroundItem)(nil),         // 14: wathena.v1.GroundItem
+	(*Look)(nil),               // 15: wathena.v1.Look
+	(*EntityVanish)(nil),       // 16: wathena.v1.EntityVanish
+	(*EntityMove)(nil),         // 17: wathena.v1.EntityMove
+	(*EntityStop)(nil),         // 18: wathena.v1.EntityStop
+	(*StatUpdate)(nil),         // 19: wathena.v1.StatUpdate
+	(*Stat)(nil),               // 20: wathena.v1.Stat
+	(*Damage)(nil),             // 21: wathena.v1.Damage
+	(*SkillCast)(nil),          // 22: wathena.v1.SkillCast
+	(*ChatMessage)(nil),        // 23: wathena.v1.ChatMessage
+	(*NpcDialog)(nil),          // 24: wathena.v1.NpcDialog
+	(*NpcMenu)(nil),            // 25: wathena.v1.NpcMenu
+	(*NpcImage)(nil),           // 26: wathena.v1.NpcImage
+	(*NpcProgress)(nil),        // 27: wathena.v1.NpcProgress
+	(*Emotion)(nil),            // 28: wathena.v1.Emotion
+	(*MinimapMark)(nil),        // 29: wathena.v1.MinimapMark
+	(*ShopOpen)(nil),           // 30: wathena.v1.ShopOpen
+	(*ShopItem)(nil),           // 31: wathena.v1.ShopItem
+	(*ShopSellable)(nil),       // 32: wathena.v1.ShopSellable
+	(*ShopResult)(nil),         // 33: wathena.v1.ShopResult
+	(*EffectPlay)(nil),         // 34: wathena.v1.EffectPlay
+	(*ItemTaken)(nil),          // 35: wathena.v1.ItemTaken
+	(*InventoryUpdate)(nil),    // 36: wathena.v1.InventoryUpdate
+	(*InventoryItem)(nil),      // 37: wathena.v1.InventoryItem
+	(*InventoryAdd)(nil),       // 38: wathena.v1.InventoryAdd
+	(*InventoryRemove)(nil),    // 39: wathena.v1.InventoryRemove
+	(*ItemUsed)(nil),           // 40: wathena.v1.ItemUsed
+	(*UseItemFailed)(nil),      // 41: wathena.v1.UseItemFailed
+	(*DropItemFailed)(nil),     // 42: wathena.v1.DropItemFailed
+	(*PickUpFailed)(nil),       // 43: wathena.v1.PickUpFailed
+	(*ItemEquipped)(nil),       // 44: wathena.v1.ItemEquipped
+	(*ItemUnequipped)(nil),     // 45: wathena.v1.ItemUnequipped
+	(*EquipFailed)(nil),        // 46: wathena.v1.EquipFailed
+	(*CardInserted)(nil),       // 47: wathena.v1.CardInserted
+	(*InsertCardFailed)(nil),   // 48: wathena.v1.InsertCardFailed
+	(*LookChange)(nil),         // 49: wathena.v1.LookChange
+	(*Cell)(nil),               // 50: wathena.v1.Cell
+	(ChatChannel)(0),           // 51: wathena.v1.ChatChannel
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
-	12, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
-	15, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
-	16, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
-	17, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
-	18, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
-	20, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
-	21, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
-	22, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
-	23, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
-	33, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
-	34, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
-	37, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
-	42, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
-	35, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
-	38, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
-	39, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
-	40, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
-	41, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
-	11, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
-	25, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
-	26, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
-	27, // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
-	28, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
-	29, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
-	32, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
-	0,  // 25: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	14, // 26: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	13, // 27: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	1,  // 28: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	19, // 29: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 30: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 31: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	43, // 32: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	44, // 33: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	24, // 34: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	4,  // 35: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
-	30, // 36: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
-	31, // 37: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
-	5,  // 38: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
-	43, // 39: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	36, // 40: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	6,  // 41: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	7,  // 42: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	8,  // 43: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	9,  // 44: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	45, // [45:45] is the sub-list for method output_type
-	45, // [45:45] is the sub-list for method input_type
-	45, // [45:45] is the sub-list for extension type_name
-	45, // [45:45] is the sub-list for extension extendee
-	0,  // [0:45] is the sub-list for field type_name
+	13, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
+	16, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
+	17, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
+	18, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
+	19, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
+	21, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
+	22, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
+	23, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
+	24, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
+	34, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
+	35, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
+	38, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
+	43, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
+	36, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
+	39, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
+	40, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
+	41, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
+	42, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
+	12, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
+	26, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
+	27, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
+	28, // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
+	29, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
+	30, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
+	33, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
+	44, // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
+	45, // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
+	46, // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
+	47, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
+	48, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
+	49, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
+	0,  // 31: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	15, // 32: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	14, // 33: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	1,  // 34: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	20, // 35: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,  // 36: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,  // 37: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	50, // 38: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	51, // 39: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	25, // 40: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	4,  // 41: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
+	31, // 42: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
+	32, // 43: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
+	5,  // 44: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
+	50, // 45: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	37, // 46: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	6,  // 47: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	7,  // 48: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	8,  // 49: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	9,  // 50: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	10, // 51: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
+	15, // 52: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
+	53, // [53:53] is the sub-list for method output_type
+	53, // [53:53] is the sub-list for method input_type
+	53, // [53:53] is the sub-list for extension type_name
+	53, // [53:53] is the sub-list for extension extendee
+	0,  // [0:53] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -5908,6 +6897,12 @@ func file_wathena_v1_event_proto_init() {
 		(*event_MinimapMark)(nil),
 		(*event_ShopOpen)(nil),
 		(*event_ShopResult)(nil),
+		(*event_ItemEquipped)(nil),
+		(*event_ItemUnequipped)(nil),
+		(*event_EquipFailed)(nil),
+		(*event_CardInserted)(nil),
+		(*event_InsertCardFailed)(nil),
+		(*event_LookChange)(nil),
 	}
 	file_wathena_v1_event_proto_msgTypes[11].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
@@ -5930,8 +6925,8 @@ func file_wathena_v1_event_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
-			NumEnums:      10,
-			NumMessages:   33,
+			NumEnums:      11,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

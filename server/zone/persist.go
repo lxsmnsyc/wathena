@@ -4,6 +4,7 @@ import (
 	"errors"
 	"maps"
 	"math"
+	"slices"
 	"time"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -114,7 +115,7 @@ func restoreInventory(t *item.Table, c *character.Character) *item.Inventory {
 		if it.Slot < 0 || it.Slot >= item.MaxInventory || it.ID == 0 || it.Amount <= 0 {
 			continue
 		}
-		inv.Slots[it.Slot] = item.Slot{ID: it.ID, Amount: it.Amount, Serial: it.Serial}
+		inv.Slots[it.Slot] = item.Slot{ID: it.ID, Amount: it.Amount, Serial: it.Serial, Equip: it.Equip, Refine: it.Refine, Cards: slices.Clone(it.Cards)}
 		inv.Weight += t.Get(it.ID).Weight * it.Amount
 	}
 	return inv
@@ -124,7 +125,8 @@ func savedItems(inv *item.Inventory) []character.Item {
 	var items []character.Item
 	for i, s := range inv.Slots {
 		if s.ID != 0 && s.Amount > 0 {
-			items = append(items, character.Item{Slot: i, ID: s.ID, Amount: s.Amount, Serial: s.Serial})
+			items = append(items, character.Item{Slot: i, ID: s.ID, Amount: s.Amount, Serial: s.Serial,
+				Equip: s.Equip, Refine: s.Refine, Cards: slices.Clone(s.Cards)})
 		}
 	}
 	return items

@@ -123,6 +123,12 @@ Server to client, in `ServerMessage`:
   - A shop opened by a click needs its NPC within 15 cells. A shop a script opened has no NPC: its `npc` is 0.
   - The gateway drops a `ShopBuy` or `ShopSell` with no lines, more than 100, a slot of 200 or more, an amount of 0 or over 30000, or item 0, without a reply. It drops an `NpcReply` without an answer, and cleans `input_text` as chat.
 - **Items a script takes.** `InventoryRemove` has `INVENTORY_REMOVE_REASON_TAKEN` for items a script took, as `delitem`.
+- **Equipment.** `InventoryItem` and `InventoryAdd` carry an item instance's `refine` and `cards` (a list, strategy section 6.8), where the item can be worn (`location`, as rAthena's `EQP_` bits) and whether it is a card. `InventoryItem.equip` holds where it is worn.
+  - `EquipItem` names a slot and the positions asked for, or 0 for every position the item takes. The server answers with `ItemUnequipped` for each item that came off, then `ItemEquipped`, or with `EquipFailed`, as `clif_equipitemack`.
+  - `UnequipItem` names a slot. The server answers with `ItemUnequipped`, also for ammunition that came off with a bow or gun.
+  - `InsertCard` names a card's slot and an item's slot. The server answers with an `InventoryRemove` of the card (`INVENTORY_REMOVE_REASON_CARD_INSERTED`) and `CardInserted`, or with `InsertCardFailed`.
+  - The gateway drops these commands without a reply when a slot is 200 or more.
+  - A player's `Look` carries its equipment as rAthena's `view_data`: the weapon type of its attacks, the shield's view, and the views of its headgear and garment. `LookChange` sends a new look to everyone who sees the player.
 - **A warp to another map is a map change, on the same connection.** The first frame from the new map starts with `MapChange`: the new map's asset name, the player's cell, and the player's own entity ID there. Then, as after `Welcome`:
   - The player's own `EntityAppear` follows, and then the inventory and stats again.
   - Entity IDs start again on the new map. The client removes every entity it showed before the change.
@@ -159,7 +165,7 @@ The 500-bot load tests measured the real traffic (strategy section 3.8, "Load te
 
 ## Breaks
 
-Nothing is deployed yet, so nothing breaks. Phase 3 step 4 added `ShopBuy`, `ShopSell`, `ShopClose`, `NpcImage`, `NpcProgress`, `Emotion`, `MinimapMark`, `ShopOpen` and `ShopResult`, the `end` prompt and the input limits of `NpcDialog`, `ChatMessage.color`, `CHAT_CHANNEL_ANNOUNCEMENT`, and two remove reasons. All are additive. `CHAT_CHANNEL_SYSTEM` is a new enum value that older clients ignore. `MapChange` is a new `Event` case, and warp portals are a new use of `ENTITY_KIND_NPC`, so the protocol version stays 1. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists.
+Nothing is deployed yet, so nothing breaks. Phase 3 step 4 added `ShopBuy`, `ShopSell`, `ShopClose`, `NpcImage`, `NpcProgress`, `Emotion`, `MinimapMark`, `ShopOpen` and `ShopResult`, the `end` prompt and the input limits of `NpcDialog`, `ChatMessage.color`, `CHAT_CHANNEL_ANNOUNCEMENT`, and two remove reasons. All are additive. `CHAT_CHANNEL_SYSTEM` is a new enum value that older clients ignore. `MapChange` is a new `Event` case, and warp portals are a new use of `ENTITY_KIND_NPC`, so the protocol version stays 1. The inventory changed messages that no deployed client used: `InventoryAdd` gained `slot`, and `UseItem.slot` now refers to `InventoryUpdate`, which exists. Phase 4 step 1 added `EquipItem`, `UnequipItem`, `InsertCard`, `ItemEquipped`, `ItemUnequipped`, `EquipFailed`, `CardInserted`, `InsertCardFailed` and `LookChange`, the equipment fields of `InventoryItem` and `InventoryAdd`, and a remove reason, and gave the equipment fields of `Look` their meaning. All are additive, so the protocol version stays 1.
 
 ## Alternatives
 

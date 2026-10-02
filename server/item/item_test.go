@@ -41,7 +41,7 @@ func TestAddStacks(t *testing.T) {
 			t.Errorf("add %d × %d: slot %d, %d; want slot %d", c.id, c.amount, slot, r, c.slot)
 		}
 	}
-	if inv.Slots[0] != (Slot{ID: 501, Amount: 8}) || inv.Count(123456) != 4 {
+	if !inv.Slots[0].Equal(&Slot{ID: 501, Amount: 8}) || inv.Count(123456) != 4 {
 		t.Errorf("slots %v", inv.Slots[:7])
 	}
 	// 8 × 7 + 10 + 2 × 40 + 2 × 0.1.
@@ -49,7 +49,7 @@ func TestAddStacks(t *testing.T) {
 		t.Errorf("weight %d", inv.Weight)
 	}
 	// An emptied slot takes the next new item.
-	if !inv.Delete(tb, 1, 1) || inv.Slots[1] != (Slot{}) {
+	if !inv.Delete(tb, 1, 1) || !inv.Slots[1].Equal(&Slot{}) {
 		t.Errorf("slot 1 %v", inv.Slots[1])
 	}
 	if slot, _ := add(1201, 1); slot != 1 {
@@ -146,7 +146,7 @@ func TestDelete(t *testing.T) {
 			t.Errorf("delete %d × %d: %v", c.slot, c.amount, got)
 		}
 	}
-	if inv.Slots[0] != (Slot{}) || inv.Weight != 0 {
+	if !inv.Slots[0].Equal(&Slot{}) || inv.Weight != 0 {
 		t.Errorf("slot %v, weight %d", inv.Slots[0], inv.Weight)
 	}
 }

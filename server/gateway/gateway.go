@@ -487,6 +487,28 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			queued = p.ShopSell(seq, b.GetNpc(), lines)
 		case m.GetCommand().HasShopClose():
 			queued = p.ShopClose(seq, m.GetCommand().GetShopClose().GetNpc())
+		case m.GetCommand().HasEquipItem():
+			e := m.GetCommand().GetEquipItem()
+			if e.GetSlot() >= item.MaxInventory {
+				// clif_parse_EquipItem ignores an index past MAX_INVENTORY.
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.EquipItem(seq, int(e.GetSlot()), e.GetPosition())
+		case m.GetCommand().HasUnequipItem():
+			slot := m.GetCommand().GetUnequipItem().GetSlot()
+			if slot >= item.MaxInventory {
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.UnequipItem(seq, int(slot))
+		case m.GetCommand().HasInsertCard():
+			c := m.GetCommand().GetInsertCard()
+			if c.GetCardSlot() >= item.MaxInventory || c.GetEquipSlot() >= item.MaxInventory {
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.InsertCard(seq, int(c.GetCardSlot()), int(c.GetEquipSlot()))
 		default:
 			// Unknown commands are ignored, so newer clients still work.
 			queued = p.Ack(seq)
