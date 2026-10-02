@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
@@ -42,6 +44,10 @@ type Mods struct {
 	// Server holds the server variables. Without it, server variables
 	// raise an error.
 	Server *variables.Server
+	// Testing gives the Lua state wa.testing, and starts the mods' entry
+	// scripts when a Headless zone gets its map. Only wactl mod test
+	// sets it.
+	Testing bool
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -116,7 +122,7 @@ func (z *Zone) startScripts() {
 	if z.Mods == nil {
 		return
 	}
-	for _, sc := range z.Mods.Scripts {
+	for _, sc := range z.modScripts() {
 		if len(sc.Entries) > 0 {
 			z.itemScripts()
 			return
@@ -124,21 +130,44 @@ func (z *Zone) startScripts() {
 	}
 }
 
+// modScripts are the mods' scripts: Mods.Scripts, with the ones that a
+// reload read in their place.
+func (z *Zone) modScripts() []*mod.Scripts {
+	scripts := z.Mods.Scripts
+	if len(z.reloaded) == 0 {
+		return scripts
+	}
+	scripts = slices.Clone(scripts)
+	for i, sc := range scripts {
+		if n := z.reloaded[sc.Mod]; n != nil {
+			scripts[i] = n
+		}
+	}
+	for _, id := range slices.Sorted(maps.Keys(z.reloaded)) {
+		if !slices.ContainsFunc(scripts, func(sc *mod.Scripts) bool { return sc.Mod == id }) {
+			scripts = append(scripts, z.reloaded[id])
+		}
+	}
+	return scripts
+}
+
 // itemScripts returns the zone's Lua state, made on first use, or nil
 // when the zone runs no scripts.
 func (z *Zone) itemScripts() *modscript.Runtime {
-	if z.scripts != nil || z.scriptsFailed || z.Mods == nil || len(z.Mods.Scripts) == 0 {
+	if z.scripts != nil || z.scriptsFailed || z.Mods == nil || len(z.Mods.Scripts) == 0 && len(z.reloaded) == 0 {
 		return z.scripts
 	}
 	log := z.Mods.Log
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
-	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server}
+	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
+		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing}
 	if z.Status != nil {
 		opts.Jobs = z.Status
 	}
-	r, err := modscript.New(opts, z.Mods.Scripts)
+	scripts := z.modScripts()
+	r, err := modscript.New(opts, scripts)
 	if err != nil {
 		log.Error("mod scripts cannot run in this zone", "map", z.Map, "err", err)
 		z.scriptsFailed = true
@@ -198,21 +227,12 @@ func (z *Zone) runScripts() {
 	z.scriptEvents = z.scriptEvents[:0]
 }
 
-// ErrNoScripts is ReloadMod's error in a zone that runs no mod scripts.
-var ErrNoScripts = errors.New("zone: the zone runs no mod scripts")
-
 // ReloadMod loads a mod's scripts again in the zone, from a new
 // snapshot. The mod's old context ends first, which removes its handlers
 // and timers. It waits until the zone has done it.
 func (z *Zone) ReloadMod(ctx context.Context, sc *mod.Scripts) error {
 	done := make(chan error, 1)
-	f := func() {
-		if z.scripts == nil {
-			done <- ErrNoScripts
-			return
-		}
-		done <- z.scripts.Reload(sc)
-	}
+	f := func() { done <- z.reloadScripts(sc) }
 	select {
 	case z.control <- f:
 	case <-ctx.Done():
@@ -226,6 +246,19 @@ func (z *Zone) ReloadMod(ctx context.Context, sc *mod.Scripts) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+// reloadScripts is ReloadMod on the zone's goroutine. A zone that has no
+// Lua state yet makes it from the new files when it needs one.
+func (z *Zone) reloadScripts(sc *mod.Scripts) error {
+	if z.reloaded == nil {
+		z.reloaded = map[string]*mod.Scripts{}
+	}
+	z.reloaded[sc.Mod] = sc
+	if z.scripts == nil {
+		return nil
+	}
+	return z.scripts.Reload(sc)
 }
 
 // scriptHost is the zone as mod scripts see it.
@@ -249,73 +282,69 @@ func (h scriptHost) PlayerField(id int64, field string) (script.Value, error) {
 	if err != nil {
 		return script.Nil, err
 	}
-	e := p.entity
-	switch field {
-	case "name":
-		return script.String(p.Name), nil
-	case "base_level":
-		return script.Int(int64(p.progress.BaseLevel)), nil
-	case "job_level":
-		return script.Int(int64(p.progress.JobLevel)), nil
-	case "job":
-		return script.Int(int64(p.char.Job)), nil
-	case "zeny":
-		return script.Int(p.record.Zeny), nil
-	case "hp":
-		return script.Int(e.hp), nil
-	case "max_hp":
-		if e.status == nil {
-			return script.Int(0), nil
-		}
-		return script.Int(int64(e.status.MaxHP)), nil
-	case "sp":
-		return script.Int(p.sp), nil
-	case "max_sp":
-		if e.status == nil {
-			return script.Int(0), nil
-		}
-		return script.Int(int64(e.status.MaxSP)), nil
-	case "map":
-		return script.String(h.Map()), nil
-	case "x":
-		return script.Int(int64(e.x)), nil
-	case "y":
-		return script.Int(int64(e.y)), nil
-	case "character_id":
-		return script.Int(p.record.ID), nil
-	case "account_id":
-		return script.Int(p.record.AccountID), nil
-	case "party":
-		// Parties do not exist yet.
-		return script.Nil, nil
-	case "sex":
+	read, ok := playerFields[field]
+	if !ok {
+		return script.Nil, fmt.Errorf("player has no field %q", field)
+	}
+	return read(h, p), nil
+}
+
+func intValue[T int | int64 | uint32](v T) script.Value { return script.Int(int64(v)) }
+
+// playerFields are the fields of player handles. server/modscript/luaapi
+// defines the same names, and a test checks both.
+var playerFields = map[string]func(h scriptHost, p *Player) script.Value{
+	"name":         func(_ scriptHost, p *Player) script.Value { return script.String(p.Name) },
+	"base_level":   func(_ scriptHost, p *Player) script.Value { return intValue(p.progress.BaseLevel) },
+	"job_level":    func(_ scriptHost, p *Player) script.Value { return intValue(p.progress.JobLevel) },
+	"job":          func(_ scriptHost, p *Player) script.Value { return intValue(p.char.Job) },
+	"zeny":         func(_ scriptHost, p *Player) script.Value { return script.Int(p.record.Zeny) },
+	"hp":           func(_ scriptHost, p *Player) script.Value { return script.Int(p.entity.hp) },
+	"max_hp":       func(_ scriptHost, p *Player) script.Value { return maxOf(p.entity, true) },
+	"sp":           func(_ scriptHost, p *Player) script.Value { return script.Int(p.sp) },
+	"max_sp":       func(_ scriptHost, p *Player) script.Value { return maxOf(p.entity, false) },
+	"map":          func(h scriptHost, _ *Player) script.Value { return script.String(h.Map()) },
+	"x":            func(_ scriptHost, p *Player) script.Value { return intValue(p.entity.x) },
+	"y":            func(_ scriptHost, p *Player) script.Value { return intValue(p.entity.y) },
+	"character_id": func(_ scriptHost, p *Player) script.Value { return script.Int(p.record.ID) },
+	"account_id":   func(_ scriptHost, p *Player) script.Value { return script.Int(p.record.AccountID) },
+	// Parties do not exist yet.
+	"party": func(scriptHost, *Player) script.Value { return script.Nil },
+	"sex": func(_ scriptHost, p *Player) script.Value {
 		if p.char.Male {
-			return script.String("male"), nil
+			return script.String("male")
 		}
-		return script.String("female"), nil
-	case "base_str":
-		return script.Int(int64(p.char.Stats.Str)), nil
-	case "base_agi":
-		return script.Int(int64(p.char.Stats.Agi)), nil
-	case "base_vit":
-		return script.Int(int64(p.char.Stats.Vit)), nil
-	case "base_int":
-		return script.Int(int64(p.char.Stats.Int)), nil
-	case "base_dex":
-		return script.Int(int64(p.char.Stats.Dex)), nil
-	case "base_luk":
-		return script.Int(int64(p.char.Stats.Luk)), nil
-	case "base_pow", "base_sta", "base_wis", "base_spl", "base_con", "base_crt":
-		// Trait stats cannot be raised yet.
-		return script.Int(0), nil
-	case "job_class":
+		return script.String("female")
+	},
+	"base_str": func(_ scriptHost, p *Player) script.Value { return intValue(p.char.Stats.Str) },
+	"base_agi": func(_ scriptHost, p *Player) script.Value { return intValue(p.char.Stats.Agi) },
+	"base_vit": func(_ scriptHost, p *Player) script.Value { return intValue(p.char.Stats.Vit) },
+	"base_int": func(_ scriptHost, p *Player) script.Value { return intValue(p.char.Stats.Int) },
+	"base_dex": func(_ scriptHost, p *Player) script.Value { return intValue(p.char.Stats.Dex) },
+	"base_luk": func(_ scriptHost, p *Player) script.Value { return intValue(p.char.Stats.Luk) },
+	// Trait stats cannot be raised yet.
+	"base_pow": zeroField, "base_sta": zeroField, "base_wis": zeroField,
+	"base_spl": zeroField, "base_con": zeroField, "base_crt": zeroField,
+	"job_class": func(h scriptHost, p *Player) script.Value {
 		if h.z.Status == nil {
-			return script.Int(0), nil
+			return script.Int(0)
 		}
 		m, _ := h.z.Status.MapID(p.char.Job)
-		return script.Int(int64(m)), nil // #nosec G115 -- map job IDs fit in 32 bits.
+		return script.Int(int64(m)) // #nosec G115 -- map job IDs fit in 32 bits.
+	},
+}
+
+func zeroField(scriptHost, *Player) script.Value { return script.Int(0) }
+
+// maxOf is an entity's maximum HP or SP, or 0 without a status.
+func maxOf(e *entity, hp bool) script.Value {
+	if e.status == nil {
+		return script.Int(0)
 	}
-	return script.Nil, fmt.Errorf("player has no field %q", field)
+	if hp {
+		return intValue(e.status.MaxHP)
+	}
+	return intValue(e.status.MaxSP)
 }
 
 // MonsterField reads a field of a monster handle. A killed monster is
@@ -325,34 +354,30 @@ func (h scriptHost) MonsterField(id int64, field string) (script.Value, error) {
 	if e == nil {
 		return script.Nil, errors.New("the monster is gone from this map")
 	}
-	m := e.monster.spawn
-	switch field {
-	case "id":
-		return script.Int(int64(m.Mob)), nil
-	case "name":
-		return script.String(m.Name), nil
-	case "level":
-		if m.Status == nil {
-			return script.Int(0), nil
-		}
-		return script.Int(int64(m.Status.Level)), nil
-	case "hp":
-		return script.Int(max(e.hp, 0)), nil
-	case "max_hp":
-		if e.status == nil {
-			return script.Int(0), nil
-		}
-		return script.Int(int64(e.status.MaxHP)), nil
-	case "map":
-		return script.String(h.Map()), nil
-	case "x":
-		return script.Int(int64(e.x)), nil
-	case "y":
-		return script.Int(int64(e.y)), nil
-	case "is_alive":
-		return script.Bool(!e.dead && h.z.entities.has(e)), nil
+	read, ok := monsterFields[field]
+	if !ok {
+		return script.Nil, fmt.Errorf("monster has no field %q", field)
 	}
-	return script.Nil, fmt.Errorf("monster has no field %q", field)
+	return read(h, e), nil
+}
+
+// monsterFields are the fields of monster handles. server/modscript/luaapi
+// defines the same names, and a test checks both.
+var monsterFields = map[string]func(h scriptHost, e *entity) script.Value{
+	"id":   func(_ scriptHost, e *entity) script.Value { return intValue(e.monster.spawn.Mob) },
+	"name": func(_ scriptHost, e *entity) script.Value { return script.String(e.monster.spawn.Name) },
+	"level": func(_ scriptHost, e *entity) script.Value {
+		if e.monster.spawn.Status == nil {
+			return script.Int(0)
+		}
+		return intValue(e.monster.spawn.Status.Level)
+	},
+	"hp":       func(_ scriptHost, e *entity) script.Value { return script.Int(max(e.hp, 0)) },
+	"max_hp":   func(_ scriptHost, e *entity) script.Value { return maxOf(e, true) },
+	"map":      func(h scriptHost, _ *entity) script.Value { return script.String(h.Map()) },
+	"x":        func(_ scriptHost, e *entity) script.Value { return intValue(e.x) },
+	"y":        func(_ scriptHost, e *entity) script.Value { return intValue(e.y) },
+	"is_alive": func(h scriptHost, e *entity) script.Value { return script.Bool(!e.dead && h.z.entities.has(e)) },
 }
 
 // SendMessage shows a line to one player in the chat log, as server

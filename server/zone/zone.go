@@ -14,6 +14,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -266,6 +267,9 @@ type Zone struct {
 	// scriptEvents wait for a point where scripts may run.
 	scripts      *modscript.Runtime
 	scriptEvents []scriptEvent
+	// reloaded are the mods' scripts that a reload read, by mod ID. They
+	// replace Mods.Scripts when the zone makes its Lua state.
+	reloaded map[string]*mod.Scripts
 	// scriptsFailed is set when the Lua state could not be made, so it
 	// is not tried on every item use.
 	scriptsFailed bool

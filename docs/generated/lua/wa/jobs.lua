@@ -1,0 +1,232 @@
+---@meta wa.jobs
+-- Generated from server/modscript/luaapi. Do not edit: wactl mod types writes it again.
+
+---Jobs, from rAthena's JOB_ names, and job tests.
+---@class wa.jobs
+---@field abyss_chaser integer 4260, rAthena's JOB_ABYSS_CHASER.
+---@field acolyte integer 4, rAthena's JOB_ACOLYTE.
+---@field acolyte_high integer 4005, rAthena's JOB_ACOLYTE_HIGH.
+---@field alchemist integer 18, rAthena's JOB_ALCHEMIST.
+---@field arch_bishop integer 4057, rAthena's JOB_ARCH_BISHOP.
+---@field arch_bishop_t integer 4063, rAthena's JOB_ARCH_BISHOP_T.
+---@field arch_mage integer 4255, rAthena's JOB_ARCH_MAGE.
+---@field archbishop_2nd integer 4336, rAthena's JOB_ARCHBISHOP_2ND.
+---@field archer integer 3, rAthena's JOB_ARCHER.
+---@field archer_high integer 4004, rAthena's JOB_ARCHER_HIGH.
+---@field assassin integer 12, rAthena's JOB_ASSASSIN.
+---@field assassin_cross integer 4013, rAthena's JOB_ASSASSIN_CROSS.
+---@field baby integer 4023, rAthena's JOB_BABY.
+---@field baby_acolyte integer 4027, rAthena's JOB_BABY_ACOLYTE.
+---@field baby_alchemist integer 4041, rAthena's JOB_BABY_ALCHEMIST.
+---@field baby_arch_bishop integer 4099, rAthena's JOB_BABY_ARCH_BISHOP.
+---@field baby_archer integer 4026, rAthena's JOB_BABY_ARCHER.
+---@field baby_assassin integer 4035, rAthena's JOB_BABY_ASSASSIN.
+---@field baby_bard integer 4042, rAthena's JOB_BABY_BARD.
+---@field baby_blacksmith integer 4033, rAthena's JOB_BABY_BLACKSMITH.
+---@field baby_crusader integer 4037, rAthena's JOB_BABY_CRUSADER.
+---@field baby_crusader2 integer 4044, rAthena's JOB_BABY_CRUSADER2.
+---@field baby_dancer integer 4043, rAthena's JOB_BABY_DANCER.
+---@field baby_genetic integer 4107, rAthena's JOB_BABY_GENETIC.
+---@field baby_guillotine_cross integer 4101, rAthena's JOB_BABY_GUILLOTINE_CROSS.
+---@field baby_gunslinger integer 4228, rAthena's JOB_BABY_GUNSLINGER.
+---@field baby_hunter integer 4034, rAthena's JOB_BABY_HUNTER.
+---@field baby_kagerou integer 4223, rAthena's JOB_BABY_KAGEROU.
+---@field baby_knight integer 4030, rAthena's JOB_BABY_KNIGHT.
+---@field baby_knight2 integer 4036, rAthena's JOB_BABY_KNIGHT2.
+---@field baby_mage integer 4025, rAthena's JOB_BABY_MAGE.
+---@field baby_mechanic integer 4100, rAthena's JOB_BABY_MECHANIC.
+---@field baby_mechanic2 integer 4112, rAthena's JOB_BABY_MECHANIC2.
+---@field baby_merchant integer 4028, rAthena's JOB_BABY_MERCHANT.
+---@field baby_minstrel integer 4104, rAthena's JOB_BABY_MINSTREL.
+---@field baby_monk integer 4038, rAthena's JOB_BABY_MONK.
+---@field baby_ninja integer 4222, rAthena's JOB_BABY_NINJA.
+---@field baby_oboro integer 4224, rAthena's JOB_BABY_OBORO.
+---@field baby_priest integer 4031, rAthena's JOB_BABY_PRIEST.
+---@field baby_ranger integer 4098, rAthena's JOB_BABY_RANGER.
+---@field baby_ranger2 integer 4111, rAthena's JOB_BABY_RANGER2.
+---@field baby_rebellion integer 4229, rAthena's JOB_BABY_REBELLION.
+---@field baby_rogue integer 4040, rAthena's JOB_BABY_ROGUE.
+---@field baby_royal_guard integer 4102, rAthena's JOB_BABY_ROYAL_GUARD.
+---@field baby_royal_guard2 integer 4110, rAthena's JOB_BABY_ROYAL_GUARD2.
+---@field baby_rune_knight integer 4096, rAthena's JOB_BABY_RUNE_KNIGHT.
+---@field baby_rune_knight2 integer 4109, rAthena's JOB_BABY_RUNE_KNIGHT2.
+---@field baby_sage integer 4039, rAthena's JOB_BABY_SAGE.
+---@field baby_shadow_chaser integer 4108, rAthena's JOB_BABY_SHADOW_CHASER.
+---@field baby_sorcerer integer 4103, rAthena's JOB_BABY_SORCERER.
+---@field baby_soul_linker integer 4227, rAthena's JOB_BABY_SOUL_LINKER.
+---@field baby_soul_reaper integer 4242, rAthena's JOB_BABY_SOUL_REAPER.
+---@field baby_star_emperor integer 4241, rAthena's JOB_BABY_STAR_EMPEROR.
+---@field baby_star_emperor2 integer 4244, rAthena's JOB_BABY_STAR_EMPEROR2.
+---@field baby_star_gladiator integer 4226, rAthena's JOB_BABY_STAR_GLADIATOR.
+---@field baby_star_gladiator2 integer 4238, rAthena's JOB_BABY_STAR_GLADIATOR2.
+---@field baby_summoner integer 4220, rAthena's JOB_BABY_SUMMONER.
+---@field baby_sura integer 4106, rAthena's JOB_BABY_SURA.
+---@field baby_swordman integer 4024, rAthena's JOB_BABY_SWORDMAN.
+---@field baby_taekwon integer 4225, rAthena's JOB_BABY_TAEKWON.
+---@field baby_thief integer 4029, rAthena's JOB_BABY_THIEF.
+---@field baby_wanderer integer 4105, rAthena's JOB_BABY_WANDERER.
+---@field baby_warlock integer 4097, rAthena's JOB_BABY_WARLOCK.
+---@field baby_wizard integer 4032, rAthena's JOB_BABY_WIZARD.
+---@field bard integer 19, rAthena's JOB_BARD.
+---@field biolo integer 4259, rAthena's JOB_BIOLO.
+---@field blacksmith integer 10, rAthena's JOB_BLACKSMITH.
+---@field cardinal integer 4256, rAthena's JOB_CARDINAL.
+---@field champion integer 4016, rAthena's JOB_CHAMPION.
+---@field clown integer 4020, rAthena's JOB_CLOWN.
+---@field creator integer 4019, rAthena's JOB_CREATOR.
+---@field crusader integer 14, rAthena's JOB_CRUSADER.
+---@field crusader2 integer 21, rAthena's JOB_CRUSADER2.
+---@field dancer integer 20, rAthena's JOB_DANCER.
+---@field dark_collector integer 4052, rAthena's JOB_DARK_COLLECTOR.
+---@field death_knight integer 4051, rAthena's JOB_DEATH_KNIGHT.
+---@field dragon_knight integer 4252, rAthena's JOB_DRAGON_KNIGHT.
+---@field dragon_knight2 integer 4280, rAthena's JOB_DRAGON_KNIGHT2.
+---@field elemental_master integer 4261, rAthena's JOB_ELEMENTAL_MASTER.
+---@field gangsi integer 4050, rAthena's JOB_GANGSI.
+---@field genetic integer 4071, rAthena's JOB_GENETIC.
+---@field genetic_2nd integer 4339, rAthena's JOB_GENETIC_2ND.
+---@field genetic_t integer 4078, rAthena's JOB_GENETIC_T.
+---@field guillotine_cross integer 4059, rAthena's JOB_GUILLOTINE_CROSS.
+---@field guillotine_cross_2nd integer 4334, rAthena's JOB_GUILLOTINE_CROSS_2ND.
+---@field guillotine_cross_t integer 4065, rAthena's JOB_GUILLOTINE_CROSS_T.
+---@field gunslinger integer 24, rAthena's JOB_GUNSLINGER.
+---@field gypsy integer 4021, rAthena's JOB_GYPSY.
+---@field hanbok integer 28, rAthena's JOB_HANBOK.
+---@field high_priest integer 4009, rAthena's JOB_HIGH_PRIEST.
+---@field high_wizard integer 4010, rAthena's JOB_HIGH_WIZARD.
+---@field hunter integer 11, rAthena's JOB_HUNTER.
+---@field hyper_novice integer 4307, rAthena's JOB_HYPER_NOVICE.
+---@field imperial_guard integer 4258, rAthena's JOB_IMPERIAL_GUARD.
+---@field imperial_guard2 integer 4281, rAthena's JOB_IMPERIAL_GUARD2.
+---@field inquisitor integer 4262, rAthena's JOB_INQUISITOR.
+---@field kagerou integer 4211, rAthena's JOB_KAGEROU.
+---@field knight integer 7, rAthena's JOB_KNIGHT.
+---@field knight2 integer 13, rAthena's JOB_KNIGHT2.
+---@field lord_knight integer 4008, rAthena's JOB_LORD_KNIGHT.
+---@field lord_knight2 integer 4014, rAthena's JOB_LORD_KNIGHT2.
+---@field mage integer 2, rAthena's JOB_MAGE.
+---@field mage_high integer 4003, rAthena's JOB_MAGE_HIGH.
+---@field mechanic integer 4058, rAthena's JOB_MECHANIC.
+---@field mechanic2 integer 4086, rAthena's JOB_MECHANIC2.
+---@field mechanic_2nd integer 4333, rAthena's JOB_MECHANIC_2ND.
+---@field mechanic_t integer 4064, rAthena's JOB_MECHANIC_T.
+---@field mechanic_t2 integer 4087, rAthena's JOB_MECHANIC_T2.
+---@field meister integer 4253, rAthena's JOB_MEISTER.
+---@field meister2 integer 4279, rAthena's JOB_MEISTER2.
+---@field merchant integer 5, rAthena's JOB_MERCHANT.
+---@field merchant_high integer 4006, rAthena's JOB_MERCHANT_HIGH.
+---@field minstrel integer 4068, rAthena's JOB_MINSTREL.
+---@field minstrel_2nd integer 4343, rAthena's JOB_MINSTREL_2ND.
+---@field minstrel_t integer 4075, rAthena's JOB_MINSTREL_T.
+---@field monk integer 15, rAthena's JOB_MONK.
+---@field night_watch integer 4306, rAthena's JOB_NIGHT_WATCH.
+---@field ninja integer 25, rAthena's JOB_NINJA.
+---@field novice integer 0, rAthena's JOB_NOVICE.
+---@field novice_high integer 4001, rAthena's JOB_NOVICE_HIGH.
+---@field oboro integer 4212, rAthena's JOB_OBORO.
+---@field oktoberfest integer 29, rAthena's JOB_OKTOBERFEST.
+---@field paladin integer 4015, rAthena's JOB_PALADIN.
+---@field paladin2 integer 4022, rAthena's JOB_PALADIN2.
+---@field priest integer 8, rAthena's JOB_PRIEST.
+---@field professor integer 4017, rAthena's JOB_PROFESSOR.
+---@field ranger integer 4056, rAthena's JOB_RANGER.
+---@field ranger2 integer 4084, rAthena's JOB_RANGER2.
+---@field ranger_2nd integer 4337, rAthena's JOB_RANGER_2ND.
+---@field ranger_t integer 4062, rAthena's JOB_RANGER_T.
+---@field ranger_t2 integer 4085, rAthena's JOB_RANGER_T2.
+---@field rebellion integer 4215, rAthena's JOB_REBELLION.
+---@field rogue integer 17, rAthena's JOB_ROGUE.
+---@field royal_guard integer 4066, rAthena's JOB_ROYAL_GUARD.
+---@field royal_guard2 integer 4082, rAthena's JOB_ROYAL_GUARD2.
+---@field royal_guard_2nd integer 4338, rAthena's JOB_ROYAL_GUARD_2ND.
+---@field royal_guard_t integer 4073, rAthena's JOB_ROYAL_GUARD_T.
+---@field royal_guard_t2 integer 4083, rAthena's JOB_ROYAL_GUARD_T2.
+---@field rune_knight integer 4054, rAthena's JOB_RUNE_KNIGHT.
+---@field rune_knight2 integer 4080, rAthena's JOB_RUNE_KNIGHT2.
+---@field rune_knight_2nd integer 4332, rAthena's JOB_RUNE_KNIGHT_2ND.
+---@field rune_knight_t integer 4060, rAthena's JOB_RUNE_KNIGHT_T.
+---@field rune_knight_t2 integer 4081, rAthena's JOB_RUNE_KNIGHT_T2.
+---@field sage integer 16, rAthena's JOB_SAGE.
+---@field shadow_chaser integer 4072, rAthena's JOB_SHADOW_CHASER.
+---@field shadow_chaser_2nd integer 4340, rAthena's JOB_SHADOW_CHASER_2ND.
+---@field shadow_chaser_t integer 4079, rAthena's JOB_SHADOW_CHASER_T.
+---@field shadow_cross integer 4254, rAthena's JOB_SHADOW_CROSS.
+---@field shinkiro integer 4304, rAthena's JOB_SHINKIRO.
+---@field shiranui integer 4305, rAthena's JOB_SHIRANUI.
+---@field sky_emperor integer 4302, rAthena's JOB_SKY_EMPEROR.
+---@field sky_emperor2 integer 4316, rAthena's JOB_SKY_EMPEROR2.
+---@field sniper integer 4012, rAthena's JOB_SNIPER.
+---@field sorcerer integer 4067, rAthena's JOB_SORCERER.
+---@field sorcerer_2nd integer 4341, rAthena's JOB_SORCERER_2ND.
+---@field sorcerer_t integer 4074, rAthena's JOB_SORCERER_T.
+---@field soul_ascetic integer 4303, rAthena's JOB_SOUL_ASCETIC.
+---@field soul_linker integer 4049, rAthena's JOB_SOUL_LINKER.
+---@field soul_reaper integer 4240, rAthena's JOB_SOUL_REAPER.
+---@field spirit_handler integer 4308, rAthena's JOB_SPIRIT_HANDLER.
+---@field stalker integer 4018, rAthena's JOB_STALKER.
+---@field star_emperor integer 4239, rAthena's JOB_STAR_EMPEROR.
+---@field star_emperor2 integer 4243, rAthena's JOB_STAR_EMPEROR2.
+---@field star_gladiator integer 4047, rAthena's JOB_STAR_GLADIATOR.
+---@field star_gladiator2 integer 4048, rAthena's JOB_STAR_GLADIATOR2.
+---@field summer integer 27, rAthena's JOB_SUMMER.
+---@field summer2 integer 30, rAthena's JOB_SUMMER2.
+---@field summoner integer 4218, rAthena's JOB_SUMMONER.
+---@field super_baby integer 4045, rAthena's JOB_SUPER_BABY.
+---@field super_baby_e integer 4191, rAthena's JOB_SUPER_BABY_E.
+---@field super_novice integer 23, rAthena's JOB_SUPER_NOVICE.
+---@field super_novice_e integer 4190, rAthena's JOB_SUPER_NOVICE_E.
+---@field sura integer 4070, rAthena's JOB_SURA.
+---@field sura_2nd integer 4342, rAthena's JOB_SURA_2ND.
+---@field sura_t integer 4077, rAthena's JOB_SURA_T.
+---@field swordman integer 1, rAthena's JOB_SWORDMAN.
+---@field swordman_high integer 4002, rAthena's JOB_SWORDMAN_HIGH.
+---@field taekwon integer 4046, rAthena's JOB_TAEKWON.
+---@field thief integer 6, rAthena's JOB_THIEF.
+---@field thief_high integer 4007, rAthena's JOB_THIEF_HIGH.
+---@field troubadour integer 4263, rAthena's JOB_TROUBADOUR.
+---@field trouvere integer 4264, rAthena's JOB_TROUVERE.
+---@field wanderer integer 4069, rAthena's JOB_WANDERER.
+---@field wanderer_2nd integer 4344, rAthena's JOB_WANDERER_2ND.
+---@field wanderer_t integer 4076, rAthena's JOB_WANDERER_T.
+---@field warlock integer 4055, rAthena's JOB_WARLOCK.
+---@field warlock_2nd integer 4335, rAthena's JOB_WARLOCK_2ND.
+---@field warlock_t integer 4061, rAthena's JOB_WARLOCK_T.
+---@field wedding integer 22, rAthena's JOB_WEDDING.
+---@field whitesmith integer 4011, rAthena's JOB_WHITESMITH.
+---@field windhawk integer 4257, rAthena's JOB_WINDHAWK.
+---@field windhawk2 integer 4278, rAthena's JOB_WINDHAWK2.
+---@field wizard integer 9, rAthena's JOB_WIZARD.
+---@field xmas integer 26, rAthena's JOB_XMAS.
+local jobs = {}
+
+---Whether the job is a transcendent job.
+---@param job integer A job, such as player.job.
+---@return boolean
+function jobs.is_transcendent(job) end
+
+---Whether the job is a baby job.
+---@param job integer
+---@return boolean
+function jobs.is_baby(job) end
+
+---Whether the job is a third job.
+---@param job integer
+---@return boolean
+function jobs.is_third(job) end
+
+---Whether the job is a fourth job.
+---@param job integer
+---@return boolean
+function jobs.is_fourth(job) end
+
+---rAthena's BaseJob: a Lord Knight is a Knight.
+---@param job integer
+---@return integer
+function jobs.base_job(job) end
+
+---rAthena's BaseClass: a Knight is a Swordman.
+---@param job integer
+---@return integer
+function jobs.first_job(job) end
+
+return jobs

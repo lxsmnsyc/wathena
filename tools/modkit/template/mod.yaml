@@ -1,0 +1,16 @@
+# The manifest. mods/README.md in the wAthena repository explains each
+# field.
+id: {%.ID%}
+name: {%.Name%}
+version: 0.1.0
+api: experimental
+description: A guide who greets players and gives each one a badge.
+authors:
+  - name: Your Name
+license: MIT
+depends:
+  - id: core
+    version: ">=0.1"
+permissions:
+  # Giving items needs the server owner's approval.
+  - player.give_items

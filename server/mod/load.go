@@ -80,7 +80,8 @@ func builtins() []*Mod {
 
 // Discover finds the mods in a folder: each folder in it that has a
 // mod.yaml, and each .zip file with a mod.yaml at its root or in its one
-// top folder. Other entries, and names that start with ".", are
+// top folder. A symbolic link to a folder or a .zip file counts as one,
+// as wactl dev uses. Other entries, and names that start with ".", are
 // skipped. Mods come back sorted by path.
 func Discover(dir string) ([]*Mod, error) {
 	entries, err := os.ReadDir(dir)
@@ -95,25 +96,23 @@ func Discover(dir string) ([]*Mod, error) {
 			continue
 		}
 		p := filepath.Join(dir, name)
-		var open func() (fs.FS, func() error, error)
+		isDir := e.IsDir()
+		if e.Type()&fs.ModeSymlink != 0 {
+			fi, err := os.Stat(p)
+			if err != nil {
+				continue
+			}
+			isDir = fi.IsDir()
+		}
 		switch {
-		case e.IsDir():
+		case isDir:
 			if _, err := os.Stat(filepath.Join(p, ManifestFile)); err != nil {
 				continue
 			}
-			open = func() (fs.FS, func() error, error) {
-				root, err := os.OpenRoot(p)
-				if err != nil {
-					return nil, nil, err
-				}
-				return root.FS(), root.Close, nil
-			}
-		case strings.EqualFold(filepath.Ext(name), ".zip"):
-			open = func() (fs.FS, func() error, error) { return openZip(p) }
-		default:
+		case !strings.EqualFold(filepath.Ext(name), ".zip"):
 			continue
 		}
-		m, err := readMod(p, open)
+		m, err := Read(p)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -121,6 +120,27 @@ func Discover(dir string) ([]*Mod, error) {
 		out = append(out, m)
 	}
 	return out, errors.Join(errs...)
+}
+
+// Read reads one mod: a folder with a mod.yaml, or a .zip file.
+func Read(p string) (*Mod, error) {
+	fi, err := os.Stat(p)
+	if err != nil {
+		return nil, err
+	}
+	var open func() (fs.FS, func() error, error)
+	if fi.IsDir() {
+		open = func() (fs.FS, func() error, error) {
+			root, err := os.OpenRoot(p)
+			if err != nil {
+				return nil, nil, err
+			}
+			return root.FS(), root.Close, nil
+		}
+	} else {
+		open = func() (fs.FS, func() error, error) { return openZip(p) }
+	}
+	return readMod(p, open)
 }
 
 // openZip opens a mod packed as a .zip file. The manifest is at the

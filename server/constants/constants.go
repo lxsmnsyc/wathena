@@ -56,6 +56,19 @@ type Module struct {
 	// Names maps values to the readable name the converter writes. When
 	// two names share a value, the one listed first in sorted order wins.
 	Names map[int64]string
+	// Origins maps readable names to rAthena's names, for the API
+	// reference.
+	Origins map[string]string
+}
+
+// ModuleNames lists the constant modules, by name after wa., in a fixed
+// order.
+func ModuleNames() []string {
+	out := make([]string, len(moduleSpecs))
+	for i, s := range moduleSpecs {
+		out[i] = s.name
+	}
+	return out
 }
 
 // moduleSpec says which rAthena constants make a module.
@@ -105,7 +118,7 @@ var renames = map[string]string{
 func (d *Data) Modules() map[string]*Module {
 	out := map[string]*Module{}
 	for _, spec := range moduleSpecs {
-		m := &Module{Name: spec.name, Values: map[string]int64{}, Names: map[int64]string{}}
+		m := &Module{Name: spec.name, Values: map[string]int64{}, Names: map[int64]string{}, Origins: map[string]string{}}
 		var names []string
 		for n := range d.Constants {
 			if strings.HasPrefix(n, spec.prefix) && !contains(spec.skip, n) {
@@ -123,6 +136,7 @@ func (d *Data) Modules() map[string]*Module {
 				continue
 			}
 			m.Values[readable] = v
+			m.Origins[readable] = n
 			if _, ok := m.Names[v]; !ok {
 				m.Names[v] = readable
 			}

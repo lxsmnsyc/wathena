@@ -1,0 +1,48 @@
+---@meta wa.monster_groups
+-- Generated from server/modscript/luaapi. Do not edit: wactl mod types writes it again.
+
+---Monster groups, from rAthena's RC2_ names.
+---@class wa.monster_groups
+---@field bio5_acolyte_merchant integer 17, rAthena's RC2_BIO5_ACOLYTE_MERCHANT.
+---@field bio5_mage_archer integer 18, rAthena's RC2_BIO5_MAGE_ARCHER.
+---@field bio5_mvp integer 19, rAthena's RC2_BIO5_MVP.
+---@field bio5_swordman_thief integer 16, rAthena's RC2_BIO5_SWORDMAN_THIEF.
+---@field biolab integer 10, rAthena's RC2_BIOLAB.
+---@field clocktower integer 20, rAthena's RC2_CLOCKTOWER.
+---@field destroyed_valkyrie_realm integer 41, rAthena's RC2_DESTROYED_VALKYRIE_REALM.
+---@field edda_arunafeltz integer 38, rAthena's RC2_EDDA_ARUNAFELTZ.
+---@field encroached_gephenia integer 42, rAthena's RC2_ENCROACHED_GEPHENIA.
+---@field ep16_def integer 37, rAthena's RC2_EP16_DEF.
+---@field ep172alpha integer 29, rAthena's RC2_EP172ALPHA.
+---@field ep172bath integer 31, rAthena's RC2_EP172BATH.
+---@field ep172beta integer 30, rAthena's RC2_EP172BETA.
+---@field faceworm integer 22, rAthena's RC2_FACEWORM.
+---@field glast_heim_abyss integer 40, rAthena's RC2_GLAST_HEIM_ABYSS.
+---@field goblin integer 1, rAthena's RC2_GOBLIN.
+---@field golem integer 4, rAthena's RC2_GOLEM.
+---@field gvg integer 7, rAthena's RC2_GVG.
+---@field hearthunter integer 23, rAthena's RC2_HEARTHUNTER.
+---@field illusion_frozen integer 35, rAthena's RC2_ILLUSION_FROZEN.
+---@field illusion_luanda integer 34, rAthena's RC2_ILLUSION_LUANDA.
+---@field illusion_moonlight integer 36, rAthena's RC2_ILLUSION_MOONLIGHT.
+---@field illusion_turtle integer 32, rAthena's RC2_ILLUSION_TURTLE.
+---@field illusion_vampire integer 27, rAthena's RC2_ILLUSION_VAMPIRE.
+---@field kobold integer 2, rAthena's RC2_KOBOLD.
+---@field lasagna integer 39, rAthena's RC2_LASAGNA.
+---@field malangdo integer 28, rAthena's RC2_MALANGDO.
+---@field manuk integer 11, rAthena's RC2_MANUK.
+---@field ninja integer 6, rAthena's RC2_NINJA.
+---@field ogh_atk_def integer 14, rAthena's RC2_OGH_ATK_DEF.
+---@field ogh_hidden integer 15, rAthena's RC2_OGH_HIDDEN.
+---@field orc integer 3, rAthena's RC2_ORC.
+---@field rachel_sanctuary integer 33, rAthena's RC2_RACHEL_SANCTUARY.
+---@field rockridge integer 24, rAthena's RC2_ROCKRIDGE.
+---@field scaraba integer 13, rAthena's RC2_SCARABA.
+---@field splendide integer 12, rAthena's RC2_SPLENDIDE.
+---@field temple_demon integer 26, rAthena's RC2_TEMPLE_DEMON.
+---@field thanatos integer 21, rAthena's RC2_THANATOS.
+---@field treasure integer 9, rAthena's RC2_TREASURE.
+---@field werner_lab integer 25, rAthena's RC2_WERNER_LAB.
+local monster_groups = {}
+
+return monster_groups

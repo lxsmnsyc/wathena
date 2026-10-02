@@ -270,3 +270,25 @@ return function() events.on("login", function(p) p:send_message("v2") end) end`)
 		t.Fatalf("after the reload: %q, logs: %s", got, logs)
 	}
 }
+
+// TestModReloadBeforeLuaState reloads a mod in a zone that has not made
+// its Lua state: the state it makes later uses the new files.
+func TestModReloadBeforeLuaState(t *testing.T) {
+	z := New("map/test", open(40), rng.FromKey([32]byte{3}).Stream(), nil)
+	v1 := testMod(`return function() end`)
+	v1.Entries = nil
+	z.Mods = &Mods{Scripts: []*mod.Scripts{v1}, IDs: []string{"example.test"}}
+	t.Cleanup(z.stopScripts)
+	v2 := testMod(`
+local events = require "wa.events"
+return function() events.on("login", function(p) p:send_message("v2") end) end`)
+	if err := z.reloadScripts(v2); err != nil {
+		t.Fatal(err)
+	}
+	z.startScripts()
+	p := add(z, "a")
+	z.stepAt(50)
+	if got := systemLines(events(p)); strings.Join(got, "|") != "v2" {
+		t.Fatalf("after the reload: %q", got)
+	}
+}

@@ -1,9 +1,10 @@
 # Making a mod
 
-A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader supports today, in phase 3 step 4. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md). It is experimental and can change in any release until API 1.0.
+A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader and tools support today, in phase 3 step 5. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md). It is experimental and can change in any release until API 1.0.
 
 - [core](core) is the base game as a mod. It is built into the server. Its files are rAthena's item scripts, NPCs and shops, which the server converts when it starts ("Item scripts" and "Core's NPCs" below).
-- [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a shop, and a script that greets players.
+- [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a shop, a script that greets players, and tests.
+- `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
 
@@ -23,7 +24,12 @@ greeter/
     main.lua            an entry script that mod.yaml lists
     npc/greeter.lua     an NPC's entry script, which npcs.yml names
     lib/messages.lua    a helper module
+  tests/
+    greeter_test.lua    tests that wactl mod test runs
+  .luarc.json           editor settings for the Lua Language Server
 ```
+
+Names that start with `.`, such as `.luarc.json`, `.wathena` and `.git`, are not part of the mod. The server ignores them, and `wactl mod pack` leaves them out.
 
 ## The manifest
 
@@ -598,18 +604,159 @@ go run ./tools/wactl convert npcs --mode renewal --out /tmp/core-npcs
 
 To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`. Kafra storage and pushcart rental say they are not available yet. The coverage report of each mode is in [docs/generated](../docs/generated).
 
-## Testing a mod
+## Tools
 
-Until `wactl mod test` exists (phase 3 step 5), run a local server with the folder that holds the mod. The loader looks one level down: `mods/examples` finds `mods/examples/greeter`.
+`wactl` has the mod commands (strategy section 6.9). They carry the reference data, so they work outside the repository. Build `wactl` with `go build ./tools/wactl`, or run it with `go run ./tools/wactl` in the repository.
+
+| Command | What it does |
+|---|---|
+| `wactl mod new <id> [--dir <folder>]` | Makes a mod from a template: a manifest, an NPC with a conversation that uses saved variables, an item overlay, a test, `locales/en.yml`, a README, and the editor definitions. It passes `validate` and `test` at once. |
+| `wactl mod validate [path] [--mods <folder>] [--show]` | Checks the mod: the manifest, the data files and their IDs, the rulesets it loads on, its permissions, the Lua syntax of every file, that entry scripts return a function, that required modules exist, and that test files register cases. `--show` prints the final value of every record the mod adds or changes, and which mod set each field. |
+| `wactl mod test [path] [--mods <folder>] [--run <text>] [--assets <build>]` | Runs the mod's tests ("Testing a mod" below). |
+| `wactl dev [path] --assets <build> [--mods <folder>]` | Runs a local server with the mod, and reloads it when its files change. |
+| `wactl mod pack [path] [--out <folder>]` | Validates the mod, then writes `<id>-<version>.zip` and `<id>-<version>.zip.sha256` into `dist`. |
+| `wactl mod install <git URL \| .zip \| folder> --mods-dir <folder>` | Checks a mod and installs it for a server ("Installing a mod" below). |
+| `wactl mod types [path]` | Writes the editor definitions into `.wathena/types` again, and `.luarc.json` when it is missing. |
+
+- `path` is the mod's folder, or the working folder when it is left out. `validate` and `test` also take a `.zip` file.
+- `--mods` names a folder of other mods, where the mod's dependencies are, as `mods.dir` does for the server.
+- The commands check against renewal data. `--mode pre-renewal` checks against pre-renewal data.
+- Problems are printed with their file and line, and the command exits with status 1.
 
 ```text
-waserver --assets <build> --map prontera --dev --debug-addr 127.0.0.1:8301 --mods mods/examples
+$ wactl mod new example.demo
+made example.demo in example.demo:
+  README.md
+  data/items.yml
+  data/npcs.yml
+  locales/en.yml
+  mod.yaml
+  scripts/npc/guide.lua
+  tests/guide_test.lua
+  .luarc.json
+  .wathena/types/ (26 files)
+next: cd example.demo && wactl mod validate && wactl mod test
+$ cd example.demo
+$ wactl mod validate
+example.demo 0.1.0 (.)
+loads on: core.ruleset.renewal, core.ruleset.pre_renewal
+checked: 2 Lua files, 2 test cases
+permissions:
+  player.give_items    needs the owner's approval: give items to players
+nothing is approved. To approve, review the mod, then add to the server config:
+  mods:
+    approve:
+      example.demo: [player.give_items]
+ok
 ```
 
-After changing a script, reload it without a restart:
+### Testing a mod
+
+Test files are `tests/*_test.lua`. Like an entry script, a test file returns a function. That function registers cases with `testing.case` from `wa.testing` ([proposal 0002](../docs/proposals/0002-lua-api.md), review decision 15).
+
+```lua
+local testing = require "wa.testing"
+local items = require "wa.items"
+local variables = require "wa.variables"
+
+local BADGE = items.id "example.demo:Guide_Badge"
+local visits = variables.character_integer "visits"
+
+return function()
+  testing.case("the guide gives one badge", function(world)
+    local player = world:new_player { map = "prontera", x = 156, y = 183 }
+    local said = world:talk(player, "Guide#prontera", { 1 })
+    testing.expect(said).to_contain("Here is your badge.")
+    testing.expect(player:count_item(BADGE)).to_be(1)
+    testing.expect(visits:get(player)).to_be(1)
+  end)
+end
+```
+
+- Each case runs in a fresh headless world: the real zone code without a network, with the mod, its dependencies and core loaded, core's converted NPCs and item scripts, a fixed random seed, and no database. A case takes a few milliseconds.
+- A world runs one map: the map of its first `new_player` or `spawn_monster`, or `prontera` when `advance` comes first. Warps to other maps do not happen.
+- Without `--assets`, every cell is walkable. With an asset build, the map's real cells are used.
+- Test code runs as the mod: its calls need the mod's permissions, and the variables it declares are the mod's, so a test reads what the mod's NPCs saved.
+- `wa.testing` exists only in `wactl mod test`. A server never has it, and never loads `tests/`.
+
+| Call | What it does |
+|---|---|
+| `testing.case(name, function(world))` | Registers a case. |
+| `world:new_player { map, x, y, job, base_level, job_level, zeny, items = { {item, amount} } }` | Adds a character at a walkable cell, with full HP and SP, and returns its player handle. Only `x` and `y` are required. |
+| `world:talk(player, npc_name, answers)` | Clicks the NPC and answers each step in order: a number picks a menu option, a string fills text input, and an integer fills number input. Next is pressed without an answer, and waits and progress bars run on the clock. Returns the NPC's lines, one per line. Fails when the conversation asks for more answers than given, when one does not fit, or when some are left over. |
+| `world:use_item(player, item)` | Uses one of the player's items. Fails when the player has none, or the use is refused. |
+| `world:advance(milliseconds)` | Moves the zone clock. Timers fire. The clock starts at 0 and moves only with this call, conversation waits, and the item use interval. |
+| `world:spawn_monster { monster, map, x, y }` | Places a monster from `monsters.id` on a cell and returns its handle. It does not come back after it dies. |
+| `world:kill(player, monster)` | The player kills the monster: `monster_killed` fires, and the player gets its exp and drops. |
+| `testing.expect(value)` | Checks a value with `.to_be(x)`, `.to_equal(table)` (deep), `.to_contain(text_or_value)`, `.to_be_true()`, `.to_be_false()`, `.to_be_nil()`, or `.to_fail_with(text)` for a function that should raise an error containing the text. |
+
+A failed check stops the case and prints the file and line of the check. A case also fails when the server logs a warning that names the mod, such as a handler that failed. `wactl mod test` exits with status 1 when any case fails, so CI can run it.
+
+```text
+$ wactl mod test
+tests/guide_test.lua
+  ok   the guide gives one badge (7 ms)
+  FAIL the guide counts visits (5 ms)
+       tests/guide_test.lua:28: expected "[Guide]\nWelcome to Prontera!\nYou have visited me 2 times.\nCome back any time." to contain "You have visited me 3 times."
+2 cases: 1 passed, 1 failed (1.6 s)
+```
+
+### A local server: wactl dev
+
+`wactl dev` runs `waserver` on loopback addresses with the mod and watches its files:
+
+```text
+$ wactl dev --assets <build>
+wactl dev: ready at http://127.0.0.1:8300; editing . reloads it
+wactl dev: changed scripts/npc/guide.lua
+wactl dev: reloaded example.demo in 1 zones
+wactl dev: changed data/items.yml
+wactl dev: the manifest or data changed: restarting the server
+wactl dev: ready at http://127.0.0.1:8300; editing . reloads it
+```
+
+- A change to a Lua file or `locales/en.yml` reloads the mod's scripts in every zone, through the server's reload endpoint. A Lua file that does not compile is reported and not reloaded.
+- A change to `mod.yaml` or a data file restarts the server.
+- The server runs with `--dev`, `--shutdown-countdown 0`, and the mods of `--mods`. It approves what the mods request, for development only.
+- `--server` names the `waserver` binary. By default it is the one next to `wactl`, then the one on `PATH`. `--addr` and `--debug-addr` set the addresses, `127.0.0.1:8300` and `127.0.0.1:8301` by default, and `--map` the start map.
+- Ctrl-C stops the server and `wactl dev`.
+
+The reload endpoint also works without `wactl dev`: run `waserver --dev --debug-addr 127.0.0.1:8301 --mods <folder>`, and after a change:
 
 ```text
 curl -X POST 'http://127.0.0.1:8301/debug/wathena/mods/reload?mod=example.greeter'
 ```
 
-A reload reads the Lua files again. Changes to mod.yaml and data files need a restart.
+### Packing and installing
+
+`wactl mod pack` validates the mod, then writes `dist/<id>-<version>.zip`, with the files in one top folder, and `dist/<id>-<version>.zip.sha256` in `sha256sum`'s format. The same files give the same archive.
+
+`wactl mod install <source> --mods-dir <folder>` installs a mod into a server's mods folder:
+
+- A Git URL is cloned. `--ref` checks out a tag, branch or commit, and the commit is printed.
+- A `.zip` file is checked against `--sha256`, or against `<file>.sha256` when it exists. With `--public-key`, `<file>.minisig` must be a matching [minisign](https://jedisct1.github.io/minisign/) signature. Authors sign with `minisign -Sm <file>`.
+- A folder is copied as it is.
+- The mod must pass `wactl mod validate` against core and the mods already installed.
+- The permissions it requests are shown, with those that need approval. Nothing is approved: the owner reviews them and adds the printed lines to the server config.
+- A mod with the same ID already installed is an error, unless `--replace` is given.
+
+```text
+$ wactl mod install dist/example.demo-0.1.0.zip --mods-dir /srv/mods
+checksum ok: SHA-256 fcf439cc...c69a (from dist/example.demo-0.1.0.zip.sha256)
+example.demo 0.1.0: Demo
+permissions:
+  player.give_items    needs the owner's approval: give items to players
+nothing is approved. To approve, review the mod, then add to the server config:
+  mods:
+    approve:
+      example.demo: [player.give_items]
+installed /srv/mods/example.demo-0.1.0.zip
+```
+
+### Editor support
+
+The Lua Language Server gives completion and type warnings for every `wa.*` module, handle, event name and bonus name.
+
+- `wactl mod new` writes the definitions into `.wathena/types` and a `.luarc.json` that names them. `wactl mod types` writes them again after a `wactl` update.
+- The definitions come from [server/modscript/luaapi](../server/modscript/luaapi), which tests check against the runtime. The same source makes the [API reference](../docs/generated/lua-api.md) and the [constants](../docs/generated/lua-constants.md).
+- In this repository, `docs/generated/lua` holds them, and `examples/greeter/.luarc.json` names that folder.

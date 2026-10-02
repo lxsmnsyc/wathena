@@ -56,3 +56,11 @@ It refuses a database that already has a world. It needs the migrator role, as `
 `wactl world backup --out <file or ->`, `wactl world restore --in <file or ->`
 
 Write the whole database with `pg_dump` in its custom format, or load such a backup with `pg_restore` in one transaction. They run as the migrator role, and pass its password to the PostgreSQL tools in `PGPASSWORD`, not on the command line. A backup file is made readable by its owner only. Restore refuses a database that has any migration applied, so it only loads into a new database made with `roles.sql`. They need `pg_dump` and `pg_restore` 18, which the `wathena/wactl` image has (deploy/README.md, "Backups").
+
+`wactl mod new <id> [--dir <folder>]`, `wactl mod validate [path] [--mods <folder>] [--show]`, `wactl mod test [path] [--mods <folder>] [--run <text>] [--assets <build>]`, `wactl mod pack [path] [--out <folder>]`, `wactl mod install <git URL | .zip | folder> --mods-dir <folder> [--ref <ref>] [--sha256 <hex>] [--public-key <key>] [--replace]`, `wactl mod types [path]`
+
+The mod tools (strategy section 6.9). `new` makes a mod from a template that passes `validate` and `test`. `validate` checks a mod, and `--show` prints the merged records it touches. `test` runs `tests/*_test.lua` in headless worlds with `wa.testing`. `pack` writes a versioned `.zip` and a SHA-256 file. `install` checks the checksum and a minisign signature when given, validates, shows the permissions that need the owner's approval, and copies the mod into a server's mods folder without approving anything. `types` writes the Lua Language Server definitions. `validate`, `test` and `--mode` check against the reference data built into wactl. mods/README.md, "Tools", has the details and examples. The code is in tools/modkit.
+
+`wactl dev [path] --assets <build> [--mods <folder>] [--server <waserver>] [--map <map>] [--addr <host:port>] [--debug-addr <host:port>]`
+
+Runs `waserver --dev` on loopback addresses with the mod and the mods of `--mods`, and approves what they request. It watches the mod's files: a Lua or locale change reloads the mod's scripts through the reload endpoint, and a change to `mod.yaml` or `data/` restarts the server. `--assets` defaults to `$WATHENA_ASSETS`. The `waserver` binary is `--server`, the one next to `wactl`, or the one on `PATH`.

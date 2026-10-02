@@ -1,0 +1,6 @@
+# An item overlay. A new item's name starts with the mod's ID, and the
+# server gives it an ID from 2,000,000 the first time it loads.
+- name: {%.ID%}:Guide_Badge
+  type: Etc
+  weight: 10
+  stackable: true

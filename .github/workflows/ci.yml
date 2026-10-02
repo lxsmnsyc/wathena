@@ -37,6 +37,36 @@ jobs:
       - run: go vet ./...
       - run: go test -race ./...
 
+  # The mod tools (mods/README.md, "Tools"): validate and test the
+  # sample mods and a new mod from the template, and check that the Lua
+  # definitions and the API reference in docs/generated are current.
+  mods:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.mod
+      - run: go build -o "$RUNNER_TEMP/wactl" ./tools/wactl
+      - name: Check the generated Lua definitions and API reference
+        run: go test -count=1 -run TestGeneratedFiles ./server/modscript/luaapi
+      - name: Validate and test the sample mods
+        run: |
+          for m in mods/examples/*/; do
+            "$RUNNER_TEMP/wactl" mod validate "$m" --mods mods/examples
+            "$RUNNER_TEMP/wactl" mod test "$m" --mods mods/examples
+          done
+      - name: Validate, test and pack a new mod
+        run: |
+          cd "$RUNNER_TEMP"
+          ./wactl mod new example.ci
+          ./wactl mod validate example.ci
+          ./wactl mod test example.ci
+          ./wactl mod pack example.ci --out dist
+          mkdir installed
+          ./wactl mod install dist/example.ci-0.1.0.zip --mods-dir installed
+
   # The Lua runtime in internal/script (decision 0002). The test job above
   # runs its cgo build with -race. This job checks the rest:
   #   - the vendored Lua sources against the pinned release tarball,

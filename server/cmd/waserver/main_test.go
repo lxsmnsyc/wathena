@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
@@ -54,7 +55,7 @@ func TestSelectMaps(t *testing.T) {
 
 func TestStartCharacter(t *testing.T) {
 	for _, mode := range reference.Modes {
-		for build := range builds {
+		for build := range gamedata.Builds {
 			tables, c, err := startCharacter(mode, build)
 			if err != nil {
 				t.Fatalf("%s %s: %v", mode, build, err)

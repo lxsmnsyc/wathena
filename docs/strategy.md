@@ -1056,6 +1056,19 @@ Planned work to give mods more control than rAthena's scripts have:
   - healing, regeneration, and item use;
   - monster AI decisions, such as target choice.
   Each new event or hook goes through the API review in proposal 0002 before it is built.
+- **Fewer hard-coded limits.** rAthena fixes many limits at compile time. wAthena makes them settings with rAthena's values as defaults, so server owners and ruleset mods can raise them. Examples, with rAthena's value and source:
+  - card slots per item: 4 (`MAX_SLOTS`);
+  - storage size: 600 (`MAX_STORAGE`), and guild storage;
+  - inventory size: 100 usable slots of 200 (`MAX_INVENTORY`), and cart size;
+  - stack size: 30,000 (`MAX_AMOUNT`), and the zeny cap: 2,147,483,647 (`MAX_ZENY`);
+  - party size: 12 (`MAX_PARTY`), and guild size;
+  - base and job level caps, and stat caps;
+  - hotkey, skill, and status effect counts the protocol or database stores.
+  Rules:
+  - A limit comes from the world's ruleset, so every zone and the database agree on it.
+  - The database schema and the protocol store values that fit the highest limit allowed, not rAthena's. For example, card slots are a list, not four columns.
+  - Lowering a limit below what saved data already uses is refused at startup, so no item or character loses data.
+  - The client reads the limits at login and sizes its windows from them.
 
 ### 6.9 Tooling
 
@@ -2283,7 +2296,7 @@ Phases run in order, because one developer does them (section 14). Each phase en
 
 ### Current status and order
 
-Status on 2026-10-01:
+Status on 2026-10-02:
 
 - Phases 0a, 0b, 1, and 2 are done.
 - Phase 2 left two items for later phases, which no exit criterion needs:
@@ -2386,7 +2399,15 @@ The order from here:
       - Checked in Chrome: the sample greeter, a dialog NPC, buying and selling at a Prontera Tool Dealer, a Kafra's save and teleport, a Butterfly Wing to the save point, variables after a reconnect, and the shutdown countdown.
       - Left: hooks, the `touch` event and timer events, instance variables, a minimap on the client, languages other than English for `wa.text`, cash, item, point and market shops, storage and pushcarts, and the NPC folders the extract leaves out, such as quests and instances.
       - The API that step 4 added was reviewed on 2026-10-02 (proposal 0002, review decision 14). `player:take_item` with an amount of 0 now raises an error, and `world.announce` needs the owner's approval.
-   5. Mod tools. `wactl mod new`, `validate`, `test`, `dev`, and `install`, and Lua Language Server type definitions.
+   5. Mod tools. Done on 2026-10-02 ([mods/README.md](../mods/README.md), "Tools", [proposal 0002](proposals/0002-lua-api.md), review decision 15, and [tools/wactl](../tools/wactl/README.md)):
+      - `wactl mod new` makes a mod from a template that passes `validate` and `test`: a manifest, an NPC with a conversation and saved variables, an item overlay, a test, a locale, a README, and editor settings.
+      - `wactl mod validate` checks the manifest, the data and its IDs, the rulesets the mod loads on, its permissions, the Lua syntax of every file, that entry scripts return a function, that required modules exist, and that tests register cases. `--show` prints the final value of each record the mod touches, and which mod set each field.
+      - `wactl mod test` runs `tests/*_test.lua` with `wa.testing`. Each case gets a fresh headless world: the real zone code without a network, the mod with its dependencies and core, core's converted NPCs and item scripts, a fixed seed, and no database. A case takes about 5 ms, after about 1.5 s to load the data. Failures show the file and line, and the exit status is 1.
+      - `wactl dev` runs `waserver --dev` with the mod, reloads its scripts when Lua files change, and restarts the server when the manifest or data change.
+      - `wactl mod pack` writes a versioned `.zip` and its SHA-256. `wactl mod install` takes a Git URL at a ref, a `.zip` or a folder, checks the checksum and a minisign signature when given, validates, and shows the permissions to approve. It never approves them.
+      - Lua Language Server definitions and the API reference ([docs/generated/lua-api.md](generated/lua-api.md)) come from one Go source, server/modscript/luaapi. Tests fail when the runtime and the definitions disagree, and when the generated files are not current.
+      - CI's `mods` job validates and tests the sample mods and a new mod, packs and installs it, and checks the generated files.
+      - Left: test worlds with more than one map, mod indexes, signing in `wactl mod pack`, `wactl convert` for community scripts, and `wactl mod purge`.
    6. Event scheduler, and the phase 3 exit check with a sample mod.
    The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. It stays `wa.experimental` until the phase 3 exit check passes, then becomes `api: 1.0`.
 7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.

@@ -18,6 +18,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/lxsmnsyc/wathena/internal/secretenv"
+	"github.com/lxsmnsyc/wathena/server/gamedata"
 )
 
 // options are the settings of `waserver all`. They come from defaults,
@@ -357,7 +358,7 @@ func validate(o options, s secrets) (settings, error) {
 	default:
 		bad("mode", "%q is not renewal, pre-renewal or none", o.Mode)
 	}
-	if _, ok := builds[o.Build]; !ok {
+	if _, ok := gamedata.Builds[o.Build]; !ok {
 		bad("build", "%q is not one of all_1, melee, critical, magic, ranged or tank", o.Build)
 	}
 	if _, err := parseStartItems(o.StartItems); err != nil {

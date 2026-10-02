@@ -1,0 +1,10 @@
+# NPC placements. A name without a prefix is this mod's own NPC, so
+# Guide#prontera is {%.ID%}:Guide#prontera. Players see the part
+# before "#". script names the NPC's entry script.
+- name: Guide#prontera
+  map: prontera
+  x: 150
+  y: 180
+  direction: south
+  sprite: 4_F_KAFRA1
+  script: scripts/npc/guide.lua

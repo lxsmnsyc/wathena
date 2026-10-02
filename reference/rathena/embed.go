@@ -1,7 +1,8 @@
 // Package rathena embeds the reference files that waserver reads at
 // startup, so a release binary needs no copy of this folder.
 //
-// Only waserver imports it. Tests and tools read the folder on disk
+// waserver imports it, and wactl for its mod commands, which run
+// outside the repository. Tests and other tools read the folder on disk
 // through internal/reference.
 package rathena
 

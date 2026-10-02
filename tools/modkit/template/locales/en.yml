@@ -1,0 +1,10 @@
+# Text for players. Scripts read it with text "key" from wa.text.
+guide:
+  hello: Welcome to Prontera!
+  visits: You have visited me %d times.
+  ask_badge: May I have a badge?
+  goodbye: Goodbye
+  given: Here is your badge.
+  already: You already have a badge.
+  full: You cannot carry a badge right now.
+  bye: Come back any time.

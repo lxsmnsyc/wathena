@@ -69,8 +69,13 @@ local function readonly(name, impl, callable)
 	return proxy
 end
 
+-- handle_methods holds each handle type's methods, by type name, for the
+-- test that checks the runtime against the API definitions.
+local handle_methods = {}
+
 -- handle makes a read-only object with methods and an ID kept outside it.
 local function handle_type(name, methods, index)
+	handle_methods[name] = methods
 	local ids = setmetatable({}, { __mode = "k" })
 	local mt = {
 		__index = function(self, key)
@@ -249,7 +254,7 @@ end)
 
 -- Monsters are handles too. A killed monster's handle stays readable
 -- while its monster_killed event runs, and fails after.
-local new_monster = handle_type("monster", {}, function(id, key)
+local new_monster, monster_ids = handle_type("monster", {}, function(id, key)
 	local ok, value = pcall(H.monster_field, id, key)
 	if not ok then
 		error(value, 3)
@@ -646,6 +651,200 @@ for module, values in pairs(H.constants()) do
 	api["wa." .. module] = readonly("wa." .. module, impl)
 end
 
+-- wa.testing: test cases for wactl mod test (mods/README.md, "Testing a
+-- mod"). The module exists only when Go set up the testing host
+-- functions, which a running server never does.
+--
+-- A test file returns a function that registers cases with
+-- testing.case. Go runs each case in a thread of a fresh world. World
+-- methods pause the thread with H.testing_world, and Go resumes it with
+-- "ok" and the results, or "error" and a message.
+
+-- registering is the list of cases while a test file registers them.
+local registering = nil
+-- test_cases are the cases of the test file that loaded last.
+local test_cases = {}
+
+local function world_call(op, ...)
+	local results = table.pack(pcall(H.testing_world, op, ...))
+	if not results[1] then
+		error(results[2], 3)
+	end
+	if results[2] == "error" then
+		error(results[3], 3)
+	end
+	return unpack(results, 3, results.n)
+end
+
+local world_ids
+local new_world
+new_world, world_ids = handle_type("test world", {
+	new_player = function(self, spec)
+		check(type(spec) == "table", "world:new_player: want a table such as { map = \"prontera\", x = 150, y = 150 }")
+		return new_player(world_call("new_player", spec))
+	end,
+	talk = function(self, player, npc_name, answers)
+		local id = player_ids[player]
+		check(id ~= nil, "world:talk: want a player from world:new_player")
+		check(type(npc_name) == "string", "world:talk: the NPC's name must be a string")
+		check(answers == nil or type(answers) == "table", "world:talk: the answers must be a list, such as { 1, \"Bob\" }")
+		return (world_call("talk", id, npc_name, answers or {}))
+	end,
+	use_item = function(self, player, item)
+		local id = player_ids[player]
+		check(id ~= nil, "world:use_item: want a player from world:new_player")
+		check(math_type(item) == "integer", "world:use_item: want an item from items.id")
+		return (world_call("use_item", id, item))
+	end,
+	advance = function(self, milliseconds)
+		check(math_type(milliseconds) == "integer" and milliseconds >= 0, "world:advance: milliseconds must be an integer of 0 or more")
+		return (world_call("advance", milliseconds))
+	end,
+	spawn_monster = function(self, spec)
+		check(type(spec) == "table", "world:spawn_monster: want a table such as { monster = PORING, map = \"prontera\", x = 150, y = 150 }")
+		return new_monster(world_call("spawn_monster", spec))
+	end,
+	kill = function(self, player, monster)
+		local id = player_ids[player]
+		check(id ~= nil, "world:kill: want a player from world:new_player")
+		local m = monster_ids[monster]
+		check(m ~= nil, "world:kill: want a monster from world:spawn_monster")
+		return (world_call("kill", id, m))
+	end,
+})
+
+-- describe shows a value in a failure message.
+local function describe(v, depth)
+	depth = depth or 0
+	if type(v) == "string" then
+		return (string.format("%q", v):gsub("\\\n", "\\n"))
+	end
+	if type(v) == "table" and getmetatable(v) == nil and depth < 3 then
+		local keys = {}
+		for k in pairs(v) do
+			keys[#keys + 1] = k
+		end
+		table.sort(keys, function(a, b)
+			return tostring(a) < tostring(b)
+		end)
+		local parts = {}
+		local n = rawlen(v)
+		for i = 1, n do
+			parts[#parts + 1] = describe(v[i], depth + 1)
+		end
+		for _, k in ipairs(keys) do
+			if math_type(k) ~= "integer" or k < 1 or k > n then
+				parts[#parts + 1] = tostring(k) .. " = " .. describe(v[k], depth + 1)
+			end
+			if #parts > 20 then
+				parts[#parts + 1] = "..."
+				break
+			end
+		end
+		return "{ " .. table.concat(parts, ", ") .. " }"
+	end
+	return tostring(v)
+end
+
+-- deep_equal compares plain tables by their contents, and other values
+-- with ==.
+local function deep_equal(a, b, depth)
+	if a == b then
+		return true
+	end
+	if type(a) ~= "table" or type(b) ~= "table" or getmetatable(a) ~= nil or getmetatable(b) ~= nil or depth > 32 then
+		return false
+	end
+	for k, v in pairs(a) do
+		if not deep_equal(v, b[k], depth + 1) then
+			return false
+		end
+	end
+	for k in pairs(b) do
+		if a[k] == nil then
+			return false
+		end
+	end
+	return true
+end
+
+local function fail(message)
+	error(message, 3)
+end
+
+local function expect(value)
+	return readonly("expectation", {
+		to_be = function(expected)
+			if value ~= expected then
+				fail("expected " .. describe(expected) .. ", got " .. describe(value))
+			end
+		end,
+		to_equal = function(expected)
+			if not deep_equal(value, expected, 0) then
+				fail("expected " .. describe(expected) .. ", got " .. describe(value))
+			end
+		end,
+		to_contain = function(part)
+			if type(value) == "string" then
+				if type(part) ~= "string" or not value:find(part, 1, true) then
+					fail("expected " .. describe(value) .. " to contain " .. describe(part))
+				end
+				return
+			end
+			if type(value) == "table" then
+				for _, v in pairs(value) do
+					if deep_equal(v, part, 0) then
+						return
+					end
+				end
+			end
+			fail("expected " .. describe(value) .. " to contain " .. describe(part))
+		end,
+		to_be_true = function()
+			if value ~= true then
+				fail("expected true, got " .. describe(value))
+			end
+		end,
+		to_be_false = function()
+			if value ~= false then
+				fail("expected false, got " .. describe(value))
+			end
+		end,
+		to_be_nil = function()
+			if value ~= nil then
+				fail("expected nil, got " .. describe(value))
+			end
+		end,
+		to_fail_with = function(text)
+			if type(value) ~= "function" then
+				fail("to_fail_with: expect(...) needs a function that should fail")
+			end
+			local ok, err = pcall(value)
+			if ok then
+				fail("expected an error containing " .. describe(text) .. ", and the function returned")
+			end
+			if not tostring(err):find(text, 1, true) then
+				fail("expected an error containing " .. describe(text) .. ", got " .. describe(tostring(err)))
+			end
+		end,
+	})
+end
+
+if H.testing_world ~= nil then
+	api["wa.testing"] = readonly("wa.testing", {
+		case = function(name, fn)
+			check(registering ~= nil, "testing.case: register cases inside the function that the test file returns")
+			check(type(name) == "string" and name ~= "", "testing.case: the name must be a string")
+			check(type(fn) == "function", "testing.case: the case must be a function(world)")
+			for _, c in ipairs(registering) do
+				check(c.name ~= name, "testing.case: there are two cases named " .. describe(name))
+			end
+			registering[#registering + 1] = { name = name, fn = fn }
+		end,
+		expect = expect,
+	})
+end
+
 -- Environments and require.
 
 local envs = {}
@@ -679,6 +878,9 @@ local function require_from(mod_id, name)
 	end
 	if name:sub(1, 3) == "wa." then
 		local m = api[name]
+		if m == nil and name == "wa.testing" then
+			error("require: wa.testing exists only in tests that wactl mod test runs", 3)
+		end
 		if m == nil then
 			error("require: there is no API module " .. name, 3)
 		end
@@ -843,6 +1045,66 @@ function R.reset_loading()
 			loaded[key] = nil
 		end
 	end
+end
+
+-- load_tests loads a test file of wactl mod test in its mod's
+-- environment, and runs the function it returns, which registers cases.
+-- It returns the names of the cases.
+function R.load_tests(mod_id, path, source)
+	local fn, err = load(source, "@" .. path, "t", environment(mod_id))
+	if fn == nil then
+		error(err, 0)
+	end
+	local register = fn()
+	if type(register) ~= "function" then
+		error(path .. " must return a function that registers cases with testing.case, and it returned " .. type(register), 0)
+	end
+	registering = {}
+	local ok, e = pcall(register)
+	local cases = registering
+	registering = nil
+	if not ok then
+		error(e, 0)
+	end
+	test_cases = cases
+	local names = {}
+	for i, c in ipairs(cases) do
+		names[i] = c.name
+	end
+	return names
+end
+
+-- run_case runs one case of the test file that loaded last, with a new
+-- world handle. It runs in a thread that world methods pause.
+function R.run_case(i)
+	test_cases[i].fn(new_world(i))
+end
+
+-- describe lists the API as the runtime has it, for the test that checks
+-- it against the API definitions: each module's keys and each handle
+-- type's methods.
+function R.describe()
+	local modules, handles = {}, {}
+	for name, m in pairs(api) do
+		local keys = {}
+		for k in pairs(m) do
+			keys[#keys + 1] = k
+		end
+		modules[name] = keys
+	end
+	for name, methods in pairs(handle_methods) do
+		local keys = {}
+		for k in pairs(methods) do
+			keys[#keys + 1] = k
+		end
+		handles[name] = keys
+	end
+	local expectation = {}
+	for k in pairs(expect(nil)) do
+		expectation[#expectation + 1] = k
+	end
+	handles.expectation = expectation
+	return { modules = modules, handles = handles }
 end
 
 -- is_protected reports whether a value is a read-only table, for tests.

@@ -340,6 +340,8 @@ curl -X POST 'http://127.0.0.1:8301/debug/wathena/mods/reload?mod=example.greete
 - It does not read `mod.yaml` or data files again. Those need a restart.
 - Other mods that required the mod's helper modules keep the versions they loaded.
 - A reload that fails in a zone leaves the mod off there until a reload succeeds.
+- A zone that has no Lua state yet keeps the new files, and makes its state from them later.
+- `wactl dev` runs a server with one mod and calls the endpoint when the mod's Lua files change (mods/README.md, "Tools").
 
 Cost: each zone's Lua state holds about 50 KB for the sample mod. All 988 maps of a kRO build start in 2.1 seconds with it, against 2.0 without mods.
 

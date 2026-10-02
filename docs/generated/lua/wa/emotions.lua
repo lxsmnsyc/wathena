@@ -1,0 +1,96 @@
+---@meta wa.emotions
+-- Generated from server/modscript/luaapi. Do not edit: wactl mod types writes it again.
+
+---Emotions for npc:show_emotion, from rAthena's ET_ names.
+---@class wa.emotions
+---@field abs integer 75, rAthena's ET_ABS.
+---@field aha integer 5, rAthena's ET_AHA.
+---@field anger integer 7, rAthena's ET_ANGER.
+---@field antenna0 integer 70, rAthena's ET_ANTENNA0.
+---@field antenna1 integer 71, rAthena's ET_ANTENNA1.
+---@field antenna2 integer 72, rAthena's ET_ANTENNA2.
+---@field antenna3 integer 73, rAthena's ET_ANTENNA3.
+---@field best integer 21, rAthena's ET_BEST.
+---@field bigthrob integer 14, rAthena's ET_BIGTHROB.
+---@field blabla integer 56, rAthena's ET_BLABLA.
+---@field br_flag integer 51, rAthena's ET_BR_FLAG.
+---@field chat_prohibit integer 34, rAthena's ET_CHAT_PROHIBIT.
+---@field chup integer 30, rAthena's ET_CHUP.
+---@field chupchup integer 31, rAthena's ET_CHUPCHUP.
+---@field comeon integer 44, rAthena's ET_COMEON.
+---@field confuse integer 53, rAthena's ET_CONFUSE.
+---@field congratulation integer 46, rAthena's ET_CONGRATULATION.
+---@field cool integer 38, rAthena's ET_COOL.
+---@field cry integer 28, rAthena's ET_CRY.
+---@field delight integer 2, rAthena's ET_DELIGHT.
+---@field dice1 integer 58, rAthena's ET_DICE1.
+---@field dice2 integer 59, rAthena's ET_DICE2.
+---@field dice3 integer 60, rAthena's ET_DICE3.
+---@field dice4 integer 61, rAthena's ET_DICE4.
+---@field dice5 integer 62, rAthena's ET_DICE5.
+---@field dice6 integer 63, rAthena's ET_DICE6.
+---@field ene integer 78, rAthena's ET_ENE.
+---@field flag integer 13, rAthena's ET_FLAG.
+---@field flag8 integer 66, rAthena's ET_FLAG8.
+---@field flag9 integer 67, rAthena's ET_FLAG9.
+---@field fret integer 6, rAthena's ET_FRET.
+---@field go integer 27, rAthena's ET_GO.
+---@field goodboy integer 41, rAthena's ET_GOODBOY.
+---@field help integer 26, rAthena's ET_HELP.
+---@field hng integer 32, rAthena's ET_HNG.
+---@field hptime integer 47, rAthena's ET_HPTIME.
+---@field huk integer 23, rAthena's ET_HUK.
+---@field hum integer 55, rAthena's ET_HUM.
+---@field hum2 integer 74, rAthena's ET_HUM2.
+---@field hungry integer 37, rAthena's ET_HUNGRY.
+---@field india_flag integer 64, rAthena's ET_INDIA_FLAG.
+---@field indonesia_flag integer 35, rAthena's ET_INDONESIA_FLAG.
+---@field kek integer 16, rAthena's ET_KEK.
+---@field kik integer 29, rAthena's ET_KIK.
+---@field luv integer 65, rAthena's ET_LUV.
+---@field mail integer 69, rAthena's ET_MAIL.
+---@field merong integer 39, rAthena's ET_MERONG.
+---@field mobile integer 68, rAthena's ET_MOBILE.
+---@field money integer 8, rAthena's ET_MONEY.
+---@field my_flag integer 49, rAthena's ET_MY_FLAG.
+---@field o integer 24, rAthena's ET_O.
+---@field ohno integer 54, rAthena's ET_OHNO.
+---@field ok integer 33, rAthena's ET_OK.
+---@field oops integer 76, rAthena's ET_OOPS.
+---@field otl integer 57, rAthena's ET_OTL.
+---@field panic integer 79, rAthena's ET_PANIC.
+---@field ph_flag integer 48, rAthena's ET_PH_FLAG.
+---@field profusely_sweat integer 19, rAthena's ET_PROFUSELY_SWEAT.
+---@field question integer 1, rAthena's ET_QUESTION.
+---@field rock integer 11, rAthena's ET_ROCK.
+---@field scissor integer 10, rAthena's ET_SCISSOR.
+---@field scratch integer 20, rAthena's ET_SCRATCH.
+---@field sexy integer 43, rAthena's ET_SEXY.
+---@field shy integer 40, rAthena's ET_SHY.
+---@field si_flag integer 50, rAthena's ET_SI_FLAG.
+---@field sleepy integer 45, rAthena's ET_SLEEPY.
+---@field smile integer 18, rAthena's ET_SMILE.
+---@field sorry integer 17, rAthena's ET_SORRY.
+---@field spark integer 52, rAthena's ET_SPARK.
+---@field spit integer 77, rAthena's ET_SPIT.
+---@field sptime integer 42, rAthena's ET_SPTIME.
+---@field stare integer 36, rAthena's ET_STARE.
+---@field stare_about integer 22, rAthena's ET_STARE_ABOUT.
+---@field surprise integer 0, rAthena's ET_SURPRISE.
+---@field sweat integer 4, rAthena's ET_SWEAT.
+---@field thanks integer 15, rAthena's ET_THANKS.
+---@field think integer 9, rAthena's ET_THINK.
+---@field throb integer 3, rAthena's ET_THROB.
+---@field whisp integer 80, rAthena's ET_WHISP.
+---@field wrap integer 12, rAthena's ET_WRAP.
+---@field x integer 25, rAthena's ET_X.
+---@field yut1 integer 81, rAthena's ET_YUT1.
+---@field yut2 integer 82, rAthena's ET_YUT2.
+---@field yut3 integer 83, rAthena's ET_YUT3.
+---@field yut4 integer 84, rAthena's ET_YUT4.
+---@field yut5 integer 85, rAthena's ET_YUT5.
+---@field yut6 integer 86, rAthena's ET_YUT6.
+---@field yut7 integer 87, rAthena's ET_YUT7.
+local emotions = {}
+
+return emotions

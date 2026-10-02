@@ -97,6 +97,11 @@ type Options struct {
 	// Server holds the server variables that every zone shares. Without
 	// it, server variables raise an error.
 	Server *variables.Server
+	// Testing adds wa.testing, for wactl mod test. A server never sets
+	// it.
+	Testing bool
+	// DeferStart leaves the mods' entry scripts for StartMods to run.
+	DeferStart bool
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -117,11 +122,14 @@ const (
 
 // Runtime is one zone's mod scripts. Only the zone's goroutine uses it.
 type Runtime struct {
-	opts   Options
-	s      *script.State
-	host   Host
-	log    *slog.Logger
-	fns    struct{ loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref }
+	opts Options
+	s    *script.State
+	host Host
+	log  *slog.Logger
+	fns  struct {
+		loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref
+		loadTests, runCase, describe                                              *script.Ref
+	}
 	nextID int64
 
 	scripts  map[string]*mod.Scripts
@@ -241,12 +249,26 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		r.scripts[sc.Mod] = sc
 		r.order = append(r.order, sc.Mod)
 	}
-	for _, sc := range mods {
-		if err := r.start(sc); err != nil {
-			r.log.Error("mod scripts failed to load; the mod is off in this zone", "map", r.host.Map(), "mod", sc.Mod, "err", err)
-		}
+	if !opts.DeferStart {
+		_ = r.StartMods()
 	}
 	return r, nil
+}
+
+// StartMods loads every mod's entry scripts in load order, and runs each
+// setup function in the mod's context. A mod whose scripts fail is
+// logged and left off in this zone. Other mods still load. New runs it,
+// unless Options.DeferStart is set. It returns the failures.
+func (r *Runtime) StartMods() error {
+	var errs []error
+	for _, id := range r.order {
+		sc := r.scripts[id]
+		if err := r.start(sc); err != nil {
+			r.log.Error("mod scripts failed to load; the mod is off in this zone", "map", r.host.Map(), "mod", sc.Mod, "err", err)
+			errs = append(errs, fmt.Errorf("%s: %w", sc.Mod, err))
+		}
+	}
+	return errors.Join(errs...)
 }
 
 // init runs the prelude with the host functions.
@@ -317,6 +339,12 @@ func (r *Runtime) init() error {
 		{"variable_set", r.variableSet},
 		{"variable_add", r.variableAdd},
 	}
+	if r.opts.Testing {
+		host = append(host, struct {
+			name string
+			fn   script.HostFunc
+		}{"testing_world", testingWorld})
+	}
 	var fields []script.Field
 	for _, h := range host {
 		f, err := r.s.Func(h.name, h.fn)
@@ -348,6 +376,9 @@ func (r *Runtime) init() error {
 		{"reset_loading", &r.fns.resetLoading},
 		{"is_protected", &r.fns.isProtected},
 		{"converse", &r.fns.converse},
+		{"load_tests", &r.fns.loadTests},
+		{"run_case", &r.fns.runCase},
+		{"describe", &r.fns.describe},
 	} {
 		ref, err := r.s.Keep(tab.Get(f.name))
 		if err != nil {

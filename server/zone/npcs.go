@@ -433,17 +433,20 @@ func (h scriptHost) NPCField(id int64, field string) (script.Value, error) {
 	if err != nil {
 		return script.Nil, err
 	}
-	switch field {
-	case "name":
-		return script.String(e.npc.DisplayName), nil
-	case "map":
-		return script.String(h.Map()), nil
-	case "x":
-		return script.Int(int64(e.x)), nil
-	case "y":
-		return script.Int(int64(e.y)), nil
+	read, ok := npcFields[field]
+	if !ok {
+		return script.Nil, fmt.Errorf("npc has no field %q", field)
 	}
-	return script.Nil, fmt.Errorf("npc has no field %q", field)
+	return read(h, e), nil
+}
+
+// npcFields are the fields of NPC handles. server/modscript/luaapi
+// defines the same names, and a test checks both.
+var npcFields = map[string]func(h scriptHost, e *entity) script.Value{
+	"name": func(_ scriptHost, e *entity) script.Value { return script.String(e.npc.DisplayName) },
+	"map":  func(h scriptHost, _ *entity) script.Value { return script.String(h.Map()) },
+	"x":    func(_ scriptHost, e *entity) script.Value { return intValue(e.x) },
+	"y":    func(_ scriptHost, e *entity) script.Value { return intValue(e.y) },
 }
 
 // NPCEmotion shows an emotion over an NPC to everyone who sees it.

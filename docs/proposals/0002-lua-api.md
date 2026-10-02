@@ -660,6 +660,29 @@ Methods on player handles check their own permissions, such as `player.give_item
     - `player:take_item(item, 0)` raises an error: the amount must be at least 1, so a script's bug shows. rAthena's `getitem` and `delitem` do nothing for an amount of 0 or less. The converter leaves out a call with a fixed amount of 0 or less, and sends a computed amount through `R.give_item` or `R.take_item`, which check it. The coverage reports count both.
     - `world.announce` needs the permission `world.announce`, which the owner approves. `maps.announce` needs none. Both take at most 255 bytes. The built-in mods hold every permission, so converted NPCs keep their announcements. waserver's countdown before it stops is server code, and needs no permission.
 
+15. Mod tests (phase 3 step 5). The user approved `wa.testing` in this shape:
+
+    - Test files `tests/*_test.lua` follow the entry script rule: they return a function that registers cases.
+    - `testing.case(name, function(world))`. Each case gets a fresh headless world with the mod and its dependencies loaded, a fixed random seed, and no database.
+    - `world:new_player { map, x, y, job, base_level, job_level, zeny, items = { {item, amount} } }` returns a normal player handle.
+    - `world:talk(player, npc_name, answers)` clicks the NPC and answers each step in order: a number picks a menu option, a string fills text input, and an integer fills number input when asked. Next is pressed without an answer. It returns everything the NPC said as text. It fails the test when the conversation asks for more answers than given.
+    - `world:use_item(player, item)`, `world:advance(milliseconds)` on the zone clock, where timers fire, `world:spawn_monster { monster, map, x, y }`, and `world:kill(player, monster)`.
+    - `testing.expect(value)` with `.to_be(x)`, `.to_equal(table)` (deep), `.to_contain(text_or_value)`, `.to_be_true()`, `.to_be_false()`, `.to_be_nil()`, and `.to_fail_with(text)` on a function that should raise an error containing the text.
+    - `wactl mod test` runs every test file of a mod, prints each failure with its file and line, and exits non-zero on any failure. `wa.testing` exists only under `wactl mod test`, never in a running server.
+
+    Step 5 built it with these details, which are provisional until reviewed:
+
+    - A test world runs one map: the map of its first `new_player` or `spawn_monster`, or `prontera` when `advance` comes first. `map` may be left out after that. Naming another map fails, and warps to other maps do not happen, as in a server where that map does not run.
+    - The zone clock starts at 0 and moves only with `world:advance`, with waits and progress bars in `world:talk`, and with the item use interval in `world:use_item`.
+    - `world:talk` also fails when answers are left over after the conversation ends, and when an answer does not fit its step. The NPC is named by its full name, its name in the mod, or the name players see when one NPC of the map has it. The text is the dialog lines, one per line.
+    - `world:use_item` fails when the player has no such item, or the zone refuses the use, with the reason, such as "not supported".
+    - `world:new_player` makes a character named `Tester 1`, `Tester 2` and so on, with full HP and SP, at a walkable cell. Without `--assets`, every cell is walkable.
+    - `world:spawn_monster` takes a monster ID from `monsters.id`. The monster does not come back after it dies. `world:kill` gives the player the monster's exp and drops, as a last hit would.
+    - `.to_contain` on a table compares elements deeply.
+    - Test code runs as the mod: its calls need the mod's permissions, and the variables it declares are the mod's. Calls that need a context, such as `events.on`, fail in a case.
+    - A case also fails when the server logs a warning that names the mod, such as a handler that failed.
+    - The API reference lists `wa.ItemUse`, the instance of a use context: `{ item }`, which the runtime already returned.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the phase 3 exit check passes with a sample mod. It then becomes `api: 1.0`.
@@ -669,3 +692,4 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the phas
 1. Build phase 3 step 2, the mod loader, with this context model. Done.
 2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, and `wa.variables` with NPCs. Done for these steps. `wa.hooks`, `wa.storage`, `wa.spawning`, `wa.schedules` and `wa.exports` come with the next steps.
 3. Review the API that step 4 added. Done: review decision 14.
+4. Review the provisional details of `wa.testing` that step 5 added (review decision 15).

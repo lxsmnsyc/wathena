@@ -56,11 +56,12 @@ func (z *Zone) spawn(spawns []Spawn) {
 	}
 }
 
-// spawnOne places one monster of a spawn.
-func (z *Zone) spawnOne(s *Spawn) {
+// spawnOne places one monster of a spawn. It returns nil when it found
+// no cell.
+func (z *Zone) spawnOne(s *Spawn) *entity {
 	x, y, ok := z.spawnCell(s)
 	if !ok {
-		return
+		return nil
 	}
 	speed := s.Speed
 	if speed <= 0 {
@@ -76,6 +77,7 @@ func (z *Zone) spawnOne(s *Spawn) {
 		e.status, e.hp = s.Status, int64(s.Status.MaxHP)
 	}
 	z.entities.add(e)
+	return e
 }
 
 // spawnCell picks a random walkable cell in a spawn's area, or anywhere
