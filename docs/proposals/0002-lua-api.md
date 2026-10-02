@@ -810,6 +810,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **`entity:exists()`** returns false once the entity is removed, has logged out, or has left the zone. It never raises an error.
     - A sample mod adds chain lightning with these calls and `maps.find_entities` (review decision 18), with a delay between bounces.
 
+21. Job changes and resets (phase 4 step 4). The user approved these on 2026-10-03:
+    - `player:change_job(job, { force })` replaces `jobchange`. It returns false when the job is not a valid next job for the player. `force = true` skips that check and needs the `player.change_job` permission. Job level goes back to 1 and learned skills stay, as rAthena does.
+    - `player:rebirth()` makes the player a High Novice at base and job level 1, with rAthena's transcendent rules.
+    - `jobs.next_jobs(job)` returns the jobs a job can change into.
+    - `player:reset_skills()` and `player:reset_stats()` replace `resetskill` and `resetstatus` and refund the points.
+    - `player:reset_skill(skill, { to_level, with_dependents })` lowers one skill, to 0 by default, and refunds its points. It returns false and changes nothing when another learned skill needs the lowered level, unless `with_dependents = true`, which lowers those skills too and refunds them.
+    - `player:reset_stat(stat, { to })` lowers one stat, to 1 by default, and refunds what raising it cost by rAthena's cost table.
+    - Quest skills, which cost no skill points, are not refunded or lowered by these calls, as rAthena's `resetskill`.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
