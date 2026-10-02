@@ -1,0 +1,7 @@
+# Mages learn Chain Lightning once Lightning Bolt is at level 3. Jobs
+# that take the Mage's tree, such as the Wizard, get it too.
+- job: mage
+  skill: example.chain-lightning:CHAIN_LIGHTNING
+  max_level: 5
+  requires:
+    - {skill: MG_LIGHTNINGBOLT, level: 3}

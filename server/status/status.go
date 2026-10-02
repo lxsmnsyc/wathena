@@ -227,7 +227,59 @@ type Bonuses struct {
 	// Regen are hp_regen, sp_regen, percent_hp_regen, percent_sp_regen,
 	// hp_loss and sp_loss: HP and SP gained or lost over time.
 	Regen []RegenBonus
+	// AutoSpell, AutoSpellWhenHit and AutoSpellOnSkill are autospell,
+	// autospell2 and autospell3: the skills that attacks, hits taken and
+	// skills used may cast (bAutoSpell, bAutoSpellWhenHit and
+	// bAutoSpellOnSkill).
+	AutoSpell, AutoSpellWhenHit, AutoSpellOnSkill []AutoSpell
+	// NoKnockback is special_state.no_knockback (bNoKnockback): skills
+	// cannot knock the player back.
+	NoKnockback bool
+	// AddStealRate is bonus.add_steal_rate (bAddStealRate): the steal
+	// chance rises by this much, per 10,000.
+	AddStealRate int
+	// AddHealRate is bonus.add_heal_rate (bHealPower): the player's heal
+	// skills heal this percent more. AddHeal2Rate is
+	// bonus.add_heal2_rate (bHealPower2): heals the player receives from
+	// skills heal this percent more.
+	AddHealRate, AddHeal2Rate int
 }
+
+// AutoSpell is s_autospell: a skill that a trigger may cast.
+type AutoSpell struct {
+	// Skill and Level are the skill cast and its level.
+	Skill, Level int
+	// Rate is the chance, per 1,000, from -1,000 to 1,000.
+	Rate int
+	// BattleFlag holds the BF_ bits of the hits that trigger it: a kind
+	// (BF_WEAPON, BF_MAGIC or BF_MISC), a range (BF_SHORT, BF_LONG) and
+	// an attack type (BF_NORMAL, BF_SKILL). AutoSpellOnSkill entries
+	// have none.
+	BattleFlag int
+	// Flag holds rAthena's AUTOSPELL_FORCE_ bits.
+	//   - AutoSpellForceTarget: in AutoSpell and AutoSpellWhenHit, the
+	//     skill is cast on the enemy (the target hit, or the attacker).
+	//     Without it, it is cast on the player. In AutoSpellOnSkill the
+	//     bit means the reverse: the skill is cast on the player, and
+	//     without it on the target of the trigger skill.
+	//   - AutoSpellForceRandomLevel: the level is a random one from 1 to
+	//     Level.
+	Flag int
+	// TriggerSkill is the skill whose use triggers an AutoSpellOnSkill
+	// entry.
+	TriggerSkill int
+	// Card is the card whose script added the entry, or 0 for an item's
+	// script. Entries of the same card do not stack (autospell_stacking
+	// is off).
+	Card int
+}
+
+// AUTOSPELL_FORCE_ bits of AutoSpell.Flag, as rAthena's
+// e_autospell_flags.
+const (
+	AutoSpellForceTarget      = 0x1
+	AutoSpellForceRandomLevel = 0x2
+)
 
 // AddEffect is s_addeffect: a status an attack may cause.
 type AddEffect struct {
@@ -293,7 +345,17 @@ type Tables struct {
 	// statuses is the status database, for the default duration of
 	// cause_status. Without it, that duration is 0.
 	statuses *sc.DB
+	// autoSpellSelf picks the target of an autospell that names none.
+	// Without it, such an autospell targets the enemy.
+	autoSpellSelf func(skill int) bool
 }
+
+// SetAutoSpellSelf sets how a "cast" bonus without a target option picks
+// one, as rAthena's bAutoSpell with no flag: self reports whether a
+// skill is a support skill, or a self skill without NoTargetSelf
+// (skill_get_inf and INF2_NOTARGETSELF). Such skills are cast on the
+// player, and others on the enemy.
+func (t *Tables) SetAutoSpellSelf(self func(skill int) bool) { t.autoSpellSelf = self }
 
 // SetStatuses sets the status database that bonuses read.
 func (t *Tables) SetStatuses(db *sc.DB) { t.statuses = db }
@@ -416,12 +478,17 @@ func (t *Tables) Calc(c Character) (Result, error) {
 	res.Base.Level, res.Battle.Level = c.BaseLevel, c.BaseLevel
 	res.Base.ID, res.Battle.ID = c.Job, c.Job
 	res.Base.CRate, res.Battle.CRate = base.crate, bat.crate
+	res.Base.SMatk, res.Battle.SMatk = base.smatk, bat.smatk
+	res.Base.Spl, res.Battle.Spl = base.spl, bat.spl
+	res.Base.HPlus, res.Battle.HPlus = base.hplus, bat.hplus
 	res.Base.PAtk, res.Battle.PAtk = base.patk, bat.patk
 	res.Battle.Player = p.b.player
 	res.Battle.Changes = BattleChanges(c.Changes)
 	res.Bonuses = Bonuses{HPRecoverRate: p.b.hprecovRate, SPRecoverRate: p.b.sprecovRate, NoHPRegen: p.b.noHPRegen, NoSPRegen: p.b.noSPRegen,
 		ResEff: p.b.resEff, AlwaysEndure: p.b.noWalkDelay, AddEff: p.b.addEff, AddEffWhenHit: p.b.addEffWhenHit,
-		AddEffOnSkill: p.b.addEffOnSkill, Regen: p.b.regen}
+		AddEffOnSkill: p.b.addEffOnSkill, Regen: p.b.regen, AutoSpell: p.b.autoSpell, AutoSpellWhenHit: p.b.autoSpellWhenHit,
+		AutoSpellOnSkill: p.b.autoSpellOnSkill, NoKnockback: p.b.noKnockback, AddStealRate: p.b.addStealRate,
+		AddHealRate: p.b.addHealRate, AddHeal2Rate: p.b.addHeal2Rate}
 	return res, nil
 }
 
@@ -550,7 +617,13 @@ func (p *pc) calcBase() data {
 		}
 		for _, cd := range e.Cards {
 			if !p.restricted(cd.Def) {
+				// current_equip_card_id: autospells of one card do not
+				// stack.
+				if cd.Def != nil {
+					pb.cardID = int(cd.Def.ID)
+				}
 				pb.run(cd.Bonuses, lr, &b)
+				pb.cardID = 0
 			}
 		}
 	}
@@ -820,6 +893,11 @@ func (p *pc) calcBase() data {
 	pl.PreRenewalSizes = p.t.preRenewalSizes
 	// The statuses at the end of status_calc_pc_sub that change bonuses.
 	if l := c.Changes; !l.Empty() {
+		if e := l.Get(sc.SCConcentrate); e != nil {
+			// Improve Concentration leaves out the AGI and DEX of cards.
+			e.Val3 = pb.paramBonus[paramAgi]
+			e.Val4 = pb.paramBonus[paramDex]
+		}
 		pb.matkRate += l.Val1(sc.SCIncmatkrate)
 	}
 	return b
@@ -1175,6 +1253,7 @@ func (p *pc) calcBattle(b *data) data {
 	// BATK: the difference that equipment made to the base status stays.
 	if b.BAtk != 0 {
 		s.BAtk = p.baseAtk(&s) + b.BAtk - p.baseAtk(b)
+		s.BAtk = calcBatk(l, s.BAtk, renewal)
 	}
 
 	// Pre-renewal applies bWeaponAtkRate to the right hand's weapon ATK

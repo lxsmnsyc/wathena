@@ -289,6 +289,9 @@ end, true, "monster")
 
 -- npc_ids holds the IDs of NPC handles, which come below.
 local npc_ids
+-- new_cast makes the cast object of a cast event, and find_entities runs
+-- an entity query, below.
+local new_cast, find_entities
 
 -- handle_key names a player, monster or NPC handle for Go, as
 -- "<kind>:<id>", or returns nil for anything else.
@@ -339,14 +342,14 @@ local function entity_handle(kind, id)
 	return nil
 end
 
--- with_handles copies Go's fields, and makes handles of target and
--- source with their kinds.
+-- with_handles copies Go's fields, and makes handles of target, source,
+-- caster and owner with their kinds.
 local function with_handles(fields)
 	local o = {}
 	for k, v in pairs(fields) do
 		o[k] = v
 	end
-	for _, k in ipairs({ "target", "source" }) do
+	for _, k in ipairs({ "target", "source", "caster", "owner" }) do
 		if fields[k .. "_kind"] ~= nil then
 			o[k] = entity_handle(fields[k .. "_kind"], fields[k])
 			o[k .. "_kind"] = nil
@@ -448,6 +451,10 @@ api["wa.context"] = readonly("wa.context", {
 		end
 		if fields.npc ~= nil then
 			return new_npc(fields.npc)
+		end
+		if fields.owner_kind ~= nil then
+			-- A passive skill's instance: owner is a handle.
+			return readonly("instance", with_handles(fields))
 		end
 		return readonly("instance", fields)
 	end,
@@ -650,6 +657,9 @@ api["wa.maps"] = readonly("wa.maps", {
 		check(type(map) == "string", "maps.announce: the map must be a name, such as prontera")
 		check(type(text) == "string", "maps.announce: the text must be a string")
 		return (call(H.announce, map, text))
+	end,
+	find_entities = function(query)
+		return find_entities("maps.find_entities", query)
 	end,
 })
 
@@ -1228,21 +1238,11 @@ function R.invoke(fn, ...)
 			value = new_monster(value)
 		elseif kind == "hit" or kind == "skill_use" then
 			-- The damage and skill_used objects: read-only tables whose
-			-- source, target and wearer fields are handles.
-			local fields = {}
-			for k, v in pairs(value) do
-				fields[k] = v
-			end
-			for _, k in ipairs({ "source", "target" }) do
-				local who = value[k .. "_kind"]
-				if who == "player" then
-					fields[k] = new_player(value[k])
-				elseif who == "monster" then
-					fields[k] = new_monster(value[k])
-				end
-				fields[k .. "_kind"] = nil
-			end
-			value = readonly(kind == "hit" and "damage" or "skill use", fields)
+			-- source, target and caster fields are handles.
+			value = readonly(kind == "hit" and "damage" or "skill use", with_handles(value))
+		elseif kind == "cast" then
+			-- The cast object of a skill's cast event.
+			value = new_cast(value)
 		elseif kind == "death" then
 			-- The death object: victim and killer are handles.
 			local fields = {}
@@ -1264,7 +1264,25 @@ function R.invoke(fn, ...)
 	return fn(unpack(args, 1, n // 2))
 end
 
-local hook_objects = { drop_rate = "drop", experience = "exp", status_chance = "status hook", status_duration = "status hook" }
+local hook_objects = {
+	drop_rate = "drop", experience = "exp", status_chance = "status hook", status_duration = "status hook",
+	skill_damage = "skill damage hook", cast_time = "cast time hook", skill_cost = "skill cost hook", cast_allowed = "cast allowed hook",
+}
+
+-- hook_values names the field of each hook's object that holds rAthena's
+-- value, and hook_messages what a hook must return.
+local hook_values = {
+	drop_rate = "rate", status_chance = "chance", status_duration = "milliseconds",
+	skill_damage = "percent", cast_time = "milliseconds", skill_cost = "sp", cast_allowed = "allowed",
+}
+local hook_messages = {
+	drop_rate = "the drop_rate hook must return an integer rate, per 10,000",
+	status_chance = "the status_chance hook must return an integer chance, per 10,000",
+	status_duration = "the status_duration hook must return an integer number of milliseconds",
+	skill_damage = "the skill_damage hook must return an integer damage percentage",
+	cast_time = "the cast_time hook must return an integer number of milliseconds",
+	skill_cost = "the skill_cost hook must return an integer SP cost",
+}
 
 -- hook_object makes the read-only object of a hook from Go's fields:
 -- player, monster, target and source become handles.
@@ -1279,45 +1297,35 @@ local function hook_object(kind, fields)
 	return readonly(hook_objects[kind], o)
 end
 
--- hook_result checks what a hook returned: an integer rate for
--- drop_rate, two integers, base and job, for experience, and an integer
--- for the status hooks.
+-- hook_result checks what a hook returned: two integers, base and job,
+-- for experience, true or false for cast_allowed, and an integer for
+-- the others.
 local function hook_result(kind, a, b)
-	if kind == "drop_rate" then
-		if math_type(a) ~= "integer" then
-			error("the drop_rate hook must return an integer rate, per 10,000", 0)
+	if kind == "experience" then
+		if math_type(a) ~= "integer" or math_type(b) ~= "integer" then
+			error("the experience hook must return two integers: base and job exp", 0)
+		end
+		return a, b
+	end
+	if kind == "cast_allowed" then
+		if type(a) ~= "boolean" then
+			error("the cast_allowed hook must return true or false", 0)
 		end
 		return a
 	end
-	if kind == "status_chance" then
-		if math_type(a) ~= "integer" then
-			error("the status_chance hook must return an integer chance, per 10,000", 0)
-		end
-		return a
+	if math_type(a) ~= "integer" then
+		error(hook_messages[kind], 0)
 	end
-	if kind == "status_duration" then
-		if math_type(a) ~= "integer" then
-			error("the status_duration hook must return an integer number of milliseconds", 0)
-		end
-		return a
-	end
-	if math_type(a) ~= "integer" or math_type(b) ~= "integer" then
-		error("the experience hook must return two integers: base and job exp", 0)
-	end
-	return a, b
+	return a
 end
 
 -- innermost is the end of a chain: the object's own value, which is
 -- rAthena's unless a hook passed a changed object.
 local function innermost(kind, o)
-	if kind == "drop_rate" then
-		return hook_result(kind, o.rate)
-	elseif kind == "status_chance" then
-		return hook_result(kind, o.chance)
-	elseif kind == "status_duration" then
-		return hook_result(kind, o.milliseconds)
+	if kind == "experience" then
+		return hook_result(kind, o.base, o.job)
 	end
-	return hook_result(kind, o.base, o.job)
+	return hook_result(kind, o[hook_values[kind]])
 end
 
 -- run_chain runs a chain of n hooks. Each runs in its own context, which
@@ -1501,6 +1509,179 @@ add_status_methods("monster", function()
 end)
 add_status_methods("npc", function()
 	return npc_ids
+end)
+
+-- Entity queries and skills (proposal 0002, review decisions 18 and 20).
+
+-- handle_parts returns the kind and ID of an entity handle, or nil.
+local function handle_parts(h)
+	local key = handle_key(h)
+	if key == nil then
+		return nil
+	end
+	local kind, id = key:match("^(%a+):(%-?%d+)$")
+	return kind, math.tointeger(tonumber(id))
+end
+
+-- find_entities runs a query: handles become "<kind>:<id>" keys, and Go
+-- checks the rest. Callers tail call it, so level 2 is the script.
+find_entities = function(what, query)
+	if type(query) ~= "table" then
+		error(what .. ": want a query table, such as { around = player, radius = 5 }", 2)
+	end
+	local q = {}
+	for k, v in pairs(query) do
+		if k == "around" or k == "enemies_of" or k == "allies_of" then
+			q[k] = handle_key(v) or false
+		elseif k == "exclude" and type(v) == "table" then
+			local list = {}
+			for i, h in ipairs(v) do
+				list[i] = handle_key(h) or false
+			end
+			q[k] = list
+		else
+			q[k] = v
+		end
+	end
+	local list = call(H.maps_find_entities, what, q)
+	local out = {}
+	for i, e in ipairs(list) do
+		out[i] = entity_handle(e.kind, e.id)
+	end
+	return out
+end
+
+-- area_fields are the query fields that give an area, which find_nearby
+-- sets itself.
+local area_fields = { around = true, map = true, x = true, y = true, rectangle = true, line = true, cells = true }
+
+-- add_entity_methods gives a handle type find_nearby, exists, and
+-- show_effect when it has none.
+local function add_entity_methods(kind, ids)
+	local methods = handle_methods[kind]
+	methods.find_nearby = function(self, query)
+		local what = kind .. ":find_nearby"
+		if type(query) ~= "table" then
+			error(what .. ": want a query table, such as { radius = 5, kinds = { \"monster\" } }", 2)
+		end
+		local q = {}
+		for k, v in pairs(query) do
+			if area_fields[k] then
+				error(what .. ": the area is around the " .. kind .. ", so the query cannot have " .. tostring(k), 2)
+			end
+			q[k] = v
+		end
+		q.around = self
+		return find_entities(what, q)
+	end
+	methods.exists = function(self)
+		local id = ids()[self]
+		if id == nil then
+			return false
+		end
+		local ok, v = pcall(H.entity_exists, kind, id)
+		return ok and v == true
+	end
+	if methods.show_effect == nil then
+		methods.show_effect = function(self, effect)
+			return (call(H.entity_show_effect, kind, ids()[self], effect))
+		end
+	end
+end
+add_entity_methods("player", function()
+	return player_ids
+end)
+add_entity_methods("monster", function()
+	return monster_ids
+end)
+add_entity_methods("npc", function()
+	return npc_ids
+end)
+
+-- The cast object of a skill's cast event. It keeps the cast's fields,
+-- and passes them to Go with each method, so it works after the event,
+-- such as in a timer.
+local cast_data
+local cast_fields = { skill = true, level = true, map = true, x = true, y = true }
+local cast_options = { percent = true, hits = true, type = true, element = true }
+
+local function cast_of(self, what)
+	local fields = cast_data[self]
+	if fields == nil then
+		error("not a cast: call the method with a colon, such as cast:" .. what .. "(target)", 3)
+	end
+	return fields
+end
+
+new_cast, cast_data = handle_type("cast", {
+	deal_damage = function(self, target, options)
+		local fields = cast_of(self, "deal_damage")
+		local tkind, tid = handle_parts(target)
+		check(tkind ~= nil, "cast:deal_damage: the target must be a player, monster or NPC handle")
+		local percent, hits, attack, element = 100, nil, nil, nil
+		if options ~= nil then
+			check(type(options) == "table", "cast:deal_damage: the options must be a table, such as { percent = 150 }")
+			for k, v in pairs(options) do
+				check(cast_options[k], "cast:deal_damage: " .. tostring(k) .. " is not an option; the options are percent, hits, type and element")
+				if k == "percent" then
+					percent = v
+				elseif k == "hits" then
+					hits = v
+				elseif k == "type" then
+					attack = v
+				else
+					element = v
+				end
+			end
+		end
+		check(math_type(percent) == "integer" and percent >= 0, "cast:deal_damage: percent must be a whole number of 0 or more")
+		local hooked = lua_hooks("skill_damage", {
+			caster = fields.caster, caster_kind = fields.caster_kind, target = tid, target_kind = tkind,
+			skill = fields.skill, level = fields.level, percent = percent,
+		})
+		if hooked ~= nil then
+			percent = hooked < 0 and 0 or hooked
+		end
+		local result = call(H.cast_deal_damage, fields, tkind .. ":" .. tid, percent, hits, attack, element)
+		if result == nil then
+			return nil
+		end
+		return readonly("damage result", result)
+	end,
+	heal = function(self, target, amount)
+		local fields = cast_of(self, "heal")
+		local key = handle_key(target)
+		check(key ~= nil, "cast:heal: the target must be a player, monster or NPC handle")
+		check(math_type(amount) == "integer" and amount >= 0, "cast:heal: the amount must be a whole number of 0 or more")
+		return (call(H.cast_heal, fields, key, amount))
+	end,
+	run_default = function(self, options)
+		local fields = cast_of(self, "run_default")
+		local key = nil
+		if options ~= nil then
+			check(type(options) == "table", "cast:run_default: the options must be a table, such as { target = monster }")
+			for k, v in pairs(options) do
+				check(k == "target", "cast:run_default: the only option is target")
+				key = handle_key(v)
+				check(key ~= nil, "cast:run_default: target must be a player, monster or NPC handle")
+			end
+		end
+		return (call(H.cast_run_default, fields, key))
+	end,
+}, function(fields, key)
+	if key == "caster" then
+		return entity_handle(fields.caster_kind, fields.caster)
+	end
+	if key == "target" then
+		if fields.target_kind == nil then
+			return nil
+		end
+		return entity_handle(fields.target_kind, fields.target)
+	end
+	if cast_fields[key] then
+		return fields[key]
+	end
+	return nil
 end)
 
 -- status_bonuses runs the bonuses function of a mod status, for a start

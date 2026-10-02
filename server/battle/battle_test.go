@@ -57,9 +57,9 @@ func (d refDamage) kind() Kind {
 	return Hit
 }
 
-// loadMobs reads every monster's status from mob_status.json, with its
-// level and its DamageTaken from testdata.
-func loadMobs(t testing.TB) map[int]*Status {
+// loadMobs reads every monster's status from a mode's mob_status.json,
+// with its level and its DamageTaken.
+func loadMobs(t testing.TB, mode reference.Mode) map[int]*Status {
 	t.Helper()
 	var ref struct {
 		Mobs []struct {
@@ -68,20 +68,23 @@ func loadMobs(t testing.TB) map[int]*Status {
 			Status Status `json:"status"`
 		} `json:"mobs"`
 	}
-	if err := reference.Load(reference.Renewal, "mob_status", &ref); err != nil {
+	if err := reference.Load(mode, "mob_status", &ref); err != nil {
 		t.Fatal(err)
 	}
 	// testdata/damage_taken.json holds DamageTaken from rAthena's
 	// db/re/mob_db.yml (GPL-3.0), which mob_status.json does not record.
+	// No monster in db/pre-re/mob_db.yml sets DamageTaken.
 	var taken struct {
 		DamageTaken map[string]int `json:"damage_taken"`
 	}
-	b, err := os.ReadFile("testdata/damage_taken.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := json.Unmarshal(b, &taken); err != nil {
-		t.Fatal(err)
+	if mode == reference.Renewal {
+		b, err := os.ReadFile("testdata/damage_taken.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := json.Unmarshal(b, &taken); err != nil {
+			t.Fatal(err)
+		}
 	}
 	mobs := make(map[int]*Status, len(ref.Mobs))
 	for _, m := range ref.Mobs {
@@ -93,10 +96,10 @@ func loadMobs(t testing.TB) map[int]*Status {
 	return mobs
 }
 
-func loadMobDamage(t testing.TB) *mobDamage {
+func loadMobDamage(t testing.TB, mode reference.Mode) *mobDamage {
 	t.Helper()
 	var ref mobDamage
-	if err := reference.Load(reference.Renewal, "mob_damage", &ref); err != nil {
+	if err := reference.Load(mode, "mob_damage", &ref); err != nil {
 		t.Fatal(err)
 	}
 	if len(ref.Pairs) == 0 {
@@ -150,8 +153,18 @@ func TestAttrFix(t *testing.T) {
 // TestMobDamageForcedMin checks every pair against rAthena's result with
 // rnd_force_min.
 func TestMobDamageForcedMin(t *testing.T) {
-	mobs := loadMobs(t)
-	ref := loadMobDamage(t)
+	checkMobDamageForcedMin(t, reference.Renewal, Attack)
+}
+
+// attackFunc is Attack or AttackPreRenewal.
+type attackFunc func(attacker, target *Status, r Rand) Result
+
+// checkMobDamageForcedMin checks every pair of a mode's mob_damage.json
+// against rAthena's result with rnd_force_min.
+func checkMobDamageForcedMin(t *testing.T, mode reference.Mode, attack attackFunc) {
+	t.Helper()
+	mobs := loadMobs(t, mode)
+	ref := loadMobDamage(t, mode)
 	matched := 0
 	for _, p := range ref.Pairs {
 		src, dst := mobs[p.Attacker], mobs[p.Target]
@@ -159,7 +172,7 @@ func TestMobDamageForcedMin(t *testing.T) {
 			t.Errorf("%d on %d: monster missing from mob_status.json", p.Attacker, p.Target)
 			continue
 		}
-		got := Attack(src, dst, forcedMin{})
+		got := attack(src, dst, forcedMin{})
 		want := p.ForcedMin
 		if got.Damage == want.Damage+want.Damage2 && got.Left == want.Damage2 && got.Kind == want.kind() &&
 			got.Hits == want.Div && got.Flag == want.Flag {
@@ -179,11 +192,11 @@ type rollStats struct {
 	sum, sumSq           float64
 }
 
-func sample(t *testing.T, src, dst *Status, r Rand, attacks int) rollStats {
+func sample(t *testing.T, attack attackFunc, src, dst *Status, r Rand, attacks int) rollStats {
 	t.Helper()
 	s := rollStats{attacks: attacks, min: -1}
 	for range attacks {
-		res := Attack(src, dst, r)
+		res := attack(src, dst, r)
 		if res.Damage < 0 {
 			t.Fatalf("negative damage %d", res.Damage)
 		}
@@ -221,12 +234,20 @@ func sample(t *testing.T, src, dst *Status, r Rand, attacks int) rollStats {
 // change the damage roll. The seed is fixed, so the result does not change
 // between runs.
 func TestMobDamageRolls(t *testing.T) {
+	checkMobDamageRolls(t, reference.Renewal, Attack)
+}
+
+// checkMobDamageRolls runs the checks of TestMobDamageRolls on a mode's
+// mob_damage.json. In pre-renewal, the range check samples another 20000
+// attacks with cornerRand, and the mean check keeps the uniform sample.
+func checkMobDamageRolls(t *testing.T, mode reference.Mode, attack attackFunc) {
+	t.Helper()
 	const (
 		rateAttacks   = 4000
 		damageAttacks = 20000
 	)
-	mobs := loadMobs(t)
-	ref := loadMobDamage(t)
+	mobs := loadMobs(t, mode)
+	ref := loadMobDamage(t, mode)
 	recorded := float64(ref.RollsPerPair)
 	for i, p := range ref.Pairs {
 		src, dst := mobs[p.Attacker], mobs[p.Target]
@@ -237,7 +258,7 @@ func TestMobDamageRolls(t *testing.T) {
 		rec := p.Rolls
 		r := rand.New(rand.NewPCG(uint64(i+1), 0x77617468656E61)) // #nosec G404 -- a fixed seed for a repeatable test.
 
-		s := sample(t, src, dst, r, rateAttacks)
+		s := sample(t, attack, src, dst, r, rateAttacks)
 		rate := float64(s.hits) / rateAttacks
 		recRate := float64(rec.Hits) / recorded
 		if tol := 4*math.Sqrt(rate*(1-rate)/recorded) + 0.02; math.Abs(rate-recRate) > tol {
@@ -252,9 +273,13 @@ func TestMobDamageRolls(t *testing.T) {
 
 		sure := *dst
 		sure.Flee, sure.Flee2 = -1<<20, 0
-		s = sample(t, src, &sure, r, damageAttacks)
-		if s.min > rec.Min || s.max < rec.Max {
-			t.Errorf("%s: damage range %d..%d does not contain recorded %d..%d", name, s.min, s.max, rec.Min, rec.Max)
+		s = sample(t, attack, src, &sure, r, damageAttacks)
+		span := s
+		if mode == reference.PreRenewal {
+			span = sample(t, attack, src, &sure, cornerRand{r}, damageAttacks)
+		}
+		if span.min > rec.Min || span.max < rec.Max {
+			t.Errorf("%s: damage range %d..%d does not contain recorded %d..%d", name, span.min, span.max, rec.Min, rec.Max)
 		}
 		if rec.Hits >= 20 {
 			mean := s.sum / float64(s.hits)
@@ -265,6 +290,24 @@ func TestMobDamageRolls(t *testing.T) {
 			}
 		}
 	}
+}
+
+// cornerRand returns 0 for a quarter of its draws, n - 1 for another
+// quarter, and a uniform draw otherwise. rAthena's rnd() % n can return
+// each of these values, so every result is one rAthena can produce. The
+// pre-renewal range checks use it: the lowest and highest damage need
+// both the damage roll and the random soft DEF at an end of their range,
+// which a uniform generator rarely draws together.
+type cornerRand struct{ r *rand.Rand }
+
+func (c cornerRand) IntN(n int) int {
+	switch c.r.IntN(4) {
+	case 0:
+		return 0
+	case 1:
+		return n - 1
+	}
+	return c.r.IntN(n)
 }
 
 // TestAttackTable checks hand-made cases for each step of the formula.

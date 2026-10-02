@@ -189,6 +189,12 @@ type Runtime struct {
 	// and computeStack the computing flags that computeBegin replaced.
 	saved        []savedChain
 	computeStack []bool
+	// skillCtxs are the contexts of skills with scripts, by skill ID, and
+	// skillEntries their entry scripts. passives are the contexts of
+	// passive skills, by owner and skill.
+	skillCtxs    map[int64]*Context
+	skillEntries map[int64]string
+	passives     map[passiveKey]*passive
 }
 
 // Context owns what a setup function and its handlers create
@@ -234,10 +240,12 @@ type handler struct {
 	ctx     *Context
 	fn      *script.Ref
 	removed bool
-	// death holds the options of a death handler, or nil, and status
-	// the options of a status event handler.
+	// death holds the options of a death handler, or nil, status the
+	// options of a status event handler, and skill those of a skill_used
+	// handler.
 	death  *deathFilter
 	status *statusFilter
+	skill  *skillFilter
 }
 
 type timer struct {
@@ -266,6 +274,7 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		setups: map[string]*script.Ref{}, bonuses: map[int64]*Bonus{},
 		conversations: map[int64]*Conversation{}, declared: map[string]string{},
 		hooks: map[string][]*hook{}, hookByID: map[int64]*hook{}, schedules: map[int64]*scheduled{}, events: map[int64]*Context{},
+		skillCtxs: map[int64]*Context{}, skillEntries: map[int64]string{}, passives: map[passiveKey]*passive{},
 	}
 	s, err := script.New(script.Options{Limits: opts.Limits})
 	if err != nil {
@@ -382,6 +391,12 @@ func (r *Runtime) init() error {
 		{"schedules_when", r.schedulesWhen},
 		{"schedules_cancel", r.schedulesCancel},
 		{"spawning_monsters", r.spawningMonsters},
+		{"maps_find_entities", r.mapsFindEntities},
+		{"entity_exists", r.entityExists},
+		{"entity_show_effect", r.entityShowEffect},
+		{"cast_deal_damage", r.castDealDamage},
+		{"cast_heal", r.castHeal},
+		{"cast_run_default", r.castRunDefault},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -460,6 +475,7 @@ func (r *Runtime) Close() {
 	for _, c := range r.events {
 		r.end(c)
 	}
+	r.endSkills()
 	for k, s := range r.setups {
 		s.Release()
 		delete(r.setups, k)
@@ -541,7 +557,7 @@ func (r *Runtime) Reload(sc *mod.Scripts) error {
 	}
 	r.scripts[sc.Mod] = sc
 	err := r.start(sc)
-	return errors.Join(err, r.reloadNPCs(sc.Mod))
+	return errors.Join(err, r.reloadNPCs(sc.Mod), r.reloadSkills(sc.Mod))
 }
 
 // end removes everything a context owns. An NPC context with
@@ -758,8 +774,8 @@ func (r *Runtime) dropTimer(t *timer) {
 	delete(t.ctx.timers, t.id)
 }
 
-// Kinds of context (proposal 0002). Mod, NPC, item and event contexts
-// exist.
+// Kinds of context (proposal 0002). Mod, NPC, item, skill and event
+// contexts exist.
 const (
 	KindMod     = "mod"
 	KindNPC     = "npc"
@@ -770,10 +786,8 @@ const (
 )
 
 // Events lists every event name and the context kinds that can listen
-// to it. Mod events, use, damage and unequip fire in zones today;
-// skill_used fires in tests until skills exist (phase 4 step 3). touch
-// is a name the next steps fire, listed so a typo is told apart from an
-// event of another kind.
+// to it. touch is a name the next steps fire, listed so a typo is told
+// apart from an event of another kind.
 var Events = map[string][]string{
 	"login":         {KindMod, KindEvent},
 	"logout":        {KindMod, KindEvent},
@@ -785,7 +799,11 @@ var Events = map[string][]string{
 	"touch":         {KindNPC},
 	"use":           {KindItem},
 	"damage":        {KindItem},
-	"skill_used":    {KindItem},
+	// skill_used is an item event, and an event of mod and event
+	// contexts (review decision 18).
+	"skill_used": {KindItem, KindMod, KindEvent},
+	// cast runs in a skill's context (review decision 20).
+	"cast": {KindSkill},
 	// Converted UnEquipScripts run on unequip.
 	"unequip": {KindItem},
 	// Status effects (review decision 19).

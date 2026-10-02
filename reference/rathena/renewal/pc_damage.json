@@ -23734,19 +23734,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 308,
+				"damage": 341,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 3,
-				"min": 218,
-				"max": 308,
-				"total": 44065
+				"min": 242,
+				"max": 341,
+				"total": 48892
 			},
 			"job": 3,
 			"build": "melee",
@@ -23799,19 +23799,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 231,
+				"damage": 261,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 1,
-				"min": 163,
-				"max": 231,
-				"total": 32855
+				"min": 185,
+				"max": 261,
+				"total": 37263
 			},
 			"job": 3,
 			"build": "melee",
@@ -23864,19 +23864,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 126,
+				"damage": 149,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 88,
-				"max": 126,
-				"total": 17885
+				"min": 106,
+				"max": 149,
+				"total": 21417
 			},
 			"job": 3,
 			"build": "melee",
@@ -23929,19 +23929,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 207,
+				"damage": 238,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 1,
-				"min": 147,
-				"max": 207,
-				"total": 29524
+				"min": 168,
+				"max": 238,
+				"total": 33870
 			},
 			"job": 3,
 			"build": "melee",
@@ -23994,19 +23994,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 6,
+				"damage": 7,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 71,
 				"crits": 0,
-				"min": 6,
-				"max": 6,
-				"total": 426
+				"min": 7,
+				"max": 8,
+				"total": 540
 			},
 			"job": 3,
 			"build": "melee",
@@ -25359,19 +25359,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 340,
+				"damage": 375,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 30,
-				"min": 241,
-				"max": 340,
-				"total": 51332
+				"min": 266,
+				"max": 375,
+				"total": 56632
 			},
 			"job": 3,
 			"build": "critical",
@@ -25424,19 +25424,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 260,
+				"damage": 291,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 26,
-				"min": 184,
-				"max": 260,
-				"total": 38949
+				"min": 207,
+				"max": 291,
+				"total": 43698
 			},
 			"job": 3,
 			"build": "critical",
@@ -25489,19 +25489,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 149,
+				"damage": 173,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 29,
-				"min": 105,
-				"max": 149,
-				"total": 22448
+				"min": 123,
+				"max": 173,
+				"total": 26169
 			},
 			"job": 3,
 			"build": "critical",
@@ -25554,19 +25554,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 236,
+				"damage": 266,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 33,
-				"min": 167,
-				"max": 236,
-				"total": 35839
+				"min": 188,
+				"max": 266,
+				"total": 40336
 			},
 			"job": 3,
 			"build": "critical",
@@ -25619,19 +25619,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 11,
+				"damage": 13,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 105,
 				"crits": 0,
-				"min": 7,
-				"max": 8,
-				"total": 769
+				"min": 9,
+				"max": 9,
+				"total": 945
 			},
 			"job": 3,
 			"build": "critical",
@@ -26984,19 +26984,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 469,
+				"damage": 504,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 29,
-				"min": 333,
-				"max": 469,
-				"total": 70737
+				"min": 358,
+				"max": 504,
+				"total": 76027
 			},
 			"job": 3,
 			"build": "ranged",
@@ -27049,19 +27049,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 376,
+				"damage": 407,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 18,
-				"min": 267,
-				"max": 376,
-				"total": 55567
+				"min": 289,
+				"max": 407,
+				"total": 60129
 			},
 			"job": 3,
 			"build": "ranged",
@@ -27114,19 +27114,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 239,
+				"damage": 264,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 25,
-				"min": 170,
-				"max": 239,
-				"total": 35836
+				"min": 188,
+				"max": 264,
+				"total": 39562
 			},
 			"job": 3,
 			"build": "ranged",
@@ -27179,19 +27179,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 345,
+				"damage": 376,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 23,
-				"min": 246,
-				"max": 345,
-				"total": 51590
+				"min": 267,
+				"max": 376,
+				"total": 56083
 			},
 			"job": 3,
 			"build": "ranged",
@@ -27244,19 +27244,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 14,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 13,
-				"max": 13,
-				"total": 2600
+				"min": 14,
+				"max": 14,
+				"total": 2800
 			},
 			"job": 3,
 			"build": "ranged",
@@ -41609,19 +41609,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 270,
+				"damage": 305,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 6,
-				"min": 191,
-				"max": 270,
-				"total": 38885
+				"min": 216,
+				"max": 305,
+				"total": 43945
 			},
 			"job": 6,
 			"build": "melee",
@@ -41674,19 +41674,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 196,
+				"damage": 228,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 3,
-				"min": 139,
-				"max": 196,
-				"total": 28045
+				"min": 161,
+				"max": 228,
+				"total": 32608
 			},
 			"job": 6,
 			"build": "melee",
@@ -41739,19 +41739,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 98,
+				"damage": 123,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 69,
-				"max": 98,
-				"total": 14052
+				"min": 87,
+				"max": 123,
+				"total": 17609
 			},
 			"job": 6,
 			"build": "melee",
@@ -41804,19 +41804,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 175,
+				"damage": 205,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 6,
-				"min": 123,
-				"max": 175,
-				"total": 25114
+				"min": 145,
+				"max": 205,
+				"total": 29562
 			},
 			"job": 6,
 			"build": "melee",
@@ -41869,19 +41869,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 5,
+				"damage": 6,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 30,
 				"crits": 0,
-				"min": 5,
-				"max": 5,
-				"total": 150
+				"min": 6,
+				"max": 6,
+				"total": 180
 			},
 			"job": 6,
 			"build": "melee",
@@ -43559,19 +43559,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 306,
+				"damage": 340,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 36,
-				"min": 217,
-				"max": 306,
-				"total": 46795
+				"min": 241,
+				"max": 340,
+				"total": 51955
 			},
 			"job": 6,
 			"build": "critical",
@@ -43624,19 +43624,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 229,
+				"damage": 260,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 32,
-				"min": 162,
-				"max": 229,
-				"total": 34711
+				"min": 184,
+				"max": 260,
+				"total": 39399
 			},
 			"job": 6,
 			"build": "critical",
@@ -43689,19 +43689,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 124,
+				"damage": 149,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 34,
-				"min": 87,
-				"max": 124,
-				"total": 18814
+				"min": 105,
+				"max": 149,
+				"total": 22652
 			},
 			"job": 6,
 			"build": "critical",
@@ -43754,19 +43754,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 205,
+				"damage": 236,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 27,
-				"min": 146,
-				"max": 205,
-				"total": 30905
+				"min": 167,
+				"max": 236,
+				"total": 35428
 			},
 			"job": 6,
 			"build": "critical",
@@ -43819,19 +43819,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 9,
+				"damage": 11,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 59,
 				"crits": 0,
-				"min": 6,
-				"max": 6,
-				"total": 354
+				"min": 7,
+				"max": 8,
+				"total": 436
 			},
 			"job": 6,
 			"build": "critical",
@@ -45509,19 +45509,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 434,
+				"damage": 469,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 20,
-				"min": 308,
-				"max": 434,
-				"total": 64271
+				"min": 333,
+				"max": 469,
+				"total": 69471
 			},
 			"job": 6,
 			"build": "ranged",
@@ -45574,19 +45574,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 344,
+				"damage": 376,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 26,
-				"min": 244,
-				"max": 344,
-				"total": 51559
+				"min": 267,
+				"max": 376,
+				"total": 56393
 			},
 			"job": 6,
 			"build": "ranged",
@@ -45639,19 +45639,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 215,
+				"damage": 239,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 32,
-				"min": 152,
-				"max": 215,
-				"total": 32600
+				"min": 170,
+				"max": 239,
+				"total": 36329
 			},
 			"job": 6,
 			"build": "ranged",
@@ -45704,19 +45704,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 316,
+				"damage": 345,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 22,
-				"min": 224,
-				"max": 316,
-				"total": 47006
+				"min": 246,
+				"max": 345,
+				"total": 51494
 			},
 			"job": 6,
 			"build": "ranged",
@@ -45769,19 +45769,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 11,
+				"damage": 13,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 163,
 				"crits": 0,
-				"min": 11,
-				"max": 11,
-				"total": 1793
+				"min": 13,
+				"max": 13,
+				"total": 2119
 			},
 			"job": 6,
 			"build": "ranged",
@@ -76384,19 +76384,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 317,
+				"damage": 352,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 225,
-				"max": 317,
-				"total": 45648
+				"min": 250,
+				"max": 352,
+				"total": 50698
 			},
 			"job": 11,
 			"build": "melee",
@@ -76449,19 +76449,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 240,
+				"damage": 271,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 170,
-				"max": 240,
-				"total": 34552
+				"min": 192,
+				"max": 271,
+				"total": 38997
 			},
 			"job": 11,
 			"build": "melee",
@@ -76514,19 +76514,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 133,
+				"damage": 158,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 94,
-				"max": 133,
-				"total": 19079
+				"min": 112,
+				"max": 158,
+				"total": 22634
 			},
 			"job": 11,
 			"build": "melee",
@@ -76579,19 +76579,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 217,
+				"damage": 246,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 3,
-				"min": 153,
-				"max": 217,
-				"total": 30984
+				"min": 175,
+				"max": 246,
+				"total": 35340
 			},
 			"job": 11,
 			"build": "melee",
@@ -76644,19 +76644,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 7,
+				"damage": 8,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 64,
 				"crits": 0,
-				"min": 7,
-				"max": 7,
-				"total": 448
+				"min": 8,
+				"max": 8,
+				"total": 512
 			},
 			"job": 11,
 			"build": "melee",
@@ -78009,19 +78009,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 351,
+				"damage": 386,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 34,
-				"min": 249,
-				"max": 351,
-				"total": 53429
+				"min": 274,
+				"max": 386,
+				"total": 58769
 			},
 			"job": 11,
 			"build": "critical",
@@ -78074,19 +78074,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 270,
+				"damage": 302,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 31,
-				"min": 191,
-				"max": 270,
-				"total": 40822
+				"min": 214,
+				"max": 302,
+				"total": 45701
 			},
 			"job": 11,
 			"build": "critical",
@@ -78139,19 +78139,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 156,
+				"damage": 182,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 28,
-				"min": 111,
-				"max": 156,
-				"total": 23567
+				"min": 129,
+				"max": 182,
+				"total": 27339
 			},
 			"job": 11,
 			"build": "critical",
@@ -78204,19 +78204,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 246,
+				"damage": 275,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 36,
-				"min": 174,
-				"max": 246,
-				"total": 37547
+				"min": 195,
+				"max": 275,
+				"total": 42035
 			},
 			"job": 11,
 			"build": "critical",
@@ -78269,19 +78269,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 11,
+				"damage": 13,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 114,
 				"crits": 3,
-				"min": 8,
-				"max": 11,
-				"total": 921
+				"min": 9,
+				"max": 13,
+				"total": 1038
 			},
 			"job": 11,
 			"build": "critical",
@@ -79634,19 +79634,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 480,
+				"damage": 515,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 23,
-				"min": 342,
-				"max": 480,
-				"total": 71657
+				"min": 367,
+				"max": 515,
+				"total": 76887
 			},
 			"job": 11,
 			"build": "ranged",
@@ -79699,19 +79699,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 386,
+				"damage": 417,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 21,
-				"min": 275,
-				"max": 386,
-				"total": 57425
+				"min": 297,
+				"max": 417,
+				"total": 62014
 			},
 			"job": 11,
 			"build": "ranged",
@@ -79764,19 +79764,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 247,
+				"damage": 273,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 23,
-				"min": 176,
-				"max": 247,
-				"total": 36914
+				"min": 194,
+				"max": 273,
+				"total": 40698
 			},
 			"job": 11,
 			"build": "ranged",
@@ -79829,19 +79829,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 355,
+				"damage": 386,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 23,
-				"min": 253,
-				"max": 355,
-				"total": 53039
+				"min": 275,
+				"max": 386,
+				"total": 57646
 			},
 			"job": 11,
 			"build": "ranged",
@@ -79894,19 +79894,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 14,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 13,
-				"max": 13,
-				"total": 2600
+				"min": 14,
+				"max": 15,
+				"total": 2900
 			},
 			"job": 11,
 			"build": "ranged",
@@ -110834,19 +110834,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 278,
+				"damage": 312,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 197,
-				"max": 278,
-				"total": 39910
+				"min": 221,
+				"max": 312,
+				"total": 44750
 			},
 			"job": 17,
 			"build": "melee",
@@ -110899,19 +110899,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 204,
+				"damage": 235,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 1,
-				"min": 144,
-				"max": 204,
-				"total": 29057
+				"min": 166,
+				"max": 235,
+				"total": 33466
 			},
 			"job": 17,
 			"build": "melee",
@@ -110964,19 +110964,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 105,
+				"damage": 128,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 6,
-				"min": 73,
-				"max": 105,
-				"total": 14990
+				"min": 91,
+				"max": 128,
+				"total": 18554
 			},
 			"job": 17,
 			"build": "melee",
@@ -111029,19 +111029,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 182,
+				"damage": 212,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 129,
-				"max": 130,
-				"total": 25856
+				"min": 150,
+				"max": 152,
+				"total": 30181
 			},
 			"job": 17,
 			"build": "melee",
@@ -111094,19 +111094,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 5,
+				"damage": 6,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 43,
 				"crits": 0,
-				"min": 5,
-				"max": 5,
-				"total": 215
+				"min": 6,
+				"max": 6,
+				"total": 258
 			},
 			"job": 17,
 			"build": "melee",
@@ -112784,19 +112784,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 310,
+				"damage": 345,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 33,
-				"min": 221,
-				"max": 310,
-				"total": 47196
+				"min": 245,
+				"max": 345,
+				"total": 52465
 			},
 			"job": 17,
 			"build": "critical",
@@ -112849,19 +112849,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 233,
+				"damage": 266,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 28,
-				"min": 165,
-				"max": 233,
-				"total": 35080
+				"min": 188,
+				"max": 266,
+				"total": 39960
 			},
 			"job": 17,
 			"build": "critical",
@@ -112914,19 +112914,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 128,
+				"damage": 152,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 34,
-				"min": 90,
-				"max": 128,
-				"total": 19462
+				"min": 108,
+				"max": 152,
+				"total": 23214
 			},
 			"job": 17,
 			"build": "critical",
@@ -112979,19 +112979,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 211,
+				"damage": 240,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 26,
-				"min": 149,
-				"max": 211,
-				"total": 31594
+				"min": 170,
+				"max": 240,
+				"total": 36002
 			},
 			"job": 17,
 			"build": "critical",
@@ -113044,19 +113044,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 6,
+				"damage": 8,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 83,
 				"crits": 0,
-				"min": 6,
-				"max": 6,
-				"total": 498
+				"min": 8,
+				"max": 8,
+				"total": 664
 			},
 			"job": 17,
 			"build": "critical",
@@ -114734,19 +114734,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 439,
+				"damage": 474,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 11,
-				"min": 313,
-				"max": 439,
-				"total": 64071
+				"min": 338,
+				"max": 474,
+				"total": 69181
 			},
 			"job": 17,
 			"build": "ranged",
@@ -114799,19 +114799,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 350,
+				"damage": 380,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 14,
-				"min": 249,
-				"max": 350,
-				"total": 51305
+				"min": 271,
+				"max": 380,
+				"total": 55817
 			},
 			"job": 17,
 			"build": "ranged",
@@ -114864,19 +114864,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 218,
+				"damage": 243,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 18,
-				"min": 156,
-				"max": 218,
-				"total": 32316
+				"min": 173,
+				"max": 243,
+				"total": 35941
 			},
 			"job": 17,
 			"build": "ranged",
@@ -114929,19 +114929,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 320,
+				"damage": 351,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 12,
-				"min": 229,
-				"max": 320,
-				"total": 46892
+				"min": 250,
+				"max": 351,
+				"total": 51306
 			},
 			"job": 17,
 			"build": "ranged",
@@ -114994,19 +114994,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 11,
+				"damage": 13,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 185,
 				"crits": 0,
-				"min": 11,
-				"max": 11,
-				"total": 2035
+				"min": 13,
+				"max": 13,
+				"total": 2405
 			},
 			"job": 17,
 			"build": "ranged",
@@ -123184,19 +123184,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 312,
+				"damage": 347,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 221,
-				"max": 312,
-				"total": 44586
+				"min": 246,
+				"max": 347,
+				"total": 49606
 			},
 			"job": 19,
 			"build": "melee",
@@ -123249,19 +123249,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 235,
+				"damage": 267,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 166,
-				"max": 235,
-				"total": 33748
+				"min": 189,
+				"max": 267,
+				"total": 38393
 			},
 			"job": 19,
 			"build": "melee",
@@ -123314,19 +123314,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 128,
+				"damage": 154,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 91,
-				"max": 128,
-				"total": 18417
+				"min": 109,
+				"max": 154,
+				"total": 21961
 			},
 			"job": 19,
 			"build": "melee",
@@ -123379,19 +123379,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 212,
+				"damage": 242,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 150,
-				"max": 212,
-				"total": 30313
+				"min": 171,
+				"max": 242,
+				"total": 34531
 			},
 			"job": 19,
 			"build": "melee",
@@ -123444,19 +123444,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 6,
+				"damage": 8,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 89,
 				"crits": 0,
-				"min": 6,
-				"max": 6,
-				"total": 534
+				"min": 8,
+				"max": 8,
+				"total": 712
 			},
 			"job": 19,
 			"build": "melee",
@@ -125134,19 +125134,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 348,
+				"damage": 383,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 41,
-				"min": 247,
-				"max": 348,
-				"total": 53677
+				"min": 272,
+				"max": 383,
+				"total": 59087
 			},
 			"job": 19,
 			"build": "critical",
@@ -125199,19 +125199,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 267,
+				"damage": 299,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 25,
-				"min": 190,
-				"max": 267,
-				"total": 40044
+				"min": 212,
+				"max": 299,
+				"total": 44765
 			},
 			"job": 19,
 			"build": "critical",
@@ -125264,19 +125264,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 155,
+				"damage": 180,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 47,
-				"min": 109,
-				"max": 155,
-				"total": 24103
+				"min": 127,
+				"max": 180,
+				"total": 28032
 			},
 			"job": 19,
 			"build": "critical",
@@ -125329,19 +125329,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 243,
+				"damage": 273,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 38,
-				"min": 172,
-				"max": 243,
-				"total": 37271
+				"min": 194,
+				"max": 273,
+				"total": 41861
 			},
 			"job": 19,
 			"build": "critical",
@@ -125394,19 +125394,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 11,
+				"damage": 13,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 105,
 				"crits": 3,
-				"min": 8,
-				"max": 11,
-				"total": 849
+				"min": 9,
+				"max": 13,
+				"total": 957
 			},
 			"job": 19,
 			"build": "critical",
@@ -127084,19 +127084,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 477,
+				"damage": 512,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 27,
-				"min": 340,
-				"max": 477,
-				"total": 71775
+				"min": 365,
+				"max": 512,
+				"total": 77045
 			},
 			"job": 19,
 			"build": "ranged",
@@ -127149,19 +127149,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 383,
+				"damage": 414,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 20,
-				"min": 273,
-				"max": 383,
-				"total": 56883
+				"min": 295,
+				"max": 414,
+				"total": 61463
 			},
 			"job": 19,
 			"build": "ranged",
@@ -127214,19 +127214,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 246,
+				"damage": 270,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 19,
-				"min": 175,
-				"max": 246,
-				"total": 36446
+				"min": 193,
+				"max": 270,
+				"total": 40063
 			},
 			"job": 19,
 			"build": "ranged",
@@ -127279,19 +127279,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 354,
+				"damage": 383,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 15,
-				"min": 252,
-				"max": 354,
-				"total": 52020
+				"min": 273,
+				"max": 383,
+				"total": 56340
 			},
 			"job": 19,
 			"build": "ranged",
@@ -127344,19 +127344,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 14,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 13,
-				"max": 13,
-				"total": 2600
+				"min": 14,
+				"max": 14,
+				"total": 2800
 			},
 			"job": 19,
 			"build": "ranged",
@@ -129034,19 +129034,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 312,
+				"damage": 347,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 221,
-				"max": 312,
-				"total": 44771
+				"min": 246,
+				"max": 347,
+				"total": 49811
 			},
 			"job": 20,
 			"build": "melee",
@@ -129099,19 +129099,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 235,
+				"damage": 267,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 166,
-				"max": 235,
-				"total": 33532
+				"min": 189,
+				"max": 267,
+				"total": 38150
 			},
 			"job": 20,
 			"build": "melee",
@@ -129164,19 +129164,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 128,
+				"damage": 154,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 7,
-				"min": 91,
-				"max": 128,
-				"total": 18575
+				"min": 109,
+				"max": 154,
+				"total": 22171
 			},
 			"job": 20,
 			"build": "melee",
@@ -129229,19 +129229,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 212,
+				"damage": 242,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 1,
-				"min": 150,
-				"max": 212,
-				"total": 30250
+				"min": 171,
+				"max": 242,
+				"total": 34459
 			},
 			"job": 20,
 			"build": "melee",
@@ -129294,19 +129294,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 6,
+				"damage": 8,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 85,
 				"crits": 0,
-				"min": 6,
-				"max": 6,
-				"total": 510
+				"min": 8,
+				"max": 8,
+				"total": 680
 			},
 			"job": 20,
 			"build": "melee",
@@ -130984,19 +130984,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 348,
+				"damage": 383,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 37,
-				"min": 247,
-				"max": 348,
-				"total": 53299
+				"min": 272,
+				"max": 383,
+				"total": 58669
 			},
 			"job": 20,
 			"build": "critical",
@@ -131049,19 +131049,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 267,
+				"damage": 299,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 29,
-				"min": 190,
-				"max": 267,
-				"total": 40336
+				"min": 212,
+				"max": 299,
+				"total": 45072
 			},
 			"job": 20,
 			"build": "critical",
@@ -131114,19 +131114,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 155,
+				"damage": 180,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 38,
-				"min": 109,
-				"max": 155,
-				"total": 23706
+				"min": 127,
+				"max": 180,
+				"total": 27572
 			},
 			"job": 20,
 			"build": "critical",
@@ -131179,19 +131179,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 243,
+				"damage": 273,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 38,
-				"min": 172,
-				"max": 243,
-				"total": 37266
+				"min": 194,
+				"max": 273,
+				"total": 41854
 			},
 			"job": 20,
 			"build": "critical",
@@ -131244,19 +131244,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 11,
+				"damage": 13,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 98,
 				"crits": 2,
-				"min": 8,
-				"max": 11,
-				"total": 790
+				"min": 9,
+				"max": 13,
+				"total": 890
 			},
 			"job": 20,
 			"build": "critical",
@@ -132934,19 +132934,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 477,
+				"damage": 512,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 23,
-				"min": 340,
-				"max": 477,
-				"total": 71242
+				"min": 365,
+				"max": 512,
+				"total": 76472
 			},
 			"job": 20,
 			"build": "ranged",
@@ -132999,19 +132999,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 383,
+				"damage": 414,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 25,
-				"min": 273,
-				"max": 383,
-				"total": 57449
+				"min": 295,
+				"max": 414,
+				"total": 62074
 			},
 			"job": 20,
 			"build": "ranged",
@@ -133064,19 +133064,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 246,
+				"damage": 270,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 25,
-				"min": 175,
-				"max": 246,
-				"total": 36856
+				"min": 193,
+				"max": 270,
+				"total": 40525
 			},
 			"job": 20,
 			"build": "ranged",
@@ -133129,19 +133129,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 354,
+				"damage": 383,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 15,
-				"min": 252,
-				"max": 354,
-				"total": 52020
+				"min": 273,
+				"max": 383,
+				"total": 56340
 			},
 			"job": 20,
 			"build": "ranged",
@@ -133194,19 +133194,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 14,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 13,
-				"max": 13,
-				"total": 2600
+				"min": 14,
+				"max": 14,
+				"total": 2800
 			},
 			"job": 20,
 			"build": "ranged",
@@ -171934,19 +171934,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 320,
+				"damage": 355,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 227,
-				"max": 320,
-				"total": 46034
+				"min": 252,
+				"max": 355,
+				"total": 51084
 			},
 			"job": 4012,
 			"build": "melee",
@@ -171999,19 +171999,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 242,
+				"damage": 274,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 1,
-				"min": 172,
-				"max": 242,
-				"total": 34603
+				"min": 194,
+				"max": 274,
+				"total": 39081
 			},
 			"job": 4012,
 			"build": "melee",
@@ -172064,19 +172064,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 135,
+				"damage": 159,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 95,
-				"max": 135,
-				"total": 19385
+				"min": 113,
+				"max": 159,
+				"total": 22959
 			},
 			"job": 4012,
 			"build": "melee",
@@ -172129,19 +172129,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 219,
+				"damage": 249,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 3,
-				"min": 155,
-				"max": 219,
-				"total": 31401
+				"min": 176,
+				"max": 249,
+				"total": 35628
 			},
 			"job": 4012,
 			"build": "melee",
@@ -172194,19 +172194,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 7,
+				"damage": 8,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 91,
 				"crits": 0,
-				"min": 7,
-				"max": 7,
-				"total": 637
+				"min": 8,
+				"max": 8,
+				"total": 728
 			},
 			"job": 4012,
 			"build": "melee",
@@ -173559,19 +173559,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 354,
+				"damage": 389,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 26,
-				"min": 251,
-				"max": 354,
-				"total": 53049
+				"min": 276,
+				"max": 389,
+				"total": 58309
 			},
 			"job": 4012,
 			"build": "critical",
@@ -173624,19 +173624,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 273,
+				"damage": 303,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 32,
-				"min": 193,
-				"max": 273,
-				"total": 41325
+				"min": 216,
+				"max": 303,
+				"total": 46095
 			},
 			"job": 4012,
 			"build": "critical",
@@ -173689,19 +173689,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 159,
+				"damage": 184,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 28,
-				"min": 112,
-				"max": 159,
-				"total": 23898
+				"min": 130,
+				"max": 184,
+				"total": 27694
 			},
 			"job": 4012,
 			"build": "critical",
@@ -173754,19 +173754,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 247,
+				"damage": 278,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 38,
-				"min": 176,
-				"max": 247,
-				"total": 37947
+				"min": 197,
+				"max": 278,
+				"total": 42642
 			},
 			"job": 4012,
 			"build": "critical",
@@ -173819,19 +173819,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 12,
+				"damage": 14,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 124,
 				"crits": 4,
-				"min": 8,
-				"max": 12,
-				"total": 1008
+				"min": 9,
+				"max": 14,
+				"total": 1178
 			},
 			"job": 4012,
 			"build": "critical",
@@ -175184,19 +175184,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 483,
+				"damage": 518,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 21,
-				"min": 344,
-				"max": 483,
-				"total": 71791
+				"min": 369,
+				"max": 518,
+				"total": 77001
 			},
 			"job": 4012,
 			"build": "ranged",
@@ -175249,19 +175249,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 387,
+				"damage": 420,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 28,
-				"min": 277,
-				"max": 387,
-				"total": 58480
+				"min": 299,
+				"max": 420,
+				"total": 63274
 			},
 			"job": 4012,
 			"build": "ranged",
@@ -175314,19 +175314,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 249,
+				"damage": 274,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 24,
-				"min": 178,
-				"max": 249,
-				"total": 37304
+				"min": 195,
+				"max": 274,
+				"total": 40989
 			},
 			"job": 4012,
 			"build": "ranged",
@@ -175379,19 +175379,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 358,
+				"damage": 387,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 20,
-				"min": 255,
-				"max": 358,
-				"total": 53162
+				"min": 276,
+				"max": 387,
+				"total": 57522
 			},
 			"job": 4012,
 			"build": "ranged",
@@ -175444,19 +175444,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 15,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 13,
-				"max": 13,
-				"total": 2600
+				"min": 15,
+				"max": 15,
+				"total": 3000
 			},
 			"job": 4012,
 			"build": "ranged",
@@ -206384,19 +206384,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 284,
+				"damage": 317,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 3,
-				"min": 201,
-				"max": 284,
-				"total": 40668
+				"min": 225,
+				"max": 317,
+				"total": 45495
 			},
 			"job": 4018,
 			"build": "melee",
@@ -206449,19 +206449,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 208,
+				"damage": 240,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 147,
-				"max": 208,
-				"total": 29907
+				"min": 170,
+				"max": 240,
+				"total": 34552
 			},
 			"job": 4018,
 			"build": "melee",
@@ -206514,19 +206514,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 109,
+				"damage": 133,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 3,
-				"min": 76,
-				"max": 109,
-				"total": 15502
+				"min": 94,
+				"max": 133,
+				"total": 19052
 			},
 			"job": 4018,
 			"build": "melee",
@@ -206579,19 +206579,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 187,
+				"damage": 217,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 7,
-				"min": 132,
-				"max": 187,
-				"total": 26975
+				"min": 153,
+				"max": 217,
+				"total": 31238
 			},
 			"job": 4018,
 			"build": "melee",
@@ -206644,19 +206644,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 5,
+				"damage": 7,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 55,
 				"crits": 0,
-				"min": 5,
-				"max": 5,
-				"total": 275
+				"min": 7,
+				"max": 7,
+				"total": 385
 			},
 			"job": 4018,
 			"build": "melee",
@@ -208334,19 +208334,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 319,
+				"damage": 354,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 45,
-				"min": 226,
-				"max": 319,
-				"total": 49549
+				"min": 251,
+				"max": 354,
+				"total": 54999
 			},
 			"job": 4018,
 			"build": "critical",
@@ -208399,19 +208399,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 242,
+				"damage": 273,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 30,
-				"min": 171,
-				"max": 242,
-				"total": 36496
+				"min": 193,
+				"max": 273,
+				"total": 41166
 			},
 			"job": 4018,
 			"build": "critical",
@@ -208464,19 +208464,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 134,
+				"damage": 159,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 46,
-				"min": 95,
-				"max": 134,
-				"total": 20839
+				"min": 112,
+				"max": 159,
+				"total": 24703
 			},
 			"job": 4018,
 			"build": "critical",
@@ -208529,19 +208529,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 218,
+				"damage": 247,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 35,
-				"min": 154,
-				"max": 218,
-				"total": 33188
+				"min": 176,
+				"max": 247,
+				"total": 37733
 			},
 			"job": 4018,
 			"build": "critical",
@@ -208594,19 +208594,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 10,
+				"damage": 12,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 90,
 				"crits": 4,
-				"min": 7,
-				"max": 10,
-				"total": 642
+				"min": 8,
+				"max": 12,
+				"total": 736
 			},
 			"job": 4018,
 			"build": "critical",
@@ -210284,19 +210284,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 448,
+				"damage": 483,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 18,
-				"min": 319,
-				"max": 448,
-				"total": 66213
+				"min": 344,
+				"max": 483,
+				"total": 71393
 			},
 			"job": 4018,
 			"build": "ranged",
@@ -210349,19 +210349,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 357,
+				"damage": 387,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 20,
-				"min": 254,
-				"max": 357,
-				"total": 52957
+				"min": 277,
+				"max": 387,
+				"total": 57600
 			},
 			"job": 4018,
 			"build": "ranged",
@@ -210414,19 +210414,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 225,
+				"damage": 249,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 30,
-				"min": 160,
-				"max": 225,
-				"total": 34042
+				"min": 178,
+				"max": 249,
+				"total": 37730
 			},
 			"job": 4018,
 			"build": "ranged",
@@ -210479,19 +210479,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 329,
+				"damage": 358,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 19,
-				"min": 234,
-				"max": 329,
-				"total": 48695
+				"min": 255,
+				"max": 358,
+				"total": 53047
 			},
 			"job": 4018,
 			"build": "ranged",
@@ -210544,19 +210544,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 12,
+				"damage": 13,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 192,
 				"crits": 0,
-				"min": 12,
-				"max": 12,
-				"total": 2304
+				"min": 13,
+				"max": 13,
+				"total": 2496
 			},
 			"job": 4018,
 			"build": "ranged",
@@ -218734,19 +218734,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 315,
+				"damage": 350,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 223,
-				"max": 315,
-				"total": 45262
+				"min": 248,
+				"max": 350,
+				"total": 50312
 			},
 			"job": 4020,
 			"build": "melee",
@@ -218799,19 +218799,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 238,
+				"damage": 268,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 1,
-				"min": 168,
-				"max": 238,
-				"total": 33860
+				"min": 191,
+				"max": 268,
+				"total": 38335
 			},
 			"job": 4020,
 			"build": "melee",
@@ -218864,19 +218864,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 131,
+				"damage": 156,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 7,
-				"min": 92,
-				"max": 131,
-				"total": 18864
+				"min": 110,
+				"max": 156,
+				"total": 22513
 			},
 			"job": 4020,
 			"build": "melee",
@@ -218929,19 +218929,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 214,
+				"damage": 245,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 3,
-				"min": 152,
-				"max": 214,
-				"total": 30709
+				"min": 173,
+				"max": 245,
+				"total": 35000
 			},
 			"job": 4020,
 			"build": "melee",
@@ -218994,19 +218994,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 6,
+				"damage": 8,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 83,
 				"crits": 0,
-				"min": 6,
-				"max": 7,
-				"total": 527
+				"min": 8,
+				"max": 8,
+				"total": 664
 			},
 			"job": 4020,
 			"build": "melee",
@@ -220684,19 +220684,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 348,
+				"damage": 383,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 28,
-				"min": 247,
-				"max": 348,
-				"total": 52408
+				"min": 272,
+				"max": 383,
+				"total": 57688
 			},
 			"job": 4020,
 			"build": "critical",
@@ -220749,19 +220749,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 267,
+				"damage": 299,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 39,
-				"min": 190,
-				"max": 267,
-				"total": 41121
+				"min": 212,
+				"max": 299,
+				"total": 45970
 			},
 			"job": 4020,
 			"build": "critical",
@@ -220814,19 +220814,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 155,
+				"damage": 180,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 25,
-				"min": 109,
-				"max": 155,
-				"total": 23110
+				"min": 127,
+				"max": 180,
+				"total": 26885
 			},
 			"job": 4020,
 			"build": "critical",
@@ -220879,19 +220879,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 243,
+				"damage": 273,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 28,
-				"min": 172,
-				"max": 243,
-				"total": 36563
+				"min": 194,
+				"max": 273,
+				"total": 41079
 			},
 			"job": 4020,
 			"build": "critical",
@@ -220944,19 +220944,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 11,
+				"damage": 13,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 109,
 				"crits": 3,
-				"min": 8,
-				"max": 11,
-				"total": 881
+				"min": 9,
+				"max": 13,
+				"total": 993
 			},
 			"job": 4020,
 			"build": "critical",
@@ -222634,19 +222634,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 480,
+				"damage": 515,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 34,
-				"min": 342,
-				"max": 480,
-				"total": 73182
+				"min": 367,
+				"max": 515,
+				"total": 78522
 			},
 			"job": 4020,
 			"build": "ranged",
@@ -222699,19 +222699,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 386,
+				"damage": 417,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 31,
-				"min": 275,
-				"max": 386,
-				"total": 58521
+				"min": 297,
+				"max": 417,
+				"total": 63200
 			},
 			"job": 4020,
 			"build": "ranged",
@@ -222764,19 +222764,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 247,
+				"damage": 273,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 22,
-				"min": 176,
-				"max": 247,
-				"total": 36853
+				"min": 194,
+				"max": 273,
+				"total": 40629
 			},
 			"job": 4020,
 			"build": "ranged",
@@ -222829,19 +222829,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 355,
+				"damage": 386,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 18,
-				"min": 253,
-				"max": 355,
-				"total": 52512
+				"min": 275,
+				"max": 386,
+				"total": 57074
 			},
 			"job": 4020,
 			"build": "ranged",
@@ -222894,19 +222894,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 14,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 13,
-				"max": 13,
-				"total": 2600
+				"min": 14,
+				"max": 15,
+				"total": 2897
 			},
 			"job": 4020,
 			"build": "ranged",
@@ -224584,19 +224584,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 315,
+				"damage": 350,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 223,
-				"max": 315,
-				"total": 45169
+				"min": 248,
+				"max": 350,
+				"total": 50209
 			},
 			"job": 4021,
 			"build": "melee",
@@ -224649,19 +224649,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 238,
+				"damage": 268,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 168,
-				"max": 238,
-				"total": 33952
+				"min": 191,
+				"max": 268,
+				"total": 38426
 			},
 			"job": 4021,
 			"build": "melee",
@@ -224714,19 +224714,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 131,
+				"damage": 156,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 92,
-				"max": 131,
-				"total": 18697
+				"min": 110,
+				"max": 156,
+				"total": 22311
 			},
 			"job": 4021,
 			"build": "melee",
@@ -224779,19 +224779,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 214,
+				"damage": 245,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 152,
-				"max": 214,
-				"total": 30663
+				"min": 173,
+				"max": 245,
+				"total": 34943
 			},
 			"job": 4021,
 			"build": "melee",
@@ -224844,19 +224844,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 6,
+				"damage": 8,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 71,
 				"crits": 0,
-				"min": 6,
-				"max": 7,
-				"total": 451
+				"min": 8,
+				"max": 8,
+				"total": 568
 			},
 			"job": 4021,
 			"build": "melee",
@@ -226534,19 +226534,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 348,
+				"damage": 383,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 29,
-				"min": 247,
-				"max": 348,
-				"total": 52483
+				"min": 272,
+				"max": 383,
+				"total": 57773
 			},
 			"job": 4021,
 			"build": "critical",
@@ -226599,19 +226599,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 267,
+				"damage": 299,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 35,
-				"min": 190,
-				"max": 267,
-				"total": 40797
+				"min": 212,
+				"max": 299,
+				"total": 45597
 			},
 			"job": 4021,
 			"build": "critical",
@@ -226664,19 +226664,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 155,
+				"damage": 180,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 36,
-				"min": 109,
-				"max": 155,
-				"total": 23593
+				"min": 127,
+				"max": 180,
+				"total": 27445
 			},
 			"job": 4021,
 			"build": "critical",
@@ -226729,19 +226729,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 243,
+				"damage": 273,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 29,
-				"min": 172,
-				"max": 243,
-				"total": 36629
+				"min": 194,
+				"max": 273,
+				"total": 41144
 			},
 			"job": 4021,
 			"build": "critical",
@@ -226794,19 +226794,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 11,
+				"damage": 13,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 102,
 				"crits": 6,
-				"min": 8,
-				"max": 11,
-				"total": 834
+				"min": 9,
+				"max": 13,
+				"total": 942
 			},
 			"job": 4021,
 			"build": "critical",
@@ -228484,19 +228484,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 480,
+				"damage": 515,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 20,
-				"min": 342,
-				"max": 480,
-				"total": 71247
+				"min": 367,
+				"max": 515,
+				"total": 76447
 			},
 			"job": 4021,
 			"build": "ranged",
@@ -228549,19 +228549,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 386,
+				"damage": 417,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 22,
-				"min": 275,
-				"max": 386,
-				"total": 57521
+				"min": 297,
+				"max": 417,
+				"total": 62119
 			},
 			"job": 4021,
 			"build": "ranged",
@@ -228614,19 +228614,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 247,
+				"damage": 273,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 33,
-				"min": 176,
-				"max": 247,
-				"total": 37616
+				"min": 194,
+				"max": 273,
+				"total": 41480
 			},
 			"job": 4021,
 			"build": "ranged",
@@ -228679,19 +228679,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 355,
+				"damage": 386,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 28,
-				"min": 253,
-				"max": 355,
-				"total": 53534
+				"min": 275,
+				"max": 386,
+				"total": 58186
 			},
 			"job": 4021,
 			"build": "ranged",
@@ -228744,19 +228744,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 14,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 13,
-				"max": 13,
-				"total": 2600
+				"min": 14,
+				"max": 15,
+				"total": 2905
 			},
 			"job": 4021,
 			"build": "ranged",
@@ -246034,19 +246034,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 616,
+				"damage": 682,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 217,
-				"max": 616,
-				"total": 66936
+				"min": 241,
+				"max": 682,
+				"total": 74286
 			},
 			"job": 24,
 			"build": "melee",
@@ -246099,19 +246099,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 462,
+				"damage": 522,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 162,
-				"max": 462,
-				"total": 47338
+				"min": 184,
+				"max": 522,
+				"total": 53694
 			},
 			"job": 24,
 			"build": "melee",
@@ -246164,19 +246164,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 260,
+				"damage": 310,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 1,
-				"min": 91,
-				"max": 260,
-				"total": 29118
+				"min": 109,
+				"max": 310,
+				"total": 34714
 			},
 			"job": 24,
 			"build": "melee",
@@ -246229,19 +246229,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 414,
+				"damage": 476,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 146,
-				"max": 414,
-				"total": 45206
+				"min": 167,
+				"max": 476,
+				"total": 51829
 			},
 			"job": 24,
 			"build": "melee",
@@ -246294,19 +246294,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 16,
 				"damage2": 0,
 				"type": 8,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 66,
 				"crits": 0,
-				"min": 6,
-				"max": 13,
-				"total": 627
+				"min": 8,
+				"max": 16,
+				"total": 792
 			},
 			"job": 24,
 			"build": "melee",
@@ -246359,19 +246359,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 343,
+				"damage": 378,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 240,
-				"max": 343,
-				"total": 48940
+				"min": 265,
+				"max": 378,
+				"total": 53990
 			},
 			"job": 24,
 			"build": "melee",
@@ -246424,19 +246424,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 263,
+				"damage": 294,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 183,
-				"max": 263,
-				"total": 37486
+				"min": 206,
+				"max": 294,
+				"total": 42032
 			},
 			"job": 24,
 			"build": "melee",
@@ -246489,19 +246489,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 156,
+				"damage": 180,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 108,
-				"max": 156,
-				"total": 22125
+				"min": 126,
+				"max": 180,
+				"total": 25718
 			},
 			"job": 24,
 			"build": "melee",
@@ -246554,19 +246554,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 238,
+				"damage": 268,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 7,
-				"min": 166,
-				"max": 238,
-				"total": 34168
+				"min": 188,
+				"max": 268,
+				"total": 38494
 			},
 			"job": 24,
 			"build": "melee",
@@ -246619,19 +246619,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 8,
+				"damage": 9,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 90,
 				"crits": 0,
-				"min": 8,
-				"max": 8,
-				"total": 720
+				"min": 9,
+				"max": 9,
+				"total": 810
 			},
 			"job": 24,
 			"build": "melee",
@@ -246684,19 +246684,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 345,
+				"damage": 380,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 237,
-				"max": 345,
-				"total": 48789
+				"min": 262,
+				"max": 380,
+				"total": 53829
 			},
 			"job": 24,
 			"build": "melee",
@@ -246749,19 +246749,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 266,
+				"damage": 296,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 2,
-				"min": 181,
-				"max": 266,
-				"total": 37174
+				"min": 203,
+				"max": 296,
+				"total": 41668
 			},
 			"job": 24,
 			"build": "melee",
@@ -246814,19 +246814,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 158,
+				"damage": 183,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 6,
-				"min": 106,
-				"max": 158,
-				"total": 22144
+				"min": 124,
+				"max": 183,
+				"total": 25745
 			},
 			"job": 24,
 			"build": "melee",
@@ -246879,19 +246879,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 240,
+				"damage": 271,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 3,
-				"min": 164,
-				"max": 240,
-				"total": 33775
+				"min": 185,
+				"max": 271,
+				"total": 38089
 			},
 			"job": 24,
 			"build": "melee",
@@ -246944,19 +246944,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 7,
+				"damage": 9,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 103,
 				"crits": 0,
-				"min": 7,
-				"max": 8,
-				"total": 809
+				"min": 9,
+				"max": 9,
+				"total": 927
 			},
 			"job": 24,
 			"build": "melee",
@@ -247009,19 +247009,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 495,
+				"damage": 530,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 7,
-				"min": 340,
-				"max": 495,
-				"total": 70509
+				"min": 365,
+				"max": 530,
+				"total": 75579
 			},
 			"job": 24,
 			"build": "melee",
@@ -247074,19 +247074,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 400,
+				"damage": 431,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 4,
-				"min": 273,
-				"max": 400,
-				"total": 56277
+				"min": 295,
+				"max": 431,
+				"total": 60762
 			},
 			"job": 24,
 			"build": "melee",
@@ -247139,19 +247139,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 264,
+				"damage": 289,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 9,
-				"min": 179,
-				"max": 264,
-				"total": 37524
+				"min": 197,
+				"max": 289,
+				"total": 41153
 			},
 			"job": 24,
 			"build": "melee",
@@ -247204,19 +247204,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 369,
+				"damage": 399,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 5,
-				"min": 252,
-				"max": 369,
-				"total": 52154
+				"min": 273,
+				"max": 399,
+				"total": 56453
 			},
 			"job": 24,
 			"build": "melee",
@@ -247269,19 +247269,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 15,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 95,
 				"crits": 0,
-				"min": 13,
-				"max": 14,
-				"total": 1305
+				"min": 15,
+				"max": 15,
+				"total": 1425
 			},
 			"job": 24,
 			"build": "melee",
@@ -248959,19 +248959,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 680,
+				"damage": 750,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 11,
-				"min": 240,
-				"max": 680,
-				"total": 76282
+				"min": 265,
+				"max": 750,
+				"total": 84172
 			},
 			"job": 24,
 			"build": "critical",
@@ -249024,19 +249024,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 520,
+				"damage": 582,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 14,
-				"min": 183,
-				"max": 520,
-				"total": 59622
+				"min": 206,
+				"max": 582,
+				"total": 66932
 			},
 			"job": 24,
 			"build": "critical",
@@ -249089,19 +249089,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 308,
+				"damage": 358,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 21,
-				"min": 108,
-				"max": 308,
-				"total": 34401
+				"min": 126,
+				"max": 358,
+				"total": 40060
 			},
 			"job": 24,
 			"build": "critical",
@@ -249154,19 +249154,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 472,
+				"damage": 532,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 15,
-				"min": 166,
-				"max": 472,
-				"total": 53358
+				"min": 188,
+				"max": 532,
+				"total": 60128
 			},
 			"job": 24,
 			"build": "critical",
@@ -249219,19 +249219,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 23,
+				"damage": 27,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 103,
 				"crits": 0,
-				"min": 8,
-				"max": 23,
-				"total": 1308
+				"min": 9,
+				"max": 27,
+				"total": 1529
 			},
 			"job": 24,
 			"build": "critical",
@@ -249284,19 +249284,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 376,
+				"damage": 411,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 41,
-				"min": 264,
-				"max": 376,
-				"total": 57814
+				"min": 289,
+				"max": 411,
+				"total": 63224
 			},
 			"job": 24,
 			"build": "critical",
@@ -249349,19 +249349,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 292,
+				"damage": 324,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 36,
-				"min": 205,
-				"max": 292,
-				"total": 44509
+				"min": 227,
+				"max": 324,
+				"total": 49332
 			},
 			"job": 24,
 			"build": "critical",
@@ -249414,19 +249414,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 180,
+				"damage": 204,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 24,
-				"min": 125,
-				"max": 180,
-				"total": 26689
+				"min": 143,
+				"max": 204,
+				"total": 30366
 			},
 			"job": 24,
 			"build": "critical",
@@ -249479,19 +249479,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 267,
+				"damage": 296,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 37,
-				"min": 187,
-				"max": 267,
-				"total": 40647
+				"min": 208,
+				"max": 296,
+				"total": 45197
 			},
 			"job": 24,
 			"build": "critical",
@@ -249544,19 +249544,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 15,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 128,
 				"crits": 5,
-				"min": 9,
-				"max": 13,
-				"total": 1172
+				"min": 10,
+				"max": 15,
+				"total": 1394
 			},
 			"job": 24,
 			"build": "critical",
@@ -249609,19 +249609,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 379,
+				"damage": 414,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 34,
-				"min": 261,
-				"max": 379,
-				"total": 57062
+				"min": 286,
+				"max": 414,
+				"total": 62402
 			},
 			"job": 24,
 			"build": "critical",
@@ -249674,19 +249674,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 295,
+				"damage": 327,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 41,
-				"min": 202,
-				"max": 295,
-				"total": 44913
+				"min": 225,
+				"max": 327,
+				"total": 49792
 			},
 			"job": 24,
 			"build": "critical",
@@ -249739,19 +249739,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 182,
+				"damage": 207,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 39,
-				"min": 123,
-				"max": 182,
-				"total": 27519
+				"min": 141,
+				"max": 207,
+				"total": 31339
 			},
 			"job": 24,
 			"build": "critical",
@@ -249804,19 +249804,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 270,
+				"damage": 299,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 38,
-				"min": 184,
-				"max": 270,
-				"total": 40812
+				"min": 206,
+				"max": 299,
+				"total": 45360
 			},
 			"job": 24,
 			"build": "critical",
@@ -249869,19 +249869,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 13,
+				"damage": 15,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 135,
 				"crits": 1,
-				"min": 9,
-				"max": 13,
-				"total": 1219
+				"min": 10,
+				"max": 15,
+				"total": 1427
 			},
 			"job": 24,
 			"build": "critical",
@@ -249934,19 +249934,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 529,
+				"damage": 564,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 37,
-				"min": 364,
-				"max": 529,
-				"total": 79981
+				"min": 389,
+				"max": 564,
+				"total": 85351
 			},
 			"job": 24,
 			"build": "critical",
@@ -249999,19 +249999,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 429,
+				"damage": 460,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 33,
-				"min": 295,
-				"max": 429,
-				"total": 64327
+				"min": 317,
+				"max": 460,
+				"total": 69107
 			},
 			"job": 24,
 			"build": "critical",
@@ -250064,19 +250064,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 288,
+				"damage": 313,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 30,
-				"min": 196,
-				"max": 288,
-				"total": 42845
+				"min": 214,
+				"max": 313,
+				"total": 46607
 			},
 			"job": 24,
 			"build": "critical",
@@ -250129,19 +250129,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 397,
+				"damage": 428,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 22,
-				"min": 272,
-				"max": 397,
-				"total": 58146
+				"min": 294,
+				"max": 428,
+				"total": 62641
 			},
 			"job": 24,
 			"build": "critical",
@@ -250194,19 +250194,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 22,
+				"damage": 24,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 129,
 				"crits": 2,
-				"min": 15,
-				"max": 22,
-				"total": 1949
+				"min": 16,
+				"max": 24,
+				"total": 2136
 			},
 			"job": 24,
 			"build": "critical",
@@ -251884,25 +251884,155 @@
 		},
 		{
 			"forced_min": {
-				"damage": 952,
+				"damage": 1022,
 				"damage2": 0,
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 16,
-				"min": 337,
-				"max": 952,
-				"total": 106121
+				"min": 362,
+				"max": 1022,
+				"total": 113951
 			},
 			"job": 24,
 			"build": "ranged",
 			"weapon_type": 17,
 			"weapon": 13100,
 			"target": 1002,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 30,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 360,
+				"adelay": 720,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 411,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 30,
+					"atk2": 0,
+					"range": 17,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 1
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 826,
+				"damage2": 0,
+				"type": 13,
+				"div": 2,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 8,
+				"min": 293,
+				"max": 826,
+				"total": 93297
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 17,
+			"weapon": 13100,
+			"target": 1023,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 30,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 360,
+				"adelay": 720,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 411,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 30,
+					"atk2": 0,
+					"range": 17,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 1
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 550,
+				"damage2": 0,
+				"type": 13,
+				"div": 2,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 9,
+				"min": 195,
+				"max": 550,
+				"total": 61648
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 17,
+			"weapon": 13100,
+			"target": 1040,
 			"attacker_status": {
 				"max_hp": 4545,
 				"max_sp": 460,
@@ -251954,144 +252084,14 @@
 				"type": 13,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 8,
 				"min": 270,
 				"max": 764,
-				"total": 86117
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 17,
-			"weapon": 13100,
-			"target": 1023,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 30,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 360,
-				"adelay": 720,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 411,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 30,
-					"atk2": 0,
-					"range": 17,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 1
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 500,
-				"damage2": 0,
-				"type": 13,
-				"div": 2,
-				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 9,
-				"min": 177,
-				"max": 500,
-				"total": 56062
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 17,
-			"weapon": 13100,
-			"target": 1040,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 30,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 360,
-				"adelay": 720,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 411,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 30,
-					"atk2": 0,
-					"range": 17,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 1
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 704,
-				"damage2": 0,
-				"type": 13,
-				"div": 2,
-				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 8,
-				"min": 249,
-				"max": 704,
-				"total": 75608
+				"total": 81956
 			},
 			"job": 24,
 			"build": "ranged",
@@ -252144,19 +252144,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 27,
+				"damage": 30,
 				"damage2": 0,
 				"type": 8,
 				"div": 2,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 13,
-				"max": 27,
-				"total": 3846
+				"min": 15,
+				"max": 30,
+				"total": 4335
 			},
 			"job": 24,
 			"build": "ranged",
@@ -252209,19 +252209,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 520,
+				"damage": 555,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 26,
-				"min": 367,
-				"max": 520,
-				"total": 77812
+				"min": 392,
+				"max": 555,
+				"total": 83072
 			},
 			"job": 24,
 			"build": "ranged",
@@ -252269,6 +252269,461 @@
 					"ele": 0,
 					"matk": 0,
 					"wlv": 1
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 453,
+				"damage2": 0,
+				"type": 10,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 26,
+				"min": 320,
+				"max": 453,
+				"total": 67750
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 18,
+			"weapon": 13150,
+			"target": 1023,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 50,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 460,
+				"adelay": 920,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 421,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 50,
+					"atk2": 0,
+					"range": 19,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 1
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 308,
+				"damage2": 0,
+				"type": 10,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 18,
+				"min": 216,
+				"max": 308,
+				"total": 45173
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 18,
+			"weapon": 13150,
+			"target": 1040,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 50,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 460,
+				"adelay": 920,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 421,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 50,
+					"atk2": 0,
+					"range": 19,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 1
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 420,
+				"damage2": 0,
+				"type": 10,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 15,
+				"min": 296,
+				"max": 420,
+				"total": 61462
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 18,
+			"weapon": 13150,
+			"target": 1026,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 50,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 460,
+				"adelay": 920,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 421,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 50,
+					"atk2": 0,
+					"range": 19,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 1
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 16,
+				"damage2": 0,
+				"type": 0,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 0,
+				"min": 16,
+				"max": 16,
+				"total": 3200
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 18,
+			"weapon": 13150,
+			"target": 1039,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 50,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 460,
+				"adelay": 920,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 421,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 50,
+					"atk2": 0,
+					"range": 19,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 1
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 558,
+				"damage2": 0,
+				"type": 10,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 30,
+				"min": 389,
+				"max": 558,
+				"total": 83784
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 19,
+			"weapon": 13157,
+			"target": 1002,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 50,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 410,
+				"adelay": 820,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 421,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 50,
+					"atk2": 0,
+					"range": 19,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 2
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 456,
+				"damage2": 0,
+				"type": 10,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 24,
+				"min": 317,
+				"max": 456,
+				"total": 67559
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 19,
+			"weapon": 13157,
+			"target": 1023,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 50,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 410,
+				"adelay": 820,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 421,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 50,
+					"atk2": 0,
+					"range": 19,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 2
+				}
+			}
+		},
+		{
+			"forced_min": {
+				"damage": 309,
+				"damage2": 0,
+				"type": 10,
+				"div": 1,
+				"dmg_lv": 5,
+				"flag": 577
+			},
+			"rolls": {
+				"hits": 200,
+				"crits": 19,
+				"min": 214,
+				"max": 309,
+				"total": 45302
+			},
+			"job": 24,
+			"build": "ranged",
+			"weapon_type": 19,
+			"weapon": 13157,
+			"target": 1040,
+			"attacker_status": {
+				"max_hp": 4545,
+				"max_sp": 460,
+				"str": 33,
+				"agi": 40,
+				"vit": 1,
+				"int": 1,
+				"dex": 106,
+				"luk": 35,
+				"batk": 148,
+				"watk": 50,
+				"watk2": 0,
+				"matk_min": 57,
+				"matk_max": 57,
+				"speed": 150,
+				"amotion": 410,
+				"adelay": 820,
+				"dmotion": 640,
+				"mode": 47103,
+				"hit": 421,
+				"flee": 246,
+				"cri": 124,
+				"flee2": 45,
+				"def": 0,
+				"mdef": 0,
+				"def2": 58,
+				"mdef2": 47,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 50,
+					"atk2": 0,
+					"range": 19,
+					"ele": 0,
+					"matk": 0,
+					"wlv": 2
 				}
 			}
 		},
@@ -252279,469 +252734,14 @@
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 26,
-				"min": 297,
-				"max": 422,
-				"total": 63093
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 18,
-			"weapon": 13150,
-			"target": 1023,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 50,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 460,
-				"adelay": 920,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 421,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 50,
-					"atk2": 0,
-					"range": 19,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 1
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 282,
-				"damage2": 0,
-				"type": 10,
-				"div": 1,
-				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 18,
-				"min": 198,
-				"max": 282,
-				"total": 41467
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 18,
-			"weapon": 13150,
-			"target": 1040,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 50,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 460,
-				"adelay": 920,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 421,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 50,
-					"atk2": 0,
-					"range": 19,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 1
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 390,
-				"damage2": 0,
-				"type": 10,
-				"div": 1,
-				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 15,
-				"min": 275,
-				"max": 390,
-				"total": 57032
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 18,
-			"weapon": 13150,
-			"target": 1026,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 50,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 460,
-				"adelay": 920,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 421,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 50,
-					"atk2": 0,
-					"range": 19,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 1
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 15,
-				"damage2": 0,
-				"type": 0,
-				"div": 1,
-				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 0,
-				"min": 15,
-				"max": 15,
-				"total": 3000
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 18,
-			"weapon": 13150,
-			"target": 1039,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 50,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 460,
-				"adelay": 920,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 421,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 50,
-					"atk2": 0,
-					"range": 19,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 1
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 523,
-				"damage2": 0,
-				"type": 10,
-				"div": 1,
-				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 30,
-				"min": 364,
-				"max": 523,
-				"total": 78484
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 19,
-			"weapon": 13157,
-			"target": 1002,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 50,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 410,
-				"adelay": 820,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 421,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 50,
-					"atk2": 0,
-					"range": 19,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 2
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 424,
-				"damage2": 0,
-				"type": 10,
-				"div": 1,
-				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 24,
-				"min": 295,
-				"max": 424,
-				"total": 62856
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 19,
-			"weapon": 13157,
-			"target": 1023,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 50,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 410,
-				"adelay": 820,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 421,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 50,
-					"atk2": 0,
-					"range": 19,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 2
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 284,
-				"damage2": 0,
-				"type": 10,
-				"div": 1,
-				"dmg_lv": 5,
-				"flag": 529
-			},
-			"rolls": {
-				"hits": 200,
-				"crits": 19,
-				"min": 196,
-				"max": 284,
-				"total": 41615
-			},
-			"job": 24,
-			"build": "ranged",
-			"weapon_type": 19,
-			"weapon": 13157,
-			"target": 1040,
-			"attacker_status": {
-				"max_hp": 4545,
-				"max_sp": 460,
-				"str": 33,
-				"agi": 40,
-				"vit": 1,
-				"int": 1,
-				"dex": 106,
-				"luk": 35,
-				"batk": 148,
-				"watk": 50,
-				"watk2": 0,
-				"matk_min": 57,
-				"matk_max": 57,
-				"speed": 150,
-				"amotion": 410,
-				"adelay": 820,
-				"dmotion": 640,
-				"mode": 47103,
-				"hit": 421,
-				"flee": 246,
-				"cri": 124,
-				"flee2": 45,
-				"def": 0,
-				"mdef": 0,
-				"def2": 58,
-				"mdef2": 47,
-				"res": 0,
-				"mres": 0,
-				"def_ele": 0,
-				"ele_lv": 1,
-				"size": 1,
-				"race": 10,
-				"class": 0,
-				"rhw": {
-					"atk": 50,
-					"atk2": 0,
-					"range": 19,
-					"ele": 0,
-					"matk": 0,
-					"wlv": 2
-				}
-			}
-		},
-		{
-			"forced_min": {
-				"damage": 393,
-				"damage2": 0,
-				"type": 10,
-				"div": 1,
-				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 27,
-				"min": 272,
-				"max": 393,
-				"total": 58430
+				"min": 294,
+				"max": 422,
+				"total": 62905
 			},
 			"job": 24,
 			"build": "ranged",
@@ -252794,19 +252794,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 15,
+				"damage": 16,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 15,
-				"max": 15,
-				"total": 3000
+				"min": 16,
+				"max": 17,
+				"total": 3240
 			},
 			"job": 24,
 			"build": "ranged",
@@ -252859,19 +252859,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 707,
+				"damage": 742,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 20,
-				"min": 491,
-				"max": 707,
-				"total": 103739
+				"min": 516,
+				"max": 742,
+				"total": 108939
 			},
 			"job": 24,
 			"build": "ranged",
@@ -252924,19 +252924,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 590,
+				"damage": 621,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 26,
-				"min": 409,
-				"max": 590,
-				"total": 87591
+				"min": 432,
+				"max": 621,
+				"total": 92300
 			},
 			"job": 24,
 			"build": "ranged",
@@ -252989,19 +252989,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 415,
+				"damage": 441,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 22,
-				"min": 287,
-				"max": 415,
-				"total": 61073
+				"min": 305,
+				"max": 441,
+				"total": 64806
 			},
 			"job": 24,
 			"build": "ranged",
@@ -253054,19 +253054,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 551,
+				"damage": 581,
 				"damage2": 0,
 				"type": 10,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 17,
-				"min": 382,
-				"max": 551,
-				"total": 80320
+				"min": 403,
+				"max": 581,
+				"total": 84747
 			},
 			"job": 24,
 			"build": "ranged",
@@ -253119,19 +253119,19 @@
 		},
 		{
 			"forced_min": {
-				"damage": 22,
+				"damage": 23,
 				"damage2": 0,
 				"type": 0,
 				"div": 1,
 				"dmg_lv": 5,
-				"flag": 529
+				"flag": 577
 			},
 			"rolls": {
 				"hits": 200,
 				"crits": 0,
-				"min": 22,
-				"max": 23,
-				"total": 4435
+				"min": 23,
+				"max": 24,
+				"total": 4732
 			},
 			"job": 24,
 			"build": "ranged",

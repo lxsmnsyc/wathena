@@ -412,6 +412,10 @@ const (
 	skillCloaking = 135 // AS_CLOAKING
 	skillSLHigh   = 494 // SL_HIGH
 	skillHilt     = 105 // BS_HILTBINDING
+	// skillEDP is ASC_EDP and skillResearchNewPoison
+	// GC_RESEARCHNEWPOISON, which SC_SUB_WEAPONPROPERTY reads.
+	skillEDP               = 378
+	skillResearchNewPoison = 2024
 )
 
 // Weapon masks of skill_get_weapontype for BS_ADRENALINE (one- and

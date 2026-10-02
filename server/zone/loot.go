@@ -159,6 +159,8 @@ func (z *Zone) gainExp(p *Player, base, job int64) {
 	}
 	if g.JobLevels > 0 {
 		z.effects = append(z.effects, effect{e, effectJobLevelUp})
+		// New skill points change what the player can learn.
+		z.sendSkillList(p)
 	}
 	if g.BaseLevels > 0 {
 		z.scriptEventFor("base_level_up", modscript.Player(int64(p.charID)))

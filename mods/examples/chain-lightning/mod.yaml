@@ -1,0 +1,20 @@
+# A sample mod that adds a skill: data/skills.yml defines it,
+# data/skill_trees.yml lets Mages learn it, and a script runs its cast.
+# mods/README.md, "Skills", explains each field.
+id: example.chain-lightning
+name: Chain Lightning
+version: 0.1.0
+api: experimental
+description: Adds Chain Lightning, a Mage skill whose bolt jumps from enemy to enemy.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read

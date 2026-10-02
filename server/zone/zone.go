@@ -18,6 +18,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -164,11 +165,25 @@ type Player struct {
 	bonuses status.Bonuses
 	// timed are the player's timed bonuses, in the order they started.
 	timed []*timedBonus
+	// cooldowns are when each skill may be used again, by skill ID, as
+	// rAthena's scd.
+	cooldowns map[int]int64
+	// passives are the contexts of the Lua scripts of learned passive
+	// skills, by skill ID.
+	passives map[int]*passiveSkill
+	// autocast is sd->state.autocast: an autospell casts, so its skill
+	// costs no SP. autoSpellLock holds the bAutoSpellOnSkill entries that
+	// are casting, by index, so an entry does not trigger itself.
+	autocast      bool
+	autoSpellLock map[int]bool
 }
 
 type entity struct {
 	// idx and slot are the entity's place in the zone's entitySet.
 	idx, slot int32
+	// uid is the entity's ID: the order the zone added it in, which
+	// entity queries sort ties by.
+	uid int64
 	// player is set for players. Monsters have monster instead, items
 	// on the ground have item, warp portals have warp, and NPCs that
 	// mods place have npc.
@@ -202,6 +217,9 @@ type entity struct {
 	packedTick uint32
 	fight
 	pickUp
+	unitSkill
+	// unit is set for a cell of a ground skill.
+	unit *skillUnit
 }
 
 type command struct {
@@ -224,6 +242,14 @@ type command struct {
 	equip      *equipCommand
 	unequip    *int
 	insertCard *insertCardCommand
+	// useSkill and learnSkill are skill commands.
+	useSkill   *useSkillCommand
+	learnSkill *int
+}
+
+type useSkillCommand struct {
+	skill, level int
+	target       SkillTarget
 }
 
 type shopBuyCommand struct {
@@ -271,6 +297,12 @@ type Zone struct {
 	// characters start at level 1 with the sex of their look. Set it
 	// before Run.
 	Start status.Character
+	// StartBaseLevel and StartJobLevel, when above 1, are the levels new
+	// characters start at, for development. They start with the status
+	// points of their base level and the skill points of their job level,
+	// and a job other than Novice starts with Basic Skill learned. Set
+	// them before Run.
+	StartBaseLevel, StartJobLevel int
 	// PlayerStatus is every player's battle status when Status is nil.
 	PlayerStatus battle.Status
 	// Progress holds the exp tables and drop settings. Without it, kills
@@ -307,6 +339,13 @@ type Zone struct {
 	// Statuses is the status database. Without it, no status starts. Set
 	// it before Run.
 	Statuses *statuschange.DB
+	// Skills and SkillTrees are the skill database and the skill trees.
+	// Without them, players have no skills to learn or cast. Set them
+	// before Run.
+	Skills     *skill.DB
+	SkillTrees *skill.Trees
+	// SkillSettings are the skill tree options of rAthena's player.conf.
+	SkillSettings skill.Settings
 
 	// statusChanges runs the statuses of the zone's entities, made on
 	// first use.
@@ -362,6 +401,22 @@ type Zone struct {
 	npcsStarted bool
 	// emotions are this tick's emotions over NPCs.
 	emotions []npcEmotion
+
+	// skillEvents are this tick's casts, cancels and skill effects.
+	skillEvents []skillEvent
+	// area is rAthena's skill_area_temp, the scratch values of the
+	// splash in progress.
+	area areaTemp
+	// groups are the ground skill groups, by group ID. nextGroup counts
+	// them, and nextUnitTimer is when skill_unit_timer next runs.
+	groups        map[int64]*unitGroup
+	nextGroup     int64
+	nextUnitTimer int64
+	// deferred is work that waits for a script's call to return, such
+	// as the death of a unit a cast's script killed. nextCast numbers the
+	// casts that scripts see.
+	deferred []func()
+	nextCast int64
 
 	// warps are the map's warps, in load order.
 	warps []Warp
@@ -425,6 +480,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		commands:  make(chan command, 1024),
 		arrivals:  make(chan *handoff),
 		stale:     make(chan *Player),
+		groups:    map[int64]*unitGroup{},
 		control:   make(chan func()),
 		announces: make(chan announcement, 256),
 		stopped:   make(chan struct{}),
@@ -627,10 +683,23 @@ func (z *Zone) join(p *Player) joinResult {
 		for st, left := range h.statusDelays {
 			p.statusDelays[st] = z.now + left
 		}
+		for id, left := range h.cooldowns {
+			if p.cooldowns == nil {
+				p.cooldowns = map[int]int64{}
+			}
+			p.cooldowns[id] = z.now + left
+		}
 	}
 	p.sent = map[wathenav1.StatId]int64{}
 	p.char = z.Start
 	p.char.Job, p.char.Male, p.char.Stats = c.Job, c.Male, c.Stats
+	// The character's own skills, or for a character without any the
+	// start character's, in a map of its own.
+	if c.Skills != nil {
+		p.char.Skills = maps.Clone(c.Skills)
+	} else {
+		p.char.Skills = maps.Clone(z.Start.Skills)
+	}
 	// Equipped items start their scripts before the first stat
 	// calculation, as status_calc_pc with SCO_FIRST. Changes to stats
 	// wait until the saved statuses and timed bonuses are back too.
@@ -674,6 +743,8 @@ func (z *Zone) join(p *Player) joinResult {
 	if s := z.battleStats(p); s != nil {
 		p.pending = append(p.pending, s)
 	}
+	z.sendSkillList(p)
+	z.startPassives(p)
 	// The first save comes one interval after the player enters. A
 	// warp saves at once, as the map change checkpoint of strategy
 	// section 3.8.
@@ -739,6 +810,10 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		z.endTimedBonuses(p, "logout")
 		z.runScripts()
 	}
+	z.castCancel(p.entity, false)
+	z.clearUnitGroups(p.entity)
+	z.removeMap(p.entity)
+	z.stopPassives(p)
 	z.save(p, true)
 	z.dropStatuses(p.entity)
 	z.remove(p, reason)
@@ -823,10 +898,10 @@ func (z *Zone) handle(c command) {
 		}
 		return
 	}
-	if c.walkTo != nil && !me.cant().Move {
+	if c.walkTo != nil && !me.cant().Move && me.cast == nil && z.now >= me.canMove {
 		// unit_walktoxy: statuses that stop moving refuse the walk, and
 		// Confusion picks another cell.
-		me.target, me.pickItem = nil, nil
+		me.target, me.pickItem, me.pending = nil, nil, nil
 		x, y := c.walkTo[0], c.walkTo[1]
 		if me.sc.Has(statuschange.SCConfusion) {
 			x, y = z.randomDir(me, x, y)
@@ -847,6 +922,12 @@ func (z *Zone) handle(c command) {
 	}
 	if c.insertCard != nil {
 		z.insertCard(p, c.insertCard.card, c.insertCard.equip)
+	}
+	if c.learnSkill != nil {
+		z.learnSkill(p, *c.learnSkill)
+	}
+	if c.useSkill != nil {
+		z.useSkill(p, c.useSkill)
 	}
 	// The game client does not attack while SC_WEIGHT90 is on, which
 	// rAthena relies on. The zone checks it itself.
@@ -907,6 +988,7 @@ func (z *Zone) stepAt(now int64) {
 			e.dir = facing(d)
 			e.path = e.path[1:]
 			e.stepStart = end
+			z.skillUnitMove(e)
 			// unit_walktoxy_timer touches the warp on each cell a
 			// player enters. A warp that takes the player ends the
 			// walk.
@@ -938,6 +1020,9 @@ func (z *Zone) stepAt(now int64) {
 	z.pickUps()
 	z.dropItems()
 	z.expireItems()
+	z.advanceCasts()
+	z.advanceUnits()
+	z.revealTick()
 	z.naturalHeal()
 	z.advanceStatuses()
 	z.autosave()
@@ -945,6 +1030,7 @@ func (z *Zone) stepAt(now int64) {
 	z.talkTimers()
 	if z.scripts != nil {
 		z.scripts.Advance(z.now)
+		z.flushDeferred()
 		z.runSchedules()
 		z.runScripts()
 	}
@@ -977,6 +1063,8 @@ func (z *Zone) stepAt(now int64) {
 	z.takes = z.takes[:0]
 	z.effects = z.effects[:0]
 	z.emotions = z.emotions[:0]
+	clear(z.skillEvents)
+	z.skillEvents = z.skillEvents[:0]
 	z.used = z.used[:0]
 	clear(z.chats)
 	z.chats = z.chats[:0]
@@ -1000,6 +1088,7 @@ func (z *Zone) update(p *Player) {
 	} else {
 		events = z.viewEvents(p, events)
 	}
+	events = append(events, z.skillEventsFor(p)...)
 	events = append(events, z.combatEvents(p)...)
 	events = append(events, z.effectEvents(p)...)
 	events = append(events, z.emotionEvents(p)...)
@@ -1031,10 +1120,17 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				if abs(e.x-me.x) > ViewRange || abs(e.y-me.y) > ViewRange {
 					continue
 				}
+				if e.unit != nil && e.unit.hidden {
+					continue
+				}
 				id, known := p.netIDs.get(e)
 				switch {
 				case !known || e == me && p.fresh:
 					id = p.netID(e)
+					if e.unit != nil {
+						events = append(events, z.unitAppear(p, id, e))
+						break
+					}
 					events = append(events, z.appear(id, e))
 					if len(e.path) > 0 {
 						events = append(events, z.move(id, e))

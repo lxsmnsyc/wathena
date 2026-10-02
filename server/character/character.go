@@ -26,6 +26,9 @@ type Character struct {
 	// TimedBonuses are the timed bonuses of player:add_timed_bonuses
 	// (rAthena's bonus_script), in the order they started.
 	TimedBonuses []TimedBonus
+	// Skills are the skills the character learned with skill points, by
+	// skill ID, with their level.
+	Skills map[int]int
 }
 
 // Status is one saved status.
@@ -131,7 +134,8 @@ func (it *Item) Equal(o *Item) bool {
 func (c *Character) Equal(o *Character) bool {
 	return c.Info == o.Info && slices.EqualFunc(c.Items, o.Items, func(a, b Item) bool { return a.Equal(&b) }) &&
 		maps.Equal(c.Variables, o.Variables) && slices.Equal(c.Statuses, o.Statuses) &&
-		slices.EqualFunc(c.TimedBonuses, o.TimedBonuses, func(a, b TimedBonus) bool { return a.Equal(&b) })
+		slices.EqualFunc(c.TimedBonuses, o.TimedBonuses, func(a, b TimedBonus) bool { return a.Equal(&b) }) &&
+		maps.Equal(c.Skills, o.Skills)
 }
 
 // Sex is the protocol's and rAthena's sex: 1 for male, 0 for female.

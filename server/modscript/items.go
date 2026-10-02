@@ -145,11 +145,15 @@ type Hit struct {
 	WearerIsSource         bool
 }
 
-// SkillUse is the object of the "skill_used" item event.
+// SkillUse is the object of the "skill_used" item event. The caster is
+// the wearer.
 type SkillUse struct {
 	Skill, Level int64
-	Target       int64 // a player handle ID, or 0 for a ground skill
-	X, Y         int64
+	// Target is a handle ID of TargetKind, or 0 for a ground skill.
+	// TargetKind is "player" when it is empty.
+	Target     int64
+	TargetKind string
+	X, Y       int64
 }
 
 // FireHit runs a context's damage handlers.
@@ -170,16 +174,19 @@ func (r *Runtime) FireHit(c *Context, h Hit) error {
 	return r.fireContext(c, "damage", Arg{"hit", script.NewTable(fields...)})
 }
 
-// FireSkillUse runs a context's skill_used handlers.
+// FireSkillUse runs a context's skill_used handlers. The object is the
+// one of FireSkillUsed, with the wearer as the caster.
 func (r *Runtime) FireSkillUse(c *Context, u SkillUse) error {
-	fields := []script.Field{
-		script.KV("skill", script.Int(u.Skill)), script.KV("level", script.Int(u.Level)),
-		script.KV("x", script.Int(u.X)), script.KV("y", script.Int(u.Y)),
-	}
+	var target *Entity
 	if u.Target != 0 {
-		fields = append(fields, script.KV("target", script.Int(u.Target)), script.KV("target_kind", script.String("player")))
+		kind := u.TargetKind
+		if kind == "" {
+			kind = "player"
+		}
+		target = &Entity{Kind: kind, ID: u.Target}
 	}
-	return r.fireContext(c, "skill_used", Arg{"skill_use", script.NewTable(fields...)})
+	obj := skillUsedObject(Entity{Kind: "player", ID: c.player}, u.Skill, u.Level, target, u.X, u.Y)
+	return r.fireContext(c, "skill_used", Arg{"skill_use", obj})
 }
 
 // setup loads an item entry script once and returns its setup function.

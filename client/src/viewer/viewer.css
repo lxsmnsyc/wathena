@@ -664,3 +664,203 @@ body {
 .status-icon [hidden] {
   display: none;
 }
+
+.hit.combo {
+  color: #ffb04a;
+  font-size: 24px;
+}
+
+#cast-bars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cast-bar {
+  position: absolute;
+  width: 60px;
+  height: 6px;
+  transform: translate(-50%, -100%);
+  border: 1px solid #000;
+  background: rgb(0 0 0 / 50%);
+}
+
+.cast-bar[hidden] {
+  display: none;
+}
+
+.cast-bar div {
+  width: 0;
+  height: 100%;
+  background: #4ad0ff;
+}
+
+#skill-window {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(380px, calc(100% - 24px));
+  max-height: calc(100% - 200px);
+  padding: 8px 10px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+  font-variant-numeric: tabular-nums;
+}
+
+#skill-window[hidden] {
+  display: none;
+}
+
+#skill-window .skill-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#skill-window ul {
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+#skill-window li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 2px;
+  border-radius: 3px;
+  user-select: none;
+}
+
+#skill-window li[draggable='true'] {
+  cursor: grab;
+}
+
+#skill-window li:hover {
+  background: rgb(255 255 255 / 12%);
+}
+
+#skill-window li.unlearned {
+  opacity: 0.6;
+}
+
+#skill-window li.waiting .use {
+  opacity: 0.6;
+}
+
+#skill-window .skill-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+#skill-window .detail {
+  color: #b8c8ff;
+  font-size: 12px;
+}
+
+#skill-window button,
+#skill-window select {
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+#skill-window .learn {
+  width: 22px;
+  padding: 0;
+}
+
+#skill-window .learn[hidden] {
+  display: none;
+}
+
+#skill-window .skill-hint {
+  color: #aaa;
+  font-size: 11px;
+}
+
+/* A text badge stands in for a skill icon, which the asset build lacks. */
+#skill-window .badge,
+.hotkey .badge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: rgb(80 110 170 / 70%);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+#hotkeys {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 4px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+  list-style: none;
+}
+
+#hotkeys[hidden] {
+  display: none;
+}
+
+/* On narrow screens the bar moves to the top, clear of the chat. */
+@media (width < 1150px) {
+  #hotkeys {
+    top: 64px;
+    bottom: auto;
+  }
+}
+
+.hotkey {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 4px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.hotkey.empty .badge {
+  visibility: hidden;
+}
+
+.hotkey.waiting .badge {
+  opacity: 0.4;
+}
+
+.hotkey .key {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  font-size: 9px;
+  color: #ccc;
+}
+
+.hotkey .cooldown {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 600;
+  text-shadow:
+    0 0 2px #000,
+    0 0 2px #000;
+}

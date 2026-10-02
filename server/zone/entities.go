@@ -13,6 +13,8 @@ import "iter"
 type entitySet struct {
 	list  []*entity
 	count int
+	// uids counts the entities ever added, for their uid.
+	uids int64
 	// free are slots to reuse. freed are the slots of entities removed
 	// since the last compact.
 	free  []int32
@@ -41,6 +43,8 @@ func (s *entitySet) add(e *entity) {
 		e.slot = s.next
 	}
 	e.idx = int32(len(s.list)) // #nosec G115 -- far fewer entities than 2^31.
+	s.uids++
+	e.uid = s.uids
 	s.list = append(s.list, e)
 	s.count++
 }

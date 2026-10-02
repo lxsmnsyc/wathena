@@ -825,3 +825,12 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the end 
    - The objects of the `status_chance` and `status_duration` hooks also carry rAthena's value, as `chance` and `milliseconds`, as the `drop_rate` object carries `rate`.
    - The events of a script call's starts and ends run after the call. Stats change inside the call since the change of 2026-10-02 in review decision 19.
    - `tick_milliseconds` ticks once more when the status runs out, as rAthena's statuses that tick.
+7. Build the entity queries and the skill API of phase 4 step 3 (review decisions 18 and 20). Done on 2026-10-02 ([decision 0011](../decisions/0011-skills.md)). Details to review:
+   - An active skill's `context:get_instance()` is `{ skill }`. A passive skill's is `{ skill, level, owner }`.
+   - `cast:heal` returns the HP healed, or nil when the caster is gone.
+   - `alive = false` finds dead entities only.
+   - A new mod skill has 1 hit, can be interrupted, and starts no status, unless its data says otherwise.
+   - Query limits: a radius of at most 30, a rectangle side and a line of at most 61 cells, a line width of 1 to 15, at most 1,024 cells, and a limit of 1 to 1,000.
+   - The skill hooks work in mod, NPC and event contexts, not in skill contexts.
+   - Ties of an entity query sort by the zone's entity ID, the order the zone added the entities in.
+   - `cast:run_default` runs core's behavior once the script's call returns.

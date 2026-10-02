@@ -43,6 +43,9 @@ func calcStr(l *sc.List, v int) int {
 		return capStat(v)
 	}
 	v += l.Val1(sc.SCIncallstatus)
+	if l.Has(sc.SCLoud) {
+		v += 4
+	}
 	if l.Has(sc.SCBlessing) {
 		if b := l.Val2(sc.SCBlessing); b != 0 {
 			v += b
@@ -58,6 +61,10 @@ func calcStr(l *sc.List, v int) int {
 func calcAgi(l *sc.List, v int) int {
 	if l.Empty() {
 		return capStat(v)
+	}
+	if e := l.Get(sc.SCConcentrate); e != nil && !l.Has(sc.SCQuagmire) {
+		// The percent leaves out the AGI of cards (val3).
+		v += (v - e.Val3) * e.Val2 / 100
 	}
 	v += l.Val1(sc.SCIncallstatus)
 	v += l.Val2(sc.SCIncreaseagi)
@@ -98,6 +105,10 @@ func calcDex(l *sc.List, v int) int {
 	if l.Empty() {
 		return capStat(v)
 	}
+	if e := l.Get(sc.SCConcentrate); e != nil && !l.Has(sc.SCQuagmire) {
+		// The percent leaves out the DEX of cards (val4).
+		v += (v - e.Val4) * e.Val2 / 100
+	}
 	v += l.Val1(sc.SCIncallstatus)
 	if l.Has(sc.SCBlessing) {
 		if b := l.Val2(sc.SCBlessing); b != 0 {
@@ -121,6 +132,17 @@ func calcLuk(l *sc.List, v int) int {
 	v += l.Val1(sc.SCIncallstatus)
 	v -= l.Val1(sc.SCStomachache)
 	return capStat(v)
+}
+
+// calcBatk is status_calc_batk. rAthena does not cap the result.
+func calcBatk(l *sc.List, v int, renewal bool) int {
+	if l.Empty() {
+		return v
+	}
+	if renewal && l.Has(sc.SCLoud) {
+		v += 30
+	}
+	return v
 }
 
 // calcCritical is status_calc_critical.
@@ -210,6 +232,10 @@ func calcDef(l *sc.List, v int, renewal, player bool, capDef func(int) int) int 
 	if l.Has(sc.SCConcentration) {
 		v -= v * l.Val4(sc.SCConcentration) / 100
 	}
+	if l.Has(sc.SCProvoke) && !player {
+		// Provoke does not lower the hard DEF of players.
+		v -= v * l.Val3(sc.SCProvoke) / 100
+	}
 	return capDef(v)
 }
 
@@ -236,6 +262,9 @@ func calcDef2(l *sc.List, v int, renewal bool, vit int) int {
 	}
 	if l.Has(sc.SCPoison) || l.Has(sc.SCDpoison) {
 		v = v * 75 / 100
+	}
+	if l.Has(sc.SCProvoke) {
+		v -= v * l.Val3(sc.SCProvoke) / 100
 	}
 	return capValue(v, lo, math.MaxInt16)
 }
@@ -565,6 +594,7 @@ func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
 	s.Luk = calcLuk(l, b.Luk)
 	if b.BAtk != 0 {
 		s.BAtk = mobBaseAtk(&s, renewal) + b.BAtk - mobBaseAtk(b, renewal)
+		s.BAtk = calcBatk(l, s.BAtk, renewal)
 	}
 	if renewal {
 		if b.WAtk == 0 {
@@ -680,7 +710,16 @@ func BattleChanges(l *sc.List) *battle.Changes {
 	if l.Has(sc.SCCurse) {
 		c.AtkPercent -= 25
 	}
+	c.AtkPercent += l.Val2(sc.SCProvoke)
 	c.AtkPercent += l.Val2(sc.SCConcentration)
 	c.AtkPercent += l.Val1(sc.SCIncatkrate)
+	// Magnum Break's fire bonus: SC_WATK_ELEMENT in pre-renewal and
+	// SC_SUB_WEAPONPROPERTY in renewal.
+	if e := l.Get(sc.SCWatkElement); e != nil {
+		c.WatkElement, c.WatkElementRate = e.Val1, e.Val2
+	}
+	if e := l.Get(sc.SCSubWeaponPro); e != nil {
+		c.SubWeaponElement, c.SubWeaponRate = e.Val1, e.Val2
+	}
 	return c
 }

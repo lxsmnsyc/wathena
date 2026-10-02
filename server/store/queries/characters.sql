@@ -91,3 +91,15 @@ DELETE FROM character_timed_bonuses WHERE character_id = @character_id;
 -- name: InsertTimedBonus :exec
 INSERT INTO character_timed_bonuses (character_id, position, key, remaining_ms, bonuses, ends_on, icon, kind)
 VALUES (@character_id, @position, @key, @remaining_ms, @bonuses, @ends_on, @icon, @kind);
+
+-- name: Skills :many
+SELECT skill_id, level FROM character_skills
+WHERE character_id = @character_id
+ORDER BY skill_id;
+
+-- name: DeleteSkills :exec
+DELETE FROM character_skills WHERE character_id = @character_id;
+
+-- name: InsertSkills :exec
+INSERT INTO character_skills (character_id, skill_id, level)
+SELECT @character_id, unnest(@skill_ids::integer[]), unnest(@levels::smallint[]);

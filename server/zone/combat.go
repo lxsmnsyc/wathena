@@ -4,6 +4,8 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/skill"
+	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
 
 // Combat: units attack a target in range at their attack delay, and walk
@@ -51,9 +53,13 @@ type combat struct {
 
 type hit struct {
 	source, target *entity
-	result         battle.Result
-	delay          int
-	hpPermille     uint32
+	// caster is the skill's caster when source is a ground unit, which
+	// viewers may not see. skill is the skill of a skill hit, or nil.
+	caster     *entity
+	skill      *skill.Def
+	result     battle.Result
+	delay      int
+	hpPermille uint32
 }
 
 type removal struct {
@@ -89,8 +95,9 @@ func (z *Zone) fight() {
 			e.target = nil
 			continue
 		}
-		// unit_can_attack: statuses that stop attacking end the attack.
-		if e.cant().Attack {
+		// unit_can_attack: statuses that stop attacking end the attack, and
+		// a target that cannot be targeted ends it too.
+		if e.cant().Attack || !z.canTarget(e, t) {
 			e.target = nil
 			continue
 		}
@@ -106,7 +113,7 @@ func (z *Zone) fight() {
 			e.path = e.path[:0]
 			e.stopped = true
 		}
-		if z.now < e.nextAttack {
+		if z.now < e.nextAttack || e.cast != nil {
 			continue
 		}
 		e.dir = facingTo(t.x-e.x, t.y-e.y)
@@ -136,7 +143,12 @@ func (z *Zone) chase(e, t *entity) {
 
 // strike runs one attack and applies its damage.
 func (z *Zone) strike(e, t *entity) {
-	r := battle.Attack(e.status, t.status, z.rand)
+	var r battle.Result
+	if z.renewal() {
+		r = battle.Attack(e.status, z.defender(t), z.rand)
+	} else {
+		r = battle.AttackPreRenewal(e.status, z.defender(t), z.rand)
+	}
 	z.logDamage(e, t, r.Damage)
 	if r.Damage > 0 {
 		t.hp -= r.Damage
@@ -144,10 +156,14 @@ func (z *Zone) strike(e, t *entity) {
 	}
 	z.hits = append(z.hits, hit{source: e, target: t, result: r, delay: e.status.AMotion, hpPermille: t.hpPermille()})
 	z.itemHitEvents(e, t, r)
-	landed := r.Kind == battle.Hit || r.Kind == battle.Critical
+	landed := !r.Blocked && (r.Kind == battle.Hit || r.Kind == battle.Critical)
 	if landed {
-		// status_damage: statuses that damage ends do, such as Sleep.
+		// status_damage: statuses that damage ends do, such as Sleep, and
+		// a hit of at least 1 damage stops a cast.
 		z.damaged(t, r.Damage, e.monster != nil)
+		if r.Damage > 0 {
+			z.castCancel(t, true)
+		}
 	}
 	if t.hp <= 0 {
 		z.die(t, e)
@@ -159,6 +175,12 @@ func (z *Zone) strike(e, t *entity) {
 		long := r.Flag&battle.FlagLong != 0
 		z.additionalEffect(e, t, long)
 		z.counterEffect(e, t, long)
+		if !t.dead && !e.dead {
+			z.autoSpellAttack(e, t, r.Flag)
+		}
+		if r.Damage > 0 && !t.dead && !e.dead {
+			z.autoSpellWhenHit(e, t, r.Flag, 0)
+		}
 	}
 	// A monster that can attack strikes back.
 	if t.monster != nil && t.target == nil && t.status.Mode&modeCanAttack != 0 {
@@ -206,8 +228,22 @@ func (z *Zone) die(e, killer *entity) {
 	if e.dead {
 		return
 	}
-	// pc_dead and mob_dead clear the statuses first.
+	if z.inHost() {
+		// A script's cast killed it: the death, with its events and drop
+		// hooks, comes once the script's call returns.
+		z.deferred = append(z.deferred, func() {
+			if e.hp <= 0 && z.entities.has(e) {
+				z.die(e, killer)
+			}
+		})
+		return
+	}
+	// pc_dead and mob_dead clear the statuses first. The cast stops and
+	// the unit's ground skills end.
 	z.statusesDied(e)
+	z.castCancel(e, false)
+	e.pending = nil
+	z.clearUnitGroups(e)
 	e.dead = true
 	e.target = nil
 	e.pickItem = nil
@@ -230,6 +266,7 @@ func (z *Zone) die(e, killer *entity) {
 		z.queueDeath(e, killer)
 		return
 	}
+	z.removeMap(e)
 	z.entities.remove(e)
 	z.dropStatuses(e)
 	z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_DIED})
@@ -289,6 +326,7 @@ func (z *Zone) respawn(p *Player) {
 		x, y = z.startCell()
 	}
 	z.closeTalk(p)
+	z.removeMap(e)
 	e.x, e.y = z.arrivalCell(x, y)
 	e.path = e.path[:0]
 	// Everyone who saw the player sees it leave and appear again at the
@@ -311,11 +349,19 @@ func (z *Zone) combatEvents(p *Player) []*wathenav1.Event {
 	var events []*wathenav1.Event
 	for _, h := range z.hits {
 		src, ok1 := p.netIDs.get(h.source)
+		if !ok1 && h.caster != nil {
+			src, ok1 = p.netIDs.get(h.caster)
+		}
 		tgt, ok2 := p.netIDs.get(h.target)
 		if !ok1 || !ok2 {
 			continue
 		}
+		var skillID uint32
+		if h.skill != nil {
+			skillID = shownSkill(h.skill)
+		}
 		events = append(events, wathenav1.Event_builder{Damage: wathenav1.Damage_builder{
+			SkillId:          skillID,
 			Source:           src,
 			Target:           tgt,
 			Amount:           h.result.Damage,
@@ -385,4 +431,21 @@ func sign(v int) int {
 		return 1
 	}
 	return 0
+}
+
+// canTarget is the part of status_check_skilluse that normal attacks
+// read: no one attacks a unit playing dead, and only bosses and
+// detectors see hidden units.
+func (z *Zone) canTarget(e, t *entity) bool {
+	l := t.sc
+	if l.Empty() {
+		return true
+	}
+	if l.Has(sc.SCTrickdead) {
+		return false
+	}
+	if l.Option&(sc.OptionHide|sc.OptionCloak|optionChasewalk) != 0 {
+		return e.status != nil && e.status.Mode&(modeStatusImmune|modeDetector) != 0
+	}
+	return true
 }

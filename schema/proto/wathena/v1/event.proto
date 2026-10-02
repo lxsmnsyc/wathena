@@ -43,6 +43,11 @@ message Event {
     LookChange look_change = 31;
     StatusIcon status_icon = 32;
     OptionChange option_change = 33;
+    SkillList skill_list = 34;
+    SkillCastCancel skill_cast_cancel = 35;
+    SkillEffect skill_effect = 36;
+    SkillFailed skill_failed = 37;
+    SkillCooldown skill_cooldown = 38;
   }
 }
 
@@ -99,6 +104,19 @@ message EntityAppear {
   // options are what the entity's status changes show, such as Stun's
   // stars. Unset for none.
   Options options = 11;
+  // skill_unit is set for ENTITY_KIND_SKILL_UNIT: a cell of a ground
+  // skill, such as one fire of Fire Wall.
+  SkillUnit skill_unit = 12;
+}
+
+// SkillUnit is one cell of a ground skill, as rAthena's skill_unit.
+message SkillUnit {
+  // unit_id is rAthena's UNT_ ID, which picks the client's effect.
+  uint32 unit_id = 1;
+  uint32 skill_id = 2;
+  // caster is the entity ID of the unit's caster, when the player sees
+  // it, or 0.
+  uint32 caster = 3;
 }
 
 // GroundItem is an item lying on a cell.
@@ -250,6 +268,9 @@ enum DamageKind {
   DAMAGE_KIND_HEAL = 5;
 }
 
+// SkillCast shows an entity starting to cast a skill, as
+// clif_skillcasting: the client shows the cast bar of cast_ms over it.
+// A cast without a cast time sends none.
 message SkillCast {
   uint32 source = 1;
   uint32 skill_id = 2;
@@ -259,6 +280,123 @@ message SkillCast {
     uint32 entity = 5;
     Cell cell = 6;
   }
+  // element is the skill's element, which picks the cast effect's color.
+  uint32 element = 7;
+}
+
+// SkillCastCancel shows an entity's cast stopping before it finished, as
+// clif_skillcastcancel: hit, stunned, or out of range.
+message SkillCastCancel {
+  uint32 source = 1;
+}
+
+// SkillEffect shows a skill taking effect without damage, as
+// clif_skill_nodamage and clif_skill_poseffect: a heal, a buff, or a
+// ground skill.
+message SkillEffect {
+  uint32 source = 1;
+  uint32 skill_id = 2;
+  uint32 level = 3;
+  oneof target {
+    uint32 entity = 4;
+    Cell cell = 5;
+  }
+  // value is what the effect shows, such as the HP healed, or the
+  // level.
+  int64 value = 6;
+  // ok is false when the skill failed on the target, such as a status
+  // that did not start.
+  bool ok = 7;
+}
+
+// SkillFailed tells the player that a skill could not be used, as
+// clif_skill_fail.
+message SkillFailed {
+  uint32 skill_id = 1;
+  SkillFailure reason = 2;
+}
+
+// SkillFailure is why a skill failed, as rAthena's USESKILL_FAIL_ values.
+enum SkillFailure {
+  SKILL_FAILURE_UNSPECIFIED = 0;
+  // LEVEL is rAthena's USESKILL_FAIL_LEVEL: the skill failed.
+  SKILL_FAILURE_LEVEL = 1;
+  SKILL_FAILURE_SP_INSUFFICIENT = 2;
+  SKILL_FAILURE_HP_INSUFFICIENT = 3;
+  SKILL_FAILURE_STUFF_INSUFFICIENT = 4;
+  SKILL_FAILURE_SKILLINTERVAL = 5;
+  SKILL_FAILURE_MONEY = 6;
+  SKILL_FAILURE_THIS_WEAPON = 7;
+  SKILL_FAILURE_REDJAMSTONE = 8;
+  SKILL_FAILURE_BLUEJAMSTONE = 9;
+  SKILL_FAILURE_WEIGHTOVER = 10;
+  SKILL_FAILURE_ARROW = 11;
+  SKILL_FAILURE_CART = 12;
+  SKILL_FAILURE_POS = 13;
+  // RANGE is out of range: the target was too far.
+  SKILL_FAILURE_RANGE = 14;
+  // TARGET is a target the skill cannot hit.
+  SKILL_FAILURE_TARGET = 15;
+  // STATUS is a status that blocks skills, such as Silence.
+  SKILL_FAILURE_STATUS = 16;
+  // HOLYWATER is AL_HOLYWATER without an Empty Bottle.
+  SKILL_FAILURE_HOLYWATER = 17;
+}
+
+// SkillCooldown tells the player that a skill cannot be used again for
+// a time, as clif_skill_cooldown. skill_id 0 is the after-cast delay of
+// every skill.
+message SkillCooldown {
+  uint32 skill_id = 1;
+  uint32 ms = 2;
+}
+
+// SkillList is the player's skill list, as clif_skillinfoblock: the
+// skills it learned and those of its tree it may learn. It is sent at
+// login and whenever the list changes. Skill points come in StatUpdate.
+message SkillList {
+  repeated SkillInfo skills = 1;
+}
+
+// SkillInfo is one skill of the skill list.
+message SkillInfo {
+  uint32 skill_id = 1;
+  // level is the learned level, 0 for a skill the player may learn.
+  uint32 level = 2;
+  uint32 max_level = 3;
+  // name is the skill's key, such as SM_BASH, and display_name the name
+  // players see.
+  string name = 4;
+  string display_name = 5;
+  SkillTarget target = 6;
+  // sp is the SP cost at the learned level.
+  uint32 sp = 7;
+  // range is the range in cells at the learned level.
+  uint32 range = 8;
+  // upgradable is set when a skill point may raise it.
+  bool upgradable = 9;
+  // icon is the skill ID whose icon and effects the client shows: the
+  // skill's own, or for a mod's skill the core skill its data names.
+  uint32 icon = 10;
+  // requires lists the skills and levels it needs, from its job's tree.
+  repeated SkillRequirement requires = 11;
+}
+
+// SkillRequirement is a skill and level that a skill of the tree needs.
+message SkillRequirement {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+}
+
+// SkillTarget is how a skill picks its target, as rAthena's INF_ types.
+enum SkillTarget {
+  SKILL_TARGET_UNSPECIFIED = 0;
+  SKILL_TARGET_PASSIVE = 1;
+  SKILL_TARGET_ENEMY = 2;
+  SKILL_TARGET_GROUND = 3;
+  SKILL_TARGET_SELF = 4;
+  SKILL_TARGET_SUPPORT = 5;
+  SKILL_TARGET_TRAP = 6;
 }
 
 message ChatMessage {

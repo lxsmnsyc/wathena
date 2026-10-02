@@ -11,6 +11,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/tools/convert"
@@ -34,6 +35,12 @@ type Mods struct {
 	// their merge.
 	Events       []worldevent.Def
 	EventOverlay *mod.Overlay
+	// Skills and SkillTrees are core's skills and trees with the mods'
+	// data/skills.yml and data/skill_trees.yml. SkillOverlay is the merge
+	// of data/skills.yml.
+	Skills       *skill.DB
+	SkillTrees   *skill.Trees
+	SkillOverlay *mod.Overlay
 	// Zone is what every zone gets.
 	Zone *zone.Mods
 }
@@ -117,6 +124,17 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	}
 	if err := checkItemScripts(merged.Data, scripts); err != nil {
 		return nil, err
+	}
+	if out.Skills, out.SkillTrees, out.SkillOverlay, err = modSkills(ctx, set, mode, assigned, core.Constants, merged.IDs, scripts); err != nil {
+		return nil, err
+	}
+	for _, n := range out.SkillOverlay.Notes {
+		log.Warn("mods: " + n)
+	}
+	for _, a := range assigned.Assigned {
+		if a.Kind == mod.SkillIDs.Kind {
+			log.Info("mods: new ID", "kind", a.Kind, "name", a.Name, "id", a.ID, "mod", a.Mod)
+		}
 	}
 	groups, err := item.NewGroups(core.Groups, func(name string) (uint32, bool) {
 		id, ok := merged.IDs[name]

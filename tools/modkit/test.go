@@ -18,6 +18,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
@@ -181,6 +182,7 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	z := h.Zone()
 	z.Items = l.itemTable()
 	z.Progress, z.Status, z.Start, z.Statuses = e.Tables, e.Jobs, e.Start, e.Statuses
+	z.Skills, z.SkillTrees, z.SkillSettings = l.Skills, l.SkillTrees, skill.Settings{}
 	if l.Tables != nil {
 		z.Progress = l.Tables
 	}

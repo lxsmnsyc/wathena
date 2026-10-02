@@ -457,7 +457,7 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 		if typ == "bautospellwhenhit" {
 			w.with(enum("on", "hit_taken"))
 		}
-		return c.autospellFlag(w, a[3])
+		return c.autospellFlag(w, a[3], false)
 	case "4:bautospellonskill":
 		return one(call("cast", of(kSkill, a[1]), of(kLevel, a[2])).with(numOpt("chance", c.times(a[3], 10)), enum("on", "skill_used"), refOpt("skill", kSkill, a[0])))
 
@@ -474,7 +474,7 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 		}
 		var out []*wcall
 		for _, w := range calls {
-			more, err := c.autospellFlag(w, a[4])
+			more, err := c.autospellFlag(w, a[4], false)
 			if err != nil {
 				return nil, err
 			}
@@ -482,7 +482,7 @@ func (c *itemConv) mapBonus(n int, args []Expr) ([]*wcall, error) {
 		}
 		return out, nil
 	case "5:bautospellonskill":
-		return c.autospellFlag(call("cast", of(kSkill, a[1]), of(kLevel, a[2])).with(numOpt("chance", c.times(a[3], 10)), enum("on", "skill_used"), refOpt("skill", kSkill, a[0])), a[4])
+		return c.autospellFlag(call("cast", of(kSkill, a[1]), of(kLevel, a[2])).with(numOpt("chance", c.times(a[3], 10)), enum("on", "skill_used"), refOpt("skill", kSkill, a[0])), a[4], true)
 	}
 	return nil, unsupported(fmt.Sprintf("bonus%s %s", map[int]string{1: "", 2: "2", 3: "3", 4: "4", 5: "5"}[n], typ), "not in the 0002a table")
 }
@@ -726,9 +726,15 @@ func (c *itemConv) splitTarget(w *wcall, flagExpr Expr) ([]*wcall, error) {
 	return out, nil
 }
 
-// autospellFlag applies autospell's i flag: 1 casts on the wearer, and 2
-// picks a random level up to the given one.
-func (c *itemConv) autospellFlag(w *wcall, flagExpr Expr) ([]*wcall, error) {
+// autospellFlag applies autospell's i flag, as pc_bonus_autospell and
+// pc_bonus_autospell_onskill read it. Bit 1 is AUTOSPELL_FORCE_TARGET:
+//   - for bAutoSpell and bAutoSpellWhenHit, set casts on the enemy, and
+//     clear casts on the wearer;
+//   - for bAutoSpellOnSkill, set casts on the wearer, and clear casts on
+//     the target of the skill used.
+//
+// Bit 2 picks a random level up to the given one.
+func (c *itemConv) autospellFlag(w *wcall, flagExpr Expr, onSkill bool) ([]*wcall, error) {
 	flag, ok := static(flagExpr)
 	if !ok {
 		return nil, unsupported("autospell flag", "computed")
@@ -736,8 +742,10 @@ func (c *itemConv) autospellFlag(w *wcall, flagExpr Expr) ([]*wcall, error) {
 	if flag&^3 != 0 {
 		return nil, unsupported("autospell flag", "bits other than 1 and 2")
 	}
-	if flag&1 != 0 {
+	if (flag&1 != 0) == onSkill {
 		w.with(enum("target", "self"))
+	} else {
+		w.with(enum("target", "enemy"))
 	}
 	if flag&2 != 0 {
 		w.with(flagOpt("random_level"))

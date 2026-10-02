@@ -18,7 +18,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -33,7 +33,8 @@ Each file starts with `system`, `mode`, `rathena_git_hash`, `data_path`, and `ci
 | `mob_damage.json` | Normal attacks between 400 pairs of monsters. |
 | `pc_status.json` | Base and final stats for 39 jobs, 3 level pairs, and 6 stat builds, with and without skills. |
 | `pc_damage.json` | Normal attacks by level 99 players with every usable weapon type against five monsters. |
-| `skill_damage.json` | Every damaging skill in the sample job trees, at every level, against three monsters. |
+| `skill_damage.json` | Every damaging skill in the sample job trees, at every level, against three monsters, with the ammunition a skill needs equipped. Heal against two undead monsters. |
+| `skill_casting.json` | For each first class job and three stat builds, every skill of its tree at every level: cast time, after-cast delay, cooldown, requirements, and for Heal the amount healed. |
 | `item_bonuses.json` | Changes from each equipment item and card, in stats, damage dealt, and damage taken. |
 | `refine.json` | Stats at every refine level for one armor and one weapon of each weapon level. |
 | `status_effects.json` | Chance, duration, and whether ten common ailments start, for many sources and targets. |
@@ -108,6 +109,22 @@ Status effects read one extract per mode ([decision 0010](../../docs/decisions/0
 | pre-renewal | 699 | 67 |
 
 It was extracted at rAthena fork commit `eac0a7e75`, with a function that the fork's `tools/wathena/extract.py` does not have yet: `build_status`. Until the fork gains it, regenerating with `extract.py` leaves this file as it is.
+
+## Skills
+
+Skills read two extracts per mode ([decision 0011](../../docs/decisions/0011-skills.md)):
+
+- `skills.json`: `skill_db.yml` as `SkillDatabase` loads it, by skill ID: the name, description, maximum level, type, target, damage flags, flags, and every value per level as an array of 13 (range, hit count, element, splash, active instances, knockback, cast and delay times, durations, cooldown, fixed cast time, and the requirements), with the unit and the status. `nocast` holds `skill_nocast_db.txt`'s map types.
+- `skill_trees.json`: `skill_tree.yml` with `Inherit` merged into each job, as `SkillTreeDatabase` loads it: each skill's maximum level, the skills it needs, and the base and job levels it needs.
+
+| Mode | Skills | Trees | Tree entries |
+|---|---:|---:|---:|
+| renewal | 1,635 | 175 | 8,122 |
+| pre-renewal | 1,228 | 77 | 2,121 |
+
+They were extracted at rAthena fork commit `2eb1327f4`, with a function that the fork's `tools/wathena/extract.py` does not have yet: `build_skills`. Until the fork gains it, regenerating with `extract.py` leaves these files as they are. The same holds for the recorder fix below and `record_skill_casting`.
+
+`pc_damage.json` and `skill_damage.json` were recorded again with the recorder fix for ranged attacks: the recorder now sets `arrow_atk` for a bow or gun with ammunition equipped, as `battle_calc_attack` callers do, and for skills that need ammunition. `skill_casting.json` is new. The other formula files did not change.
 
 ## How random rolls are recorded
 

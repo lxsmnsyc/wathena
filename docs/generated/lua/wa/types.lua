@@ -23,6 +23,7 @@
 ---| "use"
 ---| "damage"
 ---| "skill_used"
+---| "cast"
 ---| "unequip"
 ---| "status_start"
 ---| "status_end"
@@ -187,6 +188,12 @@
 ---@alias wa.HookName
 ---| "drop_rate"
 ---| "experience"
+---| "status_chance"
+---| "status_duration"
+---| "skill_damage"
+---| "cast_time"
+---| "skill_cost"
+---| "cast_allowed"
 
 ---A day of the week.
 ---@alias wa.Weekday
@@ -328,6 +335,17 @@ function wa_Player:set_save_point(map, x, y) end
 ---@param effect integer An effect from wa.effects.
 function wa_Player:show_effect(effect) end
 
+---maps.find_entities with around set to the entity.
+---
+---Needs the permission `game.read`.
+---@param query wa.EntityQuery A query without an area: it is around the entity, with radius.
+---@return (wa.Player|wa.Monster|wa.Npc)[]
+function wa_Player:find_nearby(query) end
+
+---False once the entity is removed, has logged out, or has left the zone. It never raises an error.
+---@return boolean
+function wa_Player:exists() end
+
 ---rAthena's hateffect. It shows nothing yet.
 ---@param effect integer An effect from wa.headgear_effects.
 function wa_Player:show_headgear_effect(effect) end
@@ -414,6 +432,21 @@ function wa_Player:get_statuses() end
 ---@field is_alive boolean
 local wa_Monster = {}
 
+---Plays an effect on the monster for everyone near, as specialeffect.
+---@param effect integer An effect from wa.effects.
+function wa_Monster:show_effect(effect) end
+
+---maps.find_entities with around set to the entity.
+---
+---Needs the permission `game.read`.
+---@param query wa.EntityQuery A query without an area: it is around the entity, with radius.
+---@return (wa.Player|wa.Monster|wa.Npc)[]
+function wa_Monster:find_nearby(query) end
+
+---False once the entity is removed, has logged out, or has left the zone. It never raises an error.
+---@return boolean
+function wa_Monster:exists() end
+
 ---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
@@ -461,6 +494,21 @@ function wa_Npc:show_emotion(emotion) end
 ---Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it.
 ---@param text string
 function wa_Npc:say_aloud(text) end
+
+---Plays an effect on the NPC for everyone near, as specialeffect.
+---@param effect integer An effect from wa.effects.
+function wa_Npc:show_effect(effect) end
+
+---maps.find_entities with around set to the entity.
+---
+---Needs the permission `game.read`.
+---@param query wa.EntityQuery A query without an area: it is around the entity, with radius.
+---@return (wa.Player|wa.Monster|wa.Npc)[]
+function wa_Npc:find_nearby(query) end
+
+---False once the entity is removed, has logged out, or has left the zone. It never raises an error.
+---@return boolean
+function wa_Npc:exists() end
 
 ---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 ---@param status integer A status from wa.statuses.
@@ -764,14 +812,121 @@ local wa_SpawnSpec = {}
 ---@field wearer_is_source boolean
 local wa_Damage = {}
 
----The object of the skill_used event.
+---The object of the skill_used event: a skill that took effect, after its cast time.
 ---@class wa.SkillUse
+---@field caster wa.Player|wa.Monster|wa.Npc The wearer, for an item's handler. caster.kind says which.
 ---@field skill integer
 ---@field level integer
----@field target wa.Player? nil for a ground skill.
----@field x integer
+---@field target wa.Player|wa.Monster|wa.Npc|nil nil for a ground skill.
+---@field x integer The cell the skill took effect at.
 ---@field y integer
 local wa_SkillUse = {}
+
+---The options of a skill_used handler. Each one narrows the skills that run it.
+---@class wa.SkillUsedOptions
+---@field skill integer? A skill from skills.id.
+---@field caster_kind "player"|"monster"|"npc"|nil
+---@field map string? A map name.
+local wa_SkillUsedOptions = {}
+
+---The object of the cast event: one cast of the skill, when it takes effect. It stays usable after the event, so timers of the skill's context can use it.
+---@class wa.Cast
+---@field caster wa.Player|wa.Monster|wa.Npc caster.kind says which.
+---@field skill integer
+---@field level integer
+---@field target wa.Player|wa.Monster|wa.Npc|nil nil for a ground skill.
+---@field map string
+---@field x integer The cell the skill takes effect at: the target's, or the ground cell.
+---@field y integer
+local wa_Cast = {}
+
+---Runs rAthena's damage calculation of the skill on the target, with percent as the skill's damage percentage, after the skill_damage hooks. It applies cards and defense, and fires the damage event after the script's call. Returns nil, and does nothing, when the caster is gone or cannot act, as rAthena's skill_addtimerskill.
+---@param target wa.Player|wa.Monster|wa.Npc
+---@param options? wa.CastDamageOptions
+---@return wa.CastDamageResult?
+function wa_Cast:deal_damage(target, options) end
+
+---Heals the target with rAthena's heal bonuses, and returns the HP healed. Returns nil, and does nothing, when the caster is gone or cannot act.
+---@param target wa.Player|wa.Monster|wa.Npc
+---@param amount integer 0 or more.
+---@return integer?
+function wa_Cast:heal(target, amount) end
+
+---Runs core's own behavior of the skill. It raises an error for a skill that has none, such as a mod's skill.
+---@param options? wa.RunDefaultOptions
+function wa_Cast:run_default(options) end
+
+---The options of cast:deal_damage. Without one, the skill's data gives the value.
+---@class wa.CastDamageOptions
+---@field percent integer? The skill's damage percentage, 0 or more. 100 by default.
+---@field hits integer? The number of hits, 1 to 30.
+---@field type "weapon"|"magic"|"misc"|nil The attack type.
+---@field element integer? An element from wa.elements, not all.
+local wa_CastDamageOptions = {}
+
+---What cast:deal_damage returns.
+---@class wa.CastDamageResult
+---@field amount integer The damage dealt.
+---@field is_critical boolean
+---@field missed boolean
+local wa_CastDamageResult = {}
+
+---The options of cast:run_default.
+---@class wa.RunDefaultOptions
+---@field target wa.Player|wa.Monster|wa.Npc|nil Another target. The cast's target by default.
+local wa_RunDefaultOptions = {}
+
+---The instance of a skill's context: the skill, once per zone. Its cast handlers run for every cast.
+---@class wa.SkillInstance
+---@field skill integer The skill's ID.
+local wa_SkillInstance = {}
+
+---The instance of a passive skill's context: one owner's skill, while it is learned. A new context starts when the level changes.
+---@class wa.PassiveSkillInstance
+---@field skill integer The skill's ID.
+---@field level integer The learned level.
+---@field owner wa.Player Who learned the skill.
+local wa_PassiveSkillInstance = {}
+
+---The object of the skill_damage, cast_time, skill_cost and cast_allowed hooks. The innermost result is rAthena's value.
+---@class wa.SkillHook
+---@field caster wa.Player|wa.Monster|wa.Npc
+---@field target wa.Player|wa.Monster|wa.Npc|nil nil for a ground skill, and for skill_cost.
+---@field skill integer
+---@field level integer
+---@field percent integer? skill_damage: the damage percentage.
+---@field milliseconds integer? cast_time: the cast time, after DEX and the cast bonuses.
+---@field sp integer? skill_cost: the SP cost.
+---@field allowed boolean? cast_allowed: whether rAthena lets the cast start.
+local wa_SkillHook = {}
+
+---A query of maps.find_entities. It has one area: around with radius, x and y with radius, rectangle, line, or cells. The other fields filter and sort.
+---@class wa.EntityQuery
+---@field around wa.Player|wa.Monster|wa.Npc|nil The area is the cells within radius of the entity. The entity is in its own area: exclude leaves it out.
+---@field map string? The context's own map, which is the default. Another map raises an error.
+---@field x integer? With y, the area is the cells within radius of the cell.
+---@field y integer?
+---@field radius integer? 0 to 30 cells, with around or x and y.
+---@field shape "square"|"circle"|nil With around or x and y. "square" by default, as rAthena's ranges.
+---@field rectangle integer[][]? Two opposite corners, such as { { 100, 100 }, { 110, 105 } }. Sides of at most 61 cells.
+---@field line wa.QueryLine? The cells along a line.
+---@field cells integer[][]? A list of 1 to 1024 cells, such as { { 100, 100 }, { 101, 100 } }.
+---@field kinds ("player"|"monster"|"npc")[]? Keeps these kinds. Every kind by default.
+---@field alive boolean? true, the default, keeps living entities; false keeps dead ones.
+---@field enemies_of wa.Player|wa.Monster|wa.Npc|nil Keeps the entities this one may attack, by rAthena's rules.
+---@field allies_of wa.Player|wa.Monster|wa.Npc|nil Keeps the entities this one may help, by rAthena's rules, with itself.
+---@field line_of_sight boolean? Keeps the entities that the center of the area sees: the entity of around, the cell, the middle of the rectangle, the start of the line, or the first cell.
+---@field exclude (wa.Player|wa.Monster|wa.Npc)[]? Leaves these out.
+---@field sort "nearest"|"farthest"|"lowest_hp"|"random"|nil Distances are from the center of the area. "random" draws from the zone's secret stream.
+---@field limit integer? 1 to 1000. 1000 by default.
+local wa_EntityQuery = {}
+
+---The line of a query.
+---@class wa.QueryLine
+---@field from integer[] A cell, such as { 100, 100 }.
+---@field to integer[] A cell, at most 61 cells away on each axis.
+---@field width integer? 1 to 15 cells. 1 by default.
+local wa_QueryLine = {}
 
 ---The amounts of player:item_heal and player:heal_percent. An amount is a number, or { minimum, maximum }.
 ---@class wa.HealSpec

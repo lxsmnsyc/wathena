@@ -332,3 +332,286 @@ describe('status icons and options', () => {
     expect(o.group.children.every((c) => c.visible)).toBe(true);
   });
 });
+
+describe('skills', () => {
+  function skillUnit(id: number, unitId: number, skillId: number, x: number, y: number): Event {
+    return create(EventSchema, {
+      body: {
+        case: 'appear',
+        value: {
+          id,
+          kind: EntityKind.SKILL_UNIT,
+          x,
+          y,
+          skillUnit: { unitId, skillId, caster: 1 },
+        },
+      },
+    });
+  }
+
+  function units(o: Online): number {
+    return o.group.children.filter((c) => c.name === 'skill-unit').length;
+  }
+
+  it('shows ground skill units until they vanish', () => {
+    const o = online();
+    o.setMap(map());
+    const sounds: string[] = [];
+    o.onSound = (name) => {
+      sounds.push(name);
+    };
+    // Safety Wall: an STR effect that waits for the cache, and three cylinders.
+    o.effects = {
+      cache: { get: async () => Promise.resolve(undefined) } as unknown as EffectCache,
+      textures: { uniform: () => ({ value: new Texture() }) },
+    };
+    o.handle([skillUnit(20, 0x7e, 12, 3, 4), skillUnit(21, 0x99, 12, 4, 4)]);
+    expect(units(o)).toBe(1);
+    const g = o.group.children.find((c) => c.name === 'skill-unit');
+    expect(g?.position.x).toBe(3.5);
+    expect(g?.children).toHaveLength(3);
+    expect(sounds).toEqual(['sound/effect/ef_glasswall']);
+    o.update(60_000, 0, g!.position.clone());
+    // Cylinders repeat while the unit stays.
+    expect(g?.children.some((c) => c.children.some((m) => m.visible))).toBe(true);
+    o.handle([create(EventSchema, { body: { case: 'vanish', value: { id: 20 } } })]);
+    expect(units(o)).toBe(0);
+  });
+
+  it('plays Thunder Storm once for its cell effect and its unit', () => {
+    const o = online();
+    o.setMap(map());
+    o.clock = () => 1000;
+    const sounds: string[] = [];
+    o.onSound = (name) => {
+      sounds.push(name);
+    };
+    o.effects = {
+      cache: { get: async () => Promise.resolve(undefined) } as unknown as EffectCache,
+      textures: { uniform: () => ({ value: new Texture() }) },
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'skillEffect',
+          value: {
+            source: 1,
+            skillId: 21,
+            level: 3,
+            target: { case: 'cell', value: { x: 5, y: 5 } },
+            ok: true,
+          },
+        },
+      }),
+      skillUnit(30, 0x86, 21, 5, 5),
+    ]);
+    expect(sounds).toEqual(['sound/effect/magician_thunderstorm']);
+    expect(units(o)).toBe(0);
+  });
+
+  it('passes the skill list, failures, and cooldowns on', () => {
+    const o = online();
+    o.setMap(map());
+    const got: string[] = [];
+    o.onSkillList = (list) => {
+      got.push(`list ${list.map((s) => s.skillId).join(',')}`);
+    };
+    o.onSkillFailed = (id, reason) => {
+      got.push(`failed ${id} ${reason}`);
+    };
+    o.onSkillCooldown = (id, ms) => {
+      got.push(`cooldown ${id} ${ms}`);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'skillList', value: { skills: [{ skillId: 5 }, { skillId: 6 }] } },
+      }),
+      create(EventSchema, { body: { case: 'skillFailed', value: { skillId: 5, reason: 2 } } }),
+      create(EventSchema, { body: { case: 'skillCooldown', value: { skillId: 0, ms: 700 } } }),
+    ]);
+    expect(got).toEqual(['list 5,6', 'failed 5 2', 'cooldown 0 700']);
+  });
+
+  it('starts and cancels casts with their aura', () => {
+    vi.stubGlobal('reportError', () => {});
+    const o = new Online(
+      1,
+      { get: async () => Promise.resolve(undefined) } as unknown as SpriteCache,
+      {} as Pathfinder,
+    );
+    o.effects = {
+      cache: {} as EffectCache,
+      textures: { uniform: () => ({ value: new Texture() }) },
+    };
+    o.setMap(map());
+    const casts: string[] = [];
+    o.onSkillCast = (source, skill, ms) => {
+      casts.push(`cast ${source} ${skill} ${ms}`);
+    };
+    o.onSkillCastCancel = (source) => {
+      casts.push(`cancel ${source}`);
+    };
+    // The caster is still loading, so the aura plays on its cell.
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 9, kind: EntityKind.MONSTER, x: 2, y: 2, look: { body: 1002 } },
+        },
+      }),
+    ]);
+    const before = o.group.children.length;
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'skillCast',
+          value: {
+            source: 9,
+            skillId: 19,
+            level: 1,
+            castMs: 1500,
+            element: 3,
+            target: { case: 'entity', value: 1 },
+          },
+        },
+      }),
+    ]);
+    // The fire aura: three cylinders.
+    expect(o.group.children.length).toBe(before + 3);
+    o.handle([create(EventSchema, { body: { case: 'skillCastCancel', value: { source: 9 } } })]);
+    expect(o.group.children.length).toBe(before);
+    expect(casts).toEqual(['cast 9 19 1500', 'cancel 9']);
+  });
+
+  it('uses the effects of a mod skill icon', () => {
+    const o = online();
+    o.setMap(map());
+    o.skillIcon = (id) => (id === 3001 ? 28 : id);
+    const sounds: string[] = [];
+    o.onSound = (name) => {
+      sounds.push(name);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'skillEffect',
+          value: {
+            source: 1,
+            skillId: 3001,
+            level: 1,
+            target: { case: 'cell', value: { x: 1, y: 1 } },
+            ok: true,
+          },
+        },
+      }),
+    ]);
+    expect(sounds).toEqual(['sound/_heal_effect']);
+  });
+});
+
+describe('skill numbers', () => {
+  async function loaded(): Promise<Online> {
+    vi.stubGlobal('reportError', () => {});
+    const sprites = {
+      get: async () => {
+        await Promise.resolve();
+        return sprite();
+      },
+      palette: async () => {
+        await Promise.resolve();
+        return undefined;
+      },
+    } as unknown as SpriteCache;
+    const o = new Online(1, sprites, {} as Pathfinder);
+    o.setMap(map());
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 1, kind: EntityKind.PLAYER, x: 1, y: 1, look: { body: 0 } },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 2, kind: EntityKind.MONSTER, x: 3, y: 3, look: { body: 1002 } },
+        },
+      }),
+    ]);
+    await settle();
+    return o;
+  }
+
+  it('splits a multi-hit skill into its hits, then the total', async () => {
+    const o = await loaded();
+    vi.useFakeTimers();
+    try {
+      const hits: string[] = [];
+      o.onHit = (h) => {
+        hits.push(`${h.amount}${h.combo === true ? ' total' : ''}`);
+      };
+      o.handle([
+        create(EventSchema, {
+          body: {
+            case: 'damage',
+            value: {
+              source: 1,
+              target: 2,
+              amount: 101n,
+              hits: 2,
+              kind: 1,
+              delayMs: 100,
+              skillId: 46,
+            },
+          },
+        }),
+      ]);
+      vi.advanceTimersByTime(100);
+      expect(hits).toEqual(['50']);
+      vi.advanceTimersByTime(200);
+      expect(hits).toEqual(['50', '51']);
+      vi.advanceTimersByTime(200);
+      expect(hits).toEqual(['50', '51', '101 total']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows the HP Heal heals as a heal number', async () => {
+    const o = await loaded();
+    const hits: string[] = [];
+    o.onHit = (h) => {
+      hits.push(`${h.amount} ${h.kind} ${h.mine}`);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'skillEffect',
+          value: {
+            source: 1,
+            skillId: 28,
+            level: 3,
+            target: { case: 'entity', value: 1 },
+            value: 120n,
+            ok: true,
+          },
+        },
+      }),
+      // A buff shows no number.
+      create(EventSchema, {
+        body: {
+          case: 'skillEffect',
+          value: {
+            source: 1,
+            skillId: 34,
+            level: 3,
+            target: { case: 'entity', value: 1 },
+            value: 3n,
+            ok: true,
+          },
+        },
+      }),
+    ]);
+    expect(hits).toEqual(['120 5 true']);
+  });
+});

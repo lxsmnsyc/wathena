@@ -240,6 +240,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `dev` | `--dev` | `false` | Development sessions instead of accounts. Needs a loopback `listen`. |
 | `build` | `--build` | `all_1` | Raised stats of new characters, for testing. |
 | `start_items` | `--start-items` | none | Items of new characters, for development. |
+| `start_job` | `--start-job` | none | Job, base level and job level of new characters, as `job:base:job`, for development. Needs `dev`. |
 | `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. |
 | `profile_dir` | `--profile-dir` | none | Folder for CPU profiles of slow ticks. |
 | `shutdown_countdown` | `--shutdown-countdown` | `10s` | The countdown players see before the server stops, up to `10m`. `0s` turns it off. See "NPCs". |
@@ -277,7 +278,7 @@ On SIGTERM or Ctrl+C, `waserver` stops being ready, ends every game connection w
 
 ## Mods
 
-`waserver` loads the mods in `mods.dir` at startup (strategy section 6, [decision 0006](../docs/decisions/0006-mod-loader.md)). [mods/README.md](../mods/README.md) is the guide for mod authors. `mods/examples/greeter` is a small sample, and `mods/examples/halloween` adds an NPC, an item, monsters, a hook and world events.
+`waserver` loads the mods in `mods.dir` at startup (strategy section 6, [decision 0006](../docs/decisions/0006-mod-loader.md)). [mods/README.md](../mods/README.md) is the guide for mod authors. `mods/examples/greeter` is a small sample, `mods/examples/halloween` adds an NPC, an item, monsters, a hook and world events, `mods/examples/verve` adds a status, and `mods/examples/chain-lightning` adds a skill.
 
 ```yaml
 mods:
@@ -294,8 +295,9 @@ What it does:
 - The built-in `core` mod stands for the base game. `core.ruleset.renewal` and `core.ruleset.pre_renewal` are its ruleset mods.
 - Mods load after their `depends`, their `load_after` that are installed, and `core`. Ties go by mod ID, so the order is the same on every start.
 - The world's ruleset is `mods.ruleset`, or the core ruleset of `mode`. Ruleset mods that are not the world's ruleset, or what it extends, are skipped.
-- Items from mods get IDs from 2,000,000 the first time they load, and monsters from 100,000. With a database the IDs are kept in the `mod_ids` table, and never change or go to another record. Without a database they live in memory, like the characters.
+- Items from mods get IDs from 2,000,000 the first time they load, monsters from 100,000, and skills from 20,000. With a database the IDs are kept in the `mod_ids` table, and never change or go to another record. Without a database they live in memory, like the characters.
 - Monster overlays change core's monsters everywhere they spawn, and mods' monsters appear through scripts.
+- Skills and skill trees come from the extracts `skills.json` and `skill_trees.json` of the mode, with each mod's `data/skills.yml` and `data/skill_trees.yml` over them. Every zone shares the result.
 - Each zone runs the mods' scripts in its own Lua state. A mod whose scripts fail is logged and left off in that zone. A mod whose handlers fail 10 times in a minute is turned off in that zone.
 - A zone makes its Lua state at start when a mod has entry scripts, and otherwise when a player first uses an item there.
 
@@ -423,6 +425,43 @@ Parity with rAthena's `status_effects.json` is in `server/statuschange/testdata/
 | pre-renewal | 2,640 | 2,640 | 2,640 | 2,640 | 2,640 |
 
 Left: the effects of statuses that only skills start. They start, save, end, and show their icon and option, but do nothing else until their skills exist.
+
+## Skills
+
+Players learn and cast skills, as rAthena's ([decision 0011](../docs/decisions/0011-skills.md)). The package `skill` holds the data of rAthena's `skill_db.yml` and `skill_tree.yml` for the mode (the `skills.json` and `skill_trees.json` extracts), with the overlays of mods, and the formulas of casts and damage. The zone runs the casts.
+
+- **Skill points and the tree.** Each job level gives a skill point. The skill window lists the skills of the job's tree, as `pc_calc_skilltree`: a first class job sees the Novice tree until it spent 9 points there (`player_skillup_limit`), and quest skills stay hidden. `LearnSkill` raises a skill by one level when its required skills allow it, as `pc_skillup`. Learned skills are saved in `character_skills` (migration 00011). Passive skills change stats at once.
+- **Casting** follows `unit_skilluse_id2` and `unit_skilluse_pos2`:
+  - The cast starts after the checks of `skill_check_condition_castbegin`: SP, zeny, weapon, state, statuses and weight. A target out of range makes the player walk into range first. Range is circular for players, as rAthena's client distance.
+  - Cast time follows `skill_castfix` in pre-renewal and `skill_vfcastfix` in renewal, with DEX, INT in renewal, Suffragium, Memorize and the cast bonuses of items. Everyone near sees the cast bar.
+  - Only a hit of at least 1 damage stops a cast, when the skill's `CastCancel` allows it. Phen Card's bonus keeps the cast going.
+  - When the cast ends, the target is checked (enemy, friend, line of sight), then HP, the weapon, ammunition and items. HP, SP and zeny are paid before the skill acts, and items after it, as `skill_consume_requirement`.
+  - The after-cast delay (`skill_delayfix`), the cooldown and the walk delay start. A failed cast lets the player act again at once.
+- **Damage** goes through the same code as normal attacks (`battle_calc_weapon_attack`, `battle_calc_magic_attack`, `battle_calc_misc_attack`), in both modes, with each skill's ratio and hit rate. Splash skills hit every enemy around their target, with Napalm Beat's split and Fire Ball's edge. Knockback follows `skill_blown`.
+- **Ground skills** place units that viewers see: Safety Wall and Pneuma give their status to whoever stands on them and block melee or ranged hits; Fire Wall hits and pushes what stands on it every 20 ms; Thunder Storm hits once. A timer every 100 ms runs them, as `skill_unit_timer`. `ActiveInstance` limits how many a player may have up.
+- **Statuses** that skills start work with their stat effects: Provoke, Endure, Auto Berserk, Magnum Break's fire bonus, Sight, Energy Coat, Stone Curse, Frost Diver's freeze, Ruwach, Increase and Decrease AGI, Signum Crucis, Angelus, Blessing, Improve Concentration, Crazy Uproar, Hiding, Envenom's poison, Sand Attack's blind and Trick Dead.
+- **Procs**: `cause_status` bonuses with the `skill` option roll on hits of that skill, and the `cast` bonuses (autospells) cast on attack, when hit, and on the use of a skill, as `skill_additional_effect`, `skill_counter_additional_effect` and `skill_onskillusage`.
+- **Entity queries** find units in an area for skills and scripts alike (`query.go`): a radius, a rectangle, a line or a list of cells, with filters and an order.
+- **Mods** add skills with `data/skills.yml`, `data/skill_trees.yml` and a Lua script that runs when the skill takes effect, and change core skills the same way ([mods/README.md](../mods/README.md)). `mods/examples/chain-lightning` adds a Mage skill that jumps between enemies.
+
+Skills that need a window the client does not have yet fail before they start: Warp Portal, Item Appraisal, Vending, Arrow Crafting, Change Cart, Decorate Cart and Open Buying Store. Teleport warps to a random cell at both levels, since it has no menu.
+
+To try them, start new characters as a job with skill points, such as a Swordman at job level 40:
+
+```text
+go run ./server/cmd/waserver --assets /path/to/build --map prt_fild08 --dev --start-job 1:50:40
+```
+
+Parity with rAthena, from `go test ./server/skill`:
+
+| Mode | `skill_damage.json`, first class | `skill_casting.json` |
+|---|---:|---:|
+| renewal | 488 of 488 cases, 22 skills | 1,611 of 1,611 |
+| pre-renewal | 488 of 488 cases, 22 skills | 1,611 of 1,611 |
+
+`skill_casting.json` compares cast time, after-cast delay, cooldown, requirements, and Heal's amount, for every first class skill at every level.
+
+Left: monster skills (step 5), the menus of Teleport and Warp Portal, carts and vending, water cells for Aqua Benedicta, and parties for Angelus and Crazy Uproar.
 
 ## NPCs
 

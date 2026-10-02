@@ -64,6 +64,22 @@ func (en *Engine) timer(u Unit, e *Entry, due int64) {
 			next(20 + due)
 			return
 		}
+	case SCAutoberserk:
+		if p := sc.Get(SCProvoke); p != nil && p.Val4 == 1 {
+			// Above a quarter of max HP, the Provoke of Auto Berserk ends.
+			if u.HP() > int64(st.MaxHP)/4 {
+				en.End(u, SCProvoke, ReasonRemoved)
+			}
+		} else if u.HP() <= int64(st.MaxHP)/4 {
+			// At a quarter of max HP or less, Provoke level 10 starts with
+			// no end. It replaces a Provoke from the skill.
+			en.Start(u, u, Start{Type: SCProvoke, Rate: 10000, Val1: 10, Val4: 1, Duration: InfiniteTick,
+				Reason: ReasonSkill, Source: u.Ref()})
+		}
+		if sc.Get(typ) == e {
+			next(100 + due)
+		}
+		return
 	case SCStone:
 		if e.Val4 >= 0 && u.HP() > int64(st.MaxHP)/4 {
 			// 1% of max HP, never the last HP.

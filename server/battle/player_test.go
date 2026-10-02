@@ -33,9 +33,12 @@ type pcDamage struct {
 	Cases        []pcCase `json:"cases"`
 }
 
-// pcWeapons is testdata/pc_weapons.json.
+// pcWeapons is testdata/pc_weapons.json, or
+// testdata/pc_weapons_pre_renewal.json for pre-renewal.
 type pcWeapons struct {
-	Weapons map[string]struct {
+	// WeaponLevels is each weapon's level. Only pre-renewal reads it.
+	WeaponLevels map[string]int `json:"weapon_levels"`
+	Weapons      map[string]struct {
 		EAtk          int         `json:"eatk"`
 		AtkRate       int         `json:"atk_rate"`
 		AddRace       map[int]int `json:"add_race"`
@@ -61,6 +64,8 @@ const (
 var thiefJobs = []int{6, 12, 17, 4013, 4018}
 
 type pcFixture struct {
+	mode    reference.Mode
+	attack  attackFunc
 	mobs    map[int]*Status
 	ref     *pcDamage
 	skills  map[string]map[int]int
@@ -69,8 +74,20 @@ type pcFixture struct {
 
 func loadPCFixture(t testing.TB) *pcFixture {
 	t.Helper()
-	f := &pcFixture{mobs: loadMobs(t), ref: &pcDamage{}}
-	if err := reference.Load(reference.Renewal, "pc_damage", f.ref); err != nil {
+	return loadModePCFixture(t, reference.Renewal)
+}
+
+// loadModePCFixture loads the player cases of a mode, with the attack
+// function of that mode.
+func loadModePCFixture(t testing.TB, mode reference.Mode) *pcFixture {
+	t.Helper()
+	f := &pcFixture{mode: mode, attack: Attack, mobs: loadMobs(t, mode), ref: &pcDamage{}}
+	weapons := "testdata/pc_weapons.json"
+	if mode == reference.PreRenewal {
+		f.attack = AttackPreRenewal
+		weapons = "testdata/pc_weapons_pre_renewal.json"
+	}
+	if err := reference.Load(mode, "pc_damage", f.ref); err != nil {
 		t.Fatal(err)
 	}
 	if len(f.ref.Cases) == 0 {
@@ -88,7 +105,7 @@ func loadPCFixture(t testing.TB) *pcFixture {
 			Skills    [][2]int `json:"skills"`
 		} `json:"players"`
 	}
-	if err := reference.Load(reference.Renewal, "pc_status", &status); err != nil {
+	if err := reference.Load(mode, "pc_status", &status); err != nil {
 		t.Fatal(err)
 	}
 	f.skills = make(map[string]map[int]int)
@@ -103,7 +120,7 @@ func loadPCFixture(t testing.TB) *pcFixture {
 		f.skills[strconv.Itoa(p.Job)+" "+p.Build] = skills
 	}
 
-	b, err := os.ReadFile("testdata/pc_weapons.json")
+	b, err := os.ReadFile(weapons)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,13 +144,21 @@ func (f *pcFixture) attacker(t testing.TB, c *pcCase) *Status {
 		RightWeapon: c.WeaponType,
 		LeftWeapon:  WeaponFist,
 		Skills:      skills,
-		// The recorder calls battle_calc_attack directly. rAthena sets
-		// state.arrow_atk only in battle_weapon_attack, so the recorded
-		// attacks never use ammunition, even with a bow or a gun.
-		ArrowAttack: false,
 	}
 	if slices.Contains(f.weapons.TwoHanded, c.Weapon) {
 		p.LeftWeapon = c.WeaponType
+	}
+	if f.mode == reference.PreRenewal && c.Weapon != 0 {
+		// Pre-renewal reads the weapon level from the item. A two-handed
+		// weapon is the item in both hands.
+		wlv, ok := f.weapons.WeaponLevels[strconv.Itoa(c.Weapon)]
+		if !ok {
+			t.Fatalf("%s: weapon level missing from testdata", c.name())
+		}
+		st.RHW.Wlv = wlv
+		if p.LeftWeapon != WeaponFist {
+			st.LHW.Wlv = wlv
+		}
 	}
 	if slices.Contains(thiefJobs, c.Job) {
 		p.DualWield = DualWieldThief
@@ -159,6 +184,12 @@ func (f *pcFixture) attacker(t testing.TB, c *pcCase) *Status {
 			t.Fatalf("ammunition %d missing from testdata/pc_weapons.json", ammo)
 		}
 		p.AmmoAtk, p.AmmoEle = a.Atk, a.Ele
+		// The recorder sets state.arrow_atk as battle_weapon_attack does:
+		// a bow or a gun with ammunition uses it. Its grenade sphere
+		// (13203) has Classes that no job has in renewal, so pc_isequip
+		// refuses it and grenade launchers attack without ammunition. In
+		// pre-renewal, Gunslingers can equip it.
+		p.ArrowAttack = ammo != ammoGrenade || f.mode == reference.PreRenewal
 	}
 	st.Player = p
 	return &st
@@ -176,11 +207,17 @@ func (f *pcFixture) target(t testing.TB, c *pcCase) *Status {
 // TestPCDamageForcedMin checks every player case against rAthena's result
 // with rnd_force_min.
 func TestPCDamageForcedMin(t *testing.T) {
-	f := loadPCFixture(t)
+	checkPCDamageForcedMin(t, loadPCFixture(t))
+}
+
+// checkPCDamageForcedMin checks every case of a fixture against rAthena's
+// result with rnd_force_min.
+func checkPCDamageForcedMin(t *testing.T, f *pcFixture) {
+	t.Helper()
 	matched := 0
 	for i := range f.ref.Cases {
 		c := &f.ref.Cases[i]
-		got := Attack(f.attacker(t, c), f.target(t, c), forcedMin{})
+		got := f.attack(f.attacker(t, c), f.target(t, c), forcedMin{})
 		want := c.ForcedMin
 		if got.Damage == want.Damage+want.Damage2 && got.Left == want.Damage2 && got.Kind == want.kind() &&
 			got.Hits == want.Div && got.Flag == want.Flag {
@@ -195,11 +232,11 @@ func TestPCDamageForcedMin(t *testing.T) {
 
 // pcSample is sample, counting critical hits as the recorder does: only
 // DMG_CRITICAL counts, not a double attack that is also critical.
-func pcSample(t *testing.T, src, dst *Status, r Rand, attacks int) rollStats {
+func pcSample(t *testing.T, attack attackFunc, src, dst *Status, r Rand, attacks int) rollStats {
 	t.Helper()
 	s := rollStats{attacks: attacks, min: -1}
 	for range attacks {
-		res := Attack(src, dst, r)
+		res := attack(src, dst, r)
 		if res.Damage < 0 || res.Left < 0 {
 			t.Fatalf("negative damage %+v", res)
 		}
@@ -226,7 +263,13 @@ func pcSample(t *testing.T, src, dst *Status, r Rand, attacks int) rollStats {
 // also checks the critical rate. The recorded rolls count a double attack
 // as one hit with the damage of both hits.
 func TestPCDamageRolls(t *testing.T) {
-	f := loadPCFixture(t)
+	checkPCDamageRolls(t, loadPCFixture(t))
+}
+
+// checkPCDamageRolls runs the checks of TestPCDamageRolls on every case of
+// a fixture.
+func checkPCDamageRolls(t *testing.T, f *pcFixture) {
+	t.Helper()
 	// Each job runs as a parallel subtest, because the race detector
 	// makes the player formula slow.
 	byJob := make(map[int][]int)
@@ -252,10 +295,7 @@ func checkPCRolls(t *testing.T, f *pcFixture, i int) {
 	t.Helper()
 	// There are ten times as many cases as monster pairs, so each case
 	// gets fewer attacks than in TestMobDamageRolls.
-	const (
-		rateAttacks   = 2000
-		damageAttacks = 4000
-	)
+	const rateAttacks = 2000
 	recorded := float64(f.ref.RollsPerCase)
 	c := &f.ref.Cases[i]
 	src, dst := f.attacker(t, c), f.target(t, c)
@@ -263,7 +303,7 @@ func checkPCRolls(t *testing.T, f *pcFixture, i int) {
 	rec := c.Rolls
 	r := rand.New(rand.NewPCG(uint64(i+1), 0x70635F64616D)) // #nosec G404 -- a fixed seed for a repeatable test.
 
-	s := pcSample(t, src, dst, r, rateAttacks)
+	s := pcSample(t, f.attack, src, dst, r, rateAttacks)
 	rate := float64(s.hits) / rateAttacks
 	recRate := float64(rec.Hits) / recorded
 	if tol := 4*math.Sqrt(rate*(1-rate)/recorded) + 0.02; math.Abs(rate-recRate) > tol {
@@ -283,11 +323,30 @@ func checkPCRolls(t *testing.T, f *pcFixture, i int) {
 		return
 	}
 
+	// Renewal samples the damage against a copy of the target that cannot
+	// dodge, as TestMobDamageRolls does. Pre-renewal uses the target itself
+	// for two reasons:
+	//   - A miss still deals the ATK of Weapon Research and Hilt Binding,
+	//     and the recorder counts it as a hit.
+	//   - Critical hits never miss, so a target that cannot dodge lowers
+	//     their share of the hits. Pre-renewal's base hit rate is low
+	//     enough against Baphomet for that to move the mean.
+	// The pre-renewal range check also uses cornerRand, as
+	// TestPreRenewalMobDamageRolls does.
+	const damageAttacks = 4000
 	sure := *dst
 	sure.Flee, sure.Flee2 = -1<<20, 0
-	s = pcSample(t, src, &sure, r, damageAttacks)
-	if s.min > rec.Min || s.max < rec.Max {
-		t.Errorf("%s: damage range %d..%d does not contain recorded %d..%d", name, s.min, s.max, rec.Min, rec.Max)
+	damageTarget := &sure
+	if f.mode == reference.PreRenewal {
+		damageTarget = dst
+	}
+	s = pcSample(t, f.attack, src, damageTarget, r, damageAttacks)
+	span := s
+	if f.mode == reference.PreRenewal {
+		span = pcSample(t, f.attack, src, damageTarget, cornerRand{r}, damageAttacks)
+	}
+	if span.min > rec.Min || span.max < rec.Max {
+		t.Errorf("%s: damage range %d..%d does not contain recorded %d..%d", name, span.min, span.max, rec.Min, rec.Max)
 	}
 	if rec.Hits >= 20 {
 		mean := s.sum / float64(s.hits)

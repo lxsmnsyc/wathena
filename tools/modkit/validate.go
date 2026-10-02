@@ -290,6 +290,13 @@ func (e *Env) checkEntries(l *Loaded, rep *Report) {
 			entries = append(entries, d.Script)
 		}
 	}
+	if l.Skills != nil {
+		for _, d := range l.Skills.All() {
+			if strings.HasPrefix(d.Script, id+":") && !slices.Contains(entries, d.Script) {
+				entries = append(entries, d.Script)
+			}
+		}
+	}
 	slices.Sort(entries)
 	for _, entry := range entries {
 		if err := r.CheckEntry(entry); err != nil {
@@ -356,7 +363,7 @@ func records(l *Loaded) []Record {
 		}
 		out = append(out, rec)
 	}
-	for _, o := range []*mod.Overlay{l.NPCOverlay, l.MonsterOverlay, l.EventOverlay} {
+	for _, o := range []*mod.Overlay{l.NPCOverlay, l.MonsterOverlay, l.EventOverlay, l.SkillOverlay} {
 		if o == nil {
 			continue
 		}
@@ -368,6 +375,11 @@ func records(l *Loaded) []Record {
 			if o.Kind.Name == mod.MonsterKind.Name {
 				if mid, ok := l.Zone.MonsterIDs[strings.ToUpper(r.Name)]; ok {
 					rec.Fields = append(rec.Fields, RecordField{Name: "id", Value: json.Number(fmt.Sprint(mid)), SetBy: "server"})
+				}
+			}
+			if o.Kind.Name == mod.SkillKind.Name && r.Mod != mod.Core {
+				if d := l.Skills.ByName(r.Name); d != nil {
+					rec.Fields = append(rec.Fields, RecordField{Name: "id", Value: json.Number(fmt.Sprint(d.ID)), SetBy: "server"})
 				}
 			}
 			for _, k := range slices.Sorted(maps.Keys(r.Fields)) {

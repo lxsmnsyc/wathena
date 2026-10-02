@@ -1,7 +1,7 @@
 ---@meta wa.effects
 -- Generated from server/modscript/luaapi. Do not edit: wactl mod types writes it again.
 
----Effects for player:show_effect, from rAthena's EF_ names.
+---Effects for entity:show_effect, from rAthena's EF_ names.
 ---@class wa.effects
 ---@field ab_offertorium integer 1047, rAthena's EF_AB_OFFERTORIUM.
 ---@field ab_offertorium_ring integer 1057, rAthena's EF_AB_OFFERTORIUM_RING.

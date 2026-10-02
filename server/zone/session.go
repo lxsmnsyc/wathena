@@ -165,6 +165,26 @@ func (s *Session) InsertCard(seq uint32, cardSlot, equipSlot int) bool {
 	return s.send(command{seq: seq, insertCard: &insertCardCommand{cardSlot, equipSlot}})
 }
 
+// SkillTarget is the target of a UseSkill: an entity, by the
+// connection's ID, or a cell. Neither is set for a self skill.
+type SkillTarget struct {
+	Entity    uint32
+	HasEntity bool
+	X, Y      int
+	HasCell   bool
+}
+
+// UseSkill casts a skill, as clif_parse_UseSkillToId and
+// clif_parse_UseSkillToPos.
+func (s *Session) UseSkill(seq uint32, skillID, level int, target SkillTarget) bool {
+	return s.send(command{seq: seq, useSkill: &useSkillCommand{skill: skillID, level: level, target: target}})
+}
+
+// LearnSkill spends a skill point on a skill, as pc_skillup.
+func (s *Session) LearnSkill(seq uint32, skillID int) bool {
+	return s.send(command{seq: seq, learnSkill: &skillID})
+}
+
 // Leave removes the player from the world. Out closes. Leave returns once
 // the player's last save went to its saver: from the zone the player is
 // in, from the zone it was moving to, or at shutdown.

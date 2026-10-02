@@ -5,7 +5,10 @@ import {
   Color,
   ColorManagement,
   Group,
+  Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
+  PlaneGeometry,
   Raycaster,
   Scene,
   Timer,
@@ -49,6 +52,18 @@ import { groundItemLabel } from './groundItems';
 import randomLook from './looks';
 import { StatusIconBar } from './statusIcons';
 import { StatusWindow } from './statusWindow';
+import { CastBars, Cooldowns, cooldownText } from './cooldowns';
+import { HotkeyBar, hotkeySlot, loadHotkeys, saveHotkeys } from './hotkeys';
+import {
+  SkillModel,
+  SkillWindow,
+  castLevel,
+  castable,
+  skillBadge,
+  skillFailureMessage,
+  skillOf,
+} from './skills';
+import { TargetMode } from './targeting';
 import Online from './online';
 import Player from './player';
 import Walkers from './walkers';
@@ -125,6 +140,16 @@ const pathfinder = await Pathfinder.load();
 let player: Player | undefined;
 const playerGroup = new Group();
 scene.add(playerGroup);
+// The cell under the pointer while a ground skill waits for a target.
+const cellMarker = new Mesh(
+  new PlaneGeometry(1, 1),
+  new MeshBasicMaterial({ color: 0x66ccff, transparent: true, opacity: 0.45, depthWrite: false }),
+);
+cellMarker.rotation.x = -Math.PI / 2;
+cellMarker.visible = false;
+cellMarker.renderOrder = 1;
+scene.add(cellMarker);
+
 const audio = new AudioSystem(store);
 let soundscape: Soundscape | undefined;
 let statusWindow: StatusWindow | undefined;
@@ -133,6 +158,17 @@ let inventoryWindow: InventoryWindow | undefined;
 let equipmentWindow: EquipmentWindow | undefined;
 let dialogWindow: DialogWindow | undefined;
 let shopWindow: ShopWindow | undefined;
+/** The player's skills, and the skill waiting for a target. */
+const skills = new SkillModel();
+const targetMode = new TargetMode();
+const cooldowns = new Cooldowns();
+const castBars = new CastBars();
+let skillWindow: SkillWindow | undefined;
+let hotkeyBar: HotkeyBar | undefined;
+/** The character whose hotkeys are loaded, once its name is known. */
+let hotkeysOf: string | undefined;
+/** Casts a skill from the skill window or a hotkey, at a level or the learned one. */
+let castSkill: (skillId: number, level: number | undefined) => void = () => {};
 /** A progress bar over the player: when it started and how long it lasts. */
 let progressBar: { start: number; ms: number } | undefined;
 /** Shows a short message to the player, such as why an action failed. */
@@ -446,7 +482,7 @@ if (serverURL === null) {
     const heal = h.kind === DamageKind.HEAL;
     div.className = heal
       ? 'hit heal'
-      : `hit${h.mine ? ' mine' : ''}${h.kind === DamageKind.CRITICAL ? ' critical' : ''}${h.amount === 0 ? ' miss' : ''}`;
+      : `hit${h.mine ? ' mine' : ''}${h.kind === DamageKind.CRITICAL ? ' critical' : ''}${h.amount === 0 ? ' miss' : ''}${h.combo === true ? ' combo' : ''}`;
     div.textContent = h.amount === 0 && !heal ? 'Miss' : String(h.amount);
     div.style.left = `${((p.x + 1) / 2) * 100}%`;
     div.style.top = `${((1 - p.y) / 2) * 100}%`;
@@ -648,6 +684,111 @@ if (serverURL === null) {
       }
     });
   }
+  // Skills. The skill window opens with its button or Alt+S, as in RO.
+  // F1 to F9 cast the skills on the hotkey bar. A skill that needs a
+  // target waits for a click (see the click handler below).
+  view.skillIcon = (id) => skills.iconOf(id);
+  view.onSkillList = (list) => {
+    skills.reset(list.map(skillOf));
+  };
+  view.onSkillFailed = (_skillId, reason) => {
+    logNotice(skillFailureMessage(reason));
+  };
+  view.onSkillCooldown = (skillId, ms) => {
+    cooldowns.set(skillId, ms, performance.now());
+  };
+  view.onSkillCast = (source, _skillId, castMs) => {
+    castBars.start(source, castMs, performance.now());
+  };
+  view.onSkillCastCancel = (source) => {
+    castBars.cancel(source);
+  };
+  castSkill = (skillId, level) => {
+    const s = skills.get(skillId);
+    if (s === undefined || s.level === 0) {
+      logNotice('You have not learned this skill.');
+      return;
+    }
+    if (!castable(s)) {
+      logNotice('This skill is passive.');
+      return;
+    }
+    const request = targetMode.begin(s.id, castLevel(s, level), s.target);
+    if (request !== undefined) {
+      connection.useSkill(request.skillId, request.level, request.target);
+    }
+    showTargeting();
+  };
+  const hotkeys = new HotkeyBar(document.body, {
+    use: (slot) => {
+      const h = hotkeys.get(slot);
+      if (h !== undefined) {
+        castSkill(h.skillId, h.level);
+      }
+    },
+    changed: (slots) => {
+      if (hotkeysOf !== undefined) {
+        saveHotkeys(() => localStorage, hotkeysOf, slots);
+      }
+    },
+  });
+  hotkeyBar = hotkeys;
+  hotkeys.root.hidden = false;
+  const skillRoot = document.querySelector<HTMLElement>('#skill-window');
+  const skillToggle = document.querySelector<HTMLButtonElement>('#skill-toggle');
+  if (skillRoot !== null) {
+    skillWindow = new SkillWindow(skillRoot, skills, {
+      learn: (skillId) => {
+        connection.learnSkill(skillId);
+      },
+      use: (skillId, level) => {
+        castSkill(skillId, level);
+      },
+      assign: (skillId, level) => {
+        const slot = hotkeys.firstEmpty();
+        if (slot === undefined) {
+          showMessage('The hotkey bar is full. Right-click a key to clear it.');
+          return;
+        }
+        hotkeys.assign(slot, level === undefined ? { skillId } : { skillId, level });
+      },
+    });
+    const toggle = (): void => {
+      skillWindow?.toggle();
+      skillWindow?.update(view.stats, (id) => cooldowns.remaining(id, performance.now()));
+    };
+    if (skillToggle !== null) {
+      skillToggle.hidden = false;
+      skillToggle.addEventListener('click', toggle);
+    }
+    addEventListener('keydown', (e) => {
+      if (isTyping(e.target)) {
+        return;
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyS') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  }
+  addEventListener('keydown', (e) => {
+    if (isTyping(e.target) || e.altKey || e.ctrlKey || e.metaKey) {
+      return;
+    }
+    const slot = hotkeySlot(e.code);
+    if (slot !== undefined) {
+      // F1 to F9 would open help or reload the page.
+      e.preventDefault();
+      if (!e.repeat) {
+        hotkeys.use(slot);
+      }
+      return;
+    }
+    if (e.key === 'Escape' && targetMode.cancel()) {
+      e.preventDefault();
+      showTargeting();
+    }
+  });
   // Local chat. Enter opens the input, Enter sends the line, and Escape
   // leaves the input. Lines show in the log and above the speaker.
   const chatRoot = document.querySelector<HTMLElement>('#chat');
@@ -777,6 +918,9 @@ if (serverURL === null) {
   view.onMapChange = (map, x, y) => {
     // The new map's first frame shows the icons again.
     icons.clear();
+    castBars.clear();
+    targetMode.cancel();
+    showTargeting();
     const started = performance.now();
     const before = { ...store.stats };
     changingMap = true;
@@ -868,6 +1012,37 @@ canvas.addEventListener('pointerup', (e) => {
     rect.width,
     rect.height,
   );
+  // A skill waiting for a target takes the click: an entity for enemy
+  // and support skills, a cell for ground skills. A support skill may
+  // target the player itself. A right click cancels it.
+  if (session !== undefined && targetMode.kind !== undefined) {
+    if (e.button === 2) {
+      targetMode.cancel();
+    } else if (targetMode.kind === 'entity') {
+      const t = session.online.pick(
+        e.clientX - rect.left,
+        e.clientY - rect.top,
+        camera,
+        rect.width,
+        rect.height,
+        true,
+      );
+      const request =
+        t === undefined || t.item
+          ? undefined
+          : targetMode.clickEntity(t.id, t.id === session.online.self);
+      if (request !== undefined) {
+        session.connection.useSkill(request.skillId, request.level, request.target);
+      }
+    } else if (hit !== undefined) {
+      const request = targetMode.clickCell(Math.floor(hit.point.x), Math.floor(-hit.point.z));
+      if (request !== undefined) {
+        session.connection.useSkill(request.skillId, request.level, request.target);
+      }
+    }
+    showTargeting();
+    return;
+  }
   // While the player talks to an NPC, the game does nothing on a click,
   // as the server ignores it (pc_cant_act).
   if (dialogWindow?.open === true && progressBar === undefined) {
@@ -897,12 +1072,45 @@ canvas.addEventListener('pointerup', (e) => {
   }
 });
 
+/** Shows the target mode: the cursor, and the cell marker for ground skills. */
+function showTargeting(): void {
+  canvas!.style.cursor = targetMode.kind === undefined ? '' : 'crosshair';
+  if (targetMode.kind !== 'cell') {
+    cellMarker.visible = false;
+  }
+}
+
+/** Moves the cell marker to the cell under a point of the canvas. */
+function markCell(e: PointerEvent): void {
+  const ground = current?.group.getObjectByName('ground');
+  if (targetMode.kind !== 'cell' || ground === undefined || current === undefined) {
+    cellMarker.visible = false;
+    return;
+  }
+  const rect = canvas!.getBoundingClientRect();
+  pointer.set(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1,
+  );
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObject(ground, true)[0];
+  if (hit === undefined) {
+    cellMarker.visible = false;
+    return;
+  }
+  const x = Math.floor(hit.point.x) + 0.5;
+  const y = Math.floor(-hit.point.z) + 0.5;
+  cellMarker.position.set(x, cellHeight(current.map, x, y) + 0.05, -y);
+  cellMarker.visible = true;
+}
+
 // The name of the ground item under the pointer shows under it, as in RO.
 canvas.addEventListener('pointermove', (e) => {
   if (session === undefined) {
     hoveredItem = undefined;
     return;
   }
+  markCell(e);
   const rect = canvas.getBoundingClientRect();
   const target = session.online.pick(
     e.clientX - rect.left,
@@ -977,6 +1185,77 @@ function showBubbles(now: number): void {
   }
 }
 
+const castBarRoot = document.querySelector<HTMLDivElement>('#cast-bars');
+const castBarViews = new Map<number, HTMLDivElement>();
+const castBarAt = new Vector3();
+
+/** Places the cast bars over their casters and fills them. */
+function showCastBars(now: number): void {
+  if (castBarRoot === null || session === undefined) {
+    return;
+  }
+  const active = castBars.active(now);
+  castBars.expire(now);
+  for (const [id, div] of castBarViews) {
+    if (!active.has(id)) {
+      div.remove();
+      castBarViews.delete(id);
+    }
+  }
+  for (const [id, fill] of active) {
+    let div = castBarViews.get(id);
+    if (div === undefined) {
+      div = document.createElement('div');
+      div.className = 'cast-bar';
+      div.append(document.createElement('div'));
+      castBarRoot.append(div);
+      castBarViews.set(id, div);
+    }
+    const p = session.online.position(id);
+    if (p === undefined) {
+      div.hidden = true;
+      continue;
+    }
+    castBarAt.copy(p);
+    castBarAt.y += 3.2;
+    castBarAt.project(camera);
+    div.hidden = castBarAt.z > 1;
+    div.style.left = `${((castBarAt.x + 1) / 2) * 100}%`;
+    div.style.top = `${((1 - castBarAt.y) / 2) * 100}%`;
+    const bar = div.firstElementChild;
+    if (bar instanceof HTMLElement) {
+      bar.style.width = `${fill * 100}%`;
+    }
+  }
+}
+
+/** Loads the player's hotkeys once its name is known, and shows the slots. */
+function showHotkeys(now: number): void {
+  const bar = hotkeyBar;
+  if (bar === undefined) {
+    return;
+  }
+  const name = session?.online.selfName;
+  if (name !== undefined && name !== hotkeysOf) {
+    hotkeysOf = name;
+    bar.load(loadHotkeys(() => localStorage, name));
+  }
+  bar.update((h) => {
+    const s = skills.get(h.skillId);
+    const left = cooldowns.remaining(h.skillId, now);
+    if (s === undefined) {
+      return { badge: '?', title: `Skill ${h.skillId}`, cooldown: '', usable: false };
+    }
+    const label = s.displayName || s.name;
+    return {
+      badge: skillBadge(label),
+      title: `${label} Lv ${castLevel(s, h.level)}`,
+      cooldown: cooldownText(left),
+      usable: castable(s) && left === 0,
+    };
+  });
+}
+
 const progressView = document.querySelector<HTMLDivElement>('#progress');
 const progressAt = new Vector3();
 
@@ -1049,7 +1328,13 @@ renderer.setAnimationLoop((time) => {
     if (shopWindow !== undefined) {
       shopWindow.stats = stats;
     }
+    if (skillWindow?.open === true) {
+      const now = performance.now();
+      skillWindow.update(stats, (id) => cooldowns.remaining(id, now));
+    }
   }
+  showHotkeys(performance.now());
+  showCastBars(performance.now());
   showBubbles(performance.now());
   statusIcons?.update(performance.now());
   showItemLabel();

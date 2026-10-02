@@ -1183,7 +1183,7 @@ Status effects, from rAthena's SC_ names, and the statuses mods define.
 
 ## wa.effects
 
-Effects for player:show_effect, from rAthena's EF_ names.
+Effects for entity:show_effect, from rAthena's EF_ names.
 
 | Name | Value | rAthena |
 |---|---|---|

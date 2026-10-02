@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"strings"
 
@@ -9,7 +10,8 @@ import (
 	"github.com/lxsmnsyc/wathena/server/store/db"
 )
 
-// loadStatuses reads a character's saved statuses and timed bonuses.
+// loadStatuses reads a character's saved statuses, skills and timed
+// bonuses.
 func loadStatuses(ctx context.Context, q *db.Queries, c *character.Character) error {
 	rows, err := q.Statuses(ctx, c.ID)
 	if err != nil {
@@ -17,6 +19,16 @@ func loadStatuses(ctx context.Context, q *db.Queries, c *character.Character) er
 	}
 	for _, r := range rows {
 		c.Statuses = append(c.Statuses, character.Status{Name: r.Name, Values: [4]int{r.Val1, r.Val2, r.Val3, r.Val4}, Tick: r.Tick, End: r.EndMs})
+	}
+	skills, err := q.Skills(ctx, c.ID)
+	if err != nil {
+		return err
+	}
+	for _, r := range skills {
+		if c.Skills == nil {
+			c.Skills = map[int]int{}
+		}
+		c.Skills[r.SkillID] = r.Level
 	}
 	timed, err := q.TimedBonuses(ctx, c.ID)
 	if err != nil {
@@ -36,8 +48,8 @@ func sortedStatuses(list []character.Status) []character.Status {
 	return out
 }
 
-// writeStatuses replaces a character's statuses and timed bonuses when
-// they changed from old.
+// writeStatuses replaces a character's statuses, skills and timed bonuses
+// when they changed from old.
 func writeStatuses(ctx context.Context, q *db.Queries, id int64, old, cur *character.Character) error {
 	if !slices.Equal(sortedStatuses(old.Statuses), sortedStatuses(cur.Statuses)) {
 		if err := q.DeleteStatuses(ctx, id); err != nil {
@@ -51,6 +63,21 @@ func writeStatuses(ctx context.Context, q *db.Queries, id int64, old, cur *chara
 				p.Val1s[i], p.Val2s[i], p.Val3s[i], p.Val4s[i] = s.Values[0], s.Values[1], s.Values[2], s.Values[3]
 			}
 			if err := q.InsertStatuses(ctx, p); err != nil {
+				return err
+			}
+		}
+	}
+	if !maps.Equal(old.Skills, cur.Skills) {
+		if err := q.DeleteSkills(ctx, id); err != nil {
+			return err
+		}
+		if n := len(cur.Skills); n > 0 {
+			p := db.InsertSkillsParams{CharacterID: id}
+			for _, sk := range slices.Sorted(maps.Keys(cur.Skills)) {
+				p.SkillIds = append(p.SkillIds, sk)
+				p.Levels = append(p.Levels, cur.Skills[sk])
+			}
+			if err := q.InsertSkills(ctx, p); err != nil {
 				return err
 			}
 		}

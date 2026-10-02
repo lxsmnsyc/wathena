@@ -128,6 +128,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	}
 	var filter *deathFilter
 	var sfilter *statusFilter
+	var kfilter *skillFilter
 	if opts := c.Arg(2); !opts.IsNil() {
 		var err error
 		switch {
@@ -135,8 +136,10 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 			filter, err = readDeathFilter(opts)
 		case slices.Contains(statusEvents, name):
 			sfilter, err = readStatusFilter(name, opts)
+		case name == "skill_used":
+			kfilter, err = readSkillFilter(opts)
 		default:
-			return fmt.Errorf("events.on(%q): only the death and status events take options", name)
+			return fmt.Errorf("events.on(%q): only the death, status and skill_used events take options", name)
 		}
 		if err != nil {
 			return err
@@ -149,7 +152,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter}
+	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter, skill: kfilter}
 	ctx.handlers = append(ctx.handlers, h)
 	r.handlers[name] = append(r.handlers[name], h)
 	r.byID[h.id] = h
@@ -535,6 +538,13 @@ func (r *Runtime) skillsID(c *script.Call) error {
 	name := c.String(0)
 	if r.opts.Constants != nil {
 		if id, ok := r.opts.Constants.Skill(name); ok {
+			c.Return(script.Int(id))
+			return nil
+		}
+	}
+	// Mods' skills, which the zone's skill database has.
+	if h, ok := r.host.(SkillHost); ok {
+		if id, ok := h.SkillID(name); ok {
 			c.Return(script.Int(id))
 			return nil
 		}

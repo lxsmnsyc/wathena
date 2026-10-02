@@ -205,6 +205,15 @@ func (q *Queries) DeleteInventorySlots(ctx context.Context, arg DeleteInventoryS
 	return err
 }
 
+const deleteSkills = `-- name: DeleteSkills :exec
+DELETE FROM character_skills WHERE character_id = $1
+`
+
+func (q *Queries) DeleteSkills(ctx context.Context, characterID int64) error {
+	_, err := q.db.Exec(ctx, deleteSkills, characterID)
+	return err
+}
+
 const deleteStatuses = `-- name: DeleteStatuses :exec
 DELETE FROM character_statuses WHERE character_id = $1
 `
@@ -255,6 +264,22 @@ func (q *Queries) InsertInventory(ctx context.Context, arg InsertInventoryParams
 		arg.Refines,
 		arg.Cards,
 	)
+	return err
+}
+
+const insertSkills = `-- name: InsertSkills :exec
+INSERT INTO character_skills (character_id, skill_id, level)
+SELECT $1, unnest($2::integer[]), unnest($3::smallint[])
+`
+
+type InsertSkillsParams struct {
+	CharacterID int64
+	SkillIds    []int
+	Levels      []int
+}
+
+func (q *Queries) InsertSkills(ctx context.Context, arg InsertSkillsParams) error {
+	_, err := q.db.Exec(ctx, insertSkills, arg.CharacterID, arg.SkillIds, arg.Levels)
 	return err
 }
 
@@ -448,6 +473,37 @@ func (q *Queries) SaveCharacter(ctx context.Context, arg SaveCharacterParams) (i
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const skills = `-- name: Skills :many
+SELECT skill_id, level FROM character_skills
+WHERE character_id = $1
+ORDER BY skill_id
+`
+
+type SkillsRow struct {
+	SkillID int
+	Level   int
+}
+
+func (q *Queries) Skills(ctx context.Context, characterID int64) ([]SkillsRow, error) {
+	rows, err := q.db.Query(ctx, skills, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SkillsRow
+	for rows.Next() {
+		var i SkillsRow
+		if err := rows.Scan(&i.SkillID, &i.Level); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const statuses = `-- name: Statuses :many

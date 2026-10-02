@@ -94,8 +94,8 @@ func TestLoadSampleMod(t *testing.T) {
 	if s := m.zone.Shops["example.greeter:Cookie Stand"]; s == nil || len(s.Items) != 2 || s.Items[1].Price != 10 {
 		t.Errorf("cookie stand %+v", s)
 	}
-	// core and the three sample mods.
-	if len(m.zone.Scripts) != 4 || m.zone.ItemIDs["Red_Potion"] != 501 {
+	// core and the four sample mods.
+	if len(m.zone.Scripts) != 5 || m.zone.ItemIDs["Red_Potion"] != 501 {
 		t.Errorf("zone mods: %d scripts", len(m.zone.Scripts))
 	}
 	// The Halloween mod's monsters, with the IDs of the mod range, and
@@ -113,6 +113,16 @@ func TestLoadSampleMod(t *testing.T) {
 	}
 	if len(m.all.Events) != 2 || m.all.Events[0].Map != "map/prt_fild08" || m.all.Events[0].Script != "example.halloween:scripts/events/pumpkin_king.lua" {
 		t.Errorf("events %+v", m.all.Events)
+	}
+	// The Chain Lightning mod's skill, which Mages learn.
+	chain := m.all.Skills.ByName("example.chain-lightning:CHAIN_LIGHTNING")
+	if chain == nil || chain.ID != 20_000 || chain.Script != "example.chain-lightning:scripts/skills/chain_lightning.lua" || chain.MaxLevel != 5 {
+		t.Errorf("chain lightning %+v", chain)
+	}
+	if chain != nil {
+		if e := m.all.SkillTrees.Job(2).Skill(chain.ID); e == nil || e.MaxLevel != 5 {
+			t.Errorf("mage tree entry %+v", e)
+		}
 	}
 	if m.set.Ruleset.Mod != mod.CoreRenewal {
 		t.Errorf("ruleset %s", m.set.Ruleset)

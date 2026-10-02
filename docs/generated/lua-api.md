@@ -34,7 +34,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.monster_classes`](#wamonster_classes) | Monster classes, from rAthena's CLASS_ names. |
 | [`wa.weapon_types`](#waweapon_types) | Weapon types, from rAthena's W_ names. |
 | [`wa.statuses`](#wastatuses) | Status effects, from rAthena's SC_ names, and the statuses mods define. |
-| [`wa.effects`](#waeffects) | Effects for player:show_effect, from rAthena's EF_ names. |
+| [`wa.effects`](#waeffects) | Effects for entity:show_effect, from rAthena's EF_ names. |
 | [`wa.headgear_effects`](#waheadgear_effects) | Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names. |
 | [`wa.emotions`](#waemotions) | Emotions for npc:show_emotion, from rAthena's ET_ names. |
 | [`wa.jobs`](#wajobs) | Jobs, from rAthena's JOB_ names, and job tests. |
@@ -48,9 +48,9 @@ local context = require "wa.context"
 
 The current instance, kind and mod. Calls outside a setup function or a handler raise an error.
 
-#### `context:get_instance() → wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance`
+#### `context:get_instance() → wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance|wa.SkillInstance|wa.PassiveSkillInstance`
 
-The instance the context owns: the mod, the NPC, the equipped copy, the used item, or the event run.
+The instance the context owns: the mod, the NPC, the equipped copy, the used item, the event run, the skill, or a passive skill of one owner.
 
 #### `context:get_kind() → wa.ContextKind`
 
@@ -78,7 +78,7 @@ Permission: `event.listen`.
 |---|---|---|
 | `name` | `wa.EventName` | The event's name. An unknown name, or an event of another context kind, raises an error. |
 | `handler` | `function` | Runs each time the event fires, in registration order. |
-| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|nil` | Only the death and status events take options: they narrow which events run the handler. |
+| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|wa.SkillUsedOptions\|nil` | Only the death, status and skill_used events take options: they narrow which events run the handler. |
 
 ### wa.hooks
 
@@ -97,7 +97,7 @@ Permission: `rules.override`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `wa.HookName` | The hook's name. An unknown name raises an error. |
-| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook, next: fun(object?: table): integer, integer?): integer, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration returns milliseconds. |
+| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook, next: fun(object?: table): integer\|boolean, integer?): integer\|boolean, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false. |
 | `options` | `wa.HookOptions?` |  |
 
 ### wa.schedules
@@ -254,7 +254,7 @@ Permission: `game.read`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | A skill_db name, such as SM_BASH. |
+| `name` | `string` | A skill_db name, such as SM_BASH, or a mod skill's full name, such as example.chain-lightning:CHAIN_LIGHTNING. |
 
 ### wa.monsters
 
@@ -310,6 +310,16 @@ Shows a line to every player of a map, as mapannounce.
 |---|---|---|
 | `map` | `string` | A map name, such as prontera. |
 | `text` | `string` | At most 255 bytes. |
+
+#### `maps.find_entities(query) → (wa.Player|wa.Monster|wa.Npc)[]`
+
+The entities of an area of the context's map that pass every filter, sorted, and cut to the limit. Ties sort by kind, then by entity. A query with no area, two areas, or a field it does not know raises an error.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `query` | `wa.EntityQuery` | One area, filters, and an order. |
 
 ### wa.world
 
@@ -690,7 +700,7 @@ Adds a status in a mod script. It gets a constant in wa.statuses named after it,
 local effects = require "wa.effects"
 ```
 
-Effects for player:show_effect, from rAthena's EF_ names.
+Effects for entity:show_effect, from rAthena's EF_ names.
 
 Constants: [lua-constants.md](lua-constants.md#waeffects).
 
@@ -982,6 +992,20 @@ Plays an effect on the player for everyone near, as specialeffect2.
 |---|---|---|
 | `effect` | `integer` | An effect from wa.effects. |
 
+#### `player:find_nearby(query) → (wa.Player|wa.Monster|wa.Npc)[]`
+
+maps.find_entities with around set to the entity.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `query` | `wa.EntityQuery` | A query without an area: it is around the entity, with radius. |
+
+#### `player:exists() → boolean`
+
+False once the entity is removed, has logged out, or has left the zone. It never raises an error.
+
 #### `player:show_headgear_effect(effect)`
 
 rAthena's hateffect. It shows nothing yet.
@@ -1108,6 +1132,28 @@ A monster. A killed monster's handle reads while its death event runs, with is_a
 | `y` | `integer` |  |
 | `is_alive` | `boolean` |  |
 
+#### `monster:show_effect(effect)`
+
+Plays an effect on the monster for everyone near, as specialeffect.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `effect` | `integer` | An effect from wa.effects. |
+
+#### `monster:find_nearby(query) → (wa.Player|wa.Monster|wa.Npc)[]`
+
+maps.find_entities with around set to the entity.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `query` | `wa.EntityQuery` | A query without an area: it is around the entity, with radius. |
+
+#### `monster:exists() → boolean`
+
+False once the entity is removed, has logged out, or has left the zone. It never raises an error.
+
 #### `monster:start_status(status, options?) → boolean`
 
 Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
@@ -1178,6 +1224,28 @@ Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it
 | Parameter | Type | Meaning |
 |---|---|---|
 | `text` | `string` |  |
+
+#### `npc:show_effect(effect)`
+
+Plays an effect on the NPC for everyone near, as specialeffect.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `effect` | `integer` | An effect from wa.effects. |
+
+#### `npc:find_nearby(query) → (wa.Player|wa.Monster|wa.Npc)[]`
+
+maps.find_entities with around set to the entity.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `query` | `wa.EntityQuery` | A query without an area: it is around the entity, with radius. |
+
+#### `npc:exists() → boolean`
+
+False once the entity is removed, has logged out, or has left the zone. It never raises an error.
 
 #### `npc:start_status(status, options?) → boolean`
 
@@ -1614,15 +1682,162 @@ The object of the damage event (0002a, "Item events").
 
 ### wa.SkillUse
 
-The object of the skill_used event.
+The object of the skill_used event: a skill that took effect, after its cast time.
 
 | Field | Type | Meaning |
 |---|---|---|
+| `caster` | `wa.Player\|wa.Monster\|wa.Npc` | The wearer, for an item's handler. caster.kind says which. |
 | `skill` | `integer` |  |
 | `level` | `integer` |  |
-| `target` | `wa.Player?` | nil for a ground skill. |
-| `x` | `integer` |  |
+| `target` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | nil for a ground skill. |
+| `x` | `integer` | The cell the skill took effect at. |
 | `y` | `integer` |  |
+
+### wa.SkillUsedOptions
+
+The options of a skill_used handler. Each one narrows the skills that run it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `skill` | `integer?` | A skill from skills.id. |
+| `caster_kind` | `"player"\|"monster"\|"npc"\|nil` |  |
+| `map` | `string?` | A map name. |
+
+### wa.Cast
+
+The object of the cast event: one cast of the skill, when it takes effect. It stays usable after the event, so timers of the skill's context can use it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `caster` | `wa.Player\|wa.Monster\|wa.Npc` | caster.kind says which. |
+| `skill` | `integer` |  |
+| `level` | `integer` |  |
+| `target` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | nil for a ground skill. |
+| `map` | `string` |  |
+| `x` | `integer` | The cell the skill takes effect at: the target's, or the ground cell. |
+| `y` | `integer` |  |
+
+#### `cast:deal_damage(target, options?) → wa.CastDamageResult?`
+
+Runs rAthena's damage calculation of the skill on the target, with percent as the skill's damage percentage, after the skill_damage hooks. It applies cards and defense, and fires the damage event after the script's call. Returns nil, and does nothing, when the caster is gone or cannot act, as rAthena's skill_addtimerskill.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `target` | `wa.Player\|wa.Monster\|wa.Npc` |  |
+| `options` | `wa.CastDamageOptions?` |  |
+
+#### `cast:heal(target, amount) → integer?`
+
+Heals the target with rAthena's heal bonuses, and returns the HP healed. Returns nil, and does nothing, when the caster is gone or cannot act.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `target` | `wa.Player\|wa.Monster\|wa.Npc` |  |
+| `amount` | `integer` | 0 or more. |
+
+#### `cast:run_default(options?)`
+
+Runs core's own behavior of the skill. It raises an error for a skill that has none, such as a mod's skill.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `options` | `wa.RunDefaultOptions?` |  |
+
+### wa.CastDamageOptions
+
+The options of cast:deal_damage. Without one, the skill's data gives the value.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `percent` | `integer?` | The skill's damage percentage, 0 or more. 100 by default. |
+| `hits` | `integer?` | The number of hits, 1 to 30. |
+| `type` | `"weapon"\|"magic"\|"misc"\|nil` | The attack type. |
+| `element` | `integer?` | An element from wa.elements, not all. |
+
+### wa.CastDamageResult
+
+What cast:deal_damage returns.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `amount` | `integer` | The damage dealt. |
+| `is_critical` | `boolean` |  |
+| `missed` | `boolean` |  |
+
+### wa.RunDefaultOptions
+
+The options of cast:run_default.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `target` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | Another target. The cast's target by default. |
+
+### wa.SkillInstance
+
+The instance of a skill's context: the skill, once per zone. Its cast handlers run for every cast.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | The skill's ID. |
+
+### wa.PassiveSkillInstance
+
+The instance of a passive skill's context: one owner's skill, while it is learned. A new context starts when the level changes.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | The skill's ID. |
+| `level` | `integer` | The learned level. |
+| `owner` | `wa.Player` | Who learned the skill. |
+
+### wa.SkillHook
+
+The object of the skill_damage, cast_time, skill_cost and cast_allowed hooks. The innermost result is rAthena's value.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `caster` | `wa.Player\|wa.Monster\|wa.Npc` |  |
+| `target` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | nil for a ground skill, and for skill_cost. |
+| `skill` | `integer` |  |
+| `level` | `integer` |  |
+| `percent` | `integer?` | skill_damage: the damage percentage. |
+| `milliseconds` | `integer?` | cast_time: the cast time, after DEX and the cast bonuses. |
+| `sp` | `integer?` | skill_cost: the SP cost. |
+| `allowed` | `boolean?` | cast_allowed: whether rAthena lets the cast start. |
+
+### wa.EntityQuery
+
+A query of maps.find_entities. It has one area: around with radius, x and y with radius, rectangle, line, or cells. The other fields filter and sort.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `around` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | The area is the cells within radius of the entity. The entity is in its own area: exclude leaves it out. |
+| `map` | `string?` | The context's own map, which is the default. Another map raises an error. |
+| `x` | `integer?` | With y, the area is the cells within radius of the cell. |
+| `y` | `integer?` |  |
+| `radius` | `integer?` | 0 to 30 cells, with around or x and y. |
+| `shape` | `"square"\|"circle"\|nil` | With around or x and y. "square" by default, as rAthena's ranges. |
+| `rectangle` | `integer[][]?` | Two opposite corners, such as { { 100, 100 }, { 110, 105 } }. Sides of at most 61 cells. |
+| `line` | `wa.QueryLine?` | The cells along a line. |
+| `cells` | `integer[][]?` | A list of 1 to 1024 cells, such as { { 100, 100 }, { 101, 100 } }. |
+| `kinds` | `("player"\|"monster"\|"npc")[]?` | Keeps these kinds. Every kind by default. |
+| `alive` | `boolean?` | true, the default, keeps living entities; false keeps dead ones. |
+| `enemies_of` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | Keeps the entities this one may attack, by rAthena's rules. |
+| `allies_of` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | Keeps the entities this one may help, by rAthena's rules, with itself. |
+| `line_of_sight` | `boolean?` | Keeps the entities that the center of the area sees: the entity of around, the cell, the middle of the rectangle, the start of the line, or the first cell. |
+| `exclude` | `(wa.Player\|wa.Monster\|wa.Npc)[]?` | Leaves these out. |
+| `sort` | `"nearest"\|"farthest"\|"lowest_hp"\|"random"\|nil` | Distances are from the center of the area. "random" draws from the zone's secret stream. |
+| `limit` | `integer?` | 1 to 1000. 1000 by default. |
+
+### wa.QueryLine
+
+The line of a query.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `from` | `integer[]` | A cell, such as { 100, 100 }. |
+| `to` | `integer[]` | A cell, at most 61 cells away on each axis. |
+| `width` | `integer?` | 1 to 15 cells. 1 by default. |
 
 ### wa.HealSpec
 
@@ -1986,7 +2201,8 @@ Changes the value.
 | `touch` | npc | `player: wa.Player` | A player walks into the NPC's area. It does not fire yet. |
 | `use` | item | `player: wa.Player` | The item is used. |
 | `damage` | item | `hit: wa.Damage` | A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3). |
-| `skill_used` | item | `use: wa.SkillUse` | The wearer uses a skill. It fires in tests until skills exist (phase 4 step 3). |
+| `skill_used` | item, mod, event | `use: wa.SkillUse` | A skill took effect, after its cast time. An interrupted cast does not fire it. An item's handler hears the wearer's skills. A mod or event context hears every skill of its map: options narrow it. |
+| `cast` | skill | `cast: wa.Cast` | The skill takes effect. A skill whose script has a cast handler runs it instead of core's behavior of the skill. |
 | `unequip` | item | `player: wa.Player` | The copy is unequipped, before its context ends. |
 | `status_start` | mod, event | `event: wa.StatusEvent` | A status started on an entity of the context's map, or started again. Options narrow it. |
 | `status_end` | mod, event | `event: wa.StatusEvent` | A status ended. Options narrow it. |
@@ -2004,7 +2220,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `click`, `touch`, `use`, `damage`, `skill_used`, `unequip`, `status_start`, `status_end`, `status_tick`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`
 
 ### wa.BonusName
 
@@ -2022,7 +2238,7 @@ An equipment slot.
 
 A hook name of wa.hooks.
 
-`drop_rate`, `experience`
+`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`
 
 ### wa.Weekday
 

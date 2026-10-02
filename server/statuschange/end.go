@@ -39,6 +39,11 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 	case SCIntravision:
 		// Required for overlapping.
 		recalcAll = true
+	case SCAutoberserk:
+		// The Provoke of Auto Berserk ends with it.
+		if p := sc.Get(SCProvoke); p != nil && p.Val4 == 1 {
+			en.End(u, SCProvoke, ReasonReplaced)
+		}
 	}
 
 	for _, t := range def.EndOnEnd {
@@ -222,6 +227,33 @@ func (en *Engine) Dispell(u Unit, debuffsOnly bool) {
 			continue
 		}
 		en.End(u, e.Type, ReasonDispell)
+	}
+}
+
+// RemoveMap is the status part of unit_remove_map: the unit leaves its
+// map, by a warp, a change of map, death or logout.
+//   - Statuses with RemoveOnChangeMap end.
+//   - Cloaking and Cloaking Exceed end on units other than players.
+//   - The Provoke of Auto Berserk ends, so it cannot be kept by leaving
+//     the map.
+//
+// Gospel's end waits for Gospel.
+func (en *Engine) RemoveMap(u Unit) {
+	sc := u.Changes()
+	if sc.Empty() {
+		return
+	}
+	for _, e := range sc.Sorted() {
+		if def := en.DB.Get(e.Type); def != nil && def.Flags.Has(FlagRemoveOnChangeMap) {
+			en.End(u, e.Type, ReasonRemoved)
+		}
+	}
+	if u.Kind() != KindPlayer {
+		en.End(u, SCCloaking, ReasonRemoved)
+		en.End(u, SCCloakingexceed, ReasonRemoved)
+	}
+	if p := sc.Get(SCProvoke); p != nil && p.Val4 == 1 {
+		en.End(u, SCProvoke, ReasonRemoved)
 	}
 }
 

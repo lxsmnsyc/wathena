@@ -49,9 +49,43 @@ func (v *setup) run(typ int, def *Def) bool {
 		if val[3] != 0 {
 			v.tick = InfiniteTick
 		}
+	case SCAutoberserk:
+		// The timer checks every 100 ms whether to start or end the
+		// Provoke of Auto Berserk.
+		v.tickTime = 100
+		v.tick = InfiniteTick
 	case SCSignumcrucis:
 		val[1] = 10 + 4*val[0]
 		v.tick = InfiniteTick
+	case SCTrickdead:
+		// rAthena also gives the unit the dead look (dead_sit). The zone
+		// shows it.
+		v.tick = InfiniteTick
+	case SCConcentrate:
+		// AGI and DEX in percent. val3 and val4 are the AGI and DEX of
+		// cards, which the percent leaves out. A player's stat
+		// calculation sets them again (status_calc_pc), and one follows
+		// the start, so they start at 0 here.
+		val[1] = 2 + val[0]
+		val[2], val[3] = 0, 0
+	case SCProvoke:
+		// val2 is the ATK increase and val3 the DEF decrease, in percent.
+		// val4 is 1 for the Provoke of Auto Berserk.
+		if v.src != nil && v.src.Kind() != KindPlayer && val[0] == 10 {
+			val[1] = 0
+			val[2] = 100
+		} else {
+			val[1] = 2 + 3*val[0]
+			val[2] = 5 + 5*val[0]
+		}
+	case SCSubWeaponPro:
+		// Enchant Deadly Poison lasts longer with Research New Poison.
+		if isPC && val[2] == skillEDP {
+			if lv := v.target.Skill(skillResearchNewPoison); lv > 0 {
+				v.tick += 30000
+				v.tick += int64(lv) * 15 * 1000
+			}
+		}
 	case SCKyrie:
 		if val[3] != 0 {
 			// Praefatio.

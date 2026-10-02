@@ -17,6 +17,12 @@ import {
 import type { Event } from '../gen/wathena/v1/event_pb';
 import type { DisconnectReason, Welcome } from '../gen/wathena/v1/session_pb';
 
+/** What a skill targets: an entity, a cell, or nothing for a self skill. */
+export type UseSkillTarget =
+  | { case: 'entity'; value: number }
+  | { case: 'cell'; value: { x: number; y: number } }
+  | { case: undefined; value?: undefined };
+
 /** An answer to an NPC dialog step. */
 export type NpcAnswer = NpcReply['answer'];
 
@@ -184,6 +190,27 @@ export class Connection {
     this.send({
       case: 'command',
       value: create(CommandSchema, { body: { case: 'raiseStat', value: { stat, amount } } }),
+    });
+  }
+
+  /**
+   * Casts a skill at a level. target is an entity or a cell, or empty for
+   * a self skill.
+   */
+  useSkill(skillId: number, level: number, target: UseSkillTarget): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'useSkill', value: { skillId, level, target } },
+      }),
+    });
+  }
+
+  /** Spends a skill point on a skill. */
+  learnSkill(skillId: number): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'learnSkill', value: { skillId } } }),
     });
   }
 

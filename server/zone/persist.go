@@ -10,6 +10,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/skill"
 )
 
 // Saving: the zone hands a copy of a player's character to the player's
@@ -79,12 +80,18 @@ func (z *Zone) NewCharacter(name string, look Look) character.Character {
 	if z.Progress != nil {
 		c.StatusPoints = z.Progress.NewCharacter(c.Job).StatusPoints
 	}
+	if z.StartBaseLevel > 1 || z.StartJobLevel > 1 {
+		z.startLevels(&c)
+	}
 	// Without job tables, there is no weight limit to check start items
 	// against.
 	st, maxWeight := z.PlayerStatus, math.MaxInt
 	if z.Status != nil {
 		sc := z.Start
-		sc.Job, sc.Male, sc.BaseLevel, sc.JobLevel = c.Job, c.Male, 1, 1
+		sc.Job, sc.Male, sc.BaseLevel, sc.JobLevel = c.Job, c.Male, c.BaseLevel, c.JobLevel
+		if c.Skills != nil {
+			sc.Skills = c.Skills
+		}
 		res, err := z.Status.Calc(sc)
 		if err == nil {
 			st, maxWeight = res.Battle, res.MaxWeight
@@ -159,6 +166,7 @@ func (z *Zone) snapshot(p *Player) *character.Character {
 	}
 	c.Statuses = z.savedStatuses(p)
 	c.TimedBonuses = z.savedTimedBonuses(p)
+	c.Skills = learnedSkills(p)
 	return c
 }
 
@@ -190,5 +198,26 @@ func (z *Zone) autosave() {
 			p.nextSave = z.now + z.saveInterval().Milliseconds()
 			z.save(p, false)
 		}
+	}
+}
+
+// startLevels gives a new character the development start levels, with
+// the points those levels give, as if it had gained them.
+func (z *Zone) startLevels(c *character.Character) {
+	if z.StartBaseLevel > 1 {
+		if z.Progress != nil {
+			for l := c.BaseLevel; l < z.StartBaseLevel; l++ {
+				c.StatusPoints += z.Progress.StatusPointGain(l)
+			}
+		}
+		c.BaseLevel = z.StartBaseLevel
+	}
+	if z.StartJobLevel > 1 {
+		c.SkillPoints += z.StartJobLevel - c.JobLevel
+		c.JobLevel = z.StartJobLevel
+	}
+	if c.Job != 0 {
+		// A first class job needs Basic Skill at level 9.
+		c.Skills = map[int]int{skill.IDBasic: 9}
 	}
 }

@@ -190,3 +190,20 @@ const (
 	SCPeriodPlusexp2nd     = 949  // SC_PERIOD_PLUSEXP_2ND
 	SCStarBurst            = 1018 // SC_STAR_BURST
 )
+
+// Status IDs that skills start or read, as rAthena's sc_type.
+const (
+	SCConcentrate    = 23  // SC_CONCENTRATE
+	SCQuagmire       = 28  // SC_QUAGMIRE
+	SCSuffragium     = 36  // SC_SUFFRAGIUM
+	SCLoud           = 48  // SC_LOUD
+	SCEnergycoat     = 49  // SC_ENERGYCOAT
+	SCAutoberserk    = 85  // SC_AUTOBERSERK
+	SCSafetywall     = 89  // SC_SAFETYWALL
+	SCWatkElement    = 103 // SC_WATK_ELEMENT
+	SCMemorize       = 131 // SC_MEMORIZE
+	SCPoembragi      = 175 // SC_POEMBRAGI
+	SCPneuma         = 268 // SC_PNEUMA
+	SCCloakingexceed = 364 // SC_CLOAKINGEXCEED
+	SCSubWeaponPro   = 885 // SC_SUB_WEAPONPROPERTY
+)

@@ -8,7 +8,7 @@ local skills = {}
 ---The skill's ID. An unknown name raises an error.
 ---
 ---Needs the permission `game.read`.
----@param name string A skill_db name, such as SM_BASH.
+---@param name string A skill_db name, such as SM_BASH, or a mod skill's full name, such as example.chain-lightning:CHAIN_LIGHTNING.
 ---@return integer
 function skills.id(name) end
 

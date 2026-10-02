@@ -259,3 +259,15 @@ func TestTimeZone(t *testing.T) {
 		}
 	}
 }
+
+func TestParseStartJob(t *testing.T) {
+	sj, err := parseStartJob("1:50:40")
+	if err != nil || sj != (startJob{job: 1, base: 50, jobLevel: 40}) {
+		t.Fatalf("%+v, %v", sj, err)
+	}
+	for _, bad := range []string{"", "1:50", "a:1:1", "1:0:1", "1:1:-1", "1:1:1:1"} {
+		if _, err := parseStartJob(bad); err == nil {
+			t.Errorf("%q accepted", bad)
+		}
+	}
+}

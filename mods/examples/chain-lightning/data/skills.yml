@@ -1,0 +1,27 @@
+# Chain Lightning: a new magic skill. It shows the icon and animation of
+# Lightning Bolt. The server gives it an ID in the mod range (from
+# 20,000) the first time it loads.
+#
+# A number is one value for every level, or a list with one value per
+# level.
+- name: example.chain-lightning:CHAIN_LIGHTNING
+  display_name: Chain Lightning
+  icon: MG_LIGHTNINGBOLT
+  max_level: 5
+  type: magic
+  target: enemy
+  element: wind
+  range: 9
+  cast_time: [1000, 1200, 1400, 1600, 1800]
+  after_cast_delay: 1000
+  requirements:
+    sp: [20, 24, 28, 32, 36]
+  script: scripts/skills/chain_lightning.lua
+
+# A mod can change a core skill by its name, such as:
+#
+# - name: MG_LIGHTNINGBOLT
+#   cast_time: 500
+#
+# Setting script on a core skill replaces its behavior, which needs the
+# permission rules.override.

@@ -73,7 +73,7 @@ mtf_aspd: aspd(val1)
 mtf_aspd: hit(val2)
 mtf_rangeatk: damage(val1) kind=physical range=ranged
 mtf_matk: matk(val1)
-mtf_mleatked: cast(8, val1) chance=0 on=hit_taken
+mtf_mleatked: cast(8, val1) chance=0 on=hit_taken target=set
 mtf_mleatked: damage_taken((0 - val3)) element=0
 mtf_cridamage: crit_damage(val1)
 quest_buff1: matk(val1)

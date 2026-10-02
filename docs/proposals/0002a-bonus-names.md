@@ -91,7 +91,7 @@ The last argument of `bonuses.add` can be a table. Each row of the table lists w
 | `from` | A table with one key | The source. See the keys below. |
 | `chance` | Integer per 10,000 | The chance of a proc. Required on every proc. |
 | `on` | `"attack"` (default), `"hit_taken"`, or `"skill_used"` | The trigger of a proc. |
-| `target` | `"self"` or `"enemy"` | Who gets a proc's effect. rAthena's `ATF_SELF`, `ATF_TARGET`, and autospell `i & 1`. |
+| `target` | `"self"` or `"enemy"` | Who gets a proc's effect. rAthena's `ATF_SELF`, `ATF_TARGET`, and autospell `i & 1`: for `bAutoSpell` and `bAutoSpellWhenHit` the bit casts on the enemy and its absence on the wearer; for `bAutoSpellOnSkill` the bit casts on the wearer. Without `target`, `cast` picks the wearer for support skills and self skills, and the enemy for the rest, as rAthena's bonus without `i`. |
 | `duration` | Milliseconds | How long a proc's effect lasts. |
 | `random_level` | `true` | `cast` picks a level from 1 to the given level. rAthena's autospell `i & 2`. |
 | `stacking` | `"sum"`, `"highest"`, `"lowest"`, `"last"`, or `"priority"` | See "Stacking". |

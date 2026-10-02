@@ -1,0 +1,228 @@
+# The effects the web client plays for skills, by rAthena skill ID, and
+# for the skill units of ground skills, by rAthena UNT_ ID. The effect
+# IDs are RO effect IDs from effects.yml.
+#
+# A skill lists the effects it plays at each moment:
+# - caster: on the caster, once each time the skill takes effect. This is
+#   roBrowser's beginCastEffectId and effectIdOnCaster.
+# - effect: on the target, an entity or a cell, once each time the skill
+#   takes effect, with or without damage. This is roBrowser's effectId
+#   and successEffectId.
+# - hit: on the target for each hit that deals damage. This is
+#   roBrowser's hitEffectId.
+# - aura: false for skills that show no cast aura while they cast.
+#
+# Casts show the aura of the skill's element, from auras below, for the
+# cast time. A mod's skill plays the effects of the core skill that its
+# skill list entry names as its icon.
+#
+# A skill unit shows its effect on its cell for as long as it stays, and
+# plays its sounds once. A unit without an effect, such as
+# UNT_DUMMYSKILL, plays its skill's effect once on its cell instead.
+# Thunder Storm is one such unit.
+#
+# Some roBrowser effects are not here, since the client cannot draw them
+# yet:
+# - Projectiles before a hit (beforeHitEffectId and releaseEffectId): the
+#   Soul Strike, Fire Ball, Cold Bolt and Fire Bolt projectiles, Frost
+#   Diver's ice path, Stone Fling's stone, and the arrows of Double
+#   Strafe, Arrow Shower and Arrow Repel.
+# - Magnum Break's quake, a camera shake.
+# - Sand Attack's effect 310, which roBrowser's table lacks.
+# - Sight, Ruwach's light, Hiding and Play Dead, which show as statuses.
+#
+# Entries are from roBrowserLegacy (GPL-3.0), src/DB/Skills/SkillEffect.js,
+# src/DB/Skills/SkillUnit.js, and src/Engine/MapEngine/Entity.js
+# (onEntityCastSkill) at commit 58759ab22d1d56da7f6719ee45cb475f7e851227,
+# by Vincent Thibault, Antares, and contributors.
+
+skills:
+  - id: 5
+    constant: SM_BASH
+    caster: [16]
+    hit: [1]
+  - id: 6
+    constant: SM_PROVOKE
+    effect: [67]
+  - id: 7
+    constant: SM_MAGNUM
+    caster: [17]
+  - id: 8
+    constant: SM_ENDURE
+    effect: [11]
+  - id: 10
+    constant: MG_SIGHT
+  - id: 11
+    constant: MG_NAPALMBEAT
+    hit: [1]
+  - id: 12
+    constant: MG_SAFETYWALL
+  - id: 13
+    constant: MG_SOULSTRIKE
+    caster: [15]
+    hit: [1]
+  - id: 14
+    constant: MG_COLDBOLT
+    hit: [51]
+  - id: 15
+    constant: MG_FROSTDIVER
+    hit: [28]
+  - id: 16
+    constant: MG_STONECURSE
+    effect: [23]
+  - id: 17
+    constant: MG_FIREBALL
+    caster: [24]
+    hit: [49]
+  - id: 18
+    constant: MG_FIREWALL
+    hit: [49]
+  - id: 19
+    constant: MG_FIREBOLT
+    hit: [49]
+  - id: 20
+    constant: MG_LIGHTNINGBOLT
+    effect: [29]
+    hit: [52]
+  - id: 21
+    constant: MG_THUNDERSTORM
+    effect: [30]
+    hit: [52]
+  - id: 24
+    constant: AL_RUWACH
+    hit: [1]
+  - id: 25
+    constant: AL_PNEUMA
+  - id: 26
+    constant: AL_TELEPORT
+  - id: 27
+    constant: AL_WARP
+  - id: 28
+    constant: AL_HEAL
+    effect: [312]
+    # Heal hurts undead targets.
+    hit: [320]
+  - id: 29
+    constant: AL_INCAGI
+    effect: [37]
+  - id: 30
+    constant: AL_DECAGI
+    effect: [38]
+  - id: 31
+    constant: AL_HOLYWATER
+    effect: [39]
+  - id: 32
+    constant: AL_CRUCIS
+    effect: [40]
+  - id: 33
+    constant: AL_ANGELUS
+    effect: [41]
+  - id: 34
+    constant: AL_BLESSING
+    effect: [42]
+  - id: 35
+    constant: AL_CURE
+    effect: [66]
+  - id: 42
+    constant: MC_MAMMONITE
+    effect: [10]
+  - id: 45
+    constant: AC_CONCENTRATION
+    effect: [153]
+  - id: 46
+    constant: AC_DOUBLE
+    caster: [16]
+    hit: [1]
+  - id: 47
+    constant: AC_SHOWER
+    hit: [1]
+  - id: 51
+    constant: TF_HIDING
+  - id: 52
+    constant: TF_POISON
+    hit: [20]
+  - id: 53
+    constant: TF_DETOXIFY
+    effect: [21]
+  - id: 142
+    constant: NV_FIRSTAID
+    effect: [309]
+  - id: 143
+    constant: NV_TRICKDEAD
+  - id: 146
+    constant: SM_AUTOBERSERK
+  - id: 148
+    constant: AC_CHARGEARROW
+    aura: false
+  - id: 149
+    constant: TF_SPRINKLESAND
+  - id: 150
+    constant: TF_BACKSLIDING
+  - id: 152
+    constant: TF_THROWSTONE
+  - id: 153
+    constant: MC_CARTREVOLUTION
+    caster: [170]
+    hit: [170]
+  - id: 155
+    constant: MC_LOUD
+    effect: [311]
+  - id: 156
+    constant: AL_HOLYLIGHT
+    effect: [152]
+  - id: 157
+    constant: MG_ENERGYCOAT
+    effect: [169]
+
+# Skill units by UNT_ ID, from rAthena's e_skill_unit_id.
+units:
+  - id: 126
+    constant: UNT_SAFETYWALL
+    effect: 315
+  - id: 127
+    constant: UNT_FIREWALL
+    effect: 25
+  - id: 128
+    constant: UNT_WARP_WAITING
+    effect: 316
+  - id: 129
+    constant: UNT_WARP_ACTIVE
+    effect: 317
+  - id: 133
+    constant: UNT_PNEUMA
+    effect: 141
+  - id: 134
+    constant: UNT_DUMMYSKILL
+
+# Cast auras by element, as SkillCast's element: rAthena's ELE_ values.
+auras:
+  - id: 0
+    constant: ELE_NEUTRAL
+    effect: 12
+  - id: 1
+    constant: ELE_WATER
+    effect: 54
+  - id: 2
+    constant: ELE_EARTH
+    effect: 57
+  - id: 3
+    constant: ELE_FIRE
+    effect: 55
+  - id: 4
+    constant: ELE_WIND
+    effect: 56
+  - id: 5
+    constant: ELE_POISON
+    effect: 59
+  - id: 6
+    constant: ELE_HOLY
+    effect: 58
+  - id: 7
+    constant: ELE_DARK
+    effect: 454
+  - id: 8
+    constant: ELE_GHOST
+    effect: 58
+  - id: 9
+    constant: ELE_UNDEAD
+    effect: 454

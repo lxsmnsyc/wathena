@@ -84,6 +84,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/variables"
@@ -329,6 +330,10 @@ func runAll(name string, args []string) error {
 	if err := gamedata.ApplyRuleset(jobs, loaded.set.Ruleset); err != nil {
 		return fmt.Errorf("ruleset: %w", err)
 	}
+	// A "cast" bonus without a target picks it from the skill's data.
+	if loaded.all.Skills != nil {
+		jobs.SetAutoSpellSelf(loaded.all.Skills.AutoSpellSelf)
+	}
 	// Monsters and drops come with the mods' overlays.
 	tables = loaded.all.Tables
 	spawns, err := gamedata.SpawnsOf(reference.Mode(cfg.Mode), loaded.all.Monsters)
@@ -379,6 +384,10 @@ func runAll(name string, args []string) error {
 		z := zone.New(n, grids[i], root.Child("zone:"+id).SecretStream(), spawns[id])
 		z.Progress, z.Status, z.Start, z.Items, z.StartItems = tables, jobs, start, items, given
 		z.Statuses = statuses
+		z.Skills, z.SkillTrees, z.SkillSettings = loaded.all.Skills, loaded.all.SkillTrees, skill.Settings{}
+		if sj, err := parseStartJob(cfg.StartJob); err == nil && cfg.StartJob != "" {
+			z.Start.Job, z.StartBaseLevel, z.StartJobLevel = sj.job, sj.base, sj.jobLevel
+		}
 		z.SaveMap = name
 		z.SetWarps(warps[n])
 		z.SetNPCs(loaded.npcs[n])

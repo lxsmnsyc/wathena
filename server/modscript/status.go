@@ -787,7 +787,7 @@ func (r *Runtime) playerAddTimedBonuses(c *script.Call) error {
 // their functions. hookChainEnd puts back the running context.
 func (r *Runtime) hookChainBegin(c *script.Call) error {
 	name := c.String(0)
-	if name != "status_chance" && name != "status_duration" {
+	if name != "status_chance" && name != "status_duration" && name != "skill_damage" {
 		return fmt.Errorf("no hook chain %q", name)
 	}
 	var chain []*hook

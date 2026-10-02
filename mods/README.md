@@ -276,7 +276,85 @@ return function()
 end
 ```
 
-Kinds not overlaid yet: skills, jobs, spawns, quests and achievements.
+### Skills: data/skills.yml
+
+```yaml
+- name: example.chain-lightning:CHAIN_LIGHTNING
+  display_name: Chain Lightning
+  icon: MG_LIGHTNINGBOLT
+  max_level: 5
+  type: magic
+  target: enemy
+  element: wind
+  range: 9
+  cast_time: [1000, 1200, 1400, 1600, 1800]
+  after_cast_delay: 1000
+  requirements:
+    sp: [20, 24, 28, 32, 36]
+  script: scripts/skills/chain_lightning.lua
+- name: MG_LIGHTNINGBOLT
+  cast_time: 500
+```
+
+Records are rAthena's `skill_db.yml` under readable names (proposal 0002, review decision 20). Core's skills use the same records, so a mod changes a core skill by its name, such as `MG_LIGHTNINGBOLT`. A new skill is named with the mod's ID.
+
+A number is one value for every level, or a list with one value per level from level 1. Levels past the end of a list take its last value.
+
+| Field | Meaning |
+|---|---|
+| `display_name` | The name players see. |
+| `icon` | An existing skill, such as `MG_LIGHTNINGBOLT`, whose icon and animation the skill shows. |
+| `max_level` | 1 to 13. A new skill has 1 by default. |
+| `type` | `weapon`, `magic`, `misc` or `none`, as rAthena's `BF_` types. |
+| `target` | `passive`, `enemy`, `ground`, `self` or `support`. A new skill is passive by default. |
+| `element` | A name of `wa.elements`, such as `wind`, or `weapon` (the weapon's element), `endowed` or `random`. |
+| `range` | 0 to 30 cells. |
+| `cast_time`, `fixed_cast_time`, `after_cast_delay`, `cooldown` | Milliseconds, up to one hour. A negative `fixed_cast_time`, from -100, is a percent of the cast time in renewal, as in rAthena. |
+| `requirements` | What a cast costs and needs, below. |
+| `hit` | `normal`, `single` or `multiple`: how the client shows the hits. |
+| `hit_count` | Hits per cast, -30 to 30. A negative count shows one number for all hits, as in rAthena. A new skill has 1 by default. |
+| `damage_flags` | A list of `no_damage`, `splash`, `splash_split`, `ignore_attack_card`, `ignore_element`, `ignore_defense`, `ignore_flee`, `ignore_defense_card`, `critical`, `ignore_long_card` and `simple_defense`. It replaces the skill's flags. |
+| `splash` | The splash area in cells, 0 to 30, or -1 for the whole screen. |
+| `knockback` | Cells, 0 to 20. |
+| `script` | The skill's entry script (see "Skills" under Scripts). |
+
+| Requirement | Meaning |
+|---|---|
+| `sp`, `hp` | The cost, 0 to 100,000. |
+| `sp_rate`, `hp_rate` | A percent, -100 to 100: positive of the current value, negative of the maximum. |
+| `zeny` | The zeny cost. |
+| `spirit_spheres` | Spirit spheres used, 0 to 15. |
+| `weapons` | A list of weapon types from `wa.weapon_types`, such as `[dagger, one_handed_sword]`. An empty list allows any weapon. |
+| `items` | A list of up to 10 `{item, amount}`. `amount` is 1 by default. |
+
+- `id` cannot be set. A new skill gets an ID from 20,000.
+- `skills.id "example.chain-lightning:CHAIN_LIGHTNING"` finds a mod's skill.
+- Setting `script` on a skill the mod did not add, such as a core skill, replaces that skill's behavior. It needs the permission `rules.override`.
+- A script must be a file of the mod that sets it. A missing file is an error at start.
+
+### Skill trees: data/skill_trees.yml
+
+```yaml
+- job: mage
+  skill: example.chain-lightning:CHAIN_LIGHTNING
+  max_level: 5
+  requires:
+    - {skill: MG_LIGHTNINGBOLT, level: 3}
+```
+
+| Field | Meaning |
+|---|---|
+| `job` | A job's name in `wa.jobs`, such as `mage`, or its ID. |
+| `skill` | A skill's name: core's, or a mod's full name. |
+| `max_level` | The most levels the job may learn, up to the skill's `max_level`. |
+| `requires` | Skills the job must have first, each `{skill, level}`. |
+
+- An entry adds the skill to the job's tree, or replaces the job's entry for it.
+- Jobs that take the job's tree in rAthena's `skill_tree.yml` (`Inherit`) get the entry too, such as the Wizard and the High Wizard for the Mage. A job that lists the skill itself keeps its own entry.
+- A later mod's entry for the same job and skill wins.
+- New jobs come with phase 4 step 7.
+
+Kinds not overlaid yet: jobs, spawns, quests and achievements.
 
 ## Text: locales/en.yml
 
@@ -291,7 +369,7 @@ greeter:
 
 ## IDs
 
-The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000 and monsters at 100,000. Skills start at 20,000, jobs at 10,000, and quests and achievements at 1,000,000, for when those kinds get overlays.
+The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000, monsters at 100,000 and skills at 20,000. Jobs start at 10,000, and quests and achievements at 1,000,000, for when those kinds get overlays.
 
 - An ID never changes, and never goes to another name, even when the mod is removed. The item comes back with its ID when the mod is installed again.
 - Scripts find IDs by name: `items.id "example.greeter:Welcome_Cookie"`.
@@ -363,6 +441,8 @@ end
 | `job_level_up` | `player` | The player gained a job level. |
 | `click` | `player`, `conversation` | NPC contexts only: a player talks to the NPC ("NPC scripts" below). |
 | `status_start`, `status_end`, `status_tick` | `event` | A status started, ended or ticked on the context's map ("Status effects" below). Mod and event contexts. |
+| `skill_used` | `use` | A skill took effect on the context's map, after its cast time ("Skills" below). Mod, event and item contexts. |
+| `cast` | `cast` | Skill contexts only: the skill takes effect ("Skills" below). |
 
 Event contexts can listen to the events of mod contexts.
 
@@ -552,6 +632,44 @@ The death object has `victim` (a player or monster handle), `killer` (a handle, 
 | `monster` | Monsters of one ID, from `monsters.id`. |
 | `map` | One map. A context sees its own map's deaths only. |
 
+### Entity queries
+
+```lua
+local maps = require "wa.maps"
+
+-- The nearest enemy of the caster within 5 cells of a monster, that is
+-- not in the list hit.
+local next_target = maps.find_entities {
+  around = monster, radius = 5, enemies_of = caster,
+  exclude = hit, sort = "nearest", limit = 1,
+}[1]
+
+-- The same query, around the monster.
+local near = monster:find_nearby { radius = 5, enemies_of = caster, exclude = hit, sort = "nearest", limit = 1 }
+```
+
+`maps.find_entities(query)` returns a list of entity handles of the context's map. It needs `game.read`. The query has one area:
+
+| Area | Fields |
+|---|---|
+| Around an entity | `around` and `radius`. The entity is in its own area: `exclude` leaves it out. |
+| Around a cell | `x`, `y` and `radius`. `map` may be given, and must be the context's map. |
+| A rectangle | `rectangle = { { x1, y1 }, { x2, y2 } }`, two opposite corners. |
+| A line | `line = { from = { x, y }, to = { x, y }, width = 3 }`. `width` is 1 by default. |
+| Cells | `cells = { { x, y }, ... }`, up to 1,024. |
+
+- `radius` is 0 to 30 cells. `shape` is `"square"`, the default and rAthena's, or `"circle"`. Both go with an area around an entity or a cell.
+- Filters: `kinds` (a list of `"player"`, `"monster"` and `"npc"`), `alive` (true by default; false finds dead entities), `enemies_of` or `allies_of` an entity by rAthena's attack rules, `line_of_sight`, and `exclude`, a list of handles.
+- `sort` is `"nearest"`, `"farthest"`, `"lowest_hp"` or `"random"`. `limit` is 1 to 1,000. Ties sort by entity.
+- Distances and `line_of_sight` are from the center of the area: the entity, the cell, the middle of the rectangle, the start of the line, or the first cell.
+- A query without an area, with two areas, or with a field it does not know raises an error.
+
+Every entity handle also has:
+
+- `entity:find_nearby(query)`: the same query, around the entity. The query cannot name another area.
+- `entity:exists()`: false once the entity is removed, has logged out, or has left the zone. It never raises an error, so a timer checks it before it reads a handle.
+- `entity:show_effect(effect)`: plays an effect from `wa.effects` on the entity, for everyone near.
+
 ### Spawning monsters
 
 ```lua
@@ -613,6 +731,10 @@ end
 | `experience` | `exp`: `player`, `monster`, `base`, `job` (the exp the player gets, after the shares and the level penalty) | `base, job`. Below 0 counts as 0. |
 | `status_chance` | `start`: `target`, `status`, `level`, `source`, `chance` (rAthena's chance after resistance, per 10,000) | The chance, kept to 0 to 10,000. |
 | `status_duration` | `start`: `target`, `status`, `level`, `source`, `milliseconds` (rAthena's duration after resistance) | The duration, kept to 1 to 2,147,483,647. |
+| `skill_damage` | `hook`: `caster`, `target`, `skill`, `level`, `percent` (the skill's damage percentage) | The percentage, kept to 0 to 1,000,000. |
+| `cast_time` | `hook`: `caster`, `target` (nil for a ground skill), `skill`, `level`, `milliseconds` (rAthena's cast time) | The cast time, kept to 0 to one hour. |
+| `skill_cost` | `hook`: `caster`, `skill`, `level`, `sp` (rAthena's SP cost) | The SP cost. Below 0 counts as 0. |
+| `cast_allowed` | `hook`: `caster`, `target`, `skill`, `level`, `allowed` (whether rAthena lets the cast start) | `true` or `false`. |
 
 - Hooks run in a chain. Higher priority runs first; equal priorities run in the order they were added. `next(object)` returns the rest of the chain's result. The innermost result is rAthena's value.
 - To pass a changed object, pass a table with the same fields to `next`.
@@ -709,6 +831,54 @@ player:add_timed_bonuses("tonic", 60000, { { "str", 5 }, { "max_hp", 100 } },
 - They are saved across logout, unless `ends_on` has `logout`.
 - Converted `bonus_script` lines key the bonuses by the script's text. Their flags 0x400 and 0x800 become `"extend"` and `"add"`.
 
+### Skills
+
+A skill whose data has `script` runs that entry script (proposal 0002, review decision 20). Its setup function runs in a context of kind `"skill"`.
+
+```lua
+local events = require "wa.events"
+
+return function()
+  events.on("cast", function(cast)
+    local result = cast:deal_damage(cast.target, { percent = 150 })
+    if result ~= nil and not result.missed then
+      cast:heal(cast.caster, result.amount // 10)
+    end
+  end)
+end
+```
+
+- The setup function of an active skill runs once per zone, at the skill's first cast. `context:get_instance()` is `{ skill }`. The context ends when the mod reloads.
+- The `cast` event runs when the skill takes effect, after the cast time. A skill whose script has a `cast` handler runs it instead of core's behavior of the skill.
+- The cast object has `caster`, `skill`, `level`, `target` (nil for a ground skill), `map`, `x` and `y`. It stays usable after the event, so a timer can use it.
+
+| Method | What it does |
+|---|---|
+| `cast:deal_damage(target, options)` | rAthena's damage calculation of the skill, with `percent` as the skill's damage percentage (100 by default), after the `skill_damage` hooks. It applies cards and defense, and fires the `damage` event. The options `hits`, `type` (`"weapon"`, `"magic"` or `"misc"`) and `element` replace the data's values. It returns `{ amount, is_critical, missed }`. |
+| `cast:heal(target, amount)` | Heals with rAthena's heal bonuses, and returns the HP healed. |
+| `cast:run_default(options)` | Runs core's behavior of the skill, with `target` to change the target. A skill without one, such as a mod's skill, raises an error. |
+
+- When the caster is gone or cannot act, `deal_damage` and `heal` do nothing and return nil, as rAthena's `skill_addtimerskill`. A chain of timers stops there.
+- The `damage` and `death` events that a call causes run after the script's call.
+
+A passive skill's script runs while a player has the skill learned. Each player and skill has its own context, whose `context:get_instance()` is `{ skill, level, owner }`. When the level changes, the context ends and a new one starts with the new level. It ends when the player unlearns the skill or leaves the zone.
+
+The `skill_used` event of mod and event contexts fires for every skill that takes effect on the context's map. An interrupted cast does not fire it. `use` has `caster`, `skill`, `level`, `target` (nil for a ground skill), `x` and `y`. Options narrow it:
+
+```lua
+events.on("skill_used", function(use)
+  use.caster:send_message("You cast " .. use.level .. " levels of Chain Lightning.")
+end, { skill = CHAIN_LIGHTNING, caster_kind = "player" })
+```
+
+| Option | The handler runs for |
+|---|---|
+| `skill` | One skill, from `skills.id`. |
+| `caster_kind` | `"player"`, `"monster"` or `"npc"`. |
+| `map` | One map. |
+
+The sample mod in [examples/chain-lightning](examples/chain-lightning) adds a skill, puts it in the Mage's tree, and makes its bolt jump between enemies with `maps.find_entities`.
+
 ### Items
 
 `items.id(name)` from `wa.items` returns an item's ID by name, and raises an error for an unknown name. It needs `game.read`.
@@ -763,10 +933,10 @@ end
 |---|---|---|
 | `use` | `player` | The item is used. |
 | `damage` | `hit` | A hit the wearer deals or takes. `hit` has `source`, `target`, `kind`, `range`, `skill`, `element`, `is_critical`, `amount` and `wearer_is_source` (0002a, "Item events"). `source.kind` and `target.kind` say whether each is a player or a monster. |
-| `skill_used` | `use` | The wearer uses a skill. `use` has `skill`, `level`, `target`, `x` and `y`. |
+| `skill_used` | `use` | A skill of the wearer took effect. `use` has `caster` (the wearer), `skill`, `level`, `target` (nil for a ground skill), `x` and `y`. |
 | `unequip` | `player` | The copy is unequipped, before its context ends. Converted `UnEquipScript`s run on it. |
 
-`damage` fires for each normal attack that lands, and `unequip` when a player takes the copy off. `skill_used` fires in tests until skills exist (phase 4 step 3).
+`damage` fires for each normal attack that lands, and `unequip` when a player takes the copy off.
 
 ### Bonuses
 

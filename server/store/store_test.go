@@ -287,6 +287,8 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 			{Key: "a", Remaining: 1, Bonuses: `[]`, EndsOn: []string{}, Icon: -1},
 			{Key: "b", Remaining: 3000, Bonuses: `[["str", 7]]`, EndsOn: []string{"death", "dispell"}, Icon: 925, Kind: "buff"},
 		},
+		// Learned skills, with a mod skill's ID.
+		Skills: map[int]int{1: 9, 28: 10, 20000: 5},
 	}
 	sess.Save(next, true)
 	if err := sess.Flush(ctx); err != nil {

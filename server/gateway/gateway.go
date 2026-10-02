@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/url"
 	"slices"
@@ -509,6 +510,29 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 				break
 			}
 			queued = p.InsertCard(seq, int(c.GetCardSlot()), int(c.GetEquipSlot()))
+		case m.GetCommand().HasUseSkill():
+			u := m.GetCommand().GetUseSkill()
+			if u.GetSkillId() == 0 || u.GetSkillId() > math.MaxInt32 || u.GetLevel() > math.MaxInt32 {
+				queued = p.Ack(seq)
+				break
+			}
+			target := zone.SkillTarget{Entity: u.GetEntity(), HasEntity: u.HasEntity()}
+			if u.HasCell() {
+				cell := u.GetCell()
+				if cell.GetX() > math.MaxInt16 || cell.GetY() > math.MaxInt16 {
+					queued = p.Ack(seq)
+					break
+				}
+				target.HasCell, target.X, target.Y = true, int(cell.GetX()), int(cell.GetY())
+			}
+			queued = p.UseSkill(seq, int(u.GetSkillId()), int(u.GetLevel()), target)
+		case m.GetCommand().HasLearnSkill():
+			id := m.GetCommand().GetLearnSkill().GetSkillId()
+			if id == 0 || id > math.MaxInt32 {
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.LearnSkill(seq, int(id))
 		default:
 			// Unknown commands are ignored, so newer clients still work.
 			queued = p.Ack(seq)

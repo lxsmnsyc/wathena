@@ -84,6 +84,11 @@ var Hooks = map[string][]string{
 	"experience":      {KindMod, KindNPC, KindEvent},
 	"status_chance":   {KindMod, KindNPC, KindEvent},
 	"status_duration": {KindMod, KindNPC, KindEvent},
+	// Skills (review decision 20).
+	"skill_damage": {KindMod, KindNPC, KindEvent},
+	"cast_time":    {KindMod, KindNPC, KindEvent},
+	"skill_cost":   {KindMod, KindNPC, KindEvent},
+	"cast_allowed": {KindMod, KindNPC, KindEvent},
 }
 
 type scheduled struct {

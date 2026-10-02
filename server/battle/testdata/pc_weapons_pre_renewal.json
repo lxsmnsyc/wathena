@@ -1,0 +1,15 @@
+{
+	"source": "rAthena db/pre-re/item_db_equip.yml and db/pre-re/item_db_etc.yml (GPL-3.0) at commit e985006171d2eb320ee512a653f4c83aea3d81b6",
+	"note": "Item data that the pre-renewal pc_damage.json's attacker_status does not hold, for the weapons and ammunition it uses. 'weapon_levels' is each weapon's WeaponLevel. 'two_handed' lists weapons whose location is Both_Hand. 'ammo' holds each ammunition's Attack and bonus bAtkEle element. No weapon has a bonus that changes a normal attack on a monster beyond what attacker_status holds.",
+	"weapon_levels": {
+		"1101": 1, "1116": 1, "1161": 4, "1201": 1, "1250": 2, "1301": 1, "1314": 4, "1401": 1, "1410": 3,
+		"1472": 3, "1501": 1, "1533": 4, "1550": 2, "1601": 1, "1701": 1, "1801": 1, "1901": 1, "2001": 4,
+		"2002": 4, "13020": 4, "13100": 1, "13150": 1, "13154": 1, "13157": 2, "13160": 2, "13300": 4
+	},
+	"two_handed": [1116, 1161, 1250, 1314, 1410, 1472, 1701, 2001, 2002, 13100, 13150, 13154, 13157, 13160, 13300],
+	"ammo": {
+		"1750": { "atk": 25, "ele": 0 },
+		"13200": { "atk": 10, "ele": 0 },
+		"13203": { "atk": 50, "ele": 3 }
+	}
+}

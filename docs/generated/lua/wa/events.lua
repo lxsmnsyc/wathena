@@ -10,7 +10,7 @@ local events = {}
 ---Needs the permission `event.listen`.
 ---@param name wa.EventName The event's name. An unknown name, or an event of another context kind, raises an error.
 ---@param handler function Runs each time the event fires, in registration order.
----@param options wa.DeathOptions|wa.StatusEventOptions|nil Only the death and status events take options: they narrow which events run the handler.
+---@param options wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|nil Only the death, status and skill_used events take options: they narrow which events run the handler.
 ---@return wa.EventHandle
 ---@overload fun(name: "login", handler: fun(player: wa.Player)): wa.EventHandle
 ---@overload fun(name: "logout", handler: fun(player: wa.Player)): wa.EventHandle
@@ -23,6 +23,7 @@ local events = {}
 ---@overload fun(name: "use", handler: fun(player: wa.Player)): wa.EventHandle
 ---@overload fun(name: "damage", handler: fun(hit: wa.Damage)): wa.EventHandle
 ---@overload fun(name: "skill_used", handler: fun(use: wa.SkillUse)): wa.EventHandle
+---@overload fun(name: "cast", handler: fun(cast: wa.Cast)): wa.EventHandle
 ---@overload fun(name: "unequip", handler: fun(player: wa.Player)): wa.EventHandle
 ---@overload fun(name: "status_start", handler: fun(event: wa.StatusEvent)): wa.EventHandle
 ---@overload fun(name: "status_end", handler: fun(event: wa.StatusEvent)): wa.EventHandle

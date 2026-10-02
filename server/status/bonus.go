@@ -59,6 +59,14 @@ type pcBonus struct {
 	resEff                               map[int]int
 	addEff, addEffWhenHit, addEffOnSkill []AddEffect
 	regen                                []RegenBonus
+	// autoSpell, autoSpellWhenHit and autoSpellOnSkill are autospell,
+	// autospell2 and autospell3. cardID is current_equip_card_id: the
+	// card whose script runs, or 0.
+	autoSpell, autoSpellWhenHit, autoSpellOnSkill []AutoSpell
+	cardID                                        int
+	noKnockback                                   bool
+	addStealRate                                  int
+	addHealRate, addHeal2Rate                     int
 }
 
 func newPCBonus(p *pc) *pcBonus {
@@ -67,7 +75,7 @@ func newPCBonus(p *pc) *pcBonus {
 		criticalRate: 100, hitRate: 100, fleeRate: 100, flee2Rate: 100, defRate: 100, def2Rate: 100,
 		mdefRate: 100, mdef2Rate: 100, patkRate: 100, smatkRate: 100, resRate: 100, mresRate: 100,
 		hplusRate: 100, crateRate: 100,
-		player: &battle.Player{PreRenewalSizes: false},
+		player: &battle.Player{PreRenewalSizes: false, Cast: battle.CastBonus{CastRate: 100, SPRate: 100}},
 	}
 }
 
@@ -679,6 +687,59 @@ func (pb *pcBonus) apply(b *Bonus, lr int, st *data) {
 			return
 		}
 		pb.regen = append(pb.regen, RegenBonus{Kind: b.Name, Percent: o.Percent, Value: int(int16(v)), Rate: rate}) // #nosec G115 -- pc_bonus_regen keeps an int16.
+	case "variable_cast_time", "fixed_cast_time", "after_cast_delay", "cooldown", "sp_cost":
+		if !arrow {
+			pb.applyCast(b.Name, o, v)
+		}
+	case "uninterruptible_cast":
+		// bNoCastCancel.
+		if !arrow {
+			pl.Cast.NoCastCancel = true
+		}
+	case "uninterruptible_cast_everywhere":
+		// bNoCastCancel2.
+		if !arrow {
+			pl.Cast.NoCastCancel2 = true
+		}
+	case "no_gemstone_cost":
+		// bNoGemStone.
+		if !arrow {
+			pl.Cast.NoGemstone = true
+		}
+	case "no_knockback":
+		// bNoKnockback.
+		if !arrow {
+			pb.noKnockback = true
+		}
+	case "steal_chance":
+		// bAddStealRate.
+		if !arrow {
+			pb.addStealRate += v
+		}
+	case "healing_done":
+		// bSkillHeal with a skill, bHealPower without.
+		switch {
+		case arrow:
+		case o.Has("skill"):
+			addItemBonus(&pl.SkillHeal, int(o.Skill), v, false)
+		default:
+			pb.addHealRate += v
+			pl.AddHealRate += v
+		}
+	case "healing_received":
+		// bSkillHeal2 with a skill, bHealPower2 without.
+		switch {
+		case arrow:
+		case o.Has("skill"):
+			addItemBonus(&pl.SkillHeal2, int(o.Skill), v, false)
+		default:
+			pb.addHeal2Rate += v
+			pl.AddHeal2Rate += v
+		}
+	case "ignore_mdef":
+		pb.applyIgnoreMDef(o, v, lr, bonus.HasAmount(mustSpec(b.Name), toBonus(b)))
+	case "cast":
+		pb.applyAutoSpell(b, o, lr)
 	case "skill":
 		// The skill command: an item grants a skill level while it is
 		// worn, when it is higher than the learned one.
@@ -857,17 +918,60 @@ func (pb *pcBonus) applyDamage(b *Bonus, o *bonus.Options, v, lr int) {
 			battle.Add(&pl.WeaponDamageRate, int(o.WeaponType), v)
 		}
 	}
+	if arrow {
+		// The magic sums and bSkillAtk take nothing from ammunition.
+		return
+	}
+	for _, sum := range strings.Split(group, "+") {
+		m := &pl.Magic
+		switch sum {
+		case "bMagicAddRace":
+			battle.Add(&m.AddRace, int(o.Against.Value), v)
+		case "bMagicAddClass":
+			battle.Add(&m.AddClass, int(o.Against.Value), v)
+		case "bMagicAddSize":
+			battle.Add(&m.AddSize, int(o.Against.Value), v)
+		case "bMagicAddEle":
+			battle.Add(&m.AddEle, int(o.Against.Value), v)
+		case "bMagicAddRace2":
+			battle.Add(&m.AddRace2, int(o.Against.Value), v)
+		case "bAddMagicDamageClass":
+			addItemBonus(&m.AddDamage, int(o.Against.Value), v, false)
+		case "bMagicAtkEle":
+			battle.Add(&m.AtkEle, int(o.Element), v)
+		case "bSkillAtk":
+			addItemBonus(&pl.SkillAtk, int(o.Skill), v, false)
+		}
+	}
 }
 
 // applyDamageTaken is the physical part of the "damage_taken" bonus. Its
 // amount is the change, so rAthena's reduction is minus it.
 func (pb *pcBonus) applyDamageTaken(b *Bonus, o *bonus.Options, v, lr int) {
+	pl := pb.player
+	sub := -v
+	group := bonus.DamageGroup("damage_taken", o)
+	// bSubSkill and bMagicSubDefEle also take ammunition's bonuses.
+	switch group {
+	case "bSubSkill":
+		addItemBonus(&pl.SubSkill, int(o.Skill), sub, false)
+		return
+	case "bMagicSubDefEle":
+		battle.Add(&pl.MagicSubDefEle, int(o.From.Value), sub)
+		return
+	}
 	if lr == lrArrow {
 		return
 	}
-	pl := pb.player
-	sub := -v
-	switch bonus.DamageGroup("damage_taken", o) {
+	switch group {
+	case "bMagicSubSize":
+		battle.Add(&pl.MagicSubSize, int(o.From.Value), sub)
+	case "bAddMDefMonster":
+		addItemBonus(&pl.AddMDef, int(o.From.Value), sub, false)
+	case "bMagicAtkDef":
+		pl.MagicDefRate += sub
+	case "bMiscAtkDef":
+		pl.MiscDefRate += sub
 	case "bSubRace":
 		battle.Add(&pl.SubRace, int(o.From.Value), sub)
 	case "bSubRace (bonus3)":
@@ -990,6 +1094,252 @@ func (pb *pcBonus) applyAddEff(b *Bonus, o *bonus.Options, lr int) {
 			x.Rate = min(x.Rate+e.Rate, math.MaxInt32)
 			x.ArrowRate = min(x.ArrowRate+e.ArrowRate, math.MaxInt16)
 			x.Duration = max(x.Duration, e.Duration)
+			return
+		}
+	}
+	*list = append(*list, e)
+}
+
+// addItemBonus is pc_bonus_itembonus: the value adds to the entry of an
+// ID. With capRate, a sum is at most 10000, and a new entry is capped to
+// -10000 and 10000.
+func addItemBonus(m *map[int]int, id, v int, capRate bool) {
+	if *m == nil {
+		*m = map[int]int{}
+	}
+	old, ok := (*m)[id]
+	switch {
+	case !capRate:
+		(*m)[id] = old + v
+	case ok:
+		(*m)[id] = min(old+v, 10000)
+	default:
+		(*m)[id] = capValue(v, -10000, 10000)
+	}
+}
+
+// applyCast is pc_bonus and pc_bonus2 for the bonuses of cast times,
+// delays, cooldowns and SP costs (0002a, "Speed, cast, and delay").
+// Renewal's cast rules are RENEWAL_CAST; pre-renewal has no fixed cast
+// time and ignores its bonuses.
+func (pb *pcBonus) applyCast(name string, o *bonus.Options, v int) {
+	cb := &pb.player.Cast
+	renewal := pb.p.t.renewal
+	skill := o.Has("skill")
+	id := int(o.Skill)
+	switch name {
+	case "variable_cast_time":
+		switch {
+		case skill && o.Percent:
+			// bVariableCastrate and bCastrate for a skill. Renewal keeps
+			// the reduction.
+			if renewal {
+				addItemBonus(&cb.SkillCastRate, id, -v, true)
+			} else {
+				addItemBonus(&cb.SkillCastRate, id, v, true)
+			}
+		case skill:
+			// bSkillVariableCast.
+			addItemBonus(&cb.SkillVarCast, id, v, false)
+		case o.Percent:
+			// bVariableCastrate and bCastrate.
+			if renewal {
+				cb.VarCastRate -= v
+			} else {
+				cb.CastRate += v
+			}
+		default:
+			// bVariableCast.
+			cb.AddVarCast += v
+		}
+	case "fixed_cast_time":
+		if !renewal {
+			return
+		}
+		switch {
+		case skill && o.Percent:
+			// bFixedCastrate for a skill, as a reduction.
+			addItemBonus(&cb.SkillFixCastRate, id, -v, true)
+		case skill:
+			// bSkillFixedCast.
+			addItemBonus(&cb.SkillFixCast, id, v, false)
+		case o.Percent:
+			// bFixedCastrate keeps the lowest value.
+			cb.FixCastRate = min(cb.FixCastRate, v)
+		default:
+			// bFixedCast.
+			cb.AddFixCast += v
+		}
+	case "after_cast_delay":
+		if skill {
+			// bSkillDelay.
+			addItemBonus(&cb.SkillDelay, id, v, false)
+		} else {
+			// bDelayrate, kept as a reduction.
+			cb.DelayRate -= v
+		}
+	case "cooldown":
+		// bSkillCooldown.
+		addItemBonus(&cb.SkillCooldown, id, v, false)
+	case "sp_cost":
+		// The skill forms are reductions, so their amount is flipped.
+		switch {
+		case skill && o.Percent:
+			// bSkillUseSPrate.
+			addItemBonus(&cb.SkillUseSPRate, id, -v, true)
+		case skill:
+			// bSkillUseSP.
+			addItemBonus(&cb.SkillUseSP, id, -v, false)
+		default:
+			// bUseSPrate.
+			cb.SPRate += v
+		}
+	}
+}
+
+// applyIgnoreMDef is bIgnoreMdefEle and bIgnoreMdefRace without an
+// amount, and bIgnoreMdefRaceRate and bIgnoreMdefClassRate with one.
+// bIgnoreMdefRace2Rate has no field in battle.Player yet.
+func (pb *pcBonus) applyIgnoreMDef(o *bonus.Options, v, lr int, withAmount bool) {
+	if o.Against == nil || lr == lrArrow {
+		return
+	}
+	pl := pb.player
+	if withAmount {
+		switch o.Against.Key {
+		case "race":
+			battle.Add(&pl.IgnoreMDefRaceRate, int(o.Against.Value), v)
+		case "class":
+			battle.Add(&pl.IgnoreMDefClassRate, int(o.Against.Value), v)
+		}
+		return
+	}
+	bit := uint32(1) << uint(o.Against.Value&31) // #nosec G115 -- element, race and class values are small.
+	switch o.Against.Key {
+	case "element":
+		pl.IgnoreMDefEle |= bit
+	case "race":
+		pl.IgnoreMDefRace |= bit
+	case "class":
+		pl.IgnoreMDefClass |= bit
+	}
+}
+
+// BF_ bits of autospells, as rAthena's e_battle_flag.
+const (
+	bfWeaponAS = 0x0001
+	bfMagicAS  = 0x0002
+	bfMiscAS   = 0x0004
+	bfShortAS  = 0x0010
+	bfLongAS   = 0x0040
+	bfSkillAS  = 0x0100
+	bfNormalAS = 0x0200
+)
+
+// applyAutoSpell is the "cast" bonus: bAutoSpell, bAutoSpellWhenHit and
+// bAutoSpellOnSkill through pc_bonus_autospell and
+// pc_bonus_autospell_onskill. The options turn back into rAthena's
+// values:
+//   - chance is per 10,000, and the rate per 1,000.
+//   - on picks the list: "attack" (the default), "hit_taken" or
+//     "skill_used", whose trigger is the skill option.
+//   - target "enemy" or "self" sets the AUTOSPELL_FORCE_TARGET bit as the
+//     list reads it. Without target, rAthena's bonus without a flag picks
+//     the player for support skills and self skills, and the enemy for
+//     others (Tables.SetAutoSpellSelf).
+//   - random_level sets AUTOSPELL_FORCE_RANDOM_LEVEL.
+//   - kind, range and attack are the BF_ flag, with pc_bonus_autospell's
+//     defaults. A hit_taken bonus without attack is triggered by normal
+//     attacks and skills, as bAutoSpellWhenHit without a flag.
+func (pb *pcBonus) applyAutoSpell(b *Bonus, o *bonus.Options, lr int) {
+	if lr == lrArrow || len(b.Args) < 2 {
+		return
+	}
+	id, lv := clampInt(b.Args[0]), clampInt(b.Args[1])
+	// The rate is an int16 in rAthena.
+	rate := int(int16(clampInt(b.Chance) / 10)) // #nosec G115 -- rAthena keeps the rate in an int16.
+	if rate == 0 {
+		return
+	}
+	onSkill := o.On == "skill_used"
+	// self is set when the skill is cast on the player.
+	var self bool
+	switch o.Target {
+	case "self":
+		self = true
+	case "enemy":
+		self = false
+	default:
+		self = pb.p.t.autoSpellSelf != nil && pb.p.t.autoSpellSelf(id)
+	}
+	flag := 0
+	if self == onSkill {
+		// AUTOSPELL_FORCE_TARGET casts on the enemy in the attack and
+		// hit lists, and on the player in the skill list.
+		flag |= AutoSpellForceTarget
+	}
+	if o.RandomLevel {
+		flag |= AutoSpellForceRandomLevel
+	}
+	e := AutoSpell{Skill: id, Level: lv, Rate: capValue(rate, -1000, 1000), Flag: flag, Card: pb.cardID}
+	if onSkill {
+		e.TriggerSkill = int(o.Skill)
+		pb.autoSpellOnSkill = append(pb.autoSpellOnSkill, e)
+		return
+	}
+
+	bf := 0
+	list := &pb.autoSpell
+	if o.On == "hit_taken" {
+		list = &pb.autoSpellWhenHit
+		if o.Attack == "" {
+			bf = bfNormalAS | bfSkillAS
+		}
+	}
+	switch o.Kind {
+	case "physical":
+		bf |= bfWeaponAS
+	case "magic":
+		bf |= bfMagicAS
+	case "misc":
+		bf |= bfMiscAS
+	}
+	switch o.Range {
+	case "melee":
+		bf |= bfShortAS
+	case "ranged":
+		bf |= bfLongAS
+	}
+	switch o.Attack {
+	case "normal":
+		bf |= bfNormalAS
+	case "skill":
+		bf |= bfSkillAS
+	}
+	if bf&(bfShortAS|bfLongAS) == 0 {
+		bf |= bfShortAS | bfLongAS
+	}
+	if bf&(bfWeaponAS|bfMagicAS|bfMiscAS) == 0 {
+		bf |= bfWeaponAS
+	}
+	if bf&(bfSkillAS|bfNormalAS) == 0 {
+		if bf&(bfMagicAS|bfMiscAS) != 0 {
+			bf |= bfSkillAS
+		}
+		if bf&bfWeaponAS != 0 {
+			bf |= bfNormalAS
+		}
+	}
+	e.BattleFlag = bf
+	for i := range *list {
+		x := &(*list)[i]
+		if (x.Card == e.Card || x.Rate < 0 || e.Rate < 0) && x.Skill == id && x.Level == lv && x.BattleFlag == bf && x.Flag == flag {
+			// autospell_stacking is off: a second positive rate of the
+			// same source is lost.
+			if x.Rate > 0 && e.Rate > 0 {
+				return
+			}
+			x.Rate = min(x.Rate+e.Rate, 1000)
 			return
 		}
 	}

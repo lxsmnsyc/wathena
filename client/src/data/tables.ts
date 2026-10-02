@@ -3,6 +3,7 @@
 
 import effectsTable from '../../data/effects.yml';
 import jobsTable from '../../data/jobs.yml';
+import skillsTable from '../../data/skills.yml';
 import weaponsTable from '../../data/weapons.yml';
 
 export interface Weapon {
@@ -177,3 +178,74 @@ export const weapons = table('weapons.yml', weaponsTable, 'weapons', isWeapon);
 
 /** Effects by RO effect ID. */
 export const effects = table('effects.yml', effectsTable, 'effects', isEffect);
+
+/**
+ * The effects a skill plays, as RO effect IDs. data/skills.yml explains
+ * when each list plays.
+ */
+export interface SkillEffects {
+  id: number;
+  constant: string;
+  caster?: number[];
+  effect?: number[];
+  hit?: number[];
+  /** False for skills that show no cast aura. */
+  aura?: boolean;
+}
+
+/** A skill unit's effect by UNT_ ID. Without one, the unit plays its skill's effect. */
+export interface UnitEffect {
+  id: number;
+  constant: string;
+  effect?: number;
+}
+
+/** The cast aura of an element. */
+export interface Aura {
+  id: number;
+  constant: string;
+  effect: number;
+}
+
+function numbers(v: unknown): boolean {
+  return v === undefined || (Array.isArray(v) && v.every((n) => typeof n === 'number'));
+}
+
+function isSkillEffects(v: unknown): v is SkillEffects {
+  return (
+    isObject(v) &&
+    typeof v.id === 'number' &&
+    typeof v.constant === 'string' &&
+    numbers(v.caster) &&
+    numbers(v.effect) &&
+    numbers(v.hit) &&
+    (v.aura === undefined || typeof v.aura === 'boolean')
+  );
+}
+
+function isUnitEffect(v: unknown): v is UnitEffect {
+  return (
+    isObject(v) &&
+    typeof v.id === 'number' &&
+    typeof v.constant === 'string' &&
+    (v.effect === undefined || typeof v.effect === 'number')
+  );
+}
+
+function isAura(v: unknown): v is Aura {
+  return (
+    isObject(v) &&
+    typeof v.id === 'number' &&
+    typeof v.constant === 'string' &&
+    typeof v.effect === 'number'
+  );
+}
+
+/** Skill effects by rAthena skill ID. */
+export const skillEffects = table('skills.yml', skillsTable, 'skills', isSkillEffects);
+
+/** Skill unit effects by rAthena UNT_ ID. */
+export const unitEffects = table('skills.yml', skillsTable, 'units', isUnitEffect);
+
+/** Cast auras by rAthena ELE_ element. */
+export const auras = table('skills.yml', skillsTable, 'auras', isAura);

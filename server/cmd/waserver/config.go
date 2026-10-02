@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,6 +43,7 @@ type options struct {
 	Dev            bool       `yaml:"dev"`
 	Build          string     `yaml:"build"`
 	StartItems     string     `yaml:"start_items"`
+	StartJob       string     `yaml:"start_job"`
 	DebugAddr      string     `yaml:"debug_addr"`
 	ProfileDir     string     `yaml:"profile_dir"`
 	Mods           modOptions `yaml:"mods"`
@@ -174,6 +176,7 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.StringVar(&f.Mode, "mode", o.Mode, "rAthena mode whose recorded spawns to use: renewal or pre-renewal, or none (mode)")
 	flags.StringVar(&f.Build, "build", o.Build, "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank. Other builds than all_1 are for testing (build)")
 	flags.StringVar(&f.StartItems, "start-items", "", "items every new character starts with, as id:amount pairs such as 501:10,512:20, for development (start_items)")
+	flags.StringVar(&f.StartJob, "start-job", "", "job and levels every new character starts with, as job:base:job such as 1:50:40 for a Swordman, with the skill points of its job level, for development; needs --dev (start_job)")
 	flags.StringVar(&f.DebugAddr, "debug-addr", "", "loopback address to serve measurements and profiles on, such as 127.0.0.1:8301; empty serves none (debug_addr)")
 	flags.StringVar(&f.ProfileDir, "profile-dir", "", "folder for the CPU profiles taken when a zone is over the tick budget; empty takes none (profile_dir)")
 	flags.StringVar(&f.Mods.Dir, "mods", "", "folder of installed mods; empty loads only the built-in core mods (mods.dir)")
@@ -224,6 +227,8 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.Build = f.Build
 		case "start-items":
 			o.StartItems = f.StartItems
+		case "start-job":
+			o.StartJob = f.StartJob
 		case "debug-addr":
 			o.DebugAddr = f.DebugAddr
 		case "profile-dir":
@@ -384,6 +389,13 @@ func validate(o options, s secrets) (settings, error) {
 	if _, err := parseStartItems(o.StartItems); err != nil {
 		bad("start_items", "%v", err)
 	}
+	if o.StartJob != "" {
+		if _, err := parseStartJob(o.StartJob); err != nil {
+			bad("start_job", "%v", err)
+		} else if !o.Dev {
+			bad("start_job", "is for development and needs dev")
+		}
+	}
 	if o.Mods.Dir != "" {
 		if fi, err := os.Stat(o.Mods.Dir); err != nil || !fi.IsDir() {
 			bad("mods.dir", "%s is not a folder", o.Mods.Dir)
@@ -485,4 +497,24 @@ func parseProxies(l []string) ([]netip.Prefix, error) {
 		out = append(out, netip.PrefixFrom(a, a.BitLen()))
 	}
 	return out, nil
+}
+
+// startJob is --start-job: the job and levels of new characters.
+type startJob struct{ job, base, jobLevel int }
+
+// parseStartJob reads --start-job: job:base:job, such as 1:50:40.
+func parseStartJob(v string) (startJob, error) {
+	parts := strings.Split(v, ":")
+	if len(parts) != 3 {
+		return startJob{}, fmt.Errorf("%q is not job:base:job", v)
+	}
+	var n [3]int
+	for i, p := range parts {
+		x, err := strconv.Atoi(p)
+		if err != nil || x < 0 || x > 1000 || i > 0 && x < 1 {
+			return startJob{}, fmt.Errorf("%q is not job:base:job", v)
+		}
+		n[i] = x
+	}
+	return startJob{job: n[0], base: n[1], jobLevel: n[2]}, nil
 }

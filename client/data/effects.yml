@@ -25,9 +25,14 @@
 #
 # Besides level ups (158, 371), the potion effects that play when a
 # player uses a potion or herb (204 to 209), and the warp portal (321),
-# only the map effects whose parts are STR effects are listed so far. The
-# most common map effects, such as torches (47) and emitters (974), are
-# sprite particles, which need a particle system in the client first.
+# the map effects whose parts are STR effects are listed. The most common
+# map effects, such as torches (47) and emitters (974), are sprite
+# particles, which need a particle system in the client first.
+#
+# The effects of the first class skills that skills.yml names follow
+# the others, with the parts the client draws. Their 2D and 3D particles,
+# sprite effects, and FUNC parts are left out, and some keep only their
+# sound. The cast auras (12, 54 to 59, 454) last as long as the cast.
 #
 # Entries are from roBrowserLegacy (GPL-3.0), src/DB/Effects/EffectTable.js
 # at commit 58759ab22d1d56da7f6719ee45cb475f7e851227, by Vincent Thibault,
@@ -112,3 +117,651 @@ effects:
     parts:
       - effect: effect/angel
       - sound: sound/levelup
+
+  # Skill effects (skills.yml), and the skill units of ground skills.
+  - id: 1
+    constant: EF_HIT2
+    # A skill hit. roBrowser's lens flashes are 2D particles.
+    parts:
+      - sound: sound/effect/ef_hit2
+  - id: 10
+    constant: EF_COIN
+    parts:
+      - effect: effect/maemor
+      - sound: sound/effect/ef_coin2
+  - id: 11
+    constant: EF_ENDURE
+    # roBrowser's endure.tga burst is a 3D particle.
+    parts:
+      - sound: sound/effect/ef_endure
+  - id: 12
+    constant: EF_BEGINSPELL
+    # A cast aura. The client draws it for the cast time instead of
+    # duration_ms, and removes it when the cast stops.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_yellow
+          bottom: 1
+          top: 5
+          height: 4
+          color: [1, 1, 1]
+          alpha: 0.8
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 2
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_beginspell
+  - id: 15
+    constant: EF_SOULSTRIKE
+    # The spirit balls are 3D and sprite particles.
+    parts:
+      - sound: sound/effect/ef_soulstrike
+  - id: 16
+    constant: EF_BASH
+    # roBrowser's flat bursts face the camera, which the client's
+    # cylinders cannot do.
+    parts:
+      - sound: sound/effect/ef_bash
+  - id: 17
+    constant: EF_MAGNUMBREAK
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_yellow
+          bottom: 4
+          top: 6
+          height: 1
+          color: [1, 1, 1]
+          alpha: 0.7
+          duration_ms: 300
+          copies: 1
+          copy_ms: 0
+          animation: 4
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/대폭발
+          bottom: 4
+          top: 1
+          height: 4
+          color: [1, 1, 1]
+          alpha: 0.6
+          duration_ms: 300
+          copies: 1
+          copy_ms: 0
+          animation: 4
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_magnumbreak
+  - id: 20
+    constant: EF_PATTACK
+    # The poison sparks are 3D particles.
+    parts:
+      - sound: sound/effect/ef_detoxication
+  - id: 21
+    constant: EF_DETOXICATION
+    # The sparks are 3D particles.
+    parts:
+      - sound: sound/effect/ef_detoxication
+  - id: 23
+    constant: EF_STONECURSE
+    parts:
+      - effect: effect/stonecurse
+  - id: 24
+    constant: EF_FIREBALL
+    # The fire balls are 3D particles.
+    parts:
+      - sound: sound/effect/ef_fireball
+  - id: 25
+    constant: EF_FIREWALL
+    parts:
+      - variants: [effect/firewall1, effect/firewall2]
+      - sound: sound/effect/ef_firewall
+  - id: 28
+    constant: EF_FROSTDIVER2
+    parts:
+      - effect: effect/freeze
+      - sound: sound/effect/ef_frostdiver2
+  - id: 29
+    constant: EF_LIGHTBOLT
+    parts:
+      - effect: effect/lightning
+      - variants: [effect/windhit1, effect/windhit2, effect/windhit3]
+  - id: 30
+    constant: EF_THUNDERSTORM
+    parts:
+      - effect: effect/thunderstorm
+      - sound: sound/effect/magician_thunderstorm
+  - id: 37
+    constant: EF_INCAGILITY
+    # The rising lights are 3D particles.
+    parts:
+      - sound: sound/effect/ef_incagility
+  - id: 38
+    constant: EF_DECAGILITY
+    # The falling lights are 3D particles.
+    parts:
+      - sound: sound/effect/ef_decagility
+  - id: 39
+    constant: EF_AQUA
+    # The water is a sprite effect.
+    parts:
+      - sound: sound/effect/ef_aqua
+  - id: 40
+    constant: EF_SIGNUM
+    parts:
+      - effect: effect/cross
+      - sound: sound/effect/ef_signum
+  - id: 41
+    constant: EF_ANGELUS
+    parts:
+      - effect: effect/angelus
+      - sound: sound/effect/ef_angelus
+  - id: 42
+    constant: EF_BLESSING
+    # The angel is a sprite effect, and the lights are 3D particles.
+    parts:
+      - sound: sound/effect/ef_blessing
+  - id: 49
+    constant: EF_FIREHIT
+    parts:
+      - variants: [effect/firehit1, effect/firehit2, effect/firehit3]
+      - sound: sound/effect/ef_firehit
+  - id: 51
+    constant: EF_COLDHIT
+    # The ice shards are 2D particles. roBrowser picks _hit_fist3 or
+    # _hit_fist4 at random. Sounds have no variants, so this is the first.
+    parts:
+      - sound: sound/_hit_fist3
+  - id: 52
+    constant: EF_WINDHIT
+    # roBrowser picks one of _hit_fist1 to _hit_fist3 at random. Sounds
+    # have no variants, so this is the first.
+    parts:
+      - variants: [effect/windhit1, effect/windhit2, effect/windhit3]
+      - sound: sound/_hit_fist1
+  - id: 54
+    constant: EF_BEGINSPELL2
+    # A cast aura. The client draws it for the cast time instead of
+    # duration_ms, and removes it when the cast stops.
+    # Water.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 1
+          top: 1
+          height: 30
+          color: [0.5, 0.5, 1]
+          alpha: 0.2
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 1
+          top: 1.3
+          height: 1
+          color: [0.5, 0.5, 1]
+          alpha: 0.2
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 1
+          top: 4
+          height: 3
+          color: [0.5, 0.5, 1]
+          alpha: 0.6
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 2
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_beginspell
+  - id: 55
+    constant: EF_BEGINSPELL3
+    # A cast aura. The client draws it for the cast time instead of
+    # duration_ms, and removes it when the cast stops.
+    # Fire.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_red
+          bottom: 1
+          top: 1
+          height: 30
+          color: [1, 0.4, 0.4]
+          alpha: 0.3
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_red
+          bottom: 1
+          top: 1.3
+          height: 2
+          color: [1, 0.4, 0.4]
+          alpha: 0.7
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_red
+          bottom: 1
+          top: 4
+          height: 3
+          color: [1, 0.4, 0.4]
+          alpha: 0.7
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 2
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_beginspell
+  - id: 56
+    constant: EF_BEGINSPELL4
+    # A cast aura. The client draws it for the cast time instead of
+    # duration_ms, and removes it when the cast stops.
+    # Wind.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_white
+          bottom: 1
+          top: 1
+          height: 30
+          color: [0.6, 1, 0.6]
+          alpha: 0.3
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_white
+          bottom: 1
+          top: 1.3
+          height: 2
+          color: [0.6, 1, 0.6]
+          alpha: 0.6
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_white
+          bottom: 1
+          top: 4
+          height: 3
+          color: [0.6, 1, 0.6]
+          alpha: 0.6
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 2
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_beginspell
+  - id: 57
+    constant: EF_BEGINSPELL5
+    # A cast aura. The client draws it for the cast time instead of
+    # duration_ms, and removes it when the cast stops.
+    # Earth. roBrowser blends it as blendMode 0, and the client adds it
+    # as the others.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_yellow
+          bottom: 1
+          top: 1
+          height: 30
+          color: [1, 1, 1]
+          alpha: 0.5
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_yellow
+          bottom: 1.1
+          top: 1.2
+          height: 3
+          color: [1, 1, 1]
+          alpha: 1
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_yellow
+          bottom: 1
+          top: 4
+          height: 3
+          color: [1, 1, 1]
+          alpha: 1
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 2
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_beginspell
+  - id: 58
+    constant: EF_BEGINSPELL6
+    # A cast aura. The client draws it for the cast time instead of
+    # duration_ms, and removes it when the cast stops.
+    # Holy and ghost.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_white
+          bottom: 1
+          top: 5
+          height: 4
+          color: [1, 1, 1]
+          alpha: 0.8
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 2
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_beginspell
+  - id: 59
+    constant: EF_BEGINSPELL7
+    # A cast aura. The client draws it for the cast time instead of
+    # duration_ms, and removes it when the cast stops.
+    # Poison.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_purple
+          bottom: 1
+          top: 1
+          height: 30
+          color: [0.8, 0.8, 0.8]
+          alpha: 0.3
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_purple
+          bottom: 1
+          top: 1.3
+          height: 3
+          color: [0.8, 0.8, 0.8]
+          alpha: 0.7
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_purple
+          bottom: 1
+          top: 4
+          height: 3
+          color: [0.8, 0.8, 0.8]
+          alpha: 0.7
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 2
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_beginspell
+  - id: 66
+    constant: EF_CURE
+    parts:
+      - effect: effect/cure
+      - sound: sound/effect/acolyte_cure
+  - id: 67
+    constant: EF_PROVOKE
+    parts:
+      - effect: effect/provoke
+      - sound: sound/effect/swordman_provoke
+  - id: 141
+    constant: EF_PNEUMA
+    parts:
+      - variants: [effect/pneuma1, effect/pneuma2, effect/pneuma3]
+  - id: 152
+    constant: EF_HOLYHIT
+    parts:
+      - effect: effect/holyhit
+  - id: 153
+    constant: EF_CONCENTRATION
+    parts:
+      - effect: effect/concentration
+      - sound: sound/effect/ac_concentration
+  - id: 169
+    constant: EF_ENERGYCOAT
+    parts:
+      - effect: effect/energycoat
+  - id: 170
+    constant: EF_CARTREVOLUTION
+    parts:
+      - effect: effect/cartrevolution
+      - sound: sound/effect/ef_magnumbreak
+  - id: 309
+    constant: EF_FIRSTAID
+    # The sparkle is a 2D particle.
+    parts:
+      - sound: sound/_heal_effect
+  - id: 311
+    constant: EF_LOUD
+    parts:
+      - effect: effect/loud
+      - sound: sound/effect/고성방가
+  - id: 312
+    constant: EF_HEAL
+    # The sparkles are 3D particles.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_white
+          bottom: 0.95
+          top: 0.95
+          height: 8
+          color: [0.7, 1, 0.7]
+          alpha: 0.2
+          duration_ms: 1500
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_white
+          bottom: 1
+          top: 1
+          height: 8
+          color: [0.7, 1, 0.7]
+          alpha: 0.2
+          duration_ms: 1500
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - sound: sound/_heal_effect
+  - id: 315
+    constant: EF_GLASSWALL2
+    # Safety Wall, on the cells of its skill unit.
+    parts:
+      - effect: effect/safetywall
+      - cylinder:
+          texture: texture/effect/alpha_down
+          bottom: 0.6
+          top: 0.6
+          height: 7
+          color: [0.5, 0.1, 0.5]
+          alpha: 0.4
+          duration_ms: 50000
+          copies: 1
+          copy_ms: 0
+          animation: 0
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/alpha_down
+          bottom: 0.65
+          top: 0.65
+          height: 6
+          color: [0.5, 0.1, 0.5]
+          alpha: 0.4
+          duration_ms: 50000
+          copies: 1
+          copy_ms: 0
+          animation: 0
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/alpha_down
+          bottom: 0.7
+          top: 0.7
+          height: 7
+          color: [0.5, 0.1, 0.5]
+          alpha: 0.4
+          duration_ms: 50000
+          copies: 1
+          copy_ms: 0
+          animation: 0
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_glasswall
+  - id: 316
+    constant: EF_READYPORTAL2
+    # A Warp Portal that waits for its destination.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 2.4
+          top: 3.9
+          height: 0.1
+          color: [0.6, 0.6, 1]
+          alpha: 0.4
+          duration_ms: 500
+          copies: 1
+          copy_ms: 0
+          animation: 4
+          fade: false
+          repeat: true
+      - sound: sound/effect/ef_readyportal
+  - id: 317
+    constant: EF_PORTAL2
+    # An open Warp Portal. roBrowser's fourth part, an alpha1 disc 2
+    # cells up, needs a height the client's cylinders do not have yet.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 2.4
+          top: 3.9
+          height: 0.1
+          color: [0.6, 0.6, 1]
+          alpha: 0.4
+          duration_ms: 500
+          copies: 1
+          copy_ms: 0
+          animation: 4
+          fade: false
+          repeat: true
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 0.6
+          top: 0.6
+          height: 15
+          color: [0.6, 0.6, 1]
+          alpha: 0.3
+          duration_ms: 25000
+          copies: 1
+          copy_ms: 0
+          animation: 0
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_blue
+          bottom: 0.8
+          top: 0.8
+          height: 13
+          color: [0.6, 0.6, 1]
+          alpha: 0.3
+          duration_ms: 25000
+          copies: 1
+          copy_ms: 0
+          animation: 0
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_readyportal
+      - sound: sound/effect/ef_portal
+  - id: 320
+    constant: EF_HEAL3
+    # Heal on an undead target. The sparkles are 3D particles.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_white
+          bottom: 0.95
+          top: 0.95
+          height: 10
+          color: [1, 1, 1]
+          alpha: 0.2
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - cylinder:
+          texture: texture/effect/ring_white
+          bottom: 1
+          top: 1
+          height: 9
+          color: [1, 1, 1]
+          alpha: 0.2
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 1
+          fade: true
+          repeat: false
+      - sound: sound/_heal_effect
+  - id: 454
+    constant: EF_DARKCASTING
+    # A cast aura. The client draws it for the cast time instead of
+    # duration_ms, and removes it when the cast stops.
+    # Shadow and undead.
+    parts:
+      - cylinder:
+          texture: texture/effect/ring_black
+          bottom: 1
+          top: 5
+          height: 4
+          color: [1, 1, 1]
+          alpha: 0.8
+          duration_ms: 1000
+          copies: 1
+          copy_ms: 0
+          animation: 2
+          fade: true
+          repeat: false
+      - sound: sound/effect/ef_beginspell

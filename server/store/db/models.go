@@ -136,6 +136,12 @@ type Character struct {
 	SaveY         int
 }
 
+type CharacterSkill struct {
+	CharacterID int64
+	SkillID     int
+	Level       int
+}
+
 type CharacterStatus struct {
 	CharacterID int64
 	Name        string

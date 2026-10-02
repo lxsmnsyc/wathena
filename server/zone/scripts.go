@@ -206,6 +206,7 @@ func (z *Zone) scriptEventFor(name string, args ...modscript.Arg) {
 // runScripts runs the queued events' handlers. Handlers may queue more
 // events, which run in the same call.
 func (z *Zone) runScripts() {
+	z.flushDeferred()
 	for len(z.scriptEvents) > 0 {
 		ev := z.scriptEvents[0]
 		z.scriptEvents = z.scriptEvents[1:]

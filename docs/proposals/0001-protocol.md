@@ -58,7 +58,7 @@ Client to server, in `ClientMessage`:
 |---|---|
 | `hello` | Session start. |
 | `ping` | Latency and keepalive. |
-| `command` | A player action: walk, attack, skill, chat, NPC click or reply, buy from or sell to a shop, use item, drop item, pick up, raise a stat. |
+| `command` | A player action: walk, attack, use or learn a skill, chat, NPC click or reply, buy from or sell to a shop, use item, drop item, pick up, raise a stat. |
 
 Server to client, in `ServerMessage`:
 
@@ -132,6 +132,16 @@ Server to client, in `ServerMessage`:
 - **Status effects.** `StatusIcon` shows or hides one of the player's own status icons, as `clif_status_change`: the icon's `EFST_` ID, `on`, the time left in `remaining_ms` (-1 for a status without an end, 0 when the icon goes), and up to three values. Only the player gets its own icons. On a map change, the new map sends the icons of the statuses that moved with the player again, after `MapChange`.
   - `Options` holds what others see of a unit's statuses, as rAthena's `opt1`, `opt2`, `opt3` and `option`: `body` is one state such as 1 stone, 2 frozen, 3 stunned or 4 asleep; `health` has bits such as 1 poisoned, 2 cursed, 4 silenced and 16 blind; `effect` has visual effect bits; `option` has bits such as 2 hiding and 4 cloaking.
   - `EntityAppear.options` carries them when a unit comes into view. `OptionChange` sends new options to everyone who sees the unit, as `clif_changeoption`.
+- **Skills.** `SkillList` lists the player's skills, as `clif_skillinfoblock`: each skill's ID, level, maximum level in the job's tree, names, target type, SP cost at its level, range, whether a skill point can raise it now, the skill whose icon and effects it shows, and the skills it needs. The first frame carries it, and it comes again after a skill-up and after a job level up. Skill points come as `STAT_ID_SKILL_POINTS`.
+  - `LearnSkill` names a skill. The server raises it by one level when a skill point allows it, as `pc_skillup`, and sends the new list. A skill-up that fails sends nothing.
+  - `UseSkill` names a skill, a level, and an entity or a cell. The server checks it as `clif_parse_UseSkillToId` and `clif_parse_UseSkillToPos` do, then casts it as `unit_skilluse_id2` and `unit_skilluse_pos2`. A target out of range makes the player walk into range first, and the skill is cast when the walk gets there.
+  - Everyone who sees the caster gets `SkillCast` when a cast starts, with the cast time and the skill's element. A skill without a cast time sends it with `cast_ms` 0. `SkillCastCancel` shows a cast that stopped, such as from a hit.
+  - Skill damage is a `Damage` with `skill_id` set: one per target, with the total in `amount` and the hit count in `hits`. A hit from a ground unit has the unit as its source, or the caster when the viewer does not see the unit.
+  - `SkillEffect` shows a skill that took effect without damage, as `clif_skill_nodamage`, with `value` for what it shows, such as the HP a heal gave. `ok` is false when the skill failed on its target. A ground skill sends it with the cell, as `clif_skill_poseffect`.
+  - Ground skills place units: entities of `ENTITY_KIND_SKILL_UNIT` with a `SkillUnit` holding rAthena's `UNT_` ID, the skill, and the caster. They vanish with `VANISH_REASON_EXPIRED`.
+  - `SkillFailed` tells the player why a skill did not start or finish, as `clif_skill_fail`. `SkillCooldown` tells the player how long until a skill can be used again, or with `skill_id` 0, until any skill can (the after-cast delay).
+  - A mod's skill shows another skill's icon and effects: `SkillInfo.icon`, and the `skill_id` of the events, carry that skill's ID.
+  - The gateway drops a `UseSkill` or `LearnSkill` whose skill ID is 0 or past the int32 range, a `UseSkill` whose level is past it, and one whose cell is over 32767, without a reply.
 - **A warp to another map is a map change, on the same connection.** The first frame from the new map starts with `MapChange`: the new map's asset name, the player's cell, and the player's own entity ID there. Then, as after `Welcome`:
   - The player's own `EntityAppear` follows, and then the inventory and stats again.
   - Entity IDs start again on the new map. The client removes every entity it showed before the change.
@@ -183,5 +193,5 @@ Nothing is deployed yet, so nothing breaks. Phase 3 step 4 added `ShopBuy`, `Sho
 
 ## Open points for later proposals
 
-- Messages for equipment, skills lists, party, guild, trade, vending, storage, mail, and cash, item, point and market shops.
+- Messages for party, guild, trade, vending, storage, mail, and cash, item, point and market shops.
 - Admin tool messages (strategy section 10.6), which may use a separate endpoint.

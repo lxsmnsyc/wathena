@@ -136,6 +136,8 @@ type handoff struct {
 	// temp are the player's temporary variables, which last until
 	// logout.
 	temp map[character.Variable]string
+	// cooldowns are the skill cooldowns left, in milliseconds, by skill.
+	cooldowns map[int]int64
 }
 
 // warp sends a player through a warp, as npc_touch_areanpc and
@@ -173,6 +175,12 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	z.closeTalk(p)
 	p.shop = nil
 	z.mapWarpStatuses(p)
+	// unit_remove_map: the cast stops and the player's ground skills end.
+	z.castCancel(p.entity, false)
+	p.entity.pending = nil
+	z.clearUnitGroups(p.entity)
+	z.removeMap(p.entity)
+	z.stopPassives(p)
 	h := &handoff{sess: s, char: z.snapshot(p), ackSeq: p.ackSeq, rewarp: p.rewarp, temp: p.temp,
 		canUseItem:   max(p.canUseItem-z.now, 0),
 		itemDelays:   map[uint32]int64{},
@@ -187,6 +195,14 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	for st, until := range p.statusDelays {
 		if until > z.now {
 			h.statusDelays[st] = until - z.now
+		}
+	}
+	for id, until := range p.cooldowns {
+		if until > z.now {
+			if h.cooldowns == nil {
+				h.cooldowns = map[int]int64{}
+			}
+			h.cooldowns[id] = until - z.now
 		}
 	}
 	z.remove(p, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT)
@@ -281,6 +297,9 @@ func (z *Zone) teleport(p *Player, x, y int) {
 	e.x, e.y = x, y
 	e.path = e.path[:0]
 	e.target, e.pickItem = nil, nil
+	z.castCancel(e, false)
+	e.pending = nil
+	z.removeMap(e)
 	z.forget(e)
 	for o := range z.entities.all() {
 		if o.player == nil || o == e {

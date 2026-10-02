@@ -46,6 +46,9 @@ type monster struct {
 	// handle is the monster's script handle, or 0 before a script needs
 	// one.
 	handle int64
+	// stolen is set once a thief stole from the monster, or found it
+	// cannot (steal_flag).
+	stolen bool
 }
 
 // Random walk timing, as rAthena's mob.cpp.

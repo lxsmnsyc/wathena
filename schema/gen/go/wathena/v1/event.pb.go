@@ -344,6 +344,158 @@ func (x DamageKind) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+// SkillFailure is why a skill failed, as rAthena's USESKILL_FAIL_ values.
+type SkillFailure int32
+
+const (
+	SkillFailure_SKILL_FAILURE_UNSPECIFIED SkillFailure = 0
+	// LEVEL is rAthena's USESKILL_FAIL_LEVEL: the skill failed.
+	SkillFailure_SKILL_FAILURE_LEVEL              SkillFailure = 1
+	SkillFailure_SKILL_FAILURE_SP_INSUFFICIENT    SkillFailure = 2
+	SkillFailure_SKILL_FAILURE_HP_INSUFFICIENT    SkillFailure = 3
+	SkillFailure_SKILL_FAILURE_STUFF_INSUFFICIENT SkillFailure = 4
+	SkillFailure_SKILL_FAILURE_SKILLINTERVAL      SkillFailure = 5
+	SkillFailure_SKILL_FAILURE_MONEY              SkillFailure = 6
+	SkillFailure_SKILL_FAILURE_THIS_WEAPON        SkillFailure = 7
+	SkillFailure_SKILL_FAILURE_REDJAMSTONE        SkillFailure = 8
+	SkillFailure_SKILL_FAILURE_BLUEJAMSTONE       SkillFailure = 9
+	SkillFailure_SKILL_FAILURE_WEIGHTOVER         SkillFailure = 10
+	SkillFailure_SKILL_FAILURE_ARROW              SkillFailure = 11
+	SkillFailure_SKILL_FAILURE_CART               SkillFailure = 12
+	SkillFailure_SKILL_FAILURE_POS                SkillFailure = 13
+	// RANGE is out of range: the target was too far.
+	SkillFailure_SKILL_FAILURE_RANGE SkillFailure = 14
+	// TARGET is a target the skill cannot hit.
+	SkillFailure_SKILL_FAILURE_TARGET SkillFailure = 15
+	// STATUS is a status that blocks skills, such as Silence.
+	SkillFailure_SKILL_FAILURE_STATUS SkillFailure = 16
+	// HOLYWATER is AL_HOLYWATER without an Empty Bottle.
+	SkillFailure_SKILL_FAILURE_HOLYWATER SkillFailure = 17
+)
+
+// Enum value maps for SkillFailure.
+var (
+	SkillFailure_name = map[int32]string{
+		0:  "SKILL_FAILURE_UNSPECIFIED",
+		1:  "SKILL_FAILURE_LEVEL",
+		2:  "SKILL_FAILURE_SP_INSUFFICIENT",
+		3:  "SKILL_FAILURE_HP_INSUFFICIENT",
+		4:  "SKILL_FAILURE_STUFF_INSUFFICIENT",
+		5:  "SKILL_FAILURE_SKILLINTERVAL",
+		6:  "SKILL_FAILURE_MONEY",
+		7:  "SKILL_FAILURE_THIS_WEAPON",
+		8:  "SKILL_FAILURE_REDJAMSTONE",
+		9:  "SKILL_FAILURE_BLUEJAMSTONE",
+		10: "SKILL_FAILURE_WEIGHTOVER",
+		11: "SKILL_FAILURE_ARROW",
+		12: "SKILL_FAILURE_CART",
+		13: "SKILL_FAILURE_POS",
+		14: "SKILL_FAILURE_RANGE",
+		15: "SKILL_FAILURE_TARGET",
+		16: "SKILL_FAILURE_STATUS",
+		17: "SKILL_FAILURE_HOLYWATER",
+	}
+	SkillFailure_value = map[string]int32{
+		"SKILL_FAILURE_UNSPECIFIED":        0,
+		"SKILL_FAILURE_LEVEL":              1,
+		"SKILL_FAILURE_SP_INSUFFICIENT":    2,
+		"SKILL_FAILURE_HP_INSUFFICIENT":    3,
+		"SKILL_FAILURE_STUFF_INSUFFICIENT": 4,
+		"SKILL_FAILURE_SKILLINTERVAL":      5,
+		"SKILL_FAILURE_MONEY":              6,
+		"SKILL_FAILURE_THIS_WEAPON":        7,
+		"SKILL_FAILURE_REDJAMSTONE":        8,
+		"SKILL_FAILURE_BLUEJAMSTONE":       9,
+		"SKILL_FAILURE_WEIGHTOVER":         10,
+		"SKILL_FAILURE_ARROW":              11,
+		"SKILL_FAILURE_CART":               12,
+		"SKILL_FAILURE_POS":                13,
+		"SKILL_FAILURE_RANGE":              14,
+		"SKILL_FAILURE_TARGET":             15,
+		"SKILL_FAILURE_STATUS":             16,
+		"SKILL_FAILURE_HOLYWATER":          17,
+	}
+)
+
+func (x SkillFailure) Enum() *SkillFailure {
+	p := new(SkillFailure)
+	*p = x
+	return p
+}
+
+func (x SkillFailure) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SkillFailure) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[4].Descriptor()
+}
+
+func (SkillFailure) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[4]
+}
+
+func (x SkillFailure) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// SkillTarget is how a skill picks its target, as rAthena's INF_ types.
+type SkillTarget int32
+
+const (
+	SkillTarget_SKILL_TARGET_UNSPECIFIED SkillTarget = 0
+	SkillTarget_SKILL_TARGET_PASSIVE     SkillTarget = 1
+	SkillTarget_SKILL_TARGET_ENEMY       SkillTarget = 2
+	SkillTarget_SKILL_TARGET_GROUND      SkillTarget = 3
+	SkillTarget_SKILL_TARGET_SELF        SkillTarget = 4
+	SkillTarget_SKILL_TARGET_SUPPORT     SkillTarget = 5
+	SkillTarget_SKILL_TARGET_TRAP        SkillTarget = 6
+)
+
+// Enum value maps for SkillTarget.
+var (
+	SkillTarget_name = map[int32]string{
+		0: "SKILL_TARGET_UNSPECIFIED",
+		1: "SKILL_TARGET_PASSIVE",
+		2: "SKILL_TARGET_ENEMY",
+		3: "SKILL_TARGET_GROUND",
+		4: "SKILL_TARGET_SELF",
+		5: "SKILL_TARGET_SUPPORT",
+		6: "SKILL_TARGET_TRAP",
+	}
+	SkillTarget_value = map[string]int32{
+		"SKILL_TARGET_UNSPECIFIED": 0,
+		"SKILL_TARGET_PASSIVE":     1,
+		"SKILL_TARGET_ENEMY":       2,
+		"SKILL_TARGET_GROUND":      3,
+		"SKILL_TARGET_SELF":        4,
+		"SKILL_TARGET_SUPPORT":     5,
+		"SKILL_TARGET_TRAP":        6,
+	}
+)
+
+func (x SkillTarget) Enum() *SkillTarget {
+	p := new(SkillTarget)
+	*p = x
+	return p
+}
+
+func (x SkillTarget) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SkillTarget) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[5].Descriptor()
+}
+
+func (SkillTarget) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[5]
+}
+
+func (x SkillTarget) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type ImagePosition int32
 
 const (
@@ -380,11 +532,11 @@ func (x ImagePosition) String() string {
 }
 
 func (ImagePosition) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[4].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[6].Descriptor()
 }
 
 func (ImagePosition) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[4]
+	return &file_wathena_v1_event_proto_enumTypes[6]
 }
 
 func (x ImagePosition) Number() protoreflect.EnumNumber {
@@ -440,11 +592,11 @@ func (x ShopOutcome) String() string {
 }
 
 func (ShopOutcome) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[5].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[7].Descriptor()
 }
 
 func (ShopOutcome) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[5]
+	return &file_wathena_v1_event_proto_enumTypes[7]
 }
 
 func (x ShopOutcome) Number() protoreflect.EnumNumber {
@@ -498,11 +650,11 @@ func (x InventoryRemoveReason) String() string {
 }
 
 func (InventoryRemoveReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[6].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[8].Descriptor()
 }
 
 func (InventoryRemoveReason) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[6]
+	return &file_wathena_v1_event_proto_enumTypes[8]
 }
 
 func (x InventoryRemoveReason) Number() protoreflect.EnumNumber {
@@ -569,11 +721,11 @@ func (x UseItemFailure) String() string {
 }
 
 func (UseItemFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[7].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[9].Descriptor()
 }
 
 func (UseItemFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[7]
+	return &file_wathena_v1_event_proto_enumTypes[9]
 }
 
 func (x UseItemFailure) Number() protoreflect.EnumNumber {
@@ -619,11 +771,11 @@ func (x DropItemFailure) String() string {
 }
 
 func (DropItemFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[8].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[10].Descriptor()
 }
 
 func (DropItemFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[8]
+	return &file_wathena_v1_event_proto_enumTypes[10]
 }
 
 func (x DropItemFailure) Number() protoreflect.EnumNumber {
@@ -677,11 +829,11 @@ func (x PickUpFailure) String() string {
 }
 
 func (PickUpFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[9].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[11].Descriptor()
 }
 
 func (PickUpFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[9]
+	return &file_wathena_v1_event_proto_enumTypes[11]
 }
 
 func (x PickUpFailure) Number() protoreflect.EnumNumber {
@@ -734,11 +886,11 @@ func (x EquipFailure) String() string {
 }
 
 func (EquipFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[10].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[12].Descriptor()
 }
 
 func (EquipFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[10]
+	return &file_wathena_v1_event_proto_enumTypes[12]
 }
 
 func (x EquipFailure) Number() protoreflect.EnumNumber {
@@ -1076,6 +1228,51 @@ func (x *Event) GetOptionChange() *OptionChange {
 	return nil
 }
 
+func (x *Event) GetSkillList() *SkillList {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_SkillList); ok {
+			return x.SkillList
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetSkillCastCancel() *SkillCastCancel {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_SkillCastCancel); ok {
+			return x.SkillCastCancel
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetSkillEffect() *SkillEffect {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_SkillEffect); ok {
+			return x.SkillEffect
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetSkillFailed() *SkillFailed {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_SkillFailed); ok {
+			return x.SkillFailed
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetSkillCooldown() *SkillCooldown {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_SkillCooldown); ok {
+			return x.SkillCooldown
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -1338,6 +1535,46 @@ func (x *Event) SetOptionChange(v *OptionChange) {
 		return
 	}
 	x.xxx_hidden_Body = &event_OptionChange{v}
+}
+
+func (x *Event) SetSkillList(v *SkillList) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_SkillList{v}
+}
+
+func (x *Event) SetSkillCastCancel(v *SkillCastCancel) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_SkillCastCancel{v}
+}
+
+func (x *Event) SetSkillEffect(v *SkillEffect) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_SkillEffect{v}
+}
+
+func (x *Event) SetSkillFailed(v *SkillFailed) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_SkillFailed{v}
+}
+
+func (x *Event) SetSkillCooldown(v *SkillCooldown) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_SkillCooldown{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -1611,6 +1848,46 @@ func (x *Event) HasOptionChange() bool {
 	return ok
 }
 
+func (x *Event) HasSkillList() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_SkillList)
+	return ok
+}
+
+func (x *Event) HasSkillCastCancel() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_SkillCastCancel)
+	return ok
+}
+
+func (x *Event) HasSkillEffect() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_SkillEffect)
+	return ok
+}
+
+func (x *Event) HasSkillFailed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_SkillFailed)
+	return ok
+}
+
+func (x *Event) HasSkillCooldown() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_SkillCooldown)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -1813,6 +2090,36 @@ func (x *Event) ClearOptionChange() {
 	}
 }
 
+func (x *Event) ClearSkillList() {
+	if _, ok := x.xxx_hidden_Body.(*event_SkillList); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearSkillCastCancel() {
+	if _, ok := x.xxx_hidden_Body.(*event_SkillCastCancel); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearSkillEffect() {
+	if _, ok := x.xxx_hidden_Body.(*event_SkillEffect); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearSkillFailed() {
+	if _, ok := x.xxx_hidden_Body.(*event_SkillFailed); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearSkillCooldown() {
+	if _, ok := x.xxx_hidden_Body.(*event_SkillCooldown); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -1847,6 +2154,11 @@ const Event_InsertCardFailed_case case_Event_Body = 30
 const Event_LookChange_case case_Event_Body = 31
 const Event_StatusIcon_case case_Event_Body = 32
 const Event_OptionChange_case case_Event_Body = 33
+const Event_SkillList_case case_Event_Body = 34
+const Event_SkillCastCancel_case case_Event_Body = 35
+const Event_SkillEffect_case case_Event_Body = 36
+const Event_SkillFailed_case case_Event_Body = 37
+const Event_SkillCooldown_case case_Event_Body = 38
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -1919,6 +2231,16 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_StatusIcon_case
 	case *event_OptionChange:
 		return Event_OptionChange_case
+	case *event_SkillList:
+		return Event_SkillList_case
+	case *event_SkillCastCancel:
+		return Event_SkillCastCancel_case
+	case *event_SkillEffect:
+		return Event_SkillEffect_case
+	case *event_SkillFailed:
+		return Event_SkillFailed_case
+	case *event_SkillCooldown:
+		return Event_SkillCooldown_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -1961,6 +2283,11 @@ type Event_builder struct {
 	LookChange       *LookChange
 	StatusIcon       *StatusIcon
 	OptionChange     *OptionChange
+	SkillList        *SkillList
+	SkillCastCancel  *SkillCastCancel
+	SkillEffect      *SkillEffect
+	SkillFailed      *SkillFailed
+	SkillCooldown    *SkillCooldown
 	// -- end of xxx_hidden_Body
 }
 
@@ -2066,6 +2393,21 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.OptionChange != nil {
 		x.xxx_hidden_Body = &event_OptionChange{b.OptionChange}
+	}
+	if b.SkillList != nil {
+		x.xxx_hidden_Body = &event_SkillList{b.SkillList}
+	}
+	if b.SkillCastCancel != nil {
+		x.xxx_hidden_Body = &event_SkillCastCancel{b.SkillCastCancel}
+	}
+	if b.SkillEffect != nil {
+		x.xxx_hidden_Body = &event_SkillEffect{b.SkillEffect}
+	}
+	if b.SkillFailed != nil {
+		x.xxx_hidden_Body = &event_SkillFailed{b.SkillFailed}
+	}
+	if b.SkillCooldown != nil {
+		x.xxx_hidden_Body = &event_SkillCooldown{b.SkillCooldown}
 	}
 	return m0
 }
@@ -2216,6 +2558,26 @@ type event_OptionChange struct {
 	OptionChange *OptionChange `protobuf:"bytes,33,opt,name=option_change,json=optionChange,proto3,oneof"`
 }
 
+type event_SkillList struct {
+	SkillList *SkillList `protobuf:"bytes,34,opt,name=skill_list,json=skillList,proto3,oneof"`
+}
+
+type event_SkillCastCancel struct {
+	SkillCastCancel *SkillCastCancel `protobuf:"bytes,35,opt,name=skill_cast_cancel,json=skillCastCancel,proto3,oneof"`
+}
+
+type event_SkillEffect struct {
+	SkillEffect *SkillEffect `protobuf:"bytes,36,opt,name=skill_effect,json=skillEffect,proto3,oneof"`
+}
+
+type event_SkillFailed struct {
+	SkillFailed *SkillFailed `protobuf:"bytes,37,opt,name=skill_failed,json=skillFailed,proto3,oneof"`
+}
+
+type event_SkillCooldown struct {
+	SkillCooldown *SkillCooldown `protobuf:"bytes,38,opt,name=skill_cooldown,json=skillCooldown,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -2281,6 +2643,16 @@ func (*event_LookChange) isEvent_Body() {}
 func (*event_StatusIcon) isEvent_Body() {}
 
 func (*event_OptionChange) isEvent_Body() {}
+
+func (*event_SkillList) isEvent_Body() {}
+
+func (*event_SkillCastCancel) isEvent_Body() {}
+
+func (*event_SkillEffect) isEvent_Body() {}
+
+func (*event_SkillFailed) isEvent_Body() {}
+
+func (*event_SkillCooldown) isEvent_Body() {}
 
 // MapChange moves the player to another map, after a warp. It is the
 // first event of the first frame from the new map. The client clears
@@ -2407,6 +2779,7 @@ type EntityAppear struct {
 	xxx_hidden_HpPermille uint32                 `protobuf:"varint,9,opt,name=hp_permille,json=hpPermille,proto3"`
 	xxx_hidden_Item       *GroundItem            `protobuf:"bytes,10,opt,name=item,proto3"`
 	xxx_hidden_Options    *Options               `protobuf:"bytes,11,opt,name=options,proto3"`
+	xxx_hidden_SkillUnit  *SkillUnit             `protobuf:"bytes,12,opt,name=skill_unit,json=skillUnit,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -2513,6 +2886,13 @@ func (x *EntityAppear) GetOptions() *Options {
 	return nil
 }
 
+func (x *EntityAppear) GetSkillUnit() *SkillUnit {
+	if x != nil {
+		return x.xxx_hidden_SkillUnit
+	}
+	return nil
+}
+
 func (x *EntityAppear) SetId(v uint32) {
 	x.xxx_hidden_Id = v
 }
@@ -2557,6 +2937,10 @@ func (x *EntityAppear) SetOptions(v *Options) {
 	x.xxx_hidden_Options = v
 }
 
+func (x *EntityAppear) SetSkillUnit(v *SkillUnit) {
+	x.xxx_hidden_SkillUnit = v
+}
+
 func (x *EntityAppear) HasLook() bool {
 	if x == nil {
 		return false
@@ -2578,6 +2962,13 @@ func (x *EntityAppear) HasOptions() bool {
 	return x.xxx_hidden_Options != nil
 }
 
+func (x *EntityAppear) HasSkillUnit() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SkillUnit != nil
+}
+
 func (x *EntityAppear) ClearLook() {
 	x.xxx_hidden_Look = nil
 }
@@ -2588,6 +2979,10 @@ func (x *EntityAppear) ClearItem() {
 
 func (x *EntityAppear) ClearOptions() {
 	x.xxx_hidden_Options = nil
+}
+
+func (x *EntityAppear) ClearSkillUnit() {
+	x.xxx_hidden_SkillUnit = nil
 }
 
 type EntityAppear_builder struct {
@@ -2612,6 +3007,9 @@ type EntityAppear_builder struct {
 	// options are what the entity's status changes show, such as Stun's
 	// stars. Unset for none.
 	Options *Options
+	// skill_unit is set for ENTITY_KIND_SKILL_UNIT: a cell of a ground
+	// skill, such as one fire of Fire Wall.
+	SkillUnit *SkillUnit
 }
 
 func (b0 EntityAppear_builder) Build() *EntityAppear {
@@ -2629,6 +3027,96 @@ func (b0 EntityAppear_builder) Build() *EntityAppear {
 	x.xxx_hidden_HpPermille = b.HpPermille
 	x.xxx_hidden_Item = b.Item
 	x.xxx_hidden_Options = b.Options
+	x.xxx_hidden_SkillUnit = b.SkillUnit
+	return m0
+}
+
+// SkillUnit is one cell of a ground skill, as rAthena's skill_unit.
+type SkillUnit struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UnitId  uint32                 `protobuf:"varint,1,opt,name=unit_id,json=unitId,proto3"`
+	xxx_hidden_SkillId uint32                 `protobuf:"varint,2,opt,name=skill_id,json=skillId,proto3"`
+	xxx_hidden_Caster  uint32                 `protobuf:"varint,3,opt,name=caster,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SkillUnit) Reset() {
+	*x = SkillUnit{}
+	mi := &file_wathena_v1_event_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillUnit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillUnit) ProtoMessage() {}
+
+func (x *SkillUnit) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SkillUnit) GetUnitId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_UnitId
+	}
+	return 0
+}
+
+func (x *SkillUnit) GetSkillId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_SkillId
+	}
+	return 0
+}
+
+func (x *SkillUnit) GetCaster() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Caster
+	}
+	return 0
+}
+
+func (x *SkillUnit) SetUnitId(v uint32) {
+	x.xxx_hidden_UnitId = v
+}
+
+func (x *SkillUnit) SetSkillId(v uint32) {
+	x.xxx_hidden_SkillId = v
+}
+
+func (x *SkillUnit) SetCaster(v uint32) {
+	x.xxx_hidden_Caster = v
+}
+
+type SkillUnit_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// unit_id is rAthena's UNT_ ID, which picks the client's effect.
+	UnitId  uint32
+	SkillId uint32
+	// caster is the entity ID of the unit's caster, when the player sees
+	// it, or 0.
+	Caster uint32
+}
+
+func (b0 SkillUnit_builder) Build() *SkillUnit {
+	m0 := &SkillUnit{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UnitId = b.UnitId
+	x.xxx_hidden_SkillId = b.SkillId
+	x.xxx_hidden_Caster = b.Caster
 	return m0
 }
 
@@ -2646,7 +3134,7 @@ type GroundItem struct {
 
 func (x *GroundItem) Reset() {
 	*x = GroundItem{}
-	mi := &file_wathena_v1_event_proto_msgTypes[3]
+	mi := &file_wathena_v1_event_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2658,7 +3146,7 @@ func (x *GroundItem) String() string {
 func (*GroundItem) ProtoMessage() {}
 
 func (x *GroundItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[3]
+	mi := &file_wathena_v1_event_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2773,7 +3261,7 @@ type Look struct {
 
 func (x *Look) Reset() {
 	*x = Look{}
-	mi := &file_wathena_v1_event_proto_msgTypes[4]
+	mi := &file_wathena_v1_event_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2785,7 +3273,7 @@ func (x *Look) String() string {
 func (*Look) ProtoMessage() {}
 
 func (x *Look) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[4]
+	mi := &file_wathena_v1_event_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2961,7 +3449,7 @@ type EntityVanish struct {
 
 func (x *EntityVanish) Reset() {
 	*x = EntityVanish{}
-	mi := &file_wathena_v1_event_proto_msgTypes[5]
+	mi := &file_wathena_v1_event_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2973,7 +3461,7 @@ func (x *EntityVanish) String() string {
 func (*EntityVanish) ProtoMessage() {}
 
 func (x *EntityVanish) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[5]
+	mi := &file_wathena_v1_event_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3037,7 +3525,7 @@ type EntityMove struct {
 
 func (x *EntityMove) Reset() {
 	*x = EntityMove{}
-	mi := &file_wathena_v1_event_proto_msgTypes[6]
+	mi := &file_wathena_v1_event_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3049,7 +3537,7 @@ func (x *EntityMove) String() string {
 func (*EntityMove) ProtoMessage() {}
 
 func (x *EntityMove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[6]
+	mi := &file_wathena_v1_event_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3169,7 +3657,7 @@ type EntityStop struct {
 
 func (x *EntityStop) Reset() {
 	*x = EntityStop{}
-	mi := &file_wathena_v1_event_proto_msgTypes[7]
+	mi := &file_wathena_v1_event_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3181,7 +3669,7 @@ func (x *EntityStop) String() string {
 func (*EntityStop) ProtoMessage() {}
 
 func (x *EntityStop) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[7]
+	mi := &file_wathena_v1_event_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3253,7 +3741,7 @@ type StatUpdate struct {
 
 func (x *StatUpdate) Reset() {
 	*x = StatUpdate{}
-	mi := &file_wathena_v1_event_proto_msgTypes[8]
+	mi := &file_wathena_v1_event_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3265,7 +3753,7 @@ func (x *StatUpdate) String() string {
 func (*StatUpdate) ProtoMessage() {}
 
 func (x *StatUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[8]
+	mi := &file_wathena_v1_event_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3313,7 +3801,7 @@ type Stat struct {
 
 func (x *Stat) Reset() {
 	*x = Stat{}
-	mi := &file_wathena_v1_event_proto_msgTypes[9]
+	mi := &file_wathena_v1_event_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3325,7 +3813,7 @@ func (x *Stat) String() string {
 func (*Stat) ProtoMessage() {}
 
 func (x *Stat) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[9]
+	mi := &file_wathena_v1_event_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3390,7 +3878,7 @@ type Damage struct {
 
 func (x *Damage) Reset() {
 	*x = Damage{}
-	mi := &file_wathena_v1_event_proto_msgTypes[10]
+	mi := &file_wathena_v1_event_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3402,7 +3890,7 @@ func (x *Damage) String() string {
 func (*Damage) ProtoMessage() {}
 
 func (x *Damage) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[10]
+	mi := &file_wathena_v1_event_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3533,6 +4021,9 @@ func (b0 Damage_builder) Build() *Damage {
 	return m0
 }
 
+// SkillCast shows an entity starting to cast a skill, as
+// clif_skillcasting: the client shows the cast bar of cast_ms over it.
+// A cast without a cast time sends none.
 type SkillCast struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Source  uint32                 `protobuf:"varint,1,opt,name=source,proto3"`
@@ -3540,13 +4031,14 @@ type SkillCast struct {
 	xxx_hidden_Level   uint32                 `protobuf:"varint,3,opt,name=level,proto3"`
 	xxx_hidden_CastMs  uint32                 `protobuf:"varint,4,opt,name=cast_ms,json=castMs,proto3"`
 	xxx_hidden_Target  isSkillCast_Target     `protobuf_oneof:"target"`
+	xxx_hidden_Element uint32                 `protobuf:"varint,7,opt,name=element,proto3"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SkillCast) Reset() {
 	*x = SkillCast{}
-	mi := &file_wathena_v1_event_proto_msgTypes[11]
+	mi := &file_wathena_v1_event_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3558,7 +4050,7 @@ func (x *SkillCast) String() string {
 func (*SkillCast) ProtoMessage() {}
 
 func (x *SkillCast) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[11]
+	mi := &file_wathena_v1_event_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3615,6 +4107,13 @@ func (x *SkillCast) GetCell() *Cell {
 	return nil
 }
 
+func (x *SkillCast) GetElement() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Element
+	}
+	return 0
+}
+
 func (x *SkillCast) SetSource(v uint32) {
 	x.xxx_hidden_Source = v
 }
@@ -3641,6 +4140,10 @@ func (x *SkillCast) SetCell(v *Cell) {
 		return
 	}
 	x.xxx_hidden_Target = &skillCast_Cell{v}
+}
+
+func (x *SkillCast) SetElement(v uint32) {
+	x.xxx_hidden_Element = v
 }
 
 func (x *SkillCast) HasTarget() bool {
@@ -3711,6 +4214,8 @@ type SkillCast_builder struct {
 	Entity *uint32
 	Cell   *Cell
 	// -- end of xxx_hidden_Target
+	// element is the skill's element, which picks the cast effect's color.
+	Element uint32
 }
 
 func (b0 SkillCast_builder) Build() *SkillCast {
@@ -3727,13 +4232,14 @@ func (b0 SkillCast_builder) Build() *SkillCast {
 	if b.Cell != nil {
 		x.xxx_hidden_Target = &skillCast_Cell{b.Cell}
 	}
+	x.xxx_hidden_Element = b.Element
 	return m0
 }
 
 type case_SkillCast_Target protoreflect.FieldNumber
 
 func (x case_SkillCast_Target) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[11].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[12].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -3756,6 +4262,799 @@ func (*skillCast_Entity) isSkillCast_Target() {}
 
 func (*skillCast_Cell) isSkillCast_Target() {}
 
+// SkillCastCancel shows an entity's cast stopping before it finished, as
+// clif_skillcastcancel: hit, stunned, or out of range.
+type SkillCastCancel struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Source uint32                 `protobuf:"varint,1,opt,name=source,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SkillCastCancel) Reset() {
+	*x = SkillCastCancel{}
+	mi := &file_wathena_v1_event_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillCastCancel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillCastCancel) ProtoMessage() {}
+
+func (x *SkillCastCancel) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SkillCastCancel) GetSource() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Source
+	}
+	return 0
+}
+
+func (x *SkillCastCancel) SetSource(v uint32) {
+	x.xxx_hidden_Source = v
+}
+
+type SkillCastCancel_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Source uint32
+}
+
+func (b0 SkillCastCancel_builder) Build() *SkillCastCancel {
+	m0 := &SkillCastCancel{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Source = b.Source
+	return m0
+}
+
+// SkillEffect shows a skill taking effect without damage, as
+// clif_skill_nodamage and clif_skill_poseffect: a heal, a buff, or a
+// ground skill.
+type SkillEffect struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Source  uint32                 `protobuf:"varint,1,opt,name=source,proto3"`
+	xxx_hidden_SkillId uint32                 `protobuf:"varint,2,opt,name=skill_id,json=skillId,proto3"`
+	xxx_hidden_Level   uint32                 `protobuf:"varint,3,opt,name=level,proto3"`
+	xxx_hidden_Target  isSkillEffect_Target   `protobuf_oneof:"target"`
+	xxx_hidden_Value   int64                  `protobuf:"varint,6,opt,name=value,proto3"`
+	xxx_hidden_Ok      bool                   `protobuf:"varint,7,opt,name=ok,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SkillEffect) Reset() {
+	*x = SkillEffect{}
+	mi := &file_wathena_v1_event_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillEffect) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillEffect) ProtoMessage() {}
+
+func (x *SkillEffect) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SkillEffect) GetSource() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Source
+	}
+	return 0
+}
+
+func (x *SkillEffect) GetSkillId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_SkillId
+	}
+	return 0
+}
+
+func (x *SkillEffect) GetLevel() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Level
+	}
+	return 0
+}
+
+func (x *SkillEffect) GetEntity() uint32 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Target.(*skillEffect_Entity); ok {
+			return x.Entity
+		}
+	}
+	return 0
+}
+
+func (x *SkillEffect) GetCell() *Cell {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Target.(*skillEffect_Cell); ok {
+			return x.Cell
+		}
+	}
+	return nil
+}
+
+func (x *SkillEffect) GetValue() int64 {
+	if x != nil {
+		return x.xxx_hidden_Value
+	}
+	return 0
+}
+
+func (x *SkillEffect) GetOk() bool {
+	if x != nil {
+		return x.xxx_hidden_Ok
+	}
+	return false
+}
+
+func (x *SkillEffect) SetSource(v uint32) {
+	x.xxx_hidden_Source = v
+}
+
+func (x *SkillEffect) SetSkillId(v uint32) {
+	x.xxx_hidden_SkillId = v
+}
+
+func (x *SkillEffect) SetLevel(v uint32) {
+	x.xxx_hidden_Level = v
+}
+
+func (x *SkillEffect) SetEntity(v uint32) {
+	x.xxx_hidden_Target = &skillEffect_Entity{v}
+}
+
+func (x *SkillEffect) SetCell(v *Cell) {
+	if v == nil {
+		x.xxx_hidden_Target = nil
+		return
+	}
+	x.xxx_hidden_Target = &skillEffect_Cell{v}
+}
+
+func (x *SkillEffect) SetValue(v int64) {
+	x.xxx_hidden_Value = v
+}
+
+func (x *SkillEffect) SetOk(v bool) {
+	x.xxx_hidden_Ok = v
+}
+
+func (x *SkillEffect) HasTarget() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Target != nil
+}
+
+func (x *SkillEffect) HasEntity() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Target.(*skillEffect_Entity)
+	return ok
+}
+
+func (x *SkillEffect) HasCell() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Target.(*skillEffect_Cell)
+	return ok
+}
+
+func (x *SkillEffect) ClearTarget() {
+	x.xxx_hidden_Target = nil
+}
+
+func (x *SkillEffect) ClearEntity() {
+	if _, ok := x.xxx_hidden_Target.(*skillEffect_Entity); ok {
+		x.xxx_hidden_Target = nil
+	}
+}
+
+func (x *SkillEffect) ClearCell() {
+	if _, ok := x.xxx_hidden_Target.(*skillEffect_Cell); ok {
+		x.xxx_hidden_Target = nil
+	}
+}
+
+const SkillEffect_Target_not_set_case case_SkillEffect_Target = 0
+const SkillEffect_Entity_case case_SkillEffect_Target = 4
+const SkillEffect_Cell_case case_SkillEffect_Target = 5
+
+func (x *SkillEffect) WhichTarget() case_SkillEffect_Target {
+	if x == nil {
+		return SkillEffect_Target_not_set_case
+	}
+	switch x.xxx_hidden_Target.(type) {
+	case *skillEffect_Entity:
+		return SkillEffect_Entity_case
+	case *skillEffect_Cell:
+		return SkillEffect_Cell_case
+	default:
+		return SkillEffect_Target_not_set_case
+	}
+}
+
+type SkillEffect_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Source  uint32
+	SkillId uint32
+	Level   uint32
+	// Fields of oneof xxx_hidden_Target:
+	Entity *uint32
+	Cell   *Cell
+	// -- end of xxx_hidden_Target
+	// value is what the effect shows, such as the HP healed, or the
+	// level.
+	Value int64
+	// ok is false when the skill failed on the target, such as a status
+	// that did not start.
+	Ok bool
+}
+
+func (b0 SkillEffect_builder) Build() *SkillEffect {
+	m0 := &SkillEffect{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Source = b.Source
+	x.xxx_hidden_SkillId = b.SkillId
+	x.xxx_hidden_Level = b.Level
+	if b.Entity != nil {
+		x.xxx_hidden_Target = &skillEffect_Entity{*b.Entity}
+	}
+	if b.Cell != nil {
+		x.xxx_hidden_Target = &skillEffect_Cell{b.Cell}
+	}
+	x.xxx_hidden_Value = b.Value
+	x.xxx_hidden_Ok = b.Ok
+	return m0
+}
+
+type case_SkillEffect_Target protoreflect.FieldNumber
+
+func (x case_SkillEffect_Target) String() string {
+	md := file_wathena_v1_event_proto_msgTypes[14].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isSkillEffect_Target interface {
+	isSkillEffect_Target()
+}
+
+type skillEffect_Entity struct {
+	Entity uint32 `protobuf:"varint,4,opt,name=entity,proto3,oneof"`
+}
+
+type skillEffect_Cell struct {
+	Cell *Cell `protobuf:"bytes,5,opt,name=cell,proto3,oneof"`
+}
+
+func (*skillEffect_Entity) isSkillEffect_Target() {}
+
+func (*skillEffect_Cell) isSkillEffect_Target() {}
+
+// SkillFailed tells the player that a skill could not be used, as
+// clif_skill_fail.
+type SkillFailed struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SkillId uint32                 `protobuf:"varint,1,opt,name=skill_id,json=skillId,proto3"`
+	xxx_hidden_Reason  SkillFailure           `protobuf:"varint,2,opt,name=reason,proto3,enum=wathena.v1.SkillFailure"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SkillFailed) Reset() {
+	*x = SkillFailed{}
+	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillFailed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillFailed) ProtoMessage() {}
+
+func (x *SkillFailed) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SkillFailed) GetSkillId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_SkillId
+	}
+	return 0
+}
+
+func (x *SkillFailed) GetReason() SkillFailure {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return SkillFailure_SKILL_FAILURE_UNSPECIFIED
+}
+
+func (x *SkillFailed) SetSkillId(v uint32) {
+	x.xxx_hidden_SkillId = v
+}
+
+func (x *SkillFailed) SetReason(v SkillFailure) {
+	x.xxx_hidden_Reason = v
+}
+
+type SkillFailed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SkillId uint32
+	Reason  SkillFailure
+}
+
+func (b0 SkillFailed_builder) Build() *SkillFailed {
+	m0 := &SkillFailed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SkillId = b.SkillId
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// SkillCooldown tells the player that a skill cannot be used again for
+// a time, as clif_skill_cooldown. skill_id 0 is the after-cast delay of
+// every skill.
+type SkillCooldown struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SkillId uint32                 `protobuf:"varint,1,opt,name=skill_id,json=skillId,proto3"`
+	xxx_hidden_Ms      uint32                 `protobuf:"varint,2,opt,name=ms,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SkillCooldown) Reset() {
+	*x = SkillCooldown{}
+	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillCooldown) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillCooldown) ProtoMessage() {}
+
+func (x *SkillCooldown) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SkillCooldown) GetSkillId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_SkillId
+	}
+	return 0
+}
+
+func (x *SkillCooldown) GetMs() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Ms
+	}
+	return 0
+}
+
+func (x *SkillCooldown) SetSkillId(v uint32) {
+	x.xxx_hidden_SkillId = v
+}
+
+func (x *SkillCooldown) SetMs(v uint32) {
+	x.xxx_hidden_Ms = v
+}
+
+type SkillCooldown_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SkillId uint32
+	Ms      uint32
+}
+
+func (b0 SkillCooldown_builder) Build() *SkillCooldown {
+	m0 := &SkillCooldown{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SkillId = b.SkillId
+	x.xxx_hidden_Ms = b.Ms
+	return m0
+}
+
+// SkillList is the player's skill list, as clif_skillinfoblock: the
+// skills it learned and those of its tree it may learn. It is sent at
+// login and whenever the list changes. Skill points come in StatUpdate.
+type SkillList struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Skills *[]*SkillInfo          `protobuf:"bytes,1,rep,name=skills,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SkillList) Reset() {
+	*x = SkillList{}
+	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillList) ProtoMessage() {}
+
+func (x *SkillList) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SkillList) GetSkills() []*SkillInfo {
+	if x != nil {
+		if x.xxx_hidden_Skills != nil {
+			return *x.xxx_hidden_Skills
+		}
+	}
+	return nil
+}
+
+func (x *SkillList) SetSkills(v []*SkillInfo) {
+	x.xxx_hidden_Skills = &v
+}
+
+type SkillList_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Skills []*SkillInfo
+}
+
+func (b0 SkillList_builder) Build() *SkillList {
+	m0 := &SkillList{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Skills = &b.Skills
+	return m0
+}
+
+// SkillInfo is one skill of the skill list.
+type SkillInfo struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SkillId     uint32                 `protobuf:"varint,1,opt,name=skill_id,json=skillId,proto3"`
+	xxx_hidden_Level       uint32                 `protobuf:"varint,2,opt,name=level,proto3"`
+	xxx_hidden_MaxLevel    uint32                 `protobuf:"varint,3,opt,name=max_level,json=maxLevel,proto3"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,4,opt,name=name,proto3"`
+	xxx_hidden_DisplayName string                 `protobuf:"bytes,5,opt,name=display_name,json=displayName,proto3"`
+	xxx_hidden_Target      SkillTarget            `protobuf:"varint,6,opt,name=target,proto3,enum=wathena.v1.SkillTarget"`
+	xxx_hidden_Sp          uint32                 `protobuf:"varint,7,opt,name=sp,proto3"`
+	xxx_hidden_Range       uint32                 `protobuf:"varint,8,opt,name=range,proto3"`
+	xxx_hidden_Upgradable  bool                   `protobuf:"varint,9,opt,name=upgradable,proto3"`
+	xxx_hidden_Icon        uint32                 `protobuf:"varint,10,opt,name=icon,proto3"`
+	xxx_hidden_Requires    *[]*SkillRequirement   `protobuf:"bytes,11,rep,name=requires,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *SkillInfo) Reset() {
+	*x = SkillInfo{}
+	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillInfo) ProtoMessage() {}
+
+func (x *SkillInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SkillInfo) GetSkillId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_SkillId
+	}
+	return 0
+}
+
+func (x *SkillInfo) GetLevel() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Level
+	}
+	return 0
+}
+
+func (x *SkillInfo) GetMaxLevel() uint32 {
+	if x != nil {
+		return x.xxx_hidden_MaxLevel
+	}
+	return 0
+}
+
+func (x *SkillInfo) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *SkillInfo) GetDisplayName() string {
+	if x != nil {
+		return x.xxx_hidden_DisplayName
+	}
+	return ""
+}
+
+func (x *SkillInfo) GetTarget() SkillTarget {
+	if x != nil {
+		return x.xxx_hidden_Target
+	}
+	return SkillTarget_SKILL_TARGET_UNSPECIFIED
+}
+
+func (x *SkillInfo) GetSp() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Sp
+	}
+	return 0
+}
+
+func (x *SkillInfo) GetRange() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Range
+	}
+	return 0
+}
+
+func (x *SkillInfo) GetUpgradable() bool {
+	if x != nil {
+		return x.xxx_hidden_Upgradable
+	}
+	return false
+}
+
+func (x *SkillInfo) GetIcon() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Icon
+	}
+	return 0
+}
+
+func (x *SkillInfo) GetRequires() []*SkillRequirement {
+	if x != nil {
+		if x.xxx_hidden_Requires != nil {
+			return *x.xxx_hidden_Requires
+		}
+	}
+	return nil
+}
+
+func (x *SkillInfo) SetSkillId(v uint32) {
+	x.xxx_hidden_SkillId = v
+}
+
+func (x *SkillInfo) SetLevel(v uint32) {
+	x.xxx_hidden_Level = v
+}
+
+func (x *SkillInfo) SetMaxLevel(v uint32) {
+	x.xxx_hidden_MaxLevel = v
+}
+
+func (x *SkillInfo) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *SkillInfo) SetDisplayName(v string) {
+	x.xxx_hidden_DisplayName = v
+}
+
+func (x *SkillInfo) SetTarget(v SkillTarget) {
+	x.xxx_hidden_Target = v
+}
+
+func (x *SkillInfo) SetSp(v uint32) {
+	x.xxx_hidden_Sp = v
+}
+
+func (x *SkillInfo) SetRange(v uint32) {
+	x.xxx_hidden_Range = v
+}
+
+func (x *SkillInfo) SetUpgradable(v bool) {
+	x.xxx_hidden_Upgradable = v
+}
+
+func (x *SkillInfo) SetIcon(v uint32) {
+	x.xxx_hidden_Icon = v
+}
+
+func (x *SkillInfo) SetRequires(v []*SkillRequirement) {
+	x.xxx_hidden_Requires = &v
+}
+
+type SkillInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SkillId uint32
+	// level is the learned level, 0 for a skill the player may learn.
+	Level    uint32
+	MaxLevel uint32
+	// name is the skill's key, such as SM_BASH, and display_name the name
+	// players see.
+	Name        string
+	DisplayName string
+	Target      SkillTarget
+	// sp is the SP cost at the learned level.
+	Sp uint32
+	// range is the range in cells at the learned level.
+	Range uint32
+	// upgradable is set when a skill point may raise it.
+	Upgradable bool
+	// icon is the skill ID whose icon and effects the client shows: the
+	// skill's own, or for a mod's skill the core skill its data names.
+	Icon uint32
+	// requires lists the skills and levels it needs, from its job's tree.
+	Requires []*SkillRequirement
+}
+
+func (b0 SkillInfo_builder) Build() *SkillInfo {
+	m0 := &SkillInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SkillId = b.SkillId
+	x.xxx_hidden_Level = b.Level
+	x.xxx_hidden_MaxLevel = b.MaxLevel
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_DisplayName = b.DisplayName
+	x.xxx_hidden_Target = b.Target
+	x.xxx_hidden_Sp = b.Sp
+	x.xxx_hidden_Range = b.Range
+	x.xxx_hidden_Upgradable = b.Upgradable
+	x.xxx_hidden_Icon = b.Icon
+	x.xxx_hidden_Requires = &b.Requires
+	return m0
+}
+
+// SkillRequirement is a skill and level that a skill of the tree needs.
+type SkillRequirement struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SkillId uint32                 `protobuf:"varint,1,opt,name=skill_id,json=skillId,proto3"`
+	xxx_hidden_Level   uint32                 `protobuf:"varint,2,opt,name=level,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SkillRequirement) Reset() {
+	*x = SkillRequirement{}
+	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkillRequirement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkillRequirement) ProtoMessage() {}
+
+func (x *SkillRequirement) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SkillRequirement) GetSkillId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_SkillId
+	}
+	return 0
+}
+
+func (x *SkillRequirement) GetLevel() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Level
+	}
+	return 0
+}
+
+func (x *SkillRequirement) SetSkillId(v uint32) {
+	x.xxx_hidden_SkillId = v
+}
+
+func (x *SkillRequirement) SetLevel(v uint32) {
+	x.xxx_hidden_Level = v
+}
+
+type SkillRequirement_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SkillId uint32
+	Level   uint32
+}
+
+func (b0 SkillRequirement_builder) Build() *SkillRequirement {
+	m0 := &SkillRequirement{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SkillId = b.SkillId
+	x.xxx_hidden_Level = b.Level
+	return m0
+}
+
 type ChatMessage struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Channel  ChatChannel            `protobuf:"varint,1,opt,name=channel,proto3,enum=wathena.v1.ChatChannel"`
@@ -3769,7 +5068,7 @@ type ChatMessage struct {
 
 func (x *ChatMessage) Reset() {
 	*x = ChatMessage{}
-	mi := &file_wathena_v1_event_proto_msgTypes[12]
+	mi := &file_wathena_v1_event_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3781,7 +5080,7 @@ func (x *ChatMessage) String() string {
 func (*ChatMessage) ProtoMessage() {}
 
 func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[12]
+	mi := &file_wathena_v1_event_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3897,7 +5196,7 @@ type NpcDialog struct {
 
 func (x *NpcDialog) Reset() {
 	*x = NpcDialog{}
-	mi := &file_wathena_v1_event_proto_msgTypes[13]
+	mi := &file_wathena_v1_event_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3909,7 +5208,7 @@ func (x *NpcDialog) String() string {
 func (*NpcDialog) ProtoMessage() {}
 
 func (x *NpcDialog) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[13]
+	mi := &file_wathena_v1_event_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4255,7 +5554,7 @@ func (b0 NpcDialog_builder) Build() *NpcDialog {
 type case_NpcDialog_Prompt protoreflect.FieldNumber
 
 func (x case_NpcDialog_Prompt) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[13].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[21].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -4319,7 +5618,7 @@ type NpcMenu struct {
 
 func (x *NpcMenu) Reset() {
 	*x = NpcMenu{}
-	mi := &file_wathena_v1_event_proto_msgTypes[14]
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4331,7 +5630,7 @@ func (x *NpcMenu) String() string {
 func (*NpcMenu) ProtoMessage() {}
 
 func (x *NpcMenu) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[14]
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4380,7 +5679,7 @@ type NpcImage struct {
 
 func (x *NpcImage) Reset() {
 	*x = NpcImage{}
-	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4392,7 +5691,7 @@ func (x *NpcImage) String() string {
 func (*NpcImage) ProtoMessage() {}
 
 func (x *NpcImage) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[15]
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4454,7 +5753,7 @@ type NpcProgress struct {
 
 func (x *NpcProgress) Reset() {
 	*x = NpcProgress{}
-	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	mi := &file_wathena_v1_event_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4466,7 +5765,7 @@ func (x *NpcProgress) String() string {
 func (*NpcProgress) ProtoMessage() {}
 
 func (x *NpcProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[16]
+	mi := &file_wathena_v1_event_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4529,7 +5828,7 @@ type Emotion struct {
 
 func (x *Emotion) Reset() {
 	*x = Emotion{}
-	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	mi := &file_wathena_v1_event_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4541,7 +5840,7 @@ func (x *Emotion) String() string {
 func (*Emotion) ProtoMessage() {}
 
 func (x *Emotion) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[17]
+	mi := &file_wathena_v1_event_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4606,7 +5905,7 @@ type MinimapMark struct {
 
 func (x *MinimapMark) Reset() {
 	*x = MinimapMark{}
-	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	mi := &file_wathena_v1_event_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4618,7 +5917,7 @@ func (x *MinimapMark) String() string {
 func (*MinimapMark) ProtoMessage() {}
 
 func (x *MinimapMark) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[18]
+	mi := &file_wathena_v1_event_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4721,7 +6020,7 @@ type ShopOpen struct {
 
 func (x *ShopOpen) Reset() {
 	*x = ShopOpen{}
-	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	mi := &file_wathena_v1_event_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4733,7 +6032,7 @@ func (x *ShopOpen) String() string {
 func (*ShopOpen) ProtoMessage() {}
 
 func (x *ShopOpen) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[19]
+	mi := &file_wathena_v1_event_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4810,7 +6109,7 @@ type ShopItem struct {
 
 func (x *ShopItem) Reset() {
 	*x = ShopItem{}
-	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	mi := &file_wathena_v1_event_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4822,7 +6121,7 @@ func (x *ShopItem) String() string {
 func (*ShopItem) ProtoMessage() {}
 
 func (x *ShopItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[20]
+	mi := &file_wathena_v1_event_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4897,7 +6196,7 @@ type ShopSellable struct {
 
 func (x *ShopSellable) Reset() {
 	*x = ShopSellable{}
-	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	mi := &file_wathena_v1_event_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4909,7 +6208,7 @@ func (x *ShopSellable) String() string {
 func (*ShopSellable) ProtoMessage() {}
 
 func (x *ShopSellable) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[21]
+	mi := &file_wathena_v1_event_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4969,7 +6268,7 @@ type ShopResult struct {
 
 func (x *ShopResult) Reset() {
 	*x = ShopResult{}
-	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	mi := &file_wathena_v1_event_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4981,7 +6280,7 @@ func (x *ShopResult) String() string {
 func (*ShopResult) ProtoMessage() {}
 
 func (x *ShopResult) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	mi := &file_wathena_v1_event_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5027,7 +6326,7 @@ type EffectPlay struct {
 
 func (x *EffectPlay) Reset() {
 	*x = EffectPlay{}
-	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	mi := &file_wathena_v1_event_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5039,7 +6338,7 @@ func (x *EffectPlay) String() string {
 func (*EffectPlay) ProtoMessage() {}
 
 func (x *EffectPlay) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	mi := &file_wathena_v1_event_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5175,7 +6474,7 @@ func (b0 EffectPlay_builder) Build() *EffectPlay {
 type case_EffectPlay_At protoreflect.FieldNumber
 
 func (x case_EffectPlay_At) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[23].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[31].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -5209,7 +6508,7 @@ type ItemTaken struct {
 
 func (x *ItemTaken) Reset() {
 	*x = ItemTaken{}
-	mi := &file_wathena_v1_event_proto_msgTypes[24]
+	mi := &file_wathena_v1_event_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5221,7 +6520,7 @@ func (x *ItemTaken) String() string {
 func (*ItemTaken) ProtoMessage() {}
 
 func (x *ItemTaken) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[24]
+	mi := &file_wathena_v1_event_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5282,7 +6581,7 @@ type InventoryUpdate struct {
 
 func (x *InventoryUpdate) Reset() {
 	*x = InventoryUpdate{}
-	mi := &file_wathena_v1_event_proto_msgTypes[25]
+	mi := &file_wathena_v1_event_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5294,7 +6593,7 @@ func (x *InventoryUpdate) String() string {
 func (*InventoryUpdate) ProtoMessage() {}
 
 func (x *InventoryUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[25]
+	mi := &file_wathena_v1_event_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5364,7 +6663,7 @@ type InventoryItem struct {
 
 func (x *InventoryItem) Reset() {
 	*x = InventoryItem{}
-	mi := &file_wathena_v1_event_proto_msgTypes[26]
+	mi := &file_wathena_v1_event_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5376,7 +6675,7 @@ func (x *InventoryItem) String() string {
 func (*InventoryItem) ProtoMessage() {}
 
 func (x *InventoryItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[26]
+	mi := &file_wathena_v1_event_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5529,7 +6828,7 @@ type InventoryAdd struct {
 
 func (x *InventoryAdd) Reset() {
 	*x = InventoryAdd{}
-	mi := &file_wathena_v1_event_proto_msgTypes[27]
+	mi := &file_wathena_v1_event_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5541,7 +6840,7 @@ func (x *InventoryAdd) String() string {
 func (*InventoryAdd) ProtoMessage() {}
 
 func (x *InventoryAdd) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[27]
+	mi := &file_wathena_v1_event_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5671,7 +6970,7 @@ type InventoryRemove struct {
 
 func (x *InventoryRemove) Reset() {
 	*x = InventoryRemove{}
-	mi := &file_wathena_v1_event_proto_msgTypes[28]
+	mi := &file_wathena_v1_event_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5683,7 +6982,7 @@ func (x *InventoryRemove) String() string {
 func (*InventoryRemove) ProtoMessage() {}
 
 func (x *InventoryRemove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[28]
+	mi := &file_wathena_v1_event_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5757,7 +7056,7 @@ type ItemUsed struct {
 
 func (x *ItemUsed) Reset() {
 	*x = ItemUsed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[29]
+	mi := &file_wathena_v1_event_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5769,7 +7068,7 @@ func (x *ItemUsed) String() string {
 func (*ItemUsed) ProtoMessage() {}
 
 func (x *ItemUsed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[29]
+	mi := &file_wathena_v1_event_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5829,7 +7128,7 @@ type UseItemFailed struct {
 
 func (x *UseItemFailed) Reset() {
 	*x = UseItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[30]
+	mi := &file_wathena_v1_event_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5841,7 +7140,7 @@ func (x *UseItemFailed) String() string {
 func (*UseItemFailed) ProtoMessage() {}
 
 func (x *UseItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[30]
+	mi := &file_wathena_v1_event_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5901,7 +7200,7 @@ type DropItemFailed struct {
 
 func (x *DropItemFailed) Reset() {
 	*x = DropItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[31]
+	mi := &file_wathena_v1_event_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5913,7 +7212,7 @@ func (x *DropItemFailed) String() string {
 func (*DropItemFailed) ProtoMessage() {}
 
 func (x *DropItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[31]
+	mi := &file_wathena_v1_event_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5973,7 +7272,7 @@ type PickUpFailed struct {
 
 func (x *PickUpFailed) Reset() {
 	*x = PickUpFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[32]
+	mi := &file_wathena_v1_event_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5985,7 +7284,7 @@ func (x *PickUpFailed) String() string {
 func (*PickUpFailed) ProtoMessage() {}
 
 func (x *PickUpFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[32]
+	mi := &file_wathena_v1_event_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6047,7 +7346,7 @@ type ItemEquipped struct {
 
 func (x *ItemEquipped) Reset() {
 	*x = ItemEquipped{}
-	mi := &file_wathena_v1_event_proto_msgTypes[33]
+	mi := &file_wathena_v1_event_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6059,7 +7358,7 @@ func (x *ItemEquipped) String() string {
 func (*ItemEquipped) ProtoMessage() {}
 
 func (x *ItemEquipped) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[33]
+	mi := &file_wathena_v1_event_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6120,7 +7419,7 @@ type ItemUnequipped struct {
 
 func (x *ItemUnequipped) Reset() {
 	*x = ItemUnequipped{}
-	mi := &file_wathena_v1_event_proto_msgTypes[34]
+	mi := &file_wathena_v1_event_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6132,7 +7431,7 @@ func (x *ItemUnequipped) String() string {
 func (*ItemUnequipped) ProtoMessage() {}
 
 func (x *ItemUnequipped) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[34]
+	mi := &file_wathena_v1_event_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6193,7 +7492,7 @@ type EquipFailed struct {
 
 func (x *EquipFailed) Reset() {
 	*x = EquipFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	mi := &file_wathena_v1_event_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6205,7 +7504,7 @@ func (x *EquipFailed) String() string {
 func (*EquipFailed) ProtoMessage() {}
 
 func (x *EquipFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	mi := &file_wathena_v1_event_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6267,7 +7566,7 @@ type CardInserted struct {
 
 func (x *CardInserted) Reset() {
 	*x = CardInserted{}
-	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	mi := &file_wathena_v1_event_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6279,7 +7578,7 @@ func (x *CardInserted) String() string {
 func (*CardInserted) ProtoMessage() {}
 
 func (x *CardInserted) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	mi := &file_wathena_v1_event_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6353,7 +7652,7 @@ type InsertCardFailed struct {
 
 func (x *InsertCardFailed) Reset() {
 	*x = InsertCardFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	mi := &file_wathena_v1_event_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6365,7 +7664,7 @@ func (x *InsertCardFailed) String() string {
 func (*InsertCardFailed) ProtoMessage() {}
 
 func (x *InsertCardFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	mi := &file_wathena_v1_event_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6426,7 +7725,7 @@ type LookChange struct {
 
 func (x *LookChange) Reset() {
 	*x = LookChange{}
-	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	mi := &file_wathena_v1_event_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6438,7 +7737,7 @@ func (x *LookChange) String() string {
 func (*LookChange) ProtoMessage() {}
 
 func (x *LookChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	mi := &file_wathena_v1_event_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6512,7 +7811,7 @@ type StatusIcon struct {
 
 func (x *StatusIcon) Reset() {
 	*x = StatusIcon{}
-	mi := &file_wathena_v1_event_proto_msgTypes[39]
+	mi := &file_wathena_v1_event_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6524,7 +7823,7 @@ func (x *StatusIcon) String() string {
 func (*StatusIcon) ProtoMessage() {}
 
 func (x *StatusIcon) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[39]
+	mi := &file_wathena_v1_event_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6619,7 +7918,7 @@ type Options struct {
 
 func (x *Options) Reset() {
 	*x = Options{}
-	mi := &file_wathena_v1_event_proto_msgTypes[40]
+	mi := &file_wathena_v1_event_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6631,7 +7930,7 @@ func (x *Options) String() string {
 func (*Options) ProtoMessage() {}
 
 func (x *Options) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[40]
+	mi := &file_wathena_v1_event_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6725,7 +8024,7 @@ type OptionChange struct {
 
 func (x *OptionChange) Reset() {
 	*x = OptionChange{}
-	mi := &file_wathena_v1_event_proto_msgTypes[41]
+	mi := &file_wathena_v1_event_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6737,7 +8036,7 @@ func (x *OptionChange) String() string {
 func (*OptionChange) ProtoMessage() {}
 
 func (x *OptionChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[41]
+	mi := &file_wathena_v1_event_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6802,7 +8101,7 @@ var File_wathena_v1_event_proto protoreflect.FileDescriptor
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\x9c\x0f\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xdf\x11\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -6844,13 +8143,19 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"lookChange\x129\n" +
 	"\vstatus_icon\x18  \x01(\v2\x16.wathena.v1.StatusIconH\x00R\n" +
 	"statusIcon\x12?\n" +
-	"\roption_change\x18! \x01(\v2\x18.wathena.v1.OptionChangeH\x00R\foptionChangeB\x06\n" +
+	"\roption_change\x18! \x01(\v2\x18.wathena.v1.OptionChangeH\x00R\foptionChange\x126\n" +
+	"\n" +
+	"skill_list\x18\" \x01(\v2\x15.wathena.v1.SkillListH\x00R\tskillList\x12I\n" +
+	"\x11skill_cast_cancel\x18# \x01(\v2\x1b.wathena.v1.SkillCastCancelH\x00R\x0fskillCastCancel\x12<\n" +
+	"\fskill_effect\x18$ \x01(\v2\x17.wathena.v1.SkillEffectH\x00R\vskillEffect\x12<\n" +
+	"\fskill_failed\x18% \x01(\v2\x17.wathena.v1.SkillFailedH\x00R\vskillFailed\x12B\n" +
+	"\x0eskill_cooldown\x18& \x01(\v2\x19.wathena.v1.SkillCooldownH\x00R\rskillCooldownB\x06\n" +
 	"\x04body\"P\n" +
 	"\tMapChange\x12\x10\n" +
 	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
 	"\x01x\x18\x02 \x01(\rR\x01x\x12\f\n" +
 	"\x01y\x18\x03 \x01(\rR\x01y\x12\x15\n" +
-	"\x06net_id\x18\x04 \x01(\rR\x05netId\"\xc7\x02\n" +
+	"\x06net_id\x18\x04 \x01(\rR\x05netId\"\xfd\x02\n" +
 	"\fEntityAppear\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12*\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x16.wathena.v1.EntityKindR\x04kind\x12\f\n" +
@@ -6864,7 +8169,13 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"hpPermille\x12*\n" +
 	"\x04item\x18\n" +
 	" \x01(\v2\x16.wathena.v1.GroundItemR\x04item\x12-\n" +
-	"\aoptions\x18\v \x01(\v2\x13.wathena.v1.OptionsR\aoptions\"\x81\x01\n" +
+	"\aoptions\x18\v \x01(\v2\x13.wathena.v1.OptionsR\aoptions\x124\n" +
+	"\n" +
+	"skill_unit\x18\f \x01(\v2\x15.wathena.v1.SkillUnitR\tskillUnit\"W\n" +
+	"\tSkillUnit\x12\x17\n" +
+	"\aunit_id\x18\x01 \x01(\rR\x06unitId\x12\x19\n" +
+	"\bskill_id\x18\x02 \x01(\rR\askillId\x12\x16\n" +
+	"\x06caster\x18\x03 \x01(\rR\x06caster\"\x81\x01\n" +
 	"\n" +
 	"GroundItem\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\rR\x06itemId\x12\x16\n" +
@@ -6918,15 +8229,53 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x04kind\x18\x05 \x01(\x0e2\x16.wathena.v1.DamageKindR\x04kind\x12\x19\n" +
 	"\bdelay_ms\x18\x06 \x01(\rR\adelayMs\x12\x19\n" +
 	"\bskill_id\x18\a \x01(\rR\askillId\x12,\n" +
-	"\x12target_hp_permille\x18\b \x01(\rR\x10targetHpPermille\"\xb9\x01\n" +
+	"\x12target_hp_permille\x18\b \x01(\rR\x10targetHpPermille\"\xd3\x01\n" +
 	"\tSkillCast\x12\x16\n" +
 	"\x06source\x18\x01 \x01(\rR\x06source\x12\x19\n" +
 	"\bskill_id\x18\x02 \x01(\rR\askillId\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\rR\x05level\x12\x17\n" +
 	"\acast_ms\x18\x04 \x01(\rR\x06castMs\x12\x18\n" +
 	"\x06entity\x18\x05 \x01(\rH\x00R\x06entity\x12&\n" +
-	"\x04cell\x18\x06 \x01(\v2\x10.wathena.v1.CellH\x00R\x04cellB\b\n" +
-	"\x06target\"\x9b\x01\n" +
+	"\x04cell\x18\x06 \x01(\v2\x10.wathena.v1.CellH\x00R\x04cell\x12\x18\n" +
+	"\aelement\x18\a \x01(\rR\aelementB\b\n" +
+	"\x06target\")\n" +
+	"\x0fSkillCastCancel\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\rR\x06source\"\xc8\x01\n" +
+	"\vSkillEffect\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\rR\x06source\x12\x19\n" +
+	"\bskill_id\x18\x02 \x01(\rR\askillId\x12\x14\n" +
+	"\x05level\x18\x03 \x01(\rR\x05level\x12\x18\n" +
+	"\x06entity\x18\x04 \x01(\rH\x00R\x06entity\x12&\n" +
+	"\x04cell\x18\x05 \x01(\v2\x10.wathena.v1.CellH\x00R\x04cell\x12\x14\n" +
+	"\x05value\x18\x06 \x01(\x03R\x05value\x12\x0e\n" +
+	"\x02ok\x18\a \x01(\bR\x02okB\b\n" +
+	"\x06target\"Z\n" +
+	"\vSkillFailed\x12\x19\n" +
+	"\bskill_id\x18\x01 \x01(\rR\askillId\x120\n" +
+	"\x06reason\x18\x02 \x01(\x0e2\x18.wathena.v1.SkillFailureR\x06reason\":\n" +
+	"\rSkillCooldown\x12\x19\n" +
+	"\bskill_id\x18\x01 \x01(\rR\askillId\x12\x0e\n" +
+	"\x02ms\x18\x02 \x01(\rR\x02ms\":\n" +
+	"\tSkillList\x12-\n" +
+	"\x06skills\x18\x01 \x03(\v2\x15.wathena.v1.SkillInfoR\x06skills\"\xd5\x02\n" +
+	"\tSkillInfo\x12\x19\n" +
+	"\bskill_id\x18\x01 \x01(\rR\askillId\x12\x14\n" +
+	"\x05level\x18\x02 \x01(\rR\x05level\x12\x1b\n" +
+	"\tmax_level\x18\x03 \x01(\rR\bmaxLevel\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x05 \x01(\tR\vdisplayName\x12/\n" +
+	"\x06target\x18\x06 \x01(\x0e2\x17.wathena.v1.SkillTargetR\x06target\x12\x0e\n" +
+	"\x02sp\x18\a \x01(\rR\x02sp\x12\x14\n" +
+	"\x05range\x18\b \x01(\rR\x05range\x12\x1e\n" +
+	"\n" +
+	"upgradable\x18\t \x01(\bR\n" +
+	"upgradable\x12\x12\n" +
+	"\x04icon\x18\n" +
+	" \x01(\rR\x04icon\x128\n" +
+	"\brequires\x18\v \x03(\v2\x1c.wathena.v1.SkillRequirementR\brequires\"C\n" +
+	"\x10SkillRequirement\x12\x19\n" +
+	"\bskill_id\x18\x01 \x01(\rR\askillId\x12\x14\n" +
+	"\x05level\x18\x02 \x01(\rR\x05level\"\x9b\x01\n" +
 	"\vChatMessage\x121\n" +
 	"\achannel\x18\x01 \x01(\x0e2\x17.wathena.v1.ChatChannelR\achannel\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\rR\x04from\x12\x1b\n" +
@@ -7130,7 +8479,35 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x14DAMAGE_KIND_CRITICAL\x10\x02\x12\x14\n" +
 	"\x10DAMAGE_KIND_MISS\x10\x03\x12\x1b\n" +
 	"\x17DAMAGE_KIND_LUCKY_DODGE\x10\x04\x12\x14\n" +
-	"\x10DAMAGE_KIND_HEAL\x10\x05*}\n" +
+	"\x10DAMAGE_KIND_HEAL\x10\x05*\x9a\x04\n" +
+	"\fSkillFailure\x12\x1d\n" +
+	"\x19SKILL_FAILURE_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13SKILL_FAILURE_LEVEL\x10\x01\x12!\n" +
+	"\x1dSKILL_FAILURE_SP_INSUFFICIENT\x10\x02\x12!\n" +
+	"\x1dSKILL_FAILURE_HP_INSUFFICIENT\x10\x03\x12$\n" +
+	" SKILL_FAILURE_STUFF_INSUFFICIENT\x10\x04\x12\x1f\n" +
+	"\x1bSKILL_FAILURE_SKILLINTERVAL\x10\x05\x12\x17\n" +
+	"\x13SKILL_FAILURE_MONEY\x10\x06\x12\x1d\n" +
+	"\x19SKILL_FAILURE_THIS_WEAPON\x10\a\x12\x1d\n" +
+	"\x19SKILL_FAILURE_REDJAMSTONE\x10\b\x12\x1e\n" +
+	"\x1aSKILL_FAILURE_BLUEJAMSTONE\x10\t\x12\x1c\n" +
+	"\x18SKILL_FAILURE_WEIGHTOVER\x10\n" +
+	"\x12\x17\n" +
+	"\x13SKILL_FAILURE_ARROW\x10\v\x12\x16\n" +
+	"\x12SKILL_FAILURE_CART\x10\f\x12\x15\n" +
+	"\x11SKILL_FAILURE_POS\x10\r\x12\x17\n" +
+	"\x13SKILL_FAILURE_RANGE\x10\x0e\x12\x18\n" +
+	"\x14SKILL_FAILURE_TARGET\x10\x0f\x12\x18\n" +
+	"\x14SKILL_FAILURE_STATUS\x10\x10\x12\x1b\n" +
+	"\x17SKILL_FAILURE_HOLYWATER\x10\x11*\xbe\x01\n" +
+	"\vSkillTarget\x12\x1c\n" +
+	"\x18SKILL_TARGET_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14SKILL_TARGET_PASSIVE\x10\x01\x12\x16\n" +
+	"\x12SKILL_TARGET_ENEMY\x10\x02\x12\x17\n" +
+	"\x13SKILL_TARGET_GROUND\x10\x03\x12\x15\n" +
+	"\x11SKILL_TARGET_SELF\x10\x04\x12\x18\n" +
+	"\x14SKILL_TARGET_SUPPORT\x10\x05\x12\x15\n" +
+	"\x11SKILL_TARGET_TRAP\x10\x06*}\n" +
 	"\rImagePosition\x12\x1e\n" +
 	"\x1aIMAGE_POSITION_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13IMAGE_POSITION_LEFT\x10\x01\x12\x19\n" +
@@ -7180,128 +8557,149 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x13EQUIP_FAILURE_LEVEL\x10\x03\x12\"\n" +
 	"\x1eEQUIP_FAILURE_WRONG_AMMUNITION\x10\x04B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
-var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 13)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),            // 0: wathena.v1.EntityKind
 	(VanishReason)(0),          // 1: wathena.v1.VanishReason
 	(StatId)(0),                // 2: wathena.v1.StatId
 	(DamageKind)(0),            // 3: wathena.v1.DamageKind
-	(ImagePosition)(0),         // 4: wathena.v1.ImagePosition
-	(ShopOutcome)(0),           // 5: wathena.v1.ShopOutcome
-	(InventoryRemoveReason)(0), // 6: wathena.v1.InventoryRemoveReason
-	(UseItemFailure)(0),        // 7: wathena.v1.UseItemFailure
-	(DropItemFailure)(0),       // 8: wathena.v1.DropItemFailure
-	(PickUpFailure)(0),         // 9: wathena.v1.PickUpFailure
-	(EquipFailure)(0),          // 10: wathena.v1.EquipFailure
-	(*Event)(nil),              // 11: wathena.v1.Event
-	(*MapChange)(nil),          // 12: wathena.v1.MapChange
-	(*EntityAppear)(nil),       // 13: wathena.v1.EntityAppear
-	(*GroundItem)(nil),         // 14: wathena.v1.GroundItem
-	(*Look)(nil),               // 15: wathena.v1.Look
-	(*EntityVanish)(nil),       // 16: wathena.v1.EntityVanish
-	(*EntityMove)(nil),         // 17: wathena.v1.EntityMove
-	(*EntityStop)(nil),         // 18: wathena.v1.EntityStop
-	(*StatUpdate)(nil),         // 19: wathena.v1.StatUpdate
-	(*Stat)(nil),               // 20: wathena.v1.Stat
-	(*Damage)(nil),             // 21: wathena.v1.Damage
-	(*SkillCast)(nil),          // 22: wathena.v1.SkillCast
-	(*ChatMessage)(nil),        // 23: wathena.v1.ChatMessage
-	(*NpcDialog)(nil),          // 24: wathena.v1.NpcDialog
-	(*NpcMenu)(nil),            // 25: wathena.v1.NpcMenu
-	(*NpcImage)(nil),           // 26: wathena.v1.NpcImage
-	(*NpcProgress)(nil),        // 27: wathena.v1.NpcProgress
-	(*Emotion)(nil),            // 28: wathena.v1.Emotion
-	(*MinimapMark)(nil),        // 29: wathena.v1.MinimapMark
-	(*ShopOpen)(nil),           // 30: wathena.v1.ShopOpen
-	(*ShopItem)(nil),           // 31: wathena.v1.ShopItem
-	(*ShopSellable)(nil),       // 32: wathena.v1.ShopSellable
-	(*ShopResult)(nil),         // 33: wathena.v1.ShopResult
-	(*EffectPlay)(nil),         // 34: wathena.v1.EffectPlay
-	(*ItemTaken)(nil),          // 35: wathena.v1.ItemTaken
-	(*InventoryUpdate)(nil),    // 36: wathena.v1.InventoryUpdate
-	(*InventoryItem)(nil),      // 37: wathena.v1.InventoryItem
-	(*InventoryAdd)(nil),       // 38: wathena.v1.InventoryAdd
-	(*InventoryRemove)(nil),    // 39: wathena.v1.InventoryRemove
-	(*ItemUsed)(nil),           // 40: wathena.v1.ItemUsed
-	(*UseItemFailed)(nil),      // 41: wathena.v1.UseItemFailed
-	(*DropItemFailed)(nil),     // 42: wathena.v1.DropItemFailed
-	(*PickUpFailed)(nil),       // 43: wathena.v1.PickUpFailed
-	(*ItemEquipped)(nil),       // 44: wathena.v1.ItemEquipped
-	(*ItemUnequipped)(nil),     // 45: wathena.v1.ItemUnequipped
-	(*EquipFailed)(nil),        // 46: wathena.v1.EquipFailed
-	(*CardInserted)(nil),       // 47: wathena.v1.CardInserted
-	(*InsertCardFailed)(nil),   // 48: wathena.v1.InsertCardFailed
-	(*LookChange)(nil),         // 49: wathena.v1.LookChange
-	(*StatusIcon)(nil),         // 50: wathena.v1.StatusIcon
-	(*Options)(nil),            // 51: wathena.v1.Options
-	(*OptionChange)(nil),       // 52: wathena.v1.OptionChange
-	(*Cell)(nil),               // 53: wathena.v1.Cell
-	(ChatChannel)(0),           // 54: wathena.v1.ChatChannel
+	(SkillFailure)(0),          // 4: wathena.v1.SkillFailure
+	(SkillTarget)(0),           // 5: wathena.v1.SkillTarget
+	(ImagePosition)(0),         // 6: wathena.v1.ImagePosition
+	(ShopOutcome)(0),           // 7: wathena.v1.ShopOutcome
+	(InventoryRemoveReason)(0), // 8: wathena.v1.InventoryRemoveReason
+	(UseItemFailure)(0),        // 9: wathena.v1.UseItemFailure
+	(DropItemFailure)(0),       // 10: wathena.v1.DropItemFailure
+	(PickUpFailure)(0),         // 11: wathena.v1.PickUpFailure
+	(EquipFailure)(0),          // 12: wathena.v1.EquipFailure
+	(*Event)(nil),              // 13: wathena.v1.Event
+	(*MapChange)(nil),          // 14: wathena.v1.MapChange
+	(*EntityAppear)(nil),       // 15: wathena.v1.EntityAppear
+	(*SkillUnit)(nil),          // 16: wathena.v1.SkillUnit
+	(*GroundItem)(nil),         // 17: wathena.v1.GroundItem
+	(*Look)(nil),               // 18: wathena.v1.Look
+	(*EntityVanish)(nil),       // 19: wathena.v1.EntityVanish
+	(*EntityMove)(nil),         // 20: wathena.v1.EntityMove
+	(*EntityStop)(nil),         // 21: wathena.v1.EntityStop
+	(*StatUpdate)(nil),         // 22: wathena.v1.StatUpdate
+	(*Stat)(nil),               // 23: wathena.v1.Stat
+	(*Damage)(nil),             // 24: wathena.v1.Damage
+	(*SkillCast)(nil),          // 25: wathena.v1.SkillCast
+	(*SkillCastCancel)(nil),    // 26: wathena.v1.SkillCastCancel
+	(*SkillEffect)(nil),        // 27: wathena.v1.SkillEffect
+	(*SkillFailed)(nil),        // 28: wathena.v1.SkillFailed
+	(*SkillCooldown)(nil),      // 29: wathena.v1.SkillCooldown
+	(*SkillList)(nil),          // 30: wathena.v1.SkillList
+	(*SkillInfo)(nil),          // 31: wathena.v1.SkillInfo
+	(*SkillRequirement)(nil),   // 32: wathena.v1.SkillRequirement
+	(*ChatMessage)(nil),        // 33: wathena.v1.ChatMessage
+	(*NpcDialog)(nil),          // 34: wathena.v1.NpcDialog
+	(*NpcMenu)(nil),            // 35: wathena.v1.NpcMenu
+	(*NpcImage)(nil),           // 36: wathena.v1.NpcImage
+	(*NpcProgress)(nil),        // 37: wathena.v1.NpcProgress
+	(*Emotion)(nil),            // 38: wathena.v1.Emotion
+	(*MinimapMark)(nil),        // 39: wathena.v1.MinimapMark
+	(*ShopOpen)(nil),           // 40: wathena.v1.ShopOpen
+	(*ShopItem)(nil),           // 41: wathena.v1.ShopItem
+	(*ShopSellable)(nil),       // 42: wathena.v1.ShopSellable
+	(*ShopResult)(nil),         // 43: wathena.v1.ShopResult
+	(*EffectPlay)(nil),         // 44: wathena.v1.EffectPlay
+	(*ItemTaken)(nil),          // 45: wathena.v1.ItemTaken
+	(*InventoryUpdate)(nil),    // 46: wathena.v1.InventoryUpdate
+	(*InventoryItem)(nil),      // 47: wathena.v1.InventoryItem
+	(*InventoryAdd)(nil),       // 48: wathena.v1.InventoryAdd
+	(*InventoryRemove)(nil),    // 49: wathena.v1.InventoryRemove
+	(*ItemUsed)(nil),           // 50: wathena.v1.ItemUsed
+	(*UseItemFailed)(nil),      // 51: wathena.v1.UseItemFailed
+	(*DropItemFailed)(nil),     // 52: wathena.v1.DropItemFailed
+	(*PickUpFailed)(nil),       // 53: wathena.v1.PickUpFailed
+	(*ItemEquipped)(nil),       // 54: wathena.v1.ItemEquipped
+	(*ItemUnequipped)(nil),     // 55: wathena.v1.ItemUnequipped
+	(*EquipFailed)(nil),        // 56: wathena.v1.EquipFailed
+	(*CardInserted)(nil),       // 57: wathena.v1.CardInserted
+	(*InsertCardFailed)(nil),   // 58: wathena.v1.InsertCardFailed
+	(*LookChange)(nil),         // 59: wathena.v1.LookChange
+	(*StatusIcon)(nil),         // 60: wathena.v1.StatusIcon
+	(*Options)(nil),            // 61: wathena.v1.Options
+	(*OptionChange)(nil),       // 62: wathena.v1.OptionChange
+	(*Cell)(nil),               // 63: wathena.v1.Cell
+	(ChatChannel)(0),           // 64: wathena.v1.ChatChannel
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
-	13, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
-	16, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
-	17, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
-	18, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
-	19, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
-	21, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
-	22, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
-	23, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
-	24, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
-	34, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
-	35, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
-	38, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
-	43, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
-	36, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
-	39, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
-	40, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
-	41, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
-	42, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
-	12, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
-	26, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
-	27, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
-	28, // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
-	29, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
-	30, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
-	33, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
-	44, // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
-	45, // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
-	46, // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
-	47, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
-	48, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
-	49, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
-	50, // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
-	52, // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
-	0,  // 33: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	15, // 34: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	14, // 35: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	51, // 36: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
-	1,  // 37: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	20, // 38: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 39: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 40: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	53, // 41: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	54, // 42: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	25, // 43: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	4,  // 44: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
-	31, // 45: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
-	32, // 46: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
-	5,  // 47: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
-	53, // 48: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	37, // 49: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	6,  // 50: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	7,  // 51: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	8,  // 52: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	9,  // 53: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	10, // 54: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
-	15, // 55: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
-	51, // 56: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
-	57, // [57:57] is the sub-list for method output_type
-	57, // [57:57] is the sub-list for method input_type
-	57, // [57:57] is the sub-list for extension type_name
-	57, // [57:57] is the sub-list for extension extendee
-	0,  // [0:57] is the sub-list for field type_name
+	15, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
+	19, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
+	20, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
+	21, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
+	22, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
+	24, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
+	25, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
+	33, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
+	34, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
+	44, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
+	45, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
+	48, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
+	53, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
+	46, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
+	49, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
+	50, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
+	51, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
+	52, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
+	14, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
+	36, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
+	37, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
+	38, // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
+	39, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
+	40, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
+	43, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
+	54, // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
+	55, // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
+	56, // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
+	57, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
+	58, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
+	59, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
+	60, // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
+	62, // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
+	30, // 33: wathena.v1.Event.skill_list:type_name -> wathena.v1.SkillList
+	26, // 34: wathena.v1.Event.skill_cast_cancel:type_name -> wathena.v1.SkillCastCancel
+	27, // 35: wathena.v1.Event.skill_effect:type_name -> wathena.v1.SkillEffect
+	28, // 36: wathena.v1.Event.skill_failed:type_name -> wathena.v1.SkillFailed
+	29, // 37: wathena.v1.Event.skill_cooldown:type_name -> wathena.v1.SkillCooldown
+	0,  // 38: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	18, // 39: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	17, // 40: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	61, // 41: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
+	16, // 42: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
+	1,  // 43: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	23, // 44: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,  // 45: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,  // 46: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	63, // 47: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	63, // 48: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
+	4,  // 49: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
+	31, // 50: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
+	5,  // 51: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
+	32, // 52: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
+	64, // 53: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	35, // 54: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	6,  // 55: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
+	41, // 56: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
+	42, // 57: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
+	7,  // 58: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
+	63, // 59: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	47, // 60: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	8,  // 61: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	9,  // 62: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	10, // 63: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	11, // 64: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	12, // 65: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
+	18, // 66: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
+	61, // 67: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
+	68, // [68:68] is the sub-list for method output_type
+	68, // [68:68] is the sub-list for method input_type
+	68, // [68:68] is the sub-list for extension type_name
+	68, // [68:68] is the sub-list for extension extendee
+	0,  // [0:68] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -7344,12 +8742,21 @@ func file_wathena_v1_event_proto_init() {
 		(*event_LookChange)(nil),
 		(*event_StatusIcon)(nil),
 		(*event_OptionChange)(nil),
+		(*event_SkillList)(nil),
+		(*event_SkillCastCancel)(nil),
+		(*event_SkillEffect)(nil),
+		(*event_SkillFailed)(nil),
+		(*event_SkillCooldown)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[11].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[12].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
 		(*skillCast_Cell)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[13].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[14].OneofWrappers = []any{
+		(*skillEffect_Entity)(nil),
+		(*skillEffect_Cell)(nil),
+	}
+	file_wathena_v1_event_proto_msgTypes[21].OneofWrappers = []any{
 		(*npcDialog_Next)(nil),
 		(*npcDialog_Menu)(nil),
 		(*npcDialog_InputText)(nil),
@@ -7357,7 +8764,7 @@ func file_wathena_v1_event_proto_init() {
 		(*npcDialog_Close)(nil),
 		(*npcDialog_End)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[23].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[31].OneofWrappers = []any{
 		(*effectPlay_Entity)(nil),
 		(*effectPlay_Cell)(nil),
 	}
@@ -7366,8 +8773,8 @@ func file_wathena_v1_event_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
-			NumEnums:      11,
-			NumMessages:   42,
+			NumEnums:      13,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
