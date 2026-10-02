@@ -639,6 +639,9 @@ func cardfixTarget(src, target *Status, dmg int64, rhEle, flag int) int64 {
 	} else {
 		cardfix = cardfix * int64(100-tsd.LongAtkDef) / 100
 	}
+	if tc := target.Changes; tc != nil && tc.DefRate != 0 {
+		cardfix = cardfix * int64(100-tc.DefRate) / 100
+	}
 	return applyCardfix(dmg, cardfix)
 }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -157,6 +158,12 @@ type Player struct {
 	// statsDirty is set when the player's bonuses changed since its last
 	// stat calculation.
 	statsDirty bool
+	// base and bonuses are base_status and the bonuses outside the
+	// battle status, from the last stat calculation.
+	base    battle.Status
+	bonuses status.Bonuses
+	// timed are the player's timed bonuses, in the order they started.
+	timed []*timedBonus
 }
 
 type entity struct {
@@ -184,6 +191,11 @@ type entity struct {
 	walkChanged bool
 	stopped     bool
 	lookChanged bool
+	// optionChanged is set when the entity's status options changed, so
+	// viewers get OptionChange.
+	optionChanged bool
+	// sc is the entity's status_change, or nil before its first status.
+	sc *statuschange.List
 	// packed is path in the protocol's steps, made for tick packedTick.
 	// Every viewer's move event shares it.
 	packed     []byte
@@ -292,6 +304,21 @@ type Zone struct {
 	// MaxCardSlots is MAX_SLOTS, the most cards an item holds. It is
 	// DefaultMaxCardSlots when 0. Set it before Run.
 	MaxCardSlots int
+	// Statuses is the status database. Without it, no status starts. Set
+	// it before Run.
+	Statuses *statuschange.DB
+
+	// statusChanges runs the statuses of the zone's entities, made on
+	// first use.
+	statusChanges *statuschange.Engine
+	// quietStatuses is set while statuses that never ended come back,
+	// such as after a map change: no status event fires for them.
+	quietStatuses bool
+	// inScriptCall is set while a script's call into the zone runs, so
+	// nothing calls back into Lua. hookOverride holds what the script's
+	// own run of the status hooks gave.
+	inScriptCall bool
+	hookOverride *hookOverride
 
 	// equippedRefs are the equipped slots that script handles point to,
 	// by handle ID.
@@ -502,6 +529,10 @@ func (z *Zone) wake() {
 		// Mod timers follow the zone clock, which stood still.
 		z.scripts.Shift(now - z.now)
 	}
+	if z.statusChanges != nil {
+		// So do status timers.
+		z.statusChanges.Shift(now - z.now)
+	}
 	z.now = now
 	z.prevHeal, z.nextHeal = z.now, z.now+naturalHealInterval
 	for e := range z.entities.all() {
@@ -623,6 +654,14 @@ func (z *Zone) join(p *Player) joinResult {
 	}
 	z.updateWeight(p)
 	p.pending = append(p.pending, z.inventoryList(p))
+	// Saved statuses and timed bonuses come back, as chrif_load_scdata
+	// and the bonus_script load. A login fires status_start; a map change
+	// does not, since they never ended.
+	z.restoreStatuses(p, c.Statuses, h == nil)
+	z.restoreTimedBonuses(p, c.TimedBonuses)
+	if p.statsDirty {
+		z.recalc(p)
+	}
 	if s := z.battleStats(p); s != nil {
 		p.pending = append(p.pending, s)
 	}
@@ -681,11 +720,18 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		return
 	}
 	if reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT {
-		// Handlers see the player before it goes.
+		// Handlers see the player before it goes. map_quit ends the
+		// statuses that rAthena does not save, and timed bonuses that end
+		// on logout.
 		z.scriptEventFor("logout", modscript.Player(int64(p.charID)))
+		if en := z.statusEngine(); en != nil && p.entity.sc != nil {
+			en.Logout(z.unit(p.entity))
+		}
+		z.endTimedBonuses(p, "logout")
 		z.runScripts()
 	}
 	z.save(p, true)
+	z.dropStatuses(p.entity)
 	z.remove(p, reason)
 	z.unwearAll(p)
 	// A conversation's pending call fails once the player is gone, so a
@@ -768,9 +814,15 @@ func (z *Zone) handle(c command) {
 		}
 		return
 	}
-	if c.walkTo != nil {
+	if c.walkTo != nil && !me.cant().Move {
+		// unit_walktoxy: statuses that stop moving refuse the walk, and
+		// Confusion picks another cell.
 		me.target, me.pickItem = nil, nil
-		z.walk(me, c.walkTo[0], c.walkTo[1])
+		x, y := c.walkTo[0], c.walkTo[1]
+		if me.sc.Has(statuschange.SCConfusion) {
+			x, y = z.randomDir(me, x, y)
+		}
+		z.walk(me, x, y)
 	}
 	if c.use != nil {
 		z.useItem(p, *c.use)
@@ -789,7 +841,7 @@ func (z *Zone) handle(c command) {
 	}
 	// The game client does not attack while SC_WEIGHT90 is on, which
 	// rAthena relies on. The zone checks it itself.
-	if c.attack != nil && p.overweight != item.Weight90 {
+	if c.attack != nil && p.overweight != item.Weight90 && !me.cant().Attack {
 		for e, id := range p.netIDs.all() {
 			if id == c.attack.target && e != me && e.status != nil && !e.dead {
 				me.target, me.repeat, me.pickItem = e, c.attack.repeat, nil
@@ -878,6 +930,7 @@ func (z *Zone) stepAt(now int64) {
 	z.dropItems()
 	z.expireItems()
 	z.naturalHeal()
+	z.advanceStatuses()
 	z.autosave()
 	z.runScripts()
 	z.talkTimers()
@@ -902,6 +955,7 @@ func (z *Zone) stepAt(now int64) {
 		e.walkChanged = false
 		e.stopped = false
 		e.lookChanged = false
+		e.optionChanged = false
 		e.hpChanged = false
 		if e.item != nil {
 			e.item.fresh = false
@@ -982,6 +1036,9 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				if known && e.lookChanged && e.player != nil {
 					events = append(events, lookChange(id, e.player))
 				}
+				if known && e.optionChanged && (e != me || !p.fresh) {
+					events = append(events, optionChange(id, e))
+				}
 			}
 		}
 	}
@@ -1042,6 +1099,7 @@ func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
 			Name:       m.spawn.Name,
 			WalkMs:     uint32(e.speed), // #nosec G115 -- a small speed.
 			HpPermille: e.hpPermille(),
+			Options:    e.options(),
 		}.Build()}.Build()
 	}
 	p := e.player
@@ -1055,6 +1113,7 @@ func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
 		Name:       p.Name,
 		WalkMs:     uint32(e.speed), // #nosec G115 -- a small speed.
 		HpPermille: e.hpPermille(),
+		Options:    e.options(),
 	}.Build()}.Build()
 }
 

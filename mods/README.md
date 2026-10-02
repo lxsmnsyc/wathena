@@ -5,6 +5,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [core](core) is the base game as a mod. It is built into the server. Its files are rAthena's item scripts, NPCs and shops, which the server converts when it starts ("Item scripts" and "Core's NPCs" below).
 - [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a shop, a script that greets players, and tests.
 - [examples/halloween](examples/halloween) is the phase 3 exit check: a hat, a witch who gives it once, Pumpkin Porings with drops, a night that doubles their drops through a `drop_rate` hook, and the Pumpkin King, a boss that a world event brings every evening.
+- [examples/verve](examples/verve) adds a status effect: `statuses.define`, a `status_tick` handler, and a tonic that starts the status, with tests.
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -361,6 +362,7 @@ end
 | `base_level_up` | `player` | The player gained a base level. |
 | `job_level_up` | `player` | The player gained a job level. |
 | `click` | `player`, `conversation` | NPC contexts only: a player talks to the NPC ("NPC scripts" below). |
+| `status_start`, `status_end`, `status_tick` | `event` | A status started, ended or ticked on the context's map ("Status effects" below). Mod and event contexts. |
 
 Event contexts can listen to the events of mod contexts.
 
@@ -609,12 +611,97 @@ end
 |---|---|---|
 | `drop_rate` | `drop`: `player` (the killer, or nil), `monster`, `item`, `map`, `rate` (rAthena's rate, per 10,000) | The rate, kept to 0 to 10,000. |
 | `experience` | `exp`: `player`, `monster`, `base`, `job` (the exp the player gets, after the shares and the level penalty) | `base, job`. Below 0 counts as 0. |
+| `status_chance` | `start`: `target`, `status`, `level`, `source`, `chance` (rAthena's chance after resistance, per 10,000) | The chance, kept to 0 to 10,000. |
+| `status_duration` | `start`: `target`, `status`, `level`, `source`, `milliseconds` (rAthena's duration after resistance) | The duration, kept to 1 to 2,147,483,647. |
 
 - Hooks run in a chain. Higher priority runs first; equal priorities run in the order they were added. `next(object)` returns the rest of the chain's result. The innermost result is rAthena's value.
 - To pass a changed object, pass a table with the same fields to `next`.
 - A hook only computes: a call that changes the game raises an error in it. A hook that fails is logged and left out.
 - Hooks run in the zone of the kill. A hook of a mod script runs in every zone. A hook of an event run changes kills on the event's map, until the run ends.
 - `hooks.on` needs `rules.override`, which the server owner approves and the server logs at each start. It returns a handle with `remove()`.
+
+### Status effects
+
+Every entity handle has the status methods of proposal 0002, review decision 19: players, monsters and NPCs.
+
+```lua
+local statuses = require "wa.statuses"
+
+player:start_status(statuses.blessing, { milliseconds = 60000, level = 10 })
+if player:has_status(statuses.poison) then
+  player:end_status(statuses.poison)
+end
+local s = player:get_status(statuses.blessing)
+-- s.status, s.level, s.values (val2 to val4), s.remaining_milliseconds, s.source
+```
+
+`start_status` options:
+
+| Option | Default | Meaning |
+|---|---|---|
+| `milliseconds` | The duration rAthena's `sc_start` looks up for the level | 1 to 2,147,483,647, or `"forever"` (`INFINITE_TICK`). |
+| `level` | 1 | val1. |
+| `values` | `{}` | val2 to val4, for the statuses that read them. |
+| `chance` | 10000 | Per 10,000, before resistance. |
+| `source` | None | The entity that caused it. Its stats and level count for resistance. Without it, the target's own count, as `sc_start`. |
+| `cannot_be_avoided` | false | `SCSTART_NOAVOID`: no resistance, no roll, no boss immunity. |
+| `keep_duration` | false | `SCSTART_NOTICKDEF`: resistance does not shorten it. |
+| `keep_chance` | false | `SCSTART_NORATEDEF`: resistance does not lower the chance. |
+| `hide_icon` | false | `SCSTART_NOICON`. |
+
+- `start_status` returns true when the status starts. rAthena's rules apply: a weaker copy of an active status does nothing and returns true, and a status that fails its roll returns false.
+- `end_status` returns true when the status was active. `get_statuses()` lists every active status, by status.
+- A player's stats change once an item's use script returns, or else at the end of the server tick.
+- Converted item scripts set `keep_duration`, as rAthena's `sc_start` does in item scripts. Converted NPC scripts set `cannot_be_avoided`.
+
+Events of mod and event contexts, with the options `status`, `target_kind` and `map`:
+
+```lua
+events.on("status_end", function(event)
+  -- event.target, event.status, event.level, event.source,
+  -- event.milliseconds (the time left), event.reason
+end, { status = statuses.poison, target_kind = "player" })
+```
+
+- `status_start`: `reason` is `"skill"`, `"item"`, `"bonus"` (a proc such as `cause_status`), `"script"`, or `"login"` for a status restored from a save. `milliseconds` is the duration.
+- `status_end`: `reason` is `"expired"`, `"removed"`, `"replaced"`, `"death"`, `"dispell"`, `"clearance"`, `"logout"` or `"damage"`.
+- `status_tick`: each tick of a status that ticks, such as poison, and each tick of a mod status. It has no `reason`.
+- The events of statuses that a script call starts or ends run after that call returns.
+
+A mod script defines new statuses with `statuses.define` in its setup function:
+
+```lua
+statuses.define {
+  name = "verve",
+  icon = 241, -- a status icon (EFST_ ID) the client has
+  kind = "buff",
+  ends_on = { "death", "dispell" },
+  bonuses = function(level)
+    return { { "max_hp", 100 * level } }
+  end,
+  tick_milliseconds = 5000,
+}
+-- statuses.verve is now its ID.
+```
+
+- The name is 1 to 48 lower case letters, digits and `_`. A name that a status of the game or of another mod has raises an error.
+- `bonuses` returns bonus entries, as `add_timed_bonuses` takes them. They apply to players while the status lasts. A status restored at login runs it again.
+- With `tick_milliseconds`, `status_tick` fires at that interval, and once more when the status runs out.
+- Mod statuses get IDs from 100,000. A saved status keeps its name, so it comes back when its ID changes.
+
+The sample mod in [examples/verve](examples/verve) defines a status, listens to its ticks, and has an item that starts it.
+
+### Timed bonuses
+
+```lua
+player:add_timed_bonuses("tonic", 60000, { { "str", 5 }, { "max_hp", 100 } },
+  { ends_on = { "death" }, icon = 241, kind = "buff" })
+```
+
+- The bonuses last the time given. A second call with the same key replaces them, unless `stack` is set.
+- `ends_on` lists what also ends them: `death`, `dispell`, `clearance`, `logout`, `banishing_buster`, `refresh`, `lux_anima`, `magic_gear_change` and `damage`.
+- They are saved across logout, unless `ends_on` has `logout`.
+- Converted `bonus_script` lines key the bonuses by the script's text.
 
 ### Items
 
@@ -736,7 +823,8 @@ The server checks every entry at start with the rules of `bonuses.add`. `when` i
 | `player:show_headgear_effect(effect)` | None | rAthena's `hateffect`. It shows nothing yet: the protocol has no message for it. |
 | `player:get_skill_level(skill)` | `game.read` | rAthena's `getskilllv`. |
 | `player:get_equipped(slot)` | `game.read` | The copy in a slot, such as `right_hand`, as an equipped handle, or nil. |
-| `player:start_status(...)`, `player:add_timed_bonuses(...)` | | Raise an error until status effects and timed bonuses exist (phase 4). |
+| `player:start_status(status, options)` | None | rAthena's `sc_start`, `sc_start2` and `sc_start4` ("Status effects" below). |
+| `player:add_timed_bonuses(key, ms, bonuses, options)` | None | rAthena's `bonus_script` ("Timed bonuses" below). |
 
 Heals need no approved permission.
 

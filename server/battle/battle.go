@@ -3,8 +3,11 @@
 // reference/rathena/renewal.
 //
 // This is a port of rAthena's battle.cpp (GPL-3.0). It covers a normal
-// weapon attack by a monster or a player, with no skill and no status
-// changes. Function comments name the rAthena functions they port.
+// weapon attack by a monster or a player, with no skill. Of status
+// changes, it reads what Changes carries: the ATK percent of Curse and
+// other statuses, sleep's doubled critical rate, the sure hit on a
+// stoned, frozen, stunned or sleeping target, and SC_DEF_RATE. Function comments
+// name the rAthena functions they port.
 package battle
 
 // Weapon is a unit's weapon attack, as rAthena's weapon_atk.
@@ -75,6 +78,39 @@ type Status struct {
 	PAtk  int `json:"-"`
 	// Player holds what only players have. It is nil for monsters.
 	Player *Player `json:"-"`
+	// Changes are what attacks read of the unit's status changes, or nil
+	// for a unit without them.
+	Changes *Changes `json:"-"`
+}
+
+// Changes are what attacks read of a unit's status changes.
+type Changes struct {
+	// Opt1 is the unit's body state (OPT1_). An attack on a unit with
+	// one always hits, except during Stone Curse's wait and Burning.
+	Opt1 int
+	// Sleep doubles the critical chance of attacks on the unit.
+	Sleep bool
+	// AtkPercent is battle_get_atkpercent: the unit's attacks deal this
+	// percent of their damage, from Curse, Concentration and SC_INCATKRATE.
+	AtkPercent int
+	// DefRate is SC_DEF_RATE's percent: a player takes that much less
+	// physical damage.
+	DefRate int
+}
+
+// Opt1 values that do not make attacks always hit, as rAthena's
+// OPT1_STONEWAIT and OPT1_BURNING.
+const (
+	opt1StoneWait = 6
+	opt1Burning   = 7
+)
+
+// atkPercent is battle_get_atkpercent for a normal attack.
+func (s *Status) atkPercent() int64 {
+	if s.Changes == nil {
+		return 100
+	}
+	return int64(min(max(s.Changes.AtkPercent, 0), 0xffff))
 }
 
 // Monster modes that attacks read, as rAthena's e_mode.

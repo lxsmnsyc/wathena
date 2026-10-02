@@ -157,6 +157,8 @@ func (z *Zone) snapshot(p *Player) *character.Character {
 	if len(p.vars) > 0 {
 		c.Variables = maps.Clone(p.vars)
 	}
+	c.Statuses = z.savedStatuses(p)
+	c.TimedBonuses = z.savedTimedBonuses(p)
 	return c
 }
 

@@ -136,6 +136,7 @@ type Runtime struct {
 	fns  struct {
 		loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref
 		loadTests, runCase, describe, runHooks, condition                         *script.Ref
+		statusBonuses                                                             *script.Ref
 	}
 	nextID int64
 
@@ -184,6 +185,10 @@ type Runtime struct {
 	schedules map[int64]*scheduled
 	// events are the event contexts that run, by context ID.
 	events map[int64]*Context
+	// saved are the states that hook chains the prelude runs replaced,
+	// and computeStack the computing flags that computeBegin replaced.
+	saved        []savedChain
+	computeStack []bool
 }
 
 // Context owns what a setup function and its handlers create
@@ -229,8 +234,10 @@ type handler struct {
 	ctx     *Context
 	fn      *script.Ref
 	removed bool
-	// death holds the options of a death handler, or nil.
-	death *deathFilter
+	// death holds the options of a death handler, or nil, and status
+	// the options of a status event handler.
+	death  *deathFilter
+	status *statusFilter
 }
 
 type timer struct {
@@ -321,7 +328,12 @@ func (r *Runtime) init() error {
 		{"player_show_effect", r.playerShowEffect},
 		{"player_skill_level", r.playerSkillLevel},
 		{"player_equipped", r.playerEquipped},
-		{"player_start_status", r.playerStartStatus},
+		{"entity_status", r.entityStatus},
+		{"statuses_define", r.statusesDefine},
+		{"hook_chain_begin", r.hookChainBegin},
+		{"hook_chain_end", r.hookChainEnd},
+		{"compute_begin", r.computeBegin},
+		{"compute_end", r.computeEnd},
 		{"player_add_timed_bonuses", r.playerAddTimedBonuses},
 		{"equipped_field", r.equippedField},
 		{"items_group", r.itemsGroup},
@@ -413,6 +425,7 @@ func (r *Runtime) init() error {
 		{"describe", &r.fns.describe},
 		{"run_hooks", &r.fns.runHooks},
 		{"check_condition", &r.fns.condition},
+		{"status_bonuses", &r.fns.statusBonuses},
 	} {
 		ref, err := r.s.Keep(tab.Get(f.name))
 		if err != nil {
@@ -769,6 +782,10 @@ var Events = map[string][]string{
 	"skill_used":    {KindItem},
 	// Converted UnEquipScripts run on unequip.
 	"unequip": {KindItem},
+	// Status effects (review decision 19).
+	"status_start": {KindMod, KindEvent},
+	"status_end":   {KindMod, KindEvent},
+	"status_tick":  {KindMod, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

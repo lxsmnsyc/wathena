@@ -41,6 +41,8 @@ message Event {
     CardInserted card_inserted = 29;
     InsertCardFailed insert_card_failed = 30;
     LookChange look_change = 31;
+    StatusIcon status_icon = 32;
+    OptionChange option_change = 33;
   }
 }
 
@@ -94,6 +96,9 @@ message EntityAppear {
   uint32 hp_permille = 9;
   // item is set for ENTITY_KIND_ITEM.
   GroundItem item = 10;
+  // options are what the entity's status changes show, such as Stun's
+  // stars. Unset for none.
+  Options options = 11;
 }
 
 // GroundItem is an item lying on a cell.
@@ -602,4 +607,42 @@ message InsertCardFailed {
 message LookChange {
   uint32 id = 1;
   Look look = 2;
+}
+
+// StatusIcon shows or hides one of the player's status icons, as
+// clif_status_change. Only the player gets its own icons.
+message StatusIcon {
+  // icon is the EFST_ ID of the client's status icon table.
+  uint32 icon = 1;
+  // on is true when the icon shows, and false when it goes.
+  bool on = 2;
+  // remaining_ms is how long the status lasts, or -1 when it does not
+  // end by itself. It is 0 when the icon goes.
+  int64 remaining_ms = 3;
+  // values are up to three numbers the icon may show, such as a level.
+  repeated int32 values = 4;
+}
+
+// Options are what an entity's status changes show to everyone who sees
+// it, as rAthena's opt1, opt2, opt3 and option. The client draws them,
+// such as stone, frozen, stun stars, poison or hiding.
+message Options {
+  // body is opt1: one state of the body, such as 1 stone, 2 frozen,
+  // 3 stunned or 4 asleep (OPT1_).
+  uint32 body = 1;
+  // health is opt2: bits such as 1 poison, 2 curse, 4 silence and
+  // 16 blind (OPT2_).
+  uint32 health = 2;
+  // effect is opt3: bits of visual effects (OPT3_).
+  uint32 effect = 3;
+  // option is the option bits, such as 2 hiding and 4 cloaking
+  // (OPTION_).
+  uint32 option = 4;
+}
+
+// OptionChange tells the players who see an entity that its status
+// options changed, as clif_changeoption.
+message OptionChange {
+  uint32 id = 1;
+  Options options = 2;
 }

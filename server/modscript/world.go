@@ -80,8 +80,10 @@ type hook struct {
 
 // Hooks lists every hook name and the context kinds that can add it.
 var Hooks = map[string][]string{
-	"drop_rate":  {KindMod, KindNPC, KindEvent},
-	"experience": {KindMod, KindNPC, KindEvent},
+	"drop_rate":       {KindMod, KindNPC, KindEvent},
+	"experience":      {KindMod, KindNPC, KindEvent},
+	"status_chance":   {KindMod, KindNPC, KindEvent},
+	"status_duration": {KindMod, KindNPC, KindEvent},
 }
 
 type scheduled struct {

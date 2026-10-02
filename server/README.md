@@ -10,6 +10,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `item` | The inventory, ported from rAthena's `pc_additem`, `pc_delitem` and `pc_inventoryblank`, the overweight levels of `pc_updateweightstatus`, the heal of `pc_itemheal` and `pc_percentheal`, and the item groups of `getgroupitem`, with the item data from `reference/rathena/extracts/<mode>/items.json`, `equipment.json` and `item_groups.json`. Equipping, ported from `pc_equippoint`, `pc_isequip`, `pc_equipitem`, `pc_unequipitem`, `pc_setequipindex`, `pc_calcweapontype` and `pc_insert_card` (see "Equipment"). |
 | `battle` | Attacks, ported from rAthena's `battle.cpp` in renewal mode and checked against the recorded reference, with the equipment bonuses of both sides (`battle_calc_cardfix`, `battle_absorb_damage` and the player target's defense). |
 | `status` | Player stats from job, levels, raised stats, skills and equipment, ported from rAthena's `status_calc_pc` and `pc_bonus`, in both modes, and checked against every recorded player, every equipment item and card of `item_bonuses.json`, and every level of `refine.json`. Raising stats with status points, ported from `pc_statusup`, `pc_need_status_point` and `pc_maxparameter`, with the costs of both modes and the job limits from `conf/battle/player.conf`. |
+| `statuschange` | Status effects, ported from rAthena's `status_change_start`, `status_change_end`, `status_change_clear`, `status_change_timer` and `status_get_sc_def`, with the data of `status.yml` from `reference/rathena/extracts/<mode>/status.json`, and checked against every case of `status_effects.json` (see "Status effects"). |
 | `progression` | Exp tables, level ups, status and skill points, the renewal level penalty, exp shares, drop rates and rolls, where drops land, and pick-up rights, ported from rAthena's `pc.cpp`, `mob.cpp` and `map.cpp` with the default `conf/battle` settings. |
 | `character` | A saved character as plain data: what the zone loads and hands to the store. |
 | `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
@@ -302,8 +303,8 @@ What it does:
 
 `waserver` converts rAthena's item scripts for its `mode` when it starts, and logs `item and npc scripts converted` with the time it took, about 0.9 s for renewal ([decision 0007](../docs/decisions/0007-converted-item-scripts.md), mods/README.md, "Core's item scripts"). They are the files of the `core` mod.
 
-- A used item runs its Lua `use` handler: heals, items, item boxes, effects and warps.
-- An item whose script needs what the server does not have yet, such as status effects, is refused and kept. The player sees a chat line that says what it needs.
+- A used item runs its Lua `use` handler: heals, items, item boxes, effects, warps, status effects and timed bonuses.
+- An item whose script needs what the server does not have yet, such as pets, is refused and kept. The player sees a chat line that says what it needs.
 - Butterfly Wings and `player:warp_to_save_point()` go to the character's save point. A new character's save point is the start cell of the start map (`--map`).
 - Rentals are given as normal items, since items do not expire yet.
 
@@ -311,10 +312,10 @@ To try them, give a new character some items:
 
 ```text
 go run ./server/cmd/waserver --assets /path/to/build --map prt_fild08 --dev \
-  --start-items 501:5,603:3,601:3,602:2,506:2
+  --start-items 501:5,603:3,601:3,602:2,619:2
 ```
 
-These are Red Potions, Old Blue Boxes, Fly Wings, Butterfly Wings, and Green Potions, which need status effects and are refused.
+These are Red Potions, Old Blue Boxes, Fly Wings, Butterfly Wings, and Unripe Apples, which need pets and are refused.
 
 Any of these stop the start, with every problem listed:
 
@@ -388,10 +389,40 @@ Parity with rAthena is in `tools/convert/testdata/equipment_parity_<mode>.md`, m
 
 | Mode | Equipment items | Cards | Refine levels |
 |---|---|---|---|
-| renewal | 9,939 of 9,939 compared, stats and damage | 1,496 of 1,496, stats and damage | 105 of 105, stats and damage |
-| pre-renewal | 1,867 of 1,867, stats | 427 of 427, stats | 55 of 55, stats |
+| renewal | 9,993 of 9,993 compared, stats and damage | 1,502 of 1,502, stats and damage | 105 of 105, stats and damage |
+| pre-renewal | 1,875 of 1,875, stats | 431 of 431, stats | 55 of 55, stats |
 
-Compared items are those whose scripts convert fully: 230 renewal items and 49 cards, and 18 pre-renewal items and 25 cards, are left out. Pre-renewal damage is not compared, since `battle` has renewal's formula only.
+Compared items are those whose scripts convert fully: 176 renewal items and 43 cards, and 10 pre-renewal items and 21 cards, are left out. Pre-renewal damage is not compared, since `battle` has renewal's formula only.
+
+## Status effects
+
+Players, monsters and NPCs have status effects, as rAthena's `status_change` ([decision 0010](../docs/decisions/0010-status-effects.md)). The package `statuschange` ports `status_change_start`, `status_change_end`, `status_change_timer` and `status_get_sc_def`, with the data of rAthena's `status.yml` for the mode (the `status.json` extract).
+
+- Starting a status checks immunities, the `Fail` list, boss resistance, and resistance from VIT, INT, LUK, level and `bResEff`, then rolls the chance on the zone's random stream. `start_status` options and `sc_start` flags skip parts of it, as rAthena's `SCSTART_` flags.
+- Each status lasts its duration and ends with the reason `"expired"`. Poison, bleeding, stone and the other statuses that tick do their work on rAthena's intervals.
+- Statuses change stats: the zone computes stats again when a status starts or ends, with the `status_calc_*` changes of rAthena and the converted status scripts (such as `bonus bStr` of SC_INCSTR). Monsters' stats follow their statuses too.
+- The common ailments work in full: stone, freeze, stun, sleep, poison, deadly poison, curse, silence, confusion, blind and bleeding. A stunned, frozen, stoned or sleeping unit cannot walk, attack or use items, and its HP regen follows rAthena. Damage ends sleep, freeze and stone. Confusion walks to random cells.
+- Death ends the statuses without `NoRemoveOnDead`, and logout ends those with `NoSave`.
+- Procs: `cause_status` bonuses on equipment and timed bonuses roll on each normal attack that lands, with the target's resistance and rAthena's 100 ms delay. `on = "hit_taken"` rolls on the attacker.
+- The player sees a status icon with the time left (`StatusIcon`). Everyone near sees the status options: stone, freeze, stun, poison, curse, hiding and the rest (`OptionChange`, and the `options` of `EntityAppear`).
+
+Statuses are saved with the character, as `chrif_save_scdata`: every status without `NoSave`, with its values and the time to its next timer. Login restores them with the reason `"login"`. Timed bonuses (`player:add_timed_bonuses`, rAthena's `bonus_script`) are saved too, unless `ends_on` has `logout`. Migration 00009 adds `character_statuses` and `character_timed_bonuses`.
+
+To try them, give a new character STR Dishes, Green Potions and Concentration Potions:
+
+```text
+go run ./server/cmd/waserver --assets /path/to/build --map prt_fild08 --dev \
+  --start-items 12041:3,506:3,645:3
+```
+
+Parity with rAthena's `status_effects.json` is in `server/statuschange/testdata/status_effects_parity.md`, made by `go test ./server/statuschange -run TestStatusEffectParity -update`:
+
+| Mode | Cases | Chance | Duration | Starts | All match |
+|---|---:|---:|---:|---:|---:|
+| renewal | 2,640 | 2,640 | 2,640 | 2,640 | 2,640 |
+| pre-renewal | 2,640 | 2,640 | 2,640 | 2,640 | 2,640 |
+
+Left: the effects of statuses that only skills start. They start, save, end, and show their icon and option, but do nothing else until their skills exist.
 
 ## NPCs
 

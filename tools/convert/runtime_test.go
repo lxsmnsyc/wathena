@@ -19,6 +19,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/status"
+	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -54,7 +55,36 @@ type testHost struct {
 	refine map[int64]int
 	defs   map[uint32]*item.Def
 	slots  map[string]int64
+	// statuses is the mode's status data; started counts status starts.
+	statuses *sc.DB
+	started  int
 }
+
+func (h *testHost) status(id int64) error {
+	if h.statuses.Get(int(id)) == nil {
+		return fmt.Errorf("there is no status %d", id)
+	}
+	return nil
+}
+
+func (h *testHost) StartStatus(_ modscript.Entity, s modscript.StatusStart) (bool, error) {
+	h.started++
+	return true, h.status(s.Status)
+}
+
+func (h *testHost) PreviewStatus(_ modscript.Entity, s modscript.StatusStart) (modscript.StatusPreview, bool, error) {
+	return modscript.StatusPreview{Chance: s.Chance, Milliseconds: s.Milliseconds}, true, h.status(s.Status)
+}
+
+func (h *testHost) EndStatus(_ modscript.Entity, id int64) (bool, error) { return false, h.status(id) }
+
+func (h *testHost) Statuses(modscript.Entity, int64) ([]modscript.StatusInfo, error) { return nil, nil }
+
+func (h *testHost) DefineStatus(modscript.StatusDefinition) (int64, error) {
+	return 0, fmt.Errorf("core defines no statuses")
+}
+
+func (h *testHost) AddTimedBonuses(int64, modscript.TimedBonuses) error { return nil }
 
 func (h *testHost) Map() string { return "prontera" }
 func (h *testHost) PlayerField(id int64, field string) (script.Value, error) {
@@ -165,7 +195,11 @@ func testRuntime(t *testing.T, mode reference.Mode) (*modscript.Runtime, *testHo
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := &testHost{jobs: jobs, baseLevel: 99, jobLevel: 50, stats: status.Stats{Str: 90, Agi: 50, Vit: 30, Int: 1, Dex: 40, Luk: 1},
+	statuses, _, err := core.LoadStatuses(mode)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := &testHost{jobs: jobs, statuses: statuses, baseLevel: 99, jobLevel: 50, stats: status.Stats{Str: 90, Agi: 50, Vit: 30, Int: 1, Dex: 40, Luk: 1},
 		items: map[string]uint32{}, groups: map[string]int64{}, monsters: core.Monsters, equipped: map[int64]uint32{},
 		refine: map[int64]int{}, defs: map[uint32]*item.Def{}, slots: map[string]int64{}}
 	for id, name := range itemNames(t, mode) {

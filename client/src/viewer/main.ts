@@ -47,6 +47,7 @@ import { DialogWindow } from './dialog';
 import { ShopWindow, shopMessage } from './shop';
 import { groundItemLabel } from './groundItems';
 import randomLook from './looks';
+import { StatusIconBar } from './statusIcons';
 import { StatusWindow } from './statusWindow';
 import Online from './online';
 import Player from './player';
@@ -127,6 +128,7 @@ scene.add(playerGroup);
 const audio = new AudioSystem(store);
 let soundscape: Soundscape | undefined;
 let statusWindow: StatusWindow | undefined;
+let statusIcons: StatusIconBar | undefined;
 let inventoryWindow: InventoryWindow | undefined;
 let equipmentWindow: EquipmentWindow | undefined;
 let dialogWindow: DialogWindow | undefined;
@@ -414,6 +416,8 @@ if (serverURL === null) {
     },
     closed: (message, reason) => {
       status.value = message;
+      // Status icons belong to the session that ended.
+      statusIcons?.clear();
       if (account === undefined) {
         return;
       }
@@ -604,6 +608,13 @@ if (serverURL === null) {
       }
     });
   }
+  // The player's status icons. They last until the server hides them, and
+  // the server sends them again after a map change.
+  const icons = new StatusIconBar(document.body, store);
+  statusIcons = icons;
+  view.onStatusIcon = (icon, on, remainingMs) => {
+    icons.set(icon, on, remainingMs);
+  };
   view.onSound = (sound, position) => {
     const d = position.distanceTo(controls.target);
     if (d < SPRITE_SOUND_RANGE) {
@@ -764,6 +775,8 @@ if (serverURL === null) {
   // Service Worker caches.
   const loadingView = document.querySelector<HTMLDivElement>('#loading');
   view.onMapChange = (map, x, y) => {
+    // The new map's first frame shows the icons again.
+    icons.clear();
     const started = performance.now();
     const before = { ...store.stats };
     changingMap = true;
@@ -1038,6 +1051,7 @@ renderer.setAnimationLoop((time) => {
     }
   }
   showBubbles(performance.now());
+  statusIcons?.update(performance.now());
   showItemLabel();
   showProgress(performance.now());
   right.setFromMatrixColumn(camera.matrixWorld, 0);

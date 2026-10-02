@@ -129,6 +129,9 @@ Server to client, in `ServerMessage`:
   - `InsertCard` names a card's slot and an item's slot. The server answers with an `InventoryRemove` of the card (`INVENTORY_REMOVE_REASON_CARD_INSERTED`) and `CardInserted`, or with `InsertCardFailed`.
   - The gateway drops these commands without a reply when a slot is 200 or more.
   - A player's `Look` carries its equipment as rAthena's `view_data`: the weapon type of its attacks, the shield's view, and the views of its headgear and garment. `LookChange` sends a new look to everyone who sees the player.
+- **Status effects.** `StatusIcon` shows or hides one of the player's own status icons, as `clif_status_change`: the icon's `EFST_` ID, `on`, the time left in `remaining_ms` (-1 for a status without an end, 0 when the icon goes), and up to three values. Only the player gets its own icons. On a map change, the new map sends the icons of the statuses that moved with the player again, after `MapChange`.
+  - `Options` holds what others see of a unit's statuses, as rAthena's `opt1`, `opt2`, `opt3` and `option`: `body` is one state such as 1 stone, 2 frozen, 3 stunned or 4 asleep; `health` has bits such as 1 poisoned, 2 cursed, 4 silenced and 16 blind; `effect` has visual effect bits; `option` has bits such as 2 hiding and 4 cloaking.
+  - `EntityAppear.options` carries them when a unit comes into view. `OptionChange` sends new options to everyone who sees the unit, as `clif_changeoption`.
 - **A warp to another map is a map change, on the same connection.** The first frame from the new map starts with `MapChange`: the new map's asset name, the player's cell, and the player's own entity ID there. Then, as after `Welcome`:
   - The player's own `EntityAppear` follows, and then the inventory and stats again.
   - Entity IDs start again on the new map. The client removes every entity it showed before the change.

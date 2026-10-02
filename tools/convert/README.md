@@ -5,6 +5,8 @@ Converter from rAthena scripts to wAthena Lua and data (strategy section 5.6). I
 - `parse.go` reads rAthena's script language, following `src/map/script.cpp`.
 - `equip.go` runs equipment scripts symbolically. A condition on a game value, such as the refine level, becomes the `when` option of the bonus. A game value in an amount becomes a computed bonus.
 - `use.go` translates scripts that run once: use handlers, equip and unequip scripts, and the effects of `autobonus`.
+- `usestatus.go` converts `sc_start`, `sc_start2`, `sc_start4` and `sc_end` to `player:start_status` and `player:end_status` (proposal 0002, review decision 19), and `bonus_script` to `player:add_timed_bonuses`. Item scripts set `keep_duration`, as rAthena's default flag for items is `SCSTART_NOTICKDEF`. A timed bonus's key is a hash of its script's text, as rAthena tells `bonus_script` copies apart by their text.
+- `status.go` converts the scripts of `status.yml`, such as `bonus bStr,getstatus(SC_INCSTR,1);`, to bonus templates that `statuschange` computes for each active status ([decision 0010](../../docs/decisions/0010-status-effects.md)).
 - `bonusmap.go` maps every bonus form to a `bonuses.add` call of [proposal 0002a](../../docs/proposals/0002a-bonus-names.md): names, sign flips, chance units, argument order, and options.
 - `output.go` writes core's `data/items.yml` and `scripts/items/*.lua`. Equipment with only constant bonuses becomes item data.
 - `report.go` writes the coverage report.
@@ -22,12 +24,14 @@ Tests:
 - `TestEquipmentParity` equips every fully converted equipment item and card, with its static bonuses and its Lua script, on the recorder's sample player, and compares the stats and the damage with rAthena's `item_bonuses.json`, and every refine level with `refine.json`, in both modes. The results are `testdata/equipment_parity_<mode>.md` (server/README.md, "Equipment").
 - `TestHealParity` checks that every plain heal converts to the amounts the items extract read.
 - `TestGolden` keeps the output of sample items in `testdata/golden`.
+- `TestStatusScripts` converts every status script of both modes and keeps the templates in `testdata/golden/status_scripts_<mode>.txt`.
 - `TestReportsCurrent` checks the reports in `docs/generated`.
 
 NPCs ([decision 0008](../../docs/decisions/0008-converted-npcs.md)):
 
 - `parse.go` also reads NPC scripts: labels, `goto`, `menu`, `callsub`, `function` and `switch`.
 - `npc.go` places NPCs and shops from `npcs.json`, and writes core's `data/npcs.yml`. Shops become data. A script NPC is placed when its own script converts whole.
+- `npcstatus.go` converts `sc_start`, `sc_start2`, `sc_start4`, `sc_end` and `getstatus` in NPC scripts. NPC scripts set `cannot_be_avoided`, as rAthena's default flag for NPCs is `SCSTART_NOAVOID`.
 - `npclua.go`, `npcexpr.go` and `npcscript.go` translate scripts to Lua with the API of proposal 0002: conversations, `wa.variables`, zeny, items and save points. Labels become Lua labels, and a function's `end` becomes `R.stop()`.
 - Event labels run on into the next label until an `end`, as in rAthena. These event labels convert:
   - `OnInit` runs at the end of the NPC's setup function.

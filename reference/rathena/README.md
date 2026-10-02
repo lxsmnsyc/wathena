@@ -18,7 +18,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -95,6 +95,19 @@ Equipment reads three extracts per mode ([decision 0009](../../docs/decisions/00
 | pre-renewal | 2,539 | 70 | 93 |
 
 They were extracted at rAthena fork commit `003599e1c`, with three functions that the fork's `tools/wathena/extract.py` does not have yet: `build_equipment`, `build_refine` and `build_monster_groups`. Their output was checked byte for byte against these files. Until the fork gains them, regenerating with `extract.py` leaves these three files as they are.
+
+## Status effects
+
+Status effects read one extract per mode ([decision 0010](../../docs/decisions/0010-status-effects.md)):
+
+- `status.json`: `status.yml` as `StatusDatabase` loads it, by `SC_` value: the name and constant, the icon (`EFST_` value, -1 for `EFST_BLANK`), the `DurationLookup` skill with its `Duration1` and `Duration2` at levels 1 to 13 from `skill_db.yml`, states, calc flags, opt1 to opt3, options, flags, `MinRate`, `MinDuration`, `Fail`, `EndOnStart`, `EndReturn`, `EndOnEnd`, and the script. `calc_flags` is `[All]` for a status with a script, as `loadingFinished` sets it.
+
+| Mode | Statuses | With a script |
+|---|---:|---:|
+| renewal | 1,018 | 168 |
+| pre-renewal | 699 | 67 |
+
+It was extracted at rAthena fork commit `eac0a7e75`, with a function that the fork's `tools/wathena/extract.py` does not have yet: `build_status`. Until the fork gains it, regenerating with `extract.py` leaves this file as it is.
 
 ## How random rolls are recorded
 

@@ -1,0 +1,325 @@
+speedup0: move_speed(val1) percent=true stacking=highest
+speedup1: move_speed(val1) percent=true stacking=highest
+atkpotion: atk(val1)
+matkpotion: hidden_matk(val1)
+armor_element_water: damage_taken((0 - val1)) element=1
+armor_element_water: damage_taken((0 - val2)) element=2
+armor_element_water: damage_taken((0 - val3)) element=3
+armor_element_water: damage_taken((0 - val4)) element=4
+incstr: str(val1)
+incagi: agi(val1)
+incvit: vit(val1)
+incint: int(val1)
+incdex: dex(val1)
+incluk: luk(val1)
+strfood: str(val1)
+agifood: agi(val1)
+vitfood: vit(val1)
+intfood: int(val1)
+dexfood: dex(val1)
+lukfood: luk(val1)
+hitfood: hit(val1)
+fleefood: flee(val1)
+batkfood: atk(val1)
+matkfood: matk(val1)
+incflee2: perfect_dodge(val1)
+inccri: crit(val1)
+armor_resist: damage_taken((0 - val1)) element=1
+armor_resist: damage_taken((0 - val2)) element=2
+armor_resist: damage_taken((0 - val3)) element=3
+armor_resist: damage_taken((0 - val4)) element=4
+spcost_rate: sp_cost((0 - val1)) percent=true
+commonsc_resist: status_resistance(2, val1)
+commonsc_resist: status_resistance(1, val1)
+commonsc_resist: status_resistance(11, val1)
+commonsc_resist: status_resistance(5, val1)
+commonsc_resist: status_resistance(4, val1)
+commonsc_resist: status_resistance(6, val1)
+commonsc_resist: status_resistance(8, val1)
+commonsc_resist: status_resistance(3, val1)
+commonsc_resist: status_resistance(9, val1)
+commonsc_resist: status_resistance(7, val1)
+s_lifepotion: hp_gain_over_time((0 - val1), (val2 * 1000)) percent=true unless 112
+l_lifepotion: hp_gain_over_time((0 - val1), (val2 * 1000)) percent=true unless 112
+manu_atk: damage(val1) against={monster_group 11} kind=physical
+manu_def: damage_taken((0 - val1)) from={monster_group 11}
+spl_atk: damage(val1) against={monster_group 12} kind=physical
+spl_def: damage_taken((0 - val1)) from={monster_group 12}
+manu_matk: damage(val1) against={monster_group 11} kind=magic
+spl_matk: damage(val1) against={monster_group 12} kind=magic
+food_str_cash: str(val1)
+food_agi_cash: agi(val1)
+food_vit_cash: vit(val1)
+food_dex_cash: dex(val1)
+food_int_cash: int(val1)
+food_luk_cash: luk(val1)
+mysterious_powder: max_hp(val1) percent=true
+savage_steak: str(val1)
+cocktail_warg_blood: int(val1)
+minor_bbq: vit(val1)
+siroma_ice_tea: dex(val1)
+drocera_herb_steamed: agi(val1)
+putti_tails_noodles: luk(val1)
+boost500: aspd(val1) percent=true
+full_swing_k: atk(val1)
+mana_plus: matk(val1)
+mustle_m: max_hp(val1) percent=true
+life_force_f: max_sp(val1) percent=true
+extract_white_potion_z: natural_hp_recovery(val1) percent=true
+vitata_500: natural_sp_recovery(20) percent=true
+vitata_500: max_sp(5) percent=true
+extract_salamine_juice: aspd(val1) percent=true
+mtf_aspd: aspd(val1)
+mtf_aspd: hit(val2)
+mtf_rangeatk: damage(val1) kind=physical range=ranged
+mtf_matk: matk(val1)
+mtf_mleatked: cast(8, val1) chance=0 on=hit_taken
+mtf_mleatked: damage_taken((0 - val3)) element=0
+mtf_cridamage: crit_damage(val1)
+quest_buff1: matk(val1)
+quest_buff1: atk(val1)
+quest_buff2: matk(val1)
+quest_buff2: atk(val1)
+quest_buff3: matk(val1)
+quest_buff3: atk(val1)
+mtf_aspd2: aspd(val1)
+mtf_aspd2: hit(val2)
+mtf_rangeatk2: damage(val1) kind=physical range=ranged
+mtf_matk2: matk(val1)
+n2011rwc_scroll: atk(30)
+n2011rwc_scroll: matk(30)
+n2011rwc_scroll: aspd(5) percent=true
+n2011rwc_scroll: variable_cast_time(-5) percent=true
+n2011rwc_scroll: max_hp(-10) percent=true
+n2011rwc_scroll: max_sp(-10) percent=true
+n2011rwc_scroll: cast(45, max(3, skill(45))) chance=100
+jp_event04: experience(val1) from={race 5}
+mtf_mhp: max_hp(val1) percent=true
+mtf_msp: max_sp(val1) percent=true
+mtf_pumpkin: item_hp_recovery(2000) item=set
+mtf_pumpkin: item_hp_recovery(val1) item=set
+mtf_hitflee: hit(val1)
+mtf_hitflee: crit(val1)
+mtf_hitflee: flee(val2)
+crifood: crit(val1)
+atthaste_cash: aspd(val1) percent=true
+geffen_magic1: damage(val1) against={race 10} kind=physical
+geffen_magic1: damage(val1) against={race 7} kind=physical
+geffen_magic2: damage(val1) against={race 10} kind=magic
+geffen_magic2: damage(val1) against={race 7} kind=magic
+geffen_magic3: damage_taken((0 - val1)) from={race 10}
+geffen_magic3: damage_taken((0 - val1)) from={race 7}
+armor_element_earth: damage_taken((0 - val1)) element=1
+armor_element_earth: damage_taken((0 - val2)) element=2
+armor_element_earth: damage_taken((0 - val3)) element=3
+armor_element_earth: damage_taken((0 - val4)) element=4
+armor_element_fire: damage_taken((0 - val1)) element=1
+armor_element_fire: damage_taken((0 - val2)) element=2
+armor_element_fire: damage_taken((0 - val3)) element=3
+armor_element_fire: damage_taken((0 - val4)) element=4
+armor_element_wind: damage_taken((0 - val1)) element=1
+armor_element_wind: damage_taken((0 - val2)) element=2
+armor_element_wind: damage_taken((0 - val3)) element=3
+armor_element_wind: damage_taken((0 - val4)) element=4
+doram_buf_01: hp_gain_over_time(10, 10000)
+doram_buf_02: sp_gain_over_time(5, 10000)
+glastheim_atk: damage(val1) against={monster_group 14} kind=physical
+glastheim_atk: damage(val1) against={monster_group 14} kind=magic
+glastheim_atk: ignore_def(val1) against={race 1} percent=true
+glastheim_atk: ignore_def(val1) against={race 6} percent=true
+glastheim_def: damage_taken((0 - val1)) from={monster_group 14}
+glastheim_heal: healing_done(val1)
+glastheim_heal: healing_received(val2)
+glastheim_hidden: damage_taken((0 - val1)) from={monster_group 15}
+glastheim_state: all_stats(val1)
+glastheim_itemdef: def(val1)
+glastheim_itemdef: mdef(val2)
+glastheim_hpsp: max_hp(val1)
+glastheim_hpsp: max_sp(val2)
+lhz_dun_n1: damage(val1) against={monster_group 16} kind=physical
+lhz_dun_n1: damage(val1) against={monster_group 16} kind=magic
+lhz_dun_n1: damage_taken((0 - val2)) from={monster_group 17}
+lhz_dun_n2: damage(val1) against={monster_group 17} kind=physical
+lhz_dun_n2: damage(val1) against={monster_group 17} kind=magic
+lhz_dun_n2: damage_taken((0 - val2)) from={monster_group 18}
+lhz_dun_n3: damage(val1) against={monster_group 18} kind=physical
+lhz_dun_n3: damage(val1) against={monster_group 18} kind=magic
+lhz_dun_n3: damage_taken((0 - val2)) from={monster_group 16}
+lhz_dun_n4: damage(val1) against={monster_group 19} kind=physical
+lhz_dun_n4: damage(val1) against={monster_group 19} kind=magic
+lhz_dun_n4: damage_taken((0 - val2)) from={monster_group 19}
+increase_maxhp: max_hp(val1) percent=true
+increase_maxhp: natural_hp_recovery(val2) percent=true
+increase_maxsp: max_sp(val1) percent=true
+increase_maxsp: natural_sp_recovery(val2) percent=true
+ep16_2_buff_ss: aspd(10)
+ep16_2_buff_sc: crit(30)
+ep16_2_buff_ac: variable_cast_time(-80) percent=true
+packing_envelope1: atk(val1)
+packing_envelope2: matk(val1)
+packing_envelope3: max_hp(val1) percent=true
+packing_envelope4: max_sp(val1) percent=true
+packing_envelope5: flee(val1)
+packing_envelope6: aspd(val1)
+packing_envelope7: def(val1)
+packing_envelope8: mdef(val1)
+packing_envelope9: crit(val1)
+packing_envelope10: hit(val1)
+m_lifepotion: hp_gain_over_time((0 - val1), (val2 * 1000)) percent=true unless 112
+s_manapotion: sp_gain_over_time((0 - val1), (1000 * val2)) percent=true unless 112
+almighty: matk(val1)
+almighty: atk(val1)
+ultimatecook: all_stats(val1)
+ultimatecook: matk(30)
+ultimatecook: atk(30)
+m_defscroll: def(val1)
+m_defscroll: mdef(val2)
+infinity_drink: crit_damage(5)
+infinity_drink: damage(5) kind=physical range=ranged
+infinity_drink: damage(5) element=10 kind=magic
+infinity_drink: max_hp(5) percent=true
+infinity_drink: max_sp(5) percent=true
+infinity_drink: uninterruptible_cast()
+mental_potion: max_sp(val1) percent=true
+mental_potion: sp_cost((0 - val1)) percent=true
+limit_power_booster: atk(val1)
+limit_power_booster: matk(val1)
+limit_power_booster: hit(val1)
+limit_power_booster: flee(val1)
+limit_power_booster: fixed_cast_time((0 - val1)) percent=true stacking=lowest
+limit_power_booster: atk(val2) percent=true
+limit_power_booster: matk(val2) percent=true
+limit_power_booster: aspd(val2)
+limit_power_booster: sp_cost(val3) percent=true
+combat_pill: atk(val1) percent=true
+combat_pill: matk(val1) percent=true
+combat_pill: max_hp(-3) percent=true
+combat_pill: max_sp(-3) percent=true
+combat_pill2: atk(val1) percent=true
+combat_pill2: matk(val1) percent=true
+combat_pill2: max_hp(-5) percent=true
+combat_pill2: max_sp(-5) percent=true
+mysticpowder: flee(20)
+mysticpowder: luk(10)
+sparkcandy: atk(20)
+sparkcandy: aspd(25) percent=true
+sparkcandy: always_endure()
+sparkcandy: hp_loss_over_time(100, 10000)
+magiccandy: matk(30)
+magiccandy: fixed_cast_time(-70) percent=true stacking=lowest
+magiccandy: uninterruptible_cast()
+magiccandy: sp_loss_over_time(90, 10000)
+acaraje: aspd(val1) percent=true
+acaraje: hit(val2)
+popecookie: atk(val1) percent=true
+popecookie: matk(val1) percent=true
+popecookie: damage_taken((0 - val1)) element=10
+vitalize_potion: atk(val1) percent=true
+vitalize_potion: matk(val1) percent=true
+vitalize_potion: healing_received(10)
+vitalize_potion: item_hp_recovery(10)
+cup_of_boza: vit(10)
+cup_of_boza: damage_taken(-5) element=3
+skf_matk: matk(val1)
+skf_atk: atk(val1)
+skf_aspd: aspd(val1) percent=true
+skf_cast: variable_cast_time(val1) percent=true
+beef_rib_stew: variable_cast_time(-5) percent=true
+beef_rib_stew: sp_cost(-3) percent=true
+pork_rib_stew: aspd(5) percent=true
+pork_rib_stew: sp_cost(-2) percent=true
+g_lifepotion: hp_gain_over_time((0 - val1), (val2 * 1000)) percent=true unless 112
+bath_foam_a: damage(val1) against={monster_group 31} kind=physical
+bath_foam_a: damage(val1) against={monster_group 31} kind=magic
+bath_foam_b: damage(val1) against={monster_group 31} kind=physical
+bath_foam_b: damage(val1) against={monster_group 31} kind=magic
+bath_foam_c: damage(val1) against={monster_group 31} kind=physical
+bath_foam_c: damage(val1) against={monster_group 31} kind=magic
+buchedenoel: natural_hp_recovery(3) percent=true
+buchedenoel: natural_sp_recovery(3) percent=true
+buchedenoel: hit(3)
+buchedenoel: crit(7)
+ep16_def: damage_taken((0 - val1)) from={monster_group 37}
+str_scroll: str(val1)
+int_scroll: int(val1)
+contents_1: damage(val1) against={element 10} kind=physical
+contents_1: damage(val1) against={element 10} kind=magic
+contents_2: damage(val1) kind=physical range=melee
+contents_2: damage(val1) kind=physical range=ranged
+contents_2: damage(val1) element=10 kind=magic
+contents_3: atk(val1) percent=true
+contents_3: matk(val1) percent=true
+contents_4: atk(val1) percent=true
+contents_4: matk(val1) percent=true
+contents_5: variable_cast_time((0 - val1)) percent=true
+contents_5: aspd(val1) percent=true
+contents_6: damage(val1) against={race 9} kind=physical
+contents_6: damage(val1) against={race 3} kind=physical
+contents_6: damage(val1) against={race 9} kind=magic
+contents_6: damage(val1) against={race 3} kind=magic
+contents_7: damage(val1) against={race 6} kind=physical
+contents_7: damage(val1) against={race 1} kind=physical
+contents_7: damage(val1) against={race 6} kind=magic
+contents_7: damage(val1) against={race 1} kind=magic
+contents_8: damage(val1) against={race 5} kind=physical
+contents_8: damage(val1) against={race 0} kind=physical
+contents_8: damage(val1) against={race 5} kind=magic
+contents_8: damage(val1) against={race 0} kind=magic
+contents_9: damage(val1) against={race 8} kind=physical
+contents_9: damage(val1) against={race 2} kind=physical
+contents_9: damage(val1) against={race 8} kind=magic
+contents_9: damage(val1) against={race 2} kind=magic
+contents_10: damage(val1) against={race 7} kind=physical
+contents_10: damage(val1) against={race 4} kind=physical
+contents_10: damage(val1) against={race 7} kind=magic
+contents_10: damage(val1) against={race 4} kind=magic
+contents_26: hit(val1)
+contents_26: damage(val2) against={element 10} kind=physical
+contents_26: damage(val2) against={element 10} kind=magic
+contents_27: crit(val1)
+contents_27: damage(val2) against={size 3} kind=physical
+contents_27: damage(val2) against={size 3} kind=magic
+contents_28: flee(val1)
+contents_28: damage(val2) kind=physical range=melee
+contents_28: damage(val2) kind=physical range=ranged
+contents_28: damage(val2) element=10 kind=magic
+contents_29: atk(val1) percent=true
+contents_29: matk(val1) percent=true
+contents_29: variable_cast_time(val2) percent=true
+contents_31: damage(val1) against={size 3} kind=physical
+contents_31: damage(val1) against={size 3} kind=magic
+contents_31: damage(val1) against={element 10} kind=physical
+contents_31: damage(val1) against={element 10} kind=magic
+contents_32: damage(val1) element=10 kind=magic
+contents_32: damage(val1) kind=physical range=melee
+contents_32: damage(val1) kind=physical range=ranged
+contents_32: matk(val1) percent=true
+contents_32: atk(val1) percent=true
+contents_33: variable_cast_time((0 - val1)) percent=true
+contents_33: max_hp(val1) percent=true
+contents_33: max_sp(val1) percent=true
+contents_34: aspd(val1) percent=true
+contents_34: crit(val2)
+contents_35: matk(val1)
+contents_35: atk(val1)
+c_buff_3: max_hp(val1) percent=true
+c_buff_3: max_sp(val1) percent=true
+c_buff_4: flee(val1)
+c_buff_4: hit(val1)
+c_buff_5: crit(val1)
+c_buff_5: aspd(val2)
+c_buff_6: atk(val1) percent=true
+c_buff_6: matk(val1) percent=true
+contents_15: damage(val1) against={element 10} kind=physical
+contents_15: damage(val1) against={element 10} kind=magic
+contents_16: damage(val1) against={size 3} kind=physical
+contents_16: damage(val1) against={size 3} kind=magic
+contents_17: damage(val1) element=10 kind=magic
+contents_17: damage(val1) kind=physical range=melee
+contents_17: damage(val1) kind=physical range=ranged
+contents_18: matk(val1) percent=true
+contents_18: atk(val1) percent=true
+contents_19: max_hp(val1) percent=true
+contents_19: max_sp(val1) percent=true
+contents_20: variable_cast_time(val1) percent=true
+contents_20: aspd(val2)

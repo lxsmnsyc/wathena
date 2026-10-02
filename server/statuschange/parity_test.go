@@ -1,0 +1,253 @@
+package statuschange_test
+
+import (
+	"flag"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+	"testing"
+
+	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/status"
+	sc "github.com/lxsmnsyc/wathena/server/statuschange"
+)
+
+var update = flag.Bool("update", false, "write testdata/status_effects_parity.md")
+
+// unit is a test entity.
+type unit struct {
+	kind     sc.Kind
+	st, base battle.Status
+	level    int
+	jobLevel int
+	hp, sp   int64
+	list     *sc.List
+	resEff   map[int]int
+	skills   map[int]int
+	id       int64
+}
+
+func (u *unit) Changes() *sc.List      { return u.list }
+func (u *unit) Kind() sc.Kind          { return u.kind }
+func (u *unit) Status() *battle.Status { return &u.st }
+func (u *unit) Base() *battle.Status   { return &u.base }
+func (u *unit) Level() int             { return u.level }
+func (u *unit) JobLevel() int          { return max(u.jobLevel, 1) }
+func (u *unit) HP() int64              { return u.hp }
+func (u *unit) SP() int64              { return u.sp }
+func (u *unit) Dead() bool             { return u.hp <= 0 }
+func (u *unit) ResEff(t int) int       { return u.resEff[t] }
+func (u *unit) Skill(id int) int       { return u.skills[id] }
+func (u *unit) AlwaysEndure() bool     { return false }
+func (u *unit) Ref() sc.Source         { return sc.Source{Kind: u.kind, ID: u.id} }
+func (u *unit) String() string         { return fmt.Sprintf("%v %d", u.kind, u.id) }
+func newUnit(k sc.Kind, st battle.Status) *unit {
+	return &unit{kind: k, st: st, base: st, level: st.Level, hp: int64(st.MaxHP), sp: int64(st.MaxSP), list: sc.NewList()}
+}
+
+// env is a test zone. Rolls return roll.
+type env struct {
+	now     int64
+	roll    int
+	icons   []string
+	started []string
+	ended   []string
+	ticked  []string
+	damage  []int64
+	recalc  int
+}
+
+func (e *env) Now() int64      { return e.now }
+func (e *env) RandN(n int) int { return min(e.roll, n-1) }
+func (e *env) Recalc(sc.Unit)  { e.recalc++ }
+func (e *env) Icon(u sc.Unit, icon int, on bool, tick int64, v1, v2, v3 int) {
+	e.icons = append(e.icons, fmt.Sprintf("%d:%v:%d", icon, on, tick))
+}
+func (e *env) OptionChanged(sc.Unit) {}
+func (e *env) StopWalking(sc.Unit)   {}
+func (e *env) StopAttacking(sc.Unit) {}
+func (e *env) Damage(u sc.Unit, hp, sp int64, passive, noKill bool) int64 {
+	t := u.(*unit)
+	hp = min(hp, t.hp)
+	t.hp -= hp
+	t.sp = max(t.sp-sp, 0)
+	e.damage = append(e.damage, hp)
+	return hp
+}
+func (e *env) Heal(u sc.Unit, hp, sp int64) {
+	t := u.(*unit)
+	t.hp = min(t.hp+hp, int64(t.st.MaxHP))
+}
+func (e *env) Started(u sc.Unit, x *sc.Entry) {
+	e.started = append(e.started, fmt.Sprint(x.Type))
+}
+func (e *env) Ended(u sc.Unit, x *sc.Entry, r sc.Reason) {
+	e.ended = append(e.ended, fmt.Sprintf("%d:%s", x.Type, r))
+}
+func (e *env) Ticked(u sc.Unit, x *sc.Entry)                              { e.ticked = append(e.ticked, fmt.Sprint(x.Type)) }
+func (e *env) Chance(t sc.Unit, s *sc.Source, typ, level, chance int) int { return chance }
+func (e *env) Duration(t sc.Unit, s *sc.Source, typ, level int, d int64) int64 {
+	return d
+}
+
+func loadDB(t *testing.T, mode reference.Mode) *sc.DB {
+	t.Helper()
+	var d sc.Data
+	if err := reference.LoadFile("extracts/"+string(mode)+"/status.json", &d); err != nil {
+		t.Fatal(err)
+	}
+	db, err := sc.Load(&d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return db
+}
+
+// knight is the recorder's sample knight: male, job level 50, no
+// equipment, and the raised stats of a build.
+func knight(t *testing.T, tables *status.Tables, level int, stats status.Stats) *unit {
+	t.Helper()
+	res, err := tables.Calc(status.Character{Job: 7, Male: true, BaseLevel: level, JobLevel: 50, Stats: stats})
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := newUnit(sc.KindPlayer, res.Battle)
+	u.base = res.Base
+	u.level, u.jobLevel = level, 50
+	// create_sample_pc gives the player 1 HP and 1 SP.
+	u.hp, u.sp = 1, 1
+	return u
+}
+
+// TestStatusEffectParity checks resistance and immunity against
+// status_effects.json: the chance and duration of status_get_sc_def,
+// and whether status_change_start starts the status with a 100% rate and
+// the lowest roll.
+func TestStatusEffectParity(t *testing.T) {
+	builds := map[string]status.Stats{
+		"all_1": {Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1}, "vit_50": {Str: 1, Agi: 1, Vit: 50, Int: 1, Dex: 1, Luk: 1},
+		"vit_99": {Str: 1, Agi: 1, Vit: 99, Int: 1, Dex: 1, Luk: 1}, "int_50": {Str: 1, Agi: 1, Vit: 1, Int: 50, Dex: 1, Luk: 1},
+		"int_99": {Str: 1, Agi: 1, Vit: 1, Int: 99, Dex: 1, Luk: 1}, "luk_50": {Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 50},
+		"luk_99": {Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 99}, "agi_99": {Str: 1, Agi: 99, Vit: 1, Int: 1, Dex: 1, Luk: 1},
+		"dex_99": {Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 99, Luk: 1}, "all_99": {Str: 99, Agi: 99, Vit: 99, Int: 99, Dex: 99, Luk: 99},
+	}
+	melee := status.Stats{Str: 90, Agi: 50, Vit: 30, Int: 1, Dex: 40, Luk: 1}
+	var report strings.Builder
+	report.WriteString("# Status effect parity\n\nGenerated by `go test ./server/statuschange -run TestStatusEffectParity -update`; do not edit.\n\n")
+	report.WriteString("Each case is one source, target, ailment, rate and duration of `reference/rathena/<mode>/status_effects.json`. A case matches when the chance, the duration and whether the status starts all match.\n\n")
+	report.WriteString("| Mode | Cases | Match | Chance | Duration | Starts |\n|---|---:|---:|---:|---:|---:|\n")
+	for _, mode := range reference.Modes {
+		db := loadDB(t, mode)
+		var jobs status.Data
+		if err := reference.LoadFile("extracts/"+string(mode)+"/job_stats.json", &jobs); err != nil {
+			t.Fatal(err)
+		}
+		tables, err := status.New(&jobs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var mobs struct {
+			Mobs []struct {
+				ID     int           `json:"id"`
+				Level  int           `json:"level"`
+				Status battle.Status `json:"status"`
+			} `json:"mobs"`
+		}
+		if err := reference.Load(mode, "mob_status", &mobs); err != nil {
+			t.Fatal(err)
+		}
+		mobStatus := map[string]battle.Status{}
+		for _, m := range mobs.Mobs {
+			st := m.Status
+			st.Level = m.Level
+			mobStatus[fmt.Sprintf("mob:%d", m.ID)] = st
+		}
+		var rec struct {
+			Cases []struct {
+				Chance   int    `json:"chance"`
+				Duration int64  `json:"duration"`
+				Starts   bool   `json:"starts"`
+				Source   string `json:"source"`
+				Target   string `json:"target"`
+				SC       string `json:"sc"`
+				Rate     int    `json:"rate"`
+				Tick     int64  `json:"tick"`
+			} `json:"cases"`
+		}
+		if err := reference.Load(mode, "status_effects", &rec); err != nil {
+			t.Fatal(err)
+		}
+		unitOf := func(name string) *unit {
+			if st, ok := mobStatus[name]; ok {
+				return newUnit(sc.KindMonster, st)
+			}
+			var level int
+			var build string
+			if _, err := fmt.Sscanf(strings.ReplaceAll(name, ":", " "), "pc knight %d %s", &level, &build); err == nil {
+				return knight(t, tables, level, builds[build])
+			}
+			if name == "pc:knight:99" {
+				return knight(t, tables, 99, melee)
+			}
+			t.Fatalf("unknown unit %s", name)
+			return nil
+		}
+		var matched, chanceOK, durationOK, startsOK int
+		mismatch := map[string]int{}
+		for _, c := range rec.Cases {
+			src, tgt := unitOf(c.Source), unitOf(c.Target)
+			def := db.ByName(strings.ToLower(strings.TrimPrefix(c.SC, "SC_")))
+			if def == nil {
+				t.Fatalf("no status %s", c.SC)
+			}
+			r := sc.Resist(db, src, tgt, def.ID, c.Rate, c.Tick, 0)
+			chance, duration := r.Chance(), r.Duration
+			if chance == 0 || r.Immune {
+				chance, duration = 0, 0
+			}
+			e := &env{roll: 0}
+			en := sc.New(db, e)
+			starts := en.Start(src, tgt, sc.Start{Type: def.ID, Rate: 10000, Val1: 1, Duration: c.Tick, Reason: sc.ReasonSkill})
+			ok1, ok2, ok3 := chance == c.Chance, duration == c.Duration, starts == c.Starts
+			if ok1 {
+				chanceOK++
+			}
+			if ok2 {
+				durationOK++
+			}
+			if ok3 {
+				startsOK++
+			}
+			if ok1 && ok2 && ok3 {
+				matched++
+				continue
+			}
+			key := fmt.Sprintf("%s on %s", c.SC, strings.SplitN(c.Target, ":", 2)[0])
+			mismatch[key]++
+			if mismatch[key] <= 2 {
+				t.Errorf("%s: %s from %s on %s rate %d: chance %d want %d, duration %d want %d, starts %v want %v",
+					mode, c.SC, c.Source, c.Target, c.Rate, chance, c.Chance, duration, c.Duration, starts, c.Starts)
+			}
+		}
+		fmt.Fprintf(&report, "| %s | %d | %d | %d | %d | %d |\n", mode, len(rec.Cases), matched, chanceOK, durationOK, startsOK)
+		var keys []string
+		for k := range mismatch {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			t.Logf("%s: %d cases differ: %s", mode, mismatch[k], k)
+		}
+		t.Logf("%s: %d of %d cases match (chance %d, duration %d, starts %d)", mode, matched, len(rec.Cases), chanceOK, durationOK, startsOK)
+	}
+	want, err := os.ReadFile("testdata/status_effects_parity.md")
+	if *update {
+		if err := os.WriteFile("testdata/status_effects_parity.md", []byte(report.String()), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	} else if err != nil || string(want) != report.String() {
+		t.Errorf("testdata/status_effects_parity.md is not current; run go test ./server/statuschange -run TestStatusEffectParity -update")
+	}
+}

@@ -71,7 +71,7 @@ func TestEvalLub(t *testing.T) {
 }
 
 func TestEvalLubRejectsCode(t *testing.T) {
-	const opCall, opJmp = 28, 22
+	const opJmp = 22
 	for name, code := range map[string][]uint32{
 		"call": {iABx(opGetGlob, 0, 0), iABC(opCall, 0, 1, 1)},
 		"jump": {iABx(opJmp, 0, 131071-1)},

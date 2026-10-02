@@ -205,6 +205,24 @@ func (q *Queries) DeleteInventorySlots(ctx context.Context, arg DeleteInventoryS
 	return err
 }
 
+const deleteStatuses = `-- name: DeleteStatuses :exec
+DELETE FROM character_statuses WHERE character_id = $1
+`
+
+func (q *Queries) DeleteStatuses(ctx context.Context, characterID int64) error {
+	_, err := q.db.Exec(ctx, deleteStatuses, characterID)
+	return err
+}
+
+const deleteTimedBonuses = `-- name: DeleteTimedBonuses :exec
+DELETE FROM character_timed_bonuses WHERE character_id = $1
+`
+
+func (q *Queries) DeleteTimedBonuses(ctx context.Context, characterID int64) error {
+	_, err := q.db.Exec(ctx, deleteTimedBonuses, characterID)
+	return err
+}
+
 const insertInventory = `-- name: InsertInventory :exec
 INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards)
 SELECT $1, unnest($2::smallint[]), unnest($3::integer[]),
@@ -236,6 +254,70 @@ func (q *Queries) InsertInventory(ctx context.Context, arg InsertInventoryParams
 		arg.Equips,
 		arg.Refines,
 		arg.Cards,
+	)
+	return err
+}
+
+const insertStatuses = `-- name: InsertStatuses :exec
+INSERT INTO character_statuses (character_id, name, val1, val2, val3, val4, tick, end_ms)
+SELECT $1, unnest($2::text[]), unnest($3::integer[]),
+    unnest($4::integer[]), unnest($5::integer[]), unnest($6::integer[]),
+    unnest($7::bigint[]), unnest($8::bigint[])
+`
+
+type InsertStatusesParams struct {
+	CharacterID int64
+	Names       []string
+	Val1s       []int
+	Val2s       []int
+	Val3s       []int
+	Val4s       []int
+	Ticks       []int64
+	Ends        []int64
+}
+
+func (q *Queries) InsertStatuses(ctx context.Context, arg InsertStatusesParams) error {
+	_, err := q.db.Exec(ctx, insertStatuses,
+		arg.CharacterID,
+		arg.Names,
+		arg.Val1s,
+		arg.Val2s,
+		arg.Val3s,
+		arg.Val4s,
+		arg.Ticks,
+		arg.Ends,
+	)
+	return err
+}
+
+const insertTimedBonus = `-- name: InsertTimedBonus :exec
+INSERT INTO character_timed_bonuses (character_id, position, key, remaining_ms, bonuses, ends_on, stack, icon, kind)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`
+
+type InsertTimedBonusParams struct {
+	CharacterID int64
+	Position    int
+	Key         string
+	RemainingMs int64
+	Bonuses     []byte
+	EndsOn      []string
+	Stack       bool
+	Icon        int
+	Kind        string
+}
+
+func (q *Queries) InsertTimedBonus(ctx context.Context, arg InsertTimedBonusParams) error {
+	_, err := q.db.Exec(ctx, insertTimedBonus,
+		arg.CharacterID,
+		arg.Position,
+		arg.Key,
+		arg.RemainingMs,
+		arg.Bonuses,
+		arg.EndsOn,
+		arg.Stack,
+		arg.Icon,
+		arg.Kind,
 	)
 	return err
 }
@@ -368,4 +450,92 @@ func (q *Queries) SaveCharacter(ctx context.Context, arg SaveCharacterParams) (i
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const statuses = `-- name: Statuses :many
+SELECT name, val1, val2, val3, val4, tick, end_ms FROM character_statuses
+WHERE character_id = $1
+ORDER BY name
+`
+
+type StatusesRow struct {
+	Name  string
+	Val1  int
+	Val2  int
+	Val3  int
+	Val4  int
+	Tick  int64
+	EndMs int64
+}
+
+func (q *Queries) Statuses(ctx context.Context, characterID int64) ([]StatusesRow, error) {
+	rows, err := q.db.Query(ctx, statuses, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []StatusesRow
+	for rows.Next() {
+		var i StatusesRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Val1,
+			&i.Val2,
+			&i.Val3,
+			&i.Val4,
+			&i.Tick,
+			&i.EndMs,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const timedBonuses = `-- name: TimedBonuses :many
+SELECT key, remaining_ms, bonuses, ends_on, stack, icon, kind FROM character_timed_bonuses
+WHERE character_id = $1
+ORDER BY position
+`
+
+type TimedBonusesRow struct {
+	Key         string
+	RemainingMs int64
+	Bonuses     []byte
+	EndsOn      []string
+	Stack       bool
+	Icon        int
+	Kind        string
+}
+
+func (q *Queries) TimedBonuses(ctx context.Context, characterID int64) ([]TimedBonusesRow, error) {
+	rows, err := q.db.Query(ctx, timedBonuses, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TimedBonusesRow
+	for rows.Next() {
+		var i TimedBonusesRow
+		if err := rows.Scan(
+			&i.Key,
+			&i.RemainingMs,
+			&i.Bonuses,
+			&i.EndsOn,
+			&i.Stack,
+			&i.Icon,
+			&i.Kind,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

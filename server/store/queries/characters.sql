@@ -65,3 +65,29 @@ INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refin
 SELECT @character_id, unnest(@slots::smallint[]), unnest(@item_ids::integer[]),
     unnest(@amounts::integer[]), unnest(@serials::uuid[]), unnest(@equips::integer[]),
     unnest(@refines::smallint[]), unnest(@cards::text[])::integer[];
+
+-- name: Statuses :many
+SELECT name, val1, val2, val3, val4, tick, end_ms FROM character_statuses
+WHERE character_id = @character_id
+ORDER BY name;
+
+-- name: DeleteStatuses :exec
+DELETE FROM character_statuses WHERE character_id = @character_id;
+
+-- name: InsertStatuses :exec
+INSERT INTO character_statuses (character_id, name, val1, val2, val3, val4, tick, end_ms)
+SELECT @character_id, unnest(@names::text[]), unnest(@val1s::integer[]),
+    unnest(@val2s::integer[]), unnest(@val3s::integer[]), unnest(@val4s::integer[]),
+    unnest(@ticks::bigint[]), unnest(@ends::bigint[]);
+
+-- name: TimedBonuses :many
+SELECT key, remaining_ms, bonuses, ends_on, stack, icon, kind FROM character_timed_bonuses
+WHERE character_id = @character_id
+ORDER BY position;
+
+-- name: DeleteTimedBonuses :exec
+DELETE FROM character_timed_bonuses WHERE character_id = @character_id;
+
+-- name: InsertTimedBonus :exec
+INSERT INTO character_timed_bonuses (character_id, position, key, remaining_ms, bonuses, ends_on, stack, icon, kind)
+VALUES (@character_id, @position, @key, @remaining_ms, @bonuses, @ends_on, @stack, @icon, @kind);

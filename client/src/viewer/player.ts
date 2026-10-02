@@ -1,5 +1,6 @@
 import type { Group, Vector3 } from 'three';
 import { type WMap, cellHeight, walkable } from '../formats/wmap';
+import { type Appearance, PLAIN } from './options';
 import {
   DEFAULT_SPEED,
   type Dir,
@@ -19,6 +20,8 @@ export interface Body {
   direction: number;
   play(action: number): void;
   update(deltaMs: number, cameraSteps: number, towardCamera: Vector3): void;
+  /** Multiplies the body's colors and opacity, from 0 to 1. */
+  setTint?(r: number, g: number, b: number, a: number): void;
 }
 
 export default class Player {
@@ -33,6 +36,8 @@ export default class Player {
   private override: { action: number; until: number } | undefined;
   private clock = 0;
   private body: Body;
+  /** How the player's status options make it look. */
+  private look: Appearance = PLAIN;
 
   constructor(
     character: Body,
@@ -63,6 +68,24 @@ export default class Player {
     body.direction = this.body.direction;
     body.group.position.copy(this.body.group.position);
     this.body = body;
+    this.applyLook();
+  }
+
+  /** How the player looks, such as tinted while frozen or hidden. */
+  get appearance(): Appearance {
+    return this.look;
+  }
+
+  /** Shows the player as its status options make it look. */
+  set appearance(look: Appearance) {
+    this.look = look;
+    this.applyLook();
+  }
+
+  private applyLook(): void {
+    const [r, g, b] = this.look.color;
+    this.body.setTint?.(r, g, b, this.look.opacity);
+    this.body.group.visible = this.look.visible;
   }
 
   /** The walkable cell nearest the map's center. */

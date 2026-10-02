@@ -116,8 +116,10 @@ func (z *Zone) npcAppear(id uint32, e *entity) *wathenav1.Event {
 type scriptEvent struct {
 	name string
 	args []modscript.Arg
-	// death is set for the death event, which runs with FireDeath.
-	death *modscript.Death
+	// death is set for the death event, which runs with FireDeath, and
+	// status for a status event, which runs with FireStatus.
+	death  *modscript.Death
+	status *modscript.StatusEvent
 	// release are monster handles that end after the event runs.
 	release []int64
 }
@@ -211,6 +213,8 @@ func (z *Zone) runScripts() {
 		case z.scripts == nil:
 		case ev.death != nil:
 			z.scripts.FireDeath(*ev.death)
+		case ev.status != nil:
+			z.scripts.FireStatus(ev.name, *ev.status)
 		default:
 			z.scripts.Fire(ev.name, ev.args...)
 		}

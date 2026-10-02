@@ -180,7 +180,7 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	}
 	z := h.Zone()
 	z.Items = l.itemTable()
-	z.Progress, z.Status, z.Start = e.Tables, e.Jobs, e.Start
+	z.Progress, z.Status, z.Start, z.Statuses = e.Tables, e.Jobs, e.Start, e.Statuses
 	if l.Tables != nil {
 		z.Progress = l.Tables
 	}

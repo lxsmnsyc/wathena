@@ -14,6 +14,10 @@ import (
 // evalLub runs only the instructions that load constants, build tables,
 // and read or write globals. Any other instruction, such as a function
 // call or a jump, stops evaluation with an error. No client code runs.
+//
+// One call is allowed. Some tables end with setmetatable(T, T), which
+// only guards T against new keys, as efstids.lub does. That call does
+// nothing here and returns T.
 
 // Lua 5.1 opcodes used by table-building chunks.
 const (
@@ -31,6 +35,7 @@ const (
 	opMul      = 14
 	opUnm      = 18
 	opConcat   = 21
+	opCall     = 28
 	opReturn   = 30
 	opSetList  = 34
 	opClosure  = 36
@@ -52,6 +57,10 @@ type LubTable struct {
 
 // lubFunction stands for a function defined in a chunk. It is never run.
 type lubFunction struct{}
+
+// lubSetMetatable stands for Lua's setmetatable when a chunk reads it
+// and has not defined a global of that name.
+type lubSetMetatable struct{}
 
 type lubProto struct {
 	code      []uint32
@@ -266,7 +275,11 @@ func evalLub(b []byte, globals map[string]any) error {
 				return err
 			}
 			name, _ := k.(string)
-			reg[a] = globals[name]
+			v, ok := globals[name]
+			if !ok && name == "setmetatable" {
+				v = lubSetMetatable{}
+			}
+			reg[a] = v
 			from[a] = name
 		case opSetGlob:
 			k, err := konst(bx)
@@ -377,6 +390,25 @@ func evalLub(b []byte, globals map[string]any) error {
 			}
 			reg[a] = lubFunction{}
 			pc += p.protos[bx].upvalues
+		case opCall:
+			// Only setmetatable(t, mt) with a fixed number of arguments
+			// and results is allowed. It does not change t here.
+			if _, ok := reg[a].(lubSetMetatable); !ok {
+				return fmt.Errorf("%w: lub calls %q, which is not data", ErrFormat, from[a])
+			}
+			if bb < 2 || c == 0 || int(a)+int(bb) > lubMaxStack || int(a)+int(c) > lubMaxStack {
+				return fmt.Errorf("%w: lub setmetatable call", ErrFormat)
+			}
+			t := reg[a+1]
+			if _, ok := t.(*LubTable); !ok {
+				return fmt.Errorf("%w: lub setmetatable on a non-table", ErrFormat)
+			}
+			for i := uint32(0); i+1 < c; i++ {
+				reg[a+i] = nil
+			}
+			if c >= 2 {
+				reg[a] = t
+			}
 		case opReturn:
 			return nil
 		default:

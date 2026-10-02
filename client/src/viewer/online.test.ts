@@ -252,3 +252,83 @@ describe('LookChange', () => {
     expect(o.group.children).not.toContain(before?.group);
   });
 });
+
+describe('status icons and options', () => {
+  it('passes the player status icons on', () => {
+    const o = online();
+    o.setMap(map());
+    const icons: [number, boolean, number][] = [];
+    o.onStatusIcon = (icon, on, remainingMs) => {
+      icons.push([icon, on, remainingMs]);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'statusIcon', value: { icon: 12, on: true, remainingMs: 60_000n } },
+      }),
+      create(EventSchema, {
+        body: { case: 'statusIcon', value: { icon: 12, on: false, remainingMs: 0n } },
+      }),
+    ]);
+    expect(icons).toEqual([
+      [12, true, 60_000],
+      [12, false, 0],
+    ]);
+  });
+
+  it('tints and hides units by their options, also while they load', async () => {
+    vi.stubGlobal('reportError', () => {});
+    const sprites = {
+      get: async () => {
+        await Promise.resolve();
+        return sprite();
+      },
+      palette: async () => {
+        await Promise.resolve();
+        return undefined;
+      },
+    } as unknown as SpriteCache;
+    const o = new Online(1, sprites, {} as Pathfinder);
+    o.setMap(map());
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 1, kind: EntityKind.PLAYER, x: 1, y: 1, look: { body: 0 } },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: {
+            id: 2,
+            kind: EntityKind.MONSTER,
+            x: 2,
+            y: 2,
+            look: { body: 1002 },
+            options: { option: 0x2 },
+          },
+        },
+      }),
+      // The player freezes while its sprites load.
+      create(EventSchema, {
+        body: { case: 'optionChange', value: { id: 1, options: { body: 2 } } },
+      }),
+    ]);
+    await settle();
+    const me = o.me;
+    expect(me?.appearance.color).toEqual([0.55, 0.75, 1]);
+    // The hidden monster does not show.
+    expect(o.group.children.some((c) => !c.visible)).toBe(true);
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'optionChange', value: { id: 1, options: { option: 0x4 } } },
+      }),
+      create(EventSchema, {
+        body: { case: 'optionChange', value: { id: 2, options: {} } },
+      }),
+    ]);
+    expect(me?.appearance).toMatchObject({ visible: true, opacity: 0.5 });
+    expect(me?.character.group.visible).toBe(true);
+    expect(o.group.children.every((c) => c.visible)).toBe(true);
+  });
+});

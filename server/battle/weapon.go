@@ -125,9 +125,9 @@ func calcWeaponAttack(src, target *Status, r Rand) damage {
 			sumPlayerDamage(&wd, src)
 		}
 
-		// Skill ratio: battle_calc_attack_skill_ratio is 100 with no
-		// skill and no status changes.
-		wd.rate(src, 100)
+		// Skill ratio: battle_calc_attack_skill_ratio with no skill is
+		// renewal's ATK percent of status changes.
+		wd.rate(src, src.atkPercent())
 
 		// battle_calc_skill_constant_addition is 0 with no skill.
 
@@ -298,7 +298,11 @@ func isAttackCritical(wd *damage, src, target *Status, r Rand) bool {
 		factor = 3
 	}
 	cri -= target.Luk * factor
-	// Status changes (Sleep, Auto Counter, Camouflage) are not ported.
+	// Sleep doubles it. Auto Counter and Camouflage come with their
+	// skills.
+	if tc := target.Changes; tc != nil && tc.Sleep {
+		cri *= 2
+	}
 	if tsd := target.Player; tsd != nil && tsd.CriticalDef != 0 {
 		cri = cri * (100 - tsd.CriticalDef) / 100
 	}
@@ -312,6 +316,10 @@ func isAttackHitting(wd *damage, src, target *Status, critical bool, r Rand) boo
 		return true
 	}
 	if sd := src.Player; sd != nil && sd.PerfectHit > 0 && r.IntN(100) < sd.PerfectHit {
+		return true
+	}
+	// A target that is stunned, frozen, asleep or stone is always hit.
+	if tc := target.Changes; tc != nil && tc.Opt1 != 0 && tc.Opt1 != opt1StoneWait && tc.Opt1 != opt1Burning {
 		return true
 	}
 

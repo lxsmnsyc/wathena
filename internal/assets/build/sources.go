@@ -359,14 +359,20 @@ func (g *GRF) Items() ([]Item, error) {
 	return append(items, tracks...), nil
 }
 
-// items lists item images and dropped-item sprites, named by item ID.
-// Many items share one file, such as the icon every card uses, so each
-// file converts once however many names use it.
+// items lists item images and dropped-item sprites, named by item ID, and
+// status icons, named by status ID. Many items share one file, such as
+// the icon every card uses, so each file converts once however many names
+// use it.
 func (g *GRF) items(c *grf.Client) ([]Item, error) {
 	textures, sprites, err := grfimport.ItemAssets(c)
 	if err != nil {
 		return nil, err
 	}
+	statusIcons, err := grfimport.StatusIconAssets(c)
+	if err != nil {
+		return nil, err
+	}
+	textures = append(textures, statusIcons...)
 	var items []Item
 	converted := map[string]func() ([]byte, error){}
 	once := func(key string, f func() ([]byte, error)) func() ([]byte, error) {

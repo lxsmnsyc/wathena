@@ -33,7 +33,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.sizes`](#wasizes) | Sizes, from rAthena's Size_ names. |
 | [`wa.monster_classes`](#wamonster_classes) | Monster classes, from rAthena's CLASS_ names. |
 | [`wa.weapon_types`](#waweapon_types) | Weapon types, from rAthena's W_ names. |
-| [`wa.statuses`](#wastatuses) | Status effects, from rAthena's SC_ names. |
+| [`wa.statuses`](#wastatuses) | Status effects, from rAthena's SC_ names, and the statuses mods define. |
 | [`wa.effects`](#waeffects) | Effects for player:show_effect, from rAthena's EF_ names. |
 | [`wa.headgear_effects`](#waheadgear_effects) | Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names. |
 | [`wa.emotions`](#waemotions) | Emotions for npc:show_emotion, from rAthena's ET_ names. |
@@ -68,7 +68,7 @@ local events = require "wa.events"
 
 Event handlers. The context owns them, and removes them when it ends.
 
-#### `events.on(name, handler, options?) → wa.EventHandle`
+#### `events.on(name, handler, options) → wa.EventHandle`
 
 Registers a handler for an event.
 
@@ -78,7 +78,7 @@ Permission: `event.listen`.
 |---|---|---|
 | `name` | `wa.EventName` | The event's name. An unknown name, or an event of another context kind, raises an error. |
 | `handler` | `function` | Runs each time the event fires, in registration order. |
-| `options` | `wa.DeathOptions?` | Only the death event takes options: they narrow which deaths run the handler. |
+| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|nil` | Only the death and status events take options: they narrow which events run the handler. |
 
 ### wa.hooks
 
@@ -97,7 +97,7 @@ Permission: `rules.override`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `wa.HookName` | The hook's name. An unknown name raises an error. |
-| `hook` | `fun(object: wa.Drop\|wa.Exp, next: fun(object?: table): integer, integer?): integer, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp. |
+| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook, next: fun(object?: table): integer, integer?): integer, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration returns milliseconds. |
 | `options` | `wa.HookOptions?` |  |
 
 ### wa.schedules
@@ -672,9 +672,17 @@ Constants: [lua-constants.md](lua-constants.md#waweapon_types).
 local statuses = require "wa.statuses"
 ```
 
-Status effects, from rAthena's SC_ names.
+Status effects, from rAthena's SC_ names, and the statuses mods define.
 
 Constants: [lua-constants.md](lua-constants.md#wastatuses).
+
+#### `statuses.define(definition)`
+
+Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `definition` | `wa.StatusDefinition` |  |
 
 ### wa.effects
 
@@ -1002,25 +1010,16 @@ Permission: `game.read`.
 |---|---|---|
 | `slot` | `wa.EquipSlot` |  |
 
-#### `player:start_status(status, options?)`
-
-Raises an error until status effects exist (phase 4).
-
-| Parameter | Type | Meaning |
-|---|---|---|
-| `status` | `integer` | A status from wa.statuses. |
-| `options` | `table?` |  |
-
 #### `player:add_timed_bonuses(key, milliseconds, bonuses, options?)`
 
-Raises an error until timed bonuses exist (phase 4).
+Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `key` | `string` |  |
-| `milliseconds` | `integer` |  |
-| `bonuses` | `table` |  |
-| `options` | `table?` |  |
+| `key` | `string` | 1 to 64 bytes. Timed bonuses with the same key replace each other, unless stack is set. |
+| `milliseconds` | `integer` | 1 or more. |
+| `bonuses` | `table` | A list of entries: a bonus name, its arguments, and its options, as in bonuses.add, such as { { "str", 5 } }. |
+| `options` | `wa.TimedBonusOptions?` |  |
 
 #### `player:mark_minimap(id, x, y, color)`
 
@@ -1049,6 +1048,49 @@ Opens a shop, as callshop.
 |---|---|---|
 | `shop` | `string` | A shop record of data/npcs.yml: the mod's own name, or mod:Name. |
 
+#### `player:start_status(status, options?) → boolean`
+
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` | A status from wa.statuses. |
+| `options` | `wa.StatusOptions?` |  |
+
+#### `player:end_status(status) → boolean`
+
+Ends a status, as sc_end. Returns true when it was active.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `player:has_status(status) → boolean`
+
+Whether a status is active, as getstatus.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `player:get_status(status) → wa.Status?`
+
+An active status, or nil.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `player:get_statuses() → wa.Status[]`
+
+The active statuses, by status.
+
+Permission: `game.read`.
+
 ### wa.Monster
 
 A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.
@@ -1065,6 +1107,49 @@ A monster. A killed monster's handle reads while its death event runs, with is_a
 | `x` | `integer` |  |
 | `y` | `integer` |  |
 | `is_alive` | `boolean` |  |
+
+#### `monster:start_status(status, options?) → boolean`
+
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` | A status from wa.statuses. |
+| `options` | `wa.StatusOptions?` |  |
+
+#### `monster:end_status(status) → boolean`
+
+Ends a status, as sc_end. Returns true when it was active.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `monster:has_status(status) → boolean`
+
+Whether a status is active, as getstatus.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `monster:get_status(status) → wa.Status?`
+
+An active status, or nil.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `monster:get_statuses() → wa.Status[]`
+
+The active statuses, by status.
+
+Permission: `game.read`.
 
 ### wa.Npc
 
@@ -1093,6 +1178,49 @@ Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it
 | Parameter | Type | Meaning |
 |---|---|---|
 | `text` | `string` |  |
+
+#### `npc:start_status(status, options?) → boolean`
+
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` | A status from wa.statuses. |
+| `options` | `wa.StatusOptions?` |  |
+
+#### `npc:end_status(status) → boolean`
+
+Ends a status, as sc_end. Returns true when it was active.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `npc:has_status(status) → boolean`
+
+Whether a status is active, as getstatus.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `npc:get_status(status) → wa.Status?`
+
+An active status, or nil.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+
+#### `npc:get_statuses() → wa.Status[]`
+
+The active statuses, by status.
+
+Permission: `game.read`.
 
 ### wa.EquippedItem
 
@@ -1561,6 +1689,94 @@ The options table of bonuses.add (0002a). Each name takes the options 0002a list
 | `priority` | `integer?` |  |
 | `when` | `(fun(): boolean)?` | A condition, tracked like a computed bonus. |
 
+### wa.StatusOptions
+
+The options of entity:start_status.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `milliseconds` | `integer\|"forever"\|nil` | The duration, 1 to 2,147,483,647, or forever. Without it, the duration rAthena's sc_start looks up for the level, from the status's skill. |
+| `level` | `integer?` | rAthena's val1. 1 by default. |
+| `values` | `integer[]?` | val2 to val4, for the statuses that read them. |
+| `chance` | `integer?` | Per 10,000, before resistance. 10000 by default. |
+| `source` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | Who caused the status: its stats and level count for resistance, and events and get_status show it. Without it, the target's own stats count, as rAthena's sc_start. |
+| `cannot_be_avoided` | `boolean?` | SCSTART_NOAVOID: no resistance, no chance roll, and no boss immunity. |
+| `keep_duration` | `boolean?` | SCSTART_NOTICKDEF: resistance does not shorten the duration. |
+| `keep_chance` | `boolean?` | SCSTART_NORATEDEF: resistance does not lower the chance. |
+| `hide_icon` | `boolean?` | SCSTART_NOICON: the status shows no icon. |
+
+### wa.Status
+
+An active status, as entity:get_status returns it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `status` | `integer` |  |
+| `level` | `integer` | val1. |
+| `values` | `integer[]` | val2 to val4. |
+| `remaining_milliseconds` | `integer\|"forever"` |  |
+| `source` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | Who caused it, or nil. |
+
+### wa.StatusEvent
+
+The object of status_start, status_end and status_tick.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `target` | `wa.Player\|wa.Monster\|wa.Npc` | target.kind says which. |
+| `status` | `integer` |  |
+| `level` | `integer` |  |
+| `source` | `wa.Player\|wa.Monster\|wa.Npc\|nil` |  |
+| `milliseconds` | `integer\|"forever"` | The duration at status_start, and the time left at status_end and status_tick. |
+| `reason` | `string?` | Why it started: "skill", "item", "bonus", "script" or "login". Why it ended: "expired", "removed", "replaced", "death", "dispell", "clearance", "logout" or "damage". nil for status_tick. |
+
+### wa.StatusEventOptions
+
+The options of a status event handler. Each one narrows the events that run it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `status` | `integer?` | A status from wa.statuses. |
+| `target_kind` | `"player"\|"monster"\|"npc"\|nil` |  |
+| `map` | `string?` | A map name. |
+
+### wa.StatusHook
+
+The object of the status_chance and status_duration hooks: a status that starts. The innermost result is rAthena's value after resistance.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `target` | `wa.Player\|wa.Monster\|wa.Npc` |  |
+| `status` | `integer` |  |
+| `level` | `integer` |  |
+| `source` | `wa.Player\|wa.Monster\|wa.Npc\|nil` |  |
+| `chance` | `integer?` | status_chance: the chance, per 10,000. |
+| `milliseconds` | `integer?` | status_duration: the duration. |
+
+### wa.StatusDefinition
+
+The status of statuses.define.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 48 lower case letters, digits and _, starting with a letter. The constant's name in wa.statuses. |
+| `icon` | `integer?` | The status icon (EFST_ ID) players see. None by default. |
+| `kind` | `"buff"\|"debuff"\|nil` | "buff" by default. |
+| `ends_on` | `string[]?` | What ends the status besides its time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage. Nothing by default. |
+| `bonuses` | `(fun(level: integer): table)?` | Returns bonus entries for a level, as add_timed_bonuses takes them. They apply to players while the status lasts. |
+| `tick_milliseconds` | `integer?` | From 100: status_tick fires at this interval, and once more when the status runs out, as rAthena's statuses that tick. |
+
+### wa.TimedBonusOptions
+
+Options of player:add_timed_bonuses.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ends_on` | `string[]?` | What ends the bonuses besides their time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage. |
+| `stack` | `boolean?` | Adds the bonuses next to others with the same key, instead of replacing them. |
+| `icon` | `integer?` | A status icon (EFST_ ID) to show while they last. |
+| `kind` | `"buff"\|"debuff"\|nil` |  |
+
 ### wa.NewPlayerSpec
 
 The character of world:new_player.
@@ -1772,6 +1988,9 @@ Changes the value.
 | `damage` | item | `hit: wa.Damage` | A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3). |
 | `skill_used` | item | `use: wa.SkillUse` | The wearer uses a skill. It fires in tests until skills exist (phase 4 step 3). |
 | `unequip` | item | `player: wa.Player` | The copy is unequipped, before its context ends. |
+| `status_start` | mod, event | `event: wa.StatusEvent` | A status started on an entity of the context's map, or started again. Options narrow it. |
+| `status_end` | mod, event | `event: wa.StatusEvent` | A status ended. Options narrow it. |
+| `status_tick` | mod, event | `event: wa.StatusEvent` | A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it. |
 
 ## Named types
 
@@ -1785,7 +2004,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `click`, `touch`, `use`, `damage`, `skill_used`, `unequip`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `click`, `touch`, `use`, `damage`, `skill_used`, `unequip`, `status_start`, `status_end`, `status_tick`
 
 ### wa.BonusName
 

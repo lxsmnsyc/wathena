@@ -38,6 +38,7 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `texture/<path>` | Texture | `texture/prontera/ground01` | Textures that maps and models use. |
 | `ui/<path>` | Texture | `ui/login/background` | Interface images. |
 | `icon/item/<id>` | Texture | `icon/item/501` | Item icons, by item ID. |
+| `icon/status/<id>` | Texture | `icon/status/12` | Status icons, by status ID (the client's `EFST_` number). |
 | `image/item/<id>`, `image/card/<id>` | Texture | `image/card/4001` | An item's large image and a card's art, by item ID. |
 | `image/<kind>/<name>` | Texture | `image/illust/kafra` | Other large images: `illust` (NPC illustrations) and `emblem`. |
 | `model/<path>` | Model | `model/prontera/fountain` | 3D models. |
@@ -75,6 +76,16 @@ Item assets are named by item ID, so game data and the client refer to an item b
 | `num2cardillustnametable.txt` | `data\texture\유저인터페이스\cardbmp\<name>.bmp` | `image/card/<id>` |
 
 Many items share one file, such as the icon every card uses. The build converts each file once, and stores it once.
+
+### Status icons from a game client
+
+Status icons are named by status ID, the client's `EFST_` number, which the server sends in `StatusIcon` events. The GRF importer reads two tables in `data\luafiles514\lua files\stateicon\`:
+
+| Client table | Files | Names |
+|---|---|---|
+| `efstids.lub` (`EFST_IDs`, the status constants) and `stateiconimginfo.lub` (`StateIconImgList`, from priority to a table from status ID to file name) | `data\texture\effect\<file>` | `icon/status/<id>` |
+
+The importer tries the file name as given, then the same name with each image extension. Icons whose file is missing are left out. When an ID is listed under two priorities, the lower priority number wins.
 
 ### Item text from a game client
 

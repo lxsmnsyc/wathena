@@ -24,6 +24,9 @@
 ---| "damage"
 ---| "skill_used"
 ---| "unequip"
+---| "status_start"
+---| "status_end"
+---| "status_tick"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -343,16 +346,11 @@ function wa_Player:get_skill_level(skill) end
 ---@return wa.EquippedItem?
 function wa_Player:get_equipped(slot) end
 
----Raises an error until status effects exist (phase 4).
----@param status integer A status from wa.statuses.
----@param options? table
-function wa_Player:start_status(status, options) end
-
----Raises an error until timed bonuses exist (phase 4).
----@param key string
----@param milliseconds integer
----@param bonuses table
----@param options? table
+---Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout.
+---@param key string 1 to 64 bytes. Timed bonuses with the same key replace each other, unless stack is set.
+---@param milliseconds integer 1 or more.
+---@param bonuses table A list of entries: a bonus name, its arguments, and its options, as in bonuses.add, such as { { "str", 5 } }.
+---@param options? wa.TimedBonusOptions
 function wa_Player:add_timed_bonuses(key, milliseconds, bonuses, options) end
 
 ---Marks a cell on the minimap, as viewpoint. A mark with the same ID replaces it.
@@ -370,6 +368,37 @@ function wa_Player:unmark_minimap(id) end
 ---@param shop string A shop record of data/npcs.yml: the mod's own name, or mod:Name.
 function wa_Player:open_shop(shop) end
 
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+---@param status integer A status from wa.statuses.
+---@param options? wa.StatusOptions
+---@return boolean
+function wa_Player:start_status(status, options) end
+
+---Ends a status, as sc_end. Returns true when it was active.
+---@param status integer
+---@return boolean
+function wa_Player:end_status(status) end
+
+---Whether a status is active, as getstatus.
+---
+---Needs the permission `game.read`.
+---@param status integer
+---@return boolean
+function wa_Player:has_status(status) end
+
+---An active status, or nil.
+---
+---Needs the permission `game.read`.
+---@param status integer
+---@return wa.Status?
+function wa_Player:get_status(status) end
+
+---The active statuses, by status.
+---
+---Needs the permission `game.read`.
+---@return wa.Status[]
+function wa_Player:get_statuses() end
+
 ---A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.
 ---@class wa.Monster
 ---@field kind "monster" The entity's kind.
@@ -383,6 +412,37 @@ function wa_Player:open_shop(shop) end
 ---@field y integer
 ---@field is_alive boolean
 local wa_Monster = {}
+
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+---@param status integer A status from wa.statuses.
+---@param options? wa.StatusOptions
+---@return boolean
+function wa_Monster:start_status(status, options) end
+
+---Ends a status, as sc_end. Returns true when it was active.
+---@param status integer
+---@return boolean
+function wa_Monster:end_status(status) end
+
+---Whether a status is active, as getstatus.
+---
+---Needs the permission `game.read`.
+---@param status integer
+---@return boolean
+function wa_Monster:has_status(status) end
+
+---An active status, or nil.
+---
+---Needs the permission `game.read`.
+---@param status integer
+---@return wa.Status?
+function wa_Monster:get_status(status) end
+
+---The active statuses, by status.
+---
+---Needs the permission `game.read`.
+---@return wa.Status[]
+function wa_Monster:get_statuses() end
 
 ---An NPC: the instance of an NPC context.
 ---@class wa.Npc
@@ -400,6 +460,37 @@ function wa_Npc:show_emotion(emotion) end
 ---Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it.
 ---@param text string
 function wa_Npc:say_aloud(text) end
+
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick.
+---@param status integer A status from wa.statuses.
+---@param options? wa.StatusOptions
+---@return boolean
+function wa_Npc:start_status(status, options) end
+
+---Ends a status, as sc_end. Returns true when it was active.
+---@param status integer
+---@return boolean
+function wa_Npc:end_status(status) end
+
+---Whether a status is active, as getstatus.
+---
+---Needs the permission `game.read`.
+---@param status integer
+---@return boolean
+function wa_Npc:has_status(status) end
+
+---An active status, or nil.
+---
+---Needs the permission `game.read`.
+---@param status integer
+---@return wa.Status?
+function wa_Npc:get_status(status) end
+
+---The active statuses, by status.
+---
+---Needs the permission `game.read`.
+---@return wa.Status[]
+function wa_Npc:get_statuses() end
 
 ---An equipped copy: the instance of an equip context, or what player:get_equipped returns.
 ---@class wa.EquippedItem
@@ -730,6 +821,73 @@ local wa_BonusTarget = {}
 ---@field priority integer?
 ---@field when (fun(): boolean)? A condition, tracked like a computed bonus.
 local wa_BonusOptions = {}
+
+---The options of entity:start_status.
+---@class wa.StatusOptions
+---@field milliseconds integer|"forever"|nil The duration, 1 to 2,147,483,647, or forever. Without it, the duration rAthena's sc_start looks up for the level, from the status's skill.
+---@field level integer? rAthena's val1. 1 by default.
+---@field values integer[]? val2 to val4, for the statuses that read them.
+---@field chance integer? Per 10,000, before resistance. 10000 by default.
+---@field source wa.Player|wa.Monster|wa.Npc|nil Who caused the status: its stats and level count for resistance, and events and get_status show it. Without it, the target's own stats count, as rAthena's sc_start.
+---@field cannot_be_avoided boolean? SCSTART_NOAVOID: no resistance, no chance roll, and no boss immunity.
+---@field keep_duration boolean? SCSTART_NOTICKDEF: resistance does not shorten the duration.
+---@field keep_chance boolean? SCSTART_NORATEDEF: resistance does not lower the chance.
+---@field hide_icon boolean? SCSTART_NOICON: the status shows no icon.
+local wa_StatusOptions = {}
+
+---An active status, as entity:get_status returns it.
+---@class wa.Status
+---@field status integer
+---@field level integer val1.
+---@field values integer[] val2 to val4.
+---@field remaining_milliseconds integer|"forever"
+---@field source wa.Player|wa.Monster|wa.Npc|nil Who caused it, or nil.
+local wa_Status = {}
+
+---The object of status_start, status_end and status_tick.
+---@class wa.StatusEvent
+---@field target wa.Player|wa.Monster|wa.Npc target.kind says which.
+---@field status integer
+---@field level integer
+---@field source wa.Player|wa.Monster|wa.Npc|nil
+---@field milliseconds integer|"forever" The duration at status_start, and the time left at status_end and status_tick.
+---@field reason string? Why it started: "skill", "item", "bonus", "script" or "login". Why it ended: "expired", "removed", "replaced", "death", "dispell", "clearance", "logout" or "damage". nil for status_tick.
+local wa_StatusEvent = {}
+
+---The options of a status event handler. Each one narrows the events that run it.
+---@class wa.StatusEventOptions
+---@field status integer? A status from wa.statuses.
+---@field target_kind "player"|"monster"|"npc"|nil
+---@field map string? A map name.
+local wa_StatusEventOptions = {}
+
+---The object of the status_chance and status_duration hooks: a status that starts. The innermost result is rAthena's value after resistance.
+---@class wa.StatusHook
+---@field target wa.Player|wa.Monster|wa.Npc
+---@field status integer
+---@field level integer
+---@field source wa.Player|wa.Monster|wa.Npc|nil
+---@field chance integer? status_chance: the chance, per 10,000.
+---@field milliseconds integer? status_duration: the duration.
+local wa_StatusHook = {}
+
+---The status of statuses.define.
+---@class wa.StatusDefinition
+---@field name string 1 to 48 lower case letters, digits and _, starting with a letter. The constant's name in wa.statuses.
+---@field icon integer? The status icon (EFST_ ID) players see. None by default.
+---@field kind "buff"|"debuff"|nil "buff" by default.
+---@field ends_on string[]? What ends the status besides its time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage. Nothing by default.
+---@field bonuses (fun(level: integer): table)? Returns bonus entries for a level, as add_timed_bonuses takes them. They apply to players while the status lasts.
+---@field tick_milliseconds integer? From 100: status_tick fires at this interval, and once more when the status runs out, as rAthena's statuses that tick.
+local wa_StatusDefinition = {}
+
+---Options of player:add_timed_bonuses.
+---@class wa.TimedBonusOptions
+---@field ends_on string[]? What ends the bonuses besides their time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage.
+---@field stack boolean? Adds the bonuses next to others with the same key, instead of replacing them.
+---@field icon integer? A status icon (EFST_ ID) to show while they last.
+---@field kind "buff"|"debuff"|nil
+local wa_TimedBonusOptions = {}
 
 ---The character of world:new_player.
 ---

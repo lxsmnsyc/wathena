@@ -623,6 +623,8 @@ func (b *body) call(e *Call) (val, error) {
 			return val{}, unsupported(name, "a computed skill")
 		}
 		return done(val{code: "player:get_skill_level(" + f.record("skills.id", skill) + ")", t: tInt}, nil)
+	case "getstatus":
+		return done(b.getstatus(args))
 	case "playerattached":
 		return done(intVal(1), nil)
 	case "min", "max":
@@ -875,6 +877,24 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		b.line("player:show_effect(%s)", e)
+	case "sc_start", "sc_start2", "sc_start4":
+		return b.scStart(name, args)
+	case "sc_end":
+		if len(args) != 1 {
+			return unsupported(name, "on another character")
+		}
+		v, err := b.expr(args[0])
+		if err != nil {
+			return err
+		}
+		if v.static != nil && *v.static < 0 {
+			return unsupported(name, "of every status (SC_ALL)")
+		}
+		st, err := b.constant(args[0], "statuses")
+		if err != nil {
+			return err
+		}
+		b.line("player:end_status(%s)", st)
 	case "dispbottom", "message":
 		text := args
 		if name == "message" {

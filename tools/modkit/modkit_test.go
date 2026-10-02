@@ -98,7 +98,7 @@ local variables = require "wa.variables"
 local ticks = variables.server_integer "ticks"
 local kills = variables.character_integer "kills"
 local RED_POTION = items.id "Red_Potion"
-local GREEN_POTION = items.id "Green_Potion"
+local UNRIPE_APPLE = items.id "Unripe_Apple"
 
 return function()
   testing.case("the kafra saves and charges for a teleport", function(world)
@@ -128,11 +128,11 @@ return function()
   end)
 
   testing.case("items are used up and refused", function(world)
-    local player = world:new_player { x = 150, y = 150, items = { { RED_POTION, 2 }, { GREEN_POTION, 1 } } }
+    local player = world:new_player { x = 150, y = 150, items = { { RED_POTION, 2 }, { UNRIPE_APPLE, 1 } } }
     world:use_item(player, RED_POTION)
     world:use_item(player, RED_POTION)
     testing.expect(player:count_item(RED_POTION)).to_be(0)
-    testing.expect(function() world:use_item(player, GREEN_POTION) end).to_fail_with("not supported")
+    testing.expect(function() world:use_item(player, UNRIPE_APPLE) end).to_fail_with("not supported")
     testing.expect(function() world:use_item(player, RED_POTION) end).to_fail_with("has no Red_Potion")
   end)
 
@@ -188,5 +188,180 @@ end`,
 	}
 	if got := failures["asks for more answers"]; !strings.HasPrefix(got, "tests/fail_test.lua:9: world:talk: the conversation asks for a menu choice") {
 		t.Errorf("failure: %q", got)
+	}
+}
+
+// TestStatusAPI runs a mod's tests of the status API of proposal 0002,
+// review decision 19: starting, reading and ending statuses on players
+// and monsters, the status events and hooks, a mod status, and timed
+// bonuses.
+func TestStatusAPI(t *testing.T) {
+	dir := writeMod(t, map[string]string{
+		"mod.yaml": `id: example.statuses
+name: Statuses
+version: 1.0.0
+api: experimental
+depends:
+  - id: core
+permissions:
+  - event.listen
+  - game.read
+  - rules.override
+scripts:
+  - scripts/main.lua
+`,
+		"scripts/main.lua": `
+local events = require "wa.events"
+local hooks = require "wa.hooks"
+local statuses = require "wa.statuses"
+local variables = require "wa.variables"
+local log = variables.server_string "log"
+
+local function note(s)
+  log:set(log:get() .. s .. ";")
+end
+
+return function()
+  statuses.define {
+    name = "glow",
+    tick_milliseconds = 1000,
+    ends_on = { "death" },
+    bonuses = function(level)
+      return { { "max_sp", 10 * level } }
+    end,
+  }
+  events.on("status_start", function(ev)
+    note("start " .. ev.target.kind .. " " .. ev.level .. " " .. ev.reason .. " " .. tostring(ev.milliseconds))
+  end, { status = statuses.blessing })
+  events.on("status_end", function(ev)
+    note("end " .. ev.target.kind .. " " .. ev.status .. " " .. ev.reason)
+  end, { target_kind = "monster" })
+  events.on("status_tick", function(ev)
+    note("tick " .. ev.level)
+  end, { status = statuses.glow })
+  hooks.on("status_duration", function(h, next)
+    if h.status == statuses.decreaseagi then
+      return 1234
+    end
+    return next()
+  end)
+  hooks.on("status_chance", function(h, next)
+    if h.status == statuses.curse then
+      return 0
+    end
+    return next()
+  end)
+end`,
+		"tests/status_test.lua": `
+local testing = require "wa.testing"
+local statuses = require "wa.statuses"
+local monsters = require "wa.monsters"
+local variables = require "wa.variables"
+local log = variables.server_string "log"
+
+return function()
+  testing.case("start, read and end a status", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    testing.expect(player:start_status(statuses.blessing, { milliseconds = 10000, level = 10 })).to_be_true()
+    testing.expect(player:has_status(statuses.blessing)).to_be_true()
+    local s = player:get_status(statuses.blessing)
+    testing.expect(s.status).to_be(statuses.blessing)
+    testing.expect(s.level).to_be(10)
+    testing.expect(s.remaining_milliseconds).to_be(10000)
+    testing.expect(s.source).to_be_nil()
+    testing.expect(#player:get_statuses()).to_be(1)
+    -- Events of a script's start run after the script's call.
+    world:advance(50)
+    testing.expect(log:get()).to_contain("start player 10 script 10000;")
+    world:advance(3950)
+    testing.expect(player:get_status(statuses.blessing).remaining_milliseconds).to_be(6000)
+    testing.expect(player:end_status(statuses.blessing)).to_be_true()
+    testing.expect(player:end_status(statuses.blessing)).to_be_false()
+    testing.expect(player:get_status(statuses.blessing)).to_be_nil()
+  end)
+
+  testing.case("forever and values", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    player:start_status(statuses.strfood, { milliseconds = "forever", level = 5, values = { 1, 2, 3 } })
+    local s = player:get_status(statuses.strfood)
+    testing.expect(s.remaining_milliseconds).to_be("forever")
+    testing.expect({ s.values[1], s.values[2], s.values[3] }).to_equal({ 1, 2, 3 })
+  end)
+
+  testing.case("hooks change the duration and the chance", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    player:start_status(statuses.decreaseagi, { milliseconds = 5000, cannot_be_avoided = true })
+    testing.expect(player:get_status(statuses.decreaseagi).remaining_milliseconds).to_be(1234)
+    testing.expect(player:start_status(statuses.curse, { milliseconds = 5000 })).to_be_false()
+    testing.expect(player:has_status(statuses.curse)).to_be_false()
+  end)
+
+  testing.case("a monster's status, with its source", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    local poring = world:spawn_monster { monster = monsters.id "PORING", x = 152, y = 150 }
+    testing.expect(poring:start_status(statuses.stun, { milliseconds = 3000, source = player, cannot_be_avoided = true })).to_be_true()
+    testing.expect(poring:get_status(statuses.stun).source == player).to_be_true()
+    world:advance(3000)
+    testing.expect(poring:has_status(statuses.stun)).to_be_false()
+    testing.expect(log:get()).to_contain("end monster " .. statuses.stun .. " expired;")
+  end)
+
+  testing.case("a mod status ticks and gives its bonuses", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    local sp = player.max_sp
+    player:start_status(statuses.glow, { milliseconds = 3500, level = 2 })
+    -- Stats follow at the end of the server tick.
+    world:advance(50)
+    testing.expect(player.max_sp).to_be(sp + 20)
+    world:advance(3450)
+    -- Ticks at 1, 2 and 3 seconds, and the last one at the end.
+    testing.expect(log:get()).to_be("tick 2;tick 2;tick 2;tick 2;")
+    testing.expect(player:has_status(statuses.glow)).to_be_false()
+    testing.expect(player.max_sp).to_be(sp)
+  end)
+
+  testing.case("timed bonuses replace or stack by key", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    local hp = player.max_hp
+    player:add_timed_bonuses("tonic", 5000, { { "max_hp", 100 } })
+    player:add_timed_bonuses("tonic", 5000, { { "max_hp", 100 } })
+    world:advance(50)
+    testing.expect(player.max_hp).to_be(hp + 100)
+    player:add_timed_bonuses("tonic", 2000, { { "max_hp", 50 } }, { stack = true, kind = "buff" })
+    world:advance(50)
+    testing.expect(player.max_hp).to_be(hp + 150)
+    world:advance(2000)
+    testing.expect(player.max_hp).to_be(hp + 100)
+    world:advance(2950)
+    testing.expect(player.max_hp).to_be(hp)
+  end)
+
+  testing.case("bad options raise errors", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 150 }
+    testing.expect(function() player:start_status(statuses.blessing, { milliseconds = 0 }) end).to_fail_with("milliseconds must be from 1")
+    testing.expect(function() player:start_status(statuses.blessing, { chance = 20000 }) end).to_fail_with("chance must be from 0 to 10000")
+    testing.expect(function() player:start_status(statuses.blessing, { bogus = 1 }) end).to_fail_with("is not an option")
+    testing.expect(function() player:start_status(99999999) end).to_fail_with("there is no status")
+    testing.expect(function() player:add_timed_bonuses("k", 1000, { { "no_such_bonus", 1 } }) end).to_fail_with("no_such_bonus")
+    testing.expect(function() player:add_timed_bonuses("k", 1000, {}, { ends_on = { "sunrise" } }) end).to_fail_with("sunrise")
+  end)
+end`,
+	})
+	e := env(t)
+	l, err := e.Load(context.Background(), dir, "", mod.Renewal, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	results, err := e.RunTests(context.Background(), l, "", func(CaseResult) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 7 {
+		t.Errorf("%d results", len(results))
+	}
+	for _, r := range results {
+		if r.Failed() {
+			t.Errorf("%s: %v %v", r.Name, r.Err, r.Logs)
+		}
 	}
 }

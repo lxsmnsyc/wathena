@@ -1058,6 +1058,24 @@ func (x *Event) GetLookChange() *LookChange {
 	return nil
 }
 
+func (x *Event) GetStatusIcon() *StatusIcon {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_StatusIcon); ok {
+			return x.StatusIcon
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetOptionChange() *OptionChange {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_OptionChange); ok {
+			return x.OptionChange
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -1304,6 +1322,22 @@ func (x *Event) SetLookChange(v *LookChange) {
 		return
 	}
 	x.xxx_hidden_Body = &event_LookChange{v}
+}
+
+func (x *Event) SetStatusIcon(v *StatusIcon) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_StatusIcon{v}
+}
+
+func (x *Event) SetOptionChange(v *OptionChange) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_OptionChange{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -1561,6 +1595,22 @@ func (x *Event) HasLookChange() bool {
 	return ok
 }
 
+func (x *Event) HasStatusIcon() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_StatusIcon)
+	return ok
+}
+
+func (x *Event) HasOptionChange() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_OptionChange)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -1751,6 +1801,18 @@ func (x *Event) ClearLookChange() {
 	}
 }
 
+func (x *Event) ClearStatusIcon() {
+	if _, ok := x.xxx_hidden_Body.(*event_StatusIcon); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearOptionChange() {
+	if _, ok := x.xxx_hidden_Body.(*event_OptionChange); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -1783,6 +1845,8 @@ const Event_EquipFailed_case case_Event_Body = 28
 const Event_CardInserted_case case_Event_Body = 29
 const Event_InsertCardFailed_case case_Event_Body = 30
 const Event_LookChange_case case_Event_Body = 31
+const Event_StatusIcon_case case_Event_Body = 32
+const Event_OptionChange_case case_Event_Body = 33
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -1851,6 +1915,10 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_InsertCardFailed_case
 	case *event_LookChange:
 		return Event_LookChange_case
+	case *event_StatusIcon:
+		return Event_StatusIcon_case
+	case *event_OptionChange:
+		return Event_OptionChange_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -1891,6 +1959,8 @@ type Event_builder struct {
 	CardInserted     *CardInserted
 	InsertCardFailed *InsertCardFailed
 	LookChange       *LookChange
+	StatusIcon       *StatusIcon
+	OptionChange     *OptionChange
 	// -- end of xxx_hidden_Body
 }
 
@@ -1990,6 +2060,12 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.LookChange != nil {
 		x.xxx_hidden_Body = &event_LookChange{b.LookChange}
+	}
+	if b.StatusIcon != nil {
+		x.xxx_hidden_Body = &event_StatusIcon{b.StatusIcon}
+	}
+	if b.OptionChange != nil {
+		x.xxx_hidden_Body = &event_OptionChange{b.OptionChange}
 	}
 	return m0
 }
@@ -2132,6 +2208,14 @@ type event_LookChange struct {
 	LookChange *LookChange `protobuf:"bytes,31,opt,name=look_change,json=lookChange,proto3,oneof"`
 }
 
+type event_StatusIcon struct {
+	StatusIcon *StatusIcon `protobuf:"bytes,32,opt,name=status_icon,json=statusIcon,proto3,oneof"`
+}
+
+type event_OptionChange struct {
+	OptionChange *OptionChange `protobuf:"bytes,33,opt,name=option_change,json=optionChange,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -2193,6 +2277,10 @@ func (*event_CardInserted) isEvent_Body() {}
 func (*event_InsertCardFailed) isEvent_Body() {}
 
 func (*event_LookChange) isEvent_Body() {}
+
+func (*event_StatusIcon) isEvent_Body() {}
+
+func (*event_OptionChange) isEvent_Body() {}
 
 // MapChange moves the player to another map, after a warp. It is the
 // first event of the first frame from the new map. The client clears
@@ -2318,6 +2406,7 @@ type EntityAppear struct {
 	xxx_hidden_WalkMs     uint32                 `protobuf:"varint,8,opt,name=walk_ms,json=walkMs,proto3"`
 	xxx_hidden_HpPermille uint32                 `protobuf:"varint,9,opt,name=hp_permille,json=hpPermille,proto3"`
 	xxx_hidden_Item       *GroundItem            `protobuf:"bytes,10,opt,name=item,proto3"`
+	xxx_hidden_Options    *Options               `protobuf:"bytes,11,opt,name=options,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -2417,6 +2506,13 @@ func (x *EntityAppear) GetItem() *GroundItem {
 	return nil
 }
 
+func (x *EntityAppear) GetOptions() *Options {
+	if x != nil {
+		return x.xxx_hidden_Options
+	}
+	return nil
+}
+
 func (x *EntityAppear) SetId(v uint32) {
 	x.xxx_hidden_Id = v
 }
@@ -2457,6 +2553,10 @@ func (x *EntityAppear) SetItem(v *GroundItem) {
 	x.xxx_hidden_Item = v
 }
 
+func (x *EntityAppear) SetOptions(v *Options) {
+	x.xxx_hidden_Options = v
+}
+
 func (x *EntityAppear) HasLook() bool {
 	if x == nil {
 		return false
@@ -2471,12 +2571,23 @@ func (x *EntityAppear) HasItem() bool {
 	return x.xxx_hidden_Item != nil
 }
 
+func (x *EntityAppear) HasOptions() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Options != nil
+}
+
 func (x *EntityAppear) ClearLook() {
 	x.xxx_hidden_Look = nil
 }
 
 func (x *EntityAppear) ClearItem() {
 	x.xxx_hidden_Item = nil
+}
+
+func (x *EntityAppear) ClearOptions() {
+	x.xxx_hidden_Options = nil
 }
 
 type EntityAppear_builder struct {
@@ -2498,6 +2609,9 @@ type EntityAppear_builder struct {
 	HpPermille uint32
 	// item is set for ENTITY_KIND_ITEM.
 	Item *GroundItem
+	// options are what the entity's status changes show, such as Stun's
+	// stars. Unset for none.
+	Options *Options
 }
 
 func (b0 EntityAppear_builder) Build() *EntityAppear {
@@ -2514,6 +2628,7 @@ func (b0 EntityAppear_builder) Build() *EntityAppear {
 	x.xxx_hidden_WalkMs = b.WalkMs
 	x.xxx_hidden_HpPermille = b.HpPermille
 	x.xxx_hidden_Item = b.Item
+	x.xxx_hidden_Options = b.Options
 	return m0
 }
 
@@ -6383,12 +6498,311 @@ func (b0 LookChange_builder) Build() *LookChange {
 	return m0
 }
 
+// StatusIcon shows or hides one of the player's status icons, as
+// clif_status_change. Only the player gets its own icons.
+type StatusIcon struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Icon        uint32                 `protobuf:"varint,1,opt,name=icon,proto3"`
+	xxx_hidden_On          bool                   `protobuf:"varint,2,opt,name=on,proto3"`
+	xxx_hidden_RemainingMs int64                  `protobuf:"varint,3,opt,name=remaining_ms,json=remainingMs,proto3"`
+	xxx_hidden_Values      []int32                `protobuf:"varint,4,rep,packed,name=values,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *StatusIcon) Reset() {
+	*x = StatusIcon{}
+	mi := &file_wathena_v1_event_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusIcon) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusIcon) ProtoMessage() {}
+
+func (x *StatusIcon) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *StatusIcon) GetIcon() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Icon
+	}
+	return 0
+}
+
+func (x *StatusIcon) GetOn() bool {
+	if x != nil {
+		return x.xxx_hidden_On
+	}
+	return false
+}
+
+func (x *StatusIcon) GetRemainingMs() int64 {
+	if x != nil {
+		return x.xxx_hidden_RemainingMs
+	}
+	return 0
+}
+
+func (x *StatusIcon) GetValues() []int32 {
+	if x != nil {
+		return x.xxx_hidden_Values
+	}
+	return nil
+}
+
+func (x *StatusIcon) SetIcon(v uint32) {
+	x.xxx_hidden_Icon = v
+}
+
+func (x *StatusIcon) SetOn(v bool) {
+	x.xxx_hidden_On = v
+}
+
+func (x *StatusIcon) SetRemainingMs(v int64) {
+	x.xxx_hidden_RemainingMs = v
+}
+
+func (x *StatusIcon) SetValues(v []int32) {
+	x.xxx_hidden_Values = v
+}
+
+type StatusIcon_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// icon is the EFST_ ID of the client's status icon table.
+	Icon uint32
+	// on is true when the icon shows, and false when it goes.
+	On bool
+	// remaining_ms is how long the status lasts, or -1 when it does not
+	// end by itself. It is 0 when the icon goes.
+	RemainingMs int64
+	// values are up to three numbers the icon may show, such as a level.
+	Values []int32
+}
+
+func (b0 StatusIcon_builder) Build() *StatusIcon {
+	m0 := &StatusIcon{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Icon = b.Icon
+	x.xxx_hidden_On = b.On
+	x.xxx_hidden_RemainingMs = b.RemainingMs
+	x.xxx_hidden_Values = b.Values
+	return m0
+}
+
+// Options are what an entity's status changes show to everyone who sees
+// it, as rAthena's opt1, opt2, opt3 and option. The client draws them,
+// such as stone, frozen, stun stars, poison or hiding.
+type Options struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Body   uint32                 `protobuf:"varint,1,opt,name=body,proto3"`
+	xxx_hidden_Health uint32                 `protobuf:"varint,2,opt,name=health,proto3"`
+	xxx_hidden_Effect uint32                 `protobuf:"varint,3,opt,name=effect,proto3"`
+	xxx_hidden_Option uint32                 `protobuf:"varint,4,opt,name=option,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Options) Reset() {
+	*x = Options{}
+	mi := &file_wathena_v1_event_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Options) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Options) ProtoMessage() {}
+
+func (x *Options) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Options) GetBody() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Body
+	}
+	return 0
+}
+
+func (x *Options) GetHealth() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Health
+	}
+	return 0
+}
+
+func (x *Options) GetEffect() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Effect
+	}
+	return 0
+}
+
+func (x *Options) GetOption() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Option
+	}
+	return 0
+}
+
+func (x *Options) SetBody(v uint32) {
+	x.xxx_hidden_Body = v
+}
+
+func (x *Options) SetHealth(v uint32) {
+	x.xxx_hidden_Health = v
+}
+
+func (x *Options) SetEffect(v uint32) {
+	x.xxx_hidden_Effect = v
+}
+
+func (x *Options) SetOption(v uint32) {
+	x.xxx_hidden_Option = v
+}
+
+type Options_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// body is opt1: one state of the body, such as 1 stone, 2 frozen,
+	// 3 stunned or 4 asleep (OPT1_).
+	Body uint32
+	// health is opt2: bits such as 1 poison, 2 curse, 4 silence and
+	// 16 blind (OPT2_).
+	Health uint32
+	// effect is opt3: bits of visual effects (OPT3_).
+	Effect uint32
+	// option is the option bits, such as 2 hiding and 4 cloaking
+	// (OPTION_).
+	Option uint32
+}
+
+func (b0 Options_builder) Build() *Options {
+	m0 := &Options{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Body = b.Body
+	x.xxx_hidden_Health = b.Health
+	x.xxx_hidden_Effect = b.Effect
+	x.xxx_hidden_Option = b.Option
+	return m0
+}
+
+// OptionChange tells the players who see an entity that its status
+// options changed, as clif_changeoption.
+type OptionChange struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id      uint32                 `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_Options *Options               `protobuf:"bytes,2,opt,name=options,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *OptionChange) Reset() {
+	*x = OptionChange{}
+	mi := &file_wathena_v1_event_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OptionChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OptionChange) ProtoMessage() {}
+
+func (x *OptionChange) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *OptionChange) GetId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *OptionChange) GetOptions() *Options {
+	if x != nil {
+		return x.xxx_hidden_Options
+	}
+	return nil
+}
+
+func (x *OptionChange) SetId(v uint32) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *OptionChange) SetOptions(v *Options) {
+	x.xxx_hidden_Options = v
+}
+
+func (x *OptionChange) HasOptions() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Options != nil
+}
+
+func (x *OptionChange) ClearOptions() {
+	x.xxx_hidden_Options = nil
+}
+
+type OptionChange_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id      uint32
+	Options *Options
+}
+
+func (b0 OptionChange_builder) Build() *OptionChange {
+	m0 := &OptionChange{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Options = b.Options
+	return m0
+}
+
 var File_wathena_v1_event_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xa0\x0e\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\x9c\x0f\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -6427,13 +6841,16 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\rcard_inserted\x18\x1d \x01(\v2\x18.wathena.v1.CardInsertedH\x00R\fcardInserted\x12L\n" +
 	"\x12insert_card_failed\x18\x1e \x01(\v2\x1c.wathena.v1.InsertCardFailedH\x00R\x10insertCardFailed\x129\n" +
 	"\vlook_change\x18\x1f \x01(\v2\x16.wathena.v1.LookChangeH\x00R\n" +
-	"lookChangeB\x06\n" +
+	"lookChange\x129\n" +
+	"\vstatus_icon\x18  \x01(\v2\x16.wathena.v1.StatusIconH\x00R\n" +
+	"statusIcon\x12?\n" +
+	"\roption_change\x18! \x01(\v2\x18.wathena.v1.OptionChangeH\x00R\foptionChangeB\x06\n" +
 	"\x04body\"P\n" +
 	"\tMapChange\x12\x10\n" +
 	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
 	"\x01x\x18\x02 \x01(\rR\x01x\x12\f\n" +
 	"\x01y\x18\x03 \x01(\rR\x01y\x12\x15\n" +
-	"\x06net_id\x18\x04 \x01(\rR\x05netId\"\x98\x02\n" +
+	"\x06net_id\x18\x04 \x01(\rR\x05netId\"\xc7\x02\n" +
 	"\fEntityAppear\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12*\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x16.wathena.v1.EntityKindR\x04kind\x12\f\n" +
@@ -6446,7 +6863,8 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\vhp_permille\x18\t \x01(\rR\n" +
 	"hpPermille\x12*\n" +
 	"\x04item\x18\n" +
-	" \x01(\v2\x16.wathena.v1.GroundItemR\x04item\"\x81\x01\n" +
+	" \x01(\v2\x16.wathena.v1.GroundItemR\x04item\x12-\n" +
+	"\aoptions\x18\v \x01(\v2\x13.wathena.v1.OptionsR\aoptions\"\x81\x01\n" +
 	"\n" +
 	"GroundItem\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\rR\x06itemId\x12\x16\n" +
@@ -6631,7 +7049,21 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"LookChange\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12$\n" +
-	"\x04look\x18\x02 \x01(\v2\x10.wathena.v1.LookR\x04look*\xed\x01\n" +
+	"\x04look\x18\x02 \x01(\v2\x10.wathena.v1.LookR\x04look\"k\n" +
+	"\n" +
+	"StatusIcon\x12\x12\n" +
+	"\x04icon\x18\x01 \x01(\rR\x04icon\x12\x0e\n" +
+	"\x02on\x18\x02 \x01(\bR\x02on\x12!\n" +
+	"\fremaining_ms\x18\x03 \x01(\x03R\vremainingMs\x12\x16\n" +
+	"\x06values\x18\x04 \x03(\x05R\x06values\"e\n" +
+	"\aOptions\x12\x12\n" +
+	"\x04body\x18\x01 \x01(\rR\x04body\x12\x16\n" +
+	"\x06health\x18\x02 \x01(\rR\x06health\x12\x16\n" +
+	"\x06effect\x18\x03 \x01(\rR\x06effect\x12\x16\n" +
+	"\x06option\x18\x04 \x01(\rR\x06option\"M\n" +
+	"\fOptionChange\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12-\n" +
+	"\aoptions\x18\x02 \x01(\v2\x13.wathena.v1.OptionsR\aoptions*\xed\x01\n" +
 	"\n" +
 	"EntityKind\x12\x1b\n" +
 	"\x17ENTITY_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
@@ -6749,7 +7181,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x1eEQUIP_FAILURE_WRONG_AMMUNITION\x10\x04B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),            // 0: wathena.v1.EntityKind
 	(VanishReason)(0),          // 1: wathena.v1.VanishReason
@@ -6801,8 +7233,11 @@ var file_wathena_v1_event_proto_goTypes = []any{
 	(*CardInserted)(nil),       // 47: wathena.v1.CardInserted
 	(*InsertCardFailed)(nil),   // 48: wathena.v1.InsertCardFailed
 	(*LookChange)(nil),         // 49: wathena.v1.LookChange
-	(*Cell)(nil),               // 50: wathena.v1.Cell
-	(ChatChannel)(0),           // 51: wathena.v1.ChatChannel
+	(*StatusIcon)(nil),         // 50: wathena.v1.StatusIcon
+	(*Options)(nil),            // 51: wathena.v1.Options
+	(*OptionChange)(nil),       // 52: wathena.v1.OptionChange
+	(*Cell)(nil),               // 53: wathena.v1.Cell
+	(ChatChannel)(0),           // 54: wathena.v1.ChatChannel
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
 	13, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
@@ -6836,33 +7271,37 @@ var file_wathena_v1_event_proto_depIdxs = []int32{
 	47, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
 	48, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
 	49, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
-	0,  // 31: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	15, // 32: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	14, // 33: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	1,  // 34: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	20, // 35: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 36: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 37: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	50, // 38: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	51, // 39: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	25, // 40: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	4,  // 41: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
-	31, // 42: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
-	32, // 43: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
-	5,  // 44: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
-	50, // 45: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	37, // 46: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	6,  // 47: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	7,  // 48: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	8,  // 49: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	9,  // 50: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	10, // 51: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
-	15, // 52: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
-	53, // [53:53] is the sub-list for method output_type
-	53, // [53:53] is the sub-list for method input_type
-	53, // [53:53] is the sub-list for extension type_name
-	53, // [53:53] is the sub-list for extension extendee
-	0,  // [0:53] is the sub-list for field type_name
+	50, // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
+	52, // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
+	0,  // 33: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	15, // 34: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	14, // 35: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	51, // 36: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
+	1,  // 37: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	20, // 38: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,  // 39: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,  // 40: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	53, // 41: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	54, // 42: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	25, // 43: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	4,  // 44: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
+	31, // 45: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
+	32, // 46: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
+	5,  // 47: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
+	53, // 48: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	37, // 49: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	6,  // 50: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	7,  // 51: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	8,  // 52: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	9,  // 53: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	10, // 54: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
+	15, // 55: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
+	51, // 56: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
+	57, // [57:57] is the sub-list for method output_type
+	57, // [57:57] is the sub-list for method input_type
+	57, // [57:57] is the sub-list for extension type_name
+	57, // [57:57] is the sub-list for extension extendee
+	0,  // [0:57] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -6903,6 +7342,8 @@ func file_wathena_v1_event_proto_init() {
 		(*event_CardInserted)(nil),
 		(*event_InsertCardFailed)(nil),
 		(*event_LookChange)(nil),
+		(*event_StatusIcon)(nil),
+		(*event_OptionChange)(nil),
 	}
 	file_wathena_v1_event_proto_msgTypes[11].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
@@ -6926,7 +7367,7 @@ func file_wathena_v1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
 			NumEnums:      11,
-			NumMessages:   39,
+			NumMessages:   42,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

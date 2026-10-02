@@ -10,8 +10,8 @@ Damage is not compared in pre-renewal: server/battle has renewal's formula only.
 
 | | Records | Not fully converted | Not equipped | Compared | Stats match | Damage matches | All match |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Equipment | 1885 | 18 | 0 | 1867 | 1867 | not compared | 1867 |
-| Cards | 452 | 25 | 0 | 427 | 427 | not compared | 427 |
+| Equipment | 1885 | 10 | 0 | 1875 | 1875 | not compared | 1875 |
+| Cards | 452 | 21 | 0 | 431 | 431 | not compared | 431 |
 
 Not fully converted: the item or card has a script part the converter cannot convert yet (docs/generated/item-scripts-pre-renewal.md). Not equipped: the sample player cannot equip it in wAthena.
 

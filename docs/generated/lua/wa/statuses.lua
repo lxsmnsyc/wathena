@@ -1,7 +1,7 @@
 ---@meta wa.statuses
 -- Generated from server/modscript/luaapi. Do not edit: wactl mod types writes it again.
 
----Status effects, from rAthena's SC_ names.
+---Status effects, from rAthena's SC_ names, and the statuses mods define.
 ---@class wa.statuses
 ---@field _autoshadowspell integer 447, rAthena's SC__AUTOSHADOWSPELL.
 ---@field _bloodylust integer 460, rAthena's SC__BLOODYLUST.
@@ -1027,5 +1027,9 @@
 ---@field zenkai integer 533, rAthena's SC_ZENKAI.
 ---@field zephyr integer 474, rAthena's SC_ZEPHYR.
 local statuses = {}
+
+---Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error.
+---@param definition wa.StatusDefinition
+function statuses.define(definition) end
 
 return statuses

@@ -307,6 +307,14 @@ func runAll(name string, args []string) error {
 		return fmt.Errorf("item and NPC scripts: %w", err)
 	}
 	log.Info("item and npc scripts converted", "mode", statusMode, "items", len(core.Result.Items), "npcs", len(core.NPCs.NPCs), "took", time.Since(converted).Round(time.Millisecond))
+	statuses, failedStatuses, err := core.LoadStatuses(statusMode)
+	if err != nil {
+		return fmt.Errorf("statuses: %w", err)
+	}
+	for _, s := range failedStatuses {
+		log.Warn("status script not converted; the status gives no bonuses", "status", s.Status, "err", s.Err)
+	}
+	jobs.SetStatuses(statuses)
 	var monsterData map[uint32]gamedata.Monster
 	if cfg.Mode != "none" {
 		if monsterData, err = gamedata.LoadMonsters(statusMode, tables, data); err != nil {
@@ -370,6 +378,7 @@ func runAll(name string, args []string) error {
 		// zone:<map ID>).
 		z := zone.New(n, grids[i], root.Child("zone:"+id).SecretStream(), spawns[id])
 		z.Progress, z.Status, z.Start, z.Items, z.StartItems = tables, jobs, start, items, given
+		z.Statuses = statuses
 		z.SaveMap = name
 		z.SetWarps(warps[n])
 		z.SetNPCs(loaded.npcs[n])

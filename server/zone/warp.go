@@ -167,9 +167,12 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	s.zone, s.player = nil, nil
 	s.mu.Unlock()
 
-	// The conversation and the shop window stay behind.
+	// The conversation and the shop window stay behind. pc_setpos ends
+	// the statuses that end on a map change; the others go with the
+	// character.
 	z.closeTalk(p)
 	p.shop = nil
+	z.mapWarpStatuses(p)
 	h := &handoff{sess: s, char: z.snapshot(p), ackSeq: p.ackSeq, rewarp: p.rewarp, temp: p.temp,
 		canUseItem:   max(p.canUseItem-z.now, 0),
 		itemDelays:   map[uint32]int64{},
@@ -187,6 +190,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 		}
 	}
 	z.remove(p, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT)
+	z.dropStatuses(p.entity)
 	// Worn items end their equip contexts here, and start them again in
 	// the new zone.
 	z.unwearAll(p)

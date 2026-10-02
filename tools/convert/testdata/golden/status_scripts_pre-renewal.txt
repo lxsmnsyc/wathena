@@ -1,0 +1,98 @@
+speedup0: move_speed(val1) percent=true stacking=highest
+speedup1: move_speed(val1) percent=true stacking=highest
+atkpotion: atk(val1)
+matkpotion: matk(val1)
+armor_element_water: damage_taken((0 - val1)) element=1
+armor_element_water: damage_taken((0 - val2)) element=2
+armor_element_water: damage_taken((0 - val3)) element=3
+armor_element_water: damage_taken((0 - val4)) element=4
+incstr: str(val1)
+incagi: agi(val1)
+incvit: vit(val1)
+incint: int(val1)
+incdex: dex(val1)
+incluk: luk(val1)
+strfood: str(val1)
+agifood: agi(val1)
+vitfood: vit(val1)
+intfood: int(val1)
+dexfood: dex(val1)
+lukfood: luk(val1)
+hitfood: hit(val1)
+fleefood: flee(val1)
+batkfood: atk(val1)
+matkfood: matk(val1)
+incflee2: perfect_dodge(val1)
+inccri: crit(val1)
+armor_resist: damage_taken((0 - val1)) element=1
+armor_resist: damage_taken((0 - val2)) element=2
+armor_resist: damage_taken((0 - val3)) element=3
+armor_resist: damage_taken((0 - val4)) element=4
+spcost_rate: sp_cost((0 - val1)) percent=true
+commonsc_resist: status_resistance(2, val1)
+commonsc_resist: status_resistance(1, val1)
+commonsc_resist: status_resistance(11, val1)
+commonsc_resist: status_resistance(5, val1)
+commonsc_resist: status_resistance(4, val1)
+commonsc_resist: status_resistance(6, val1)
+commonsc_resist: status_resistance(8, val1)
+commonsc_resist: status_resistance(3, val1)
+commonsc_resist: status_resistance(9, val1)
+commonsc_resist: status_resistance(7, val1)
+s_lifepotion: hp_gain_over_time((0 - val1), (val2 * 1000)) percent=true unless 112
+l_lifepotion: hp_gain_over_time((0 - val1), (val2 * 1000)) percent=true unless 112
+manu_atk: damage(val1) against={monster_group 11} kind=physical
+manu_def: damage_taken((0 - val1)) from={monster_group 11}
+spl_atk: damage(val1) against={monster_group 12} kind=physical
+spl_def: damage_taken((0 - val1)) from={monster_group 12}
+manu_matk: damage(val1) against={monster_group 11} kind=magic
+spl_matk: damage(val1) against={monster_group 12} kind=magic
+food_str_cash: str(val1)
+food_agi_cash: agi(val1)
+food_vit_cash: vit(val1)
+food_dex_cash: dex(val1)
+food_int_cash: int(val1)
+food_luk_cash: luk(val1)
+mysterious_powder: max_hp(val1) percent=true
+savage_steak: str(val1)
+cocktail_warg_blood: int(val1)
+minor_bbq: vit(val1)
+siroma_ice_tea: dex(val1)
+drocera_herb_steamed: agi(val1)
+putti_tails_noodles: luk(val1)
+boost500: aspd(val1) percent=true
+full_swing_k: atk(val1)
+mana_plus: matk(val1)
+mustle_m: max_hp(val1) percent=true
+life_force_f: max_sp(val1) percent=true
+extract_white_potion_z: natural_hp_recovery(val1) percent=true
+vitata_500: natural_sp_recovery(20) percent=true
+vitata_500: max_sp(5) percent=true
+extract_salamine_juice: aspd(val1) percent=true
+atthaste_cash: aspd(val1) percent=true
+geffen_magic1: damage(val1) against={race 10} kind=physical
+geffen_magic1: damage(val1) against={race 7} kind=physical
+geffen_magic2: damage(val1) against={race 10} kind=magic
+geffen_magic2: damage(val1) against={race 7} kind=magic
+geffen_magic3: damage_taken((0 - val1)) from={race 10}
+geffen_magic3: damage_taken((0 - val1)) from={race 7}
+armor_element_earth: damage_taken((0 - val1)) element=1
+armor_element_earth: damage_taken((0 - val2)) element=2
+armor_element_earth: damage_taken((0 - val3)) element=3
+armor_element_earth: damage_taken((0 - val4)) element=4
+armor_element_fire: damage_taken((0 - val1)) element=1
+armor_element_fire: damage_taken((0 - val2)) element=2
+armor_element_fire: damage_taken((0 - val3)) element=3
+armor_element_fire: damage_taken((0 - val4)) element=4
+armor_element_wind: damage_taken((0 - val1)) element=1
+armor_element_wind: damage_taken((0 - val2)) element=2
+armor_element_wind: damage_taken((0 - val3)) element=3
+armor_element_wind: damage_taken((0 - val4)) element=4
+doram_buf_01: hp_gain_over_time(10, 10000)
+doram_buf_02: sp_gain_over_time(5, 10000)
+increase_maxhp: max_hp(val1) percent=true
+increase_maxhp: natural_hp_recovery(val2) percent=true
+increase_maxsp: max_sp(val1) percent=true
+increase_maxsp: natural_sp_recovery(val2) percent=true
+acaraje: aspd(val1) percent=true
+acaraje: hit(val2)

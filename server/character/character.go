@@ -20,6 +20,51 @@ type Character struct {
 	// its account (proposal 0002, "Variables"), as JSON. A variable at
 	// its default value is not in the map.
 	Variables map[Variable]string
+	// Statuses are the statuses that rAthena saves (sc_data), in status
+	// order.
+	Statuses []Status
+	// TimedBonuses are the timed bonuses of player:add_timed_bonuses
+	// (rAthena's bonus_script), in the order they started.
+	TimedBonuses []TimedBonus
+}
+
+// Status is one saved status.
+type Status struct {
+	// Name is the status's name in wa.statuses, such as blessing, or a
+	// mod status's full name, such as example.glow:glow.
+	Name string
+	// Values are val1 to val4.
+	Values [4]int
+	// Tick is the time to the status's next timer, in milliseconds, as
+	// chrif_save_scdata saves it, or -1 for a status without an end.
+	Tick int64
+	// End is the time to the end of a mod status that ticks, or 0.
+	End int64
+}
+
+// TimedBonus is one saved timed bonus.
+type TimedBonus struct {
+	// Key names it: a new one with the same key replaces it, unless
+	// Stack is set.
+	Key string
+	// Remaining is the time left, in milliseconds.
+	Remaining int64
+	// Bonuses are the bonus entries as JSON: a list of [name, args...,
+	// options], as player:add_timed_bonuses takes them.
+	Bonuses string
+	// EndsOn are the names of what ends it, such as death.
+	EndsOn []string
+	Stack  bool
+	// Icon is the EFST_ icon, or -1 for none. Kind is "buff", "debuff"
+	// or "" for neither.
+	Icon int
+	Kind string
+}
+
+// Equal reports whether two timed bonuses are the same.
+func (t *TimedBonus) Equal(o *TimedBonus) bool {
+	return t.Key == o.Key && t.Remaining == o.Remaining && t.Bonuses == o.Bonuses && slices.Equal(t.EndsOn, o.EndsOn) &&
+		t.Stack == o.Stack && t.Icon == o.Icon && t.Kind == o.Kind
 }
 
 // Variable names one saved variable of a mod.
@@ -86,7 +131,8 @@ func (it *Item) Equal(o *Item) bool {
 // Equal reports whether two characters hold the same data.
 func (c *Character) Equal(o *Character) bool {
 	return c.Info == o.Info && slices.EqualFunc(c.Items, o.Items, func(a, b Item) bool { return a.Equal(&b) }) &&
-		maps.Equal(c.Variables, o.Variables)
+		maps.Equal(c.Variables, o.Variables) && slices.Equal(c.Statuses, o.Statuses) &&
+		slices.EqualFunc(c.TimedBonuses, o.TimedBonuses, func(a, b TimedBonus) bool { return a.Equal(&b) })
 }
 
 // Sex is the protocol's and rAthena's sex: 1 for male, 0 for female.

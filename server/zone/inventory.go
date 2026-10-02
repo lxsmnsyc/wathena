@@ -224,8 +224,16 @@ func (z *Zone) canUse(p *Player, d *item.Def) wathenav1.UseItemFailure {
 			return wathenav1.UseItemFailure_USE_ITEM_FAILURE_CANNOT_USE
 		}
 	}
+	// Statuses that stop item use (SCS_NOCONSUMEITEM).
+	if p.entity.cant().Consume {
+		return wathenav1.UseItemFailure_USE_ITEM_FAILURE_CANNOT_USE
+	}
 	return wathenav1.UseItemFailure_USE_ITEM_FAILURE_UNSPECIFIED
 }
+
+// itemNauthiz is ITEMID_NAUTHIZ, the rune that works while stunned,
+// frozen, asleep or stone.
+const itemNauthiz = 12725
 
 // itemDelay is pc_itemcd_check: an item with a reuse delay starts it and
 // may not be used again before it ends. A delay with a status belongs to
@@ -275,6 +283,11 @@ func (z *Zone) useItem(p *Player, slot int) {
 		p.pending = append(p.pending, useItemFailed(slot, r))
 		return
 	}
+	// pc_useitem: no item while stunned, frozen, asleep or stone.
+	if s.ID != itemNauthiz && p.entity.actsBlocked() {
+		p.pending = append(p.pending, useItemFailed(slot, wathenav1.UseItemFailure_USE_ITEM_FAILURE_CANNOT_USE))
+		return
+	}
 	if d.Script == "" || d.Unsupported != "" {
 		p.pending = append(p.pending, useItemFailed(slot, wathenav1.UseItemFailure_USE_ITEM_FAILURE_NOT_SUPPORTED))
 		if d.Unsupported != "" {
@@ -305,6 +318,8 @@ func (z *Zone) useItem(p *Player, slot int) {
 	if err != nil && z.Mods.Log != nil {
 		z.Mods.Log.Warn("item script failed", "map", z.Map, "item", d.AegisName, "script", d.Script, "err", err)
 	}
+	// Statuses the script started change stats once it returns.
+	z.refreshStats()
 	if delayed && !d.NoConsume && err == nil && p.inventory.Slots[slot].ID == s.ID {
 		z.deleteItem(p, slot, 1, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_USED)
 	}

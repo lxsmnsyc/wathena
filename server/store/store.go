@@ -195,6 +195,9 @@ func (s *Store) Load(ctx context.Context, id int64) (*character.Character, *Sess
 			return err
 		}
 		version = row.SaveVersion
+		if err := loadStatuses(ctx, q, c); err != nil {
+			return err
+		}
 		return loadVariables(ctx, q, c)
 	})
 	if err != nil {
@@ -385,6 +388,9 @@ func (s *Store) write(ctx context.Context, id, version int64, base, c *character
 			if err := q.InsertInventory(ctx, insertParams(id, ins)); err != nil {
 				return err
 			}
+		}
+		if err := writeStatuses(ctx, q, id, base, c); err != nil {
+			return err
 		}
 		return writeVariables(ctx, q, c, base.Variables, c.Variables)
 	})

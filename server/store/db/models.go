@@ -136,6 +136,29 @@ type Character struct {
 	SaveY         int
 }
 
+type CharacterStatus struct {
+	CharacterID int64
+	Name        string
+	Val1        int
+	Val2        int
+	Val3        int
+	Val4        int
+	Tick        int64
+	EndMs       int64
+}
+
+type CharacterTimedBonuse struct {
+	CharacterID int64
+	Position    int
+	Key         string
+	RemainingMs int64
+	Bonuses     []byte
+	EndsOn      []string
+	Stack       bool
+	Icon        int
+	Kind        string
+}
+
 type GameTicket struct {
 	TokenHash   []byte
 	SessionID   int64

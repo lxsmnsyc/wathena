@@ -150,6 +150,15 @@ export class Character {
     return false;
   }
 
+  /** Multiplies every part's colors and opacity, as SpriteView.setTint. */
+  setTint(r: number, g: number, b: number, a: number): void {
+    for (const views of this.parts.values()) {
+      for (const v of views) {
+        v.setTint(r, g, b, a);
+      }
+    }
+  }
+
   /** Called when the body starts a frame with a sound event. */
   get onSound(): ((name: string) => void) | undefined {
     return this.body.onSound;

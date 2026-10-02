@@ -153,7 +153,7 @@ Weapon types, from rAthena's W_ names.
 
 ## wa.statuses
 
-Status effects, from rAthena's SC_ names.
+Status effects, from rAthena's SC_ names, and the statuses mods define.
 
 | Name | Value | rAthena |
 |---|---|---|

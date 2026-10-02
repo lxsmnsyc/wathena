@@ -129,8 +129,9 @@ end`)
 	if err == nil || !strings.Contains(err.Error(), "bonuses belong to an equipped item") {
 		t.Errorf("bonus in a use: %v", err)
 	}
+	// A host without status effects refuses them.
 	err = r.UseItem(1, 1, "core:scripts/items/status.lua")
-	if err == nil || !strings.Contains(err.Error(), "status effects are not supported yet") {
+	if err == nil || !strings.Contains(err.Error(), "this zone has no status effects") {
 		t.Errorf("start_status: %v", err)
 	}
 	if err := r.UseItem(1, 1, "core:scripts/items/missing.lua"); err == nil {

@@ -8,9 +8,9 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Kind | Items with scripts | Full | Partly | Not | Static data | Lua files |
 |---|---:|---:|---:|---:|---:|---:|
-| Equipment and cards | 1995 | 1935 (97.0%) | 35 | 25 | 1667 | 297 |
-| Usable | 1537 | 1068 (69.5%) | 155 | 314 | 0 | 1068 |
-| Delayed use | 70 | 12 (17.1%) | 4 | 54 | 0 | 12 |
+| Equipment and cards | 1995 | 1947 (97.6%) | 24 | 24 | 1667 | 298 |
+| Usable | 1537 | 1333 (86.7%) | 12 | 192 | 0 | 1333 |
+| Delayed use | 70 | 12 (17.1%) | 5 | 53 | 0 | 12 |
 
 - Static data: equipment whose scripts are only constant bonuses. They become `bonuses` in item data, and the server applies them without Lua.
 - Lua files: items with an entry script, in `scripts/items/`.
@@ -19,12 +19,12 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| `skill` | 87 | 75 | 12 | 0 | 87 |  |
+| `skill` | 87 | 86 | 1 | 0 | 87 |  |
 | `specialeffect2` | 36 | 35 | 1 | 0 | 36 |  |
 | `autobonus` | 35 | 34 | 0 | 1 | 34 | status effects: sc_start (1) |
 | `heal` | 20 | 0 | 20 | 0 | 0 | not supported (20) |
-| `sc_start` | 15 | 0 | 0 | 15 | 0 | status effects: sc_start (15) |
-| `sc_end` | 13 | 0 | 11 | 2 | 0 | status effects: sc_end (21) |
+| `sc_start` | 15 | 1 | 0 | 14 | 1 | status effects: sc_start (14) |
+| `sc_end` | 13 | 12 | 0 | 1 | 12 | status effects: sc_end (9) |
 | `autobonus2` | 4 | 4 | 0 | 0 | 4 |  |
 | `itemheal` | 3 | 0 | 0 | 3 | 0 | not supported (3) |
 | `autobonus3` | 2 | 1 | 1 | 0 | 1 | effect script (1) |
@@ -40,17 +40,17 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| `bonus bMdef` | 263 | 260 | 3 | 0 | 263 |  |
-| `bonus bInt` | 231 | 229 | 2 | 0 | 231 |  |
+| `bonus bMdef` | 263 | 261 | 2 | 0 | 263 |  |
+| `bonus bInt` | 231 | 230 | 1 | 0 | 231 |  |
 | `bonus bDex` | 175 | 174 | 1 | 0 | 175 |  |
-| `bonus bStr` | 174 | 173 | 1 | 0 | 174 |  |
+| `bonus bStr` | 174 | 174 | 0 | 0 | 174 |  |
 | `bonus bAtkEle` | 143 | 142 | 1 | 0 | 143 |  |
 | `bonus bAgi` | 140 | 140 | 0 | 0 | 140 |  |
 | `bonus bMatkRate` | 130 | 129 | 1 | 0 | 130 |  |
 | `bonus2 bSubRace` | 124 | 124 | 0 | 0 | 124 |  |
 | `bonus2 bAddRace` | 120 | 120 | 0 | 0 | 120 |  |
-| `bonus3 bAutoSpell` | 112 | 111 | 1 | 0 | 112 |  |
-| `bonus2 bSubEle` | 103 | 101 | 2 | 0 | 103 |  |
+| `bonus3 bAutoSpell` | 112 | 112 | 0 | 0 | 112 |  |
+| `bonus2 bSubEle` | 103 | 103 | 0 | 0 | 103 |  |
 | `bonus bLuk` | 102 | 101 | 1 | 0 | 102 |  |
 | `bonus bUnbreakableWeapon` | 94 | 94 | 0 | 0 | 94 |  |
 | `bonus bVit` | 92 | 91 | 1 | 0 | 92 |  |
@@ -62,13 +62,13 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus bAspdRate` | 70 | 70 | 0 | 0 | 70 |  |
 | `bonus bFlee` | 70 | 69 | 1 | 0 | 70 |  |
 | `bonus bBaseAtk` | 69 | 69 | 0 | 0 | 69 |  |
-| `bonus bDef` | 69 | 65 | 4 | 0 | 69 |  |
+| `bonus bDef` | 69 | 69 | 0 | 0 | 69 |  |
 | `bonus bHit` | 57 | 57 | 0 | 0 | 57 |  |
 | `bonus2 bSkillAtk` | 55 | 50 | 5 | 0 | 55 |  |
 | `bonus2 bAddClass` | 49 | 49 | 0 | 0 | 49 |  |
 | `bonus bAllStats` | 46 | 46 | 0 | 0 | 46 |  |
 | `bonus bMaxHPrate` | 46 | 46 | 0 | 0 | 46 |  |
-| `bonus3 bAutoSpellWhenHit` | 46 | 45 | 1 | 0 | 46 |  |
+| `bonus3 bAutoSpellWhenHit` | 46 | 46 | 0 | 0 | 46 |  |
 | `bonus2 bIgnoreDefRaceRate` | 42 | 42 | 0 | 0 | 42 |  |
 | `bonus2 bAddEle` | 38 | 38 | 0 | 0 | 38 |  |
 | `bonus bMaxSPrate` | 33 | 33 | 0 | 0 | 33 |  |
@@ -90,7 +90,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus bCritAtkRate` | 16 | 16 | 0 | 0 | 16 |  |
 | `bonus bUnbreakableHelm` | 16 | 16 | 0 | 0 | 16 |  |
 | `bonus bHealPower` | 15 | 15 | 0 | 0 | 15 |  |
-| `bonus bSpeedRate` | 14 | 10 | 4 | 0 | 14 |  |
+| `bonus bSpeedRate` | 14 | 14 | 0 | 0 | 14 |  |
 | `bonus2 bSPGainRace` | 14 | 4 | 10 | 0 | 14 |  |
 | `bonus4 bAutoSpellWhenHit` | 14 | 14 | 0 | 0 | 14 |  |
 | `bonus bSPDrainValue` | 12 | 12 | 0 | 0 | 12 |  |
@@ -174,22 +174,22 @@ An item converts fully when every part of its scripts converts. A usable item th
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
 | `getitem` | 648 | 644 | 0 | 4 | 644 | computed item (4) |
-| `sc_start` | 237 | 0 | 130 | 107 | 0 | status effects: sc_start (306) |
+| `sc_start` | 237 | 227 | 10 | 0 | 237 |  |
 | `rentitem` | 226 | 226 | 0 | 0 | 226 |  |
-| `percentheal` | 154 | 33 | 121 | 0 | 154 |  |
-| `itemheal` | 138 | 124 | 14 | 0 | 138 |  |
+| `percentheal` | 154 | 148 | 6 | 0 | 154 |  |
+| `itemheal` | 138 | 138 | 0 | 0 | 138 |  |
 | `pet` | 55 | 0 | 0 | 55 | 0 | not supported (55) |
 | `mercenary_create` | 39 | 0 | 0 | 39 | 0 | not supported (39) |
 | `getgroupitem` | 37 | 37 | 0 | 0 | 37 |  |
 | `callfunc` | 21 | 0 | 0 | 21 | 0 | not supported (21) |
-| `specialeffect2` | 21 | 1 | 20 | 0 | 21 |  |
+| `specialeffect2` | 21 | 21 | 0 | 0 | 21 |  |
 | `unitskilluseid` | 17 | 0 | 0 | 17 | 0 | not supported (17) |
-| `sc_start2` | 15 | 0 | 9 | 6 | 0 | status effects: sc_start2 (15) |
-| `sc_end` | 14 | 0 | 10 | 4 | 0 | status effects: sc_end (71) |
+| `sc_start2` | 15 | 15 | 0 | 0 | 15 |  |
+| `sc_end` | 14 | 14 | 0 | 0 | 14 |  |
 | `condition` | 10 | 0 | 0 | 10 | 0 | checkmadogear (3); strcharinfo (3); countitem (1); ... |
-| `sc_start4` | 9 | 0 | 4 | 5 | 0 | status effects: sc_start4 (9) |
+| `sc_start4` | 9 | 9 | 0 | 0 | 9 |  |
 | `setfont` | 9 | 0 | 0 | 9 | 0 | not supported (9) |
-| `skilleffect` | 9 | 0 | 4 | 5 | 0 | not supported (9) |
+| `skilleffect` | 9 | 0 | 9 | 0 | 0 | not supported (9) |
 | `cooking` | 5 | 0 | 0 | 5 | 0 | not supported (5) |
 | `makerune` | 5 | 0 | 0 | 5 | 0 | not supported (5) |
 | `monster` | 4 | 0 | 0 | 4 | 0 | not supported (4) |
@@ -198,7 +198,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `searchstores` | 3 | 0 | 0 | 3 | 0 | not supported (3) |
 | `variables` | 3 | 0 | 0 | 3 | 0 | Zeny keeps state outside the script (3) |
 | `getexp2` | 2 | 0 | 0 | 2 | 0 | not supported (2) |
-| `heal` | 2 | 0 | 0 | 2 | 0 | not supported (2) |
+| `heal` | 2 | 0 | 1 | 1 | 0 | not supported (2) |
 | `itemskill` | 2 | 0 | 2 | 0 | 0 | skills used by items (2) |
 | `mercenary_heal` | 2 | 0 | 0 | 2 | 0 | not supported (2) |
 | `announce` | 1 | 0 | 0 | 1 | 0 | not supported (1) |
@@ -213,13 +213,13 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| `itemskill` | 61 | 5 | 4 | 52 | 5 | skills used by items (60) |
+| `itemskill` | 61 | 5 | 5 | 51 | 5 | skills used by items (60) |
 | `getitem` | 2 | 0 | 2 | 0 | 2 |  |
 | `percentheal` | 2 | 0 | 2 | 0 | 2 |  |
 | `specialeffect2` | 2 | 0 | 2 | 0 | 2 |  |
 | `callfunc` | 1 | 0 | 0 | 1 | 0 | not supported (1) |
 | `condition` | 1 | 0 | 0 | 1 | 0 | checkoption (1) |
 | `itemheal` | 1 | 0 | 1 | 0 | 1 |  |
-| `sc_start` | 1 | 0 | 0 | 1 | 0 | status effects: sc_start (1) |
-| `skilleffect` | 1 | 0 | 0 | 1 | 0 | not supported (1) |
+| `sc_start` | 1 | 0 | 1 | 0 | 1 |  |
+| `skilleffect` | 1 | 0 | 1 | 0 | 0 | not supported (1) |
 

@@ -475,8 +475,23 @@ func (t *imperative) commandErr(s *Command) error {
 		}
 		t.line("player:show_headgear_effect(%s)", eff)
 		return nil
-	case "sc_start", "sc_start2", "sc_start4", "sc_end", "sc_end_class":
-		return unsupported("status effects", "%s", name)
+	case "sc_start", "sc_start2", "sc_start4":
+		return t.scStart(name, args, true)
+	case "sc_end":
+		if len(args) != 1 {
+			return unsupported(name, "on another character")
+		}
+		if v, ok := t.staticNum(args[0]); ok && v < 0 {
+			return unsupported(name, "of every status (SC_ALL)")
+		}
+		st, err := t.constArg(args[0], "statuses")
+		if err != nil {
+			return err
+		}
+		t.line("player:end_status(%s)", st)
+		return nil
+	case "bonus_script":
+		return t.bonusScript(args)
 	}
 	return unsupported(name, "")
 }

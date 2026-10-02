@@ -9,7 +9,7 @@ local hooks = {}
 ---
 ---Needs the permission `rules.override`.
 ---@param name wa.HookName The hook's name. An unknown name raises an error.
----@param hook? fun(object: wa.Drop|wa.Exp, next: fun(object?: table): integer, integer?): integer, integer Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp.
+---@param hook? fun(object: wa.Drop|wa.Exp|wa.StatusHook, next: fun(object?: table): integer, integer?): integer, integer Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration returns milliseconds.
 ---@param options? wa.HookOptions
 ---@return wa.HookHandle
 function hooks.on(name, hook, options) end

@@ -3,6 +3,7 @@ package modscript
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
@@ -126,12 +127,18 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 		return err
 	}
 	var filter *deathFilter
+	var sfilter *statusFilter
 	if opts := c.Arg(2); !opts.IsNil() {
-		if name != "death" {
-			return fmt.Errorf("events.on(%q): only the death event takes options", name)
-		}
 		var err error
-		if filter, err = readDeathFilter(opts); err != nil {
+		switch {
+		case name == "death":
+			filter, err = readDeathFilter(opts)
+		case slices.Contains(statusEvents, name):
+			sfilter, err = readStatusFilter(name, opts)
+		default:
+			return fmt.Errorf("events.on(%q): only the death and status events take options", name)
+		}
+		if err != nil {
 			return err
 		}
 	}
@@ -142,7 +149,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter}
+	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter}
 	ctx.handlers = append(ctx.handlers, h)
 	r.handlers[name] = append(r.handlers[name], h)
 	r.byID[h.id] = h
@@ -493,24 +500,6 @@ func (r *Runtime) playerEquipped(c *script.Call) error {
 		c.Return(script.Nil)
 	}
 	return nil
-}
-
-// playerStartStatus is player:start_status. Status effects come with
-// phase 4, so it refuses for now.
-func (r *Runtime) playerStartStatus(c *script.Call) error {
-	if err := r.mutating("player:start_status"); err != nil {
-		return err
-	}
-	return errors.New("player:start_status: status effects are not supported yet (phase 4)")
-}
-
-// playerAddTimedBonuses is player:add_timed_bonuses. Its bonuses need
-// equipment stats and saving, which come with phase 4.
-func (r *Runtime) playerAddTimedBonuses(c *script.Call) error {
-	if err := r.mutating("player:add_timed_bonuses"); err != nil {
-		return err
-	}
-	return errors.New("player:add_timed_bonuses: timed bonuses are not supported yet (phase 4)")
 }
 
 func (r *Runtime) equippedField(c *script.Call) error {

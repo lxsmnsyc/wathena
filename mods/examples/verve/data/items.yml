@@ -1,0 +1,6 @@
+# The tonic that starts Verve.
+- name: example.verve:Verve_Tonic
+  type: Healing
+  weight: 20
+  stackable: true
+  script: scripts/items/verve_tonic.lua

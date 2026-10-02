@@ -21,6 +21,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -40,6 +41,8 @@ type Env struct {
 	Start    status.Character
 	Monsters map[uint32]gamedata.Monster
 	Warps    map[string][]zone.Warp
+	// Statuses is the status database, which test worlds share.
+	Statuses *statuschange.DB
 	// Assets is an asset build whose map cells tests use. Without it,
 	// every cell of a map is walkable.
 	Assets string
@@ -64,6 +67,10 @@ func LoadEnv(mode reference.Mode, assets string) (*Env, error) {
 	if e.Jobs, e.Start, err = gamedata.StartCharacter(mode, "all_1"); err != nil {
 		return nil, err
 	}
+	if e.Statuses, _, err = e.Core.LoadStatuses(mode); err != nil {
+		return nil, err
+	}
+	e.Jobs.SetStatuses(e.Statuses)
 	if e.Monsters, err = gamedata.LoadMonsters(mode, e.Tables, e.Prog); err != nil {
 		return nil, err
 	}

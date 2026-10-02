@@ -624,7 +624,7 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Trait stats.** Player handles have `base_pow` to `base_crt`, next to `base_str` to `base_luk`.
     - **Item data.** Item records take `script` (the entry script), `bonuses` (static bonuses as data), and `unsupported` (what the item needs that the server does not have; a usable item with it is refused).
     - **Heals** (`player:item_heal`, `player:heal_percent`) need no approved permission.
-    - **`player:start_status` and `player:add_timed_bonuses`** raise "not supported yet" until phase 4.
+    - **`player:start_status` and `player:add_timed_bonuses`** raise "not supported yet" until phase 4. Both work since phase 4 step 2 (review decision 19).
     - **Item groups.** `player:give_item_from_group` takes a group from `items.group`, such as `items.group "BLUEBOX"`, the group's name in item_group_db.
 
 13. NPCs (phase 3 step 4). The user approved these, for the rAthena commands that NPC scripts use most:
@@ -789,3 +789,7 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the end 
 3. Review the API that step 4 added. Done: review decision 14.
 4. Review the provisional details of `wa.testing` that step 5 added (review decision 15).
 5. Review the provisional details that step 6 added. Done: review decision 17. `respawn_milliseconds` stays provisional.
+6. Build the status API of phase 4 step 2 (review decision 19). Done on 2026-10-02 ([decision 0010](../decisions/0010-status-effects.md)). Details to review:
+   - The objects of the `status_chance` and `status_duration` hooks also carry rAthena's value, as `chance` and `milliseconds`, as the `drop_rate` object carries `rate`.
+   - A player's stats change once an item's use script returns, or else at the end of the server tick, and the events of a script call's starts and ends run after the call. The Lua runtime cannot run Lua inside a host call.
+   - `tick_milliseconds` ticks once more when the status runs out, as rAthena's statuses that tick.

@@ -119,7 +119,7 @@ var Modules = []Module{
 			Name: "on",
 			Params: []Param{{"name", "wa.EventName", "The event's name. An unknown name, or an event of another context kind, raises an error."},
 				{"handler", "function", "Runs each time the event fires, in registration order."},
-				{"options", "wa.DeathOptions?", "Only the death event takes options: they narrow which deaths run the handler."}},
+				{"options", "wa.DeathOptions|wa.StatusEventOptions|nil", "Only the death and status events take options: they narrow which events run the handler."}},
 			Returns:    "wa.EventHandle",
 			Doc:        "Registers a handler for an event.",
 			Permission: "event.listen",
@@ -131,7 +131,7 @@ var Modules = []Module{
 		Funcs: []Func{{
 			Name: "on",
 			Params: []Param{{"name", "wa.HookName", "The hook's name. An unknown name raises an error."},
-				{"hook", "fun(object: wa.Drop|wa.Exp, next: fun(object?: table): integer, integer?): integer, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp."},
+				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook, next: fun(object?: table): integer, integer?): integer, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration returns milliseconds."},
 				{"options", "wa.HookOptions?", ""}},
 			Returns:    "wa.HookHandle",
 			Doc:        "Adds a hook. Higher priority runs first; equal priorities run in the order they were added.",
@@ -244,7 +244,13 @@ var Modules = []Module{
 	{Name: "wa.sizes", Local: "sizes", Doc: "Sizes, from rAthena's Size_ names.", Constants: true},
 	{Name: "wa.monster_classes", Local: "monster_classes", Doc: "Monster classes, from rAthena's CLASS_ names.", Constants: true},
 	{Name: "wa.weapon_types", Local: "weapon_types", Doc: "Weapon types, from rAthena's W_ names.", Constants: true},
-	{Name: "wa.statuses", Local: "statuses", Doc: "Status effects, from rAthena's SC_ names.", Constants: true},
+	{
+		Name: "wa.statuses", Local: "statuses", Doc: "Status effects, from rAthena's SC_ names, and the statuses mods define.", Constants: true,
+		Funcs: []Func{
+			{Name: "define", Params: []Param{{"definition", "wa.StatusDefinition", ""}},
+				Doc: "Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error."},
+		},
+	},
 	{Name: "wa.effects", Local: "effects", Doc: "Effects for player:show_effect, from rAthena's EF_ names.", Constants: true},
 	{Name: "wa.headgear_effects", Local: "headgear_effects", Doc: "Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names.", Constants: true},
 	{Name: "wa.emotions", Local: "emotions", Doc: "Emotions for npc:show_emotion, from rAthena's ET_ names.", Constants: true},
@@ -337,7 +343,7 @@ var Classes = []Class{
 		Name: "wa.Player", Handle: "player",
 		Doc:    "A player. Each access looks the player up again. A handle to a player who left the map raises an error. Reading needs game.read.",
 		Fields: playerFields(),
-		Methods: []Func{
+		Methods: append([]Func{
 			{Name: "send_message", Params: []Param{{"text", "string", "1 to 255 bytes."}}, Doc: "Shows a line in the player's chat log, as CHAT_CHANNEL_SYSTEM."},
 			{Name: "give_item", Params: []Param{itemParam, {"amount", "integer?", "1 to 30000. 1 by default."}, {"options", "wa.GiveItemOptions?", ""}}, Returns: "boolean", Doc: "Gives items, as getitem. Returns false when they do not fit.", Permission: "player.give_items"},
 			{Name: "give_item_from_group", Params: []Param{{"group", "integer", "A group from items.group."}}, Doc: "Gives one use of an item group, as getgroupitem.", Permission: "player.give_items"},
@@ -357,12 +363,14 @@ var Classes = []Class{
 			{Name: "show_headgear_effect", Params: []Param{{"effect", "integer", "An effect from wa.headgear_effects."}}, Doc: "rAthena's hateffect. It shows nothing yet."},
 			{Name: "get_skill_level", Params: []Param{{"skill", "integer", "A skill from skills.id."}}, Returns: "integer", Doc: "The level of a skill the player has, or 0, as getskilllv.", Permission: "game.read"},
 			{Name: "get_equipped", Params: []Param{{"slot", "wa.EquipSlot", ""}}, Returns: "wa.EquippedItem?", Doc: "The copy in a slot, or nil.", Permission: "game.read"},
-			{Name: "start_status", Params: []Param{{"status", "integer", "A status from wa.statuses."}, {"options", "table?", ""}}, Doc: "Raises an error until status effects exist (phase 4)."},
-			{Name: "add_timed_bonuses", Params: []Param{{"key", "string", ""}, {"milliseconds", "integer", ""}, {"bonuses", "table", ""}, {"options", "table?", ""}}, Doc: "Raises an error until timed bonuses exist (phase 4)."},
+			{Name: "add_timed_bonuses", Params: []Param{{"key", "string", "1 to 64 bytes. Timed bonuses with the same key replace each other, unless stack is set."},
+				{"milliseconds", "integer", "1 or more."}, {"bonuses", "table", "A list of entries: a bonus name, its arguments, and its options, as in bonuses.add, such as { { \"str\", 5 } }."},
+				{"options", "wa.TimedBonusOptions?", ""}},
+				Doc: "Gives the player bonuses for a time, as rAthena's bonus_script. They are saved across logout, unless ends_on has logout."},
 			{Name: "mark_minimap", Params: []Param{{"id", "integer", ""}, {"x", "integer", ""}, {"y", "integer", ""}, {"color", "integer", "0xRRGGBB."}}, Doc: "Marks a cell on the minimap, as viewpoint. A mark with the same ID replaces it."},
 			{Name: "unmark_minimap", Params: []Param{{"id", "integer", ""}}, Doc: "Removes a minimap mark."},
 			{Name: "open_shop", Params: []Param{{"shop", "string", "A shop record of data/npcs.yml: the mod's own name, or mod:Name."}}, Doc: "Opens a shop, as callshop."},
-		},
+		}, statusMethods...),
 	},
 	{
 		Name: "wa.Monster", Handle: "monster",
@@ -379,6 +387,7 @@ var Classes = []Class{
 			{"y", "integer", ""},
 			{"is_alive", "boolean", ""},
 		},
+		Methods: statusMethods,
 	},
 	{
 		Name: "wa.Npc", Handle: "npc",
@@ -390,10 +399,10 @@ var Classes = []Class{
 			{"x", "integer", ""},
 			{"y", "integer", ""},
 		},
-		Methods: []Func{
+		Methods: append([]Func{
 			{Name: "show_emotion", Params: []Param{{"emotion", "integer", "An emotion from wa.emotions."}}, Doc: "Shows an emotion over the NPC, as emotion."},
 			{Name: "say_aloud", Params: []Param{{"text", "string", ""}}, Doc: "Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it."},
-		},
+		}, statusMethods...),
 	},
 	{
 		Name: "wa.EquippedItem", Handle: "equipped item",
@@ -606,6 +615,75 @@ var Classes = []Class{
 		},
 	},
 	{
+		Name: "wa.StatusOptions", Doc: "The options of entity:start_status.",
+		Fields: []Field{
+			{"milliseconds", `integer|"forever"|nil`, "The duration, 1 to 2,147,483,647, or forever. Without it, the duration rAthena's sc_start looks up for the level, from the status's skill."},
+			{"level", "integer?", "rAthena's val1. 1 by default."},
+			{"values", "integer[]?", "val2 to val4, for the statuses that read them."},
+			{"chance", "integer?", "Per 10,000, before resistance. 10000 by default."},
+			{"source", "wa.Player|wa.Monster|wa.Npc|nil", "Who caused the status: its stats and level count for resistance, and events and get_status show it. Without it, the target's own stats count, as rAthena's sc_start."},
+			{"cannot_be_avoided", "boolean?", "SCSTART_NOAVOID: no resistance, no chance roll, and no boss immunity."},
+			{"keep_duration", "boolean?", "SCSTART_NOTICKDEF: resistance does not shorten the duration."},
+			{"keep_chance", "boolean?", "SCSTART_NORATEDEF: resistance does not lower the chance."},
+			{"hide_icon", "boolean?", "SCSTART_NOICON: the status shows no icon."},
+		},
+	},
+	{
+		Name: "wa.Status", Doc: "An active status, as entity:get_status returns it.",
+		Fields: []Field{
+			{"status", "integer", ""}, {"level", "integer", "val1."}, {"values", "integer[]", "val2 to val4."},
+			{"remaining_milliseconds", `integer|"forever"`, ""},
+			{"source", "wa.Player|wa.Monster|wa.Npc|nil", "Who caused it, or nil."},
+		},
+	},
+	{
+		Name: "wa.StatusEvent", Doc: "The object of status_start, status_end and status_tick.",
+		Fields: []Field{
+			{"target", "wa.Player|wa.Monster|wa.Npc", "target.kind says which."},
+			{"status", "integer", ""}, {"level", "integer", ""},
+			{"source", "wa.Player|wa.Monster|wa.Npc|nil", ""},
+			{"milliseconds", `integer|"forever"`, "The duration at status_start, and the time left at status_end and status_tick."},
+			{"reason", "string?", `Why it started: "skill", "item", "bonus", "script" or "login". Why it ended: "expired", "removed", "replaced", "death", "dispell", "clearance", "logout" or "damage". nil for status_tick.`},
+		},
+	},
+	{
+		Name: "wa.StatusEventOptions", Doc: "The options of a status event handler. Each one narrows the events that run it.",
+		Fields: []Field{
+			{"status", "integer?", "A status from wa.statuses."},
+			{"target_kind", `"player"|"monster"|"npc"|nil`, ""},
+			{"map", "string?", "A map name."},
+		},
+	},
+	{
+		Name: "wa.StatusHook", Doc: "The object of the status_chance and status_duration hooks: a status that starts. The innermost result is rAthena's value after resistance.",
+		Fields: []Field{
+			{"target", "wa.Player|wa.Monster|wa.Npc", ""}, {"status", "integer", ""}, {"level", "integer", ""},
+			{"source", "wa.Player|wa.Monster|wa.Npc|nil", ""},
+			{"chance", "integer?", "status_chance: the chance, per 10,000."},
+			{"milliseconds", "integer?", "status_duration: the duration."},
+		},
+	},
+	{
+		Name: "wa.StatusDefinition", Doc: "The status of statuses.define.",
+		Fields: []Field{
+			{"name", "string", "1 to 48 lower case letters, digits and _, starting with a letter. The constant's name in wa.statuses."},
+			{"icon", "integer?", "The status icon (EFST_ ID) players see. None by default."},
+			{"kind", `"buff"|"debuff"|nil`, `"buff" by default.`},
+			{"ends_on", "string[]?", "What ends the status besides its time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage. Nothing by default."},
+			{"bonuses", "(fun(level: integer): table)?", "Returns bonus entries for a level, as add_timed_bonuses takes them. They apply to players while the status lasts."},
+			{"tick_milliseconds", "integer?", "From 100: status_tick fires at this interval, and once more when the status runs out, as rAthena's statuses that tick."},
+		},
+	},
+	{
+		Name: "wa.TimedBonusOptions", Doc: "Options of player:add_timed_bonuses.",
+		Fields: []Field{
+			{"ends_on", "string[]?", "What ends the bonuses besides their time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage."},
+			{"stack", "boolean?", "Adds the bonuses next to others with the same key, instead of replacing them."},
+			{"icon", "integer?", "A status icon (EFST_ ID) to show while they last."},
+			{"kind", `"buff"|"debuff"|nil`, ""},
+		},
+	},
+	{
 		Name: "wa.NewPlayerSpec", Testing: true, Doc: "The character of world:new_player.",
 		Fields: []Field{
 			{"map", "string?", "The map, such as prontera. The world's map by default; a world runs one map."},
@@ -624,6 +702,17 @@ var Classes = []Class{
 			{"x", "integer", ""}, {"y", "integer", ""},
 		},
 	},
+}
+
+// statusMethods are the status methods of every entity handle (proposal
+// 0002, review decision 19).
+var statusMethods = []Func{
+	{Name: "start_status", Params: []Param{{"status", "integer", "A status from wa.statuses."}, {"options", "wa.StatusOptions?", ""}}, Returns: "boolean",
+		Doc: "Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. A player's stats change once an item's use script returns, or else at the end of the server tick."},
+	{Name: "end_status", Params: []Param{{"status", "integer", ""}}, Returns: "boolean", Doc: "Ends a status, as sc_end. Returns true when it was active."},
+	{Name: "has_status", Params: []Param{{"status", "integer", ""}}, Returns: "boolean", Doc: "Whether a status is active, as getstatus.", Permission: "game.read"},
+	{Name: "get_status", Params: []Param{{"status", "integer", ""}}, Returns: "wa.Status?", Doc: "An active status, or nil.", Permission: "game.read"},
+	{Name: "get_statuses", Returns: "wa.Status[]", Doc: "The active statuses, by status.", Permission: "game.read"},
 }
 
 // Variable classes: one per type, for the scopes with a player and for
@@ -666,6 +755,9 @@ var Events = []Event{
 	{Name: "damage", Kinds: []string{"item"}, Params: []Param{{"hit", "wa.Damage", ""}}, Doc: "A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3)."},
 	{Name: "skill_used", Kinds: []string{"item"}, Params: []Param{{"use", "wa.SkillUse", ""}}, Doc: "The wearer uses a skill. It fires in tests until skills exist (phase 4 step 3)."},
 	{Name: "unequip", Kinds: []string{"item"}, Params: []Param{playerParam}, Doc: "The copy is unequipped, before its context ends."},
+	{Name: "status_start", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status started on an entity of the context's map, or started again. Options narrow it."},
+	{Name: "status_end", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status ended. Options narrow it."},
+	{Name: "status_tick", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it."},
 }
 
 // EquipSlots are the slot names of player:get_equipped.

@@ -127,7 +127,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | setunitdata | 5 | 0 | 0 | 5 | 0 |  |
 | disablenpc | 4 | 0 | 0 | 4 | 0 |  |
 | event onreset_01 | 4 | 0 | 0 | 4 | 0 |  |
-| sc_start2 | 4 | 0 | 0 | 4 | 0 |  |
+| sc_start2 | 4 | 0 | 0 | 4 | 0 | on another character (4) |
 | event onstop | 3 | 0 | 0 | 3 | 0 |  |
 | gettime | 3 | 0 | 0 | 3 | 0 |  |
 | checkriding | 2 | 0 | 0 | 2 | 0 |  |

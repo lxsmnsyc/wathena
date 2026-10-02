@@ -1,0 +1,22 @@
+# A sample mod that adds a status effect: statuses.define, a status_tick
+# handler, and an item that starts the status. mods/README.md explains
+# each field.
+id: example.verve
+name: Verve
+version: 0.1.0
+api: experimental
+description: Adds Verve, a status that raises max HP and heals over time, and a tonic that starts it.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read
+scripts:
+  - scripts/main.lua

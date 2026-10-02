@@ -3,6 +3,7 @@ package store_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -196,6 +197,37 @@ func TestConstraints(t *testing.T) {
 	if err := insert(0, 502, 1, fresh()); !isCode(err, uniqueViolation) {
 		t.Errorf("taken slot: %v, want a unique violation", err)
 	}
+	// Statuses and timed bonuses.
+	status := func(name string, tick, end int64) error {
+		return q.InsertStatuses(ctx, db.InsertStatusesParams{CharacterID: id, Names: []string{name}, Val1s: []int{1}, Val2s: []int{0},
+			Val3s: []int{0}, Val4s: []int{0}, Ticks: []int64{tick}, Ends: []int64{end}})
+	}
+	timed := func(pos int, key string, ms int64, ends []string, icon int, kind string) error {
+		return q.InsertTimedBonus(ctx, db.InsertTimedBonusParams{CharacterID: id, Position: pos, Key: key, RemainingMs: ms,
+			Bonuses: []byte("[]"), EndsOn: ends, Icon: icon, Kind: kind})
+	}
+	for name, err := range map[string]error{
+		"empty status name":   status("", 1, 0),
+		"status tick -2":      status("blessing", -2, 0),
+		"negative status end": status("blessing", 1, -1),
+		"empty timed key":     timed(0, "", 1, []string{}, -1, ""),
+		"timed key over 64":   timed(0, strings.Repeat("k", 65), 1, []string{}, -1, ""),
+		"negative remaining":  timed(0, "k", -1, []string{}, -1, ""),
+		"icon -2":             timed(0, "k", 1, []string{}, -2, ""),
+		"unknown kind":        timed(0, "k", 1, []string{}, -1, "curse"),
+		"timed position 1024": timed(1024, "k", 1, []string{}, -1, ""),
+	} {
+		if !isCode(err, checkViolation) {
+			t.Errorf("%s: %v, want a check violation", name, err)
+		}
+	}
+	if err := status("blessing", 1, 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := status("blessing", 1, 0); !isCode(err, uniqueViolation) {
+		t.Errorf("repeated status: %v, want a unique violation", err)
+	}
+
 	// pgx refuses a Go int that does not fit the column before it reaches
 	// the database.
 	if err := insert(1, 501, 1<<40, fresh()); err == nil {
@@ -243,7 +275,32 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 			{Slot: 7, ID: 1201, Amount: 1, Serial: item.NewSerial()},
 			{Slot: 199, ID: 909, Amount: 3, Serial: item.NewSerial()},
 		},
+		// Statuses come back by name, and timed bonuses in their order.
+		Statuses: []character.Status{
+			{Name: "blessing", Values: [4]int{10, 0, 0, 0}, Tick: 59000},
+			{Name: "example.glow:glow", Values: [4]int{1, -2, 2147483647, -2147483648}, Tick: 1000, End: 30000},
+			{Name: "strfood", Values: [4]int{10}, Tick: -1},
+		},
+		TimedBonuses: []character.TimedBonus{
+			{Key: "b", Remaining: 5000, Bonuses: `[["str", 5]]`, EndsOn: []string{"death", "dispell"}, Stack: true, Icon: 925, Kind: "buff"},
+			{Key: "a", Remaining: 1, Bonuses: `[]`, EndsOn: []string{}, Icon: -1},
+		},
 	}
+	sess.Save(next, true)
+	if err := sess.Flush(ctx); err != nil {
+		t.Fatal(err)
+	}
+	got, sess, err = s.Load(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Equal(next) {
+		t.Errorf("after save %+v\nwant %+v", got, next)
+	}
+
+	// Statuses that end and timed bonuses that run out leave no rows.
+	next.Statuses, next.TimedBonuses = next.Statuses[2:], nil
+	next.Statuses[0].Tick = -1
 	sess.Save(next, true)
 	if err := sess.Flush(ctx); err != nil {
 		t.Fatal(err)
@@ -252,8 +309,8 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !got.Equal(next) {
-		t.Errorf("after save %+v\nwant %+v", got, next)
+	if !got.Equal(next) || len(got.TimedBonuses) != 0 {
+		t.Errorf("after second save %+v\nwant %+v", got, next)
 	}
 }
 

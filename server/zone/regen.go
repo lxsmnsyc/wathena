@@ -1,6 +1,9 @@
 package zone
 
-import "github.com/lxsmnsyc/wathena/server/item"
+import (
+	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/statuschange"
+)
 
 // Regen: players heal HP and SP over time, as rAthena's
 // status_natural_heal, which a timer runs every NATURAL_HEAL_INTERVAL
@@ -32,6 +35,8 @@ type regenState struct {
 	hp, sp int64
 	// skillHP and skillSP add up time toward the next skill heal.
 	skillHP, skillSP int64
+	// bonus adds up time for each regen bonus of the player.
+	bonus []int64
 }
 
 // naturalHeal is status_natural_heal_timer: every naturalHealInterval, it
@@ -81,8 +86,21 @@ func (z *Zone) naturalHealOne(p *Player, diff int64) {
 	if p.sp >= int64(e.status.MaxSP) {
 		flag &^= regenSkillSP
 	}
-	if e.dead {
+	// status_calc_regen_rate: statuses such as Poison stop regen.
+	if hp, sp := e.sc.Regen(); !hp || !sp {
+		if !hp {
+			flag &^= regenHP | regenSkillHP
+		}
+		if !sp {
+			flag &^= regenSP | regenSkillSP
+		}
+	}
+	if e.dead || (e.sc != nil && e.sc.Option&(statuschange.OptionHide|statuschange.OptionCloak|optionChaseWalk) != 0) {
 		flag = 0
+	}
+	// pc_bleeding and pc_regen: HP and SP lost and gained over time.
+	if len(p.bonuses.Regen) > 0 {
+		z.regenBonuses(p, diff)
 	}
 	if flag != 0 && p.overweight != item.WeightNormal {
 		flag = 0
@@ -139,6 +157,65 @@ func (z *Zone) naturalHealOne(p *Player, diff int64) {
 	if p.sp != spBefore {
 		if st := z.battleStats(p); st != nil {
 			p.pending = append(p.pending, st)
+		}
+	}
+}
+
+// optionChaseWalk is OPTION_CHASEWALK, which stops regen as hiding does.
+const optionChaseWalk = 0x4000
+
+// regenBonuses is pc_bleeding and pc_regen: the hp_loss_over_time,
+// sp_loss_over_time, hp_gain_over_time and sp_gain_over_time bonuses.
+// Each counts its own time, which starts again at each stat calculation,
+// as rAthena rebuilds the lists. Losses never kill.
+func (z *Zone) regenBonuses(p *Player, diff int64) {
+	e := p.entity
+	regen := p.bonuses.Regen
+	if len(p.regenTicks.bonus) != len(regen) {
+		p.regenTicks.bonus = make([]int64, len(regen))
+	}
+	var lossHP, lossSP, gainHP, gainSP int64
+	dead := e.dead
+	for i, r := range regen {
+		loss := r.Kind == "hp_loss_over_time" || r.Kind == "sp_loss_over_time"
+		if loss && dead {
+			continue
+		}
+		t := &p.regenTicks.bonus[i]
+		*t += diff
+		for *t >= int64(r.Rate) {
+			*t -= int64(r.Rate)
+			v := int64(r.Value)
+			switch r.Kind {
+			case "hp_loss_over_time":
+				lossHP += v
+			case "sp_loss_over_time":
+				lossSP += v
+			case "hp_gain_over_time":
+				if r.Percent {
+					v = int64(e.status.MaxHP) * v / 100
+				}
+				gainHP += v
+			case "sp_gain_over_time":
+				if r.Percent {
+					v = int64(e.status.MaxSP) * v / 100
+				}
+				gainSP += v
+			}
+		}
+		if r.Kind == "hp_loss_over_time" && lossHP >= e.hp {
+			lossHP = e.hp - 1
+		}
+	}
+	if lossHP > 0 || lossSP > 0 {
+		scEnv{z}.Damage(z.unit(e), lossHP, lossSP, true, false)
+	}
+	if gainHP > 0 || gainSP > 0 {
+		_, sp := z.statusHeal(p, gainHP, gainSP)
+		if sp > 0 {
+			if s := z.battleStats(p); s != nil {
+				p.pending = append(p.pending, s)
+			}
 		}
 	}
 }

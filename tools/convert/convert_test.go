@@ -17,6 +17,7 @@ var goldenItems = []string{
 	"Passion_FB_Hat_Box", "A_Drop_Of_Heal_", "Poring_Card", "Knight_Of_Abyss_Card", "Krieger_Katar2",
 	"Sword_Guardian_Card", "Tae_Goo_Lyeon", "Shadow_Staff", "BF_Spear1", "C_Flutter_Butterfly", "Ice_Falchon",
 	"Book_Of_The_Apocalypse", "Erhu", "Time_Gap_SS_Dagger1", "Altas_Weapon", "Veteran_Sword", "Green_Potion",
+	"Str_Dish01", "RWC_Cele_Fire", "Center_Potion",
 }
 
 func TestGolden(t *testing.T) {
@@ -191,6 +192,12 @@ func TestConvertUse(t *testing.T) {
 		{`warp "Random",0,0;`, "player:warp_to_random_cell()"},
 		{`warp "prontera",156,191;`, `player:warp("prontera", 156, 191)`},
 		{"specialeffect2 EF_HEAL;", "player:show_effect(effects.heal)"},
+		{"sc_start SC_BLESSING,60000,10;", "player:start_status(statuses.blessing, { milliseconds = 60000, level = 10, keep_duration = true })"},
+		{"sc_start SC_STONE,0,1,5000,0;", "player:start_status(statuses.stone, { chance = 5000 })"},
+		{"sc_start4 SC_STRFOOD,1200000,10,0,0,0;", "player:start_status(statuses.strfood, { milliseconds = 1200000, level = 10, keep_duration = true })"},
+		{"sc_start2 SC_POISON,-1,1,30;", `player:start_status(statuses.poison, { milliseconds = "forever", values = { 30 }, keep_duration = true })`},
+		{"sc_end SC_POISON;", "player:end_status(statuses.poison)"},
+		{`bonus_script "{ bonus bStr,5; }",60,1025,0,EFST_ATTACK_PROPERTY_FIRE;`, "{ \"str\", 5 },\n    }, { ends_on = { \"death\" }, icon = "},
 		{".@r = rand(1,3); if (.@r == 1) getitem 501,1; else if (.@r == 2) getitem 502,1; else getitem 503,1;",
 			"r = random.integer(1, 3)\n    if r == 1 then"},
 	} {
@@ -199,9 +206,9 @@ func TestConvertUse(t *testing.T) {
 			t.Errorf("%s: want %q in\n%s\n%v", tc.script, tc.want, it.Lua, it.Unsupported)
 		}
 	}
-	it := convertOne(t, "Usable", "sc_start SC_BLESSING,60000,10;")
+	it := convertOne(t, "Usable", "sc_end SC_ALL;")
 	if it.Status != None || it.Lua != "" || unsupportedSummary(it) != "status effects" {
-		t.Errorf("sc_start: %s %q %v", it.Status, it.Lua, it.Unsupported)
+		t.Errorf("sc_end SC_ALL: %s %q %v", it.Status, it.Lua, it.Unsupported)
 	}
 }
 

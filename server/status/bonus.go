@@ -54,6 +54,11 @@ type pcBonus struct {
 	// decided holds the stacking decisions: bonuses another bonus of
 	// their set replaced.
 	skipped map[*Bonus]bool
+	// resEff, addEff, addEffWhenHit, addEffOnSkill and regen are the
+	// bonuses of statuses and regen, as Bonuses.
+	resEff                               map[int]int
+	addEff, addEffWhenHit, addEffOnSkill []AddEffect
+	regen                                []RegenBonus
 }
 
 func newPCBonus(p *pc) *pcBonus {
@@ -75,7 +80,8 @@ type tagged struct {
 
 // order lists every bonus of the equipment in the order status_calc_pc
 // runs item scripts (0002a, "Stacking"): equipment by slot, then the
-// ammunition, then cards by the slot of the item that holds them.
+// ammunition, then cards by the slot of the item that holds them, then
+// status scripts and timed bonuses.
 func (pb *pcBonus) order(eq *Equipment) []tagged {
 	var out []tagged
 	p := pb.p
@@ -126,6 +132,11 @@ func (pb *pcBonus) order(eq *Equipment) []tagged {
 			for j := range e.Cards[c].Bonuses {
 				out = append(out, tagged{&e.Cards[c].Bonuses[j], lr})
 			}
+		}
+	}
+	for _, list := range [][]Bonus{p.c.StatusBonuses, p.c.TimedBonuses} {
+		for j := range list {
+			out = append(out, tagged{&list[j], lrNone})
 		}
 	}
 	return out
@@ -646,6 +657,28 @@ func (pb *pcBonus) apply(b *Bonus, lr int, st *data) {
 		if !arrow {
 			pb.addMaxWeight += v
 		}
+	case "status_resistance":
+		// bResEff, added up and capped at 100%.
+		if arrow || len(b.Args) < 2 {
+			return
+		}
+		if pb.resEff == nil {
+			pb.resEff = map[int]int{}
+		}
+		id := clampInt(b.Args[0])
+		pb.resEff[id] = capValue(pb.resEff[id]+v, -10000, 10000)
+	case "cause_status":
+		pb.applyAddEff(b, o, lr)
+	case "hp_gain_over_time", "sp_gain_over_time", "hp_loss_over_time", "sp_loss_over_time":
+		// pc_bonus_regen: a value every interval, from 1 ms.
+		if arrow || len(b.Args) < 2 {
+			return
+		}
+		rate := clampInt(b.Args[1])
+		if rate < 1 {
+			return
+		}
+		pb.regen = append(pb.regen, RegenBonus{Kind: b.Name, Percent: o.Percent, Value: int(int16(v)), Rate: rate}) // #nosec G115 -- pc_bonus_regen keeps an int16.
 	case "skill":
 		// The skill command: an item grants a skill level while it is
 		// worn, when it is higher than the learned one.
@@ -877,4 +910,88 @@ func toBonus(b *Bonus) *bonus.Bonus {
 		out.Args = append(out.Args, bonus.Num{Value: a})
 	}
 	return out
+}
+
+// applyAddEff is the bAddEff family through pc_bonus_addeff and
+// pc_bonus_addeff_onskill: the options of cause_status (0002a, "Status
+// effects and other procs") turn back into rAthena's ATF_ flags. Entries
+// with the same status and flags add up their rates and keep the longer
+// duration.
+func (pb *pcBonus) applyAddEff(b *Bonus, o *bonus.Options, lr int) {
+	if len(b.Args) == 0 {
+		return
+	}
+	e := AddEffect{Status: clampInt(b.Args[0]), Duration: clampInt(o.Duration)}
+	rate := clampInt(b.Chance)
+	if e.Duration == 0 && pb.p.t.statuses != nil {
+		// The Duration2 of the status's skill at level 7.
+		if d := pb.p.t.statuses.Get(e.Status); d != nil {
+			e.Duration = d.Duration2(7)
+		}
+	}
+	if o.Skill != 0 {
+		// bAddEffOnSkill.
+		if lr == lrArrow {
+			return
+		}
+		e.Skill, e.Rate = int(o.Skill), rate
+		e.Flag = ATFTarget
+		if o.Target == "self" {
+			e.Flag = ATFSelf
+		}
+		for i := range pb.addEffOnSkill {
+			x := &pb.addEffOnSkill[i]
+			if x.Status == e.Status && x.Skill == e.Skill && x.Flag == e.Flag {
+				x.Rate = min(x.Rate+e.Rate, math.MaxInt32)
+				x.Duration = max(x.Duration, e.Duration)
+				return
+			}
+		}
+		pb.addEffOnSkill = append(pb.addEffOnSkill, e)
+		return
+	}
+	whenHit := o.On == "hit_taken"
+	if whenHit && lr == lrArrow {
+		return
+	}
+	if lr == lrArrow {
+		e.ArrowRate = rate
+	} else {
+		e.Rate = rate
+	}
+	switch o.Range {
+	case "melee":
+		e.Flag |= ATFShort
+	case "ranged":
+		e.Flag |= ATFLong
+	default:
+		e.Flag |= ATFShort | ATFLong
+	}
+	if o.Target == "self" {
+		e.Flag |= ATFSelf
+	} else {
+		e.Flag |= ATFTarget
+	}
+	switch o.Kind {
+	case "magic":
+		e.Flag |= ATFMagic
+	case "misc":
+		e.Flag |= ATFMisc
+	default:
+		e.Flag |= ATFWeapon
+	}
+	list := &pb.addEff
+	if whenHit {
+		list = &pb.addEffWhenHit
+	}
+	for i := range *list {
+		x := &(*list)[i]
+		if x.Status == e.Status && x.Flag == e.Flag {
+			x.Rate = min(x.Rate+e.Rate, math.MaxInt32)
+			x.ArrowRate = min(x.ArrowRate+e.ArrowRate, math.MaxInt16)
+			x.Duration = max(x.Duration, e.Duration)
+			return
+		}
+	}
+	*list = append(*list, e)
 }

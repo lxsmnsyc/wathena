@@ -116,7 +116,16 @@ func (z *Zone) spawnCell(s *Spawn) (int, int, bool) {
 func (z *Zone) think() {
 	for e := range z.entities.all() {
 		m := e.monster
-		if m == nil || !m.spawn.CanMove || len(e.path) > 0 || e.target != nil {
+		if m == nil {
+			continue
+		}
+		// mob_ai_sub_hard: a monster that is stunned, frozen, asleep or
+		// stone forgets its target and does nothing.
+		if e.actsBlocked() {
+			e.target = nil
+			continue
+		}
+		if !m.spawn.CanMove || len(e.path) > 0 || e.target != nil || e.cant().Move {
 			continue
 		}
 		if m.nextWalk < 0 {

@@ -15,13 +15,14 @@ import (
 )
 
 // testItems are items as rAthena's renewal item_db has them, with core's
-// converted scripts, one whose script needs status effects, and one that
+// converted scripts, one whose script needs pets, and one that
 // may not be dropped.
 func testItems() *item.Table {
 	return item.New(&item.Data{Mode: "renewal", Items: []item.Def{
 		{ID: 501, AegisName: "Red_Potion", Type: "Healing", Weight: 70, Stackable: true, Script: "core:scripts/items/Red_Potion.lua"},
 		{ID: 505, AegisName: "Blue_Potion", Type: "Healing", Weight: 150, Stackable: true, Script: "core:scripts/items/Blue_Potion.lua"},
-		{ID: 506, AegisName: "Green_Potion", Type: "Healing", Weight: 70, Stackable: true, Unsupported: "status effects"},
+		{ID: 506, AegisName: "Green_Potion", Type: "Healing", Weight: 70, Stackable: true, Script: "core:scripts/items/Green_Potion.lua"},
+		{ID: 619, AegisName: "Unripe_Apple", Type: "Usable", Weight: 20, Stackable: true, Unsupported: "pets"},
 		{ID: 601, AegisName: "Wing_Of_Fly", Type: "DelayConsume", Weight: 50, Stackable: true, Script: "core:scripts/items/Wing_Of_Fly.lua"},
 		{ID: 602, AegisName: "Wing_Of_Butterfly", Type: "DelayConsume", Weight: 50, Stackable: true, Script: "core:scripts/items/Wing_Of_Butterfly.lua"},
 		{ID: 603, AegisName: "Old_Blue_Box", Type: "Usable", Weight: 200, Stackable: true, Script: "core:scripts/items/Old_Blue_Box.lua"},
@@ -242,13 +243,13 @@ func TestUseHealingItem(t *testing.T) {
 }
 
 func TestUseItemRules(t *testing.T) {
-	z, a, _ := invZone(t, StartItem{501, 3}, StartItem{909, 1}, StartItem{506, 1}, StartItem{607, 2})
+	z, a, _ := invZone(t, StartItem{501, 3}, StartItem{909, 1}, StartItem{619, 1}, StartItem{607, 2})
 	a.entity.hp = 10
 	// Two uses in one tick: item_use_interval refuses the second.
 	use(z, a, 0)
 	use(z, a, 0)
-	// An Etc item cannot be used. A Green Potion's script needs status
-	// effects, so it is refused and not spent.
+	// An Etc item cannot be used. An Unripe Apple's script needs
+	// pets, so it is refused and not spent.
 	z.stepAt(z.now + 100)
 	use(z, a, 1)
 	use(z, a, 2)
@@ -267,10 +268,10 @@ func TestUseItemRules(t *testing.T) {
 	if got := useFailures(ev); len(got) != len(want) || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] || got[3] != want[3] {
 		t.Errorf("failures %v, want %v", got, want)
 	}
-	if !hasSystemLine(ev, "This item needs a feature the server does not have yet: status effects.") {
-		t.Error("no message says what the Green Potion needs")
+	if !hasSystemLine(ev, "This item needs a feature the server does not have yet: pets.") {
+		t.Error("no message says what the Unripe Apple needs")
 	}
-	if a.inventory.Count(501) != 2 || a.inventory.Count(506) != 1 || a.inventory.Count(909) != 1 {
+	if a.inventory.Count(501) != 2 || a.inventory.Count(619) != 1 || a.inventory.Count(909) != 1 {
 		t.Errorf("inventory %v", a.inventory.Slots[:4])
 	}
 

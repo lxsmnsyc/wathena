@@ -58,6 +58,7 @@ uniform sampler2D page;
 uniform sampler2D palette;
 uniform float indexed;
 uniform vec4 color;
+uniform vec4 tint;
 varying vec2 vUv;
 
 void main() {
@@ -70,7 +71,7 @@ void main() {
   } else {
     c = texture2D(page, vUv);
   }
-  c *= color;
+  c *= color * tint;
   if (c.a < 0.004) discard;
   gl_FragColor = c;
 }
@@ -203,6 +204,8 @@ export class SpriteView {
    */
   onSound: ((name: string) => void) | undefined;
   private readonly layers: { mesh: Mesh; u: LayerUniforms }[] = [];
+  /** A color and opacity that multiply every layer, such as for a status. */
+  private readonly tint = new Vector4(1, 1, 1, 1);
 
   constructor(readonly asset: SpriteAsset) {
     this.palette = asset.palette;
@@ -259,6 +262,15 @@ export class SpriteView {
   setPalette(palette: Texture | undefined): void {
     this.palette = palette ?? this.asset.palette;
     this.shown = '';
+  }
+
+  /**
+   * Multiplies the sprite's colors by r, g and b, and its opacity by a,
+   * all from 0 to 1. 1, 1, 1, 1 draws the sprite as it is.
+   */
+  setTint(r: number, g: number, b: number, a: number): void {
+    // Every layer's material shares this vector.
+    this.tint.set(r, g, b, a);
   }
 
   /**
@@ -342,7 +354,7 @@ export class SpriteView {
         new ShaderMaterial({
           vertexShader: VERTEX,
           fragmentShader: FRAGMENT,
-          uniforms: { ...u },
+          uniforms: { ...u, tint: { value: this.tint } },
           transparent: true,
           depthWrite: false,
         }),

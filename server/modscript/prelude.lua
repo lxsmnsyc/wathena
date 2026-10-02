@@ -213,11 +213,20 @@ new_player, player_ids = handle_type("player", {
 		end
 		return new_equipped(id)
 	end,
-	start_status = function(self, status, options)
-		return (call(H.player_start_status, player_ids[self], status, options))
-	end,
 	add_timed_bonuses = function(self, key, milliseconds, list, options)
-		return (call(H.player_add_timed_bonuses, player_ids[self], key, milliseconds))
+		if type(key) ~= "string" then
+			error("player:add_timed_bonuses: the key must be a string", 2)
+		end
+		if math_type(milliseconds) ~= "integer" then
+			error("player:add_timed_bonuses: milliseconds must be an integer", 2)
+		end
+		if type(list) ~= "table" then
+			error("player:add_timed_bonuses: the bonuses must be a list of entries, such as { { \"str\", 5 } }", 2)
+		end
+		if options ~= nil and type(options) ~= "table" then
+			error("player:add_timed_bonuses: the options must be a table", 2)
+		end
+		return (call(H.player_add_timed_bonuses, player_ids[self], key, milliseconds, list, options))
 	end,
 	pay_zeny = function(self, amount)
 		return (call(H.player_pay_zeny, player_ids[self], amount))
@@ -278,8 +287,11 @@ local new_monster, monster_ids = handle_type("monster", {}, function(id, key)
 	return value
 end, true, "monster")
 
--- handle_key names a player or monster handle for Go, as "<kind>:<id>",
--- or returns nil for anything else.
+-- npc_ids holds the IDs of NPC handles, which come below.
+local npc_ids
+
+-- handle_key names a player, monster or NPC handle for Go, as
+-- "<kind>:<id>", or returns nil for anything else.
 local function handle_key(h)
 	local id = player_ids[h]
 	if id ~= nil then
@@ -289,11 +301,16 @@ local function handle_key(h)
 	if id ~= nil then
 		return "monster:" .. id
 	end
+	if npc_ids ~= nil then
+		id = npc_ids[h]
+		if id ~= nil then
+			return "npc:" .. id
+		end
+	end
 	return nil
 end
 
 -- NPCs are handles too: the instance of an NPC context.
-local npc_ids
 local new_npc
 new_npc, npc_ids = handle_type("npc", {
 	show_emotion = function(self, emotion)
@@ -309,6 +326,34 @@ new_npc, npc_ids = handle_type("npc", {
 	end
 	return value
 end, false, "npc")
+
+-- entity_handle makes the handle of an entity of a kind.
+local function entity_handle(kind, id)
+	if kind == "player" then
+		return new_player(id)
+	elseif kind == "monster" then
+		return new_monster(id)
+	elseif kind == "npc" then
+		return new_npc(id)
+	end
+	return nil
+end
+
+-- with_handles copies Go's fields, and makes handles of target and
+-- source with their kinds.
+local function with_handles(fields)
+	local o = {}
+	for k, v in pairs(fields) do
+		o[k] = v
+	end
+	for _, k in ipairs({ "target", "source" }) do
+		if fields[k .. "_kind"] ~= nil then
+			o[k] = entity_handle(fields[k .. "_kind"], fields[k])
+			o[k .. "_kind"] = nil
+		end
+	end
+	return o
+end
 
 -- Conversations: the methods that wait for the player pause the
 -- conversation's thread. Go resumes it with "ok" and the answer, or with
@@ -772,7 +817,11 @@ api["wa.bonuses"] = readonly("wa.bonuses", {
 })
 
 -- Constant modules, such as wa.races, come from Go. wa.jobs also has the
--- job tests.
+-- job tests, and wa.statuses has define.
+local statuses_impl
+
+-- status_bonus_fns are the bonuses functions of mod statuses, by status.
+local status_bonus_fns = {}
 local job_tests = {}
 for _, test in ipairs({ "is_transcendent", "is_baby", "is_third", "is_fourth", "base_job", "first_job" }) do
 	job_tests[test] = function(job)
@@ -790,7 +839,37 @@ for module, values in pairs(H.constants()) do
 			impl[k] = fn
 		end
 	end
+	if module == "statuses" then
+		statuses_impl = impl
+	end
 	api["wa." .. module] = readonly("wa." .. module, impl)
+end
+if statuses_impl == nil then
+	statuses_impl = {}
+	api["wa.statuses"] = readonly("wa.statuses", statuses_impl)
+end
+
+local define_fields = { name = true, icon = true, kind = true, ends_on = true, bonuses = true, tick_milliseconds = true }
+
+-- statuses.define adds a status in a mod script, with a constant in
+-- statuses named after it. Its bonuses function runs in Lua when one of
+-- its statuses starts.
+statuses_impl.define = function(spec)
+	check(type(spec) == "table", "statuses.define: want a table such as { name = \"glow\", kind = \"buff\" }")
+	for k in pairs(spec) do
+		check(define_fields[k], "statuses.define: " .. tostring(k) .. " is not a field; the fields are name, icon, kind, ends_on, bonuses and tick_milliseconds")
+	end
+	check(type(spec.name) == "string", "statuses.define: name must be a string")
+	check(spec.icon == nil or math_type(spec.icon) == "integer", "statuses.define: icon must be a status icon ID")
+	check(spec.kind == nil or type(spec.kind) == "string", "statuses.define: kind is \"buff\" or \"debuff\"")
+	check(spec.ends_on == nil or type(spec.ends_on) == "table", "statuses.define: ends_on must be a list of names")
+	check(spec.bonuses == nil or type(spec.bonuses) == "function", "statuses.define: bonuses must be a function of the level that returns bonus entries")
+	check(spec.tick_milliseconds == nil or math_type(spec.tick_milliseconds) == "integer", "statuses.define: tick_milliseconds must be an integer")
+	local existing = rawget(statuses_impl, spec.name)
+	local id = call(H.statuses_define, spec.name, spec.icon, spec.kind, spec.ends_on, spec.tick_milliseconds)
+	check(existing == nil or existing == id, "statuses.define: statuses." .. spec.name .. " is a status already")
+	status_bonus_fns[id] = spec.bonuses
+	statuses_impl[spec.name] = id
 end
 
 -- wa.testing: test cases for wactl mod test (mods/README.md, "Testing a
@@ -1176,34 +1255,49 @@ function R.invoke(fn, ...)
 			end
 			fields.victim_kind, fields.killer_kind = nil, nil
 			value = readonly("death", fields)
+		elseif kind == "status" then
+			-- The status event object: target and source are handles.
+			value = readonly("status event", with_handles(value))
 		end
 		args[#args + 1] = value
 	end
 	return fn(unpack(args, 1, n // 2))
 end
 
+local hook_objects = { drop_rate = "drop", experience = "exp", status_chance = "status hook", status_duration = "status hook" }
+
 -- hook_object makes the read-only object of a hook from Go's fields:
--- player and monster become handles.
+-- player, monster, target and source become handles.
 local function hook_object(kind, fields)
-	local o = {}
-	for k, v in pairs(fields) do
-		o[k] = v
-	end
+	local o = with_handles(fields)
 	if fields.player ~= nil then
 		o.player = new_player(fields.player)
 	end
 	if fields.monster ~= nil then
 		o.monster = new_monster(fields.monster)
 	end
-	return readonly(kind == "drop_rate" and "drop" or "exp", o)
+	return readonly(hook_objects[kind], o)
 end
 
 -- hook_result checks what a hook returned: an integer rate for
--- drop_rate, and two integers, base and job, for experience.
+-- drop_rate, two integers, base and job, for experience, and an integer
+-- for the status hooks.
 local function hook_result(kind, a, b)
 	if kind == "drop_rate" then
 		if math_type(a) ~= "integer" then
 			error("the drop_rate hook must return an integer rate, per 10,000", 0)
+		end
+		return a
+	end
+	if kind == "status_chance" then
+		if math_type(a) ~= "integer" then
+			error("the status_chance hook must return an integer chance, per 10,000", 0)
+		end
+		return a
+	end
+	if kind == "status_duration" then
+		if math_type(a) ~= "integer" then
+			error("the status_duration hook must return an integer number of milliseconds", 0)
 		end
 		return a
 	end
@@ -1218,15 +1312,18 @@ end
 local function innermost(kind, o)
 	if kind == "drop_rate" then
 		return hook_result(kind, o.rate)
+	elseif kind == "status_chance" then
+		return hook_result(kind, o.chance)
+	elseif kind == "status_duration" then
+		return hook_result(kind, o.milliseconds)
 	end
 	return hook_result(kind, o.base, o.job)
 end
 
--- run_hooks runs a chain of n hooks. Each runs in its own context, which
+-- run_chain runs a chain of n hooks. Each runs in its own context, which
 -- Go sets with H.hook_enter. A hook that fails is logged, and the chain
 -- goes on as if it were not there.
-function R.run_hooks(kind, fields, n, ...)
-	local fns = table.pack(...)
+local function run_chain(kind, fields, n, fns)
 	local function at(i, o)
 		if i > n then
 			return innermost(kind, o)
@@ -1259,6 +1356,161 @@ function R.run_hooks(kind, fields, n, ...)
 		return a, b
 	end
 	return at(1, hook_object(kind, fields))
+end
+
+function R.run_hooks(kind, fields, n, ...)
+	return run_chain(kind, fields, n, table.pack(...))
+end
+
+-- Status effects (proposal 0002, review decision 19): the status methods
+-- of every entity handle. A host function cannot call into Lua, so a
+-- start runs the bonuses function of a mod status and the hooks here,
+-- and passes their results to Go.
+
+-- lua_hooks runs the chain of a status hook for a start that a script
+-- asked for. It returns nil when no hook runs.
+local function lua_hooks(kind, fields)
+	local got = table.pack(H.hook_chain_begin(kind))
+	local n = got[1]
+	if n == 0 then
+		H.hook_chain_end()
+		return nil
+	end
+	local ok, a = pcall(run_chain, kind, fields, n, table.pack(unpack(got, 2, got.n)))
+	H.hook_chain_end()
+	if not ok then
+		error(a, 0)
+	end
+	return a
+end
+
+local status_option_names = {
+	milliseconds = true, level = true, values = true, chance = true, source = true,
+	cannot_be_avoided = true, keep_duration = true, keep_chance = true, hide_icon = true,
+}
+
+-- status_options copies the options of start_status as plain data: the
+-- source handle becomes "<kind>:<id>".
+local function status_options(options)
+	if options == nil then
+		return nil
+	end
+	if type(options) ~= "table" then
+		error("start_status: the options must be a table, such as { milliseconds = 60000, level = 10 }", 4)
+	end
+	local out = {}
+	for k, v in pairs(options) do
+		if not status_option_names[k] then
+			error("start_status: " .. tostring(k) .. " is not an option; the options are milliseconds, level, values, chance, source, cannot_be_avoided, keep_duration, keep_chance and hide_icon", 4)
+		end
+		if k == "source" then
+			local key = handle_key(v)
+			if key == nil then
+				error("start_status: source must be a player, monster or NPC handle", 4)
+			end
+			out.source = key
+		elseif k == "values" then
+			if type(v) ~= "table" then
+				error("start_status: values must be a list of up to 3 integers: val2 to val4", 4)
+			end
+			local list = {}
+			for i, x in ipairs(v) do
+				list[i] = x
+			end
+			out.values = list
+		else
+			out[k] = v
+		end
+	end
+	return out
+end
+
+local function start_status(kind, id, status, options)
+	if math_type(status) ~= "integer" then
+		error("start_status: want a status from wa.statuses", 3)
+	end
+	local opts = status_options(options)
+	local level = (opts ~= nil and math_type(opts.level) == "integer") and opts.level or 1
+	local entries = nil
+	local fn = status_bonus_fns[status]
+	if fn ~= nil then
+		H.compute_begin()
+		local ok, r = pcall(fn, level)
+		H.compute_end()
+		if not ok then
+			error(r, 3)
+		end
+		entries = r
+	end
+	local chance, duration
+	local preview = call(H.entity_status, "preview", kind, id, status, opts)
+	if preview ~= nil then
+		local fields = { target = id, target_kind = kind, status = status, level = level, chance = preview.chance }
+		if opts ~= nil and opts.source ~= nil then
+			local skind, sid = opts.source:match("^(%a+):(%-?%d+)$")
+			fields.source, fields.source_kind = math.tointeger(tonumber(sid)), skind
+		end
+		chance = lua_hooks("status_chance", fields)
+		fields.chance, fields.milliseconds = nil, preview.milliseconds
+		duration = lua_hooks("status_duration", fields)
+	end
+	return (call(H.entity_status, "start", kind, id, status, opts, entries, chance, duration))
+end
+
+-- status_object makes the read-only object of get_status from Go's
+-- fields.
+local function status_object(fields)
+	local o = with_handles(fields)
+	o.values = readonly("values", fields.values)
+	return readonly("status", o)
+end
+
+-- add_status_methods gives a handle type the status methods.
+local function add_status_methods(kind, ids)
+	local methods = handle_methods[kind]
+	methods.start_status = function(self, status, options)
+		return start_status(kind, ids()[self], status, options)
+	end
+	methods.end_status = function(self, status)
+		return (call(H.entity_status, "end", kind, ids()[self], status))
+	end
+	methods.has_status = function(self, status)
+		return (call(H.entity_status, "has", kind, ids()[self], status))
+	end
+	methods.get_status = function(self, status)
+		local list = call(H.entity_status, "get", kind, ids()[self], status)
+		if list[1] == nil then
+			return nil
+		end
+		return status_object(list[1])
+	end
+	methods.get_statuses = function(self)
+		local list = call(H.entity_status, "list", kind, ids()[self], nil)
+		local out = {}
+		for i, fields in ipairs(list) do
+			out[i] = status_object(fields)
+		end
+		return out
+	end
+end
+add_status_methods("player", function()
+	return player_ids
+end)
+add_status_methods("monster", function()
+	return monster_ids
+end)
+add_status_methods("npc", function()
+	return npc_ids
+end)
+
+-- status_bonuses runs the bonuses function of a mod status, for a start
+-- that Go makes, such as at login.
+function R.status_bonuses(status, level)
+	local fn = status_bonus_fns[status]
+	if fn == nil then
+		return nil
+	end
+	return fn(level)
 end
 
 -- check_condition runs the condition of a world event: a function of a

@@ -5,17 +5,18 @@
 //
 // This is a port of rAthena's status.cpp and parts of pc.cpp (GPL-3.0).
 // It covers a player with equipment, refines, cards and their bonuses,
-// and no status changes, no mount and no cart, in both renewal and
-// pre-renewal. Function comments name the rAthena functions they port.
-// The settings are the defaults from rAthena's conf/battle files.
+// status changes (changes.go), and no mount and no cart, in both renewal
+// and pre-renewal, and the status changes of monsters. Function comments
+// name the rAthena functions they port. The settings are the defaults
+// from rAthena's conf/battle files.
 //
 // Stats are totals of modifiers (decision 0009): Calc starts from the
 // job tables and adds each equipped item, its refine and its bonuses in
 // rAthena's order every time. It keeps no state between calls.
 //
 // What it does not port yet:
-//   - Status changes, item combos, random options, enchant grades and
-//     forged weapons.
+//   - The effects of status changes that only skills start, item
+//     combos, random options, enchant grades and forged weapons.
 //   - Summoners (pc_checkskill_summoner and Soul Attack's range), which
 //     Calc refuses.
 //   - Taekwon rankers, which need the fame list. Calc treats every
@@ -31,6 +32,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
+	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
 
 // Settings from rAthena's conf/battle files and headers.
@@ -182,6 +184,14 @@ type Character struct {
 	Deaths int
 	// Equipment is what the player wears, or nil for nothing.
 	Equipment *Equipment
+	// Changes are the player's active statuses, its status_change, or
+	// nil for none.
+	Changes *sc.List
+	// StatusBonuses are the bonuses of active statuses: the scripts of
+	// status.yml and the bonuses of mod statuses, in status order, as
+	// status_calc_pc_sub runs status scripts. TimedBonuses are the timed
+	// bonuses, in the order they started (pc_bonus_script).
+	StatusBonuses, TimedBonuses []Bonus
 }
 
 // Result is a player's stats.
@@ -207,6 +217,51 @@ type Bonuses struct {
 	HPRecoverRate, SPRecoverRate int
 	// NoHPRegen and NoSPRegen are bNoRegen: natural regen is off.
 	NoHPRegen, NoSPRegen bool
+	// ResEff is reseff: the resistance to each status, per 10,000.
+	ResEff map[int]int
+	// AlwaysEndure is bNoWalkDelay.
+	AlwaysEndure bool
+	// AddEff, AddEffWhenHit and AddEffOnSkill are addeff, addeff_atked
+	// and addeff_onskill: the statuses that attacks may cause.
+	AddEff, AddEffWhenHit, AddEffOnSkill []AddEffect
+	// Regen are hp_regen, sp_regen, percent_hp_regen, percent_sp_regen,
+	// hp_loss and sp_loss: HP and SP gained or lost over time.
+	Regen []RegenBonus
+}
+
+// AddEffect is s_addeffect: a status an attack may cause.
+type AddEffect struct {
+	Status int
+	// Rate and ArrowRate are per 10,000; ArrowRate adds to ranged
+	// attacks.
+	Rate, ArrowRate int
+	// Flag holds rAthena's ATF_ bits.
+	Flag int
+	// Duration is the duration in milliseconds.
+	Duration int
+	// Skill is the skill of an addeff_onskill entry.
+	Skill int
+}
+
+// ATF_ bits of AddEffect, as rAthena's e_additional_effect.
+const (
+	ATFSelf   = 0x01
+	ATFTarget = 0x02
+	ATFShort  = 0x04
+	ATFLong   = 0x08
+	ATFWeapon = 0x10
+	ATFMagic  = 0x20
+	ATFMisc   = 0x40
+)
+
+// RegenBonus is s_regen: an amount every Rate milliseconds.
+type RegenBonus struct {
+	// Kind is hp_gain_over_time, sp_gain_over_time, hp_loss_over_time or
+	// sp_loss_over_time. Percent is set for a percent of max HP or SP.
+	Kind    string
+	Percent bool
+	Value   int
+	Rate    int
 }
 
 // Window holds the two numbers rAthena's status window shows for ATK,
@@ -235,7 +290,13 @@ type Tables struct {
 	// preRenewalSizes is the size_table ruleset flag set to pre_renewal:
 	// attacks use pre-renewal's size table for knuckles and whips.
 	preRenewalSizes bool
+	// statuses is the status database, for the default duration of
+	// cause_status. Without it, that duration is 0.
+	statuses *sc.DB
 }
+
+// SetStatuses sets the status database that bonuses read.
+func (t *Tables) SetStatuses(db *sc.DB) { t.statuses = db }
 
 // SetSizeTable sets the size_table ruleset flag: pre-renewal's size
 // table, or renewal's.
@@ -357,7 +418,10 @@ func (t *Tables) Calc(c Character) (Result, error) {
 	res.Base.CRate, res.Battle.CRate = base.crate, bat.crate
 	res.Base.PAtk, res.Battle.PAtk = base.patk, bat.patk
 	res.Battle.Player = p.b.player
-	res.Bonuses = Bonuses{HPRecoverRate: p.b.hprecovRate, SPRecoverRate: p.b.sprecovRate, NoHPRegen: p.b.noHPRegen, NoSPRegen: p.b.noSPRegen}
+	res.Battle.Changes = BattleChanges(c.Changes)
+	res.Bonuses = Bonuses{HPRecoverRate: p.b.hprecovRate, SPRecoverRate: p.b.sprecovRate, NoHPRegen: p.b.noHPRegen, NoSPRegen: p.b.noSPRegen,
+		ResEff: p.b.resEff, AlwaysEndure: p.b.noWalkDelay, AddEff: p.b.addEff, AddEffWhenHit: p.b.addEffWhenHit,
+		AddEffOnSkill: p.b.addEffOnSkill, Regen: p.b.regen}
 	return res, nil
 }
 
@@ -490,6 +554,10 @@ func (p *pc) calcBase() data {
 			}
 		}
 	}
+
+	// Status scripts, then timed bonuses (pc_bonus_script).
+	pb.run(c.StatusBonuses, lrNone, &b)
+	pb.run(c.TimedBonuses, lrNone, &b)
 
 	// rhw.range and lhw.range become at least 1, and the right hand's
 	// range is the longer of the two.
@@ -750,6 +818,10 @@ func (p *pc) calcBase() data {
 	pl.Weapon, pl.RightWeapon, pl.LeftWeapon = weapon, p.worn.WeaponType1, p.worn.WeaponType2
 	pl.AmmoAtk, pl.AmmoEle = pb.arrowAtk, pb.arrowEle
 	pl.PreRenewalSizes = p.t.preRenewalSizes
+	// The statuses at the end of status_calc_pc_sub that change bonuses.
+	if l := c.Changes; !l.Empty() {
+		pb.matkRate += l.Val1(sc.SCIncmatkrate)
+	}
 	return b
 }
 
@@ -927,7 +999,8 @@ func (p *pc) baseAmotion(b *data) int {
 		if lv := p.skill(skillSingleAction); lv > 0 && w.Weapon >= weaponRevolver && w.Weapon <= weaponGrenade {
 			val += (lv + 1) / 2
 		}
-		return int(temp+float32(val)*float32(b.Agi)/200) - min(aspd, 200)
+		fixed := calcAspdBonus(p.c.Changes, true, true, nil)
+		return int(temp+float32(fixed+val)*float32(b.Agi)/200) - min(aspd, 200)
 	}
 	var amotion int
 	if w.Weapon < weaponTypes {
@@ -968,9 +1041,13 @@ func (p *pc) calcMaxHP(vit int) int {
 	// VIT from equipment scripts gives 1 more HP each.
 	dmax += float64(p.b.paramEquip[paramVit])
 	dmax += float64(p.hpBonus())
-	// status_get_hpbonus_equip: bMaxHPrate.
+	// status_get_hpbonus_equip: bMaxHPrate. status_get_hpbonus_item has
+	// nothing to add.
 	dmax += dmax * float64(p.b.hprate-100) / 100
-	// status_get_hpbonus with STATUS_BONUS_RATE has only status changes.
+	// status_get_hpbonus with STATUS_BONUS_RATE, from statuses.
+	if rate := hpRateSC(p.c.Changes); rate != 0 {
+		dmax += float64(int64(dmax * float64(rate) / 100))
+	}
 	return max(int(uint32(max(dmax, 1))), 1)
 }
 
@@ -995,10 +1072,10 @@ func (p *pc) capMaxHP(hp int) int {
 	return capValue(hp, 1, maxHP)
 }
 
-// hpBonus is status_get_hpbonus with STATUS_BONUS_FIX: bMaxHP and
-// skills.
+// hpBonus is status_get_hpbonus with STATUS_BONUS_FIX: bMaxHP, skills
+// and statuses.
 func (p *pc) hpBonus() int {
-	bonus := p.b.hp
+	bonus := p.b.hp + hpBonusSC(p.c.Changes, p.t.renewal)
 	bonus += p.skill(skillTrust) * 200
 	for _, id := range []int{skillBreakthrough, skillTranscendence} {
 		if lv := p.skill(id); lv > 0 {
@@ -1024,7 +1101,13 @@ func (p *pc) calcMaxSP(intel int) int {
 	// INT from equipment scripts gives 1 more SP each.
 	dmax += float64(p.b.paramEquip[paramInt])
 	dmax += float64(p.spBonus())
-	dmax += dmax * float64(p.b.sprate-100) / 100
+	// status_get_spbonus_equip and status_get_spbonus_item.
+	equip := dmax * float64(p.b.sprate-100) / 100
+	if item := spItemSC(p.c.Changes); item != 0 {
+		dmax += equip + dmax*float64(item)/100
+	} else {
+		dmax += equip
+	}
 	// "Aegis accuracy": the rate bonus is truncated before it is added.
 	dmax += float64(int64(dmax * float64(p.spRate()) / 100))
 	return max(int(uint32(max(dmax, 1))), 1)
@@ -1060,6 +1143,7 @@ func (p *pc) spRate() int {
 		}
 		bonus += p.skill(lesson)
 	}
+	bonus += spRateSC(p.c.Changes)
 	return max(bonus, -100)
 }
 
@@ -1073,79 +1157,125 @@ func (p *pc) maxWeight() int {
 	return w
 }
 
-// calcBattle is status_calc_bl_main with every flag and no status
-// changes. Most values stay as in the base status.
+// calcBattle is status_calc_bl_main with every flag, for a player: the
+// battle status from the base status and the player's statuses.
 func (p *pc) calcBattle(b *data) data {
 	s := *b
 	pb := p.b
+	l := p.c.Changes
+	renewal := p.t.renewal
 
-	// status_calc_speed. A player's status change list is never nil, so
-	// item speed bonuses and the haste from Improve Dodge apply even with
-	// no status changes.
-	rate := 100
-	itemSpeed := pb.speedRate + pb.speedAddRate
-	if itemSpeed > 0 {
-		// GetMoveSlowValue: a slowdown from items.
-		rate += itemSpeed
-	}
-	haste := 0
-	if p.mapID&mapidSecondMask == mapidAssassin && p.skill(skillMiss) > 0 {
-		haste = p.skill(skillMiss)
-	}
-	if itemSpeed < 0 {
-		haste = max(haste, -itemSpeed)
-	}
-	rate -= haste
-	rate = max(rate, 40)
-	speed := b.Speed
-	if rate != 100 {
-		speed = speed * rate / 100
-	}
-	s.Speed = capValue(speed, minWalkSpeed, maxWalkSpeedCap)
-	if s.Speed < maxWalkSpeed {
-		s.Speed = maxWalkSpeed
+	s.Str = calcStr(l, b.Str)
+	s.Agi = calcAgi(l, b.Agi)
+	s.Vit = calcVit(l, b.Vit)
+	s.Int = calcInt(l, b.Int)
+	s.Dex = calcDex(l, b.Dex)
+	s.Luk = calcLuk(l, b.Luk)
+
+	// BATK: the difference that equipment made to the base status stays.
+	if b.BAtk != 0 {
+		s.BAtk = p.baseAtk(&s) + b.BAtk - p.baseAtk(b)
 	}
 
 	// Pre-renewal applies bWeaponAtkRate to the right hand's weapon ATK
 	// here.
-	if !p.t.renewal && pb.weaponAtkRate != 0 {
+	if !renewal && pb.weaponAtkRate != 0 {
 		s.RHW.Atk += s.RHW.Atk * pb.weaponAtkRate / 100
 	}
 
-	// The caps of status_calc_hit to status_calc_mdef2 with no status
-	// changes.
-	s.Hit = capValue(s.Hit, 1, math.MaxInt16)
-	s.Flee = capValue(s.Flee, 1, math.MaxInt16)
-	s.Def, s.MDef = p.capDef(s.Def), p.capDef(s.MDef)
-	if p.t.renewal {
-		s.Def2 = capValue(s.Def2, math.MinInt16, math.MaxInt16)
-		s.MDef2 = capValue(s.MDef2, math.MinInt16, math.MaxInt16)
+	// HIT and FLEE follow the change of the stats they come from.
+	if s.Dex == b.Dex && (!renewal || (s.Luk == b.Luk && s.con == b.con)) {
+		s.Hit = calcHit(l, b.Hit, renewal)
 	} else {
-		s.Def2 = capValue(s.Def2, 1, math.MaxInt16)
-		s.MDef2 = capValue(s.MDef2, 1, math.MaxInt16)
+		d := s.Dex - b.Dex
+		if renewal {
+			d += s.Luk/3 - b.Luk/3 + 2*(s.con-b.con)
+		}
+		s.Hit = calcHit(l, b.Hit+d, renewal)
 	}
-	if b.Flee2 != 0 {
-		s.Flee2 = capValue(s.Flee2, 10, math.MaxInt16)
+	if s.Agi == b.Agi && (!renewal || (s.Luk == b.Luk && s.con == b.con)) {
+		s.Flee = calcFlee(l, b.Flee)
+	} else {
+		d := s.Agi - b.Agi
+		if renewal {
+			d += s.Luk/5 - b.Luk/5 + 2*(s.con-b.con)
+		}
+		s.Flee = calcFlee(l, b.Flee+d)
 	}
+
+	s.Def = calcDef(l, b.Def, renewal, true, p.capDef)
+	switch {
+	case s.Vit == b.Vit && (!renewal || s.Agi == b.Agi):
+		s.Def2 = calcDef2(l, b.Def2, renewal, s.Vit)
+	case renewal:
+		s.Def2 = calcDef2(l, b.Def2+int((float32(s.Vit)/2-float32(b.Vit)/2)+(float32(s.Agi)/5-float32(b.Agi)/5)), renewal, s.Vit)
+	default:
+		s.Def2 = calcDef2(l, b.Def2+s.Vit-b.Vit, renewal, s.Vit)
+	}
+	s.MDef = calcMdef(l, b.MDef, p.capDef)
+	switch {
+	case s.Int == b.Int && s.Vit == b.Vit && (!renewal || s.Dex == b.Dex):
+		s.MDef2 = calcMdef2(l, b.MDef2, renewal)
+	case renewal:
+		s.MDef2 = calcMdef2(l, b.MDef2+s.Int-b.Int+int((float32(s.Dex)/5-float32(b.Dex)/5)+(float32(s.Vit)/5-float32(b.Vit)/5)), renewal)
+	default:
+		s.MDef2 = calcMdef2(l, b.MDef2+s.Int-b.Int+(s.Vit-b.Vit)/2, renewal)
+	}
+
+	// status_calc_speed. Item speed bonuses and the haste of Improve
+	// Dodge apply even with no status changes, since a player's status
+	// change list always exists.
+	in := speedInput{player: true, itemSpeed: pb.speedRate + pb.speedAddRate, tunnel: p.skill(skillTunnelDrive)}
+	if p.mapID&mapidSecondMask == mapidAssassin {
+		in.assassinTF = p.skill(skillMiss)
+	}
+	s.Speed = calcSpeed(l, b.Speed, in)
+	if s.Speed < maxWalkSpeed {
+		s.Speed = maxWalkSpeed
+	}
+
 	// Critical is at least 1%, and katars double it after status changes.
 	if b.Cri != 0 {
-		s.Cri = capValue(s.Cri, 10, math.MaxInt16)
+		switch {
+		case s.Luk == b.Luk:
+			s.Cri = calcCritical(l, b.Cri)
+		case renewal:
+			s.Cri = calcCritical(l, b.Cri+3*(s.Luk-b.Luk))
+		default:
+			s.Cri = calcCritical(l, b.Cri+(s.Luk-b.Luk)*10/3)
+		}
 		if p.worn.Weapon == weaponKatar {
 			s.Cri *= 2
 		}
 	}
-	if p.t.renewal {
+	if b.Flee2 != 0 {
+		s.Flee2 = calcFlee2(l, b.Flee2+s.Luk-b.Luk)
+	}
+
+	// Elements.
+	s.RHW.Ele = calcAttackElement(l, b.RHW.Ele)
+	s.LHW.Ele = calcAttackElement(l, b.LHW.Ele)
+	s.DefEle = calcElement(l, b.DefEle)
+	s.EleLv = calcElementLv(l, b.EleLv)
+
+	// Max HP and SP from the battle VIT and INT.
+	s.MaxHP = p.capMaxHP(p.calcMaxHP(s.Vit))
+	s.MaxSP = capValue(p.calcMaxSP(s.Int), 1, maxSP)
+
+	if renewal {
 		// status_calc_watk with only a left-hand weapon.
 		if b.WAtk == 0 {
-			s.WAtk2 = capValue(s.WAtk2, 0, math.MaxUint16)
+			s.WAtk = 0
+			s.WAtk2 = capValue(b.WAtk2, 0, math.MaxUint16)
 		} else {
-			s.WAtk = capValue(s.WAtk, 0, math.MaxUint16)
+			s.WAtk = capValue(b.WAtk, 0, math.MaxUint16)
 		}
 	}
 
 	// MATK.
+	recognized := l.Has(sc.SCRecognizedspell)
 	var matkMin, matkMax int
-	if p.t.renewal {
+	if renewal {
 		// MATK = StatusMATK + WeaponMATK + ExtraMATK.
 		matkMin, matkMax = p.baseMatk(&s), p.baseMatk(&s)
 		wMatk, variance := 0, 0
@@ -1159,37 +1289,56 @@ func (p *pc) calcBattle(b *data) data {
 		}
 		matkMin += wMatk - variance
 		matkMax += wMatk + variance
+		if recognized {
+			matkMin = max(matkMin, matkMax)
+		}
 		if o := pb.player.Right.Overrefine; o > 0 {
 			matkMin++
 			matkMax += o - 1
 		}
+		matkMin += pb.ematk + pb.ematkHidden
+		matkMax += pb.ematk + pb.ematkHidden
+		if pb.matkRate != 100 {
+			matkMin = matkMin * pb.matkRate / 100
+			matkMax = matkMax * pb.matkRate / 100
+		}
 	} else {
 		matkMin = int(uint16(s.Int + (s.Int/7)*(s.Int/7))) // #nosec G115 -- status_base_matk_min returns uint16.
 		matkMax = int(uint16(s.Int + (s.Int/5)*(s.Int/5))) // #nosec G115 -- status_base_matk_max returns uint16.
-	}
-	matkMin += pb.ematk + pb.ematkHidden
-	matkMax += pb.ematk + pb.ematkHidden
-	if pb.matkRate != 100 {
-		matkMin = matkMin * pb.matkRate / 100
-		matkMax = matkMax * pb.matkRate / 100
+		matkMin += pb.ematk + pb.ematkHidden
+		matkMax += pb.ematk + pb.ematkHidden
+		if pb.matkRate != 100 {
+			matkMin = matkMin * pb.matkRate / 100
+			matkMax = matkMax * pb.matkRate / 100
+		}
+		if recognized {
+			matkMin = max(matkMin, matkMax)
+		}
 	}
 	s.MAtkMin = capValue(matkMin, 0, math.MaxUint16)
 	s.MAtkMax = capValue(matkMax, 0, math.MaxUint16)
 
 	// ASPD.
 	amotion := p.baseAmotion(&s)
+	if !p.t.renewalASPD {
+		s.aspdRate = calcAspdRate(l, b.aspdRate)
+	}
 	amotion = amotion * s.aspdRate / 1000
 	if p.t.renewalASPD {
-		// The renewal rate modifier, from bAspdRate.
-		amotion += max(195-amotion, 2) * pb.aspdRate2 / 100
+		// The renewal rate modifier, from bAspdRate and statuses.
+		amotion += max(195-amotion, 2) * (pb.aspdRate2 + calcAspdBonus(l, false, true, p.skill)) / 100
 		amotion = amotionZeroASPD - amotion*amotionInterval
 		// The raw change of bAspd.
 		amotion += pb.aspdAdd
 	}
-	// status_calc_fix_aspd.
-	amotion = capValue(amotion, 1, minASPD)
+	amotion = calcFixAspd(l, amotion)
 	s.AMotion = capValue(amotion, p.maxASPD()/amotionDividerPC, minASPD/amotionDividerPC)
 	s.ADelay = amotionDividerPC * s.AMotion
+
+	// Damage motion follows a changed AGI.
+	if b.Agi != s.Agi {
+		s.DMotion = capValue(800-s.Agi*4, 400, 800)
+	}
 	return s
 }
 

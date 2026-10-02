@@ -8,9 +8,9 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Kind | Items with scripts | Full | Partly | Not | Static data | Lua files |
 |---|---:|---:|---:|---:|---:|---:|
-| Equipment and cards | 14108 | 13759 (97.5%) | 166 | 183 | 6125 | 7792 |
-| Usable | 5280 | 4418 (83.7%) | 341 | 521 | 0 | 4418 |
-| Delayed use | 665 | 11 (1.7%) | 13 | 641 | 0 | 11 |
+| Equipment and cards | 14108 | 13829 (98.0%) | 112 | 167 | 6125 | 7808 |
+| Usable | 5280 | 4940 (93.6%) | 58 | 282 | 0 | 4940 |
+| Delayed use | 665 | 16 (2.4%) | 12 | 637 | 0 | 16 |
 
 - Static data: equipment whose scripts are only constant bonuses. They become `bonuses` in item data, and the server applies them without Lua.
 - Lua files: items with an entry script, in `scripts/items/`.
@@ -19,16 +19,16 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| `skill` | 493 | 452 | 41 | 0 | 491 | unknown skill: DC_FORTUNEKISS2 (2); unknown skill: BA_POEMBRAGI2 (1) |
-| `autobonus` | 367 | 316 | 41 | 10 | 321 | effect script (39); status effects: sc_start (6); parameter Hp (2); ... |
+| `skill` | 493 | 485 | 8 | 0 | 491 | unknown skill: DC_FORTUNEKISS2 (2); unknown skill: BA_POEMBRAGI2 (1) |
+| `autobonus` | 367 | 320 | 37 | 10 | 325 | effect script (35); status effects: sc_start (6); parameter Hp (2); ... |
 | `hateffect` | 213 | 211 | 2 | 0 | 213 |  |
-| `specialeffect2` | 144 | 122 | 21 | 1 | 142 | variables: EF_ENCHANCE is a character variable or an unknown constant (2) |
-| `autobonus3` | 114 | 101 | 13 | 0 | 101 | effect script (7); heal (3); variables: UNLUCKY is a character variable or an unknown constant (3); ... |
+| `specialeffect2` | 144 | 123 | 20 | 1 | 142 | variables: EF_ENCHANCE is a character variable or an unknown constant (2) |
+| `autobonus3` | 114 | 102 | 12 | 0 | 102 | effect script (6); heal (3); variables: UNLUCKY is a character variable or an unknown constant (3); ... |
 | `vip_status` | 84 | 0 | 0 | 84 | 0 | not supported (84) |
-| `sc_end` | 66 | 0 | 50 | 16 | 0 | status effects: sc_end (74) |
+| `sc_end` | 66 | 65 | 0 | 1 | 65 | status effects: sc_end (9) |
 | `heal` | 60 | 0 | 57 | 3 | 0 | not supported (60) |
-| `autobonus2` | 44 | 23 | 18 | 3 | 26 | effect script (15); variables: Eff_Confuse is a character variable or an unknown constant (2); heal (1) |
-| `sc_start` | 42 | 0 | 5 | 37 | 0 | status effects: sc_start (42) |
+| `autobonus2` | 44 | 24 | 18 | 2 | 27 | effect script (14); variables: Eff_Confuse is a character variable or an unknown constant (2); heal (1) |
+| `sc_start` | 42 | 21 | 0 | 21 | 21 | status effects: sc_start (21) |
 | `active_transform` | 33 | 0 | 25 | 8 | 0 | not supported (38) |
 | `getpetinfo` | 12 | 0 | 0 | 12 | 0 | not supported (12) |
 | `showscript` | 12 | 0 | 9 | 3 | 0 | not supported (18) |
@@ -55,76 +55,76 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| `bonus2 bSkillAtk` | 2701 | 2681 | 20 | 0 | 2701 |  |
-| `bonus bBaseAtk` | 2141 | 2127 | 14 | 0 | 2141 |  |
-| `bonus bMatk` | 1492 | 1483 | 9 | 0 | 1492 |  |
-| `bonus bMaxHP` | 1486 | 1474 | 12 | 0 | 1486 |  |
-| `bonus bAtkRate` | 1370 | 1364 | 6 | 0 | 1370 |  |
-| `bonus bMatkRate` | 1232 | 1226 | 6 | 0 | 1232 |  |
-| `bonus bMdef` | 1229 | 1217 | 12 | 0 | 1229 |  |
-| `bonus bLongAtkRate` | 1225 | 1214 | 11 | 0 | 1225 |  |
-| `bonus bMaxHPrate` | 1202 | 1181 | 21 | 0 | 1202 |  |
-| `bonus bAspdRate` | 1134 | 1126 | 8 | 0 | 1134 |  |
-| `bonus bVariableCastrate` | 1058 | 1052 | 6 | 0 | 1058 |  |
-| `bonus bDelayrate` | 1029 | 1007 | 22 | 0 | 1029 |  |
-| `bonus2 bMagicAtkEle` | 1007 | 1001 | 6 | 0 | 1007 |  |
-| `bonus2 bAddRace` | 851 | 841 | 10 | 0 | 851 |  |
-| `bonus2 bSubRace` | 787 | 770 | 17 | 0 | 787 |  |
-| `bonus bMaxSPrate` | 782 | 769 | 13 | 0 | 782 |  |
-| `bonus bPatk` | 782 | 780 | 2 | 0 | 782 |  |
+| `bonus2 bSkillAtk` | 2701 | 2688 | 13 | 0 | 2701 |  |
+| `bonus bBaseAtk` | 2141 | 2133 | 8 | 0 | 2141 |  |
+| `bonus bMatk` | 1492 | 1486 | 6 | 0 | 1492 |  |
+| `bonus bMaxHP` | 1486 | 1485 | 1 | 0 | 1486 |  |
+| `bonus bAtkRate` | 1370 | 1367 | 3 | 0 | 1370 |  |
+| `bonus bMatkRate` | 1232 | 1228 | 4 | 0 | 1232 |  |
+| `bonus bMdef` | 1229 | 1219 | 10 | 0 | 1229 |  |
+| `bonus bLongAtkRate` | 1225 | 1218 | 7 | 0 | 1225 |  |
+| `bonus bMaxHPrate` | 1202 | 1185 | 17 | 0 | 1202 |  |
+| `bonus bAspdRate` | 1134 | 1129 | 5 | 0 | 1134 |  |
+| `bonus bVariableCastrate` | 1058 | 1054 | 4 | 0 | 1058 |  |
+| `bonus bDelayrate` | 1029 | 1021 | 8 | 0 | 1029 |  |
+| `bonus2 bMagicAtkEle` | 1007 | 1003 | 4 | 0 | 1007 |  |
+| `bonus2 bAddRace` | 851 | 846 | 5 | 0 | 851 |  |
+| `bonus2 bSubRace` | 787 | 783 | 4 | 0 | 787 |  |
+| `bonus bMaxSPrate` | 782 | 773 | 9 | 0 | 782 |  |
+| `bonus bPatk` | 782 | 781 | 1 | 0 | 782 |  |
 | `bonus bShortAtkRate` | 688 | 686 | 2 | 0 | 688 |  |
-| `bonus bInt` | 687 | 666 | 21 | 0 | 687 |  |
-| `bonus2 bAddSize` | 663 | 657 | 6 | 0 | 663 |  |
+| `bonus bInt` | 687 | 669 | 18 | 0 | 687 |  |
+| `bonus2 bAddSize` | 663 | 660 | 3 | 0 | 663 |  |
 | `bonus bCritical` | 630 | 630 | 0 | 0 | 630 |  |
 | `bonus bUnbreakableWeapon` | 595 | 594 | 1 | 0 | 595 |  |
-| `bonus2 bSubEle` | 559 | 548 | 11 | 0 | 559 |  |
-| `bonus bDex` | 555 | 546 | 9 | 0 | 555 |  |
+| `bonus2 bSubEle` | 559 | 549 | 10 | 0 | 559 |  |
+| `bonus bDex` | 555 | 550 | 5 | 0 | 555 |  |
 | `bonus bCritAtkRate` | 541 | 540 | 1 | 0 | 541 |  |
-| `bonus bMaxSP` | 536 | 533 | 3 | 0 | 536 |  |
-| `bonus bDef` | 535 | 529 | 6 | 0 | 535 |  |
-| `bonus2 bAddEle` | 484 | 483 | 1 | 0 | 484 |  |
+| `bonus bMaxSP` | 536 | 535 | 1 | 0 | 536 |  |
+| `bonus bDef` | 535 | 535 | 0 | 0 | 535 |  |
+| `bonus2 bAddEle` | 484 | 484 | 0 | 0 | 484 |  |
 | `bonus bSmatk` | 472 | 472 | 0 | 0 | 472 |  |
-| `bonus2 bSkillCooldown` | 468 | 452 | 16 | 0 | 468 |  |
+| `bonus2 bSkillCooldown` | 468 | 465 | 3 | 0 | 468 |  |
 | `bonus bStr` | 445 | 440 | 5 | 0 | 445 |  |
 | `bonus bHit` | 439 | 439 | 0 | 0 | 439 |  |
 | `bonus2 bMagicAddRace` | 435 | 433 | 2 | 0 | 435 |  |
-| `bonus bAllStats` | 420 | 415 | 5 | 0 | 420 |  |
-| `bonus bAgi` | 391 | 386 | 5 | 0 | 391 |  |
-| `bonus2 bMagicAddSize` | 376 | 373 | 3 | 0 | 376 |  |
-| `bonus bFlee` | 362 | 356 | 6 | 0 | 362 |  |
+| `bonus bAllStats` | 420 | 417 | 3 | 0 | 420 |  |
+| `bonus bAgi` | 391 | 388 | 3 | 0 | 391 |  |
+| `bonus2 bMagicAddSize` | 376 | 376 | 0 | 0 | 376 |  |
+| `bonus bFlee` | 362 | 358 | 4 | 0 | 362 |  |
 | `bonus bFixedCast` | 360 | 358 | 2 | 0 | 360 |  |
-| `bonus bVit` | 346 | 327 | 19 | 0 | 346 |  |
+| `bonus bVit` | 346 | 328 | 18 | 0 | 346 |  |
 | `bonus bPow` | 316 | 315 | 1 | 0 | 316 |  |
-| `bonus2 bAddClass` | 308 | 302 | 6 | 0 | 308 |  |
+| `bonus2 bAddClass` | 308 | 304 | 4 | 0 | 308 |  |
 | `bonus2 bMagicAddEle` | 299 | 298 | 1 | 0 | 299 |  |
-| `bonus bLuk` | 284 | 266 | 18 | 0 | 284 |  |
+| `bonus bLuk` | 284 | 267 | 17 | 0 | 284 |  |
 | `bonus2 bIgnoreDefRaceRate` | 262 | 262 | 0 | 0 | 262 |  |
 | `bonus3 bAutoSpell` | 260 | 257 | 2 | 1 | 259 | invalid bonus: bonuses.add("cast"): argument 2 is a skill level, from 1 (1) |
 | `bonus bAtkEle` | 256 | 254 | 2 | 0 | 256 |  |
 | `bonus bHealPower` | 253 | 251 | 2 | 0 | 253 |  |
-| `bonus bAspd` | 250 | 247 | 3 | 0 | 250 |  |
-| `bonus2 bResEff` | 249 | 243 | 6 | 0 | 249 |  |
-| `bonus bSpl` | 236 | 235 | 1 | 0 | 236 |  |
+| `bonus bAspd` | 250 | 248 | 2 | 0 | 250 |  |
+| `bonus2 bResEff` | 249 | 245 | 4 | 0 | 249 |  |
+| `bonus bSpl` | 236 | 236 | 0 | 0 | 236 |  |
 | `bonus bCon` | 230 | 230 | 0 | 0 | 230 |  |
 | `bonus2 bExpAddRace` | 212 | 208 | 4 | 0 | 212 |  |
 | `bonus bUseSPrate` | 196 | 195 | 1 | 0 | 196 |  |
-| `bonus2 bSubClass` | 168 | 164 | 4 | 0 | 168 |  |
-| `bonus2 bSkillUseSP` | 167 | 152 | 15 | 0 | 167 |  |
-| `bonus bPerfectHitAddRate` | 153 | 145 | 8 | 0 | 153 |  |
+| `bonus2 bSubClass` | 168 | 166 | 2 | 0 | 168 |  |
+| `bonus2 bSkillUseSP` | 167 | 164 | 3 | 0 | 167 |  |
+| `bonus bPerfectHitAddRate` | 153 | 149 | 4 | 0 | 153 |  |
 | `bonus bUnbreakableHelm` | 148 | 140 | 8 | 0 | 148 |  |
 | `bonus2 bAddEff` | 148 | 148 | 0 | 0 | 148 |  |
 | `bonus bRes` | 145 | 145 | 0 | 0 | 145 |  |
-| `bonus2 bIgnoreMdefRaceRate` | 143 | 142 | 1 | 0 | 143 |  |
-| `bonus2 bVariableCastrate` | 136 | 131 | 5 | 0 | 136 |  |
-| `bonus bFlee2` | 133 | 132 | 1 | 0 | 133 |  |
+| `bonus2 bIgnoreMdefRaceRate` | 143 | 143 | 0 | 0 | 143 |  |
+| `bonus2 bVariableCastrate` | 136 | 132 | 4 | 0 | 136 |  |
+| `bonus bFlee2` | 133 | 133 | 0 | 0 | 133 |  |
 | `bonus bSPrecovRate` | 126 | 121 | 5 | 0 | 126 |  |
 | `bonus bMres` | 125 | 124 | 1 | 0 | 125 |  |
 | `bonus bCrate` | 105 | 105 | 0 | 0 | 105 |  |
-| `bonus bUnbreakableArmor` | 105 | 103 | 2 | 0 | 105 |  |
+| `bonus bUnbreakableArmor` | 105 | 104 | 1 | 0 | 105 |  |
 | `bonus3 bAutoSpellWhenHit` | 105 | 103 | 2 | 0 | 105 |  |
 | `bonus2 bSubSize` | 99 | 99 | 0 | 0 | 99 |  |
 | `bonus bHPrecovRate` | 98 | 96 | 2 | 0 | 98 |  |
-| `bonus2 bAddMonsterDropItem` | 73 | 72 | 1 | 0 | 73 |  |
+| `bonus2 bAddMonsterDropItem` | 73 | 73 | 0 | 0 | 73 |  |
 | `bonus bSPGainValue` | 72 | 67 | 5 | 0 | 72 |  |
 | `bonus2 bHPDrainRate` | 72 | 60 | 12 | 0 | 72 |  |
 | `bonus2 bSkillUseSPrate` | 68 | 68 | 0 | 0 | 68 |  |
@@ -132,13 +132,13 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus5 bAutoSpell` | 64 | 64 | 0 | 0 | 64 |  |
 | `bonus bHealPower2` | 63 | 63 | 0 | 0 | 63 |  |
 | `bonus bHPGainValue` | 62 | 59 | 3 | 0 | 62 |  |
-| `bonus2 bMagicAddClass` | 62 | 61 | 1 | 0 | 62 |  |
+| `bonus2 bMagicAddClass` | 62 | 62 | 0 | 0 | 62 |  |
 | `bonus bFixedCastrate` | 60 | 59 | 1 | 0 | 60 |  |
 | `bonus bCrt` | 59 | 59 | 0 | 0 | 59 |  |
 | `bonus bDefEle` | 59 | 59 | 0 | 0 | 59 |  |
 | `bonus bNonCritAtkRate` | 59 | 59 | 0 | 0 | 59 |  |
-| `bonus bSpeedRate` | 59 | 55 | 4 | 0 | 59 |  |
-| `bonus2 bFixedCastrate` | 55 | 50 | 5 | 0 | 55 |  |
+| `bonus bSpeedRate` | 59 | 59 | 0 | 0 | 59 |  |
+| `bonus2 bFixedCastrate` | 55 | 52 | 3 | 0 | 55 |  |
 | `bonus bNoCastCancel` | 52 | 52 | 0 | 0 | 52 |  |
 | `bonus2 bSPDrainRate` | 52 | 40 | 12 | 0 | 52 |  |
 | `bonus5 bAutoSpellWhenHit` | 52 | 52 | 0 | 0 | 52 |  |
@@ -146,28 +146,28 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus4 bAutoSpellOnSkill` | 50 | 50 | 0 | 0 | 50 |  |
 | `bonus bSplashRange` | 49 | 49 | 0 | 0 | 49 |  |
 | `bonus bAddItemHealRate` | 48 | 48 | 0 | 0 | 48 |  |
-| `bonus bNoKnockback` | 48 | 46 | 2 | 0 | 48 |  |
+| `bonus bNoKnockback` | 48 | 47 | 1 | 0 | 48 |  |
 | `bonus2 bAddEffWhenHit` | 46 | 41 | 5 | 0 | 46 |  |
 | `bonus2 bAddRace2` | 46 | 46 | 0 | 0 | 46 |  |
 | `bonus2 bDropAddRace` | 43 | 40 | 3 | 0 | 43 |  |
-| `bonus bMagicSPGainValue` | 41 | 40 | 1 | 0 | 41 |  |
+| `bonus bMagicSPGainValue` | 41 | 41 | 0 | 0 | 41 |  |
 | `bonus2 bHPRegenRate` | 40 | 38 | 2 | 0 | 39 | invalid bonus: bonuses.add("hp_gain_over_time"): argument 2 must be a value, not a function: only the amount can be c... (1) |
 | `bonus2 bIgnoreMdefClassRate` | 40 | 38 | 2 | 0 | 40 |  |
 | `bonus2 bHPLossRate` | 38 | 15 | 23 | 0 | 38 |  |
-| `bonus2 bAddItemHealRate` | 36 | 35 | 1 | 0 | 36 |  |
-| `bonus bSPDrainValue` | 35 | 34 | 1 | 0 | 35 |  |
+| `bonus2 bAddItemHealRate` | 36 | 36 | 0 | 0 | 36 |  |
+| `bonus bSPDrainValue` | 35 | 35 | 0 | 0 | 35 |  |
 | `bonus bShortWeaponDamageReturn` | 35 | 34 | 1 | 0 | 35 |  |
 | `bonus3 bAddEff` | 35 | 33 | 2 | 0 | 35 |  |
 | `bonus bSta` | 34 | 34 | 0 | 0 | 34 |  |
 | `bonus2 bMagicAddRace2` | 34 | 34 | 0 | 0 | 34 |  |
 | `bonus2 bSPRegenRate` | 33 | 31 | 2 | 0 | 32 | invalid bonus: bonuses.add("sp_gain_over_time"): argument 2 must be a value, not a function: only the amount can be c... (1) |
-| `bonus bMagicHPGainValue` | 31 | 30 | 1 | 0 | 31 |  |
+| `bonus bMagicHPGainValue` | 31 | 31 | 0 | 0 | 31 |  |
 | `bonus4 bAutoSpellWhenHit` | 31 | 31 | 0 | 0 | 31 |  |
 | `bonus bIgnoreDefRace` | 30 | 30 | 0 | 0 | 30 |  |
 | `bonus bWis` | 28 | 28 | 0 | 0 | 28 |  |
-| `bonus bRestartFullRecover` | 26 | 21 | 5 | 0 | 26 |  |
+| `bonus bRestartFullRecover` | 26 | 25 | 1 | 0 | 26 |  |
 | `bonus2 bIgnoreDefClassRate` | 26 | 25 | 1 | 0 | 26 |  |
-| `bonus2 bAddEff2` | 25 | 24 | 1 | 0 | 25 |  |
+| `bonus2 bAddEff2` | 25 | 25 | 0 | 0 | 25 |  |
 | `bonus2 bSPGainRace` | 25 | 15 | 10 | 0 | 25 |  |
 | `bonus2 bCriticalAddRace` | 24 | 24 | 0 | 0 | 24 |  |
 | `bonus bNoSizeFix` | 23 | 23 | 0 | 0 | 23 |  |
@@ -211,7 +211,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus2 bAddSkillBlow` | 6 | 6 | 0 | 0 | 6 |  |
 | `bonus2 bComaRace` | 6 | 6 | 0 | 0 | 6 |  |
 | `bonus2 bRegenPercentSP` | 6 | 5 | 1 | 0 | 6 |  |
-| `bonus5 bAutoSpellOnSkill` | 6 | 5 | 1 | 0 | 6 |  |
+| `bonus5 bAutoSpellOnSkill` | 6 | 6 | 0 | 0 | 6 |  |
 | `bonus bAgiVit` | 5 | 4 | 1 | 0 | 5 |  |
 | `bonus bDef2Rate` | 5 | 5 | 0 | 0 | 5 |  |
 | `bonus3 bSPVanishRate` | 5 | 5 | 0 | 0 | 5 |  |
@@ -261,25 +261,25 @@ An item converts fully when every part of its scripts converts. A usable item th
 |---|---:|---:|---:|---:|---:|---|
 | `getgroupitem` | 2767 | 2766 | 0 | 1 | 2766 | unknown item group: 2941 (1) |
 | `getitem` | 1243 | 1221 | 22 | 0 | 1243 |  |
-| `sc_start` | 442 | 0 | 239 | 203 | 0 | status effects: sc_start (621) |
-| `itemheal` | 244 | 217 | 27 | 0 | 244 |  |
-| `percentheal` | 226 | 81 | 145 | 0 | 226 |  |
-| `specialeffect2` | 160 | 7 | 153 | 0 | 160 |  |
+| `sc_start` | 442 | 422 | 20 | 0 | 442 |  |
+| `itemheal` | 244 | 237 | 7 | 0 | 244 |  |
+| `percentheal` | 226 | 216 | 10 | 0 | 226 |  |
+| `specialeffect2` | 160 | 148 | 12 | 0 | 160 |  |
 | `rentitem` | 73 | 73 | 0 | 0 | 73 |  |
 | `pet` | 68 | 0 | 0 | 68 | 0 | not supported (68) |
 | `mercenary_create` | 59 | 0 | 0 | 59 | 0 | not supported (59) |
-| `sc_start2` | 49 | 0 | 38 | 11 | 0 | status effects: sc_start2 (55) |
+| `sc_start2` | 49 | 49 | 0 | 0 | 49 |  |
 | `callfunc` | 36 | 0 | 2 | 34 | 0 | not supported (36) |
-| `sc_end` | 28 | 0 | 14 | 14 | 0 | status effects: sc_end (118) |
-| `warp` | 28 | 25 | 3 | 0 | 28 |  |
-| `sc_start4` | 24 | 0 | 19 | 5 | 0 | status effects: sc_start4 (24) |
+| `sc_end` | 28 | 26 | 2 | 0 | 26 | variables: SC_CURSEDCIRCLE is a character variable or an unknown constant (1); variables: SC_DECAGI is a character variable or an unknown constant (1) |
+| `warp` | 28 | 26 | 2 | 0 | 28 |  |
+| `sc_start4` | 24 | 24 | 0 | 0 | 24 |  |
 | `getitembound` | 22 | 0 | 22 | 0 | 0 | not supported (22) |
-| `transform` | 18 | 0 | 4 | 14 | 0 | not supported (18) |
+| `transform` | 18 | 0 | 5 | 13 | 0 | not supported (18) |
 | `unitskilluseid` | 18 | 0 | 0 | 18 | 0 | not supported (18) |
-| `bonus_script` | 17 | 0 | 7 | 10 | 0 | not supported (17) |
+| `bonus_script` | 17 | 13 | 4 | 0 | 14 | rand: in an equip script, where bonuses must not change between recalculations (3) |
 | `condition` | 17 | 0 | 0 | 17 | 0 | strcharinfo (8); checkmadogear (3); eaclass: mask EAJ_ASSASSIN_CROSS (2); ... |
 | `showscript` | 13 | 0 | 6 | 7 | 0 | not supported (13) |
-| `skilleffect` | 12 | 0 | 7 | 5 | 0 | not supported (12) |
+| `skilleffect` | 12 | 0 | 12 | 0 | 0 | not supported (12) |
 | `variables` | 10 | 0 | 1 | 9 | 0 | Zeny keeps state outside the script (4); RouletteBronze keeps state outside the script (2); CharMoves keeps state outside the script (1); ... |
 | `getexp2` | 9 | 0 | 0 | 9 | 0 | not supported (9) |
 | `setfont` | 9 | 0 | 0 | 9 | 0 | not supported (9) |
@@ -287,7 +287,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `itemskill` | 5 | 1 | 3 | 1 | 1 | skills used by items (4) |
 | `makerune` | 5 | 0 | 0 | 5 | 0 | not supported (5) |
 | `monster` | 5 | 0 | 0 | 5 | 0 | not supported (5) |
-| `heal` | 4 | 0 | 2 | 2 | 0 | not supported (4) |
+| `heal` | 4 | 0 | 3 | 1 | 0 | not supported (4) |
 | `produce` | 4 | 0 | 0 | 4 | 0 | not supported (4) |
 | `searchstores` | 4 | 0 | 0 | 4 | 0 | not supported (4) |
 | `announce` | 3 | 0 | 0 | 3 | 0 | not supported (3) |
@@ -313,18 +313,18 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `laphine_synthesis` | 231 | 0 | 0 | 231 | 0 | not supported (231) |
 | `laphine_upgrade` | 150 | 0 | 0 | 150 | 0 | not supported (150) |
 | `item_reform` | 130 | 0 | 0 | 130 | 0 | not supported (130) |
-| `itemskill` | 110 | 8 | 10 | 92 | 8 | skills used by items (106) |
+| `itemskill` | 110 | 8 | 11 | 91 | 8 | skills used by items (106) |
 | `callfunc` | 18 | 0 | 0 | 18 | 0 | not supported (18) |
 | `condition` | 9 | 0 | 0 | 9 | 0 | strcharinfo (8); checkoption (1) |
 | `percentheal` | 8 | 0 | 8 | 0 | 8 |  |
 | `item_enchant` | 6 | 0 | 0 | 6 | 0 | not supported (6) |
-| `sc_start` | 6 | 0 | 2 | 4 | 0 | status effects: sc_start (6) |
-| `specialeffect2` | 5 | 0 | 5 | 0 | 5 |  |
+| `sc_start` | 6 | 5 | 1 | 0 | 6 |  |
+| `specialeffect2` | 5 | 2 | 3 | 0 | 5 |  |
 | `duplicate_dynamic` | 2 | 0 | 0 | 2 | 0 | not supported (2) |
 | `getitem` | 2 | 0 | 2 | 0 | 2 |  |
 | `getgroupitem` | 1 | 1 | 0 | 0 | 1 |  |
 | `heal` | 1 | 0 | 0 | 1 | 0 | not supported (1) |
 | `itemheal` | 1 | 0 | 1 | 0 | 1 |  |
 | `showscript` | 1 | 0 | 1 | 0 | 0 | not supported (1) |
-| `skilleffect` | 1 | 0 | 0 | 1 | 0 | not supported (1) |
+| `skilleffect` | 1 | 0 | 1 | 0 | 0 | not supported (1) |
 

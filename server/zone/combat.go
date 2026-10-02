@@ -89,9 +89,16 @@ func (z *Zone) fight() {
 			e.target = nil
 			continue
 		}
+		// unit_can_attack: statuses that stop attacking end the attack.
+		if e.cant().Attack {
+			e.target = nil
+			continue
+		}
 		reach := max(e.status.RHW.Range, 1)
 		if chebyshev(e, t) > reach {
-			z.chase(e, t)
+			if !e.cant().Move {
+				z.chase(e, t)
+			}
 			continue
 		}
 		// In range: stop walking, then attack at the attack delay.
@@ -137,9 +144,21 @@ func (z *Zone) strike(e, t *entity) {
 	}
 	z.hits = append(z.hits, hit{source: e, target: t, result: r, delay: e.status.AMotion, hpPermille: t.hpPermille()})
 	z.itemHitEvents(e, t, r)
+	landed := r.Kind == battle.Hit || r.Kind == battle.Critical
+	if landed {
+		// status_damage: statuses that damage ends do, such as Sleep.
+		z.damaged(t, r.Damage, e.monster != nil)
+	}
 	if t.hp <= 0 {
 		z.die(t, e)
 		return
+	}
+	if landed {
+		// skill_additional_effect and skill_counter_additional_effect:
+		// the statuses that equipment bonuses cause.
+		long := r.Flag&battle.FlagLong != 0
+		z.additionalEffect(e, t, long)
+		z.counterEffect(e, t, long)
 	}
 	// A monster that can attack strikes back.
 	if t.monster != nil && t.target == nil && t.status.Mode&modeCanAttack != 0 {
@@ -181,8 +200,14 @@ func (z *Zone) itemHitEvents(e, t *entity, r battle.Result) {
 	}
 }
 
-// die ends a unit killed by another.
+// die ends a unit killed by another, or by its statuses when killer is
+// nil.
 func (z *Zone) die(e, killer *entity) {
+	if e.dead {
+		return
+	}
+	// pc_dead and mob_dead clear the statuses first.
+	z.statusesDied(e)
 	e.dead = true
 	e.target = nil
 	e.pickItem = nil
@@ -206,6 +231,7 @@ func (z *Zone) die(e, killer *entity) {
 		return
 	}
 	z.entities.remove(e)
+	z.dropStatuses(e)
 	z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_DIED})
 	z.queueDeath(e, killer)
 	z.reward(e, killer)

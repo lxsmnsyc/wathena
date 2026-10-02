@@ -68,6 +68,9 @@ func (z *Zone) recalc(p *Player) {
 	if z.Items != nil && p.inventory != nil {
 		c.Equipment = z.equipment(p)
 	}
+	c.Changes = e.sc
+	c.StatusBonuses = z.statusBonuses(p)
+	c.TimedBonuses = p.timedBonusList()
 	res, err := z.Status.Calc(c)
 	if err != nil {
 		// Levels the job tables do not have. The player keeps its stats.
@@ -83,6 +86,10 @@ func (z *Zone) recalc(p *Player) {
 	}
 	st := res.Battle
 	e.status = &st
+	p.base, p.bonuses = res.Base, res.Bonuses
+	// The regen bonuses start their time again, as status_calc_pc
+	// rebuilds them.
+	p.regenTicks.bonus = nil
 	p.maxWeight = res.MaxWeight
 	p.window = res.Window
 	if st.Speed > 0 {

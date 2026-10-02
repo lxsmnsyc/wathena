@@ -617,3 +617,50 @@ body {
   height: 100%;
   background: #4ad04a;
 }
+
+#status-icons {
+  position: fixed;
+  top: 64px;
+  left: 12px;
+  display: flex;
+  flex-flow: column wrap;
+  gap: 4px;
+  max-height: 50vh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.status-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 32px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-shadow:
+    0 0 2px #000,
+    0 0 2px #000;
+}
+
+.status-icon img {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+
+.status-icon .badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 60%);
+  font-size: 10px;
+}
+
+.status-icon [hidden] {
+  display: none;
+}

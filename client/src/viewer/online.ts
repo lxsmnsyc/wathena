@@ -15,6 +15,7 @@ import {
   type Look as LookMessage,
   type MinimapMark,
   type NpcDialog,
+  type Options,
   type PickUpFailure,
   type ShopOpen,
   type ShopOutcome,
@@ -32,6 +33,7 @@ import type { TextureSource } from '../render/textures';
 import type { Pathfinder } from '../world/pathfinder';
 import GroundItems from './groundItems';
 import { type StackDetails, type StackInput, USE_EFFECTS } from './inventory';
+import { appearance } from './options';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
 
@@ -39,8 +41,9 @@ import Player, { type Body } from './player';
 // server gives, and vanish. Items lie on the ground until someone picks
 // them up. Effects play on entities or cells. Warp portals are NPCs with
 // the warp sprite, drawn as the warp effect. Other NPCs are one sprite,
-// sprite/npc/<sprite ID>. A map change clears everything, and events
-// wait until the new map has loaded.
+// sprite/npc/<sprite ID>. Status options tint units, and hide units that
+// hide (options.ts). A map change clears everything, and events wait
+// until the new map has loaded.
 
 /** JT_WARPNPC, the NPC sprite of warp portals. */
 export const WARP_SPRITE = 45;
@@ -137,6 +140,8 @@ interface Pending {
   walk: Parameters<Player['follow']> | undefined;
   /** The newest look, for a player. */
   look: LookMessage | undefined;
+  /** The newest status options. */
+  options: Options | undefined;
 }
 
 /** How long the pick up action plays, in milliseconds. */
@@ -202,6 +207,12 @@ export default class Online {
   onNpcImage: ((name: string, position: ImagePosition) => void) | undefined;
   /** Called when a progress bar starts over the player. */
   onProgress: ((durationMs: number, color: number) => void) | undefined;
+  /**
+   * Called when one of the player's status icons shows or goes, with its
+   * EFST_ ID and how long it lasts in milliseconds, or -1 when it does not
+   * end by itself.
+   */
+  onStatusIcon: ((icon: number, on: boolean, remainingMs: number) => void) | undefined;
   /** Called for a minimap mark. */
   onMinimapMark: ((mark: MinimapMark) => void) | undefined;
   /** Called when a shop window opens. */
@@ -320,6 +331,7 @@ export default class Online {
             dir: a.dir,
             walk: undefined,
             look: a.look,
+            options: a.options,
           };
           this.pending.set(a.id, pending);
           // Monsters and NPCs are one sprite. Players are characters
@@ -345,6 +357,7 @@ export default class Online {
                 a.walkMs || undefined,
               );
               unit.stand(pending.x, pending.y, pending.dir);
+              unit.appearance = appearance(pending.options, a.id === this.self);
               if (pending.walk !== undefined) {
                 unit.follow(...pending.walk);
               }
@@ -502,6 +515,14 @@ export default class Online {
         case 'lookChange':
           this.changeLook(e.body.value.id, e.body.value.look);
           break;
+        case 'optionChange':
+          this.changeOptions(e.body.value.id, e.body.value.options);
+          break;
+        case 'statusIcon': {
+          const s = e.body.value;
+          this.onStatusIcon?.(s.icon, s.on, Number(s.remainingMs));
+          break;
+        }
         case 'inventoryRemove':
           this.onInventoryRemove?.(e.body.value.slot, e.body.value.amount, e.body.value.reason);
           break;
@@ -619,6 +640,22 @@ export default class Online {
         this.group.add(c.group);
       })
       .catch(reportError);
+  }
+
+  /**
+   * Shows a unit's new status options. A unit still loading takes them
+   * once it has loaded.
+   */
+  private changeOptions(id: number, options: Options | undefined): void {
+    const pending = this.pending.get(id);
+    if (pending !== undefined) {
+      pending.options = options;
+      return;
+    }
+    const unit = this.units.get(id);
+    if (unit !== undefined) {
+      unit.appearance = appearance(options, id === this.self);
+    }
   }
 
   /**
@@ -823,7 +860,8 @@ export default class Online {
       });
     };
     for (const [id, unit] of this.units) {
-      if (id !== this.self) {
+      // Hidden units cannot be clicked.
+      if (id !== this.self && unit.appearance.visible) {
         add(id, unit.character.group.position, 1, false, 40);
       }
     }
