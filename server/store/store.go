@@ -537,6 +537,7 @@ func saveParams(c *character.Character, version int64) db.SaveCharacterParams {
 		Hp: int(c.HP), Sp: int(c.SP), Map: c.Map, X: c.X, Y: c.Y, Zeny: c.Zeny,
 		InventorySize: c.InventorySize,
 		SaveMap:       c.SaveMap, SaveX: c.SaveX, SaveY: c.SaveY,
+		JobChangeLevel: c.JobChangeLevel, RebirthJob: c.RebirthJob, Options: c.Options,
 	}
 }
 
@@ -551,6 +552,7 @@ func fromRow(r *db.Character, items []db.InventoryRow) (*character.Character, er
 		InventorySize: r.InventorySize,
 		Stats:         status.Stats{Str: r.Str, Agi: r.Agi, Vit: r.Vit, Int: r.Int, Dex: r.Dex, Luk: r.Luk},
 		SaveMap:       r.SaveMap, SaveX: r.SaveX, SaveY: r.SaveY,
+		JobChangeLevel: r.JobChangeLevel, RebirthJob: r.RebirthJob, Options: r.Options,
 	}}
 	for _, it := range items {
 		id, err := itemID(it.ItemID)

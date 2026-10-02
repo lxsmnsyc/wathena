@@ -336,6 +336,10 @@ func (z *Zone) heal(p *Player, h *item.Heal) {
 		hp, sp = item.PercentHeal(hp, sp, st.MaxHP, st.MaxSP)
 	} else {
 		hp, sp = item.ItemHeal(hp, sp, st.Vit, st.Int, p.char.Skills)
+		hp += z.appleItemHeal(e)
+		if z.asuraNoItemSP(e) {
+			sp = 0
+		}
 	}
 	gotHP, gotSP := z.statusHeal(p, int64(hp), int64(sp))
 	if gotHP > 0 {

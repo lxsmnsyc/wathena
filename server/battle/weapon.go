@@ -65,6 +65,8 @@ type damage struct {
 	// basedamage is pre-renewal's damage of a normal attack with the
 	// right hand, which SC_WATK_ELEMENT reads.
 	basedamage int64
+	// rejected is the damage Reject Sword returned to the attacker.
+	rejected int64
 
 	statusAtk, statusAtk2   int64
 	weaponAtk, weaponAtk2   int64
@@ -79,12 +81,14 @@ type damage struct {
 func calcWeaponAttack(src, target *Status, sk *Skill, r Rand) damage {
 	sd := src.Player
 	wd := initializeWeaponData(src, sk)
+	modifyDamageData(&wd, src, target)
 
-	rightElement := weaponElement(src, handRight, wd.sk, r)
-	leftElement := weaponElement(src, handLeft, wd.sk, r)
+	rightElement := modifyElement(&wd, src, target, weaponElement(src, handRight, wd.sk, r))
+	leftElement := modifyElement(&wd, src, target, weaponElement(src, handLeft, wd.sk, r))
 
-	// Check for Lucky Dodge. Skills cannot be lucky dodged.
-	if sk == nil && target.Flee2 != 0 && r.IntN(1000) < target.Flee2 {
+	// Check for Lucky Dodge. Skills cannot be lucky dodged, except
+	// Martyr's Reckoning.
+	if (sk == nil || wd.skillID() == skillSacrifice) && target.Flee2 != 0 && r.IntN(1000) < target.Flee2 {
 		wd.typ = dmgLuckyDodge
 		wd.dmgLv = atkLucky
 		if wd.div < 0 {
@@ -113,6 +117,15 @@ func calcWeaponAttack(src, target *Status, sk *Skill, r Rand) damage {
 	} else if infdef = isInfiniteDefense(target, wd.flag); !infdef {
 		calcSkillBaseDamage(&wd, src, target, critical, r)
 
+		// Magic Crasher adds a MATK roll to weapon ATK.
+		if wd.skillID() == skillMagicCrasher {
+			matk := int64(src.MAtkMin)
+			if src.MAtkMax > src.MAtkMin {
+				matk += int64(r.IntN(src.MAtkMax - src.MAtkMin))
+			}
+			wd.atkAdd(src, &wd.weaponAtk, &wd.weaponAtk2, matk)
+		}
+
 		if sd != nil {
 			// Renewal applies the attacker's cards to weapon and
 			// equipment ATK only.
@@ -136,6 +149,11 @@ func calcWeaponAttack(src, target *Status, sk *Skill, r Rand) damage {
 		if c := src.Changes; c != nil && c.WatkElementRate != 0 && wd.skillID() != skillMeteorAssault {
 			wd.atkAddRate(src, &wd.weaponAtk, &wd.weaponAtk2, int64(c.WatkElementRate))
 		}
+		// SC_DRUMBATTLE adds its ATK to equipment ATK.
+		if c := src.Changes; c != nil && c.DrumBattle != 0 {
+			wd.atkAdd(src, &wd.equipAtk, &wd.equipAtk2, int64(c.DrumBattle))
+		}
+		edpBonus(&wd, src)
 
 		// Players sum their ATK parts. Monsters already have their
 		// damage from battle_calc_base_damage.
@@ -149,7 +167,7 @@ func calcWeaponAttack(src, target *Status, sk *Skill, r Rand) damage {
 		wd.rate(src, int64(ratio))
 
 		// Additive damage bonus.
-		wd.atkAdd(src, &wd.damage, &wd.damage2, skillConstantAddition(&wd, src, target))
+		wd.atkAdd(src, &wd.damage, &wd.damage2, skillConstantAddition(&wd, src, target, r))
 
 		// Advanced Katar Mastery applies after the skill ratio.
 		if lv := src.skill(skillAdvKatarMastery); sd != nil && sd.Weapon == WeaponKatar && lv > 0 {
@@ -226,11 +244,31 @@ func calcWeaponAttack(src, target *Status, sk *Skill, r Rand) damage {
 	calcAttackLeftRightHands(&wd, src)
 	calcAttackGvgBg(&wd, src, target)
 
-	// battle_calc_weapon_final_atk_modifiers only changes damage through
-	// status changes and skill damage adjustments, which do not apply.
+	calcWeaponFinalAtkModifiers(&wd, src, target, r)
 	// battle_do_reflect does not change the attacker's damage.
 	absorbDamage(&wd, target)
 	return wd
+}
+
+// calcWeaponFinalAtkModifiers is battle_calc_weapon_final_atk_modifiers,
+// for the statuses ported so far: Reject Sword halves a hit of a monster,
+// or of a player with a dagger or a sword, and returns the halved damage
+// to the attacker. The zone deals the returned damage and counts the
+// reflection.
+func calcWeaponFinalAtkModifiers(wd *damage, src, target *Status, r Rand) {
+	tc := target.Changes
+	if wd.damage == 0 || tc == nil || tc.RejectSword <= 0 {
+		return
+	}
+	if sd := src.Player; sd != nil && sd.RightWeapon != WeaponDagger && sd.RightWeapon != Weapon1HSword &&
+		sd.Weapon != Weapon2HSword {
+		return
+	}
+	if r.IntN(100) >= tc.RejectSword {
+		return
+	}
+	wd.damage = wd.damage * 50 / 100
+	wd.rejected = wd.damage
 }
 
 // absorbDamage is battle_absorb_damage: a player target's
@@ -372,10 +410,28 @@ func isAttackCritical(wd *damage, src, target *Status, doubleCanCrit, chainCanCr
 		factor = 3
 	}
 	cri -= target.Luk * factor
-	// Sleep doubles it. Auto Counter and Camouflage come with their
-	// skills.
+	// Sleep doubles it. Camouflage comes with its skill.
 	if tc := target.Changes; tc != nil && tc.Sleep {
 		cri *= 2
+	}
+	// Auto Counter's counter is always critical: auto_counter_type is 15,
+	// every unit type. A normal attack under SC_AUTOCOUNTER would end it
+	// and be critical too, but the status keeps its unit from attacking
+	// (NoAttack).
+	if wd.skillID() == skillAutoCounter {
+		return true
+	}
+	// Renewal's Soul Breaker has half the critical chance.
+	if wd.skillID() == skillSoulBreaker && !wd.pre {
+		cri /= 2
+	}
+	if wd.skillID() == skillSharpShooting {
+		// Focused Arrow Strike is critical more often.
+		if wd.pre {
+			cri += 200
+		} else {
+			cri += 300
+		}
 	}
 	if tsd := target.Player; tsd != nil && tsd.CriticalDef != 0 {
 		cri = cri * (100 - tsd.CriticalDef) / 100
@@ -391,6 +447,10 @@ func isAttackHitting(wd *damage, src, target *Status, critical, pre bool, r Rand
 		return true
 	}
 	if sd := src.Player; sd != nil && sd.PerfectHit > 0 && r.IntN(100) < sd.PerfectHit {
+		return true
+	}
+	// Venom Splasher's own target is always hit.
+	if wd.skillID() == skillVenomSplasher && wd.miscflag == 0 {
 		return true
 	}
 	// A target that is stunned, frozen, asleep or stone is always hit.
@@ -409,6 +469,10 @@ func isAttackHitting(wd *damage, src, target *Status, critical, pre bool, r Rand
 	hitrate := src.Hit - flee
 	if pre {
 		hitrate += 80
+	}
+	// Blinding Mist's hit penalty is only for ranged normal attacks.
+	if tc := target.Changes; tc != nil && tc.FogWall && wd.flag&(bfLong|bfMagic) == bfLong && wd.sk == nil {
+		hitrate -= 50
 	}
 
 	if src.Player != nil {
@@ -442,6 +506,10 @@ func isAttackHitting(wd *damage, src, target *Status, critical, pre bool, r Rand
 	}
 
 	hitrate = min(max(hitrate, minHitrate), maxHitrate)
+	// Rapid Smiting gives a flat 20 hit after the cap.
+	if wd.skillID() == skillShieldChain {
+		hitrate += 20
+	}
 	return r.IntN(100) < hitrate
 }
 
@@ -466,6 +534,20 @@ func isInfiniteDefense(target *Status, flag int) bool {
 // use battle_calc_base_damage. A skill that splits its damage divides it
 // among its targets.
 func calcSkillBaseDamage(wd *damage, src, target *Status, critical bool, r Rand) {
+	switch wd.skillID() {
+	case skillSpiralPierce:
+		calcSpiralPierceBase(wd, src, target, r)
+		return
+	case skillSacrifice:
+		// Martyr's Reckoning: 9% of max HP, as weapon ATK.
+		wd.damage = int64(src.MaxHP * 9 / 100)
+		wd.damage2 = 0
+		wd.weaponAtk, wd.weaponAtk2 = wd.damage, wd.damage2
+		return
+	case skillShieldBoomerang, skillShieldChain:
+		calcShieldBase(wd, src, true)
+		return
+	}
 	bflag := 0
 	if critical {
 		bflag |= bdmgCrit
@@ -497,6 +579,29 @@ func calcSkillBaseDamage(wd *damage, src, target *Status, critical bool, r Rand)
 	}
 }
 
+// calcShieldBase is the Shield Boomerang and Shield Chain case of
+// battle_calc_skill_base_damage: base ATK, plus 4 per refine and a tenth
+// of the weight of a player's shield, which renewal counts as weapon ATK
+// too. A unit that is not a player adds its atk2 instead. Pre-renewal's
+// DEF reduction, which comes next for players, is the caller's.
+func calcShieldBase(wd *damage, src *Status, renewal bool) {
+	wd.damage = int64(src.BAtk)
+	sd := src.Player
+	if sd == nil {
+		wd.atkAdd(src, &wd.damage, &wd.damage2, int64(src.RHW.Atk2))
+		return
+	}
+	if !sd.Shield {
+		return
+	}
+	wd.atkAdd(src, &wd.damage, &wd.damage2, int64(4*sd.ShieldRefine))
+	wd.atkAdd(src, &wd.damage, &wd.damage2, int64(sd.ShieldWeight/10))
+	if renewal {
+		wd.atkAdd(src, &wd.weaponAtk, &wd.weaponAtk2, int64(4*sd.ShieldRefine))
+		wd.atkAdd(src, &wd.weaponAtk, &wd.weaponAtk2, int64(sd.ShieldWeight/10))
+	}
+}
+
 // calcBaseDamage is battle_calc_base_damage for a unit that is not a
 // player: a roll between the weapon's atk and atk2, plus base ATK. The
 // roll is rnd() % (atk2 - atk), so atk2 itself is only reached by a
@@ -509,6 +614,10 @@ func calcBaseDamage(st *Status, wa *Weapon, _ int, flag int, r Rand) int64 {
 		atkmin, atkmax = wa.Atk, wa.Atk2
 	}
 	atkmin = min(atkmin, atkmax)
+	// Maximize Power takes the maximum.
+	if c := st.Changes; c != nil && c.MaximizePower {
+		atkmin = atkmax
+	}
 
 	var dmg int64
 	if flag&bdmgCrit == 0 {
@@ -625,7 +734,8 @@ func handBits(ele, race, class uint32, target *Status) bool {
 // With left_cardfix_to_right, the left hand's flags count for the right
 // hand.
 func attackIgnoresDef(wd *damage, src, target *Status, h hand) bool {
-	if sd := src.Player; sd != nil {
+	// Grand Cross skips the bonuses that ignore DEF.
+	if sd := src.Player; sd != nil && wd.skillID() != skillGrandCross {
 		if h == handRight && handBits(sd.Right.IgnoreDefEle, sd.Right.IgnoreDefRace, sd.Right.IgnoreDefClass, target) {
 			return true
 		}
@@ -649,7 +759,7 @@ func isAttackPiercing(wd *damage, src, target *Status, h hand) bool {
 	switch wd.skillID() {
 	case skillInvestigate:
 		return true
-	case skillSacrifice, skillShieldChain:
+	case skillSacrifice, skillShieldChain, skillGrandCross:
 		return false
 	}
 	sd := src.Player
@@ -668,10 +778,18 @@ func isAttackPiercing(wd *damage, src, target *Status, h hand) bool {
 	return false
 }
 
-// calcAttackPostDefense is battle_calc_attack_post_defense in renewal.
-// With no status changes, it only raises damage to at least 1.
+// calcAttackPostDefense is battle_calc_attack_post_defense in renewal:
+// Aura Blade adds (3 + its level) times the base level, then damage is
+// at least 1.
 func calcAttackPostDefense(wd *damage, src *Status) {
+	if c := src.Changes; c != nil && c.AuraBlade > 0 {
+		wd.atkAdd(src, &wd.damage, &wd.damage2, int64((3+c.AuraBlade)*src.Level))
+	}
 	minDamage(wd, src, 1)
+	// Sonic Acceleration adds 90% to Sonic Blow.
+	if wd.skillID() == skillSonicBlow && src.skill(skillSonicAcceleration) > 0 {
+		wd.atkAddRate(src, &wd.damage, &wd.damage2, 90)
+	}
 }
 
 // minDamage is battle_min_damage: right-hand damage is raised to at
@@ -693,25 +811,31 @@ func minDamage(wd *damage, src *Status, minimum int64) {
 func calcElementDamage(wd *damage, src, target *Status, rightElement, leftElement int) {
 	if !wd.nk.Has(NKIgnoreElement) && (wd.damage > 0 || wd.damage2 > 0) {
 		// Renewal players apply the element table to each ATK part in
-		// battle_calc_damage_parts instead.
-		if src.Player == nil {
+		// battle_calc_damage_parts instead. Martyr's Reckoning has no ATK
+		// parts, so every unit applies it here.
+		if wd.skillID() == skillSacrifice {
+			wd.damage = AttrFix(wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+			if isAttackLeftHanded(src, wd.sk) {
+				wd.damage2 = AttrFix(wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
+			}
+		} else if src.Player == nil {
 			// Normal attacks by monsters are non-elemental and deal 100%
 			// against every defense element (attack_attr_none).
 			if wd.sk == nil && monsterAttackAttrNone {
 				return
 			}
-			wd.damage = AttrFix(wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+			wd.damage = attrFix(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
 			if isAttackLeftHanded(src, wd.sk) {
-				wd.damage2 = AttrFix(wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
+				wd.damage2 = attrFix(src, target, wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
 			}
 		}
 		// Skills forced to neutral gain from the weapon's element, and the
 		// element table applies again with neutral.
 		switch wd.skillID() {
 		case skillInvestigate, skillExtremityFist, skillShieldBoomerang, skillShieldChain, skillCartRevolution, skillMagicCrasher:
-			wd.damage = AttrFix(wd.damage, Neutral, target.DefEle, target.EleLv, 1)
+			wd.damage = attrFix(src, target, wd.damage, Neutral, target.DefEle, target.EleLv, 1)
 			if isAttackLeftHanded(src, wd.sk) {
-				wd.damage2 = AttrFix(wd.damage2, Neutral, target.DefEle, target.EleLv, 1)
+				wd.damage2 = attrFix(src, target, wd.damage2, Neutral, target.DefEle, target.EleLv, 1)
 			}
 		}
 	}
@@ -741,6 +865,12 @@ func calcAttackPlant(wd *damage, src, target *Status) {
 		wd.damage, wd.damage2 = 0, 0
 		wd.dmgLv = atkBlock
 		return
+	}
+
+	// Triple Attack and Finger Offensive do not split their damage on a
+	// plant. In pre-renewal the target needs exactly 100 DEF.
+	if id := wd.skillID(); (id == skillTripleAttack || id == skillFingerOffensive) && wd.div < 0 && (!wd.pre || target.Def == 100) {
+		wd.div = -wd.div
 	}
 
 	applyDivFix(wd)
@@ -812,11 +942,57 @@ func calcDamage(wd *damage, src, target *Status, dmg int64) int64 {
 	}
 	// ksprotection is off by default.
 
+	// Pre-renewal Gravitation Field and Gloria Domini bypass everything
+	// else.
+	if wd.pre && (wd.skillID() == skillGravitation || wd.skillID() == skillPressure) {
+		return dmg
+	}
+
 	tc := target.Changes
+	if tc != nil && tc.Aeterna != nil && tc.Aeterna(wd.flag, wd.skillID()) {
+		// Lex Aeterna doubles the damage and ends.
+		dmg *= 2
+	}
+	// Assumptio halves the damage in pre-renewal, outside versus maps.
+	if tc != nil && tc.Assumptio > 0 && wd.pre {
+		dmg /= 2
+	}
+	// Renewal's Sightless Mind: the target takes 30% more damage, or 15%
+	// for a boss.
+	if tc != nil && tc.Raid && !wd.pre {
+		if target.Class == ClassBoss {
+			dmg += dmg * 15 / 100
+		} else {
+			dmg += dmg * 30 / 100
+		}
+	}
+	// Blinding Mist: skills deal 25% less, and ranged weapon hits 75%
+	// less.
+	if tc != nil && tc.FogWall {
+		if wd.flag&bfSkill != 0 {
+			dmg -= dmg * 25 / 100
+		} else if wd.flag&(bfLong|bfWeapon) == bfLong|bfWeapon {
+			dmg /= 4
+		}
+	}
+	// Defending Aura reduces ranged weapon damage. Throw Zeny and its
+	// kin, which it skips, are not ported.
+	if tc != nil && tc.Defender != 0 && wd.flag&(bfLong|bfWeapon) == bfLong|bfWeapon {
+		dmg -= dmg * int64(tc.Defender) / 100
+	}
 	// Energy Coat reduces physical damage, and magic damage in renewal,
-	// by 6% per 20% of SP, and costs SP.
-	if tc != nil && tc.EnergyCoat != nil && (wd.flag&bfWeapon != 0 || !wd.pre && wd.flag&bfMagic != 0) {
+	// by 6% per 20% of SP, and costs SP. Cart Termination goes through.
+	if tc != nil && tc.EnergyCoat != nil && (wd.flag&bfWeapon != 0 || !wd.pre && wd.flag&bfMagic != 0) &&
+		wd.skillID() != skillCartTermination {
 		dmg -= dmg * int64(tc.EnergyCoat()) / 100
+	}
+	// Renewal: Steel Body reduces every hit to a tenth.
+	if tc != nil && tc.SteelBody && !wd.pre {
+		if dmg > 10 {
+			dmg /= 10
+		} else {
+			dmg = 1
+		}
 	}
 
 	if skillMinDamage != 0 && dmg > 0 && dmg < int64(wd.div) && wd.flag&bfWeapon != 0 && skillMinDamage&1 != 0 {
@@ -828,10 +1004,19 @@ func calcDamage(wd *damage, src, target *Status, dmg int64) int64 {
 		dmg = max(dmg*int64(taken)/100, 1)
 	}
 
-	// battle_status_block_damage, last: Safety Wall, Pneuma and the other
-	// statuses that block a hit. Safety Wall's durability takes the
-	// damage left after the reductions above.
+	// battle_status_block_damage, last: Kyrie Eleison first, then Safety
+	// Wall, Pneuma and the other statuses that block a hit. Safety Wall's
+	// durability takes the damage left after the reductions above.
+	if tc != nil && tc.Kyrie != nil && dmg > 0 {
+		dmg = tc.Kyrie(wd.flag, wd.skillID(), dmg)
+	}
 	if tc != nil && tc.Block != nil && tc.Block(wd.flag, wd.skillID(), dmg) {
+		wd.dmgLv = atkBlock
+		return 0
+	}
+	// Pre-renewal Basilica blocks every hit from a unit that is not a
+	// boss, with Pneuma's check.
+	if tc != nil && tc.Basilica && wd.pre && !src.hasMode(ModeStatusImmune) {
 		wd.dmgLv = atkBlock
 		return 0
 	}
@@ -877,3 +1062,34 @@ func (wd *damage) allAtkAddRate(src *Status, pct int64) {
 func (wd *damage) context(src, target *Status) *SkillContext {
 	return &SkillContext{Src: src, Target: target, Skill: wd.sk, Flag: wd.miscflag, Renewal: !wd.pre}
 }
+
+// calcSpiralPierceBase is Spiral Pierce's case of the renewal
+// battle_calc_skill_base_damage. A player's status, weapon and equipment
+// ATK all count as equipment ATK, which adds a tenth of the weapon's
+// weight, then takes 70%, then a size fix of its own: 130% on small and
+// 115% on medium targets. Other units use their ATK.
+func calcSpiralPierceBase(wd *damage, src, target *Status, r Rand) {
+	sd := src.Player
+	if sd == nil {
+		wd.damage = calcBaseDamage(src, &src.RHW, target.Size, 0, r)
+		return
+	}
+	calcDamageParts(wd, src, target, false, r)
+	wd.atkAdd2(src, &wd.equipAtk, &wd.equipAtk2, wd.statusAtk+wd.weaponAtk, wd.statusAtk2+wd.weaponAtk2)
+	wd.atkRate2(src, &wd.statusAtk, &wd.statusAtk2, 0, 0)
+	wd.atkRate2(src, &wd.weaponAtk, &wd.weaponAtk2, 0, 0)
+	if sd.RightWeapon != WeaponFist {
+		wd.equipAtk += int64(sd.WeaponWeight / 10)
+	}
+	wd.atkRate2(src, &wd.equipAtk, &wd.equipAtk2, 70, 70)
+	switch target.Size {
+	case SizeSmall:
+		wd.atkRate2(src, &wd.equipAtk, &wd.equipAtk2, 130, 130)
+	case SizeMedium:
+		wd.atkRate2(src, &wd.equipAtk, &wd.equipAtk2, 115, 115)
+	}
+}
+
+// skillCartTermination is WS_CARTTERMINATION, which Energy Coat does not
+// reduce.
+const skillCartTermination = 485

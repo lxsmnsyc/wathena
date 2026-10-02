@@ -1,0 +1,20 @@
+# A sample mod that uses the job change and reset calls: a trainer NPC
+# that lowers a skill or a stat for a fee, and tests that also walk core's
+# Job Master. mods/README.md, "Job changes and resets", explains the calls.
+id: example.job-trainer
+name: Job Trainer
+version: 0.1.0
+api: experimental
+description: A trainer who lowers one skill or one stat for a fee, and tests of the job change path.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read

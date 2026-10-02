@@ -5,6 +5,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
 
 // Dispatch at cast end: skill_castend_damage_id, skill_castend_nodamage_id
@@ -29,11 +30,17 @@ func (z *Zone) castendDamage(src, target *entity, d *skill.Def, lv, flag int) {
 
 // castendNoDamage is skill_castend_nodamage_id.
 func (z *Zone) castendNoDamage(src, target *entity, d *skill.Def, lv, flag int) {
-	if src.dead || target == nil || !z.entities.has(target) || target.dead && d.ID != skill.IDResurrection {
+	if src.dead || target == nil || !z.entities.has(target) {
 		return
 	}
-	// A player's Heal on an undead target is a magic attack.
-	if src.player != nil && d.ID == skill.IDHeal && target.status != nil && battle.IsUndead(target.status.Race, target.status.DefEle) {
+	// Only some skills may be cast on the dead.
+	if src != target && target.dead && d.ID != skill.IDResurrection && d.ID != skill.IDRedemptio {
+		return
+	}
+	// A player's Heal, Resurrection or Aspersio on an undead target is a
+	// magic attack.
+	if src.player != nil && (d.ID == skill.IDHeal || d.ID == skill.IDResurrection || d.ID == skill.IDAspersio) &&
+		target.status != nil && battle.IsUndead(target.status.Race, target.status.DefEle) {
 		if !isEnemy(src, target) {
 			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 			return
@@ -41,9 +48,16 @@ func (z *Zone) castendNoDamage(src, target *entity, d *skill.Def, lv, flag int) 
 		z.castendDamage(src, target, d, lv, flag)
 		return
 	}
+	// A skill cast on the caster that places a unit is a ground skill on
+	// its cell, as pre-renewal Basilica.
+	if src == target && d.Unit != nil {
+		z.castendPos(src, src.x, src.y, d, lv, 0)
+		return
+	}
 	// A status skill of an element above neutral cast on another unit
 	// fails silently on a target that takes no damage from the element.
-	if d.Status >= 0 && src != target && target.status != nil {
+	// Support skills skip the check.
+	if d.Status >= 0 && src != target && target.status != nil && d.Target != skill.TargetSupport {
 		if ele := d.Element.At(lv); ele > eleNeutral && ele < battle.ElementWeapon &&
 			z.attrFix(100, ele, target.status.DefEle, target.status.EleLv) <= 0 {
 			return
@@ -68,7 +82,12 @@ func (z *Zone) castendPos(src *entity, x, y int, d *skill.Def, lv, flag int) {
 	if src.dead {
 		return
 	}
-	z.skillPosEffect(src, d, lv, x, y)
+	switch d.ID {
+	case skill.IDMeteor, skill.IDIceWall, skill.IDGanbantein, skill.IDCultivation:
+		// These show their effect themselves.
+	default:
+		z.skillPosEffect(src, d, lv, x, y)
+	}
 	if !z.runSkillScript(src, nil, d, lv, x, y, true) {
 		if impl, ok := skillImpls[d.ID].(castendPoser); ok {
 			impl.castendPos(z, src, x, y, d, lv, &flag)
@@ -174,9 +193,35 @@ func (z *Zone) takeItems(p *Player, id uint32, amount int) bool {
 	return true
 }
 
-// hasCart is pc_iscarton. Carts do not exist yet, so only SC_PUSH_CART,
-// which nothing starts, gives one.
-func (z *Zone) hasCart(p *Player) bool { return p.entity.sc.Has(scPushCart) }
+// hasCart is pc_iscarton. rAthena's client version defines NEW_CARTS,
+// where SC_PUSH_CART is the cart. wAthena saves the cart in the option
+// bits (OPTION_CART), as rAthena without NEW_CARTS, so either counts.
+func (z *Zone) hasCart(p *Player) bool {
+	return p.record.Options&optionCart != 0 || p.entity.sc.Has(scPushCart)
+}
+
+// cartOptions are the option bits of each cart type, as pc_setcart's
+// table without NEW_CARTS: 0 is no cart, then OPTION_CART1 to
+// OPTION_CART5.
+var cartOptions = [...]int{0, 0x0008, 0x0080, 0x0100, 0x0200, 0x0400}
+
+// setCart is pc_setcart, with the saved option bits. Type 0 removes the
+// cart. Types 1 to 5 give a cart, which needs Pushcart (MC_PUSHCART).
+// setOptions computes the stats again, for the cart's speed penalty. It
+// reports whether the type was valid.
+func (z *Zone) setCart(p *Player, typ int) bool {
+	if typ < 0 || typ >= len(cartOptions) {
+		return false
+	}
+	if p.skillLevel(skillPushCart) <= 0 && typ != 0 {
+		return false
+	}
+	o := p.record.Options&^optionCart | cartOptions[typ]
+	if o != p.record.Options {
+		z.setOptions(p, o)
+	}
+	return true
+}
 
 // scPushCart is SC_PUSH_CART.
 const scPushCart = 518
@@ -185,6 +230,10 @@ const scPushCart = 518
 // maximum.
 func (z *Zone) healHP(e *entity, hp int64) {
 	if hp <= 0 || e.dead || e.status == nil {
+		return
+	}
+	// Frenzy blocks heals without flag 1.
+	if e.sc.Has(sc.SCBerserk) {
 		return
 	}
 	if p := e.player; p != nil {

@@ -60,3 +60,9 @@ func init() {
 		IDThrowStone:     throwStone{},
 	})
 }
+
+// MaxCartWeight is battle_config.max_cart_weight: a pushcart's maximum
+// weight, which status_calc_pc gives every player. It is 8000 in
+// conf/battle/player.conf, which battle_set_defaults multiplies by 10,
+// as weights are in tenths.
+const MaxCartWeight = 80000

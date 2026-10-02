@@ -34,6 +34,16 @@ type Caster struct {
 	Changes *sc.List
 	// Monster is set for a monster or an NPC.
 	Monster bool
+	// TargetDistance is distance_math_bl from the caster to the target
+	// of an id skill, which Charge Attack's cast time reads.
+	TargetDistance int
+	// SpiritBalls is a player's spirit spheres, as sd->spiritball.
+	SpiritBalls int
+	// Renewal is set in renewal mode, which some requirements read.
+	Renewal bool
+	// Encore is the dance that costs half its SP after Encore
+	// (skill_id_old BD_ENCORE and skill_id_dance), or 0.
+	Encore int
 }
 
 func (c *Caster) cast() *battle.CastBonus {
@@ -67,11 +77,19 @@ func (d *Def) CastTimeFor(c *Caster, lv int, renewal, learned bool) CastResult {
 			res.Milliseconds = 0
 			return res
 		}
+		if d.ID == IDChargeAttack {
+			// unit_skilluse_id2: 0 to 3 cells cast at the base time, 4
+			// to 6 at twice and 7 or more at three times.
+			k := min(max((c.TargetDistance-1)/3, 0), 2)
+			t += float64(int(t) * k)
+		}
+		t = monkCastTime(d, c, lv, t, renewal)
 		res.Milliseconds = d.castfixSC(c, t, &res)
 		return res
 	}
 	// skill_castfix in renewal only applies cast_rate.
 	t = float64(max(int(t*castRate/100), 0))
+	t = monkCastTime(d, c, lv, t, renewal)
 	res.Milliseconds = d.vfcastfix(c, t, lv, learned, &res)
 	return res
 }
@@ -185,12 +203,21 @@ func (d *Def) vfcastfix(c *Caster, t float64, lv int, learned bool, res *CastRes
 			fixcastR = max(fixcastR, v)
 		}
 	}
+	// varcast is rAthena's VARCAST_REDUCTION: the value adds to
+	// varcast_r, and while the sum is above 0 the cast time goes down by
+	// the value at once.
+	varcast := func(val int) {
+		if varcastR += val; varcastR != 0 && varcastR >= 0 {
+			t *= float64(1 - float32(min(val, 100))/100)
+		}
+	}
 	if l := c.Changes; l != nil && !l.Empty() && flag&CastIgnoreStatus == 0 {
 		if e := l.Get(sc.SCSlowcast); e != nil {
-			varcastR -= e.Val2
+			varcast(-e.Val2)
 		}
 		if e := l.Get(sc.SCSuffragium); e != nil {
-			varcastR += e.Val2
+			// Renewal keeps Suffragium after the cast.
+			varcast(e.Val2)
 		}
 		if l.Has(sc.SCMemorize) && (c.cast() == nil || learned) {
 			reduce += 50
@@ -228,6 +255,12 @@ func (d *Def) Delay(c *Caster, lv int) int {
 			t = 1000
 		}
 		t -= float64(4*c.Status.Agi + 2*c.Status.Dex)
+	case IDBasilica:
+		// Pre-renewal Basilica has no delay when it starts, only when it
+		// is cancelled. A player always has a status list.
+		if !d.renewal && !c.Changes.Has(sc.SCBasilica) {
+			t = 0
+		}
 	}
 	delay := 0
 	if d.CastDelayFlags&2 == 0 {
@@ -296,6 +329,9 @@ func (d *Def) RequirementFor(c *Caster, lv int, hp, sp int64) Requirement {
 		r.HP += st.MaxHP * -rate / 100
 	}
 	r.SP = q.SP.At(lv)
+	if c.Encore != 0 && d.ID == c.Encore {
+		r.SP /= 2
+	}
 	if rate := q.SPRate.At(lv); rate > 0 {
 		r.SP += int(sp * int64(rate) / 100)
 	} else {
@@ -314,6 +350,16 @@ func (d *Def) RequirementFor(c *Caster, lv int, hp, sp int64) Requirement {
 		}
 	}
 	r.SP = min(max(r.SP*spSkillRate/100, 0), math.MaxInt16)
+	// Renewal's Adaptation lowers the SP of songs by 20%, and Ring of
+	// Nibelungen's tenth effect all SP by 30%.
+	if l := c.Changes; d.renewal && !l.Empty() {
+		if l.Has(sc.SCAdaptation) && d.Has("IsSong") {
+			r.SP -= r.SP * 20 / 100
+		}
+		if l.Val2(sc.SCNibelungen) == ringSPConsume {
+			r.SP -= r.SP * 30 / 100
+		}
+	}
 	r.Zeny = q.Zeny.At(lv)
 	r.SpiritSphere = q.SpiritSphere.At(lv)
 	r.State = q.State
@@ -330,6 +376,10 @@ func (d *Def) RequirementFor(c *Caster, lv int, hp, sp int64) Requirement {
 	if b := c.cast(); b != nil {
 		noGem = b.NoGemstone
 	}
+	// Into the Abyss: no gemstones either.
+	if c.Status != nil && c.Status.Player != nil && c.Changes.Has(sc.SCIntoabyss) {
+		noGem = true
+	}
 	add := func(it [2]int) {
 		if it[0] == 0 {
 			return
@@ -345,27 +395,50 @@ func (d *Def) RequirementFor(c *Caster, lv int, hp, sp int64) Requirement {
 			add(q.Items[lv-1])
 		}
 	} else {
-		for _, it := range q.Items {
+		for i, it := range q.Items {
+			switch d.ID {
+			case IDPotionPitcher, IDSlimPitcher, IDCultivation:
+				// Only the item of the level is used.
+				if i != lv%11-1 {
+					continue
+				}
+			case IDCallHomunculus:
+				// No player has a homunculus yet. Renewal then takes only
+				// the first item. Pre-renewal takes them all, but its
+				// skill_db lists only one.
+				if i > 0 {
+					continue
+				}
+			}
 			add(it)
 		}
 	}
 
-	switch d.ID {
-	case IDMammonite:
-		// Unfair Trick lowers Mammonite's zeny cost.
+	// The cost reductions of skills: Unfair Trick lowers the zeny cost
+	// of Mammonite, and in renewal of Cart Termination, by 20% in
+	// renewal and 10% in pre-renewal.
+	switch {
+	case d.ID == IDMammonite, d.ID == IDCartTermination && c.Renewal:
 		if st.Player != nil && st.Player.Skills[IDUnfairTrick] > 0 {
-			r.Zeny -= r.Zeny * 10 / 100
+			if c.Renewal {
+				r.Zeny -= r.Zeny * 20 / 100
+			} else {
+				r.Zeny -= r.Zeny * 10 / 100
+			}
 		}
+	case d.ID == IDChainCombo, d.ID == IDComboFinish, d.ID == IDTigerFist, d.ID == IDChainCrush,
+		d.ID == IDBodyRelocation, d.ID == IDExtremityFist:
+		monkRequirement(d, c, &r, c.Renewal)
 	}
 	return r
 }
 
 // Skill IDs that the cast formulas read.
 const (
-	IDTripleAttack = 263 // MO_TRIPLEATTACK
-	IDChainCombo   = 272 // MO_CHAINCOMBO
-	IDComboFinish  = 273 // MO_COMBOFINISH
-	IDTigerFist    = 371 // CH_TIGERFIST
-	IDChainCrush   = 372 // CH_CHAINCRUSH
-	IDUnfairTrick  = 1007
+	IDTripleAttack = 263  // MO_TRIPLEATTACK
+	IDChainCombo   = 272  // MO_CHAINCOMBO
+	IDComboFinish  = 273  // MO_COMBOFINISH
+	IDTigerFist    = 371  // CH_TIGERFIST
+	IDChainCrush   = 372  // CH_CHAINCRUSH
+	IDUnfairTrick  = 1012 // BS_UNFAIRLYTRICK
 )

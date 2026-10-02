@@ -17,6 +17,8 @@ type Player struct {
 	RightWeapon, LeftWeapon int
 	// Skills maps a learned skill ID to its level, as pc_checkskill reads.
 	Skills map[int]int
+	// JobLevel is sd->status.job_level, which renewal's Dissonance reads.
+	JobLevel int
 	// Granted marks the skills whose level an item grants, as
 	// pc_checkskill_flag's SKILL_FLAG_TEMPORARY and replaced flags.
 	Granted map[int]bool
@@ -59,6 +61,19 @@ type Player struct {
 	// CartWeight and CartWeightMax are the pushcart's weight, which Cart
 	// Revolution reads.
 	CartWeight, CartWeightMax int
+	// Riding is pc_isriding: the player rides a Peco Peco. Spear
+	// Mastery adds more, and a spear deals to medium targets what it
+	// deals to large ones.
+	Riding bool
+	// WeaponWeight is the weight of the right hand's weapon item, as
+	// item_db's Weight, which Spiral Pierce reads.
+	WeaponWeight int
+	// Shield is set when the left hand holds a shield: equip_index
+	// EQI_HAND_L holds an item of type IT_ARMOR. ShieldWeight is its
+	// item_db Weight and ShieldRefine its refine, which Shield Boomerang
+	// and Shield Chain read.
+	Shield                     bool
+	ShieldWeight, ShieldRefine int
 	// Right and Left are each hand's weapon bonuses. rAthena counts both
 	// on the right hand because left_cardfix_to_right is on. Arrow holds
 	// the ammunition's.
@@ -120,6 +135,14 @@ type Player struct {
 	DamageTakenCap int
 	// DualWield is the class rule for attacks with a weapon in each hand.
 	DualWield DualWield
+
+	// SpiritBall is the player's spirit spheres, as sd->spiritball.
+	// SpiritBallOld is sd->spiritball_old: the spheres a skill counted
+	// when it started, which Finger Offensive and Asura Strike read.
+	SpiritBall, SpiritBallOld int
+	// SP is the player's current SP, as status_data's sp, which Asura
+	// Strike reads.
+	SP int
 }
 
 // CastBonus are the bonuses of skill cast times, delays and costs, as
@@ -349,6 +372,16 @@ func SizeFix(weaponType, size int) int {
 	return sizeFixTable[weaponType][size]
 }
 
+// sizeFor is the size whose atkmods a player's weapon uses against a
+// target size. status_calc_pc gives a player riding with a spear the
+// large size's value against medium targets.
+func (p *Player) sizeFor(size int) int {
+	if p.Riding && (p.Weapon == Weapon1HSpear || p.Weapon == Weapon2HSpear) && size == SizeMedium {
+		return SizeLarge
+	}
+	return size
+}
+
 // hand is a weapon hand, as rAthena's EQI_HAND_R and EQI_HAND_L.
 type hand int
 
@@ -406,8 +439,8 @@ func calcDamageParts(wd *damage, src, target *Status, critical bool, r Rand) {
 	wd.statusAtk2 += int64(src.BAtk)
 
 	// Status ATK is neutral on normal attacks.
-	wd.statusAtk = AttrFix(wd.statusAtk, Neutral, target.DefEle, target.EleLv, 0)
-	wd.statusAtk2 = AttrFix(wd.statusAtk2, Neutral, target.DefEle, target.EleLv, 0)
+	wd.statusAtk = attrFix(src, target, wd.statusAtk, Neutral, target.DefEle, target.EleLv, 0)
+	wd.statusAtk2 = attrFix(src, target, wd.statusAtk2, Neutral, target.DefEle, target.EleLv, 0)
 
 	// Right-hand status ATK is doubled after the element table.
 	wd.statusAtk *= 2
@@ -421,20 +454,20 @@ func calcDamageParts(wd *damage, src, target *Status, critical bool, r Rand) {
 		rate := int64(c.SubWeaponRate)
 		bonus := int64(math.Floor(float64(float32(wd.weaponAtk * rate / 100))))
 		bonus2 := int64(math.Floor(float64(float32(wd.weaponAtk2 * rate / 100))))
-		bonus = AttrFix(bonus, c.SubWeaponElement, target.DefEle, target.EleLv, 0)
-		bonus2 = AttrFix(bonus2, c.SubWeaponElement, target.DefEle, target.EleLv, 0)
+		bonus = attrFix(src, target, bonus, c.SubWeaponElement, target.DefEle, target.EleLv, 0)
+		bonus2 = attrFix(src, target, bonus2, c.SubWeaponElement, target.DefEle, target.EleLv, 0)
 		wd.weaponAtk += bonus
 		wd.weaponAtk2 += bonus2
 	}
 
-	wd.weaponAtk = AttrFix(wd.weaponAtk, rightElement, target.DefEle, target.EleLv, 0)
-	wd.weaponAtk2 = AttrFix(wd.weaponAtk2, leftElement, target.DefEle, target.EleLv, 0)
+	wd.weaponAtk = attrFix(src, target, wd.weaponAtk, rightElement, target.DefEle, target.EleLv, 0)
+	wd.weaponAtk2 = attrFix(src, target, wd.weaponAtk2, leftElement, target.DefEle, target.EleLv, 0)
 
 	wd.equipAtk += calcEquipAttack(src, wd.sk)
-	wd.equipAtk = AttrFix(wd.equipAtk, rightElement, target.DefEle, target.EleLv, 0)
+	wd.equipAtk = attrFix(src, target, wd.equipAtk, rightElement, target.DefEle, target.EleLv, 0)
 
 	wd.equipAtk2 += calcEquipAttack(src, wd.sk)
-	wd.equipAtk2 = AttrFix(wd.equipAtk2, leftElement, target.DefEle, target.EleLv, 0)
+	wd.equipAtk2 = attrFix(src, target, wd.equipAtk2, leftElement, target.DefEle, target.EleLv, 0)
 
 	// AtkRate adds a percent of weapon and equipment ATK.
 	if rate := int64(src.Player.AtkRate); rate != 0 {
@@ -480,9 +513,8 @@ func calcBaseWeaponAttack(src, target *Status, h hand, critical bool, r Rand) in
 		atkmin = max(0, int(float32(float32(atkmin)-variance)+statBonus))
 		atkmax = min(math.MaxUint16, int(float32(float32(atkmax)+variance)+statBonus))
 
-		// Maximize Power also takes the maximum. Status changes are not
-		// ported.
-		if critical {
+		// Maximize Power also takes the maximum.
+		if c := src.Changes; c != nil && c.MaximizePower || critical {
 			dmg = int64(atkmax)
 		} else {
 			dmg = int64(rndValue(r, atkmin, atkmax))
@@ -492,11 +524,10 @@ func calcBaseWeaponAttack(src, target *Status, h hand, critical bool, r Rand) in
 	dmg = addWeaponDamage(sd, dmg, h, r)
 
 	// battle_calc_sizefix. Weapon Perfection also skips the size penalty.
-	// Status changes are not ported.
-	if !sd.NoSizeFix {
-		fix := SizeFix(sd.weapon(h), target.Size)
+	if c := src.Changes; !sd.NoSizeFix && (c == nil || !c.WeaponPerfection) {
+		fix := SizeFix(sd.weapon(h), sd.sizeFor(target.Size))
 		if sd.PreRenewalSizes {
-			fix = PreRenewalSizeFix(sd.weapon(h), target.Size)
+			fix = PreRenewalSizeFix(sd.weapon(h), sd.sizeFor(target.Size))
 		}
 		dmg = dmg * int64(fix) / 100
 	}
@@ -544,8 +575,7 @@ func calcEquipAttack(src *Status, sk *Skill) int64 {
 // calcAttackMasteries is the renewal battle_calc_attack_masteries for a
 // player. A few skills take no mastery ATK.
 //
-// Star Crumbs and Spirit Spheres also add mastery ATK. They are not
-// ported.
+// Star Crumbs also add mastery ATK. They are not ported.
 func calcAttackMasteries(wd *damage, src, target *Status) {
 	if !skillStacksMasteries(wd.skillID()) {
 		return
@@ -561,6 +591,38 @@ func calcAttackMasteries(wd *damage, src, target *Status) {
 	if wd.skillID() != skillCartRevolution && src.skill(skillHiltBinding) > 0 {
 		wd.atkAdd(src, &wd.masteryAtk, &wd.masteryAtk2, 4)
 	}
+	// SC_NIBELUNGEN counts as a mastery: rAthena adds its val2, which in
+	// renewal is the effect's number.
+	if c := src.Changes; c != nil && c.Nibelungen != 0 {
+		wd.atkAdd(src, &wd.masteryAtk, &wd.masteryAtk2, int64(c.Nibelungen))
+	}
+	// Spirit Sphere bonus damage.
+	wd.atkAdd(src, &wd.masteryAtk, &wd.masteryAtk2, spiritBallDamage(wd, src))
+}
+
+// spiritBallDamage is battle_get_spiritball_damage: 3 damage per spirit
+// sphere. Skills that use spheres count the spheres they used too. Units
+// that are not players have none.
+func spiritBallDamage(wd *damage, src *Status) int64 {
+	sd := src.Player
+	if sd == nil {
+		return 0
+	}
+	switch wd.skillID() {
+	case skillInvestigate:
+		// It used as many spheres as it hits.
+		return int64((wd.div + sd.SpiritBall) * 3)
+	case skillFingerOffensive:
+		if wd.pre {
+			return int64((wd.div + sd.SpiritBall) * 3)
+		}
+		// Renewal keeps the spheres used in spiritball_old.
+		return int64((sd.SpiritBallOld + sd.SpiritBall) * 3)
+	case skillExtremityFist:
+		// The spheres the player had before the cast.
+		return int64(sd.SpiritBallOld * 3)
+	}
+	return int64(sd.SpiritBall * 3)
 }
 
 // addMastery is battle_addmastery: ATK from mastery skills, by target and
@@ -614,8 +676,12 @@ func addMastery(src, target *Status, h hand, pre bool) int64 {
 		dmg += 4 * lv(skillTwoHandMastery)
 	case Weapon1HSpear, Weapon2HSpear:
 		if l := lv(skillSpearMastery); l > 0 {
-			// Riding adds 5 per level instead of 4. Mounts are not ported.
-			dmg += 4 * l
+			// Riding adds 5 per level instead of 4.
+			if src.Player.Riding {
+				dmg += 5 * l
+			} else {
+				dmg += 4 * l
+			}
 			if lv(skillDragonTraining) > 0 {
 				dmg += 10 * l
 			}

@@ -33,8 +33,9 @@ Each file starts with `system`, `mode`, `rathena_git_hash`, `data_path`, and `ci
 | `mob_damage.json` | Normal attacks between 400 pairs of monsters. |
 | `pc_status.json` | Base and final stats for 39 jobs, 3 level pairs, and 6 stat builds, with and without skills. |
 | `pc_damage.json` | Normal attacks by level 99 players with every usable weapon type against five monsters. |
-| `skill_damage.json` | Every damaging skill in the sample job trees, at every level, against three monsters, with the ammunition a skill needs equipped. Heal against two undead monsters. |
-| `skill_casting.json` | For each first class job and three stat builds, every skill of its tree at every level: cast time, after-cast delay, cooldown, requirements, and for Heal the amount healed. |
+| `skill_damage.json` | Every damaging skill of the first, second and transcendent job trees, at every level, against three monsters, with the ammunition a skill needs equipped and the learned skills of each player. Heal against two undead monsters. |
+| `skill_casting.json` | For each first, second and transcendent job and three stat builds, every skill of its tree that no earlier job recorded, at every level: cast time, after-cast delay, cooldown, requirements, and heals. |
+| `skill_status.json` | For each second and transcendent class skill that starts a status, at every level: the statuses `skill_castend_nodamage_id` starts with their values and timers, the target's stats before and after, and a normal attack against a Golem before and after. |
 | `item_bonuses.json` | Changes from each equipment item and card, in stats, damage dealt, and damage taken. |
 | `refine.json` | Stats at every refine level for one armor and one weapon of each weapon level. |
 | `status_effects.json` | Chance, duration, and whether ten common ailments start, for many sources and targets. |
@@ -71,7 +72,7 @@ They were first extracted at rAthena fork commit `f4641e37b`, from the same rAth
 The converter also reads two extracts per mode for NPCs ([decision 0008](../../docs/decisions/0008-converted-npcs.md)):
 
 - `npcs.json`: script NPCs, functions, shops and their duplicates, in the order `npc/<mode>/scripts_main.conf` loads them, with the names, map checks and duplicate rules of `warps.json`. Each NPC is one line of the file.
-- Script NPCs are kept from the folders the first release needs: `kafras`, `merchants`, `cities`, `airports`, `guides` and `other`, below `npc/`, `npc/re/` and `npc/pre-re/`. `left_out` counts the others by folder, such as `quests` and `instances`. Shops and functions are kept from every folder.
+- Script NPCs are kept from the folders the first release needs: `kafras`, `merchants`, `cities`, `airports`, `guides`, `jobs` and `other`, below `npc/`, `npc/re/` and `npc/pre-re/`. `left_out` counts the others by folder, such as `quests` and `instances`. Shops and functions are kept from every folder.
 - Shops have their items, with a price below 0 in the line replaced by the item's buy price, as `npc_parse_shop`. `discount` says whether Discount lowers the prices (`npc_shop_discount`). Item and point shops name their currency, and market shops give a stock.
 - `item_prices.json`: the buy and sell price of every item, with `ItemDatabase::loadingFinished`'s rules: a missing Buy is Sell * 2, a missing Sell is Buy / 2, and a Sell above what Discount and Overcharge allow becomes 1. `no_sell` is `Trade.NoSell`.
 
@@ -80,7 +81,7 @@ The converter also reads two extracts per mode for NPCs ([decision 0008](../../d
 | renewal | 6,870 | 358 | 5.3 MB | 2.0 MB |
 | pre-renewal | 4,190 | 185 | 3.2 MB | 0.4 MB |
 
-They were first extracted at rAthena fork commit `003599e1c`.
+They were first extracted at rAthena fork commit `003599e1c`. The `jobs` folder came at commit `e92917ccc`, with a change to `extract.py` that the fork does not have yet: `0002-extract-job-change-npcs.patch` (see "Second class recordings").
 
 ## Equipment
 
@@ -125,6 +126,26 @@ Skills read two extracts per mode ([decision 0011](../../docs/decisions/0011-ski
 They were extracted at rAthena fork commit `2eb1327f4`, with a function that the fork's `tools/wathena/extract.py` does not have yet: `build_skills`. Until the fork gains it, regenerating with `extract.py` leaves these files as they are. The same holds for the recorder fix below and `record_skill_casting`.
 
 `pc_damage.json` and `skill_damage.json` were recorded again with the recorder fix for ranged attacks: the recorder now sets `arrow_atk` for a bow or gun with ammunition equipped, as `battle_calc_attack` callers do, and for skills that need ammunition. `skill_casting.json` is new. The other formula files did not change.
+
+## Second class recordings
+
+`skill_damage.json` and `skill_casting.json` were recorded again for second and transcendent classes, and `skill_status.json` is new ([decision 0012](../../docs/decisions/0012-second-classes-and-job-changes.md)):
+
+- The sample players are now the first, second and transcendent jobs. Dancers and Gypsies are female. `players` lists each player's learned skills, so the tests learn the same ones.
+- Skills that need ammunition use arrows. A player with a cart has the cart weight of `cart_weight`, which Cart Termination reads.
+- A few skills record extra cases, such as Charge Attack at each distance.
+
+| Mode | `skill_damage.json` | `skill_casting.json` | `skill_status.json` |
+|---|---:|---:|---:|
+| renewal | 129 skills, 1.2 MB | 6,078 cases, 2.5 MB | 622 cases, 1.2 MB |
+| pre-renewal | 129 skills, 1.2 MB | 6,096 cases, 2.5 MB | 512 cases, 0.9 MB |
+
+The recorder changes are not in the fork yet. They are in two patches against fork commit `e92917ccc`, kept outside this repository: `0001-record-second-class-skills.patch` (the recorder, `record_skill_status`, and `WATHENA_RECORD_ONLY` to record only some files) and `0002-extract-job-change-npcs.patch` (the `jobs` folder in `npcs.json`). With them applied, the recordings come from:
+
+```text
+WATHENA_RECORD_ONLY=skill_damage,skill_casting,skill_status bash tools/wathena/record.sh renewal pre-renewal
+python3 tools/wathena/extract.py
+```
 
 ## How random rolls are recorded
 

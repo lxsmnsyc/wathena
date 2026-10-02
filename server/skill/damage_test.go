@@ -3,9 +3,11 @@ package skill
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math"
 	"math/rand/v2"
 	"os"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -52,9 +54,36 @@ type skillCase struct {
 	Level      int       `json:"level"`
 	AttackType int       `json:"attack_type"`
 	Job        int       `json:"job"`
+	Sex        *int      `json:"sex"`
+	Build      string    `json:"build"`
 	WeaponType int       `json:"weapon_type"`
 	Weapon     uint32    `json:"weapon"`
+	Ammo       *uint32   `json:"ammo"`
+	CartWeight int       `json:"cart_weight"`
 	Target     int       `json:"target"`
+}
+
+// male reports whether the case's player is male: rAthena's SEX_MALE is
+// 1. Cases recorded before the recorder named the sex are male.
+func (c *skillCase) male() bool { return c.Sex == nil || *c.Sex == 1 }
+
+// samplePlayer is one entry of a recording's players: the skills a sample
+// player learned and its job level.
+type samplePlayer struct {
+	Job      int      `json:"job"`
+	Build    string   `json:"build"`
+	Sex      int      `json:"sex"`
+	JobLevel int      `json:"job_level"`
+	Skills   [][2]int `json:"skills"`
+}
+
+// playerKey is the key of a sample player: job, build and sex.
+func playerKey(job int, build string, male bool) string {
+	sex := 0
+	if male {
+		sex = 1
+	}
+	return fmt.Sprintf("%d %s %d", job, build, sex)
 }
 
 type refRolls struct {
@@ -72,10 +101,10 @@ type damageFixture struct {
 	tables *status.Tables
 	items  *item.Table
 	mobs   map[int]*battle.Status
-	// skills are the skills each sample player learns, by "job build",
-	// and jobLevels its job level at base level 99.
+	// skills are the skills each sample player learns, and jobLevels its
+	// job level at base level 99, by playerKey.
 	skills    map[string]map[int]int
-	jobLevels map[int]int
+	jobLevels map[string]int
 	cases     []skillCase
 	rolls     int
 }
@@ -95,7 +124,7 @@ func loadDB(t testing.TB, mode reference.Mode) *DB {
 
 func loadDamageFixture(t testing.TB, mode reference.Mode) *damageFixture {
 	t.Helper()
-	f := &damageFixture{mode: mode, db: loadDB(t, mode), skills: map[string]map[int]int{}, jobLevels: map[int]int{}}
+	f := &damageFixture{mode: mode, db: loadDB(t, mode), skills: map[string]map[int]int{}, jobLevels: map[string]int{}}
 	var jobs status.Data
 	if err := reference.LoadFile("extracts/"+string(mode)+"/job_stats.json", &jobs); err != nil {
 		t.Fatal(err)
@@ -142,6 +171,8 @@ func loadDamageFixture(t testing.TB, mode reference.Mode) *damageFixture {
 		st := m.Status
 		st.Level = m.Level
 		st.ID = m.ID
+		// The recorder's monsters have full HP, which an HP of 0 stands
+		// for (CurrentHP).
 		if mode == reference.Renewal {
 			// Pre-renewal's mob_db has no DamageTaken.
 			st.DamageTaken = taken.DamageTaken[strconv.Itoa(m.ID)]
@@ -170,19 +201,36 @@ func loadDamageFixture(t testing.TB, mode reference.Mode) *damageFixture {
 		for _, s := range p.Skills {
 			skills[s[0]] = s[1]
 		}
-		f.skills[fmt.Sprintf("%d %s", p.Job, p.Build)] = skills
-		f.jobLevels[p.Job] = p.JobLevel
+		key := playerKey(p.Job, p.Build, true)
+		f.skills[key] = skills
+		f.jobLevels[key] = p.JobLevel
 	}
 
 	var ref struct {
-		RollsPerCase int         `json:"rolls_per_case"`
-		Cases        []skillCase `json:"cases"`
+		RollsPerCase int            `json:"rolls_per_case"`
+		Players      []samplePlayer `json:"players"`
+		Cases        []skillCase    `json:"cases"`
 	}
 	if err := reference.Load(mode, "skill_damage", &ref); err != nil {
 		t.Fatal(err)
 	}
+	// The recording's own players come first: they have the right sex.
+	for _, p := range ref.Players {
+		key := playerKey(p.Job, p.Build, p.Sex == 1)
+		f.skills[key] = learnedMap(p.Skills)
+		f.jobLevels[key] = p.JobLevel
+	}
 	f.cases, f.rolls = ref.Cases, ref.RollsPerCase
 	return f
+}
+
+// learnedMap turns a recording's [skill, level] pairs into a map.
+func learnedMap(pairs [][2]int) map[int]int {
+	m := make(map[int]int, len(pairs))
+	for _, s := range pairs {
+		m[s[0]] = s[1]
+	}
+	return m
 }
 
 // build is the stat build create_skill_user picks for a skill and a
@@ -200,17 +248,22 @@ func build(def *Def, weaponType int) string {
 	return "melee"
 }
 
-// attacker is the recorder's skill user: a level 99 male player of the
-// case's job with every tree skill and the case's weapon, with basic
-// ammunition for a bow or a gun.
+// attacker is the recorder's skill user: a level 99 player of the case's
+// job and sex with every tree skill and the case's weapon, with the
+// ammunition the case names, or basic ammunition for a bow or a gun in
+// cases recorded before the recorder named it.
 func (f *damageFixture) attacker(t testing.TB, c *skillCase, def *Def) (*battle.Status, error) {
 	t.Helper()
-	b := build(def, c.WeaponType)
-	skills, ok := f.skills[fmt.Sprintf("%d %s", c.Job, b)]
-	if !ok {
-		return nil, fmt.Errorf("pc_status.json has no level 99 %s player of job %d with all skills", b, c.Job)
+	b := c.Build
+	if b == "" {
+		b = build(def, c.WeaponType)
 	}
-	ch := status.Character{Job: c.Job, Male: true, BaseLevel: 99, JobLevel: f.jobLevels[c.Job], Stats: builds[b], Skills: skills}
+	key := playerKey(c.Job, b, c.male())
+	skills, ok := f.skills[key]
+	if !ok {
+		return nil, fmt.Errorf("no level 99 %s player of job %d with all skills", b, c.Job)
+	}
+	ch := status.Character{Job: c.Job, Male: c.male(), BaseLevel: 99, JobLevel: f.jobLevels[key], Stats: builds[b], Skills: skills}
 	ammo := uint32(0)
 	if c.Weapon != 0 {
 		inv := &item.Inventory{}
@@ -224,7 +277,11 @@ func (f *damageFixture) attacker(t testing.TB, c *skillCase, def *Def) (*battle.
 		if uint32(wd.Location)&item.EqpHandL != 0 {
 			eq.Items[item.EqiHandL] = eq.Items[item.EqiHandR]
 		}
-		if a := basicAmmo[c.WeaponType]; a != 0 {
+		a := basicAmmo[c.WeaponType]
+		if c.Ammo != nil {
+			a = *c.Ammo
+		}
+		if a != 0 {
 			if ad, ok := f.items.Lookup(a); ok && ad.Jobs != nil {
 				ammo = a
 				inv.Slots[1] = item.Slot{ID: a, Amount: 100, Equip: item.EqpAmmo}
@@ -242,7 +299,13 @@ func (f *damageFixture) attacker(t testing.TB, c *skillCase, def *Def) (*battle.
 	// skill_check_condition_castbegin sets state.arrow_atk when the skill
 	// requires ammunition.
 	if st.Player != nil {
+		// The recorder's players have 1 SP, which Asura Strike reads.
+		st.Player.SP = 1
 		st.Player.ArrowAttack = def.Requires.Ammo != 0 && ammo != 0
+		if c.CartWeight > 0 {
+			// The recorder's pc_setcart and the cart weight it sets.
+			st.Player.CartWeight, st.Player.CartWeightMax = c.CartWeight, MaxCartWeight
+		}
 	}
 	return &st, nil
 }
@@ -274,9 +337,28 @@ var firstClassDamage = map[string]bool{
 	"AL_HOLYLIGHT": true, "AL_HEAL": true, "AL_RUWACH": true,
 }
 
-// TestSkillDamage checks the first class skills against skill_damage.json:
-// rAthena's forced_min result exactly, and the seeded rolls' range and
-// mean.
+// damageGaps are ported skills whose recorded damage does not match yet,
+// with the reason. Each job's test file adds its own in init.
+var damageGaps = map[string]string{}
+
+// rollGaps are cases whose forced minimum must match but whose seeded
+// rolls are a statistical outlier of rAthena's recording, by the case's
+// name, with the reason. Each job's test file adds its own in init.
+var rollGaps = map[string]string{}
+
+// goldenDamage reports whether a skill's cases must match: the first
+// class skills, and every skill with Go behavior that has no gap.
+func goldenDamage(name string, id int) bool {
+	if firstClassDamage[name] {
+		return true
+	}
+	_, gap := damageGaps[name]
+	return Ported(id) && !gap
+}
+
+// TestSkillDamage checks every skill with Go behavior against
+// skill_damage.json: rAthena's forced_min result exactly, and the seeded
+// rolls' range and mean. Skills without behavior are counted only.
 func TestSkillDamage(t *testing.T) {
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
@@ -284,9 +366,11 @@ func TestSkillDamage(t *testing.T) {
 			matched, total := 0, 0
 			skillsSeen := map[string]bool{}
 			skillsBad := map[string]bool{}
+			left := map[string]bool{}
 			for i := range f.cases {
 				c := &f.cases[i]
-				if !firstClassDamage[c.SkillName] {
+				if !goldenDamage(c.SkillName, c.Skill) {
+					left[c.SkillName] = true
 					continue
 				}
 				total++
@@ -310,6 +394,10 @@ func TestSkillDamage(t *testing.T) {
 						c.name(), got, want.Damage, want.Damage2, kindOf(want), want.Div, want.Flag)
 					continue
 				}
+				if _, skip := rollGaps[string(mode)+": "+c.name()]; skip {
+					matched++
+					continue
+				}
 				if msg := checkRolls(mode, src, target, sk, def.Type, f.rolls, c.Rolls); msg != "" {
 					skillsBad[c.SkillName] = true
 					t.Errorf("%s: %s", c.name(), msg)
@@ -317,8 +405,8 @@ func TestSkillDamage(t *testing.T) {
 				}
 				matched++
 			}
-			t.Logf("%s: %d of %d first class skill cases match; %d of %d skills", mode, matched, total,
-				len(skillsSeen)-len(skillsBad), len(skillsSeen))
+			t.Logf("%s: %d of %d cases match; %d of %d skills; %d recorded skills not ported: %v", mode, matched, total,
+				len(skillsSeen)-len(skillsBad), len(skillsSeen), len(left), slices.Sorted(maps.Keys(left)))
 		})
 	}
 }
@@ -338,6 +426,10 @@ func checkRolls(mode reference.Mode, src, target *battle.Status, sk *battle.Skil
 	const attacks = 4000
 	r := rand.New(rand.NewPCG(1, 2))
 	hits, lo, hi, total := 0, int64(-1), int64(0), int64(0)
+	// The mean compares the hits rAthena's rolls could have: only
+	// non-critical ones when its rolls had no critical hit. sum and sq
+	// are their sum and sum of squares.
+	means, sum, sq := 0, 0.0, 0.0
 	for range attacks {
 		res := attack(mode, typ, src, target, sk, r)
 		if res.Kind != battle.Hit && res.Kind != battle.Critical {
@@ -349,6 +441,12 @@ func checkRolls(mode reference.Mode, src, target *battle.Status, sk *battle.Skil
 		}
 		hi = max(hi, res.Damage)
 		total += res.Damage
+		if want.Crits == 0 && res.Kind == battle.Critical {
+			continue
+		}
+		means++
+		sum += float64(res.Damage)
+		sq += float64(res.Damage) * float64(res.Damage)
 	}
 	if want.Hits == 0 {
 		// rAthena's rolls never hit. At the minimum hit rate of 5%, 50
@@ -364,15 +462,26 @@ func checkRolls(mode reference.Mode, src, target *battle.Status, sk *battle.Skil
 	if want.Min < lo || want.Max > hi {
 		return fmt.Sprintf("damage range %d..%d does not contain recorded %d..%d", lo, hi, want.Min, want.Max)
 	}
-	mean := float64(total) / float64(hits)
+	if means == 0 {
+		return "never hit without a critical hit"
+	}
+	mean := sum / float64(means)
 	wantMean := float64(want.Total) / float64(want.Hits)
-	tol := max(1, float64(want.Max-want.Min)/math.Sqrt(float64(want.Hits))*2)
+	// The recorded mean of few hits varies by about the spread of the
+	// damage over the square root of their count. The spread comes from
+	// the recorded range, or from these draws when the recording has too
+	// few hits to show it.
+	sd := math.Sqrt(max(0, sq/float64(means)-mean*mean))
+	tol := max(1, float64(want.Max-want.Min)/math.Sqrt(float64(want.Hits))*2, 3*sd/math.Sqrt(float64(want.Hits)))
 	if math.Abs(mean-wantMean) > tol {
 		return fmt.Sprintf("mean damage %.1f, recorded %.1f (tolerance %.1f)", mean, wantMean, tol)
 	}
 	rate := float64(hits) / attacks
 	wantRate := float64(want.Hits) / float64(n)
-	if math.Abs(rate-wantRate) > 0.15 {
+	// rAthena rolls n times, so its rate is off from the true rate by
+	// up to three standard deviations of a binomial of n draws.
+	rateTol := max(0.15, 3*math.Sqrt(rate*(1-rate)/float64(n)))
+	if math.Abs(rate-wantRate) > rateTol {
 		return fmt.Sprintf("hit rate %.2f, recorded %.2f", rate, wantRate)
 	}
 	return ""

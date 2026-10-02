@@ -95,6 +95,7 @@ const (
 	skillVultureEye        = 44   // AC_VULTURE
 	skillMiss              = 49   // TF_MISS
 	skillMaceMastery       = 65   // PR_MACEMASTERY
+	skillPushCart          = 39   // MC_PUSHCART
 	skillHiltBinding       = 105  // BS_HILTBINDING
 	skillWeaponResearch    = 107  // BS_WEAPONRESEARCH
 	skillSkinTemper        = 109  // BS_SKINTEMPER
@@ -102,13 +103,17 @@ const (
 	skillDodge             = 265  // MO_DODGE
 	skillAdvancedBook      = 274  // SA_ADVANCEDBOOK
 	skillDragonology       = 284  // SA_DRAGONOLOGY
+	skillFreeCast          = 278  // SA_FREECAST
 	skillMusicalLesson     = 315  // BA_MUSICALLESSON
 	skillDancingLesson     = 323  // DC_DANCINGLESSON
 	skillMeditatio         = 363  // HP_MEDITATIO
+	skillManaRecharge      = 481  // HP_MANARECHARGE
 	skillSoulDrain         = 364  // HW_SOULDRAIN
 	skillDevil             = 441  // SG_DEVIL
 	skillKaina             = 466  // SL_KAINA
 	skillSingleAction      = 509  // GS_SINGLEACTION
+	skillRiding            = 63   // KN_RIDING
+	skillCavalierMastery   = 64   // KN_CAVALIERMASTERY
 	skillSnakeEye          = 510  // GS_SNAKEEYE
 	skillAllIncCarry       = 681  // ALL_INCCARRY
 	skillEucharistica      = 2049 // AB_EUCHARISTICA
@@ -187,11 +192,21 @@ type Character struct {
 	// Changes are the player's active statuses, its status_change, or
 	// nil for none.
 	Changes *sc.List
+	// Riding is pc_isriding: the player rides a Peco Peco (OPTION_RIDING).
+	// It slows attacks less with Cavalier Mastery, carries more with
+	// Riding, walks faster and adds to Spear Mastery.
+	Riding bool
+	// Cart is pc_iscarton: the player pushes a cart, which slows it
+	// down unless Pushcart is at level 10.
+	Cart bool
 	// StatusBonuses are the bonuses of active statuses: the scripts of
 	// status.yml and the bonuses of mod statuses, in status order, as
 	// status_calc_pc_sub runs status scripts. TimedBonuses are the timed
 	// bonuses, in the order they started (pc_bonus_script).
 	StatusBonuses, TimedBonuses []Bonus
+	// Casting is set while the player casts a skill
+	// (ud.skilltimer != INVALID_TIMER), which Free Cast reads.
+	Casting bool
 }
 
 // Result is a player's stats.
@@ -235,6 +250,9 @@ type Bonuses struct {
 	// NoKnockback is special_state.no_knockback (bNoKnockback): skills
 	// cannot knock the player back.
 	NoKnockback bool
+	// Unstripable is bonus.unstripable_equip: the EQP_ positions that
+	// Divest skills cannot take off.
+	Unstripable uint32
 	// AddStealRate is bonus.add_steal_rate (bAddStealRate): the steal
 	// chance rises by this much, per 10,000.
 	AddStealRate int
@@ -487,7 +505,7 @@ func (t *Tables) Calc(c Character) (Result, error) {
 	res.Bonuses = Bonuses{HPRecoverRate: p.b.hprecovRate, SPRecoverRate: p.b.sprecovRate, NoHPRegen: p.b.noHPRegen, NoSPRegen: p.b.noSPRegen,
 		ResEff: p.b.resEff, AlwaysEndure: p.b.noWalkDelay, AddEff: p.b.addEff, AddEffWhenHit: p.b.addEffWhenHit,
 		AddEffOnSkill: p.b.addEffOnSkill, Regen: p.b.regen, AutoSpell: p.b.autoSpell, AutoSpellWhenHit: p.b.autoSpellWhenHit,
-		AutoSpellOnSkill: p.b.autoSpellOnSkill, NoKnockback: p.b.noKnockback, AddStealRate: p.b.addStealRate,
+		AutoSpellOnSkill: p.b.autoSpellOnSkill, NoKnockback: p.b.noKnockback, Unstripable: p.b.unstripable, AddStealRate: p.b.addStealRate,
 		AddHealRate: p.b.addHealRate, AddHeal2Rate: p.b.addHeal2Rate}
 	return res, nil
 }
@@ -556,6 +574,11 @@ func (p *pc) calcBase() data {
 				if info != nil && p.worn.WeaponType1 != weaponBow {
 					wa.Matk += info.bonus / 100
 				}
+			} else {
+				// Pre-renewal's battle_calc_base_damage reads the weapon
+				// level of the item in the hand, which server/battle
+				// takes from Wlv.
+				wa.Wlv = wlv
 			}
 			if info != nil {
 				wd.Overrefine = info.randomBonus / 100
@@ -841,14 +864,25 @@ func (p *pc) calcBase() data {
 		if lv := p.skill(skillSingleAction); lv > 0 && weapon >= weaponRevolver && weapon <= weaponGrenade {
 			b.aspdRate -= (lv + 1) / 2 * 10
 		}
+		if c.Riding {
+			b.aspdRate += 500 - 100*p.skill(skillCavalierMastery)
+		}
 		b.aspdRate += pb.aspdRate
 	}
 	b.ADelay = amotionDividerPC * b.AMotion
 
 	b.DMotion = capValue(800-b.Agi*4, 400, 800)
 
-	// Element and race resistance and damage from skills.
 	pl := pb.player
+	// Skill SP cost: Mana Recharge lowers dsprate by 4% per level, which
+	// does not go below 0.
+	if lv := p.skill(skillManaRecharge); lv > 0 {
+		pl.Cast.SPRate -= 4 * lv
+	}
+	pl.Cast.SPRate -= c.Changes.Val3(sc.SCService4u)
+	pl.Cast.SPRate = max(pl.Cast.SPRate, 0)
+
+	// Element and race resistance and damage from skills.
 	if lv := p.skill(skillTrust); lv > 0 {
 		battle.Add(&pl.SubEle, eleHoly, lv*5)
 	}
@@ -859,6 +893,7 @@ func (p *pc) calcBase() data {
 	if lv := p.skill(skillDragonology); lv > 0 {
 		// left_cardfix_to_right is on, so only the right hand gets it.
 		battle.Add(&pl.Right.AddRace, raceDragon, lv*4)
+		battle.Add(&pl.Magic.AddRace, raceDragon, lv*2)
 		battle.Add(&pl.SubRace, raceDragon, lv*4)
 	}
 	if lv := p.skill(skillEucharistica); lv > 0 {
@@ -891,6 +926,15 @@ func (p *pc) calcBase() data {
 	pl.Weapon, pl.RightWeapon, pl.LeftWeapon = weapon, p.worn.WeaponType1, p.worn.WeaponType2
 	pl.AmmoAtk, pl.AmmoEle = pb.arrowAtk, pb.arrowEle
 	pl.PreRenewalSizes = p.t.preRenewalSizes
+	pl.Riding = c.Riding
+	pl.JobLevel = c.JobLevel
+	if e := p.eq.Items[item.EqiHandR]; e != nil && e.Def != nil && e.Def.IsWeapon() {
+		pl.WeaponWeight = e.Def.Weight
+	}
+	// The shield that Shield Boomerang and Shield Chain read.
+	if e := p.eq.Items[item.EqiHandL]; e != nil && e.Def != nil && e.Def.IsArmor() {
+		pl.Shield, pl.ShieldWeight, pl.ShieldRefine = true, e.Def.Weight, e.Refine
+	}
 	// The statuses at the end of status_calc_pc_sub that change bonuses.
 	if l := c.Changes; !l.Empty() {
 		if e := l.Get(sc.SCConcentrate); e != nil {
@@ -898,7 +942,46 @@ func (p *pc) calcBase() data {
 			e.Val3 = pb.paramBonus[paramAgi]
 			e.Val4 = pb.paramBonus[paramDex]
 		}
+		if e := l.Get(sc.SCSiegfried); e != nil {
+			// Siegfried's element resistance: the four elements, and in
+			// pre-renewal five more.
+			eles := []int{eleWater, eleEarth, eleFire, eleWind}
+			if !p.t.renewal {
+				eles = append(eles, elePoison, eleHoly, eleDark, eleGhost, eleUndead)
+			}
+			for _, ele := range eles {
+				battle.Add(&pl.SubEle, ele, e.Val2)
+			}
+		}
+		if e := l.Get(sc.SCFortune); e != nil && p.t.renewal {
+			pl.CritAtkRate += 2 * e.Val1
+		}
+		if e := l.Get(sc.SCBasilica); e != nil && p.t.renewal {
+			// Renewal's Basilica: 5% more damage per level against the
+			// dark and undead elements, on the right hand only
+			// (left_cardfix_to_right is on), and 3% more holy magic per
+			// level.
+			battle.Add(&pl.Right.AddEle, eleDark, e.Val1*5)
+			battle.Add(&pl.Right.AddEle, eleUndead, e.Val1*5)
+			battle.Add(&pl.Magic.AtkEle, eleHoly, e.Val1*3)
+		}
+		if p.t.renewal {
+			// Endows raise magic of their element.
+			battle.Add(&pl.Magic.AtkEle, eleFire, l.Val1(sc.SCFireweapon))
+			battle.Add(&pl.Magic.AtkEle, eleWind, l.Val1(sc.SCWindweapon))
+			battle.Add(&pl.Magic.AtkEle, eleWater, l.Val1(sc.SCWaterweapon))
+			battle.Add(&pl.Magic.AtkEle, eleEarth, l.Val1(sc.SCEarthweapon))
+		}
 		pb.matkRate += l.Val1(sc.SCIncmatkrate)
+		pb.matkRate += l.Val2(sc.SCMindbreaker)
+		if e := l.Get(sc.SCProvidence); e != nil {
+			// Resistant Souls: holy and demon resistance.
+			battle.Add(&pl.SubEle, eleHoly, e.Val2)
+			battle.Add(&pl.SubRace, battle.RaceDemon, e.Val2)
+		}
+		if l.Val2(sc.SCNibelungen) == ringMatkRate {
+			pb.matkRate += 20
+		}
 	}
 	return b
 }
@@ -1077,6 +1160,9 @@ func (p *pc) baseAmotion(b *data) int {
 		if lv := p.skill(skillSingleAction); lv > 0 && w.Weapon >= weaponRevolver && w.Weapon <= weaponGrenade {
 			val += (lv + 1) / 2
 		}
+		if p.c.Riding {
+			val -= 50 - 10*p.skill(skillCavalierMastery)
+		}
 		fixed := calcAspdBonus(p.c.Changes, true, true, nil)
 		return int(temp+float32(fixed+val)*float32(b.Agi)/200) - min(aspd, 200)
 	}
@@ -1220,6 +1306,9 @@ func (p *pc) spRate() int {
 			lesson = skillMusicalLesson
 		}
 		bonus += p.skill(lesson)
+		if p.c.Changes.Val2(sc.SCNibelungen) == ringSPRate {
+			bonus += 30
+		}
 	}
 	bonus += spRateSC(p.c.Changes)
 	return max(bonus, -100)
@@ -1231,6 +1320,9 @@ func (p *pc) maxWeight() int {
 	w := p.statsJob.maxWeight + p.c.Stats.Str*300
 	w += p.b.addMaxWeight
 	w += 2000 * p.skill(skillIncCarry)
+	if p.c.Riding && p.skill(skillRiding) > 0 {
+		w += 10000
+	}
 	w += 2000 * p.skill(skillAllIncCarry)
 	return w
 }
@@ -1256,10 +1348,17 @@ func (p *pc) calcBattle(b *data) data {
 		s.BAtk = calcBatk(l, s.BAtk, renewal)
 	}
 
-	// Pre-renewal applies bWeaponAtkRate to the right hand's weapon ATK
-	// here.
-	if !renewal && pb.weaponAtkRate != 0 {
-		s.RHW.Atk += s.RHW.Atk * pb.weaponAtkRate / 100
+	// Pre-renewal's status_calc_watk on each hand's weapon ATK, then
+	// bWeaponAtkRate on the right hand's. A player's refine ATK is left
+	// out.
+	if !renewal {
+		s.RHW.Atk = calcWatk(l, b.RHW.Atk, renewal, b.RHW.Wlv == 4)
+		if pb.weaponAtkRate != 0 {
+			s.RHW.Atk += s.RHW.Atk * pb.weaponAtkRate / 100
+		}
+		if b.LHW.Atk != 0 {
+			s.LHW.Atk = calcWatk(l, b.LHW.Atk, renewal, b.LHW.Wlv == 4)
+		}
 	}
 
 	// HIT and FLEE follow the change of the stats they come from.
@@ -1273,13 +1372,13 @@ func (p *pc) calcBattle(b *data) data {
 		s.Hit = calcHit(l, b.Hit+d, renewal)
 	}
 	if s.Agi == b.Agi && (!renewal || (s.Luk == b.Luk && s.con == b.con)) {
-		s.Flee = calcFlee(l, b.Flee)
+		s.Flee = calcFlee(l, b.Flee, renewal)
 	} else {
 		d := s.Agi - b.Agi
 		if renewal {
 			d += s.Luk/5 - b.Luk/5 + 2*(s.con-b.con)
 		}
-		s.Flee = calcFlee(l, b.Flee+d)
+		s.Flee = calcFlee(l, b.Flee+d, renewal)
 	}
 
 	s.Def = calcDef(l, b.Def, renewal, true, p.capDef)
@@ -1291,7 +1390,7 @@ func (p *pc) calcBattle(b *data) data {
 	default:
 		s.Def2 = calcDef2(l, b.Def2+s.Vit-b.Vit, renewal, s.Vit)
 	}
-	s.MDef = calcMdef(l, b.MDef, p.capDef)
+	s.MDef = calcMdef(l, b.MDef, renewal, p.capDef)
 	switch {
 	case s.Int == b.Int && s.Vit == b.Vit && (!renewal || s.Dex == b.Dex):
 		s.MDef2 = calcMdef2(l, b.MDef2, renewal)
@@ -1304,7 +1403,15 @@ func (p *pc) calcBattle(b *data) data {
 	// status_calc_speed. Item speed bonuses and the haste of Improve
 	// Dodge apply even with no status changes, since a player's status
 	// change list always exists.
-	in := speedInput{player: true, itemSpeed: pb.speedRate + pb.speedAddRate, tunnel: p.skill(skillTunnelDrive)}
+	in := speedInput{player: true, itemSpeed: pb.speedRate + pb.speedAddRate, tunnel: p.skill(skillTunnelDrive),
+		riding: p.c.Riding, cart: p.c.Cart, pushCart: p.skill(skillPushCart),
+		danceLesson: p.skill(skillDancingLesson)}
+	if p.c.Casting {
+		in.freeCast = p.skill(skillFreeCast)
+	}
+	if p.c.Male {
+		in.danceLesson = p.skill(skillMusicalLesson)
+	}
 	if p.mapID&mapidSecondMask == mapidAssassin {
 		in.assassinTF = p.skill(skillMiss)
 	}
@@ -1317,11 +1424,11 @@ func (p *pc) calcBattle(b *data) data {
 	if b.Cri != 0 {
 		switch {
 		case s.Luk == b.Luk:
-			s.Cri = calcCritical(l, b.Cri)
+			s.Cri = calcCritical(l, b.Cri, renewal)
 		case renewal:
-			s.Cri = calcCritical(l, b.Cri+3*(s.Luk-b.Luk))
+			s.Cri = calcCritical(l, b.Cri+3*(s.Luk-b.Luk), renewal)
 		default:
-			s.Cri = calcCritical(l, b.Cri+(s.Luk-b.Luk)*10/3)
+			s.Cri = calcCritical(l, b.Cri+(s.Luk-b.Luk)*10/3, renewal)
 		}
 		if p.worn.Weapon == weaponKatar {
 			s.Cri *= 2
@@ -1342,12 +1449,13 @@ func (p *pc) calcBattle(b *data) data {
 	s.MaxSP = capValue(p.calcMaxSP(s.Int), 1, maxSP)
 
 	if renewal {
-		// status_calc_watk with only a left-hand weapon.
+		// status_calc_watk, on the left hand's weapon ATK with only a
+		// left-hand weapon.
 		if b.WAtk == 0 {
 			s.WAtk = 0
-			s.WAtk2 = capValue(b.WAtk2, 0, math.MaxUint16)
+			s.WAtk2 = calcWatk(l, b.WAtk2, renewal, true)
 		} else {
-			s.WAtk = capValue(b.WAtk, 0, math.MaxUint16)
+			s.WAtk = calcWatk(l, b.WAtk, renewal, true)
 		}
 	}
 
@@ -1375,8 +1483,12 @@ func (p *pc) calcBattle(b *data) data {
 			matkMin++
 			matkMax += o - 1
 		}
+		// Mystical Amplification.
+		matkMin, matkMax = magicPowerMatk(l, matkMin, matkMax, true)
 		matkMin += pb.ematk + pb.ematkHidden
 		matkMax += pb.ematk + pb.ematkHidden
+		matkMin = calcPseudobuffMatk(l, matkMin, renewal)
+		matkMax = calcPseudobuffMatk(l, matkMax, renewal)
 		if pb.matkRate != 100 {
 			matkMin = matkMin * pb.matkRate / 100
 			matkMax = matkMax * pb.matkRate / 100
@@ -1393,6 +1505,9 @@ func (p *pc) calcBattle(b *data) data {
 		if recognized {
 			matkMin = max(matkMin, matkMax)
 		}
+		matkMin = calcPseudobuffMatk(l, matkMin, renewal)
+		matkMax = calcPseudobuffMatk(l, matkMax, renewal)
+		matkMin, matkMax = magicPowerMatk(l, matkMin, matkMax, false)
 	}
 	s.MAtkMin = capValue(matkMin, 0, math.MaxUint16)
 	s.MAtkMax = capValue(matkMax, 0, math.MaxUint16)
@@ -1400,12 +1515,21 @@ func (p *pc) calcBattle(b *data) data {
 	// ASPD.
 	amotion := p.baseAmotion(&s)
 	if !p.t.renewalASPD {
-		s.aspdRate = calcAspdRate(l, b.aspdRate)
+		s.aspdRate = calcAspdRateOf(l, b.aspdRate, p.worn.Weapon)
 	}
 	amotion = amotion * s.aspdRate / 1000
+	if lv := p.skill(skillFreeCast); lv > 0 && p.c.Casting {
+		// Free Cast slows the attacks of a player who casts.
+		if p.t.renewalASPD {
+			amotion = amotion * 5 * (lv + 10) / 100
+		} else {
+			amotion += (2000 - amotion) * (55 - 5*(lv+1)) / 100
+		}
+	}
 	if p.t.renewalASPD {
 		// The renewal rate modifier, from bAspdRate and statuses.
-		amotion += max(195-amotion, 2) * (pb.aspdRate2 + calcAspdBonus(l, false, true, p.skill)) / 100
+		bonus := calcAspdBonus(l, false, true, p.skill)
+		amotion += max(195-amotion, 2) * (pb.aspdRate2 + bonus) / 100
 		amotion = amotionZeroASPD - amotion*amotionInterval
 		// The raw change of bAspd.
 		amotion += pb.aspdAdd

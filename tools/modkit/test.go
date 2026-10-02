@@ -19,6 +19,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
@@ -450,7 +451,8 @@ func (s *spec) err() error {
 
 func (w *testWorld) newPlayer(v script.Value) ([]script.Value, error) {
 	const what = "world:new_player"
-	s, err := newSpec(what, v, "map", "x", "y", "job", "base_level", "job_level", "zeny", "items")
+	s, err := newSpec(what, v, "map", "x", "y", "job", "base_level", "job_level", "zeny", "items", "sex", "skills", "stats",
+		"skill_points", "status_points")
 	if err != nil {
 		return nil, err
 	}
@@ -460,6 +462,65 @@ func (w *testWorld) newPlayer(v script.Value) ([]script.Value, error) {
 		Zeny: s.int("zeny", 0, false),
 	}
 	mapName := s.str("map")
+	switch sex := s.str("sex"); sex {
+	case "", "male":
+	case "female":
+		tp.Female = true
+	default:
+		return nil, fmt.Errorf(`%s: sex must be "male" or "female"`, what)
+	}
+	for _, f := range []struct {
+		name string
+		dst  **int
+	}{{"skill_points", &tp.SkillPoints}, {"status_points", &tp.StatusPoints}} {
+		if v := s.t.Get(f.name); !v.IsNil() {
+			n, ok := v.AsInt()
+			if !ok || n < 0 || n > 1<<20 {
+				return nil, fmt.Errorf("%s: %s must be an integer from 0", what, f.name)
+			}
+			x := int(n)
+			*f.dst = &x
+		}
+	}
+	if skills := s.t.Get("skills"); !skills.IsNil() {
+		list, ok := skills.AsTable()
+		if !ok {
+			return nil, fmt.Errorf("%s: skills must be a list of { skill, level }", what)
+		}
+		tp.Skills = map[int]int{}
+		for i := int64(1); i <= int64(len(list.Fields)); i++ {
+			pair, ok := list.Index(i).AsTable()
+			if !ok {
+				return nil, fmt.Errorf("%s: skills[%d] must be { skill, level }", what, i)
+			}
+			id, ok1 := pair.Index(1).AsInt()
+			lv, ok2 := pair.Index(2).AsInt()
+			if !ok1 || !ok2 || id <= 0 || id > 1<<20 || lv < 1 || lv > 1000 {
+				return nil, fmt.Errorf("%s: skills[%d] must be { skill, level }, with a skill from skills.id and a level from 1", what, i)
+			}
+			tp.Skills[int(id)] = int(lv)
+		}
+	}
+	if stats := s.t.Get("stats"); !stats.IsNil() {
+		t, ok := stats.AsTable()
+		if !ok {
+			return nil, fmt.Errorf("%s: stats must be a table such as { str = 50 }", what)
+		}
+		st := status.Stats{Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1}
+		for _, f := range []struct {
+			name string
+			dst  *int
+		}{{"str", &st.Str}, {"agi", &st.Agi}, {"vit", &st.Vit}, {"int", &st.Int}, {"dex", &st.Dex}, {"luk", &st.Luk}} {
+			if v := t.Get(f.name); !v.IsNil() {
+				n, ok := v.AsInt()
+				if !ok || n < 1 || n > 1000 {
+					return nil, fmt.Errorf("%s: stats.%s must be an integer from 1", what, f.name)
+				}
+				*f.dst = int(n)
+			}
+		}
+		tp.Stats = &st
+	}
 	if items := s.t.Get("items"); !items.IsNil() {
 		list, ok := items.AsTable()
 		if !ok {

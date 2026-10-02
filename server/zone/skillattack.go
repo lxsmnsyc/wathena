@@ -51,6 +51,13 @@ func (z *Zone) skillAttack(typ int, src, dsrc, target *entity, d *skill.Def, lv,
 	if target.monster != nil && target.status.Mode&modeSkillImmune != 0 {
 		return 0
 	}
+	// status_isimmune: Wand of Hermode turns a magic skill into a miss,
+	// and the skill's status on the target ends.
+	if d.Type == battle.TypeMagic && statusIsImmune(target) {
+		z.scEnd(target, d.Status)
+		z.skillDamage(src, dsrc, target, d, lv, battle.Result{Kind: battle.Miss, Hits: 1, Flag: battle.FlagMagic}, 0)
+		return 0
+	}
 	if src != dsrc {
 		// A ground skill checks the target as the caster would.
 		if !z.statusCheckSkillUse(src, target, d, 2) {
@@ -66,7 +73,25 @@ func (z *Zone) skillAttack(typ int, src, dsrc, target *entity, d *skill.Def, lv,
 	if target.sc.Has(sc.SCTrickdead) {
 		return 0
 	}
+	// Pre-renewal: while its caster keeps a Gravitation Field, only the
+	// field and autospells deal damage.
+	if e := src.sc.Get(scGravitation); !z.renewal() && src.player != nil && e != nil && e.Val3 == bctSelf &&
+		d.ID != skill.IDGravitation && !src.player.autocast {
+		return 0
+	}
 	res := z.calcSkillAttack(typ, src, dsrc, target, d, lv, flag&0xFFF, nil)
+	if res.Flag&battle.FlagMagic != 0 && src == dsrc && target.sc.Has(sc.SCMagicrod) {
+		// Magic Rod absorbs a magic skill cast at the unit.
+		z.magicRodAbsorb(target, d, lv, &res)
+	}
+	if typ == battle.TypeWeapon {
+		// battle_calc_weapon_final_atk_modifiers: Poison React's counter.
+		z.poisonReactCounter(src, target, res)
+	}
+	if typ == battle.TypeWeapon || typ == battle.TypeMisc {
+		// battle_do_reflect: Shield Reflect returns part of a melee hit.
+		z.reflectShield(src, target, d.ID, res)
+	}
 	return z.applySkillAttack(src, dsrc, target, d, lv, flag, res)
 }
 
@@ -78,7 +103,9 @@ func (z *Zone) calcSkillAttack(typ int, src, dsrc, target *entity, d *skill.Def,
 	if srcSt == nil {
 		srcSt = &npcStatus
 	}
+	z.syncBattlePlayer(src)
 	bsk := d.Battle(srcSt, lv, flag, chebyshev(src, target))
+	bsk.Self = src == target
 	if dsrc != src {
 		// A hit from a ground unit shows no attack motion.
 		bsk.Ground = true
@@ -87,11 +114,21 @@ func (z *Zone) calcSkillAttack(typ int, src, dsrc, target *entity, d *skill.Def,
 		bsk.Impl = impl
 	}
 	bsk.Impl = z.hookSkillRatio(src, target, d, lv, bsk.Impl)
-	tgt := z.defender(target)
-	if z.renewal() {
-		return battle.SkillAttack(typ, srcSt, tgt, bsk, z.rand)
+	tgt := z.defenderFor(src, target, lv)
+	if d.ID == skill.IDSoulBurn {
+		// Soul Siphon's damage reads the target's SP.
+		cp := *tgt
+		cp.SP = int(z.spOf(target))
+		tgt = &cp
 	}
-	return battle.SkillAttackPreRenewal(typ, srcSt, tgt, bsk, z.rand)
+	var res battle.Result
+	if z.renewal() {
+		res = battle.SkillAttack(typ, srcSt, tgt, bsk, z.rand)
+	} else {
+		res = battle.SkillAttackPreRenewal(typ, srcSt, tgt, bsk, z.rand)
+	}
+	z.rejectSword(src, target, res)
+	return res
 }
 
 // applySkillAttack is the part of skill_attack after the calculation:
@@ -100,8 +137,9 @@ func (z *Zone) calcSkillAttack(typ int, src, dsrc, target *entity, d *skill.Def,
 func (z *Zone) applySkillAttack(src, dsrc, target *entity, d *skill.Def, lv, flag int, res battle.Result) int64 {
 	damage := res.Damage
 	hits := max(res.Hits, 1)
-	// Only a hit that dealt at least one damage per hit pushes.
-	if damage < int64(hits) {
+	// Only a hit that dealt at least one damage per hit pushes, but Palm
+	// Strike always pushes.
+	if damage < int64(hits) && d.ID != skill.IDPalmStrike {
 		res.Knockback = 0
 	}
 	if d.ID == skill.IDFireWall && target.status != nil &&
@@ -119,6 +157,8 @@ func (z *Zone) applySkillAttack(src, dsrc, target *entity, d *skill.Def, lv, fla
 	if dsrc == src && d.Target != skill.TargetGround && src.status != nil {
 		delay = src.status.AMotion
 	}
+	// Combo handling, before the damage is dealt.
+	z.skillCombo(src, dsrc, target, d, lv)
 	z.skillDamage(src, dsrc, target, d, lv, res, delay)
 	if flag&4 == 0 && res.Knockback > 0 && !target.dead {
 		z.skillAttackBlow(src, dsrc, target, res.Knockback, d)
@@ -126,6 +166,7 @@ func (z *Zone) applySkillAttack(src, dsrc, target *entity, d *skill.Def, lv, fla
 	if damage > 0 && src.player != nil && !src.dead {
 		z.skillUsage(src, target, d, lv)
 	}
+	z.doubleCast(src, dsrc, target, d, lv, flag)
 	return damage
 }
 
@@ -134,6 +175,11 @@ func (z *Zone) applySkillAttack(src, dsrc, target *entity, d *skill.Def, lv, fla
 // ends, procs, and the monster's retaliation.
 func (z *Zone) skillDamage(src, dsrc, target *entity, d *skill.Def, lv int, res battle.Result, delay int) {
 	damage := res.Damage
+	// skill_attack: a player hit by a copyable skill may copy it, unless
+	// the hit kills it.
+	if target.player != nil && res.Flag&battle.FlagSkill != 0 && damage > 0 && damage < target.hp {
+		z.skillDoCopy(target, d, lv)
+	}
 	if src.player != nil || target.player != nil {
 		z.logDamage(src, target, damage)
 	}
@@ -151,13 +197,27 @@ func (z *Zone) skillDamage(src, dsrc, target *entity, d *skill.Def, lv int, res 
 	}
 	if target.hp <= 0 {
 		z.die(target, src)
+		// skill_counter_additional_effect still runs on a kill.
+		if damage > 0 {
+			z.soulDrain(src, target, d, res.Flag)
+		}
 		return
+	}
+	if res.Blocked {
+		// skill_additional_effect's part that a block does not stop.
+		z.skillDamageBlocked(src, target, d, lv)
 	}
 	if !res.Blocked && res.Kind != battle.Miss && res.Kind != battle.LuckyDodge {
 		z.skillAdditionalEffect(src, target, d, lv, res, landed)
 		if damage > 0 {
 			z.counterEffectFlags(src, target, res.Flag)
-			z.autoSpellWhenHit(src, target, res.Flag, d.NK)
+			// applyCounterAdditionalEffects may change the attack type
+			// that the autospells read.
+			flag := res.Flag
+			if impl, ok := skillImpls[d.ID].(counterFlagger); ok {
+				flag = impl.counterFlag(src, target, flag)
+			}
+			z.autoSpellWhenHit(src, target, flag, d.NK)
 		}
 	}
 	// mob_attacked: a monster that can attack strikes back.
@@ -186,6 +246,7 @@ func (z *Zone) skillAdditionalEffect(src, target *entity, d *skill.Def, lv int, 
 	if impl, ok := skillImpls[d.ID].(additionalEffecter); ok {
 		impl.additionalEffect(z, src, target, d, lv)
 	}
+	z.breakOnHit(src, target, d.ID, res.Flag)
 	if !target.dead && !src.dead {
 		z.autoSpellAttack(src, target, res.Flag)
 	}
@@ -274,6 +335,11 @@ func (z *Zone) skillBlown(src, target *entity, count, dir int, ignoreImmune bool
 			return 0
 		}
 	}
+	// unit_blown_immune: the caster of pre-renewal Basilica cannot be
+	// pushed, except by a boss.
+	if target.basilicaCaster() && (src.status == nil || src.status.Class != battle.ClassBoss) {
+		return 0
+	}
 	if dir == -1 {
 		dir = mapCalcDir(target, src.x, src.y)
 	}
@@ -298,7 +364,7 @@ func (z *Zone) skillBlown(src, target *entity, count, dir int, ignoreImmune bool
 	target.path = target.path[:0]
 	target.x, target.y = x, y
 	target.stopped = true
-	z.skillUnitMove(target)
+	z.moveBlock(target)
 	return moved
 }
 
@@ -322,6 +388,12 @@ type splashDamager interface {
 	splashDamage(z *Zone, src, target *entity, d *skill.Def, lv, flag int)
 }
 
+// splashSearcher is a splash skill that counts its targets in another
+// area than it hits, as SkillImplRecursiveDamageSplash::getSearchSize.
+type splashSearcher interface {
+	searchSize(lv int) int
+}
+
 // recursiveSplash is SkillImplRecursiveDamageSplash::castendDamageId on
 // the first target: it counts the targets of a skill that splits its
 // damage, then hits every enemy around the target, the target included.
@@ -329,8 +401,12 @@ func (z *Zone) recursiveSplash(src, target *entity, d *skill.Def, lv, flag int) 
 	z.area = areaTemp{main: target}
 	size := d.SplashFor(lv)
 	if flag&sdLevel != 0 || d.NK.Has(battle.NKSplashSplit) {
+		search := size
+		if s, ok := skillImpls[d.ID].(splashSearcher); ok {
+			search = s.searchSize(lv)
+		}
 		// map_foreachinallrange: counted without the wall check.
-		z.area.count = max(len(z.areaTargets(src, target.x, target.y, size, false)), 1)
+		z.area.count = max(len(z.areaTargets(src, target.x, target.y, search, false)), 1)
 	}
 	for _, t := range z.areaTargets(src, target.x, target.y, size, true) {
 		sflag := z.area.count & 0xFFF

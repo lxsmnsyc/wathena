@@ -41,6 +41,7 @@ var Systems = []string{
 	"pc_damage",
 	"skill_damage",
 	"skill_casting",
+	"skill_status",
 	"item_bonuses",
 	"refine",
 	"status_effects",

@@ -11,6 +11,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -174,14 +175,32 @@ func (v scEnv) RandN(n int) int {
 // once, as rAthena computes them inside status_change_start and
 // status_change_end. A script that starts or ends a status reads the new
 // stats after the call.
-func (v scEnv) Recalc(u sc.Unit) {
+func (v scEnv) Recalc(u sc.Unit, def *sc.Def) {
 	z, e := v.z, u.(scUnit).e
 	switch {
 	case e.player != nil:
-		z.statsChanged(e.player)
+		p := e.player
+		pending := p.statsDirty
+		z.markStats(p)
+		if !pending && !recalcsAspd(def) {
+			// status_calc_bl only computes what the status's flags name.
+			// Of what this server computes, only ASPD can differ from a
+			// full status_calc_pc: renewal's ASPD reads Musical Lesson
+			// and Plagiarism only while a status is active.
+			p.keepAspd = true
+		}
+		z.flushStats()
 	case e.monster != nil && e.monster.spawn.Status != nil:
 		z.recalcMonster(e)
 	}
+}
+
+// recalcsAspd reports whether status_calc_bl computes ASPD for a
+// status's flags: SCB_ASPD, or SCB_AGI and SCB_DEX, which lead to it,
+// or SCB_BASE, which is a full status_calc_pc. A nil status computes
+// everything.
+func recalcsAspd(def *sc.Def) bool {
+	return def == nil || def.Calcs("aspd") || def.Calcs("agi") || def.Calcs("dex") || def.Calcs("base")
 }
 
 // recalcMonster is status_calc_bl_main for a monster: its battle status
@@ -268,8 +287,73 @@ func (v scEnv) Damage(u sc.Unit, hp, sp int64, passive, noKill bool) int64 {
 	}
 	if e.hp <= 0 {
 		z.die(e, nil)
+		return hp
 	}
+	z.hpLowered(e)
 	return hp
+}
+
+// SetHP is status_set_hp: HP becomes the value, by damage or a heal
+// that statuses do not block.
+func (v scEnv) SetHP(u sc.Unit, hp int64) {
+	e := u.(scUnit).e
+	if e.status == nil || e.dead {
+		return
+	}
+	hp = min(max(hp, 1), int64(e.status.MaxHP))
+	if hp != e.hp {
+		e.hp, e.hpChanged = hp, true
+	}
+}
+
+// SetSP is status_set_sp.
+func (v scEnv) SetSP(u sc.Unit, sp int64) {
+	z, e := v.z, u.(scUnit).e
+	p := e.player
+	if p == nil || e.status == nil {
+		return
+	}
+	p.sp = min(max(sp, 0), int64(e.status.MaxSP))
+	if s := z.battleStats(p); s != nil {
+		p.pending = append(p.pending, s)
+	}
+}
+
+// ForceHeal is status_heal with flag 1: a heal that Frenzy does not
+// block.
+func (v scEnv) ForceHeal(u sc.Unit, hp int64) {
+	e := u.(scUnit).e
+	if e.status == nil || e.dead || hp <= 0 {
+		return
+	}
+	e.hp = min(e.hp+hp, int64(e.status.MaxHP))
+	e.hpChanged = true
+}
+
+// refreshChanges keeps what attacks read of a unit's statuses current.
+// rAthena's battle code reads the statuses at each attack, so a status
+// without calc flags, such as SC_WATK_ELEMENT or SC_AUTOCOUNTER, changes
+// attacks without a stat calculation. A monster that shares its spawn's
+// status gets its own copy first.
+func (z *Zone) refreshChanges(e *entity) {
+	if e.status == nil {
+		return
+	}
+	if m := e.monster; m != nil && e.status == m.spawn.Status {
+		if e.sc.Empty() {
+			return
+		}
+		st := *e.status
+		e.status = &st
+	}
+	e.status.Changes = status.BattleChanges(e.sc)
+}
+
+// hpLowered is the end of status_damage: Frenzy ends at 100 HP or less.
+func (z *Zone) hpLowered(e *entity) {
+	if e.hp <= 100 && e.sc.Has(sc.SCBerserk) {
+		z.scEnd(e, sc.SCBerserk)
+	}
 }
 
 func (v scEnv) Heal(u sc.Unit, hp, sp int64) {
@@ -290,6 +374,7 @@ func (v scEnv) Heal(u sc.Unit, hp, sp int64) {
 }
 
 func (v scEnv) Started(u sc.Unit, e *sc.Entry) {
+	v.z.refreshChanges(u.(scUnit).e)
 	if v.z.quietStatuses {
 		return
 	}
@@ -297,6 +382,10 @@ func (v scEnv) Started(u sc.Unit, e *sc.Entry) {
 }
 
 func (v scEnv) Ended(u sc.Unit, e *sc.Entry, reason sc.Reason) {
+	v.z.statusEndEffects(u.(scUnit).e, e)
+	v.z.performanceEnded(u.(scUnit).e, e)
+	v.z.refreshChanges(u.(scUnit).e)
+	v.z.monkStatusEnded(u.(scUnit).e, e)
 	if v.z.quietStatuses {
 		return
 	}
@@ -305,6 +394,40 @@ func (v scEnv) Ended(u sc.Unit, e *sc.Entry, reason sc.Reason) {
 
 func (v scEnv) Ticked(u sc.Unit, e *sc.Entry) {
 	v.z.statusEvent("status_tick", u.(scUnit), e, e.Remaining(v.z.now), "")
+}
+
+// Strip is the strip part of status_change_start, as stripEquip.
+func (v scEnv) Strip(u sc.Unit, typ int) bool { return v.z.stripEquip(u.(scUnit).e, typ) }
+
+// UnitOf is map_id2bl: the player or monster a source names, while it
+// is in the zone.
+func (v scEnv) UnitOf(s sc.Source) sc.Unit {
+	z := v.z
+	var e *entity
+	switch s.Kind {
+	case sc.KindPlayer:
+		if p := z.players[uint32(s.ID)]; p != nil { // #nosec G115 -- a player's source ID is its char ID.
+			e = p.entity
+		}
+	case sc.KindMonster:
+		e = z.monsterHandles[s.ID]
+	}
+	if e == nil || !z.entities.has(e) {
+		return nil
+	}
+	return z.unit(e)
+}
+
+// AreaChars is map_foreachinallarea over BL_CHAR: the players and
+// monsters in the square around a unit, the dead included.
+func (v scEnv) AreaChars(u sc.Unit, r int) []sc.Unit {
+	z, e := v.z, u.(scUnit).e
+	var out []sc.Unit
+	for _, t := range z.findEntities(&query{area: areaRadius, x: e.x, y: e.y, radius: r,
+		kinds: queryPlayers | queryMonsters, dead: true}) {
+		out = append(out, z.unit(t))
+	}
+	return out
 }
 
 // statusEvent queues a status event for mod scripts. Events run after
@@ -393,7 +516,22 @@ func (e *entity) cant() sc.Cant {
 	if e.sc == nil {
 		return sc.Cant{}
 	}
-	return e.sc.Cant
+	c := e.sc.Cant
+	// status_calc_state_sub's NoMoveCond: the caster of pre-renewal
+	// Basilica cannot move.
+	if !c.Move && e.basilicaCaster() {
+		c.Move = true
+	}
+	// SC_HIDING's NoMoveCond in status_calc_state_sub: a hidden unit
+	// cannot move, except a player with Tunnel Drive.
+	if !c.Move && e.sc.Has(sc.SCHiding) && (e.player == nil || e.player.skillLevel(skill.IDTunnelDrive) <= 0) {
+		c.Move = true
+	}
+	// The caster of Battle Chant cannot move.
+	if !c.Move && e.gospelCaster() {
+		c.Move = true
+	}
+	return c
 }
 
 // body is an entity's opt1: stun, freeze, stone or sleep, which stop it
@@ -417,14 +555,24 @@ func (e *entity) actsBlocked() bool {
 // none.
 func (e *entity) options() *wathenav1.Options {
 	l := e.sc
-	if l == nil || (l.Opt1 == 0 && l.Opt2 == 0 && l.Opt3 == 0 && l.Option == 0) {
+	// A player's saved options (cart, falcon, Peco Peco) join the
+	// options of its statuses, as rAthena keeps both in sc.option.
+	saved := 0
+	if e.player != nil {
+		saved = e.player.record.Options
+	}
+	if (l == nil || (l.Opt1 == 0 && l.Opt2 == 0 && l.Opt3 == 0 && l.Option == 0)) && saved == 0 {
 		return nil
 	}
+	var o1, o2, o3, opt int
+	if l != nil {
+		o1, o2, o3, opt = int(l.Opt1), int(l.Opt2), int(l.Opt3), int(l.Option)
+	}
 	return wathenav1.Options_builder{
-		Body:   uint32(l.Opt1),   // #nosec G115 -- OPT1_ values are small.
-		Health: uint32(l.Opt2),   // #nosec G115 -- bits.
-		Effect: uint32(l.Opt3),   // #nosec G115 -- bits.
-		Option: uint32(l.Option), // #nosec G115 -- bits.
+		Body:   uint32(o1),          // #nosec G115 -- OPT1_ values are small.
+		Health: uint32(o2),          // #nosec G115 -- bits.
+		Effect: uint32(o3),          // #nosec G115 -- bits.
+		Option: uint32(opt | saved), // #nosec G115 -- bits.
 	}.Build()
 }
 
@@ -444,6 +592,10 @@ func optionChange(id uint32, e *entity) *wathenav1.Event {
 func (z *Zone) damaged(e *entity, hp int64, fromMonster bool) {
 	if en := z.statusEngine(); en != nil && e.sc != nil {
 		en.Damaged(z.unit(e), hp, fromMonster)
+		z.gravitationDamaged(e)
+	}
+	if hp > 0 && !e.dead && e.hp > 0 {
+		z.hpLowered(e)
 	}
 	if p := e.player; p != nil {
 		z.endTimedBonuses(p, "damage")
@@ -814,7 +966,11 @@ const addEffDelay = 100
 func (z *Zone) additionalEffect(src, target *entity, long bool) {
 	p := src.player
 	en := z.statusEngine()
-	if p == nil || en == nil || target.dead {
+	if p == nil || target.dead {
+		return
+	}
+	if en == nil {
+		z.snatcher(src, target)
 		return
 	}
 	su, tu := z.unit(src), z.unit(target)
@@ -835,6 +991,12 @@ func (z *Zone) additionalEffect(src, target *entity, long bool) {
 			en.Start(su, su, s)
 		}
 	}
+	// The normal attack's own effects (case 0 of the skill switch).
+	if !target.dead && !src.dead {
+		z.autoBlitzBeat(src, target)
+	}
+	// The normal attack's own effects: Snatcher's steal.
+	z.snatcher(src, target)
 }
 
 // counterEffect is skill_counter_additional_effect for a normal attack
@@ -945,6 +1107,17 @@ func (h scriptHost) statusStart(target modscript.Entity, s modscript.StatusStart
 			start.Duration = int64(def.Duration(start.Val1))
 		}
 	}
+	// buildin_sc_start with potion_flag and potion_target: a thrown
+	// potion's status goes on the target, from the target, for half its
+	// time, with val4 1.
+	if t := z.potionStatusTarget(); t != nil {
+		tu, su = z.unit(t), z.unit(t)
+		start.Source = sc.Source{}
+		if start.Duration != sc.InfiniteTick {
+			start.Duration /= 2
+		}
+		start.Val4 = 1
+	}
 	if s.CannotBeAvoided {
 		start.Flag |= sc.NoAvoid
 	}
@@ -997,6 +1170,10 @@ func (h scriptHost) EndStatus(target modscript.Entity, status int64) (bool, erro
 	e, err := h.entityOf(target)
 	if err != nil {
 		return false, err
+	}
+	// buildin_sc_end with potion_flag ends the status on potion_target.
+	if t := z.potionStatusTarget(); t != nil {
+		e = t
 	}
 	// buildin_sc_end refuses a status that neither clearing nor a
 	// forced end may remove.

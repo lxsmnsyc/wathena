@@ -185,6 +185,9 @@ const (
 	StatId_STAT_ID_INT_COST StatId = 33
 	StatId_STAT_ID_DEX_COST StatId = 34
 	StatId_STAT_ID_LUK_COST StatId = 35
+	// JOB is the player's rAthena job ID, which changes with a job change.
+	// The look's body shows the class a rider shows instead.
+	StatId_STAT_ID_JOB StatId = 36
 )
 
 // Enum value maps for StatId.
@@ -226,6 +229,7 @@ var (
 		33: "STAT_ID_INT_COST",
 		34: "STAT_ID_DEX_COST",
 		35: "STAT_ID_LUK_COST",
+		36: "STAT_ID_JOB",
 	}
 	StatId_value = map[string]int32{
 		"STAT_ID_UNSPECIFIED":   0,
@@ -264,6 +268,7 @@ var (
 		"STAT_ID_INT_COST":      33,
 		"STAT_ID_DEX_COST":      34,
 		"STAT_ID_LUK_COST":      35,
+		"STAT_ID_JOB":           36,
 	}
 )
 
@@ -8431,7 +8436,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x18VANISH_REASON_LOGGED_OUT\x10\x03\x12\x1c\n" +
 	"\x18VANISH_REASON_TELEPORTED\x10\x04\x12\x1b\n" +
 	"\x17VANISH_REASON_PICKED_UP\x10\x05\x12\x19\n" +
-	"\x15VANISH_REASON_EXPIRED\x10\x06*\xe6\x05\n" +
+	"\x15VANISH_REASON_EXPIRED\x10\x06*\xf7\x05\n" +
 	"\x06StatId\x12\x17\n" +
 	"\x13STAT_ID_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -8471,7 +8476,8 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x10STAT_ID_VIT_COST\x10 \x12\x14\n" +
 	"\x10STAT_ID_INT_COST\x10!\x12\x14\n" +
 	"\x10STAT_ID_DEX_COST\x10\"\x12\x14\n" +
-	"\x10STAT_ID_LUK_COST\x10#*\xa4\x01\n" +
+	"\x10STAT_ID_LUK_COST\x10#\x12\x0f\n" +
+	"\vSTAT_ID_JOB\x10$*\xa4\x01\n" +
 	"\n" +
 	"DamageKind\x12\x1b\n" +
 	"\x17DAMAGE_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +

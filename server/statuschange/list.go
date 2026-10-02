@@ -191,7 +191,30 @@ func (l *List) calcState(db *DB) {
 		Unequip: s.Has(StateNoUnequipItem), Consume: s.Has(StateNoConsumeItem), Attack: s.Has(StateNoAttack),
 		Warp: s.Has(StateNoWarp), DeathPenalty: s.Has(StateNoDeathPenalty), Interact: s.Has(StateNoInteract),
 	}
+	// status_calc_state_sub's conditions: the caster of a pre-renewal
+	// Gravitation Field (val3 BCT_SELF) cannot move or use items.
+	if e := l.Get(SCGravitation); e != nil && e.Val3 == bctSelf {
+		l.Cant.Move, l.Cant.Consume = true, true
+	}
+	// SC_DANCING's conditions. An ensemble (val4 set) keeps its
+	// performers in place: in renewal only for Moonlit Water Mill and
+	// Wand of Hermode, in pre-renewal for every one unless Longing for
+	// Freedom is on. In pre-renewal a song stops attacks, as does an
+	// ensemble without Longing for Freedom.
+	if e := l.Get(SCDancing); e != nil {
+		id := e.Val1 & 0xFFFF
+		special := id == skillMoonlit || id == skillHermode
+		if e.Val4 != 0 && (db.renewal && special || !db.renewal && (!l.Has(SCLonging) || special)) {
+			l.Cant.Move = true
+		}
+		if !db.renewal && (e.Val4 == 0 || !l.Has(SCLonging)) {
+			l.Cant.Attack = true
+		}
+	}
 }
+
+// bctSelf is BCT_SELF.
+const bctSelf = 0x010000
 
 // Regen is the status part of status_calc_regen_rate: whether natural HP
 // and SP regen may run. The rate changes of skills come with them.
@@ -208,3 +231,20 @@ func (l *List) Regen() (hp, sp bool) {
 	sp = !l.Has(SCDancing) && !l.Has(SCMaximizepower) && (!l.Has(SCOblivioncurse) || l.Val3(SCOblivioncurse) != 1)
 	return true, sp
 }
+
+// RegenRate is the rate part of status_calc_regen_rate: the percent
+// speed of natural HP and SP regen. Magnificat doubles SP regen.
+func (l *List) RegenRate() (hp, sp int) {
+	hp, sp = 100, 100
+	if l.Empty() {
+		return hp, sp
+	}
+	if l.Has(SCMagnificat) {
+		sp += 100
+	}
+	return hp, sp
+}
+
+// Timer is when the status's timer next runs, in zone milliseconds, or
+// -1 for none. Tests compare it with rAthena's timer.
+func (e *Entry) Timer() int64 { return e.timer }

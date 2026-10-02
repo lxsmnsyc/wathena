@@ -18,6 +18,9 @@ type Slot struct {
 	// Cards are the card IDs in the item's slots, in slot order. Only
 	// filled slots are listed (strategy section 6.8: slots are a list).
 	Cards []uint32
+	// Broken is rAthena's item.attribute of 1: skill_break_equip broke
+	// the item, and it cannot be equipped until it is repaired.
+	Broken bool
 }
 
 // Inventory is a player's inventory, as mmo_charstatus's inventory with

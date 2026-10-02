@@ -1,0 +1,8 @@
+# The trainer stands next to core's Job Master in Prontera.
+- name: Trainer#prontera
+  map: prontera
+  x: 160
+  y: 191
+  direction: south
+  sprite: 1_M_JOBTESTER
+  script: scripts/npc/trainer.lua

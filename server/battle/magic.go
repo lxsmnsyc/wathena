@@ -6,10 +6,15 @@ package battle
 
 // Skill IDs that only these functions read.
 const (
-	skillFreezingTrap = 121 // HT_FREEZINGTRAP
-	skillPhantasmic   = 380 // HT_PHANTASMIC
-	skillGroundDrift  = 525 // GS_GROUNDDRIFT
+	skillFreezingTrap = 121  // HT_FREEZINGTRAP
+	skillPhantasmic   = 1009 // HT_PHANTASMIC
+	skillGroundDrift  = 525  // GS_GROUNDDRIFT
 	skillResearchTrap = 2248
+	skillFirePillar   = 80  // WZ_FIREPILLAR
+	skillGravitation  = 484 // HW_GRAVITATION
+	skillDissonance   = 317 // BA_DISSONANCE
+	// mobEmperium is MOBID_EMPERIUM.
+	mobEmperium = 1288
 )
 
 // BaseDamager is implemented by a SkillImpl whose magic or misc damage
@@ -31,12 +36,26 @@ func atkPercent(src *Status, sk *Skill) int64 {
 
 // skillRatio is battle_calc_attack_skill_ratio: in renewal it starts from
 // the ATK percent of status changes, then the skill adds its own ratio.
-// Overthrust, Berserk, Poison React and the other statuses it reads are
-// not ported.
+// It reads Power Thrust, Maximum Power Thrust, Frenzy and Poison React.
 func skillRatio(wd *damage, src, target *Status, renewal bool) int {
 	ratio := 100
 	if wd.skillID() != skillSacrifice && renewal {
 		ratio = int(atkPercent(src, wd.sk))
+	}
+	// Power Thrust's val3 and Maximum Power Thrust's val2.
+	if c := src.Changes; c != nil && wd.skillID() != skillSacrifice {
+		ratio += c.Overthrust
+	}
+	// Frenzy adds 100%, or 200% in renewal.
+	if c := src.Changes; c != nil && c.Berserk && wd.skillID() != skillSacrifice {
+		if renewal {
+			ratio += 200
+		} else {
+			ratio += 100
+		}
+	}
+	if wd.skillID() != skillSacrifice {
+		ratio += poisonReactRatio(wd, src)
 	}
 	if wd.sk != nil && wd.sk.Impl != nil {
 		wd.sk.Impl.SkillRatio(wd.context(src, target), &ratio)
@@ -46,10 +65,18 @@ func skillRatio(wd *damage, src, target *Status, renewal bool) int {
 
 // skillConstantAddition is battle_calc_skill_constant_addition in
 // renewal: damage that a skill adds after its ratio.
-func skillConstantAddition(wd *damage, src, _ *Status) int64 {
+func skillConstantAddition(wd *damage, src, _ *Status, r Rand) int64 {
 	switch wd.skillID() {
 	case skillExtremityFist:
 		return int64(250 + 150*wd.skillLv())
+	case skillShieldChain:
+		// A player with a shield: a roll between 100 and 7% of the
+		// shield's weight plus (level + refine) squared, at least 100.
+		if sd := src.Player; sd != nil && sd.Shield {
+			n := wd.skillLv() + sd.ShieldRefine
+			bonus := 7*sd.ShieldWeight/100 + n*n
+			return int64(max(100, rndValue(r, 100, bonus)))
+		}
 	case skillFreezingTrap:
 		if src.Player != nil {
 			return int64(40 * src.skill(skillResearchTrap))
@@ -97,6 +124,13 @@ func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 		sd.ArrowAttack = false
 	}
 	ad.flag |= rangeType(src, sk)
+	// modifyDamageData of the skill's SkillImpl, such as Fire Pillar,
+	// whose damage players divide among its hits.
+	if m, ok := sk.Impl.(DamageDataModifier); ok {
+		d := DamageData{Div: ad.div, Knockback: ad.blewcount, Flag: ad.flag}
+		m.ModifyDamageData(ad.context(src, target), &d)
+		ad.div, ad.blewcount, ad.flag = d.Div, d.Knockback, d.Flag
+	}
 
 	if !isInfiniteDefense(target, ad.flag) {
 		ratio := 100
@@ -121,6 +155,11 @@ func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 			hasRatio = true
 			if pre {
 				ad.damage = ad.damage * int64(ratio) / 100
+			}
+			// Constant additions of skills, after the ratio in
+			// pre-renewal and before it in renewal.
+			if sk.ID == skillFirePillar {
+				ad.damage += int64(100 + 50*sk.Level)
 			}
 		}
 
@@ -197,22 +236,43 @@ func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 			}
 		}
 
+		// The physical part of Grand Cross.
+		if sk.ID == skillGrandCross {
+			grandCrossDamage(&ad, src, target, pre, r)
+		}
+
 		if ad.damage < 1 {
 			ad.damage = 1
 		}
 		// The elemental spirits that add to bolts are not ported.
 
-		if !ad.nk.Has(NKIgnoreElement) {
+		elemFix := func(dmg int64) int64 {
 			if pre {
-				ad.damage = AttrFixPreRenewal(ad.damage, ele, target.DefEle, target.EleLv, 0)
-			} else {
-				ad.damage = AttrFix(ad.damage, ele, target.DefEle, target.EleLv, 0)
+				return attrFixPre(src, target, dmg, ele, target.DefEle, target.EleLv, 0)
 			}
+			return attrFix(src, target, dmg, ele, target.DefEle, target.EleLv, 0)
+		}
+		if !ad.nk.Has(NKIgnoreElement) {
+			ad.damage = elemFix(ad.damage)
 		}
 		if pre {
 			// Pre-renewal applies a player target's magic cards after the
 			// element table.
 			ad.damage += cardfixMagic(src, target, ad.damage, ele, ad.flag, ad.nk, true)
+		}
+		if sk.ID == skillGrandCross {
+			if sk.Self {
+				// Grand Cross on its caster: half the damage for a
+				// player, none for other units.
+				if src.Player != nil {
+					ad.damage /= 2
+				} else {
+					ad.damage = 0
+				}
+			} else {
+				// On a target, the element table applies a second time.
+				ad.damage = elemFix(ad.damage)
+			}
 		}
 	}
 	// Against a target that takes 1 damage from each hit, damage is
@@ -222,6 +282,40 @@ func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 	ad.damage = calcDamage(&ad, src, target, ad.damage)
 	absorbDamage(&ad, target)
 	return ad
+}
+
+// grandCrossDamage is the Grand Cross case of battle_calc_magic_attack:
+// the caster's ATK joins its MATK, then the ratio of 100% + 40% per
+// level applies.
+//   - Pre-renewal: ATK is the base damage after DEF, plus the refine
+//     bonus. The sum is at least 1.
+//   - Renewal: ATK is a player's status, weapon, equipment and percent
+//     ATK. The sum is halved, and after the ratio the target's DEF and
+//     MDEF are subtracted.
+func grandCrossDamage(ad *damage, src, target *Status, pre bool, r Rand) {
+	sk := ad.sk
+	wd := initializeWeaponData(src, sk)
+	wd.pre = pre
+	if pre {
+		calcSkillBaseDamagePreRenewal(&wd, src, target, false, r)
+		calcDefenseReductionPreRenewal(&wd, src, target, false, r)
+		if src.Player != nil {
+			wd.damage += int64(src.RHW.Atk2)
+		}
+		ad.damage = max(1, wd.damage+ad.damage)
+	} else {
+		calcSkillBaseDamage(&wd, src, target, false, r)
+		if src.Player != nil {
+			wd.damage = wd.statusAtk + wd.weaponAtk + wd.equipAtk + wd.percentAtk
+		}
+		ad.damage = (wd.damage + ad.damage) / 2
+	}
+	ratio := int64(100 + 40*sk.Level)
+	ad.damage = ad.damage * ratio / 100
+	if !pre {
+		calcDefenseReduction(ad, src, target, 0)
+		ad.damage -= int64(target.MDef + target.MDef2)
+	}
 }
 
 // calcMiscAttack is battle_calc_misc_attack, in pre-renewal when pre is
@@ -244,9 +338,54 @@ func calcMiscAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 			md.damage = 30
 		}
 		md.flag |= bfWeapon
+	case skillGravitation:
+		// Gravitation Field is a misc attack in pre-renewal only. It
+		// deals 400 to the Emperium on all levels.
+		md.damage = int64(200 + 200*sk.Level)
+		if target.ID == mobEmperium {
+			md.damage = 400
+		}
+	case skillPressure:
+		// Pre-renewal's Gloria Domini deals a fixed damage.
+		if pre {
+			md.damage = int64(500 + 300*sk.Level)
+		}
+	case skillGospel:
+		// Battle Chant's damage: 1500 to 5499 unreduced with flag 1, or
+		// 3000 to 7999 less DEF and soft DEF. Renewal subtracts DEF and
+		// pre-renewal its percent.
+		if md.miscflag > 0 {
+			md.damage = int64(r.IntN(4000) + 1500)
+		} else {
+			md.damage = int64(r.IntN(5000) + 3000)
+			if pre {
+				md.damage -= md.damage * int64(target.Def) / 100
+			} else {
+				md.damage -= int64(target.Def)
+			}
+			md.damage -= int64(target.Def2)
+			md.damage = max(md.damage, 0)
+		}
+	case skillDissonance:
+		// Pre-renewal's Dissonance: 30 + 10 per level, and the level
+		// times Musical Lesson's level.
+		if pre {
+			md.damage = int64(30 + 10*sk.Level + sk.Level*src.skill(skillMusicalLesson))
+		}
+	case skillSoulBreaker:
+		// Pre-renewal's INT part of Soul Breaker. It ignores FLEE and the
+		// element, which the weapon part does not.
+		if pre {
+			md.damage = int64(500 + r.IntN(500) + 5*sk.Level*src.Int)
+			md.nk |= NKIgnoreFlee | NKIgnoreElement
+		}
 	default:
 		if b, ok := sk.Impl.(BaseDamager); ok {
 			md.damage = b.BaseDamage(md.context(src, target), r)
+		}
+		if pre && (sk.ID == skillBlitzBeat || sk.ID == skillFalconAssault) && md.miscflag > 1 {
+			// An automatic Blitz Beat splits its damage among its targets.
+			md.nk |= NKSplashSplit
 		}
 	}
 
@@ -292,9 +431,9 @@ func calcMiscAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 
 	if !md.nk.Has(NKIgnoreElement) {
 		if pre {
-			md.damage = AttrFixPreRenewal(md.damage, ele, target.DefEle, target.EleLv, 0)
+			md.damage = attrFixPre(src, target, md.damage, ele, target.DefEle, target.EleLv, 0)
 		} else {
-			md.damage = AttrFix(md.damage, ele, target.DefEle, target.EleLv, 0)
+			md.damage = attrFix(src, target, md.damage, ele, target.DefEle, target.EleLv, 0)
 		}
 	}
 

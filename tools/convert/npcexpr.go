@@ -104,6 +104,10 @@ func (b *body) param(name string) (val, error) {
 		return val{code: "jobs.base_job(player.job)", t: tInt}, nil
 	case "sex":
 		return val{code: `(player.sex == "male" and 1 or 0)`, t: tInt}, nil
+	case "upper":
+		// Upper is 1 for a transcendent job and 2 for a baby job.
+		f.need("jobs")
+		return val{code: "(jobs.is_transcendent(player.job) and 1 or (jobs.is_baby(player.job) and 2 or 0))", t: tInt}, nil
 	case "hp":
 		return val{code: "player.hp", t: tInt}, nil
 	case "maxhp":
@@ -977,6 +981,14 @@ func (b *body) commandErr(name string, args []Expr) error {
 		b.line("-- logmes: wAthena has no script log yet.")
 	case "setarray", "deletearray":
 		return b.arrayCommand(name, args)
+	case "jobchange":
+		return b.jobchange(args)
+	case "resetlvl":
+		return b.resetlvl(args)
+	case "resetskill":
+		b.line("player:reset_skills()")
+	case "resetstatus":
+		b.line("player:reset_stats()")
 	case "openstorage":
 		b.line(`R.not_available(conversation, "Storage")`)
 	case "setcart":
@@ -1311,4 +1323,60 @@ func sortStrings(s []string) {
 			s[j], s[j-1] = s[j-1], s[j]
 		}
 	}
+}
+
+// Jobs that the job change commands read, as rAthena's Job_ constants.
+const (
+	jobNoviceHigh = 4001
+)
+
+// jobchange converts rAthena's jobchange: a change that skips the job
+// change rules, since the script checks its own. jobchange Job_Novice_High
+// is the rebirth NPC's, which resetlvl(1) follows: it converts to
+// player:rebirth, which does both.
+func (b *body) jobchange(args []Expr) error {
+	if len(args) < 1 || len(args) > 3 {
+		return unsupported("jobchange", "arguments")
+	}
+	if len(args) >= 2 {
+		up, err := b.expr(args[1])
+		if err != nil {
+			return err
+		}
+		if up.static == nil || *up.static != 0 {
+			return unsupported("jobchange", "a transcendent or baby flag")
+		}
+	}
+	if len(args) == 3 {
+		return unsupported("jobchange", "for another character")
+	}
+	job, err := b.expr(args[0])
+	if err != nil {
+		return err
+	}
+	if job.static != nil && *job.static == jobNoviceHigh {
+		b.rebirth = true
+		b.line("player:rebirth()")
+		return nil
+	}
+	b.n.file.need("jobs")
+	b.line("player:change_job(%s, { force = true })", job.asInt())
+	return nil
+}
+
+// resetlvl converts rAthena's resetlvl. Only type 1 right after
+// jobchange Job_Novice_High converts: player:rebirth does it.
+func (b *body) resetlvl(args []Expr) error {
+	if len(args) != 1 {
+		return unsupported("resetlvl", "arguments")
+	}
+	v, err := b.expr(args[0])
+	if err != nil {
+		return err
+	}
+	if v.static == nil || *v.static != 1 || !b.rebirth {
+		return unsupported("resetlvl", "outside a rebirth")
+	}
+	b.line("-- resetlvl(1): player:rebirth reset the levels.")
+	return nil
 }

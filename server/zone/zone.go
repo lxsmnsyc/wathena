@@ -126,6 +126,9 @@ type Player struct {
 	saved    *character.Character
 	nextSave int64
 
+	// spheres are the player's spirit spheres.
+	spheres
+
 	// arrival is set while a player that warped from another zone joins.
 	arrival *handoff
 	// mapChange is set until the first frame after a warp from another
@@ -176,6 +179,18 @@ type Player struct {
 	// are casting, by index, so an entry does not trigger itself.
 	autocast      bool
 	autoSpellLock map[int]bool
+	// keepAspd is set while the stats wait for a status's own
+	// status_calc_bl, which does not compute ASPD.
+	keepAspd bool
+	// rogue is the state of the Rogue's skills: the skill Plagiarism
+	// copied, and Gangster's Paradise.
+	rogue rogueState
+	// castOld is the cast that Cast Cancel stops, as sd->skill_id_old and
+	// skill_lv_old.
+	castOld *casting
+	// perform is the player's last song or dance and Encore's mark
+	// (skills_bard.go).
+	perform performState
 }
 
 type entity struct {
@@ -218,6 +233,7 @@ type entity struct {
 	fight
 	pickUp
 	unitSkill
+	bladeStopState
 	// unit is set for a cell of a ground skill.
 	unit *skillUnit
 }
@@ -276,6 +292,9 @@ type attackCommand struct {
 type Zone struct {
 	Map  string
 	grid *path.Grid
+	// ownGrid is set once the zone copied its grid to change cells, as
+	// Ice Wall does. The map's grid may be shared.
+	ownGrid bool
 
 	start    time.Time
 	now      int64
@@ -407,11 +426,23 @@ type Zone struct {
 	// area is rAthena's skill_area_temp, the scratch values of the
 	// splash in progress.
 	area areaTemp
+	// bowled is rAthena's bowling_db: the units one Bowling Bash already
+	// hit.
+	bowled map[*entity]bool
+	// potion is rAthena's potion_flag and the potion values it fills,
+	// for the thrown potions of the Alchemist skills.
+	potion potionRun
 	// groups are the ground skill groups, by group ID. nextGroup counts
 	// them, and nextUnitTimer is when skill_unit_timer next runs.
 	groups        map[int64]*unitGroup
 	nextGroup     int64
 	nextUnitTimer int64
+	// timerSkills are the skill effects waiting for their time, as
+	// skill_addtimerskill's timers.
+	timerSkills []*timerSkill
+	// partners are the partners skill_check_pc_partner found last, which
+	// it keeps between the cast start and end.
+	partners []*entity
 	// deferred is work that waits for a script's call to return, such
 	// as the death of a unit a cast's script killed. nextCast numbers the
 	// casts that scripts see.
@@ -648,7 +679,7 @@ func (z *Zone) join(p *Player) joinResult {
 	}
 	p.load = nil
 	p.record = c.Info
-	p.Look = Look{Job: uint32(c.Job), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
+	p.Look = Look{Job: uint32(viewJob(c.Job, c.Options)), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
 	h := p.arrival
 	p.arrival = nil
@@ -688,6 +719,10 @@ func (z *Zone) join(p *Player) joinResult {
 				p.cooldowns = map[int]int64{}
 			}
 			p.cooldowns[id] = z.now + left
+		}
+		// Spirit spheres go on too.
+		for _, left := range h.spiritBalls {
+			p.spiritTimers = append(p.spiritTimers, z.now+left)
 		}
 	}
 	p.sent = map[wathenav1.StatId]int64{}
@@ -743,6 +778,7 @@ func (z *Zone) join(p *Player) joinResult {
 	if s := z.battleStats(p); s != nil {
 		p.pending = append(p.pending, s)
 	}
+	z.loadPlagiarism(p, c.Variables)
 	z.sendSkillList(p)
 	z.startPassives(p)
 	// The first save comes one interval after the player enters. A
@@ -898,11 +934,12 @@ func (z *Zone) handle(c command) {
 		}
 		return
 	}
-	if c.walkTo != nil && !me.cant().Move && me.cast == nil && z.now >= me.canMove {
+	if c.walkTo != nil && !me.cant().Move && (me.cast == nil || freeCast(me)) && z.now >= me.canMove {
 		// unit_walktoxy: statuses that stop moving refuse the walk, and
 		// Confusion picks another cell.
 		me.target, me.pickItem, me.pending = nil, nil, nil
 		x, y := c.walkTo[0], c.walkTo[1]
+		z.cloakingWalk(me)
 		if me.sc.Has(statuschange.SCConfusion) {
 			x, y = z.randomDir(me, x, y)
 		}
@@ -933,7 +970,10 @@ func (z *Zone) handle(c command) {
 	// rAthena relies on. The zone checks it itself.
 	if c.attack != nil && p.overweight != item.Weight90 && !me.cant().Attack {
 		for e, id := range p.netIDs.all() {
-			if id == c.attack.target && e != me && e.status != nil && !e.dead {
+			// unit_attack's battle_check_target for summons: players hit
+			// only those alchemist_summon_setting allows.
+			if id == c.attack.target && e != me && e.status != nil && !e.dead &&
+				(e.monster == nil || e.monster.master == nil || isEnemy(me, e)) {
 				me.target, me.repeat, me.pickItem = e, c.attack.repeat, nil
 			}
 		}
@@ -1021,7 +1061,10 @@ func (z *Zone) stepAt(now int64) {
 	z.dropItems()
 	z.expireItems()
 	z.advanceCasts()
+	z.advanceTimerSkills()
+	z.advanceSpiritBalls()
 	z.advanceUnits()
+	z.advanceTimerSkills()
 	z.revealTick()
 	z.naturalHeal()
 	z.advanceStatuses()
@@ -1120,7 +1163,7 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				if abs(e.x-me.x) > ViewRange || abs(e.y-me.y) > ViewRange {
 					continue
 				}
-				if e.unit != nil && e.unit.hidden {
+				if e.unit != nil && (e.unit.hidden || trapHiddenFrom(e, me)) {
 					continue
 				}
 				id, known := p.netIDs.get(e)

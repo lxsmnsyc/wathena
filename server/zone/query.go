@@ -184,6 +184,16 @@ func isEnemy(a, b *entity) bool {
 	if a == b {
 		return false
 	}
+	// A summoned monster is on its master's side. Players may hit floras
+	// and marine spheres as alchemist_summon_setting says, and other
+	// monsters treat them as friends (BCT_PARTY). A summon's enemies are
+	// its master's: monsters without a master.
+	if m := b.monster; m != nil && m.master != nil {
+		return a.player != nil && m.playersHit
+	}
+	if m := a.monster; m != nil && m.master != nil {
+		return b.monster != nil && b.monster.master == nil
+	}
 	return a.player != nil && b.monster != nil || a.monster != nil && b.player != nil
 }
 
@@ -253,5 +263,66 @@ func (z *Zone) findEntities(q *query) []*entity {
 	if q.limit > 0 && len(out) > q.limit {
 		out = out[:q.limit]
 	}
+	return out
+}
+
+// inDir is map_foreachindir for characters: the alive players and
+// monsters in a path of the given width (range) and length from a cell,
+// in one of the eight directions toward another cell, with a clear shot
+// from the source. offset moves the start of the path away from the
+// source. Units come in the order the zone added them.
+func (z *Zone) inDir(x0, y0, x1, y1, rng, length, offset int) []*entity {
+	if rng < 0 || length < 1 || offset < 0 {
+		return nil
+	}
+	dir := mapCalcDir(&entity{x: x0, y: y0}, x1, y1)
+	dx, dy := dirX[dir], dirY[dir]
+	diagonal := dir%2 == 1
+	if offset != 0 && diagonal {
+		// Diagonal paths work with half cells so they can join.
+		offset = 2*offset - 1
+		length++
+	}
+	step := offset / (dir%2 + 1)
+	mx0, my0 := x0+dx*step, y0+dy*step
+	mx1, my1 := x0+dx*(step+length-1), y0+dy*(step+length-1)
+	if mx0 > mx1 {
+		mx0, mx1 = mx1, mx0
+	}
+	if my0 > my1 {
+		my0, my1 = my1, my0
+	}
+	// The width turns 90 degrees from the direction.
+	side := (dir + 2) % 8
+	mx0 -= abs(rng * dirX[side])
+	my0 -= abs(rng * dirY[side])
+	mx1 += abs(rng * dirX[side])
+	my1 += abs(rng * dirY[side])
+	mx0, my0 = max(mx0, 0), max(my0, 0)
+	mx1, my1 = min(mx1, z.grid.Width-1), min(my1, z.grid.Height-1)
+	var out []*entity
+	for e := range z.entities.all() {
+		if (e.player == nil && e.monster == nil) || e.dead || e.status == nil {
+			continue
+		}
+		if e.x < mx0 || e.x > mx1 || e.y < my0 || e.y > my1 {
+			continue
+		}
+		// skill_eightpath_same_cell is on: the source's own cell counts.
+		rx, ry := (e.x-x0)*dx, (e.y-y0)*dy
+		if diagonal {
+			if rx+ry < offset || rx+ry > 2*(length+offset/2-1) {
+				continue
+			}
+			if abs(rx-ry) > 2*rng {
+				continue
+			}
+		}
+		if ok, _ := path.Shoot(z.grid, x0, y0, e.x, e.y); !ok {
+			continue
+		}
+		out = append(out, e)
+	}
+	slices.SortFunc(out, func(a, b *entity) int { return cmp.Compare(a.uid, b.uid) })
 	return out
 }

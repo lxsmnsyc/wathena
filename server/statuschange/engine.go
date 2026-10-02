@@ -59,7 +59,9 @@ type Env interface {
 	// RandN is rnd() % n from the zone's secret stream.
 	RandN(n int) int
 	// Recalc is status_calc_bl: the unit's stats are computed again.
-	Recalc(u Unit)
+	// def is the status that started or ended, whose calc flags tell
+	// what status_calc_bl computes.
+	Recalc(u Unit, def *Def)
 	// Icon is clif_status_change: a status icon shows or hides, with the
 	// time left and up to three values.
 	Icon(u Unit, icon int, on bool, tick int64, v1, v2, v3 int)
@@ -86,6 +88,27 @@ type Env interface {
 	// changes it.
 	Chance(target Unit, src *Source, typ, level, chance int) int
 	Duration(target Unit, src *Source, typ, level int, duration int64) int64
+	// Strip is the part of status_change_start for SC_STRIPWEAPON,
+	// SC_STRIPSHIELD, SC_STRIPARMOR and SC_STRIPHELM on a player: the
+	// equipment the status takes comes off (pc_unequipitem). It reports
+	// false when nothing comes off, or bUnstripable keeps it on.
+	Strip(u Unit, typ int) bool
+	// UnitOf is map_id2bl: the unit a source names, or nil when it is
+	// not in the zone.
+	UnitOf(s Source) Unit
+	// AreaChars is map_foreachinallarea over BL_CHAR: the characters in
+	// the square of radius r around a unit, the unit included.
+	AreaChars(u Unit, r int) []Unit
+}
+
+// HPSetter is what an Env may also do: status_set_hp, status_set_sp,
+// and status_heal with flag 1, which heals past the statuses that block
+// healing, such as Frenzy. The engine skips these changes with an Env
+// that does not have them.
+type HPSetter interface {
+	SetHP(u Unit, hp int64)
+	SetSP(u Unit, sp int64)
+	ForceHeal(u Unit, hp int64)
 }
 
 // Engine runs the statuses of one zone. Only the zone's goroutine uses

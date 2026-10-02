@@ -29,6 +29,9 @@ type unitSkill struct {
 	// pending is a skill to cast once a walk brings the unit in range, as
 	// rAthena's stepaction.
 	pending *pendingSkill
+	// sgCounter is status_change's sg_counter: the Storm Gust hits the
+	// unit took in a row, in pre-renewal.
+	sgCounter int
 }
 
 // skillLevel is pc_checkskill: the level of a skill the player learned,
@@ -38,12 +41,17 @@ func (p *Player) skillLevel(id int) int {
 	if st := p.entity.status; st != nil && st.Player != nil {
 		lv = max(lv, st.Player.Skills[id])
 	}
+	// The skill Plagiarism copied.
+	if id == p.rogue.cloneID {
+		lv = max(lv, p.rogue.cloneLv)
+	}
 	return lv
 }
 
 // learner is what the skill tree reads of a player.
 func (z *Zone) learner(p *Player) *skill.Learner {
-	l := &skill.Learner{Job: p.char.Job, Male: p.char.Male, BaseLevel: 1, JobLevel: 1, Learned: p.char.Skills}
+	l := &skill.Learner{Job: p.char.Job, Male: p.char.Male, BaseLevel: 1, JobLevel: 1, Learned: p.char.Skills,
+		ChangeLevel2nd: p.record.JobChangeLevel}
 	if z.Progress != nil {
 		l.BaseLevel, l.JobLevel = p.progress.BaseLevel, p.progress.JobLevel
 	}
@@ -96,6 +104,9 @@ func (z *Zone) skillList(p *Player) *wathenav1.Event {
 			}
 		}
 		infos = append(infos, info.Build())
+	}
+	if ci := z.copiedSkillInfo(p); ci != nil {
+		infos = append(infos, ci)
 	}
 	return wathenav1.Event_builder{SkillList: wathenav1.SkillList_builder{Skills: infos}.Build()}.Build()
 }

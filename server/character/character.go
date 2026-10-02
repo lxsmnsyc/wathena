@@ -107,6 +107,16 @@ type Info struct {
 	// such as map/prontera. Empty is the world's start point.
 	SaveMap      string
 	SaveX, SaveY int
+	// JobChangeLevel is rAthena's change_level_2nd (the JOBCHANGE2ND_VAR
+	// variable): the job level at the change from a first class to a
+	// second class, or 0.
+	JobChangeLevel int
+	// RebirthJob is the second class a transcendent character had before
+	// its rebirth, which picks its transcendent line, or 0.
+	RebirthJob int
+	// Options are the saved bits of rAthena's status.option: the cart,
+	// the falcon and the Peco Peco (OPTION_RIDING, 0x20).
+	Options int
 }
 
 // Item is one filled inventory slot.

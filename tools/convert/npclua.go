@@ -323,6 +323,9 @@ type body struct {
 	// hidden are locals the converter adds, such as the result of an
 	// input, declared at the top with the others.
 	hidden []string
+	// rebirth is set after jobchange Job_Novice_High, which converts to
+	// player:rebirth, so the resetlvl(1) after it converts to nothing.
+	rebirth bool
 }
 
 // breakable is a loop or a switch, which break leaves.

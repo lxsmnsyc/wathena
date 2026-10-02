@@ -31,9 +31,12 @@ type Weapon struct {
 // from mob_status.json decodes into it. Level, EAtk, DamageTaken and
 // Player are not in that object.
 type Status struct {
-	Level   int    `json:"level"`
-	MaxHP   int    `json:"max_hp"`
-	MaxSP   int    `json:"max_sp"`
+	Level int `json:"level"`
+	MaxHP int `json:"max_hp"`
+	MaxSP int `json:"max_sp"`
+	// SP is the unit's SP when an attack reads it, as Soul Siphon does.
+	// The zone sets it; it is not part of the reference's status.
+	SP      int    `json:"-"`
 	Str     int    `json:"str"`
 	Agi     int    `json:"agi"`
 	Vit     int    `json:"vit"`
@@ -88,6 +91,10 @@ type Status struct {
 	// more healing.
 	Spl   int `json:"-"`
 	HPlus int `json:"-"`
+	// HP is status_data's hp: the unit's HP when an attack reads it, as
+	// Turn Undead, Resurrection and Sonic Blow do. 0 stands for full HP,
+	// as for a status without a unit (CurrentHP).
+	HP int64 `json:"-"`
 	// Player holds what only players have. It is nil for monsters.
 	Player *Player `json:"-"`
 	// Changes are what attacks read of the unit's status changes, or nil
@@ -117,6 +124,19 @@ type Changes struct {
 	// EnergyCoat is set while Energy Coat is on: it charges the SP and
 	// returns the percent of damage it takes away.
 	EnergyCoat func() int
+	// Aeterna is set while Lex Aeterna is on: it reports whether a hit
+	// with these battle flags deals double damage, and ends the status.
+	Aeterna func(flag, skill int) bool
+	// Kyrie is set while Kyrie Eleison is on: it is the start of
+	// battle_status_block_damage. The barrier takes the damage and counts
+	// the hit, and it returns what is left of a weapon hit's damage.
+	Kyrie func(flag, skill int, damage int64) int64
+	// Assumptio is SC_ASSUMPTIO's level, or 0. In pre-renewal the unit
+	// takes half damage; in renewal heals on it are stronger.
+	Assumptio int
+	// Basilica is set while the unit has SC_BASILICA. In pre-renewal
+	// it blocks every hit from a unit that is not a boss.
+	Basilica bool
 	// WatkElement and WatkElementRate are SC_WATK_ELEMENT's val1 and
 	// val2: an element and a percent. A rate of 0 means no status.
 	//   - Pre-renewal: a player's physical hits deal that percent of the
@@ -127,6 +147,63 @@ type Changes struct {
 	// and val2: in renewal, a player's weapon ATK gains that percent of
 	// itself as damage of that element. A rate of 0 means no status.
 	SubWeaponElement, SubWeaponRate int
+	// Berserk is set while Frenzy (SC_BERSERK) is on: the skill ratio
+	// of the unit's weapon attacks rises by 100%, or 200% in renewal.
+	Berserk bool
+	// AuraBlade is SC_AURABLADE's level, or 0: the unit's weapon attacks
+	// add damage after DEF.
+	AuraBlade int
+	// JointBeat is SC_JOINTBEAT's val2: the unit's broken joints, as
+	// BREAK_ bits. Joint Beat deals double damage to a broken neck.
+	JointBeat int
+	// EDP is SC_EDP's level (val1) and EDPRate its damage percent (val3,
+	// pre-renewal only). A level of 0 means no status.
+	EDP, EDPRate int
+	// PoisonReact is SC_POISONREACT's level (val1) while it is in damage
+	// boost mode (val4 1), or 0.
+	PoisonReact int
+	// SteelBody is set while SC_STEELBODY is on: in renewal, the unit
+	// takes a tenth of each hit.
+	SteelBody bool
+	// BladeStop is set while SC_BLADESTOP is on: in renewal, Investigate
+	// and Finger Offensive deal half again as much to the unit.
+	BladeStop bool
+	// Raid is set while SC_RAID is on: in renewal, the unit takes 30%
+	// more damage, or 15% for a boss.
+	Raid bool
+	// RejectSword is SC_REJECTSWORD's val2: the chance in percent that a
+	// melee weapon hit on the unit is halved and returned. 0 means no
+	// status.
+	RejectSword int
+	// VolcanoRate, DelugeRate and ViolentGaleRate are val3 of SC_VOLCANO,
+	// SC_DELUGE and SC_VIOLENTGALE: the unit's fire, water and wind
+	// attacks deal that percent more, as battle_attr_fix.
+	VolcanoRate, DelugeRate, ViolentGaleRate int
+	// FogWall is set while the unit stands in Blinding Mist
+	// (SC_FOGWALL): skills deal 25% less to it, ranged normal attacks 75%
+	// less, and those hit 50 less often.
+	FogWall bool
+	// SpiderWeb is set while Fiber Lock holds the unit (SC_SPIDERWEB). It
+	// reports whether a fire hit deals double, and ends one of the webs,
+	// as battle_attr_fix. It may be nil.
+	SpiderWeb func() bool
+	// Overthrust is SC_OVERTHRUST's val3 plus SC_MAXOVERTHRUST's val2:
+	// the skill ratio of the unit's weapon attacks rises by that
+	// percent.
+	Overthrust int
+	// MaximizePower is set while SC_MAXIMIZEPOWER is on: the weapon
+	// damage roll takes its maximum.
+	MaximizePower bool
+	// WeaponPerfection is set while SC_WEAPONPERFECTION is on: a
+	// player's weapon damage takes no size penalty.
+	WeaponPerfection bool
+	// Defender is SC_DEFENDER's val2, or 0: the unit takes that percent
+	// less damage from ranged weapon hits.
+	Defender int
+	// DrumBattle is SC_DRUMBATTLE's val2 and Nibelungen SC_NIBELUNGEN's,
+	// or 0. In renewal the first adds equipment ATK and the second
+	// mastery ATK.
+	DrumBattle, Nibelungen int
 }
 
 // Opt1 values that do not make attacks always hit, as rAthena's
@@ -135,6 +212,14 @@ const (
 	opt1StoneWait = 6
 	opt1Burning   = 7
 )
+
+// CurrentHP is status_data's hp: HP, or MaxHP when HP is not given.
+func (s *Status) CurrentHP() int64 {
+	if s.HP <= 0 {
+		return int64(s.MaxHP)
+	}
+	return s.HP
+}
 
 // atkPercent is battle_get_atkpercent for a normal attack.
 func (s *Status) atkPercent() int64 {
@@ -150,6 +235,8 @@ const (
 	ModeIgnoreMagic  = 0x0020000
 	ModeIgnoreRanged = 0x0040000
 	ModeIgnoreMisc   = 0x0100000
+	// ModeStatusImmune is MD_STATUSIMMUNE, which bosses have.
+	ModeStatusImmune = 0x4000000
 )
 
 // hasMode is rAthena's status_has_mode: every bit of md must be set.
@@ -185,6 +272,9 @@ type Result struct {
 	// Blocked is set when a status of the target blocked the hit
 	// (ATK_BLOCK), such as Safety Wall. Kind is then Miss.
 	Blocked bool
+	// Rejected is the damage Reject Sword returned to the attacker. The
+	// hit's own damage is already halved.
+	Rejected int64
 }
 
 // Rand is the random source attacks draw from. IntN returns a number in
@@ -204,7 +294,7 @@ func Attack(attacker, target *Status, r Rand) Result {
 // result converts rAthena's Damage fields to a Result.
 func (wd *damage) result() Result {
 	res := Result{Damage: wd.damage + wd.damage2, Left: wd.damage2, Hits: wd.div, Flag: wd.flag,
-		Knockback: wd.blewcount, Blocked: wd.dmgLv == atkBlock}
+		Knockback: wd.blewcount, Blocked: wd.dmgLv == atkBlock, Rejected: wd.rejected}
 	switch {
 	case wd.dmgLv == atkLucky:
 		res.Kind = LuckyDodge

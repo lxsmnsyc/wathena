@@ -82,6 +82,7 @@ const (
 	SCElementalchange      = 165  // SC_ELEMENTALCHANGE
 	SCSiegfried            = 172  // SC_SIEGFRIED
 	SCModechange           = 177  // SC_MODECHANGE
+	SCStop                 = 182  // SC_STOP
 	SCSpirit               = 184  // SC_SPIRIT
 	SCIntravision          = 186  // SC_INTRAVISION
 	SCIncallstatus         = 187  // SC_INCALLSTATUS
@@ -195,7 +196,11 @@ const (
 const (
 	SCConcentrate    = 23  // SC_CONCENTRATE
 	SCQuagmire       = 28  // SC_QUAGMIRE
+	SCGravitation    = 155 // SC_GRAVITATION
 	SCSuffragium     = 36  // SC_SUFFRAGIUM
+	SCMagnificat     = 40  // SC_MAGNIFICAT
+	SCGloria         = 41  // SC_GLORIA
+	SCBasilica       = 116 // SC_BASILICA
 	SCLoud           = 48  // SC_LOUD
 	SCEnergycoat     = 49  // SC_ENERGYCOAT
 	SCAutoberserk    = 85  // SC_AUTOBERSERK
@@ -206,4 +211,132 @@ const (
 	SCPneuma         = 268 // SC_PNEUMA
 	SCCloakingexceed = 364 // SC_CLOAKINGEXCEED
 	SCSubWeaponPro   = 885 // SC_SUB_WEAPONPROPERTY
+	SCStripweapon    = 68  // SC_STRIPWEAPON
+	SCStripshield    = 69  // SC_STRIPSHIELD
+	SCStriparmor     = 70  // SC_STRIPARMOR
+	SCStriphelm      = 71  // SC_STRIPHELM
+	SCChasewalk      = 124 // SC_CHASEWALK
+	SCRejectsword    = 125 // SC_REJECTSWORD
+	SCPreserve       = 151 // SC_PRESERVE
+	SCCloseconfine   = 162 // SC_CLOSECONFINE
+	SCCloseconfine2  = 163 // SC_CLOSECONFINE2
+	SCRaid           = 513 // SC_RAID
+)
+
+// Status IDs of the Knight and Lord Knight skills, as rAthena's sc_type.
+const (
+	SCTwohandquicken = 22  // SC_TWOHANDQUICKEN
+	SCAutocounter    = 87  // SC_AUTOCOUNTER
+	SCAurablade      = 108 // SC_AURABLADE
+	SCParrying       = 109 // SC_PARRYING
+	SCTensionrelax   = 111 // SC_TENSIONRELAX
+	SCOnehand        = 150 // SC_ONEHAND
+	SCRegeneration   = 153 // SC_REGENERATION
+)
+
+// Joint Beat's breaks, as rAthena's e_joint_break: SC_JOINTBEAT's val2
+// holds them as bits.
+const (
+	BreakAnkle    = 0x01 // BREAK_ANKLE
+	BreakWrist    = 0x02 // BREAK_WRIST
+	BreakKnee     = 0x04 // BREAK_KNEE
+	BreakShoulder = 0x08 // BREAK_SHOULDER
+	BreakWaist    = 0x10 // BREAK_WAIST
+	BreakNeck     = 0x20 // BREAK_NECK
+	BreakFlags    = 0x3F // BREAK_FLAGS
+)
+
+// Status IDs of the Crusader and Paladin skills, as rAthena's sc_type.
+const (
+	SCAutoguard     = 76  // SC_AUTOGUARD
+	SCReflectshield = 77  // SC_REFLECTSHIELD
+	SCProvidence    = 79  // SC_PROVIDENCE
+	SCDefender      = 80  // SC_DEFENDER
+	SCSpearquicken  = 86  // SC_SPEARQUICKEN
+	SCGospel        = 114 // SC_GOSPEL
+	SCDevotion      = 134 // SC_DEVOTION
+	SCSacrifice     = 135 // SC_SACRIFICE
+	SCShrink        = 159 // SC_SHRINK
+	SCInchit        = 194 // SC_INCHIT
+	SCIncfleerate   = 197 // SC_INCFLEERATE
+	SCIncdefrate    = 202 // SC_INCDEFRATE
+)
+
+// Battle check flags that SC_GOSPEL's val4 holds, as rAthena's BCT_SELF
+// and BCT_ENEMY: the caster's own Battle Chant, or its effect on an
+// enemy.
+const (
+	BCTSelf  = 0x010000
+	BCTEnemy = 0x020000
+)
+
+// Status IDs of the Assassin and Assassin Cross skills, as rAthena's
+// sc_type.
+const (
+	SCEncpoison   = 26  // SC_ENCPOISON
+	SCPoisonreact = 27  // SC_POISONREACT
+	SCSplasher    = 78  // SC_SPLASHER
+	SCEdp         = 119 // SC_EDP
+)
+
+// Status IDs of the Monk and Champion skills, as rAthena's sc_type.
+const (
+	SCExtremityfist     = 91  // SC_EXTREMITYFIST
+	SCExplosionspirits  = 92  // SC_EXPLOSIONSPIRITS
+	SCCombo             = 93  // SC_COMBO
+	SCBladestopWait     = 94  // SC_BLADESTOP_WAIT
+	SCBladestop         = 95  // SC_BLADESTOP
+	SCFogwall           = 132 // SC_FOGWALL
+	SCSteelbody         = 136 // SC_STEELBODY
+	SCSkillrateUp       = 221 // SC_SKILLRATE_UP
+	SCCursedcircleAtker = 414 // SC_CURSEDCIRCLE_ATKER
+	SCRaisingdragon     = 417 // SC_RAISINGDRAGON
+	SCGtEnergygain      = 418 // SC_GT_ENERGYGAIN
+)
+
+// Status IDs of the Sage and Professor skills, as rAthena's sc_type.
+const (
+	SCMagicrod    = 81  // SC_MAGICROD
+	SCAutospell   = 83  // SC_AUTOSPELL
+	SCVolcano     = 100 // SC_VOLCANO
+	SCDeluge      = 101 // SC_DELUGE
+	SCViolentgale = 102 // SC_VIOLENTGALE
+	SCMindbreaker = 130 // SC_MINDBREAKER
+	SCSpiderweb   = 133 // SC_SPIDERWEB
+	SCDoublecast  = 154 // SC_DOUBLECAST
+	SCSuiton      = 236 // SC_SUITON
+)
+
+// Status IDs of the Blacksmith and Whitesmith skills, as rAthena's
+// sc_type.
+const (
+	SCMeltdown      = 122 // SC_MELTDOWN
+	SCCartboost     = 123 // SC_CARTBOOST
+	SCMaxoverthrust = 156 // SC_MAXOVERTHRUST
+)
+
+// Status IDs of the Bard, Dancer, Clown and Gypsy skills, as rAthena's
+// sc_type.
+const (
+	SCComa            = 185 // SC_COMA
+	SCMarionette      = 126 // SC_MARIONETTE
+	SCMarionette2     = 127 // SC_MARIONETTE2
+	SCLonging         = 157 // SC_LONGING
+	SCHermode         = 158 // SC_HERMODE
+	SCRichmankim      = 166 // SC_RICHMANKIM
+	SCEternalchaos    = 167 // SC_ETERNALCHAOS
+	SCDrumbattle      = 168 // SC_DRUMBATTLE
+	SCNibelungen      = 169 // SC_NIBELUNGEN
+	SCRokisweil       = 170 // SC_ROKISWEIL
+	SCIntoabyss       = 171 // SC_INTOABYSS
+	SCWhistle         = 173 // SC_WHISTLE
+	SCAssncros        = 174 // SC_ASSNCROS
+	SCAppleidun       = 176 // SC_APPLEIDUN
+	SCHumming         = 178 // SC_HUMMING
+	SCDontforgetme    = 179 // SC_DONTFORGETME
+	SCFortune         = 180 // SC_FORTUNE
+	SCService4u       = 181 // SC_SERVICE4U
+	SCTarotcard       = 664 // SC_TAROTCARD
+	SCAdaptation      = 702 // SC_ADAPTATION
+	SCEnsemblefatigue = 745 // SC_ENSEMBLEFATIGUE
 )

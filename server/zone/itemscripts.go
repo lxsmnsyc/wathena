@@ -85,6 +85,10 @@ func (h scriptHost) GiveGroup(id int64, group int64) error {
 // Heal runs itemheal through pc_itemheal, or percentheal through
 // pc_percentheal.
 func (h scriptHost) Heal(id int64, percent bool, hp, sp [2]int) error {
+	// With potion_flag, a thrown potion keeps the heal.
+	if h.z.potionHeal(percent, hp, sp) {
+		return nil
+	}
 	p, err := h.player(id)
 	if err != nil {
 		return err

@@ -229,4 +229,9 @@ function jobs.base_job(job) end
 ---@return integer
 function jobs.first_job(job) end
 
+---The jobs a job can change into, in job ID order: a Novice into a first class or a Super Novice, a High Novice into a transcendent first class, a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other jobs have none until third classes exist.
+---@param job integer
+---@return integer[]
+function jobs.next_jobs(job) end
+
 return jobs

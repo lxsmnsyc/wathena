@@ -138,6 +138,8 @@ type handoff struct {
 	temp map[character.Variable]string
 	// cooldowns are the skill cooldowns left, in milliseconds, by skill.
 	cooldowns map[int]int64
+	// spiritBalls are the spirit spheres' times left, oldest first.
+	spiritBalls []int64
 }
 
 // warp sends a player through a warp, as npc_touch_areanpc and
@@ -205,6 +207,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 			h.cooldowns[id] = until - z.now
 		}
 	}
+	h.spiritBalls = z.spheresLeft(p)
 	z.remove(p, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT)
 	z.dropStatuses(p.entity)
 	// Worn items end their equip contexts here, and start them again in

@@ -98,6 +98,11 @@ func (z *Zone) equipItem(p *Player, slot int, position uint32) {
 		return
 	}
 	d := z.Items.Get(s.ID)
+	// pc_isequip: what a strip took off cannot go back on.
+	if stripBlocksEquip(p.entity.sc, d) {
+		p.pending = append(p.pending, equipFailed(slot, wathenav1.EquipFailure_EQUIP_FAILURE_CANNOT_EQUIP))
+		return
+	}
 	if position == 0 {
 		// The client asks for every position the item takes.
 		position = uint32(d.Location)
@@ -121,6 +126,7 @@ func (z *Zone) equipItem(p *Player, slot int, position uint32) {
 	}
 	for _, u := range ch.Unequipped {
 		z.unwear(p, u.Slot, true)
+		z.unequipStatuses(p, u.Slot, u.Position)
 		p.pending = append(p.pending, itemUnequipped(u.Slot, u.Position))
 	}
 	z.wear(p, slot)
@@ -139,6 +145,7 @@ func (z *Zone) unequipItem(p *Player, slot int) {
 	}
 	for _, u := range ch.Unequipped {
 		z.unwear(p, u.Slot, true)
+		z.unequipStatuses(p, u.Slot, u.Position)
 		p.pending = append(p.pending, itemUnequipped(u.Slot, u.Position))
 	}
 	z.equipmentChanged(p)
@@ -193,6 +200,7 @@ const DefaultMaxCardSlots = 4
 // equipment changed, and sends what changed.
 func (z *Zone) equipmentChanged(p *Player) {
 	z.recalc(p)
+	z.checkAllowSkill(p)
 	if s := z.battleStats(p); s != nil {
 		p.pending = append(p.pending, s)
 	}
@@ -337,6 +345,7 @@ func (z *Zone) equipment(p *Player) *status.Equipment {
 
 // markStats marks a player's stats for flushStats.
 func (z *Zone) markStats(p *Player) {
+	p.keepAspd = false
 	if !p.statsDirty {
 		p.statsDirty = true
 		z.dirtyStats = append(z.dirtyStats, p)

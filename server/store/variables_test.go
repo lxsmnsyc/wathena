@@ -11,8 +11,9 @@ import (
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
 
-// TestVariablesAndSavePoint saves a character's variables, its account's
-// and its save point with the character, and reads them back: changed
+// TestVariablesAndSavePoint saves a character's variables, its account's,
+// its save point and its job change fields with the character, and reads
+// them back: changed
 // values, deleted ones, and an account variable another character of
 // the account sees.
 func TestVariablesAndSavePoint(t *testing.T) {
@@ -35,6 +36,8 @@ func TestVariablesAndSavePoint(t *testing.T) {
 	bag := character.Variable{Mod: "core", Name: "bag"}
 	next := *c
 	next.SaveMap, next.SaveX, next.SaveY = "map/prontera", 157, 327
+	// The fields of job changes (migration 00012).
+	next.Job, next.JobChangeLevel, next.RebirthJob, next.Options = 4008, 44, 7, 0x20
 	next.Variables = map[character.Variable]string{quest: "2", seen: "true", bag: `{"items":[1,2]}`}
 	sess.Save(&next, false)
 	if err := sess.Flush(ctx); err != nil {

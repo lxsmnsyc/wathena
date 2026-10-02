@@ -45,6 +45,7 @@ func AttackPreRenewal(attacker, target *Status, r Rand) Result {
 // SkillAttackPreRenewal is battle_calc_attack for a skill in pre-renewal:
 // the attack type is BF_WEAPON, BF_MAGIC or BF_MISC.
 func SkillAttackPreRenewal(typ int, src, target *Status, sk *Skill, r Rand) Result {
+	sk.Renewal = false
 	var d damage
 	switch typ {
 	case TypeWeapon:
@@ -67,14 +68,19 @@ func calcWeaponAttackPreRenewal(src, target *Status, sk *Skill, r Rand) damage {
 	sd := src.Player
 	wd := initializeWeaponData(src, sk)
 	wd.pre = true
+	modifyDamageData(&wd, src, target)
 
-	rightElement := weaponElement(src, handRight, sk, r)
-	leftElement := weaponElement(src, handLeft, sk, r)
+	rightElement := modifyElement(&wd, src, target, weaponElement(src, handRight, sk, r))
+	leftElement := modifyElement(&wd, src, target, weaponElement(src, handLeft, sk, r))
 
-	// Check for Lucky Dodge. Skills cannot be lucky dodged.
-	if sk == nil && target.Flee2 != 0 && r.IntN(1000) < target.Flee2 {
+	// Check for Lucky Dodge. Skills cannot be lucky dodged, except
+	// Martyr's Reckoning.
+	if (sk == nil || wd.skillID() == skillSacrifice) && target.Flee2 != 0 && r.IntN(1000) < target.Flee2 {
 		wd.typ = dmgLuckyDodge
 		wd.dmgLv = atkLucky
+		if wd.div < 0 {
+			wd.div = -wd.div
+		}
 		return wd
 	}
 
@@ -100,13 +106,13 @@ func calcWeaponAttackPreRenewal(src, target *Status, sk *Skill, r Rand) damage {
 		// that read it. A skill then rolls its own.
 		calcSkillBaseDamagePreRenewal(&wd, src, target, critical, r)
 		wd.basedamage = wd.damage
-		if sk != nil {
+		if sk != nil && !calcSkillOwnBaseDamagePreRenewal(&wd, src, target, critical, r) {
 			calcSkillBaseDamagePreRenewal(&wd, src, target, critical, r)
 		}
 
 		// Skill ratio and the additive damage bonus.
 		wd.rate(src, int64(skillRatio(&wd, src, target, false)))
-		wd.atkAdd(src, &wd.damage, &wd.damage2, skillConstantAddition(&wd, src, target))
+		wd.atkAdd(src, &wd.damage, &wd.damage2, skillConstantAddition(&wd, src, target, r))
 
 		// pc_skillatk_bonus and pc_sub_skillatk_bonus.
 		if sd != nil && sk != nil {
@@ -123,11 +129,15 @@ func calcWeaponAttackPreRenewal(src, target *Status, sk *Skill, r Rand) damage {
 		// battle_attack_sc_bonus: pre-renewal applies the ATK percent of
 		// status changes after the skill ratio. Its other parts need status
 		// changes or spirit charms, which are not ported.
-		wd.rate(src, atkPercent(src, sk))
+		wd.rate(src, atkPercentPreRenewal(src, sk))
 		wd.basedamage = wd.basedamage * atkPercent(src, nil) / 100
 
 		if wd.damage+wd.damage2 != 0 {
-			calcDefenseReductionPreRenewal(&wd, src, target, critical, r)
+			// Shield Boomerang and Rapid Smiting reduced their damage by
+			// DEF before the skill ratio.
+			if id := wd.skillID(); id != skillShieldChain && id != skillShieldBoomerang {
+				calcDefenseReductionPreRenewal(&wd, src, target, critical, r)
+			}
 			calcAttackPostDefensePreRenewal(&wd, src, target)
 		}
 	}
@@ -172,9 +182,14 @@ func calcWeaponAttackPreRenewal(src, target *Status, sk *Skill, r Rand) damage {
 	calcAttackLeftRightHands(&wd, src)
 	calcAttackGvgBg(&wd, src, target)
 
-	// battle_calc_weapon_final_atk_modifiers only changes damage through
-	// status changes and skill damage adjustments, which do not apply.
-	// battle_do_reflect does not change the attacker's damage.
+	// Soul Breaker's misc part, then battle_calc_weapon_final_atk_modifiers.
+	// Poison React's counter is in the zone. battle_do_reflect does not
+	// change the attacker's damage.
+	if wd.skillID() == skillSoulBreaker {
+		md := calcMiscAttack(src, target, sk, true, r)
+		wd.damage += md.damage
+	}
+	calcWeaponFinalAtkModifiers(&wd, src, target, r)
 	absorbDamage(&wd, target)
 	return wd
 }
@@ -200,6 +215,19 @@ func calcSkillBaseDamagePreRenewal(wd *damage, src, target *Status, critical boo
 			}
 		}
 		// Other weapons that use ammunition work like melee attacks.
+	}
+	// Magic Crasher's base damage is MATK.
+	if wd.skillID() == skillMagicCrasher {
+		bflag |= bdmgMagic
+	}
+	if wd.skillID() == skillSharpShooting {
+		// Focused Arrow Strike ignores DEF and FLEE, but its damage is a
+		// normal hit's.
+		bflag &^= bdmgCrit
+	}
+	// Weapon Perfection skips the size penalty.
+	if c := src.Changes; c != nil && c.WeaponPerfection {
+		bflag |= bdmgNoSize
 	}
 	wd.damage = calcBaseDamagePreRenewal(src, handRight, target.Size, bflag, r)
 	if isAttackLeftHanded(src, wd.sk) {
@@ -245,8 +273,14 @@ func calcBaseDamagePreRenewal(st *Status, h hand, size, flag int, r Rand) int64 
 	if sd == nil {
 		// Mental Charge (SC_CHANGE) makes monsters use their MATK. Status
 		// changes are not ported.
-		atkmin, atkmax = toUint32(wa.Atk), toUint32(wa.Atk2)
+		if flag&bdmgMagic != 0 {
+			atkmin, atkmax = toUint32(st.MAtkMin), toUint32(st.MAtkMax)
+		} else {
+			atkmin, atkmax = toUint32(wa.Atk), toUint32(wa.Atk2)
+		}
 		atkmin = min(atkmin, atkmax)
+	} else if flag&bdmgMagic != 0 {
+		atkmin, atkmax = toUint32(st.MAtkMin), toUint32(st.MAtkMax)
 	} else {
 		atkmax = toUint32(wa.Atk)
 		if flag&bdmgCrit == 0 || flag&bdmgArrow != 0 {
@@ -263,8 +297,10 @@ func calcBaseDamagePreRenewal(st *Status, h hand, size, flag int, r Rand) int64 
 		}
 	}
 
-	// Maximize Power also takes the maximum. Status changes are not
-	// ported.
+	// Maximize Power also takes the maximum.
+	if c := st.Changes; c != nil && c.MaximizePower {
+		atkmin = atkmax
+	}
 
 	var dmg int64
 	if flag&bdmgCrit == 0 {
@@ -288,12 +324,14 @@ func calcBaseDamagePreRenewal(st *Status, h hand, size, flag int, r Rand) int64 
 		}
 		// The size penalty only applies to players.
 		if !sd.NoSizeFix && flag&bdmgNoSize == 0 {
-			dmg = dmg * int64(PreRenewalSizeFix(sd.weapon(h), size)) / 100
+			dmg = dmg * int64(PreRenewalSizeFix(sd.weapon(h), sd.sizeFor(size))) / 100
 		}
 	}
 	// Elementals get bonuses from insignia status changes here.
 
-	dmg += int64(st.BAtk)
+	if flag&bdmgMagic == 0 {
+		dmg += int64(st.BAtk)
+	}
 
 	if sd != nil {
 		dmg = addWeaponDamage(sd, dmg, h, r)
@@ -378,6 +416,11 @@ func calcDefenseReductionPreRenewal(wd *damage, src, target *Status, critical bo
 		case attackIgnoresDefPreRenewal(wd, src, target, h, critical):
 			return 100
 		case isAttackPiercingPreRenewal(wd, src, target, h, critical):
+			// is_attack_piercing returns 2 for Investigate, which
+			// doubles the percent.
+			if wd.skillID() == skillInvestigate {
+				return 2 * (def1 + vitDef)
+			}
 			return def1 + vitDef
 		}
 		return 100 - def1
@@ -423,7 +466,10 @@ func calcAttackPostDefensePreRenewal(wd *damage, src, target *Status) {
 
 	calcAttackMasteriesPreRenewal(wd, src, target)
 
-	// Aura Blade adds damage here. Status changes are not ported.
+	// Aura Blade adds 20 per level, except to Spiral Pierce.
+	if c := src.Changes; c != nil && c.AuraBlade > 0 && wd.skillID() != skillSpiralPierce {
+		wd.atkAdd(src, &wd.damage, &wd.damage2, int64(20*c.AuraBlade))
+	}
 	minDamage(wd, src, 1)
 }
 
@@ -439,7 +485,7 @@ func calcAttackMasteriesPreRenewal(wd *damage, src, target *Status) {
 	}
 	// The base damage of a normal attack always gets the masteries.
 	wd.basedamage += addMastery(src, target, handRight, true)
-	if !skillStacksMasteries(wd.skillID()) {
+	if !skillStacksMasteriesPreRenewal(wd.skillID()) {
 		return
 	}
 	wd.damage += addMastery(src, target, handRight, true)
@@ -453,9 +499,9 @@ func calcAttackMasteriesPreRenewal(wd *damage, src, target *Status) {
 // hand. Envenom adds its damage and applies the table again, and skills
 // forced to neutral apply it again with neutral.
 //
-// Star Crumbs and Spirit Spheres add damage after the element table. They
-// are not ported. Of the status bonuses here, SC_WATK_ELEMENT (Magnum
-// Break's fire bonus) is ported and EDP is not.
+// Spirit Spheres add damage after the element table. Star Crumbs, which
+// do too, are not ported. Of the status bonuses here, EDP and
+// SC_WATK_ELEMENT (Magnum Break's fire bonus) are ported.
 func calcElementDamagePreRenewal(wd *damage, src, target *Status, rightElement, leftElement int) {
 	if !wd.nk.Has(NKIgnoreElement) && (wd.damage > 0 || wd.damage2 > 0) {
 		// Normal attacks by monsters are non-elemental and deal 100%
@@ -464,32 +510,45 @@ func calcElementDamagePreRenewal(wd *damage, src, target *Status, rightElement, 
 		if src.Player == nil && wd.sk == nil && monsterAttackAttrNone {
 			return
 		}
-		wd.damage = AttrFixPreRenewal(wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+		wd.damage = attrFixPre(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
 		if isAttackLeftHanded(src, wd.sk) {
-			wd.damage2 = AttrFixPreRenewal(wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
+			wd.damage2 = attrFixPre(src, target, wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
 		}
 		switch wd.skillID() {
 		case skillCartRevolution, skillMagicCrasher:
-			wd.damage = AttrFixPreRenewal(wd.damage, Neutral, target.DefEle, target.EleLv, 1)
+			wd.damage = attrFixPre(src, target, wd.damage, Neutral, target.DefEle, target.EleLv, 1)
 			if isAttackLeftHanded(src, wd.sk) {
-				wd.damage2 = AttrFixPreRenewal(wd.damage2, Neutral, target.DefEle, target.EleLv, 1)
+				wd.damage2 = attrFixPre(src, target, wd.damage2, Neutral, target.DefEle, target.EleLv, 1)
 			}
 		}
+	}
+	// These mastery bonuses apply even when the attack misses.
+	if skillStacksMasteries(wd.skillID()) {
+		// Spirit Sphere bonus damage.
+		wd.atkAdd(src, &wd.damage, &wd.damage2, spiritBallDamage(wd, src))
 	}
 	if skillStacksMasteries(wd.skillID()) && wd.skillID() == skillEnvenom {
 		// Envenom adds 15 per level, and the element table applies to the
 		// base damage and again to the final damage.
 		wd.atkAdd(src, &wd.damage, &wd.damage2, int64(15*wd.skillLv()))
-		wd.damage = AttrFixPreRenewal(wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+		wd.damage = attrFixPre(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+	}
+	// EDP adds its percent of the damage, after the masteries and before
+	// SC_WATK_ELEMENT.
+	if c := src.Changes; c != nil && c.EDP > 0 && !wd.nk.Has(NKIgnoreElement) && !wd.nk.Has(NKIgnoreAtkCard) &&
+		(wd.damage > 0 || wd.damage2 > 0) {
+		wd.damage += wd.damage * int64(c.EDPRate) / 100
 	}
 	// SC_WATK_ELEMENT adds a percent of the damage a normal attack of its
 	// element would deal. Only players get it, and not on skills that
 	// ignore the element or attack cards, or when the damage is 0 or
-	// less. Star Crumbs and Spirit Spheres would add to the base damage
-	// first; they are not ported.
+	// less. Spirit Spheres add to the base damage first; Star Crumbs, which
+	// would too, are not ported.
 	if c := src.Changes; c != nil && src.Player != nil && c.WatkElementRate != 0 &&
 		!wd.nk.Has(NKIgnoreElement) && !wd.nk.Has(NKIgnoreAtkCard) && (wd.damage > 0 || wd.damage2 > 0) {
-		wd.basedamage = AttrFixPreRenewal(wd.basedamage, c.WatkElement, target.DefEle, target.EleLv, 1)
+		wd.basedamage = attrFixPre(src, target, wd.basedamage, c.WatkElement, target.DefEle, target.EleLv, 1)
+		// Spirit Sphere bonus damage.
+		wd.basedamage += spiritBallDamage(wd, src)
 		wd.damage += wd.basedamage * int64(c.WatkElementRate) / 100
 	}
 	if !attrRecover {
@@ -558,4 +617,68 @@ func absInt(n int) int {
 		return -n
 	}
 	return n
+}
+
+// skillStacksMasteriesPreRenewal is battle_skill_stacks_masteries_vvs
+// with BCHK_ALL in pre-renewal: Spiral Pierce takes only the refine bonus
+// and Star Crumbs, so no masteries and no ATK percent.
+func skillStacksMasteriesPreRenewal(id int) bool {
+	if id == skillSpiralPierce {
+		return false
+	}
+	return skillStacksMasteries(id)
+}
+
+// atkPercentPreRenewal is battle_get_atkpercent in pre-renewal: a
+// player's skill that takes no masteries takes no ATK percent either.
+func atkPercentPreRenewal(src *Status, sk *Skill) int64 {
+	if sk != nil && src.Player != nil && !skillStacksMasteriesPreRenewal(sk.ID) {
+		return 100
+	}
+	return atkPercent(src, sk)
+}
+
+// calcSkillOwnBaseDamagePreRenewal holds the cases of the pre-renewal
+// battle_calc_skill_base_damage for skills with a base damage of their
+// own. It reports whether the skill has one; the others take the
+// default case.
+func calcSkillOwnBaseDamagePreRenewal(wd *damage, src, target *Status, critical bool, r Rand) bool {
+	switch wd.skillID() {
+	case skillSacrifice:
+		// Martyr's Reckoning: 9% of max HP.
+		wd.damage = int64(src.MaxHP * 9 / 100)
+		wd.damage2 = 0
+		return true
+	case skillShieldBoomerang, skillShieldChain:
+		// The shield's base damage, then DEF before the skill ratio,
+		// for players.
+		calcShieldBase(wd, src, false)
+		if src.Player != nil {
+			calcDefenseReductionPreRenewal(wd, src, target, critical, r)
+		}
+		return true
+	case skillSpiralPierce:
+		// Players: 80% of the weapon's weight, plus 50% per level of
+		// that. Other units use their ATK. Then (STR / 10)^2 and a size
+		// fix of its own: 125% on small and 75% on large targets.
+		if sd := src.Player; sd != nil {
+			if sd.RightWeapon != WeaponFist {
+				wd.damage = int64(sd.WeaponWeight * 8 / 100)
+			}
+			wd.atkAddRate(src, &wd.damage, &wd.damage2, int64(50*wd.skillLv()))
+		} else {
+			wd.damage = calcBaseDamagePreRenewal(src, handRight, target.Size, 0, r)
+		}
+		i := int64(src.Str / 10)
+		i *= i
+		wd.atkAdd(src, &wd.damage, &wd.damage2, i)
+		switch target.Size {
+		case SizeSmall:
+			wd.rate(src, 125)
+		case SizeLarge:
+			wd.rate(src, 75)
+		}
+		return true
+	}
+	return false
 }

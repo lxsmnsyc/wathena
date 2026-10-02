@@ -13,6 +13,8 @@ const (
 const (
 	IDSanctuary  = 70   // PR_SANCTUARY
 	IDPowerOfSea = 5148 // SU_POWEROFSEA
+	idAppleIdun  = 322  // BA_APPLEIDUN
+	idEvilLand   = 670  // NPC_EVILLAND
 )
 
 // CalcHeal is skill_calc_heal: what a skill heals, or with heal false
@@ -29,8 +31,15 @@ func CalcHeal(src, target *battle.Status, id, lv int, heal, renewal bool, r batt
 	}
 	var hp int64
 	hpBonus := int64(0)
-	switch id {
-	case IDSanctuary:
+	switch {
+	case id == idAppleIdun && !renewal:
+		// Pre-renewal's Apple of Idun: 30 + 5 per level + half the VIT,
+		// and 5 per level of Musical Lesson. Renewal's takes the default.
+		hp = int64(30 + 5*lv + src.Vit/2)
+		if sd != nil {
+			hp += int64(5 * skill(IDMusicalLesson))
+		}
+	case id == IDSanctuary:
 		if lv > 6 {
 			hp = 777
 		} else {
@@ -95,6 +104,10 @@ func CalcHeal(src, target *battle.Status, id, lv int, heal, renewal bool, r batt
 			add(int64(b))
 		}
 	}
+	// The target's statuses. Renewal's Assumptio adds 2% per level.
+	if tc := target.Changes; tc != nil && renewal && tc.Assumptio > 0 && id != idAppleIdun && id != idEvilLand {
+		hpBonus += int64(tc.Assumptio) * 2
+	}
 
 	if !renewal {
 		return hp
@@ -104,7 +117,7 @@ func CalcHeal(src, target *battle.Status, id, lv int, heal, renewal bool, r batt
 	}
 	// The MATK part of the renewal heal. Item and skill MATK bonuses do
 	// not apply.
-	if id != IDSanctuary {
+	if id != IDSanctuary && id != idAppleIdun {
 		lo, hi := baseMatkMin(src), baseMatkMax(src)
 		if w := src.RHW.Matk; w > 0 {
 			variance := w * src.RHW.Wlv / 10

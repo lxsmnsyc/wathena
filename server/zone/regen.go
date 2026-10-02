@@ -95,6 +95,39 @@ func (z *Zone) naturalHealOne(p *Player, diff int64) {
 			flag &^= regenSP | regenSkillSP
 		}
 	}
+	// status_calc_regen_rate: Tension Relax triples HP regen, or lets an
+	// overweight player heal at the normal rate. SC_REGENERATION raises
+	// the rates, or with val4 removes natural regen.
+	rateHP, rateSP := 100, 100
+	overweight := p.overweight != item.WeightNormal
+	if e.sc.Has(statuschange.SCTensionrelax) {
+		if overweight {
+			overweight = false
+		} else {
+			rateHP += 200
+		}
+	}
+	if e.sc.Has(statuschange.SCMagnificat) {
+		rateSP += 100
+	}
+	// Renewal's Ring of Nibelungen: its HP or SP regen effect.
+	switch e.sc.Val2(statuschange.SCNibelungen) {
+	case ringHPRegen:
+		rateHP += 100
+	case ringSPRegen:
+		rateSP += 100
+	}
+	if r := e.sc.Get(statuschange.SCRegeneration); r != nil {
+		if r.Val4 == 0 {
+			rateHP += r.Val2 * 100
+			rateSP += r.Val3 * 100
+		} else {
+			flag &^= r.Val4 & (regenHP | regenSP)
+		}
+	}
+	if z.monkNoSPRegen(p) {
+		flag &^= regenSP | regenSkillSP
+	}
 	if e.dead || (e.sc != nil && e.sc.Option&(statuschange.OptionHide|statuschange.OptionCloak|optionChaseWalk) != 0) {
 		flag = 0
 	}
@@ -102,7 +135,7 @@ func (z *Zone) naturalHealOne(p *Player, diff int64) {
 	if len(p.bonuses.Regen) > 0 {
 		z.regenBonuses(p, diff)
 	}
-	if flag != 0 && p.overweight != item.WeightNormal {
+	if flag != 0 && overweight {
 		flag = 0
 	}
 	if len(e.path) > 0 {
@@ -111,7 +144,7 @@ func (z *Zone) naturalHealOne(p *Player, diff int64) {
 	spBefore := p.sp
 	s := &p.regenTicks
 	if flag&regenHP != 0 {
-		rate := int64(healHPInterval - naturalHealInterval/2)
+		rate := int64(float64(healHPInterval)/(float64(rateHP)/100)) - naturalHealInterval/2
 		if s.hp+rate <= z.now {
 			s.hp = z.now
 			if e.hp >= int64(e.status.MaxHP) {
@@ -124,7 +157,11 @@ func (z *Zone) naturalHealOne(p *Player, diff int64) {
 		s.hp = z.now
 	}
 	if flag&regenSP != 0 {
-		rate := int64(healSPInterval - naturalHealInterval/2)
+		rate := int64(float64(healSPInterval)/(float64(rateSP)/100)) - naturalHealInterval/2
+		if z.furySPRegen(p) {
+			// Fury doubles the tick.
+			rate = 2*(rate+naturalHealInterval/2) - naturalHealInterval/2
+		}
 		if s.sp+rate <= z.now {
 			s.sp = z.now
 			if p.sp >= int64(e.status.MaxSP) {

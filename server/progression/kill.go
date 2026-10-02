@@ -155,13 +155,24 @@ func (t *Tables) KillWith(m *Mob, log *DamageLog, killer uint32, who func(charID
 			per += per * float64((count-1)*t.ExpBonusAttacker) / 100
 		}
 		var base, job int64
+		// The common bonus, 100 unless a status adds to it.
+		bonus := 100
+		if h != nil {
+			bonus += h.ExpBonus
+		}
+		withBonus := func(exp float64) float64 {
+			if bonus != 100 {
+				exp = exp * float64(bonus) / 100
+			}
+			return exp
+		}
 		if m.BaseExp != 0 {
 			// apply_rate2 by the share, then the common bonus and the map
-			// rate, both 100.
-			base = capFloat(float64(m.BaseExp)*per, 1)
+			// rate, which is 100.
+			base = capFloat(withBonus(float64(m.BaseExp)*per), 1)
 		}
 		if m.JobExp != 0 {
-			job = capFloat(float64(m.JobExp)*per, 1)
+			job = capFloat(withBonus(float64(m.JobExp)*per), 1)
 		}
 		if base == 0 && job == 0 {
 			continue

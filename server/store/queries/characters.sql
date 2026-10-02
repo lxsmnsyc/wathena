@@ -45,6 +45,8 @@ UPDATE characters SET
     hp = @hp, sp = @sp, map = @map, x = @x, y = @y, zeny = @zeny,
     inventory_size = @inventory_size,
     save_map = @save_map, save_x = @save_x, save_y = @save_y,
+    job_change_level = @job_change_level, rebirth_job = @rebirth_job,
+    options = @options,
     save_version = save_version + 1, saved_at = now()
 WHERE id = @id AND save_version = @save_version;
 

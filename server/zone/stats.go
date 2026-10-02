@@ -69,6 +69,9 @@ func (z *Zone) recalc(p *Player) {
 		c.Equipment = z.equipment(p)
 	}
 	c.Changes = e.sc
+	c.Riding = p.record.Options&optionRiding != 0
+	c.Casting = e.cast != nil
+	c.Cart = z.hasCart(p)
 	c.StatusBonuses = z.statusBonuses(p)
 	c.TimedBonuses = p.timedBonusList()
 	res, err := z.Status.Calc(c)
@@ -85,6 +88,11 @@ func (z *Zone) recalc(p *Player) {
 		oldMax = e.status.MaxHP
 	}
 	st := res.Battle
+	if p.keepAspd && e.status != nil {
+		// A status's own recalculation that leaves ASPD as it was.
+		st.AMotion, st.ADelay = e.status.AMotion, e.status.ADelay
+	}
+	p.keepAspd = false
 	e.status = &st
 	p.base, p.bonuses = res.Base, res.Bonuses
 	// The regen bonuses start their time again, as status_calc_pc

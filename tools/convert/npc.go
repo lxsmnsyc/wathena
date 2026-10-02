@@ -479,6 +479,7 @@ func (r *NPCResult) Files() map[string]string {
 			used[f.Path] = true
 		}
 	}
+	addCoreFiles(out)
 	return out
 }
 

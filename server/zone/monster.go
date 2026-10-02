@@ -49,6 +49,20 @@ type monster struct {
 	// stolen is set once a thief stole from the monster, or found it
 	// cannot (steal_flag).
 	stolen bool
+	// stoleCoin is set once a Rogue mugged the monster
+	// (steal_coin_flag).
+	stoleCoin bool
+	// soulChanged is set once Soul Exhale took the monster's SP
+	// (soul_change_flag).
+	soulChanged bool
+	// master is the unit that summoned the monster (master_id), and ai
+	// its special_state.ai, such as AI_FLORA. playersHit is set when
+	// players may hit it (alchemist_summon_setting). deleteAt is when its
+	// delete timer (mob_timer_delete) runs, or 0.
+	master     *entity
+	ai         int
+	playersHit bool
+	deleteAt   int64
 }
 
 // Random walk timing, as rAthena's mob.cpp.
@@ -120,6 +134,9 @@ func (z *Zone) think() {
 	for e := range z.entities.all() {
 		m := e.monster
 		if m == nil {
+			continue
+		}
+		if (m.deleteAt > 0 || m.master != nil) && z.summonThink(e) {
 			continue
 		}
 		// mob_ai_sub_hard: a monster that is stunned, frozen, asleep or

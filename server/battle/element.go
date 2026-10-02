@@ -113,3 +113,58 @@ func AttrFix(damage int64, atkEle, defEle, defLv, flag int) int64 {
 	// when the percent is 0.
 	return damage - damage*(100-ratio)/100
 }
+
+// attrFix is battle_attr_fix with the statuses of the attacker and the
+// target, in renewal: the ground fields the attacker stands on raise the
+// percent of their element, and Fiber Lock doubles a fire hit once.
+func attrFix(src, target *Status, damage int64, atkEle, defEle, defLv, flag int) int64 {
+	ratio := int64(Attribute(defLv, atkEle, defEle))
+	ratio += int64(fieldBonus(src, atkEle))
+	if spiderWebFire(target, atkEle) {
+		ratio += 100
+	}
+	if !attrRecover && flag&1 == 0 && ratio < 0 {
+		ratio = 0
+	}
+	return damage - damage*(100-ratio)/100
+}
+
+// attrFixPre is attrFix in pre-renewal: the statuses raise the damage
+// before the element table.
+func attrFixPre(src, target *Status, damage int64, atkEle, defEle, defLv, flag int) int64 {
+	ratio := int64(PreRenewalAttribute(defLv, atkEle, defEle))
+	if b := fieldBonus(src, atkEle); b != 0 {
+		damage += damage * int64(b) / 100
+	}
+	if spiderWebFire(target, atkEle) {
+		damage *= 2
+	}
+	if !attrRecover && flag&1 == 0 && ratio < 0 {
+		ratio = 0
+	}
+	return damage * ratio / 100
+}
+
+// fieldBonus is the percent that the attacker's Volcano, Deluge or
+// Violent Gale adds to an attack of its element.
+func fieldBonus(src *Status, atkEle int) int {
+	if src == nil || src.Changes == nil {
+		return 0
+	}
+	switch atkEle {
+	case Fire:
+		return src.Changes.VolcanoRate
+	case Wind:
+		return src.Changes.ViolentGaleRate
+	case Water:
+		return src.Changes.DelugeRate
+	}
+	return 0
+}
+
+// spiderWebFire reports whether Fiber Lock doubles a fire hit on the
+// target, and ends a web when it does.
+func spiderWebFire(target *Status, atkEle int) bool {
+	return atkEle == Fire && target != nil && target.Changes != nil && target.Changes.SpiderWeb != nil &&
+		target.Changes.SpiderWeb()
+}

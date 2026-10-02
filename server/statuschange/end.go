@@ -26,7 +26,7 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 	if def == nil {
 		return true
 	}
-	if def.States != 0 {
+	if def.States != 0 || def.CondStates {
 		sc.calcState(en.DB)
 	}
 
@@ -43,6 +43,60 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 		// The Provoke of Auto Berserk ends with it.
 		if p := sc.Get(SCProvoke); p != nil && p.Val4 == 1 {
 			en.End(u, SCProvoke, ReasonReplaced)
+		}
+	case SCBerserk:
+		// Frenzy leaves 100 HP, unless val2 was cleared (as by a
+		// dispel). Its Endure ends, and regen stops for the skill's
+		// duration (SC_REGENERATION with val4 RGN_HP|RGN_SP).
+		if h, ok := en.env.(HPSetter); ok && u.HP() > 100 && val2 != 0 {
+			h.SetHP(u, 100)
+		}
+		if c := sc.Get(SCEndure); c != nil && c.Val4 != 0 {
+			c.Val4 = 0
+			en.End(u, SCEndure, ReasonReplaced)
+		}
+		en.Start(u, u, Start{Type: SCRegeneration, Rate: 10000, Val1: 10, Val4: regenHP | regenSP,
+			Duration: int64(def.Duration(val1)), Reason: ReasonSkill, Source: e.Source})
+	case SCSplasher:
+		// When its own timer ends it, the caster's skill (val2) hits at its
+		// level (val1), once the status has ended. The caster is the
+		// status's source, which rAthena keeps in val3.
+		if c, ok := en.env.(SkillCaster); ok && expired && e.Source.Kind != KindNone {
+			defer c.CastendDamage(e.Source, u, val2, val1, sdLevel)
+		}
+	case SCCloseconfine2:
+		// The holder counts one target less, and lets go at none. val2 is
+		// 0 when the holder let go first. The fallthrough of rAthena to
+		// SC_CLOSECONFINE only looks for SC_CLOSECONFINE2 holders around
+		// the target, which status_change_timer_sub does nothing for.
+		if val2 != 0 {
+			if src := en.env.UnitOf(e.Source); src != nil {
+				if h := src.Changes().Get(SCCloseconfine); h != nil {
+					h.Val1--
+					if h.Val1 <= 0 {
+						en.End(src, SCCloseconfine, ReasonRemoved)
+					}
+				}
+			}
+		}
+	case SCCloseconfine:
+		// The holder let go: every character near it that it held goes
+		// free (status_change_timer_sub). The range adds the ranges of
+		// Close Confine and Back Slide, which most use to get away.
+		if val2 > 0 {
+			r := 1 + closeConfineRange + backSlidingRange
+			if u.Kind() != KindPlayer {
+				// skill_get_range2 gives other units than players 9 for a
+				// range of 0.
+				r = 1 + closeConfineRange + 9
+			}
+			ref := u.Ref()
+			for _, t := range en.env.AreaChars(u, r) {
+				if t2 := t.Changes().Get(SCCloseconfine2); t2 != nil && t2.Val2 != 0 && t2.Source == ref {
+					t2.Val2 = 0
+					en.End(t, SCCloseconfine2, ReasonRemoved)
+				}
+			}
 		}
 	}
 
@@ -68,7 +122,11 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 		en.env.OptionChanged(u)
 	}
 	if def.Changes() || recalcAll {
-		en.env.Recalc(u)
+		calc := def
+		if recalcAll {
+			calc = nil
+		}
+		en.env.Recalc(u, calc)
 	}
 	// The script event sees the status as it was.
 	en.env.Ended(u, e, reason)
@@ -79,6 +137,13 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 	}
 	return true
 }
+
+// The ranges of RG_CLOSECONFINE and TF_BACKSLIDING in skill_db.yml,
+// which the end of SC_CLOSECONFINE reads.
+const (
+	closeConfineRange = 1
+	backSlidingRange  = 0
+)
 
 // ClearKind is the type of status_change_clear.
 type ClearKind int
@@ -214,6 +279,21 @@ func (en *Engine) Damaged(u Unit, hp int64, fromMonster bool) {
 	}
 }
 
+// Retime is delete_timer and add_timer on an active status: it ends ms
+// from now instead of when it would. It reports whether the status was
+// active. Blinding Mist uses it on the blindness of a monster that walks
+// out of the mist.
+func (en *Engine) Retime(u Unit, typ int, ms int64) bool {
+	e := u.Changes().Get(typ)
+	if e == nil {
+		return false
+	}
+	at := en.env.Now() + ms
+	e.End = at
+	en.setTimer(u, e, at)
+	return true
+}
+
 // Dispell ends the statuses that Dispell ends: those without NoDispell.
 // It is the base of SA_DISPELL and of scripts that end debuffs.
 func (en *Engine) Dispell(u Unit, debuffsOnly bool) {
@@ -234,10 +314,9 @@ func (en *Engine) Dispell(u Unit, debuffsOnly bool) {
 // map, by a warp, a change of map, death or logout.
 //   - Statuses with RemoveOnChangeMap end.
 //   - Cloaking and Cloaking Exceed end on units other than players.
+//   - The caster's own Battle Chant (SC_GOSPEL) ends.
 //   - The Provoke of Auto Berserk ends, so it cannot be kept by leaving
 //     the map.
-//
-// Gospel's end waits for Gospel.
 func (en *Engine) RemoveMap(u Unit) {
 	sc := u.Changes()
 	if sc.Empty() {
@@ -251,6 +330,9 @@ func (en *Engine) RemoveMap(u Unit) {
 	if u.Kind() != KindPlayer {
 		en.End(u, SCCloaking, ReasonRemoved)
 		en.End(u, SCCloakingexceed, ReasonRemoved)
+	}
+	if g := sc.Get(SCGospel); g != nil && g.Val4 == BCTSelf {
+		en.End(u, SCGospel, ReasonRemoved)
 	}
 	if p := sc.Get(SCProvoke); p != nil && p.Val4 == 1 {
 		en.End(u, SCProvoke, ReasonRemoved)
@@ -321,3 +403,10 @@ func (en *Engine) Load(u Unit, s Saved, bonuses []Bonus) bool {
 	}
 	return en.Start(nil, u, st)
 }
+
+// Regen flags that SC_REGENERATION's val4 removes, as rAthena's
+// RGN_HP and RGN_SP.
+const (
+	regenHP = 0x1
+	regenSP = 0x2
+)

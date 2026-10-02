@@ -4,6 +4,7 @@ import (
 	"math"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
@@ -98,9 +99,12 @@ func (z *Zone) useSkill(p *Player, c *useSkillCommand) {
 		return
 	}
 	if e.cast != nil {
-		return
-	}
-	if z.now < e.canAct {
+		// Only Cast Cancel works during a cast, and it skips the act
+		// delay.
+		if def.ID != skill.IDCastCancel {
+			return
+		}
+	} else if z.now < e.canAct {
 		z.skillFail(e, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_SKILLINTERVAL)
 		return
 	}
@@ -123,7 +127,9 @@ func (z *Zone) useSkill(p *Player, c *useSkillCommand) {
 			}
 		}
 	}
-	if target == nil || target.unit != nil || target.item != nil || target.warp != nil {
+	// Only the skills that target traps (INF_TRAP_SKILL) may target a
+	// skill unit.
+	if target == nil || target.unit != nil && def.Target != skill.TargetTrap || target.item != nil || target.warp != nil {
 		return
 	}
 	z.skillUseID(e, target, def, lv)
@@ -132,12 +138,24 @@ func (z *Zone) useSkill(p *Player, c *useSkillCommand) {
 // skillUseID is unit_skilluse_id2: a unit starts a skill on a target.
 // It reports whether the cast started.
 func (z *Zone) skillUseID(src, target *entity, def *skill.Def, lv int) bool {
-	if src.dead || !z.entities.has(target) {
+	if src.dead {
 		return false
 	}
-	res := def.CastTimeFor(z.caster(src), lv, z.renewal(), src.player == nil || src.player.char.Skills[def.ID] > 0)
+	// The combo rules and the auto targets.
+	target, combo := z.comboTarget(src, target, def, lv)
+	if target == nil || !z.entities.has(target) {
+		return false
+	}
+	caster := z.caster(src)
+	// Charge Attack's cast time reads distance_math_bl to the target.
+	caster.TargetDistance = mathDistance(src, target)
+	res := def.CastTimeFor(caster, lv, z.renewal(), src.player == nil || src.player.char.Skills[def.ID] > 0)
 	z.castSideEffects(src, res)
-	if src.cast != nil {
+	if !z.renewal() && def.ID == skill.IDChaseWalk && src.sc.Has(sc.SCChasewalk) {
+		// Pre-renewal ends Chase Walk without a cast time.
+		res.Milliseconds = 0
+	}
+	if src.cast != nil && def.ID != skill.IDCastCancel {
 		return false
 	}
 	if def.Has("NoTargetSelf") && src == target {
@@ -154,14 +172,42 @@ func (z *Zone) skillUseID(src, target *entity, def *skill.Def, lv int) bool {
 		return false
 	}
 	rng := def.RangeFor(src.status, lv)
-	if src != target && !z.checkRange(src, target.x, target.y, rng) {
+	// A combo skill during an attack has the attack's range.
+	if src != target && (!combo || src.target == nil) && !z.checkRange(src, target.x, target.y, rng) {
 		// rAthena's stepaction: a walking player casts once a step brings
 		// it in range. Here the server walks the player there.
 		z.approach(src, &pendingSkill{def: def, lv: lv, target: target}, target.x, target.y)
 		return false
 	}
+	switch def.ID {
+	case skill.IDResurrection:
+		// Resurrection needs a dead target or an undead one.
+		if st := target.status; !target.dead && (st == nil || !battle.IsUndead(st.Race, st.DefEle)) {
+			return false
+		}
+	case skill.IDPangVoice, skill.IDWinkCharm:
+		// unit_skilluse_id2: bosses cannot be charmed.
+		if target.status != nil && target.status.Class == battle.ClassBoss {
+			z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_TARGET)
+			return false
+		}
+	case skill.IDBasilica:
+		// Cancelling pre-renewal Basilica has no cast time.
+		if !z.renewal() && src.sc.Has(sc.SCBasilica) {
+			res.Milliseconds = 0
+		}
+	}
 	src.pending = nil
-	src.target = nil
+	if !combo {
+		// unit_stop_attack: only combo skills keep the attack going.
+		src.target = nil
+	}
+	if old := src.cast; old != nil {
+		// Cast Cancel during a cast: the cast it stops waits for Cast
+		// Cancel's effect, as sd->skill_id_old.
+		return z.castCancelBegin(src, old, &casting{def: def, lv: lv, target: target, cancel: def.CastCancel},
+			z.hookCastTime(src, target, def, lv, res.Milliseconds))
+	}
 	src.cast = &casting{def: def, lv: lv, target: target, cancel: def.CastCancel}
 	return z.castBegin(src, z.hookCastTime(src, target, def, lv, res.Milliseconds))
 }
@@ -229,6 +275,10 @@ func (z *Zone) castSideEffects(src *entity, res skill.CastResult) {
 func (z *Zone) castBegin(src *entity, castMs int) bool {
 	c := src.cast
 	def, lv := c.def, c.lv
+	// SC_MAGICPOWER switches its state at the start of a cast.
+	if !z.renewal() {
+		z.toggleMagicPower(src, def)
+	}
 	if len(src.path) > 0 {
 		src.path = src.path[:0]
 		src.stopped = true
@@ -249,8 +299,11 @@ func (z *Zone) castBegin(src *entity, castMs int) bool {
 		castDelay = int64(castMs)
 	}
 	src.canAct = max(src.canAct, z.now+max(castDelay, skill.MinSkillDelayLimit)) + securityCastTime
+	z.castCloaking(src, def, c.ground)
 	if castMs > 0 {
 		c.end = z.now + int64(castMs)
+		// Free Cast changes the speed of a player who casts.
+		z.freeCastChanged(src)
 		return true
 	}
 	z.castEnd(src, false)
@@ -294,6 +347,7 @@ func (z *Zone) castCancel(e *entity, onlyIfAllowed bool) bool {
 	e.canAct = z.now
 	e.cast = nil
 	z.skillEvents = append(z.skillEvents, skillEvent{kind: skillEventCancel, src: e})
+	z.freeCastChanged(e)
 	return true
 }
 
@@ -305,6 +359,10 @@ func (z *Zone) castEnd(src *entity, timed bool) {
 	if c == nil {
 		return
 	}
+	if timed {
+		// The walk speed of Free Cast comes back.
+		z.freeCastChanged(src)
+	}
 	ok := false
 	if c.ground {
 		ok = z.castEndPos(src, c, timed)
@@ -312,6 +370,9 @@ func (z *Zone) castEnd(src *entity, timed bool) {
 		ok = z.castEndID(src, c, timed)
 	}
 	if !ok {
+		if !c.ground && c.def.ID == skill.IDExtremityFist {
+			z.asuraFailed(src, c)
+		}
 		// A failed cast clears the act delay.
 		src.canAct = z.now
 	}
@@ -325,6 +386,14 @@ func (z *Zone) castEndID(src *entity, c *casting, timed bool) bool {
 	}
 	if target == nil || !z.entities.has(target) || target.dead && def.ID != skill.IDResurrection {
 		return false
+	}
+	if def.ID == skill.IDSpiderWeb {
+		// Fiber Lock becomes a ground skill at a cell near the target.
+		x, y := target.x, target.y
+		if splash := def.SplashFor(lv); splash != 0 {
+			x, y = z.randomDir(target, target.x+splash, target.y+splash)
+		}
+		return z.castEndPos(src, &casting{def: def, lv: lv, x: x, y: y, ground: true}, timed)
 	}
 	if r := z.castEndIDCheck(src, target, def); r != wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED {
 		if r != skillFailSilent {
@@ -362,6 +431,9 @@ func (z *Zone) castEndID(src *entity, c *casting, timed bool) bool {
 		src.stopped = true
 	}
 	z.afterCast(src, def, lv, false)
+	if def.ID == skill.IDGrandCross {
+		z.grandCrossCast(src, def, lv)
+	}
 	if def.CastType() == skill.CastNoDamage {
 		z.castendNoDamage(src, target, def, lv, 0)
 	} else {
@@ -377,6 +449,18 @@ func (z *Zone) castEndIDCheck(src, target *entity, def *skill.Def) wathenav1.Ski
 	if src != target && skillImmune(target) && def.CastType() == skill.CastNoDamage {
 		return skillFailSilent
 	}
+	switch def.ID {
+	case skill.IDTurnUndead:
+		if st := target.status; st == nil || !battle.IsUndead(st.Race, st.DefEle) {
+			return skillFailSilent
+		}
+	case skill.IDLexDivina:
+		// Lex Divina needs an enemy, or a silenced ally, whom it cures.
+		if !isEnemy(src, target) && !target.sc.Has(sc.SCSilence) {
+			return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
+		}
+		return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
+	}
 	switch {
 	case def.Target == skill.TargetEnemy || def.Target == skill.TargetSelf && def.Has("NoTargetSelf"):
 		if !isEnemy(src, target) {
@@ -387,9 +471,36 @@ func (z *Zone) castEndIDCheck(src, target *entity, def *skill.Def) wathenav1.Ski
 			return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
 		}
 	}
-	if (def.Has("PartyOnly") || def.Has("GuildOnly")) && src != target {
+	enemyInf := def.Target == skill.TargetEnemy || def.Target == skill.TargetSelf && def.Has("NoTargetSelf")
+	if (def.Has("PartyOnly") || def.Has("GuildOnly")) && src != target && !enemyInf {
 		// Parties and guilds are not ported, so only the caster counts.
+		// A skill on enemies keeps them as targets.
 		return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
+	}
+	if def.ID == skill.IDSoulBurn && target.player == nil {
+		// Soul Siphon only works on players.
+		return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
+	}
+	// Blinding Mist makes offensive skills on units in it fail 75% of
+	// the time.
+	if enemyInf && target.sc.Has(sc.SCFogwall) && z.rand.IntN(100) < 75 {
+		return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
+	}
+	switch def.ID {
+	case skill.IDBackStab:
+		// Pre-renewal: only from behind the target. Never from its cell.
+		if !z.renewal() && mapCheckDir(mapCalcDir(src, target.x, target.y), rDir(target)) {
+			return skillFailSilent
+		}
+		if chebyshev(src, target) == 0 {
+			return skillFailSilent
+		}
+	case skill.IDStealCoin:
+		// Only monsters that are not bosses and were not mugged yet.
+		if target.monster == nil || target.status == nil || target.status.Mode&modeStatusImmune != 0 ||
+			target.monster.stoleCoin {
+			return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
+		}
 	}
 	return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
 }
@@ -562,6 +673,11 @@ func (z *Zone) statusCheckSkillUse(src, target *entity, def *skill.Def, flag int
 		if src.player == nil && src.dead {
 			return false
 		}
+		// Teleport fails on top of Magnetic Earth.
+		if def.ID == skill.IDTeleport && z.landProtected(src.x, src.y) &&
+			(src.status == nil || src.status.Mode&modeStatusImmune == 0) {
+			return false
+		}
 		if l := src.sc; !l.Empty() {
 			if l.Opt1 != 0 && l.Opt1 != sc.Opt1StoneWait && l.Opt1 != sc.Opt1Burning {
 				if flag != 1 {
@@ -574,10 +690,40 @@ func (z *Zone) statusCheckSkillUse(src, target *entity, def *skill.Def, flag int
 			if l.Has(sc.SCTrickdead) && def.ID != skill.IDTrickDead {
 				return false
 			}
+			// The caster of Battle Chant can only end it.
+			if src.gospelCaster() && def.ID != skill.IDGospel {
+				return false
+			}
+			// Auto Counter keeps its unit from starting skills.
+			if l.Has(sc.SCAutocounter) && flag == 0 {
+				return false
+			}
+			// Blade Stop allows a few skills, by its level.
+			if e := l.Get(sc.SCBladestop); e != nil && !bladeStopAllows(e.Val1, def.ID) {
+				return false
+			}
+			// Performing, Marionette Control, Ensemble Fatigue, Classical
+			// Pluck and Wand of Hermode.
+			if !z.performanceSkillUse(src, def, flag) {
+				return false
+			}
 			if flag == 0 && l.Cant.Cast {
 				return false
 			}
+			// Under pre-renewal Basilica, only its caster may cast, and
+			// only Basilica, which cancels it.
+			if b := l.Get(sc.SCBasilica); b != nil && flag == 0 && !z.renewal() &&
+				(int64(b.Val4) != z.unit(src).Ref().ID || def.ID != skill.IDBasilica) {
+				return false
+			}
 			if l.Option&sc.OptionHide != 0 && src.player != nil && !def.Has("AllowWhenHidden") {
+				return false
+			}
+			// Skill blocking: Volcano stops Ice Wall.
+			if l.Has(scVolcano) && def.ID == skill.IDIceWall {
+				return false
+			}
+			if l.Option&optionChasewalk != 0 && def.ID != skill.IDChaseWalk {
 				return false
 			}
 		}
@@ -585,12 +731,26 @@ func (z *Zone) statusCheckSkillUse(src, target *entity, def *skill.Def, flag int
 	if target == nil || target == src {
 		return true
 	}
+	// Pre-renewal Gloria Domini never reaches a hidden target after its
+	// start, even from a boss.
+	if !z.renewal() && def.ID == skill.IDPressure && flag != 0 && !target.sc.Empty() &&
+		target.sc.Option&sc.OptionHide != 0 {
+		return false
+	}
+	// Storm Gust and Frost Nova do not hit frozen units.
+	if (def.ID == skill.IDStormGust || def.ID == skill.IDFrostNova) && target.sc.Has(sc.SCFreeze) {
+		return false
+	}
 	hide := sc.OptionHide
 	if flag == 0 {
 		hide |= sc.OptionCloak | optionChasewalk
 	}
 	if def.Has("TargetHidden") {
 		hide &^= sc.OptionHide
+	}
+	// Lex Aeterna cannot reach a frozen or stoned target.
+	if l := target.sc; def.ID == skill.IDLexAeterna && (l.Has(sc.SCFreeze) || l.Has(sc.SCStone)) {
+		return false
 	}
 	if l := target.sc; !l.Empty() && l.Option&hide != 0 {
 		// A boss or a detector sees hidden units.
@@ -607,7 +767,15 @@ func (z *Zone) caster(e *entity) *skill.Caster {
 	if st == nil {
 		st = &npcStatus
 	}
-	return &skill.Caster{Status: st, Changes: e.sc, Monster: e.player == nil}
+	c := &skill.Caster{Status: st, Changes: e.sc, Monster: e.player == nil, Renewal: z.renewal()}
+	if p := e.player; p != nil {
+		c.SpiritBalls = p.spiritBalls()
+		// skill_get_requirement: after Encore, the dance costs half.
+		if p.perform.skillOld == skill.IDEncore {
+			c.Encore = p.perform.danceSkill
+		}
+	}
+	return c
 }
 
 // renewal reports whether the zone runs renewal's formulas.
@@ -638,7 +806,9 @@ func (z *Zone) checkCastBegin(src *entity, def *skill.Def, lv int) bool {
 	// The skill's own checks.
 	if impl, ok := skillImpls[def.ID].(castBeginChecker); ok {
 		if r := impl.castBegin(z, src, def, lv); r != wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED {
-			z.skillFail(src, def.ID, r)
+			if r != skillFailSilent {
+				z.skillFail(src, def.ID, r)
+			}
 			return false
 		}
 	}
@@ -659,19 +829,27 @@ func (z *Zone) checkCastBegin(src *entity, def *skill.Def, lv int) bool {
 			return false
 		}
 	case skill.StateWater:
-		// Water cells are not in the map data yet.
-		z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
-		return false
-	case skill.StateFalcon, skill.StateRiding:
-		// Falcons and mounts are not ported.
-		z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
-		return false
-	}
-	for _, s := range req.Status {
-		if !src.sc.Has(s) {
+		// Water cells are not in the map data yet, so only Deluge and
+		// Suiton count.
+		if !src.sc.Has(scDeluge) && !src.sc.Has(scSuiton) {
 			z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 			return false
 		}
+	case skill.StateRiding:
+		// Dragons are not ported, so only the Peco Peco counts.
+		if !p.riding() {
+			z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+			return false
+		}
+	case skill.StateFalcon:
+		if !isFalcon(p) {
+			z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+			return false
+		}
+	}
+	// Sight Rasher checks its statuses when the cast ends.
+	if def.ID != skill.IDSightRasher && !z.checkStatusRequired(src, def, req) {
+		return false
 	}
 	for _, it := range req.Equipment {
 		if !z.wears(p, uint32(it)) { // #nosec G115 -- item IDs are positive.
@@ -695,8 +873,8 @@ func (z *Zone) checkCastBegin(src *entity, def *skill.Def, lv int) bool {
 		z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_MONEY)
 		return false
 	}
-	if req.SpiritSphere > 0 {
-		// Spirit spheres are not ported.
+	if req.SpiritSphere > 0 && !z.castBeginSpheres(p, def, req.SpiritSphere) {
+		// USESKILL_FAIL_SPIRITS, which the protocol does not have yet.
 		z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		return false
 	}
@@ -714,7 +892,21 @@ func (z *Zone) checkCastEnd(src *entity, def *skill.Def, lv int) bool {
 	if def.Has("Toggleable") && def.Status >= 0 && src.sc.Has(def.Status) {
 		return true
 	}
+	// The skill's own checks.
+	if impl, ok := skillImpls[def.ID].(castEndChecker); ok {
+		if r := impl.castEnd(z, src, def, lv); r != wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED {
+			z.skillFail(src, def.ID, r)
+			return false
+		}
+	}
+	// The skill's own actions at cast end.
+	if def.ID == skill.IDBenedictio {
+		z.chargePartners()
+	}
 	req := z.requirement(src, def, lv)
+	if def.ID == skill.IDSightRasher && !z.checkStatusRequired(src, def, req) {
+		return false
+	}
 	if req.HP > 0 && src.hp <= int64(req.HP) {
 		z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_HP_INSUFFICIENT)
 		return false
@@ -787,6 +979,13 @@ func (z *Zone) consumeRequirement(src *entity, def *skill.Def, lv, typ int) {
 			// skill_consume_hpspap: Magnum Break's HP is required, not
 			// taken.
 			hp = 0
+		case skill.IDTarotCard, skill.IDAdaptation, skill.IDEncore:
+			// Tarot Card pays when it works; the others cost no SP.
+			sp = 0
+		}
+		// Encore's half cost is for one cast of the dance.
+		if pf := &p.perform; pf.skillOld == skill.IDEncore && def.ID == pf.danceSkill {
+			pf.skillOld = 0
 		}
 		if def.Has("Toggleable") && def.Status >= 0 && src.sc.Has(def.Status) {
 			hp, sp = 0, 0
@@ -808,6 +1007,7 @@ func (z *Zone) consumeRequirement(src *entity, def *skill.Def, lv, typ int) {
 				p.pending = append(p.pending, s)
 			}
 		}
+		z.consumeSpheres(p, def, req.SpiritSphere)
 		if req.Zeny > 0 {
 			z.setZeny(p, max(p.record.Zeny-int64(req.Zeny), 0))
 		}
@@ -817,6 +1017,18 @@ func (z *Zone) consumeRequirement(src *entity, def *skill.Def, lv, typ int) {
 			z.takeItems(p, uint32(it[0]), it[1]) // #nosec G115 -- item IDs are positive.
 		}
 	}
+}
+
+// checkStatusRequired is skill_check_condition_sc_required: the caster
+// has every status the skill requires.
+func (z *Zone) checkStatusRequired(src *entity, def *skill.Def, req skill.Requirement) bool {
+	for _, s := range req.Status {
+		if !src.sc.Has(s) {
+			z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+			return false
+		}
+	}
+	return true
 }
 
 // checkWeaponType is pc_check_weapontype: the player's weapon type, or

@@ -110,7 +110,7 @@ provides:
 | Permission | Default |
 |---|---|
 | `game.read`, `npc.create`, `event.listen`, `storage.mod` | Granted to every mod. |
-| `player.give_items`, `player.give_zeny`, `player.give_exp`, `player.warp`, `player.status`, `world.announce`, `events.schedule` | Needs the owner's approval. |
+| `player.give_items`, `player.give_zeny`, `player.give_exp`, `player.warp`, `player.status`, `player.change_job`, `world.announce`, `events.schedule` | Needs the owner's approval. |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls` | Needs approval, and is logged as a warning at each start. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -879,6 +879,41 @@ end, { skill = CHAIN_LIGHTNING, caster_kind = "player" })
 
 The sample mod in [examples/chain-lightning](examples/chain-lightning) adds a skill, puts it in the Mage's tree, and makes its bolt jump between enemies with `maps.find_entities`.
 
+### Job changes and resets
+
+The job calls follow proposal 0002, review decision 21, and rAthena's `pc_jobchange`, `pc_resetskill`, `pc_resetstate` and its rebirth NPC.
+
+```lua
+local jobs = require "wa.jobs"
+
+-- A Swordman at job level 40 picks a second class.
+for _, job in ipairs(jobs.next_jobs(player.job)) do
+  -- jobs.knight, jobs.crusader
+end
+if player:change_job(jobs.knight) then
+  player:show_effect(effects.angel)
+end
+```
+
+| Call | What it does |
+|---|---|
+| `jobs.next_jobs(job)` | The jobs a job can change into, in job ID order: a Novice into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Bard and Dancer are both listed, and so are Clown and Gypsy. Other jobs have none until third classes exist. |
+| `player:change_job(job, { force })` | Changes the job, as `jobchange`. Job level goes back to 1, job exp to 0, and learned skills stay. A male player who asks for a Dancer becomes a Bard, and the reverse. Returns false, and changes nothing, when the job is not a next job of the player's, or when a transcendent player asks for a job outside the line it had before its rebirth. `force = true` skips these checks and needs `player.change_job`. |
+| `player:rebirth()` | A second class at base level 99 and job level 50 or more becomes a High Novice at base and job level 1, with every stat at 1, 100 status points, First Aid and Trick Dead, as the rebirth NPC's `jobchange Job_Novice_High` and `resetlvl(1)`. Its second class picks its transcendent line. Returns false for other players. |
+| `player:reset_skills()` | Every skill learned with skill points goes back to 0, and the points come back, as `resetskill`. |
+| `player:reset_stats()` | Every stat goes back to 1, and the status points become those of the base level, 52 more for a transcendent job, as `resetstatus`. |
+| `player:reset_skill(skill, { to_level, with_dependents })` | Lowers one skill, to 0 by default, and refunds its points. Returns false, and changes nothing, when a learned skill needs a higher level of it, unless `with_dependents = true`, which lowers those skills to 0 too and refunds them. |
+| `player:reset_stat(stat, { to })` | Lowers one stat (`"str"` to `"luk"`), to 1 by default, and refunds what raising it cost, by rAthena's cost table: `2 + (value - 1) / 10` points per step below 100 in renewal, and `1 + (value + 9) / 10` in pre-renewal. Returns false when the stat is not above the value. |
+
+- Quest skills, which cost no skill points, are never lowered or refunded. Basic Skill stays for every job but the Novice and the High Novice, as in `resetskill`.
+- The changes follow `pc_jobchange`: a base level above the new job's maximum comes down and the stats reset; a change into a transcendent job adds 52 status points, and a change out of one takes them back or resets the stats; equipment the new job cannot wear comes off; and a Peco Peco, a falcon or a cart goes when the new job lacks its skill.
+- The job level at the change from a first class to a second class is saved (rAthena's `change_level_2nd`). The skill tree reads it: a second class sees its own skills once it spent the points of that many first class job levels.
+- Every call computes the player's stats before it returns, and sends the new skill list.
+
+Core places a Job Master in Prontera (`core:Job Master#prontera`). It changes a Novice or a High Novice at job level 10 with Basic Skill 9 into a first class (a Super Novice needs base level 45 too), a first class at job level 40 into a second class, and gives a rebirth to a second class at base level 99 and job level 50. rAthena's job change quests mostly do not convert yet: the coverage reports in [docs/generated](../docs/generated) count them as "Job change NPCs".
+
+The sample mod in [examples/job-trainer](examples/job-trainer) adds a trainer that lowers one skill or one stat for a fee, and its tests walk the Job Master's paths.
+
 ### Items
 
 `items.id(name)` from `wa.items` returns an item's ID by name, and raises an error for an unknown name. It needs `game.read`.
@@ -1058,7 +1093,9 @@ To read them:
 go run ./tools/wactl convert npcs --mode renewal --out /tmp/core-npcs
 ```
 
-To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`. Kafra storage and pushcart rental say they are not available yet. The coverage report of each mode is in [docs/generated](../docs/generated).
+To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`. Kafra storage and pushcart rental say they are not available yet.
+
+Core also has NPCs of its own, written for wAthena: the Job Master (see "Job changes and resets"). The converter maps `jobchange` to `player:change_job` with `force`, `jobchange Job_Novice_High` and the `resetlvl(1)` after it to `player:rebirth`, `resetskill` and `resetstatus` to the reset calls, and the `Upper` parameter to the job tests. The coverage report of each mode is in [docs/generated](../docs/generated).
 
 ## Tools
 
@@ -1138,7 +1175,7 @@ end
 | Call | What it does |
 |---|---|
 | `testing.case(name, function(world))` | Registers a case. |
-| `world:new_player { map, x, y, job, base_level, job_level, zeny, items = { {item, amount} } }` | Adds a character at a walkable cell, with full HP and SP, and returns its player handle. Only `x` and `y` are required. |
+| `world:new_player { map, x, y, job, base_level, job_level, zeny, items = { {item, amount} }, sex, skills = { {skill, level} }, stats = { str = 50 }, skill_points, status_points }` | Adds a character at a walkable cell, with full HP and SP, and returns its player handle. Only `x` and `y` are required. `sex` is `"male"` by default. `skills` are learned skills, `stats` the raised stats (the others are 1), and `skill_points` and `status_points` the points left to spend. |
 | `world:talk(player, npc_name, answers)` | Clicks the NPC and answers each step in order: a number picks a menu option, a string fills text input, and an integer fills number input. Next is pressed without an answer, and waits and progress bars run on the clock. Returns the NPC's lines, one per line. Fails when the conversation asks for more answers than given, when one does not fit, or when some are left over. |
 | `world:use_item(player, item)` | Uses one of the player's items. Fails when the player has none, or the use is refused. |
 | `world:advance(milliseconds)` | Moves the zone clock. Timers fire. The clock starts at 0 and moves only with this call, conversation waits, and the item use interval. |

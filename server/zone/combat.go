@@ -101,6 +101,12 @@ func (z *Zone) fight() {
 			e.target = nil
 			continue
 		}
+		// mob_ai_sub_hard: a monster drops a target under Gangster's
+		// Paradise.
+		if gangsterProtects(e, t) {
+			e.target = nil
+			continue
+		}
 		reach := max(e.status.RHW.Range, 1)
 		if chebyshev(e, t) > reach {
 			if !e.cant().Move {
@@ -113,12 +119,14 @@ func (z *Zone) fight() {
 			e.path = e.path[:0]
 			e.stopped = true
 		}
-		if z.now < e.nextAttack || e.cast != nil {
+		if z.now < e.nextAttack || e.cast != nil && !freeCast(e) {
 			continue
 		}
 		e.dir = facingTo(t.x-e.x, t.y-e.y)
 		z.strike(e, t)
-		e.nextAttack = z.now + int64(max(e.status.ADelay, 100))
+		// unit_set_attackdelay keeps a later attack time, such as a
+		// combo's.
+		e.nextAttack = max(e.nextAttack, z.now+int64(max(e.status.ADelay, 100)))
 		if !e.repeat {
 			e.target = nil
 		}
@@ -143,12 +151,34 @@ func (z *Zone) chase(e, t *entity) {
 
 // strike runs one attack and applies its damage.
 func (z *Zone) strike(e, t *entity) {
+	// battle_weapon_attack: Blade Stop and Raging Trifecta Blow replace
+	// the attack, the attack ends Cloaking, Auto Counter takes the
+	// attack, and Poison React may block it.
+	if z.weaponAttackSkills(e, t) {
+		return
+	}
+	z.weaponAttackCloaking(e)
+	if z.autoCounterBlock(e, t) || z.poisonReactBlock(e, t) {
+		return
+	}
+	// Martyr's Reckoning takes the attack.
+	if z.sacrificeAttack(e, t) {
+		return
+	}
+	z.syncBattlePlayer(e)
 	var r battle.Result
 	if z.renewal() {
-		r = battle.Attack(e.status, z.defender(t), z.rand)
+		r = battle.Attack(e.status, z.defenderFor(e, t, 0), z.rand)
 	} else {
-		r = battle.AttackPreRenewal(e.status, z.defender(t), z.rand)
+		r = battle.AttackPreRenewal(e.status, z.defenderFor(e, t, 0), z.rand)
 	}
+	// battle_do_reflect: Shield Reflect returns part of the hit.
+	z.reflectShield(e, t, 0, r)
+	// Poison React's effects inside battle_calc_attack: the boosted
+	// attack's poison, then the target's counter.
+	z.poisonReactBoost(e, t, r)
+	z.poisonReactCounter(e, t, r)
+	z.rejectSword(e, t, r)
 	z.logDamage(e, t, r.Damage)
 	if r.Damage > 0 {
 		t.hp -= r.Damage
@@ -165,6 +195,12 @@ func (z *Zone) strike(e, t *entity) {
 			z.castCancel(t, true)
 		}
 	}
+	// battle_weapon_attack: Hindsight's spell, whether the attack hit or
+	// not. rAthena deals the attack's damage later, so the spell finds
+	// the target alive.
+	if !e.sc.Empty() && e.sc.Has(sc.SCAutospell) && !e.dead {
+		z.autoSpellStatus(e, t)
+	}
 	if t.hp <= 0 {
 		z.die(t, e)
 		return
@@ -174,6 +210,8 @@ func (z *Zone) strike(e, t *entity) {
 		// the statuses that equipment bonuses cause.
 		long := r.Flag&battle.FlagLong != 0
 		z.additionalEffect(e, t, long)
+		z.normalAttackPoison(e, t)
+		z.breakOnHit(e, t, 0, r.Flag)
 		z.counterEffect(e, t, long)
 		if !t.dead && !e.dead {
 			z.autoSpellAttack(e, t, r.Flag)
@@ -182,8 +220,8 @@ func (z *Zone) strike(e, t *entity) {
 			z.autoSpellWhenHit(e, t, r.Flag, 0)
 		}
 	}
-	// A monster that can attack strikes back.
-	if t.monster != nil && t.target == nil && t.status.Mode&modeCanAttack != 0 {
+	// A monster that can attack strikes back, at an enemy.
+	if t.monster != nil && t.target == nil && t.status.Mode&modeCanAttack != 0 && isEnemy(t, e) {
 		t.target, t.repeat = e, true
 		t.path = t.path[:0]
 		t.nextAttack = z.now + int64(t.status.DMotion)
@@ -241,9 +279,15 @@ func (z *Zone) die(e, killer *entity) {
 	// pc_dead and mob_dead clear the statuses first. The cast stops and
 	// the unit's ground skills end.
 	z.statusesDied(e)
+	z.clearTimerSkills(e)
+	if p := e.player; p != nil {
+		// pc_dead: the spirit spheres go.
+		z.delSpiritBall(p, p.spiritBalls())
+	}
 	z.castCancel(e, false)
 	e.pending = nil
 	z.clearUnitGroups(e)
+	z.clearTimerSkills(e)
 	e.dead = true
 	e.target = nil
 	e.pickItem = nil
@@ -437,6 +481,13 @@ func sign(v int) int {
 // read: no one attacks a unit playing dead, and only bosses and
 // detectors see hidden units.
 func (z *Zone) canTarget(e, t *entity) bool {
+	// The attacker's own options: a hidden player and a unit in Chase
+	// Walk do not attack.
+	if l := e.sc; !l.Empty() {
+		if l.Option&sc.OptionHide != 0 && e.player != nil || l.Option&optionChasewalk != 0 {
+			return false
+		}
+	}
 	l := t.sc
 	if l.Empty() {
 		return true

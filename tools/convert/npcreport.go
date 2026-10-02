@@ -37,6 +37,10 @@ func (n *NPC) isKafra() bool {
 	return false
 }
 
+// isJobNPC reports whether an NPC comes from a jobs folder of rAthena's
+// npc/: the job change NPCs.
+func (n *NPC) isJobNPC() bool { return strings.Contains(n.File, "/jobs/") }
+
 // NPCReport writes the coverage report of converted NPCs as Markdown:
 // per kind, per command, per file, and per function.
 func (r *NPCResult) NPCReport() string {
@@ -48,7 +52,7 @@ func (r *NPCResult) NPCReport() string {
 	type counts struct{ total, placed, full, partial, none int }
 	byKind := map[string]*counts{}
 	var kinds []string
-	var kafras, dialogs counts
+	var kafras, dialogs, jobNPCs counts
 	for _, n := range r.NPCs {
 		kind := n.Kind
 		if n.DuplicateOf != "" {
@@ -81,6 +85,9 @@ func (r *NPCResult) NPCReport() string {
 		if n.isDialog() {
 			add(&dialogs)
 		}
+		if n.Kind == "script" && n.DuplicateOf == "" && n.isJobNPC() {
+			add(&jobNPCs)
+		}
 	}
 	sort.Strings(kinds)
 	b.WriteString("## NPC lines\n\n")
@@ -90,7 +97,8 @@ func (r *NPCResult) NPCReport() string {
 		fmt.Fprintf(&b, "| %s | %d | %d | %d | %d | %d |\n", k, c.total, c.placed, c.full, c.partial, c.none)
 	}
 	fmt.Fprintf(&b, "| Kafras (scripts that call F_Kafra) | %d | %d | %d | %d | %d |\n", kafras.total, kafras.placed, kafras.full, kafras.partial, kafras.none)
-	fmt.Fprintf(&b, "| Dialog NPCs (only talk, menus and emotions) | %d | %d | %d | %d | %d |\n\n", dialogs.total, dialogs.placed, dialogs.full, dialogs.partial, dialogs.none)
+	fmt.Fprintf(&b, "| Dialog NPCs (only talk, menus and emotions) | %d | %d | %d | %d | %d |\n", dialogs.total, dialogs.placed, dialogs.full, dialogs.partial, dialogs.none)
+	fmt.Fprintf(&b, "| Job change NPCs (script NPCs of the jobs folders) | %d | %d | %d | %d | %d |\n\n", jobNPCs.total, jobNPCs.placed, jobNPCs.full, jobNPCs.partial, jobNPCs.none)
 	b.WriteString("- Shops that are not placed have no map or no sprite: scripts open them with `callshop`, which converts to `player:open_shop`.\n")
 	b.WriteString("- cashshop, itemshop, pointshop and marketshop lines need cash points, item and point currencies, and stock, which wAthena does not have yet.\n")
 	b.WriteString("- Kafra storage and pushcart rental say they are not available yet.\n")

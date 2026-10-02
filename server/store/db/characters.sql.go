@@ -45,7 +45,7 @@ const claimCharacter = `-- name: ClaimCharacter :one
 UPDATE characters
 SET save_version = save_version + 1, login_at = now()
 WHERE id = $1
-RETURNING id, account_id, slot, name, job, sex, hair, hair_color, cloth_color, base_level, job_level, base_exp, job_exp, status_points, skill_points, str, agi, vit, int, dex, luk, hp, sp, map, x, y, zeny, inventory_size, save_version, created_at, login_at, saved_at, save_map, save_x, save_y
+RETURNING id, account_id, slot, name, job, sex, hair, hair_color, cloth_color, base_level, job_level, base_exp, job_exp, status_points, skill_points, str, agi, vit, int, dex, luk, hp, sp, map, x, y, zeny, inventory_size, save_version, created_at, login_at, saved_at, save_map, save_x, save_y, job_change_level, rebirth_job, options
 `
 
 // ClaimCharacter starts a session: it raises the save version, so saves
@@ -89,6 +89,9 @@ func (q *Queries) ClaimCharacter(ctx context.Context, id int64) (Character, erro
 		&i.SaveMap,
 		&i.SaveX,
 		&i.SaveY,
+		&i.JobChangeLevel,
+		&i.RebirthJob,
+		&i.Options,
 	)
 	return i, err
 }
@@ -399,40 +402,45 @@ UPDATE characters SET
     hp = $18, sp = $19, map = $20, x = $21, y = $22, zeny = $23,
     inventory_size = $24,
     save_map = $25, save_x = $26, save_y = $27,
+    job_change_level = $28, rebirth_job = $29,
+    options = $30,
     save_version = save_version + 1, saved_at = now()
-WHERE id = $28 AND save_version = $29
+WHERE id = $31 AND save_version = $32
 `
 
 type SaveCharacterParams struct {
-	Job           int
-	Sex           int
-	Hair          int
-	HairColor     int
-	ClothColor    int
-	BaseLevel     int
-	JobLevel      int
-	BaseExp       int64
-	JobExp        int64
-	StatusPoints  int
-	SkillPoints   int
-	Str           int
-	Agi           int
-	Vit           int
-	Int           int
-	Dex           int
-	Luk           int
-	Hp            int
-	Sp            int
-	Map           string
-	X             int
-	Y             int
-	Zeny          int64
-	InventorySize int
-	SaveMap       string
-	SaveX         int
-	SaveY         int
-	ID            int64
-	SaveVersion   int64
+	Job            int
+	Sex            int
+	Hair           int
+	HairColor      int
+	ClothColor     int
+	BaseLevel      int
+	JobLevel       int
+	BaseExp        int64
+	JobExp         int64
+	StatusPoints   int
+	SkillPoints    int
+	Str            int
+	Agi            int
+	Vit            int
+	Int            int
+	Dex            int
+	Luk            int
+	Hp             int
+	Sp             int
+	Map            string
+	X              int
+	Y              int
+	Zeny           int64
+	InventorySize  int
+	SaveMap        string
+	SaveX          int
+	SaveY          int
+	JobChangeLevel int
+	RebirthJob     int
+	Options        int
+	ID             int64
+	SaveVersion    int64
 }
 
 // SaveCharacter writes a character if its save version is still the one
@@ -466,6 +474,9 @@ func (q *Queries) SaveCharacter(ctx context.Context, arg SaveCharacterParams) (i
 		arg.SaveMap,
 		arg.SaveX,
 		arg.SaveY,
+		arg.JobChangeLevel,
+		arg.RebirthJob,
+		arg.Options,
 		arg.ID,
 		arg.SaveVersion,
 	)

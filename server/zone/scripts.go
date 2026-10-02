@@ -174,9 +174,9 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 	}
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
 		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location}
-	if z.Status != nil {
-		opts.Jobs = z.Status
-	}
+	// The job tables are read at each call: a headless zone gets them
+	// after its Lua state is made.
+	opts.Jobs = zoneJobs{z}
 	scripts := z.modScripts()
 	r, err := modscript.New(opts, scripts)
 	if err != nil {
@@ -265,6 +265,23 @@ func (z *Zone) reloadScripts(sc *mod.Scripts) error {
 
 // scriptHost is the zone as mod scripts see it.
 type scriptHost struct{ z *Zone }
+
+// zoneJobs answers the job tests of scripts from the zone's job tables.
+type zoneJobs struct{ z *Zone }
+
+func (j zoneJobs) MapID(job int) (uint64, bool) {
+	if j.z.Status == nil {
+		return 0, false
+	}
+	return j.z.Status.MapID(job)
+}
+
+func (j zoneJobs) JobOf(mapID uint64, male bool) (int, bool) {
+	if j.z.Status == nil {
+		return 0, false
+	}
+	return j.z.Status.JobOf(mapID, male)
+}
 
 func (h scriptHost) Map() string { return strings.TrimPrefix(h.z.Map, "map/") }
 

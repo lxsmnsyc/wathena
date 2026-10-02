@@ -49,6 +49,11 @@ const (
 	FlagShort  = bfShort
 	FlagSkill  = bfSkill
 	FlagNormal = bfNormal
+	// FlagRangeMask, FlagWeaponMask and FlagSkillMask are BF_RANGEMASK,
+	// BF_WEAPONMASK and BF_SKILLMASK.
+	FlagRangeMask  = 0x00f0
+	FlagWeaponMask = 0x000f
+	FlagSkillMask  = 0x0f00
 )
 
 // Skill is a skill attack: rAthena's skill_id and skill_lv, with the
@@ -87,6 +92,13 @@ type Skill struct {
 	Flag int
 	// Impl holds the skill's own formulas. It may be nil.
 	Impl SkillImpl
+	// Self is set when the target is the caster itself (src == target),
+	// as for Grand Cross, whose area hits its caster.
+	Self bool
+	// Renewal is set for an attack in renewal: SkillAttack sets it and
+	// SkillAttackPreRenewal clears it. Skills whose range type differs by
+	// mode read it.
+	Renewal bool
 }
 
 // SkillImpl is what a skill changes in a damage calculation, as the
@@ -99,6 +111,54 @@ type SkillImpl interface {
 	// HitRate is modifyHitRate: it changes the chance to hit, in
 	// percent, before the cap.
 	HitRate(a *SkillContext, hit *int)
+}
+
+// DamageData is the part of rAthena's Damage that a skill may change
+// before the calculation: the hit count (div_), the knockback
+// (blewcount) and the battle flags.
+type DamageData struct {
+	Div, Knockback, Flag int
+}
+
+// DamageDataModifier is implemented by a SkillImpl that changes the hit
+// count, knockback or battle flags of its attack, as
+// SkillImpl::modifyDamageData. battle_calc_weapon_attack calls it after
+// initialize_weapon_data.
+type DamageDataModifier interface {
+	ModifyDamageData(a *SkillContext, d *DamageData)
+}
+
+// ElementModifier is implemented by a SkillImpl that changes the element
+// of its weapon attack, as SkillImpl::modifyElement, which
+// battle_get_weapon_element calls last.
+type ElementModifier interface {
+	ModifyElement(a *SkillContext, element *int)
+}
+
+// modifyDamageData runs the skill's DamageDataModifier on a weapon
+// attack.
+func modifyDamageData(wd *damage, src, target *Status) {
+	if wd.sk == nil {
+		return
+	}
+	m, ok := wd.sk.Impl.(DamageDataModifier)
+	if !ok {
+		return
+	}
+	d := DamageData{Div: wd.div, Knockback: wd.blewcount, Flag: wd.flag}
+	m.ModifyDamageData(wd.context(src, target), &d)
+	wd.div, wd.blewcount, wd.flag = d.Div, d.Knockback, d.Flag
+}
+
+// modifyElement runs the skill's ElementModifier on a hand's element.
+func modifyElement(wd *damage, src, target *Status, element int) int {
+	if wd.sk == nil {
+		return element
+	}
+	if m, ok := wd.sk.Impl.(ElementModifier); ok {
+		m.ModifyElement(wd.context(src, target), &element)
+	}
+	return element
 }
 
 // SkillContext is what a SkillImpl reads of an attack.
@@ -120,6 +180,7 @@ func IsUndead(race, element int) bool { return isUndead(element) }
 // SkillAttack is battle_calc_attack for a skill in renewal: the attack
 // type is BF_WEAPON, BF_MAGIC or BF_MISC.
 func SkillAttack(typ int, src, target *Status, sk *Skill, r Rand) Result {
+	sk.Renewal = true
 	var d damage
 	switch typ {
 	case TypeWeapon:
@@ -183,10 +244,15 @@ func rangeType(src *Status, sk *Skill) int {
 		return bfShort
 	}
 	switch sk.ID {
-	case skillArrowShower:
-		// Monsters' Arrow Shower is melee.
+	case skillArrowShower, skillBomb:
+		// Monsters' Arrow Shower and Bomb are melee.
 		if src.Player == nil {
 			return bfShort
+		}
+	case skillBrandishSpear:
+		// Renewal's Brandish Spear is ranged.
+		if sk.Renewal {
+			return bfLong
 		}
 	}
 	// skillrange_by_distance is every unit but players: they are melee
@@ -227,12 +293,24 @@ const (
 	skillEnvenom         = 52  // TF_POISON
 	skillShieldBoomerang = 251 // CR_SHIELDBOOMERANG
 	skillAcidTerror      = 230 // AM_ACIDTERROR
+	skillBomb            = 229 // AM_DEMONSTRATION
 	skillInvestigate     = 266 // MO_INVESTIGATE
 	skillExtremityFist   = 271 // MO_EXTREMITYFIST
+	skillTripleAttack    = 263 // MO_TRIPLEATTACK
+	skillFingerOffensive = 267 // MO_FINGEROFFENSIVE
 	skillShieldChain     = 480 // PA_SHIELDCHAIN
 	skillSacrifice       = 368 // PA_SACRIFICE
 	skillCartRevolution  = 153 // MC_CARTREVOLUTION
 	skillThrowStone      = 152 // TF_THROWSTONE
 	skillMagicCrasher    = 365 // HW_MAGICCRASHER
 	skillMeteorAssault   = 406 // ASC_METEORASSAULT
+	skillBrandishSpear   = 57  // KN_BRANDISHSPEAR
+	skillAutoCounter     = 61  // KN_AUTOCOUNTER
+	skillSpiralPierce    = 397 // LK_SPIRALPIERCE
+	skillBlitzBeat       = 129 // HT_BLITZBEAT
+	skillFalconAssault   = 381 // SN_FALCONASSAULT
+	skillSharpShooting   = 382 // SN_SHARPSHOOTING
+	skillGrandCross      = 254 // CR_GRANDCROSS
+	skillPressure        = 367 // PA_PRESSURE
+	skillGospel          = 369 // PA_GOSPEL
 )

@@ -122,6 +122,10 @@ type Learner struct {
 	BaseLevel, JobLevel int
 	// Learned are the skills learned with skill points, by ID.
 	Learned map[int]int
+	// ChangeLevel2nd is change_level_2nd: the job level the player had
+	// when it changed from a first class to a second class, or 0 when it
+	// is not known, which counts the first class's maximum job level.
+	ChangeLevel2nd int
 }
 
 // Settings are the conf/battle/player.conf options of skill trees.
@@ -148,8 +152,8 @@ const (
 	joblSecond2     = 0x200
 	joblThird       = 0x1000
 	joblFourth      = 0x10000
-	joblUpper       = 0x2000
-	joblBaby        = 0x4000
+	joblUpper       = 0x100000
+	joblBaby        = 0x200000
 	jobNovice       = 0
 )
 
@@ -174,8 +178,7 @@ func spentPoints(db *DB, l *Learner, set Settings) int {
 // job whose tree the player sees. With player_skillup_limit, a job sees
 // the tree of the job before it until it spent that job's points: a
 // first class needs the Novice's 9 points, and a second class the first
-// class's. Job change levels are not saved yet, so a second class counts
-// the first class's maximum job level.
+// class's, up to the job level it changed jobs at (change_level_2nd).
 func treeJob(db *DB, jobs Jobs, l *Learner, set Settings) (int, error) {
 	mapID, ok := jobs.MapID(l.Job)
 	if !ok {
@@ -207,7 +210,10 @@ func normalizeJob(db *DB, jobs Jobs, l *Learner, mapID uint64, set Settings) uin
 		if mapID&(joblSecond1|joblSecond2) != 0 && mapID&mapidSecondMask != joblSecond1|mapidNovice {
 			first := mapID & mapidFirstMask
 			if job, ok := jobs.JobOf(first, l.Male); ok && job > 0 {
-				change := jobs.MaxJobLevel(job)
+				change := l.ChangeLevel2nd
+				if change == 0 {
+					change = jobs.MaxJobLevel(job)
+				}
 				if points < change-1 {
 					return first
 				}

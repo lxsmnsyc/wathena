@@ -254,3 +254,40 @@ func (g *Groups) Contains(name string, id uint32) bool {
 	}
 	return false
 }
+
+// Settings of conf/battle/drops.conf that group drops read.
+const (
+	// itemGroupRate, itemGroupDropMin and itemGroupDropMax are
+	// item_group_rate, item_group_drop_min and item_group_drop_max: an
+	// entry's adjusted rate is its rate times the percent, kept within
+	// the bounds.
+	itemGroupRate    = 100
+	itemGroupDropMin = 1
+	itemGroupDropMax = 10000
+)
+
+// RandomDrop is ItemGroupDatabase::get_random_entry with
+// GROUP_ALGORITHM_DROP on a subgroup of a group: one entry at random,
+// which drops with its adjusted rate per 10,000 (rnd_chance_official).
+// It reports false when the group or subgroup is missing or the roll
+// fails. rAthena picks the entry from an unordered map, so the entry
+// for a roll differs, but each entry has the same chance.
+func (g *Groups) RandomDrop(name string, subgroup int, r Rand) (uint32, bool) {
+	gr, ok := g.ByName(name)
+	if !ok {
+		return 0, false
+	}
+	for s := range gr.Subgroups {
+		sub := &gr.Subgroups[s]
+		if sub.Subgroup != subgroup || len(sub.Entries) == 0 {
+			continue
+		}
+		e := r.IntN(len(sub.Entries))
+		adj := min(max(sub.Entries[e].Rate*itemGroupRate/100, itemGroupDropMin), itemGroupDropMax)
+		if r.IntN(20001)%10000 >= adj {
+			return 0, false
+		}
+		return g.items[gr.ID][s][e], true
+	}
+	return 0, false
+}

@@ -843,3 +843,9 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the end 
    - The skill hooks work in mod, NPC and event contexts, not in skill contexts.
    - Ties of an entity query sort by the zone's entity ID, the order the zone added the entities in.
    - `cast:run_default` runs core's behavior once the script's call returns.
+8. Build the job change API of phase 4 step 4 (review decision 21). Done on 2026-10-03 ([decision 0012](../decisions/0012-second-classes-and-job-changes.md)). Details to review:
+   - Without `force`, `player:change_job` also keeps a transcendent player in the line of its second class before the rebirth, as the transcendent job NPCs check with `ADVJOB`. `force` reaches any job of the job tables.
+   - A male player who changes into a Dancer becomes a Bard, and the reverse, as `pc_jobchange`.
+   - `player:rebirth` needs a second class at base level 99 and job level 50, as the rebirth NPC. It returns false for other players.
+   - `player:reset_skill` returns false for a quest skill, and `with_dependents` leaves quest skills among the dependents as they are.
+   - `wa.testing`'s `new_player` spec gained `sex`, `skills`, `stats`, `skill_points` and `status_points`, so mod tests can set up a job change. These fields are provisional.

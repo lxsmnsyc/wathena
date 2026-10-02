@@ -40,12 +40,42 @@ func (en *Engine) timer(u Unit, e *Entry, due int64) {
 	}
 
 	switch typ {
+	case SCBlind:
+		// Blindness lasts while the unit stands in Blinding Mist.
+		if sc.Has(SCFogwall) {
+			next(5000 + due)
+			return
+		}
+	case SCDancing, SCMarionette, SCMarionette2, SCWhistle, SCAssncros, SCPoembragi, SCAppleidun, SCHumming,
+		SCDontforgetme, SCFortune, SCService4u:
+		// The Bard and Dancer statuses, in bard.go.
+		if en.performanceTimer(u, e, due) {
+			return
+		}
 	case SCMaximizepower, SCCloaking:
 		// Not enough SP to go on ends it.
 		if en.charge(u, 0, 1) {
 			tick(int64(e.Val2) + due)
 			return
 		}
+	case SCChasewalk:
+		// Not enough SP to go on ends it. The first drain gives the STR
+		// bonus, ten times as long with the Rogue's Soul Link.
+		if !en.charge(u, 0, int64(e.Val4)) {
+			break
+		}
+		if !sc.Has(SCChasewalk2) {
+			d := int64(def.Duration2(e.Val1))
+			if s := sc.Get(SCSpirit); s != nil && s.Val2 == skillSLRogue {
+				d *= 10
+			}
+			en.Start(u, u, Start{Type: SCChasewalk2, Rate: 10000, Val1: 1 << (e.Val1 - 1), Duration: d,
+				Reason: ReasonSkill, Source: u.Ref()})
+		}
+		if sc.Get(typ) == e {
+			tick(int64(e.Val2) + due)
+		}
+		return
 	case SCHiding:
 		e.Val2--
 		if e.Val2 > 0 {
@@ -120,6 +150,14 @@ func (en *Engine) timer(u Unit, e *Entry, due int64) {
 		if e.Val4 >= 0 && u.HP() < int64(st.MaxHP) {
 			en.env.Heal(u, int64(st.MaxHP)/100, 0)
 		}
+	case SCSplasher:
+		// Venom Splasher counts down every 500 ms, then explodes when it
+		// ends.
+		e.Val4 -= 500
+		if e.Val4 > 0 {
+			tick(500 + due)
+			return
+		}
 	case SCOblivioncurse:
 		e.Val4--
 		if e.Val4 >= 0 {
@@ -144,6 +182,39 @@ func (en *Engine) timer(u Unit, e *Entry, due int64) {
 			}
 			tick(1000 + due)
 			return
+		}
+	case SCTensionrelax:
+		// Goes on while HP is not full, for its number of ticks.
+		if u.HP() < int64(st.MaxHP) {
+			e.Val3--
+			if e.Val3 >= 0 {
+				tick(10000 + due)
+				return
+			}
+		}
+	case SCBerserk:
+		// 5% of max HP every 10 seconds, until HP is 100 or less.
+		e.Val3--
+		if e.Val3 > 0 && en.charge(u, int64(e.Val2), 0) && u.HP() > 100 {
+			tick(int64(e.Val4) + due)
+			return
+		}
+	case SCGospel:
+		// The caster's Battle Chant costs 30 HP and 20 SP every 10
+		// seconds, or 45 HP and 35 SP above level 5.
+		if e.Val4 == BCTSelf {
+			e.Val2--
+			if e.Val2 > 0 {
+				hp, sp := int64(30), int64(20)
+				if e.Val1 > 5 {
+					hp, sp = 45, 35
+				}
+				if !en.charge(u, hp, sp) {
+					break
+				}
+				tick(10000 + due)
+				return
+			}
 		}
 	case SCStomachache:
 		e.Val4--

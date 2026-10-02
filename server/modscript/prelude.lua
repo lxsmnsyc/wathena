@@ -231,6 +231,36 @@ new_player, player_ids = handle_type("player", {
 	pay_zeny = function(self, amount)
 		return (call(H.player_pay_zeny, player_ids[self], amount))
 	end,
+	change_job = function(self, job, options)
+		if options ~= nil and type(options) ~= "table" then
+			error("player:change_job: the options must be a table", 2)
+		end
+		local force = options ~= nil and options.force or false
+		return (call(H.player_change_job, player_ids[self], job, force))
+	end,
+	rebirth = function(self)
+		return (call(H.player_rebirth, player_ids[self]))
+	end,
+	reset_skills = function(self)
+		call(H.player_reset, player_ids[self], "skills")
+	end,
+	reset_stats = function(self)
+		call(H.player_reset, player_ids[self], "stats")
+	end,
+	reset_skill = function(self, skill, options)
+		if options ~= nil and type(options) ~= "table" then
+			error("player:reset_skill: the options must be a table", 2)
+		end
+		options = options or {}
+		return (call(H.player_reset_skill, player_ids[self], skill, options.to_level, options.with_dependents or false))
+	end,
+	reset_stat = function(self, stat, options)
+		if options ~= nil and type(options) ~= "table" then
+			error("player:reset_stat: the options must be a table", 2)
+		end
+		options = options or {}
+		return (call(H.player_reset_stat, player_ids[self], stat, options.to))
+	end,
 	give_zeny = function(self, amount)
 		return (call(H.player_give_zeny, player_ids[self], amount))
 	end,
@@ -838,6 +868,10 @@ for _, test in ipairs({ "is_transcendent", "is_baby", "is_third", "is_fourth", "
 		check(math_type(job) == "integer", "jobs." .. test .. ": want a job, such as player.job")
 		return (call(H.jobs_test, test, job))
 	end
+end
+job_tests.next_jobs = function(job)
+	check(math_type(job) == "integer", "jobs.next_jobs: want a job, such as player.job")
+	return (call(H.jobs_next, job))
 end
 for module, values in pairs(H.constants()) do
 	local impl = {}

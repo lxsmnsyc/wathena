@@ -3,6 +3,7 @@ package zone
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"slices"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -165,6 +167,14 @@ type TestPlayer struct {
 	Job, BaseLevel, JobLevel int
 	Zeny                     int64
 	Items                    []StartItem
+	// Female makes a female character. Skills are learned skills by ID,
+	// Stats the raised stats (nil for the start character's), and
+	// SkillPoints and StatusPoints the points left to spend (nil for the
+	// level's).
+	Female                    bool
+	Skills                    map[int]int
+	Stats                     *status.Stats
+	SkillPoints, StatusPoints *int
 }
 
 // AddPlayer adds a character at a cell, with full HP and SP, and returns
@@ -183,8 +193,24 @@ func (h *Headless) AddPlayer(tp TestPlayer) (int64, error) {
 	if tp.Zeny < 0 || tp.Zeny > character.MaxZeny {
 		return 0, fmt.Errorf("zeny is 0 to %d", character.MaxZeny)
 	}
-	c := z.NewCharacter(tp.Name, Look{Sex: 1})
+	sex := uint32(1)
+	if tp.Female {
+		sex = 0
+	}
+	c := z.NewCharacter(tp.Name, Look{Sex: sex})
 	c.Job, c.BaseLevel, c.JobLevel, c.Zeny = tp.Job, tp.BaseLevel, tp.JobLevel, tp.Zeny
+	if tp.Stats != nil {
+		c.Stats = *tp.Stats
+	}
+	if len(tp.Skills) > 0 {
+		c.Skills = maps.Clone(tp.Skills)
+	}
+	if tp.SkillPoints != nil {
+		c.SkillPoints = *tp.SkillPoints
+	}
+	if tp.StatusPoints != nil {
+		c.StatusPoints = *tp.StatusPoints
+	}
 	c.X, c.Y = tp.X, tp.Y
 	if z.Status != nil {
 		sc := z.Start

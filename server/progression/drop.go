@@ -146,6 +146,9 @@ type Hooks struct {
 	// shares and the level penalty, and returns the exp to give.
 	// Results below 0 count as 0.
 	Experience func(charID uint32, base, job int64) (int64, int64)
+	// ExpBonus is added to mob_dead's common exp bonus of 100%, as
+	// SC_RICHMANKIM adds its val2.
+	ExpBonus int
 }
 
 // RollDropsWith is RollDrops with hooks.

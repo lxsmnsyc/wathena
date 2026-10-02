@@ -209,6 +209,9 @@ type Def struct {
 	DurationSkill         int
 	Durations, Durations2 [maxSkillLevel]int
 	States                States
+	// CondStates is set when the status has conditional states, which
+	// status_calc_state_sub checks in calcState.
+	CondStates bool
 	// CalcAll is set when the status changes every stat (SCB_ALL).
 	CalcAll bool
 	// Calc are the SCB_ names of what the status changes, lower case.
@@ -238,6 +241,13 @@ type Def struct {
 // definition's bonuses function.
 func (d *Def) Changes() bool {
 	return d.CalcAll || len(d.Calc) > 0 || len(d.Bonuses) > 0 || d.Mod != ""
+}
+
+// Calcs reports whether status_calc_bl recomputes a stat for the
+// status, by its SCB_ name in lower case, such as aspd. SCB_ALL, a
+// script's bonuses and a mod status recompute every stat.
+func (d *Def) Calcs(name string) bool {
+	return d.CalcAll || len(d.Bonuses) > 0 || d.Mod != "" || slices.Contains(d.Calc, name)
 }
 
 // Duration is skill_get_time of the status's DurationLookup skill at a
@@ -328,6 +338,7 @@ func newDef(s *DataStatus) (*Def, error) {
 			// Conditional states (NoMoveCond and the like) have no ported
 			// condition, as status_calc_state_sub reports for them.
 			if strings.HasSuffix(strings.ToLower(n), "cond") {
+				def.CondStates = true
 				continue
 			}
 			return nil, fmt.Errorf("statuschange: %s: unknown state %s", s.Name, n)

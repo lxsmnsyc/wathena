@@ -33,10 +33,21 @@ type (
 	castBeginChecker interface {
 		castBegin(z *Zone, src *entity, d *skill.Def, lv int) wathenav1.SkillFailure
 	}
+	// castEndChecker holds the skill's own checks of
+	// skill_check_condition_castend, which may use items. It returns
+	// SKILL_FAILURE_UNSPECIFIED when the skill may go on.
+	castEndChecker interface {
+		castEnd(z *Zone, src *entity, d *skill.Def, lv int) wathenav1.SkillFailure
+	}
 	// additionalEffecter is applyAdditionalEffects: what a hit that
 	// connected does besides damage.
 	additionalEffecter interface {
 		additionalEffect(z *Zone, src, target *entity, d *skill.Def, lv int)
+	}
+	// counterFlagger is applyCounterAdditionalEffects: it changes the
+	// attack type of a hit that the target's autospells read.
+	counterFlagger interface {
+		counterFlag(src, target *entity, flag int) int
 	}
 )
 
@@ -113,6 +124,17 @@ var skillImpls = map[int]any{
 	idCallBaby:          notPorted{},
 	idBuyingStore:       notPorted{},
 	idCartDecorate:      notPorted{},
+}
+
+// registerSkillImpls adds skill behaviors from another file, once each.
+// The files of the second and transcendent classes call it in init.
+func registerSkillImpls(impls map[int]any) {
+	for id, impl := range impls {
+		if _, dup := skillImpls[id]; dup {
+			panic("zone: skill behavior registered twice")
+		}
+		skillImpls[id] = impl
+	}
 }
 
 // Skill IDs of first class trees that server/skill does not name.

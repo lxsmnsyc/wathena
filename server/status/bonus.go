@@ -65,6 +65,7 @@ type pcBonus struct {
 	autoSpell, autoSpellWhenHit, autoSpellOnSkill []AutoSpell
 	cardID                                        int
 	noKnockback                                   bool
+	unstripable                                   uint32
 	addStealRate                                  int
 	addHealRate, addHeal2Rate                     int
 }
@@ -711,6 +712,12 @@ func (pb *pcBonus) apply(b *Bonus, lr int, st *data) {
 		if !arrow {
 			pb.noKnockback = true
 		}
+	case "unstrippable_weapon", "unstrippable_armor", "unstrippable_helm", "unstrippable_shield":
+		// bUnstripableWeapon, bUnstripableArmor, bUnstripableHelm and
+		// bUnstripableShield.
+		if !arrow {
+			pb.unstripable |= unstripablePos[b.Name]
+		}
 	case "steal_chance":
 		// bAddStealRate.
 		if !arrow {
@@ -1344,4 +1351,11 @@ func (pb *pcBonus) applyAutoSpell(b *Bonus, o *bonus.Options, lr int) {
 		}
 	}
 	*list = append(*list, e)
+}
+
+// unstripablePos are the EQP_ positions that the unstrippable bonuses
+// keep on, as pc_bonus.
+var unstripablePos = map[string]uint32{
+	"unstrippable_weapon": item.EqpWeapon, "unstrippable_armor": item.EqpArmor,
+	"unstrippable_helm": item.EqpHelm, "unstrippable_shield": item.EqpShield,
 }

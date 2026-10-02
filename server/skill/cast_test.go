@@ -2,6 +2,7 @@ package skill
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 type castCase struct {
 	Job         int    `json:"job"`
 	Build       string `json:"build"`
+	Sex         *int   `json:"sex"`
 	Skill       int    `json:"skill"`
 	SkillName   string `json:"skill_name"`
 	Level       int    `json:"level"`
@@ -38,6 +40,10 @@ type castCase struct {
 	} `json:"heal"`
 }
 
+// castingGaps are skills whose recorded casting does not match yet, with
+// the reason. Each job's test file adds its own in init.
+var castingGaps = map[string]string{}
+
 // TestCasting checks cast times, delays, cooldowns, requirements and
 // Heal's amounts against skill_casting.json, for every skill of the first
 // classes' trees in both modes.
@@ -54,7 +60,7 @@ func TestCasting(t *testing.T) {
 				t.Fatal(err)
 			}
 			skills := map[string]map[int]int{}
-			jobLevels := map[int]int{}
+			jobLevels := map[string]int{}
 			var pcs struct {
 				Players []struct {
 					Job       int      `json:"job"`
@@ -74,32 +80,48 @@ func TestCasting(t *testing.T) {
 					for _, s := range p.Skills {
 						m[s[0]] = s[1]
 					}
-					skills[fmt.Sprintf("%d %s", p.Job, p.Build)] = m
-					jobLevels[p.Job] = p.JobLevel
+					key := playerKey(p.Job, p.Build, true)
+					skills[key] = m
+					jobLevels[key] = p.JobLevel
 				}
 			}
 			var ref struct {
-				Cases []castCase `json:"cases"`
+				Players []samplePlayer `json:"players"`
+				Cases   []castCase     `json:"cases"`
 			}
 			if err := reference.Load(mode, "skill_casting", &ref); err != nil {
 				t.Fatal(err)
 			}
-			matched := 0
+			// The recording's own players come first: they have the right
+			// sex.
+			for _, p := range ref.Players {
+				key := playerKey(p.Job, p.Build, p.Sex == 1)
+				skills[key] = learnedMap(p.Skills)
+				jobLevels[key] = p.JobLevel
+			}
+			matched, total := 0, 0
+			bad := map[string]bool{}
 			for i := range ref.Cases {
 				c := &ref.Cases[i]
+				if _, gap := castingGaps[c.SkillName]; gap {
+					continue
+				}
+				total++
 				name := fmt.Sprintf("%s lv %d, job %d %s", c.SkillName, c.Level, c.Job, c.Build)
 				def := db.Get(c.Skill)
 				if def == nil {
 					t.Fatalf("%s: skill missing", name)
 				}
-				learned := skills[fmt.Sprintf("%d %s", c.Job, c.Build)]
-				res, err := tables.Calc(status.Character{Job: c.Job, Male: true, BaseLevel: 99, JobLevel: jobLevels[c.Job],
+				male := c.Sex == nil || *c.Sex == 1
+				key := playerKey(c.Job, c.Build, male)
+				learned := skills[key]
+				res, err := tables.Calc(status.Character{Job: c.Job, Male: male, BaseLevel: 99, JobLevel: jobLevels[key],
 					Stats: builds[c.Build], Skills: learned})
 				if err != nil {
 					t.Fatalf("%s: %v", name, err)
 				}
 				st := res.Battle
-				caster := &Caster{Status: &st}
+				caster := &Caster{Status: &st, Renewal: mode == reference.Renewal}
 				var diffs []string
 				if got := def.CastTimeFor(caster, c.Level, mode == reference.Renewal, learned[c.Skill] > 0).Milliseconds; got != c.Cast {
 					diffs = append(diffs, fmt.Sprintf("cast %d, want %d", got, c.Cast))
@@ -132,12 +154,14 @@ func TestCasting(t *testing.T) {
 					}
 				}
 				if len(diffs) > 0 {
+					bad[c.SkillName] = true
 					t.Errorf("%s: %v", name, diffs)
 					continue
 				}
 				matched++
 			}
-			t.Logf("%s: %d of %d casting cases match", mode, matched, len(ref.Cases))
+			t.Logf("%s: %d of %d casting cases match; skills with a mismatch: %v; gaps: %v", mode, matched, total,
+				slices.Sorted(maps.Keys(bad)), slices.Sorted(maps.Keys(castingGaps)))
 		})
 	}
 }

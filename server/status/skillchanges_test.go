@@ -35,9 +35,12 @@ type scEnv struct{}
 
 func (scEnv) Now() int64                                                { return 0 }
 func (scEnv) RandN(int) int                                             { return 0 }
-func (scEnv) Recalc(sc.Unit)                                            {}
+func (scEnv) Recalc(sc.Unit, *sc.Def)                                   {}
 func (scEnv) Icon(sc.Unit, int, bool, int64, int, int, int)             {}
 func (scEnv) OptionChanged(sc.Unit)                                     {}
+func (scEnv) Strip(sc.Unit, int) bool                                   { return true }
+func (scEnv) UnitOf(sc.Source) sc.Unit                                  { return nil }
+func (scEnv) AreaChars(sc.Unit, int) []sc.Unit                          { return nil }
 func (scEnv) StopWalking(sc.Unit)                                       {}
 func (scEnv) StopAttacking(sc.Unit)                                     {}
 func (scEnv) Damage(sc.Unit, int64, int64, bool, bool) int64            { return 0 }

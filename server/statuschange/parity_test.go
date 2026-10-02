@@ -59,15 +59,18 @@ type env struct {
 	recalc  int
 }
 
-func (e *env) Now() int64      { return e.now }
-func (e *env) RandN(n int) int { return min(e.roll, n-1) }
-func (e *env) Recalc(sc.Unit)  { e.recalc++ }
+func (e *env) Now() int64              { return e.now }
+func (e *env) RandN(n int) int         { return min(e.roll, n-1) }
+func (e *env) Recalc(sc.Unit, *sc.Def) { e.recalc++ }
 func (e *env) Icon(u sc.Unit, icon int, on bool, tick int64, v1, v2, v3 int) {
 	e.icons = append(e.icons, fmt.Sprintf("%d:%v:%d", icon, on, tick))
 }
-func (e *env) OptionChanged(sc.Unit) {}
-func (e *env) StopWalking(sc.Unit)   {}
-func (e *env) StopAttacking(sc.Unit) {}
+func (e *env) OptionChanged(sc.Unit)            {}
+func (e *env) Strip(sc.Unit, int) bool          { return true }
+func (e *env) UnitOf(sc.Source) sc.Unit         { return nil }
+func (e *env) AreaChars(sc.Unit, int) []sc.Unit { return nil }
+func (e *env) StopWalking(sc.Unit)              {}
+func (e *env) StopAttacking(sc.Unit)            {}
 func (e *env) Damage(u sc.Unit, hp, sp int64, passive, noKill bool) int64 {
 	t := u.(*unit)
 	hp = min(hp, t.hp)

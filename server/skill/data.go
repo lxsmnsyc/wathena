@@ -173,6 +173,10 @@ type Def struct {
 	// Icon is the skill whose icon and animation the skill shows, for a
 	// mod's skill. It is 0 for the skill's own.
 	Icon int
+
+	// renewal is the mode of the database that holds the skill, for the
+	// formulas that differ by mode.
+	renewal bool
 }
 
 // Has reports whether an INF2_ flag is set, by name, such as IsQuest.
@@ -324,6 +328,7 @@ func Load(d *Data) (*DB, error) {
 }
 
 func (db *DB) add(d *Def) {
+	d.renewal = db.renewal
 	if old := db.byID[d.ID]; old != nil {
 		delete(db.byName, old.Name)
 		db.order = slices.DeleteFunc(db.order, func(x *Def) bool { return x == old })

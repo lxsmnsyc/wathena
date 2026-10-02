@@ -387,6 +387,34 @@ function wa_Player:unmark_minimap(id) end
 ---@param shop string A shop record of data/npcs.yml: the mod's own name, or mod:Name.
 function wa_Player:open_shop(shop) end
 
+---Changes the player's job, as jobchange with rAthena's pc_jobchange. Job level goes back to 1, and learned skills stay. A transcendent player stays in the line it had before its rebirth. Returns false, and changes nothing, when the job is not a valid next job (jobs.next_jobs). A male player who changes into a Dancer becomes a Bard, and the reverse.
+---@param job integer A job from wa.jobs.
+---@param options? wa.ChangeJobOptions
+---@return boolean
+function wa_Player:change_job(job, options) end
+
+---Makes a second class at base level 99 and job level 50 or more a High Novice at base and job level 1, with 100 status points, First Aid and Trick Dead, as rAthena's rebirth. Its second class picks its transcendent jobs. Returns false, and changes nothing, for other players.
+---@return boolean
+function wa_Player:rebirth() end
+
+---Lowers every skill learned with skill points to 0 and refunds the points, as resetskill. Quest skills stay, and so does Basic Skill outside the Novice jobs.
+function wa_Player:reset_skills() end
+
+---Sets every stat to 1 and gives back the status points of the base level, as resetstatus.
+function wa_Player:reset_stats() end
+
+---Lowers one skill, to 0 by default, and refunds its skill points. Returns false, and changes nothing, when another learned skill needs the lowered level and with_dependents is not set, when the skill is not above the level, or for a quest skill.
+---@param skill integer A skill from skills.id.
+---@param options? wa.ResetSkillOptions
+---@return boolean
+function wa_Player:reset_skill(skill, options) end
+
+---Lowers one stat, to 1 by default, and refunds what raising it cost, by rAthena's cost table. Returns false when the stat is not above the value.
+---@param stat "str"|"agi"|"vit"|"int"|"dex"|"luk"
+---@param options? wa.ResetStatOptions
+---@return boolean
+function wa_Player:reset_stat(stat, options) end
+
 ---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
@@ -1037,6 +1065,22 @@ local wa_StatusHook = {}
 ---@field tick_milliseconds integer? From 100: status_tick fires at this interval, and once more when the status runs out, as rAthena's statuses that tick.
 local wa_StatusDefinition = {}
 
+---Options of player:change_job.
+---@class wa.ChangeJobOptions
+---@field force boolean? Skips the job change rules. It needs the permission player.change_job.
+local wa_ChangeJobOptions = {}
+
+---Options of player:reset_skill.
+---@class wa.ResetSkillOptions
+---@field to_level integer? The level to lower the skill to. 0 by default.
+---@field with_dependents boolean? Also lowers to 0, and refunds, the skills that need a higher level of it. Quest skills among them stay.
+local wa_ResetSkillOptions = {}
+
+---Options of player:reset_stat.
+---@class wa.ResetStatOptions
+---@field to integer? The value to lower the stat to. 1 by default.
+local wa_ResetStatOptions = {}
+
 ---Options of player:add_timed_bonuses.
 ---@class wa.TimedBonusOptions
 ---@field ends_on string[]? What ends the bonuses besides their time: death, dispell, clearance, logout, banishing_buster, refresh, lux_anima, magic_gear_change and damage.
@@ -1057,6 +1101,11 @@ local wa_TimedBonusOptions = {}
 ---@field job_level integer? 1 by default.
 ---@field zeny integer? 0 by default.
 ---@field items integer[][]? A list of { item, amount }.
+---@field sex "male"|"female"|nil Male by default.
+---@field skills integer[][]? Learned skills, a list of { skill, level }.
+---@field stats table? Raised stats, such as { str = 50, dex = 30 }. The others are 1.
+---@field skill_points integer? Skill points left to spend. 0 by default.
+---@field status_points integer? Status points left to spend. Those of the base level by default.
 local wa_NewPlayerSpec = {}
 
 ---The monster of world:spawn_monster.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PickUpFailure, StatId } from '../gen/wathena/v1/event_pb';
-import { expLine, expPercent, hpLine, pickUpMessage } from './hud';
+import { expLine, expPercent, hpLine, jobName, pickUpMessage } from './hud';
 
 describe('expPercent', () => {
   it('rounds down to a tenth of a percent', () => {
@@ -45,8 +45,32 @@ describe('status lines', () => {
     expect(expLine(stats)).toBe('Base Lv 12 (34.5%), Job Lv 50 (max)');
   });
 
+  it('names the job', () => {
+    const stats = new Map<StatId, bigint>([
+      [StatId.JOB, 4008n],
+      [StatId.BASE_LEVEL, 99n],
+      [StatId.JOB_LEVEL, 1n],
+    ]);
+    expect(expLine(stats)).toBe('Lord Knight: Base Lv 99, Job Lv 1');
+  });
+
   it('shows levels before exp arrives', () => {
     expect(expLine(new Map([[StatId.BASE_LEVEL, 1n]]))).toBe('Base Lv 1');
+  });
+});
+
+describe('jobName', () => {
+  it('names second, transcendent and mounted jobs', () => {
+    expect(jobName(0)).toBe('Novice');
+    expect(jobName(2)).toBe('Mage');
+    expect(jobName(7)).toBe('Knight');
+    expect(jobName(13)).toBe('Knight');
+    expect(jobName(4001)).toBe('High Novice');
+    expect(jobName(4002)).toBe('High Swordman');
+    expect(jobName(4013)).toBe('Assassin Cross');
+    expect(jobName(4021)).toBe('Gypsy');
+    expect(jobName(23)).toBe('Super Novice');
+    expect(jobName(999999)).toBe('Job 999999');
   });
 });
 

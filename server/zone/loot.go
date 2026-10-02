@@ -5,6 +5,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/skill"
 )
 
 // Loot: a monster's death gives exp to the players who fought it and
@@ -21,6 +22,8 @@ const (
 	// Effects from rAthena's clif_misceffect.
 	effectBaseLevelUp = 371
 	effectJobLevelUp  = 158
+	// oreItemGroup is IG_ORE, the ores of Finding Ore.
+	oreItemGroup = "ORE"
 )
 
 // groundItem is an item lying on a cell, as rAthena's flooritem_data.
@@ -112,6 +115,13 @@ func (z *Zone) reward(e, killer *entity) {
 		k = &progression.Killer{Player: true, Luk: killer.status.Luk}
 	}
 	hooks := z.killHooks(e, killer)
+	// mob_dead's common exp bonus from statuses.
+	if b := z.richmanBonus(e, killer); b != 0 {
+		if hooks == nil {
+			hooks = &progression.Hooks{}
+		}
+		hooks.ExpBonus = b
+	}
 	kill := t.KillWith(mob, &e.monster.dmglog, killerID, z.attacker, hooks)
 	for _, r := range kill.Rewards {
 		if p := z.players[r.CharID]; p != nil {
@@ -129,6 +139,13 @@ func (z *Zone) reward(e, killer *entity) {
 			continue
 		}
 		f.items = append(f.items, d.Item)
+	}
+	// Ore Discovery: a first looter with Finding Ore (BS_FINDINGORE)
+	// may find an ore of the ORE group, whoever killed the monster.
+	if p := z.players[kill.First]; p != nil && p.skillLevel(skill.IDFindingOre) > 0 && z.Mods != nil {
+		if id, ok := z.Mods.Groups.RandomDrop(oreItemGroup, 1, z.rand); ok {
+			f.items = append(f.items, id)
+		}
 	}
 	if len(f.items) > 0 {
 		z.falling = append(z.falling, f)
@@ -191,6 +208,7 @@ func (z *Zone) progressStats(p *Player, before *wathenav1.Event) *wathenav1.Even
 		stat(wathenav1.StatId_STAT_ID_NEXT_JOB_EXP, next(t.IsMaxJobLevel(c), t.NextJobExp(c))),
 		stat(wathenav1.StatId_STAT_ID_STATUS_POINTS, int64(c.StatusPoints)),
 		stat(wathenav1.StatId_STAT_ID_SKILL_POINTS, int64(c.SkillPoints)),
+		stat(wathenav1.StatId_STAT_ID_JOB, int64(p.char.Job)),
 	}
 	if before == nil {
 		return wathenav1.Event_builder{Stats: wathenav1.StatUpdate_builder{Stats: all}.Build()}.Build()

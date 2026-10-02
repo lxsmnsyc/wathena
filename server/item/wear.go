@@ -311,6 +311,10 @@ func (inv *Inventory) Equip(t *Table, slot int, reqPos uint32, w *Wearer) (Chang
 	if r := CanEquip(d, w, worn.Weapon); r != EquipOK {
 		return ch, r
 	}
+	// pc_isequip: a broken item cannot be equipped.
+	if s.Broken {
+		return ch, EquipFail
+	}
 	if pos&reqPos == 0 || s.Equip != 0 {
 		return ch, EquipFail
 	}

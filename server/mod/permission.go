@@ -29,6 +29,7 @@ var Permissions = []Permission{
 	{Name: "player.give_exp", Approval: true, Allows: "give exp to players"},
 	{Name: "player.warp", Approval: true, Allows: "move players"},
 	{Name: "player.status", Approval: true, Allows: "apply status effects to players"},
+	{Name: "player.change_job", Approval: true, Allows: "change a player into any job, without the job change rules"},
 	{Name: "world.announce", Approval: true, Allows: "announce to every player of the world"},
 	{Name: "events.schedule", Approval: true, Allows: "add world events to the scheduler"},
 	{Name: "rules.override", Approval: true, Flagged: true, Allows: "replace formulas such as damage or drop rates"},

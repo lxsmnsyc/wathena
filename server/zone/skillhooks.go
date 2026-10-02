@@ -12,32 +12,67 @@ import (
 // Coat), and the procs of item bonuses (skill_additional_effect and
 // skill_counter_additional_effect).
 
-// defender is the target's battle status for one attack. A target with a
-// status that blocks or reduces hits gets a copy whose Changes run them.
-func (z *Zone) defender(t *entity) *battle.Status {
+// defender is the target's battle status for one attack, with its HP. A
+// target with a status that blocks or reduces hits gets a copy whose
+// Changes run them.
+func (z *Zone) defender(t *entity) *battle.Status { return z.defenderFor(nil, t, 0) }
+
+// defenderFor is defender for an attack from src, or from no known unit
+// when src is nil, with a skill level, 0 for a normal attack. Guard's
+// Shrink reads both.
+func (z *Zone) defenderFor(src, t *entity, lv int) *battle.Status {
 	st := t.status
 	l := t.sc
-	if st == nil || l.Empty() || !l.Has(sc.SCSafetywall) && !l.Has(sc.SCPneuma) && !l.Has(sc.SCEnergycoat) {
-		return st
+	if st == nil || l.Empty() || !l.Has(sc.SCSafetywall) && !l.Has(sc.SCPneuma) && !l.Has(sc.SCEnergycoat) &&
+		!l.Has(sc.SCKyrie) && !l.Has(sc.SCAeterna) && !l.Has(sc.SCParrying) && !l.Has(sc.SCRaid) &&
+		!l.Has(sc.SCRejectsword) && !l.Has(sc.SCSpiderweb) && !l.Has(sc.SCAutoguard) {
+		return withHP(st, t.hp)
 	}
 	cp := *st
+	cp.HP = t.hp
 	var ch battle.Changes
 	if st.Changes != nil {
 		ch = *st.Changes
 	}
-	ch.Block = func(flag, _ int, dmg int64) bool { return z.blockDamage(t, flag, dmg) }
+	ch.Block = func(flag, skillID int, dmg int64) bool { return z.blockDamage(src, t, flag, skillID, lv, dmg) }
 	if l.Has(sc.SCEnergycoat) {
 		ch.EnergyCoat = func() int { return z.energyCoat(t) }
+	}
+	if l.Has(sc.SCKyrie) {
+		ch.Kyrie = func(flag, skillID int, dmg int64) int64 { return z.kyrieBlock(t, flag, skillID, dmg) }
+	}
+	if l.Has(sc.SCAeterna) {
+		ch.Aeterna = func(flag, skillID int) bool { return z.lexAeterna(t, flag, skillID) }
+	}
+	// Sightless Mind and Reject Sword change no stats, so they are read
+	// when the hit comes.
+	ch.Raid = l.Has(sc.SCRaid)
+	ch.RejectSword = l.Val2(sc.SCRejectsword)
+	if l.Has(sc.SCSpiderweb) {
+		ch.SpiderWeb = func() bool { return z.spiderWebBurn(t) }
 	}
 	cp.Changes = &ch
 	return &cp
 }
 
-// blockDamage is battle_status_block_damage for Safety Wall and Pneuma.
-// Safety Wall blocks melee hits that are not magic, and uses one of its
-// hits; in renewal its durability also takes the damage. Pneuma blocks
-// ranged hits that are not magic.
-func (z *Zone) blockDamage(t *entity, flag int, dmg int64) bool {
+// withHP is a status with the unit's HP, which some skills read, such as
+// Sonic Blow and Turn Undead. A unit at full HP keeps its status.
+func withHP(st *battle.Status, hp int64) *battle.Status {
+	if st == nil || hp <= 0 || hp >= int64(st.MaxHP) {
+		return st
+	}
+	cp := *st
+	cp.HP = hp
+	return &cp
+}
+
+// blockDamage is battle_status_block_damage for Safety Wall, Pneuma,
+// Guard and Parrying. Safety Wall blocks melee hits that are not magic,
+// and uses one of its hits; in renewal its durability also takes the
+// damage. Pneuma blocks ranged hits that are not magic. Guard and
+// Parrying block weapon hits by their chance. src is the attacker, or
+// nil, and lv the attack's skill level.
+func (z *Zone) blockDamage(src, t *entity, flag, skillID, lv int, dmg int64) bool {
 	l := t.sc
 	if e := l.Get(sc.SCSafetywall); e != nil && flag&(battle.FlagShort|battle.FlagMagic) == battle.FlagShort {
 		if g := z.groups[int64(e.Val3)]; g != nil {
@@ -61,8 +96,33 @@ func (z *Zone) blockDamage(t *entity, flag int, dmg int64) bool {
 	if l.Has(sc.SCPneuma) && flag&(battle.FlagMagic|battle.FlagLong) == battle.FlagLong {
 		return true
 	}
+	if z.autoGuard(src, t, flag, skillID, lv) {
+		return true
+	}
+	// Wand of Hermode blocks magic.
+	if l.Has(scHermode) && flag&battle.FlagMagic != 0 {
+		return true
+	}
+	if e := l.Get(sc.SCParrying); e != nil && flag&battle.FlagWeapon != 0 && skillID != idCartTermination &&
+		z.rand.IntN(100) < e.Val2 {
+		if z.Skills != nil {
+			if d := z.Skills.Get(skill.IDParrying); d != nil {
+				z.skillEffect(t, t, d, e.Val1, int64(e.Val1), true)
+			}
+		}
+		// unit_set_attackdelay with DELAY_EVENT_PARRY: a player's attack
+		// and act delays start again.
+		if t.player != nil && t.status != nil {
+			t.nextAttack = max(t.nextAttack, z.now+int64(t.status.ADelay))
+			t.canAct = max(t.canAct, z.now+int64(t.status.AMotion)+maxASPDDelay)
+		}
+		return true
+	}
 	return false
 }
+
+// idCartTermination is WS_CARTTERMINATION, which Parrying cannot block.
+const idCartTermination = 485
 
 // energyCoat is Energy Coat's part of battle_calc_damage: it costs 1% of
 // max SP plus 0.5% per 20% of SP, ends when the SP cannot be paid, and
@@ -103,7 +163,14 @@ func (z *Zone) additionalEffectFlags(src, target *entity, flag, skillID int) {
 	}
 	su, tu := z.unit(src), z.unit(target)
 	long := flag&battle.FlagLong != 0
-	for _, a := range p.bonuses.AddEff {
+	effs := p.bonuses.AddEff
+	if skillID == skill.IDSoulBreaker && !z.renewal() || skillID == skill.IDCartTermination || skillID == skill.IDBomb {
+		// Cart Termination, Bomb, and pre-renewal's Soul Breaker trigger
+		// no cause_status bonus. Of rAthena's list of such skills, they
+		// are the ones ported.
+		effs = nil
+	}
+	for _, a := range effs {
 		rate := a.Rate
 		if long {
 			rate += a.ArrowRate
@@ -193,6 +260,7 @@ func addEffMatchesFlag(atf, flag int) bool {
 // character in the square around the unit stops hiding. Ruwach also
 // hits each enemy it reveals with a level 1 magic hit.
 func (z *Zone) revealTick() {
+	z.sightBlasterTick()
 	var sight, ruwach []*entity
 	for e := range z.entities.all() {
 		if e.sc.Empty() || e.dead {

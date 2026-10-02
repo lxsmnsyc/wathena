@@ -118,6 +118,20 @@ func (en *Engine) Start(src, target Unit, s Start) bool {
 		if st.DefEle == eleFire && st.EleLv == 2 {
 			return false
 		}
+	case SCStripweapon, SCStripshield, SCStriparmor, SCStriphelm:
+		// The strips need to take something off a player, or they fail. A
+		// status loaded from a save takes nothing.
+		if (s.Type == SCStripweapon || s.Type == SCStripshield) && s.Val2 == 1 {
+			// The effect of Brandish Spear and Grand Cross: nothing comes
+			// off.
+			s.Val2 = 0
+		} else if target.Kind() == KindPlayer && s.Flag&Loaded == 0 && !en.env.Strip(target, s.Type) {
+			return false
+		}
+		if tick == 1 {
+			// The shortest duration only strips, without the status.
+			return true
+		}
 	}
 	s.Duration = tick
 	if delay <= 0 {
@@ -196,9 +210,9 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 			return false
 		}
 	case SCCloaking:
-		// Without Cloaking level 3, a wall must be next to the player.
-		// Walls are not checked yet, so it fails.
-		if isPC && target.Skill(skillCloaking) < 3 {
+		// Without Cloaking level 3, a wall must be next to the player. The
+		// learned level counts, not the level used.
+		if isPC && target.Skill(skillCloaking) < 3 && !en.cloakWall(target) {
 			return false
 		}
 	case SCStrfood, SCAgifood, SCVitfood, SCIntfood, SCDexfood, SCLukfood,
@@ -230,7 +244,11 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 		}
 	}
 	for _, t := range def.EndOnStart {
-		if sc.Has(t) {
+		if e := sc.Get(t); e != nil {
+			if t == SCBerserk || t == SCSaturdaynightfever {
+				// Marks the status so its end takes no HP.
+				e.Val2 = 0
+			}
 			en.End(target, t, ReasonReplaced)
 		}
 	}
@@ -256,9 +274,19 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 		if sc.Has(SCSpirit) && sc.Val2(SCSpirit) == skillSLHigh {
 			en.End(target, SCSpirit, ReasonReplaced)
 		}
+	case SCDeluge:
+		// Deluge washes off Blinding Mist's blindness.
+		if sc.Has(SCFogwall) && sc.Has(SCBlind) {
+			en.End(target, SCBlind, ReasonRemoved)
+		}
 	case SCImpositio:
 		if e := sc.Get(SCImpositio); e != nil && e.Val1 > val1 {
 			en.End(target, SCImpositio, ReasonReplaced)
+		}
+	case SCSilence:
+		// Silence ends the caster's Battle Chant.
+		if e := sc.Get(SCGospel); e != nil && e.Val4 == BCTSelf {
+			en.End(target, SCGospel, ReasonReplaced)
 		}
 	case SCEndure:
 		if isPC && target.AlwaysEndure() {
@@ -274,11 +302,29 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 			if e.Val2 > val2 {
 				return false
 			}
+		case SCGospel:
+			// Nothing replaces the caster's own Battle Chant.
+			if e.Val4 == BCTSelf {
+				return false
+			}
+			if e.Val1 > val1 {
+				return true
+			}
 		case SCEndure:
 			if e.Val4 != 0 && val4 == 0 {
 				return true
 			}
 			if e.Val1 > val1 {
+				return true
+			}
+		case SCJointbeat:
+			// A broken neck takes no new breaks until it ends. Other
+			// breaks add up.
+			if e.Val2&BreakNeck != 0 {
+				return false
+			}
+			val2 |= e.Val2
+			if !def.Flags.Has(FlagOverlapIgnoreLevel) && e.Val1 > val1 {
 				return true
 			}
 		default:
@@ -380,9 +426,9 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 		e.clearTimer()
 	}
 	if def.Changes() {
-		en.env.Recalc(target)
+		en.env.Recalc(target, def)
 	}
-	if isNew && def.States != 0 {
+	if isNew && (def.States != 0 || def.CondStates) {
 		sc.calcState(db)
 	}
 
@@ -392,6 +438,15 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 		if val1 != 0 || val2 != 0 {
 			en.env.Damage(target, int64(val1), int64(val2), true, false)
 		}
+	case SCBerserk:
+		// Frenzy heals to the new max HP and takes all SP, unless val2
+		// is already set. val2 then holds the HP each tick takes: 5% of
+		// max HP.
+		if h, ok := en.env.(HPSetter); ok && e.Val2 == 0 {
+			h.ForceHeal(target, int64(target.Status().MaxHP))
+			h.SetSP(target, 0)
+		}
+		e.Val2 = 5 * target.Status().MaxHP / 100
 	}
 	en.env.Started(target, e)
 	return true

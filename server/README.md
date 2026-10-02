@@ -444,24 +444,59 @@ Players learn and cast skills, as rAthena's ([decision 0011](../docs/decisions/0
 - **Entity queries** find units in an area for skills and scripts alike (`query.go`): a radius, a rectangle, a line or a list of cells, with filters and an order.
 - **Mods** add skills with `data/skills.yml`, `data/skill_trees.yml` and a Lua script that runs when the skill takes effect, and change core skills the same way ([mods/README.md](../mods/README.md)). `mods/examples/chain-lightning` adds a Mage skill that jumps between enemies.
 
-Skills that need a window the client does not have yet fail before they start: Warp Portal, Item Appraisal, Vending, Arrow Crafting, Change Cart, Decorate Cart and Open Buying Store. Teleport warps to a random cell at both levels, since it has no menu.
+- **Second and transcendent classes** have their skills too, in both modes: every 2-1 and 2-2 class, the Bard and Dancer, their transcendent classes, and the Super Novice, whose skills are all first class skills. Each job's formulas are in `skill/<job>.go` and its behaviors in `zone/skills_<job>.go`. The systems they brought:
+  - Peco Peco riding, the falcon and the cart, saved in the option bits (`pc_setriding`, `pc_setfalcon`, `pc_setcart`).
+  - Spirit spheres, combos (`skill_combo`) and Blade Stop.
+  - Timer skills (`skill_addtimerskill`), for Double Bolt, Palm Strike and the delayed hits of other skills.
+  - Traps, songs, dances and ensembles, element fields, Land Protector and the other ground units, with their overlap rules (`skill_cell_overlap`, `skill_dance_overlap`).
+  - Plagiarism, the strip skills, breaking equipment (`skill_break_equip`), thrown potions, plant summons, Guard, Shield Reflect and `pc_checkallowskill`.
+  - Statuses that only recalculate the stats they flag, as `status_calc_bl`: a status without `SCB_ASPD` leaves ASPD as it was.
 
-To try them, start new characters as a job with skill points, such as a Swordman at job level 40:
+Skills that need something the server or the client does not have yet fail before they start, so they cost nothing:
+
+- A window: Warp Portal, Item Appraisal, Vending, Arrow Crafting, Change Cart, Decorate Cart, Open Buying Store, Repair Weapon, Weapon Refine, Hindsight, Abracadabra, Create Elemental Converter and Prepare Potion.
+- A homunculus: Call Homunculus, Vaporize and Resurrect Homunculus.
+- Call Baby, which needs a family.
+
+Teleport warps to a random cell at both levels, since it has no menu. Party skills reach only the caster, and Devotion and Redemptio fail, as rAthena does for a player without a party. Ensembles need a partner in the same party, so they fail before they start.
+
+To try them, start new characters as a job with skill points, such as a Swordman at job level 40, then change to a Knight at the Job Master (see "Job changes"):
 
 ```text
 go run ./server/cmd/waserver --assets /path/to/build --map prt_fild08 --dev --start-job 1:50:40
 ```
 
-Parity with rAthena, from `go test ./server/skill`:
+Parity with rAthena, from `go test ./server/skill` and `go test ./server/zone -run TestSkillStatusGolden`:
 
-| Mode | `skill_damage.json`, first class | `skill_casting.json` |
-|---|---:|---:|
-| renewal | 488 of 488 cases, 22 skills | 1,611 of 1,611 |
-| pre-renewal | 488 of 488 cases, 22 skills | 1,611 of 1,611 |
+| Mode | `skill_damage.json` | `skill_casting.json` | `skill_status.json` |
+|---|---:|---:|---:|
+| renewal | 1,879 of 1,879 cases, 92 skills | 6,078 of 6,078 | 621 of 621 |
+| pre-renewal | 1,864 of 1,864 cases, 91 skills | 6,096 of 6,096 | 512 of 512 |
 
-`skill_casting.json` compares cast time, after-cast delay, cooldown, requirements, and Heal's amount, for every first class skill at every level.
+- `skill_casting.json` compares cast time, after-cast delay, cooldown, requirements, and heals, for every first, second and transcendent class skill at every level.
+- `skill_status.json` compares the statuses that a skill starts, with their values and timers, the target's stats before and after, and a normal attack before and after.
+- Three skills have their own golden tests instead of the shared ones: Spiral Pierce (its recorded weapon has a script bonus), Shield Chain (one recorded hit count is a statistical outlier) and Eternal Chaos (the recorder's Golem stood in the song).
+- The damage tests leave out the Gunslinger, Ninja, Taekwon and Soul Linker skills, which come later.
 
-Left: monster skills (step 5), the menus of Teleport and Warp Portal, carts and vending, water cells for Aqua Benedicta, and parties for Angelus and Crazy Uproar.
+Left: monster skills (step 5), parties for party skills, ensembles and Devotion, homunculi, the windows listed above, cart items, sitting (Tension Relax, Gangster's Paradise), monster AI for plant summons, and saving broken equipment.
+
+## Job changes
+
+Players change jobs through scripts, with the calls of proposal 0002, review decision 21 (`jobchange.go`, and [mods/README.md](../mods/README.md), "Job changes and resets"):
+
+- `player:change_job` ports `pc_jobchange`: job level 1 and job exp 0, the transcendent status points, a base level cap with a stat reset, equipment the new job cannot wear comes off, and a Peco Peco, falcon or cart goes without its skill. A male Dancer becomes a Bard. Without `force`, only the next jobs of `jobs.next_jobs` are allowed, and a transcendent player stays in its line.
+- `player:rebirth` makes a second class at 99/50 a High Novice at 1/1 with 100 status points and the platinum skills, as the rebirth NPC (`npc/jobs/valkyrie.txt`).
+- `player:reset_skills`, `player:reset_stats`, `player:reset_skill` and `player:reset_stat` refund skill and status points as `pc_resetskill` and `pc_resetstate`, and by rAthena's stat cost table. Quest skills stay.
+- Migration 00012 saves the job level of the change to a second class (rAthena's `change_level_2nd`), which the skill tree reads, the second class before a rebirth, which picks the transcendent line, and the saved option bits of a cart, a falcon and a Peco Peco. A rider shows its mounted class, as `status_set_viewdata`.
+- The progress stats carry `STAT_ID_JOB`, which the client shows with the levels.
+
+Core places a Job Master in Prontera, since rAthena's job change quests mostly do not convert. It follows rAthena's level rules: job level 10 with Basic Skill 9 for a first class (base level 45 too for a Super Novice), job level 40 for a second class, and 99/50 for a rebirth.
+
+To try it, start a Swordman at job level 40 and talk to the Job Master at Prontera 151,191:
+
+```text
+go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev --start-job 1:50:40
+```
 
 ## NPCs
 

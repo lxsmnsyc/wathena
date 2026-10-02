@@ -103,6 +103,9 @@ func (z *Zone) autoSpellAttack(src, target *entity, flag int) {
 		if d.CastType() == skill.CastGround && !z.posMaxCount(src, d, lv, tbl.x, tbl.y, false) {
 			continue
 		}
+		if !z.renewal() {
+			z.toggleMagicPower(src, d)
+		}
 		z.autoCast(src, tbl, d, lv)
 		z.autoSpellDelay(src, d, lv)
 		if src.dead || target.dead {
