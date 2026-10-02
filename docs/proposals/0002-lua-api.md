@@ -745,6 +745,23 @@ Methods on player handles check their own permissions, such as `player.give_item
       Since monster data has no respawn time, `spawning.monsters` takes `respawn_milliseconds`, from 1,000, and uses 5,000 ms without it, as a spawn line without a delay. `respawn_milliseconds` is provisional. There is no variance option, as for a normal spawn line.
     - **Kind.** Every entity handle has a read-only `kind` field: `"player"`, `"monster"` or `"npc"`, and later kinds such as pets. The death object has no `victim_kind` field any more: scripts read `death.victim.kind` and `death.killer.kind` (the killer may be nil). The option `victim_kind` of `events.on("death", ...)` stays. The damage object's `source` and `target` have `kind` too.
 
+18. Entity queries and the skill event (planned for phase 4 step 3). The user approved these on 2026-10-02:
+    - **`maps.find_entities(query)`** returns a list of entity handles. It needs `game.read`. The name matches `maps.find_player`. The query has one area, filters, and an order:
+      - The area is a radius around an entity (`around`) or a cell (`map`, `x`, `y`), a `rectangle` of two corners, a `line` from one cell to another with a `width`, or a list of `cells`.
+      - `shape` is `"square"` by default, as rAthena's range, or `"circle"`.
+      - The filters are `kinds`, `alive` (true by default), `enemies_of` or `allies_of` an entity with rAthena's attack rules, `line_of_sight` from the center of the area, and `exclude`, a list of handles.
+      - `sort` is `"nearest"`, `"farthest"`, `"lowest_hp"` or `"random"`, and `limit` caps the count. Ties sort by entity ID. `"random"` uses the zone's secret stream.
+
+      ```lua
+      local next_target = maps.find_entities {
+        around = current, radius = 5, enemies_of = caster,
+        exclude = hit, sort = "nearest", limit = 1,
+      }[1]
+      ```
+    - **`entity:find_nearby(query)`** is the same query with `around` set to the entity. Every entity handle has it. The query table stays open to new areas, filters and orders, which later versions add without changing old calls.
+    - **The `skill_used` event** opens to mod and event contexts, which the user asked for as a cast event. It keeps the item event's name, so one name means one thing everywhere. Its object has `caster`, `skill`, `level`, `target`, `x` and `y`. Options narrow it: `skill`, `caster_kind` and `map`. It fires when the skill takes effect, after the cast time. A cast that is interrupted does not fire it.
+    - A sample mod adds a chain lightning skill with these queries, once the skill definition API exists. Its shape gets its own review in step 3.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
