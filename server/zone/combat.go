@@ -168,16 +168,17 @@ func (z *Zone) die(e, killer *entity) {
 		if e.player.talk != nil {
 			e.player.endTalk = true
 		}
+		z.queueDeath(e, killer)
 		return
 	}
 	z.entities.remove(e)
 	z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_DIED})
-	if killer != nil && killer.player != nil {
-		z.monsterKilled(killer.player, e)
-	}
+	z.queueDeath(e, killer)
 	z.reward(e, killer)
 	s := e.monster.spawn
-	z.respawns = append(z.respawns, respawn{spawn: s, at: z.now + int64(max(s.RespawnMs, 1000))})
+	if !s.noRespawn {
+		z.respawns = append(z.respawns, respawn{spawn: s, at: z.now + int64(max(s.RespawnMs, 1000))})
+	}
 }
 
 // forget removes an entity from every target.

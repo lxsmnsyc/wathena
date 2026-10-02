@@ -29,7 +29,12 @@ NPCs ([decision 0008](../../docs/decisions/0008-converted-npcs.md)):
 - `parse.go` also reads NPC scripts: labels, `goto`, `menu`, `callsub`, `function` and `switch`.
 - `npc.go` places NPCs and shops from `npcs.json`, and writes core's `data/npcs.yml`. Shops become data. A script NPC is placed when its own script converts whole.
 - `npclua.go`, `npcexpr.go` and `npcscript.go` translate scripts to Lua with the API of proposal 0002: conversations, `wa.variables`, zeny, items and save points. Labels become Lua labels, and a function's `end` becomes `R.stop()`.
-- `rathena.lua` is `scripts/lib/rathena.lua`: helpers for what Lua lacks, such as rAthena's arrays, `menu`, `getarg`, `input` with its bounds, and `getitem` and `delitem` with a computed amount, which do nothing for 0 or less.
+- Event labels run on into the next label until an `end`, as in rAthena. These event labels convert:
+  - `OnInit` runs at the end of the NPC's setup function.
+  - Clock labels become schedules: `OnClockHHMM` and `OnHourHH` daily, `OnMinuteMM` hourly, and `OnSunHHMM` to `OnSatHHMM` weekly. `OnDayMMDD` does not convert, since the API has no yearly schedule.
+  - A label that a `monster` command of the same NPC names runs when each of its monsters dies, with the player that killed it.
+- `monster` converts on the NPC's own map, with the monster's own name, the default size and AI, and an event label of the NPC or none. `mobcount` converts for such a label. `killmonster` does not convert.
+- `rathena.lua` is `scripts/lib/rathena.lua`: helpers for what Lua lacks, such as rAthena's arrays, `menu`, `getarg`, `input` with its bounds, `getitem` and `delitem` with a computed amount, which do nothing for 0 or less, and `monster` and `mobcount`.
 - `npcreport.go` writes the coverage report.
 
 ```text
@@ -39,8 +44,9 @@ go run ./tools/wactl convert npcs --mode renewal --report docs/generated/npc-scr
 
 NPC tests:
 
-- `TestRunConvertedNPCs` starts every converted NPC of both modes in a zone's Lua state, and fails on any error.
+- `TestRunConvertedNPCs` starts every converted NPC of both modes in a zone's Lua state, kills the monsters they spawn, runs their schedules, and fails on any error.
 - `TestNPCGolden` keeps the output of sample NPCs and functions in `testdata/golden/npcs`, such as Prontera's Kafra and its functions, a dialog NPC, an inn and a tool dealer.
+- `TestNPCEventsConvert` converts NPCs written for the test, with clock labels and monsters, and keeps two in `testdata/golden/npcs/events_*.lua`. `TestRunNPCEvents` runs them: their schedules, and their monsters' deaths.
 - `TestNPCReportsCurrent` checks the reports in `docs/generated`.
 - `TestShopsConvert` checks that every zeny shop converts, and that cash, item, point and market shops are reported instead.
 - server/zone's `kafra_test.go` runs Prontera's converted Kafra: save, and teleport with its price and points.

@@ -13,6 +13,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/constants"
@@ -102,6 +103,12 @@ type Options struct {
 	Testing bool
 	// DeferStart leaves the mods' entry scripts for StartMods to run.
 	DeferStart bool
+	// Clock is the server clock, for wa.schedules. Without it, schedules
+	// raise an error.
+	Clock func() time.Time
+	// Location is the server's time zone. Schedules match times there.
+	// It is UTC when nil.
+	Location *time.Location
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -128,7 +135,7 @@ type Runtime struct {
 	log  *slog.Logger
 	fns  struct {
 		loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref
-		loadTests, runCase, describe                                              *script.Ref
+		loadTests, runCase, describe, runHooks, condition                         *script.Ref
 	}
 	nextID int64
 
@@ -168,6 +175,15 @@ type Runtime struct {
 	// "<mod> <scope> <name>" to the type, so a name keeps one type.
 	variables []*variable
 	declared  map[string]string
+	// hooks are the hooks by name, in the order they run. chain is the
+	// chain that runs now.
+	hooks    map[string][]*hook
+	hookByID map[int64]*hook
+	chain    []*hook
+	// schedules are the schedules of wa.schedules, by handle ID.
+	schedules map[int64]*scheduled
+	// events are the event contexts that run, by context ID.
+	events map[int64]*Context
 }
 
 // Context owns what a setup function and its handlers create
@@ -197,6 +213,11 @@ type Context struct {
 	// timers are gone, and it ends with the last conversation.
 	conversations map[int64]*Conversation
 	retiring      bool
+	// hooks and schedules are those the context added. spawned is set
+	// once it spawned monsters.
+	hooks     []*hook
+	schedules map[int64]*scheduled
+	spawned   bool
 }
 
 // Ended reports whether the context has ended.
@@ -208,6 +229,8 @@ type handler struct {
 	ctx     *Context
 	fn      *script.Ref
 	removed bool
+	// death holds the options of a death handler, or nil.
+	death *deathFilter
 }
 
 type timer struct {
@@ -235,6 +258,7 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		handlers: map[string][]*handler{}, byID: map[int64]*handler{}, timers: map[int64]*timer{},
 		setups: map[string]*script.Ref{}, bonuses: map[int64]*Bonus{},
 		conversations: map[int64]*Conversation{}, declared: map[string]string{},
+		hooks: map[string][]*hook{}, hookByID: map[int64]*hook{}, schedules: map[int64]*scheduled{}, events: map[int64]*Context{},
 	}
 	s, err := script.New(script.Options{Limits: opts.Limits})
 	if err != nil {
@@ -338,6 +362,14 @@ func (r *Runtime) init() error {
 		{"variable_get", r.variableGet},
 		{"variable_set", r.variableSet},
 		{"variable_add", r.variableAdd},
+		{"hooks_on", r.hooksOn},
+		{"hooks_remove", r.hooksRemove},
+		{"hook_enter", r.hookEnter},
+		{"hook_failed", r.hookFailed},
+		{"schedules_add", r.schedulesAdd},
+		{"schedules_when", r.schedulesWhen},
+		{"schedules_cancel", r.schedulesCancel},
+		{"spawning_monsters", r.spawningMonsters},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -379,6 +411,8 @@ func (r *Runtime) init() error {
 		{"load_tests", &r.fns.loadTests},
 		{"run_case", &r.fns.runCase},
 		{"describe", &r.fns.describe},
+		{"run_hooks", &r.fns.runHooks},
+		{"check_condition", &r.fns.condition},
 	} {
 		ref, err := r.s.Keep(tab.Get(f.name))
 		if err != nil {
@@ -409,6 +443,9 @@ func (r *Runtime) Close() {
 		if c := r.contexts[id]; c != nil {
 			r.end(c)
 		}
+	}
+	for _, c := range r.events {
+		r.end(c)
 	}
 	for k, s := range r.setups {
 		s.Release()
@@ -523,6 +560,18 @@ func (r *Runtime) end(c *Context) {
 		r.dropBonus(b)
 	}
 	c.bonuses = nil
+	for _, h := range slices.Clone(c.hooks) {
+		r.removeHook(h)
+	}
+	for _, sc := range c.schedules {
+		r.dropSchedule(sc)
+	}
+	if c.spawned {
+		c.spawned = false
+		if h, ok := r.host.(SpawnHost); ok {
+			h.Despawn(c.ID)
+		}
+	}
 	if r.contexts[c.Mod] == c {
 		delete(r.contexts, c.Mod)
 	}
@@ -690,7 +739,8 @@ func (r *Runtime) dropTimer(t *timer) {
 	delete(t.ctx.timers, t.id)
 }
 
-// Kinds of context (proposal 0002). Mod and item contexts exist.
+// Kinds of context (proposal 0002). Mod, NPC, item and event contexts
+// exist.
 const (
 	KindMod     = "mod"
 	KindNPC     = "npc"
@@ -702,21 +752,21 @@ const (
 
 // Events lists every event name and the context kinds that can listen
 // to it. Mod events and use fire in zones today; damage, skill_used and
-// unequip fire in tests until equipment exists (phase 4). The others are
-// names the next steps fire, listed so a typo is told apart from an
+// unequip fire in tests until equipment exists (phase 4). touch is a
+// name the next steps fire, listed so a typo is told apart from an
 // event of another kind.
 var Events = map[string][]string{
-	"login":          {KindMod},
-	"logout":         {KindMod},
-	"map_enter":      {KindMod},
-	"monster_killed": {KindMod},
-	"base_level_up":  {KindMod},
-	"job_level_up":   {KindMod},
-	"click":          {KindNPC},
-	"touch":          {KindNPC},
-	"use":            {KindItem},
-	"damage":         {KindItem},
-	"skill_used":     {KindItem},
+	"login":         {KindMod, KindEvent},
+	"logout":        {KindMod, KindEvent},
+	"map_enter":     {KindMod, KindEvent},
+	"death":         {KindMod, KindNPC, KindEvent},
+	"base_level_up": {KindMod, KindEvent},
+	"job_level_up":  {KindMod, KindEvent},
+	"click":         {KindNPC},
+	"touch":         {KindNPC},
+	"use":           {KindItem},
+	"damage":        {KindItem},
+	"skill_used":    {KindItem},
 	// Converted UnEquipScripts run on unequip.
 	"unequip": {KindItem},
 }

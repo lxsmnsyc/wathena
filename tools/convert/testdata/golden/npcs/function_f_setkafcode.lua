@@ -87,8 +87,8 @@
 --   	emotion ET_THANKS;
 --   	return;
 --   }
-local variables = require "wa.variables"
 local emotions = require "wa.emotions"
+local variables = require "wa.variables"
 
 local R = require "core.lib.rathena"
 local ACCOUNT_KAFRA_CODE = variables.account_integer "kafra_code"

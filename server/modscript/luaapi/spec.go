@@ -106,8 +106,8 @@ var Modules = []Module{
 		Name: "wa.context", Local: "context",
 		Doc: "The current instance, kind and mod. Calls outside a setup function or a handler raise an error.",
 		Methods: []Func{
-			{Name: "get_instance", Returns: "wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse",
-				Doc: "The instance the context owns: the mod, the NPC, the equipped copy, or the used item."},
+			{Name: "get_instance", Returns: "wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance",
+				Doc: "The instance the context owns: the mod, the NPC, the equipped copy, the used item, or the event run."},
 			{Name: "get_kind", Returns: "wa.ContextKind", Doc: "The context's kind."},
 			{Name: "get_mod", Returns: "string", Doc: "The ID of the context's mod."},
 		},
@@ -116,11 +116,45 @@ var Modules = []Module{
 		Name: "wa.events", Local: "events",
 		Doc: "Event handlers. The context owns them, and removes them when it ends.",
 		Funcs: []Func{{
-			Name:       "on",
-			Params:     []Param{{"name", "wa.EventName", "The event's name. An unknown name, or an event of another context kind, raises an error."}, {"handler", "function", "Runs each time the event fires, in registration order."}},
+			Name: "on",
+			Params: []Param{{"name", "wa.EventName", "The event's name. An unknown name, or an event of another context kind, raises an error."},
+				{"handler", "function", "Runs each time the event fires, in registration order."},
+				{"options", "wa.DeathOptions?", "Only the death event takes options: they narrow which deaths run the handler."}},
 			Returns:    "wa.EventHandle",
 			Doc:        "Registers a handler for an event.",
 			Permission: "event.listen",
+		}},
+	},
+	{
+		Name: "wa.hooks", Local: "hooks",
+		Doc: "Hooks change a game result in a chain ordered by priority. Each hook calls next to get the rest of the chain's result. The innermost result is rAthena's value. Hooks only compute: calls that change the game raise an error in them. The context owns them.",
+		Funcs: []Func{{
+			Name: "on",
+			Params: []Param{{"name", "wa.HookName", "The hook's name. An unknown name raises an error."},
+				{"hook", "fun(object: wa.Drop|wa.Exp, next: fun(object?: table): integer, integer?): integer, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp."},
+				{"options", "wa.HookOptions?", ""}},
+			Returns:    "wa.HookHandle",
+			Doc:        "Adds a hook. Higher priority runs first; equal priorities run in the order they were added.",
+			Permission: "rules.override",
+		}},
+	},
+	{
+		Name: "wa.schedules", Local: "schedules",
+		Doc: "Schedules on the server clock, in the server's time zone (time_zone in the config). A time that does not exist on a day clocks change runs at the next valid minute, and a time that happens twice runs once. A time that passed while the zone slept or the server was stopped runs once, or not at all. The context owns them.",
+		Funcs: []Func{
+			{Name: "daily", Params: []Param{{"time", "string", "HH:MM, such as \"20:00\"."}, {"handler", "fun()", ""}}, Returns: "wa.Schedule", Doc: "Runs the handler every day at the time."},
+			{Name: "weekly", Params: []Param{{"day", "wa.Weekday", ""}, {"time", "string", "HH:MM."}, {"handler", "fun()", ""}}, Returns: "wa.Schedule", Doc: "Runs the handler every week on the day at the time."},
+			{Name: "hourly", Params: []Param{{"minute", "integer", "0 to 59."}, {"handler", "fun()", ""}}, Returns: "wa.Schedule", Doc: "Runs the handler every hour at the minute."},
+			{Name: "when", Params: []Param{{"condition", "fun(): boolean", "Reads the game and returns true or false. Calls that change the game raise an error in it."}, {"handler", "fun()", ""}, {"options", "wa.WhenOptions?", ""}},
+				Returns: "wa.Schedule", Doc: "Runs the handler once the condition has held for lasting_minutes. The condition runs once a minute, at the start of each minute of the server clock. The handler runs once for each time the condition holds."},
+		},
+	},
+	{
+		Name: "wa.spawning", Local: "spawning",
+		Doc: "Monsters that the context owns. They go when it ends.",
+		Funcs: []Func{{
+			Name: "monsters", Params: []Param{{"spec", "wa.SpawnSpec", ""}}, Returns: "wa.Monster[]",
+			Doc: "Places monsters on the context's map and returns their handles. Without x and y, each lands on a random walkable cell.", Permission: "npc.create",
 		}},
 	},
 	{
@@ -331,7 +365,7 @@ var Classes = []Class{
 	},
 	{
 		Name: "wa.Monster", Handle: "monster",
-		Doc: "A monster. A killed monster's handle reads while its monster_killed event runs, with is_alive false, and raises an error after it. Reading needs game.read.",
+		Doc: "A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.",
 		Fields: []Field{
 			{"id", "integer", "The monster's ID, such as 1002."},
 			{"name", "string", ""},
@@ -409,7 +443,13 @@ var Classes = []Class{
 			{Name: "use_item", Params: []Param{playerParam, itemParam}, Doc: "Uses one of the player's items. It waits for the item use interval first. Fails when the player has no such item, or the use is refused."},
 			{Name: "advance", Params: []Param{{"milliseconds", "integer", ""}}, Doc: "Moves the zone clock forward. Timers fire and conversations that wait go on."},
 			{Name: "spawn_monster", Params: []Param{{"spec", "wa.SpawnMonsterSpec", ""}}, Returns: "wa.Monster", Doc: "Places a monster on a cell. It does not come back after it dies."},
-			{Name: "kill", Params: []Param{playerParam, {"monster", "wa.Monster", "A monster from spawn_monster."}}, Doc: "The player kills the monster at once: monster_killed fires, and the player gets its exp and drops."},
+			{Name: "kill", Params: []Param{playerParam, {"monster", "wa.Monster", "A living monster: from spawn_monster, get_monsters or spawning.monsters."}}, Doc: "The player kills the monster at once: the death event fires, and the player gets its exp and drops."},
+			{Name: "set_time", Params: []Param{{"time", "string", "Such as \"2026-10-31 19:58\"."}, {"time_zone", "string?", "An IANA name, such as Asia/Manila. UTC by default."}},
+				Doc: "Sets the server time and time zone the world starts at. Call it before the world has a map. Without it, the world starts at 2026-01-05 12:00 UTC.", Provisional: true},
+			{Name: "get_time", Returns: "string", Doc: "The server time in the world's time zone, as \"2026-10-31 20:00\".", Provisional: true},
+			{Name: "get_monsters", Params: []Param{{"monster", "integer?", "From monsters.id. Every monster without it."}}, Returns: "wa.Monster[]", Doc: "The living monsters of the map, in the order they spawned.", Provisional: true},
+			{Name: "get_announcements", Returns: "string[]", Doc: "Every line announced to the world or the map so far, in order.", Provisional: true},
+			{Name: "count_floor_items", Params: []Param{itemParam}, Returns: "integer", Doc: "How many of the item lie on the map, with drops about to fall.", Provisional: true},
 		},
 	},
 	{
@@ -432,6 +472,79 @@ var Classes = []Class{
 	{
 		Name: "wa.ItemUse", Doc: "The instance of a use context.",
 		Fields: []Field{{"item", "integer", "The used item's ID."}},
+	},
+	{
+		Name: "wa.EventInstance", Doc: "The instance of an event context: one run of a world event.", Provisional: true,
+		Fields: []Field{{"name", "string", "The event's full name, such as example.halloween:Pumpkin_King."}, {"map", "string", "The map of the zone that runs it."}},
+	},
+	{
+		Name: "wa.Death", Doc: "The object of the death event.",
+		Fields: []Field{
+			{"victim", "wa.Player|wa.Monster", "Readable while the event runs, with is_alive false for a monster."},
+			{"victim_kind", `"player"|"monster"`, ""},
+			{"killer", "wa.Player|wa.Monster|nil", "nil when nothing killed the unit."},
+			{"map", "string", ""},
+			{"x", "integer", ""},
+			{"y", "integer", ""},
+			{"skill", "integer?", "nil for a normal attack."},
+		},
+	},
+	{
+		Name: "wa.DeathOptions", Doc: "The options of a death handler. Each one narrows the deaths that run it.",
+		Fields: []Field{
+			{"victim", "wa.Player|wa.Monster|nil", "One unit."},
+			{"victims", "(wa.Player|wa.Monster)[]?", "Any of these units."},
+			{"victim_kind", `"player"|"monster"|nil`, ""},
+			{"monster", "integer?", "A monster from monsters.id."},
+			{"map", "string?", "A map name."},
+		},
+	},
+	{
+		Name: "wa.Drop", Doc: "The object of the drop_rate hook: one drop of a killed monster.",
+		Fields: []Field{
+			{"player", "wa.Player?", "The killer, or nil."},
+			{"monster", "wa.Monster", "The killed monster."},
+			{"item", "integer", ""},
+			{"map", "string", ""},
+			{"rate", "integer", "rAthena's rate, per 10,000."},
+		},
+	},
+	{
+		Name: "wa.Exp", Doc: "The object of the experience hook: the exp one player gets for a kill, after the shares and the level penalty.",
+		Fields: []Field{
+			{"player", "wa.Player", ""},
+			{"monster", "wa.Monster", "The killed monster."},
+			{"base", "integer", ""},
+			{"job", "integer", ""},
+		},
+	},
+	{
+		Name: "wa.HookOptions", Doc: "The options of hooks.on.",
+		Fields: []Field{{"priority", "integer?", "Higher runs first. 0 by default."}},
+	},
+	{
+		Name: "wa.HookHandle", Handle: "hook handle", Doc: "What hooks.on returns.", Provisional: true,
+		Methods: []Func{{Name: "remove", Doc: "Removes the hook. A second call does nothing."}},
+	},
+	{
+		Name: "wa.Schedule", Handle: "schedule", Doc: "What wa.schedules returns.", Provisional: true,
+		Methods: []Func{{Name: "cancel", Doc: "Stops the schedule. A second call does nothing."}},
+	},
+	{
+		Name: "wa.WhenOptions", Doc: "The options of schedules.when.",
+		Fields: []Field{{"lasting_minutes", "integer?", "How long the condition must hold, 0 to 10080. 0 by default."}},
+	},
+	{
+		Name: "wa.SpawnSpec", Doc: "The monsters of spawning.monsters.",
+		Fields: []Field{
+			{"monster", "integer", "From monsters.id."},
+			{"map", "string?", "The context's own map, which is the default. Another map raises an error."},
+			{"amount", "integer?", "1 to 1000. 1 by default."},
+			{"x", "integer?", "With y, the cell. Without them, a random walkable cell for each monster."},
+			{"y", "integer?", ""},
+			{"area", "integer?", "Spreads the monsters within this many cells of x and y."},
+			{"respawn", "boolean?", "true: a dead monster comes back after 5 seconds while the context lives, as a normal spawn. false by default: dead stays dead."},
+		},
 	},
 	{
 		Name: "wa.Damage", Doc: "The object of the damage event (0002a, \"Item events\").",
@@ -538,12 +651,12 @@ func init() {
 
 // Events lists every event name of wa.events.
 var Events = []Event{
-	{Name: "login", Kinds: []string{"mod"}, Params: []Param{playerParam}, Doc: "A player logs in, in the zone it enters."},
-	{Name: "logout", Kinds: []string{"mod"}, Params: []Param{playerParam}, Doc: "A player logs out, before it leaves."},
-	{Name: "map_enter", Kinds: []string{"mod"}, Params: []Param{playerParam}, Doc: "A player enters the zone: at login and after a warp."},
-	{Name: "monster_killed", Kinds: []string{"mod"}, Params: []Param{playerParam, {"monster", "wa.Monster", ""}}, Doc: "The player killed a monster."},
-	{Name: "base_level_up", Kinds: []string{"mod"}, Params: []Param{playerParam}, Doc: "The player gained a base level."},
-	{Name: "job_level_up", Kinds: []string{"mod"}, Params: []Param{playerParam}, Doc: "The player gained a job level."},
+	{Name: "login", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "A player logs in, in the zone it enters."},
+	{Name: "logout", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "A player logs out, before it leaves."},
+	{Name: "map_enter", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "A player enters the zone: at login and after a warp."},
+	{Name: "death", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"death", "wa.Death", ""}}, Doc: "A player or a monster died on the context's map. Options narrow it."},
+	{Name: "base_level_up", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "The player gained a base level."},
+	{Name: "job_level_up", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "The player gained a job level."},
 	{Name: "click", Kinds: []string{"npc"}, Params: []Param{playerParam, {"conversation", "wa.Conversation", ""}}, Doc: "A player talks to the NPC."},
 	{Name: "touch", Kinds: []string{"npc"}, Params: []Param{playerParam}, Doc: "A player walks into the NPC's area. It does not fire yet."},
 	{Name: "use", Kinds: []string{"item"}, Params: []Param{playerParam}, Doc: "The item is used."},
@@ -576,6 +689,8 @@ func Aliases() []Alias {
 		{Name: "wa.EventName", Values: events, Doc: "An event name of wa.events."},
 		{Name: "wa.BonusName", Values: bonuses, Doc: "A bonus name of wa.bonuses (proposal 0002a)."},
 		{Name: "wa.EquipSlot", Values: EquipSlots, Doc: "An equipment slot."},
+		{Name: "wa.HookName", Values: []string{"drop_rate", "experience"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
 	}
 }
 

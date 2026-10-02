@@ -78,7 +78,7 @@ func newLuaFile() *luaFile {
 var moduleOrder = []string{
 	"bonuses", "context", "events", "random", "timers", "integers", "items", "skills", "monsters",
 	"races", "monster_groups", "elements", "sizes", "monster_classes", "weapon_types", "statuses",
-	"effects", "headgear_effects", "jobs",
+	"effects", "headgear_effects", "jobs", "schedules",
 }
 
 // need marks an API module as used and returns its local name.
@@ -151,6 +151,8 @@ func (f *luaFile) String(header []string) string {
 			mods = append(mods, m)
 		}
 	}
+	// Modules that moduleOrder does not list come last, by name.
+	sort.Strings(mods)
 	sort.SliceStable(mods, func(i, j int) bool { return indexOf(moduleOrder, mods[i]) < indexOf(moduleOrder, mods[j]) })
 	for _, m := range mods {
 		fmt.Fprintf(&b, "local %s = require \"wa.%s\"\n", m, m)

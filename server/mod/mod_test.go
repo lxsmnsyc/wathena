@@ -574,7 +574,9 @@ func TestScriptsAndModulePaths(t *testing.T) {
 
 // TestSampleMod loads mods/examples, which the docs point mod authors to.
 func TestSampleMod(t *testing.T) {
-	s, err := resolve(t, filepath.Join("..", "..", "mods", "examples"), Config{})
+	s, err := resolve(t, filepath.Join("..", "..", "mods", "examples"), Config{Approve: map[string][]string{
+		"example.halloween": {"player.give_items", "world.announce", "events.schedule", "rules.override"},
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -586,8 +588,11 @@ func TestSampleMod(t *testing.T) {
 	if items.IDs["example.greeter:Welcome_Cookie"] != 2_000_000 {
 		t.Errorf("cookie ID %d", items.IDs["example.greeter:Welcome_Cookie"])
 	}
+	if items.IDs["example.halloween:Pumpkin_Hat"] != 2_000_001 {
+		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
+	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 3 || npcs[0].DisplayName != "Greeter" || npcs[0].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 4 || npcs[0].DisplayName != "Greeter" || npcs[0].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
 	// The cookie stand is a shop that only scripts open.
@@ -597,6 +602,39 @@ func TestSampleMod(t *testing.T) {
 	sc, err := s.Scripts("example.greeter")
 	if err != nil || len(sc.Entries) != 1 || sc.Texts["greeter.hello"] == "" {
 		t.Errorf("scripts %+v, %v", sc, err)
+	}
+	monsters, err := s.Monsters(func(name string) bool { return name == "PORING" || name == "JAKK" })
+	if err != nil || len(monsters.Records) != 2 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
+		t.Errorf("monsters %+v, %v", monsters, err)
+	}
+	events, err := s.Events()
+	if err != nil || len(events.Records) != 2 || events.Records[0].Name != "example.halloween:Pumpkin_King" {
+		t.Errorf("events %+v, %v", events, err)
+	}
+}
+
+func TestEventsNeedPermission(t *testing.T) {
+	dir := t.TempDir()
+	writeMod(t, dir, "a", map[string]string{
+		"mod.yaml":        manifest("example.a"),
+		"data/events.yml": "- name: Boss\n  trigger: {daily: \"20:00\"}\n  duration_minutes: 60\n  script: scripts/boss.lua\n",
+	})
+	s, err := resolve(t, dir, Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.Events()
+	wantError(t, err, "events example.a:Boss", "example.a needs the permission events.schedule")
+	writeMod(t, dir, "a", map[string]string{"mod.yaml": manifest("example.a", "permissions: [events.schedule]")})
+	if s, err = resolve(t, dir, Config{Approve: map[string][]string{"example.a": {"events.schedule"}}}); err != nil {
+		t.Fatal(err)
+	}
+	o, err := s.Events()
+	if err != nil || len(o.Records) != 1 || o.Records[0].Name != "example.a:Boss" {
+		t.Fatalf("events %+v, %v", o, err)
+	}
+	if script, err := ScriptOf(o.Records[0]); err != nil || script != "example.a:scripts/boss.lua" {
+		t.Fatalf("script %q, %v", script, err)
 	}
 }
 

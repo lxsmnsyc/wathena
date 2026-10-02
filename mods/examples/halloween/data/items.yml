@@ -1,0 +1,10 @@
+# A new hat. Its bonuses are data: they never change, so it needs no
+# Lua (mods/README.md, "Static bonuses").
+- name: example.halloween:Pumpkin_Hat
+  type: Armor
+  display_name: Pumpkin Hat
+  weight: 200
+  sell: 500
+  bonuses:
+    - [luk, 3]
+    - [perfect_dodge, 1]

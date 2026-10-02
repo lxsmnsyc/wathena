@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/script"
@@ -15,7 +17,8 @@ import (
 )
 
 // npcHost is testHost with NPCs: one NPC handle per placed NPC, a player
-// with zeny, and the last step each conversation waits on.
+// with zeny, the last step each conversation waits on, and the monsters
+// scripts spawn.
 type npcHost struct {
 	*testHost
 	npcs  map[int64]*NPC
@@ -23,7 +26,27 @@ type npcHost struct {
 	ended map[int64]bool
 	vars  map[modscript.VariableKey]string
 	zeny  int64
+	// spawned are the monsters that have not died yet, by handle ID.
+	spawned     map[int64]uint32
+	nextMonster int64
 }
+
+func (h *npcHost) SpawnMonsters(_ int64, s modscript.SpawnSpec) ([]int64, error) {
+	if h.spawned == nil {
+		h.spawned = map[int64]uint32{}
+	}
+	ids := make([]int64, s.Amount)
+	for i := range ids {
+		h.nextMonster++
+		ids[i] = h.nextMonster
+		h.spawned[ids[i]] = s.Monster
+	}
+	return ids, nil
+}
+func (h *npcHost) Despawn(int64) {}
+
+// testClock is the clock of the NPC runtime: schedules start from it.
+var testClock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 
 func (h *npcHost) PlayerField(id int64, field string) (script.Value, error) {
 	if field == "zeny" {
@@ -108,8 +131,9 @@ func (l *logRecorder) WithGroup(string) slog.Handler      { return l }
 // TestRunConvertedNPCs starts every placed NPC of both modes and talks to
 // it four times: answering each menu with its first option, its second,
 // its third, and its last one, each number with its minimum, and text
-// with "abc". A part of a function that did not convert may fail when
-// reached. Any other error fails the test.
+// with "abc". Then every monster the NPCs spawned dies, killed by the
+// player, and every schedule runs once. A part of a function that did
+// not convert may fail when reached. Any other error fails the test.
 func TestRunConvertedNPCs(t *testing.T) {
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
@@ -176,6 +200,18 @@ func TestRunConvertedNPCs(t *testing.T) {
 					}
 				}
 			}
+			// Each spawned monster dies, killed by the player, and each
+			// schedule runs once.
+			deaths := 0
+			for len(h.spawned) > 0 && deaths < 10_000 {
+				for _, id := range sortedIDs(h.spawned) {
+					mob := h.spawned[id]
+					delete(h.spawned, id)
+					deaths++
+					rt.FireDeath(modscript.Death{Victim: id, VictimKind: "monster", Monster: int64(mob), Killer: 1, KillerKind: "player"})
+				}
+			}
+			rt.RunSchedules(testClock.Add(8 * 24 * time.Hour))
 			bad := 0
 			for _, m := range logs.msgs {
 				if strings.Contains(m, "which wAthena does not have yet") {
@@ -186,7 +222,7 @@ func TestRunConvertedNPCs(t *testing.T) {
 					t.Error(m)
 				}
 			}
-			t.Logf("%d NPCs started, %d clicks, %d steps, %d errors", started, clicks, steps, bad)
+			t.Logf("%d NPCs started, %d clicks, %d steps, %d monster deaths, %d errors", started, clicks, steps, deaths, bad)
 		})
 	}
 }
@@ -196,10 +232,20 @@ func npcRuntime(t *testing.T, core *Core, h *npcHost, logs *logRecorder) *modscr
 	t.Helper()
 	sc := coreScripts(t, core)
 	r, err := modscript.New(modscript.Options{Host: h, Mods: []string{"core"}, Constants: core.Constants, Jobs: h.jobs,
-		Log: slog.New(logs), Server: variables.NewServer(nil, nil)}, sc)
+		Log: slog.New(logs), Server: variables.NewServer(nil, nil),
+		Clock: func() time.Time { return testClock }, Location: time.UTC}, sc)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(r.Close)
 	return r
+}
+
+func sortedIDs(m map[int64]uint32) []int64 {
+	out := make([]int64, 0, len(m))
+	for id := range m {
+		out = append(out, id)
+	}
+	slices.Sort(out)
+	return out
 }

@@ -19,6 +19,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/secretenv"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
+	"github.com/lxsmnsyc/wathena/server/worldevent"
 )
 
 // options are the settings of `waserver all`. They come from defaults,
@@ -47,6 +48,9 @@ type options struct {
 	// ShutdownCountdown is how long players are warned before the server
 	// stops on SIGTERM or an interrupt. 0 stops at once.
 	ShutdownCountdown time.Duration `yaml:"shutdown_countdown"`
+	// TimeZone is the server's time zone, as an IANA name such as
+	// Asia/Manila. Schedules and world events match their times there.
+	TimeZone string `yaml:"time_zone"`
 }
 
 // modOptions are the mods settings (server/README.md, "Mods").
@@ -63,6 +67,9 @@ type modOptions struct {
 	Approve map[string][]string `yaml:"approve"`
 	// Disable lists installed mods that must not load.
 	Disable []string `yaml:"disable"`
+	// Events change the trigger or the duration of world events, or
+	// turn them off, by the event's full name.
+	Events map[string]worldevent.Override `yaml:"events"`
 }
 
 // list is a list of strings. In the config file it is a YAML sequence
@@ -95,6 +102,7 @@ func defaultOptions() options {
 		Mode:     "renewal",
 		Captcha:  "none",
 		Build:    "all_1",
+		TimeZone: "UTC",
 
 		ShutdownCountdown: 10 * time.Second,
 	}
@@ -171,6 +179,7 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.StringVar(&f.Mods.Dir, "mods", "", "folder of installed mods; empty loads only the built-in core mods (mods.dir)")
 	flags.StringVar(&f.Mods.Ruleset, "ruleset", "", "the world's ruleset mod, such as core.ruleset.renewal; empty picks the core ruleset of --mode (mods.ruleset)")
 	flags.BoolVar(&f.Mods.Strict, "mods-strict", false, "make data overlay warnings errors, such as two mods setting the same field (mods.strict)")
+	flags.StringVar(&f.TimeZone, "time-zone", o.TimeZone, "the server's time zone, as an IANA name such as Asia/Manila; schedules and world events use it (time_zone)")
 	flags.DurationVar(&f.ShutdownCountdown, "shutdown-countdown", o.ShutdownCountdown, "how long players are warned before the server stops on SIGTERM, such as 10s; 0 stops at once, and a second signal skips the rest (shutdown_countdown)")
 	flags.StringVar(&database, "database", "", "PostgreSQL URL of the game role; prefer the "+databaseEnv+" environment variable, which keeps the password out of process lists")
 	if err := flags.Parse(args); err != nil {
@@ -227,6 +236,8 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.Mods.Strict = f.Mods.Strict
 		case "shutdown-countdown":
 			o.ShutdownCountdown = f.ShutdownCountdown
+		case "time-zone":
+			o.TimeZone = f.TimeZone
 		}
 	})
 	return o, database, nil
@@ -275,6 +286,8 @@ type settings struct {
 	Origins        []string
 	TrustedProxies []netip.Prefix
 	Secrets        secrets
+	// Location is the time zone of TimeZone.
+	Location *time.Location
 }
 
 // validate checks the options and secrets together and lists every
@@ -310,6 +323,13 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if o.ShutdownCountdown < 0 || o.ShutdownCountdown > 10*time.Minute {
 		bad("shutdown_countdown", "is 0 to 10m")
+	}
+	if o.TimeZone == "" {
+		st.Location = time.UTC
+	} else if loc, err := time.LoadLocation(o.TimeZone); err != nil || o.TimeZone == "Local" {
+		bad("time_zone", "%q is not an IANA time zone name, such as UTC or Asia/Manila", o.TimeZone)
+	} else {
+		st.Location = loc
 	}
 	if o.DebugAddr != "" && !loopback(o.DebugAddr) {
 		bad("debug_addr", "has no access control, so it must be a loopback address such as 127.0.0.1:8301")

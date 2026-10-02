@@ -16,7 +16,7 @@ func TestLoadSpawnsWithRewards(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		all, err := loadSpawns(mode, tables, data)
+		all, err := gamedata.LoadSpawns(mode, tables, data)
 		if err != nil {
 			t.Fatal(err)
 		}

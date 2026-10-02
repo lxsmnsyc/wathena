@@ -125,6 +125,16 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	if err := checkEvent(name, ctx.Kind); err != nil {
 		return err
 	}
+	var filter *deathFilter
+	if opts := c.Arg(2); !opts.IsNil() {
+		if name != "death" {
+			return fmt.Errorf("events.on(%q): only the death event takes options", name)
+		}
+		var err error
+		if filter, err = readDeathFilter(opts); err != nil {
+			return err
+		}
+	}
 	if err := r.room(ctx); err != nil {
 		return err
 	}
@@ -132,7 +142,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref}
+	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter}
 	ctx.handlers = append(ctx.handlers, h)
 	r.handlers[name] = append(r.handlers[name], h)
 	r.byID[h.id] = h
@@ -145,8 +155,8 @@ func (r *Runtime) room(ctx *Context) error {
 	if ctx.retiring {
 		return errors.New("the NPC's script was reloaded: a conversation of the old version cannot add handlers or timers")
 	}
-	if n := len(ctx.handlers) + len(ctx.timers); n >= MaxRegistrations {
-		return fmt.Errorf("the context has %d handlers and timers, the most it may have", n)
+	if n := len(ctx.handlers) + len(ctx.timers) + len(ctx.hooks) + len(ctx.schedules); n >= MaxRegistrations {
+		return fmt.Errorf("the context has %d handlers, timers, hooks and schedules, the most it may have", n)
 	}
 	return nil
 }

@@ -10,26 +10,118 @@ import (
 // segments splits a script's top level at its event labels: the part
 // before the first is what a click runs, and each label starting with
 // On, such as OnInit, starts the part its event runs. Other labels stay
-// in the part they are in.
+// in the part they are in. As in rAthena, an event's part runs on into
+// the next label's part unless it ends with end, close, return or goto.
+// The labels it runs into stay in it as labels.
 func segments(stmts []Stmt) (click []Stmt, events map[string][]Stmt, order []string) {
-	events = map[string][]Stmt{}
-	cur := ""
+	type part struct {
+		label *Label
+		stmts []Stmt
+	}
+	var parts []*part
 	for _, s := range stmts {
 		if l, ok := s.(*Label); ok && strings.HasPrefix(l.Name, "On") {
-			cur = strings.ToLower(l.Name)
-			if _, seen := events[cur]; !seen {
-				order = append(order, cur)
-				events[cur] = []Stmt{}
-			}
+			parts = append(parts, &part{label: l})
 			continue
 		}
-		if cur == "" {
+		if len(parts) == 0 {
 			click = append(click, s)
 		} else {
-			events[cur] = append(events[cur], s)
+			p := parts[len(parts)-1]
+			p.stmts = append(p.stmts, s)
 		}
 	}
+	events = map[string][]Stmt{}
+	for i, p := range parts {
+		name := strings.ToLower(p.label.Name)
+		if _, seen := events[name]; seen {
+			continue
+		}
+		body := append([]Stmt{}, p.stmts...)
+		for j := i + 1; j < len(parts) && !terminates(body); j++ {
+			body = append(body, parts[j].label)
+			body = append(body, parts[j].stmts...)
+		}
+		order = append(order, name)
+		events[name] = body
+	}
 	return click, events, order
+}
+
+// terminates reports whether statements end with a jump that leaves
+// them: end, close, return or goto.
+func terminates(stmts []Stmt) bool {
+	if len(stmts) == 0 {
+		return false
+	}
+	switch s := stmts[len(stmts)-1].(type) {
+	case *Jump:
+		return s.Kind == "end" || s.Kind == "close"
+	case *Return, *Goto:
+		return true
+	}
+	return false
+}
+
+// clockSchedule returns the schedule of a clock label, as a format for
+// the handler, such as schedules.daily("00:00", %s) for OnClock0000. ok
+// is false for a label that is not a clock label. err is set for a
+// clock label that does not convert. rAthena runs these labels in
+// npc_event_do_clock:
+//   - OnClockHHMM every day at HH:MM.
+//   - OnHourHH when the hour changes to HH.
+//   - OnMinuteMM every hour at minute MM.
+//   - OnSunHHMM to OnSatHHMM on that day at HH:MM.
+//   - OnDayMMDD once a year, which the API has no schedule for.
+func clockSchedule(label string) (format string, ok bool, err error) {
+	kinds := []struct{ prefix, day string }{
+		{"onclock", ""}, {"onhour", ""}, {"onminute", ""}, {"onday", ""},
+		{"onsun", "sunday"}, {"onmon", "monday"}, {"ontue", "tuesday"}, {"onwed", "wednesday"},
+		{"onthu", "thursday"}, {"onfri", "friday"}, {"onsat", "saturday"},
+	}
+	name := strings.ToLower(label)
+	for _, k := range kinds {
+		digits, found := strings.CutPrefix(name, k.prefix)
+		if !found || digits == "" || strings.Trim(digits, "0123456789") != "" {
+			continue
+		}
+		bad := unsupported("event "+name, "%s is not a valid time", digits)
+		num := func(s string) int {
+			n := 0
+			for _, c := range s {
+				n = n*10 + int(c-'0')
+			}
+			return n
+		}
+		switch k.prefix {
+		case "onday":
+			return "", true, unsupported("event "+name, "a yearly schedule (OnDay) is not in the API")
+		case "onhour", "onminute":
+			if len(digits) != 2 {
+				return "", true, bad
+			}
+			n := num(digits)
+			if k.prefix == "onhour" {
+				if n > 23 {
+					return "", true, bad
+				}
+				return fmt.Sprintf(`schedules.daily("%02d:00", %%s)`, n), true, nil
+			}
+			if n > 59 {
+				return "", true, bad
+			}
+			return fmt.Sprintf("schedules.hourly(%d, %%s)", n), true, nil
+		}
+		if len(digits) != 4 || num(digits[:2]) > 23 || num(digits[2:]) > 59 {
+			return "", true, bad
+		}
+		at := digits[:2] + ":" + digits[2:]
+		if k.day == "" {
+			return fmt.Sprintf(`schedules.daily("%s", %%s)`, at), true, nil
+		}
+		return fmt.Sprintf(`schedules.weekly("%s", "%s", %%s)`, k.day, at), true, nil
+	}
+	return "", false, nil
 }
 
 // emptyScript reports whether statements do nothing: only end.
@@ -125,7 +217,12 @@ func checkGotos(b *body) error {
 }
 
 // npcScript converts an NPC's script into its entry script. It returns
-// "" for a script that does nothing.
+// "" for a script that does nothing. Its setup function does this:
+//   - It makes a local function for each event label that a schedule
+//     or a monster's death runs. The function runs with the player that
+//     killed the monster, or with no player.
+//   - It adds the schedules of clock labels and the click handler.
+//   - It runs OnInit last, so an end there does not skip the rest.
 func (n *npcConv) npcScript() (string, error) {
 	stmts, err := ParseNPC(n.line.Script)
 	if err != nil {
@@ -134,13 +231,32 @@ func (n *npcConv) npcScript() (string, error) {
 	click, events, order := segments(stmts.Stmts)
 	n.scanArrays(stmts.Stmts)
 	for _, e := range order {
-		if e != "oninit" {
+		n.eventLabels[e] = true
+	}
+	mobEvents := n.mobEvents(stmts.Stmts)
+	schedules := map[string]string{}
+	for _, e := range order {
+		if e == "oninit" {
+			continue
+		}
+		format, ok, err := clockSchedule(e)
+		switch {
+		case ok && err == nil:
+			schedules[e] = format
+			n.eventFn(e)
+		case mobEvents[e]:
+			// The function comes when the monster command converts.
+		case err != nil:
+			return "", err
+		default:
 			return "", unsupported("event "+e, "")
 		}
 	}
-	setup, err := n.writeBody(events["oninit"], 2, true, false)
-	if err != nil {
-		return "", err
+	var setup []string
+	if len(events["oninit"]) > 0 {
+		if setup, err = n.writeBody(events["oninit"], 2, true, false); err != nil {
+			return "", err
+		}
 	}
 	var handler []string
 	if !emptyScript(click) {
@@ -148,7 +264,16 @@ func (n *npcConv) npcScript() (string, error) {
 			return "", err
 		}
 	}
-	if len(handler) == 0 && len(events["oninit"]) == 0 {
+	bodies := map[string][]string{}
+	// A body may name more labels, with a monster command.
+	for i := 0; i < len(n.eventOrder); i++ {
+		e := n.eventOrder[i]
+		if bodies[e], err = n.writeBody(events[e], 3, true, false); err != nil {
+			return "", err
+		}
+		n.ok("event " + e)
+	}
+	if len(handler) == 0 && len(setup) == 0 && len(n.eventOrder) == 0 {
 		return "", nil
 	}
 	f := n.file
@@ -156,7 +281,6 @@ func (n *npcConv) npcScript() (string, error) {
 	f.line("return function()")
 	f.indent++
 	f.line("local npc = context:get_instance()")
-	var npcVars []string
 	for _, k := range n.varOrder {
 		v := n.vars[k]
 		if v.scope != "npc" {
@@ -169,16 +293,32 @@ func (n *npcConv) npcScript() (string, error) {
 		case v.str:
 			init = `""`
 		}
-		npcVars = append(npcVars, fmt.Sprintf("local %s = %s", v.local, init))
+		f.line("local %s = %s", v.local, init)
 	}
-	for _, l := range npcVars {
-		f.line("%s", l)
+	if len(n.eventOrder) > 0 {
+		names := make([]string, len(n.eventOrder))
+		for i, e := range n.eventOrder {
+			names[i] = n.eventFns[e]
+		}
+		f.line("local %s", strings.Join(names, ", "))
+		for _, e := range n.eventOrder {
+			f.line("%s = function(player, conversation)", n.eventFns[e])
+			f.line("  R.run(function()")
+			f.indent = 0
+			for _, l := range bodies[e] {
+				f.line("%s", l)
+			}
+			f.indent = 1
+			f.line("  end)")
+			f.line("end")
+		}
 	}
-	f.indent = 0
-	for _, l := range setup {
-		f.line("%s", l)
+	for _, e := range order {
+		if format, ok := schedules[e]; ok {
+			f.need("schedules")
+			f.line(format, n.eventFns[e])
+		}
 	}
-	f.indent = 1
 	if len(handler) > 0 {
 		f.need("events")
 		f.line(`events.on("click", function(player, conversation)`)
@@ -191,9 +331,30 @@ func (n *npcConv) npcScript() (string, error) {
 		f.line("  end)")
 		f.line("end)")
 	}
+	if len(setup) > 0 {
+		f.line("R.run(function()")
+		f.indent = 0
+		for _, l := range setup {
+			f.line("%s", l)
+		}
+		f.indent = 1
+		f.line("end)")
+	}
 	f.indent = 0
 	f.line("end")
 	return n.finish(n.header()), nil
+}
+
+// eventFn returns the local function of an event label, and adds it.
+func (n *npcConv) eventFn(label string) string {
+	if fn, ok := n.eventFns[label]; ok {
+		return fn
+	}
+	fn := "event_" + luaName(label)
+	n.names[fn] = true
+	n.eventFns[label] = fn
+	n.eventOrder = append(n.eventOrder, label)
+	return fn
 }
 
 // finish writes the file: the header, the requires, the shared helpers,

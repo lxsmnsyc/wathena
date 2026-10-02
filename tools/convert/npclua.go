@@ -116,11 +116,18 @@ type npcConv struct {
 	isFunction bool
 	names      map[string]bool
 	counter    int
+	// eventLabels are the script's labels that start with On, in lower
+	// case. eventFns are the local functions of the labels that
+	// schedules and monsters' deaths run, in the order of eventOrder.
+	eventLabels map[string]bool
+	eventFns    map[string]string
+	eventOrder  []string
 }
 
 func (c *npcConverter) newNPCConv(l *npcLine) *npcConv {
 	return &npcConv{c: c, line: l, file: newLuaFile(), vars: map[string]*npcVar{}, arrays: map[string]bool{},
-		features: map[string]bool{}, calls: map[string]bool{}, names: map[string]bool{}}
+		features: map[string]bool{}, calls: map[string]bool{}, names: map[string]bool{},
+		eventLabels: map[string]bool{}, eventFns: map[string]string{}}
 }
 
 func (n *npcConv) functions() []string {
@@ -152,7 +159,7 @@ var reserved = map[string]bool{
 	"variables": true, "items": true, "skills": true, "random": true, "integers": true, "emotions": true,
 	"effects": true, "jobs": true, "text": true, "maps": true, "world": true, "require": true, "self": true,
 	"string": true, "table": true, "math": true, "select": true, "type": true, "tostring": true, "tonumber": true,
-	"pairs": true, "ipairs": true, "error": true, "pcall": true,
+	"pairs": true, "ipairs": true, "error": true, "pcall": true, "schedules": true, "spawning": true, "monsters": true,
 }
 
 // luaName turns an rAthena name into a Lua name: lower case, letters,

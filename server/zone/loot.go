@@ -108,14 +108,15 @@ func (z *Zone) reward(e, killer *entity) {
 		killerID = killer.player.charID
 		k = &progression.Killer{Player: true, Luk: killer.status.Luk}
 	}
-	kill := t.Kill(mob, &e.monster.dmglog, killerID, z.attacker)
+	hooks := z.killHooks(e, killer)
+	kill := t.KillWith(mob, &e.monster.dmglog, killerID, z.attacker, hooks)
 	for _, r := range kill.Rewards {
 		if p := z.players[r.CharID]; p != nil {
 			z.gainExp(p, r.BaseExp, r.JobExp)
 		}
 	}
 	f := fall{x: e.x, y: e.y, first: kill.First, second: kill.Second, third: kill.Third, boss: mob.Boss(), at: z.now + t.DropDelay}
-	for _, d := range t.RollDrops(mob, kill.DropModifier, k, kill.First != 0, z.rand) {
+	for _, d := range t.RollDropsWith(mob, kill.DropModifier, k, kill.First != 0, z.rand, hooks) {
 		if p := z.players[kill.First]; d.Egg && p != nil {
 			// pet_create_egg puts the egg in the inventory when a slot
 			// is free. The egg is lost otherwise.

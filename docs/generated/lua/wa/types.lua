@@ -15,7 +15,7 @@
 ---| "login"
 ---| "logout"
 ---| "map_enter"
----| "monster_killed"
+---| "death"
 ---| "base_level_up"
 ---| "job_level_up"
 ---| "click"
@@ -179,6 +179,21 @@
 ---| "shadow_shoes"
 ---| "shadow_right_accessory"
 ---| "shadow_left_accessory"
+
+---A hook name of wa.hooks.
+---@alias wa.HookName
+---| "drop_rate"
+---| "experience"
+
+---A day of the week.
+---@alias wa.Weekday
+---| "sunday"
+---| "monday"
+---| "tuesday"
+---| "wednesday"
+---| "thursday"
+---| "friday"
+---| "saturday"
 
 ---A player. Each access looks the player up again. A handle to a player who left the map raises an error. Reading needs game.read.
 ---@class wa.Player
@@ -354,7 +369,7 @@ function wa_Player:unmark_minimap(id) end
 ---@param shop string A shop record of data/npcs.yml: the mod's own name, or mod:Name.
 function wa_Player:open_shop(shop) end
 
----A monster. A killed monster's handle reads while its monster_killed event runs, with is_alive false, and raises an error after it. Reading needs game.read.
+---A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.
 ---@class wa.Monster
 ---@field id integer The monster's ID, such as 1002.
 ---@field name string
@@ -493,10 +508,43 @@ function wa_TestWorld:advance(milliseconds) end
 ---@return wa.Monster
 function wa_TestWorld:spawn_monster(spec) end
 
----The player kills the monster at once: monster_killed fires, and the player gets its exp and drops.
+---The player kills the monster at once: the death event fires, and the player gets its exp and drops.
 ---@param player wa.Player A player handle.
----@param monster wa.Monster A monster from spawn_monster.
+---@param monster wa.Monster A living monster: from spawn_monster, get_monsters or spawning.monsters.
 function wa_TestWorld:kill(player, monster) end
+
+---Sets the server time and time zone the world starts at. Call it before the world has a map. Without it, the world starts at 2026-01-05 12:00 UTC.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param time string Such as "2026-10-31 19:58".
+---@param time_zone? string An IANA name, such as Asia/Manila. UTC by default.
+function wa_TestWorld:set_time(time, time_zone) end
+
+---The server time in the world's time zone, as "2026-10-31 20:00".
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@return string
+function wa_TestWorld:get_time() end
+
+---The living monsters of the map, in the order they spawned.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param monster? integer From monsters.id. Every monster without it.
+---@return wa.Monster[]
+function wa_TestWorld:get_monsters(monster) end
+
+---Every line announced to the world or the map so far, in order.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@return string[]
+function wa_TestWorld:get_announcements() end
+
+---How many of the item lie on the map, with drops about to fall.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param item integer An item from items.id.
+---@return integer
+function wa_TestWorld:count_floor_items(item) end
 
 ---A check on a value, from testing.expect. Its functions are called with a dot: testing.expect(n).to_be(3).
 ---
@@ -539,6 +587,90 @@ local wa_ModInstance = {}
 ---@class wa.ItemUse
 ---@field item integer The used item's ID.
 local wa_ItemUse = {}
+
+---The instance of an event context: one run of a world event.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@class wa.EventInstance
+---@field name string The event's full name, such as example.halloween:Pumpkin_King.
+---@field map string The map of the zone that runs it.
+local wa_EventInstance = {}
+
+---The object of the death event.
+---@class wa.Death
+---@field victim wa.Player|wa.Monster Readable while the event runs, with is_alive false for a monster.
+---@field victim_kind "player"|"monster"
+---@field killer wa.Player|wa.Monster|nil nil when nothing killed the unit.
+---@field map string
+---@field x integer
+---@field y integer
+---@field skill integer? nil for a normal attack.
+local wa_Death = {}
+
+---The options of a death handler. Each one narrows the deaths that run it.
+---@class wa.DeathOptions
+---@field victim wa.Player|wa.Monster|nil One unit.
+---@field victims (wa.Player|wa.Monster)[]? Any of these units.
+---@field victim_kind "player"|"monster"|nil
+---@field monster integer? A monster from monsters.id.
+---@field map string? A map name.
+local wa_DeathOptions = {}
+
+---The object of the drop_rate hook: one drop of a killed monster.
+---@class wa.Drop
+---@field player wa.Player? The killer, or nil.
+---@field monster wa.Monster The killed monster.
+---@field item integer
+---@field map string
+---@field rate integer rAthena's rate, per 10,000.
+local wa_Drop = {}
+
+---The object of the experience hook: the exp one player gets for a kill, after the shares and the level penalty.
+---@class wa.Exp
+---@field player wa.Player
+---@field monster wa.Monster The killed monster.
+---@field base integer
+---@field job integer
+local wa_Exp = {}
+
+---The options of hooks.on.
+---@class wa.HookOptions
+---@field priority integer? Higher runs first. 0 by default.
+local wa_HookOptions = {}
+
+---What hooks.on returns.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@class wa.HookHandle
+local wa_HookHandle = {}
+
+---Removes the hook. A second call does nothing.
+function wa_HookHandle:remove() end
+
+---What wa.schedules returns.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@class wa.Schedule
+local wa_Schedule = {}
+
+---Stops the schedule. A second call does nothing.
+function wa_Schedule:cancel() end
+
+---The options of schedules.when.
+---@class wa.WhenOptions
+---@field lasting_minutes integer? How long the condition must hold, 0 to 10080. 0 by default.
+local wa_WhenOptions = {}
+
+---The monsters of spawning.monsters.
+---@class wa.SpawnSpec
+---@field monster integer From monsters.id.
+---@field map string? The context's own map, which is the default. Another map raises an error.
+---@field amount integer? 1 to 1000. 1 by default.
+---@field x integer? With y, the cell. Without them, a random walkable cell for each monster.
+---@field y integer?
+---@field area integer? Spreads the monsters within this many cells of x and y.
+---@field respawn boolean? true: a dead monster comes back after 5 seconds while the context lives, as a normal spawn. false by default: dead stays dead.
+local wa_SpawnSpec = {}
 
 ---The object of the damage event (0002a, "Item events").
 ---@class wa.Damage

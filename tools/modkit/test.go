@@ -11,12 +11,17 @@ import (
 	"strings"
 	"sync"
 	"time"
+	// The time zone database, for world:set_time on systems without
+	// one.
+	_ "time/tzdata"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/variables"
+	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
+	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
 // Tests of wactl mod test (mods/README.md, "Testing a mod"):
@@ -150,6 +155,8 @@ type testWorld struct {
 	h   *zone.Headless
 	// players counts the players, for their names.
 	players int
+	// events runs the world events of the world's map.
+	events *worldevent.Scheduler
 }
 
 // newWorld makes a headless world with the loaded mods.
@@ -174,6 +181,9 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	z := h.Zone()
 	z.Items = l.itemTable()
 	z.Progress, z.Status, z.Start = e.Tables, e.Jobs, e.Start
+	if l.Tables != nil {
+		z.Progress = l.Tables
+	}
 	return &testWorld{env: e, l: l, h: h}, nil
 }
 
@@ -216,8 +226,52 @@ func (w *testWorld) bind(name string) error {
 	if err := w.h.Bind(asset, grid, npcs, w.env.Warps[asset]); err != nil {
 		return fmt.Errorf("the mods' entry scripts failed on %s: %w", name, err)
 	}
+	return w.startEvents(asset)
+}
+
+// startEvents starts the world event scheduler for the events of the
+// world's map, and of no map, on the world's clock. It runs after
+// every tick.
+func (w *testWorld) startEvents(asset string) error {
+	var defs []worldevent.Def
+	for _, d := range w.l.Events {
+		if d.Map == "" || d.Map == asset {
+			defs = append(defs, d)
+		}
+	}
+	if len(defs) == 0 {
+		return nil
+	}
+	seed := sha256.Sum256(append(Seed[:], "events"...))
+	w.events = worldevent.New(defs, worldevent.Options{Runner: headlessRunner{w.h}, Location: w.h.Location(),
+		Rand: rng.FromKey(seed).Stream(), Log: w.h.Zone().Mods.Log})
+	ctx := context.Background()
+	if err := w.events.Load(ctx, w.h.Now()); err != nil {
+		return err
+	}
+	w.h.AfterStep = func() { w.events.Check(ctx, w.h.Now()) }
+	w.h.AfterStep()
 	return nil
 }
+
+// headlessRunner runs world events in a test world's zone.
+type headlessRunner struct{ h *zone.Headless }
+
+func (r headlessRunner) Start(_ context.Context, d worldevent.Def, run worldevent.Run) error {
+	return r.h.StartEvent(zone.EventRun{ID: run.ID, Name: d.Name, Entry: d.Script})
+}
+
+func (r headlessRunner) End(_ context.Context, _ worldevent.Def, run worldevent.Run) error {
+	r.h.EndEvent(run.ID)
+	return nil
+}
+
+func (r headlessRunner) Condition(_ context.Context, d worldevent.Def) (bool, error) {
+	return r.h.EventCondition(d.Mod, d.Trigger.Module, d.Trigger.Function)
+}
+
+// timeLayout is how world:set_time and world:get_time write times.
+const timeLayout = "2006-01-02 15:04"
 
 // Do runs a world method of a test case.
 func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
@@ -266,6 +320,41 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 		return nil, nil
 	case "spawn_monster":
 		return w.spawnMonster(args[0])
+	case "set_time":
+		return nil, w.setTime(args)
+	case "get_time":
+		return []script.Value{script.String(w.h.Now().In(w.h.Location()).Format(timeLayout))}, nil
+	case "get_monsters":
+		var id int64
+		if len(args) > 0 && !args[0].IsNil() {
+			id, _ = args[0].AsInt()
+			if id <= 0 || id > 1<<32-1 {
+				return nil, errors.New("world:get_monsters: want a monster from monsters.id")
+			}
+		}
+		if _, ok := w.h.Bound(); !ok {
+			return []script.Value{script.List()}, nil
+		}
+		var list []script.Value
+		for _, h := range w.h.Monsters(uint32(id)) {
+			list = append(list, script.Int(h))
+		}
+		return []script.Value{script.List(list...)}, nil
+	case "get_announcements":
+		var list []script.Value
+		for _, a := range w.h.Announcements() {
+			list = append(list, script.String(a))
+		}
+		return []script.Value{script.List(list...)}, nil
+	case "count_floor_items":
+		id, _ := args[0].AsInt()
+		if id <= 0 || id > 1<<32-1 {
+			return nil, errors.New("world:count_floor_items: want an item from items.id")
+		}
+		if _, ok := w.h.Bound(); !ok {
+			return []script.Value{script.Int(0)}, nil
+		}
+		return []script.Value{script.Int(int64(w.h.FloorItems(uint32(id))))}, nil
 	case "kill":
 		p, _ := args[0].AsInt()
 		m, _ := args[1].AsInt()
@@ -275,6 +364,30 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 		return nil, nil
 	}
 	return nil, fmt.Errorf("the test world has no method %q", op)
+}
+
+// setTime is world:set_time(time, time_zone): the server time and time
+// zone the world starts at.
+func (w *testWorld) setTime(args []script.Value) error {
+	const what = "world:set_time"
+	if _, ok := w.h.Bound(); ok {
+		return errors.New(what + ": call it before the world has a map: before new_player, spawn_monster and advance")
+	}
+	text, _ := args[0].AsString()
+	loc := w.h.Location()
+	if len(args) > 1 && !args[1].IsNil() {
+		name, _ := args[1].AsString()
+		l, err := time.LoadLocation(name)
+		if err != nil || name == "" || name == "Local" {
+			return fmt.Errorf("%s: %q is not an IANA time zone name, such as Asia/Manila", what, name)
+		}
+		loc = l
+	}
+	t, err := time.ParseInLocation(timeLayout, text, loc)
+	if err != nil {
+		return fmt.Errorf("%s: %q is not a time such as \"2026-10-31 19:58\"", what, text)
+	}
+	return w.h.SetClock(t, loc)
 }
 
 // spec reads a table of named fields, and refuses fields it does not
@@ -390,17 +503,23 @@ func (w *testWorld) spawnMonster(v script.Value) ([]script.Value, error) {
 	if err := s.err(); err != nil {
 		return nil, err
 	}
-	m, ok := w.env.Monsters[uint32(id)] // #nosec G115 -- a missing ID is refused below.
+	monsters := w.l.Monsters
+	if monsters == nil {
+		monsters = w.env.Monsters
+	}
+	m, ok := monsters[uint32(id)] // #nosec G115 -- a missing ID is refused below.
 	if id <= 0 || id > 1<<32-1 || !ok {
 		return nil, fmt.Errorf("%s: %d is not a monster; use monsters.id", what, id)
 	}
 	if err := w.bind(mapName); err != nil {
 		return nil, fmt.Errorf("%s: %w", what, err)
 	}
-	name := ""
-	for n, mid := range w.env.Core.Monsters {
-		if mid == id && (name == "" || n < name) {
-			name = n
+	name := m.Name
+	if name == "" {
+		for n, mid := range w.env.Core.Monsters {
+			if mid == id && (name == "" || n < name) {
+				name = n
+			}
 		}
 	}
 	h, err := w.h.SpawnMonster(m.Spawn(uint32(id), name, x, y))

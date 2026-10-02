@@ -4,6 +4,7 @@
 package zone
 
 import (
+	"cmp"
 	"context"
 	"maps"
 	"sync"
@@ -262,6 +263,9 @@ type Zone struct {
 	// Mods are the mods' scripts and item names. Without them, no
 	// scripts run. Set it before Run.
 	Mods *Mods
+	// Clock is the server clock, which schedules and world events
+	// follow. It is the system clock when nil. Set it before Run.
+	Clock func() time.Time
 
 	// scripts runs the mods' Lua in the zone's own state, made by Run.
 	// scriptEvents wait for a point where scripts may run.
@@ -279,6 +283,10 @@ type Zone struct {
 	// handle ID. A killed monster stays here until its event has run.
 	monsterHandles    map[int64]*entity
 	nextMonsterHandle int64
+	// owned are the spawns of spawning.monsters, by owning context ID.
+	owned map[int64][]*Spawn
+	// eventRuns are the runs of world events in the zone, by run ID.
+	eventRuns map[int64]*modscript.Context
 	// control gets work that must run on the zone's goroutine, such as a
 	// mod reload.
 	control chan func()
@@ -377,9 +385,15 @@ func (z *Zone) Run(ctx context.Context) {
 	defer z.stopScripts()
 	var t *time.Ticker
 	var ticks <-chan time.Time
+	// sched wakes a sleeping zone for its scripts' schedules, which
+	// follow the server clock.
+	var sched *time.Timer
 	defer func() {
 		if t != nil {
 			t.Stop()
+		}
+		if sched != nil {
+			sched.Stop()
 		}
 	}()
 	z.asleep = true
@@ -398,7 +412,13 @@ func (z *Zone) Run(ctx context.Context) {
 		// queued goes to the sender in one batch.
 		z.runScripts()
 		z.flush()
+		var schedC <-chan time.Time
+		if ticks == nil {
+			schedC = z.scheduleWait(&sched)
+		}
 		select {
+		case <-schedC:
+			z.runSchedules()
 		case <-ctx.Done():
 			for _, p := range z.players {
 				z.save(p, true)
@@ -816,6 +836,8 @@ func (z *Zone) stepAt(now int64) {
 	z.talkTimers()
 	if z.scripts != nil {
 		z.scripts.Advance(z.now)
+		z.runSchedules()
+		z.runScripts()
 	}
 	acted := time.Now()
 	z.Metrics.Phase(metrics.PhaseAct, acted.Sub(moved))
@@ -964,7 +986,7 @@ func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
 			X:          uint32(e.x),   // #nosec G115 -- map cells are at most 1024.
 			Y:          uint32(e.y),   // #nosec G115 -- as above.
 			Dir:        uint32(e.dir), // #nosec G115 -- 0 to 7.
-			Look:       wathenav1.Look_builder{Body: m.spawn.Mob}.Build(),
+			Look:       wathenav1.Look_builder{Body: cmp.Or(m.spawn.Sprite, m.spawn.Mob)}.Build(),
 			Name:       m.spawn.Name,
 			WalkMs:     uint32(e.speed), // #nosec G115 -- a small speed.
 			HpPermille: e.hpPermille(),

@@ -1,0 +1,9 @@
+# Text for players, in English.
+witch:
+  hello: Happy Halloween, traveller!
+  gift: Take this hat. Pumpkins bring luck at night.
+  again: You already have my hat. Hunt the Pumpkin Porings after dark!
+  full: Your bag is too heavy. Come back with room for a hat.
+king:
+  risen: The Pumpkin King has risen on the Prontera fields!
+  night: Night falls. Pumpkin Porings drop twice as much until dawn.

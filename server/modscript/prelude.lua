@@ -74,9 +74,12 @@ end
 local handle_methods = {}
 
 -- handle makes a read-only object with methods and an ID kept outside it.
-local function handle_type(name, methods, index)
+-- With cached set, one ID gives the same object while a script holds it,
+-- so two handles to one entity are equal with ==.
+local function handle_type(name, methods, index, cached)
 	handle_methods[name] = methods
 	local ids = setmetatable({}, { __mode = "k" })
+	local cache = cached and setmetatable({}, { __mode = "v" }) or nil
 	local mt = {
 		__index = function(self, key)
 			local m = methods[key]
@@ -97,9 +100,18 @@ local function handle_type(name, methods, index)
 		__metatable = false,
 	}
 	local function new(id)
+		if cache ~= nil then
+			local h = cache[id]
+			if h ~= nil then
+				return h
+			end
+		end
 		local h = setmetatable({}, mt)
 		ids[h] = id
 		protected[h] = true
+		if cache ~= nil then
+			cache[id] = h
+		end
 		return h
 	end
 	return new, ids
@@ -237,7 +249,7 @@ new_player, player_ids = handle_type("player", {
 		error(value, 3)
 	end
 	return value
-end)
+end, true)
 
 -- Equipped copies are handles too: the context instance of an equip
 -- script, and what player:get_equipped returns.
@@ -253,14 +265,28 @@ new_equipped = handle_type("equipped item", {}, function(id, key)
 end)
 
 -- Monsters are handles too. A killed monster's handle stays readable
--- while its monster_killed event runs, and fails after.
+-- while its death event runs, and fails after.
 local new_monster, monster_ids = handle_type("monster", {}, function(id, key)
 	local ok, value = pcall(H.monster_field, id, key)
 	if not ok then
 		error(value, 3)
 	end
 	return value
-end)
+end, true)
+
+-- handle_key names a player or monster handle for Go, as "<kind>:<id>",
+-- or returns nil for anything else.
+local function handle_key(h)
+	local id = player_ids[h]
+	if id ~= nil then
+		return "player:" .. id
+	end
+	id = monster_ids[h]
+	if id ~= nil then
+		return "monster:" .. id
+	end
+	return nil
+end
 
 -- NPCs are handles too: the instance of an NPC context.
 local npc_ids
@@ -384,11 +410,123 @@ api["wa.context"] = readonly("wa.context", {
 	end,
 })
 
+-- death_options turns the options of a death handler into plain data:
+-- victim and victims become one list of handle keys.
+local function death_options(options)
+	check(type(options) == "table", "events.on(\"death\"): the options must be a table")
+	local out = {}
+	local victims
+	for k, v in pairs(options) do
+		if k == "victim" then
+			local key = handle_key(v)
+			check(key ~= nil, "events.on(\"death\"): victim must be a player or monster handle")
+			victims = victims or {}
+			victims[#victims + 1] = key
+		elseif k == "victims" then
+			check(type(v) == "table", "events.on(\"death\"): victims must be a list of handles")
+			victims = victims or {}
+			for _, h in ipairs(v) do
+				local key = handle_key(h)
+				check(key ~= nil, "events.on(\"death\"): victims must be a list of player or monster handles")
+				victims[#victims + 1] = key
+			end
+		else
+			out[k] = v
+		end
+	end
+	out.victims = victims
+	return out
+end
+
 api["wa.events"] = readonly("wa.events", {
-	on = function(name, handler)
+	on = function(name, handler, options)
 		check(type(name) == "string", "events.on: the event name must be a string")
 		check(type(handler) == "function", "events.on: the handler must be a function")
-		return new_event_handle(call(H.events_on, name, handler))
+		if options ~= nil and name == "death" then
+			options = death_options(options)
+		end
+		return new_event_handle(call(H.events_on, name, handler, options))
+	end,
+})
+
+-- Hooks (proposal 0002, "Hooks"): a chain ordered by priority. Each hook
+-- gets the object and next, which runs the rest of the chain.
+local hook_ids
+local new_hook
+new_hook, hook_ids = handle_type("hook handle", {
+	remove = function(self)
+		return (call(H.hooks_remove, hook_ids[self]))
+	end,
+})
+
+api["wa.hooks"] = readonly("wa.hooks", {
+	on = function(name, fn, options)
+		check(type(name) == "string", "hooks.on: the hook name must be a string")
+		check(type(fn) == "function", "hooks.on: the hook must be a function(object, next)")
+		local priority = 0
+		if options ~= nil then
+			check(type(options) == "table", "hooks.on: the options must be a table, such as { priority = 10 }")
+			for k, v in pairs(options) do
+				check(k == "priority", "hooks.on: the only option is priority")
+				check(math_type(v) == "integer", "hooks.on: priority must be an integer")
+				priority = v
+			end
+		end
+		return new_hook(call(H.hooks_on, name, fn, priority))
+	end,
+})
+
+-- Schedules on the server clock, in the server's time zone.
+local schedule_ids
+local new_schedule
+new_schedule, schedule_ids = handle_type("schedule", {
+	cancel = function(self)
+		return (call(H.schedules_cancel, schedule_ids[self]))
+	end,
+})
+
+api["wa.schedules"] = readonly("wa.schedules", {
+	daily = function(time, handler)
+		check(type(time) == "string", "schedules.daily: the time must be a string, such as \"20:00\"")
+		check(type(handler) == "function", "schedules.daily: the handler must be a function")
+		return new_schedule(call(H.schedules_add, "daily", handler, time))
+	end,
+	weekly = function(day, time, handler)
+		check(type(day) == "string", "schedules.weekly: the day must be a string, such as \"saturday\"")
+		check(type(time) == "string", "schedules.weekly: the time must be a string, such as \"20:00\"")
+		check(type(handler) == "function", "schedules.weekly: the handler must be a function")
+		return new_schedule(call(H.schedules_add, "weekly", handler, day, time))
+	end,
+	hourly = function(minute, handler)
+		check(math_type(minute) == "integer", "schedules.hourly: the minute must be an integer from 0 to 59")
+		check(type(handler) == "function", "schedules.hourly: the handler must be a function")
+		return new_schedule(call(H.schedules_add, "hourly", handler, minute))
+	end,
+	when = function(condition, handler, options)
+		check(type(condition) == "function", "schedules.when: the condition must be a function that returns true or false")
+		check(type(handler) == "function", "schedules.when: the handler must be a function")
+		local lasting = 0
+		if options ~= nil then
+			check(type(options) == "table", "schedules.when: the options must be a table, such as { lasting_minutes = 60 }")
+			for k, v in pairs(options) do
+				check(k == "lasting_minutes", "schedules.when: the only option is lasting_minutes")
+				check(math_type(v) == "integer", "schedules.when: lasting_minutes must be an integer")
+				lasting = v
+			end
+		end
+		return new_schedule(call(H.schedules_when, condition, handler, lasting))
+	end,
+})
+
+api["wa.spawning"] = readonly("wa.spawning", {
+	monsters = function(spec)
+		check(type(spec) == "table", "spawning.monsters: want a table such as { monster = PORING, amount = 5 }")
+		local list = call(H.spawning_monsters, spec)
+		local out = {}
+		for i, id in ipairs(list) do
+			out[i] = new_monster(id)
+		end
+		return out
 	end,
 })
 
@@ -708,8 +846,32 @@ new_world, world_ids = handle_type("test world", {
 		local id = player_ids[player]
 		check(id ~= nil, "world:kill: want a player from world:new_player")
 		local m = monster_ids[monster]
-		check(m ~= nil, "world:kill: want a monster from world:spawn_monster")
+		check(m ~= nil, "world:kill: want a monster handle")
 		return (world_call("kill", id, m))
+	end,
+	set_time = function(self, time, time_zone)
+		check(type(time) == "string", "world:set_time: want a time such as \"2026-10-31 19:58\"")
+		check(time_zone == nil or type(time_zone) == "string", "world:set_time: the time zone must be an IANA name, such as \"Asia/Manila\"")
+		return (world_call("set_time", time, time_zone))
+	end,
+	get_time = function(self)
+		return (world_call("get_time"))
+	end,
+	get_monsters = function(self, monster)
+		check(monster == nil or math_type(monster) == "integer", "world:get_monsters: want a monster from monsters.id, or nothing")
+		local list = world_call("get_monsters", monster)
+		local out = {}
+		for i, mid in ipairs(list) do
+			out[i] = new_monster(mid)
+		end
+		return out
+	end,
+	get_announcements = function(self)
+		return (world_call("get_announcements"))
+	end,
+	count_floor_items = function(self, item)
+		check(math_type(item) == "integer", "world:count_floor_items: want an item from items.id")
+		return (world_call("count_floor_items", item))
 	end,
 })
 
@@ -998,10 +1160,111 @@ function R.invoke(fn, ...)
 				fields[k .. "_kind"] = nil
 			end
 			value = readonly(kind == "hit" and "damage" or "skill use", fields)
+		elseif kind == "death" then
+			-- The death object: victim and killer are handles.
+			local fields = {}
+			for k, v in pairs(value) do
+				fields[k] = v
+			end
+			fields.victim = value.victim_kind == "player" and new_player(value.victim) or new_monster(value.victim)
+			if value.killer ~= nil then
+				fields.killer = value.killer_kind == "player" and new_player(value.killer) or new_monster(value.killer)
+			end
+			fields.killer_kind = nil
+			value = readonly("death", fields)
 		end
 		args[#args + 1] = value
 	end
 	return fn(unpack(args, 1, n // 2))
+end
+
+-- hook_object makes the read-only object of a hook from Go's fields:
+-- player and monster become handles.
+local function hook_object(kind, fields)
+	local o = {}
+	for k, v in pairs(fields) do
+		o[k] = v
+	end
+	if fields.player ~= nil then
+		o.player = new_player(fields.player)
+	end
+	if fields.monster ~= nil then
+		o.monster = new_monster(fields.monster)
+	end
+	return readonly(kind == "drop_rate" and "drop" or "exp", o)
+end
+
+-- hook_result checks what a hook returned: an integer rate for
+-- drop_rate, and two integers, base and job, for experience.
+local function hook_result(kind, a, b)
+	if kind == "drop_rate" then
+		if math_type(a) ~= "integer" then
+			error("the drop_rate hook must return an integer rate, per 10,000", 0)
+		end
+		return a
+	end
+	if math_type(a) ~= "integer" or math_type(b) ~= "integer" then
+		error("the experience hook must return two integers: base and job exp", 0)
+	end
+	return a, b
+end
+
+-- innermost is the end of a chain: the object's own value, which is
+-- rAthena's unless a hook passed a changed object.
+local function innermost(kind, o)
+	if kind == "drop_rate" then
+		return hook_result(kind, o.rate)
+	end
+	return hook_result(kind, o.base, o.job)
+end
+
+-- run_hooks runs a chain of n hooks. Each runs in its own context, which
+-- Go sets with H.hook_enter. A hook that fails is logged, and the chain
+-- goes on as if it were not there.
+function R.run_hooks(kind, fields, n, ...)
+	local fns = table.pack(...)
+	local function at(i, o)
+		if i > n then
+			return innermost(kind, o)
+		end
+		H.hook_enter(i)
+		local called, inner_a, inner_b = false, nil, nil
+		local next_fn = function(next_o)
+			if next_o == nil then
+				next_o = o
+			end
+			if type(next_o) ~= "table" then
+				error("next: want the object, or a table with the same fields", 2)
+			end
+			inner_a, inner_b = at(i + 1, next_o)
+			called = true
+			H.hook_enter(i)
+			return inner_a, inner_b
+		end
+		local ok, a, b = pcall(fns[i], o, next_fn)
+		if ok then
+			ok, a, b = pcall(hook_result, kind, a, b)
+		end
+		if not ok then
+			H.hook_failed(i, tostring(a))
+			if called then
+				return inner_a, inner_b
+			end
+			return at(i + 1, o)
+		end
+		return a, b
+	end
+	return at(1, hook_object(kind, fields))
+end
+
+-- check_condition runs the condition of a world event: a function of a
+-- module that mod_id can require.
+function R.check_condition(mod_id, module, name)
+	local m = require_from(mod_id, module)
+	if type(m) ~= "table" or type(m[name]) ~= "function" then
+		error("the condition " .. module .. "." .. name .. " is not a function: the module must return a table with it", 0)
+	end
+	return m[name]() and true or false
 end
 
 -- converse runs the click handlers of an NPC in a conversation's

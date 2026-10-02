@@ -64,7 +64,7 @@ Script errors are different. A mod whose scripts fail to load in a zone is logge
 
 ## When scripts run in a zone
 
-Events such as `monster_killed` happen while the zone walks its entity list. A handler that adds or removes entities there could break the walk. So:
+Events such as `monster_killed` (now `death`, proposal 0002, review decision 16) happen while the zone walks its entity list. A handler that adds or removes entities there could break the walk. So:
 
 - Events wait in a queue. The zone runs their handlers after the tick's actions, before it sends updates, and after each message it handles, such as a join.
 - `logout` runs at once, before the player leaves, so its handlers can still read the player.

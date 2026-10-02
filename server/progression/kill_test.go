@@ -158,3 +158,18 @@ func TestKillExpCalcTypes(t *testing.T) {
 		t.Error("Kill changed the log")
 	}
 }
+
+func TestKillExperienceHook(t *testing.T) {
+	tb := New(&Data{}, nil, DefaultConfig)
+	mob := &Mob{Level: 1, MaxHP: 10, BaseExp: 100, JobExp: 50}
+	var l DamageLog
+	l.Add(1, 10, 0)
+	who := func(uint32) Attacker { return Attacker{Online: true, BaseLevel: 1} }
+	k := tb.KillWith(mob, &l, 1, who, &Hooks{Experience: func(id uint32, base, job int64) (int64, int64) { return base * 2, -1 }})
+	if len(k.Rewards) != 1 || k.Rewards[0].BaseExp != 200 || k.Rewards[0].JobExp != 0 {
+		t.Fatalf("rewards %+v", k.Rewards)
+	}
+	if k := tb.KillWith(mob, &l, 1, who, &Hooks{Experience: func(uint32, int64, int64) (int64, int64) { return 0, 0 }}); len(k.Rewards) != 0 {
+		t.Fatalf("a hook that gives nothing left rewards %+v", k.Rewards)
+	}
+}

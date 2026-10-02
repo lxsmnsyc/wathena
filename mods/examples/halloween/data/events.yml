@@ -1,0 +1,17 @@
+# World events. The scheduler starts them without staff action, in the
+# server's time zone (time_zone in the config). Each run is one event
+# context: what its script makes goes when the run ends.
+
+# The Pumpkin King rises every evening at 20:00 for an hour.
+- name: Pumpkin_King
+  trigger: { daily: "20:00" }
+  duration_minutes: 60
+  script: scripts/events/pumpkin_king.lua
+  map: prt_fild08
+
+# From 18:00 to 06:00, Pumpkin Porings drop twice as much.
+- name: Pumpkin_Night
+  trigger: { daily: "18:00" }
+  duration_minutes: 720
+  script: scripts/events/pumpkin_night.lua
+  map: prt_fild08

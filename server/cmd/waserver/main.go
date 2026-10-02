@@ -64,6 +64,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	// The time zone database, for time_zone on systems without one,
+	// such as the distroless image.
+	_ "time/tzdata"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -85,6 +88,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/server/world"
+	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 	"github.com/lxsmnsyc/wathena/tools/convert"
@@ -260,10 +264,6 @@ func runAll(name string, args []string) error {
 			return err
 		}
 	}
-	spawns, err := loadSpawns(reference.Mode(cfg.Mode), tables, data)
-	if err != nil {
-		return err
-	}
 	statusMode := reference.Mode(cfg.Mode)
 	if cfg.Mode == "none" {
 		statusMode = reference.Renewal
@@ -307,10 +307,27 @@ func runAll(name string, args []string) error {
 		return fmt.Errorf("item and NPC scripts: %w", err)
 	}
 	log.Info("item and npc scripts converted", "mode", statusMode, "items", len(core.Result.Items), "npcs", len(core.NPCs.NPCs), "took", time.Since(converted).Round(time.Millisecond))
-	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, ids, core, log)
+	var monsterData map[uint32]gamedata.Monster
+	if cfg.Mode != "none" {
+		if monsterData, err = gamedata.LoadMonsters(statusMode, tables, data); err != nil {
+			return err
+		}
+	}
+	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, monsterData, tables, ids, core, log)
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
+	// Monsters and drops come with the mods' overlays.
+	tables = loaded.all.Tables
+	spawns, err := gamedata.SpawnsOf(reference.Mode(cfg.Mode), loaded.all.Monsters)
+	if err != nil {
+		return err
+	}
+	events, err := worldevent.Apply(loaded.all.Events, cfg.Mods.Events)
+	if err != nil {
+		return fmt.Errorf("mods:\n%w", indent(err))
+	}
+	loaded.zone.Location = cfg.Location
 	items := item.New(loaded.items.Data)
 	// Server variables are shared by every zone, and written soon after
 	// they change.
@@ -363,6 +380,29 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
+	// World events start without staff action, on the server clock.
+	var runStore worldevent.Store
+	if pool != nil {
+		runStore = store.NewEventRuns(pool)
+	}
+	for _, d := range events {
+		if _, err := w.EventZone(d); err != nil {
+			return fmt.Errorf("mods: %s: events %s: %w", d.Where, d.Name, err)
+		}
+	}
+	scheduler := worldevent.New(events, worldevent.Options{Runner: w.Events(), Store: runStore, Location: cfg.Location,
+		Rand: root.Child("events").SecretStream(), Log: log})
+	if err := scheduler.Load(ctx, time.Now()); err != nil {
+		return fmt.Errorf("world events: %w", err)
+	}
+	next := scheduler.Next()
+	for _, d := range scheduler.Defs() {
+		attrs := []any{"event", d.Name, "trigger", d.Trigger.Describe(), "minutes", int(d.Duration.Minutes())}
+		if at, ok := next[d.Name]; ok {
+			attrs = append(attrs, "next", at.In(cfg.Location).Format("2006-01-02 15:04 MST"))
+		}
+		log.Info("world event", attrs...)
+	}
 	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: cfg.Origins, Log: log, Metrics: &reg.Conns}
 	go reg.Conns.Run(ctx)
 	hc := &health{}
@@ -414,6 +454,7 @@ func runAll(name string, args []string) error {
 		go accounts.Run(ctx)
 	}
 	go w.Run(ctx)
+	go scheduler.Run(ctx)
 	if st != nil {
 		// On shutdown every zone hands its players' last saves to the
 		// store, which then gets 10 seconds to write them.
@@ -698,11 +739,6 @@ func parseStartItems(s string) ([]zone.StartItem, error) {
 		out = append(out, zone.StartItem{ID: uint32(n), Amount: a})
 	}
 	return out, nil
-}
-
-// loadSpawns is gamedata.LoadSpawns.
-func loadSpawns(mode reference.Mode, tables *progression.Tables, data *progression.Data) (map[string][]zone.Spawn, error) {
-	return gamedata.LoadSpawns(mode, tables, data)
 }
 
 func count(spawns []zone.Spawn) int {

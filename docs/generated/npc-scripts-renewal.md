@@ -44,18 +44,18 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 
 | Command | Scripts | NPC full | NPC partly | NPC not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| mes | 1198 | 825 | 108 | 265 | 1198 |  |
-| close | 1059 | 794 | 108 | 157 | 1059 |  |
-| next | 937 | 656 | 108 | 173 | 937 |  |
+| mes | 1200 | 825 | 108 | 267 | 1200 |  |
+| close | 1060 | 794 | 108 | 158 | 1060 |  |
+| next | 938 | 656 | 108 | 174 | 938 |  |
 | select | 491 | 260 | 99 | 132 | 491 |  |
 | variables | 281 | 83 | 106 | 92 | 275 | $@arena_picture is a temporary server variable (1); $@arn_1 is a temporary server variable (1); $@in_battle is a temporary server variable (1) |
-| end | 260 | 147 | 88 | 25 | 260 |  |
+| end | 261 | 147 | 88 | 26 | 261 |  |
 | getarg | 204 | 36 | 106 | 62 | 193 | outside a function (11) |
 | callfunc | 197 | 37 | 108 | 52 | 197 |  |
 | warp | 177 | 83 | 73 | 21 | 168 | to a computed map (2) |
 | Zeny | 166 | 64 | 81 | 21 | 166 |  |
 | countitem | 164 | 32 | 76 | 56 | 164 |  |
-| close2 | 157 | 113 | 7 | 37 | 157 |  |
+| close2 | 158 | 113 | 7 | 38 | 158 |  |
 | event onenable | 145 | 0 | 0 | 145 | 0 |  |
 | input | 135 | 18 | 61 | 56 | 135 |  |
 | emotion | 127 | 50 | 54 | 23 | 116 | on a player or another NPC (11) |
@@ -64,7 +64,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | delitem | 114 | 31 | 71 | 12 | 114 |  |
 | cutin | 106 | 18 | 66 | 22 | 106 |  |
 | isequipped | 103 | 0 | 0 | 103 | 0 |  |
-| checkweight | 85 | 29 | 3 | 53 | 85 |  |
+| checkweight | 86 | 29 | 3 | 54 | 86 |  |
 | percentheal | 84 | 15 | 61 | 8 | 17 | a negative amount, which takes HP or SP (5) |
 | strcharinfo | 83 | 17 | 49 | 17 | 83 |  |
 | callsub | 79 | 0 | 66 | 13 | 79 |  |
@@ -79,7 +79,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | implode | 51 | 0 | 49 | 2 | 51 |  |
 | getguildname | 50 | 0 | 49 | 1 | 0 |  |
 | rand | 47 | 26 | 0 | 21 | 47 |  |
-| callshop | 44 | 38 | 0 | 6 | 43 | a computed shop (1) |
+| callshop | 45 | 38 | 0 | 7 | 44 | a computed shop (1) |
 | disable_items | 44 | 0 | 0 | 44 | 0 |  |
 | parameter MaxWeight | 44 | 0 | 0 | 44 | 0 |  |
 | getmonsterinfo | 42 | 0 | 5 | 37 | 0 |  |
@@ -99,8 +99,8 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getmapusers | 11 | 0 | 9 | 2 | 0 |  |
 | event onstart | 10 | 0 | 0 | 10 | 0 |  |
 | getgmlevel | 10 | 0 | 2 | 8 | 0 |  |
+| mesitemlink | 10 | 4 | 0 | 6 | 7 | arguments (3) |
 | event onstartarena | 9 | 0 | 0 | 9 | 0 |  |
-| mesitemlink | 9 | 4 | 0 | 5 | 6 | arguments (3) |
 | setd | 9 | 0 | 9 | 0 | 0 |  |
 | waitingroom | 9 | 0 | 0 | 9 | 0 |  |
 | event onwelcome | 8 | 0 | 0 | 8 | 0 |  |
@@ -129,9 +129,9 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onreset_01 | 4 | 0 | 0 | 4 | 0 |  |
 | sc_start2 | 4 | 0 | 0 | 4 | 0 |  |
 | event onstop | 3 | 0 | 0 | 3 | 0 |  |
+| gettime | 3 | 0 | 0 | 3 | 0 |  |
 | checkriding | 2 | 0 | 0 | 2 | 0 |  |
 | cloakonnpc | 2 | 0 | 0 | 2 | 0 |  |
-| event onclock0000 | 2 | 0 | 0 | 2 | 0 |  |
 | event onenter | 2 | 0 | 0 | 2 | 0 |  |
 | event ontimer20000 | 2 | 0 | 0 | 2 | 0 |  |
 | event ontimer5000 | 2 | 0 | 0 | 2 | 0 |  |
@@ -141,6 +141,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getstrlen | 2 | 0 | 0 | 2 | 2 |  |
 | gettimetick | 2 | 0 | 0 | 2 | 0 |  |
 | insertchar | 2 | 0 | 0 | 2 | 0 |  |
+| npcshopupdate | 2 | 0 | 0 | 2 | 0 |  |
 | assignment | 1 | 0 | 0 | 1 | 0 |  |
 | assignment in an expression | 1 | 0 | 0 | 1 | 0 |  |
 | atcommand | 1 | 0 | 0 | 1 | 0 |  |
@@ -155,13 +156,9 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onend_n1 | 1 | 0 | 0 | 1 | 0 |  |
 | event onheart | 1 | 0 | 0 | 1 | 0 |  |
 | event onhide | 1 | 0 | 0 | 1 | 0 |  |
-| event onhour00 | 1 | 0 | 0 | 1 | 0 |  |
 | event onlinerec_50 | 1 | 0 | 0 | 1 | 0 |  |
 | event onlinerec_aco | 1 | 0 | 0 | 1 | 0 |  |
-| event onmon0000 | 1 | 0 | 0 | 1 | 0 |  |
-| event onmymobdead | 1 | 0 | 0 | 1 | 0 |  |
 | event onpclogoutevent | 1 | 0 | 0 | 1 | 0 |  |
-| event onsun0000 | 1 | 0 | 0 | 1 | 0 |  |
 | event ontimer | 1 | 0 | 0 | 1 | 0 |  |
 | event ontimer120000 | 1 | 0 | 0 | 1 | 0 |  |
 | event ontimer23000 | 1 | 0 | 0 | 1 | 0 |  |
@@ -188,6 +185,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | isbegin_quest | 1 | 0 | 0 | 1 | 0 |  |
 | ismounting | 1 | 0 | 0 | 1 | 0 |  |
 | jobcanentermap | 1 | 0 | 0 | 1 | 0 |  |
+| killmonster | 1 | 0 | 0 | 1 | 0 | the API cannot remove spawned monsters (1) |
 | mergeitem | 1 | 0 | 0 | 1 | 0 |  |
 | mesitemicon | 1 | 0 | 0 | 1 | 0 |  |
 | npcskill | 1 | 0 | 0 | 1 | 0 |  |

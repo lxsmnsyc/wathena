@@ -1,0 +1,3 @@
+-- status: none
+-- record: 
+-- unsupported: killmonster: the API cannot remove spawned monsters

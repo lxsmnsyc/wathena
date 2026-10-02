@@ -100,13 +100,13 @@ return function()
   events.on("click", function(player, conversation) ... end)   -- NPC clicked
   events.on("touch", function(player) ... end)                 -- walked into the NPC's area
   events.on("login", function(player) ... end)                 -- mod context only
-  events.on("monster_killed", function(player, monster) ... end)
+  events.on("death", function(death) ... end, { victim_kind = "monster" })
   events.on("base_level_up", function(player) ... end)
   events.on("job_level_up", function(player) ... end)
 end
 ```
 
-- `monster_killed` gets a monster handle, like the handles in "Players and other entities". The monster is gone, but the handle stays readable while the event's handlers run, and its `is_alive` field is `false`. After the event, reading it raises an error, as for any handle to a removed entity.
+- `death` gets one death object, with the victim and the killer as handles, like the handles in "Players and other entities". A dead monster is gone, but its handle stays readable while the event's handlers run, and its `is_alive` field is `false`. After the event, reading it raises an error, as for any handle to a removed entity. Options narrow which deaths run the handler (review decision 16).
 - `base_level_up` and `job_level_up` are separate events. Each gets the player.
 
 - `events.on` checks the name when it is called. An unknown name, or a name the context's kind cannot use, raises an error during setup, so a typo still fails before the event ever fires.
@@ -125,12 +125,12 @@ local hooks = require "wa.hooks"
 return function()
   hooks.on("drop_rate", function(drop, next)
     local rate = next(drop)
-    return drop.map.flags.event_zone and rate * 2 or rate
-  end)
+    return drop.monster.id == PUMPKIN_PORING and rate * 2 or rate
+  end, { priority = 10 })
 end
 ```
 
-Hooks need the `rules.override` permission. Hook names are checked the same way as event names.
+Hooks need the `rules.override` permission. Hook names are checked the same way as event names. Review decision 16 lists the hooks.
 
 ### Players and other entities
 
@@ -330,10 +330,13 @@ return function()
   timers.every(60000, function() ... end)                -- repeating
   timer:cancel()
   schedules.daily("00:00", function() ... end)           -- server time zone
+  schedules.weekly("saturday", "20:00", function() ... end)
+  schedules.hourly(30, function() ... end)
+  schedules.when(function() return is_quiet() end, function() ... end, { lasting_minutes = 60 })
 end
 ```
 
-Timers belong to the context, so they stop when it ends.
+Timers and schedules belong to the context, so they stop when it ends. World events that run without staff action are data, in `data/events.yml` (review decision 16).
 
 `timers.with_bonuses(ms, function() ... end)` adds bonuses that end after `ms`. It returns a timer. The option `{ restart = timer }` cancels that timer first, if it still runs, so a proc that triggers again restarts its duration instead of stacking.
 
@@ -411,7 +414,7 @@ local current_season = exports.get("example.seasonal-lib", "current_season")
 | `wa.context` | The current instance, kind, and mod | None |
 | `wa.events` | Event registration | `event.listen` |
 | `wa.hooks` | Result hooks | `rules.override` |
-| `wa.timers`, `wa.schedules` | Timers and schedules owned by the context | None, `events.schedule` for world events |
+| `wa.timers`, `wa.schedules` | Timers and schedules owned by the context | None. World events in `data/events.yml` need `events.schedule` |
 | `wa.variables` | Typed saved variables | `storage.mod` |
 | `wa.storage` | Mod tables and key-value storage | `storage.mod` |
 | `wa.bonuses` | Item bonuses | Item contexts only |
@@ -479,7 +482,7 @@ Methods on player handles check their own permissions, such as `player.give_item
 | `itemheal rand(45,65), 0;` | `player:item_heal { hp = { 45, 65 } }` |
 | `sc_start SC_BLESSING, 60000, 10;` | `player:start_status(statuses.blessing, { milliseconds = 60000, level = 10 })` |
 | `specialeffect EF_HEAL;` | `player:show_effect(effects.heal)`, or the same on the NPC from `context:get_instance()` |
-| `monster "prt_fild08",0,0,"--ja--",1002,10,"NPC::OnKill";` | `spawning.monsters { map = "prt_fild08", monster = PORING, amount = 10, on_death = function(monster, killer) ... end }` |
+| `monster "prt_fild08",0,0,"--ja--",1002,10,"NPC::OnKill";` | `local list = spawning.monsters { monster = PORING, amount = 10 }` and `events.on("death", handler, { victims = list })` |
 | `rand(45, 65)` | `random.integer(45, 65)` |
 
 ### Conversations
@@ -514,7 +517,7 @@ Methods on player handles check their own permissions, such as `player.give_item
 | `OnPCLoginEvent:` | `events.on("login", handler)` in a mod script |
 | `OnClock0000:` | `schedules.daily("00:00", handler)` |
 | `OnTimer5000:` with `initnpctimer` | `timers.after(5000, handler)` |
-| `OnMyMobDead:` named in `monster` | `on_death` in `spawning.monsters`, owned by the context |
+| `OnMyMobDead:` named in `monster` | `events.on("death", handler, { victims = list })`, owned by the context |
 | `donpcevent "Guard#1::OnAlarm";` | An export the guard provides, or a shared helper module |
 | `enablenpc` / `disablenpc` | `npc:show()` / `npc:hide()` on the NPC from `context:get_instance()` |
 
@@ -574,7 +577,7 @@ Methods on player handles check their own permissions, such as `player.give_item
    - The mod context's instance fields `id` and `map`.
    - The NPC fields `direction` (a named direction), `display_name`, and `sprite`, and the mod ID prefix on NPC names.
    - The player fields `max_sp`, `character_id`, and `account_id`.
-7. `monster_killed` passes a monster handle, not a table of what the monster was. The handle reads while the event runs, with `is_alive` false, and raises an error after it, like any handle to a removed entity. Mods use one kind of object for monsters.
+7. `monster_killed` (replaced by `death` in review decision 16) passes a monster handle, not a table of what the monster was. The handle reads while the event runs, with `is_alive` false, and raises an error after it, like any handle to a removed entity. Mods use one kind of object for monsters.
 8. `level_up` with a kind argument is split into `base_level_up` and `job_level_up`, each `function(player)`. A handler listens to the level it needs, without a check on a string.
 9. Item scripts (phase 3 step 3) add these, for the commands rAthena's item scripts use most:
 
@@ -683,6 +686,51 @@ Methods on player handles check their own permissions, such as `player.give_item
     - A case also fails when the server logs a warning that names the mod, such as a handler that failed.
     - The API reference lists `wa.ItemUse`, the instance of a use context: `{ item }`, which the runtime already returned.
 
+16. World events, schedules, spawning, death, and hooks (phase 3 step 6). The user approved these:
+
+    - **World events as data.** A mod's `data/events.yml` lists events. Each has a `trigger`, `duration_minutes`, a `script` (an entry script), and an optional `map`. It needs the permission `events.schedule`.
+
+      ```yaml
+      - name: example.bosses:Baphomet_Night
+        trigger: { weekly: { day: saturday, time: "20:00" } }
+        duration_minutes: 60
+        script: scripts/events/baphomet_night.lua
+      ```
+
+      - Triggers: `daily: "HH:MM"`, `weekly: { day, time }`, `monthly: { day, time }`, `hourly: { minute }`, `random: { chance_per_hour }` (out of 10,000, drawn from a secret stream), and `condition`.
+      - Each run of an event is one context of kind `"event"`. What it creates, such as monsters, timers, handlers, schedules and hooks, goes when the run ends.
+      - Times are in the server's time zone, an IANA name in the config. A time that does not exist runs at the next valid minute. A time that happens twice runs once.
+    - **`wa.schedules`**, owned by the context: `schedules.daily("00:00", handler)`, `schedules.weekly("saturday", "20:00", handler)`, `schedules.hourly(30, handler)`, and `schedules.when(condition, handler, { lasting_minutes = 60 })`, whose handler runs once the condition has held that long.
+    - **`wa.spawning.monsters { map, monster, amount, x, y, area, respawn }`** returns monster handles. Without `x` and `y`, each monster lands on a random walkable cell. `area` spreads them within that many cells. `respawn = false` is the default: a dead monster stays dead. `respawn = true` is a normal spawn while the context lives. The context owns the monsters. It needs `npc.create`.
+    - **`events.on("death", handler, options)`** replaces `monster_killed`. The handler gets a death object: `victim` (a handle, readable during the event, with `is_alive` false for a monster), `victim_kind` (`"player"` or `"monster"`), `killer` (a handle or nil), `map`, `x`, `y`, and `skill` (or nil). The options `victim`, `victims`, `victim_kind`, `monster` and `map` narrow it. It fires for deaths on the context's map, players included.
+    - **`wa.hooks`**: `hooks.on("drop_rate", function(drop, next) ... end, { priority = n })`, with `drop` = { `player`, `monster`, `item`, `map`, `rate` per 10,000 }, and `hooks.on("experience", function(exp, next) ... end, { priority = n })`, with `exp` = { `player`, `monster`, `base`, `job` }. Higher priority runs first. `next(object)` returns the rest of the chain's result. The innermost result is rAthena's value. They need `rules.override`.
+
+    Step 6 decided these details:
+
+    - **Which zone runs an event.** The zone of the event's `map`. Without `map`, the zone of the world's start map. A context spawns monsters on its own map only, so an event that spawns sets `map`.
+    - **Restarts.** Each run is recorded in PostgreSQL (`world_event_runs`) before it starts, so a restart never runs the same time twice. Runs whose whole window passed while the server was stopped are skipped. A run whose window is still open at the start, and that has not run, starts at once and ends at its usual time: a server that starts at 22:00 has the night that began at 18:00. A run cut short by a stop does not start again.
+    - **One run at a time.** A time that comes while the event's last run still lasts is skipped.
+    - **Random triggers** draw once at the start of each hour, from the world's secret stream `events`.
+    - **Condition triggers** name a function of a helper module, which `require` finds: `condition: { module: example.bosses.conditions, function: town_is_quiet, lasting_minutes: 60 }`. The module returns a table that holds the function. It runs once a minute in the zone of the event's map. It only reads the game: a call that changes it raises an error. The event starts once the function has returned true for `lasting_minutes`, and after the run ends it must hold that long again.
+    - **`schedules.when` polls.** Its condition runs once a minute, at the start of each minute of the server clock, not when a value it reads changes. Tracking reads is not feasible: player counts, server variables and monster counts have no change notifications. The handler runs once for each time the condition holds that long.
+    - **Missed schedules.** A schedule whose time passed while its zone slept or the server was stopped runs once, or not at all after a stop. A sleeping zone wakes for its schedules.
+    - **Hooks only compute.** A hook, like a computed bonus, cannot change the game: such calls raise an error. A hook that fails is logged and left out of the chain. To pass a changed object, a hook passes a table with the same fields to `next`. `drop_rate` results are kept to 0 to 10,000, and `experience` results below 0 count as 0. Hooks run where the kill happens: a hook of an event context changes kills on its map.
+    - **Spawns from mods** come from scripts: a mod script calls `spawning.monsters { respawn = true }`. There is no `data/spawns.yml` yet. Core's spawns are still rAthena's spawn lines.
+    - **Owners can move events.** The config's `mods.events` changes an event's trigger or duration, or turns it off, by its full name.
+    - **Events in contexts.** Event contexts can listen to the events of mod contexts: `login`, `logout`, `map_enter`, `death`, `base_level_up` and `job_level_up`. NPC contexts can listen to `death`.
+    - **Monster records.** `data/monsters.yml` adds and changes monsters. A new monster, named with the mod's ID, starts from the stats of the monster its `sprite` names and shows that sprite. IDs come from the mod range, from 100,000. The fields set what combat reads directly (`hp`, `attack`, `defense`, `hit`, `flee`), since the server has no monster status calculation yet. `class: boss` adds rAthena's boss modes.
+    - **Handles compare.** Two handles to one player or monster are equal with `==`, so `death.victim == boss` works.
+
+    Provisional, until reviewed:
+
+    - `schedules.*` return a schedule handle with `cancel()`, and `hooks.on` returns a hook handle with `remove()`, like `timers` and `events.on`.
+    - `context:get_instance()` of an event context is `{ name, map }`.
+    - `display_name` sets the name players see of an item or a monster in `data/items.yml` and `data/monsters.yml`. `name` is the record's key, so review decision 14's item `name` field cannot be written; `display_name` replaces it, as for NPCs.
+    - The monster fields of `data/monsters.yml`: `display_name`, `sprite`, `level`, `hp`, `sp`, `attack`, `magic_attack`, `defense`, `magic_defense`, `hit`, `flee`, `speed`, `attack_range`, `attack_delay`, `attack_motion`, `damage_motion`, `element`, `element_level`, `race`, `size`, `class`, `modes`, `base_exp`, `job_exp` and `drops`.
+    - A monster with `respawn = true` comes back 5 seconds after it dies.
+    - The config's `time_zone` (UTC by default) and `mods.events`.
+    - `wa.testing`: `world:set_time(time, time_zone)`, `world:get_time()`, `world:get_monsters(monster)`, `world:get_announcements()`, and `world:count_floor_items(item)`. A test world runs the world events of its map, and of no map, on its clock. `world:kill` takes any living monster handle. After a kill, the monster's handle raises an error, as after any death event.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the phase 3 exit check passes with a sample mod. It then becomes `api: 1.0`.
@@ -690,6 +738,7 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the phas
 ## Next steps
 
 1. Build phase 3 step 2, the mod loader, with this context model. Done.
-2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, and `wa.variables` with NPCs. Done for these steps. `wa.hooks`, `wa.storage`, `wa.spawning`, `wa.schedules` and `wa.exports` come with the next steps.
+2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, `wa.variables` with NPCs, and `wa.hooks`, `wa.spawning` and `wa.schedules` with world events. Done for these steps. `wa.storage` and `wa.exports` come later.
 3. Review the API that step 4 added. Done: review decision 14.
 4. Review the provisional details of `wa.testing` that step 5 added (review decision 15).
+5. Review the provisional details that step 6 added (review decision 16, "Provisional").

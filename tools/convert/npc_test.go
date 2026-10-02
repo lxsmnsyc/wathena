@@ -11,9 +11,11 @@ import (
 
 // goldenNPCs are NPCs whose converted output is kept in
 // testdata/golden/npcs: a city Kafra and a Kafra with its own dialog, a
-// dialog NPC, one with labels and goto, an inn that heals and saves, and
-// a shop. goldenFunctions are the functions they call.
-var goldenNPCs = []string{"kaf_prontera", "Kafra Service", "Woman#payon", "Wayne", "Inn Employee#Ahlma", "Tool Dealer#prt1"}
+// dialog NPC, one with labels and goto, an inn that heals and saves, a
+// shop, and two that do not convert yet: one with a clock label and one
+// that spawns monsters. goldenFunctions are the functions they call.
+var goldenNPCs = []string{"kaf_prontera", "Kafra Service", "Woman#payon", "Wayne", "Inn Employee#Ahlma", "Tool Dealer#prt1",
+	"Slot Move Card Sales#slo", "Cursed Spirit#nif"}
 
 var goldenFunctions = []string{"f_kafra", "f_kafset", "f_kaftele", "f_kafend", "f_kafinfo", "f_setkafcode", "f_entkafcode", "f_checkkafcode", "f_innmaid"}
 

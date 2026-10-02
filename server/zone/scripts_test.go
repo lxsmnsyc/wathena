@@ -94,8 +94,9 @@ return function()
       player:send_message(name .. " " .. player.name)
     end)
   end
-  events.on("monster_killed", function(player, monster)
-    player:send_message("monster_killed " .. player.name .. " " .. monster.name .. " " .. monster.id ..
+  events.on("death", function(death)
+    local player, monster = death.killer, death.victim
+    player:send_message("death " .. death.victim_kind .. " " .. player.name .. " " .. monster.name .. " " .. monster.id ..
       " level " .. monster.level .. " hp " .. monster.hp .. "/" .. monster.max_hp ..
       " alive " .. tostring(monster.is_alive) .. " on " .. monster.map)
     timers.after(0, function()
@@ -113,7 +114,7 @@ func TestModEventsFromZoneActions(t *testing.T) {
 	}
 	got := strings.Join(systemLines(kill(t, z, p, m)), "|")
 	// The timer runs after the event, when the handle no longer reads.
-	want := "monster_killed a Poring 1002 level 3 hp 0/30 alive false on test|base_level_up a|job_level_up a|" +
+	want := "death monster a Poring 1002 level 3 hp 0/30 alive false on test|base_level_up a|job_level_up a|" +
 		"after the event: false the monster is gone from this map"
 	if got != want {
 		t.Fatalf("after the kill: %q, logs: %s", got, logs)
@@ -188,8 +189,8 @@ func TestModLimitDoesNotBreakZone(t *testing.T) {
 	z, p, m, logs := scriptZone(t, `
 local events = require "wa.events"
 return function()
-  events.on("monster_killed", function(player) while true do end end)
-  events.on("monster_killed", function(player) player:send_message("after the loop") end)
+  events.on("death", function(death) while true do end end)
+  events.on("death", function(death) death.killer:send_message("after the loop") end)
 end`)
 	z.stepAt(50)
 	events(p)

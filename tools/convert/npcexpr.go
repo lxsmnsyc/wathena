@@ -646,6 +646,8 @@ func (b *body) call(e *Call) (val, error) {
 		return done(val{code: "#" + v.asText(), t: tInt}, nil)
 	case "guildopenstorage":
 		return done(val{code: `R.not_available(conversation, "Guild storage")`, t: tInt}, nil)
+	case "mobcount":
+		return done(b.mobcount(args))
 	}
 	return val{}, unsupported(name, "")
 }
@@ -959,10 +961,206 @@ func (b *body) commandErr(name string, args []Expr) error {
 		b.line(`R.not_available(conversation, "Storage")`)
 	case "setcart":
 		b.line(`R.not_available(conversation, "Pushcart rental")`)
+	case "monster":
+		return b.monster(args)
+	case "killmonster":
+		return unsupported(name, "the API cannot remove spawned monsters")
 	default:
 		return unsupported(name, "")
 	}
 	return nil
+}
+
+// ownEvent reads an event label of this NPC for the command what: the
+// NPC's own name and "::OnX", or strnpcinfo(0) or strnpcinfo(3) joined
+// with "::OnX". It returns the label in lower case, or "" for "".
+func (b *body) ownEvent(what string, e Expr) (string, error) {
+	n := b.n
+	var name, label string
+	switch e := e.(type) {
+	case *Str:
+		if e.Value == "" {
+			return "", nil
+		}
+		var ok bool
+		if name, label, ok = strings.Cut(e.Value, "::"); !ok {
+			return "", unsupported(what, "%q is not an event label", e.Value)
+		}
+	case *Binary:
+		c, isCall := e.X.(*Call)
+		s, isStr := e.Y.(*Str)
+		if e.Op != "+" || !isCall || !isStr || !strings.EqualFold(c.Name, "strnpcinfo") || len(c.Args) != 1 || !strings.HasPrefix(s.Value, "::") {
+			return "", unsupported(what, "a computed event label")
+		}
+		if k, ok := c.Args[0].(*Num); !ok || k.Value != 0 && k.Value != 3 {
+			return "", unsupported(what, "a computed event label")
+		}
+		name, label = n.line.Name, s.Value[2:]
+	default:
+		return "", unsupported(what, "a computed event label")
+	}
+	switch {
+	case n.isFunction:
+		return "", unsupported(what, "an event label in a function")
+	case name == "":
+		return "", unsupported(what, "a global event label (::%s)", label)
+	case name != n.line.Name:
+		return "", unsupported(what, "an event label of another NPC (%s)", name)
+	}
+	lower := strings.ToLower(label)
+	if !n.eventLabels[lower] {
+		return "", unsupported(what, "%s is not an event label of this NPC", label)
+	}
+	return lower, nil
+}
+
+// mobEvents lists the labels that this NPC's monster commands run when
+// their monsters die.
+func (n *npcConv) mobEvents(stmts []Stmt) map[string]bool {
+	out := map[string]bool{}
+	b := n.newBody(0)
+	walkStmts(stmts, func(s Stmt) {
+		if c, ok := s.(*Command); ok && strings.EqualFold(c.Name, "monster") && len(c.Args) >= 7 {
+			if label, err := b.ownEvent("monster", c.Args[6]); err == nil && label != "" {
+				out[label] = true
+			}
+		}
+	})
+	return out
+}
+
+// walkStmts calls fn for each statement, nested ones too.
+func walkStmts(list []Stmt, fn func(Stmt)) {
+	for _, s := range list {
+		fn(s)
+		switch s := s.(type) {
+		case *Block:
+			walkStmts(s.Stmts, fn)
+		case *If:
+			walkStmts([]Stmt{s.Then}, fn)
+			if s.Else != nil {
+				walkStmts([]Stmt{s.Else}, fn)
+			}
+		case *Switch:
+			for _, cs := range s.Cases {
+				walkStmts(cs.Body, fn)
+			}
+		case *For:
+			walkStmts([]Stmt{s.Body}, fn)
+		case *While:
+			walkStmts([]Stmt{s.Body}, fn)
+		case *FuncDecl:
+			if s.Body != nil {
+				walkStmts([]Stmt{s.Body}, fn)
+			}
+		}
+	}
+}
+
+// monster writes rAthena's monster command: monster "<map>",<x>,<y>,
+// "<name>",<monster>,<amount>{,"<event label>"{,<size>{,<ai>}}}. It
+// converts with these limits:
+//   - The map is the NPC's own map. R.monster checks a computed map.
+//   - The name is "--ja--", "--en--", "", or the monster's own name.
+//   - The event label is "" or a label of this NPC. Its function runs
+//     when each monster dies, with the player that killed it.
+//   - The size and the AI are the defaults.
+func (b *body) monster(args []Expr) error {
+	const what = "monster"
+	if len(args) < 6 || len(args) > 9 {
+		return unsupported(what, "arguments")
+	}
+	vals := make([]val, 6)
+	for i := range vals {
+		v, err := b.expr(args[i])
+		if err != nil {
+			return err
+		}
+		vals[i] = v
+	}
+	m := vals[0]
+	if m.str != nil && *m.str != b.n.line.Map {
+		return unsupported(what, "on another map")
+	}
+	c := b.n.c
+	mob := vals[4]
+	id := int64(-1)
+	var code string
+	switch {
+	case mob.static != nil:
+		id = *mob.static
+	case mob.str != nil:
+		var ok bool
+		if id, ok = c.monsterIDs[strings.ToUpper(*mob.str)]; !ok {
+			return unsupported(what, "%q is not a monster", *mob.str)
+		}
+	default:
+		code = mob.asInt()
+	}
+	if code == "" {
+		info, ok := c.monsters[id]
+		if !ok {
+			return unsupported(what, "%d is not a monster, such as a random monster", id)
+		}
+		code = b.n.file.record("monsters.id", info.sprite)
+	}
+	// rAthena shows the name; wAthena shows the monster's own name.
+	name := vals[3]
+	switch {
+	case name.str == nil:
+		return unsupported(what, "a computed name")
+	case *name.str == "" || *name.str == "--ja--" || *name.str == "--en--":
+	case id >= 0 && *name.str == c.monsters[id].name:
+	default:
+		return unsupported(what, "a name of its own")
+	}
+	for i, def := range []string{"size", "AI"} {
+		if len(args) > 7+i {
+			v, err := b.expr(args[7+i])
+			if err != nil {
+				return err
+			}
+			if v.static == nil || *v.static != 0 {
+				return unsupported(what, "a %s other than the default", def)
+			}
+		}
+	}
+	call := fmt.Sprintf("R.monster(npc, %s, %s, %s, %s, %s", m.asText(), vals[1].asInt(), vals[2].asInt(), code, vals[5].asInt())
+	if len(args) > 6 {
+		label, err := b.ownEvent(what, args[6])
+		if err != nil {
+			return err
+		}
+		if label != "" {
+			call += fmt.Sprintf(", %s, %s", luaString(label), b.n.eventFn(label))
+		}
+	}
+	b.line("%s)", call)
+	return nil
+}
+
+// mobcount writes mobcount for an event label of this NPC: the monsters
+// of R.monster with that label that live.
+func (b *body) mobcount(args []Expr) (val, error) {
+	const what = "mobcount"
+	if len(args) != 2 {
+		return val{}, unsupported(what, "arguments")
+	}
+	m, err := b.expr(args[0])
+	if err != nil {
+		return val{}, err
+	}
+	if m.str != nil && *m.str != b.n.line.Map {
+		return val{}, unsupported(what, "on another map")
+	}
+	label, err := b.ownEvent(what, args[1])
+	if err != nil {
+		return val{}, err
+	}
+	if label == "" {
+		return val{}, unsupported(what, "without an event label")
+	}
+	return val{code: fmt.Sprintf("R.mobcount(npc, %s, %s)", m.asText(), luaString(label)), t: tInt}, nil
 }
 
 // menu writes rAthena's menu: a choice, then a jump to the option's

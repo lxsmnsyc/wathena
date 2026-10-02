@@ -299,11 +299,11 @@ func (r *Runtime) endTimerBonuses(t *timer) {
 	t.bonuses = nil
 }
 
-// mutating refuses a call that changes the game while a computed bonus
-// runs.
+// mutating refuses a call that changes the game while a computed bonus,
+// a hook, or a condition runs.
 func (r *Runtime) mutating(what string) error {
 	if r.computing {
-		return fmt.Errorf("%s cannot run in a computed bonus: computed functions only return a value", what)
+		return fmt.Errorf("%s cannot run in a computed bonus, a hook or a condition: they only return a value", what)
 	}
 	return nil
 }

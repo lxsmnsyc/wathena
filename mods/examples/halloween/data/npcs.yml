@@ -1,0 +1,8 @@
+# The witch who gives each character one Pumpkin Hat.
+- name: Pumpkin Witch#prt_fild08
+  map: prt_fild08
+  x: 199
+  y: 204
+  direction: south
+  sprite: 4_F_KAFRA1
+  script: scripts/npc/witch.lua

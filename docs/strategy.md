@@ -671,7 +671,7 @@ NPC placement lives in the mod's data (`data/npcs.yml`), which names the script.
 
 Other rules:
 
-- **Events.** Scripts register handlers such as `"login"`, `"monster_killed"`, and `"map_enter"` with `events.on`. Timers come from `wa.timers`. These replace label names like `OnPCLoginEvent:` and `OnTimer5000:`.
+- **Events.** Scripts register handlers such as `"login"`, `"death"`, and `"map_enter"` with `events.on`. Timers come from `wa.timers`. These replace label names like `OnPCLoginEvent:` and `OnTimer5000:`.
 - **Variables.** Variables are declared with a scope and a type, such as `variables.character_integer "quest_step"` from `wa.variables`. They replace the `@`, `#`, `##`, `$`, and `.@` prefixes. Per-NPC and per-call state are Lua locals. Each mod's variables are stored under its own namespace (section 6.7).
 - **Reloading.** Each script file can be reloaded alone. Running coroutines finish on the old version.
 
@@ -2298,7 +2298,7 @@ Phases run in order, because one developer does them (section 14). Each phase en
 
 Status on 2026-10-02:
 
-- Phases 0a, 0b, 1, and 2 are done.
+- Phases 0a, 0b, 1, 2, and 3 are done.
 - Phase 2 left two items for later phases, which no exit criterion needs:
   - The ruleset loader moves to phase 3, since ruleset mods load through the mod loader. Until then, `waserver --mode` picks the rAthena mode, and the world records its ruleset.
   - The distributed mode, and tests that run the service interfaces both in one process and over the network (section 3.9), wait for a world that needs more than one machine.
@@ -2408,8 +2408,17 @@ The order from here:
       - Lua Language Server definitions and the API reference ([docs/generated/lua-api.md](generated/lua-api.md)) come from one Go source, server/modscript/luaapi. Tests fail when the runtime and the definitions disagree, and when the generated files are not current.
       - CI's `mods` job validates and tests the sample mods and a new mod, packs and installs it, and checks the generated files.
       - Left: test worlds with more than one map, mod indexes, signing in `wactl mod pack`, `wactl convert` for community scripts, and `wactl mod purge`.
-   6. Event scheduler, and the phase 3 exit check with a sample mod.
-   The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. It stays `wa.experimental` until the phase 3 exit check passes, then becomes `api: 1.0`.
+   6. Event scheduler, and the phase 3 exit check with a sample mod. Done on 2026-10-02 ([proposal 0002](proposals/0002-lua-api.md), review decision 16, [mods/README.md](../mods/README.md), "World events", and server/README.md, "World events"):
+      - World events as data in a mod's `data/events.yml`: daily, weekly, monthly, hourly, random and condition triggers, a duration, a script and a map. The scheduler matches times in the server's time zone (`time_zone`, an IANA name), keeps times in UTC, runs a time that does not exist at the next valid minute and a time that happens twice once, and records each run in PostgreSQL before it starts, so a restart never runs a time twice. Runs missed while the server was stopped are skipped, and a run whose window is still open at the start begins at once. The owner can move or turn off an event in the config.
+      - Each run is an event context in the zone of the event's map. What it makes goes when the run ends: monsters, handlers, timers, schedules and hooks.
+      - `wa.schedules` (daily, weekly, hourly, and `when`, which polls once a minute), `wa.spawning.monsters` with monsters that the context owns, the `death` event for players and monsters with filters, in place of `monster_killed`, and `wa.hooks` with `drop_rate` and `experience`, wired into server/progression's drop and exp code. Without hooks the results are rAthena's, and the parity tests pass unchanged.
+      - Monster overlays in `data/monsters.yml`: new monsters with IDs from 100,000 that reuse a sprite, and changes to core's monsters, with stats, exp, drops, class and modes.
+      - Spawns from mods come from scripts, with `spawning.monsters { respawn = true }` in a mod script. There is no `data/spawns.yml` yet.
+      - The sample mod `mods/examples/halloween` adds an NPC that gives a Pumpkin Hat once, the hat with static bonuses, Pumpkin Porings that reuse the Poring sprite with drops, a `drop_rate` hook that doubles their drops at night through a world event from 18:00 to 06:00, and the Pumpkin King, a boss that a world event brings at 20:00 with world announcements for its arrival and its death. Its 7 test cases drive the clock across the events' starts and ends with `world:set_time` and `world:advance`.
+      - The converter turns `OnClock`, `OnHour`, `OnMinute` and the weekday labels into schedules, and `monster` with `OnMyMobDead`-style labels of the same NPC, and `mobcount`, into `spawning.monsters` and death handlers. No more NPC converts whole yet: each one that uses them also needs something else, such as `OnTimer`, `killmonster`, `gettime` or `npcshopupdate`.
+      - Checked in Chrome: see "Phase 3 exit check" below.
+      - Left: a yearly schedule for `OnDay`, a way to remove one spawned monster (`killmonster`), mod item and monster names in the client's data tables (phase 6), `data/spawns.yml`, built-in event types of section 8.8, rewards in event data, and the provisional parts of review decision 16.
+   The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. The phase 3 exit check passed. Manifests stay `api: experimental` until the provisional parts of review decisions 15 and 16 are reviewed; then the API becomes `api: 1.0`.
 7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua.
 
 Reasons for this order:
@@ -2556,6 +2565,16 @@ Exit criteria:
 - Converted item scripts and service NPCs behave the same as the originals in scripted tests.
 - A sample community mod adds an NPC, an item, a monster, and a hook without changes to the server source.
 - A scheduled boss spawn event runs without staff action.
+
+Phase 3 exit check, done on 2026-10-02:
+
+- Converted scripts: every converted item script and NPC of both modes loads and runs in tests. The base stats of 7,630 converted equipment items match rAthena's `item_bonuses.json`, plain heals match the item extract, Prontera's converted Kafra saves and teleports at rAthena's price, and shops follow `npc_buylist` and `npc_selllist` (tools/convert/README.md, and server/zone's tests). What does not convert is refused and reported, not run differently.
+- Sample mod: `mods/examples/halloween` adds an NPC, an item, two monsters, a `drop_rate` hook and two world events as data and Lua, with no server change. `wactl mod validate` and `wactl mod test` pass on it.
+- Scheduled boss: in Chrome, with `waserver --mods` holding the Halloween mod and a test-only overlay mod that makes the Pumpkin King weak enough for a level 1 novice, and `mods.events` setting the king's time a few minutes ahead:
+  - The night event started with the server, in a time zone where it was night, and the king's run started by itself at its time. The world announcement showed, the king appeared near the field's center, a player killed it, and its death announcement showed.
+  - In a second run, a king nobody killed vanished when its run ended.
+  - The witch gave a Pumpkin Hat once, and the second talk said the character already had one.
+  - 15 Pumpkin Porings dropped 7 items at night and 3 by day. The tests check the doubling exactly.
 
 ### Phase 4: Combat, up to transcendent classes
 

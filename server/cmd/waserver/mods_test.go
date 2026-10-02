@@ -6,11 +6,17 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/tools/convert"
 )
+
+// sampleApprovals approves what the sample mods request.
+var sampleApprovals = map[string][]string{
+	"example.halloween": {"player.give_items", "world.announce", "events.schedule", "rules.override"},
+}
 
 // TestLoadSampleMod loads mods/examples over the renewal reference data,
 // as waserver does at startup.
@@ -23,7 +29,16 @@ func TestLoadSampleMod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := loadMods(context.Background(), modOptions{Dir: "../../../mods/examples"}, mod.Renewal, reference.Renewal, data, &mod.MemoryIDs{}, core, slog.New(slog.DiscardHandler))
+	tables, prog, err := loadProgression(reference.Renewal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	monsters, err := gamedata.LoadMonsters(reference.Renewal, tables, prog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := loadMods(context.Background(), modOptions{Dir: "../../../mods/examples", Approve: sampleApprovals}, mod.Renewal, reference.Renewal, data, monsters, tables,
+		&mod.MemoryIDs{}, core, slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,8 +94,24 @@ func TestLoadSampleMod(t *testing.T) {
 	if s := m.zone.Shops["example.greeter:Cookie Stand"]; s == nil || len(s.Items) != 2 || s.Items[1].Price != 10 {
 		t.Errorf("cookie stand %+v", s)
 	}
-	if len(m.zone.Scripts) != 2 || m.zone.ItemIDs["Red_Potion"] != 501 {
-		t.Errorf("zone mods %+v", m.zone)
+	if len(m.zone.Scripts) != 3 || m.zone.ItemIDs["Red_Potion"] != 501 {
+		t.Errorf("zone mods: %d scripts", len(m.zone.Scripts))
+	}
+	// The Halloween mod's monsters, with the IDs of the mod range, and
+	// its world events.
+	poring := m.zone.MonsterIDs["EXAMPLE.HALLOWEEN:PUMPKIN_PORING"]
+	king := m.zone.MonsterIDs["EXAMPLE.HALLOWEEN:PUMPKIN_KING"]
+	if poring != 100_000 || king != 100_001 {
+		t.Errorf("monster IDs %d %d", poring, king)
+	}
+	if s := m.zone.Monsters[100_000]; s.Name != "Pumpkin Poring" || s.Sprite != 1002 || s.Reward == nil || s.Reward.Level != 12 || len(s.Reward.Drops) != 3 {
+		t.Errorf("pumpkin poring %+v %+v", s, s.Reward)
+	}
+	if s := m.zone.Monsters[100_001]; s.Status.Class != 1 || s.Status.Mode&0x4000000 == 0 || s.Sprite != 1130 {
+		t.Errorf("pumpkin king %+v", s.Status)
+	}
+	if len(m.all.Events) != 2 || m.all.Events[0].Map != "map/prt_fild08" || m.all.Events[0].Script != "example.halloween:scripts/events/pumpkin_king.lua" {
+		t.Errorf("events %+v", m.all.Events)
 	}
 	if m.set.Ruleset.Mod != mod.CoreRenewal {
 		t.Errorf("ruleset %s", m.set.Ruleset)

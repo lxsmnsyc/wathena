@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 // assetDir makes a folder that passes the assets check.
@@ -237,5 +238,24 @@ mods:
 	}
 	if got := rulesetBase("renewal", ""); got != "renewal" {
 		t.Errorf("base from the mode: %q", got)
+	}
+}
+
+func TestTimeZone(t *testing.T) {
+	o := defaultOptions()
+	o.Assets, o.Dev = assetDir(t), true
+	st, err := validate(o, secrets{})
+	if err != nil || st.Location != time.UTC {
+		t.Fatalf("default: %v %v", st.Location, err)
+	}
+	o.TimeZone = "Asia/Manila"
+	if st, err = validate(o, secrets{}); err != nil || st.Location.String() != "Asia/Manila" {
+		t.Fatalf("manila: %v %v", st.Location, err)
+	}
+	for _, bad := range []string{"Local", "Mars/Olympus"} {
+		o.TimeZone = bad
+		if _, err := validate(o, secrets{}); err == nil || !strings.Contains(err.Error(), "time_zone") {
+			t.Errorf("%s: %v", bad, err)
+		}
 	}
 }

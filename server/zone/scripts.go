@@ -8,6 +8,7 @@ import (
 	"maps"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -48,6 +49,12 @@ type Mods struct {
 	// scripts when a Headless zone gets its map. Only wactl mod test
 	// sets it.
 	Testing bool
+	// Monsters are every monster's spawn of one, by monster ID, with
+	// its stats, for spawning.monsters.
+	Monsters map[uint32]Spawn
+	// Location is the server's time zone, where schedules match their
+	// times. It is UTC when nil.
+	Location *time.Location
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -109,6 +116,8 @@ func (z *Zone) npcAppear(id uint32, e *entity) *wathenav1.Event {
 type scriptEvent struct {
 	name string
 	args []modscript.Arg
+	// death is set for the death event, which runs with FireDeath.
+	death *modscript.Death
 	// release are monster handles that end after the event runs.
 	release []int64
 }
@@ -162,7 +171,7 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 		log = slog.New(slog.DiscardHandler)
 	}
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
-		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing}
+		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location}
 	if z.Status != nil {
 		opts.Jobs = z.Status
 	}
@@ -192,35 +201,23 @@ func (z *Zone) scriptEventFor(name string, args ...modscript.Arg) {
 	z.scriptEvents = append(z.scriptEvents, scriptEvent{name: name, args: args})
 }
 
-// monsterKilled queues monster_killed. The handle to the dead monster
-// stays readable until the event has run.
-func (z *Zone) monsterKilled(killer *Player, e *entity) {
-	if z.scripts == nil {
-		return
-	}
-	if z.monsterHandles == nil {
-		z.monsterHandles = map[int64]*entity{}
-	}
-	z.nextMonsterHandle++
-	h := z.nextMonsterHandle
-	z.monsterHandles[h] = e
-	z.scriptEvents = append(z.scriptEvents, scriptEvent{
-		name:    "monster_killed",
-		args:    []modscript.Arg{modscript.Player(int64(killer.charID)), modscript.Monster(h)},
-		release: []int64{h},
-	})
-}
-
 // runScripts runs the queued events' handlers. Handlers may queue more
 // events, which run in the same call.
 func (z *Zone) runScripts() {
 	for len(z.scriptEvents) > 0 {
 		ev := z.scriptEvents[0]
 		z.scriptEvents = z.scriptEvents[1:]
-		if z.scripts != nil {
+		switch {
+		case z.scripts == nil:
+		case ev.death != nil:
+			z.scripts.FireDeath(*ev.death)
+		default:
 			z.scripts.Fire(ev.name, ev.args...)
 		}
 		for _, h := range ev.release {
+			if e := z.monsterHandles[h]; e != nil && e.monster != nil {
+				e.monster.handle = 0
+			}
 			delete(z.monsterHandles, h)
 		}
 	}
@@ -348,7 +345,7 @@ func maxOf(e *entity, hp bool) script.Value {
 }
 
 // MonsterField reads a field of a monster handle. A killed monster is
-// readable until its monster_killed event has run, with is_alive false.
+// readable until its death event has run, with is_alive false.
 func (h scriptHost) MonsterField(id int64, field string) (script.Value, error) {
 	e := h.z.monsterHandles[id]
 	if e == nil {

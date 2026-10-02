@@ -230,7 +230,8 @@ func TestMonsterHandle(t *testing.T) {
 local events = require "wa.events"
 local timers = require "wa.timers"
 return function()
-  events.on("monster_killed", function(player, monster)
+  events.on("death", function(death)
+    local player, monster = death.killer, death.victim
     player:send_message(monster.name .. " alive " .. tostring(monster.is_alive))
     local ok = pcall(function() monster.name = "x" end)
     player:send_message("writable " .. tostring(ok))
@@ -240,7 +241,7 @@ return function()
     end)
   end)
 end`))
-	r.Fire("monster_killed", Player(1), Monster(7))
+	r.FireDeath(Death{Victim: 7, VictimKind: "monster", Monster: 1002, Killer: 1, KillerKind: "player"})
 	delete(h.monsters, 7)
 	advance(h, r, 10)
 	want := "1:Poring alive false|1:writable false|1:later false the monster is gone"
@@ -381,7 +382,7 @@ end`))
 
 func TestEventNamesChecked(t *testing.T) {
 	cases := map[string]string{
-		`events.on("logn", function() end)`:  `there is no event "logn"; a mod context can listen to base_level_up, job_level_up, login, logout, map_enter, monster_killed`,
+		`events.on("logn", function() end)`:  `there is no event "logn"; a mod context can listen to base_level_up, death, job_level_up, login, logout, map_enter`,
 		`events.on("click", function() end)`: `"click" is an event of npc contexts, and this is a mod context`,
 		`events.on("login", 3)`:              "the handler must be a function",
 	}

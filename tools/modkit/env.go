@@ -152,7 +152,7 @@ func (e *Env) Load(ctx context.Context, p, depsDir, base string, log *slog.Logge
 			delete(approve, id)
 		}
 	}
-	loaded, err := gamedata.LoadMods(ctx, found, cfg, e.Mode, e.Items, &mod.MemoryIDs{}, e.Core, log)
+	loaded, err := gamedata.LoadMods(ctx, found, cfg, e.Mode, e.Items, e.Monsters, e.Tables, &mod.MemoryIDs{}, e.Core, log)
 	if err != nil {
 		return nil, err
 	}

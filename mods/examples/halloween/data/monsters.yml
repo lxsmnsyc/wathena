@@ -1,0 +1,37 @@
+# New monsters. Each shows the sprite of a core monster, and starts from
+# its stats. The server gives each an ID in the mod range (from 100,000)
+# the first time it loads.
+- name: example.halloween:PUMPKIN_PORING
+  sprite: PORING
+  display_name: Pumpkin Poring
+  level: 12
+  hp: 260
+  attack: [18, 26]
+  defense: 4
+  base_exp: 90
+  job_exp: 70
+  element: ghost
+  element_level: 1
+  drops:
+    - {item: Pumpkin, rate: 2000}
+    - {item: Candy, rate: 1000}
+    - {item: "example.halloween:Pumpkin_Hat", rate: 50}
+
+# The boss of the Pumpkin_King event.
+- name: example.halloween:PUMPKIN_KING
+  sprite: JAKK
+  display_name: Pumpkin King
+  level: 60
+  hp: 40000
+  attack: [300, 450]
+  defense: 30
+  magic_defense: 30
+  hit: 180
+  flee: 120
+  class: boss
+  modes: [can_move, can_attack, aggressive]
+  base_exp: 25000
+  job_exp: 18000
+  drops:
+    - {item: "example.halloween:Pumpkin_Hat", rate: 5000}
+    - {item: Pumpkin_Head, rate: 10000}

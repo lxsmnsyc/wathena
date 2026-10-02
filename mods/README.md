@@ -1,9 +1,10 @@
 # Making a mod
 
-A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader and tools support today, in phase 3 step 5. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md). It is experimental and can change in any release until API 1.0.
+A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader and tools support today, in phase 3 step 6. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md). It is experimental and can change in any release until API 1.0.
 
 - [core](core) is the base game as a mod. It is built into the server. Its files are rAthena's item scripts, NPCs and shops, which the server converts when it starts ("Item scripts" and "Core's NPCs" below).
 - [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a shop, a script that greets players, and tests.
+- [examples/halloween](examples/halloween) is the phase 3 exit check: a hat, a witch who gives it once, Pumpkin Porings with drops, a night that doubles their drops through a `drop_rate` hook, and the Pumpkin King, a boss that a world event brings every evening.
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -17,7 +18,9 @@ greeter/
   mod.yaml              the manifest
   data/
     items.yml           item overlay
+    monsters.yml        monster overlay
     npcs.yml            NPC placements and shops
+    events.yml          world events
   locales/
     en.yml              text for players, read with wa.text
   scripts/
@@ -139,7 +142,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 ```
 
 - Names are AegisNames, such as `Red_Potion`.
-- Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`, and `name`, `buy`, `sell` and `no_sell`: the name `items.name` gives, the prices of NPC shops in zeny, and whether shops buy the item.
+- Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`, and `display_name`, `buy`, `sell` and `no_sell`: the name `items.name` gives, the prices of NPC shops in zeny, and whether shops buy the item. `name` is the record's key, so the name players see is `display_name`, as for NPCs.
 - `script` is the item's entry script, a path under the mod's `scripts/`. It belongs to the mod that sets it.
 - `bonuses` are static bonuses of an equipment item ("Static bonuses" below).
 - `unsupported` says what the item's script needs that the server does not have yet. A usable item with it is refused, and the player sees the text. Core sets it on converted items.
@@ -180,7 +183,92 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
     - {item: "example.greeter:Welcome_Cookie", price: 25}
 ```
 
-Kinds not overlaid yet: monsters, skills, jobs, spawns, quests, achievements, and events.
+### Monsters: data/monsters.yml
+
+```yaml
+- name: example.halloween:PUMPKIN_PORING
+  sprite: PORING
+  display_name: Pumpkin Poring
+  level: 12
+  hp: 260
+  attack: [18, 26]
+  base_exp: 90
+  job_exp: 70
+  element: ghost
+  drops:
+    - {item: Pumpkin, rate: 2000}
+    - {item: "example.halloween:Pumpkin_Hat", rate: 50}
+- name: PORING
+  hp: 80
+```
+
+- Names are AegisNames in upper case, such as `PORING`. A new monster is named with the mod's ID.
+- `sprite` names the monster whose sprite players see. A new monster needs it, and starts from that monster's stats, with no exp and no drops.
+- The server has no monster status calculation yet (phase 4), so the fields set what combat reads: `hp`, `sp`, `level`, `attack` and `magic_attack` as `[minimum, maximum]`, `defense`, `magic_defense`, `hit`, `flee`, `speed` (milliseconds per cell), `attack_range`, `attack_delay`, `attack_motion` and `damage_motion`.
+- `element` (from `wa.elements`, with `element_level` 1 to 4), `race` (from `wa.races`) and `size` (from `wa.sizes`) are names.
+- `class` is `normal`, `boss`, `guardian`, `battlefield` or `event`. As in rAthena, `boss` adds the modes `detector`, `status_immune` and `knockback_immune`.
+- `modes` is a list of rAthena's modes in lower case, such as `can_move`, `can_attack`, `aggressive` and `mvp`. It replaces the monster's modes.
+- `base_exp` and `job_exp` are scaled by the exp rates. `drops` is a list of `{item, rate}`, with rates per 10,000, at most 20. The drop rate settings apply to them as to core's.
+- `display_name` is the name players see. `id` cannot be set.
+- `monsters.id "example.halloween:PUMPKIN_PORING"` finds a mod's monster. Monsters appear on maps through scripts (`spawning.monsters`, below). There is no `data/spawns.yml` yet.
+
+### World events: data/events.yml
+
+```yaml
+- name: Pumpkin_King
+  trigger: { daily: "20:00" }
+  duration_minutes: 60
+  script: scripts/events/pumpkin_king.lua
+  map: prt_fild08
+```
+
+The world event scheduler starts events without staff action (strategy section 8.8). A mod that adds or changes an event needs the permission `events.schedule`.
+
+| Field | Meaning |
+|---|---|
+| `trigger` | What starts the event (below). |
+| `duration_minutes` | How long a run lasts: 1 to 10,080 minutes. |
+| `script` | The entry script of a run. Its setup function runs in a new event context. |
+| `map` | The map whose zone runs the event. Without it, the world's start map. |
+
+| Trigger | Starts the event |
+|---|---|
+| `daily: "20:00"` | Every day at that time. |
+| `weekly: { day: saturday, time: "20:00" }` | Every week. |
+| `monthly: { day: 1, time: "00:00" }` | Every month. A month without the day, such as the 31st, has no run. |
+| `hourly: { minute: 30 }` | Every hour. |
+| `random: { chance_per_hour: 500 }` | At the start of each hour, with a chance per 10,000 from a secret stream. |
+| `condition: { module: example.bosses.conditions, function: town_is_quiet, lasting_minutes: 60 }` | Once the function has returned true for that long. |
+
+Rules:
+
+- Times are in the server's time zone, `time_zone` in the config (server/README.md). On a day clocks change, a time that does not exist runs at the next valid minute, and a time that happens twice runs once.
+- Each run is one context of kind `"event"`. `context:get_instance()` is `{ name, map }`. What the run makes goes when it ends: monsters, handlers, timers, schedules and hooks.
+- An event has one run at a time. A time that comes while a run lasts is skipped.
+- Each run is recorded before it starts, so a restart never runs the same time twice. Runs whose window passed while the server was stopped are skipped. A run whose window is still open when the server starts begins at once and ends at its usual time. A run cut short by a stop does not start again.
+- A condition is a function of a helper module that the mod can `require`. The module returns a table that holds it. It runs once a minute in the zone of the event's map, and only reads the game: a call that changes it raises an error. After a run ends, it must hold for `lasting_minutes` again.
+- A sleeping zone keeps its clock still, so the timers of a run on a map without players wait. The run still ends on time.
+- The server owner can move or turn off an event in the config, under `mods.events` (server/README.md, "World events").
+
+```lua
+-- scripts/events/pumpkin_king.lua
+local events = require "wa.events"
+local monsters = require "wa.monsters"
+local spawning = require "wa.spawning"
+local world = require "wa.world"
+
+local PUMPKIN_KING = monsters.id "example.halloween:PUMPKIN_KING"
+
+return function()
+  local king = spawning.monsters { monster = PUMPKIN_KING }[1]
+  world.announce("The Pumpkin King has risen on the Prontera fields!")
+  events.on("death", function(death)
+    world.announce(death.killer.name .. " defeated the Pumpkin King!")
+  end, { victim = king })
+end
+```
+
+Kinds not overlaid yet: skills, jobs, spawns, quests and achievements.
 
 ## Text: locales/en.yml
 
@@ -195,7 +283,7 @@ greeter:
 
 ## IDs
 
-The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000. Monsters start at 100,000, skills at 20,000, jobs at 10,000, and quests and achievements at 1,000,000, for when those kinds get overlays.
+The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000 and monsters at 100,000. Skills start at 20,000, jobs at 10,000, and quests and achievements at 1,000,000, for when those kinds get overlays.
 
 - An ID never changes, and never goes to another name, even when the mod is removed. The item comes back with its ID when the mod is installed again.
 - Scripts find IDs by name: `items.id "example.greeter:Welcome_Cookie"`.
@@ -262,10 +350,12 @@ end
 | `login` | `player` | A player logs in, in the zone it enters. |
 | `logout` | `player` | A player logs out, before it leaves. |
 | `map_enter` | `player` | A player enters the zone: at login and after a warp. |
-| `monster_killed` | `player`, `monster` | The player killed a monster. `monster` is a monster handle. |
+| `death` | `death` | A player or a monster died on the context's map ("Death" below). Mod, NPC and event contexts. |
 | `base_level_up` | `player` | The player gained a base level. |
 | `job_level_up` | `player` | The player gained a job level. |
 | `click` | `player`, `conversation` | NPC contexts only: a player talks to the NPC ("NPC scripts" below). |
+
+Event contexts can listen to the events of mod contexts.
 
 `touch`, for NPCs whose area a player walks into, is a name that registers and does not fire yet.
 
@@ -413,7 +503,7 @@ Shops follow rAthena's `npc_buylist` and `npc_selllist`: a purchase checks the z
 
 ### Monsters
 
-`monster_killed` gives the handler a read-only monster handle. It works like a player handle.
+Monster handles, from `death` and `spawning.monsters`, are read-only. They work like player handles.
 
 | Field | Meaning |
 |---|---|
@@ -422,9 +512,100 @@ Shops follow rAthena's `npc_buylist` and `npc_selllist`: a purchase checks the z
 | `map`, `x`, `y` | The zone's map name and the cell. |
 | `is_alive` | `false` for a killed monster. |
 
-- The killed monster is gone from the map, but its handle stays readable until the event's handlers have run.
+- A killed monster is gone from the map, but its handle stays readable until the death event's handlers have run.
 - After that, reading the handle raises an error, like a handle to a player who left. A timer that the handler starts cannot read it.
+- Two handles to one monster are equal with `==`. A monster that comes back after it died is a new monster, with a new handle.
 - Reading needs `game.read`.
+
+### Death
+
+```lua
+local events = require "wa.events"
+
+return function()
+  events.on("death", function(death)
+    if death.killer then
+      death.killer:send_message("You defeated " .. death.victim.name .. ".")
+    end
+  end, { victim_kind = "monster" })
+end
+```
+
+The death object has `victim` (a player or monster handle), `victim_kind` (`"player"` or `"monster"`), `killer` (a handle, or nil when nothing killed it), `map`, `x`, `y`, and `skill` (nil for a normal attack). It fires for deaths on the context's map. Options narrow it:
+
+| Option | The handler runs for |
+|---|---|
+| `victim` | One player or monster handle. |
+| `victims` | Any handle of a list, such as what `spawning.monsters` returned. |
+| `victim_kind` | `"player"` or `"monster"`. |
+| `monster` | Monsters of one ID, from `monsters.id`. |
+| `map` | One map. A context sees its own map's deaths only. |
+
+### Spawning monsters
+
+```lua
+local spawning = require "wa.spawning"
+
+return function()
+  -- 15 Pumpkin Porings that come back after they die, while the mod runs.
+  spawning.monsters { monster = PUMPKIN_PORING, amount = 15, respawn = true }
+  -- 3 near a cell, that stay dead.
+  local guards = spawning.monsters { monster = PORING, amount = 3, x = 150, y = 180, area = 5 }
+end
+```
+
+- `spawning.monsters { map, monster, amount, x, y, area, respawn }` places monsters on the context's map and returns their handles. `map` may be left out. Another map raises an error, so a mod script, which runs in every zone, checks `context:get_instance().map` first.
+- Without `x` and `y`, each monster lands on a random walkable cell. `area` spreads them within that many cells of `x`, `y`.
+- `amount` is 1 to 1,000. `respawn = true` brings a dead monster back after 5 seconds, as a normal spawn. By default a dead monster stays dead.
+- The context owns the monsters: they go when it ends, such as when an event's run ends or the mod reloads.
+- It needs `npc.create`, which every mod has.
+
+### Schedules
+
+```lua
+local schedules = require "wa.schedules"
+
+return function()
+  schedules.daily("00:00", function() end)
+  schedules.weekly("saturday", "20:00", function() end)
+  local s = schedules.hourly(30, function() end)
+  s:cancel()
+  schedules.when(function() return #players_here() == 0 end, function() end, { lasting_minutes = 60 })
+end
+```
+
+- Schedules follow the server clock, in the server's time zone. A time that does not exist on a day clocks change runs at the next valid minute. A time that happens twice runs once.
+- A mod script runs in every zone, so its schedules run in every zone. Check `context:get_instance().map` to run on one map.
+- A sleeping zone wakes for its schedules. A time that passed more than once, such as while the server was stopped, runs at most once.
+- `schedules.when` runs its condition once a minute, at the start of each minute. The handler runs once the condition has held for `lasting_minutes`, once for each time it holds. The condition only reads the game: a call that changes it raises an error.
+- The context owns its schedules. Each returns a handle with `cancel()`. They need no permission.
+
+### Hooks
+
+```lua
+local hooks = require "wa.hooks"
+
+return function()
+  hooks.on("drop_rate", function(drop, next)
+    local rate = next(drop)
+    if drop.monster.id == PUMPKIN_PORING then
+      return rate * 2
+    end
+    return rate
+  end, { priority = 10 })
+end
+```
+
+| Hook | Object | Returns |
+|---|---|---|
+| `drop_rate` | `drop`: `player` (the killer, or nil), `monster`, `item`, `map`, `rate` (rAthena's rate, per 10,000) | The rate, kept to 0 to 10,000. |
+| `experience` | `exp`: `player`, `monster`, `base`, `job` (the exp the player gets, after the shares and the level penalty) | `base, job`. Below 0 counts as 0. |
+
+- Hooks run in a chain. Higher priority runs first; equal priorities run in the order they were added. `next(object)` returns the rest of the chain's result. The innermost result is rAthena's value.
+- To pass a changed object, pass a table with the same fields to `next`.
+- A hook only computes: a call that changes the game raises an error in it. A hook that fails is logged and left out.
+- Hooks run in the zone of the kill. A hook of a mod script runs in every zone. A hook of an event run changes kills on the event's map, until the run ends.
+- `hooks.on` needs `rules.override`, which the server owner approves and the server logs at each start. It returns a handle with `remove()`.
 
 ### Items
 
@@ -564,6 +745,7 @@ Modules:
 | `wa.headgear_effects` | The constants of `show_headgear_effect`. |
 | `wa.emotions` | The constants of `npc:show_emotion`, from rAthena's `ET_` names, such as `emotions.thanks`. |
 | `wa.variables`, `wa.text`, `wa.maps`, `wa.world` | Saved variables, text, and announcements ("NPC scripts"). |
+| `wa.schedules`, `wa.spawning`, `wa.hooks` | Schedules, monsters and hooks ("Schedules", "Spawning monsters", "Hooks"). |
 
 Constant names come from rAthena's by a fixed rule (0002a, "Constants used in arguments", lists the spelled-out names): the prefix goes, the rest is in lower case, and a few names are spelled out. So `RC_DemiHuman` is `races.demi_human`, `SC_STUN` is `statuses.stun`, `EF_HEAL` is `effects.heal`, and `W_2HSWORD` is `weapon_types.two_handed_sword`. A name that starts with a digit gets an `n`: `statuses.n2011rwc_scroll`.
 
@@ -687,7 +869,14 @@ end
 | `world:use_item(player, item)` | Uses one of the player's items. Fails when the player has none, or the use is refused. |
 | `world:advance(milliseconds)` | Moves the zone clock. Timers fire. The clock starts at 0 and moves only with this call, conversation waits, and the item use interval. |
 | `world:spawn_monster { monster, map, x, y }` | Places a monster from `monsters.id` on a cell and returns its handle. It does not come back after it dies. |
-| `world:kill(player, monster)` | The player kills the monster: `monster_killed` fires, and the player gets its exp and drops. |
+| `world:kill(player, monster)` | The player kills a living monster: `death` fires, and the player gets its exp and drops. After it, the monster's handle raises an error. |
+| `world:set_time(time, time_zone)` | Sets the server time and time zone the world starts at, such as `"2026-10-31 19:58"` and `"Asia/Manila"`. Call it before the world has a map. Without it, the world starts at 2026-01-05 12:00 UTC. |
+| `world:get_time()` | The server time, as `"2026-10-31 20:00"`. |
+| `world:get_monsters(monster)` | Handles of the living monsters of the map, of one ID or all, in the order they spawned. |
+| `world:get_announcements()` | Every line announced to the world or the map so far. |
+| `world:count_floor_items(item)` | How many of an item lie on the map. |
+
+The last five, and world events in test worlds, are provisional (proposal 0002, review decision 16). A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
 | `testing.expect(value)` | Checks a value with `.to_be(x)`, `.to_equal(table)` (deep), `.to_contain(text_or_value)`, `.to_be_true()`, `.to_be_false()`, `.to_be_nil()`, or `.to_fail_with(text)` for a function that should raise an error containing the text. |
 
 A failed check stops the case and prints the file and line of the check. A case also fails when the server logs a warning that names the mod, such as a handler that failed. `wactl mod test` exits with status 1 when any case fails, so CI can run it.

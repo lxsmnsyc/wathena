@@ -335,6 +335,10 @@ func records(l *Loaded) []Record {
 		}
 		for _, k := range slices.Sorted(maps.Keys(fields)) {
 			by, set := r.SetBy[k]
+			if k == "name" && !set {
+				// display_name in the file sets the item's name.
+				by, set = r.SetBy["display_name"]
+			}
 			if !set {
 				// Empty fields that no mod set are left out. Other
 				// fields are core's, or a new record's defaults.
@@ -352,15 +356,25 @@ func records(l *Loaded) []Record {
 		}
 		out = append(out, rec)
 	}
-	for _, r := range l.NPCOverlay.Records {
-		if !touches(r, id) {
+	for _, o := range []*mod.Overlay{l.NPCOverlay, l.MonsterOverlay, l.EventOverlay} {
+		if o == nil {
 			continue
 		}
-		rec := Record{Kind: "npcs", Name: r.Name, AddedBy: r.Mod, Where: r.Where}
-		for _, k := range slices.Sorted(maps.Keys(r.Fields)) {
-			rec.Fields = append(rec.Fields, RecordField{Name: k, Value: r.Fields[k], SetBy: r.SetBy[k]})
+		for _, r := range o.Records {
+			if !touches(r, id) {
+				continue
+			}
+			rec := Record{Kind: o.Kind.Name, Name: r.Name, AddedBy: r.Mod, Where: r.Where}
+			if o.Kind.Name == mod.MonsterKind.Name {
+				if mid, ok := l.Zone.MonsterIDs[strings.ToUpper(r.Name)]; ok {
+					rec.Fields = append(rec.Fields, RecordField{Name: "id", Value: json.Number(fmt.Sprint(mid)), SetBy: "server"})
+				}
+			}
+			for _, k := range slices.Sorted(maps.Keys(r.Fields)) {
+				rec.Fields = append(rec.Fields, RecordField{Name: k, Value: r.Fields[k], SetBy: r.SetBy[k]})
+			}
+			out = append(out, rec)
 		}
-		out = append(out, rec)
 	}
 	return out
 }

@@ -26,6 +26,14 @@ type Spawn struct {
 	// Reward is the monster's level, exp and drops. Monsters without one
 	// give nothing when they die.
 	Reward *progression.Mob
+	// Sprite is the monster ID whose sprite players see, for a monster
+	// of a mod that reuses another's. 0 shows Mob's own.
+	Sprite uint32
+
+	// owner is the script context that spawned the monsters, or 0.
+	// noRespawn keeps dead monsters from coming back.
+	owner     int64
+	noRespawn bool
 }
 
 type monster struct {
@@ -35,6 +43,9 @@ type monster struct {
 	nextWalk int64
 	// dmglog is who fought the monster, for exp shares and loot.
 	dmglog progression.DamageLog
+	// handle is the monster's script handle, or 0 before a script needs
+	// one.
+	handle int64
 }
 
 // Random walk timing, as rAthena's mob.cpp.

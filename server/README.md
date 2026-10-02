@@ -242,11 +242,13 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. |
 | `profile_dir` | `--profile-dir` | none | Folder for CPU profiles of slow ticks. |
 | `shutdown_countdown` | `--shutdown-countdown` | `10s` | The countdown players see before the server stops, up to `10m`. `0s` turns it off. See "NPCs". |
+| `time_zone` | `--time-zone` | `UTC` | The server's time zone, as an IANA name such as `Asia/Manila`. Schedules and world events match their times there. See "World events". |
 | `mods.dir` | `--mods` | none | The folder of installed mods. See "Mods". |
 | `mods.ruleset` | `--ruleset` | the core ruleset of `mode` | The world's ruleset mod. |
 | `mods.strict` | `--mods-strict` | `false` | Data overlay warnings become errors. |
 | `mods.approve` | none | none | Approved permissions, by mod ID. |
 | `mods.disable` | none | none | Installed mods that must not load. |
+| `mods.events` | none | none | Changes to world events, by event name. See "World events". |
 
 `waserver` checks everything before it starts, and lists every problem by key. With a database it also refuses to start:
 
@@ -274,7 +276,7 @@ On SIGTERM or Ctrl+C, `waserver` stops being ready, ends every game connection w
 
 ## Mods
 
-`waserver` loads the mods in `mods.dir` at startup (strategy section 6, [decision 0006](../docs/decisions/0006-mod-loader.md)). [mods/README.md](../mods/README.md) is the guide for mod authors. `mods/examples/greeter` is a small sample.
+`waserver` loads the mods in `mods.dir` at startup (strategy section 6, [decision 0006](../docs/decisions/0006-mod-loader.md)). [mods/README.md](../mods/README.md) is the guide for mod authors. `mods/examples/greeter` is a small sample, and `mods/examples/halloween` adds an NPC, an item, monsters, a hook and world events.
 
 ```yaml
 mods:
@@ -291,7 +293,8 @@ What it does:
 - The built-in `core` mod stands for the base game. `core.ruleset.renewal` and `core.ruleset.pre_renewal` are its ruleset mods.
 - Mods load after their `depends`, their `load_after` that are installed, and `core`. Ties go by mod ID, so the order is the same on every start.
 - The world's ruleset is `mods.ruleset`, or the core ruleset of `mode`. Ruleset mods that are not the world's ruleset, or what it extends, are skipped.
-- Items from mods get IDs from 2,000,000 the first time they load. With a database the IDs are kept in the `mod_ids` table, and never change or go to another item. Without a database they live in memory, like the characters.
+- Items from mods get IDs from 2,000,000 the first time they load, and monsters from 100,000. With a database the IDs are kept in the `mod_ids` table, and never change or go to another record. Without a database they live in memory, like the characters.
+- Monster overlays change core's monsters everywhere they spawn, and mods' monsters appear through scripts.
 - Each zone runs the mods' scripts in its own Lua state. A mod whose scripts fail is logged and left off in that zone. A mod whose handlers fail 10 times in a minute is turned off in that zone.
 - A zone makes its Lua state at start when a mod has entry scripts, and otherwise when a player first uses an item there.
 
@@ -356,17 +359,57 @@ Cost: each zone's Lua state holds about 50 KB for the sample mod. All 988 maps o
 - The save point is kept in the `characters` table. A dead character is saved at its save point, and a player who dies goes back there.
 - Character and account variables of `wa.variables` save with the character. Server variables save right after they change, and again when the server stops. Without a database they live in memory.
 
-To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing:
+To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing. The sample mods need their permissions approved, in a config file such as:
+
+```yaml
+# examples.yml
+mods:
+  dir: mods/examples
+  approve:
+    example.halloween: [player.give_items, world.announce, events.schedule, rules.override]
+```
 
 ```text
-go run ./server/cmd/waserver --assets /path/to/build --maps prontera,prt_in,izlude --dev \
-  --mods mods/examples --start-items 909:300,602:1
+go run ./server/cmd/waserver --config examples.yml --assets /path/to/build --maps prontera,prt_in,izlude --dev \
+  --start-items 909:300,602:1
 ```
 
 Stopping:
 
 - On SIGTERM or Ctrl+C the server announces a countdown to every player, at 30, 10, 5, 3, 2 and 1 seconds, then saves and stops. A second signal stops it at once.
 - `shutdown_countdown` (`--shutdown-countdown`) sets the countdown. The default is 10 seconds, the most is 10 minutes, and 0 turns it off.
+
+## World events
+
+`waserver` starts the world events of the mods' `data/events.yml` without staff action (strategy section 8.8, mods/README.md, "World events"). It logs each event at start with its trigger and next time:
+
+```text
+level=INFO msg="world event" event=example.halloween:Pumpkin_King trigger="daily at 20:00" minutes=60 next="2026-10-31 20:00 PST"
+level=INFO msg="world event started" event=example.halloween:Pumpkin_King scheduled=... ends=...
+```
+
+- Times match in `time_zone`, an IANA name. The server keeps every time in UTC. On a day clocks change, a time that does not exist runs at the next valid minute, and a time that happens twice runs once. The binary carries the time zone database, so the distroless image needs none.
+- A run starts in the zone of the event's map, or of the start map. An event whose map does not run is an error at start.
+- Each run is written to the `world_event_runs` table before it starts, so a restart never runs the same time twice. Runs missed while the server was stopped are skipped, except a run whose window is still open at the start: it begins at once and ends at its usual time. Without a database, runs are kept in memory.
+- Random triggers draw from the world's secret stream `events`, once at the start of each hour.
+- Condition triggers run their Lua function once a minute, in the zone of the event's map.
+
+`mods.events` moves or turns off an event, by its full name:
+
+```yaml
+time_zone: Asia/Manila
+mods:
+  events:
+    example.halloween:Pumpkin_King:
+      trigger: { weekly: { day: saturday, time: "21:00" } }
+      duration_minutes: 30
+    example.halloween:Pumpkin_Night:
+      disabled: true
+```
+
+- `trigger` takes the forms of `data/events.yml`. `duration_minutes` is 1 to 10,080.
+- An event that does not exist is an error, so a typo does not pass.
+- For a quick test, set the trigger a minute or two ahead.
 
 ## Load tests and metrics
 

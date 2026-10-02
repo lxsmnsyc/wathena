@@ -1,6 +1,7 @@
 package progression
 
 import (
+	"math/rand/v2"
 	"slices"
 	"testing"
 
@@ -123,5 +124,27 @@ func TestRollDrops(t *testing.T) {
 	r = &scripted{vals: []int{9999, 0, 9999}}
 	if got := tb.RollDrops(m, 100, nil, false, r); !slices.Equal(got, []Dropped{{Item: 9001}, {Item: 501}}) {
 		t.Errorf("egg on the ground: %v", got)
+	}
+}
+
+func TestRollDropsHook(t *testing.T) {
+	tb := New(&Data{}, map[uint32]string{501: "Healing"}, DefaultConfig)
+	m := &Mob{Drops: []Drop{{Item: 501, Rate: 1}}}
+	count := func(h *Hooks) int {
+		r := rand.New(rand.NewPCG(1, 2))
+		n := 0
+		for range 1000 {
+			n += len(tb.RollDropsWith(m, 100, nil, false, r, h))
+		}
+		return n
+	}
+	if n := count(nil); n > 10 {
+		t.Fatalf("without a hook, %d of 1000 kills dropped at 0.01%%", n)
+	}
+	if n := count(&Hooks{DropRate: func(item uint32, rate int) int { return 20000 }}); n != 1000 {
+		t.Fatalf("a hook rate above 10,000 dropped %d of 1000, want all", n)
+	}
+	if n := count(&Hooks{DropRate: func(item uint32, rate int) int { return -5 }}); n != 0 {
+		t.Fatalf("a hook rate below 0 dropped %d", n)
 	}
 }

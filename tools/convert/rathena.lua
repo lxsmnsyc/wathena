@@ -4,6 +4,9 @@
 -- need: arrays that start at 0, menus written as "A:B", and the end of a
 -- script from inside a function.
 
+local events = require "wa.events"
+local spawning = require "wa.spawning"
+
 local R = {}
 
 -- STOP ends a converted script from any depth, as rAthena's end does
@@ -209,6 +212,68 @@ function R.take_item(player, item, amount)
 		return true
 	end
 	return player:take_item(item, amount)
+end
+
+-- Monsters of rAthena's monster command. alive counts the living
+-- monsters of each NPC by event label, for mobcount. Its keys are weak,
+-- so an NPC that ends leaves it.
+local alive = setmetatable({}, { __mode = "k" })
+
+-- own_map checks that a command works on the NPC's own map, the only
+-- map where it can spawn monsters.
+local function own_map(npc, what, map)
+	if map ~= npc.map then
+		error(what .. ": this NPC is on " .. npc.map .. " and works on its own map only, not on " .. tostring(map), 3)
+	end
+end
+
+-- monster is rAthena's monster command on the NPC's own map. A cell of
+-- 0 or less places each monster on a random cell, as rAthena does. With
+-- a label, on_death runs when each monster dies: with the player that
+-- killed it, or with nil. The death handler goes once all have died.
+function R.monster(npc, map, x, y, mob, amount, label, on_death)
+	own_map(npc, "monster", map)
+	if amount <= 0 then
+		return
+	end
+	local spec = { monster = mob, amount = amount }
+	if x > 0 and y > 0 then
+		spec.x, spec.y = x, y
+	end
+	local list = spawning.monsters(spec)
+	if label == nil or #list == 0 then
+		return
+	end
+	local counts = alive[npc]
+	if counts == nil then
+		counts = {}
+		alive[npc] = counts
+	end
+	counts[label] = (counts[label] or 0) + #list
+	local left = #list
+	local handle
+	handle = events.on("death", function(death)
+		counts[label] = counts[label] - 1
+		left = left - 1
+		if left == 0 then
+			handle:remove()
+		end
+		-- The death object has no killer kind: a handle's text starts
+		-- with its kind.
+		local killer = death.killer
+		if killer ~= nil and tostring(killer):sub(1, 7) ~= "player " then
+			killer = nil
+		end
+		on_death(killer)
+	end, { victims = list })
+end
+
+-- mobcount is rAthena's mobcount for one event label of the NPC: its
+-- monsters with that label that live.
+function R.mobcount(npc, map, label)
+	own_map(npc, "mobcount", map)
+	local counts = alive[npc]
+	return counts and counts[label] or 0
 end
 
 -- input is rAthena's input for a number: the player may enter any

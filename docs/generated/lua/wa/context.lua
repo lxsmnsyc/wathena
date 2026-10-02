@@ -5,8 +5,8 @@
 ---@class wa.context
 local context = {}
 
----The instance the context owns: the mod, the NPC, the equipped copy, or the used item.
----@return wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse
+---The instance the context owns: the mod, the NPC, the equipped copy, the used item, or the event run.
+---@return wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance
 function context:get_instance() end
 
 ---The context's kind.

@@ -81,6 +81,11 @@ type Kill struct {
 // It leaves out what needs parties, homunculi, pets, mercenaries, guilds,
 // MVP rewards, Star Gladiator bonuses and zeny from monsters.
 func (t *Tables) Kill(m *Mob, log *DamageLog, killer uint32, who func(charID uint32) Attacker) Kill {
+	return t.KillWith(m, log, killer, who, nil)
+}
+
+// KillWith is Kill with hooks: each reward goes through h.Experience.
+func (t *Tables) KillWith(m *Mob, log *DamageLog, killer uint32, who func(charID uint32) Attacker, h *Hooks) Kill {
 	k := Kill{First: killer, DropModifier: 100}
 	entries := append([]DamageEntry(nil), log.Entries...)
 	eligible := make([]Attacker, len(entries))
@@ -167,6 +172,13 @@ func (t *Tables) Kill(m *Mob, log *DamageLog, killer uint32, who func(charID uin
 			}
 			if job != 0 {
 				job = min(max(applyRate(job, rate), 1), MaxExp)
+			}
+		}
+		if h != nil && h.Experience != nil {
+			base, job = h.Experience(e.CharID, base, job)
+			base, job = max(base, 0), max(job, 0)
+			if base == 0 && job == 0 {
+				continue
 			}
 		}
 		k.Rewards = append(k.Rewards, Reward{CharID: e.CharID, BaseExp: base, JobExp: job})

@@ -123,7 +123,6 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onhide | 1 | 0 | 0 | 1 | 0 |  |
 | event onlinerec_50 | 1 | 0 | 0 | 1 | 0 |  |
 | event onlinerec_aco | 1 | 0 | 0 | 1 | 0 |  |
-| event onmymobdead | 1 | 0 | 0 | 1 | 0 |  |
 | event onpclogoutevent | 1 | 0 | 0 | 1 | 0 |  |
 | event ontimer | 1 | 0 | 0 | 1 | 0 |  |
 | event ontimer120000 | 1 | 0 | 0 | 1 | 0 |  |
@@ -138,6 +137,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | insertchar | 1 | 0 | 0 | 1 | 0 |  |
 | is_party_leader | 1 | 0 | 0 | 1 | 0 |  |
 | ismounting | 1 | 0 | 0 | 1 | 0 |  |
+| killmonster | 1 | 0 | 0 | 1 | 0 | the API cannot remove spawned monsters (1) |
 | npcskill | 1 | 0 | 0 | 1 | 0 |  |
 | nude | 1 | 0 | 0 | 1 | 0 |  |
 | openauction | 1 | 0 | 0 | 1 | 0 |  |

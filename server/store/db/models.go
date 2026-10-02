@@ -190,3 +190,10 @@ type World struct {
 	GeneratorVersion int
 	CreatedAt        pgtype.Timestamptz
 }
+
+type WorldEventRun struct {
+	Event       string
+	ScheduledAt pgtype.Timestamptz
+	StartedAt   pgtype.Timestamptz
+	EndsAt      pgtype.Timestamptz
+}

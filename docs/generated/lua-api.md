@@ -13,6 +13,9 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 |---|---|
 | [`wa.context`](#wacontext) | The current instance, kind and mod. Calls outside a setup function or a handler raise an error. |
 | [`wa.events`](#waevents) | Event handlers. The context owns them, and removes them when it ends. |
+| [`wa.hooks`](#wahooks) | Hooks change a game result in a chain ordered by priority. Each hook calls next to get the rest of the chain's result. The innermost result is rAthena's value. Hooks only compute: calls that change the game raise an error in them. The context owns them. |
+| [`wa.schedules`](#waschedules) | Schedules on the server clock, in the server's time zone (time_zone in the config). A time that does not exist on a day clocks change runs at the next valid minute, and a time that happens twice runs once. A time that passed while the zone slept or the server was stopped runs once, or not at all. The context owns them. |
+| [`wa.spawning`](#waspawning) | Monsters that the context owns. They go when it ends. |
 | [`wa.timers`](#watimers) | Timers on the zone clock. The context owns them, and cancels them when it ends. |
 | [`wa.items`](#waitems) | Items by name. |
 | [`wa.skills`](#waskills) | Skills by name. |
@@ -45,9 +48,9 @@ local context = require "wa.context"
 
 The current instance, kind and mod. Calls outside a setup function or a handler raise an error.
 
-#### `context:get_instance() → wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse`
+#### `context:get_instance() → wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance`
 
-The instance the context owns: the mod, the NPC, the equipped copy, or the used item.
+The instance the context owns: the mod, the NPC, the equipped copy, the used item, or the event run.
 
 #### `context:get_kind() → wa.ContextKind`
 
@@ -65,7 +68,7 @@ local events = require "wa.events"
 
 Event handlers. The context owns them, and removes them when it ends.
 
-#### `events.on(name, handler) → wa.EventHandle`
+#### `events.on(name, handler, options?) → wa.EventHandle`
 
 Registers a handler for an event.
 
@@ -75,6 +78,91 @@ Permission: `event.listen`.
 |---|---|---|
 | `name` | `wa.EventName` | The event's name. An unknown name, or an event of another context kind, raises an error. |
 | `handler` | `function` | Runs each time the event fires, in registration order. |
+| `options` | `wa.DeathOptions?` | Only the death event takes options: they narrow which deaths run the handler. |
+
+### wa.hooks
+
+```lua
+local hooks = require "wa.hooks"
+```
+
+Hooks change a game result in a chain ordered by priority. Each hook calls next to get the rest of the chain's result. The innermost result is rAthena's value. Hooks only compute: calls that change the game raise an error in them. The context owns them.
+
+#### `hooks.on(name, hook?, options?) → wa.HookHandle`
+
+Adds a hook. Higher priority runs first; equal priorities run in the order they were added.
+
+Permission: `rules.override`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `wa.HookName` | The hook's name. An unknown name raises an error. |
+| `hook` | `fun(object: wa.Drop\|wa.Exp, next: fun(object?: table): integer, integer?): integer, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp. |
+| `options` | `wa.HookOptions?` |  |
+
+### wa.schedules
+
+```lua
+local schedules = require "wa.schedules"
+```
+
+Schedules on the server clock, in the server's time zone (time_zone in the config). A time that does not exist on a day clocks change runs at the next valid minute, and a time that happens twice runs once. A time that passed while the zone slept or the server was stopped runs once, or not at all. The context owns them.
+
+#### `schedules.daily(time, handler) → wa.Schedule`
+
+Runs the handler every day at the time.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `time` | `string` | HH:MM, such as "20:00". |
+| `handler` | `fun()` |  |
+
+#### `schedules.weekly(day, time, handler) → wa.Schedule`
+
+Runs the handler every week on the day at the time.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `day` | `wa.Weekday` |  |
+| `time` | `string` | HH:MM. |
+| `handler` | `fun()` |  |
+
+#### `schedules.hourly(minute, handler) → wa.Schedule`
+
+Runs the handler every hour at the minute.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `minute` | `integer` | 0 to 59. |
+| `handler` | `fun()` |  |
+
+#### `schedules.when(condition, handler, options?) → wa.Schedule`
+
+Runs the handler once the condition has held for lasting_minutes. The condition runs once a minute, at the start of each minute of the server clock. The handler runs once for each time the condition holds.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `condition` | `fun(): boolean` | Reads the game and returns true or false. Calls that change the game raise an error in it. |
+| `handler` | `fun()` |  |
+| `options` | `wa.WhenOptions?` |  |
+
+### wa.spawning
+
+```lua
+local spawning = require "wa.spawning"
+```
+
+Monsters that the context owns. They go when it ends.
+
+#### `spawning.monsters(spec) → wa.Monster[]`
+
+Places monsters on the context's map and returns their handles. Without x and y, each lands on a random walkable cell.
+
+Permission: `npc.create`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `spec` | `wa.SpawnSpec` |  |
 
 ### wa.timers
 
@@ -962,7 +1050,7 @@ Opens a shop, as callshop.
 
 ### wa.Monster
 
-A monster. A killed monster's handle reads while its monster_killed event runs, with is_alive false, and raises an error after it. Reading needs game.read.
+A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1166,12 +1254,55 @@ Places a monster on a cell. It does not come back after it dies.
 
 #### `testWorld:kill(player, monster)`
 
-The player kills the monster at once: monster_killed fires, and the player gets its exp and drops.
+The player kills the monster at once: the death event fires, and the player gets its exp and drops.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
-| `monster` | `wa.Monster` | A monster from spawn_monster. |
+| `monster` | `wa.Monster` | A living monster: from spawn_monster, get_monsters or spawning.monsters. |
+
+#### `testWorld:set_time(time, time_zone?)`
+
+Sets the server time and time zone the world starts at. Call it before the world has a map. Without it, the world starts at 2026-01-05 12:00 UTC.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `time` | `string` | Such as "2026-10-31 19:58". |
+| `time_zone` | `string?` | An IANA name, such as Asia/Manila. UTC by default. |
+
+#### `testWorld:get_time() → string`
+
+The server time in the world's time zone, as "2026-10-31 20:00".
+
+Provisional: not reviewed in proposal 0002 yet.
+
+#### `testWorld:get_monsters(monster?) → wa.Monster[]`
+
+The living monsters of the map, in the order they spawned.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `monster` | `integer?` | From monsters.id. Every monster without it. |
+
+#### `testWorld:get_announcements() → string[]`
+
+Every line announced to the world or the map so far, in order.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+#### `testWorld:count_floor_items(item) → integer`
+
+How many of the item lie on the map, with drops about to fall.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
 
 ### wa.Expectation
 
@@ -1239,6 +1370,110 @@ The instance of a use context.
 | Field | Type | Meaning |
 |---|---|---|
 | `item` | `integer` | The used item's ID. |
+
+### wa.EventInstance
+
+The instance of an event context: one run of a world event.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` | The event's full name, such as example.halloween:Pumpkin_King. |
+| `map` | `string` | The map of the zone that runs it. |
+
+### wa.Death
+
+The object of the death event.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `victim` | `wa.Player\|wa.Monster` | Readable while the event runs, with is_alive false for a monster. |
+| `victim_kind` | `"player"\|"monster"` |  |
+| `killer` | `wa.Player\|wa.Monster\|nil` | nil when nothing killed the unit. |
+| `map` | `string` |  |
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+| `skill` | `integer?` | nil for a normal attack. |
+
+### wa.DeathOptions
+
+The options of a death handler. Each one narrows the deaths that run it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `victim` | `wa.Player\|wa.Monster\|nil` | One unit. |
+| `victims` | `(wa.Player\|wa.Monster)[]?` | Any of these units. |
+| `victim_kind` | `"player"\|"monster"\|nil` |  |
+| `monster` | `integer?` | A monster from monsters.id. |
+| `map` | `string?` | A map name. |
+
+### wa.Drop
+
+The object of the drop_rate hook: one drop of a killed monster.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player?` | The killer, or nil. |
+| `monster` | `wa.Monster` | The killed monster. |
+| `item` | `integer` |  |
+| `map` | `string` |  |
+| `rate` | `integer` | rAthena's rate, per 10,000. |
+
+### wa.Exp
+
+The object of the experience hook: the exp one player gets for a kill, after the shares and the level penalty.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` |  |
+| `monster` | `wa.Monster` | The killed monster. |
+| `base` | `integer` |  |
+| `job` | `integer` |  |
+
+### wa.HookOptions
+
+The options of hooks.on.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `priority` | `integer?` | Higher runs first. 0 by default. |
+
+### wa.HookHandle
+
+What hooks.on returns.
+
+#### `hookHandle:remove()`
+
+Removes the hook. A second call does nothing.
+
+### wa.Schedule
+
+What wa.schedules returns.
+
+#### `schedule:cancel()`
+
+Stops the schedule. A second call does nothing.
+
+### wa.WhenOptions
+
+The options of schedules.when.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `lasting_minutes` | `integer?` | How long the condition must hold, 0 to 10080. 0 by default. |
+
+### wa.SpawnSpec
+
+The monsters of spawning.monsters.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `monster` | `integer` | From monsters.id. |
+| `map` | `string?` | The context's own map, which is the default. Another map raises an error. |
+| `amount` | `integer?` | 1 to 1000. 1 by default. |
+| `x` | `integer?` | With y, the cell. Without them, a random walkable cell for each monster. |
+| `y` | `integer?` |  |
+| `area` | `integer?` | Spreads the monsters within this many cells of x and y. |
+| `respawn` | `boolean?` | true: a dead monster comes back after 5 seconds while the context lives, as a normal spawn. false by default: dead stays dead. |
 
 ### wa.Damage
 
@@ -1532,12 +1767,12 @@ Changes the value.
 
 | Event | Contexts | Handler arguments | When |
 |---|---|---|---|
-| `login` | mod | `player: wa.Player` | A player logs in, in the zone it enters. |
-| `logout` | mod | `player: wa.Player` | A player logs out, before it leaves. |
-| `map_enter` | mod | `player: wa.Player` | A player enters the zone: at login and after a warp. |
-| `monster_killed` | mod | `player: wa.Player, monster: wa.Monster` | The player killed a monster. |
-| `base_level_up` | mod | `player: wa.Player` | The player gained a base level. |
-| `job_level_up` | mod | `player: wa.Player` | The player gained a job level. |
+| `login` | mod, event | `player: wa.Player` | A player logs in, in the zone it enters. |
+| `logout` | mod, event | `player: wa.Player` | A player logs out, before it leaves. |
+| `map_enter` | mod, event | `player: wa.Player` | A player enters the zone: at login and after a warp. |
+| `death` | mod, npc, event | `death: wa.Death` | A player or a monster died on the context's map. Options narrow it. |
+| `base_level_up` | mod, event | `player: wa.Player` | The player gained a base level. |
+| `job_level_up` | mod, event | `player: wa.Player` | The player gained a job level. |
 | `click` | npc | `player: wa.Player, conversation: wa.Conversation` | A player talks to the NPC. |
 | `touch` | npc | `player: wa.Player` | A player walks into the NPC's area. It does not fire yet. |
 | `use` | item | `player: wa.Player` | The item is used. |
@@ -1557,7 +1792,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `monster_killed`, `base_level_up`, `job_level_up`, `click`, `touch`, `use`, `damage`, `skill_used`, `unequip`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `click`, `touch`, `use`, `damage`, `skill_used`, `unequip`
 
 ### wa.BonusName
 
@@ -1570,4 +1805,16 @@ A bonus name of wa.bonuses (proposal 0002a).
 An equipment slot.
 
 `head_top`, `head_middle`, `head_low`, `armor`, `left_hand`, `right_hand`, `garment`, `shoes`, `left_accessory`, `right_accessory`, `ammo`, `costume_head_top`, `costume_head_middle`, `costume_head_low`, `costume_garment`, `shadow_armor`, `shadow_weapon`, `shadow_shield`, `shadow_shoes`, `shadow_right_accessory`, `shadow_left_accessory`
+
+### wa.HookName
+
+A hook name of wa.hooks.
+
+`drop_rate`, `experience`
+
+### wa.Weekday
+
+A day of the week.
+
+`sunday`, `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`
 

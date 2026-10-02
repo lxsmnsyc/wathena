@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/bonus"
@@ -55,7 +56,15 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 			}
 			d = item.Def{ID: id, AegisName: r.Name, Type: "Etc"}
 		}
-		if err := applyFields(&d, r.Fields); err != nil {
+		fields := r.Fields
+		if v, ok := fields["display_name"]; ok {
+			// The record's name is its key, so the name players see is
+			// display_name, as for NPCs.
+			fields = maps.Clone(fields)
+			delete(fields, "display_name")
+			fields["name"] = v
+		}
+		if err := applyFields(&d, fields); err != nil {
 			errs = append(errs, fmt.Errorf("%s: items %s: %w", r.Where, r.Name, err))
 			continue
 		}

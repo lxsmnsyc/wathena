@@ -1,6 +1,9 @@
 package progression
 
-import "math"
+import (
+	"math"
+	"strings"
+)
 
 // ItemType returns an item's type from item_db in lower case, such as
 // "healing" or "card", and whether the item exists.
@@ -129,6 +132,24 @@ type Dropped struct {
 // It leaves out drops from item scripts, Ore Discovery, map drops,
 // autoloot and MVP drops.
 func (t *Tables) RollDrops(m *Mob, modifier int, killer *Killer, hasFirst bool, r Rand) []Dropped {
+	return t.RollDropsWith(m, modifier, killer, hasFirst, r, nil)
+}
+
+// Hooks change what a kill gives, for the hooks of mods (proposal 0002,
+// "Hooks"). A nil Hooks, or a nil field, keeps rAthena's result.
+type Hooks struct {
+	// DropRate gets each drop's rate after mob_getdroprate, per 10,000,
+	// and returns the rate to roll against. Results are kept to 0 to
+	// 10,000.
+	DropRate func(item uint32, rate int) int
+	// Experience gets the exp one player gets for the kill, after the
+	// shares and the level penalty, and returns the exp to give.
+	// Results below 0 count as 0.
+	Experience func(charID uint32, base, job int64) (int64, int64)
+}
+
+// RollDropsWith is RollDrops with hooks.
+func (t *Tables) RollDropsWith(m *Mob, modifier int, killer *Killer, hasFirst bool, r Rand, h *Hooks) []Dropped {
 	var out []Dropped
 	for _, d := range m.Drops {
 		typ, ok := t.items[d.Item]
@@ -136,10 +157,31 @@ func (t *Tables) RollDrops(m *Mob, modifier int, killer *Killer, hasFirst bool, 
 			continue
 		}
 		rate := t.DropRate(d.Rate, modifier, killer)
+		if h != nil && h.DropRate != nil {
+			rate = min(max(h.DropRate(d.Item, rate), 0), 10000)
+		}
 		if r.IntN(10000) >= rate {
 			continue
 		}
 		out = append(out, Dropped{Item: d.Item, Egg: hasFirst && typ == "petegg"})
 	}
 	return out
+}
+
+// WithItems returns a copy of the tables that also knows the types of
+// more items, such as the items of mods, so their drops roll. types
+// maps item IDs to item_db types in any case. Items the tables know
+// keep their type.
+func (t *Tables) WithItems(types map[uint32]string) *Tables {
+	c := *t
+	c.items = make(map[uint32]string, len(t.items)+len(types))
+	for id, typ := range t.items {
+		c.items[id] = typ
+	}
+	for id, typ := range types {
+		if _, ok := c.items[id]; !ok {
+			c.items[id] = strings.ToLower(typ)
+		}
+	}
+	return &c
 }

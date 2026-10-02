@@ -11,6 +11,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/tools/convert"
@@ -20,6 +21,8 @@ import (
 type mods struct {
 	set   *mod.Set
 	items *mod.Items
+	// all is everything the mods bring.
+	all *gamedata.Mods
 	// npcs are the NPC placements, by map asset name.
 	npcs map[string][]zone.NPC
 	// zone is what every zone gets.
@@ -34,7 +37,8 @@ type mods struct {
 // core is the mode's item scripts, converted from rAthena when the
 // server starts (docs/decisions/0007-converted-item-scripts.md). They
 // are core's files.
-func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mode, items *item.Data, ids mod.IDStore, core *convert.Core, log *slog.Logger) (*mods, error) {
+func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mode, items *item.Data, monsters map[uint32]gamedata.Monster,
+	tables *progression.Tables, ids mod.IDStore, core *convert.Core, log *slog.Logger) (*mods, error) {
 	var found []*mod.Mod
 	if o.Dir != "" {
 		var err error
@@ -43,11 +47,11 @@ func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mod
 		}
 	}
 	cfg := mod.Config{Ruleset: o.Ruleset, Base: base, Approve: o.Approve, Disable: o.Disable, Strict: o.Strict}
-	m, err := gamedata.LoadMods(ctx, found, cfg, mode, items, ids, core, log)
+	m, err := gamedata.LoadMods(ctx, found, cfg, mode, items, monsters, tables, ids, core, log)
 	if err != nil {
 		return nil, err
 	}
-	return &mods{set: m.Set, items: m.Items, npcs: m.NPCs, zone: m.Zone}, nil
+	return &mods{set: m.Set, items: m.Items, npcs: m.NPCs, zone: m.Zone, all: m}, nil
 }
 
 // reloadHandler reloads one mod's scripts in every zone, for

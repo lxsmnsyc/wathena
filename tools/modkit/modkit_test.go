@@ -86,9 +86,9 @@ return function()
   events.on("login", function(player)
     timers.after(5000, function() ticks:add(1) end)
   end)
-  events.on("monster_killed", function(player, monster)
-    kills:add(player, 1)
-  end)
+  events.on("death", function(death)
+    kills:add(death.killer, 1)
+  end, { victim_kind = "monster" })
 end`,
 		"tests/world_test.lua": `
 local testing = require "wa.testing"
@@ -117,14 +117,14 @@ return function()
     testing.expect(ticks:get()).to_be(1)
   end)
 
-  testing.case("a kill fires monster_killed", function(world)
+  testing.case("a kill fires death", function(world)
     local player = world:new_player { x = 150, y = 150 }
     local poring = world:spawn_monster { monster = monsters.id "PORING", x = 152, y = 150 }
     testing.expect(poring.is_alive).to_be_true()
     world:kill(player, poring)
-    testing.expect(poring.is_alive).to_be_false()
+    testing.expect(function() return poring.is_alive end).to_fail_with("gone")
     testing.expect(kills:get(player)).to_be(1)
-    testing.expect(function() world:kill(player, poring) end).to_fail_with("already dead")
+    testing.expect(function() world:kill(player, poring) end).to_fail_with("dead or gone")
   end)
 
   testing.case("items are used up and refused", function(world)

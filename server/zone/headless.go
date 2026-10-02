@@ -6,6 +6,7 @@ import (
 	"math"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -26,6 +27,9 @@ import (
 //     state exists before, so a test file can load first.
 //   - The mods' entry scripts run at Bind, so their context knows the
 //     map.
+//   - Its server clock is Start plus the zone clock. Schedules and world
+//     events follow it. AfterStep runs after every tick, for the world
+//     event scheduler.
 //
 // Players have sessions without a connection. Their messages are read
 // after every tick.
@@ -36,8 +40,13 @@ type Headless struct {
 	events map[int64][]*wathenav1.Event
 	// nextID gives test characters their database IDs.
 	nextID int64
-	// monsters are the monsters that SpawnMonster made, by handle.
-	monsters map[int64]*entity
+	// Start is the server time when the zone clock is 0. Set it before
+	// Bind.
+	Start time.Time
+	// AfterStep runs after every tick.
+	AfterStep func()
+	// announcements are the lines announced to the world or the map.
+	announcements []string
 }
 
 // NewHeadless makes a zone that tests drive. mods must have Testing set,
@@ -49,12 +58,17 @@ func NewHeadless(mods *Mods, seed [32]byte) (*Headless, error) {
 	}
 	z := New("", nil, rng.FromKey(seed).Stream(), nil)
 	z.Mods = mods
-	h := &Headless{z: z, events: map[int64][]*wathenav1.Event{}, monsters: map[int64]*entity{}}
+	h := &Headless{z: z, events: map[int64][]*wathenav1.Event{}, Start: DefaultTestTime}
+	z.Clock = func() time.Time { return h.Start.Add(time.Duration(z.now) * time.Millisecond) }
 	if z.itemScripts() == nil {
 		return nil, errors.New("zone: the mods' Lua state could not be made; see the log")
 	}
 	return h, nil
 }
+
+// DefaultTestTime is the server time a headless zone starts at:
+// Monday 5 January 2026, 12:00 UTC.
+var DefaultTestTime = time.Date(2026, 1, 5, 12, 0, 0, 0, time.UTC)
 
 // Zone returns the zone, to set its tables before Bind.
 func (h *Headless) Zone() *Zone { return h.z }
@@ -91,11 +105,25 @@ func (h *Headless) step(at int64) {
 	z.runScripts()
 	z.stepAt(max(at, z.now))
 	z.runScripts()
+	if h.AfterStep != nil {
+		h.AfterStep()
+		z.runScripts()
+	}
 	h.drain()
 }
 
-// drain reads the messages of every player.
+// drain reads the messages of every player, and the announcements.
 func (h *Headless) drain() {
+	for {
+		select {
+		case a := <-h.z.announces:
+			h.z.announce(a)
+			h.announcements = append(h.announcements, a.text)
+			continue
+		default:
+		}
+		break
+	}
 	for id, p := range h.z.players {
 		h.events[int64(id)] = append(h.events[int64(id)], readEvents(p.Out)...)
 	}
@@ -405,42 +433,112 @@ func (h *Headless) SpawnMonster(s Spawn) (int64, error) {
 	if s.X < 0 || s.Y < 0 || s.X >= z.grid.Width || s.Y >= z.grid.Height || z.grid.NoPass(s.X, s.Y) {
 		return 0, fmt.Errorf("%d,%d is not a walkable cell of %s", s.X, s.Y, strings.TrimPrefix(z.Map, "map/"))
 	}
-	s.Amount, s.W, s.H = 1, 0, 0
+	s.Amount, s.W, s.H, s.noRespawn = 1, 0, 0, true
 	e := z.spawnOne(&s)
 	if e == nil {
 		return 0, errors.New("the monster found no cell")
 	}
-	if z.monsterHandles == nil {
-		z.monsterHandles = map[int64]*entity{}
-	}
-	z.nextMonsterHandle++
-	id := z.nextMonsterHandle
-	z.monsterHandles[id] = e
-	h.monsters[id] = e
+	id := z.monsterHandle(e)
 	h.step(0)
 	return id, nil
 }
 
 // Kill has a player kill a monster at once: the monster dies as if the
 // player's last hit took its HP, and the player gets its exp and drops.
-// monster_killed handlers run.
+// death handlers run. monster is any monster handle.
 func (h *Headless) Kill(player, monster int64) error {
 	z := h.z
 	p, err := h.player(player)
 	if err != nil {
 		return err
 	}
-	e := h.monsters[monster]
-	if e == nil {
-		return errors.New("the monster is not one that spawn_monster made")
-	}
-	if e.dead || !z.entities.has(e) {
-		return errors.New("the monster is already dead")
+	e := z.monsterHandles[monster]
+	if e == nil || e.dead || !z.entities.has(e) {
+		return errors.New("the monster is dead or gone")
 	}
 	z.logDamage(p.entity, e, max(e.hp, 1))
 	e.hp = 0
 	z.die(e, p.entity)
-	z.respawns = slices.DeleteFunc(z.respawns, func(r respawn) bool { return r.spawn == e.monster.spawn })
 	h.step(0)
 	return nil
+}
+
+// Monsters returns the handles of the living monsters on the map, of
+// one monster ID, or of every monster when id is 0, in the order they
+// spawned.
+func (h *Headless) Monsters(id uint32) []int64 {
+	var out []int64
+	for e := range h.z.entities.all() {
+		if e.monster != nil && !e.dead && (id == 0 || e.monster.spawn.Mob == id) {
+			out = append(out, h.z.monsterHandle(e))
+		}
+	}
+	return out
+}
+
+// Announcements returns the lines announced to the world or the map so
+// far.
+func (h *Headless) Announcements() []string { return slices.Clone(h.announcements) }
+
+// FloorItems counts the items of an ID lying on the map, and those
+// about to fall.
+func (h *Headless) FloorItems(id uint32) int {
+	n := 0
+	for e := range h.z.entities.all() {
+		if e.item != nil && e.item.id == id {
+			n += e.item.amount
+		}
+	}
+	for _, f := range h.z.falling {
+		for _, it := range f.items {
+			if it == id {
+				n++
+			}
+		}
+	}
+	return n
+}
+
+// Now returns the server time.
+func (h *Headless) Now() time.Time { return h.z.wallClock() }
+
+// SetClock sets the server time when the zone clock is 0, and the
+// server's time zone. Call it before Bind.
+func (h *Headless) SetClock(start time.Time, loc *time.Location) error {
+	if h.bound {
+		return errors.New("the world already has a map")
+	}
+	h.Start = start
+	mods := *h.z.Mods
+	mods.Location = loc
+	h.z.Mods = &mods
+	h.z.scripts.SetLocation(loc)
+	return nil
+}
+
+// Location returns the server's time zone.
+func (h *Headless) Location() *time.Location {
+	if h.z.Mods.Location == nil {
+		return time.UTC
+	}
+	return h.z.Mods.Location
+}
+
+// StartEvent starts a run of a world event in the zone, on the calling
+// goroutine.
+func (h *Headless) StartEvent(run EventRun) error {
+	err := h.z.startEvent(run)
+	h.z.runScripts()
+	return err
+}
+
+// EndEvent ends a run of a world event.
+func (h *Headless) EndEvent(id int64) {
+	h.z.endEvent(id)
+	h.z.runScripts()
+}
+
+// EventCondition runs the condition of a world event.
+func (h *Headless) EventCondition(mod, module, fn string) (bool, error) {
+	return h.z.eventCondition(mod, module, fn)
 }

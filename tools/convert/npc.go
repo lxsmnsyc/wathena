@@ -142,6 +142,10 @@ type npcConverter struct {
 	sprites  map[string]uint32
 	spriteID map[uint32]bool
 	jobs     map[string]string
+	// monsters are the monsters by ID, and monsterIDs their IDs by
+	// AegisName in upper case.
+	monsters   map[int64]monsterInfo
+	monsterIDs map[string]int64
 	// functions are the rAthena functions by lower-case name, and
 	// converted those converted so far.
 	functions map[string]*npcLine
@@ -152,6 +156,12 @@ type npcConverter struct {
 	// and of a computed amount, which R checks.
 	zeroAmounts    map[string]bool
 	checkedAmounts map[string]bool
+}
+
+// monsterInfo is a monster of client_tables.json: its AegisName, and
+// the name players see.
+type monsterInfo struct {
+	sprite, name string
 }
 
 // unavailableFunctions are rAthena functions for services wAthena does
@@ -189,6 +199,11 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 			ID     uint32 `json:"id"`
 			Sprite string `json:"sprite"`
 		} `json:"npc_sprites"`
+		Monsters []struct {
+			ID     int64  `json:"id"`
+			Sprite string `json:"sprite"`
+			Name   string `json:"name"`
+		} `json:"monsters"`
 	}
 	if err := json.NewDecoder(in.ClientTables).Decode(&tables); err != nil {
 		return nil, fmt.Errorf("client_tables.json: %w", err)
@@ -198,6 +213,11 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		items: map[uint32]string{}, itemIDs: map[string]uint32{}, sprites: map[string]uint32{}, spriteID: map[uint32]bool{},
 		jobs: map[string]string{}, functions: map[string]*npcLine{}, converted: map[string]*Function{}, paths: map[string]bool{},
 		zeroAmounts: map[string]bool{}, checkedAmounts: map[string]bool{},
+		monsters: map[int64]monsterInfo{}, monsterIDs: map[string]int64{},
+	}
+	for _, m := range tables.Monsters {
+		c.monsters[m.ID] = monsterInfo{sprite: m.Sprite, name: m.Name}
+		c.monsterIDs[strings.ToUpper(m.Sprite)] = m.ID
 	}
 	for _, it := range tables.Items {
 		c.items[it.ID] = it.AegisName

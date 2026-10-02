@@ -5,6 +5,7 @@ package gamedata
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/battle"
@@ -89,6 +90,12 @@ type Monster struct {
 	Status *battle.Status
 	// Reward is nil without the exp tables.
 	Reward *progression.Mob
+	// AegisName is the monster's database name, such as PORING, or a mod
+	// monster's full name. Name is the name players see.
+	AegisName, Name string
+	// Sprite is the monster ID whose sprite players see, or 0 for its
+	// own.
+	Sprite uint32
 }
 
 // LoadMonsters reads every monster's stats that reference/rathena
@@ -107,6 +114,21 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 	if err := reference.Load(mode, "mob_status", &mobs); err != nil {
 		return nil, err
 	}
+	var client struct {
+		Monsters []struct {
+			ID     uint32 `json:"id"`
+			Sprite string `json:"sprite"`
+			Name   string `json:"name"`
+		} `json:"monsters"`
+	}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/client_tables.json", &client); err != nil {
+		return nil, err
+	}
+	type naming struct{ aegis, name string }
+	names := make(map[uint32]naming, len(client.Monsters))
+	for _, m := range client.Monsters {
+		names[m.ID] = naming{strings.ToUpper(m.Sprite), m.Name}
+	}
 	extra := map[uint32]*progression.MobData{}
 	if data != nil {
 		for i := range data.Mobs {
@@ -118,8 +140,9 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 		st := m.Status
 		st.Level = m.Level
 		x := extra[m.ID]
+		n := names[m.ID]
 		if tables == nil || x == nil {
-			out[m.ID] = Monster{Status: &st}
+			out[m.ID] = Monster{Status: &st, AegisName: n.aegis, Name: n.name}
 			continue
 		}
 		st.DamageTaken = x.DamageTaken
@@ -131,7 +154,7 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 			Mode:    st.Mode, Class: st.Class,
 		}
 		r.Drops = tables.AdjustDrops(r.Boss(), x.Drops)
-		out[m.ID] = Monster{Status: &st, Reward: r}
+		out[m.ID] = Monster{Status: &st, Reward: r, AegisName: n.aegis, Name: n.name}
 	}
 	return out, nil
 }
@@ -143,7 +166,7 @@ func (m Monster) Spawn(id uint32, name string, x, y int) zone.Spawn {
 		Mob: id, Name: name, Amount: 1, X: x, Y: y,
 		// Mode bit 1 is MD_CANMOVE.
 		Speed: m.Status.Speed, CanMove: m.Status.Mode&1 != 0,
-		Status: m.Status, Reward: m.Reward,
+		Status: m.Status, Reward: m.Reward, Sprite: m.Sprite,
 	}
 }
 
@@ -152,6 +175,20 @@ func (m Monster) Spawn(id uint32, name string, x, y int) zone.Spawn {
 // rAthena, until the core mod has its own. With tables, monsters also get
 // their DamageTaken, exp and drops.
 func LoadSpawns(mode reference.Mode, tables *progression.Tables, data *progression.Data) (map[string][]zone.Spawn, error) {
+	if mode == "none" {
+		return nil, nil
+	}
+	monsters, err := LoadMonsters(mode, tables, data)
+	if err != nil {
+		return nil, err
+	}
+	return SpawnsOf(mode, monsters)
+}
+
+// SpawnsOf reads every map's monsters, by map name, from the spawns
+// that reference/rathena recorded from rAthena, with the stats of
+// monsters, such as the monsters after the mods' overlays.
+func SpawnsOf(mode reference.Mode, monsters map[uint32]Monster) (map[string][]zone.Spawn, error) {
 	if mode == "none" {
 		return nil, nil
 	}
@@ -168,10 +205,6 @@ func LoadSpawns(mode reference.Mode, tables *progression.Tables, data *progressi
 		} `json:"maps"`
 	}
 	if err := reference.LoadFile("extracts/"+string(mode)+"/spawns.json", &spawns); err != nil {
-		return nil, err
-	}
-	monsters, err := LoadMonsters(mode, tables, data)
-	if err != nil {
 		return nil, err
 	}
 	out := map[string][]zone.Spawn{}
