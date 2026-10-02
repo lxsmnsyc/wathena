@@ -794,6 +794,22 @@ Methods on player handles check their own permissions, such as `player.give_item
 
       The method returns true when the bonuses were added or extended, and false when they were ignored. The converter maps `bonus_script`'s flags 0x400 and 0x800 to `"extend"` and `"add"`.
 
+20. Skills (phase 4 step 3). The user approved these on 2026-10-02:
+    - **Skill data** is a mod's `data/skills.yml`, with the fields of rAthena's `skill_db.yml` under readable names: `name`, `display_name`, `icon`, `max_level`, `type` (`weapon`, `magic` or `misc`), `target` (`passive`, `enemy`, `ground`, `self` or `support`), `element`, `range`, `cast_time`, `fixed_cast_time`, `after_cast_delay`, `cooldown`, `requirements` (such as `sp`, `weapons` and `items`), and `script`. A number is one value, or a list with one value per level. Core's skills use the same records, so overlays change them. Skill IDs come from the mod range.
+    - **`icon`** names an existing skill whose icon and animation the new skill shows, until the client data tables of phase 6.
+    - **Skill trees** are `data/skill_trees.yml`: `job`, `skill`, `max_level` and `requires`, a list of skills and levels. New jobs wait for step 7.
+    - **The `cast` event** runs in the skill's context when the skill takes effect. The cast object has `caster`, `skill`, `level`, `target` (nil for ground skills), `map`, `x` and `y`, and these methods:
+      - `cast:deal_damage(target, options)` runs rAthena's damage calculation with `percent` as the skill's damage percentage. The options `hits`, `type` and `element` change the data's values. It applies cards and defense, fires the `damage` event, and returns an object with `amount`, `is_critical` and `missed`.
+      - `cast:heal(target, amount)` heals with rAthena's heal bonuses.
+      - `cast:run_default(options)` runs core's own behavior of the skill, with `target` to change the target. It works only for skills that have one.
+      - The cast object stays usable after the event, so timers can use it. When the caster is gone or cannot act, `deal_damage` does nothing and returns nil, as rAthena's `skill_addtimerskill`.
+    - **Passive skills** run their script while the skill is learned, and again when its level changes. `context:get_instance()` gives `level` and `owner`.
+    - **Replacing a core skill's behavior.** A mod can set `script` on a core skill. It needs `rules.override`.
+    - **Hooks** `skill_damage` (the damage percentage), `cast_time`, `skill_cost` and `cast_allowed`. Without hooks the results are rAthena's.
+    - **`entity:show_effect(effect)`** on every entity handle, not only players.
+    - **`entity:exists()`** returns false once the entity is removed, has logged out, or has left the zone. It never raises an error.
+    - A sample mod adds chain lightning with these calls and `maps.find_entities` (review decision 18), with a delay between bounces.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
