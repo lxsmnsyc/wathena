@@ -831,6 +831,17 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Tests.** `world:advance` runs monster AI. Tests read `monster.target` and `monster.state`. There are no new `wa.testing` calls.
     - Later: an option to make a spawned monster follow a master, AI for summoned monsters beyond rAthena's defaults, and NPC AI hooks.
 
+23. Rolled item values and random options (phase 4 step 6). The user approved these on 2026-10-03:
+    - **Roll data.** An item in `data/items.yml` has `rolls`, a map from a roll name to `min`, `max`, `default`, `distribution` and `hidden`. `distribution` is `uniform`, `triangular` (the default) or `weighted`. A `weighted` roll has `weights`, a list of `{ value, weight }`, where `value` is one number or a `[min, max]` range. `hidden: true` shows the value only after identification. An item has at most 8 rolls, and values are integers.
+    - **Static bonuses** take a roll in place of a number: `bonuses: [[luk, { roll: luck }]]`.
+    - **Reading.** Equipped handles have a read-only `rolls` table, such as `equipped.rolls.boss_damage`, and `cards`, a list of `{ item, rolls }` for the cards in the slots.
+    - **Giving.** `player:give_item(item, amount, { roll = ... })`. `"random"` rolls each value. `"default"` uses the defaults and is the default for scripts and shops. A table such as `{ boss_damage = 31 }` sets the values, needs `items.modify_rolls`, and clamps each value to its range. Monster drops roll. With the `item_rolls` flag off, every roll uses its default, as rAthena.
+    - **Hook `item_roll`**: `hooks.on("item_roll", function(roll, next) ... end)`, with `roll` = { `item`, `name`, `min`, `max`, `default`, `source` }, where `source` is `{ kind = "drop", monster }`, `{ kind = "script" }` or `{ kind = "shop" }`. It returns the value, which the server clamps to the range. It needs `rules.override`. It replaces the Lua function form of strategy section 5.4.
+    - **Rerolling.** `equipped:set_roll(name, value)` and `equipped:reroll(name)`, where `reroll()` without a name rerolls every value. Both need `items.modify_rolls`. Only equipped copies have them until inventory copies have handles.
+    - **Random options.** rAthena rolls them too, so they roll whatever the `item_rolls` flag says. `data/random_options.yml` has `name`, `display_name` and `bonus`. `data/random_option_groups.yml` has the slots, chances and value ranges of `item_randomopt_group`. rAthena's names become readable names, such as `max_hp` for `RDMOPT_VAR_MAXHPAMOUNT`. They are stored with the rolls. `equipped.random_options` is a list of `{ option, value, param }`. Monster drops with a `random_option_group` roll them, as rAthena.
+    - **Tests.** In `wa.testing`, `roll = { ... }` needs no permission, and drops from `world:kill` roll from a seeded random stream.
+    - Later: rolls on crafting and quest rewards, roll searches in vending, and handles for inventory copies.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
