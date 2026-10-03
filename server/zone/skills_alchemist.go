@@ -897,7 +897,7 @@ func (z *Zone) produceMix(p *Player, skillID int, product uint32, qty, idx int) 
 		return false
 	}
 	// A full inventory loses them (skill_drop_items_full is off).
-	z.addItem(p, product, made)
+	z.addItem(p, product, made, skillOrigin(skillID))
 	return true
 }
 

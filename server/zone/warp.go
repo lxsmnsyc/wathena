@@ -170,6 +170,10 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	}
 	s.zone, s.player = nil, nil
 	s.mu.Unlock()
+	// The player's transfers are committed before the new zone saves it.
+	if p.transferred {
+		z.commitTransfers()
+	}
 
 	// The conversation and the shop window stay behind. pc_setpos ends
 	// the statuses that end on a map change; the others go with the

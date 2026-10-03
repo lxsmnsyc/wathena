@@ -1,0 +1,15 @@
+# A monster that stands still, never attacks, and always drops a Jellopy
+# and a Test Charm. AI type 6 has no modes: it cannot move or attack. Its
+# level is the test players' base level, so renewal's drop penalty for a
+# level difference does not apply.
+- name: e2e.fixture:DUMMY
+  sprite: PORING
+  display_name: Dummy
+  level: 50
+  hp: 40
+  base_exp: 10
+  job_exp: 10
+  ai: 6
+  drops:
+    - {item: Jellopy, rate: 10000}
+    - {item: "e2e.fixture:Charm", rate: 10000}

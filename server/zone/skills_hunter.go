@@ -481,7 +481,7 @@ func (removeTrap) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv
 	z.skillEffect(src, target, d, lv, int64(lv), true)
 	held := g.def.ID == skill.IDAnkleSnare && g.trap != nil && g.trap.caught != nil
 	if !trapUsed(g) && !held {
-		z.addItem(p, trapItem(g), 1)
+		z.addItem(p, trapItem(g), 1, skillOrigin(d.ID))
 	}
 	z.deleteUnit(target)
 }

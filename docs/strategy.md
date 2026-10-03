@@ -2212,7 +2212,7 @@ Uses:
 | Use | How |
 |---|---|
 | Load tests | Nightly runs with 7,500 bots against an all-in-one build and a distributed build. Results are checked against section 3.8. |
-| End-to-end tests | Scenarios for login, combat, trade, storage, and mail run on every pull request against a small server. |
+| End-to-end tests | Scenarios for login, combat, trade, storage, and mail run against a small server in the local checks (`scripts/check.sh`), before every commit. |
 | Duplication tests | Many bots trade, vend, and mail the same items at once. A job then checks item serials for copies (section 3.5). |
 | Economy tests | Bots farm fields in each level band. Results feed the balance checks in section 8.13. |
 | Mod tests | `wactl mod test` uses in-process fake players for speed. Bots are used for end-to-end mod tests. |
@@ -2518,7 +2518,16 @@ The order from here:
       - Left: the warg as a companion and the dragon colors as records, with their script commands; cart storage; companions that fight, companion events and more than one companion; sprite names for companions and carts in the GRF importer; and the rental mount.
    Steps 2, 3, 5, and 7 add Lua API. Each step's API goes to review before it is built.
 8. Phase 5 in full. Social and economy systems, tier 1. It runs in these steps, approved on 2026-10-03:
-   1. The end-to-end harness and item transfers. `botclient` runs scripted scenarios against a real `waserver` with `go test ./e2e`, in the local checks. One transactional service moves items and zeny between owners, with serials and logs (section 3.5). Duplication test scaffolding moves items with bots at the same time and checks totals. No new Lua API.
+   1. The end-to-end harness and item transfers. `botclient` runs scripted scenarios against a real `waserver` with `go test ./e2e`, in the local checks. One transactional service moves items and zeny between owners, with serials and logs (section 3.5). Duplication test scaffolding moves items with bots at the same time and checks totals. No new Lua API. Done on 2026-10-03 ([decision 0017](decisions/0017-e2e-and-transfers.md), server/README.md, "Transfers and item logs" and "Local checks", and [e2e/README.md](../e2e/README.md)):
+      - `e2e` starts a real `waserver` for each test, with `--dev`, the placeholder map and a copy of it, a fixture mod, and PostgreSQL when `WATHENA_TEST_DATABASE_URL` is set. A new `--seed` flag, for `--dev` only, fixes the random streams. Every check is on what the server sent to a bot or what it saved.
+      - `botclient` tracks the inventory, stats, skills, dialogs and shops, records events with waits, and sends the NPC, shop, item and skill commands.
+      - Scenarios: login, walking and chat; a kill, both drops (one with a roll) and a potion; Bash and a job change to Knight; a script's give and take, a purchase and a sale; a warp to another map; and the trades again with PostgreSQL, with one log line per move while the player plays.
+      - `transfer` moves items and zeny between owners: inventories now, and the kinds that storage, cart, guild storage, mail and vending need. Each transfer is checked on copies first (ownership by serial, amounts, weight and slot limits, the stack rules of section 5.4), and changes nothing when a move fails. Splits get new serials, and each log line names the serial it came from.
+      - Drops, pick-ups, monster items given to the inventory, NPC shops, the script calls for items and zeny, item use, and skill products and costs go through it. Players get the same messages as before, and the zone tests pass unchanged in what they check.
+      - With a database, the zone commits the characters a transfer changed with the log lines in one transaction, rows locked in ID order, one commit at a time in order, so a dropped item is never saved in two inventories. Migration 00015 adds `item_log` and `zeny_log`, partitioned by month.
+      - The duplication test: 16 bots drop parts of their Jellopy stacks and pick up each other's for 6 seconds, about 250 drops and as many pick-ups, while the test audits every serial 30 times. The totals of items and zeny stay constant, no serial is held twice, and each bot's inventory matches the server's. With PostgreSQL, the saved totals match, and the log has one line for each drop and pick-up. It passes with `-race`, with the server built with `-race`.
+      - `scripts/check.sh` runs the jobs of `ci.yml` locally, since GitHub Actions does not run for this repository.
+      - Left: dropping log partitions after 180 days, card insertion through transfers, the holders other than the inventory (steps 4 to 6), and a tool to trace a serial.
    2. Chat and moderation: whispers, chat channels, blocking, the chat filter, chat limits for new characters, reports and sanctions (section 7.10).
    3. Friends and parties: party exp and item sharing, party booking in the web client, and the party skills that step 4 left failing.
    4. Guilds: guild skills, guild storage and emblems.

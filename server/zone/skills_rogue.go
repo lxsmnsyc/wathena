@@ -9,6 +9,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 	"github.com/lxsmnsyc/wathena/shared/path"
 )
 
@@ -114,7 +115,7 @@ func (stealCoin) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv 
 	// rnd_value(8 * level, 10 * level).
 	amount := 8*targetLv + z.rand.IntN(2*targetLv+1)
 	amount += lv * targetLv / 10
-	z.setZeny(p, min(p.record.Zeny+int64(amount), character.MaxZeny))
+	z.earnZeny(p, int64(amount), transfer.ActionLoot, monsterOwner(target))
 	// battle_damage with 0 damage: the effects of a ranged normal attack,
 	// and the monster may turn on the caster.
 	z.additionalEffect(src, target, true)

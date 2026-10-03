@@ -120,7 +120,7 @@ func TestAutosaveOnlyWhenChanged(t *testing.T) {
 	}
 	// Without job tables, the maximum weight is set by hand.
 	p.maxWeight = maxWeight
-	if r := z.addItem(p, 909, 4); r != item.AddSuccess {
+	if r := z.addItem(p, 909, 4, scriptOrigin); r != item.AddSuccess {
 		t.Fatalf("add: %v", r)
 	}
 	z.stepAt(DefaultSaveInterval.Milliseconds() + 100)

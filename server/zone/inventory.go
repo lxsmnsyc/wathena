@@ -7,6 +7,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
 // Inventory: each player has rAthena's inventory of slots, with weight
@@ -84,8 +85,8 @@ func (z *Zone) inventoryList(p *Player) *wathenav1.Event {
 // addItem is pc_additem: it puts items in a player's inventory and sends
 // the slot and the new weight, or returns why it could not. A copy of an
 // item with rolls gets their defaults, through the item_roll hooks.
-func (z *Zone) addItem(p *Player, id uint32, amount int) item.AddResult {
-	return z.addCopy(p, id, amount, 0, nil, z.newExtra(z.Items.Get(id), false, rollSource{kind: sourceScript}, ""))
+func (z *Zone) addItem(p *Player, id uint32, amount int, o origin) item.AddResult {
+	return z.addCopy(p, id, amount, 0, nil, z.newExtra(z.Items.Get(id), false, rollSource{kind: sourceScript}, ""), o)
 }
 
 // deleteItem is pc_delitem: it takes an amount from a slot and sends the
@@ -97,16 +98,12 @@ func (z *Zone) deleteItem(p *Player, slot, amount int, reason wathenav1.Inventor
 			z.unequipItem(p, slot)
 		}
 	}
-	if !p.inventory.Delete(z.Items, slot, amount) {
+	if slot < 0 || slot >= item.MaxInventory {
 		return false
 	}
-	p.pending = append(p.pending, wathenav1.Event_builder{InventoryRemove: wathenav1.InventoryRemove_builder{
-		Slot:   uint32(slot),   // #nosec G115 -- below MaxInventory.
-		Amount: uint32(amount), // #nosec G115 -- at most MaxAmount.
-		Reason: reason,
-	}.Build()}.Build())
-	z.updateWeight(p)
-	return true
+	action, to := removeEnd(reason)
+	tx := transfer.New(action).Destroy(z.box(p), slot, p.inventory.Slots[slot].Serial, amount, to)
+	return z.apply(p, tx, reason) == nil
 }
 
 // updateWeight sends the weight, as clif_updatestatus(SP_WEIGHT), and is
@@ -379,19 +376,18 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 	e := p.entity
 	pl := progression.PlaceDrop(z.cellFree, e.x, e.y, z.rand)
 	// map_addflooritem copies the item, with its refine, cards and
-	// rolls. Part of a stack keeps the stack's serial as its origin, so
-	// the copy picked up later logs where it came from.
+	// rolls. The copy keeps the stack's serial as its origin, so the
+	// copy picked up later logs where it came from.
 	g := &groundItem{
 		id: s.ID, amount: amount, subX: pl.SubX, subY: pl.SubY,
 		refine: s.Refine, cards: slices.Clone(s.Cards), extra: s.Clone(),
+		origin:  s.Serial,
 		expires: z.now + lifetime,
 		fresh:   true,
 	}
-	if amount < s.Amount {
-		g.from = s.Serial
+	if z.deleteItem(p, slot, amount, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED) {
+		z.entities.add(&entity{x: pl.X, y: pl.Y, item: g})
 	}
-	z.entities.add(&entity{x: pl.X, y: pl.Y, item: g})
-	z.deleteItem(p, slot, amount, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED)
 }
 
 // usedEvents are the item uses a player sees this tick.

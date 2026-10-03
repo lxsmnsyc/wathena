@@ -193,6 +193,46 @@ type Inventory struct {
 	Identified    bool
 }
 
+type ItemLog struct {
+	ID            int64
+	At            pgtype.Timestamptz
+	Action        string
+	FromKind      string
+	FromID        int64
+	ToKind        string
+	ToID          int64
+	Serial        pgtype.UUID
+	Source        pgtype.UUID
+	ItemID        int
+	Amount        int
+	Refine        int
+	Cards         []int
+	Rolls         []byte
+	CardRolls     []byte
+	RandomOptions []byte
+	Identified    bool
+}
+
+type ItemLogDefault struct {
+	ID            int64
+	At            pgtype.Timestamptz
+	Action        string
+	FromKind      string
+	FromID        int64
+	ToKind        string
+	ToID          int64
+	Serial        pgtype.UUID
+	Source        pgtype.UUID
+	ItemID        int
+	Amount        int
+	Refine        int
+	Cards         []int
+	Rolls         []byte
+	CardRolls     []byte
+	RandomOptions []byte
+	Identified    bool
+}
+
 type ModAccountVariable struct {
 	AccountID int64
 	ModID     string
@@ -236,4 +276,26 @@ type WorldEventRun struct {
 	ScheduledAt pgtype.Timestamptz
 	StartedAt   pgtype.Timestamptz
 	EndsAt      pgtype.Timestamptz
+}
+
+type ZenyLog struct {
+	ID       int64
+	At       pgtype.Timestamptz
+	Action   string
+	FromKind string
+	FromID   int64
+	ToKind   string
+	ToID     int64
+	Amount   int64
+}
+
+type ZenyLogDefault struct {
+	ID       int64
+	At       pgtype.Timestamptz
+	Action   string
+	FromKind string
+	FromID   int64
+	ToKind   string
+	ToID     int64
+	Amount   int64
 }

@@ -16,7 +16,7 @@
 - Start with a one or two sentence summary.
 - List the changes as sentences.
 - List how you tested the change.
-- CI must pass before review.
+- The local checks must pass before review: run `scripts/check.sh`. GitHub Actions does not run for this repository, so the script runs the jobs of `.github/workflows/ci.yml` instead (server/README.md, "Local checks").
 
 ## Tests
 

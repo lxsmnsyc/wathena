@@ -14,7 +14,8 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `progression` | Exp tables, level ups, status and skill points, the renewal level penalty, exp shares, drop rates and rolls, where drops land, and pick-up rights, ported from rAthena's `pc.cpp`, `mob.cpp` and `map.cpp` with the default `conf/battle` settings. |
 | `companion` | Companions, mounts and carts: the records of `data/companions.yml` and `data/mounts.yml`, core's own files, the core rules a record acts as, and the option bits that show each look (see "Companions, mounts and carts"). |
 | `character` | A saved character as plain data: what the zone loads and hands to the store. |
-| `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
+| `transfer` | Moves of items and zeny between owners, checked as one step and logged with serials: inventories now, and the holders that later steps add (storage, cart, guild storage, mail and vending). See "Transfers and item logs". |
+| `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, transfer commits with the item and zeny logs, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
 | `account` | The account service under `/account/`: signup, login, logout, login sessions, account settings with TOTP codes, recovery codes and passkeys, the character list with character creation, Play, and one-time game tickets. Argon2id passwords, CSRF tokens, a strict Content Security Policy, rate limits and a captcha hook. `GameTickets` checks the ticket in `Hello` for the gateway. See decisions [0004](../docs/decisions/0004-account-service-and-game-tickets.md) and [0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). |
 | `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone the player is in, through its `zone.Session`, which stays the same across map changes. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. |
 | `cmd/waserver` | The all-in-one server: the web client, an asset build over HTTP, the account pages, and a world of zones over WebSocket, one per map, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. See "All-in-one". |
@@ -121,6 +122,7 @@ With a database:
 - Characters load when they log in and are saved every 30 seconds when they changed, when they log out, and when the server stops (Ctrl+C or SIGTERM).
 - Characters are also saved when they arrive on another map, at their new cell.
 - The level, exp, status and skill points, raised stats, HP, SP, map and position, look, zeny and inventory are saved. Items keep their serial numbers, and their rolled values and random options (migration 00013, "Rolled item values").
+- A move of items or zeny is saved with its log lines at once, in one transaction with the characters it changed (see "Transfers and item logs").
 
 A local database in Docker:
 
@@ -242,6 +244,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `build` | `--build` | `all_1` | Raised stats of new characters, for testing. |
 | `start_items` | `--start-items` | none | Items of new characters, for development. |
 | `start_job` | `--start-job` | none | Job, base level and job level of new characters, as `job:base:job`, for development. Needs `dev`. |
+| `seed` | `--seed` | none | Text that fixes the random streams of the zones and world events, so a test runs the same way each time. For tests only. Needs `dev`. |
 | `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. |
 | `profile_dir` | `--profile-dir` | none | Folder for CPU profiles of slow ticks. |
 | `shutdown_countdown` | `--shutdown-countdown` | `10s` | The countdown players see before the server stops, up to `10m`. `0s` turns it off. See "NPCs". |
@@ -561,7 +564,7 @@ Items can roll values when a copy is made, and rAthena's random options roll on 
 - **The `item_rolls` flag.** Off, the default of core's rulesets, every roll is its default, as rAthena. Random options roll either way.
 - **Gives and shops.** `player:give_item` uses the defaults unless the script asks for `"random"` or sets values. NPC shops sell copies at their defaults. `player:give_item_from_group` rolls an equipment entry's random options, as `getgroupitem`.
 - **Stats.** Static bonuses read the copy's rolls (`{ roll: name }`), and a card's bonuses the card's rolls. Random options apply after every card, as `status_calc_pc_sub`. `equipped:set_roll` and `equipped:reroll` start the copy's equip scripts again once the script's call returns.
-- **Stacking.** A stack is the item plus its rolls and options. Unidentified copies with hidden rolls never stack. A part of a stack picked up from the ground gets a new serial, and the server logs `item split` with the serial of the stack it came from.
+- **Stacking.** A stack is the item plus its rolls and options. Unidentified copies with hidden rolls never stack. An item picked up from the ground gets a new serial, and its line in the item log names the serial of the stack it was dropped from (see "Transfers and item logs").
 - **Messages.** `InventoryItem`, `InventoryAdd` and `ItemRollsChange` carry each roll with its label, range and unit, each card's rolls, and the random options with their display names. A hidden roll of an unidentified copy goes without its value. The web client shows them in the item's description, such as "LUK +2 (1 to 5)" and "MaxHP +51".
 - **Storage.** Migration 00013 adds the `rolls`, `card_rolls` and `random_options` JSONB columns and `identified` to `inventory`. Options are saved by name. When a character enters a zone, values outside a roll's range are clamped, and rolls and options the data no longer has are dropped. The server logs each change as `item rolls fixed on load`.
 
@@ -577,6 +580,34 @@ Parity with rAthena's `random_option_rolls.json`, from `go test ./server/gamedat
 The roll distributions are checked by `go test ./server/item -run TestRollDistributions`: 100,000 draws of each distribution stay in their range and pass a chi-square test.
 
 To try it, load the sample mod [examples/lucky-clover](../mods/examples/lucky-clover) with a ruleset mod that turns `item_rolls` on ([mods/README.md](../mods/README.md), "Rulesets"), kill Clover Porings on `prt_fild09`, pick up a charm, and select it in the inventory window (Alt+E). Its description shows its rolls and its random option.
+
+## Transfers and item logs
+
+Every change to a player's items and zeny goes through the package `transfer` ([decision 0017](../docs/decisions/0017-e2e-and-transfers.md), strategy section 3.5):
+
+- **Moves.** A transfer lists moves: an item from one holder to another, an item from an end into a holder (a pick-up, a purchase, a script's `give_item`, a skill's product), an item from a holder to an end (a drop, a sale, a script's `take_item`, a use), and zeny between wallets and ends. Holders are an inventory now, and storage, cart, guild storage, mail and vending for the steps that add them.
+- **Checks.** Every move runs first on copies of the holders: the slot must hold the serial the move names, the amount must be there, and the item must fit the weight and slot limits and the stack rules of strategy section 5.4. When one move fails, nothing changes.
+- **Serials.** A whole stack that moves keeps its serial. Part of a stack gets a new serial. An amount that joins a stack takes that stack's serial. A new copy from an end gets a new serial. A ground item keeps the serial of the stack it was dropped from as its origin, and the copy picked up names it.
+- **Messages.** The player sees each change in the order of the moves, with the same messages as before transfers existed.
+- **Paths.** Drops, pick-ups, monster items given to the inventory (pet eggs, MVP prizes, Steal), NPC shops, `give_item`, `give_item_from_group`, `take_item`, `pay_zeny`, `give_zeny`, item use, and the items and zeny that skills make or cost. Card insertion does not use transfers yet.
+
+With a database, the zone hands the characters a transfer changed, with its log lines, to the store after each event it handles. The store writes each such commit in one transaction:
+
+- It locks the characters' rows in ID order, saves each character with its save version, and writes the lines to `item_log` and `zeny_log` (migration 00015).
+- Commits are written one at a time, in the order they came. A drop's commit is written before the pick-up of the dropped item, so the database never holds an item in two inventories, even after a crash.
+- A character's saves that came before its commit are dropped, since the commit's copy is newer. Its saves that came after wait for the commit.
+- A commit that waits takes in the commits that come after it, so commits batch when the database is slow.
+
+Each log line has the time, the action (`drop`, `pick_up`, `loot`, `buy`, `sell`, `give`, `take`, `use`, `skill` or `move`), the owners it came from and went to, the serial it ended in, the serial it came from when that differs, the item, the amount, and the refine, cards, rolls and random options. Without a database, the lines go to the log at debug level.
+
+Both logs are partitioned by month. `ensure_log_partitions` makes the partitions of this month and the next, and `waserver` calls it at start and every 12 hours. Dropping months older than the 180 days of strategy section 7.10 is left to a later step.
+
+To find where a serial went, and where it came from:
+
+```sql
+SELECT at, action, from_kind, from_id, to_kind, to_id, amount, source
+FROM item_log WHERE serial = '0192f0c4-...' OR source = '0192f0c4-...' ORDER BY at;
+```
 
 ## NPCs
 
@@ -657,6 +688,7 @@ curl 'http://127.0.0.1:8301/debug/wathena/metrics?format=text'
 |---|---|
 | `GET /debug/wathena/metrics` | Every measurement since the start or the last reset, as JSON. `?format=text` gives tables. |
 | `POST /debug/wathena/reset` | Starts every count again, such as after the bots of a load test have joined. |
+| `GET /debug/wathena/items` | With `--dev` only: every item, with its serial, and all zeny that the players and the ground of each zone hold, as JSON, for the duplication tests. |
 | `/debug/pprof/` | Go's CPU, heap, goroutine and trace profiles. |
 
 `waserver` also prints the tables when it stops.
@@ -721,9 +753,23 @@ The bots join at the server's `--map`, or at their saved map with a database. To
 
 A zone does not wake each connection's goroutine itself. While a zone runs, its tick collects every message in an outbox and hands it to the zone's sender goroutine in one batch. The sender puts each message on its connection's channel, in order, and closes the channel of a connection that has 64 messages waiting. Before this, the zone goroutine woke 500 connection goroutines one by one each tick. Each wake can enter the kernel, and a trace of the 500-bot test showed the zone goroutine stalled for up to 9 ms between two wakes. A map change waits until the old zone's messages to the player went out, so they come before the new zone's.
 
-### CI
+### Local checks
 
-CI's `loadtest` job runs `TestLoadSmoke` in `tools/botclient`: it builds `waserver` and the placeholder assets, starts the server in its own process, and runs the `smoke` scenario for 20 seconds. No bot may fail. Tick work must stay under 25 ms at p99 and 100 ms at most, 2.5 and 4 times the budgets, since CI runners are shared. Bandwidth keeps its budgets. The test is skipped unless `WATHENA_LOAD_TEST=1`:
+GitHub Actions does not run for this repository. `scripts/check.sh` runs the jobs of `.github/workflows/ci.yml` on the local machine instead, one step per job, and lists the result of each at the end:
+
+```text
+scripts/check.sh              # the default steps
+scripts/check.sh all          # also the Compose stack and the browser tests
+scripts/check.sh lint e2e     # some steps
+```
+
+- The `test` step runs `go test -race ./...`, which includes the end-to-end tests in [e2e](../e2e/README.md).
+- Without `WATHENA_TEST_DATABASE_URL`, the script starts a `postgres:18` container for the database tests when Docker runs, and removes it at the end. `CHECK_NO_DOCKER=1` turns that off.
+- Checks of generated files compare the files before and after the generator, so uncommitted work does not fail them.
+- A step whose tool is missing, such as `tinygo` or `pnpm`, is reported as skipped with the reason.
+- The script header lists the steps and the CI job each one replaces.
+
+The `loadtest` step runs `TestLoadSmoke` in `tools/botclient`: it builds `waserver` and the placeholder assets, starts the server in its own process, and runs the `smoke` scenario for 20 seconds. No bot may fail. Tick work must stay under 25 ms at p99 and 100 ms at most, 2.5 and 4 times the budgets, since shared machines are noisy. Bandwidth keeps its budgets. The test is skipped unless `WATHENA_LOAD_TEST=1`:
 
 ```text
 WATHENA_LOAD_TEST=1 go test -count=1 -run TestLoadSmoke -v ./tools/botclient

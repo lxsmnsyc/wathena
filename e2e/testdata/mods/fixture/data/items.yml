@@ -1,0 +1,11 @@
+# A charm with a roll, to check that rolls survive a drop and a pick-up.
+- name: e2e.fixture:Charm
+  type: Armor
+  display_name: Test Charm
+  weight: 10
+  sell: 100
+  location: [both_accessory]
+  rolls:
+    luck: {min: 1, max: 5, default: 3, distribution: uniform}
+  bonuses:
+    - [luk, {roll: luck}]

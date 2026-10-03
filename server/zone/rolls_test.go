@@ -11,6 +11,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
@@ -111,7 +112,7 @@ func slotOf(t *testing.T, p *Player, id uint32) int {
 func TestRolledStaticBonus(t *testing.T) {
 	z, p, _ := rollZone(t, "return function() end")
 	luk := p.entity.status.Luk
-	if r := z.addCopy(p, rollHat, 1, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"luck": 5})}); r != item.AddSuccess {
+	if r := z.addCopy(p, rollHat, 1, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"luck": 5})}, scriptOrigin); r != item.AddSuccess {
 		t.Fatal(r)
 	}
 	slot := slotOf(t, p, rollHat)
@@ -239,10 +240,10 @@ return function()
   end)
 end`)
 	x := item.Extra{Rolls: item.RollsOf(map[string]int{"might": 4}), Options: []item.Option{{Name: "max_hp", Value: 100}}}
-	if r := z.addCopy(p, rollShirt, 1, 0, nil, x); r != item.AddSuccess {
+	if r := z.addCopy(p, rollShirt, 1, 0, nil, x, scriptOrigin); r != item.AddSuccess {
 		t.Fatal(r)
 	}
-	if r := z.addCopy(p, rollCard, 1, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"dodge": 6})}); r != item.AddSuccess {
+	if r := z.addCopy(p, rollCard, 1, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"dodge": 6})}, scriptOrigin); r != item.AddSuccess {
 		t.Fatal(r)
 	}
 	shirt, card := slotOf(t, p, rollShirt), slotOf(t, p, rollCard)
@@ -279,8 +280,8 @@ end`)
 
 func TestRollMessages(t *testing.T) {
 	z, p, _ := rollZone(t, "return function() end")
-	z.addCopy(p, rollCard, 1, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"dodge": 6}), Unidentified: true})
-	z.addCopy(p, rollHat, 1, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"luck": 2}), Options: []item.Option{{Name: "max_hp", Value: 100}}})
+	z.addCopy(p, rollCard, 1, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"dodge": 6}), Unidentified: true}, scriptOrigin)
+	z.addCopy(p, rollHat, 1, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"luck": 2}), Options: []item.Option{{Name: "max_hp", Value: 100}}}, scriptOrigin)
 	z.stepAt(z.now + 50)
 	ev := events(p)
 	var adds []*wathenav1.InventoryAdd
@@ -331,7 +332,7 @@ func TestRollsLoadAndSplit(t *testing.T) {
 	}
 	// Dropping part of a stack, then picking it up, gives a new serial and
 	// logs the stack it came from.
-	z.addCopy(p, rollCard, 5, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"dodge": 4})})
+	z.addCopy(p, rollCard, 5, 0, nil, item.Extra{Rolls: item.RollsOf(map[string]int{"dodge": 4})}, scriptOrigin)
 	slot := slotOf(t, p, rollCard)
 	from := p.inventory.Slots[slot].Serial
 	z.dropItem(p, slot, 2)
@@ -341,7 +342,7 @@ func TestRollsLoadAndSplit(t *testing.T) {
 			it = e
 		}
 	}
-	if it == nil || it.item.from != from || it.item.extra.Rolls.Key() != "dodge=4" {
+	if it == nil || it.item.origin != from || it.item.extra.Rolls.Key() != "dodge=4" {
 		t.Fatalf("ground item %+v", it)
 	}
 	// The same rolls join the stack again.
@@ -349,7 +350,10 @@ func TestRollsLoadAndSplit(t *testing.T) {
 	if p.inventory.Slots[slot].Amount != 5 {
 		t.Errorf("amount %d after picking the split back up", p.inventory.Slots[slot].Amount)
 	}
-	if !strings.Contains(logs.String(), "item split") || !strings.Contains(logs.String(), from.String()) {
-		t.Errorf("no split log: %s", logs)
+	// The pick-up's log line names the stack the part was dropped from.
+	got := z.txLogs.Items
+	if n := len(got); n < 2 || got[n-2].Action != transfer.ActionDrop || got[n-2].Serial != from ||
+		got[n-1].Action != transfer.ActionPickUp || got[n-1].Source != from || got[n-1].Serial != from || got[n-1].Amount != 2 {
+		t.Errorf("logs %+v", got)
 	}
 }

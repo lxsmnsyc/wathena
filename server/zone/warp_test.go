@@ -106,7 +106,7 @@ func TestHandoffKeepsCharacterOnce(t *testing.T) {
 	s := &saves{}
 	p := onMap(a, "Keeper", 20, 18, s)
 	p.maxWeight = maxWeight
-	a.addItem(p, 909, 7)
+	a.addItem(p, 909, 7, scriptOrigin)
 	a.gainExp(p, 20, 5)
 	p.entity.hp = 77
 	p.itemDelays[501] = a.now + 3000

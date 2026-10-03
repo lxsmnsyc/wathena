@@ -368,7 +368,7 @@ func TestFullRecalculationEveryItem(t *testing.T) {
 				}
 				p := f.player(who.job, who.male, who.level)
 				if who.weapon != nil {
-					if z.addCopy(p, who.weapon.ID, 1, 0, nil, item.Extra{}) != item.AddSuccess {
+					if z.addCopy(p, who.weapon.ID, 1, 0, nil, item.Extra{}, scriptOrigin) != item.AddSuccess {
 						res.skip("cannot be added to the inventory", d.ID)
 						z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
 						continue
@@ -385,7 +385,7 @@ func TestFullRecalculationEveryItem(t *testing.T) {
 				if d.Type == "Ammo" {
 					amount = 10
 				}
-				if r := z.addCopy(p, d.ID, amount, refine, nil, item.Extra{}); r != item.AddSuccess {
+				if r := z.addCopy(p, d.ID, amount, refine, nil, item.Extra{}, scriptOrigin); r != item.AddSuccess {
 					res.skip("cannot be added to the inventory", d.ID)
 					z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
 					continue
@@ -442,7 +442,7 @@ func TestFullRecalculationEveryItem(t *testing.T) {
 				if host.Refineable {
 					refine = 4
 				}
-				if z.addCopy(p, host.ID, 1, refine, nil, item.Extra{}) != item.AddSuccess || z.addCopy(p, c.ID, 1, 0, nil, item.Extra{}) != item.AddSuccess {
+				if z.addCopy(p, host.ID, 1, refine, nil, item.Extra{}, scriptOrigin) != item.AddSuccess || z.addCopy(p, c.ID, 1, 0, nil, item.Extra{}, scriptOrigin) != item.AddSuccess {
 					res.skip("cannot be added to the inventory", c.ID)
 					z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
 					continue

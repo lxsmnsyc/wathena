@@ -11,6 +11,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
 // NPC conversations, as rAthena's npc_click and npc_scriptcont:
@@ -488,8 +489,7 @@ func (h scriptHost) PayZeny(id, amount int64) (bool, error) {
 	if p.record.Zeny < amount {
 		return false, nil
 	}
-	h.z.setZeny(p, p.record.Zeny-amount)
-	return true, nil
+	return h.z.payZeny(p, amount, transfer.ActionTake, transfer.End(transfer.KindScript)), nil
 }
 
 // GiveZeny is pc_getzeny: zeny over MAX_ZENY is lost.
@@ -498,16 +498,8 @@ func (h scriptHost) GiveZeny(id, amount int64) error {
 	if err != nil {
 		return err
 	}
-	h.z.setZeny(p, min(p.record.Zeny+amount, character.MaxZeny))
+	h.z.earnZeny(p, min(amount, character.MaxZeny), transfer.ActionGive, transfer.End(transfer.KindScript))
 	return nil
-}
-
-// setZeny changes a player's zeny and sends it.
-func (z *Zone) setZeny(p *Player, zeny int64) {
-	p.record.Zeny = zeny
-	if s := z.battleStats(p); s != nil {
-		p.pending = append(p.pending, s)
-	}
 }
 
 // TakeItem is delitem: the amount leaves the first slots that hold the

@@ -966,7 +966,7 @@ func (z *Zone) mobLoot(e, it *entity, canMove bool) bool {
 		return true
 	}
 	g := it.item
-	looted := fallItem{id: g.id, amount: g.amount, refine: g.refine, cards: g.cards, extra: g.extra}
+	looted := fallItem{id: g.id, amount: g.amount, refine: g.refine, cards: g.cards, extra: g.extra, origin: g.origin, from: g.from}
 	if len(m.loot) < lootItemSize {
 		m.loot = append(m.loot, looted)
 	} else {

@@ -39,6 +39,9 @@ type Entity struct {
 	Name               string
 	// Body is the look's body: a job, a monster or an NPC sprite.
 	Body uint32
+	// ItemID and Amount are a ground item's.
+	ItemID uint32
+	Amount int
 }
 
 // Warp reports whether the entity is a warp portal.
@@ -87,6 +90,14 @@ type Bot struct {
 	ready     chan struct{}
 	readyOnce sync.Once
 
+	// game is the bot's own state from its events (game.go). record
+	// keeps every event, and changed closes and is replaced when events
+	// come.
+	game    gameState
+	record  bool
+	events  []*wathenav1.Event
+	changed chan struct{}
+
 	done chan struct{}
 	err  error
 }
@@ -97,6 +108,10 @@ type Options struct {
 	// the first frame that acknowledges it. It includes the wait for the
 	// next tick. Many bots may share one.
 	Ack *metrics.Histogram
+	// Record keeps every event the bot gets, for Events and Wait, as
+	// end-to-end tests need. Load tests leave it off, since the list
+	// grows for as long as the bot plays.
+	Record bool
 }
 
 // Dial connects to a server's WebSocket URL, such as
@@ -109,7 +124,8 @@ func Dial(ctx context.Context, url string, token []byte, opts Options) (*Bot, er
 		return nil, err
 	}
 	conn.SetReadLimit(schema.MaxMessageBytes)
-	b := &Bot{Name: string(token), conn: conn, seen: map[uint32]*Entity{}, hit: map[uint32]bool{}, sent: map[uint32]time.Time{}, done: make(chan struct{}), ready: make(chan struct{}), ack: opts.Ack}
+	b := &Bot{Name: string(token), conn: conn, seen: map[uint32]*Entity{}, hit: map[uint32]bool{}, sent: map[uint32]time.Time{}, done: make(chan struct{}), ready: make(chan struct{}), ack: opts.Ack,
+		record: opts.Record, changed: make(chan struct{}), game: newGameState()}
 	err = b.send(ctx, wathenav1.ClientMessage_builder{Hello: wathenav1.Hello_builder{
 		ProtocolVersion: schema.Version, SessionToken: token, ClientName: ClientName, Language: "en",
 	}.Build()}, false)
@@ -388,7 +404,13 @@ func (b *Bot) apply(m *wathenav1.ServerMessage) {
 	}
 	for _, e := range f.GetEvents() {
 		b.event(e, now)
+		b.game.apply(e)
 	}
+	if b.record {
+		b.events = append(b.events, f.GetEvents()...)
+	}
+	close(b.changed)
+	b.changed = make(chan struct{})
 }
 
 // event applies one event. The caller holds mu.
@@ -404,7 +426,8 @@ func (b *Bot) event(e *wathenav1.Event, now time.Time) {
 	case e.HasAppear():
 		a := e.GetAppear()
 		x, y := int(a.GetX()), int(a.GetY())
-		b.seen[a.GetId()] = &Entity{ID: a.GetId(), Kind: a.GetKind(), X: x, Y: y, DestX: x, DestY: y, Name: a.GetName(), Body: a.GetLook().GetBody()}
+		b.seen[a.GetId()] = &Entity{ID: a.GetId(), Kind: a.GetKind(), X: x, Y: y, DestX: x, DestY: y, Name: a.GetName(), Body: a.GetLook().GetBody(),
+			ItemID: a.GetItem().GetItemId(), Amount: int(a.GetItem().GetAmount())}
 		if a.GetId() == b.netID {
 			b.x, b.y, b.walk = x, y, nil
 			b.readyOnce.Do(func() { close(b.ready) })

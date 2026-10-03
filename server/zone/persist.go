@@ -198,6 +198,10 @@ func (z *Zone) save(p *Player, final bool) {
 	if s == nil {
 		return
 	}
+	// The player's transfers are committed before its later saves.
+	if p.transferred {
+		z.commitTransfers()
+	}
 	if s.saver != nil {
 		c := z.snapshot(p)
 		if final || p.saved == nil || !c.Equal(p.saved) {

@@ -271,3 +271,19 @@ func TestParseStartJob(t *testing.T) {
 		}
 	}
 }
+
+func TestSeedNeedsDev(t *testing.T) {
+	o := defaultOptions()
+	o.Assets, o.Seed = assetDir(t), "test"
+	if _, err := validate(o, dbSecrets); err == nil || !strings.Contains(err.Error(), "seed:") {
+		t.Errorf("a seed without dev: %v", err)
+	}
+	o.Dev = true
+	if _, err := validate(o, secrets{}); err != nil {
+		t.Errorf("a seed with dev: %v", err)
+	}
+	o, _, err := parseOptions("waserver", []string{"--seed", "abc"}, io.Discard)
+	if err != nil || o.Seed != "abc" {
+		t.Errorf("--seed: %q, %v", o.Seed, err)
+	}
+}

@@ -10,6 +10,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 	"github.com/lxsmnsyc/wathena/shared/path"
 )
 
@@ -1102,7 +1103,7 @@ func (z *Zone) consumeRequirement(src *entity, def *skill.Def, lv, typ int) {
 		}
 		z.consumeSpheres(p, def, req.SpiritSphere)
 		if req.Zeny > 0 {
-			z.setZeny(p, max(p.record.Zeny-int64(req.Zeny), 0))
+			z.payZeny(p, min(int64(req.Zeny), p.record.Zeny), transfer.ActionSkill, transfer.Owner{Kind: transfer.KindSkill, ID: int64(def.ID)})
 		}
 	}
 	if typ&2 != 0 {

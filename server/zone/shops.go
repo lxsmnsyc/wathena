@@ -4,6 +4,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
 // NPC shops, as rAthena's shop NPCs (npc_buylist and npc_selllist):
@@ -238,9 +239,11 @@ func (z *Zone) buy(p *Player, npc uint32, lines []buyLine) {
 		fail(wathenav1.ShopOutcome_SHOP_OUTCOME_FAILED)
 		return
 	}
-	// The items go in a copy first. Lines for the same item can pass
-	// one by one and fail together, and then nothing changes.
-	trial := *p.inventory
+	// The zeny and the items move in one transfer, which checks every
+	// item first. Lines for the same item can pass one by one and fail
+	// together, and then nothing changes.
+	box := z.box(p)
+	tx := transfer.New(transfer.ActionBuy).Pay(z.wallet(p), total, transfer.End(transfer.KindShop))
 	for _, l := range lines {
 		d := z.Items.Get(l.id)
 		step := l.amount
@@ -248,22 +251,16 @@ func (z *Zone) buy(p *Player, npc uint32, lines []buyLine) {
 			step = 1
 		}
 		for given := 0; given < l.amount; given += step {
-			if _, r := trial.Add(d, step, p.maxWeight); r != item.AddSuccess {
-				fail(wathenav1.ShopOutcome_SHOP_OUTCOME_FAILED)
-				return
+			x := z.newExtra(d, false, rollSource{kind: sourceShop}, "")
+			if len(x.Rolls) == 0 && len(d.Rolls) > 0 {
+				x.Rolls = d.Defaults()
 			}
+			tx.Create(transfer.End(transfer.KindShop), item.Slot{ID: l.id, Extra: x}, step, box, item.Serial{})
 		}
 	}
-	z.setZeny(p, p.record.Zeny-total)
-	for _, l := range lines {
-		d := z.Items.Get(l.id)
-		step := l.amount
-		if d.UniqueID || !d.Stackable {
-			step = 1
-		}
-		for given := 0; given < l.amount; given += step {
-			z.addCopy(p, l.id, step, 0, nil, z.newExtra(z.Items.Get(l.id), false, rollSource{kind: sourceShop}, ""))
-		}
+	if err := z.apply(p, tx, 0); err != nil {
+		fail(wathenav1.ShopOutcome_SHOP_OUTCOME_FAILED)
+		return
 	}
 	p.pending = append(p.pending, shopResult(wathenav1.ShopOutcome_SHOP_OUTCOME_BOUGHT))
 }
@@ -309,10 +306,17 @@ func (z *Zone) sell(p *Player, npc uint32, lines []sellLine) {
 		}
 		total += int64(sellPrice(p.char.Skills, d.Sell)) * int64(l.amount)
 	}
+	// The items and the zeny move in one transfer. Zeny over MAX_ZENY is
+	// lost.
+	box := z.box(p)
+	tx := transfer.New(transfer.ActionSell)
 	for _, l := range lines {
-		z.deleteItem(p, l.slot, l.amount, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_SOLD)
+		tx.Destroy(box, l.slot, p.inventory.Slots[l.slot].Serial, l.amount, transfer.End(transfer.KindShop))
 	}
-	total = min(total, character.MaxZeny)
-	z.setZeny(p, min(p.record.Zeny+total, character.MaxZeny))
+	tx.Earn(transfer.End(transfer.KindShop), min(total, character.MaxZeny), z.wallet(p), true)
+	if err := z.apply(p, tx, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_SOLD); err != nil {
+		fail()
+		return
+	}
 	p.pending = append(p.pending, shopResult(wathenav1.ShopOutcome_SHOP_OUTCOME_SOLD))
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
 // Loot: a monster's death gives exp to the players who fought it and
@@ -36,9 +37,12 @@ type groundItem struct {
 	cards      []uint32
 	extra      item.Extra
 	subX, subY int
-	// from is the serial of the stack the item was split from, or zero.
-	// The copy picked up gets a new serial and logs it.
-	from   item.Serial
+	// origin is the serial of the stack the item was dropped from, or
+	// zero. The copy picked up gets a new serial and logs it. from is
+	// where the item came from when no stack did, such as the monster
+	// that dropped it.
+	origin item.Serial
+	from   transfer.Owner
 	rights progression.Rights
 	// expires is when the item vanishes, in zone milliseconds.
 	expires int64
@@ -81,6 +85,9 @@ type fallItem struct {
 	refine int
 	cards  []uint32
 	extra  item.Extra
+	// origin and from are as in groundItem.
+	origin item.Serial
+	from   transfer.Owner
 }
 
 type take struct {
@@ -149,7 +156,7 @@ func (z *Zone) reward(e, killer *entity) {
 			// pet_create_egg puts the egg in the inventory when a slot
 			// is free. The egg is lost otherwise.
 			if p.inventory.Blank() > 0 {
-				z.addItem(p, d.Item, 1)
+				z.addItem(p, d.Item, 1, origin{action: transfer.ActionLoot, from: monsterOwner(e)})
 			}
 			continue
 		}
@@ -177,24 +184,8 @@ func (z *Zone) reward(e, killer *entity) {
 // rolled from the zone's random stream, and the random options of its
 // group, as mob_setdropitem and mob_setdropitem_option.
 func (z *Zone) dropCopy(id uint32, group string, monster *entity) fallItem {
-	return fallItem{id: id, amount: 1, extra: z.newExtra(z.Items.Get(id), true, rollSource{kind: sourceDrop, monster: monster}, group)}
-}
-
-// logSplit logs a copy picked up from part of a stack: its new serial,
-// the stack it came from, and its rolls (strategy section 5.4,
-// "Stacking").
-func (z *Zone) logSplit(p *Player, g *groundItem) {
-	if z.Mods == nil || z.Mods.Log == nil {
-		return
-	}
-	for i := range p.inventory.Slots {
-		s := &p.inventory.Slots[i]
-		if s.ID == g.id && s.Extra.Equal(&g.extra) {
-			z.Mods.Log.Info("item split", "character", p.Name, "item", g.id, "amount", g.amount,
-				"serial", s.Serial.String(), "from", g.from.String(), "rolls", g.extra.Rolls.Key())
-			return
-		}
-	}
+	return fallItem{id: id, amount: 1, extra: z.newExtra(z.Items.Get(id), true, rollSource{kind: sourceDrop, monster: monster}, group),
+		from: monsterOwner(monster)}
 }
 
 // effectMVP is EF_MVP, the effect over the MVP player.
@@ -250,7 +241,7 @@ func (z *Zone) mvpReward(e *entity, m *progression.Mob, kill progression.Kill) {
 			}
 		}
 		fi := z.dropCopy(d.Item, d.RandomOptionGroup, e)
-		if r := z.addCopy(mvp, d.Item, 1, 0, nil, fi.extra); r != item.AddSuccess {
+		if r := z.addCopy(mvp, d.Item, 1, 0, nil, fi.extra, origin{action: transfer.ActionLoot, from: fi.from}); r != item.AddSuccess {
 			pe := mvp.entity
 			z.falling = append(z.falling, fall{x: pe.x, y: pe.y, items: []fallItem{fi},
 				first: mvp.charID, second: kill.Second, third: kill.Third, boss: progression.BossMVP, at: z.now})
@@ -354,6 +345,7 @@ func (z *Zone) dropItems() {
 			z.entities.add(&entity{x: pl.X, y: pl.Y, item: &groundItem{
 				id: it.id, amount: max(it.amount, 1), subX: pl.SubX, subY: pl.SubY,
 				refine: it.refine, cards: it.cards, extra: it.extra,
+				origin: it.origin, from: it.from,
 				rights:  z.Progress.NewRights(f.first, f.second, f.third, z.now, f.boss),
 				expires: z.now + z.Progress.FloorItemLifetime,
 				fresh:   true,
@@ -458,18 +450,26 @@ func (z *Zone) take(p *Player, it *entity, net uint32) {
 	}
 	// party_share_loot gives the item with pc_additem. When it fails,
 	// the item stays and the player learns why.
-	if r := z.addCopy(p, g.id, g.amount, g.refine, g.cards, g.extra); r != item.AddSuccess {
+	if r := z.addCopy(p, g.id, g.amount, g.refine, g.cards, g.extra, g.pickUpOrigin()); r != item.AddSuccess {
 		p.pending = append(p.pending, pickUpFailed(net, pickUpFailure(r)))
 		return
-	}
-	if !g.from.IsZero() {
-		z.logSplit(p, g)
 	}
 	// unit_stop_attack.
 	p.entity.target = nil
 	z.entities.remove(it)
 	z.takes = append(z.takes, take{p.entity, it})
 	z.removed = append(z.removed, removal{it, wathenav1.VanishReason_VANISH_REASON_PICKED_UP})
+}
+
+// pickUpOrigin is where a ground item comes from, for the log of its
+// pick-up: the ground, with the serial of the stack it was dropped from,
+// or the monster that dropped it.
+func (g *groundItem) pickUpOrigin() origin {
+	o := origin{action: transfer.ActionPickUp, from: transfer.End(transfer.KindGround), source: g.origin}
+	if g.origin.IsZero() && g.from.Kind != transfer.KindNone {
+		o.from = g.from
+	}
+	return o
 }
 
 func pickUpFailed(item uint32, reason wathenav1.PickUpFailure) *wathenav1.Event {

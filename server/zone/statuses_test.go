@@ -101,7 +101,7 @@ func timed(t *testing.T, z *Zone, p *Player, tb modscript.TimedBonuses, entries 
 // and both go when it ends.
 func TestFoodRaisesStr(t *testing.T) {
 	z, p, _ := statusZone(t)
-	z.addItem(p, 12041, 1)
+	z.addItem(p, 12041, 1, scriptOrigin)
 	events(p)
 	str := p.entity.status.Str
 	use(z, p, 0)
@@ -133,7 +133,7 @@ func TestFoodRaisesStr(t *testing.T) {
 // A Green Potion ends Poison.
 func TestGreenPotionCuresPoison(t *testing.T) {
 	z, p, _ := statusZone(t)
-	z.addItem(p, 506, 1)
+	z.addItem(p, 506, 1, scriptOrigin)
 	if !startOn(z, p.entity, sc.SCPoison, 1, 60000) {
 		t.Fatal("poison did not start")
 	}

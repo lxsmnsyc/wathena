@@ -26,6 +26,8 @@ Early planning. There is no playable build yet.
 | `deploy/` | Docker Compose files and example configuration. |
 | `reference/` | Reference data from rAthena, used by parity tests. |
 | `internal/` | Go packages shared by the server and tools, such as the reference data loader. |
+| `e2e/` | End-to-end tests that play a real server with bots. |
+| `scripts/` | `check.sh`, which runs the CI checks on this machine. |
 
 ## Game files
 

@@ -87,6 +87,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
@@ -273,7 +274,13 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
-	root, err := rng.NewRoot(secret())
+	seed := secret()
+	if cfg.Seed != "" {
+		// Tests fix the random streams, so a run repeats.
+		seed = []byte(cfg.Seed)
+		log.Warn("the random streams follow --seed; use it only for tests")
+	}
+	root, err := rng.NewRoot(seed)
 	if err != nil {
 		return err
 	}
@@ -436,6 +443,11 @@ func runAll(name string, args []string) error {
 		st = store.New(pool, store.Options{Log: log})
 		gw.Characters = dbCharacters{store: st, world: w}
 		hc.checks = append(hc.checks, pool.Ping)
+		// Transfers commit the characters they change with their log
+		// lines, in one transaction (decision 0017).
+		for _, z := range zones {
+			z.Committer = storeCommitter{st}
+		}
 	}
 	var accounts *account.Service
 	if !cfg.Dev {
@@ -509,8 +521,9 @@ func runAll(name string, args []string) error {
 		dbg := http.NewServeMux()
 		dbg.Handle("/", reg.Handler())
 		if cfg.Dev {
-			// Mod reloads are for development only.
+			// Mod reloads and the item audit are for development only.
 			dbg.Handle("POST /debug/wathena/mods/reload", reloadHandler(loaded.set, w, log))
+			dbg.Handle("GET /debug/wathena/items", auditHandler(w))
 		}
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
 	}
@@ -689,6 +702,19 @@ type dbCharacters struct {
 func (d dbCharacters) Find(ctx context.Context, name string, look zone.Look) (int64, error) {
 	c := d.world.NewCharacter(name, look)
 	return d.store.DevCharacter(ctx, &c)
+}
+
+// storeCommitter hands the zones' transfer commits to the store.
+type storeCommitter struct{ store *store.Store }
+
+func (c storeCommitter) Commit(saves []zone.CommitSave, logs transfer.Logs) {
+	entries := make([]store.Entry, 0, len(saves))
+	for _, s := range saves {
+		if x, ok := s.Saver.(*store.Session); ok {
+			entries = append(entries, store.Entry{Session: x, Char: s.Character})
+		}
+	}
+	c.store.Commit(entries, logs)
 }
 
 func (d dbCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {

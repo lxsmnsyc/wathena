@@ -44,6 +44,7 @@ type options struct {
 	Build          string     `yaml:"build"`
 	StartItems     string     `yaml:"start_items"`
 	StartJob       string     `yaml:"start_job"`
+	Seed           string     `yaml:"seed"`
 	DebugAddr      string     `yaml:"debug_addr"`
 	ProfileDir     string     `yaml:"profile_dir"`
 	Mods           modOptions `yaml:"mods"`
@@ -177,6 +178,7 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.StringVar(&f.Build, "build", o.Build, "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank. Other builds than all_1 are for testing (build)")
 	flags.StringVar(&f.StartItems, "start-items", "", "items every new character starts with, as id:amount pairs such as 501:10,512:20, for development (start_items)")
 	flags.StringVar(&f.StartJob, "start-job", "", "job and levels every new character starts with, as job:base:job such as 1:50:40 for a Swordman, with the skill points of its job level, for development; needs --dev (start_job)")
+	flags.StringVar(&f.Seed, "seed", "", "text that fixes the random streams of the zones and world events, so a test runs the same each time, for development; needs --dev (seed)")
 	flags.StringVar(&f.DebugAddr, "debug-addr", "", "loopback address to serve measurements and profiles on, such as 127.0.0.1:8301; empty serves none (debug_addr)")
 	flags.StringVar(&f.ProfileDir, "profile-dir", "", "folder for the CPU profiles taken when a zone is over the tick budget; empty takes none (profile_dir)")
 	flags.StringVar(&f.Mods.Dir, "mods", "", "folder of installed mods; empty loads only the built-in core mods (mods.dir)")
@@ -229,6 +231,8 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.StartItems = f.StartItems
 		case "start-job":
 			o.StartJob = f.StartJob
+		case "seed":
+			o.Seed = f.Seed
 		case "debug-addr":
 			o.DebugAddr = f.DebugAddr
 		case "profile-dir":
@@ -395,6 +399,9 @@ func validate(o options, s secrets) (settings, error) {
 		} else if !o.Dev {
 			bad("start_job", "is for development and needs dev")
 		}
+	}
+	if o.Seed != "" && !o.Dev {
+		bad("seed", "is for development and needs dev: a known seed lets players predict drops")
 	}
 	if o.Mods.Dir != "" {
 		if fi, err := os.Stat(o.Mods.Dir); err != nil || !fi.IsDir() {

@@ -1,13 +1,14 @@
 package zone
 
 import (
+	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
 // Rolled item values (strategy section 5.4, proposal 0002 review
@@ -126,40 +127,22 @@ func (z *Zone) fixExtra(c string, slot int, d *item.Def, x *item.Extra, cards []
 }
 
 // addCopy is pc_additem for a copy with a refine, cards and an extra.
-// A copy whose item has rolls but which has none gets the defaults.
-func (z *Zone) addCopy(p *Player, id uint32, amount, refine int, cards []uint32, x item.Extra) item.AddResult {
+// A copy whose item has rolls but which has none gets the defaults. The
+// copy comes from o, for the logs. A new stack or instance gets its own
+// serial. Items picked up from the ground get a new one too, since
+// ground items are not saved: the log line names the serial of the
+// stack the item was dropped from.
+func (z *Zone) addCopy(p *Player, id uint32, amount, refine int, cards []uint32, x item.Extra, o origin) item.AddResult {
 	d := z.Items.Get(id)
 	if len(x.Rolls) == 0 && len(d.Rolls) > 0 {
 		x.Rolls = d.Defaults()
 	}
-	slot, res := p.inventory.AddExtra(d, amount, p.maxWeight, x)
-	if res != item.AddSuccess {
-		return res
+	tx := transfer.New(o.action).Create(o.from, item.Slot{ID: id, Refine: refine, Cards: cards, Extra: x}, amount, z.box(p), o.source)
+	var e *transfer.Error
+	if err := z.apply(p, tx, 0); errors.As(err, &e) {
+		return e.AddResult()
 	}
-	s := &p.inventory.Slots[slot]
-	// A new stack or instance gets its own serial. Items picked up from
-	// the ground get a new one too, since ground items are not saved.
-	if s.Serial.IsZero() {
-		s.Serial = item.NewSerial()
-	}
-	if s.Amount == amount && (refine != 0 || len(cards) > 0) {
-		s.Refine, s.Cards = refine, slices.Clone(cards)
-	}
-	rolls, cardRolls, opts := z.rollMessages(d, s)
-	p.pending = append(p.pending, wathenav1.Event_builder{InventoryAdd: wathenav1.InventoryAdd_builder{
-		ItemId:    id,
-		Amount:    uint32(amount),           // #nosec G115 -- at most MaxAmount.
-		Slot:      uint32(slot),             // #nosec G115 -- below MaxInventory.
-		Refine:    uint32(max(s.Refine, 0)), // #nosec G115 -- at most the refine limit.
-		Cards:     s.Cards,
-		Location:  wornLocation(d),
-		Card:      d.IsCard(),
-		Rolls:     rolls,
-		CardRolls: cardRolls,
-		Options:   opts,
-	}.Build()}.Build())
-	z.updateWeight(p)
-	return res
+	return item.AddSuccess
 }
 
 // rollMessages are a slot's rolls, card rolls and options as the client
@@ -254,7 +237,7 @@ func (z *Zone) giveRolled(p *Player, itemID uint32, amount int, roll modscript.G
 		default:
 			x = z.newExtra(d, roll.Mode == modscript.RollRandom, rollSource{kind: sourceScript}, "")
 		}
-		if r := z.addCopy(p, itemID, step, 0, nil, x); r != item.AddSuccess {
+		if r := z.addCopy(p, itemID, step, 0, nil, x, scriptOrigin); r != item.AddSuccess {
 			p.pending = append(p.pending, pickUpFailed(0, pickUpFailure(r)))
 			return false, nil
 		}

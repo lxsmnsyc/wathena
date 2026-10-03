@@ -22,6 +22,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/statuschange"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -126,6 +127,8 @@ type Player struct {
 	// the next autosave runs, in zone milliseconds.
 	saved    *character.Character
 	nextSave int64
+	// transferred is set while the player is in the zone's txPlayers.
+	transferred bool
 
 	// companion and mount are the player's records of data/companions.yml
 	// and data/mounts.yml, or nil (companions.go).
@@ -360,6 +363,15 @@ type Zone struct {
 	// MaxCardSlots is MAX_SLOTS, the most cards an item holds. It is
 	// DefaultMaxCardSlots when 0. Set it before Run.
 	MaxCardSlots int
+	// Committer saves the characters that transfers changed, with the
+	// transfers' log lines (transfers.go). Without it, the lines go to
+	// the log. Set it before Run.
+	Committer Committer
+	// txLogs are the log lines of the transfers since the last commit,
+	// and txPlayers the players they changed.
+	txLogs    transfer.Logs
+	txPlayers []*Player
+
 	// Statuses is the status database. Without it, no status starts. Set
 	// it before Run.
 	Statuses *statuschange.DB
@@ -569,6 +581,7 @@ func (z *Zone) Run(ctx context.Context) {
 		// Handlers of what the last event did run now, and what they
 		// queued goes to the sender in one batch.
 		z.runScripts()
+		z.commitTransfers()
 		z.flush()
 		var schedC <-chan time.Time
 		if ticks == nil {

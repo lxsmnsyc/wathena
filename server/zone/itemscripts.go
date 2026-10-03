@@ -38,7 +38,7 @@ func (z *Zone) giveItem(p *Player, id uint32, amount int, stacked bool) bool {
 		step = 1
 	}
 	for given := 0; given < amount; given += step {
-		if r := z.addItem(p, id, step); r != item.AddSuccess {
+		if r := z.addItem(p, id, step, scriptOrigin); r != item.AddSuccess {
 			p.pending = append(p.pending, pickUpFailed(0, pickUpFailure(r)))
 			return false
 		}
@@ -82,7 +82,7 @@ func (h scriptHost) GiveGroup(id int64, group int64) error {
 		}
 		for given := 0; given < g.Amount; given += step {
 			x := z.newExtra(d, false, rollSource{kind: sourceScript}, group)
-			if r := z.addCopy(p, g.Item, step, 0, nil, x); r != item.AddSuccess {
+			if r := z.addCopy(p, g.Item, step, 0, nil, x, scriptOrigin); r != item.AddSuccess {
 				p.pending = append(p.pending, pickUpFailed(0, pickUpFailure(r)))
 			}
 		}

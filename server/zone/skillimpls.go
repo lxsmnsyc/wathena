@@ -5,6 +5,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
+	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
 // Skill behaviors: what each first class skill does when its cast ends,
@@ -441,7 +442,7 @@ func (holyWater) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv 
 		z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		return
 	}
-	z.addItem(p, itemHolyWater, 1)
+	z.addItem(p, itemHolyWater, 1, skillOrigin(d.ID))
 	z.skillEffect(src, target, d, lv, int64(lv), true)
 }
 
@@ -575,7 +576,7 @@ func (z *Zone) stealItem(src, target *entity, lv int) bool {
 		// The monster cannot be stolen from again, even when the item
 		// does not fit.
 		m.stolen = true
-		return z.addItem(p, dr.Item, 1) == 0
+		return z.addItem(p, dr.Item, 1, origin{action: transfer.ActionLoot, from: monsterOwner(target)}) == 0
 	}
 	return false
 }
@@ -627,7 +628,7 @@ type pickStone struct{}
 func (pickStone) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
 	z.skillEffect(src, target, d, lv, int64(lv), true)
 	if p := src.player; p != nil {
-		z.addItem(p, itemStone, 1)
+		z.addItem(p, itemStone, 1, skillOrigin(d.ID))
 	}
 }
 

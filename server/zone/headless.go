@@ -111,6 +111,7 @@ func (h *Headless) step(at int64) {
 		h.AfterStep()
 		z.runScripts()
 	}
+	z.commitTransfers()
 	h.drain()
 }
 
@@ -546,7 +547,7 @@ func (h *Headless) TakeFloorItems(player int64) error {
 	}
 	for _, e := range items {
 		g := e.item
-		if z.addCopy(p, g.id, g.amount, g.refine, g.cards, g.extra) == item.AddSuccess {
+		if z.addCopy(p, g.id, g.amount, g.refine, g.cards, g.extra, g.pickUpOrigin()) == item.AddSuccess {
 			z.entities.remove(e)
 		}
 	}

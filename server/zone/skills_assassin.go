@@ -342,7 +342,7 @@ func (z *Zone) produceDeadlyPoison(p *Player) bool {
 	if z.rand.IntN(10000) < makePer {
 		// A full inventory loses the bottle (skill_drop_items_full is
 		// off).
-		z.addItem(p, itemPoisonBottle, 1)
+		z.addItem(p, itemPoisonBottle, 1, skillOrigin(skill.IDCreateDeadly))
 		return true
 	}
 	// status_percent_damage of 25% of max HP, which can kill.

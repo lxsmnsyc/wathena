@@ -77,7 +77,7 @@ func equipZone(t *testing.T) (*Zone, *Player, *Player) {
 // slot.
 func give(t *testing.T, z *Zone, p *Player, id uint32, amount int) int {
 	t.Helper()
-	if r := z.addItem(p, id, amount); r != item.AddSuccess {
+	if r := z.addItem(p, id, amount, scriptOrigin); r != item.AddSuccess {
 		t.Fatalf("add %d: %v", id, r)
 	}
 	for i, s := range p.inventory.Slots {

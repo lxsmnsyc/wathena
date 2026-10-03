@@ -16,6 +16,12 @@
 //     session saves nothing more, and OnStale tells its owner.
 //   - Load waits for the character's saves still in the queue, so a new
 //     session reads what the last one saved.
+//   - Commit writes the characters that transfers changed, with the
+//     transfers' log lines, in one transaction (commit.go). Commits are
+//     written one at a time, in the order they came. A session's saves
+//     that came after its commit wait until the commit is written, and
+//     its saves that came before are dropped, since the commit's copy is
+//     newer.
 //
 // Game code uses only the queries sqlc generates in server/store/db,
 // which always bind their parameters.
@@ -85,6 +91,10 @@ type Store struct {
 	wake    chan struct{}
 	stop    chan struct{}
 	workers sync.WaitGroup
+	// lane holds the commits not written yet, in order (commit.go).
+	// laneWake wakes the commit worker.
+	lane     []*commit
+	laneWake chan struct{}
 }
 
 // New makes a store on a pool and starts its workers. Close stops them.
@@ -110,9 +120,12 @@ func New(pool *pgxpool.Pool, opt Options) *Store {
 		n = DefaultWorkers
 	}
 	s.wake = make(chan struct{}, n)
+	s.laneWake = make(chan struct{}, 1)
 	for range n {
 		s.workers.Go(s.work)
 	}
+	s.workers.Go(s.commitWork)
+	s.workers.Go(s.partitionWork)
 	return s
 }
 
@@ -126,19 +139,20 @@ func (s *Store) Close(ctx context.Context) error {
 	return err
 }
 
-// Drain waits until no save is waiting or running, or ctx ends.
+// Drain waits until no save or commit is waiting or running, or ctx
+// ends.
 func (s *Store) Drain(ctx context.Context) error {
 	for {
 		s.mu.Lock()
-		n, ch := len(s.busy), s.changed
+		n, commits, ch := len(s.busy), len(s.lane), s.changed
 		s.mu.Unlock()
-		if n == 0 {
+		if n == 0 && commits == 0 {
 			return nil
 		}
 		select {
 		case <-ch:
 		case <-ctx.Done():
-			return fmt.Errorf("store: %d characters not saved: %w", n, ctx.Err())
+			return fmt.Errorf("store: %d characters and %d transfer commits not saved: %w", n, commits, ctx.Err())
 		}
 	}
 }
@@ -161,8 +175,14 @@ type Session struct {
 	final   bool
 	// active is set while a save waits, runs, or waits to run again.
 	active bool
-	ended  bool
-	err    error
+	// running is set while a save of the session is being written.
+	// lane counts the commits not written yet that save the session.
+	// parked is set when a save waits for those commits.
+	running bool
+	lane    int
+	parked  bool
+	ended   bool
+	err     error
 	// stale is set once a save failed with ErrStale. onStale is called
 	// then, on its own goroutine.
 	stale   bool
@@ -304,8 +324,22 @@ func (s *Store) work() {
 		x := s.queue[0]
 		s.queue[0] = nil
 		s.queue = s.queue[1:]
+		if x.lane > 0 {
+			// A commit of the session comes first. It queues the
+			// session again once it is written.
+			x.parked = true
+			s.mu.Unlock()
+			continue
+		}
+		if x.pending == nil {
+			// A commit replaced the copy that waited.
+			s.idleSession(x)
+			s.mu.Unlock()
+			continue
+		}
 		c, final, base, version := x.pending, x.final, x.saved, x.version
 		x.pending = nil
+		x.running = true
 		s.mu.Unlock()
 
 		ctx, cancel := context.WithTimeout(context.Background(), saveTimeout)
@@ -321,6 +355,7 @@ func (s *Store) finish(x *Session, c *character.Character, final bool, err error
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	x.err = err
+	x.running = false
 	switch {
 	case err == nil:
 		x.saved = c
@@ -329,13 +364,7 @@ func (s *Store) finish(x *Session, c *character.Character, final bool, err error
 		// Another session owns the character now. Nothing this session
 		// holds may be written.
 		s.log.Warn("save dropped: the character was loaded by a newer session", "character", x.id)
-		x.pending, x.ended = nil, true
-		if !x.stale {
-			x.stale = true
-			if x.onStale != nil {
-				go x.onStale()
-			}
-		}
+		s.goStale(x)
 	default:
 		s.log.Error("save failed; trying again", "character", x.id, "err", err)
 		if x.pending == nil {
@@ -347,19 +376,50 @@ func (s *Store) finish(x *Session, c *character.Character, final bool, err error
 			defer s.mu.Unlock()
 			s.push(x)
 		})
+		s.broadcast()
 		return
 	}
 	if x.pending != nil {
 		s.push(x)
+		s.broadcast()
 		return
 	}
 	if final {
 		x.ended = true
 	}
-	x.active = false
-	if s.busy[x.id]--; s.busy[x.id] <= 0 {
-		delete(s.busy, x.id)
+	s.idleSession(x)
+}
+
+// goStale ends a session whose character a newer session loaded.
+// s.mu must be held.
+func (s *Store) goStale(x *Session) {
+	x.pending, x.ended = nil, true
+	if !x.stale {
+		x.stale = true
+		if x.onStale != nil {
+			go x.onStale()
+		}
 	}
+}
+
+// idleSession marks a session as having no save waiting or running.
+// s.mu must be held.
+func (s *Store) idleSession(x *Session) {
+	x.active = false
+	s.done(x.id)
+}
+
+// done counts one save or commit of a character as finished, and wakes
+// those who wait. s.mu must be held.
+func (s *Store) done(id int64) {
+	if s.busy[id]--; s.busy[id] <= 0 {
+		delete(s.busy, id)
+	}
+	s.broadcast()
+}
+
+// broadcast wakes everything that waits on s.changed. s.mu must be held.
+func (s *Store) broadcast() {
 	close(s.changed)
 	s.changed = make(chan struct{})
 }
@@ -367,34 +427,39 @@ func (s *Store) finish(x *Session, c *character.Character, final bool, err error
 // write saves a character in one transaction. base is what the database
 // holds for the session, so only changed inventory slots are written.
 func (s *Store) write(ctx context.Context, id, version int64, base, c *character.Character) error {
+	return pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		return writeCharacter(ctx, s.q.WithTx(tx), id, version, base, c)
+	})
+}
+
+// writeCharacter saves a character in a transaction. It returns ErrStale
+// before it writes anything when the save version is not the session's.
+func writeCharacter(ctx context.Context, q *db.Queries, id, version int64, base, c *character.Character) error {
 	if c.ID != id {
 		return fmt.Errorf("store: save of character %d in the session of %d", c.ID, id)
 	}
-	return pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
-		q := s.q.WithTx(tx)
-		n, err := q.SaveCharacter(ctx, saveParams(c, version))
-		if err != nil {
+	n, err := q.SaveCharacter(ctx, saveParams(c, version))
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrStale
+	}
+	del, ins := diffItems(base.Items, c.Items)
+	if len(del) > 0 {
+		if err := q.DeleteInventorySlots(ctx, db.DeleteInventorySlotsParams{CharacterID: id, Slots: del}); err != nil {
 			return err
 		}
-		if n == 0 {
-			return ErrStale
-		}
-		del, ins := diffItems(base.Items, c.Items)
-		if len(del) > 0 {
-			if err := q.DeleteInventorySlots(ctx, db.DeleteInventorySlotsParams{CharacterID: id, Slots: del}); err != nil {
-				return err
-			}
-		}
-		if len(ins) > 0 {
-			if err := q.InsertInventory(ctx, insertParams(id, ins)); err != nil {
-				return err
-			}
-		}
-		if err := writeStatuses(ctx, q, id, base, c); err != nil {
+	}
+	if len(ins) > 0 {
+		if err := q.InsertInventory(ctx, insertParams(id, ins)); err != nil {
 			return err
 		}
-		return writeVariables(ctx, q, c, base.Variables, c.Variables)
-	})
+	}
+	if err := writeStatuses(ctx, q, id, base, c); err != nil {
+		return err
+	}
+	return writeVariables(ctx, q, c, base.Variables, c.Variables)
 }
 
 // loadVariables reads a character's variables and its account's.
