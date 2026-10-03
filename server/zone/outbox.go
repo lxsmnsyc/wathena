@@ -33,6 +33,8 @@ type outMsg struct {
 type outClosed struct {
 	once   sync.Once
 	closed atomic.Bool
+	// behind is set when the channel closed because it was full.
+	behind atomic.Bool
 }
 
 func (o *outClosed) close(ch chan *wathenav1.ServerMessage) {
@@ -62,6 +64,7 @@ func (p *Player) deliver(m *wathenav1.ServerMessage) {
 	select {
 	case p.out <- m:
 	default:
+		st.behind.Store(true)
 		st.close(p.out)
 	}
 }

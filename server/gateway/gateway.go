@@ -104,8 +104,8 @@ type Characters interface {
 	// look. A source may make the character first.
 	Find(ctx context.Context, name string, look zone.Look) (int64, error)
 	// Load starts a session for a character and returns the character
-	// and its saver. The saver is nil for a character that only lives
-	// in memory.
+	// and its saver. The saver may be nil, when nothing keeps the
+	// character.
 	Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error)
 }
 
@@ -133,8 +133,8 @@ type World interface {
 type Gateway struct {
 	World    World
 	Sessions Sessions
-	// Characters loads characters. When nil, every session plays a new
-	// character that only lives in memory.
+	// Characters loads characters. When nil, characters only live in
+	// memory, for as long as the gateway runs.
 	Characters Characters
 	// Origins lists the web client origins pages may connect from, as
 	// scheme://host[:port], such as https://play.example.com. Pages on
@@ -391,8 +391,15 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 				return
 			}
 		}
-		// The zone dropped the player, such as for falling behind, or
-		// the player left the world.
+		// The zone dropped the player for falling behind, or the player
+		// left the world.
+		if p.FellBehind() {
+			if g.Log != nil {
+				g.Log.Warn("a connection fell behind, so the zone dropped it", "character", char.Name)
+			}
+			_ = c.Close(websocket.StatusTryAgainLater, "fell behind")
+			return
+		}
 		_ = c.Close(websocket.StatusNormalClosure, "")
 	}()
 	return g.read(ctx, c, p, seq, char.CreatedAt)
@@ -694,9 +701,11 @@ func (g *Gateway) loadFailed(ctx context.Context, c *conn, err error) error {
 	return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_UNSPECIFIED, "The server cannot load your character. Try again later.")
 }
 
-// memoryCharacters gives every session a new character that only lives
-// in memory. Names that differ only in case are the same character, as
-// in the database.
+// memoryCharacters keeps characters in memory while the server runs. A
+// name's first session makes a new character. Its saves are what the
+// next session of the name loads, so items a player held when its
+// connection closed come back when it logs in again. Names that differ
+// only in case are the same character, as in the database.
 type memoryCharacters struct {
 	world World
 	mu    sync.Mutex
@@ -707,6 +716,11 @@ type memoryCharacters struct {
 type memoryCharacter struct {
 	name string
 	look zone.Look
+	// saved is the last save, or nil before the first.
+	saved *character.Character
+	// session counts the loads. Only the latest session's saves count,
+	// as a database's save version does.
+	session int
 }
 
 func (m *memoryCharacters) Find(_ context.Context, name string, look zone.Look) (int64, error) {
@@ -717,17 +731,42 @@ func (m *memoryCharacters) Find(_ context.Context, name string, look zone.Look) 
 	if !ok {
 		id = int64(len(m.ids) + 1)
 		m.ids[key] = id
+		m.looks[id] = memoryCharacter{name: name, look: look}
 	}
-	m.looks[id] = memoryCharacter{name, look}
 	return id, nil
 }
 
 func (m *memoryCharacters) Load(_ context.Context, id int64) (*character.Character, zone.Saver, error) {
 	m.mu.Lock()
 	mc := m.looks[id]
+	mc.session++
+	m.looks[id] = mc
 	m.mu.Unlock()
+	if mc.saved != nil {
+		return mc.saved.Clone(), memorySaver{m, id, mc.session}, nil
+	}
 	c := m.world.NewCharacter(mc.name, mc.look)
-	return &c, nil, nil
+	return &c, memorySaver{m, id, mc.session}, nil
+}
+
+// memorySaver keeps a session's saves of a memory character.
+type memorySaver struct {
+	m       *memoryCharacters
+	id      int64
+	session int
+}
+
+// Save keeps c, unless a newer session loaded the character. The zone
+// hands over a copy it no longer changes.
+func (s memorySaver) Save(c *character.Character, _ bool) {
+	s.m.mu.Lock()
+	defer s.m.mu.Unlock()
+	mc := s.m.looks[s.id]
+	if mc.session != s.session {
+		return
+	}
+	mc.saved = c
+	s.m.looks[s.id] = mc
 }
 
 func readMessage(ctx context.Context, c *conn) (*wathenav1.ClientMessage, error) {

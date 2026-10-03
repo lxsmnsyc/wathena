@@ -66,6 +66,10 @@ func newPlayer(s *Session, c *character.Character) *Player {
 	return &Player{Name: c.Name, Out: s.Out, out: s.out, fresh: true, load: c, sess: s}
 }
 
+// FellBehind reports whether a zone closed Out because the connection
+// did not take its messages fast enough.
+func (s *Session) FellBehind() bool { return s.outClosed.behind.Load() }
+
 // done records that the session's last save went to its saver.
 func (s *Session) done() {
 	s.leftOnce.Do(func() { close(s.left) })

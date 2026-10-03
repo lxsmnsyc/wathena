@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/transfer"
@@ -153,5 +154,68 @@ func TestAudit(t *testing.T) {
 		if it.Serial != want[i].Serial || it.Amount != want[i].Amount {
 			t.Errorf("item %d: %+v, want %+v", i, it, want[i])
 		}
+	}
+}
+
+// TestFallingBehindKeepsItems drops a connection that fell behind while
+// another player picks up its drop. The commands it sent after are
+// ignored, its last save holds what it held, and no item is lost or
+// held twice.
+func TestFallingBehindKeepsItems(t *testing.T) {
+	z := saveZone()
+	s := &saves{}
+	p := addCharacter(z, savedCharacter(), s)
+	oc := savedCharacter()
+	oc.ID, oc.Name = 8, "Other"
+	q := addCharacter(z, oc, &saves{})
+	q.maxWeight = 1 << 20
+	z.dropItem(p, 0, 2)
+	z.stepAt(z.now + 50)
+	var ground *entity
+	for e := range z.entities.all() {
+		if e.item != nil {
+			ground = e
+		}
+	}
+	if ground == nil {
+		t.Fatal("the drop is not on the ground")
+	}
+	z.handle(command{player: q, seq: 2, pickUp: new(q.netIDs.id(ground))})
+	// The connection stops reading until its messages fill up.
+	for !p.sess.FellBehind() {
+		p.deliver(&wathenav1.ServerMessage{})
+	}
+	z.handle(command{player: p, seq: 3, drop: &dropCommand{slot: 0, amount: 1}})
+	for start, now := z.now, z.now+50; now <= start+1000 && z.entities.has(ground); now += 50 {
+		z.stepAt(now)
+	}
+	if z.entities.has(ground) {
+		t.Fatalf("the other player did not pick up the drop: %v", failures(q))
+	}
+	z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+	if len(s.final) == 0 || !s.final[len(s.final)-1] {
+		t.Fatalf("no final save: %v", s.final)
+	}
+	last := s.got[len(s.got)-1]
+	held := map[uint32]int{}
+	serials := map[item.Serial]string{}
+	for _, it := range last.Items {
+		held[it.ID] += it.Amount
+		serials[it.Serial] = "the saved character"
+	}
+	for _, sl := range q.inventory.Slots {
+		if sl.ID == 0 {
+			continue
+		}
+		held[sl.ID] += sl.Amount
+		if who, ok := serials[sl.Serial]; ok {
+			t.Errorf("serial %s is held by %s and the other player", sl.Serial, who)
+		}
+		serials[sl.Serial] = "the other player"
+	}
+	// Each started with 3 potions and a 1201. The ignored drop changed
+	// nothing.
+	if held[501] != 6 || held[1201] != 2 || q.inventory.Count(501) != 5 {
+		t.Errorf("held %v, the other player has %d potions", held, q.inventory.Count(501))
 	}
 }

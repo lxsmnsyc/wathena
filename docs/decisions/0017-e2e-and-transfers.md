@@ -2,7 +2,7 @@
 
 - Status: proposed.
 - Date: 2026-10-03.
-- Code: [e2e](../../e2e), [tools/botclient](../../tools/botclient) (`game.go`), [server/transfer](../../server/transfer), [server/zone](../../server/zone) (`transfers.go`), [server/store](../../server/store) (`commit.go`, migration 00015), [server/cmd/waserver](../../server/cmd/waserver) (`audit.go`, `--seed`), [scripts/check.sh](../../scripts/check.sh).
+- Code: [e2e](../../e2e), [tools/botclient](../../tools/botclient) (`game.go`, `bot.go`), [server/transfer](../../server/transfer), [server/zone](../../server/zone) (`transfers.go`), [server/store](../../server/store) (`commit.go`, migration 00015), [server/cmd/waserver](../../server/cmd/waserver) (`audit.go`, `--seed`), [scripts/check.sh](../../scripts/check.sh).
 - Phase 5, step 1. Builds on strategy sections 3.5, 5.4, 7.10 and 12.1, and [decision 0014](0014-rolled-items.md). It adds no Lua API.
 
 ## Decision
@@ -43,6 +43,30 @@
 - After every audit and at the end, the totals of each item and of zeny are those of the start, no serial is held twice, and each bot's inventory matches the server's.
 - With a database, it also checks the saved inventories, one log line for each move the bots saw, and a history for every serial.
 - The first test uses the moves that exist: 16 bots drop parts of their stacks and pick up each other's for 6 seconds.
+- About one move in 60 is a `DisconnectMove`: the bot sends a drop or a pick-up and closes its connection at once, as a player whose network drops. The move may happen or not.
+- A bot whose connection closes, by its own move or by the server, logs in again with the same name. Its character comes back as the server saved it when it left. Connections that the server closed are listed in the test's log.
+- While a bot is away, an audit cannot see its character, so the audit only checks that no total is above the start and that no serial is held twice. The last audit waits until every bot is back.
+- A move sent just before a connection closed can happen without its bot seeing it. The counts of drops and pick-ups the bots saw, and the item log lines, may differ by at most one for each time a bot logged in again.
+- `TestDisconnectKeepsItems` closes a connection in the middle of a drop while another player picks up an earlier drop, in memory and with PostgreSQL. The zone test `TestFallingBehindKeepsItems` drops a connection that fell behind in the middle of a pick-up.
+
+### Characters without a database
+
+- Without a database, `--dev` characters now stay in memory until the server stops. A name that logs in again plays its character as it was when it left, as with a database.
+- Before, every session made a new character. A character's items left the world with its session, and a new session of the name brought new start items. The duplication tests could not log a bot in again without that showing as a loss and a copy.
+
+### A missing total in the duplication test
+
+`TestDuplicationDropsAndPickUps` failed once under the full `-race` suite with heavy machine load: `Dup1: settling: connection closed`, and the audit showed 434 Jellopy of 480. No item was lost by the game.
+
+- The bots made their moves with a context that ends when the move time is up. `botclient` used that context for its WebSocket writes.
+- `github.com/coder/websocket` closes the whole connection when a write's context ends during the write. Under heavy load a write is slow, so a bot that was writing when the time ran out closed its own connection. The server saw the connection end without a close frame and ended the session.
+- `botclient` also took a sequence number before the write. A write that failed left a gap, and the gateway closes a connection whose numbers skip one, with `DISCONNECT_REASON_BAD_MESSAGE`.
+- The zone saved the character and took it out of the world, as for any logout. The audit only lists characters in the world. Without a database the session's character was also dropped, so its items were gone from the server, as for every logout then.
+- A loop of 12 runs of the old test, beside the full `-race` suite, failed twice, once in each way. One run ended with `Dup2: settling: botclient: the connection closed`, the reason `DISCONNECT_REASON_BAD_MESSAGE: The client sent messages out of order.`, and 381 Jellopy of 480. The other ended with `Dup7: settling: ... use of closed network connection`, and the server's log showed the session end on `EOF`, with no close frame from the bot.
+- So the missing 46 Jellopy were what the closed bot held. Closing one bot on purpose on the old code shows the same: the bot held 83 Jellopy, and the audit showed 397 of 480.
+- The fix: `botclient` writes with its own 10 second timeout, not the caller's context, and gives the sequence number back when a write fails. `TestCancelledSendKeepsConnection` sends 2000 commands whose contexts end within 50 microseconds. On the old code it failed in 3 runs of 3.
+- With a database, the final save kept the items, and `TestDuplicationWithDatabase` with disconnects shows they come back.
+- The gateway now logs a warning when the zone drops a connection that fell behind, and closes it with the reason `fell behind`, so a server kick is easy to tell from a client close.
 
 ### Local checks
 

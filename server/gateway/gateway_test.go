@@ -393,3 +393,32 @@ func TestWarpKeepsConnection(t *testing.T) {
 		return e.GetMove().GetId() == mc.GetNetId() && e.GetMove().GetFromX() == 5
 	}))
 }
+
+// TestMemoryCharacterComesBack checks that a character without a
+// database keeps what it held when its connection closed.
+func TestMemoryCharacterComesBack(t *testing.T) {
+	url := serverWith(t, func(z *zone.Zone) {
+		z.StartItems = []zone.StartItem{{ID: 909, Amount: 3}}
+	})
+	a := dial(t, url)
+	a.hello("Alice", schema.Version)
+	a.next((*wathenav1.ServerMessage).HasWelcome)
+	a.next(hasEvent((*wathenav1.Event).HasInventory))
+	a.send(wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{
+		DropItem: wathenav1.DropItem_builder{Slot: 0, Amount: 2}.Build(),
+	}.Build()}.Build())
+	a.next(hasEvent((*wathenav1.Event).HasInventoryRemove))
+	_ = a.c.CloseNow()
+
+	b := dial(t, url)
+	b.hello("alice", schema.Version)
+	b.next((*wathenav1.ServerMessage).HasWelcome)
+	inv := b.next(hasEvent((*wathenav1.Event).HasInventory))
+	for _, e := range inv.GetFrame().GetEvents() {
+		if l := e.GetInventory(); l != nil {
+			if it := l.GetItems(); len(it) != 1 || it[0].GetItemId() != 909 || it[0].GetAmount() != 1 {
+				t.Errorf("inventory after logging in again: %v", l)
+			}
+		}
+	}
+}

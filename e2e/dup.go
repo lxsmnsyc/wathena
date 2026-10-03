@@ -41,6 +41,24 @@ import (
 type Move struct {
 	Name string
 	Do   func(ctx context.Context, b *botclient.Bot, rnd *rand.Rand) (bool, error)
+	// Weight is how often a bot picks the move, against the weights of
+	// the other moves. 0 counts as 1.
+	Weight int
+}
+
+// pick picks a move by weight.
+func pick(moves []Move, rnd *rand.Rand) Move {
+	total := 0
+	for _, m := range moves {
+		total += max(m.Weight, 1)
+	}
+	n := rnd.IntN(total)
+	for _, m := range moves {
+		if n -= max(m.Weight, 1); n < 0 {
+			return m
+		}
+	}
+	return moves[len(moves)-1]
 }
 
 // DupTest is a duplication test.
@@ -54,7 +72,8 @@ type DupTest struct {
 	Duration time.Duration
 	// Seed fixes each bot's choices.
 	Seed uint64
-	// Moves are what the bots do: each step, a bot picks one at random.
+	// Moves are what the bots do: each step, a bot picks one at random,
+	// by weight.
 	Moves []Move
 	// Settle runs on every bot after the moves, until it returns false,
 	// so the world ends quiet, such as with every ground item picked up.
@@ -68,8 +87,14 @@ type DupTest struct {
 type DupReport struct {
 	// Moves counts the moves that happened, by name.
 	Moves map[string]int
-	// Audits is how many audits passed.
-	Audits int
+	// Audits is how many audits passed with every bot online. Partial
+	// counts the audits taken while a bot was logging in again.
+	Audits, Partial int
+	// Reconnects counts the times a bot logged in again after its
+	// connection closed. Closed lists the connections the server closed,
+	// with why, as the bots saw it.
+	Reconnects int
+	Closed     []string
 	// Dropped and Added count the drops and the items entering an
 	// inventory that the bots' messages showed, over the whole test.
 	Dropped, Added int
@@ -135,6 +160,12 @@ func mergeKeys(a, b map[uint32]int) map[uint32]int {
 }
 
 // Run runs the test. It fails t for every check that does not hold.
+//
+// A bot whose connection closes, by a DisconnectMove or by the server,
+// logs in again with the same name and goes on. Its character comes
+// back as the server saved it when it left. While a bot is away, an
+// audit cannot see what its character holds, so the audit only checks
+// that no total is above the start and that no serial is held twice.
 func (d DupTest) Run(t *testing.T) DupReport {
 	t.Helper()
 	if d.Prefix == "" {
@@ -146,14 +177,14 @@ func (d DupTest) Run(t *testing.T) DupReport {
 	srv := d.Server
 	ctx, cancel := context.WithTimeout(context.Background(), d.Duration+2*time.Minute)
 	defer cancel()
-	bots := make([]*botclient.Bot, d.Bots)
-	for i := range bots {
-		b, err := botclient.Dial(ctx, srv.WS, fmt.Appendf(nil, "%s%d", d.Prefix, i+1), botclient.Options{Record: true})
+	bots := &dupBots{now: make([]*botclient.Bot, d.Bots)}
+	t.Cleanup(bots.close)
+	for i := range d.Bots {
+		b, err := d.dial(ctx, i)
 		if err != nil {
 			t.Fatalf("bot %d: %v", i+1, err)
 		}
-		bots[i] = b
-		t.Cleanup(func() { _ = b.Close() })
+		bots.now[i] = b
 	}
 	start, err := d.audit(ctx, d.Bots)
 	if err != nil {
@@ -166,25 +197,63 @@ func (d DupTest) Run(t *testing.T) DupReport {
 		failed.Store(true)
 		t.Errorf(format, args...)
 	}
+	// again logs bot i in again when its connection closed. left is
+	// set when the bot closed it. It returns the bot to go on with.
+	again := func(i int, b *botclient.Bot, left bool) (*botclient.Bot, error) {
+		select {
+		case <-b.Done():
+		default:
+			return b, nil
+		}
+		why := b.Err()
+		var nb *botclient.Bot
+		var err error
+		for try := 0; try < 5 && ctx.Err() == nil; try++ {
+			if nb, err = d.dial(ctx, i); err == nil {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("logging in again after %v: %w", why, err)
+		}
+		bots.replace(i, nb)
+		mu.Lock()
+		rep.Reconnects++
+		if !left {
+			rep.Closed = append(rep.Closed, fmt.Sprintf("%s: %v", b.Name, why))
+		}
+		mu.Unlock()
+		return nb, nil
+	}
 
 	// The bots move until the time is up, while the test audits.
 	moving, stop := context.WithTimeout(ctx, d.Duration)
 	defer stop()
 	var wg sync.WaitGroup
-	for i, b := range bots {
-		rnd := rand.New(rand.NewPCG(d.Seed, uint64(i)+1)) // #nosec G404 -- test choices, not secrets.
+	for i := range d.Bots {
+		rnd := rand.New(rand.NewPCG(d.Seed, uint64(i)+1)) // #nosec G404 G115 -- test choices, not secrets, from small counts.
 		wg.Go(func() {
+			b := bots.get(i)
 			for moving.Err() == nil {
-				m := d.Moves[rnd.IntN(len(d.Moves))]
+				m := pick(d.Moves, rnd)
 				done, err := m.Do(moving, b, rnd)
-				if err != nil && moving.Err() == nil {
-					fail("%s: %s: %v", b.Name, m.Name, err)
+				left := errors.Is(err, errLeft)
+				if left {
+					err = nil
+				}
+				if err != nil && moving.Err() == nil && !closed(b) {
+					fail("%s: %s: %v", b.Name, m.Name, closedErr(b, err))
 					return
 				}
 				if done {
 					mu.Lock()
 					rep.Moves[m.Name]++
 					mu.Unlock()
+				}
+				if b, err = again(i, b, left); err != nil {
+					fail("%s: %v", d.name(i), err)
+					return
 				}
 			}
 		})
@@ -207,11 +276,16 @@ func (d DupTest) Run(t *testing.T) DupReport {
 				}
 				return
 			}
-			if !d.check(t, start, zones, "during the moves") {
+			full, ok := d.check(t, start, zones, "during the moves")
+			if !ok {
 				failed.Store(true)
 				return
 			}
-			rep.Audits++
+			if full {
+				rep.Audits++
+			} else {
+				rep.Partial++
+			}
 		}
 	}()
 	wg.Wait()
@@ -224,16 +298,21 @@ func (d DupTest) Run(t *testing.T) DupReport {
 	// before the time was up can land after a bot settled, so settling
 	// runs again while the audit shows ground items.
 	for round := 0; d.Settle != nil && round < 5; round++ {
-		for i, b := range bots {
+		for i := range d.Bots {
 			rnd := rand.New(rand.NewPCG(d.Seed, uint64(d.Bots*(round+1)+i)+1)) // #nosec G404 G115 -- test choices, not secrets, from small counts.
 			wg.Go(func() {
+				b := bots.get(i)
 				for ctx.Err() == nil {
-					again, err := d.Settle(ctx, b, rnd)
-					if err != nil {
-						fail("%s: settling: %v", b.Name, err)
+					more, err := d.Settle(ctx, b, rnd)
+					if err != nil && !closed(b) {
+						fail("%s: settling: %v", b.Name, closedErr(b, err))
 						return
 					}
-					if !again {
+					if b, err = again(i, b, false); err != nil {
+						fail("%s: settling: %v", d.name(i), err)
+						return
+					}
+					if !more {
 						return
 					}
 				}
@@ -249,17 +328,21 @@ func (d DupTest) Run(t *testing.T) DupReport {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
-	zones, err := srv.Audit(ctx)
+	if failed.Load() {
+		t.FailNow()
+	}
+	// The bots that logged in again are online before the last audit.
+	zones, err := d.online(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !d.check(t, start, zones, "at the end") {
+	if full, ok := d.check(t, start, zones, "at the end"); !ok || !full {
 		t.FailNow()
 	}
 	rep.Audits++
 	rep.End, _ = TotalsOf(zones)
-	d.checkBots(ctx, t, bots)
-	for _, b := range bots {
+	d.checkBots(ctx, t, bots.all())
+	for _, b := range bots.every() {
 		events, _ := b.Events(0)
 		for _, e := range events {
 			if r := e.GetInventoryRemove(); r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED {
@@ -270,7 +353,82 @@ func (d DupTest) Run(t *testing.T) DupReport {
 			}
 		}
 	}
+	for _, c := range rep.Closed {
+		t.Logf("the server closed a connection: %s", c)
+	}
 	return rep
+}
+
+// name is bot i's name.
+func (d DupTest) name(i int) string { return fmt.Sprintf("%s%d", d.Prefix, i+1) }
+
+// dial logs bot i in.
+func (d DupTest) dial(ctx context.Context, i int) (*botclient.Bot, error) {
+	return botclient.Dial(ctx, d.Server.WS, []byte(d.name(i)), botclient.Options{Record: true})
+}
+
+// dupBots are the bots of a test: the connection each bot plays now,
+// and every connection it had.
+type dupBots struct {
+	mu   sync.Mutex
+	now  []*botclient.Bot
+	gone []*botclient.Bot
+}
+
+func (s *dupBots) get(i int) *botclient.Bot {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.now[i]
+}
+
+func (s *dupBots) replace(i int, b *botclient.Bot) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.gone = append(s.gone, s.now[i])
+	s.now[i] = b
+}
+
+// all returns the connections the bots play now.
+func (s *dupBots) all() []*botclient.Bot {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.now)
+}
+
+// every returns every connection the bots had.
+func (s *dupBots) every() []*botclient.Bot {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append(slices.Clone(s.gone), s.now...)
+}
+
+func (s *dupBots) close() {
+	for _, b := range s.all() {
+		_ = b.Close()
+	}
+}
+
+// online waits until every bot's character is in the world, and returns
+// that audit.
+func (d DupTest) online(ctx context.Context) ([]AuditZone, error) {
+	for {
+		zones, err := d.Server.Audit(ctx)
+		if err != nil {
+			return nil, err
+		}
+		n := 0
+		for _, z := range zones {
+			n += len(z.Players)
+		}
+		if n >= d.Bots {
+			return zones, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
 }
 
 // audit waits until the server holds the given number of players, and
@@ -300,15 +458,34 @@ func (d DupTest) audit(ctx context.Context, players int) (Totals, error) {
 	}
 }
 
-// check compares an audit with the start.
-func (d DupTest) check(t *testing.T, start Totals, zones []AuditZone, when string) bool {
+// check compares an audit with the start. full reports whether every
+// bot was online. When one was not, its character's items are out of
+// the audit, so only totals above the start fail.
+func (d DupTest) check(t *testing.T, start Totals, zones []AuditZone, when string) (full, ok bool) {
 	t.Helper()
+	n := 0
+	for _, z := range zones {
+		n += len(z.Players)
+	}
+	full = n >= d.Bots
 	now, twice := TotalsOf(zones)
-	problems := append(twice, compare(start, now)...)
+	problems := slices.Clone(twice)
+	if full {
+		problems = append(problems, compare(start, now)...)
+	} else {
+		for _, id := range slices.Sorted(maps.Keys(now.Items)) {
+			if now.Items[id] > start.Items[id] {
+				problems = append(problems, fmt.Sprintf("item %d: %d with a player away, more than the %d of the start", id, now.Items[id], start.Items[id]))
+			}
+		}
+		if now.Zeny > start.Zeny {
+			problems = append(problems, fmt.Sprintf("zeny: %d with a player away, more than the %d of the start", now.Zeny, start.Zeny))
+		}
+	}
 	for _, p := range problems {
 		t.Errorf("%s: %s", when, p)
 	}
-	return len(problems) == 0
+	return full, len(problems) == 0
 }
 
 // checkBots checks that each bot's inventory, from the server's
@@ -396,6 +573,47 @@ func PickUpMove() Move {
 	}}
 }
 
+// errLeft is what DisconnectMove returns after it closed the connection.
+var errLeft = errors.New("the bot closed its connection")
+
+// DisconnectMove starts a drop of part of a stack of an item, or a
+// pick-up of a ground item in view, and closes the connection at once,
+// as a player whose network drops in the middle of a move. The move may
+// happen or not. The test then logs the bot in again.
+func DisconnectMove(id uint32) Move {
+	return Move{Name: "disconnect", Do: func(ctx context.Context, b *botclient.Bot, rnd *rand.Rand) (bool, error) {
+		var err error
+		ground := groundItems(b)
+		var slots []botclient.Item
+		for _, it := range b.Game().Items {
+			if it.ID == id {
+				slots = append(slots, it)
+			}
+		}
+		slices.SortFunc(slots, func(a, b botclient.Item) int { return a.Slot - b.Slot })
+		switch {
+		case len(slots) > 0 && (len(ground) == 0 || rnd.IntN(2) == 0):
+			it := slots[rnd.IntN(len(slots))]
+			err = b.DropItem(ctx, it.Slot, 1+rnd.IntN(it.Amount))
+		case len(ground) > 0:
+			err = b.PickUp(ctx, ground[rnd.IntN(len(ground))].ID)
+		}
+		if err != nil {
+			return false, ignoreDone(ctx, err)
+		}
+		// Sometimes the server takes the command before the connection
+		// closes, and sometimes not.
+		if n := rnd.IntN(3); n > 0 {
+			time.Sleep(time.Duration(n) * botTick / 2)
+		}
+		_ = b.CloseNow()
+		return true, errLeft
+	}}
+}
+
+// botTick is the server's tick, zone.Tick.
+const botTick = 50 * time.Millisecond
+
 // SettlePickUps picks up ground items until none is in view from a
 // cell that sees the whole map, such as its center.
 func SettlePickUps(x, y int) func(ctx context.Context, b *botclient.Bot, rnd *rand.Rand) (bool, error) {
@@ -481,6 +699,26 @@ func pickUp(ctx context.Context, b *botclient.Bot, rnd *rand.Rand) (bool, error)
 	return err == nil, nil
 }
 
+// closed reports whether the bot's connection closed, waiting a little
+// for the bot to see it, since a failed send can come first.
+func closed(b *botclient.Bot) bool {
+	select {
+	case <-b.Done():
+		return true
+	case <-time.After(time.Second):
+		return false
+	}
+}
+
+// closedErr adds why the connection closed to an error that comes from
+// a closed connection.
+func closedErr(b *botclient.Bot, err error) error {
+	if why := b.Err(); why != nil {
+		return fmt.Errorf("%w (the connection closed: %v)", err, why)
+	}
+	return err
+}
+
 // pause waits a little when a bot has nothing to do.
 func pause(ctx context.Context) error {
 	select {
@@ -500,7 +738,8 @@ func ignoreDone(ctx context.Context, err error) error {
 // CheckDatabase stops the server, then checks what it saved for a test
 // of drops and pick-ups: the totals of the start in the bots'
 // inventories, an item log line for each drop and each pick-up the bots
-// saw, and a history for every serial: each serial in the inventories
+// saw (and at most one more for each time a bot logged in again), and a
+// history for every serial: each serial in the inventories
 // was there at the start or is in the item log, and each pick-up names
 // a serial that was dropped.
 func (d DupTest) CheckDatabase(t *testing.T, rep DupReport) {
@@ -542,8 +781,11 @@ func (d DupTest) CheckDatabase(t *testing.T, rep DupReport) {
 		if err := db.QueryRow(ctx, `SELECT count(*) FROM item_log WHERE action = $1`, action).Scan(&n); err != nil {
 			t.Fatal(err)
 		}
-		if n != want {
-			t.Errorf("database: %d item log lines for %s, the bots saw %d", n, action, want)
+		// A move sent just before a connection closed can happen
+		// without its bot seeing it: at most one for each time a bot
+		// logged in again.
+		if n < want || n > want+rep.Reconnects {
+			t.Errorf("database: %d item log lines for %s, the bots saw %d and logged in again %d times", n, action, want, rep.Reconnects)
 		}
 	}
 	logged := map[string]bool{}

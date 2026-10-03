@@ -32,8 +32,9 @@
 //
 // --dev replaces accounts with development sessions: any valid name is a
 // session token, and plays the character of that name. It only listens
-// on a loopback address. With --dev, the database is optional, and
-// characters only live in memory without it.
+// on a loopback address. With --dev, the database is optional. Without
+// it, characters live in memory until the server stops, and a name that
+// logs in again plays the character as it was when it left.
 //
 // --debug-addr serves the server's measurements and Go's profiles on a
 // loopback address, such as 127.0.0.1:8301 (server/README.md, "Load

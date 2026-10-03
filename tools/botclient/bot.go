@@ -192,25 +192,41 @@ func (b *Bot) read(ctx context.Context) (*wathenav1.ServerMessage, error) {
 }
 
 // send numbers and sends a message. track records its time, for Ack.
+//
+// A context that has ended sends nothing. Once the write starts, ctx no
+// longer stops it: the WebSocket library closes the connection when a
+// write's context ends in the middle of the write, so a caller's
+// deadline would end the session. Only writeTimeout stops a write.
+// A message that was not sent gives its sequence number back, since the
+// server closes a connection whose numbers skip one.
 func (b *Bot) send(ctx context.Context, m wathenav1.ClientMessage_builder, track bool) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	b.wmu.Lock()
 	defer b.wmu.Unlock()
-	b.seq++
-	m.Seq = b.seq
+	m.Seq = b.seq + 1
 	data, err := proto.Marshal(m.Build())
 	if err != nil {
 		return err
 	}
-	if track && b.ack != nil {
+	track = track && b.ack != nil
+	if track {
 		b.mu.Lock()
-		b.sent[b.seq] = time.Now()
+		b.sent[m.Seq] = time.Now()
 		b.mu.Unlock()
 	}
-	ctx, cancel := context.WithTimeout(ctx, writeTimeout)
+	wctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), writeTimeout)
 	defer cancel()
-	if err := b.conn.Write(ctx, websocket.MessageBinary, data); err != nil {
+	if err := b.conn.Write(wctx, websocket.MessageBinary, data); err != nil {
+		if track {
+			b.mu.Lock()
+			delete(b.sent, m.Seq)
+			b.mu.Unlock()
+		}
 		return err
 	}
+	b.seq++
 	// Client frames carry a 4-byte mask key.
 	b.bytesOut.Add(uint64(len(data)) + wsHeader(len(data)) + 4)
 	b.msgsOut.Add(1)
@@ -265,6 +281,14 @@ func (e *DisconnectError) Error() string {
 // Close closes the connection, as a player who closes the page.
 func (b *Bot) Close() error {
 	err := b.conn.Close(websocket.StatusNormalClosure, "")
+	<-b.done
+	return err
+}
+
+// CloseNow closes the connection at once, without the close handshake,
+// as a client whose network drops.
+func (b *Bot) CloseNow() error {
+	err := b.conn.CloseNow()
 	<-b.done
 	return err
 }

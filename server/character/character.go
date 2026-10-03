@@ -195,6 +195,22 @@ func (c *Character) Equal(o *Character) bool {
 		slices.EqualFunc(c.Sanctions, o.Sanctions, func(a, b Sanction) bool { return a.Equal(&b) })
 }
 
+// Clone returns a copy of c that shares no slices or maps with it.
+func (c *Character) Clone() *Character {
+	out := &Character{Info: c.Info, Variables: maps.Clone(c.Variables), Statuses: slices.Clone(c.Statuses),
+		Skills: maps.Clone(c.Skills), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions)}
+	for _, it := range c.Items {
+		it.Cards = slices.Clone(it.Cards)
+		it.Extra = it.Clone()
+		out.Items = append(out.Items, it)
+	}
+	for _, b := range c.TimedBonuses {
+		b.EndsOn = slices.Clone(b.EndsOn)
+		out.TimedBonuses = append(out.TimedBonuses, b)
+	}
+	return out
+}
+
 // equal reports whether two infos are the same. Times compare as
 // instants, without their monotonic readings.
 func (i *Info) equal(o *Info) bool {

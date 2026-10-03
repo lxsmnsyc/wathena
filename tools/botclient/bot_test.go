@@ -166,3 +166,26 @@ func TestScenario(t *testing.T) {
 		t.Error(v)
 	}
 }
+
+// TestCancelledSendKeepsConnection checks that a command whose context
+// ends while it is written does not close the connection. The WebSocket
+// library closes a connection when a write's context ends during the
+// write, which made the duplication tests lose bots when their move
+// time ran out.
+func TestCancelledSendKeepsConnection(t *testing.T) {
+	s := serve(t, nil)
+	b := dial(t, s, "Alice")
+	for i := range 2000 {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(i%50)*time.Microsecond)
+		_ = b.WalkTo(ctx, 5+i%10, 5)
+		cancel()
+		select {
+		case <-b.Done():
+			t.Fatalf("the connection closed after %d cancelled sends: %v", i+1, b.Err())
+		default:
+		}
+	}
+	if err := b.WalkTo(context.Background(), 20, 20); err != nil {
+		t.Fatalf("a send after the cancelled ones failed: %v", err)
+	}
+}

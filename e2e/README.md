@@ -15,7 +15,7 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
 - The mod in [testdata/mods/fixture](testdata/mods/fixture) places Dummies, which stand still and always drop a Jellopy and a Test Charm with a roll, a shop, and NPCs that give and take items and zeny, change jobs, warp and mute. It adds the word "badword" to the chat filter. It uses only the 1.0 Lua API.
 - The lower chat limits of new characters are off, since every test character is new.
 - `AdvanceClock` moves the server clock with `--dev`'s `POST /debug/wathena/clock`, and `Reports` reads `GET /debug/wathena/reports`.
-- Players are `--dev` characters. They start as Swordmen at base level 50 and job level 40, with 10 Red Potions and 20 Jellopy, unless `Options` says otherwise.
+- Players are `--dev` characters. Without a database they stay in memory while the server runs, so a player who logs in again gets its character back. They start as Swordmen at base level 50 and job level 40, with 10 Red Potions and 20 Jellopy, unless `Options` says otherwise.
 - `--seed` fixes the random streams, so the same test makes the same draws.
 - With `Options.Database`, the server gets a new PostgreSQL database and connects as the game role. Without `WATHENA_TEST_DATABASE_URL`, those tests skip.
 - With `-race`, the servers of tests that set `Options.Race` are built with the race detector, and one of them runs at a time. Others run without it, since it makes the server start about ten times slower.
@@ -50,6 +50,8 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestReport` | A player reports a line. The report keeps the line and the other chat the reporter saw, and not a whisper it did not see. |
 | `TestReportInTheDatabase` | The same with PostgreSQL: the report, `report_lines` and `chat_log`. |
 | `TestTransfersInTheDatabase` | The shop and loot scenarios with PostgreSQL: one item log line for each move while the player plays, the zeny log, and the saved character. |
+| `TestDisconnectKeepsItems` | A player's connection closes in the middle of a drop, while another player picks up its earlier drop. It logs in again with what the server held for it, and nothing is lost or held twice. |
+| `TestDisconnectKeepsItemsInTheDatabase` | The same with PostgreSQL, then the saved inventories. |
 | `TestDuplicationDropsAndPickUps` | The duplication test below, in memory. |
 | `TestDuplicationWithDatabase` | The same, with PostgreSQL, then the database checks. |
 
@@ -62,7 +64,16 @@ p.Talk("Quartermaster").Choose("Give")
 - no serial is held twice,
 - each bot's inventory, from the server's messages, is what the server holds for it.
 
-With a database, `CheckDatabase` stops the server and checks the saved inventories against the start, one item log line for each drop and pick-up the bots saw, and a history for every serial. Later steps add moves for trade, storage, mail and vending.
+Disconnects are part of the test:
+
+- `DisconnectMove` sends a drop or a pick-up and closes the connection at once. The move may happen or not. Moves have weights, and the test makes about one move in 60 a disconnect.
+- A bot whose connection closes, by its own move or by the server, logs in again with the same name and goes on. Connections the server closed are in the test's log, with why.
+- While a bot is away, an audit only checks that no total is above the start and that no serial is held twice. The last audit waits until every bot is back.
+- A move sent just before a connection closed can happen without its bot seeing it, so the counts of drops and pick-ups seen may differ by one for each login again.
+
+With a database, `CheckDatabase` stops the server and checks the saved inventories against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial. Later steps add moves for trade, storage, mail and vending.
+
+A failure that shows a total below the start with a closed connection means a character left the world while the test still counted on it. See decision 0017, "A missing total in the duplication test". `botclient` writes with its own timeout for this reason: the WebSocket library closes the connection when a write's context ends during the write.
 
 ## Running every check
 
