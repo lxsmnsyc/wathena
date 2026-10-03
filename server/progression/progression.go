@@ -152,6 +152,9 @@ type Drop struct {
 	Item           uint32 `json:"item"`
 	Rate           int    `json:"rate"`
 	StealProtected bool   `json:"steal_protected"`
+	// RandomOptionGroup is mob_db's RandomOptionGroup: the group of
+	// random options the dropped copy rolls, or "".
+	RandomOptionGroup string `json:"random_option_group,omitempty"`
 }
 
 type job struct {

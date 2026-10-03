@@ -55,6 +55,12 @@ type Mods struct {
 	// Location is the server's time zone, where schedules match their
 	// times. It is UTC when nil.
 	Location *time.Location
+	// RandomOptions are the random options and their groups, for drops
+	// and equipment (strategy section 5.4).
+	RandomOptions *mod.RandomOptions
+	// ItemRolls is the item_rolls ruleset flag. Off, every roll of a new
+	// copy is its default, as rAthena. Random options roll either way.
+	ItemRolls bool
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.

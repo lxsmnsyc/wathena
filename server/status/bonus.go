@@ -143,6 +143,20 @@ func (pb *pcBonus) order(eq *Equipment) []tagged {
 			}
 		}
 	}
+	// Random options, after every card.
+	for i := range item.EqiMax {
+		e := eq.Items[i]
+		if e == nil || i == item.EqiAmmo || p.sameEquipIndex(i) || pb.p.restricted(e.Def) {
+			continue
+		}
+		lr := lrNone
+		if i == item.EqiHandL && e.Position == item.EqpHandL {
+			lr = lrWeapon
+		}
+		for j := range e.Options {
+			out = append(out, tagged{&e.Options[j], lr})
+		}
+	}
 	for _, list := range [][]Bonus{p.c.StatusBonuses, p.c.TimedBonuses} {
 		for j := range list {
 			out = append(out, tagged{&list[j], lrNone})

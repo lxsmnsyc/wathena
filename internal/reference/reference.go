@@ -48,6 +48,7 @@ var Systems = []string{
 	"refine",
 	"status_effects",
 	"level_penalty",
+	"random_option_rolls",
 }
 
 // Header is the start of every formula file.

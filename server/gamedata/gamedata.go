@@ -162,6 +162,9 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 		for i := range data.Mobs {
 			extra[data.Mobs[i].ID] = &data.Mobs[i]
 		}
+		if err := setOptionGroups(mode, extra); err != nil {
+			return nil, err
+		}
 	}
 	renewal := mode == reference.Renewal
 	out := make(map[uint32]Monster, len(defs.Monsters))
@@ -190,6 +193,46 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 		out[d.ID] = m
 	}
 	return out, nil
+}
+
+// setOptionGroups sets the random option group of each drop that has
+// one in mob_db, from random_options.json. The drops are copied first, so
+// the progression data is not changed.
+func setOptionGroups(mode reference.Mode, mobs map[uint32]*progression.MobData) error {
+	var d struct {
+		Drops []struct {
+			Monster uint32 `json:"monster"`
+			MVP     bool   `json:"mvp"`
+			Index   int    `json:"index"`
+			Item    uint32 `json:"item"`
+			Group   string `json:"group"`
+		} `json:"drops"`
+	}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/random_options.json", &d); err != nil {
+		return err
+	}
+	copied := map[uint32]bool{}
+	for _, x := range d.Drops {
+		m := mobs[x.Monster]
+		if m == nil {
+			continue
+		}
+		if !copied[x.Monster] {
+			c := *m
+			c.Drops, c.MvpDrops = slices.Clone(m.Drops), slices.Clone(m.MvpDrops)
+			mobs[x.Monster], m = &c, &c
+			copied[x.Monster] = true
+		}
+		list := m.Drops
+		if x.MVP {
+			list = m.MvpDrops
+		}
+		if x.Index < 0 || x.Index >= len(list) || list[x.Index].Item != x.Item {
+			return fmt.Errorf("random_options.json: monster %d has no drop of item %d at %d", x.Monster, x.Item, x.Index)
+		}
+		list[x.Index].RandomOptionGroup = x.Group
+	}
+	return nil
 }
 
 // fillReward sets the reward from the monster's data, with the exp rates

@@ -162,19 +162,28 @@ new_player, player_ids = handle_type("player", {
 		return (call(H.player_send_message, player_ids[self], text))
 	end,
 	give_item = function(self, item, amount, options)
-		local rent = 0
+		local rent, roll = 0, nil
 		if options ~= nil then
 			if type(options) ~= "table" then
 				error("player:give_item: the options must be a table, such as { rent_seconds = 3600 }", 2)
 			end
 			for k, v in pairs(options) do
-				if k ~= "rent_seconds" or math_type(v) ~= "integer" then
-					error("player:give_item: the only option is rent_seconds, a whole number of seconds", 2)
+				if k == "rent_seconds" then
+					if math_type(v) ~= "integer" then
+						error("player:give_item: rent_seconds is a whole number of seconds", 2)
+					end
+					rent = v
+				elseif k == "roll" then
+					if v ~= "random" and v ~= "default" and type(v) ~= "table" then
+						error("player:give_item: roll is \"random\", \"default\" or a table of values, such as { boss_damage = 31 }", 2)
+					end
+					roll = v
+				else
+					error("player:give_item: the options are rent_seconds and roll", 2)
 				end
-				rent = v
 			end
 		end
-		return (call(H.player_give_item, player_ids[self], item, amount, rent))
+		return (call(H.player_give_item, player_ids[self], item, amount, rent, roll))
 	end,
 	count_item = function(self, item)
 		return (call(H.player_count_item, player_ids[self], item))
@@ -296,13 +305,35 @@ end, true, "player")
 
 -- Equipped copies are handles too: the context instance of an equip
 -- script, and what player:get_equipped returns.
-new_equipped = handle_type("equipped item", {}, function(id, key)
+local equipped_ids
+new_equipped, equipped_ids = handle_type("equipped item", {
+	set_roll = function(self, name, value)
+		call(H.equipped_set_roll, equipped_ids[self], name, value)
+	end,
+	reroll = function(self, name)
+		call(H.equipped_reroll, equipped_ids[self], name)
+	end,
+}, function(id, key)
 	local ok, value = pcall(H.equipped_field, id, key)
 	if not ok then
 		error(value, 3)
 	end
 	if key == "wearer" then
 		return new_player(value)
+	end
+	if key == "rolls" then
+		return readonly("rolls", value)
+	end
+	if key == "cards" or key == "random_options" then
+		-- A list of read-only entries: { item, rolls } or
+		-- { option, value, param }.
+		for i, entry in ipairs(value) do
+			if entry.rolls ~= nil then
+				entry.rolls = readonly("rolls", entry.rolls)
+			end
+			value[i] = readonly(key == "cards" and "card" or "random option", entry)
+		end
+		return readonly(key, value)
 	end
 	return value
 end)
@@ -1348,7 +1379,7 @@ end
 local hook_objects = {
 	drop_rate = "drop", experience = "exp", status_chance = "status hook", status_duration = "status hook",
 	skill_damage = "skill damage hook", cast_time = "cast time hook", skill_cost = "skill cost hook", cast_allowed = "cast allowed hook",
-	monster_target = "monster target choice",
+	monster_target = "monster target choice", item_roll = "item roll",
 }
 
 -- hook_values names the field of each hook's object that holds rAthena's
@@ -1364,11 +1395,24 @@ local hook_messages = {
 	skill_damage = "the skill_damage hook must return an integer damage percentage",
 	cast_time = "the cast_time hook must return an integer number of milliseconds",
 	skill_cost = "the skill_cost hook must return an integer SP cost",
+	item_roll = "the item_roll hook must return an integer value",
 }
 
 -- hook_object makes the read-only object of a hook from Go's fields:
 -- player, monster, target and source become handles.
 local function hook_object(kind, fields)
+	if kind == "item_roll" then
+		-- The server's roll is not a field: the innermost next returns
+		-- it. The source's monster is a handle.
+		local src = { kind = fields.source.kind }
+		if fields.source.monster ~= nil then
+			src.monster = new_monster(fields.source.monster)
+		end
+		return readonly(hook_objects[kind], {
+			item = fields.item, name = fields.name, min = fields.min, max = fields.max,
+			default = fields.default, source = readonly("roll source", src),
+		})
+	end
 	local o = with_handles(fields)
 	if fields.player ~= nil then
 		o.player = new_player(fields.player)
@@ -1429,7 +1473,10 @@ end
 
 -- innermost is the end of a chain: the object's own value, which is
 -- rAthena's unless a hook passed a changed object.
-local function innermost(kind, o)
+local function innermost(kind, o, fields)
+	if kind == "item_roll" then
+		return hook_result(kind, fields.value)
+	end
 	if kind == "experience" then
 		return hook_result(kind, o.base, o.job)
 	end
@@ -1445,7 +1492,7 @@ end
 local function run_chain(kind, fields, n, fns)
 	local function at(i, o)
 		if i > n then
-			return innermost(kind, o)
+			return innermost(kind, o, fields)
 		end
 		H.hook_enter(i)
 		local called, inner_a, inner_b = false, nil, nil

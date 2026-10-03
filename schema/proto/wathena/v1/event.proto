@@ -48,6 +48,7 @@ message Event {
     SkillEffect skill_effect = 36;
     SkillFailed skill_failed = 37;
     SkillCooldown skill_cooldown = 38;
+    ItemRollsChange item_rolls_change = 39;
   }
 }
 
@@ -582,6 +583,59 @@ message InventoryItem {
   uint32 location = 7;
   // card is set for a card, which InsertCard puts into an item.
   bool card = 8;
+  // rolls are the copy's rolled values, card_rolls the rolls of each
+  // card in the order of cards, and options its random options (strategy
+  // section 5.4).
+  repeated ItemRoll rolls = 9;
+  repeated CardRolls card_rolls = 10;
+  repeated ItemOption options = 11;
+}
+
+// ItemRoll is one rolled value of an item copy, with its range, as the
+// client shows it: "Damage against bosses +31% (15 to 35)".
+message ItemRoll {
+  // name is the roll's name in the item's data, such as boss_damage.
+  string name = 1;
+  // label is how the client shows the roll, such as "Damage against
+  // bosses".
+  string label = 2;
+  // value is the rolled value. known is false for a hidden roll of a
+  // copy that is not identified yet. value is 0 then.
+  sint32 value = 3;
+  bool known = 4;
+  sint32 min = 5;
+  sint32 max = 6;
+  // unit is "%" or empty.
+  string unit = 7;
+}
+
+// CardRolls are the rolls of one card in an item's slots.
+message CardRolls {
+  repeated ItemRoll rolls = 1;
+}
+
+// ItemOption is one random option of an item copy, as rAthena's random
+// options.
+message ItemOption {
+  // name is the option's name in data/random_options.yml, such as max_hp.
+  string name = 1;
+  // label is how the client shows it, such as "MaxHP".
+  string label = 2;
+  sint32 value = 3;
+  // unit is "%" or empty.
+  string unit = 4;
+  // flag is set for an option that has no amount, such as an attack
+  // element. The client shows its label only.
+  bool flag = 5;
+}
+
+// ItemRollsChange tells the player the rolls of a slot changed, as when
+// a mod rerolls an equipped copy.
+message ItemRollsChange {
+  uint32 slot = 1;
+  repeated ItemRoll rolls = 2;
+  repeated CardRolls card_rolls = 3;
+  repeated ItemOption options = 4;
 }
 
 // InventoryAdd tells the player an amount of an item entered a slot. The
@@ -597,6 +651,10 @@ message InventoryAdd {
   // location and card are as in InventoryItem.
   uint32 location = 6;
   bool card = 7;
+  // rolls, card_rolls and options are as in InventoryItem.
+  repeated ItemRoll rolls = 8;
+  repeated CardRolls card_rolls = 9;
+  repeated ItemOption options = 10;
 }
 
 // InventoryRemove tells the player an amount left a slot. A slot left

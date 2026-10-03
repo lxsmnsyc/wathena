@@ -93,7 +93,7 @@ type monster struct {
 	// loot are the items a looter picked up (lootitems). canLoot is set
 	// when it has loot slots: when its modes made it a looter as it
 	// spawned or changed class.
-	loot    []uint32
+	loot    []fallItem
 	canLoot bool
 	// trickcasting is the end of NPC_RANDOMMOVE's fake cast.
 	trickcasting int64

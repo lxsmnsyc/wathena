@@ -21,6 +21,9 @@ type Slot struct {
 	// Broken is rAthena's item.attribute of 1: skill_break_equip broke
 	// the item, and it cannot be equipped until it is repaired.
 	Broken bool
+	// Extra holds the copy's rolls, its cards' rolls, its random options
+	// and whether it is identified.
+	Extra
 }
 
 // Inventory is a player's inventory, as mmo_charstatus's inventory with
@@ -56,12 +59,23 @@ const (
 	AddStackLimit
 )
 
-// Add is pc_additem for an item with no cards, refine, or expiry. It
-// returns the slot the item went to. maxWeight is max_weight, in tenths.
+// Add is pc_additem for an item with no cards, refine, rolls or expiry.
+// It returns the slot the item went to. maxWeight is max_weight, in
+// tenths.
 //
 // A stackable item joins the first slot with the same item. Anything
 // else takes the first empty slot below Size.
 func (inv *Inventory) Add(d *Def, amount, maxWeight int) (int, AddResult) {
+	return inv.AddExtra(d, amount, maxWeight, Extra{})
+}
+
+// AddExtra is Add for a copy with rolls or random options. A stackable
+// item joins the first slot with the same item and the same rolls and
+// options (strategy section 5.4, "Stacking"), as pc_additem compares
+// cards and options. An unidentified copy of an item with hidden rolls
+// never stacks, so stacking cannot tell which hidden values are equal.
+// A new slot keeps a copy of x.
+func (inv *Inventory) AddExtra(d *Def, amount, maxWeight int, x Extra) (int, AddResult) {
 	if d.ID == 0 || amount <= 0 {
 		return -1, AddInvalid
 	}
@@ -76,10 +90,10 @@ func (inv *Inventory) Add(d *Def, amount, maxWeight int) (int, AddResult) {
 		return -1, AddOverweight
 	}
 	i := -1
-	if d.stacks() {
+	if d.stacks() && (!x.Unidentified || !d.HasHidden()) {
 		for n := range inv.Slots {
 			s := &inv.Slots[n]
-			if s.ID != d.ID {
+			if s.ID != d.ID || !s.Extra.Equal(&x) {
 				continue
 			}
 			if amount > MaxAmount-s.Amount || d.StackLimit > 0 && amount > d.StackLimit-s.Amount {
@@ -100,7 +114,7 @@ func (inv *Inventory) Add(d *Def, amount, maxWeight int) (int, AddResult) {
 		if i < 0 || i >= inv.Size {
 			return -1, AddOverItem
 		}
-		inv.Slots[i] = Slot{ID: d.ID, Amount: amount}
+		inv.Slots[i] = Slot{ID: d.ID, Amount: amount, Extra: x.Clone()}
 	}
 	inv.Weight += w
 	return i, AddSuccess
@@ -189,5 +203,5 @@ func (c Config) Overweight(weight, maxWeight int) int {
 // Equal reports whether two slots hold the same item instance.
 func (s *Slot) Equal(o *Slot) bool {
 	return s.ID == o.ID && s.Amount == o.Amount && s.Serial == o.Serial && s.Equip == o.Equip &&
-		s.Refine == o.Refine && slices.Equal(s.Cards, o.Cards)
+		s.Refine == o.Refine && slices.Equal(s.Cards, o.Cards) && s.Extra.Equal(&o.Extra)
 }

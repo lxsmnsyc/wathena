@@ -6,6 +6,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a shop, a script that greets players, and tests.
 - [examples/halloween](examples/halloween) is the phase 3 exit check: a hat, a witch who gives it once, Pumpkin Porings with drops, a night that doubles their drops through a `drop_rate` hook, and the Pumpkin King, a boss that a world event brings every evening.
 - [examples/verve](examples/verve) adds a status effect: `statuses.define`, a `status_tick` handler, and a tonic that starts the status, with tests.
+- [examples/lucky-clover](examples/lucky-clover) adds a charm with rolled values, a monster that drops it with random options, an `item_roll` hook, and a smith who rerolls it ("Rolled item values" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -146,6 +147,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 - Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`, and `display_name`, `buy`, `sell` and `no_sell`: the name `items.name` gives, the prices of NPC shops in zeny, and whether shops buy the item. `name` is the record's key, so the name players see is `display_name`, as for NPCs.
 - `script` is the item's entry script, a path under the mod's `scripts/`. It belongs to the mod that sets it.
 - `bonuses` are static bonuses of an equipment item ("Static bonuses" below).
+- `rolls` are values each new copy rolls, at most 8 ("Rolled item values" below).
 - Equipment has the fields of the equipment extract, as rAthena's item_db names them:
   - `location`: the positions the item is worn in, as a list such as `[head_top, head_middle]`. The names are the slot names of `player:get_equipped`, and `both_hand` and `both_accessory`. A card's location is where it can be put.
   - `subtype`: the weapon type of a weapon, or the ammunition type of ammunition, as rAthena's `W_` and `AMMO_` numbers.
@@ -227,7 +229,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 - `modes` is a list of rAthena's modes in lower case, such as `can_move`, `aggressive`, `looter` and `mvp`. They add to the modes of the AI type.
 - `skills` is the monster's skills list, converted from rAthena's `mob_skill_db.txt` for core's monsters. It replaces the monster's list (see "Monster skills", below).
 - `script` names the monster's AI script, which runs for each spawned monster (see "Monster AI", below).
-- `base_exp` and `job_exp` are scaled by the exp rates. `drops` is a list of `{item, rate}`, with rates per 10,000, at most 20. The drop rate settings apply to them as to core's.
+- `base_exp` and `job_exp` are scaled by the exp rates. `drops` is a list of `{item, rate}`, with rates per 10,000, at most 20. The drop rate settings apply to them as to core's. A drop can add `random_option_group`, a group of `data/random_option_groups.yml`: the dropped copy rolls its random options ("Random options" below). `mvp_drops` take it too.
 - `display_name` is the name players see. `id` cannot be set.
 - `monsters.id "example.halloween:PUMPKIN_PORING"` finds a mod's monster. Monsters appear on maps through scripts (`spawning.monsters`, below). There is no `data/spawns.yml` yet.
 
@@ -747,6 +749,7 @@ end
 | `skill_cost` | `hook`: `caster`, `skill`, `level`, `sp` (rAthena's SP cost) | The SP cost. Below 0 counts as 0. |
 | `cast_allowed` | `hook`: `caster`, `target`, `skill`, `level`, `allowed` (whether rAthena lets the cast start) | `true` or `false`. |
 | `monster_target` | `choice`: `monster`, `candidates` (the units it may take), `current` (rAthena's choice, or nil), `reason` (`"aggressive"`, `"assist"`, `"hit"` or `"change"`) | One of `candidates`, or nil for none. Anything else counts as a failure of the hook. |
+| `item_roll` | `roll`: `item`, `name` (the roll), `min`, `max`, `default`, `source` (`{ kind = "drop", monster }`, `{ kind = "script" }` or `{ kind = "shop" }`) | The value, clamped to the roll's range. The innermost result is the server's roll ("Rolled item values" below). |
 
 - Hooks run in a chain. Higher priority runs first; equal priorities run in the order they were added. `next(object)` returns the rest of the chain's result. The innermost result is rAthena's value.
 - To pass a changed object, pass a table with the same fields to `next`.
@@ -1017,6 +1020,72 @@ Conditions, one to one with rAthena's, from `always` to `trickcasting`: `always`
 - Monsters use player skills through the skill framework, and the `NPC_` skills that only monsters use. [docs/generated/monster-skills-renewal.md](../docs/generated/monster-skills-renewal.md) and its pre-renewal twin list the rows of core's lists and the parts that do not convert.
 - A list has at most 50 entries, as rAthena's `MAX_MOBSKILL`.
 
+### Rolled item values
+
+An item can declare values that each new copy rolls ([proposal 0002](../docs/proposals/0002-lua-api.md), review decision 23, and strategy section 5.4). [examples/lucky-clover](examples/lucky-clover) uses each part.
+
+```yaml
+- name: example.lucky-clover:Clover_Charm
+  type: Armor
+  location: [both_accessory]
+  rolls:
+    luck: {min: 1, max: 5, default: 3, distribution: uniform}
+    fortune:
+      default: 1
+      distribution: weighted
+      hidden: true
+      weights:
+        - {value: 1, weight: 70}
+        - {value: [2, 4], weight: 25}
+        - {value: 5, weight: 5}
+  bonuses:
+    - [luk, {roll: luck}]
+    - [crit, {roll: fortune}]
+```
+
+- `rolls` maps a roll's name to `min`, `max`, `default`, `distribution` and `hidden`. A name is lower-case letters, digits and `_`. An item has at most 8 rolls. Values are whole numbers that fit in 32 bits.
+- `distribution` is `uniform`, `triangular` (the default) or `weighted`.
+  - `uniform`: each value from `min` to `max` is as likely.
+  - `triangular`: a value's chance falls in a straight line from `default` to one past each end, so values near the default are common and `min` and `max` are rare.
+  - `weighted`: `weights` is a list of `{ value, weight }`, where `value` is one number or `[min, max]`. A tier is picked by weight, then a value of its range. `min` and `max` may be left out: they are the lowest and highest values of the tiers.
+- `hidden: true` keeps the value from the client until the copy is identified. A copy that a drop or a random give rolls starts unidentified when its item has a hidden roll. The client shows "?" in place of the value. Identifying does not exist yet ("Left" in [decision 0014](../docs/decisions/0014-rolled-items.md)).
+- A static bonus takes `{ roll: name }` in place of its amount. The client names the roll after the first static bonus that reads it, such as "Physical damage against bosses", or after its name.
+- When values are rolled:
+  - Monster drops and MVP prizes roll each value from its distribution.
+  - `player:give_item(item, amount, { roll = "random" })` rolls them too. `"default"`, the default, uses the defaults, and so do NPC shops.
+  - `{ roll = { luck = 5 } }` sets values, each clamped to its range. Rolls it leaves out get their defaults. It needs `items.modify_rolls`, except in a test case's own code.
+  - With the ruleset flag `item_rolls` off, the default of core's rulesets, every roll is its default, as rAthena. Random options roll either way, as rAthena rolls them.
+- The `item_roll` hook ("Hooks" above) gets every roll of a new copy: from drops, gives (also inside a script's call) and shops. With the flag off, `next()` returns the default.
+- Equipped handles have `rolls`, a read-only table such as `equipped.rolls.luck`; `cards`, a list of `{ item, rolls }` for the cards in the slots; and `random_options`, a list of `{ option, value, param }`. In a card's script, `context:get_instance()` reads the item that holds the card, but its `rolls` are the card's own.
+- `equipped:set_roll(name, value)` sets one value, clamped. `equipped:reroll(name)` rolls one value again, and `equipped:reroll()` every value, as a random give with the source `{ kind = "script" }`. Both need `items.modify_rolls`. The copy's equip scripts start again after the call, so they read the new values. The handle stays the same. Only equipped copies have them until inventory copies have handles.
+- Stacking: stackable copies stack when their rolls and random options are equal. A card with 31 and a card with 29 take two slots. Unidentified copies with hidden rolls never stack. A part of a stack that a player drops and someone picks up gets a new serial, and the server logs the stack it came from.
+- The server checks saved rolls against the item's data when a character enters a zone: a value outside its range is clamped, a roll the item no longer has is dropped, and a roll the item gained gets its default. Each change is logged.
+
+### Random options
+
+rAthena's random options become core's `data/random_options.yml` and `data/random_option_groups.yml`. [docs/generated/random-options-renewal.md](../docs/generated/random-options-renewal.md) lists core's options with rAthena's names. Pre-renewal has none, as rAthena.
+
+```yaml
+# data/random_options.yml
+- name: example.demo:glow
+  display_name: Glow
+  bonus: [[luk, {roll: value}], [max_hp, {roll: param, multiply: 10}]]
+
+# data/random_option_groups.yml
+- name: example.demo:SHINY
+  slots:
+    - [{option: max_hp, min: 20, max: 60, chance: 6000}, {option: "example.demo:glow", min: 1, max: 3, chance: 4000}]
+  max_random: 1
+  random:
+    - {option: luk, min: 1, max: 3, chance: 1000}
+```
+
+- An option has `display_name`, what the client shows, and `bonus`, a list of bonus entries as static bonuses. `{ roll: value }` is the option's value and `{ roll: param }` its param. `multiply` and `divide` scale them, as rAthena's `getrandomoptinfo(ROA_VALUE) / 10`. Core's options also have `id`, rAthena's option ID, which a mod cannot change.
+- Core's options have readable names from their first bonus, such as `max_hp` for `VAR_MAXHPAMOUNT`, `physical_damage_against_boss` for `CLASS_DAMAGE_BOSS_USER`, and `fire_damage_taken` for `ATTR_TOLERACE_FIRE`.
+- A group keeps rAthena's rules (`s_random_opt_group::apply`): `slots` lists, for each option index from the first, the options it can get with `min`, `max`, `param` and `chance` per 10,000. Each slot picks an option at random and keeps it when its chance passes, trying up to three times the slot's options, and keeps one without its chance after that. Then each index below `max_random` without an option tries one of `random`. A copy has at most 5 options.
+- Groups keep rAthena's names, such as `AS_WEAPON_1`. Core's monster drops have rAthena's groups. `player:give_item_from_group` rolls the options of an entry's group for equipment, as `getgroupitem`.
+- Options apply after every card, as rAthena's `status_calc_pc_sub`.
+
 ### Items
 
 `items.id(name)` from `wa.items` returns an item's ID by name, and raises an error for an unknown name. It needs `game.read`.
@@ -1120,7 +1189,7 @@ Equipment whose bonuses never change needs no Lua. Its `bonuses` field lists the
     - [cast, MG_FIREBOLT, 3, {chance: 500, on: hit_taken}]
 ```
 
-The server checks every entry at start with the rules of `bonuses.add`. `when` is a function, so static bonuses cannot have it. [Decision 0007](../docs/decisions/0007-converted-item-scripts.md) explains the format.
+The server checks every entry at start with the rules of `bonuses.add`. `when` is a function, so static bonuses cannot have it. An amount can be `{ roll: name }`, a rolled value of the copy ("Rolled item values" above). [Decision 0007](../docs/decisions/0007-converted-item-scripts.md) explains the format.
 
 ### Item API
 
@@ -1128,7 +1197,7 @@ The server checks every entry at start with the rules of `bonuses.add`. `when` i
 |---|---|---|
 | `player:item_heal { hp = n, sp = n }` | None | rAthena's `itemheal`, with its bonuses from VIT, INT and skills. An amount can be `{ min, max }`, drawn as `rand`, HP first. |
 | `player:heal_percent { hp = n, sp = n }` | None | rAthena's `percentheal`. |
-| `player:give_item(item, amount, { rent_seconds = s })` | `player.give_items` | rAthena's `getitem`, and `rentitem` with `rent_seconds`. Rentals do not expire yet. |
+| `player:give_item(item, amount, { rent_seconds = s, roll = r })` | `player.give_items` | rAthena's `getitem`, and `rentitem` with `rent_seconds`. Rentals do not expire yet. `roll` is `"random"`, `"default"` or a table of values ("Rolled item values" above); a table also needs `items.modify_rolls`. |
 | `player:give_item_from_group(group)` | `player.give_items` | rAthena's `getgroupitem`: one use of an item group from `items.group "BLUEBOX"`, with rAthena's group rules. |
 | `player:warp(map, x, y)` | `player.warp` | Moves the player after the event. Returns false when the map does not run. |
 | `player:warp_to_random_cell()` | `player.warp` | A Fly Wing: a random walkable cell of the map, as `pc_randomwarp`. |
@@ -1142,7 +1211,7 @@ The server checks every entry at start with the rules of `bonuses.add`. `when` i
 
 Heals need no approved permission.
 
-Equipped handles, from `context:get_instance()` in an equip script or from `player:get_equipped`, have `item`, `refine`, `enchant_grade` (0 for none, 1 to 4 for D to A), `wearer`, `weapon_type`, `weapon_level` and `armor_level`.
+Equipped handles, from `context:get_instance()` in an equip script or from `player:get_equipped`, have `item`, `refine`, `enchant_grade` (0 for none, 1 to 4 for D to A), `wearer`, `weapon_type`, `weapon_level` and `armor_level`, and `rolls`, `cards` and `random_options` with the methods `set_roll` and `reroll` ("Rolled item values" above).
 
 Player handles gained `base_str` to `base_luk` (allocated points), and `job_class` (rAthena's `eaclass()`). `base_pow` to `base_crt` are 0 until trait stats exist.
 

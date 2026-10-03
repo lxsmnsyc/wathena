@@ -6,6 +6,8 @@ package item
 // conf/battle: ammo_check_weapon and ammo_unequip are on, and
 // allow_equip_restricted_item is on.
 
+import "slices"
+
 // Map job ID bits and masks that equipping reads, from rAthena's map.hpp.
 const (
 	joblSecond1     = 0x100
@@ -473,9 +475,16 @@ func (inv *Inventory) InsertCard(t *Table, cardSlot, equipSlot, maxSlots int) bo
 	if !ok1 || !ok2 || cs.Amount < 1 || !CanInsertCard(card, equip, es, maxSlots) {
 		return false
 	}
-	id := cs.ID
+	id, rolls := cs.ID, slices.Clone(cs.Rolls)
 	if !inv.Delete(t, cardSlot, 1) {
 		return false
+	}
+	// The card keeps its rolls in the slot it goes into.
+	if len(rolls) > 0 || len(es.CardRolls) > 0 {
+		for len(es.CardRolls) < len(es.Cards) {
+			es.CardRolls = append(es.CardRolls, nil)
+		}
+		es.CardRolls = append(es.CardRolls, rolls)
 	}
 	es.Cards = append(es.Cards, id)
 	return true

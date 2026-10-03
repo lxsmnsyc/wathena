@@ -34,7 +34,13 @@ import { type SpriteCache, SpriteView } from '../render/sprites';
 import type { TextureSource } from '../render/textures';
 import type { Pathfinder } from '../world/pathfinder';
 import GroundItems from './groundItems';
-import { type StackDetails, type StackInput, USE_EFFECTS } from './inventory';
+import {
+  type StackDetails,
+  type StackInput,
+  type StackRolls,
+  USE_EFFECTS,
+  stackRolls,
+} from './inventory';
 import { appearance } from './options';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
@@ -211,6 +217,8 @@ export default class Online {
   onItemUnequipped: ((slot: number, position: number) => void) | undefined;
   /** Called when putting an item on fails. */
   onEquipFailed: ((slot: number, reason: EquipFailure) => void) | undefined;
+  /** Called when the rolls of a slot changed. */
+  onItemRollsChange: ((slot: number, rolls: StackRolls) => void) | undefined;
   /** Called when a card went into an item. */
   onCardInserted: ((cardSlot: number, equipSlot: number, cardId: number) => void) | undefined;
   /** Called when a card did not go into an item. */
@@ -659,6 +667,7 @@ export default class Online {
               cards: [...i.cards],
               location: i.location,
               card: i.card,
+              ...stackRolls(i),
             })),
             e.body.value.size,
           );
@@ -670,9 +679,13 @@ export default class Online {
             cards: [...a.cards],
             location: a.location,
             card: a.card,
+            ...stackRolls(a),
           });
           break;
         }
+        case 'itemRollsChange':
+          this.onItemRollsChange?.(e.body.value.slot, stackRolls(e.body.value));
+          break;
         case 'itemEquipped':
           this.onItemEquipped?.(e.body.value.slot, e.body.value.position);
           break;

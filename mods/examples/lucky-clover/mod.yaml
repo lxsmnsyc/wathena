@@ -1,0 +1,26 @@
+# A sample mod for rolled item values and random options (proposal 0002,
+# review decision 23): a charm with rolls, a monster that drops it with
+# random options, a hook on its rolls, and a smith who rerolls it.
+# mods/README.md, "Rolled item values", explains each part.
+id: example.lucky-clover
+name: Lucky Clover
+version: 0.1.0
+api: experimental
+description: A Clover Charm with rolled luck, Clover Porings on prt_fild09 that drop it with random options, and a smith who rerolls its luck for a fee.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read
+  - rules.override
+  - items.modify_rolls
+  - player.give_items
+scripts:
+  - scripts/main.lua

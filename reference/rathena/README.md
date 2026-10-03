@@ -18,7 +18,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. `random_options.json` is what random options read, described below. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -42,6 +42,7 @@ Each file starts with `system`, `mode`, `rathena_git_hash`, `data_path`, and `ci
 | `refine.json` | Stats at every refine level for one armor and one weapon of each weapon level. |
 | `status_effects.json` | Chance, duration, and whether ten common ailments start, for many sources and targets. |
 | `level_penalty.json` | Renewal exp and drop modifiers by level difference. Empty in pre-renewal. |
+| `random_option_rolls.json` | rAthena's random option groups applied with every draw at its lowest, and statistics of seeded applications, and the options of each monster drop with a group. |
 
 ## Warps
 
@@ -170,6 +171,27 @@ python3 tools/wathena/extract.py
 ```
 
 `mob_status.json` stays. The parity test of monster stats compares it with the stats that `server/mob` computes from `monsters.json`.
+
+## Random options
+
+Random options read one extract and one recording per mode ([decision 0014](../../docs/decisions/0014-rolled-items.md)):
+
+- `extracts/<mode>/random_options.json`: `item_randomopt_db.yml` and `item_randomopt_group.yml` with their imports for the mode, as `RandomOptionDatabase` and `RandomOptionGroupDatabase` load them. Each option has its ID, name and script. Each group has its slots in order, `max_random` and `random`, and each entry its option, `min`, `max`, `param` and `chance` per 10,000, with rAthena's defaults and fixes (a `MinValue` above `MaxValue` makes `MaxValue` one more). `drops` lists every monster drop with a `RandomOptionGroup`, by its index in the monster's drops as `MobDatabase` keeps them.
+- `random_option_rolls.json`: for each group, the options of `s_random_opt_group::apply` with `rnd_force_min`, and statistics of 100,000 calls with a seeded generator: how many copies got 0 to 5 options, and for each option index, each option's count, lowest and highest value, and sum. `drops` has the options of `mob_setdropitem_option` with `rnd_force_min` for each monster drop with a group. The values come from `std::uniform_int_distribution`, so the statistics depend on the C++ library: these were recorded with the builder image's (Alpine, musl).
+
+| Mode | Options | Groups | Drops with a group | Seed |
+|---|---:|---:|---:|---:|
+| renewal | 249 | 108 | 179 | 20240501 |
+| pre-renewal | 0 | 0 | 0 | 20240501 |
+
+Pre-renewal has no random options: rAthena imports `db/re/item_randomopt_*.yml` in renewal only.
+
+They come from rAthena fork commit `8e1c56558`, which adds `build_random_options` to `tools/wathena/extract.py` and `record_random_options` to the recorder. With it:
+
+```text
+WATHENA_RECORD_ONLY=random_option_rolls bash tools/wathena/record.sh renewal pre-renewal
+python3 tools/wathena/extract.py
+```
 
 ## How random rolls are recorded
 

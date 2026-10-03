@@ -111,6 +111,25 @@ func (z *Zone) NewCharacter(name string, look Look) character.Character {
 	return c
 }
 
+// fixRolls checks the rolls and random options of every copy a player
+// brought in against the item data (strategy section 5.4).
+func (z *Zone) fixRolls(p *Player) {
+	if z.Items == nil {
+		return
+	}
+	for i := range p.inventory.Slots {
+		s := &p.inventory.Slots[i]
+		if s.ID == 0 {
+			continue
+		}
+		d := z.Items.Get(s.ID)
+		if len(d.Rolls) == 0 && len(s.Rolls) == 0 && len(s.CardRolls) == 0 && len(s.Options) == 0 {
+			continue
+		}
+		z.fixExtra(p.Name, i, d, &s.Extra, s.Cards)
+	}
+}
+
 // restoreInventory fills an inventory from a saved character. Slots
 // outside the inventory are left out.
 func restoreInventory(t *item.Table, c *character.Character) *item.Inventory {
@@ -122,7 +141,8 @@ func restoreInventory(t *item.Table, c *character.Character) *item.Inventory {
 		if it.Slot < 0 || it.Slot >= item.MaxInventory || it.ID == 0 || it.Amount <= 0 {
 			continue
 		}
-		inv.Slots[it.Slot] = item.Slot{ID: it.ID, Amount: it.Amount, Serial: it.Serial, Equip: it.Equip, Refine: it.Refine, Cards: slices.Clone(it.Cards)}
+		inv.Slots[it.Slot] = item.Slot{ID: it.ID, Amount: it.Amount, Serial: it.Serial, Equip: it.Equip, Refine: it.Refine,
+			Cards: slices.Clone(it.Cards), Extra: it.Clone()}
 		inv.Weight += t.Get(it.ID).Weight * it.Amount
 	}
 	return inv
@@ -133,7 +153,7 @@ func savedItems(inv *item.Inventory) []character.Item {
 	for i, s := range inv.Slots {
 		if s.ID != 0 && s.Amount > 0 {
 			items = append(items, character.Item{Slot: i, ID: s.ID, Amount: s.Amount, Serial: s.Serial,
-				Equip: s.Equip, Refine: s.Refine, Cards: slices.Clone(s.Cards)})
+				Equip: s.Equip, Refine: s.Refine, Cards: slices.Clone(s.Cards), Extra: s.Clone()})
 		}
 	}
 	return items

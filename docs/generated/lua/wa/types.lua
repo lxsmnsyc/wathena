@@ -195,6 +195,7 @@
 ---| "skill_cost"
 ---| "cast_allowed"
 ---| "monster_target"
+---| "item_roll"
 
 ---A monster's skill state, in the words of rAthena's mob_skill_db.
 ---@alias wa.MonsterState
@@ -621,7 +622,52 @@ function wa_Npc:get_statuses() end
 ---@field weapon_type integer
 ---@field weapon_level integer
 ---@field armor_level integer
+---@field rolls table<string, integer> The copy's rolled values by name, such as rolls.boss_damage. In a card's script, the card's own rolls. Read-only.
+---@field cards wa.CardRolls[] The cards in the copy's slots, in slot order, with their rolls.
+---@field random_options wa.RandomOption[] The copy's random options, in option order.
 local wa_EquippedItem = {}
+
+---Sets one rolled value. The copy's equip scripts start again after the call, so they read the new value.
+---
+---Needs the permission `items.modify_rolls`.
+---@param name string A roll of the item, or of the card for a card's copy.
+---@param value integer Clamped to the roll's range.
+function wa_EquippedItem:set_roll(name, value) end
+
+---Rolls values again, as a random give: from the roll's distribution when the item_rolls flag is on, the default otherwise, through the item_roll hooks with source kind "script".
+---
+---Needs the permission `items.modify_rolls`.
+---@param name? string One roll. Every roll without it.
+function wa_EquippedItem:reroll(name) end
+
+---A card in an equipped copy's slots.
+---@class wa.CardRolls
+---@field item integer The card's item ID.
+---@field rolls table<string, integer> The card's rolled values by name.
+local wa_CardRolls = {}
+
+---A random option of a copy, as rAthena's random options.
+---@class wa.RandomOption
+---@field option string The option's name in data/random_options.yml, such as max_hp.
+---@field value integer
+---@field param integer
+local wa_RandomOption = {}
+
+---The object of the item_roll hook: one roll of a new copy. The innermost result is the server's roll: from the roll's distribution when the item_rolls flag is on and the copy is rolled, the default otherwise.
+---@class wa.ItemRoll
+---@field item integer The item's ID.
+---@field name string The roll's name.
+---@field min integer
+---@field max integer
+---@field default integer
+---@field source wa.ItemRollSource Where the copy comes from.
+local wa_ItemRoll = {}
+
+---Where a rolled copy comes from: a monster's drop, a script, or an NPC shop.
+---@class wa.ItemRollSource
+---@field kind "drop"|"script"|"shop"
+---@field monster wa.Monster? The killed monster, for a drop.
+local wa_ItemRollSource = {}
 
 ---A player talking to an NPC. Methods that wait pause the handler until the player answers. When the player leaves, the waiting call raises "the conversation was closed".
 ---@class wa.Conversation
@@ -1016,6 +1062,7 @@ local wa_HealSpec = {}
 ---Options of player:give_item.
 ---@class wa.GiveItemOptions
 ---@field rent_seconds integer? Gives rentals, as rentitem. Rentals do not expire yet.
+---@field roll "random"|"default"|table<string, integer>|nil How the copies' rolls are set: "random" rolls each value, "default" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code.
 local wa_GiveItemOptions = {}
 
 ---Options of timers.with_bonuses.

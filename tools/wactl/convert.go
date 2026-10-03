@@ -146,3 +146,46 @@ func convertMonsters(args []string) error {
 	}
 	return nil
 }
+
+// convertRandomOptions converts rAthena's random options and their groups
+// from the extracts in reference/rathena, as waserver does when it
+// starts. This command writes core's data/random_options.yml and
+// data/random_option_groups.yml for reading, and the coverage report.
+func convertRandomOptions(args []string) error {
+	fs := newFlags("convert random-options")
+	mode := fs.String("mode", "renewal", "rAthena data mode: renewal or pre-renewal")
+	out := fs.String("out", "", "folder to write data/random_options.yml and data/random_option_groups.yml into")
+	report := fs.String("report", "", "file to write the coverage report into, such as docs/generated/random-options-renewal.md")
+	_ = fs.Parse(args)
+	m := reference.Mode(*mode)
+	if m != reference.Renewal && m != reference.PreRenewal {
+		return fmt.Errorf("--mode must be renewal or pre-renewal")
+	}
+	core, err := convert.LoadCore(m)
+	if err != nil {
+		return err
+	}
+	res := core.RandomOptions
+	if *out != "" {
+		for p, content := range res.Files() {
+			full := filepath.Join(*out, filepath.FromSlash(p))
+			if err := os.MkdirAll(filepath.Dir(full), 0o750); err != nil {
+				return err
+			}
+			if err := os.WriteFile(full, []byte(content), 0o600); err != nil {
+				return err
+			}
+		}
+		fmt.Printf("wrote the random options to %s\n", *out)
+	}
+	if *report != "" {
+		if err := os.WriteFile(*report, []byte(res.Report(string(m))), 0o600); err != nil {
+			return err
+		}
+		fmt.Printf("wrote %s\n", *report)
+	}
+	if *out == "" && *report == "" {
+		fmt.Printf("%d options converted, %d not\n", len(res.Options), len(res.Failed))
+	}
+	return nil
+}

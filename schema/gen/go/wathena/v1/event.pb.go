@@ -1278,6 +1278,15 @@ func (x *Event) GetSkillCooldown() *SkillCooldown {
 	return nil
 }
 
+func (x *Event) GetItemRollsChange() *ItemRollsChange {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ItemRollsChange); ok {
+			return x.ItemRollsChange
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -1580,6 +1589,14 @@ func (x *Event) SetSkillCooldown(v *SkillCooldown) {
 		return
 	}
 	x.xxx_hidden_Body = &event_SkillCooldown{v}
+}
+
+func (x *Event) SetItemRollsChange(v *ItemRollsChange) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ItemRollsChange{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -1893,6 +1910,14 @@ func (x *Event) HasSkillCooldown() bool {
 	return ok
 }
 
+func (x *Event) HasItemRollsChange() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ItemRollsChange)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -2125,6 +2150,12 @@ func (x *Event) ClearSkillCooldown() {
 	}
 }
 
+func (x *Event) ClearItemRollsChange() {
+	if _, ok := x.xxx_hidden_Body.(*event_ItemRollsChange); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -2164,6 +2195,7 @@ const Event_SkillCastCancel_case case_Event_Body = 35
 const Event_SkillEffect_case case_Event_Body = 36
 const Event_SkillFailed_case case_Event_Body = 37
 const Event_SkillCooldown_case case_Event_Body = 38
+const Event_ItemRollsChange_case case_Event_Body = 39
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -2246,6 +2278,8 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_SkillFailed_case
 	case *event_SkillCooldown:
 		return Event_SkillCooldown_case
+	case *event_ItemRollsChange:
+		return Event_ItemRollsChange_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -2293,6 +2327,7 @@ type Event_builder struct {
 	SkillEffect      *SkillEffect
 	SkillFailed      *SkillFailed
 	SkillCooldown    *SkillCooldown
+	ItemRollsChange  *ItemRollsChange
 	// -- end of xxx_hidden_Body
 }
 
@@ -2413,6 +2448,9 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.SkillCooldown != nil {
 		x.xxx_hidden_Body = &event_SkillCooldown{b.SkillCooldown}
+	}
+	if b.ItemRollsChange != nil {
+		x.xxx_hidden_Body = &event_ItemRollsChange{b.ItemRollsChange}
 	}
 	return m0
 }
@@ -2583,6 +2621,10 @@ type event_SkillCooldown struct {
 	SkillCooldown *SkillCooldown `protobuf:"bytes,38,opt,name=skill_cooldown,json=skillCooldown,proto3,oneof"`
 }
 
+type event_ItemRollsChange struct {
+	ItemRollsChange *ItemRollsChange `protobuf:"bytes,39,opt,name=item_rolls_change,json=itemRollsChange,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -2658,6 +2700,8 @@ func (*event_SkillEffect) isEvent_Body() {}
 func (*event_SkillFailed) isEvent_Body() {}
 
 func (*event_SkillCooldown) isEvent_Body() {}
+
+func (*event_ItemRollsChange) isEvent_Body() {}
 
 // MapChange moves the player to another map, after a warp. It is the
 // first event of the first frame from the new map. The client clears
@@ -6653,17 +6697,20 @@ func (b0 InventoryUpdate_builder) Build() *InventoryUpdate {
 
 // InventoryItem is one inventory slot.
 type InventoryItem struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Slot     uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
-	xxx_hidden_ItemId   uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
-	xxx_hidden_Amount   uint32                 `protobuf:"varint,3,opt,name=amount,proto3"`
-	xxx_hidden_Equip    uint32                 `protobuf:"varint,4,opt,name=equip,proto3"`
-	xxx_hidden_Refine   uint32                 `protobuf:"varint,5,opt,name=refine,proto3"`
-	xxx_hidden_Cards    []uint32               `protobuf:"varint,6,rep,packed,name=cards,proto3"`
-	xxx_hidden_Location uint32                 `protobuf:"varint,7,opt,name=location,proto3"`
-	xxx_hidden_Card     bool                   `protobuf:"varint,8,opt,name=card,proto3"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot      uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_ItemId    uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount    uint32                 `protobuf:"varint,3,opt,name=amount,proto3"`
+	xxx_hidden_Equip     uint32                 `protobuf:"varint,4,opt,name=equip,proto3"`
+	xxx_hidden_Refine    uint32                 `protobuf:"varint,5,opt,name=refine,proto3"`
+	xxx_hidden_Cards     []uint32               `protobuf:"varint,6,rep,packed,name=cards,proto3"`
+	xxx_hidden_Location  uint32                 `protobuf:"varint,7,opt,name=location,proto3"`
+	xxx_hidden_Card      bool                   `protobuf:"varint,8,opt,name=card,proto3"`
+	xxx_hidden_Rolls     *[]*ItemRoll           `protobuf:"bytes,9,rep,name=rolls,proto3"`
+	xxx_hidden_CardRolls *[]*CardRolls          `protobuf:"bytes,10,rep,name=card_rolls,json=cardRolls,proto3"`
+	xxx_hidden_Options   *[]*ItemOption         `protobuf:"bytes,11,rep,name=options,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *InventoryItem) Reset() {
@@ -6747,6 +6794,33 @@ func (x *InventoryItem) GetCard() bool {
 	return false
 }
 
+func (x *InventoryItem) GetRolls() []*ItemRoll {
+	if x != nil {
+		if x.xxx_hidden_Rolls != nil {
+			return *x.xxx_hidden_Rolls
+		}
+	}
+	return nil
+}
+
+func (x *InventoryItem) GetCardRolls() []*CardRolls {
+	if x != nil {
+		if x.xxx_hidden_CardRolls != nil {
+			return *x.xxx_hidden_CardRolls
+		}
+	}
+	return nil
+}
+
+func (x *InventoryItem) GetOptions() []*ItemOption {
+	if x != nil {
+		if x.xxx_hidden_Options != nil {
+			return *x.xxx_hidden_Options
+		}
+	}
+	return nil
+}
+
 func (x *InventoryItem) SetSlot(v uint32) {
 	x.xxx_hidden_Slot = v
 }
@@ -6779,6 +6853,18 @@ func (x *InventoryItem) SetCard(v bool) {
 	x.xxx_hidden_Card = v
 }
 
+func (x *InventoryItem) SetRolls(v []*ItemRoll) {
+	x.xxx_hidden_Rolls = &v
+}
+
+func (x *InventoryItem) SetCardRolls(v []*CardRolls) {
+	x.xxx_hidden_CardRolls = &v
+}
+
+func (x *InventoryItem) SetOptions(v []*ItemOption) {
+	x.xxx_hidden_Options = &v
+}
+
 type InventoryItem_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -6799,6 +6885,12 @@ type InventoryItem_builder struct {
 	Location uint32
 	// card is set for a card, which InsertCard puts into an item.
 	Card bool
+	// rolls are the copy's rolled values, card_rolls the rolls of each
+	// card in the order of cards, and options its random options (strategy
+	// section 5.4).
+	Rolls     []*ItemRoll
+	CardRolls []*CardRolls
+	Options   []*ItemOption
 }
 
 func (b0 InventoryItem_builder) Build() *InventoryItem {
@@ -6813,27 +6905,469 @@ func (b0 InventoryItem_builder) Build() *InventoryItem {
 	x.xxx_hidden_Cards = b.Cards
 	x.xxx_hidden_Location = b.Location
 	x.xxx_hidden_Card = b.Card
+	x.xxx_hidden_Rolls = &b.Rolls
+	x.xxx_hidden_CardRolls = &b.CardRolls
+	x.xxx_hidden_Options = &b.Options
+	return m0
+}
+
+// ItemRoll is one rolled value of an item copy, with its range, as the
+// client shows it: "Damage against bosses +31% (15 to 35)".
+type ItemRoll struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name  string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Label string                 `protobuf:"bytes,2,opt,name=label,proto3"`
+	xxx_hidden_Value int32                  `protobuf:"zigzag32,3,opt,name=value,proto3"`
+	xxx_hidden_Known bool                   `protobuf:"varint,4,opt,name=known,proto3"`
+	xxx_hidden_Min   int32                  `protobuf:"zigzag32,5,opt,name=min,proto3"`
+	xxx_hidden_Max   int32                  `protobuf:"zigzag32,6,opt,name=max,proto3"`
+	xxx_hidden_Unit  string                 `protobuf:"bytes,7,opt,name=unit,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ItemRoll) Reset() {
+	*x = ItemRoll{}
+	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemRoll) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemRoll) ProtoMessage() {}
+
+func (x *ItemRoll) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ItemRoll) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ItemRoll) GetLabel() string {
+	if x != nil {
+		return x.xxx_hidden_Label
+	}
+	return ""
+}
+
+func (x *ItemRoll) GetValue() int32 {
+	if x != nil {
+		return x.xxx_hidden_Value
+	}
+	return 0
+}
+
+func (x *ItemRoll) GetKnown() bool {
+	if x != nil {
+		return x.xxx_hidden_Known
+	}
+	return false
+}
+
+func (x *ItemRoll) GetMin() int32 {
+	if x != nil {
+		return x.xxx_hidden_Min
+	}
+	return 0
+}
+
+func (x *ItemRoll) GetMax() int32 {
+	if x != nil {
+		return x.xxx_hidden_Max
+	}
+	return 0
+}
+
+func (x *ItemRoll) GetUnit() string {
+	if x != nil {
+		return x.xxx_hidden_Unit
+	}
+	return ""
+}
+
+func (x *ItemRoll) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *ItemRoll) SetLabel(v string) {
+	x.xxx_hidden_Label = v
+}
+
+func (x *ItemRoll) SetValue(v int32) {
+	x.xxx_hidden_Value = v
+}
+
+func (x *ItemRoll) SetKnown(v bool) {
+	x.xxx_hidden_Known = v
+}
+
+func (x *ItemRoll) SetMin(v int32) {
+	x.xxx_hidden_Min = v
+}
+
+func (x *ItemRoll) SetMax(v int32) {
+	x.xxx_hidden_Max = v
+}
+
+func (x *ItemRoll) SetUnit(v string) {
+	x.xxx_hidden_Unit = v
+}
+
+type ItemRoll_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the roll's name in the item's data, such as boss_damage.
+	Name string
+	// label is how the client shows the roll, such as "Damage against
+	// bosses".
+	Label string
+	// value is the rolled value. known is false for a hidden roll of a
+	// copy that is not identified yet. value is 0 then.
+	Value int32
+	Known bool
+	Min   int32
+	Max   int32
+	// unit is "%" or empty.
+	Unit string
+}
+
+func (b0 ItemRoll_builder) Build() *ItemRoll {
+	m0 := &ItemRoll{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Label = b.Label
+	x.xxx_hidden_Value = b.Value
+	x.xxx_hidden_Known = b.Known
+	x.xxx_hidden_Min = b.Min
+	x.xxx_hidden_Max = b.Max
+	x.xxx_hidden_Unit = b.Unit
+	return m0
+}
+
+// CardRolls are the rolls of one card in an item's slots.
+type CardRolls struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Rolls *[]*ItemRoll           `protobuf:"bytes,1,rep,name=rolls,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CardRolls) Reset() {
+	*x = CardRolls{}
+	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CardRolls) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CardRolls) ProtoMessage() {}
+
+func (x *CardRolls) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CardRolls) GetRolls() []*ItemRoll {
+	if x != nil {
+		if x.xxx_hidden_Rolls != nil {
+			return *x.xxx_hidden_Rolls
+		}
+	}
+	return nil
+}
+
+func (x *CardRolls) SetRolls(v []*ItemRoll) {
+	x.xxx_hidden_Rolls = &v
+}
+
+type CardRolls_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Rolls []*ItemRoll
+}
+
+func (b0 CardRolls_builder) Build() *CardRolls {
+	m0 := &CardRolls{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Rolls = &b.Rolls
+	return m0
+}
+
+// ItemOption is one random option of an item copy, as rAthena's random
+// options.
+type ItemOption struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name  string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Label string                 `protobuf:"bytes,2,opt,name=label,proto3"`
+	xxx_hidden_Value int32                  `protobuf:"zigzag32,3,opt,name=value,proto3"`
+	xxx_hidden_Unit  string                 `protobuf:"bytes,4,opt,name=unit,proto3"`
+	xxx_hidden_Flag  bool                   `protobuf:"varint,5,opt,name=flag,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ItemOption) Reset() {
+	*x = ItemOption{}
+	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemOption) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemOption) ProtoMessage() {}
+
+func (x *ItemOption) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ItemOption) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ItemOption) GetLabel() string {
+	if x != nil {
+		return x.xxx_hidden_Label
+	}
+	return ""
+}
+
+func (x *ItemOption) GetValue() int32 {
+	if x != nil {
+		return x.xxx_hidden_Value
+	}
+	return 0
+}
+
+func (x *ItemOption) GetUnit() string {
+	if x != nil {
+		return x.xxx_hidden_Unit
+	}
+	return ""
+}
+
+func (x *ItemOption) GetFlag() bool {
+	if x != nil {
+		return x.xxx_hidden_Flag
+	}
+	return false
+}
+
+func (x *ItemOption) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *ItemOption) SetLabel(v string) {
+	x.xxx_hidden_Label = v
+}
+
+func (x *ItemOption) SetValue(v int32) {
+	x.xxx_hidden_Value = v
+}
+
+func (x *ItemOption) SetUnit(v string) {
+	x.xxx_hidden_Unit = v
+}
+
+func (x *ItemOption) SetFlag(v bool) {
+	x.xxx_hidden_Flag = v
+}
+
+type ItemOption_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the option's name in data/random_options.yml, such as max_hp.
+	Name string
+	// label is how the client shows it, such as "MaxHP".
+	Label string
+	Value int32
+	// unit is "%" or empty.
+	Unit string
+	// flag is set for an option that has no amount, such as an attack
+	// element. The client shows its label only.
+	Flag bool
+}
+
+func (b0 ItemOption_builder) Build() *ItemOption {
+	m0 := &ItemOption{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Label = b.Label
+	x.xxx_hidden_Value = b.Value
+	x.xxx_hidden_Unit = b.Unit
+	x.xxx_hidden_Flag = b.Flag
+	return m0
+}
+
+// ItemRollsChange tells the player the rolls of a slot changed, as when
+// a mod rerolls an equipped copy.
+type ItemRollsChange struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot      uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Rolls     *[]*ItemRoll           `protobuf:"bytes,2,rep,name=rolls,proto3"`
+	xxx_hidden_CardRolls *[]*CardRolls          `protobuf:"bytes,3,rep,name=card_rolls,json=cardRolls,proto3"`
+	xxx_hidden_Options   *[]*ItemOption         `protobuf:"bytes,4,rep,name=options,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ItemRollsChange) Reset() {
+	*x = ItemRollsChange{}
+	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemRollsChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemRollsChange) ProtoMessage() {}
+
+func (x *ItemRollsChange) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ItemRollsChange) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *ItemRollsChange) GetRolls() []*ItemRoll {
+	if x != nil {
+		if x.xxx_hidden_Rolls != nil {
+			return *x.xxx_hidden_Rolls
+		}
+	}
+	return nil
+}
+
+func (x *ItemRollsChange) GetCardRolls() []*CardRolls {
+	if x != nil {
+		if x.xxx_hidden_CardRolls != nil {
+			return *x.xxx_hidden_CardRolls
+		}
+	}
+	return nil
+}
+
+func (x *ItemRollsChange) GetOptions() []*ItemOption {
+	if x != nil {
+		if x.xxx_hidden_Options != nil {
+			return *x.xxx_hidden_Options
+		}
+	}
+	return nil
+}
+
+func (x *ItemRollsChange) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *ItemRollsChange) SetRolls(v []*ItemRoll) {
+	x.xxx_hidden_Rolls = &v
+}
+
+func (x *ItemRollsChange) SetCardRolls(v []*CardRolls) {
+	x.xxx_hidden_CardRolls = &v
+}
+
+func (x *ItemRollsChange) SetOptions(v []*ItemOption) {
+	x.xxx_hidden_Options = &v
+}
+
+type ItemRollsChange_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Slot      uint32
+	Rolls     []*ItemRoll
+	CardRolls []*CardRolls
+	Options   []*ItemOption
+}
+
+func (b0 ItemRollsChange_builder) Build() *ItemRollsChange {
+	m0 := &ItemRollsChange{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Rolls = &b.Rolls
+	x.xxx_hidden_CardRolls = &b.CardRolls
+	x.xxx_hidden_Options = &b.Options
 	return m0
 }
 
 // InventoryAdd tells the player an amount of an item entered a slot. The
 // slot was empty or held the same item.
 type InventoryAdd struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ItemId   uint32                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3"`
-	xxx_hidden_Amount   uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
-	xxx_hidden_Slot     uint32                 `protobuf:"varint,3,opt,name=slot,proto3"`
-	xxx_hidden_Refine   uint32                 `protobuf:"varint,4,opt,name=refine,proto3"`
-	xxx_hidden_Cards    []uint32               `protobuf:"varint,5,rep,packed,name=cards,proto3"`
-	xxx_hidden_Location uint32                 `protobuf:"varint,6,opt,name=location,proto3"`
-	xxx_hidden_Card     bool                   `protobuf:"varint,7,opt,name=card,proto3"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ItemId    uint32                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount    uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	xxx_hidden_Slot      uint32                 `protobuf:"varint,3,opt,name=slot,proto3"`
+	xxx_hidden_Refine    uint32                 `protobuf:"varint,4,opt,name=refine,proto3"`
+	xxx_hidden_Cards     []uint32               `protobuf:"varint,5,rep,packed,name=cards,proto3"`
+	xxx_hidden_Location  uint32                 `protobuf:"varint,6,opt,name=location,proto3"`
+	xxx_hidden_Card      bool                   `protobuf:"varint,7,opt,name=card,proto3"`
+	xxx_hidden_Rolls     *[]*ItemRoll           `protobuf:"bytes,8,rep,name=rolls,proto3"`
+	xxx_hidden_CardRolls *[]*CardRolls          `protobuf:"bytes,9,rep,name=card_rolls,json=cardRolls,proto3"`
+	xxx_hidden_Options   *[]*ItemOption         `protobuf:"bytes,10,rep,name=options,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *InventoryAdd) Reset() {
 	*x = InventoryAdd{}
-	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	mi := &file_wathena_v1_event_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6845,7 +7379,7 @@ func (x *InventoryAdd) String() string {
 func (*InventoryAdd) ProtoMessage() {}
 
 func (x *InventoryAdd) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	mi := &file_wathena_v1_event_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6905,6 +7439,33 @@ func (x *InventoryAdd) GetCard() bool {
 	return false
 }
 
+func (x *InventoryAdd) GetRolls() []*ItemRoll {
+	if x != nil {
+		if x.xxx_hidden_Rolls != nil {
+			return *x.xxx_hidden_Rolls
+		}
+	}
+	return nil
+}
+
+func (x *InventoryAdd) GetCardRolls() []*CardRolls {
+	if x != nil {
+		if x.xxx_hidden_CardRolls != nil {
+			return *x.xxx_hidden_CardRolls
+		}
+	}
+	return nil
+}
+
+func (x *InventoryAdd) GetOptions() []*ItemOption {
+	if x != nil {
+		if x.xxx_hidden_Options != nil {
+			return *x.xxx_hidden_Options
+		}
+	}
+	return nil
+}
+
 func (x *InventoryAdd) SetItemId(v uint32) {
 	x.xxx_hidden_ItemId = v
 }
@@ -6933,6 +7494,18 @@ func (x *InventoryAdd) SetCard(v bool) {
 	x.xxx_hidden_Card = v
 }
 
+func (x *InventoryAdd) SetRolls(v []*ItemRoll) {
+	x.xxx_hidden_Rolls = &v
+}
+
+func (x *InventoryAdd) SetCardRolls(v []*CardRolls) {
+	x.xxx_hidden_CardRolls = &v
+}
+
+func (x *InventoryAdd) SetOptions(v []*ItemOption) {
+	x.xxx_hidden_Options = &v
+}
+
 type InventoryAdd_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -6946,6 +7519,10 @@ type InventoryAdd_builder struct {
 	// location and card are as in InventoryItem.
 	Location uint32
 	Card     bool
+	// rolls, card_rolls and options are as in InventoryItem.
+	Rolls     []*ItemRoll
+	CardRolls []*CardRolls
+	Options   []*ItemOption
 }
 
 func (b0 InventoryAdd_builder) Build() *InventoryAdd {
@@ -6959,6 +7536,9 @@ func (b0 InventoryAdd_builder) Build() *InventoryAdd {
 	x.xxx_hidden_Cards = b.Cards
 	x.xxx_hidden_Location = b.Location
 	x.xxx_hidden_Card = b.Card
+	x.xxx_hidden_Rolls = &b.Rolls
+	x.xxx_hidden_CardRolls = &b.CardRolls
+	x.xxx_hidden_Options = &b.Options
 	return m0
 }
 
@@ -6975,7 +7555,7 @@ type InventoryRemove struct {
 
 func (x *InventoryRemove) Reset() {
 	*x = InventoryRemove{}
-	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	mi := &file_wathena_v1_event_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6987,7 +7567,7 @@ func (x *InventoryRemove) String() string {
 func (*InventoryRemove) ProtoMessage() {}
 
 func (x *InventoryRemove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	mi := &file_wathena_v1_event_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7061,7 +7641,7 @@ type ItemUsed struct {
 
 func (x *ItemUsed) Reset() {
 	*x = ItemUsed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	mi := &file_wathena_v1_event_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7073,7 +7653,7 @@ func (x *ItemUsed) String() string {
 func (*ItemUsed) ProtoMessage() {}
 
 func (x *ItemUsed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	mi := &file_wathena_v1_event_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7133,7 +7713,7 @@ type UseItemFailed struct {
 
 func (x *UseItemFailed) Reset() {
 	*x = UseItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	mi := &file_wathena_v1_event_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7145,7 +7725,7 @@ func (x *UseItemFailed) String() string {
 func (*UseItemFailed) ProtoMessage() {}
 
 func (x *UseItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	mi := &file_wathena_v1_event_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7205,7 +7785,7 @@ type DropItemFailed struct {
 
 func (x *DropItemFailed) Reset() {
 	*x = DropItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[39]
+	mi := &file_wathena_v1_event_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7217,7 +7797,7 @@ func (x *DropItemFailed) String() string {
 func (*DropItemFailed) ProtoMessage() {}
 
 func (x *DropItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[39]
+	mi := &file_wathena_v1_event_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7277,7 +7857,7 @@ type PickUpFailed struct {
 
 func (x *PickUpFailed) Reset() {
 	*x = PickUpFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[40]
+	mi := &file_wathena_v1_event_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7289,7 +7869,7 @@ func (x *PickUpFailed) String() string {
 func (*PickUpFailed) ProtoMessage() {}
 
 func (x *PickUpFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[40]
+	mi := &file_wathena_v1_event_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7351,7 +7931,7 @@ type ItemEquipped struct {
 
 func (x *ItemEquipped) Reset() {
 	*x = ItemEquipped{}
-	mi := &file_wathena_v1_event_proto_msgTypes[41]
+	mi := &file_wathena_v1_event_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7363,7 +7943,7 @@ func (x *ItemEquipped) String() string {
 func (*ItemEquipped) ProtoMessage() {}
 
 func (x *ItemEquipped) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[41]
+	mi := &file_wathena_v1_event_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7424,7 +8004,7 @@ type ItemUnequipped struct {
 
 func (x *ItemUnequipped) Reset() {
 	*x = ItemUnequipped{}
-	mi := &file_wathena_v1_event_proto_msgTypes[42]
+	mi := &file_wathena_v1_event_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7436,7 +8016,7 @@ func (x *ItemUnequipped) String() string {
 func (*ItemUnequipped) ProtoMessage() {}
 
 func (x *ItemUnequipped) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[42]
+	mi := &file_wathena_v1_event_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7497,7 +8077,7 @@ type EquipFailed struct {
 
 func (x *EquipFailed) Reset() {
 	*x = EquipFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[43]
+	mi := &file_wathena_v1_event_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7509,7 +8089,7 @@ func (x *EquipFailed) String() string {
 func (*EquipFailed) ProtoMessage() {}
 
 func (x *EquipFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[43]
+	mi := &file_wathena_v1_event_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7571,7 +8151,7 @@ type CardInserted struct {
 
 func (x *CardInserted) Reset() {
 	*x = CardInserted{}
-	mi := &file_wathena_v1_event_proto_msgTypes[44]
+	mi := &file_wathena_v1_event_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7583,7 +8163,7 @@ func (x *CardInserted) String() string {
 func (*CardInserted) ProtoMessage() {}
 
 func (x *CardInserted) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[44]
+	mi := &file_wathena_v1_event_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7657,7 +8237,7 @@ type InsertCardFailed struct {
 
 func (x *InsertCardFailed) Reset() {
 	*x = InsertCardFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[45]
+	mi := &file_wathena_v1_event_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7669,7 +8249,7 @@ func (x *InsertCardFailed) String() string {
 func (*InsertCardFailed) ProtoMessage() {}
 
 func (x *InsertCardFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[45]
+	mi := &file_wathena_v1_event_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7730,7 +8310,7 @@ type LookChange struct {
 
 func (x *LookChange) Reset() {
 	*x = LookChange{}
-	mi := &file_wathena_v1_event_proto_msgTypes[46]
+	mi := &file_wathena_v1_event_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7742,7 +8322,7 @@ func (x *LookChange) String() string {
 func (*LookChange) ProtoMessage() {}
 
 func (x *LookChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[46]
+	mi := &file_wathena_v1_event_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7816,7 +8396,7 @@ type StatusIcon struct {
 
 func (x *StatusIcon) Reset() {
 	*x = StatusIcon{}
-	mi := &file_wathena_v1_event_proto_msgTypes[47]
+	mi := &file_wathena_v1_event_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7828,7 +8408,7 @@ func (x *StatusIcon) String() string {
 func (*StatusIcon) ProtoMessage() {}
 
 func (x *StatusIcon) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[47]
+	mi := &file_wathena_v1_event_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7923,7 +8503,7 @@ type Options struct {
 
 func (x *Options) Reset() {
 	*x = Options{}
-	mi := &file_wathena_v1_event_proto_msgTypes[48]
+	mi := &file_wathena_v1_event_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7935,7 +8515,7 @@ func (x *Options) String() string {
 func (*Options) ProtoMessage() {}
 
 func (x *Options) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[48]
+	mi := &file_wathena_v1_event_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8029,7 +8609,7 @@ type OptionChange struct {
 
 func (x *OptionChange) Reset() {
 	*x = OptionChange{}
-	mi := &file_wathena_v1_event_proto_msgTypes[49]
+	mi := &file_wathena_v1_event_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8041,7 +8621,7 @@ func (x *OptionChange) String() string {
 func (*OptionChange) ProtoMessage() {}
 
 func (x *OptionChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[49]
+	mi := &file_wathena_v1_event_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8106,7 +8686,7 @@ var File_wathena_v1_event_proto protoreflect.FileDescriptor
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xdf\x11\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xaa\x12\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -8154,7 +8734,8 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x11skill_cast_cancel\x18# \x01(\v2\x1b.wathena.v1.SkillCastCancelH\x00R\x0fskillCastCancel\x12<\n" +
 	"\fskill_effect\x18$ \x01(\v2\x17.wathena.v1.SkillEffectH\x00R\vskillEffect\x12<\n" +
 	"\fskill_failed\x18% \x01(\v2\x17.wathena.v1.SkillFailedH\x00R\vskillFailed\x12B\n" +
-	"\x0eskill_cooldown\x18& \x01(\v2\x19.wathena.v1.SkillCooldownH\x00R\rskillCooldownB\x06\n" +
+	"\x0eskill_cooldown\x18& \x01(\v2\x19.wathena.v1.SkillCooldownH\x00R\rskillCooldown\x12I\n" +
+	"\x11item_rolls_change\x18' \x01(\v2\x1b.wathena.v1.ItemRollsChangeH\x00R\x0fitemRollsChangeB\x06\n" +
 	"\x04body\"P\n" +
 	"\tMapChange\x12\x10\n" +
 	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
@@ -8348,7 +8929,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x04item\x18\x02 \x01(\rR\x04item\"V\n" +
 	"\x0fInventoryUpdate\x12/\n" +
 	"\x05items\x18\x01 \x03(\v2\x19.wathena.v1.InventoryItemR\x05items\x12\x12\n" +
-	"\x04size\x18\x02 \x01(\rR\x04size\"\xc8\x01\n" +
+	"\x04size\x18\x02 \x01(\rR\x04size\"\xdc\x02\n" +
 	"\rInventoryItem\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x17\n" +
 	"\aitem_id\x18\x02 \x01(\rR\x06itemId\x12\x16\n" +
@@ -8357,7 +8938,35 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x06refine\x18\x05 \x01(\rR\x06refine\x12\x14\n" +
 	"\x05cards\x18\x06 \x03(\rR\x05cards\x12\x1a\n" +
 	"\blocation\x18\a \x01(\rR\blocation\x12\x12\n" +
-	"\x04card\x18\b \x01(\bR\x04card\"\xb1\x01\n" +
+	"\x04card\x18\b \x01(\bR\x04card\x12*\n" +
+	"\x05rolls\x18\t \x03(\v2\x14.wathena.v1.ItemRollR\x05rolls\x124\n" +
+	"\n" +
+	"card_rolls\x18\n" +
+	" \x03(\v2\x15.wathena.v1.CardRollsR\tcardRolls\x120\n" +
+	"\aoptions\x18\v \x03(\v2\x16.wathena.v1.ItemOptionR\aoptions\"\x98\x01\n" +
+	"\bItemRoll\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\x11R\x05value\x12\x14\n" +
+	"\x05known\x18\x04 \x01(\bR\x05known\x12\x10\n" +
+	"\x03min\x18\x05 \x01(\x11R\x03min\x12\x10\n" +
+	"\x03max\x18\x06 \x01(\x11R\x03max\x12\x12\n" +
+	"\x04unit\x18\a \x01(\tR\x04unit\"7\n" +
+	"\tCardRolls\x12*\n" +
+	"\x05rolls\x18\x01 \x03(\v2\x14.wathena.v1.ItemRollR\x05rolls\"t\n" +
+	"\n" +
+	"ItemOption\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\x11R\x05value\x12\x12\n" +
+	"\x04unit\x18\x04 \x01(\tR\x04unit\x12\x12\n" +
+	"\x04flag\x18\x05 \x01(\bR\x04flag\"\xb9\x01\n" +
+	"\x0fItemRollsChange\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12*\n" +
+	"\x05rolls\x18\x02 \x03(\v2\x14.wathena.v1.ItemRollR\x05rolls\x124\n" +
+	"\n" +
+	"card_rolls\x18\x03 \x03(\v2\x15.wathena.v1.CardRollsR\tcardRolls\x120\n" +
+	"\aoptions\x18\x04 \x03(\v2\x16.wathena.v1.ItemOptionR\aoptions\"\xc5\x02\n" +
 	"\fInventoryAdd\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\rR\x06itemId\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\rR\x06amount\x12\x12\n" +
@@ -8365,7 +8974,12 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x06refine\x18\x04 \x01(\rR\x06refine\x12\x14\n" +
 	"\x05cards\x18\x05 \x03(\rR\x05cards\x12\x1a\n" +
 	"\blocation\x18\x06 \x01(\rR\blocation\x12\x12\n" +
-	"\x04card\x18\a \x01(\bR\x04card\"x\n" +
+	"\x04card\x18\a \x01(\bR\x04card\x12*\n" +
+	"\x05rolls\x18\b \x03(\v2\x14.wathena.v1.ItemRollR\x05rolls\x124\n" +
+	"\n" +
+	"card_rolls\x18\t \x03(\v2\x15.wathena.v1.CardRollsR\tcardRolls\x120\n" +
+	"\aoptions\x18\n" +
+	" \x03(\v2\x16.wathena.v1.ItemOptionR\aoptions\"x\n" +
 	"\x0fInventoryRemove\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\rR\x06amount\x129\n" +
@@ -8564,7 +9178,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x1eEQUIP_FAILURE_WRONG_AMMUNITION\x10\x04B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 13)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 54)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),            // 0: wathena.v1.EntityKind
 	(VanishReason)(0),          // 1: wathena.v1.VanishReason
@@ -8614,23 +9228,27 @@ var file_wathena_v1_event_proto_goTypes = []any{
 	(*ItemTaken)(nil),          // 45: wathena.v1.ItemTaken
 	(*InventoryUpdate)(nil),    // 46: wathena.v1.InventoryUpdate
 	(*InventoryItem)(nil),      // 47: wathena.v1.InventoryItem
-	(*InventoryAdd)(nil),       // 48: wathena.v1.InventoryAdd
-	(*InventoryRemove)(nil),    // 49: wathena.v1.InventoryRemove
-	(*ItemUsed)(nil),           // 50: wathena.v1.ItemUsed
-	(*UseItemFailed)(nil),      // 51: wathena.v1.UseItemFailed
-	(*DropItemFailed)(nil),     // 52: wathena.v1.DropItemFailed
-	(*PickUpFailed)(nil),       // 53: wathena.v1.PickUpFailed
-	(*ItemEquipped)(nil),       // 54: wathena.v1.ItemEquipped
-	(*ItemUnequipped)(nil),     // 55: wathena.v1.ItemUnequipped
-	(*EquipFailed)(nil),        // 56: wathena.v1.EquipFailed
-	(*CardInserted)(nil),       // 57: wathena.v1.CardInserted
-	(*InsertCardFailed)(nil),   // 58: wathena.v1.InsertCardFailed
-	(*LookChange)(nil),         // 59: wathena.v1.LookChange
-	(*StatusIcon)(nil),         // 60: wathena.v1.StatusIcon
-	(*Options)(nil),            // 61: wathena.v1.Options
-	(*OptionChange)(nil),       // 62: wathena.v1.OptionChange
-	(*Cell)(nil),               // 63: wathena.v1.Cell
-	(ChatChannel)(0),           // 64: wathena.v1.ChatChannel
+	(*ItemRoll)(nil),           // 48: wathena.v1.ItemRoll
+	(*CardRolls)(nil),          // 49: wathena.v1.CardRolls
+	(*ItemOption)(nil),         // 50: wathena.v1.ItemOption
+	(*ItemRollsChange)(nil),    // 51: wathena.v1.ItemRollsChange
+	(*InventoryAdd)(nil),       // 52: wathena.v1.InventoryAdd
+	(*InventoryRemove)(nil),    // 53: wathena.v1.InventoryRemove
+	(*ItemUsed)(nil),           // 54: wathena.v1.ItemUsed
+	(*UseItemFailed)(nil),      // 55: wathena.v1.UseItemFailed
+	(*DropItemFailed)(nil),     // 56: wathena.v1.DropItemFailed
+	(*PickUpFailed)(nil),       // 57: wathena.v1.PickUpFailed
+	(*ItemEquipped)(nil),       // 58: wathena.v1.ItemEquipped
+	(*ItemUnequipped)(nil),     // 59: wathena.v1.ItemUnequipped
+	(*EquipFailed)(nil),        // 60: wathena.v1.EquipFailed
+	(*CardInserted)(nil),       // 61: wathena.v1.CardInserted
+	(*InsertCardFailed)(nil),   // 62: wathena.v1.InsertCardFailed
+	(*LookChange)(nil),         // 63: wathena.v1.LookChange
+	(*StatusIcon)(nil),         // 64: wathena.v1.StatusIcon
+	(*Options)(nil),            // 65: wathena.v1.Options
+	(*OptionChange)(nil),       // 66: wathena.v1.OptionChange
+	(*Cell)(nil),               // 67: wathena.v1.Cell
+	(ChatChannel)(0),           // 68: wathena.v1.ChatChannel
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
 	15, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
@@ -8644,13 +9262,13 @@ var file_wathena_v1_event_proto_depIdxs = []int32{
 	34, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
 	44, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
 	45, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
-	48, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
-	53, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
+	52, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
+	57, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
 	46, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
-	49, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
-	50, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
-	51, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
-	52, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
+	53, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
+	54, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
+	55, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
+	56, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
 	14, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
 	36, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
 	37, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
@@ -8658,54 +9276,65 @@ var file_wathena_v1_event_proto_depIdxs = []int32{
 	39, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
 	40, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
 	43, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
-	54, // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
-	55, // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
-	56, // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
-	57, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
-	58, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
-	59, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
-	60, // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
-	62, // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
+	58, // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
+	59, // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
+	60, // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
+	61, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
+	62, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
+	63, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
+	64, // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
+	66, // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
 	30, // 33: wathena.v1.Event.skill_list:type_name -> wathena.v1.SkillList
 	26, // 34: wathena.v1.Event.skill_cast_cancel:type_name -> wathena.v1.SkillCastCancel
 	27, // 35: wathena.v1.Event.skill_effect:type_name -> wathena.v1.SkillEffect
 	28, // 36: wathena.v1.Event.skill_failed:type_name -> wathena.v1.SkillFailed
 	29, // 37: wathena.v1.Event.skill_cooldown:type_name -> wathena.v1.SkillCooldown
-	0,  // 38: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	18, // 39: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	17, // 40: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	61, // 41: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
-	16, // 42: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
-	1,  // 43: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	23, // 44: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 45: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 46: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	63, // 47: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	63, // 48: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
-	4,  // 49: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
-	31, // 50: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
-	5,  // 51: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
-	32, // 52: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
-	64, // 53: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	35, // 54: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	6,  // 55: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
-	41, // 56: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
-	42, // 57: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
-	7,  // 58: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
-	63, // 59: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	47, // 60: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	8,  // 61: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	9,  // 62: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	10, // 63: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	11, // 64: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	12, // 65: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
-	18, // 66: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
-	61, // 67: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
-	68, // [68:68] is the sub-list for method output_type
-	68, // [68:68] is the sub-list for method input_type
-	68, // [68:68] is the sub-list for extension type_name
-	68, // [68:68] is the sub-list for extension extendee
-	0,  // [0:68] is the sub-list for field type_name
+	51, // 38: wathena.v1.Event.item_rolls_change:type_name -> wathena.v1.ItemRollsChange
+	0,  // 39: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	18, // 40: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	17, // 41: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	65, // 42: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
+	16, // 43: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
+	1,  // 44: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	23, // 45: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,  // 46: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,  // 47: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	67, // 48: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	67, // 49: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
+	4,  // 50: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
+	31, // 51: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
+	5,  // 52: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
+	32, // 53: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
+	68, // 54: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	35, // 55: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	6,  // 56: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
+	41, // 57: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
+	42, // 58: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
+	7,  // 59: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
+	67, // 60: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	47, // 61: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	48, // 62: wathena.v1.InventoryItem.rolls:type_name -> wathena.v1.ItemRoll
+	49, // 63: wathena.v1.InventoryItem.card_rolls:type_name -> wathena.v1.CardRolls
+	50, // 64: wathena.v1.InventoryItem.options:type_name -> wathena.v1.ItemOption
+	48, // 65: wathena.v1.CardRolls.rolls:type_name -> wathena.v1.ItemRoll
+	48, // 66: wathena.v1.ItemRollsChange.rolls:type_name -> wathena.v1.ItemRoll
+	49, // 67: wathena.v1.ItemRollsChange.card_rolls:type_name -> wathena.v1.CardRolls
+	50, // 68: wathena.v1.ItemRollsChange.options:type_name -> wathena.v1.ItemOption
+	48, // 69: wathena.v1.InventoryAdd.rolls:type_name -> wathena.v1.ItemRoll
+	49, // 70: wathena.v1.InventoryAdd.card_rolls:type_name -> wathena.v1.CardRolls
+	50, // 71: wathena.v1.InventoryAdd.options:type_name -> wathena.v1.ItemOption
+	8,  // 72: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	9,  // 73: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	10, // 74: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	11, // 75: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	12, // 76: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
+	18, // 77: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
+	65, // 78: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
+	79, // [79:79] is the sub-list for method output_type
+	79, // [79:79] is the sub-list for method input_type
+	79, // [79:79] is the sub-list for extension type_name
+	79, // [79:79] is the sub-list for extension extendee
+	0,  // [0:79] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -8753,6 +9382,7 @@ func file_wathena_v1_event_proto_init() {
 		(*event_SkillEffect)(nil),
 		(*event_SkillFailed)(nil),
 		(*event_SkillCooldown)(nil),
+		(*event_ItemRollsChange)(nil),
 	}
 	file_wathena_v1_event_proto_msgTypes[12].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
@@ -8780,7 +9410,7 @@ func file_wathena_v1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
 			NumEnums:      13,
-			NumMessages:   50,
+			NumMessages:   54,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

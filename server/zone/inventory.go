@@ -60,15 +60,19 @@ func (z *Zone) inventoryList(p *Player) *wathenav1.Event {
 			continue
 		}
 		d := z.Items.Get(s.ID)
+		rolls, cardRolls, opts := z.rollMessages(d, &s)
 		slots = append(slots, wathenav1.InventoryItem_builder{
-			Slot:     uint32(i), // #nosec G115 -- below MaxInventory.
-			ItemId:   s.ID,
-			Amount:   uint32(s.Amount), // #nosec G115 -- at most MaxAmount.
-			Equip:    s.Equip,
-			Refine:   uint32(max(s.Refine, 0)), // #nosec G115 -- at most the refine limit.
-			Cards:    s.Cards,
-			Location: wornLocation(d),
-			Card:     d.IsCard(),
+			Slot:      uint32(i), // #nosec G115 -- below MaxInventory.
+			ItemId:    s.ID,
+			Amount:    uint32(s.Amount), // #nosec G115 -- at most MaxAmount.
+			Equip:     s.Equip,
+			Refine:    uint32(max(s.Refine, 0)), // #nosec G115 -- at most the refine limit.
+			Cards:     s.Cards,
+			Location:  wornLocation(d),
+			Card:      d.IsCard(),
+			Rolls:     rolls,
+			CardRolls: cardRolls,
+			Options:   opts,
 		}.Build())
 	}
 	return wathenav1.Event_builder{Inventory: wathenav1.InventoryUpdate_builder{
@@ -78,40 +82,10 @@ func (z *Zone) inventoryList(p *Player) *wathenav1.Event {
 }
 
 // addItem is pc_additem: it puts items in a player's inventory and sends
-// the slot and the new weight, or returns why it could not.
+// the slot and the new weight, or returns why it could not. A copy of an
+// item with rolls gets their defaults, through the item_roll hooks.
 func (z *Zone) addItem(p *Player, id uint32, amount int) item.AddResult {
-	return z.addInstance(p, id, amount, 0, nil)
-}
-
-// addInstance is addItem for an item with a refine and cards, such as
-// equipment picked up from the ground. Equipment never stacks, so it
-// keeps them in its own slot.
-func (z *Zone) addInstance(p *Player, id uint32, amount, refine int, cards []uint32) item.AddResult {
-	slot, res := p.inventory.Add(z.Items.Get(id), amount, p.maxWeight)
-	if res != item.AddSuccess {
-		return res
-	}
-	s := &p.inventory.Slots[slot]
-	// A new stack or instance gets its own serial. Items picked up from
-	// the ground get a new one too, since ground items are not saved.
-	if s.Serial.IsZero() {
-		s.Serial = item.NewSerial()
-	}
-	if s.Amount == amount && (refine != 0 || len(cards) > 0) {
-		s.Refine, s.Cards = refine, slices.Clone(cards)
-	}
-	d := z.Items.Get(id)
-	p.pending = append(p.pending, wathenav1.Event_builder{InventoryAdd: wathenav1.InventoryAdd_builder{
-		ItemId:   id,
-		Amount:   uint32(amount),           // #nosec G115 -- at most MaxAmount.
-		Slot:     uint32(slot),             // #nosec G115 -- below MaxInventory.
-		Refine:   uint32(max(s.Refine, 0)), // #nosec G115 -- at most the refine limit.
-		Cards:    s.Cards,
-		Location: wornLocation(d),
-		Card:     d.IsCard(),
-	}.Build()}.Build())
-	z.updateWeight(p)
-	return res
+	return z.addCopy(p, id, amount, 0, nil, z.newExtra(z.Items.Get(id), false, rollSource{kind: sourceScript}, ""))
 }
 
 // deleteItem is pc_delitem: it takes an amount from a slot and sends the
@@ -404,13 +378,19 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 	}
 	e := p.entity
 	pl := progression.PlaceDrop(z.cellFree, e.x, e.y, z.rand)
-	// map_addflooritem copies the item, with its refine and cards.
-	z.entities.add(&entity{x: pl.X, y: pl.Y, item: &groundItem{
+	// map_addflooritem copies the item, with its refine, cards and
+	// rolls. Part of a stack keeps the stack's serial as its origin, so
+	// the copy picked up later logs where it came from.
+	g := &groundItem{
 		id: s.ID, amount: amount, subX: pl.SubX, subY: pl.SubY,
-		refine: s.Refine, cards: slices.Clone(s.Cards),
+		refine: s.Refine, cards: slices.Clone(s.Cards), extra: s.Clone(),
 		expires: z.now + lifetime,
 		fresh:   true,
-	}})
+	}
+	if amount < s.Amount {
+		g.from = s.Serial
+	}
+	z.entities.add(&entity{x: pl.X, y: pl.Y, item: g})
 	z.deleteItem(p, slot, amount, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED)
 }
 

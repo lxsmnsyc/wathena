@@ -132,12 +132,15 @@ type Item struct {
 	Refine int
 	// Cards are the cards in the item's slots, in slot order.
 	Cards []uint32
+	// Extra holds the rolls, the cards' rolls, the random options and
+	// whether the copy is identified (strategy section 5.4).
+	item.Extra
 }
 
 // Equal reports whether two items are the same.
 func (it *Item) Equal(o *Item) bool {
 	return it.Slot == o.Slot && it.ID == o.ID && it.Amount == o.Amount && it.Serial == o.Serial &&
-		it.Equip == o.Equip && it.Refine == o.Refine && slices.Equal(it.Cards, o.Cards)
+		it.Equip == o.Equip && it.Refine == o.Refine && slices.Equal(it.Cards, o.Cards) && it.Extra.Equal(&o.Extra)
 }
 
 // Equal reports whether two characters hold the same data.

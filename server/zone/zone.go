@@ -708,6 +708,7 @@ func (z *Zone) join(p *Player) joinResult {
 	p.charID = z.nextChar
 	z.players[p.charID] = p
 	p.inventory = restoreInventory(z.Items, c)
+	z.fixRolls(p)
 	// pc_authok starts the regen waits at login.
 	p.regenTicks = regenState{hp: z.now, sp: z.now}
 	p.itemDelays = map[uint32]int64{}

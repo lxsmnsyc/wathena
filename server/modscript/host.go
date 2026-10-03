@@ -342,7 +342,18 @@ func (r *Runtime) playerGiveItem(c *script.Call) error {
 	if rent < 0 || rent > 1<<31 {
 		return errors.New("player:give_item: rent_seconds must be from 0 to 2^31")
 	}
-	ok, err := r.host.GiveItem(id, uint32(item), int(amount), rent) // #nosec G115 -- checked above.
+	roll, err := r.giveRoll(c.Arg(4))
+	if err != nil {
+		return err
+	}
+	var ok bool
+	if h, isRoll := r.host.(RollHost); isRoll {
+		ok, err = h.GiveRolledItem(id, uint32(item), int(amount), rent, roll) // #nosec G115 -- checked above.
+	} else if roll.Mode == RollDefault {
+		ok, err = r.host.GiveItem(id, uint32(item), int(amount), rent) // #nosec G115 -- checked above.
+	} else {
+		err = errors.New("player:give_item: rolled values do not exist here")
+	}
 	if err != nil {
 		return err
 	}

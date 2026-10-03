@@ -5,9 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/bonus"
+	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
@@ -41,6 +45,9 @@ type Mods struct {
 	Skills       *skill.DB
 	SkillTrees   *skill.Trees
 	SkillOverlay *mod.Overlay
+	// RandomOptions are the random options and groups with the mods'
+	// overlays.
+	RandomOptions *mod.RandomOptions
 	// Zone is what every zone gets.
 	Zone *zone.Mods
 }
@@ -176,9 +183,83 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 			templates[id] = m.Template(id)
 		}
 	}
+	opts, err := set.RandomOptions(core.Names(merged.IDs))
+	if err != nil {
+		return nil, err
+	}
+	for _, n := range append(opts.OptionOverlay.Notes, opts.GroupOverlay.Notes...) {
+		log.Warn("mods: " + n)
+	}
+	if err := checkOptionGroups(out.Monsters, opts); err != nil {
+		return nil, err
+	}
+	out.RandomOptions = opts
+	labelRolls(merged.Data, opts, core.Constants)
 	out.Zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
-		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates}
+		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates,
+		RandomOptions: opts, ItemRolls: set.Ruleset.Flag("item_rolls") == "on"}
 	return out, nil
+}
+
+// checkOptionGroups checks that every drop's random option group exists.
+func checkOptionGroups(monsters map[uint32]Monster, opts *mod.RandomOptions) error {
+	var errs []error
+	for _, id := range slices.Sorted(maps.Keys(monsters)) {
+		m := monsters[id]
+		if m.Reward == nil {
+			continue
+		}
+		for _, d := range append(slices.Clone(m.Reward.Drops), m.Reward.MvpDrops...) {
+			if d.RandomOptionGroup != "" && opts.Group(d.RandomOptionGroup) == nil {
+				errs = append(errs, fmt.Errorf("monsters %s: drop of item %d: there is no random option group %q", m.AegisName, d.Item, d.RandomOptionGroup))
+			}
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// labelRolls sets how the client shows each roll and random option: the
+// words of the first static bonus that reads it, as bonus.Describe.
+func labelRolls(items *item.Data, opts *mod.RandomOptions, consts *constants.Data) {
+	var modules map[string]*constants.Module
+	if consts != nil {
+		modules = consts.Modules()
+	}
+	constName := func(module string, v int64) string {
+		if m := modules[module]; m != nil {
+			return m.Names[v]
+		}
+		return ""
+	}
+	for i := range items.Items {
+		d := &items.Items[i]
+		for name, r := range d.Rolls {
+			r.Label, r.Unit = "", ""
+			for _, b := range d.Static {
+				if slices.Contains(b.Rolls(), name) {
+					r.Label, r.Unit = bonus.Describe(b, constName)
+					break
+				}
+			}
+			if r.Label == "" {
+				r.Label = strings.ReplaceAll(name, "_", " ")
+				r.Label = strings.ToUpper(r.Label[:1]) + r.Label[1:]
+			}
+		}
+	}
+	for _, o := range opts.Options {
+		if len(o.Static) == 0 {
+			continue
+		}
+		label, unit := bonus.Describe(o.Static[0], constName)
+		if o.DisplayName == "" {
+			o.DisplayName = label
+		}
+		o.Unit = unit
+		if s, ok := bonus.Lookup(o.Static[0].Name); ok {
+			o.Flag = !bonus.HasAmount(s, o.Static[0])
+		}
+	}
 }
 
 // npcShops makes the shops of NPC records, by record name. A price of -1

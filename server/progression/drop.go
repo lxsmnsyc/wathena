@@ -120,6 +120,8 @@ func (t *Tables) DropRate(base, modifier int, killer *Killer) int {
 // Dropped is an item a kill dropped.
 type Dropped struct {
 	Item uint32
+	// RandomOptionGroup is the drop's group of random options, or "".
+	RandomOptionGroup string
 	// Egg is set for a pet egg, which rAthena puts in the first looter's
 	// inventory instead of on the ground.
 	Egg bool
@@ -166,7 +168,7 @@ func (t *Tables) RollDropsWith(m *Mob, modifier int, killer *Killer, hasFirst bo
 		if r.IntN(10000) >= rate {
 			continue
 		}
-		out = append(out, Dropped{Item: d.Item, Egg: hasFirst && typ == "petegg"})
+		out = append(out, Dropped{Item: d.Item, RandomOptionGroup: d.RandomOptionGroup, Egg: hasFirst && typ == "petegg"})
 	}
 	return out
 }

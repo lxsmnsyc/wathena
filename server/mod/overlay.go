@@ -26,6 +26,9 @@ type Kind struct {
 	// Fixed are fields a mod cannot set on records it did not add, such
 	// as the ID.
 	Fixed []string
+	// CoreNames lets core's own file add records with plain names, such
+	// as max_hp, which mods then change by that name.
+	CoreNames bool
 }
 
 // Record is one record that mods added or changed. Core records that no
@@ -192,6 +195,17 @@ func (o *Overlay) resolve(modID, name string, core func(string) bool) (string, e
 	}
 	if core(name) {
 		return name, nil
+	}
+	if o.Kind.CoreNames {
+		if modID == Core {
+			if err := validLocalName(name); err != nil {
+				return "", err
+			}
+			return name, nil
+		}
+		if r := o.byName[name]; r != nil && r.Mod == Core {
+			return name, nil
+		}
 	}
 	if !o.Kind.LocalNames {
 		return "", fmt.Errorf("%s is not a core record of %s; a new record is named with the mod's ID, such as %s:%s", name, o.Kind.Name, modID, name)

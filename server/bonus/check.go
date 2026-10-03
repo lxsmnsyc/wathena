@@ -12,6 +12,29 @@ import (
 type Num struct {
 	Value    int64
 	Computed bool
+	// Roll names a rolled value of the copy, as { roll: name } in item
+	// data (strategy section 5.4). Such a number is Computed, and Value
+	// is 0. Multiply and Divide, when not 0, scale the value, as a
+	// random option's getrandomoptinfo(ROA_VALUE) / 10.
+	Roll             string
+	Multiply, Divide int64
+}
+
+// Resolve gives the number with a copy's rolls. A roll the copy lacks is
+// 0. Divide truncates toward zero, as rAthena's int division.
+func (n Num) Resolve(roll func(name string) (int, bool)) int64 {
+	if n.Roll == "" {
+		return n.Value
+	}
+	v, _ := roll(n.Roll)
+	out := int64(v)
+	if n.Multiply != 0 {
+		out *= n.Multiply
+	}
+	if n.Divide != 0 {
+		out /= n.Divide
+	}
+	return out
 }
 
 // Target is the against or from option: one key and its value.

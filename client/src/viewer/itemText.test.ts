@@ -5,9 +5,11 @@ import {
   ItemTexts,
   colorRuns,
   itemLabel,
+  optionText,
   parseItemDescriptions,
   parseItemNames,
   refinedLabel,
+  rollText,
   stripColors,
 } from './itemText';
 
@@ -107,5 +109,35 @@ describe('ItemTexts', () => {
     const texts = new ItemTexts({ table: async () => Promise.resolve(undefined) });
     await texts.loadNames();
     expect(texts.label(501)).toBe('Item 501');
+  });
+});
+
+describe('rollText', () => {
+  it('shows the value and the range', () => {
+    const roll = {
+      label: 'Damage against bosses',
+      value: 31,
+      known: true,
+      min: 15,
+      max: 35,
+      unit: '%',
+    };
+    expect(rollText(roll)).toBe('Damage against bosses +31% (15 to 35)');
+    expect(rollText({ ...roll, value: -2, unit: '' })).toBe('Damage against bosses -2 (15 to 35)');
+  });
+
+  it('hides a hidden value until the copy is identified', () => {
+    expect(rollText({ label: 'LUK', value: 0, known: false, min: 1, max: 5, unit: '' })).toBe(
+      'LUK ? (1 to 5)',
+    );
+  });
+});
+
+describe('optionText', () => {
+  it('shows the value, or the label alone for a flag', () => {
+    expect(optionText({ label: 'MaxHP', value: 100, unit: '', flag: false })).toBe('MaxHP +100');
+    expect(optionText({ label: 'Attack element: Fire', value: 0, unit: '', flag: true })).toBe(
+      'Attack element: Fire',
+    );
   });
 });

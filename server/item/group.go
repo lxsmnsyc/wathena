@@ -51,9 +51,9 @@ type GroupEntry struct {
 	// Stacked is false when stackable items are given one at a time.
 	// The extract leaves it out when true, rAthena's default.
 	Stacked *bool `json:"stacked"`
-	// Announced, UniqueID, Named, Bound, refine and grade limits, and
-	// random options are read but not applied yet: items have no such
-	// state.
+	// Announced, UniqueID, Named, Bound, and refine and grade limits
+	// are read but not applied yet: items have no such state.
+	// RandomOptionGroup gives an equipment item its random options.
 	Announced         bool   `json:"announced"`
 	UniqueID          bool   `json:"unique_id"`
 	Named             bool   `json:"named"`

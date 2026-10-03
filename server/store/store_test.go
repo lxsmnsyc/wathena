@@ -160,10 +160,18 @@ func TestConstraints(t *testing.T) {
 	}
 
 	serial := pgtype.UUID{Bytes: item.NewSerial(), Valid: true}
+	insertRolled := func(slot int, s pgtype.UUID, cards, rolls, cardRolls, options string) error {
+		return q.InsertInventory(ctx, db.InsertInventoryParams{
+			CharacterID: id, Slots: []int{slot}, ItemIds: []int{1101}, Amounts: []int{1}, Serials: []pgtype.UUID{s},
+			Equips: []int{0}, Refines: []int{0}, Cards: []string{cards},
+			Rolls: []string{rolls}, CardRolls: []string{cardRolls}, RandomOptions: []string{options}, Identified: []bool{true},
+		})
+	}
 	insertItem := func(slot, itemID, amount int, s pgtype.UUID, equip, refine int, cards string) error {
 		return q.InsertInventory(ctx, db.InsertInventoryParams{
 			CharacterID: id, Slots: []int{slot}, ItemIds: []int{itemID}, Amounts: []int{amount}, Serials: []pgtype.UUID{s},
 			Equips: []int{equip}, Refines: []int{refine}, Cards: []string{cards},
+			Rolls: []string{"{}"}, CardRolls: []string{"[]"}, RandomOptions: []string{"[]"}, Identified: []bool{true},
 		})
 	}
 	insert := func(slot, itemID, amount int, s pgtype.UUID) error {
@@ -184,6 +192,11 @@ func TestConstraints(t *testing.T) {
 		"card 0":       insertItem(1, 1101, 1, fresh(), 0, 0, "{4001,0}"),
 		"17 cards":     insertItem(1, 1101, 1, fresh(), 0, 0, "{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}"),
 		"null card":    insertItem(1, 1101, 1, fresh(), 0, 0, "{4001,NULL}"),
+		// Rolls are an object, and card rolls and options lists.
+		"rolls a list":       insertRolled(1, fresh(), "{}", "[1]", "[]", "[]"),
+		"card rolls object":  insertRolled(1, fresh(), "{}", "{}", "{}", "[]"),
+		"options a number":   insertRolled(1, fresh(), "{}", "{}", "[]", "5"),
+		"17 card roll lists": insertRolled(1, fresh(), "{}", "{}", "["+strings.Repeat("{},", 16)+"{}]", "[]"),
 	} {
 		if !isCode(err, checkViolation) {
 			t.Errorf("%s: %v, want a check violation", name, err)
@@ -272,7 +285,16 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 		},
 		Items: []character.Item{
 			{Slot: 0, ID: 501, Amount: 30000, Serial: c.Items[0].Serial},
-			{Slot: 7, ID: 1201, Amount: 1, Serial: item.NewSerial()},
+			// Rolls, a card's rolls, random options and an unidentified
+			// copy (strategy section 5.4).
+			{Slot: 7, ID: 1201, Amount: 1, Serial: item.NewSerial(), Cards: []uint32{4001, 4140}, Extra: item.Extra{
+				Rolls:     item.RollsOf(map[string]int{"boss_damage": 31, "luck": -2}),
+				CardRolls: []item.Rolls{nil, item.RollsOf(map[string]int{"boss_damage": 29})},
+				Options:   []item.Option{{Name: "max_hp", Value: 100}, {Name: "example.a:glow", Value: -5, Param: 3}},
+			}},
+			{Slot: 8, ID: 4140, Amount: 2, Serial: item.NewSerial(), Extra: item.Extra{
+				Rolls: item.RollsOf(map[string]int{"boss_damage": 15}), Unidentified: true,
+			}},
 			{Slot: 199, ID: 909, Amount: 3, Serial: item.NewSerial()},
 		},
 		// Statuses come back by name, and timed bonuses in their order,

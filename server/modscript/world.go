@@ -91,6 +91,8 @@ var Hooks = map[string][]string{
 	"cast_allowed": {KindMod, KindNPC, KindEvent},
 	// Monster AI (review decision 22).
 	"monster_target": {KindMod, KindNPC, KindEvent},
+	// Rolled item values (review decision 23).
+	"item_roll": {KindMod, KindNPC, KindEvent},
 }
 
 type scheduled struct {
@@ -360,6 +362,36 @@ func (r *Runtime) runHooks(name string, fields []script.Field) ([]script.Value, 
 		return nil, false
 	}
 	return vals, len(vals) > 0
+}
+
+// runHookNested runs a hook chain of one result as a nested call when a
+// script's call runs (internal/script, "Nested calls"), and as a plain
+// call otherwise. The item_roll hooks need it: a script's give_item or
+// reroll makes a copy inside its own call.
+func (r *Runtime) runHookNested(name string, fields []script.Field) (script.Value, bool) {
+	var chain []*hook
+	for _, h := range r.hooks[name] {
+		if !h.removed && !h.ctx.ended && !h.ctx.retiring {
+			chain = append(chain, h)
+		}
+	}
+	if len(chain) == 0 {
+		return script.Nil, false
+	}
+	args := []script.Value{script.String(name), script.NewTable(fields...), script.Int(int64(len(chain)))}
+	for _, h := range chain {
+		args = append(args, h.fn.Value())
+	}
+	prev, prevComputing, prevChain := r.current, r.computing, r.chain
+	r.chain, r.computing = chain, true
+	v, err := r.s.Call1Nested(r.fns.runHooks.Value(), args...)
+	r.current, r.computing, r.chain = prev, prevComputing, prevChain
+	if err != nil {
+		r.afterError()
+		r.failed(chain[0].ctx, "hook "+name, err)
+		return script.Nil, false
+	}
+	return v, true
 }
 
 // hookEnter sets the running context to the context of hook i, from 1,

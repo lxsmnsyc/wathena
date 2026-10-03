@@ -236,26 +236,34 @@ func (q *Queries) DeleteTimedBonuses(ctx context.Context, characterID int64) err
 }
 
 const insertInventory = `-- name: InsertInventory :exec
-INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards)
+INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards,
+    rolls, card_rolls, random_options, identified)
 SELECT $1, unnest($2::smallint[]), unnest($3::integer[]),
     unnest($4::integer[]), unnest($5::uuid[]), unnest($6::integer[]),
-    unnest($7::smallint[]), unnest($8::text[])::integer[]
+    unnest($7::smallint[]), unnest($8::text[])::integer[],
+    unnest($9::text[])::jsonb, unnest($10::text[])::jsonb,
+    unnest($11::text[])::jsonb, unnest($12::boolean[])
 `
 
 type InsertInventoryParams struct {
-	CharacterID int64
-	Slots       []int
-	ItemIds     []int
-	Amounts     []int
-	Serials     []pgtype.UUID
-	Equips      []int
-	Refines     []int
-	Cards       []string
+	CharacterID   int64
+	Slots         []int
+	ItemIds       []int
+	Amounts       []int
+	Serials       []pgtype.UUID
+	Equips        []int
+	Refines       []int
+	Cards         []string
+	Rolls         []string
+	CardRolls     []string
+	RandomOptions []string
+	Identified    []bool
 }
 
 // InsertInventory writes items in one statement. Each item's cards come
 // as an array literal, such as {4001,4002}, since PostgreSQL arrays of
-// arrays must all have the same length.
+// arrays must all have the same length. Rolls and random options come
+// as JSON text.
 func (q *Queries) InsertInventory(ctx context.Context, arg InsertInventoryParams) error {
 	_, err := q.db.Exec(ctx, insertInventory,
 		arg.CharacterID,
@@ -266,6 +274,10 @@ func (q *Queries) InsertInventory(ctx context.Context, arg InsertInventoryParams
 		arg.Equips,
 		arg.Refines,
 		arg.Cards,
+		arg.Rolls,
+		arg.CardRolls,
+		arg.RandomOptions,
+		arg.Identified,
 	)
 	return err
 }
@@ -349,19 +361,23 @@ func (q *Queries) InsertTimedBonus(ctx context.Context, arg InsertTimedBonusPara
 }
 
 const inventory = `-- name: Inventory :many
-SELECT slot, item_id, amount, serial, equip, refine, cards FROM inventory
+SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified FROM inventory
 WHERE character_id = $1
 ORDER BY slot
 `
 
 type InventoryRow struct {
-	Slot   int
-	ItemID int
-	Amount int
-	Serial pgtype.UUID
-	Equip  int
-	Refine int
-	Cards  []int
+	Slot          int
+	ItemID        int
+	Amount        int
+	Serial        pgtype.UUID
+	Equip         int
+	Refine        int
+	Cards         []int
+	Rolls         []byte
+	CardRolls     []byte
+	RandomOptions []byte
+	Identified    bool
 }
 
 func (q *Queries) Inventory(ctx context.Context, characterID int64) ([]InventoryRow, error) {
@@ -381,6 +397,10 @@ func (q *Queries) Inventory(ctx context.Context, characterID int64) ([]Inventory
 			&i.Equip,
 			&i.Refine,
 			&i.Cards,
+			&i.Rolls,
+			&i.CardRolls,
+			&i.RandomOptions,
+			&i.Identified,
 		); err != nil {
 			return nil, err
 		}

@@ -23,6 +23,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -508,8 +509,59 @@ func insertParams(id int64, items []character.Item) db.InsertInventoryParams {
 		p.Equips = append(p.Equips, int(it.Equip))
 		p.Refines = append(p.Refines, it.Refine)
 		p.Cards = append(p.Cards, cardsLiteral(it.Cards))
+		p.Rolls = append(p.Rolls, rollsJSON(it.Rolls))
+		cards := make([]item.Rolls, len(it.CardRolls))
+		copy(cards, it.CardRolls)
+		p.CardRolls = append(p.CardRolls, mustJSON(cards))
+		opts := it.Options
+		if opts == nil {
+			opts = []item.Option{}
+		}
+		p.RandomOptions = append(p.RandomOptions, mustJSON(opts))
+		p.Identified = append(p.Identified, !it.Unidentified)
 	}
 	return p
+}
+
+// rollsJSON writes rolls as a JSON object, {} for none.
+func rollsJSON(r item.Rolls) string {
+	if len(r) == 0 {
+		return "{}"
+	}
+	return mustJSON(r)
+}
+
+// mustJSON writes a value that always encodes: rolls, lists of rolls and
+// options.
+func mustJSON(v any) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
+// readExtra reads an inventory row's rolls, card rolls and random
+// options. The server checks their values against the item data when the
+// character enters a zone.
+func readExtra(it *db.InventoryRow) (item.Extra, error) {
+	x := item.Extra{Unidentified: !it.Identified}
+	if err := json.Unmarshal(it.Rolls, &x.Rolls); err != nil {
+		return x, fmt.Errorf("store: rolls of slot %d: %w", it.Slot, err)
+	}
+	if err := json.Unmarshal(it.CardRolls, &x.CardRolls); err != nil {
+		return x, fmt.Errorf("store: card rolls of slot %d: %w", it.Slot, err)
+	}
+	if err := json.Unmarshal(it.RandomOptions, &x.Options); err != nil {
+		return x, fmt.Errorf("store: random options of slot %d: %w", it.Slot, err)
+	}
+	if len(x.CardRolls) == 0 {
+		x.CardRolls = nil
+	}
+	if len(x.Options) == 0 {
+		x.Options = nil
+	}
+	return x, nil
 }
 
 // cardsLiteral writes cards as a PostgreSQL array literal, such as
@@ -560,6 +612,9 @@ func fromRow(r *db.Character, items []db.InventoryRow) (*character.Character, er
 			return nil, err
 		}
 		ci := character.Item{Slot: it.Slot, ID: id, Amount: it.Amount, Serial: it.Serial.Bytes, Refine: it.Refine}
+		if ci.Extra, err = readExtra(&it); err != nil {
+			return nil, err
+		}
 		if it.Equip < 0 || it.Equip > math.MaxUint32 {
 			return nil, fmt.Errorf("store: equip %d out of range", it.Equip)
 		}

@@ -73,8 +73,16 @@ func (h scriptHost) GiveGroup(id int64, group int64) error {
 		if !g.Stacked || !z.Items.Get(g.Item).Stackable {
 			step = 1
 		}
+		d := z.Items.Get(g.Item)
+		group := ""
+		if g.Entry != nil && d.IsEquipment() {
+			// pc_get_itemgroup_sub rolls an equipment item's random
+			// options from the entry's group, for each copy.
+			group = g.Entry.RandomOptionGroup
+		}
 		for given := 0; given < g.Amount; given += step {
-			if r := z.addItem(p, g.Item, step); r != item.AddSuccess {
+			x := z.newExtra(d, false, rollSource{kind: sourceScript}, group)
+			if r := z.addCopy(p, g.Item, step, 0, nil, x); r != item.AddSuccess {
 				p.pending = append(p.pending, pickUpFailed(0, pickUpFailure(r)))
 			}
 		}

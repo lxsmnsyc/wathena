@@ -407,6 +407,15 @@ body {
   display: none;
 }
 
+#inventory-window .item-detail-rolls {
+  margin-bottom: 4px;
+  color: #206030;
+}
+
+#inventory-window .item-detail-rolls[hidden] {
+  display: none;
+}
+
 #equipment-window {
   position: fixed;
   top: 64px;

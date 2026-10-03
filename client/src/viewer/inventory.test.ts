@@ -8,6 +8,8 @@ import {
   dropItemMessage,
   gotItemMessage,
   parseDropAmount,
+  rollLines,
+  stackRolls,
   useItemMessage,
   usedItemMessage,
   weightPercent,
@@ -16,7 +18,19 @@ import {
 
 /** A slot with no equipment details. */
 function plain(slot: number, itemId: number, amount: number): Stack {
-  return { slot, itemId, amount, equip: 0, refine: 0, cards: [], location: 0, card: false };
+  return {
+    slot,
+    itemId,
+    amount,
+    equip: 0,
+    refine: 0,
+    cards: [],
+    location: 0,
+    card: false,
+    rolls: [],
+    cardRolls: [],
+    options: [],
+  };
 }
 
 describe('InventoryModel', () => {
@@ -69,6 +83,9 @@ describe('InventoryModel', () => {
       cards: [4001],
       location: 0x2,
       card: false,
+      rolls: [],
+      cardRolls: [],
+      options: [],
     });
     m.add(3, 4001, 1, { location: 0x2, card: true });
     expect(m.get(3)?.card).toBe(true);
@@ -165,5 +182,43 @@ describe('USE_EFFECTS', () => {
     expect(USE_EFFECTS.get(501)).toBe(204);
     expect(USE_EFFECTS.get(505)).toBe(208);
     expect(USE_EFFECTS.get(512)).toBeUndefined();
+  });
+});
+
+describe('rolls', () => {
+  const roll = {
+    label: 'Damage against bosses',
+    value: 31,
+    known: true,
+    min: 15,
+    max: 35,
+    unit: '%',
+  };
+
+  it('copies the roll fields of a message', () => {
+    const got = stackRolls({
+      rolls: [{ ...roll, name: 'boss_damage' } as typeof roll],
+      cardRolls: [{ rolls: [{ ...roll, label: 'LUK', value: 2, min: 1, max: 5, unit: '' }] }],
+      options: [{ label: 'MaxHP', value: 100, unit: '', flag: false }],
+    });
+    expect(got.rolls).toEqual([roll]);
+    expect(got.cardRolls[0]?.[0]?.value).toBe(2);
+    expect(got.options).toEqual([{ label: 'MaxHP', value: 100, unit: '', flag: false }]);
+  });
+
+  it('lists rolls, card rolls and options for the description', () => {
+    const m = new InventoryModel();
+    m.reset([{ slot: 3, itemId: 1201, amount: 1, cards: [4001], rolls: [roll] }], 100);
+    m.rollsChanged(3, {
+      rolls: [{ ...roll, value: 20 }],
+      cardRolls: [[{ ...roll, label: 'LUK', value: 2, min: 1, max: 5, unit: '' }]],
+      options: [{ label: 'Attack element: Fire', value: 0, unit: '', flag: true }],
+    });
+    const s = m.get(3);
+    expect(s === undefined ? [] : rollLines(s, (id) => `Item ${id}`)).toEqual([
+      'Damage against bosses +20% (15 to 35)',
+      'Item 4001: LUK +2 (1 to 5)',
+      'Attack element: Fire',
+    ]);
   });
 });

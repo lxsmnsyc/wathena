@@ -148,14 +148,14 @@ func TestLooter(t *testing.T) {
 	if z.entities.has(it) {
 		t.Fatal("the looter did not take the item")
 	}
-	if len(m.monster.loot) != 1 || m.monster.loot[0] != 909 {
+	if len(m.monster.loot) != 1 || m.monster.loot[0].id != 909 {
 		t.Fatalf("loot %v", m.monster.loot)
 	}
 	z.Progress = testTables()
 	m.monster.spawn.Reward = &progression.Mob{ID: 1002, Level: 1, MaxHP: m.status.MaxHP}
 	m.hp = 0
 	z.die(m, p.entity)
-	if len(z.falling) != 1 || len(z.falling[0].items) != 1 || z.falling[0].items[0] != 909 {
+	if len(z.falling) != 1 || len(z.falling[0].items) != 1 || z.falling[0].items[0].id != 909 {
 		t.Fatalf("drops %v", z.falling)
 	}
 }

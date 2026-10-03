@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"regexp"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/bonus"
@@ -87,6 +88,11 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 				if err != nil {
 					errs = append(errs, fmt.Errorf("%s: items %s: bonuses[%d]: %w", r.Where, r.Name, i, err))
 					continue
+				}
+				for _, name := range b.Rolls() {
+					if d.Rolls[name] == nil {
+						errs = append(errs, fmt.Errorf("%s: items %s: bonuses[%d]: the item has no roll %q", r.Where, r.Name, i, name))
+					}
 				}
 				d.Static = append(d.Static, b)
 			}
@@ -182,11 +188,31 @@ func checkItem(d *item.Def) error {
 	if uint32(d.Location) > item.EqpShadowGear|item.EqpAmmo|0x3fff {
 		errs = append(errs, "location has a position that does not exist")
 	}
+	if len(d.Rolls) > item.MaxRolls {
+		errs = append(errs, fmt.Sprintf("an item has at most %d rolls", item.MaxRolls))
+	}
+	for _, name := range d.RollNames() {
+		r := d.Rolls[name]
+		if !rollName.MatchString(name) {
+			errs = append(errs, fmt.Sprintf("roll %q: a roll name is lower-case letters, digits and _, starting with a letter, at most 32 bytes", name))
+			continue
+		}
+		if r == nil {
+			errs = append(errs, fmt.Sprintf("roll %s: want min, max, default and distribution", name))
+			continue
+		}
+		if err := r.Check(); err != nil {
+			errs = append(errs, fmt.Sprintf("roll %s: %v", name, err))
+		}
+	}
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, "; "))
 	}
 	return nil
 }
+
+// rollName is the form of a roll's name.
+var rollName = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 
 func containsFold(list []string, s string) bool {
 	for _, v := range list {

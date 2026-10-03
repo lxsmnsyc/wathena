@@ -349,6 +349,8 @@ func (r *Runtime) init() error {
 		{"compute_end", r.computeEnd},
 		{"player_add_timed_bonuses", r.playerAddTimedBonuses},
 		{"equipped_field", r.equippedField},
+		{"equipped_set_roll", r.equippedSetRoll},
+		{"equipped_reroll", r.equippedReroll},
 		{"items_group", r.itemsGroup},
 		{"skills_id", r.skillsID},
 		{"monsters_id", r.monstersID},

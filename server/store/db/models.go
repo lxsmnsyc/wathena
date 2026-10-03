@@ -177,14 +177,18 @@ type GameTicket struct {
 }
 
 type Inventory struct {
-	Serial      pgtype.UUID
-	CharacterID int64
-	Slot        int
-	ItemID      int
-	Amount      int
-	Equip       int
-	Refine      int
-	Cards       []int
+	Serial        pgtype.UUID
+	CharacterID   int64
+	Slot          int
+	ItemID        int
+	Amount        int
+	Equip         int
+	Refine        int
+	Cards         []int
+	Rolls         []byte
+	CardRolls     []byte
+	RandomOptions []byte
+	Identified    bool
 }
 
 type ModAccountVariable struct {

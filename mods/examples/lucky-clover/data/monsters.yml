@@ -1,0 +1,11 @@
+# A Poring that always drops a Clover Charm, with the CLOVER random
+# options.
+- name: example.lucky-clover:CLOVER_PORING
+  sprite: PORING
+  display_name: Clover Poring
+  level: 1
+  hp: 60
+  base_exp: 30
+  job_exp: 20
+  drops:
+    - {item: "example.lucky-clover:Clover_Charm", rate: 10000, random_option_group: "example.lucky-clover:CLOVER"}

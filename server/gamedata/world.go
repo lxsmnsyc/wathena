@@ -454,7 +454,8 @@ func aiTypeList() string {
 }
 
 // readDrops reads a drops list: { item, rate }, with the rate per
-// 10,000, as mob_db.yml.
+// 10,000, as mob_db.yml, and random_option_group, the group of random
+// options the dropped copy rolls. LoadMods checks that the group exists.
 func readDrops(v any, items map[string]uint32, most int) ([]progression.Drop, error) {
 	list, ok := v.([]any)
 	if !ok {
@@ -463,8 +464,9 @@ func readDrops(v any, items map[string]uint32, most int) ([]progression.Drop, er
 	var out []progression.Drop
 	for i, e := range list {
 		m, ok := e.(map[string]any)
-		if !ok || len(m) != 2 {
-			return nil, fmt.Errorf("drop %d: want { item: Name, rate: n }", i+1)
+		group, hasGroup := m["random_option_group"].(string)
+		if !ok || len(m) != 2 && (len(m) != 3 || !hasGroup || group == "") {
+			return nil, fmt.Errorf("drop %d: want { item: Name, rate: n }, and random_option_group when the copy rolls random options", i+1)
 		}
 		name, _ := m["item"].(string)
 		id, ok := items[name]
@@ -475,7 +477,7 @@ func readDrops(v any, items map[string]uint32, most int) ([]progression.Drop, er
 		if !ok || rate < 1 || rate > 10000 {
 			return nil, fmt.Errorf("drop %d: rate must be 1 to 10000", i+1)
 		}
-		out = append(out, progression.Drop{Item: id, Rate: rate})
+		out = append(out, progression.Drop{Item: id, Rate: rate, RandomOptionGroup: group})
 	}
 	if len(out) > most {
 		return nil, fmt.Errorf("a monster has at most %d of these drops", most)

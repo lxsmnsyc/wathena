@@ -1,0 +1,25 @@
+# The Clover Charm, an accessory with two rolls (mods/README.md, "Rolled
+# item values"). Its bonuses read the rolls, so it needs no Lua.
+- name: example.lucky-clover:Clover_Charm
+  type: Armor
+  display_name: Clover Charm
+  weight: 100
+  sell: 1000
+  location: [both_accessory]
+  armor_level: 1
+  rolls:
+    # Each value from 1 to 5 is as likely.
+    luck: {min: 1, max: 5, default: 3, distribution: uniform}
+    # Three tiers: common, rare and perfect. It shows once the charm is
+    # identified.
+    fortune:
+      default: 1
+      distribution: weighted
+      hidden: true
+      weights:
+        - {value: 1, weight: 70}
+        - {value: [2, 4], weight: 25}
+        - {value: 5, weight: 5}
+  bonuses:
+    - [luk, {roll: luck}]
+    - [crit, {roll: fortune}]

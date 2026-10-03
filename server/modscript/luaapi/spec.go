@@ -131,7 +131,7 @@ var Modules = []Module{
 		Funcs: []Func{{
 			Name: "on",
 			Params: []Param{{"name", "wa.HookName", "The hook's name. An unknown name raises an error."},
-				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice, next: fun(object?: table): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none."},
+				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice|wa.ItemRoll, next: fun(object?: table): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range."},
 				{"options", "wa.HookOptions?", ""}},
 			Returns:    "wa.HookHandle",
 			Doc:        "Adds a hook. Higher priority runs first; equal priorities run in the order they were added.",
@@ -446,6 +446,39 @@ var Classes = []Class{
 			{"weapon_type", "integer", ""},
 			{"weapon_level", "integer", ""},
 			{"armor_level", "integer", ""},
+			{"rolls", "table<string, integer>", "The copy's rolled values by name, such as rolls.boss_damage. In a card's script, the card's own rolls. Read-only."},
+			{"cards", "wa.CardRolls[]", "The cards in the copy's slots, in slot order, with their rolls."},
+			{"random_options", "wa.RandomOption[]", "The copy's random options, in option order."},
+		},
+		Methods: []Func{
+			{Name: "set_roll", Params: []Param{{"name", "string", "A roll of the item, or of the card for a card's copy."}, {"value", "integer", "Clamped to the roll's range."}},
+				Doc: "Sets one rolled value. The copy's equip scripts start again after the call, so they read the new value.", Permission: "items.modify_rolls"},
+			{Name: "reroll", Params: []Param{{"name", "string?", "One roll. Every roll without it."}},
+				Doc: "Rolls values again, as a random give: from the roll's distribution when the item_rolls flag is on, the default otherwise, through the item_roll hooks with source kind \"script\".", Permission: "items.modify_rolls"},
+		},
+	},
+	{
+		Name: "wa.CardRolls", Doc: "A card in an equipped copy's slots.",
+		Fields: []Field{{"item", "integer", "The card's item ID."}, {"rolls", "table<string, integer>", "The card's rolled values by name."}},
+	},
+	{
+		Name: "wa.RandomOption", Doc: "A random option of a copy, as rAthena's random options.",
+		Fields: []Field{{"option", "string", "The option's name in data/random_options.yml, such as max_hp."}, {"value", "integer", ""}, {"param", "integer", ""}},
+	},
+	{
+		Name: "wa.ItemRoll", Doc: "The object of the item_roll hook: one roll of a new copy. The innermost result is the server's roll: from the roll's distribution when the item_rolls flag is on and the copy is rolled, the default otherwise.",
+		Fields: []Field{
+			{"item", "integer", "The item's ID."},
+			{"name", "string", "The roll's name."},
+			{"min", "integer", ""}, {"max", "integer", ""}, {"default", "integer", ""},
+			{"source", "wa.ItemRollSource", "Where the copy comes from."},
+		},
+	},
+	{
+		Name: "wa.ItemRollSource", Doc: "Where a rolled copy comes from: a monster's drop, a script, or an NPC shop.",
+		Fields: []Field{
+			{"kind", `"drop"|"script"|"shop"`, ""},
+			{"monster", "wa.Monster?", "The killed monster, for a drop."},
 		},
 	},
 	{
@@ -725,7 +758,8 @@ var Classes = []Class{
 	},
 	{
 		Name: "wa.GiveItemOptions", Doc: "Options of player:give_item.",
-		Fields: []Field{{"rent_seconds", "integer?", "Gives rentals, as rentitem. Rentals do not expire yet."}},
+		Fields: []Field{{"rent_seconds", "integer?", "Gives rentals, as rentitem. Rentals do not expire yet."},
+			{"roll", `"random"|"default"|table<string, integer>|nil`, "How the copies' rolls are set: \"random\" rolls each value, \"default\" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code."}},
 	},
 	{
 		Name: "wa.WithBonusesOptions", Doc: "Options of timers.with_bonuses.",
@@ -958,7 +992,7 @@ func Aliases() []Alias {
 		{Name: "wa.EventName", Values: events, Doc: "An event name of wa.events."},
 		{Name: "wa.BonusName", Values: bonuses, Doc: "A bonus name of wa.bonuses (proposal 0002a)."},
 		{Name: "wa.EquipSlot", Values: EquipSlots, Doc: "An equipment slot."},
-		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll"}, Doc: "A hook name of wa.hooks."},
 		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
 	}

@@ -1,0 +1,8 @@
+{
+	"rathena_git_hash": "8e1c56558d71d1c7e05cef3b8defa5c98c0cc780",
+	"mode": "pre-renewal",
+	"note": "item_randomopt_db.yml and item_randomopt_group.yml with their imports for the mode, as RandomOptionDatabase and RandomOptionGroupDatabase load them. Pre-renewal loads none. options: name is Option without RDMOPT_, and script is Script as YAML reads it. groups: slots are the Slots by slot number (1-based), max_random is MaxRandom capped to MAX_ITEM_RDM_OPT (5), and random is Random. Each option entry has add_option's defaults and fixes: a missing MinValue, MaxValue, Param or Chance is 0, a MinValue above MaxValue makes MaxValue MinValue + 1, param is cast to int8, and chance is out of 10000. drops are the mob_db.yml Drops and MvpDrops with a RandomOptionGroup that resolves; index is the drop's position in the monster's dropitem or mvpitem list, which holds only drops whose item exists.",
+	"options": [],
+	"groups": [],
+	"drops": []
+}

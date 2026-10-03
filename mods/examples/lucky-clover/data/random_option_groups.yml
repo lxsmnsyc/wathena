@@ -1,0 +1,6 @@
+# The random options a Clover Charm from a Clover Poring gets: one slot,
+# with MaxHP more often than MaxSP. The option names are core's
+# data/random_options.yml names.
+- name: example.lucky-clover:CLOVER
+  slots:
+    - [{option: max_hp, min: 20, max: 60, chance: 6000}, {option: max_sp, min: 10, max: 30, chance: 4000}]

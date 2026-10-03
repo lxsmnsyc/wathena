@@ -262,7 +262,7 @@ func (z *Zone) buy(p *Player, npc uint32, lines []buyLine) {
 			step = 1
 		}
 		for given := 0; given < l.amount; given += step {
-			z.addItem(p, l.id, step)
+			z.addCopy(p, l.id, step, 0, nil, z.newExtra(z.Items.Get(l.id), false, rollSource{kind: sourceShop}, ""))
 		}
 	}
 	p.pending = append(p.pending, shopResult(wathenav1.ShopOutcome_SHOP_OUTCOME_BOUGHT))

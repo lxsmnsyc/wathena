@@ -9,7 +9,7 @@ local hooks = {}
 ---
 ---Needs the permission `rules.override`.
 ---@param name wa.HookName The hook's name. An unknown name raises an error.
----@param hook? fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice, next: fun(object?: table): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none.
+---@param hook? fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice|wa.ItemRoll, next: fun(object?: table): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range.
 ---@param options? wa.HookOptions
 ---@return wa.HookHandle
 function hooks.on(name, hook, options) end

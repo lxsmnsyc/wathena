@@ -21,6 +21,7 @@ commands:
   convert items    convert rAthena item scripts to Lua and item data
   convert npcs     convert rAthena NPC scripts and shops to Lua and NPC data
   convert monsters convert rAthena monster skills to monster data
+  convert random-options convert rAthena random options and groups to data
   dev              run a local server with a mod, and reload it when files change
   mod new          make a mod from a template
   mod validate     check a mod's manifest, data, permissions, scripts and tests
@@ -65,6 +66,8 @@ func main() {
 		err = convertNPCs(os.Args[3:])
 	case "convert monsters":
 		err = convertMonsters(os.Args[3:])
+	case "convert random-options":
+		err = convertRandomOptions(os.Args[3:])
 	case "migrate status":
 		err = migrate(os.Args[3:], false)
 	case "migrate up":

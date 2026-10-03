@@ -1,0 +1,10 @@
+{
+	"system": "random_option_rolls",
+	"mode": "pre-renewal",
+	"rathena_git_hash": "e985006171d2eb320ee512a653f4c83aea3d81b6",
+	"data_path": "pre-re/",
+	"circular_area": false,
+	"note": "forced_min is the options s_random_opt_group::apply gives with rnd_force_min set, in option order, up to the first empty one. rolls are statistics over count calls of apply with the generator seeded with seed: options_per_item counts items with 0 to 5 options, and slots[i] lists, per option id at option index i, the count and the minimum, maximum and sum of the values. The values come from std::uniform_int_distribution, so they depend on the C++ library. drops are the mob_db Drops and MvpDrops with a random option group, by monster, with index in rAthena's dropitem or mvpitem list, and forced_min from mob_setdropitem_option on an empty item with rnd_force_min set.",
+	"groups": [],
+	"drops": []
+}

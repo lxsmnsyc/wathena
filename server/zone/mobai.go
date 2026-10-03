@@ -966,11 +966,12 @@ func (z *Zone) mobLoot(e, it *entity, canMove bool) bool {
 		return true
 	}
 	g := it.item
+	looted := fallItem{id: g.id, amount: g.amount, refine: g.refine, cards: g.cards, extra: g.extra}
 	if len(m.loot) < lootItemSize {
-		m.loot = append(m.loot, g.id)
+		m.loot = append(m.loot, looted)
 	} else {
 		// The first item looted is lost.
-		m.loot = append(m.loot[1:], g.id)
+		m.loot = append(m.loot[1:], looted)
 	}
 	z.entities.remove(it)
 	z.takes = append(z.takes, take{e, it})

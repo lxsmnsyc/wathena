@@ -95,6 +95,45 @@ export function refinedLabel(label: string, refine: number): string {
   return refine > 0 ? `+${refine} ${label}` : label;
 }
 
+/** A rolled value of an item copy, as ItemRoll (strategy section 5.4). */
+export interface RollLine {
+  label: string;
+  value: number;
+  /** False for a hidden roll of a copy that is not identified yet. */
+  known: boolean;
+  min: number;
+  max: number;
+  /** "%" or "". */
+  unit: string;
+}
+
+/** A random option of an item copy, as ItemOption. */
+export interface OptionLine {
+  label: string;
+  value: number;
+  unit: string;
+  /** Set for an option without an amount, such as an attack element. */
+  flag: boolean;
+}
+
+function signed(value: number, unit: string): string {
+  return `${value < 0 ? '' : '+'}${value}${unit}`;
+}
+
+/**
+ * A rolled value with its range: "Damage against bosses +31% (15 to 35)".
+ * A hidden roll shows "?" in place of its value until the copy is identified.
+ */
+export function rollText(r: RollLine): string {
+  const value = r.known ? signed(r.value, r.unit) : '?';
+  return `${r.label} ${value} (${r.min} to ${r.max})`;
+}
+
+/** A random option: "MaxHP +100", or its label alone for a flag. */
+export function optionText(o: OptionLine): string {
+  return o.flag ? o.label : `${o.label} ${signed(o.value, o.unit)}`;
+}
+
 /** A part of a line in one color. color is "#rrggbb", or undefined before any code. */
 export interface ColorRun {
   text: string;

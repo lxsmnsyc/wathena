@@ -30,11 +30,16 @@ const (
 type groundItem struct {
 	id     uint32
 	amount int
-	// refine and cards are a dropped equipment item's.
+	// refine and cards are a dropped equipment item's, and extra its
+	// rolls and random options.
 	refine     int
 	cards      []uint32
+	extra      item.Extra
 	subX, subY int
-	rights     progression.Rights
+	// from is the serial of the stack the item was split from, or zero.
+	// The copy picked up gets a new serial and logs it.
+	from   item.Serial
+	rights progression.Rights
 	// expires is when the item vanishes, in zone milliseconds.
 	expires int64
 	// fresh is set in the tick the item fell, so viewers see it drop.
@@ -62,10 +67,20 @@ type loot struct {
 
 type fall struct {
 	x, y                 int
-	items                []uint32
+	items                []fallItem
 	first, second, third uint32
 	boss                 progression.BossType
 	at                   int64
+}
+
+// fallItem is an item about to fall: a drop with its rolls, or what a
+// looter picked up.
+type fallItem struct {
+	id     uint32
+	amount int
+	refine int
+	cards  []uint32
+	extra  item.Extra
 }
 
 type take struct {
@@ -138,13 +153,13 @@ func (z *Zone) reward(e, killer *entity) {
 			}
 			continue
 		}
-		f.items = append(f.items, d.Item)
+		f.items = append(f.items, z.dropCopy(d.Item, d.RandomOptionGroup, e))
 	}
 	// Ore Discovery: a first looter with Finding Ore (BS_FINDINGORE)
 	// may find an ore of the ORE group, whoever killed the monster.
 	if p := z.players[kill.First]; p != nil && p.skillLevel(skill.IDFindingOre) > 0 && z.Mods != nil {
 		if id, ok := z.Mods.Groups.RandomDrop(oreItemGroup, 1, z.rand); ok {
-			f.items = append(f.items, id)
+			f.items = append(f.items, z.dropCopy(id, "", e))
 		}
 	}
 	// mob_dead: a looter drops what it picked up, with the same rights.
@@ -156,6 +171,30 @@ func (z *Zone) reward(e, killer *entity) {
 		z.falling = append(z.falling, f)
 	}
 	z.mvpReward(e, mob, kill)
+}
+
+// dropCopy is a monster's drop as it falls: one copy with its rolls,
+// rolled from the zone's random stream, and the random options of its
+// group, as mob_setdropitem and mob_setdropitem_option.
+func (z *Zone) dropCopy(id uint32, group string, monster *entity) fallItem {
+	return fallItem{id: id, amount: 1, extra: z.newExtra(z.Items.Get(id), true, rollSource{kind: sourceDrop, monster: monster}, group)}
+}
+
+// logSplit logs a copy picked up from part of a stack: its new serial,
+// the stack it came from, and its rolls (strategy section 5.4,
+// "Stacking").
+func (z *Zone) logSplit(p *Player, g *groundItem) {
+	if z.Mods == nil || z.Mods.Log == nil {
+		return
+	}
+	for i := range p.inventory.Slots {
+		s := &p.inventory.Slots[i]
+		if s.ID == g.id && s.Extra.Equal(&g.extra) {
+			z.Mods.Log.Info("item split", "character", p.Name, "item", g.id, "amount", g.amount,
+				"serial", s.Serial.String(), "from", g.from.String(), "rolls", g.extra.Rolls.Key())
+			return
+		}
+	}
 }
 
 // effectMVP is EF_MVP, the effect over the MVP player.
@@ -210,9 +249,10 @@ func (z *Zone) mvpReward(e *entity, m *progression.Mob, kill progression.Kill) {
 				continue
 			}
 		}
-		if r := z.addItem(mvp, d.Item, 1); r != item.AddSuccess {
+		fi := z.dropCopy(d.Item, d.RandomOptionGroup, e)
+		if r := z.addCopy(mvp, d.Item, 1, 0, nil, fi.extra); r != item.AddSuccess {
 			pe := mvp.entity
-			z.falling = append(z.falling, fall{x: pe.x, y: pe.y, items: []uint32{d.Item},
+			z.falling = append(z.falling, fall{x: pe.x, y: pe.y, items: []fallItem{fi},
 				first: mvp.charID, second: kill.Second, third: kill.Third, boss: progression.BossMVP, at: z.now})
 		}
 		// item_drop_mvp_mode 0: one prize.
@@ -309,10 +349,11 @@ func (z *Zone) dropItems() {
 			continue
 		}
 		dir := progression.DirCenter
-		for _, id := range f.items {
+		for _, it := range f.items {
 			pl := progression.PlaceItem(z.cellFree, f.x, f.y, dir, z.rand)
 			z.entities.add(&entity{x: pl.X, y: pl.Y, item: &groundItem{
-				id: id, amount: 1, subX: pl.SubX, subY: pl.SubY,
+				id: it.id, amount: max(it.amount, 1), subX: pl.SubX, subY: pl.SubY,
+				refine: it.refine, cards: it.cards, extra: it.extra,
 				rights:  z.Progress.NewRights(f.first, f.second, f.third, z.now, f.boss),
 				expires: z.now + z.Progress.FloorItemLifetime,
 				fresh:   true,
@@ -417,9 +458,12 @@ func (z *Zone) take(p *Player, it *entity, net uint32) {
 	}
 	// party_share_loot gives the item with pc_additem. When it fails,
 	// the item stays and the player learns why.
-	if r := z.addInstance(p, g.id, g.amount, g.refine, g.cards); r != item.AddSuccess {
+	if r := z.addCopy(p, g.id, g.amount, g.refine, g.cards, g.extra); r != item.AddSuccess {
 		p.pending = append(p.pending, pickUpFailed(net, pickUpFailure(r)))
 		return
+	}
+	if !g.from.IsZero() {
+		z.logSplit(p, g)
 	}
 	// unit_stop_attack.
 	p.entity.target = nil

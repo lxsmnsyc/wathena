@@ -36,6 +36,9 @@ type wornSlot struct {
 	handle int64
 	item   *equipScript
 	cards  []*equipScript
+	// cardHandles are the handles of each card's context. A card's
+	// handle reads the item's fields, but its rolls are the card's own.
+	cardHandles []int64
 }
 
 // equipScript is one equip context and the bonuses its script keeps.
@@ -68,6 +71,8 @@ func (s *bonusSink) BonusRemoved(b *modscript.Bonus) {
 type equippedRef struct {
 	p    *Player
 	slot int
+	// card is the card's index for a card's handle, or -1.
+	card int
 }
 
 // throwableGroup is IG_THROWABLE: ammunition whose script does not run
@@ -225,8 +230,20 @@ func (z *Zone) wear(p *Player, slot int) {
 	if z.equippedRefs == nil {
 		z.equippedRefs = map[int64]equippedRef{}
 	}
-	z.equippedRefs[ws.handle] = equippedRef{p, slot}
+	z.equippedRefs[ws.handle] = equippedRef{p, slot, -1}
+	for i := range s.Cards {
+		z.nextEquipped++
+		ws.cardHandles = append(ws.cardHandles, z.nextEquipped)
+		z.equippedRefs[z.nextEquipped] = equippedRef{p, slot, i}
+	}
 	p.worn[slot] = ws
+	z.startSlotScripts(p, slot, ws)
+}
+
+// startSlotScripts starts the equip contexts of a worn slot's item and
+// cards.
+func (z *Zone) startSlotScripts(p *Player, slot int, ws *wornSlot) {
+	s := &p.inventory.Slots[slot]
 	d := z.Items.Get(s.ID)
 	throwable := d.IsAmmo() && z.Mods != nil && z.Mods.Groups.Contains(throwableGroup, d.ID)
 	if !throwable {
@@ -234,10 +251,32 @@ func (z *Zone) wear(p *Player, slot int) {
 	}
 	ws.cards = make([]*equipScript, len(s.Cards))
 	for i, c := range s.Cards {
-		if cd, ok := z.Items.Lookup(c); ok {
-			ws.cards[i] = z.startEquipScript(p, ws.handle, cd)
+		if cd, ok := z.Items.Lookup(c); ok && i < len(ws.cardHandles) {
+			ws.cards[i] = z.startEquipScript(p, ws.cardHandles[i], cd)
 		}
 	}
+}
+
+// restartSlot ends a worn slot's equip contexts without their unequip
+// handlers and starts them again with the same handles, after its rolls
+// changed. Stats wait for the caller.
+func (z *Zone) restartSlot(p *Player, slot int) {
+	ws := p.worn[slot]
+	if ws == nil {
+		return
+	}
+	z.holdStats++
+	defer func() { z.holdStats-- }()
+	if r := z.scripts; r != nil {
+		for _, es := range append([]*equipScript{ws.item}, ws.cards...) {
+			if es != nil {
+				r.EndEquip(es.ctx)
+			}
+		}
+	}
+	ws.item, ws.cards = nil, nil
+	z.startSlotScripts(p, slot, ws)
+	z.markStats(p)
 }
 
 // startEquipScript runs an item's script in a new equip context, or
@@ -273,6 +312,9 @@ func (z *Zone) unwear(p *Player, slot int, unequip bool) {
 	defer func() { z.holdStats-- }()
 	delete(p.worn, slot)
 	delete(z.equippedRefs, ws.handle)
+	for _, h := range ws.cardHandles {
+		delete(z.equippedRefs, h)
+	}
 	r := z.scripts
 	for _, es := range append([]*equipScript{ws.item}, ws.cards...) {
 		if es == nil || r == nil {
@@ -311,7 +353,12 @@ func (z *Zone) unwearAll(p *Player) {
 // scripts whose condition holds, with computed values run now.
 func (z *Zone) equipment(p *Player) *status.Equipment {
 	src := func(slot, card int, d *item.Def) []status.Bonus {
-		out := status.StaticBonuses(d)
+		s := &p.inventory.Slots[slot]
+		rolls := s.Rolls
+		if card >= 0 {
+			rolls = s.CardRoll(card)
+		}
+		out := status.StaticBonuses(d, rolls)
 		ws := p.worn[slot]
 		if ws == nil {
 			return out
@@ -340,7 +387,11 @@ func (z *Zone) equipment(p *Player) *status.Equipment {
 		}
 		return out
 	}
-	return status.Wear(p.inventory, z.Items, src)
+	var find func(string) *item.RandomOption
+	if z.Mods != nil && z.Mods.RandomOptions != nil {
+		find = z.Mods.RandomOptions.Option
+	}
+	return status.WearOptions(p.inventory, z.Items, src, find)
 }
 
 // markStats marks a player's stats for flushStats.
@@ -497,6 +548,12 @@ func (h scriptHost) EquippedField(id int64, field string) (script.Value, error) 
 		return script.Int(int64(d.WeaponLevel)), nil
 	case "armor_level":
 		return script.Int(int64(d.ArmorLevel)), nil
+	case "rolls":
+		return h.z.equippedRolls(ref.p, ref.slot, ref.card), nil
+	case "cards":
+		return h.z.equippedCards(ref.p, ref.slot), nil
+	case "random_options":
+		return equippedOptions(s), nil
 	}
 	return script.Nil, errNoField(field)
 }

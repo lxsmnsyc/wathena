@@ -17,6 +17,11 @@ import (
 //
 // It is the same shape as the entries of player:add_timed_bonuses
 // (0002a, "bonus_script"), so one reader serves both.
+//
+// An amount can be { roll: name }: a rolled value of the copy (strategy
+// section 5.4). A random option's bonus reads { roll: value } and
+// { roll: param }. multiply and divide scale it, such as
+// { roll: value, divide: 10 }.
 
 // Names finds the values of the names that item data writes.
 type Names interface {
@@ -51,7 +56,8 @@ func FromData(entry any, names Names) (*Bonus, error) {
 	b := &Bonus{Name: name, Options: Options{Set: map[string]bool{}}}
 	args := list[1:]
 	if n := len(args); n > 0 {
-		if m, ok := args[n-1].(map[string]any); ok {
+		// The last map is the options, unless it is a roll.
+		if m, ok := args[n-1].(map[string]any); ok && m["roll"] == nil {
 			if err := readOptions(&b.Options, m, names); err != nil {
 				return nil, fmt.Errorf("%s: %w", name, err)
 			}
@@ -59,6 +65,14 @@ func FromData(entry any, names Names) (*Bonus, error) {
 		}
 	}
 	for i, a := range args {
+		if m, ok := a.(map[string]any); ok {
+			n, err := readRoll(m)
+			if err != nil {
+				return nil, fmt.Errorf("%s: argument %d: %w", name, i+1, err)
+			}
+			b.Args = append(b.Args, n)
+			continue
+		}
 		var v int64
 		var err error
 		if i < len(s.Subject) {
@@ -84,6 +98,44 @@ func FromData(entry any, names Names) (*Bonus, error) {
 		return nil, err
 	}
 	return b, nil
+}
+
+// readRoll reads { roll: name }, with multiply or divide when given.
+func readRoll(m map[string]any) (Num, error) {
+	name, ok := m["roll"].(string)
+	if !ok || name == "" {
+		return Num{}, fmt.Errorf("a table in place of a number is { roll: name }")
+	}
+	n := Num{Computed: true, Roll: name}
+	for k, v := range m {
+		switch k {
+		case "roll":
+		case "multiply", "divide":
+			x, err := integer(v)
+			if err != nil || x == 0 {
+				return Num{}, fmt.Errorf("%s is a whole number other than 0", k)
+			}
+			if k == "multiply" {
+				n.Multiply = x
+			} else {
+				n.Divide = x
+			}
+		default:
+			return Num{}, fmt.Errorf("%q is not a field of a roll; the fields are roll, multiply and divide", k)
+		}
+	}
+	return n, nil
+}
+
+// Rolls returns the names of the rolls a bonus reads.
+func (b *Bonus) Rolls() []string {
+	var out []string
+	for _, a := range b.Args {
+		if a.Roll != "" {
+			out = append(out, a.Roll)
+		}
+	}
+	return out
 }
 
 func integer(v any) (int64, error) {

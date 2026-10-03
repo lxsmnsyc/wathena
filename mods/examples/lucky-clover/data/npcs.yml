@@ -1,0 +1,8 @@
+# The smith stands near core's Job Master in Prontera.
+- name: Clover Smith#prontera
+  map: prontera
+  x: 155
+  y: 191
+  direction: south
+  sprite: 4_M_DWARF
+  script: scripts/npc/smith.lua

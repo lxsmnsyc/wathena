@@ -27,7 +27,12 @@ A state is used by one goroutine at a time, as each zone owns its own (strategy 
 
 ## Nested calls
 
-`Call1Nested` lets a host function call Lua on its own state. wAthena uses it for one thing: computing a player's stats again, which runs computed bonuses and `when` conditions, inside a script's call that changed them (decision 0010). Every other call from a host function still gets `ErrReentrant`. Rules:
+`Call1Nested` lets a host function call Lua on its own state. wAthena uses it for two things. Every other call from a host function still gets `ErrReentrant`.
+
+- Computing a player's stats again, which runs computed bonuses and `when` conditions, inside a script's call that changed them (decision 0010).
+- The `item_roll` hooks of a copy that a script makes inside its call, such as `player:give_item` with `roll = "random"` or `equipped:reroll` (decision 0014).
+
+Rules:
 
 - It runs on the thread that called the host function, inside the outer call. It is not a new call.
 - The outer call's CPU budget, time limit, and memory limit apply to it.

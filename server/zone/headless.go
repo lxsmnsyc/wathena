@@ -517,12 +517,71 @@ func (h *Headless) FloorItems(id uint32) int {
 	}
 	for _, f := range h.z.falling {
 		for _, it := range f.items {
-			if it == id {
-				n++
+			if it.id == id {
+				n += max(it.amount, 1)
 			}
 		}
 	}
 	return n
+}
+
+// TakeFloorItems puts every item lying on the map in a player's
+// inventory, without pick-up rights or distance, for Go tests of mods.
+// Items that do not fit stay.
+func (h *Headless) TakeFloorItems(player int64) error {
+	p, err := h.player(player)
+	if err != nil {
+		return err
+	}
+	z := h.z
+	// Drops wait for their drop delay first.
+	for i := 0; i < 10 && len(z.falling) > 0; i++ {
+		h.step(z.now + 1000)
+	}
+	var items []*entity
+	for e := range z.entities.all() {
+		if e.item != nil {
+			items = append(items, e)
+		}
+	}
+	for _, e := range items {
+		g := e.item
+		if z.addCopy(p, g.id, g.amount, g.refine, g.cards, g.extra) == item.AddSuccess {
+			z.entities.remove(e)
+		}
+	}
+	h.step(0)
+	return nil
+}
+
+// EquipItem puts on a player's copy in a slot, for Go tests of mods.
+func (h *Headless) EquipItem(player int64, slot int) error {
+	p, err := h.player(player)
+	if err != nil {
+		return err
+	}
+	h.z.handle(command{player: p, equip: &equipCommand{slot: slot}})
+	h.step(0)
+	if p.inventory.Slots[slot].Equip == 0 {
+		return fmt.Errorf("slot %d did not go on", slot)
+	}
+	return nil
+}
+
+// Copies returns the slots of a player's copies of an item, by slot, for
+// Go tests of mods.
+func (h *Headless) Copies(player int64, itemID uint32) (map[int]item.Slot, error) {
+	p, err := h.player(player)
+	if err != nil {
+		return nil, err
+	}
+	out := map[int]item.Slot{}
+	for i, s := range p.inventory.Slots {
+		if s.ID == itemID {
+			out[i] = s
+		}
+	}
+	return out, nil
 }
 
 // Now returns the server time.

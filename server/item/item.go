@@ -97,6 +97,9 @@ type Def struct {
 	// Static are Bonuses read and checked, in order. The mod loader sets
 	// them.
 	Static []*bonus.Bonus `json:"-"`
+	// Rolls are the item's rolled values (strategy section 5.4), by
+	// name. Each new copy gets a value for each.
+	Rolls map[string]*RollDef `json:"rolls"`
 	// Unsupported says why the server cannot run the item's script yet.
 	// Using such an item is refused before it is spent.
 	Unsupported string `json:"unsupported"`

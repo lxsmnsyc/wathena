@@ -1,7 +1,14 @@
 import type { AssetStore } from '../assets/store';
 import { DropItemFailure, StatId, UseItemFailure } from '../gen/wathena/v1/event_pb';
 import { NO_CARD_TARGET, canEquip, cardNames, cardTargets, stackLabel } from './equipment';
-import { type ItemTexts, renderDescription } from './itemText';
+import {
+  type ItemTexts,
+  type OptionLine,
+  type RollLine,
+  optionText,
+  renderDescription,
+  rollText,
+} from './itemText';
 
 // The inventory window, as RO's Alt+E window: each slot's icon, item and
 // amount, and the weight. Worn items show in the equipment window
@@ -29,10 +36,24 @@ export interface Stack {
   location: number;
   /** Whether the item is a card. */
   card: boolean;
+  /** The copy's rolled values. */
+  rolls: RollLine[];
+  /** The rolls of each card, in the order of cards. */
+  cardRolls: RollLine[][];
+  /** The copy's random options. */
+  options: OptionLine[];
 }
 
+/** The rolls of a slot, as ItemRollsChange. */
+export type StackRolls = Pick<Stack, 'rolls' | 'cardRolls' | 'options'>;
+
 /** The parts of a stack the server can leave out. They default to none. */
-export type StackDetails = Partial<Pick<Stack, 'equip' | 'refine' | 'cards' | 'location' | 'card'>>;
+export type StackDetails = Partial<
+  Pick<
+    Stack,
+    'equip' | 'refine' | 'cards' | 'location' | 'card' | 'rolls' | 'cardRolls' | 'options'
+  >
+>;
 
 /** A slot as the server sends it: slot, item and amount, and the details it has. */
 export type StackInput = Pick<Stack, 'slot' | 'itemId' | 'amount'> & StackDetails;
@@ -47,7 +68,49 @@ function stack(s: StackInput): Stack {
     cards: [...(s.cards ?? [])],
     location: s.location ?? 0,
     card: s.card ?? false,
+    rolls: [...(s.rolls ?? [])],
+    cardRolls: (s.cardRolls ?? []).map((r) => [...r]),
+    options: [...(s.options ?? [])],
   };
+}
+
+/** The roll fields of InventoryItem, InventoryAdd and ItemRollsChange. */
+export interface RollFields {
+  rolls: readonly RollLine[];
+  cardRolls: readonly { rolls: readonly RollLine[] }[];
+  options: readonly OptionLine[];
+}
+
+/** Copies the roll fields of a message into plain lines. */
+export function stackRolls(m: RollFields): StackRolls {
+  const roll = (r: RollLine): RollLine => ({
+    label: r.label,
+    value: r.value,
+    known: r.known,
+    min: r.min,
+    max: r.max,
+    unit: r.unit,
+  });
+  return {
+    rolls: m.rolls.map(roll),
+    cardRolls: m.cardRolls.map((c) => c.rolls.map(roll)),
+    options: m.options.map((o) => ({ label: o.label, value: o.value, unit: o.unit, flag: o.flag })),
+  };
+}
+
+/**
+ * The lines a copy's rolls add to its description: its rolls, each card's
+ * rolls after the card's name, and its random options.
+ */
+export function rollLines(s: Stack, label: (itemId: number) => string): string[] {
+  const out = s.rolls.map(rollText);
+  s.cardRolls.forEach((rolls, i) => {
+    const card = s.cards[i];
+    for (const r of rolls) {
+      out.push(`${card === undefined ? 'Card' : label(card)}: ${rollText(r)}`);
+    }
+  });
+  return [...out, ...s.options.map(optionText)];
 }
 
 /** The inventory as the server last described it. */
@@ -120,6 +183,16 @@ export class InventoryModel {
    */
   cardInserted(equipSlot: number, cardId: number): void {
     this.slots.get(equipSlot)?.cards.push(cardId);
+  }
+
+  /** Replaces a slot's rolls, as ItemRollsChange. */
+  rollsChanged(slot: number, rolls: StackRolls): void {
+    const s = this.slots.get(slot);
+    if (s !== undefined) {
+      s.rolls = [...rolls.rolls];
+      s.cardRolls = rolls.cardRolls.map((r) => [...r]);
+      s.options = [...rolls.options];
+    }
   }
 
   get(slot: number): Stack | undefined {
@@ -268,6 +341,7 @@ export class InventoryWindow {
   private readonly detail: HTMLDivElement;
   private readonly detailName: HTMLDivElement;
   private readonly detailCards: HTMLDivElement;
+  private readonly detailRolls: HTMLDivElement;
   private readonly detailText: HTMLDivElement;
   private readonly picker: HTMLDivElement;
   private readonly pickerPrompt: HTMLDivElement;
@@ -350,8 +424,10 @@ export class InventoryWindow {
     this.detailName.className = 'item-detail-name';
     this.detailCards = document.createElement('div');
     this.detailCards.className = 'item-detail-cards';
+    this.detailRolls = document.createElement('div');
+    this.detailRolls.className = 'item-detail-rolls';
     this.detailText = document.createElement('div');
-    this.detail.append(this.detailName, this.detailCards, this.detailText);
+    this.detail.append(this.detailName, this.detailCards, this.detailRolls, this.detailText);
     this.picker = document.createElement('div');
     this.picker.className = 'card-picker';
     this.picker.hidden = true;
@@ -571,6 +647,9 @@ export class InventoryWindow {
     const cards = cardNames(s, label);
     this.detailCards.textContent = cards.length > 0 ? `Cards: ${cards.join(', ')}` : '';
     this.detailCards.hidden = cards.length === 0;
+    const rolls = rollLines(s, label);
+    renderDescription(this.detailRolls, rolls);
+    this.detailRolls.hidden = rolls.length === 0;
     this.detail.hidden = false;
     this.texts
       .description(id)

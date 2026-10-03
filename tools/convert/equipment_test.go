@@ -226,7 +226,7 @@ func (f *equipFixture) equip(t *testing.T, job, level int, id, card uint32, refi
 		}
 	}
 	src := func(slot, c int, d *item.Def) []status.Bonus {
-		out := status.StaticBonuses(d)
+		out := status.StaticBonuses(d, nil)
 		path := f.paths[d.ID]
 		if path == "" {
 			return out

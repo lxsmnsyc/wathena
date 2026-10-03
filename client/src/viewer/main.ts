@@ -539,6 +539,9 @@ if (serverURL === null) {
   view.onCardInserted = (_cardSlot, equipSlot, cardId) => {
     inventory.cardInserted(equipSlot, cardId);
   };
+  view.onItemRollsChange = (slot, rolls) => {
+    inventory.rollsChanged(slot, rolls);
+  };
   // Equipment and card failures go to the chat log as notices.
   view.onEquipFailed = (_slot, reason) => {
     logNotice(equipMessage(reason));

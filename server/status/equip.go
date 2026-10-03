@@ -35,6 +35,10 @@ type Equipped struct {
 	Bonuses []Bonus
 	// Cards are the cards in its slots, in slot order.
 	Cards []Card
+	// Options are the bonuses of its random options, in option order.
+	// They run after every card, as status_calc_pc_sub's loop over
+	// random options.
+	Options []Bonus
 }
 
 // Card is a card in an equipped item.
@@ -54,10 +58,17 @@ type Bonus struct {
 
 // FromBonus makes a Bonus from a checked bonus whose values are fixed,
 // such as a static bonus of item data.
-func FromBonus(b *bonus.Bonus) Bonus {
+func FromBonus(b *bonus.Bonus) Bonus { return FromRolled(b, nil) }
+
+// FromRolled makes a Bonus from a static bonus whose numbers may read a
+// copy's rolls, as { roll: name }. roll may be nil for none.
+func FromRolled(b *bonus.Bonus, roll func(name string) (int, bool)) Bonus {
+	if roll == nil {
+		roll = func(string) (int, bool) { return 0, false }
+	}
 	out := Bonus{Name: b.Name, Chance: b.Options.Chance.Value, Options: &b.Options}
 	for _, a := range b.Args {
-		out.Args = append(out.Args, a.Value)
+		out.Args = append(out.Args, a.Resolve(roll))
 	}
 	return out
 }
@@ -166,6 +177,12 @@ type BonusSource func(slot, card int, d *item.Def) []Bonus
 // an item in two positions is one Equipped. Items and cards the table
 // lacks are left out. src may be nil for no bonuses.
 func Wear(inv *item.Inventory, t *item.Table, src BonusSource) *Equipment {
+	return WearOptions(inv, t, src, nil)
+}
+
+// WearOptions is Wear with the random options of each copy: find returns
+// an option's data. A nil find leaves options out.
+func WearOptions(inv *item.Inventory, t *item.Table, src BonusSource, find func(name string) *item.RandomOption) *Equipment {
 	e := &Equipment{Worn: inv.Worn(t), MapType: item.MapNormal}
 	bySlot := map[int]*Equipped{}
 	for i, slot := range e.Worn.Index {
@@ -194,6 +211,9 @@ func Wear(inv *item.Inventory, t *item.Table, src BonusSource) *Equipment {
 				}
 				eq.Cards = append(eq.Cards, card)
 			}
+			if find != nil {
+				eq.Options = OptionBonuses(s.Options, find)
+			}
 			bySlot[slot] = eq
 		}
 		e.Items[i] = eq
@@ -201,11 +221,47 @@ func Wear(inv *item.Inventory, t *item.Table, src BonusSource) *Equipment {
 	return e
 }
 
-// StaticBonuses are an item's static bonuses as Bonus values.
-func StaticBonuses(d *item.Def) []Bonus {
+// StaticBonuses are an item's static bonuses as Bonus values, with the
+// copy's rolls. A roll the copy lacks reads its default.
+func StaticBonuses(d *item.Def, rolls item.Rolls) []Bonus {
 	out := make([]Bonus, 0, len(d.Static))
+	roll := func(name string) (int, bool) {
+		if v, ok := rolls.Get(name); ok {
+			return v, true
+		}
+		if r := d.Rolls[name]; r != nil {
+			return r.Default, true
+		}
+		return 0, false
+	}
 	for _, b := range d.Static {
-		out = append(out, FromBonus(b))
+		out = append(out, FromRolled(b, roll))
+	}
+	return out
+}
+
+// OptionBonuses are the bonuses of a copy's random options, in option
+// order. find returns an option's data, or nil for one the world lacks,
+// which gives nothing.
+func OptionBonuses(opts []item.Option, find func(name string) *item.RandomOption) []Bonus {
+	var out []Bonus
+	for _, o := range opts {
+		d := find(o.Name)
+		if d == nil {
+			continue
+		}
+		roll := func(name string) (int, bool) {
+			switch name {
+			case "value":
+				return o.Value, true
+			case "param":
+				return o.Param, true
+			}
+			return 0, false
+		}
+		for _, b := range d.Static {
+			out = append(out, FromRolled(b, roll))
+		}
 	}
 	return out
 }

@@ -7,7 +7,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `zone` | One map: its players and monsters, local chat to every player within 9 cells of the speaker, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. Monsters run rAthena's AI and use their skills (see "Monster AI and monster skills"). Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. A kill gives exp to the players who fought the monster and drops items around it. Items lie on the ground for a minute, and players pick them up with the looter rights rAthena gives the top attackers. Each player has rAthena's inventory: 100 slots, stacks up to 30000, and a weight limit that pick-ups respect. Players use items, whose scripts run in Lua (see "Item scripts"), and drop items at their feet with no looter rights. HP and SP regenerate as rAthena's natural regen, which stops from 70% weight in renewal (50% in pre-renewal). From 90% weight, attacks stop. Warps send a player who steps into their area to their target, as rAthena's `npc_touch_areanpc` and `pc_setpos`: to another map as a message to that map's zone, or within the map. A zone without players sleeps. Each tick finds what a player sees through an index of 8 × 8 cell blocks, as rAthena's `BLOCK_SIZE`, and hands its messages to a sender goroutine in one batch (see "Load tests and metrics"). |
 | `metrics` | Measurements for the budgets in strategy section 3.8: tick work per zone, garbage collector pauses, CPU, memory, goroutines, and bytes per connection. A zone over its tick budget for 10 ticks in a row logs a warning and can write a CPU profile. See "Load tests and metrics". |
 | `world` | Several zones in one process, one goroutine per map. It finds zones by map name, puts a joining character in the zone of its saved map, and waits at shutdown for every zone and every player between zones. `LoadWarps` reads `reference/rathena/extracts/<mode>/warps.json`. |
-| `item` | The inventory, ported from rAthena's `pc_additem`, `pc_delitem` and `pc_inventoryblank`, the overweight levels of `pc_updateweightstatus`, the heal of `pc_itemheal` and `pc_percentheal`, and the item groups of `getgroupitem`, with the item data from `reference/rathena/extracts/<mode>/items.json`, `equipment.json` and `item_groups.json`. Equipping, ported from `pc_equippoint`, `pc_isequip`, `pc_equipitem`, `pc_unequipitem`, `pc_setequipindex`, `pc_calcweapontype` and `pc_insert_card` (see "Equipment"). |
+| `item` | The inventory, ported from rAthena's `pc_additem`, `pc_delitem` and `pc_inventoryblank`, the overweight levels of `pc_updateweightstatus`, the heal of `pc_itemheal` and `pc_percentheal`, and the item groups of `getgroupitem`, with the item data from `reference/rathena/extracts/<mode>/items.json`, `equipment.json` and `item_groups.json`. Equipping, ported from `pc_equippoint`, `pc_isequip`, `pc_equipitem`, `pc_unequipitem`, `pc_setequipindex`, `pc_calcweapontype` and `pc_insert_card` (see "Equipment"). Rolled values and random options, with `s_random_opt_group::apply` (see "Rolled item values"). |
 | `battle` | Attacks, ported from rAthena's `battle.cpp` in renewal mode and checked against the recorded reference, with the equipment bonuses of both sides (`battle_calc_cardfix`, `battle_absorb_damage` and the player target's defense). |
 | `status` | Player stats from job, levels, raised stats, skills and equipment, ported from rAthena's `status_calc_pc` and `pc_bonus`, in both modes, and checked against every recorded player, every equipment item and card of `item_bonuses.json`, and every level of `refine.json`. Raising stats with status points, ported from `pc_statusup`, `pc_need_status_point` and `pc_maxparameter`, with the costs of both modes and the job limits from `conf/battle/player.conf`. |
 | `statuschange` | Status effects, ported from rAthena's `status_change_start`, `status_change_end`, `status_change_clear`, `status_change_timer` and `status_get_sc_def`, with the data of `status.yml` from `reference/rathena/extracts/<mode>/status.json`, and checked against every case of `status_effects.json` (see "Status effects"). |
@@ -119,7 +119,7 @@ With a database:
 - With `--dev`, a token that is a new name makes an account and a character of that name, marked as a dev account. Dev accounts have no password and cannot log in on the account pages.
 - Characters load when they log in and are saved every 30 seconds when they changed, when they log out, and when the server stops (Ctrl+C or SIGTERM).
 - Characters are also saved when they arrive on another map, at their new cell.
-- The level, exp, status and skill points, raised stats, HP, SP, map and position, look, zeny and inventory are saved. Items keep their serial numbers.
+- The level, exp, status and skill points, raised stats, HP, SP, map and position, look, zeny and inventory are saved. Items keep their serial numbers, and their rolled values and random options (migration 00013, "Rolled item values").
 
 A local database in Docker:
 
@@ -529,6 +529,31 @@ go run ./server/cmd/waserver --assets /path/to/build --map prt_fild03 --dev
 ```
 
 Left: MVP tombs, monster level ups, guardians, monsters that follow a player through a warp, the mode change of `NPC_EMOTION`, and the `NPC_` skills that `docs/generated/monster-skills-<mode>.md` lists without a port.
+
+## Rolled item values
+
+Items can roll values when a copy is made, and rAthena's random options roll on the same storage ([decision 0014](../docs/decisions/0014-rolled-items.md), strategy section 5.4). The package `item` holds the rolls and their distributions (`roll.go`) and the port of `s_random_opt_group::apply` (`random.go`). The zone rolls them (`rolls.go`):
+
+- **Drops.** Each item a monster drops, and each MVP prize, rolls its values from the zone's secret random stream, through the mods' `item_roll` hooks. A drop with a random option group rolls its options, as `mob_setdropitem_option`. Monsters that loot keep the rolls of what they pick up, and drop them when they die.
+- **The `item_rolls` flag.** Off, the default of core's rulesets, every roll is its default, as rAthena. Random options roll either way.
+- **Gives and shops.** `player:give_item` uses the defaults unless the script asks for `"random"` or sets values. NPC shops sell copies at their defaults. `player:give_item_from_group` rolls an equipment entry's random options, as `getgroupitem`.
+- **Stats.** Static bonuses read the copy's rolls (`{ roll: name }`), and a card's bonuses the card's rolls. Random options apply after every card, as `status_calc_pc_sub`. `equipped:set_roll` and `equipped:reroll` start the copy's equip scripts again once the script's call returns.
+- **Stacking.** A stack is the item plus its rolls and options. Unidentified copies with hidden rolls never stack. A part of a stack picked up from the ground gets a new serial, and the server logs `item split` with the serial of the stack it came from.
+- **Messages.** `InventoryItem`, `InventoryAdd` and `ItemRollsChange` carry each roll with its label, range and unit, each card's rolls, and the random options with their display names. A hidden roll of an unidentified copy goes without its value. The web client shows them in the item's description, such as "LUK +2 (1 to 5)" and "MaxHP +51".
+- **Storage.** Migration 00013 adds the `rolls`, `card_rolls` and `random_options` JSONB columns and `identified` to `inventory`. Options are saved by name. When a character enters a zone, values outside a roll's range are clamped, and rolls and options the data no longer has are dropped. The server logs each change as `item rolls fixed on load`.
+
+Core's random options come from the extract `random_options.json` (reference/rathena/README.md, "Random options"). In renewal, 239 of 249 options and all 108 groups convert ([docs/generated/random-options-renewal.md](../docs/generated/random-options-renewal.md)). Pre-renewal has none, as rAthena.
+
+Parity with rAthena's `random_option_rolls.json`, from `go test ./server/gamedata -run TestRandomOptionParity`:
+
+| Mode | Groups | Options with every draw at its lowest | Seeded statistics (100,000 rolls per group) | Monster drops with a group |
+|---|---:|---:|---:|---:|
+| renewal | 108 | 108 of 108 groups | 3,363 of 3,363 option cells within 6 standard errors | 179 of 179 |
+| pre-renewal | 0 | none | none | none |
+
+The roll distributions are checked by `go test ./server/item -run TestRollDistributions`: 100,000 draws of each distribution stay in their range and pass a chi-square test.
+
+To try it, load the sample mod [examples/lucky-clover](../mods/examples/lucky-clover) with a ruleset mod that turns `item_rolls` on ([mods/README.md](../mods/README.md), "Rulesets"), kill Clover Porings on `prt_fild09`, pick up a charm, and select it in the inventory window (Alt+E). Its description shows its rolls and its random option.
 
 ## NPCs
 

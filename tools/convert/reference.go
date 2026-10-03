@@ -30,6 +30,8 @@ type Core struct {
 	Monsters map[string]int64
 	// MonsterSkills are the converted monster skills.
 	MonsterSkills *MonsterResult
+	// RandomOptions are the converted random options and groups.
+	RandomOptions *RandomOptionResult
 }
 
 // Reference converts the item scripts of a mode's extracts.
@@ -48,8 +50,8 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 	read := func(name string) ([]byte, error) {
 		return reference.ReadFile("extracts/" + string(mode) + "/" + name + ".json")
 	}
-	var in [7][]byte
-	for i, name := range []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills"} {
+	var in [8][]byte
+	for i, name := range []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills", "random_options"} {
 		data, err := read(name)
 		if err != nil {
 			return nil, err
@@ -68,6 +70,10 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 		return nil, err
 	}
 	mobs, err := ConvertMonsters(MonsterInput{Monsters: bytes.NewReader(in[5]), Constants: bytes.NewReader(in[1]), Skills: bytes.NewReader(in[6])})
+	if err != nil {
+		return nil, err
+	}
+	opts, err := res.ConvertRandomOptions(bytes.NewReader(in[7]))
 	if err != nil {
 		return nil, err
 	}
@@ -93,12 +99,12 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 		monsters[strings.ToUpper(m.Sprite)] = m.ID
 	}
 	files := fstest.MapFS{}
-	for _, part := range []map[string]string{res.Files(), npcs.Files(), mobs.Files()} {
+	for _, part := range []map[string]string{res.Files(), npcs.Files(), mobs.Files(), opts.Files()} {
 		for path, content := range part {
 			files[path] = &fstest.MapFile{Data: []byte(content), Mode: 0o444}
 		}
 	}
-	return &Core{Result: res, NPCs: npcs, Files: files, Constants: consts, Groups: &groups, Monsters: monsters, MonsterSkills: mobs}, nil
+	return &Core{Result: res, NPCs: npcs, Files: files, Constants: consts, Groups: &groups, Monsters: monsters, MonsterSkills: mobs, RandomOptions: opts}, nil
 }
 
 // FS returns the generated files as a read-only file system.

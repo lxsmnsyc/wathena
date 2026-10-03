@@ -97,7 +97,7 @@ Permission: `rules.override`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `wa.HookName` | The hook's name. An unknown name raises an error. |
-| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice, next: fun(object?: table): integer\|boolean\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?): integer\|boolean\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none. |
+| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice\|wa.ItemRoll, next: fun(object?: table): integer\|boolean\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?): integer\|boolean\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range. |
 | `options` | `wa.HookOptions?` |  |
 
 ### wa.schedules
@@ -1396,6 +1396,71 @@ An equipped copy: the instance of an equip context, or what player:get_equipped 
 | `weapon_type` | `integer` |  |
 | `weapon_level` | `integer` |  |
 | `armor_level` | `integer` |  |
+| `rolls` | `table<string, integer>` | The copy's rolled values by name, such as rolls.boss_damage. In a card's script, the card's own rolls. Read-only. |
+| `cards` | `wa.CardRolls[]` | The cards in the copy's slots, in slot order, with their rolls. |
+| `random_options` | `wa.RandomOption[]` | The copy's random options, in option order. |
+
+#### `equippedItem:set_roll(name, value)`
+
+Sets one rolled value. The copy's equip scripts start again after the call, so they read the new value.
+
+Permission: `items.modify_rolls`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A roll of the item, or of the card for a card's copy. |
+| `value` | `integer` | Clamped to the roll's range. |
+
+#### `equippedItem:reroll(name?)`
+
+Rolls values again, as a random give: from the roll's distribution when the item_rolls flag is on, the default otherwise, through the item_roll hooks with source kind "script".
+
+Permission: `items.modify_rolls`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string?` | One roll. Every roll without it. |
+
+### wa.CardRolls
+
+A card in an equipped copy's slots.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | The card's item ID. |
+| `rolls` | `table<string, integer>` | The card's rolled values by name. |
+
+### wa.RandomOption
+
+A random option of a copy, as rAthena's random options.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `option` | `string` | The option's name in data/random_options.yml, such as max_hp. |
+| `value` | `integer` |  |
+| `param` | `integer` |  |
+
+### wa.ItemRoll
+
+The object of the item_roll hook: one roll of a new copy. The innermost result is the server's roll: from the roll's distribution when the item_rolls flag is on and the copy is rolled, the default otherwise.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | The item's ID. |
+| `name` | `string` | The roll's name. |
+| `min` | `integer` |  |
+| `max` | `integer` |  |
+| `default` | `integer` |  |
+| `source` | `wa.ItemRollSource` | Where the copy comes from. |
+
+### wa.ItemRollSource
+
+Where a rolled copy comes from: a monster's drop, a script, or an NPC shop.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | `"drop"\|"script"\|"shop"` |  |
+| `monster` | `wa.Monster?` | The killed monster, for a drop. |
 
 ### wa.Conversation
 
@@ -1959,6 +2024,7 @@ Options of player:give_item.
 | Field | Type | Meaning |
 |---|---|---|
 | `rent_seconds` | `integer?` | Gives rentals, as rentitem. Rentals do not expire yet. |
+| `roll` | `"random"\|"default"\|table<string, integer>\|nil` | How the copies' rolls are set: "random" rolls each value, "default" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code. |
 
 ### wa.WithBonusesOptions
 
@@ -2372,7 +2438,7 @@ An equipment slot.
 
 A hook name of wa.hooks.
 
-`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`
+`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`
 
 ### wa.MonsterState
 

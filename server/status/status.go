@@ -651,6 +651,20 @@ func (p *pc) calcBase() data {
 		}
 	}
 
+	// Random options, by the slot of the item that has them, after every
+	// card. The left hand's weapon options apply to the left hand.
+	for i := range item.EqiMax {
+		e := p.eq.Items[i]
+		if e == nil || i == item.EqiAmmo || p.sameEquipIndex(i) || len(e.Options) == 0 || p.restricted(e.Def) {
+			continue
+		}
+		lr := lrNone
+		if i == item.EqiHandL && e.Position == item.EqpHandL {
+			lr = lrWeapon
+		}
+		pb.run(e.Options, lr, &b)
+	}
+
 	// Status scripts, then timed bonuses (pc_bonus_script).
 	pb.run(c.StatusBonuses, lrNone, &b)
 	pb.run(c.TimedBonuses, lrNone, &b)

@@ -575,8 +575,9 @@ func TestScriptsAndModulePaths(t *testing.T) {
 // TestSampleMod loads mods/examples, which the docs point mod authors to.
 func TestSampleMod(t *testing.T) {
 	s, err := resolve(t, filepath.Join("..", "..", "mods", "examples"), Config{Approve: map[string][]string{
-		"example.halloween": {"player.give_items", "world.announce", "events.schedule", "rules.override"},
-		"example.wolf-pack": {"rules.override"},
+		"example.halloween":    {"player.give_items", "world.announce", "events.schedule", "rules.override"},
+		"example.wolf-pack":    {"rules.override"},
+		"example.lucky-clover": {"rules.override", "items.modify_rolls", "player.give_items"},
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -593,7 +594,7 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 5 || npcs[0].DisplayName != "Greeter" || npcs[0].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 6 || npcs[0].DisplayName != "Greeter" || npcs[0].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
 	// The cookie stand is a shop that only scripts open.
@@ -605,7 +606,7 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("scripts %+v, %v", sc, err)
 	}
 	monsters, err := s.Monsters(func(name string) bool { return name == "PORING" || name == "JAKK" || name == "WOLF" })
-	if err != nil || len(monsters.Records) != 4 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
+	if err != nil || len(monsters.Records) != 5 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
 		t.Errorf("monsters %+v, %v", monsters, err)
 	}
 	events, err := s.Events()
