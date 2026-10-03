@@ -18,7 +18,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -35,6 +35,8 @@ Each file starts with `system`, `mode`, `rathena_git_hash`, `data_path`, and `ci
 | `pc_damage.json` | Normal attacks by level 99 players with every usable weapon type against five monsters. |
 | `skill_damage.json` | Every damaging skill of the first, second and transcendent job trees, at every level, against three monsters, with the ammunition a skill needs equipped and the learned skills of each player. Heal against two undead monsters. |
 | `skill_casting.json` | For each first, second and transcendent job and three stat builds, every skill of its tree that no earlier job recorded, at every level: cast time, after-cast delay, cooldown, requirements, and heals. |
+| `mob_ai.json` | Single decisions of the hard monster AI for every AI type: target search, hits, target changes, assists, loot, chase and cast sensor. |
+| `mob_skill_use.json` | For every monster with skills, which entry of its skill list it uses in each state and condition, and what the skill does. |
 | `skill_status.json` | For each second and transcendent class skill that starts a status, at every level: the statuses `skill_castend_nodamage_id` starts with their values and timers, the target's stats before and after, and a normal attack against a Golem before and after. |
 | `item_bonuses.json` | Changes from each equipment item and card, in stats, damage dealt, and damage taken. |
 | `refine.json` | Stats at every refine level for one armor and one weapon of each weapon level. |
@@ -146,6 +148,28 @@ The recorder changes are not in the fork yet. They are in two patches against fo
 WATHENA_RECORD_ONLY=skill_damage,skill_casting,skill_status bash tools/wathena/record.sh renewal pre-renewal
 python3 tools/wathena/extract.py
 ```
+
+## Monsters
+
+Monster stats, skills and AI read one extract and two recordings per mode ([decision 0013](../../docs/decisions/0013-monster-ai.md)):
+
+- `extracts/<mode>/monsters.json`: `mob_db.yml` as `MobDatabase` loads it, before `status_calc_misc`, with the AI type, the modes, the `mob_skill_db.txt` rows of each monster in file order, and `mob_chat_db.yml`. The file's `note` lists the details.
+- `mob_ai.json`: single calls of `mob_ai_sub_hard`, `mob_set_attacked_id` and `unit_skilluse_id` with a probe monster of each AI type on an open part of `prt_fild08`. The file's `note` lists the cases and results.
+- `mob_skill_use.json`: for every monster with skills, every entry in each case of its condition: which entry `mobskill_use` or `mobskill_event` picks, its target and cast time, and what the skill did to the player and the monster.
+
+| Mode | Monsters | With skills | Skill rows | `mob_ai.json` | `mob_skill_use.json` |
+|---|---:|---:|---:|---:|---:|
+| renewal | 2,675 | 1,941 | 14,514 | 2,814 cases | 22,189 cases, 18,232 used |
+| pre-renewal | 1,004 | 703 | 5,494 | 2,814 cases | 8,594 cases, 7,213 used |
+
+They come from rAthena fork commit `ecf13b511`, which adds `build_monsters` to `tools/wathena/extract.py`, `record_mob_ai` and `record_mob_skill_use` to the recorder, and two small hooks in `mob.cpp` for the recorder. With it:
+
+```text
+WATHENA_RECORD_ONLY=mob_ai,mob_skill_use bash tools/wathena/record.sh renewal pre-renewal
+python3 tools/wathena/extract.py
+```
+
+`mob_status.json` stays. The parity test of monster stats compares it with the stats that `server/mob` computes from `monsters.json`.
 
 ## How random rolls are recorded
 

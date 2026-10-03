@@ -14,7 +14,7 @@ func fighters(t *testing.T, mobHP int, mode uint32) (*Zone, *Player, *entity) {
 	// Both sides always hit for 10. The bare-handed player deals twice its
 	// status ATK.
 	mob := &battle.Status{MaxHP: mobHP, Hit: 200, ADelay: 1000, AMotion: 500, DMotion: 300, Mode: mode, RHW: battle.Weapon{Atk: 10, Atk2: 10, Range: 1}}
-	spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, Status: mob, RespawnMs: 5000}}
+	spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, ViewRange: 10, ChaseRange: 12, Status: mob, RespawnMs: 5000}}
 	z := New("map/test", open(40), rng.FromKey([32]byte{2}).Stream(), spawns)
 	z.PlayerStatus = battle.Status{MaxHP: 100, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	p := add(z, "a")
@@ -74,7 +74,7 @@ func TestAttackUntilDeathAndRespawn(t *testing.T) {
 }
 
 func TestMonsterStrikesBackAndPlayerRevives(t *testing.T) {
-	z, p, m := fighters(t, 1000, modeCanAttack)
+	z, p, m := fighters(t, 1000, modeCanAttack|1)
 	id := p.netIDs.id(m)
 	z.handle(command{player: p, seq: 1, attack: &attackCommand{target: id, repeat: false}})
 	for now := int64(100); now <= 2000; now += 50 {

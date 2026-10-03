@@ -299,9 +299,9 @@ func (statusRecovery) castendNoDamage(z *Zone, src, target *entity, d *skill.Def
 			sc.SCWhiteimprison} {
 			z.scEnd(target, typ)
 		}
-		if target.monster != nil {
+		if target.monster != nil && target.status != nil {
 			// mob_unlocktarget: the monster goes back to idle.
-			target.target, target.repeat = nil, false
+			z.mobUnlockTarget(target)
 		}
 	}
 	z.scEnd(target, sc.SCNetherworld)

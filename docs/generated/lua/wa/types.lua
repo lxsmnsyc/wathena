@@ -194,6 +194,18 @@
 ---| "cast_time"
 ---| "skill_cost"
 ---| "cast_allowed"
+---| "monster_target"
+
+---A monster's skill state, in the words of rAthena's mob_skill_db.
+---@alias wa.MonsterState
+---| "idle"
+---| "walk"
+---| "loot"
+---| "dead"
+---| "attack"
+---| "angry"
+---| "chase"
+---| "follow"
 
 ---A day of the week.
 ---@alias wa.Weekday
@@ -446,7 +458,7 @@ function wa_Player:get_status(status) end
 ---@return wa.Status[]
 function wa_Player:get_statuses() end
 
----A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.
+---A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read. The methods control its AI, as rAthena's unit script commands. They raise an error once the monster is gone.
 ---@class wa.Monster
 ---@field kind "monster" The entity's kind.
 ---@field id integer The monster's ID, such as 1002.
@@ -458,6 +470,9 @@ function wa_Player:get_statuses() end
 ---@field x integer
 ---@field y integer
 ---@field is_alive boolean
+---@field target wa.Player|wa.Monster|wa.Npc|nil The unit its AI follows (target_id), or nil.
+---@field state wa.MonsterState Its skill state, in rAthena's words.
+---@field master wa.Player|wa.Monster|nil The unit that summoned it as a slave, or nil.
 local wa_Monster = {}
 
 ---Plays an effect on the monster for everyone near, as specialeffect.
@@ -474,6 +489,34 @@ function wa_Monster:find_nearby(query) end
 ---False once the entity is removed, has logged out, or has left the zone. It never raises an error.
 ---@return boolean
 function wa_Monster:exists() end
+
+---The monster takes the target and chases it to attack, as unitattack. Returns false when it cannot target it.
+---@param target wa.Player|wa.Monster|wa.Npc
+---@return boolean
+function wa_Monster:set_target(target) end
+
+---The monster drops its target and goes idle, as mob_unlocktarget.
+function wa_Monster:clear_target() end
+
+---The monster walks to a cell, as unitwalk. Its AI waits until it gets there. Returns false when it cannot walk there.
+---@param x integer
+---@param y integer
+---@return boolean
+function wa_Monster:walk_to(x, y) end
+
+---The monster uses a skill with the skill's own cast time, as unitskilluseid. No delay of its skills list applies. Returns false when the cast does not start.
+---@param skill integer From skills.id.
+---@param level integer 1 to 100.
+---@param target wa.Player|wa.Monster|wa.Npc The target, or its cell for a ground skill. The monster itself for a skill on itself.
+---@return boolean
+function wa_Monster:use_skill(skill, level, target) end
+
+---The monster says a line to the players near it, after its name, as unittalk.
+---@param text string 1 to 255 bytes.
+function wa_Monster:talk(text) end
+
+---The monster stops walking and attacking, and drops its target, as unitstop.
+function wa_Monster:stop() end
 
 ---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
 ---@param status integer A status from wa.statuses.
@@ -927,6 +970,14 @@ local wa_PassiveSkillInstance = {}
 ---@field sp integer? skill_cost: the SP cost.
 ---@field allowed boolean? cast_allowed: whether rAthena lets the cast start.
 local wa_SkillHook = {}
+
+---The object of the monster_target hook: a monster's AI chooses a target. The innermost result is current, rAthena's choice.
+---@class wa.MonsterTargetChoice
+---@field monster wa.Monster The monster that chooses.
+---@field candidates (wa.Player|wa.Monster|wa.Npc)[] The units it may take. The hook returns one of them, or nil.
+---@field current wa.Player|wa.Monster|wa.Npc|nil rAthena's choice: the target the monster takes without hooks.
+---@field reason "aggressive"|"assist"|"hit"|"change" Why it chooses: it looks for a target, a monster of its kind calls for help, a unit hit it, or it changes chase target.
+local wa_MonsterTargetChoice = {}
 
 ---A query of maps.find_entities. It has one area: around with radius, x and y with radius, rectangle, line, or cells. The other fields filter and sort.
 ---@class wa.EntityQuery

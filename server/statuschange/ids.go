@@ -340,3 +340,11 @@ const (
 	SCAdaptation      = 702 // SC_ADAPTATION
 	SCEnsemblefatigue = 745 // SC_ENSEMBLEFATIGUE
 )
+
+// Status IDs of monster skills, as rAthena's sc_type.
+const (
+	SCKeeping    = 66  // SC_KEEPING
+	SCBarrier    = 67  // SC_BARRIER
+	SCRebirth    = 284 // SC_REBIRTH
+	SCInvincible = 295 // SC_INVINCIBLE
+)

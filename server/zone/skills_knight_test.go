@@ -49,6 +49,10 @@ func knightZone(t *testing.T, mode reference.Mode, weapon uint32, golems int) (*
 		e.monster.spawn.Status = &st
 		e.hp = 1000000
 		e.monster.spawn.CanMove = false
+		if e.status != nil {
+			// The monster AI does not move a monster without can_move.
+			e.status.Mode &^= 1
+		}
 		out = append(out, e)
 	}
 	return z, p, out

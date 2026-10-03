@@ -25,7 +25,8 @@ func (z *Zone) defenderFor(src, t *entity, lv int) *battle.Status {
 	l := t.sc
 	if st == nil || l.Empty() || !l.Has(sc.SCSafetywall) && !l.Has(sc.SCPneuma) && !l.Has(sc.SCEnergycoat) &&
 		!l.Has(sc.SCKyrie) && !l.Has(sc.SCAeterna) && !l.Has(sc.SCParrying) && !l.Has(sc.SCRaid) &&
-		!l.Has(sc.SCRejectsword) && !l.Has(sc.SCSpiderweb) && !l.Has(sc.SCAutoguard) {
+		!l.Has(sc.SCRejectsword) && !l.Has(sc.SCSpiderweb) && !l.Has(sc.SCAutoguard) &&
+		!l.Has(scMillenniumshield) && !l.Has(scDamageHeal) {
 		return withHP(st, t.hp)
 	}
 	cp := *st
@@ -96,6 +97,9 @@ func (z *Zone) blockDamage(src, t *entity, flag, skillID, lv int, dmg int64) boo
 	if l.Has(sc.SCPneuma) && flag&(battle.FlagMagic|battle.FlagLong) == battle.FlagLong {
 		return true
 	}
+	if z.millenniumShield(src, t, dmg) {
+		return true
+	}
 	if z.autoGuard(src, t, flag, skillID, lv) {
 		return true
 	}
@@ -118,7 +122,7 @@ func (z *Zone) blockDamage(src, t *entity, flag, skillID, lv int, dmg int64) boo
 		}
 		return true
 	}
-	return false
+	return z.damageHeal(t, flag, dmg)
 }
 
 // idCartTermination is WS_CARTTERMINATION, which Parrying cannot block.

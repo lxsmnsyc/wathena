@@ -106,8 +106,8 @@ var Modules = []Module{
 		Name: "wa.context", Local: "context",
 		Doc: "The current instance, kind and mod. Calls outside a setup function or a handler raise an error.",
 		Methods: []Func{
-			{Name: "get_instance", Returns: "wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance|wa.SkillInstance|wa.PassiveSkillInstance",
-				Doc: "The instance the context owns: the mod, the NPC, the equipped copy, the used item, the event run, the skill, or a passive skill of one owner."},
+			{Name: "get_instance", Returns: "wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance|wa.SkillInstance|wa.PassiveSkillInstance|wa.Monster",
+				Doc: "The instance the context owns: the mod, the NPC, the equipped copy, the used item, the event run, the skill, a passive skill of one owner, or the monster of a monster's AI script."},
 			{Name: "get_kind", Returns: "wa.ContextKind", Doc: "The context's kind."},
 			{Name: "get_mod", Returns: "string", Doc: "The ID of the context's mod."},
 		},
@@ -131,7 +131,7 @@ var Modules = []Module{
 		Funcs: []Func{{
 			Name: "on",
 			Params: []Param{{"name", "wa.HookName", "The hook's name. An unknown name raises an error."},
-				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook, next: fun(object?: table): integer|boolean, integer?): integer|boolean, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false."},
+				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice, next: fun(object?: table): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none."},
 				{"options", "wa.HookOptions?", ""}},
 			Returns:    "wa.HookHandle",
 			Doc:        "Adds a hook. Higher priority runs first; equal priorities run in the order they were added.",
@@ -391,7 +391,7 @@ var Classes = []Class{
 	},
 	{
 		Name: "wa.Monster", Handle: "monster",
-		Doc: "A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.",
+		Doc: "A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read. The methods control its AI, as rAthena's unit script commands. They raise an error once the monster is gone.",
 		Fields: []Field{
 			{"kind", `"monster"`, "The entity's kind."},
 			{"id", "integer", "The monster's ID, such as 1002."},
@@ -403,8 +403,21 @@ var Classes = []Class{
 			{"x", "integer", ""},
 			{"y", "integer", ""},
 			{"is_alive", "boolean", ""},
+			{"target", "wa.Player|wa.Monster|wa.Npc|nil", "The unit its AI follows (target_id), or nil."},
+			{"state", "wa.MonsterState", "Its skill state, in rAthena's words."},
+			{"master", "wa.Player|wa.Monster|nil", "The unit that summoned it as a slave, or nil."},
 		},
-		Methods: append([]Func{showEffect("monster"), findNearby, existsMethod}, statusMethods...),
+		Methods: append([]Func{showEffect("monster"), findNearby, existsMethod,
+			{Name: "set_target", Params: []Param{{"target", "wa.Player|wa.Monster|wa.Npc", ""}}, Returns: "boolean",
+				Doc: "The monster takes the target and chases it to attack, as unitattack. Returns false when it cannot target it."},
+			{Name: "clear_target", Doc: "The monster drops its target and goes idle, as mob_unlocktarget."},
+			{Name: "walk_to", Params: []Param{{"x", "integer", ""}, {"y", "integer", ""}}, Returns: "boolean",
+				Doc: "The monster walks to a cell, as unitwalk. Its AI waits until it gets there. Returns false when it cannot walk there."},
+			{Name: "use_skill", Params: []Param{{"skill", "integer", "From skills.id."}, {"level", "integer", "1 to 100."}, {"target", "wa.Player|wa.Monster|wa.Npc", "The target, or its cell for a ground skill. The monster itself for a skill on itself."}}, Returns: "boolean",
+				Doc: "The monster uses a skill with the skill's own cast time, as unitskilluseid. No delay of its skills list applies. Returns false when the cast does not start."},
+			{Name: "talk", Params: []Param{{"text", "string", "1 to 255 bytes."}}, Doc: "The monster says a line to the players near it, after its name, as unittalk."},
+			{Name: "stop", Doc: "The monster stops walking and attacking, and drops its target, as unitstop."},
+		}, statusMethods...),
 	},
 	{
 		Name: "wa.Npc", Handle: "npc",
@@ -665,6 +678,15 @@ var Classes = []Class{
 			{"milliseconds", "integer?", "cast_time: the cast time, after DEX and the cast bonuses."},
 			{"sp", "integer?", "skill_cost: the SP cost."},
 			{"allowed", "boolean?", "cast_allowed: whether rAthena lets the cast start."},
+		},
+	},
+	{
+		Name: "wa.MonsterTargetChoice", Doc: "The object of the monster_target hook: a monster's AI chooses a target. The innermost result is current, rAthena's choice.",
+		Fields: []Field{
+			{"monster", "wa.Monster", "The monster that chooses."},
+			{"candidates", "(wa.Player|wa.Monster|wa.Npc)[]", "The units it may take. The hook returns one of them, or nil."},
+			{"current", "wa.Player|wa.Monster|wa.Npc|nil", "rAthena's choice: the target the monster takes without hooks."},
+			{"reason", `"aggressive"|"assist"|"hit"|"change"`, "Why it chooses: it looks for a target, a monster of its kind calls for help, a unit hit it, or it changes chase target."},
 		},
 	},
 	{
@@ -936,7 +958,8 @@ func Aliases() []Alias {
 		{Name: "wa.EventName", Values: events, Doc: "An event name of wa.events."},
 		{Name: "wa.BonusName", Values: bonuses, Doc: "A bonus name of wa.bonuses (proposal 0002a)."},
 		{Name: "wa.EquipSlot", Values: EquipSlots, Doc: "An equipment slot."},
-		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
 	}
 }

@@ -90,6 +90,7 @@ var floraSummons = [5]uint32{1589, 1579, 1575, 1555, 1590}
 // Summoned monsters' AI, as rAthena's e_mob_ai.
 const (
 	aiNone   = 0
+	aiAttack = 1 // AI_ATTACK
 	aiFlora  = 2 // AI_FLORA
 	aiSphere = 3 // AI_SPHERE
 )
@@ -517,7 +518,7 @@ func (s summonPlant) castBegin(z *Zone, src *entity, d *skill.Def, lv int) wathe
 	same, all := 0, 0
 	for e := range z.entities.all() {
 		m := e.monster
-		if m == nil || m.master != src || m.ai != ai {
+		if m == nil || m.master != src || m.specialAI != ai {
 			continue
 		}
 		all++
@@ -578,7 +579,7 @@ func (z *Zone) summonMonster(src *entity, class uint32, x, y int, name string, a
 	if speed <= 0 {
 		speed = WalkSpeed
 	}
-	e := &entity{monster: &monster{spawn: &sp, nextWalk: -1, ai: ai}, x: x, y: y, dir: z.rand.IntN(8), speed: speed}
+	e := &entity{monster: &monster{spawn: &sp, nextWalk: -1, specialAI: ai}, x: x, y: y, dir: z.rand.IntN(8), speed: speed}
 	if sp.Status != nil {
 		st := *sp.Status
 		e.status, e.hp = &st, int64(st.MaxHP)
@@ -592,6 +593,7 @@ func (z *Zone) summonMonster(src *entity, class uint32, x, y int, name string, a
 		e.monster.deleteAt = z.now + lifetime
 	}
 	z.entities.add(e)
+	z.monsterSpawned(e)
 	return e
 }
 
@@ -629,6 +631,7 @@ func (z *Zone) freeMonster(e *entity) {
 	z.forget(e)
 	z.dropStatuses(e)
 	z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_TELEPORTED})
+	z.endMonsterScript(e)
 	if h := e.monster.handle; h != 0 {
 		delete(z.monsterHandles, h)
 	}

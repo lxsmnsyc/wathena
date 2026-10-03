@@ -65,9 +65,9 @@ func checkBlocks(t *testing.T, z *Zone) {
 // twinZone makes a zone with wandering monsters that fight back, and
 // warps within the map.
 func twinZone() *Zone {
-	mob := &battle.Status{MaxHP: 40, Hit: 200, ADelay: 1000, AMotion: 500, DMotion: 300, Mode: modeCanAttack, RHW: battle.Weapon{Atk: 30, Atk2: 30, Range: 1}}
+	mob := &battle.Status{MaxHP: 40, Hit: 200, ADelay: 1000, AMotion: 500, DMotion: 300, Mode: modeCanAttack | 1, RHW: battle.Weapon{Atk: 30, Atk2: 30, Range: 1}}
 	spawns := []Spawn{
-		{Mob: 1002, Name: "Poring", Amount: 60, Speed: 200, CanMove: true, Status: mob, RespawnMs: 2000},
+		{Mob: 1002, Name: "Poring", Amount: 60, Speed: 200, CanMove: true, ViewRange: 10, ChaseRange: 12, Status: mob, RespawnMs: 2000},
 		{Mob: 1078, Name: "Red Plant", Amount: 40, Speed: 2000},
 	}
 	z := New("map/test", open(120), rng.FromKey([32]byte{7}).Stream(), spawns)

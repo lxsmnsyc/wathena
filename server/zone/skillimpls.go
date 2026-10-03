@@ -264,8 +264,10 @@ func (provoke) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv in
 	z.skillEffect(src, target, d, lv, int64(lv), true)
 	z.castCancel(target, true)
 	if target.monster != nil && !src.dead {
-		// mob_target: the monster turns on the caster.
-		target.target, target.repeat = src, true
+		// The provoked monster turns on the caster (provoke_flag and
+		// mob_target).
+		target.monster.provoke = src
+		z.mobTarget(target, src)
 	}
 }
 

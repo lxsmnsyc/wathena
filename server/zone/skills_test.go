@@ -266,6 +266,10 @@ func TestFireWallHitsAndPushes(t *testing.T) {
 	m.status = &battle.Status{MaxHP: 100000, Level: 1, Vit: 1, Luk: 1, Int: 1, Flee: 1, DefEle: 0, EleLv: 1, RHW: battle.Weapon{Range: 1}}
 	m.hp = 100000
 	m.monster.spawn.CanMove = false
+	if m.status != nil {
+		// The monster AI does not move a monster without can_move.
+		m.status.Mode &^= 1
+	}
 	castAt(z, p, skill.IDFireWall, 10, m.x, m.y)
 	ev := run(z, p, 100, 6000)
 	if len(z.groups) == 0 && len(skillDamage(ev, skill.IDFireWall)) == 0 {
@@ -342,7 +346,8 @@ func TestProvokeAndTrickDead(t *testing.T) {
 	if !m.sc.Has(sc.SCProvoke) {
 		t.Fatal("no Provoke")
 	}
-	if m.target != p.entity {
+	// mob_target: the AI takes the caster as its target.
+	if m.monster.target != p.entity && m.target != p.entity {
 		t.Error("the provoked monster did not turn on the caster")
 	}
 	run(z, p, 250, 2000)
@@ -352,7 +357,7 @@ func TestProvokeAndTrickDead(t *testing.T) {
 		t.Fatal("no Trick Dead")
 	}
 	run(z, p, 2150, 3000)
-	if m.target == p.entity {
+	if m.target == p.entity || m.monster.target == p.entity {
 		t.Error("the monster still attacks a player playing dead")
 	}
 	// Toggling it off costs nothing.

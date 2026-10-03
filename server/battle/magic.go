@@ -139,6 +139,9 @@ func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 		if b, ok := sk.Impl.(BaseDamager); ok {
 			// Heal and the other skills with a base damage of their own.
 			ad.damage = b.BaseDamage(ad.context(src, target), r)
+		} else if sk.ID == skillNPCEarthquake {
+			// NPC_EARTHQUAKE starts from ATK instead of MATK.
+			ad.damage = npcEarthquakeDamage(&ad, src, target, pre, r)
 		} else {
 			if src.MAtkMax > src.MAtkMin {
 				ad.damage += int64(src.MAtkMin + r.IntN(src.MAtkMax-src.MAtkMin))
@@ -236,8 +239,8 @@ func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 			}
 		}
 
-		// The physical part of Grand Cross.
-		if sk.ID == skillGrandCross {
+		// The physical part of Grand Cross and NPC_GRANDDARKNESS.
+		if sk.ID == skillGrandCross || sk.ID == skillGrandDarkness {
 			grandCrossDamage(&ad, src, target, pre, r)
 		}
 
@@ -260,7 +263,7 @@ func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 			// element table.
 			ad.damage += cardfixMagic(src, target, ad.damage, ele, ad.flag, ad.nk, true)
 		}
-		if sk.ID == skillGrandCross {
+		if sk.ID == skillGrandCross || sk.ID == skillGrandDarkness {
 			if sk.Self {
 				// Grand Cross on its caster: half the damage for a
 				// player, none for other units.

@@ -154,6 +154,7 @@ func (h scriptHost) Despawn(owner int64) {
 		z.entities.remove(e)
 		z.forget(e)
 		z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT})
+		z.endMonsterScript(e)
 		if e.monster.handle != 0 {
 			delete(z.monsterHandles, e.monster.handle)
 		}

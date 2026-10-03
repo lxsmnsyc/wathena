@@ -379,6 +379,11 @@ func isAttackLeftHanded(src *Status, sk *Skill) bool {
 // Double Attack and Chain Action have the Critical damage flag in the
 // mode's skill_db.yml.
 func isAttackCritical(wd *damage, src, target *Status, doubleCanCrit, chainCanCrit bool, r Rand) bool {
+	// NPC_CRITICALSLASH is always critical. LG_PINPOINTATTACK is not
+	// ported.
+	if wd.skillID() == skillNpcCriticalSlash {
+		return true
+	}
 	if wd.sk != nil && !wd.nk.Has(NKCritical) {
 		return false
 	}
@@ -525,7 +530,11 @@ func isInfiniteDefense(target *Status, flag int) bool {
 	if target.hasMode(ModeIgnoreRanged) && flag&(bfWeapon|bfLong) == bfWeapon|bfLong {
 		return true
 	}
-	return target.hasMode(ModeIgnoreMisc) && flag&bfMisc != 0
+	if target.hasMode(ModeIgnoreMisc) && flag&bfMisc != 0 {
+		return true
+	}
+	// SC_INVINCIBLE.
+	return target.Changes != nil && target.Changes.Invincible
 }
 
 // calcSkillBaseDamage is battle_calc_skill_base_damage in renewal. No
@@ -734,8 +743,8 @@ func handBits(ele, race, class uint32, target *Status) bool {
 // With left_cardfix_to_right, the left hand's flags count for the right
 // hand.
 func attackIgnoresDef(wd *damage, src, target *Status, h hand) bool {
-	// Grand Cross skips the bonuses that ignore DEF.
-	if sd := src.Player; sd != nil && wd.skillID() != skillGrandCross {
+	// Grand Cross and NPC_GRANDDARKNESS skip the bonuses that ignore DEF.
+	if sd := src.Player; sd != nil && wd.skillID() != skillGrandCross && wd.skillID() != skillGrandDarkness {
 		if h == handRight && handBits(sd.Right.IgnoreDefEle, sd.Right.IgnoreDefRace, sd.Right.IgnoreDefClass, target) {
 			return true
 		}
@@ -759,7 +768,7 @@ func isAttackPiercing(wd *damage, src, target *Status, h hand) bool {
 	switch wd.skillID() {
 	case skillInvestigate:
 		return true
-	case skillSacrifice, skillShieldChain, skillGrandCross:
+	case skillSacrifice, skillShieldChain, skillGrandCross, skillGrandDarkness:
 		return false
 	}
 	sd := src.Player
@@ -949,6 +958,11 @@ func calcDamage(wd *damage, src, target *Status, dmg int64) int64 {
 	}
 
 	tc := target.Changes
+	// SC_BARRIER: a hit that deals damage deals 1 per hit, and nothing
+	// else changes it.
+	if tc != nil && tc.Barrier && dmg > 0 {
+		return int64(wd.div)
+	}
 	if tc != nil && tc.Aeterna != nil && tc.Aeterna(wd.flag, wd.skillID()) {
 		// Lex Aeterna doubles the damage and ends.
 		dmg *= 2
@@ -979,6 +993,19 @@ func calcDamage(wd *damage, src, target *Status, dmg int64) int64 {
 	// kin, which it skips, are not ported.
 	if tc != nil && tc.Defender != 0 && wd.flag&(bfLong|bfWeapon) == bfLong|bfWeapon {
 		dmg -= dmg * int64(tc.Defender) / 100
+	}
+	// SC_ARMORCHANGE changes the damage of weapon and magic hits.
+	if tc != nil && tc.ArmorChangeWeapon|tc.ArmorChangeMagic != 0 {
+		if wd.flag&bfWeapon != 0 {
+			dmg -= dmg * int64(tc.ArmorChangeWeapon) / 100
+		} else if wd.flag&bfMagic != 0 {
+			dmg -= dmg * int64(tc.ArmorChangeMagic) / 100
+		}
+	}
+	// SC_ARMOR (NPC_DEFENDER) divides the damage of ranged weapon and
+	// misc hits.
+	if tc != nil && tc.ArmorDiv != 0 && tc.ArmorRange&wd.flag != 0 && tc.ArmorType&wd.flag != 0 {
+		dmg /= int64(tc.ArmorDiv)
 	}
 	// Energy Coat reduces physical damage, and magic damage in renewal,
 	// by 6% per 20% of SP, and costs SP. Cart Termination goes through.

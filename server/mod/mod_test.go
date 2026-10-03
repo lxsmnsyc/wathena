@@ -576,6 +576,7 @@ func TestScriptsAndModulePaths(t *testing.T) {
 func TestSampleMod(t *testing.T) {
 	s, err := resolve(t, filepath.Join("..", "..", "mods", "examples"), Config{Approve: map[string][]string{
 		"example.halloween": {"player.give_items", "world.announce", "events.schedule", "rules.override"},
+		"example.wolf-pack": {"rules.override"},
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -603,8 +604,8 @@ func TestSampleMod(t *testing.T) {
 	if err != nil || len(sc.Entries) != 1 || sc.Texts["greeter.hello"] == "" {
 		t.Errorf("scripts %+v, %v", sc, err)
 	}
-	monsters, err := s.Monsters(func(name string) bool { return name == "PORING" || name == "JAKK" })
-	if err != nil || len(monsters.Records) != 2 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
+	monsters, err := s.Monsters(func(name string) bool { return name == "PORING" || name == "JAKK" || name == "WOLF" })
+	if err != nil || len(monsters.Records) != 4 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
 		t.Errorf("monsters %+v, %v", monsters, err)
 	}
 	events, err := s.Events()

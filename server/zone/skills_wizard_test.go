@@ -37,6 +37,10 @@ func wizardZone(t *testing.T, mode reference.Mode, mobs ...uint32) (*Zone, *Play
 	for e := range z.entities.all() {
 		if e.monster != nil {
 			e.monster.spawn.CanMove = false
+			if e.status != nil {
+				// The monster AI does not move a monster without can_move.
+				e.status.Mode &^= 1
+			}
 			// Each spawn has its own copy of the status.
 			e.monster.spawn.Status.Mode &^= modeCanAttack
 			e.status = e.monster.spawn.Status

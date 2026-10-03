@@ -4,12 +4,14 @@
 package gamedata
 
 import (
+	"cmp"
 	"fmt"
-	"strings"
+	"slices"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -90,9 +92,13 @@ func LoadItemData(mode reference.Mode) (*item.Data, error) {
 	return &d, nil
 }
 
-// Monster is one monster's battle status and, with the exp tables, its
-// level, exp and drops.
+// Monster is one monster's data: its base stats, AI and skills, its
+// battle status computed from them, and, with the exp tables, its level,
+// exp and drops.
 type Monster struct {
+	// Def is the monster's mob_db data. Overlays change it, and Status
+	// is computed from it.
+	Def    *mob.Def
 	Status *battle.Status
 	// Reward is nil without the exp tables.
 	Reward *progression.Mob
@@ -102,29 +108,33 @@ type Monster struct {
 	// Sprite is the monster ID whose sprite players see, or 0 for its
 	// own.
 	Sprite uint32
+	// Skills are the monster's skills (mob_skill_db), from core's and the
+	// mods' data/monsters.yml.
+	Skills []mob.Skill
+	// Script is the AI entry script, as mod:path, or "".
+	Script string
+	// AI is the AI type number of mob_db's Ai, and modesOn and modesOff
+	// the Modes that mob_db sets and clears over the AI type's modes.
+	// renewal picks the stat formulas.
+	modesOn, modesOff []uint32
+	renewal           bool
+	// mvpDrops are the drops before the drop rate settings.
+	drops, mvpDrops []progression.Drop
 }
 
-// LoadMonsters reads every monster's stats that reference/rathena
-// recorded from rAthena, by monster ID. With tables, monsters also get
-// their DamageTaken, exp and drops.
+// LoadMonsters reads every monster of monsters.json, the mob_db that
+// reference/rathena extracted, by monster ID, and computes its battle
+// status as rAthena's status_calc_mob. With tables, monsters also get
+// their exp and drops.
 func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progression.Data) (map[uint32]Monster, error) {
-	var mobs struct {
-		Mobs []struct {
-			ID      uint32        `json:"id"`
-			Level   int           `json:"level"`
-			BaseExp int64         `json:"base_exp"`
-			JobExp  int64         `json:"job_exp"`
-			Status  battle.Status `json:"status"`
-		} `json:"mobs"`
-	}
-	if err := reference.Load(mode, "mob_status", &mobs); err != nil {
+	defs, err := mob.Load(mode)
+	if err != nil {
 		return nil, err
 	}
 	var client struct {
 		Monsters []struct {
-			ID     uint32 `json:"id"`
-			Sprite string `json:"sprite"`
-			Name   string `json:"name"`
+			ID   uint32 `json:"id"`
+			Name string `json:"name"`
 		} `json:"monsters"`
 	}
 	if err := reference.LoadFile("extracts/"+string(mode)+"/client_tables.json", &client); err != nil {
@@ -143,10 +153,9 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 	for _, m := range groups.Monsters {
 		race2[m.ID] = m.Groups
 	}
-	type naming struct{ aegis, name string }
-	names := make(map[uint32]naming, len(client.Monsters))
+	names := make(map[uint32]string, len(client.Monsters))
 	for _, m := range client.Monsters {
-		names[m.ID] = naming{strings.ToUpper(m.Sprite), m.Name}
+		names[m.ID] = m.Name
 	}
 	extra := map[uint32]*progression.MobData{}
 	if data != nil {
@@ -154,39 +163,61 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 			extra[data.Mobs[i].ID] = &data.Mobs[i]
 		}
 	}
-	out := make(map[uint32]Monster, len(mobs.Mobs))
-	for _, m := range mobs.Mobs {
-		st := m.Status
-		st.Level, st.ID, st.Race2 = m.Level, int(m.ID), race2[m.ID]
-		x := extra[m.ID]
-		n := names[m.ID]
-		if tables == nil || x == nil {
-			out[m.ID] = Monster{Status: &st, AegisName: n.aegis, Name: n.name}
-			continue
+	renewal := mode == reference.Renewal
+	out := make(map[uint32]Monster, len(defs.Monsters))
+	for i := range defs.Monsters {
+		d := defs.Monsters[i]
+		d.Skills = nil
+		ai, ok := mob.AIModes(d.AI)
+		if !ok {
+			return nil, fmt.Errorf("monster %d: unknown AI %q", d.ID, d.AI)
 		}
-		st.DamageTaken = x.DamageTaken
-		// mob_status.json recorded the exp at the default rates of 100%.
-		r := &progression.Mob{
-			ID: m.ID, Level: m.Level, MaxHP: st.MaxHP,
-			BaseExp: progression.MobExp(m.BaseExp, tables.BaseExpRate),
-			JobExp:  progression.MobExp(m.JobExp, tables.JobExpRate),
-			Mode:    st.Mode, Class: st.Class,
+		if got := mob.Modes(ai, d.ModesOn, d.ModesOff, d.Class); got != d.Mode {
+			return nil, fmt.Errorf("monster %d: modes %#x, want %#x", d.ID, got, d.Mode)
 		}
-		r.Drops = tables.AdjustDrops(r.Boss(), x.Drops)
-		out[m.ID] = Monster{Status: &st, Reward: r, AegisName: n.aegis, Name: n.name}
+		m := Monster{Def: &d, AegisName: d.AegisName, Name: cmp.Or(names[d.ID], d.Name),
+			modesOn: d.ModesOn, modesOff: d.ModesOff, renewal: renewal}
+		if x := extra[d.ID]; x != nil {
+			m.drops, m.mvpDrops = x.Drops, x.MvpDrops
+		}
+		st := mob.Calc(&d, renewal)
+		st.Race2 = race2[d.ID]
+		m.Status = &st
+		if tables != nil && extra[d.ID] != nil {
+			m.Reward = &progression.Mob{}
+			m.fillReward(tables)
+		}
+		out[d.ID] = m
 	}
 	return out, nil
+}
+
+// fillReward sets the reward from the monster's data, with the exp rates
+// and drop settings of tables. mob_db's exp is at the default rates of
+// 100%.
+func (m *Monster) fillReward(tables *progression.Tables) {
+	d, r := m.Def, m.Reward
+	r.ID, r.Level, r.MaxHP, r.Mode, r.Class = d.ID, d.Level, m.Status.MaxHP, m.Status.Mode, d.Class
+	r.BaseExp = progression.MobExp(d.BaseExp, tables.BaseExpRate)
+	r.JobExp = progression.MobExp(d.JobExp, tables.JobExpRate)
+	r.MvpExp = progression.MobExp(d.MvpExp, tables.MvpExpRate)
+	r.Drops = tables.AdjustDrops(r.Boss(), m.drops)
+	r.MvpDrops = slices.Clone(m.mvpDrops)
 }
 
 // Spawn is a spawn of one monster with its stats: Amount is 1, and the
 // area is the one cell.
 func (m Monster) Spawn(id uint32, name string, x, y int) zone.Spawn {
-	return zone.Spawn{
+	s := zone.Spawn{
 		Mob: id, Name: name, Amount: 1, X: x, Y: y,
-		// Mode bit 1 is MD_CANMOVE.
-		Speed: m.Status.Speed, CanMove: m.Status.Mode&1 != 0,
+		Speed: m.Status.Speed, CanMove: m.Status.Mode&mob.ModeCanMove != 0,
 		Status: m.Status, Reward: m.Reward, Sprite: m.Sprite,
+		Skills: m.Skills, Script: m.Script,
 	}
+	if m.Def != nil {
+		s.ViewRange, s.ChaseRange = m.Def.SkillRange, m.Def.ChaseRange
+	}
+	return s
 }
 
 // LoadSpawns reads every map's monsters, by map name such as prontera,

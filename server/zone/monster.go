@@ -2,6 +2,7 @@ package zone
 
 import (
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/shared/path"
 )
@@ -29,6 +30,14 @@ type Spawn struct {
 	// Sprite is the monster ID whose sprite players see, for a monster
 	// of a mod that reuses another's. 0 shows Mob's own.
 	Sprite uint32
+	// Skills are the monster's skills, as mob_skill_db.
+	Skills []mob.Skill
+	// ViewRange is mob_db's SkillRange (range2): how far the monster
+	// looks for targets. ChaseRange (range3) is how far it chases.
+	ViewRange, ChaseRange int
+	// Script is the monster's AI entry script, as mod:path, or "". Its
+	// setup function runs once for each monster that spawns.
+	Script string
 
 	// owner is the script context that spawned the monsters, or 0.
 	// noRespawn keeps dead monsters from coming back.
@@ -38,9 +47,66 @@ type Spawn struct {
 
 type monster struct {
 	spawn *Spawn
-	// nextWalk is when the monster next tries to wander, in zone
-	// milliseconds, or -1 before its first try.
+	// nextWalk is next_walktime: when the monster next tries to wander,
+	// in zone milliseconds.
 	nextWalk int64
+	// ai is the monster's skill state and aggressive flag.
+	ai mob.AIState
+	// target is target_id: the unit the AI follows, or an item a looter
+	// goes for. The attack itself is the entity's fight target, as
+	// rAthena keeps it in unit_data.
+	target *entity
+	// attacked and normAttacked are attacked_id and norm_attacked_id:
+	// who hit the monster last, for the AI to answer. attackedCount is
+	// state.attacked_count, for rude attacks.
+	attacked, normAttacked *entity
+	attackedCount          int
+	// hits are the mob_attacked timers of hits that landed: the AI
+	// learns who hit it once the hit's walk delay passed.
+	hits []mobHit
+	// nextThink, lastSkillCheck, lastLink and lastCanMove are
+	// next_thinktime, last_skillcheck, last_linktime and last_canmove.
+	nextThink, lastSkillCheck, lastLink, lastCanMove int64
+	// skillDelay is skilldelay: when each of the monster's skills may
+	// be used again. skillIdx is skill_idx: the skill being used, or -1.
+	skillDelay []int64
+	skillIdx   int
+	// lastSkill is ud->skill_id: the skill the monster used last, for
+	// after_skill. lastUse is the entry it used last and its target.
+	lastSkill int
+	lastUse   mobUse
+	// chaseTo is ud.target_to: the unit a chase walk follows, and
+	// chaseRange how close it gets. walked counts the steps of the walk
+	// (walkpath.path_pos). walkFails is walktoxy_fail_count.
+	chaseTo    *entity
+	chaseRange int
+	walked     int
+	walkFails  int
+	// attackContinue is ud.state.attack_continue: the chase attacks on
+	// arrival. attackNow is set while unit_attack's own attack waits for
+	// the fight, after which the state is set again.
+	attackContinue bool
+	attackNow      bool
+	// forceWalk is ud.state.force_walk: a script walks the monster, so
+	// the AI waits.
+	forceWalk bool
+	// loot are the items a looter picked up (lootitems). canLoot is set
+	// when it has loot slots: when its modes made it a looter as it
+	// spawned or changed class.
+	loot    []uint32
+	canLoot bool
+	// trickcasting is the end of NPC_RANDOMMOVE's fake cast.
+	trickcasting int64
+	// provoke is state.provoke_flag: the unit that provoked the monster.
+	provoke *entity
+	// level is md->level.
+	level int
+	// respawnAs is the spawn a monster that changed class comes back
+	// as, or nil. reborn is state.rebirth: NPC_REBIRTH brought it back.
+	respawnAs *Spawn
+	reborn    bool
+	// ctx is the context of the monster's AI script, or 0.
+	ctx int64
 	// dmglog is who fought the monster, for exp shares and loot.
 	dmglog progression.DamageLog
 	// handle is the monster's script handle, or 0 before a script needs
@@ -55,12 +121,15 @@ type monster struct {
 	// soulChanged is set once Soul Exhale took the monster's SP
 	// (soul_change_flag).
 	soulChanged bool
-	// master is the unit that summoned the monster (master_id), and ai
-	// its special_state.ai, such as AI_FLORA. playersHit is set when
-	// players may hit it (alchemist_summon_setting). deleteAt is when its
-	// delete timer (mob_timer_delete) runs, or 0.
+	// noRewards is set when status_kill killed the monster, as
+	// NPC_SUICIDE does: mob_dead's type 3 gives no exp and no drops.
+	noRewards bool
+	// master is the unit that summoned the monster (master_id), and
+	// specialAI its special_state.ai, such as AI_FLORA. playersHit is set
+	// when players may hit it (alchemist_summon_setting). deleteAt is when
+	// its delete timer (mob_timer_delete) runs, or 0.
 	master     *entity
-	ai         int
+	specialAI  int
 	playersHit bool
 	deleteAt   int64
 }
@@ -105,7 +174,21 @@ func (z *Zone) spawnOne(s *Spawn) *entity {
 		e.status, e.hp = s.Status, int64(s.Status.MaxHP)
 	}
 	z.entities.add(e)
+	z.monsterSpawned(e)
 	return e
+}
+
+// monsterSpawned is the end of mob_spawn: the AI starts, the monster's
+// AI script runs, and its spawn skills are used.
+func (z *Zone) monsterSpawned(e *entity) {
+	if e.status == nil {
+		return
+	}
+	z.startMonster(e)
+	z.startMonsterScript(e)
+	if !e.dead && z.entities.has(e) {
+		z.mobSkillUse(e, mob.CondSpawned, 0)
+	}
 }
 
 // spawnCell picks a random walkable cell in a spawn's area, or anywhere
@@ -129,37 +212,24 @@ func (z *Zone) spawnCell(s *Spawn) (int, int, bool) {
 	return 0, 0, false
 }
 
-// think runs monster AI for this tick: for now, wandering.
-func (z *Zone) think() {
-	for e := range z.entities.all() {
-		m := e.monster
-		if m == nil {
-			continue
-		}
-		if (m.deleteAt > 0 || m.master != nil) && z.summonThink(e) {
-			continue
-		}
-		// mob_ai_sub_hard: a monster that is stunned, frozen, asleep or
-		// stone forgets its target and does nothing.
-		if e.actsBlocked() {
-			e.target = nil
-			continue
-		}
-		if !m.spawn.CanMove || len(e.path) > 0 || e.target != nil || e.cant().Move {
-			continue
-		}
-		if m.nextWalk < 0 {
-			m.nextWalk = z.now + int64(z.rand.IntN(1000)+minRandomWalk)
-			continue
-		}
-		if z.now < m.nextWalk {
-			continue
-		}
-		if steps, ok := z.randomWalk(e); ok {
-			m.nextWalk = z.now + int64(z.rand.IntN(1000)+minRandomWalk+path.PathTime(steps, e.speed))
-		} else {
-			m.nextWalk = z.now + thinkMs
-		}
+// wanderOnly moves a monster without stats, which has no AI: it wanders
+// when it can move, as mob_randomwalk.
+func (z *Zone) wanderOnly(e *entity) {
+	m := e.monster
+	if !m.spawn.CanMove || len(e.path) > 0 || e.target != nil || e.cant().Move {
+		return
+	}
+	if m.nextWalk < 0 {
+		m.nextWalk = z.now + int64(z.rand.IntN(1000)+minRandomWalk)
+		return
+	}
+	if z.now < m.nextWalk {
+		return
+	}
+	if steps, ok := z.randomWalk(e); ok {
+		m.nextWalk = z.now + int64(z.rand.IntN(1000)+minRandomWalk+path.PathTime(steps, e.speed))
+	} else {
+		m.nextWalk = z.now + thinkMs
 	}
 }
 

@@ -6,7 +6,8 @@
   display_name: Pumpkin Poring
   level: 12
   hp: 260
-  attack: [18, 26]
+  attack: 22
+  str: 12
   defense: 4
   base_exp: 90
   job_exp: 70
@@ -23,13 +24,17 @@
   display_name: Pumpkin King
   level: 60
   hp: 40000
-  attack: [300, 450]
+  attack: 375
   defense: 30
   magic_defense: 30
-  hit: 180
-  flee: 120
+  # HIT and FLEE come from the stats, as rAthena's status_calc_mob
+  # computes them: HIT is level + DEX + 150, and FLEE level + AGI + 100.
+  dex: 90
+  agi: 60
   class: boss
-  modes: [can_move, can_attack, aggressive]
+  # AI type 04: it attacks players on sight, and changes target to a
+  # player that hits it in melee.
+  ai: 4
   base_exp: 25000
   job_exp: 18000
   drops:

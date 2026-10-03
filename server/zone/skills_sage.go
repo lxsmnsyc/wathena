@@ -634,7 +634,7 @@ func (mindBreaker) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, l
 	z.castCancel(target, false)
 	if target.monster != nil && !src.dead {
 		// mob_target: the monster turns on the caster.
-		target.target, target.repeat = src, true
+		z.mobTarget(target, src)
 	}
 }
 

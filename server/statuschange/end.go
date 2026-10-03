@@ -98,6 +98,18 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 				}
 			}
 		}
+	case SCStop:
+		// NPC_STOP holds two units: the partner's SC_STOP ends too when its
+		// val2 names this unit. rAthena finds the partner by val2, a block
+		// ID. IDs here are per kind of unit, so the status's source names
+		// the partner.
+		if val2 != 0 {
+			if t := en.env.UnitOf(e.Source); t != nil {
+				if p := t.Changes().Get(SCStop); p != nil && p.Val2 != 0 && p.Source == u.Ref() {
+					en.End(t, SCStop, ReasonRemoved)
+				}
+			}
+		}
 	}
 
 	for _, t := range def.EndOnEnd {

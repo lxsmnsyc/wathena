@@ -624,7 +624,7 @@ func (absorbSpirits) castendNoDamage(z *Zone, src, target *entity, d *skill.Def,
 	case target.monster != nil && target.status != nil && target.status.Mode&modeStatusImmune == 0 && z.rand.IntN(100) < 20:
 		sp = 2 * z.unit(target).Level()
 		// mob_target: the monster turns on the caster.
-		target.target, target.repeat = src, true
+		z.mobTarget(target, src)
 	default:
 		z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		return

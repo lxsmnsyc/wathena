@@ -1,0 +1,35 @@
+# The leader of a pack. It shows the Wolf's sprite, and attacks players
+# on sight: AI type 04. In any state, its skill calls two Pack Wolves when it has
+# fewer. Its AI script, scripts/monsters/alpha.lua, sends the pack after
+# its target.
+- name: example.wolf-pack:ALPHA_WOLF
+  sprite: WOLF
+  display_name: Alpha Wolf
+  level: 30
+  hp: 3000
+  attack: 120
+  str: 40
+  agi: 40
+  dex: 50
+  ai: 4
+  skills:
+    - skill: NPC_SUMMONSLAVE
+      # The level is how many wolves it calls.
+      level: 2
+      state: any
+      delay: 30000
+      target: self
+      condition: slaves_below
+      condition_value: 2
+      summons: [example.wolf-pack:PACK_WOLF]
+      chat: "Awooo!"
+  script: scripts/monsters/alpha.lua
+
+# A wolf of the pack. AI type 01: it only fights what hits it, or what
+# its leader sends it after.
+- name: example.wolf-pack:PACK_WOLF
+  sprite: WOLF
+  display_name: Pack Wolf
+  level: 20
+  hp: 600
+  ai: 1

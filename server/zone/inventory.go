@@ -337,6 +337,7 @@ func (z *Zone) heal(p *Player, h *item.Heal) {
 	} else {
 		hp, sp = item.ItemHeal(hp, sp, st.Vit, st.Int, p.char.Skills)
 		hp += z.appleItemHeal(e)
+		hp, sp = itemHealPenalty(e, hp, sp)
 		if z.asuraNoItemSP(e) {
 			sp = 0
 		}

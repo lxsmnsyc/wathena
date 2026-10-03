@@ -1,0 +1,21 @@
+# A sample mod of monster AI: two monsters of data/monsters.yml with
+# skills, an AI script that leads a pack, and a monster_target hook.
+# mods/README.md, "Monster AI", explains each part.
+id: example.wolf-pack
+name: Wolf Pack
+version: 0.1.0
+api: experimental
+description: An Alpha Wolf that calls its pack and sends it after its prey, and wolves that leave Novices alone.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - rules.override
+scripts:
+  - scripts/main.lua

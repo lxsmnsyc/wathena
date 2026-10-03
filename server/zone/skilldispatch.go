@@ -83,7 +83,7 @@ func (z *Zone) castendPos(src *entity, x, y int, d *skill.Def, lv, flag int) {
 		return
 	}
 	switch d.ID {
-	case skill.IDMeteor, skill.IDIceWall, skill.IDGanbantein, skill.IDCultivation:
+	case skill.IDMeteor, skill.IDIceWall, skill.IDGanbantein, skill.IDCultivation, skill.IDNPCRainOfMeteor:
 		// These show their effect themselves.
 	default:
 		z.skillPosEffect(src, d, lv, x, y)

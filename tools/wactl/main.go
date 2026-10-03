@@ -20,6 +20,7 @@ commands:
   assets sprites   convert monster and NPC sprites and report sizes
   convert items    convert rAthena item scripts to Lua and item data
   convert npcs     convert rAthena NPC scripts and shops to Lua and NPC data
+  convert monsters convert rAthena monster skills to monster data
   dev              run a local server with a mod, and reload it when files change
   mod new          make a mod from a template
   mod validate     check a mod's manifest, data, permissions, scripts and tests
@@ -62,6 +63,8 @@ func main() {
 		err = convertItems(os.Args[3:])
 	case "convert npcs":
 		err = convertNPCs(os.Args[3:])
+	case "convert monsters":
+		err = convertMonsters(os.Args[3:])
 	case "migrate status":
 		err = migrate(os.Args[3:], false)
 	case "migrate up":

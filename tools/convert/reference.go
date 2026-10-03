@@ -28,6 +28,8 @@ type Core struct {
 	Groups *item.GroupData
 	// Monsters maps monster AegisNames, in upper case, to IDs.
 	Monsters map[string]int64
+	// MonsterSkills are the converted monster skills.
+	MonsterSkills *MonsterResult
 }
 
 // Reference converts the item scripts of a mode's extracts.
@@ -46,8 +48,8 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 	read := func(name string) ([]byte, error) {
 		return reference.ReadFile("extracts/" + string(mode) + "/" + name + ".json")
 	}
-	var in [5][]byte
-	for i, name := range []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs"} {
+	var in [7][]byte
+	for i, name := range []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills"} {
 		data, err := read(name)
 		if err != nil {
 			return nil, err
@@ -62,6 +64,10 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 		return nil, err
 	}
 	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in[4]), Constants: bytes.NewReader(in[1]), ClientTables: bytes.NewReader(in[3])})
+	if err != nil {
+		return nil, err
+	}
+	mobs, err := ConvertMonsters(MonsterInput{Monsters: bytes.NewReader(in[5]), Constants: bytes.NewReader(in[1]), Skills: bytes.NewReader(in[6])})
 	if err != nil {
 		return nil, err
 	}
@@ -87,12 +93,12 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 		monsters[strings.ToUpper(m.Sprite)] = m.ID
 	}
 	files := fstest.MapFS{}
-	for _, part := range []map[string]string{res.Files(), npcs.Files()} {
+	for _, part := range []map[string]string{res.Files(), npcs.Files(), mobs.Files()} {
 		for path, content := range part {
 			files[path] = &fstest.MapFile{Data: []byte(content), Mode: 0o444}
 		}
 	}
-	return &Core{Result: res, NPCs: npcs, Files: files, Constants: consts, Groups: &groups, Monsters: monsters}, nil
+	return &Core{Result: res, NPCs: npcs, Files: files, Constants: consts, Groups: &groups, Monsters: monsters, MonsterSkills: mobs}, nil
 }
 
 // FS returns the generated files as a read-only file system.

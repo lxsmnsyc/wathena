@@ -32,6 +32,9 @@ type unitSkill struct {
 	// sgCounter is status_change's sg_counter: the Storm Gust hits the
 	// unit took in a row, in pre-renewal.
 	sgCounter int
+	// comet is status_change's comet_x and comet_y: the cell of the
+	// unit's last NPC_COMET, or nil before its first.
+	comet *[2]int
 }
 
 // skillLevel is pc_checkskill: the level of a skill the player learned,

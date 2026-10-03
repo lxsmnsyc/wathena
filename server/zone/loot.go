@@ -147,8 +147,76 @@ func (z *Zone) reward(e, killer *entity) {
 			f.items = append(f.items, id)
 		}
 	}
+	// mob_dead: a looter drops what it picked up, with the same rights.
+	if m := e.monster; len(m.loot) > 0 {
+		f.items = append(f.items, m.loot...)
+		m.loot = nil
+	}
 	if len(f.items) > 0 {
 		z.falling = append(z.falling, f)
+	}
+	z.mvpReward(e, mob, kill)
+}
+
+// effectMVP is EF_MVP, the effect over the MVP player.
+const effectMVP = 68
+
+// mvpReward is the MVP part of mob_dead: the player with the most damage
+// dealt and taken (get_mvp_player) gets the MVP exp and, of the MVP
+// drops in order, the first that rolls, in its inventory or at its feet.
+func (z *Zone) mvpReward(e *entity, m *progression.Mob, kill progression.Kill) {
+	t := z.Progress
+	if m.Boss() != progression.BossMVP {
+		return
+	}
+	var mvp *Player
+	var best int64
+	count := 0
+	for _, en := range e.monster.dmglog.Entries {
+		p := z.players[en.CharID]
+		if p == nil || !z.entities.has(p.entity) {
+			continue
+		}
+		count++
+		if p.entity.dead {
+			continue
+		}
+		if sum := en.Damage + en.Tanked; sum > best {
+			best, mvp = sum, p
+		}
+	}
+	if mvp == nil {
+		return
+	}
+	z.effects = append(z.effects, effect{mvp.entity, effectMVP})
+	if exp := m.MvpExp; exp > 0 {
+		pen := t.Penalty(progression.PenaltyMVPExp, mvp.progress.BaseLevel, m)
+		exp = min(max(exp*int64(pen)/100, 0), progression.MaxExp)
+		if t.ExpBonusAttacker > 0 && count > 1 {
+			count = min(count, t.ExpBonusMaxAttacker)
+			exp += exp * int64(t.ExpBonusAttacker*(count-1)) / 100
+		}
+		exp = min(max(exp, 1), progression.MaxExp)
+		z.gainExp(mvp, exp, 0)
+	}
+	pen := t.Penalty(progression.PenaltyMVPDrop, mvp.progress.BaseLevel, m)
+	for _, d := range m.MvpDrops {
+		rate := min(max(d.Rate*pen/100, 0), 10000)
+		if rate != 10000 {
+			if rate <= 0 && !t.DropRate0Item {
+				rate = 1
+			}
+			if z.rand.IntN(10000) >= rate {
+				continue
+			}
+		}
+		if r := z.addItem(mvp, d.Item, 1); r != item.AddSuccess {
+			pe := mvp.entity
+			z.falling = append(z.falling, fall{x: pe.x, y: pe.y, items: []uint32{d.Item},
+				first: mvp.charID, second: kill.Second, third: kill.Third, boss: progression.BossMVP, at: z.now})
+		}
+		// item_drop_mvp_mode 0: one prize.
+		break
 	}
 }
 

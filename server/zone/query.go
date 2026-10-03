@@ -184,15 +184,16 @@ func isEnemy(a, b *entity) bool {
 	if a == b {
 		return false
 	}
-	// A summoned monster is on its master's side. Players may hit floras
-	// and marine spheres as alchemist_summon_setting says, and other
-	// monsters treat them as friends (BCT_PARTY). A summon's enemies are
-	// its master's: monsters without a master.
-	if m := b.monster; m != nil && m.master != nil {
+	// A player's summon, such as a flora (a special AI), is on its
+	// master's side. Players may hit floras and marine spheres as
+	// alchemist_summon_setting says, and other monsters treat them as
+	// friends (BCT_PARTY). Such a summon's enemies are its master's:
+	// monsters without a master. A monster's slave is a monster.
+	if m := b.monster; m != nil && m.master != nil && m.specialAI != aiNone {
 		return a.player != nil && m.playersHit
 	}
-	if m := a.monster; m != nil && m.master != nil {
-		return b.monster != nil && b.monster.master == nil
+	if m := a.monster; m != nil && m.master != nil && m.specialAI != aiNone {
+		return b.monster != nil && (b.monster.master == nil || b.monster.specialAI == aiNone)
 	}
 	return a.player != nil && b.monster != nil || a.monster != nil && b.player != nil
 }

@@ -157,7 +157,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	out.Tables = tables
 	monsterIDs := core.Monsters
 	if monsters != nil {
-		if out.Monsters, monsterIDs, out.MonsterOverlay, err = monsterOverlay(ctx, set, monsters, core.Constants, merged.IDs, tables, assigned); err != nil {
+		if out.Monsters, monsterIDs, out.MonsterOverlay, err = monsterOverlay(ctx, set, monsters, core.Constants, merged.IDs, out.Skills, tables, assigned); err != nil {
 			return nil, err
 		}
 		for _, n := range out.MonsterOverlay.Notes {

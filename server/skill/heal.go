@@ -45,6 +45,13 @@ func CalcHeal(src, target *battle.Status, id, lv int, heal, renewal bool, r batt
 		} else {
 			hp = int64(lv) * 100
 		}
+	case id == idEvilLand:
+		// NPC_EVILLAND: 100 per level, 666 above level 6.
+		if lv > 6 {
+			hp = 666
+		} else {
+			hp = int64(lv) * 100
+		}
 	default:
 		if lv >= maxHealLv {
 			return maxHeal
@@ -65,7 +72,8 @@ func CalcHeal(src, target *battle.Status, id, lv int, heal, renewal bool, r batt
 		// are not ported.
 	}
 
-	if !heal {
+	// Evil Land's damage is not halved.
+	if !heal && id != idEvilLand {
 		hp /= 2
 	}
 
@@ -117,7 +125,7 @@ func CalcHeal(src, target *battle.Status, id, lv int, heal, renewal bool, r batt
 	}
 	// The MATK part of the renewal heal. Item and skill MATK bonuses do
 	// not apply.
-	if id != IDSanctuary && id != idAppleIdun {
+	if id != IDSanctuary && id != idAppleIdun && id != idEvilLand {
 		lo, hi := baseMatkMin(src), baseMatkMax(src)
 		if w := src.RHW.Matk; w > 0 {
 			variance := w * src.RHW.Wlv / 10

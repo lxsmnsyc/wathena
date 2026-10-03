@@ -4,7 +4,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 
 | Package | Content |
 |---|---|
-| `zone` | One map: its players and monsters, local chat to every player within 9 cells of the speaker, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. A monster that can attack strikes back. Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. A kill gives exp to the players who fought the monster and drops items around it. Items lie on the ground for a minute, and players pick them up with the looter rights rAthena gives the top attackers. Each player has rAthena's inventory: 100 slots, stacks up to 30000, and a weight limit that pick-ups respect. Players use items, whose scripts run in Lua (see "Item scripts"), and drop items at their feet with no looter rights. HP and SP regenerate as rAthena's natural regen, which stops from 70% weight in renewal (50% in pre-renewal). From 90% weight, attacks stop. Warps send a player who steps into their area to their target, as rAthena's `npc_touch_areanpc` and `pc_setpos`: to another map as a message to that map's zone, or within the map. A zone without players sleeps. Each tick finds what a player sees through an index of 8 × 8 cell blocks, as rAthena's `BLOCK_SIZE`, and hands its messages to a sender goroutine in one batch (see "Load tests and metrics"). |
+| `zone` | One map: its players and monsters, local chat to every player within 9 cells of the speaker, their walks through `shared/path`, and what each player sees within 14 cells, in 50 ms ticks. Monsters wander as rAthena's `mob_randomwalk`, from the zone's secret random stream. Units attack a target at their attack delay, walking into range first. Monsters run rAthena's AI and use their skills (see "Monster AI and monster skills"). Dead monsters respawn after their respawn time, and dead players return to the start after 3 seconds. A kill gives exp to the players who fought the monster and drops items around it. Items lie on the ground for a minute, and players pick them up with the looter rights rAthena gives the top attackers. Each player has rAthena's inventory: 100 slots, stacks up to 30000, and a weight limit that pick-ups respect. Players use items, whose scripts run in Lua (see "Item scripts"), and drop items at their feet with no looter rights. HP and SP regenerate as rAthena's natural regen, which stops from 70% weight in renewal (50% in pre-renewal). From 90% weight, attacks stop. Warps send a player who steps into their area to their target, as rAthena's `npc_touch_areanpc` and `pc_setpos`: to another map as a message to that map's zone, or within the map. A zone without players sleeps. Each tick finds what a player sees through an index of 8 × 8 cell blocks, as rAthena's `BLOCK_SIZE`, and hands its messages to a sender goroutine in one batch (see "Load tests and metrics"). |
 | `metrics` | Measurements for the budgets in strategy section 3.8: tick work per zone, garbage collector pauses, CPU, memory, goroutines, and bytes per connection. A zone over its tick budget for 10 ticks in a row logs a warning and can write a CPU profile. See "Load tests and metrics". |
 | `world` | Several zones in one process, one goroutine per map. It finds zones by map name, puts a joining character in the zone of its saved map, and waits at shutdown for every zone and every player between zones. `LoadWarps` reads `reference/rathena/extracts/<mode>/warps.json`. |
 | `item` | The inventory, ported from rAthena's `pc_additem`, `pc_delitem` and `pc_inventoryblank`, the overweight levels of `pc_updateweightstatus`, the heal of `pc_itemheal` and `pc_percentheal`, and the item groups of `getgroupitem`, with the item data from `reference/rathena/extracts/<mode>/items.json`, `equipment.json` and `item_groups.json`. Equipping, ported from `pc_equippoint`, `pc_isequip`, `pc_equipitem`, `pc_unequipitem`, `pc_setequipindex`, `pc_calcweapontype` and `pc_insert_card` (see "Equipment"). |
@@ -478,7 +478,7 @@ Parity with rAthena, from `go test ./server/skill` and `go test ./server/zone -r
 - Three skills have their own golden tests instead of the shared ones: Spiral Pierce (its recorded weapon has a script bonus), Shield Chain (one recorded hit count is a statistical outlier) and Eternal Chaos (the recorder's Golem stood in the song).
 - The damage tests leave out the Gunslinger, Ninja, Taekwon and Soul Linker skills, which come later.
 
-Left: monster skills (step 5), parties for party skills, ensembles and Devotion, homunculi, the windows listed above, cart items, sitting (Tension Relax, Gangster's Paradise), monster AI for plant summons, and saving broken equipment.
+Left: parties for party skills, ensembles and Devotion, homunculi, the windows listed above, cart items, sitting (Tension Relax, Gangster's Paradise), monster AI for plant summons, and saving broken equipment.
 
 ## Job changes
 
@@ -497,6 +497,38 @@ To try it, start a Swordman at job level 40 and talk to the Job Master at Pronte
 ```text
 go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev --start-job 1:50:40
 ```
+
+## Monster AI and monster skills
+
+Monsters think as rAthena's `mob.cpp` ([decision 0013](../docs/decisions/0013-monster-ai.md)). The package `mob` holds what needs no map: the data of `monsters.json`, the stats of `status_calc_mob`, the AI types and states, and the skills lists. The zone runs the AI:
+
+- **Stats** come from the record: hit, flee, defense and magic defense from stats, attack ranges and magic attack, in both modes, as `status_calc_misc`.
+- **The hard AI** (`mob_ai_sub_hard`) runs every 100 ms for each monster within a player's view plus 4 cells. Other monsters run the lazy AI every second: they walk at random and use idle skills.
+- **Targets.** An aggressive monster looks for a target in its view range, and walks to it if a path is no longer than its chase range. A monster gives up when the target leaves its chase range, hides, or dies. Monsters with the `assist` mode join monsters of their kind that fight, looters pick up items, and the change-target modes, angry monsters and the cast sensor follow rAthena's rules.
+- **Hits.** The AI learns of a hit once the damage shows and the hit's walk delay passes, as the `mob_attacked` timer. A monster that can attack strikes back.
+- **Skills.** Every 1 s, or on an event (a hit, a cast on it, its spawn), a monster checks its skills list as `mobskill_use` and `mobskill_event`: state, condition, rate and delay, then the target. Casts go through the skill framework with the entry's cast time. Lines of `mob_chat_db.yml` show as the monster's chat.
+- **`NPC_` skills** that only monsters use are in `skills_npc*.go`: summons and slaves, class changes, emotions, random moves, rebirth, and the attack, status and buff skills.
+- **MVPs.** The player that did the most damage gets the MVP exp and drops, with the MVP effect.
+
+The `monster_target` hook, the methods of monster handles and the AI scripts of monster records are the Lua API of proposal 0002, review decision 22 ([mods/README.md](../mods/README.md), "Monster AI").
+
+Parity with rAthena, from `go test ./server/mob` and `go test ./server/zone -run 'TestMobAIParity|TestMobSkillUseParity'`:
+
+| Mode | `mob_status.json` | `mob_ai.json` | `mob_skill_use.json`, entry chosen | `mob_skill_use.json`, effects |
+|---|---:|---:|---:|---:|
+| renewal | 2,675 of 2,675 | 2,814 of 2,814 | 22,189 of 22,189 | 17,158 of 18,232 |
+| pre-renewal | 1,004 of 1,004 | 2,814 of 2,814 | 8,594 of 8,594 | 6,745 of 7,213 |
+
+- `mob_ai.json` checks single decisions of every AI type: target search, hits, target changes, assists, loot, chase and the cast sensor.
+- The chosen entry includes its target and cast time. The effects (damage, statuses, moves, summons, class changes) are checked in every case where the monster used a skill. Most of the rest are `NPC_EMOTION` mode changes, which the skills list cannot hold, and `NPC_` skills without a port.
+
+To see it, start on `prt_fild03`, where Chocos (AI type 19) attack on sight and use their skills, and Yoyos (AI type 07) loot and help each other:
+
+```text
+go run ./server/cmd/waserver --assets /path/to/build --map prt_fild03 --dev
+```
+
+Left: MVP tombs, monster level ups, guardians, monsters that follow a player through a warp, the mode change of `NPC_EMOTION`, and the `NPC_` skills that `docs/generated/monster-skills-<mode>.md` lists without a port.
 
 ## NPCs
 

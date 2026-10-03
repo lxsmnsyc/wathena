@@ -274,7 +274,8 @@ func rangeType(src *Status, sk *Skill) int {
 // No first class skill is left out.
 func skillStacksMasteries(id int) bool {
 	switch id {
-	case skillShieldChain, skillShieldBoomerang, skillAcidTerror, skillInvestigate, skillExtremityFist, skillSacrifice:
+	case skillShieldChain, skillShieldBoomerang, skillAcidTerror, skillInvestigate, skillExtremityFist, skillSacrifice,
+		skillNPCDragonBreath:
 		return false
 	}
 	return true

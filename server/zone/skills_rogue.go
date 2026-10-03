@@ -124,19 +124,13 @@ func (stealCoin) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv 
 	z.skillEffect(src, target, d, amount, int64(amount), true)
 }
 
-// mobAttacked is mob_attacked: a monster that can attack and has no
-// target turns on its attacker.
+// mobAttacked is the mob_attacked timer of a skill that hits a monster
+// without damage, such as Steal Coin: the monster learns who did it.
 func (z *Zone) mobAttacked(src, target *entity) {
-	if target.monster == nil || target.dead || target.target != nil || target.status == nil ||
-		target.status.Mode&modeCanAttack == 0 || src.dead || !isEnemy(target, src) {
+	if target.monster == nil || target.dead || target.status == nil || src.dead {
 		return
 	}
-	target.target, target.repeat = src, true
-	if len(target.path) > 0 {
-		target.path = target.path[:0]
-		target.stopped = true
-	}
-	target.nextAttack = max(target.nextAttack, z.now+int64(target.status.DMotion))
+	z.mobSetAttacked(target, src, false)
 }
 
 // backStab is SkillBackStab.

@@ -195,6 +195,9 @@ type Runtime struct {
 	skillCtxs    map[int64]*Context
 	skillEntries map[int64]string
 	passives     map[passiveKey]*passive
+	// monsterCtxs are the contexts of monsters' AI scripts, by monster
+	// handle.
+	monsterCtxs map[int64]*Context
 }
 
 // Context owns what a setup function and its handlers create
@@ -275,6 +278,7 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		conversations: map[int64]*Conversation{}, declared: map[string]string{},
 		hooks: map[string][]*hook{}, hookByID: map[int64]*hook{}, schedules: map[int64]*scheduled{}, events: map[int64]*Context{},
 		skillCtxs: map[int64]*Context{}, skillEntries: map[int64]string{}, passives: map[passiveKey]*passive{},
+		monsterCtxs: map[int64]*Context{},
 	}
 	s, err := script.New(script.Options{Limits: opts.Limits})
 	if err != nil {
@@ -403,6 +407,12 @@ func (r *Runtime) init() error {
 		{"cast_deal_damage", r.castDealDamage},
 		{"cast_heal", r.castHeal},
 		{"cast_run_default", r.castRunDefault},
+		{"monster_set_target", r.monsterSetTarget},
+		{"monster_clear_target", r.monsterClearTarget},
+		{"monster_walk_to", r.monsterWalkTo},
+		{"monster_use_skill", r.monsterUseSkill},
+		{"monster_talk", r.monsterTalk},
+		{"monster_stop", r.monsterStop},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -482,6 +492,10 @@ func (r *Runtime) Close() {
 		r.end(c)
 	}
 	r.endSkills()
+	for id, c := range r.monsterCtxs {
+		delete(r.monsterCtxs, id)
+		r.end(c)
+	}
 	for k, s := range r.setups {
 		s.Release()
 		delete(r.setups, k)
@@ -563,6 +577,7 @@ func (r *Runtime) Reload(sc *mod.Scripts) error {
 	}
 	r.scripts[sc.Mod] = sc
 	err := r.start(sc)
+	r.reloadMonsters(sc.Mod)
 	return errors.Join(err, r.reloadNPCs(sc.Mod), r.reloadSkills(sc.Mod))
 }
 

@@ -21,7 +21,7 @@ func worldZone(t *testing.T, files ...string) (*Zone, *Player, *entity, *syncBuf
 	mob := &battle.Status{MaxHP: 30, Hit: 200, ADelay: 1000, AMotion: 500, DMotion: 300, Mode: 0x81, RHW: battle.Weapon{Atk: 10, Atk2: 10, Range: 1}}
 	reward := &progression.Mob{ID: 1002, Level: 3, MaxHP: 30, BaseExp: 15, JobExp: 25, Drops: []progression.Drop{{Item: 909, Rate: 1}}}
 	mob.Level = 3
-	poring := Spawn{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, Status: mob, RespawnMs: 60000, Reward: reward}
+	poring := Spawn{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, ViewRange: 10, ChaseRange: 12, Status: mob, RespawnMs: 60000, Reward: reward}
 	z := New("map/test", open(40), rng.FromKey([32]byte{3}).Stream(), []Spawn{poring})
 	z.Progress = testTables()
 	z.PlayerStatus = battle.Status{MaxHP: 100, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}

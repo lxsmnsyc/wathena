@@ -37,6 +37,8 @@ var Systems = []string{
 	"elements",
 	"mob_status",
 	"mob_damage",
+	"mob_ai",
+	"mob_skill_use",
 	"pc_status",
 	"pc_damage",
 	"skill_damage",

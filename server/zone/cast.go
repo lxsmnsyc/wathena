@@ -6,6 +6,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -135,9 +136,22 @@ func (z *Zone) useSkill(p *Player, c *useSkillCommand) {
 	z.skillUseID(e, target, def, lv)
 }
 
+// castOverride is the cast time and cancel flag that a monster's
+// mob_skill_db entry passes to unit_skilluse_id2 and unit_skilluse_pos2
+// in place of the skill's own.
+type castOverride struct {
+	ms     int
+	cancel bool
+}
+
 // skillUseID is unit_skilluse_id2: a unit starts a skill on a target.
 // It reports whether the cast started.
 func (z *Zone) skillUseID(src, target *entity, def *skill.Def, lv int) bool {
+	return z.skillUseIDWith(src, target, def, lv, nil)
+}
+
+// skillUseIDWith is skillUseID with a monster entry's cast time.
+func (z *Zone) skillUseIDWith(src, target *entity, def *skill.Def, lv int, o *castOverride) bool {
 	if src.dead {
 		return false
 	}
@@ -149,7 +163,12 @@ func (z *Zone) skillUseID(src, target *entity, def *skill.Def, lv int) bool {
 	caster := z.caster(src)
 	// Charge Attack's cast time reads distance_math_bl to the target.
 	caster.TargetDistance = mathDistance(src, target)
-	res := def.CastTimeFor(caster, lv, z.renewal(), src.player == nil || src.player.char.Skills[def.ID] > 0)
+	var res skill.CastResult
+	if o != nil {
+		res = def.MonsterCastTime(caster, o.ms, lv, z.renewal())
+	} else {
+		res = def.CastTimeFor(caster, lv, z.renewal(), src.player == nil || src.player.char.Skills[def.ID] > 0)
+	}
 	z.castSideEffects(src, res)
 	if !z.renewal() && def.ID == skill.IDChaseWalk && src.sc.Has(sc.SCChasewalk) {
 		// Pre-renewal ends Chase Walk without a cast time.
@@ -169,6 +188,9 @@ func (z *Zone) skillUseID(src, target *entity, def *skill.Def, lv int) bool {
 	}
 	if !z.hookCastAllowed(src, target, def, lv) {
 		z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+		return false
+	}
+	if mobSummonBlocked(src, def) {
 		return false
 	}
 	rng := def.RangeFor(src.status, lv)
@@ -202,26 +224,59 @@ func (z *Zone) skillUseID(src, target *entity, def *skill.Def, lv int) bool {
 		// unit_stop_attack: only combo skills keep the attack going.
 		src.target = nil
 	}
+	cancel := def.CastCancel
+	if o != nil {
+		cancel = o.cancel
+	}
 	if old := src.cast; old != nil {
 		// Cast Cancel during a cast: the cast it stops waits for Cast
 		// Cancel's effect, as sd->skill_id_old.
-		return z.castCancelBegin(src, old, &casting{def: def, lv: lv, target: target, cancel: def.CastCancel},
+		return z.castCancelBegin(src, old, &casting{def: def, lv: lv, target: target, cancel: cancel},
 			z.hookCastTime(src, target, def, lv, res.Milliseconds))
 	}
-	src.cast = &casting{def: def, lv: lv, target: target, cancel: def.CastCancel}
+	src.cast = &casting{def: def, lv: lv, target: target, cancel: cancel}
+	z.castSensor(src, target, res.Milliseconds)
 	return z.castBegin(src, z.hookCastTime(src, target, def, lv, res.Milliseconds))
+}
+
+// mobSummonBlocked is the check of unit_skilluse_id2 and
+// unit_skilluse_pos2: a summoned monster with a special AI, such as a
+// flora, cannot summon or teleport.
+func mobSummonBlocked(src *entity, def *skill.Def) bool {
+	m := src.monster
+	if m == nil || m.master == nil || m.specialAI == aiNone {
+		return false
+	}
+	switch def.ID {
+	case mob.IDSummonSlave, mob.IDSummonMonster, mob.IDDeathSummon, skill.IDTeleport:
+		return true
+	}
+	return false
 }
 
 // skillUsePos is unit_skilluse_pos2: a unit starts a ground skill on a
 // cell.
 func (z *Zone) skillUsePos(src *entity, def *skill.Def, lv, x, y int) bool {
+	return z.skillUsePosWith(src, def, lv, x, y, nil)
+}
+
+// skillUsePosWith is skillUsePos with a monster entry's cast time.
+func (z *Zone) skillUsePosWith(src *entity, def *skill.Def, lv, x, y int, o *castOverride) bool {
 	if src.dead || src.cast != nil {
 		return false
 	}
 	if x < 0 || y < 0 || x >= z.grid.Width || y >= z.grid.Height {
 		return false
 	}
-	res := def.CastTimeFor(z.caster(src), lv, z.renewal(), src.player == nil || src.player.char.Skills[def.ID] > 0)
+	if mobSummonBlocked(src, def) {
+		return false
+	}
+	var res skill.CastResult
+	if o != nil {
+		res = def.MonsterCastTime(z.caster(src), o.ms, lv, z.renewal())
+	} else {
+		res = def.CastTimeFor(z.caster(src), lv, z.renewal(), src.player == nil || src.player.char.Skills[def.ID] > 0)
+	}
 	z.castSideEffects(src, res)
 	if src.player != nil {
 		if !z.checkCastBegin(src, def, lv) {
@@ -247,6 +302,9 @@ func (z *Zone) skillUsePos(src *entity, def *skill.Def, lv, x, y int) bool {
 	src.pending = nil
 	src.target = nil
 	src.cast = &casting{def: def, lv: lv, x: x, y: y, ground: true}
+	if o != nil {
+		src.cast.cancel = o.cancel
+	}
 	return z.castBegin(src, z.hookCastTime(src, nil, def, lv, res.Milliseconds))
 }
 
@@ -348,6 +406,7 @@ func (z *Zone) castCancel(e *entity, onlyIfAllowed bool) bool {
 	e.cast = nil
 	z.skillEvents = append(z.skillEvents, skillEvent{kind: skillEventCancel, src: e})
 	z.freeCastChanged(e)
+	z.mobCastCancel(e)
 	return true
 }
 
@@ -362,6 +421,11 @@ func (z *Zone) castEnd(src *entity, timed bool) {
 	if timed {
 		// The walk speed of Free Cast comes back.
 		z.freeCastChanged(src)
+	}
+	if src.monster != nil && !src.dead {
+		// What happens at a monster's cast end even when the skill fails.
+		z.mobCastEnd(src)
+		defer func() { src.monster.skillIdx = -1 }()
 	}
 	ok := false
 	if c.ground {
@@ -460,6 +524,16 @@ func (z *Zone) castEndIDCheck(src, target *entity, def *skill.Def) wathenav1.Ski
 			return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
 		}
 		return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
+	}
+	if def.ID == idNpcPhantomThrust {
+		// NPC_PHANTOMTHRUST cannot be cast on the Emperium, and fails with
+		// USESKILL_FAIL_TOTARGET on a unit that is not an enemy.
+		if target.monster != nil && target.monster.spawn.Mob == mobEmperium {
+			return skillFailSilent
+		}
+		if !isEnemy(src, target) {
+			return wathenav1.SkillFailure_SKILL_FAILURE_TARGET
+		}
 	}
 	switch {
 	case def.Target == skill.TargetEnemy || def.Target == skill.TargetSelf && def.Has("NoTargetSelf"):
@@ -737,8 +811,9 @@ func (z *Zone) statusCheckSkillUse(src, target *entity, def *skill.Def, flag int
 		target.sc.Option&sc.OptionHide != 0 {
 		return false
 	}
-	// Storm Gust and Frost Nova do not hit frozen units.
-	if (def.ID == skill.IDStormGust || def.ID == skill.IDFrostNova) && target.sc.Has(sc.SCFreeze) {
+	// Storm Gust, Frost Nova and NPC_STORMGUST2 do not hit frozen units.
+	if (def.ID == skill.IDStormGust || def.ID == skill.IDFrostNova || def.ID == skill.IDNPCStormGust2) &&
+		target.sc.Has(sc.SCFreeze) {
 		return false
 	}
 	hide := sc.OptionHide

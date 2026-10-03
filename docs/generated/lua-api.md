@@ -48,9 +48,9 @@ local context = require "wa.context"
 
 The current instance, kind and mod. Calls outside a setup function or a handler raise an error.
 
-#### `context:get_instance() → wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance|wa.SkillInstance|wa.PassiveSkillInstance`
+#### `context:get_instance() → wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance|wa.SkillInstance|wa.PassiveSkillInstance|wa.Monster`
 
-The instance the context owns: the mod, the NPC, the equipped copy, the used item, the event run, the skill, or a passive skill of one owner.
+The instance the context owns: the mod, the NPC, the equipped copy, the used item, the event run, the skill, a passive skill of one owner, or the monster of a monster's AI script.
 
 #### `context:get_kind() → wa.ContextKind`
 
@@ -97,7 +97,7 @@ Permission: `rules.override`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `wa.HookName` | The hook's name. An unknown name raises an error. |
-| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook, next: fun(object?: table): integer\|boolean, integer?): integer\|boolean, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false. |
+| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice, next: fun(object?: table): integer\|boolean\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?): integer\|boolean\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none. |
 | `options` | `wa.HookOptions?` |  |
 
 ### wa.schedules
@@ -1164,7 +1164,7 @@ Permission: `game.read`.
 
 ### wa.Monster
 
-A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read.
+A monster. A killed monster's handle reads while its death event runs, with is_alive false, and raises an error after it. Two handles to one monster are equal with ==. A monster that comes back after it died is a new monster with a new handle. Reading needs game.read. The methods control its AI, as rAthena's unit script commands. They raise an error once the monster is gone.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1178,6 +1178,9 @@ A monster. A killed monster's handle reads while its death event runs, with is_a
 | `x` | `integer` |  |
 | `y` | `integer` |  |
 | `is_alive` | `boolean` |  |
+| `target` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | The unit its AI follows (target_id), or nil. |
+| `state` | `wa.MonsterState` | Its skill state, in rAthena's words. |
+| `master` | `wa.Player\|wa.Monster\|nil` | The unit that summoned it as a slave, or nil. |
 
 #### `monster:show_effect(effect)`
 
@@ -1200,6 +1203,49 @@ Permission: `game.read`.
 #### `monster:exists() → boolean`
 
 False once the entity is removed, has logged out, or has left the zone. It never raises an error.
+
+#### `monster:set_target(target) → boolean`
+
+The monster takes the target and chases it to attack, as unitattack. Returns false when it cannot target it.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `target` | `wa.Player\|wa.Monster\|wa.Npc` |  |
+
+#### `monster:clear_target()`
+
+The monster drops its target and goes idle, as mob_unlocktarget.
+
+#### `monster:walk_to(x, y) → boolean`
+
+The monster walks to a cell, as unitwalk. Its AI waits until it gets there. Returns false when it cannot walk there.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+
+#### `monster:use_skill(skill, level, target) → boolean`
+
+The monster uses a skill with the skill's own cast time, as unitskilluseid. No delay of its skills list applies. Returns false when the cast does not start.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | From skills.id. |
+| `level` | `integer` | 1 to 100. |
+| `target` | `wa.Player\|wa.Monster\|wa.Npc` | The target, or its cell for a ground skill. The monster itself for a skill on itself. |
+
+#### `monster:talk(text)`
+
+The monster says a line to the players near it, after its name, as unittalk.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `text` | `string` | 1 to 255 bytes. |
+
+#### `monster:stop()`
+
+The monster stops walking and attacking, and drops its target, as unitstop.
 
 #### `monster:start_status(status, options?) → boolean`
 
@@ -1852,6 +1898,17 @@ The object of the skill_damage, cast_time, skill_cost and cast_allowed hooks. Th
 | `sp` | `integer?` | skill_cost: the SP cost. |
 | `allowed` | `boolean?` | cast_allowed: whether rAthena lets the cast start. |
 
+### wa.MonsterTargetChoice
+
+The object of the monster_target hook: a monster's AI chooses a target. The innermost result is current, rAthena's choice.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `monster` | `wa.Monster` | The monster that chooses. |
+| `candidates` | `(wa.Player\|wa.Monster\|wa.Npc)[]` | The units it may take. The hook returns one of them, or nil. |
+| `current` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | rAthena's choice: the target the monster takes without hooks. |
+| `reason` | `"aggressive"\|"assist"\|"hit"\|"change"` | Why it chooses: it looks for a target, a monster of its kind calls for help, a unit hit it, or it changes chase target. |
+
 ### wa.EntityQuery
 
 A query of maps.find_entities. It has one area: around with radius, x and y with radius, rectangle, line, or cells. The other fields filter and sort.
@@ -2315,7 +2372,13 @@ An equipment slot.
 
 A hook name of wa.hooks.
 
-`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`
+`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`
+
+### wa.MonsterState
+
+A monster's skill state, in the words of rAthena's mob_skill_db.
+
+`idle`, `walk`, `loot`, `dead`, `attack`, `angry`, `chase`, `follow`
 
 ### wa.Weekday
 

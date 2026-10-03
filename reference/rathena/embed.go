@@ -8,8 +8,8 @@ package rathena
 
 import "embed"
 
-// Files holds the extracts and monster stats of both modes, at the same
-// paths as in this folder.
+// Files holds the extracts of both modes, at the same paths as in this
+// folder.
 //
 //go:embed extracts/renewal/progression.json extracts/renewal/client_tables.json
 //go:embed extracts/renewal/items.json extracts/renewal/spawns.json
@@ -18,6 +18,7 @@ import "embed"
 //go:embed extracts/renewal/npcs.json extracts/renewal/item_prices.json
 //go:embed extracts/renewal/equipment.json extracts/renewal/refine_db.json extracts/renewal/monster_groups.json
 //go:embed extracts/renewal/status.json extracts/renewal/skills.json extracts/renewal/skill_trees.json
+//go:embed extracts/renewal/monsters.json
 //go:embed extracts/pre-renewal/progression.json extracts/pre-renewal/client_tables.json
 //go:embed extracts/pre-renewal/items.json extracts/pre-renewal/spawns.json
 //go:embed extracts/pre-renewal/job_stats.json extracts/pre-renewal/warps.json
@@ -25,5 +26,5 @@ import "embed"
 //go:embed extracts/pre-renewal/npcs.json extracts/pre-renewal/item_prices.json
 //go:embed extracts/pre-renewal/equipment.json extracts/pre-renewal/refine_db.json extracts/pre-renewal/monster_groups.json
 //go:embed extracts/pre-renewal/status.json extracts/pre-renewal/skills.json extracts/pre-renewal/skill_trees.json
-//go:embed renewal/mob_status.json pre-renewal/mob_status.json
+//go:embed extracts/pre-renewal/monsters.json
 var Files embed.FS

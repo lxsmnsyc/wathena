@@ -209,6 +209,16 @@ func (v *setup) run(typ int, def *Def) bool {
 		} else {
 			val[1] = 10
 		}
+	case scDamageHeal:
+		// The attack type that heals instead of hurting.
+		switch val[0] {
+		case 1:
+			val[1] = battle.FlagWeapon
+		case 2:
+			val[1] = battle.FlagMagic
+		case 3:
+			val[1] = battle.FlagMisc
+		}
 	case SCBossmapinfo:
 		// The minimap of the map's boss needs boss tracking, which does
 		// not exist yet. rAthena fails without a boss on the map.
@@ -394,6 +404,9 @@ func (v *setup) run(typ int, def *Def) bool {
 		// 10,000.
 		val[1] = 100 * val[0]
 		val[2] = 70 * val[0]
+	case scWeaponBreaker:
+		// The chance to break the target's weapon, per 10,000.
+		val[1] = val[0] * 2 * 100
 	case SCMagicpower:
 		// MATK percent. In pre-renewal it lasts one cast: val4 is 0
 		// while it waits and 1 once a spell started.
@@ -414,11 +427,53 @@ func (v *setup) run(typ int, def *Def) bool {
 		} else {
 			val[1] = 10 * val[0]
 		}
+	case SCGradualGravity:
+		// The percent of max HP each tick takes, and the time left.
+		val[1] = 10 * val[0]
+		v.tickTime = int64(scInterval(typ))
+		val[3] = int(v.tick - v.tickTime)
+	case scAllStatDown:
+		// The stats it takes: 10 less below the skill's top level.
+		val[1] = 20 * val[0]
+		if val[0] < npcAllStatDownMax {
+			val[1] -= 10
+		}
+	case scArmor:
+		// NPC_DEFENDER: the damage is divided by val2, for hits of the
+		// range in val3 and the types in val4.
+		val[1] = 8
+		val[2] = npcBfLong
+		val[3] = battle.FlagWeapon | battle.FlagMisc
 	case SCCriticalwound:
 		val[0] = 1 + (val[0]-1)%5
 		val[1] = 20 * val[0]
-	case SCSlowcast:
+	case scMagicmirror, SCSlowcast:
+		if typ == scMagicmirror {
+			// Levels 6 to 10 last less, with the effect of levels 1 to 5.
+			val[0] = 1 + (val[0]-1)%5
+		}
+		// The chance to reflect magic, or the cast time increase.
 		val[1] = 20 * val[0]
+	case scNPCHallucinationWalk:
+		// val2 is the FLEE bonus, val3 the chance in percent to evade a
+		// magic hit.
+		val[1] = 50 * val[0]
+		val[2] = 10 * val[0]
+	case scArmorchange:
+		// NPC_ANTIMAGIC raises MDEF, and NPC_STONESKIN DEF: val2 is the
+		// weapon damage reduction and val3 the magic damage reduction,
+		// 20% per level. Levels 6 to 10 last less, with the effect of
+		// levels 1 to 5.
+		if val[1] == skillNpcAntimagic {
+			val[1] = -20
+			val[2] = 20
+		} else {
+			val[1] = 20
+			val[2] = -20
+		}
+		val[0] = 1 + (val[0]-1)%5
+		val[1] *= val[0]
+		val[2] *= val[0]
 	case SCExpboost, SCJexpboost, SCPeriodReceiveitem2nd, SCPeriodPlusexp2nd:
 		if val[0] < 1 {
 			return false
@@ -434,11 +489,29 @@ func (v *setup) run(typ int, def *Def) bool {
 		if val[0] < 1 {
 			val[0] = 1
 		}
+	case SCInvincible:
+		// The ATK percent, speed and ASPD increases.
+		val[1] = 100
+		val[2] = 50
+		val[3] = 700
 	case SCFear:
 		en.Start(v.src, v.target, Start{Type: SCAnkle, Rate: 10000, Duration: 2000, Reason: ReasonSkill})
 	case SCRefresh:
 		en.env.Heal(v.target, int64(st.MaxHP)*25/100, 0)
 		en.ClearBuffs(v.target, RemoveOnRefresh)
+	case scMillenniumshield:
+		// 2 to 4 shields of 1000 HP each. clif_millenniumshield has no
+		// event on the client yet.
+		chance := en.env.RandN(100)
+		switch {
+		case chance < 20:
+			val[1] = 4
+		case chance < 50:
+			val[1] = 3
+		default:
+			val[1] = 2
+		}
+		val[2] = 1000
 	case SCWeaponblocking:
 		val[1] = 10 + 2*val[0]
 		val[3] = int(v.tick / 5000)

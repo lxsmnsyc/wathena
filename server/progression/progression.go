@@ -45,9 +45,9 @@ type ItemRate struct {
 // Config holds the battle settings this package reads. DefaultConfig has
 // rAthena's defaults.
 type Config struct {
-	// BaseExpRate and JobExpRate scale monster exp when loading, in
-	// percent (base_exp_rate, job_exp_rate).
-	BaseExpRate, JobExpRate int
+	// BaseExpRate, JobExpRate and MvpExpRate scale monster exp when
+	// loading, in percent (base_exp_rate, job_exp_rate, mvp_exp_rate).
+	BaseExpRate, JobExpRate, MvpExpRate int
 	// MultiLevelUp lets one kill give more than one level
 	// (multi_level_up). MultiLevelUpBase and MultiLevelUpJob stop it from
 	// those levels on, when not 0.
@@ -97,6 +97,7 @@ type Config struct {
 var DefaultConfig = Config{
 	BaseExpRate:          100,
 	JobExpRate:           100,
+	MvpExpRate:           100,
 	ExpBonusAttacker:     25,
 	ExpBonusMaxAttacker:  12,
 	FirstAttackLootBonus: 30,

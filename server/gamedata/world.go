@@ -9,8 +9,10 @@ import (
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/constants"
+	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
@@ -18,56 +20,113 @@ import (
 // Monster overlays (data/monsters.yml) and world events
 // (data/events.yml). mods/README.md, "Monsters", lists the fields.
 //
-// The server has no monster status calculation yet (phase 4), so the
-// values that combat reads are set directly: hp, attack, defense, hit
-// and flee, not the base stats they come from.
+// The fields set mob_db's base values. The server computes the combat
+// values from them, as rAthena's status_calc_mob (proposal 0002, review
+// decision 22).
 
 // monsterFields are the fields of a monster record.
 var monsterFields = []string{
-	"display_name", "sprite", "level", "hp", "sp", "attack", "magic_attack", "defense", "magic_defense", "hit", "flee",
-	"speed", "attack_range", "attack_delay", "attack_motion", "damage_motion", "element", "element_level",
-	"race", "size", "class", "modes", "base_exp", "job_exp", "drops",
+	"display_name", "sprite", "level", "hp", "sp", "attack", "magic_attack", "defense", "magic_defense",
+	"resistance", "magic_resistance", "str", "agi", "vit", "int", "dex", "luk", "speed", "attack_range",
+	"skill_range", "chase_range", "attack_delay", "attack_motion", "damage_motion", "element", "element_level",
+	"race", "size", "class", "ai", "modes", "base_exp", "job_exp", "mvp_exp", "drops", "mvp_drops",
+	"damage_taken", "skills", "script",
 }
 
-// Monster classes of class, as rAthena's e_aegis_monsterclass, and the
-// modes each adds, as mob_db's loading does.
-var monsterClasses = map[string]struct {
-	class int
-	modes uint32
-}{
-	"normal":      {0, 0},
-	"boss":        {1, modeDetector | modeStatusImmune | modeKnockbackImmune},
-	"guardian":    {2, modeStatusImmune},
-	"battlefield": {4, modeStatusImmune | modeSkillImmune},
-	"event":       {5, modeFixedItemDrop},
-}
-
-// Mode bits of rAthena's e_mode.
-const (
-	modeKnockbackImmune = 0x0200000
-	modeFixedItemDrop   = 0x1000000
-	modeDetector        = 0x2000000
-	modeStatusImmune    = 0x4000000
-	modeSkillImmune     = 0x8000000
-)
+// Monster classes of class, as rAthena's e_aegis_monsterclass.
+var monsterClasses = map[string]int{"normal": 0, "boss": 1, "guardian": 2, "battlefield": 4, "event": 5}
 
 // MonsterModes are the names of modes, from rAthena's MD_ names.
-var MonsterModes = map[string]uint32{
-	"can_move": 0x1, "looter": 0x2, "aggressive": 0x4, "assist": 0x8, "cast_sensor_idle": 0x10,
-	"no_random_walk": 0x20, "no_cast": 0x40, "can_attack": 0x80, "cast_sensor_chase": 0x200,
-	"change_chase": 0x400, "angry": 0x800, "change_target_melee": 0x1000, "change_target_chase": 0x2000,
-	"target_weak": 0x4000, "random_target": 0x8000, "ignore_melee": 0x10000, "ignore_magic": 0x20000,
-	"ignore_ranged": 0x40000, "mvp": 0x80000, "ignore_misc": 0x100000, "knockback_immune": 0x200000,
-	"teleport_block": 0x400000, "fixed_item_drop": 0x1000000, "detector": 0x2000000,
-	"status_immune": 0x4000000, "skill_immune": 0x8000000,
+var MonsterModes = mob.ModeNames
+
+// monsterNames resolves the names of a skills list for mob.ParseSkills.
+type monsterNames struct {
+	skills   *skill.DB
+	byName   map[string]uint32
+	names    map[uint32]string
+	statuses *constants.Module
+	emotions *constants.Module
 }
 
-// monsterOverlay applies the mods' monster overlays over the core
-// monsters. It returns every monster by ID, and every name, in upper
-// case, by ID. items finds drops by item name. tables adjusts drops and
-// scales exp, and may be nil.
+func (n *monsterNames) SkillID(name string) (int, bool) {
+	if n.skills == nil {
+		return 0, false
+	}
+	d := n.skills.ByName(name)
+	if d == nil {
+		return 0, false
+	}
+	return d.ID, true
+}
+
+func (n *monsterNames) SkillName(id int) (string, bool) {
+	if n.skills == nil {
+		return "", false
+	}
+	d := n.skills.Get(id)
+	if d == nil {
+		return "", false
+	}
+	return d.Name, true
+}
+
+func (n *monsterNames) Ground(id int) bool {
+	if n.skills == nil {
+		return false
+	}
+	d := n.skills.Get(id)
+	return d != nil && d.Target == skill.TargetGround
+}
+
+func (n *monsterNames) MonsterID(name string) (uint32, bool) {
+	id, ok := n.byName[name]
+	return id, ok
+}
+
+func (n *monsterNames) MonsterName(id uint32) (string, bool) {
+	s, ok := n.names[id]
+	return s, ok
+}
+
+func (n *monsterNames) StatusID(name string) (int, bool) {
+	if n.statuses == nil {
+		return 0, false
+	}
+	v, ok := n.statuses.Values[name]
+	return int(v), ok
+}
+
+func (n *monsterNames) StatusName(id int) (string, bool) {
+	if n.statuses == nil {
+		return "", false
+	}
+	s, ok := n.statuses.Names[int64(id)]
+	return s, ok
+}
+
+func (n *monsterNames) EmotionID(name string) (int, bool) {
+	if n.emotions == nil {
+		return 0, false
+	}
+	v, ok := n.emotions.Values[name]
+	return int(v), ok
+}
+
+func (n *monsterNames) EmotionName(id int) (string, bool) {
+	if n.emotions == nil {
+		return "", false
+	}
+	s, ok := n.emotions.Names[int64(id)]
+	return s, ok
+}
+
+// monsterOverlay applies the overlays of data/monsters.yml, core's and
+// the mods', over the core monsters. It returns every monster by ID, and
+// every name, in upper case, by ID. items finds drops by item name,
+// skills the skills of skills lists, and set the AI scripts. tables
+// adjusts drops and scales exp, and may be nil.
 func monsterOverlay(ctx context.Context, set *mod.Set, base map[uint32]Monster, consts *constants.Data,
-	items map[string]uint32, tables *progression.Tables, ids *mod.IDs) (map[uint32]Monster, map[string]int64, *mod.Overlay, error) {
+	items map[string]uint32, skills *skill.DB, tables *progression.Tables, ids *mod.IDs) (map[uint32]Monster, map[string]int64, *mod.Overlay, error) {
 	byName := map[string]uint32{}
 	for id, m := range base {
 		if m.AegisName != "" {
@@ -80,51 +139,79 @@ func monsterOverlay(ctx context.Context, set *mod.Set, base map[uint32]Monster, 
 	}
 	out := maps.Clone(base)
 	var errs []error
+	// The first pass gives every new monster its ID, so a skills list
+	// may summon a monster that a later record adds.
+	type pending struct {
+		r  *mod.Record
+		id uint32
+		m  Monster
+	}
+	var todo []pending
 	for _, r := range o.Records {
-		var m Monster
-		var id uint32
 		if core, ok := byName[r.Name]; ok {
-			id, m = core, out[core].clone()
-		} else {
-			spriteName, _ := r.Fields["sprite"].(string)
-			from, ok := byName[spriteName]
-			if !ok {
-				errs = append(errs, fmt.Errorf("%s: monsters %s: a new monster needs sprite: the AegisName of a monster whose sprite it shows, such as PORING", r.Where, r.Name))
-				continue
-			}
-			if id, err = ids.ID(ctx, mod.MonsterIDs, r.Name, r.Mod); err != nil {
-				return nil, nil, nil, err
-			}
-			m = out[from].clone()
-			m.AegisName, m.Name = r.Name, mod.Local(r.Name)
-			if m.Status != nil {
-				// A new monster is its own class for bAddDamageClass,
-				// and has no race groups of its own.
-				m.Status.ID, m.Status.Race2 = int(id), nil
-			}
-			if m.Reward != nil {
-				m.Reward.BaseExp, m.Reward.JobExp, m.Reward.Drops = 0, 0, nil
-			}
-		}
-		if err := applyMonster(&m, id, r.Fields, byName, consts, items, tables); err != nil {
-			errs = append(errs, fmt.Errorf("%s: monsters %s: %w", r.Where, r.Name, err))
+			todo = append(todo, pending{r, core, out[core].clone()})
 			continue
 		}
+		spriteName, _ := r.Fields["sprite"].(string)
+		from, ok := byName[spriteName]
+		if !ok {
+			errs = append(errs, fmt.Errorf("%s: monsters %s: a new monster needs sprite: the AegisName of a monster whose sprite it shows, such as PORING", r.Where, r.Name))
+			continue
+		}
+		id, err := ids.ID(ctx, mod.MonsterIDs, r.Name, r.Mod)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		m := out[from].clone()
+		m.AegisName, m.Name = r.Name, mod.Local(r.Name)
+		if m.Def != nil {
+			m.Def.ID, m.Def.AegisName = id, r.Name
+			m.Def.BaseExp, m.Def.JobExp, m.Def.MvpExp = 0, 0, 0
+		}
+		// A new monster has its own drops and skills, and no race groups
+		// of its own.
+		m.drops, m.mvpDrops, m.Skills, m.Script = nil, nil, nil, ""
+		if m.Status != nil {
+			m.Status.Race2 = nil
+		}
 		byName[r.Name] = id
-		out[id] = m
+		todo = append(todo, pending{r, id, m})
 	}
 	if len(errs) > 0 {
 		return nil, nil, nil, errors.Join(errs...)
 	}
-	names := make(map[string]int64, len(byName))
+	names := &monsterNames{skills: skills, byName: byName, names: map[uint32]string{}}
 	for n, id := range byName {
-		names[strings.ToUpper(n)] = int64(id)
+		names.names[id] = n
 	}
-	return out, names, o, nil
+	if consts != nil {
+		mods := consts.Modules()
+		names.statuses, names.emotions = mods["statuses"], mods["emotions"]
+	}
+	for _, p := range todo {
+		m := p.m
+		if err := applyMonster(&m, p.r, set, consts, items, names, tables); err != nil {
+			errs = append(errs, fmt.Errorf("%s: monsters %s: %w", p.r.Where, p.r.Name, err))
+			continue
+		}
+		out[p.id] = m
+	}
+	if len(errs) > 0 {
+		return nil, nil, nil, errors.Join(errs...)
+	}
+	upper := make(map[string]int64, len(byName))
+	for n, id := range byName {
+		upper[strings.ToUpper(n)] = int64(id)
+	}
+	return out, upper, o, nil
 }
 
 // clone copies a monster, so an overlay does not change the original.
 func (m Monster) clone() Monster {
+	if m.Def != nil {
+		d := *m.Def
+		m.Def = &d
+	}
 	if m.Status != nil {
 		st := *m.Status
 		m.Status = &st
@@ -134,12 +221,15 @@ func (m Monster) clone() Monster {
 		r.Drops = slices.Clone(r.Drops)
 		m.Reward = &r
 	}
+	m.Skills = slices.Clone(m.Skills)
 	return m
 }
 
-// applyMonster sets a record's fields on a monster.
-func applyMonster(m *Monster, id uint32, f map[string]any, byName map[string]uint32, consts *constants.Data,
-	items map[string]uint32, tables *progression.Tables) error {
+// applyMonster sets a record's fields on a monster, and computes its
+// battle status again.
+func applyMonster(m *Monster, r *mod.Record, set *mod.Set, consts *constants.Data, items map[string]uint32,
+	names *monsterNames, tables *progression.Tables) error {
+	f := r.Fields
 	var errs []string
 	bad := func(format string, args ...any) { errs = append(errs, fmt.Sprintf(format, args...)) }
 	for k := range f {
@@ -147,7 +237,10 @@ func applyMonster(m *Monster, id uint32, f map[string]any, byName map[string]uin
 			bad("%q is not a field; monsters have %s", k, strings.Join(monsterFields, ", "))
 		}
 	}
-	st := m.Status
+	d := m.Def
+	if d == nil {
+		return errors.New("the monster has no data")
+	}
 	num := func(k string, lo, hi int, to *int) {
 		v, ok := f[k]
 		if !ok {
@@ -160,23 +253,12 @@ func applyMonster(m *Monster, id uint32, f map[string]any, byName map[string]uin
 		}
 		*to = n
 	}
-	pair := func(k string, lo, hi int, a, b *int) {
-		v, ok := f[k]
-		if !ok {
-			return
+	num64 := func(k string, to *int64) {
+		var n int
+		if _, ok := f[k]; ok {
+			num(k, 0, 1<<31-1, &n)
+			*to = int64(n)
 		}
-		list, _ := v.([]any)
-		if len(list) != 2 {
-			bad("%s must be [minimum, maximum]", k)
-			return
-		}
-		x, ok1 := list[0].(int)
-		y, ok2 := list[1].(int)
-		if !ok1 || !ok2 || x < lo || y > hi || x > y {
-			bad("%s must be [minimum, maximum], from %d to %d", k, lo, hi)
-			return
-		}
-		*a, *b = x, y
 	}
 	constant := func(k, module string, to *int) {
 		v, ok := f[k]
@@ -208,85 +290,172 @@ func applyMonster(m *Monster, id uint32, f map[string]any, byName map[string]uin
 	}
 	if v, ok := f["sprite"]; ok {
 		s, _ := v.(string)
-		from, ok := byName[s]
+		from, ok := names.byName[s]
 		if !ok {
 			bad("sprite: there is no monster %q", s)
 		} else {
 			m.Sprite = from
 		}
 	}
-	num("level", 1, 999, &st.Level)
-	num("hp", 1, 1<<31-1, &st.MaxHP)
-	num("sp", 0, 1<<31-1, &st.MaxSP)
-	pair("attack", 0, 1<<20, &st.RHW.Atk, &st.RHW.Atk2)
-	pair("magic_attack", 0, 1<<20, &st.MAtkMin, &st.MAtkMax)
-	num("defense", -100, 1<<15, &st.Def)
-	num("magic_defense", -100, 1<<15, &st.MDef)
-	num("hit", 0, 1<<15, &st.Hit)
-	num("flee", 0, 1<<15, &st.Flee)
-	num("speed", 20, 1000, &st.Speed)
-	num("attack_range", 1, 14, &st.RHW.Range)
-	num("attack_delay", 20, 10000, &st.ADelay)
-	num("attack_motion", 20, 10000, &st.AMotion)
-	num("damage_motion", 0, 10000, &st.DMotion)
-	constant("element", "elements", &st.DefEle)
-	num("element_level", 1, 4, &st.EleLv)
-	constant("race", "races", &st.Race)
-	constant("size", "sizes", &st.Size)
-	if v, ok := f["modes"]; ok {
-		list, ok := v.([]any)
-		if !ok {
-			bad("modes must be a list, such as [can_move, can_attack, aggressive]")
-		}
-		var mode uint32
-		for _, e := range list {
-			s, _ := e.(string)
-			bit, ok := MonsterModes[s]
-			if !ok {
-				bad("modes: %q is not a mode; the modes are %s", s, strings.Join(slices.Sorted(maps.Keys(MonsterModes)), ", "))
-				continue
+	num("level", 1, 999, &d.Level)
+	num("hp", 1, 1<<31-1, &d.HP)
+	num("sp", 1, 1<<31-1, &d.SP)
+	if v, ok := f["attack"]; ok {
+		// mob_db's Attack: renewal's base attack, or pre-renewal's
+		// minimum. Pre-renewal also takes [minimum, maximum] (Attack and
+		// Attack2).
+		switch v := v.(type) {
+		case int:
+			num("attack", 0, 1<<16-1, &d.Attack)
+		case []any:
+			lo, ok1 := listInt(v, 0)
+			hi, ok2 := listInt(v, 1)
+			switch {
+			case m.renewal:
+				bad("attack must be one number in renewal, and magic_attack sets the magic attack")
+			case len(v) != 2 || !ok1 || !ok2 || lo < 0 || hi > 1<<16-1 || lo > hi:
+				bad("attack must be a number, or [minimum, maximum] from 0 to 65535")
+			default:
+				d.Attack, d.Attack2 = lo, hi
 			}
-			mode |= bit
+		default:
+			bad("attack must be a whole number from 0 to 65535")
 		}
-		st.Mode = mode
 	}
+	if _, ok := f["magic_attack"]; ok {
+		if !m.renewal {
+			bad("magic_attack is mob_db's Attack2 of renewal; pre-renewal monsters get their magic attack from int")
+		}
+		num("magic_attack", 0, 1<<16-1, &d.Attack2)
+	}
+	defLo, defHi := -128, 127
+	if m.renewal {
+		defLo, defHi = -32768, 32767
+	}
+	num("defense", defLo, defHi, &d.Defense)
+	num("magic_defense", defLo, defHi, &d.MagicDefense)
+	num("resistance", 0, 1<<16-1, &d.Resistance)
+	num("magic_resistance", 0, 1<<16-1, &d.MagicResistance)
+	for _, st := range []struct {
+		k  string
+		to *int
+	}{{"str", &d.Str}, {"agi", &d.Agi}, {"vit", &d.Vit}, {"int", &d.Int}, {"dex", &d.Dex}, {"luk", &d.Luk}} {
+		num(st.k, 0, 1<<16-1, st.to)
+	}
+	num("speed", 20, 1000, &d.WalkSpeed)
+	num("attack_range", 0, 14, &d.AttackRange)
+	num("skill_range", 0, 30, &d.SkillRange)
+	num("chase_range", 0, 30, &d.ChaseRange)
+	num("attack_delay", 100, 8000, &d.AttackDelay)
+	num("attack_motion", 1, 8000, &d.AttackMotion)
+	num("damage_motion", 0, 10000, &d.DamageMotion)
+	constant("element", "elements", &d.Element)
+	num("element_level", 1, 4, &d.ElementLevel)
+	constant("race", "races", &d.Race)
+	constant("size", "sizes", &d.Size)
+	num("damage_taken", 0, 100, &d.DamageTaken)
 	if v, ok := f["class"]; ok {
 		s, _ := v.(string)
 		c, ok := monsterClasses[s]
 		if !ok {
 			bad("class: %q is not normal, boss, guardian, battlefield or event", s)
 		}
-		st.Class = c.class
-		st.Mode |= c.modes
+		d.Class = c
 	}
-	if r := m.Reward; r != nil {
-		r.ID, r.Level, r.MaxHP, r.Mode, r.Class = id, st.Level, st.MaxHP, st.Mode, st.Class
-		var exp int
-		if _, ok := f["base_exp"]; ok {
-			num("base_exp", 0, 1<<31-1, &exp)
-			r.BaseExp = progression.MobExp(int64(exp), tables.BaseExpRate)
+	if v, ok := f["ai"]; ok {
+		n, ok := v.(int)
+		if _, exists := mob.AITypes[n]; !ok || !exists {
+			bad("ai must be one of rAthena's AI types, from 1 to 27: %s", aiTypeList())
+		} else {
+			d.AI = fmt.Sprintf("%02d", n)
 		}
-		if _, ok := f["job_exp"]; ok {
-			num("job_exp", 0, 1<<31-1, &exp)
-			r.JobExp = progression.MobExp(int64(exp), tables.JobExpRate)
+	}
+	if v, ok := f["modes"]; ok {
+		list, ok := v.([]any)
+		if !ok {
+			bad("modes must be a list, such as [aggressive, assist]")
 		}
-		if v, ok := f["drops"]; ok {
-			drops, err := readDrops(v, items)
-			if err != nil {
-				bad("drops: %v", err)
+		var on []uint32
+		for _, e := range list {
+			s, _ := e.(string)
+			bit, ok := mob.ModeNames[s]
+			if !ok {
+				bad("modes: %q is not a mode; the modes are %s", s, strings.Join(slices.Sorted(maps.Keys(mob.ModeNames)), ", "))
+				continue
 			}
-			r.Drops = tables.AdjustDrops(r.Boss(), drops)
+			on = append(on, bit)
+		}
+		// The list adds to the modes of the AI type, as mob_db's Modes.
+		m.modesOn, m.modesOff = on, nil
+	}
+	ai, _ := mob.AIModes(d.AI)
+	d.Mode = mob.Modes(ai, m.modesOn, m.modesOff, d.Class)
+	num64("base_exp", &d.BaseExp)
+	num64("job_exp", &d.JobExp)
+	num64("mvp_exp", &d.MvpExp)
+	if v, ok := f["drops"]; ok {
+		drops, err := readDrops(v, items, 20)
+		if err != nil {
+			bad("drops: %v", err)
+		}
+		m.drops = drops
+	}
+	if v, ok := f["mvp_drops"]; ok {
+		drops, err := readDrops(v, items, 3)
+		if err != nil {
+			bad("mvp_drops: %v", err)
+		}
+		m.mvpDrops = drops
+	}
+	if v, ok := f["skills"]; ok {
+		list, err := mob.ParseSkills(v, names)
+		if err != nil {
+			bad("skills: %v", err)
+		}
+		m.Skills = list
+	}
+	if v, ok := f["script"]; ok {
+		path, _ := v.(string)
+		owner := r.SetBy["script"]
+		if path == "" || !set.HasFile(owner, path) {
+			bad("script: %s does not exist in %s", path, owner)
+		} else {
+			m.Script = owner + ":" + path
 		}
 	}
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, "; "))
 	}
+	race2 := m.Status.Race2
+	st := mob.Calc(d, m.renewal)
+	st.Race2 = race2
+	m.Status = &st
+	if m.Reward != nil && tables != nil {
+		m.fillReward(tables)
+	}
 	return nil
+}
+
+func listInt(list []any, i int) (int, bool) {
+	if i >= len(list) {
+		return 0, false
+	}
+	n, ok := list[i].(int)
+	return n, ok
+}
+
+// aiTypeList lists the AI types that exist.
+func aiTypeList() string {
+	var out []string
+	for _, n := range slices.Sorted(maps.Keys(mob.AITypes)) {
+		out = append(out, fmt.Sprintf("%02d", n))
+	}
+	return strings.Join(out, ", ")
 }
 
 // readDrops reads a drops list: { item, rate }, with the rate per
 // 10,000, as mob_db.yml.
-func readDrops(v any, items map[string]uint32) ([]progression.Drop, error) {
+func readDrops(v any, items map[string]uint32, most int) ([]progression.Drop, error) {
 	list, ok := v.([]any)
 	if !ok {
 		return nil, errors.New("want a list of { item: Name, rate: n }, with rates per 10,000")
@@ -308,8 +477,8 @@ func readDrops(v any, items map[string]uint32) ([]progression.Drop, error) {
 		}
 		out = append(out, progression.Drop{Item: id, Rate: rate})
 	}
-	if len(out) > 20 {
-		return nil, errors.New("a monster has at most 20 drops")
+	if len(out) > most {
+		return nil, fmt.Errorf("a monster has at most %d of these drops", most)
 	}
 	return out, nil
 }

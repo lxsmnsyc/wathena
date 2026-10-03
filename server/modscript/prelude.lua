@@ -308,11 +308,16 @@ new_equipped = handle_type("equipped item", {}, function(id, key)
 end)
 
 -- Monsters are handles too. A killed monster's handle stays readable
--- while its death event runs, and fails after.
+-- while its death event runs, and fails after. target and master are
+-- handles, which key_handle makes below; the methods come below too.
+local key_handle
 local new_monster, monster_ids = handle_type("monster", {}, function(id, key)
 	local ok, value = pcall(H.monster_field, id, key)
 	if not ok then
 		error(value, 3)
+	end
+	if (key == "target" or key == "master") and value ~= nil then
+		return key_handle(value)
 	end
 	return value
 end, true, "monster")
@@ -370,6 +375,44 @@ local function entity_handle(kind, id)
 		return new_npc(id)
 	end
 	return nil
+end
+
+-- key_handle makes the handle of a handle key, "<kind>:<id>".
+key_handle = function(key)
+	local kind, id = string.match(key, "^(%a+):(%d+)$")
+	if kind == nil then
+		return nil
+	end
+	return entity_handle(kind, math.tointeger(tonumber(id)))
+end
+
+-- The methods of monster handles (proposal 0002, review decision 22).
+local monster_methods = handle_methods["monster"]
+monster_methods.set_target = function(self, target)
+	local key = handle_key(target)
+	if key == nil then
+		error("monster:set_target: the target must be a player, monster or NPC handle", 2)
+	end
+	return (call(H.monster_set_target, monster_ids[self], key))
+end
+monster_methods.clear_target = function(self)
+	call(H.monster_clear_target, monster_ids[self])
+end
+monster_methods.walk_to = function(self, x, y)
+	return (call(H.monster_walk_to, monster_ids[self], x, y))
+end
+monster_methods.use_skill = function(self, skill, level, target)
+	local key = handle_key(target)
+	if key == nil then
+		error("monster:use_skill: the target must be a player, monster or NPC handle; use the monster itself for a skill on itself", 2)
+	end
+	return (call(H.monster_use_skill, monster_ids[self], skill, level, key))
+end
+monster_methods.talk = function(self, text)
+	call(H.monster_talk, monster_ids[self], text)
+end
+monster_methods.stop = function(self)
+	call(H.monster_stop, monster_ids[self])
 end
 
 -- with_handles copies Go's fields, and makes handles of target, source,
@@ -481,6 +524,10 @@ api["wa.context"] = readonly("wa.context", {
 		end
 		if fields.npc ~= nil then
 			return new_npc(fields.npc)
+		end
+		if fields.monster ~= nil then
+			-- A monster's AI script: the instance is the monster.
+			return new_monster(fields.monster)
 		end
 		if fields.owner_kind ~= nil then
 			-- A passive skill's instance: owner is a handle.
@@ -1301,6 +1348,7 @@ end
 local hook_objects = {
 	drop_rate = "drop", experience = "exp", status_chance = "status hook", status_duration = "status hook",
 	skill_damage = "skill damage hook", cast_time = "cast time hook", skill_cost = "skill cost hook", cast_allowed = "cast allowed hook",
+	monster_target = "monster target choice",
 }
 
 -- hook_values names the field of each hook's object that holds rAthena's
@@ -1328,13 +1376,39 @@ local function hook_object(kind, fields)
 	if fields.monster ~= nil then
 		o.monster = new_monster(fields.monster)
 	end
+	if kind == "monster_target" then
+		-- The candidates and rAthena's choice are handle keys.
+		local list = {}
+		for i, key in ipairs(fields.candidates) do
+			list[i] = key_handle(key)
+		end
+		o.candidates = readonly("candidates", list)
+		if fields.current ~= nil then
+			o.current = key_handle(fields.current)
+		end
+	end
 	return readonly(hook_objects[kind], o)
 end
 
 -- hook_result checks what a hook returned: two integers, base and job,
 -- for experience, true or false for cast_allowed, and an integer for
 -- the others.
-local function hook_result(kind, a, b)
+local function hook_result(kind, a, b, o)
+	if kind == "monster_target" then
+		-- nil, or one of the candidates.
+		if a == nil then
+			return nil
+		end
+		local key = handle_key(a)
+		if key ~= nil and type(o) == "table" and type(o.candidates) == "table" then
+			for _, c in ipairs(o.candidates) do
+				if handle_key(c) == key then
+					return a
+				end
+			end
+		end
+		error("the monster_target hook must return one of the candidates, or nil", 0)
+	end
 	if kind == "experience" then
 		if math_type(a) ~= "integer" or math_type(b) ~= "integer" then
 			error("the experience hook must return two integers: base and job exp", 0)
@@ -1358,6 +1432,9 @@ end
 local function innermost(kind, o)
 	if kind == "experience" then
 		return hook_result(kind, o.base, o.job)
+	end
+	if kind == "monster_target" then
+		return hook_result(kind, o.current, nil, o)
 	end
 	return hook_result(kind, o[hook_values[kind]])
 end
@@ -1386,7 +1463,7 @@ local function run_chain(kind, fields, n, fns)
 		end
 		local ok, a, b = pcall(fns[i], o, next_fn)
 		if ok then
-			ok, a, b = pcall(hook_result, kind, a, b)
+			ok, a, b = pcall(hook_result, kind, a, b, o)
 		end
 		if not ok then
 			H.hook_failed(i, tostring(a))
@@ -1401,6 +1478,14 @@ local function run_chain(kind, fields, n, fns)
 end
 
 function R.run_hooks(kind, fields, n, ...)
+	if kind == "monster_target" then
+		-- Go gets the chosen handle as its key, or nil.
+		local h = run_chain(kind, fields, n, table.pack(...))
+		if h == nil then
+			return nil
+		end
+		return handle_key(h)
+	end
 	return run_chain(kind, fields, n, table.pack(...))
 end
 

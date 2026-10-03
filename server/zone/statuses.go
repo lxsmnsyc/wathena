@@ -374,6 +374,7 @@ func (v scEnv) Heal(u sc.Unit, hp, sp int64) {
 }
 
 func (v scEnv) Started(u sc.Unit, e *sc.Entry) {
+	v.z.keepingStarted(u.(scUnit).e, e)
 	v.z.refreshChanges(u.(scUnit).e)
 	if v.z.quietStatuses {
 		return
@@ -386,6 +387,7 @@ func (v scEnv) Ended(u sc.Unit, e *sc.Entry, reason sc.Reason) {
 	v.z.performanceEnded(u.(scUnit).e, e)
 	v.z.refreshChanges(u.(scUnit).e)
 	v.z.monkStatusEnded(u.(scUnit).e, e)
+	v.z.keepingEnded(u.(scUnit).e, e)
 	if v.z.quietStatuses {
 		return
 	}

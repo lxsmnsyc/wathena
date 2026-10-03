@@ -150,6 +150,12 @@ func (en *Engine) timer(u Unit, e *Entry, due int64) {
 		if e.Val4 >= 0 && u.HP() < int64(st.MaxHP) {
 			en.env.Heal(u, int64(st.MaxHP)/100, 0)
 		}
+	case SCGradualGravity:
+		// status_zap of val2 percent of max HP, which may kill. rAthena
+		// multiplies the unsigned max_hp.
+		if e.Val4 >= 0 {
+			en.env.Damage(u, int64(uint32(st.MaxHP)*uint32(e.Val2))/100, 0, true, false) // #nosec G115 -- rAthena's max_hp is a uint32.
+		}
 	case SCSplasher:
 		// Venom Splasher counts down every 500 ms, then explodes when it
 		// ends.

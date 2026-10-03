@@ -38,7 +38,7 @@ func statusZone(t *testing.T) (*Zone, *Player, *entity) {
 	t.Helper()
 	mob := &battle.Status{MaxHP: 1000, Hit: 200, ADelay: 1000, AMotion: 500, DMotion: 300, Level: 1, Vit: 1, Luk: 1, Int: 1,
 		RHW: battle.Weapon{Atk: 10, Atk2: 10, Range: 1}}
-	spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, Status: mob, RespawnMs: 60000}}
+	spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, ViewRange: 10, ChaseRange: 12, Status: mob, RespawnMs: 60000}}
 	z := New("map/test", open(40), rng.FromKey([32]byte{9}).Stream(), spawns)
 	z.Items = item.New(&item.Data{Mode: "renewal", Items: []item.Def{
 		{ID: 501, AegisName: "Red_Potion", Type: "Healing", Weight: 70, Stackable: true, Script: "core:scripts/items/Red_Potion.lua"},

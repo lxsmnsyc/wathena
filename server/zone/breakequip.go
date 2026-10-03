@@ -87,9 +87,12 @@ func (z *Zone) breakOnHit(src, target *entity, skillID, flag int) {
 	}
 	// The target's weapon, then its armor. The item bonuses
 	// bBreakWeaponRate and bBreakArmorRate are not in the stats yet,
-	// so only Melt Down gives a chance.
+	// so only Melt Down and SC_WEAPONBREAKER give a chance.
 	rate := 0
 	if e := src.sc.Get(sc.SCMeltdown); e != nil {
+		rate += e.Val2
+	}
+	if e := src.sc.Get(scWeaponBreaker); e != nil {
 		rate += e.Val2
 	}
 	if rate != 0 {

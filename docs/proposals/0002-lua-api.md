@@ -861,3 +861,13 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the end 
    - `player:rebirth` needs a second class at base level 99 and job level 50, as the rebirth NPC. It returns false for other players.
    - `player:reset_skill` returns false for a quest skill, and `with_dependents` leaves quest skills among the dependents as they are.
    - `wa.testing`'s `new_player` spec gained `sex`, `skills`, `stats`, `skill_points` and `status_points`, so mod tests can set up a job change. These fields are provisional.
+9. Build the monster API of phase 4 step 5 (review decision 22). Done on 2026-10-03 ([decision 0013](../decisions/0013-monster-ai.md)). Details to review:
+   - `attack` in `data/monsters.yml` is one number, rAthena's `Attack`. Pre-renewal also takes `[minimum, maximum]`, rAthena's `Attack` and `Attack2`. `magic_attack` is renewal only, where it is rAthena's `Attack2`.
+   - `modes` now adds to the modes of `ai`. Before, it replaced the monster's modes.
+   - The skills list has no field for two parts of rAthena's rows, so they are dropped: the mode change of `NPC_EMOTION` and `NPC_EMOTION_ON` (441 renewal rows), and the second emotion of `NPC_EMOTION` (71 renewal rows). A field for them needs review.
+   - The color of a `mob_chat_db.yml` line is dropped. `chat` holds only the text.
+   - `target_casting` is rAthena's `trickcasting`, and `spawned` is `onspawn`.
+   - The `monster_target` hook's object has `current`, rAthena's choice, as the other hooks carry rAthena's value. It works in mod, NPC and event contexts.
+   - The monster methods need no permission. Reading the fields needs `game.read`, as other handle fields.
+   - `walk_to` keeps the AI waiting until the walk ends, as rAthena's `force_walk`. `use_skill` takes a level from 1 to 100 and skips the delays of the skills list.
+   - A monster AI script's context also ends when its mod reloads. Monsters spawned after the reload run the new script.

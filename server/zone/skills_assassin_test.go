@@ -31,6 +31,10 @@ func assassinMobs(z *Zone) []*entity {
 	for e := range z.entities.all() {
 		if e.monster != nil {
 			e.monster.spawn.CanMove = false
+			if e.status != nil {
+				// The monster AI does not move a monster without can_move.
+				e.status.Mode &^= 1
+			}
 			out = append(out, e)
 		}
 	}

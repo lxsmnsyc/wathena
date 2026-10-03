@@ -122,6 +122,8 @@ type scriptEvent struct {
 	status *modscript.StatusEvent
 	// release are monster handles that end after the event runs.
 	release []int64
+	// monster is set to run the setup of a monster's AI script.
+	monster *entity
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -212,6 +214,8 @@ func (z *Zone) runScripts() {
 		z.scriptEvents = z.scriptEvents[1:]
 		switch {
 		case z.scripts == nil:
+		case ev.monster != nil:
+			z.runMonsterScript(ev.monster)
 		case ev.death != nil:
 			z.scripts.FireDeath(*ev.death)
 		case ev.status != nil:

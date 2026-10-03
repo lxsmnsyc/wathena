@@ -3,6 +3,7 @@ package zone
 import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
@@ -109,9 +110,23 @@ func (z *Zone) fight() {
 		}
 		reach := max(e.status.RHW.Range, 1)
 		if chebyshev(e, t) > reach {
+			if e.monster != nil {
+				// unit_attack_timer_sub: a monster chases with its
+				// attack range, and the chase attacks on arrival.
+				if z.now >= e.nextAttack && !z.walkToBL(e, t, reach, true) {
+					e.target = nil
+				}
+				continue
+			}
 			if !e.cant().Move {
 				z.chase(e, t)
 			}
+			continue
+		}
+		// mob_ai_sub_hard_attacktimer: at the end of its attack delay, a
+		// monster drops a target it no longer sees.
+		if e.monster != nil && z.now >= e.nextAttack && !z.visible(e, t, true) {
+			e.target = nil
 			continue
 		}
 		// In range: stop walking, then attack at the attack delay.
@@ -123,10 +138,25 @@ func (z *Zone) fight() {
 			continue
 		}
 		e.dir = facingTo(t.x-e.x, t.y-e.y)
+		if e.monster != nil {
+			// unit_attack_timer_sub: an assisting monster calls the
+			// monsters of its kind before it attacks.
+			z.mobLinkSearch(e, t)
+		}
 		z.strike(e, t)
 		// unit_set_attackdelay keeps a later attack time, such as a
 		// combo's.
 		e.nextAttack = max(e.nextAttack, z.now+int64(max(e.status.ADelay, 100)))
+		if m := e.monster; m != nil && !e.dead {
+			// mob_set_delay: the AI rests for the attack motion.
+			m.nextThink = max(z.now+int64(e.status.AMotion), m.nextThink)
+			if m.attackNow {
+				// unit_attack sets the attack state after its attack,
+				// even when the attack killed the target.
+				m.attackNow = false
+				m.ai.SetState(mob.StateBerserk, e.status.Mode)
+			}
+		}
 		if !e.repeat {
 			e.target = nil
 		}
@@ -165,7 +195,12 @@ func (z *Zone) strike(e, t *entity) {
 	if z.sacrificeAttack(e, t) {
 		return
 	}
+	// SC_MAGICALATTACK turns the attack into NPC_MAGICALATTACK.
+	if z.magicalAttack(e, t) {
+		return
+	}
 	z.syncBattlePlayer(e)
+	normal := isNormAttacked(e, t)
 	var r battle.Result
 	if z.renewal() {
 		r = battle.Attack(e.status, z.defenderFor(e, t, 0), z.rand)
@@ -220,12 +255,21 @@ func (z *Zone) strike(e, t *entity) {
 			z.autoSpellWhenHit(e, t, r.Flag, 0)
 		}
 	}
-	// A monster that can attack strikes back, at an enemy.
-	if t.monster != nil && t.target == nil && t.status.Mode&modeCanAttack != 0 && isEnemy(t, e) {
-		t.target, t.repeat = e, true
-		t.path = t.path[:0]
-		t.nextAttack = z.now + int64(t.status.DMotion)
+	// battle_damage: a hit that connected tells the monster, for its
+	// skills and its AI, once the damage shows.
+	if landed && !e.dead {
+		z.mobHitEvents(e, t, r.Damage, max(r.Hits, 1), r.Flag, 0, normal, damageDelay(e))
 	}
+}
+
+// damageDelay is the delay of battle_delay_damage for a normal attack:
+// the attacker's attack motion, at most 1 second for a monster.
+func damageDelay(e *entity) int64 {
+	d := int64(e.status.AMotion)
+	if e.player == nil {
+		d = min(d, 1000)
+	}
+	return max(d, 0)
 }
 
 // itemHitEvents runs the "damage" handlers of the equipped items of the
@@ -276,6 +320,23 @@ func (z *Zone) die(e, killer *entity) {
 		})
 		return
 	}
+	if m := e.monster; m != nil && killer != nil && len(m.spawn.Skills) > 0 && e.status != nil {
+		// mob_dead: a monster that something killed uses its dead state
+		// skills first.
+		e.hp = 1
+		z.mobDeadSkills(e)
+		e.hp = 0
+	}
+	if e.monster != nil && killer != nil && killer.monster != nil && killer.status != nil {
+		// mob_dead: a monster that killed a monster drops its target.
+		z.mobUnlockTarget(killer)
+	}
+	// status_damage: SC_REBIRTH brings a monster back once, with 20% HP
+	// per level (its val2), after mob_dead gave its rewards.
+	rebirth := 0
+	if m := e.monster; m != nil && !m.reborn && e.sc.Has(sc.SCRebirth) {
+		rebirth = 20 * e.sc.Val1(sc.SCRebirth)
+	}
 	// pc_dead and mob_dead clear the statuses first. The cast stops and
 	// the unit's ground skills end.
 	z.statusesDied(e)
@@ -288,16 +349,33 @@ func (z *Zone) die(e, killer *entity) {
 	e.pending = nil
 	z.clearUnitGroups(e)
 	z.clearTimerSkills(e)
+	// pc_dead: a monster that killed the player and targets it drops its
+	// target.
+	unlockKiller := e.player != nil && killer != nil && killer.monster != nil && killer.status != nil &&
+		killer.monster.target == e
 	e.dead = true
 	e.target = nil
 	e.pickItem = nil
 	e.path = e.path[:0]
 	for o := range z.entities.all() {
-		if o.target == e {
+		// A monster keeps a dead player as its attack target until its
+		// next attack, as its attack timer finds the target dead then.
+		if o.target == e && (o.monster == nil || e.player == nil) {
 			o.target = nil
+			if m := o.monster; m != nil {
+				m.attackContinue = false
+			}
+		}
+		// Monsters that target a dead player find it dead at their next
+		// think, as rAthena's pc_dead leaves their target_id.
+		if m := o.monster; m != nil && e.player == nil {
+			forgetMonster(m, e)
 		}
 	}
 	if e.player != nil {
+		if unlockKiller {
+			z.mobUnlockTarget(killer)
+		}
 		// Players lie where they fell, then return to their save point.
 		e.diedAt = z.now
 		// status_damage resets the regen waits on death.
@@ -310,13 +388,38 @@ func (z *Zone) die(e, killer *entity) {
 		z.queueDeath(e, killer)
 		return
 	}
+	if m := e.monster; m != nil && rebirth > 0 {
+		if !m.noRewards {
+			z.reward(e, killer)
+		}
+		pct := rebirth
+		e.dead = false
+		m.reborn = true
+		m.dmglog.Entries = nil
+		e.hp = max(int64(e.status.MaxHP)*int64(pct)/100, 1)
+		e.hpChanged = true
+		z.mobUnlockTarget(e)
+		if d := z.skillsGet(skill.IDResurrection); d != nil {
+			// clif_skill_nodamage of ALL_RESURRECTION.
+			z.skillEffect(e, e, d, 1, 1, true)
+		}
+		return
+	}
 	z.removeMap(e)
 	z.entities.remove(e)
 	z.dropStatuses(e)
 	z.removed = append(z.removed, removal{e, wathenav1.VanishReason_VANISH_REASON_DIED})
 	z.queueDeath(e, killer)
-	z.reward(e, killer)
+	if !e.monster.noRewards {
+		z.reward(e, killer)
+	}
+	// mob_deleteslave: its slaves die with it.
+	z.killSlaves(e)
+	z.endMonsterScript(e)
 	s := e.monster.spawn
+	if e.monster.respawnAs != nil {
+		s = e.monster.respawnAs
+	}
 	if !s.noRespawn {
 		z.respawns = append(z.respawns, respawn{spawn: s, at: z.now + int64(max(s.RespawnMs, 1000))})
 	}
@@ -328,6 +431,28 @@ func (z *Zone) forget(e *entity) {
 		if o.target == e {
 			o.target = nil
 		}
+		if m := o.monster; m != nil {
+			forgetMonster(m, e)
+		}
+	}
+}
+
+// forgetMonster drops a unit from a monster's AI.
+func forgetMonster(m *monster, e *entity) {
+	if m.target == e {
+		m.target = nil
+	}
+	if m.chaseTo == e {
+		m.chaseTo = nil
+	}
+	if m.attacked == e {
+		m.attacked = nil
+	}
+	if m.normAttacked == e {
+		m.normAttacked = nil
+	}
+	if m.provoke == e {
+		m.provoke = nil
 	}
 }
 
@@ -499,4 +624,19 @@ func (z *Zone) canTarget(e, t *entity) bool {
 		return e.status != nil && e.status.Mode&(modeStatusImmune|modeDetector) != 0
 	}
 	return true
+}
+
+// killSlaves is mob_deleteslave: the slaves of a dead master die.
+func (z *Zone) killSlaves(e *entity) {
+	var slaves []*entity
+	for o := range z.entities.all() {
+		if m := o.monster; m != nil && m.master == e && m.specialAI == aiNone && !o.dead {
+			slaves = append(slaves, o)
+		}
+	}
+	for _, o := range slaves {
+		o.hp = 0
+		o.hpChanged = true
+		z.die(o, nil)
+	}
 }

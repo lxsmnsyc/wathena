@@ -34,10 +34,13 @@ type Mob struct {
 	// BaseExp and JobExp are the exp after BaseExpRate and JobExpRate. Use
 	// Tables.MobExp to scale them.
 	BaseExp, JobExp int64
-	Mode            uint32
-	Class           int
-	// Drops are the drops after Tables.AdjustDrops.
-	Drops []Drop
+	// MvpExp is the MVP exp after MvpExpRate.
+	MvpExp int64
+	Mode   uint32
+	Class  int
+	// Drops are the drops after Tables.AdjustDrops. MvpDrops are the
+	// MVP prizes, which the MVP drop rates scale when they drop.
+	Drops, MvpDrops []Drop
 }
 
 // Boss is s_mob_db::get_bosstype.

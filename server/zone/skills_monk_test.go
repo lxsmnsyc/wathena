@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -345,6 +346,8 @@ func TestAbsorbSpiritSpheres(t *testing.T) {
 		t.Fatalf("%d spheres and %d SP, want 0 and %d", p.spiritBalls(), p.sp, 10-5+21)
 	}
 	z.rand = rng.New(forcedMinSource{})
+	// mob_target: only a monster that can attack takes a target.
+	m.status.Mode = mob.ModeCanAttack
 	sp := p.sp
 	z.stepAt(max(e.canAct, 1050))
 	cast(z, p, skill.IDAbsorbSpirits, 1, m)
@@ -352,7 +355,7 @@ func TestAbsorbSpiritSpheres(t *testing.T) {
 	if want := sp - 5 + int64(2*m.status.Level); p.sp != want {
 		t.Errorf("SP %d after absorbing from the monster, want %d", p.sp, want)
 	}
-	if m.target != e {
+	if m.monster.target != e {
 		t.Error("the monster did not turn on the caster")
 	}
 }

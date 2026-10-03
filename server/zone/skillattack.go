@@ -84,6 +84,14 @@ func (z *Zone) skillAttack(typ int, src, dsrc, target *entity, d *skill.Def, lv,
 		// Magic Rod absorbs a magic skill cast at the unit.
 		z.magicRodAbsorb(target, d, lv, &res)
 	}
+	if res.Flag&battle.FlagMagic != 0 && (d.ID != npcEarthquakeID || flag&0xFFF == 1) &&
+		z.npcHallucinationWalkEvade(target, res.Damage) {
+		// SC_NPC_HALLUCINATIONWALK evades a magic hit
+		// (skills_npc_status.go). With eq_single_target_reflectable,
+		// NPC_EARTHQUAKE counts only when it hits one target.
+		res.Damage, res.Left = 0, 0
+		res.Kind = battle.Miss
+	}
 	if typ == battle.TypeWeapon {
 		// battle_calc_weapon_final_atk_modifiers: Poison React's counter.
 		z.poisonReactCounter(src, target, res)
@@ -104,6 +112,8 @@ func (z *Zone) calcSkillAttack(typ int, src, dsrc, target *entity, d *skill.Def,
 		srcSt = &npcStatus
 	}
 	z.syncBattlePlayer(src)
+	// status_data's hp, which NPC_SELFDESTRUCTION's damage reads.
+	srcSt = withHP(srcSt, src.hp)
 	bsk := d.Battle(srcSt, lv, flag, chebyshev(src, target))
 	bsk.Self = src == target
 	if dsrc != src {
@@ -112,6 +122,10 @@ func (z *Zone) calcSkillAttack(typ int, src, dsrc, target *entity, d *skill.Def,
 	}
 	if impl != nil {
 		bsk.Impl = impl
+	} else if b, ok := skillImpls[d.ID].(ratioBinder); ok && d.Mod == "" {
+		// A formula that reads the zone, such as NPC_COMET's distance
+		// from its center.
+		bsk.Impl = b.bindRatio(z, src, dsrc, target)
 	}
 	bsk.Impl = z.hookSkillRatio(src, target, d, lv, bsk.Impl)
 	tgt := z.defenderFor(src, target, lv)
@@ -220,15 +234,10 @@ func (z *Zone) skillDamage(src, dsrc, target *entity, d *skill.Def, lv int, res 
 			z.autoSpellWhenHit(src, target, flag, d.NK)
 		}
 	}
-	// mob_attacked: a monster that can attack strikes back.
-	if target.monster != nil && target.target == nil && target.status.Mode&modeCanAttack != 0 && !src.dead &&
-		isEnemy(target, src) {
-		target.target, target.repeat = src, true
-		if len(target.path) > 0 {
-			target.path = target.path[:0]
-			target.stopped = true
-		}
-		target.nextAttack = max(target.nextAttack, z.now+int64(target.status.DMotion))
+	// battle_damage: a hit that connected tells the monster, for its
+	// skills and its AI.
+	if landed && !src.dead {
+		z.mobHitEvents(src, target, damage, max(res.Hits, 1), res.Flag, d.ID, false, int64(delay))
 	}
 }
 
@@ -362,9 +371,12 @@ func (z *Zone) skillBlown(src, target *entity, count, dir int, ignoreImmune bool
 		return 0
 	}
 	target.path = target.path[:0]
+	x0, y0 := target.x, target.y
 	target.x, target.y = x, y
 	target.stopped = true
 	z.moveBlock(target)
+	// map_moveblock: SC_PROPERTYWALK leaves a unit on the cell left.
+	z.propertyWalkMoved(target, x0, y0)
 	return moved
 }
 
@@ -413,7 +425,9 @@ func (z *Zone) recursiveSplash(src, target *entity, d *skill.Def, lv, flag int) 
 		if flag&sdLevel != 0 {
 			sflag |= sdLevel
 		}
-		if t != z.area.main {
+		// The first target gets no animation, nor does any target of an
+		// NPC skill (INF2_ISNPC).
+		if t != z.area.main && !d.Has("IsNpc") {
 			sflag |= sdAnimation
 		}
 		if s, ok := skillImpls[d.ID].(splashDamager); ok {

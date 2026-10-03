@@ -25,7 +25,7 @@ func testTables() *progression.Tables {
 func lootZone(t *testing.T, reward *progression.Mob) (*Zone, *Player, *entity) {
 	t.Helper()
 	mob := &battle.Status{MaxHP: 30, Hit: 200, ADelay: 1000, AMotion: 500, DMotion: 300, RHW: battle.Weapon{Atk: 10, Atk2: 10, Range: 1}}
-	spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, Status: mob, RespawnMs: 60000, Reward: reward}}
+	spawns := []Spawn{{Mob: 1002, Name: "Poring", Amount: 1, X: 20, Y: 20, Speed: 400, ViewRange: 10, ChaseRange: 12, Status: mob, RespawnMs: 60000, Reward: reward}}
 	z := New("map/test", open(40), rng.FromKey([32]byte{3}).Stream(), spawns)
 	z.Progress = testTables()
 	z.PlayerStatus = battle.Status{MaxHP: 100, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}

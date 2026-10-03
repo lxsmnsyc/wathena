@@ -199,7 +199,8 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
   display_name: Pumpkin Poring
   level: 12
   hp: 260
-  attack: [18, 26]
+  attack: 22
+  str: 12
   base_exp: 90
   job_exp: 70
   element: ghost
@@ -212,10 +213,20 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 
 - Names are AegisNames in upper case, such as `PORING`. A new monster is named with the mod's ID.
 - `sprite` names the monster whose sprite players see. A new monster needs it, and starts from that monster's stats, with no exp and no drops.
-- The server has no monster status calculation yet, so the fields set what combat reads. Phase 4 adds monster stats: the server then computes these values from the base stats, as rAthena does, and the fields change. The fields are: `hp`, `sp`, `level`, `attack` and `magic_attack` as `[minimum, maximum]`, `defense`, `magic_defense`, `hit`, `flee`, `speed` (milliseconds per cell), `attack_range`, `attack_delay`, `attack_motion` and `damage_motion`.
+- The fields are rAthena's `mob_db.yml` values. The server computes the rest from them, as rAthena's `status_calc_mob`: hit, flee, the defense and magic defense from stats, the attack range of each hit, and the magic attack. There are no fields to set those; a mod raises them with stats or bonuses.
+  - `hp`, `sp`, `level`, `str`, `agi`, `vit`, `int`, `dex` and `luk`.
+  - `attack`: one number, rAthena's `Attack`. In pre-renewal it can also be `[minimum, maximum]`, rAthena's `Attack` and `Attack2`.
+  - `magic_attack`: renewal only, rAthena's `Attack2`.
+  - `defense`, `magic_defense`, `resistance` and `magic_resistance`.
+  - `speed` (milliseconds per cell), `attack_range`, `skill_range`, `chase_range`, `attack_delay`, `attack_motion` and `damage_motion`.
+  - `mvp_exp` and `mvp_drops`, a list of at most 3 `{item, rate}`, which go to the MVP of a monster with the `mvp` mode.
+  - `damage_taken`: the percent of damage the monster takes, 0 to 100.
 - `element` (from `wa.elements`, with `element_level` 1 to 4), `race` (from `wa.races`) and `size` (from `wa.sizes`) are names.
 - `class` is `normal`, `boss`, `guardian`, `battlefield` or `event`. As in rAthena, `boss` adds the modes `detector`, `status_immune` and `knockback_immune`.
-- `modes` is a list of rAthena's modes in lower case, such as `can_move`, `can_attack`, `aggressive` and `mvp`. It replaces the monster's modes.
+- `ai` is rAthena's AI type, 1 to 27, which sets the monster's modes (see "Monster AI", below).
+- `modes` is a list of rAthena's modes in lower case, such as `can_move`, `aggressive`, `looter` and `mvp`. They add to the modes of the AI type.
+- `skills` is the monster's skills list, converted from rAthena's `mob_skill_db.txt` for core's monsters. It replaces the monster's list (see "Monster skills", below).
+- `script` names the monster's AI script, which runs for each spawned monster (see "Monster AI", below).
 - `base_exp` and `job_exp` are scaled by the exp rates. `drops` is a list of `{item, rate}`, with rates per 10,000, at most 20. The drop rate settings apply to them as to core's.
 - `display_name` is the name players see. `id` cannot be set.
 - `monsters.id "example.halloween:PUMPKIN_PORING"` finds a mod's monster. Monsters appear on maps through scripts (`spawning.monsters`, below). There is no `data/spawns.yml` yet.
@@ -593,7 +604,7 @@ Shops follow rAthena's `npc_buylist` and `npc_selllist`: a purchase checks the z
 
 ### Monsters
 
-Monster handles, from `death` and `spawning.monsters`, are read-only. They work like player handles. Every entity handle has a `kind` field: `"player"`, `"monster"` or `"npc"`, so `death.victim.kind` and `death.killer.kind` say what died and what killed it.
+Monster handles, from `death`, `spawning.monsters` and entity queries, work like player handles. Their fields are read-only; the methods of "Monster AI", below, change what a monster does. Every entity handle has a `kind` field: `"player"`, `"monster"` or `"npc"`, so `death.victim.kind` and `death.killer.kind` say what died and what killed it.
 
 | Field | Meaning |
 |---|---|
@@ -735,6 +746,7 @@ end
 | `cast_time` | `hook`: `caster`, `target` (nil for a ground skill), `skill`, `level`, `milliseconds` (rAthena's cast time) | The cast time, kept to 0 to one hour. |
 | `skill_cost` | `hook`: `caster`, `skill`, `level`, `sp` (rAthena's SP cost) | The SP cost. Below 0 counts as 0. |
 | `cast_allowed` | `hook`: `caster`, `target`, `skill`, `level`, `allowed` (whether rAthena lets the cast start) | `true` or `false`. |
+| `monster_target` | `choice`: `monster`, `candidates` (the units it may take), `current` (rAthena's choice, or nil), `reason` (`"aggressive"`, `"assist"`, `"hit"` or `"change"`) | One of `candidates`, or nil for none. Anything else counts as a failure of the hook. |
 
 - Hooks run in a chain. Higher priority runs first; equal priorities run in the order they were added. `next(object)` returns the rest of the chain's result. The innermost result is rAthena's value.
 - To pass a changed object, pass a table with the same fields to `next`.
@@ -913,6 +925,97 @@ end
 Core places a Job Master in Prontera (`core:Job Master#prontera`). It changes a Novice or a High Novice at job level 10 with Basic Skill 9 into a first class (a Super Novice needs base level 45 too), a first class at job level 40 into a second class, and gives a rebirth to a second class at base level 99 and job level 50. rAthena's job change quests mostly do not convert yet: the coverage reports in [docs/generated](../docs/generated) count them as "Job change NPCs".
 
 The sample mod in [examples/job-trainer](examples/job-trainer) adds a trainer that lowers one skill or one stat for a fee, and its tests walk the Job Master's paths.
+
+### Monster AI
+
+Monsters run rAthena's AI ([decision 0013](../docs/decisions/0013-monster-ai.md)). A monster record's `ai` is rAthena's AI type, which is a set of modes:
+
+| AI | Modes |
+|---:|---|
+| 01 | `can_move`, `can_attack` |
+| 02 | `can_move`, `looter`, `can_attack` |
+| 03 | `can_move`, `assist`, `can_attack`, `change_target_melee` |
+| 04 | `can_move`, `aggressive`, `can_attack`, `angry`, `change_target_melee`, `change_target_chase` |
+| 05 | `can_move`, `aggressive`, `can_attack`, `change_target_chase` |
+| 06 | none (a plant) |
+| 07 | `can_move`, `looter`, `assist`, `can_attack`, `change_target_melee` |
+| 08 | `can_move`, `aggressive`, `can_attack`, `change_target_melee`, `change_target_chase`, `target_weak` |
+| 09 | `can_move`, `aggressive`, `cast_sensor_idle`, `can_attack`, `change_target_melee`, `change_target_chase` |
+| 10 | `aggressive`, `can_attack` |
+| 11 | `aggressive`, `can_attack` |
+| 12 | `can_move`, `aggressive`, `can_attack`, `change_target_chase` |
+| 13 | `can_move`, `aggressive`, `assist`, `can_attack`, `change_target_melee`, `change_target_chase` |
+| 17 | `can_move`, `cast_sensor_idle`, `can_attack` |
+| 19 | `can_move`, `aggressive`, `cast_sensor_idle`, `can_attack`, `change_target_melee`, `change_target_chase` |
+| 20 | `can_move`, `aggressive`, `cast_sensor_idle`, `can_attack`, `cast_sensor_chase`, `change_target_melee`, `change_target_chase` |
+| 21 | `can_move`, `aggressive`, `cast_sensor_idle`, `can_attack`, `cast_sensor_chase`, `change_chase`, `change_target_melee`, `change_target_chase` |
+| 24 | `can_move`, `no_random_walk`, `can_attack` |
+| 25 | `can_move` |
+| 26 | `can_move`, `aggressive`, `cast_sensor_idle`, `can_attack`, `cast_sensor_chase`, `change_chase`, `change_target_melee`, `change_target_chase`, `random_target` |
+| 27 | `aggressive`, `can_attack`, `random_target` |
+
+Types 14 to 16, 18, 22 and 23 do not exist in rAthena. `modes` adds to the modes of the type.
+
+Monster handles have these fields and methods:
+
+| Field or method | Meaning |
+|---|---|
+| `target` | The unit its AI follows, or nil. |
+| `state` | Its state in rAthena's words: `idle`, `walk`, `loot`, `dead`, `attack`, `angry`, `chase` or `follow`. |
+| `master` | The unit that summoned it as a slave, or nil. |
+| `monster:set_target(unit)` | It takes the unit as target and chases it, as `unitattack`. Returns false when it cannot target it. |
+| `monster:clear_target()` | It drops its target and goes idle, as `mob_unlocktarget`. |
+| `monster:walk_to(x, y)` | It walks to the cell, as `unitwalk`. Its AI waits until it gets there. Returns false when it cannot walk there. |
+| `monster:use_skill(skill, level, target)` | It uses the skill with the skill's own cast time, as `unitskilluseid`. A ground skill goes on the target's cell. No delay of its skills list applies. Returns false when the cast does not start. |
+| `monster:talk(text)` | It says a line to the players near it, after its name. |
+| `monster:stop()` | It stops walking and attacking, and drops its target. |
+
+- The methods change the game, so they cannot run in a hook. They raise an error once the monster is gone.
+- The `monster_target` hook (see "Hooks") changes the targets the AI picks. Its innermost result is rAthena's choice.
+
+A monster record's `script` names an AI script. Its setup function runs once for each monster of the record that spawns, in a context of kind `"monster"`. `context:get_instance()` returns the monster. The context ends, with its timers, when the monster dies or leaves the map, or the mod reloads.
+
+```lua
+-- scripts/monsters/alpha.lua
+local context = require "wa.context"
+local timers = require "wa.timers"
+
+return function()
+  local alpha = context:get_instance()
+  timers.every(1000, function()
+    if alpha.target ~= nil and alpha.hp < alpha.max_hp / 2 then
+      alpha:talk("To me, my pack!")
+    end
+  end)
+end
+```
+
+In mod tests, `world:advance` runs the AI, and tests read `monster.target` and `monster.state`. [examples/wolf-pack](examples/wolf-pack) has an Alpha Wolf that calls its pack with a skill and sends it after its prey, and a hook that keeps the wolves away from Novices.
+
+### Monster skills
+
+A monster record's `skills` is rAthena's `mob_skill_db.txt` with readable names. Core's monsters have the lists of the mode. Each entry:
+
+| Field | Meaning |
+|---|---|
+| `skill` | The skill, by name, such as `NPC_SUMMONSLAVE` or `MG_FIREBOLT`. |
+| `level` | The skill level. For a summon, how many monsters it calls. |
+| `state` | When the entry is checked: `any`, `idle`, `walk`, `loot`, `dead`, `attack`, `angry`, `chase`, `follow` or `anytarget`. Default `any`. |
+| `rate` | The chance per 10,000 each check. Default 10,000. |
+| `cast_time` | The cast time in milliseconds, which replaces the skill's own. |
+| `delay` | The milliseconds before the entry can be used again. |
+| `cancelable` | Whether a hit stops the cast. |
+| `target` | `target`, `random_target`, `self`, `friend`, `master`, or `around1` to `around8`. Default `target`. |
+| `condition` | One of the conditions below. Default `always`. |
+| `condition_value` | The condition's value, such as a percent of HP or a status name. |
+| `summons` | Monster names for summon and class change skills. |
+| `emotion` | The emotion number for `NPC_EMOTION`. |
+| `chat` | A line the monster says when it uses the entry. |
+
+Conditions, one to one with rAthena's, from `always` to `trickcasting`: `always`, `hp_below`, `hp_between`, `friend_hp_below`, `friend_hp_between`, `has_status`, `lacks_status`, `friend_has_status`, `friend_lacks_status`, `attackers_above`, `attackers_at_least`, `slaves_below`, `slaves_at_most`, `hit_melee`, `hit_ranged`, `hit_by_skill`, `after_skill`, `targeted_by_cast`, `target_casting`, `hit_while_stuck`, `master_hp_below`, `master_attacked`, `spawned`, `summoned_by_alchemist`, `monsters_nearby_above`, `hit_by_ground_skill` and `damage_above`.
+
+- Monsters use player skills through the skill framework, and the `NPC_` skills that only monsters use. [docs/generated/monster-skills-renewal.md](../docs/generated/monster-skills-renewal.md) and its pre-renewal twin list the rows of core's lists and the parts that do not convert.
+- A list has at most 50 entries, as rAthena's `MAX_MOBSKILL`.
 
 ### Items
 

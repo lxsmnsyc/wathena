@@ -182,7 +182,7 @@ func goldenZone(t *testing.T, mode reference.Mode, mobs ...uint32) *Zone {
 	var spawns []Spawn
 	for i, id := range mobs {
 		st := *g.mobs[id]
-		spawns = append(spawns, Spawn{Mob: id, Name: fmt.Sprint(id), Amount: 1, X: 20 + i, Y: 22, Speed: 400, Status: &st,
+		spawns = append(spawns, Spawn{Mob: id, Name: fmt.Sprint(id), Amount: 1, X: 20 + i, Y: 22, Speed: 400, ViewRange: 10, ChaseRange: 12, Status: &st,
 			RespawnMs: 60000})
 	}
 	z := New("map/test", open(40), rng.New(forcedMinSource{}), spawns)

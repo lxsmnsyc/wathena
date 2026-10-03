@@ -114,8 +114,10 @@ func unitLayout(d *skill.Def, lv int, src *entity, x, y int) [][2]int {
 	case skill.IDMagnus, skill.IDGospel:
 		// Battle Chant's cross is Magnus Exorcismus's.
 		return magnusLayout
-	case skill.IDGrandCross:
+	case skill.IDGrandCross, skill.IDNPCGrandDarkness:
 		return grandCrossLayout
+	case skill.IDNPCFlameCross:
+		return flameCrossLayout
 	case skill.IDVenomDust:
 		// skill_init_unit_layout: Venom Dust's cross of 5 cells.
 		return [][2]int{{-1, 0}, {0, -1}, {0, 0}, {0, 1}, {1, 0}}
@@ -172,7 +174,7 @@ func (z *Zone) unitSettingFlag(src *entity, d *skill.Def, lv, x, y, flag int) *u
 	var val1 int
 	var link int64
 	switch d.ID {
-	case skill.IDMeteor:
+	case skill.IDMeteor, skill.IDNPCRainOfMeteor:
 		limit = int64(flag)
 		// The flag should not change anything else for these skills.
 		flag = 0
@@ -214,6 +216,9 @@ func (z *Zone) unitSettingFlag(src *entity, d *skill.Def, lv, x, y, flag int) *u
 	case skill.IDSanctuary:
 		// The undead and demons it may still hit.
 		g.val1 = lv + 3
+	case skill.IDNPCComet:
+		// The caster's last comet, which the damage reads.
+		src.comet = &[2]int{x, y}
 	case skill.IDSkidTrap, skill.IDAnkleSnare, skill.IDShockwave, skill.IDSandman, skill.IDClaymoreTrap,
 		skill.IDLandMine, skill.IDFlasher, skill.IDFreezingTrap, skill.IDBlastMine, skill.IDTalkieBox:
 		g.trap = z.trapSetting(src, d, lv)
@@ -278,11 +283,14 @@ func (z *Zone) unitSettingFlag(src *entity, d *skill.Def, lv, x, y, flag int) *u
 		case skill.IDIceWall:
 			u.val1 = 200 + 200*lv
 			u.val2 = int(z.grid.Cells[ux+uy*z.grid.Width])
-		case skill.IDGrandCross:
+		case skill.IDGrandCross, skill.IDNPCGrandDarkness:
 			// The hits each cell deals: 950 / 300 = 3.
 			if g.interval > 0 {
 				u.val1 = d.Duration1.At(lv) / g.interval
 			}
+		case skill.IDNPCReverberation:
+			// The hits the cell takes before it goes off.
+			u.val1 = 1 + lv
 		case skill.IDWaterBall:
 			// Water, Deluge or Suiton turn into Water Ball cells. A
 			// monster needs none.
@@ -447,7 +455,7 @@ func (z *Zone) unitTimer() {
 		u := e.unit
 		g := u.group
 		age := z.now - g.start
-		meteor := g.def.ID == skill.IDMeteor
+		meteor := g.def.ID == skill.IDMeteor || g.def.ID == skill.IDNPCRainOfMeteor
 		if age >= g.limit || age >= u.limit {
 			// The unit expired (skill_unit_onlimit).
 			switch {
@@ -471,8 +479,11 @@ func (z *Zone) unitTimer() {
 			if g.val2 == 0 && (age >= g.limit-int64(g.interval) || age >= u.limit-int64(g.interval)) && g.src != nil {
 				z.skillPosEffect(g.src, g.def, g.lv, e.x, e.y)
 				g.val2 = 1
-				// Every meteor hits 700 ms after its effect starts.
-				g.limit = g.limit - int64(g.interval) + 700
+				// Every meteor of Meteor Storm hits 700 ms after its
+				// effect starts.
+				if g.def.ID == skill.IDMeteor {
+					g.limit = g.limit - int64(g.interval) + 700
+				}
 			}
 			// No damage until it expires.
 			continue
@@ -645,8 +656,23 @@ func (z *Zone) unitOnPlaceTimer(e, t *entity) {
 		z.skillAttack(g.def.Type, g.src, e, t, g.def, g.lv, 0)
 	case skill.IDBasilica:
 		z.basilicaOnPlace(e, t)
-	case skill.IDGrandCross:
+	case idNPCWideSuck:
+		// The hit heals the caster (skills_npc_status.go).
+		z.npcWideSuckOnPlace(e, t)
+	case skill.IDGrandCross, skill.IDNPCGrandDarkness:
 		z.grandCrossOnPlace(e, t)
+	case skill.IDNPCEvilLand:
+		z.evilLandOnPlace(e, t)
+	case skill.IDNPCEarthquake:
+		z.earthquakeOnPlace(e, t)
+	case skill.IDNPCComet:
+		z.cometOnPlace(e, t)
+	case skill.IDNPCCloudKill:
+		z.cloudKillOnPlace(e, t)
+	case skill.IDNPCMagmaEruption:
+		z.magmaEruptionOnPlace(e, t)
+	case skill.IDNPCReverberation:
+		z.reverberationOnPlace(e)
 	case skill.IDGospel:
 		z.gospelOnPlace(e, t)
 	case skill.IDLullaby, skill.IDUglyDance, skill.IDDissonance, skill.IDAppleIdun:

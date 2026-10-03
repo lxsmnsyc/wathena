@@ -5,8 +5,8 @@
 ---@class wa.context
 local context = {}
 
----The instance the context owns: the mod, the NPC, the equipped copy, the used item, the event run, the skill, or a passive skill of one owner.
----@return wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance|wa.SkillInstance|wa.PassiveSkillInstance
+---The instance the context owns: the mod, the NPC, the equipped copy, the used item, the event run, the skill, a passive skill of one owner, or the monster of a monster's AI script.
+---@return wa.ModInstance|wa.Npc|wa.EquippedItem|wa.ItemUse|wa.EventInstance|wa.SkillInstance|wa.PassiveSkillInstance|wa.Monster
 function context:get_instance() end
 
 ---The context's kind.

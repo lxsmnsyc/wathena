@@ -50,6 +50,10 @@ func hunterZone(t *testing.T, mode reference.Mode, job int, mobs ...uint32) (*Zo
 		if e.monster != nil {
 			// The monsters never move and never die.
 			e.monster.spawn.CanMove = false
+			if e.status != nil {
+				// The monster AI does not move a monster without can_move.
+				e.status.Mode &^= 1
+			}
 			e.hp = 1 << 40
 		}
 	}

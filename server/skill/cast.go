@@ -442,3 +442,18 @@ const (
 	IDChainCrush   = 372  // CH_CHAINCRUSH
 	IDUnfairTrick  = 1012 // BS_UNFAIRLYTRICK
 )
+
+// MonsterCastTime is the cast time of a monster's skill: the cast time
+// of its mob_skill_db entry, which unit_skilluse_id2 and
+// unit_skilluse_pos2 change with skill_castfix_sc in pre-renewal and
+// skill_vfcastfix in renewal. A monster has no cast time of its own
+// stats.
+func (d *Def) MonsterCastTime(c *Caster, ms, lv int, renewal bool) CastResult {
+	var res CastResult
+	if renewal {
+		res.Milliseconds = d.vfcastfix(c, float64(ms), lv, false, &res)
+		return res
+	}
+	res.Milliseconds = d.castfixSC(c, float64(ms), &res)
+	return res
+}

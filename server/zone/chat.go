@@ -7,6 +7,8 @@ type chatLine struct {
 	speaker *entity
 	name    string
 	text    string
+	// color is the color of a monster's line, or 0.
+	color uint32
 }
 
 // ChatRange is how far local chat reaches, in cells on both axes. It is
@@ -30,6 +32,7 @@ func (z *Zone) chatEvents(p *Player) []*wathenav1.Event {
 			From:     id,
 			FromName: c.name,
 			Text:     c.text,
+			Color:    c.color,
 		}.Build()}.Build())
 	}
 	return events

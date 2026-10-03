@@ -418,8 +418,10 @@ type Zone struct {
 	// their scripts run.
 	npcHandles  map[int64]*entity
 	npcsStarted bool
-	// emotions are this tick's emotions over NPCs.
+	// emotions are this tick's emotions over NPCs and monsters.
 	emotions []npcEmotion
+	// prevThink is when the monster AI last ran.
+	prevThink int64
 
 	// skillEvents are this tick's casts, cancels and skill effects.
 	skillEvents []skillEvent
@@ -629,8 +631,13 @@ func (z *Zone) wake() {
 	z.now = now
 	z.prevHeal, z.nextHeal = z.now, z.now+naturalHealInterval
 	for e := range z.entities.all() {
-		if e.monster != nil && len(e.path) == 0 {
-			e.monster.nextWalk = -1
+		if m := e.monster; m != nil && len(e.path) == 0 {
+			if e.status == nil {
+				m.nextWalk = -1
+				continue
+			}
+			m.nextWalk = z.now + int64(z.rand.IntN(1000)+minRandomWalk)
+			m.nextThink = z.now
 		}
 	}
 }
@@ -1029,6 +1036,14 @@ func (z *Zone) stepAt(now int64) {
 			e.path = e.path[1:]
 			e.stepStart = end
 			z.skillUnitMove(e)
+			// map_moveblock: SC_PROPERTYWALK leaves a unit on the cell
+			// left.
+			z.propertyWalkMoved(e, e.x-dx, e.y-dy)
+			if e.monster != nil && !e.dead {
+				// unit_walktoxy_timer: the monster's next step, or the end
+				// of its walk.
+				z.mobStepped(e)
+			}
 			// unit_walktoxy_timer touches the warp on each cell a
 			// player enters. A warp that takes the player ends the
 			// walk.

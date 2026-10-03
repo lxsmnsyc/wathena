@@ -204,6 +204,21 @@ type Changes struct {
 	// or 0. In renewal the first adds equipment ATK and the second
 	// mastery ATK.
 	DrumBattle, Nibelungen int
+	// Barrier is set while SC_BARRIER (NPC_BARRIER) is on: each hit
+	// that would deal damage deals 1 per hit instead.
+	Barrier bool
+	// ArmorChangeWeapon and ArmorChangeMagic are SC_ARMORCHANGE's val2
+	// and val3 (NPC_STONESKIN and NPC_ANTIMAGIC): the percent less damage
+	// the unit takes from weapon and magic hits. Either may be negative.
+	ArmorChangeWeapon, ArmorChangeMagic int
+	// ArmorDiv, ArmorRange and ArmorType are SC_ARMOR's val2 to val4
+	// (NPC_DEFENDER): hits with a battle flag of both ArmorRange and
+	// ArmorType deal their damage divided by ArmorDiv. ArmorDiv is 0
+	// without the status.
+	ArmorDiv, ArmorRange, ArmorType int
+	// Invincible is set while SC_INVINCIBLE (NPC_INVINCIBLE) is on: the
+	// unit takes 1 damage from every hit, as is_infinite_defense.
+	Invincible bool
 }
 
 // Opt1 values that do not make attacks always hit, as rAthena's

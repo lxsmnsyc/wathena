@@ -55,6 +55,10 @@ func crusaderZone(t *testing.T, mode reference.Mode, shield bool, golems int) (*
 		e.monster.spawn.Status = &st
 		e.hp = 1000000
 		e.monster.spawn.CanMove = false
+		if e.status != nil {
+			// The monster AI does not move a monster without can_move.
+			e.status.Mode &^= 1
+		}
 		// They do not strike back, so only the skills deal damage.
 		st.Mode &^= modeCanAttack
 		out = append(out, e)

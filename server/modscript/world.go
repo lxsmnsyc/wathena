@@ -89,6 +89,8 @@ var Hooks = map[string][]string{
 	"cast_time":    {KindMod, KindNPC, KindEvent},
 	"skill_cost":   {KindMod, KindNPC, KindEvent},
 	"cast_allowed": {KindMod, KindNPC, KindEvent},
+	// Monster AI (review decision 22).
+	"monster_target": {KindMod, KindNPC, KindEvent},
 }
 
 type scheduled struct {

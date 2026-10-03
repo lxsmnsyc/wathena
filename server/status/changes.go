@@ -78,6 +78,7 @@ func calcStr(l *sc.List, v int) int {
 	if l.Val2(sc.SCNibelungen) == ringAllStat {
 		v += 15
 	}
+	v -= l.Val2(scAllStatDown)
 	return capStat(v)
 }
 
@@ -103,6 +104,7 @@ func calcAgi(l *sc.List, v int) int {
 	if l.Val2(sc.SCNibelungen) == ringAllStat {
 		v += 15
 	}
+	v -= l.Val2(scAllStatDown)
 	return capStat(v)
 }
 
@@ -125,6 +127,7 @@ func calcVit(l *sc.List, v int) int {
 	if e := l.Get(sc.SCStriparmor); e != nil {
 		v -= v * e.Val2 / 100
 	}
+	v -= l.Val2(scAllStatDown)
 	return capStat(v)
 }
 
@@ -155,6 +158,7 @@ func calcInt(l *sc.List, v int) int {
 	if e := l.Get(sc.SCStriphelm); e != nil {
 		v -= v * e.Val2 / 100
 	}
+	v -= l.Val2(scAllStatDown)
 	return capStat(v)
 }
 
@@ -185,6 +189,7 @@ func calcDex(l *sc.List, v int) int {
 	if l.Val2(sc.SCNibelungen) == ringAllStat {
 		v += 15
 	}
+	v -= l.Val2(scAllStatDown)
 	return capStat(v)
 }
 
@@ -209,6 +214,7 @@ func calcLuk(l *sc.List, v int) int {
 	if l.Val2(sc.SCNibelungen) == ringAllStat {
 		v += 15
 	}
+	v -= l.Val2(scAllStatDown)
 	return capStat(v)
 }
 
@@ -293,6 +299,10 @@ func calcHit(l *sc.List, v int, renewal bool) int {
 	if l.Has(sc.SCInchitrate) {
 		v += v * l.Val1(sc.SCInchitrate) / 100
 	}
+	// NPC_POWERUP's hit rate.
+	if l.Has(scPowerup) {
+		v += v * l.Val2(scPowerup) / 100
+	}
 	if l.Has(sc.SCBlind) {
 		v -= v * 25 / 100
 	}
@@ -328,6 +338,7 @@ func calcFlee(l *sc.List, v int, renewal bool) int {
 	v += l.Val2(sc.SCWindwalk)
 	v += l.Val3(sc.SCCloseconfine)
 	v += l.Val2(sc.SCViolentgale)
+	v += l.Val2(scNPCHallucinationWalk)
 	if renewal {
 		v += 2 * l.Val1(sc.SCSpearquicken)
 	}
@@ -338,10 +349,14 @@ func calcFlee(l *sc.List, v int, renewal bool) int {
 	if l.Has(sc.SCIncfleerate) {
 		v += v * l.Val1(sc.SCIncfleerate) / 100
 	}
+	// NPC_AGIUP's flee rate.
+	if l.Has(scAgiup) {
+		v += v * l.Val2(scAgiup) / 100
+	}
 	if l.Has(sc.SCBerserk) {
 		v -= v * 50 / 100
 	}
-	if l.Has(sc.SCSpiderweb) {
+	if l.Has(sc.SCSpiderweb) || l.Has(scWideWeb) {
 		v -= v * 50 / 100
 	}
 	if l.Has(sc.SCBlind) {
@@ -376,6 +391,10 @@ func calcDef(l *sc.List, v int, renewal, player bool, capDef func(int) int) int 
 	}
 	if renewal && l.Has(sc.SCEternalchaos) {
 		return 0
+	}
+	// NPC_KEEPING.
+	if l.Has(sc.SCKeeping) {
+		return 90
 	}
 	v += l.Val3(sc.SCDrumbattle)
 	if renewal && l.Has(sc.SCAssumptio) {
@@ -602,6 +621,9 @@ func calcSpeed(l *sc.List, speed int, in speedInput) int {
 	rate += val
 	val = 0
 	// GetMoveHasteValue1.
+	if l.Has(scAgiup) {
+		val = max(val, l.Val1(scAgiup))
+	}
 	if l.Has(sc.SCIncreaseagi) {
 		val = max(val, 25)
 	}
@@ -623,6 +645,9 @@ func calcSpeed(l *sc.List, speed int, in speedInput) int {
 	}
 	if l.Has(sc.SCBerserk) {
 		val = max(val, 25)
+	}
+	if l.Has(sc.SCInvincible) {
+		val = max(val, l.Val3(sc.SCInvincible))
 	}
 	if l.Has(sc.SCParalyse) && l.Val3(sc.SCParalyse) == 0 {
 		val = max(val, 50)
@@ -657,6 +682,10 @@ func calcSpeedEnd(l *sc.List, speed, rate int, in speedInput) int {
 	}
 	// Defending Aura walks at speed 200 or slower.
 	if l.Has(sc.SCDefender) {
+		speed = max(speed, 200)
+	}
+	// NPC_DEFENDER's SC_ARMOR too.
+	if l.Has(scArmor) {
 		speed = max(speed, 200)
 	}
 	return capValue(speed, minWalkSpeed, maxWalkSpeedCap)
@@ -768,6 +797,9 @@ func calcAspdRateOf(l *sc.List, rate, weapon int) int {
 	}
 	if l.Has(sc.SCSpearquicken) && most < l.Val2(sc.SCSpearquicken) {
 		most = l.Val2(sc.SCSpearquicken)
+	}
+	if l.Has(sc.SCInvincible) && most < l.Val4(sc.SCInvincible) {
+		most = l.Val4(sc.SCInvincible)
 	}
 	// A Bard's song does not quicken bows and guns.
 	if e := l.Get(sc.SCAssncros); e != nil && most < e.Val2 && !aspdRangedWeapon(weapon) {
@@ -1115,6 +1147,8 @@ func BattleChanges(l *sc.List) *battle.Changes {
 	}
 	c.AtkPercent += 2 * l.Val1(sc.SCTruesight)
 	c.AtkPercent += l.Val1(sc.SCIncatkrate)
+	c.AtkPercent += l.Val1(scPowerup)
+	c.AtkPercent += l.Val2(sc.SCInvincible)
 	c.Berserk = l.Has(sc.SCBerserk)
 	c.AuraBlade = l.Val1(sc.SCAurablade)
 	c.JointBeat = l.Val2(sc.SCJointbeat)
@@ -1149,6 +1183,14 @@ func BattleChanges(l *sc.List) *battle.Changes {
 	c.MaximizePower = l.Has(sc.SCMaximizepower)
 	c.WeaponPerfection = l.Has(sc.SCWeaponperfection)
 	c.DrumBattle, c.Nibelungen = l.Val2(sc.SCDrumbattle), l.Val2(sc.SCNibelungen)
+	// The monster self skills: NPC_BARRIER, NPC_STONESKIN and
+	// NPC_ANTIMAGIC, NPC_DEFENDER, and NPC_INVINCIBLE.
+	c.Barrier = l.Has(sc.SCBarrier)
+	c.ArmorChangeWeapon, c.ArmorChangeMagic = l.Val2(scArmorchange), l.Val3(scArmorchange)
+	if e := l.Get(scArmor); e != nil {
+		c.ArmorDiv, c.ArmorRange, c.ArmorType = e.Val2, e.Val3, e.Val4
+	}
+	c.Invincible = l.Has(sc.SCInvincible)
 	return c
 }
 
