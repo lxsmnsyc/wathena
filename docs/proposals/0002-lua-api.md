@@ -819,6 +819,18 @@ Methods on player handles check their own permissions, such as `player.give_item
     - `player:reset_stat(stat, { to })` lowers one stat, to 1 by default, and refunds what raising it cost by rAthena's cost table.
     - Quest skills, which cost no skill points, are not refunded or lowered by these calls, as rAthena's `resetskill`.
 
+22. Monster stats, monster skills and monster AI (phase 4 step 5). The user approved these on 2026-10-03:
+    - **Monster stats.** `data/monsters.yml` adds `str`, `agi`, `vit`, `int`, `dex`, `luk`, `magic_attack`, `resistance`, `magic_resistance`, `skill_range`, `chase_range`, `mvp_exp`, `mvp_drops`, `damage_taken`, and `ai`, rAthena's AI type number from 01 to 27, read as a list of modes. `hit` and `flee` are removed. The server computes them from the stats, as rAthena's `status_calc_mob`. There are no override fields. A mod raises them with stats or bonuses.
+    - **Monster skills** are a `skills` list on a monster record, converted from rAthena's `mob_skill_db`. Each entry has `skill`, `level`, `state`, `rate` (per 10,000), `cast_time`, `delay`, `cancelable`, `target`, `condition`, `condition_value`, `summons`, `emotion` and `chat`.
+      - `state` keeps rAthena's words: `any`, `idle`, `walk`, `loot`, `dead`, `attack`, `angry`, `chase`, `follow` and `anytarget`.
+      - `target` is `target`, `random_target`, `self`, `friend`, `master`, or `around1` to `around8`.
+      - `condition` uses readable names: `always`, `hp_below`, `hp_between`, `friend_hp_below`, `friend_hp_between`, `has_status`, `lacks_status`, `friend_has_status`, `friend_lacks_status`, `attackers_above`, `attackers_at_least`, `slaves_below`, `slaves_at_most`, `hit_melee`, `hit_ranged`, `hit_by_skill`, `after_skill`, `targeted_by_cast`, `target_casting`, `hit_while_stuck`, `master_hp_below`, `master_attacked`, `spawned`, `summoned_by_alchemist`, `monsters_nearby_above`, `hit_by_ground_skill` and `damage_above`. They map one to one to rAthena's conditions, from `always` to `trickcasting`.
+    - **Monster handles** get the read-only fields `target` (a handle or nil), `state`, and `master` (a handle or nil, for summoned monsters). They get the methods `set_target(entity)`, `clear_target()`, `walk_to(x, y)`, `use_skill(skill, level, target)`, `talk(text)` and `stop()`, which replace `unitattack`, `unitwalk`, `unitskilluseid`, `unittalk` and `unitstop` for monsters. NPCs do not get them yet.
+    - **Hook `monster_target`**: `hooks.on("monster_target", function(choice, next) ... end)`, with `choice` = { `monster`, `candidates`, `current`, `reason` }, where `reason` is `"aggressive"`, `"assist"`, `"hit"` or `"change"`. It returns a handle or nil, and needs `rules.override`. Without hooks the choice is rAthena's. Other AI hooks wait for strategy section 6.8.
+    - **Monster AI scripts.** A monster record's `script` field names an entry script. Its setup function runs once for each spawned monster. `context:get_instance()` returns the monster. The context ends when the monster dies or is removed.
+    - **Tests.** `world:advance` runs monster AI. Tests read `monster.target` and `monster.state`. There are no new `wa.testing` calls.
+    - Later: an option to make a spawned monster follow a master, AI for summoned monsters beyond rAthena's defaults, and NPC AI hooks.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
