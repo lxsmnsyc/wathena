@@ -2517,6 +2517,15 @@ The order from here:
       - A sample mod, [examples/familiars](../mods/examples/familiars), adds an Owl that acts as a falcon, a Horse that acts as a Peco Peco, a skill that needs a falcon, and a keeper who hands them out. Its 7 `wactl mod test` cases and `TestFamiliars` pass.
       - Left: the warg as a companion and the dragon colors as records, with their script commands; cart storage; companions that fight, companion events and more than one companion; sprite names for companions and carts in the GRF importer; and the rental mount.
    Steps 2, 3, 5, and 7 add Lua API. Each step's API goes to review before it is built.
+8. Phase 5 in full. Social and economy systems, tier 1. It runs in these steps, approved on 2026-10-03:
+   1. The end-to-end harness and item transfers. `botclient` runs scripted scenarios against a real `waserver` with `go test ./e2e`, in the local checks. One transactional service moves items and zeny between owners, with serials and logs (section 3.5). Duplication test scaffolding moves items with bots at the same time and checks totals. No new Lua API.
+   2. Chat and moderation: whispers, chat channels, blocking, the chat filter, chat limits for new characters, reports and sanctions (section 7.10).
+   3. Friends and parties: party exp and item sharing, party booking in the web client, and the party skills that step 4 left failing.
+   4. Guilds: guild skills, guild storage and emblems.
+   5. Storage, cart and trade: personal storage, cart storage, Kafra storage and trade.
+   6. Mail, vending and shops: mail (RODEX), vending with autotrade and vending search, and barter shops.
+   7. Automatic events (boss spawns, invasions and treasure hunts), and the phase 5 exit check, with duplication tests under bot load.
+   Steps 2 to 7 add Lua API. Each step's API goes to review before it is built.
 
 Reasons for this order:
 

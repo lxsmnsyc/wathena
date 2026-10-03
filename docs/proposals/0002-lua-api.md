@@ -864,6 +864,16 @@ Methods on player handles check their own permissions, such as `player.give_item
     - The converter maps `setfalcon`, `setriding`, `setcart` and `checkfalcon` to these calls.
     - Later: companions that fight on their own, companion events, and more than one companion at a time.
 
+26. Chat and moderation (phase 5 step 2). The user approved these on 2026-10-03:
+    - **Event `chat`**: `events.on("chat", function(message) ... end, options)`, with `message` = { `player`, `channel`, `text`, `to`, `map` }. `channel` is `"public"`, `"whisper"`, `"party"`, `"guild"` or a channel name. The options `channel`, `map` and `player` narrow it. It is a world event (strategy section 6.8).
+    - **Hook `chat`**: `hooks.on("chat", function(message, next) ... end)` returns the text, or nil to block the message. It runs after the server's chat filter and needs `rules.override`.
+    - `player:whisper(text, { from })` sends a whisper. `from` is the name the player sees, by default the NPC's or the mod's name. `player:send_message` stays for system messages.
+    - `player:is_blocking(other)`.
+    - `player:mute(minutes, reason)`, `player:jail(minutes, reason)` and `player:unmute()` need the new permission `player.sanction`, which is flagged for review. Bans are a staff tool, not Lua API.
+    - **`wa.channels`**: `channels.create { name, display_name, color, join }`, with `join` = `"open"` or `"invite"`, makes a channel owned by the context. `channels.get(name)` finds one. A channel has `send(text)`, `add(player)`, `remove(player)` and `get_members()`. Core's channels, such as `#main` and `#trade`, are records in `data/channels.yml`.
+    - The word lists of the chat filter and the reserved names are `data/chat_filter.yml`, with replace or reject per word. Chat rate limits, and lower limits in a new character's first hour, are server settings.
+    - Reports and their review come with the staff tools, not the Lua API.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
