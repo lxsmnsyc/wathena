@@ -1,5 +1,7 @@
 package battle
 
+import "github.com/lxsmnsyc/wathena/server/rules"
+
 // Elements, as rAthena's e_element.
 const (
 	Neutral = iota
@@ -127,6 +129,40 @@ func attrFix(src, target *Status, damage int64, atkEle, defEle, defLv, flag int)
 		ratio = 0
 	}
 	return damage - damage*(100-ratio)/100
+}
+
+// ruleset returns the attack's rules: the world's, or those of its
+// mode's core ruleset.
+func (wd *damage) ruleset() *rules.Rules {
+	if wd.rules != nil {
+		return wd.rules
+	}
+	return rules.Of(!wd.pre)
+}
+
+// attrFix is battle_attr_fix as the element_table flag picks it:
+// renewal's table and status bonuses, or pre-renewal's. The attack's
+// mode does not matter.
+func (wd *damage) attrFix(src, target *Status, damage int64, atkEle, defEle, defLv, flag int) int64 {
+	if wd.ruleset().ElementTable {
+		return attrFix(src, target, damage, atkEle, defEle, defLv, flag)
+	}
+	return attrFixPre(src, target, damage, atkEle, defEle, defLv, flag)
+}
+
+// attrFixPlain is wd.attrFix with no status changes, as AttrFix and
+// AttrFixPreRenewal.
+func (wd *damage) attrFixPlain(damage int64, atkEle, defEle, defLv, flag int) int64 {
+	return ElementFix(wd.ruleset(), damage, atkEle, defEle, defLv, flag)
+}
+
+// ElementFix applies the element table that the element_table flag of
+// rl picks: AttrFix or AttrFixPreRenewal.
+func ElementFix(rl *rules.Rules, damage int64, atkEle, defEle, defLv, flag int) int64 {
+	if rl.ElementTable {
+		return AttrFix(damage, atkEle, defEle, defLv, flag)
+	}
+	return AttrFixPreRenewal(damage, atkEle, defEle, defLv, flag)
 }
 
 // attrFixPre is attrFix in pre-renewal: the statuses raise the damage

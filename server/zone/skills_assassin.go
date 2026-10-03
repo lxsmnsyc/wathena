@@ -163,7 +163,7 @@ type venomSplasher struct{}
 // its HP.
 func (venomSplasher) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
 	st := target.status
-	if st == nil || st.Mode&modeStatusImmune != 0 || !z.renewal() && target.hp > int64(st.MaxHP)*3/4 {
+	if st == nil || st.Mode&modeStatusImmune != 0 || !z.skillRenewal(skill.IDVenomSplasher) && target.hp > int64(st.MaxHP)*3/4 {
 		if src.player != nil {
 			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		}
@@ -231,7 +231,7 @@ type enchantDeadlyPoison struct{ statusSkill }
 // a player without a weapon cannot use it.
 func (enchantDeadlyPoison) castBegin(z *Zone, src *entity, d *skill.Def, _ int) wathenav1.SkillFailure {
 	bit := 1
-	if z.renewal() {
+	if z.skillRenewal(skill.IDEnchantDeadly) {
 		bit = 2
 	}
 	if st := src.status; switchRemoveEDP&bit != 0 && st != nil && st.Player != nil && st.Player.RightWeapon == battle.WeaponFist {
@@ -245,7 +245,7 @@ func (enchantDeadlyPoison) castBegin(z *Zone, src *entity, d *skill.Def, _ int) 
 // skill_db does not list.
 func (enchantDeadlyPoison) castEnd(z *Zone, src *entity, d *skill.Def, _ int) wathenav1.SkillFailure {
 	p := src.player
-	if !z.renewal() || p == nil {
+	if !z.skillRenewal(skill.IDEnchantDeadly) || p == nil {
 		return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
 	}
 	for slot, s := range p.inventory.Slots {
@@ -260,7 +260,7 @@ func (enchantDeadlyPoison) castEnd(z *Zone, src *entity, d *skill.Def, _ int) wa
 
 func (s enchantDeadlyPoison) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
 	s.statusSkill.castendNoDamage(z, src, target, d, lv, flag)
-	if z.renewal() {
+	if z.skillRenewal(skill.IDEnchantDeadly) {
 		z.scStart4(src, src, sc.SCSubWeaponPro, 100, elePoison, 25, d.ID, 0, int64(d.Duration1.At(lv)))
 	} else {
 		z.scStart4(src, src, sc.SCWatkElement, 100, elePoison, 25, 0, 0, int64(d.Duration1.At(lv)))
@@ -492,7 +492,7 @@ func (z *Zone) unequipStatuses(p *Player, slot int, pos uint32) {
 		return
 	}
 	bit := 1
-	if z.renewal() {
+	if z.skillRenewal(skill.IDEnchantDeadly) {
 		bit = 2
 	}
 	if pos&item.EqpHandR != 0 && switchRemoveEDP&bit != 0 {

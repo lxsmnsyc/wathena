@@ -13,6 +13,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
@@ -297,6 +298,40 @@ func sameAttack(got battle.Result, want *goldenDamage) bool {
 func TestSkillStatusGolden(t *testing.T) {
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
+			checkSkillStatusGolden(t, mode, nil)
+		})
+	}
+}
+
+// statusParts are the parts of a skill_status.json case that a mixed
+// ruleset keeps at the recording's mode. A nil ruleset keeps them all.
+type statusParts struct {
+	// run is false when the case's skill or its statuses' chance and
+	// duration follow the other mode, or Spear Quicken's ASPD value
+	// (the aspd flag).
+	run bool
+	// stats and attacks compare the target's stats and the normal
+	// attacks.
+	stats, attacks bool
+}
+
+func statusPartsOf(rl *rules.Rules, skillID int) statusParts {
+	if rl == nil {
+		return statusParts{true, true, true}
+	}
+	b := rl.Renewal
+	return statusParts{
+		run:     rl.Skill(skillID) == b && rl.StatusResist == b && (rl.ASPD == b || skillID != skill.IDSpearQuicken),
+		stats:   rl.ASPD == b && rl.FourthJobTraits == b && rl.EnsembleSongs == b,
+		attacks: rl.ASPD == b && rl.ElementTable == b && rl.SizeTable == b,
+	}
+}
+
+// checkSkillStatusGolden runs a mode's skill_status.json, in zones with
+// rl when it is not nil, and returns the number of cases that ran.
+func checkSkillStatusGolden(t *testing.T, mode reference.Mode, rl *rules.Rules) int {
+	{
+		{
 			var ref struct {
 				Players []goldenPlayer    `json:"players"`
 				Cases   []skillStatusCase `json:"cases"`
@@ -316,9 +351,13 @@ func TestSkillStatusGolden(t *testing.T) {
 					left[c.SkillName] = true
 					continue
 				}
+				parts := statusPartsOf(rl, c.Skill)
+				if !parts.run {
+					continue
+				}
 				total++
 				name := fmt.Sprintf("%s lv %d (job %d)", c.SkillName, c.Level, c.Job)
-				if diffs := runSkillStatusCase(t, mode, c, players[fmt.Sprintf("%d %s %d", c.Job, c.Build, c.Sex)]); len(diffs) > 0 {
+				if diffs := runSkillStatusCase(t, mode, c, players[fmt.Sprintf("%d %s %d", c.Job, c.Build, c.Sex)], rl, parts); len(diffs) > 0 {
 					bad[c.SkillName] = true
 					t.Errorf("%s: %v", name, diffs)
 					continue
@@ -327,7 +366,8 @@ func TestSkillStatusGolden(t *testing.T) {
 			}
 			t.Logf("%s: %d of %d skill status cases match; skills with a mismatch: %v; not ported: %v", mode, matched, total,
 				slices.Sorted(maps.Keys(bad)), slices.Sorted(maps.Keys(left)))
-		})
+			return total
+		}
 	}
 }
 
@@ -363,8 +403,9 @@ func sameStatuses(got, want []statusEntryCase) bool {
 	return true
 }
 
-// runSkillStatusCase runs one case and returns its differences.
-func runSkillStatusCase(t *testing.T, mode reference.Mode, c *skillStatusCase, sp goldenPlayer) []string {
+// runSkillStatusCase runs one case and returns its differences: the
+// parts that rl, a mixed ruleset or nil, keeps at the mode's values.
+func runSkillStatusCase(t *testing.T, mode reference.Mode, c *skillStatusCase, sp goldenPlayer, rl *rules.Rules, parts statusParts) []string {
 	t.Helper()
 	mobs := []uint32{1040}
 	if c.Target != 0 {
@@ -372,6 +413,9 @@ func runSkillStatusCase(t *testing.T, mode reference.Mode, c *skillStatusCase, s
 	}
 	z := goldenZone(t, mode, mobs...)
 	p := goldenPlayerIn(t, z, sp, c.Weapon, c.Ammo)
+	if rl != nil {
+		zoneRules(t, z, rl)
+	}
 	src := p.entity
 	golem := monsterOf(z, 1040)
 	// The recorder's Golem stands apart from the caster, so area skills
@@ -382,12 +426,12 @@ func runSkillStatusCase(t *testing.T, mode reference.Mode, c *skillStatusCase, s
 		target = monsterOf(z, c.Target)
 	}
 	var diffs []string
-	if c.AttackBefore != nil {
+	if c.AttackBefore != nil && parts.attacks {
 		if got := goldenAttack(z, src, golem); !sameAttack(got, c.AttackBefore) {
 			diffs = append(diffs, fmt.Sprintf("attack before %+v, want %+v", got, *c.AttackBefore))
 		}
 	}
-	if d := diffFields(statusFields(target.status), c.Before); len(d) > 0 {
+	if d := diffFields(statusFields(target.status), c.Before); parts.stats && len(d) > 0 {
 		diffs = append(diffs, fmt.Sprintf("before: %v", d))
 	}
 	def := z.Skills.Get(c.Skill)
@@ -408,10 +452,10 @@ func runSkillStatusCase(t *testing.T, mode reference.Mode, c *skillStatusCase, s
 		want := c.Statuses
 		diffs = append(diffs, fmt.Sprintf("statuses %v, want %v", got, want))
 	}
-	if d := diffFields(statusFields(target.status), c.After); len(d) > 0 {
+	if d := diffFields(statusFields(target.status), c.After); parts.stats && len(d) > 0 {
 		diffs = append(diffs, fmt.Sprintf("after: %v", d))
 	}
-	if c.AttackAfter != nil {
+	if c.AttackAfter != nil && parts.attacks {
 		if got := goldenAttack(z, src, golem); !sameAttack(got, c.AttackAfter) {
 			diffs = append(diffs, fmt.Sprintf("attack after %+v, want %+v", got, *c.AttackAfter))
 		}

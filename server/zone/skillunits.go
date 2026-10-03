@@ -188,7 +188,7 @@ func (z *Zone) unitSettingFlag(src *entity, d *skill.Def, lv, x, y, flag int) *u
 		val1 = lv + 2
 	case skill.IDGravitation:
 		// Pre-renewal: a field cast under another links to it.
-		if e := src.sc.Get(scGravitation); !z.renewal() && e != nil && e.Val3 == bctSelf {
+		if e := src.sc.Get(scGravitation); !z.skillRenewal(skill.IDGravitation) && e != nil && e.Val3 == bctSelf {
 			link = int64(e.Val4)
 		}
 	}
@@ -204,7 +204,7 @@ func (z *Zone) unitSettingFlag(src *entity, d *skill.Def, lv, x, y, flag int) *u
 	switch d.ID {
 	case skill.IDSafetyWall:
 		g.val2 = lv + 1
-		if z.renewal() && src.status != nil {
+		if z.skillRenewal(skill.IDSafetyWall) && src.status != nil {
 			level := z.unit(src).Level()
 			g.val3 = int64(300*lv + 65*(src.status.Int+level) + src.status.MaxSP)
 		}
@@ -610,7 +610,7 @@ func (z *Zone) unitOnPlaceTimer(e, t *entity) {
 		g.unitID = untUsedTraps
 		return
 	case untGravitation:
-		if z.renewal() {
+		if z.skillRenewal(skill.IDGravitation) {
 			// Renewal's field hits from the caster.
 			z.skillAttack(g.def.Type, g.src, g.src, t, g.def, g.lv, 0)
 		} else {
@@ -620,7 +620,7 @@ func (z *Zone) unitOnPlaceTimer(e, t *entity) {
 	}
 	switch g.def.ID {
 	case skill.IDStormGust:
-		if z.renewal() {
+		if z.skillRenewal(skill.IDStormGust) {
 			z.skillAttack(g.def.Type, g.src, e, t, g.def, g.lv, 0)
 			return
 		}
@@ -650,7 +650,7 @@ func (z *Zone) unitOnPlaceTimer(e, t *entity) {
 		z.sanctuaryOnPlace(e, t)
 	case skill.IDMagnus:
 		// Pre-renewal Magnus Exorcismus hits only the undead and demons.
-		if st := t.status; !z.renewal() && (st == nil || !battle.IsUndead(st.Race, st.DefEle) && st.Race != battle.RaceDemon) {
+		if st := t.status; !z.skillRenewal(skill.IDMagnus) && (st == nil || !battle.IsUndead(st.Race, st.DefEle) && st.Race != battle.RaceDemon) {
 			break
 		}
 		z.skillAttack(g.def.Type, g.src, e, t, g.def, g.lv, 0)
@@ -945,7 +945,7 @@ func (z *Zone) cellOverlap(src *entity, d *skill.Def, x, y int) int {
 		case skill.IDIceWall, skill.IDGravitation:
 			// These cannot be placed on themselves. Gravitation Field only
 			// in pre-renewal.
-			if (d.ID != skill.IDGravitation || !z.renewal()) && g.def.ID == d.ID {
+			if (d.ID != skill.IDGravitation || !z.skillRenewal(skill.IDGravitation)) && g.def.ID == d.ID {
 				return 0
 			}
 		case skill.IDLandProtector:

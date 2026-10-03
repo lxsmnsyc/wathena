@@ -240,12 +240,9 @@ func (z *Zone) healHP(e *entity, hp int64) {
 	e.hpChanged = true
 }
 
-// attrFix is battle_attr_fix in the zone's mode.
+// attrFix is battle_attr_fix with the table of the element_table flag.
 func (z *Zone) attrFix(damage int64, atkEle, defEle, defLv int) int64 {
-	if z.renewal() {
-		return battle.AttrFix(damage, atkEle, defEle, defLv, 0)
-	}
-	return battle.AttrFixPreRenewal(damage, atkEle, defEle, defLv, 0)
+	return battle.ElementFix(z.rules(), damage, atkEle, defEle, defLv, 0)
 }
 
 // moveTo is unit_warp within the map for a unit that is not a player:

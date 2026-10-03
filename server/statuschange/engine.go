@@ -4,6 +4,7 @@ import (
 	"container/heap"
 
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/rules"
 )
 
 // StartFlag holds rAthena's e_status_change_start_flags.
@@ -114,8 +115,11 @@ type HPSetter interface {
 // Engine runs the statuses of one zone. Only the zone's goroutine uses
 // it.
 type Engine struct {
-	DB  *DB
-	env Env
+	DB *DB
+	// Rules are the world's ruleset flags: status_resist and
+	// ensemble_songs. nil follows the base of DB.
+	Rules *rules.Rules
+	env   Env
 	// timers are the statuses' timers and the delayed starts, by due
 	// time.
 	timers timerHeap
@@ -124,6 +128,14 @@ type Engine struct {
 
 // New makes a zone's engine.
 func New(db *DB, env Env) *Engine { return &Engine{DB: db, env: env} }
+
+// ruleset returns the engine's rules.
+func (en *Engine) ruleset() *rules.Rules {
+	if en.Rules != nil {
+		return en.Rules
+	}
+	return rules.Of(en.DB.renewal)
+}
 
 // timer is one due time: a status's status_change_timer, or a delayed
 // start (status_change_start_timer).

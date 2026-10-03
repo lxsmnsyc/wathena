@@ -8,6 +8,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/verve](examples/verve) adds a status effect: `statuses.define`, a `status_tick` handler, and a tonic that starts the status, with tests.
 - [examples/lucky-clover](examples/lucky-clover) adds a charm with rolled values, a monster that drops it with random options, an `item_roll` hook, and a smith who rerolls it ("Rolled item values" below).
 - [examples/desperado](examples/desperado) is the phase 4 exit check: a new job, the Desperado, with a new skill, Quick Draw, a hat only it wears, a mentor who changes jobs, and a `job_change` handler ("Jobs" below).
+- [examples/classic-casting](examples/classic-casting) is a ruleset mod: a renewal world with pre-renewal cast time, element table, cooldowns and Mystical Amplification ("Rulesets" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -106,6 +107,33 @@ provides:
 - A ruleset mod can extend another ruleset mod. Flags apply from the core ruleset up.
 - `fourth_job_traits: on` needs the renewal base.
 - A content mod whose `supports.rulesets` does not match is refused, with the reason.
+
+What each flag changes ([decision 0019](../docs/decisions/0019-ruleset-flags.md) has the details):
+
+| Flag | Values | What it changes |
+|---|---|---|
+| `cast_time` | `renewal`, `pre_renewal` | Fixed and variable cast time, or cast time by DEX only, and how cast bonuses count. On a pre-renewal base, renewal's cast time makes 20% of each skill's cast time fixed. |
+| `skill_cooldown` | `on`, `off` | Renewal's skill cooldowns, or pre-renewal's. Pre-renewal still has cooldowns for some skills, such as Provoke. |
+| `aspd` | `renewal`, `pre_renewal` | The ASPD formula, shield penalty and bonus stacking. |
+| `stat_point_cost` | `renewal`, `pre_renewal` | The status point cost of raising a stat. The two agree below 100. |
+| `level_penalty_exp`, `level_penalty_drop` | `on`, `off` | Exp and drop rates by the level gap between player and monster. |
+| `level_damage_mod` | `on`, `off` | The renewal versions of skills deal more above base level 99. |
+| `element_table` | `renewal`, `pre_renewal` | The element table and the field bonuses of Volcano, Deluge and Violent Gale. |
+| `size_table` | `renewal`, `pre_renewal` | The size penalty of knuckles and whips. |
+| `status_resist` | `renewal`, `pre_renewal` | Status effect chance and duration against the target's stats. |
+| `heal_formula` | `renewal`, `pre_renewal` | Heal, Sanctuary and the other heal skills, and the parts of item heals that differ. |
+| `boss_protection` | `renewal`, `pre_renewal` | Whether Ankle Snare and Skid Trap catch bosses, and Blade Stop on bosses. |
+| `ensemble_songs` | `renewal`, `pre_renewal` | Songs and dances as buffs on the performer's party, or as ground areas, with their values, ensemble fatigue and Longing for Freedom. |
+| `homunculus` | `renewal`, `pre_renewal` | Nothing yet: homunculi do not exist. |
+| `busy_restrictions` | `on`, `off` | The busy message for items, skills and NPC clicks while talking, and no NPC clicks while casting. |
+| `fourth_job_traits` | `on`, `off` | Trait stats, RES and MRES. |
+| `item_rolls` | `on`, `off` | Random values for items with roll ranges ("Rolled item values" below). |
+| `skill_rebalance.<skill>` | `renewal`, `pre_renewal` | One skill's own formulas and effects, and its status's. `<skill>` is a `skill_db` name, such as `HW_MAGICPOWER`. |
+
+- The songs and the skills with a `skill_rebalance` flag take their `skill_db` record from the flag's mode, such as pre-renewal's ground area for Basilica. A mod's `data/skills.yml` applies over it.
+- `skill_rebalance` works for the 94 skills of `rules.RebalancedSkills` in `server/rules`. Another core skill loads with a warning, and only its record changes. An unknown skill or a song is an error: songs follow `ensemble_songs`.
+- `wactl mod test` runs a ruleset mod's tests in worlds whose ruleset is the mod. Use `--mode pre-renewal` for a mod with the pre-renewal base.
+- [examples/classic-casting](examples/classic-casting) is a sample ruleset mod: a renewal world with pre-renewal casting.
 
 ## Permissions
 

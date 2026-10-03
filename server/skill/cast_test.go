@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/status"
 )
 
@@ -50,6 +51,18 @@ var castingGaps = map[string]string{}
 func TestCasting(t *testing.T) {
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
+			checkCasting(t, mode, nil)
+		})
+	}
+}
+
+// checkCasting runs a mode's skill_casting.json. rl, when not nil, is a
+// mixed ruleset of the mode's base: each part of a case runs only when
+// the flags it reads keep the mode's value (castingApplies), through
+// the code the mix picks.
+func checkCasting(t *testing.T, mode reference.Mode, rl *rules.Rules) {
+	{
+		{
 			db := loadDB(t, mode)
 			var jobs status.Data
 			if err := reference.LoadFile("extracts/"+string(mode)+"/job_stats.json", &jobs); err != nil {
@@ -99,11 +112,20 @@ func TestCasting(t *testing.T) {
 				skills[key] = learnedMap(p.Skills)
 				jobLevels[key] = p.JobLevel
 			}
+			renewal := mode == reference.Renewal
+			full := rl
+			if full == nil {
+				full = rules.Of(renewal)
+			}
 			matched, total := 0, 0
 			bad := map[string]bool{}
 			for i := range ref.Cases {
 				c := &ref.Cases[i]
 				if _, gap := castingGaps[c.SkillName]; gap {
+					continue
+				}
+				ap := castingApplies(rl, renewal, c.Skill)
+				if !ap.skill {
 					continue
 				}
 				total++
@@ -121,15 +143,15 @@ func TestCasting(t *testing.T) {
 					t.Fatalf("%s: %v", name, err)
 				}
 				st := res.Battle
-				caster := &Caster{Status: &st, Renewal: mode == reference.Renewal}
+				caster := &Caster{Status: &st, Renewal: renewal, Rules: rl}
 				var diffs []string
-				if got := def.CastTimeFor(caster, c.Level, mode == reference.Renewal, learned[c.Skill] > 0).Milliseconds; got != c.Cast {
+				if got := def.CastTimeFor(caster, c.Level, full.CastTime, learned[c.Skill] > 0).Milliseconds; ap.cast && got != c.Cast {
 					diffs = append(diffs, fmt.Sprintf("cast %d, want %d", got, c.Cast))
 				}
 				if got := def.Delay(caster, c.Level); got != c.Delay {
 					diffs = append(diffs, fmt.Sprintf("delay %d, want %d", got, c.Delay))
 				}
-				if got := def.CooldownFor(caster, c.Level); got != c.Cooldown {
+				if got := def.CooldownFor(caster, c.Level); ap.cooldown && got != c.Cooldown {
 					diffs = append(diffs, fmt.Sprintf("cooldown %d, want %d", got, c.Cooldown))
 				}
 				// The recorder's players have 1 HP and 1 SP.
@@ -143,13 +165,13 @@ func TestCasting(t *testing.T) {
 				if gotItems == nil {
 					gotItems = [][2]int{}
 				}
-				if req.HP != w.HP || req.MaxHP != w.MaxHP || req.SP != w.SP || req.Zeny != w.Zeny || req.Weapon != w.Weapon ||
+				if ap.requirement && (req.HP != w.HP || req.MaxHP != w.MaxHP || req.SP != w.SP || req.Zeny != w.Zeny || req.Weapon != w.Weapon ||
 					req.Ammo != w.Ammo || req.AmmoAmount != w.AmmoQty || req.State != w.State || req.SpiritSphere != w.Spiritball ||
-					!slices.Equal(gotItems, items) {
+					!slices.Equal(gotItems, items)) {
 					diffs = append(diffs, fmt.Sprintf("requirement %+v, want %+v", req, w))
 				}
-				if c.Heal != nil {
-					if got := CalcHeal(&st, &st, c.Skill, c.Level, true, mode == reference.Renewal, forcedMin{}); got != c.Heal.ForcedMin {
+				if c.Heal != nil && ap.heal {
+					if got := CalcHeal(&st, &st, c.Skill, c.Level, true, full.HealFormula, forcedMin{}); got != c.Heal.ForcedMin {
 						diffs = append(diffs, fmt.Sprintf("heal %d, want %d", got, c.Heal.ForcedMin))
 					}
 				}
@@ -162,6 +184,30 @@ func TestCasting(t *testing.T) {
 			}
 			t.Logf("%s: %d of %d casting cases match; skills with a mismatch: %v; gaps: %v", mode, matched, total,
 				slices.Sorted(maps.Keys(bad)), slices.Sorted(maps.Keys(castingGaps)))
-		})
+		}
+	}
+}
+
+// castingParts are the parts of a skill_casting.json case that a mixed
+// ruleset keeps at the recording's mode.
+type castingParts struct {
+	// skill is false when the case's skill has a flag of the other mode:
+	// its record and its code are the other mode's.
+	skill                             bool
+	cast, cooldown, requirement, heal bool
+}
+
+// castingApplies reports which parts of a case of a mode run under a
+// mixed ruleset. A nil ruleset is the mode's core ruleset.
+func castingApplies(rl *rules.Rules, renewal bool, skillID int) castingParts {
+	if rl == nil {
+		return castingParts{true, true, true, true, true}
+	}
+	return castingParts{
+		skill:       rl.Skill(skillID) == renewal,
+		cast:        rl.CastTime == renewal,
+		cooldown:    rl.SkillCooldown == renewal,
+		requirement: rl.EnsembleSongs == renewal,
+		heal:        rl.HealFormula == renewal,
 	}
 }

@@ -442,8 +442,8 @@ func calcDamageParts(wd *damage, src, target *Status, critical bool, r Rand) {
 	wd.statusAtk2 += int64(src.BAtk)
 
 	// Status ATK is neutral on normal attacks.
-	wd.statusAtk = attrFix(src, target, wd.statusAtk, Neutral, target.DefEle, target.EleLv, 0)
-	wd.statusAtk2 = attrFix(src, target, wd.statusAtk2, Neutral, target.DefEle, target.EleLv, 0)
+	wd.statusAtk = wd.attrFix(src, target, wd.statusAtk, Neutral, target.DefEle, target.EleLv, 0)
+	wd.statusAtk2 = wd.attrFix(src, target, wd.statusAtk2, Neutral, target.DefEle, target.EleLv, 0)
 
 	// Right-hand status ATK is doubled after the element table.
 	wd.statusAtk *= 2
@@ -457,20 +457,20 @@ func calcDamageParts(wd *damage, src, target *Status, critical bool, r Rand) {
 		rate := int64(c.SubWeaponRate)
 		bonus := int64(math.Floor(float64(float32(wd.weaponAtk * rate / 100))))
 		bonus2 := int64(math.Floor(float64(float32(wd.weaponAtk2 * rate / 100))))
-		bonus = attrFix(src, target, bonus, c.SubWeaponElement, target.DefEle, target.EleLv, 0)
-		bonus2 = attrFix(src, target, bonus2, c.SubWeaponElement, target.DefEle, target.EleLv, 0)
+		bonus = wd.attrFix(src, target, bonus, c.SubWeaponElement, target.DefEle, target.EleLv, 0)
+		bonus2 = wd.attrFix(src, target, bonus2, c.SubWeaponElement, target.DefEle, target.EleLv, 0)
 		wd.weaponAtk += bonus
 		wd.weaponAtk2 += bonus2
 	}
 
-	wd.weaponAtk = attrFix(src, target, wd.weaponAtk, rightElement, target.DefEle, target.EleLv, 0)
-	wd.weaponAtk2 = attrFix(src, target, wd.weaponAtk2, leftElement, target.DefEle, target.EleLv, 0)
+	wd.weaponAtk = wd.attrFix(src, target, wd.weaponAtk, rightElement, target.DefEle, target.EleLv, 0)
+	wd.weaponAtk2 = wd.attrFix(src, target, wd.weaponAtk2, leftElement, target.DefEle, target.EleLv, 0)
 
 	wd.equipAtk += calcEquipAttack(src, wd.sk)
-	wd.equipAtk = attrFix(src, target, wd.equipAtk, rightElement, target.DefEle, target.EleLv, 0)
+	wd.equipAtk = wd.attrFix(src, target, wd.equipAtk, rightElement, target.DefEle, target.EleLv, 0)
 
 	wd.equipAtk2 += calcEquipAttack(src, wd.sk)
-	wd.equipAtk2 = attrFix(src, target, wd.equipAtk2, leftElement, target.DefEle, target.EleLv, 0)
+	wd.equipAtk2 = wd.attrFix(src, target, wd.equipAtk2, leftElement, target.DefEle, target.EleLv, 0)
 
 	// AtkRate adds a percent of weapon and equipment ATK.
 	if rate := int64(src.Player.AtkRate); rate != 0 {

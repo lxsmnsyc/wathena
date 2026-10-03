@@ -1,6 +1,10 @@
 package battle
 
-import "math"
+import (
+	"math"
+
+	"github.com/lxsmnsyc/wathena/server/rules"
+)
 
 // damageType is rAthena's e_damage_type, the hit animation.
 type damageType int
@@ -62,6 +66,9 @@ type damage struct {
 	nk NK
 	// pre is set for an attack in pre-renewal.
 	pre bool
+	// rules are the world's ruleset flags. nil follows the base of the
+	// attack's mode.
+	rules *rules.Rules
 	// basedamage is pre-renewal's damage of a normal attack with the
 	// right hand, which SC_WATK_ELEMENT reads.
 	basedamage int64
@@ -78,9 +85,12 @@ type damage struct {
 // calcWeaponAttack is battle_calc_weapon_attack in renewal, for a normal
 // attack (sk is nil) or a skill. The random draws happen in rAthena's
 // order: lucky dodge, double attack, critical, hit, then the damage rolls.
-func calcWeaponAttack(src, target *Status, sk *Skill, r Rand) damage {
+func calcWeaponAttack(src, target *Status, sk *Skill, rl *rules.Rules, r Rand) damage {
 	sd := src.Player
 	wd := initializeWeaponData(src, sk)
+	if rl != nil {
+		wd.rules = rl
+	}
 	modifyDamageData(&wd, src, target)
 
 	rightElement := modifyElement(&wd, src, target, weaponElement(src, handRight, wd.sk, r))
@@ -300,6 +310,7 @@ func absorbDamage(wd *damage, target *Status) {
 func initializeWeaponData(src *Status, sk *Skill) damage {
 	wd := damage{typ: dmgNormal, div: 1, dmgLv: atkDef, flag: bfWeapon, sk: sk}
 	if sk != nil {
+		wd.rules = sk.Rules
 		wd.div = sk.Hits
 		wd.blewcount = sk.Knockback
 		wd.miscflag = sk.Flag
@@ -823,9 +834,9 @@ func calcElementDamage(wd *damage, src, target *Status, rightElement, leftElemen
 		// battle_calc_damage_parts instead. Martyr's Reckoning has no ATK
 		// parts, so every unit applies it here.
 		if wd.skillID() == skillSacrifice {
-			wd.damage = AttrFix(wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+			wd.damage = wd.attrFixPlain(wd.damage, rightElement, target.DefEle, target.EleLv, 1)
 			if isAttackLeftHanded(src, wd.sk) {
-				wd.damage2 = AttrFix(wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
+				wd.damage2 = wd.attrFixPlain(wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
 			}
 		} else if src.Player == nil {
 			// Normal attacks by monsters are non-elemental and deal 100%
@@ -833,18 +844,18 @@ func calcElementDamage(wd *damage, src, target *Status, rightElement, leftElemen
 			if wd.sk == nil && monsterAttackAttrNone {
 				return
 			}
-			wd.damage = attrFix(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+			wd.damage = wd.attrFix(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
 			if isAttackLeftHanded(src, wd.sk) {
-				wd.damage2 = attrFix(src, target, wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
+				wd.damage2 = wd.attrFix(src, target, wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
 			}
 		}
 		// Skills forced to neutral gain from the weapon's element, and the
 		// element table applies again with neutral.
 		switch wd.skillID() {
 		case skillInvestigate, skillExtremityFist, skillShieldBoomerang, skillShieldChain, skillCartRevolution, skillMagicCrasher:
-			wd.damage = attrFix(src, target, wd.damage, Neutral, target.DefEle, target.EleLv, 1)
+			wd.damage = wd.attrFix(src, target, wd.damage, Neutral, target.DefEle, target.EleLv, 1)
 			if isAttackLeftHanded(src, wd.sk) {
-				wd.damage2 = attrFix(src, target, wd.damage2, Neutral, target.DefEle, target.EleLv, 1)
+				wd.damage2 = wd.attrFix(src, target, wd.damage2, Neutral, target.DefEle, target.EleLv, 1)
 			}
 		}
 	}
@@ -952,8 +963,10 @@ func calcDamage(wd *damage, src, target *Status, dmg int64) int64 {
 	// ksprotection is off by default.
 
 	// Pre-renewal Gravitation Field and Gloria Domini bypass everything
-	// else.
-	if wd.pre && (wd.skillID() == skillGravitation || wd.skillID() == skillPressure) {
+	// else. From here on, each status's own skill_rebalance flag picks
+	// its RENEWAL branch.
+	rl := wd.ruleset()
+	if (wd.skillID() == skillGravitation || wd.skillID() == skillPressure) && !rl.Skill(wd.skillID()) {
 		return dmg
 	}
 
@@ -968,12 +981,12 @@ func calcDamage(wd *damage, src, target *Status, dmg int64) int64 {
 		dmg *= 2
 	}
 	// Assumptio halves the damage in pre-renewal, outside versus maps.
-	if tc != nil && tc.Assumptio > 0 && wd.pre {
+	if tc != nil && tc.Assumptio > 0 && !rl.Skill(skillAssumptio) {
 		dmg /= 2
 	}
 	// Renewal's Sightless Mind: the target takes 30% more damage, or 15%
 	// for a boss.
-	if tc != nil && tc.Raid && !wd.pre {
+	if tc != nil && tc.Raid && rl.Skill(skillRaid) {
 		if target.Class == ClassBoss {
 			dmg += dmg * 15 / 100
 		} else {
@@ -1009,12 +1022,12 @@ func calcDamage(wd *damage, src, target *Status, dmg int64) int64 {
 	}
 	// Energy Coat reduces physical damage, and magic damage in renewal,
 	// by 6% per 20% of SP, and costs SP. Cart Termination goes through.
-	if tc != nil && tc.EnergyCoat != nil && (wd.flag&bfWeapon != 0 || !wd.pre && wd.flag&bfMagic != 0) &&
+	if tc != nil && tc.EnergyCoat != nil && (wd.flag&bfWeapon != 0 || rl.Skill(skillEnergyCoat) && wd.flag&bfMagic != 0) &&
 		wd.skillID() != skillCartTermination {
 		dmg -= dmg * int64(tc.EnergyCoat()) / 100
 	}
 	// Renewal: Steel Body reduces every hit to a tenth.
-	if tc != nil && tc.SteelBody && !wd.pre {
+	if tc != nil && tc.SteelBody && rl.Skill(skillSteelBody) {
 		if dmg > 10 {
 			dmg /= 10
 		} else {
@@ -1043,7 +1056,7 @@ func calcDamage(wd *damage, src, target *Status, dmg int64) int64 {
 	}
 	// Pre-renewal Basilica blocks every hit from a unit that is not a
 	// boss, with Pneuma's check.
-	if tc != nil && tc.Basilica && wd.pre && !src.hasMode(ModeStatusImmune) {
+	if tc != nil && tc.Basilica && !rl.Skill(skillBasilica) && !src.hasMode(ModeStatusImmune) {
 		wd.dmgLv = atkBlock
 		return 0
 	}
@@ -1087,7 +1100,8 @@ func (wd *damage) allAtkAddRate(src *Status, pct int64) {
 
 // context is the SkillContext of the attack.
 func (wd *damage) context(src, target *Status) *SkillContext {
-	return &SkillContext{Src: src, Target: target, Skill: wd.sk, Flag: wd.miscflag, Renewal: !wd.pre}
+	rl := wd.ruleset()
+	return &SkillContext{Src: src, Target: target, Skill: wd.sk, Flag: wd.miscflag, Renewal: rl.Skill(wd.skillID()), Rules: rl}
 }
 
 // calcSpiralPierceBase is Spiral Pierce's case of the renewal
@@ -1120,3 +1134,13 @@ func calcSpiralPierceBase(wd *damage, src, target *Status, r Rand) {
 // skillCartTermination is WS_CARTTERMINATION, which Energy Coat does not
 // reduce.
 const skillCartTermination = 485
+
+// The skills whose statuses battle_calc_damage reads in RENEWAL
+// branches, which their skill_rebalance flags pick.
+const (
+	skillEnergyCoat = 157 // MG_ENERGYCOAT
+	skillRaid       = 214 // RG_RAID
+	skillSteelBody  = 268 // MO_STEELBODY
+	skillAssumptio  = 361 // HP_ASSUMPTIO
+	skillBasilica   = 362 // HP_BASILICA
+)

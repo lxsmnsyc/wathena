@@ -142,7 +142,7 @@ func (npcColuceoHeal) castendNoDamage(z *Zone, src, target *entity, d *skill.Def
 		if tst == nil || src.status == nil || battle.IsUndead(tst.Race, tst.DefEle) || target.sc.Has(sc.SCBerserk) {
 			return
 		}
-		i := skill.CalcHeal(src.status, tst, skill.IDHeal, 10, true, z.renewal(), z.rand)
+		i := skill.CalcHeal(src.status, tst, skill.IDHeal, 10, true, z.rules().HealFormula, z.rand)
 		if statusIsImmune(target) {
 			i = 0
 		}

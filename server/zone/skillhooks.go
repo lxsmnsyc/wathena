@@ -82,7 +82,7 @@ func (z *Zone) blockDamage(src, t *entity, flag, skillID, lv int, dmg int64) boo
 				switch {
 				case g.val2 <= 0:
 					z.deleteGroup(g)
-				case z.renewal():
+				case z.skillRenewal(skill.IDSafetyWall):
 					if g.val3-dmg > 0 {
 						g.val3 -= dmg
 					} else {
@@ -168,7 +168,7 @@ func (z *Zone) additionalEffectFlags(src, target *entity, flag, skillID int) {
 	su, tu := z.unit(src), z.unit(target)
 	long := flag&battle.FlagLong != 0
 	effs := p.bonuses.AddEff
-	if skillID == skill.IDSoulBreaker && !z.renewal() || skillID == skill.IDCartTermination || skillID == skill.IDBomb {
+	if skillID == skill.IDSoulBreaker && !z.skillRenewal(skill.IDSoulBreaker) || skillID == skill.IDCartTermination || skillID == skill.IDBomb {
 		// Cart Termination, Bomb, and pre-renewal's Soul Breaker trigger
 		// no cause_status bonus. Of rAthena's list of such skills, they
 		// are the ones ported.

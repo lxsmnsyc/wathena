@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
 
@@ -32,8 +33,27 @@ const (
 	// skillPlagiarism is RG_PLAGIARISM, which renewal's ASPD rate from
 	// statuses reads, and skillTunnelDrive RG_TUNNELDRIVE, which the
 	// speed of a hidden player reads.
-	skillPlagiarism  = 225
-	skillTunnelDrive = 213
+	skillPlagiarism = 225
+	// The skills whose statuses have RENEWAL branches here, which their
+	// skill_rebalance flags pick.
+	skillAngelus         = 33  // AL_ANGELUS
+	skillBlessing        = 34  // AL_BLESSING
+	skillTwoHandQuicken  = 60  // KN_TWOHANDQUICKEN
+	skillImpositio       = 66  // PR_IMPOSITIO
+	skillAdrenaline      = 111 // BS_ADRENALINE
+	skillLoud            = 155 // MC_LOUD
+	skillSpearQuicken    = 258 // CR_SPEARQUICKEN
+	skillSteelBody       = 268 // MO_STEELBODY
+	skillLKConcentration = 357 // LK_CONCENTRATION
+	skillAssumptio       = 361 // HP_ASSUMPTIO
+	skillBasilica        = 362 // HP_BASILICA
+	skillMagicPower      = 366 // HW_MAGICPOWER
+	skillVolcano         = 285 // SA_VOLCANO
+	skillFlameLauncher   = 280 // SA_FLAMELAUNCHER
+	skillFrostWeapon     = 281 // SA_FROSTWEAPON
+	skillLightningLoader = 282 // SA_LIGHTNINGLOADER
+	skillSeismicWeapon   = 283 // SA_SEISMICWEAPON
+	skillTunnelDrive     = 213
 )
 
 // SC_NIBELUNGEN's effects in renewal, as e_nibelungen_status. Its val2
@@ -221,52 +241,56 @@ func calcLuk(l *sc.List, v int) int {
 // calcWatk is status_calc_watk: weapon ATK from statuses, capped to an
 // unsigned short. lv4 is set when pre-renewal's Ring of Nibelungen
 // applies: always for other units than players, and for a player whose
-// hand holds a level 4 weapon.
-func calcWatk(l *sc.List, v int, renewal, lv4 bool) int {
+// hand holds a level 4 weapon. songs is the ensemble_songs flag, which
+// picks the performances' parts.
+func calcWatk(l *sc.List, v int, songs, lv4 bool) int {
 	if l.Empty() {
 		return capStat(v)
 	}
-	if !renewal {
+	if !songs {
 		v += l.Val2(sc.SCDrumbattle)
 	}
 	v += l.Val2(sc.SCImpositio)
-	if !renewal && lv4 {
+	if !songs && lv4 {
 		v += l.Val2(sc.SCNibelungen)
 	}
 	return capStat(v)
 }
 
 // calcPseudobuffMatk is status_calc_pseudobuff_matk: flat MATK from
-// skills. Renewal's Impositio Manus and Volcano add their val2. NV_TRANSCENDENCE's
-// part is not ported.
-func calcPseudobuffMatk(l *sc.List, v int, renewal bool) int {
+// skills. Renewal's Impositio Manus and Volcano add their val2, each by
+// its skill's skill_rebalance flag. NV_TRANSCENDENCE's part is not
+// ported.
+func calcPseudobuffMatk(l *sc.List, v int, rl *rules.Rules) int {
 	if l.Empty() {
 		return capStat(v)
 	}
-	if renewal {
+	if rl.Skill(skillImpositio) {
 		v += l.Val2(sc.SCImpositio)
+	}
+	if rl.Skill(skillVolcano) {
 		v += l.Val2(sc.SCVolcano)
 	}
 	return capStat(v)
 }
 
 // calcBatk is status_calc_batk. rAthena does not cap the result.
-func calcBatk(l *sc.List, v int, renewal bool) int {
+func calcBatk(l *sc.List, v int, rl *rules.Rules) int {
 	if l.Empty() {
 		return v
 	}
 	v += l.Val2(sc.SCVolcano)
-	if renewal && l.Has(sc.SCLoud) {
+	if rl.Skill(skillLoud) && l.Has(sc.SCLoud) {
 		v += 30
 	}
-	if l.Val2(sc.SCNibelungen) == ringAtkRate {
+	if rl.EnsembleSongs && l.Val2(sc.SCNibelungen) == ringAtkRate {
 		v += v * 20 / 100
 	}
 	return v
 }
 
 // calcCritical is status_calc_critical.
-func calcCritical(l *sc.List, v int, renewal bool) int {
+func calcCritical(l *sc.List, v int, rl *rules.Rules) int {
 	if l.Empty() {
 		return capValue(v, 10, math.MaxInt16)
 	}
@@ -278,17 +302,17 @@ func calcCritical(l *sc.List, v int, renewal bool) int {
 	if l.Has(sc.SCCloaking) {
 		v += v
 	}
-	if renewal && l.Has(sc.SCSpearquicken) {
+	if rl.Skill(skillSpearQuicken) && l.Has(sc.SCSpearquicken) {
 		v += 3 * l.Val1(sc.SCSpearquicken) * 10
 	}
-	if renewal && l.Has(sc.SCTwohandquicken) {
+	if rl.Skill(skillTwoHandQuicken) && l.Has(sc.SCTwohandquicken) {
 		v += (2 + l.Val1(sc.SCTwohandquicken)) * 10
 	}
 	return capValue(v, 10, math.MaxInt16)
 }
 
 // calcHit is status_calc_hit.
-func calcHit(l *sc.List, v int, renewal bool) int {
+func calcHit(l *sc.List, v int, rl *rules.Rules) int {
 	if l.Empty() {
 		return capValue(v, 1, math.MaxInt16)
 	}
@@ -309,26 +333,25 @@ func calcHit(l *sc.List, v int, renewal bool) int {
 	if l.Has(sc.SCFear) {
 		v -= v * 20 / 100
 	}
-	if renewal {
-		if l.Has(sc.SCBlessing) {
-			v += l.Val1(sc.SCBlessing) * 2
-		}
-		if l.Has(sc.SCTwohandquicken) {
-			v += l.Val1(sc.SCTwohandquicken) * 2
-		}
-		if l.Has(sc.SCAdrenaline) {
-			v += l.Val1(sc.SCAdrenaline)*3 + 5
-		}
-		if l.Val2(sc.SCNibelungen) == ringHit {
-			v += 50
-		}
+	// Renewal's parts, each by its skill's flag.
+	if rl.Skill(skillBlessing) && l.Has(sc.SCBlessing) {
+		v += l.Val1(sc.SCBlessing) * 2
+	}
+	if rl.Skill(skillTwoHandQuicken) && l.Has(sc.SCTwohandquicken) {
+		v += l.Val1(sc.SCTwohandquicken) * 2
+	}
+	if rl.Skill(skillAdrenaline) && l.Has(sc.SCAdrenaline) {
+		v += l.Val1(sc.SCAdrenaline)*3 + 5
+	}
+	if rl.EnsembleSongs && l.Val2(sc.SCNibelungen) == ringHit {
+		v += 50
 	}
 	return capValue(v, 1, math.MaxInt16)
 }
 
 // calcFlee is status_calc_flee. The flee penalties of GvG and
 // battleground maps wait for those maps.
-func calcFlee(l *sc.List, v int, renewal bool) int {
+func calcFlee(l *sc.List, v int, rl *rules.Rules) int {
 	if l.Empty() {
 		return capValue(v, 1, math.MaxInt16)
 	}
@@ -339,10 +362,10 @@ func calcFlee(l *sc.List, v int, renewal bool) int {
 	v += l.Val3(sc.SCCloseconfine)
 	v += l.Val2(sc.SCViolentgale)
 	v += l.Val2(scNPCHallucinationWalk)
-	if renewal {
+	if rl.Skill(skillSpearQuicken) {
 		v += 2 * l.Val1(sc.SCSpearquicken)
 	}
-	if l.Val2(sc.SCNibelungen) == ringFlee {
+	if rl.EnsembleSongs && l.Val2(sc.SCNibelungen) == ringFlee {
 		v += 50
 	}
 	// Rates.
@@ -377,8 +400,9 @@ func calcFlee2(l *sc.List, v int) int {
 	return capValue(v, 10, math.MaxInt16)
 }
 
-// calcDef is status_calc_def. cap is DEFTYPE's range.
-func calcDef(l *sc.List, v int, renewal, player bool, capDef func(int) int) int {
+// calcDef is status_calc_def. cap is DEFTYPE's range. songs is the
+// ensemble_songs flag: renewal's Eternal Chaos takes all DEF.
+func calcDef(l *sc.List, v int, rl *rules.Rules, player bool, capDef func(int) int) int {
 	if l.Empty() {
 		return capDef(v)
 	}
@@ -386,10 +410,10 @@ func calcDef(l *sc.List, v int, renewal, player bool, capDef func(int) int) int 
 		return 0
 	}
 	// Steel Body gives 90 DEF only in pre-renewal.
-	if !renewal && l.Has(sc.SCSteelbody) {
+	if !rl.Skill(skillSteelBody) && l.Has(sc.SCSteelbody) {
 		return 90
 	}
-	if renewal && l.Has(sc.SCEternalchaos) {
+	if rl.EnsembleSongs && l.Has(sc.SCEternalchaos) {
 		return 0
 	}
 	// NPC_KEEPING.
@@ -397,7 +421,7 @@ func calcDef(l *sc.List, v int, renewal, player bool, capDef func(int) int) int 
 		return 90
 	}
 	v += l.Val3(sc.SCDrumbattle)
-	if renewal && l.Has(sc.SCAssumptio) {
+	if rl.Skill(skillAssumptio) && l.Has(sc.SCAssumptio) {
 		v += l.Val1(sc.SCAssumptio) * 50
 	}
 	if l.Has(sc.SCIncdefrate) {
@@ -431,9 +455,9 @@ func calcDef(l *sc.List, v int, renewal, player bool, capDef func(int) int) int 
 
 // calcDef2 is status_calc_def2. vit is the unit's VIT, which renewal's
 // Angelus reads.
-func calcDef2(l *sc.List, v int, renewal bool, vit int) int {
+func calcDef2(l *sc.List, v int, rl *rules.Rules, vit int) int {
 	lo := 1
-	if renewal {
+	if rl.Renewal {
 		lo = math.MinInt16
 	}
 	if l.Empty() {
@@ -443,14 +467,14 @@ func calcDef2(l *sc.List, v int, renewal bool, vit int) int {
 		return 0
 	}
 	if l.Has(sc.SCAngelus) {
-		if renewal {
+		if rl.Skill(skillAngelus) {
 			// Angelus raises the VIT part of DEF.
 			v += vit / 2 * l.Val2(sc.SCAngelus) / 100
 		} else {
 			v += v * l.Val2(sc.SCAngelus) / 100
 		}
 	}
-	if !renewal && l.Has(sc.SCConcentration) {
+	if !rl.Skill(skillLKConcentration) && l.Has(sc.SCConcentration) {
 		v -= v * l.Val4(sc.SCConcentration) / 100
 	}
 	if l.Has(sc.SCPoison) || l.Has(sc.SCDpoison) {
@@ -474,7 +498,7 @@ func calcDef2(l *sc.List, v int, renewal bool, vit int) int {
 }
 
 // calcMdef is status_calc_mdef.
-func calcMdef(l *sc.List, v int, renewal bool, capDef func(int) int) int {
+func calcMdef(l *sc.List, v int, rl *rules.Rules, capDef func(int) int) int {
 	if l.Empty() {
 		return capDef(v)
 	}
@@ -482,7 +506,7 @@ func calcMdef(l *sc.List, v int, renewal bool, capDef func(int) int) int {
 		return 0
 	}
 	// Steel Body gives 90 MDEF only in pre-renewal.
-	if !renewal && l.Has(sc.SCSteelbody) {
+	if !rl.Skill(skillSteelBody) && l.Has(sc.SCSteelbody) {
 		return 90
 	}
 	if e := l.Get(sc.SCEndure); e != nil && e.Val3 == 0 {
@@ -932,7 +956,7 @@ func calcAttackElement(l *sc.List, ele int) int {
 
 // hpBonusSC is the status part of status_get_hpbonus with
 // STATUS_BONUS_FIX.
-func hpBonusSC(l *sc.List, renewal bool) int {
+func hpBonusSC(l *sc.List, rl *rules.Rules) int {
 	if l.Empty() {
 		return 0
 	}
@@ -940,7 +964,7 @@ func hpBonusSC(l *sc.List, renewal bool) int {
 	if l.Has(sc.SCMarionette) {
 		b -= 1000
 	}
-	if renewal {
+	if rl.Skill(skillAngelus) {
 		b += l.Val1(sc.SCAngelus) * 50
 	}
 	return b
@@ -956,7 +980,7 @@ func hpRateSC(l *sc.List) int {
 			b += 200
 		}
 		b += l.Val2(sc.SCDeluge)
-		if l.Val2(sc.SCNibelungen) == ringHPRate {
+		if l.Val2(sc.SCNibelungen) == ringHPRate { // Pre-renewal's val2 is 75 or more.
 			b += 30
 		}
 		if l.Has(sc.SCVenombleed) && l.Val3(sc.SCVenombleed) == 1 {
@@ -984,8 +1008,8 @@ func spItemSC(l *sc.List) int {
 }
 
 // calcMaxHPNoPC is status_calc_maxhp for other units than players.
-func calcMaxHPNoPC(l *sc.List, maxHP int, renewal bool) int {
-	v := int64(maxHP) + int64(hpBonusSC(l, renewal))
+func calcMaxHPNoPC(l *sc.List, maxHP int, rl *rules.Rules) int {
+	v := int64(maxHP) + int64(hpBonusSC(l, rl))
 	if rate := 100 + hpRateSC(l); rate != 100 {
 		v = v * int64(rate) / 100
 	}
@@ -1039,6 +1063,14 @@ func calcMode(l *sc.List, mode uint32) uint32 {
 // from its base status and its statuses. A monster without statuses keeps
 // its base status. renewal picks the formulas.
 func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
+	return CalcMonsterRules(base, l, rules.Of(renewal))
+}
+
+// CalcMonsterRules is CalcMonster under a world's rules: the base picks
+// the formulas, and ensemble_songs the performances' parts.
+func CalcMonsterRules(base *battle.Status, l *sc.List, rl *rules.Rules) battle.Status {
+	renewal, songs := rl.Renewal, rl.EnsembleSongs
+	magicPower := rl.Skill(skillMagicPower)
 	s := *base
 	if l.Empty() {
 		return s
@@ -1053,51 +1085,51 @@ func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
 	s.Luk = calcLuk(l, b.Luk)
 	if b.BAtk != 0 {
 		s.BAtk = mobBaseAtk(&s, renewal) + b.BAtk - mobBaseAtk(b, renewal)
-		s.BAtk = calcBatk(l, s.BAtk, renewal)
+		s.BAtk = calcBatk(l, s.BAtk, rl)
 	}
 	if renewal {
 		if b.WAtk == 0 {
 			s.WAtk = 0
-			s.WAtk2 = calcWatkMob(l, b.WAtk2, renewal)
+			s.WAtk2 = calcWatkMob(l, b.WAtk2, songs)
 		} else {
-			s.WAtk = calcWatkMob(l, b.WAtk, renewal)
+			s.WAtk = calcWatkMob(l, b.WAtk, songs)
 		}
 	} else {
-		s.RHW.Atk = calcWatkMob(l, b.RHW.Atk, renewal)
-		s.RHW.Atk2 = calcWatkMob(l, b.RHW.Atk2, renewal)
+		s.RHW.Atk = calcWatkMob(l, b.RHW.Atk, songs)
+		s.RHW.Atk2 = calcWatkMob(l, b.RHW.Atk2, songs)
 		if b.LHW.Atk != 0 {
-			s.LHW.Atk = calcWatkMob(l, b.LHW.Atk, renewal)
-			s.LHW.Atk2 = calcWatkMob(l, b.LHW.Atk2, renewal)
+			s.LHW.Atk = calcWatkMob(l, b.LHW.Atk, songs)
+			s.LHW.Atk2 = calcWatkMob(l, b.LHW.Atk2, songs)
 		}
 	}
 	if s.Dex == b.Dex && (!renewal || s.Luk == b.Luk) {
-		s.Hit = calcHit(l, b.Hit, renewal)
+		s.Hit = calcHit(l, b.Hit, rl)
 	} else {
 		d := s.Dex - b.Dex
 		if renewal {
 			d += s.Luk/3 - b.Luk/3
 		}
-		s.Hit = calcHit(l, b.Hit+d, renewal)
+		s.Hit = calcHit(l, b.Hit+d, rl)
 	}
 	if s.Agi == b.Agi && (!renewal || s.Luk == b.Luk) {
-		s.Flee = calcFlee(l, b.Flee, renewal)
+		s.Flee = calcFlee(l, b.Flee, rl)
 	} else {
 		d := s.Agi - b.Agi
 		if renewal {
 			d += s.Luk/5 - b.Luk/5
 		}
-		s.Flee = calcFlee(l, b.Flee+d, renewal)
+		s.Flee = calcFlee(l, b.Flee+d, rl)
 	}
 	capDef := func(v int) int { return capDefType(v, renewal) }
-	s.Def = calcDef(l, b.Def, renewal, false, capDef)
+	s.Def = calcDef(l, b.Def, rl, false, capDef)
 	if s.Vit == b.Vit && (!renewal || s.Agi == b.Agi) {
-		s.Def2 = calcDef2(l, b.Def2, renewal, s.Vit)
+		s.Def2 = calcDef2(l, b.Def2, rl, s.Vit)
 	} else if renewal {
-		s.Def2 = calcDef2(l, b.Def2+int((float32(s.Vit)/2-float32(b.Vit)/2)+(float32(s.Agi)/5-float32(b.Agi)/5)), renewal, s.Vit)
+		s.Def2 = calcDef2(l, b.Def2+int((float32(s.Vit)/2-float32(b.Vit)/2)+(float32(s.Agi)/5-float32(b.Agi)/5)), rl, s.Vit)
 	} else {
-		s.Def2 = calcDef2(l, b.Def2+s.Vit-b.Vit, renewal, s.Vit)
+		s.Def2 = calcDef2(l, b.Def2+s.Vit-b.Vit, rl, s.Vit)
 	}
-	s.MDef = calcMdef(l, b.MDef, renewal, capDef)
+	s.MDef = calcMdef(l, b.MDef, rl, capDef)
 	if s.Int == b.Int && s.Vit == b.Vit && (!renewal || s.Dex == b.Dex) {
 		s.MDef2 = calcMdef2(l, b.MDef2, renewal)
 	} else if renewal {
@@ -1108,11 +1140,11 @@ func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
 	s.Speed = calcSpeed(l, b.Speed, speedInput{})
 	if b.Cri != 0 {
 		if s.Luk == b.Luk {
-			s.Cri = calcCritical(l, b.Cri, renewal)
+			s.Cri = calcCritical(l, b.Cri, rl)
 		} else if renewal {
-			s.Cri = calcCritical(l, b.Cri+3*(s.Luk-b.Luk), renewal)
+			s.Cri = calcCritical(l, b.Cri+3*(s.Luk-b.Luk), rl)
 		} else {
-			s.Cri = calcCritical(l, b.Cri+(s.Luk-b.Luk)*10/3, renewal)
+			s.Cri = calcCritical(l, b.Cri+(s.Luk-b.Luk)*10/3, rl)
 		}
 	}
 	if b.Flee2 != 0 {
@@ -1122,7 +1154,7 @@ func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
 	s.LHW.Ele = calcAttackElement(l, b.LHW.Ele)
 	s.DefEle = calcElement(l, b.DefEle)
 	s.EleLv = calcElementLv(l, b.EleLv)
-	s.MaxHP = calcMaxHPNoPC(l, b.MaxHP, renewal)
+	s.MaxHP = calcMaxHPNoPC(l, b.MaxHP, rl)
 	s.MaxSP = calcMaxSPNoPC(l, b.MaxSP)
 	if renewal {
 		lv := b.Level
@@ -1132,8 +1164,8 @@ func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
 			mn = max(mn, mx)
 		}
 		// Renewal applies Mystical Amplification before the pseudo buffs.
-		mn, mx = magicPowerMatk(l, mn, mx, true)
-		mn, mx = calcPseudobuffMatk(l, mn, renewal), calcPseudobuffMatk(l, mx, renewal)
+		mn, mx = magicPowerMatk(l, mn, mx, magicPower)
+		mn, mx = calcPseudobuffMatk(l, mn, rl), calcPseudobuffMatk(l, mx, rl)
 		s.MAtkMin = capValue(mn, 0, math.MaxUint16)
 		s.MAtkMax = capValue(mx, 0, math.MaxUint16)
 	} else {
@@ -1144,8 +1176,8 @@ func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
 		}
 		// Pre-renewal applies the pseudo buffs before Mystical
 		// Amplification.
-		mn, mx = calcPseudobuffMatk(l, mn, renewal), calcPseudobuffMatk(l, mx, renewal)
-		mn, mx = magicPowerMatk(l, mn, mx, false)
+		mn, mx = calcPseudobuffMatk(l, mn, rl), calcPseudobuffMatk(l, mx, rl)
+		mn, mx = magicPowerMatk(l, mn, mx, magicPower)
 		s.MAtkMin = capValue(mn, 0, math.MaxUint16)
 		s.MAtkMax = capValue(mx, 0, math.MaxUint16)
 	}
@@ -1161,12 +1193,12 @@ func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
 
 // calcWatkMob is status_calc_watk for a monster: Volcano adds to a
 // monster's weapon ATK only, then the statuses of calcWatk.
-func calcWatkMob(l *sc.List, v int, renewal bool) int {
+func calcWatkMob(l *sc.List, v int, songs bool) int {
 	if l.Empty() {
 		return capStat(v)
 	}
 	v += l.Val2(sc.SCVolcano)
-	return calcWatk(l, v, renewal, true)
+	return calcWatk(l, v, songs, true)
 }
 
 // mobBaseAtk is status_base_atk for a monster: renewal's STR plus level,
@@ -1250,6 +1282,7 @@ func BattleChanges(l *sc.List) *battle.Changes {
 
 // magicPowerMatk is SC_MAGICPOWER's part of status_calc_bl_main: MATK
 // rises by val3 percent. In pre-renewal only while a spell runs (val4).
+// renewal is HW_MAGICPOWER's skill_rebalance flag.
 func magicPowerMatk(l *sc.List, mn, mx int, renewal bool) (int, int) {
 	e := l.Get(sc.SCMagicpower)
 	if e == nil || !renewal && e.Val4 == 0 {

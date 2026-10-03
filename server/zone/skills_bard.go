@@ -107,13 +107,13 @@ func songDanceOf(d *skill.Def) int {
 type song struct{}
 
 func (song) castendNoDamage(z *Zone, src, _ *entity, d *skill.Def, lv int, _ *int) {
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		z.castendSong(src, d, lv)
 	}
 }
 
 func (song) castendPos(z *Zone, src *entity, x, y int, d *skill.Def, lv int, flag *int) {
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		return
 	}
 	*flag |= 1
@@ -284,7 +284,7 @@ func (z *Zone) ensembleCast(src *entity, d *skill.Def, lv int) {
 	}
 	t := partners[0]
 	dancing := src.sc.Get(sc.SCDancing)
-	if dancing != nil && (!z.renewal() || d.ID == skill.IDMoonlit) {
+	if dancing != nil && (!z.rules().EnsembleSongs || d.ID == skill.IDMoonlit) {
 		dancing.Val4 = int(z.unit(t).Ref().ID)
 		z.scStart4(src, t, sc.SCDancing, 100, d.ID, dancing.Val2, lv, int(z.unit(src).Ref().ID),
 			int64(d.Duration1.At(lv))+1000)
@@ -292,7 +292,7 @@ func (z *Zone) ensembleCast(src *entity, d *skill.Def, lv int) {
 		t.player.perform.danceSkill, t.player.perform.danceLv = d.ID, lv
 		return
 	}
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		dur := int64(z.Skills.Get(skill.IDSpecialSinger).Duration1.At(lv))
 		z.scStart(src, src, sc.SCEnsemblefatigue, 100, 1, dur)
 		z.scStart(src, t, sc.SCEnsemblefatigue, 100, 1, dur)
@@ -333,7 +333,7 @@ func (z *Zone) songValues(src *entity, id, lv int) (int, int) {
 		val1 += lesson(skill.IDMusicalLesson)
 		val2 += 2 * lesson(skill.IDMusicalLesson)
 	case skill.IDDontForgetMe:
-		if z.renewal() {
+		if z.rules().EnsembleSongs {
 			val1 = 3*lv + st.Dex/15 // ASPD decrease.
 			val2 = 2*lv + st.Agi/20 // Speed decrease.
 			val1 += lesson(skill.IDDancingLesson)
@@ -447,7 +447,7 @@ func (z *Zone) performanceEnded(e *entity, en *sc.Entry) {
 			}
 		}
 	case sc.SCHermode:
-		if !z.renewal() && en.Val3 == bctSelf {
+		if !z.rules().EnsembleSongs && en.Val3 == bctSelf {
 			z.clearUnitGroups(e)
 		}
 	}
@@ -481,7 +481,7 @@ func (z *Zone) unitByID(id int) *entity {
 type lullaby struct{}
 
 func (lullaby) additionalEffect(z *Zone, src, target *entity, d *skill.Def, lv int) {
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		z.scStart(src, target, d.Status, 100, lv, int64(d.Duration1.At(lv)))
 		return
 	}
@@ -509,7 +509,7 @@ type uglyDance struct{ song }
 
 func (uglyDance) additionalEffect(z *Zone, src, target *entity, _ *skill.Def, lv int) {
 	var sp int
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		sp = 2*lv + 10
 	} else {
 		sp = 5 + 5*lv
@@ -530,7 +530,7 @@ type adaptation struct{}
 // Adaptation's Duration2. rAthena reads the time left as val3 >> 16,
 // which is 0, so only the dance's own duration counts.
 func (adaptation) castBegin(z *Zone, src *entity, d *skill.Def, lv int) wathenav1.SkillFailure {
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
 	}
 	dancing := src.sc.Get(sc.SCDancing)
@@ -546,7 +546,7 @@ func (adaptation) castBegin(z *Zone, src *entity, d *skill.Def, lv int) wathenav
 }
 
 func (adaptation) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		statusSkill{}.castendNoDamage(z, src, target, d, lv, flag)
 		return
 	}
@@ -636,7 +636,7 @@ func (frostJoker) additionalEffect(z *Zone, src, target *entity, d *skill.Def, l
 type pangVoice struct{}
 
 func (pangVoice) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDPangVoice) {
 		z.scStart(src, target, sc.SCConfusion, 100, lv, int64(d.Duration1.At(lv)))
 		z.scStart(src, target, sc.SCBleeding, 100, lv, int64(d.Duration2.At(lv)))
 	} else {
@@ -654,7 +654,7 @@ type winkCharm struct{}
 func (winkCharm) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
 	switch {
 	case target.player != nil:
-		if z.renewal() {
+		if z.skillRenewal(skill.IDWinkCharm) {
 			z.scStart(src, target, sc.SCConfusion, 100, lv, int64(d.Duration1.At(lv)))
 			z.scStart(src, target, sc.SCHallucination, 100, lv, int64(d.Duration2.At(lv)))
 		} else if z.scStart(src, target, sc.SCConfusion, 10, lv, int64(d.Duration1.At(lv))) {
@@ -753,7 +753,7 @@ func (marionette) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv
 type longingFreedom struct{}
 
 func (longingFreedom) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
-	if z.renewal() || target.sc.Has(d.Status) {
+	if z.rules().EnsembleSongs || target.sc.Has(d.Status) {
 		return
 	}
 	dancing := target.sc.Get(sc.SCDancing)
@@ -770,20 +770,20 @@ type hermode struct{}
 
 // castBegin is pre-renewal's check that a warp portal is near.
 func (hermode) castBegin(z *Zone, src *entity, d *skill.Def, lv int) wathenav1.SkillFailure {
-	if !z.renewal() && !z.warpNear(src.x, src.y, d.SplashFor(lv)) {
+	if !z.rules().EnsembleSongs && !z.warpNear(src.x, src.y, d.SplashFor(lv)) {
 		return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
 	}
 	return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
 }
 
 func (hermode) castendNoDamage(z *Zone, src, _ *entity, d *skill.Def, lv int, _ *int) {
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		z.castendSong(src, d, lv)
 	}
 }
 
 func (hermode) castendPos(z *Zone, src *entity, x, y int, d *skill.Def, lv int, flag *int) {
-	if z.renewal() {
+	if z.rules().EnsembleSongs {
 		return
 	}
 	z.clearUnitGroups(src)
@@ -815,7 +815,7 @@ func (tarotCard) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv 
 	}
 	// rAthena also fails on the Emperium and battleground monsters,
 	// which do not exist yet.
-	if z.rand.IntN(100) > lv*8 || !z.renewal() && target.sc.Has(sc.SCBasilica) {
+	if z.rand.IntN(100) > lv*8 || !z.skillRenewal(skill.IDTarotCard) && target.sc.Has(sc.SCBasilica) {
 		if src.player != nil {
 			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		}
@@ -953,7 +953,7 @@ func (z *Zone) tarotCard(src, target *entity, d *skill.Def, lv int) int {
 		z.scStart(src, target, sc.SCStun, 100, lv, statusTime(sc.SCStun, true))
 	default:
 		// The Sun: in renewal, SC_TAROTCARD keeps other cards away.
-		if z.renewal() {
+		if z.skillRenewal(skill.IDTarotCard) {
 			z.scStart(src, target, sc.SCTarotcard, 100, lv, time2)
 		}
 		for _, typ := range []int{sc.SCIncatkrate, sc.SCIncmatkrate, sc.SCInchitrate, sc.SCIncfleerate, sc.SCIncdefrate} {
@@ -1091,7 +1091,7 @@ func (z *Zone) songOnPlace(g *unitGroup, t *entity) {
 // songLeft is skill_unit_onleft for the pre-renewal songs a unit no
 // longer stands in. Renewal's songs have no units.
 func (z *Zone) songLeft(t *entity, covered map[int]bool) {
-	if z.renewal() || t.sc.Empty() || z.Skills == nil {
+	if z.rules().EnsembleSongs || t.sc.Empty() || z.Skills == nil {
 		return
 	}
 	// A performer who stepped out of its ensemble stops.
@@ -1145,7 +1145,7 @@ func (z *Zone) songOnPlaceTimer(e, t *entity) {
 		if g.src == t || g.src.status == nil || t.status == nil {
 			return
 		}
-		heal := skill.CalcHeal(g.src.status, t.status, g.def.ID, g.lv, true, z.renewal(), z.rand)
+		heal := skill.CalcHeal(g.src.status, t.status, g.def.ID, g.lv, true, z.rules().HealFormula, z.rand)
 		z.skillEffect(e, t, z.Skills.Get(skill.IDHeal), int(heal), heal, true)
 		z.healHP(t, heal)
 	}
@@ -1208,7 +1208,7 @@ func (z *Zone) performanceSkillUse(src *entity, def *skill.Def, flag int) bool {
 	if l.Empty() {
 		return true
 	}
-	renewal := z.renewal()
+	renewal := z.rules().EnsembleSongs
 	if d := l.Get(sc.SCDancing); d != nil && flag != 2 {
 		switch {
 		case !renewal && l.Has(sc.SCLonging):
@@ -1283,7 +1283,7 @@ func (v scEnv) RawStats(u sc.Unit) [6]int {
 // richmanBonus is mob_dead's exp bonus from Richman Kim: the monster's
 // SC_RICHMANKIM in pre-renewal, the killer's in renewal.
 func (z *Zone) richmanBonus(mob, killer *entity) int {
-	if !z.renewal() {
+	if !z.rules().EnsembleSongs {
 		return mob.sc.Val2(sc.SCRichmankim)
 	}
 	if killer != nil && killer.player != nil {
@@ -1296,7 +1296,7 @@ func (z *Zone) richmanBonus(mob, killer *entity) int {
 // more HP from items. rAthena divides the rate by 100, so it adds 0 for
 // every level.
 func (z *Zone) appleItemHeal(e *entity) int {
-	if !z.renewal() {
+	if !z.rules().HealFormula {
 		return 0
 	}
 	return e.sc.Val3(sc.SCAppleidun) / 100

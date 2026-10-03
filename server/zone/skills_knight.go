@@ -123,7 +123,7 @@ func (brandishSpear) castendNoDamage(z *Zone, src, target *entity, d *skill.Def,
 			brandishSpear{}.castendDamage(z, src, t, d, lv, &f)
 		}
 	}
-	if z.renewal() {
+	if z.skillRenewal(skill.IDBrandishSpear) {
 		hit(z.unitsInDir(src, src.x, src.y, target.x, target.y, splash, maxCount, 0), *flag)
 		return
 	}
@@ -147,7 +147,7 @@ func (brandishSpear) castendNoDamage(z *Zone, src, target *entity, d *skill.Def,
 }
 
 func (brandishSpear) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
-	if z.renewal() || target == z.area.main {
+	if z.skillRenewal(skill.IDBrandishSpear) || target == z.area.main {
 		z.skillAttack(d.Type, src, src, target, d, lv, *flag)
 		return
 	}
@@ -239,7 +239,7 @@ func facesDir(a, b int) bool {
 type bowlingBash struct{}
 
 func (bowlingBash) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDBowlingBash) {
 		size := d.SplashFor(lv)
 		count := len(z.areaTargets(src, target.x, target.y, size, false))
 		f := count
@@ -318,7 +318,7 @@ type chargeAttack struct{}
 func (chargeAttack) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
 	straight := z.clearShot(src.x, src.y, target.x, target.y)
 	dist := mathDistance(src, target)
-	if z.renewal() {
+	if z.skillRenewal(skill.IDChargeAttack) {
 		dist = d.Knockback.At(lv)
 	}
 	dir := mapCalcDir(target, src.x, src.y)

@@ -243,7 +243,7 @@ func (z *Zone) evilLandOnPlace(e, t *entity) {
 	if srcSt == nil {
 		srcSt = &npcStatus
 	}
-	heal := skill.CalcHeal(srcSt, st, g.def.ID, g.lv, true, z.renewal(), z.rand)
+	heal := skill.CalcHeal(srcSt, st, g.def.ID, g.lv, true, z.rules().HealFormula, z.rand)
 	if t.hp >= int64(st.MaxHP) {
 		return
 	}

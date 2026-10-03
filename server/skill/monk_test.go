@@ -28,8 +28,10 @@ func TestFingerOffensiveCastTimePerSphere(t *testing.T) {
 	if got := d.CastTimeFor(c, 2, false, true).Milliseconds; got != 3000 {
 		t.Errorf("cast time %d at level 2 with 9 spheres, want 3000", got)
 	}
-	// Renewal has no such rule.
+	// Renewal has no such rule. MO_FINGEROFFENSIVE's skill_rebalance
+	// flag picks it, which follows the caster's base here.
 	r := loadDB(t, reference.Renewal).Get(IDFingerOffensive)
+	c.Renewal = true
 	c.SpiritBalls = 0
 	want := r.CastTimeFor(c, 5, true, true).Milliseconds
 	c.SpiritBalls = 3

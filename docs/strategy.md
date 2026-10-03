@@ -303,9 +303,9 @@ Why these cannot be mixed:
 | Flag | Values | What it changes | Depends on |
 |---|---|---|---|
 | `cast_time` | `renewal`, `pre_renewal` | Variable plus fixed cast time, or DEX-only cast time. | Pre-Renewal base with `renewal` uses a default fixed cast of 20% when `skill_db` has no `FixedCastTime`. |
-| `skill_cooldown` | `on`, `off` | Per-skill cooldowns for players, homunculi, and guild skills. | Cooldown values come from the Renewal `skill_db`, applied as a data overlay on a pre-Renewal base. |
+| `skill_cooldown` | `on`, `off` | Per-skill cooldowns for players, homunculi, and guild skills. | Cooldowns come from the `skill_db` of the flag's mode, applied as a data overlay. `off` keeps pre-Renewal's cooldowns, which rAthena's pre-Renewal `skill_db` has for 175 skills. |
 | `aspd` | `renewal`, `pre_renewal` | ASPD formula, shield penalty, and bonus stacking. | Ships with both `job_aspd` tables. |
-| `stat_point_cost` | `renewal`, `pre_renewal` | Status point cost formula (`statpoint.yml`). | None. |
+| `stat_point_cost` | `renewal`, `pre_renewal` | Status point cost formula (`RENEWAL_STAT`). The two agree below 100. | None. The points per level of `statpoint.yml` stay with the base. |
 | `level_penalty_exp` | `on`, `off` | Exp modifier by level gap between player and monster. | None. |
 | `level_penalty_drop` | `on`, `off` | Drop rate modifier by level gap. | None. |
 | `level_damage_mod` | `on`, `off` | Skill damage scales with base level. | Only useful with a level cap above 99. |
@@ -314,12 +314,12 @@ Why these cannot be mixed:
 | `status_resist` | `renewal`, `pre_renewal` | Status effect resistance and duration formulas. | None. |
 | `heal_formula` | `renewal`, `pre_renewal` | Heal skill and healing item formulas. | None. |
 | `boss_protection` | `renewal`, `pre_renewal` | Boss endure, trap immunity, and stun length. | None. |
-| `ensemble_songs` | `renewal`, `pre_renewal` | Songs as self buffs and ensemble fatigue. | None. |
-| `homunculus` | `renewal`, `pre_renewal` | Homunculus ASPD, exp share, and stat growth. | Ships with both homunculus tables. |
+| `ensemble_songs` | `renewal`, `pre_renewal` | Songs as self buffs and ensemble fatigue. | The songs take their `skill_db` records from the flag's mode. |
+| `homunculus` | `renewal`, `pre_renewal` | Homunculus ASPD, exp share, and stat growth. | Ships with both homunculus tables. Nothing reads it until homunculi exist. |
 | `busy_restrictions` | `on`, `off` | Blocks NPC, item, skill, and cart actions while busy. | None. |
 | `fourth_job_traits` | `on`, `off` | POW, STA, and other trait stats, plus RES and MRES. | Renewal base only. |
 | `item_rolls` | `on`, `off` | Items with roll ranges get random values when created. With `off`, every roll uses its default value, which matches rAthena (section 5.4). | None. |
-| `skill_rebalance.<skill>` | `renewal`, `pre_renewal` | Ratio and effect of one skill that changed between modes, such as Basilica or Magnum Break. | Base ATK model for damage skills. |
+| `skill_rebalance.<skill>` | `renewal`, `pre_renewal` | Ratio and effect of one skill that changed between modes, such as Basilica or Magnum Break, with its own status. | Base ATK model for damage skills. The skill takes its `skill_db` record from the flag's mode. Songs follow `ensemble_songs`. |
 
 #### Ruleset mods
 
@@ -359,7 +359,7 @@ Rules:
 
 Implementation:
 
-- In Go, `Ruleset` is a struct of small interfaces, one per flag, such as `CastTimeModel` and `ASPDModel`. Each interface has a Renewal and a pre-Renewal implementation.
+- In Go, `rules.Rules` holds one value per flag. Each place where rAthena checks `RENEWAL` reads the flag of its feature (decision 0019 lists what each flag changes).
 - Each flag declares the data files it needs. The data loader picks each file from the Renewal or pre-Renewal set to match.
 - The loader rejects combinations that break a dependency, with an error naming the flag.
 - Scripts check flags with `rules.is("cast_time", "renewal")`, from `require "wa.rules"`. This replaces rAthena's `checkre()`.
@@ -2539,7 +2539,13 @@ The order from here:
       - The client has chat tabs for channels and whispers, chat commands, a block list panel, a report button on lines, and mute notices.
       - End-to-end scenarios: whispers, channels, blocking, the filter, a mute until it ends, and reports in memory and in PostgreSQL.
       - Left: party and guild chat, the staff queue, bans, block everyone, players' own channels, and the hub across processes.
-   3. The ruleset flags. The 14 flags that are accepted but not read yet get the other mode's code path, parity tests against both recordings, tests at both values, and sampled mixed rulesets. Added on 2026-10-03, so that later steps build on rulesets that work.
+   3. The ruleset flags. The 14 flags that are accepted but not read yet get the other mode's code path, parity tests against both recordings, tests at both values, and sampled mixed rulesets. Added on 2026-10-03, so that later steps build on rulesets that work. Done on 2026-10-04 ([decision 0019](decisions/0019-ruleset-flags.md), server/README.md, "Rulesets", and mods/README.md, "Rulesets"):
+      - `server/rules` holds the flags as the code reads them, and each `RENEWAL` site of a ported feature reads its flag instead of the base. `LoadMods` applies the flags to the job tables, the exp and drop tables, the skill data and the zones.
+      - Every flag but `homunculus` has behavior: `cast_time`, `skill_cooldown`, `stat_point_cost`, `level_penalty_exp`, `level_penalty_drop`, `level_damage_mod`, `element_table`, `status_resist`, `heal_formula`, `boss_protection`, `ensemble_songs`, `busy_restrictions`, `fourth_job_traits` and `skill_rebalance.<skill>` for 94 skills.
+      - On a pre-renewal base, renewal's cast time gives a skill without `FixedCastTime` the default fixed cast of 20%, and the level penalty flags take renewal's table. `skill_cooldown` takes the cooldowns of its mode. The songs and the rebalanced skills take their `skill_db` records from their flag's mode.
+      - Tests: each flag at both values on both bases, with expected values from the other mode's recording or rAthena's formulas. `TestEveryFlagBothValues` fails for a flag without a behavior test. Eight seeded mixes per base run every recording that applies in battle, skill, status, statuschange, progression, zone and gamedata. Both core rulesets match every recording as before.
+      - A sample ruleset mod, [examples/classic-casting](../mods/examples/classic-casting), sets pre-renewal cast time, element table, cooldowns and Mystical Amplification on a renewal base. `wactl mod test` loads a ruleset mod as the world's ruleset. Its test and `TestClassicCasting` pass.
+      - Left: `homunculus`, which needs homunculi; boss endure on hits and the busy cart change, which need hit stops and cart looks; the party exp share; rebalanced skills whose other version needs a status the base lacks; the `RENEWAL` sites of skills not ported yet; and reading flags from Lua, which needs API.
    4. Friends and parties: party exp and item sharing, party booking in the web client, and the party skills that step 4 left failing.
    5. Guilds: guild skills, guild storage and emblems.
    6. Storage, cart and trade: personal storage, cart storage, Kafra storage and trade.
@@ -2749,7 +2755,7 @@ Phase 4 exit check, done on 2026-10-03:
   - The 79 renewal and 8 pre-renewal effect mismatches of `mob_skill_use.json` are skills without a full port: `ITM_TOMAHAWK`, `GS_DUST`, `SA_REVERSEORCISH`, three `ABR_` skills and `RK_IGNITIONBREAK`.
   - 37 recorded expanded class skills (Gunslinger, Ninja, Taekwon, Soul Linker) are not ported yet, so `skill_damage.json` leaves them out.
   - The check found a bug: a pre-renewal base used renewal's size table. It is fixed.
-- Ruleset flags: `TestEveryFlagBothValues` loads every flag at both values on both bases, and `TestCoreRulesetFlags` checks the core rulesets. Only `aspd`, `size_table` and `item_rolls` have behavior, and each has behavior tests for both values. The other 14 flags are accepted and recorded, but nothing reads them yet: their rules follow the base. `TestSampledMixedRulesets` runs 8 seeded mixes per base, with 6 to 11 flags away from the base, through stats, damage, cast times, exp and drops. This criterion is met for the built flags only.
+- Ruleset flags: `TestEveryFlagBothValues` loads every flag at both values on both bases, and `TestCoreRulesetFlags` checks the core rulesets. Only `aspd`, `size_table` and `item_rolls` have behavior, and each has behavior tests for both values. The other 14 flags are accepted and recorded, but nothing reads them yet: their rules follow the base. `TestSampledMixedRulesets` runs 8 seeded mixes per base, with 6 to 11 flags away from the base, through stats, damage, cast times, exp and drops. This criterion is met for the built flags only. Phase 5 step 3 gave every flag but `homunculus` its behavior and its tests at both values, and the mixes now run every recording that applies ([decision 0019](decisions/0019-ruleset-flags.md)).
 - Golden tests: every player skill with a behavior has a recording or its own test. 23 have only `skill_casting.json` coverage, such as First Aid, Steal and the Sage's element skills. 41 monster `NPC_` skills have no test, down from 73 before this check: summons, monster magic, ground units and renewal third class formulas.
 - Full recalculation (section 5.3): `TestFullRecalculationEveryItem` equips, levels and unequips every core item and card, saves and loads the player after each step, and compares the whole battle status and weight.
   - Renewal: 12,222 items and 1,545 cards, 40,892 steps, 0 mismatches.

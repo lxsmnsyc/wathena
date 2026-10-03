@@ -39,7 +39,7 @@ func npcEarthquakeDamage(ad *damage, src, target *Status, pre bool, r Rand) int6
 	case src.Player != nil && pre:
 		dmg = int64(src.BAtk + src.RHW.Atk)
 	case src.Player != nil:
-		wd := calcWeaponAttack(src, target, ad.sk, r)
+		wd := calcWeaponAttack(src, target, ad.sk, nil, r)
 		dmg = int64(src.Str*2) + wd.damage
 	case pre:
 		dmg = calcBaseDamagePreRenewal(src, handRight, target.Size, 0, r)

@@ -188,9 +188,8 @@ func (spiralPierce) SkillRatio(a *battle.SkillContext, ratio *int) {
 		return
 	}
 	*ratio += 50 + 50*a.Level()
-	if lv := a.Src.Level; lv > 100 {
-		*ratio = *ratio * lv / 100
-	}
+	// RE_LVL_DMOD(100). At level 100 the ratio does not change.
+	reLvlDmod(a, ratio, 100)
 }
 
 // ModifyDamageData is SkillSpiralPierce::modifyDamageData: a unit that

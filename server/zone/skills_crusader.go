@@ -213,7 +213,7 @@ type gloriaDomini struct{}
 
 func (gloriaDomini) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
 	typ := d.Type
-	if z.renewal() {
+	if z.skillRenewal(skill.IDPressure) {
 		typ = battle.TypeMagic
 	}
 	z.skillAttack(typ, src, src, target, d, lv, *flag)
@@ -225,7 +225,7 @@ func (gloriaDomini) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv
 // its copy of the attack type, which does not reach the autospells, so
 // that part changes nothing.
 func (gloriaDomini) additionalEffect(z *Zone, src, target *entity, _ *skill.Def, lv int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDPressure) {
 		return
 	}
 	p := target.player
@@ -412,7 +412,7 @@ func (z *Zone) autoGuard(src, t *entity, flag, skillID, lv int) bool {
 	if src == nil || !t.sc.Has(sc.SCShrink) {
 		return true
 	}
-	if z.renewal() {
+	if z.skillRenewal(skill.IDShrink) {
 		// skill_get_time2 of the attacking skill: a normal attack gives 0.
 		ms := int64(0)
 		if skillID != 0 && d != nil {

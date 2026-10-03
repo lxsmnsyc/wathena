@@ -32,6 +32,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
 
@@ -376,6 +377,10 @@ type Tables struct {
 	// preRenewalSizes is the size_table ruleset flag set to pre_renewal:
 	// attacks use pre-renewal's size table for knuckles and whips.
 	preRenewalSizes bool
+	// rules are the other ruleset flags that player stats read:
+	// cast_time for the cast bonuses, stat_point_cost,
+	// fourth_job_traits and ensemble_songs. Never nil.
+	rules *rules.Rules
 	// statuses is the status database, for the default duration of
 	// cause_status. Without it, that duration is 0.
 	statuses *sc.DB
@@ -398,6 +403,18 @@ func (t *Tables) SetStatuses(db *sc.DB) { t.statuses = db }
 // table, or renewal's.
 func (t *Tables) SetSizeTable(preRenewal bool) { t.preRenewalSizes = preRenewal }
 
+// SetRules sets the ruleset flags that player stats read, other than
+// aspd and size_table: cast_time, stat_point_cost, fourth_job_traits
+// and ensemble_songs. The base stays the tables' own.
+func (t *Tables) SetRules(r *rules.Rules) {
+	cp := *r
+	cp.Renewal = t.renewal
+	t.rules = &cp
+}
+
+// Rules returns the ruleset flags the tables read.
+func (t *Tables) Rules() *rules.Rules { return t.rules }
+
 // New builds the tables from job_stats.json.
 func New(d *Data) (*Tables, error) {
 	var renewal bool
@@ -408,7 +425,7 @@ func New(d *Data) (*Tables, error) {
 	default:
 		return nil, fmt.Errorf("status: unknown mode %q", d.Mode)
 	}
-	t := &Tables{renewal: renewal, renewalASPD: renewal, preRenewalSizes: !renewal, jobs: map[int]*job{}, mapIDJobs: map[uint64][2]int{}}
+	t := &Tables{renewal: renewal, renewalASPD: renewal, preRenewalSizes: !renewal, rules: rules.Base(renewal), jobs: map[int]*job{}, mapIDJobs: map[uint64][2]int{}}
 	t.byName = map[string]int{}
 	for _, jd := range CoreJobData(d) {
 		t.jobs[jd.ID] = newJob(&jd, renewal)
@@ -448,6 +465,14 @@ type data struct {
 	pow, sta, wis, spl, con, crt int
 	patk, smatk, hplus, crate    int
 	aspdRate                     int
+}
+
+// dropTraits clears the trait stats and what they give: P.ATK, S.MATK,
+// RES, MRES, H.PLUS and C.RATE, for fourth_job_traits off.
+func (b *data) dropTraits() {
+	b.pow, b.sta, b.wis, b.spl, b.con, b.crt = 0, 0, 0, 0, 0, 0
+	b.patk, b.smatk, b.hplus, b.crate = 0, 0, 0, 0
+	b.Res, b.MRes = 0, 0
 }
 
 // pc is the part of map_session_data this package reads.
@@ -506,7 +531,13 @@ func (t *Tables) Calc(c Character) (Result, error) {
 		return Result{}, fmt.Errorf("status: job %d cannot have base level %d and job level %d", c.Job, c.BaseLevel, c.JobLevel)
 	}
 	base := p.calcBase()
+	if !t.rules.FourthJobTraits {
+		base.dropTraits()
+	}
 	bat := p.calcBattle(&base)
+	if !t.rules.FourthJobTraits {
+		bat.dropTraits()
+	}
 	res := Result{Base: base.Status, Battle: bat.Status, MaxWeight: p.maxWeight(), Window: p.window(&bat)}
 	res.Base.Level, res.Battle.Level = c.BaseLevel, c.BaseLevel
 	res.Base.ID, res.Battle.ID = c.Job, c.Job
@@ -736,6 +767,11 @@ func (p *pc) calcBase() data {
 
 	b.con += p.skill(skillGrenadeMastery)
 	b.spl += p.skill(skillSoulMastery)
+	if !p.t.rules.FourthJobTraits {
+		// fourth_job_traits off: no trait stats from the job, equipment
+		// or skills.
+		b.pow, b.sta, b.wis, b.spl, b.con, b.crt = 0, 0, 0, 0, 0, 0
+	}
 
 	// Attack. Pre-renewal adds bWeaponAtk of the weapon type to base ATK.
 	weapon := p.worn.Weapon
@@ -980,19 +1016,19 @@ func (p *pc) calcBase() data {
 		}
 		if e := l.Get(sc.SCSiegfried); e != nil {
 			// Siegfried's element resistance: the four elements, and in
-			// pre-renewal five more.
+			// pre-renewal five more (ensemble_songs).
 			eles := []int{eleWater, eleEarth, eleFire, eleWind}
-			if !p.t.renewal {
+			if !p.t.rules.EnsembleSongs {
 				eles = append(eles, elePoison, eleHoly, eleDark, eleGhost, eleUndead)
 			}
 			for _, ele := range eles {
 				battle.Add(&pl.SubEle, ele, e.Val2)
 			}
 		}
-		if e := l.Get(sc.SCFortune); e != nil && p.t.renewal {
+		if e := l.Get(sc.SCFortune); e != nil && p.t.rules.EnsembleSongs {
 			pl.CritAtkRate += 2 * e.Val1
 		}
-		if e := l.Get(sc.SCBasilica); e != nil && p.t.renewal {
+		if e := l.Get(sc.SCBasilica); e != nil && p.t.rules.Skill(skillBasilica) {
 			// Renewal's Basilica: 5% more damage per level against the
 			// dark and undead elements, on the right hand only
 			// (left_cardfix_to_right is on), and 3% more holy magic per
@@ -1001,12 +1037,15 @@ func (p *pc) calcBase() data {
 			battle.Add(&pl.Right.AddEle, eleUndead, e.Val1*5)
 			battle.Add(&pl.Magic.AtkEle, eleHoly, e.Val1*3)
 		}
-		if p.t.renewal {
-			// Endows raise magic of their element.
-			battle.Add(&pl.Magic.AtkEle, eleFire, l.Val1(sc.SCFireweapon))
-			battle.Add(&pl.Magic.AtkEle, eleWind, l.Val1(sc.SCWindweapon))
-			battle.Add(&pl.Magic.AtkEle, eleWater, l.Val1(sc.SCWaterweapon))
-			battle.Add(&pl.Magic.AtkEle, eleEarth, l.Val1(sc.SCEarthweapon))
+		// Renewal's endows raise magic of their element, each by its
+		// skill's skill_rebalance flag.
+		for _, en := range []struct{ skill, ele, status int }{
+			{skillFlameLauncher, eleFire, sc.SCFireweapon}, {skillLightningLoader, eleWind, sc.SCWindweapon},
+			{skillFrostWeapon, eleWater, sc.SCWaterweapon}, {skillSeismicWeapon, eleEarth, sc.SCEarthweapon},
+		} {
+			if p.t.rules.Skill(en.skill) {
+				battle.Add(&pl.Magic.AtkEle, en.ele, l.Val1(en.status))
+			}
 		}
 		pb.matkRate += l.Val1(sc.SCIncmatkrate)
 		pb.matkRate += l.Val2(sc.SCMindbreaker)
@@ -1281,7 +1320,7 @@ func (p *pc) capMaxHP(hp int) int {
 // hpBonus is status_get_hpbonus with STATUS_BONUS_FIX: bMaxHP, skills
 // and statuses.
 func (p *pc) hpBonus() int {
-	bonus := p.b.hp + hpBonusSC(p.c.Changes, p.t.renewal)
+	bonus := p.b.hp + hpBonusSC(p.c.Changes, p.t.rules)
 	bonus += p.skill(skillTrust) * 200
 	for _, id := range []int{skillBreakthrough, skillTranscendence} {
 		if lv := p.skill(id); lv > 0 {
@@ -1342,7 +1381,9 @@ func (p *pc) spBonus() int {
 // spRate is status_get_spbonus with STATUS_BONUS_RATE, from skills.
 func (p *pc) spRate() int {
 	bonus := p.skill(skillMeditatio) + 2*p.skill(skillSoulDrain)
-	if p.t.renewal {
+	// The lessons' SP and Ring of Nibelungen's SP are renewal's
+	// performance rules (ensemble_songs).
+	if p.t.rules.EnsembleSongs {
 		lesson := skillDancingLesson
 		if p.c.Male {
 			lesson = skillMusicalLesson
@@ -1392,52 +1433,52 @@ func (p *pc) calcBattle(b *data) data {
 	// BATK: the difference that equipment made to the base status stays.
 	if b.BAtk != 0 {
 		s.BAtk = p.baseAtk(&s) + b.BAtk - p.baseAtk(b)
-		s.BAtk = calcBatk(l, s.BAtk, renewal)
+		s.BAtk = calcBatk(l, s.BAtk, p.t.rules)
 	}
 
 	// Pre-renewal's status_calc_watk on each hand's weapon ATK, then
 	// bWeaponAtkRate on the right hand's. A player's refine ATK is left
 	// out.
 	if !renewal {
-		s.RHW.Atk = calcWatk(l, b.RHW.Atk, renewal, b.RHW.Wlv == 4)
+		s.RHW.Atk = calcWatk(l, b.RHW.Atk, p.t.rules.EnsembleSongs, b.RHW.Wlv == 4)
 		if pb.weaponAtkRate != 0 {
 			s.RHW.Atk += s.RHW.Atk * pb.weaponAtkRate / 100
 		}
 		if b.LHW.Atk != 0 {
-			s.LHW.Atk = calcWatk(l, b.LHW.Atk, renewal, b.LHW.Wlv == 4)
+			s.LHW.Atk = calcWatk(l, b.LHW.Atk, p.t.rules.EnsembleSongs, b.LHW.Wlv == 4)
 		}
 	}
 
 	// HIT and FLEE follow the change of the stats they come from.
 	if s.Dex == b.Dex && (!renewal || (s.Luk == b.Luk && s.con == b.con)) {
-		s.Hit = calcHit(l, b.Hit, renewal)
+		s.Hit = calcHit(l, b.Hit, p.t.rules)
 	} else {
 		d := s.Dex - b.Dex
 		if renewal {
 			d += s.Luk/3 - b.Luk/3 + 2*(s.con-b.con)
 		}
-		s.Hit = calcHit(l, b.Hit+d, renewal)
+		s.Hit = calcHit(l, b.Hit+d, p.t.rules)
 	}
 	if s.Agi == b.Agi && (!renewal || (s.Luk == b.Luk && s.con == b.con)) {
-		s.Flee = calcFlee(l, b.Flee, renewal)
+		s.Flee = calcFlee(l, b.Flee, p.t.rules)
 	} else {
 		d := s.Agi - b.Agi
 		if renewal {
 			d += s.Luk/5 - b.Luk/5 + 2*(s.con-b.con)
 		}
-		s.Flee = calcFlee(l, b.Flee+d, renewal)
+		s.Flee = calcFlee(l, b.Flee+d, p.t.rules)
 	}
 
-	s.Def = calcDef(l, b.Def, renewal, true, p.capDef)
+	s.Def = calcDef(l, b.Def, p.t.rules, true, p.capDef)
 	switch {
 	case s.Vit == b.Vit && (!renewal || s.Agi == b.Agi):
-		s.Def2 = calcDef2(l, b.Def2, renewal, s.Vit)
+		s.Def2 = calcDef2(l, b.Def2, p.t.rules, s.Vit)
 	case renewal:
-		s.Def2 = calcDef2(l, b.Def2+int((float32(s.Vit)/2-float32(b.Vit)/2)+(float32(s.Agi)/5-float32(b.Agi)/5)), renewal, s.Vit)
+		s.Def2 = calcDef2(l, b.Def2+int((float32(s.Vit)/2-float32(b.Vit)/2)+(float32(s.Agi)/5-float32(b.Agi)/5)), p.t.rules, s.Vit)
 	default:
-		s.Def2 = calcDef2(l, b.Def2+s.Vit-b.Vit, renewal, s.Vit)
+		s.Def2 = calcDef2(l, b.Def2+s.Vit-b.Vit, p.t.rules, s.Vit)
 	}
-	s.MDef = calcMdef(l, b.MDef, renewal, p.capDef)
+	s.MDef = calcMdef(l, b.MDef, p.t.rules, p.capDef)
 	switch {
 	case s.Int == b.Int && s.Vit == b.Vit && (!renewal || s.Dex == b.Dex):
 		s.MDef2 = calcMdef2(l, b.MDef2, renewal)
@@ -1478,11 +1519,11 @@ func (p *pc) calcBattle(b *data) data {
 	if b.Cri != 0 {
 		switch {
 		case s.Luk == b.Luk:
-			s.Cri = calcCritical(l, b.Cri, renewal)
+			s.Cri = calcCritical(l, b.Cri, p.t.rules)
 		case renewal:
-			s.Cri = calcCritical(l, b.Cri+3*(s.Luk-b.Luk), renewal)
+			s.Cri = calcCritical(l, b.Cri+3*(s.Luk-b.Luk), p.t.rules)
 		default:
-			s.Cri = calcCritical(l, b.Cri+(s.Luk-b.Luk)*10/3, renewal)
+			s.Cri = calcCritical(l, b.Cri+(s.Luk-b.Luk)*10/3, p.t.rules)
 		}
 		if p.worn.Weapon == weaponKatar {
 			s.Cri *= 2
@@ -1507,9 +1548,9 @@ func (p *pc) calcBattle(b *data) data {
 		// left-hand weapon.
 		if b.WAtk == 0 {
 			s.WAtk = 0
-			s.WAtk2 = calcWatk(l, b.WAtk2, renewal, true)
+			s.WAtk2 = calcWatk(l, b.WAtk2, p.t.rules.EnsembleSongs, true)
 		} else {
-			s.WAtk = calcWatk(l, b.WAtk, renewal, true)
+			s.WAtk = calcWatk(l, b.WAtk, p.t.rules.EnsembleSongs, true)
 		}
 	}
 
@@ -1538,11 +1579,11 @@ func (p *pc) calcBattle(b *data) data {
 			matkMax += o - 1
 		}
 		// Mystical Amplification.
-		matkMin, matkMax = magicPowerMatk(l, matkMin, matkMax, true)
+		matkMin, matkMax = magicPowerMatk(l, matkMin, matkMax, p.t.rules.Skill(skillMagicPower))
 		matkMin += pb.ematk + pb.ematkHidden
 		matkMax += pb.ematk + pb.ematkHidden
-		matkMin = calcPseudobuffMatk(l, matkMin, renewal)
-		matkMax = calcPseudobuffMatk(l, matkMax, renewal)
+		matkMin = calcPseudobuffMatk(l, matkMin, p.t.rules)
+		matkMax = calcPseudobuffMatk(l, matkMax, p.t.rules)
 		if pb.matkRate != 100 {
 			matkMin = matkMin * pb.matkRate / 100
 			matkMax = matkMax * pb.matkRate / 100
@@ -1559,9 +1600,9 @@ func (p *pc) calcBattle(b *data) data {
 		if recognized {
 			matkMin = max(matkMin, matkMax)
 		}
-		matkMin = calcPseudobuffMatk(l, matkMin, renewal)
-		matkMax = calcPseudobuffMatk(l, matkMax, renewal)
-		matkMin, matkMax = magicPowerMatk(l, matkMin, matkMax, false)
+		matkMin = calcPseudobuffMatk(l, matkMin, p.t.rules)
+		matkMax = calcPseudobuffMatk(l, matkMax, p.t.rules)
+		matkMin, matkMax = magicPowerMatk(l, matkMin, matkMax, p.t.rules.Skill(skillMagicPower))
 	}
 	s.MAtkMin = capValue(matkMin, 0, math.MaxUint16)
 	s.MAtkMax = capValue(matkMax, 0, math.MaxUint16)

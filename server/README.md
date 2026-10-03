@@ -13,6 +13,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `statuschange` | Status effects, ported from rAthena's `status_change_start`, `status_change_end`, `status_change_clear`, `status_change_timer` and `status_get_sc_def`, with the data of `status.yml` from `reference/rathena/extracts/<mode>/status.json`, and checked against every case of `status_effects.json` (see "Status effects"). |
 | `progression` | Exp tables, level ups, status and skill points, the renewal level penalty, exp shares, drop rates and rolls, where drops land, and pick-up rights, ported from rAthena's `pc.cpp`, `mob.cpp` and `map.cpp` with the default `conf/battle` settings. |
 | `companion` | Companions, mounts and carts: the records of `data/companions.yml` and `data/mounts.yml`, core's own files, the core rules a record acts as, and the option bits that show each look (see "Companions, mounts and carts"). |
+| `rules` | A world's ruleset flags as the code reads them, the skills whose `skill_rebalance` flags change something, and `rulestest`, the sampled mixed rulesets of the tests. See "Rulesets". |
 | `character` | A saved character as plain data: what the zone loads and hands to the store. |
 | `transfer` | Moves of items and zeny between owners, checked as one step and logged with serials: inventories now, and the holders that later steps add (storage, cart, guild storage, mail and vending). See "Transfers and item logs". |
 | `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, transfer commits with the item and zeny logs, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
@@ -309,6 +310,18 @@ What it does:
 - Each zone runs the mods' scripts in its own Lua state. A mod whose scripts fail is logged and left off in that zone. A mod whose handlers fail 10 times in a minute is turned off in that zone.
 - A zone makes its Lua state at start when a mod has entry scripts, and otherwise when a player first uses an item there.
 
+## Rulesets
+
+A world's ruleset is a base and a value for each flag of strategy section 3.6. [Decision 0019](../docs/decisions/0019-ruleset-flags.md) lists what each flag changes, and [mods/README.md](../mods/README.md), "Rulesets", how a ruleset mod sets them.
+
+- `gamedata.RulesOf` turns the loader's ruleset into `rules.Rules`: one value per flag, and the `skill_rebalance` flags by skill ID.
+- `LoadMods` applies them. The job tables get `aspd`, `size_table`, `cast_time`, `stat_point_cost`, `fourth_job_traits` and `ensemble_songs`. The exp and drop tables get the level penalty flags, with renewal's table on a pre-renewal base. The skill data gets `skill_cooldown`'s cooldowns, and the records of the songs and the rebalanced skills from their flag's mode. Every zone gets the rules in `zone.Mods.Rules`.
+- The code reads the flag of its feature where rAthena checks `RENEWAL`. The base still picks the data sets and the stat and damage models. The battle code takes the rules with each attack (`battle.AttackRules`, `battle.SkillAttackRules`).
+- The log line `mods loaded` shows the ruleset and the flags it changes. A `skill_rebalance` flag for a skill whose versions the server does not tell apart is logged as a warning.
+- `homunculus` changes nothing yet: homunculi do not exist.
+
+Tests: each flag has tests at both values on both bases (`TestEveryFlagBothValues` in `server/mod` names them). `rules/rulestest.Mixes` makes 8 mixed rulesets per base, and each package runs the recordings that apply to them (the `TestMixedRulesets` tests).
+
 ## Item scripts
 
 `waserver` converts rAthena's item scripts for its `mode` when it starts, and logs `item and npc scripts converted` with the time it took, about 0.9 s for renewal ([decision 0007](../docs/decisions/0007-converted-item-scripts.md), mods/README.md, "Core's item scripts"). They are the files of the `core` mod.
@@ -341,7 +354,7 @@ Flagged permissions, such as `rules.override`, are logged as warnings at each st
 
 - `mode` picks the rAthena reference data: monsters, drops, items and tables. The world row pins it, and `waserver` refuses another.
 - The ruleset's base must be the same as `mode`: `renewal` with `renewal`, `pre_renewal` with `pre-renewal`.
-- Until the ruleset flags drive the game code (phase 4), flags only decide which mods may load.
+- The ruleset's flags decide which mods may load, and pick the game code of each feature ("Rulesets" below).
 
 Reloading a mod's scripts, for development:
 
@@ -393,7 +406,7 @@ go run ./server/cmd/waserver --assets /path/to/build --map prt_fild08 --dev --bu
 
 Equipment is saved with the inventory: the `equip`, `refine` and `cards` columns of migration 00008. Cards are a list, and the database allows up to 16 cards and refine 255, so a ruleset can raise the limits without a migration.
 
-The ruleset's `aspd` and `size_table` flags pick the ASPD formula and table, and the size table of knuckles and whips (strategy section 3.6). A flag set to the other mode loads that mode's job table.
+The ruleset's `aspd` and `size_table` flags pick the ASPD formula and table, and the size table of knuckles and whips (strategy section 3.6). A flag set to the other mode loads that mode's job table. `cast_time` picks how cast bonuses count, `fourth_job_traits` whether trait stats count, and `stat_point_cost` the cost of raising a stat ("Rulesets" above).
 
 Parity with rAthena is in `tools/convert/testdata/equipment_parity_<mode>.md`, made by `go test ./tools/convert -run TestEquipmentParity`:
 

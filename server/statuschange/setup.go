@@ -108,7 +108,7 @@ func (v *setup) run(typ int, def *Def) bool {
 		// val2 is the chance to poison, val3 the damage increase in
 		// pre-renewal. Research New Poison makes it last longer.
 		val[1] = (val[0]+1)/2 + 2
-		if !en.DB.renewal {
+		if !en.ruleset().Skill(skillEDP) {
 			val[2] = 50 * (val[0] + 1)
 		}
 		if isPC {
@@ -274,7 +274,7 @@ func (v *setup) run(typ int, def *Def) bool {
 			switch {
 			case val[1] != 0:
 				val[2] = 5 * val[0]
-			case !en.DB.renewal:
+			case !en.ruleset().Skill(skillOverthrust):
 				val[2] = 5
 			case val[0] > 4:
 				val[2] = 15
@@ -294,7 +294,7 @@ func (v *setup) run(typ int, def *Def) bool {
 			v.tick += v.tick / 10
 		}
 	case SCConcentration:
-		if en.DB.renewal {
+		if en.ruleset().Skill(skillLKConcentration) {
 			val[1] = 5 + val[0]*2
 			val[3] = 5 + val[0]*2
 		} else {
@@ -378,8 +378,9 @@ func (v *setup) run(typ int, def *Def) bool {
 			val[3] = 250 - 50*val[0]
 		}
 	case SCSpearquicken:
-		// The ASPD rate, without renewal's ASPD (RENEWAL_ASPD).
-		if !en.DB.renewal {
+		// The ASPD rate, without renewal's ASPD (RENEWAL_ASPD, the aspd
+		// flag).
+		if !en.ruleset().ASPD {
 			val[1] = 200 + 10*val[0]
 		}
 	case SCSacrifice:
@@ -411,13 +412,13 @@ func (v *setup) run(typ int, def *Def) bool {
 		// MATK percent. In pre-renewal it lasts one cast: val4 is 0
 		// while it waits and 1 once a spell started.
 		val[2] = 5 * val[0]
-		if !en.DB.renewal {
+		if !en.ruleset().Skill(skillMagicPower) {
 			val[1] = 1
 			val[3] = 0
 		}
 	case SCGravitation:
 		// ASPD decrease, a pre-renewal status.
-		if !en.DB.renewal {
+		if !en.ruleset().Skill(skillGravitation) {
 			val[1] = 50 * val[0]
 		}
 	case SCQuagmire:
@@ -480,7 +481,7 @@ func (v *setup) run(typ int, def *Def) bool {
 		}
 	case SCSuffragium:
 		// Cast time reduction in percent.
-		if en.DB.renewal {
+		if en.ruleset().Skill(skillSuffragium) {
 			val[1] = 5 + val[0]*5
 		} else {
 			val[1] = 15 * val[0]
@@ -603,7 +604,7 @@ func (v *setup) run(typ int, def *Def) bool {
 		}
 		if e2 := src2.Changes().Get(SCCloseconfine); e2 == nil {
 			// The FLEE bonus.
-			if en.DB.renewal {
+			if en.ruleset().Skill(skillCloseConfine) {
 				val[2] = 50
 			} else {
 				val[2] = 10
@@ -622,7 +623,7 @@ func (v *setup) run(typ int, def *Def) bool {
 	case SCAutospell:
 		// val1 is Hindsight's level, val2 the skill to cast and val3 its
 		// highest level. val4 is the chance, in percent.
-		if en.DB.renewal {
+		if en.ruleset().Skill(skillAutospell) {
 			val[3] = val[0] * 2
 		} else {
 			val[3] = 5 + val[0]*2
@@ -634,7 +635,7 @@ func (v *setup) run(typ int, def *Def) bool {
 		switch typ {
 		case SCVolcano:
 			// ATK, and MATK in renewal.
-			if en.DB.renewal {
+			if en.ruleset().Skill(skillVolcano) {
 				val[1] = 5 + val[0]*5
 			} else {
 				val[1] = val[0] * 10
@@ -645,13 +646,13 @@ func (v *setup) run(typ int, def *Def) bool {
 		case SCViolentgale:
 			// FLEE.
 			val[1] = val[0] * 3
-			if !en.DB.renewal && st.DefEle != eleWind {
+			if !en.ruleset().Skill(skillViolentGale) && st.DefEle != eleWind {
 				val[1] = 0
 			}
 		case SCDeluge:
 			// Max HP, in percent.
 			val[1] = delugeHP[i]
-			if !en.DB.renewal && st.DefEle != eleWater {
+			if !en.ruleset().Skill(skillDeluge) && st.DefEle != eleWater {
 				val[1] = 0
 			}
 		}
@@ -694,6 +695,21 @@ var stripRate = map[int]int{SCStripweapon: 25, SCStripshield: 15, SCStriparmor: 
 
 // skillSLRogue is SL_ROGUE, the Soul Link that speeds up Chase Walk.
 const skillSLRogue = 456
+
+// The skills whose statuses have RENEWAL branches in setup, which their
+// skill_rebalance flags pick.
+const (
+	skillSuffragium      = 67   // PR_SUFFRAGIUM
+	skillOverthrust      = 113  // BS_OVERTHRUST
+	skillAutospell       = 279  // SA_AUTOSPELL
+	skillVolcano         = 285  // SA_VOLCANO
+	skillDeluge          = 286  // SA_DELUGE
+	skillViolentGale     = 287  // SA_VIOLENTGALE
+	skillLKConcentration = 357  // LK_CONCENTRATION
+	skillMagicPower      = 366  // HW_MAGICPOWER
+	skillGravitation     = 484  // HW_GRAVITATION
+	skillCloseConfine    = 1005 // RG_CLOSECONFINE
+)
 
 // fieldEnchant and delugeHP are the tables of SC_VOLCANO, SC_VIOLENTGALE
 // and SC_DELUGE in status_change_start, by level: the damage bonus of the

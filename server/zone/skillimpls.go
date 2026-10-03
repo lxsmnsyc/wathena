@@ -287,7 +287,7 @@ func (magnumBreak) castendNoDamage(z *Zone, src, _ *entity, d *skill.Def, lv int
 		z.skillAttack(d.Type, src, src, t, d, lv, f)
 	}
 	z.skillEffect(src, src, d, lv, int64(lv), true)
-	if z.renewal() {
+	if z.skillRenewal(skill.IDMagnumBreak) {
 		z.scStart4(src, src, sc.SCSubWeaponPro, 100, eleFire, 20, d.ID, 0, int64(d.Duration2.At(lv)))
 	} else {
 		z.scStart4(src, src, sc.SCWatkElement, 100, eleFire, 20, 0, 0, int64(d.Duration2.At(lv)))
@@ -405,7 +405,7 @@ func (heal) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, 
 	if srcSt == nil || tSt == nil {
 		return
 	}
-	amount := skill.CalcHeal(srcSt, tSt, d.ID, lv, true, z.renewal(), z.rand)
+	amount := skill.CalcHeal(srcSt, tSt, d.ID, lv, true, z.rules().HealFormula, z.rand)
 	z.skillEffect(src, target, d, lv, amount, true)
 	z.healHP(target, amount)
 }
@@ -556,7 +556,7 @@ func (z *Zone) stealItem(src, target *entity, lv int) bool {
 	if rate < 1 {
 		return false
 	}
-	if z.renewal() && z.rand.IntN(100) >= rate {
+	if z.skillRenewal(skill.IDSteal) && z.rand.IntN(100) >= rate {
 		return false
 	}
 	for _, dr := range reward.Drops {
@@ -567,7 +567,7 @@ func (z *Zone) stealItem(src, target *entity, lv int) bool {
 			continue
 		}
 		chance := dr.Rate
-		if !z.renewal() {
+		if !z.skillRenewal(skill.IDSteal) {
 			chance = dr.Rate * rate / 100
 		}
 		if z.rand.IntN(10000) >= chance {

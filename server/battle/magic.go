@@ -116,7 +116,7 @@ func miscElement(sk *Skill, r Rand) int {
 // set and in renewal otherwise.
 func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 	ad := damage{damage: 1, div: sk.Hits, blewcount: sk.Knockback, flag: bfMagic | bfSkill, miscflag: sk.Flag,
-		dmgLv: atkDef, sk: sk, nk: sk.NK, pre: pre}
+		dmgLv: atkDef, sk: sk, nk: sk.NK, pre: pre, rules: sk.Rules}
 	imdef := ad.nk.Has(NKIgnoreDefense)
 	ele := magicElement(src, sk, r)
 	if sd := src.Player; sd != nil {
@@ -250,10 +250,7 @@ func calcMagicAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 		// The elemental spirits that add to bolts are not ported.
 
 		elemFix := func(dmg int64) int64 {
-			if pre {
-				return attrFixPre(src, target, dmg, ele, target.DefEle, target.EleLv, 0)
-			}
-			return attrFix(src, target, dmg, ele, target.DefEle, target.EleLv, 0)
+			return ad.attrFix(src, target, dmg, ele, target.DefEle, target.EleLv, 0)
 		}
 		if !ad.nk.Has(NKIgnoreElement) {
 			ad.damage = elemFix(ad.damage)
@@ -326,7 +323,7 @@ func grandCrossDamage(ad *damage, src, target *Status, pre bool, r Rand) {
 // Stone, and the skills whose SkillImpl gives a base damage.
 func calcMiscAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 	md := damage{div: sk.Hits, blewcount: sk.Knockback, dmgLv: atkDef, flag: bfMisc | bfSkill, miscflag: sk.Flag,
-		sk: sk, nk: sk.NK, pre: pre}
+		sk: sk, nk: sk.NK, pre: pre, rules: sk.Rules}
 	if sd := src.Player; sd != nil {
 		sd.ArrowAttack = false
 	}
@@ -433,11 +430,7 @@ func calcMiscAttack(src, target *Status, sk *Skill, pre bool, r Rand) damage {
 	}
 
 	if !md.nk.Has(NKIgnoreElement) {
-		if pre {
-			md.damage = attrFixPre(src, target, md.damage, ele, target.DefEle, target.EleLv, 0)
-		} else {
-			md.damage = attrFix(src, target, md.damage, ele, target.DefEle, target.EleLv, 0)
-		}
+		md.damage = md.attrFix(src, target, md.damage, ele, target.DefEle, target.EleLv, 0)
 	}
 
 	// Plant damage.

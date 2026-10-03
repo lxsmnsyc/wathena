@@ -1,5 +1,7 @@
 package statuschange
 
+import "github.com/lxsmnsyc/wathena/server/rules"
+
 // Settings from rAthena's conf/battle files that resistance reads.
 const (
 	// pcSCDefRate and mobSCDefRate are pc_status_def_rate and
@@ -35,13 +37,19 @@ type Resistance struct {
 // status_isimmune, the immunity of Golden Thief Bug's bonus to magic
 // statuses, needs the skill data of step 3 and is not ported.
 func Resist(db *DB, src, target Unit, typ, rate int, tick int64, flag StartFlag) Resistance {
+	return ResistRules(rules.Of(db.renewal), db, src, target, typ, rate, tick, flag)
+}
+
+// ResistRules is Resist under a world's rules: status_resist picks
+// status_get_sc_def's formulas, and ensemble_songs Siegfried's part.
+func ResistRules(rl *rules.Rules, db *DB, src, target Unit, typ, rate int, tick int64, flag StartFlag) Resistance {
 	if src == nil {
 		if tick == 0 {
 			tick = 1
 		}
 		return Resistance{Rate: 10000, Duration: tick, Plain: true}
 	}
-	renewal := db.renewal
+	renewal := rl.StatusResist
 	st := target.Status()
 	sst := src.Status()
 	isPC := target.Kind() == KindPlayer
@@ -244,7 +252,7 @@ func Resist(db *DB, src, target Unit, typ, rate int, tick int64, flag StartFlag)
 		switch {
 		case sc.Has(SCScresist):
 			scDef += sc.Val1(SCScresist) * 100
-		case sc.Has(SCSiegfried) && (!renewal || typ == SCBlind || typ == SCStone || typ == SCFreeze || typ == SCStun || typ == SCCurse || typ == SCSleep || typ == SCSilence):
+		case sc.Has(SCSiegfried) && (!rl.EnsembleSongs || typ == SCBlind || typ == SCStone || typ == SCFreeze || typ == SCStun || typ == SCCurse || typ == SCSleep || typ == SCSilence):
 			scDef += sc.Val3(SCSiegfried) * 100
 		case sc.Has(SCLeechesend) && sc.Val3(SCLeechesend) == 0:
 			if typ == SCBlind || typ == SCStun {

@@ -8,6 +8,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mob"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/server/transfer"
@@ -167,12 +168,12 @@ func (z *Zone) skillUseIDWith(src, target *entity, def *skill.Def, lv int, o *ca
 	caster.TargetDistance = mathDistance(src, target)
 	var res skill.CastResult
 	if o != nil {
-		res = def.MonsterCastTime(caster, o.ms, lv, z.renewal())
+		res = def.MonsterCastTime(caster, o.ms, lv, z.rules().CastTime)
 	} else {
-		res = def.CastTimeFor(caster, lv, z.renewal(), src.player == nil || src.player.char.Skills[def.ID] > 0)
+		res = def.CastTimeFor(caster, lv, z.rules().CastTime, src.player == nil || src.player.char.Skills[def.ID] > 0)
 	}
 	z.castSideEffects(src, res)
-	if !z.renewal() && def.ID == skill.IDChaseWalk && src.sc.Has(sc.SCChasewalk) {
+	if !z.rules().CastTime && def.ID == skill.IDChaseWalk && src.sc.Has(sc.SCChasewalk) {
 		// Pre-renewal ends Chase Walk without a cast time.
 		res.Milliseconds = 0
 	}
@@ -217,7 +218,7 @@ func (z *Zone) skillUseIDWith(src, target *entity, def *skill.Def, lv int, o *ca
 		}
 	case skill.IDBasilica:
 		// Cancelling pre-renewal Basilica has no cast time.
-		if !z.renewal() && src.sc.Has(sc.SCBasilica) {
+		if !z.skillRenewal(skill.IDBasilica) && src.sc.Has(sc.SCBasilica) {
 			res.Milliseconds = 0
 		}
 	}
@@ -275,9 +276,9 @@ func (z *Zone) skillUsePosWith(src *entity, def *skill.Def, lv, x, y int, o *cas
 	}
 	var res skill.CastResult
 	if o != nil {
-		res = def.MonsterCastTime(z.caster(src), o.ms, lv, z.renewal())
+		res = def.MonsterCastTime(z.caster(src), o.ms, lv, z.rules().CastTime)
 	} else {
-		res = def.CastTimeFor(z.caster(src), lv, z.renewal(), src.player == nil || src.player.char.Skills[def.ID] > 0)
+		res = def.CastTimeFor(z.caster(src), lv, z.rules().CastTime, src.player == nil || src.player.char.Skills[def.ID] > 0)
 	}
 	z.castSideEffects(src, res)
 	if src.player != nil {
@@ -336,7 +337,7 @@ func (z *Zone) castBegin(src *entity, castMs int) bool {
 	c := src.cast
 	def, lv := c.def, c.lv
 	// SC_MAGICPOWER switches its state at the start of a cast.
-	if !z.renewal() {
+	if !z.skillRenewal(skill.IDMagicPower) {
 		z.toggleMagicPower(src, def)
 	}
 	if len(src.path) > 0 {
@@ -565,7 +566,7 @@ func (z *Zone) castEndIDCheck(src, target *entity, def *skill.Def) wathenav1.Ski
 	switch def.ID {
 	case skill.IDBackStab:
 		// Pre-renewal: only from behind the target. Never from its cell.
-		if !z.renewal() && mapCheckDir(mapCalcDir(src, target.x, target.y), rDir(target)) {
+		if !z.skillRenewal(skill.IDBackStab) && mapCheckDir(mapCalcDir(src, target.x, target.y), rDir(target)) {
 			return skillFailSilent
 		}
 		if chebyshev(src, target) == 0 {
@@ -788,7 +789,7 @@ func (z *Zone) statusCheckSkillUse(src, target *entity, def *skill.Def, flag int
 			}
 			// Under pre-renewal Basilica, only its caster may cast, and
 			// only Basilica, which cancels it.
-			if b := l.Get(sc.SCBasilica); b != nil && flag == 0 && !z.renewal() &&
+			if b := l.Get(sc.SCBasilica); b != nil && flag == 0 && !z.skillRenewal(skill.IDBasilica) &&
 				(int64(b.Val4) != z.unit(src).Ref().ID || def.ID != skill.IDBasilica) {
 				return false
 			}
@@ -809,7 +810,7 @@ func (z *Zone) statusCheckSkillUse(src, target *entity, def *skill.Def, flag int
 	}
 	// Pre-renewal Gloria Domini never reaches a hidden target after its
 	// start, even from a boss.
-	if !z.renewal() && def.ID == skill.IDPressure && flag != 0 && !target.sc.Empty() &&
+	if !z.skillRenewal(skill.IDPressure) && def.ID == skill.IDPressure && flag != 0 && !target.sc.Empty() &&
 		target.sc.Option&sc.OptionHide != 0 {
 		return false
 	}
@@ -844,7 +845,7 @@ func (z *Zone) caster(e *entity) *skill.Caster {
 	if st == nil {
 		st = &npcStatus
 	}
-	c := &skill.Caster{Status: st, Changes: e.sc, Monster: e.player == nil, Renewal: z.renewal()}
+	c := &skill.Caster{Status: st, Changes: e.sc, Monster: e.player == nil, Renewal: z.renewal(), Rules: z.rules()}
 	if p := e.player; p != nil {
 		c.SpiritBalls = p.spiritBalls()
 		// skill_get_requirement: after Encore, the dance costs half.
@@ -855,7 +856,22 @@ func (z *Zone) caster(e *entity) *skill.Caster {
 	return c
 }
 
-// renewal reports whether the zone runs renewal's formulas.
+// rules returns the world's ruleset flags (decision 0019): those of the
+// world's ruleset mod, or the core ruleset of the zone's base. Code that
+// branches where rAthena checks RENEWAL reads the flag of its feature
+// here, and z.renewal() only for the base.
+func (z *Zone) rules() *rules.Rules {
+	if z.Mods != nil && z.Mods.Rules != nil {
+		return z.Mods.Rules
+	}
+	return rules.Of(z.renewal())
+}
+
+// skillRenewal reports whether a skill uses its renewal version: its
+// skill_rebalance flag, or the base.
+func (z *Zone) skillRenewal(id int) bool { return z.rules().Skill(id) }
+
+// renewal reports whether the zone runs renewal's formulas: the base.
 func (z *Zone) renewal() bool {
 	if z.Skills != nil {
 		return z.Skills.Renewal()

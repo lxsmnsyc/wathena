@@ -88,9 +88,20 @@ func (e *Env) Validate(ctx context.Context, p, depsDir string) *Report {
 	}
 	rep.Problems = append(rep.Problems, problems...)
 
-	// The rulesets it loads on, and the base to check it with.
+	// The rulesets it loads on, and the base to check it with. A ruleset
+	// mod is the world's ruleset itself, on its own base.
 	base := ""
+	if m.Manifest.Provides.Ruleset != nil {
+		s, err := mod.Resolve([]*mod.Mod{m}, mod.Config{Ruleset: m.ID(), Approve: map[string][]string{m.ID(): m.Manifest.Permissions}})
+		if err == nil {
+			base = s.Ruleset.Base
+			rep.Rulesets = append(rep.Rulesets, m.ID()+" (base "+base+")")
+		}
+	}
 	for _, b := range []string{mod.Renewal, mod.PreRenewal} {
+		if m.Manifest.Provides.Ruleset != nil {
+			break
+		}
 		// Other problems, such as a dependency in another folder, are
 		// reported below.
 		_, err := mod.Resolve([]*mod.Mod{m}, mod.Config{Base: b, Approve: map[string][]string{m.ID(): m.Manifest.Permissions}})

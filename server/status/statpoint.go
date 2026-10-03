@@ -80,7 +80,8 @@ func maxParam(mapID uint64) int {
 }
 
 // statusPointCost is PC_STATUS_POINT_COST: the status points that raising
-// a stat from low to low + 1 costs. Renewal is RENEWAL_STAT.
+// a stat from low to low + 1 costs. renewal is the stat_point_cost flag
+// (RENEWAL_STAT).
 func statusPointCost(renewal bool, low int) int {
 	if !renewal {
 		return 1 + (low+9)/10
@@ -148,7 +149,7 @@ func (t *Tables) NeedStatusPoint(c *Character, st Stat, val int) int {
 	}
 	sp := 0
 	for ; low < high; low++ {
-		sp += statusPointCost(t.renewal, low)
+		sp += statusPointCost(t.rules.StatPointCost, low)
 	}
 	return sp
 }
@@ -159,7 +160,7 @@ func (t *Tables) maxParameterIncrease(c *Character, st Stat, points, maxValue in
 	base := *c.Stats.stat(st)
 	final := base
 	for final <= maxValue && points >= 0 {
-		points -= statusPointCost(t.renewal, final)
+		points -= statusPointCost(t.rules.StatPointCost, final)
 		final++
 	}
 	final--

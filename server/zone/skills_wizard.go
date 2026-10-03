@@ -154,7 +154,7 @@ type vermilion struct{ unitSkillImpl }
 // additionalEffect is SkillLordOfVermilion::applyAdditionalEffects.
 func (vermilion) additionalEffect(z *Zone, src, target *entity, d *skill.Def, lv int) {
 	rate := min(4*lv, 40)
-	if z.renewal() {
+	if z.skillRenewal(skill.IDVermilion) {
 		rate = 10 + 5*lv
 	}
 	z.scStart(src, target, sc.SCBlind, rate, lv, int64(d.Duration2.At(lv)))
@@ -276,7 +276,7 @@ type stormGust struct{ unitSkillImpl }
 // additionalEffect is SkillStormGust::applyAdditionalEffects: renewal
 // freezes by chance; pre-renewal freezes on the third hit in a row.
 func (stormGust) additionalEffect(z *Zone, src, target *entity, d *skill.Def, lv int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDStormGust) {
 		z.scStart(src, target, sc.SCFreeze, 65-5*lv, lv, int64(d.Duration2.At(lv)))
 		return
 	}
@@ -360,7 +360,7 @@ type gravitation struct{}
 func (gravitation) castendPos(z *Zone, src *entity, x, y int, d *skill.Def, lv int, flag *int) {
 	*flag |= 1
 	g := z.unitSetting(src, d, lv, x, y)
-	if z.renewal() || g == nil {
+	if z.skillRenewal(skill.IDGravitation) || g == nil {
 		return
 	}
 	z.scStart4(src, src, d.Status, 100, lv, 0, bctSelf, int(g.id), int64(d.Duration1.At(lv)))
@@ -370,7 +370,7 @@ func (gravitation) castendPos(z *Zone, src *entity, x, y int, d *skill.Def, lv i
 // part: damage to the caster ends its field.
 func (z *Zone) gravitationDamaged(e *entity) {
 	ge := e.sc.Get(scGravitation)
-	if z.renewal() || ge == nil || ge.Val3 != bctSelf {
+	if z.skillRenewal(skill.IDGravitation) || ge == nil || ge.Val3 != bctSelf {
 		return
 	}
 	if g := z.groups[int64(ge.Val4)]; g != nil {
@@ -397,7 +397,7 @@ func (z *Zone) wizardFieldRefresh(t *entity) {
 	} else if t.player != nil && t.sc.Has(sc.SCQuagmire) {
 		z.scEnd(t, sc.SCQuagmire)
 	}
-	if z.renewal() {
+	if z.skillRenewal(skill.IDGravitation) {
 		return
 	}
 	if g := z.fieldOn(t, skill.IDGravitation); g != nil {

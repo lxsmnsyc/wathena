@@ -335,11 +335,8 @@ func runAll(name string, args []string) error {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
 	// The job tables come from the job records: core's and the mods'.
+	// LoadMods set the ruleset's flags that player stats read on them.
 	jobs = loaded.all.JobTables
-	// The ruleset's flags pick the formulas that player stats use.
-	if err := gamedata.ApplyRuleset(jobs, loaded.set.Ruleset); err != nil {
-		return fmt.Errorf("ruleset: %w", err)
-	}
 	// A "cast" bonus without a target picks it from the skill's data.
 	if loaded.all.Skills != nil {
 		jobs.SetAutoSpellSelf(loaded.all.Skills.AutoSpellSelf)

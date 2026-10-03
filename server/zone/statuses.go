@@ -40,6 +40,11 @@ func (z *Zone) statusEngine() *sc.Engine {
 	if z.statusChanges == nil && z.Statuses != nil {
 		z.statusChanges = sc.New(z.Statuses, scEnv{z})
 	}
+	if z.statusChanges != nil {
+		// The world's ruleset: status_resist, ensemble_songs and the
+		// skills' flags.
+		z.statusChanges.Rules = z.rules()
+	}
 	return z.statusChanges
 }
 
@@ -212,7 +217,7 @@ func (z *Zone) recalcMonster(e *entity) {
 	if e.sc.Empty() {
 		e.status = base
 	} else {
-		st := status.CalcMonster(base, e.sc, z.Statuses.Renewal())
+		st := status.CalcMonsterRules(base, e.sc, z.rules())
 		e.status = &st
 	}
 	if e.hp > int64(e.status.MaxHP) {

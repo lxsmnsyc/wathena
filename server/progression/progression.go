@@ -182,19 +182,8 @@ func New(d *Data, items map[uint32]string, cfg Config) *Tables {
 	}
 	t.loadExp(d.Exp)
 	t.loadStatPoints(d)
-	for typ, rows := range d.LevelPenalty {
-		p := &[2*MaxLevel - 1]int{}
-		for i := range p {
-			p[i] = -1
-		}
-		for _, r := range rows {
-			if abs(r.Difference) > MaxLevel {
-				continue
-			}
-			p[r.Difference+MaxLevel-1] = r.Rate
-		}
-		fillPenalty(p)
-		t.penalty[typ] = p
+	for typ := range d.LevelPenalty {
+		t.penalty[typ] = penaltyTable(d, typ)
 	}
 	return t
 }

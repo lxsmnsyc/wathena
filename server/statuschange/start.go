@@ -150,7 +150,7 @@ func (en *Engine) Start(src, target Unit, s Start) bool {
 // scDef is status_get_sc_def with its roll and the status_chance hook:
 // the duration, or 0 when the status is resisted.
 func (en *Engine) scDef(src, target Unit, s *Start, tick int64) int64 {
-	r := Resist(en.DB, src, target, s.Type, s.Rate, tick, s.Flag)
+	r := ResistRules(en.ruleset(), en.DB, src, target, s.Type, s.Rate, tick, s.Flag)
 	if r.Immune || r.Duration == 0 {
 		return 0
 	}
@@ -456,7 +456,7 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 		en.env.Recalc(target, def)
 	}
 	if isNew && (def.States != 0 || def.CondStates) {
-		sc.calcState(db)
+		sc.calcState(db, en.ruleset().EnsembleSongs)
 	}
 
 	// What runs once the status is in place.
@@ -562,7 +562,7 @@ func (en *Engine) Preview(src, target Unit, s Start) (rate int, duration int64, 
 	if s.Flag&(NoAvoid|Loaded) != 0 {
 		return s.Rate, s.Duration, true
 	}
-	r := Resist(en.DB, src, target, s.Type, s.Rate, s.Duration, s.Flag)
+	r := ResistRules(en.ruleset(), en.DB, src, target, s.Type, s.Rate, s.Duration, s.Flag)
 	if r.Immune || r.Duration == 0 {
 		return 0, 0, false
 	}

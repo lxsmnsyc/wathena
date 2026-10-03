@@ -129,6 +129,15 @@ func modSkills(ctx context.Context, set *mod.Set, mode reference.Mode, ids *mod.
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	// The ruleset's flags that change skill data apply to core's skills,
+	// before the mods' overlays.
+	rl, _, err := RulesOf(set.Ruleset, core)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if err := applySkillFlags(core, mode, rl); err != nil {
+		return nil, nil, nil, err
+	}
 	o, err := set.Skills(func(name string) bool { return !strings.Contains(name, ":") && core.ByName(name) != nil })
 	if err != nil {
 		return nil, nil, nil, err

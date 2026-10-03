@@ -63,9 +63,7 @@ func (sharpShooting) SkillRatio(a *battle.SkillContext, ratio *int) {
 	}
 	if a.Renewal {
 		*ratio += -100 + 300 + 300*lv
-		if a.Src.Level > 99 {
-			*ratio = *ratio * a.Src.Level / 100
-		}
+		reLvlDmod(a, ratio, 100)
 		return
 	}
 	*ratio += 100 + 50*lv

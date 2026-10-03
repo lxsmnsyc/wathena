@@ -264,13 +264,15 @@ func monkRequirement(d *Def, c *Caster, r *Requirement, renewal bool) {
 // time of the Monk's skills, between skill_castfix and
 // skill_castfix_sc or skill_vfcastfix:
 //   - Pre-renewal Finger Offensive takes its cast time once more for
-//     each sphere it throws.
+//     each sphere it throws (skill_rebalance.MO_FINGEROFFENSIVE).
 //   - Asura Strike right after Raging Thrust or Chain Crush Combo casts
 //     at once (-1).
-func monkCastTime(d *Def, c *Caster, lv int, t float64, renewal bool) float64 {
+func monkCastTime(d *Def, c *Caster, lv int, t float64) float64 {
 	switch d.ID {
 	case IDFingerOffensive:
-		if !renewal && c.cast() != nil {
+		// A #ifndef RENEWAL of unit_skilluse_id2, so the skill's own
+		// skill_rebalance flag picks.
+		if !c.ruleset().Skill(IDFingerOffensive) && c.cast() != nil {
 			t += t * float64(min(lv, c.SpiritBalls))
 		}
 	case IDExtremityFist:

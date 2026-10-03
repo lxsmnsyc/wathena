@@ -1,5 +1,7 @@
 package battle
 
+import "github.com/lxsmnsyc/wathena/server/rules"
+
 // Skill attacks: battle_calc_attack with a skill, for BF_WEAPON,
 // BF_MAGIC and BF_MISC. The skill's data comes from skill_db, and its
 // own formulas from a SkillImpl, as rAthena's SkillImpl methods that
@@ -96,9 +98,21 @@ type Skill struct {
 	// as for Grand Cross, whose area hits its caster.
 	Self bool
 	// Renewal is set for an attack in renewal: SkillAttack sets it and
-	// SkillAttackPreRenewal clears it. Skills whose range type differs by
-	// mode read it.
+	// SkillAttackPreRenewal clears it.
 	Renewal bool
+	// Rules are the world's ruleset flags. nil follows the base of the
+	// attack's mode. The skill's skill_rebalance flag picks its own
+	// formulas, such as Brandish Spear's range type.
+	Rules *rules.Rules
+}
+
+// rebalanced reports whether the skill uses its renewal version: its
+// skill_rebalance flag, or the attack's mode.
+func (sk *Skill) rebalanced() bool {
+	if sk.Rules != nil {
+		return sk.Rules.Skill(sk.ID)
+	}
+	return sk.Renewal
 }
 
 // SkillImpl is what a skill changes in a damage calculation, as the
@@ -167,12 +181,25 @@ type SkillContext struct {
 	Skill       *Skill
 	// Flag is the attack's wflag or mflag (the Damage's miscflag).
 	Flag int
-	// Renewal is set in renewal mode.
+	// Renewal is set when the skill uses its renewal version: its
+	// skill_rebalance flag, or the base.
 	Renewal bool
+	// Rules are the world's ruleset flags, never nil. Skills read
+	// heal_formula and level_damage_mod here.
+	Rules *rules.Rules
 }
 
 // Level is the skill level.
 func (a *SkillContext) Level() int { return a.Skill.Level }
+
+// Ruleset returns the attack's rules. Without Rules, every flag follows
+// Renewal.
+func (a *SkillContext) Ruleset() *rules.Rules {
+	if a.Rules != nil {
+		return a.Rules
+	}
+	return rules.Of(a.Renewal)
+}
 
 // IsUndead is battle_check_undead with undead_detect_type 0.
 func IsUndead(race, element int) bool { return isUndead(element) }
@@ -184,7 +211,7 @@ func SkillAttack(typ int, src, target *Status, sk *Skill, r Rand) Result {
 	var d damage
 	switch typ {
 	case TypeWeapon:
-		d = calcWeaponAttack(src, target, sk, r)
+		d = calcWeaponAttack(src, target, sk, nil, r)
 	case TypeMagic:
 		d = calcMagicAttack(src, target, sk, false, r)
 	case TypeMisc:
@@ -193,6 +220,17 @@ func SkillAttack(typ int, src, target *Status, sk *Skill, r Rand) Result {
 		return Result{Kind: Miss}
 	}
 	return finishAttack(&d, src)
+}
+
+// SkillAttackRules is battle_calc_attack for a skill under a world's
+// rules, sk.Rules: the base picks SkillAttack or SkillAttackPreRenewal,
+// and the flags pick the parts that each reads. With nil rules it is
+// SkillAttack.
+func SkillAttackRules(typ int, src, target *Status, sk *Skill, r Rand) Result {
+	if sk.Rules != nil && !sk.Rules.Renewal {
+		return SkillAttackPreRenewal(typ, src, target, sk, r)
+	}
+	return SkillAttack(typ, src, target, sk, r)
 }
 
 // finishAttack is the end of battle_calc_attack: an attack that deals no
@@ -251,7 +289,7 @@ func rangeType(src *Status, sk *Skill) int {
 		}
 	case skillBrandishSpear:
 		// Renewal's Brandish Spear is ranged.
-		if sk.Renewal {
+		if sk.rebalanced() {
 			return bfLong
 		}
 	}

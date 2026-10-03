@@ -112,7 +112,7 @@ type bomb struct{ unitSkillImpl }
 // pre-renewal.
 func (bomb) additionalEffect(z *Zone, src, target *entity, _ *skill.Def, lv int) {
 	rate := 100 * lv
-	if z.renewal() {
+	if z.skillRenewal(skill.IDBomb) {
 		rate = 300 * lv
 	}
 	z.breakEquip(src, target, item.EqpWeapon, rate, bctEnemy)
@@ -133,7 +133,7 @@ func (acidTerror) additionalEffect(z *Zone, src, target *entity, d *skill.Def, l
 func (z *Zone) acidTerrorEffect(src, target *entity, d *skill.Def, lv int) {
 	z.scStart4(src, target, sc.SCBleeding, lv*3, lv, int(z.unit(src).Ref().ID), 0, 0, int64(d.Duration2.At(lv)))
 	rate := 100 * d.Duration1.At(lv)
-	if z.renewal() {
+	if z.skillRenewal(skill.IDAcidTerror) {
 		rate = 1000*lv + 500 - 1000
 	}
 	if z.breakEquip(src, target, item.EqpArmor, rate, bctEnemy) != 0 {
@@ -363,7 +363,7 @@ func (a aidPotion) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, l
 		z.skillEffect(target, target, z.Skills.Get(skill.IDSPRecovery), sp, int64(sp), true)
 	}
 	if !target.sc.Empty() {
-		if z.renewal() && target.sc.Has(scExtremityFist) {
+		if z.rules().HealFormula && target.sc.Has(scExtremityFist) {
 			sp = 0
 		}
 		if target.sc.Has(sc.SCNorecoverState) {

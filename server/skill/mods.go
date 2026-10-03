@@ -235,6 +235,7 @@ func Apply(d *Def, fields map[string]any, names Names) error {
 				d.CastTime = l
 			case "fixed_cast_time":
 				d.FixedCastTime = l
+				d.fixedCastSet = true
 			case "after_cast_delay":
 				d.AfterCastActDelay = l
 			default:

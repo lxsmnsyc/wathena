@@ -106,14 +106,14 @@ func (sandAttack) SkillRatio(_ *battle.SkillContext, ratio *int) { *ratio += 30 
 // BaseDamage is Heal's damage to the undead: skill_calc_heal with heal
 // false, as battle_calc_magic_attack.
 func (heal) BaseDamage(a *battle.SkillContext, r battle.Rand) int64 {
-	return CalcHeal(a.Src, a.Target, IDHeal, a.Level(), false, a.Renewal, r)
+	return CalcHeal(a.Src, a.Target, IDHeal, a.Level(), false, a.Ruleset().HealFormula, r)
 }
 
-// reLvlDmod is rAthena's RE_LVL_DMOD macro in renewal: above base level
-// 99, the ratio grows with the caster's level over val. Pre-renewal
-// defines it as nothing.
+// reLvlDmod is rAthena's RE_LVL_DMOD macro, which the level_damage_mod
+// flag turns on (RENEWAL_LVDMG): above base level 99, the ratio grows
+// with the caster's level over val. Off, it does nothing.
 func reLvlDmod(a *battle.SkillContext, ratio *int, val int) {
-	if a.Renewal && a.Src.Level > 99 && val > 0 {
+	if a.Ruleset().LevelDamageMod && a.Src.Level > 99 && val > 0 {
 		*ratio = *ratio * a.Src.Level / val
 	}
 }

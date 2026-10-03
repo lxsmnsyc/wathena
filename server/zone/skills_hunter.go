@@ -123,7 +123,7 @@ func (z *Zone) useTrap(e *entity, ms int64) {
 // trapCatches is skill_unit_timer_sub_onplace's check for traps: in
 // renewal, Ankle Snare and Skid Trap no longer catch bosses.
 func (z *Zone) trapCatches(g *unitGroup, t *entity) bool {
-	if !z.renewal() || trapUsed(g) || (g.def.ID != skill.IDAnkleSnare && g.def.ID != skill.IDSkidTrap) {
+	if !z.rules().BossProtection || trapUsed(g) || (g.def.ID != skill.IDAnkleSnare && g.def.ID != skill.IDSkidTrap) {
 		return true
 	}
 	return t.status == nil || t.status.Mode&modeStatusImmune == 0
@@ -142,7 +142,7 @@ func (z *Zone) trapOnPlaceTimer(e, t *entity) {
 		// Knockback away from the caster's cell when it set the trap.
 		z.skillBlown(e, t, g.def.Knockback.At(g.lv), mapCalcDir(t, tr.casterX, tr.casterY), false)
 		z.useTrap(e, usedTrapTime)
-		if z.renewal() {
+		if z.skillRenewal(skill.IDSkidTrap) {
 			// The target stops for Duration2.
 			z.scStart(ss, t, sc.SCStop, 100, 0, int64(g.def.Duration2.At(g.lv)))
 		} else if t.monster != nil {
@@ -180,7 +180,7 @@ func (z *Zone) ankleSnare(e, t *entity) {
 	ss := g.src
 	sec := int64(g.def.Duration2.At(g.lv))
 	mintime := int64(30 * (z.unit(ss).Level() + 100))
-	if !z.renewal() && t.status.Mode&modeStatusImmune != 0 {
+	if !z.rules().BossProtection && t.status.Mode&modeStatusImmune != 0 {
 		// Bosses cannot set it off in renewal.
 		sec /= 5
 	}
@@ -333,7 +333,7 @@ func (z *Zone) trapExpired(e *entity) bool {
 	}
 	switch g.def.ID {
 	case skill.IDBlastMine, skill.IDClaymoreTrap:
-		if g.def.ID == skill.IDBlastMine || z.renewal() {
+		if g.def.ID == skill.IDBlastMine || z.skillRenewal(skill.IDClaymoreTrap) {
 			g.unitID = untUsedTraps
 			g.limit = z.now + usedTrapTime - g.start
 			u.limit = z.now + usedTrapTime - g.start

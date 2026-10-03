@@ -93,13 +93,13 @@ func (aspersio) BaseDamage(*battle.SkillContext, battle.Rand) int64 { return 40 
 // BaseDamage is B.S. Sacramenti's damage in battle_calc_magic_attack:
 // skill_calc_heal with heal false.
 func (benedictio) BaseDamage(a *battle.SkillContext, r battle.Rand) int64 {
-	return CalcHeal(a.Src, a.Target, IDBenedictio, a.Level(), false, a.Renewal, r)
+	return CalcHeal(a.Src, a.Target, IDBenedictio, a.Level(), false, a.Ruleset().HealFormula, r)
 }
 
 // BaseDamage is Sanctuary's damage in battle_calc_magic_attack:
 // skill_calc_heal with heal false.
 func (sanctuary) BaseDamage(a *battle.SkillContext, r battle.Rand) int64 {
-	return CalcHeal(a.Src, a.Target, IDSanctuary, a.Level(), false, a.Renewal, r)
+	return CalcHeal(a.Src, a.Target, IDSanctuary, a.Level(), false, a.Ruleset().HealFormula, r)
 }
 
 // BaseDamage is Turn Undead's damage in battle_calc_magic_attack.

@@ -186,20 +186,20 @@ func (z *Zone) monkNoSPRegen(p *Player) bool {
 	if l.Has(sc.SCExtremityfist) {
 		return true
 	}
-	return !z.renewal() && l.Has(sc.SCExplosionspirits)
+	return !z.skillRenewal(skill.IDExplosionSpirits) && l.Has(sc.SCExplosionspirits)
 }
 
 // furySPRegen is status_natural_heal's renewal rule that doubles a
 // Monk's SP regen interval under Fury, unless soul linked.
 func (z *Zone) furySPRegen(p *Player) bool {
 	l := p.entity.sc
-	return z.renewal() && z.mapID(p)&jcSecondMask == mapidMonk && l.Has(sc.SCExplosionspirits) && !soulLinkedMonk(l)
+	return z.skillRenewal(skill.IDExplosionSpirits) && z.mapID(p)&jcSecondMask == mapidMonk && l.Has(sc.SCExplosionspirits) && !soulLinkedMonk(l)
 }
 
 // asuraNoItemSP is pc_itemheal's renewal rule: no SP from items after
 // Asura Strike.
 func (z *Zone) asuraNoItemSP(e *entity) bool {
-	return z.renewal() && e.sc.Has(sc.SCExtremityfist)
+	return z.rules().HealFormula && e.sc.Has(sc.SCExtremityfist)
 }
 
 // castBeginSpheres is the spirit sphere check of
@@ -347,7 +347,7 @@ func (z *Zone) skillCombo(src, dsrc, target *entity, d *skill.Def, lv int) {
 		switch {
 		case lvOf(skill.IDExtremityFist) > 0 && balls >= 1 && fury:
 			duration = 1
-		case !z.renewal() && lvOf(skill.IDTigerFist) > 0 && balls >= 1:
+		case !z.skillRenewal(skill.IDTigerFist) && lvOf(skill.IDTigerFist) > 0 && balls >= 1:
 			duration = 1
 		}
 	case skill.IDDoubleStrafe:
@@ -399,12 +399,12 @@ func (z *Zone) weaponAttackSkills(src, target *entity) bool {
 	if z.Skills == nil {
 		return false
 	}
-	if w := target.sc.Get(sc.SCBladestopWait); w != nil && (z.renewal() || !isBossClass(src)) &&
+	if w := target.sc.Get(sc.SCBladestopWait); w != nil && (z.rules().BossProtection || !isBossClass(src)) &&
 		(src.player != nil || chebyshev(src, target) <= 2) {
 		lv := w.Val1
 		d := z.Skills.Get(skill.IDBladeStop)
 		duration := int64(d.Duration2.At(lv))
-		if z.renewal() && isBossClass(src) {
+		if z.rules().BossProtection && isBossClass(src) {
 			// Only 2 seconds for bosses.
 			duration = 2000
 		}
@@ -433,7 +433,7 @@ func (z *Zone) weaponAttackSkills(src, target *entity) bool {
 		return false
 	}
 	rate := 30
-	if !z.renewal() {
+	if !z.skillRenewal(skill.IDTripleAttack) {
 		rate = 30 - lv
 	}
 	if e := src.sc.Get(sc.SCSkillrateUp); e != nil && e.Val1 == skill.IDTripleAttack {
@@ -744,7 +744,7 @@ func (tigerFist) castBegin(z *Zone, src *entity, _ *skill.Def, _ int) wathenav1.
 		return skillFailSilent
 	}
 	v := l.Val1(sc.SCCombo)
-	if v == skill.IDComboFinish || !z.renewal() && v == skill.IDChainCrush {
+	if v == skill.IDComboFinish || !z.skillRenewal(skill.IDTigerFist) && v == skill.IDChainCrush {
 		return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
 	}
 	return skillFailSilent
@@ -806,7 +806,7 @@ func (extremityFist) castBegin(z *Zone, src *entity, _ *skill.Def, _ int) wathen
 
 func (extremityFist) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
 	dir := mapCalcDir(src, target.x, target.y)
-	if p := src.player; p != nil && z.renewal() && p.spiritBallOld > 5 {
+	if p := src.player; p != nil && z.skillRenewal(skill.IDExtremityFist) && p.spiritBallOld > 5 {
 		// More than five spheres double the damage.
 		*flag |= 1
 	}

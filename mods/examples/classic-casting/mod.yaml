@@ -1,0 +1,22 @@
+# A sample ruleset mod (strategy section 3.6, decision 0019): a renewal
+# world with pre-renewal casting. mods/README.md, "Ruleset mods",
+# explains each flag.
+id: example.classic-casting
+name: Classic Casting
+version: 0.1.0
+api: 1.0
+description: A renewal world whose spells cast and hit as in pre-renewal - DEX-only cast times, pre-renewal's element table, pre-renewal's skill cooldowns and Mystical Amplification for one spell.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+provides:
+  ruleset:
+    extends: core.ruleset.renewal
+    flags:
+      cast_time: pre_renewal
+      element_table: pre_renewal
+      skill_cooldown: off
+      skill_rebalance.HW_MAGICPOWER: pre_renewal

@@ -177,9 +177,12 @@ type Def struct {
 	// mod's skill. It is 0 for the skill's own.
 	Icon int
 
-	// renewal is the mode of the database that holds the skill, for the
-	// formulas that differ by mode.
-	renewal bool
+	// fixedCastSet is set when the skill's data has a FixedCastTime:
+	// every skill of renewal's skill_db, and a mod skill whose record
+	// sets fixed_cast_time. Pre-renewal's skill_db has none, so renewal's
+	// cast time with the cast_time flag uses default_fixed_castrate
+	// there.
+	fixedCastSet bool
 }
 
 // Has reports whether an INF2_ flag is set, by name, such as IsQuest.
@@ -331,7 +334,9 @@ func Load(d *Data) (*DB, error) {
 }
 
 func (db *DB) add(d *Def) {
-	d.renewal = db.renewal
+	if db.renewal {
+		d.fixedCastSet = true
+	}
 	if old := db.byID[d.ID]; old != nil {
 		delete(db.byName, old.Name)
 		db.order = slices.DeleteFunc(db.order, func(x *Def) bool { return x == old })
@@ -343,6 +348,20 @@ func (db *DB) add(d *Def) {
 
 // Renewal reports whether the database is renewal's.
 func (db *DB) Renewal() bool { return db.renewal }
+
+// UseCooldowns gives each skill the Cooldown of the skill with its name
+// in other, the skill database of the other mode. It is the
+// skill_cooldown flag set to the other mode's value: renewal's cooldowns
+// on a pre-renewal base, or pre-renewal's on a renewal base. A skill that
+// other does not have keeps its own. Call it on a database that nothing
+// else holds yet, before mods' overlays.
+func (db *DB) UseCooldowns(other *DB) {
+	for _, d := range db.order {
+		if o := other.byName[d.Name]; o != nil {
+			d.Cooldown = o.Cooldown
+		}
+	}
+}
 
 // Get returns a skill by ID, or nil.
 func (db *DB) Get(id int) *Def {

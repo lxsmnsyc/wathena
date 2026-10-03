@@ -126,7 +126,9 @@ type Loaded struct {
 // Load reads the mod at p, finds its dependencies in depsDir (may be
 // ""), and merges them over core. The owner's approval is assumed for
 // every permission the mods request. base is the ruleset base, renewal
-// or pre_renewal.
+// or pre_renewal. A ruleset mod loads as the world's ruleset, so its
+// tests run with its flags, and its base must be the environment's
+// mode.
 func (e *Env) Load(ctx context.Context, p, depsDir, base string, log *slog.Logger) (*Loaded, error) {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
@@ -154,6 +156,10 @@ func (e *Env) Load(ctx context.Context, p, depsDir, base string, log *slog.Logge
 	// Only the mods the target needs: its dependencies, and theirs.
 	found = needed(m, found)
 	cfg := mod.Config{Base: base, Approve: approve}
+	if m.Manifest.Provides.Ruleset != nil {
+		b, _ := mod.ModeBase(string(e.Mode))
+		cfg.Ruleset, cfg.Base = m.ID(), b
+	}
 	for id := range approve {
 		if !slices.ContainsFunc(found, func(f *mod.Mod) bool { return f.ID() == id }) {
 			delete(approve, id)

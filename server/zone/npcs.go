@@ -109,9 +109,33 @@ func near(p *Player, e *entity) bool {
 	return abs(e.x-me.x) <= npcClickRange && abs(e.y-me.y) <= npcClickRange
 }
 
-// click is npc_click.
+// rkEnchantBlade is RK_ENCHANTBLADE, the first third class skill.
+const rkEnchantBlade = 2001
+
+// busyText is the text of MSI_BUSY.
+const busyText = "You cannot do that now: you are busy with another action."
+
+// busy is clif_msg with MSI_BUSY, which only renewal sends: the
+// busy_restrictions flag.
+func (z *Zone) busy(p *Player) {
+	if z.rules().BusyRestrictions {
+		p.pending = append(p.pending, systemMessage(busyText))
+	}
+}
+
+// click is npc_click, after clif_parse_NpcClicked's checks.
 func (z *Zone) click(p *Player, netID uint32) {
-	if p.talk != nil || p.entity.dead {
+	if p.entity.dead {
+		return
+	}
+	if p.talk != nil {
+		z.busy(p)
+		return
+	}
+	// With busy_restrictions on, a player who casts a skill below the
+	// third class skills cannot click an NPC.
+	if c := p.entity.cast; c != nil && z.rules().BusyRestrictions && c.def.ID < rkEnchantBlade {
+		z.busy(p)
 		return
 	}
 	var e *entity

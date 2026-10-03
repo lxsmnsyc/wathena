@@ -49,7 +49,8 @@ var danceSPInterval = map[int]int{
 // performance statuses. It reports whether the status may start.
 func (v *setup) performanceSetup(typ int) bool {
 	val := &v.val
-	renewal := v.en.DB.renewal
+	// The performances follow the ensemble_songs flag.
+	renewal := v.en.ruleset().EnsembleSongs
 	switch typ {
 	case SCComa:
 		// HP falls to 1, and SP to 1 unless val2 is set. rAthena returns
@@ -235,7 +236,7 @@ func (en *Engine) performanceTimer(u Unit, e *Entry, due int64) bool {
 		}
 		s, sp := 0, 1
 		id := e.Val1 & 0xFFFF
-		if !en.DB.renewal {
+		if !en.ruleset().EnsembleSongs {
 			s = danceSPInterval[id]
 		}
 		if id == skillMoonlit {
@@ -244,7 +245,7 @@ func (en *Engine) performanceTimer(u Unit, e *Entry, due int64) bool {
 			s = 10
 		}
 		if s != 0 && e.Val3%s == 0 {
-			if !en.DB.renewal && u.Changes().Has(SCLonging) {
+			if !en.ruleset().EnsembleSongs && u.Changes().Has(SCLonging) {
 				sp *= 3
 			}
 			if !en.charge(u, 0, int64(sp)) {
@@ -268,7 +269,7 @@ func (en *Engine) performanceTimer(u Unit, e *Entry, due int64) bool {
 	case SCWhistle, SCAssncros, SCPoembragi, SCAppleidun, SCHumming, SCDontforgetme, SCFortune, SCService4u:
 		// refresh_song is off: a song that runs out while its unit still
 		// covers the unit lasts again.
-		if en.DB.renewal || u.Dead() {
+		if en.ruleset().EnsembleSongs || u.Dead() {
 			return false
 		}
 		p, ok := en.env.(Performer)

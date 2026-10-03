@@ -11,6 +11,8 @@
 // name the rAthena functions they port.
 package battle
 
+import "github.com/lxsmnsyc/wathena/server/rules"
+
 // Weapon is a unit's weapon attack, as rAthena's weapon_atk. For a
 // monster, Atk and Atk2 are its lowest and highest attack. For a player in
 // pre-renewal, Atk is the weapon's ATK and Atk2 its refine bonus. Matk and
@@ -302,7 +304,19 @@ type Rand interface {
 // with BF_WEAPON and no skill. The attacker is a player when its Player
 // is set, and a monster otherwise.
 func Attack(attacker, target *Status, r Rand) Result {
-	wd := calcWeaponAttack(attacker, target, nil, r)
+	wd := calcWeaponAttack(attacker, target, nil, nil, r)
+	return finishAttack(&wd, attacker)
+}
+
+// AttackRules is a normal attack under a world's rules: the base picks
+// Attack or AttackPreRenewal, and the flags pick the parts that each
+// reads, such as the element table.
+func AttackRules(attacker, target *Status, rl *rules.Rules, r Rand) Result {
+	if rl != nil && !rl.Renewal {
+		wd := calcWeaponAttackPreRenewal(attacker, target, nil, rl, r)
+		return finishAttack(&wd, attacker)
+	}
+	wd := calcWeaponAttack(attacker, target, nil, rl, r)
 	return finishAttack(&wd, attacker)
 }
 

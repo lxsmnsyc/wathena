@@ -190,7 +190,7 @@ func (z *Zone) castCancelBegin(src *entity, old, cc *casting, castMs int) bool {
 type magicRod struct{}
 
 func (magicRod) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDMagicRod) {
 		z.skillEffect(src, src, d, lv, int64(lv), true)
 	}
 	z.scStart(src, target, d.Status, 100, lv, int64(d.Duration1.At(lv)))
@@ -202,7 +202,7 @@ func (magicRod) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv i
 func (z *Zone) magicRodAbsorb(target *entity, d *skill.Def, lv int, res *battle.Result) {
 	e := target.sc.Get(sc.SCMagicrod)
 	sp := spSkillCost(d, lv)
-	if !z.renewal() {
+	if !z.skillRenewal(skill.IDMagicRod) {
 		if rod := z.Skills.Get(skill.IDMagicRod); rod != nil {
 			z.skillEffect(target, target, rod, e.Val1, int64(e.Val1), true)
 		}
@@ -243,7 +243,7 @@ func (spellBreaker) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, 
 			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 			return
 		}
-		if !z.renewal() && lv >= 5 && target.player == nil {
+		if !z.skillRenewal(skill.IDSpellBreaker) && lv >= 5 && target.player == nil {
 			hp = int64(st.MaxHP / 50)
 		}
 	} else if lv >= 5 && target.player == nil {
@@ -346,7 +346,7 @@ func (endow) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int,
 		z.skillEffect(src, target, d, lv, int64(lv), false)
 		return
 	}
-	if z.renewal() {
+	if z.skillRenewal(d.ID) {
 		ok := z.scStart(src, target, d.Status, 100, lv, int64(d.Duration1.At(lv)))
 		z.skillEffect(src, target, d, lv, int64(lv), ok)
 		return
@@ -575,7 +575,7 @@ func (soulExhale) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv
 		return
 	}
 	sp1, sp2 := z.spOf(src), z.spOf(target)
-	if z.renewal() {
+	if z.skillRenewal(skill.IDSoulChange) {
 		sp1 /= 2
 		sp2 /= 2
 		if target.sc.Has(sc.SCExtremityfist) {

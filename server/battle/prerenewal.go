@@ -1,5 +1,7 @@
 package battle
 
+import "github.com/lxsmnsyc/wathena/server/rules"
+
 // Pre-renewal port of rAthena's normal weapon attack: the #ifndef RENEWAL
 // branches of battle.cpp. The helpers that both modes share live in
 // weapon.go and player.go.
@@ -40,7 +42,7 @@ const (
 //   - Player.PreRenewalSizes picks the size table, as in Attack. Players
 //     of pre-renewal's job tables have it set.
 func AttackPreRenewal(attacker, target *Status, r Rand) Result {
-	wd := calcWeaponAttackPreRenewal(attacker, target, nil, r)
+	wd := calcWeaponAttackPreRenewal(attacker, target, nil, nil, r)
 	return finishAttack(&wd, attacker)
 }
 
@@ -51,7 +53,7 @@ func SkillAttackPreRenewal(typ int, src, target *Status, sk *Skill, r Rand) Resu
 	var d damage
 	switch typ {
 	case TypeWeapon:
-		d = calcWeaponAttackPreRenewal(src, target, sk, r)
+		d = calcWeaponAttackPreRenewal(src, target, sk, nil, r)
 	case TypeMagic:
 		d = calcMagicAttack(src, target, sk, true, r)
 	case TypeMisc:
@@ -66,10 +68,13 @@ func SkillAttackPreRenewal(typ int, src, target *Status, sk *Skill, r Rand) Resu
 // for a normal attack (sk is nil) or a skill. The random draws happen in
 // rAthena's order: lucky dodge, double attack, critical, hit, the damage
 // rolls, then the random part of soft DEF.
-func calcWeaponAttackPreRenewal(src, target *Status, sk *Skill, r Rand) damage {
+func calcWeaponAttackPreRenewal(src, target *Status, sk *Skill, rl *rules.Rules, r Rand) damage {
 	sd := src.Player
 	wd := initializeWeaponData(src, sk)
 	wd.pre = true
+	if rl != nil {
+		wd.rules = rl
+	}
 	modifyDamageData(&wd, src, target)
 
 	rightElement := modifyElement(&wd, src, target, weaponElement(src, handRight, sk, r))
@@ -517,15 +522,15 @@ func calcElementDamagePreRenewal(wd *damage, src, target *Status, rightElement, 
 		if src.Player == nil && wd.sk == nil && monsterAttackAttrNone {
 			return
 		}
-		wd.damage = attrFixPre(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+		wd.damage = wd.attrFix(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
 		if isAttackLeftHanded(src, wd.sk) {
-			wd.damage2 = attrFixPre(src, target, wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
+			wd.damage2 = wd.attrFix(src, target, wd.damage2, leftElement, target.DefEle, target.EleLv, 1)
 		}
 		switch wd.skillID() {
 		case skillCartRevolution, skillMagicCrasher:
-			wd.damage = attrFixPre(src, target, wd.damage, Neutral, target.DefEle, target.EleLv, 1)
+			wd.damage = wd.attrFix(src, target, wd.damage, Neutral, target.DefEle, target.EleLv, 1)
 			if isAttackLeftHanded(src, wd.sk) {
-				wd.damage2 = attrFixPre(src, target, wd.damage2, Neutral, target.DefEle, target.EleLv, 1)
+				wd.damage2 = wd.attrFix(src, target, wd.damage2, Neutral, target.DefEle, target.EleLv, 1)
 			}
 		}
 	}
@@ -538,7 +543,7 @@ func calcElementDamagePreRenewal(wd *damage, src, target *Status, rightElement, 
 		// Envenom adds 15 per level, and the element table applies to the
 		// base damage and again to the final damage.
 		wd.atkAdd(src, &wd.damage, &wd.damage2, int64(15*wd.skillLv()))
-		wd.damage = attrFixPre(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
+		wd.damage = wd.attrFix(src, target, wd.damage, rightElement, target.DefEle, target.EleLv, 1)
 	}
 	// EDP adds its percent of the damage, after the masteries and before
 	// SC_WATK_ELEMENT.
@@ -553,7 +558,7 @@ func calcElementDamagePreRenewal(wd *damage, src, target *Status, rightElement, 
 	// would too, are not ported.
 	if c := src.Changes; c != nil && src.Player != nil && c.WatkElementRate != 0 &&
 		!wd.nk.Has(NKIgnoreElement) && !wd.nk.Has(NKIgnoreAtkCard) && (wd.damage > 0 || wd.damage2 > 0) {
-		wd.basedamage = attrFixPre(src, target, wd.basedamage, c.WatkElement, target.DefEle, target.EleLv, 1)
+		wd.basedamage = wd.attrFix(src, target, wd.basedamage, c.WatkElement, target.DefEle, target.EleLv, 1)
 		// Spirit Sphere bonus damage.
 		wd.basedamage += spiritBallDamage(wd, src)
 		wd.damage += wd.basedamage * int64(c.WatkElementRate) / 100

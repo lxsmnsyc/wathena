@@ -201,12 +201,7 @@ func (z *Zone) strike(e, t *entity) {
 	}
 	z.syncBattlePlayer(e)
 	normal := isNormAttacked(e, t)
-	var r battle.Result
-	if z.renewal() {
-		r = battle.Attack(e.status, z.defenderFor(e, t, 0), z.rand)
-	} else {
-		r = battle.AttackPreRenewal(e.status, z.defenderFor(e, t, 0), z.rand)
-	}
+	r := battle.AttackRules(e.status, z.defenderFor(e, t, 0), z.rules(), z.rand)
 	// battle_do_reflect: Shield Reflect returns part of the hit.
 	z.reflectShield(e, t, 0, r)
 	// Poison React's effects inside battle_calc_attack: the boosted

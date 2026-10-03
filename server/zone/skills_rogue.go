@@ -139,7 +139,7 @@ type backStab struct{}
 
 func (backStab) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
 	dir := mapCalcDir(src, target.x, target.y)
-	if z.renewal() {
+	if z.skillRenewal(skill.IDBackStab) {
 		// The caster steps to the cell behind the target.
 		x, y := 0, 0
 		switch {
@@ -182,7 +182,7 @@ func (backStab) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv int
 // additionalEffect is SkillBackStab::applyAdditionalEffects: renewal's
 // stun.
 func (backStab) additionalEffect(z *Zone, src, target *entity, d *skill.Def, lv int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDBackStab) {
 		z.scStart(src, target, sc.SCStun, 5+2*lv, lv, int64(d.Duration1.At(lv)))
 	}
 }
@@ -248,7 +248,7 @@ func (raid) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, 
 func (raid) additionalEffect(z *Zone, src, target *entity, d *skill.Def, lv int) {
 	z.scStart(src, target, sc.SCStun, 10+3*lv, lv, int64(d.Duration1.At(lv)))
 	z.scStart(src, target, sc.SCBlind, 10+3*lv, lv, int64(d.Duration2.At(lv)))
-	if z.renewal() {
+	if z.skillRenewal(skill.IDRaid) {
 		z.scStart(src, target, sc.SCRaid, 100, lv, 10000)
 	}
 }

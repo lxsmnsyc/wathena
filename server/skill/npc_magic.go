@@ -194,7 +194,7 @@ func (n npcRatio) SkillRatio(a *battle.SkillContext, ratio *int) { *ratio += n.a
 // BaseDamage is the NPC_EVILLAND case of battle_calc_misc_attack:
 // skill_calc_heal with heal false.
 func (npcEvilLand) BaseDamage(a *battle.SkillContext, r battle.Rand) int64 {
-	return CalcHeal(a.Src, a.Target, IDNPCEvilLand, a.Level(), false, a.Renewal, r)
+	return CalcHeal(a.Src, a.Target, IDNPCEvilLand, a.Level(), false, a.Ruleset().HealFormula, r)
 }
 
 // SkillRatio is SkillComet2::calculateSkillRatio: 2500% + 500% per level,

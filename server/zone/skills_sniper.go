@@ -30,7 +30,7 @@ type windWalk struct{ statusSkill }
 type sharpShooting struct{}
 
 func (sharpShooting) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDSharpShooting) {
 		z.recursiveSplash(src, target, d, lv, *flag)
 		return
 	}

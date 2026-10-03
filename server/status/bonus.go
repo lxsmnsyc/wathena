@@ -1141,11 +1141,11 @@ func addItemBonus(m *map[int]int, id, v int, capRate bool) {
 
 // applyCast is pc_bonus and pc_bonus2 for the bonuses of cast times,
 // delays, cooldowns and SP costs (0002a, "Speed, cast, and delay").
-// Renewal's cast rules are RENEWAL_CAST; pre-renewal has no fixed cast
-// time and ignores its bonuses.
+// Renewal's cast rules are RENEWAL_CAST, which the cast_time flag picks;
+// pre-renewal has no fixed cast time and ignores its bonuses.
 func (pb *pcBonus) applyCast(name string, o *bonus.Options, v int) {
 	cb := &pb.player.Cast
-	renewal := pb.p.t.renewal
+	renewal := pb.p.t.rules.CastTime
 	skill := o.Has("skill")
 	id := int(o.Skill)
 	switch name {

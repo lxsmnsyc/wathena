@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
 
@@ -39,11 +40,22 @@ type Caster struct {
 	TargetDistance int
 	// SpiritBalls is a player's spirit spheres, as sd->spiritball.
 	SpiritBalls int
-	// Renewal is set in renewal mode, which some requirements read.
+	// Renewal is set in renewal mode. Rules, when set, holds the world's
+	// ruleset flags, which some requirements and delays read. Without
+	// Rules, every flag follows Renewal.
 	Renewal bool
+	Rules   *rules.Rules
 	// Encore is the dance that costs half its SP after Encore
 	// (skill_id_old BD_ENCORE and skill_id_dance), or 0.
 	Encore int
+}
+
+// ruleset returns the caster's rules.
+func (c *Caster) ruleset() *rules.Rules {
+	if c.Rules != nil {
+		return c.Rules
+	}
+	return rules.Of(c.Renewal)
 }
 
 func (c *Caster) cast() *battle.CastBonus {
@@ -65,7 +77,8 @@ type CastResult struct {
 }
 
 // CastTimeFor is the cast time of unit_skilluse_id2: skill_castfix, then
-// skill_vfcastfix in renewal or skill_castfix_sc in pre-renewal.
+// skill_vfcastfix with renewal's cast time (RENEWAL_CAST) or
+// skill_castfix_sc with pre-renewal's. renewal is the cast_time flag.
 // learned is whether the caster learned the skill, which Foresight
 // reads.
 func (d *Def) CastTimeFor(c *Caster, lv int, renewal, learned bool) CastResult {
@@ -83,13 +96,13 @@ func (d *Def) CastTimeFor(c *Caster, lv int, renewal, learned bool) CastResult {
 			k := min(max((c.TargetDistance-1)/3, 0), 2)
 			t += float64(int(t) * k)
 		}
-		t = monkCastTime(d, c, lv, t, renewal)
+		t = monkCastTime(d, c, lv, t)
 		res.Milliseconds = d.castfixSC(c, t, &res)
 		return res
 	}
 	// skill_castfix in renewal only applies cast_rate.
 	t = float64(max(int(t*castRate/100), 0))
-	t = monkCastTime(d, c, lv, t, renewal)
+	t = monkCastTime(d, c, lv, t)
 	res.Milliseconds = d.vfcastfix(c, t, lv, learned, &res)
 	return res
 }
@@ -176,6 +189,11 @@ func (d *Def) vfcastfix(c *Caster, t float64, lv int, learned bool, res *CastRes
 	}
 	flag := d.CastTimeFlags
 	fixed := d.FixedCastTime.At(lv)
+	if !d.fixedCastSet {
+		// Pre-renewal's skill_db has no FixedCastTime, which rAthena
+		// reads as unset (-1).
+		fixed = -1
+	}
 	fixcastR, varcastR, reduce := 0, 0, 0
 	if fixed < 0 {
 		if defaultFixedCastrate > 0 {
@@ -258,7 +276,7 @@ func (d *Def) Delay(c *Caster, lv int) int {
 	case IDBasilica:
 		// Pre-renewal Basilica has no delay when it starts, only when it
 		// is cancelled. A player always has a status list.
-		if !d.renewal && !c.Changes.Has(sc.SCBasilica) {
+		if !c.ruleset().Skill(IDBasilica) && !c.Changes.Has(sc.SCBasilica) {
 			t = 0
 		}
 	}
@@ -351,8 +369,8 @@ func (d *Def) RequirementFor(c *Caster, lv int, hp, sp int64) Requirement {
 	}
 	r.SP = min(max(r.SP*spSkillRate/100, 0), math.MaxInt16)
 	// Renewal's Adaptation lowers the SP of songs by 20%, and Ring of
-	// Nibelungen's tenth effect all SP by 30%.
-	if l := c.Changes; d.renewal && !l.Empty() {
+	// Nibelungen's tenth effect all SP by 30% (ensemble_songs).
+	if l := c.Changes; c.ruleset().EnsembleSongs && !l.Empty() {
 		if l.Has(sc.SCAdaptation) && d.Has("IsSong") {
 			r.SP -= r.SP * 20 / 100
 		}
@@ -416,11 +434,13 @@ func (d *Def) RequirementFor(c *Caster, lv int, hp, sp int64) Requirement {
 
 	// The cost reductions of skills: Unfair Trick lowers the zeny cost
 	// of Mammonite, and in renewal of Cart Termination, by 20% in
-	// renewal and 10% in pre-renewal.
+	// renewal and 10% in pre-renewal. Each skill's skill_rebalance flag
+	// picks.
+	renewal := c.ruleset().Skill(d.ID)
 	switch {
-	case d.ID == IDMammonite, d.ID == IDCartTermination && c.Renewal:
+	case d.ID == IDMammonite, d.ID == IDCartTermination && renewal:
 		if st.Player != nil && st.Player.Skills[IDUnfairTrick] > 0 {
-			if c.Renewal {
+			if renewal {
 				r.Zeny -= r.Zeny * 20 / 100
 			} else {
 				r.Zeny -= r.Zeny * 10 / 100
@@ -428,7 +448,7 @@ func (d *Def) RequirementFor(c *Caster, lv int, hp, sp int64) Requirement {
 		}
 	case d.ID == IDChainCombo, d.ID == IDComboFinish, d.ID == IDTigerFist, d.ID == IDChainCrush,
 		d.ID == IDBodyRelocation, d.ID == IDExtremityFist:
-		monkRequirement(d, c, &r, c.Renewal)
+		monkRequirement(d, c, &r, renewal)
 	}
 	return r
 }
@@ -445,9 +465,9 @@ const (
 
 // MonsterCastTime is the cast time of a monster's skill: the cast time
 // of its mob_skill_db entry, which unit_skilluse_id2 and
-// unit_skilluse_pos2 change with skill_castfix_sc in pre-renewal and
-// skill_vfcastfix in renewal. A monster has no cast time of its own
-// stats.
+// unit_skilluse_pos2 change with skill_castfix_sc or skill_vfcastfix, as
+// the cast_time flag (renewal) picks. A monster has no cast time of its
+// own stats.
 func (d *Def) MonsterCastTime(c *Caster, ms, lv int, renewal bool) CastResult {
 	var res CastResult
 	if renewal {

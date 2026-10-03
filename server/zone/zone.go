@@ -1011,6 +1011,12 @@ func (z *Zone) handle(c command) {
 		if c.walkTo != nil {
 			z.walkDuringTalk(p)
 		}
+		// pc_useitem and clif_parse_skill_toid: with busy_restrictions
+		// on, an item or a skill refused for the conversation tells the
+		// player so (MSI_BUSY).
+		if c.use != nil || c.useSkill != nil {
+			z.busy(p)
+		}
 		return
 	}
 	if c.walkTo != nil && !me.cant().Move && (me.cast == nil || freeCast(me)) && z.now >= me.canMove {

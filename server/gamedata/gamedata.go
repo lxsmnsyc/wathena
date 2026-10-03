@@ -12,7 +12,6 @@ import (
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mob"
-	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
@@ -361,28 +360,4 @@ func StartCharacter(mode reference.Mode, build string) (*status.Tables, status.C
 		return nil, status.Character{}, err
 	}
 	return tables, c, nil
-}
-
-// ApplyRuleset sets the ruleset flags that equipment and player stats
-// read (strategy section 3.6): aspd, the ASPD formula, shield penalty
-// and bonus stacking; and size_table, the size table of knuckles and
-// whips. The aspd flag of the other mode needs that mode's job table.
-func ApplyRuleset(jobs *status.Tables, r *mod.Ruleset) error {
-	aspd := r.Flag("aspd") == mod.Renewal
-	var other *status.Data
-	if aspd != jobs.Renewal() {
-		mode := reference.PreRenewal
-		if aspd {
-			mode = reference.Renewal
-		}
-		other = &status.Data{}
-		if err := reference.LoadFile("extracts/"+string(mode)+"/job_stats.json", other); err != nil {
-			return err
-		}
-	}
-	if err := jobs.SetASPD(aspd, other); err != nil {
-		return err
-	}
-	jobs.SetSizeTable(r.Flag("size_table") == mod.PreRenewal)
-	return nil
 }

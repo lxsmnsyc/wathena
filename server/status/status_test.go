@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/rules"
 )
 
 // Raised stats of the recorder's PC_SAMPLE_BUILDS.
@@ -37,7 +38,20 @@ func load(t *testing.T, mode reference.Mode) *Tables {
 func TestRecordedPlayers(t *testing.T) {
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
+			checkRecordedPlayers(t, mode, nil)
+		})
+	}
+}
+
+// checkRecordedPlayers checks every player of a mode's pc_status.json,
+// with the tables' rules set to rl when it is not nil.
+func checkRecordedPlayers(t *testing.T, mode reference.Mode, rl *rules.Rules) {
+	{
+		{
 			tb := load(t, mode)
+			if rl != nil {
+				tb.SetRules(rl)
+			}
 			var pcs struct {
 				Players []struct {
 					Job       int             `json:"job"`
@@ -82,7 +96,7 @@ func TestRecordedPlayers(t *testing.T) {
 				matched++
 			}
 			t.Logf("%s: %d of %d players match", mode, matched, len(pcs.Players))
-		})
+		}
 	}
 }
 

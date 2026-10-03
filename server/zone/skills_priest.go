@@ -168,7 +168,7 @@ func (z *Zone) statusRevive(e *entity, perHP, perSP int) bool {
 type renewalPartyStatus struct{}
 
 func (renewalPartyStatus) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
-	if z.renewal() {
+	if z.skillRenewal(d.ID) {
 		partyStatus{}.castendNoDamage(z, src, target, d, lv, flag)
 		return
 	}
@@ -355,7 +355,7 @@ func (z *Zone) lexAeterna(t *entity, flag, skillID int) bool {
 	if skillID == idSoulBurn {
 		return false
 	}
-	if z.renewal() || skillID != idBreaker || flag&battle.FlagWeapon == 0 {
+	if z.skillRenewal(idBreaker) || skillID != idBreaker || flag&battle.FlagWeapon == 0 {
 		z.scEnd(t, sc.SCAeterna)
 	}
 	return true
@@ -408,7 +408,7 @@ type redemptio struct{}
 // to the next base level.
 func (redemptio) castBegin(z *Zone, src *entity, _ *skill.Def, _ int) wathenav1.SkillFailure {
 	p := src.player
-	if z.renewal() || p == nil || z.Progress == nil {
+	if z.skillRenewal(skill.IDRedemptio) || p == nil || z.Progress == nil {
 		return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
 	}
 	const expCostRedemptio = 1
@@ -457,7 +457,7 @@ type basilica struct{}
 // pre-renewal: the 7x7 area around the caster has no walls and no other
 // unit, unless the cast cancels a Basilica.
 func (basilica) castBegin(z *Zone, src *entity, d *skill.Def, lv int) wathenav1.SkillFailure {
-	if z.renewal() || src.sc.Has(sc.SCBasilica) || d.Unit == nil {
+	if z.skillRenewal(skill.IDBasilica) || src.sc.Has(sc.SCBasilica) || d.Unit == nil {
 		return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED
 	}
 	r := d.Unit.Layout.At(lv) + 1
@@ -479,13 +479,13 @@ func (basilica) castBegin(z *Zone, src *entity, d *skill.Def, lv int) wathenav1.
 }
 
 func (basilica) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDBasilica) {
 		statusSkill{}.castendNoDamage(z, src, target, d, lv, flag)
 	}
 }
 
 func (basilica) castendPos(z *Zone, src *entity, x, y int, d *skill.Def, lv int, flag *int) {
-	if z.renewal() {
+	if z.skillRenewal(skill.IDBasilica) {
 		return
 	}
 	if src.sc.Has(sc.SCBasilica) {
@@ -562,7 +562,7 @@ func (z *Zone) basilicaOnPlace(unit, t *entity) {
 //   - pc_cell_basilica for a player that moved: it has SC_BASILICA on the
 //     area's cells, with no values and no end, and loses it off them.
 func (z *Zone) basilicaRefresh(t *entity, moved bool) {
-	if z.renewal() || t.dead || t.player == nil && t.monster == nil {
+	if z.skillRenewal(skill.IDBasilica) || t.dead || t.player == nil && t.monster == nil {
 		return
 	}
 	x, y := t.x, t.y
@@ -595,7 +595,7 @@ func (z *Zone) statusEndEffects(e *entity, en *sc.Entry) {
 			z.deleteGroup(g)
 		}
 	}
-	if en.Type == sc.SCBasilica && !z.renewal() && en.Val3 != 0 && int64(en.Val4) == z.unit(e).Ref().ID {
+	if en.Type == sc.SCBasilica && !z.skillRenewal(skill.IDBasilica) && en.Val3 != 0 && int64(en.Val4) == z.unit(e).Ref().ID {
 		if g := z.groups[int64(en.Val3)]; g != nil {
 			z.deleteGroup(g)
 		}
@@ -620,7 +620,7 @@ func (z *Zone) sanctuaryOnPlace(unit, t *entity) {
 	if st == nil {
 		return
 	}
-	heal := skill.CalcHeal(srcSt, st, g.def.ID, g.lv, true, z.renewal(), z.rand)
+	heal := skill.CalcHeal(srcSt, st, g.def.ID, g.lv, true, z.rules().HealFormula, z.rand)
 	// The Emperium and battleground monsters do not exist yet.
 	if t.hp >= int64(st.MaxHP) {
 		return

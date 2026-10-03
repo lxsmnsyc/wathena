@@ -17,6 +17,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
@@ -66,6 +67,10 @@ type Mods struct {
 	// merges.
 	Chat         *chat.Data
 	ChatOverlays []*mod.Overlay
+	// Rules are the ruleset's flags as the game code reads them
+	// (decision 0019). JobTables, Tables, Skills and Zone already follow
+	// them.
+	Rules *rules.Rules
 	// Zone is what every zone gets.
 	Zone *zone.Mods
 }
@@ -171,6 +176,19 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	for _, n := range out.SkillOverlay.Notes {
 		log.Warn("mods: " + n)
 	}
+	rl, notes, err := RulesOf(set.Ruleset, out.Skills)
+	if err != nil {
+		return nil, err
+	}
+	for _, n := range notes {
+		log.Warn("ruleset: " + n)
+	}
+	out.Rules = rl
+	if out.JobTables != nil {
+		if err := ApplyRuleset(out.JobTables, rl); err != nil {
+			return nil, fmt.Errorf("ruleset: %w", err)
+		}
+	}
 	if out.Companions, out.CompanionOverlays, err = modCompanions(ctx, set, assigned, out.Skills, core.Names(merged.IDs)); err != nil {
 		return nil, err
 	}
@@ -202,6 +220,9 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 			types[d.ID] = d.Type
 		}
 		tables = tables.WithItems(types)
+		if tables, err = levelPenalty(tables, mode, rl); err != nil {
+			return nil, fmt.Errorf("ruleset: %w", err)
+		}
 	}
 	out.Tables = tables
 	monsterIDs := core.Monsters
@@ -247,7 +268,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	labelRolls(merged.Data, opts, core.Constants)
 	out.Zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
 		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates,
-		RandomOptions: opts, ItemRolls: set.Ruleset.Flag("item_rolls") == "on", Companions: out.Companions, Chat: out.Chat}
+		RandomOptions: opts, ItemRolls: rl.ItemRolls, Rules: rl, Companions: out.Companions, Chat: out.Chat}
 	return out, nil
 }
 

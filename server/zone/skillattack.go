@@ -75,7 +75,7 @@ func (z *Zone) skillAttack(typ int, src, dsrc, target *entity, d *skill.Def, lv,
 	}
 	// Pre-renewal: while its caster keeps a Gravitation Field, only the
 	// field and autospells deal damage.
-	if e := src.sc.Get(scGravitation); !z.renewal() && src.player != nil && e != nil && e.Val3 == bctSelf &&
+	if e := src.sc.Get(scGravitation); !z.skillRenewal(skill.IDGravitation) && src.player != nil && e != nil && e.Val3 == bctSelf &&
 		d.ID != skill.IDGravitation && !src.player.autocast {
 		return 0
 	}
@@ -135,12 +135,8 @@ func (z *Zone) calcSkillAttack(typ int, src, dsrc, target *entity, d *skill.Def,
 		cp.SP = int(z.spOf(target))
 		tgt = &cp
 	}
-	var res battle.Result
-	if z.renewal() {
-		res = battle.SkillAttack(typ, srcSt, tgt, bsk, z.rand)
-	} else {
-		res = battle.SkillAttackPreRenewal(typ, srcSt, tgt, bsk, z.rand)
-	}
+	bsk.Rules = z.rules()
+	res := battle.SkillAttackRules(typ, srcSt, tgt, bsk, z.rand)
 	z.rejectSword(src, target, res)
 	return res
 }

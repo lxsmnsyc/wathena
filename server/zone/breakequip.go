@@ -70,13 +70,11 @@ func (z *Zone) breakOnHit(src, target *entity, skillID, flag int) {
 		// Self weapon breaking. Power Thrust and Maximum Power Thrust add
 		// 0.1% each in pre-renewal.
 		rate := equipNaturalBreakRate
-		if !z.renewal() {
-			if src.sc.Has(sc.SCOverthrust) {
-				rate += 10
-			}
-			if src.sc.Has(sc.SCMaxoverthrust) {
-				rate += 10
-			}
+		if !z.skillRenewal(skill.IDOverThrust) && src.sc.Has(sc.SCOverthrust) {
+			rate += 10
+		}
+		if !z.skillRenewal(skill.IDOverThrustMax) && src.sc.Has(sc.SCMaxoverthrust) {
+			rate += 10
 		}
 		if rate != 0 {
 			z.breakEquip(src, src, item.EqpWeapon, rate, bctSelf)

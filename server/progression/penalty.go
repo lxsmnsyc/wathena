@@ -1,5 +1,7 @@
 package progression
 
+import "fmt"
+
 // Penalty types, as the Type names of rAthena's level_penalty.yml in
 // lower case.
 const (
@@ -52,6 +54,58 @@ func (m *Mob) Boss() BossType {
 		return BossMini
 	}
 	return BossNone
+}
+
+// penaltyTable is PenaltyDatabase's table of one type, from the rows of
+// level_penalty.yml. It returns nil for a type the data does not list.
+func penaltyTable(d *Data, typ string) *[2*MaxLevel - 1]int {
+	rows, ok := d.LevelPenalty[typ]
+	if !ok {
+		return nil
+	}
+	p := &[2*MaxLevel - 1]int{}
+	for i := range p {
+		p[i] = -1
+	}
+	for _, r := range rows {
+		if abs(r.Difference) > MaxLevel {
+			continue
+		}
+		p[r.Difference+MaxLevel-1] = r.Rate
+	}
+	fillPenalty(p)
+	return p
+}
+
+// WithLevelPenalty returns tables whose level penalty follows the
+// level_penalty_exp and level_penalty_drop ruleset flags (RENEWAL_EXP and
+// RENEWAL_DROP). exp covers the exp and MVP exp types, and drop the drop
+// and MVP drop types:
+//   - On, a type keeps the base's table. A base without one, as
+//     pre-renewal, whose data has no level_penalty.yml, takes it from
+//     renewal, renewal's progression data. renewal may be nil when the
+//     base has every table it needs. A type neither lists, as the MVP
+//     types today, gives 100%.
+//   - Off, a type gives 100%, as in pre-renewal.
+func (t *Tables) WithLevelPenalty(exp, drop bool, renewal *Data) (*Tables, error) {
+	out := *t
+	out.penalty = map[string]*[2*MaxLevel - 1]int{}
+	for typ, on := range map[string]bool{PenaltyExp: exp, PenaltyMVPExp: exp, PenaltyDrop: drop, PenaltyMVPDrop: drop} {
+		if !on {
+			continue
+		}
+		p := t.penalty[typ]
+		if p == nil && renewal != nil {
+			p = penaltyTable(renewal, typ)
+		}
+		switch {
+		case p != nil:
+			out.penalty[typ] = p
+		case typ == PenaltyExp || typ == PenaltyDrop:
+			return nil, fmt.Errorf("progression: the %s level penalty needs renewal's level_penalty.yml", typ)
+		}
+	}
+	return &out, nil
 }
 
 // fillPenalty is PenaltyDatabase::loadingFinished. Unset rates (-1) take

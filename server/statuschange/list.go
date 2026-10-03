@@ -177,8 +177,9 @@ func (l *List) Val3(t int) int { return l.val(t, 3) }
 func (l *List) Val4(t int) int { return l.val(t, 4) }
 
 // calcState is status_calc_state for every state: a state holds while
-// any active status has it.
-func (l *List) calcState(db *DB) {
+// any active status has it. songs is the ensemble_songs flag, which
+// picks SC_DANCING's conditions.
+func (l *List) calcState(db *DB, songs bool) {
 	var s States
 	for _, e := range l.entries {
 		if d := db.Get(e.Type); d != nil {
@@ -204,10 +205,10 @@ func (l *List) calcState(db *DB) {
 	if e := l.Get(SCDancing); e != nil {
 		id := e.Val1 & 0xFFFF
 		special := id == skillMoonlit || id == skillHermode
-		if e.Val4 != 0 && (db.renewal && special || !db.renewal && (!l.Has(SCLonging) || special)) {
+		if e.Val4 != 0 && (songs && special || !songs && (!l.Has(SCLonging) || special)) {
 			l.Cant.Move = true
 		}
-		if !db.renewal && (e.Val4 == 0 || !l.Has(SCLonging)) {
+		if !songs && (e.Val4 == 0 || !l.Has(SCLonging)) {
 			l.Cant.Attack = true
 		}
 	}

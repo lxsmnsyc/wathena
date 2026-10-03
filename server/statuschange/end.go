@@ -27,7 +27,7 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 		return true
 	}
 	if def.States != 0 || def.CondStates {
-		sc.calcState(en.DB)
+		sc.calcState(en.DB, en.ruleset().EnsembleSongs)
 	}
 
 	recalcAll := false

@@ -18,6 +18,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
 
@@ -63,6 +64,9 @@ type Mods struct {
 	// ItemRolls is the item_rolls ruleset flag. Off, every roll of a new
 	// copy is its default, as rAthena. Random options roll either way.
 	ItemRolls bool
+	// Rules are the world's ruleset flags (decision 0019). Without them
+	// the zone follows the core ruleset of its base.
+	Rules *rules.Rules
 	// Companions are the companions and mounts. Without them the zone
 	// uses core's (companion.Core).
 	Companions *companion.Set
