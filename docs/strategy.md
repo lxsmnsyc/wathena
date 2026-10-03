@@ -957,7 +957,7 @@ Mods add or change game data by overlaying YAML records.
 
 ### 6.5 IDs
 
-The database stores items, mobs, skills, jobs, quests, and achievements by numeric ID. IDs must never change once assigned.
+The database stores items, mobs, skills, jobs, quests, and achievements by numeric ID. Companions and mounts have IDs too, but characters save them by name. IDs must never change once assigned.
 
 The `core` mod keeps rAthena's IDs. Assets converted from the operator's game files are found by these IDs. The data is treated as complete, so `core` does not add IDs from future official updates.
 
@@ -969,6 +969,8 @@ Highest IDs in `core` today, taken from `db/re` and `db/pre-re`:
 | Monsters | 22,668 | 22,669 | 100,000 |
 | Skills | 10,019 | 10,020 | 20,000 |
 | Jobs | 4,350 (`JOB_SECOND_JOB_END`) | 4,351 | 10,000 |
+| Companions | 1 (the falcon) | 2 | 10,000 |
+| Mounts | 6 (the Madogear) | 7 | 10,000 |
 | Quests | 62,238 | 62,239 | 1,000,000 |
 | Achievements | 240,020 | 240,021 | 1,000,000 |
 
@@ -2495,6 +2497,18 @@ The order from here:
       - A sample mod, [examples/desperado](../mods/examples/desperado), adds the Desperado, a second job for Gunslingers, with the skill Quick Draw, a hat only it wears, a mentor who changes jobs with `player:change_job`, and a `job_change` handler.
       - Checked in Chrome: a Gunslinger at job level 40 changed into a Desperado through `player:change_job`, and the HUD went from "Gunslinger: Base Lv 60, Job Lv 40" to "Desperado: Base Lv 60, Job Lv 1", with the Desperado's maximum HP and the hat of the `job_change` handler.
       - Left: mounts, falcons and carts for new jobs, which wait for a general design of companions; mod job names in the account pages; characters whose mod job was removed; and mod item names in the client (phase 6).
+   8. A follow-up after the phase 4 exit check: companions, mounts and carts (proposal 0002, review decision 25), and the fix for characters whose mod job was removed. Done on 2026-10-03 ([decision 0016](decisions/0016-companions-and-mounts.md), server/README.md, "Companions, mounts and carts", and [mods/README.md](../mods/README.md), "Companions, mounts and carts"):
+      - Companions and mounts are records of `data/companions.yml` and `data/mounts.yml`. Core's records are the falcon, and the Peco Peco, Grand Peco, gryphon, dragon, warg and Madogear, as files of the core mod. Mod records get IDs from 10,000. Carts have a look from 1 to 5 and need Pushcart.
+      - A record's `acts_as` picks rAthena's option check that it passes, so a mod's record that acts as the falcon or the Peco Peco works with their skills and rules. Its `look` sets the option bits the client already gets. Its `bonuses` apply while the player has it, and a mount's `speed` replaces the walk speed bonus.
+      - `status.Calc` ports the mounted rules of every core mount: walk speed, the ASPD rule with Cavalier Mastery or Dragon Training, the weight limit, spears against medium targets, Spear Mastery, and the Madogear's speed, weight and DEF. Warg riders and Madogears use only the skills marked for them.
+      - The Lua API of review decision 25: `companions.id`, `mounts.id`, `player:set_companion`, `player:set_mount`, `player:set_cart`, the read-only fields `player.companion`, `player.mount` and `player.cart`, and `companion` in skill requirements. A job change removes what the new job does not meet `requires` for.
+      - Migration 00014 saves the record names beside the option bits. Old saves get core's records from their bits, and a record a removed mod took away is dropped with a warning.
+      - A character whose mod job was removed loads as a Novice, with a warning.
+      - The converter maps `setfalcon`, `setriding`, `setcart`, `checkfalcon`, `checkriding` and `checkcart`. In renewal 1,039 script NPCs are placed and 920 convert fully, up from 1,037 and 918, and job change NPCs 91 and 80, up from 90 and 79. In pre-renewal 813 and 749, up from 812 and 748, and job change NPCs 63 and 62, up from 62 and 61. The item reports did not change.
+      - The client draws the falcon or warg beside the player and the cart behind it, the mounted bodies of the third classes from their option bits, and a costume mount for a job without a mounted sprite.
+      - A new recording per mode, `mount_status.json`, from rAthena fork commit `5e50b7ad9`. Parity: 74 of 74 mounted cases in renewal and 48 of 48 in pre-renewal, in stats, weight limit, option bits and a normal attack.
+      - A sample mod, [examples/familiars](../mods/examples/familiars), adds an Owl that acts as a falcon, a Horse that acts as a Peco Peco, a skill that needs a falcon, and a keeper who hands them out. Its 7 `wactl mod test` cases and `TestFamiliars` pass.
+      - Left: the warg as a companion and the dragon colors as records, with their script commands; cart storage; companions that fight, companion events and more than one companion; sprite names for companions and carts in the GRF importer; and the rental mount.
    Steps 2, 3, 5, and 7 add Lua API. Each step's API goes to review before it is built.
 
 Reasons for this order:
