@@ -875,6 +875,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - The word lists of the chat filter and the reserved names are `data/chat_filter.yml`, with replace or reject per word. Chat rate limits, and lower limits in a new character's first hour, are server settings.
     - Reports and their review come with the staff tools, not the Lua API.
 
+27. Friends, parties and limits (phase 5 step 4). The user approved these on 2026-10-03:
+    - **Party handles.** `player.party` is a party or nil. Read-only fields: `id`, `name`, `leader` (a handle, or nil when the leader is offline), `leader_name`, `exp_share` (`"each"` or `"even"`), `item_share` (`"each"` or `"even"`) and `item_pickup` (`"each"` or `"shared"`). `party:get_members()` returns handles of online members. `party:get_member_names()` returns every member's name.
+    - **`wa.parties`**: `parties.create(leader, name)` returns the party, or nil when the name is taken or the leader has a party. `party:add(player)`, `party:remove(player)`, `party:set_leader(player)`, `party:set_options { exp_share, item_share, item_pickup }` and `party:disband()` replace `party_create`, `party_addmember`, `party_delmember`, `party_changeleader`, `party_changeoption` and `party_destroy`. They need the new permission `party.manage`. `parties.get(id)` and `parties.find(name)` find a party. Reading needs `game.read`.
+    - **Events** `party_join` and `party_leave`, with { `party`, `player`, `reason` }, where `reason` is `"invited"`, `"left"`, `"expelled"`, `"disbanded"` or `"script"`. `party_change`, with { `party`, `leader`, `options` }.
+    - The `experience` hook's object gains `party` (or nil) and `share`, the player's share before rAthena's split.
+    - **Friends**: `player:is_friend(other)` and `player:get_friend_names()`. Only players add and remove friends.
+    - **Limits.** A ruleset mod's `limits` block sets limits that rAthena compiles in, with rAthena's values as defaults, such as `party_members` (12), `friends` (40) and `block_list` (20). rAthena's `battle_athena.conf` values, such as `party_share_level` (15), are ruleset rules. Each limit has a hard maximum, such as 64 party members, 200 friends, 100 blocked names, 8 card slots and 2,000 storage slots. A ruleset outside the bounds fails to load. Lowering a limit deletes nothing: an over-full list keeps its entries and cannot grow, and cards over the slot limit stay but give no bonus. The client gets the limits at login. Lua reads them as `rules.limits.<name>`, read-only. Step 4 adds the party, friend and block list limits, and later steps add the guild, storage, cart, inventory and card slot limits.
+    - Test worlds call `parties.create` without the permission.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.

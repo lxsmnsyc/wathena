@@ -2539,12 +2539,13 @@ The order from here:
       - The client has chat tabs for channels and whispers, chat commands, a block list panel, a report button on lines, and mute notices.
       - End-to-end scenarios: whispers, channels, blocking, the filter, a mute until it ends, and reports in memory and in PostgreSQL.
       - Left: party and guild chat, the staff queue, bans, block everyone, players' own channels, and the hub across processes.
-   3. Friends and parties: party exp and item sharing, party booking in the web client, and the party skills that step 4 left failing.
-   4. Guilds: guild skills, guild storage and emblems.
-   5. Storage, cart and trade: personal storage, cart storage, Kafra storage and trade.
-   6. Mail, vending and shops: mail (RODEX), vending with autotrade and vending search, and barter shops.
-   7. Automatic events (boss spawns, invasions and treasure hunts), and the phase 5 exit check, with duplication tests under bot load.
-   Steps 2 to 7 add Lua API. Each step's API goes to review before it is built.
+   3. The ruleset flags. The 14 flags that are accepted but not read yet get the other mode's code path, parity tests against both recordings, tests at both values, and sampled mixed rulesets. Added on 2026-10-03, so that later steps build on rulesets that work.
+   4. Friends and parties: party exp and item sharing, party booking in the web client, and the party skills that step 4 left failing.
+   5. Guilds: guild skills, guild storage and emblems.
+   6. Storage, cart and trade: personal storage, cart storage, Kafra storage and trade.
+   7. Mail, vending and shops: mail (RODEX), vending with autotrade and vending search, and barter shops.
+   8. Automatic events (boss spawns, invasions and treasure hunts), and the phase 5 exit check, with duplication tests under bot load.
+   Steps 2 and 4 to 8 add Lua API. Each step's API goes to review before it is built.
 
 Reasons for this order:
 
