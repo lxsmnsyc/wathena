@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -69,6 +71,7 @@ type skillNames struct {
 	db     *skill.DB
 	items  map[string]uint32
 	consts map[string]*constants.Module
+	jobs   *Jobs
 }
 
 func (n *skillNames) Skill(name string) (int, bool) {
@@ -96,10 +99,14 @@ func (n *skillNames) Element(name string) (int, bool) { return n.constant("eleme
 
 func (n *skillNames) WeaponType(name string) (int, bool) { return n.constant("weapon_types", name) }
 
-// job finds a job by its name in wa.jobs, such as mage, or its ID.
+// job finds a job by its name in wa.jobs, such as mage, a mod job's
+// full name, or its ID.
 func (n *skillNames) job(name string) (int, bool) {
 	if id, err := strconv.Atoi(name); err == nil {
 		return id, id >= 0
+	}
+	if n.jobs != nil {
+		return n.jobs.ID(name)
 	}
 	return n.constant("jobs", name)
 }
@@ -108,8 +115,12 @@ func (n *skillNames) job(name string) (int, bool) {
 // New skills get IDs in the mod range from ids. items finds required
 // items by name. Every script a skill names must be a file of the mod
 // that set it.
+//
+// jobs are the job records. A new job's tree starts from the trees of the
+// jobs it inherits, and an entry for a job reaches the jobs that inherit
+// it, new jobs too.
 func modSkills(ctx context.Context, set *mod.Set, mode reference.Mode, ids *mod.IDs, consts *constants.Data,
-	items map[string]uint32, scripts []*mod.Scripts) (*skill.DB, *skill.Trees, *mod.Overlay, error) {
+	items map[string]uint32, scripts []*mod.Scripts, jobs *Jobs) (*skill.DB, *skill.Trees, *mod.Overlay, error) {
 	base, treeData, err := LoadSkillData(mode)
 	if err != nil {
 		return nil, nil, nil, err
@@ -127,11 +138,15 @@ func modSkills(ctx context.Context, set *mod.Set, mode reference.Mode, ids *mod.
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	if len(o.Records) == 0 && len(entries) == 0 {
+	var newJobs map[int][]int
+	if jobs != nil {
+		newJobs = jobs.modInherits()
+	}
+	if len(o.Records) == 0 && len(entries) == 0 && len(newJobs) == 0 {
 		return core, trees, o, nil
 	}
 	db := core.Clone()
-	names := &skillNames{db: db, items: items}
+	names := &skillNames{db: db, items: items, jobs: jobs}
 	if consts != nil {
 		names.consts = consts.Modules()
 	}
@@ -181,15 +196,18 @@ func modSkills(ctx context.Context, set *mod.Set, mode reference.Mode, ids *mod.
 	if len(errs) > 0 {
 		return nil, nil, nil, errors.Join(errs...)
 	}
-	if len(entries) > 0 {
+	if len(entries) > 0 || len(newJobs) > 0 {
 		trees = trees.Clone()
+		if err := buildModTrees(trees, newJobs); err != nil {
+			return nil, nil, nil, fmt.Errorf("jobs: inherits: %w", err)
+		}
 		for _, e := range entries {
 			ts, job, err := treeSkill(e, db, names)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("%s: skill_trees: %w", e.Where, err))
 				continue
 			}
-			trees.SetInherited(job, ts, treeData.Inheritors(job))
+			trees.SetInherited(job, ts, inheritors(treeData, newJobs, job))
 		}
 	}
 	if len(errs) > 0 {
@@ -223,4 +241,35 @@ func treeSkill(e mod.TreeEntry, db *skill.DB, names *skillNames) (skill.TreeSkil
 		ts.Requires = append(ts.Requires, [2]int{need.ID, r.Level})
 	}
 	return ts, job, nil
+}
+
+// inheritors returns the jobs whose trees take a job's tree, directly or
+// not: through rAthena's Inherit, and through the inherits of new jobs.
+func inheritors(d *skill.TreeData, newJobs map[int][]int, job int) []int {
+	out := d.Inheritors(job)
+	if len(newJobs) == 0 {
+		return out
+	}
+	seen := map[int]bool{job: true}
+	for _, j := range out {
+		seen[j] = true
+	}
+	for changed := true; changed; {
+		changed = false
+		for _, id := range slices.Sorted(maps.Keys(newJobs)) {
+			if seen[id] {
+				continue
+			}
+			for _, from := range newJobs[id] {
+				if seen[from] {
+					seen[id] = true
+					out = append(out, id)
+					changed = true
+					break
+				}
+			}
+		}
+	}
+	slices.Sort(out)
+	return out
 }

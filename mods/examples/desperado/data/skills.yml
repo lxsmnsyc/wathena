@@ -1,0 +1,16 @@
+# Quick Draw: two fast shots at one enemy. It shows the icon and
+# animation of Triple Action. The server gives it an ID in the mod range
+# (from 20,000) the first time it loads.
+- name: example.desperado:QUICK_DRAW
+  display_name: Quick Draw
+  icon: GS_TRIPLEACTION
+  max_level: 5
+  type: weapon
+  target: enemy
+  range: 9
+  after_cast_delay: 500
+  cooldown: 1000
+  requirements:
+    sp: [8, 10, 12, 14, 16]
+    weapons: [revolver, rifle, gatling, shotgun, grenade]
+  script: scripts/skills/quick_draw.lua

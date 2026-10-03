@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -20,7 +21,7 @@ func overlaySet(t *testing.T, monsters string, scripts ...string) *mod.Set {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{
-		"a/mod.yaml":          "id: example.a\nname: A\nversion: 1.0.0\napi: experimental\n",
+		"a/mod.yaml":          "id: example.a\nname: A\nversion: 1.0.0\napi: 1.0\n",
 		"a/data/monsters.yml": monsters,
 	}
 	for _, p := range scripts {
@@ -95,7 +96,7 @@ func TestMonsterOverlay(t *testing.T) {
   mvp_drops: [{item: Jellopy, rate: 1000}]
   skills:
     - {skill: NPC_SUMMONSLAVE, state: idle, rate: 1000, target: self, condition: slaves_below, condition_value: 2, summons: [PORING, example.a:SMALL_PORING]}
-    - {skill: NPC_EMOTION, state: attack, emotion: surprise, chat: "Boing!"}
+    - {skill: NPC_EMOTION, state: attack, emotion: [surprise, anger], modes: [can_move, aggressive], chat: "Boing!", chat_color: 0xFF8000}
     - {skill: AL_HEAL, level: 5, target: self, condition: hp_between, condition_value: [10, 50]}
   script: scripts/monsters/big.lua
 - name: example.a:SMALL_PORING
@@ -132,7 +133,8 @@ func TestMonsterOverlay(t *testing.T) {
 	if s := big.Skills[0]; s.ID != mob.IDSummonSlave || s.State != mob.StateIdle || s.Condition != mob.CondSlavesBelow || s.Value != 2 || len(s.Summons) != 2 || s.Summons[1] != 100_001 {
 		t.Errorf("summon %+v", s)
 	}
-	if s := big.Skills[1]; s.Emotion != 0 || s.Chat != "Boing!" || s.State != mob.StateBerserk {
+	if s := big.Skills[1]; !slices.Equal(s.Emotions, []int{0, 7}) || s.Chat != "Boing!" || s.ChatColor != 0xFF8000 ||
+		s.State != mob.StateBerserk || !s.HasModes || s.Modes != mob.ModeCanMove|mob.ModeAggressive {
 		t.Errorf("emotion %+v", s)
 	}
 	if s := big.Skills[2]; s.Level != 5 || s.Value != 10 || s.Value2 != 50 || s.State != mob.StateAny {

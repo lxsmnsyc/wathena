@@ -87,6 +87,9 @@ func (z *Zone) wearer(p *Player) *item.Wearer {
 	}
 	if z.Status != nil {
 		w.MapID, _ = z.Status.MapID(p.char.Job)
+		if m, ok := z.Status.EquipMapID(p.char.Job); ok && m != w.MapID {
+			w.EquipsAs, w.EquipMapID = true, m
+		}
 		w.Renewal = z.Status.Renewal()
 	}
 	return w

@@ -20,7 +20,7 @@ import (
 func skillSet(t *testing.T, manifest string, files map[string]string) *mod.Set {
 	t.Helper()
 	dir := t.TempDir()
-	files["mod.yaml"] = "id: example.a\nname: A\nversion: 1.0.0\napi: experimental\n" + manifest
+	files["mod.yaml"] = "id: example.a\nname: A\nversion: 1.0.0\napi: 1.0\n" + manifest
 	for p, s := range files {
 		full := filepath.Join(dir, "a", filepath.FromSlash(p))
 		if err := os.MkdirAll(filepath.Dir(full), 0o750); err != nil {
@@ -65,7 +65,7 @@ func loadModSkills(t *testing.T, set *mod.Set) (*skill.DB, *skill.Trees, error) 
 		t.Fatal(err)
 	}
 	db, trees, _, err := modSkills(context.Background(), set, reference.Renewal, ids, testConstants(t),
-		map[string]uint32{"Red_Gemstone": 716}, scripts)
+		map[string]uint32{"Red_Gemstone": 716}, scripts, nil)
 	return db, trees, err
 }
 

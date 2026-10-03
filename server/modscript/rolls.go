@@ -95,6 +95,18 @@ func (r *Runtime) rollHost(what string) (RollHost, error) {
 // decision 23, "Tests").
 func (r *Runtime) giveRoll(v script.Value) (GiveRoll, error) {
 	const what = "player:give_item"
+	if _, ok := v.AsTable(); ok && (!r.opts.Testing || r.current != nil) {
+		if err := r.need(what+" with a table of rolls", "items.modify_rolls"); err != nil {
+			return GiveRoll{}, err
+		}
+	}
+	return ReadGiveRoll(what, v)
+}
+
+// ReadGiveRoll reads the roll option of player:give_item, or of
+// world:equip in a test case. what names the call in errors. It does not
+// check permissions.
+func ReadGiveRoll(what string, v script.Value) (GiveRoll, error) {
 	if v.IsNil() {
 		return GiveRoll{Mode: RollDefault}, nil
 	}
@@ -107,11 +119,6 @@ func (r *Runtime) giveRoll(v script.Value) (GiveRoll, error) {
 	t, ok := v.AsTable()
 	if !ok {
 		return GiveRoll{}, errors.New(what + ": roll is \"random\", \"default\" or a table of values, such as { boss_damage = 31 }")
-	}
-	if !r.opts.Testing || r.current != nil {
-		if err := r.need(what+" with a table of rolls", "items.modify_rolls"); err != nil {
-			return GiveRoll{}, err
-		}
 	}
 	out := GiveRoll{Mode: RollSet, Values: map[string]int{}}
 	for _, f := range t.Fields {

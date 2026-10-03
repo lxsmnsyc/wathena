@@ -6,14 +6,7 @@ Each row of rAthena's `mob_skill_db.txt` becomes an entry of a monster's `skills
 
 | Rows | Monsters | Full | Partial |
 |---:|---:|---:|---:|
-| 5494 | 703 | 5270 | 224 |
-
-## Lost parts
-
-| Part | Rows |
-|---|---:|
-| the mode change of NPC_EMOTION | 216 |
-| the mode change of NPC_EMOTION_ON | 8 |
+| 5494 | 703 | 5494 | 0 |
 
 ## Rows per skill
 

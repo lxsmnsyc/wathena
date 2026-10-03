@@ -215,6 +215,33 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 		if isPC && target.Skill(skillCloaking) < 3 && !en.cloakWall(target) {
 			return false
 		}
+	case SCModechange:
+		// val2 sets the mode, val3 adds modes and val4 removes them. A
+		// new change piles up with the one before. A change that leaves
+		// the base mode ends the one before instead.
+		base := target.Base()
+		if base == nil {
+			return false
+		}
+		if e := sc.Get(typ); e != nil {
+			if val2 == 0 {
+				val2 = e.Val2
+			}
+			val3 |= e.Val3
+			val4 |= e.Val4
+		}
+		mode := base.Mode
+		if val2 != 0 {
+			mode = uint32(val2) // #nosec G115 -- a mode's bits.
+		}
+		mode &^= uint32(val4) // #nosec G115 -- as above.
+		mode |= uint32(val3)  // #nosec G115 -- as above.
+		if mode == base.Mode {
+			if sc.Has(typ) {
+				return en.End(target, typ, ReasonRemoved)
+			}
+			return false
+		}
 	case SCStrfood, SCAgifood, SCVitfood, SCIntfood, SCDexfood, SCLukfood,
 		SCFoodStrCash, SCFoodAgiCash, SCFoodVitCash, SCFoodIntCash, SCFoodDexCash, SCFoodLukCash:
 		// A stronger food of the other kind keeps a weaker one out.

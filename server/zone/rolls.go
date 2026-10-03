@@ -219,12 +219,21 @@ func (h scriptHost) GiveRolledItem(id int64, itemID uint32, amount int, rentSeco
 	if err != nil {
 		return false, err
 	}
-	z := h.z
+	ok, err := h.z.giveRolled(p, itemID, amount, roll)
+	if err != nil {
+		return false, fmt.Errorf("player:give_item: %w", err)
+	}
+	return ok, nil
+}
+
+// giveRolled gives items with the roll option of player:give_item. It
+// returns false when they do not fit.
+func (z *Zone) giveRolled(p *Player, itemID uint32, amount int, roll modscript.GiveRoll) (bool, error) {
 	d := z.Items.Get(itemID)
 	if roll.Mode == modscript.RollSet {
 		for name := range roll.Values {
 			if d.Rolls[name] == nil {
-				return false, fmt.Errorf("player:give_item: item %s has no roll %q", d.AegisName, name)
+				return false, fmt.Errorf("item %s has no roll %q", d.AegisName, name)
 			}
 		}
 	}

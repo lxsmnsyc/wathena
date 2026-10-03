@@ -947,6 +947,10 @@ for _, test in ipairs({ "is_transcendent", "is_baby", "is_third", "is_fourth", "
 		return (call(H.jobs_test, test, job))
 	end
 end
+job_tests.id = function(name)
+	check(type(name) == "string", "jobs.id: want a job's name, such as \"knight\" or \"example.jobs:Desperado\"")
+	return (call(H.jobs_id, name))
+end
 job_tests.next_jobs = function(job)
 	check(math_type(job) == "integer", "jobs.next_jobs: want a job, such as player.job")
 	return (call(H.jobs_next, job))
@@ -1038,6 +1042,22 @@ new_world, world_ids = handle_type("test world", {
 		check(id ~= nil, "world:use_item: want a player from world:new_player")
 		check(math_type(item) == "integer", "world:use_item: want an item from items.id")
 		return (world_call("use_item", id, item))
+	end,
+	equip = function(self, player, item, options)
+		local id = player_ids[player]
+		check(id ~= nil, "world:equip: want a player from world:new_player")
+		check(math_type(item) == "integer", "world:equip: want an item from items.id")
+		local roll = nil
+		if options ~= nil then
+			check(type(options) == "table", "world:equip: the options must be a table, such as { roll = \"random\" }")
+			for k, v in pairs(options) do
+				check(k == "roll", "world:equip: the only option is roll")
+				check(v == "random" or v == "default" or type(v) == "table",
+					"world:equip: roll is \"random\", \"default\" or a table of values, such as { boss_damage = 31 }")
+				roll = v
+			end
+		end
+		return new_equipped(world_call("equip", id, item, roll))
 	end,
 	advance = function(self, milliseconds)
 		check(math_type(milliseconds) == "integer" and milliseconds >= 0, "world:advance: milliseconds must be an integer of 0 or more")
@@ -1370,6 +1390,9 @@ function R.invoke(fn, ...)
 		elseif kind == "status" then
 			-- The status event object: target and source are handles.
 			value = readonly("status event", with_handles(value))
+		elseif kind == "job_change" then
+			-- The job_change object: player is a handle.
+			value = readonly("job change", { player = new_player(value.player), from = value.from, to = value.to })
 		end
 		args[#args + 1] = value
 	end

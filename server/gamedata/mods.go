@@ -16,6 +16,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/tools/convert"
@@ -48,6 +49,11 @@ type Mods struct {
 	// RandomOptions are the random options and groups with the mods'
 	// overlays.
 	RandomOptions *mod.RandomOptions
+	// Jobs are the job records: core's with the mods' data/jobs.yml.
+	// JobTables are the job tables built from them, or nil when LoadMods
+	// had none to start from.
+	Jobs      *Jobs
+	JobTables *status.Tables
 	// Zone is what every zone gets.
 	Zone *zone.Mods
 }
@@ -59,9 +65,11 @@ type Mods struct {
 // core's files: cfg.Core is set to them.
 //
 // monsters are the core monsters, and tables the exp and drop tables,
-// which may be nil. Mods' monster overlays apply over them.
+// which may be nil. Mods' monster overlays apply over them. jobs are the
+// job tables, which may be nil: the result's JobTables are built from the
+// job records over them, and the exp tables get the records' exp.
 func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode reference.Mode, items *item.Data, monsters map[uint32]Monster,
-	tables *progression.Tables, ids mod.IDStore, core *convert.Core, log *slog.Logger) (*Mods, error) {
+	tables *progression.Tables, jobs *status.Tables, ids mod.IDStore, core *convert.Core, log *slog.Logger) (*Mods, error) {
 	cfg.Core = core.Files
 	set, err := mod.Resolve(found, cfg)
 	if err != nil {
@@ -82,12 +90,22 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	if err != nil {
 		return nil, err
 	}
+	jobRecs, err := modJobs(ctx, set, mode, assigned, core.Constants)
+	if err != nil {
+		return nil, err
+	}
+	for _, n := range jobRecs.Overlay.Notes {
+		log.Warn("mods: " + n)
+	}
 	byName := make(map[string]uint32, len(items.Items))
 	for _, d := range items.Items {
 		byName[d.AegisName] = d.ID
 	}
 	merged, err := set.Items(ctx, items, assigned, core.Names(byName))
 	if err != nil {
+		return nil, err
+	}
+	if err := itemJobs(merged, jobRecs); err != nil {
 		return nil, err
 	}
 	for _, a := range assigned.Assigned {
@@ -107,7 +125,10 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	for _, n := range append(merged.Overlay.Notes, npcOverlay.Notes...) {
 		log.Warn("mods: " + n)
 	}
-	out := &Mods{Set: set, Items: merged, NPCs: map[string][]zone.NPC{}, NPCOverlay: npcOverlay}
+	out := &Mods{Set: set, Items: merged, NPCs: map[string][]zone.NPC{}, NPCOverlay: npcOverlay, Jobs: jobRecs}
+	if jobs != nil {
+		out.JobTables = jobs.WithJobs(jobRecs.StatusData())
+	}
 	shops, err := npcShops(placed, merged)
 	if err != nil {
 		return nil, err
@@ -132,7 +153,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	if err := checkItemScripts(merged.Data, scripts); err != nil {
 		return nil, err
 	}
-	if out.Skills, out.SkillTrees, out.SkillOverlay, err = modSkills(ctx, set, mode, assigned, core.Constants, merged.IDs, scripts); err != nil {
+	if out.Skills, out.SkillTrees, out.SkillOverlay, err = modSkills(ctx, set, mode, assigned, core.Constants, merged.IDs, scripts, jobRecs); err != nil {
 		return nil, err
 	}
 	for _, n := range out.SkillOverlay.Notes {
@@ -155,6 +176,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 		all = append(all, m.ID())
 	}
 	if tables != nil {
+		tables = tables.WithJobs(jobRecs.ExpTables())
 		types := map[uint32]string{}
 		for _, d := range merged.Data.Items {
 			types[d.ID] = d.Type
@@ -219,7 +241,8 @@ func checkOptionGroups(monsters map[uint32]Monster, opts *mod.RandomOptions) err
 }
 
 // labelRolls sets how the client shows each roll and random option: the
-// words of the first static bonus that reads it, as bonus.Describe.
+// words of the first static bonus that reads it, as bonus.Describe. A
+// roll's display_name replaces those words, and its unit stays.
 func labelRolls(items *item.Data, opts *mod.RandomOptions, consts *constants.Data) {
 	var modules map[string]*constants.Module
 	if consts != nil {
@@ -241,7 +264,10 @@ func labelRolls(items *item.Data, opts *mod.RandomOptions, consts *constants.Dat
 					break
 				}
 			}
-			if r.Label == "" {
+			switch {
+			case r.DisplayName != "":
+				r.Label = r.DisplayName
+			case r.Label == "":
 				r.Label = strings.ReplaceAll(name, "_", " ")
 				r.Label = strings.ToUpper(r.Label[:1]) + r.Label[1:]
 			}
@@ -328,4 +354,43 @@ func NPCSprites(mode reference.Mode) (map[string]uint32, error) {
 		out[strings.ToUpper(s.Sprite)] = s.ID
 	}
 	return out, nil
+}
+
+// itemJobs resolves the job names of items' jobs lists: a core job sets
+// the bits of rAthena's Jobs for its class, as item_db's Jobs, and a mod
+// job is listed by ID.
+func itemJobs(items *mod.Items, jobs *Jobs) error {
+	var errs []error
+	for i := range items.Data.Items {
+		d := &items.Data.Items[i]
+		if len(d.JobNames) == 0 {
+			continue
+		}
+		mask := item.JobMask{}
+		d.JobIDs = nil
+		for _, name := range d.JobNames {
+			id, ok := jobs.ID(name)
+			if !ok {
+				where := ""
+				if r := items.Overlay.Record(d.AegisName); r != nil {
+					where = r.Where + ": "
+				}
+				errs = append(errs, fmt.Errorf("%sitems %s: jobs: %q is not a job: want a name of wa.jobs, such as knight, or a mod job's full name", where, d.AegisName, name))
+				continue
+			}
+			r := jobs.Records[id]
+			if r.Data.Info.Mod != "" {
+				d.JobIDs = append(d.JobIDs, id)
+				continue
+			}
+			// itemdb_jobid2mapid: the bits of rAthena's Jobs for the
+			// job's class.
+			c := item.ClassMask(uint64(r.Data.MapID)) // #nosec G115 -- map job IDs are positive.
+			for k := range mask {
+				mask[k] |= c[k]
+			}
+		}
+		d.Jobs = &mask
+	}
+	return errors.Join(errs...)
 }

@@ -4,7 +4,7 @@
 id: example.job-trainer
 name: Job Trainer
 version: 0.1.0
-api: experimental
+api: 1.0
 description: A trainer who lowers one skill or one stat for a fee, and tests of the job change path.
 authors:
   - name: wAthena contributors

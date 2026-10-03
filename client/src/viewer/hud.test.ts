@@ -57,6 +57,16 @@ describe('status lines', () => {
   it('shows levels before exp arrives', () => {
     expect(expLine(new Map([[StatId.BASE_LEVEL, 1n]]))).toBe('Base Lv 1');
   });
+
+  it('names a job by the name the server sent', () => {
+    const stats = new Map<StatId, bigint>([
+      [StatId.BASE_LEVEL, 60n],
+      [StatId.JOB_LEVEL, 1n],
+      [StatId.JOB, 10000n],
+    ]);
+    expect(expLine(stats)).toBe('Job 10000: Base Lv 60, Job Lv 1');
+    expect(expLine(stats, new Map([[10000, 'Desperado']]))).toBe('Desperado: Base Lv 60, Job Lv 1');
+  });
 });
 
 describe('jobName', () => {

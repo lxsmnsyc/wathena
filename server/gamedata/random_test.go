@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/tools/convert"
@@ -246,4 +247,37 @@ func compareStats(t *testing.T, g *item.OptionGroup, name string, seed uint64, n
 		}
 	}
 	return cells
+}
+
+// TestRollLabels checks how the client names rolls: a roll's
+// display_name, or the words of the first static bonus that reads it
+// with its unit, or the roll's name.
+func TestRollLabels(t *testing.T) {
+	static := func(entry ...any) *bonus.Bonus {
+		b, err := bonus.FromData(entry, &bonus.Tables{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+	d := item.Def{ID: 1, AegisName: "Charm", Rolls: map[string]*item.RollDef{
+		"luck":     {Min: 1, Max: 5, Default: 3, DisplayName: "Clover luck"},
+		"critical": {Min: 1, Max: 5, Default: 3},
+		"unused":   {Min: 1, Max: 5, Default: 3},
+	}, Static: []*bonus.Bonus{
+		static("luk", map[string]any{"roll": "luck"}),
+		static("crit", map[string]any{"roll": "critical"}),
+	}}
+	data := &item.Data{Items: []item.Def{d}}
+	labelRolls(data, &mod.RandomOptions{}, nil)
+	rolls := data.Items[0].Rolls
+	want, _ := bonus.Describe(d.Static[1], func(string, int64) string { return "" })
+	for name, label := range map[string]string{"luck": "Clover luck", "critical": want, "unused": "Unused"} {
+		if got := rolls[name].Label; got != label {
+			t.Errorf("roll %s: label %q, want %q", name, got, label)
+		}
+	}
+	if _, unit := bonus.Describe(d.Static[0], func(string, int64) string { return "" }); rolls["luck"].Unit != unit {
+		t.Errorf("roll luck: unit %q, want the bonus's %q", rolls["luck"].Unit, unit)
+	}
 }

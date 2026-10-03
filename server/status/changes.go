@@ -982,6 +982,29 @@ func capDefType(v int, renewal bool) int {
 	return int(int8(capValue(v, 0, math.MaxUint8))) // #nosec G115 -- defType is a signed char in pre-renewal.
 }
 
+// modeMask is rAthena's MD_MASK: the modes that SC_MODECHANGE's val2
+// sets.
+const modeMask = 0xFFFF
+
+// calcMode is status_calc_mode: SC_MODECHANGE's val2 sets the modes of
+// MD_MASK, val3 adds modes and val4 removes them.
+func calcMode(l *sc.List, mode uint32) uint32 {
+	e := l.Get(sc.SCModechange)
+	if e == nil {
+		return mode
+	}
+	if e.Val2 != 0 {
+		mode = mode&^modeMask | uint32(e.Val2) // #nosec G115 -- a mode's bits.
+	}
+	if e.Val3 != 0 {
+		mode |= uint32(e.Val3) // #nosec G115 -- as above.
+	}
+	if e.Val4 != 0 {
+		mode &^= uint32(e.Val4) // #nosec G115 -- as above.
+	}
+	return mode
+}
+
 // CalcMonster is status_calc_bl_main for a monster: its battle status
 // from its base status and its statuses. A monster without statuses keeps
 // its base status. renewal picks the formulas.
@@ -991,6 +1014,7 @@ func CalcMonster(base *battle.Status, l *sc.List, renewal bool) battle.Status {
 		return s
 	}
 	b := base
+	s.Mode = calcMode(l, b.Mode)
 	s.Str = calcStr(l, b.Str)
 	s.Agi = calcAgi(l, b.Agi)
 	s.Vit = calcVit(l, b.Vit)

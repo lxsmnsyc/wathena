@@ -137,6 +137,12 @@ type Def struct {
 	View int `json:"view"`
 	// Jobs is item_data's class_base. nil is every job.
 	Jobs *JobMask `json:"jobs"`
+	// JobNames are the names of a jobs list in data/items.yml, such as
+	// [knight, example.jobs:Desperado]. server/gamedata turns them into
+	// Jobs, for core's jobs, and JobIDs, for mod jobs.
+	JobNames []string `json:"-"`
+	// JobIDs are the mod jobs that may use the item.
+	JobIDs []int `json:"-"`
 	// Classes is item_data's class_upper: the ITEMJ_ bits of the classes
 	// that may use the item. 0 is every class.
 	Classes uint32 `json:"classes"`

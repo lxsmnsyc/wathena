@@ -99,6 +99,10 @@ func TestItemRolls(t *testing.T) {
 		{"rolls: {a: {default: 1}, b: {default: 1}, c: {default: 1}, d: {default: 1}, e: {default: 1}, f: {default: 1}, g: {default: 1}, h: {default: 1}, i: {default: 1}}", "at most 8 rolls"},
 		{"rolls: {luck: {min: 1.5, max: 5, default: 3}}", "min"},
 		{"rolls: {luck: {default: 2, distribution: weighted, weights: [{value: [1, 3], weight: 1}]}}", ""},
+		{"rolls: {luck: {min: 1, max: 5, default: 3, display_name: Clover luck}}", ""},
+		{"rolls: {luck: {min: 1, max: 5, default: 3, display_name: \"\"}}", "roll luck: display_name is 1 to 64 bytes"},
+		{"rolls: {luck: {min: 1, max: 5, default: 3, display_name: " + strings.Repeat("x", 65) + "}}", "roll luck: display_name is 1 to 64 bytes"},
+		{"rolls: {luck: {min: 1, max: 5, default: 3, display_name: 5}}", "display_name"},
 	} {
 		dir := t.TempDir()
 		writeMod(t, dir, "a", map[string]string{"mod.yaml": manifest("example.a"),

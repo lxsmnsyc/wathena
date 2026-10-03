@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"maps"
 	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/bonus"
@@ -65,7 +67,22 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 			delete(fields, "display_name")
 			fields["name"] = v
 		}
+		// jobs is rAthena's three masks, or a list of job names, which
+		// server/gamedata resolves once the jobs are loaded.
+		names, isNames := jobNameList(fields["jobs"])
+		if isNames {
+			fields = maps.Clone(fields)
+			delete(fields, "jobs")
+		}
 		if err := applyFields(&d, fields); err != nil {
+			errs = append(errs, fmt.Errorf("%s: items %s: %w", r.Where, r.Name, err))
+			continue
+		}
+		if isNames {
+			d.JobNames, d.JobIDs, d.Jobs = names, nil, &item.JobMask{}
+			d.JobRestricted = true
+		}
+		if err := checkRollNames(fields["rolls"]); err != nil {
 			errs = append(errs, fmt.Errorf("%s: items %s: %w", r.Where, r.Name, err))
 			continue
 		}
@@ -112,6 +129,32 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 		names[d.AegisName] = d.ID
 	}
 	return &Items{Data: out, IDs: names, Overlay: o}, nil
+}
+
+// jobNameList reads an item's jobs field as a list of job names, such as
+// [knight, example.jobs:Desperado]. Three decimal strings are rAthena's
+// masks, not names.
+func jobNameList(v any) ([]string, bool) {
+	list, ok := v.([]any)
+	if !ok || len(list) == 0 {
+		return nil, false
+	}
+	var names []string
+	numbers := 0
+	for _, e := range list {
+		s, ok := e.(string)
+		if !ok {
+			return nil, false
+		}
+		if _, err := strconv.ParseUint(s, 10, 64); err == nil {
+			numbers++
+		}
+		names = append(names, s)
+	}
+	if numbers == len(list) {
+		return nil, false
+	}
+	return names, true
 }
 
 // applyFields sets fields on a record through its JSON form, so the
@@ -207,6 +250,19 @@ func checkItem(d *item.Def) error {
 	}
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// checkRollNames refuses an empty display_name in the rolls field of an
+// item record, which the item data cannot tell from no display_name.
+func checkRollNames(rolls any) error {
+	m, _ := rolls.(map[string]any)
+	for _, name := range slices.Sorted(maps.Keys(m)) {
+		r, _ := m[name].(map[string]any)
+		if v, ok := r["display_name"]; ok && v == "" {
+			return fmt.Errorf("roll %s: display_name is 1 to %d bytes", name, item.MaxRollDisplayName)
+		}
 	}
 	return nil
 }

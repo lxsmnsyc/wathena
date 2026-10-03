@@ -4,7 +4,7 @@
 id: example.halloween
 name: Halloween
 version: 0.1.0
-api: experimental
+api: 1.0
 description: Pumpkin Porings on the Prontera fields, a witch with a hat, a night that doubles their drops, and the Pumpkin King every evening.
 authors:
   - name: wAthena contributors

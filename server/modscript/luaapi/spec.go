@@ -259,16 +259,17 @@ var Modules = []Module{
 	{Name: "wa.headgear_effects", Local: "headgear_effects", Doc: "Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names.", Constants: true},
 	{Name: "wa.emotions", Local: "emotions", Doc: "Emotions for npc:show_emotion, from rAthena's ET_ names.", Constants: true},
 	{
-		Name: "wa.jobs", Local: "jobs", Doc: "Jobs, from rAthena's JOB_ names, and job tests.", Constants: true,
+		Name: "wa.jobs", Local: "jobs", Doc: "Jobs, from rAthena's JOB_ names, and job tests. The job tests work with mod jobs too.", Constants: true,
 		Funcs: []Func{
+			{Name: "id", Params: []Param{{"name", "string", "A name of wa.jobs, such as knight, or a mod job's full name, such as example.jobs:Desperado."}}, Returns: "integer", Doc: "The job's ID. An unknown name raises an error.", Permission: "game.read"},
 			{Name: "is_transcendent", Params: []Param{{"job", "integer", "A job, such as player.job."}}, Returns: "boolean", Doc: "Whether the job is a transcendent job."},
 			{Name: "is_baby", Params: []Param{{"job", "integer", ""}}, Returns: "boolean", Doc: "Whether the job is a baby job."},
 			{Name: "is_third", Params: []Param{{"job", "integer", ""}}, Returns: "boolean", Doc: "Whether the job is a third job."},
 			{Name: "is_fourth", Params: []Param{{"job", "integer", ""}}, Returns: "boolean", Doc: "Whether the job is a fourth job."},
-			{Name: "base_job", Params: []Param{{"job", "integer", ""}}, Returns: "integer", Doc: "rAthena's BaseJob: a Lord Knight is a Knight."},
+			{Name: "base_job", Params: []Param{{"job", "integer", ""}}, Returns: "integer", Doc: "rAthena's BaseJob: a Lord Knight is a Knight. A job record's base_job."},
 			{Name: "first_job", Params: []Param{{"job", "integer", ""}}, Returns: "integer", Doc: "rAthena's BaseClass: a Knight is a Swordman."},
 			{Name: "next_jobs", Params: []Param{{"job", "integer", ""}}, Returns: "integer[]",
-				Doc: "The jobs a job can change into, in job ID order: a Novice into a first class or a Super Novice, a High Novice into a transcendent first class, a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other jobs have none until third classes exist."},
+				Doc: "The jobs a job can change into, in job ID order: the jobs whose record lists it in changes_from. In core's records a Novice changes into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other core jobs have none until third classes exist."},
 		},
 	},
 	{
@@ -377,8 +378,8 @@ var Classes = []Class{
 			{Name: "mark_minimap", Params: []Param{{"id", "integer", ""}, {"x", "integer", ""}, {"y", "integer", ""}, {"color", "integer", "0xRRGGBB."}}, Doc: "Marks a cell on the minimap, as viewpoint. A mark with the same ID replaces it."},
 			{Name: "unmark_minimap", Params: []Param{{"id", "integer", ""}}, Doc: "Removes a minimap mark."},
 			{Name: "open_shop", Params: []Param{{"shop", "string", "A shop record of data/npcs.yml: the mod's own name, or mod:Name."}}, Doc: "Opens a shop, as callshop."},
-			{Name: "change_job", Params: []Param{{"job", "integer", "A job from wa.jobs."}, {"options", "wa.ChangeJobOptions?", ""}}, Returns: "boolean",
-				Doc: "Changes the player's job, as jobchange with rAthena's pc_jobchange. Job level goes back to 1, and learned skills stay. A transcendent player stays in the line it had before its rebirth. Returns false, and changes nothing, when the job is not a valid next job (jobs.next_jobs). A male player who changes into a Dancer becomes a Bard, and the reverse."},
+			{Name: "change_job", Params: []Param{{"job", "integer", "A job from wa.jobs or jobs.id."}, {"options", "wa.ChangeJobOptions?", ""}}, Returns: "boolean",
+				Doc: "Changes the player's job, as jobchange with rAthena's pc_jobchange. Job level goes back to 1, and learned skills stay. A transcendent player stays in the line it had before its rebirth. Returns false, and changes nothing, when the job is not a valid next job (jobs.next_jobs) or the player lacks the base or job level that the job's changes_from asks. A male player who changes into a Dancer becomes a Bard, and the reverse. The job_change event follows a change."},
 			{Name: "rebirth", Returns: "boolean",
 				Doc: "Makes a second class at base level 99 and job level 50 or more a High Novice at base and job level 1, with 100 status points, First Aid and Trick Dead, as rAthena's rebirth. Its second class picks its transcendent jobs. Returns false, and changes nothing, for other players."},
 			{Name: "reset_skills", Doc: "Lowers every skill learned with skill points to 0 and refunds the points, as resetskill. Quest skills stay, and so does Basic Skill outside the Novice jobs."},
@@ -517,6 +518,8 @@ var Classes = []Class{
 			{Name: "talk", Params: []Param{playerParam, {"npc_name", "string", "The NPC's full name, its name in the mod, or the name players see when one NPC of the map has it."}, {"answers", "(integer|string)[]?", "A number picks a menu option, a string fills text input, and an integer fills number input."}},
 				Returns: "string", Doc: "Clicks the NPC and answers each step in order. Next is pressed without an answer. Returns everything the NPC said, one line per line. Fails when the conversation asks for more answers than given, or ends with answers left."},
 			{Name: "use_item", Params: []Param{playerParam, itemParam}, Doc: "Uses one of the player's items. It waits for the item use interval first. Fails when the player has no such item, or the use is refused."},
+			{Name: "equip", Params: []Param{playerParam, itemParam, {"options", "wa.EquipOptions?", ""}}, Returns: "wa.EquippedItem",
+				Doc: "Gives the player one copy of the item and puts it on. Returns the equipped copy, as player:get_equipped. Fails when the copy does not fit or cannot be equipped, such as by the player's job or level."},
 			{Name: "advance", Params: []Param{{"milliseconds", "integer", ""}}, Doc: "Moves the zone clock forward. Timers fire and conversations that wait go on."},
 			{Name: "spawn_monster", Params: []Param{{"spec", "wa.SpawnMonsterSpec", ""}}, Returns: "wa.Monster", Doc: "Places a monster on a cell. It does not come back after it dies."},
 			{Name: "kill", Params: []Param{playerParam, {"monster", "wa.Monster", "A living monster: from spawn_monster, get_monsters or spawning.monsters."}}, Doc: "The player kills the monster at once: the death event fires, and the player gets its exp and drops."},
@@ -562,6 +565,14 @@ var Classes = []Class{
 			{"x", "integer", ""},
 			{"y", "integer", ""},
 			{"skill", "integer?", "nil for a normal attack."},
+		},
+	},
+	{
+		Name: "wa.JobChange", Doc: "The object of the job_change event.",
+		Fields: []Field{
+			{"player", "wa.Player", "The player that changed jobs."},
+			{"from", "integer", "The job before the change."},
+			{"to", "integer", "The new job. A male player who changes into a Dancer is a Bard here."},
 		},
 	},
 	{
@@ -619,7 +630,7 @@ var Classes = []Class{
 			{"y", "integer?", ""},
 			{"area", "integer?", "Spreads the monsters within this many cells of x and y."},
 			{"respawn", "boolean?", "true: a dead monster comes back while the context lives, as a spawn line's monster. false by default: dead stays dead."},
-			{"respawn_milliseconds", "integer?", "With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay. Provisional."},
+			{"respawn_milliseconds", "integer?", "With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay."},
 		},
 	},
 	{
@@ -890,6 +901,12 @@ var Classes = []Class{
 		},
 	},
 	{
+		Name: "wa.EquipOptions", Testing: true, Doc: "Options of world:equip.",
+		Fields: []Field{
+			{"roll", `"random"|"default"|table<string, integer>|nil`, "How the copy's rolls are set, as the roll option of player:give_item. A table needs no permission here."},
+		},
+	},
+	{
 		Name: "wa.SpawnMonsterSpec", Testing: true, Doc: "The monster of world:spawn_monster.",
 		Fields: []Field{
 			{"monster", "integer", "From monsters.id."},
@@ -956,6 +973,7 @@ var Events = []Event{
 	{Name: "death", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"death", "wa.Death", ""}}, Doc: "A player or a monster died on the context's map. Options narrow it."},
 	{Name: "base_level_up", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "The player gained a base level."},
 	{Name: "job_level_up", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "The player gained a job level."},
+	{Name: "job_change", Kinds: []string{"mod", "event"}, Params: []Param{{"change", "wa.JobChange", ""}}, Doc: "The player changed jobs: player:change_job, player:rebirth, or a converted jobchange. It fires after the stats and skills of the new job are set."},
 	{Name: "click", Kinds: []string{"npc"}, Params: []Param{playerParam, {"conversation", "wa.Conversation", ""}}, Doc: "A player talks to the NPC."},
 	{Name: "touch", Kinds: []string{"npc"}, Params: []Param{playerParam}, Doc: "A player walks into the NPC's area. It does not fire yet."},
 	{Name: "use", Kinds: []string{"item"}, Params: []Param{playerParam}, Doc: "The item is used."},

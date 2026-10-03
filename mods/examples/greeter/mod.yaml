@@ -3,7 +3,7 @@
 id: example.greeter
 name: Greeter
 version: 0.1.0
-api: experimental
+api: 1.0
 description: Greets players when they log in, and places a greeter NPC.
 authors:
   - name: wAthena contributors

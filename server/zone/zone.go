@@ -686,7 +686,7 @@ func (z *Zone) join(p *Player) joinResult {
 	}
 	p.load = nil
 	p.record = c.Info
-	p.Look = Look{Job: uint32(viewJob(c.Job, c.Options)), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
+	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), c.Options)), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
 	h := p.arrival
 	p.arrival = nil
@@ -759,6 +759,9 @@ func (z *Zone) join(p *Player) joinResult {
 		}
 		// The first frame carries the levels and exp.
 		p.pending = append(p.pending, z.progressStats(p, nil))
+	}
+	if z.Status != nil {
+		p.pending = append(p.pending, z.jobNameEvent(p.char.Job))
 	}
 	z.recalc(p)
 	// HP and SP are the saved ones, up to their maximum. A character that

@@ -322,10 +322,12 @@ func runAll(name string, args []string) error {
 			return err
 		}
 	}
-	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, monsterData, tables, ids, core, log)
+	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, monsterData, tables, jobs, ids, core, log)
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
+	// The job tables come from the job records: core's and the mods'.
+	jobs = loaded.all.JobTables
 	// The ruleset's flags pick the formulas that player stats use.
 	if err := gamedata.ApplyRuleset(jobs, loaded.set.Ruleset); err != nil {
 		return fmt.Errorf("ruleset: %w", err)

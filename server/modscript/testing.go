@@ -16,7 +16,7 @@ import (
 // its own Lua state, and the work runs mod scripts.
 
 // TestWorld does what a test case's world asks for: new_player, talk,
-// use_item, advance, spawn_monster and kill. args are the values the
+// use_item, equip, advance, spawn_monster and kill. args are the values the
 // world method passed. A returned error fails the case at the line that
 // called the method.
 type TestWorld interface {

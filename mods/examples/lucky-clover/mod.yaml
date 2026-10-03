@@ -5,7 +5,7 @@
 id: example.lucky-clover
 name: Lucky Clover
 version: 0.1.0
-api: experimental
+api: 1.0
 description: A Clover Charm with rolled luck, Clover Porings on prt_fild09 that drop it with random options, and a smith who rerolls its luck for a fee.
 authors:
   - name: wAthena contributors

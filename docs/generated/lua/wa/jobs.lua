@@ -1,7 +1,7 @@
 ---@meta wa.jobs
 -- Generated from server/modscript/luaapi. Do not edit: wactl mod types writes it again.
 
----Jobs, from rAthena's JOB_ names, and job tests.
+---Jobs, from rAthena's JOB_ names, and job tests. The job tests work with mod jobs too.
 ---@class wa.jobs
 ---@field abyss_chaser integer 4260, rAthena's JOB_ABYSS_CHASER.
 ---@field acolyte integer 4, rAthena's JOB_ACOLYTE.
@@ -199,6 +199,13 @@
 ---@field xmas integer 26, rAthena's JOB_XMAS.
 local jobs = {}
 
+---The job's ID. An unknown name raises an error.
+---
+---Needs the permission `game.read`.
+---@param name string A name of wa.jobs, such as knight, or a mod job's full name, such as example.jobs:Desperado.
+---@return integer
+function jobs.id(name) end
+
 ---Whether the job is a transcendent job.
 ---@param job integer A job, such as player.job.
 ---@return boolean
@@ -219,7 +226,7 @@ function jobs.is_third(job) end
 ---@return boolean
 function jobs.is_fourth(job) end
 
----rAthena's BaseJob: a Lord Knight is a Knight.
+---rAthena's BaseJob: a Lord Knight is a Knight. A job record's base_job.
 ---@param job integer
 ---@return integer
 function jobs.base_job(job) end
@@ -229,7 +236,7 @@ function jobs.base_job(job) end
 ---@return integer
 function jobs.first_job(job) end
 
----The jobs a job can change into, in job ID order: a Novice into a first class or a Super Novice, a High Novice into a transcendent first class, a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other jobs have none until third classes exist.
+---The jobs a job can change into, in job ID order: the jobs whose record lists it in changes_from. In core's records a Novice changes into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other core jobs have none until third classes exist.
 ---@param job integer
 ---@return integer[]
 function jobs.next_jobs(job) end

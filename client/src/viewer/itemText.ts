@@ -97,6 +97,10 @@ export function refinedLabel(label: string, refine: number): string {
 
 /** A rolled value of an item copy, as ItemRoll (strategy section 5.4). */
 export interface RollLine {
+  /**
+   * The roll's display_name when its item data sets one, or else the words of
+   * the first static bonus that reads it, as the server sends them.
+   */
   label: string;
   value: number;
   /** False for a hidden roll of a copy that is not identified yet. */

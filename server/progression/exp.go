@@ -236,3 +236,55 @@ func applyRate(val int64, rate int) int64 {
 	}
 	return val * int64(rate) / 100
 }
+
+// JobExp is a job's exp tables, as a job record of data/jobs.yml holds
+// them: BaseExp[i] is the exp to go from base level i+1 to i+2, and
+// JobExp the same for job levels.
+type JobExp struct {
+	MaxBaseLevel, MaxJobLevel int
+	BaseExp, JobExp           []int64
+}
+
+// ExpOf returns a job's exp tables, as JobExp. ok is false for a job
+// without them.
+func (t *Tables) ExpOf(job int) (JobExp, bool) {
+	j := t.jobs[job]
+	if j == nil {
+		return JobExp{}, false
+	}
+	e := JobExp{MaxBaseLevel: j.maxBase, MaxJobLevel: j.maxJob}
+	e.BaseExp = trimZeros(j.baseExp[:])
+	e.JobExp = trimZeros(j.jobExp[:])
+	return e, true
+}
+
+// trimZeros returns a copy of a table without its trailing zeros.
+func trimZeros(table []int64) []int64 {
+	n := len(table)
+	for n > 0 && table[n-1] == 0 {
+		n--
+	}
+	return append([]int64(nil), table[:n]...)
+}
+
+// WithJobs returns tables whose exp tables are the given ones, by job
+// ID: every job, core's included. The other tables stay shared.
+func (t *Tables) WithJobs(jobs map[int]JobExp) *Tables {
+	c := *t
+	c.jobs = make(map[int]*job, len(jobs))
+	for id, e := range jobs {
+		j := &job{maxBase: levelCap(e.MaxBaseLevel), maxJob: levelCap(e.MaxJobLevel)}
+		for i, exp := range e.BaseExp {
+			if level := i + 1; level <= j.maxBase && level <= MaxLevel {
+				j.baseExp[i] = exp
+			}
+		}
+		for i, exp := range e.JobExp {
+			if level := i + 1; level <= j.maxJob && level <= MaxLevel {
+				j.jobExp[i] = exp
+			}
+		}
+		c.jobs[id] = j
+	}
+	return &c
+}

@@ -233,8 +233,12 @@ export default class Online {
   onDropItemFailed: ((reason: DropItemFailure) => void) | undefined;
   /** Called when the player's pick up fails. */
   onPickUpFailed: ((reason: PickUpFailure) => void) | undefined;
-  /** Called for every local chat line, with the speaker's entity ID. */
-  onChat: ((from: number, name: string, text: string) => void) | undefined;
+  /**
+   * Called for every local chat line, with the speaker's entity ID, and
+   * the line's color as 0xrrggbb, or 0 for the log's color. A monster's
+   * line has a color.
+   */
+  onChat: ((from: number, name: string, text: string, color: number) => void) | undefined;
   /** Called for text the server sends to this player alone, such as a mod's message. */
   onServerText: ((text: string) => void) | undefined;
   /** Called for an announcement to the map or the world, with its color or 0. */
@@ -295,6 +299,8 @@ export default class Online {
   private readonly recent = new Recent();
   /** The player's own stats, as the server last sent them. */
   readonly stats = new Map<StatId, bigint>();
+  /** Job names from the server's JobName events, by job ID. */
+  readonly jobNames = new Map<number, string>();
   /** Events that arrived before the map loaded. */
   private waiting: Event[] = [];
   /** Entity names, by ID, from EntityAppear. */
@@ -683,6 +689,9 @@ export default class Online {
           });
           break;
         }
+        case 'jobName':
+          this.jobNames.set(e.body.value.job, e.body.value.name);
+          break;
         case 'itemRollsChange':
           this.onItemRollsChange?.(e.body.value.slot, stackRolls(e.body.value));
           break;
@@ -747,7 +756,7 @@ export default class Online {
         case 'chat': {
           const c = e.body.value;
           if (c.channel === ChatChannel.LOCAL) {
-            this.onChat?.(c.from, c.fromName, c.text);
+            this.onChat?.(c.from, c.fromName, c.text, c.color);
           } else if (c.channel === ChatChannel.SYSTEM) {
             this.onServerText?.(c.text);
           } else if (c.channel === ChatChannel.ANNOUNCEMENT) {

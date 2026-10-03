@@ -18,6 +18,7 @@
 ---| "death"
 ---| "base_level_up"
 ---| "job_level_up"
+---| "job_change"
 ---| "click"
 ---| "touch"
 ---| "use"
@@ -400,8 +401,8 @@ function wa_Player:unmark_minimap(id) end
 ---@param shop string A shop record of data/npcs.yml: the mod's own name, or mod:Name.
 function wa_Player:open_shop(shop) end
 
----Changes the player's job, as jobchange with rAthena's pc_jobchange. Job level goes back to 1, and learned skills stay. A transcendent player stays in the line it had before its rebirth. Returns false, and changes nothing, when the job is not a valid next job (jobs.next_jobs). A male player who changes into a Dancer becomes a Bard, and the reverse.
----@param job integer A job from wa.jobs.
+---Changes the player's job, as jobchange with rAthena's pc_jobchange. Job level goes back to 1, and learned skills stay. A transcendent player stays in the line it had before its rebirth. Returns false, and changes nothing, when the job is not a valid next job (jobs.next_jobs) or the player lacks the base or job level that the job's changes_from asks. A male player who changes into a Dancer becomes a Bard, and the reverse. The job_change event follows a change.
+---@param job integer A job from wa.jobs or jobs.id.
 ---@param options? wa.ChangeJobOptions
 ---@return boolean
 function wa_Player:change_job(job, options) end
@@ -759,6 +760,13 @@ function wa_TestWorld:talk(player, npc_name, answers) end
 ---@param item integer An item from items.id.
 function wa_TestWorld:use_item(player, item) end
 
+---Gives the player one copy of the item and puts it on. Returns the equipped copy, as player:get_equipped. Fails when the copy does not fit or cannot be equipped, such as by the player's job or level.
+---@param player wa.Player A player handle.
+---@param item integer An item from items.id.
+---@param options? wa.EquipOptions
+---@return wa.EquippedItem
+function wa_TestWorld:equip(player, item, options) end
+
 ---Moves the zone clock forward. Timers fire and conversations that wait go on.
 ---@param milliseconds integer
 function wa_TestWorld:advance(milliseconds) end
@@ -854,6 +862,13 @@ local wa_EventInstance = {}
 ---@field skill integer? nil for a normal attack.
 local wa_Death = {}
 
+---The object of the job_change event.
+---@class wa.JobChange
+---@field player wa.Player The player that changed jobs.
+---@field from integer The job before the change.
+---@field to integer The new job. A male player who changes into a Dancer is a Bard here.
+local wa_JobChange = {}
+
 ---The options of a death handler. Each one narrows the deaths that run it.
 ---@class wa.DeathOptions
 ---@field victim wa.Player|wa.Monster|nil One unit.
@@ -913,7 +928,7 @@ local wa_WhenOptions = {}
 ---@field y integer?
 ---@field area integer? Spreads the monsters within this many cells of x and y.
 ---@field respawn boolean? true: a dead monster comes back while the context lives, as a spawn line's monster. false by default: dead stays dead.
----@field respawn_milliseconds integer? With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay. Provisional.
+---@field respawn_milliseconds integer? With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay.
 local wa_SpawnSpec = {}
 
 ---The object of the damage event (0002a, "Item events").
@@ -1205,6 +1220,13 @@ local wa_TimedBonusOptions = {}
 ---@field skill_points integer? Skill points left to spend. 0 by default.
 ---@field status_points integer? Status points left to spend. Those of the base level by default.
 local wa_NewPlayerSpec = {}
+
+---Options of world:equip.
+---
+---It exists only in tests that wactl mod test runs.
+---@class wa.EquipOptions
+---@field roll "random"|"default"|table<string, integer>|nil How the copy's rolls are set, as the roll option of player:give_item. A table needs no permission here.
+local wa_EquipOptions = {}
 
 ---The monster of world:spawn_monster.
 ---

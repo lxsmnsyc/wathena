@@ -20,6 +20,16 @@ func TestNpcWeaponFormulas(t *testing.T) {
 		{"NPC_FIREATTACK", idNpcFireAttack, 1, 100, 96},
 		{"NPC_GROUNDATTACK", idNpcGroundAttack, 3, 300, 96},
 		{"NPC_UNDEADATTACK", idNpcUndeadAttack, 10, 1000, 96},
+		{"NPC_WATERATTACK", idNpcWaterAttack, 2, 200, 96},
+		{"NPC_WINDATTACK", idNpcWindAttack, 4, 400, 96},
+		{"NPC_POISONATTACK", idNpcPoisonAttack, 5, 500, 96},
+		{"NPC_HOLYATTACK", idNpcHolyAttack, 6, 600, 96},
+		{"NPC_DARKNESSATTACK", idNpcDarknessAttack, 7, 700, 96},
+		{"NPC_TELEKINESISATTACK", idNpcTelekinesisAttack, 8, 800, 96},
+		// WeaponSkillImpl: a plain weapon hit.
+		{"NPC_GUIDEDATTACK", idNpcGuidedAttack, 1, 100, 80},
+		{"NPC_RANGEATTACK", idNpcRangeAttack, 1, 100, 80},
+		{"NPC_HELMBRAKE", idNpcHelmBrake, 1, 100, 80},
 		// SkillMultiStageAttack: 25% per level.
 		{"NPC_COMBOATTACK", idNpcComboAttack, 4, 200, 80},
 		// SkillPiercingAttack: 75%.

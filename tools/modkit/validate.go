@@ -363,7 +363,11 @@ func records(l *Loaded) []Record {
 		}
 		out = append(out, rec)
 	}
-	for _, o := range []*mod.Overlay{l.NPCOverlay, l.MonsterOverlay, l.EventOverlay, l.SkillOverlay} {
+	var jobOverlay *mod.Overlay
+	if l.Jobs != nil {
+		jobOverlay = l.Jobs.Overlay
+	}
+	for _, o := range []*mod.Overlay{jobOverlay, l.NPCOverlay, l.MonsterOverlay, l.EventOverlay, l.SkillOverlay} {
 		if o == nil {
 			continue
 		}
@@ -375,6 +379,11 @@ func records(l *Loaded) []Record {
 			if o.Kind.Name == mod.MonsterKind.Name {
 				if mid, ok := l.Zone.MonsterIDs[strings.ToUpper(r.Name)]; ok {
 					rec.Fields = append(rec.Fields, RecordField{Name: "id", Value: json.Number(fmt.Sprint(mid)), SetBy: "server"})
+				}
+			}
+			if o.Kind.Name == mod.JobKind.Name && r.Mod != mod.Core {
+				if id, ok := l.Jobs.ID(r.Name); ok {
+					rec.Fields = append(rec.Fields, RecordField{Name: "id", Value: json.Number(fmt.Sprint(id)), SetBy: "server"})
 				}
 			}
 			if o.Kind.Name == mod.SkillKind.Name && r.Mod != mod.Core {

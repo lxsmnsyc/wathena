@@ -4,7 +4,7 @@
 id: example.wolf-pack
 name: Wolf Pack
 version: 0.1.0
-api: experimental
+api: 1.0
 description: An Alpha Wolf that calls its pack and sends it after its prey, and wolves that leave Novices alone.
 authors:
   - name: wAthena contributors

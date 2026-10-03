@@ -112,11 +112,26 @@ func TestRollCheck(t *testing.T) {
 		{RollDef{Default: 1, Distribution: Weighted, Weights: []Weight{{1, 1, 0}}}, "weight is"},
 		{RollDef{Min: 1, Max: 5, Default: 1, Weights: []Weight{{1, 1, 1}}}, "only a weighted"},
 		{RollDef{Min: 0, Max: 1 << 40, Default: 0}, "values are"},
+		{RollDef{Min: 1, Max: 5, Default: 3, DisplayName: strings.Repeat("x", 65)}, "display_name is 1 to 64 bytes"},
 	} {
 		err := c.d.Check()
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%+v: %v, want %q", c.d, err, c.want)
 		}
+	}
+}
+
+func TestRollDisplayName(t *testing.T) {
+	var d RollDef
+	if err := json.Unmarshal([]byte(`{"min": 1, "max": 5, "default": 3, "display_name": "Clover luck"}`), &d); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Check(); err != nil || d.DisplayName != "Clover luck" {
+		t.Errorf("%+v: %v", d, err)
+	}
+	d.DisplayName = strings.Repeat("x", 64)
+	if err := d.Check(); err != nil {
+		t.Errorf("64 bytes: %v", err)
 	}
 }
 

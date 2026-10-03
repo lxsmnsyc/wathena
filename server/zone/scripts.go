@@ -293,6 +293,20 @@ func (j zoneJobs) JobOf(mapID uint64, male bool) (int, bool) {
 	return j.z.Status.JobOf(mapID, male)
 }
 
+func (j zoneJobs) JobID(name string) (int, bool) {
+	if j.z.Status == nil {
+		return 0, false
+	}
+	return j.z.Status.JobID(name)
+}
+
+func (j zoneJobs) BaseJobOf(job int) (int, bool) {
+	if j.z.Status == nil {
+		return 0, false
+	}
+	return j.z.Status.BaseJobOf(job)
+}
+
 func (h scriptHost) Map() string { return strings.TrimPrefix(h.z.Map, "map/") }
 
 func (h scriptHost) player(id int64) (*Player, error) {

@@ -568,6 +568,57 @@ func (h *Headless) EquipItem(player int64, slot int) error {
 	return nil
 }
 
+// Equip gives a player one copy of an item, with the roll option of
+// player:give_item, and puts it on, as a click on it. It returns the
+// handle of the equipped copy, as player:get_equipped. It fails when the
+// copy does not fit or does not go on. A copy that does not go on stays
+// in the inventory.
+func (h *Headless) Equip(player int64, itemID uint32, roll modscript.GiveRoll) (int64, error) {
+	z := h.z
+	p, err := h.player(player)
+	if err != nil {
+		return 0, err
+	}
+	d, ok := z.Items.Lookup(itemID)
+	if !ok {
+		return 0, fmt.Errorf("there is no item %d", itemID)
+	}
+	had := map[int]bool{}
+	for i, s := range p.inventory.Slots {
+		if s.ID == itemID {
+			had[i] = true
+		}
+	}
+	fits, err := z.giveRolled(p, itemID, 1, roll)
+	if err != nil {
+		return 0, err
+	}
+	slot := -1
+	for i, s := range p.inventory.Slots {
+		if s.ID == itemID && !had[i] {
+			slot = i
+			break
+		}
+	}
+	if !fits || slot < 0 {
+		return 0, fmt.Errorf("%s (%d) does not fit in the inventory", d.AegisName, itemID)
+	}
+	h.events[player] = nil
+	z.handle(command{player: p, equip: &equipCommand{slot: slot}})
+	h.step(0)
+	for _, ev := range h.events[player] {
+		if f := ev.GetEquipFailed(); f != nil {
+			why := strings.ToLower(strings.TrimPrefix(f.GetReason().String(), "EQUIP_FAILURE_"))
+			return 0, fmt.Errorf("the zone refused to equip %s: %s", d.AegisName, strings.ReplaceAll(why, "_", " "))
+		}
+	}
+	w := p.worn[slot]
+	if p.inventory.Slots[slot].Equip == 0 || w == nil {
+		return 0, fmt.Errorf("%s (%d) did not go on", d.AegisName, itemID)
+	}
+	return w.handle, nil
+}
+
 // Copies returns the slots of a player's copies of an item, by slot, for
 // Go tests of mods.
 func (h *Headless) Copies(player int64, itemID uint32) (map[int]item.Slot, error) {
@@ -626,4 +677,54 @@ func (h *Headless) EndEvent(id int64) {
 // EventCondition runs the condition of a world event.
 func (h *Headless) EventCondition(mod, module, fn string) (bool, error) {
 	return h.z.eventCondition(mod, module, fn)
+}
+
+// UseSkill has a player use a skill on a monster, as the client's skill
+// command. It is for Go tests of mods: wa.testing has no call for it.
+func (h *Headless) UseSkill(player int64, skillID, level int, monster int64) error {
+	z := h.z
+	p, err := h.player(player)
+	if err != nil {
+		return err
+	}
+	e := z.monsterHandles[monster]
+	if e == nil || e.dead || !z.entities.has(e) {
+		return errors.New("the monster is dead or gone")
+	}
+	z.handle(command{player: p, useSkill: &useSkillCommand{skill: skillID, level: level,
+		target: SkillTarget{Entity: p.netID(e), HasEntity: true}}})
+	h.step(0)
+	return nil
+}
+
+// MonsterHP returns a monster's HP. It is for Go tests of mods.
+func (h *Headless) MonsterHP(monster int64) (int64, error) {
+	e := h.z.monsterHandles[monster]
+	if e == nil || !h.z.entities.has(e) {
+		return 0, errors.New("the monster is gone")
+	}
+	return e.hp, nil
+}
+
+// SkillList returns the skills of a player's skill list and whether a
+// point raises each, as the client's skill window shows them. It is for
+// Go tests of mods.
+func (h *Headless) SkillList(player int64) (map[int]bool, error) {
+	z := h.z
+	p, err := h.player(player)
+	if err != nil {
+		return nil, err
+	}
+	if !z.skillsReady() {
+		return nil, errors.New("the zone has no skill data")
+	}
+	entries, err := z.SkillTrees.List(z.Skills, z.Status, z.learner(p), z.SkillSettings)
+	if err != nil {
+		return nil, err
+	}
+	out := map[int]bool{}
+	for _, e := range entries {
+		out[e.Skill] = e.Upgradable
+	}
+	return out, nil
 }

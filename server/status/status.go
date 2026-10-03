@@ -351,7 +351,9 @@ type Tables struct {
 	renewal   bool
 	jobs      map[int]*job
 	mapIDJobs map[uint64][2]int
-	refine    *refineTable
+	// byName finds jobs by their record's name.
+	byName map[string]int
+	refine *refineTable
 	// renewalASPD is the aspd ruleset flag: renewal's ASPD formula, shield
 	// penalty and bonus stacking (RENEWAL_ASPD). aspdBase holds the ASPD
 	// table of the flag's mode by job, when it differs from the base's.
@@ -392,9 +394,11 @@ func New(d *Data) (*Tables, error) {
 	default:
 		return nil, fmt.Errorf("status: unknown mode %q", d.Mode)
 	}
-	t := &Tables{renewal: renewal, renewalASPD: renewal, jobs: map[int]*job{}, mapIDJobs: map[uint64][2]int{}}
-	for i := range d.Jobs {
-		t.jobs[d.Jobs[i].ID] = newJob(&d.Jobs[i], renewal)
+	t := &Tables{renewal: renewal, renewalASPD: renewal, preRenewalSizes: !renewal, jobs: map[int]*job{}, mapIDJobs: map[uint64][2]int{}}
+	t.byName = map[string]int{}
+	for _, jd := range CoreJobData(d) {
+		t.jobs[jd.ID] = newJob(&jd, renewal)
+		t.byName[jd.Info.Name] = jd.ID
 	}
 	for _, m := range d.MapIDJobs {
 		t.mapIDJobs[uint64(m.MapID)] = [2]int{m.Female, m.Male} // #nosec G115 -- map job IDs are positive.
@@ -480,12 +484,9 @@ func (t *Tables) Calc(c Character) (Result, error) {
 	if p.mapID&mapidFirstMask == mapidSummoner {
 		return Result{}, fmt.Errorf("status: job %d is a summoner, which is not ported", c.Job)
 	}
-	statsID, ok := t.mapIDToJob(p.mapID, c.Male)
-	if !ok {
+	var ok bool
+	if p.statsJob, ok = t.statsJob(j, c.Male); !ok {
 		return Result{}, fmt.Errorf("status: job %d has no map job ID", c.Job)
-	}
-	if p.statsJob, err = t.job(statsID); err != nil {
-		return Result{}, err
 	}
 	if c.BaseLevel < 1 || c.BaseLevel > maxLevel || c.JobLevel < 1 || c.JobLevel > len(p.statsJob.bonus) {
 		return Result{}, fmt.Errorf("status: job %d cannot have base level %d and job level %d", c.Job, c.BaseLevel, c.JobLevel)
@@ -1130,7 +1131,11 @@ func (p *pc) baseAtk(b *data) int {
 // aspdTable returns the job's ASPD table for the aspd flag's mode.
 func (p *pc) aspdTable() []int {
 	if p.t.aspdBase != nil {
-		return p.t.aspdBase[p.c.Job]
+		if table, ok := p.t.aspdBase[p.c.Job]; ok {
+			return table
+		}
+		// A mod job takes the other mode's table of its look.
+		return p.t.aspdBase[p.t.LookJob(p.c.Job)]
 	}
 	return p.job.aspdBase
 }

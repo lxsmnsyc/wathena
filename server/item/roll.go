@@ -19,6 +19,9 @@ import (
 // MaxRolls is the most rolls an item declares.
 const MaxRolls = 8
 
+// MaxRollDisplayName is the longest display_name of a roll, in bytes.
+const MaxRollDisplayName = 64
+
 // Distributions of a roll.
 const (
 	Uniform    = "uniform"
@@ -38,9 +41,13 @@ type RollDef struct {
 	Weights []Weight `json:"weights"`
 	// Hidden rolls show only once the copy is identified.
 	Hidden bool `json:"hidden"`
+	// DisplayName is the name players see, 1 to 64 bytes. Empty means
+	// the label of the first static bonus that reads the roll.
+	DisplayName string `json:"display_name,omitempty"`
 	// Label and Unit are how the client shows the roll, such as
-	// "Physical damage against bosses" and "%". The mod loader sets them
-	// from the first static bonus that reads the roll.
+	// "Physical damage against bosses" and "%". The mod loader sets them:
+	// Label is DisplayName when set, and otherwise comes from the first
+	// static bonus that reads the roll, as Unit does.
 	Label string `json:"-"`
 	Unit  string `json:"-"`
 }
@@ -295,6 +302,9 @@ func (r *RollDef) Check() error {
 		}
 	default:
 		return fmt.Errorf("distribution %q is not uniform, triangular or weighted", r.Distribution)
+	}
+	if len(r.DisplayName) > MaxRollDisplayName {
+		return fmt.Errorf("display_name is 1 to %d bytes", MaxRollDisplayName)
 	}
 	lo, hi := r.Bounds()
 	if lo < -maxRollValue || hi > maxRollValue {

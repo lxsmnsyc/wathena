@@ -6,6 +6,7 @@ import {
   CHAT_REFILL_MS,
   ChatRate,
   MAX_CHAT,
+  chatColor,
   chatLine,
   cleanChat,
   isTyping,
@@ -42,6 +43,19 @@ describe('cleanChat', () => {
 describe('chatLine', () => {
   it('shows the name and the text as RO does', () => {
     expect(chatLine('Alice', 'hello')).toBe('Alice : hello');
+  });
+});
+
+describe('chatColor', () => {
+  it('turns 0xrrggbb into CSS', () => {
+    expect(chatColor(0xff8000)).toBe('#ff8000');
+    expect(chatColor(0x0000ff)).toBe('#0000ff');
+  });
+
+  it('keeps the line’s own color for 0 and values past 0xffffff', () => {
+    expect(chatColor(0)).toBeUndefined();
+    expect(chatColor(0x1000000)).toBeUndefined();
+    expect(chatColor(-1)).toBeUndefined();
   });
 });
 

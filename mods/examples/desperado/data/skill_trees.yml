@@ -1,0 +1,6 @@
+# Desperados learn Quick Draw once Single Action is at level 3.
+- job: example.desperado:Desperado
+  skill: example.desperado:QUICK_DRAW
+  max_level: 5
+  requires:
+    - {skill: GS_SINGLEACTION, level: 3}

@@ -148,6 +148,8 @@ func (f *pcFixture) attacker(t testing.TB, c *pcCase) *Status {
 	if slices.Contains(f.weapons.TwoHanded, c.Weapon) {
 		p.LeftWeapon = c.WeaponType
 	}
+	// core.ruleset.pre_renewal sets the size_table flag to pre_renewal.
+	p.PreRenewalSizes = f.mode == reference.PreRenewal
 	if f.mode == reference.PreRenewal && c.Weapon != 0 {
 		// Pre-renewal reads the weapon level from the item. A two-handed
 		// weapon is the item in both hands.

@@ -50,6 +50,19 @@ type Wearer struct {
 	Skills map[int]int
 	// Renewal picks renewal's rules where the modes differ.
 	Renewal bool
+	// EquipsAs is set for a job whose equipment rules are another
+	// job's, as a job record's equips_as. EquipMapID is that job's map
+	// job ID, which the job and class checks read.
+	EquipsAs   bool
+	EquipMapID uint64
+}
+
+// equipClass is the map job ID that the job and class checks read.
+func (w *Wearer) equipClass() uint64 {
+	if w.EquipsAs {
+		return w.EquipMapID
+	}
+	return w.MapID
 }
 
 // EquipResult is rAthena's e_ITEM_EQUIP_ACK.
@@ -110,7 +123,7 @@ func CanEquip(d *Def, w *Wearer, weapon int) EquipResult {
 	if !AmmoFits(d, w, weapon) {
 		return EquipFail
 	}
-	if !jobCanUse(d, w.MapID) || !classCanUse(d, w.MapID, w.Renewal) {
+	if !JobCanUse(d, w.Job, w.equipClass(), w.Renewal) {
 		return EquipFail
 	}
 	return EquipOK
@@ -144,8 +157,13 @@ func AmmoFits(d *Def, w *Wearer, weapon int) bool {
 }
 
 // JobCanUse is pc_job_can_use_item and pc_isItemClass: whether a job may
-// use or wear an item.
-func JobCanUse(d *Def, mapID uint64, renewal bool) bool {
+// use or wear an item. mapID is the class the checks read: the job's,
+// or that of its equips_as job. A mod job that the item's jobs list
+// names may use it whatever its class.
+func JobCanUse(d *Def, job int, mapID uint64, renewal bool) bool {
+	if slices.Contains(d.JobIDs, job) {
+		return true
+	}
 	return jobCanUse(d, mapID) && classCanUse(d, mapID, renewal)
 }
 
@@ -159,6 +177,21 @@ func isGun(weapon int, renewal bool) bool {
 		return renewal
 	}
 	return false
+}
+
+// ClassMask is the part of itemdb_jobid2mapid for one job: the bit of
+// its class's first job, in the mask of its second job kind.
+func ClassMask(mapID uint64) JobMask {
+	var m JobMask
+	index := 0
+	switch {
+	case mapID&joblSecond1 != 0:
+		index = 1
+	case mapID&joblSecond2 != 0:
+		index = 2
+	}
+	m[index] = 1 << (mapID & mapidFirstMask)
+	return m
 }
 
 // jobCanUse is pc_job_can_use_item.

@@ -114,12 +114,13 @@ func Load(mode reference.Mode) (*Data, error) {
 	return &d, nil
 }
 
-// ChatText returns a mob_chat_db line's text, or "" for an unknown ID.
-func (d *Data) ChatText(id int) string {
+// ChatLine returns a mob_chat_db line, or the zero Chat for an unknown
+// ID.
+func (d *Data) ChatLine(id int) Chat {
 	for _, c := range d.Chats {
 		if c.ID == id {
-			return c.Text
+			return c
 		}
 	}
-	return ""
+	return Chat{}
 }

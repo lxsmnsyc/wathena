@@ -18,6 +18,7 @@ var sampleApprovals = map[string][]string{
 	"example.halloween":    {"player.give_items", "world.announce", "events.schedule", "rules.override"},
 	"example.wolf-pack":    {"rules.override"},
 	"example.lucky-clover": {"rules.override", "items.modify_rolls", "player.give_items"},
+	"example.desperado":    {"player.give_items"},
 }
 
 // TestLoadSampleMod loads mods/examples over the renewal reference data,
@@ -39,14 +40,14 @@ func TestLoadSampleMod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := loadMods(context.Background(), modOptions{Dir: "../../../mods/examples", Approve: sampleApprovals}, mod.Renewal, reference.Renewal, data, monsters, tables,
+	m, err := loadMods(context.Background(), modOptions{Dir: "../../../mods/examples", Approve: sampleApprovals}, mod.Renewal, reference.Renewal, data, monsters, tables, nil,
 		&mod.MemoryIDs{}, core, slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatal(err)
 	}
 	table := item.New(m.items.Data)
 	cookie := m.items.IDs["example.greeter:Welcome_Cookie"]
-	if d := table.Get(cookie); cookie != 2_000_000 || d.Type != "Healing" || d.Script != "example.greeter:scripts/items/welcome_cookie.lua" {
+	if d := table.Get(cookie); cookie < 2_000_000 || d.Type != "Healing" || d.Script != "example.greeter:scripts/items/welcome_cookie.lua" {
 		t.Errorf("cookie %d: %+v", cookie, d)
 	}
 	// Core's converted scripts: a heal, a box, a static card, and an
@@ -96,8 +97,8 @@ func TestLoadSampleMod(t *testing.T) {
 	if s := m.zone.Shops["example.greeter:Cookie Stand"]; s == nil || len(s.Items) != 2 || s.Items[1].Price != 10 {
 		t.Errorf("cookie stand %+v", s)
 	}
-	// core and the seven sample mods.
-	if len(m.zone.Scripts) != 8 || m.zone.ItemIDs["Red_Potion"] != 501 {
+	// core and the eight sample mods.
+	if len(m.zone.Scripts) != 9 || m.zone.ItemIDs["Red_Potion"] != 501 {
 		t.Errorf("zone mods: %d scripts", len(m.zone.Scripts))
 	}
 	// The Halloween mod's monsters, with the IDs of the mod range, and

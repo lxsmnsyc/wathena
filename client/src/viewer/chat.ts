@@ -65,6 +65,17 @@ export function chatLine(name: string, text: string): string {
   return `${name} : ${text}`;
 }
 
+/**
+ * A line's color as CSS, from 0xrrggbb, or undefined for 0, which means
+ * the line's own color.
+ */
+export function chatColor(color: number): string | undefined {
+  if (!Number.isInteger(color) || color <= 0 || color > 0xffffff) {
+    return undefined;
+  }
+  return `#${color.toString(16).padStart(6, '0')}`;
+}
+
 /** Adds an item to a list and drops the oldest past max. */
 export function pushLimited<T>(list: T[], item: T, max: number): T[] {
   list.push(item);
@@ -159,11 +170,18 @@ export function isTyping(target: EventTarget | null): boolean {
 export class ChatLog {
   constructor(private readonly list: HTMLElement) {}
 
-  /** Adds a line said by a player. */
-  add(name: string, text: string, mine: boolean): void {
+  /**
+   * Adds a line said by a player, or by a monster in its color as
+   * 0xrrggbb. A color of 0 keeps the log's color.
+   */
+  add(name: string, text: string, mine: boolean, color = 0): void {
     const row = document.createElement('li');
     if (mine) {
       row.className = 'mine';
+    }
+    const css = chatColor(color);
+    if (css !== undefined) {
+      row.style.color = css;
     }
     // Names and text are isolated, so right-to-left text in one cannot
     // reorder the other.
@@ -191,8 +209,9 @@ export class ChatLog {
     const row = document.createElement('li');
     row.className = 'announcement';
     row.textContent = text;
-    if (color > 0 && color <= 0xffffff) {
-      row.style.color = `#${color.toString(16).padStart(6, '0')}`;
+    const css = chatColor(color);
+    if (css !== undefined) {
+      row.style.color = css;
     }
     this.append(row);
   }

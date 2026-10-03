@@ -1,11 +1,10 @@
 package zone
 
 import (
-	"slices"
-
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
@@ -43,68 +42,24 @@ const transcendentStatusPoints = 52
 // High Novice ("not 88").
 const noviceHighStatusPoints = 100
 
-// supportedJobs are the jobs that job changes reach until third classes
-// exist: the Novice, the first and second classes, the Super Novice, and
-// their transcendent jobs. Expanded classes, baby jobs and mounted job
-// IDs are left out.
-var supportedJobs = []int{
-	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 23,
-	4001, 4002, 4003, 4004, 4005, 4006, 4007, 4008, 4009, 4010, 4011, 4012, 4013,
-	4015, 4016, 4017, 4018, 4019, 4020, 4021,
-}
-
-// NextJobs is jobs.next_jobs: the jobs a job can change into, in job ID
-// order. A Novice becomes a first class or a Super Novice, a High Novice
-// a transcendent first class, and a first class one of its two second
+// NextJobs is jobs.next_jobs: the jobs whose record lists a job in
+// changes_from, in job ID order. Core's records hold rAthena's rules: a
+// Novice becomes a first class or a Super Novice, a High Novice a
+// transcendent first class, and a first class one of its two second
 // classes. Jobs that differ by sex, such as Bard and Dancer, are both in
 // the list.
 func NextJobs(t *status.Tables, job int) []int {
 	if t == nil {
 		return nil
 	}
-	m, ok := t.MapID(job)
-	if !ok || m&jcBaby != 0 {
-		return nil
-	}
-	var out []int
-	for _, j := range supportedJobs {
-		n, ok := t.MapID(j)
-		if !ok || !nextMapID(m, n) {
-			continue
-		}
-		out = append(out, j)
-	}
-	return out
-}
-
-// nextMapID reports whether map job ID n is a next job of m.
-func nextMapID(m, n uint64) bool {
-	upper := m & jcUpper
-	if n&jcUpper != upper || n&(jcBaby|jcThird|jcFourth) != 0 {
-		return false
-	}
-	base := m &^ jcUpper
-	nb := n &^ jcUpper
-	switch {
-	case base == jobNovice:
-		// A first class, or the Super Novice, which has no transcendent
-		// job.
-		if nb&(jcSecond1|jcSecond2) == 0 {
-			f := nb & jcFirstMask
-			return f > 0 && f <= 6
-		}
-		return nb == jcSuperNov && upper == 0
-	case base&(jcSecond1|jcSecond2) == 0 && base&jcFirstMask > 0 && base&jcFirstMask <= 6:
-		return nb == base|jcSecond1 || nb == base|jcSecond2
-	}
-	return false
+	return t.NextJobs(job)
 }
 
 // changeJob is player:change_job, with pc_jobchange's rules. Without
-// force, the job must be one of the player's next jobs, and a
-// transcendent player stays in the line it had before its rebirth, as
-// the transcendent job NPCs check. It returns false and changes nothing
-// when the change is not allowed.
+// force, the job's record must list the player's job in changes_from,
+// with the levels it needs, and a transcendent player stays in the line
+// it had before its rebirth, as the transcendent job NPCs check. It
+// returns false and changes nothing when the change is not allowed.
 func (z *Zone) changeJob(p *Player, job int, force bool) bool {
 	if z.Status == nil || job < 0 {
 		return false
@@ -117,14 +72,26 @@ func (z *Zone) changeJob(p *Player, job int, force bool) bool {
 	if !ok {
 		return false
 	}
-	// pc_mapid2jobid with the player's sex: a male who changes into a
-	// Dancer becomes a Bard.
-	job, ok = z.Status.JobOf(target, p.char.Male)
-	if !ok || target == cur {
+	if !z.Status.IsMod(job) {
+		// pc_mapid2jobid with the player's sex: a male who changes into
+		// a Dancer becomes a Bard. A mod job's map job ID names a core
+		// job, so it keeps its own ID.
+		if job, ok = z.Status.JobOf(target, p.char.Male); !ok {
+			return false
+		}
+		if target == cur && !z.Status.IsMod(p.char.Job) {
+			return false
+		}
+	}
+	if job == p.char.Job {
 		return false
 	}
 	if !force {
-		if !slices.Contains(supportedJobs, job) || !nextMapID(cur, target) || !z.rebirthLine(p, target) {
+		c, ok := z.Status.ChangeFrom(job, p.char.Job)
+		if !ok || !z.rebirthLine(p, target) {
+			return false
+		}
+		if z.Progress != nil && (p.progress.BaseLevel < c.BaseLevel || p.progress.JobLevel < c.JobLevel) {
 			return false
 		}
 	}
@@ -158,6 +125,7 @@ func (z *Zone) jobChange(p *Player, job int, target, previous uint64) {
 	}
 	// The skill Plagiarism copied goes with the old job.
 	z.plagiarismReset(p)
+	from := p.char.Job
 	p.char.Job = job
 	z.updateBodyLook(p)
 	if z.Progress != nil {
@@ -189,6 +157,16 @@ func (z *Zone) jobChange(p *Player, job int, target, previous uint64) {
 		z.scEnd(p.entity, sc.SCSpirit)
 	}
 	z.afterJobChange(p)
+	p.pending = append(p.pending, z.jobNameEvent(job))
+	z.scriptEventFor("job_change", modscript.JobChange(int64(p.charID), int64(from), int64(job)))
+}
+
+// jobNameEvent names a job for the client, which knows only the jobs of
+// its data tables.
+func (z *Zone) jobNameEvent(job int) *wathenav1.Event {
+	return wathenav1.Event_builder{JobName: wathenav1.JobName_builder{
+		Job: uint32(job), Name: z.Status.DisplayName(job), // #nosec G115 -- job IDs are positive.
+	}.Build()}.Build()
 }
 
 // afterJobChange computes the stats again and sends what changed, as the
@@ -293,13 +271,22 @@ func viewJob(job, options int) int {
 }
 
 // updateBodyLook sets the job a player shows, and marks the look for
-// viewers when it changed (clif_changelook with LOOK_BASE).
+// viewers when it changed (clif_changelook with LOOK_BASE). A job shows
+// the sprites of its look.
 func (z *Zone) updateBodyLook(p *Player) {
-	j := uint32(viewJob(p.char.Job, p.record.Options)) // #nosec G115 -- job IDs are positive.
+	j := uint32(viewJob(z.lookJob(p.char.Job), p.record.Options)) // #nosec G115 -- job IDs are positive.
 	if p.Look.Job != j {
 		p.Look.Job = j
 		p.entity.lookChanged = true
 	}
+}
+
+// lookJob is the job whose sprites a job shows.
+func (z *Zone) lookJob(job int) int {
+	if z.Status == nil {
+		return job
+	}
+	return z.Status.LookJob(job)
 }
 
 // rebirth is player:rebirth: a second class at base level 99 and job
@@ -318,9 +305,11 @@ func (z *Zone) rebirth(p *Player) bool {
 	if p.progress.BaseLevel < 99 || p.progress.JobLevel < 50 {
 		return false
 	}
-	second, ok := z.Status.JobOf(cur, p.char.Male)
-	if !ok {
-		return false
+	second := p.char.Job
+	if !z.Status.IsMod(second) {
+		if second, ok = z.Status.JobOf(cur, p.char.Male); !ok {
+			return false
+		}
 	}
 	target, ok := z.Status.MapID(jobNoviceHigh)
 	if !ok {

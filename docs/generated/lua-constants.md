@@ -2687,7 +2687,7 @@ Emotions for npc:show_emotion, from rAthena's ET_ names.
 
 ## wa.jobs
 
-Jobs, from rAthena's JOB_ names, and job tests.
+Jobs, from rAthena's JOB_ names, and job tests. The job tests work with mod jobs too.
 
 | Name | Value | rAthena |
 |---|---|---|

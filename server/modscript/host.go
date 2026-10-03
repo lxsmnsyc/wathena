@@ -634,6 +634,12 @@ func (r *Runtime) jobsTest(c *script.Call) error {
 	case "is_fourth":
 		c.Return(script.Bool(m&mapidFourth != 0))
 	case "base_job", "first_job":
+		if test == "base_job" {
+			if b, ok := r.opts.Jobs.BaseJobOf(int(job)); ok {
+				c.Return(script.Int(int64(b)))
+				return nil
+			}
+		}
 		mask := uint64(mapidUpperMask)
 		if test == "first_job" {
 			mask = mapidBaseMask
@@ -653,6 +659,22 @@ func (r *Runtime) jobsTest(c *script.Call) error {
 		return fmt.Errorf("jobs: no test %q", test)
 	}
 	return nil
+}
+
+// jobsID is jobs.id: a job by a name of wa.jobs or a mod job's full
+// name.
+func (r *Runtime) jobsID(c *script.Call) error {
+	if err := r.need("jobs.id", "game.read"); err != nil {
+		return err
+	}
+	name := c.String(0)
+	if r.opts.Jobs != nil {
+		if id, ok := r.opts.Jobs.JobID(name); ok {
+			c.Return(script.Int(int64(id)))
+			return nil
+		}
+	}
+	return fmt.Errorf("jobs.id: there is no job %q", name)
 }
 
 // constantsTable returns the constant modules, as { races = { ... } }.

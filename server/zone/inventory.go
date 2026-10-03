@@ -192,9 +192,9 @@ func (z *Zone) canUse(p *Player, d *item.Def) wathenav1.UseItemFailure {
 	if d.JobRestricted {
 		mapID, ok := uint64(0), false
 		if z.Status != nil {
-			mapID, ok = z.Status.MapID(p.char.Job)
+			mapID, ok = z.Status.EquipMapID(p.char.Job)
 		}
-		if !ok || d.Jobs == nil || !item.JobCanUse(d, mapID, z.Status.Renewal()) {
+		if !ok || d.Jobs == nil || !item.JobCanUse(d, p.char.Job, mapID, z.Status.Renewal()) {
 			return wathenav1.UseItemFailure_USE_ITEM_FAILURE_CANNOT_USE
 		}
 	}

@@ -86,7 +86,7 @@ func (z *Zone) mobSkillUseEvent(e *entity, event mob.Condition, eventSkill int, 
 			break
 		}
 		if s.Chat != "" {
-			z.mobChat(e, s.Chat, mobChatColor)
+			z.mobChat(e, s.Chat, s.ChatLineColor())
 		}
 		return true
 	}
@@ -102,9 +102,6 @@ type mobUse struct {
 	x, y   int
 	ground bool
 }
-
-// mobChatColor is the default color of mob_chat_db.yml lines.
-const mobChatColor = 0xFF0000
 
 // mobCondition checks a condition that is a state of the monster, and
 // returns the friend it found for friend conditions.
@@ -422,8 +419,13 @@ func (z *Zone) mobCastEnd(e *entity) {
 	m.nextThink = max(z.now+int64(e.status.AMotion), m.nextThink)
 	z.mobSkillDelay(e)
 	if m.skillIdx >= 0 && m.skillIdx < len(m.spawn.Skills) {
-		if em := m.spawn.Skills[m.skillIdx].Emotion; em >= 0 {
-			z.emotions = append(z.emotions, npcEmotion{e, uint32(em)}) // #nosec G115 -- an emotion of wa.emotions.
+		// The entry's Emotion column shows here. NPC_EMOTION's own
+		// emotion, val1, shows when it takes effect, at the same time,
+		// so the zone shows both here, in turn.
+		for _, em := range m.spawn.Skills[m.skillIdx].Emotions {
+			if em >= 0 {
+				z.emotions = append(z.emotions, npcEmotion{e, uint32(em)}) // #nosec G115 -- checked above.
+			}
 		}
 	}
 }

@@ -3,6 +3,7 @@ package mob
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -158,11 +159,62 @@ type Skill struct {
 	// Summons are the monsters of NPC_SUMMONSLAVE, NPC_SUMMONMONSTER,
 	// NPC_METAMORPHOSIS and NPC_TRANSFORMATION, by ID.
 	Summons []uint32
-	// Emotion is shown over the monster when the skill takes effect, or
-	// -1.
-	Emotion int
+	// Emotions are shown over the monster, in turn, when the skill takes
+	// effect: none, one, or two. NPC_EMOTION's val1 is the second when
+	// the row's Emotion column shows one first.
+	Emotions []int
+	// HasModes is set when the entry changes the monster's modes, which
+	// only NPC_EMOTION and NPC_EMOTION_ON do, through SC_MODECHANGE.
+	// NPC_EMOTION sets the modes of ModeMask to Modes, or with no Modes
+	// ends the change, so the monster has its own modes again.
+	// NPC_EMOTION_ON adds Modes, and takes aggressive away when Modes
+	// lacks it.
+	HasModes bool
+	Modes    uint32
 	// Chat is a line the monster says when it uses the skill, or "".
-	Chat string
+	// ChatColor is its color as 0xRRGGBB, or 0 for DefaultChatColor.
+	Chat      string
+	ChatColor uint32
+}
+
+// DefaultChatColor is the color of a chat line without chat_color, as
+// mob_chat_db.yml's default Color.
+const DefaultChatColor uint32 = 0xFF0000
+
+// ModeMask is rAthena's MD_MASK: the modes that NPC_EMOTION sets.
+const ModeMask uint32 = 0xFFFF
+
+// ModeChange is the mode change of an NPC_EMOTION or NPC_EMOTION_ON
+// entry as rAthena's val2 to val5 of the skill: SC_MODECHANGE's set,
+// added and removed modes, and whether the skill ends an earlier change
+// first.
+func (s *Skill) ModeChange() (set, add, del uint32, end bool) {
+	if !s.HasModes {
+		return 0, 0, 0, false
+	}
+	switch s.ID {
+	case IDEmotion:
+		if s.Modes == 0 {
+			return 0, 0, 0, true
+		}
+		return s.Modes, 0, 0, false
+	case IDEmotionOn:
+		// mob_parse_row_mobskilldb: the modes are added, and a list
+		// without aggressive takes it away.
+		if s.Modes&ModeAggressive == 0 {
+			del = ModeAggressive
+		}
+		return 0, s.Modes, del, false
+	}
+	return 0, 0, 0, false
+}
+
+// ChatLineColor is the color the chat line is sent with.
+func (s *Skill) ChatLineColor() uint32 {
+	if s.ChatColor == 0 {
+		return DefaultChatColor
+	}
+	return s.ChatColor
 }
 
 // Skills with values that mob_skill_db keeps in val1 to val5.
@@ -192,11 +244,13 @@ func SummonSkill(id int) bool {
 //   - ground reports whether a skill is a ground skill: rAthena turns an
 //     around target into target for other skills.
 //   - exists reports whether a monster ID exists, for summons.
-//   - chat finds a mob_chat_db line.
+//   - chat finds a mob_chat_db line, or the zero Chat.
 //
-// lost lists what the row does that a Skill cannot hold: the mode
-// changes of NPC_EMOTION and NPC_EMOTION_ON.
-func FromRaw(r RawSkill, ground func(id int) bool, exists func(id uint32) bool, chat func(id int) string) (s Skill, lost []string, err error) {
+// mode is the monster's mode, which an NPC_EMOTION row compares its mode
+// with. lost lists what the row does that a Skill cannot hold: modes
+// that ModeNames does not name, and the added and removed modes of
+// val3 to val5, which no row of mob_skill_db sets.
+func FromRaw(r RawSkill, mode uint32, ground func(id int) bool, exists func(id uint32) bool, chat func(id int) Chat) (s Skill, lost []string, err error) {
 	st, ok := ParseState(r.State)
 	if !ok {
 		return s, nil, fmt.Errorf("unknown state %q", r.State)
@@ -222,7 +276,9 @@ func FromRaw(r RawSkill, ground func(id int) bool, exists func(id uint32) bool, 
 	s = Skill{
 		ID: r.Skill, Level: r.Level, State: st, Rate: r.Rate, CastTime: r.CastTime, Delay: r.Delay,
 		Cancelable: r.Cancelable, Target: tgt, Condition: Condition(ci), Value: r.ConditionValue,
-		Emotion: r.Emotion,
+	}
+	if r.Emotion >= 0 {
+		s.Emotions = []int{r.Emotion}
 	}
 	switch s.Condition {
 	case CondHPBetween, CondFriendHPBetween:
@@ -239,21 +295,53 @@ func FromRaw(r RawSkill, ground func(id int) bool, exists func(id uint32) bool, 
 	}
 	switch r.Skill {
 	case IDEmotion, IDEmotionOn:
-		// val1 is the emotion the skill shows. The Emotion column shows
-		// one more, which rarely happens.
-		if s.Emotion < 0 {
-			s.Emotion = r.Values[0]
-		} else if r.Values[0] != s.Emotion {
-			lost = append(lost, "the second emotion of "+r.SkillName)
+		// val1 is the emotion the skill shows, after the Emotion
+		// column's emotion when the row has one.
+		s.Emotions = append(s.Emotions, r.Values[0])
+		// val2 is a mode. NPC_EMOTION sets it, or returns the monster to
+		// its own mode when it is the monster's mode, and NPC_EMOTION_ON
+		// adds it (mob_parse_row_mobskilldb).
+		if v := uint32(r.Values[1]); v != 0 { // #nosec G115 -- a mode's bits.
+			s.HasModes = true
+			if r.Skill == IDEmotion && v == mode {
+				v = 0
+			}
+			s.Modes = v
+			if _, rest := ModeList(v); rest != 0 {
+				lost = append(lost, "modes without a name in the mode change of "+r.SkillName)
+			}
 		}
-		if r.Values[1] != 0 || r.Values[2] != 0 || r.Values[3] != 0 {
-			lost = append(lost, "the mode change of "+r.SkillName)
+		if r.Values[2] != 0 || r.Values[3] != 0 || r.Values[4] != 0 {
+			lost = append(lost, "the added or removed modes of "+r.SkillName)
 		}
 	}
 	if r.Chat > 0 {
-		s.Chat = chat(r.Chat)
+		c := chat(r.Chat)
+		s.Chat = c.Text
+		if c.Color != DefaultChatColor {
+			s.ChatColor = c.Color
+		}
 	}
 	return s, lost, nil
+}
+
+// ModeList names the modes of bits, in bit order, and returns the bits
+// that ModeNames does not name.
+func ModeList(bits uint32) (names []string, rest uint32) {
+	rest = bits
+	for b := uint32(1); b != 0; b <<= 1 {
+		if bits&b == 0 {
+			continue
+		}
+		for n, v := range ModeNames {
+			if v == b {
+				names = append(names, n)
+				rest &^= b
+				break
+			}
+		}
+	}
+	return names, rest
 }
 
 // ID is the row's skill ID.
@@ -280,7 +368,7 @@ type Names interface {
 // skillFields are the fields of a skills entry, in the order YAML writes
 // them.
 var skillFields = []string{"skill", "level", "state", "rate", "cast_time", "delay", "cancelable", "target",
-	"condition", "condition_value", "summons", "emotion", "chat"}
+	"condition", "condition_value", "summons", "emotion", "modes", "chat", "chat_color"}
 
 // valueKind is what condition_value holds for a condition.
 func (c Condition) valueKind() string {
@@ -366,15 +454,33 @@ func (s Skill) YAML(n Names) (string, error) {
 		}
 		add("summons", "["+strings.Join(names, ", ")+"]")
 	}
-	if s.Emotion >= 0 {
-		e, ok := n.EmotionName(s.Emotion)
+	var emotions []string
+	for _, em := range s.Emotions {
+		e, ok := n.EmotionName(em)
 		if !ok {
-			return "", fmt.Errorf("emotion %d has no name", s.Emotion)
+			return "", fmt.Errorf("emotion %d has no name", em)
 		}
-		add("emotion", e)
+		emotions = append(emotions, e)
+	}
+	switch len(emotions) {
+	case 0:
+	case 1:
+		add("emotion", emotions[0])
+	default:
+		add("emotion", "["+strings.Join(emotions, ", ")+"]")
+	}
+	if s.HasModes {
+		names, rest := ModeList(s.Modes)
+		if rest != 0 {
+			return "", fmt.Errorf("modes 0x%X have no name", rest)
+		}
+		add("modes", "["+strings.Join(names, ", ")+"]")
 	}
 	if s.Chat != "" {
 		add("chat", quote(s.Chat))
+		if s.ChatColor != 0 && s.ChatColor != DefaultChatColor {
+			add("chat_color", fmt.Sprintf("0x%06X", s.ChatColor))
+		}
 	}
 	b.WriteString("}")
 	return b.String(), nil
@@ -445,7 +551,7 @@ func ParseSkills(v any, n Names) ([]Skill, error) {
 
 // ParseSkill reads one entry of a skills list.
 func ParseSkill(m map[string]any, n Names) (Skill, error) {
-	s := Skill{Level: 1, State: StateAny, Rate: 10000, Emotion: -1}
+	s := Skill{Level: 1, State: StateAny, Rate: 10000}
 	var errs []string
 	bad := func(format string, args ...any) { errs = append(errs, fmt.Sprintf(format, args...)) }
 	for k := range m {
@@ -566,12 +672,44 @@ func ParseSkill(m map[string]any, n Names) (Skill, error) {
 		}
 	}
 	if v, ok := m["emotion"]; ok {
-		w, _ := v.(string)
-		e, ok := n.EmotionID(w)
-		if !ok {
-			bad("emotion: %q is not in wa.emotions", w)
+		list, isList := v.([]any)
+		if !isList {
+			list = []any{v}
+		} else if len(list) != 2 {
+			bad("emotion must be one emotion or a list of two, such as [surprise, heh]")
+			list = nil
 		}
-		s.Emotion = e
+		for _, x := range list {
+			w, _ := x.(string)
+			e, ok := n.EmotionID(w)
+			if !ok {
+				bad("emotion: %q is not in wa.emotions", w)
+				continue
+			}
+			s.Emotions = append(s.Emotions, e)
+		}
+	}
+	if v, ok := m["modes"]; ok {
+		list, isList := v.([]any)
+		if !isList {
+			bad("modes must be a list, such as [can_move, aggressive]")
+		}
+		for _, x := range list {
+			w, _ := x.(string)
+			bit, ok := ModeNames[w]
+			if !ok {
+				bad("modes: %q is not a mode; the modes are %s", w, strings.Join(slices.Sorted(maps.Keys(ModeNames)), ", "))
+				continue
+			}
+			s.Modes |= bit
+		}
+		s.HasModes = true
+		switch {
+		case s.ID != IDEmotion && s.ID != IDEmotionOn:
+			bad("modes: only NPC_EMOTION and NPC_EMOTION_ON change modes")
+		case s.ID == IDEmotionOn && isList && len(list) == 0:
+			bad("modes: NPC_EMOTION_ON needs a mode to add")
+		}
 	}
 	if v, ok := m["chat"]; ok {
 		w, _ := v.(string)
@@ -579,6 +717,17 @@ func ParseSkill(m map[string]any, n Names) (Skill, error) {
 			bad("chat must be 1 to %d bytes", MaxChat)
 		}
 		s.Chat = w
+	}
+	if v, ok := m["chat_color"]; ok {
+		c, ok := v.(int)
+		if !ok || c < 1 || c > 0xFFFFFF {
+			bad("chat_color must be a color from 0x000001 to 0xFFFFFF, such as 0xFF8000")
+			c = 0
+		}
+		if s.Chat == "" {
+			bad("chat_color needs chat")
+		}
+		s.ChatColor = uint32(max(c, 0)) // #nosec G115 -- checked above.
 	}
 	if len(errs) > 0 {
 		return s, errors.New(strings.Join(errs, "; "))

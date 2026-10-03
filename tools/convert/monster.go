@@ -127,9 +127,9 @@ func ConvertMonsters(in MonsterInput) (*MonsterResult, error) {
 		n.monsters[m.AegisName] = m.ID
 		n.aegis[m.ID] = m.AegisName
 	}
-	chats := map[int]string{}
+	chats := map[int]mob.Chat{}
 	for _, c := range data.Chats {
-		chats[c.ID] = c.Text
+		chats[c.ID] = c
 	}
 	out := &MonsterResult{Mode: data.Mode, Lost: map[string]int{}, Skills: map[string]int{}}
 	for _, m := range data.Monsters {
@@ -140,16 +140,14 @@ func ConvertMonsters(in MonsterInput) (*MonsterResult, error) {
 		for _, r := range m.Skills {
 			out.Entries++
 			out.Skills[r.SkillName]++
-			s, lost, err := mob.FromRaw(r, n.Ground, func(id uint32) bool { _, ok := n.aegis[id]; return ok },
-				func(id int) string { return chats[id] })
+			s, lost, err := mob.FromRaw(r, m.Mode, n.Ground, func(id uint32) bool { _, ok := n.aegis[id]; return ok },
+				func(id int) mob.Chat { return chats[id] })
 			if err != nil {
 				return nil, fmt.Errorf("monster %d (%s): %v", m.ID, m.AegisName, err)
 			}
-			if _, ok := n.EmotionName(s.Emotion); s.Emotion >= 0 && !ok {
-				// A value past ET_MAX, such as a summon that spilled into
-				// the Emotion column, shows nothing in rAthena.
-				s.Emotion = -1
-			}
+			// A value past ET_MAX, such as a summon that spilled into the
+			// Emotion column, shows nothing in rAthena.
+			s.Emotions = slices.DeleteFunc(s.Emotions, func(em int) bool { _, ok := n.EmotionName(em); return !ok })
 			line, err := s.YAML(n)
 			if err != nil {
 				return nil, fmt.Errorf("monster %d (%s): %v", m.ID, m.AegisName, err)

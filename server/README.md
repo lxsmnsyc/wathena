@@ -484,11 +484,21 @@ Left: parties for party skills, ensembles and Devotion, homunculi, the windows l
 
 Players change jobs through scripts, with the calls of proposal 0002, review decision 21 (`jobchange.go`, and [mods/README.md](../mods/README.md), "Job changes and resets"):
 
-- `player:change_job` ports `pc_jobchange`: job level 1 and job exp 0, the transcendent status points, a base level cap with a stat reset, equipment the new job cannot wear comes off, and a Peco Peco, falcon or cart goes without its skill. A male Dancer becomes a Bard. Without `force`, only the next jobs of `jobs.next_jobs` are allowed, and a transcendent player stays in its line.
+- `player:change_job` ports `pc_jobchange`: job level 1 and job exp 0, the transcendent status points, a base level cap with a stat reset, equipment the new job cannot wear comes off, and a Peco Peco, falcon or cart goes without its skill. A male Dancer becomes a Bard. Without `force`, only the next jobs of `jobs.next_jobs` are allowed, with the levels of the job's `changes_from`, and a transcendent player stays in its line. The `job_change` event follows.
 - `player:rebirth` makes a second class at 99/50 a High Novice at 1/1 with 100 status points and the platinum skills, as the rebirth NPC (`npc/jobs/valkyrie.txt`).
 - `player:reset_skills`, `player:reset_stats`, `player:reset_skill` and `player:reset_stat` refund skill and status points as `pc_resetskill` and `pc_resetstate`, and by rAthena's stat cost table. Quest skills stay.
 - Migration 00012 saves the job level of the change to a second class (rAthena's `change_level_2nd`), which the skill tree reads, the second class before a rebirth, which picks the transcendent line, and the saved option bits of a cart, a falcon and a Peco Peco. A rider shows its mounted class, as `status_set_viewdata`.
-- The progress stats carry `STAT_ID_JOB`, which the client shows with the levels.
+- The progress stats carry `STAT_ID_JOB`, and `JobName` carries the job's `display_name` after login and after each change. The client shows the name with the levels.
+
+### Job records
+
+Jobs are records ([decision 0015](../docs/decisions/0015-job-definitions.md), and [mods/README.md](../mods/README.md), "Jobs"):
+
+- `gamedata.CoreJobs` converts each mode's `job_stats.json`, the exp tables of `progression.json` and the `Inherit` lists of `skill_trees.json` into core's records, with the names of `wa.jobs`. `status.CoreJobData` adds what follows from the map job IDs: the tier, `base_job`, and `changes_from` from rAthena's job change rules.
+- `gamedata.LoadMods` applies the mods' `data/jobs.yml` over them. The job tables (`status.Tables.WithJobs`), the exp tables (`progression.Tables.WithJobs`) and the skill trees of new jobs come from the records.
+- A mod job gets an ID from 10,000 and a map job ID made from its look's class with its own tier, transcendent and baby bits. `pc_mapid2jobid` keeps core's jobs only, so a mod job keeps its own bonuses, weight and maximum stats, and its own skill tree.
+- The body of a player's look is the look job's, and the client names the job from `JobName`.
+- `TestCoreJobRecordsMatchRAthena` checks that the tables built from core's records match rAthena's for every job: 3,150 stat calculations of 175 jobs in renewal and 1,368 of 76 jobs in pre-renewal, with the maximum stats, exp tables and next jobs.
 
 Core places a Job Master in Prontera, since rAthena's job change quests mostly do not convert. It follows rAthena's level rules: job level 10 with Basic Skill 9 for a first class (base level 45 too for a Super Novice), job level 40 for a second class, and 99/50 for a rebirth.
 
@@ -506,8 +516,9 @@ Monsters think as rAthena's `mob.cpp` ([decision 0013](../docs/decisions/0013-mo
 - **The hard AI** (`mob_ai_sub_hard`) runs every 100 ms for each monster within a player's view plus 4 cells. Other monsters run the lazy AI every second: they walk at random and use idle skills.
 - **Targets.** An aggressive monster looks for a target in its view range, and walks to it if a path is no longer than its chase range. A monster gives up when the target leaves its chase range, hides, or dies. Monsters with the `assist` mode join monsters of their kind that fight, looters pick up items, and the change-target modes, angry monsters and the cast sensor follow rAthena's rules.
 - **Hits.** The AI learns of a hit once the damage shows and the hit's walk delay passes, as the `mob_attacked` timer. A monster that can attack strikes back.
-- **Skills.** Every 1 s, or on an event (a hit, a cast on it, its spawn), a monster checks its skills list as `mobskill_use` and `mobskill_event`: state, condition, rate and delay, then the target. Casts go through the skill framework with the entry's cast time. Lines of `mob_chat_db.yml` show as the monster's chat.
+- **Skills.** Every 1 s, or on an event (a hit, a cast on it, its spawn), a monster checks its skills list as `mobskill_use` and `mobskill_event`: state, condition, rate and delay, then the target. Casts go through the skill framework with the entry's cast time. Lines of `mob_chat_db.yml` show as the monster's chat, in the entry's `chat_color`.
 - **`NPC_` skills** that only monsters use are in `skills_npc*.go`: summons and slaves, class changes, emotions, random moves, rebirth, and the attack, status and buff skills.
+- **Emotions and modes.** An entry's `emotion` is one emotion or a list of two, shown in turn. The `modes` of an `NPC_EMOTION` or `NPC_EMOTION_ON` entry change the monster's mode through `SC_MODECHANGE`, as `status_calc_mode`: `NPC_EMOTION` sets the AI modes, or ends the change with `modes: []`, and `NPC_EMOTION_ON` adds modes.
 - **MVPs.** The player that did the most damage gets the MVP exp and drops, with the MVP effect.
 
 The `monster_target` hook, the methods of monster handles and the AI scripts of monster records are the Lua API of proposal 0002, review decision 22 ([mods/README.md](../mods/README.md), "Monster AI").
@@ -516,11 +527,11 @@ Parity with rAthena, from `go test ./server/mob` and `go test ./server/zone -run
 
 | Mode | `mob_status.json` | `mob_ai.json` | `mob_skill_use.json`, entry chosen | `mob_skill_use.json`, effects |
 |---|---:|---:|---:|---:|
-| renewal | 2,675 of 2,675 | 2,814 of 2,814 | 22,189 of 22,189 | 17,158 of 18,232 |
-| pre-renewal | 1,004 of 1,004 | 2,814 of 2,814 | 8,594 of 8,594 | 6,745 of 7,213 |
+| renewal | 2,675 of 2,675 | 2,814 of 2,814 | 22,189 of 22,189 | 18,153 of 18,232 |
+| pre-renewal | 1,004 of 1,004 | 2,814 of 2,814 | 8,594 of 8,594 | 7,205 of 7,213 |
 
 - `mob_ai.json` checks single decisions of every AI type: target search, hits, target changes, assists, loot, chase and the cast sensor.
-- The chosen entry includes its target and cast time. The effects (damage, statuses, moves, summons, class changes) are checked in every case where the monster used a skill. Most of the rest are `NPC_EMOTION` mode changes, which the skills list cannot hold, and `NPC_` skills without a port.
+- The chosen entry includes its target and cast time. The effects (damage, statuses, moves, summons, class changes, mode changes) are checked in every case where the monster used a skill. The rest are a few player skills that monsters use, such as `ITM_TOMAHAWK` and `GS_DUST`.
 
 To see it, start on `prt_fild03`, where Chocos (AI type 19) attack on sight and use their skills, and Yoyos (AI type 07) loot and help each other:
 
@@ -528,7 +539,7 @@ To see it, start on `prt_fild03`, where Chocos (AI type 19) attack on sight and 
 go run ./server/cmd/waserver --assets /path/to/build --map prt_fild03 --dev
 ```
 
-Left: MVP tombs, monster level ups, guardians, monsters that follow a player through a warp, the mode change of `NPC_EMOTION`, and the `NPC_` skills that `docs/generated/monster-skills-<mode>.md` lists without a port.
+Left: MVP tombs, monster level ups, guardians, monsters that follow a player through a warp, and the `NPC_` skills that `docs/generated/monster-skills-<mode>.md` lists without a port.
 
 ## Rolled item values
 

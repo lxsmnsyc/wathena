@@ -285,8 +285,8 @@ func Resolve(found []*Mod, cfg Config) (*Set, error) {
 	for _, id := range slices.Sorted(maps.Keys(active)) {
 		m := active[id]
 		man := m.Manifest
-		if man.API != API {
-			fail("%s: api %q does not include this server's API, which is %s until API 1.0; use api: %s", m.Path, man.API, API, API)
+		if !man.SupportsAPI() {
+			fail("%s: api %q does not include this server's API, which is %s; use api: %s or a range that includes it", m.Path, man.API, API, API)
 		}
 		if man.Provides.Ruleset == nil {
 			if ok, why := man.supports(rs); !ok {

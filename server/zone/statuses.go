@@ -875,6 +875,11 @@ func (z *Zone) savedTimedBonuses(p *Player) []character.TimedBonus {
 // whose bonuses no longer read, such as a bonus a mod removed, is left
 // out.
 func (z *Zone) restoreTimedBonuses(p *Player, saved []character.TimedBonus) {
+	if len(saved) == 0 {
+		// bonusNames copies every constant module, which a login without
+		// timed bonuses does not need.
+		return
+	}
 	names := z.bonusNames()
 	for _, s := range saved {
 		var entries []any

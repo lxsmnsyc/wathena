@@ -61,7 +61,7 @@ func writeMod(t *testing.T, files map[string]string) string {
 const testManifest = `id: example.tested
 name: Tested
 version: 1.0.0
-api: experimental
+api: 1.0
 depends:
   - id: core
 permissions:
@@ -136,6 +136,20 @@ return function()
     testing.expect(function() world:use_item(player, RED_POTION) end).to_fail_with("has no Red_Potion")
   end)
 
+  testing.case("equipment goes on and is refused", function(world)
+    local KNIFE = items.id "Knife"
+    local player = world:new_player { x = 150, y = 150 }
+    local knife = world:equip(player, KNIFE)
+    testing.expect(knife.item).to_be(KNIFE)
+    testing.expect(player:get_equipped("right_hand").item).to_be(KNIFE)
+    testing.expect(player:count_item(KNIFE)).to_be(1)
+    testing.expect(function() world:equip(player, RED_POTION) end).to_fail_with("refused to equip Red_Potion")
+    testing.expect(function() world:equip(player, KNIFE, { refine = 7 }) end).to_fail_with("the only option is roll")
+    testing.expect(function() world:equip(player, KNIFE, { roll = "best" }) end).to_fail_with("roll is \"random\"")
+    testing.expect(function() world:equip(player, KNIFE, { roll = { power = 1 } }) end).to_fail_with("has no roll \"power\"")
+    testing.expect(function() world:equip(player, 99999999) end).to_fail_with("there is no item")
+  end)
+
   testing.case("expectations", function(world)
     testing.expect({ a = { 1, 2 } }).to_equal({ a = { 1, 2 } })
     testing.expect({ 1, { x = 2 } }).to_contain({ x = 2 })
@@ -180,7 +194,7 @@ end`,
 			t.Errorf("%s: %v %v", r.Name, r.Err, r.Logs)
 		}
 	}
-	if len(results) != 8 {
+	if len(results) != 9 {
 		t.Errorf("%d results", len(results))
 	}
 	if got := failures["fails at its line"]; got != "tests/fail_test.lua:5: expected 3, got 2" {
@@ -200,7 +214,7 @@ func TestStatusAPI(t *testing.T) {
 		"mod.yaml": `id: example.statuses
 name: Statuses
 version: 1.0.0
-api: experimental
+api: 1.0
 depends:
   - id: core
 permissions:

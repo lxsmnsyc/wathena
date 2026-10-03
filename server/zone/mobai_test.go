@@ -1,9 +1,11 @@
 package zone
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -182,7 +184,7 @@ func TestMonsterSummonsSlaves(t *testing.T) {
 	z, p := aiZone(t)
 	p.entity.x, p.entity.y = 30, 30
 	summon := mob.Skill{ID: mob.IDSummonSlave, Level: 2, State: mob.StateIdle, Rate: 10000, Delay: 10000,
-		Target: mob.TargetSelf, Condition: mob.CondSlavesBelow, Value: 1, Summons: []uint32{1113}, Emotion: -1}
+		Target: mob.TargetSelf, Condition: mob.CondSlavesBelow, Value: 1, Summons: []uint32{1113}}
 	aiMob(t, z, 1113, 5, 5, mob.AITypes[1], nil)
 	master := aiMob(t, z, 1002, 25, 25, mob.AITypes[1]&^mob.ModeCanMove, []mob.Skill{summon})
 	steps(z, p, 3000, func() bool { return z.countSlaves(master) > 0 })
@@ -212,7 +214,7 @@ func TestMonsterHealsBelowHP(t *testing.T) {
 	z, p := aiZone(t)
 	p.entity.x, p.entity.y = 30, 30
 	heal := mob.Skill{ID: skill.IDHeal, Level: 9, State: mob.StateAny, Rate: 10000, Delay: 5000,
-		Target: mob.TargetSelf, Condition: mob.CondHPBelow, Value: 50, Emotion: -1}
+		Target: mob.TargetSelf, Condition: mob.CondHPBelow, Value: 50}
 	m := aiMob(t, z, 1002, 25, 25, mob.AITypes[1], []mob.Skill{heal})
 	sturdy(m)
 	steps(z, p, 2000, nil)
@@ -280,7 +282,7 @@ func TestClassChange(t *testing.T) {
 	m.hp = int64(m.status.MaxHP) / 2
 	before := hpPercent(m)
 	orig := m.monster.spawn
-	m.monster.spawn.Skills = []mob.Skill{{ID: mob.IDMetamorphosis, Level: 1, Summons: []uint32{1113}, Emotion: -1}}
+	m.monster.spawn.Skills = []mob.Skill{{ID: mob.IDMetamorphosis, Level: 1, Summons: []uint32{1113}}}
 	m.monster.skillIdx = 0
 	z.castendNoDamage(m, m, z.Skills.Get(mob.IDMetamorphosis), 1, 0)
 	if m.monster.spawn.Mob != 1113 {
@@ -294,5 +296,97 @@ func TestClassChange(t *testing.T) {
 	z.die(m, p.entity)
 	if len(z.respawns) != 1 || z.respawns[0].spawn != orig {
 		t.Error("it does not come back as its own kind")
+	}
+}
+
+// TestMonsterEmotionModeChange checks NPC_EMOTION and NPC_EMOTION_ON:
+// the entry's two emotions show in turn, its chat line keeps its color,
+// and its modes change the monster's mode through SC_MODECHANGE.
+func TestMonsterEmotionModeChange(t *testing.T) {
+	z, p := aiZone(t)
+	p.entity.x, p.entity.y = 30, 30
+	passive := mob.ModeCanMove | mob.ModeCanAttack
+	angry := mob.Skill{ID: mob.IDEmotion, Level: 1, State: mob.StateIdle, Rate: 10000, Delay: 60000,
+		Target: mob.TargetSelf, Emotions: []int{0, 7}, HasModes: true, Modes: passive | mob.ModeAggressive,
+		Chat: "Grr!", ChatColor: 0xFF8000}
+	calm := mob.Skill{ID: mob.IDEmotion, Level: 1, State: mob.StateIdle, Rate: 10000, Target: mob.TargetSelf,
+		HasModes: true}
+	on := mob.Skill{ID: mob.IDEmotionOn, Level: 1, State: mob.StateIdle, Rate: 10000, Target: mob.TargetSelf,
+		HasModes: true, Modes: passive | mob.ModeAngry}
+	m := aiMob(t, z, 1002, 25, 25, passive, []mob.Skill{angry, calm, on})
+	sturdy(m)
+	z.stepAt(z.now + 50)
+	events(p)
+
+	if !z.mobSkillUse(m, mobEventNone, 0) || m.monster.lastUse.idx != 0 {
+		t.Fatal("the monster did not use NPC_EMOTION")
+	}
+	if m.cast != nil {
+		z.castEnd(m, true)
+	}
+	z.stepAt(z.now + 50)
+	var emotions []uint32
+	var lines []*wathenav1.ChatMessage
+	for _, e := range events(p) {
+		if em := e.GetEmotion(); em != nil {
+			emotions = append(emotions, em.GetEmotion())
+		}
+		if c := e.GetChat(); c != nil {
+			lines = append(lines, c)
+		}
+	}
+	if !slices.Equal(emotions, []uint32{0, 7}) {
+		t.Errorf("emotions %v, want [0 7]", emotions)
+	}
+	if len(lines) != 1 || lines[0].GetText() != "Grr!" || lines[0].GetColor() != 0xFF8000 {
+		t.Errorf("chat %v, want Grr! in 0xFF8000", lines)
+	}
+	if !m.sc.Has(sc.SCModechange) || m.status.Mode != passive|mob.ModeAggressive {
+		t.Fatalf("mode 0x%X, want 0x%X through SC_MODECHANGE", m.status.Mode, passive|mob.ModeAggressive)
+	}
+
+	// An entry without modes ends the change.
+	d := z.Skills.Get(mob.IDEmotion)
+	m.monster.skillIdx = 1
+	z.castendNoDamage(m, m, d, 1, 0)
+	if m.sc.Has(sc.SCModechange) || m.status.Mode != passive {
+		t.Fatalf("mode 0x%X after the end, want 0x%X", m.status.Mode, passive)
+	}
+
+	// NPC_EMOTION_ON adds its modes. Angry makes the monster attack
+	// first.
+	m.monster.skillIdx = 2
+	z.castendNoDamage(m, m, z.Skills.Get(mob.IDEmotionOn), 1, 0)
+	if want := passive | mob.ModeAngry; !m.sc.Has(sc.SCModechange) || m.status.Mode != want || !m.monster.ai.Aggressive {
+		t.Errorf("mode 0x%X after NPC_EMOTION_ON, want 0x%X and aggressive", m.status.Mode, want)
+	}
+	// A change on top of it piles up, as SC_MODECHANGE in
+	// status_change_start: NPC_EMOTION sets the modes, but the angry
+	// mode that NPC_EMOTION_ON added and the aggressive mode it took away
+	// stay so.
+	m.monster.skillIdx = 0
+	z.castendNoDamage(m, m, d, 1, 0)
+	if want := passive | mob.ModeAngry; !m.sc.Has(sc.SCModechange) || m.status.Mode != want {
+		t.Errorf("mode 0x%X after both, want 0x%X", m.status.Mode, want)
+	}
+}
+
+// TestMonsterChatDefaultColor checks that a chat line without a color is
+// sent in mob_chat_db's default red.
+func TestMonsterChatDefaultColor(t *testing.T) {
+	z, p := aiZone(t)
+	p.entity.x, p.entity.y = 30, 30
+	say := mob.Skill{ID: mob.IDEmotion, Level: 1, State: mob.StateIdle, Rate: 10000, Target: mob.TargetSelf,
+		Emotions: []int{7}, Chat: "Hello"}
+	m := aiMob(t, z, 1002, 25, 25, mob.AITypes[1], []mob.Skill{say})
+	z.stepAt(z.now + 50)
+	events(p)
+	if !z.mobSkillUse(m, mobEventNone, 0) {
+		t.Fatal("no skill")
+	}
+	z.stepAt(z.now + 50)
+	got := chats(p)
+	if len(got) != 1 || got[0].GetColor() != mob.DefaultChatColor {
+		t.Errorf("chat %v, want the default color", got)
 	}
 }

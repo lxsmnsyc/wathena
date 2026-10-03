@@ -4,7 +4,7 @@
 id: example.chain-lightning
 name: Chain Lightning
 version: 0.1.0
-api: experimental
+api: 1.0
 description: Adds Chain Lightning, a Mage skill whose bolt jumps from enemy to enemy.
 authors:
   - name: wAthena contributors

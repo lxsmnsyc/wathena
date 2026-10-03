@@ -26,7 +26,7 @@ var templateFS embed.FS
 // variables, an item overlay, a test, an English locale, a README, and
 // the editor definitions. It returns the files it wrote.
 func New(id, dir string, consts *constants.Data) ([]string, error) {
-	if _, err := mod.ParseManifest(mod.ManifestFile, []byte("id: "+id+"\nname: x\nversion: 0.1.0\napi: experimental\n")); err != nil {
+	if _, err := mod.ParseManifest(mod.ManifestFile, []byte("id: "+id+"\nname: x\nversion: 0.1.0\napi: 1.0\n")); err != nil {
 		return nil, err
 	}
 	if entries, err := os.ReadDir(dir); err == nil && len(entries) > 0 {

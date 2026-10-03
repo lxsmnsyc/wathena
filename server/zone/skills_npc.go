@@ -42,13 +42,32 @@ func mobEntry(e *entity) *mob.Skill {
 	return &m.spawn.Skills[m.skillIdx]
 }
 
-// npcEmotionSkill is SkillEmotion and SkillEmotionOn: the monster shows its
-// entry's emotion, which castEnd shows. The mode change of rAthena's
-// val2 to val5 is not in the skills list (review decision 22), so it is
-// not ported.
+// npcEmotionSkill is SkillEmotion and SkillEmotionOn: the entry's
+// emotions, which mobCastEnd shows, and its mode change through
+// SC_MODECHANGE. npc_emotion_behavior is 0.
 type npcEmotionSkill struct{}
 
-func (npcEmotionSkill) castendNoDamage(*Zone, *entity, *entity, *skill.Def, int, *int) {}
+func (npcEmotionSkill) castendNoDamage(z *Zone, src, _ *entity, d *skill.Def, lv int, _ *int) {
+	s := mobEntry(src)
+	if s == nil {
+		return
+	}
+	set, add, del, end := s.ModeChange()
+	if end {
+		z.scEnd(src, d.Status)
+	}
+	m := src.monster
+	// A monster whose mode NPC_EMOTION sets drops its target.
+	if s.ID == mob.IDEmotion && m.ai.State != mob.StateIdle && m.ai.State != mob.StateWalk && set != 0 {
+		z.mobUnlockTarget(src)
+	}
+	if set != 0 || add != 0 {
+		z.scStart4(src, src, d.Status, 100, lv, int(set), int(add), int(del), int64(d.Duration1.At(lv)))
+	}
+	if src.status != nil {
+		m.ai.Aggressive = src.status.Mode&mob.ModeAngry != 0
+	}
+}
 
 // npcSummon is SkillFollowerSummons, SkillMonsterSummons and
 // SkillDeathSummon: mob_summonslave with the entry's summons.

@@ -18,6 +18,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/variables"
@@ -187,6 +188,9 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	if l.Tables != nil {
 		z.Progress = l.Tables
 	}
+	if l.JobTables != nil {
+		z.Status = l.JobTables
+	}
 	return &testWorld{env: e, l: l, h: h}, nil
 }
 
@@ -312,6 +316,25 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 			return nil, fmt.Errorf("world:use_item: %w", err)
 		}
 		return nil, nil
+	case "equip":
+		id, _ := args[0].AsInt()
+		it, _ := args[1].AsInt()
+		if it <= 0 || it > 1<<32-1 {
+			return nil, errors.New("world:equip: want an item from items.id")
+		}
+		rollArg := script.Nil
+		if len(args) > 2 {
+			rollArg = args[2]
+		}
+		roll, err := modscript.ReadGiveRoll("world:equip", rollArg)
+		if err != nil {
+			return nil, err
+		}
+		h, err := w.h.Equip(id, uint32(it), roll)
+		if err != nil {
+			return nil, fmt.Errorf("world:equip: %w", err)
+		}
+		return []script.Value{script.Int(h)}, nil
 	case "advance":
 		ms, _ := args[0].AsInt()
 		if _, ok := w.h.Bound(); !ok {

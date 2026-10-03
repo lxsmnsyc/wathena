@@ -4,7 +4,7 @@
 id: example.verve
 name: Verve
 version: 0.1.0
-api: experimental
+api: 1.0
 description: Adds Verve, a status that raises max HP and heals over time, and a tonic that starts it.
 authors:
   - name: wAthena contributors

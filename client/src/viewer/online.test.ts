@@ -137,6 +137,36 @@ describe('Online', () => {
     expect(server).toEqual(['Welcome']);
     expect(local).toEqual(['Bob: hi']);
   });
+
+  it('passes the color of a monster’s chat line to onChat', () => {
+    const o = online();
+    o.setMap(map());
+    const colors: number[] = [];
+    o.onChat = (_from, _name, _text, color) => {
+      colors.push(color);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'chat',
+          value: {
+            channel: ChatChannel.LOCAL,
+            from: 9,
+            fromName: 'Poring',
+            text: 'Grr!',
+            color: 0xff8000,
+          },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'chat',
+          value: { channel: ChatChannel.LOCAL, from: 3, fromName: 'Bob', text: 'hi' },
+        },
+      }),
+    ]);
+    expect(colors).toEqual([0xff8000, 0]);
+  });
 });
 
 describe('lookOf', () => {

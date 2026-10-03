@@ -113,6 +113,9 @@ type Jobs interface {
 	JobOf(mapID uint64, male bool) (int, bool)
 	// MaxJobLevel is a job's max_job_level.
 	MaxJobLevel(job int) int
+	// IsMod reports whether a mod added the job. Its map job ID names a
+	// core job of its class, so its own tree is found by its ID.
+	IsMod(job int) bool
 }
 
 // Learner is what pc_calc_skilltree reads of a player.
@@ -187,6 +190,9 @@ func treeJob(db *DB, jobs Jobs, l *Learner, set Settings) (int, error) {
 	c := mapID
 	if !set.NoSkillupLimit {
 		c = normalizeJob(db, jobs, l, mapID, set)
+	}
+	if c == mapID && jobs.IsMod(l.Job) {
+		return l.Job, nil
 	}
 	job, ok := jobs.JobOf(c, l.Male)
 	if !ok {

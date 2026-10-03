@@ -59,8 +59,15 @@ export function jobName(id: number): string {
   return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-/** The levels and exp line, or undefined until the server sends levels. */
-export function expLine(stats: ReadonlyMap<StatId, bigint>): string | undefined {
+/**
+ * The levels and exp line, or undefined until the server sends levels.
+ * names holds the job names the server sent, which win over the names
+ * made from the client tables, since mods add jobs the tables lack.
+ */
+export function expLine(
+  stats: ReadonlyMap<StatId, bigint>,
+  names: ReadonlyMap<number, string> = new Map(),
+): string | undefined {
   const level = (name: string, lv: StatId, exp: StatId, next: StatId): string | undefined => {
     const l = stats.get(lv);
     if (l === undefined) {
@@ -80,7 +87,11 @@ export function expLine(stats: ReadonlyMap<StatId, bigint>): string | undefined 
   }
   const id = stats.get(StatId.JOB);
   const line = parts.join(', ');
-  return id === undefined ? line : `${jobName(Number(id))}: ${line}`;
+  if (id === undefined) {
+    return line;
+  }
+  const name = names.get(Number(id)) ?? jobName(Number(id));
+  return `${name}: ${line}`;
 }
 
 /** What to tell the player when a pick up fails. */

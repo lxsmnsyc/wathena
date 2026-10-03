@@ -49,7 +49,17 @@ message Event {
     SkillFailed skill_failed = 37;
     SkillCooldown skill_cooldown = 38;
     ItemRollsChange item_rolls_change = 39;
+    JobName job_name = 40;
   }
+}
+
+// JobName names the player's job, from its record's display_name. It
+// comes after login and after each job change, since the client data
+// tables do not know the jobs mods add.
+message JobName {
+  // job is the job ID, as STAT_ID_JOB.
+  uint32 job = 1;
+  string name = 2;
 }
 
 // MapChange moves the player to another map, after a warp. It is the
@@ -241,8 +251,9 @@ enum StatId {
   STAT_ID_INT_COST = 33;
   STAT_ID_DEX_COST = 34;
   STAT_ID_LUK_COST = 35;
-  // JOB is the player's rAthena job ID, which changes with a job change.
-  // The look's body shows the class a rider shows instead.
+  // JOB is the player's job ID, which changes with a job change: rAthena's
+  // job ID, or a mod job's ID, which JobName names. The look's body shows
+  // the job's look, or the class a rider shows.
   STAT_ID_JOB = 36;
 }
 
@@ -410,8 +421,9 @@ message ChatMessage {
   uint32 from = 2;
   string from_name = 3;
   string text = 4;
-  // color is the text's color as 0xRRGGBB for an announcement, or 0 for
-  // the channel's own color.
+  // color is the text's color as 0xRRGGBB for an announcement or a
+  // monster's chat line, or 0 for the channel's own color. A monster's
+  // line is local chat in its skills entry's chat_color.
   uint32 color = 5;
 }
 

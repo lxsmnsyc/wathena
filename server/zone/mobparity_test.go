@@ -64,7 +64,7 @@ func loadMobDefs(t *testing.T, mode reference.Mode, skills *skill.DB) *mobDefs {
 		st := mob.Calc(def, mode == reference.Renewal)
 		out.status[id] = &st
 		for _, r := range def.Skills {
-			s, _, err := mob.FromRaw(r, ground, exists, d.ChatText)
+			s, _, err := mob.FromRaw(r, def.Mode, ground, exists, d.ChatLine)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -533,6 +533,7 @@ func TestMobSkillUseParity(t *testing.T) {
 					ec("mob_statuses", nilEmpty(got.Effects.MobStatuses), nilEmpty(w.MobStatuses))
 					ec("mob_moved", got.Effects.MobMoved, w.MobMoved)
 					ec("mob_changed_to", got.Effects.MobChangedTo, w.MobChangedTo)
+					ec("mob_mode", modeOf(got.Effects.MobMode), modeOf(w.MobMode))
 				}
 				ec("summoned", nilEmpty32(got.Effects.Summoned), nilEmpty32(w.Summoned))
 				if len(ed) == 0 {
@@ -568,6 +569,14 @@ func TestMobSkillUseParity(t *testing.T) {
 	}
 }
 
+// modeOf shows a recorded mode change, or "none".
+func modeOf(m *uint32) string {
+	if m == nil {
+		return "none"
+	}
+	return fmt.Sprintf("0x%X", *m)
+}
+
 func nilEmpty(s []int) []int {
 	if len(s) == 0 {
 		return nil
@@ -601,7 +610,7 @@ func runMobSkillCase(t *testing.T, mode reference.Mode, c mobSkillCase) mobSkill
 		mm.target = p.entity
 	}
 	z.now = 2000
-	hp0 := m.hp
+	hp0, mode0 := m.hp, m.status.Mode
 	used := false
 	switch c.Case {
 	case "hp":
@@ -670,6 +679,9 @@ func runMobSkillCase(t *testing.T, mode reference.Mode, c mobSkillCase) mobSkill
 		}
 		if mm.spawn.Mob != c.Mob {
 			e.MobChangedTo = mm.spawn.Mob
+		}
+		if md := m.status.Mode; md != mode0 {
+			e.MobMode = &md
 		}
 	}
 	for o := range z.entities.all() {

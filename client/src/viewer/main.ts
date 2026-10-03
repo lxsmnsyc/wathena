@@ -804,8 +804,8 @@ if (serverURL === null) {
       log.notice(text);
     };
     const rate = new ChatRate(performance.now());
-    view.onChat = (from, speaker, text) => {
-      log.add(speaker, text, from === view.self);
+    view.onChat = (from, speaker, text, color) => {
+      log.add(speaker, text, from === view.self, color);
       bubbles.say(from, chatLine(speaker, text), performance.now());
     };
     view.onServerText = (text) => {
@@ -1315,7 +1315,7 @@ renderer.setAnimationLoop((time) => {
     if (hp !== undefined && hpOutput !== null && hpOutput.value !== hp) {
       hpOutput.value = hp;
     }
-    const exp = expLine(stats);
+    const exp = expLine(stats, session?.online.jobNames);
     if (exp !== undefined && expOutput !== null && expOutput.value !== exp) {
       expOutput.value = exp;
     }

@@ -1,0 +1,24 @@
+# A sample mod that adds a job and a skill: data/jobs.yml defines the
+# Desperado, data/skills.yml its skill Quick Draw, and
+# data/skill_trees.yml lets the Desperado learn it. mods/README.md,
+# "Jobs" and "Skills", explains each field.
+id: example.desperado
+name: Desperado
+version: 0.1.0
+api: 1.0
+description: Adds the Desperado, a second job for Gunslingers, with its own skill and a mentor who changes jobs.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read
+  - player.give_items
+scripts:
+  - scripts/main.lua

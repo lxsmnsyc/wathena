@@ -1,0 +1,10 @@
+# The Desperado's Hat. jobs lists job names: only Desperados wear it.
+- name: example.desperado:Desperado_Hat
+  type: Armor
+  display_name: Desperado's Hat
+  weight: 200
+  location: [head_top]
+  def: 3
+  jobs: [example.desperado:Desperado]
+  bonuses:
+    - [dex, 2]

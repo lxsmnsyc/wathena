@@ -118,13 +118,9 @@ func (t *Tables) MaxParameter(c *Character) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	id, ok := t.mapIDToJob(j.mapID, c.Male)
+	sj, ok := t.statsJob(j, c.Male)
 	if !ok {
 		return 0, fmt.Errorf("status: job %d has no map job ID", c.Job)
-	}
-	sj, err := t.job(id)
-	if err != nil {
-		return 0, err
 	}
 	return sj.maxParam, nil
 }

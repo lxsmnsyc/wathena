@@ -2423,7 +2423,7 @@ The order from here:
       - The converter turns `OnClock`, `OnHour`, `OnMinute` and the weekday labels into schedules, and `monster` with `OnMyMobDead`-style labels of the same NPC, and `mobcount`, into `spawning.monsters` and death handlers. No more NPC converts whole yet: each one that uses them also needs something else, such as `OnTimer`, `killmonster`, `gettime` or `npcshopupdate`.
       - Checked in Chrome: see "Phase 3 exit check" below.
       - Left: a yearly schedule for `OnDay`, a way to remove one spawned monster (`killmonster`), mod item and monster names in the client's data tables (phase 6), `data/spawns.yml`, built-in event types of section 8.8, rewards in event data, and the review of `respawn_milliseconds`.
-   The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. The phase 3 exit check passed. Manifests stay `api: experimental` until the end of phase 4, which changes parts of the API such as monster stats; then the API becomes `api: 1.0`. The step 6 API was reviewed on 2026-10-02 (proposal 0002, review decision 17): handles gained `kind`, and `respawn = true` follows rAthena's spawn line delays.
+   The public Lua API is specified in [proposal 0002](proposals/0002-lua-api.md), accepted on 2026-10-01. The phase 3 exit check passed. Manifests said `api: experimental` until the end of phase 4, which changed parts of the API such as monster stats. After the phase 4 exit check the API became `api: 1.0`. The step 6 API was reviewed on 2026-10-02 (proposal 0002, review decision 17): handles gained `kind`, and `respawn = true` follows rAthena's spawn line delays.
 7. Phase 4 in full. Skills, status effects, equipment, and monster AI, on top of Lua. It runs in these steps, approved on 2026-10-02:
    1. Equipment and modifiers. Equipping and unequipping, equipment slots, refines, and cards. Stats become totals of modifiers, and the converted item bonuses apply to players. The ruleset flags that equipment needs. Checked against `item_bonuses.json` and `refine.json`. Done on 2026-10-02 ([decision 0009](decisions/0009-stats-as-totals-of-modifiers.md), server/README.md, "Equipment", and [proposal 0001](proposals/0001-protocol.md)):
       - Equipping and unequipping, ported from rAthena's `pc_equippoint`, `pc_isequip`, `pc_equipitem`, `pc_unequipitem` and `pc_calcweapontype`: every position, jobs and classes, sex and level, two-handed weapons against shields, dual wield for Assassins, Kagerou and Oboro, accessories, and ammunition with `ammo_unequip`. Cards go into items as `pc_insert_card`.
@@ -2485,7 +2485,16 @@ The order from here:
       - A sample mod, [examples/lucky-clover](../mods/examples/lucky-clover), has a charm with two rolls, Clover Porings that drop it with random options, an `item_roll` hook, and a smith who rerolls it.
       - Parity: with every draw at its lowest, 108 of 108 groups and 179 of 179 monster drops give rAthena's options; seeded statistics match in 3,363 of 3,363 cells; 100,000 draws of each distribution stay in range and pass a chi-square test.
       - Left: identifying items (Item Appraisal and Magnifiers), so hidden values do not show yet; rolls on crafting and quest rewards; roll searches in vending; handles for inventory copies; the ten `RACE_WEAPON_TOLERACE_*` options; mod item names in the client; and item logs in the database.
-   7. Job definitions through the mod API, and the phase 4 exit check. Then the API becomes 1.0.
+   7. Job definitions through the mod API, and the phase 4 exit check. Then the API becomes 1.0. Done on 2026-10-03 ([decision 0015](decisions/0015-job-definitions.md), server/README.md, "Job records", [mods/README.md](../mods/README.md), "Jobs", and [proposal 0002](proposals/0002-lua-api.md), review decision 24):
+      - Jobs are records of `data/jobs.yml` with the fields of review decision 24. Core's jobs are records too, converted from the existing `job_stats.json`, `progression.json` and `skill_trees.json` extracts, so the rAthena fork needed no change. The job tables, exp tables, `jobs.next_jobs`, `player:change_job` and the trees of new jobs read the records. The tables built from core's records match rAthena's in 3,150 stat calculations of 175 jobs in renewal and 1,368 of 76 jobs in pre-renewal, with their maximum stats, exp tables and next jobs.
+      - Mod jobs get IDs from 10,000 and the class of their look with their own tier, transcendent and baby bits. Fields a new job leaves out come from its look. Skill trees take `inherits`, and an item's `jobs` field takes job names.
+      - `jobs.id`, the `job_change` event, and the job calls and tests work with mod jobs. The protocol gained `JobName`. The client shows the look's sprites and the `display_name`.
+      - Monster skill entries gained `modes` through `SC_MODECHANGE`, a list of two for `emotion`, and `chat_color`, which the client shows. Every `mob_skill_db` row converts in full: 14,514 in renewal and 5,494 in pre-renewal. The effects of `mob_skill_use.json` now match in 18,153 of 18,232 used skills in renewal and 7,205 of 7,213 in pre-renewal.
+      - `wa.testing` gained `world:equip`, rolls gained `display_name`, and the provisional details became final.
+      - Manifests moved to `api: 1.0`.
+      - A sample mod, [examples/desperado](../mods/examples/desperado), adds the Desperado, a second job for Gunslingers, with the skill Quick Draw, a hat only it wears, a mentor who changes jobs with `player:change_job`, and a `job_change` handler.
+      - Checked in Chrome: a Gunslinger at job level 40 changed into a Desperado through `player:change_job`, and the HUD went from "Gunslinger: Base Lv 60, Job Lv 40" to "Desperado: Base Lv 60, Job Lv 1", with the Desperado's maximum HP and the hat of the `job_change` handler.
+      - Left: mounts, falcons and carts for new jobs, which wait for a general design of companions; mod job names in the account pages; characters whose mod job was removed; and mod item names in the client (phase 6).
    Steps 2, 3, 5, and 7 add Lua API. Each step's API goes to review before it is built.
 
 Reasons for this order:
@@ -2661,6 +2670,43 @@ Exit criteria:
 - The full-recalculation check in section 5.3 passes for every item in `core`.
 - With `item_rolls` set to `off`, every item matches rAthena. With `on`, 100,000 rolled drops stay inside their declared ranges and follow their distributions.
 - A sample mod adds a new skill and a new job.
+
+Phase 4 exit check, done on 2026-10-03:
+
+- Parity harness: every recorded file matches in both modes. The tests pick each mode's data and formulas. `TestSampledMixedRulesets` checks that `core.ruleset.renewal` and `core.ruleset.pre_renewal`, applied through the loader, give what each mode's tables give alone.
+
+  | File | Renewal | Pre-renewal |
+  |---|---:|---:|
+  | `pathfinding.json` | 9,000 queries, both modes | (same) |
+  | `distance.json` (new test) | 1,681 of 1,681 | 1,681 of 1,681 |
+  | `elements.json` | 400 of 400 | 400 of 400 |
+  | `mob_status.json` | 2,675 of 2,675 | 1,004 of 1,004 |
+  | `mob_damage.json` | 400 of 400 | 400 of 400 |
+  | `pc_status.json` | 1,404 of 1,404 | 1,404 of 1,404 |
+  | `pc_damage.json` | 3,975 of 3,975 | 3,975 of 3,975 |
+  | `skill_damage.json` | 1,879 of 1,879 (92 skills) | 1,864 of 1,864 (91 skills) |
+  | `skill_casting.json` | 6,078 of 6,078 | 6,096 of 6,096 |
+  | `skill_status.json` | 621 of 621 | 512 of 512 |
+  | `mob_ai.json` | 2,814 of 2,814 | 2,814 of 2,814 |
+  | `mob_skill_use.json`, entry chosen | 22,189 of 22,189 | 8,594 of 8,594 |
+  | `mob_skill_use.json`, effects | 18,153 of 18,232 | 7,205 of 7,213 |
+  | `item_bonuses.json` | 9,993 items, 1,502 cards | 1,875 items, 431 cards |
+  | `refine.json` | 105 of 105 | 55 of 55 |
+  | `status_effects.json` | 2,640 of 2,640 | 2,640 of 2,640 |
+  | `level_penalty.json` | 642 of 642 | empty, as rAthena |
+  | `random_option_rolls.json` | 108 groups, 3,363 cells, 179 drops | none, as rAthena |
+
+  - The 79 renewal and 8 pre-renewal effect mismatches of `mob_skill_use.json` are skills without a full port: `ITM_TOMAHAWK`, `GS_DUST`, `SA_REVERSEORCISH`, three `ABR_` skills and `RK_IGNITIONBREAK`.
+  - 37 recorded expanded class skills (Gunslinger, Ninja, Taekwon, Soul Linker) are not ported yet, so `skill_damage.json` leaves them out.
+  - The check found a bug: a pre-renewal base used renewal's size table. It is fixed.
+- Ruleset flags: `TestEveryFlagBothValues` loads every flag at both values on both bases, and `TestCoreRulesetFlags` checks the core rulesets. Only `aspd`, `size_table` and `item_rolls` have behavior, and each has behavior tests for both values. The other 14 flags are accepted and recorded, but nothing reads them yet: their rules follow the base. `TestSampledMixedRulesets` runs 8 seeded mixes per base, with 6 to 11 flags away from the base, through stats, damage, cast times, exp and drops. This criterion is met for the built flags only.
+- Golden tests: every player skill with a behavior has a recording or its own test. 23 have only `skill_casting.json` coverage, such as First Aid, Steal and the Sage's element skills. 41 monster `NPC_` skills have no test, down from 73 before this check: summons, monster magic, ground units and renewal third class formulas.
+- Full recalculation (section 5.3): `TestFullRecalculationEveryItem` equips, levels and unequips every core item and card, saves and loads the player after each step, and compares the whole battle status and weight.
+  - Renewal: 12,222 items and 1,545 cards, 40,892 steps, 0 mismatches.
+  - Pre-renewal: 1,955 items and 452 cards, 7,203 steps, 0 mismatches.
+  - Left out: Doram items (summoners are not ported), enchants without a position, and some ammunition. Under `-race` it checks every 25th item.
+- Rolled items: `TestRolledDropDistributions` makes 100,000 drops through the zone's drop code with `item_rolls` on. Every value is in range. The chi-square values are 26.5 of a 57.9 limit (uniform), 7.2 of 34.5 (triangular) and 9.1 of 34.5 (weighted). With the flag off, every roll is its default, and items match rAthena by `TestEquipmentParity` and `TestRandomOptionParity`.
+- Sample mod: [examples/desperado](../mods/examples/desperado) adds the Desperado job and the Quick Draw skill. Its 6 `wactl mod test` cases and `TestDesperado` pass, and Chrome showed the job change in the HUD (step 7 above).
 
 ### Phase 5: Social and economy systems, tier 1
 

@@ -855,9 +855,18 @@ Methods on player handles check their own permissions, such as `player.give_item
     - The details listed under next steps 6 to 9, and the step 6 details (`multiply` and `divide` in `{ roll }`, lists in a random option's `bonus`, `random_option_group` on drops, card handles with their own rolls, the `item_roll` hook for default values, core option IDs, and hidden rolls that start unidentified), are accepted as built.
     - Mounts, falcons and carts wait for a general design, since mods may add their own companions such as familiars.
 
+25. Companions, mounts and carts (after phase 4 step 7). The user approved these on 2026-10-03:
+    - **Companions** are `data/companions.yml`: `name`, `display_name`, `look` (an existing companion sprite, such as `falcon`), `acts_as` (a core companion whose skills work with it, such as `falcon`), `requires` (a list of `{ skill, level }`) and `bonuses`. A player has at most one companion. A skill that needs a falcon accepts any companion that acts as one. A skill's `requirements` can name a companion: `{ companion = <name> }`. Core's companion is `falcon`, and later `warg`.
+    - **Mounts** are `data/mounts.yml`: `name`, `display_name`, `look` (such as `peco_peco` or `dragon`), `acts_as` (a core mount whose rules apply: speed, the mounted ASPD rule, and spear damage), `requires`, `speed` and `bonuses`.
+    - **Carts** have a look number and the player's cart storage.
+    - `player:set_companion(companion)`, `player:set_mount(mount)` and `player:set_cart(look)`, each with `nil` to remove. They return false when the player does not meet `requires`. A cart needs Pushcart, as rAthena. The fields `player.companion`, `player.mount` and `player.cart` are read-only. `companions.id` and `mounts.id` find records.
+    - A job change removes a companion or mount the new job does not meet `requires` for, as `pc_jobchange`.
+    - The converter maps `setfalcon`, `setriding`, `setcart` and `checkfalcon` to these calls.
+    - Later: companions that fight on their own, companion events, and more than one companion at a time.
+
 ## Version
 
-A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
+The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
 
 ## Next steps
 
@@ -895,3 +904,18 @@ A mod's manifest says `api: experimental` (strategy section 6.12) until the end 
    - The monster methods need no permission. Reading the fields needs `game.read`, as other handle fields.
    - `walk_to` keeps the AI waiting until the walk ends, as rAthena's `force_walk`. `use_skill` takes a level from 1 to 100 and skips the delays of the skills list.
    - A monster AI script's context also ends when its mod reloads. Monsters spawned after the reload run the new script.
+10. Build the job definitions and the details before 1.0 of phase 4 step 7 (review decision 24). Done on 2026-10-03 ([decision 0015](../decisions/0015-job-definitions.md)). The details of next steps 6 to 9 are accepted as built, and the API is 1.0. The parts that step 5 dropped now have fields: `modes`, a list of two for `emotion`, and `chat_color`. The user accepted these details as built on 2026-10-03, except that a character whose mod job was removed must still load:
+   - A new job's `display_name` defaults to its name without the mod prefix, as for new monsters, and not to its look's name.
+   - `changes_from` levels are optional. Core's records have none, since rAthena's `jobchange` checks none, so `player:change_job` without `force` still accepts core's next jobs at any level. The Job Master checks rAthena's levels.
+   - A new job with no `changes_from` takes its look's, so its look's earlier job may change into it. `changes_from: []` leaves it to scripts with `force`.
+   - On core's jobs, `tier`, `transcendent`, `baby`, `base_job` and `inherits` cannot change. `look` changes only the sprites.
+   - A mod job's class is its look's class with its own tier, transcendent and baby bits. A second job without second job bits gets the 2-1 bit.
+   - An item's `jobs` list with a core job's name sets rAthena's `Jobs` bits of its class, so `knight` covers Lord Knight and Rune Knight unless `classes` leaves them out. A mod job's name lets that job wear the item whatever its class.
+   - `aspd` merges by weapon type. `hp` and `hp_table` replace each other, and `hp_table` must cover every base level.
+   - `jobs.id` needs `game.read`, as `skills.id`.
+   - The `job_change` event also fires for `player:rebirth`, with `to` the High Novice.
+   - `chat_color` is a number written 0xRRGGBB, from 0x000001, since 0 is the channel's own color in the protocol. Its default is rAthena's red.
+   - `emotion` shows both emotions at the cast's end, in order, on any skill. `modes: []` on `NPC_EMOTION` ends the mode change, as a row whose mode equals the monster's.
+   - `world:equip` leaves the given copy in the inventory when it cannot be equipped.
+   - A roll's `display_name` replaces the label from its bonus. The unit stays.
+   - `api: experimental` is refused with a message, and a range such as `^1.0` must include 1.0.

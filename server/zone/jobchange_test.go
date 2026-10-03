@@ -306,3 +306,61 @@ func TestJobChangeSkillTree(t *testing.T) {
 		t.Error("the Knight tree shows before 49 points at a change level of 50")
 	}
 }
+
+// withModJob adds a mod job to a zone's job tables: a second job of the
+// Gunslinger line that shows the Gunslinger's sprites, and that a
+// Gunslinger at job level 40 may change into.
+func withModJob(t *testing.T, z *Zone) int {
+	t.Helper()
+	const id = 10_000
+	var d status.Data
+	if err := reference.LoadFile("extracts/renewal/job_stats.json", &d); err != nil {
+		t.Fatal(err)
+	}
+	jobs := status.CoreJobData(&d)
+	for _, j := range jobs {
+		if j.ID == 24 {
+			j.ID, j.MapID = id, 0x108
+			j.Info = status.JobInfo{Name: "example.a:Desperado", DisplayName: "Desperado", Mod: "example.a", Look: 24, EquipsAs: 24, BaseJob: id,
+				Tier: status.TierSecond, ChangesFrom: []status.JobChange{{Job: 24, JobLevel: 40}}}
+			jobs = append(jobs, j)
+			break
+		}
+	}
+	z.Status = z.Status.WithJobs(jobs)
+	return id
+}
+
+// TestChangeIntoModJob checks a change into a mod job: changes_from and
+// its levels, the look job's sprites, and the job's name for the client.
+func TestChangeIntoModJob(t *testing.T) {
+	z, p := jobZone(t, reference.Renewal, 24, 60, 39)
+	id := withModJob(t, z)
+	if !slices.Equal(NextJobs(z.Status, 24), []int{id}) {
+		t.Errorf("next jobs of the Gunslinger: %v", NextJobs(z.Status, 24))
+	}
+	if z.changeJob(p, id, false) {
+		t.Fatal("a Gunslinger at job level 39 changed into the mod job")
+	}
+	p.progress.JobLevel = 40
+	if !z.changeJob(p, id, false) || p.char.Job != id || p.progress.JobLevel != 1 {
+		t.Fatalf("job %d, job level %d", p.char.Job, p.progress.JobLevel)
+	}
+	if p.Look.Job != 24 {
+		t.Errorf("the mod job shows sprites of job %d", p.Look.Job)
+	}
+	z.stepAt(z.now + 50)
+	var name string
+	for _, e := range events(p) {
+		if n := e.GetJobName(); n != nil && n.GetJob() == uint32(id) {
+			name = n.GetName()
+		}
+	}
+	if name != "Desperado" {
+		t.Errorf("job name %q", name)
+	}
+	// Back to a core job only with force.
+	if z.changeJob(p, 24, false) || !z.changeJob(p, 24, true) || p.char.Job != 24 {
+		t.Errorf("job %d after the change back", p.char.Job)
+	}
+}

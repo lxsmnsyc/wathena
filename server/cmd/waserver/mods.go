@@ -12,6 +12,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/tools/convert"
@@ -38,7 +39,7 @@ type mods struct {
 // server starts (docs/decisions/0007-converted-item-scripts.md). They
 // are core's files.
 func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mode, items *item.Data, monsters map[uint32]gamedata.Monster,
-	tables *progression.Tables, ids mod.IDStore, core *convert.Core, log *slog.Logger) (*mods, error) {
+	tables *progression.Tables, jobs *status.Tables, ids mod.IDStore, core *convert.Core, log *slog.Logger) (*mods, error) {
 	var found []*mod.Mod
 	if o.Dir != "" {
 		var err error
@@ -47,7 +48,7 @@ func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mod
 		}
 	}
 	cfg := mod.Config{Ruleset: o.Ruleset, Base: base, Approve: o.Approve, Disable: o.Disable, Strict: o.Strict}
-	m, err := gamedata.LoadMods(ctx, found, cfg, mode, items, monsters, tables, ids, core, log)
+	m, err := gamedata.LoadMods(ctx, found, cfg, mode, items, monsters, tables, jobs, ids, core, log)
 	if err != nil {
 		return nil, err
 	}

@@ -56,30 +56,76 @@ type JobData struct {
 	MaxJobLevel  int   `json:"max_job_level"`
 	// ASPDBase is indexed by weapon type. Renewal has one more column for
 	// shields and holds ASPD. Pre-renewal holds amotion.
-	ASPDBase   []int `json:"aspd_base"`
-	BonusStats []struct {
-		Level int `json:"level"`
-		Str   int `json:"str"`
-		Agi   int `json:"agi"`
-		Vit   int `json:"vit"`
-		Int   int `json:"int"`
-		Dex   int `json:"dex"`
-		Luk   int `json:"luk"`
-		Pow   int `json:"pow"`
-		Sta   int `json:"sta"`
-		Wis   int `json:"wis"`
-		Spl   int `json:"spl"`
-		Con   int `json:"con"`
-		Crt   int `json:"crt"`
-	} `json:"bonus_stats"`
-	BaseHP []struct {
-		Level int `json:"level"`
-		HP    int `json:"hp"`
-	} `json:"base_hp"`
-	BaseSP []struct {
-		Level int `json:"level"`
-		SP    int `json:"sp"`
-	} `json:"base_sp"`
+	ASPDBase   []int           `json:"aspd_base"`
+	BonusStats []JobBonusStats `json:"bonus_stats"`
+	BaseHP     []JobHP         `json:"base_hp"`
+	BaseSP     []JobSP         `json:"base_sp"`
+	// Info is what the job's record in data/jobs.yml adds. The extract
+	// does not have it.
+	Info JobInfo `json:"-"`
+}
+
+// JobBonusStats is one row of job_stats.yml's BonusStats: the stats a
+// job level adds.
+type JobBonusStats struct {
+	Level int `json:"level"`
+	Str   int `json:"str"`
+	Agi   int `json:"agi"`
+	Vit   int `json:"vit"`
+	Int   int `json:"int"`
+	Dex   int `json:"dex"`
+	Luk   int `json:"luk"`
+	Pow   int `json:"pow"`
+	Sta   int `json:"sta"`
+	Wis   int `json:"wis"`
+	Spl   int `json:"spl"`
+	Con   int `json:"con"`
+	Crt   int `json:"crt"`
+}
+
+// JobHP is one row of job_stats.yml's BaseHp.
+type JobHP struct {
+	Level int `json:"level"`
+	HP    int `json:"hp"`
+}
+
+// JobSP is one row of job_stats.yml's BaseSp.
+type JobSP struct {
+	Level int `json:"level"`
+	SP    int `json:"sp"`
+}
+
+// JobInfo is the part of a job record of data/jobs.yml that rAthena's
+// job_db does not hold (proposal 0002, review decision 24).
+type JobInfo struct {
+	// Name is the job's name: its name in wa.jobs, such as knight, or a
+	// mod job's full name, such as example.jobs:Desperado.
+	Name string
+	// DisplayName is the name players see.
+	DisplayName string
+	// Mod is the mod that added the job, or "" for core's jobs.
+	Mod string
+	// Look is the job whose sprites the job shows. EquipsAs is the job
+	// whose equipment rules it follows. BaseJob is rAthena's BaseJob.
+	Look, EquipsAs, BaseJob int
+	// Tier is novice, first, second, third, fourth or expanded.
+	Tier               string
+	Transcendent, Baby bool
+	// ChangesFrom lists the jobs that may change into this one, with the
+	// levels they need.
+	ChangesFrom []JobChange
+	// Inherits lists the jobs whose skill trees the job's tree takes, as
+	// rAthena's Inherit.
+	Inherits []int
+	// MaxStats is the highest STR to LUK, or 0 for rAthena's default of
+	// the job's class.
+	MaxStats int
+}
+
+// JobChange is one entry of a job's changes_from: a job that may change
+// into it, and the base and job levels it needs (0 is none).
+type JobChange struct {
+	Job, BaseLevel, JobLevel int
 }
 
 // Data is job_stats.json, which reference/rathena extracted from
@@ -128,6 +174,7 @@ type job struct {
 	bonus  []traits
 	baseHP []uint32
 	baseSP []uint32
+	info   JobInfo
 }
 
 // newJob builds a job's tables as JobDatabase::loadingFinished: missing
@@ -141,8 +188,12 @@ func newJob(d *JobData, renewal bool) *job {
 		maxBaseLevel: d.MaxBaseLevel,
 		maxJobLevel:  d.MaxJobLevel,
 		aspdBase:     d.ASPDBase,
+		info:         d.Info,
 	}
 	j.maxParam = maxParam(j.mapID)
+	if d.Info.MaxStats > 0 {
+		j.maxParam = d.Info.MaxStats
+	}
 	j.baseHP = make([]uint32, j.maxBaseLevel)
 	for _, r := range d.BaseHP {
 		if r.Level >= 1 && r.Level <= j.maxBaseLevel {

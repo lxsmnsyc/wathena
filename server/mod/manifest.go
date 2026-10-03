@@ -16,10 +16,13 @@ import (
 // ManifestFile is the name of a mod's manifest, at the root of its folder.
 const ManifestFile = "mod.yaml"
 
-// API is the scripting API version this server offers. The API stays
-// experimental until the phase 3 exit check (proposal 0002, "Version").
-// Until then a mod declares `api: experimental`.
-const API = "experimental"
+// API is the scripting API version this server offers (proposal 0002,
+// "Version", and strategy section 6.12). A mod declares `api: 1.0`, or a
+// range that includes it, such as ">=1.0 <2.0".
+const API = "1.0"
+
+// apiVersion is API as a version, which a manifest's range must include.
+var apiVersion = Version{Major: 1}
 
 // Manifest is a mod's mod.yaml (strategy section 6.3).
 type Manifest struct {
@@ -172,7 +175,8 @@ func ParseManifest(file string, data []byte) (*Manifest, error) {
 	switch m.API {
 	case "":
 		bad("api", "is required; this server's API is %s, so use api: %s", API, API)
-	case API:
+	case "experimental":
+		bad("api", "experimental ended with API %s; use api: %s", API, API)
 	default:
 		if _, err := ParseRange(m.API); err != nil {
 			bad("api", "%v", err)
@@ -274,6 +278,13 @@ func checkScriptPath(p string) error {
 }
 
 var scriptName = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+
+// SupportsAPI reports whether the manifest's api includes this server's
+// API.
+func (m *Manifest) SupportsAPI() bool {
+	r, err := ParseRange(m.API)
+	return err == nil && r.Match(apiVersion)
+}
 
 // SemVer returns the parsed version.
 func (m *Manifest) SemVer() Version { return m.version }

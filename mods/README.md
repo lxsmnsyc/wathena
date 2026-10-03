@@ -1,12 +1,13 @@
 # Making a mod
 
-A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader and tools support today, in phase 3 step 6. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md). It is experimental and can change in any release until API 1.0.
+A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader and tools support today, at the end of phase 4. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md), at version 1.0. It follows semantic versioning (strategy section 6.12): breaking changes only come with a new major version, and new API starts under `wa.experimental`.
 
 - [core](core) is the base game as a mod. It is built into the server. Its files are rAthena's item scripts, NPCs and shops, which the server converts when it starts ("Item scripts" and "Core's NPCs" below).
 - [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a shop, a script that greets players, and tests.
 - [examples/halloween](examples/halloween) is the phase 3 exit check: a hat, a witch who gives it once, Pumpkin Porings with drops, a night that doubles their drops through a `drop_rate` hook, and the Pumpkin King, a boss that a world event brings every evening.
 - [examples/verve](examples/verve) adds a status effect: `statuses.define`, a `status_tick` handler, and a tonic that starts the status, with tests.
 - [examples/lucky-clover](examples/lucky-clover) adds a charm with rolled values, a monster that drops it with random options, an `item_roll` hook, and a smith who rerolls it ("Rolled item values" below).
+- [examples/desperado](examples/desperado) is the phase 4 exit check: a new job, the Desperado, with a new skill, Quick Draw, a hat only it wears, a mentor who changes jobs, and a `job_change` handler ("Jobs" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -42,7 +43,7 @@ Names that start with `.`, such as `.luarc.json`, `.wathena` and `.git`, are not
 id: example.greeter
 name: Greeter
 version: 0.1.0
-api: experimental
+api: 1.0
 description: Greets players when they log in.
 authors:
   - name: Example Author
@@ -68,7 +69,7 @@ scripts:
 | `id` | yes | Lowercase words of letters, digits, `_` and `-`, separated by dots. `core`, `core.*`, `wa` and `wa.*` are reserved. |
 | `name` | yes | The name people see. |
 | `version` | yes | A semantic version, such as `1.2.0`. |
-| `api` | yes | `experimental` until API 1.0. A range such as `">=1.0 <2.0"` parses, and is refused until the server has API 1.0. |
+| `api` | yes | The API version the mod is written for: `1.0`, or a range that includes it, such as `">=1.0 <2.0"`. A range without 1.0 is refused. `experimental`, the value before API 1.0, is refused too. |
 | `description`, `authors`, `license` | no | Shown to server owners. Each author needs a `name`. |
 | `depends` | no | Mods that must be installed and load first. `version` is a range: `>=1.0 <2.0`, `^1.2`, `~1.2`, `1.2.3`, and alternatives with `||`. |
 | `load_after` | no | Mods to load after when they are installed. A missing one is ignored. |
@@ -93,7 +94,7 @@ A ruleset mod starts from another ruleset mod and changes flags:
 id: example.classic-plus
 name: Classic Plus
 version: 1.0.0
-api: experimental
+api: 1.0
 provides:
   ruleset:
     extends: core.ruleset.pre_renewal
@@ -153,7 +154,10 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
   - `subtype`: the weapon type of a weapon, or the ammunition type of ammunition, as rAthena's `W_` and `AMMO_` numbers.
   - `atk`, `matk` (renewal only), `def`, `range`, `slots` (up to 16; the world uses at most 4, rAthena's `MAX_SLOTS`), `weapon_level`, `armor_level` and `refineable`.
   - `view`: the sprite the item shows on a character, as item_db's `View`.
-  - `jobs` and `classes`: who may wear it, as three decimal strings of rAthena's job bit masks and the `ITEMJ_` bits. Leave them out for everyone.
+  - `jobs` and `classes`: who may wear it. `jobs` is a list of job names, such as `[knight, example.desperado:Desperado]`, or three decimal strings of rAthena's job bit masks. `classes` holds the `ITEMJ_` bits. Leave them out for everyone.
+    - A core job's name sets the bits of rAthena's `Jobs` for its class, as item_db does: `knight` also lets a Lord Knight or a Rune Knight wear the item, unless `classes` leaves them out.
+    - A mod job's name lets that job wear the item, whatever its class.
+    - A job with `equips_as` follows the masks of that job ("Jobs" below).
   - `no_equip`: the map types where its script does not run, as `item_noequip.txt`: 1 normal maps, 2 PvP, 4 GvG, 8 battlegrounds.
 - `unsupported` says what the item's script needs that the server does not have yet. A usable item with it is refused, and the player sees the text. Core sets it on converted items.
 - `id` and `aegis_name` cannot be set.
@@ -357,17 +361,66 @@ A number is one value for every level, or a list with one value per level from l
 
 | Field | Meaning |
 |---|---|
-| `job` | A job's name in `wa.jobs`, such as `mage`, or its ID. |
+| `job` | A job's name in `wa.jobs`, such as `mage`, a mod job's full name, or its ID. |
 | `skill` | A skill's name: core's, or a mod's full name. |
 | `max_level` | The most levels the job may learn, up to the skill's `max_level`. |
 | `requires` | Skills the job must have first, each `{skill, level}`. |
 
 - An entry adds the skill to the job's tree, or replaces the job's entry for it.
-- Jobs that take the job's tree in rAthena's `skill_tree.yml` (`Inherit`) get the entry too, such as the Wizard and the High Wizard for the Mage. A job that lists the skill itself keeps its own entry.
+- Jobs that take the job's tree in rAthena's `skill_tree.yml` (`Inherit`) get the entry too, such as the Wizard and the High Wizard for the Mage. A job that lists the skill itself keeps its own entry. A new job whose `inherits` lists the job gets it too.
 - A later mod's entry for the same job and skill wins.
-- New jobs come with phase 4 step 7.
 
-Kinds not overlaid yet: jobs, spawns, quests and achievements.
+### Jobs: data/jobs.yml
+
+Job records follow proposal 0002, review decision 24. Core's jobs are records too: rAthena's `job_stats.yml`, `job_aspd.yml`, `job_basepoints.yml`, `job_exp.yml` and the `Inherit` lists of `skill_tree.yml`, converted when the server starts. The job tables, the exp tables, `jobs.next_jobs` and the skill trees of new jobs come from the records. [examples/desperado](examples/desperado) adds a job.
+
+```yaml
+- name: example.desperado:Desperado
+  display_name: Desperado
+  look: gunslinger
+  tier: second
+  changes_from:
+    - {job: gunslinger, job_level: 40}
+  inherits: [novice, gunslinger]
+  max_job_level: 50
+  exp_table: knight
+  hp: {factor: 110, increase: 500}
+  aspd: {revolver: 55, rifle: 70}
+  bonus_stats:
+    - {level: 1, dex: 1}
+- name: knight
+  max_weight: 30000
+```
+
+| Field | Meaning |
+|---|---|
+| `display_name` | The name players see. A new job without it shows its name without the mod prefix. |
+| `look` | A job whose sprites the job shows, until the client data tables of phase 6. A new job needs it. Every field a new job leaves out comes from its look. On a core job, `look` changes only the sprites. |
+| `tier` | `novice`, `first`, `second`, `third`, `fourth` or `expanded`. |
+| `transcendent`, `baby` | Whether the job is a transcendent or a baby job. |
+| `base_job` | rAthena's `BaseJob`, which `jobs.base_job` returns. |
+| `changes_from` | The jobs that may change into this one, each `{ job, base_level, job_level }`. The levels are optional. `jobs.next_jobs` and `player:change_job` read it. `[]` leaves the job to scripts with `force`. |
+| `inherits` | Jobs whose skill trees the job's tree takes, as rAthena's `Inherit`, such as `[novice, swordman, knight]`. |
+| `equips_as` | A job whose equipment the job may wear: item `jobs` masks and `classes` read that job's class. |
+| `max_base_level`, `max_job_level` | Up to 275. The exp tables must cover them. |
+| `max_stats` | The most STR to LUK. By default, rAthena's maximum for the job's class. |
+| `max_weight` | The weight limit, in tenths, before STR. |
+| `hp`, `sp` | `{ factor, increase }`, as `job_stats.yml`'s `HpFactor` and `HpIncrease`, with rAthena's formula. |
+| `hp_table`, `sp_table` | One value per base level, in place of the formula. |
+| `aspd` | Base ASPD by weapon type, such as `{ fist: 40, revolver: 55 }`, as `job_aspd.yml`. Renewal also has `shield`. A weapon type left out keeps its value. |
+| `bonus_stats` | The stats each job level adds, each `{ level, str, agi, vit, int, dex, luk }`, as `job_stats.yml`'s `BonusStats`. Renewal also takes `pow`, `sta`, `wis`, `spl`, `con` and `crt`. |
+| `exp_table` | A job whose exp tables the job uses. |
+| `base_exp`, `job_exp` | The exp from each level to the next, in place of `exp_table`. |
+
+- New jobs get IDs from 10,000. `jobs.id "example.desperado:Desperado"` finds one.
+- rAthena's rules that read the class, such as dual wielding or the maximum stats of a class, treat a new job as its look's class with its own `tier`, `transcendent` and `baby`. The Desperado above is a second job of the Gunslinger's line, as the Rebellion.
+- A new job's stats, weight and maximum stats come from its own record, never from its look.
+- On core's jobs, `tier`, `transcendent`, `baby`, `base_job` and `inherits` come from rAthena and cannot change.
+- Core's `changes_from` holds rAthena's job change rules without levels, since `jobchange` checks none. Core's Job Master checks rAthena's levels itself.
+- The client shows the look's sprites and the `display_name`, which the server sends with the job.
+- Mounts, falcons and carts for new jobs wait for a general design of companions.
+
+Kinds not overlaid yet: spawns, quests and achievements.
 
 ## Text: locales/en.yml
 
@@ -382,7 +435,7 @@ greeter:
 
 ## IDs
 
-The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000, monsters at 100,000 and skills at 20,000. Jobs start at 10,000, and quests and achievements at 1,000,000, for when those kinds get overlays.
+The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000, monsters at 100,000, skills at 20,000 and jobs at 10,000. Quests and achievements start at 1,000,000, for when those kinds get overlays.
 
 - An ID never changes, and never goes to another name, even when the mod is removed. The item comes back with its ID when the mod is installed again.
 - Scripts find IDs by name: `items.id "example.greeter:Welcome_Cookie"`.
@@ -452,6 +505,7 @@ end
 | `death` | `death` | A player or a monster died on the context's map ("Death" below). Mod, NPC and event contexts. |
 | `base_level_up` | `player` | The player gained a base level. |
 | `job_level_up` | `player` | The player gained a job level. |
+| `job_change` | `change` | The player changed jobs: `change` is `{ player, from, to }`. It fires after the new job's stats and skills are set ("Jobs" above). Mod and event contexts. |
 | `click` | `player`, `conversation` | NPC contexts only: a player talks to the NPC ("NPC scripts" below). |
 | `status_start`, `status_end`, `status_tick` | `event` | A status started, ended or ticked on the context's map ("Status effects" below). Mod and event contexts. |
 | `skill_used` | `use` | A skill took effect on the context's map, after its cast time ("Skills" below). Mod, event and item contexts. |
@@ -698,7 +752,7 @@ end
 
 - `spawning.monsters { map, monster, amount, x, y, area, respawn }` places monsters on the context's map and returns their handles. `map` may be left out. Another map raises an error, so a mod script, which runs in every zone, checks `context:get_instance().map` first.
 - Without `x` and `y`, each monster lands on a random walkable cell. `area` spreads them within that many cells of `x`, `y`.
-- `amount` is 1 to 1,000. By default a dead monster stays dead. `respawn = true` makes it come back as a spawn line's monster does in rAthena: after `respawn_milliseconds` (1,000 or more), or after 5,000 ms without it, rAthena's delay for a spawn line that gives none. Monster data has no respawn time, so the delay belongs to the call. `respawn_milliseconds` is provisional.
+- `amount` is 1 to 1,000. By default a dead monster stays dead. `respawn = true` makes it come back as a spawn line's monster does in rAthena: after `respawn_milliseconds` (1,000 or more), or after 5,000 ms without it, rAthena's delay for a spawn line that gives none. Monster data has no respawn time, so the delay belongs to the call.
 - The context owns the monsters: they go when it ends, such as when an event's run ends or the mod reloads.
 - It needs `npc.create`, which every mod has.
 
@@ -912,8 +966,9 @@ end
 
 | Call | What it does |
 |---|---|
-| `jobs.next_jobs(job)` | The jobs a job can change into, in job ID order: a Novice into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Bard and Dancer are both listed, and so are Clown and Gypsy. Other jobs have none until third classes exist. |
-| `player:change_job(job, { force })` | Changes the job, as `jobchange`. Job level goes back to 1, job exp to 0, and learned skills stay. A male player who asks for a Dancer becomes a Bard, and the reverse. Returns false, and changes nothing, when the job is not a next job of the player's, or when a transcendent player asks for a job outside the line it had before its rebirth. `force = true` skips these checks and needs `player.change_job`. |
+| `jobs.id(name)` | A job by its name in `wa.jobs`, such as `"knight"`, or a mod job's full name. |
+| `jobs.next_jobs(job)` | The jobs a job can change into, in job ID order: the jobs whose record lists it in `changes_from`. In core's records a Novice changes into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Bard and Dancer are both listed, and so are Clown and Gypsy. Other core jobs have none until third classes exist. |
+| `player:change_job(job, { force })` | Changes the job, as `jobchange`. Job level goes back to 1, job exp to 0, and learned skills stay. A male player who asks for a Dancer becomes a Bard, and the reverse. Returns false, and changes nothing, when the job is not a next job of the player's, when the player lacks the levels of the job's `changes_from`, or when a transcendent player asks for a job outside the line it had before its rebirth. `force = true` skips these checks and needs `player.change_job`. The `job_change` event follows. |
 | `player:rebirth()` | A second class at base level 99 and job level 50 or more becomes a High Novice at base and job level 1, with every stat at 1, 100 status points, First Aid and Trick Dead, as the rebirth NPC's `jobchange Job_Novice_High` and `resetlvl(1)`. Its second class picks its transcendent line. Returns false for other players. |
 | `player:reset_skills()` | Every skill learned with skill points goes back to 0, and the points come back, as `resetskill`. |
 | `player:reset_stats()` | Every stat goes back to 1, and the status points become those of the base level, 52 more for a transcendent job, as `resetstatus`. |
@@ -924,6 +979,7 @@ end
 - The changes follow `pc_jobchange`: a base level above the new job's maximum comes down and the stats reset; a change into a transcendent job adds 52 status points, and a change out of one takes them back or resets the stats; equipment the new job cannot wear comes off; and a Peco Peco, a falcon or a cart goes when the new job lacks its skill.
 - The job level at the change from a first class to a second class is saved (rAthena's `change_level_2nd`). The skill tree reads it: a second class sees its own skills once it spent the points of that many first class job levels.
 - Every call computes the player's stats before it returns, and sends the new skill list.
+- The job tests of `wa.jobs` (`is_transcendent`, `base_job`, `first_job` and the others) work with mod jobs. `first_job` of a mod job is the first job of its class's line.
 
 Core places a Job Master in Prontera (`core:Job Master#prontera`). It changes a Novice or a High Novice at job level 10 with Basic Skill 9 into a first class (a Super Novice needs base level 45 too), a first class at job level 40 into a second class, and gives a rebirth to a second class at base level 99 and job level 50. rAthena's job change quests mostly do not convert yet: the coverage reports in [docs/generated](../docs/generated) count them as "Job change NPCs".
 
@@ -1012,13 +1068,30 @@ A monster record's `skills` is rAthena's `mob_skill_db.txt` with readable names.
 | `condition` | One of the conditions below. Default `always`. |
 | `condition_value` | The condition's value, such as a percent of HP or a status name. |
 | `summons` | Monster names for summon and class change skills. |
-| `emotion` | The emotion number for `NPC_EMOTION`. |
+| `emotion` | An emotion of `wa.emotions`, such as `surprise`, shown when the skill takes effect. A list of two, such as `[kik, surprise]`, shows both in turn, as rAthena's `NPC_EMOTION` with an emotion in its `Emotion` column. |
+| `modes` | Only for `NPC_EMOTION` and `NPC_EMOTION_ON`: a list of mode names, as the monster's `modes`. The change is the status `SC_MODECHANGE`, which lasts until the monster dies. See below. |
 | `chat` | A line the monster says when it uses the entry. |
+| `chat_color` | The line's color as `0xRRGGBB`, from `0x000001` to `0xFFFFFF`, such as `0xFF8000`, as the `Color` of rAthena's `mob_chat_db.yml`. Default `0xFF0000`. |
 
 Conditions, one to one with rAthena's, from `always` to `trickcasting`: `always`, `hp_below`, `hp_between`, `friend_hp_below`, `friend_hp_between`, `has_status`, `lacks_status`, `friend_has_status`, `friend_lacks_status`, `attackers_above`, `attackers_at_least`, `slaves_below`, `slaves_at_most`, `hit_melee`, `hit_ranged`, `hit_by_skill`, `after_skill`, `targeted_by_cast`, `target_casting`, `hit_while_stuck`, `master_hp_below`, `master_attacked`, `spawned`, `summoned_by_alchemist`, `monsters_nearby_above`, `hit_by_ground_skill` and `damage_above`.
 
 - Monsters use player skills through the skill framework, and the `NPC_` skills that only monsters use. [docs/generated/monster-skills-renewal.md](../docs/generated/monster-skills-renewal.md) and its pre-renewal twin list the rows of core's lists and the parts that do not convert.
 - A list has at most 50 entries, as rAthena's `MAX_MOBSKILL`.
+- `modes` changes the monster's modes, as rAthena's `NPC_EMOTION` and `NPC_EMOTION_ON`:
+  - `NPC_EMOTION` sets the monster's AI modes, from `can_move` to `random_target`, to the list. The other modes stay. A monster that is attacking or chasing drops its target.
+  - `NPC_EMOTION` with `modes: []` ends the change, so the monster has its own modes again.
+  - `NPC_EMOTION_ON` adds the list to the monster's modes. A list without `aggressive` takes `aggressive` away.
+  - A change piles up with the one before it, as `SC_MODECHANGE` in rAthena. A change that leaves the monster's own modes ends the one before it.
+
+```yaml
+# A mod's skills for core's Wolf.
+- name: WOLF
+  skills:
+    - {skill: NPC_EMOTION, state: chase, rate: 2000, delay: 5000, target: self, emotion: [kik, surprise], modes: [can_move, can_attack]}
+    - {skill: NPC_EMOTION, state: idle, rate: 2000, delay: 5000, target: self, emotion: hng, modes: []}
+    - {skill: NPC_EMOTION_ON, state: attack, delay: 30000, target: self, emotion: fret, modes: [can_move, aggressive, can_attack, angry]}
+    - {skill: AL_HEAL, state: any, rate: 500, target: self, condition: hp_below, condition_value: 30, chat: "Awoo!", chat_color: 0xFF8000}
+```
 
 ### Rolled item values
 
@@ -1031,6 +1104,7 @@ An item can declare values that each new copy rolls ([proposal 0002](../docs/pro
   rolls:
     luck: {min: 1, max: 5, default: 3, distribution: uniform}
     fortune:
+      display_name: Clover fortune
       default: 1
       distribution: weighted
       hidden: true
@@ -1043,13 +1117,14 @@ An item can declare values that each new copy rolls ([proposal 0002](../docs/pro
     - [crit, {roll: fortune}]
 ```
 
-- `rolls` maps a roll's name to `min`, `max`, `default`, `distribution` and `hidden`. A name is lower-case letters, digits and `_`. An item has at most 8 rolls. Values are whole numbers that fit in 32 bits.
+- `rolls` maps a roll's name to `min`, `max`, `default`, `distribution`, `hidden` and `display_name`. A name is lower-case letters, digits and `_`. An item has at most 8 rolls. Values are whole numbers that fit in 32 bits.
 - `distribution` is `uniform`, `triangular` (the default) or `weighted`.
   - `uniform`: each value from `min` to `max` is as likely.
   - `triangular`: a value's chance falls in a straight line from `default` to one past each end, so values near the default are common and `min` and `max` are rare.
   - `weighted`: `weights` is a list of `{ value, weight }`, where `value` is one number or `[min, max]`. A tier is picked by weight, then a value of its range. `min` and `max` may be left out: they are the lowest and highest values of the tiers.
 - `hidden: true` keeps the value from the client until the copy is identified. A copy that a drop or a random give rolls starts unidentified when its item has a hidden roll. The client shows "?" in place of the value. Identifying does not exist yet ("Left" in [decision 0014](../docs/decisions/0014-rolled-items.md)).
 - A static bonus takes `{ roll: name }` in place of its amount. The client names the roll after the first static bonus that reads it, such as "Physical damage against bosses", or after its name.
+- `display_name`, 1 to 64 bytes, is the name the client shows in place of the static bonus's words, such as "Clover fortune". The unit of the bonus stays, such as "%".
 - When values are rolled:
   - Monster drops and MVP prizes roll each value from its distribution.
   - `player:give_item(item, amount, { roll = "random" })` rolls them too. `"default"`, the default, uses the defaults, and so do NPC shops.
@@ -1350,6 +1425,7 @@ end
 | `world:new_player { map, x, y, job, base_level, job_level, zeny, items = { {item, amount} }, sex, skills = { {skill, level} }, stats = { str = 50 }, skill_points, status_points }` | Adds a character at a walkable cell, with full HP and SP, and returns its player handle. Only `x` and `y` are required. `sex` is `"male"` by default. `skills` are learned skills, `stats` the raised stats (the others are 1), and `skill_points` and `status_points` the points left to spend. |
 | `world:talk(player, npc_name, answers)` | Clicks the NPC and answers each step in order: a number picks a menu option, a string fills text input, and an integer fills number input. Next is pressed without an answer, and waits and progress bars run on the clock. Returns the NPC's lines, one per line. Fails when the conversation asks for more answers than given, when one does not fit, or when some are left over. |
 | `world:use_item(player, item)` | Uses one of the player's items. Fails when the player has none, or the use is refused. |
+| `world:equip(player, item, { roll })` | Gives the player one copy of an item and puts it on. Returns the equipped copy, as `player:get_equipped` does. `roll` is the roll option of `player:give_item`: `"random"`, `"default"` (the default) or a table of values, which needs no permission here. Fails when the copy does not fit or cannot be equipped. |
 | `world:advance(milliseconds)` | Moves the zone clock. Timers fire. The clock starts at 0 and moves only with this call, conversation waits, and the item use interval. |
 | `world:spawn_monster { monster, map, x, y }` | Places a monster from `monsters.id` on a cell and returns its handle. It does not come back after it dies. |
 | `world:kill(player, monster)` | The player kills a living monster: `death` fires, and the player gets its exp and drops. After it, the monster's handle raises an error. |

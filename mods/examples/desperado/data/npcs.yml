@@ -1,0 +1,9 @@
+# The mentor stands in Prontera, next to core's Job Master.
+- name: Mentor#prontera
+  map: prontera
+  x: 147
+  y: 191
+  direction: south
+  sprite: 4_M_JOB_HUNTER
+  display_name: Desperado Mentor
+  script: scripts/npc/mentor.lua

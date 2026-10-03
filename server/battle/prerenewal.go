@@ -35,8 +35,10 @@ const (
 //   - RHW.Wlv and LHW.Wlv are the weapon levels of the items in each hand.
 //     rAthena reads them from the item, not from the status.
 //   - BAtk already holds bonus bBaseAtk, so EAtk is not read.
-//   - Player.AtkRate, Player.PreRenewalSizes, Status.Res, Status.CRate
-//     and Status.PAtk are renewal only and are not read.
+//   - Player.AtkRate, Status.Res, Status.CRate and Status.PAtk are
+//     renewal only and are not read.
+//   - Player.PreRenewalSizes picks the size table, as in Attack. Players
+//     of pre-renewal's job tables have it set.
 func AttackPreRenewal(attacker, target *Status, r Rand) Result {
 	wd := calcWeaponAttackPreRenewal(attacker, target, nil, r)
 	return finishAttack(&wd, attacker)
@@ -322,9 +324,14 @@ func calcBaseDamagePreRenewal(st *Status, h hand, size, flag int, r Rand) int64 
 				dmg += int64(r.IntN(absInt(sd.AmmoAtk)))
 			}
 		}
-		// The size penalty only applies to players.
+		// The size penalty only applies to players. The size_table
+		// ruleset flag picks the table.
 		if !sd.NoSizeFix && flag&bdmgNoSize == 0 {
-			dmg = dmg * int64(PreRenewalSizeFix(sd.weapon(h), sd.sizeFor(size))) / 100
+			fix := SizeFix(sd.weapon(h), sd.sizeFor(size))
+			if sd.PreRenewalSizes {
+				fix = PreRenewalSizeFix(sd.weapon(h), sd.sizeFor(size))
+			}
+			dmg = dmg * int64(fix) / 100
 		}
 	}
 	// Elementals get bonuses from insignia status changes here.

@@ -30,7 +30,7 @@ func writeMod(t *testing.T, dir, name string, files map[string]string) {
 
 // manifest returns a valid mod.yaml with extra lines.
 func manifest(id string, extra ...string) string {
-	return "id: " + id + "\nname: Test " + id + "\nversion: 1.0.0\napi: experimental\n" + strings.Join(extra, "\n") + "\n"
+	return "id: " + id + "\nname: Test " + id + "\nversion: 1.0.0\napi: 1.0\n" + strings.Join(extra, "\n") + "\n"
 }
 
 func resolve(t *testing.T, dir string, cfg Config) (*Set, error) {
@@ -68,10 +68,12 @@ func TestManifestValidation(t *testing.T) {
 		parts []string
 	}{
 		{"", []string{"m/mod.yaml", "empty"}},
-		{"id: Bad_ID\nname: x\nversion: 1.0.0\napi: experimental\n", []string{"m/mod.yaml: id:", "not a mod ID"}},
+		{"id: Bad_ID\nname: x\nversion: 1.0.0\napi: 1.0\n", []string{"m/mod.yaml: id:", "not a mod ID"}},
 		{manifest("core.extra"), []string{"reserved"}},
-		{"id: a\nname: x\nversion: 1.0\napi: experimental\n", []string{"version:", "not a semantic version"}},
+		{"id: a\nname: x\nversion: 1.0\napi: 1.0\n", []string{"version:", "not a semantic version"}},
 		{"id: a\nname: x\nversion: 1.0.0\n", []string{"api: is required"}},
+		{"id: a\nname: x\nversion: 1.0.0\napi: experimental\n", []string{"api: experimental ended with API 1.0; use api: 1.0"}},
+		{"id: a\nname: x\nversion: 1.0.0\napi: one\n", []string{"api:", "not a semantic version"}},
 		{manifest("a", "depends:\n  - id: b\n    version: '>=x'"), []string{"depends[0].version"}},
 		{manifest("a", "depends:\n  - id: a"), []string{"depends[0].id: a mod cannot depend on itself"}},
 		{manifest("a", "permissions: [player.fly]"), []string{"permissions[0]", `"player.fly" is not a permission`}},
@@ -337,10 +339,19 @@ func TestWorldAnnouncePermission(t *testing.T) {
 }
 
 func TestAPIRange(t *testing.T) {
-	dir := t.TempDir()
-	writeMod(t, dir, "a", map[string]string{"mod.yaml": "id: example.a\nname: A\nversion: 1.0.0\napi: '>=1.0 <2.0'\n"})
-	_, err := resolve(t, dir, Config{})
-	wantError(t, err, `api ">=1.0 <2.0" does not include this server's API, which is experimental`)
+	for _, api := range []string{"1.0", "'1.0'", "1", "1.0.0", "'>=1.0 <2.0'", "^1.0", "'~1.0'", "'<1.0 || >=1.0'"} {
+		dir := t.TempDir()
+		writeMod(t, dir, "a", map[string]string{"mod.yaml": "id: example.a\nname: A\nversion: 1.0.0\napi: " + api + "\n"})
+		if _, err := resolve(t, dir, Config{}); err != nil {
+			t.Errorf("api %s: %v", api, err)
+		}
+	}
+	for _, api := range []string{"'>=2.0'", "'<1.0'", "1.1", "'>1.0 <2.0'"} {
+		dir := t.TempDir()
+		writeMod(t, dir, "a", map[string]string{"mod.yaml": "id: example.a\nname: A\nversion: 1.0.0\napi: " + api + "\n"})
+		_, err := resolve(t, dir, Config{})
+		wantError(t, err, "does not include this server's API, which is 1.0; use api: 1.0 or a range that includes it")
+	}
 }
 
 // testNames resolve the names of static bonuses in tests.
@@ -578,6 +589,7 @@ func TestSampleMod(t *testing.T) {
 		"example.halloween":    {"player.give_items", "world.announce", "events.schedule", "rules.override"},
 		"example.wolf-pack":    {"rules.override"},
 		"example.lucky-clover": {"rules.override", "items.modify_rolls", "player.give_items"},
+		"example.desperado":    {"player.give_items"},
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -587,18 +599,19 @@ func TestSampleMod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if items.IDs["example.greeter:Welcome_Cookie"] != 2_000_000 {
+	// The Desperado's hat loads first, in ID order of the mods.
+	if items.IDs["example.greeter:Welcome_Cookie"] != 2_000_001 {
 		t.Errorf("cookie ID %d", items.IDs["example.greeter:Welcome_Cookie"])
 	}
-	if items.IDs["example.halloween:Pumpkin_Hat"] != 2_000_001 {
+	if items.IDs["example.halloween:Pumpkin_Hat"] != 2_000_002 {
 		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 6 || npcs[0].DisplayName != "Greeter" || npcs[0].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 7 || npcs[1].DisplayName != "Greeter" || npcs[1].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
 	// The cookie stand is a shop that only scripts open.
-	if shop := npcs[2]; shop.Placed || len(shop.Shop) != 2 || !shop.Discount || shop.Shop[1].Price != -1 {
+	if shop := npcs[3]; shop.Placed || len(shop.Shop) != 2 || !shop.Discount || shop.Shop[1].Price != -1 {
 		t.Errorf("shop %+v", shop)
 	}
 	sc, err := s.Scripts("example.greeter")

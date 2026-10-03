@@ -126,6 +126,12 @@ describe('rollText', () => {
     expect(rollText({ ...roll, value: -2, unit: '' })).toBe('Damage against bosses -2 (15 to 35)');
   });
 
+  it('shows a display name in place of the bonus words, with the unit', () => {
+    expect(
+      rollText({ label: 'Clover luck', value: 4, known: true, min: 1, max: 5, unit: '%' }),
+    ).toBe('Clover luck +4% (1 to 5)');
+  });
+
   it('hides a hidden value until the copy is identified', () => {
     expect(rollText({ label: 'LUK', value: 0, known: false, min: 1, max: 5, unit: '' })).toBe(
       'LUK ? (1 to 5)',

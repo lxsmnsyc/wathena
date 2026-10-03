@@ -74,12 +74,18 @@ type Host interface {
 	Now() int64
 }
 
-// Jobs answers the job tests of wa.jobs from rAthena's map job IDs.
+// Jobs answers the job tests of wa.jobs from the job records and
+// rAthena's map job IDs.
 type Jobs interface {
-	// MapID is pc_jobid2mapid.
+	// MapID is pc_jobid2mapid. A mod job has the map job ID of its
+	// class.
 	MapID(job int) (uint64, bool)
 	// JobOf is pc_mapid2jobid.
 	JobOf(mapID uint64, male bool) (int, bool)
+	// JobID finds a job by a name of wa.jobs or a mod job's full name.
+	JobID(name string) (int, bool)
+	// BaseJobOf is a job record's base_job. ok is false without one.
+	BaseJobOf(job int) (int, bool)
 }
 
 // Options configure a zone's Runtime.
@@ -361,6 +367,7 @@ func (r *Runtime) init() error {
 		{"timers_bonus_start", r.timersBonusStart},
 		{"timers_bonus_done", r.timersBonusDone},
 		{"jobs_test", r.jobsTest},
+		{"jobs_id", r.jobsID},
 		{"jobs_next", r.jobsNext},
 		{"player_change_job", r.playerChangeJob},
 		{"player_rebirth", r.playerRebirth},
@@ -712,6 +719,13 @@ func Value(v script.Value) Arg { return Arg{"value", v} }
 // zone's handle ID for the monster.
 func Monster(id int64) Arg { return Arg{"monster", script.Int(id)} }
 
+// JobChange is the object of the job_change event: { player, from, to }
+// (review decision 24). player is the character's ID.
+func JobChange(player, from, to int64) Arg {
+	return Arg{"job_change", script.NewTable(
+		script.KV("player", script.Int(player)), script.KV("from", script.Int(from)), script.KV("to", script.Int(to)))}
+}
+
 // Fire runs every handler of an event, in registration order. A handler
 // that fails is logged and does not stop the others. Handlers added
 // while the event runs wait for the next one.
@@ -818,10 +832,12 @@ var Events = map[string][]string{
 	"death":         {KindMod, KindNPC, KindEvent},
 	"base_level_up": {KindMod, KindEvent},
 	"job_level_up":  {KindMod, KindEvent},
-	"click":         {KindNPC},
-	"touch":         {KindNPC},
-	"use":           {KindItem},
-	"damage":        {KindItem},
+	// job_change follows a job change (review decision 24).
+	"job_change": {KindMod, KindEvent},
+	"click":      {KindNPC},
+	"touch":      {KindNPC},
+	"use":        {KindItem},
+	"damage":     {KindItem},
 	// skill_used is an item event, and an event of mod and event
 	// contexts (review decision 18).
 	"skill_used": {KindItem, KindMod, KindEvent},

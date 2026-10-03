@@ -11,8 +11,9 @@
     # Each value from 1 to 5 is as likely.
     luck: {min: 1, max: 5, default: 3, distribution: uniform}
     # Three tiers: common, rare and perfect. It shows once the charm is
-    # identified.
+    # identified, as "Clover fortune" in place of the words of its bonus.
     fortune:
+      display_name: Clover fortune
       default: 1
       distribution: weighted
       hidden: true

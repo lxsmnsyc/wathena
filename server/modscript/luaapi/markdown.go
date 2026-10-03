@@ -61,7 +61,7 @@ func Markdown() string {
 	var b strings.Builder
 	b.WriteString("# Lua API reference\n\n")
 	b.WriteString("Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go test ./server/modscript/luaapi -update`. Do not edit it by hand.\n\n")
-	b.WriteString("- The API is [proposal 0002](../proposals/0002-lua-api.md). It is experimental until API 1.0.\n")
+	b.WriteString("- The API is [proposal 0002](../proposals/0002-lua-api.md), version 1.0. A mod's manifest says `api: 1.0`.\n")
 	b.WriteString("- Tests check these definitions against the runtime, so this page lists what the server has today.\n")
 	b.WriteString("- Editors get the same definitions from `wactl mod types` ([mods/README.md](../../mods/README.md), \"Tools\").\n")
 	b.WriteString("- The constants are in [lua-constants.md](lua-constants.md).\n\n")
