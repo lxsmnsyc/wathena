@@ -1058,6 +1058,13 @@ Planned work to give mods more control than rAthena's scripts have:
   - healing, regeneration, and item use;
   - monster AI decisions, such as target choice.
   Each new event or hook goes through the API review in proposal 0002 before it is built.
+- **World events.** Events such as `cast`, `skill_used`, `use` and `damage` belong to one item, skill or NPC today. The same events should also work for the whole world, so a mod can react to any interaction, not only its own item or skill. Examples:
+  - any entity casts or uses a skill, uses an item, attacks, or takes damage;
+  - any player picks up, drops, trades or equips an item;
+  - any player talks to an NPC, warps, or enters an area;
+  - any monster spawns, changes target, or uses a skill.
+
+  Each event takes filters, so a handler runs only for what it needs: the source, the target, their kinds, a skill or an item, a map, or an area. A world event that can change the result is a hook. The scoped events stay as they are. Each new event goes through the API review in proposal 0002 before it is built.
 - **Entity queries.** Mods and skills need to find entities by place, not only by name. A query takes an area and filters, and returns entity handles:
   - areas: a radius around a cell or an entity, a rectangle, a line between two cells with a width, or a list of cells;
   - filters: entity kind, alive, enemies or allies of an entity, line of sight, and handles to leave out;
