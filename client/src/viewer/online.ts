@@ -41,6 +41,7 @@ import {
   USE_EFFECTS,
   stackRolls,
 } from './inventory';
+import { bodyLook, cartLook, companionLook, mountedBody } from './mounts';
 import { appearance } from './options';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
@@ -83,20 +84,33 @@ interface Playing {
  * - Headgear, sprite/headgear/<sex>/<view>.
  * - The garment, sprite/garment/<job>/<sex>/<view>.
  *
- * A view of 0 draws nothing.
+ * A view of 0 draws nothing. The option bits add a mount, a companion
+ * and a cart (mounts.ts):
+ * - A mounted player's body, sprite/body/<mounted look>/<sex>.
+ * - A companion, sprite/companion/<look>.
+ * - A cart, sprite/cart/<n>.
  */
-export function lookOf(m: LookMessage | undefined): Look {
-  const job = jobs.get(m?.body ?? 0) ?? jobs.get(0);
+export function lookOf(m: LookMessage | undefined, option = 0): Look {
+  const body = m?.body ?? 0;
+  const job = jobs.get(mountedBody(body, option)) ?? jobs.get(0);
   const name = job?.look ?? 'novice';
   const info = looks.get(name);
   const sex = info?.sex ?? (m?.sex === 1 ? 'm' : 'f');
   const race = info?.race ?? 'human';
   const hair = Math.max(m?.hair ?? 1, 1);
   const look: Look = {
-    body: `sprite/body/${name}/${sex}`,
+    body: `sprite/body/${bodyLook(body, option)}/${sex}`,
     head: `sprite/head/${race}/${sex}/${hair}`,
     hairPalette: `palette/hair/${race}/${sex}/${hair}/${m?.hairColor ?? 0}`,
   };
+  const companion = companionLook(option);
+  if (companion !== undefined) {
+    look.companion = `sprite/companion/${companion}`;
+  }
+  const cart = cartLook(option);
+  if (cart !== undefined) {
+    look.cart = `sprite/cart/${cart}`;
+  }
   if (m === undefined) {
     return look;
   }
@@ -162,6 +176,22 @@ interface Pending {
   look: LookMessage | undefined;
   /** The newest status options. */
   options: Options | undefined;
+}
+
+/** A player's look and the option bits it is drawn with. */
+interface PlayerLook {
+  look: LookMessage | undefined;
+  option: number;
+}
+
+/** Whether two looks draw the same sprites. */
+function sameLook(a: PlayerLook, b: PlayerLook): boolean {
+  if (a.look !== b.look) {
+    return false;
+  }
+  const x = lookOf(a.look, a.option);
+  const y = lookOf(b.look, b.option);
+  return x.body === y.body && x.companion === y.companion && x.cart === y.cart;
 }
 
 /** How long the pick up action plays, in milliseconds. */
@@ -420,7 +450,7 @@ export default class Online {
             ? this.sprites
                 .get(spriteOf(a.kind, a.look?.body ?? 0))
                 .then((s) => (s === undefined ? undefined : new SpriteView(s)))
-            : Character.load(this.sprites, lookOf(a.look));
+            : Character.load(this.sprites, lookOf(a.look, a.options?.option));
           body
             .then((c) => {
               if (c === undefined || this.pending.get(a.id) !== pending) {
@@ -442,9 +472,15 @@ export default class Online {
               }
               this.units.set(a.id, unit);
               this.group.add(c.group);
-              // The look changed while the sprites loaded.
-              if (pending.look !== a.look) {
-                this.changeLook(a.id, pending.look);
+              if (single) {
+                return;
+              }
+              const shown = { look: a.look, option: a.options?.option ?? 0 };
+              this.looksShown.set(a.id, shown);
+              // The look or options changed while the sprites loaded.
+              const option = pending.options?.option ?? 0;
+              if (pending.look !== a.look || !sameLook(shown, { look: pending.look, option })) {
+                this.loadLook(a.id, pending.look, option);
               }
             })
             .catch(reportError);
@@ -796,8 +832,11 @@ export default class Online {
 
   private readonly pending = new Map<number, Pending>();
 
-  /** The look each player's newest LookChange loads, until it shows. */
-  private readonly lookLoads = new Map<number, LookMessage | undefined>();
+  /** The look and option bits each player's newest load uses, until it shows. */
+  private readonly lookLoads = new Map<number, PlayerLook>();
+
+  /** The newest look and option bits of each player shown. */
+  private readonly looksShown = new Map<number, PlayerLook>();
 
   /**
    * Shows a player's new look, such as after it put on a hat. The new
@@ -814,15 +853,26 @@ export default class Online {
       pending.look = look;
       return;
     }
+    this.loadLook(id, look, this.looksShown.get(id)?.option ?? 0);
+  }
+
+  /**
+   * Loads a player's character for a look and option bits. The new
+   * character takes the old one's place, direction and action once its
+   * sprites load.
+   */
+  private loadLook(id: number, look: LookMessage | undefined, option: number): void {
     const unit = this.units.get(id);
     if (unit === undefined) {
       return;
     }
-    this.lookLoads.set(id, look);
-    Character.load(this.sprites, lookOf(look))
+    const want = { look, option };
+    this.looksShown.set(id, want);
+    this.lookLoads.set(id, want);
+    Character.load(this.sprites, lookOf(look, option))
       .then((c) => {
         // A later change, a vanish, or a death replaces this one.
-        if (c === undefined || this.units.get(id) !== unit || this.lookLoads.get(id) !== look) {
+        if (c === undefined || this.units.get(id) !== unit || this.lookLoads.get(id) !== want) {
           return;
         }
         this.lookLoads.delete(id);
@@ -844,7 +894,8 @@ export default class Online {
 
   /**
    * Shows a unit's new status options. A unit still loading takes them
-   * once it has loaded.
+   * once it has loaded. A player whose mount, companion or cart changes
+   * loads its character again.
    */
   private changeOptions(id: number, options: Options | undefined): void {
     const pending = this.pending.get(id);
@@ -853,8 +904,19 @@ export default class Online {
       return;
     }
     const unit = this.units.get(id);
-    if (unit !== undefined) {
-      unit.appearance = appearance(options, id === this.self);
+    if (unit === undefined) {
+      return;
+    }
+    unit.appearance = appearance(options, id === this.self);
+    const shown = this.looksShown.get(id);
+    if (shown === undefined) {
+      return;
+    }
+    const next = { look: shown.look, option: options?.option ?? 0 };
+    if (sameLook(shown, next)) {
+      shown.option = next.option;
+    } else {
+      this.loadLook(id, next.look, next.option);
     }
   }
 
@@ -900,6 +962,7 @@ export default class Online {
   private remove(id: number): void {
     this.pending.delete(id);
     this.lookLoads.delete(id);
+    this.looksShown.delete(id);
     this.names.delete(id);
     this.items.remove(id);
     const portal = this.portals.get(id);

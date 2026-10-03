@@ -1,0 +1,14 @@
+# The Owl: a familiar that shows the falcon's sprite and acts as a
+# falcon, so Blitz Beat and the other falcon skills work with it. The
+# server gives it an ID in the mod range (from 10,000) the first time it
+# loads.
+- name: example.familiars:Owl
+  display_name: Owl
+  look: falcon
+  acts_as: falcon
+  # A player needs Falconry Mastery to keep it, as a falcon.
+  requires:
+    - {skill: HT_FALCON, level: 1}
+  # The Owl sees in the dark: DEX +2 while it is with the player.
+  bonuses:
+    - [dex, 2]

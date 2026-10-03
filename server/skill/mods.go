@@ -45,7 +45,7 @@ var SkillFields = []string{
 }
 
 // RequirementFields are the fields of requirements in data/skills.yml.
-var RequirementFields = []string{"sp", "hp", "sp_rate", "hp_rate", "zeny", "spirit_spheres", "weapons", "items"}
+var RequirementFields = []string{"sp", "hp", "sp_rate", "hp_rate", "zeny", "spirit_spheres", "weapons", "items", "companion"}
 
 // Names finds the names that data/skills.yml writes.
 type Names interface {
@@ -377,6 +377,14 @@ func applyRequirements(q *Requires, v any, names Names) error {
 				}
 				q.Items[i] = [2]int{id, amount}
 			}
+		case "companion":
+			// server/gamedata checks the name once the companions load.
+			s, ok := v.(string)
+			if !ok || s == "" {
+				bad(key, errors.New("want a companion's name, such as falcon"))
+				continue
+			}
+			q.Companion = s
 		default:
 			bad(key, fmt.Errorf("not a requirement; the requirements are %s", strings.Join(RequirementFields, ", ")))
 		}

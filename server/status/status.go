@@ -114,6 +114,10 @@ const (
 	skillSingleAction      = 509  // GS_SINGLEACTION
 	skillRiding            = 63   // KN_RIDING
 	skillCavalierMastery   = 64   // KN_CAVALIERMASTERY
+	skillDragonTraining    = 2007 // RK_DRAGONTRAINING
+	skillWugRider          = 2241 // RA_WUGRIDER
+	skillMadoLicence       = 2255 // NC_MADOLICENCE
+	skillMainframe         = 2266 // NC_MAINFRAME
 	skillSnakeEye          = 510  // GS_SNAKEEYE
 	skillAllIncCarry       = 681  // ALL_INCCARRY
 	skillEucharistica      = 2049 // AB_EUCHARISTICA
@@ -196,6 +200,13 @@ type Character struct {
 	// It slows attacks less with Cavalier Mastery, carries more with
 	// Riding, walks faster and adds to Spear Mastery.
 	Riding bool
+	// Dragon is pc_isridingdragon, WugRider pc_isridingwug and Madogear
+	// pc_ismadogear: the other mounts of status_calc_pc and
+	// status_calc_speed.
+	Dragon, WugRider, Madogear bool
+	// MountSpeed replaces the walk speed bonus of the mount's rules, in
+	// percent, as a mount record's speed. Nil keeps the rules' bonus.
+	MountSpeed *int
 	// Cart is pc_iscarton: the player pushes a cart, which slows it
 	// down unless Pushcart is at level 10.
 	Cart bool
@@ -204,6 +215,9 @@ type Character struct {
 	// status_calc_pc_sub runs status scripts. TimedBonuses are the timed
 	// bonuses, in the order they started (pc_bonus_script).
 	StatusBonuses, TimedBonuses []Bonus
+	// CompanionBonuses are the bonuses of the player's companion and
+	// mount records, which run after the timed bonuses.
+	CompanionBonuses []Bonus
 	// Casting is set while the player casts a skill
 	// (ud.skilltimer != INVALID_TIMER), which Free Cast reads.
 	Casting bool
@@ -669,6 +683,7 @@ func (p *pc) calcBase() data {
 	// Status scripts, then timed bonuses (pc_bonus_script).
 	pb.run(c.StatusBonuses, lrNone, &b)
 	pb.run(c.TimedBonuses, lrNone, &b)
+	pb.run(c.CompanionBonuses, lrNone, &b)
 
 	// rhw.range and lhw.range become at least 1, and the right hand's
 	// range is the longer of the two.
@@ -849,6 +864,9 @@ func (p *pc) calcBase() data {
 	if pb.defRate != 100 {
 		b.Def = p.capDef(b.Def * pb.defRate / 100)
 	}
+	if lv := p.skill(skillMainframe); p.c.Madogear && lv > 0 {
+		b.Def += 20 + lv*20
+	}
 	if !renewal && weaponDefenseType == 0 && b.Def > maxDef {
 		b.Def2 += overDefBonus * (b.Def - maxDef)
 		b.Def = maxDef
@@ -881,6 +899,8 @@ func (p *pc) calcBase() data {
 		}
 		if c.Riding {
 			b.aspdRate += 500 - 100*p.skill(skillCavalierMastery)
+		} else if c.Dragon {
+			b.aspdRate += 250 - 50*p.skill(skillDragonTraining)
 		}
 		b.aspdRate += pb.aspdRate
 	}
@@ -942,6 +962,7 @@ func (p *pc) calcBase() data {
 	pl.AmmoAtk, pl.AmmoEle = pb.arrowAtk, pb.arrowEle
 	pl.PreRenewalSizes = p.t.preRenewalSizes
 	pl.Riding = c.Riding
+	pl.Dragon = c.Dragon
 	pl.JobLevel = c.JobLevel
 	if e := p.eq.Items[item.EqiHandR]; e != nil && e.Def != nil && e.Def.IsWeapon() {
 		pl.WeaponWeight = e.Def.Weight
@@ -1181,6 +1202,8 @@ func (p *pc) baseAmotion(b *data) int {
 		}
 		if p.c.Riding {
 			val -= 50 - 10*p.skill(skillCavalierMastery)
+		} else if p.c.Dragon {
+			val -= 25 - 5*p.skill(skillDragonTraining)
 		}
 		fixed := calcAspdBonus(p.c.Changes, true, true, nil)
 		return int(temp+float32(fixed+val)*float32(b.Agi)/200) - min(aspd, 200)
@@ -1341,8 +1364,13 @@ func (p *pc) maxWeight() int {
 	w += 2000 * p.skill(skillIncCarry)
 	if p.c.Riding && p.skill(skillRiding) > 0 {
 		w += 10000
+	} else if p.c.Dragon {
+		w += 5000 + 2000*p.skill(skillDragonTraining)
 	}
 	w += 2000 * p.skill(skillAllIncCarry)
+	if p.c.Madogear {
+		w += 15000
+	}
 	return w
 }
 
@@ -1423,11 +1451,18 @@ func (p *pc) calcBattle(b *data) data {
 	// Dodge apply even with no status changes, since a player's status
 	// change list always exists.
 	in := speedInput{player: true, itemSpeed: pb.speedRate + pb.speedAddRate, tunnel: p.skill(skillTunnelDrive),
-		riding: p.c.Riding, cart: p.c.Cart, pushCart: p.skill(skillPushCart),
+		riding: p.c.Riding || p.c.Dragon, cart: p.c.Cart, pushCart: p.skill(skillPushCart),
 		danceLesson: p.skill(skillDancingLesson)}
 	if p.c.Casting {
 		in.freeCast = p.skill(skillFreeCast)
 	}
+	if p.c.WugRider {
+		in.wugRider, in.wugRiderLv = true, p.skill(skillWugRider)
+	}
+	if p.c.Madogear {
+		in.madogear, in.madoLicence = true, p.skill(skillMadoLicence)
+	}
+	in.mountSpeed = p.c.MountSpeed
 	if p.c.Male {
 		in.danceLesson = p.skill(skillMusicalLesson)
 	}

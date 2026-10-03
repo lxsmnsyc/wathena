@@ -1,0 +1,13 @@
+# The Horse: a mount that shows the Peco Peco's sprite and follows the
+# Peco Peco's rules: the riding ASPD rule, Riding's weight, and spears
+# against medium targets. It walks a little slower than a Peco Peco.
+- name: example.familiars:Horse
+  display_name: Horse
+  look: peco_peco
+  acts_as: peco_peco
+  requires:
+    - {skill: KN_RIDING, level: 1}
+  # The walk speed bonus in percent. A Peco Peco has 25.
+  speed: 20
+  bonuses:
+    - [max_hp, 200]

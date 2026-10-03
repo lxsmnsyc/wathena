@@ -182,6 +182,16 @@ var Modules = []Module{
 		Funcs: []Func{{Name: "id", Params: []Param{{"name", "string", "A skill_db name, such as SM_BASH, or a mod skill's full name, such as example.chain-lightning:CHAIN_LIGHTNING."}}, Returns: "integer", Doc: "The skill's ID. An unknown name raises an error.", Permission: "game.read"}},
 	},
 	{
+		Name: "wa.companions", Local: "companions",
+		Doc:   "Companions by name: core's, such as falcon, and the mods' records of data/companions.yml.",
+		Funcs: []Func{{Name: "id", Params: []Param{{"name", "string", "A core companion's name, such as falcon, or a mod companion's full name, such as example.familiars:Owl."}}, Returns: "integer", Doc: "The companion's ID. An unknown name raises an error.", Permission: "game.read"}},
+	},
+	{
+		Name: "wa.mounts", Local: "mounts",
+		Doc:   "Mounts by name: core's, such as peco_peco, and the mods' records of data/mounts.yml.",
+		Funcs: []Func{{Name: "id", Params: []Param{{"name", "string", "A core mount's name, such as peco_peco, grand_peco, gryphon, dragon, warg or madogear, or a mod mount's full name."}}, Returns: "integer", Doc: "The mount's ID. An unknown name raises an error.", Permission: "game.read"}},
+	},
+	{
 		Name: "wa.monsters", Local: "monsters",
 		Doc:   "Monsters by name.",
 		Funcs: []Func{{Name: "id", Params: []Param{{"name", "string", "An AegisName, such as PORING."}}, Returns: "integer", Doc: "The monster's ID. An unknown name raises an error.", Permission: "game.read"}},
@@ -333,6 +343,9 @@ func playerFields() []Field {
 		{"account_id", "integer", "The database ID, 0 without a database."},
 		{"party", "nil", "nil: parties do not exist yet."},
 		{"sex", `"male"|"female"`, ""},
+		{"companion", "integer?", "The player's companion, from companions.id, or nil."},
+		{"mount", "integer?", "The player's mount, from mounts.id, or nil."},
+		{"cart", "integer?", "The look of the player's cart, from 1, or nil."},
 	}
 	for _, s := range stats {
 		doc := "Allocated points."
@@ -382,6 +395,12 @@ var Classes = []Class{
 				Doc: "Changes the player's job, as jobchange with rAthena's pc_jobchange. Job level goes back to 1, and learned skills stay. A transcendent player stays in the line it had before its rebirth. Returns false, and changes nothing, when the job is not a valid next job (jobs.next_jobs) or the player lacks the base or job level that the job's changes_from asks. A male player who changes into a Dancer becomes a Bard, and the reverse. The job_change event follows a change."},
 			{Name: "rebirth", Returns: "boolean",
 				Doc: "Makes a second class at base level 99 and job level 50 or more a High Novice at base and job level 1, with 100 status points, First Aid and Trick Dead, as rAthena's rebirth. Its second class picks its transcendent jobs. Returns false, and changes nothing, for other players."},
+			{Name: "set_companion", Params: []Param{{"companion", "integer?", "A companion from companions.id, or nil to remove it."}}, Returns: "boolean",
+				Doc: "Gives the player a companion in place of its current one, as setfalcon. Returns false, and changes nothing, when the player lacks the skills of the companion's requires, such as Falconry Mastery for a falcon."},
+			{Name: "set_mount", Params: []Param{{"mount", "integer?", "A mount from mounts.id, or nil to remove it."}}, Returns: "boolean",
+				Doc: "Puts the player on a mount in place of its current one, as setriding. The mount's acts_as picks its rules: walk speed, the mounted ASPD rule and spear damage. Returns false, and changes nothing, when the player lacks the skills of the mount's requires, such as Riding for a Peco Peco."},
+			{Name: "set_cart", Params: []Param{{"look", "integer?", "A cart look from 1 to 5, or nil to remove the cart."}}, Returns: "boolean",
+				Doc: "Gives the player a cart of a look, as setcart. Returns false, and changes nothing, without Pushcart or for a look the client does not have."},
 			{Name: "reset_skills", Doc: "Lowers every skill learned with skill points to 0 and refunds the points, as resetskill. Quest skills stay, and so does Basic Skill outside the Novice jobs."},
 			{Name: "reset_stats", Doc: "Sets every stat to 1 and gives back the status points of the base level, as resetstatus."},
 			{Name: "reset_skill", Params: []Param{{"skill", "integer", "A skill from skills.id."}, {"options", "wa.ResetSkillOptions?", ""}}, Returns: "boolean",

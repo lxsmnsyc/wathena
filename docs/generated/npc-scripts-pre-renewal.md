@@ -8,12 +8,12 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 
 | Kind | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
-| script | 1702 | 812 | 748 | 64 | 890 |
+| script | 1702 | 813 | 749 | 64 | 889 |
 | script (duplicate) | 3330 | 92 | 92 | 0 | 3238 |
 | shop | 185 | 185 | 185 | 0 | 0 |
 | Kafras (scripts that call F_Kafra) | 43 | 41 | 0 | 41 | 2 |
 | Dialog NPCs (only talk, menus and emotions) | 697 | 599 | 599 | 0 | 98 |
-| Job change NPCs (script NPCs of the jobs folders) | 315 | 62 | 61 | 1 | 253 |
+| Job change NPCs (script NPCs of the jobs folders) | 315 | 63 | 62 | 1 | 252 |
 
 - Shops that are not placed have no map or no sprite: scripts open them with `callshop`, which converts to `player:open_shop`.
 - cashshop, itemshop, pointshop and marketshop lines need cash points, item and point currencies, and stock, which wAthena does not have yet.
@@ -40,18 +40,18 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 
 | Command | Scripts | NPC full | NPC partly | NPC not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| mes | 1008 | 741 | 64 | 203 | 1008 |  |
-| close | 908 | 698 | 64 | 146 | 908 |  |
-| next | 869 | 620 | 64 | 185 | 869 |  |
-| select | 447 | 253 | 63 | 131 | 447 |  |
-| variables | 282 | 112 | 63 | 107 | 276 | $@arena_picture is a temporary server variable (1); $@arn_1 is a temporary server variable (1); $@in_battle is a temporary server variable (1) |
+| mes | 1008 | 742 | 64 | 202 | 1008 |  |
+| close | 909 | 699 | 64 | 146 | 909 |  |
+| next | 869 | 621 | 64 | 184 | 869 |  |
+| select | 447 | 254 | 63 | 130 | 447 |  |
+| variables | 283 | 113 | 63 | 107 | 277 | $@arena_picture is a temporary server variable (1); $@arn_1 is a temporary server variable (1); $@in_battle is a temporary server variable (1) |
 | end | 236 | 140 | 63 | 33 | 236 |  |
 | event ontouch_ | 228 | 0 | 0 | 228 | 0 |  |
 | warp | 173 | 96 | 48 | 29 | 169 | to a computed map (2) |
 | event onenable | 166 | 0 | 0 | 166 | 0 |  |
 | close2 | 153 | 101 | 7 | 45 | 153 |  |
 | callfunc | 138 | 53 | 64 | 21 | 138 |  |
-| Zeny | 134 | 57 | 59 | 18 | 134 |  |
+| Zeny | 135 | 58 | 59 | 18 | 135 |  |
 | getarg | 133 | 47 | 63 | 23 | 122 | outside a function (11) |
 | strcharinfo | 116 | 39 | 41 | 36 | 116 |  |
 | countitem | 101 | 33 | 48 | 20 | 101 |  |
@@ -69,7 +69,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | setarray | 56 | 4 | 41 | 11 | 56 |  |
 | getitem | 54 | 43 | 1 | 10 | 54 |  |
 | close3 | 50 | 1 | 45 | 4 | 50 |  |
-| parameter | 48 | 0 | 0 | 48 | 0 |  |
+| parameter | 49 | 0 | 0 | 49 | 0 |  |
 | logmes | 46 | 0 | 45 | 1 | 46 |  |
 | checkweight | 43 | 24 | 0 | 19 | 43 |  |
 | implode | 43 | 0 | 41 | 2 | 43 |  |
@@ -95,13 +95,13 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | donpcevent | 9 | 0 | 0 | 9 | 0 |  |
 | event onwelcome | 8 | 0 | 0 | 8 | 0 |  |
 | getpartnerid | 8 | 0 | 0 | 8 | 0 |  |
+| getskilllv | 8 | 1 | 4 | 3 | 8 |  |
 | parse | 8 | 0 | 0 | 8 | 0 | at 116 near ",": set needs a variable (1); at 117 near ",": set needs a variable (1); at 319 near "mes": statement before the first case (1) |
 | skill | 8 | 0 | 0 | 8 | 0 |  |
 | getbattleflag | 7 | 0 | 0 | 7 | 0 |  |
 | getitemname | 7 | 2 | 0 | 5 | 7 |  |
-| getskilllv | 7 | 0 | 4 | 3 | 7 |  |
 | specialeffect | 7 | 0 | 0 | 7 | 0 |  |
-| checkcart | 6 | 0 | 4 | 2 | 0 |  |
+| checkcart | 6 | 1 | 4 | 1 | 6 |  |
 | event onout | 6 | 0 | 0 | 6 | 0 |  |
 | getexp | 6 | 0 | 0 | 6 | 0 |  |
 | setquest | 6 | 0 | 0 | 6 | 0 |  |
@@ -111,15 +111,16 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimeover1 | 5 | 0 | 0 | 5 | 0 |  |
 | event ontouchnpc | 5 | 0 | 0 | 5 | 0 |  |
 | openstorage | 5 | 1 | 4 | 0 | 5 |  |
+| setcart | 5 | 1 | 4 | 0 | 5 |  |
 | disable_items | 4 | 0 | 0 | 4 | 0 |  |
 | event onreset_01 | 4 | 0 | 0 | 4 | 0 |  |
 | event onsmile | 4 | 0 | 0 | 4 | 0 |  |
 | getlook | 4 | 0 | 0 | 4 | 0 |  |
-| setcart | 4 | 0 | 4 | 0 | 4 |  |
 | waitingroom | 4 | 0 | 0 | 4 | 0 |  |
 | event onstop | 3 | 0 | 0 | 3 | 0 |  |
 | event ontimer345000 | 3 | 0 | 0 | 3 | 0 |  |
-| checkriding | 2 | 0 | 0 | 2 | 0 |  |
+| ismounting | 3 | 0 | 0 | 3 | 0 |  |
+| checkriding | 2 | 0 | 0 | 2 | 2 |  |
 | completequest | 2 | 0 | 0 | 2 | 0 |  |
 | event onenter | 2 | 0 | 0 | 2 | 0 |  |
 | event ontimer300000 | 2 | 0 | 0 | 2 | 0 |  |
@@ -127,6 +128,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getequipid | 2 | 0 | 0 | 2 | 0 |  |
 | getiteminfo | 2 | 0 | 0 | 2 | 0 |  |
 | getmapusers | 2 | 0 | 0 | 2 | 0 |  |
+| parameter Weight | 2 | 0 | 0 | 2 | 0 |  |
 | assignment | 1 | 0 | 0 | 1 | 0 |  |
 | assignment in an expression | 1 | 0 | 0 | 1 | 0 |  |
 | checkwug | 1 | 0 | 0 | 1 | 0 |  |
@@ -152,7 +154,6 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | goto | 1 | 0 | 0 | 1 | 1 |  |
 | insertchar | 1 | 0 | 0 | 1 | 0 |  |
 | is_party_leader | 1 | 0 | 0 | 1 | 0 |  |
-| ismounting | 1 | 0 | 0 | 1 | 0 |  |
 | jobchange | 1 | 0 | 0 | 1 | 0 |  |
 | killmonster | 1 | 0 | 0 | 1 | 0 | the API cannot remove spawned monsters (1) |
 | killmonsterall | 1 | 0 | 0 | 1 | 0 |  |
@@ -162,7 +163,6 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | nude | 1 | 0 | 0 | 1 | 0 |  |
 | openauction | 1 | 0 | 0 | 1 | 0 |  |
 | openmail | 1 | 0 | 0 | 1 | 0 |  |
-| parameter Weight | 1 | 0 | 0 | 1 | 0 |  |
 | parameter Zeny | 1 | 0 | 0 | 1 | 0 | set to a value (1) |
 | setlook | 1 | 0 | 0 | 1 | 0 |  |
 | soundeffect | 1 | 0 | 0 | 1 | 0 |  |
@@ -179,7 +179,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | F_ClearJobVar | npc/other/Global_Functions.txt:56 | whole |  |
 | F_ClockTowerGate | npc/cities/aldebaran.txt:1494 | partly | warp: to a computed map |
 | F_CmdGuide | npc/pre-re/guides/guides_comodo.txt:34 | whole |  |
-| F_CoolEventCorp | npc/kafras/cool_event_corp.txt:25 | partly | checkcart |
+| F_CoolEventCorp | npc/kafras/cool_event_corp.txt:25 | whole |  |
 | F_EntKafCode | npc/kafras/functions_kafras.txt:583 | whole |  |
 | F_FatherRub | npc/jobs/2-1/priest.txt:1727 | whole |  |
 | F_FatherYos | npc/jobs/2-1/priest.txt:1806 | whole |  |
@@ -276,7 +276,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/jobs/2-2a/Professor.txt | 1 | 0 | 1 |
 | npc/jobs/2-2a/Stalker.txt | 1 | 0 | 1 |
 | npc/jobs/2-2e/SoulLinker.txt | 8 | 0 | 8 |
-| npc/jobs/novice/supernovice.txt | 3 | 1 | 2 |
+| npc/jobs/novice/supernovice.txt | 3 | 2 | 1 |
 | npc/jobs/valkyrie.txt | 5 | 2 | 3 |
 | npc/kafras/cool_event_corp.txt | 4 | 4 | 0 |
 | npc/kafras/dts_warper.txt | 24 | 8 | 16 |

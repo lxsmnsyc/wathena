@@ -418,7 +418,7 @@ local current_season = exports.get("example.seasonal-lib", "current_season")
 | `wa.variables` | Typed saved variables | `storage.mod` |
 | `wa.storage` | Mod tables and key-value storage | `storage.mod` |
 | `wa.bonuses` | Item bonuses | Item contexts only |
-| `wa.items`, `wa.monsters`, `wa.skills`, `wa.maps` | Record lookups by name, and map queries | `game.read` |
+| `wa.items`, `wa.monsters`, `wa.skills`, `wa.companions`, `wa.mounts`, `wa.maps` | Record lookups by name, and map queries | `game.read` |
 | `wa.spawning` | Monsters and NPCs owned by the context | `npc.create` |
 | `wa.random` | `random.integer(minimum, maximum)` and `random.chance(numerator, denominator)` from the zone's secret stream | None |
 | `wa.integers` | `divide_truncated` and `remainder_truncated` with C rounding, for converted scripts | None |
@@ -919,3 +919,15 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - `world:equip` leaves the given copy in the inventory when it cannot be equipped.
    - A roll's `display_name` replaces the label from its bonus. The unit stays.
    - `api: experimental` is refused with a message, and a range such as `^1.0` must include 1.0.
+11. Build companions, mounts and carts (review decision 25), and load a character whose mod job was removed as a Novice. Done on 2026-10-03 ([decision 0016](../decisions/0016-companions-and-mounts.md)). Details to review:
+   - Records of mods are named with the mod's ID, as jobs and skills, such as `example.familiars:Owl`. Core's are plain names. Mod records get IDs from 10,000, and core's keep the IDs of their files, from 1.
+   - The looks a record may name are the sprites rAthena's option bits show: companions `falcon` and `warg`, mounts `peco_peco`, `grand_peco`, `gryphon`, `dragon`, `dragon_brown`, `dragon_gray`, `dragon_blue`, `dragon_red`, `warg` and `madogear`.
+   - A core record acts as itself. A new record without `acts_as` follows no core rules: it has a look and bonuses only.
+   - `speed` is the walk speed bonus in percent, 0 to 50, in place of the rules' bonus. The rules give 25 for a Peco Peco or a dragon.
+   - `requires` entries take `level` as optional, 1 by default.
+   - A record's `bonuses` cannot read rolls.
+   - `companions.id` and `mounts.id` need `game.read`, as `jobs.id`. The set calls need no permission.
+   - `player.cart` is the cart's look, or nil. `player:set_cart` returns false for a look above 5.
+   - `player:reset_skills` removes a companion or mount whose skills it resets, as `resetskill`, and `player:reset_skill` one whose `requires` the player no longer meets.
+   - The converter maps `checkfalcon`, `checkriding` and `checkcart` to tests of `player.companion`, `player.mount` and `player.cart` against nil. `checkriding` is then true on any mount.
+   - Not built, since the decision has no API for them: `setdragon`, `setmadogear`, `checkdragon`, `checkwug`, `ismounting` and the warg companion. Each needs a review item before it converts.

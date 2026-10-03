@@ -13,6 +13,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -125,6 +126,10 @@ type Player struct {
 	// the next autosave runs, in zone milliseconds.
 	saved    *character.Character
 	nextSave int64
+
+	// companion and mount are the player's records of data/companions.yml
+	// and data/mounts.yml, or nil (companions.go).
+	companion, mount *companion.Record
 
 	// spheres are the player's spirit spheres.
 	spheres
@@ -685,8 +690,10 @@ func (z *Zone) join(p *Player) joinResult {
 		c = &n
 	}
 	p.load = nil
+	z.checkJob(c)
 	p.record = c.Info
-	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), c.Options)), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
+	z.restoreCompanions(p, c)
+	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), p.record.Options)), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
 	h := p.arrival
 	p.arrival = nil
@@ -978,8 +985,9 @@ func (z *Zone) handle(c command) {
 		z.useSkill(p, c.useSkill)
 	}
 	// The game client does not attack while SC_WEIGHT90 is on, which
-	// rAthena relies on. The zone checks it itself.
-	if c.attack != nil && p.overweight != item.Weight90 && !me.cant().Attack {
+	// rAthena relies on. The zone checks it itself. A warg rider does
+	// not attack, as unit_attack.
+	if c.attack != nil && p.overweight != item.Weight90 && !me.cant().Attack && p.mountRule() != companion.RuleWugRider {
 		for e, id := range p.netIDs.all() {
 			// unit_attack's battle_check_target for summons: players hit
 			// only those alchemist_summon_setting allows.

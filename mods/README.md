@@ -343,6 +343,7 @@ A number is one value for every level, or a list with one value per level from l
 | `spirit_spheres` | Spirit spheres used, 0 to 15. |
 | `weapons` | A list of weapon types from `wa.weapon_types`, such as `[dagger, one_handed_sword]`. An empty list allows any weapon. |
 | `items` | A list of up to 10 `{item, amount}`. `amount` is 1 by default. |
+| `companion` | A companion of `data/companions.yml`, such as `falcon`. The caster's companion must be it or act as it. |
 
 - `id` cannot be set. A new skill gets an ID from 20,000.
 - `skills.id "example.chain-lightning:CHAIN_LIGHTNING"` finds a mod's skill.
@@ -418,7 +419,55 @@ Job records follow proposal 0002, review decision 24. Core's jobs are records to
 - On core's jobs, `tier`, `transcendent`, `baby`, `base_job` and `inherits` come from rAthena and cannot change.
 - Core's `changes_from` holds rAthena's job change rules without levels, since `jobchange` checks none. Core's Job Master checks rAthena's levels itself.
 - The client shows the look's sprites and the `display_name`, which the server sends with the job.
-- Mounts, falcons and carts for new jobs wait for a general design of companions.
+- A new job keeps a companion or a mount when it meets the record's `requires`, such as Falconry Mastery for a falcon (see "Companions, mounts and carts").
+- A character whose mod job was removed loads as a Novice, at most at job level 10, and the server logs a warning. Its skills, stats and items stay.
+
+### Companions, mounts and carts: data/companions.yml and data/mounts.yml
+
+Companion and mount records follow proposal 0002, review decision 25. Core's records are files of the core mod: the falcon in `data/companions.yml`, and the Peco Peco, Grand Peco, gryphon, dragon, warg and Madogear in `data/mounts.yml`. A mod adds its own records and changes core's by name. [examples/familiars](examples/familiars) adds an Owl and a Horse.
+
+```yaml
+# data/companions.yml
+- name: example.familiars:Owl
+  display_name: Owl
+  look: falcon
+  acts_as: falcon
+  requires:
+    - {skill: HT_FALCON, level: 1}
+  bonuses:
+    - [dex, 2]
+# data/mounts.yml
+- name: example.familiars:Horse
+  display_name: Horse
+  look: peco_peco
+  acts_as: peco_peco
+  requires:
+    - {skill: KN_RIDING, level: 1}
+  speed: 20
+```
+
+| Field | Meaning |
+|---|---|
+| `display_name` | The name players see. By default the name without the mod prefix. |
+| `look` | The sprite. Companions: `falcon` or `warg`. Mounts: `peco_peco`, `grand_peco`, `gryphon`, `dragon`, `dragon_brown`, `dragon_gray`, `dragon_blue`, `dragon_red`, `warg` or `madogear`. |
+| `acts_as` | The core record whose rules apply. A companion that acts as `falcon` works with the falcon's skills, such as Blitz Beat. A mount that acts as `peco_peco`, `grand_peco` or `gryphon` follows the riding rules, and `dragon`, `warg` and `madogear` their own: walk speed, the mounted ASPD rule with Cavalier Mastery or Dragon Training, the weight limit, and spears against medium targets. A core record acts as itself. A new record without `acts_as` has a look and bonuses only. |
+| `requires` | Skills the player needs, each `{ skill, level }`. `level` is 1 by default. |
+| `bonuses` | Static bonuses while the player has the record, as an item's `bonuses`, such as `[[dex, 2]]`. |
+| `speed` | Mounts only: the walk speed bonus in percent, 0 to 50, in place of the rules' bonus. A Peco Peco and a dragon have 25, a warg 15 plus 5 per level of Warg Rider. |
+
+| Call | What it does |
+|---|---|
+| `companions.id(name)`, `mounts.id(name)` | A record's ID: core's from 1, a mod's from 10,000. They need `game.read`. |
+| `player:set_companion(companion)` | Gives the player a companion in place of its current one, or removes it with `nil`. Returns false, and changes nothing, when the player lacks the skills of `requires`, as `setfalcon` without Falconry Mastery. |
+| `player:set_mount(mount)` | The same for a mount, as `setriding`. |
+| `player:set_cart(look)` | Gives the player a cart of a look from 1 to 5, or removes it with `nil`, as `setcart`. Returns false without Pushcart, or for a look above 5. |
+| `player.companion`, `player.mount`, `player.cart` | The record IDs and the cart's look, or `nil`. Read-only. |
+
+- A player has at most one companion and one mount.
+- A job change removes a companion or a mount whose `requires` the new job does not meet, and a cart without Pushcart, as `pc_jobchange`. It always removes the Madogear, as rAthena does. `player:reset_skills` removes those whose skills it resets, as `resetskill`, and `player:reset_skill` those whose skills the player no longer has.
+- The client shows the look: the falcon or warg beside the player, the cart behind it, and the mounted sprite of the player's job. A job without a mounted sprite, such as a Hunter on a Peco Peco, shows its costume mount.
+- The character saves the record names and the option bits of their looks. A record whose mod was removed goes when the character loads, with a warning in the log.
+- The converter maps `setfalcon`, `setriding` and `setcart` to these calls, and `checkfalcon`, `checkriding` and `checkcart` to `player.companion ~= nil`, `player.mount ~= nil` and `player.cart ~= nil`.
 
 Kinds not overlaid yet: spawns, quests and achievements.
 
@@ -435,7 +484,7 @@ greeter:
 
 ## IDs
 
-The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000, monsters at 100,000, skills at 20,000 and jobs at 10,000. Quests and achievements start at 1,000,000, for when those kinds get overlays.
+The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000, monsters at 100,000, skills at 20,000, and jobs, companions and mounts at 10,000. Quests and achievements start at 1,000,000, for when those kinds get overlays.
 
 - An ID never changes, and never goes to another name, even when the mod is removed. The item comes back with its ID when the mod is installed again.
 - Scripts find IDs by name: `items.id "example.greeter:Welcome_Cookie"`.
@@ -976,7 +1025,7 @@ end
 | `player:reset_stat(stat, { to })` | Lowers one stat (`"str"` to `"luk"`), to 1 by default, and refunds what raising it cost, by rAthena's cost table: `2 + (value - 1) / 10` points per step below 100 in renewal, and `1 + (value + 9) / 10` in pre-renewal. Returns false when the stat is not above the value. |
 
 - Quest skills, which cost no skill points, are never lowered or refunded. Basic Skill stays for every job but the Novice and the High Novice, as in `resetskill`.
-- The changes follow `pc_jobchange`: a base level above the new job's maximum comes down and the stats reset; a change into a transcendent job adds 52 status points, and a change out of one takes them back or resets the stats; equipment the new job cannot wear comes off; and a Peco Peco, a falcon or a cart goes when the new job lacks its skill.
+- The changes follow `pc_jobchange`: a base level above the new job's maximum comes down and the stats reset; a change into a transcendent job adds 52 status points, and a change out of one takes them back or resets the stats; equipment the new job cannot wear comes off; and a companion, a mount or a cart goes when the new job does not meet its `requires` (see "Companions, mounts and carts").
 - The job level at the change from a first class to a second class is saved (rAthena's `change_level_2nd`). The skill tree reads it: a second class sees its own skills once it spent the points of that many first class job levels.
 - Every call computes the player's stats before it returns, and sends the new skill list.
 - The job tests of `wa.jobs` (`is_transcendent`, `base_job`, `first_job` and the others) work with mod jobs. `first_job` of a mod job is the first job of its class's line.

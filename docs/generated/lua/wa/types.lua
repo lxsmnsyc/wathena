@@ -239,6 +239,9 @@
 ---@field account_id integer The database ID, 0 without a database.
 ---@field party nil nil: parties do not exist yet.
 ---@field sex "male"|"female"
+---@field companion integer? The player's companion, from companions.id, or nil.
+---@field mount integer? The player's mount, from mounts.id, or nil.
+---@field cart integer? The look of the player's cart, from 1, or nil.
 ---@field base_str integer Allocated points.
 ---@field base_agi integer Allocated points.
 ---@field base_vit integer Allocated points.
@@ -410,6 +413,21 @@ function wa_Player:change_job(job, options) end
 ---Makes a second class at base level 99 and job level 50 or more a High Novice at base and job level 1, with 100 status points, First Aid and Trick Dead, as rAthena's rebirth. Its second class picks its transcendent jobs. Returns false, and changes nothing, for other players.
 ---@return boolean
 function wa_Player:rebirth() end
+
+---Gives the player a companion in place of its current one, as setfalcon. Returns false, and changes nothing, when the player lacks the skills of the companion's requires, such as Falconry Mastery for a falcon.
+---@param companion? integer A companion from companions.id, or nil to remove it.
+---@return boolean
+function wa_Player:set_companion(companion) end
+
+---Puts the player on a mount in place of its current one, as setriding. The mount's acts_as picks its rules: walk speed, the mounted ASPD rule and spear damage. Returns false, and changes nothing, when the player lacks the skills of the mount's requires, such as Riding for a Peco Peco.
+---@param mount? integer A mount from mounts.id, or nil to remove it.
+---@return boolean
+function wa_Player:set_mount(mount) end
+
+---Gives the player a cart of a look, as setcart. Returns false, and changes nothing, without Pushcart or for a look the client does not have.
+---@param look? integer A cart look from 1 to 5, or nil to remove the cart.
+---@return boolean
+function wa_Player:set_cart(look) end
 
 ---Lowers every skill learned with skill points to 0 and refunds the points, as resetskill. Quest skills stay, and so does Basic Skill outside the Novice jobs.
 function wa_Player:reset_skills() end

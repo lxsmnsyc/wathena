@@ -559,24 +559,6 @@ func (beastStrafing) castendDamage(z *Zone, src, target *entity, d *skill.Def, l
 	}
 }
 
-// Falcons: rAthena's OPTION_FALCON, saved in the character's options.
-
-// isFalcon is pc_isfalcon.
-func isFalcon(p *Player) bool { return p.record.Options&optionFalcon != 0 }
-
-// setFalcon is pc_setfalcon: a player with Falconry Mastery gets a
-// falcon, or loses it.
-func (z *Zone) setFalcon(p *Player, on bool) {
-	switch {
-	case on:
-		if p.skillLevel(skill.IDFalcon) > 0 {
-			z.setOptions(p, p.record.Options|optionFalcon)
-		}
-	case isFalcon(p):
-		z.setOptions(p, p.record.Options&^optionFalcon)
-	}
-}
-
 // rangerJobs are the jobs of MAPID_RANGER under MAPID_THIRDMASK: Ranger,
 // transcendent and baby Ranger, and Windhawk.
 var rangerJobs = map[int]bool{4056: true, 4062: true, 4098: true, 4257: true}

@@ -207,6 +207,25 @@ describe('lookOf', () => {
     expect(lookOf(create(LookSchema, { weapon: 0 })).weapon).toBeUndefined();
     expect(lookOf(create(LookSchema, { weapon: 9999 })).weapon).toBeUndefined();
   });
+
+  it('draws the mount, companion and cart of the option bits', () => {
+    // A Rune Knight on a dragon, with a cart.
+    const rider = lookOf(create(LookSchema, { body: 4054, sex: 1, weapon: 2 }), 0x80000 | 0x8);
+    expect(rider).toMatchObject({
+      body: 'sprite/body/rune_knight2/m',
+      weapon: 'sprite/weapon/rune_knight2/m/2',
+      cart: 'sprite/cart/1',
+    });
+    expect(rider.companion).toBeUndefined();
+    // A Hunter on a costume mount, with a falcon. Equipment keeps the job's look.
+    const hunter = lookOf(create(LookSchema, { body: 11, sex: 0, weapon: 11 }), 0x20 | 0x10);
+    expect(hunter).toMatchObject({
+      body: 'sprite/body/ostrich_hunter/f',
+      weapon: 'sprite/weapon/hunter/f/11',
+      companion: 'sprite/companion/falcon',
+    });
+    expect(hunter.cart).toBeUndefined();
+  });
 });
 
 /** A sprite of one frame per action, for characters that load. */
@@ -280,6 +299,68 @@ describe('LookChange', () => {
     expect(o.position(1)?.x).toBe(4.5);
     expect(o.group.children).toContain(after?.group);
     expect(o.group.children).not.toContain(before?.group);
+  });
+
+  it('loads a companion and cart on OptionChange, and not for a tint', async () => {
+    vi.stubGlobal('reportError', () => {});
+    const asked: [string, boolean | undefined][] = [];
+    const sprites = {
+      get: async (name: string, placeholder?: boolean) => {
+        asked.push([name, placeholder]);
+        await Promise.resolve();
+        return name.startsWith('sprite/body/') ||
+          name.startsWith('sprite/companion/') ||
+          name.startsWith('sprite/cart/')
+          ? sprite()
+          : undefined;
+      },
+      palette: async () => {
+        await Promise.resolve();
+        return undefined;
+      },
+    } as unknown as SpriteCache;
+    const o = new Online(1, sprites, {} as Pathfinder);
+    o.setMap(map());
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 1, kind: EntityKind.PLAYER, x: 4, y: 5, dir: 3, look: { body: 11, sex: 1 } },
+        },
+      }),
+    ]);
+    await settle();
+    const before = o.me?.character;
+    // Poison only tints, so the character stays.
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'optionChange', value: { id: 1, options: { health: 1 } } },
+      }),
+    ]);
+    await settle();
+    expect(o.me?.character).toBe(before);
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'optionChange', value: { id: 1, options: { option: 0x10 | 0x8 } } },
+      }),
+    ]);
+    await settle();
+    expect(asked).toContainEqual(['sprite/companion/falcon', true]);
+    expect(asked).toContainEqual(['sprite/cart/1', true]);
+    const after = o.me?.character;
+    expect(after).not.toBe(before);
+    expect(after?.direction).toBe(3);
+    expect(o.position(1)?.x).toBe(4.5);
+    // A LookChange keeps the companion.
+    asked.length = 0;
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'lookChange', value: { id: 1, look: { body: 11, sex: 1, headTop: 17 } } },
+      }),
+    ]);
+    await settle();
+    expect(asked).toContainEqual(['sprite/companion/falcon', true]);
+    expect(o.me?.character).not.toBe(after);
   });
 });
 

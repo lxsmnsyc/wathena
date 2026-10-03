@@ -607,11 +607,11 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 7 || npcs[1].DisplayName != "Greeter" || npcs[1].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 8 || npcs[2].DisplayName != "Greeter" || npcs[2].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
 	// The cookie stand is a shop that only scripts open.
-	if shop := npcs[3]; shop.Placed || len(shop.Shop) != 2 || !shop.Discount || shop.Shop[1].Price != -1 {
+	if shop := npcs[4]; shop.Placed || len(shop.Shop) != 2 || !shop.Discount || shop.Shop[1].Price != -1 {
 		t.Errorf("shop %+v", shop)
 	}
 	sc, err := s.Scripts("example.greeter")

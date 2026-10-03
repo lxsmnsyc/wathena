@@ -1,0 +1,21 @@
+# A sample mod that adds a companion and a mount: data/companions.yml
+# defines the Owl, data/mounts.yml the Horse, and data/skills.yml a skill
+# that needs a falcon or the Owl. mods/README.md, "Companions, mounts and
+# carts", explains each field.
+id: example.familiars
+name: Familiars
+version: 0.1.0
+api: 1.0
+description: Adds an Owl that Hunters keep in place of a falcon, a Horse that Knights ride, and a keeper who hands them out.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read

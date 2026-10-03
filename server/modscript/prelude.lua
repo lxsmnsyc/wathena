@@ -250,6 +250,15 @@ new_player, player_ids = handle_type("player", {
 	rebirth = function(self)
 		return (call(H.player_rebirth, player_ids[self]))
 	end,
+	set_companion = function(self, companion)
+		return (call(H.player_set_companion, player_ids[self], "companion", companion))
+	end,
+	set_mount = function(self, mount)
+		return (call(H.player_set_companion, player_ids[self], "mount", mount))
+	end,
+	set_cart = function(self, look)
+		return (call(H.player_set_cart, player_ids[self], look))
+	end,
 	reset_skills = function(self)
 		call(H.player_reset, player_ids[self], "skills")
 	end,
@@ -830,6 +839,15 @@ api["wa.skills"] = readonly("wa.skills", {
 		return (call(H.skills_id, name))
 	end,
 })
+
+for _, module in ipairs({ "companions", "mounts" }) do
+	api["wa." .. module] = readonly("wa." .. module, {
+		id = function(name)
+			check(type(name) == "string", module .. ".id: the name must be a string, such as \"falcon\"")
+			return (call(H.companions_id, module, name))
+		end,
+	})
+end
 
 api["wa.monsters"] = readonly("wa.monsters", {
 	id = function(name)

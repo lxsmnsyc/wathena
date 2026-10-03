@@ -78,7 +78,7 @@ func newLuaFile() *luaFile {
 var moduleOrder = []string{
 	"bonuses", "context", "events", "random", "timers", "integers", "items", "skills", "monsters",
 	"races", "monster_groups", "elements", "sizes", "monster_classes", "weapon_types", "statuses",
-	"effects", "headgear_effects", "jobs", "schedules",
+	"effects", "headgear_effects", "jobs", "companions", "mounts", "schedules",
 }
 
 // need marks an API module as used and returns its local name.

@@ -5,6 +5,7 @@ import (
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -877,6 +878,18 @@ func (z *Zone) checkCastBegin(src *entity, def *skill.Def, lv int) bool {
 	if def.Has("Toggleable") && def.Status >= 0 && src.sc.Has(def.Status) {
 		return true
 	}
+	// A warg rider and a Madogear use only the skills marked for them.
+	switch p.mountRule() {
+	case companion.RuleWugRider:
+		if !def.Has("AllowOnWarg") {
+			return false
+		}
+	case companion.RuleMadogear:
+		if !def.Has("AllowOnMado") {
+			z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+			return false
+		}
+	}
 	req := z.requirement(src, def, lv)
 	// The skill's own checks.
 	if impl, ok := skillImpls[def.ID].(castBeginChecker); ok {
@@ -911,8 +924,7 @@ func (z *Zone) checkCastBegin(src *entity, def *skill.Def, lv int) bool {
 			return false
 		}
 	case skill.StateRiding:
-		// Dragons are not ported, so only the Peco Peco counts.
-		if !p.riding() {
+		if !p.riding() && !p.ridingDragon() {
 			z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 			return false
 		}
@@ -921,6 +933,12 @@ func (z *Zone) checkCastBegin(src *entity, def *skill.Def, lv int) bool {
 			z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 			return false
 		}
+	}
+	// A mod skill's requirements may name a companion: the player's
+	// companion must be it or act as it.
+	if c := def.Requires.Companion; c != "" && !p.companion.Is(c) {
+		z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+		return false
 	}
 	// Sight Rasher checks its statuses when the cast ends.
 	if def.ID != skill.IDSightRasher && !z.checkStatusRequired(src, def, req) {

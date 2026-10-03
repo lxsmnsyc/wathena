@@ -3,6 +3,7 @@ package zone
 import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
@@ -197,26 +198,21 @@ func (z *Zone) takeItems(p *Player, id uint32, amount int) bool {
 // where SC_PUSH_CART is the cart. wAthena saves the cart in the option
 // bits (OPTION_CART), as rAthena without NEW_CARTS, so either counts.
 func (z *Zone) hasCart(p *Player) bool {
-	return p.record.Options&optionCart != 0 || p.entity.sc.Has(scPushCart)
+	return p.record.Options&companion.OptionCart != 0 || p.entity.sc.Has(scPushCart)
 }
-
-// cartOptions are the option bits of each cart type, as pc_setcart's
-// table without NEW_CARTS: 0 is no cart, then OPTION_CART1 to
-// OPTION_CART5.
-var cartOptions = [...]int{0, 0x0008, 0x0080, 0x0100, 0x0200, 0x0400}
 
 // setCart is pc_setcart, with the saved option bits. Type 0 removes the
 // cart. Types 1 to 5 give a cart, which needs Pushcart (MC_PUSHCART).
 // setOptions computes the stats again, for the cart's speed penalty. It
 // reports whether the type was valid.
 func (z *Zone) setCart(p *Player, typ int) bool {
-	if typ < 0 || typ >= len(cartOptions) {
+	if typ < 0 || typ > companion.MaxCart {
 		return false
 	}
 	if p.skillLevel(skillPushCart) <= 0 && typ != 0 {
 		return false
 	}
-	o := p.record.Options&^optionCart | cartOptions[typ]
+	o := p.record.Options&^companion.OptionCart | companion.CartOptions[typ]
 	if o != p.record.Options {
 		z.setOptions(p, o)
 	}

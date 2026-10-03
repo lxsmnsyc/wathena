@@ -527,8 +527,18 @@ type speedInput struct {
 	itemSpeed  int
 	assassinTF int
 	tunnel     int
-	// riding is pc_isriding: the player rides a Peco Peco.
-	riding bool
+	// riding is pc_isriding or pc_isridingdragon: the player rides a Peco
+	// Peco or a dragon. wugRider is pc_isridingwug, and wugRiderLv the
+	// level of RA_WUGRIDER.
+	riding     bool
+	wugRider   bool
+	wugRiderLv int
+	// madogear is pc_ismadogear, and madoLicence the level of
+	// NC_MADOLICENCE.
+	madogear    bool
+	madoLicence int
+	// mountSpeed replaces the mount's walk speed bonus, or is nil.
+	mountSpeed *int
 	// freeCast is the level of Free Cast of a player who casts, or 0.
 	freeCast int
 	// cart is pc_iscarton, and pushCart the level of MC_PUSHCART.
@@ -540,10 +550,24 @@ type speedInput struct {
 	danceLesson int
 }
 
-// calcSpeed is status_calc_speed, without the mounts other than the Peco
-// Peco and the speed changes of casting, which wait for them.
+// scAcceleration is SC_ACCELERATION, which speeds a Madogear up.
+const scAcceleration = 349
+
+// calcSpeed is status_calc_speed, with the mounts of rAthena's options.
+// SC_ALL_RIDING, the rental mount, is not ported.
 func calcSpeed(l *sc.List, speed int, in speedInput) int {
 	rate := 100
+	if in.player && in.madogear && in.mountSpeed == nil {
+		// A Madogear's speed ignores other statuses.
+		val := -25
+		if in.madoLicence < 5 {
+			val = 50 - 10*in.madoLicence
+		}
+		if l.Has(scAcceleration) {
+			val -= 25
+		}
+		return capValue(speed+speed*val/100, minWalkSpeed, maxWalkSpeedCap)
+	}
 	if in.freeCast > 0 {
 		// A player with Free Cast walks while casting, slower.
 		rate = 175 - 5*in.freeCast
@@ -551,8 +575,14 @@ func calcSpeed(l *sc.List, speed int, in speedInput) int {
 	}
 	// GetMoveHasteValue2: mounts.
 	val := 0
-	if in.player && in.riding {
+	switch {
+	case !in.player:
+	case in.mountSpeed != nil && (in.riding || in.wugRider || in.madogear):
+		val = *in.mountSpeed
+	case in.riding:
 		val = 25
+	case in.wugRider:
+		val = 15 + 5*in.wugRiderLv
 	}
 	rate -= val
 	// GetMoveSlowValue.

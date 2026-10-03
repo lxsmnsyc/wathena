@@ -12,6 +12,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `status` | Player stats from job, levels, raised stats, skills and equipment, ported from rAthena's `status_calc_pc` and `pc_bonus`, in both modes, and checked against every recorded player, every equipment item and card of `item_bonuses.json`, and every level of `refine.json`. Raising stats with status points, ported from `pc_statusup`, `pc_need_status_point` and `pc_maxparameter`, with the costs of both modes and the job limits from `conf/battle/player.conf`. |
 | `statuschange` | Status effects, ported from rAthena's `status_change_start`, `status_change_end`, `status_change_clear`, `status_change_timer` and `status_get_sc_def`, with the data of `status.yml` from `reference/rathena/extracts/<mode>/status.json`, and checked against every case of `status_effects.json` (see "Status effects"). |
 | `progression` | Exp tables, level ups, status and skill points, the renewal level penalty, exp shares, drop rates and rolls, where drops land, and pick-up rights, ported from rAthena's `pc.cpp`, `mob.cpp` and `map.cpp` with the default `conf/battle` settings. |
+| `companion` | Companions, mounts and carts: the records of `data/companions.yml` and `data/mounts.yml`, core's own files, the core rules a record acts as, and the option bits that show each look (see "Companions, mounts and carts"). |
 | `character` | A saved character as plain data: what the zone loads and hands to the store. |
 | `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
 | `account` | The account service under `/account/`: signup, login, logout, login sessions, account settings with TOTP codes, recovery codes and passkeys, the character list with character creation, Play, and one-time game tickets. Argon2id passwords, CSRF tokens, a strict Content Security Policy, rate limits and a captcha hook. `GameTickets` checks the ticket in `Hello` for the gateway. See decisions [0004](../docs/decisions/0004-account-service-and-game-tickets.md) and [0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). |
@@ -278,7 +279,7 @@ On SIGTERM or Ctrl+C, `waserver` stops being ready, ends every game connection w
 
 ## Mods
 
-`waserver` loads the mods in `mods.dir` at startup (strategy section 6, [decision 0006](../docs/decisions/0006-mod-loader.md)). [mods/README.md](../mods/README.md) is the guide for mod authors. `mods/examples/greeter` is a small sample, `mods/examples/halloween` adds an NPC, an item, monsters, a hook and world events, `mods/examples/verve` adds a status, and `mods/examples/chain-lightning` adds a skill.
+`waserver` loads the mods in `mods.dir` at startup (strategy section 6, [decision 0006](../docs/decisions/0006-mod-loader.md)). [mods/README.md](../mods/README.md) is the guide for mod authors. `mods/examples/greeter` is a small sample, `mods/examples/halloween` adds an NPC, an item, monsters, a hook and world events, `mods/examples/verve` adds a status, `mods/examples/chain-lightning` adds a skill, and `mods/examples/familiars` adds a companion and a mount.
 
 ```yaml
 mods:
@@ -295,7 +296,7 @@ What it does:
 - The built-in `core` mod stands for the base game. `core.ruleset.renewal` and `core.ruleset.pre_renewal` are its ruleset mods.
 - Mods load after their `depends`, their `load_after` that are installed, and `core`. Ties go by mod ID, so the order is the same on every start.
 - The world's ruleset is `mods.ruleset`, or the core ruleset of `mode`. Ruleset mods that are not the world's ruleset, or what it extends, are skipped.
-- Items from mods get IDs from 2,000,000 the first time they load, monsters from 100,000, and skills from 20,000. With a database the IDs are kept in the `mod_ids` table, and never change or go to another record. Without a database they live in memory, like the characters.
+- Items from mods get IDs from 2,000,000 the first time they load, monsters from 100,000, skills from 20,000, and jobs, companions and mounts from 10,000. With a database the IDs are kept in the `mod_ids` table, and never change or go to another record. Without a database they live in memory, like the characters.
 - Monster overlays change core's monsters everywhere they spawn, and mods' monsters appear through scripts.
 - Skills and skill trees come from the extracts `skills.json` and `skill_trees.json` of the mode, with each mod's `data/skills.yml` and `data/skill_trees.yml` over them. Every zone shares the result.
 - Each zone runs the mods' scripts in its own Lua state. A mod whose scripts fail is logged and left off in that zone. A mod whose handlers fail 10 times in a minute is turned off in that zone.
@@ -484,7 +485,7 @@ Left: parties for party skills, ensembles and Devotion, homunculi, the windows l
 
 Players change jobs through scripts, with the calls of proposal 0002, review decision 21 (`jobchange.go`, and [mods/README.md](../mods/README.md), "Job changes and resets"):
 
-- `player:change_job` ports `pc_jobchange`: job level 1 and job exp 0, the transcendent status points, a base level cap with a stat reset, equipment the new job cannot wear comes off, and a Peco Peco, falcon or cart goes without its skill. A male Dancer becomes a Bard. Without `force`, only the next jobs of `jobs.next_jobs` are allowed, with the levels of the job's `changes_from`, and a transcendent player stays in its line. The `job_change` event follows.
+- `player:change_job` ports `pc_jobchange`: job level 1 and job exp 0, the transcendent status points, a base level cap with a stat reset, equipment the new job cannot wear comes off, and a companion, mount or cart goes when the new job does not meet its `requires`. A male Dancer becomes a Bard. Without `force`, only the next jobs of `jobs.next_jobs` are allowed, with the levels of the job's `changes_from`, and a transcendent player stays in its line. The `job_change` event follows.
 - `player:rebirth` makes a second class at 99/50 a High Novice at 1/1 with 100 status points and the platinum skills, as the rebirth NPC (`npc/jobs/valkyrie.txt`).
 - `player:reset_skills`, `player:reset_stats`, `player:reset_skill` and `player:reset_stat` refund skill and status points as `pc_resetskill` and `pc_resetstate`, and by rAthena's stat cost table. Quest skills stay.
 - Migration 00012 saves the job level of the change to a second class (rAthena's `change_level_2nd`), which the skill tree reads, the second class before a rebirth, which picks the transcendent line, and the saved option bits of a cart, a falcon and a Peco Peco. A rider shows its mounted class, as `status_set_viewdata`.
@@ -507,6 +508,17 @@ To try it, start a Swordman at job level 40 and talk to the Job Master at Pronte
 ```text
 go run ./server/cmd/waserver --assets /path/to/build --map prontera --dev --start-job 1:50:40
 ```
+
+### Companions, mounts and carts
+
+Players keep a companion, a mount and a cart, with the calls of proposal 0002, review decision 25 ([decision 0016](../docs/decisions/0016-companions-and-mounts.md), `companions.go`, and [mods/README.md](../mods/README.md), "Companions, mounts and carts"):
+
+- Core's records are `server/companion/core/data/companions.yml` and `mounts.yml`, which the core mod carries. `gamedata.LoadMods` merges the mods' records over them. Mod records get IDs from 10,000.
+- A record's `acts_as` picks the rules it follows, and its `look` the option bits that show it, as rAthena's `OPTION_FALCON`, `OPTION_RIDING`, `OPTION_DRAGON1` to `OPTION_DRAGON5`, `OPTION_WUGRIDER` and `OPTION_MADOGEAR`. `pc_isfalcon`, `pc_isriding` and the other checks read the rules, so a mod's record that acts as the falcon or the Peco Peco works with their skills.
+- `status.Calc` ports the mounted rules of `status_calc_pc` and `status_calc_speed` for the Peco Peco, the dragon, the warg and the Madogear: walk speed, the ASPD rule with Cavalier Mastery or Dragon Training, the weight limit, spears against medium targets, Spear Mastery, and the Madogear's speed, weight and Mainframe Restructure DEF. A mount record's `speed` replaces the walk speed bonus. Record `bonuses` run after the timed bonuses.
+- A warg rider uses only skills marked `AllowOnWarg` and does not attack, and a Madogear only skills marked `AllowOnMado`, as `skill_check_condition_castbegin` and `unit_attack`.
+- Migration 00014 saves the record names beside the option bits of migration 00012. A character saved before it gets core's records from the bits. A name whose record is gone, such as one of a removed mod, is dropped with a warning when the character loads.
+- `TestMountParity` checks the stats, weight limit, option bits and a normal attack of mounted players against `mount_status.json`: 74 of 74 cases in renewal (Knight and Crusader lines, babies, Rune Knight on a Peco Peco and a dragon, Royal Guard, Ranger on a warg, Mechanic on a Madogear) and 48 of 48 in pre-renewal.
 
 ## Monster AI and monster skills
 

@@ -65,6 +65,9 @@ type Player struct {
 	// Mastery adds more, and a spear deals to medium targets what it
 	// deals to large ones.
 	Riding bool
+	// Dragon is pc_isridingdragon: the player rides a dragon, which
+	// counts as riding for spears.
+	Dragon bool
 	// WeaponWeight is the weight of the right hand's weapon item, as
 	// item_db's Weight, which Spiral Pierce reads.
 	WeaponWeight int
@@ -376,7 +379,7 @@ func SizeFix(weaponType, size int) int {
 // target size. status_calc_pc gives a player riding with a spear the
 // large size's value against medium targets.
 func (p *Player) sizeFor(size int) int {
-	if p.Riding && (p.Weapon == Weapon1HSpear || p.Weapon == Weapon2HSpear) && size == SizeMedium {
+	if (p.Riding || p.Dragon) && (p.Weapon == Weapon1HSpear || p.Weapon == Weapon2HSpear) && size == SizeMedium {
 		return SizeLarge
 	}
 	return size
@@ -676,8 +679,9 @@ func addMastery(src, target *Status, h hand, pre bool) int64 {
 		dmg += 4 * lv(skillTwoHandMastery)
 	case Weapon1HSpear, Weapon2HSpear:
 		if l := lv(skillSpearMastery); l > 0 {
-			// Riding adds 5 per level instead of 4.
-			if src.Player.Riding {
+			// Riding a Peco Peco or a dragon adds 5 per level instead
+			// of 4.
+			if src.Player.Riding || src.Player.Dragon {
 				dmg += 5 * l
 			} else {
 				dmg += 4 * l

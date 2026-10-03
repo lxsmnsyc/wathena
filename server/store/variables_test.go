@@ -38,6 +38,8 @@ func TestVariablesAndSavePoint(t *testing.T) {
 	next.SaveMap, next.SaveX, next.SaveY = "map/prontera", 157, 327
 	// The fields of job changes (migration 00012).
 	next.Job, next.JobChangeLevel, next.RebirthJob, next.Options = 4008, 44, 7, 0x20
+	// The record names of companions and mounts (migration 00014).
+	next.Companion, next.Mount = "example.familiars:Owl", "peco_peco"
 	next.Variables = map[character.Variable]string{quest: "2", seen: "true", bag: `{"items":[1,2]}`}
 	sess.Save(&next, false)
 	if err := sess.Flush(ctx); err != nil {

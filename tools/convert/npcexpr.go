@@ -490,6 +490,15 @@ func (b *body) call(e *Call) (val, error) {
 			return val{}, err
 		}
 		return done(val{code: "player:count_item(" + it + ")", t: tInt}, nil)
+	case "checkfalcon", "checkriding", "checkcart":
+		// rAthena's checks return 1 or 0. Any companion, mount or cart
+		// counts: a mod's record that acts as the falcon or the Peco Peco
+		// should pass, and the API has no field for acts_as.
+		if len(args) > 0 {
+			return val{}, unsupported(name, "for another character")
+		}
+		field := map[string]string{"checkfalcon": "companion", "checkriding": "mount", "checkcart": "cart"}[name]
+		return done(val{code: "player." + field + " ~= nil", t: tBool}, nil)
 	case "checkweight":
 		if len(args) != 2 {
 			return val{}, unsupported(name, "more than one item")
@@ -991,8 +1000,8 @@ func (b *body) commandErr(name string, args []Expr) error {
 		b.line("player:reset_stats()")
 	case "openstorage":
 		b.line(`R.not_available(conversation, "Storage")`)
-	case "setcart":
-		b.line(`R.not_available(conversation, "Pushcart rental")`)
+	case "setfalcon", "setriding", "setcart":
+		return b.setCompanion(name, args)
 	case "monster":
 		return b.monster(args)
 	case "killmonster":
@@ -1329,6 +1338,48 @@ func sortStrings(s []string) {
 const (
 	jobNoviceHigh = 4001
 )
+
+// setCompanion converts setfalcon, setriding and setcart: the flag or
+// the cart type, 1 by default, then an optional character. A flag of 0
+// and cart type 0 remove.
+func (b *body) setCompanion(name string, args []Expr) error {
+	if len(args) > 1 {
+		return unsupported(name, "for another character")
+	}
+	arg := intVal(1)
+	if len(args) == 1 {
+		v, err := b.expr(args[0])
+		if err != nil {
+			return err
+		}
+		arg = v
+	}
+	f := b.n.file
+	if name == "setcart" {
+		switch {
+		case arg.static != nil && *arg.static == 0:
+			b.line("player:set_cart(nil)")
+		case arg.static != nil:
+			b.line("player:set_cart(%d)", *arg.static)
+		default:
+			b.line("player:set_cart(R.nonzero(%s))", arg.asInt())
+		}
+		return nil
+	}
+	call, record := "player:set_companion", f.record("companions.id", "falcon")
+	if name == "setriding" {
+		call, record = "player:set_mount", f.record("mounts.id", "peco_peco")
+	}
+	switch {
+	case arg.static != nil && *arg.static == 0:
+		b.line("%s(nil)", call)
+	case arg.static != nil:
+		b.line("%s(%s)", call, record)
+	default:
+		b.line("%s(R.truthy(%s) and %s or nil)", call, arg.asInt(), record)
+	}
+	return nil
+}
 
 // jobchange converts rAthena's jobchange: a change that skips the job
 // change rules, since the script checks its own. jobchange Job_Novice_High

@@ -3,6 +3,8 @@ package zone
 import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 
+	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -151,8 +153,9 @@ func (z *Zone) jobChange(p *Player, job int, target, previous uint64) {
 		}
 	}
 	z.unequipInvalid(p)
-	// Peco Peco, falcon and cart go when the new job lacks their skill.
-	z.dropOptionsWithoutSkills(p, false)
+	// The companion, mount and cart go when the new job does not meet
+	// their requires.
+	z.dropCompanionsWithoutSkills(p, false, true)
 	if p.entity.sc.Has(sc.SCSpirit) {
 		z.scEnd(p.entity, sc.SCSpirit)
 	}
@@ -207,49 +210,19 @@ func (z *Zone) unequipInvalid(p *Player) {
 	}
 }
 
-// Options of status.option that job changes and resets read, as rAthena's
-// OPTION_ bits.
+// Skills that job changes and resets read.
 const (
-	optionCart    = 0x0008 | 0x0080 | 0x0100 | 0x0200 | 0x0400
-	optionFalcon  = 0x0010
-	optionRiding  = 0x0020
-	skillRiding   = 63  // KN_RIDING
-	skillFalcon   = 127 // HT_FALCON
-	skillPushCart = 39  // MC_PUSHCART
+	skillRiding   = 63 // KN_RIDING
+	skillPushCart = 39 // MC_PUSHCART
 )
 
-// dropOptionsWithoutSkills removes the saved options whose skill the
-// player lacks, as pc_jobchange, or, with resetting set, whose skill the
-// player has, as pc_resetskill before it resets the skills.
-func (z *Zone) dropOptionsWithoutSkills(p *Player, resetting bool) {
-	o := p.record.Options
-	for _, x := range []struct{ bit, skill int }{{optionRiding, skillRiding}, {optionFalcon, skillFalcon}, {optionCart, skillPushCart}} {
-		if o&x.bit == 0 {
-			continue
-		}
-		has := p.skillLevel(x.skill) > 0
-		if has == resetting {
-			o &^= x.bit
-		}
-	}
-	if o != p.record.Options {
-		z.setOptions(p, o)
-	}
-}
-
 // setOptions is pc_setoption for the saved options: the stats change,
-// viewers see the new options, and a rider shows its mounted job.
+// viewers see the new options, the player sees the icons of its looks,
+// and a rider shows its mounted job.
 func (z *Zone) setOptions(p *Player, o int) {
 	old := p.record.Options
 	p.record.Options = o
-	// clif_status_load of the riding and falcon icons.
-	for _, x := range []struct{ bit, icon int }{{optionRiding, iconRiding}, {optionFalcon, iconFalcon}} {
-		if on := o&x.bit != 0; on != (old&x.bit != 0) {
-			p.pending = append(p.pending, wathenav1.Event_builder{StatusIcon: wathenav1.StatusIcon_builder{
-				Icon: uint32(x.icon), On: on, // #nosec G115 -- EFST_ IDs are small.
-			}.Build()}.Build())
-		}
-	}
+	p.pending = append(p.pending, lookIconEvents(old, o)...)
 	z.statsChanged(p)
 	p.entity.optionChanged = true
 	z.updateBodyLook(p)
@@ -257,12 +230,12 @@ func (z *Zone) setOptions(p *Player, o int) {
 
 // mountedJobs are the classes status_set_viewdata shows for a job that
 // rides a Peco Peco.
-var mountedJobs = map[int]int{7: 13, 14: 21, 4008: 4014, 4015: 4022}
+var mountedJobs = map[int]int{7: 13, 14: 21, 4008: 4014, 4015: 4022, 4030: 4036, 4037: 4044}
 
 // viewJob is the class a player shows, as status_set_viewdata: the
 // mounted class while it rides.
 func viewJob(job, options int) int {
-	if options&optionRiding != 0 {
+	if options&companion.OptionRiding != 0 {
 		if m, ok := mountedJobs[job]; ok {
 			return m
 		}
@@ -350,7 +323,7 @@ func (z *Zone) resetLevels(p *Player) {
 // learned with points goes back to 0 and refunds its points. Quest
 // skills stay, and so does a non-Novice's Basic Skill.
 func (z *Zone) resetSkills(p *Player) {
-	z.dropOptionsWithoutSkills(p, true)
+	z.dropCompanionsWithoutSkills(p, true, false)
 	points := z.resetSkillsOf(p)
 	if z.Progress != nil {
 		p.progress.SkillPoints += points
@@ -440,7 +413,7 @@ func (z *Zone) resetSkill(p *Player, id, toLevel int, withDependents bool) bool 
 	if z.Progress != nil {
 		p.progress.SkillPoints += points
 	}
-	z.dropOptionsWithoutSkills(p, false)
+	z.dropCompanionsWithoutSkills(p, false, false)
 	z.afterJobChange(p)
 	return true
 }
@@ -585,4 +558,25 @@ func (h scriptHost) ResetStat(id int64, stat, to int) (bool, error) {
 		return false, err
 	}
 	return h.z.resetStat(p, status.Stat(stat), to), nil
+}
+
+// novice is JOB_NOVICE.
+const novice = 0
+
+// checkJob loads a character whose job the world no longer has, such as
+// the job of a removed mod, as a Novice, and logs a warning. Its job
+// level drops to the Novice's highest, with no job exp past it. Its
+// skills, stats and items stay.
+func (z *Zone) checkJob(c *character.Character) {
+	if z.Status == nil {
+		return
+	}
+	if _, ok := z.Status.Info(c.Job); ok {
+		return
+	}
+	z.warn("character loaded as a Novice: the world has no such job", "character", c.Name, "job", c.Job)
+	c.Job = novice
+	if top := z.Status.MaxJobLevel(novice); top > 0 && c.JobLevel >= top {
+		c.JobLevel, c.JobExp = top, 0
+	}
 }

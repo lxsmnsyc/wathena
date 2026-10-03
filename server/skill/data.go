@@ -112,6 +112,9 @@ type Requires struct {
 	ItemLevelDependent bool
 	// Equipment lists items the caster must wear.
 	Equipment []int
+	// Companion is a companion the caster must have: a record of
+	// data/companions.yml, or one that acts as it.
+	Companion string
 }
 
 // Unit is skill_db's Unit: the ground unit a skill places.

@@ -69,7 +69,7 @@ func (z *Zone) recalc(p *Player) {
 		c.Equipment = z.equipment(p)
 	}
 	c.Changes = e.sc
-	c.Riding = p.record.Options&optionRiding != 0
+	p.mountInput(&c)
 	c.Casting = e.cast != nil
 	c.Cart = z.hasCart(p)
 	c.StatusBonuses = z.statusBonuses(p)

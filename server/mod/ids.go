@@ -21,6 +21,8 @@ var (
 	MonsterIDs     = IDRange{Kind: "monster", Start: 100_000}
 	SkillIDs       = IDRange{Kind: "skill", Start: 20_000}
 	JobIDs         = IDRange{Kind: "job", Start: 10_000}
+	CompanionIDs   = IDRange{Kind: "companion", Start: 10_000}
+	MountIDs       = IDRange{Kind: "mount", Start: 10_000}
 	QuestIDs       = IDRange{Kind: "quest", Start: 1_000_000}
 	AchievementIDs = IDRange{Kind: "achievement", Start: 1_000_000}
 )

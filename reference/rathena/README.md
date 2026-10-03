@@ -193,6 +193,28 @@ WATHENA_RECORD_ONLY=random_option_rolls bash tools/wathena/record.sh renewal pre
 python3 tools/wathena/extract.py
 ```
 
+## Mounted players
+
+`mount_status.json` holds player stats and damage on each mount, one file per mode:
+
+- Players are level 99 at their job's maximum job level, with the `melee` build and every tree skill learned.
+- Each job is recorded without a mount (`none`) and on each mount its skills allow: `riding` (`KN_RIDING`), `dragon` (`RK_DRAGONTRAINING`), `wug_rider` (`RA_WUGRIDER`) and `madogear` (`NC_MADOLICENCE`).
+- Each mount is tested with no weapon (`weapon` 0) and the lowest-ID 1H spear, 2H spear and 1H sword the job can equip.
+- Each case has `option`, `max_weight`, `battle_status`, `atkmods` (the right hand's size modifiers for small, medium and large) and `skills`.
+- `damage` is a normal attack against Orc Warrior (1023, medium), with `forced_min` and `rolls` as in `pc_damage.json`.
+- The jobs are Knight, Crusader, Lord Knight, Paladin, Baby Knight and Baby Crusader. Renewal also has Rune Knight, Royal Guard, Ranger and Mechanic.
+
+| Mode | Cases | none | riding | dragon | wug_rider | madogear |
+|---|---:|---:|---:|---:|---:|---:|
+| renewal | 74 | 35 | 32 | 4 | 1 | 2 |
+| pre-renewal | 48 | 24 | 24 | 0 | 0 | 0 |
+
+They come from rAthena fork commit `5e50b7ad9`, which adds `record_mount_status` to the recorder. With it:
+
+```text
+WATHENA_RECORD_ONLY=mount_status bash tools/wathena/record.sh renewal pre-renewal
+```
+
 ## How random rolls are recorded
 
 rAthena's random number output depends on the C++ standard library, so wAthena cannot reproduce the exact rolls. The recorder uses three methods instead:

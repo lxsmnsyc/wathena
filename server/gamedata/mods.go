@@ -11,6 +11,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/bonus"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -54,6 +55,11 @@ type Mods struct {
 	// had none to start from.
 	Jobs      *Jobs
 	JobTables *status.Tables
+	// Companions are the companions and mounts: core's with the mods'
+	// data/companions.yml and data/mounts.yml. CompanionOverlays are the
+	// two merges.
+	Companions        *companion.Set
+	CompanionOverlays []*mod.Overlay
 	// Zone is what every zone gets.
 	Zone *zone.Mods
 }
@@ -159,8 +165,16 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	for _, n := range out.SkillOverlay.Notes {
 		log.Warn("mods: " + n)
 	}
+	if out.Companions, out.CompanionOverlays, err = modCompanions(ctx, set, assigned, out.Skills, core.Names(merged.IDs)); err != nil {
+		return nil, err
+	}
+	for _, o := range out.CompanionOverlays {
+		for _, n := range o.Notes {
+			log.Warn("mods: " + n)
+		}
+	}
 	for _, a := range assigned.Assigned {
-		if a.Kind == mod.SkillIDs.Kind {
+		if a.Kind == mod.SkillIDs.Kind || a.Kind == mod.CompanionIDs.Kind || a.Kind == mod.MountIDs.Kind {
 			log.Info("mods: new ID", "kind", a.Kind, "name", a.Name, "id", a.ID, "mod", a.Mod)
 		}
 	}
@@ -219,7 +233,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	labelRolls(merged.Data, opts, core.Constants)
 	out.Zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
 		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates,
-		RandomOptions: opts, ItemRolls: set.Ruleset.Flag("item_rolls") == "on"}
+		RandomOptions: opts, ItemRolls: set.Ruleset.Flag("item_rolls") == "on", Companions: out.Companions}
 	return out, nil
 }
 

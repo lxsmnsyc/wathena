@@ -19,6 +19,8 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.timers`](#watimers) | Timers on the zone clock. The context owns them, and cancels them when it ends. |
 | [`wa.items`](#waitems) | Items by name. |
 | [`wa.skills`](#waskills) | Skills by name. |
+| [`wa.companions`](#wacompanions) | Companions by name: core's, such as falcon, and the mods' records of data/companions.yml. |
+| [`wa.mounts`](#wamounts) | Mounts by name: core's, such as peco_peco, and the mods' records of data/mounts.yml. |
 | [`wa.monsters`](#wamonsters) | Monsters by name. |
 | [`wa.text`](#watext) | Text for players, from the mod's locales/en.yml. Call the module with a key: text "greeter.hello". |
 | [`wa.maps`](#wamaps) | Maps. |
@@ -255,6 +257,42 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string` | A skill_db name, such as SM_BASH, or a mod skill's full name, such as example.chain-lightning:CHAIN_LIGHTNING. |
+
+### wa.companions
+
+```lua
+local companions = require "wa.companions"
+```
+
+Companions by name: core's, such as falcon, and the mods' records of data/companions.yml.
+
+#### `companions.id(name) → integer`
+
+The companion's ID. An unknown name raises an error.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A core companion's name, such as falcon, or a mod companion's full name, such as example.familiars:Owl. |
+
+### wa.mounts
+
+```lua
+local mounts = require "wa.mounts"
+```
+
+Mounts by name: core's, such as peco_peco, and the mods' records of data/mounts.yml.
+
+#### `mounts.id(name) → integer`
+
+The mount's ID. An unknown name raises an error.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A core mount's name, such as peco_peco, grand_peco, gryphon, dragon, warg or madogear, or a mod mount's full name. |
 
 ### wa.monsters
 
@@ -855,6 +893,9 @@ A player. Each access looks the player up again. A handle to a player who left t
 | `account_id` | `integer` | The database ID, 0 without a database. |
 | `party` | `nil` | nil: parties do not exist yet. |
 | `sex` | `"male"\|"female"` |  |
+| `companion` | `integer?` | The player's companion, from companions.id, or nil. |
+| `mount` | `integer?` | The player's mount, from mounts.id, or nil. |
+| `cart` | `integer?` | The look of the player's cart, from 1, or nil. |
 | `base_str` | `integer` | Allocated points. |
 | `base_agi` | `integer` | Allocated points. |
 | `base_vit` | `integer` | Allocated points. |
@@ -1102,6 +1143,30 @@ Changes the player's job, as jobchange with rAthena's pc_jobchange. Job level go
 #### `player:rebirth() → boolean`
 
 Makes a second class at base level 99 and job level 50 or more a High Novice at base and job level 1, with 100 status points, First Aid and Trick Dead, as rAthena's rebirth. Its second class picks its transcendent jobs. Returns false, and changes nothing, for other players.
+
+#### `player:set_companion(companion?) → boolean`
+
+Gives the player a companion in place of its current one, as setfalcon. Returns false, and changes nothing, when the player lacks the skills of the companion's requires, such as Falconry Mastery for a falcon.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `companion` | `integer?` | A companion from companions.id, or nil to remove it. |
+
+#### `player:set_mount(mount?) → boolean`
+
+Puts the player on a mount in place of its current one, as setriding. The mount's acts_as picks its rules: walk speed, the mounted ASPD rule and spear damage. Returns false, and changes nothing, when the player lacks the skills of the mount's requires, such as Riding for a Peco Peco.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `mount` | `integer?` | A mount from mounts.id, or nil to remove it. |
+
+#### `player:set_cart(look?) → boolean`
+
+Gives the player a cart of a look, as setcart. Returns false, and changes nothing, without Pushcart or for a look the client does not have.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `look` | `integer?` | A cart look from 1 to 5, or nil to remove the cart. |
 
 #### `player:reset_skills()`
 

@@ -1,0 +1,8172 @@
+{
+	"system": "mount_status",
+	"mode": "pre-renewal",
+	"rathena_git_hash": "e985006171d2eb320ee512a653f4c83aea3d81b6",
+	"data_path": "pre-re/",
+	"circular_area": false,
+	"note": "Level 99 players at their maximum job level, with the melee build and every tree skill learned. Each job is recorded without a mount and on each mount its skills allow: 'riding' (KN_RIDING, pc_setriding), 'dragon' (RK_DRAGONTRAINING, OPTION_DRAGON1), 'wug_rider' (RA_WUGRIDER, OPTION_WUGRIDER) and 'madogear' (NC_MADOLICENCE, pc_setmadogear). Each mount is tested with no weapon (weapon 0) and the lowest-ID 1H spear, 2H spear and 1H sword the job can equip. 'atkmods' is the right hand's size modifier for small, medium and large targets. 'damage' is a normal attack against Orc Warrior (1023, medium), with 'forced_min' and 'rolls' as in pc_damage.json.",
+	"rolls_per_case": 200,
+	"target": 1023,
+	"cases": [
+		{
+			"job": 7,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 0,
+			"item": 0,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 150,
+				"amotion": 299,
+				"adelay": 598,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 189,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 119,
+					"max": 189,
+					"total": 24236
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 7,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 0,
+			"item": 0,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 112,
+				"amotion": 299,
+				"adelay": 598,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 189,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 119,
+					"max": 189,
+					"total": 24165
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 7,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 4,
+			"item": 1401,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 150,
+				"amotion": 448,
+				"adelay": 896,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 250,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 178,
+					"max": 181,
+					"total": 35895
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 7,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 4,
+			"item": 1401,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 112,
+				"amotion": 448,
+				"adelay": 896,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 267,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 194,
+					"max": 197,
+					"total": 39104
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 7,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 5,
+			"item": 1410,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 150,
+				"amotion": 448,
+				"adelay": 896,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 367,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 3,
+					"min": 204,
+					"max": 367,
+					"total": 49181
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 7,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 5,
+			"item": 1410,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 112,
+				"amotion": 448,
+				"adelay": 896,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 424,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 226,
+					"max": 335,
+					"total": 56092
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 7,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 2,
+			"item": 1101,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 150,
+				"amotion": 373,
+				"adelay": 746,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 254,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 7,
+					"min": 181,
+					"max": 254,
+					"total": 36975
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 7,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 2,
+			"item": 1101,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 112,
+				"amotion": 373,
+				"adelay": 746,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 254,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 181,
+					"max": 254,
+					"total": 36664
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 14,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 0,
+			"item": 0,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 150,
+				"amotion": 300,
+				"adelay": 600,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 187,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 117,
+					"max": 120,
+					"total": 23701
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 14,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 0,
+			"item": 0,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 112,
+				"amotion": 300,
+				"adelay": 600,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 187,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 4,
+					"min": 117,
+					"max": 187,
+					"total": 23985
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 14,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 4,
+			"item": 1401,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 150,
+				"amotion": 450,
+				"adelay": 900,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 248,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 176,
+					"max": 248,
+					"total": 35630
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 14,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 4,
+			"item": 1401,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 112,
+				"amotion": 450,
+				"adelay": 900,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 265,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 192,
+					"max": 195,
+					"total": 38708
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 14,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 5,
+			"item": 1410,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 150,
+				"amotion": 450,
+				"adelay": 900,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 365,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 197,
+					"max": 365,
+					"total": 48517
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 14,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 5,
+			"item": 1410,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 112,
+				"amotion": 450,
+				"adelay": 900,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 422,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 221,
+					"max": 422,
+					"total": 55642
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 14,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 2,
+			"item": 1101,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 150,
+				"amotion": 375,
+				"adelay": 750,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 252,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 4,
+					"min": 179,
+					"max": 252,
+					"total": 36376
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 14,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 2,
+			"item": 1101,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 112,
+				"amotion": 375,
+				"adelay": 750,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 252,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 179,
+					"max": 252,
+					"total": 36251
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 4008,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 0,
+			"item": 0,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 13762,
+				"max_sp": 395,
+				"str": 105,
+				"agi": 58,
+				"vit": 38,
+				"int": 3,
+				"dex": 49,
+				"luk": 4,
+				"batk": 214,
+				"matk_min": 3,
+				"matk_max": 3,
+				"speed": 150,
+				"amotion": 288,
+				"adelay": 576,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 148,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 38,
+				"mdef2": 22,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 214,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 141,
+					"max": 144,
+					"total": 28510
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					355,
+					5
+				],
+				[
+					356,
+					10
+				],
+				[
+					357,
+					5
+				],
+				[
+					358,
+					1
+				],
+				[
+					359,
+					1
+				],
+				[
+					397,
+					5
+				],
+				[
+					398,
+					5
+				],
+				[
+					399,
+					10
+				]
+			]
+		},
+		{
+			"job": 4008,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 0,
+			"item": 0,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 13762,
+				"max_sp": 395,
+				"str": 105,
+				"agi": 58,
+				"vit": 38,
+				"int": 3,
+				"dex": 49,
+				"luk": 4,
+				"batk": 214,
+				"matk_min": 3,
+				"matk_max": 3,
+				"speed": 112,
+				"amotion": 288,
+				"adelay": 576,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 148,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 38,
+				"mdef2": 22,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 214,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 141,
+					"max": 214,
+					"total": 28560
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					355,
+					5
+				],
+				[
+					356,
+					10
+				],
+				[
+					357,
+					5
+				],
+				[
+					358,
+					1
+				],
+				[
+					359,
+					1
+				],
+				[
+					397,
+					5
+				],
+				[
+					398,
+					5
+				],
+				[
+					399,
+					10
+				]
+			]
+		},
+		{
+			"job": 4008,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 4,
+			"item": 1401,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 13762,
+				"max_sp": 395,
+				"str": 105,
+				"agi": 58,
+				"vit": 38,
+				"int": 3,
+				"dex": 49,
+				"luk": 4,
+				"batk": 214,
+				"matk_min": 3,
+				"matk_max": 3,
+				"speed": 150,
+				"amotion": 432,
+				"adelay": 864,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 148,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 38,
+				"mdef2": 22,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 275,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 200,
+					"max": 203,
+					"total": 40313
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					355,
+					5
+				],
+				[
+					356,
+					10
+				],
+				[
+					357,
+					5
+				],
+				[
+					358,
+					1
+				],
+				[
+					359,
+					1
+				],
+				[
+					397,
+					5
+				],
+				[
+					398,
+					5
+				],
+				[
+					399,
+					10
+				]
+			]
+		},
+		{
+			"job": 4008,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 4,
+			"item": 1401,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 13762,
+				"max_sp": 395,
+				"str": 105,
+				"agi": 58,
+				"vit": 38,
+				"int": 3,
+				"dex": 49,
+				"luk": 4,
+				"batk": 214,
+				"matk_min": 3,
+				"matk_max": 3,
+				"speed": 112,
+				"amotion": 432,
+				"adelay": 864,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 148,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 38,
+				"mdef2": 22,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 292,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 216,
+					"max": 219,
+					"total": 43496
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					355,
+					5
+				],
+				[
+					356,
+					10
+				],
+				[
+					357,
+					5
+				],
+				[
+					358,
+					1
+				],
+				[
+					359,
+					1
+				],
+				[
+					397,
+					5
+				],
+				[
+					398,
+					5
+				],
+				[
+					399,
+					10
+				]
+			]
+		},
+		{
+			"job": 4008,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 5,
+			"item": 1410,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 13762,
+				"max_sp": 395,
+				"str": 105,
+				"agi": 58,
+				"vit": 38,
+				"int": 3,
+				"dex": 49,
+				"luk": 4,
+				"batk": 214,
+				"matk_min": 3,
+				"matk_max": 3,
+				"speed": 150,
+				"amotion": 432,
+				"adelay": 864,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 148,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 38,
+				"mdef2": 22,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 392,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 227,
+					"max": 392,
+					"total": 53800
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					355,
+					5
+				],
+				[
+					356,
+					10
+				],
+				[
+					357,
+					5
+				],
+				[
+					358,
+					1
+				],
+				[
+					359,
+					1
+				],
+				[
+					397,
+					5
+				],
+				[
+					398,
+					5
+				],
+				[
+					399,
+					10
+				]
+			]
+		},
+		{
+			"job": 4008,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 5,
+			"item": 1410,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 13762,
+				"max_sp": 395,
+				"str": 105,
+				"agi": 58,
+				"vit": 38,
+				"int": 3,
+				"dex": 49,
+				"luk": 4,
+				"batk": 214,
+				"matk_min": 3,
+				"matk_max": 3,
+				"speed": 112,
+				"amotion": 432,
+				"adelay": 864,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 148,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 38,
+				"mdef2": 22,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 449,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 253,
+					"max": 449,
+					"total": 61358
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					355,
+					5
+				],
+				[
+					356,
+					10
+				],
+				[
+					357,
+					5
+				],
+				[
+					358,
+					1
+				],
+				[
+					359,
+					1
+				],
+				[
+					397,
+					5
+				],
+				[
+					398,
+					5
+				],
+				[
+					399,
+					10
+				]
+			]
+		},
+		{
+			"job": 4008,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 2,
+			"item": 1101,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 13762,
+				"max_sp": 395,
+				"str": 105,
+				"agi": 58,
+				"vit": 38,
+				"int": 3,
+				"dex": 49,
+				"luk": 4,
+				"batk": 214,
+				"matk_min": 3,
+				"matk_max": 3,
+				"speed": 150,
+				"amotion": 360,
+				"adelay": 720,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 148,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 38,
+				"mdef2": 22,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 279,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 204,
+					"max": 279,
+					"total": 41202
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					355,
+					5
+				],
+				[
+					356,
+					10
+				],
+				[
+					357,
+					5
+				],
+				[
+					358,
+					1
+				],
+				[
+					359,
+					1
+				],
+				[
+					397,
+					5
+				],
+				[
+					398,
+					5
+				],
+				[
+					399,
+					10
+				]
+			]
+		},
+		{
+			"job": 4008,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 2,
+			"item": 1101,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 13762,
+				"max_sp": 395,
+				"str": 105,
+				"agi": 58,
+				"vit": 38,
+				"int": 3,
+				"dex": 49,
+				"luk": 4,
+				"batk": 214,
+				"matk_min": 3,
+				"matk_max": 3,
+				"speed": 112,
+				"amotion": 360,
+				"adelay": 720,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 148,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 38,
+				"mdef2": 22,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 279,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 204,
+					"max": 207,
+					"total": 41094
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					355,
+					5
+				],
+				[
+					356,
+					10
+				],
+				[
+					357,
+					5
+				],
+				[
+					358,
+					1
+				],
+				[
+					359,
+					1
+				],
+				[
+					397,
+					5
+				],
+				[
+					398,
+					5
+				],
+				[
+					399,
+					10
+				]
+			]
+		},
+		{
+			"job": 4015,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 0,
+			"item": 0,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 12809,
+				"max_sp": 641,
+				"str": 99,
+				"agi": 58,
+				"vit": 40,
+				"int": 8,
+				"dex": 48,
+				"luk": 4,
+				"batk": 189,
+				"matk_min": 9,
+				"matk_max": 9,
+				"speed": 150,
+				"amotion": 288,
+				"adelay": 576,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 147,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 28,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 189,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 119,
+					"max": 122,
+					"total": 24089
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				],
+				[
+					367,
+					5
+				],
+				[
+					368,
+					5
+				],
+				[
+					369,
+					10
+				],
+				[
+					480,
+					5
+				]
+			]
+		},
+		{
+			"job": 4015,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 0,
+			"item": 0,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 12809,
+				"max_sp": 641,
+				"str": 99,
+				"agi": 58,
+				"vit": 40,
+				"int": 8,
+				"dex": 48,
+				"luk": 4,
+				"batk": 189,
+				"matk_min": 9,
+				"matk_max": 9,
+				"speed": 112,
+				"amotion": 288,
+				"adelay": 576,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 147,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 28,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 189,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 119,
+					"max": 189,
+					"total": 24161
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				],
+				[
+					367,
+					5
+				],
+				[
+					368,
+					5
+				],
+				[
+					369,
+					10
+				],
+				[
+					480,
+					5
+				]
+			]
+		},
+		{
+			"job": 4015,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 4,
+			"item": 1401,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 12809,
+				"max_sp": 641,
+				"str": 99,
+				"agi": 58,
+				"vit": 40,
+				"int": 8,
+				"dex": 48,
+				"luk": 4,
+				"batk": 189,
+				"matk_min": 9,
+				"matk_max": 9,
+				"speed": 150,
+				"amotion": 432,
+				"adelay": 864,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 147,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 28,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 250,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 178,
+					"max": 250,
+					"total": 35985
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				],
+				[
+					367,
+					5
+				],
+				[
+					368,
+					5
+				],
+				[
+					369,
+					10
+				],
+				[
+					480,
+					5
+				]
+			]
+		},
+		{
+			"job": 4015,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 4,
+			"item": 1401,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 12809,
+				"max_sp": 641,
+				"str": 99,
+				"agi": 58,
+				"vit": 40,
+				"int": 8,
+				"dex": 48,
+				"luk": 4,
+				"batk": 189,
+				"matk_min": 9,
+				"matk_max": 9,
+				"speed": 112,
+				"amotion": 432,
+				"adelay": 864,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 147,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 28,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 267,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 194,
+					"max": 197,
+					"total": 39091
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				],
+				[
+					367,
+					5
+				],
+				[
+					368,
+					5
+				],
+				[
+					369,
+					10
+				],
+				[
+					480,
+					5
+				]
+			]
+		},
+		{
+			"job": 4015,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 5,
+			"item": 1410,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 12809,
+				"max_sp": 641,
+				"str": 99,
+				"agi": 58,
+				"vit": 40,
+				"int": 8,
+				"dex": 48,
+				"luk": 4,
+				"batk": 189,
+				"matk_min": 9,
+				"matk_max": 9,
+				"speed": 150,
+				"amotion": 432,
+				"adelay": 864,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 147,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 28,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 367,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 204,
+					"max": 367,
+					"total": 48750
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				],
+				[
+					367,
+					5
+				],
+				[
+					368,
+					5
+				],
+				[
+					369,
+					10
+				],
+				[
+					480,
+					5
+				]
+			]
+		},
+		{
+			"job": 4015,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 5,
+			"item": 1410,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 12809,
+				"max_sp": 641,
+				"str": 99,
+				"agi": 58,
+				"vit": 40,
+				"int": 8,
+				"dex": 48,
+				"luk": 4,
+				"batk": 189,
+				"matk_min": 9,
+				"matk_max": 9,
+				"speed": 112,
+				"amotion": 432,
+				"adelay": 864,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 147,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 28,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 424,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 229,
+					"max": 424,
+					"total": 56768
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				],
+				[
+					367,
+					5
+				],
+				[
+					368,
+					5
+				],
+				[
+					369,
+					10
+				],
+				[
+					480,
+					5
+				]
+			]
+		},
+		{
+			"job": 4015,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 2,
+			"item": 1101,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 12809,
+				"max_sp": 641,
+				"str": 99,
+				"agi": 58,
+				"vit": 40,
+				"int": 8,
+				"dex": 48,
+				"luk": 4,
+				"batk": 189,
+				"matk_min": 9,
+				"matk_max": 9,
+				"speed": 150,
+				"amotion": 360,
+				"adelay": 720,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 147,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 28,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 254,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 181,
+					"max": 254,
+					"total": 36560
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				],
+				[
+					367,
+					5
+				],
+				[
+					368,
+					5
+				],
+				[
+					369,
+					10
+				],
+				[
+					480,
+					5
+				]
+			]
+		},
+		{
+			"job": 4015,
+			"base_level": 99,
+			"job_level": 70,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 2,
+			"item": 1101,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 12809,
+				"max_sp": 641,
+				"str": 99,
+				"agi": 58,
+				"vit": 40,
+				"int": 8,
+				"dex": 48,
+				"luk": 4,
+				"batk": 189,
+				"matk_min": 9,
+				"matk_max": 9,
+				"speed": 112,
+				"amotion": 360,
+				"adelay": 720,
+				"dmotion": 568,
+				"mode": 47103,
+				"hit": 147,
+				"flee": 157,
+				"cri": 23,
+				"flee2": 14,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 28,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 1,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 254,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 181,
+					"max": 254,
+					"total": 36568
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				],
+				[
+					367,
+					5
+				],
+				[
+					368,
+					5
+				],
+				[
+					369,
+					10
+				],
+				[
+					480,
+					5
+				]
+			]
+		},
+		{
+			"job": 4030,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 0,
+			"item": 0,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 150,
+				"amotion": 299,
+				"adelay": 598,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 189,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 119,
+					"max": 189,
+					"total": 24240
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 4030,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 0,
+			"item": 0,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 112,
+				"amotion": 299,
+				"adelay": 598,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 189,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 119,
+					"max": 189,
+					"total": 24243
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 4030,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 4,
+			"item": 1401,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 150,
+				"amotion": 448,
+				"adelay": 896,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 250,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 178,
+					"max": 250,
+					"total": 35951
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 4030,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 4,
+			"item": 1401,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 112,
+				"amotion": 448,
+				"adelay": 896,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 267,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 194,
+					"max": 267,
+					"total": 39169
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 4030,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 5,
+			"item": 1410,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 150,
+				"amotion": 448,
+				"adelay": 896,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 367,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 202,
+					"max": 367,
+					"total": 48677
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 4030,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 5,
+			"item": 1410,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 112,
+				"amotion": 448,
+				"adelay": 896,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 424,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 3,
+					"min": 226,
+					"max": 424,
+					"total": 57014
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 4030,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 2,
+			"item": 1101,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 150,
+				"amotion": 373,
+				"adelay": 746,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 254,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 0,
+					"min": 181,
+					"max": 184,
+					"total": 36518
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 4030,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 2,
+			"item": 1101,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 11169,
+				"max_sp": 310,
+				"str": 98,
+				"agi": 52,
+				"vit": 40,
+				"int": 1,
+				"dex": 46,
+				"luk": 5,
+				"batk": 189,
+				"matk_min": 1,
+				"matk_max": 1,
+				"speed": 112,
+				"amotion": 373,
+				"adelay": 746,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 145,
+				"flee": 151,
+				"cri": 26,
+				"flee2": 15,
+				"def": 0,
+				"mdef": 0,
+				"def2": 40,
+				"mdef2": 21,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 254,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 181,
+					"max": 254,
+					"total": 36652
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					55,
+					10
+				],
+				[
+					56,
+					10
+				],
+				[
+					57,
+					10
+				],
+				[
+					58,
+					10
+				],
+				[
+					59,
+					5
+				],
+				[
+					60,
+					10
+				],
+				[
+					61,
+					5
+				],
+				[
+					62,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				]
+			]
+		},
+		{
+			"job": 4037,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 0,
+			"item": 0,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 150,
+				"amotion": 300,
+				"adelay": 600,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 187,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 4,
+					"min": 117,
+					"max": 187,
+					"total": 23983
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 4037,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 0,
+			"item": 0,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 112,
+				"amotion": 300,
+				"adelay": 600,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 0,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				100,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 187,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 3,
+					"min": 117,
+					"max": 187,
+					"total": 23911
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 4037,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 4,
+			"item": 1401,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 150,
+				"amotion": 450,
+				"adelay": 900,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 248,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 3,
+					"min": 176,
+					"max": 248,
+					"total": 35731
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 4037,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 4,
+			"item": 1401,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 112,
+				"amotion": 450,
+				"adelay": 900,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 28,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 265,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 192,
+					"max": 265,
+					"total": 38867
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 4037,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 5,
+			"item": 1410,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 150,
+				"amotion": 450,
+				"adelay": 900,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				75,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 365,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 198,
+					"max": 365,
+					"total": 48728
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 4037,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 5,
+			"item": 1410,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 112,
+				"amotion": 450,
+				"adelay": 900,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 185,
+					"atk2": 0,
+					"range": 3,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				100
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 422,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 7,
+					"min": 224,
+					"max": 422,
+					"total": 56674
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 4037,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "none",
+			"weapon": 2,
+			"item": 1101,
+			"option": 0,
+			"max_weight": 55000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 150,
+				"amotion": 375,
+				"adelay": 750,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 252,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 2,
+					"min": 179,
+					"max": 252,
+					"total": 36232
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		},
+		{
+			"job": 4037,
+			"base_level": 99,
+			"job_level": 50,
+			"build": "melee",
+			"mount": "riding",
+			"weapon": 2,
+			"item": 1101,
+			"option": 32,
+			"max_weight": 65000,
+			"battle_status": {
+				"max_hp": 10462,
+				"max_sp": 508,
+				"str": 97,
+				"agi": 52,
+				"vit": 37,
+				"int": 7,
+				"dex": 43,
+				"luk": 6,
+				"batk": 187,
+				"matk_min": 8,
+				"matk_max": 8,
+				"speed": 112,
+				"amotion": 375,
+				"adelay": 750,
+				"dmotion": 592,
+				"mode": 47103,
+				"hit": 142,
+				"flee": 151,
+				"cri": 30,
+				"flee2": 16,
+				"def": 0,
+				"mdef": 0,
+				"def2": 37,
+				"mdef2": 25,
+				"res": 0,
+				"mres": 0,
+				"def_ele": 0,
+				"ele_lv": 1,
+				"size": 0,
+				"race": 10,
+				"class": 0,
+				"rhw": {
+					"atk": 25,
+					"atk2": 0,
+					"range": 1,
+					"ele": 0
+				}
+			},
+			"atkmods": [
+				75,
+				100,
+				75
+			],
+			"damage": {
+				"forced_min": {
+					"damage": 252,
+					"damage2": 0,
+					"type": 10,
+					"div": 1,
+					"dmg_lv": 5,
+					"flag": 529
+				},
+				"rolls": {
+					"hits": 200,
+					"crits": 1,
+					"min": 179,
+					"max": 252,
+					"total": 36185
+				}
+			},
+			"skills": [
+				[
+					1,
+					9
+				],
+				[
+					2,
+					10
+				],
+				[
+					3,
+					10
+				],
+				[
+					4,
+					10
+				],
+				[
+					5,
+					10
+				],
+				[
+					6,
+					10
+				],
+				[
+					7,
+					10
+				],
+				[
+					8,
+					10
+				],
+				[
+					22,
+					10
+				],
+				[
+					23,
+					10
+				],
+				[
+					28,
+					10
+				],
+				[
+					35,
+					1
+				],
+				[
+					55,
+					10
+				],
+				[
+					63,
+					1
+				],
+				[
+					64,
+					5
+				],
+				[
+					248,
+					10
+				],
+				[
+					249,
+					10
+				],
+				[
+					250,
+					5
+				],
+				[
+					251,
+					5
+				],
+				[
+					252,
+					10
+				],
+				[
+					253,
+					10
+				],
+				[
+					254,
+					10
+				],
+				[
+					255,
+					5
+				],
+				[
+					256,
+					5
+				],
+				[
+					257,
+					5
+				],
+				[
+					258,
+					10
+				]
+			]
+		}
+	]
+}

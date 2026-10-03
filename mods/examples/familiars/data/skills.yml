@@ -1,0 +1,14 @@
+# Owl Strike: the player's falcon or Owl spots a weak point, and the
+# player strikes it. It needs a companion that is a falcon or acts as
+# one, such as the Owl.
+- name: example.familiars:OWL_STRIKE
+  display_name: Owl Strike
+  icon: HT_BLITZBEAT
+  max_level: 1
+  type: weapon
+  target: enemy
+  range: 9
+  requirements:
+    sp: 10
+    companion: falcon
+  script: scripts/skills/owl_strike.lua

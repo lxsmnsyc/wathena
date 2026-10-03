@@ -88,4 +88,35 @@ describe('Character', () => {
     c.update(0, 0, toward);
     expect(garment!.position.z).toBeGreaterThan(body!.position.z);
   });
+
+  it('draws the companion at the shoulder and the cart behind', async () => {
+    const placeholders: string[] = [];
+    const withExtras: SpriteSource = {
+      get: async (name, placeholder) => {
+        if (placeholder === true) {
+          placeholders.push(name);
+        }
+        return Promise.resolve(assets[name === 'falcon' || name === 'cart' ? 'garment' : name]);
+      },
+      palette: async () => Promise.resolve(undefined),
+    };
+    const c = (await Character.load(withExtras, {
+      body: 'body',
+      companion: 'falcon',
+      cart: 'cart',
+    }))!;
+    expect(placeholders).toEqual(['falcon', 'cart']);
+    const [, companion, cart] = c.group.children;
+    expect(c.isPart(companion!)).toBe(true);
+    c.update(0, 0, new Vector3(0, 0, 1));
+    expect(offsetOf(c, 1)).toEqual([17.5, -17.5]);
+    // Facing south, the cart is a cell north, which is -z.
+    expect(cart!.position.x).toBeCloseTo(0);
+    expect(cart!.position.z).toBeCloseTo(-1);
+    c.direction = 6;
+    c.update(0, 0, new Vector3(0, 0, 1));
+    // Facing east, the cart is a cell west.
+    expect(cart!.position.x).toBeCloseTo(-1);
+    expect(cart!.position.z).toBeCloseTo(0);
+  });
 });

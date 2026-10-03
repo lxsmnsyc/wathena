@@ -1,0 +1,6 @@
+# Hunters learn Owl Strike once Falconry Mastery is learned.
+- job: hunter
+  skill: example.familiars:OWL_STRIKE
+  max_level: 1
+  requires:
+    - {skill: HT_FALCON, level: 1}

@@ -38,36 +38,6 @@ func init() {
 	})
 }
 
-// Status icons of the saved options, as rAthena's EFST_RIDING and
-// EFST_FALCON.
-const (
-	iconRiding = 27
-	iconFalcon = 28
-)
-
-// riding is pc_isriding: the player rides a Peco Peco.
-func (p *Player) riding() bool { return p.record.Options&optionRiding != 0 }
-
-// setRiding is pc_setriding and the riding part of pc_setoption: a
-// player with Riding (KN_RIDING) mounts a Peco Peco, and any rider can
-// dismount. The stats are computed again, the player sees the riding
-// icon, and viewers see the option change. It reports whether the
-// state changed.
-func (z *Zone) setRiding(p *Player, on bool) bool {
-	if on == p.riding() {
-		return false
-	}
-	if on && p.skillLevel(skill.IDRiding) <= 0 {
-		return false
-	}
-	o := p.record.Options &^ optionRiding
-	if on {
-		o |= optionRiding
-	}
-	z.setOptions(p, o)
-	return true
-}
-
 // mathDistance is distance_math_bl: the straight distance between two
 // units, truncated.
 func mathDistance(a, b *entity) int {

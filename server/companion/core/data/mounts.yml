@@ -1,0 +1,47 @@
+# Core's mounts (proposal 0002, review decision 25). A mod changes them
+# by name and adds its own in its data/mounts.yml.
+#
+# The Peco Peco, the Grand Peco and the gryphon are rAthena's
+# OPTION_RIDING, which pc_setriding gives to a player with Riding
+# (KN_RIDING). The client shows the mounted sprite of the player's job:
+# a Knight's Peco Peco, a Crusader's Grand Peco, a Royal Guard's gryphon.
+- name: peco_peco
+  id: 1
+  display_name: Peco Peco
+  look: peco_peco
+  requires:
+    - {skill: KN_RIDING, level: 1}
+- name: grand_peco
+  id: 2
+  display_name: Grand Peco
+  look: grand_peco
+  requires:
+    - {skill: KN_RIDING, level: 1}
+- name: gryphon
+  id: 3
+  display_name: Gryphon
+  look: gryphon
+  requires:
+    - {skill: KN_RIDING, level: 1}
+# The Rune Knight's dragon, OPTION_DRAGON1. The looks dragon_brown,
+# dragon_gray, dragon_blue and dragon_red are the other colors.
+- name: dragon
+  id: 4
+  display_name: Dragon
+  look: dragon
+  requires:
+    - {skill: RK_DRAGONTRAINING, level: 1}
+# The Ranger's warg, OPTION_WUGRIDER.
+- name: warg
+  id: 5
+  display_name: Warg
+  look: warg
+  requires:
+    - {skill: RA_WUGRIDER, level: 1}
+# The Mechanic's Madogear, OPTION_MADOGEAR.
+- name: madogear
+  id: 6
+  display_name: Madogear
+  look: madogear
+  requires:
+    - {skill: NC_MADOLICENCE, level: 1}

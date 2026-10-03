@@ -1,6 +1,6 @@
 import { Group, type Object3D, type Texture, type Vector3 } from 'three';
 import type { Frame } from '../formats/wspr';
-import { type SpriteAsset, SpriteView } from './sprites';
+import { PIXELS_PER_CELL, type SpriteAsset, SpriteView } from './sprites';
 
 /** Where characters get their sprites and palettes, such as a SpriteCache. */
 export interface SpriteSource {
@@ -11,7 +11,11 @@ export interface SpriteSource {
 // A player character drawn from separate sprites: body, head, headgear,
 // weapon, shield, and garment. Heads and headgear attach to the body at
 // the body frame's anchor. The order the parts are drawn in depends on
-// whether the character faces the camera.
+// whether the character faces the camera. A companion and a cart are
+// drawn apart from the body:
+// - The companion sits half a cell to the right of the body and up.
+// - The cart sits one cell behind the body, in its facing direction.
+// Both play their own idle or walk action and face the body's direction.
 
 /** Asset names for a character's parts. Only body is required. */
 export interface Look {
@@ -26,11 +30,31 @@ export interface Look {
   garment?: string;
   bodyPalette?: string;
   hairPalette?: string;
+  /** A companion drawn beside the character, such as a falcon. */
+  companion?: string;
+  /** A cart drawn behind the character. */
+  cart?: string;
 }
 
 /** RO actions whose frames are head turns instead of an animation. */
 const IDLE = 0;
+const WALK = 1;
 const SIT = 2;
+
+/** Where the companion is drawn from the body, in pixels on screen. */
+const COMPANION_OFFSET: [number, number] = [PIXELS_PER_CELL / 2, -PIXELS_PER_CELL / 2];
+
+/** Cell steps by facing, 0 south, turning clockwise. North is +y, and +y is -z in the scene. */
+const FACING_STEPS: [number, number][] = [
+  [0, -1],
+  [-1, -1],
+  [-1, 0],
+  [-1, 1],
+  [0, 1],
+  [1, 1],
+  [1, 0],
+  [1, -1],
+];
 
 type Part =
   | 'body'
@@ -91,34 +115,66 @@ export class Character {
   private constructor(
     private readonly body: SpriteView,
     private readonly parts: Map<Part, SpriteView[]>,
+    private readonly companion: SpriteView | undefined,
+    private readonly cart: SpriteView | undefined,
   ) {
-    for (const views of parts.values()) {
-      for (const v of views) {
-        this.group.add(v.group);
-      }
+    for (const v of this.views()) {
+      this.group.add(v.group);
+    }
+  }
+
+  /** Every sprite the character draws. */
+  private *views(): Generator<SpriteView> {
+    for (const views of this.parts.values()) {
+      yield* views;
+    }
+    if (this.companion !== undefined) {
+      yield this.companion;
+    }
+    if (this.cart !== undefined) {
+      yield this.cart;
     }
   }
 
   static async load(sprites: SpriteSource, look: Look): Promise<Character | undefined> {
-    const optional = async (name: string | undefined): Promise<SpriteView[]> => {
-      const asset = name === undefined ? undefined : await sprites.get(name, false);
+    const optional = async (
+      name: string | undefined,
+      placeholder = false,
+    ): Promise<SpriteView[]> => {
+      const asset = name === undefined ? undefined : await sprites.get(name, placeholder);
       return asset === undefined ? [] : [new SpriteView(asset)];
     };
     const palette = async (name: string | undefined): Promise<Texture | undefined> =>
       name === undefined ? undefined : sprites.palette(name);
-    const [bodyAsset, head, top, mid, bottom, weapon, shield, garment, bodyPalette, hairPalette] =
-      await Promise.all([
-        sprites.get(look.body),
-        optional(look.head),
-        optional(look.headgearTop),
-        optional(look.headgearMid),
-        optional(look.headgearBottom),
-        optional(look.weapon),
-        optional(look.shield),
-        optional(look.garment),
-        palette(look.bodyPalette),
-        palette(look.hairPalette),
-      ]);
+    const [
+      bodyAsset,
+      head,
+      top,
+      mid,
+      bottom,
+      weapon,
+      shield,
+      garment,
+      bodyPalette,
+      hairPalette,
+      companion,
+      cart,
+    ] = await Promise.all([
+      sprites.get(look.body),
+      optional(look.head),
+      optional(look.headgearTop),
+      optional(look.headgearMid),
+      optional(look.headgearBottom),
+      optional(look.weapon),
+      optional(look.shield),
+      optional(look.garment),
+      palette(look.bodyPalette),
+      palette(look.hairPalette),
+      // Companions and carts are not named by the importer yet, so a
+      // placeholder build shows the placeholder sprite.
+      optional(look.companion, true),
+      optional(look.cart, true),
+    ]);
     if (bodyAsset === undefined) {
       return undefined;
     }
@@ -137,13 +193,13 @@ export class Character {
       ['shield', shield],
       ['garment', garment],
     ]);
-    return new Character(body, parts);
+    return new Character(body, parts, companion[0], cart[0]);
   }
 
   /** Whether an object is one of the character's own sprites, not something added to its group. */
   isPart(o: Object3D): boolean {
-    for (const views of this.parts.values()) {
-      if (views.some((v) => v.group === o)) {
+    for (const v of this.views()) {
+      if (v.group === o) {
         return true;
       }
     }
@@ -152,10 +208,8 @@ export class Character {
 
   /** Multiplies every part's colors and opacity, as SpriteView.setTint. */
   setTint(r: number, g: number, b: number, a: number): void {
-    for (const views of this.parts.values()) {
-      for (const v of views) {
-        v.setTint(r, g, b, a);
-      }
+    for (const v of this.views()) {
+      v.setTint(r, g, b, a);
     }
   }
 
@@ -211,6 +265,27 @@ export class Character {
         v.draw(index, frame, dx, dy);
       }
     }
+    // The companion is drawn in front of the body's parts.
+    this.companion?.group.position.copy(towardCamera).multiplyScalar(depth * LAYER_GAP);
+    this.drawFollower(this.companion, cameraSteps, COMPANION_OFFSET);
+    if (this.cart !== undefined) {
+      const [sx, sy] = FACING_STEPS[this.direction & 7]!;
+      const length = Math.hypot(sx, sy);
+      this.cart.group.position.set(-sx / length, 0, sy / length);
+      this.drawFollower(this.cart, cameraSteps, [0, 0]);
+    }
+  }
+
+  /** Draws a companion or cart with the body's facing, walking or standing. */
+  private drawFollower(v: SpriteView | undefined, cameraSteps: number, at: [number, number]): void {
+    if (v === undefined) {
+      return;
+    }
+    const action = this.action === WALK ? WALK : IDLE;
+    const index = v.actionIndex(action, this.direction, cameraSteps);
+    const a = v.asset.sprite.actions[index];
+    const interval = a !== undefined && a.intervalMs > 0 ? a.intervalMs : 100;
+    v.draw(index, Math.floor(this.time / interval), at[0], at[1]);
   }
 }
 

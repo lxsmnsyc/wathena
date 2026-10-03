@@ -15,6 +15,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/bonus"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
@@ -58,6 +59,34 @@ type testHost struct {
 	// statuses is the mode's status data; started counts status starts.
 	statuses *sc.DB
 	started  int
+	// companion, mount and cart are what the companion calls set, by
+	// kind, with 0 for none.
+	companions map[string]int
+}
+
+// CompanionID finds core's records, with the IDs of their files.
+func (h *testHost) CompanionID(kind, name string) (int, bool) {
+	set := companion.Core()
+	t := &set.Companions
+	if kind == "mount" {
+		t = &set.Mounts
+	}
+	if r := t.ByName(name); r != nil {
+		return r.ID, true
+	}
+	return 0, false
+}
+
+func (h *testHost) SetCompanion(_ int64, kind string, id int) (bool, error) {
+	if h.companions == nil {
+		h.companions = map[string]int{}
+	}
+	h.companions[kind] = id
+	return true, nil
+}
+
+func (h *testHost) SetCart(_ int64, look int) (bool, error) {
+	return h.SetCompanion(0, "cart", look)
 }
 
 func (h *testHost) status(id int64) error {
@@ -111,6 +140,11 @@ func (h *testHost) PlayerField(id int64, field string) (script.Value, error) {
 		return script.Int(0), nil
 	case "max_hp", "max_sp":
 		return script.Int(1000), nil
+	case "companion", "mount", "cart":
+		if id := h.companions[field]; id != 0 {
+			return script.Int(int64(id)), nil
+		}
+		return script.Nil, nil
 	case "job_class":
 		m, _ := h.jobs.MapID(h.job)
 		return script.Int(int64(m)), nil

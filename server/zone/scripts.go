@@ -12,6 +12,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -61,6 +62,9 @@ type Mods struct {
 	// ItemRolls is the item_rolls ruleset flag. Off, every roll of a new
 	// copy is its default, as rAthena. Random options roll either way.
 	ItemRolls bool
+	// Companions are the companions and mounts. Without them the zone
+	// uses core's (companion.Core).
+	Companions *companion.Set
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -369,6 +373,9 @@ var playerFields = map[string]func(h scriptHost, p *Player) script.Value{
 	// Trait stats cannot be raised yet.
 	"base_pow": zeroField, "base_sta": zeroField, "base_wis": zeroField,
 	"base_spl": zeroField, "base_con": zeroField, "base_crt": zeroField,
+	"companion": func(_ scriptHost, p *Player) script.Value { return companionField(p.companion) },
+	"mount":     func(_ scriptHost, p *Player) script.Value { return companionField(p.mount) },
+	"cart":      func(_ scriptHost, p *Player) script.Value { return cartField(p) },
 	"job_class": func(h scriptHost, p *Player) script.Value {
 		if h.z.Status == nil {
 			return script.Int(0)

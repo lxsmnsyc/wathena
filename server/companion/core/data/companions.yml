@@ -1,0 +1,11 @@
+# Core's companions (proposal 0002, review decision 25). A mod changes
+# them by name and adds its own in its data/companions.yml.
+#
+# The falcon is rAthena's OPTION_FALCON. pc_setfalcon gives it to a
+# player with Falconry Mastery (HT_FALCON).
+- name: falcon
+  id: 1
+  display_name: Falcon
+  look: falcon
+  requires:
+    - {skill: HT_FALCON, level: 1}

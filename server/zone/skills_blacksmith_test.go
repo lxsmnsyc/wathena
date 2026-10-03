@@ -6,6 +6,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -130,7 +131,7 @@ func TestCartRequirement(t *testing.T) {
 	if z.setCart(p, 1) || z.hasCart(p) {
 		t.Error("got a cart without Pushcart")
 	}
-	if z.setCart(p, len(cartOptions)) {
+	if z.setCart(p, companion.MaxCart+1) {
 		t.Error("an unknown cart type was accepted")
 	}
 }

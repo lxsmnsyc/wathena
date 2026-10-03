@@ -115,8 +115,13 @@ type Info struct {
 	// its rebirth, which picks its transcendent line, or 0.
 	RebirthJob int
 	// Options are the saved bits of rAthena's status.option: the cart,
-	// the falcon and the Peco Peco (OPTION_RIDING, 0x20).
+	// and the looks of the companion and the mount, such as the falcon
+	// (OPTION_FALCON) and the Peco Peco (OPTION_RIDING, 0x20).
 	Options int
+	// Companion and Mount are the full names of the character's
+	// companion and mount records, or empty for none. A character saved
+	// with empty names and look bits in Options has core's.
+	Companion, Mount string
 }
 
 // Item is one filled inventory slot.

@@ -137,6 +137,8 @@ type Character struct {
 	JobChangeLevel int
 	RebirthJob     int
 	Options        int
+	Companion      string
+	Mount          string
 }
 
 type CharacterSkill struct {

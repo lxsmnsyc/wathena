@@ -5,6 +5,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
@@ -94,7 +95,7 @@ func TestFalconRequirement(t *testing.T) {
 		t.Fatalf("Blitz Beat without a falcon: failures %v", f)
 	}
 	z.setFalcon(p, true)
-	if !isFalcon(p) || p.record.Options&optionFalcon == 0 {
+	if !isFalcon(p) || p.record.Options&companion.OptionFalcon == 0 {
 		t.Fatal("no falcon after pc_setfalcon")
 	}
 	cast(z, p, skill.IDBlitzBeat, 5, m)

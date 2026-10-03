@@ -367,7 +367,8 @@ func records(l *Loaded) []Record {
 	if l.Jobs != nil {
 		jobOverlay = l.Jobs.Overlay
 	}
-	for _, o := range []*mod.Overlay{jobOverlay, l.NPCOverlay, l.MonsterOverlay, l.EventOverlay, l.SkillOverlay} {
+	overlays := append([]*mod.Overlay{jobOverlay, l.NPCOverlay, l.MonsterOverlay, l.EventOverlay, l.SkillOverlay}, l.CompanionOverlays...)
+	for _, o := range overlays {
 		if o == nil {
 			continue
 		}
@@ -389,6 +390,15 @@ func records(l *Loaded) []Record {
 			if o.Kind.Name == mod.SkillKind.Name && r.Mod != mod.Core {
 				if d := l.Skills.ByName(r.Name); d != nil {
 					rec.Fields = append(rec.Fields, RecordField{Name: "id", Value: json.Number(fmt.Sprint(d.ID)), SetBy: "server"})
+				}
+			}
+			if (o.Kind.Name == mod.CompanionKind.Name || o.Kind.Name == mod.MountKind.Name) && r.Mod != mod.Core {
+				t := &l.Companions.Companions
+				if o.Kind.Name == mod.MountKind.Name {
+					t = &l.Companions.Mounts
+				}
+				if c := t.ByName(r.Name); c != nil {
+					rec.Fields = append(rec.Fields, RecordField{Name: "id", Value: json.Number(fmt.Sprint(c.ID)), SetBy: "server"})
 				}
 			}
 			for _, k := range slices.Sorted(maps.Keys(r.Fields)) {

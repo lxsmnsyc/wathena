@@ -29,6 +29,8 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `sprite/weapon/<look>/<sex>/<view>` | Sprite | `sprite/weapon/swordman/m/2` | Weapon drawn on a character, by weapon view ID. |
 | `sprite/shield/<look>/<sex>/<view>` | Sprite | `sprite/shield/knight/f/1` | Shield drawn on a character, by shield view ID. |
 | `sprite/garment/<look>/<sex>/<view>` | Sprite | `sprite/garment/archer/m/1` | Garment drawn on a character, by garment view ID. |
+| `sprite/companion/<look>` | Sprite | `sprite/companion/falcon` | A companion drawn beside its player: `falcon` or `warg`. The GRF importer does not name it yet, so builds show the placeholder sprite. |
+| `sprite/cart/<n>` | Sprite | `sprite/cart/1` | A cart drawn behind its player, 1 to 5. The GRF importer does not name it yet, so builds show the placeholder sprite. |
 | `sprite/mob/<id>` | Sprite | `sprite/mob/1002` | Monster, by monster ID. |
 | `sprite/npc/<id>` | Sprite | `sprite/npc/117` | NPC, by NPC sprite ID. |
 | `sprite/item/<id>` | Sprite | `sprite/item/501` | A dropped item, by item ID. |

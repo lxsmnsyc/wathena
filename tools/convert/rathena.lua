@@ -49,6 +49,15 @@ function R.truthy(v)
 	return v ~= nil and v ~= 0 and v ~= ""
 end
 
+-- nonzero is a number, or nil for 0, for calls that take nil for none,
+-- such as player:set_cart.
+function R.nonzero(v)
+	if v == 0 then
+		return nil
+	end
+	return v
+end
+
 -- menu splits rAthena's menu text, "A:B:C", into options.
 function R.menu(text)
 	local out = {}

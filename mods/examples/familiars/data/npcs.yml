@@ -1,0 +1,9 @@
+# The keeper stands in Prontera, west of the Desperado Mentor.
+- name: Keeper#prontera
+  map: prontera
+  x: 143
+  y: 191
+  direction: south
+  sprite: 4_M_JOB_HUNTER
+  display_name: Familiar Keeper
+  script: scripts/npc/keeper.lua
