@@ -842,6 +842,19 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Tests.** In `wa.testing`, `roll = { ... }` needs no permission, and drops from `world:kill` roll from a seeded random stream.
     - Later: rolls on crafting and quest rewards, roll searches in vending, and handles for inventory copies.
 
+24. Job definitions and the details before 1.0 (phase 4 step 7). The user approved these on 2026-10-03:
+    - **Job records** are `data/jobs.yml`, which core's jobs use too. Fields: `name`, `display_name`, `look` (an existing job whose sprites the job shows, until the client data tables of phase 6), `tier` (`novice`, `first`, `second`, `third`, `fourth` or `expanded`), `transcendent`, `baby`, `base_job`, `changes_from` (a list of `{ job, base_level, job_level }`), `inherits` (skill tree inheritance, rAthena's `Inherit`), `equips_as`, `max_base_level`, `max_job_level`, `max_stats`, `max_weight`, `hp` and `sp` (`{ factor, increase }`, or `hp_table` and `sp_table` with one value per level), `aspd` (base ASPD by weapon type), `bonus_stats` (stats by job level), and `exp_table` (an existing job's table, or `base_exp` and `job_exp` lists). A field that is left out comes from the `look` job. Job IDs come from the mod range. Skill trees stay in `data/skill_trees.yml`.
+    - An item's `jobs` field also takes a list of job names, such as `[knight, example.jobs:Desperado]`. rAthena's bit masks still work.
+    - `jobs.id "example.jobs:Desperado"` finds a job, as `skills.id`. The job calls and tests work with mod jobs.
+    - **Event `job_change`**: `events.on("job_change", function(change) ... end)`, with `change` = { `player`, `from`, `to` }.
+    - The client shows the `look` job's sprites and the `display_name`.
+    - After the phase 4 exit check, manifests move from `api: experimental` to `api: 1.0`.
+    - **Monster skill entries** get `modes`, applied through SC_MODECHANGE as rAthena's `NPC_EMOTION`, and `emotion` takes a list of two. `chat_color` is a hex color, sent with the chat line.
+    - **`wa.testing`** gets `world:equip(player, item, { roll })`, which returns the equipped handle. The `new_player` fields `sex`, `skills`, `stats`, `skill_points` and `status_points` are final, and so is `respawn_milliseconds`.
+    - **Rolls** take an optional `display_name`.
+    - The details listed under next steps 6 to 9, and the step 6 details (`multiply` and `divide` in `{ roll }`, lists in a random option's `bonus`, `random_option_group` on drops, card handles with their own rolls, the `item_roll` hook for default values, core option IDs, and hidden rolls that start unidentified), are accepted as built.
+    - Mounts, falcons and carts wait for a general design, since mods may add their own companions such as familiars.
+
 ## Version
 
 A mod's manifest says `api: experimental` (strategy section 6.12) until the end of phase 4. The phase 3 exit check passed with a sample mod, but phase 4 changes parts of the API, such as monster stats. The API then becomes `api: 1.0`.
