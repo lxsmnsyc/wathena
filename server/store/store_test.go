@@ -267,12 +267,18 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 	}
 	want := *c
 	want.ID, want.AccountID = id, got.AccountID
+	// The database sets the creation time.
+	if time.Since(got.CreatedAt) > time.Minute {
+		t.Errorf("created at %v", got.CreatedAt)
+	}
+	want.CreatedAt = got.CreatedAt
 	if got.AccountID == 0 || !got.Equal(&want) {
 		t.Fatalf("loaded %+v\nwant %+v", got, &want)
 	}
 
 	// Every field changes, and the inventory gains, changes and loses
 	// slots.
+	start := time.Now().Truncate(time.Second)
 	next := &character.Character{
 		Info: character.Info{
 			ID: id, AccountID: got.AccountID, Slot: got.Slot, Name: "Alice",
@@ -281,7 +287,7 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 			StatusPoints: 17, SkillPoints: 3,
 			Stats: status.Stats{Str: 99, Agi: 80, Vit: 70, Int: 60, Dex: 50, Luk: 40},
 			HP:    9000, SP: 800, Map: "map/prt_fild08", X: 1023, Y: 0, Zeny: 2147483647,
-			InventorySize: 200,
+			InventorySize: 200, CreatedAt: got.CreatedAt,
 		},
 		Items: []character.Item{
 			{Slot: 0, ID: 501, Amount: 30000, Serial: c.Items[0].Serial},
@@ -311,6 +317,13 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 		},
 		// Learned skills, with a mod skill's ID.
 		Skills: map[int]int{1: 9, 28: 10, 20000: 5},
+		// A block list in its order, and a mute and a jail (decision 0018).
+		Blocks: []string{"Zed", "bob", "Carol Ann"},
+		Sanctions: []character.Sanction{
+			{Kind: character.SanctionMute, Reason: "spam", Start: start, End: start.Add(time.Hour), By: "example.a"},
+			{Kind: character.SanctionJail, Reason: "botting", Start: start, End: start.Add(48 * time.Hour), By: "staff",
+				ReturnMap: "map/prontera", ReturnX: 150, ReturnY: 180},
+		},
 	}
 	sess.Save(next, true)
 	if err := sess.Flush(ctx); err != nil {
@@ -324,9 +337,12 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 		t.Errorf("after save %+v\nwant %+v", got, next)
 	}
 
-	// Statuses that end and timed bonuses that run out leave no rows.
+	// Statuses that end and timed bonuses that run out leave no rows. A
+	// mute lifted early is kept with its lift time.
 	next.Statuses, next.TimedBonuses = next.Statuses[2:], nil
 	next.Statuses[0].Tick = -1
+	next.Blocks = []string{"bob"}
+	next.Sanctions = next.Sanctions[1:]
 	sess.Save(next, true)
 	if err := sess.Flush(ctx); err != nil {
 		t.Fatal(err)
@@ -337,6 +353,13 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 	}
 	if !got.Equal(next) || len(got.TimedBonuses) != 0 {
 		t.Errorf("after second save %+v\nwant %+v", got, next)
+	}
+	var lifted, total int
+	if err := game.QueryRow(ctx, `SELECT count(*) FILTER (WHERE lifted_at IS NOT NULL), count(*) FROM sanctions WHERE character_id = $1`, id).Scan(&lifted, &total); err != nil {
+		t.Fatal(err)
+	}
+	if lifted != 1 || total != 2 {
+		t.Errorf("sanctions: %d lifted of %d", lifted, total)
 	}
 }
 

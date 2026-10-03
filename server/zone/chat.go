@@ -1,6 +1,9 @@
 package zone
 
-import wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+import (
+	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/chat"
+)
 
 // chatLine is one line of local chat, from a player or an NPC.
 type chatLine struct {
@@ -9,6 +12,9 @@ type chatLine struct {
 	text    string
 	// color is the color of a monster's line, or 0.
 	color uint32
+	// line is a player's line, for the chat log and reports. Its ID is
+	// zero for NPC and monster lines.
+	line chat.Line
 }
 
 // ChatRange is how far local chat reaches, in cells on both axes. It is
@@ -27,13 +33,22 @@ func (z *Zone) chatEvents(p *Player) []*wathenav1.Event {
 		if !ok || max(abs(c.speaker.x-me.x), abs(c.speaker.y-me.y)) > ChatRange {
 			continue
 		}
-		events = append(events, wathenav1.Event_builder{Chat: wathenav1.ChatMessage_builder{
+		m := wathenav1.ChatMessage_builder{
 			Channel:  wathenav1.ChatChannel_CHAT_CHANNEL_LOCAL,
 			From:     id,
 			FromName: c.name,
 			Text:     c.text,
 			Color:    c.color,
-		}.Build()}.Build())
+		}
+		if !c.line.ID.IsZero() {
+			// A player's line: hidden from those who block the speaker.
+			if c.speaker != me && p.blocking(c.name) {
+				continue
+			}
+			m.LineId = c.line.ID[:]
+			p.see(c.line)
+		}
+		events = append(events, wathenav1.Event_builder{Chat: m.Build()}.Build())
 	}
 	return events
 }

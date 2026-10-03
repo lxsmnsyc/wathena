@@ -502,6 +502,279 @@ func (x SkillTarget) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+type WhisperOutcome int32
+
+const (
+	WhisperOutcome_WHISPER_OUTCOME_UNSPECIFIED WhisperOutcome = 0
+	WhisperOutcome_WHISPER_OUTCOME_SENT        WhisperOutcome = 1
+	// No character of that name is online, as ACKWHISPER_TARGET_OFFLINE.
+	WhisperOutcome_WHISPER_OUTCOME_NOT_ONLINE WhisperOutcome = 2
+	// The target blocks the player, as ACKWHISPER_IGNORED.
+	WhisperOutcome_WHISPER_OUTCOME_BLOCKED WhisperOutcome = 3
+)
+
+// Enum value maps for WhisperOutcome.
+var (
+	WhisperOutcome_name = map[int32]string{
+		0: "WHISPER_OUTCOME_UNSPECIFIED",
+		1: "WHISPER_OUTCOME_SENT",
+		2: "WHISPER_OUTCOME_NOT_ONLINE",
+		3: "WHISPER_OUTCOME_BLOCKED",
+	}
+	WhisperOutcome_value = map[string]int32{
+		"WHISPER_OUTCOME_UNSPECIFIED": 0,
+		"WHISPER_OUTCOME_SENT":        1,
+		"WHISPER_OUTCOME_NOT_ONLINE":  2,
+		"WHISPER_OUTCOME_BLOCKED":     3,
+	}
+)
+
+func (x WhisperOutcome) Enum() *WhisperOutcome {
+	p := new(WhisperOutcome)
+	*p = x
+	return p
+}
+
+func (x WhisperOutcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WhisperOutcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[6].Descriptor()
+}
+
+func (WhisperOutcome) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[6]
+}
+
+func (x WhisperOutcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type ChatRefusal int32
+
+const (
+	ChatRefusal_CHAT_REFUSAL_UNSPECIFIED ChatRefusal = 0
+	// The player is muted. A SanctionNotice says until when.
+	ChatRefusal_CHAT_REFUSAL_MUTED ChatRefusal = 1
+	// The line has a word that the server's chat filter rejects.
+	ChatRefusal_CHAT_REFUSAL_FILTERED ChatRefusal = 2
+	// The player is not in the channel.
+	ChatRefusal_CHAT_REFUSAL_NOT_IN_CHANNEL ChatRefusal = 3
+	// The channel does not let its members talk, as rAthena's chat
+	// option.
+	ChatRefusal_CHAT_REFUSAL_CANNOT_CHAT ChatRefusal = 4
+	// The line went over the chat rate limit, or the channel's delay since
+	// the player's last line has not passed, as rAthena's "You're talking
+	// too fast!".
+	ChatRefusal_CHAT_REFUSAL_TOO_FAST ChatRefusal = 5
+)
+
+// Enum value maps for ChatRefusal.
+var (
+	ChatRefusal_name = map[int32]string{
+		0: "CHAT_REFUSAL_UNSPECIFIED",
+		1: "CHAT_REFUSAL_MUTED",
+		2: "CHAT_REFUSAL_FILTERED",
+		3: "CHAT_REFUSAL_NOT_IN_CHANNEL",
+		4: "CHAT_REFUSAL_CANNOT_CHAT",
+		5: "CHAT_REFUSAL_TOO_FAST",
+	}
+	ChatRefusal_value = map[string]int32{
+		"CHAT_REFUSAL_UNSPECIFIED":    0,
+		"CHAT_REFUSAL_MUTED":          1,
+		"CHAT_REFUSAL_FILTERED":       2,
+		"CHAT_REFUSAL_NOT_IN_CHANNEL": 3,
+		"CHAT_REFUSAL_CANNOT_CHAT":    4,
+		"CHAT_REFUSAL_TOO_FAST":       5,
+	}
+)
+
+func (x ChatRefusal) Enum() *ChatRefusal {
+	p := new(ChatRefusal)
+	*p = x
+	return p
+}
+
+func (x ChatRefusal) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ChatRefusal) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[7].Descriptor()
+}
+
+func (ChatRefusal) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[7]
+}
+
+func (x ChatRefusal) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type ChannelFailure int32
+
+const (
+	ChannelFailure_CHANNEL_FAILURE_UNSPECIFIED ChannelFailure = 0
+	// No channel has the name.
+	ChannelFailure_CHANNEL_FAILURE_UNKNOWN ChannelFailure = 1
+	// The player is already in the channel.
+	ChannelFailure_CHANNEL_FAILURE_ALREADY_JOINED ChannelFailure = 2
+	// The channel only takes players a mod adds.
+	ChannelFailure_CHANNEL_FAILURE_INVITE_ONLY ChannelFailure = 3
+	// The player is not in the channel.
+	ChannelFailure_CHANNEL_FAILURE_NOT_JOINED ChannelFailure = 4
+	// The player may not leave the channel.
+	ChannelFailure_CHANNEL_FAILURE_CANNOT_LEAVE ChannelFailure = 5
+	// The player is in as many channels as it may be.
+	ChannelFailure_CHANNEL_FAILURE_TOO_MANY ChannelFailure = 6
+)
+
+// Enum value maps for ChannelFailure.
+var (
+	ChannelFailure_name = map[int32]string{
+		0: "CHANNEL_FAILURE_UNSPECIFIED",
+		1: "CHANNEL_FAILURE_UNKNOWN",
+		2: "CHANNEL_FAILURE_ALREADY_JOINED",
+		3: "CHANNEL_FAILURE_INVITE_ONLY",
+		4: "CHANNEL_FAILURE_NOT_JOINED",
+		5: "CHANNEL_FAILURE_CANNOT_LEAVE",
+		6: "CHANNEL_FAILURE_TOO_MANY",
+	}
+	ChannelFailure_value = map[string]int32{
+		"CHANNEL_FAILURE_UNSPECIFIED":    0,
+		"CHANNEL_FAILURE_UNKNOWN":        1,
+		"CHANNEL_FAILURE_ALREADY_JOINED": 2,
+		"CHANNEL_FAILURE_INVITE_ONLY":    3,
+		"CHANNEL_FAILURE_NOT_JOINED":     4,
+		"CHANNEL_FAILURE_CANNOT_LEAVE":   5,
+		"CHANNEL_FAILURE_TOO_MANY":       6,
+	}
+)
+
+func (x ChannelFailure) Enum() *ChannelFailure {
+	p := new(ChannelFailure)
+	*p = x
+	return p
+}
+
+func (x ChannelFailure) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ChannelFailure) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[8].Descriptor()
+}
+
+func (ChannelFailure) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[8]
+}
+
+func (x ChannelFailure) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type SanctionKind int32
+
+const (
+	SanctionKind_SANCTION_KIND_UNSPECIFIED SanctionKind = 0
+	// MUTE stops the player's chat, as rAthena's SC_NOCHAT.
+	SanctionKind_SANCTION_KIND_MUTE SanctionKind = 1
+	// JAIL holds the player on the jail map, as rAthena's SC_JAILED.
+	SanctionKind_SANCTION_KIND_JAIL SanctionKind = 2
+)
+
+// Enum value maps for SanctionKind.
+var (
+	SanctionKind_name = map[int32]string{
+		0: "SANCTION_KIND_UNSPECIFIED",
+		1: "SANCTION_KIND_MUTE",
+		2: "SANCTION_KIND_JAIL",
+	}
+	SanctionKind_value = map[string]int32{
+		"SANCTION_KIND_UNSPECIFIED": 0,
+		"SANCTION_KIND_MUTE":        1,
+		"SANCTION_KIND_JAIL":        2,
+	}
+)
+
+func (x SanctionKind) Enum() *SanctionKind {
+	p := new(SanctionKind)
+	*p = x
+	return p
+}
+
+func (x SanctionKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SanctionKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[9].Descriptor()
+}
+
+func (SanctionKind) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[9]
+}
+
+func (x SanctionKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type ReportOutcome int32
+
+const (
+	ReportOutcome_REPORT_OUTCOME_UNSPECIFIED ReportOutcome = 0
+	// The report was saved for the staff.
+	ReportOutcome_REPORT_OUTCOME_SENT ReportOutcome = 1
+	// The reported line is not among the lines the player saw in the last
+	// 5 minutes.
+	ReportOutcome_REPORT_OUTCOME_LINE_NOT_FOUND ReportOutcome = 2
+	// The player sent too many reports in the last hour.
+	ReportOutcome_REPORT_OUTCOME_TOO_MANY ReportOutcome = 3
+	// The name is not a valid character name.
+	ReportOutcome_REPORT_OUTCOME_BAD_NAME ReportOutcome = 4
+)
+
+// Enum value maps for ReportOutcome.
+var (
+	ReportOutcome_name = map[int32]string{
+		0: "REPORT_OUTCOME_UNSPECIFIED",
+		1: "REPORT_OUTCOME_SENT",
+		2: "REPORT_OUTCOME_LINE_NOT_FOUND",
+		3: "REPORT_OUTCOME_TOO_MANY",
+		4: "REPORT_OUTCOME_BAD_NAME",
+	}
+	ReportOutcome_value = map[string]int32{
+		"REPORT_OUTCOME_UNSPECIFIED":    0,
+		"REPORT_OUTCOME_SENT":           1,
+		"REPORT_OUTCOME_LINE_NOT_FOUND": 2,
+		"REPORT_OUTCOME_TOO_MANY":       3,
+		"REPORT_OUTCOME_BAD_NAME":       4,
+	}
+)
+
+func (x ReportOutcome) Enum() *ReportOutcome {
+	p := new(ReportOutcome)
+	*p = x
+	return p
+}
+
+func (x ReportOutcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ReportOutcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[10].Descriptor()
+}
+
+func (ReportOutcome) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[10]
+}
+
+func (x ReportOutcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type ImagePosition int32
 
 const (
@@ -538,11 +811,11 @@ func (x ImagePosition) String() string {
 }
 
 func (ImagePosition) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[6].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[11].Descriptor()
 }
 
 func (ImagePosition) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[6]
+	return &file_wathena_v1_event_proto_enumTypes[11]
 }
 
 func (x ImagePosition) Number() protoreflect.EnumNumber {
@@ -598,11 +871,11 @@ func (x ShopOutcome) String() string {
 }
 
 func (ShopOutcome) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[7].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[12].Descriptor()
 }
 
 func (ShopOutcome) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[7]
+	return &file_wathena_v1_event_proto_enumTypes[12]
 }
 
 func (x ShopOutcome) Number() protoreflect.EnumNumber {
@@ -656,11 +929,11 @@ func (x InventoryRemoveReason) String() string {
 }
 
 func (InventoryRemoveReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[8].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[13].Descriptor()
 }
 
 func (InventoryRemoveReason) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[8]
+	return &file_wathena_v1_event_proto_enumTypes[13]
 }
 
 func (x InventoryRemoveReason) Number() protoreflect.EnumNumber {
@@ -727,11 +1000,11 @@ func (x UseItemFailure) String() string {
 }
 
 func (UseItemFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[9].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[14].Descriptor()
 }
 
 func (UseItemFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[9]
+	return &file_wathena_v1_event_proto_enumTypes[14]
 }
 
 func (x UseItemFailure) Number() protoreflect.EnumNumber {
@@ -777,11 +1050,11 @@ func (x DropItemFailure) String() string {
 }
 
 func (DropItemFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[10].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[15].Descriptor()
 }
 
 func (DropItemFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[10]
+	return &file_wathena_v1_event_proto_enumTypes[15]
 }
 
 func (x DropItemFailure) Number() protoreflect.EnumNumber {
@@ -835,11 +1108,11 @@ func (x PickUpFailure) String() string {
 }
 
 func (PickUpFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[11].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[16].Descriptor()
 }
 
 func (PickUpFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[11]
+	return &file_wathena_v1_event_proto_enumTypes[16]
 }
 
 func (x PickUpFailure) Number() protoreflect.EnumNumber {
@@ -892,11 +1165,11 @@ func (x EquipFailure) String() string {
 }
 
 func (EquipFailure) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_event_proto_enumTypes[12].Descriptor()
+	return file_wathena_v1_event_proto_enumTypes[17].Descriptor()
 }
 
 func (EquipFailure) Type() protoreflect.EnumType {
-	return &file_wathena_v1_event_proto_enumTypes[12]
+	return &file_wathena_v1_event_proto_enumTypes[17]
 }
 
 func (x EquipFailure) Number() protoreflect.EnumNumber {
@@ -1297,6 +1570,96 @@ func (x *Event) GetJobName() *JobName {
 	return nil
 }
 
+func (x *Event) GetWhisperResult() *WhisperResult {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_WhisperResult); ok {
+			return x.WhisperResult
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetChatRefused() *ChatRefused {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ChatRefused); ok {
+			return x.ChatRefused
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetChannelJoined() *ChannelJoined {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ChannelJoined); ok {
+			return x.ChannelJoined
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetChannelLeft() *ChannelLeft {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ChannelLeft); ok {
+			return x.ChannelLeft
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetChannelList() *ChannelList {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ChannelList); ok {
+			return x.ChannelList
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetChannelMembers() *ChannelMembers {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ChannelMembers); ok {
+			return x.ChannelMembers
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetChannelFailed() *ChannelFailed {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ChannelFailed); ok {
+			return x.ChannelFailed
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetBlockList() *BlockList {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_BlockList); ok {
+			return x.BlockList
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetSanction() *SanctionNotice {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_Sanction); ok {
+			return x.Sanction
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetReportResult() *ReportResult {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_ReportResult); ok {
+			return x.ReportResult
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -1615,6 +1978,86 @@ func (x *Event) SetJobName(v *JobName) {
 		return
 	}
 	x.xxx_hidden_Body = &event_JobName{v}
+}
+
+func (x *Event) SetWhisperResult(v *WhisperResult) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_WhisperResult{v}
+}
+
+func (x *Event) SetChatRefused(v *ChatRefused) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ChatRefused{v}
+}
+
+func (x *Event) SetChannelJoined(v *ChannelJoined) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ChannelJoined{v}
+}
+
+func (x *Event) SetChannelLeft(v *ChannelLeft) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ChannelLeft{v}
+}
+
+func (x *Event) SetChannelList(v *ChannelList) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ChannelList{v}
+}
+
+func (x *Event) SetChannelMembers(v *ChannelMembers) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ChannelMembers{v}
+}
+
+func (x *Event) SetChannelFailed(v *ChannelFailed) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ChannelFailed{v}
+}
+
+func (x *Event) SetBlockList(v *BlockList) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_BlockList{v}
+}
+
+func (x *Event) SetSanction(v *SanctionNotice) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_Sanction{v}
+}
+
+func (x *Event) SetReportResult(v *ReportResult) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_ReportResult{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -1944,6 +2387,86 @@ func (x *Event) HasJobName() bool {
 	return ok
 }
 
+func (x *Event) HasWhisperResult() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_WhisperResult)
+	return ok
+}
+
+func (x *Event) HasChatRefused() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ChatRefused)
+	return ok
+}
+
+func (x *Event) HasChannelJoined() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ChannelJoined)
+	return ok
+}
+
+func (x *Event) HasChannelLeft() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ChannelLeft)
+	return ok
+}
+
+func (x *Event) HasChannelList() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ChannelList)
+	return ok
+}
+
+func (x *Event) HasChannelMembers() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ChannelMembers)
+	return ok
+}
+
+func (x *Event) HasChannelFailed() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ChannelFailed)
+	return ok
+}
+
+func (x *Event) HasBlockList() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_BlockList)
+	return ok
+}
+
+func (x *Event) HasSanction() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_Sanction)
+	return ok
+}
+
+func (x *Event) HasReportResult() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_ReportResult)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -2188,6 +2711,66 @@ func (x *Event) ClearJobName() {
 	}
 }
 
+func (x *Event) ClearWhisperResult() {
+	if _, ok := x.xxx_hidden_Body.(*event_WhisperResult); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearChatRefused() {
+	if _, ok := x.xxx_hidden_Body.(*event_ChatRefused); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearChannelJoined() {
+	if _, ok := x.xxx_hidden_Body.(*event_ChannelJoined); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearChannelLeft() {
+	if _, ok := x.xxx_hidden_Body.(*event_ChannelLeft); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearChannelList() {
+	if _, ok := x.xxx_hidden_Body.(*event_ChannelList); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearChannelMembers() {
+	if _, ok := x.xxx_hidden_Body.(*event_ChannelMembers); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearChannelFailed() {
+	if _, ok := x.xxx_hidden_Body.(*event_ChannelFailed); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearBlockList() {
+	if _, ok := x.xxx_hidden_Body.(*event_BlockList); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearSanction() {
+	if _, ok := x.xxx_hidden_Body.(*event_Sanction); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearReportResult() {
+	if _, ok := x.xxx_hidden_Body.(*event_ReportResult); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -2229,6 +2812,16 @@ const Event_SkillFailed_case case_Event_Body = 37
 const Event_SkillCooldown_case case_Event_Body = 38
 const Event_ItemRollsChange_case case_Event_Body = 39
 const Event_JobName_case case_Event_Body = 40
+const Event_WhisperResult_case case_Event_Body = 41
+const Event_ChatRefused_case case_Event_Body = 42
+const Event_ChannelJoined_case case_Event_Body = 43
+const Event_ChannelLeft_case case_Event_Body = 44
+const Event_ChannelList_case case_Event_Body = 45
+const Event_ChannelMembers_case case_Event_Body = 46
+const Event_ChannelFailed_case case_Event_Body = 47
+const Event_BlockList_case case_Event_Body = 48
+const Event_Sanction_case case_Event_Body = 49
+const Event_ReportResult_case case_Event_Body = 50
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -2315,6 +2908,26 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_ItemRollsChange_case
 	case *event_JobName:
 		return Event_JobName_case
+	case *event_WhisperResult:
+		return Event_WhisperResult_case
+	case *event_ChatRefused:
+		return Event_ChatRefused_case
+	case *event_ChannelJoined:
+		return Event_ChannelJoined_case
+	case *event_ChannelLeft:
+		return Event_ChannelLeft_case
+	case *event_ChannelList:
+		return Event_ChannelList_case
+	case *event_ChannelMembers:
+		return Event_ChannelMembers_case
+	case *event_ChannelFailed:
+		return Event_ChannelFailed_case
+	case *event_BlockList:
+		return Event_BlockList_case
+	case *event_Sanction:
+		return Event_Sanction_case
+	case *event_ReportResult:
+		return Event_ReportResult_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -2364,6 +2977,16 @@ type Event_builder struct {
 	SkillCooldown    *SkillCooldown
 	ItemRollsChange  *ItemRollsChange
 	JobName          *JobName
+	WhisperResult    *WhisperResult
+	ChatRefused      *ChatRefused
+	ChannelJoined    *ChannelJoined
+	ChannelLeft      *ChannelLeft
+	ChannelList      *ChannelList
+	ChannelMembers   *ChannelMembers
+	ChannelFailed    *ChannelFailed
+	BlockList        *BlockList
+	Sanction         *SanctionNotice
+	ReportResult     *ReportResult
 	// -- end of xxx_hidden_Body
 }
 
@@ -2490,6 +3113,36 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.JobName != nil {
 		x.xxx_hidden_Body = &event_JobName{b.JobName}
+	}
+	if b.WhisperResult != nil {
+		x.xxx_hidden_Body = &event_WhisperResult{b.WhisperResult}
+	}
+	if b.ChatRefused != nil {
+		x.xxx_hidden_Body = &event_ChatRefused{b.ChatRefused}
+	}
+	if b.ChannelJoined != nil {
+		x.xxx_hidden_Body = &event_ChannelJoined{b.ChannelJoined}
+	}
+	if b.ChannelLeft != nil {
+		x.xxx_hidden_Body = &event_ChannelLeft{b.ChannelLeft}
+	}
+	if b.ChannelList != nil {
+		x.xxx_hidden_Body = &event_ChannelList{b.ChannelList}
+	}
+	if b.ChannelMembers != nil {
+		x.xxx_hidden_Body = &event_ChannelMembers{b.ChannelMembers}
+	}
+	if b.ChannelFailed != nil {
+		x.xxx_hidden_Body = &event_ChannelFailed{b.ChannelFailed}
+	}
+	if b.BlockList != nil {
+		x.xxx_hidden_Body = &event_BlockList{b.BlockList}
+	}
+	if b.Sanction != nil {
+		x.xxx_hidden_Body = &event_Sanction{b.Sanction}
+	}
+	if b.ReportResult != nil {
+		x.xxx_hidden_Body = &event_ReportResult{b.ReportResult}
 	}
 	return m0
 }
@@ -2668,6 +3321,46 @@ type event_JobName struct {
 	JobName *JobName `protobuf:"bytes,40,opt,name=job_name,json=jobName,proto3,oneof"`
 }
 
+type event_WhisperResult struct {
+	WhisperResult *WhisperResult `protobuf:"bytes,41,opt,name=whisper_result,json=whisperResult,proto3,oneof"`
+}
+
+type event_ChatRefused struct {
+	ChatRefused *ChatRefused `protobuf:"bytes,42,opt,name=chat_refused,json=chatRefused,proto3,oneof"`
+}
+
+type event_ChannelJoined struct {
+	ChannelJoined *ChannelJoined `protobuf:"bytes,43,opt,name=channel_joined,json=channelJoined,proto3,oneof"`
+}
+
+type event_ChannelLeft struct {
+	ChannelLeft *ChannelLeft `protobuf:"bytes,44,opt,name=channel_left,json=channelLeft,proto3,oneof"`
+}
+
+type event_ChannelList struct {
+	ChannelList *ChannelList `protobuf:"bytes,45,opt,name=channel_list,json=channelList,proto3,oneof"`
+}
+
+type event_ChannelMembers struct {
+	ChannelMembers *ChannelMembers `protobuf:"bytes,46,opt,name=channel_members,json=channelMembers,proto3,oneof"`
+}
+
+type event_ChannelFailed struct {
+	ChannelFailed *ChannelFailed `protobuf:"bytes,47,opt,name=channel_failed,json=channelFailed,proto3,oneof"`
+}
+
+type event_BlockList struct {
+	BlockList *BlockList `protobuf:"bytes,48,opt,name=block_list,json=blockList,proto3,oneof"`
+}
+
+type event_Sanction struct {
+	Sanction *SanctionNotice `protobuf:"bytes,49,opt,name=sanction,proto3,oneof"`
+}
+
+type event_ReportResult struct {
+	ReportResult *ReportResult `protobuf:"bytes,50,opt,name=report_result,json=reportResult,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -2747,6 +3440,26 @@ func (*event_SkillCooldown) isEvent_Body() {}
 func (*event_ItemRollsChange) isEvent_Body() {}
 
 func (*event_JobName) isEvent_Body() {}
+
+func (*event_WhisperResult) isEvent_Body() {}
+
+func (*event_ChatRefused) isEvent_Body() {}
+
+func (*event_ChannelJoined) isEvent_Body() {}
+
+func (*event_ChannelLeft) isEvent_Body() {}
+
+func (*event_ChannelList) isEvent_Body() {}
+
+func (*event_ChannelMembers) isEvent_Body() {}
+
+func (*event_ChannelFailed) isEvent_Body() {}
+
+func (*event_BlockList) isEvent_Body() {}
+
+func (*event_Sanction) isEvent_Body() {}
+
+func (*event_ReportResult) isEvent_Body() {}
 
 // JobName names the player's job, from its record's display_name. It
 // comes after login and after each job change, since the client data
@@ -5225,14 +5938,16 @@ func (b0 SkillRequirement_builder) Build() *SkillRequirement {
 }
 
 type ChatMessage struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Channel  ChatChannel            `protobuf:"varint,1,opt,name=channel,proto3,enum=wathena.v1.ChatChannel"`
-	xxx_hidden_From     uint32                 `protobuf:"varint,2,opt,name=from,proto3"`
-	xxx_hidden_FromName string                 `protobuf:"bytes,3,opt,name=from_name,json=fromName,proto3"`
-	xxx_hidden_Text     string                 `protobuf:"bytes,4,opt,name=text,proto3"`
-	xxx_hidden_Color    uint32                 `protobuf:"varint,5,opt,name=color,proto3"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Channel     ChatChannel            `protobuf:"varint,1,opt,name=channel,proto3,enum=wathena.v1.ChatChannel"`
+	xxx_hidden_From        uint32                 `protobuf:"varint,2,opt,name=from,proto3"`
+	xxx_hidden_FromName    string                 `protobuf:"bytes,3,opt,name=from_name,json=fromName,proto3"`
+	xxx_hidden_Text        string                 `protobuf:"bytes,4,opt,name=text,proto3"`
+	xxx_hidden_Color       uint32                 `protobuf:"varint,5,opt,name=color,proto3"`
+	xxx_hidden_ChannelName string                 `protobuf:"bytes,6,opt,name=channel_name,json=channelName,proto3"`
+	xxx_hidden_LineId      []byte                 `protobuf:"bytes,7,opt,name=line_id,json=lineId,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ChatMessage) Reset() {
@@ -5295,6 +6010,20 @@ func (x *ChatMessage) GetColor() uint32 {
 	return 0
 }
 
+func (x *ChatMessage) GetChannelName() string {
+	if x != nil {
+		return x.xxx_hidden_ChannelName
+	}
+	return ""
+}
+
+func (x *ChatMessage) GetLineId() []byte {
+	if x != nil {
+		return x.xxx_hidden_LineId
+	}
+	return nil
+}
+
 func (x *ChatMessage) SetChannel(v ChatChannel) {
 	x.xxx_hidden_Channel = v
 }
@@ -5315,6 +6044,17 @@ func (x *ChatMessage) SetColor(v uint32) {
 	x.xxx_hidden_Color = v
 }
 
+func (x *ChatMessage) SetChannelName(v string) {
+	x.xxx_hidden_ChannelName = v
+}
+
+func (x *ChatMessage) SetLineId(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_LineId = v
+}
+
 type ChatMessage_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -5326,8 +6066,14 @@ type ChatMessage_builder struct {
 	Text     string
 	// color is the text's color as 0xRRGGBB for an announcement or a
 	// monster's chat line, or 0 for the channel's own color. A monster's
-	// line is local chat in its skills entry's chat_color.
+	// line is local chat in its skills entry's chat_color. A channel's
+	// line has the channel's color.
 	Color uint32
+	// channel_name names the channel of CHAT_CHANNEL_NAMED, such as #trade.
+	ChannelName string
+	// line_id identifies a line a player said, for Report. It is empty
+	// for lines no player said, such as NPC lines and announcements.
+	LineId []byte
 }
 
 func (b0 ChatMessage_builder) Build() *ChatMessage {
@@ -5339,6 +6085,940 @@ func (b0 ChatMessage_builder) Build() *ChatMessage {
 	x.xxx_hidden_FromName = b.FromName
 	x.xxx_hidden_Text = b.Text
 	x.xxx_hidden_Color = b.Color
+	x.xxx_hidden_ChannelName = b.ChannelName
+	x.xxx_hidden_LineId = b.LineId
+	return m0
+}
+
+// WhisperResult answers the player's whisper, as clif_wis_end.
+type WhisperResult struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_To      string                 `protobuf:"bytes,1,opt,name=to,proto3"`
+	xxx_hidden_Outcome WhisperOutcome         `protobuf:"varint,2,opt,name=outcome,proto3,enum=wathena.v1.WhisperOutcome"`
+	xxx_hidden_Text    string                 `protobuf:"bytes,3,opt,name=text,proto3"`
+	xxx_hidden_LineId  []byte                 `protobuf:"bytes,4,opt,name=line_id,json=lineId,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *WhisperResult) Reset() {
+	*x = WhisperResult{}
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WhisperResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WhisperResult) ProtoMessage() {}
+
+func (x *WhisperResult) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *WhisperResult) GetTo() string {
+	if x != nil {
+		return x.xxx_hidden_To
+	}
+	return ""
+}
+
+func (x *WhisperResult) GetOutcome() WhisperOutcome {
+	if x != nil {
+		return x.xxx_hidden_Outcome
+	}
+	return WhisperOutcome_WHISPER_OUTCOME_UNSPECIFIED
+}
+
+func (x *WhisperResult) GetText() string {
+	if x != nil {
+		return x.xxx_hidden_Text
+	}
+	return ""
+}
+
+func (x *WhisperResult) GetLineId() []byte {
+	if x != nil {
+		return x.xxx_hidden_LineId
+	}
+	return nil
+}
+
+func (x *WhisperResult) SetTo(v string) {
+	x.xxx_hidden_To = v
+}
+
+func (x *WhisperResult) SetOutcome(v WhisperOutcome) {
+	x.xxx_hidden_Outcome = v
+}
+
+func (x *WhisperResult) SetText(v string) {
+	x.xxx_hidden_Text = v
+}
+
+func (x *WhisperResult) SetLineId(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_LineId = v
+}
+
+type WhisperResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// to is the name the whisper went to, as the target spells it when it
+	// was sent.
+	To      string
+	Outcome WhisperOutcome
+	// text and line_id are the line as sent, after the chat filter, when
+	// outcome is SENT.
+	Text   string
+	LineId []byte
+}
+
+func (b0 WhisperResult_builder) Build() *WhisperResult {
+	m0 := &WhisperResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_To = b.To
+	x.xxx_hidden_Outcome = b.Outcome
+	x.xxx_hidden_Text = b.Text
+	x.xxx_hidden_LineId = b.LineId
+	return m0
+}
+
+// ChatRefused tells the player that a line it said was not sent.
+type ChatRefused struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Channel ChatChannel            `protobuf:"varint,1,opt,name=channel,proto3,enum=wathena.v1.ChatChannel"`
+	xxx_hidden_To      string                 `protobuf:"bytes,2,opt,name=to,proto3"`
+	xxx_hidden_Reason  ChatRefusal            `protobuf:"varint,3,opt,name=reason,proto3,enum=wathena.v1.ChatRefusal"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ChatRefused) Reset() {
+	*x = ChatRefused{}
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChatRefused) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChatRefused) ProtoMessage() {}
+
+func (x *ChatRefused) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChatRefused) GetChannel() ChatChannel {
+	if x != nil {
+		return x.xxx_hidden_Channel
+	}
+	return ChatChannel_CHAT_CHANNEL_UNSPECIFIED
+}
+
+func (x *ChatRefused) GetTo() string {
+	if x != nil {
+		return x.xxx_hidden_To
+	}
+	return ""
+}
+
+func (x *ChatRefused) GetReason() ChatRefusal {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ChatRefusal_CHAT_REFUSAL_UNSPECIFIED
+}
+
+func (x *ChatRefused) SetChannel(v ChatChannel) {
+	x.xxx_hidden_Channel = v
+}
+
+func (x *ChatRefused) SetTo(v string) {
+	x.xxx_hidden_To = v
+}
+
+func (x *ChatRefused) SetReason(v ChatRefusal) {
+	x.xxx_hidden_Reason = v
+}
+
+type ChatRefused_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Channel ChatChannel
+	// to is the whisper's target or the channel's name, when there is one.
+	To     string
+	Reason ChatRefusal
+}
+
+func (b0 ChatRefused_builder) Build() *ChatRefused {
+	m0 := &ChatRefused{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Channel = b.Channel
+	x.xxx_hidden_To = b.To
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// ChannelJoined tells the player it is in a channel: after ChannelCommand
+// JOIN, at login for channels that players join by themselves, or when a
+// mod adds the player.
+type ChannelJoined struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_DisplayName string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3"`
+	xxx_hidden_Color       uint32                 `protobuf:"varint,3,opt,name=color,proto3"`
+	xxx_hidden_CanLeave    bool                   `protobuf:"varint,4,opt,name=can_leave,json=canLeave,proto3"`
+	xxx_hidden_CanChat     bool                   `protobuf:"varint,5,opt,name=can_chat,json=canChat,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *ChannelJoined) Reset() {
+	*x = ChannelJoined{}
+	mi := &file_wathena_v1_event_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelJoined) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelJoined) ProtoMessage() {}
+
+func (x *ChannelJoined) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChannelJoined) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ChannelJoined) GetDisplayName() string {
+	if x != nil {
+		return x.xxx_hidden_DisplayName
+	}
+	return ""
+}
+
+func (x *ChannelJoined) GetColor() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Color
+	}
+	return 0
+}
+
+func (x *ChannelJoined) GetCanLeave() bool {
+	if x != nil {
+		return x.xxx_hidden_CanLeave
+	}
+	return false
+}
+
+func (x *ChannelJoined) GetCanChat() bool {
+	if x != nil {
+		return x.xxx_hidden_CanChat
+	}
+	return false
+}
+
+func (x *ChannelJoined) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *ChannelJoined) SetDisplayName(v string) {
+	x.xxx_hidden_DisplayName = v
+}
+
+func (x *ChannelJoined) SetColor(v uint32) {
+	x.xxx_hidden_Color = v
+}
+
+func (x *ChannelJoined) SetCanLeave(v bool) {
+	x.xxx_hidden_CanLeave = v
+}
+
+func (x *ChannelJoined) SetCanChat(v bool) {
+	x.xxx_hidden_CanChat = v
+}
+
+type ChannelJoined_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the channel's name with its #, such as #trade.
+	Name string
+	// display_name is what the client shows before each line, such as
+	// [Trade], as rAthena's alias.
+	DisplayName string
+	// color is the lines' color as 0xRRGGBB.
+	Color uint32
+	// can_leave is false for a channel the player may not leave.
+	CanLeave bool
+	// can_chat is false for a channel whose members only read.
+	CanChat bool
+}
+
+func (b0 ChannelJoined_builder) Build() *ChannelJoined {
+	m0 := &ChannelJoined{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_DisplayName = b.DisplayName
+	x.xxx_hidden_Color = b.Color
+	x.xxx_hidden_CanLeave = b.CanLeave
+	x.xxx_hidden_CanChat = b.CanChat
+	return m0
+}
+
+// ChannelLeft tells the player it is no longer in a channel.
+type ChannelLeft struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ChannelLeft) Reset() {
+	*x = ChannelLeft{}
+	mi := &file_wathena_v1_event_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelLeft) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelLeft) ProtoMessage() {}
+
+func (x *ChannelLeft) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChannelLeft) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ChannelLeft) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+type ChannelLeft_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name string
+}
+
+func (b0 ChannelLeft_builder) Build() *ChannelLeft {
+	m0 := &ChannelLeft{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
+// ChannelList answers ChannelCommand LIST: the channels the player may
+// join, and those it is in.
+type ChannelList struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Channels *[]*ChannelInfo        `protobuf:"bytes,1,rep,name=channels,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ChannelList) Reset() {
+	*x = ChannelList{}
+	mi := &file_wathena_v1_event_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelList) ProtoMessage() {}
+
+func (x *ChannelList) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChannelList) GetChannels() []*ChannelInfo {
+	if x != nil {
+		if x.xxx_hidden_Channels != nil {
+			return *x.xxx_hidden_Channels
+		}
+	}
+	return nil
+}
+
+func (x *ChannelList) SetChannels(v []*ChannelInfo) {
+	x.xxx_hidden_Channels = &v
+}
+
+type ChannelList_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Channels []*ChannelInfo
+}
+
+func (b0 ChannelList_builder) Build() *ChannelList {
+	m0 := &ChannelList{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Channels = &b.Channels
+	return m0
+}
+
+type ChannelInfo struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_DisplayName string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3"`
+	xxx_hidden_Color       uint32                 `protobuf:"varint,3,opt,name=color,proto3"`
+	xxx_hidden_Members     uint32                 `protobuf:"varint,4,opt,name=members,proto3"`
+	xxx_hidden_Joined      bool                   `protobuf:"varint,5,opt,name=joined,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *ChannelInfo) Reset() {
+	*x = ChannelInfo{}
+	mi := &file_wathena_v1_event_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelInfo) ProtoMessage() {}
+
+func (x *ChannelInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChannelInfo) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ChannelInfo) GetDisplayName() string {
+	if x != nil {
+		return x.xxx_hidden_DisplayName
+	}
+	return ""
+}
+
+func (x *ChannelInfo) GetColor() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Color
+	}
+	return 0
+}
+
+func (x *ChannelInfo) GetMembers() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Members
+	}
+	return 0
+}
+
+func (x *ChannelInfo) GetJoined() bool {
+	if x != nil {
+		return x.xxx_hidden_Joined
+	}
+	return false
+}
+
+func (x *ChannelInfo) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *ChannelInfo) SetDisplayName(v string) {
+	x.xxx_hidden_DisplayName = v
+}
+
+func (x *ChannelInfo) SetColor(v uint32) {
+	x.xxx_hidden_Color = v
+}
+
+func (x *ChannelInfo) SetMembers(v uint32) {
+	x.xxx_hidden_Members = v
+}
+
+func (x *ChannelInfo) SetJoined(v bool) {
+	x.xxx_hidden_Joined = v
+}
+
+type ChannelInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name        string
+	DisplayName string
+	Color       uint32
+	// members is how many players are in the channel.
+	Members uint32
+	Joined  bool
+}
+
+func (b0 ChannelInfo_builder) Build() *ChannelInfo {
+	m0 := &ChannelInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_DisplayName = b.DisplayName
+	x.xxx_hidden_Color = b.Color
+	x.xxx_hidden_Members = b.Members
+	x.xxx_hidden_Joined = b.Joined
+	return m0
+}
+
+// ChannelMembers answers ChannelCommand MEMBERS.
+type ChannelMembers struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name  string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Names []string               `protobuf:"bytes,2,rep,name=names,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ChannelMembers) Reset() {
+	*x = ChannelMembers{}
+	mi := &file_wathena_v1_event_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelMembers) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelMembers) ProtoMessage() {}
+
+func (x *ChannelMembers) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChannelMembers) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ChannelMembers) GetNames() []string {
+	if x != nil {
+		return x.xxx_hidden_Names
+	}
+	return nil
+}
+
+func (x *ChannelMembers) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *ChannelMembers) SetNames(v []string) {
+	x.xxx_hidden_Names = v
+}
+
+type ChannelMembers_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name string
+	// names are the members' character names, sorted.
+	Names []string
+}
+
+func (b0 ChannelMembers_builder) Build() *ChannelMembers {
+	m0 := &ChannelMembers{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Names = b.Names
+	return m0
+}
+
+// ChannelFailed tells the player why a ChannelCommand did nothing.
+type ChannelFailed struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Reason ChannelFailure         `protobuf:"varint,2,opt,name=reason,proto3,enum=wathena.v1.ChannelFailure"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ChannelFailed) Reset() {
+	*x = ChannelFailed{}
+	mi := &file_wathena_v1_event_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelFailed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelFailed) ProtoMessage() {}
+
+func (x *ChannelFailed) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChannelFailed) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ChannelFailed) GetReason() ChannelFailure {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ChannelFailure_CHANNEL_FAILURE_UNSPECIFIED
+}
+
+func (x *ChannelFailed) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *ChannelFailed) SetReason(v ChannelFailure) {
+	x.xxx_hidden_Reason = v
+}
+
+type ChannelFailed_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name   string
+	Reason ChannelFailure
+}
+
+func (b0 ChannelFailed_builder) Build() *ChannelFailed {
+	m0 := &ChannelFailed{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// BlockList is the player's block list: after login and after each Block.
+type BlockList struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Names []string               `protobuf:"bytes,1,rep,name=names,proto3"`
+	xxx_hidden_Full  bool                   `protobuf:"varint,2,opt,name=full,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *BlockList) Reset() {
+	*x = BlockList{}
+	mi := &file_wathena_v1_event_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BlockList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlockList) ProtoMessage() {}
+
+func (x *BlockList) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *BlockList) GetNames() []string {
+	if x != nil {
+		return x.xxx_hidden_Names
+	}
+	return nil
+}
+
+func (x *BlockList) GetFull() bool {
+	if x != nil {
+		return x.xxx_hidden_Full
+	}
+	return false
+}
+
+func (x *BlockList) SetNames(v []string) {
+	x.xxx_hidden_Names = v
+}
+
+func (x *BlockList) SetFull(v bool) {
+	x.xxx_hidden_Full = v
+}
+
+type BlockList_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// names are the blocked character names, in the order they were added.
+	Names []string
+	// full is set when a Block did nothing because the list holds the most
+	// names it may hold.
+	Full bool
+}
+
+func (b0 BlockList_builder) Build() *BlockList {
+	m0 := &BlockList{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Names = b.Names
+	x.xxx_hidden_Full = b.Full
+	return m0
+}
+
+// SanctionNotice tells the player about a mute or a jail: when it starts,
+// after login while it lasts, when a muted player tries to talk, and
+// when it ends.
+type SanctionNotice struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind     SanctionKind           `protobuf:"varint,1,opt,name=kind,proto3,enum=wathena.v1.SanctionKind"`
+	xxx_hidden_Reason   string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
+	xxx_hidden_EndsAtMs int64                  `protobuf:"varint,3,opt,name=ends_at_ms,json=endsAtMs,proto3"`
+	xxx_hidden_Ended    bool                   `protobuf:"varint,4,opt,name=ended,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *SanctionNotice) Reset() {
+	*x = SanctionNotice{}
+	mi := &file_wathena_v1_event_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SanctionNotice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SanctionNotice) ProtoMessage() {}
+
+func (x *SanctionNotice) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SanctionNotice) GetKind() SanctionKind {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return SanctionKind_SANCTION_KIND_UNSPECIFIED
+}
+
+func (x *SanctionNotice) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *SanctionNotice) GetEndsAtMs() int64 {
+	if x != nil {
+		return x.xxx_hidden_EndsAtMs
+	}
+	return 0
+}
+
+func (x *SanctionNotice) GetEnded() bool {
+	if x != nil {
+		return x.xxx_hidden_Ended
+	}
+	return false
+}
+
+func (x *SanctionNotice) SetKind(v SanctionKind) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *SanctionNotice) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+func (x *SanctionNotice) SetEndsAtMs(v int64) {
+	x.xxx_hidden_EndsAtMs = v
+}
+
+func (x *SanctionNotice) SetEnded(v bool) {
+	x.xxx_hidden_Ended = v
+}
+
+type SanctionNotice_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Kind SanctionKind
+	// reason is the staff's or the mod's reason.
+	Reason string
+	// ends_at_ms is when it ends, in Unix milliseconds.
+	EndsAtMs int64
+	// ended is set when the sanction ended.
+	Ended bool
+}
+
+func (b0 SanctionNotice_builder) Build() *SanctionNotice {
+	m0 := &SanctionNotice{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_Reason = b.Reason
+	x.xxx_hidden_EndsAtMs = b.EndsAtMs
+	x.xxx_hidden_Ended = b.Ended
+	return m0
+}
+
+// ReportResult answers Report.
+type ReportResult struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Outcome ReportOutcome          `protobuf:"varint,1,opt,name=outcome,proto3,enum=wathena.v1.ReportOutcome"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ReportResult) Reset() {
+	*x = ReportResult{}
+	mi := &file_wathena_v1_event_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportResult) ProtoMessage() {}
+
+func (x *ReportResult) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ReportResult) GetOutcome() ReportOutcome {
+	if x != nil {
+		return x.xxx_hidden_Outcome
+	}
+	return ReportOutcome_REPORT_OUTCOME_UNSPECIFIED
+}
+
+func (x *ReportResult) SetOutcome(v ReportOutcome) {
+	x.xxx_hidden_Outcome = v
+}
+
+type ReportResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Outcome ReportOutcome
+}
+
+func (b0 ReportResult_builder) Build() *ReportResult {
+	m0 := &ReportResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Outcome = b.Outcome
 	return m0
 }
 
@@ -5366,7 +7046,7 @@ type NpcDialog struct {
 
 func (x *NpcDialog) Reset() {
 	*x = NpcDialog{}
-	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	mi := &file_wathena_v1_event_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5378,7 +7058,7 @@ func (x *NpcDialog) String() string {
 func (*NpcDialog) ProtoMessage() {}
 
 func (x *NpcDialog) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[22]
+	mi := &file_wathena_v1_event_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5724,7 +7404,7 @@ func (b0 NpcDialog_builder) Build() *NpcDialog {
 type case_NpcDialog_Prompt protoreflect.FieldNumber
 
 func (x case_NpcDialog_Prompt) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[22].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[33].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -5788,7 +7468,7 @@ type NpcMenu struct {
 
 func (x *NpcMenu) Reset() {
 	*x = NpcMenu{}
-	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	mi := &file_wathena_v1_event_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5800,7 +7480,7 @@ func (x *NpcMenu) String() string {
 func (*NpcMenu) ProtoMessage() {}
 
 func (x *NpcMenu) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[23]
+	mi := &file_wathena_v1_event_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5849,7 +7529,7 @@ type NpcImage struct {
 
 func (x *NpcImage) Reset() {
 	*x = NpcImage{}
-	mi := &file_wathena_v1_event_proto_msgTypes[24]
+	mi := &file_wathena_v1_event_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5861,7 +7541,7 @@ func (x *NpcImage) String() string {
 func (*NpcImage) ProtoMessage() {}
 
 func (x *NpcImage) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[24]
+	mi := &file_wathena_v1_event_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5923,7 +7603,7 @@ type NpcProgress struct {
 
 func (x *NpcProgress) Reset() {
 	*x = NpcProgress{}
-	mi := &file_wathena_v1_event_proto_msgTypes[25]
+	mi := &file_wathena_v1_event_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5935,7 +7615,7 @@ func (x *NpcProgress) String() string {
 func (*NpcProgress) ProtoMessage() {}
 
 func (x *NpcProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[25]
+	mi := &file_wathena_v1_event_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5998,7 +7678,7 @@ type Emotion struct {
 
 func (x *Emotion) Reset() {
 	*x = Emotion{}
-	mi := &file_wathena_v1_event_proto_msgTypes[26]
+	mi := &file_wathena_v1_event_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6010,7 +7690,7 @@ func (x *Emotion) String() string {
 func (*Emotion) ProtoMessage() {}
 
 func (x *Emotion) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[26]
+	mi := &file_wathena_v1_event_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6075,7 +7755,7 @@ type MinimapMark struct {
 
 func (x *MinimapMark) Reset() {
 	*x = MinimapMark{}
-	mi := &file_wathena_v1_event_proto_msgTypes[27]
+	mi := &file_wathena_v1_event_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6087,7 +7767,7 @@ func (x *MinimapMark) String() string {
 func (*MinimapMark) ProtoMessage() {}
 
 func (x *MinimapMark) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[27]
+	mi := &file_wathena_v1_event_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6190,7 +7870,7 @@ type ShopOpen struct {
 
 func (x *ShopOpen) Reset() {
 	*x = ShopOpen{}
-	mi := &file_wathena_v1_event_proto_msgTypes[28]
+	mi := &file_wathena_v1_event_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6202,7 +7882,7 @@ func (x *ShopOpen) String() string {
 func (*ShopOpen) ProtoMessage() {}
 
 func (x *ShopOpen) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[28]
+	mi := &file_wathena_v1_event_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6279,7 +7959,7 @@ type ShopItem struct {
 
 func (x *ShopItem) Reset() {
 	*x = ShopItem{}
-	mi := &file_wathena_v1_event_proto_msgTypes[29]
+	mi := &file_wathena_v1_event_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6291,7 +7971,7 @@ func (x *ShopItem) String() string {
 func (*ShopItem) ProtoMessage() {}
 
 func (x *ShopItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[29]
+	mi := &file_wathena_v1_event_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6366,7 +8046,7 @@ type ShopSellable struct {
 
 func (x *ShopSellable) Reset() {
 	*x = ShopSellable{}
-	mi := &file_wathena_v1_event_proto_msgTypes[30]
+	mi := &file_wathena_v1_event_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6378,7 +8058,7 @@ func (x *ShopSellable) String() string {
 func (*ShopSellable) ProtoMessage() {}
 
 func (x *ShopSellable) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[30]
+	mi := &file_wathena_v1_event_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6438,7 +8118,7 @@ type ShopResult struct {
 
 func (x *ShopResult) Reset() {
 	*x = ShopResult{}
-	mi := &file_wathena_v1_event_proto_msgTypes[31]
+	mi := &file_wathena_v1_event_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6450,7 +8130,7 @@ func (x *ShopResult) String() string {
 func (*ShopResult) ProtoMessage() {}
 
 func (x *ShopResult) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[31]
+	mi := &file_wathena_v1_event_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6496,7 +8176,7 @@ type EffectPlay struct {
 
 func (x *EffectPlay) Reset() {
 	*x = EffectPlay{}
-	mi := &file_wathena_v1_event_proto_msgTypes[32]
+	mi := &file_wathena_v1_event_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6508,7 +8188,7 @@ func (x *EffectPlay) String() string {
 func (*EffectPlay) ProtoMessage() {}
 
 func (x *EffectPlay) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[32]
+	mi := &file_wathena_v1_event_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6644,7 +8324,7 @@ func (b0 EffectPlay_builder) Build() *EffectPlay {
 type case_EffectPlay_At protoreflect.FieldNumber
 
 func (x case_EffectPlay_At) String() string {
-	md := file_wathena_v1_event_proto_msgTypes[32].Descriptor()
+	md := file_wathena_v1_event_proto_msgTypes[43].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -6678,7 +8358,7 @@ type ItemTaken struct {
 
 func (x *ItemTaken) Reset() {
 	*x = ItemTaken{}
-	mi := &file_wathena_v1_event_proto_msgTypes[33]
+	mi := &file_wathena_v1_event_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6690,7 +8370,7 @@ func (x *ItemTaken) String() string {
 func (*ItemTaken) ProtoMessage() {}
 
 func (x *ItemTaken) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[33]
+	mi := &file_wathena_v1_event_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6751,7 +8431,7 @@ type InventoryUpdate struct {
 
 func (x *InventoryUpdate) Reset() {
 	*x = InventoryUpdate{}
-	mi := &file_wathena_v1_event_proto_msgTypes[34]
+	mi := &file_wathena_v1_event_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6763,7 +8443,7 @@ func (x *InventoryUpdate) String() string {
 func (*InventoryUpdate) ProtoMessage() {}
 
 func (x *InventoryUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[34]
+	mi := &file_wathena_v1_event_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6836,7 +8516,7 @@ type InventoryItem struct {
 
 func (x *InventoryItem) Reset() {
 	*x = InventoryItem{}
-	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	mi := &file_wathena_v1_event_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6848,7 +8528,7 @@ func (x *InventoryItem) String() string {
 func (*InventoryItem) ProtoMessage() {}
 
 func (x *InventoryItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[35]
+	mi := &file_wathena_v1_event_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7049,7 +8729,7 @@ type ItemRoll struct {
 
 func (x *ItemRoll) Reset() {
 	*x = ItemRoll{}
-	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	mi := &file_wathena_v1_event_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7061,7 +8741,7 @@ func (x *ItemRoll) String() string {
 func (*ItemRoll) ProtoMessage() {}
 
 func (x *ItemRoll) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[36]
+	mi := &file_wathena_v1_event_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7191,7 +8871,7 @@ type CardRolls struct {
 
 func (x *CardRolls) Reset() {
 	*x = CardRolls{}
-	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	mi := &file_wathena_v1_event_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7203,7 +8883,7 @@ func (x *CardRolls) String() string {
 func (*CardRolls) ProtoMessage() {}
 
 func (x *CardRolls) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[37]
+	mi := &file_wathena_v1_event_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7256,7 +8936,7 @@ type ItemOption struct {
 
 func (x *ItemOption) Reset() {
 	*x = ItemOption{}
-	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	mi := &file_wathena_v1_event_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7268,7 +8948,7 @@ func (x *ItemOption) String() string {
 func (*ItemOption) ProtoMessage() {}
 
 func (x *ItemOption) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[38]
+	mi := &file_wathena_v1_event_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7375,7 +9055,7 @@ type ItemRollsChange struct {
 
 func (x *ItemRollsChange) Reset() {
 	*x = ItemRollsChange{}
-	mi := &file_wathena_v1_event_proto_msgTypes[39]
+	mi := &file_wathena_v1_event_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7387,7 +9067,7 @@ func (x *ItemRollsChange) String() string {
 func (*ItemRollsChange) ProtoMessage() {}
 
 func (x *ItemRollsChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[39]
+	mi := &file_wathena_v1_event_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7488,7 +9168,7 @@ type InventoryAdd struct {
 
 func (x *InventoryAdd) Reset() {
 	*x = InventoryAdd{}
-	mi := &file_wathena_v1_event_proto_msgTypes[40]
+	mi := &file_wathena_v1_event_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7500,7 +9180,7 @@ func (x *InventoryAdd) String() string {
 func (*InventoryAdd) ProtoMessage() {}
 
 func (x *InventoryAdd) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[40]
+	mi := &file_wathena_v1_event_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7676,7 +9356,7 @@ type InventoryRemove struct {
 
 func (x *InventoryRemove) Reset() {
 	*x = InventoryRemove{}
-	mi := &file_wathena_v1_event_proto_msgTypes[41]
+	mi := &file_wathena_v1_event_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7688,7 +9368,7 @@ func (x *InventoryRemove) String() string {
 func (*InventoryRemove) ProtoMessage() {}
 
 func (x *InventoryRemove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[41]
+	mi := &file_wathena_v1_event_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7762,7 +9442,7 @@ type ItemUsed struct {
 
 func (x *ItemUsed) Reset() {
 	*x = ItemUsed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[42]
+	mi := &file_wathena_v1_event_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7774,7 +9454,7 @@ func (x *ItemUsed) String() string {
 func (*ItemUsed) ProtoMessage() {}
 
 func (x *ItemUsed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[42]
+	mi := &file_wathena_v1_event_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7834,7 +9514,7 @@ type UseItemFailed struct {
 
 func (x *UseItemFailed) Reset() {
 	*x = UseItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[43]
+	mi := &file_wathena_v1_event_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7846,7 +9526,7 @@ func (x *UseItemFailed) String() string {
 func (*UseItemFailed) ProtoMessage() {}
 
 func (x *UseItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[43]
+	mi := &file_wathena_v1_event_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7906,7 +9586,7 @@ type DropItemFailed struct {
 
 func (x *DropItemFailed) Reset() {
 	*x = DropItemFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[44]
+	mi := &file_wathena_v1_event_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7918,7 +9598,7 @@ func (x *DropItemFailed) String() string {
 func (*DropItemFailed) ProtoMessage() {}
 
 func (x *DropItemFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[44]
+	mi := &file_wathena_v1_event_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7978,7 +9658,7 @@ type PickUpFailed struct {
 
 func (x *PickUpFailed) Reset() {
 	*x = PickUpFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[45]
+	mi := &file_wathena_v1_event_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7990,7 +9670,7 @@ func (x *PickUpFailed) String() string {
 func (*PickUpFailed) ProtoMessage() {}
 
 func (x *PickUpFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[45]
+	mi := &file_wathena_v1_event_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8052,7 +9732,7 @@ type ItemEquipped struct {
 
 func (x *ItemEquipped) Reset() {
 	*x = ItemEquipped{}
-	mi := &file_wathena_v1_event_proto_msgTypes[46]
+	mi := &file_wathena_v1_event_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8064,7 +9744,7 @@ func (x *ItemEquipped) String() string {
 func (*ItemEquipped) ProtoMessage() {}
 
 func (x *ItemEquipped) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[46]
+	mi := &file_wathena_v1_event_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8125,7 +9805,7 @@ type ItemUnequipped struct {
 
 func (x *ItemUnequipped) Reset() {
 	*x = ItemUnequipped{}
-	mi := &file_wathena_v1_event_proto_msgTypes[47]
+	mi := &file_wathena_v1_event_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8137,7 +9817,7 @@ func (x *ItemUnequipped) String() string {
 func (*ItemUnequipped) ProtoMessage() {}
 
 func (x *ItemUnequipped) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[47]
+	mi := &file_wathena_v1_event_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8198,7 +9878,7 @@ type EquipFailed struct {
 
 func (x *EquipFailed) Reset() {
 	*x = EquipFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[48]
+	mi := &file_wathena_v1_event_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8210,7 +9890,7 @@ func (x *EquipFailed) String() string {
 func (*EquipFailed) ProtoMessage() {}
 
 func (x *EquipFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[48]
+	mi := &file_wathena_v1_event_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8272,7 +9952,7 @@ type CardInserted struct {
 
 func (x *CardInserted) Reset() {
 	*x = CardInserted{}
-	mi := &file_wathena_v1_event_proto_msgTypes[49]
+	mi := &file_wathena_v1_event_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8284,7 +9964,7 @@ func (x *CardInserted) String() string {
 func (*CardInserted) ProtoMessage() {}
 
 func (x *CardInserted) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[49]
+	mi := &file_wathena_v1_event_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8358,7 +10038,7 @@ type InsertCardFailed struct {
 
 func (x *InsertCardFailed) Reset() {
 	*x = InsertCardFailed{}
-	mi := &file_wathena_v1_event_proto_msgTypes[50]
+	mi := &file_wathena_v1_event_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8370,7 +10050,7 @@ func (x *InsertCardFailed) String() string {
 func (*InsertCardFailed) ProtoMessage() {}
 
 func (x *InsertCardFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[50]
+	mi := &file_wathena_v1_event_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8431,7 +10111,7 @@ type LookChange struct {
 
 func (x *LookChange) Reset() {
 	*x = LookChange{}
-	mi := &file_wathena_v1_event_proto_msgTypes[51]
+	mi := &file_wathena_v1_event_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8443,7 +10123,7 @@ func (x *LookChange) String() string {
 func (*LookChange) ProtoMessage() {}
 
 func (x *LookChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[51]
+	mi := &file_wathena_v1_event_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8517,7 +10197,7 @@ type StatusIcon struct {
 
 func (x *StatusIcon) Reset() {
 	*x = StatusIcon{}
-	mi := &file_wathena_v1_event_proto_msgTypes[52]
+	mi := &file_wathena_v1_event_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8529,7 +10209,7 @@ func (x *StatusIcon) String() string {
 func (*StatusIcon) ProtoMessage() {}
 
 func (x *StatusIcon) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[52]
+	mi := &file_wathena_v1_event_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8624,7 +10304,7 @@ type Options struct {
 
 func (x *Options) Reset() {
 	*x = Options{}
-	mi := &file_wathena_v1_event_proto_msgTypes[53]
+	mi := &file_wathena_v1_event_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8636,7 +10316,7 @@ func (x *Options) String() string {
 func (*Options) ProtoMessage() {}
 
 func (x *Options) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[53]
+	mi := &file_wathena_v1_event_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8730,7 +10410,7 @@ type OptionChange struct {
 
 func (x *OptionChange) Reset() {
 	*x = OptionChange{}
-	mi := &file_wathena_v1_event_proto_msgTypes[54]
+	mi := &file_wathena_v1_event_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8742,7 +10422,7 @@ func (x *OptionChange) String() string {
 func (*OptionChange) ProtoMessage() {}
 
 func (x *OptionChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_event_proto_msgTypes[54]
+	mi := &file_wathena_v1_event_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8807,7 +10487,7 @@ var File_wathena_v1_event_proto protoreflect.FileDescriptor
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xdc\x12\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xdc\x17\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -8857,7 +10537,18 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\fskill_failed\x18% \x01(\v2\x17.wathena.v1.SkillFailedH\x00R\vskillFailed\x12B\n" +
 	"\x0eskill_cooldown\x18& \x01(\v2\x19.wathena.v1.SkillCooldownH\x00R\rskillCooldown\x12I\n" +
 	"\x11item_rolls_change\x18' \x01(\v2\x1b.wathena.v1.ItemRollsChangeH\x00R\x0fitemRollsChange\x120\n" +
-	"\bjob_name\x18( \x01(\v2\x13.wathena.v1.JobNameH\x00R\ajobNameB\x06\n" +
+	"\bjob_name\x18( \x01(\v2\x13.wathena.v1.JobNameH\x00R\ajobName\x12B\n" +
+	"\x0ewhisper_result\x18) \x01(\v2\x19.wathena.v1.WhisperResultH\x00R\rwhisperResult\x12<\n" +
+	"\fchat_refused\x18* \x01(\v2\x17.wathena.v1.ChatRefusedH\x00R\vchatRefused\x12B\n" +
+	"\x0echannel_joined\x18+ \x01(\v2\x19.wathena.v1.ChannelJoinedH\x00R\rchannelJoined\x12<\n" +
+	"\fchannel_left\x18, \x01(\v2\x17.wathena.v1.ChannelLeftH\x00R\vchannelLeft\x12<\n" +
+	"\fchannel_list\x18- \x01(\v2\x17.wathena.v1.ChannelListH\x00R\vchannelList\x12E\n" +
+	"\x0fchannel_members\x18. \x01(\v2\x1a.wathena.v1.ChannelMembersH\x00R\x0echannelMembers\x12B\n" +
+	"\x0echannel_failed\x18/ \x01(\v2\x19.wathena.v1.ChannelFailedH\x00R\rchannelFailed\x126\n" +
+	"\n" +
+	"block_list\x180 \x01(\v2\x15.wathena.v1.BlockListH\x00R\tblockList\x128\n" +
+	"\bsanction\x181 \x01(\v2\x1a.wathena.v1.SanctionNoticeH\x00R\bsanction\x12?\n" +
+	"\rreport_result\x182 \x01(\v2\x18.wathena.v1.ReportResultH\x00R\freportResultB\x06\n" +
 	"\x04body\"/\n" +
 	"\aJobName\x12\x10\n" +
 	"\x03job\x18\x01 \x01(\rR\x03job\x12\x12\n" +
@@ -8986,13 +10677,57 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\brequires\x18\v \x03(\v2\x1c.wathena.v1.SkillRequirementR\brequires\"C\n" +
 	"\x10SkillRequirement\x12\x19\n" +
 	"\bskill_id\x18\x01 \x01(\rR\askillId\x12\x14\n" +
-	"\x05level\x18\x02 \x01(\rR\x05level\"\x9b\x01\n" +
+	"\x05level\x18\x02 \x01(\rR\x05level\"\xd7\x01\n" +
 	"\vChatMessage\x121\n" +
 	"\achannel\x18\x01 \x01(\x0e2\x17.wathena.v1.ChatChannelR\achannel\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\rR\x04from\x12\x1b\n" +
 	"\tfrom_name\x18\x03 \x01(\tR\bfromName\x12\x12\n" +
 	"\x04text\x18\x04 \x01(\tR\x04text\x12\x14\n" +
-	"\x05color\x18\x05 \x01(\rR\x05color\"\xe1\x02\n" +
+	"\x05color\x18\x05 \x01(\rR\x05color\x12!\n" +
+	"\fchannel_name\x18\x06 \x01(\tR\vchannelName\x12\x17\n" +
+	"\aline_id\x18\a \x01(\fR\x06lineId\"\x82\x01\n" +
+	"\rWhisperResult\x12\x0e\n" +
+	"\x02to\x18\x01 \x01(\tR\x02to\x124\n" +
+	"\aoutcome\x18\x02 \x01(\x0e2\x1a.wathena.v1.WhisperOutcomeR\aoutcome\x12\x12\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\x12\x17\n" +
+	"\aline_id\x18\x04 \x01(\fR\x06lineId\"\x81\x01\n" +
+	"\vChatRefused\x121\n" +
+	"\achannel\x18\x01 \x01(\x0e2\x17.wathena.v1.ChatChannelR\achannel\x12\x0e\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\x12/\n" +
+	"\x06reason\x18\x03 \x01(\x0e2\x17.wathena.v1.ChatRefusalR\x06reason\"\x94\x01\n" +
+	"\rChannelJoined\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x14\n" +
+	"\x05color\x18\x03 \x01(\rR\x05color\x12\x1b\n" +
+	"\tcan_leave\x18\x04 \x01(\bR\bcanLeave\x12\x19\n" +
+	"\bcan_chat\x18\x05 \x01(\bR\acanChat\"!\n" +
+	"\vChannelLeft\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"B\n" +
+	"\vChannelList\x123\n" +
+	"\bchannels\x18\x01 \x03(\v2\x17.wathena.v1.ChannelInfoR\bchannels\"\x8c\x01\n" +
+	"\vChannelInfo\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x14\n" +
+	"\x05color\x18\x03 \x01(\rR\x05color\x12\x18\n" +
+	"\amembers\x18\x04 \x01(\rR\amembers\x12\x16\n" +
+	"\x06joined\x18\x05 \x01(\bR\x06joined\":\n" +
+	"\x0eChannelMembers\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05names\x18\x02 \x03(\tR\x05names\"W\n" +
+	"\rChannelFailed\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x122\n" +
+	"\x06reason\x18\x02 \x01(\x0e2\x1a.wathena.v1.ChannelFailureR\x06reason\"5\n" +
+	"\tBlockList\x12\x14\n" +
+	"\x05names\x18\x01 \x03(\tR\x05names\x12\x12\n" +
+	"\x04full\x18\x02 \x01(\bR\x04full\"\x8a\x01\n" +
+	"\x0eSanctionNotice\x12,\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x18.wathena.v1.SanctionKindR\x04kind\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x1c\n" +
+	"\n" +
+	"ends_at_ms\x18\x03 \x01(\x03R\bendsAtMs\x12\x14\n" +
+	"\x05ended\x18\x04 \x01(\bR\x05ended\"C\n" +
+	"\fReportResult\x123\n" +
+	"\aoutcome\x18\x01 \x01(\x0e2\x19.wathena.v1.ReportOutcomeR\aoutcome\"\xe1\x02\n" +
 	"\tNpcDialog\x12\x10\n" +
 	"\x03npc\x18\x01 \x01(\rR\x03npc\x12\x16\n" +
 	"\x06dialog\x18\x02 \x01(\rR\x06dialog\x12\x14\n" +
@@ -9252,7 +10987,37 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x13SKILL_TARGET_GROUND\x10\x03\x12\x15\n" +
 	"\x11SKILL_TARGET_SELF\x10\x04\x12\x18\n" +
 	"\x14SKILL_TARGET_SUPPORT\x10\x05\x12\x15\n" +
-	"\x11SKILL_TARGET_TRAP\x10\x06*}\n" +
+	"\x11SKILL_TARGET_TRAP\x10\x06*\x88\x01\n" +
+	"\x0eWhisperOutcome\x12\x1f\n" +
+	"\x1bWHISPER_OUTCOME_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14WHISPER_OUTCOME_SENT\x10\x01\x12\x1e\n" +
+	"\x1aWHISPER_OUTCOME_NOT_ONLINE\x10\x02\x12\x1b\n" +
+	"\x17WHISPER_OUTCOME_BLOCKED\x10\x03*\xb8\x01\n" +
+	"\vChatRefusal\x12\x1c\n" +
+	"\x18CHAT_REFUSAL_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12CHAT_REFUSAL_MUTED\x10\x01\x12\x19\n" +
+	"\x15CHAT_REFUSAL_FILTERED\x10\x02\x12\x1f\n" +
+	"\x1bCHAT_REFUSAL_NOT_IN_CHANNEL\x10\x03\x12\x1c\n" +
+	"\x18CHAT_REFUSAL_CANNOT_CHAT\x10\x04\x12\x19\n" +
+	"\x15CHAT_REFUSAL_TOO_FAST\x10\x05*\xf3\x01\n" +
+	"\x0eChannelFailure\x12\x1f\n" +
+	"\x1bCHANNEL_FAILURE_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17CHANNEL_FAILURE_UNKNOWN\x10\x01\x12\"\n" +
+	"\x1eCHANNEL_FAILURE_ALREADY_JOINED\x10\x02\x12\x1f\n" +
+	"\x1bCHANNEL_FAILURE_INVITE_ONLY\x10\x03\x12\x1e\n" +
+	"\x1aCHANNEL_FAILURE_NOT_JOINED\x10\x04\x12 \n" +
+	"\x1cCHANNEL_FAILURE_CANNOT_LEAVE\x10\x05\x12\x1c\n" +
+	"\x18CHANNEL_FAILURE_TOO_MANY\x10\x06*]\n" +
+	"\fSanctionKind\x12\x1d\n" +
+	"\x19SANCTION_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12SANCTION_KIND_MUTE\x10\x01\x12\x16\n" +
+	"\x12SANCTION_KIND_JAIL\x10\x02*\xa5\x01\n" +
+	"\rReportOutcome\x12\x1e\n" +
+	"\x1aREPORT_OUTCOME_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13REPORT_OUTCOME_SENT\x10\x01\x12!\n" +
+	"\x1dREPORT_OUTCOME_LINE_NOT_FOUND\x10\x02\x12\x1b\n" +
+	"\x17REPORT_OUTCOME_TOO_MANY\x10\x03\x12\x1b\n" +
+	"\x17REPORT_OUTCOME_BAD_NAME\x10\x04*}\n" +
 	"\rImagePosition\x12\x1e\n" +
 	"\x1aIMAGE_POSITION_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13IMAGE_POSITION_LEFT\x10\x01\x12\x19\n" +
@@ -9302,8 +11067,8 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x13EQUIP_FAILURE_LEVEL\x10\x03\x12\"\n" +
 	"\x1eEQUIP_FAILURE_WRONG_AMMUNITION\x10\x04B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
-var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 13)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 55)
+var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 18)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 66)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),            // 0: wathena.v1.EntityKind
 	(VanishReason)(0),          // 1: wathena.v1.VanishReason
@@ -9311,157 +11076,190 @@ var file_wathena_v1_event_proto_goTypes = []any{
 	(DamageKind)(0),            // 3: wathena.v1.DamageKind
 	(SkillFailure)(0),          // 4: wathena.v1.SkillFailure
 	(SkillTarget)(0),           // 5: wathena.v1.SkillTarget
-	(ImagePosition)(0),         // 6: wathena.v1.ImagePosition
-	(ShopOutcome)(0),           // 7: wathena.v1.ShopOutcome
-	(InventoryRemoveReason)(0), // 8: wathena.v1.InventoryRemoveReason
-	(UseItemFailure)(0),        // 9: wathena.v1.UseItemFailure
-	(DropItemFailure)(0),       // 10: wathena.v1.DropItemFailure
-	(PickUpFailure)(0),         // 11: wathena.v1.PickUpFailure
-	(EquipFailure)(0),          // 12: wathena.v1.EquipFailure
-	(*Event)(nil),              // 13: wathena.v1.Event
-	(*JobName)(nil),            // 14: wathena.v1.JobName
-	(*MapChange)(nil),          // 15: wathena.v1.MapChange
-	(*EntityAppear)(nil),       // 16: wathena.v1.EntityAppear
-	(*SkillUnit)(nil),          // 17: wathena.v1.SkillUnit
-	(*GroundItem)(nil),         // 18: wathena.v1.GroundItem
-	(*Look)(nil),               // 19: wathena.v1.Look
-	(*EntityVanish)(nil),       // 20: wathena.v1.EntityVanish
-	(*EntityMove)(nil),         // 21: wathena.v1.EntityMove
-	(*EntityStop)(nil),         // 22: wathena.v1.EntityStop
-	(*StatUpdate)(nil),         // 23: wathena.v1.StatUpdate
-	(*Stat)(nil),               // 24: wathena.v1.Stat
-	(*Damage)(nil),             // 25: wathena.v1.Damage
-	(*SkillCast)(nil),          // 26: wathena.v1.SkillCast
-	(*SkillCastCancel)(nil),    // 27: wathena.v1.SkillCastCancel
-	(*SkillEffect)(nil),        // 28: wathena.v1.SkillEffect
-	(*SkillFailed)(nil),        // 29: wathena.v1.SkillFailed
-	(*SkillCooldown)(nil),      // 30: wathena.v1.SkillCooldown
-	(*SkillList)(nil),          // 31: wathena.v1.SkillList
-	(*SkillInfo)(nil),          // 32: wathena.v1.SkillInfo
-	(*SkillRequirement)(nil),   // 33: wathena.v1.SkillRequirement
-	(*ChatMessage)(nil),        // 34: wathena.v1.ChatMessage
-	(*NpcDialog)(nil),          // 35: wathena.v1.NpcDialog
-	(*NpcMenu)(nil),            // 36: wathena.v1.NpcMenu
-	(*NpcImage)(nil),           // 37: wathena.v1.NpcImage
-	(*NpcProgress)(nil),        // 38: wathena.v1.NpcProgress
-	(*Emotion)(nil),            // 39: wathena.v1.Emotion
-	(*MinimapMark)(nil),        // 40: wathena.v1.MinimapMark
-	(*ShopOpen)(nil),           // 41: wathena.v1.ShopOpen
-	(*ShopItem)(nil),           // 42: wathena.v1.ShopItem
-	(*ShopSellable)(nil),       // 43: wathena.v1.ShopSellable
-	(*ShopResult)(nil),         // 44: wathena.v1.ShopResult
-	(*EffectPlay)(nil),         // 45: wathena.v1.EffectPlay
-	(*ItemTaken)(nil),          // 46: wathena.v1.ItemTaken
-	(*InventoryUpdate)(nil),    // 47: wathena.v1.InventoryUpdate
-	(*InventoryItem)(nil),      // 48: wathena.v1.InventoryItem
-	(*ItemRoll)(nil),           // 49: wathena.v1.ItemRoll
-	(*CardRolls)(nil),          // 50: wathena.v1.CardRolls
-	(*ItemOption)(nil),         // 51: wathena.v1.ItemOption
-	(*ItemRollsChange)(nil),    // 52: wathena.v1.ItemRollsChange
-	(*InventoryAdd)(nil),       // 53: wathena.v1.InventoryAdd
-	(*InventoryRemove)(nil),    // 54: wathena.v1.InventoryRemove
-	(*ItemUsed)(nil),           // 55: wathena.v1.ItemUsed
-	(*UseItemFailed)(nil),      // 56: wathena.v1.UseItemFailed
-	(*DropItemFailed)(nil),     // 57: wathena.v1.DropItemFailed
-	(*PickUpFailed)(nil),       // 58: wathena.v1.PickUpFailed
-	(*ItemEquipped)(nil),       // 59: wathena.v1.ItemEquipped
-	(*ItemUnequipped)(nil),     // 60: wathena.v1.ItemUnequipped
-	(*EquipFailed)(nil),        // 61: wathena.v1.EquipFailed
-	(*CardInserted)(nil),       // 62: wathena.v1.CardInserted
-	(*InsertCardFailed)(nil),   // 63: wathena.v1.InsertCardFailed
-	(*LookChange)(nil),         // 64: wathena.v1.LookChange
-	(*StatusIcon)(nil),         // 65: wathena.v1.StatusIcon
-	(*Options)(nil),            // 66: wathena.v1.Options
-	(*OptionChange)(nil),       // 67: wathena.v1.OptionChange
-	(*Cell)(nil),               // 68: wathena.v1.Cell
-	(ChatChannel)(0),           // 69: wathena.v1.ChatChannel
+	(WhisperOutcome)(0),        // 6: wathena.v1.WhisperOutcome
+	(ChatRefusal)(0),           // 7: wathena.v1.ChatRefusal
+	(ChannelFailure)(0),        // 8: wathena.v1.ChannelFailure
+	(SanctionKind)(0),          // 9: wathena.v1.SanctionKind
+	(ReportOutcome)(0),         // 10: wathena.v1.ReportOutcome
+	(ImagePosition)(0),         // 11: wathena.v1.ImagePosition
+	(ShopOutcome)(0),           // 12: wathena.v1.ShopOutcome
+	(InventoryRemoveReason)(0), // 13: wathena.v1.InventoryRemoveReason
+	(UseItemFailure)(0),        // 14: wathena.v1.UseItemFailure
+	(DropItemFailure)(0),       // 15: wathena.v1.DropItemFailure
+	(PickUpFailure)(0),         // 16: wathena.v1.PickUpFailure
+	(EquipFailure)(0),          // 17: wathena.v1.EquipFailure
+	(*Event)(nil),              // 18: wathena.v1.Event
+	(*JobName)(nil),            // 19: wathena.v1.JobName
+	(*MapChange)(nil),          // 20: wathena.v1.MapChange
+	(*EntityAppear)(nil),       // 21: wathena.v1.EntityAppear
+	(*SkillUnit)(nil),          // 22: wathena.v1.SkillUnit
+	(*GroundItem)(nil),         // 23: wathena.v1.GroundItem
+	(*Look)(nil),               // 24: wathena.v1.Look
+	(*EntityVanish)(nil),       // 25: wathena.v1.EntityVanish
+	(*EntityMove)(nil),         // 26: wathena.v1.EntityMove
+	(*EntityStop)(nil),         // 27: wathena.v1.EntityStop
+	(*StatUpdate)(nil),         // 28: wathena.v1.StatUpdate
+	(*Stat)(nil),               // 29: wathena.v1.Stat
+	(*Damage)(nil),             // 30: wathena.v1.Damage
+	(*SkillCast)(nil),          // 31: wathena.v1.SkillCast
+	(*SkillCastCancel)(nil),    // 32: wathena.v1.SkillCastCancel
+	(*SkillEffect)(nil),        // 33: wathena.v1.SkillEffect
+	(*SkillFailed)(nil),        // 34: wathena.v1.SkillFailed
+	(*SkillCooldown)(nil),      // 35: wathena.v1.SkillCooldown
+	(*SkillList)(nil),          // 36: wathena.v1.SkillList
+	(*SkillInfo)(nil),          // 37: wathena.v1.SkillInfo
+	(*SkillRequirement)(nil),   // 38: wathena.v1.SkillRequirement
+	(*ChatMessage)(nil),        // 39: wathena.v1.ChatMessage
+	(*WhisperResult)(nil),      // 40: wathena.v1.WhisperResult
+	(*ChatRefused)(nil),        // 41: wathena.v1.ChatRefused
+	(*ChannelJoined)(nil),      // 42: wathena.v1.ChannelJoined
+	(*ChannelLeft)(nil),        // 43: wathena.v1.ChannelLeft
+	(*ChannelList)(nil),        // 44: wathena.v1.ChannelList
+	(*ChannelInfo)(nil),        // 45: wathena.v1.ChannelInfo
+	(*ChannelMembers)(nil),     // 46: wathena.v1.ChannelMembers
+	(*ChannelFailed)(nil),      // 47: wathena.v1.ChannelFailed
+	(*BlockList)(nil),          // 48: wathena.v1.BlockList
+	(*SanctionNotice)(nil),     // 49: wathena.v1.SanctionNotice
+	(*ReportResult)(nil),       // 50: wathena.v1.ReportResult
+	(*NpcDialog)(nil),          // 51: wathena.v1.NpcDialog
+	(*NpcMenu)(nil),            // 52: wathena.v1.NpcMenu
+	(*NpcImage)(nil),           // 53: wathena.v1.NpcImage
+	(*NpcProgress)(nil),        // 54: wathena.v1.NpcProgress
+	(*Emotion)(nil),            // 55: wathena.v1.Emotion
+	(*MinimapMark)(nil),        // 56: wathena.v1.MinimapMark
+	(*ShopOpen)(nil),           // 57: wathena.v1.ShopOpen
+	(*ShopItem)(nil),           // 58: wathena.v1.ShopItem
+	(*ShopSellable)(nil),       // 59: wathena.v1.ShopSellable
+	(*ShopResult)(nil),         // 60: wathena.v1.ShopResult
+	(*EffectPlay)(nil),         // 61: wathena.v1.EffectPlay
+	(*ItemTaken)(nil),          // 62: wathena.v1.ItemTaken
+	(*InventoryUpdate)(nil),    // 63: wathena.v1.InventoryUpdate
+	(*InventoryItem)(nil),      // 64: wathena.v1.InventoryItem
+	(*ItemRoll)(nil),           // 65: wathena.v1.ItemRoll
+	(*CardRolls)(nil),          // 66: wathena.v1.CardRolls
+	(*ItemOption)(nil),         // 67: wathena.v1.ItemOption
+	(*ItemRollsChange)(nil),    // 68: wathena.v1.ItemRollsChange
+	(*InventoryAdd)(nil),       // 69: wathena.v1.InventoryAdd
+	(*InventoryRemove)(nil),    // 70: wathena.v1.InventoryRemove
+	(*ItemUsed)(nil),           // 71: wathena.v1.ItemUsed
+	(*UseItemFailed)(nil),      // 72: wathena.v1.UseItemFailed
+	(*DropItemFailed)(nil),     // 73: wathena.v1.DropItemFailed
+	(*PickUpFailed)(nil),       // 74: wathena.v1.PickUpFailed
+	(*ItemEquipped)(nil),       // 75: wathena.v1.ItemEquipped
+	(*ItemUnequipped)(nil),     // 76: wathena.v1.ItemUnequipped
+	(*EquipFailed)(nil),        // 77: wathena.v1.EquipFailed
+	(*CardInserted)(nil),       // 78: wathena.v1.CardInserted
+	(*InsertCardFailed)(nil),   // 79: wathena.v1.InsertCardFailed
+	(*LookChange)(nil),         // 80: wathena.v1.LookChange
+	(*StatusIcon)(nil),         // 81: wathena.v1.StatusIcon
+	(*Options)(nil),            // 82: wathena.v1.Options
+	(*OptionChange)(nil),       // 83: wathena.v1.OptionChange
+	(*Cell)(nil),               // 84: wathena.v1.Cell
+	(ChatChannel)(0),           // 85: wathena.v1.ChatChannel
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
-	16, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
-	20, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
-	21, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
-	22, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
-	23, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
-	25, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
-	26, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
-	34, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
-	35, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
-	45, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
-	46, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
-	53, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
-	58, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
-	47, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
-	54, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
-	55, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
-	56, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
-	57, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
-	15, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
-	37, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
-	38, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
-	39, // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
-	40, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
-	41, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
-	44, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
-	59, // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
-	60, // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
-	61, // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
-	62, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
-	63, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
-	64, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
-	65, // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
-	67, // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
-	31, // 33: wathena.v1.Event.skill_list:type_name -> wathena.v1.SkillList
-	27, // 34: wathena.v1.Event.skill_cast_cancel:type_name -> wathena.v1.SkillCastCancel
-	28, // 35: wathena.v1.Event.skill_effect:type_name -> wathena.v1.SkillEffect
-	29, // 36: wathena.v1.Event.skill_failed:type_name -> wathena.v1.SkillFailed
-	30, // 37: wathena.v1.Event.skill_cooldown:type_name -> wathena.v1.SkillCooldown
-	52, // 38: wathena.v1.Event.item_rolls_change:type_name -> wathena.v1.ItemRollsChange
-	14, // 39: wathena.v1.Event.job_name:type_name -> wathena.v1.JobName
-	0,  // 40: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	19, // 41: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	18, // 42: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	66, // 43: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
-	17, // 44: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
-	1,  // 45: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	24, // 46: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 47: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 48: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	68, // 49: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	68, // 50: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
-	4,  // 51: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
-	32, // 52: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
-	5,  // 53: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
-	33, // 54: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
-	69, // 55: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	36, // 56: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	6,  // 57: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
-	42, // 58: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
-	43, // 59: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
-	7,  // 60: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
-	68, // 61: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	48, // 62: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	49, // 63: wathena.v1.InventoryItem.rolls:type_name -> wathena.v1.ItemRoll
-	50, // 64: wathena.v1.InventoryItem.card_rolls:type_name -> wathena.v1.CardRolls
-	51, // 65: wathena.v1.InventoryItem.options:type_name -> wathena.v1.ItemOption
-	49, // 66: wathena.v1.CardRolls.rolls:type_name -> wathena.v1.ItemRoll
-	49, // 67: wathena.v1.ItemRollsChange.rolls:type_name -> wathena.v1.ItemRoll
-	50, // 68: wathena.v1.ItemRollsChange.card_rolls:type_name -> wathena.v1.CardRolls
-	51, // 69: wathena.v1.ItemRollsChange.options:type_name -> wathena.v1.ItemOption
-	49, // 70: wathena.v1.InventoryAdd.rolls:type_name -> wathena.v1.ItemRoll
-	50, // 71: wathena.v1.InventoryAdd.card_rolls:type_name -> wathena.v1.CardRolls
-	51, // 72: wathena.v1.InventoryAdd.options:type_name -> wathena.v1.ItemOption
-	8,  // 73: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	9,  // 74: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	10, // 75: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	11, // 76: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	12, // 77: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
-	19, // 78: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
-	66, // 79: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
-	80, // [80:80] is the sub-list for method output_type
-	80, // [80:80] is the sub-list for method input_type
-	80, // [80:80] is the sub-list for extension type_name
-	80, // [80:80] is the sub-list for extension extendee
-	0,  // [0:80] is the sub-list for field type_name
+	21, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
+	25, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
+	26, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
+	27, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
+	28, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
+	30, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
+	31, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
+	39, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
+	51, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
+	61, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
+	62, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
+	69, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
+	74, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
+	63, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
+	70, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
+	71, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
+	72, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
+	73, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
+	20, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
+	53, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
+	54, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
+	55, // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
+	56, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
+	57, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
+	60, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
+	75, // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
+	76, // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
+	77, // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
+	78, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
+	79, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
+	80, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
+	81, // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
+	83, // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
+	36, // 33: wathena.v1.Event.skill_list:type_name -> wathena.v1.SkillList
+	32, // 34: wathena.v1.Event.skill_cast_cancel:type_name -> wathena.v1.SkillCastCancel
+	33, // 35: wathena.v1.Event.skill_effect:type_name -> wathena.v1.SkillEffect
+	34, // 36: wathena.v1.Event.skill_failed:type_name -> wathena.v1.SkillFailed
+	35, // 37: wathena.v1.Event.skill_cooldown:type_name -> wathena.v1.SkillCooldown
+	68, // 38: wathena.v1.Event.item_rolls_change:type_name -> wathena.v1.ItemRollsChange
+	19, // 39: wathena.v1.Event.job_name:type_name -> wathena.v1.JobName
+	40, // 40: wathena.v1.Event.whisper_result:type_name -> wathena.v1.WhisperResult
+	41, // 41: wathena.v1.Event.chat_refused:type_name -> wathena.v1.ChatRefused
+	42, // 42: wathena.v1.Event.channel_joined:type_name -> wathena.v1.ChannelJoined
+	43, // 43: wathena.v1.Event.channel_left:type_name -> wathena.v1.ChannelLeft
+	44, // 44: wathena.v1.Event.channel_list:type_name -> wathena.v1.ChannelList
+	46, // 45: wathena.v1.Event.channel_members:type_name -> wathena.v1.ChannelMembers
+	47, // 46: wathena.v1.Event.channel_failed:type_name -> wathena.v1.ChannelFailed
+	48, // 47: wathena.v1.Event.block_list:type_name -> wathena.v1.BlockList
+	49, // 48: wathena.v1.Event.sanction:type_name -> wathena.v1.SanctionNotice
+	50, // 49: wathena.v1.Event.report_result:type_name -> wathena.v1.ReportResult
+	0,  // 50: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	24, // 51: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	23, // 52: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	82, // 53: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
+	22, // 54: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
+	1,  // 55: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	29, // 56: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,  // 57: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,  // 58: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	84, // 59: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	84, // 60: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
+	4,  // 61: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
+	37, // 62: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
+	5,  // 63: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
+	38, // 64: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
+	85, // 65: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	6,  // 66: wathena.v1.WhisperResult.outcome:type_name -> wathena.v1.WhisperOutcome
+	85, // 67: wathena.v1.ChatRefused.channel:type_name -> wathena.v1.ChatChannel
+	7,  // 68: wathena.v1.ChatRefused.reason:type_name -> wathena.v1.ChatRefusal
+	45, // 69: wathena.v1.ChannelList.channels:type_name -> wathena.v1.ChannelInfo
+	8,  // 70: wathena.v1.ChannelFailed.reason:type_name -> wathena.v1.ChannelFailure
+	9,  // 71: wathena.v1.SanctionNotice.kind:type_name -> wathena.v1.SanctionKind
+	10, // 72: wathena.v1.ReportResult.outcome:type_name -> wathena.v1.ReportOutcome
+	52, // 73: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	11, // 74: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
+	58, // 75: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
+	59, // 76: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
+	12, // 77: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
+	84, // 78: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	64, // 79: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	65, // 80: wathena.v1.InventoryItem.rolls:type_name -> wathena.v1.ItemRoll
+	66, // 81: wathena.v1.InventoryItem.card_rolls:type_name -> wathena.v1.CardRolls
+	67, // 82: wathena.v1.InventoryItem.options:type_name -> wathena.v1.ItemOption
+	65, // 83: wathena.v1.CardRolls.rolls:type_name -> wathena.v1.ItemRoll
+	65, // 84: wathena.v1.ItemRollsChange.rolls:type_name -> wathena.v1.ItemRoll
+	66, // 85: wathena.v1.ItemRollsChange.card_rolls:type_name -> wathena.v1.CardRolls
+	67, // 86: wathena.v1.ItemRollsChange.options:type_name -> wathena.v1.ItemOption
+	65, // 87: wathena.v1.InventoryAdd.rolls:type_name -> wathena.v1.ItemRoll
+	66, // 88: wathena.v1.InventoryAdd.card_rolls:type_name -> wathena.v1.CardRolls
+	67, // 89: wathena.v1.InventoryAdd.options:type_name -> wathena.v1.ItemOption
+	13, // 90: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	14, // 91: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	15, // 92: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	16, // 93: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	17, // 94: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
+	24, // 95: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
+	82, // 96: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
+	97, // [97:97] is the sub-list for method output_type
+	97, // [97:97] is the sub-list for method input_type
+	97, // [97:97] is the sub-list for extension type_name
+	97, // [97:97] is the sub-list for extension extendee
+	0,  // [0:97] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -9511,6 +11309,16 @@ func file_wathena_v1_event_proto_init() {
 		(*event_SkillCooldown)(nil),
 		(*event_ItemRollsChange)(nil),
 		(*event_JobName)(nil),
+		(*event_WhisperResult)(nil),
+		(*event_ChatRefused)(nil),
+		(*event_ChannelJoined)(nil),
+		(*event_ChannelLeft)(nil),
+		(*event_ChannelList)(nil),
+		(*event_ChannelMembers)(nil),
+		(*event_ChannelFailed)(nil),
+		(*event_BlockList)(nil),
+		(*event_Sanction)(nil),
+		(*event_ReportResult)(nil),
 	}
 	file_wathena_v1_event_proto_msgTypes[13].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
@@ -9520,7 +11328,7 @@ func file_wathena_v1_event_proto_init() {
 		(*skillEffect_Entity)(nil),
 		(*skillEffect_Cell)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[22].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[33].OneofWrappers = []any{
 		(*npcDialog_Next)(nil),
 		(*npcDialog_Menu)(nil),
 		(*npcDialog_InputText)(nil),
@@ -9528,7 +11336,7 @@ func file_wathena_v1_event_proto_init() {
 		(*npcDialog_Close)(nil),
 		(*npcDialog_End)(nil),
 	}
-	file_wathena_v1_event_proto_msgTypes[32].OneofWrappers = []any{
+	file_wathena_v1_event_proto_msgTypes[43].OneofWrappers = []any{
 		(*effectPlay_Entity)(nil),
 		(*effectPlay_Cell)(nil),
 	}
@@ -9537,8 +11345,8 @@ func file_wathena_v1_event_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
-			NumEnums:      13,
-			NumMessages:   55,
+			NumEnums:      18,
+			NumMessages:   66,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

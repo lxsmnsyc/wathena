@@ -29,3 +29,10 @@
   sprite: 4_F_KAFRA2
   display_name: Guide
   script: scripts/npc/guide.lua
+- name: Warden#e2e
+  map: placeholder/map
+  x: 12
+  y: 6
+  sprite: 4_M_JOB_KNIGHT1
+  display_name: Warden
+  script: scripts/npc/warden.lua

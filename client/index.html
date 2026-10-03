@@ -31,7 +31,12 @@
       <output id="message"></output>
     </form>
     <div id="dock">
+      <section id="block-panel" aria-label="Blocked players" hidden></section>
       <section id="chat" aria-label="Chat" hidden>
+        <div id="chat-bar">
+          <div id="chat-tabs" role="tablist" aria-label="Chat tabs"></div>
+          <button id="block-toggle" type="button" title="Blocked players">Blocked</button>
+        </div>
         <ol id="chat-log" aria-live="polite"></ol>
         <input
           id="chat-input"

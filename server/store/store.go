@@ -219,6 +219,9 @@ func (s *Store) Load(ctx context.Context, id int64) (*character.Character, *Sess
 		if err := loadStatuses(ctx, q, c); err != nil {
 			return err
 		}
+		if err := loadModeration(ctx, q, c); err != nil {
+			return err
+		}
 		return loadVariables(ctx, q, c)
 	})
 	if err != nil {
@@ -459,6 +462,9 @@ func writeCharacter(ctx context.Context, q *db.Queries, id, version int64, base,
 	if err := writeStatuses(ctx, q, id, base, c); err != nil {
 		return err
 	}
+	if err := writeModeration(ctx, q, id, base, c); err != nil {
+		return err
+	}
 	return writeVariables(ctx, q, c, base.Variables, c.Variables)
 }
 
@@ -671,7 +677,7 @@ func fromRow(r *db.Character, items []db.InventoryRow) (*character.Character, er
 		Stats:         status.Stats{Str: r.Str, Agi: r.Agi, Vit: r.Vit, Int: r.Int, Dex: r.Dex, Luk: r.Luk},
 		SaveMap:       r.SaveMap, SaveX: r.SaveX, SaveY: r.SaveY,
 		JobChangeLevel: r.JobChangeLevel, RebirthJob: r.RebirthJob, Options: r.Options,
-		Companion: r.Companion, Mount: r.Mount,
+		Companion: r.Companion, Mount: r.Mount, CreatedAt: r.CreatedAt.Time,
 	}}
 	for _, it := range items {
 		id, err := itemID(it.ItemID)

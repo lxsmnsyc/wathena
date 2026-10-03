@@ -141,6 +141,12 @@ type Character struct {
 	Mount          string
 }
 
+type CharacterBlock struct {
+	CharacterID int64
+	Position    int
+	Name        string
+}
+
 type CharacterSkill struct {
 	CharacterID int64
 	SkillID     int
@@ -167,6 +173,17 @@ type CharacterTimedBonuse struct {
 	EndsOn      []string
 	Icon        int
 	Kind        string
+}
+
+type ChatLog struct {
+	ID          pgtype.UUID
+	At          pgtype.Timestamptz
+	Kind        string
+	CharacterID int64
+	Name        string
+	Target      string
+	Map         string
+	Text        string
 }
 
 type GameTicket struct {
@@ -260,6 +277,39 @@ type ModServerVariable struct {
 	Name      string
 	Value     []byte
 	UpdatedAt pgtype.Timestamptz
+}
+
+type Report struct {
+	ID           int64
+	CreatedAt    pgtype.Timestamptz
+	ReporterID   int64
+	ReporterName string
+	TargetID     int64
+	TargetName   string
+	LineID       pgtype.UUID
+	Reason       string
+	Map          string
+	Status       string
+	ClosedAt     pgtype.Timestamptz
+}
+
+type ReportLine struct {
+	ReportID int64
+	LineID   pgtype.UUID
+}
+
+type Sanction struct {
+	ID          int64
+	CharacterID int64
+	Kind        string
+	Reason      string
+	StartedAt   pgtype.Timestamptz
+	EndsAt      pgtype.Timestamptz
+	LiftedAt    pgtype.Timestamptz
+	IssuedBy    string
+	ReturnMap   string
+	ReturnX     int
+	ReturnY     int
 }
 
 type World struct {

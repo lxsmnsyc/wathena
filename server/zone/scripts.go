@@ -12,6 +12,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -65,6 +66,10 @@ type Mods struct {
 	// Companions are the companions and mounts. Without them the zone
 	// uses core's (companion.Core).
 	Companions *companion.Set
+	// Chat is the chat channels and filter, for a zone that makes its own
+	// chat hub, such as a headless zone. Without it the zone uses core's
+	// (chat.Core).
+	Chat *chat.Data
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -134,6 +139,8 @@ type scriptEvent struct {
 	release []int64
 	// monster is set to run the setup of a monster's AI script.
 	monster *entity
+	// chat is set for the chat event, which runs with FireChat.
+	chat *modscript.ChatMessage
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -230,6 +237,8 @@ func (z *Zone) runScripts() {
 			z.scripts.FireDeath(*ev.death)
 		case ev.status != nil:
 			z.scripts.FireStatus(ev.name, *ev.status)
+		case ev.chat != nil:
+			z.scripts.FireChat(*ev.chat)
 		default:
 			z.scripts.Fire(ev.name, ev.args...)
 		}

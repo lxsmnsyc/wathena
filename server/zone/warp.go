@@ -3,6 +3,7 @@ package zone
 import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/chat"
 )
 
 // Warps and map changes, as rAthena's warp NPCs and pc_setpos:
@@ -103,7 +104,9 @@ func (z *Zone) warpNear(x, y, r int) bool {
 //   - The target map does not run in this world (SETPOS_NO_MAPSERVER).
 //   - The session is ending.
 func (z *Zone) target(p *Player, w *Warp) *Zone {
-	if p.entity.dead || p.gone() || p.sess == nil {
+	if p.entity.dead || p.gone() || p.sess == nil || z.jailed(p) {
+		// A jailed player cannot leave through a warp, as the jail map's
+		// flags in rAthena.
 		return nil
 	}
 	if p.rewarp > maxRewarp {
@@ -140,6 +143,11 @@ type handoff struct {
 	cooldowns map[int]int64
 	// spiritBalls are the spirit spheres' times left, oldest first.
 	spiritBalls []int64
+	// member is the player in the chat hub, and seen the lines it saw,
+	// for reports.
+	member *chat.Member
+	hub    *chat.Hub
+	seen   []chat.Line
 }
 
 // warp sends a player through a warp, as npc_touch_areanpc and
@@ -188,6 +196,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	z.removeMap(p.entity)
 	z.stopPassives(p)
 	h := &handoff{sess: s, char: z.snapshot(p), ackSeq: p.ackSeq, rewarp: p.rewarp, temp: p.temp,
+		member: p.member, hub: z.Chat, seen: p.seen,
 		canUseItem:   max(p.canUseItem-z.now, 0),
 		itemDelays:   map[uint32]int64{},
 		statusDelays: map[string]int64{},
@@ -265,6 +274,9 @@ func (h *handoff) finish(why ending) {
 	}
 	if s.saver != nil {
 		s.saver.Save(h.char, true)
+	}
+	if h.hub != nil {
+		h.hub.Offline(h.member)
 	}
 	s.outClosed.close(s.out)
 	s.done()

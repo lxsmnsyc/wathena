@@ -180,7 +180,7 @@ func TestChatAndViewStayOnTheirMap(t *testing.T) {
 			}
 		}
 	}
-	a.handle(command{player: x, chat: new("hello")})
+	a.handle(command{player: x, chat: &chatCommand{text: "hello"}})
 	a.stepAt(100)
 	b.stepAt(100)
 	if len(chats(y)) != 0 {

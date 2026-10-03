@@ -3,6 +3,10 @@ import { type Camera, Group, Vector3 } from 'three';
 import { effects as effectTable, jobs, looks, partEffect, weapons } from '../data/tables';
 import { type WMap, cellHeight } from '../formats/wmap';
 import {
+  type ChannelFailure,
+  type ChannelInfo,
+  type ChannelJoined,
+  type ChatRefused,
   DamageKind,
   type DropItemFailure,
   type EffectPlay,
@@ -17,6 +21,8 @@ import {
   type NpcDialog,
   type Options,
   type PickUpFailure,
+  type ReportOutcome,
+  type SanctionNotice,
   type ShopOpen,
   type ShopOutcome,
   type SkillFailure,
@@ -24,6 +30,7 @@ import {
   StatId,
   type UseItemFailure,
   VanishReason,
+  type WhisperResult,
 } from '../gen/wathena/v1/event_pb';
 import { ChatChannel } from '../gen/wathena/v1/command_pb';
 import { unpackSteps } from '../net/connection';
@@ -266,9 +273,41 @@ export default class Online {
   /**
    * Called for every local chat line, with the speaker's entity ID, and
    * the line's color as 0xrrggbb, or 0 for the log's color. A monster's
-   * line has a color.
+   * line has a color. lineId identifies a player's line for Report, and
+   * is empty for other lines.
    */
-  onChat: ((from: number, name: string, text: string, color: number) => void) | undefined;
+  onChat:
+    | ((from: number, name: string, text: string, color: number, lineId: Uint8Array) => void)
+    | undefined;
+  /** Called for a whisper to the player, with the sender's name. */
+  onWhisper: ((from: string, text: string, lineId: Uint8Array) => void) | undefined;
+  /**
+   * Called for a line in a chat channel, such as #trade. name is the
+   * speaker's name, or empty for the channel's own line.
+   */
+  onChannelChat:
+    | ((channel: string, name: string, text: string, color: number, lineId: Uint8Array) => void)
+    | undefined;
+  /** Called with the server's answer to the player's whisper. */
+  onWhisperResult: ((result: WhisperResult) => void) | undefined;
+  /** Called when a line the player said was not sent. */
+  onChatRefused: ((refused: ChatRefused) => void) | undefined;
+  /** Called when the player is in a chat channel. */
+  onChannelJoined: ((channel: ChannelJoined) => void) | undefined;
+  /** Called when the player is no longer in a chat channel. */
+  onChannelLeft: ((name: string) => void) | undefined;
+  /** Called with the chat channels the player may join. */
+  onChannelList: ((channels: ChannelInfo[]) => void) | undefined;
+  /** Called with the members of a chat channel. */
+  onChannelMembers: ((name: string, names: string[]) => void) | undefined;
+  /** Called when a channel command did nothing. */
+  onChannelFailed: ((name: string, reason: ChannelFailure) => void) | undefined;
+  /** Called with the player's block list, after login and after each change. */
+  onBlockList: ((names: string[], full: boolean) => void) | undefined;
+  /** Called when a mute or a jail starts, lasts, or ends. */
+  onSanction: ((notice: SanctionNotice) => void) | undefined;
+  /** Called with the server's answer to a report. */
+  onReportResult: ((outcome: ReportOutcome) => void) | undefined;
   /** Called for text the server sends to this player alone, such as a mod's message. */
   onServerText: ((text: string) => void) | undefined;
   /** Called for an announcement to the map or the world, with its color or 0. */
@@ -792,7 +831,11 @@ export default class Online {
         case 'chat': {
           const c = e.body.value;
           if (c.channel === ChatChannel.LOCAL) {
-            this.onChat?.(c.from, c.fromName, c.text, c.color);
+            this.onChat?.(c.from, c.fromName, c.text, c.color, c.lineId);
+          } else if (c.channel === ChatChannel.WHISPER) {
+            this.onWhisper?.(c.fromName, c.text, c.lineId);
+          } else if (c.channel === ChatChannel.NAMED) {
+            this.onChannelChat?.(c.channelName, c.fromName, c.text, c.color, c.lineId);
           } else if (c.channel === ChatChannel.SYSTEM) {
             this.onServerText?.(c.text);
           } else if (c.channel === ChatChannel.ANNOUNCEMENT) {
@@ -822,6 +865,36 @@ export default class Online {
           break;
         case 'shopResult':
           this.onShopResult?.(e.body.value.outcome);
+          break;
+        case 'whisperResult':
+          this.onWhisperResult?.(e.body.value);
+          break;
+        case 'chatRefused':
+          this.onChatRefused?.(e.body.value);
+          break;
+        case 'channelJoined':
+          this.onChannelJoined?.(e.body.value);
+          break;
+        case 'channelLeft':
+          this.onChannelLeft?.(e.body.value.name);
+          break;
+        case 'channelList':
+          this.onChannelList?.(e.body.value.channels);
+          break;
+        case 'channelMembers':
+          this.onChannelMembers?.(e.body.value.name, [...e.body.value.names]);
+          break;
+        case 'channelFailed':
+          this.onChannelFailed?.(e.body.value.name, e.body.value.reason);
+          break;
+        case 'blockList':
+          this.onBlockList?.([...e.body.value.names], e.body.value.full);
+          break;
+        case 'sanction':
+          this.onSanction?.(e.body.value);
+          break;
+        case 'reportResult':
+          this.onReportResult?.(e.body.value.outcome);
           break;
         default:
           // Events this client does not show yet.

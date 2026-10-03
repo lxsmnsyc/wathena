@@ -74,7 +74,7 @@ func (z *Zone) NewCharacter(name string, look Look) character.Character {
 		Name: name, Job: z.Start.Job, Male: look.Sex == 1,
 		Hair: int(look.Hair), HairColor: int(look.HairColor),
 		BaseLevel: 1, JobLevel: 1, Stats: z.Start.Stats,
-		Map: z.Map, InventorySize: item.BaseSlots,
+		Map: z.Map, InventorySize: item.BaseSlots, CreatedAt: z.wallClock(),
 	}}
 	c.X, c.Y = z.startCell()
 	if z.Progress != nil {
@@ -187,6 +187,8 @@ func (z *Zone) snapshot(p *Player) *character.Character {
 	c.Statuses = z.savedStatuses(p)
 	c.TimedBonuses = z.savedTimedBonuses(p)
 	c.Skills = learnedSkills(p)
+	c.Blocks = slices.Clone(p.blocks)
+	c.Sanctions = slices.Clone(p.sanctions)
 	return c
 }
 

@@ -3,6 +3,8 @@ package convert
 import (
 	"fmt"
 	"strings"
+
+	"github.com/lxsmnsyc/wathena/server/chat"
 )
 
 // Expressions and commands of NPC scripts.
@@ -914,6 +916,15 @@ func (b *body) commandErr(name string, args []Expr) error {
 			if len(args) != 2 {
 				return unsupported(name, "arguments")
 			}
+			// message names the player. Only the attached player's own
+			// name, strcharinfo(0), converts.
+			to, err := b.expr(args[0])
+			if err != nil {
+				return err
+			}
+			if to.code != "player.name" {
+				return unsupported(name, "to another character")
+			}
 			text = args[1:]
 		}
 		if len(text) != 1 {
@@ -1002,6 +1013,14 @@ func (b *body) commandErr(name string, args []Expr) error {
 		b.line(`R.not_available(conversation, "Storage")`)
 	case "setfalcon", "setriding", "setcart":
 		return b.setCompanion(name, args)
+	case "channel_create", "channel_chat", "channel_join", "channel_kick":
+		return b.channel(name, args)
+	case "channel_delete":
+		return unsupported(name, "the channel API cannot delete a channel")
+	case "channel_setopt", "channel_setcolor", "channel_setpass", "channel_setgroup", "channel_setgroup2":
+		return unsupported(name, "the channel API cannot change a channel's options")
+	case "channel_ban", "channel_unban":
+		return unsupported(name, "the channel API has no bans")
 	case "monster":
 		return b.monster(args)
 	case "killmonster":
@@ -1378,6 +1397,92 @@ func (b *body) setCompanion(name string, args []Expr) error {
 	default:
 		b.line("%s(R.truthy(%s) and %s or nil)", call, arg.asInt(), record)
 	}
+	return nil
+}
+
+// channel converts channel_create, channel_chat, channel_join and
+// channel_kick to wa.channels (proposal 0002, review decision 26).
+//   - The channel name must be a fixed "#name". rAthena reads a name
+//     without # as a map's local channel, and #map as the NPC's map
+//     channel. The API cannot send to one map's channel.
+//   - rAthena skips a channel that does not exist, so the converted code
+//     checks the result of channels.get.
+//   - channel_create converts with the name and the alias only. The API
+//     has no password, options, delay or private owner. Its color comes
+//     after those, so it does not convert either.
+//   - channel_chat converts without a color. The line has the channel's
+//     own color.
+//   - channel_join and channel_kick convert for the attached player only.
+//     channel_kick shows no kick line, since the API has none.
+func (b *body) channel(name string, args []Expr) error {
+	if len(args) < 1 {
+		return unsupported(name, "arguments")
+	}
+	v, err := b.expr(args[0])
+	if err != nil {
+		return err
+	}
+	if v.str == nil {
+		return unsupported(name, "a computed channel")
+	}
+	if !strings.HasPrefix(*v.str, "#") {
+		return unsupported(name, "a map's channel")
+	}
+	ch, ok := chat.NormalizeChannel(*v.str)
+	if !ok {
+		return unsupported(name, "a channel name the API does not allow")
+	}
+	if ch == "map" {
+		return unsupported(name, "the map channel")
+	}
+	f := b.n.file
+	f.need("channels")
+	var call string
+	switch name {
+	case "channel_create":
+		if len(args) != 2 {
+			return unsupported(name, "a password, options, a delay, a color or an owner")
+		}
+		alias, err := b.expr(args[1])
+		if err != nil {
+			return err
+		}
+		b.line("if not channels.get(%s) then", luaString(ch))
+		b.line("  channels.create { name = %s, display_name = %s }", luaString(ch), alias.asText())
+		b.line("end")
+		return nil
+	case "channel_chat":
+		if len(args) != 2 {
+			return unsupported(name, "with a color")
+		}
+		text, err := b.expr(args[1])
+		if err != nil {
+			return err
+		}
+		call = "send(" + text.asText() + ")"
+	case "channel_join":
+		if len(args) != 1 {
+			return unsupported(name, "for another character")
+		}
+		call = "add(player)"
+	case "channel_kick":
+		if len(args) != 2 {
+			return unsupported(name, "arguments")
+		}
+		who, err := b.expr(args[1])
+		if err != nil {
+			return err
+		}
+		if who.code != "player.name" && who.code != "player.character_id" {
+			return unsupported(name, "another character")
+		}
+		call = "remove(player)"
+	}
+	local := b.hide("channel")
+	b.line("%s = channels.get(%s)", local, luaString(ch))
+	b.line("if %s then", local)
+	b.line("  %s:%s", local, call)
+	b.line("end")
 	return nil
 }
 

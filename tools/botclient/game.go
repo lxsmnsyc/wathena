@@ -284,3 +284,35 @@ func (b *Bot) UseSkill(ctx context.Context, skill, level, target uint32) error {
 	}
 	return b.command(ctx, wathenav1.Command_builder{UseSkill: u.Build()})
 }
+
+// Whisper whispers a line to a character by name, or to a channel with
+// a name that starts with #.
+func (b *Bot) Whisper(ctx context.Context, to, text string) error {
+	return b.command(ctx, wathenav1.Command_builder{Chat: wathenav1.Chat_builder{
+		Channel: wathenav1.ChatChannel_CHAT_CHANNEL_WHISPER, To: to, Text: text,
+	}.Build()})
+}
+
+// ChannelChat says a line in a channel, such as #trade.
+func (b *Bot) ChannelChat(ctx context.Context, channel, text string) error {
+	return b.command(ctx, wathenav1.Command_builder{Chat: wathenav1.Chat_builder{
+		Channel: wathenav1.ChatChannel_CHAT_CHANNEL_NAMED, ChannelName: channel, Text: text,
+	}.Build()})
+}
+
+// Channel joins or leaves a channel, or asks for the channels or a
+// channel's members.
+func (b *Bot) Channel(ctx context.Context, action wathenav1.ChannelAction, name string) error {
+	return b.command(ctx, wathenav1.Command_builder{Channel: wathenav1.ChannelCommand_builder{Action: action, Name: name}.Build()})
+}
+
+// Block adds a name to the block list, or removes it.
+func (b *Bot) Block(ctx context.Context, name string, unblock bool) error {
+	return b.command(ctx, wathenav1.Command_builder{Block: wathenav1.Block_builder{Name: name, Unblock: unblock}.Build()})
+}
+
+// Report reports a player, or the line with an ID when line is not
+// empty.
+func (b *Bot) Report(ctx context.Context, name string, line []byte, reason string) error {
+	return b.command(ctx, wathenav1.Command_builder{Report: wathenav1.Report_builder{Name: name, LineId: line, Reason: reason}.Build()})
+}

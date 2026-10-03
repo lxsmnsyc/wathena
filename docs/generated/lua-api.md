@@ -25,6 +25,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.text`](#watext) | Text for players, from the mod's locales/en.yml. Call the module with a key: text "greeter.hello". |
 | [`wa.maps`](#wamaps) | Maps. |
 | [`wa.world`](#waworld) | The world. |
+| [`wa.channels`](#wachannels) | Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world. |
 | [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
 | [`wa.integers`](#waintegers) | Integer division that rounds as C does, toward zero, for scripts converted from rAthena. |
@@ -80,7 +81,7 @@ Permission: `event.listen`.
 |---|---|---|
 | `name` | `wa.EventName` | The event's name. An unknown name, or an event of another context kind, raises an error. |
 | `handler` | `function` | Runs each time the event fires, in registration order. |
-| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|wa.SkillUsedOptions\|nil` | Only the death, status and skill_used events take options: they narrow which events run the handler. |
+| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|wa.SkillUsedOptions\|wa.ChatOptions\|nil` | Only the death, status, skill_used and chat events take options: they narrow which events run the handler. |
 
 ### wa.hooks
 
@@ -99,7 +100,7 @@ Permission: `rules.override`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `wa.HookName` | The hook's name. An unknown name raises an error. |
-| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice\|wa.ItemRoll, next: fun(object?: table): integer\|boolean\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?): integer\|boolean\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range. |
+| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice\|wa.ItemRoll\|wa.ChatMessage, next: fun(object?: table): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message. |
 | `options` | `wa.HookOptions?` |  |
 
 ### wa.schedules
@@ -376,6 +377,32 @@ Permission: `world.announce`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `text` | `string` | At most 255 bytes. |
+
+### wa.channels
+
+```lua
+local channels = require "wa.channels"
+```
+
+Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world.
+
+#### `channels.create(spec) → wa.Channel`
+
+Makes a channel that the context owns, and returns it. The channel ends when its owner ends, and its members leave it. The same mod's context in another zone, or after a reload, gets the same channel. A name that core or another mod has raises an error.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `spec` | `wa.ChannelSpec` |  |
+
+#### `channels.get(name) → wa.Channel?`
+
+A running channel: core's or a mod's. nil when none has the name.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A channel's name, with or without its #, such as trade. |
 
 ### wa.variables
 
@@ -1185,6 +1212,53 @@ Lowers one skill, to 0 by default, and refunds its skill points. Returns false, 
 | `skill` | `integer` | A skill from skills.id. |
 | `options` | `wa.ResetSkillOptions?` |  |
 
+#### `player:whisper(text, options?)`
+
+Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `text` | `string` | 1 to 255 bytes. |
+| `options` | `wa.WhisperOptions?` |  |
+
+#### `player:is_blocking(other) → boolean`
+
+Whether the player blocks the other player's name.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `other` | `wa.Player` |  |
+
+#### `player:mute(minutes, reason)`
+
+Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
+
+Permission: `player.sanction`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `minutes` | `integer` | 1 to 5,256,000 (ten years). |
+| `reason` | `string` | 1 to 255 characters. The player sees it. |
+
+#### `player:jail(minutes, reason)`
+
+Jails the player, as rAthena's pc_jail: it goes to the jail map and cannot warp until the end, then goes back to where it was. It replaces a jail that has not ended. The player sees the reason and the end time. The jail is saved.
+
+Permission: `player.sanction`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `minutes` | `integer` | 1 to 5,256,000 (ten years). |
+| `reason` | `string` | 1 to 255 characters. The player sees it. |
+
+#### `player:unmute() → boolean`
+
+Ends the player's mute. Returns false when it was not muted.
+
+Permission: `player.sanction`.
+
 #### `player:reset_stat(stat, options?) → boolean`
 
 Lowers one stat, to 1 by default, and refunds what raising it cost, by rAthena's cost table. Returns false when the stat is not above the value.
@@ -1611,6 +1685,104 @@ Shows a progress bar and waits until it is full. A walk cancels it and ends the 
 |---|---|---|
 | `seconds` | `integer` | Up to 600. |
 
+### wa.Channel
+
+A chat channel, from channels.create or channels.get.
+
+#### `channel:send(text)`
+
+Shows a line of the channel itself to its members, as rAthena's channelmes. It does not pass the chat filter.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `text` | `string` | 1 to 255 bytes. |
+
+#### `channel:add(player) → boolean`
+
+Puts the player in the channel, whatever its join rule. Returns false when it was already in it.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `channel:remove(player) → boolean`
+
+Takes the player out of the channel, even one it may not leave. Returns false when it was not in it.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `channel:get_members() → string[]`
+
+The members' character names, sorted. Members may be on any map.
+
+Permission: `game.read`.
+
+### wa.ChannelSpec
+
+The channel of channels.create.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 19 letters, digits, _ and -, with or without the #. Players see it as #name. Not public, whisper, party or guild. |
+| `display_name` | `string?` | What players see before each line, 1 to 24 characters, as rAthena's alias. [name] by default. |
+| `color` | `integer?` | The lines' color, 0xRRGGBB. White by default. |
+| `join` | `"open"\|"invite"\|nil` | "open", the default: any player may join. "invite": only channel:add puts players in. |
+
+### wa.WhisperOptions
+
+The options of player:whisper.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `from` | `string?` | The name the player sees, 1 to 24 characters. The NPC's name in an NPC context, else the mod's name. |
+
+### wa.ChatMessage
+
+The object of the chat event and the chat hook: a line a player says. The hook runs after the server's chat filter, and the event after the line went out.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | The speaker. |
+| `channel` | `string` | "public" for local chat, "whisper", "party", "guild", or a channel's name without its #, such as trade. |
+| `text` | `string` | The line, after the chat filter. |
+| `to` | `string?` | A whisper's target name. nil for other channels. |
+| `map` | `string` | The speaker's map. |
+
+### wa.ChatOptions
+
+The options of a chat handler. Each one narrows the lines that run it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `channel` | `string?` | "public", "whisper", "party", "guild" or a channel's name, with or without its #. |
+| `map` | `string?` | A map name. |
+| `player` | `wa.Player?` | One speaker. |
+
+### wa.ChatTestOptions
+
+The options of world:chat.
+
+It exists only in tests that `wactl mod test` runs.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `channel` | `string?` | "public", the default, "whisper", or a channel's name. |
+| `to` | `string?` | A whisper's target name. |
+
+### wa.HeardLine
+
+A chat line a test player got, from world:get_chat.
+
+It exists only in tests that `wactl mod test` runs.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `channel` | `string` | "public", "whisper", "system", or a channel's name with its #. |
+| `from` | `string` | The speaker's name, or empty for a system line or a channel's own line. |
+| `text` | `string` |  |
+
 ### wa.EventHandle
 
 What events.on returns.
@@ -1735,6 +1907,28 @@ How many of the item lie on the map, with drops about to fall.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `item` | `integer` | An item from items.id. |
+
+#### `testWorld:chat(player, text, options?)`
+
+The player says a line, as a client's chat: it passes the mute, the chat filter and the chat hooks, then the chat event runs.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+| `text` | `string` | 1 to 255 characters. |
+| `options` | `wa.ChatTestOptions?` |  |
+
+#### `testWorld:get_chat(player) → wa.HeardLine[]`
+
+The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
 
 ### wa.Expectation
 
@@ -2513,6 +2707,7 @@ Changes the value.
 | `status_start` | mod, event | `event: wa.StatusEvent` | A status started on an entity of the context's map, or started again. Options narrow it. |
 | `status_end` | mod, event | `event: wa.StatusEvent` | A status ended. Options narrow it. |
 | `status_tick` | mod, event | `event: wa.StatusEvent` | A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it. |
+| `chat` | mod, npc, event | `message: wa.ChatMessage` | A player on the context's map said a line: local chat, a whisper, or a channel line. It runs after the line went out. Options narrow it. |
 
 ## Named types
 
@@ -2526,7 +2721,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`
 
 ### wa.BonusName
 
@@ -2544,7 +2739,7 @@ An equipment slot.
 
 A hook name of wa.hooks.
 
-`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`
+`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`, `chat`
 
 ### wa.MonsterState
 

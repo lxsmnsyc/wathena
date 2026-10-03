@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi5gUKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIeCgpMZWFyblNraWxsEhAKCHNraWxsX2lkGAEgASgNIhwKBENlbGwSCQoBeBgBIAEoDRIJCgF5GAIgASgNIkoKBENoYXQSKAoHY2hhbm5lbBgBIAEoDjIXLndhdGhlbmEudjEuQ2hhdENoYW5uZWwSDAoEdGV4dBgCIAEoCRIKCgJ0bxgDIAEoCSIXCghOcGNDbGljaxILCgNucGMYASABKA0igwEKCE5wY1JlcGx5Eg4KBmRpYWxvZxgBIAEoDRIOCgRuZXh0GAIgASgISAASDgoEbWVudRgDIAEoDUgAEhQKCmlucHV0X3RleHQYBCABKAlIABIWCgxpbnB1dF9udW1iZXIYBSABKANIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFuc3dlciI+CgdTaG9wQnV5EgsKA25wYxgBIAEoDRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuU2hvcEJ1eUxpbmUiLgoLU2hvcEJ1eUxpbmUSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0iQAoIU2hvcFNlbGwSCwoDbnBjGAEgASgNEicKBWl0ZW1zGAIgAygLMhgud2F0aGVuYS52MS5TaG9wU2VsbExpbmUiLAoMU2hvcFNlbGxMaW5lEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhgKCVNob3BDbG9zZRILCgNucGMYASABKA0iFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIigKCERyb3BJdGVtEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0iKwoJRXF1aXBJdGVtEgwKBHNsb3QYASABKA0SEAoIcG9zaXRpb24YAiABKA0iGwoLVW5lcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDSIzCgpJbnNlcnRDYXJkEhEKCWNhcmRfc2xvdBgBIAEoDRISCgplcXVpcF9zbG90GAIgASgNKt0BCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFEhcKE0NIQVRfQ0hBTk5FTF9TWVNURU0QBhIdChlDSEFUX0NIQU5ORUxfQU5OT1VOQ0VNRU5UEAcqlwEKCEJhc2VTdGF0EhkKFUJBU0VfU1RBVF9VTlNQRUNJRklFRBAAEhEKDUJBU0VfU1RBVF9TVFIQARIRCg1CQVNFX1NUQVRfQUdJEAISEQoNQkFTRV9TVEFUX1ZJVBADEhEKDUJBU0VfU1RBVF9JTlQQBBIRCg1CQVNFX1NUQVRfREVYEAUSEQoNQkFTRV9TVEFUX0xVSxAGQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi3wYKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHgoKTGVhcm5Ta2lsbBIQCghza2lsbF9pZBgBIAEoDSIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJgCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkSFAoMY2hhbm5lbF9uYW1lGAQgASgJIkkKDkNoYW5uZWxDb21tYW5kEikKBmFjdGlvbhgBIAEoDjIZLndhdGhlbmEudjEuQ2hhbm5lbEFjdGlvbhIMCgRuYW1lGAIgASgJIiYKBUJsb2NrEgwKBG5hbWUYASABKAkSDwoHdW5ibG9jaxgCIAEoCCI3CgZSZXBvcnQSDAoEbmFtZRgBIAEoCRIPCgdsaW5lX2lkGAIgASgMEg4KBnJlYXNvbhgDIAEoCSIXCghOcGNDbGljaxILCgNucGMYASABKA0igwEKCE5wY1JlcGx5Eg4KBmRpYWxvZxgBIAEoDRIOCgRuZXh0GAIgASgISAASDgoEbWVudRgDIAEoDUgAEhQKCmlucHV0X3RleHQYBCABKAlIABIWCgxpbnB1dF9udW1iZXIYBSABKANIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFuc3dlciI+CgdTaG9wQnV5EgsKA25wYxgBIAEoDRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuU2hvcEJ1eUxpbmUiLgoLU2hvcEJ1eUxpbmUSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0iQAoIU2hvcFNlbGwSCwoDbnBjGAEgASgNEicKBWl0ZW1zGAIgAygLMhgud2F0aGVuYS52MS5TaG9wU2VsbExpbmUiLAoMU2hvcFNlbGxMaW5lEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhgKCVNob3BDbG9zZRILCgNucGMYASABKA0iFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIigKCERyb3BJdGVtEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0iKwoJRXF1aXBJdGVtEgwKBHNsb3QYASABKA0SEAoIcG9zaXRpb24YAiABKA0iGwoLVW5lcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDSIzCgpJbnNlcnRDYXJkEhEKCWNhcmRfc2xvdBgBIAEoDRISCgplcXVpcF9zbG90GAIgASgNKvUBCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFEhcKE0NIQVRfQ0hBTk5FTF9TWVNURU0QBhIdChlDSEFUX0NIQU5ORUxfQU5OT1VOQ0VNRU5UEAcSFgoSQ0hBVF9DSEFOTkVMX05BTUVEEAgqlwEKDUNoYW5uZWxBY3Rpb24SHgoaQ0hBTk5FTF9BQ1RJT05fVU5TUEVDSUZJRUQQABIXChNDSEFOTkVMX0FDVElPTl9KT0lOEAESGAoUQ0hBTk5FTF9BQ1RJT05fTEVBVkUQAhIXChNDSEFOTkVMX0FDVElPTl9MSVNUEAMSGgoWQ0hBTk5FTF9BQ1RJT05fTUVNQkVSUxAEKpcBCghCYXNlU3RhdBIZChVCQVNFX1NUQVRfVU5TUEVDSUZJRUQQABIRCg1CQVNFX1NUQVRfU1RSEAESEQoNQkFTRV9TVEFUX0FHSRACEhEKDUJBU0VfU1RBVF9WSVQQAxIRCg1CQVNFX1NUQVRfSU5UEAQSEQoNQkFTRV9TVEFUX0RFWBAFEhEKDUJBU0VfU1RBVF9MVUsQBkJAWj5naXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL3YxO3dhdGhlbmF2MWIGcHJvdG8z");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -124,6 +124,24 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: LearnSkill;
     case: "learnSkill";
+  } | {
+    /**
+     * @generated from field: wathena.v1.ChannelCommand channel = 18;
+     */
+    value: ChannelCommand;
+    case: "channel";
+  } | {
+    /**
+     * @generated from field: wathena.v1.Block block = 19;
+     */
+    value: Block;
+    case: "block";
+  } | {
+    /**
+     * @generated from field: wathena.v1.Report report = 20;
+     */
+    value: Report;
+    case: "report";
   } | { case: undefined; value?: undefined };
 };
 
@@ -267,6 +285,9 @@ export const CellSchema: GenMessage<Cell> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 5);
 
 /**
+ * Chat says a line. The server checks the sender's mute, the chat filter
+ * and the rate limits first. A line it refuses comes back as ChatRefused.
+ *
  * @generated from message wathena.v1.Chat
  */
 export type Chat = Message<"wathena.v1.Chat"> & {
@@ -281,11 +302,21 @@ export type Chat = Message<"wathena.v1.Chat"> & {
   text: string;
 
   /**
-   * to is a character name for whispers.
+   * to is a character name for whispers. The server answers a whisper
+   * with WhisperResult. A name that starts with # whispers to that chat
+   * channel, as rAthena does, and joins it first when anyone may join.
    *
    * @generated from field: string to = 3;
    */
   to: string;
+
+  /**
+   * channel_name is the channel's name with its #, such as #trade, for
+   * CHAT_CHANNEL_NAMED.
+   *
+   * @generated from field: string channel_name = 4;
+   */
+  channelName: string;
 };
 
 /**
@@ -294,6 +325,101 @@ export type Chat = Message<"wathena.v1.Chat"> & {
  */
 export const ChatSchema: GenMessage<Chat> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 6);
+
+/**
+ * ChannelCommand joins or leaves a chat channel, or asks for the list of
+ * channels or the members of one, as rAthena's @join and @channel.
+ *
+ * @generated from message wathena.v1.ChannelCommand
+ */
+export type ChannelCommand = Message<"wathena.v1.ChannelCommand"> & {
+  /**
+   * @generated from field: wathena.v1.ChannelAction action = 1;
+   */
+  action: ChannelAction;
+
+  /**
+   * name is the channel's name with its #, such as #trade. LIST does not
+   * use it.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message wathena.v1.ChannelCommand.
+ * Use `create(ChannelCommandSchema)` to create a new message.
+ */
+export const ChannelCommandSchema: GenMessage<ChannelCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 7);
+
+/**
+ * Block adds a character name to the player's block list, or removes
+ * one, as rAthena's /ex and /in. A blocked player cannot whisper to the
+ * player, and the player does not see its chat. The server answers with
+ * BlockList.
+ *
+ * @generated from message wathena.v1.Block
+ */
+export type Block = Message<"wathena.v1.Block"> & {
+  /**
+   * name is a character name, 1 to 24 characters.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bool unblock = 2;
+   */
+  unblock: boolean;
+};
+
+/**
+ * Describes the message wathena.v1.Block.
+ * Use `create(BlockSchema)` to create a new message.
+ */
+export const BlockSchema: GenMessage<Block> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 8);
+
+/**
+ * Report reports a player, or one chat line, to the staff (strategy
+ * section 7.10). The report keeps the chat the player saw in the last 5
+ * minutes. The server answers with ReportResult.
+ *
+ * @generated from message wathena.v1.Report
+ */
+export type Report = Message<"wathena.v1.Report"> & {
+  /**
+   * name is the reported character's name.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * line_id is ChatMessage.line_id of the reported line, or empty to
+   * report the player.
+   *
+   * @generated from field: bytes line_id = 2;
+   */
+  lineId: Uint8Array;
+
+  /**
+   * reason is the player's own words, at most 255 characters.
+   *
+   * @generated from field: string reason = 3;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message wathena.v1.Report.
+ * Use `create(ReportSchema)` to create a new message.
+ */
+export const ReportSchema: GenMessage<Report> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 9);
 
 /**
  * NpcClick talks to an NPC, or opens its shop, as rAthena's npc_click.
@@ -313,7 +439,7 @@ export type NpcClick = Message<"wathena.v1.NpcClick"> & {
  * Use `create(NpcClickSchema)` to create a new message.
  */
 export const NpcClickSchema: GenMessage<NpcClick> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 7);
+  messageDesc(file_wathena_v1_command, 10);
 
 /**
  * NpcReply answers the open NPC dialog step.
@@ -382,7 +508,7 @@ export type NpcReply = Message<"wathena.v1.NpcReply"> & {
  * Use `create(NpcReplySchema)` to create a new message.
  */
 export const NpcReplySchema: GenMessage<NpcReply> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 8);
+  messageDesc(file_wathena_v1_command, 11);
 
 /**
  * ShopBuy buys items from the shop that ShopOpen showed, in one step,
@@ -411,7 +537,7 @@ export type ShopBuy = Message<"wathena.v1.ShopBuy"> & {
  * Use `create(ShopBuySchema)` to create a new message.
  */
 export const ShopBuySchema: GenMessage<ShopBuy> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 9);
+  messageDesc(file_wathena_v1_command, 12);
 
 /**
  * @generated from message wathena.v1.ShopBuyLine
@@ -436,7 +562,7 @@ export type ShopBuyLine = Message<"wathena.v1.ShopBuyLine"> & {
  * Use `create(ShopBuyLineSchema)` to create a new message.
  */
 export const ShopBuyLineSchema: GenMessage<ShopBuyLine> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 10);
+  messageDesc(file_wathena_v1_command, 13);
 
 /**
  * ShopSell sells inventory slots to the shop that ShopOpen showed, as
@@ -463,7 +589,7 @@ export type ShopSell = Message<"wathena.v1.ShopSell"> & {
  * Use `create(ShopSellSchema)` to create a new message.
  */
 export const ShopSellSchema: GenMessage<ShopSell> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 11);
+  messageDesc(file_wathena_v1_command, 14);
 
 /**
  * @generated from message wathena.v1.ShopSellLine
@@ -489,7 +615,7 @@ export type ShopSellLine = Message<"wathena.v1.ShopSellLine"> & {
  * Use `create(ShopSellLineSchema)` to create a new message.
  */
 export const ShopSellLineSchema: GenMessage<ShopSellLine> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 12);
+  messageDesc(file_wathena_v1_command, 15);
 
 /**
  * ShopClose closes the shop window without buying or selling.
@@ -508,7 +634,7 @@ export type ShopClose = Message<"wathena.v1.ShopClose"> & {
  * Use `create(ShopCloseSchema)` to create a new message.
  */
 export const ShopCloseSchema: GenMessage<ShopClose> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 13);
+  messageDesc(file_wathena_v1_command, 16);
 
 /**
  * UseItem uses the item in an inventory slot, as rAthena's pc_useitem.
@@ -531,7 +657,7 @@ export type UseItem = Message<"wathena.v1.UseItem"> & {
  * Use `create(UseItemSchema)` to create a new message.
  */
 export const UseItemSchema: GenMessage<UseItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 14);
+  messageDesc(file_wathena_v1_command, 17);
 
 /**
  * DropItem drops an amount from an inventory slot on the ground near the
@@ -561,7 +687,7 @@ export type DropItem = Message<"wathena.v1.DropItem"> & {
  * Use `create(DropItemSchema)` to create a new message.
  */
 export const DropItemSchema: GenMessage<DropItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 15);
+  messageDesc(file_wathena_v1_command, 18);
 
 /**
  * PickUp walks next to a ground item and picks it up.
@@ -580,7 +706,7 @@ export type PickUp = Message<"wathena.v1.PickUp"> & {
  * Use `create(PickUpSchema)` to create a new message.
  */
 export const PickUpSchema: GenMessage<PickUp> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 16);
+  messageDesc(file_wathena_v1_command, 19);
 
 /**
  * RaiseStat spends status points to raise a stat, as rAthena's
@@ -608,7 +734,7 @@ export type RaiseStat = Message<"wathena.v1.RaiseStat"> & {
  * Use `create(RaiseStatSchema)` to create a new message.
  */
 export const RaiseStatSchema: GenMessage<RaiseStat> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 17);
+  messageDesc(file_wathena_v1_command, 20);
 
 /**
  * EquipItem puts on the item in an inventory slot, as rAthena's
@@ -637,7 +763,7 @@ export type EquipItem = Message<"wathena.v1.EquipItem"> & {
  * Use `create(EquipItemSchema)` to create a new message.
  */
 export const EquipItemSchema: GenMessage<EquipItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 18);
+  messageDesc(file_wathena_v1_command, 21);
 
 /**
  * UnequipItem takes off the item in an inventory slot, as rAthena's
@@ -657,7 +783,7 @@ export type UnequipItem = Message<"wathena.v1.UnequipItem"> & {
  * Use `create(UnequipItemSchema)` to create a new message.
  */
 export const UnequipItemSchema: GenMessage<UnequipItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 19);
+  messageDesc(file_wathena_v1_command, 22);
 
 /**
  * InsertCard puts one card from a slot into the first free card slot of
@@ -683,7 +809,7 @@ export type InsertCard = Message<"wathena.v1.InsertCard"> & {
  * Use `create(InsertCardSchema)` to create a new message.
  */
 export const InsertCardSchema: GenMessage<InsertCard> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 20);
+  messageDesc(file_wathena_v1_command, 23);
 
 /**
  * @generated from enum wathena.v1.ChatChannel
@@ -736,6 +862,14 @@ export enum ChatChannel {
    * @generated from enum value: CHAT_CHANNEL_ANNOUNCEMENT = 7;
    */
   ANNOUNCEMENT = 7,
+
+  /**
+   * NAMED is a chat channel such as #global or #trade, as rAthena's
+   * channel system. ChatMessage.channel_name names it.
+   *
+   * @generated from enum value: CHAT_CHANNEL_NAMED = 8;
+   */
+  NAMED = 8,
 }
 
 /**
@@ -743,6 +877,53 @@ export enum ChatChannel {
  */
 export const ChatChannelSchema: GenEnum<ChatChannel> = /*@__PURE__*/
   enumDesc(file_wathena_v1_command, 0);
+
+/**
+ * @generated from enum wathena.v1.ChannelAction
+ */
+export enum ChannelAction {
+  /**
+   * @generated from enum value: CHANNEL_ACTION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * JOIN joins a channel that anyone may join. The server answers with
+   * ChannelJoined or ChannelFailed.
+   *
+   * @generated from enum value: CHANNEL_ACTION_JOIN = 1;
+   */
+  JOIN = 1,
+
+  /**
+   * LEAVE leaves a channel the player may leave. The server answers with
+   * ChannelLeft or ChannelFailed.
+   *
+   * @generated from enum value: CHANNEL_ACTION_LEAVE = 2;
+   */
+  LEAVE = 2,
+
+  /**
+   * LIST asks for the channels the player may join, with ChannelList.
+   *
+   * @generated from enum value: CHANNEL_ACTION_LIST = 3;
+   */
+  LIST = 3,
+
+  /**
+   * MEMBERS asks for the members of a channel the player is in, with
+   * ChannelMembers.
+   *
+   * @generated from enum value: CHANNEL_ACTION_MEMBERS = 4;
+   */
+  MEMBERS = 4,
+}
+
+/**
+ * Describes the enum wathena.v1.ChannelAction.
+ */
+export const ChannelActionSchema: GenEnum<ChannelAction> = /*@__PURE__*/
+  enumDesc(file_wathena_v1_command, 1);
 
 /**
  * BaseStat is a stat that status points raise.
@@ -790,5 +971,5 @@ export enum BaseStat {
  * Describes the enum wathena.v1.BaseStat.
  */
 export const BaseStatSchema: GenEnum<BaseStat> = /*@__PURE__*/
-  enumDesc(file_wathena_v1_command, 1);
+  enumDesc(file_wathena_v1_command, 2);
 

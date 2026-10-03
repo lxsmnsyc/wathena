@@ -32,7 +32,7 @@ func TestChat(t *testing.T) {
 		events(p)
 	}
 
-	z.handle(command{player: a, seq: 1, chat: new("hello")})
+	z.handle(command{player: a, seq: 1, chat: &chatCommand{text: "hello"}})
 	z.stepAt(100)
 	self := chats(a)
 	if len(self) != 1 || self[0].GetFrom() != a.netIDs.id(a.entity) || self[0].GetFromName() != "Alice" ||
@@ -55,7 +55,7 @@ func TestChat(t *testing.T) {
 
 	// A dead player still talks, as in rAthena.
 	a.entity.dead = true
-	z.handle(command{player: a, seq: 2, chat: new("ouch")})
+	z.handle(command{player: a, seq: 2, chat: &chatCommand{text: "ouch"}})
 	z.stepAt(200)
 	if got := chats(b); len(got) != 1 || got[0].GetText() != "ouch" {
 		t.Errorf("Bob hears %v from the dead", got)

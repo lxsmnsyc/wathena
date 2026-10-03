@@ -381,6 +381,23 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 			return []script.Value{script.Int(0)}, nil
 		}
 		return []script.Value{script.Int(int64(w.h.FloorItems(uint32(id))))}, nil
+	case "chat":
+		p, _ := args[0].AsInt()
+		text, _ := args[1].AsString()
+		channel, _ := args[2].AsString()
+		to, _ := args[3].AsString()
+		if err := w.h.Say(p, channel, text, to); err != nil {
+			return nil, fmt.Errorf("world:chat: %w", err)
+		}
+		return nil, nil
+	case "get_chat":
+		p, _ := args[0].AsInt()
+		var list []script.Value
+		for _, l := range w.h.Heard(p) {
+			list = append(list, script.NewTable(script.KV("channel", script.String(l.Channel)),
+				script.KV("from", script.String(l.From)), script.KV("text", script.String(l.Text))))
+		}
+		return []script.Value{script.List(list...)}, nil
 	case "kill":
 		p, _ := args[0].AsInt()
 		m, _ := args[1].AsInt()

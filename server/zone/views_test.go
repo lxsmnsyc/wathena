@@ -86,6 +86,10 @@ func frameText(p *Player, seen map[string]int) []string {
 		f := m.GetFrame()
 		var ev []string
 		for _, e := range f.GetEvents() {
+			if c := e.GetChat(); c != nil {
+				// Line IDs are random in each zone.
+				c.SetLineId(nil)
+			}
 			ev = append(ev, prototext.Format(e))
 			switch {
 			case e.HasVanish():
@@ -147,7 +151,7 @@ func TestViewsMatchFullScan(t *testing.T) {
 				// map.
 				c.walkTo = &[2]int{60, 60}
 			case n < 6:
-				c.chat = &line
+				c.chat = &chatCommand{text: line}
 			case n < 8:
 				// Attack a monster the player sees. Both zones gave it
 				// the same ID, as the frames so far matched.

@@ -255,6 +255,10 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `mods.approve` | none | none | Approved permissions, by mod ID. |
 | `mods.disable` | none | none | Installed mods that must not load. |
 | `mods.events` | none | none | Changes to world events, by event name. See "World events". |
+| `chat.burst`, `chat.refill` | none | `5`, `1s` | Chat rate limits: lines at once, and the time for one more. See "Chat and moderation". |
+| `chat.new_character_burst`, `chat.new_character_refill`, `chat.new_character_period` | none | `3`, `3s`, `1h` | Lower limits for a character's first period after it was made. A period of `0s` turns them off. |
+| `chat.log_days` | none | `30` | Days the chat log keeps lines, except lines of open reports. More than 30 logs a warning. |
+| `jail.map`, `jail.cells` | none | `sec_pri`, `[[49, 75], [24, 75]]` | Where jailed players go, as rAthena's `MAP_JAIL` and `pc_jail`. A jail map that does not run logs a warning. |
 
 `waserver` checks everything before it starts, and lists every problem by key. With a database it also refuses to start:
 
@@ -607,6 +611,33 @@ To find where a serial went, and where it came from:
 ```sql
 SELECT at, action, from_kind, from_id, to_kind, to_id, amount, source
 FROM item_log WHERE serial = '0192f0c4-...' OR source = '0192f0c4-...' ORDER BY at;
+```
+
+## Chat and moderation
+
+Chat follows strategy section 7.10 and proposal 0002, review decision 26 ([decision 0018](../docs/decisions/0018-chat-and-moderation.md)). The package `chat` holds what every zone of the world shares: the chat filter, the channels, and the hub, which finds online players by name.
+
+- **Local chat** reaches the players in range, as before.
+- **Whispers** reach a player on any map of the process. The sender gets `WhisperResult`: sent, not online, or blocked, as rAthena's `clif_wis_end`. A whisper to `#name` speaks in that channel, and joins it first when anyone may join, as rAthena.
+- **Channels** are core's records of `data/channels.yml` (rAthena's `#global`, `#support`, `#trade` and `#map`) and the channels mods make. `ChannelCommand` joins, leaves, lists channels and lists members. A channel's lines carry its name and color. `#map` members hear the members on their own map, and leave it on a map change.
+- **Blocking.** `Block` adds a name to the character's block list, at most 20, as rAthena's `MAX_IGNORE_LIST`, or removes it. A blocked name cannot whisper to the player, and the player does not see its local or channel lines. The list is saved with the character, in `character_blocks`. Trades and invites check it once they exist (steps 3 and 5).
+- **The chat filter** of `data/chat_filter.yml` replaces or rejects words in every line, and refuses new character names that have a word or a reserved name, on the account pages and for `--dev` logins.
+- **Rate limits** are the `chat.*` settings, per connection. A character made less than `chat.new_character_period` ago has the lower limits. Lines over the rate are dropped, and the player gets `ChatRefused` with `TOO_FAST`, since the client does not know a new character's limits. A flood ends the connection, as before.
+- **Mutes and jails** come from mods with `player.sanction` for now, and from the staff tools later. A muted player's lines come back as `ChatRefused` with a `SanctionNotice` that has the reason and the end time. A jailed player goes to the jail map, cannot use warps, scripts' warps or wings, comes back in jail after death, and goes back to where it was when the jail ends. Sanctions run on the server clock and are saved in `sanctions`, which keeps ended ones too.
+- **Reports.** `Report` reports a player, or a line by its `line_id`. The report keeps the lines the reporter saw in the last 5 minutes. A player may send 10 reports an hour.
+- **The chat log** keeps every line players say: local, whisper and channel. With a database, `chat_log` keeps lines for `chat.log_days` days, and `report_lines` ties a report to its lines, which stay while the report is open. A worker writes lines and reports in batches, in order, and deletes old lines every 12 hours. Without a database, the last 10,000 lines and 1,000 reports stay in memory.
+
+With `--dev`, the debug address serves two more endpoints for development and the end-to-end tests:
+
+- `GET /debug/wathena/reports` lists the newest reports with their lines.
+- `POST /debug/wathena/clock?advance=90s` moves the server clock forward, which mutes, jails, schedules and world events in zones follow.
+
+Migration 00016 adds `character_blocks`, `sanctions`, `chat_log`, `reports` and `report_lines`. To read the open reports:
+
+```sql
+SELECT r.id, r.reporter_name, r.target_name, r.reason, c.at, c.name, c.text
+FROM reports r JOIN report_lines rl ON rl.report_id = r.id JOIN chat_log c ON c.id = rl.line_id
+WHERE r.status = 'open' ORDER BY r.id, c.at;
 ```
 
 ## NPCs

@@ -37,6 +37,9 @@ const (
 	// world, as rAthena's announce and mapannounce. from is 0 and
 	// from_name is empty. Clients never send it.
 	ChatChannel_CHAT_CHANNEL_ANNOUNCEMENT ChatChannel = 7
+	// NAMED is a chat channel such as #global or #trade, as rAthena's
+	// channel system. ChatMessage.channel_name names it.
+	ChatChannel_CHAT_CHANNEL_NAMED ChatChannel = 8
 )
 
 // Enum value maps for ChatChannel.
@@ -50,6 +53,7 @@ var (
 		5: "CHAT_CHANNEL_WORLD",
 		6: "CHAT_CHANNEL_SYSTEM",
 		7: "CHAT_CHANNEL_ANNOUNCEMENT",
+		8: "CHAT_CHANNEL_NAMED",
 	}
 	ChatChannel_value = map[string]int32{
 		"CHAT_CHANNEL_UNSPECIFIED":  0,
@@ -60,6 +64,7 @@ var (
 		"CHAT_CHANNEL_WORLD":        5,
 		"CHAT_CHANNEL_SYSTEM":       6,
 		"CHAT_CHANNEL_ANNOUNCEMENT": 7,
+		"CHAT_CHANNEL_NAMED":        8,
 	}
 )
 
@@ -82,6 +87,63 @@ func (ChatChannel) Type() protoreflect.EnumType {
 }
 
 func (x ChatChannel) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type ChannelAction int32
+
+const (
+	ChannelAction_CHANNEL_ACTION_UNSPECIFIED ChannelAction = 0
+	// JOIN joins a channel that anyone may join. The server answers with
+	// ChannelJoined or ChannelFailed.
+	ChannelAction_CHANNEL_ACTION_JOIN ChannelAction = 1
+	// LEAVE leaves a channel the player may leave. The server answers with
+	// ChannelLeft or ChannelFailed.
+	ChannelAction_CHANNEL_ACTION_LEAVE ChannelAction = 2
+	// LIST asks for the channels the player may join, with ChannelList.
+	ChannelAction_CHANNEL_ACTION_LIST ChannelAction = 3
+	// MEMBERS asks for the members of a channel the player is in, with
+	// ChannelMembers.
+	ChannelAction_CHANNEL_ACTION_MEMBERS ChannelAction = 4
+)
+
+// Enum value maps for ChannelAction.
+var (
+	ChannelAction_name = map[int32]string{
+		0: "CHANNEL_ACTION_UNSPECIFIED",
+		1: "CHANNEL_ACTION_JOIN",
+		2: "CHANNEL_ACTION_LEAVE",
+		3: "CHANNEL_ACTION_LIST",
+		4: "CHANNEL_ACTION_MEMBERS",
+	}
+	ChannelAction_value = map[string]int32{
+		"CHANNEL_ACTION_UNSPECIFIED": 0,
+		"CHANNEL_ACTION_JOIN":        1,
+		"CHANNEL_ACTION_LEAVE":       2,
+		"CHANNEL_ACTION_LIST":        3,
+		"CHANNEL_ACTION_MEMBERS":     4,
+	}
+)
+
+func (x ChannelAction) Enum() *ChannelAction {
+	p := new(ChannelAction)
+	*p = x
+	return p
+}
+
+func (x ChannelAction) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ChannelAction) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_command_proto_enumTypes[1].Descriptor()
+}
+
+func (ChannelAction) Type() protoreflect.EnumType {
+	return &file_wathena_v1_command_proto_enumTypes[1]
+}
+
+func (x ChannelAction) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
@@ -131,11 +193,11 @@ func (x BaseStat) String() string {
 }
 
 func (BaseStat) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_command_proto_enumTypes[1].Descriptor()
+	return file_wathena_v1_command_proto_enumTypes[2].Descriptor()
 }
 
 func (BaseStat) Type() protoreflect.EnumType {
-	return &file_wathena_v1_command_proto_enumTypes[1]
+	return &file_wathena_v1_command_proto_enumTypes[2]
 }
 
 func (x BaseStat) Number() protoreflect.EnumNumber {
@@ -329,6 +391,33 @@ func (x *Command) GetLearnSkill() *LearnSkill {
 	return nil
 }
 
+func (x *Command) GetChannel() *ChannelCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Channel); ok {
+			return x.Channel
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetBlock() *Block {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Block); ok {
+			return x.Block
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetReport() *Report {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Report); ok {
+			return x.Report
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -463,6 +552,30 @@ func (x *Command) SetLearnSkill(v *LearnSkill) {
 		return
 	}
 	x.xxx_hidden_Body = &command_LearnSkill{v}
+}
+
+func (x *Command) SetChannel(v *ChannelCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Channel{v}
+}
+
+func (x *Command) SetBlock(v *Block) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Block{v}
+}
+
+func (x *Command) SetReport(v *Report) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Report{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -608,6 +721,30 @@ func (x *Command) HasLearnSkill() bool {
 	return ok
 }
 
+func (x *Command) HasChannel() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Channel)
+	return ok
+}
+
+func (x *Command) HasBlock() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Block)
+	return ok
+}
+
+func (x *Command) HasReport() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Report)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -714,6 +851,24 @@ func (x *Command) ClearLearnSkill() {
 	}
 }
 
+func (x *Command) ClearChannel() {
+	if _, ok := x.xxx_hidden_Body.(*command_Channel); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearBlock() {
+	if _, ok := x.xxx_hidden_Body.(*command_Block); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearReport() {
+	if _, ok := x.xxx_hidden_Body.(*command_Report); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -732,6 +887,9 @@ const Command_EquipItem_case case_Command_Body = 14
 const Command_UnequipItem_case case_Command_Body = 15
 const Command_InsertCard_case case_Command_Body = 16
 const Command_LearnSkill_case case_Command_Body = 17
+const Command_Channel_case case_Command_Body = 18
+const Command_Block_case case_Command_Body = 19
+const Command_Report_case case_Command_Body = 20
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -772,6 +930,12 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_InsertCard_case
 	case *command_LearnSkill:
 		return Command_LearnSkill_case
+	case *command_Channel:
+		return Command_Channel_case
+	case *command_Block:
+		return Command_Block_case
+	case *command_Report:
+		return Command_Report_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -798,6 +962,9 @@ type Command_builder struct {
 	UnequipItem *UnequipItem
 	InsertCard  *InsertCard
 	LearnSkill  *LearnSkill
+	Channel     *ChannelCommand
+	Block       *Block
+	Report      *Report
 	// -- end of xxx_hidden_Body
 }
 
@@ -855,6 +1022,15 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.LearnSkill != nil {
 		x.xxx_hidden_Body = &command_LearnSkill{b.LearnSkill}
+	}
+	if b.Channel != nil {
+		x.xxx_hidden_Body = &command_Channel{b.Channel}
+	}
+	if b.Block != nil {
+		x.xxx_hidden_Body = &command_Block{b.Block}
+	}
+	if b.Report != nil {
+		x.xxx_hidden_Body = &command_Report{b.Report}
 	}
 	return m0
 }
@@ -941,6 +1117,18 @@ type command_LearnSkill struct {
 	LearnSkill *LearnSkill `protobuf:"bytes,17,opt,name=learn_skill,json=learnSkill,proto3,oneof"`
 }
 
+type command_Channel struct {
+	Channel *ChannelCommand `protobuf:"bytes,18,opt,name=channel,proto3,oneof"`
+}
+
+type command_Block struct {
+	Block *Block `protobuf:"bytes,19,opt,name=block,proto3,oneof"`
+}
+
+type command_Report struct {
+	Report *Report `protobuf:"bytes,20,opt,name=report,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -974,6 +1162,12 @@ func (*command_UnequipItem) isCommand_Body() {}
 func (*command_InsertCard) isCommand_Body() {}
 
 func (*command_LearnSkill) isCommand_Body() {}
+
+func (*command_Channel) isCommand_Body() {}
+
+func (*command_Block) isCommand_Body() {}
+
+func (*command_Report) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -1447,13 +1641,16 @@ func (b0 Cell_builder) Build() *Cell {
 	return m0
 }
 
+// Chat says a line. The server checks the sender's mute, the chat filter
+// and the rate limits first. A line it refuses comes back as ChatRefused.
 type Chat struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Channel ChatChannel            `protobuf:"varint,1,opt,name=channel,proto3,enum=wathena.v1.ChatChannel"`
-	xxx_hidden_Text    string                 `protobuf:"bytes,2,opt,name=text,proto3"`
-	xxx_hidden_To      string                 `protobuf:"bytes,3,opt,name=to,proto3"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Channel     ChatChannel            `protobuf:"varint,1,opt,name=channel,proto3,enum=wathena.v1.ChatChannel"`
+	xxx_hidden_Text        string                 `protobuf:"bytes,2,opt,name=text,proto3"`
+	xxx_hidden_To          string                 `protobuf:"bytes,3,opt,name=to,proto3"`
+	xxx_hidden_ChannelName string                 `protobuf:"bytes,4,opt,name=channel_name,json=channelName,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Chat) Reset() {
@@ -1502,6 +1699,13 @@ func (x *Chat) GetTo() string {
 	return ""
 }
 
+func (x *Chat) GetChannelName() string {
+	if x != nil {
+		return x.xxx_hidden_ChannelName
+	}
+	return ""
+}
+
 func (x *Chat) SetChannel(v ChatChannel) {
 	x.xxx_hidden_Channel = v
 }
@@ -1514,13 +1718,22 @@ func (x *Chat) SetTo(v string) {
 	x.xxx_hidden_To = v
 }
 
+func (x *Chat) SetChannelName(v string) {
+	x.xxx_hidden_ChannelName = v
+}
+
 type Chat_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Channel ChatChannel
 	Text    string
-	// to is a character name for whispers.
+	// to is a character name for whispers. The server answers a whisper
+	// with WhisperResult. A name that starts with # whispers to that chat
+	// channel, as rAthena does, and joins it first when anyone may join.
 	To string
+	// channel_name is the channel's name with its #, such as #trade, for
+	// CHAT_CHANNEL_NAMED.
+	ChannelName string
 }
 
 func (b0 Chat_builder) Build() *Chat {
@@ -1530,6 +1743,253 @@ func (b0 Chat_builder) Build() *Chat {
 	x.xxx_hidden_Channel = b.Channel
 	x.xxx_hidden_Text = b.Text
 	x.xxx_hidden_To = b.To
+	x.xxx_hidden_ChannelName = b.ChannelName
+	return m0
+}
+
+// ChannelCommand joins or leaves a chat channel, or asks for the list of
+// channels or the members of one, as rAthena's @join and @channel.
+type ChannelCommand struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Action ChannelAction          `protobuf:"varint,1,opt,name=action,proto3,enum=wathena.v1.ChannelAction"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ChannelCommand) Reset() {
+	*x = ChannelCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelCommand) ProtoMessage() {}
+
+func (x *ChannelCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChannelCommand) GetAction() ChannelAction {
+	if x != nil {
+		return x.xxx_hidden_Action
+	}
+	return ChannelAction_CHANNEL_ACTION_UNSPECIFIED
+}
+
+func (x *ChannelCommand) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ChannelCommand) SetAction(v ChannelAction) {
+	x.xxx_hidden_Action = v
+}
+
+func (x *ChannelCommand) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+type ChannelCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Action ChannelAction
+	// name is the channel's name with its #, such as #trade. LIST does not
+	// use it.
+	Name string
+}
+
+func (b0 ChannelCommand_builder) Build() *ChannelCommand {
+	m0 := &ChannelCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Action = b.Action
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
+// Block adds a character name to the player's block list, or removes
+// one, as rAthena's /ex and /in. A blocked player cannot whisper to the
+// player, and the player does not see its chat. The server answers with
+// BlockList.
+type Block struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Unblock bool                   `protobuf:"varint,2,opt,name=unblock,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *Block) Reset() {
+	*x = Block{}
+	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Block) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Block) ProtoMessage() {}
+
+func (x *Block) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Block) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *Block) GetUnblock() bool {
+	if x != nil {
+		return x.xxx_hidden_Unblock
+	}
+	return false
+}
+
+func (x *Block) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Block) SetUnblock(v bool) {
+	x.xxx_hidden_Unblock = v
+}
+
+type Block_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is a character name, 1 to 24 characters.
+	Name    string
+	Unblock bool
+}
+
+func (b0 Block_builder) Build() *Block {
+	m0 := &Block{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Unblock = b.Unblock
+	return m0
+}
+
+// Report reports a player, or one chat line, to the staff (strategy
+// section 7.10). The report keeps the chat the player saw in the last 5
+// minutes. The server answers with ReportResult.
+type Report struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_LineId []byte                 `protobuf:"bytes,2,opt,name=line_id,json=lineId,proto3"`
+	xxx_hidden_Reason string                 `protobuf:"bytes,3,opt,name=reason,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Report) Reset() {
+	*x = Report{}
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Report) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Report) ProtoMessage() {}
+
+func (x *Report) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Report) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *Report) GetLineId() []byte {
+	if x != nil {
+		return x.xxx_hidden_LineId
+	}
+	return nil
+}
+
+func (x *Report) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *Report) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Report) SetLineId(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_LineId = v
+}
+
+func (x *Report) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+type Report_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the reported character's name.
+	Name string
+	// line_id is ChatMessage.line_id of the reported line, or empty to
+	// report the player.
+	LineId []byte
+	// reason is the player's own words, at most 255 characters.
+	Reason string
+}
+
+func (b0 Report_builder) Build() *Report {
+	m0 := &Report{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_LineId = b.LineId
+	x.xxx_hidden_Reason = b.Reason
 	return m0
 }
 
@@ -1544,7 +2004,7 @@ type NpcClick struct {
 
 func (x *NpcClick) Reset() {
 	*x = NpcClick{}
-	mi := &file_wathena_v1_command_proto_msgTypes[7]
+	mi := &file_wathena_v1_command_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1556,7 +2016,7 @@ func (x *NpcClick) String() string {
 func (*NpcClick) ProtoMessage() {}
 
 func (x *NpcClick) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[7]
+	mi := &file_wathena_v1_command_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1603,7 +2063,7 @@ type NpcReply struct {
 
 func (x *NpcReply) Reset() {
 	*x = NpcReply{}
-	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	mi := &file_wathena_v1_command_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1615,7 +2075,7 @@ func (x *NpcReply) String() string {
 func (*NpcReply) ProtoMessage() {}
 
 func (x *NpcReply) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	mi := &file_wathena_v1_command_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1858,7 +2318,7 @@ func (b0 NpcReply_builder) Build() *NpcReply {
 type case_NpcReply_Answer protoreflect.FieldNumber
 
 func (x case_NpcReply_Answer) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[8].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[11].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -1919,7 +2379,7 @@ type ShopBuy struct {
 
 func (x *ShopBuy) Reset() {
 	*x = ShopBuy{}
-	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	mi := &file_wathena_v1_command_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1931,7 +2391,7 @@ func (x *ShopBuy) String() string {
 func (*ShopBuy) ProtoMessage() {}
 
 func (x *ShopBuy) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	mi := &file_wathena_v1_command_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1994,7 +2454,7 @@ type ShopBuyLine struct {
 
 func (x *ShopBuyLine) Reset() {
 	*x = ShopBuyLine{}
-	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	mi := &file_wathena_v1_command_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2006,7 +2466,7 @@ func (x *ShopBuyLine) String() string {
 func (*ShopBuyLine) ProtoMessage() {}
 
 func (x *ShopBuyLine) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	mi := &file_wathena_v1_command_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2069,7 +2529,7 @@ type ShopSell struct {
 
 func (x *ShopSell) Reset() {
 	*x = ShopSell{}
-	mi := &file_wathena_v1_command_proto_msgTypes[11]
+	mi := &file_wathena_v1_command_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2081,7 +2541,7 @@ func (x *ShopSell) String() string {
 func (*ShopSell) ProtoMessage() {}
 
 func (x *ShopSell) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[11]
+	mi := &file_wathena_v1_command_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2143,7 +2603,7 @@ type ShopSellLine struct {
 
 func (x *ShopSellLine) Reset() {
 	*x = ShopSellLine{}
-	mi := &file_wathena_v1_command_proto_msgTypes[12]
+	mi := &file_wathena_v1_command_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2155,7 +2615,7 @@ func (x *ShopSellLine) String() string {
 func (*ShopSellLine) ProtoMessage() {}
 
 func (x *ShopSellLine) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[12]
+	mi := &file_wathena_v1_command_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2216,7 +2676,7 @@ type ShopClose struct {
 
 func (x *ShopClose) Reset() {
 	*x = ShopClose{}
-	mi := &file_wathena_v1_command_proto_msgTypes[13]
+	mi := &file_wathena_v1_command_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2228,7 +2688,7 @@ func (x *ShopClose) String() string {
 func (*ShopClose) ProtoMessage() {}
 
 func (x *ShopClose) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[13]
+	mi := &file_wathena_v1_command_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2275,7 +2735,7 @@ type UseItem struct {
 
 func (x *UseItem) Reset() {
 	*x = UseItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[14]
+	mi := &file_wathena_v1_command_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2287,7 +2747,7 @@ func (x *UseItem) String() string {
 func (*UseItem) ProtoMessage() {}
 
 func (x *UseItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[14]
+	mi := &file_wathena_v1_command_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2338,7 +2798,7 @@ type DropItem struct {
 
 func (x *DropItem) Reset() {
 	*x = DropItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[15]
+	mi := &file_wathena_v1_command_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2350,7 +2810,7 @@ func (x *DropItem) String() string {
 func (*DropItem) ProtoMessage() {}
 
 func (x *DropItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[15]
+	mi := &file_wathena_v1_command_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2411,7 +2871,7 @@ type PickUp struct {
 
 func (x *PickUp) Reset() {
 	*x = PickUp{}
-	mi := &file_wathena_v1_command_proto_msgTypes[16]
+	mi := &file_wathena_v1_command_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2423,7 +2883,7 @@ func (x *PickUp) String() string {
 func (*PickUp) ProtoMessage() {}
 
 func (x *PickUp) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[16]
+	mi := &file_wathena_v1_command_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2472,7 +2932,7 @@ type RaiseStat struct {
 
 func (x *RaiseStat) Reset() {
 	*x = RaiseStat{}
-	mi := &file_wathena_v1_command_proto_msgTypes[17]
+	mi := &file_wathena_v1_command_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2484,7 +2944,7 @@ func (x *RaiseStat) String() string {
 func (*RaiseStat) ProtoMessage() {}
 
 func (x *RaiseStat) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[17]
+	mi := &file_wathena_v1_command_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2546,7 +3006,7 @@ type EquipItem struct {
 
 func (x *EquipItem) Reset() {
 	*x = EquipItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[18]
+	mi := &file_wathena_v1_command_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2558,7 +3018,7 @@ func (x *EquipItem) String() string {
 func (*EquipItem) ProtoMessage() {}
 
 func (x *EquipItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[18]
+	mi := &file_wathena_v1_command_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2621,7 +3081,7 @@ type UnequipItem struct {
 
 func (x *UnequipItem) Reset() {
 	*x = UnequipItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[19]
+	mi := &file_wathena_v1_command_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2633,7 +3093,7 @@ func (x *UnequipItem) String() string {
 func (*UnequipItem) ProtoMessage() {}
 
 func (x *UnequipItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[19]
+	mi := &file_wathena_v1_command_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2682,7 +3142,7 @@ type InsertCard struct {
 
 func (x *InsertCard) Reset() {
 	*x = InsertCard{}
-	mi := &file_wathena_v1_command_proto_msgTypes[20]
+	mi := &file_wathena_v1_command_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2694,7 +3154,7 @@ func (x *InsertCard) String() string {
 func (*InsertCard) ProtoMessage() {}
 
 func (x *InsertCard) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[20]
+	mi := &file_wathena_v1_command_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2748,7 +3208,7 @@ var File_wathena_v1_command_proto protoreflect.FileDescriptor
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\x8e\a\n" +
+	"wathena.v1\"\x9f\b\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -2772,7 +3232,10 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\vinsert_card\x18\x10 \x01(\v2\x16.wathena.v1.InsertCardH\x00R\n" +
 	"insertCard\x129\n" +
 	"\vlearn_skill\x18\x11 \x01(\v2\x16.wathena.v1.LearnSkillH\x00R\n" +
-	"learnSkillB\x06\n" +
+	"learnSkill\x126\n" +
+	"\achannel\x18\x12 \x01(\v2\x1a.wathena.v1.ChannelCommandH\x00R\achannel\x12)\n" +
+	"\x05block\x18\x13 \x01(\v2\x11.wathena.v1.BlockH\x00R\x05block\x12,\n" +
+	"\x06report\x18\x14 \x01(\v2\x12.wathena.v1.ReportH\x00R\x06reportB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -2791,11 +3254,22 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\bskill_id\x18\x01 \x01(\rR\askillId\"\"\n" +
 	"\x04Cell\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\rR\x01y\"]\n" +
+	"\x01y\x18\x02 \x01(\rR\x01y\"\x80\x01\n" +
 	"\x04Chat\x121\n" +
 	"\achannel\x18\x01 \x01(\x0e2\x17.wathena.v1.ChatChannelR\achannel\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x12\x0e\n" +
-	"\x02to\x18\x03 \x01(\tR\x02to\"\x1c\n" +
+	"\x02to\x18\x03 \x01(\tR\x02to\x12!\n" +
+	"\fchannel_name\x18\x04 \x01(\tR\vchannelName\"W\n" +
+	"\x0eChannelCommand\x121\n" +
+	"\x06action\x18\x01 \x01(\x0e2\x19.wathena.v1.ChannelActionR\x06action\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"5\n" +
+	"\x05Block\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
+	"\aunblock\x18\x02 \x01(\bR\aunblock\"M\n" +
+	"\x06Report\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
+	"\aline_id\x18\x02 \x01(\fR\x06lineId\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"\x1c\n" +
 	"\bNpcClick\x12\x10\n" +
 	"\x03npc\x18\x01 \x01(\rR\x03npc\"\xb6\x01\n" +
 	"\bNpcReply\x12\x16\n" +
@@ -2840,7 +3314,7 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"InsertCard\x12\x1b\n" +
 	"\tcard_slot\x18\x01 \x01(\rR\bcardSlot\x12\x1d\n" +
 	"\n" +
-	"equip_slot\x18\x02 \x01(\rR\tequipSlot*\xdd\x01\n" +
+	"equip_slot\x18\x02 \x01(\rR\tequipSlot*\xf5\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
@@ -2849,7 +3323,14 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x14CHAT_CHANNEL_WHISPER\x10\x04\x12\x16\n" +
 	"\x12CHAT_CHANNEL_WORLD\x10\x05\x12\x17\n" +
 	"\x13CHAT_CHANNEL_SYSTEM\x10\x06\x12\x1d\n" +
-	"\x19CHAT_CHANNEL_ANNOUNCEMENT\x10\a*\x97\x01\n" +
+	"\x19CHAT_CHANNEL_ANNOUNCEMENT\x10\a\x12\x16\n" +
+	"\x12CHAT_CHANNEL_NAMED\x10\b*\x97\x01\n" +
+	"\rChannelAction\x12\x1e\n" +
+	"\x1aCHANNEL_ACTION_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13CHANNEL_ACTION_JOIN\x10\x01\x12\x18\n" +
+	"\x14CHANNEL_ACTION_LEAVE\x10\x02\x12\x17\n" +
+	"\x13CHANNEL_ACTION_LIST\x10\x03\x12\x1a\n" +
+	"\x16CHANNEL_ACTION_MEMBERS\x10\x04*\x97\x01\n" +
 	"\bBaseStat\x12\x19\n" +
 	"\x15BASE_STAT_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rBASE_STAT_STR\x10\x01\x12\x11\n" +
@@ -2859,61 +3340,69 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_DEX\x10\x05\x12\x11\n" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
-var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_wathena_v1_command_proto_goTypes = []any{
-	(ChatChannel)(0),     // 0: wathena.v1.ChatChannel
-	(BaseStat)(0),        // 1: wathena.v1.BaseStat
-	(*Command)(nil),      // 2: wathena.v1.Command
-	(*WalkTo)(nil),       // 3: wathena.v1.WalkTo
-	(*Attack)(nil),       // 4: wathena.v1.Attack
-	(*UseSkill)(nil),     // 5: wathena.v1.UseSkill
-	(*LearnSkill)(nil),   // 6: wathena.v1.LearnSkill
-	(*Cell)(nil),         // 7: wathena.v1.Cell
-	(*Chat)(nil),         // 8: wathena.v1.Chat
-	(*NpcClick)(nil),     // 9: wathena.v1.NpcClick
-	(*NpcReply)(nil),     // 10: wathena.v1.NpcReply
-	(*ShopBuy)(nil),      // 11: wathena.v1.ShopBuy
-	(*ShopBuyLine)(nil),  // 12: wathena.v1.ShopBuyLine
-	(*ShopSell)(nil),     // 13: wathena.v1.ShopSell
-	(*ShopSellLine)(nil), // 14: wathena.v1.ShopSellLine
-	(*ShopClose)(nil),    // 15: wathena.v1.ShopClose
-	(*UseItem)(nil),      // 16: wathena.v1.UseItem
-	(*DropItem)(nil),     // 17: wathena.v1.DropItem
-	(*PickUp)(nil),       // 18: wathena.v1.PickUp
-	(*RaiseStat)(nil),    // 19: wathena.v1.RaiseStat
-	(*EquipItem)(nil),    // 20: wathena.v1.EquipItem
-	(*UnequipItem)(nil),  // 21: wathena.v1.UnequipItem
-	(*InsertCard)(nil),   // 22: wathena.v1.InsertCard
+	(ChatChannel)(0),       // 0: wathena.v1.ChatChannel
+	(ChannelAction)(0),     // 1: wathena.v1.ChannelAction
+	(BaseStat)(0),          // 2: wathena.v1.BaseStat
+	(*Command)(nil),        // 3: wathena.v1.Command
+	(*WalkTo)(nil),         // 4: wathena.v1.WalkTo
+	(*Attack)(nil),         // 5: wathena.v1.Attack
+	(*UseSkill)(nil),       // 6: wathena.v1.UseSkill
+	(*LearnSkill)(nil),     // 7: wathena.v1.LearnSkill
+	(*Cell)(nil),           // 8: wathena.v1.Cell
+	(*Chat)(nil),           // 9: wathena.v1.Chat
+	(*ChannelCommand)(nil), // 10: wathena.v1.ChannelCommand
+	(*Block)(nil),          // 11: wathena.v1.Block
+	(*Report)(nil),         // 12: wathena.v1.Report
+	(*NpcClick)(nil),       // 13: wathena.v1.NpcClick
+	(*NpcReply)(nil),       // 14: wathena.v1.NpcReply
+	(*ShopBuy)(nil),        // 15: wathena.v1.ShopBuy
+	(*ShopBuyLine)(nil),    // 16: wathena.v1.ShopBuyLine
+	(*ShopSell)(nil),       // 17: wathena.v1.ShopSell
+	(*ShopSellLine)(nil),   // 18: wathena.v1.ShopSellLine
+	(*ShopClose)(nil),      // 19: wathena.v1.ShopClose
+	(*UseItem)(nil),        // 20: wathena.v1.UseItem
+	(*DropItem)(nil),       // 21: wathena.v1.DropItem
+	(*PickUp)(nil),         // 22: wathena.v1.PickUp
+	(*RaiseStat)(nil),      // 23: wathena.v1.RaiseStat
+	(*EquipItem)(nil),      // 24: wathena.v1.EquipItem
+	(*UnequipItem)(nil),    // 25: wathena.v1.UnequipItem
+	(*InsertCard)(nil),     // 26: wathena.v1.InsertCard
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
-	3,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
-	4,  // 1: wathena.v1.Command.attack:type_name -> wathena.v1.Attack
-	5,  // 2: wathena.v1.Command.use_skill:type_name -> wathena.v1.UseSkill
-	8,  // 3: wathena.v1.Command.chat:type_name -> wathena.v1.Chat
-	9,  // 4: wathena.v1.Command.npc_click:type_name -> wathena.v1.NpcClick
-	10, // 5: wathena.v1.Command.npc_reply:type_name -> wathena.v1.NpcReply
-	16, // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
-	18, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
-	19, // 8: wathena.v1.Command.raise_stat:type_name -> wathena.v1.RaiseStat
-	17, // 9: wathena.v1.Command.drop_item:type_name -> wathena.v1.DropItem
-	11, // 10: wathena.v1.Command.shop_buy:type_name -> wathena.v1.ShopBuy
-	13, // 11: wathena.v1.Command.shop_sell:type_name -> wathena.v1.ShopSell
-	15, // 12: wathena.v1.Command.shop_close:type_name -> wathena.v1.ShopClose
-	20, // 13: wathena.v1.Command.equip_item:type_name -> wathena.v1.EquipItem
-	21, // 14: wathena.v1.Command.unequip_item:type_name -> wathena.v1.UnequipItem
-	22, // 15: wathena.v1.Command.insert_card:type_name -> wathena.v1.InsertCard
-	6,  // 16: wathena.v1.Command.learn_skill:type_name -> wathena.v1.LearnSkill
-	7,  // 17: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 18: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	12, // 19: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
-	14, // 20: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
-	1,  // 21: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	4,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
+	5,  // 1: wathena.v1.Command.attack:type_name -> wathena.v1.Attack
+	6,  // 2: wathena.v1.Command.use_skill:type_name -> wathena.v1.UseSkill
+	9,  // 3: wathena.v1.Command.chat:type_name -> wathena.v1.Chat
+	13, // 4: wathena.v1.Command.npc_click:type_name -> wathena.v1.NpcClick
+	14, // 5: wathena.v1.Command.npc_reply:type_name -> wathena.v1.NpcReply
+	20, // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
+	22, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
+	23, // 8: wathena.v1.Command.raise_stat:type_name -> wathena.v1.RaiseStat
+	21, // 9: wathena.v1.Command.drop_item:type_name -> wathena.v1.DropItem
+	15, // 10: wathena.v1.Command.shop_buy:type_name -> wathena.v1.ShopBuy
+	17, // 11: wathena.v1.Command.shop_sell:type_name -> wathena.v1.ShopSell
+	19, // 12: wathena.v1.Command.shop_close:type_name -> wathena.v1.ShopClose
+	24, // 13: wathena.v1.Command.equip_item:type_name -> wathena.v1.EquipItem
+	25, // 14: wathena.v1.Command.unequip_item:type_name -> wathena.v1.UnequipItem
+	26, // 15: wathena.v1.Command.insert_card:type_name -> wathena.v1.InsertCard
+	7,  // 16: wathena.v1.Command.learn_skill:type_name -> wathena.v1.LearnSkill
+	10, // 17: wathena.v1.Command.channel:type_name -> wathena.v1.ChannelCommand
+	11, // 18: wathena.v1.Command.block:type_name -> wathena.v1.Block
+	12, // 19: wathena.v1.Command.report:type_name -> wathena.v1.Report
+	8,  // 20: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 21: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	1,  // 22: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
+	16, // 23: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
+	18, // 24: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
+	2,  // 25: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -2939,12 +3428,15 @@ func file_wathena_v1_command_proto_init() {
 		(*command_UnequipItem)(nil),
 		(*command_InsertCard)(nil),
 		(*command_LearnSkill)(nil),
+		(*command_Channel)(nil),
+		(*command_Block)(nil),
+		(*command_Report)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
 		(*useSkill_Cell)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[8].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[11].OneofWrappers = []any{
 		(*npcReply_Next)(nil),
 		(*npcReply_Menu)(nil),
 		(*npcReply_InputText)(nil),
@@ -2956,8 +3448,8 @@ func file_wathena_v1_command_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   21,
+			NumEnums:      3,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

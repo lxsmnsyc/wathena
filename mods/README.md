@@ -113,7 +113,7 @@ provides:
 |---|---|
 | `game.read`, `npc.create`, `event.listen`, `storage.mod` | Granted to every mod. |
 | `player.give_items`, `player.give_zeny`, `player.give_exp`, `player.warp`, `player.status`, `player.change_job`, `world.announce`, `events.schedule` | Needs the owner's approval. |
-| `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls` | Needs approval, and is logged as a warning at each start. |
+| `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
 - A mod with a permission that is not approved does not load, and the server does not start. The error names the permissions.
@@ -469,6 +469,42 @@ Companion and mount records follow proposal 0002, review decision 25. Core's rec
 - The character saves the record names and the option bits of their looks. A record whose mod was removed goes when the character loads, with a warning in the log.
 - The converter maps `setfalcon`, `setriding` and `setcart` to these calls, and `checkfalcon`, `checkriding` and `checkcart` to `player.companion ~= nil`, `player.mount ~= nil` and `player.cart ~= nil`.
 
+### Chat channels and the chat filter: data/channels.yml and data/chat_filter.yml
+
+Chat records follow proposal 0002, review decision 26. Core's records are files of the core mod: rAthena's default channels `#global`, `#support`, `#trade` and `#map` in `data/channels.yml`, and reserved staff titles in `data/chat_filter.yml`. Server owners add their word lists in a mod of their own.
+
+```yaml
+# data/channels.yml: change a core channel by name.
+- name: trade
+  color: 0x00FF00
+  autojoin: true
+# data/chat_filter.yml: words of the filter.
+- {name: grief, action: replace}
+- {name: spamsite, action: reject, match: part}
+- {name: gamemaster, action: reserve}
+```
+
+| Channel field | Meaning |
+|---|---|
+| `display_name` | What players see before each line, as rAthena's alias, such as `[Trade]`. |
+| `color` | The lines' color, written 0xRRGGBB. |
+| `join` | `open`: any player may join. `invite`: only `channel:add` puts players in. |
+| `autojoin` | Players join it at login. It needs `join: open`. |
+| `can_leave`, `can_chat` | rAthena's `leave` and `chat` options. `#global` cannot be left, as rAthena's. |
+| `delay_milliseconds` | The least time between two lines of one member, 1000 by default, as rAthena's `delay`. |
+| `kind` | `world`, or `map`: one channel per map, as rAthena's `#map`. A member hears the members on its own map and leaves it on a map change. |
+
+- A mod changes core's channels by name. It makes its own channels with `channels.create`, not with records.
+- `public`, `whisper`, `party` and `guild` are not channel names.
+
+| Filter field | Meaning |
+|---|---|
+| `action` | `replace` (the default) turns the word into asterisks. `reject` refuses the whole line, and the speaker is told. `reserve` only refuses character names that have it, such as a staff title. |
+| `match` | `word` (the default) finds the word alone, so `grief` does not match `griefer`. `part` finds it inside longer words too. |
+
+- Case does not matter. A mod's word is the record name after the mod's ID.
+- Every word, whatever its action, refuses new character names that have it. The account pages and `--dev` logins check names.
+
 Kinds not overlaid yet: spawns, quests and achievements.
 
 ## Text: locales/en.yml
@@ -558,6 +594,7 @@ end
 | `click` | `player`, `conversation` | NPC contexts only: a player talks to the NPC ("NPC scripts" below). |
 | `status_start`, `status_end`, `status_tick` | `event` | A status started, ended or ticked on the context's map ("Status effects" below). Mod and event contexts. |
 | `skill_used` | `use` | A skill took effect on the context's map, after its cast time ("Skills" below). Mod, event and item contexts. |
+| `chat` | `message` | A player on the context's map said a line, after it went out ("Chat" below). Mod, NPC and event contexts. |
 | `cast` | `cast` | Skill contexts only: the skill takes effect ("Skills" below). |
 
 Event contexts can listen to the events of mod contexts.
@@ -748,6 +785,66 @@ The death object has `victim` (a player or monster handle), `killer` (a handle, 
 | `monster` | Monsters of one ID, from `monsters.id`. |
 | `map` | One map. A context sees its own map's deaths only. |
 
+### Chat
+
+Chat follows proposal 0002, review decision 26. [examples/town-crier](examples/town-crier) uses each part.
+
+```lua
+local channels = require "wa.channels"
+local events = require "wa.events"
+local hooks = require "wa.hooks"
+
+return function()
+  local lounge = channels.create { name = "lounge", display_name = "[Lounge]", color = 0xFFA500, join = "invite" }
+  hooks.on("chat", function(message, next)
+    local text = next(message)
+    if text ~= nil and text:find("https?://") then
+      return nil
+    end
+    return text
+  end)
+  events.on("chat", function(message)
+    if message.text == "!lounge" then
+      lounge:add(message.player)
+      message.player:whisper("Welcome to the lounge.", { from = "Host" })
+    end
+  end, { channel = "public" })
+end
+```
+
+A line goes through these steps:
+
+1. The gateway checks the chat rate limits, which are server settings, with lower limits in a character's first hour.
+2. The zone refuses the line of a muted player, with the end time.
+3. The server's chat filter replaces or rejects words (`data/chat_filter.yml` above).
+4. The `chat` hooks run. Each returns the text, or nil to stop the line. They need `rules.override`, and only compute.
+5. The line goes out: to the players in range, the whisper's target on any map, or the channel's members. Players who block the speaker do not see it.
+6. The `chat` event runs.
+
+The message of the event and the hook is `{ player, channel, text, to, map }`:
+
+- `channel` is `"public"` for local chat, `"whisper"`, `"party"`, `"guild"`, or a channel's name without its `#`, such as `"trade"`. Party and guild chat do not exist yet.
+- `to` is a whisper's target name, or nil.
+- The event's options `channel`, `map` and `player` narrow it. It is a world event: a handler hears every player of its context's map.
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `player:whisper(text, { from })` | None | Sends the player a whisper. `from` is the name it sees, by default the NPC's name in an NPC context, or the mod's name. It does not pass the filter or the hooks, and blocks do not stop it. `player:send_message` stays for system lines. |
+| `player:is_blocking(other)` | `game.read` | Whether the player blocks the other player's name. |
+| `player:mute(minutes, reason)` | `player.sanction` | Mutes the player, as rAthena's `SC_NOCHAT`. It replaces a mute that has not ended. |
+| `player:jail(minutes, reason)` | `player.sanction` | Jails the player, as rAthena's `pc_jail`: it goes to the jail map and cannot warp until the end, then goes back to where it was. |
+| `player:unmute()` | `player.sanction` | Ends a mute. Returns false when the player was not muted. |
+| `channels.create { name, display_name, color, join }` | None | Makes a channel that the context owns. |
+| `channels.get(name)` | `game.read` | Finds a channel, core's or a mod's, with or without its `#`, or nil. |
+| `channel:send(text)` | None | A line of the channel itself, as rAthena's `channelmes`. |
+| `channel:add(player)`, `channel:remove(player)` | None | Puts a player in, or takes it out, whatever the channel's rules. They return false when nothing changed. |
+| `channel:get_members()` | `game.read` | The members' names, sorted. Members may be on any map. |
+
+- Minutes are 1 to 5,256,000, and reasons 1 to 255 characters. The player sees the reason and the end time. Mutes and jails are saved, and the database keeps every one for the staff tools.
+- A channel is one for the whole world. Each zone runs the mod's setup, and every zone's context of the mod shares the channel. It ends when the mod's last context ends, and its members leave it. A name that core or another mod has raises an error.
+- Bans and reports are staff tools, not Lua API.
+- `player.sanction` is flagged: the server logs it at each start.
+
 ### Entity queries
 
 ```lua
@@ -853,6 +950,7 @@ end
 | `cast_allowed` | `hook`: `caster`, `target`, `skill`, `level`, `allowed` (whether rAthena lets the cast start) | `true` or `false`. |
 | `monster_target` | `choice`: `monster`, `candidates` (the units it may take), `current` (rAthena's choice, or nil), `reason` (`"aggressive"`, `"assist"`, `"hit"` or `"change"`) | One of `candidates`, or nil for none. Anything else counts as a failure of the hook. |
 | `item_roll` | `roll`: `item`, `name` (the roll), `min`, `max`, `default`, `source` (`{ kind = "drop", monster }`, `{ kind = "script" }` or `{ kind = "shop" }`) | The value, clamped to the roll's range. The innermost result is the server's roll ("Rolled item values" below). |
+| `chat` | `message`: `player`, `channel`, `text`, `to`, `map` ("Chat" below) | The text, or nil to stop the line. It runs after the server's chat filter. |
 
 - Hooks run in a chain. Higher priority runs first; equal priorities run in the order they were added. `next(object)` returns the rest of the chain's result. The innermost result is rAthena's value.
 - To pass a changed object, pass a table with the same fields to `next`.
@@ -1483,6 +1581,8 @@ end
 | `world:get_monsters(monster)` | Handles of the living monsters of the map, of one ID or all, in the order they spawned. |
 | `world:get_announcements()` | Every line announced to the world or the map so far. |
 | `world:count_floor_items(item)` | How many of an item lie on the map. |
+| `world:chat(player, text, { channel, to })` | Provisional. The player says a line, as a client's chat: `channel` is `"public"` (the default), `"whisper"` with `to`, or a channel's name. It passes the mute, the filter and the hooks, then the `chat` event runs. |
+| `world:get_chat(player)` | Provisional. The chat lines the player got so far, each `{ channel, from, text }`: `channel` is `"public"`, `"whisper"`, `"system"`, or a channel's name with its `#`. |
 
 The last five, and world events in test worlds, were added in phase 3 step 6 (proposal 0002, review decisions 16 and 17). A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
 | `testing.expect(value)` | Checks a value with `.to_be(x)`, `.to_equal(table)` (deep), `.to_contain(text_or_value)`, `.to_be_true()`, `.to_be_false()`, `.to_be_nil()`, or `.to_fail_with(text)` for a function that should raise an error containing the text. |

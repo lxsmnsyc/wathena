@@ -5,6 +5,7 @@
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
 import {
   type BaseStat,
+  type ChannelAction,
   ChatChannel,
   CommandSchema,
   type NpcReply,
@@ -220,6 +221,69 @@ export class Connection {
       case: 'command',
       value: create(CommandSchema, {
         body: { case: 'chat', value: { channel: ChatChannel.LOCAL, text } },
+      }),
+    });
+  }
+
+  /**
+   * Whispers a line to a character by name, or to a chat channel for a
+   * name that starts with #. The server answers with WhisperResult. The
+   * caller cleans the line with cleanChat.
+   */
+  whisper(to: string, text: string): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.WHISPER, text, to } },
+      }),
+    });
+  }
+
+  /**
+   * Says a line in a chat channel the player is in, such as #trade. The
+   * caller cleans the line with cleanChat.
+   */
+  channelChat(name: string, text: string): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.NAMED, text, channelName: name } },
+      }),
+    });
+  }
+
+  /**
+   * Joins or leaves a chat channel, or asks for the channel list or the
+   * members of one. LIST does not use name.
+   */
+  channel(action: ChannelAction, name = ''): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'channel', value: { action, name } } }),
+    });
+  }
+
+  /** Adds a character name to the block list, or removes it. The server answers with BlockList. */
+  block(name: string, unblock = false): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'block', value: { name, unblock } } }),
+    });
+  }
+
+  /**
+   * Reports a chat line by its line ID, or a player when lineId is
+   * undefined. reason is the player's own words. The server answers with
+   * ReportResult.
+   */
+  report(name: string, lineId: Uint8Array | undefined, reason: string): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: {
+          case: 'report',
+          value: { name, lineId: lineId ?? new Uint8Array(), reason },
+        },
       }),
     });
   }

@@ -1,0 +1,3 @@
+# A word the server's chat filter replaces with asterisks, before the
+# mod's chat hook runs. Players cannot take a name with it either.
+- {name: grief, action: replace}

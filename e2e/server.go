@@ -312,10 +312,14 @@ func Start(t testing.TB, o Options) *Server {
 	return s
 }
 
-// configYAML approves the fixture mod's permissions.
+// configYAML approves the fixture mod's permissions, and turns off the
+// lower chat limits of new characters, since every test character is
+// new.
 const configYAML = `mods:
   approve:
-    e2e.fixture: [player.give_items, player.give_zeny, player.warp]
+    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction]
+chat:
+  new_character_period: 0s
 `
 
 // gameURL is the URL of a test database for the server, acting as the

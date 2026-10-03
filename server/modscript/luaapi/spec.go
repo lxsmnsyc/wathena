@@ -119,7 +119,7 @@ var Modules = []Module{
 			Name: "on",
 			Params: []Param{{"name", "wa.EventName", "The event's name. An unknown name, or an event of another context kind, raises an error."},
 				{"handler", "function", "Runs each time the event fires, in registration order."},
-				{"options", "wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|nil", "Only the death, status and skill_used events take options: they narrow which events run the handler."}},
+				{"options", "wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|wa.ChatOptions|nil", "Only the death, status, skill_used and chat events take options: they narrow which events run the handler."}},
 			Returns:    "wa.EventHandle",
 			Doc:        "Registers a handler for an event.",
 			Permission: "event.listen",
@@ -131,7 +131,7 @@ var Modules = []Module{
 		Funcs: []Func{{
 			Name: "on",
 			Params: []Param{{"name", "wa.HookName", "The hook's name. An unknown name raises an error."},
-				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice|wa.ItemRoll, next: fun(object?: table): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?): integer|boolean|wa.Player|wa.Monster|wa.Npc|nil, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range."},
+				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice|wa.ItemRoll|wa.ChatMessage, next: fun(object?: table): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer?): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message."},
 				{"options", "wa.HookOptions?", ""}},
 			Returns:    "wa.HookHandle",
 			Doc:        "Adds a hook. Higher priority runs first; equal priorities run in the order they were added.",
@@ -217,6 +217,15 @@ var Modules = []Module{
 		Name: "wa.world", Local: "world",
 		Doc:   "The world.",
 		Funcs: []Func{{Name: "announce", Params: []Param{{"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of the world, as announce.", Permission: "world.announce"}},
+	},
+	{
+		Name: "wa.channels", Local: "channels",
+		Doc: "Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world.",
+		Funcs: []Func{
+			{Name: "create", Params: []Param{{"spec", "wa.ChannelSpec", ""}}, Returns: "wa.Channel",
+				Doc: "Makes a channel that the context owns, and returns it. The channel ends when its owner ends, and its members leave it. The same mod's context in another zone, or after a reload, gets the same channel. A name that core or another mod has raises an error."},
+			{Name: "get", Params: []Param{{"name", "string", "A channel's name, with or without its #, such as trade."}}, Returns: "wa.Channel?", Doc: "A running channel: core's or a mod's. nil when none has the name.", Permission: "game.read"},
+		},
 	},
 	{
 		Name: "wa.variables", Local: "variables",
@@ -405,6 +414,14 @@ var Classes = []Class{
 			{Name: "reset_stats", Doc: "Sets every stat to 1 and gives back the status points of the base level, as resetstatus."},
 			{Name: "reset_skill", Params: []Param{{"skill", "integer", "A skill from skills.id."}, {"options", "wa.ResetSkillOptions?", ""}}, Returns: "boolean",
 				Doc: "Lowers one skill, to 0 by default, and refunds its skill points. Returns false, and changes nothing, when another learned skill needs the lowered level and with_dependents is not set, when the skill is not above the level, or for a quest skill."},
+			{Name: "whisper", Params: []Param{{"text", "string", "1 to 255 bytes."}, {"options", "wa.WhisperOptions?", ""}},
+				Doc: "Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it."},
+			{Name: "is_blocking", Params: []Param{{"other", "wa.Player", ""}}, Returns: "boolean", Doc: "Whether the player blocks the other player's name.", Permission: "game.read"},
+			{Name: "mute", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
+				Doc: "Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.", Permission: "player.sanction"},
+			{Name: "jail", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
+				Doc: "Jails the player, as rAthena's pc_jail: it goes to the jail map and cannot warp until the end, then goes back to where it was. It replaces a jail that has not ended. The player sees the reason and the end time. The jail is saved.", Permission: "player.sanction"},
+			{Name: "unmute", Returns: "boolean", Doc: "Ends the player's mute. Returns false when it was not muted.", Permission: "player.sanction"},
 			{Name: "reset_stat", Params: []Param{{"stat", `"str"|"agi"|"vit"|"int"|"dex"|"luk"`, ""}, {"options", "wa.ResetStatOptions?", ""}}, Returns: "boolean",
 				Doc: "Lowers one stat, to 1 by default, and refunds what raising it cost, by rAthena's cost table. Returns false when the stat is not above the value."},
 		}, statusMethods...),
@@ -518,6 +535,61 @@ var Classes = []Class{
 		},
 	},
 	{
+		Name: "wa.Channel", Handle: "channel", Doc: "A chat channel, from channels.create or channels.get.",
+		Methods: []Func{
+			{Name: "send", Params: []Param{{"text", "string", "1 to 255 bytes."}}, Doc: "Shows a line of the channel itself to its members, as rAthena's channelmes. It does not pass the chat filter."},
+			{Name: "add", Params: []Param{playerParam}, Returns: "boolean", Doc: "Puts the player in the channel, whatever its join rule. Returns false when it was already in it."},
+			{Name: "remove", Params: []Param{playerParam}, Returns: "boolean", Doc: "Takes the player out of the channel, even one it may not leave. Returns false when it was not in it."},
+			{Name: "get_members", Returns: "string[]", Doc: "The members' character names, sorted. Members may be on any map.", Permission: "game.read"},
+		},
+	},
+	{
+		Name: "wa.ChannelSpec", Doc: "The channel of channels.create.",
+		Fields: []Field{
+			{"name", "string", "1 to 19 letters, digits, _ and -, with or without the #. Players see it as #name. Not public, whisper, party or guild."},
+			{"display_name", "string?", "What players see before each line, 1 to 24 characters, as rAthena's alias. [name] by default."},
+			{"color", "integer?", "The lines' color, 0xRRGGBB. White by default."},
+			{"join", `"open"|"invite"|nil`, `"open", the default: any player may join. "invite": only channel:add puts players in.`},
+		},
+	},
+	{
+		Name: "wa.WhisperOptions", Doc: "The options of player:whisper.",
+		Fields: []Field{{"from", "string?", "The name the player sees, 1 to 24 characters. The NPC's name in an NPC context, else the mod's name."}},
+	},
+	{
+		Name: "wa.ChatMessage", Doc: "The object of the chat event and the chat hook: a line a player says. The hook runs after the server's chat filter, and the event after the line went out.",
+		Fields: []Field{
+			{"player", "wa.Player", "The speaker."},
+			{"channel", "string", `"public" for local chat, "whisper", "party", "guild", or a channel's name without its #, such as trade.`},
+			{"text", "string", "The line, after the chat filter."},
+			{"to", "string?", "A whisper's target name. nil for other channels."},
+			{"map", "string", "The speaker's map."},
+		},
+	},
+	{
+		Name: "wa.ChatOptions", Doc: "The options of a chat handler. Each one narrows the lines that run it.",
+		Fields: []Field{
+			{"channel", "string?", `"public", "whisper", "party", "guild" or a channel's name, with or without its #.`},
+			{"map", "string?", "A map name."},
+			{"player", "wa.Player?", "One speaker."},
+		},
+	},
+	{
+		Name: "wa.ChatTestOptions", Testing: true, Provisional: true, Doc: "The options of world:chat.",
+		Fields: []Field{
+			{"channel", "string?", `"public", the default, "whisper", or a channel's name.`},
+			{"to", "string?", "A whisper's target name."},
+		},
+	},
+	{
+		Name: "wa.HeardLine", Testing: true, Provisional: true, Doc: "A chat line a test player got, from world:get_chat.",
+		Fields: []Field{
+			{"channel", "string", `"public", "whisper", "system", or a channel's name with its #.`},
+			{"from", "string", "The speaker's name, or empty for a system line or a channel's own line."},
+			{"text", "string", ""},
+		},
+	},
+	{
 		Name: "wa.EventHandle", Handle: "event handle", Doc: "What events.on returns.",
 		Methods: []Func{{Name: "remove", Doc: "Removes the handler. A second call does nothing."}},
 	},
@@ -548,6 +620,9 @@ var Classes = []Class{
 			{Name: "get_monsters", Params: []Param{{"monster", "integer?", "From monsters.id. Every monster without it."}}, Returns: "wa.Monster[]", Doc: "The living monsters of the map, in the order they spawned."},
 			{Name: "get_announcements", Returns: "string[]", Doc: "Every line announced to the world or the map so far, in order."},
 			{Name: "count_floor_items", Params: []Param{itemParam}, Returns: "integer", Doc: "How many of the item lie on the map, with drops about to fall."},
+			{Name: "chat", Params: []Param{playerParam, {"text", "string", "1 to 255 characters."}, {"options", "wa.ChatTestOptions?", ""}},
+				Doc: "The player says a line, as a client's chat: it passes the mute, the chat filter and the chat hooks, then the chat event runs.", Provisional: true},
+			{Name: "get_chat", Params: []Param{playerParam}, Returns: "wa.HeardLine[]", Doc: "The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines.", Provisional: true},
 		},
 	},
 	{
@@ -1003,6 +1078,7 @@ var Events = []Event{
 	{Name: "status_start", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status started on an entity of the context's map, or started again. Options narrow it."},
 	{Name: "status_end", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status ended. Options narrow it."},
 	{Name: "status_tick", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it."},
+	{Name: "chat", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"message", "wa.ChatMessage", ""}}, Doc: "A player on the context's map said a line: local chat, a whisper, or a channel line. It runs after the line went out. Options narrow it."},
 }
 
 // EquipSlots are the slot names of player:get_equipped.
@@ -1029,7 +1105,7 @@ func Aliases() []Alias {
 		{Name: "wa.EventName", Values: events, Doc: "An event name of wa.events."},
 		{Name: "wa.BonusName", Values: bonuses, Doc: "A bonus name of wa.bonuses (proposal 0002a)."},
 		{Name: "wa.EquipSlot", Values: EquipSlots, Doc: "An equipment slot."},
-		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat"}, Doc: "A hook name of wa.hooks."},
 		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
 	}

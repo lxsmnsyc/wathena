@@ -144,6 +144,12 @@ func (h scriptHost) Warp(id int64, where, mapName string, x, y int) (bool, error
 // not run, goes to the start map's start cell. It is nil when even the
 // start map does not run, as in tests without a world.
 func (z *Zone) savePoint(p *Player) (*Zone, int, int) {
+	if z.jailed(p) {
+		// A jailed player comes back in jail.
+		if to, x, y := z.jailCell(); to != nil {
+			return to, x, y
+		}
+	}
 	if m := p.record.SaveMap; m != "" {
 		if to := z.zoneOf(m); to != nil {
 			return to, p.record.SaveX, p.record.SaveY
@@ -199,7 +205,8 @@ func (z *Zone) StartCell() (int, int) { return z.startCell() }
 func (z *Zone) finishWarp(p *Player) {
 	w := p.warpTo
 	p.warpTo = nil
-	if w == nil || p.gone() || p.entity.dead {
+	if w == nil || p.gone() || p.entity.dead || z.jailed(p) {
+		// A jailed player stays in jail.
 		return
 	}
 	if w.to == z {

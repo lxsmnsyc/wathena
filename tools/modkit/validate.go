@@ -368,6 +368,7 @@ func records(l *Loaded) []Record {
 		jobOverlay = l.Jobs.Overlay
 	}
 	overlays := append([]*mod.Overlay{jobOverlay, l.NPCOverlay, l.MonsterOverlay, l.EventOverlay, l.SkillOverlay}, l.CompanionOverlays...)
+	overlays = append(overlays, l.ChatOverlays...)
 	for _, o := range overlays {
 		if o == nil {
 			continue

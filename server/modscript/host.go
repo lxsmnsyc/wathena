@@ -129,6 +129,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	var filter *deathFilter
 	var sfilter *statusFilter
 	var kfilter *skillFilter
+	var cfilter *chatFilter
 	if opts := c.Arg(2); !opts.IsNil() {
 		var err error
 		switch {
@@ -138,8 +139,10 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 			sfilter, err = readStatusFilter(name, opts)
 		case name == "skill_used":
 			kfilter, err = readSkillFilter(opts)
+		case name == "chat":
+			cfilter, err = readChatFilter(opts)
 		default:
-			return fmt.Errorf("events.on(%q): only the death, status and skill_used events take options", name)
+			return fmt.Errorf("events.on(%q): only the death, status, skill_used and chat events take options", name)
 		}
 		if err != nil {
 			return err
@@ -152,7 +155,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter, skill: kfilter}
+	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter, skill: kfilter, chat: cfilter}
 	ctx.handlers = append(ctx.handlers, h)
 	r.handlers[name] = append(r.handlers[name], h)
 	r.byID[h.id] = h

@@ -1,0 +1,16 @@
+# Core's chat filter (strategy section 7.10, proposal 0002, review
+# decision 26). Each record is one word or phrase. Case does not matter.
+#   - action: replace turns the word into asterisks, reject refuses the
+#     whole line, and reserve only refuses character names that have it.
+#   - match: word (the default) finds the word alone, part finds it
+#     inside longer words too.
+# Every word, whatever its action, refuses character names that have it.
+# Core lists only reserved staff titles. Server owners add their word
+# lists in a mod's data/chat_filter.yml, or change these by name.
+- {name: gm, action: reserve}
+- {name: admin, action: reserve}
+- {name: administrator, action: reserve}
+- {name: moderator, action: reserve}
+- {name: staff, action: reserve}
+- {name: system, action: reserve}
+- {name: server, action: reserve}

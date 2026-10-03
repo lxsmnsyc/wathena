@@ -10,7 +10,7 @@ local events = {}
 ---Needs the permission `event.listen`.
 ---@param name wa.EventName The event's name. An unknown name, or an event of another context kind, raises an error.
 ---@param handler function Runs each time the event fires, in registration order.
----@param options wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|nil Only the death, status and skill_used events take options: they narrow which events run the handler.
+---@param options wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|wa.ChatOptions|nil Only the death, status, skill_used and chat events take options: they narrow which events run the handler.
 ---@return wa.EventHandle
 ---@overload fun(name: "login", handler: fun(player: wa.Player)): wa.EventHandle
 ---@overload fun(name: "logout", handler: fun(player: wa.Player)): wa.EventHandle
@@ -29,6 +29,7 @@ local events = {}
 ---@overload fun(name: "status_start", handler: fun(event: wa.StatusEvent)): wa.EventHandle
 ---@overload fun(name: "status_end", handler: fun(event: wa.StatusEvent)): wa.EventHandle
 ---@overload fun(name: "status_tick", handler: fun(event: wa.StatusEvent)): wa.EventHandle
+---@overload fun(name: "chat", handler: fun(message: wa.ChatMessage)): wa.EventHandle
 function events.on(name, handler, options) end
 
 return events

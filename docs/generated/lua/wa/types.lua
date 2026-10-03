@@ -29,6 +29,7 @@
 ---| "status_start"
 ---| "status_end"
 ---| "status_tick"
+---| "chat"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -197,6 +198,7 @@
 ---| "cast_allowed"
 ---| "monster_target"
 ---| "item_roll"
+---| "chat"
 
 ---A monster's skill state, in the words of rAthena's mob_skill_db.
 ---@alias wa.MonsterState
@@ -440,6 +442,38 @@ function wa_Player:reset_stats() end
 ---@param options? wa.ResetSkillOptions
 ---@return boolean
 function wa_Player:reset_skill(skill, options) end
+
+---Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it.
+---@param text string 1 to 255 bytes.
+---@param options? wa.WhisperOptions
+function wa_Player:whisper(text, options) end
+
+---Whether the player blocks the other player's name.
+---
+---Needs the permission `game.read`.
+---@param other wa.Player
+---@return boolean
+function wa_Player:is_blocking(other) end
+
+---Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
+---
+---Needs the permission `player.sanction`.
+---@param minutes integer 1 to 5,256,000 (ten years).
+---@param reason string 1 to 255 characters. The player sees it.
+function wa_Player:mute(minutes, reason) end
+
+---Jails the player, as rAthena's pc_jail: it goes to the jail map and cannot warp until the end, then goes back to where it was. It replaces a jail that has not ended. The player sees the reason and the end time. The jail is saved.
+---
+---Needs the permission `player.sanction`.
+---@param minutes integer 1 to 5,256,000 (ten years).
+---@param reason string 1 to 255 characters. The player sees it.
+function wa_Player:jail(minutes, reason) end
+
+---Ends the player's mute. Returns false when it was not muted.
+---
+---Needs the permission `player.sanction`.
+---@return boolean
+function wa_Player:unmute() end
 
 ---Lowers one stat, to 1 by default, and refunds what raising it cost, by rAthena's cost table. Returns false when the stat is not above the value.
 ---@param stat "str"|"agi"|"vit"|"int"|"dex"|"luk"
@@ -734,6 +768,80 @@ function wa_Conversation:hide_image() end
 ---@param seconds integer Up to 600.
 function wa_Conversation:show_progress(seconds) end
 
+---A chat channel, from channels.create or channels.get.
+---@class wa.Channel
+local wa_Channel = {}
+
+---Shows a line of the channel itself to its members, as rAthena's channelmes. It does not pass the chat filter.
+---@param text string 1 to 255 bytes.
+function wa_Channel:send(text) end
+
+---Puts the player in the channel, whatever its join rule. Returns false when it was already in it.
+---@param player wa.Player A player handle.
+---@return boolean
+function wa_Channel:add(player) end
+
+---Takes the player out of the channel, even one it may not leave. Returns false when it was not in it.
+---@param player wa.Player A player handle.
+---@return boolean
+function wa_Channel:remove(player) end
+
+---The members' character names, sorted. Members may be on any map.
+---
+---Needs the permission `game.read`.
+---@return string[]
+function wa_Channel:get_members() end
+
+---The channel of channels.create.
+---@class wa.ChannelSpec
+---@field name string 1 to 19 letters, digits, _ and -, with or without the #. Players see it as #name. Not public, whisper, party or guild.
+---@field display_name string? What players see before each line, 1 to 24 characters, as rAthena's alias. [name] by default.
+---@field color integer? The lines' color, 0xRRGGBB. White by default.
+---@field join "open"|"invite"|nil "open", the default: any player may join. "invite": only channel:add puts players in.
+local wa_ChannelSpec = {}
+
+---The options of player:whisper.
+---@class wa.WhisperOptions
+---@field from string? The name the player sees, 1 to 24 characters. The NPC's name in an NPC context, else the mod's name.
+local wa_WhisperOptions = {}
+
+---The object of the chat event and the chat hook: a line a player says. The hook runs after the server's chat filter, and the event after the line went out.
+---@class wa.ChatMessage
+---@field player wa.Player The speaker.
+---@field channel string "public" for local chat, "whisper", "party", "guild", or a channel's name without its #, such as trade.
+---@field text string The line, after the chat filter.
+---@field to string? A whisper's target name. nil for other channels.
+---@field map string The speaker's map.
+local wa_ChatMessage = {}
+
+---The options of a chat handler. Each one narrows the lines that run it.
+---@class wa.ChatOptions
+---@field channel string? "public", "whisper", "party", "guild" or a channel's name, with or without its #.
+---@field map string? A map name.
+---@field player wa.Player? One speaker.
+local wa_ChatOptions = {}
+
+---The options of world:chat.
+---
+---It exists only in tests that wactl mod test runs.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@class wa.ChatTestOptions
+---@field channel string? "public", the default, "whisper", or a channel's name.
+---@field to string? A whisper's target name.
+local wa_ChatTestOptions = {}
+
+---A chat line a test player got, from world:get_chat.
+---
+---It exists only in tests that wactl mod test runs.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@class wa.HeardLine
+---@field channel string "public", "whisper", "system", or a channel's name with its #.
+---@field from string The speaker's name, or empty for a system line or a channel's own line.
+---@field text string
+local wa_HeardLine = {}
+
 ---What events.on returns.
 ---@class wa.EventHandle
 local wa_EventHandle = {}
@@ -821,6 +929,21 @@ function wa_TestWorld:get_announcements() end
 ---@param item integer An item from items.id.
 ---@return integer
 function wa_TestWorld:count_floor_items(item) end
+
+---The player says a line, as a client's chat: it passes the mute, the chat filter and the chat hooks, then the chat event runs.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param player wa.Player A player handle.
+---@param text string 1 to 255 characters.
+---@param options? wa.ChatTestOptions
+function wa_TestWorld:chat(player, text, options) end
+
+---The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param player wa.Player A player handle.
+---@return wa.HeardLine[]
+function wa_TestWorld:get_chat(player) end
 
 ---A check on a value, from testing.expect. Its functions are called with a dot: testing.expect(n).to_be(3).
 ---

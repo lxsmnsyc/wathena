@@ -12,7 +12,9 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
 
 - `Start` builds `waserver` and an asset build once per test run, then starts a server for the test and stops it when the test ends.
 - The world has two maps: `placeholder/map`, where players start, and `e2e_field`, a copy of it for warps.
-- The mod in [testdata/mods/fixture](testdata/mods/fixture) places Dummies, which stand still and always drop a Jellopy and a Test Charm with a roll, a shop, and NPCs that give and take items and zeny, change jobs and warp. It uses only the 1.0 Lua API.
+- The mod in [testdata/mods/fixture](testdata/mods/fixture) places Dummies, which stand still and always drop a Jellopy and a Test Charm with a roll, a shop, and NPCs that give and take items and zeny, change jobs, warp and mute. It adds the word "badword" to the chat filter. It uses only the 1.0 Lua API.
+- The lower chat limits of new characters are off, since every test character is new.
+- `AdvanceClock` moves the server clock with `--dev`'s `POST /debug/wathena/clock`, and `Reports` reads `GET /debug/wathena/reports`.
 - Players are `--dev` characters. They start as Swordmen at base level 50 and job level 40, with 10 Red Potions and 20 Jellopy, unless `Options` says otherwise.
 - `--seed` fixes the random streams, so the same test makes the same draws.
 - With `Options.Database`, the server gets a new PostgreSQL database and connects as the game role. Without `WATHENA_TEST_DATABASE_URL`, those tests skip.
@@ -40,6 +42,13 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestSkillAndJobChange` | A Swordman learns Bash, casts it on a Dummy, and becomes a Knight at the Mentor. |
 | `TestShopAndScriptItems` | A script gives items and zeny, a shop sells and buys, and a script takes items. |
 | `TestWarp` | The Guide warps the player to the other map. |
+| `TestWhispers` | Two players whisper on one map, then across maps. A whisper to a name that is not online says so. |
+| `TestChannels` | Two players on different maps join `#trade`, talk there, list the members and the channels. A line in a channel the player is not in is refused. |
+| `TestBlocking` | A player blocks another: its whispers are refused and its local chat is hidden, while a third player still hears it. Unblocking shows it again. |
+| `TestChatFilter` | The fixture's filter word turns into asterisks in local chat and in a whisper. |
+| `TestMute` | The Warden mutes a player for a minute. Its lines and whispers are refused, then work again after the server clock moves 61 seconds. |
+| `TestReport` | A player reports a line. The report keeps the line and the other chat the reporter saw, and not a whisper it did not see. |
+| `TestReportInTheDatabase` | The same with PostgreSQL: the report, `report_lines` and `chat_log`. |
 | `TestTransfersInTheDatabase` | The shop and loot scenarios with PostgreSQL: one item log line for each move while the player plays, the zeny log, and the saved character. |
 | `TestDuplicationDropsAndPickUps` | The duplication test below, in memory. |
 | `TestDuplicationWithDatabase` | The same, with PostgreSQL, then the database checks. |

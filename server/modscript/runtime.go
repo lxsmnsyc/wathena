@@ -238,6 +238,8 @@ type Context struct {
 	hooks     []*hook
 	schedules map[int64]*scheduled
 	spawned   bool
+	// channels is set once the context made a chat channel.
+	channels bool
 }
 
 // Ended reports whether the context has ended.
@@ -255,6 +257,7 @@ type handler struct {
 	death  *deathFilter
 	status *statusFilter
 	skill  *skillFilter
+	chat   *chatFilter
 }
 
 type timer struct {
@@ -425,6 +428,12 @@ func (r *Runtime) init() error {
 		{"monster_use_skill", r.monsterUseSkill},
 		{"monster_talk", r.monsterTalk},
 		{"monster_stop", r.monsterStop},
+		{"player_whisper", r.playerWhisper},
+		{"player_is_blocking", r.playerIsBlocking},
+		{"player_sanction", r.playerSanction},
+		{"channels_create", r.channelsCreate},
+		{"channels_get", r.channelsGet},
+		{"channel_call", r.channelCall},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -632,6 +641,12 @@ func (r *Runtime) end(c *Context) {
 		c.spawned = false
 		if h, ok := r.host.(SpawnHost); ok {
 			h.Despawn(c.ID)
+		}
+	}
+	if c.channels {
+		c.channels = false
+		if h, ok := r.host.(ChatHost); ok {
+			h.ReleaseChannels(c.ID)
 		}
 	}
 	if r.contexts[c.Mod] == c {
@@ -852,6 +867,9 @@ var Events = map[string][]string{
 	"status_start": {KindMod, KindEvent},
 	"status_end":   {KindMod, KindEvent},
 	"status_tick":  {KindMod, KindEvent},
+	// chat is a world event: any player's line on the context's map
+	// (review decision 26).
+	"chat": {KindMod, KindNPC, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

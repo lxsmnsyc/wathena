@@ -7,12 +7,14 @@ import (
 	"cmp"
 	"context"
 	"maps"
+	"slices"
 	"sync"
 	"time"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
@@ -199,6 +201,16 @@ type Player struct {
 	// perform is the player's last song or dance and Encore's mark
 	// (skills_bard.go).
 	perform performState
+
+	// member is the player in the world's chat hub, and blocks its block
+	// list (social.go). sanctions are its mutes and jails. seen are the
+	// player lines it saw in the last 5 minutes, for reports.
+	// jailPending is set while a jail waits to move the player.
+	member      *chat.Member
+	blocks      []string
+	sanctions   []character.Sanction
+	seen        []chat.Line
+	jailPending bool
 }
 
 type entity struct {
@@ -247,13 +259,17 @@ type entity struct {
 }
 
 type command struct {
-	player   *Player
-	seq      uint32
-	walkTo   *[2]int
-	attack   *attackCommand
-	pickUp   *uint32
-	raise    *raiseCommand
-	chat     *string
+	player *Player
+	seq    uint32
+	walkTo *[2]int
+	attack *attackCommand
+	pickUp *uint32
+	raise  *raiseCommand
+	chat   *chatCommand
+	// channel, block and report are chat commands (social.go).
+	channel  *channelCommand
+	block    *blockCommand
+	report   *reportCommand
 	use      *int
 	drop     *dropCommand
 	npcClick *uint32
@@ -367,6 +383,22 @@ type Zone struct {
 	// transfers' log lines (transfers.go). Without it, the lines go to
 	// the log. Set it before Run.
 	Committer Committer
+	// Chat is the world's chat hub, which every zone of the world shares
+	// (social.go). Without it, the zone makes its own on first use. Set
+	// it before Run.
+	Chat *chat.Hub
+	// Jail is where jailed players go. DefaultJail when its map is empty.
+	// Set it before Run.
+	Jail Jail
+	// chatIn gets the hub's deliveries for this zone's players.
+	chatIn chan chatIn
+	// channelHandles are the chat channels script handles point to, by
+	// handle ID, and channelOwners the channels each context made.
+	channelHandles map[int64]*chat.Channel
+	nextChannel    int64
+	channelOwners  map[int64][]*chat.Channel
+	// nextSanctionCheck is when checkSanctions next runs.
+	nextSanctionCheck int64
 	// txLogs are the log lines of the transfers since the last commit,
 	// and txPlayers the players they changed.
 	txLogs    transfer.Logs
@@ -533,6 +565,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		groups:    map[int64]*unitGroup{},
 		control:   make(chan func()),
 		announces: make(chan announcement, 256),
+		chatIn:    make(chan chatIn, 1024),
 		stopped:   make(chan struct{}),
 		Metrics:   &metrics.Zone{Name: mapName},
 	}
@@ -593,6 +626,7 @@ func (z *Zone) Run(ctx context.Context) {
 		case <-ctx.Done():
 			for _, p := range z.players {
 				z.save(p, true)
+				z.chatOffline(p)
 				z.drop(p)
 			}
 			z.stopSender()
@@ -617,6 +651,8 @@ func (z *Zone) Run(ctx context.Context) {
 			f()
 		case a := <-z.announces:
 			z.announce(a)
+		case in := <-z.chatIn:
+			z.receiveChat(in)
 		case c := <-z.commands:
 			began := time.Now()
 			z.handle(c)
@@ -705,6 +741,7 @@ func (z *Zone) join(p *Player) joinResult {
 	p.load = nil
 	z.checkJob(c)
 	p.record = c.Info
+	p.blocks, p.sanctions = slices.Clone(c.Blocks), slices.Clone(c.Sanctions)
 	z.restoreCompanions(p, c)
 	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), p.record.Options)), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
@@ -825,6 +862,7 @@ func (z *Zone) join(p *Player) joinResult {
 	if len(c.Variables) > 0 {
 		p.vars = maps.Clone(c.Variables)
 	}
+	z.chatOnline(p, h)
 	if h == nil {
 		p.rewarp = 0
 		p.touchOnEnter = true
@@ -876,6 +914,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		}
 		z.endTimedBonuses(p, "logout")
 		z.runScripts()
+		z.chatOffline(p)
 	}
 	z.castCancel(p.entity, false)
 	z.clearUnitGroups(p.entity)
@@ -933,7 +972,16 @@ func (z *Zone) handle(c command) {
 	if c.chat != nil {
 		// Dead players can talk too: clif_process_message only checks
 		// for mutes.
-		z.chats = append(z.chats, chatLine{speaker: p.entity, name: p.Name, text: *c.chat})
+		z.say(p, c.chat)
+	}
+	if c.channel != nil {
+		z.channelCommand(p, c.channel)
+	}
+	if c.block != nil {
+		z.block(p, c.block)
+	}
+	if c.report != nil {
+		z.report(p, c.report)
 	}
 	if c.npcReply != nil {
 		z.reply(p, c.npcReply)
@@ -1108,6 +1156,7 @@ func (z *Zone) stepAt(now int64) {
 	z.revealTick()
 	z.naturalHeal()
 	z.advanceStatuses()
+	z.checkSanctions()
 	z.autosave()
 	z.runScripts()
 	z.talkTimers()

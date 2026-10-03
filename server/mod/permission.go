@@ -36,6 +36,9 @@ var Permissions = []Permission{
 	{Name: "admin.commands", Approval: true, Flagged: true, Allows: "add GM commands"},
 	{Name: "net.http", Approval: true, Flagged: true, Allows: "call external HTTP services"},
 	{Name: "items.modify_rolls", Approval: true, Flagged: true, Allows: "change the rolled values of existing items"},
+	// player.sanction is flagged for review (proposal 0002, review
+	// decision 26).
+	{Name: "player.sanction", Approval: true, Flagged: true, Allows: "mute and jail players"},
 }
 
 // LookupPermission returns a permission by name.

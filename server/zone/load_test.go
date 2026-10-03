@@ -48,7 +48,7 @@ func loadTick(z *Zone, players []*Player, r *rand.Rand, now int64) {
 	}
 	if r.IntN(10) == 0 {
 		line := "a chat line of forty characters, roughly"
-		z.handle(command{player: players[r.IntN(len(players))], chat: &line})
+		z.handle(command{player: players[r.IntN(len(players))], chat: &chatCommand{text: line}})
 	}
 	z.stepAt(now)
 	for _, p := range players {

@@ -1,6 +1,7 @@
 # The mod of the end-to-end tests (e2e/README.md): a monster that always
 # drops two items, a shop, and NPCs that give and take items and zeny,
-# change jobs and warp, on the placeholder maps. It uses only API 1.0.
+# change jobs, warp and mute, and a word for the chat filter, on the
+# placeholder maps. It uses only API 1.0.
 id: e2e.fixture
 name: End-to-end fixture
 version: 0.1.0
@@ -21,5 +22,6 @@ permissions:
   - player.give_items
   - player.give_zeny
   - player.warp
+  - player.sanction
 scripts:
   - scripts/main.lua

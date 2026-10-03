@@ -589,6 +589,7 @@ func TestSampleMod(t *testing.T) {
 		"example.halloween":    {"player.give_items", "world.announce", "events.schedule", "rules.override"},
 		"example.wolf-pack":    {"rules.override"},
 		"example.lucky-clover": {"rules.override", "items.modify_rolls", "player.give_items"},
+		"example.town-crier":   {"rules.override"},
 		"example.desperado":    {"player.give_items"},
 	}})
 	if err != nil {

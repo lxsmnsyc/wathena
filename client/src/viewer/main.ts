@@ -25,13 +25,27 @@ import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
-import { DamageKind, InventoryRemoveReason } from '../gen/wathena/v1/event_pb';
+import { DamageKind, InventoryRemoveReason, SanctionKind } from '../gen/wathena/v1/event_pb';
+import { ChannelAction } from '../gen/wathena/v1/command_pb';
 import { DisconnectReason } from '../gen/wathena/v1/session_pb';
 import { accountPage, accountURL, fetchTicket } from '../net/account';
 import gameServerURL from '../net/server';
 import { Connection } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
-import { Bubbles, ChatLog, ChatRate, chatLine, cleanChat, isTyping } from './chat';
+import { Bubbles, ChatLog, ChatRate, chatLine, isTyping } from './chat';
+import { type ChatAction, parseChatInput } from './chatCommands';
+import {
+  type Sanction,
+  channelFailureMessage,
+  channelListMessage,
+  membersMessage,
+  refusalMessage,
+  reportMessage,
+  sanctionMessage,
+  whisperMessage,
+} from './chatNotices';
+import { ChatTabBar, ChatTabs, placeholder, whisperKey } from './chatTabs';
+import { BlockPanel, MAX_BLOCKED, blockChanges } from './blockList';
 import { expLine, hpLine, pickUpMessage } from './hud';
 import {
   InventoryModel,
@@ -792,27 +806,231 @@ if (serverURL === null) {
       showTargeting();
     }
   });
-  // Local chat. Enter opens the input, Enter sends the line, and Escape
-  // leaves the input. Lines show in the log and above the speaker.
+  // Chat. Enter opens the input, Enter sends the line, and Escape
+  // leaves the input. Local lines show in the log and above the speaker.
+  // The tabs above the log pick where the input sends a line.
   const chatRoot = document.querySelector<HTMLElement>('#chat');
   const chatList = document.querySelector<HTMLOListElement>('#chat-log');
   const chatInput = document.querySelector<HTMLInputElement>('#chat-input');
-  if (chatRoot !== null && chatList !== null && chatInput !== null) {
+  const chatTabsRoot = document.querySelector<HTMLElement>('#chat-tabs');
+  if (chatRoot !== null && chatList !== null && chatInput !== null && chatTabsRoot !== null) {
     chatRoot.hidden = false;
     const log = new ChatLog(chatList);
     logNotice = (text) => {
       log.notice(text);
     };
     const rate = new ChatRate(performance.now());
-    view.onChat = (from, speaker, text, color) => {
-      log.add(speaker, text, from === view.self, color);
+    const tabs = new ChatTabs();
+    const tabBar = new ChatTabBar(chatTabsRoot, tabs);
+    const showTab = (key: string): void => {
+      if (!tabs.activate(key)) {
+        return;
+      }
+      log.setTab(tabs.active);
+      chatInput.placeholder = placeholder(tabs.target());
+      tabBar.render();
+    };
+    tabBar.onSelect = (key) => {
+      showTab(key);
+      chatInput.focus();
+    };
+    tabBar.onClose = (tab) => {
+      if (tab.kind === 'channel') {
+        // The tab goes when the server says the player left.
+        connection.channel(ChannelAction.LEAVE, tab.name);
+        return;
+      }
+      tabs.close(tab.key);
+      showTab(tabs.active);
+    };
+    tabBar.render();
+    /** Marks a tab unread when a line comes to it while it is hidden. */
+    const unread = (key: string): void => {
+      if (tabs.markUnread(key)) {
+        tabBar.render();
+      }
+    };
+    /** The player's mute, as the last SanctionNotice gave it. */
+    let mute: Sanction | undefined;
+    log.onReport = (name, lineId) => {
+      connection.report(name, lineId, '');
+    };
+    view.onChat = (from, speaker, text, color, lineId) => {
+      log.add(speaker, text, from === view.self, color, lineId);
       bubbles.say(from, chatLine(speaker, text), performance.now());
     };
-    view.onServerText = (text) => {
-      log.server(text);
+    view.onChannelChat = (channel, speaker, text, color, lineId) => {
+      const tab = tabs.channel(channel);
+      const key = tab?.key ?? '';
+      log.channel(
+        key,
+        tab?.alias ?? `[${channel}]`,
+        speaker,
+        text,
+        color === 0 ? (tab?.color ?? 0) : color,
+        speaker === view.selfName,
+        lineId,
+      );
+      unread(key);
     };
-    view.onAnnouncement = (text, color) => {
-      log.announce(text, color);
+    view.onWhisper = (from, text, lineId) => {
+      const key = tabs.openWhisper(from);
+      tabBar.render();
+      log.whisper(key, true, from, text, lineId);
+      unread(key);
+    };
+    view.onWhisperResult = (r) => {
+      const failed = whisperMessage(r.to, r.outcome);
+      if (failed !== undefined) {
+        log.notice(failed, tabs.get(whisperKey(r.to)) === undefined ? '' : whisperKey(r.to));
+        return;
+      }
+      const key = tabs.openWhisper(r.to);
+      tabBar.render();
+      log.whisper(key, false, r.to, r.text);
+    };
+    view.onChatRefused = (r) => {
+      log.notice(refusalMessage(r.reason, r.to, mute));
+    };
+    view.onSanction = (n) => {
+      const s: Sanction = {
+        kind: n.kind,
+        reason: n.reason,
+        endsAtMs: Number(n.endsAtMs),
+        ended: n.ended,
+      };
+      if (s.kind === SanctionKind.MUTE) {
+        mute = s.ended ? undefined : s;
+      }
+      log.notice(sanctionMessage(s));
+    };
+    view.onChannelJoined = (c) => {
+      tabs.joinChannel(c.name, c.displayName, c.color, c.canLeave);
+      tabBar.render();
+      log.notice(`You joined ${c.name}.`);
+    };
+    view.onChannelLeft = (name) => {
+      tabs.leaveChannel(name);
+      showTab(tabs.active);
+      log.notice(`You left ${name}.`);
+    };
+    view.onChannelList = (channels) => {
+      log.notice(channelListMessage(channels));
+    };
+    view.onChannelMembers = (name, names) => {
+      log.notice(membersMessage(name, names));
+    };
+    view.onChannelFailed = (name, reason) => {
+      log.notice(channelFailureMessage(name, reason));
+    };
+    view.onReportResult = (outcome) => {
+      log.notice(reportMessage(outcome));
+    };
+    // The block list panel opens with the Blocked button.
+    const blockRoot = document.querySelector<HTMLElement>('#block-panel');
+    const blockToggle = document.querySelector<HTMLButtonElement>('#block-toggle');
+    if (blockRoot !== null && blockToggle !== null) {
+      const panel = new BlockPanel(blockRoot, {
+        block: (name) => {
+          connection.block(name);
+        },
+        unblock: (name) => {
+          connection.block(name, true);
+        },
+      });
+      blockToggle.addEventListener('click', () => {
+        panel.toggle();
+      });
+      // The first list comes after login, and its names are not news.
+      let blocked: string[] | undefined;
+      view.onBlockList = (names, full) => {
+        panel.show(names, full);
+        if (blocked !== undefined) {
+          for (const text of blockChanges(blocked, names)) {
+            log.notice(text);
+          }
+        }
+        if (full) {
+          log.notice(`Your block list is full (${String(MAX_BLOCKED)} names).`);
+        }
+        blocked = names;
+      };
+    }
+    /** Sends a line if the rate allows it, and says so when it does not. */
+    const sendLine = (send: () => void): boolean => {
+      if (!rate.take(performance.now())) {
+        // The line stays in the input, to send again later.
+        log.notice('You are sending messages too fast.');
+        return false;
+      }
+      send();
+      return true;
+    };
+    /** Runs a line typed in the input. Returns whether to clear the input. */
+    const run = (action: ChatAction): boolean => {
+      switch (action.kind) {
+        case 'empty':
+          return true;
+        case 'error':
+          log.notice(action.message);
+          return false;
+        case 'say': {
+          const target = tabs.target();
+          return sendLine(() => {
+            if (target.kind === 'channel') {
+              connection.channelChat(target.name, action.text);
+            } else if (target.kind === 'whisper') {
+              connection.whisper(target.name, action.text);
+            } else {
+              connection.chat(action.text);
+            }
+          });
+        }
+        case 'whisper':
+          return sendLine(() => {
+            connection.whisper(action.to, action.text);
+          });
+        case 'openWhisper':
+          tabs.openWhisper(action.to);
+          showTab(whisperKey(action.to));
+          return true;
+        case 'channel':
+          return sendLine(() => {
+            connection.channelChat(action.name, action.text);
+          });
+        case 'openChannel': {
+          const tab = tabs.channel(action.name);
+          if (tab === undefined) {
+            log.notice(`You are not in ${action.name}. Type /join ${action.name} to join it.`);
+            return false;
+          }
+          showTab(tab.key);
+          return true;
+        }
+        case 'join':
+          connection.channel(ChannelAction.JOIN, action.name);
+          return true;
+        case 'leave':
+          connection.channel(ChannelAction.LEAVE, action.name);
+          return true;
+        case 'list':
+          connection.channel(ChannelAction.LIST);
+          return true;
+        case 'members':
+          connection.channel(ChannelAction.MEMBERS, action.name);
+          return true;
+        case 'block':
+          connection.block(action.name);
+          return true;
+        case 'unblock':
+          connection.block(action.name, true);
+          return true;
+        case 'report':
+          connection.report(action.name, undefined, action.reason);
+          return true;
+        default:
+          return false;
+      }
     };
     chatInput.addEventListener('keydown', (e) => {
       // Keys typed here are text, not game shortcuts.
@@ -825,20 +1043,16 @@ if (serverURL === null) {
         return;
       }
       e.preventDefault();
-      const text = cleanChat(chatInput.value);
-      if (text === undefined) {
+      const action = parseChatInput(chatInput.value);
+      if (action.kind === 'empty') {
         // Enter on an empty line leaves the input, as in RO.
         chatInput.value = '';
         chatInput.blur();
         return;
       }
-      if (!rate.take(performance.now())) {
-        // The line stays in the input, to send again later.
-        log.notice('You are sending messages too fast.');
-        return;
+      if (run(action)) {
+        chatInput.value = '';
       }
-      connection.chat(text);
-      chatInput.value = '';
     });
     addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !isTyping(e.target) && !e.altKey && !e.ctrlKey && !e.metaKey) {

@@ -50,6 +50,16 @@ message Event {
     SkillCooldown skill_cooldown = 38;
     ItemRollsChange item_rolls_change = 39;
     JobName job_name = 40;
+    WhisperResult whisper_result = 41;
+    ChatRefused chat_refused = 42;
+    ChannelJoined channel_joined = 43;
+    ChannelLeft channel_left = 44;
+    ChannelList channel_list = 45;
+    ChannelMembers channel_members = 46;
+    ChannelFailed channel_failed = 47;
+    BlockList block_list = 48;
+    SanctionNotice sanction = 49;
+    ReportResult report_result = 50;
   }
 }
 
@@ -423,8 +433,174 @@ message ChatMessage {
   string text = 4;
   // color is the text's color as 0xRRGGBB for an announcement or a
   // monster's chat line, or 0 for the channel's own color. A monster's
-  // line is local chat in its skills entry's chat_color.
+  // line is local chat in its skills entry's chat_color. A channel's
+  // line has the channel's color.
   uint32 color = 5;
+  // channel_name names the channel of CHAT_CHANNEL_NAMED, such as #trade.
+  string channel_name = 6;
+  // line_id identifies a line a player said, for Report. It is empty
+  // for lines no player said, such as NPC lines and announcements.
+  bytes line_id = 7;
+}
+
+// WhisperResult answers the player's whisper, as clif_wis_end.
+message WhisperResult {
+  // to is the name the whisper went to, as the target spells it when it
+  // was sent.
+  string to = 1;
+  WhisperOutcome outcome = 2;
+  // text and line_id are the line as sent, after the chat filter, when
+  // outcome is SENT.
+  string text = 3;
+  bytes line_id = 4;
+}
+
+enum WhisperOutcome {
+  WHISPER_OUTCOME_UNSPECIFIED = 0;
+  WHISPER_OUTCOME_SENT = 1;
+  // No character of that name is online, as ACKWHISPER_TARGET_OFFLINE.
+  WHISPER_OUTCOME_NOT_ONLINE = 2;
+  // The target blocks the player, as ACKWHISPER_IGNORED.
+  WHISPER_OUTCOME_BLOCKED = 3;
+}
+
+// ChatRefused tells the player that a line it said was not sent.
+message ChatRefused {
+  ChatChannel channel = 1;
+  // to is the whisper's target or the channel's name, when there is one.
+  string to = 2;
+  ChatRefusal reason = 3;
+}
+
+enum ChatRefusal {
+  CHAT_REFUSAL_UNSPECIFIED = 0;
+  // The player is muted. A SanctionNotice says until when.
+  CHAT_REFUSAL_MUTED = 1;
+  // The line has a word that the server's chat filter rejects.
+  CHAT_REFUSAL_FILTERED = 2;
+  // The player is not in the channel.
+  CHAT_REFUSAL_NOT_IN_CHANNEL = 3;
+  // The channel does not let its members talk, as rAthena's chat
+  // option.
+  CHAT_REFUSAL_CANNOT_CHAT = 4;
+  // The line went over the chat rate limit, or the channel's delay since
+  // the player's last line has not passed, as rAthena's "You're talking
+  // too fast!".
+  CHAT_REFUSAL_TOO_FAST = 5;
+}
+
+// ChannelJoined tells the player it is in a channel: after ChannelCommand
+// JOIN, at login for channels that players join by themselves, or when a
+// mod adds the player.
+message ChannelJoined {
+  // name is the channel's name with its #, such as #trade.
+  string name = 1;
+  // display_name is what the client shows before each line, such as
+  // [Trade], as rAthena's alias.
+  string display_name = 2;
+  // color is the lines' color as 0xRRGGBB.
+  uint32 color = 3;
+  // can_leave is false for a channel the player may not leave.
+  bool can_leave = 4;
+  // can_chat is false for a channel whose members only read.
+  bool can_chat = 5;
+}
+
+// ChannelLeft tells the player it is no longer in a channel.
+message ChannelLeft {
+  string name = 1;
+}
+
+// ChannelList answers ChannelCommand LIST: the channels the player may
+// join, and those it is in.
+message ChannelList {
+  repeated ChannelInfo channels = 1;
+}
+
+message ChannelInfo {
+  string name = 1;
+  string display_name = 2;
+  uint32 color = 3;
+  // members is how many players are in the channel.
+  uint32 members = 4;
+  bool joined = 5;
+}
+
+// ChannelMembers answers ChannelCommand MEMBERS.
+message ChannelMembers {
+  string name = 1;
+  // names are the members' character names, sorted.
+  repeated string names = 2;
+}
+
+// ChannelFailed tells the player why a ChannelCommand did nothing.
+message ChannelFailed {
+  string name = 1;
+  ChannelFailure reason = 2;
+}
+
+enum ChannelFailure {
+  CHANNEL_FAILURE_UNSPECIFIED = 0;
+  // No channel has the name.
+  CHANNEL_FAILURE_UNKNOWN = 1;
+  // The player is already in the channel.
+  CHANNEL_FAILURE_ALREADY_JOINED = 2;
+  // The channel only takes players a mod adds.
+  CHANNEL_FAILURE_INVITE_ONLY = 3;
+  // The player is not in the channel.
+  CHANNEL_FAILURE_NOT_JOINED = 4;
+  // The player may not leave the channel.
+  CHANNEL_FAILURE_CANNOT_LEAVE = 5;
+  // The player is in as many channels as it may be.
+  CHANNEL_FAILURE_TOO_MANY = 6;
+}
+
+// BlockList is the player's block list: after login and after each Block.
+message BlockList {
+  // names are the blocked character names, in the order they were added.
+  repeated string names = 1;
+  // full is set when a Block did nothing because the list holds the most
+  // names it may hold.
+  bool full = 2;
+}
+
+// SanctionNotice tells the player about a mute or a jail: when it starts,
+// after login while it lasts, when a muted player tries to talk, and
+// when it ends.
+message SanctionNotice {
+  SanctionKind kind = 1;
+  // reason is the staff's or the mod's reason.
+  string reason = 2;
+  // ends_at_ms is when it ends, in Unix milliseconds.
+  int64 ends_at_ms = 3;
+  // ended is set when the sanction ended.
+  bool ended = 4;
+}
+
+enum SanctionKind {
+  SANCTION_KIND_UNSPECIFIED = 0;
+  // MUTE stops the player's chat, as rAthena's SC_NOCHAT.
+  SANCTION_KIND_MUTE = 1;
+  // JAIL holds the player on the jail map, as rAthena's SC_JAILED.
+  SANCTION_KIND_JAIL = 2;
+}
+
+// ReportResult answers Report.
+message ReportResult {
+  ReportOutcome outcome = 1;
+}
+
+enum ReportOutcome {
+  REPORT_OUTCOME_UNSPECIFIED = 0;
+  // The report was saved for the staff.
+  REPORT_OUTCOME_SENT = 1;
+  // The reported line is not among the lines the player saw in the last
+  // 5 minutes.
+  REPORT_OUTCOME_LINE_NOT_FOUND = 2;
+  // The player sent too many reports in the last hour.
+  REPORT_OUTCOME_TOO_MANY = 3;
+  // The name is not a valid character name.
+  REPORT_OUTCOME_BAD_NAME = 4;
 }
 
 // NpcDialog is one step of an NPC dialog. Text is in the player's language.

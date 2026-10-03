@@ -96,6 +96,9 @@ type Config struct {
 	// NewCharacter makes a new level 1 character with its start stats,
 	// position and items. waserver passes the zone's.
 	NewCharacter func(name string, look Look) character.Character
+	// CheckName checks a new character's name against the chat filter
+	// and the reserved names (strategy section 7.10). It may be nil.
+	CheckName func(name string) error
 	// Captcha is asked for after repeated failures. NoCaptcha when nil.
 	Captcha Captcha
 	// Hasher hashes passwords. When nil, DefaultParams with
@@ -833,6 +836,8 @@ func (s *Service) postCharacters(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case !ValidCharacterName(name):
 		p.Error = "Character names are 4 to 24 letters or digits, with single spaces between words."
+	case s.cfg.CheckName != nil && s.cfg.CheckName(name) != nil:
+		p.Error = "That character name is not allowed. Choose another."
 	case err1 != nil || slot < 0 || slot >= s.cfg.Slots:
 		p.Error = "Choose a free slot."
 	case err2 != nil || hair < MinHair || hair > MaxHair || err3 != nil || color < 0 || color > MaxHairColor:

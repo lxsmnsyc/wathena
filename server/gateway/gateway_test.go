@@ -13,6 +13,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/schema"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	chatpkg "github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/world"
@@ -38,7 +39,9 @@ func serverWith(t *testing.T, setup func(*zone.Zone)) string {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	go z.Run(ctx)
-	s := httptest.NewServer(&Gateway{World: z, Sessions: DevSessions{}})
+	// New characters' lower chat limits are off, so the tests see the
+	// limits of ChatBurst and ChatRefill.
+	s := httptest.NewServer(&Gateway{World: z, Sessions: DevSessions{}, Chat: chatpkg.Limits{Burst: ChatBurst, Refill: ChatRefill}})
 	t.Cleanup(s.Close)
 	return "ws" + strings.TrimPrefix(s.URL, "http")
 }

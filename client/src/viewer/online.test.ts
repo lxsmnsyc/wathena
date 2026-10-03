@@ -167,6 +167,86 @@ describe('Online', () => {
     ]);
     expect(colors).toEqual([0xff8000, 0]);
   });
+
+  it('passes whispers, channel lines and line IDs on', () => {
+    const o = online();
+    o.setMap(map());
+    const lines: string[] = [];
+    const id = new Uint8Array([1, 2]);
+    o.onChat = (_from, name, text, _color, lineId) => {
+      lines.push(`local ${name}: ${text} ${String(lineId.length)}`);
+    };
+    o.onWhisper = (from, text, lineId) => {
+      lines.push(`whisper ${from}: ${text} ${String(lineId.length)}`);
+    };
+    o.onChannelChat = (channel, name, text, color) => {
+      lines.push(`${channel} ${name}: ${text} ${color.toString(16)}`);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'chat',
+          value: { channel: ChatChannel.LOCAL, from: 3, fromName: 'Bob', text: 'hi', lineId: id },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'chat',
+          value: { channel: ChatChannel.WHISPER, fromName: 'Eve', text: 'psst', lineId: id },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'chat',
+          value: {
+            channel: ChatChannel.NAMED,
+            channelName: '#trade',
+            fromName: 'Ann',
+            text: 'S> Knife',
+            color: 0xff00,
+          },
+        },
+      }),
+    ]);
+    expect(lines).toEqual(['local Bob: hi 2', 'whisper Eve: psst 2', '#trade Ann: S> Knife ff00']);
+  });
+
+  it('passes channel, block, sanction and report events on', () => {
+    const o = online();
+    o.setMap(map());
+    const got: string[] = [];
+    o.onChannelJoined = (c) => {
+      got.push(`joined ${c.name}`);
+    };
+    o.onChannelLeft = (name) => {
+      got.push(`left ${name}`);
+    };
+    o.onBlockList = (names, full) => {
+      got.push(`blocked ${names.join(',')} ${String(full)}`);
+    };
+    o.onSanction = (n) => {
+      got.push(`sanction ${String(n.endsAtMs)}`);
+    };
+    o.onReportResult = (outcome) => {
+      got.push(`report ${String(outcome)}`);
+    };
+    o.handle([
+      create(EventSchema, { body: { case: 'channelJoined', value: { name: '#trade' } } }),
+      create(EventSchema, { body: { case: 'channelLeft', value: { name: '#map' } } }),
+      create(EventSchema, {
+        body: { case: 'blockList', value: { names: ['Bob', 'Eve'], full: true } },
+      }),
+      create(EventSchema, { body: { case: 'sanction', value: { endsAtMs: 5n } } }),
+      create(EventSchema, { body: { case: 'reportResult', value: { outcome: 1 } } }),
+    ]);
+    expect(got).toEqual([
+      'joined #trade',
+      'left #map',
+      'blocked Bob,Eve true',
+      'sanction 5',
+      'report 1',
+    ]);
+  });
 });
 
 describe('lookOf', () => {

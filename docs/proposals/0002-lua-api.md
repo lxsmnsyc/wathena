@@ -420,6 +420,7 @@ local current_season = exports.get("example.seasonal-lib", "current_season")
 | `wa.bonuses` | Item bonuses | Item contexts only |
 | `wa.items`, `wa.monsters`, `wa.skills`, `wa.companions`, `wa.mounts`, `wa.maps` | Record lookups by name, and map queries | `game.read` |
 | `wa.spawning` | Monsters and NPCs owned by the context | `npc.create` |
+| `wa.channels` | Chat channels: `channels.create` makes one owned by the context, and `channels.get` finds one (review decision 26) | None for `create` and the channel's `send`, `add` and `remove`; `game.read` for `get` and `get_members` |
 | `wa.random` | `random.integer(minimum, maximum)` and `random.chance(numerator, denominator)` from the zone's secret stream | None |
 | `wa.integers` | `divide_truncated` and `remainder_truncated` with C rounding, for converted scripts | None |
 | `wa.text` | Translated text for the player's language, and `text.item_link(item)` | None |
@@ -941,3 +942,15 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - `player:reset_skills` removes a companion or mount whose skills it resets, as `resetskill`, and `player:reset_skill` one whose `requires` the player no longer meets.
    - The converter maps `checkfalcon`, `checkriding` and `checkcart` to tests of `player.companion`, `player.mount` and `player.cart` against nil. `checkriding` is then true on any mount.
    - Not built, since the decision has no API for them: `setdragon`, `setmadogear`, `checkdragon`, `checkwug`, `ismounting` and the warg companion. Each needs a review item before it converts.
+12. Build chat and moderation (review decision 26). Done on 2026-10-03 ([decision 0018](../decisions/0018-chat-and-moderation.md)). Details to review:
+   - Core's channels are rAthena's defaults, `#global`, `#support`, `#trade` and `#map`, not `#main`. A mod changes them by name in `data/channels.yml`, and cannot add channel records: it makes its own with `channels.create`.
+   - The fields of a channel record: `display_name`, `color`, `join`, `autojoin`, `can_leave`, `can_chat`, `delay_milliseconds` and `kind` (`world` or `map`). The fields of a chat filter word: `action` (`replace`, `reject` or `reserve`) and `match` (`word` or `part`).
+   - The `chat` event and hook's `channel` is the channel's name without its `#`, and `public`, `whisper`, `party` and `guild` are not channel names. `to` is the whisper target's name, not a handle, since the target may be on another map. The event's `channel` option takes a name with or without its `#`.
+   - The `chat` event runs in mod, NPC and event contexts, after the line went out. A line a hook stopped runs no event. A hook cannot tell the speaker, since hooks only compute.
+   - A channel from `channels.create` is one for the world, shared by the same mod's contexts in every zone and after a reload, and ends with its last owner. The channel handle has only the methods of the decision, without fields such as `name`.
+   - `channels.create`, `channel:send`, `channel:add` and `channel:remove` need no permission. `channels.get`, `channel:get_members` and `player:is_blocking` need `game.read`. `channel:add` and `channel:remove` skip the join and leave rules, and return false when nothing changed.
+   - `channel:get_members()` returns names, sorted. `player:is_blocking` takes a player handle.
+   - `player:whisper` skips the filter, the hooks and the block list, and is not logged. Its default `from` is the NPC's display name in an NPC context, else the manifest's `name`, cut to 24 characters.
+   - Minutes of `mute` and `jail` are 1 to 5,256,000. A new mute or jail replaces one that has not ended. There is no `unjail`. `unmute` returns false when the player was not muted.
+   - `wa.testing` gained `world:chat(player, text, { channel, to })` and `world:get_chat(player)`, provisional, so mod tests can use the chat event and hook.
+   - The converter maps `channel_chat`, `channel_join`, `channel_kick` and `channel_create` in their plain forms. Needed for the rest: deleting a channel, channel options, passwords and bans, a line in another color, the map channel of one map, and joining or kicking another character.

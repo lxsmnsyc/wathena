@@ -25,6 +25,9 @@ message Command {
     UnequipItem unequip_item = 15;
     InsertCard insert_card = 16;
     LearnSkill learn_skill = 17;
+    ChannelCommand channel = 18;
+    Block block = 19;
+    Report report = 20;
   }
 }
 
@@ -62,11 +65,18 @@ message Cell {
   uint32 y = 2;
 }
 
+// Chat says a line. The server checks the sender's mute, the chat filter
+// and the rate limits first. A line it refuses comes back as ChatRefused.
 message Chat {
   ChatChannel channel = 1;
   string text = 2;
-  // to is a character name for whispers.
+  // to is a character name for whispers. The server answers a whisper
+  // with WhisperResult. A name that starts with # whispers to that chat
+  // channel, as rAthena does, and joins it first when anyone may join.
   string to = 3;
+  // channel_name is the channel's name with its #, such as #trade, for
+  // CHAT_CHANNEL_NAMED.
+  string channel_name = 4;
 }
 
 enum ChatChannel {
@@ -84,6 +94,56 @@ enum ChatChannel {
   // world, as rAthena's announce and mapannounce. from is 0 and
   // from_name is empty. Clients never send it.
   CHAT_CHANNEL_ANNOUNCEMENT = 7;
+  // NAMED is a chat channel such as #global or #trade, as rAthena's
+  // channel system. ChatMessage.channel_name names it.
+  CHAT_CHANNEL_NAMED = 8;
+}
+
+// ChannelCommand joins or leaves a chat channel, or asks for the list of
+// channels or the members of one, as rAthena's @join and @channel.
+message ChannelCommand {
+  ChannelAction action = 1;
+  // name is the channel's name with its #, such as #trade. LIST does not
+  // use it.
+  string name = 2;
+}
+
+enum ChannelAction {
+  CHANNEL_ACTION_UNSPECIFIED = 0;
+  // JOIN joins a channel that anyone may join. The server answers with
+  // ChannelJoined or ChannelFailed.
+  CHANNEL_ACTION_JOIN = 1;
+  // LEAVE leaves a channel the player may leave. The server answers with
+  // ChannelLeft or ChannelFailed.
+  CHANNEL_ACTION_LEAVE = 2;
+  // LIST asks for the channels the player may join, with ChannelList.
+  CHANNEL_ACTION_LIST = 3;
+  // MEMBERS asks for the members of a channel the player is in, with
+  // ChannelMembers.
+  CHANNEL_ACTION_MEMBERS = 4;
+}
+
+// Block adds a character name to the player's block list, or removes
+// one, as rAthena's /ex and /in. A blocked player cannot whisper to the
+// player, and the player does not see its chat. The server answers with
+// BlockList.
+message Block {
+  // name is a character name, 1 to 24 characters.
+  string name = 1;
+  bool unblock = 2;
+}
+
+// Report reports a player, or one chat line, to the staff (strategy
+// section 7.10). The report keeps the chat the player saw in the last 5
+// minutes. The server answers with ReportResult.
+message Report {
+  // name is the reported character's name.
+  string name = 1;
+  // line_id is ChatMessage.line_id of the reported line, or empty to
+  // report the player.
+  bytes line_id = 2;
+  // reason is the player's own words, at most 255 characters.
+  string reason = 3;
 }
 
 // NpcClick talks to an NPC, or opens its shop, as rAthena's npc_click.

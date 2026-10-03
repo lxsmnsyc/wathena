@@ -4,12 +4,14 @@ import (
 	"embed"
 	"io/fs"
 
+	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 )
 
 // coreFiles are core's own files, written for wAthena instead of
 // converted: the Job Master, a job change NPC (scripts/npcs/job_master.lua).
-// Core's companions and mounts come from server/companion.
+// Core's companions and mounts come from server/companion, and its chat
+// channels and chat filter from server/chat.
 //
 //go:embed core
 var coreFiles embed.FS
@@ -38,6 +40,11 @@ func addCoreFiles(out map[string]string) {
 	for _, k := range []companion.Kind{companion.Companions, companion.Mounts} {
 		if b, err := companion.CoreFiles.ReadFile("core/" + k.File); err == nil {
 			out[k.File] = string(b)
+		}
+	}
+	for _, f := range []string{chat.ChannelFile, chat.FilterFile} {
+		if b, err := chat.CoreFiles.ReadFile("core/" + f); err == nil {
+			out[f] = string(b)
 		}
 	}
 }

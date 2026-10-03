@@ -1,0 +1,24 @@
+# A sample mod for chat (proposal 0002, review decision 26): a channel of
+# its own, a chat hook that softens a word and stops links, a chat event
+# that answers a command, and a word for the server's chat filter.
+# mods/README.md, "Chat", explains each part.
+id: example.town-crier
+name: Town Crier
+version: 0.1.0
+api: 1.0
+description: Runs an #events channel that players join by saying !events, keeps links out of chat, and adds a word to the chat filter.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read
+  - rules.override
+scripts:
+  - scripts/main.lua

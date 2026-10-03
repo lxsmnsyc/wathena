@@ -23,6 +23,7 @@ import (
 	"github.com/lxsmnsyc/wathena/schema"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
+	chatpkg "github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -145,6 +146,12 @@ type Gateway struct {
 	// Metrics counts each connection's bytes and messages. It may be
 	// nil.
 	Metrics *metrics.Conns
+	// Chat are the chat rate limits. chat.DefaultLimits when zero.
+	Chat chatpkg.Limits
+	// CheckName checks the name of a --dev session's character against
+	// the chat filter and the reserved names (strategy section 7.10). It
+	// may be nil.
+	CheckName func(name string) error
 
 	mu     sync.Mutex
 	online map[int64]*online
@@ -313,6 +320,11 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 	}
 	chars := g.characters()
 	id := login.CharacterID
+	if id == 0 && g.CheckName != nil {
+		if err := g.CheckName(login.Name); err != nil {
+			return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_SESSION_INVALID, "That character name is not allowed: "+err.Error()+".")
+		}
+	}
 	if id == 0 {
 		if id, err = chars.Find(ctx, login.Name, login.Look); err != nil {
 			return g.loadFailed(ctx, c, err)
@@ -383,11 +395,15 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 		// the player left the world.
 		_ = c.Close(websocket.StatusNormalClosure, "")
 	}()
-	return g.read(ctx, c, p, seq)
+	return g.read(ctx, c, p, seq, char.CreatedAt)
 }
 
-func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32) error {
-	chat := newChatLimit(time.Now())
+func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32, created time.Time) error {
+	limits := g.Chat
+	if limits == (chatpkg.Limits{}) {
+		limits = chatpkg.DefaultLimits()
+	}
+	chat := newChatLimitFor(time.Now(), func(now time.Time) (int, time.Duration) { return limits.For(created, now) })
 	for {
 		m, err := readMessage(ctx, c)
 		if err != nil {
@@ -422,14 +438,64 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			}
 			ch := m.GetCommand().GetChat()
 			text, valid := CleanChat(ch.GetText())
-			// Lines over the rate are dropped without a reply, as
-			// rAthena's min_chat_delay does. Only local chat exists so
-			// far, so other channels are ignored.
-			if !ok || !valid || ch.GetChannel() != wathenav1.ChatChannel_CHAT_CHANNEL_LOCAL {
+			// Lines over the rate are dropped, as rAthena's
+			// min_chat_delay does, and the player is told, since the
+			// client does not know a new character's lower limits. Party
+			// and guild chat do not exist yet, so they are ignored.
+			if !ok {
+				queued = p.ChatTooFast(seq, ch.GetChannel(), ch.GetTo()+ch.GetChannelName())
+				break
+			}
+			if !valid {
 				queued = p.Ack(seq)
 				break
 			}
-			queued = p.Chat(seq, text)
+			switch ch.GetChannel() {
+			case wathenav1.ChatChannel_CHAT_CHANNEL_LOCAL:
+				queued = p.Chat(seq, text)
+			case wathenav1.ChatChannel_CHAT_CHANNEL_WHISPER:
+				to := ch.GetTo()
+				if !ValidName(to) {
+					queued = p.Ack(seq)
+					break
+				}
+				queued = p.Whisper(seq, to, text)
+			case wathenav1.ChatChannel_CHAT_CHANNEL_NAMED:
+				queued = p.ChannelChat(seq, ch.GetChannelName(), text)
+			default:
+				queued = p.Ack(seq)
+			}
+		case m.GetCommand().HasChannel():
+			cc := m.GetCommand().GetChannel()
+			if cc.GetAction() < wathenav1.ChannelAction_CHANNEL_ACTION_JOIN || cc.GetAction() > wathenav1.ChannelAction_CHANNEL_ACTION_MEMBERS || len(cc.GetName()) > 64 {
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.Channel(seq, cc.GetAction(), cc.GetName())
+		case m.GetCommand().HasBlock():
+			b := m.GetCommand().GetBlock()
+			if !ValidName(b.GetName()) {
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.Block(seq, b.GetName(), b.GetUnblock())
+		case m.GetCommand().HasReport():
+			r := m.GetCommand().GetReport()
+			reason := ""
+			if r.GetReason() != "" {
+				var ok bool
+				if reason, ok = CleanChat(r.GetReason()); !ok {
+					queued = p.Ack(seq)
+					break
+				}
+			}
+			line, isLine := chatpkg.LineIDFrom(r.GetLineId())
+			if !ValidName(r.GetName()) || len(r.GetLineId()) > 0 && !isLine {
+				// The zone answers an empty name with REPORT_OUTCOME_BAD_NAME.
+				queued = p.Report(seq, "", chatpkg.LineID{}, "")
+				break
+			}
+			queued = p.Report(seq, r.GetName(), line, reason)
 		case m.GetCommand().HasPickUp():
 			queued = p.PickUp(seq, m.GetCommand().GetPickUp().GetItem())
 		case m.GetCommand().HasRaiseStat():

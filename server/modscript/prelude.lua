@@ -303,6 +303,55 @@ new_player, player_ids = handle_type("player", {
 	open_shop = function(self, shop)
 		return (call(H.player_open_shop, player_ids[self], shop))
 	end,
+	whisper = function(self, text, options)
+		if type(text) ~= "string" then
+			error("player:whisper: the text must be a string", 2)
+		end
+		local from = nil
+		if options ~= nil then
+			if type(options) ~= "table" then
+				error("player:whisper: the options must be a table, such as { from = \"Guide\" }", 2)
+			end
+			for k, v in pairs(options) do
+				if k ~= "from" then
+					error("player:whisper: the only option is from", 2)
+				end
+				if type(v) ~= "string" then
+					error("player:whisper: from must be a string", 2)
+				end
+				from = v
+			end
+		end
+		return (call(H.player_whisper, player_ids[self], text, from))
+	end,
+	is_blocking = function(self, other)
+		local id = player_ids[other]
+		if id == nil then
+			error("player:is_blocking: want a player handle", 2)
+		end
+		return (call(H.player_is_blocking, player_ids[self], id))
+	end,
+	mute = function(self, minutes, reason)
+		if math_type(minutes) ~= "integer" then
+			error("player:mute: minutes must be an integer", 2)
+		end
+		if type(reason) ~= "string" then
+			error("player:mute: the reason must be a string", 2)
+		end
+		call(H.player_sanction, player_ids[self], "mute", minutes, reason)
+	end,
+	jail = function(self, minutes, reason)
+		if math_type(minutes) ~= "integer" then
+			error("player:jail: minutes must be an integer", 2)
+		end
+		if type(reason) ~= "string" then
+			error("player:jail: the reason must be a string", 2)
+		end
+		call(H.player_sanction, player_ids[self], "jail", minutes, reason)
+	end,
+	unmute = function(self)
+		return (call(H.player_sanction, player_ids[self], "unmute"))
+	end,
 }, function(id, key)
 	-- Level 3 is the script line that read the field.
 	local ok, value = pcall(H.player_field, id, key)
@@ -611,12 +660,31 @@ local function death_options(options)
 	return out
 end
 
+-- chat_options turns the options of a chat handler into plain data: the
+-- player handle becomes its ID.
+local function chat_options(options)
+	check(type(options) == "table", "events.on(\"chat\"): the options must be a table")
+	local out = {}
+	for k, v in pairs(options) do
+		if k == "player" then
+			local id = player_ids[v]
+			check(id ~= nil, "events.on(\"chat\"): player must be a player handle")
+			out.player = id
+		else
+			out[k] = v
+		end
+	end
+	return out
+end
+
 api["wa.events"] = readonly("wa.events", {
 	on = function(name, handler, options)
 		check(type(name) == "string", "events.on: the event name must be a string")
 		check(type(handler) == "function", "events.on: the handler must be a function")
 		if options ~= nil and name == "death" then
 			options = death_options(options)
+		elseif options ~= nil and name == "chat" then
+			options = chat_options(options)
 		end
 		return new_event_handle(call(H.events_on, name, handler, options))
 	end,
@@ -784,6 +852,45 @@ api["wa.world"] = readonly("wa.world", {
 	announce = function(text)
 		check(type(text) == "string", "world.announce: the text must be a string")
 		return (call(H.announce, nil, text))
+	end,
+})
+
+-- Chat channels (proposal 0002, review decision 26). A channel is one
+-- for the whole world: every zone's handle of it is the same channel.
+local channel_ids
+local new_channel
+new_channel, channel_ids = handle_type("channel", {
+	send = function(self, text)
+		check(type(text) == "string", "channel:send: the text must be a string")
+		call(H.channel_call, "send", channel_ids[self], text)
+	end,
+	add = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "channel:add: want a player handle")
+		return (call(H.channel_call, "add", channel_ids[self], id))
+	end,
+	remove = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "channel:remove: want a player handle")
+		return (call(H.channel_call, "remove", channel_ids[self], id))
+	end,
+	get_members = function(self)
+		return (call(H.channel_call, "get_members", channel_ids[self]))
+	end,
+}, nil, true)
+
+api["wa.channels"] = readonly("wa.channels", {
+	create = function(spec)
+		check(type(spec) == "table", "channels.create: want a table such as { name = \"lounge\", join = \"open\" }")
+		return new_channel(call(H.channels_create, spec))
+	end,
+	get = function(name)
+		check(type(name) == "string", "channels.get: the name must be a string, such as \"trade\"")
+		local id = call(H.channels_get, name)
+		if id == nil then
+			return nil
+		end
+		return new_channel(id)
 	end,
 })
 
@@ -1112,6 +1219,34 @@ new_world, world_ids = handle_type("test world", {
 	get_announcements = function(self)
 		return (world_call("get_announcements"))
 	end,
+	chat = function(self, player, text, options)
+		local id = player_ids[player]
+		check(id ~= nil, "world:chat: want a player from world:new_player")
+		check(type(text) == "string", "world:chat: the text must be a string")
+		local channel, to = "public", ""
+		if options ~= nil then
+			check(type(options) == "table", "world:chat: the options must be a table, such as { channel = \"whisper\", to = \"Bob\" }")
+			for k, v in pairs(options) do
+				check(k == "channel" or k == "to", "world:chat: the options are channel and to")
+				check(type(v) == "string", "world:chat: " .. k .. " must be a string")
+				if k == "channel" then
+					channel = v
+				else
+					to = v
+				end
+			end
+		end
+		return (world_call("chat", id, text, channel, to))
+	end,
+	get_chat = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "world:get_chat: want a player from world:new_player")
+		local list = world_call("get_chat", id)
+		for i, line in ipairs(list) do
+			list[i] = readonly("heard line", line)
+		end
+		return list
+	end,
 	count_floor_items = function(self, item)
 		check(math_type(item) == "integer", "world:count_floor_items: want an item from items.id")
 		return (world_call("count_floor_items", item))
@@ -1411,6 +1546,11 @@ function R.invoke(fn, ...)
 		elseif kind == "job_change" then
 			-- The job_change object: player is a handle.
 			value = readonly("job change", { player = new_player(value.player), from = value.from, to = value.to })
+		elseif kind == "chat" then
+			-- The chat message: player is a handle.
+			value = readonly("chat message", {
+				player = new_player(value.player), channel = value.channel, text = value.text, to = value.to, map = value.map,
+			})
 		end
 		args[#args + 1] = value
 	end
@@ -1420,7 +1560,7 @@ end
 local hook_objects = {
 	drop_rate = "drop", experience = "exp", status_chance = "status hook", status_duration = "status hook",
 	skill_damage = "skill damage hook", cast_time = "cast time hook", skill_cost = "skill cost hook", cast_allowed = "cast allowed hook",
-	monster_target = "monster target choice", item_roll = "item roll",
+	monster_target = "monster target choice", item_roll = "item roll", chat = "chat message",
 }
 
 -- hook_values names the field of each hook's object that holds rAthena's
@@ -1428,6 +1568,7 @@ local hook_objects = {
 local hook_values = {
 	drop_rate = "rate", status_chance = "chance", status_duration = "milliseconds",
 	skill_damage = "percent", cast_time = "milliseconds", skill_cost = "sp", cast_allowed = "allowed",
+	chat = "text",
 }
 local hook_messages = {
 	drop_rate = "the drop_rate hook must return an integer rate, per 10,000",
@@ -1503,6 +1644,13 @@ local function hook_result(kind, a, b, o)
 	if kind == "cast_allowed" then
 		if type(a) ~= "boolean" then
 			error("the cast_allowed hook must return true or false", 0)
+		end
+		return a
+	end
+	if kind == "chat" then
+		-- The text, or nil to block the message.
+		if a ~= nil and type(a) ~= "string" then
+			error("the chat hook must return the text, or nil to block the message", 0)
 		end
 		return a
 	end

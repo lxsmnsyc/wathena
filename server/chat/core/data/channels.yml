@@ -1,0 +1,32 @@
+# Core's chat channels: rAthena's default channels of conf/channels.conf,
+# with its aliases, colors and options (proposal 0002, review decision
+# 26). A channel's players see it as #<name>. Mods change these records
+# by name; mods/README.md lists the fields.
+- name: global
+  display_name: "[Global]"
+  color: 0xFFFFFF
+  join: open
+  autojoin: false
+  can_leave: false
+  delay_milliseconds: 1000
+- name: support
+  display_name: "[Support]"
+  color: 0x83CFE9
+  join: open
+  autojoin: false
+  delay_milliseconds: 1000
+- name: trade
+  display_name: "[Trade]"
+  color: 0xB6FF00
+  join: open
+  autojoin: false
+  delay_milliseconds: 1000
+# The map channel: one channel per map, as rAthena's CHAN_TYPE_MAP. A
+# player hears the members on its own map, and leaves it on a map change.
+- name: map
+  display_name: "[Map]"
+  color: 0xFFFF90
+  join: open
+  autojoin: false
+  delay_milliseconds: 1000
+  kind: map

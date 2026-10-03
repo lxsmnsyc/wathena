@@ -2528,7 +2528,17 @@ The order from here:
       - The duplication test: 16 bots drop parts of their Jellopy stacks and pick up each other's for 6 seconds, about 250 drops and as many pick-ups, while the test audits every serial 30 times. The totals of items and zeny stay constant, no serial is held twice, and each bot's inventory matches the server's. With PostgreSQL, the saved totals match, and the log has one line for each drop and pick-up. It passes with `-race`, with the server built with `-race`.
       - `scripts/check.sh` runs the jobs of `ci.yml` locally, since GitHub Actions does not run for this repository.
       - Left: dropping log partitions after 180 days, card insertion through transfers, the holders other than the inventory (steps 4 to 6), and a tool to trace a serial.
-   2. Chat and moderation: whispers, chat channels, blocking, the chat filter, chat limits for new characters, reports and sanctions (section 7.10).
+   2. Chat and moderation: whispers, chat channels, blocking, the chat filter, chat limits for new characters, reports and sanctions (section 7.10). Done on 2026-10-03 ([decision 0018](decisions/0018-chat-and-moderation.md), server/README.md, "Chat and moderation", and mods/README.md, "Chat"):
+      - One chat hub per process finds online players by name. Whispers reach any map, and the sender learns at once when the target is not online or blocks it, as rAthena's `clif_wis_end`.
+      - Channels are core's records of `data/channels.yml`, rAthena's `#global`, `#support`, `#trade` and `#map`, and the channels mods make with `wa.channels`. Players join, leave, list channels and list members.
+      - Block lists of up to 20 names are saved with the character. Blocked names cannot whisper, and their chat is hidden.
+      - The chat filter of `data/chat_filter.yml` replaces or rejects words in every line, and refuses character names with a word or a reserved name. Chat rate limits are server settings, lower in a character's first hour.
+      - Mutes and jails have a reason and an end time, which the player sees, and are saved. A jailed player goes to `sec_pri` and cannot warp until the end.
+      - Reports keep the chat the reporter saw in the last 5 minutes. The chat log keeps lines 30 days, longer while an open report holds them. Migration 00016 adds the tables.
+      - The Lua API of review decision 26: the `chat` event and hook, `player:whisper`, `player:is_blocking`, `player:mute`, `player:jail`, `player:unmute` with the flagged permission `player.sanction`, and `wa.channels`. A sample mod, [examples/town-crier](../mods/examples/town-crier), uses each part.
+      - The client has chat tabs for channels and whispers, chat commands, a block list panel, a report button on lines, and mute notices.
+      - End-to-end scenarios: whispers, channels, blocking, the filter, a mute until it ends, and reports in memory and in PostgreSQL.
+      - Left: party and guild chat, the staff queue, bans, block everyone, players' own channels, and the hub across processes.
    3. Friends and parties: party exp and item sharing, party booking in the web client, and the party skills that step 4 left failing.
    4. Guilds: guild skills, guild storage and emblems.
    5. Storage, cart and trade: personal storage, cart storage, Kafra storage and trade.

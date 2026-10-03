@@ -13,8 +13,9 @@ import (
 const MaxChat = 255
 
 // Chat rate limits, per connection. A player may send ChatBurst lines at
-// once, and one more every ChatRefill after that. rAthena's
-// min_chat_delay does the same with a burst of 1, and is off by default.
+// once, and one more every ChatRefill after that, unless Gateway.Chat
+// sets others (chat.Limits). rAthena's min_chat_delay does the same with
+// a burst of 1, and is off by default.
 const (
 	ChatBurst  = 5
 	ChatRefill = time.Second
@@ -66,24 +67,40 @@ func bidiControl(r rune) bool {
 }
 
 // chatLimit is one connection's chat rate limit: a token bucket of
-// ChatBurst lines that refills one line per ChatRefill, and a count of
-// dropped lines that also falls by one per ChatRefill.
+// burst lines that refills one line per refill, and a count of dropped
+// lines that also falls by one per refill. rate, when set, gives the
+// burst and refill at each line, so a new character's lower limits end
+// when its first hour does.
 type chatLimit struct {
 	tokens  float64
 	strikes float64
 	last    time.Time
+	burst   int
+	refill  time.Duration
+	rate    func(now time.Time) (int, time.Duration)
 }
 
 func newChatLimit(now time.Time) *chatLimit {
-	return &chatLimit{tokens: ChatBurst, last: now}
+	return &chatLimit{tokens: ChatBurst, last: now, burst: ChatBurst, refill: ChatRefill}
+}
+
+// newChatLimitFor is a limit that follows rate.
+func newChatLimitFor(now time.Time, rate func(now time.Time) (int, time.Duration)) *chatLimit {
+	l := &chatLimit{last: now, rate: rate}
+	l.burst, l.refill = rate(now)
+	l.tokens = float64(l.burst)
+	return l
 }
 
 // allow reports whether a line sent at now may go out. When it may not,
 // over reports whether the connection has dropped too many lines.
 func (l *chatLimit) allow(now time.Time) (ok, over bool) {
+	if l.rate != nil {
+		l.burst, l.refill = l.rate(now)
+	}
 	if d := now.Sub(l.last); d > 0 {
-		refill := float64(d) / float64(ChatRefill)
-		l.tokens = min(ChatBurst, l.tokens+refill)
+		refill := float64(d) / float64(l.refill)
+		l.tokens = min(float64(l.burst), l.tokens+refill)
 		l.strikes = max(0, l.strikes-refill)
 		l.last = now
 	}

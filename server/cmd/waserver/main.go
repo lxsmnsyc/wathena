@@ -78,6 +78,7 @@ import (
 	"github.com/lxsmnsyc/wathena/reference/rathena"
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -354,6 +355,24 @@ func runAll(name string, args []string) error {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
 	loaded.zone.Location = cfg.Location
+	// With --dev, the server clock can be moved forward from the debug
+	// address, for tests (decision 0018).
+	var clock func() time.Time
+	var dclock *devClock
+	if cfg.Dev {
+		dclock = &devClock{}
+		clock = dclock.Now
+	}
+	// One chat hub for the world: whispers, channels and block lists.
+	hub := chat.NewHub(loaded.all.Chat.Channels, loaded.all.Chat.Filter)
+	hub.Limits, hub.Clock = cfg.Chat.Limits, clock
+	jail := zone.Jail{Map: assetName(cfg.Jail.Map), Cells: cfg.Jail.Cells}
+	if !slices.Contains(names, jail.Map) {
+		log.Warn("the jail map does not run: jailed players stay where they are and cannot warp", "jail", jail.Map)
+	}
+	if cfg.Chat.LogDays > 30 {
+		log.Warn("chat lines are kept longer than the 30 days of the privacy policy", "days", cfg.Chat.LogDays)
+	}
 	items := item.New(loaded.items.Data)
 	// Server variables are shared by every zone, and written soon after
 	// they change.
@@ -398,6 +417,7 @@ func runAll(name string, args []string) error {
 			z.Start.Job, z.StartBaseLevel, z.StartJobLevel = sj.job, sj.base, sj.jobLevel
 		}
 		z.SaveMap = name
+		z.Chat, z.Jail, z.Clock = hub, jail, clock
 		z.SetWarps(warps[n])
 		z.SetNPCs(loaded.npcs[n])
 		z.Mods = loaded.zone
@@ -434,7 +454,8 @@ func runAll(name string, args []string) error {
 		}
 		log.Info("world event", attrs...)
 	}
-	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: cfg.Origins, Log: log, Metrics: &reg.Conns}
+	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: cfg.Origins, Log: log, Metrics: &reg.Conns,
+		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName}
 	go reg.Conns.Run(ctx)
 	hc := &health{}
 	var st *store.Store
@@ -448,6 +469,16 @@ func runAll(name string, args []string) error {
 		for _, z := range zones {
 			z.Committer = storeCommitter{st}
 		}
+	}
+	// The chat log and reports go to the database, or stay in memory
+	// without one.
+	var chatLog *store.ChatLog
+	memoryLog := &chat.MemoryLog{}
+	if pool != nil {
+		chatLog = store.NewChatLog(pool, store.ChatLogOptions{Retention: time.Duration(cfg.Chat.LogDays) * 24 * time.Hour, Log: log})
+		hub.Log = chatLog
+	} else {
+		hub.Log = memoryLog
 	}
 	var accounts *account.Service
 	if !cfg.Dev {
@@ -471,6 +502,7 @@ func runAll(name string, args []string) error {
 		}
 		accounts, err = account.New(account.Config{
 			Pool: pool, PublicURL: cfg.Public, ClientOrigins: cfg.Origins, PlayURL: playURL,
+			CheckName: hub.Filter.CheckName,
 			NewCharacter: func(name string, look account.Look) character.Character {
 				sex := uint32(0)
 				if look.Male {
@@ -491,6 +523,17 @@ func runAll(name string, args []string) error {
 	}
 	go w.Run(ctx)
 	go scheduler.Run(ctx)
+	if chatLog != nil {
+		// The chat log writes what waits once every zone stopped.
+		defer func() {
+			<-w.Stopped()
+			drain, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := chatLog.Close(drain); err != nil {
+				log.Error("chat lines lost at shutdown", "err", err)
+			}
+		}()
+	}
 	if st != nil {
 		// On shutdown every zone hands its players' last saves to the
 		// store, which then gets 10 seconds to write them.
@@ -524,6 +567,8 @@ func runAll(name string, args []string) error {
 			// Mod reloads and the item audit are for development only.
 			dbg.Handle("POST /debug/wathena/mods/reload", reloadHandler(loaded.set, w, log))
 			dbg.Handle("GET /debug/wathena/items", auditHandler(w))
+			dbg.Handle("GET /debug/wathena/reports", reportsHandler(memoryLog, chatLog))
+			dbg.Handle("POST /debug/wathena/clock", clockHandler(dclock))
 		}
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
 	}

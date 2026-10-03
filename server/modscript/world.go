@@ -93,6 +93,8 @@ var Hooks = map[string][]string{
 	"monster_target": {KindMod, KindNPC, KindEvent},
 	// Rolled item values (review decision 23).
 	"item_roll": {KindMod, KindNPC, KindEvent},
+	// Chat (review decision 26). It runs after the server's chat filter.
+	"chat": {KindMod, KindNPC, KindEvent},
 }
 
 type scheduled struct {

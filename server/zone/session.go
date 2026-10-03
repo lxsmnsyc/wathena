@@ -129,7 +129,7 @@ func (s *Session) RaiseStat(seq uint32, stat status.Stat, amount int) bool {
 // Chat says a line of local chat, as rAthena's clif_parse_GlobalMessage.
 // The gateway has checked the text.
 func (s *Session) Chat(seq uint32, text string) bool {
-	return s.send(command{seq: seq, chat: &text})
+	return s.send(command{seq: seq, chat: &chatCommand{kind: chatLocal, text: text}})
 }
 
 // UseItem asks to use the item in an inventory slot, as rAthena's

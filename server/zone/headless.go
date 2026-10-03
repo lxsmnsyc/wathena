@@ -49,6 +49,18 @@ type Headless struct {
 	AfterStep func()
 	// announcements are the lines announced to the world or the map.
 	announcements []string
+	// heard are the chat lines each player got, by player ID.
+	heard map[int64][]Heard
+}
+
+// Heard is a chat line a test player got: a local line, a whisper, a
+// channel's line, or a system line.
+type Heard struct {
+	// Channel is "public", "whisper", "system" or a channel's name with
+	// its #.
+	Channel string
+	From    string
+	Text    string
 }
 
 // NewHeadless makes a zone that tests drive. mods must have Testing set,
@@ -104,6 +116,7 @@ func (h *Headless) Close() { h.z.stopScripts() }
 // a conversation, and the item use interval move the clock.
 func (h *Headless) step(at int64) {
 	z := h.z
+	z.drainChat()
 	z.runScripts()
 	z.stepAt(max(at, z.now))
 	z.runScripts()
@@ -128,9 +141,64 @@ func (h *Headless) drain() {
 		break
 	}
 	for id, p := range h.z.players {
-		h.events[int64(id)] = append(h.events[int64(id)], readEvents(p.Out)...)
+		events := readEvents(p.Out)
+		h.events[int64(id)] = append(h.events[int64(id)], events...)
+		for _, e := range events {
+			c := e.GetChat()
+			if c == nil {
+				continue
+			}
+			heard := Heard{From: c.GetFromName(), Text: c.GetText()}
+			switch c.GetChannel() {
+			case wathenav1.ChatChannel_CHAT_CHANNEL_LOCAL:
+				heard.Channel = "public"
+			case wathenav1.ChatChannel_CHAT_CHANNEL_WHISPER:
+				heard.Channel = "whisper"
+			case wathenav1.ChatChannel_CHAT_CHANNEL_NAMED:
+				heard.Channel = c.GetChannelName()
+			default:
+				heard.Channel = "system"
+			}
+			if h.heard == nil {
+				h.heard = map[int64][]Heard{}
+			}
+			h.heard[int64(id)] = append(h.heard[int64(id)], heard)
+		}
 	}
 }
+
+// Say makes a player say a line, as a client's Chat: in local chat
+// ("public"), as a whisper to a name, or in a channel by name. The line
+// passes the mute, the filter and the hooks, and the zone runs a tick.
+func (h *Headless) Say(player int64, channel, text, to string) error {
+	p, err := h.player(player)
+	if err != nil {
+		return err
+	}
+	if t, ok := cleanLine(text); !ok {
+		return errors.New("the text must be 1 to 255 characters of UTF-8")
+	} else {
+		text = t
+	}
+	cmd := &chatCommand{kind: chatLocal, text: text}
+	switch channel {
+	case "public":
+	case "whisper":
+		if to == "" {
+			return errors.New("a whisper needs to, the target's name")
+		}
+		cmd.kind, cmd.to = chatWhisper, to
+	default:
+		cmd.kind, cmd.to = chatChannel, channel
+	}
+	h.z.say(p, cmd)
+	h.step(0)
+	h.step(0)
+	return nil
+}
+
+// Heard returns the chat lines a player got so far, oldest first.
+func (h *Headless) Heard(player int64) []Heard { return slices.Clone(h.heard[player]) }
 
 // readEvents reads the messages waiting on a channel and returns their
 // events.

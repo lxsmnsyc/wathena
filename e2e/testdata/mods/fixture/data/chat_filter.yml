@@ -1,0 +1,2 @@
+# A word the chat filter replaces, for the chat scenarios.
+- {name: badword, action: replace}

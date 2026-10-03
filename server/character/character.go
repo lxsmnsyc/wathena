@@ -6,6 +6,7 @@ package character
 import (
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -29,6 +30,40 @@ type Character struct {
 	// Skills are the skills the character learned with skill points, by
 	// skill ID, with their level.
 	Skills map[int]int
+	// Blocks are the character names the character blocks, in the order
+	// they were added (strategy section 7.10). rAthena keeps its ignore
+	// list for the session only; wAthena saves it.
+	Blocks []string
+	// Sanctions are the character's mutes and jails that have not ended.
+	Sanctions []Sanction
+}
+
+// Kinds of sanctions.
+const (
+	SanctionMute = "mute"
+	SanctionJail = "jail"
+)
+
+// Sanction is a mute or a jail (strategy section 7.10). The database
+// keeps every sanction, ended ones too, for the staff tools.
+type Sanction struct {
+	// Kind is SanctionMute or SanctionJail.
+	Kind   string
+	Reason string
+	// Start and End are when it started and ends, on the server clock.
+	Start, End time.Time
+	// By names who gave it: a mod's ID, or a staff member.
+	By string
+	// ReturnMap, ReturnX and ReturnY are where a jailed character goes
+	// back to when the jail ends, as SC_JAILED's val3 and val4.
+	ReturnMap        string
+	ReturnX, ReturnY int
+}
+
+// Equal reports whether two sanctions are the same.
+func (s *Sanction) Equal(o *Sanction) bool {
+	return s.Kind == o.Kind && s.Reason == o.Reason && s.Start.Equal(o.Start) && s.End.Equal(o.End) && s.By == o.By &&
+		s.ReturnMap == o.ReturnMap && s.ReturnX == o.ReturnX && s.ReturnY == o.ReturnY
 }
 
 // Status is one saved status.
@@ -122,6 +157,9 @@ type Info struct {
 	// companion and mount records, or empty for none. A character saved
 	// with empty names and look bits in Options has core's.
 	Companion, Mount string
+	// CreatedAt is when the character was made. Chat limits are lower in
+	// its first hour (strategy section 7.10).
+	CreatedAt time.Time
 }
 
 // Item is one filled inventory slot.
@@ -150,10 +188,19 @@ func (it *Item) Equal(o *Item) bool {
 
 // Equal reports whether two characters hold the same data.
 func (c *Character) Equal(o *Character) bool {
-	return c.Info == o.Info && slices.EqualFunc(c.Items, o.Items, func(a, b Item) bool { return a.Equal(&b) }) &&
+	return c.equal(&o.Info) && slices.EqualFunc(c.Items, o.Items, func(a, b Item) bool { return a.Equal(&b) }) &&
 		maps.Equal(c.Variables, o.Variables) && slices.Equal(c.Statuses, o.Statuses) &&
 		slices.EqualFunc(c.TimedBonuses, o.TimedBonuses, func(a, b TimedBonus) bool { return a.Equal(&b) }) &&
-		maps.Equal(c.Skills, o.Skills)
+		maps.Equal(c.Skills, o.Skills) && slices.Equal(c.Blocks, o.Blocks) &&
+		slices.EqualFunc(c.Sanctions, o.Sanctions, func(a, b Sanction) bool { return a.Equal(&b) })
+}
+
+// equal reports whether two infos are the same. Times compare as
+// instants, without their monotonic readings.
+func (i *Info) equal(o *Info) bool {
+	a, b := *i, *o
+	a.CreatedAt, b.CreatedAt = time.Time{}, time.Time{}
+	return a == b && i.CreatedAt.Equal(o.CreatedAt)
 }
 
 // Sex is the protocol's and rAthena's sex: 1 for male, 0 for female.

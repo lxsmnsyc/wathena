@@ -160,6 +160,7 @@ var reserved = map[string]bool{
 	"effects": true, "jobs": true, "text": true, "maps": true, "world": true, "require": true, "self": true,
 	"string": true, "table": true, "math": true, "select": true, "type": true, "tostring": true, "tonumber": true,
 	"pairs": true, "ipairs": true, "error": true, "pcall": true, "schedules": true, "spawning": true, "monsters": true,
+	"channels": true,
 }
 
 // luaName turns an rAthena name into a Lua name: lower case, letters,

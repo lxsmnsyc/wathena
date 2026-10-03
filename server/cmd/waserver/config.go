@@ -19,6 +19,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/lxsmnsyc/wathena/internal/secretenv"
+	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 )
@@ -54,6 +55,27 @@ type options struct {
 	// TimeZone is the server's time zone, as an IANA name such as
 	// Asia/Manila. Schedules and world events match their times there.
 	TimeZone string `yaml:"time_zone"`
+	// Chat are the chat rate limits and the chat log's retention
+	// (decision 0018).
+	Chat chatOptions `yaml:"chat"`
+	// Jail is where jailed players go.
+	Jail jailOptions `yaml:"jail"`
+}
+
+// chatOptions are the chat settings (server/README.md, "Chat and
+// moderation").
+type chatOptions struct {
+	chat.Limits `yaml:",inline"`
+	// LogDays is how many days chat lines are kept, except those of open
+	// reports. 30 by default, as strategy section 7.10.
+	LogDays int `yaml:"log_days"`
+}
+
+// jailOptions are the jail map and its cells, rAthena's MAP_JAIL and
+// pc_jail cells by default.
+type jailOptions struct {
+	Map   string   `yaml:"map"`
+	Cells [][2]int `yaml:"cells"`
 }
 
 // modOptions are the mods settings (server/README.md, "Mods").
@@ -106,6 +128,8 @@ func defaultOptions() options {
 		Captcha:  "none",
 		Build:    "all_1",
 		TimeZone: "UTC",
+		Chat:     chatOptions{Limits: chat.DefaultLimits(), LogDays: 30},
+		Jail:     jailOptions{Map: "sec_pri", Cells: [][2]int{{49, 75}, {24, 75}}},
 
 		ShutdownCountdown: 10 * time.Second,
 	}
@@ -339,6 +363,28 @@ func validate(o options, s secrets) (settings, error) {
 		bad("time_zone", "%q is not an IANA time zone name, such as UTC or Asia/Manila", o.TimeZone)
 	} else {
 		st.Location = loc
+	}
+	// Options made without defaultOptions get the defaults here.
+	def := defaultOptions()
+	if st.Chat.Limits == (chat.Limits{}) {
+		st.Chat.Limits = def.Chat.Limits
+	}
+	if st.Chat.LogDays == 0 {
+		st.Chat.LogDays = def.Chat.LogDays
+	}
+	if st.Jail.Map == "" {
+		st.Jail = def.Jail
+	}
+	if err := st.Chat.Check(); err != nil {
+		bad("chat", "%v", err)
+	}
+	if st.Chat.LogDays < 1 || st.Chat.LogDays > 3650 {
+		bad("chat.log_days", "is 1 to 3650")
+	}
+	for _, c := range st.Jail.Cells {
+		if c[0] < 0 || c[1] < 0 || c[0] > 1023 || c[1] > 1023 {
+			bad("jail.cells", "%v is not a cell", c)
+		}
 	}
 	if o.DebugAddr != "" && !loopback(o.DebugAddr) {
 		bad("debug_addr", "has no access control, so it must be a loopback address such as 127.0.0.1:8301")

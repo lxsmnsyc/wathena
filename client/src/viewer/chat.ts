@@ -1,7 +1,9 @@
-// Local chat: the log, the input rules, and the bubbles above speakers.
+// Chat: the log, the input rules, and the bubbles above speakers.
 // The server checks every line again (server/gateway/chat.go). These
 // rules only keep the client from sending lines the server drops.
 // User text is only ever set with textContent.
+
+import { ALL_TAB, LOCAL_LINES, showsLine } from './chatTabs';
 
 /** The most characters a line may have, as Unicode code points. */
 export const MAX_CHAT = 255;
@@ -64,6 +66,9 @@ export function cleanChat(text: string): string | undefined {
 export function chatLine(name: string, text: string): string {
   return `${name} : ${text}`;
 }
+
+/** How long a report button waits for the second click, in milliseconds. */
+export const REPORT_CONFIRM_MS = 3000;
 
 /**
  * A line's color as CSS, from 0xrrggbb, or undefined for 0, which means
@@ -166,16 +171,39 @@ export function isTyping(target: EventTarget | null): boolean {
   );
 }
 
-/** The chat log on the page. It keeps the last LOG_LINES lines. */
+/**
+ * The chat log on the page. It keeps the last LOG_LINES lines. Each line
+ * belongs to a tab (chatTabs.ts) and shows when that tab is active, or on
+ * All. A line a player said has a report button, button.report, that
+ * asks for a second click and then calls onReport.
+ */
 export class ChatLog {
+  /** The active tab's key. */
+  private active = ALL_TAB;
+
+  /** Called to report a line, with the speaker's name and the line's ID. */
+  onReport: ((name: string, lineId: Uint8Array) => void) | undefined;
+
   constructor(private readonly list: HTMLElement) {}
 
+  /** Shows the lines of a tab. */
+  setTab(key: string): void {
+    this.active = key;
+    for (const row of this.list.children) {
+      if (row instanceof HTMLElement) {
+        row.hidden = !showsLine(key, row.dataset.tab ?? '');
+      }
+    }
+    this.list.scrollTop = this.list.scrollHeight;
+  }
+
   /**
-   * Adds a line said by a player, or by a monster in its color as
-   * 0xrrggbb. A color of 0 keeps the log's color.
+   * Adds a local line said by a player, or by a monster in its color as
+   * 0xrrggbb. A color of 0 keeps the log's color. lineId is the line's ID
+   * for reports, empty for lines no player said.
    */
-  add(name: string, text: string, mine: boolean, color = 0): void {
-    const row = document.createElement('li');
+  add(name: string, text: string, mine: boolean, color = 0, lineId?: Uint8Array): void {
+    const row = this.row(LOCAL_LINES);
     if (mine) {
       row.className = 'mine';
     }
@@ -185,17 +213,57 @@ export class ChatLog {
     }
     // Names and text are isolated, so right-to-left text in one cannot
     // reorder the other.
-    const who = document.createElement('bdi');
-    who.textContent = name;
-    const what = document.createElement('bdi');
-    what.textContent = text;
-    row.append(who, ' : ', what);
+    row.append(bdi(name), ' : ', bdi(text));
+    if (!mine) {
+      this.reportButton(row, name, lineId);
+    }
+    this.append(row);
+  }
+
+  /**
+   * Adds a chat channel line under the channel's tab, as "[Alias] Name :
+   * text", in the channel's color. An empty name is the channel's own line.
+   */
+  channel(
+    tab: string,
+    alias: string,
+    name: string,
+    text: string,
+    color: number,
+    mine: boolean,
+    lineId?: Uint8Array,
+  ): void {
+    const row = this.row(tab);
+    row.classList.add('channel');
+    const css = chatColor(color);
+    if (css !== undefined) {
+      row.style.color = css;
+    }
+    if (name === '') {
+      row.append(bdi(alias), ' ', bdi(text));
+    } else {
+      row.append(bdi(alias), ' ', bdi(name), ' : ', bdi(text));
+      if (!mine) {
+        this.reportButton(row, name, lineId);
+      }
+    }
+    this.append(row);
+  }
+
+  /** Adds a whisper under its tab, as "(From Name) : text" or "(To Name) : text". */
+  whisper(tab: string, incoming: boolean, name: string, text: string, lineId?: Uint8Array): void {
+    const row = this.row(tab);
+    row.classList.add('whisper');
+    row.append(`(${incoming ? 'From' : 'To'} `, bdi(name), ') : ', bdi(text));
+    if (incoming) {
+      this.reportButton(row, name, lineId);
+    }
     this.append(row);
   }
 
   /** Adds text the server sent to this player alone, such as a mod's message. */
   server(text: string): void {
-    const row = document.createElement('li');
+    const row = this.row('');
     row.className = 'server';
     row.textContent = text;
     this.append(row);
@@ -206,7 +274,7 @@ export class ChatLog {
    * 0xrrggbb, or the announcement color for 0.
    */
   announce(text: string, color: number): void {
-    const row = document.createElement('li');
+    const row = this.row('');
     row.className = 'announcement';
     row.textContent = text;
     const css = chatColor(color);
@@ -216,12 +284,51 @@ export class ChatLog {
     this.append(row);
   }
 
-  /** Adds a notice from the client itself. */
-  notice(text: string): void {
-    const row = document.createElement('li');
+  /** Adds a notice from the client itself, on every tab or on one. */
+  notice(text: string, tab = ''): void {
+    const row = this.row(tab);
     row.className = 'notice';
     row.textContent = text;
     this.append(row);
+  }
+
+  /** A new row for a tab, hidden unless the active tab shows it. */
+  private row(tab: string): HTMLLIElement {
+    const row = document.createElement('li');
+    row.dataset.tab = tab;
+    row.hidden = !showsLine(this.active, tab);
+    return row;
+  }
+
+  /**
+   * Adds a report button to a row with a line ID. The first click asks
+   * for a second one, which sends the report.
+   */
+  private reportButton(row: HTMLLIElement, name: string, lineId: Uint8Array | undefined): void {
+    if (lineId === undefined || lineId.length === 0 || name === '') {
+      return;
+    }
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'report';
+    button.textContent = '!';
+    button.title = 'Report this line';
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    button.addEventListener('click', () => {
+      if (button.classList.contains('armed')) {
+        clearTimeout(timer);
+        button.remove();
+        this.onReport?.(name, lineId);
+        return;
+      }
+      button.classList.add('armed');
+      button.textContent = 'Report?';
+      timer = setTimeout(() => {
+        button.classList.remove('armed');
+        button.textContent = '!';
+      }, REPORT_CONFIRM_MS);
+    });
+    row.append(' ', button);
   }
 
   private append(row: HTMLLIElement): void {
@@ -235,4 +342,11 @@ export class ChatLog {
       this.list.scrollTop = this.list.scrollHeight;
     }
   }
+}
+
+/** Text in its own bidirectional isolate. */
+function bdi(text: string): HTMLElement {
+  const e = document.createElement('bdi');
+  e.textContent = text;
+  return e;
 }

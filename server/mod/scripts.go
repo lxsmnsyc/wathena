@@ -18,6 +18,8 @@ const MaxScriptBytes = 8 << 20
 // A reload reads a new snapshot.
 type Scripts struct {
 	Mod string
+	// Name is the manifest's name, which player:whisper shows by default.
+	Name string
 	// Entries are the manifest's entry scripts, which run once per zone
 	// with a mod context.
 	Entries []string
@@ -45,7 +47,7 @@ func (s *Set) Scripts(id string) (*Scripts, error) {
 	if m == nil {
 		return nil, fmt.Errorf("%s is not loaded", id)
 	}
-	out := &Scripts{Mod: id, Entries: m.Manifest.Scripts, Files: map[string]string{}, Grants: m.Grants, Visible: s.Visible(id)}
+	out := &Scripts{Mod: id, Name: m.Manifest.Name, Entries: m.Manifest.Scripts, Files: map[string]string{}, Grants: m.Grants, Visible: s.Visible(id)}
 	fsys, closeFS, err := m.Open()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", m.Path, err)

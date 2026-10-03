@@ -11,6 +11,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/bonus"
+	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -60,6 +61,11 @@ type Mods struct {
 	// two merges.
 	Companions        *companion.Set
 	CompanionOverlays []*mod.Overlay
+	// Chat are the chat channels and filter: core's with the mods'
+	// data/channels.yml and data/chat_filter.yml. ChatOverlays are the two
+	// merges.
+	Chat         *chat.Data
+	ChatOverlays []*mod.Overlay
 	// Zone is what every zone gets.
 	Zone *zone.Mods
 }
@@ -230,10 +236,18 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 		return nil, err
 	}
 	out.RandomOptions = opts
+	if out.Chat, out.ChatOverlays, err = modChat(set); err != nil {
+		return nil, err
+	}
+	for _, o := range out.ChatOverlays {
+		for _, n := range o.Notes {
+			log.Warn("mods: " + n)
+		}
+	}
 	labelRolls(merged.Data, opts, core.Constants)
 	out.Zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
 		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates,
-		RandomOptions: opts, ItemRolls: set.Ruleset.Flag("item_rolls") == "on", Companions: out.Companions}
+		RandomOptions: opts, ItemRolls: set.Ruleset.Flag("item_rolls") == "on", Companions: out.Companions, Chat: out.Chat}
 	return out, nil
 }
 
