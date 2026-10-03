@@ -14,12 +14,19 @@ import {
   EntityKind,
   type EquipFailure,
   type Event,
+  type Friend,
+  type FriendOutcome,
   type ImagePosition,
   type InventoryRemoveReason,
   type Look as LookMessage,
   type MinimapMark,
   type NpcDialog,
   type Options,
+  type PartyBookingList,
+  type PartyInfo,
+  type PartyInvite,
+  type PartyMember,
+  type PartyOutcome,
   type PickUpFailure,
   type ReportOutcome,
   type SanctionNotice,
@@ -288,6 +295,28 @@ export default class Online {
   onChannelChat:
     | ((channel: string, name: string, text: string, color: number, lineId: Uint8Array) => void)
     | undefined;
+  /** Called for a line said to the player's party. */
+  onPartyChat: ((name: string, text: string, lineId: Uint8Array) => void) | undefined;
+  /** Called with the player's party, after login and after each change. An id of 0 means none. */
+  onPartyInfo: ((info: PartyInfo) => void) | undefined;
+  /** Called when one party member's values change, such as its HP. */
+  onPartyMember: ((member: PartyMember) => void) | undefined;
+  /** Called when a leader invites the player to a party. */
+  onPartyInvite: ((invite: PartyInvite) => void) | undefined;
+  /** Called with how a party action went, or what happened to the party. */
+  onPartyResult: ((outcome: PartyOutcome, name: string) => void) | undefined;
+  /** Called when a party member got an item that even item share gave. */
+  onPartyItemShared: ((name: string, itemId: number, amount: number) => void) | undefined;
+  /** Called with the player's friend list, after login and after each change. */
+  onFriendList: ((friends: Friend[]) => void) | undefined;
+  /** Called when a friend logs in or out. */
+  onFriendStatus: ((name: string, online: boolean) => void) | undefined;
+  /** Called when a player asks to be friends. */
+  onFriendRequest: ((from: string) => void) | undefined;
+  /** Called with how a friend action went. */
+  onFriendResult: ((outcome: FriendOutcome, name: string) => void) | undefined;
+  /** Called with party booking ads, or the player's own ad. */
+  onPartyBookingList: ((list: PartyBookingList) => void) | undefined;
   /** Called with the server's answer to the player's whisper. */
   onWhisperResult: ((result: WhisperResult) => void) | undefined;
   /** Called when a line the player said was not sent. */
@@ -834,6 +863,8 @@ export default class Online {
             this.onChat?.(c.from, c.fromName, c.text, c.color, c.lineId);
           } else if (c.channel === ChatChannel.WHISPER) {
             this.onWhisper?.(c.fromName, c.text, c.lineId);
+          } else if (c.channel === ChatChannel.PARTY) {
+            this.onPartyChat?.(c.fromName, c.text, c.lineId);
           } else if (c.channel === ChatChannel.NAMED) {
             this.onChannelChat?.(c.channelName, c.fromName, c.text, c.color, c.lineId);
           } else if (c.channel === ChatChannel.SYSTEM) {
@@ -895,6 +926,38 @@ export default class Online {
           break;
         case 'reportResult':
           this.onReportResult?.(e.body.value.outcome);
+          break;
+        case 'partyInfo':
+          this.onPartyInfo?.(e.body.value);
+          break;
+        case 'partyMember':
+          if (e.body.value.member !== undefined) {
+            this.onPartyMember?.(e.body.value.member);
+          }
+          break;
+        case 'partyInvite':
+          this.onPartyInvite?.(e.body.value);
+          break;
+        case 'partyResult':
+          this.onPartyResult?.(e.body.value.outcome, e.body.value.name);
+          break;
+        case 'partyItemShared':
+          this.onPartyItemShared?.(e.body.value.name, e.body.value.itemId, e.body.value.amount);
+          break;
+        case 'friendList':
+          this.onFriendList?.(e.body.value.friends);
+          break;
+        case 'friendStatus':
+          this.onFriendStatus?.(e.body.value.name, e.body.value.online);
+          break;
+        case 'friendRequest':
+          this.onFriendRequest?.(e.body.value.from);
+          break;
+        case 'friendResult':
+          this.onFriendResult?.(e.body.value.outcome, e.body.value.name);
+          break;
+        case 'partyBookingList':
+          this.onPartyBookingList?.(e.body.value);
           break;
         default:
           // Events this client does not show yet.

@@ -73,6 +73,20 @@ describe('parseChatInput', () => {
     expect(parseChatInput('/report').kind).toBe('error');
   });
 
+  it('reads party lines with /p, /party and %', () => {
+    expect(parseChatInput('/p hello all')).toEqual({ kind: 'party', text: 'hello all' });
+    expect(parseChatInput('/P  hi ')).toEqual({ kind: 'party', text: 'hi' });
+    expect(parseChatInput('/party hi')).toEqual({ kind: 'party', text: 'hi' });
+    expect(parseChatInput('%hello')).toEqual({ kind: 'party', text: 'hello' });
+    expect(parseChatInput('% hello')).toEqual({ kind: 'party', text: 'hello' });
+    expect(parseChatInput('/p')).toEqual({ kind: 'openParty' });
+    expect(parseChatInput('%')).toEqual({ kind: 'openParty' });
+    // A line that only has % inside is a plain line.
+    expect(parseChatInput('50% off')).toEqual({ kind: 'say', text: '50% off' });
+    // /pm is not /p.
+    expect(parseChatInput('/pm x').kind).toBe('error');
+  });
+
   it('names unknown commands', () => {
     const action = parseChatInput('/dance now');
     expect(action.kind).toBe('error');

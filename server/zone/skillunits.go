@@ -547,7 +547,11 @@ const (
 
 // checkTarget is battle_check_target on a normal map for the units this
 // server has: the caster itself, its enemies, its allies (monsters among
-// monsters are BCT_PARTY), and other players, which are neutral.
+// monsters are BCT_PARTY), and other players, which are neutral. Outside
+// PvP and GvG, a unit whose master shares the source master's party is
+// BCT_PARTY too, when the flag asks for it or the unit is an enemy. The
+// party state then takes the place of the enemy state, except for a
+// summon that players may hit.
 func checkTarget(src, t *entity, flag int) bool {
 	if flag&bctAll == bctAll {
 		return t.player != nil || t.monster != nil
@@ -561,14 +565,34 @@ func checkTarget(src, t *entity, flag int) bool {
 		if isEnemy(src, t) {
 			state |= bctEnemy
 		}
+		return flag&state != 0
 	case isEnemy(src, t):
 		state = bctEnemy
 	case src.monster != nil && t.monster != nil:
 		state = bctParty
-	default:
+	}
+	if (flag&bctParty != 0 || state&bctEnemy != 0) && sameParty(battleMaster(src), battleMaster(t)) {
+		state |= bctParty
+		if state&bctEnemy != 0 && (t.monster == nil || !t.monster.playersHit) {
+			state &^= bctEnemy
+		}
+	}
+	if state == 0 {
 		state = bctNeutral
 	}
 	return flag&state != 0
+}
+
+// battleMaster is battle_get_master: the unit that summoned a monster,
+// up the chain of masters, or the unit itself.
+func battleMaster(e *entity) *entity {
+	for range 8 {
+		if e.monster == nil || e.monster.master == nil {
+			break
+		}
+		e = e.monster.master
+	}
+	return e
 }
 
 // unitOnPlaceTimer is skill_unit_onplace_timer: a unit acts on one

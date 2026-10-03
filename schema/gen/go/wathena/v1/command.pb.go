@@ -418,6 +418,33 @@ func (x *Command) GetReport() *Report {
 	return nil
 }
 
+func (x *Command) GetParty() *PartyCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Party); ok {
+			return x.Party
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetFriend() *FriendCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Friend); ok {
+			return x.Friend
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetPartyBooking() *PartyBookingCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_PartyBooking); ok {
+			return x.PartyBooking
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -576,6 +603,30 @@ func (x *Command) SetReport(v *Report) {
 		return
 	}
 	x.xxx_hidden_Body = &command_Report{v}
+}
+
+func (x *Command) SetParty(v *PartyCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Party{v}
+}
+
+func (x *Command) SetFriend(v *FriendCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Friend{v}
+}
+
+func (x *Command) SetPartyBooking(v *PartyBookingCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_PartyBooking{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -745,6 +796,30 @@ func (x *Command) HasReport() bool {
 	return ok
 }
 
+func (x *Command) HasParty() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Party)
+	return ok
+}
+
+func (x *Command) HasFriend() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Friend)
+	return ok
+}
+
+func (x *Command) HasPartyBooking() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_PartyBooking)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -869,6 +944,24 @@ func (x *Command) ClearReport() {
 	}
 }
 
+func (x *Command) ClearParty() {
+	if _, ok := x.xxx_hidden_Body.(*command_Party); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearFriend() {
+	if _, ok := x.xxx_hidden_Body.(*command_Friend); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearPartyBooking() {
+	if _, ok := x.xxx_hidden_Body.(*command_PartyBooking); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -890,6 +983,9 @@ const Command_LearnSkill_case case_Command_Body = 17
 const Command_Channel_case case_Command_Body = 18
 const Command_Block_case case_Command_Body = 19
 const Command_Report_case case_Command_Body = 20
+const Command_Party_case case_Command_Body = 21
+const Command_Friend_case case_Command_Body = 22
+const Command_PartyBooking_case case_Command_Body = 23
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -936,6 +1032,12 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_Block_case
 	case *command_Report:
 		return Command_Report_case
+	case *command_Party:
+		return Command_Party_case
+	case *command_Friend:
+		return Command_Friend_case
+	case *command_PartyBooking:
+		return Command_PartyBooking_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -945,26 +1047,29 @@ type Command_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Fields of oneof xxx_hidden_Body:
-	WalkTo      *WalkTo
-	Attack      *Attack
-	UseSkill    *UseSkill
-	Chat        *Chat
-	NpcClick    *NpcClick
-	NpcReply    *NpcReply
-	UseItem     *UseItem
-	PickUp      *PickUp
-	RaiseStat   *RaiseStat
-	DropItem    *DropItem
-	ShopBuy     *ShopBuy
-	ShopSell    *ShopSell
-	ShopClose   *ShopClose
-	EquipItem   *EquipItem
-	UnequipItem *UnequipItem
-	InsertCard  *InsertCard
-	LearnSkill  *LearnSkill
-	Channel     *ChannelCommand
-	Block       *Block
-	Report      *Report
+	WalkTo       *WalkTo
+	Attack       *Attack
+	UseSkill     *UseSkill
+	Chat         *Chat
+	NpcClick     *NpcClick
+	NpcReply     *NpcReply
+	UseItem      *UseItem
+	PickUp       *PickUp
+	RaiseStat    *RaiseStat
+	DropItem     *DropItem
+	ShopBuy      *ShopBuy
+	ShopSell     *ShopSell
+	ShopClose    *ShopClose
+	EquipItem    *EquipItem
+	UnequipItem  *UnequipItem
+	InsertCard   *InsertCard
+	LearnSkill   *LearnSkill
+	Channel      *ChannelCommand
+	Block        *Block
+	Report       *Report
+	Party        *PartyCommand
+	Friend       *FriendCommand
+	PartyBooking *PartyBookingCommand
 	// -- end of xxx_hidden_Body
 }
 
@@ -1031,6 +1136,15 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.Report != nil {
 		x.xxx_hidden_Body = &command_Report{b.Report}
+	}
+	if b.Party != nil {
+		x.xxx_hidden_Body = &command_Party{b.Party}
+	}
+	if b.Friend != nil {
+		x.xxx_hidden_Body = &command_Friend{b.Friend}
+	}
+	if b.PartyBooking != nil {
+		x.xxx_hidden_Body = &command_PartyBooking{b.PartyBooking}
 	}
 	return m0
 }
@@ -1129,6 +1243,18 @@ type command_Report struct {
 	Report *Report `protobuf:"bytes,20,opt,name=report,proto3,oneof"`
 }
 
+type command_Party struct {
+	Party *PartyCommand `protobuf:"bytes,21,opt,name=party,proto3,oneof"`
+}
+
+type command_Friend struct {
+	Friend *FriendCommand `protobuf:"bytes,22,opt,name=friend,proto3,oneof"`
+}
+
+type command_PartyBooking struct {
+	PartyBooking *PartyBookingCommand `protobuf:"bytes,23,opt,name=party_booking,json=partyBooking,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -1168,6 +1294,12 @@ func (*command_Channel) isCommand_Body() {}
 func (*command_Block) isCommand_Body() {}
 
 func (*command_Report) isCommand_Body() {}
+
+func (*command_Party) isCommand_Body() {}
+
+func (*command_Friend) isCommand_Body() {}
+
+func (*command_PartyBooking) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -3203,12 +3335,1368 @@ func (b0 InsertCard_builder) Build() *InsertCard {
 	return m0
 }
 
+// PartyCommand is a party action, as rAthena's party packets. The server
+// answers with PartyResult when the action fails or is refused, and with
+// PartyInfo when the party changed. Party chat is Chat with
+// CHAT_CHANNEL_PARTY.
+type PartyCommand struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Action isPartyCommand_Action  `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PartyCommand) Reset() {
+	*x = PartyCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyCommand) ProtoMessage() {}
+
+func (x *PartyCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyCommand) GetCreate() *PartyCreate {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyCommand_Create); ok {
+			return x.Create
+		}
+	}
+	return nil
+}
+
+func (x *PartyCommand) GetInvite() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyCommand_Invite); ok {
+			return x.Invite
+		}
+	}
+	return ""
+}
+
+func (x *PartyCommand) GetReply() *PartyReply {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyCommand_Reply); ok {
+			return x.Reply
+		}
+	}
+	return nil
+}
+
+func (x *PartyCommand) GetLeave() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyCommand_Leave); ok {
+			return x.Leave
+		}
+	}
+	return false
+}
+
+func (x *PartyCommand) GetExpel() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyCommand_Expel); ok {
+			return x.Expel
+		}
+	}
+	return ""
+}
+
+func (x *PartyCommand) GetSetLeader() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyCommand_SetLeader); ok {
+			return x.SetLeader
+		}
+	}
+	return ""
+}
+
+func (x *PartyCommand) GetOptions() *PartyOptions {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyCommand_Options); ok {
+			return x.Options
+		}
+	}
+	return nil
+}
+
+func (x *PartyCommand) SetCreate(v *PartyCreate) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &partyCommand_Create{v}
+}
+
+func (x *PartyCommand) SetInvite(v string) {
+	x.xxx_hidden_Action = &partyCommand_Invite{v}
+}
+
+func (x *PartyCommand) SetReply(v *PartyReply) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &partyCommand_Reply{v}
+}
+
+func (x *PartyCommand) SetLeave(v bool) {
+	x.xxx_hidden_Action = &partyCommand_Leave{v}
+}
+
+func (x *PartyCommand) SetExpel(v string) {
+	x.xxx_hidden_Action = &partyCommand_Expel{v}
+}
+
+func (x *PartyCommand) SetSetLeader(v string) {
+	x.xxx_hidden_Action = &partyCommand_SetLeader{v}
+}
+
+func (x *PartyCommand) SetOptions(v *PartyOptions) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &partyCommand_Options{v}
+}
+
+func (x *PartyCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *PartyCommand) HasCreate() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyCommand_Create)
+	return ok
+}
+
+func (x *PartyCommand) HasInvite() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyCommand_Invite)
+	return ok
+}
+
+func (x *PartyCommand) HasReply() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyCommand_Reply)
+	return ok
+}
+
+func (x *PartyCommand) HasLeave() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyCommand_Leave)
+	return ok
+}
+
+func (x *PartyCommand) HasExpel() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyCommand_Expel)
+	return ok
+}
+
+func (x *PartyCommand) HasSetLeader() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyCommand_SetLeader)
+	return ok
+}
+
+func (x *PartyCommand) HasOptions() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyCommand_Options)
+	return ok
+}
+
+func (x *PartyCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *PartyCommand) ClearCreate() {
+	if _, ok := x.xxx_hidden_Action.(*partyCommand_Create); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *PartyCommand) ClearInvite() {
+	if _, ok := x.xxx_hidden_Action.(*partyCommand_Invite); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *PartyCommand) ClearReply() {
+	if _, ok := x.xxx_hidden_Action.(*partyCommand_Reply); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *PartyCommand) ClearLeave() {
+	if _, ok := x.xxx_hidden_Action.(*partyCommand_Leave); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *PartyCommand) ClearExpel() {
+	if _, ok := x.xxx_hidden_Action.(*partyCommand_Expel); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *PartyCommand) ClearSetLeader() {
+	if _, ok := x.xxx_hidden_Action.(*partyCommand_SetLeader); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *PartyCommand) ClearOptions() {
+	if _, ok := x.xxx_hidden_Action.(*partyCommand_Options); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const PartyCommand_Action_not_set_case case_PartyCommand_Action = 0
+const PartyCommand_Create_case case_PartyCommand_Action = 1
+const PartyCommand_Invite_case case_PartyCommand_Action = 2
+const PartyCommand_Reply_case case_PartyCommand_Action = 3
+const PartyCommand_Leave_case case_PartyCommand_Action = 4
+const PartyCommand_Expel_case case_PartyCommand_Action = 5
+const PartyCommand_SetLeader_case case_PartyCommand_Action = 6
+const PartyCommand_Options_case case_PartyCommand_Action = 7
+
+func (x *PartyCommand) WhichAction() case_PartyCommand_Action {
+	if x == nil {
+		return PartyCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *partyCommand_Create:
+		return PartyCommand_Create_case
+	case *partyCommand_Invite:
+		return PartyCommand_Invite_case
+	case *partyCommand_Reply:
+		return PartyCommand_Reply_case
+	case *partyCommand_Leave:
+		return PartyCommand_Leave_case
+	case *partyCommand_Expel:
+		return PartyCommand_Expel_case
+	case *partyCommand_SetLeader:
+		return PartyCommand_SetLeader_case
+	case *partyCommand_Options:
+		return PartyCommand_Options_case
+	default:
+		return PartyCommand_Action_not_set_case
+	}
+}
+
+type PartyCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// create makes a party with the player as its leader, as
+	// party_create.
+	Create *PartyCreate
+	// invite asks a player by name to join the leader's party, as
+	// party_invite. Only the leader may invite.
+	Invite *string
+	// reply answers the invite of PartyInvite, as party_reply_invite.
+	Reply *PartyReply
+	// leave leaves the party, as party_leave. When the leader leaves,
+	// the party breaks up, as rAthena does.
+	Leave *bool
+	// expel removes a member by name, as party_removemember. Only the
+	// leader may expel.
+	Expel *string
+	// set_leader makes a member the leader, as party_changeleader. Only
+	// the leader may do it.
+	SetLeader *string
+	// options changes the party's options, as party_changeoption. Only
+	// the leader may do it.
+	Options *PartyOptions
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 PartyCommand_builder) Build() *PartyCommand {
+	m0 := &PartyCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Create != nil {
+		x.xxx_hidden_Action = &partyCommand_Create{b.Create}
+	}
+	if b.Invite != nil {
+		x.xxx_hidden_Action = &partyCommand_Invite{*b.Invite}
+	}
+	if b.Reply != nil {
+		x.xxx_hidden_Action = &partyCommand_Reply{b.Reply}
+	}
+	if b.Leave != nil {
+		x.xxx_hidden_Action = &partyCommand_Leave{*b.Leave}
+	}
+	if b.Expel != nil {
+		x.xxx_hidden_Action = &partyCommand_Expel{*b.Expel}
+	}
+	if b.SetLeader != nil {
+		x.xxx_hidden_Action = &partyCommand_SetLeader{*b.SetLeader}
+	}
+	if b.Options != nil {
+		x.xxx_hidden_Action = &partyCommand_Options{b.Options}
+	}
+	return m0
+}
+
+type case_PartyCommand_Action protoreflect.FieldNumber
+
+func (x case_PartyCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[24].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isPartyCommand_Action interface {
+	isPartyCommand_Action()
+}
+
+type partyCommand_Create struct {
+	// create makes a party with the player as its leader, as
+	// party_create.
+	Create *PartyCreate `protobuf:"bytes,1,opt,name=create,proto3,oneof"`
+}
+
+type partyCommand_Invite struct {
+	// invite asks a player by name to join the leader's party, as
+	// party_invite. Only the leader may invite.
+	Invite string `protobuf:"bytes,2,opt,name=invite,proto3,oneof"`
+}
+
+type partyCommand_Reply struct {
+	// reply answers the invite of PartyInvite, as party_reply_invite.
+	Reply *PartyReply `protobuf:"bytes,3,opt,name=reply,proto3,oneof"`
+}
+
+type partyCommand_Leave struct {
+	// leave leaves the party, as party_leave. When the leader leaves,
+	// the party breaks up, as rAthena does.
+	Leave bool `protobuf:"varint,4,opt,name=leave,proto3,oneof"`
+}
+
+type partyCommand_Expel struct {
+	// expel removes a member by name, as party_removemember. Only the
+	// leader may expel.
+	Expel string `protobuf:"bytes,5,opt,name=expel,proto3,oneof"`
+}
+
+type partyCommand_SetLeader struct {
+	// set_leader makes a member the leader, as party_changeleader. Only
+	// the leader may do it.
+	SetLeader string `protobuf:"bytes,6,opt,name=set_leader,json=setLeader,proto3,oneof"`
+}
+
+type partyCommand_Options struct {
+	// options changes the party's options, as party_changeoption. Only
+	// the leader may do it.
+	Options *PartyOptions `protobuf:"bytes,7,opt,name=options,proto3,oneof"`
+}
+
+func (*partyCommand_Create) isPartyCommand_Action() {}
+
+func (*partyCommand_Invite) isPartyCommand_Action() {}
+
+func (*partyCommand_Reply) isPartyCommand_Action() {}
+
+func (*partyCommand_Leave) isPartyCommand_Action() {}
+
+func (*partyCommand_Expel) isPartyCommand_Action() {}
+
+func (*partyCommand_SetLeader) isPartyCommand_Action() {}
+
+func (*partyCommand_Options) isPartyCommand_Action() {}
+
+type PartyCreate struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Options *PartyOptions          `protobuf:"bytes,2,opt,name=options,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *PartyCreate) Reset() {
+	*x = PartyCreate{}
+	mi := &file_wathena_v1_command_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyCreate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyCreate) ProtoMessage() {}
+
+func (x *PartyCreate) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyCreate) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *PartyCreate) GetOptions() *PartyOptions {
+	if x != nil {
+		return x.xxx_hidden_Options
+	}
+	return nil
+}
+
+func (x *PartyCreate) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *PartyCreate) SetOptions(v *PartyOptions) {
+	x.xxx_hidden_Options = v
+}
+
+func (x *PartyCreate) HasOptions() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Options != nil
+}
+
+func (x *PartyCreate) ClearOptions() {
+	x.xxx_hidden_Options = nil
+}
+
+type PartyCreate_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the party's name, 1 to 24 characters.
+	Name string
+	// options are the item options. exp_share is always each at first, as
+	// in rAthena.
+	Options *PartyOptions
+}
+
+func (b0 PartyCreate_builder) Build() *PartyCreate {
+	m0 := &PartyCreate{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Options = b.Options
+	return m0
+}
+
+type PartyReply struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PartyId uint64                 `protobuf:"varint,1,opt,name=party_id,json=partyId,proto3"`
+	xxx_hidden_Accept  bool                   `protobuf:"varint,2,opt,name=accept,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *PartyReply) Reset() {
+	*x = PartyReply{}
+	mi := &file_wathena_v1_command_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyReply) ProtoMessage() {}
+
+func (x *PartyReply) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyReply) GetPartyId() uint64 {
+	if x != nil {
+		return x.xxx_hidden_PartyId
+	}
+	return 0
+}
+
+func (x *PartyReply) GetAccept() bool {
+	if x != nil {
+		return x.xxx_hidden_Accept
+	}
+	return false
+}
+
+func (x *PartyReply) SetPartyId(v uint64) {
+	x.xxx_hidden_PartyId = v
+}
+
+func (x *PartyReply) SetAccept(v bool) {
+	x.xxx_hidden_Accept = v
+}
+
+type PartyReply_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// party_id is PartyInvite.party_id.
+	PartyId uint64
+	Accept  bool
+}
+
+func (b0 PartyReply_builder) Build() *PartyReply {
+	m0 := &PartyReply{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_PartyId = b.PartyId
+	x.xxx_hidden_Accept = b.Accept
+	return m0
+}
+
+// PartyOptions are a party's sharing options, as rAthena's party.exp and
+// party.item.
+type PartyOptions struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ExpEven      bool                   `protobuf:"varint,1,opt,name=exp_even,json=expEven,proto3"`
+	xxx_hidden_ItemEven     bool                   `protobuf:"varint,2,opt,name=item_even,json=itemEven,proto3"`
+	xxx_hidden_PickupShared bool                   `protobuf:"varint,3,opt,name=pickup_shared,json=pickupShared,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *PartyOptions) Reset() {
+	*x = PartyOptions{}
+	mi := &file_wathena_v1_command_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyOptions) ProtoMessage() {}
+
+func (x *PartyOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyOptions) GetExpEven() bool {
+	if x != nil {
+		return x.xxx_hidden_ExpEven
+	}
+	return false
+}
+
+func (x *PartyOptions) GetItemEven() bool {
+	if x != nil {
+		return x.xxx_hidden_ItemEven
+	}
+	return false
+}
+
+func (x *PartyOptions) GetPickupShared() bool {
+	if x != nil {
+		return x.xxx_hidden_PickupShared
+	}
+	return false
+}
+
+func (x *PartyOptions) SetExpEven(v bool) {
+	x.xxx_hidden_ExpEven = v
+}
+
+func (x *PartyOptions) SetItemEven(v bool) {
+	x.xxx_hidden_ItemEven = v
+}
+
+func (x *PartyOptions) SetPickupShared(v bool) {
+	x.xxx_hidden_PickupShared = v
+}
+
+type PartyOptions_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// exp_even shares exp evenly among the members on the map, as exp 1.
+	// Each member gets its own exp otherwise.
+	ExpEven bool
+	// item_even gives each picked up item to a party member on the map, as
+	// item & 2 (the distribution option).
+	ItemEven bool
+	// pickup_shared lets members pick up items their party's top attackers
+	// may take, as item & 1 (the pick-up option).
+	PickupShared bool
+}
+
+func (b0 PartyOptions_builder) Build() *PartyOptions {
+	m0 := &PartyOptions{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ExpEven = b.ExpEven
+	x.xxx_hidden_ItemEven = b.ItemEven
+	x.xxx_hidden_PickupShared = b.PickupShared
+	return m0
+}
+
+// FriendCommand changes the friend list, as rAthena's friend packets. The
+// server answers with FriendResult and FriendList.
+type FriendCommand struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Action isFriendCommand_Action `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *FriendCommand) Reset() {
+	*x = FriendCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendCommand) ProtoMessage() {}
+
+func (x *FriendCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FriendCommand) GetAdd() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*friendCommand_Add); ok {
+			return x.Add
+		}
+	}
+	return ""
+}
+
+func (x *FriendCommand) GetReply() *FriendReply {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*friendCommand_Reply); ok {
+			return x.Reply
+		}
+	}
+	return nil
+}
+
+func (x *FriendCommand) GetRemove() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*friendCommand_Remove); ok {
+			return x.Remove
+		}
+	}
+	return ""
+}
+
+func (x *FriendCommand) SetAdd(v string) {
+	x.xxx_hidden_Action = &friendCommand_Add{v}
+}
+
+func (x *FriendCommand) SetReply(v *FriendReply) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &friendCommand_Reply{v}
+}
+
+func (x *FriendCommand) SetRemove(v string) {
+	x.xxx_hidden_Action = &friendCommand_Remove{v}
+}
+
+func (x *FriendCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *FriendCommand) HasAdd() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*friendCommand_Add)
+	return ok
+}
+
+func (x *FriendCommand) HasReply() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*friendCommand_Reply)
+	return ok
+}
+
+func (x *FriendCommand) HasRemove() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*friendCommand_Remove)
+	return ok
+}
+
+func (x *FriendCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *FriendCommand) ClearAdd() {
+	if _, ok := x.xxx_hidden_Action.(*friendCommand_Add); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *FriendCommand) ClearReply() {
+	if _, ok := x.xxx_hidden_Action.(*friendCommand_Reply); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *FriendCommand) ClearRemove() {
+	if _, ok := x.xxx_hidden_Action.(*friendCommand_Remove); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const FriendCommand_Action_not_set_case case_FriendCommand_Action = 0
+const FriendCommand_Add_case case_FriendCommand_Action = 1
+const FriendCommand_Reply_case case_FriendCommand_Action = 2
+const FriendCommand_Remove_case case_FriendCommand_Action = 3
+
+func (x *FriendCommand) WhichAction() case_FriendCommand_Action {
+	if x == nil {
+		return FriendCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *friendCommand_Add:
+		return FriendCommand_Add_case
+	case *friendCommand_Reply:
+		return FriendCommand_Reply_case
+	case *friendCommand_Remove:
+		return FriendCommand_Remove_case
+	default:
+		return FriendCommand_Action_not_set_case
+	}
+}
+
+type FriendCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// add asks an online player by name to be friends, as
+	// clif_parse_FriendsListAdd.
+	Add *string
+	// reply answers FriendRequest, as clif_parse_FriendsListReply.
+	Reply *FriendReply
+	// remove takes a friend off the list by name, on both sides, as
+	// clif_parse_FriendsListRemove.
+	Remove *string
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 FriendCommand_builder) Build() *FriendCommand {
+	m0 := &FriendCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Add != nil {
+		x.xxx_hidden_Action = &friendCommand_Add{*b.Add}
+	}
+	if b.Reply != nil {
+		x.xxx_hidden_Action = &friendCommand_Reply{b.Reply}
+	}
+	if b.Remove != nil {
+		x.xxx_hidden_Action = &friendCommand_Remove{*b.Remove}
+	}
+	return m0
+}
+
+type case_FriendCommand_Action protoreflect.FieldNumber
+
+func (x case_FriendCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[28].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isFriendCommand_Action interface {
+	isFriendCommand_Action()
+}
+
+type friendCommand_Add struct {
+	// add asks an online player by name to be friends, as
+	// clif_parse_FriendsListAdd.
+	Add string `protobuf:"bytes,1,opt,name=add,proto3,oneof"`
+}
+
+type friendCommand_Reply struct {
+	// reply answers FriendRequest, as clif_parse_FriendsListReply.
+	Reply *FriendReply `protobuf:"bytes,2,opt,name=reply,proto3,oneof"`
+}
+
+type friendCommand_Remove struct {
+	// remove takes a friend off the list by name, on both sides, as
+	// clif_parse_FriendsListRemove.
+	Remove string `protobuf:"bytes,3,opt,name=remove,proto3,oneof"`
+}
+
+func (*friendCommand_Add) isFriendCommand_Action() {}
+
+func (*friendCommand_Reply) isFriendCommand_Action() {}
+
+func (*friendCommand_Remove) isFriendCommand_Action() {}
+
+type FriendReply struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Accept bool                   `protobuf:"varint,2,opt,name=accept,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *FriendReply) Reset() {
+	*x = FriendReply{}
+	mi := &file_wathena_v1_command_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendReply) ProtoMessage() {}
+
+func (x *FriendReply) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FriendReply) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *FriendReply) GetAccept() bool {
+	if x != nil {
+		return x.xxx_hidden_Accept
+	}
+	return false
+}
+
+func (x *FriendReply) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *FriendReply) SetAccept(v bool) {
+	x.xxx_hidden_Accept = v
+}
+
+type FriendReply_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is FriendRequest.from.
+	Name   string
+	Accept bool
+}
+
+func (b0 FriendReply_builder) Build() *FriendReply {
+	m0 := &FriendReply{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Accept = b.Accept
+	return m0
+}
+
+// PartyBookingCommand registers, searches or deletes a party booking ad,
+// as rAthena's party booking. The server answers with PartyBookingList.
+type PartyBookingCommand struct {
+	state             protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Action isPartyBookingCommand_Action `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PartyBookingCommand) Reset() {
+	*x = PartyBookingCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyBookingCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyBookingCommand) ProtoMessage() {}
+
+func (x *PartyBookingCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyBookingCommand) GetRegister() *PartyBookingAd {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyBookingCommand_Register); ok {
+			return x.Register
+		}
+	}
+	return nil
+}
+
+func (x *PartyBookingCommand) GetSearch() *PartyBookingSearch {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyBookingCommand_Search); ok {
+			return x.Search
+		}
+	}
+	return nil
+}
+
+func (x *PartyBookingCommand) GetDelete() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*partyBookingCommand_Delete); ok {
+			return x.Delete
+		}
+	}
+	return false
+}
+
+func (x *PartyBookingCommand) SetRegister(v *PartyBookingAd) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &partyBookingCommand_Register{v}
+}
+
+func (x *PartyBookingCommand) SetSearch(v *PartyBookingSearch) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &partyBookingCommand_Search{v}
+}
+
+func (x *PartyBookingCommand) SetDelete(v bool) {
+	x.xxx_hidden_Action = &partyBookingCommand_Delete{v}
+}
+
+func (x *PartyBookingCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *PartyBookingCommand) HasRegister() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyBookingCommand_Register)
+	return ok
+}
+
+func (x *PartyBookingCommand) HasSearch() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyBookingCommand_Search)
+	return ok
+}
+
+func (x *PartyBookingCommand) HasDelete() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*partyBookingCommand_Delete)
+	return ok
+}
+
+func (x *PartyBookingCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *PartyBookingCommand) ClearRegister() {
+	if _, ok := x.xxx_hidden_Action.(*partyBookingCommand_Register); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *PartyBookingCommand) ClearSearch() {
+	if _, ok := x.xxx_hidden_Action.(*partyBookingCommand_Search); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *PartyBookingCommand) ClearDelete() {
+	if _, ok := x.xxx_hidden_Action.(*partyBookingCommand_Delete); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const PartyBookingCommand_Action_not_set_case case_PartyBookingCommand_Action = 0
+const PartyBookingCommand_Register_case case_PartyBookingCommand_Action = 1
+const PartyBookingCommand_Search_case case_PartyBookingCommand_Action = 2
+const PartyBookingCommand_Delete_case case_PartyBookingCommand_Action = 3
+
+func (x *PartyBookingCommand) WhichAction() case_PartyBookingCommand_Action {
+	if x == nil {
+		return PartyBookingCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *partyBookingCommand_Register:
+		return PartyBookingCommand_Register_case
+	case *partyBookingCommand_Search:
+		return PartyBookingCommand_Search_case
+	case *partyBookingCommand_Delete:
+		return PartyBookingCommand_Delete_case
+	default:
+		return PartyBookingCommand_Action_not_set_case
+	}
+}
+
+type PartyBookingCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	Register *PartyBookingAd
+	Search   *PartyBookingSearch
+	// delete removes the player's own ad.
+	Delete *bool
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 PartyBookingCommand_builder) Build() *PartyBookingCommand {
+	m0 := &PartyBookingCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Register != nil {
+		x.xxx_hidden_Action = &partyBookingCommand_Register{b.Register}
+	}
+	if b.Search != nil {
+		x.xxx_hidden_Action = &partyBookingCommand_Search{b.Search}
+	}
+	if b.Delete != nil {
+		x.xxx_hidden_Action = &partyBookingCommand_Delete{*b.Delete}
+	}
+	return m0
+}
+
+type case_PartyBookingCommand_Action protoreflect.FieldNumber
+
+func (x case_PartyBookingCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[30].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isPartyBookingCommand_Action interface {
+	isPartyBookingCommand_Action()
+}
+
+type partyBookingCommand_Register struct {
+	Register *PartyBookingAd `protobuf:"bytes,1,opt,name=register,proto3,oneof"`
+}
+
+type partyBookingCommand_Search struct {
+	Search *PartyBookingSearch `protobuf:"bytes,2,opt,name=search,proto3,oneof"`
+}
+
+type partyBookingCommand_Delete struct {
+	// delete removes the player's own ad.
+	Delete bool `protobuf:"varint,3,opt,name=delete,proto3,oneof"`
+}
+
+func (*partyBookingCommand_Register) isPartyBookingCommand_Action() {}
+
+func (*partyBookingCommand_Search) isPartyBookingCommand_Action() {}
+
+func (*partyBookingCommand_Delete) isPartyBookingCommand_Action() {}
+
+// PartyBookingAd is an ad for a party: the level it is for, the map, and
+// the jobs it wants.
+type PartyBookingAd struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Level uint32                 `protobuf:"varint,1,opt,name=level,proto3"`
+	xxx_hidden_Map   string                 `protobuf:"bytes,2,opt,name=map,proto3"`
+	xxx_hidden_Jobs  []uint32               `protobuf:"varint,3,rep,packed,name=jobs,proto3"`
+	xxx_hidden_Note  string                 `protobuf:"bytes,4,opt,name=note,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *PartyBookingAd) Reset() {
+	*x = PartyBookingAd{}
+	mi := &file_wathena_v1_command_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyBookingAd) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyBookingAd) ProtoMessage() {}
+
+func (x *PartyBookingAd) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyBookingAd) GetLevel() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Level
+	}
+	return 0
+}
+
+func (x *PartyBookingAd) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *PartyBookingAd) GetJobs() []uint32 {
+	if x != nil {
+		return x.xxx_hidden_Jobs
+	}
+	return nil
+}
+
+func (x *PartyBookingAd) GetNote() string {
+	if x != nil {
+		return x.xxx_hidden_Note
+	}
+	return ""
+}
+
+func (x *PartyBookingAd) SetLevel(v uint32) {
+	x.xxx_hidden_Level = v
+}
+
+func (x *PartyBookingAd) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *PartyBookingAd) SetJobs(v []uint32) {
+	x.xxx_hidden_Jobs = v
+}
+
+func (x *PartyBookingAd) SetNote(v string) {
+	x.xxx_hidden_Note = v
+}
+
+type PartyBookingAd_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// level is the level the ad is for, 1 to 999. A search for level L
+	// finds ads from L - 15 to L, as party_booking_search.
+	Level uint32
+	// map is a map's asset name, such as map/prt_fild08, or empty.
+	Map string
+	// jobs are up to 6 job IDs the party wants.
+	Jobs []uint32
+	// note is a line about the party, at most 80 characters.
+	Note string
+}
+
+func (b0 PartyBookingAd_builder) Build() *PartyBookingAd {
+	m0 := &PartyBookingAd{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Level = b.Level
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Jobs = b.Jobs
+	x.xxx_hidden_Note = b.Note
+	return m0
+}
+
+type PartyBookingSearch struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Level uint32                 `protobuf:"varint,1,opt,name=level,proto3"`
+	xxx_hidden_Map   string                 `protobuf:"bytes,2,opt,name=map,proto3"`
+	xxx_hidden_Job   uint32                 `protobuf:"varint,3,opt,name=job,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *PartyBookingSearch) Reset() {
+	*x = PartyBookingSearch{}
+	mi := &file_wathena_v1_command_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyBookingSearch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyBookingSearch) ProtoMessage() {}
+
+func (x *PartyBookingSearch) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyBookingSearch) GetLevel() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Level
+	}
+	return 0
+}
+
+func (x *PartyBookingSearch) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *PartyBookingSearch) GetJob() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Job
+	}
+	return 0
+}
+
+func (x *PartyBookingSearch) SetLevel(v uint32) {
+	x.xxx_hidden_Level = v
+}
+
+func (x *PartyBookingSearch) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *PartyBookingSearch) SetJob(v uint32) {
+	x.xxx_hidden_Job = v
+}
+
+type PartyBookingSearch_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// level is 0 for any level.
+	Level uint32
+	// map is empty for any map.
+	Map string
+	// job is a job ID the ad must want, or 0 for any job. rAthena searches
+	// by map or by job: a search with both finds nothing.
+	Job uint32
+}
+
+func (b0 PartyBookingSearch_builder) Build() *PartyBookingSearch {
+	m0 := &PartyBookingSearch{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Level = b.Level
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Job = b.Job
+	return m0
+}
+
 var File_wathena_v1_command_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\x9f\b\n" +
+	"wathena.v1\"\xce\t\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -3235,7 +4723,10 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"learnSkill\x126\n" +
 	"\achannel\x18\x12 \x01(\v2\x1a.wathena.v1.ChannelCommandH\x00R\achannel\x12)\n" +
 	"\x05block\x18\x13 \x01(\v2\x11.wathena.v1.BlockH\x00R\x05block\x12,\n" +
-	"\x06report\x18\x14 \x01(\v2\x12.wathena.v1.ReportH\x00R\x06reportB\x06\n" +
+	"\x06report\x18\x14 \x01(\v2\x12.wathena.v1.ReportH\x00R\x06report\x120\n" +
+	"\x05party\x18\x15 \x01(\v2\x18.wathena.v1.PartyCommandH\x00R\x05party\x123\n" +
+	"\x06friend\x18\x16 \x01(\v2\x19.wathena.v1.FriendCommandH\x00R\x06friend\x12F\n" +
+	"\rparty_booking\x18\x17 \x01(\v2\x1f.wathena.v1.PartyBookingCommandH\x00R\fpartyBookingB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -3314,7 +4805,50 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"InsertCard\x12\x1b\n" +
 	"\tcard_slot\x18\x01 \x01(\rR\bcardSlot\x12\x1d\n" +
 	"\n" +
-	"equip_slot\x18\x02 \x01(\rR\tequipSlot*\xf5\x01\n" +
+	"equip_slot\x18\x02 \x01(\rR\tequipSlot\"\x9c\x02\n" +
+	"\fPartyCommand\x121\n" +
+	"\x06create\x18\x01 \x01(\v2\x17.wathena.v1.PartyCreateH\x00R\x06create\x12\x18\n" +
+	"\x06invite\x18\x02 \x01(\tH\x00R\x06invite\x12.\n" +
+	"\x05reply\x18\x03 \x01(\v2\x16.wathena.v1.PartyReplyH\x00R\x05reply\x12\x16\n" +
+	"\x05leave\x18\x04 \x01(\bH\x00R\x05leave\x12\x16\n" +
+	"\x05expel\x18\x05 \x01(\tH\x00R\x05expel\x12\x1f\n" +
+	"\n" +
+	"set_leader\x18\x06 \x01(\tH\x00R\tsetLeader\x124\n" +
+	"\aoptions\x18\a \x01(\v2\x18.wathena.v1.PartyOptionsH\x00R\aoptionsB\b\n" +
+	"\x06action\"U\n" +
+	"\vPartyCreate\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x122\n" +
+	"\aoptions\x18\x02 \x01(\v2\x18.wathena.v1.PartyOptionsR\aoptions\"?\n" +
+	"\n" +
+	"PartyReply\x12\x19\n" +
+	"\bparty_id\x18\x01 \x01(\x04R\apartyId\x12\x16\n" +
+	"\x06accept\x18\x02 \x01(\bR\x06accept\"k\n" +
+	"\fPartyOptions\x12\x19\n" +
+	"\bexp_even\x18\x01 \x01(\bR\aexpEven\x12\x1b\n" +
+	"\titem_even\x18\x02 \x01(\bR\bitemEven\x12#\n" +
+	"\rpickup_shared\x18\x03 \x01(\bR\fpickupShared\"x\n" +
+	"\rFriendCommand\x12\x12\n" +
+	"\x03add\x18\x01 \x01(\tH\x00R\x03add\x12/\n" +
+	"\x05reply\x18\x02 \x01(\v2\x17.wathena.v1.FriendReplyH\x00R\x05reply\x12\x18\n" +
+	"\x06remove\x18\x03 \x01(\tH\x00R\x06removeB\b\n" +
+	"\x06action\"9\n" +
+	"\vFriendReply\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06accept\x18\x02 \x01(\bR\x06accept\"\xad\x01\n" +
+	"\x13PartyBookingCommand\x128\n" +
+	"\bregister\x18\x01 \x01(\v2\x1a.wathena.v1.PartyBookingAdH\x00R\bregister\x128\n" +
+	"\x06search\x18\x02 \x01(\v2\x1e.wathena.v1.PartyBookingSearchH\x00R\x06search\x12\x18\n" +
+	"\x06delete\x18\x03 \x01(\bH\x00R\x06deleteB\b\n" +
+	"\x06action\"`\n" +
+	"\x0ePartyBookingAd\x12\x14\n" +
+	"\x05level\x18\x01 \x01(\rR\x05level\x12\x10\n" +
+	"\x03map\x18\x02 \x01(\tR\x03map\x12\x12\n" +
+	"\x04jobs\x18\x03 \x03(\rR\x04jobs\x12\x12\n" +
+	"\x04note\x18\x04 \x01(\tR\x04note\"N\n" +
+	"\x12PartyBookingSearch\x12\x14\n" +
+	"\x05level\x18\x01 \x01(\rR\x05level\x12\x10\n" +
+	"\x03map\x18\x02 \x01(\tR\x03map\x12\x10\n" +
+	"\x03job\x18\x03 \x01(\rR\x03job*\xf5\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
@@ -3341,35 +4875,44 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_wathena_v1_command_proto_goTypes = []any{
-	(ChatChannel)(0),       // 0: wathena.v1.ChatChannel
-	(ChannelAction)(0),     // 1: wathena.v1.ChannelAction
-	(BaseStat)(0),          // 2: wathena.v1.BaseStat
-	(*Command)(nil),        // 3: wathena.v1.Command
-	(*WalkTo)(nil),         // 4: wathena.v1.WalkTo
-	(*Attack)(nil),         // 5: wathena.v1.Attack
-	(*UseSkill)(nil),       // 6: wathena.v1.UseSkill
-	(*LearnSkill)(nil),     // 7: wathena.v1.LearnSkill
-	(*Cell)(nil),           // 8: wathena.v1.Cell
-	(*Chat)(nil),           // 9: wathena.v1.Chat
-	(*ChannelCommand)(nil), // 10: wathena.v1.ChannelCommand
-	(*Block)(nil),          // 11: wathena.v1.Block
-	(*Report)(nil),         // 12: wathena.v1.Report
-	(*NpcClick)(nil),       // 13: wathena.v1.NpcClick
-	(*NpcReply)(nil),       // 14: wathena.v1.NpcReply
-	(*ShopBuy)(nil),        // 15: wathena.v1.ShopBuy
-	(*ShopBuyLine)(nil),    // 16: wathena.v1.ShopBuyLine
-	(*ShopSell)(nil),       // 17: wathena.v1.ShopSell
-	(*ShopSellLine)(nil),   // 18: wathena.v1.ShopSellLine
-	(*ShopClose)(nil),      // 19: wathena.v1.ShopClose
-	(*UseItem)(nil),        // 20: wathena.v1.UseItem
-	(*DropItem)(nil),       // 21: wathena.v1.DropItem
-	(*PickUp)(nil),         // 22: wathena.v1.PickUp
-	(*RaiseStat)(nil),      // 23: wathena.v1.RaiseStat
-	(*EquipItem)(nil),      // 24: wathena.v1.EquipItem
-	(*UnequipItem)(nil),    // 25: wathena.v1.UnequipItem
-	(*InsertCard)(nil),     // 26: wathena.v1.InsertCard
+	(ChatChannel)(0),            // 0: wathena.v1.ChatChannel
+	(ChannelAction)(0),          // 1: wathena.v1.ChannelAction
+	(BaseStat)(0),               // 2: wathena.v1.BaseStat
+	(*Command)(nil),             // 3: wathena.v1.Command
+	(*WalkTo)(nil),              // 4: wathena.v1.WalkTo
+	(*Attack)(nil),              // 5: wathena.v1.Attack
+	(*UseSkill)(nil),            // 6: wathena.v1.UseSkill
+	(*LearnSkill)(nil),          // 7: wathena.v1.LearnSkill
+	(*Cell)(nil),                // 8: wathena.v1.Cell
+	(*Chat)(nil),                // 9: wathena.v1.Chat
+	(*ChannelCommand)(nil),      // 10: wathena.v1.ChannelCommand
+	(*Block)(nil),               // 11: wathena.v1.Block
+	(*Report)(nil),              // 12: wathena.v1.Report
+	(*NpcClick)(nil),            // 13: wathena.v1.NpcClick
+	(*NpcReply)(nil),            // 14: wathena.v1.NpcReply
+	(*ShopBuy)(nil),             // 15: wathena.v1.ShopBuy
+	(*ShopBuyLine)(nil),         // 16: wathena.v1.ShopBuyLine
+	(*ShopSell)(nil),            // 17: wathena.v1.ShopSell
+	(*ShopSellLine)(nil),        // 18: wathena.v1.ShopSellLine
+	(*ShopClose)(nil),           // 19: wathena.v1.ShopClose
+	(*UseItem)(nil),             // 20: wathena.v1.UseItem
+	(*DropItem)(nil),            // 21: wathena.v1.DropItem
+	(*PickUp)(nil),              // 22: wathena.v1.PickUp
+	(*RaiseStat)(nil),           // 23: wathena.v1.RaiseStat
+	(*EquipItem)(nil),           // 24: wathena.v1.EquipItem
+	(*UnequipItem)(nil),         // 25: wathena.v1.UnequipItem
+	(*InsertCard)(nil),          // 26: wathena.v1.InsertCard
+	(*PartyCommand)(nil),        // 27: wathena.v1.PartyCommand
+	(*PartyCreate)(nil),         // 28: wathena.v1.PartyCreate
+	(*PartyReply)(nil),          // 29: wathena.v1.PartyReply
+	(*PartyOptions)(nil),        // 30: wathena.v1.PartyOptions
+	(*FriendCommand)(nil),       // 31: wathena.v1.FriendCommand
+	(*FriendReply)(nil),         // 32: wathena.v1.FriendReply
+	(*PartyBookingCommand)(nil), // 33: wathena.v1.PartyBookingCommand
+	(*PartyBookingAd)(nil),      // 34: wathena.v1.PartyBookingAd
+	(*PartyBookingSearch)(nil),  // 35: wathena.v1.PartyBookingSearch
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
 	4,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
@@ -3392,17 +4935,27 @@ var file_wathena_v1_command_proto_depIdxs = []int32{
 	10, // 17: wathena.v1.Command.channel:type_name -> wathena.v1.ChannelCommand
 	11, // 18: wathena.v1.Command.block:type_name -> wathena.v1.Block
 	12, // 19: wathena.v1.Command.report:type_name -> wathena.v1.Report
-	8,  // 20: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 21: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	1,  // 22: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
-	16, // 23: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
-	18, // 24: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
-	2,  // 25: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	27, // 20: wathena.v1.Command.party:type_name -> wathena.v1.PartyCommand
+	31, // 21: wathena.v1.Command.friend:type_name -> wathena.v1.FriendCommand
+	33, // 22: wathena.v1.Command.party_booking:type_name -> wathena.v1.PartyBookingCommand
+	8,  // 23: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 24: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	1,  // 25: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
+	16, // 26: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
+	18, // 27: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
+	2,  // 28: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	28, // 29: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
+	29, // 30: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
+	30, // 31: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
+	30, // 32: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
+	32, // 33: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
+	34, // 34: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
+	35, // 35: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
+	36, // [36:36] is the sub-list for method output_type
+	36, // [36:36] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -3431,6 +4984,9 @@ func file_wathena_v1_command_proto_init() {
 		(*command_Channel)(nil),
 		(*command_Block)(nil),
 		(*command_Report)(nil),
+		(*command_Party)(nil),
+		(*command_Friend)(nil),
+		(*command_PartyBooking)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
@@ -3443,13 +4999,32 @@ func file_wathena_v1_command_proto_init() {
 		(*npcReply_InputNumber)(nil),
 		(*npcReply_Close)(nil),
 	}
+	file_wathena_v1_command_proto_msgTypes[24].OneofWrappers = []any{
+		(*partyCommand_Create)(nil),
+		(*partyCommand_Invite)(nil),
+		(*partyCommand_Reply)(nil),
+		(*partyCommand_Leave)(nil),
+		(*partyCommand_Expel)(nil),
+		(*partyCommand_SetLeader)(nil),
+		(*partyCommand_Options)(nil),
+	}
+	file_wathena_v1_command_proto_msgTypes[28].OneofWrappers = []any{
+		(*friendCommand_Add)(nil),
+		(*friendCommand_Reply)(nil),
+		(*friendCommand_Remove)(nil),
+	}
+	file_wathena_v1_command_proto_msgTypes[30].OneofWrappers = []any{
+		(*partyBookingCommand_Register)(nil),
+		(*partyBookingCommand_Search)(nil),
+		(*partyBookingCommand_Delete)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   24,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

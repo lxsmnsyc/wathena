@@ -3,7 +3,7 @@
 // rules only keep the client from sending lines the server drops.
 // User text is only ever set with textContent.
 
-import { ALL_TAB, LOCAL_LINES, showsLine } from './chatTabs';
+import { ALL_TAB, LOCAL_LINES, PARTY_TAB, showsLine } from './chatTabs';
 
 /** The most characters a line may have, as Unicode code points. */
 export const MAX_CHAT = 255;
@@ -246,6 +246,20 @@ export class ChatLog {
       if (!mine) {
         this.reportButton(row, name, lineId);
       }
+    }
+    this.append(row);
+  }
+
+  /**
+   * Adds a party line under the Party tab, as "Name : text" in the party
+   * color. The All tab shows it too.
+   */
+  party(name: string, text: string, mine: boolean, lineId?: Uint8Array): void {
+    const row = this.row(PARTY_TAB);
+    row.classList.add('party');
+    row.append(bdi(name), ' : ', bdi(text));
+    if (!mine) {
+      this.reportButton(row, name, lineId);
     }
     this.append(row);
   }

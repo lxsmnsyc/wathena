@@ -26,6 +26,7 @@ import (
 	chatpkg "github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
@@ -148,6 +149,9 @@ type Gateway struct {
 	Metrics *metrics.Conns
 	// Chat are the chat rate limits. chat.DefaultLimits when zero.
 	Chat chatpkg.Limits
+	// Limits are the world ruleset's limits, which Welcome sends.
+	// rAthena's when zero.
+	Limits rules.Limits
 	// CheckName checks the name of a --dev session's character against
 	// the chat filter and the reserved names (strategy section 7.10). It
 	// may be nil.
@@ -361,6 +365,7 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 		Tick:            p.Tick,
 		NetId:           p.NetID,
 		Map:             p.Map,
+		Limits:          limitsMessage(g.Limits),
 	}.Build()}.Build()
 	if err := write(ctx, c, welcome); err != nil {
 		return err
@@ -447,8 +452,8 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			text, valid := CleanChat(ch.GetText())
 			// Lines over the rate are dropped, as rAthena's
 			// min_chat_delay does, and the player is told, since the
-			// client does not know a new character's lower limits. Party
-			// and guild chat do not exist yet, so they are ignored.
+			// client does not know a new character's lower limits. Guild
+			// chat does not exist yet, so it is ignored.
 			if !ok {
 				queued = p.ChatTooFast(seq, ch.GetChannel(), ch.GetTo()+ch.GetChannelName())
 				break
@@ -469,6 +474,8 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 				queued = p.Whisper(seq, to, text)
 			case wathenav1.ChatChannel_CHAT_CHANNEL_NAMED:
 				queued = p.ChannelChat(seq, ch.GetChannelName(), text)
+			case wathenav1.ChatChannel_CHAT_CHANNEL_PARTY:
+				queued = p.PartyChat(seq, text)
 			default:
 				queued = p.Ack(seq)
 			}
@@ -503,6 +510,12 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 				break
 			}
 			queued = p.Report(seq, r.GetName(), line, reason)
+		case m.GetCommand().HasParty():
+			queued = partyCommand(p, seq, m.GetCommand().GetParty())
+		case m.GetCommand().HasFriend():
+			queued = friendCommand(p, seq, m.GetCommand().GetFriend())
+		case m.GetCommand().HasPartyBooking():
+			queued = bookingCommand(p, seq, m.GetCommand().GetPartyBooking())
 		case m.GetCommand().HasPickUp():
 			queued = p.PickUp(seq, m.GetCommand().GetPickUp().GetItem())
 		case m.GetCommand().HasRaiseStat():

@@ -1,6 +1,9 @@
 package progression
 
-import "sort"
+import (
+	"slices"
+	"sort"
+)
 
 // DamageEntry is one attacker in a monster's damage log, as rAthena's
 // s_dmglog for a player. CharID 0 is never logged.
@@ -54,6 +57,10 @@ type Attacker struct {
 	Online    bool
 	Dead      bool
 	BaseLevel int
+	// Party is the player's party ID, or 0, and EvenShare whether its
+	// party shares exp evenly.
+	Party     int64
+	EvenShare bool
 }
 
 // Reward is the exp one player gets for a kill, before GainExp.
@@ -72,6 +79,19 @@ type Kill struct {
 	// DropModifier is the renewal drop penalty for the first of them, in
 	// percent.
 	DropModifier int
+	// Pots are the exp of parties that share evenly, in the order the
+	// damage log first names each party, as mob_dead's pt[]. ShareExp
+	// splits each one.
+	Pots []PartyPot
+}
+
+// PartyPot is the exp a party with even share earned from one kill:
+// the sum of its members' shares, before the level penalty.
+type PartyPot struct {
+	Party     int64
+	Base, Job int64
+	// Shares are each fighting member's own share, by character.
+	Shares map[uint32][2]int64
 }
 
 // Kill is the exp and loot priority part of mob_dead for a monster
@@ -174,9 +194,24 @@ func (t *Tables) KillWith(m *Mob, log *DamageLog, killer uint32, who func(charID
 		if m.JobExp != 0 {
 			job = capFloat(withBonus(float64(m.JobExp)*per), 1)
 		}
+		if a := eligible[i]; a.Party != 0 && a.EvenShare {
+			// mob_dead adds the share to its party's pot. party_exp_share
+			// splits the pot, and the level penalty comes after the split.
+			j := slices.IndexFunc(k.Pots, func(p PartyPot) bool { return p.Party == a.Party })
+			if j < 0 {
+				k.Pots = append(k.Pots, PartyPot{Party: a.Party, Shares: map[uint32][2]int64{}})
+				j = len(k.Pots) - 1
+			}
+			pot := &k.Pots[j]
+			pot.Base = addCap(pot.Base, base, MaxExp)
+			pot.Job = addCap(pot.Job, job, MaxExp)
+			pot.Shares[e.CharID] = [2]int64{base, job}
+			continue
+		}
 		if base == 0 && job == 0 {
 			continue
 		}
+		shareBase, shareJob := base, job
 		if rate := t.Penalty(PenaltyExp, eligible[i].BaseLevel, m); rate != 100 {
 			if base != 0 {
 				base = min(max(applyRate(base, rate), 1), MaxExp)
@@ -186,7 +221,8 @@ func (t *Tables) KillWith(m *Mob, log *DamageLog, killer uint32, who func(charID
 			}
 		}
 		if h != nil && h.Experience != nil {
-			base, job = h.Experience(e.CharID, base, job)
+			base, job = h.Experience(ExpGain{CharID: e.CharID, Base: base, Job: job, Party: eligible[i].Party,
+				ShareBase: shareBase, ShareJob: shareJob})
 			base, job = max(base, 0), max(job, 0)
 			if base == 0 && job == 0 {
 				continue
@@ -195,4 +231,57 @@ func (t *Tables) KillWith(m *Mob, log *DamageLog, killer uint32, who func(charID
 		k.Rewards = append(k.Rewards, Reward{CharID: e.CharID, BaseExp: base, JobExp: job})
 	}
 	return k
+}
+
+// ShareMember is a party member that party_exp_share counts: on the
+// kill's map and alive.
+type ShareMember struct {
+	CharID    uint32
+	BaseLevel int
+}
+
+// ShareExp is party_exp_share: a party pot split among the members on
+// the map, in slot order. evenBonus is party_even_share_bonus. Each
+// member's share then gets its own level penalty (RENEWAL_EXP, the
+// level_penalty_exp flag) and the hooks.
+func (t *Tables) ShareExp(m *Mob, pot PartyPot, members []ShareMember, evenBonus int, h *Hooks) []Reward {
+	c := int64(len(members))
+	if c < 1 {
+		return nil
+	}
+	base, job := pot.Base/c, pot.Job/c
+	if evenBonus != 0 && c > 1 {
+		bonus := float64(100 + evenBonus*int(c-1))
+		if base != 0 {
+			base = min(max(int64(float64(base)*bonus/100), 0), MaxExp)
+		}
+		if job != 0 {
+			job = min(max(int64(float64(job)*bonus/100), 0), MaxExp)
+		}
+	}
+	var out []Reward
+	for _, mb := range members {
+		b, j := base, job
+		if b != 0 || j != 0 {
+			if rate := t.Penalty(PenaltyExp, mb.BaseLevel, m); rate != 100 {
+				if b != 0 {
+					b = min(max(applyRate(b, rate), 1), MaxExp)
+				}
+				if j != 0 {
+					j = min(max(applyRate(j, rate), 1), MaxExp)
+				}
+			}
+		}
+		if h != nil && h.Experience != nil {
+			sh := pot.Shares[mb.CharID]
+			b, j = h.Experience(ExpGain{CharID: mb.CharID, Base: b, Job: j, Party: pot.Party, ShareBase: sh[0], ShareJob: sh[1]})
+			b, j = max(b, 0), max(j, 0)
+		}
+		// pc_gainexp does nothing for 0 and 0.
+		if b == 0 && j == 0 {
+			continue
+		}
+		out = append(out, Reward{CharID: mb.CharID, BaseExp: b, JobExp: j})
+	}
+	return out
 }

@@ -15,18 +15,15 @@ import (
 // SkillImpl classes in rAthena's src/map/skills/archer. The two modes
 // differ:
 //   - Renewal's songs are statuses that skill_castend_song starts on the
-//     caster and its party, or on the enemies around for the songs that
-//     hurt. Parties do not exist yet, so a buff reaches the caster alone,
-//     as rAthena does for a player without a party.
+//     caster and its party around it, or on the enemies around for the
+//     songs that hurt. Without a party a buff reaches the caster alone.
 //   - Pre-renewal's songs and dances are ground units around the
 //     performer, who gets SC_DANCING. The units follow the performer, act
 //     on whoever stands in them, and cost SP every few seconds.
 //
 // Ensembles need a partner of the other performer job next to the
-// caster, in the same party (skill_check_pc_partner). Parties do not
-// exist yet, so no partner is ever found and the ensembles fail before
-// they start, as rAthena does for a player without a party. Their
-// effects are ported for when parties come.
+// caster, in the same party (skill_check_pc_partner). A player without
+// a party finds no partner, so its ensembles fail before they start.
 
 func init() {
 	registerSkillImpls(map[int]any{
@@ -176,21 +173,25 @@ func (z *Zone) ensembleCheck(src *entity, d *skill.Def, lv int) wathenav1.SkillF
 }
 
 // ensemblePartners is skill_check_pc_partner's search for an ensemble
-// (skill_check_condition_char_sub's default case): players within range
-// of the other sex and a performer job, who know the skill, hold an
-// instrument or a whip, are not dancing, stand, can move, and are in the
-// caster's party. Parties do not exist yet, so there is no partner. The
-// level becomes the average of the caster's and the partners' levels.
+// (skill_check_condition_char_sub's default case): the first player
+// within range of the other sex and a performer job who is alive, can
+// cast, stands, can move, knows the skill, holds an instrument or a
+// whip, is not dancing, and is in the caster's party. The zone keeps the
+// partner for the cast end, as rAthena's static list. The level becomes
+// the average of the caster's and the partner's levels.
 func (z *Zone) ensemblePartners(src *entity, d *skill.Def, lv *int, rng int) []*entity {
+	z.partners = z.partners[:0]
 	p := src.player
 	if p == nil || z.Status == nil {
-		return nil
+		return z.partners
 	}
-	var out []*entity
 	sum := 0
 	for _, t := range z.findEntities(&query{area: areaRadius, x: src.x, y: src.y, radius: rng, kinds: queryPlayers}) {
+		if len(z.partners) >= 1 {
+			break
+		}
 		tp := t.player
-		if t == src || t.dead || t.cant().Move || tp.char.Male == p.char.Male {
+		if t == src || t.dead || t.cant().Cast || tp.rogue.sitting || t.cant().Move || tp.char.Male == p.char.Male {
 			continue
 		}
 		mapID, ok := z.Status.MapID(tp.char.Job)
@@ -204,16 +205,12 @@ func (z *Zone) ensemblePartners(src *entity, d *skill.Def, lv *int, rng int) []*
 		if !sameParty(src, t) {
 			continue
 		}
-		out = append(out, t)
+		z.partners = append(z.partners, t)
 		sum += tlv
 	}
-	*lv = (sum + *lv) / (len(out) + 1)
-	return out
+	*lv = (sum + *lv) / (len(z.partners) + 1)
+	return z.partners
 }
-
-// sameParty reports whether two players are in one party. Parties do not
-// exist yet.
-func sameParty(_, _ *entity) bool { return false }
 
 // Job masks that the partner checks read, as rAthena's MAPID_ values.
 const (
@@ -240,8 +237,8 @@ func (z *Zone) castendSong(src *entity, d *skill.Def, lv int) int {
 	z.skillEffect(src, src, d, lv, int64(lv), true)
 	p.perform.danceSkill, p.perform.danceLv = d.ID, lv
 	if d.Has("IsEnsemble") {
-		// skill_check_pc_partner with cast_flag: the partners found when
-		// the cast began. There are none without parties.
+		// skill_check_pc_partner with cast_flag: the partner found when
+		// the cast began.
 		z.ensembleCast(src, d, lv)
 	}
 	n := 0
@@ -275,14 +272,13 @@ func (z *Zone) applySong(src, t *entity, d *skill.Def, lv int) {
 }
 
 // ensembleCast is skill_check_pc_partner with cast_flag for an ensemble:
-// the first partner dances too, or in renewal both get Ensemble Fatigue.
-// Without parties there is no partner.
+// the partner the last search found dances too, or in renewal both get
+// Ensemble Fatigue.
 func (z *Zone) ensembleCast(src *entity, d *skill.Def, lv int) {
-	partners := z.ensemblePartners(src, d, &lv, 1)
-	if len(partners) == 0 {
+	if len(z.partners) == 0 || !z.entities.has(z.partners[0]) || z.partners[0].player == nil {
 		return
 	}
-	t := partners[0]
+	t := z.partners[0]
 	dancing := src.sc.Get(sc.SCDancing)
 	if dancing != nil && (!z.rules().EnsembleSongs || d.ID == skill.IDMoonlit) {
 		dancing.Val4 = int(z.unit(t).Ref().ID)
@@ -711,8 +707,8 @@ func (moonlit) castendPos(z *Zone, src *entity, x, y int, d *skill.Def, lv int, 
 // marionette is SkillMarionetteControl: half the caster's stats go to
 // the target. Casting it again on the same target ends it. A performer
 // of the caster's sex, or a target under Curse or Quagmire, cannot be
-// controlled. Marionette Control is PartyOnly, so without parties it
-// only reaches the caster, which fails here.
+// controlled. Marionette Control is PartyOnly, so it reaches the members
+// of the caster's party, and the caster, which fails here.
 type marionette struct{}
 
 func (marionette) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {

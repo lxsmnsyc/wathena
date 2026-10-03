@@ -5,6 +5,8 @@ import (
 	"maps"
 	"slices"
 	"strings"
+
+	"github.com/lxsmnsyc/wathena/server/rules"
 )
 
 // Ruleset bases (strategy section 3.6). A base cannot be mixed.
@@ -72,6 +74,9 @@ type Ruleset struct {
 	// Flags holds every flag's value. skill_rebalance flags are only
 	// present when a ruleset mod set them.
 	Flags map[string]string
+	// Limits and Rules hold the limits and rules the ruleset mods set, by
+	// name. One they do not set has rAthena's value (server/rules).
+	Limits, Rules map[string]int
 }
 
 // Flag returns a flag's value.
@@ -130,6 +135,20 @@ func checkFlag(name, value string) error {
 		return fmt.Errorf("%s: %q is not one of %s", name, value, strings.Join(values, ", "))
 	}
 	return nil
+}
+
+// checkBound checks one limit or rule of a ruleset mod and returns its
+// value.
+func checkBound(list []rules.Bound, kind, name, value string) (int, error) {
+	b, ok := rules.FindBound(list, name)
+	if !ok {
+		var names []string
+		for _, b := range list {
+			names = append(names, b.Name)
+		}
+		return 0, fmt.Errorf("%q is not a ruleset %s; the %ss are %s", name, kind, kind, strings.Join(names, ", "))
+	}
+	return b.ParseValue(value)
 }
 
 // checkRuleset checks the dependencies between flags. Only

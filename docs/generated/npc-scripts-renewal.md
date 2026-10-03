@@ -98,9 +98,9 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getgmlevel | 22 | 0 | 4 | 18 | 0 |  |
 | checkquest | 21 | 0 | 0 | 21 | 0 |  |
 | specialeffect2 | 20 | 7 | 1 | 12 | 20 |  |
+| donpcevent | 18 | 0 | 0 | 18 | 0 |  |
 | event onstartarena | 18 | 0 | 0 | 18 | 0 |  |
 | setquest | 18 | 0 | 2 | 16 | 0 |  |
-| donpcevent | 17 | 0 | 0 | 17 | 0 |  |
 | event onstart | 15 | 0 | 0 | 15 | 0 |  |
 | getbattleflag | 15 | 0 | 0 | 15 | 0 |  |
 | getbrokenid | 15 | 0 | 14 | 1 | 0 |  |
@@ -156,7 +156,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer5000 | 2 | 0 | 0 | 2 | 0 |  |
 | event ontimer500000 | 2 | 0 | 0 | 2 | 0 |  |
 | function | 2 | 0 | 0 | 2 | 0 | local functions (2) |
-| getcharid | 2 | 0 | 0 | 2 | 0 | parties, guilds and other IDs (2) |
+| getcharid | 2 | 0 | 0 | 2 | 0 | guilds, battlegrounds, clans and other IDs (2) |
 | getequipid | 2 | 0 | 0 | 2 | 0 |  |
 | getiteminfo | 2 | 0 | 0 | 2 | 0 |  |
 | getlook | 2 | 0 | 0 | 2 | 0 |  |
@@ -212,7 +212,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getmercinfo | 1 | 0 | 0 | 1 | 0 |  |
 | goto | 1 | 0 | 0 | 1 | 1 |  |
 | inarray | 1 | 0 | 0 | 1 | 0 |  |
-| is_party_leader | 1 | 0 | 0 | 1 | 0 |  |
+| is_party_leader | 1 | 0 | 0 | 1 | 1 |  |
 | jobcanentermap | 1 | 0 | 0 | 1 | 0 |  |
 | jobchange | 1 | 0 | 1 | 0 | 0 |  |
 | jobname | 1 | 0 | 0 | 1 | 0 |  |

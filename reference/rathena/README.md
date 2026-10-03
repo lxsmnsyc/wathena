@@ -42,6 +42,7 @@ Each file starts with `system`, `mode`, `rathena_git_hash`, `data_path`, and `ci
 | `refine.json` | Stats at every refine level for one armor and one weapon of each weapon level. |
 | `status_effects.json` | Chance, duration, and whether ten common ailments start, for many sources and targets. |
 | `level_penalty.json` | Renewal exp and drop modifiers by level difference. Empty in pre-renewal. |
+| `party_share.json` | Exp sharing among attackers and parties when a monster dies, and party item pick-up rights and distribution. |
 | `random_option_rolls.json` | rAthena's random option groups applied with every draw at its lowest, and statistics of seeded applications, and the options of each monster drop with a group. |
 
 ## Warps
@@ -213,6 +214,27 @@ They come from rAthena fork commit `5e50b7ad9`, which adds `record_mount_status`
 
 ```text
 WATHENA_RECORD_ONLY=mount_status bash tools/wathena/record.sh renewal pre-renewal
+```
+
+## Party sharing
+
+`party_share.json` holds party exp sharing and party loot, one file per mode:
+
+- `exp_cases` kill a monster through rAthena (`mob_dead` and `party_exp_share`) and list every `pc_gainexp` call in `gained`, with the base and job exp passed in, before `pc_calcexp`.
+- Exp cases cover no party, parties with each take and even share, two parties, members that did no damage, dead members, members on another map, 1 to 5 members, and `party_even_share_bonus` at 0 and 10. Each case runs against Poring (1002), Orc Warrior (1023) and Raydric (1163), with player base levels from 1 to 99, so the renewal level penalty differs per member.
+- `loot_cases` drop one Jellopy with `map_addflooritem` and take it with `pc_takeitem`. They cover the party item options 0 to 3, `party_item_share_type` 0 to 3, the first, second and third looters and other players, pick-up times between the protection ticks, and members that are dead, on another map, or have a full inventory.
+- For random picks, `candidates` lists the players in rAthena's order and `drawn` lists each index `rnd_value` drew, so a test can replay the pick. `itemc_before` and `itemc_after` are the round robin counter.
+- The header holds the `battle_config` values the cases use, at rAthena's defaults. The file's `note` explains every field.
+
+| Mode | Exp cases | Loot cases |
+|---|---:|---:|
+| renewal | 69 | 108 |
+| pre-renewal | 69 | 108 |
+
+They come from rAthena fork commit `50df331ca`, which adds `record_party_share` to the recorder. With it:
+
+```text
+WATHENA_RECORD_ONLY=party_share bash tools/wathena/record.sh renewal pre-renewal
 ```
 
 ## How random rolls are recorded

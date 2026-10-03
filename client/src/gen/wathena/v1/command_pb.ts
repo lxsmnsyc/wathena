@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi3wYKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHgoKTGVhcm5Ta2lsbBIQCghza2lsbF9pZBgBIAEoDSIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJgCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkSFAoMY2hhbm5lbF9uYW1lGAQgASgJIkkKDkNoYW5uZWxDb21tYW5kEikKBmFjdGlvbhgBIAEoDjIZLndhdGhlbmEudjEuQ2hhbm5lbEFjdGlvbhIMCgRuYW1lGAIgASgJIiYKBUJsb2NrEgwKBG5hbWUYASABKAkSDwoHdW5ibG9jaxgCIAEoCCI3CgZSZXBvcnQSDAoEbmFtZRgBIAEoCRIPCgdsaW5lX2lkGAIgASgMEg4KBnJlYXNvbhgDIAEoCSIXCghOcGNDbGljaxILCgNucGMYASABKA0igwEKCE5wY1JlcGx5Eg4KBmRpYWxvZxgBIAEoDRIOCgRuZXh0GAIgASgISAASDgoEbWVudRgDIAEoDUgAEhQKCmlucHV0X3RleHQYBCABKAlIABIWCgxpbnB1dF9udW1iZXIYBSABKANIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFuc3dlciI+CgdTaG9wQnV5EgsKA25wYxgBIAEoDRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuU2hvcEJ1eUxpbmUiLgoLU2hvcEJ1eUxpbmUSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0iQAoIU2hvcFNlbGwSCwoDbnBjGAEgASgNEicKBWl0ZW1zGAIgAygLMhgud2F0aGVuYS52MS5TaG9wU2VsbExpbmUiLAoMU2hvcFNlbGxMaW5lEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhgKCVNob3BDbG9zZRILCgNucGMYASABKA0iFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIigKCERyb3BJdGVtEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0iKwoJRXF1aXBJdGVtEgwKBHNsb3QYASABKA0SEAoIcG9zaXRpb24YAiABKA0iGwoLVW5lcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDSIzCgpJbnNlcnRDYXJkEhEKCWNhcmRfc2xvdBgBIAEoDRISCgplcXVpcF9zbG90GAIgASgNKvUBCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFEhcKE0NIQVRfQ0hBTk5FTF9TWVNURU0QBhIdChlDSEFUX0NIQU5ORUxfQU5OT1VOQ0VNRU5UEAcSFgoSQ0hBVF9DSEFOTkVMX05BTUVEEAgqlwEKDUNoYW5uZWxBY3Rpb24SHgoaQ0hBTk5FTF9BQ1RJT05fVU5TUEVDSUZJRUQQABIXChNDSEFOTkVMX0FDVElPTl9KT0lOEAESGAoUQ0hBTk5FTF9BQ1RJT05fTEVBVkUQAhIXChNDSEFOTkVMX0FDVElPTl9MSVNUEAMSGgoWQ0hBTk5FTF9BQ1RJT05fTUVNQkVSUxAEKpcBCghCYXNlU3RhdBIZChVCQVNFX1NUQVRfVU5TUEVDSUZJRUQQABIRCg1CQVNFX1NUQVRfU1RSEAESEQoNQkFTRV9TVEFUX0FHSRACEhEKDUJBU0VfU1RBVF9WSVQQAxIRCg1CQVNFX1NUQVRfSU5UEAQSEQoNQkFTRV9TVEFUX0RFWBAFEhEKDUJBU0VfU1RBVF9MVUsQBkJAWj5naXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL3YxO3dhdGhlbmF2MWIGcHJvdG8z");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi8QcKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIeCgpMZWFyblNraWxsEhAKCHNraWxsX2lkGAEgASgNIhwKBENlbGwSCQoBeBgBIAEoDRIJCgF5GAIgASgNImAKBENoYXQSKAoHY2hhbm5lbBgBIAEoDjIXLndhdGhlbmEudjEuQ2hhdENoYW5uZWwSDAoEdGV4dBgCIAEoCRIKCgJ0bxgDIAEoCRIUCgxjaGFubmVsX25hbWUYBCABKAkiSQoOQ2hhbm5lbENvbW1hbmQSKQoGYWN0aW9uGAEgASgOMhkud2F0aGVuYS52MS5DaGFubmVsQWN0aW9uEgwKBG5hbWUYAiABKAkiJgoFQmxvY2sSDAoEbmFtZRgBIAEoCRIPCgd1bmJsb2NrGAIgASgIIjcKBlJlcG9ydBIMCgRuYW1lGAEgASgJEg8KB2xpbmVfaWQYAiABKAwSDgoGcmVhc29uGAMgASgJIhcKCE5wY0NsaWNrEgsKA25wYxgBIAEoDSKDAQoITnBjUmVwbHkSDgoGZGlhbG9nGAEgASgNEg4KBG5leHQYAiABKAhIABIOCgRtZW51GAMgASgNSAASFAoKaW5wdXRfdGV4dBgEIAEoCUgAEhYKDGlucHV0X251bWJlchgFIAEoA0gAEg8KBWNsb3NlGAYgASgISABCCAoGYW5zd2VyIj4KB1Nob3BCdXkSCwoDbnBjGAEgASgNEiYKBWl0ZW1zGAIgAygLMhcud2F0aGVuYS52MS5TaG9wQnV5TGluZSIuCgtTaG9wQnV5TGluZRIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDSJACghTaG9wU2VsbBILCgNucGMYASABKA0SJwoFaXRlbXMYAiADKAsyGC53YXRoZW5hLnYxLlNob3BTZWxsTGluZSIsCgxTaG9wU2VsbExpbmUSDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iGAoJU2hvcENsb3NlEgsKA25wYxgBIAEoDSIXCgdVc2VJdGVtEgwKBHNsb3QYASABKA0iKAoIRHJvcEl0ZW0SDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iFgoGUGlja1VwEgwKBGl0ZW0YASABKA0iPwoJUmFpc2VTdGF0EiIKBHN0YXQYASABKA4yFC53YXRoZW5hLnYxLkJhc2VTdGF0Eg4KBmFtb3VudBgCIAEoDSIrCglFcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDRIQCghwb3NpdGlvbhgCIAEoDSIbCgtVbmVxdWlwSXRlbRIMCgRzbG90GAEgASgNIjMKCkluc2VydENhcmQSEQoJY2FyZF9zbG90GAEgASgNEhIKCmVxdWlwX3Nsb3QYAiABKA0i4wEKDFBhcnR5Q29tbWFuZBIpCgZjcmVhdGUYASABKAsyFy53YXRoZW5hLnYxLlBhcnR5Q3JlYXRlSAASEAoGaW52aXRlGAIgASgJSAASJwoFcmVwbHkYAyABKAsyFi53YXRoZW5hLnYxLlBhcnR5UmVwbHlIABIPCgVsZWF2ZRgEIAEoCEgAEg8KBWV4cGVsGAUgASgJSAASFAoKc2V0X2xlYWRlchgGIAEoCUgAEisKB29wdGlvbnMYByABKAsyGC53YXRoZW5hLnYxLlBhcnR5T3B0aW9uc0gAQggKBmFjdGlvbiJGCgtQYXJ0eUNyZWF0ZRIMCgRuYW1lGAEgASgJEikKB29wdGlvbnMYAiABKAsyGC53YXRoZW5hLnYxLlBhcnR5T3B0aW9ucyIuCgpQYXJ0eVJlcGx5EhAKCHBhcnR5X2lkGAEgASgEEg4KBmFjY2VwdBgCIAEoCCJKCgxQYXJ0eU9wdGlvbnMSEAoIZXhwX2V2ZW4YASABKAgSEQoJaXRlbV9ldmVuGAIgASgIEhUKDXBpY2t1cF9zaGFyZWQYAyABKAgiZAoNRnJpZW5kQ29tbWFuZBINCgNhZGQYASABKAlIABIoCgVyZXBseRgCIAEoCzIXLndhdGhlbmEudjEuRnJpZW5kUmVwbHlIABIQCgZyZW1vdmUYAyABKAlIAEIICgZhY3Rpb24iKwoLRnJpZW5kUmVwbHkSDAoEbmFtZRgBIAEoCRIOCgZhY2NlcHQYAiABKAgikwEKE1BhcnR5Qm9va2luZ0NvbW1hbmQSLgoIcmVnaXN0ZXIYASABKAsyGi53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0FkSAASMAoGc2VhcmNoGAIgASgLMh4ud2F0aGVuYS52MS5QYXJ0eUJvb2tpbmdTZWFyY2hIABIQCgZkZWxldGUYAyABKAhIAEIICgZhY3Rpb24iSAoOUGFydHlCb29raW5nQWQSDQoFbGV2ZWwYASABKA0SCwoDbWFwGAIgASgJEgwKBGpvYnMYAyADKA0SDAoEbm90ZRgEIAEoCSI9ChJQYXJ0eUJvb2tpbmdTZWFyY2gSDQoFbGV2ZWwYASABKA0SCwoDbWFwGAIgASgJEgsKA2pvYhgDIAEoDSr1AQoLQ2hhdENoYW5uZWwSHAoYQ0hBVF9DSEFOTkVMX1VOU1BFQ0lGSUVEEAASFgoSQ0hBVF9DSEFOTkVMX0xPQ0FMEAESFgoSQ0hBVF9DSEFOTkVMX1BBUlRZEAISFgoSQ0hBVF9DSEFOTkVMX0dVSUxEEAMSGAoUQ0hBVF9DSEFOTkVMX1dISVNQRVIQBBIWChJDSEFUX0NIQU5ORUxfV09STEQQBRIXChNDSEFUX0NIQU5ORUxfU1lTVEVNEAYSHQoZQ0hBVF9DSEFOTkVMX0FOTk9VTkNFTUVOVBAHEhYKEkNIQVRfQ0hBTk5FTF9OQU1FRBAIKpcBCg1DaGFubmVsQWN0aW9uEh4KGkNIQU5ORUxfQUNUSU9OX1VOU1BFQ0lGSUVEEAASFwoTQ0hBTk5FTF9BQ1RJT05fSk9JThABEhgKFENIQU5ORUxfQUNUSU9OX0xFQVZFEAISFwoTQ0hBTk5FTF9BQ1RJT05fTElTVBADEhoKFkNIQU5ORUxfQUNUSU9OX01FTUJFUlMQBCqXAQoIQmFzZVN0YXQSGQoVQkFTRV9TVEFUX1VOU1BFQ0lGSUVEEAASEQoNQkFTRV9TVEFUX1NUUhABEhEKDUJBU0VfU1RBVF9BR0kQAhIRCg1CQVNFX1NUQVRfVklUEAMSEQoNQkFTRV9TVEFUX0lOVBAEEhEKDUJBU0VfU1RBVF9ERVgQBRIRCg1CQVNFX1NUQVRfTFVLEAZCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -142,6 +142,24 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: Report;
     case: "report";
+  } | {
+    /**
+     * @generated from field: wathena.v1.PartyCommand party = 21;
+     */
+    value: PartyCommand;
+    case: "party";
+  } | {
+    /**
+     * @generated from field: wathena.v1.FriendCommand friend = 22;
+     */
+    value: FriendCommand;
+    case: "friend";
+  } | {
+    /**
+     * @generated from field: wathena.v1.PartyBookingCommand party_booking = 23;
+     */
+    value: PartyBookingCommand;
+    case: "partyBooking";
   } | { case: undefined; value?: undefined };
 };
 
@@ -810,6 +828,368 @@ export type InsertCard = Message<"wathena.v1.InsertCard"> & {
  */
 export const InsertCardSchema: GenMessage<InsertCard> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 23);
+
+/**
+ * PartyCommand is a party action, as rAthena's party packets. The server
+ * answers with PartyResult when the action fails or is refused, and with
+ * PartyInfo when the party changed. Party chat is Chat with
+ * CHAT_CHANNEL_PARTY.
+ *
+ * @generated from message wathena.v1.PartyCommand
+ */
+export type PartyCommand = Message<"wathena.v1.PartyCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.PartyCommand.action
+   */
+  action: {
+    /**
+     * create makes a party with the player as its leader, as
+     * party_create.
+     *
+     * @generated from field: wathena.v1.PartyCreate create = 1;
+     */
+    value: PartyCreate;
+    case: "create";
+  } | {
+    /**
+     * invite asks a player by name to join the leader's party, as
+     * party_invite. Only the leader may invite.
+     *
+     * @generated from field: string invite = 2;
+     */
+    value: string;
+    case: "invite";
+  } | {
+    /**
+     * reply answers the invite of PartyInvite, as party_reply_invite.
+     *
+     * @generated from field: wathena.v1.PartyReply reply = 3;
+     */
+    value: PartyReply;
+    case: "reply";
+  } | {
+    /**
+     * leave leaves the party, as party_leave. When the leader leaves,
+     * the party breaks up, as rAthena does.
+     *
+     * @generated from field: bool leave = 4;
+     */
+    value: boolean;
+    case: "leave";
+  } | {
+    /**
+     * expel removes a member by name, as party_removemember. Only the
+     * leader may expel.
+     *
+     * @generated from field: string expel = 5;
+     */
+    value: string;
+    case: "expel";
+  } | {
+    /**
+     * set_leader makes a member the leader, as party_changeleader. Only
+     * the leader may do it.
+     *
+     * @generated from field: string set_leader = 6;
+     */
+    value: string;
+    case: "setLeader";
+  } | {
+    /**
+     * options changes the party's options, as party_changeoption. Only
+     * the leader may do it.
+     *
+     * @generated from field: wathena.v1.PartyOptions options = 7;
+     */
+    value: PartyOptions;
+    case: "options";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.PartyCommand.
+ * Use `create(PartyCommandSchema)` to create a new message.
+ */
+export const PartyCommandSchema: GenMessage<PartyCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 24);
+
+/**
+ * @generated from message wathena.v1.PartyCreate
+ */
+export type PartyCreate = Message<"wathena.v1.PartyCreate"> & {
+  /**
+   * name is the party's name, 1 to 24 characters.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * options are the item options. exp_share is always each at first, as
+   * in rAthena.
+   *
+   * @generated from field: wathena.v1.PartyOptions options = 2;
+   */
+  options?: PartyOptions | undefined;
+};
+
+/**
+ * Describes the message wathena.v1.PartyCreate.
+ * Use `create(PartyCreateSchema)` to create a new message.
+ */
+export const PartyCreateSchema: GenMessage<PartyCreate> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 25);
+
+/**
+ * @generated from message wathena.v1.PartyReply
+ */
+export type PartyReply = Message<"wathena.v1.PartyReply"> & {
+  /**
+   * party_id is PartyInvite.party_id.
+   *
+   * @generated from field: uint64 party_id = 1;
+   */
+  partyId: bigint;
+
+  /**
+   * @generated from field: bool accept = 2;
+   */
+  accept: boolean;
+};
+
+/**
+ * Describes the message wathena.v1.PartyReply.
+ * Use `create(PartyReplySchema)` to create a new message.
+ */
+export const PartyReplySchema: GenMessage<PartyReply> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 26);
+
+/**
+ * PartyOptions are a party's sharing options, as rAthena's party.exp and
+ * party.item.
+ *
+ * @generated from message wathena.v1.PartyOptions
+ */
+export type PartyOptions = Message<"wathena.v1.PartyOptions"> & {
+  /**
+   * exp_even shares exp evenly among the members on the map, as exp 1.
+   * Each member gets its own exp otherwise.
+   *
+   * @generated from field: bool exp_even = 1;
+   */
+  expEven: boolean;
+
+  /**
+   * item_even gives each picked up item to a party member on the map, as
+   * item & 2 (the distribution option).
+   *
+   * @generated from field: bool item_even = 2;
+   */
+  itemEven: boolean;
+
+  /**
+   * pickup_shared lets members pick up items their party's top attackers
+   * may take, as item & 1 (the pick-up option).
+   *
+   * @generated from field: bool pickup_shared = 3;
+   */
+  pickupShared: boolean;
+};
+
+/**
+ * Describes the message wathena.v1.PartyOptions.
+ * Use `create(PartyOptionsSchema)` to create a new message.
+ */
+export const PartyOptionsSchema: GenMessage<PartyOptions> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 27);
+
+/**
+ * FriendCommand changes the friend list, as rAthena's friend packets. The
+ * server answers with FriendResult and FriendList.
+ *
+ * @generated from message wathena.v1.FriendCommand
+ */
+export type FriendCommand = Message<"wathena.v1.FriendCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.FriendCommand.action
+   */
+  action: {
+    /**
+     * add asks an online player by name to be friends, as
+     * clif_parse_FriendsListAdd.
+     *
+     * @generated from field: string add = 1;
+     */
+    value: string;
+    case: "add";
+  } | {
+    /**
+     * reply answers FriendRequest, as clif_parse_FriendsListReply.
+     *
+     * @generated from field: wathena.v1.FriendReply reply = 2;
+     */
+    value: FriendReply;
+    case: "reply";
+  } | {
+    /**
+     * remove takes a friend off the list by name, on both sides, as
+     * clif_parse_FriendsListRemove.
+     *
+     * @generated from field: string remove = 3;
+     */
+    value: string;
+    case: "remove";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.FriendCommand.
+ * Use `create(FriendCommandSchema)` to create a new message.
+ */
+export const FriendCommandSchema: GenMessage<FriendCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 28);
+
+/**
+ * @generated from message wathena.v1.FriendReply
+ */
+export type FriendReply = Message<"wathena.v1.FriendReply"> & {
+  /**
+   * name is FriendRequest.from.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bool accept = 2;
+   */
+  accept: boolean;
+};
+
+/**
+ * Describes the message wathena.v1.FriendReply.
+ * Use `create(FriendReplySchema)` to create a new message.
+ */
+export const FriendReplySchema: GenMessage<FriendReply> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 29);
+
+/**
+ * PartyBookingCommand registers, searches or deletes a party booking ad,
+ * as rAthena's party booking. The server answers with PartyBookingList.
+ *
+ * @generated from message wathena.v1.PartyBookingCommand
+ */
+export type PartyBookingCommand = Message<"wathena.v1.PartyBookingCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.PartyBookingCommand.action
+   */
+  action: {
+    /**
+     * @generated from field: wathena.v1.PartyBookingAd register = 1;
+     */
+    value: PartyBookingAd;
+    case: "register";
+  } | {
+    /**
+     * @generated from field: wathena.v1.PartyBookingSearch search = 2;
+     */
+    value: PartyBookingSearch;
+    case: "search";
+  } | {
+    /**
+     * delete removes the player's own ad.
+     *
+     * @generated from field: bool delete = 3;
+     */
+    value: boolean;
+    case: "delete";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.PartyBookingCommand.
+ * Use `create(PartyBookingCommandSchema)` to create a new message.
+ */
+export const PartyBookingCommandSchema: GenMessage<PartyBookingCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 30);
+
+/**
+ * PartyBookingAd is an ad for a party: the level it is for, the map, and
+ * the jobs it wants.
+ *
+ * @generated from message wathena.v1.PartyBookingAd
+ */
+export type PartyBookingAd = Message<"wathena.v1.PartyBookingAd"> & {
+  /**
+   * level is the level the ad is for, 1 to 999. A search for level L
+   * finds ads from L - 15 to L, as party_booking_search.
+   *
+   * @generated from field: uint32 level = 1;
+   */
+  level: number;
+
+  /**
+   * map is a map's asset name, such as map/prt_fild08, or empty.
+   *
+   * @generated from field: string map = 2;
+   */
+  map: string;
+
+  /**
+   * jobs are up to 6 job IDs the party wants.
+   *
+   * @generated from field: repeated uint32 jobs = 3;
+   */
+  jobs: number[];
+
+  /**
+   * note is a line about the party, at most 80 characters.
+   *
+   * @generated from field: string note = 4;
+   */
+  note: string;
+};
+
+/**
+ * Describes the message wathena.v1.PartyBookingAd.
+ * Use `create(PartyBookingAdSchema)` to create a new message.
+ */
+export const PartyBookingAdSchema: GenMessage<PartyBookingAd> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 31);
+
+/**
+ * @generated from message wathena.v1.PartyBookingSearch
+ */
+export type PartyBookingSearch = Message<"wathena.v1.PartyBookingSearch"> & {
+  /**
+   * level is 0 for any level.
+   *
+   * @generated from field: uint32 level = 1;
+   */
+  level: number;
+
+  /**
+   * map is empty for any map.
+   *
+   * @generated from field: string map = 2;
+   */
+  map: string;
+
+  /**
+   * job is a job ID the ad must want, or 0 for any job. rAthena searches
+   * by map or by job: a search with both finds nothing.
+   *
+   * @generated from field: uint32 job = 3;
+   */
+  job: number;
+};
+
+/**
+ * Describes the message wathena.v1.PartyBookingSearch.
+ * Use `create(PartyBookingSearchSchema)` to create a new message.
+ */
+export const PartyBookingSearchSchema: GenMessage<PartyBookingSearch> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 32);
 
 /**
  * @generated from enum wathena.v1.ChatChannel

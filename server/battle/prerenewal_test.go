@@ -150,6 +150,17 @@ func TestPreRenewalPlayerAttackTable(t *testing.T) {
 		}, func(d *Status) { d.Race = RaceDemiHuman }, forcedMin{}, hit(132)},
 		{"critical damage", func(s *Status) { s.Cri, s.Player.CritAtkRate = 1000, 20 }, nil, forcedMin{}, crit(180)},
 		{"non-critical damage", func(s *Status) { s.Player.NonCritAtkRate = 10 }, nil, forcedMin{}, hit(110)},
+		// Taekwon Mission adds 2% per level for each other party member
+		// on the map: 5 * 2 * 2.
+		{"Taekwon Mission in a party", func(s *Status) {
+			s.Player.Skills = map[int]int{skillTKPower: 5}
+			s.Player.PartyOnMap = 3
+		}, nil, forcedMin{}, hit(120)},
+		{"Taekwon Mission alone in a party", func(s *Status) {
+			s.Player.Skills = map[int]int{skillTKPower: 5}
+			s.Player.PartyOnMap = 1
+		}, nil, forcedMin{}, hit(100)},
+		{"Taekwon Mission without a party", func(s *Status) { s.Player.Skills = map[int]int{skillTKPower: 5} }, nil, forcedMin{}, hit(100)},
 		// Poison against Undead 1 is -25%, and the damage is raised to 0.
 		{"negative element", func(s *Status) { s.RHW.Ele = Poison }, func(d *Status) { d.DefEle = Undead }, forcedMin{},
 			Result{Kind: Miss, Hits: 1, Flag: short}},

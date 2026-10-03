@@ -102,11 +102,11 @@ func (z *Zone) trapSetting(src *entity, d *skill.Def, lv int) *trapState {
 }
 
 // trapHiddenFrom reports whether a hidden trap is hidden from a viewer,
-// as skill_getareachar_skillunit_visibilty_single: only its caster sees
-// it, since parties do not exist yet.
+// as skill_getareachar_skillunit_visibilty_single: only its caster and
+// the caster's party see it.
 func trapHiddenFrom(e, viewer *entity) bool {
 	g := e.unit.group
-	return g.trap != nil && g.trap.hidden && g.src != viewer
+	return g.trap != nil && g.trap.hidden && g.src != viewer && !sameParty(battleMaster(g.src), viewer)
 }
 
 // trapUsed reports whether a trap went off (UNT_USED_TRAPS).

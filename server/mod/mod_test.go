@@ -591,6 +591,7 @@ func TestSampleMod(t *testing.T) {
 		"example.lucky-clover": {"rules.override", "items.modify_rolls", "player.give_items"},
 		"example.town-crier":   {"rules.override"},
 		"example.desperado":    {"player.give_items"},
+		"example.party-hall":   {"party.manage"},
 	}})
 	if err != nil {
 		t.Fatal(err)

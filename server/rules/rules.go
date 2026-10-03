@@ -67,6 +67,12 @@ type Rules struct {
 	// true for the skill's renewal version. A skill without an entry
 	// follows the base.
 	Skills map[int]bool
+	// Limits are the limits rAthena compiles in, such as MAX_PARTY
+	// (limits.go).
+	Limits Limits
+	// Party holds the party and friend values of rAthena's
+	// battle_athena.conf and inter_athena.conf (limits.go).
+	Party Party
 }
 
 // Base returns the rules of a core ruleset: every flag at the base's
@@ -77,6 +83,7 @@ func Base(renewal bool) *Rules {
 		LevelPenaltyExp: renewal, LevelPenaltyDrop: renewal, LevelDamageMod: renewal, ElementTable: renewal,
 		StatusResist: renewal, HealFormula: renewal, BossProtection: renewal, EnsembleSongs: renewal,
 		Homunculus: renewal, BusyRestrictions: renewal, FourthJobTraits: renewal,
+		Limits: DefaultLimits(), Party: DefaultParty(),
 	}
 }
 

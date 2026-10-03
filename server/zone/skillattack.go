@@ -167,6 +167,12 @@ func (z *Zone) applySkillAttack(src, dsrc, target *entity, d *skill.Def, lv, fla
 	if dsrc == src && d.Target != skill.TargetGround && src.status != nil {
 		delay = src.status.AMotion
 	}
+	// TK_COUNTER: SG_FRIEND's bonus to the party's Monks.
+	if d.ID == idTKCounter && inParty(src) {
+		if f := src.player.skillLevel(idSGFriend); f > 0 {
+			z.partySkillCheck(src, idTKCounter, f)
+		}
+	}
 	// Combo handling, before the damage is dealt.
 	z.skillCombo(src, dsrc, target, d, lv)
 	z.skillDamage(src, dsrc, target, d, lv, res, delay)
@@ -193,16 +199,22 @@ func (z *Zone) skillDamage(src, dsrc, target *entity, d *skill.Def, lv int, res 
 	if src.player != nil || target.player != nil {
 		z.logDamage(src, target, damage)
 	}
-	if damage > 0 {
-		target.hp -= damage
+	// A devoted player's Crusader takes the damage, so the player keeps
+	// its HP and its cast. The hit still shows its damage on the player.
+	taken, devoter := z.devotionSkillHit(target, d, damage)
+	if taken > 0 {
+		target.hp -= taken
 		target.hpChanged = true
 	}
 	z.hits = append(z.hits, hit{source: dsrc, caster: src, target: target, result: res, delay: delay,
 		hpPermille: target.hpPermille(), skill: d})
+	if devoter != nil {
+		z.devotionDamage(src, devoter, damage)
+	}
 	z.later(func() { z.itemHitEvents(src, target, res) })
 	landed := !res.Blocked && (res.Kind == battle.Hit || res.Kind == battle.Critical)
-	if landed && damage > 0 {
-		z.damaged(target, damage, src.monster != nil)
+	if landed && taken > 0 {
+		z.damaged(target, taken, src.monster != nil)
 		z.castCancel(target, true)
 	}
 	if target.hp <= 0 {

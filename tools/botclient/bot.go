@@ -94,6 +94,7 @@ type Bot struct {
 	// keeps every event, and changed closes and is replaced when events
 	// come.
 	game    gameState
+	social  socialState
 	record  bool
 	events  []*wathenav1.Event
 	changed chan struct{}
@@ -148,6 +149,8 @@ func Dial(ctx context.Context, url string, token []byte, opts Options) (*Bot, er
 		return nil, errors.New("botclient: the first message is not Welcome")
 	}
 	b.mapName, b.netID = w.GetMap(), w.GetNetId()
+	l := w.GetLimits()
+	b.social.limits = WorldLimits{PartyMembers: int(l.GetPartyMembers()), Friends: int(l.GetFriends()), BlockList: int(l.GetBlockList())}
 	go b.readLoop() // #nosec G118 -- the loop lasts as long as the connection, not the dial's context.
 	select {
 	case <-b.ready:
@@ -429,6 +432,7 @@ func (b *Bot) apply(m *wathenav1.ServerMessage) {
 	for _, e := range f.GetEvents() {
 		b.event(e, now)
 		b.game.apply(e)
+		b.social.apply(e)
 	}
 	if b.record {
 		b.events = append(b.events, f.GetEvents()...)

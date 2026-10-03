@@ -1,9 +1,13 @@
-// The tabs above the chat log: All, one tab per chat channel the player
-// is in, and one tab per whisper partner. The chat input sends to the
+// The tabs above the chat log: All, Party while the player has a party,
+// one tab per chat channel the player is in, and one tab per whisper
+// partner. The chat input sends to the
 // active tab. User text is only ever set with textContent.
 
 /** The key of the All tab. */
 export const ALL_TAB = 'all';
+
+/** The key of the Party tab, and of party lines. */
+export const PARTY_TAB = 'party';
 
 /** The key of local chat lines, which only the All tab shows. */
 export const LOCAL_LINES = 'local';
@@ -14,13 +18,14 @@ export const MAX_WHISPER_TABS = 10;
 /** Where the chat input sends a line. */
 export type ChatTarget =
   | { kind: 'local' }
+  | { kind: 'party' }
   | { kind: 'channel'; name: string }
   | { kind: 'whisper'; name: string };
 
 export interface ChatTab {
-  /** ALL_TAB, channel:#name in lower case, or whisper:Name. */
+  /** ALL_TAB, PARTY_TAB, channel:#name in lower case, or whisper:Name. */
   key: string;
-  kind: 'all' | 'channel' | 'whisper';
+  kind: 'all' | 'party' | 'channel' | 'whisper';
   /** The channel's name with its #, or the whisper partner's name. */
   name: string;
   /** What the tab shows. */
@@ -61,6 +66,8 @@ export function placeholder(target: ChatTarget): string {
       return `Say in ${target.name}`;
     case 'whisper':
       return `Whisper to ${target.name}`;
+    case 'party':
+      return 'Say to your party';
     default:
       return 'Press Enter to chat';
   }
@@ -84,7 +91,7 @@ export class ChatTabs {
   /** The active tab's key. */
   active = ALL_TAB;
 
-  /** The tabs in order: All, the channels, then the whispers. */
+  /** The tabs in order: All, Party, the channels, then the whispers. */
   get tabs(): readonly ChatTab[] {
     return this.list;
   }
@@ -130,6 +137,33 @@ export class ChatTabs {
   /** Removes a channel's tab. All becomes active if it was. */
   leaveChannel(name: string): void {
     this.close(channelKey(name));
+  }
+
+  /** Whether the Party tab shows. */
+  get hasParty(): boolean {
+    return this.get(PARTY_TAB) !== undefined;
+  }
+
+  /** Shows the Party tab, right after All, while the player has a party. */
+  showParty(): void {
+    if (this.hasParty) {
+      return;
+    }
+    this.list.splice(1, 0, {
+      key: PARTY_TAB,
+      kind: 'party',
+      name: '',
+      label: 'Party',
+      alias: '',
+      color: 0,
+      closable: false,
+      unread: false,
+    });
+  }
+
+  /** Removes the Party tab, when the player has no party. All becomes active if it was. */
+  hideParty(): void {
+    this.close(PARTY_TAB);
   }
 
   /**
@@ -201,6 +235,9 @@ export class ChatTabs {
     }
     if (tab?.kind === 'whisper') {
       return { kind: 'whisper', name: tab.name };
+    }
+    if (tab?.kind === 'party') {
+      return { kind: 'party' };
     }
     return { kind: 'local' };
   }

@@ -8,15 +8,19 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
+	"github.com/lxsmnsyc/wathena/server/rules"
+	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
 // socialWorld is zones that share a chat hub and a clock, as a world.
 type socialWorld struct {
-	hub   *chat.Hub
-	log   *chat.MemoryLog
-	now   time.Time
-	zones []*Zone
+	hub *chat.Hub
+	// social is the world's party and friend registry.
+	social *social.Registry
+	log    *chat.MemoryLog
+	now    time.Time
+	zones  []*Zone
 }
 
 func newSocialWorld(words []chat.Word, maps ...string) *socialWorld {
@@ -24,9 +28,11 @@ func newSocialWorld(words []chat.Word, maps ...string) *socialWorld {
 	w.hub = chat.NewHub(chat.Core().Channels, chat.NewFilter(words))
 	w.hub.Log = w.log
 	w.hub.Clock = func() time.Time { return w.now }
+	w.social = social.New(rules.DefaultLimits(), rules.DefaultParty())
+	w.social.Blocks = w.hub.BlocksName
 	for _, m := range maps {
 		z := New(m, open(60), rng.FromKey([32]byte{}).Stream(), nil)
-		z.Chat, z.Clock = w.hub, w.hub.Clock
+		z.Chat, z.Clock, z.Social = w.hub, w.hub.Clock, w.social
 		w.zones = append(w.zones, z)
 	}
 	return w
@@ -47,6 +53,7 @@ func (w *socialWorld) join(z *Zone, name string) *Player {
 func (w *socialWorld) step(at int64) {
 	for _, z := range w.zones {
 		z.drainChat()
+		z.drainSocial()
 		z.stepAt(at)
 	}
 }

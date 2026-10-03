@@ -145,12 +145,24 @@ type Hooks struct {
 	// 10,000.
 	DropRate func(item uint32, rate int) int
 	// Experience gets the exp one player gets for the kill, after the
-	// shares and the level penalty, and returns the exp to give.
-	// Results below 0 count as 0.
-	Experience func(charID uint32, base, job int64) (int64, int64)
+	// shares, the party split and the level penalty, and returns the exp
+	// to give. Results below 0 count as 0.
+	Experience func(g ExpGain) (int64, int64)
 	// ExpBonus is added to mob_dead's common exp bonus of 100%, as
 	// SC_RICHMANKIM adds its val2.
 	ExpBonus int
+}
+
+// ExpGain is what the Experience hook gets for one player.
+type ExpGain struct {
+	CharID    uint32
+	Base, Job int64
+	// Party is the player's party ID, or 0.
+	Party int64
+	// ShareBase and ShareJob are the player's own share of the kill,
+	// before an even party split and the level penalty. They are 0 for a
+	// party member who did not fight.
+	ShareBase, ShareJob int64
 }
 
 // RollDropsWith is RollDrops with hooks.

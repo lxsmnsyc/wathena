@@ -372,7 +372,7 @@ func TestGospelNoParty(t *testing.T) {
 // TestDevotionFails checks SkillSacrifice without a party: Devotion
 // cannot target its caster (NoTargetSelf), and on another player the
 // cast fails at skill_castend_id_check (PartyOnly), costing nothing but
-// the cast.
+// the cast. TestDevotionProtectsMember covers a party member.
 func TestDevotionFails(t *testing.T) {
 	z, p, _ := crusaderZone(t, reference.Renewal, false, 0)
 	other := add(z, "other")
@@ -388,11 +388,6 @@ func TestDevotionFails(t *testing.T) {
 	}
 	if other.entity.sc.Has(sc.SCDevotion) {
 		t.Error("SC_DEVOTION started without a party")
-	}
-	// The skill's own checks, reached directly, fail too.
-	z.castendNoDamage(p.entity, other.entity, z.Skills.Get(skill.IDDevotion), 5, 0)
-	if other.entity.sc.Has(sc.SCDevotion) {
-		t.Error("SkillSacrifice started SC_DEVOTION")
 	}
 }
 

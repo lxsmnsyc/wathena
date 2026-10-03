@@ -72,6 +72,100 @@ const (
 	idSRGateOfHell  = 2343 // SR_GATEOFHELL
 )
 
+// idSGFriend is SG_FRIEND.
+const idSGFriend = 442
+
+// mapidStarGladiator is MAPID_STAR_GLADIATOR.
+const mapidStarGladiator = jcSecond1 | 0x7
+
+// Jobs that party_check_state looks for among the online members, as
+// rAthena's JOB_ IDs.
+var (
+	// partyMonkJobs are JOB_MONK, JOB_BABY_MONK, JOB_CHAMPION, JOB_SURA,
+	// JOB_SURA_T, JOB_BABY_SURA and JOB_INQUISITOR.
+	partyMonkJobs = []int{15, 4038, 4016, 4070, 4077, 4106, 4262}
+	// partySGJobs are JOB_STAR_GLADIATOR, JOB_BABY_STAR_GLADIATOR,
+	// JOB_STAR_EMPEROR, JOB_BABY_STAR_EMPEROR and JOB_SKY_EMPEROR.
+	partySGJobs = []int{4047, 4226, 4239, 4241, 4302}
+	// partySNoviceJobs are JOB_SUPER_NOVICE, JOB_SUPER_BABY,
+	// JOB_SUPER_NOVICE_E, JOB_SUPER_BABY_E and JOB_HYPER_NOVICE.
+	partySNoviceJobs = []int{23, 4045, 4190, 4191, 4307}
+	// partyTKJobs are JOB_TAEKWON and JOB_BABY_TAEKWON.
+	partyTKJobs = []int{4046, 4225}
+)
+
+// partyHasJob is party_check_state: whether an online member of a
+// player's party, on any map, has one of the jobs.
+func partyHasJob(e *entity, jobs []int) bool {
+	if e.player == nil || e.player.partyState.view == nil {
+		return false
+	}
+	for _, m := range e.player.partyState.view.Members {
+		if m.Online && slices.Contains(jobs, m.Job) {
+			return true
+		}
+	}
+	return false
+}
+
+// partySkillCheck is party_skill_check:
+//   - TK_COUNTER: with a Monk class online, each Monk on the map with
+//     Triple Attack gets a higher Triple Attack rate.
+//   - MO_COMBOFINISH: with a Star Gladiator class online, each Star
+//     Gladiator on the map in the Counter Kick stance with Union of the
+//     Sun, Moon and Stars gets a higher Counter Kick rate.
+//   - AM_TWILIGHT2 and AM_TWILIGHT3 need a Super Novice or a Taekwon
+//     class online.
+func (z *Zone) partySkillCheck(src *entity, id, lv int) bool {
+	if !inParty(src) {
+		return false
+	}
+	switch id {
+	case idTKCounter:
+		if !partyHasJob(src, partyMonkJobs) {
+			return false
+		}
+	case skill.IDComboFinish:
+		if !partyHasJob(src, partySGJobs) {
+			return false
+		}
+	case skill.IDTwilight2:
+		return partyHasJob(src, partySNoviceJobs)
+	case skill.IDTwilight3:
+		return partyHasJob(src, partyTKJobs)
+	default:
+		return false
+	}
+	ms := z.skillTime(idSGFriend, 1)
+	for _, t := range z.partySameMap(src, 0) {
+		p := t.player
+		m, ok := mapIDOf(z, p)
+		if !ok {
+			continue
+		}
+		switch id {
+		case idTKCounter:
+			if m&mapidSecondMask == mapidMonk && p.skillLevel(skill.IDTripleAttack) > 0 {
+				z.scStart4(t, t, sc.SCSkillrateUp, 100, skill.IDTripleAttack, 50+50*lv, 0, 0, ms)
+			}
+		case skill.IDComboFinish:
+			if f := p.skillLevel(idSGFriend); m&mapidSecondMask == mapidStarGladiator && t.sc.Has(sc.SCReadycounter) && f > 0 {
+				z.scStart4(t, t, sc.SCSkillrateUp, 100, idTKCounter, 50+50*f, 0, 0, ms)
+			}
+		}
+	}
+	return false
+}
+
+// mapIDOf is a player's class as rAthena's e_mapid (sd->class_).
+func mapIDOf(z *Zone, p *Player) (int, bool) {
+	if p == nil || z.Status == nil {
+		return 0, false
+	}
+	m, ok := z.Status.MapID(p.char.Job)
+	return int(m), ok // #nosec G115 -- e_mapid values fit in 32 bits (JOBL_FOURTH is 0x10000).
+}
+
 // spheres are a player's spirit spheres.
 type spheres struct {
 	// spiritTimers are when each sphere ends, oldest first: their count
@@ -148,6 +242,7 @@ func (z *Zone) syncBattlePlayer(e *entity) {
 	bp.SpiritBall = p.spiritBalls()
 	bp.SpiritBallOld = p.spiritBallOld
 	bp.SP = int(p.sp)
+	bp.PartyOnMap = len(z.partySameMap(e, 0))
 }
 
 // spheresLeft are a player's spheres as times left, which a map change
@@ -330,7 +425,10 @@ func (z *Zone) skillCombo(src, dsrc, target *entity, d *skill.Def, lv int) {
 			duration = 1
 		}
 	case skill.IDComboFinish:
-		// SG_FRIEND's party bonus needs parties, which are not ported.
+		// SG_FRIEND's bonus to the party's Star Gladiators.
+		if inParty(src) {
+			z.partySkillCheck(src, skill.IDComboFinish, lv)
+		}
 		switch {
 		case lvOf(skill.IDTigerFist) > 0 && balls >= 1:
 			duration = 1
@@ -640,8 +738,8 @@ func (absorbSpirits) castendNoDamage(z *Zone, src, target *entity, d *skill.Def,
 }
 
 // kiTranslation is SkillKiTranslation: the caster's spheres go to the
-// target. It is PartyOnly, so without parties the caster gives them to
-// itself, as rAthena does for a player without a party.
+// target. It is PartyOnly, so the target is the caster or a member of
+// its party.
 type kiTranslation struct{}
 
 func (kiTranslation) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {

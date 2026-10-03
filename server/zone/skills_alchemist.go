@@ -424,8 +424,8 @@ type aidCondensedPotion struct{}
 
 // castendPos is SkillAidCondensedPotion::castendPos2. The caster's
 // skills raise the potion's heal before it lands. The heal reaches the
-// caster and its own summons in the splash: they are its party (BCT_PARTY
-// and BCT_GUILD), and parties and guilds do not exist yet.
+// caster, its own summons and its party members in the splash
+// (BCT_PARTY and BCT_GUILD). Guilds do not exist yet.
 func (aidCondensedPotion) castendPos(z *Zone, src *entity, x, y int, d *skill.Def, lv int, flag *int) {
 	p := src.player
 	if p == nil {
@@ -686,11 +686,10 @@ func (plantCultivation) castendPos(z *Zone, src *entity, x, y int, d *skill.Def,
 type twilightAlchemy struct{}
 
 // castBegin is skill_check_condition_castbegin for AM_TWILIGHT2 and
-// AM_TWILIGHT3: party_skill_check needs a Super Novice or a Taekwon in
-// the caster's party. Parties do not exist yet, so they fail, as rAthena
-// does for a player without a party.
-func (twilightAlchemy) castBegin(z *Zone, src *entity, d *skill.Def, _ int) wathenav1.SkillFailure {
-	if d.ID == skill.IDTwilight2 || d.ID == skill.IDTwilight3 {
+// AM_TWILIGHT3: party_skill_check needs an online Super Novice or
+// Taekwon class in the caster's party. A player without a party fails.
+func (twilightAlchemy) castBegin(z *Zone, src *entity, d *skill.Def, lv int) wathenav1.SkillFailure {
+	if (d.ID == skill.IDTwilight2 || d.ID == skill.IDTwilight3) && !z.partySkillCheck(src, d.ID, lv) {
 		return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
 	}
 	return wathenav1.SkillFailure_SKILL_FAILURE_UNSPECIFIED

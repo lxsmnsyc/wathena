@@ -995,3 +995,350 @@ body {
     0 0 2px #000,
     0 0 2px #000;
 }
+
+#chat-log .party {
+  color: #9effa0;
+}
+
+.online-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #666;
+}
+
+.online-dot.online {
+  background: #5fdc5f;
+}
+
+#friend-panel {
+  width: min(320px, 100%);
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+}
+
+#friend-panel[hidden] {
+  display: none;
+}
+
+#friend-panel h2 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+#friend-panel .friend-names {
+  max-height: 10em;
+  margin: 0 0 6px;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+#friend-panel .friend-names li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 1px 0;
+}
+
+#friend-panel .friend-names li.offline {
+  color: #aaa;
+}
+
+#friend-panel .friend-who {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+#friend-panel .empty {
+  color: #aaa;
+}
+
+#friend-panel .friend-error {
+  margin: 0 0 6px;
+  color: #ffd84a;
+}
+
+#friend-panel .friend-form {
+  display: flex;
+  gap: 6px;
+}
+
+#friend-panel .friend-name {
+  flex: 1;
+  min-width: 0;
+}
+
+#party-window {
+  position: fixed;
+  top: 64px;
+  left: min(344px, calc(100% - 292px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(280px, calc(100% - 24px));
+  max-height: calc(100% - 300px);
+  padding: 8px 10px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+  font-variant-numeric: tabular-nums;
+}
+
+#party-window[hidden] {
+  display: none;
+}
+
+#party-window h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+#party-window .party-count {
+  color: #b8c8ff;
+  font-weight: normal;
+}
+
+#party-window .party-members {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#party-window .party-members[hidden],
+#party-window form[hidden],
+#party-window fieldset[hidden],
+#party-window button[hidden],
+#party-window p[hidden] {
+  display: none;
+}
+
+#party-window .party-members li {
+  padding: 3px 0;
+}
+
+#party-window .party-members li.offline {
+  color: #aaa;
+}
+
+#party-window .party-member-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+#party-window .party-leader {
+  color: #ffd84a;
+}
+
+#party-window .party-detail {
+  color: #b8c8ff;
+  font-size: 12px;
+}
+
+#party-window .party-member-head button {
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+#party-window .party-hp {
+  height: 5px;
+  margin-top: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 15%);
+}
+
+#party-window .party-hp-fill {
+  height: 100%;
+  background: #4fd24f;
+}
+
+#party-window .party-hp-fill.low {
+  background: #e04848;
+}
+
+#party-window .party-hp-text {
+  font-size: 11px;
+  color: #ccc;
+}
+
+#party-window .party-create,
+#party-window .party-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#party-window .party-options {
+  margin: 0;
+  padding: 4px 6px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 4px;
+}
+
+#party-window .party-row,
+#party-window .party-invite {
+  display: flex;
+  gap: 6px;
+}
+
+#party-window .party-row input,
+#party-window .party-invite input {
+  flex: 1;
+  min-width: 0;
+}
+
+#party-window .party-leave {
+  align-self: flex-end;
+}
+
+#party-window .party-error {
+  margin: 0;
+  color: #ffd84a;
+}
+
+#booking-window {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(380px, calc(100% - 24px));
+  max-height: calc(100% - 300px);
+  padding: 8px 10px;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+}
+
+#booking-window[hidden] {
+  display: none;
+}
+
+#booking-window h2,
+#booking-window h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+#booking-window h3 {
+  font-size: 13px;
+  color: #b8c8ff;
+}
+
+#booking-window form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#booking-window .booking-row {
+  display: flex;
+  gap: 6px;
+}
+
+#booking-window .booking-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+#booking-window .booking-ad-level,
+#booking-window .booking-search-level {
+  flex: 0 0 4em;
+}
+
+#booking-window .booking-jobs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px 6px;
+  margin: 0;
+  padding: 4px 6px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+#booking-window .booking-register {
+  align-self: flex-end;
+}
+
+#booking-window .booking-own[hidden],
+#booking-window p[hidden] {
+  display: none;
+}
+
+#booking-window .booking-own {
+  color: #c8ffc8;
+}
+
+#booking-window .booking-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#booking-window .booking-results li {
+  padding: 4px 0;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+}
+
+#booking-window .booking-results .empty {
+  color: #aaa;
+}
+
+#booking-window .booking-info,
+#booking-window .booking-jobs-wanted {
+  color: #b8c8ff;
+  font-size: 12px;
+}
+
+#booking-window .booking-note {
+  overflow-wrap: anywhere;
+}
+
+#booking-window .booking-results button {
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+#booking-window .booking-more,
+#booking-window .booking-error {
+  margin: 0;
+  color: #ffd84a;
+}
+
+#social-prompts {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: translateX(-50%);
+}
+
+#social-prompts[hidden] {
+  display: none;
+}
+
+.social-prompt {
+  padding: 8px 12px;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 80%);
+  text-align: center;
+}
+
+.social-prompt p {
+  margin: 0 0 6px;
+}

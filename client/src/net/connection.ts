@@ -2,13 +2,16 @@
 // describes: one WebSocket, binary frames of one message each, and Hello
 // first.
 
-import { create, fromBinary, toBinary } from '@bufbuild/protobuf';
+import { type MessageInitShape, create, fromBinary, toBinary } from '@bufbuild/protobuf';
 import {
   type BaseStat,
   type ChannelAction,
   ChatChannel,
   CommandSchema,
+  FriendCommandSchema,
   type NpcReply,
+  PartyBookingCommandSchema,
+  PartyCommandSchema,
 } from '../gen/wathena/v1/command_pb';
 import {
   type ClientMessage,
@@ -18,11 +21,61 @@ import {
 import type { Event } from '../gen/wathena/v1/event_pb';
 import type { DisconnectReason, Welcome } from '../gen/wathena/v1/session_pb';
 
+/** A party's sharing options, as PartyOptions. */
+export interface PartyOptionValues {
+  expEven: boolean;
+  itemEven: boolean;
+  pickupShared: boolean;
+}
+
+/** A party booking ad, as PartyBookingAd. */
+export interface BookingAdValues {
+  level: number;
+  /** A map's asset name, such as map/prt_fild08, or empty. */
+  map: string;
+  /** Up to 6 job IDs. */
+  jobs: number[];
+  note: string;
+}
+
+/** A party booking search, as PartyBookingSearch. 0 and empty mean any. */
+export interface BookingSearchValues {
+  level: number;
+  map: string;
+  job: number;
+}
+
+/** The world's limits that size the client's windows, as Welcome.limits. */
+export interface ClientLimits {
+  partyMembers: number;
+  friends: number;
+  blockList: number;
+}
+
+/** rAthena's defaults, for a server that sends no limits: MAX_PARTY, MAX_FRIENDS and MAX_IGNORE_LIST. */
+export const DEFAULT_LIMITS: ClientLimits = { partyMembers: 12, friends: 40, blockList: 20 };
+
+/** The limits Welcome gives, with rAthena's defaults for the ones it leaves at 0. */
+export function limitsOf(welcome: Pick<Welcome, 'limits'>): ClientLimits {
+  const l = welcome.limits;
+  const or = (v: number | undefined, fallback: number): number =>
+    v === undefined || v === 0 ? fallback : v;
+  return {
+    partyMembers: or(l?.partyMembers, DEFAULT_LIMITS.partyMembers),
+    friends: or(l?.friends, DEFAULT_LIMITS.friends),
+    blockList: or(l?.blockList, DEFAULT_LIMITS.blockList),
+  };
+}
+
 /** What a skill targets: an entity, a cell, or nothing for a self skill. */
 export type UseSkillTarget =
   | { case: 'entity'; value: number }
   | { case: 'cell'; value: { x: number; y: number } }
   | { case: undefined; value?: undefined };
+
+type PartyAction = NonNullable<MessageInitShape<typeof PartyCommandSchema>['action']>;
+type FriendAction = NonNullable<MessageInitShape<typeof FriendCommandSchema>['action']>;
+type BookingAction = NonNullable<MessageInitShape<typeof PartyBookingCommandSchema>['action']>;
 
 /** An answer to an NPC dialog step. */
 export type NpcAnswer = NpcReply['answer'];
@@ -46,10 +99,15 @@ export interface Handlers {
 export class Connection {
   private seq = 0;
 
+  /** The world's limits from Welcome, with defaults for the ones it left out. */
+  readonly limits: ClientLimits;
+
   private constructor(
     private readonly socket: WebSocket,
     readonly welcome: Welcome,
-  ) {}
+  ) {
+    this.limits = limitsOf(welcome);
+  }
 
   /**
    * Connects and says hello. token is the session token: a one-time game
@@ -288,6 +346,90 @@ export class Connection {
     });
   }
 
+  /**
+   * Says a line to the player's party. The caller cleans it with
+   * cleanChat.
+   */
+  partyChat(text: string): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.PARTY, text } },
+      }),
+    });
+  }
+
+  /**
+   * Makes a party with the player as its leader. Exp share starts as
+   * each, as in rAthena. The server answers with PartyResult and PartyInfo.
+   */
+  partyCreate(name: string, itemEven: boolean, pickupShared: boolean): void {
+    this.party({
+      case: 'create',
+      value: { name, options: { expEven: false, itemEven, pickupShared } },
+    });
+  }
+
+  /** Invites a player by name to the leader's party. */
+  partyInvite(name: string): void {
+    this.party({ case: 'invite', value: name });
+  }
+
+  /** Answers PartyInvite. */
+  partyReply(partyId: bigint, accept: boolean): void {
+    this.party({ case: 'reply', value: { partyId, accept } });
+  }
+
+  /** Leaves the party. When the leader leaves, the party breaks up. */
+  partyLeave(): void {
+    this.party({ case: 'leave', value: true });
+  }
+
+  /** Removes a member from the leader's party. */
+  partyExpel(name: string): void {
+    this.party({ case: 'expel', value: name });
+  }
+
+  /** Makes a member the party's leader. */
+  partySetLeader(name: string): void {
+    this.party({ case: 'setLeader', value: name });
+  }
+
+  /** Changes the party's sharing options. */
+  partyOptions(options: PartyOptionValues): void {
+    this.party({ case: 'options', value: options });
+  }
+
+  /** Asks an online player by name to be friends. */
+  friendAdd(name: string): void {
+    this.friend({ case: 'add', value: name });
+  }
+
+  /** Answers FriendRequest. */
+  friendReply(name: string, accept: boolean): void {
+    this.friend({ case: 'reply', value: { name, accept } });
+  }
+
+  /** Takes a friend off the list, on both sides. */
+  friendRemove(name: string): void {
+    this.friend({ case: 'remove', value: name });
+  }
+
+  /** Places the player's party booking ad. The server answers with PartyBookingList. */
+  bookingRegister(ad: BookingAdValues): void {
+    this.booking({ case: 'register', value: ad });
+  }
+
+  /** Searches the party booking ads. The server answers with PartyBookingList. */
+  bookingSearch(search: BookingSearchValues): void {
+    this.booking({ case: 'search', value: search });
+  }
+
+  /** Removes the player's own party booking ad. */
+  bookingDelete(): void {
+    this.booking({ case: 'delete', value: true });
+  }
+
   /** Talks to an NPC, or opens its shop. */
   npcClick(npc: number): void {
     this.send({
@@ -330,6 +472,33 @@ export class Connection {
 
   close(): void {
     this.socket.close();
+  }
+
+  private party(action: PartyAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'party', value: create(PartyCommandSchema, { action }) },
+      }),
+    });
+  }
+
+  private friend(action: FriendAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'friend', value: create(FriendCommandSchema, { action }) },
+      }),
+    });
+  }
+
+  private booking(action: BookingAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'partyBooking', value: create(PartyBookingCommandSchema, { action }) },
+      }),
+    });
   }
 
   private send(body: ClientMessage['body']): void {

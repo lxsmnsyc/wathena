@@ -160,7 +160,7 @@ var reserved = map[string]bool{
 	"effects": true, "jobs": true, "text": true, "maps": true, "world": true, "require": true, "self": true,
 	"string": true, "table": true, "math": true, "select": true, "type": true, "tostring": true, "tonumber": true,
 	"pairs": true, "ipairs": true, "error": true, "pcall": true, "schedules": true, "spawning": true, "monsters": true,
-	"channels": true,
+	"channels": true, "parties": true,
 }
 
 // luaName turns an rAthena name into a Lua name: lower case, letters,
@@ -327,6 +327,9 @@ type body struct {
 	// rebirth is set after jobchange Job_Novice_High, which converts to
 	// player:rebirth, so the resetlvl(1) after it converts to nothing.
 	rebirth bool
+	// partyNames and partyCount are the locals that getpartymember sets,
+	// for reads of $@partymembername$ and $@partymembercount.
+	partyNames, partyCount string
 }
 
 // breakable is a loop or a switch, which break leaves.
@@ -537,6 +540,11 @@ func (b *body) readVar(name string, index Expr) (val, error) {
 			return val{}, err
 		}
 		idx = iv.asInt()
+	}
+	if prefix == "$@" {
+		if v, ok, err := b.partyMemberVar(name, idx, false); ok {
+			return v, err
+		}
 	}
 	if prefix == ".@" {
 		l := b.local(name)

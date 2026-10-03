@@ -9,6 +9,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/lucky-clover](examples/lucky-clover) adds a charm with rolled values, a monster that drops it with random options, an `item_roll` hook, and a smith who rerolls it ("Rolled item values" below).
 - [examples/desperado](examples/desperado) is the phase 4 exit check: a new job, the Desperado, with a new skill, Quick Draw, a hat only it wears, a mentor who changes jobs, and a `job_change` handler ("Jobs" below).
 - [examples/classic-casting](examples/classic-casting) is a ruleset mod: a renewal world with pre-renewal cast time, element table, cooldowns and Mystical Amplification ("Rulesets" below).
+- [examples/party-hall](examples/party-hall) makes parties with `wa.parties`, greets members on the party events, and reads `rules.limits` ("Parties and friends" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -133,6 +134,43 @@ What each flag changes ([decision 0019](../docs/decisions/0019-ruleset-flags.md)
 - The songs and the skills with a `skill_rebalance` flag take their `skill_db` record from the flag's mode, such as pre-renewal's ground area for Basilica. A mod's `data/skills.yml` applies over it.
 - `skill_rebalance` works for the 94 skills of `rules.RebalancedSkills` in `server/rules`. Another core skill loads with a warning, and only its record changes. An unknown skill or a song is an error: songs follow `ensemble_songs`.
 - `wactl mod test` runs a ruleset mod's tests in worlds whose ruleset is the mod. Use `--mode pre-renewal` for a mod with the pre-renewal base.
+
+### Limits and rules
+
+A ruleset mod also sets the limits that rAthena compiles in, and the values of rAthena's conf files that rulesets own (proposal 0002, review decision 27):
+
+```yaml
+provides:
+  ruleset:
+    extends: core.ruleset.renewal
+    limits:
+      party_members: 20
+      friends: 80
+    rules:
+      party_share_level: 30
+      party_even_share_bonus: 10
+```
+
+| Limit | rAthena's value | Bounds | What it limits |
+|---|---|---|---|
+| `party_members` | 12 (`MAX_PARTY`) | 2 to 64 | Members of a party. |
+| `friends` | 40 (`MAX_FRIENDS`) | 1 to 200 | Names on a friend list. |
+| `block_list` | 20 (`MAX_IGNORE_LIST`) | 1 to 100 | Names on a block list. |
+
+| Rule | rAthena's value | Values | What it changes |
+|---|---|---|---|
+| `party_share_level` | 15 | 0 to 1000 | Even exp share needs the online members' base levels within this range. |
+| `party_even_share_bonus` | 0 | 0 to 1000 | Exp bonus in percent for each member after the first that even exp share counts. |
+| `party_item_share_type` | 0 | 0 to 3 | Bit 1: even item share only for items with a first looter. Bit 2: members in turn, not at random. |
+| `change_party_leader_samemap` | yes | yes, no | A new leader must be on the leader's map. |
+| `block_account_in_same_party` | yes | yes, no | Two characters of one account cannot be in one party. |
+| `friend_auto_add` | yes | yes, no | An accepted friend request puts each player on the other's list. |
+
+- A value outside its bounds, or a name that is not a limit or a rule, fails the mod's load.
+- A ruleset mod that does not set one keeps what it extends. The core rulesets have rAthena's values.
+- Lowering a limit deletes nothing. A list over the limit keeps its names and cannot grow.
+- The client gets the limits at login, and Lua reads them as `rules.limits.<name>` ("Parties and friends" below).
+- Later steps add the guild, storage, cart, inventory and card slot limits.
 - [examples/classic-casting](examples/classic-casting) is a sample ruleset mod: a renewal world with pre-renewal casting.
 
 ## Permissions
@@ -141,6 +179,7 @@ What each flag changes ([decision 0019](../docs/decisions/0019-ruleset-flags.md)
 |---|---|
 | `game.read`, `npc.create`, `event.listen`, `storage.mod` | Granted to every mod. |
 | `player.give_items`, `player.give_zeny`, `player.give_exp`, `player.warp`, `player.status`, `player.change_job`, `world.announce`, `events.schedule` | Needs the owner's approval. |
+| `party.manage` | Needs the owner's approval. It makes parties and changes their members, leader and options (review decision 27). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -851,7 +890,7 @@ A line goes through these steps:
 
 The message of the event and the hook is `{ player, channel, text, to, map }`:
 
-- `channel` is `"public"` for local chat, `"whisper"`, `"party"`, `"guild"`, or a channel's name without its `#`, such as `"trade"`. Party and guild chat do not exist yet.
+- `channel` is `"public"` for local chat, `"whisper"`, `"party"`, `"guild"`, or a channel's name without its `#`, such as `"trade"`. Guild chat does not exist yet.
 - `to` is a whisper's target name, or nil.
 - The event's options `channel`, `map` and `player` narrow it. It is a world event: a handler hears every player of its context's map.
 
@@ -872,6 +911,58 @@ The message of the event and the hook is `{ player, channel, text, to, map }`:
 - A channel is one for the whole world. Each zone runs the mod's setup, and every zone's context of the mod shares the channel. It ends when the mod's last context ends, and its members leave it. A name that core or another mod has raises an error.
 - Bans and reports are staff tools, not Lua API.
 - `player.sanction` is flagged: the server logs it at each start.
+
+### Parties and friends
+
+Parties and friends follow proposal 0002, review decision 27. [examples/party-hall](examples/party-hall) uses each part.
+
+```lua
+local events = require "wa.events"
+local parties = require "wa.parties"
+local rules = require "wa.rules"
+
+return function()
+  events.on("chat", function(message)
+    if message.text == "!party" and message.player.party == nil then
+      local party = parties.create(message.player, message.player.name .. "'s Hall")
+      if party ~= nil then
+        party:set_options { exp_share = "even" }
+      end
+    end
+  end, { channel = "public" })
+  events.on("party_join", function(join)
+    local size = rules.limits.party_members
+    join.player:whisper("Welcome to " .. join.party.name .. ". It holds up to " .. size .. ".", { from = "Hall" })
+  end)
+end
+```
+
+`player.party` is the player's party, or nil. A party has the read-only fields `id`, `name`, `leader`, `leader_name`, `exp_share` (`"each"` or `"even"`), `item_share` (`"each"` or `"even"`) and `item_pickup` (`"each"` or `"shared"`).
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `party:get_members()` | `game.read` | The online members on this map, in slot order. |
+| `party:get_member_names()` | `game.read` | Every member's name, online or not. |
+| `parties.create(leader, name)` | `party.manage` | Makes a party, as `party_create`. Returns nil when the name is taken or the leader has a party. |
+| `party:add(player)`, `party:remove(player)` | `party.manage` | As `party_addmember` and `party_delmember`. They return false when nothing changed. Removing the leader breaks the party up. |
+| `party:set_leader(player)` | `party.manage` | As `party_changeleader`: the player must be an online member. |
+| `party:set_options { exp_share, item_share, item_pickup }` | `party.manage` | As `party_changeoption`. Even exp share still needs the members' levels within `party_share_level`. |
+| `party:disband()` | `party.manage` | As `party_destroy`. |
+| `parties.get(id)`, `parties.find(name)` | `game.read` | Find a party, or nil. |
+| `player:is_friend(other)`, `player:get_friend_names()` | `game.read` | Read the friend list. Only players add and remove friends. |
+| `rules.limits.<name>` | None | The world's limits, read-only: `party_members`, `friends` and `block_list`. |
+
+Events:
+
+- `party_join` and `party_leave` get `{ party, player, reason }`. `reason` is `"invited"`, `"left"`, `"expelled"`, `"disbanded"` or `"script"`. They run on the map of the player who joined or left. A member who is offline gets no event, and a player who makes a party itself gets no `party_join`.
+- `party_change` gets `{ party, leader, options }`, after a change of the leader or the options. It runs on the map where the change was made.
+- The `experience` hook's object has `party` (or nil) and `share`, `{ base, job }`: the player's own share of the kill, before the even split and the level penalty. With even exp share, the hook runs once for each member on the map.
+
+Rules:
+
+- A party is one for the whole world, and lives on after its members log out. Its leader and members are handles of players on this map: a member on another map is nil in `party.leader`, and left out of `get_members`.
+- The leader leaving breaks the party up, as in rAthena.
+- In `wactl mod test`, a test case's own code needs no permission to make and change parties.
 
 ### Entity queries
 

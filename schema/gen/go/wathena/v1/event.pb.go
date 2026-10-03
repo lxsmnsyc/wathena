@@ -559,7 +559,7 @@ const (
 	ChatRefusal_CHAT_REFUSAL_MUTED ChatRefusal = 1
 	// The line has a word that the server's chat filter rejects.
 	ChatRefusal_CHAT_REFUSAL_FILTERED ChatRefusal = 2
-	// The player is not in the channel.
+	// The player is not in the channel, or has no party for party chat.
 	ChatRefusal_CHAT_REFUSAL_NOT_IN_CHANNEL ChatRefusal = 3
 	// The channel does not let its members talk, as rAthena's chat
 	// option.
@@ -1176,6 +1176,215 @@ func (x EquipFailure) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+type PartyOutcome int32
+
+const (
+	PartyOutcome_PARTY_OUTCOME_UNSPECIFIED PartyOutcome = 0
+	// CREATED: the player made a party, as clif_party_created 0.
+	PartyOutcome_PARTY_OUTCOME_CREATED PartyOutcome = 1
+	// NAME_TAKEN: a party of that name exists, as clif_party_created 1.
+	PartyOutcome_PARTY_OUTCOME_NAME_TAKEN PartyOutcome = 2
+	// ALREADY_IN_PARTY: the player is in a party already, as
+	// clif_party_created 2.
+	PartyOutcome_PARTY_OUTCOME_ALREADY_IN_PARTY PartyOutcome = 3
+	// BAD_NAME: the name is not allowed by the chat filter.
+	PartyOutcome_PARTY_OUTCOME_BAD_NAME PartyOutcome = 4
+	// NOT_LEADER: only the leader may do that (msg 282).
+	PartyOutcome_PARTY_OUTCOME_NOT_LEADER PartyOutcome = 5
+	// NOT_ONLINE: no player of that name is online (PARTY_REPLY_OFFLINE).
+	PartyOutcome_PARTY_OUTCOME_NOT_ONLINE PartyOutcome = 6
+	// TARGET_IN_PARTY: the player is in a party or has an invite open
+	// (PARTY_REPLY_JOIN_OTHER_PARTY).
+	PartyOutcome_PARTY_OUTCOME_TARGET_IN_PARTY PartyOutcome = 7
+	// FULL: the party holds the most members it may hold
+	// (PARTY_REPLY_FULL).
+	PartyOutcome_PARTY_OUTCOME_FULL PartyOutcome = 8
+	// INVITE_SENT: the invite went out.
+	PartyOutcome_PARTY_OUTCOME_INVITE_SENT PartyOutcome = 9
+	// REFUSED: the player refused the invite, or blocks the leader
+	// (PARTY_REPLY_REJECTED).
+	PartyOutcome_PARTY_OUTCOME_REFUSED PartyOutcome = 10
+	// ACCEPTED: the player joined (PARTY_REPLY_ACCEPTED).
+	PartyOutcome_PARTY_OUTCOME_ACCEPTED PartyOutcome = 11
+	// SAME_ACCOUNT: a character of the same account is in the party
+	// (PARTY_REPLY_DUAL).
+	PartyOutcome_PARTY_OUTCOME_SAME_ACCOUNT PartyOutcome = 12
+	// JOINED, LEFT, EXPELLED and DISBANDED tell about members: name joined,
+	// left, was expelled, or the party broke up.
+	PartyOutcome_PARTY_OUTCOME_JOINED    PartyOutcome = 13
+	PartyOutcome_PARTY_OUTCOME_LEFT      PartyOutcome = 14
+	PartyOutcome_PARTY_OUTCOME_EXPELLED  PartyOutcome = 15
+	PartyOutcome_PARTY_OUTCOME_DISBANDED PartyOutcome = 16
+	// NOT_MEMBER: no member of that name is in the party.
+	PartyOutcome_PARTY_OUTCOME_NOT_MEMBER PartyOutcome = 17
+	// LEADER_CHANGED: name is the new leader.
+	PartyOutcome_PARTY_OUTCOME_LEADER_CHANGED PartyOutcome = 18
+	// LEADER_NOT_HERE: the new leader must be on the leader's map, as
+	// MSI_PARTY_MASTER_CHANGE_SAME_MAP.
+	PartyOutcome_PARTY_OUTCOME_LEADER_NOT_HERE PartyOutcome = 19
+	// EXP_SHARE_REFUSED: even exp share needs the online members' base
+	// levels within party_share_level, as the char server's party option
+	// check. EXP_SHARE_OFF: even exp share was turned off for that reason.
+	PartyOutcome_PARTY_OUTCOME_EXP_SHARE_REFUSED PartyOutcome = 20
+	PartyOutcome_PARTY_OUTCOME_EXP_SHARE_OFF     PartyOutcome = 21
+	// OPTIONS_CHANGED: the leader changed the options.
+	PartyOutcome_PARTY_OUTCOME_OPTIONS_CHANGED PartyOutcome = 22
+	// NO_PARTY: the player has no party.
+	PartyOutcome_PARTY_OUTCOME_NO_PARTY PartyOutcome = 23
+)
+
+// Enum value maps for PartyOutcome.
+var (
+	PartyOutcome_name = map[int32]string{
+		0:  "PARTY_OUTCOME_UNSPECIFIED",
+		1:  "PARTY_OUTCOME_CREATED",
+		2:  "PARTY_OUTCOME_NAME_TAKEN",
+		3:  "PARTY_OUTCOME_ALREADY_IN_PARTY",
+		4:  "PARTY_OUTCOME_BAD_NAME",
+		5:  "PARTY_OUTCOME_NOT_LEADER",
+		6:  "PARTY_OUTCOME_NOT_ONLINE",
+		7:  "PARTY_OUTCOME_TARGET_IN_PARTY",
+		8:  "PARTY_OUTCOME_FULL",
+		9:  "PARTY_OUTCOME_INVITE_SENT",
+		10: "PARTY_OUTCOME_REFUSED",
+		11: "PARTY_OUTCOME_ACCEPTED",
+		12: "PARTY_OUTCOME_SAME_ACCOUNT",
+		13: "PARTY_OUTCOME_JOINED",
+		14: "PARTY_OUTCOME_LEFT",
+		15: "PARTY_OUTCOME_EXPELLED",
+		16: "PARTY_OUTCOME_DISBANDED",
+		17: "PARTY_OUTCOME_NOT_MEMBER",
+		18: "PARTY_OUTCOME_LEADER_CHANGED",
+		19: "PARTY_OUTCOME_LEADER_NOT_HERE",
+		20: "PARTY_OUTCOME_EXP_SHARE_REFUSED",
+		21: "PARTY_OUTCOME_EXP_SHARE_OFF",
+		22: "PARTY_OUTCOME_OPTIONS_CHANGED",
+		23: "PARTY_OUTCOME_NO_PARTY",
+	}
+	PartyOutcome_value = map[string]int32{
+		"PARTY_OUTCOME_UNSPECIFIED":       0,
+		"PARTY_OUTCOME_CREATED":           1,
+		"PARTY_OUTCOME_NAME_TAKEN":        2,
+		"PARTY_OUTCOME_ALREADY_IN_PARTY":  3,
+		"PARTY_OUTCOME_BAD_NAME":          4,
+		"PARTY_OUTCOME_NOT_LEADER":        5,
+		"PARTY_OUTCOME_NOT_ONLINE":        6,
+		"PARTY_OUTCOME_TARGET_IN_PARTY":   7,
+		"PARTY_OUTCOME_FULL":              8,
+		"PARTY_OUTCOME_INVITE_SENT":       9,
+		"PARTY_OUTCOME_REFUSED":           10,
+		"PARTY_OUTCOME_ACCEPTED":          11,
+		"PARTY_OUTCOME_SAME_ACCOUNT":      12,
+		"PARTY_OUTCOME_JOINED":            13,
+		"PARTY_OUTCOME_LEFT":              14,
+		"PARTY_OUTCOME_EXPELLED":          15,
+		"PARTY_OUTCOME_DISBANDED":         16,
+		"PARTY_OUTCOME_NOT_MEMBER":        17,
+		"PARTY_OUTCOME_LEADER_CHANGED":    18,
+		"PARTY_OUTCOME_LEADER_NOT_HERE":   19,
+		"PARTY_OUTCOME_EXP_SHARE_REFUSED": 20,
+		"PARTY_OUTCOME_EXP_SHARE_OFF":     21,
+		"PARTY_OUTCOME_OPTIONS_CHANGED":   22,
+		"PARTY_OUTCOME_NO_PARTY":          23,
+	}
+)
+
+func (x PartyOutcome) Enum() *PartyOutcome {
+	p := new(PartyOutcome)
+	*p = x
+	return p
+}
+
+func (x PartyOutcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PartyOutcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[18].Descriptor()
+}
+
+func (PartyOutcome) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[18]
+}
+
+func (x PartyOutcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type FriendOutcome int32
+
+const (
+	FriendOutcome_FRIEND_OUTCOME_UNSPECIFIED FriendOutcome = 0
+	// ADDED: the player and name are friends now (reqack 0).
+	FriendOutcome_FRIEND_OUTCOME_ADDED FriendOutcome = 1
+	// REFUSED: name does not want to be friends (reqack 1).
+	FriendOutcome_FRIEND_OUTCOME_REFUSED FriendOutcome = 2
+	// LIST_FULL: the player's list is full (reqack 2).
+	FriendOutcome_FRIEND_OUTCOME_LIST_FULL FriendOutcome = 3
+	// THEIR_LIST_FULL: name's list is full (reqack 3).
+	FriendOutcome_FRIEND_OUTCOME_THEIR_LIST_FULL FriendOutcome = 4
+	// NOT_ONLINE: no player of that name is online (msg 3).
+	FriendOutcome_FRIEND_OUTCOME_NOT_ONLINE FriendOutcome = 5
+	// ALREADY_FRIENDS: name is on the list (msg 671).
+	FriendOutcome_FRIEND_OUTCOME_ALREADY_FRIENDS FriendOutcome = 6
+	// REQUEST_SENT: the request went out.
+	FriendOutcome_FRIEND_OUTCOME_REQUEST_SENT FriendOutcome = 7
+	// REMOVED: name is off the list (msg 674).
+	FriendOutcome_FRIEND_OUTCOME_REMOVED FriendOutcome = 8
+	// NOT_FOUND: name is not on the list (msg 672).
+	FriendOutcome_FRIEND_OUTCOME_NOT_FOUND FriendOutcome = 9
+)
+
+// Enum value maps for FriendOutcome.
+var (
+	FriendOutcome_name = map[int32]string{
+		0: "FRIEND_OUTCOME_UNSPECIFIED",
+		1: "FRIEND_OUTCOME_ADDED",
+		2: "FRIEND_OUTCOME_REFUSED",
+		3: "FRIEND_OUTCOME_LIST_FULL",
+		4: "FRIEND_OUTCOME_THEIR_LIST_FULL",
+		5: "FRIEND_OUTCOME_NOT_ONLINE",
+		6: "FRIEND_OUTCOME_ALREADY_FRIENDS",
+		7: "FRIEND_OUTCOME_REQUEST_SENT",
+		8: "FRIEND_OUTCOME_REMOVED",
+		9: "FRIEND_OUTCOME_NOT_FOUND",
+	}
+	FriendOutcome_value = map[string]int32{
+		"FRIEND_OUTCOME_UNSPECIFIED":     0,
+		"FRIEND_OUTCOME_ADDED":           1,
+		"FRIEND_OUTCOME_REFUSED":         2,
+		"FRIEND_OUTCOME_LIST_FULL":       3,
+		"FRIEND_OUTCOME_THEIR_LIST_FULL": 4,
+		"FRIEND_OUTCOME_NOT_ONLINE":      5,
+		"FRIEND_OUTCOME_ALREADY_FRIENDS": 6,
+		"FRIEND_OUTCOME_REQUEST_SENT":    7,
+		"FRIEND_OUTCOME_REMOVED":         8,
+		"FRIEND_OUTCOME_NOT_FOUND":       9,
+	}
+)
+
+func (x FriendOutcome) Enum() *FriendOutcome {
+	p := new(FriendOutcome)
+	*p = x
+	return p
+}
+
+func (x FriendOutcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FriendOutcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_event_proto_enumTypes[19].Descriptor()
+}
+
+func (FriendOutcome) Type() protoreflect.EnumType {
+	return &file_wathena_v1_event_proto_enumTypes[19]
+}
+
+func (x FriendOutcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 // Event is one thing the player sees change.
 // Clients must skip Event cases they do not know, so new cases can be added.
 type Event struct {
@@ -1660,6 +1869,96 @@ func (x *Event) GetReportResult() *ReportResult {
 	return nil
 }
 
+func (x *Event) GetPartyInfo() *PartyInfo {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_PartyInfo); ok {
+			return x.PartyInfo
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetPartyMember() *PartyMemberUpdate {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_PartyMember); ok {
+			return x.PartyMember
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetPartyInvite() *PartyInvite {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_PartyInvite); ok {
+			return x.PartyInvite
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetPartyResult() *PartyResult {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_PartyResult); ok {
+			return x.PartyResult
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetFriendList() *FriendList {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_FriendList); ok {
+			return x.FriendList
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetFriendStatus() *FriendStatus {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_FriendStatus); ok {
+			return x.FriendStatus
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetFriendRequest() *FriendRequest {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_FriendRequest); ok {
+			return x.FriendRequest
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetFriendResult() *FriendResult {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_FriendResult); ok {
+			return x.FriendResult
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetPartyBookingList() *PartyBookingList {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_PartyBookingList); ok {
+			return x.PartyBookingList
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetPartyItemShared() *PartyItemShared {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_PartyItemShared); ok {
+			return x.PartyItemShared
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -2058,6 +2357,86 @@ func (x *Event) SetReportResult(v *ReportResult) {
 		return
 	}
 	x.xxx_hidden_Body = &event_ReportResult{v}
+}
+
+func (x *Event) SetPartyInfo(v *PartyInfo) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_PartyInfo{v}
+}
+
+func (x *Event) SetPartyMember(v *PartyMemberUpdate) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_PartyMember{v}
+}
+
+func (x *Event) SetPartyInvite(v *PartyInvite) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_PartyInvite{v}
+}
+
+func (x *Event) SetPartyResult(v *PartyResult) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_PartyResult{v}
+}
+
+func (x *Event) SetFriendList(v *FriendList) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_FriendList{v}
+}
+
+func (x *Event) SetFriendStatus(v *FriendStatus) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_FriendStatus{v}
+}
+
+func (x *Event) SetFriendRequest(v *FriendRequest) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_FriendRequest{v}
+}
+
+func (x *Event) SetFriendResult(v *FriendResult) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_FriendResult{v}
+}
+
+func (x *Event) SetPartyBookingList(v *PartyBookingList) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_PartyBookingList{v}
+}
+
+func (x *Event) SetPartyItemShared(v *PartyItemShared) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_PartyItemShared{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -2467,6 +2846,86 @@ func (x *Event) HasReportResult() bool {
 	return ok
 }
 
+func (x *Event) HasPartyInfo() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_PartyInfo)
+	return ok
+}
+
+func (x *Event) HasPartyMember() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_PartyMember)
+	return ok
+}
+
+func (x *Event) HasPartyInvite() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_PartyInvite)
+	return ok
+}
+
+func (x *Event) HasPartyResult() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_PartyResult)
+	return ok
+}
+
+func (x *Event) HasFriendList() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_FriendList)
+	return ok
+}
+
+func (x *Event) HasFriendStatus() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_FriendStatus)
+	return ok
+}
+
+func (x *Event) HasFriendRequest() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_FriendRequest)
+	return ok
+}
+
+func (x *Event) HasFriendResult() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_FriendResult)
+	return ok
+}
+
+func (x *Event) HasPartyBookingList() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_PartyBookingList)
+	return ok
+}
+
+func (x *Event) HasPartyItemShared() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_PartyItemShared)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -2771,6 +3230,66 @@ func (x *Event) ClearReportResult() {
 	}
 }
 
+func (x *Event) ClearPartyInfo() {
+	if _, ok := x.xxx_hidden_Body.(*event_PartyInfo); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearPartyMember() {
+	if _, ok := x.xxx_hidden_Body.(*event_PartyMember); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearPartyInvite() {
+	if _, ok := x.xxx_hidden_Body.(*event_PartyInvite); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearPartyResult() {
+	if _, ok := x.xxx_hidden_Body.(*event_PartyResult); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearFriendList() {
+	if _, ok := x.xxx_hidden_Body.(*event_FriendList); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearFriendStatus() {
+	if _, ok := x.xxx_hidden_Body.(*event_FriendStatus); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearFriendRequest() {
+	if _, ok := x.xxx_hidden_Body.(*event_FriendRequest); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearFriendResult() {
+	if _, ok := x.xxx_hidden_Body.(*event_FriendResult); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearPartyBookingList() {
+	if _, ok := x.xxx_hidden_Body.(*event_PartyBookingList); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Event) ClearPartyItemShared() {
+	if _, ok := x.xxx_hidden_Body.(*event_PartyItemShared); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -2822,6 +3341,16 @@ const Event_ChannelFailed_case case_Event_Body = 47
 const Event_BlockList_case case_Event_Body = 48
 const Event_Sanction_case case_Event_Body = 49
 const Event_ReportResult_case case_Event_Body = 50
+const Event_PartyInfo_case case_Event_Body = 51
+const Event_PartyMember_case case_Event_Body = 52
+const Event_PartyInvite_case case_Event_Body = 53
+const Event_PartyResult_case case_Event_Body = 54
+const Event_FriendList_case case_Event_Body = 55
+const Event_FriendStatus_case case_Event_Body = 56
+const Event_FriendRequest_case case_Event_Body = 57
+const Event_FriendResult_case case_Event_Body = 58
+const Event_PartyBookingList_case case_Event_Body = 59
+const Event_PartyItemShared_case case_Event_Body = 60
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -2928,6 +3457,26 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_Sanction_case
 	case *event_ReportResult:
 		return Event_ReportResult_case
+	case *event_PartyInfo:
+		return Event_PartyInfo_case
+	case *event_PartyMember:
+		return Event_PartyMember_case
+	case *event_PartyInvite:
+		return Event_PartyInvite_case
+	case *event_PartyResult:
+		return Event_PartyResult_case
+	case *event_FriendList:
+		return Event_FriendList_case
+	case *event_FriendStatus:
+		return Event_FriendStatus_case
+	case *event_FriendRequest:
+		return Event_FriendRequest_case
+	case *event_FriendResult:
+		return Event_FriendResult_case
+	case *event_PartyBookingList:
+		return Event_PartyBookingList_case
+	case *event_PartyItemShared:
+		return Event_PartyItemShared_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -2987,6 +3536,16 @@ type Event_builder struct {
 	BlockList        *BlockList
 	Sanction         *SanctionNotice
 	ReportResult     *ReportResult
+	PartyInfo        *PartyInfo
+	PartyMember      *PartyMemberUpdate
+	PartyInvite      *PartyInvite
+	PartyResult      *PartyResult
+	FriendList       *FriendList
+	FriendStatus     *FriendStatus
+	FriendRequest    *FriendRequest
+	FriendResult     *FriendResult
+	PartyBookingList *PartyBookingList
+	PartyItemShared  *PartyItemShared
 	// -- end of xxx_hidden_Body
 }
 
@@ -3143,6 +3702,36 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.ReportResult != nil {
 		x.xxx_hidden_Body = &event_ReportResult{b.ReportResult}
+	}
+	if b.PartyInfo != nil {
+		x.xxx_hidden_Body = &event_PartyInfo{b.PartyInfo}
+	}
+	if b.PartyMember != nil {
+		x.xxx_hidden_Body = &event_PartyMember{b.PartyMember}
+	}
+	if b.PartyInvite != nil {
+		x.xxx_hidden_Body = &event_PartyInvite{b.PartyInvite}
+	}
+	if b.PartyResult != nil {
+		x.xxx_hidden_Body = &event_PartyResult{b.PartyResult}
+	}
+	if b.FriendList != nil {
+		x.xxx_hidden_Body = &event_FriendList{b.FriendList}
+	}
+	if b.FriendStatus != nil {
+		x.xxx_hidden_Body = &event_FriendStatus{b.FriendStatus}
+	}
+	if b.FriendRequest != nil {
+		x.xxx_hidden_Body = &event_FriendRequest{b.FriendRequest}
+	}
+	if b.FriendResult != nil {
+		x.xxx_hidden_Body = &event_FriendResult{b.FriendResult}
+	}
+	if b.PartyBookingList != nil {
+		x.xxx_hidden_Body = &event_PartyBookingList{b.PartyBookingList}
+	}
+	if b.PartyItemShared != nil {
+		x.xxx_hidden_Body = &event_PartyItemShared{b.PartyItemShared}
 	}
 	return m0
 }
@@ -3361,6 +3950,46 @@ type event_ReportResult struct {
 	ReportResult *ReportResult `protobuf:"bytes,50,opt,name=report_result,json=reportResult,proto3,oneof"`
 }
 
+type event_PartyInfo struct {
+	PartyInfo *PartyInfo `protobuf:"bytes,51,opt,name=party_info,json=partyInfo,proto3,oneof"`
+}
+
+type event_PartyMember struct {
+	PartyMember *PartyMemberUpdate `protobuf:"bytes,52,opt,name=party_member,json=partyMember,proto3,oneof"`
+}
+
+type event_PartyInvite struct {
+	PartyInvite *PartyInvite `protobuf:"bytes,53,opt,name=party_invite,json=partyInvite,proto3,oneof"`
+}
+
+type event_PartyResult struct {
+	PartyResult *PartyResult `protobuf:"bytes,54,opt,name=party_result,json=partyResult,proto3,oneof"`
+}
+
+type event_FriendList struct {
+	FriendList *FriendList `protobuf:"bytes,55,opt,name=friend_list,json=friendList,proto3,oneof"`
+}
+
+type event_FriendStatus struct {
+	FriendStatus *FriendStatus `protobuf:"bytes,56,opt,name=friend_status,json=friendStatus,proto3,oneof"`
+}
+
+type event_FriendRequest struct {
+	FriendRequest *FriendRequest `protobuf:"bytes,57,opt,name=friend_request,json=friendRequest,proto3,oneof"`
+}
+
+type event_FriendResult struct {
+	FriendResult *FriendResult `protobuf:"bytes,58,opt,name=friend_result,json=friendResult,proto3,oneof"`
+}
+
+type event_PartyBookingList struct {
+	PartyBookingList *PartyBookingList `protobuf:"bytes,59,opt,name=party_booking_list,json=partyBookingList,proto3,oneof"`
+}
+
+type event_PartyItemShared struct {
+	PartyItemShared *PartyItemShared `protobuf:"bytes,60,opt,name=party_item_shared,json=partyItemShared,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -3460,6 +4089,26 @@ func (*event_BlockList) isEvent_Body() {}
 func (*event_Sanction) isEvent_Body() {}
 
 func (*event_ReportResult) isEvent_Body() {}
+
+func (*event_PartyInfo) isEvent_Body() {}
+
+func (*event_PartyMember) isEvent_Body() {}
+
+func (*event_PartyInvite) isEvent_Body() {}
+
+func (*event_PartyResult) isEvent_Body() {}
+
+func (*event_FriendList) isEvent_Body() {}
+
+func (*event_FriendStatus) isEvent_Body() {}
+
+func (*event_FriendRequest) isEvent_Body() {}
+
+func (*event_FriendResult) isEvent_Body() {}
+
+func (*event_PartyBookingList) isEvent_Body() {}
+
+func (*event_PartyItemShared) isEvent_Body() {}
 
 // JobName names the player's job, from its record's display_name. It
 // comes after login and after each job change, since the client data
@@ -10482,12 +11131,1208 @@ func (b0 OptionChange_builder) Build() *OptionChange {
 	return m0
 }
 
+// PartyInfo is the player's party: after login, and after every change of
+// its members, leader or options. An id of 0 means the player has no
+// party, such as after it left.
+type PartyInfo struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id      uint64                 `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Options *PartyOptions          `protobuf:"bytes,3,opt,name=options,proto3"`
+	xxx_hidden_Members *[]*PartyMember        `protobuf:"bytes,4,rep,name=members,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *PartyInfo) Reset() {
+	*x = PartyInfo{}
+	mi := &file_wathena_v1_event_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyInfo) ProtoMessage() {}
+
+func (x *PartyInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyInfo) GetId() uint64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *PartyInfo) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *PartyInfo) GetOptions() *PartyOptions {
+	if x != nil {
+		return x.xxx_hidden_Options
+	}
+	return nil
+}
+
+func (x *PartyInfo) GetMembers() []*PartyMember {
+	if x != nil {
+		if x.xxx_hidden_Members != nil {
+			return *x.xxx_hidden_Members
+		}
+	}
+	return nil
+}
+
+func (x *PartyInfo) SetId(v uint64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *PartyInfo) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *PartyInfo) SetOptions(v *PartyOptions) {
+	x.xxx_hidden_Options = v
+}
+
+func (x *PartyInfo) SetMembers(v []*PartyMember) {
+	x.xxx_hidden_Members = &v
+}
+
+func (x *PartyInfo) HasOptions() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Options != nil
+}
+
+func (x *PartyInfo) ClearOptions() {
+	x.xxx_hidden_Options = nil
+}
+
+type PartyInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id      uint64
+	Name    string
+	Options *PartyOptions
+	// members are every member, online or not, in slot order, as
+	// clif_party_info. A new member takes the slot of the first member
+	// who left.
+	Members []*PartyMember
+}
+
+func (b0 PartyInfo_builder) Build() *PartyInfo {
+	m0 := &PartyInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Options = b.Options
+	x.xxx_hidden_Members = &b.Members
+	return m0
+}
+
+// PartyMember is one member of the player's party.
+type PartyMember struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name      string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Leader    bool                   `protobuf:"varint,2,opt,name=leader,proto3"`
+	xxx_hidden_Online    bool                   `protobuf:"varint,3,opt,name=online,proto3"`
+	xxx_hidden_Map       string                 `protobuf:"bytes,4,opt,name=map,proto3"`
+	xxx_hidden_Job       uint32                 `protobuf:"varint,5,opt,name=job,proto3"`
+	xxx_hidden_BaseLevel uint32                 `protobuf:"varint,6,opt,name=base_level,json=baseLevel,proto3"`
+	xxx_hidden_Hp        int64                  `protobuf:"varint,7,opt,name=hp,proto3"`
+	xxx_hidden_MaxHp     int64                  `protobuf:"varint,8,opt,name=max_hp,json=maxHp,proto3"`
+	xxx_hidden_X         uint32                 `protobuf:"varint,9,opt,name=x,proto3"`
+	xxx_hidden_Y         uint32                 `protobuf:"varint,10,opt,name=y,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *PartyMember) Reset() {
+	*x = PartyMember{}
+	mi := &file_wathena_v1_event_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyMember) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyMember) ProtoMessage() {}
+
+func (x *PartyMember) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyMember) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *PartyMember) GetLeader() bool {
+	if x != nil {
+		return x.xxx_hidden_Leader
+	}
+	return false
+}
+
+func (x *PartyMember) GetOnline() bool {
+	if x != nil {
+		return x.xxx_hidden_Online
+	}
+	return false
+}
+
+func (x *PartyMember) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *PartyMember) GetJob() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Job
+	}
+	return 0
+}
+
+func (x *PartyMember) GetBaseLevel() uint32 {
+	if x != nil {
+		return x.xxx_hidden_BaseLevel
+	}
+	return 0
+}
+
+func (x *PartyMember) GetHp() int64 {
+	if x != nil {
+		return x.xxx_hidden_Hp
+	}
+	return 0
+}
+
+func (x *PartyMember) GetMaxHp() int64 {
+	if x != nil {
+		return x.xxx_hidden_MaxHp
+	}
+	return 0
+}
+
+func (x *PartyMember) GetX() uint32 {
+	if x != nil {
+		return x.xxx_hidden_X
+	}
+	return 0
+}
+
+func (x *PartyMember) GetY() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Y
+	}
+	return 0
+}
+
+func (x *PartyMember) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *PartyMember) SetLeader(v bool) {
+	x.xxx_hidden_Leader = v
+}
+
+func (x *PartyMember) SetOnline(v bool) {
+	x.xxx_hidden_Online = v
+}
+
+func (x *PartyMember) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *PartyMember) SetJob(v uint32) {
+	x.xxx_hidden_Job = v
+}
+
+func (x *PartyMember) SetBaseLevel(v uint32) {
+	x.xxx_hidden_BaseLevel = v
+}
+
+func (x *PartyMember) SetHp(v int64) {
+	x.xxx_hidden_Hp = v
+}
+
+func (x *PartyMember) SetMaxHp(v int64) {
+	x.xxx_hidden_MaxHp = v
+}
+
+func (x *PartyMember) SetX(v uint32) {
+	x.xxx_hidden_X = v
+}
+
+func (x *PartyMember) SetY(v uint32) {
+	x.xxx_hidden_Y = v
+}
+
+type PartyMember_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name   string
+	Leader bool
+	Online bool
+	// map is the member's map's asset name, such as map/prontera. It is
+	// the last map for a member who is offline.
+	Map string
+	// job and base_level are the member's job ID and base level.
+	Job       uint32
+	BaseLevel uint32
+	// hp and max_hp are the member's exact HP, as clif_party_hp.
+	Hp    int64
+	MaxHp int64
+	// x and y are the member's cell, for the minimap, as clif_party_xy.
+	X uint32
+	Y uint32
+}
+
+func (b0 PartyMember_builder) Build() *PartyMember {
+	m0 := &PartyMember{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Leader = b.Leader
+	x.xxx_hidden_Online = b.Online
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Job = b.Job
+	x.xxx_hidden_BaseLevel = b.BaseLevel
+	x.xxx_hidden_Hp = b.Hp
+	x.xxx_hidden_MaxHp = b.MaxHp
+	x.xxx_hidden_X = b.X
+	x.xxx_hidden_Y = b.Y
+	return m0
+}
+
+// PartyMemberUpdate changes one member's values in the party window: HP
+// when it changes, the cell once a second, and the map, the level and
+// the online state when they change.
+type PartyMemberUpdate struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Member *PartyMember           `protobuf:"bytes,1,opt,name=member,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PartyMemberUpdate) Reset() {
+	*x = PartyMemberUpdate{}
+	mi := &file_wathena_v1_event_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyMemberUpdate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyMemberUpdate) ProtoMessage() {}
+
+func (x *PartyMemberUpdate) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyMemberUpdate) GetMember() *PartyMember {
+	if x != nil {
+		return x.xxx_hidden_Member
+	}
+	return nil
+}
+
+func (x *PartyMemberUpdate) SetMember(v *PartyMember) {
+	x.xxx_hidden_Member = v
+}
+
+func (x *PartyMemberUpdate) HasMember() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Member != nil
+}
+
+func (x *PartyMemberUpdate) ClearMember() {
+	x.xxx_hidden_Member = nil
+}
+
+type PartyMemberUpdate_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Member *PartyMember
+}
+
+func (b0 PartyMemberUpdate_builder) Build() *PartyMemberUpdate {
+	m0 := &PartyMemberUpdate{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Member = b.Member
+	return m0
+}
+
+// PartyInvite asks the player to join a party, as clif_party_invite. The
+// player answers with PartyCommand.reply.
+type PartyInvite struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PartyId   uint64                 `protobuf:"varint,1,opt,name=party_id,json=partyId,proto3"`
+	xxx_hidden_PartyName string                 `protobuf:"bytes,2,opt,name=party_name,json=partyName,proto3"`
+	xxx_hidden_From      string                 `protobuf:"bytes,3,opt,name=from,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *PartyInvite) Reset() {
+	*x = PartyInvite{}
+	mi := &file_wathena_v1_event_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyInvite) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyInvite) ProtoMessage() {}
+
+func (x *PartyInvite) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyInvite) GetPartyId() uint64 {
+	if x != nil {
+		return x.xxx_hidden_PartyId
+	}
+	return 0
+}
+
+func (x *PartyInvite) GetPartyName() string {
+	if x != nil {
+		return x.xxx_hidden_PartyName
+	}
+	return ""
+}
+
+func (x *PartyInvite) GetFrom() string {
+	if x != nil {
+		return x.xxx_hidden_From
+	}
+	return ""
+}
+
+func (x *PartyInvite) SetPartyId(v uint64) {
+	x.xxx_hidden_PartyId = v
+}
+
+func (x *PartyInvite) SetPartyName(v string) {
+	x.xxx_hidden_PartyName = v
+}
+
+func (x *PartyInvite) SetFrom(v string) {
+	x.xxx_hidden_From = v
+}
+
+type PartyInvite_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	PartyId   uint64
+	PartyName string
+	// from is the name of the leader who invites.
+	From string
+}
+
+func (b0 PartyInvite_builder) Build() *PartyInvite {
+	m0 := &PartyInvite{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_PartyId = b.PartyId
+	x.xxx_hidden_PartyName = b.PartyName
+	x.xxx_hidden_From = b.From
+	return m0
+}
+
+// PartyResult tells the player how a party action went, when it failed,
+// and what happened to the party, such as a member who left.
+type PartyResult struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Outcome PartyOutcome           `protobuf:"varint,1,opt,name=outcome,proto3,enum=wathena.v1.PartyOutcome"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *PartyResult) Reset() {
+	*x = PartyResult{}
+	mi := &file_wathena_v1_event_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyResult) ProtoMessage() {}
+
+func (x *PartyResult) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyResult) GetOutcome() PartyOutcome {
+	if x != nil {
+		return x.xxx_hidden_Outcome
+	}
+	return PartyOutcome_PARTY_OUTCOME_UNSPECIFIED
+}
+
+func (x *PartyResult) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *PartyResult) SetOutcome(v PartyOutcome) {
+	x.xxx_hidden_Outcome = v
+}
+
+func (x *PartyResult) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+type PartyResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Outcome PartyOutcome
+	// name is the player or party the outcome is about.
+	Name string
+}
+
+func (b0 PartyResult_builder) Build() *PartyResult {
+	m0 := &PartyResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Outcome = b.Outcome
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
+// FriendList is the player's friend list: after login and after each
+// change.
+type FriendList struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Friends *[]*Friend             `protobuf:"bytes,1,rep,name=friends,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *FriendList) Reset() {
+	*x = FriendList{}
+	mi := &file_wathena_v1_event_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendList) ProtoMessage() {}
+
+func (x *FriendList) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FriendList) GetFriends() []*Friend {
+	if x != nil {
+		if x.xxx_hidden_Friends != nil {
+			return *x.xxx_hidden_Friends
+		}
+	}
+	return nil
+}
+
+func (x *FriendList) SetFriends(v []*Friend) {
+	x.xxx_hidden_Friends = &v
+}
+
+type FriendList_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Friends []*Friend
+}
+
+func (b0 FriendList_builder) Build() *FriendList {
+	m0 := &FriendList{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Friends = &b.Friends
+	return m0
+}
+
+type Friend struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Online bool                   `protobuf:"varint,2,opt,name=online,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Friend) Reset() {
+	*x = Friend{}
+	mi := &file_wathena_v1_event_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Friend) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Friend) ProtoMessage() {}
+
+func (x *Friend) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Friend) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *Friend) GetOnline() bool {
+	if x != nil {
+		return x.xxx_hidden_Online
+	}
+	return false
+}
+
+func (x *Friend) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Friend) SetOnline(v bool) {
+	x.xxx_hidden_Online = v
+}
+
+type Friend_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name   string
+	Online bool
+}
+
+func (b0 Friend_builder) Build() *Friend {
+	m0 := &Friend{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Online = b.Online
+	return m0
+}
+
+// FriendStatus tells that a friend logged in or out, as
+// clif_friendslist_toggle.
+type FriendStatus struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Online bool                   `protobuf:"varint,2,opt,name=online,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *FriendStatus) Reset() {
+	*x = FriendStatus{}
+	mi := &file_wathena_v1_event_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendStatus) ProtoMessage() {}
+
+func (x *FriendStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FriendStatus) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *FriendStatus) GetOnline() bool {
+	if x != nil {
+		return x.xxx_hidden_Online
+	}
+	return false
+}
+
+func (x *FriendStatus) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *FriendStatus) SetOnline(v bool) {
+	x.xxx_hidden_Online = v
+}
+
+type FriendStatus_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name   string
+	Online bool
+}
+
+func (b0 FriendStatus_builder) Build() *FriendStatus {
+	m0 := &FriendStatus{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Online = b.Online
+	return m0
+}
+
+// FriendRequest asks the player to be friends with from, as
+// clif_friendlist_req. The player answers with FriendCommand.reply.
+type FriendRequest struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_From string                 `protobuf:"bytes,1,opt,name=from,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *FriendRequest) Reset() {
+	*x = FriendRequest{}
+	mi := &file_wathena_v1_event_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendRequest) ProtoMessage() {}
+
+func (x *FriendRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FriendRequest) GetFrom() string {
+	if x != nil {
+		return x.xxx_hidden_From
+	}
+	return ""
+}
+
+func (x *FriendRequest) SetFrom(v string) {
+	x.xxx_hidden_From = v
+}
+
+type FriendRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	From string
+}
+
+func (b0 FriendRequest_builder) Build() *FriendRequest {
+	m0 := &FriendRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_From = b.From
+	return m0
+}
+
+// FriendResult answers a friend action, as clif_friendslist_reqack and
+// the friend messages.
+type FriendResult struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Outcome FriendOutcome          `protobuf:"varint,1,opt,name=outcome,proto3,enum=wathena.v1.FriendOutcome"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *FriendResult) Reset() {
+	*x = FriendResult{}
+	mi := &file_wathena_v1_event_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendResult) ProtoMessage() {}
+
+func (x *FriendResult) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FriendResult) GetOutcome() FriendOutcome {
+	if x != nil {
+		return x.xxx_hidden_Outcome
+	}
+	return FriendOutcome_FRIEND_OUTCOME_UNSPECIFIED
+}
+
+func (x *FriendResult) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *FriendResult) SetOutcome(v FriendOutcome) {
+	x.xxx_hidden_Outcome = v
+}
+
+func (x *FriendResult) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+type FriendResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Outcome FriendOutcome
+	Name    string
+}
+
+func (b0 FriendResult_builder) Build() *FriendResult {
+	m0 := &FriendResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Outcome = b.Outcome
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
+// PartyBookingList answers PartyBookingCommand: the ads a search found,
+// or the player's own ad after register and delete.
+type PartyBookingList struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Entries    *[]*PartyBookingEntry  `protobuf:"bytes,1,rep,name=entries,proto3"`
+	xxx_hidden_More       bool                   `protobuf:"varint,2,opt,name=more,proto3"`
+	xxx_hidden_Registered bool                   `protobuf:"varint,3,opt,name=registered,proto3"`
+	xxx_hidden_Own        *PartyBookingEntry     `protobuf:"bytes,4,opt,name=own,proto3"`
+	xxx_hidden_Refused    bool                   `protobuf:"varint,5,opt,name=refused,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *PartyBookingList) Reset() {
+	*x = PartyBookingList{}
+	mi := &file_wathena_v1_event_proto_msgTypes[76]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyBookingList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyBookingList) ProtoMessage() {}
+
+func (x *PartyBookingList) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[76]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyBookingList) GetEntries() []*PartyBookingEntry {
+	if x != nil {
+		if x.xxx_hidden_Entries != nil {
+			return *x.xxx_hidden_Entries
+		}
+	}
+	return nil
+}
+
+func (x *PartyBookingList) GetMore() bool {
+	if x != nil {
+		return x.xxx_hidden_More
+	}
+	return false
+}
+
+func (x *PartyBookingList) GetRegistered() bool {
+	if x != nil {
+		return x.xxx_hidden_Registered
+	}
+	return false
+}
+
+func (x *PartyBookingList) GetOwn() *PartyBookingEntry {
+	if x != nil {
+		return x.xxx_hidden_Own
+	}
+	return nil
+}
+
+func (x *PartyBookingList) GetRefused() bool {
+	if x != nil {
+		return x.xxx_hidden_Refused
+	}
+	return false
+}
+
+func (x *PartyBookingList) SetEntries(v []*PartyBookingEntry) {
+	x.xxx_hidden_Entries = &v
+}
+
+func (x *PartyBookingList) SetMore(v bool) {
+	x.xxx_hidden_More = v
+}
+
+func (x *PartyBookingList) SetRegistered(v bool) {
+	x.xxx_hidden_Registered = v
+}
+
+func (x *PartyBookingList) SetOwn(v *PartyBookingEntry) {
+	x.xxx_hidden_Own = v
+}
+
+func (x *PartyBookingList) SetRefused(v bool) {
+	x.xxx_hidden_Refused = v
+}
+
+func (x *PartyBookingList) HasOwn() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Own != nil
+}
+
+func (x *PartyBookingList) ClearOwn() {
+	x.xxx_hidden_Own = nil
+}
+
+type PartyBookingList_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Entries []*PartyBookingEntry
+	// more is set when the search found more ads than it lists, as
+	// party_booking_search's more_result.
+	More bool
+	// registered is set when the player has an ad. own is that ad.
+	Registered bool
+	Own        *PartyBookingEntry
+	// refused is set when register failed because the player has an ad
+	// already, as clif_PartyBookingRegisterAck 2.
+	Refused bool
+}
+
+func (b0 PartyBookingList_builder) Build() *PartyBookingList {
+	m0 := &PartyBookingList{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Entries = &b.Entries
+	x.xxx_hidden_More = b.More
+	x.xxx_hidden_Registered = b.Registered
+	x.xxx_hidden_Own = b.Own
+	x.xxx_hidden_Refused = b.Refused
+	return m0
+}
+
+type PartyBookingEntry struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name       string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Ad         *PartyBookingAd        `protobuf:"bytes,2,opt,name=ad,proto3"`
+	xxx_hidden_PlacedAtMs int64                  `protobuf:"varint,3,opt,name=placed_at_ms,json=placedAtMs,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *PartyBookingEntry) Reset() {
+	*x = PartyBookingEntry{}
+	mi := &file_wathena_v1_event_proto_msgTypes[77]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyBookingEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyBookingEntry) ProtoMessage() {}
+
+func (x *PartyBookingEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[77]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyBookingEntry) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *PartyBookingEntry) GetAd() *PartyBookingAd {
+	if x != nil {
+		return x.xxx_hidden_Ad
+	}
+	return nil
+}
+
+func (x *PartyBookingEntry) GetPlacedAtMs() int64 {
+	if x != nil {
+		return x.xxx_hidden_PlacedAtMs
+	}
+	return 0
+}
+
+func (x *PartyBookingEntry) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *PartyBookingEntry) SetAd(v *PartyBookingAd) {
+	x.xxx_hidden_Ad = v
+}
+
+func (x *PartyBookingEntry) SetPlacedAtMs(v int64) {
+	x.xxx_hidden_PlacedAtMs = v
+}
+
+func (x *PartyBookingEntry) HasAd() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Ad != nil
+}
+
+func (x *PartyBookingEntry) ClearAd() {
+	x.xxx_hidden_Ad = nil
+}
+
+type PartyBookingEntry_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the character that placed the ad.
+	Name string
+	Ad   *PartyBookingAd
+	// placed_at_ms is when the ad was placed, in Unix milliseconds.
+	PlacedAtMs int64
+}
+
+func (b0 PartyBookingEntry_builder) Build() *PartyBookingEntry {
+	m0 := &PartyBookingEntry{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Ad = b.Ad
+	x.xxx_hidden_PlacedAtMs = b.PlacedAtMs
+	return m0
+}
+
+// PartyItemShared tells the party who got an item that even item share
+// gave, as clif_party_show_picker.
+type PartyItemShared struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_ItemId uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,3,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PartyItemShared) Reset() {
+	*x = PartyItemShared{}
+	mi := &file_wathena_v1_event_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PartyItemShared) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyItemShared) ProtoMessage() {}
+
+func (x *PartyItemShared) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PartyItemShared) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *PartyItemShared) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *PartyItemShared) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *PartyItemShared) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *PartyItemShared) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *PartyItemShared) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+type PartyItemShared_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the member who got the item.
+	Name   string
+	ItemId uint32
+	Amount uint32
+}
+
+func (b0 PartyItemShared_builder) Build() *PartyItemShared {
+	m0 := &PartyItemShared{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_Amount = b.Amount
+	return m0
+}
+
 var File_wathena_v1_event_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xdc\x17\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xee\x1c\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -10548,7 +12393,19 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"block_list\x180 \x01(\v2\x15.wathena.v1.BlockListH\x00R\tblockList\x128\n" +
 	"\bsanction\x181 \x01(\v2\x1a.wathena.v1.SanctionNoticeH\x00R\bsanction\x12?\n" +
-	"\rreport_result\x182 \x01(\v2\x18.wathena.v1.ReportResultH\x00R\freportResultB\x06\n" +
+	"\rreport_result\x182 \x01(\v2\x18.wathena.v1.ReportResultH\x00R\freportResult\x126\n" +
+	"\n" +
+	"party_info\x183 \x01(\v2\x15.wathena.v1.PartyInfoH\x00R\tpartyInfo\x12B\n" +
+	"\fparty_member\x184 \x01(\v2\x1d.wathena.v1.PartyMemberUpdateH\x00R\vpartyMember\x12<\n" +
+	"\fparty_invite\x185 \x01(\v2\x17.wathena.v1.PartyInviteH\x00R\vpartyInvite\x12<\n" +
+	"\fparty_result\x186 \x01(\v2\x17.wathena.v1.PartyResultH\x00R\vpartyResult\x129\n" +
+	"\vfriend_list\x187 \x01(\v2\x16.wathena.v1.FriendListH\x00R\n" +
+	"friendList\x12?\n" +
+	"\rfriend_status\x188 \x01(\v2\x18.wathena.v1.FriendStatusH\x00R\ffriendStatus\x12B\n" +
+	"\x0efriend_request\x189 \x01(\v2\x19.wathena.v1.FriendRequestH\x00R\rfriendRequest\x12?\n" +
+	"\rfriend_result\x18: \x01(\v2\x18.wathena.v1.FriendResultH\x00R\ffriendResult\x12L\n" +
+	"\x12party_booking_list\x18; \x01(\v2\x1c.wathena.v1.PartyBookingListH\x00R\x10partyBookingList\x12I\n" +
+	"\x11party_item_shared\x18< \x01(\v2\x1b.wathena.v1.PartyItemSharedH\x00R\x0fpartyItemSharedB\x06\n" +
 	"\x04body\"/\n" +
 	"\aJobName\x12\x10\n" +
 	"\x03job\x18\x01 \x01(\rR\x03job\x12\x12\n" +
@@ -10891,7 +12748,66 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x06option\x18\x04 \x01(\rR\x06option\"M\n" +
 	"\fOptionChange\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12-\n" +
-	"\aoptions\x18\x02 \x01(\v2\x13.wathena.v1.OptionsR\aoptions*\xed\x01\n" +
+	"\aoptions\x18\x02 \x01(\v2\x13.wathena.v1.OptionsR\aoptions\"\x96\x01\n" +
+	"\tPartyInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x122\n" +
+	"\aoptions\x18\x03 \x01(\v2\x18.wathena.v1.PartyOptionsR\aoptions\x121\n" +
+	"\amembers\x18\x04 \x03(\v2\x17.wathena.v1.PartyMemberR\amembers\"\xd7\x01\n" +
+	"\vPartyMember\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06leader\x18\x02 \x01(\bR\x06leader\x12\x16\n" +
+	"\x06online\x18\x03 \x01(\bR\x06online\x12\x10\n" +
+	"\x03map\x18\x04 \x01(\tR\x03map\x12\x10\n" +
+	"\x03job\x18\x05 \x01(\rR\x03job\x12\x1d\n" +
+	"\n" +
+	"base_level\x18\x06 \x01(\rR\tbaseLevel\x12\x0e\n" +
+	"\x02hp\x18\a \x01(\x03R\x02hp\x12\x15\n" +
+	"\x06max_hp\x18\b \x01(\x03R\x05maxHp\x12\f\n" +
+	"\x01x\x18\t \x01(\rR\x01x\x12\f\n" +
+	"\x01y\x18\n" +
+	" \x01(\rR\x01y\"D\n" +
+	"\x11PartyMemberUpdate\x12/\n" +
+	"\x06member\x18\x01 \x01(\v2\x17.wathena.v1.PartyMemberR\x06member\"[\n" +
+	"\vPartyInvite\x12\x19\n" +
+	"\bparty_id\x18\x01 \x01(\x04R\apartyId\x12\x1d\n" +
+	"\n" +
+	"party_name\x18\x02 \x01(\tR\tpartyName\x12\x12\n" +
+	"\x04from\x18\x03 \x01(\tR\x04from\"U\n" +
+	"\vPartyResult\x122\n" +
+	"\aoutcome\x18\x01 \x01(\x0e2\x18.wathena.v1.PartyOutcomeR\aoutcome\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\":\n" +
+	"\n" +
+	"FriendList\x12,\n" +
+	"\afriends\x18\x01 \x03(\v2\x12.wathena.v1.FriendR\afriends\"4\n" +
+	"\x06Friend\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06online\x18\x02 \x01(\bR\x06online\":\n" +
+	"\fFriendStatus\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06online\x18\x02 \x01(\bR\x06online\"#\n" +
+	"\rFriendRequest\x12\x12\n" +
+	"\x04from\x18\x01 \x01(\tR\x04from\"W\n" +
+	"\fFriendResult\x123\n" +
+	"\aoutcome\x18\x01 \x01(\x0e2\x19.wathena.v1.FriendOutcomeR\aoutcome\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xca\x01\n" +
+	"\x10PartyBookingList\x127\n" +
+	"\aentries\x18\x01 \x03(\v2\x1d.wathena.v1.PartyBookingEntryR\aentries\x12\x12\n" +
+	"\x04more\x18\x02 \x01(\bR\x04more\x12\x1e\n" +
+	"\n" +
+	"registered\x18\x03 \x01(\bR\n" +
+	"registered\x12/\n" +
+	"\x03own\x18\x04 \x01(\v2\x1d.wathena.v1.PartyBookingEntryR\x03own\x12\x18\n" +
+	"\arefused\x18\x05 \x01(\bR\arefused\"u\n" +
+	"\x11PartyBookingEntry\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12*\n" +
+	"\x02ad\x18\x02 \x01(\v2\x1a.wathena.v1.PartyBookingAdR\x02ad\x12 \n" +
+	"\fplaced_at_ms\x18\x03 \x01(\x03R\n" +
+	"placedAtMs\"V\n" +
+	"\x0fPartyItemShared\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\rR\x06itemId\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\rR\x06amount*\xed\x01\n" +
 	"\n" +
 	"EntityKind\x12\x1b\n" +
 	"\x17ENTITY_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
@@ -11065,10 +12981,47 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x18EQUIP_FAILURE_EMPTY_SLOT\x10\x01\x12\x1e\n" +
 	"\x1aEQUIP_FAILURE_CANNOT_EQUIP\x10\x02\x12\x17\n" +
 	"\x13EQUIP_FAILURE_LEVEL\x10\x03\x12\"\n" +
-	"\x1eEQUIP_FAILURE_WRONG_AMMUNITION\x10\x04B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
+	"\x1eEQUIP_FAILURE_WRONG_AMMUNITION\x10\x04*\xe6\x05\n" +
+	"\fPartyOutcome\x12\x1d\n" +
+	"\x19PARTY_OUTCOME_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15PARTY_OUTCOME_CREATED\x10\x01\x12\x1c\n" +
+	"\x18PARTY_OUTCOME_NAME_TAKEN\x10\x02\x12\"\n" +
+	"\x1ePARTY_OUTCOME_ALREADY_IN_PARTY\x10\x03\x12\x1a\n" +
+	"\x16PARTY_OUTCOME_BAD_NAME\x10\x04\x12\x1c\n" +
+	"\x18PARTY_OUTCOME_NOT_LEADER\x10\x05\x12\x1c\n" +
+	"\x18PARTY_OUTCOME_NOT_ONLINE\x10\x06\x12!\n" +
+	"\x1dPARTY_OUTCOME_TARGET_IN_PARTY\x10\a\x12\x16\n" +
+	"\x12PARTY_OUTCOME_FULL\x10\b\x12\x1d\n" +
+	"\x19PARTY_OUTCOME_INVITE_SENT\x10\t\x12\x19\n" +
+	"\x15PARTY_OUTCOME_REFUSED\x10\n" +
+	"\x12\x1a\n" +
+	"\x16PARTY_OUTCOME_ACCEPTED\x10\v\x12\x1e\n" +
+	"\x1aPARTY_OUTCOME_SAME_ACCOUNT\x10\f\x12\x18\n" +
+	"\x14PARTY_OUTCOME_JOINED\x10\r\x12\x16\n" +
+	"\x12PARTY_OUTCOME_LEFT\x10\x0e\x12\x1a\n" +
+	"\x16PARTY_OUTCOME_EXPELLED\x10\x0f\x12\x1b\n" +
+	"\x17PARTY_OUTCOME_DISBANDED\x10\x10\x12\x1c\n" +
+	"\x18PARTY_OUTCOME_NOT_MEMBER\x10\x11\x12 \n" +
+	"\x1cPARTY_OUTCOME_LEADER_CHANGED\x10\x12\x12!\n" +
+	"\x1dPARTY_OUTCOME_LEADER_NOT_HERE\x10\x13\x12#\n" +
+	"\x1fPARTY_OUTCOME_EXP_SHARE_REFUSED\x10\x14\x12\x1f\n" +
+	"\x1bPARTY_OUTCOME_EXP_SHARE_OFF\x10\x15\x12!\n" +
+	"\x1dPARTY_OUTCOME_OPTIONS_CHANGED\x10\x16\x12\x1a\n" +
+	"\x16PARTY_OUTCOME_NO_PARTY\x10\x17*\xc5\x02\n" +
+	"\rFriendOutcome\x12\x1e\n" +
+	"\x1aFRIEND_OUTCOME_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14FRIEND_OUTCOME_ADDED\x10\x01\x12\x1a\n" +
+	"\x16FRIEND_OUTCOME_REFUSED\x10\x02\x12\x1c\n" +
+	"\x18FRIEND_OUTCOME_LIST_FULL\x10\x03\x12\"\n" +
+	"\x1eFRIEND_OUTCOME_THEIR_LIST_FULL\x10\x04\x12\x1d\n" +
+	"\x19FRIEND_OUTCOME_NOT_ONLINE\x10\x05\x12\"\n" +
+	"\x1eFRIEND_OUTCOME_ALREADY_FRIENDS\x10\x06\x12\x1f\n" +
+	"\x1bFRIEND_OUTCOME_REQUEST_SENT\x10\a\x12\x1a\n" +
+	"\x16FRIEND_OUTCOME_REMOVED\x10\b\x12\x1c\n" +
+	"\x18FRIEND_OUTCOME_NOT_FOUND\x10\tB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
-var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 18)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 66)
+var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 20)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 79)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),            // 0: wathena.v1.EntityKind
 	(VanishReason)(0),          // 1: wathena.v1.VanishReason
@@ -11088,178 +13041,214 @@ var file_wathena_v1_event_proto_goTypes = []any{
 	(DropItemFailure)(0),       // 15: wathena.v1.DropItemFailure
 	(PickUpFailure)(0),         // 16: wathena.v1.PickUpFailure
 	(EquipFailure)(0),          // 17: wathena.v1.EquipFailure
-	(*Event)(nil),              // 18: wathena.v1.Event
-	(*JobName)(nil),            // 19: wathena.v1.JobName
-	(*MapChange)(nil),          // 20: wathena.v1.MapChange
-	(*EntityAppear)(nil),       // 21: wathena.v1.EntityAppear
-	(*SkillUnit)(nil),          // 22: wathena.v1.SkillUnit
-	(*GroundItem)(nil),         // 23: wathena.v1.GroundItem
-	(*Look)(nil),               // 24: wathena.v1.Look
-	(*EntityVanish)(nil),       // 25: wathena.v1.EntityVanish
-	(*EntityMove)(nil),         // 26: wathena.v1.EntityMove
-	(*EntityStop)(nil),         // 27: wathena.v1.EntityStop
-	(*StatUpdate)(nil),         // 28: wathena.v1.StatUpdate
-	(*Stat)(nil),               // 29: wathena.v1.Stat
-	(*Damage)(nil),             // 30: wathena.v1.Damage
-	(*SkillCast)(nil),          // 31: wathena.v1.SkillCast
-	(*SkillCastCancel)(nil),    // 32: wathena.v1.SkillCastCancel
-	(*SkillEffect)(nil),        // 33: wathena.v1.SkillEffect
-	(*SkillFailed)(nil),        // 34: wathena.v1.SkillFailed
-	(*SkillCooldown)(nil),      // 35: wathena.v1.SkillCooldown
-	(*SkillList)(nil),          // 36: wathena.v1.SkillList
-	(*SkillInfo)(nil),          // 37: wathena.v1.SkillInfo
-	(*SkillRequirement)(nil),   // 38: wathena.v1.SkillRequirement
-	(*ChatMessage)(nil),        // 39: wathena.v1.ChatMessage
-	(*WhisperResult)(nil),      // 40: wathena.v1.WhisperResult
-	(*ChatRefused)(nil),        // 41: wathena.v1.ChatRefused
-	(*ChannelJoined)(nil),      // 42: wathena.v1.ChannelJoined
-	(*ChannelLeft)(nil),        // 43: wathena.v1.ChannelLeft
-	(*ChannelList)(nil),        // 44: wathena.v1.ChannelList
-	(*ChannelInfo)(nil),        // 45: wathena.v1.ChannelInfo
-	(*ChannelMembers)(nil),     // 46: wathena.v1.ChannelMembers
-	(*ChannelFailed)(nil),      // 47: wathena.v1.ChannelFailed
-	(*BlockList)(nil),          // 48: wathena.v1.BlockList
-	(*SanctionNotice)(nil),     // 49: wathena.v1.SanctionNotice
-	(*ReportResult)(nil),       // 50: wathena.v1.ReportResult
-	(*NpcDialog)(nil),          // 51: wathena.v1.NpcDialog
-	(*NpcMenu)(nil),            // 52: wathena.v1.NpcMenu
-	(*NpcImage)(nil),           // 53: wathena.v1.NpcImage
-	(*NpcProgress)(nil),        // 54: wathena.v1.NpcProgress
-	(*Emotion)(nil),            // 55: wathena.v1.Emotion
-	(*MinimapMark)(nil),        // 56: wathena.v1.MinimapMark
-	(*ShopOpen)(nil),           // 57: wathena.v1.ShopOpen
-	(*ShopItem)(nil),           // 58: wathena.v1.ShopItem
-	(*ShopSellable)(nil),       // 59: wathena.v1.ShopSellable
-	(*ShopResult)(nil),         // 60: wathena.v1.ShopResult
-	(*EffectPlay)(nil),         // 61: wathena.v1.EffectPlay
-	(*ItemTaken)(nil),          // 62: wathena.v1.ItemTaken
-	(*InventoryUpdate)(nil),    // 63: wathena.v1.InventoryUpdate
-	(*InventoryItem)(nil),      // 64: wathena.v1.InventoryItem
-	(*ItemRoll)(nil),           // 65: wathena.v1.ItemRoll
-	(*CardRolls)(nil),          // 66: wathena.v1.CardRolls
-	(*ItemOption)(nil),         // 67: wathena.v1.ItemOption
-	(*ItemRollsChange)(nil),    // 68: wathena.v1.ItemRollsChange
-	(*InventoryAdd)(nil),       // 69: wathena.v1.InventoryAdd
-	(*InventoryRemove)(nil),    // 70: wathena.v1.InventoryRemove
-	(*ItemUsed)(nil),           // 71: wathena.v1.ItemUsed
-	(*UseItemFailed)(nil),      // 72: wathena.v1.UseItemFailed
-	(*DropItemFailed)(nil),     // 73: wathena.v1.DropItemFailed
-	(*PickUpFailed)(nil),       // 74: wathena.v1.PickUpFailed
-	(*ItemEquipped)(nil),       // 75: wathena.v1.ItemEquipped
-	(*ItemUnequipped)(nil),     // 76: wathena.v1.ItemUnequipped
-	(*EquipFailed)(nil),        // 77: wathena.v1.EquipFailed
-	(*CardInserted)(nil),       // 78: wathena.v1.CardInserted
-	(*InsertCardFailed)(nil),   // 79: wathena.v1.InsertCardFailed
-	(*LookChange)(nil),         // 80: wathena.v1.LookChange
-	(*StatusIcon)(nil),         // 81: wathena.v1.StatusIcon
-	(*Options)(nil),            // 82: wathena.v1.Options
-	(*OptionChange)(nil),       // 83: wathena.v1.OptionChange
-	(*Cell)(nil),               // 84: wathena.v1.Cell
-	(ChatChannel)(0),           // 85: wathena.v1.ChatChannel
+	(PartyOutcome)(0),          // 18: wathena.v1.PartyOutcome
+	(FriendOutcome)(0),         // 19: wathena.v1.FriendOutcome
+	(*Event)(nil),              // 20: wathena.v1.Event
+	(*JobName)(nil),            // 21: wathena.v1.JobName
+	(*MapChange)(nil),          // 22: wathena.v1.MapChange
+	(*EntityAppear)(nil),       // 23: wathena.v1.EntityAppear
+	(*SkillUnit)(nil),          // 24: wathena.v1.SkillUnit
+	(*GroundItem)(nil),         // 25: wathena.v1.GroundItem
+	(*Look)(nil),               // 26: wathena.v1.Look
+	(*EntityVanish)(nil),       // 27: wathena.v1.EntityVanish
+	(*EntityMove)(nil),         // 28: wathena.v1.EntityMove
+	(*EntityStop)(nil),         // 29: wathena.v1.EntityStop
+	(*StatUpdate)(nil),         // 30: wathena.v1.StatUpdate
+	(*Stat)(nil),               // 31: wathena.v1.Stat
+	(*Damage)(nil),             // 32: wathena.v1.Damage
+	(*SkillCast)(nil),          // 33: wathena.v1.SkillCast
+	(*SkillCastCancel)(nil),    // 34: wathena.v1.SkillCastCancel
+	(*SkillEffect)(nil),        // 35: wathena.v1.SkillEffect
+	(*SkillFailed)(nil),        // 36: wathena.v1.SkillFailed
+	(*SkillCooldown)(nil),      // 37: wathena.v1.SkillCooldown
+	(*SkillList)(nil),          // 38: wathena.v1.SkillList
+	(*SkillInfo)(nil),          // 39: wathena.v1.SkillInfo
+	(*SkillRequirement)(nil),   // 40: wathena.v1.SkillRequirement
+	(*ChatMessage)(nil),        // 41: wathena.v1.ChatMessage
+	(*WhisperResult)(nil),      // 42: wathena.v1.WhisperResult
+	(*ChatRefused)(nil),        // 43: wathena.v1.ChatRefused
+	(*ChannelJoined)(nil),      // 44: wathena.v1.ChannelJoined
+	(*ChannelLeft)(nil),        // 45: wathena.v1.ChannelLeft
+	(*ChannelList)(nil),        // 46: wathena.v1.ChannelList
+	(*ChannelInfo)(nil),        // 47: wathena.v1.ChannelInfo
+	(*ChannelMembers)(nil),     // 48: wathena.v1.ChannelMembers
+	(*ChannelFailed)(nil),      // 49: wathena.v1.ChannelFailed
+	(*BlockList)(nil),          // 50: wathena.v1.BlockList
+	(*SanctionNotice)(nil),     // 51: wathena.v1.SanctionNotice
+	(*ReportResult)(nil),       // 52: wathena.v1.ReportResult
+	(*NpcDialog)(nil),          // 53: wathena.v1.NpcDialog
+	(*NpcMenu)(nil),            // 54: wathena.v1.NpcMenu
+	(*NpcImage)(nil),           // 55: wathena.v1.NpcImage
+	(*NpcProgress)(nil),        // 56: wathena.v1.NpcProgress
+	(*Emotion)(nil),            // 57: wathena.v1.Emotion
+	(*MinimapMark)(nil),        // 58: wathena.v1.MinimapMark
+	(*ShopOpen)(nil),           // 59: wathena.v1.ShopOpen
+	(*ShopItem)(nil),           // 60: wathena.v1.ShopItem
+	(*ShopSellable)(nil),       // 61: wathena.v1.ShopSellable
+	(*ShopResult)(nil),         // 62: wathena.v1.ShopResult
+	(*EffectPlay)(nil),         // 63: wathena.v1.EffectPlay
+	(*ItemTaken)(nil),          // 64: wathena.v1.ItemTaken
+	(*InventoryUpdate)(nil),    // 65: wathena.v1.InventoryUpdate
+	(*InventoryItem)(nil),      // 66: wathena.v1.InventoryItem
+	(*ItemRoll)(nil),           // 67: wathena.v1.ItemRoll
+	(*CardRolls)(nil),          // 68: wathena.v1.CardRolls
+	(*ItemOption)(nil),         // 69: wathena.v1.ItemOption
+	(*ItemRollsChange)(nil),    // 70: wathena.v1.ItemRollsChange
+	(*InventoryAdd)(nil),       // 71: wathena.v1.InventoryAdd
+	(*InventoryRemove)(nil),    // 72: wathena.v1.InventoryRemove
+	(*ItemUsed)(nil),           // 73: wathena.v1.ItemUsed
+	(*UseItemFailed)(nil),      // 74: wathena.v1.UseItemFailed
+	(*DropItemFailed)(nil),     // 75: wathena.v1.DropItemFailed
+	(*PickUpFailed)(nil),       // 76: wathena.v1.PickUpFailed
+	(*ItemEquipped)(nil),       // 77: wathena.v1.ItemEquipped
+	(*ItemUnequipped)(nil),     // 78: wathena.v1.ItemUnequipped
+	(*EquipFailed)(nil),        // 79: wathena.v1.EquipFailed
+	(*CardInserted)(nil),       // 80: wathena.v1.CardInserted
+	(*InsertCardFailed)(nil),   // 81: wathena.v1.InsertCardFailed
+	(*LookChange)(nil),         // 82: wathena.v1.LookChange
+	(*StatusIcon)(nil),         // 83: wathena.v1.StatusIcon
+	(*Options)(nil),            // 84: wathena.v1.Options
+	(*OptionChange)(nil),       // 85: wathena.v1.OptionChange
+	(*PartyInfo)(nil),          // 86: wathena.v1.PartyInfo
+	(*PartyMember)(nil),        // 87: wathena.v1.PartyMember
+	(*PartyMemberUpdate)(nil),  // 88: wathena.v1.PartyMemberUpdate
+	(*PartyInvite)(nil),        // 89: wathena.v1.PartyInvite
+	(*PartyResult)(nil),        // 90: wathena.v1.PartyResult
+	(*FriendList)(nil),         // 91: wathena.v1.FriendList
+	(*Friend)(nil),             // 92: wathena.v1.Friend
+	(*FriendStatus)(nil),       // 93: wathena.v1.FriendStatus
+	(*FriendRequest)(nil),      // 94: wathena.v1.FriendRequest
+	(*FriendResult)(nil),       // 95: wathena.v1.FriendResult
+	(*PartyBookingList)(nil),   // 96: wathena.v1.PartyBookingList
+	(*PartyBookingEntry)(nil),  // 97: wathena.v1.PartyBookingEntry
+	(*PartyItemShared)(nil),    // 98: wathena.v1.PartyItemShared
+	(*Cell)(nil),               // 99: wathena.v1.Cell
+	(ChatChannel)(0),           // 100: wathena.v1.ChatChannel
+	(*PartyOptions)(nil),       // 101: wathena.v1.PartyOptions
+	(*PartyBookingAd)(nil),     // 102: wathena.v1.PartyBookingAd
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
-	21, // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
-	25, // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
-	26, // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
-	27, // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
-	28, // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
-	30, // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
-	31, // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
-	39, // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
-	51, // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
-	61, // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
-	62, // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
-	69, // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
-	74, // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
-	63, // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
-	70, // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
-	71, // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
-	72, // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
-	73, // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
-	20, // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
-	53, // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
-	54, // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
-	55, // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
-	56, // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
-	57, // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
-	60, // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
-	75, // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
-	76, // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
-	77, // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
-	78, // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
-	79, // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
-	80, // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
-	81, // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
-	83, // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
-	36, // 33: wathena.v1.Event.skill_list:type_name -> wathena.v1.SkillList
-	32, // 34: wathena.v1.Event.skill_cast_cancel:type_name -> wathena.v1.SkillCastCancel
-	33, // 35: wathena.v1.Event.skill_effect:type_name -> wathena.v1.SkillEffect
-	34, // 36: wathena.v1.Event.skill_failed:type_name -> wathena.v1.SkillFailed
-	35, // 37: wathena.v1.Event.skill_cooldown:type_name -> wathena.v1.SkillCooldown
-	68, // 38: wathena.v1.Event.item_rolls_change:type_name -> wathena.v1.ItemRollsChange
-	19, // 39: wathena.v1.Event.job_name:type_name -> wathena.v1.JobName
-	40, // 40: wathena.v1.Event.whisper_result:type_name -> wathena.v1.WhisperResult
-	41, // 41: wathena.v1.Event.chat_refused:type_name -> wathena.v1.ChatRefused
-	42, // 42: wathena.v1.Event.channel_joined:type_name -> wathena.v1.ChannelJoined
-	43, // 43: wathena.v1.Event.channel_left:type_name -> wathena.v1.ChannelLeft
-	44, // 44: wathena.v1.Event.channel_list:type_name -> wathena.v1.ChannelList
-	46, // 45: wathena.v1.Event.channel_members:type_name -> wathena.v1.ChannelMembers
-	47, // 46: wathena.v1.Event.channel_failed:type_name -> wathena.v1.ChannelFailed
-	48, // 47: wathena.v1.Event.block_list:type_name -> wathena.v1.BlockList
-	49, // 48: wathena.v1.Event.sanction:type_name -> wathena.v1.SanctionNotice
-	50, // 49: wathena.v1.Event.report_result:type_name -> wathena.v1.ReportResult
-	0,  // 50: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	24, // 51: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	23, // 52: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	82, // 53: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
-	22, // 54: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
-	1,  // 55: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	29, // 56: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,  // 57: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,  // 58: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	84, // 59: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	84, // 60: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
-	4,  // 61: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
-	37, // 62: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
-	5,  // 63: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
-	38, // 64: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
-	85, // 65: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	6,  // 66: wathena.v1.WhisperResult.outcome:type_name -> wathena.v1.WhisperOutcome
-	85, // 67: wathena.v1.ChatRefused.channel:type_name -> wathena.v1.ChatChannel
-	7,  // 68: wathena.v1.ChatRefused.reason:type_name -> wathena.v1.ChatRefusal
-	45, // 69: wathena.v1.ChannelList.channels:type_name -> wathena.v1.ChannelInfo
-	8,  // 70: wathena.v1.ChannelFailed.reason:type_name -> wathena.v1.ChannelFailure
-	9,  // 71: wathena.v1.SanctionNotice.kind:type_name -> wathena.v1.SanctionKind
-	10, // 72: wathena.v1.ReportResult.outcome:type_name -> wathena.v1.ReportOutcome
-	52, // 73: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	11, // 74: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
-	58, // 75: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
-	59, // 76: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
-	12, // 77: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
-	84, // 78: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	64, // 79: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	65, // 80: wathena.v1.InventoryItem.rolls:type_name -> wathena.v1.ItemRoll
-	66, // 81: wathena.v1.InventoryItem.card_rolls:type_name -> wathena.v1.CardRolls
-	67, // 82: wathena.v1.InventoryItem.options:type_name -> wathena.v1.ItemOption
-	65, // 83: wathena.v1.CardRolls.rolls:type_name -> wathena.v1.ItemRoll
-	65, // 84: wathena.v1.ItemRollsChange.rolls:type_name -> wathena.v1.ItemRoll
-	66, // 85: wathena.v1.ItemRollsChange.card_rolls:type_name -> wathena.v1.CardRolls
-	67, // 86: wathena.v1.ItemRollsChange.options:type_name -> wathena.v1.ItemOption
-	65, // 87: wathena.v1.InventoryAdd.rolls:type_name -> wathena.v1.ItemRoll
-	66, // 88: wathena.v1.InventoryAdd.card_rolls:type_name -> wathena.v1.CardRolls
-	67, // 89: wathena.v1.InventoryAdd.options:type_name -> wathena.v1.ItemOption
-	13, // 90: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	14, // 91: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	15, // 92: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	16, // 93: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	17, // 94: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
-	24, // 95: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
-	82, // 96: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
-	97, // [97:97] is the sub-list for method output_type
-	97, // [97:97] is the sub-list for method input_type
-	97, // [97:97] is the sub-list for extension type_name
-	97, // [97:97] is the sub-list for extension extendee
-	0,  // [0:97] is the sub-list for field type_name
+	23,  // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
+	27,  // 1: wathena.v1.Event.vanish:type_name -> wathena.v1.EntityVanish
+	28,  // 2: wathena.v1.Event.move:type_name -> wathena.v1.EntityMove
+	29,  // 3: wathena.v1.Event.stop:type_name -> wathena.v1.EntityStop
+	30,  // 4: wathena.v1.Event.stats:type_name -> wathena.v1.StatUpdate
+	32,  // 5: wathena.v1.Event.damage:type_name -> wathena.v1.Damage
+	33,  // 6: wathena.v1.Event.skill_cast:type_name -> wathena.v1.SkillCast
+	41,  // 7: wathena.v1.Event.chat:type_name -> wathena.v1.ChatMessage
+	53,  // 8: wathena.v1.Event.npc_dialog:type_name -> wathena.v1.NpcDialog
+	63,  // 9: wathena.v1.Event.effect:type_name -> wathena.v1.EffectPlay
+	64,  // 10: wathena.v1.Event.item_taken:type_name -> wathena.v1.ItemTaken
+	71,  // 11: wathena.v1.Event.inventory_add:type_name -> wathena.v1.InventoryAdd
+	76,  // 12: wathena.v1.Event.pick_up_failed:type_name -> wathena.v1.PickUpFailed
+	65,  // 13: wathena.v1.Event.inventory:type_name -> wathena.v1.InventoryUpdate
+	72,  // 14: wathena.v1.Event.inventory_remove:type_name -> wathena.v1.InventoryRemove
+	73,  // 15: wathena.v1.Event.item_used:type_name -> wathena.v1.ItemUsed
+	74,  // 16: wathena.v1.Event.use_item_failed:type_name -> wathena.v1.UseItemFailed
+	75,  // 17: wathena.v1.Event.drop_item_failed:type_name -> wathena.v1.DropItemFailed
+	22,  // 18: wathena.v1.Event.map_change:type_name -> wathena.v1.MapChange
+	55,  // 19: wathena.v1.Event.npc_image:type_name -> wathena.v1.NpcImage
+	56,  // 20: wathena.v1.Event.npc_progress:type_name -> wathena.v1.NpcProgress
+	57,  // 21: wathena.v1.Event.emotion:type_name -> wathena.v1.Emotion
+	58,  // 22: wathena.v1.Event.minimap_mark:type_name -> wathena.v1.MinimapMark
+	59,  // 23: wathena.v1.Event.shop_open:type_name -> wathena.v1.ShopOpen
+	62,  // 24: wathena.v1.Event.shop_result:type_name -> wathena.v1.ShopResult
+	77,  // 25: wathena.v1.Event.item_equipped:type_name -> wathena.v1.ItemEquipped
+	78,  // 26: wathena.v1.Event.item_unequipped:type_name -> wathena.v1.ItemUnequipped
+	79,  // 27: wathena.v1.Event.equip_failed:type_name -> wathena.v1.EquipFailed
+	80,  // 28: wathena.v1.Event.card_inserted:type_name -> wathena.v1.CardInserted
+	81,  // 29: wathena.v1.Event.insert_card_failed:type_name -> wathena.v1.InsertCardFailed
+	82,  // 30: wathena.v1.Event.look_change:type_name -> wathena.v1.LookChange
+	83,  // 31: wathena.v1.Event.status_icon:type_name -> wathena.v1.StatusIcon
+	85,  // 32: wathena.v1.Event.option_change:type_name -> wathena.v1.OptionChange
+	38,  // 33: wathena.v1.Event.skill_list:type_name -> wathena.v1.SkillList
+	34,  // 34: wathena.v1.Event.skill_cast_cancel:type_name -> wathena.v1.SkillCastCancel
+	35,  // 35: wathena.v1.Event.skill_effect:type_name -> wathena.v1.SkillEffect
+	36,  // 36: wathena.v1.Event.skill_failed:type_name -> wathena.v1.SkillFailed
+	37,  // 37: wathena.v1.Event.skill_cooldown:type_name -> wathena.v1.SkillCooldown
+	70,  // 38: wathena.v1.Event.item_rolls_change:type_name -> wathena.v1.ItemRollsChange
+	21,  // 39: wathena.v1.Event.job_name:type_name -> wathena.v1.JobName
+	42,  // 40: wathena.v1.Event.whisper_result:type_name -> wathena.v1.WhisperResult
+	43,  // 41: wathena.v1.Event.chat_refused:type_name -> wathena.v1.ChatRefused
+	44,  // 42: wathena.v1.Event.channel_joined:type_name -> wathena.v1.ChannelJoined
+	45,  // 43: wathena.v1.Event.channel_left:type_name -> wathena.v1.ChannelLeft
+	46,  // 44: wathena.v1.Event.channel_list:type_name -> wathena.v1.ChannelList
+	48,  // 45: wathena.v1.Event.channel_members:type_name -> wathena.v1.ChannelMembers
+	49,  // 46: wathena.v1.Event.channel_failed:type_name -> wathena.v1.ChannelFailed
+	50,  // 47: wathena.v1.Event.block_list:type_name -> wathena.v1.BlockList
+	51,  // 48: wathena.v1.Event.sanction:type_name -> wathena.v1.SanctionNotice
+	52,  // 49: wathena.v1.Event.report_result:type_name -> wathena.v1.ReportResult
+	86,  // 50: wathena.v1.Event.party_info:type_name -> wathena.v1.PartyInfo
+	88,  // 51: wathena.v1.Event.party_member:type_name -> wathena.v1.PartyMemberUpdate
+	89,  // 52: wathena.v1.Event.party_invite:type_name -> wathena.v1.PartyInvite
+	90,  // 53: wathena.v1.Event.party_result:type_name -> wathena.v1.PartyResult
+	91,  // 54: wathena.v1.Event.friend_list:type_name -> wathena.v1.FriendList
+	93,  // 55: wathena.v1.Event.friend_status:type_name -> wathena.v1.FriendStatus
+	94,  // 56: wathena.v1.Event.friend_request:type_name -> wathena.v1.FriendRequest
+	95,  // 57: wathena.v1.Event.friend_result:type_name -> wathena.v1.FriendResult
+	96,  // 58: wathena.v1.Event.party_booking_list:type_name -> wathena.v1.PartyBookingList
+	98,  // 59: wathena.v1.Event.party_item_shared:type_name -> wathena.v1.PartyItemShared
+	0,   // 60: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	26,  // 61: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	25,  // 62: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	84,  // 63: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
+	24,  // 64: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
+	1,   // 65: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	31,  // 66: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,   // 67: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,   // 68: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	99,  // 69: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	99,  // 70: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
+	4,   // 71: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
+	39,  // 72: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
+	5,   // 73: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
+	40,  // 74: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
+	100, // 75: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	6,   // 76: wathena.v1.WhisperResult.outcome:type_name -> wathena.v1.WhisperOutcome
+	100, // 77: wathena.v1.ChatRefused.channel:type_name -> wathena.v1.ChatChannel
+	7,   // 78: wathena.v1.ChatRefused.reason:type_name -> wathena.v1.ChatRefusal
+	47,  // 79: wathena.v1.ChannelList.channels:type_name -> wathena.v1.ChannelInfo
+	8,   // 80: wathena.v1.ChannelFailed.reason:type_name -> wathena.v1.ChannelFailure
+	9,   // 81: wathena.v1.SanctionNotice.kind:type_name -> wathena.v1.SanctionKind
+	10,  // 82: wathena.v1.ReportResult.outcome:type_name -> wathena.v1.ReportOutcome
+	54,  // 83: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	11,  // 84: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
+	60,  // 85: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
+	61,  // 86: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
+	12,  // 87: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
+	99,  // 88: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	66,  // 89: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	67,  // 90: wathena.v1.InventoryItem.rolls:type_name -> wathena.v1.ItemRoll
+	68,  // 91: wathena.v1.InventoryItem.card_rolls:type_name -> wathena.v1.CardRolls
+	69,  // 92: wathena.v1.InventoryItem.options:type_name -> wathena.v1.ItemOption
+	67,  // 93: wathena.v1.CardRolls.rolls:type_name -> wathena.v1.ItemRoll
+	67,  // 94: wathena.v1.ItemRollsChange.rolls:type_name -> wathena.v1.ItemRoll
+	68,  // 95: wathena.v1.ItemRollsChange.card_rolls:type_name -> wathena.v1.CardRolls
+	69,  // 96: wathena.v1.ItemRollsChange.options:type_name -> wathena.v1.ItemOption
+	67,  // 97: wathena.v1.InventoryAdd.rolls:type_name -> wathena.v1.ItemRoll
+	68,  // 98: wathena.v1.InventoryAdd.card_rolls:type_name -> wathena.v1.CardRolls
+	69,  // 99: wathena.v1.InventoryAdd.options:type_name -> wathena.v1.ItemOption
+	13,  // 100: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	14,  // 101: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	15,  // 102: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	16,  // 103: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	17,  // 104: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
+	26,  // 105: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
+	84,  // 106: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
+	101, // 107: wathena.v1.PartyInfo.options:type_name -> wathena.v1.PartyOptions
+	87,  // 108: wathena.v1.PartyInfo.members:type_name -> wathena.v1.PartyMember
+	87,  // 109: wathena.v1.PartyMemberUpdate.member:type_name -> wathena.v1.PartyMember
+	18,  // 110: wathena.v1.PartyResult.outcome:type_name -> wathena.v1.PartyOutcome
+	92,  // 111: wathena.v1.FriendList.friends:type_name -> wathena.v1.Friend
+	19,  // 112: wathena.v1.FriendResult.outcome:type_name -> wathena.v1.FriendOutcome
+	97,  // 113: wathena.v1.PartyBookingList.entries:type_name -> wathena.v1.PartyBookingEntry
+	97,  // 114: wathena.v1.PartyBookingList.own:type_name -> wathena.v1.PartyBookingEntry
+	102, // 115: wathena.v1.PartyBookingEntry.ad:type_name -> wathena.v1.PartyBookingAd
+	116, // [116:116] is the sub-list for method output_type
+	116, // [116:116] is the sub-list for method input_type
+	116, // [116:116] is the sub-list for extension type_name
+	116, // [116:116] is the sub-list for extension extendee
+	0,   // [0:116] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -11319,6 +13308,16 @@ func file_wathena_v1_event_proto_init() {
 		(*event_BlockList)(nil),
 		(*event_Sanction)(nil),
 		(*event_ReportResult)(nil),
+		(*event_PartyInfo)(nil),
+		(*event_PartyMember)(nil),
+		(*event_PartyInvite)(nil),
+		(*event_PartyResult)(nil),
+		(*event_FriendList)(nil),
+		(*event_FriendStatus)(nil),
+		(*event_FriendRequest)(nil),
+		(*event_FriendResult)(nil),
+		(*event_PartyBookingList)(nil),
+		(*event_PartyItemShared)(nil),
 	}
 	file_wathena_v1_event_proto_msgTypes[13].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
@@ -11345,8 +13344,8 @@ func file_wathena_v1_event_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
-			NumEnums:      18,
-			NumMessages:   66,
+			NumEnums:      20,
+			NumMessages:   79,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -1,6 +1,6 @@
-// The commands a player types in the chat input, such as "/w Name text"
-// or "/join #trade". A line that is not a command goes to the active
-// chat tab.
+// The commands a player types in the chat input, such as "/w Name text",
+// "/join #trade" or "/p text". A line that is not a command goes to the
+// active chat tab.
 
 import { cleanChat } from './chat';
 
@@ -19,6 +19,10 @@ export type ChatAction =
   | { kind: 'openWhisper'; to: string }
   /** A line in a chat channel. */
   | { kind: 'channel'; name: string; text: string }
+  /** A line to the player's party. */
+  | { kind: 'party'; text: string }
+  /** Shows the party tab. */
+  | { kind: 'openParty' }
   /** Shows the tab of a chat channel. */
   | { kind: 'openChannel'; name: string }
   | { kind: 'join'; name: string }
@@ -121,6 +125,11 @@ export function parseChatInput(input: string): ChatAction {
     const text = space < 0 ? undefined : cleanChat(line.slice(space + 1));
     return text === undefined ? { kind: 'openChannel', name } : { kind: 'channel', name, text };
   }
+  if (line.startsWith('%')) {
+    // rAthena's party prefix: "%text" says text to the party.
+    const text = cleanChat(line.slice(1));
+    return text === undefined ? { kind: 'openParty' } : { kind: 'party', text };
+  }
   if (!line.startsWith('/')) {
     const text = cleanChat(input);
     return text === undefined ? { kind: 'empty' } : { kind: 'say', text };
@@ -142,6 +151,11 @@ export function parseChatInput(input: string): ChatAction {
       }
       const text = cleanChat(after);
       return text === undefined ? { kind: 'openWhisper', to } : { kind: 'whisper', to, text };
+    }
+    case '/p':
+    case '/party': {
+      const text = cleanChat(rest);
+      return text === undefined ? { kind: 'openParty' } : { kind: 'party', text };
     }
     case '/join':
       return channelCommand('join', rest, '/join #channel');
@@ -166,7 +180,7 @@ export function parseChatInput(input: string): ChatAction {
     default:
       return {
         kind: 'error',
-        message: `Unknown command ${command}. Commands: /w, /join, /leave, /channels, /members, /block, /unblock, /report.`,
+        message: `Unknown command ${command}. Commands: /w, /p, /join, /leave, /channels, /members, /block, /unblock, /report.`,
       };
   }
 }

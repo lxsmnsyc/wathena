@@ -39,6 +39,7 @@ NPCs ([decision 0008](../../docs/decisions/0008-converted-npcs.md)):
   - Clock labels become schedules: `OnClockHHMM` and `OnHourHH` daily, `OnMinuteMM` hourly, and `OnSunHHMM` to `OnSatHHMM` weekly. `OnDayMMDD` does not convert, since the API has no yearly schedule.
   - A label that a `monster` command of the same NPC names runs when each of its monsters dies, with the player that killed it.
 - `monster` converts on the NPC's own map, with the monster's own name, the default size and AI, and an event label of the NPC or none. `mobcount` converts for such a label. `killmonster` does not convert.
+- `npcparty.go` converts the party commands and reads to `player.party` and `wa.parties` (proposal 0002, review decision 27). A party ID of `getcharid(1)` becomes `player.party`, and any other ID `parties.get(id)`. The write commands convert as statements for the attached player only. `getpartymember` converts for names, and `$@partymembername$` and `$@partymembercount` read its result in the same function. Character IDs, account IDs and the leader's job, map and level do not convert.
 - `rathena.lua` is `scripts/lib/rathena.lua`: helpers for what Lua lacks, such as rAthena's arrays, `menu`, `getarg`, `input` with its bounds, `getitem` and `delitem` with a computed amount, which do nothing for 0 or less, and `monster` and `mobcount`.
 - `npcreport.go` writes the coverage report.
 

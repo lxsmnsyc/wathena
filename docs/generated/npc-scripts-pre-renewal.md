@@ -89,10 +89,10 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontouch | 12 | 0 | 0 | 12 | 0 |  |
 | specialeffect2 | 12 | 6 | 0 | 6 | 12 |  |
 | checkquest | 10 | 0 | 0 | 10 | 0 |  |
+| donpcevent | 10 | 0 | 0 | 10 | 0 |  |
 | event onstart | 10 | 0 | 0 | 10 | 0 |  |
 | getargcount | 10 | 0 | 2 | 8 | 10 |  |
 | getgmlevel | 10 | 0 | 2 | 8 | 0 |  |
-| donpcevent | 9 | 0 | 0 | 9 | 0 |  |
 | event onwelcome | 8 | 0 | 0 | 8 | 0 |  |
 | getpartnerid | 8 | 0 | 0 | 8 | 0 |  |
 | getskilllv | 8 | 1 | 4 | 3 | 8 |  |
@@ -153,7 +153,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | gettimetick | 1 | 0 | 0 | 1 | 0 |  |
 | goto | 1 | 0 | 0 | 1 | 1 |  |
 | insertchar | 1 | 0 | 0 | 1 | 0 |  |
-| is_party_leader | 1 | 0 | 0 | 1 | 0 |  |
+| is_party_leader | 1 | 0 | 0 | 1 | 1 |  |
 | jobchange | 1 | 0 | 0 | 1 | 0 |  |
 | killmonster | 1 | 0 | 0 | 1 | 0 | the API cannot remove spawned monsters (1) |
 | killmonsterall | 1 | 0 | 0 | 1 | 0 |  |

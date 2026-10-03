@@ -30,6 +30,9 @@
 ---| "status_end"
 ---| "status_tick"
 ---| "chat"
+---| "party_join"
+---| "party_leave"
+---| "party_change"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -239,7 +242,7 @@
 ---@field y integer
 ---@field character_id integer The database ID, 0 without a database.
 ---@field account_id integer The database ID, 0 without a database.
----@field party nil nil: parties do not exist yet.
+---@field party wa.Party? The player's party, or nil.
 ---@field sex "male"|"female"
 ---@field companion integer? The player's companion, from companions.id, or nil.
 ---@field mount integer? The player's mount, from mounts.id, or nil.
@@ -454,6 +457,19 @@ function wa_Player:whisper(text, options) end
 ---@param other wa.Player
 ---@return boolean
 function wa_Player:is_blocking(other) end
+
+---Whether the other player is on the player's friend list. Only players add and remove friends.
+---
+---Needs the permission `game.read`.
+---@param other wa.Player
+---@return boolean
+function wa_Player:is_friend(other) end
+
+---The names on the player's friend list, in the order they were added.
+---
+---Needs the permission `game.read`.
+---@return string[]
+function wa_Player:get_friend_names() end
 
 ---Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
 ---
@@ -792,6 +808,95 @@ function wa_Channel:remove(player) end
 ---@return string[]
 function wa_Channel:get_members() end
 
+---A party, from player.party or wa.parties. Its leader and members are players of this map: a member on another map is nil or left out.
+---@class wa.Party
+---@field id integer
+---@field name string
+---@field leader wa.Player? The leader, or nil when it is offline or on another map.
+---@field leader_name string The leader's name, online or not.
+---@field exp_share "each"|"even" Even shares the exp of a kill among the members on the map, as rAthena's even share.
+---@field item_share "each"|"even" Even gives each picked up item to a member on the map.
+---@field item_pickup "each"|"shared" Shared lets members pick up the items their party's top attackers may take.
+local wa_Party = {}
+
+---The online members on this map, in the party's slot order.
+---
+---Needs the permission `game.read`.
+---@return wa.Player[]
+function wa_Party:get_members() end
+
+---Every member's name, online or not, in slot order.
+---
+---Needs the permission `game.read`.
+---@return string[]
+function wa_Party:get_member_names() end
+
+---Puts the player in the party, as party_addmember. Returns false when the player has a party, the party is full, or a character of the same account is in it. The party_join event follows, with the reason "script".
+---
+---Needs the permission `party.manage`.
+---@param player wa.Player A player handle.
+---@return boolean
+function wa_Party:add(player) end
+
+---Takes the player out of the party, as party_delmember. The leader's removal breaks the party up, as in rAthena. Returns false when the player is not in the party.
+---
+---Needs the permission `party.manage`.
+---@param player wa.Player A player handle.
+---@return boolean
+function wa_Party:remove(player) end
+
+---Makes an online member the leader, as party_changeleader. Returns false when the player is not an online member, or leads already. The party_change event follows.
+---
+---Needs the permission `party.manage`.
+---@param player wa.Player A player handle.
+---@return boolean
+function wa_Party:set_leader(player) end
+
+---Changes the options it names, as party_changeoption. Even exp share needs the online members' base levels within the ruleset's party_share_level, else exp share stays each. The party_change event follows a change.
+---
+---Needs the permission `party.manage`.
+---@param options wa.PartyOptions
+function wa_Party:set_options(options) end
+
+---Breaks the party up, as party_destroy. Each member gets the party_leave event, with the reason "disbanded".
+---
+---Needs the permission `party.manage`.
+function wa_Party:disband() end
+
+---A party's options, in party:set_options and the party_change event.
+---@class wa.PartyOptions
+---@field exp_share "each"|"even"|nil
+---@field item_share "each"|"even"|nil
+---@field item_pickup "each"|"shared"|nil
+local wa_PartyOptions = {}
+
+---The object of the party_join and party_leave events.
+---@class wa.PartyMembership
+---@field party wa.Party The party. After it broke up, its fields still read.
+---@field player wa.Player The player who joined or left.
+---@field reason "invited"|"left"|"expelled"|"disbanded"|"script" Why: an accepted invite, a leave, an expel, a break up, or a wa.parties call.
+local wa_PartyMembership = {}
+
+---The object of the party_change event.
+---@class wa.PartyChange
+---@field party wa.Party
+---@field leader wa.Player? The leader, or nil when it is on another map.
+---@field options wa.PartyOptions The party's options after the change.
+local wa_PartyChange = {}
+
+---The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.
+---@class wa.Limits
+---@field party_members integer The most members a party holds, as MAX_PARTY. 12 by default, at most 64.
+---@field friends integer The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200.
+---@field block_list integer The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100.
+local wa_Limits = {}
+
+---The share of the experience hook's object.
+---@class wa.ExpShare
+---@field base integer
+---@field job integer
+local wa_ExpShare = {}
+
 ---The channel of channels.create.
 ---@class wa.ChannelSpec
 ---@field name string 1 to 19 letters, digits, _ and -, with or without the #. Players see it as #name. Not public, whisper, party or guild.
@@ -1028,12 +1133,14 @@ local wa_DeathOptions = {}
 ---@field rate integer rAthena's rate, per 10,000.
 local wa_Drop = {}
 
----The object of the experience hook: the exp one player gets for a kill, after the shares and the level penalty.
+---The object of the experience hook: the exp one player gets for a kill, after the shares, the even party split and the level penalty. With even exp share, each member on the map gets its own hook run.
 ---@class wa.Exp
 ---@field player wa.Player
 ---@field monster wa.Monster The killed monster.
 ---@field base integer
 ---@field job integer
+---@field party wa.Party? The player's party, or nil.
+---@field share wa.ExpShare The player's own share of the kill, before the even party split and the level penalty. 0 and 0 for a member who did not fight.
 local wa_Exp = {}
 
 ---The options of hooks.on.

@@ -201,6 +201,7 @@ type Welcome struct {
 	xxx_hidden_Tick            uint32                 `protobuf:"varint,3,opt,name=tick,proto3"`
 	xxx_hidden_NetId           uint32                 `protobuf:"varint,4,opt,name=net_id,json=netId,proto3"`
 	xxx_hidden_Map             string                 `protobuf:"bytes,5,opt,name=map,proto3"`
+	xxx_hidden_Limits          *Limits                `protobuf:"bytes,6,opt,name=limits,proto3"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -265,6 +266,13 @@ func (x *Welcome) GetMap() string {
 	return ""
 }
 
+func (x *Welcome) GetLimits() *Limits {
+	if x != nil {
+		return x.xxx_hidden_Limits
+	}
+	return nil
+}
+
 func (x *Welcome) SetProtocolVersion(v uint32) {
 	x.xxx_hidden_ProtocolVersion = v
 }
@@ -285,6 +293,21 @@ func (x *Welcome) SetMap(v string) {
 	x.xxx_hidden_Map = v
 }
 
+func (x *Welcome) SetLimits(v *Limits) {
+	x.xxx_hidden_Limits = v
+}
+
+func (x *Welcome) HasLimits() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Limits != nil
+}
+
+func (x *Welcome) ClearLimits() {
+	x.xxx_hidden_Limits = nil
+}
+
 type Welcome_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -298,6 +321,9 @@ type Welcome_builder struct {
 	// map is the asset name of the player's map, such as "map/prontera".
 	// The player's own EntityAppear follows in the first Frame.
 	Map string
+	// limits are the world ruleset's limits, so the client sizes its
+	// windows (strategy section 6.8).
+	Limits *Limits
 }
 
 func (b0 Welcome_builder) Build() *Welcome {
@@ -309,6 +335,98 @@ func (b0 Welcome_builder) Build() *Welcome {
 	x.xxx_hidden_Tick = b.Tick
 	x.xxx_hidden_NetId = b.NetId
 	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Limits = b.Limits
+	return m0
+}
+
+// Limits are limits that rAthena compiles in and a ruleset sets
+// (proposal 0002, review decision 27).
+type Limits struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PartyMembers uint32                 `protobuf:"varint,1,opt,name=party_members,json=partyMembers,proto3"`
+	xxx_hidden_Friends      uint32                 `protobuf:"varint,2,opt,name=friends,proto3"`
+	xxx_hidden_BlockList    uint32                 `protobuf:"varint,3,opt,name=block_list,json=blockList,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *Limits) Reset() {
+	*x = Limits{}
+	mi := &file_wathena_v1_session_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Limits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Limits) ProtoMessage() {}
+
+func (x *Limits) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_session_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Limits) GetPartyMembers() uint32 {
+	if x != nil {
+		return x.xxx_hidden_PartyMembers
+	}
+	return 0
+}
+
+func (x *Limits) GetFriends() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Friends
+	}
+	return 0
+}
+
+func (x *Limits) GetBlockList() uint32 {
+	if x != nil {
+		return x.xxx_hidden_BlockList
+	}
+	return 0
+}
+
+func (x *Limits) SetPartyMembers(v uint32) {
+	x.xxx_hidden_PartyMembers = v
+}
+
+func (x *Limits) SetFriends(v uint32) {
+	x.xxx_hidden_Friends = v
+}
+
+func (x *Limits) SetBlockList(v uint32) {
+	x.xxx_hidden_BlockList = v
+}
+
+type Limits_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// party_members is the most members a party holds, as MAX_PARTY.
+	PartyMembers uint32
+	// friends is the most names a friend list holds, as MAX_FRIENDS.
+	Friends uint32
+	// block_list is the most names a block list holds, as
+	// MAX_IGNORE_LIST.
+	BlockList uint32
+}
+
+func (b0 Limits_builder) Build() *Limits {
+	m0 := &Limits{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_PartyMembers = b.PartyMembers
+	x.xxx_hidden_Friends = b.Friends
+	x.xxx_hidden_BlockList = b.BlockList
 	return m0
 }
 
@@ -321,7 +439,7 @@ type Ping struct {
 
 func (x *Ping) Reset() {
 	*x = Ping{}
-	mi := &file_wathena_v1_session_proto_msgTypes[2]
+	mi := &file_wathena_v1_session_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -333,7 +451,7 @@ func (x *Ping) String() string {
 func (*Ping) ProtoMessage() {}
 
 func (x *Ping) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_session_proto_msgTypes[2]
+	mi := &file_wathena_v1_session_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -379,7 +497,7 @@ type Pong struct {
 
 func (x *Pong) Reset() {
 	*x = Pong{}
-	mi := &file_wathena_v1_session_proto_msgTypes[3]
+	mi := &file_wathena_v1_session_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +509,7 @@ func (x *Pong) String() string {
 func (*Pong) ProtoMessage() {}
 
 func (x *Pong) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_session_proto_msgTypes[3]
+	mi := &file_wathena_v1_session_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -451,7 +569,7 @@ type Disconnect struct {
 
 func (x *Disconnect) Reset() {
 	*x = Disconnect{}
-	mi := &file_wathena_v1_session_proto_msgTypes[4]
+	mi := &file_wathena_v1_session_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -463,7 +581,7 @@ func (x *Disconnect) String() string {
 func (*Disconnect) ProtoMessage() {}
 
 func (x *Disconnect) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_session_proto_msgTypes[4]
+	mi := &file_wathena_v1_session_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -524,13 +642,19 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\rsession_token\x18\x02 \x01(\fR\fsessionToken\x12\x1f\n" +
 	"\vclient_name\x18\x03 \x01(\tR\n" +
 	"clientName\x12\x1a\n" +
-	"\blanguage\x18\x04 \x01(\tR\blanguage\"\x97\x01\n" +
+	"\blanguage\x18\x04 \x01(\tR\blanguage\"\xc3\x01\n" +
 	"\aWelcome\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\rR\x0fprotocolVersion\x12$\n" +
 	"\x0eserver_time_ms\x18\x02 \x01(\x04R\fserverTimeMs\x12\x12\n" +
 	"\x04tick\x18\x03 \x01(\rR\x04tick\x12\x15\n" +
 	"\x06net_id\x18\x04 \x01(\rR\x05netId\x12\x10\n" +
-	"\x03map\x18\x05 \x01(\tR\x03map\"\x1c\n" +
+	"\x03map\x18\x05 \x01(\tR\x03map\x12*\n" +
+	"\x06limits\x18\x06 \x01(\v2\x12.wathena.v1.LimitsR\x06limits\"f\n" +
+	"\x06Limits\x12#\n" +
+	"\rparty_members\x18\x01 \x01(\rR\fpartyMembers\x12\x18\n" +
+	"\afriends\x18\x02 \x01(\rR\afriends\x12\x1d\n" +
+	"\n" +
+	"block_list\x18\x03 \x01(\rR\tblockList\"\x1c\n" +
 	"\x04Ping\x12\x14\n" +
 	"\x05nonce\x18\x01 \x01(\rR\x05nonce\"B\n" +
 	"\x04Pong\x12\x14\n" +
@@ -552,22 +676,24 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\x1cDISCONNECT_REASON_LOGGED_OUT\x10\bB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_wathena_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_wathena_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_wathena_v1_session_proto_goTypes = []any{
 	(DisconnectReason)(0), // 0: wathena.v1.DisconnectReason
 	(*Hello)(nil),         // 1: wathena.v1.Hello
 	(*Welcome)(nil),       // 2: wathena.v1.Welcome
-	(*Ping)(nil),          // 3: wathena.v1.Ping
-	(*Pong)(nil),          // 4: wathena.v1.Pong
-	(*Disconnect)(nil),    // 5: wathena.v1.Disconnect
+	(*Limits)(nil),        // 3: wathena.v1.Limits
+	(*Ping)(nil),          // 4: wathena.v1.Ping
+	(*Pong)(nil),          // 5: wathena.v1.Pong
+	(*Disconnect)(nil),    // 6: wathena.v1.Disconnect
 }
 var file_wathena_v1_session_proto_depIdxs = []int32{
-	0, // 0: wathena.v1.Disconnect.reason:type_name -> wathena.v1.DisconnectReason
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 0: wathena.v1.Welcome.limits:type_name -> wathena.v1.Limits
+	0, // 1: wathena.v1.Disconnect.reason:type_name -> wathena.v1.DisconnectReason
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_session_proto_init() }
@@ -581,7 +707,7 @@ func file_wathena_v1_session_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_session_proto_rawDesc), len(file_wathena_v1_session_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

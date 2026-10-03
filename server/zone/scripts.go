@@ -145,6 +145,8 @@ type scriptEvent struct {
 	monster *entity
 	// chat is set for the chat event, which runs with FireChat.
 	chat *modscript.ChatMessage
+	// party is set for a party event, which runs with FireParty.
+	party *modscript.PartyEvent
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -196,7 +198,7 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 		log = slog.New(slog.DiscardHandler)
 	}
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
-		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location}
+		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location, Rules: z.worldRules()}
 	// The job tables are read at each call: a headless zone gets them
 	// after its Lua state is made.
 	opts.Jobs = zoneJobs{z}
@@ -243,6 +245,8 @@ func (z *Zone) runScripts() {
 			z.scripts.FireStatus(ev.name, *ev.status)
 		case ev.chat != nil:
 			z.scripts.FireChat(*ev.chat)
+		case ev.party != nil:
+			z.scripts.FireParty(*ev.party)
 		default:
 			z.scripts.Fire(ev.name, ev.args...)
 		}
@@ -369,8 +373,15 @@ var playerFields = map[string]func(h scriptHost, p *Player) script.Value{
 	"y":            func(_ scriptHost, p *Player) script.Value { return intValue(p.entity.y) },
 	"character_id": func(_ scriptHost, p *Player) script.Value { return script.Int(p.record.ID) },
 	"account_id":   func(_ scriptHost, p *Player) script.Value { return script.Int(p.record.AccountID) },
-	// Parties do not exist yet.
-	"party": func(scriptHost, *Player) script.Value { return script.Nil },
+	"party": func(h scriptHost, p *Player) script.Value {
+		if p.soc == nil {
+			return script.Nil
+		}
+		if id := h.z.socialHub().PartyOf(p.soc); id != 0 {
+			return script.Int(id)
+		}
+		return script.Nil
+	},
 	"sex": func(_ scriptHost, p *Player) script.Value {
 		if p.char.Male {
 			return script.String("male")

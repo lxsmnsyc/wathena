@@ -60,6 +60,16 @@ message Event {
     BlockList block_list = 48;
     SanctionNotice sanction = 49;
     ReportResult report_result = 50;
+    PartyInfo party_info = 51;
+    PartyMemberUpdate party_member = 52;
+    PartyInvite party_invite = 53;
+    PartyResult party_result = 54;
+    FriendList friend_list = 55;
+    FriendStatus friend_status = 56;
+    FriendRequest friend_request = 57;
+    FriendResult friend_result = 58;
+    PartyBookingList party_booking_list = 59;
+    PartyItemShared party_item_shared = 60;
   }
 }
 
@@ -478,7 +488,7 @@ enum ChatRefusal {
   CHAT_REFUSAL_MUTED = 1;
   // The line has a word that the server's chat filter rejects.
   CHAT_REFUSAL_FILTERED = 2;
-  // The player is not in the channel.
+  // The player is not in the channel, or has no party for party chat.
   CHAT_REFUSAL_NOT_IN_CHANNEL = 3;
   // The channel does not let its members talk, as rAthena's chat
   // option.
@@ -1032,4 +1042,200 @@ message Options {
 message OptionChange {
   uint32 id = 1;
   Options options = 2;
+}
+
+// PartyInfo is the player's party: after login, and after every change of
+// its members, leader or options. An id of 0 means the player has no
+// party, such as after it left.
+message PartyInfo {
+  uint64 id = 1;
+  string name = 2;
+  PartyOptions options = 3;
+  // members are every member, online or not, in slot order, as
+  // clif_party_info. A new member takes the slot of the first member
+  // who left.
+  repeated PartyMember members = 4;
+}
+
+// PartyMember is one member of the player's party.
+message PartyMember {
+  string name = 1;
+  bool leader = 2;
+  bool online = 3;
+  // map is the member's map's asset name, such as map/prontera. It is
+  // the last map for a member who is offline.
+  string map = 4;
+  // job and base_level are the member's job ID and base level.
+  uint32 job = 5;
+  uint32 base_level = 6;
+  // hp and max_hp are the member's exact HP, as clif_party_hp.
+  int64 hp = 7;
+  int64 max_hp = 8;
+  // x and y are the member's cell, for the minimap, as clif_party_xy.
+  uint32 x = 9;
+  uint32 y = 10;
+}
+
+// PartyMemberUpdate changes one member's values in the party window: HP
+// when it changes, the cell once a second, and the map, the level and
+// the online state when they change.
+message PartyMemberUpdate {
+  PartyMember member = 1;
+}
+
+// PartyInvite asks the player to join a party, as clif_party_invite. The
+// player answers with PartyCommand.reply.
+message PartyInvite {
+  uint64 party_id = 1;
+  string party_name = 2;
+  // from is the name of the leader who invites.
+  string from = 3;
+}
+
+// PartyResult tells the player how a party action went, when it failed,
+// and what happened to the party, such as a member who left.
+message PartyResult {
+  PartyOutcome outcome = 1;
+  // name is the player or party the outcome is about.
+  string name = 2;
+}
+
+enum PartyOutcome {
+  PARTY_OUTCOME_UNSPECIFIED = 0;
+  // CREATED: the player made a party, as clif_party_created 0.
+  PARTY_OUTCOME_CREATED = 1;
+  // NAME_TAKEN: a party of that name exists, as clif_party_created 1.
+  PARTY_OUTCOME_NAME_TAKEN = 2;
+  // ALREADY_IN_PARTY: the player is in a party already, as
+  // clif_party_created 2.
+  PARTY_OUTCOME_ALREADY_IN_PARTY = 3;
+  // BAD_NAME: the name is not allowed by the chat filter.
+  PARTY_OUTCOME_BAD_NAME = 4;
+  // NOT_LEADER: only the leader may do that (msg 282).
+  PARTY_OUTCOME_NOT_LEADER = 5;
+  // NOT_ONLINE: no player of that name is online (PARTY_REPLY_OFFLINE).
+  PARTY_OUTCOME_NOT_ONLINE = 6;
+  // TARGET_IN_PARTY: the player is in a party or has an invite open
+  // (PARTY_REPLY_JOIN_OTHER_PARTY).
+  PARTY_OUTCOME_TARGET_IN_PARTY = 7;
+  // FULL: the party holds the most members it may hold
+  // (PARTY_REPLY_FULL).
+  PARTY_OUTCOME_FULL = 8;
+  // INVITE_SENT: the invite went out.
+  PARTY_OUTCOME_INVITE_SENT = 9;
+  // REFUSED: the player refused the invite, or blocks the leader
+  // (PARTY_REPLY_REJECTED).
+  PARTY_OUTCOME_REFUSED = 10;
+  // ACCEPTED: the player joined (PARTY_REPLY_ACCEPTED).
+  PARTY_OUTCOME_ACCEPTED = 11;
+  // SAME_ACCOUNT: a character of the same account is in the party
+  // (PARTY_REPLY_DUAL).
+  PARTY_OUTCOME_SAME_ACCOUNT = 12;
+  // JOINED, LEFT, EXPELLED and DISBANDED tell about members: name joined,
+  // left, was expelled, or the party broke up.
+  PARTY_OUTCOME_JOINED = 13;
+  PARTY_OUTCOME_LEFT = 14;
+  PARTY_OUTCOME_EXPELLED = 15;
+  PARTY_OUTCOME_DISBANDED = 16;
+  // NOT_MEMBER: no member of that name is in the party.
+  PARTY_OUTCOME_NOT_MEMBER = 17;
+  // LEADER_CHANGED: name is the new leader.
+  PARTY_OUTCOME_LEADER_CHANGED = 18;
+  // LEADER_NOT_HERE: the new leader must be on the leader's map, as
+  // MSI_PARTY_MASTER_CHANGE_SAME_MAP.
+  PARTY_OUTCOME_LEADER_NOT_HERE = 19;
+  // EXP_SHARE_REFUSED: even exp share needs the online members' base
+  // levels within party_share_level, as the char server's party option
+  // check. EXP_SHARE_OFF: even exp share was turned off for that reason.
+  PARTY_OUTCOME_EXP_SHARE_REFUSED = 20;
+  PARTY_OUTCOME_EXP_SHARE_OFF = 21;
+  // OPTIONS_CHANGED: the leader changed the options.
+  PARTY_OUTCOME_OPTIONS_CHANGED = 22;
+  // NO_PARTY: the player has no party.
+  PARTY_OUTCOME_NO_PARTY = 23;
+}
+
+// FriendList is the player's friend list: after login and after each
+// change.
+message FriendList {
+  repeated Friend friends = 1;
+}
+
+message Friend {
+  string name = 1;
+  bool online = 2;
+}
+
+// FriendStatus tells that a friend logged in or out, as
+// clif_friendslist_toggle.
+message FriendStatus {
+  string name = 1;
+  bool online = 2;
+}
+
+// FriendRequest asks the player to be friends with from, as
+// clif_friendlist_req. The player answers with FriendCommand.reply.
+message FriendRequest {
+  string from = 1;
+}
+
+// FriendResult answers a friend action, as clif_friendslist_reqack and
+// the friend messages.
+message FriendResult {
+  FriendOutcome outcome = 1;
+  string name = 2;
+}
+
+enum FriendOutcome {
+  FRIEND_OUTCOME_UNSPECIFIED = 0;
+  // ADDED: the player and name are friends now (reqack 0).
+  FRIEND_OUTCOME_ADDED = 1;
+  // REFUSED: name does not want to be friends (reqack 1).
+  FRIEND_OUTCOME_REFUSED = 2;
+  // LIST_FULL: the player's list is full (reqack 2).
+  FRIEND_OUTCOME_LIST_FULL = 3;
+  // THEIR_LIST_FULL: name's list is full (reqack 3).
+  FRIEND_OUTCOME_THEIR_LIST_FULL = 4;
+  // NOT_ONLINE: no player of that name is online (msg 3).
+  FRIEND_OUTCOME_NOT_ONLINE = 5;
+  // ALREADY_FRIENDS: name is on the list (msg 671).
+  FRIEND_OUTCOME_ALREADY_FRIENDS = 6;
+  // REQUEST_SENT: the request went out.
+  FRIEND_OUTCOME_REQUEST_SENT = 7;
+  // REMOVED: name is off the list (msg 674).
+  FRIEND_OUTCOME_REMOVED = 8;
+  // NOT_FOUND: name is not on the list (msg 672).
+  FRIEND_OUTCOME_NOT_FOUND = 9;
+}
+
+// PartyBookingList answers PartyBookingCommand: the ads a search found,
+// or the player's own ad after register and delete.
+message PartyBookingList {
+  repeated PartyBookingEntry entries = 1;
+  // more is set when the search found more ads than it lists, as
+  // party_booking_search's more_result.
+  bool more = 2;
+  // registered is set when the player has an ad. own is that ad.
+  bool registered = 3;
+  PartyBookingEntry own = 4;
+  // refused is set when register failed because the player has an ad
+  // already, as clif_PartyBookingRegisterAck 2.
+  bool refused = 5;
+}
+
+message PartyBookingEntry {
+  // name is the character that placed the ad.
+  string name = 1;
+  PartyBookingAd ad = 2;
+  // placed_at_ms is when the ad was placed, in Unix milliseconds.
+  int64 placed_at_ms = 3;
+}
+
+// PartyItemShared tells the party who got an item that even item share
+// gave, as clif_party_show_picker.
+message PartyItemShared {
+  // name is the member who got the item.
+  string name = 1;
+  uint32 item_id = 2;
+  uint32 amount = 3;
 }

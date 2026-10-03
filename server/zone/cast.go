@@ -210,6 +210,14 @@ func (z *Zone) skillUseIDWith(src, target *entity, def *skill.Def, lv int, o *ca
 		if st := target.status; !target.dead && (st == nil || !battle.IsUndead(st.Race, st.DefEle)) {
 			return false
 		}
+	case skill.IDDevotion:
+		// unit_skilluse_id2: a player target needs a free slot.
+		if src.player != nil && target.player != nil {
+			if _, ok := z.devotionSlot(src, target, lv); !ok {
+				z.skillFail(src, def.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+				return false
+			}
+		}
 	case skill.IDPangVoice, skill.IDWinkCharm:
 		// unit_skilluse_id2: bosses cannot be charmed.
 		if target.status != nil && target.status.Class == battle.ClassBoss {
@@ -538,21 +546,35 @@ func (z *Zone) castEndIDCheck(src, target *entity, def *skill.Def) wathenav1.Ski
 			return wathenav1.SkillFailure_SKILL_FAILURE_TARGET
 		}
 	}
+	// A PartyOnly or GuildOnly skill on another unit also takes the
+	// caster's party or guild (BCT_PARTY, BCT_GUILD), and no neutral
+	// unit. A skill on enemies keeps them as targets.
+	ally := 0
+	if src != target {
+		if def.Has("PartyOnly") {
+			ally |= bctParty
+		}
+		if def.Has("GuildOnly") {
+			ally |= bctGuild
+		}
+	}
+	enemyInf := def.Target == skill.TargetEnemy || def.Target == skill.TargetSelf && def.Has("NoTargetSelf")
 	switch {
-	case def.Target == skill.TargetEnemy || def.Target == skill.TargetSelf && def.Has("NoTargetSelf"):
-		if !isEnemy(src, target) {
+	case enemyInf:
+		if !isEnemy(src, target) && (ally == 0 || !checkTarget(src, target, ally)) {
 			return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
 		}
 	case def.Has("NoTargetEnemy"):
 		if isEnemy(src, target) {
 			return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
 		}
-	}
-	enemyInf := def.Target == skill.TargetEnemy || def.Target == skill.TargetSelf && def.Has("NoTargetSelf")
-	if (def.Has("PartyOnly") || def.Has("GuildOnly")) && src != target && !enemyInf {
-		// Parties and guilds are not ported, so only the caster counts.
-		// A skill on enemies keeps them as targets.
-		return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
+		if ally != 0 && !checkTarget(src, target, bctSelf|bctParty|bctGuild) {
+			return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
+		}
+	case ally != 0:
+		if !checkTarget(src, target, ally) {
+			return wathenav1.SkillFailure_SKILL_FAILURE_LEVEL
+		}
 	}
 	if def.ID == skill.IDSoulBurn && target.player == nil {
 		// Soul Siphon only works on players.

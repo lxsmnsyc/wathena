@@ -84,8 +84,9 @@ func (z *Zone) killHooks(e, killer *entity) *progression.Hooks {
 		}
 	}
 	if r.HasHooks("experience") {
-		h.Experience = func(charID uint32, base, job int64) (int64, int64) {
-			return r.RunExperience(modscript.Experience{Player: int64(charID), Monster: monster, Base: base, Job: job})
+		h.Experience = func(g progression.ExpGain) (int64, int64) {
+			return r.RunExperience(modscript.Experience{Player: int64(g.CharID), Monster: monster, Base: g.Base, Job: g.Job,
+				Party: g.Party, ShareBase: g.ShareBase, ShareJob: g.ShareJob})
 		}
 	}
 	return h

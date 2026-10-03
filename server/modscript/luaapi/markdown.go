@@ -85,6 +85,13 @@ func Markdown() string {
 		if m.Constants {
 			fmt.Fprintf(&b, "Constants: [lua-constants.md](lua-constants.md#%s).\n\n", anchor(m.Name))
 		}
+		if len(m.Fields) > 0 {
+			b.WriteString("| Field | Type | Meaning |\n|---|---|---|\n")
+			for _, f := range m.Fields {
+				fmt.Fprintf(&b, "| %s | %s | %s |\n", code(f.Name), code(cell(f.Type)), cell(f.Doc))
+			}
+			b.WriteString("\n")
+		}
 		for _, f := range m.Funcs {
 			funcSection(&b, m.Local, ".", f)
 		}

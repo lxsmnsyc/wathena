@@ -40,6 +40,10 @@ func New(start string, zones ...*zone.Zone) (*World, error) {
 	if w.start == nil {
 		return nil, fmt.Errorf("world: the start map %s does not run", start)
 	}
+	// Zones without a chat hub or social registry share the start zone's.
+	for _, z := range zones {
+		z.ShareHubs(w.start)
+	}
 	return w, nil
 }
 

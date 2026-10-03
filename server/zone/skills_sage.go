@@ -659,9 +659,9 @@ func (dispell) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv in
 		}
 		return
 	}
-	if src.player != nil && target.player != nil {
-		// Outside PvP, which does not exist yet, it only works on party
-		// members, which do not exist either.
+	if src.player != nil && target.player != nil && !sameParty(src, target) {
+		// Outside PvP a player's Dispell only works on players of its
+		// party, the caster included, and fails without a message.
 		return
 	}
 	z.skillEffect(src, target, d, lv, int64(lv), true)

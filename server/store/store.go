@@ -222,6 +222,9 @@ func (s *Store) Load(ctx context.Context, id int64) (*character.Character, *Sess
 		if err := loadModeration(ctx, q, c); err != nil {
 			return err
 		}
+		if err := loadFriends(ctx, q, c); err != nil {
+			return err
+		}
 		return loadVariables(ctx, q, c)
 	})
 	if err != nil {

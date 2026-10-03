@@ -252,8 +252,11 @@ func calcSkillBaseDamagePreRenewal(wd *damage, src, target *Status, critical boo
 		} else if sd.NonCritAtkRate > 0 && (wd.sk == nil || !wd.sk.IgnoreNonCritBonus) {
 			wd.atkAddRate(src, &wd.damage, &wd.damage2, int64(sd.NonCritAtkRate))
 		}
-		// Taekwon Mission (TK_POWER) needs party members on the map. It
-		// is not ported.
+		// Taekwon Mission (TK_POWER) adds 2% per level for each other
+		// member of the player's party on the map.
+		if lv := src.skill(skillTKPower); lv > 0 && sd.PartyOnMap > 1 {
+			wd.atkAddRate(src, &wd.damage, &wd.damage2, int64(2*lv*(sd.PartyOnMap-1)))
+		}
 	}
 	if tsd := target.Player; tsd != nil && tsd.CritDefRate != 0 && wd.sk == nil && bflag&bdmgCrit != 0 {
 		wd.atkAddRate(src, &wd.damage, &wd.damage2, int64(-tsd.CritDefRate))

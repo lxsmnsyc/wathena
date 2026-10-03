@@ -72,6 +72,69 @@ func TestLevelPenalty(t *testing.T) {
 	}
 }
 
+func TestPartyShare(t *testing.T) {
+	for _, mode := range Modes {
+		var p struct {
+			ExpCalcType         int `json:"exp_calc_type"`
+			ExpBonusAttacker    int `json:"exp_bonus_attacker"`
+			ExpBonusMaxAttacker int `json:"exp_bonus_max_attacker"`
+			ExpCases            []struct {
+				Name    string `json:"name"`
+				Monster int    `json:"monster"`
+				Players []struct {
+					Party int    `json:"party"`
+					Map   string `json:"map"`
+					Dead  bool   `json:"dead"`
+				} `json:"players"`
+				Damage []struct {
+					Player int   `json:"player"`
+					Damage int64 `json:"damage"`
+				} `json:"damage"`
+				Killer int `json:"killer"`
+				Gained []struct {
+					Player int   `json:"player"`
+					Base   int64 `json:"base"`
+					Job    int64 `json:"job"`
+				} `json:"gained"`
+			} `json:"exp_cases"`
+			LootCases []struct {
+				Name       string `json:"name"`
+				PartyItem  int    `json:"party_item"`
+				ShareType  int    `json:"share_type"`
+				Picker     int    `json:"picker"`
+				Taken      bool   `json:"taken"`
+				Receiver   int    `json:"receiver"`
+				Candidates []int  `json:"candidates"`
+				Drawn      []int  `json:"drawn"`
+			} `json:"loot_cases"`
+		}
+		if err := Load(mode, "party_share", &p); err != nil {
+			t.Fatal(err)
+		}
+		if p.ExpCalcType != 0 || p.ExpBonusAttacker != 25 || p.ExpBonusMaxAttacker != 12 {
+			t.Errorf("%s: exp settings are %d, %d, %d, want rAthena's defaults 0, 25, 12", mode, p.ExpCalcType, p.ExpBonusAttacker, p.ExpBonusMaxAttacker)
+		}
+		if len(p.ExpCases) == 0 {
+			t.Errorf("%s: party_share has no exp cases", mode)
+		}
+		if len(p.LootCases) == 0 {
+			t.Errorf("%s: party_share has no loot cases", mode)
+		}
+		for _, c := range p.ExpCases {
+			if len(c.Players) == 0 || len(c.Damage) == 0 || len(c.Gained) == 0 {
+				t.Errorf("%s: exp case %s has no players, damage or gains", mode, c.Name)
+			}
+		}
+		draws := 0
+		for _, c := range p.LootCases {
+			draws += len(c.Drawn)
+		}
+		if draws == 0 {
+			t.Errorf("%s: no loot case has a random pick", mode)
+		}
+	}
+}
+
 func TestExtracts(t *testing.T) {
 	for _, mode := range Modes {
 		for _, name := range []string{"spawns", "client_tables", "progression", "job_stats", "items", "equipment", "refine_db", "monster_groups", "status", "skills", "skill_trees", "random_options"} {

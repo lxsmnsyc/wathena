@@ -18,6 +18,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
 
@@ -115,6 +116,9 @@ type Options struct {
 	// Location is the server's time zone. Schedules match times there.
 	// It is UTC when nil.
 	Location *time.Location
+	// Rules are the world's ruleset, for rules.limits. Without them, the
+	// limits are rAthena's.
+	Rules *rules.Rules
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -434,6 +438,12 @@ func (r *Runtime) init() error {
 		{"channels_create", r.channelsCreate},
 		{"channels_get", r.channelsGet},
 		{"channel_call", r.channelCall},
+		{"party_field", r.partyField},
+		{"party_call", r.partyCall},
+		{"parties_create", r.partiesCreate},
+		{"parties_find", r.partiesFind},
+		{"player_friend", r.playerFriend},
+		{"rules_limits", r.rulesLimits},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -870,6 +880,12 @@ var Events = map[string][]string{
 	// chat is a world event: any player's line on the context's map
 	// (review decision 26).
 	"chat": {KindMod, KindNPC, KindEvent},
+	// Parties (review decision 27). party_join and party_leave run in the
+	// zone of the player who joined or left, and party_change in the
+	// zone where the change was made.
+	"party_join":   {KindMod, KindEvent},
+	"party_leave":  {KindMod, KindEvent},
+	"party_change": {KindMod, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

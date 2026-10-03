@@ -157,6 +157,9 @@ local function heal(self, spec, percent, what)
 	return (call(H.player_heal, player_ids[self], percent, hp1, hp2, sp1, sp2))
 end
 
+-- Party handles are made after the player handle, which reads them.
+local new_party, party_ids
+
 new_player, player_ids = handle_type("player", {
 	send_message = function(self, text)
 		return (call(H.player_send_message, player_ids[self], text))
@@ -352,11 +355,24 @@ new_player, player_ids = handle_type("player", {
 	unmute = function(self)
 		return (call(H.player_sanction, player_ids[self], "unmute"))
 	end,
+	is_friend = function(self, other)
+		local id = player_ids[other]
+		if id == nil then
+			error("player:is_friend: want a player handle", 2)
+		end
+		return (call(H.player_friend, player_ids[self], "is_friend", id))
+	end,
+	get_friend_names = function(self)
+		return (call(H.player_friend, player_ids[self], "get_friend_names"))
+	end,
 }, function(id, key)
 	-- Level 3 is the script line that read the field.
 	local ok, value = pcall(H.player_field, id, key)
 	if not ok then
 		error(value, 3)
+	end
+	if key == "party" and value ~= nil then
+		return new_party(value)
 	end
 	return value
 end, true, "player")
@@ -892,6 +908,88 @@ api["wa.channels"] = readonly("wa.channels", {
 		end
 		return new_channel(id)
 	end,
+})
+
+-- Parties (proposal 0002, review decision 27). A party is one for the
+-- whole world. Its leader and members are handles of players in this
+-- zone, so a member on another map is nil or left out.
+new_party, party_ids = handle_type("party", {
+	get_members = function(self)
+		local out = {}
+		for i, id in ipairs(call(H.party_call, "get_members", party_ids[self])) do
+			out[i] = new_player(id)
+		end
+		return out
+	end,
+	get_member_names = function(self)
+		return (call(H.party_call, "get_member_names", party_ids[self]))
+	end,
+	add = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "party:add: want a player handle")
+		return (call(H.party_call, "add", party_ids[self], id))
+	end,
+	remove = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "party:remove: want a player handle")
+		return (call(H.party_call, "remove", party_ids[self], id))
+	end,
+	set_leader = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "party:set_leader: want a player handle")
+		return (call(H.party_call, "set_leader", party_ids[self], id))
+	end,
+	set_options = function(self, options)
+		check(type(options) == "table", "party:set_options: want a table such as { exp_share = \"even\" }")
+		call(H.party_call, "set_options", party_ids[self], options)
+	end,
+	disband = function(self)
+		call(H.party_call, "disband", party_ids[self])
+	end,
+}, function(id, key)
+	local ok, value = pcall(H.party_field, id, key)
+	if not ok then
+		error(value, 3)
+	end
+	if key == "leader" and value ~= nil then
+		return new_player(value)
+	end
+	return value
+end, true)
+
+api["wa.parties"] = readonly("wa.parties", {
+	create = function(leader, name)
+		local id = player_ids[leader]
+		check(id ~= nil, "parties.create: want a player handle as the leader")
+		check(type(name) == "string", "parties.create: the name must be a string")
+		local party = call(H.parties_create, id, name)
+		if party == nil then
+			return nil
+		end
+		return new_party(party)
+	end,
+	get = function(id)
+		check(math_type(id) == "integer", "parties.get: the ID must be an integer")
+		local party = call(H.parties_find, "get", id)
+		if party == nil then
+			return nil
+		end
+		return new_party(party)
+	end,
+	find = function(name)
+		check(type(name) == "string", "parties.find: the name must be a string")
+		local party = call(H.parties_find, "find", name)
+		if party == nil then
+			return nil
+		end
+		return new_party(party)
+	end,
+})
+
+-- The world's ruleset (proposal 0002, review decision 27): its limits,
+-- read-only.
+api["wa.rules"] = readonly("wa.rules", {
+	limits = readonly("rules.limits", H.rules_limits()),
 })
 
 -- Saved variables (proposal 0002, "Variables"). A declaration names the
@@ -1546,6 +1644,20 @@ function R.invoke(fn, ...)
 		elseif kind == "job_change" then
 			-- The job_change object: player is a handle.
 			value = readonly("job change", { player = new_player(value.player), from = value.from, to = value.to })
+		elseif kind == "party_event" then
+			-- The party_join, party_leave and party_change objects: party,
+			-- player and leader are handles.
+			local fields = { party = new_party(value.party), reason = value.reason }
+			if value.player ~= nil then
+				fields.player = new_player(value.player)
+			end
+			if value.leader ~= nil then
+				fields.leader = new_player(value.leader)
+			end
+			if value.options ~= nil then
+				fields.options = readonly("party options", value.options)
+			end
+			value = readonly("party event", fields)
 		elseif kind == "chat" then
 			-- The chat message: player is a handle.
 			value = readonly("chat message", {
@@ -1601,6 +1713,15 @@ local function hook_object(kind, fields)
 	end
 	if fields.monster ~= nil then
 		o.monster = new_monster(fields.monster)
+	end
+	if kind == "experience" then
+		-- The player's party, and its own share before the party split.
+		if fields.party ~= nil then
+			o.party = new_party(fields.party)
+		end
+		if fields.share ~= nil then
+			o.share = readonly("exp share", { base = fields.share.base, job = fields.share.job })
+		end
 	end
 	if kind == "monster_target" then
 		-- The candidates and rAthena's choice are handle keys.

@@ -16,6 +16,8 @@ import (
 	"slices"
 	"sort"
 	"strings"
+
+	"github.com/lxsmnsyc/wathena/server/rules"
 )
 
 // Core is the ID of the built-in mod that stands for the base game. It
@@ -390,10 +392,25 @@ func resolveRuleset(all map[string]*Mod, disabled map[string]bool, cfg Config) (
 		cur = m.Manifest.Provides.Ruleset.Extends
 	}
 	base := strings.TrimPrefix(chain[len(chain)-1], "core.ruleset.")
-	rs := &Ruleset{Mod: id, Base: base, Flags: coreFlags(base)}
+	rs := &Ruleset{Mod: id, Base: base, Flags: coreFlags(base), Limits: map[string]int{}, Rules: map[string]int{}}
 	for i := len(chain) - 1; i >= 0; i-- {
-		for name, v := range all[chain[i]].Manifest.Provides.Ruleset.Flags {
+		spec := all[chain[i]].Manifest.Provides.Ruleset
+		for name, v := range spec.Flags {
 			rs.Flags[name] = string(v)
+		}
+		for name, v := range spec.Limits {
+			n, err := checkBound(rules.LimitBounds, "limit", name, string(v))
+			if err != nil {
+				return nil, nil, fmt.Errorf("the ruleset %s: %w", chain[i], err)
+			}
+			rs.Limits[name] = n
+		}
+		for name, v := range spec.Rules {
+			n, err := checkBound(rules.RuleBounds, "rule", name, string(v))
+			if err != nil {
+				return nil, nil, fmt.Errorf("the ruleset %s: %w", chain[i], err)
+			}
+			rs.Rules[name] = n
 		}
 	}
 	if err := checkRuleset(rs); err != nil {

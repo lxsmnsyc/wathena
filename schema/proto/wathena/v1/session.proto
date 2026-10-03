@@ -30,6 +30,21 @@ message Welcome {
   // map is the asset name of the player's map, such as "map/prontera".
   // The player's own EntityAppear follows in the first Frame.
   string map = 5;
+  // limits are the world ruleset's limits, so the client sizes its
+  // windows (strategy section 6.8).
+  Limits limits = 6;
+}
+
+// Limits are limits that rAthena compiles in and a ruleset sets
+// (proposal 0002, review decision 27).
+message Limits {
+  // party_members is the most members a party holds, as MAX_PARTY.
+  uint32 party_members = 1;
+  // friends is the most names a friend list holds, as MAX_FRIENDS.
+  uint32 friends = 2;
+  // block_list is the most names a block list holds, as
+  // MAX_IGNORE_LIST.
+  uint32 block_list = 3;
 }
 
 message Ping {

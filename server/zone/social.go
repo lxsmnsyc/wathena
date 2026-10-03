@@ -56,6 +56,8 @@ const (
 	chatLocal chatKind = iota
 	chatWhisper
 	chatChannel
+	// chatParty is party chat (party.go).
+	chatParty
 )
 
 type chatCommand struct {
@@ -213,6 +215,9 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 			cmd, viaWhisper = &chatCommand{kind: chatChannel, to: cmd.to, text: cmd.text}, true
 		}
 	}
+	if cmd.kind == chatParty {
+		ev.Channel, protoChannel = "party", wathenav1.ChatChannel_CHAT_CHANNEL_PARTY
+	}
 	if cmd.kind == chatChannel {
 		protoChannel, ev.To = wathenav1.ChatChannel_CHAT_CHANNEL_NAMED, ""
 		n, ok := chat.NormalizeChannel(cmd.to)
@@ -301,6 +306,16 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 			return
 		}
 		line.To = info.Name
+	case chatParty:
+		// party_send_message: a player without a party says nothing.
+		line.Kind = chat.LineParty
+		if p.soc == nil || !z.socialHub().Chat(p.soc, line) {
+			refuse(wathenav1.ChatRefusal_CHAT_REFUSAL_NOT_IN_CHANNEL)
+			return
+		}
+		if v := p.partyState.view; v != nil {
+			line.To = v.Name
+		}
 	}
 	hub.ChatLog().Line(line)
 	z.scriptEvents = append(z.scriptEvents, scriptEvent{name: "chat", chat: &ev})
@@ -480,7 +495,8 @@ func (z *Zone) channelCommand(p *Player, c *channelCommand) {
 }
 
 // block changes the player's block list, as clif_parse_PMIgnore. A
-// list that is full refuses a new name.
+// list that holds the ruleset's block_list limit refuses a new name. A
+// list over a lowered limit keeps its names.
 func (z *Zone) block(p *Player, c *blockCommand) {
 	k := chat.Key(c.name)
 	i := slices.IndexFunc(p.blocks, func(b string) bool { return chat.Key(b) == k })
@@ -488,7 +504,7 @@ func (z *Zone) block(p *Player, c *blockCommand) {
 	switch {
 	case c.unblock && i >= 0:
 		p.blocks = slices.Delete(slices.Clone(p.blocks), i, i+1)
-	case !c.unblock && i < 0 && len(p.blocks) >= chat.MaxBlocks:
+	case !c.unblock && i < 0 && len(p.blocks) >= z.limits().BlockList:
 		full = true
 	case !c.unblock && i < 0:
 		p.blocks = append(slices.Clone(p.blocks), c.name)

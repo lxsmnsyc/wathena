@@ -60,19 +60,21 @@ const (
 	LineLocal   = "local"
 	LineWhisper = "whisper"
 	LineChannel = "channel"
+	LineParty   = "party"
 )
 
 // Line is one line a player said, as the chat log keeps it.
 type Line struct {
 	ID LineID
 	At time.Time
-	// Kind is LineLocal, LineWhisper or LineChannel.
+	// Kind is LineLocal, LineWhisper, LineChannel or LineParty.
 	Kind string
 	// CharacterID is the speaker's database ID, or 0 for a character that
 	// only lives in memory.
 	CharacterID int64
 	Name        string
-	// To is the whisper's target or the channel's name with its #.
+	// To is the whisper's target, the channel's name with its #, or the
+	// party's name.
 	To string
 	// Map is the speaker's map, such as map/prontera.
 	Map  string

@@ -4,6 +4,7 @@ import {
   ChatTabs,
   LOCAL_LINES,
   MAX_WHISPER_TABS,
+  PARTY_TAB,
   channelKey,
   placeholder,
   showsLine,
@@ -42,6 +43,21 @@ describe('ChatTabs', () => {
     expect(tabs.target()).toEqual({ kind: 'whisper', name: 'Bob' });
     expect(tabs.activate('whisper:Nobody')).toBe(false);
     expect(tabs.target()).toEqual({ kind: 'whisper', name: 'Bob' });
+  });
+
+  it('shows the Party tab after All while the player has a party', () => {
+    const tabs = new ChatTabs();
+    tabs.joinChannel('#trade', '[Trade]', 0, true);
+    expect(tabs.hasParty).toBe(false);
+    tabs.showParty();
+    tabs.showParty();
+    expect(tabs.tabs.map((t) => t.key)).toEqual([ALL_TAB, PARTY_TAB, channelKey('#trade')]);
+    expect(tabs.get(PARTY_TAB)?.closable).toBe(false);
+    tabs.activate(PARTY_TAB);
+    expect(tabs.target()).toEqual({ kind: 'party' });
+    tabs.hideParty();
+    expect(tabs.hasParty).toBe(false);
+    expect(tabs.active).toBe(ALL_TAB);
   });
 
   it('goes back to All when the active tab closes', () => {
@@ -87,6 +103,9 @@ describe('showsLine', () => {
     expect(showsLine('whisper:Bob', '')).toBe(true);
     expect(showsLine('whisper:Bob', LOCAL_LINES)).toBe(false);
     expect(showsLine('whisper:Bob', 'channel:#trade')).toBe(false);
+    expect(showsLine(ALL_TAB, PARTY_TAB)).toBe(true);
+    expect(showsLine(PARTY_TAB, PARTY_TAB)).toBe(true);
+    expect(showsLine(PARTY_TAB, LOCAL_LINES)).toBe(false);
   });
 });
 
@@ -95,5 +114,6 @@ describe('placeholder', () => {
     expect(placeholder({ kind: 'local' })).toBe('Press Enter to chat');
     expect(placeholder({ kind: 'channel', name: '#trade' })).toBe('Say in #trade');
     expect(placeholder({ kind: 'whisper', name: 'Bob' })).toBe('Whisper to Bob');
+    expect(placeholder({ kind: 'party' })).toBe('Say to your party');
   });
 });

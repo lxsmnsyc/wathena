@@ -17,12 +17,11 @@ import (
 // server/skill/crusader.go and server/battle; the statuses' stats are in
 // server/status and server/statuschange.
 //
-// Parties do not exist yet:
-//   - Sacrifice (Devotion) is a party skill. Its cast fails at
-//     skill_castend_id_check, as rAthena's does for a player without a
-//     party, so SC_DEVOTION never starts.
+// The party parts:
+//   - Sacrifice (Devotion) protects a member of the caster's party. A
+//     player without a party has no one to devote.
 //   - Battle Chant's support effects reach party members other than
-//     the caster. Without a party they reach no one, as in rAthena.
+//     the caster. Without a party they reach no one.
 //
 // Faith, Riding, Cavalier Mastery and Spear Mastery are passive: their
 // effects are in server/status and server/battle.
@@ -54,6 +53,8 @@ const (
 	// MAPID_SECONDMASK.
 	mapidCrusader   = 0x201
 	mapidSecondMask = 0xfff
+	// idNPCEvilLand is NPC_EVILLAND, whose hits Devotion does not take.
+	idNPCEvilLand = 670
 	// devotionLevelDifference is devotion_level_difference of
 	// conf/battle/skill.conf.
 	devotionLevelDifference = 10
@@ -164,14 +165,14 @@ func (z *Zone) grandCrossOnPlace(unit, t *entity) {
 	}
 }
 
-// devotion is SkillSacrifice (CR_DEVOTION). It needs a party: the cast
-// fails at skill_castend_id_check (PartyOnly), as rAthena's does for a
-// player without one, so this never runs. Its own checks are ported; a
-// cast that passed them would need the devotion links of a party, which
-// do not exist, so it fails there.
+// devotion is SkillSacrifice (CR_DEVOTION): a Crusader protects a
+// player of its party (PartyOnly) within 10 levels of its own, which
+// takes a free slot of up to one per level, at most 5. The player gets
+// SC_DEVOTION, which names the Crusader (val1), the slot (val2) and the
+// skill's range (val3).
 type devotion struct{}
 
-func (devotion) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, _ int, _ *int) {
+func (devotion) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
 	if src.player == nil {
 		return
 	}
@@ -184,14 +185,164 @@ func (devotion) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, _ in
 	if diff < 0 {
 		diff = -diff
 	}
-	if diff > devotionLevelDifference || target.sc.Has(sc.SCDevotion) || z.crusaderClass(target) ||
-		target.sc.Has(scHellpower) {
+	srcID := int(src.player.charID)
+	if e := target.sc.Get(sc.SCDevotion); diff > devotionLevelDifference || e != nil && e.Val1 != srcID ||
+		z.crusaderClass(target) || target.sc.Has(scHellpower) {
 		z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		return
 	}
-	// sd->devotion holds the party members a Crusader protects. Without
-	// parties no slot can hold one.
-	z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+	i, ok := z.devotionSlot(src, target, lv)
+	if !ok {
+		// No free slot.
+		z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+		return
+	}
+	started := z.scStart4(src, target, sc.SCDevotion, 100, srcID, i, d.RangeFor(src.status, lv), 0,
+		int64(d.Duration2.At(lv)))
+	z.skillEffect(src, target, d, lv, int64(lv), started)
+}
+
+// maxDevotion is MAX_DEVOTION.
+const maxDevotion = 5
+
+// devotionRdamageSkillOnly is devotion_rdamage_skill_only of
+// conf/battle/skill.conf. devotion_rdamage is 0, so a devoted player's
+// reflected damage never goes to its Crusader (battle_check_devotion).
+const devotionRdamageSkillOnly = true
+
+// devotionSlots is sd->devotion: the players a Crusader protects, by
+// slot. The zone keeps no list of its own. A slot holds the player in
+// the zone whose SC_DEVOTION names the Crusader in val1 and the slot in
+// val2, which the cast sets and the status's end clears.
+func (z *Zone) devotionSlots(src *entity) [maxDevotion]*entity {
+	var out [maxDevotion]*entity
+	if src.player == nil {
+		return out
+	}
+	id := int(src.player.charID)
+	for _, p := range z.players {
+		e := p.entity
+		if !z.entities.has(e) {
+			continue
+		}
+		if dv := e.sc.Get(sc.SCDevotion); dv != nil && dv.Val1 == id && dv.Val2 >= 0 && dv.Val2 < maxDevotion {
+			out[dv.Val2] = e
+		}
+	}
+	return out
+}
+
+// devotionSlot is the slot a Devotion cast takes: the target's own slot
+// among the first min(level, 5), or the first free one. ok is false
+// without one.
+func (z *Zone) devotionSlot(src, target *entity, lv int) (int, bool) {
+	slots := z.devotionSlots(src)
+	n := min(lv, maxDevotion)
+	for i := range n {
+		if slots[i] == target {
+			return i, true
+		}
+	}
+	for i := range n {
+		if slots[i] == nil {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+// devoterOf is map_id2bl of a devoted player's SC_DEVOTION val1: the
+// Crusader that protects it, when it is a player in the zone, and the
+// status.
+func (z *Zone) devoterOf(t *entity) (*entity, *sc.Entry) {
+	e := t.sc.Get(sc.SCDevotion)
+	if e == nil || e.Val1 <= 0 {
+		return nil, nil
+	}
+	p := z.players[uint32(e.Val1)] // #nosec G115 -- val1 is a char ID.
+	if p == nil || !z.entities.has(p.entity) {
+		return nil, nil
+	}
+	return p.entity, e
+}
+
+// devotionInRange is check_distance_bl of a devoted player and its
+// Crusader with SC_DEVOTION's val3.
+func devotionInRange(t, d *entity, e *sc.Entry) bool {
+	return checkDistance(t.x-d.x, t.y-d.y, e.Val3, false)
+}
+
+// devotionLink is the Crusader that takes a devoted player's hits: the
+// player's Crusader, when it is in the zone and in range. It is nil
+// otherwise.
+func (z *Zone) devotionLink(t *entity) *entity {
+	d, e := z.devoterOf(t)
+	if d == nil || !devotionInRange(t, d, e) {
+		return nil
+	}
+	return d
+}
+
+// devotionSkillHit is SC_DEVOTION's part of skill_attack: a devoted
+// player in range of its Crusader takes none of a skill's damage, and
+// the Crusader takes all of it (battle_fix_damage), which the caller
+// deals with devotionDamage after the hit. A devoted player out of range
+// loses SC_DEVOTION and takes the damage. Pre-renewal's Gloria Domini
+// and Gravitation Field, and NPC_EVILLAND, hit the player itself. It
+// returns the damage the target takes and the Crusader, or nil.
+func (z *Zone) devotionSkillHit(target *entity, d *skill.Def, damage int64) (int64, *entity) {
+	if !target.sc.Has(sc.SCDevotion) {
+		return damage, nil
+	}
+	switch d.ID {
+	case idNPCEvilLand:
+		return damage, nil
+	case skill.IDPressure, skill.IDGravitation:
+		if !z.skillRenewal(d.ID) {
+			return damage, nil
+		}
+	}
+	dv := z.devotionLink(target)
+	if dv == nil {
+		z.scEnd(target, sc.SCDevotion)
+		return damage, nil
+	}
+	return 0, dv
+}
+
+// devotionDamage is the Crusader's part of a hit on a player it
+// protects: clif_damage on the Crusader itself, then battle_fix_damage,
+// which may stop its cast or kill it.
+func (z *Zone) devotionDamage(src, dv *entity, damage int64) {
+	if dv.dead || damage <= 0 {
+		return
+	}
+	z.logDamage(src, dv, damage)
+	dv.hp -= damage
+	dv.hpChanged = true
+	z.hits = append(z.hits, hit{source: dv, target: dv, result: battle.Result{Kind: battle.Hit, Damage: damage, Hits: 1},
+		hpPermille: dv.hpPermille()})
+	z.damaged(dv, damage, src.monster != nil)
+	z.castCancel(dv, true)
+	if dv.hp <= 0 {
+		z.die(dv, src)
+	}
+}
+
+// Devoted is sd->devotion for the status engine: the players a player
+// protects with Devotion, in slot order.
+func (v scEnv) Devoted(u sc.Unit) []sc.Unit {
+	su, ok := u.(scUnit)
+	if !ok || su.e.player == nil {
+		return nil
+	}
+	var out []sc.Unit
+	for _, t := range v.z.devotionSlots(su.e) {
+		if t != nil {
+			out = append(out, v.z.unit(t))
+		}
+	}
+	return out
 }
 
 // resistantSouls is SkillResistantSouls (CR_PROVIDENCE): the status on
@@ -266,8 +417,7 @@ func (battleChant) castendPos(z *Zone, src *entity, _, _ int, d *skill.Def, lv i
 
 // gospelOnPlace is UNT_GOSPEL in skill_unit_onplace_timer. A unit other
 // than the caster gets an effect at 50% + 5% per level:
-//   - A party member gets one of 13 support effects. Parties do not
-//     exist yet, so no one does, as in rAthena without a party.
+//   - A party member gets one of 13 support effects.
 //   - An enemy gets one of 10 offensive effects: damage, ailments for 30
 //     minutes, level 10 Provoke, or 20 seconds of lower DEF, ATK, FLEE,
 //     speed and ASPD.
@@ -312,7 +462,7 @@ func (z *Zone) gospelOnPlace(unit, t *entity) {
 
 // gospelSupport is the support effects of UNT_GOSPEL on a party member:
 // one of 13 at random. Only party members other than the caster get
-// them, and parties do not exist yet, so nothing calls it.
+// them.
 func (z *Zone) gospelSupport(g *unitGroup, t *entity) {
 	ss := g.src
 	ms := int64(g.def.Duration2.At(g.lv))
@@ -383,8 +533,9 @@ func (e *entity) gospelCaster() bool {
 // missed. rAthena marks the hit ATK_MISS; the zone reads it as blocked,
 // which shows the same miss.
 //
-// A devoted player's Guard shows on its Crusader instead. Devotion needs
-// a party and never starts, so that part is not ported.
+// A devoted player within its Crusader's range shows the Guard on the
+// Crusader instead, which then cannot walk for the moment, and Shrink
+// does not act.
 func (z *Zone) autoGuard(src, t *entity, flag, skillID, lv int) bool {
 	e := t.sc.Get(sc.SCAutoguard)
 	if e == nil || flag&battle.FlagWeapon == 0 || z.rand.IntN(100) >= e.Val2 {
@@ -404,6 +555,13 @@ func (z *Zone) autoGuard(src, t *entity, flag, skillID, lv int) bool {
 		delay = 300
 	case e.Val1 <= 9:
 		delay = 200
+	}
+	if dv := z.devotionLink(t); dv != nil {
+		if z.Skills != nil {
+			z.skillEffect(dv, dv, z.Skills.Get(skill.IDAutoGuard), e.Val1, int64(e.Val1), true)
+		}
+		z.setWalkDelay(dv, delay)
+		return true
 	}
 	if z.Skills != nil {
 		z.skillEffect(t, t, z.Skills.Get(skill.IDAutoGuard), e.Val1, int64(e.Val1), true)
@@ -449,6 +607,15 @@ func (z *Zone) reflectShield(src, target *entity, skillID int, res battle.Result
 		return
 	}
 	if skillImmune(target) || skillID == idCartTermination || skillID == idMaxPainAtk {
+		return
+	}
+	// A Shield Reflect that Devotion passed on (val4 1) does not return
+	// normal attacks (devotion_rdamage_skill_only). A devoted player out
+	// of its Crusader's range returns nothing.
+	if dv, de := z.devoterOf(target); dv != nil && !devotionInRange(target, dv, de) {
+		return
+	}
+	if skillID == 0 && devotionRdamageSkillOnly && e.Val4 != 0 {
 		return
 	}
 	rdamage := res.Damage * int64(e.Val2) / 100

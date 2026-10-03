@@ -22,6 +22,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/server/transfer"
@@ -211,6 +212,11 @@ type Player struct {
 	sanctions   []character.Sanction
 	seen        []chat.Line
 	jailPending bool
+
+	// soc is the player in the world's social registry, and partyState
+	// its party as this zone knows it (party.go).
+	soc        *social.Player
+	partyState partyState
 }
 
 type entity struct {
@@ -267,9 +273,13 @@ type command struct {
 	raise  *raiseCommand
 	chat   *chatCommand
 	// channel, block and report are chat commands (social.go).
-	channel  *channelCommand
-	block    *blockCommand
-	report   *reportCommand
+	channel *channelCommand
+	block   *blockCommand
+	report  *reportCommand
+	// party, friend and booking are social commands (party.go).
+	party    *partyCommand
+	friend   *friendCommand
+	booking  *bookingCommand
 	use      *int
 	drop     *dropCommand
 	npcClick *uint32
@@ -392,6 +402,12 @@ type Zone struct {
 	Jail Jail
 	// chatIn gets the hub's deliveries for this zone's players.
 	chatIn chan chatIn
+	// Social is the world's social registry: parties, friends and party
+	// booking (party.go). Without it, the zone makes its own on first
+	// use. Set it before Run.
+	Social *social.Registry
+	// socialIn gets the registry's notices for this zone's players.
+	socialIn chan socialIn
 	// channelHandles are the chat channels script handles point to, by
 	// handle ID, and channelOwners the channels each context made.
 	channelHandles map[int64]*chat.Channel
@@ -566,6 +582,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		control:   make(chan func()),
 		announces: make(chan announcement, 256),
 		chatIn:    make(chan chatIn, 1024),
+		socialIn:  make(chan socialIn, 1024),
 		stopped:   make(chan struct{}),
 		Metrics:   &metrics.Zone{Name: mapName},
 	}
@@ -627,6 +644,7 @@ func (z *Zone) Run(ctx context.Context) {
 			for _, p := range z.players {
 				z.save(p, true)
 				z.chatOffline(p)
+				z.socialOffline(p)
 				z.drop(p)
 			}
 			z.stopSender()
@@ -653,6 +671,8 @@ func (z *Zone) Run(ctx context.Context) {
 			z.announce(a)
 		case in := <-z.chatIn:
 			z.receiveChat(in)
+		case in := <-z.socialIn:
+			z.receiveSocial(in)
 		case c := <-z.commands:
 			began := time.Now()
 			z.handle(c)
@@ -863,6 +883,7 @@ func (z *Zone) join(p *Player) joinResult {
 		p.vars = maps.Clone(c.Variables)
 	}
 	z.chatOnline(p, h)
+	z.socialOnline(p, h, friendsOf(c))
 	if h == nil {
 		p.rewarp = 0
 		p.touchOnEnter = true
@@ -915,6 +936,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		z.endTimedBonuses(p, "logout")
 		z.runScripts()
 		z.chatOffline(p)
+		z.socialOffline(p)
 	}
 	z.castCancel(p.entity, false)
 	z.clearUnitGroups(p.entity)
@@ -982,6 +1004,16 @@ func (z *Zone) handle(c command) {
 	}
 	if c.report != nil {
 		z.report(p, c.report)
+	}
+	// Dead players may use their party and friend lists, as rAthena.
+	if c.party != nil {
+		z.partyCommand(p, c.party)
+	}
+	if c.friend != nil {
+		z.friendCommand(p, c.friend)
+	}
+	if c.booking != nil {
+		z.bookingCommand(p, c.booking)
 	}
 	if c.npcReply != nil {
 		z.reply(p, c.npcReply)
@@ -1163,6 +1195,7 @@ func (z *Zone) stepAt(now int64) {
 	z.naturalHeal()
 	z.advanceStatuses()
 	z.checkSanctions()
+	z.partyUpdates()
 	z.autosave()
 	z.runScripts()
 	z.talkTimers()

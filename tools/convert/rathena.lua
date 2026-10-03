@@ -297,4 +297,29 @@ function R.input(conversation, min, max)
 	return n, 0
 end
 
+-- party_field reads a field of a party handle, such as its name. Without
+-- a party it returns the default, as rAthena's party reads return "null"
+-- for a party that does not exist.
+function R.party_field(party, field, default)
+	if party == nil then
+		return default
+	end
+	return party[field]
+end
+
+-- party_members is rAthena's getpartymember for names: every member's
+-- name in an array from 0, and the count. Without a party the array is
+-- empty and the count is 0.
+function R.party_members(party)
+	local out = {}
+	if party == nil then
+		return out, 0
+	end
+	local names = party:get_member_names()
+	for i, name in ipairs(names) do
+		out[i - 1] = name
+	end
+	return out, #names
+end
+
 return R

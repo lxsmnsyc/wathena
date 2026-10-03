@@ -36,6 +36,17 @@ type Character struct {
 	Blocks []string
 	// Sanctions are the character's mutes and jails that have not ended.
 	Sanctions []Sanction
+	// Friends is the character's friend list, as the store loads it. The
+	// world's social registry keeps and saves the list after login, so a
+	// save of the character does not write it.
+	Friends []Friend
+}
+
+// Friend is one name on a friend list. CharID is 0 for a character that
+// only lives in memory.
+type Friend struct {
+	CharID int64
+	Name   string
 }
 
 // Kinds of sanctions.
@@ -198,7 +209,7 @@ func (c *Character) Equal(o *Character) bool {
 // Clone returns a copy of c that shares no slices or maps with it.
 func (c *Character) Clone() *Character {
 	out := &Character{Info: c.Info, Variables: maps.Clone(c.Variables), Statuses: slices.Clone(c.Statuses),
-		Skills: maps.Clone(c.Skills), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions)}
+		Skills: maps.Clone(c.Skills), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions), Friends: slices.Clone(c.Friends)}
 	for _, it := range c.Items {
 		it.Cards = slices.Clone(it.Cards)
 		it.Extra = it.Clone()

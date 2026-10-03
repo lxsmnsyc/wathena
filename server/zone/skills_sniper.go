@@ -16,10 +16,18 @@ func init() {
 	})
 }
 
-// windWalk is SkillWindWalker: the party around the caster gets the
-// status. Parties do not exist yet, so the caster alone gets it, as
-// rAthena does for a player without a party.
+// windWalk is SkillWindWalker: a player in a party casts it on the
+// members in the splash on its map. The caster alone gets the status
+// otherwise.
 type windWalk struct{ statusSkill }
+
+func (w windWalk) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
+	if *flag&1 == 0 && inParty(src) {
+		z.partyCastNoDamage(src, d, lv, *flag)
+		return
+	}
+	w.statusSkill.castendNoDamage(z, src, target, d, lv, flag)
+}
 
 // sharpShooting is SkillFocusedArrowStrike. In renewal it hits the target
 // and the enemies around it (SkillImplRecursiveDamageSplash), and each

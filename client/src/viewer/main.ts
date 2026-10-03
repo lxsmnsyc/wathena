@@ -25,7 +25,12 @@ import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
-import { DamageKind, InventoryRemoveReason, SanctionKind } from '../gen/wathena/v1/event_pb';
+import {
+  DamageKind,
+  InventoryRemoveReason,
+  PartyOutcome,
+  SanctionKind,
+} from '../gen/wathena/v1/event_pb';
 import { ChannelAction } from '../gen/wathena/v1/command_pb';
 import { DisconnectReason } from '../gen/wathena/v1/session_pb';
 import { accountPage, accountURL, fetchTicket } from '../net/account';
@@ -44,8 +49,27 @@ import {
   sanctionMessage,
   whisperMessage,
 } from './chatNotices';
-import { ChatTabBar, ChatTabs, placeholder, whisperKey } from './chatTabs';
-import { BlockPanel, MAX_BLOCKED, blockChanges } from './blockList';
+import { ChatTabBar, ChatTabs, PARTY_TAB, placeholder, whisperKey } from './chatTabs';
+import { BlockPanel, blockChanges } from './blockList';
+import { BOOKING_REFUSED, BookingWindow, entryView } from './booking';
+import { FriendPanel, friendsFromList, setFriendOnline } from './friends';
+import {
+  NO_PARTY,
+  PartyWindow,
+  leads,
+  mergeMember,
+  partyAfterResult,
+  partyFromInfo,
+} from './party';
+import { Prompts } from './prompts';
+import {
+  friendMessage,
+  friendRequestText,
+  friendStatusMessage,
+  itemSharedMessage,
+  partyInviteText,
+  partyMessage,
+} from './socialNotices';
 import { expLine, hpLine, pickUpMessage } from './hud';
 import {
   InventoryModel,
@@ -930,14 +954,18 @@ if (serverURL === null) {
     const blockRoot = document.querySelector<HTMLElement>('#block-panel');
     const blockToggle = document.querySelector<HTMLButtonElement>('#block-toggle');
     if (blockRoot !== null && blockToggle !== null) {
-      const panel = new BlockPanel(blockRoot, {
-        block: (name) => {
-          connection.block(name);
+      const panel = new BlockPanel(
+        blockRoot,
+        {
+          block: (name) => {
+            connection.block(name);
+          },
+          unblock: (name) => {
+            connection.block(name, true);
+          },
         },
-        unblock: (name) => {
-          connection.block(name, true);
-        },
-      });
+        connection.limits.blockList,
+      );
       blockToggle.addEventListener('click', () => {
         panel.toggle();
       });
@@ -951,9 +979,234 @@ if (serverURL === null) {
           }
         }
         if (full) {
-          log.notice(`Your block list is full (${String(MAX_BLOCKED)} names).`);
+          log.notice(`Your block list is full (${String(connection.limits.blockList)} names).`);
         }
         blocked = names;
+      };
+    }
+    /** Opens the whisper tab of a character and puts the cursor in the input. */
+    const startWhisper = (name: string): void => {
+      tabs.openWhisper(name);
+      showTab(whisperKey(name));
+      chatInput.focus();
+    };
+    /** A shortcut key with Alt, as RO's window keys. e.code, since Alt changes e.key on macOS. */
+    const altKey = (code: string, action: () => void): void => {
+      addEventListener('keydown', (e) => {
+        if (isTyping(e.target)) {
+          return;
+        }
+        if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === code) {
+          e.preventDefault();
+          action();
+        }
+      });
+    };
+    // Parties. The party window opens with its button or Alt+Z, as in RO.
+    // The Party tab shows while the player has a party.
+    let party = NO_PARTY;
+    const promptRoot = document.querySelector<HTMLElement>('#social-prompts');
+    const prompts = promptRoot === null ? undefined : new Prompts(promptRoot);
+    const partyRoot = document.querySelector<HTMLElement>('#party-window');
+    const partyToggle = document.querySelector<HTMLButtonElement>('#party-toggle');
+    const partyWindow =
+      partyRoot === null
+        ? undefined
+        : new PartyWindow(
+            partyRoot,
+            {
+              create: (name, itemEven, pickupShared) => {
+                connection.partyCreate(name, itemEven, pickupShared);
+              },
+              invite: (name) => {
+                connection.partyInvite(name);
+              },
+              leave: () => {
+                connection.partyLeave();
+              },
+              expel: (name) => {
+                connection.partyExpel(name);
+              },
+              setLeader: (name) => {
+                connection.partySetLeader(name);
+              },
+              options: (options) => {
+                connection.partyOptions(options);
+              },
+            },
+            connection.limits.partyMembers,
+          );
+    if (partyWindow !== undefined) {
+      partyWindow.selfName = () => view.selfName;
+      partyWindow.jobNames = view.jobNames;
+      const toggle = (): void => {
+        partyWindow.toggle();
+      };
+      if (partyToggle !== null) {
+        partyToggle.hidden = false;
+        partyToggle.addEventListener('click', toggle);
+      }
+      altKey('KeyZ', toggle);
+    }
+    /** Shows a new party state in the window and the tabs. */
+    const setParty = (next: typeof party): void => {
+      party = next;
+      partyWindow?.show(party);
+      if (party.id === 0n) {
+        tabs.hideParty();
+        showTab(tabs.active);
+      } else if (!tabs.hasParty) {
+        tabs.showParty();
+        tabBar.render();
+      }
+    };
+    view.onPartyInfo = (info) => {
+      setParty(partyFromInfo(info));
+    };
+    view.onPartyMember = (member) => {
+      const next = mergeMember(party, member);
+      if (next !== party) {
+        party = next;
+        partyWindow?.show(party);
+      }
+    };
+    view.onPartyResult = (outcome, name) => {
+      log.notice(partyMessage(outcome, name, view.selfName));
+      setParty(partyAfterResult(party, outcome, name, view.selfName));
+    };
+    view.onPartyInvite = (invite) => {
+      const answer = (accept: boolean): void => {
+        connection.partyReply(invite.partyId, accept);
+      };
+      if (prompts === undefined) {
+        answer(false);
+        return;
+      }
+      prompts.show({
+        key: `party:${String(invite.partyId)}`,
+        text: partyInviteText(invite.from, invite.partyName),
+        accept: () => {
+          answer(true);
+        },
+        decline: () => {
+          answer(false);
+        },
+      });
+    };
+    view.onPartyItemShared = (name, itemId, amount) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          log.notice(itemSharedMessage(name, itemTexts.label(itemId), amount));
+        })
+        .catch(reportError);
+    };
+    view.onPartyChat = (name, text, lineId) => {
+      log.party(name, text, name === view.selfName, lineId);
+      unread(PARTY_TAB);
+    };
+    // Friends. The friend list opens with the Friends button or Alt+H.
+    const friendRoot = document.querySelector<HTMLElement>('#friend-panel');
+    const friendToggle = document.querySelector<HTMLButtonElement>('#friend-toggle');
+    if (friendRoot !== null) {
+      const friends = new FriendPanel(
+        friendRoot,
+        {
+          add: (name) => {
+            connection.friendAdd(name);
+          },
+          remove: (name) => {
+            connection.friendRemove(name);
+          },
+          whisper: startWhisper,
+        },
+        connection.limits.friends,
+      );
+      friends.selfName = () => view.selfName;
+      const toggle = (): void => {
+        friends.toggle();
+      };
+      friendToggle?.addEventListener('click', toggle);
+      altKey('KeyH', toggle);
+      view.onFriendList = (list) => {
+        friends.show(friendsFromList(list));
+      };
+      view.onFriendStatus = (name, isOnline) => {
+        const next = setFriendOnline(friends.friends, name, isOnline);
+        if (next !== undefined) {
+          friends.show(next);
+          log.notice(friendStatusMessage(name, isOnline));
+        }
+      };
+    }
+    view.onFriendResult = (outcome, name) => {
+      log.notice(friendMessage(outcome, name));
+    };
+    view.onFriendRequest = (from) => {
+      const answer = (accept: boolean): void => {
+        connection.friendReply(from, accept);
+      };
+      if (prompts === undefined) {
+        answer(false);
+        return;
+      }
+      prompts.show({
+        key: `friend:${from}`,
+        text: friendRequestText(from),
+        accept: () => {
+          answer(true);
+        },
+        decline: () => {
+          answer(false);
+        },
+      });
+    };
+    // Party booking opens with its button or Alt+B.
+    const bookingRoot = document.querySelector<HTMLElement>('#booking-window');
+    const bookingToggle = document.querySelector<HTMLButtonElement>('#booking-toggle');
+    if (bookingRoot !== null) {
+      /** Set while a search waits for its answer. */
+      let searching = false;
+      const booking = new BookingWindow(bookingRoot, {
+        register: (ad) => {
+          connection.bookingRegister(ad);
+        },
+        search: (search) => {
+          searching = true;
+          connection.bookingSearch(search);
+        },
+        remove: () => {
+          connection.bookingDelete();
+        },
+        whisper: startWhisper,
+        invite: (name) => {
+          connection.partyInvite(name);
+        },
+      });
+      booking.leader = () => leads(party, view.selfName);
+      booking.selfName = () => view.selfName;
+      const toggle = (): void => {
+        booking.toggle();
+      };
+      if (bookingToggle !== null) {
+        bookingToggle.hidden = false;
+        bookingToggle.addEventListener('click', toggle);
+      }
+      altKey('KeyB', toggle);
+      view.onPartyBookingList = (list) => {
+        booking.showOwn(
+          list.registered && list.own !== undefined ? entryView(list.own) : undefined,
+        );
+        if (list.refused) {
+          booking.showError(BOOKING_REFUSED);
+          log.notice(BOOKING_REFUSED);
+        }
+        // An answer to register or delete lists no ads, and keeps the
+        // last search's results.
+        if (searching || list.entries.length > 0) {
+          searching = false;
+          booking.showResults(list.entries.map(entryView), list.more);
+        }
       };
     }
     /** Sends a line if the rate allows it, and says so when it does not. */
@@ -979,6 +1232,8 @@ if (serverURL === null) {
           return sendLine(() => {
             if (target.kind === 'channel') {
               connection.channelChat(target.name, action.text);
+            } else if (target.kind === 'party') {
+              connection.partyChat(action.text);
             } else if (target.kind === 'whisper') {
               connection.whisper(target.name, action.text);
             } else {
@@ -998,6 +1253,21 @@ if (serverURL === null) {
           return sendLine(() => {
             connection.channelChat(action.name, action.text);
           });
+        case 'party':
+          if (party.id === 0n) {
+            log.notice(partyMessage(PartyOutcome.NO_PARTY, ''));
+            return false;
+          }
+          return sendLine(() => {
+            connection.partyChat(action.text);
+          });
+        case 'openParty':
+          if (!tabs.hasParty) {
+            log.notice(partyMessage(PartyOutcome.NO_PARTY, ''));
+            return false;
+          }
+          showTab(PARTY_TAB);
+          return true;
         case 'openChannel': {
           const tab = tabs.channel(action.name);
           if (tab === undefined) {

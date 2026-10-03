@@ -81,6 +81,9 @@ type DupTest struct {
 	// AuditEvery is the time between audits while the bots move. It is
 	// 200 ms when 0.
 	AuditEvery time.Duration
+	// Setup, when set, runs once every bot is online, before the start
+	// audit, such as to put the bots in parties.
+	Setup func(ctx context.Context, bots []*botclient.Bot) error
 }
 
 // DupReport is what a duplication test did.
@@ -98,6 +101,12 @@ type DupReport struct {
 	// Dropped and Added count the drops and the items entering an
 	// inventory that the bots' messages showed, over the whole test.
 	Dropped, Added int
+	// Taken counts the pick-ups the bots saw themselves make, from their
+	// own ItemTaken. Unmatched adds up, for each connection, how far its
+	// items that came in differ from its own pick-ups. It is 0 when
+	// every pick-up goes to its picker, but for a connection that closed
+	// in the middle of a pick-up.
+	Taken, Unmatched int
 	// Start and End are the totals at the start and at the end.
 	Start, End Totals
 }
@@ -185,6 +194,11 @@ func (d DupTest) Run(t *testing.T) DupReport {
 			t.Fatalf("bot %d: %v", i+1, err)
 		}
 		bots.now[i] = b
+	}
+	if d.Setup != nil {
+		if err := d.Setup(ctx, bots.all()); err != nil {
+			t.Fatalf("setup: %v", err)
+		}
 	}
 	start, err := d.audit(ctx, d.Bots)
 	if err != nil {
@@ -344,14 +358,22 @@ func (d DupTest) Run(t *testing.T) DupReport {
 	d.checkBots(ctx, t, bots.all())
 	for _, b := range bots.every() {
 		events, _ := b.Events(0)
+		self := b.View().NetID
+		taken, added := 0, 0
 		for _, e := range events {
 			if r := e.GetInventoryRemove(); r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED {
 				rep.Dropped++
 			}
 			if e.HasInventoryAdd() {
-				rep.Added++
+				added++
+			}
+			if e.GetItemTaken().GetSource() == self && e.HasItemTaken() {
+				taken++
 			}
 		}
+		rep.Added += added
+		rep.Taken += taken
+		rep.Unmatched += max(taken-added, added-taken)
 	}
 	for _, c := range rep.Closed {
 		t.Logf("the server closed a connection: %s", c)
@@ -529,6 +551,46 @@ func (d DupTest) checkBots(ctx context.Context, t *testing.T, bots []*botclient.
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+// PartySetup puts the bots in parties of size, in order, each led by
+// its first bot, with the given item options. Even exp share stays off.
+func PartySetup(size int, itemEven, pickupShared bool) func(ctx context.Context, bots []*botclient.Bot) error {
+	return func(ctx context.Context, bots []*botclient.Bot) error {
+		for i := 0; i < len(bots); i += size {
+			group := bots[i:min(i+size, len(bots))]
+			leader := group[0]
+			if err := leader.PartyCreate(ctx, leader.Name+" party", itemEven, pickupShared); err != nil {
+				return err
+			}
+			if err := leader.WaitState(ctx, func(_ botclient.View, g botclient.Game) bool { return g.Party != nil }); err != nil {
+				return fmt.Errorf("%s: no party: %w", leader.Name, err)
+			}
+			for _, m := range group[1:] {
+				if err := leader.PartyInvite(ctx, m.Name); err != nil {
+					return err
+				}
+				var inv *wathenav1.PartyInvite
+				if err := m.WaitState(ctx, func(_ botclient.View, g botclient.Game) bool { inv = g.Invite; return inv != nil }); err != nil {
+					return fmt.Errorf("%s: no invite: %w", m.Name, err)
+				}
+				if err := m.PartyReply(ctx, inv.GetPartyId(), true); err != nil {
+					return err
+				}
+				if err := m.WaitState(ctx, func(_ botclient.View, g botclient.Game) bool { return g.Party != nil }); err != nil {
+					return fmt.Errorf("%s: did not join: %w", m.Name, err)
+				}
+			}
+			for _, m := range group {
+				if err := m.WaitState(ctx, func(_ botclient.View, g botclient.Game) bool {
+					return g.Party != nil && len(g.Party.Members) == len(group) && g.Party.ItemEven == itemEven && g.Party.PickupShared == pickupShared
+				}); err != nil {
+					return fmt.Errorf("%s: the party is not whole: %w", m.Name, err)
+				}
+			}
+		}
+		return nil
 	}
 }
 

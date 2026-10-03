@@ -5,7 +5,9 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
@@ -44,6 +46,9 @@ type groundItem struct {
 	origin item.Serial
 	from   transfer.Owner
 	rights progression.Rights
+	// looters are the names of the first, second and third looters, for
+	// shared pick-up, which checks their parties when the item is taken.
+	looters [3]string
 	// expires is when the item vanishes, in zone milliseconds.
 	expires int64
 	// fresh is set in the tick the item fell, so viewers see it drop.
@@ -121,7 +126,56 @@ func (z *Zone) attacker(charID uint32) progression.Attacker {
 	if p == nil || !z.entities.has(p.entity) {
 		return progression.Attacker{}
 	}
-	return progression.Attacker{Online: true, Dead: p.entity.dead, BaseLevel: p.progress.BaseLevel}
+	a := progression.Attacker{Online: true, Dead: p.entity.dead, BaseLevel: p.progress.BaseLevel}
+	if p.soc != nil && z.Social != nil {
+		if sh, ok := z.Social.ShareOf(p.soc); ok {
+			a.Party, a.EvenShare = sh.Party, sh.Options.ExpEven
+		}
+	}
+	return a
+}
+
+// shareExp is party_exp_share for each party pot of a kill: the members
+// on this map who are alive, in slot order, split the pot.
+func (z *Zone) shareExp(mob *progression.Mob, kill progression.Kill, hooks *progression.Hooks) {
+	if len(kill.Pots) == 0 || z.Social == nil {
+		return
+	}
+	bonus := rules.PartyOrDefault(z.worldRules()).EvenShareBonus
+	for _, pot := range kill.Pots {
+		var members []progression.ShareMember
+		for _, p := range z.partyHere(pot.Party) {
+			if !p.entity.dead {
+				members = append(members, progression.ShareMember{CharID: p.charID, BaseLevel: p.progress.BaseLevel})
+			}
+		}
+		for _, r := range z.Progress.ShareExp(mob, pot, members, bonus, hooks) {
+			if p := z.players[r.CharID]; p != nil {
+				z.gainExp(p, r.BaseExp, r.JobExp)
+			}
+		}
+	}
+}
+
+// partyHere are a party's members in this zone, in slot order, as
+// p->data[i] with sd->m == the map.
+func (z *Zone) partyHere(party int64) []*Player {
+	sh, ok := z.Social.ShareByID(party)
+	if !ok {
+		return nil
+	}
+	return z.slotPlayers(sh)
+}
+
+// slotPlayers are a party's members in this zone, in slot order.
+func (z *Zone) slotPlayers(sh social.Share) []*Player {
+	var out []*Player
+	for _, p := range z.slotsHere(sh) {
+		if p != nil {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // reward gives exp and drops for a dead monster, as mob_dead.
@@ -150,6 +204,7 @@ func (z *Zone) reward(e, killer *entity) {
 			z.gainExp(p, r.BaseExp, r.JobExp)
 		}
 	}
+	z.shareExp(mob, kill, hooks)
 	f := fall{x: e.x, y: e.y, first: kill.First, second: kill.Second, third: kill.Third, boss: mob.Boss(), at: z.now + t.DropDelay}
 	for _, d := range t.RollDropsWith(mob, kill.DropModifier, k, kill.First != 0, z.rand, hooks) {
 		if p := z.players[kill.First]; d.Egg && p != nil {
@@ -340,6 +395,7 @@ func (z *Zone) dropItems() {
 			continue
 		}
 		dir := progression.DirCenter
+		looters := z.looterNames(f.first, f.second, f.third)
 		for _, it := range f.items {
 			pl := progression.PlaceItem(z.cellFree, f.x, f.y, dir, z.rand)
 			z.entities.add(&entity{x: pl.X, y: pl.Y, item: &groundItem{
@@ -347,6 +403,7 @@ func (z *Zone) dropItems() {
 				refine: it.refine, cards: it.cards, extra: it.extra,
 				origin: it.origin, from: it.from,
 				rights:  z.Progress.NewRights(f.first, f.second, f.third, z.now, f.boss),
+				looters: looters,
 				expires: z.now + z.Progress.FloorItemLifetime,
 				fresh:   true,
 			}})
@@ -441,24 +498,129 @@ func (z *Zone) pickUps() {
 	}
 }
 
-// take is pc_takeitem for a player without a party, once in reach.
+// looterNames are the names of the players of three charIDs, or "".
+func (z *Zone) looterNames(ids ...uint32) [3]string {
+	var out [3]string
+	for i, id := range ids {
+		if p := z.players[id]; id != 0 && p != nil {
+			out[i] = p.Name
+		}
+	}
+	return out
+}
+
+// take is pc_takeitem, once in reach, with party_share_loot:
+//   - With shared pick-up, a player may take what its party's looters
+//     may take, while they are online.
+//   - With even item share, the item goes to a member on the map who is
+//     alive, at random or in turn by party_item_share_type. A member who
+//     cannot carry it is skipped, and the picker gets it when no one
+//     can.
 func (z *Zone) take(p *Player, it *entity, net uint32) {
 	g := it.item
-	if !g.rights.CanTake(p.charID, z.now) {
+	var sh social.Share
+	inParty := false
+	if p.soc != nil && z.Social != nil {
+		sh, inParty = z.Social.ShareOf(p.soc)
+	}
+	shared := inParty && sh.Options.PickupShared
+	sameParty := func(i int) bool {
+		if g.looters[i] == "" {
+			return false
+		}
+		o, ok := z.Social.ShareOfName(g.looters[i])
+		return ok && o.Party == sh.Party
+	}
+	if !g.rights.CanTakeParty(p.charID, z.now, shared, sameParty) {
 		p.pending = append(p.pending, pickUpFailed(net, wathenav1.PickUpFailure_PICK_UP_FAILURE_NOT_YOURS))
 		return
 	}
-	// party_share_loot gives the item with pc_additem. When it fails,
-	// the item stays and the player learns why.
-	if r := z.addCopy(p, g.id, g.amount, g.refine, g.cards, g.extra, g.pickUpOrigin()); r != item.AddSuccess {
-		p.pending = append(p.pending, pickUpFailed(net, pickUpFailure(r)))
-		return
+	// shareLoot gives the item itself when it picks a member, even when
+	// it picks the picker, so the picker only gets it here when the item
+	// was not shared.
+	target := p
+	var sharedTo *Player
+	if inParty {
+		sharedTo = z.shareLoot(p, sh, g)
+	}
+	if sharedTo != nil {
+		target = sharedTo
+	} else {
+		// party_share_loot gives the item with pc_additem. When it fails,
+		// the item stays and the player learns why.
+		if r := z.addCopy(p, g.id, g.amount, g.refine, g.cards, g.extra, g.pickUpOrigin()); r != item.AddSuccess {
+			p.pending = append(p.pending, pickUpFailed(net, pickUpFailure(r)))
+			return
+		}
 	}
 	// unit_stop_attack.
 	p.entity.target = nil
 	z.entities.remove(it)
 	z.takes = append(z.takes, take{p.entity, it})
 	z.removed = append(z.removed, removal{it, wathenav1.VanishReason_VANISH_REASON_PICKED_UP})
+	if inParty && showPicker(z.Items.Get(g.id)) {
+		// clif_party_show_picker, with show_party_share_picker and
+		// show_picker.item_type's default: armor, weapons and cards.
+		z.Social.ItemShared(sh.Party, z.Map, social.ItemShared{Name: target.Name, Item: g.id, Amount: g.amount})
+	}
+}
+
+// showPicker reports whether an item's type is in show_picker.item_type's
+// default, 112: IT_ARMOR, IT_WEAPON and IT_CARD.
+func showPicker(d *item.Def) bool {
+	return d != nil && (d.Type == "Armor" || d.Type == "Weapon" || d.Type == "Card")
+}
+
+// shareLoot is the member pick of party_share_loot. It gives the item to
+// the member it picks and returns that member, or nil when the item is
+// not shared or no member could take it.
+func (z *Zone) shareLoot(p *Player, sh social.Share, g *groundItem) *Player {
+	shareType := rules.PartyOrDefault(z.worldRules()).ItemShareType
+	if !social.SharesLoot(sh.Options, shareType, g.rights.First != 0) {
+		return nil
+	}
+	slots := z.slotsHere(sh)
+	eligible := func(i int) bool { return i < len(slots) && slots[i] != nil && !slots[i].entity.dead }
+	give := func(i int) bool {
+		return z.addCopy(slots[i], g.id, g.amount, g.refine, g.cards, g.extra, g.pickUpOrigin()) == item.AddSuccess
+	}
+	if shareType&social.ShareRoundRobin != 0 {
+		slot, ok := social.RoundRobin(sh.ItemC, len(sh.Slots), eligible, give)
+		if !ok {
+			return nil
+		}
+		z.Social.SetItemC(sh.Party, slot)
+		return slots[slot]
+	}
+	var candidates []int
+	for i := range slots {
+		if eligible(i) {
+			candidates = append(candidates, i)
+		}
+	}
+	slot, ok := social.RandomPick(candidates, z.rand.IntN, give)
+	if !ok {
+		return nil
+	}
+	return slots[slot]
+}
+
+// slotsHere maps a party's slots to this zone's players, by slot: nil
+// for a hole or a member who is not on this map.
+func (z *Zone) slotsHere(sh social.Share) []*Player {
+	byKey := map[string]*Player{}
+	for _, p := range z.players {
+		if !p.gone() && p.soc != nil && z.entities.has(p.entity) {
+			byKey[p.soc.Key()] = p
+		}
+	}
+	out := make([]*Player, len(sh.Slots))
+	for i, k := range sh.Slots {
+		if k != "" {
+			out[i] = byKey[k]
+		}
+	}
+	return out
 }
 
 // pickUpOrigin is where a ground item comes from, for the log of its

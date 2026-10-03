@@ -117,6 +117,7 @@ func (h *Headless) Close() { h.z.stopScripts() }
 func (h *Headless) step(at int64) {
 	z := h.z
 	z.drainChat()
+	z.drainSocial()
 	z.runScripts()
 	z.stepAt(max(at, z.now))
 	z.runScripts()

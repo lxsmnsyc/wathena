@@ -5,7 +5,7 @@
 
 import { MAX_NAME, cleanName } from './chatCommands';
 
-/** The most names a block list holds, as the server's limit. */
+/** The most names a block list holds when the server sends no limit, as MAX_IGNORE_LIST. */
 export const MAX_BLOCKED = 20;
 
 /** The notices for the names a new block list added and removed. */
@@ -46,6 +46,8 @@ export class BlockPanel {
   constructor(
     private readonly root: HTMLElement,
     private readonly actions: BlockActions,
+    /** The most names the list holds, as Welcome.limits.block_list. */
+    private readonly max = MAX_BLOCKED,
   ) {
     const title = document.createElement('h2');
     title.append('Blocked players ', this.count);
@@ -86,7 +88,7 @@ export class BlockPanel {
   /** Shows a block list as BlockList gives it. */
   show(names: string[], full: boolean): void {
     this.current = [...names];
-    this.count.textContent = `(${String(names.length)} / ${String(MAX_BLOCKED)})`;
+    this.count.textContent = `(${String(names.length)} / ${String(this.max)})`;
     const rows = names.map((name) => {
       const row = document.createElement('li');
       const label = document.createElement('bdi');
@@ -109,7 +111,7 @@ export class BlockPanel {
       rows.push(row);
     }
     this.names.replaceChildren(...rows);
-    this.full.hidden = !full && names.length < MAX_BLOCKED;
+    this.full.hidden = !full && names.length < this.max;
   }
 
   /** Opens or closes the panel. */
@@ -124,7 +126,7 @@ export class BlockPanel {
       problem = `Type a name of 1 to ${String(MAX_NAME)} characters.`;
     } else if (this.current.includes(name)) {
       problem = `${name} is already blocked.`;
-    } else if (this.current.length >= MAX_BLOCKED) {
+    } else if (this.current.length >= this.max) {
       problem = 'The block list is full. Unblock a name first.';
     }
     this.error.textContent = problem ?? '';

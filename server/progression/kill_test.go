@@ -165,11 +165,11 @@ func TestKillExperienceHook(t *testing.T) {
 	var l DamageLog
 	l.Add(1, 10, 0)
 	who := func(uint32) Attacker { return Attacker{Online: true, BaseLevel: 1} }
-	k := tb.KillWith(mob, &l, 1, who, &Hooks{Experience: func(id uint32, base, job int64) (int64, int64) { return base * 2, -1 }})
+	k := tb.KillWith(mob, &l, 1, who, &Hooks{Experience: func(g ExpGain) (int64, int64) { return g.Base * 2, -1 }})
 	if len(k.Rewards) != 1 || k.Rewards[0].BaseExp != 200 || k.Rewards[0].JobExp != 0 {
 		t.Fatalf("rewards %+v", k.Rewards)
 	}
-	if k := tb.KillWith(mob, &l, 1, who, &Hooks{Experience: func(uint32, int64, int64) (int64, int64) { return 0, 0 }}); len(k.Rewards) != 0 {
+	if k := tb.KillWith(mob, &l, 1, who, &Hooks{Experience: func(ExpGain) (int64, int64) { return 0, 0 }}); len(k.Rewards) != 0 {
 		t.Fatalf("a hook that gives nothing left rewards %+v", k.Rewards)
 	}
 }

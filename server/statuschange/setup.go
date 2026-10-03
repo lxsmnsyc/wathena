@@ -31,6 +31,10 @@ type setup struct {
 	tick        int64
 	tickTime    int64
 	flag        StartFlag
+	// reason and source are the start's, which the statuses a start
+	// passes on keep.
+	reason Reason
+	source Source
 }
 
 // run sets up the values. It returns false when the status fails.
@@ -48,8 +52,13 @@ func (v *setup) run(typ int, def *Def) bool {
 		// AGI change.
 		val[1] = 2 + val[0]
 	case SCEndure:
-		// Hit count. Devotion does not exist yet, so it is not passed on.
+		// Hit count. A player passes it on to the players it protects
+		// with Devotion, unless it has no end. GvG and battleground maps,
+		// where it is not passed on, do not exist yet.
 		val[1] = 7
+		if isPC && val[3] == 0 {
+			v.passToDevoted(typ, *val)
+		}
 		if val[3] != 0 {
 			v.tick = InfiniteTick
 		}
@@ -350,8 +359,8 @@ func (v *setup) run(typ int, def *Def) bool {
 		val[2] = val[0]
 	case SCAutoguard:
 		// The block chance: 5% for each of the first two levels, then 1%
-		// less every two levels, at least 1%. Devotion would pass it on
-		// to the devoted, but Devotion needs a party and never starts.
+		// less every two levels, at least 1%. A player passes it on to the
+		// players it protects with Devotion.
 		if v.flag&NoAvoid == 0 {
 			val[1] = 0
 			for i := 0; i < val[0]; i++ {
@@ -361,21 +370,27 @@ func (v *setup) run(typ int, def *Def) bool {
 				}
 				val[1] += t
 			}
+			v.passToDevoted(typ, [4]int{val[0], val[1], 0, 0})
 		}
 	case SCReflectshield:
-		// The percent of melee damage reflected. Devotion would pass it
-		// on, as for SC_AUTOGUARD.
+		// The percent of melee damage reflected. A player passes it on to
+		// the players it protects with Devotion, with val4 1.
 		val[1] = 10 + val[0]*3
+		v.passToDevoted(typ, [4]int{val[0], val[1], 0, 1})
+	case SCDevotion:
+		// The devoted player takes on the Crusader's guard statuses.
+		v.inheritDevotion(val[0])
 	case SCProvidence:
 		// The holy and demon resistance.
 		val[1] = val[0] * 5
 	case SCDefender:
 		// val2 is the ranged damage reduction and val4 the ASPD penalty.
-		// Devotion would pass it on, as for SC_AUTOGUARD.
+		// A player passes it on to the players it protects with Devotion.
 		if v.flag&NoAvoid == 0 {
 			val[1] = 5 + 15*val[0]
 			val[2] = 0
 			val[3] = 250 - 50*val[0]
+			v.passToDevoted(typ, *val)
 		}
 	case SCSpearquicken:
 		// The ASPD rate, without renewal's ASPD (RENEWAL_ASPD, the aspd

@@ -319,6 +319,7 @@ A world's ruleset is a base and a value for each flag of strategy section 3.6. [
 - The code reads the flag of its feature where rAthena checks `RENEWAL`. The base still picks the data sets and the stat and damage models. The battle code takes the rules with each attack (`battle.AttackRules`, `battle.SkillAttackRules`).
 - The log line `mods loaded` shows the ruleset and the flags it changes. A `skill_rebalance` flag for a skill whose versions the server does not tell apart is logged as a warning.
 - `homunculus` changes nothing yet: homunculi do not exist.
+- A ruleset also has limits and rules ([decision 0020](../docs/decisions/0020-parties-and-friends.md)): `rules.Limits` (`party_members`, `friends`, `block_list`) and `rules.Party` (`party_share_level` and the other party values of rAthena's conf files). `server/rules` lists their defaults and bounds. The gateway sends the limits in `Welcome`.
 
 Tests: each flag has tests at both values on both bases (`TestEveryFlagBothValues` in `server/mod` names them). `rules/rulestest.Mixes` makes 8 mixed rulesets per base, and each package runs the recordings that apply to them (the `TestMixedRulesets` tests).
 
@@ -633,7 +634,7 @@ Chat follows strategy section 7.10 and proposal 0002, review decision 26 ([decis
 - **Local chat** reaches the players in range, as before.
 - **Whispers** reach a player on any map of the process. The sender gets `WhisperResult`: sent, not online, or blocked, as rAthena's `clif_wis_end`. A whisper to `#name` speaks in that channel, and joins it first when anyone may join, as rAthena.
 - **Channels** are core's records of `data/channels.yml` (rAthena's `#global`, `#support`, `#trade` and `#map`) and the channels mods make. `ChannelCommand` joins, leaves, lists channels and lists members. A channel's lines carry its name and color. `#map` members hear the members on their own map, and leave it on a map change.
-- **Blocking.** `Block` adds a name to the character's block list, at most 20, as rAthena's `MAX_IGNORE_LIST`, or removes it. A blocked name cannot whisper to the player, and the player does not see its local or channel lines. The list is saved with the character, in `character_blocks`. Trades and invites check it once they exist (steps 3 and 5).
+- **Blocking.** `Block` adds a name to the character's block list, up to the ruleset's `block_list` limit (20 by default, rAthena's `MAX_IGNORE_LIST`), or removes it. A blocked name cannot whisper to the player, and the player does not see its local, channel or party lines. The list is saved with the character, in `character_blocks`. Party invites and friend requests check it. Trades will too (step 6).
 - **The chat filter** of `data/chat_filter.yml` replaces or rejects words in every line, and refuses new character names that have a word or a reserved name, on the account pages and for `--dev` logins.
 - **Rate limits** are the `chat.*` settings, per connection. A character made less than `chat.new_character_period` ago has the lower limits. Lines over the rate are dropped, and the player gets `ChatRefused` with `TOO_FAST`, since the client does not know a new character's limits. A flood ends the connection, as before.
 - **Mutes and jails** come from mods with `player.sanction` for now, and from the staff tools later. A muted player's lines come back as `ChatRefused` with a `SanctionNotice` that has the reason and the end time. A jailed player goes to the jail map, cannot use warps, scripts' warps or wings, comes back in jail after death, and goes back to where it was when the jail ends. Sanctions run on the server clock and are saved in `sanctions`, which keeps ended ones too.
@@ -652,6 +653,22 @@ SELECT r.id, r.reporter_name, r.target_name, r.reason, c.at, c.name, c.text
 FROM reports r JOIN report_lines rl ON rl.report_id = r.id JOIN chat_log c ON c.id = rl.line_id
 WHERE r.status = 'open' ORDER BY r.id, c.at;
 ```
+
+## Parties and friends
+
+Parties, friends and party booking follow proposal 0002, review decision 27 ([decision 0020](../docs/decisions/0020-parties-and-friends.md)). The package `social` holds one registry per world, which every zone shares, as the chat hub.
+
+- **Parties** follow rAthena's `party.cpp` and the char server's `int_party.cpp`. `PartyCommand` creates a party, invites by name, answers an invite, leaves, expels, hands over the lead and sets the options. Only the leader invites, expels, hands over the lead and sets the options. The party breaks up when its leader leaves, as rAthena does.
+- **Members** sit in slots, as `party.member[MAX_PARTY]`: a new member takes the first free slot. A party holds up to the ruleset's `party_members` (12 by default). With `block_account_in_same_party`, two characters of one account cannot be in one party.
+- **The party window.** `PartyInfo` lists the members with their online state, map, job, level, HP and cell after every change. Members on the same map get `PartyMemberUpdate` when HP changes, and the cell once a second, as `clif_party_hp` and `party_send_xy_timer`.
+- **Party chat** is `Chat` with `CHAT_CHANNEL_PARTY`. It passes the mute, the filter and the hooks, reaches every online member on any map, and is logged with the kind `party`.
+- **Exp share.** With even exp share, `mob_dead` puts each fighting member's share in the party's pot, and `party_exp_share` splits it among the members on the map who are alive, with `party_even_share_bonus`. The level penalty applies to each member after the split when `level_penalty_exp` is on. Even share needs the online members' base levels within `party_share_level` (15 by default): asking for it outside the range is refused, and a login, logout or level up that breaks the range turns it off, as the char server does.
+- **Item share.** With shared pick-up (`item & 1`), a member may take what its party's top attackers may take. With even item share (`item & 2`), a picked up item goes to a member on the map who is alive, at random or in turn by `party_item_share_type`, as `party_share_loot`. Items go through transfers, so the item log names the member who got the item.
+- **Friends** follow `clif.cpp`'s friend packets. `FriendCommand` asks an online player, answers a request, or removes a friend from both lists. A list holds up to the ruleset's `friends` (40 by default). Friends see each other log in and out (`FriendStatus`).
+- **Party booking.** `PartyBookingCommand` places an ad (level, map, up to 6 jobs and a note), searches ads as `party_booking_search`, and deletes the player's ad. Ads live in memory and end at logout.
+- **Party skills** reach the caster's party members, as rAthena does ([decision 0020](../docs/decisions/0020-parties-and-friends.md) lists them).
+
+With a database, every party loads at start, and a character's friend list loads with it. A writer saves each change on its own goroutine in the order it came. Migration 00017 adds `parties`, `party_members` and `character_friends`, allows 100 blocked names, and adds the `party` kind to `chat_log`. Without a database, parties and friend lists last while the server runs.
 
 ## NPCs
 

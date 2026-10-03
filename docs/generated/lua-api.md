@@ -26,6 +26,8 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.maps`](#wamaps) | Maps. |
 | [`wa.world`](#waworld) | The world. |
 | [`wa.channels`](#wachannels) | Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world. |
+| [`wa.parties`](#waparties) | Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do. |
+| [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decision 27). Read-only. |
 | [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
 | [`wa.integers`](#waintegers) | Integer division that rounds as C does, toward zero, for scripts converted from rAthena. |
@@ -403,6 +405,57 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string` | A channel's name, with or without its #, such as trade. |
+
+### wa.parties
+
+```lua
+local parties = require "wa.parties"
+```
+
+Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do.
+
+#### `parties.create(leader, name) → wa.Party?`
+
+Makes a party with the player as its leader, as party_create, and returns it. Exp share starts as each, and the items as each. nil when the name is taken or the leader has a party. The party_join event follows, with the reason "script". A test case needs no permission for it.
+
+Permission: `party.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `leader` | `wa.Player` |  |
+| `name` | `string` | 1 to 24 characters. |
+
+#### `parties.get(id) → wa.Party?`
+
+A party by ID, or nil.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `id` | `integer` | A party's ID, such as player.party.id. |
+
+#### `parties.find(name) → wa.Party?`
+
+A party by name, or nil.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A party's name, without regard to case. |
+
+### wa.rules
+
+```lua
+local rules = require "wa.rules"
+```
+
+The world's ruleset (strategy section 3.6, review decision 27). Read-only.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `limits` | `wa.Limits` | The limits that rAthena compiles in, as the ruleset sets them, such as rules.limits.party_members. |
 
 ### wa.variables
 
@@ -918,7 +971,7 @@ A player. Each access looks the player up again. A handle to a player who left t
 | `y` | `integer` |  |
 | `character_id` | `integer` | The database ID, 0 without a database. |
 | `account_id` | `integer` | The database ID, 0 without a database. |
-| `party` | `nil` | nil: parties do not exist yet. |
+| `party` | `wa.Party?` | The player's party, or nil. |
 | `sex` | `"male"\|"female"` |  |
 | `companion` | `integer?` | The player's companion, from companions.id, or nil. |
 | `mount` | `integer?` | The player's mount, from mounts.id, or nil. |
@@ -1230,6 +1283,22 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `other` | `wa.Player` |  |
+
+#### `player:is_friend(other) → boolean`
+
+Whether the other player is on the player's friend list. Only players add and remove friends.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `other` | `wa.Player` |  |
+
+#### `player:get_friend_names() → string[]`
+
+The names on the player's friend list, in the order they were added.
+
+Permission: `game.read`.
 
 #### `player:mute(minutes, reason)`
 
@@ -1719,6 +1788,127 @@ The members' character names, sorted. Members may be on any map.
 
 Permission: `game.read`.
 
+### wa.Party
+
+A party, from player.party or wa.parties. Its leader and members are players of this map: a member on another map is nil or left out.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | `integer` |  |
+| `name` | `string` |  |
+| `leader` | `wa.Player?` | The leader, or nil when it is offline or on another map. |
+| `leader_name` | `string` | The leader's name, online or not. |
+| `exp_share` | `"each"\|"even"` | Even shares the exp of a kill among the members on the map, as rAthena's even share. |
+| `item_share` | `"each"\|"even"` | Even gives each picked up item to a member on the map. |
+| `item_pickup` | `"each"\|"shared"` | Shared lets members pick up the items their party's top attackers may take. |
+
+#### `party:get_members() → wa.Player[]`
+
+The online members on this map, in the party's slot order.
+
+Permission: `game.read`.
+
+#### `party:get_member_names() → string[]`
+
+Every member's name, online or not, in slot order.
+
+Permission: `game.read`.
+
+#### `party:add(player) → boolean`
+
+Puts the player in the party, as party_addmember. Returns false when the player has a party, the party is full, or a character of the same account is in it. The party_join event follows, with the reason "script".
+
+Permission: `party.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `party:remove(player) → boolean`
+
+Takes the player out of the party, as party_delmember. The leader's removal breaks the party up, as in rAthena. Returns false when the player is not in the party.
+
+Permission: `party.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `party:set_leader(player) → boolean`
+
+Makes an online member the leader, as party_changeleader. Returns false when the player is not an online member, or leads already. The party_change event follows.
+
+Permission: `party.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `party:set_options(options)`
+
+Changes the options it names, as party_changeoption. Even exp share needs the online members' base levels within the ruleset's party_share_level, else exp share stays each. The party_change event follows a change.
+
+Permission: `party.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `options` | `wa.PartyOptions` |  |
+
+#### `party:disband()`
+
+Breaks the party up, as party_destroy. Each member gets the party_leave event, with the reason "disbanded".
+
+Permission: `party.manage`.
+
+### wa.PartyOptions
+
+A party's options, in party:set_options and the party_change event.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `exp_share` | `"each"\|"even"\|nil` |  |
+| `item_share` | `"each"\|"even"\|nil` |  |
+| `item_pickup` | `"each"\|"shared"\|nil` |  |
+
+### wa.PartyMembership
+
+The object of the party_join and party_leave events.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `party` | `wa.Party` | The party. After it broke up, its fields still read. |
+| `player` | `wa.Player` | The player who joined or left. |
+| `reason` | `"invited"\|"left"\|"expelled"\|"disbanded"\|"script"` | Why: an accepted invite, a leave, an expel, a break up, or a wa.parties call. |
+
+### wa.PartyChange
+
+The object of the party_change event.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `party` | `wa.Party` |  |
+| `leader` | `wa.Player?` | The leader, or nil when it is on another map. |
+| `options` | `wa.PartyOptions` | The party's options after the change. |
+
+### wa.Limits
+
+The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `party_members` | `integer` | The most members a party holds, as MAX_PARTY. 12 by default, at most 64. |
+| `friends` | `integer` | The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200. |
+| `block_list` | `integer` | The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100. |
+
+### wa.ExpShare
+
+The share of the experience hook's object.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `base` | `integer` |  |
+| `job` | `integer` |  |
+
 ### wa.ChannelSpec
 
 The channel of channels.create.
@@ -2055,7 +2245,7 @@ The object of the drop_rate hook: one drop of a killed monster.
 
 ### wa.Exp
 
-The object of the experience hook: the exp one player gets for a kill, after the shares and the level penalty.
+The object of the experience hook: the exp one player gets for a kill, after the shares, the even party split and the level penalty. With even exp share, each member on the map gets its own hook run.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -2063,6 +2253,8 @@ The object of the experience hook: the exp one player gets for a kill, after the
 | `monster` | `wa.Monster` | The killed monster. |
 | `base` | `integer` |  |
 | `job` | `integer` |  |
+| `party` | `wa.Party?` | The player's party, or nil. |
+| `share` | `wa.ExpShare` | The player's own share of the kill, before the even party split and the level penalty. 0 and 0 for a member who did not fight. |
 
 ### wa.HookOptions
 
@@ -2707,7 +2899,10 @@ Changes the value.
 | `status_start` | mod, event | `event: wa.StatusEvent` | A status started on an entity of the context's map, or started again. Options narrow it. |
 | `status_end` | mod, event | `event: wa.StatusEvent` | A status ended. Options narrow it. |
 | `status_tick` | mod, event | `event: wa.StatusEvent` | A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it. |
-| `chat` | mod, npc, event | `message: wa.ChatMessage` | A player on the context's map said a line: local chat, a whisper, or a channel line. It runs after the line went out. Options narrow it. |
+| `chat` | mod, npc, event | `message: wa.ChatMessage` | A player on the context's map said a line: local chat, a whisper, a party line, or a channel line. It runs after the line went out. Options narrow it. |
+| `party_join` | mod, event | `join: wa.PartyMembership` | A player of the context's map joined a party: an accepted invite, or a wa.parties call. It does not fire for a player who makes a party itself. |
+| `party_leave` | mod, event | `leave: wa.PartyMembership` | A player of the context's map left its party. A member who is offline gets no event. |
+| `party_change` | mod, event | `change: wa.PartyChange` | A party's leader or options changed, by a change made on the context's map. |
 
 ## Named types
 
@@ -2721,7 +2916,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`
 
 ### wa.BonusName
 

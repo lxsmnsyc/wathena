@@ -46,13 +46,17 @@ func init() {
 
 // smithStatus is SkillAdrenalineRush, SkillAdvancedAdrenalineRush,
 // SkillWeaponPerfection and SkillPowerThrust: the party buffs of the
-// Blacksmith. Parties do not exist yet, so the caster alone gets the
-// status, as rAthena does for a player without a party. A player target
-// needs one of the skill's weapons. val2 is 1 on the caster, whose
-// status is stronger than a party member's.
+// Blacksmith. A player in a party casts them on the members in the
+// splash on its map. The caster alone gets the status otherwise. A
+// player target needs one of the skill's weapons. val2 is 1 on the
+// caster, whose status is stronger than a party member's.
 type smithStatus struct{}
 
-func (smithStatus) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
+func (smithStatus) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
+	if *flag&1 == 0 && inParty(src) {
+		z.partyCastNoDamage(src, d, lv, *flag)
+		return
+	}
 	if w := d.Requires.Weapon; w != 0 && target.player != nil && !checkWeaponType(target, w) {
 		return
 	}

@@ -301,6 +301,10 @@ type DropRate struct {
 type Experience struct {
 	Player, Monster int64
 	Base, Job       int64
+	// Party is the player's party ID, or 0. ShareBase and ShareJob are
+	// the player's own share before rAthena's party split.
+	Party               int64
+	ShareBase, ShareJob int64
 }
 
 // RunDropRate runs the drop_rate hooks and returns the rate they give,
@@ -328,6 +332,10 @@ func (r *Runtime) RunExperience(e Experience) (int64, int64) {
 	fields := []script.Field{
 		script.KV("player", script.Int(e.Player)), script.KV("monster", script.Int(e.Monster)),
 		script.KV("base", script.Int(e.Base)), script.KV("job", script.Int(e.Job)),
+		script.KV("share", script.NewTable(script.KV("base", script.Int(e.ShareBase)), script.KV("job", script.Int(e.ShareJob)))),
+	}
+	if e.Party != 0 {
+		fields = append(fields, script.KV("party", script.Int(e.Party)))
 	}
 	vals, ok := r.runHooks("experience", fields)
 	if !ok || len(vals) < 2 {

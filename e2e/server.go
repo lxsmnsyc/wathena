@@ -102,6 +102,9 @@ type Server struct {
 	// DB is an admin pool on the server's database, or nil.
 	DB *pgxpool.Pool
 
+	bin     string
+	args    []string
+	env     []string
 	cmd     *exec.Cmd
 	logs    *logBuffer
 	exited  chan struct{}
@@ -262,14 +265,31 @@ func Start(t testing.TB, o Options) *Server {
 		t.Fatal(err)
 	}
 	addr, debug := freeAddr(t), freeAddr(t)
-	cmd := exec.Command(bin, "--config", config, "--assets", b.assets, "--map", StartMap, // #nosec G204 -- a binary built above.
-		"--maps", StartMap+","+strings.TrimPrefix(FieldMap, "map/"), "--dev", "--mode", "renewal",
+	args := []string{"--config", config, "--assets", b.assets, "--map", StartMap,
+		"--maps", StartMap + "," + strings.TrimPrefix(FieldMap, "map/"), "--dev", "--mode", "renewal",
 		"--addr", addr, "--debug-addr", debug, "--origins", "", "--shutdown-countdown", "0",
-		"--seed", o.Seed, "--start-job", o.StartJob, "--start-items", o.StartItems, "--mods", b.mods)
-	// The server's database is the test's, or none.
-	cmd.Env = append(os.Environ(), "WATHENA_DATABASE_URL="+dbURL)
-	s := &Server{t: t, WS: "ws://" + addr + "/ws", Debug: "http://" + debug, DB: admin, cmd: cmd,
-		logs: &logBuffer{}, exited: make(chan struct{})}
+		"--seed", o.Seed, "--start-job", o.StartJob, "--start-items", o.StartItems, "--mods", b.mods}
+	s := &Server{t: t, WS: "ws://" + addr + "/ws", Debug: "http://" + debug, DB: admin, bin: bin, args: args,
+		// The server's database is the test's, or none.
+		env: append(os.Environ(), "WATHENA_DATABASE_URL="+dbURL), logs: &logBuffer{}}
+	t.Cleanup(func() {
+		s.Stop()
+		if t.Failed() {
+			t.Logf("server log:\n%s", s.logs.tail(80))
+		}
+	})
+	s.launch()
+	return s
+}
+
+// launch starts the server's process and waits until it serves.
+func (s *Server) launch() {
+	t := s.t
+	t.Helper()
+	cmd := exec.Command(s.bin, s.args...) // #nosec G204 -- a binary built by prepare.
+	cmd.Env = s.env
+	s.cmd, s.exited, s.stopped = cmd, make(chan struct{}), false
+	exited := s.exited
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		t.Fatal(err)
@@ -294,22 +314,24 @@ func Start(t testing.TB, o Options) *Server {
 	}()
 	go func() {
 		_ = cmd.Wait()
-		close(s.exited)
+		close(exited)
 	}()
-	t.Cleanup(func() {
-		s.Stop()
-		if t.Failed() {
-			t.Logf("server log:\n%s", s.logs.tail(80))
-		}
-	})
 	select {
 	case <-serving:
-	case <-s.exited:
+	case <-exited:
 		t.Fatalf("the server stopped before it served:\n%s", s.logs.tail(40))
 	case <-time.After(5 * time.Minute):
 		t.Fatalf("the server did not start in 5 minutes:\n%s", s.logs.tail(40))
 	}
-	return s
+}
+
+// Restart stops the server and starts it again with the same options,
+// addresses and database, as a restart of a live server. Players must
+// join again.
+func (s *Server) Restart() {
+	s.t.Helper()
+	s.Stop()
+	s.launch()
 }
 
 // configYAML approves the fixture mod's permissions, and turns off the
@@ -343,7 +365,7 @@ func gameURL(t testing.TB, admin *pgxpool.Pool) string {
 // database, the last saves are written when it returns. Stopping twice
 // does nothing.
 func (s *Server) Stop() {
-	if s.stopped {
+	if s.stopped || s.cmd == nil || s.cmd.Process == nil {
 		return
 	}
 	s.stopped = true

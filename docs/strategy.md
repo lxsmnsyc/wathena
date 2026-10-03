@@ -1081,7 +1081,8 @@ Planned work to give mods more control than rAthena's scripts have:
   Rules:
   - A limit comes from the world's ruleset, so every zone and the database agree on it.
   - The database schema and the protocol store values that fit the highest limit allowed, not rAthena's. For example, card slots are a list, not four columns.
-  - Lowering a limit below what saved data already uses is refused at startup, so no item or character loses data.
+  - Lowering a limit deletes nothing: a list over the limit keeps its entries and cannot grow, and cards over the slot limit stay but give no bonus (proposal 0002, review decision 27, which replaced refusing to start).
+  - Each limit has a hard maximum, and a ruleset outside the bounds fails to load. Phase 5 step 4 added `party_members`, `friends` and `block_list` ([decision 0020](decisions/0020-parties-and-friends.md)).
   - The client reads the limits at login and sizes its windows from them.
 
 ### 6.9 Tooling
@@ -2546,7 +2547,14 @@ The order from here:
       - Tests: each flag at both values on both bases, with expected values from the other mode's recording or rAthena's formulas. `TestEveryFlagBothValues` fails for a flag without a behavior test. Eight seeded mixes per base run every recording that applies in battle, skill, status, statuschange, progression, zone and gamedata. Both core rulesets match every recording as before.
       - A sample ruleset mod, [examples/classic-casting](../mods/examples/classic-casting), sets pre-renewal cast time, element table, cooldowns and Mystical Amplification on a renewal base. `wactl mod test` loads a ruleset mod as the world's ruleset. Its test and `TestClassicCasting` pass.
       - Left: `homunculus`, which needs homunculi; boss endure on hits and the busy cart change, which need hit stops and cart looks; the party exp share; rebalanced skills whose other version needs a status the base lacks; the `RENEWAL` sites of skills not ported yet; and reading flags from Lua, which needs API.
-   4. Friends and parties: party exp and item sharing, party booking in the web client, and the party skills that step 4 left failing.
+   4. Friends and parties: party exp and item sharing, party booking in the web client, and the party skills that step 4 left failing. Done on 2026-10-04 ([decision 0020](decisions/0020-parties-and-friends.md), proposal 0002 review decision 27):
+      - `server/social` keeps parties and friends for the world. Invites follow rAthena's rules and the step 2 block lists. A leader who leaves breaks the party up.
+      - Exp share and item share follow rAthena, through the transfer service. Parity with a new recording, `party_share.json` (rAthena fork commit `50df331ca`): 69 of 69 kills and 108 of 108 pick-ups in each mode.
+      - The party skills that phase 4 left failing reach members, Devotion included, for skills and normal attacks.
+      - Ruleset limits: `party_members`, `friends` and `block_list`, with rAthena's defaults and hard maximums, sent to the client at login and read in Lua as `rules.limits`.
+      - The Lua API of review decision 27, the party script commands in the converter, the party window, the friend list and party booking in the client, and the sample mod [examples/party-hall](../mods/examples/party-hall).
+      - e2e scenarios for invites, blocks, party chat, exp and item share, a leader leaving, friends, a party skill, and parties and friends after a restart. A duplication test with shared pick-ups found a bug where the picker got a shared item twice. It is fixed.
+      - Left: guild reach of skills, the Devotion link line, family exp share, offline member events, and the registry across processes.
    5. Guilds: guild skills, guild storage and emblems.
    6. Storage, cart and trade: personal storage, cart storage, Kafra storage and trade.
    7. Mail, vending and shops: mail (RODEX), vending with autotrade and vending search, and barter shops.

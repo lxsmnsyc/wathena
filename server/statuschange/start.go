@@ -363,7 +363,8 @@ func (en *Engine) startPostDelay(src, target Unit, s *Start) bool {
 
 	tickTime := int64(0)
 	if flag&Loaded == 0 {
-		v := setup{en: en, src: src, target: target, st: st, val: [4]int{val1, val2, val3, val4}, tick: tick, flag: flag}
+		v := setup{en: en, src: src, target: target, st: st, val: [4]int{val1, val2, val3, val4}, tick: tick, flag: flag,
+			reason: s.Reason, source: s.Source}
 		if !v.run(typ, def) {
 			return false
 		}

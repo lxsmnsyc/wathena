@@ -520,12 +520,15 @@ func (b *body) call(e *Call) (val, error) {
 				switch *v.static {
 				case 0:
 					return done(val{code: "player.name", t: tStr}, nil)
+				case 1:
+					// rAthena returns "" without a party.
+					return done(val{code: `(player.party and player.party.name or "")`, t: tStr}, nil)
 				case 3:
 					return done(val{code: "player.map", t: tStr}, nil)
 				}
 			}
 		}
-		return val{}, unsupported("strcharinfo", "other than the name and the map")
+		return val{}, unsupported("strcharinfo", "other than the name, the party and the map")
 	case "strnpcinfo":
 		if len(args) == 1 {
 			if v, err := b.expr(args[0]); err == nil && v.static != nil {
@@ -544,12 +547,18 @@ func (b *body) call(e *Call) (val, error) {
 				switch *v.static {
 				case 0:
 					return done(val{code: "player.character_id", t: tInt}, nil)
+				case 1:
+					// The party ID is 0 without a party.
+					return done(val{code: "(player.party and player.party.id or 0)", t: tInt}, nil)
 				case 3:
 					return done(val{code: "player.account_id", t: tInt}, nil)
 				}
 			}
 		}
-		return val{}, unsupported("getcharid", "parties, guilds and other IDs")
+		if len(args) == 2 {
+			return val{}, unsupported("getcharid", "of another character")
+		}
+		return val{}, unsupported("getcharid", "guilds, battlegrounds, clans and other IDs")
 	case "getitemname":
 		if len(args) != 1 {
 			return val{}, unsupported(name, "arguments")
@@ -586,7 +595,13 @@ func (b *body) call(e *Call) (val, error) {
 			}
 			sep = v.asText()
 		}
-		if p, _, _ := varName(target.Name); p == ".@" {
+		p, _, _ := varName(target.Name)
+		if p == "$@" && name == "getarraysize" {
+			if v, ok, err := b.partyMemberVar(target.Name, "", true); ok {
+				return done(v, err)
+			}
+		}
+		if p == ".@" {
 			l := b.local(target.Name)
 			if name == "implode" {
 				return done(val{code: "R.implode(" + l.lua + ", " + sep + ")", t: tStr}, nil)
@@ -665,6 +680,9 @@ func (b *body) call(e *Call) (val, error) {
 		return done(val{code: `R.not_available(conversation, "Guild storage")`, t: tInt}, nil)
 	case "mobcount":
 		return done(b.mobcount(args))
+	}
+	if v, ok, err := b.partyRead(name, args); ok {
+		return done(v, err)
 	}
 	return val{}, unsupported(name, "")
 }
@@ -1021,6 +1039,13 @@ func (b *body) commandErr(name string, args []Expr) error {
 		return unsupported(name, "the channel API cannot change a channel's options")
 	case "channel_ban", "channel_unban":
 		return unsupported(name, "the channel API has no bans")
+	case "party_create", "party_addmember", "party_delmember", "party_changeleader", "party_changeoption", "party_destroy":
+		return b.partyCommand(name, args)
+	case "getpartymember":
+		_, err := b.getpartymember(args)
+		return err
+	case "warpparty":
+		return unsupported(name, "the party API cannot warp a party, and rAthena's warpparty has its own map checks")
 	case "monster":
 		return b.monster(args)
 	case "killmonster":

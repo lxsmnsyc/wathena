@@ -147,6 +147,12 @@ type CharacterBlock struct {
 	Name        string
 }
 
+type CharacterFriend struct {
+	CharacterID int64
+	FriendID    int64
+	Added       pgtype.Int8
+}
+
 type CharacterSkill struct {
 	CharacterID int64
 	SkillID     int
@@ -277,6 +283,22 @@ type ModServerVariable struct {
 	Name      string
 	Value     []byte
 	UpdatedAt pgtype.Timestamptz
+}
+
+type Party struct {
+	ID           int64
+	Name         string
+	ExpEven      bool
+	ItemEven     bool
+	PickupShared bool
+	LeaderID     int64
+	CreatedAt    pgtype.Timestamptz
+}
+
+type PartyMember struct {
+	PartyID     int64
+	CharacterID int64
+	Slot        int
 }
 
 type Report struct {

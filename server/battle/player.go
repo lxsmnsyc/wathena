@@ -146,6 +146,11 @@ type Player struct {
 	// SP is the player's current SP, as status_data's sp, which Asura
 	// Strike reads.
 	SP int
+	// PartyOnMap is the count of the members of the player's party on
+	// its map, the player included, as party_foreachsamemap with
+	// party_sub_count. It is 0 without a party. Pre-renewal's Taekwon
+	// Mission reads it.
+	PartyOnMap int
 }
 
 // CastBonus are the bonuses of skill cast times, delays and costs, as

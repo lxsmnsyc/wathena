@@ -462,19 +462,81 @@ func (crucis) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int
 	z.skillEffect(src, target, d, lv, int64(lv), true)
 }
 
-// partyStatus is the party buffs, as SkillAngelus. Parties do not exist
-// yet, so the caster alone gets the status, as rAthena does for a
-// player without a party.
+// partySameMap is party_foreachsamemap: the members of a player's party
+// on its map, in slot order. A range above 0 keeps the members in the
+// square of that many cells around the player; 0 is the whole map. A
+// unit that is not a player in a party has none.
+func (z *Zone) partySameMap(e *entity, rng int) []*entity {
+	if e == nil || e.player == nil || z.Social == nil {
+		return nil
+	}
+	id := e.player.partyID()
+	if id == 0 {
+		return nil
+	}
+	var out []*entity
+	for _, m := range z.partyHere(id) {
+		t := m.entity
+		if rng > 0 && (abs(t.x-e.x) > rng || abs(t.y-e.y) > rng) {
+			continue
+		}
+		out = append(out, t)
+	}
+	return out
+}
+
+// partyAreaSub is party_foreachsamemap with skill_area_sub: the skill
+// runs on each member in range that battle_check_target passes with the
+// flag. It returns how many it ran on.
+func (z *Zone) partyAreaSub(src *entity, rng, flag int, fn func(t *entity, flag int)) int {
+	n := 0
+	for _, t := range z.partySameMap(src, rng) {
+		if checkTarget(src, t, flag) {
+			fn(t, flag)
+			n++
+		}
+	}
+	return n
+}
+
+// partyCastNoDamage is party_foreachsamemap with skill_area_sub and
+// skill_castend_nodamage_id, with flag|BCT_PARTY|1, over the members in
+// the skill's splash.
+func (z *Zone) partyCastNoDamage(src *entity, d *skill.Def, lv, flag int) int {
+	return z.partyAreaSub(src, d.SplashFor(lv), flag|bctParty|1, func(t *entity, f int) {
+		z.castendNoDamage(src, t, d, lv, f)
+	})
+}
+
+// inParty reports whether a unit is a player in a party
+// (sd->status.party_id).
+func inParty(e *entity) bool { return e.player != nil && e.player.partyID() != 0 }
+
+// partyStatus is the party buffs, as SkillAngelus. A player in a party
+// casts it on the members in its splash on the map. The caster alone
+// gets the status otherwise.
 type partyStatus struct{}
 
-func (partyStatus) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, _ *int) {
+func (partyStatus) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
+	if *flag&1 == 0 && inParty(src) {
+		z.partyCastNoDamage(src, d, lv, *flag)
+		return
+	}
 	z.skillEffect(target, target, d, lv, int64(lv), true)
 	z.scStart(src, target, d.Status, 100, lv, int64(d.Duration1.At(lv)))
 }
 
-// loud is SkillCrazyUproar: StatusSkillImpl, with renewal's party cast,
-// which falls back to the caster without a party.
+// loud is SkillCrazyUproar: StatusSkillImpl. In renewal a player in a
+// party casts it on the members in its splash on the map.
 type loud struct{ statusSkill }
+
+func (l loud) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
+	if z.skillRenewal(d.ID) && *flag&1 == 0 && inParty(src) {
+		z.partyCastNoDamage(src, d, lv, *flag)
+		return
+	}
+	l.statusSkill.castendNoDamage(z, src, target, d, lv, flag)
+}
 
 // cure is SkillCure.
 type cure struct{}

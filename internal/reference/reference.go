@@ -48,6 +48,7 @@ var Systems = []string{
 	"refine",
 	"status_effects",
 	"level_penalty",
+	"party_share",
 	"random_option_rolls",
 }
 

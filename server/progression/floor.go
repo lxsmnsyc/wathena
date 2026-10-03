@@ -141,3 +141,30 @@ func (r Rights) CanTake(charID uint32, now int64) bool {
 	}
 	return now >= wait
 }
+
+// CanTakeParty is pc_takeitem's rights check for a player in a party.
+// With shared pick-up (party item & 1), a looter's party members may
+// take the item when that looter may: sameParty(i) reports whether the
+// first (0), second (1) or third (2) looter is online and in the
+// player's party. Without it, the check is CanTake.
+func (r Rights) CanTakeParty(charID uint32, now int64, shared bool, sameParty func(i int) bool) bool {
+	wait := r.ThirdTick
+	switch {
+	case r.First == 0 || r.First == charID:
+		wait = 0
+	case r.Second > 0 && r.Second == charID && !shared:
+		wait = r.FirstTick
+	case r.Third > 0 && r.Third == charID && !shared:
+		wait = r.SecondTick
+	case shared:
+		switch {
+		case r.First > 0 && sameParty(0):
+			wait = 0
+		case r.Second > 0 && sameParty(1):
+			wait = r.FirstTick
+		case r.Third > 0 && sameParty(2):
+			wait = r.SecondTick
+		}
+	}
+	return now >= wait
+}

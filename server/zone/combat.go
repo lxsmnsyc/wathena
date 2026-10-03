@@ -209,15 +209,26 @@ func (z *Zone) strike(e, t *entity) {
 	z.poisonReactBoost(e, t, r)
 	z.poisonReactCounter(e, t, r)
 	z.rejectSword(e, t, r)
+	// battle_weapon_attack: a devoted player in range of its Crusader
+	// shows the hit, but the Crusader takes the damage. Out of range,
+	// SC_DEVOTION ends and the player takes it.
+	var devoter *entity
+	if r.Damage > 0 && t.sc.Has(sc.SCDevotion) {
+		if devoter = z.devotionLink(t); devoter == nil {
+			z.scEnd(t, sc.SCDevotion)
+		}
+	}
 	z.logDamage(e, t, r.Damage)
-	if r.Damage > 0 {
+	if r.Damage > 0 && devoter == nil {
 		t.hp -= r.Damage
 		t.hpChanged = true
 	}
 	z.hits = append(z.hits, hit{source: e, target: t, result: r, delay: e.status.AMotion, hpPermille: t.hpPermille()})
 	z.itemHitEvents(e, t, r)
 	landed := !r.Blocked && (r.Kind == battle.Hit || r.Kind == battle.Critical)
-	if landed {
+	if devoter != nil {
+		z.devotionDamage(e, devoter, r.Damage)
+	} else if landed {
 		// status_damage: statuses that damage ends do, such as Sleep, and
 		// a hit of at least 1 damage stops a cast.
 		z.damaged(t, r.Damage, e.monster != nil)

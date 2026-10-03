@@ -1,0 +1,9940 @@
+{
+	"system": "party_share",
+	"mode": "pre-renewal",
+	"rathena_git_hash": "e985006171d2eb320ee512a653f4c83aea3d81b6",
+	"data_path": "pre-re/",
+	"circular_area": false,
+	"renewal_exp": false,
+	"exp_calc_type": 0,
+	"exp_bonus_attacker": 25,
+	"exp_bonus_max_attacker": 12,
+	"party_even_share_bonus": 0,
+	"idle_no_share": 0,
+	"mob_size_influence": 0,
+	"zeny_from_mobs": 0,
+	"party_share_type": 0,
+	"item_first_get_time": 3000,
+	"item_second_get_time": 2000,
+	"item_third_get_time": 2000,
+	"note": "Party exp sharing (mob_dead and party_exp_share) and party loot (pc_takeitem and party_share_loot). The header holds the battle_config values the cases use. Each case changes only party_even_share_bonus (exp) or party_share_type (loot). Exp cases: 'players' are sample players with the melee build. 'party' is 0 for no party, or party 1 or 2. 'map' is 'same' for the monster's map or 'other' for izlude. 'dead' players have dead_sit set. 'party_exp' is the party's exp option by party number: 0 each take, 1 even share. 'damage' is the damage log in order. Each entry goes to mob_log_damage, except the last one when 'killer' is not -1: then the monster's HP is set to 1 and status_damage deals the entry's damage, which mob_damage logs in full. When 'killer' is -1, status_damage with no source kills the monster after the log is filled. 'gained' lists every pc_gainexp call during the kill, in order, with the base and job exp passed in, before pc_calcexp. 'monster_base_exp' and 'monster_job_exp' are the monster's mob_db exp after the server rates. Loot cases: one Jellopy (amount 1) is dropped with map_addflooritem and taken with pc_takeitem by 'picker'. All players on the same map stand on the item's cell. 'first', 'second' and 'third' are the looter player indices, or -1 for none. 'first_tick', 'second_tick' and 'third_tick' are their protection ticks in milliseconds after the drop, and 'at' is the pick-up time after the drop. 'party_item' is the party's item option: bit 1 shares pick-up priority, bit 2 shares the item among members. 'share_type' is battle_config.party_share_type. 'slot' is the player's party member slot. 'inventory_full' players have every inventory slot taken, so pc_additem fails. 'itemc_before' and 'itemc_after' are the picker's party round robin counter (party_data.itemc), or -1 when the picker has no party. 'taken' is what pc_takeitem returned. It is also true when no one could hold the item. 'floor_cleared' is true when the item left the floor. 'receiver' is the player whose inventory gained the item, or -1. 'candidates' are the player indices in rAthena's order for the first random pick, and 'drawn' is each index rnd_value(0, count-1) drew. When a drawn candidate cannot hold the item, rAthena moves the last candidate into its place and draws again from one fewer.",
+	"exp_cases": [
+		{
+			"name": "solo_99",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "solo_1",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "two_no_party",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 60
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "repeated_hits_no_party",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "zero_damage_entry",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 0
+				},
+				{
+					"player": 1,
+					"damage": 100
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 2,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "each_2",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 70
+				},
+				{
+					"player": 1,
+					"damage": 30
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_2",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 70
+				},
+				{
+					"player": 1,
+					"damage": 30
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "each_4_levels",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 3,
+					"damage": 40
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 3,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_4_levels",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 3,
+					"damage": 40
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 3,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_4_one_attacker",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 3,
+					"damage": 100
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 1,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 2,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 3,
+					"base": 0,
+					"job": 0
+				}
+			]
+		},
+		{
+			"name": "even_5_two_attackers",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 8,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 11,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 9,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 2,
+					"damage": 45
+				},
+				{
+					"player": 0,
+					"damage": 55
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 1,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 2,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 3,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 4,
+					"base": 0,
+					"job": 0
+				}
+			]
+		},
+		{
+			"name": "even_dead_member",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 1,
+					"damage": 50
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_dead_attacker",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 1,
+					"damage": 50
+				},
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 2,
+					"damage": 10
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_other_map_member",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 80
+				},
+				{
+					"player": 1,
+					"damage": 20
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_other_map_attacker",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 1,
+					"damage": 40
+				},
+				{
+					"player": 0,
+					"damage": 40
+				},
+				{
+					"player": 2,
+					"damage": 20
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "two_parties_even",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1,
+				"2": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 3,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "two_parties_even_and_each",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1,
+				"2": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 3,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_party_and_solo",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 2,
+					"damage": 50
+				},
+				{
+					"player": 0,
+					"damage": 25
+				},
+				{
+					"player": 1,
+					"damage": 25
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_3",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 1,
+					"base": 0,
+					"job": 0
+				},
+				{
+					"player": 2,
+					"base": 0,
+					"job": 0
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_5_levels",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 8,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 11,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 9,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 20
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				},
+				{
+					"player": 4,
+					"damage": 20
+				}
+			],
+			"killer": 4,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 3,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 4,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_dead_and_other_map",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 60
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "each_bonus10_3",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 1,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 20
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 2,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "even_no_killer",
+			"monster": 1002,
+			"monster_level": 1,
+			"monster_base_exp": 2,
+			"monster_job_exp": 1,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 40
+				},
+				{
+					"player": 1,
+					"damage": 60
+				}
+			],
+			"killer": -1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 1,
+					"job": 1
+				}
+			]
+		},
+		{
+			"name": "solo_99",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 408,
+					"job": 160
+				}
+			]
+		},
+		{
+			"name": "solo_1",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 408,
+					"job": 160
+				}
+			]
+		},
+		{
+			"name": "two_no_party",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 60
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 306,
+					"job": 120
+				},
+				{
+					"player": 1,
+					"base": 204,
+					"job": 80
+				}
+			]
+		},
+		{
+			"name": "repeated_hits_no_party",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 204,
+					"job": 80
+				},
+				{
+					"player": 1,
+					"base": 306,
+					"job": 120
+				}
+			]
+		},
+		{
+			"name": "zero_damage_entry",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 0
+				},
+				{
+					"player": 1,
+					"damage": 100
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 510,
+					"job": 200
+				}
+			]
+		},
+		{
+			"name": "each_2",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 70
+				},
+				{
+					"player": 1,
+					"damage": 30
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 357,
+					"job": 140
+				},
+				{
+					"player": 1,
+					"base": 153,
+					"job": 60
+				}
+			]
+		},
+		{
+			"name": "even_2",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 70
+				},
+				{
+					"player": 1,
+					"damage": 30
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 255,
+					"job": 100
+				},
+				{
+					"player": 1,
+					"base": 255,
+					"job": 100
+				}
+			]
+		},
+		{
+			"name": "each_4_levels",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 3,
+					"damage": 40
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 71,
+					"job": 28
+				},
+				{
+					"player": 1,
+					"base": 142,
+					"job": 56
+				},
+				{
+					"player": 2,
+					"base": 214,
+					"job": 84
+				},
+				{
+					"player": 3,
+					"base": 285,
+					"job": 112
+				}
+			]
+		},
+		{
+			"name": "even_4_levels",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 3,
+					"damage": 40
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 178,
+					"job": 70
+				},
+				{
+					"player": 1,
+					"base": 178,
+					"job": 70
+				},
+				{
+					"player": 2,
+					"base": 178,
+					"job": 70
+				},
+				{
+					"player": 3,
+					"base": 178,
+					"job": 70
+				}
+			]
+		},
+		{
+			"name": "even_4_one_attacker",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 3,
+					"damage": 100
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 102,
+					"job": 40
+				},
+				{
+					"player": 1,
+					"base": 102,
+					"job": 40
+				},
+				{
+					"player": 2,
+					"base": 102,
+					"job": 40
+				},
+				{
+					"player": 3,
+					"base": 102,
+					"job": 40
+				}
+			]
+		},
+		{
+			"name": "even_5_two_attackers",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 8,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 11,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 9,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 2,
+					"damage": 45
+				},
+				{
+					"player": 0,
+					"damage": 55
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 101,
+					"job": 40
+				},
+				{
+					"player": 1,
+					"base": 101,
+					"job": 40
+				},
+				{
+					"player": 2,
+					"base": 101,
+					"job": 40
+				},
+				{
+					"player": 3,
+					"base": 101,
+					"job": 40
+				},
+				{
+					"player": 4,
+					"base": 101,
+					"job": 40
+				}
+			]
+		},
+		{
+			"name": "even_dead_member",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 1,
+					"damage": 50
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 255,
+					"job": 100
+				},
+				{
+					"player": 1,
+					"base": 255,
+					"job": 100
+				}
+			]
+		},
+		{
+			"name": "even_dead_attacker",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 1,
+					"damage": 50
+				},
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 2,
+					"damage": 10
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 166,
+					"job": 65
+				},
+				{
+					"player": 2,
+					"base": 166,
+					"job": 65
+				}
+			]
+		},
+		{
+			"name": "even_other_map_member",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 80
+				},
+				{
+					"player": 1,
+					"damage": 20
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 255,
+					"job": 100
+				},
+				{
+					"player": 1,
+					"base": 255,
+					"job": 100
+				}
+			]
+		},
+		{
+			"name": "even_other_map_attacker",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 1,
+					"damage": 40
+				},
+				{
+					"player": 0,
+					"damage": 40
+				},
+				{
+					"player": 2,
+					"damage": 20
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 153,
+					"job": 60
+				},
+				{
+					"player": 2,
+					"base": 153,
+					"job": 60
+				}
+			]
+		},
+		{
+			"name": "two_parties_even",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1,
+				"2": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 178,
+					"job": 70
+				},
+				{
+					"player": 1,
+					"base": 178,
+					"job": 70
+				},
+				{
+					"player": 2,
+					"base": 178,
+					"job": 70
+				},
+				{
+					"player": 3,
+					"base": 178,
+					"job": 70
+				}
+			]
+		},
+		{
+			"name": "two_parties_even_and_each",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1,
+				"2": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 2,
+					"base": 214,
+					"job": 84
+				},
+				{
+					"player": 3,
+					"base": 142,
+					"job": 56
+				},
+				{
+					"player": 0,
+					"base": 178,
+					"job": 70
+				},
+				{
+					"player": 1,
+					"base": 178,
+					"job": 70
+				}
+			]
+		},
+		{
+			"name": "even_party_and_solo",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 2,
+					"damage": 50
+				},
+				{
+					"player": 0,
+					"damage": 25
+				},
+				{
+					"player": 1,
+					"damage": 25
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 2,
+					"base": 306,
+					"job": 120
+				},
+				{
+					"player": 0,
+					"base": 153,
+					"job": 60
+				},
+				{
+					"player": 1,
+					"base": 153,
+					"job": 60
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_3",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 163,
+					"job": 63
+				},
+				{
+					"player": 1,
+					"base": 163,
+					"job": 63
+				},
+				{
+					"player": 2,
+					"base": 163,
+					"job": 63
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_5_levels",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 8,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 11,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 9,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 20
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				},
+				{
+					"player": 4,
+					"damage": 20
+				}
+			],
+			"killer": 4,
+			"gained": [
+				{
+					"player": 0,
+					"base": 228,
+					"job": 89
+				},
+				{
+					"player": 1,
+					"base": 228,
+					"job": 89
+				},
+				{
+					"player": 2,
+					"base": 228,
+					"job": 89
+				},
+				{
+					"player": 3,
+					"base": 228,
+					"job": 89
+				},
+				{
+					"player": 4,
+					"base": 228,
+					"job": 89
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_dead_and_other_map",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 60
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 280,
+					"job": 110
+				},
+				{
+					"player": 1,
+					"base": 280,
+					"job": 110
+				}
+			]
+		},
+		{
+			"name": "each_bonus10_3",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 1,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 20
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 306,
+					"job": 120
+				},
+				{
+					"player": 1,
+					"base": 183,
+					"job": 72
+				},
+				{
+					"player": 2,
+					"base": 122,
+					"job": 48
+				}
+			]
+		},
+		{
+			"name": "even_no_killer",
+			"monster": 1023,
+			"monster_level": 24,
+			"monster_base_exp": 408,
+			"monster_job_exp": 160,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 40
+				},
+				{
+					"player": 1,
+					"damage": 60
+				}
+			],
+			"killer": -1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 255,
+					"job": 100
+				},
+				{
+					"player": 1,
+					"base": 255,
+					"job": 100
+				}
+			]
+		},
+		{
+			"name": "solo_99",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 3410,
+					"job": 1795
+				}
+			]
+		},
+		{
+			"name": "solo_1",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 3410,
+					"job": 1795
+				}
+			]
+		},
+		{
+			"name": "two_no_party",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 60
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2557,
+					"job": 1346
+				},
+				{
+					"player": 1,
+					"base": 1705,
+					"job": 897
+				}
+			]
+		},
+		{
+			"name": "repeated_hits_no_party",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1705,
+					"job": 897
+				},
+				{
+					"player": 1,
+					"base": 2557,
+					"job": 1346
+				}
+			]
+		},
+		{
+			"name": "zero_damage_entry",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 0
+				},
+				{
+					"player": 1,
+					"damage": 100
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1,
+					"job": 1
+				},
+				{
+					"player": 1,
+					"base": 4262,
+					"job": 2243
+				}
+			]
+		},
+		{
+			"name": "each_2",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 70
+				},
+				{
+					"player": 1,
+					"damage": 30
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2983,
+					"job": 1570
+				},
+				{
+					"player": 1,
+					"base": 1278,
+					"job": 673
+				}
+			]
+		},
+		{
+			"name": "even_2",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 70
+				},
+				{
+					"player": 1,
+					"damage": 30
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2130,
+					"job": 1121
+				},
+				{
+					"player": 1,
+					"base": 2130,
+					"job": 1121
+				}
+			]
+		},
+		{
+			"name": "each_4_levels",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 3,
+					"damage": 40
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 596,
+					"job": 314
+				},
+				{
+					"player": 1,
+					"base": 1193,
+					"job": 628
+				},
+				{
+					"player": 2,
+					"base": 1790,
+					"job": 942
+				},
+				{
+					"player": 3,
+					"base": 2387,
+					"job": 1256
+				}
+			]
+		},
+		{
+			"name": "even_4_levels",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 10
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 3,
+					"damage": 40
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1491,
+					"job": 785
+				},
+				{
+					"player": 1,
+					"base": 1491,
+					"job": 785
+				},
+				{
+					"player": 2,
+					"base": 1491,
+					"job": 785
+				},
+				{
+					"player": 3,
+					"base": 1491,
+					"job": 785
+				}
+			]
+		},
+		{
+			"name": "even_4_one_attacker",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 3,
+					"damage": 100
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 852,
+					"job": 448
+				},
+				{
+					"player": 1,
+					"base": 852,
+					"job": 448
+				},
+				{
+					"player": 2,
+					"base": 852,
+					"job": 448
+				},
+				{
+					"player": 3,
+					"base": 852,
+					"job": 448
+				}
+			]
+		},
+		{
+			"name": "even_5_two_attackers",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 8,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 11,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 9,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 2,
+					"damage": 45
+				},
+				{
+					"player": 0,
+					"damage": 55
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 852,
+					"job": 448
+				},
+				{
+					"player": 1,
+					"base": 852,
+					"job": 448
+				},
+				{
+					"player": 2,
+					"base": 852,
+					"job": 448
+				},
+				{
+					"player": 3,
+					"base": 852,
+					"job": 448
+				},
+				{
+					"player": 4,
+					"base": 852,
+					"job": 448
+				}
+			]
+		},
+		{
+			"name": "even_dead_member",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 1,
+					"damage": 50
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2131,
+					"job": 1121
+				},
+				{
+					"player": 1,
+					"base": 2131,
+					"job": 1121
+				}
+			]
+		},
+		{
+			"name": "even_dead_attacker",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 1,
+					"damage": 50
+				},
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 2,
+					"damage": 10
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1394,
+					"job": 733
+				},
+				{
+					"player": 2,
+					"base": 1394,
+					"job": 733
+				}
+			]
+		},
+		{
+			"name": "even_other_map_member",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 80
+				},
+				{
+					"player": 1,
+					"damage": 20
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2131,
+					"job": 1121
+				},
+				{
+					"player": 1,
+					"base": 2131,
+					"job": 1121
+				}
+			]
+		},
+		{
+			"name": "even_other_map_attacker",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 1,
+					"damage": 40
+				},
+				{
+					"player": 0,
+					"damage": 40
+				},
+				{
+					"player": 2,
+					"damage": 20
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1278,
+					"job": 672
+				},
+				{
+					"player": 2,
+					"base": 1278,
+					"job": 672
+				}
+			]
+		},
+		{
+			"name": "two_parties_even",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1,
+				"2": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1491,
+					"job": 785
+				},
+				{
+					"player": 1,
+					"base": 1491,
+					"job": 785
+				},
+				{
+					"player": 2,
+					"base": 1491,
+					"job": 785
+				},
+				{
+					"player": 3,
+					"base": 1491,
+					"job": 785
+				}
+			]
+		},
+		{
+			"name": "two_parties_even_and_each",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1,
+				"2": 0
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 2,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 30
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				}
+			],
+			"killer": 3,
+			"gained": [
+				{
+					"player": 2,
+					"base": 1790,
+					"job": 942
+				},
+				{
+					"player": 3,
+					"base": 1193,
+					"job": 628
+				},
+				{
+					"player": 0,
+					"base": 1491,
+					"job": 785
+				},
+				{
+					"player": 1,
+					"base": 1491,
+					"job": 785
+				}
+			]
+		},
+		{
+			"name": "even_party_and_solo",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 0,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 2,
+					"damage": 50
+				},
+				{
+					"player": 0,
+					"damage": 25
+				},
+				{
+					"player": 1,
+					"damage": 25
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 2,
+					"base": 2557,
+					"job": 1346
+				},
+				{
+					"player": 0,
+					"base": 1278,
+					"job": 673
+				},
+				{
+					"player": 1,
+					"base": 1278,
+					"job": 673
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_3",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 100
+				}
+			],
+			"killer": 0,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1363,
+					"job": 717
+				},
+				{
+					"player": 1,
+					"base": 1363,
+					"job": 717
+				},
+				{
+					"player": 2,
+					"base": 1363,
+					"job": 717
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_5_levels",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 8,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 11,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 0,
+					"base_level": 1,
+					"job_level": 10,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 9,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 20
+				},
+				{
+					"player": 1,
+					"damage": 20
+				},
+				{
+					"player": 2,
+					"damage": 20
+				},
+				{
+					"player": 3,
+					"damage": 20
+				},
+				{
+					"player": 4,
+					"damage": 20
+				}
+			],
+			"killer": 4,
+			"gained": [
+				{
+					"player": 0,
+					"base": 1909,
+					"job": 1005
+				},
+				{
+					"player": 1,
+					"base": 1909,
+					"job": 1005
+				},
+				{
+					"player": 2,
+					"base": 1909,
+					"job": 1005
+				},
+				{
+					"player": 3,
+					"base": 1909,
+					"job": 1005
+				},
+				{
+					"player": 4,
+					"base": 1909,
+					"job": 1005
+				}
+			]
+		},
+		{
+			"name": "even_bonus10_dead_and_other_map",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "other",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 1,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": true
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 60
+				},
+				{
+					"player": 1,
+					"damage": 40
+				}
+			],
+			"killer": 1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2344,
+					"job": 1233
+				},
+				{
+					"player": 1,
+					"base": 2344,
+					"job": 1233
+				}
+			]
+		},
+		{
+			"name": "each_bonus10_3",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 0
+			},
+			"even_share_bonus": 10,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 30,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 99,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 50
+				},
+				{
+					"player": 1,
+					"damage": 30
+				},
+				{
+					"player": 2,
+					"damage": 20
+				}
+			],
+			"killer": 2,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2557,
+					"job": 1346
+				},
+				{
+					"player": 1,
+					"base": 1534,
+					"job": 807
+				},
+				{
+					"player": 2,
+					"base": 1023,
+					"job": 538
+				}
+			]
+		},
+		{
+			"name": "even_no_killer",
+			"monster": 1163,
+			"monster_level": 52,
+			"monster_base_exp": 3410,
+			"monster_job_exp": 1795,
+			"party_exp": {
+				"1": 1
+			},
+			"even_share_bonus": 0,
+			"players": [
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				},
+				{
+					"job": 7,
+					"base_level": 60,
+					"job_level": 50,
+					"party": 1,
+					"map": "same",
+					"dead": false
+				}
+			],
+			"damage": [
+				{
+					"player": 0,
+					"damage": 40
+				},
+				{
+					"player": 1,
+					"damage": 60
+				}
+			],
+			"killer": -1,
+			"gained": [
+				{
+					"player": 0,
+					"base": 2131,
+					"job": 1121
+				},
+				{
+					"player": 1,
+					"base": 2131,
+					"job": 1121
+				}
+			]
+		}
+	],
+	"loot_cases": [
+		{
+			"name": "no_party_first_before_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_first_after_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_first_after_second",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_first_after_third",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 8000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_second_before_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_second_after_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_second_after_second",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_second_after_third",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 8000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_third_before_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_third_after_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_third_after_second",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_third_after_third",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 8000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_outsider_before_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_outsider_after_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_outsider_after_second",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_party_outsider_after_third",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 8000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": -1,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 3,
+			"itemc_after": -1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_first_item0_before_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_first_item0_after_first",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_first_item0_after_second",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_first_item0_after_third",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 8000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 3,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_first_item1_before_first",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 3,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_first_item1_after_first",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 3,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_first_item1_after_second",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 3,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_first_item1_after_third",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 8000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 3,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "first_picks_item0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "second_in_party_early_item0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "other_party_after_second_item0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_third_after_first_item0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_second_other_party_item0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "first_picks_item1",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "second_in_party_early_item1",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "other_party_after_second_item1",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_third_after_first_item1",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_second_other_party_item1",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "first_picks_item2",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				2
+			]
+		},
+		{
+			"name": "second_in_party_early_item2",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "other_party_after_second_item2",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_third_after_first_item2",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_second_other_party_item2",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "first_picks_item3",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				1
+			]
+		},
+		{
+			"name": "second_in_party_early_item3",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				2
+			]
+		},
+		{
+			"name": "other_party_after_second_item3",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 6000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_third_after_first_item3",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 0,
+					"slot": -1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 3,
+			"first": 0,
+			"second": 1,
+			"third": 2,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": false,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "member_of_second_other_party_item3",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 2,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 2,
+			"first": 0,
+			"second": 1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 4000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 0,
+			"candidates": [
+				1,
+				2
+			],
+			"drawn": [
+				1
+			]
+		},
+		{
+			"name": "skip_rules_item0_type0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item0_type0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 2,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item0_type0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item0_type0",
+			"party_item": 0,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item0_type1",
+			"party_item": 0,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item0_type1",
+			"party_item": 0,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 2,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item0_type1",
+			"party_item": 0,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item0_type1",
+			"party_item": 0,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item0_type2",
+			"party_item": 0,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item0_type2",
+			"party_item": 0,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 2,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item0_type2",
+			"party_item": 0,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item0_type2",
+			"party_item": 0,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item0_type3",
+			"party_item": 0,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item0_type3",
+			"party_item": 0,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 2,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item0_type3",
+			"party_item": 0,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item0_type3",
+			"party_item": 0,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item1_type0",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item1_type0",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 2,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item1_type0",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item1_type0",
+			"party_item": 1,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item1_type1",
+			"party_item": 1,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item1_type1",
+			"party_item": 1,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 2,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item1_type1",
+			"party_item": 1,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item1_type1",
+			"party_item": 1,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item1_type2",
+			"party_item": 1,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item1_type2",
+			"party_item": 1,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 2,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item1_type2",
+			"party_item": 1,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item1_type2",
+			"party_item": 1,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item1_type3",
+			"party_item": 1,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item1_type3",
+			"party_item": 1,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": false,
+			"receiver": -1,
+			"itemc_after": 2,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item1_type3",
+			"party_item": 1,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item1_type3",
+			"party_item": 1,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item2_type0",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 4,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				3,
+				4
+			],
+			"drawn": [
+				2
+			]
+		},
+		{
+			"name": "picker_full_item2_type0",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 2,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				1
+			]
+		},
+		{
+			"name": "no_looter_item2_type0",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				0
+			]
+		},
+		{
+			"name": "slot_gaps_item2_type0",
+			"party_item": 2,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				1
+			]
+		},
+		{
+			"name": "skip_rules_item2_type1",
+			"party_item": 2,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				3,
+				4
+			],
+			"drawn": [
+				1,
+				0
+			]
+		},
+		{
+			"name": "picker_full_item2_type1",
+			"party_item": 2,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 2,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				1
+			]
+		},
+		{
+			"name": "no_looter_item2_type1",
+			"party_item": 2,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item2_type1",
+			"party_item": 2,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 5,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				0
+			]
+		},
+		{
+			"name": "skip_rules_item2_type2",
+			"party_item": 2,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 4,
+			"itemc_after": 4,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item2_type2",
+			"party_item": 2,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item2_type2",
+			"party_item": 2,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item2_type2",
+			"party_item": 2,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 7,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item2_type3",
+			"party_item": 2,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 4,
+			"itemc_after": 4,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item2_type3",
+			"party_item": 2,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item2_type3",
+			"party_item": 2,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item2_type3",
+			"party_item": 2,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 7,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item3_type0",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				3,
+				4
+			],
+			"drawn": [
+				0
+			]
+		},
+		{
+			"name": "picker_full_item3_type0",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 2,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				1
+			]
+		},
+		{
+			"name": "no_looter_item3_type0",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				2
+			]
+		},
+		{
+			"name": "slot_gaps_item3_type0",
+			"party_item": 3,
+			"share_type": 0,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				1
+			]
+		},
+		{
+			"name": "skip_rules_item3_type1",
+			"party_item": 3,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 0,
+			"itemc_after": 0,
+			"candidates": [
+				0,
+				3,
+				4
+			],
+			"drawn": [
+				1,
+				0
+			]
+		},
+		{
+			"name": "picker_full_item3_type1",
+			"party_item": 3,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 2,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				2
+			]
+		},
+		{
+			"name": "no_looter_item3_type1",
+			"party_item": 3,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item3_type1",
+			"party_item": 3,
+			"share_type": 1,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 5,
+			"candidates": [
+				0,
+				1,
+				2
+			],
+			"drawn": [
+				1
+			]
+		},
+		{
+			"name": "skip_rules_item3_type2",
+			"party_item": 3,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 4,
+			"itemc_after": 4,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item3_type2",
+			"party_item": 3,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item3_type2",
+			"party_item": 3,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item3_type2",
+			"party_item": 3,
+			"share_type": 2,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 7,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "skip_rules_item3_type3",
+			"party_item": 3,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": true,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "other",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 4,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 4,
+			"itemc_after": 4,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "picker_full_item3_type3",
+			"party_item": 3,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": true
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 0,
+			"first": 0,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 2,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 1,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "no_looter_item3_type3",
+			"party_item": 3,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 1,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 2,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": -1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 0,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 0,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 1,
+			"itemc_after": 0,
+			"candidates": [],
+			"drawn": []
+		},
+		{
+			"name": "slot_gaps_item3_type3",
+			"party_item": 3,
+			"share_type": 3,
+			"players": [
+				{
+					"party": 1,
+					"slot": 0,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 3,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				},
+				{
+					"party": 1,
+					"slot": 7,
+					"map": "same",
+					"dead": false,
+					"inventory_full": false
+				}
+			],
+			"picker": 1,
+			"first": 1,
+			"second": -1,
+			"third": -1,
+			"first_tick": 3000,
+			"second_tick": 5000,
+			"third_tick": 7000,
+			"at": 1000,
+			"item": 909,
+			"amount": 1,
+			"itemc_before": 5,
+			"taken": true,
+			"floor_cleared": true,
+			"receiver": 2,
+			"itemc_after": 7,
+			"candidates": [],
+			"drawn": []
+		}
+	]
+}

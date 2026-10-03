@@ -47,6 +47,7 @@ func TestDuplicationDropsAndPickUps(t *testing.T) {
 	d := dupTest(srv)
 	rep := d.Run(t)
 	checkDupReport(t, rep)
+	t.Logf("%d pick-ups the bots made themselves, %d items came in, %d unmatched", rep.Taken, rep.Added, rep.Unmatched)
 	srv.CheckLogs()
 }
 
@@ -60,5 +61,27 @@ func TestDuplicationWithDatabase(t *testing.T) {
 	rep := d.Run(t)
 	checkDupReport(t, rep)
 	d.CheckDatabase(t, rep)
+	srv.CheckLogs()
+}
+
+// TestDuplicationPartyPickUps runs the duplication test with the bots in
+// parties of 4 with even item share and shared pick-up, so a pick-up
+// gives the item to a random member on the map.
+func TestDuplicationPartyPickUps(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", Race: true})
+	d := dupTest(srv)
+	d.Prefix = "Party"
+	d.Setup = PartySetup(4, true, true)
+	rep := d.Run(t)
+	checkDupReport(t, rep)
+	// With even item share among 4 members, a pick-up gives the picker
+	// the item one time in 4, so each bot's items that came in differ
+	// from its own pick-ups. Without sharing they differ only for a
+	// connection that closed in the middle of a pick-up.
+	t.Logf("%d pick-ups the bots made themselves, %d items came in, %d unmatched", rep.Taken, rep.Added, rep.Unmatched)
+	if rep.Unmatched <= rep.Reconnects {
+		t.Errorf("%d items came in that differ from the bots' own pick-ups, with %d logins again: the items were not shared", rep.Unmatched, rep.Reconnects)
+	}
 	srv.CheckLogs()
 }

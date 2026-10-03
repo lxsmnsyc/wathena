@@ -12,8 +12,8 @@ import (
 
 // Limits of the hub.
 const (
-	// MaxBlocks is the most names a block list holds, as rAthena's
-	// MAX_IGNORE_LIST.
+	// MaxBlocks is rAthena's MAX_IGNORE_LIST, the default of the
+	// ruleset's block_list limit (server/rules), which the zone applies.
 	MaxBlocks = 20
 	// MaxChannels is the most channels a player may be in. rAthena ends
 	// the connection of a player in more than 200.
@@ -241,6 +241,15 @@ func (h *Hub) Blocks(m *Member, name string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return m.blocks[Key(name)]
+}
+
+// BlocksName reports whether the online player target blocks the name
+// from. It is false when target is not online.
+func (h *Hub) BlocksName(target, from string) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	m := h.online[Key(target)]
+	return m != nil && m.blocks[Key(from)]
 }
 
 // IsOnline reports whether a character of the name is online, and its

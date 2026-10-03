@@ -32,6 +32,9 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 
 	recalcAll := false
 	switch typ {
+	case SCEndure, SCDefender, SCReflectshield, SCAutoguard:
+		// The players a player protects with Devotion lose it too.
+		en.endOnDevoted(u, typ, reason)
 	case SCConcentration:
 		if c := sc.Get(SCEndure); c != nil && c.Val4 == 0 {
 			en.End(u, SCEndure, ReasonReplaced)
@@ -172,6 +175,10 @@ const (
 
 // Clear is status_change_clear: statuses end for a reason, by kind.
 func (en *Engine) Clear(u Unit, kind ClearKind, reason Reason) {
+	if kind == ClearDeath {
+		// pc_dead: the players the dead player protects lose Devotion.
+		en.devoterDied(u)
+	}
 	sc := u.Changes()
 	if sc.Empty() {
 		return

@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -77,6 +78,11 @@ type RulesetSupport struct {
 type RulesetSpec struct {
 	Extends string               `yaml:"extends"`
 	Flags   map[string]flagValue `yaml:"flags"`
+	// Limits and Rules set the limits that rAthena compiles in and the
+	// values of its conf files (proposal 0002, review decision 27). A
+	// ruleset mod that does not set one keeps what it extends.
+	Limits map[string]flagValue `yaml:"limits"`
+	Rules  map[string]flagValue `yaml:"rules"`
 }
 
 // flagValue is a flag's value. YAML 1.1 readers turn on and off into
@@ -241,6 +247,16 @@ func ParseManifest(file string, data []byte) (*Manifest, error) {
 		for name, v := range p.Flags {
 			if err := checkFlag(name, string(v)); err != nil {
 				bad("provides.ruleset.flags", "%v", err)
+			}
+		}
+		for name, v := range p.Limits {
+			if _, err := checkBound(rules.LimitBounds, "limit", name, string(v)); err != nil {
+				bad("provides.ruleset.limits", "%v", err)
+			}
+		}
+		for name, v := range p.Rules {
+			if _, err := checkBound(rules.RuleBounds, "rule", name, string(v)); err != nil {
+				bad("provides.ruleset.rules", "%v", err)
 			}
 		}
 		if m.Supports.Rulesets != nil {

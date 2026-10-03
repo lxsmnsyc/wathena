@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/session.proto.
  */
 export const file_wathena_v1_session: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL3Nlc3Npb24ucHJvdG8SCndhdGhlbmEudjEiXwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIVCg1zZXNzaW9uX3Rva2VuGAIgASgMEhMKC2NsaWVudF9uYW1lGAMgASgJEhAKCGxhbmd1YWdlGAQgASgJImYKB1dlbGNvbWUSGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIWCg5zZXJ2ZXJfdGltZV9tcxgCIAEoBBIMCgR0aWNrGAMgASgNEg4KBm5ldF9pZBgEIAEoDRILCgNtYXAYBSABKAkiFQoEUGluZxINCgVub25jZRgBIAEoDSItCgRQb25nEg0KBW5vbmNlGAEgASgNEhYKDnNlcnZlcl90aW1lX21zGAIgASgEIksKCkRpc2Nvbm5lY3QSLAoGcmVhc29uGAEgASgOMhwud2F0aGVuYS52MS5EaXNjb25uZWN0UmVhc29uEg8KB21lc3NhZ2UYAiABKAkq4AIKEERpc2Nvbm5lY3RSZWFzb24SIQodRElTQ09OTkVDVF9SRUFTT05fVU5TUEVDSUZJRUQQABIpCiVESVNDT05ORUNUX1JFQVNPTl9WRVJTSU9OX1VOU1VQUE9SVEVEEAESJQohRElTQ09OTkVDVF9SRUFTT05fU0VTU0lPTl9JTlZBTElEEAISKQolRElTQ09OTkVDVF9SRUFTT05fTE9HR0VEX0lOX0VMU0VXSEVSRRADEiIKHkRJU0NPTk5FQ1RfUkVBU09OX1JBVEVfTElNSVRFRBAEEiEKHURJU0NPTk5FQ1RfUkVBU09OX0JBRF9NRVNTQUdFEAUSHAoYRElTQ09OTkVDVF9SRUFTT05fQkFOTkVEEAYSJQohRElTQ09OTkVDVF9SRUFTT05fU0VSVkVSX1NIVVRET1dOEAcSIAocRElTQ09OTkVDVF9SRUFTT05fTE9HR0VEX09VVBAIQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
+  fileDesc("Chh3YXRoZW5hL3YxL3Nlc3Npb24ucHJvdG8SCndhdGhlbmEudjEiXwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIVCg1zZXNzaW9uX3Rva2VuGAIgASgMEhMKC2NsaWVudF9uYW1lGAMgASgJEhAKCGxhbmd1YWdlGAQgASgJIooBCgdXZWxjb21lEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQSDAoEdGljaxgDIAEoDRIOCgZuZXRfaWQYBCABKA0SCwoDbWFwGAUgASgJEiIKBmxpbWl0cxgGIAEoCzISLndhdGhlbmEudjEuTGltaXRzIkQKBkxpbWl0cxIVCg1wYXJ0eV9tZW1iZXJzGAEgASgNEg8KB2ZyaWVuZHMYAiABKA0SEgoKYmxvY2tfbGlzdBgDIAEoDSIVCgRQaW5nEg0KBW5vbmNlGAEgASgNIi0KBFBvbmcSDQoFbm9uY2UYASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQiSwoKRGlzY29ubmVjdBIsCgZyZWFzb24YASABKA4yHC53YXRoZW5hLnYxLkRpc2Nvbm5lY3RSZWFzb24SDwoHbWVzc2FnZRgCIAEoCSrgAgoQRGlzY29ubmVjdFJlYXNvbhIhCh1ESVNDT05ORUNUX1JFQVNPTl9VTlNQRUNJRklFRBAAEikKJURJU0NPTk5FQ1RfUkVBU09OX1ZFUlNJT05fVU5TVVBQT1JURUQQARIlCiFESVNDT05ORUNUX1JFQVNPTl9TRVNTSU9OX0lOVkFMSUQQAhIpCiVESVNDT05ORUNUX1JFQVNPTl9MT0dHRURfSU5fRUxTRVdIRVJFEAMSIgoeRElTQ09OTkVDVF9SRUFTT05fUkFURV9MSU1JVEVEEAQSIQodRElTQ09OTkVDVF9SRUFTT05fQkFEX01FU1NBR0UQBRIcChhESVNDT05ORUNUX1JFQVNPTl9CQU5ORUQQBhIlCiFESVNDT05ORUNUX1JFQVNPTl9TRVJWRVJfU0hVVERPV04QBxIgChxESVNDT05ORUNUX1JFQVNPTl9MT0dHRURfT1VUEAhCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
 
 /**
  * Hello is the first client message on a new connection.
@@ -95,6 +95,14 @@ export type Welcome = Message<"wathena.v1.Welcome"> & {
    * @generated from field: string map = 5;
    */
   map: string;
+
+  /**
+   * limits are the world ruleset's limits, so the client sizes its
+   * windows (strategy section 6.8).
+   *
+   * @generated from field: wathena.v1.Limits limits = 6;
+   */
+  limits?: Limits | undefined;
 };
 
 /**
@@ -103,6 +111,43 @@ export type Welcome = Message<"wathena.v1.Welcome"> & {
  */
 export const WelcomeSchema: GenMessage<Welcome> = /*@__PURE__*/
   messageDesc(file_wathena_v1_session, 1);
+
+/**
+ * Limits are limits that rAthena compiles in and a ruleset sets
+ * (proposal 0002, review decision 27).
+ *
+ * @generated from message wathena.v1.Limits
+ */
+export type Limits = Message<"wathena.v1.Limits"> & {
+  /**
+   * party_members is the most members a party holds, as MAX_PARTY.
+   *
+   * @generated from field: uint32 party_members = 1;
+   */
+  partyMembers: number;
+
+  /**
+   * friends is the most names a friend list holds, as MAX_FRIENDS.
+   *
+   * @generated from field: uint32 friends = 2;
+   */
+  friends: number;
+
+  /**
+   * block_list is the most names a block list holds, as
+   * MAX_IGNORE_LIST.
+   *
+   * @generated from field: uint32 block_list = 3;
+   */
+  blockList: number;
+};
+
+/**
+ * Describes the message wathena.v1.Limits.
+ * Use `create(LimitsSchema)` to create a new message.
+ */
+export const LimitsSchema: GenMessage<Limits> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_session, 2);
 
 /**
  * @generated from message wathena.v1.Ping
@@ -119,7 +164,7 @@ export type Ping = Message<"wathena.v1.Ping"> & {
  * Use `create(PingSchema)` to create a new message.
  */
 export const PingSchema: GenMessage<Ping> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 2);
+  messageDesc(file_wathena_v1_session, 3);
 
 /**
  * @generated from message wathena.v1.Pong
@@ -141,7 +186,7 @@ export type Pong = Message<"wathena.v1.Pong"> & {
  * Use `create(PongSchema)` to create a new message.
  */
 export const PongSchema: GenMessage<Pong> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 3);
+  messageDesc(file_wathena_v1_session, 4);
 
 /**
  * Disconnect is the last message before the server closes the connection.
@@ -167,7 +212,7 @@ export type Disconnect = Message<"wathena.v1.Disconnect"> & {
  * Use `create(DisconnectSchema)` to create a new message.
  */
 export const DisconnectSchema: GenMessage<Disconnect> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 4);
+  messageDesc(file_wathena_v1_session, 5);
 
 /**
  * @generated from enum wathena.v1.DisconnectReason

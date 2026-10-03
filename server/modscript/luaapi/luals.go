@@ -112,6 +112,13 @@ func luaModule(m Module, consts *constants.Module) string {
 	if m.Call != nil {
 		fmt.Fprintf(&b, "---@overload %s\n", signature(m.Call.Params, m.Call.Returns))
 	}
+	for _, f := range m.Fields {
+		fmt.Fprintf(&b, "---@field %s %s", f.Name, f.Type)
+		if f.Doc != "" {
+			b.WriteString(" " + f.Doc)
+		}
+		b.WriteString("\n")
+	}
 	if consts != nil {
 		for _, name := range slices.Sorted(maps.Keys(consts.Values)) {
 			fmt.Fprintf(&b, "---@field %s integer %d, rAthena's %s.\n", name, consts.Values[name], consts.Origins[name])

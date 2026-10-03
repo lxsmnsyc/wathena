@@ -4,6 +4,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
+	"github.com/lxsmnsyc/wathena/server/social"
 )
 
 // Warps and map changes, as rAthena's warp NPCs and pc_setpos:
@@ -148,6 +149,9 @@ type handoff struct {
 	member *chat.Member
 	hub    *chat.Hub
 	seen   []chat.Line
+	// soc is the player in the social registry, and social the registry.
+	soc    *social.Player
+	social *social.Registry
 }
 
 // warp sends a player through a warp, as npc_touch_areanpc and
@@ -196,7 +200,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	z.removeMap(p.entity)
 	z.stopPassives(p)
 	h := &handoff{sess: s, char: z.snapshot(p), ackSeq: p.ackSeq, rewarp: p.rewarp, temp: p.temp,
-		member: p.member, hub: z.Chat, seen: p.seen,
+		member: p.member, hub: z.Chat, seen: p.seen, soc: p.soc, social: z.Social,
 		canUseItem:   max(p.canUseItem-z.now, 0),
 		itemDelays:   map[uint32]int64{},
 		statusDelays: map[string]int64{},
@@ -277,6 +281,9 @@ func (h *handoff) finish(why ending) {
 	}
 	if h.hub != nil {
 		h.hub.Offline(h.member)
+	}
+	if h.social != nil {
+		h.social.Offline(h.soc, s)
 	}
 	s.outClosed.close(s.out)
 	s.done()

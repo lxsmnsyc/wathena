@@ -28,6 +28,9 @@ message Command {
     ChannelCommand channel = 18;
     Block block = 19;
     Report report = 20;
+    PartyCommand party = 21;
+    FriendCommand friend = 22;
+    PartyBookingCommand party_booking = 23;
   }
 }
 
@@ -274,4 +277,117 @@ message UnequipItem {
 message InsertCard {
   uint32 card_slot = 1;
   uint32 equip_slot = 2;
+}
+
+// PartyCommand is a party action, as rAthena's party packets. The server
+// answers with PartyResult when the action fails or is refused, and with
+// PartyInfo when the party changed. Party chat is Chat with
+// CHAT_CHANNEL_PARTY.
+message PartyCommand {
+  oneof action {
+    // create makes a party with the player as its leader, as
+    // party_create.
+    PartyCreate create = 1;
+    // invite asks a player by name to join the leader's party, as
+    // party_invite. Only the leader may invite.
+    string invite = 2;
+    // reply answers the invite of PartyInvite, as party_reply_invite.
+    PartyReply reply = 3;
+    // leave leaves the party, as party_leave. When the leader leaves,
+    // the party breaks up, as rAthena does.
+    bool leave = 4;
+    // expel removes a member by name, as party_removemember. Only the
+    // leader may expel.
+    string expel = 5;
+    // set_leader makes a member the leader, as party_changeleader. Only
+    // the leader may do it.
+    string set_leader = 6;
+    // options changes the party's options, as party_changeoption. Only
+    // the leader may do it.
+    PartyOptions options = 7;
+  }
+}
+
+message PartyCreate {
+  // name is the party's name, 1 to 24 characters.
+  string name = 1;
+  // options are the item options. exp_share is always each at first, as
+  // in rAthena.
+  PartyOptions options = 2;
+}
+
+message PartyReply {
+  // party_id is PartyInvite.party_id.
+  uint64 party_id = 1;
+  bool accept = 2;
+}
+
+// PartyOptions are a party's sharing options, as rAthena's party.exp and
+// party.item.
+message PartyOptions {
+  // exp_even shares exp evenly among the members on the map, as exp 1.
+  // Each member gets its own exp otherwise.
+  bool exp_even = 1;
+  // item_even gives each picked up item to a party member on the map, as
+  // item & 2 (the distribution option).
+  bool item_even = 2;
+  // pickup_shared lets members pick up items their party's top attackers
+  // may take, as item & 1 (the pick-up option).
+  bool pickup_shared = 3;
+}
+
+// FriendCommand changes the friend list, as rAthena's friend packets. The
+// server answers with FriendResult and FriendList.
+message FriendCommand {
+  oneof action {
+    // add asks an online player by name to be friends, as
+    // clif_parse_FriendsListAdd.
+    string add = 1;
+    // reply answers FriendRequest, as clif_parse_FriendsListReply.
+    FriendReply reply = 2;
+    // remove takes a friend off the list by name, on both sides, as
+    // clif_parse_FriendsListRemove.
+    string remove = 3;
+  }
+}
+
+message FriendReply {
+  // name is FriendRequest.from.
+  string name = 1;
+  bool accept = 2;
+}
+
+// PartyBookingCommand registers, searches or deletes a party booking ad,
+// as rAthena's party booking. The server answers with PartyBookingList.
+message PartyBookingCommand {
+  oneof action {
+    PartyBookingAd register = 1;
+    PartyBookingSearch search = 2;
+    // delete removes the player's own ad.
+    bool delete = 3;
+  }
+}
+
+// PartyBookingAd is an ad for a party: the level it is for, the map, and
+// the jobs it wants.
+message PartyBookingAd {
+  // level is the level the ad is for, 1 to 999. A search for level L
+  // finds ads from L - 15 to L, as party_booking_search.
+  uint32 level = 1;
+  // map is a map's asset name, such as map/prt_fild08, or empty.
+  string map = 2;
+  // jobs are up to 6 job IDs the party wants.
+  repeated uint32 jobs = 3;
+  // note is a line about the party, at most 80 characters.
+  string note = 4;
+}
+
+message PartyBookingSearch {
+  // level is 0 for any level.
+  uint32 level = 1;
+  // map is empty for any map.
+  string map = 2;
+  // job is a job ID the ad must want, or 0 for any job. rAthena searches
+  // by map or by job: a search with both finds nothing.
+  uint32 job = 3;
 }

@@ -74,6 +74,9 @@ type Module struct {
 	Call *Func
 	// Constants is set for a constant module of server/constants.
 	Constants bool
+	// Fields are read-only fields of the module, such as wa.rules'
+	// limits.
+	Fields []Field
 	// Testing modules exist only under wactl mod test.
 	Testing     bool
 	Provisional bool
@@ -228,6 +231,23 @@ var Modules = []Module{
 		},
 	},
 	{
+		Name: "wa.parties", Local: "parties",
+		Doc: "Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do.",
+		Funcs: []Func{
+			{Name: "create", Params: []Param{{"leader", "wa.Player", ""}, {"name", "string", "1 to 24 characters."}}, Returns: "wa.Party?",
+				Doc: "Makes a party with the player as its leader, as party_create, and returns it. Exp share starts as each, and the items as each. nil when the name is taken or the leader has a party. The party_join event follows, with the reason \"script\". A test case needs no permission for it.", Permission: "party.manage"},
+			{Name: "get", Params: []Param{{"id", "integer", "A party's ID, such as player.party.id."}}, Returns: "wa.Party?", Doc: "A party by ID, or nil.", Permission: "game.read"},
+			{Name: "find", Params: []Param{{"name", "string", "A party's name, without regard to case."}}, Returns: "wa.Party?", Doc: "A party by name, or nil.", Permission: "game.read"},
+		},
+	},
+	{
+		Name: "wa.rules", Local: "rules",
+		Doc: "The world's ruleset (strategy section 3.6, review decision 27). Read-only.",
+		Fields: []Field{
+			{"limits", "wa.Limits", "The limits that rAthena compiles in, as the ruleset sets them, such as rules.limits.party_members."},
+		},
+	},
+	{
 		Name: "wa.variables", Local: "variables",
 		Doc:   "Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID.",
 		Funcs: variableFuncs(),
@@ -350,7 +370,7 @@ func playerFields() []Field {
 		{"y", "integer", ""},
 		{"character_id", "integer", "The database ID, 0 without a database."},
 		{"account_id", "integer", "The database ID, 0 without a database."},
-		{"party", "nil", "nil: parties do not exist yet."},
+		{"party", "wa.Party?", "The player's party, or nil."},
 		{"sex", `"male"|"female"`, ""},
 		{"companion", "integer?", "The player's companion, from companions.id, or nil."},
 		{"mount", "integer?", "The player's mount, from mounts.id, or nil."},
@@ -417,6 +437,8 @@ var Classes = []Class{
 			{Name: "whisper", Params: []Param{{"text", "string", "1 to 255 bytes."}, {"options", "wa.WhisperOptions?", ""}},
 				Doc: "Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it."},
 			{Name: "is_blocking", Params: []Param{{"other", "wa.Player", ""}}, Returns: "boolean", Doc: "Whether the player blocks the other player's name.", Permission: "game.read"},
+			{Name: "is_friend", Params: []Param{{"other", "wa.Player", ""}}, Returns: "boolean", Doc: "Whether the other player is on the player's friend list. Only players add and remove friends.", Permission: "game.read"},
+			{Name: "get_friend_names", Returns: "string[]", Doc: "The names on the player's friend list, in the order they were added.", Permission: "game.read"},
 			{Name: "mute", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
 				Doc: "Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.", Permission: "player.sanction"},
 			{Name: "jail", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
@@ -541,6 +563,66 @@ var Classes = []Class{
 			{Name: "add", Params: []Param{playerParam}, Returns: "boolean", Doc: "Puts the player in the channel, whatever its join rule. Returns false when it was already in it."},
 			{Name: "remove", Params: []Param{playerParam}, Returns: "boolean", Doc: "Takes the player out of the channel, even one it may not leave. Returns false when it was not in it."},
 			{Name: "get_members", Returns: "string[]", Doc: "The members' character names, sorted. Members may be on any map.", Permission: "game.read"},
+		},
+	},
+	{
+		Name: "wa.Party", Handle: "party", Doc: "A party, from player.party or wa.parties. Its leader and members are players of this map: a member on another map is nil or left out.",
+		Fields: []Field{
+			{"id", "integer", ""},
+			{"name", "string", ""},
+			{"leader", "wa.Player?", "The leader, or nil when it is offline or on another map."},
+			{"leader_name", "string", "The leader's name, online or not."},
+			{"exp_share", `"each"|"even"`, "Even shares the exp of a kill among the members on the map, as rAthena's even share."},
+			{"item_share", `"each"|"even"`, "Even gives each picked up item to a member on the map."},
+			{"item_pickup", `"each"|"shared"`, "Shared lets members pick up the items their party's top attackers may take."},
+		},
+		Methods: []Func{
+			{Name: "get_members", Returns: "wa.Player[]", Doc: "The online members on this map, in the party's slot order.", Permission: "game.read"},
+			{Name: "get_member_names", Returns: "string[]", Doc: "Every member's name, online or not, in slot order.", Permission: "game.read"},
+			{Name: "add", Params: []Param{playerParam}, Returns: "boolean", Doc: "Puts the player in the party, as party_addmember. Returns false when the player has a party, the party is full, or a character of the same account is in it. The party_join event follows, with the reason \"script\".", Permission: "party.manage"},
+			{Name: "remove", Params: []Param{playerParam}, Returns: "boolean", Doc: "Takes the player out of the party, as party_delmember. The leader's removal breaks the party up, as in rAthena. Returns false when the player is not in the party.", Permission: "party.manage"},
+			{Name: "set_leader", Params: []Param{playerParam}, Returns: "boolean", Doc: "Makes an online member the leader, as party_changeleader. Returns false when the player is not an online member, or leads already. The party_change event follows.", Permission: "party.manage"},
+			{Name: "set_options", Params: []Param{{"options", "wa.PartyOptions", ""}}, Doc: "Changes the options it names, as party_changeoption. Even exp share needs the online members' base levels within the ruleset's party_share_level, else exp share stays each. The party_change event follows a change.", Permission: "party.manage"},
+			{Name: "disband", Doc: "Breaks the party up, as party_destroy. Each member gets the party_leave event, with the reason \"disbanded\".", Permission: "party.manage"},
+		},
+	},
+	{
+		Name: "wa.PartyOptions", Doc: "A party's options, in party:set_options and the party_change event.",
+		Fields: []Field{
+			{"exp_share", `"each"|"even"|nil`, ""},
+			{"item_share", `"each"|"even"|nil`, ""},
+			{"item_pickup", `"each"|"shared"|nil`, ""},
+		},
+	},
+	{
+		Name: "wa.PartyMembership", Doc: "The object of the party_join and party_leave events.",
+		Fields: []Field{
+			{"party", "wa.Party", "The party. After it broke up, its fields still read."},
+			{"player", "wa.Player", "The player who joined or left."},
+			{"reason", `"invited"|"left"|"expelled"|"disbanded"|"script"`, "Why: an accepted invite, a leave, an expel, a break up, or a wa.parties call."},
+		},
+	},
+	{
+		Name: "wa.PartyChange", Doc: "The object of the party_change event.",
+		Fields: []Field{
+			{"party", "wa.Party", ""},
+			{"leader", "wa.Player?", "The leader, or nil when it is on another map."},
+			{"options", "wa.PartyOptions", "The party's options after the change."},
+		},
+	},
+	{
+		Name: "wa.Limits", Doc: "The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.",
+		Fields: []Field{
+			{"party_members", "integer", "The most members a party holds, as MAX_PARTY. 12 by default, at most 64."},
+			{"friends", "integer", "The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200."},
+			{"block_list", "integer", "The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100."},
+		},
+	},
+	{
+		Name: "wa.ExpShare", Doc: "The share of the experience hook's object.",
+		Fields: []Field{
+			{"base", "integer", ""},
+			{"job", "integer", ""},
 		},
 	},
 	{
@@ -690,12 +772,14 @@ var Classes = []Class{
 		},
 	},
 	{
-		Name: "wa.Exp", Doc: "The object of the experience hook: the exp one player gets for a kill, after the shares and the level penalty.",
+		Name: "wa.Exp", Doc: "The object of the experience hook: the exp one player gets for a kill, after the shares, the even party split and the level penalty. With even exp share, each member on the map gets its own hook run.",
 		Fields: []Field{
 			{"player", "wa.Player", ""},
 			{"monster", "wa.Monster", "The killed monster."},
 			{"base", "integer", ""},
 			{"job", "integer", ""},
+			{"party", "wa.Party?", "The player's party, or nil."},
+			{"share", "wa.ExpShare", "The player's own share of the kill, before the even party split and the level penalty. 0 and 0 for a member who did not fight."},
 		},
 	},
 	{
@@ -1078,7 +1162,10 @@ var Events = []Event{
 	{Name: "status_start", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status started on an entity of the context's map, or started again. Options narrow it."},
 	{Name: "status_end", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status ended. Options narrow it."},
 	{Name: "status_tick", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it."},
-	{Name: "chat", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"message", "wa.ChatMessage", ""}}, Doc: "A player on the context's map said a line: local chat, a whisper, or a channel line. It runs after the line went out. Options narrow it."},
+	{Name: "chat", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"message", "wa.ChatMessage", ""}}, Doc: "A player on the context's map said a line: local chat, a whisper, a party line, or a channel line. It runs after the line went out. Options narrow it."},
+	{Name: "party_join", Kinds: []string{"mod", "event"}, Params: []Param{{"join", "wa.PartyMembership", ""}}, Doc: "A player of the context's map joined a party: an accepted invite, or a wa.parties call. It does not fire for a player who makes a party itself."},
+	{Name: "party_leave", Kinds: []string{"mod", "event"}, Params: []Param{{"leave", "wa.PartyMembership", ""}}, Doc: "A player of the context's map left its party. A member who is offline gets no event."},
+	{Name: "party_change", Kinds: []string{"mod", "event"}, Params: []Param{{"change", "wa.PartyChange", ""}}, Doc: "A party's leader or options changed, by a change made on the context's map."},
 }
 
 // EquipSlots are the slot names of player:get_equipped.

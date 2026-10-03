@@ -48,6 +48,9 @@ func TestAPIDefinitions(t *testing.T) {
 		for _, f := range append(slices.Clone(m.Funcs), m.Methods...) {
 			want = append(want, f.Name)
 		}
+		for _, f := range m.Fields {
+			want = append(want, f.Name)
+		}
 		if m.Constants {
 			c := tables[strings.TrimPrefix(m.Name, "wa.")]
 			if c == nil {

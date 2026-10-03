@@ -99,6 +99,14 @@ type Game struct {
 	// or nil.
 	Dialog *wathenav1.NpcDialog
 	Shop   *wathenav1.ShopOpen
+	// Party is the bot's party, or nil. Invite is the last party invite
+	// the bot has not answered, or nil.
+	Party  *Party
+	Invite *wathenav1.PartyInvite
+	// Friends is the friend list, and FriendRequests the names that
+	// asked to be friends and got no answer yet.
+	Friends        []Friend
+	FriendRequests []string
 }
 
 // Count is the amount of an item in the inventory.
@@ -127,9 +135,11 @@ func (g Game) SlotOf(id uint32) int {
 func (b *Bot) Game() Game {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	party, invite, friends, requests := b.social.clone()
 	return Game{
 		Items: maps.Clone(b.game.items), Stats: maps.Clone(b.game.stats), Skills: maps.Clone(b.game.skills),
 		Dialog: b.game.dialog, Shop: b.game.shop,
+		Party: party, Invite: invite, Friends: friends, FriendRequests: requests,
 	}
 }
 

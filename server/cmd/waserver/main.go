@@ -86,7 +86,9 @@ import (
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/transfer"
@@ -364,6 +366,25 @@ func runAll(name string, args []string) error {
 	// One chat hub for the world: whispers, channels and block lists.
 	hub := chat.NewHub(loaded.all.Chat.Channels, loaded.all.Chat.Filter)
 	hub.Limits, hub.Clock = cfg.Chat.Limits, clock
+	// One social registry for the world: parties, friend lists and party
+	// booking (decision 0020). Every saved party loads now.
+	worldRules := loaded.zone.Rules
+	if worldRules == nil {
+		worldRules = rules.Of(statusMode == "renewal")
+	}
+	socials := social.New(rules.LimitsOrDefault(worldRules), rules.PartyOrDefault(worldRules))
+	socials.Blocks, socials.Clock = hub.BlocksName, clock
+	var socialStore *store.SocialStore
+	if pool != nil {
+		parties, err := store.LoadParties(ctx, pool)
+		if err != nil {
+			return fmt.Errorf("parties: %w", err)
+		}
+		socialStore = store.NewSocialStore(pool, log)
+		socials.Store = socialStore
+		socials.Load(parties)
+		log.Info("parties loaded", "parties", len(parties))
+	}
 	jail := zone.Jail{Map: assetName(cfg.Jail.Map), Cells: cfg.Jail.Cells}
 	if !slices.Contains(names, jail.Map) {
 		log.Warn("the jail map does not run: jailed players stay where they are and cannot warp", "jail", jail.Map)
@@ -415,7 +436,7 @@ func runAll(name string, args []string) error {
 			z.Start.Job, z.StartBaseLevel, z.StartJobLevel = sj.job, sj.base, sj.jobLevel
 		}
 		z.SaveMap = name
-		z.Chat, z.Jail, z.Clock = hub, jail, clock
+		z.Chat, z.Jail, z.Clock, z.Social = hub, jail, clock, socials
 		z.SetWarps(warps[n])
 		z.SetNPCs(loaded.npcs[n])
 		z.Mods = loaded.zone
@@ -453,7 +474,7 @@ func runAll(name string, args []string) error {
 		log.Info("world event", attrs...)
 	}
 	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: cfg.Origins, Log: log, Metrics: &reg.Conns,
-		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName}
+		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName, Limits: rules.LimitsOrDefault(worldRules)}
 	go reg.Conns.Run(ctx)
 	hc := &health{}
 	var st *store.Store
@@ -521,6 +542,17 @@ func runAll(name string, args []string) error {
 	}
 	go w.Run(ctx)
 	go scheduler.Run(ctx)
+	if socialStore != nil {
+		// Party and friend changes are written once every zone stopped.
+		defer func() {
+			<-w.Stopped()
+			drain, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := socialStore.Close(drain); err != nil {
+				log.Error("party and friend changes lost at shutdown", "err", err)
+			}
+		}()
+	}
 	if chatLog != nil {
 		// The chat log writes what waits once every zone stopped.
 		defer func() {

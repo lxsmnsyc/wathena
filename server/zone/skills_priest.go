@@ -11,11 +11,11 @@ import (
 )
 
 // Skill behaviors of the Priest and the High Priest, as the SkillImpl
-// classes in rAthena's src/map/skills/acolyte. Parties do not exist yet:
-// the party skills reach the caster alone, as rAthena does for a player
-// without a party, and Redemptio fails, as it does without a party. Mace
-// Mastery, Meditatio and Mana Recharge are passive: their effects are in
-// server/status, server/battle and server/skill.
+// classes in rAthena's src/map/skills/acolyte. The party skills reach
+// the caster's party members on the map, or the caster alone without a
+// party, and Redemptio fails without a party. Mace Mastery, Meditatio
+// and Mana Recharge are passive: their effects are in server/status,
+// server/battle and server/skill.
 
 func init() {
 	registerSkillImpls(map[int]any{
@@ -163,8 +163,8 @@ func (z *Zone) statusRevive(e *entity, perHP, perSP int) bool {
 }
 
 // renewalPartyStatus is Impositio Manus and Suffragium: a party buff in
-// renewal (SkillImpositioManus, SkillSuffragium), which reaches the
-// caster alone without a party, and StatusSkillImpl in pre-renewal.
+// renewal (SkillImpositioManus, SkillSuffragium), and StatusSkillImpl in
+// pre-renewal.
 type renewalPartyStatus struct{}
 
 func (renewalPartyStatus) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
@@ -398,9 +398,9 @@ func (turnUndead) castendDamage(z *Zone, src, target *entity, d *skill.Def, lv i
 }
 
 // redemptio is SkillRedemptio. It revives the dead members of the
-// caster's party at the cost of the caster's HP, SP and, in pre-renewal,
-// experience. A player without a party fails, as in rAthena, and
-// parties do not exist yet.
+// caster's party in its splash at the cost of the caster's HP, SP and,
+// in pre-renewal, experience. A player without a party, or with no dead
+// member in range, fails.
 type redemptio struct{}
 
 // castBegin is Redemptio's part of skill_check_condition_castbegin: in
@@ -423,9 +423,34 @@ func (redemptio) castBegin(z *Zone, src *entity, _ *skill.Def, _ int) wathenav1.
 }
 
 func (redemptio) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv int, flag *int) {
-	if src.player != nil && *flag&1 == 0 {
-		// The caster has no party.
-		z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+	if p := src.player; p != nil && *flag&1 == 0 {
+		if !inParty(src) {
+			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+			return
+		}
+		// skill_area_temp[0] counts the dead members the cast reached.
+		revived := 0
+		z.partyAreaSub(src, d.SplashFor(lv), *flag|bctParty|1, func(t *entity, f int) {
+			if t.dead {
+				revived++
+			}
+			z.castendNoDamage(src, t, d, lv, f)
+		})
+		if revived == 0 {
+			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
+			return
+		}
+		if !z.skillRenewal(skill.IDRedemptio) {
+			// exp_cost_redemptio (1%) of the next level, less a fifth
+			// (exp_cost_redemptio_limit 5) for each member revived.
+			const expCostRedemptio, expCostRedemptioLimit = 1, 5
+			if left := int64(expCostRedemptioLimit - revived); left > 0 && z.Progress != nil {
+				next := z.Progress.NextBaseExp(&p.progress)
+				z.loseBaseExp(p, min(p.progress.BaseExp, next*left*expCostRedemptio/expCostRedemptioLimit/100))
+			}
+			z.setSPZero(src)
+		}
+		z.setHP(src, 1)
 		return
 	}
 	if !target.dead || *flag&1 == 0 {
@@ -433,6 +458,35 @@ func (redemptio) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, lv 
 	}
 	// A party member: Resurrection at level 3.
 	z.resurrect(src, target, 3)
+}
+
+// setHP is status_set_hp: the unit's HP becomes a value from 1 to its
+// max, by a heal or by damage that triggers nothing.
+func (z *Zone) setHP(e *entity, hp int64) {
+	if hp < 1 || e.dead || e.status == nil {
+		return
+	}
+	hp = min(hp, int64(e.status.MaxHP))
+	switch {
+	case hp > e.hp:
+		z.healHP(e, hp-e.hp)
+	case hp < e.hp:
+		z.zap(e, e.hp-hp, 0)
+	}
+}
+
+// loseBaseExp is the base part of pc_lostexp: the player loses up to
+// its base experience.
+func (z *Zone) loseBaseExp(p *Player, exp int64) {
+	exp = min(exp, p.progress.BaseExp)
+	if exp <= 0 {
+		return
+	}
+	before := z.progressStats(p, nil)
+	p.progress.BaseExp -= exp
+	if changed := z.progressStats(p, before); changed != nil {
+		p.pending = append(p.pending, changed)
+	}
 }
 
 // assumptio is SkillAssumptio: StatusSkillImpl, which a player cannot

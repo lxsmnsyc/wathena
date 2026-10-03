@@ -39,6 +39,8 @@ var Permissions = []Permission{
 	// player.sanction is flagged for review (proposal 0002, review
 	// decision 26).
 	{Name: "player.sanction", Approval: true, Flagged: true, Allows: "mute and jail players"},
+	// party.manage is review decision 27's: wa.parties' changes.
+	{Name: "party.manage", Approval: true, Allows: "make parties and change their members, leader and options"},
 }
 
 // LookupPermission returns a permission by name.
