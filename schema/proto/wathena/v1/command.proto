@@ -34,6 +34,10 @@ message Command {
     GuildCommand guild = 24;
     StorageCommand storage = 25;
     TradeCommand trade = 26;
+    MailCommand mail = 27;
+    VendingCommand vending = 28;
+    BuyingStoreCommand buying_store = 29;
+    StoreSearchCommand store_search = 30;
   }
 }
 
@@ -565,4 +569,193 @@ message TradeCommand {
     // cancel ends the trade, as trade_tradecancel.
     bool cancel = 7;
   }
+}
+
+// MailCommand is one step of mail (RODEX), as rAthena's mail.cpp and
+// the RODEX packets of clif.cpp. The server answers with MailBox,
+// MailRead and MailResult.
+message MailCommand {
+  oneof action {
+    // open opens the mailbox window and lists the mails, as
+    // clif_parse_Mail_refreshinbox. The mailbox does not open while the
+    // player trades, vends, runs a buying store or has a storage open.
+    bool open = 1;
+    // read shows a mail's text and attachments, as clif_parse_Mail_read.
+    uint64 read = 2;
+    // send writes a mail, as clif_parse_Mail_send.
+    MailSend send = 3;
+    // take moves a mail's attachments into the inventory, as
+    // clif_parse_Mail_getattach.
+    MailTake take = 4;
+    // delete removes a mail without attachments, as
+    // clif_parse_Mail_delete.
+    uint64 delete = 5;
+    // close closes the mailbox window.
+    bool close = 6;
+  }
+}
+
+// MailSend is a new mail. The attachments are checked as mail_setitem
+// checks each one, then the mail is sent as mail_send.
+message MailSend {
+  // to is the recipient's character name. The recipient may be offline.
+  string to = 1;
+  // title is 1 to 39 bytes, and body at most 499.
+  string title = 2;
+  string body = 3;
+  // zeny is the zeny to attach. The fee is on top of it.
+  uint32 zeny = 4;
+  // items are the inventory slots and amounts to attach, at most the
+  // mail_items limit.
+  repeated StorageMove items = 5;
+}
+
+// MailTake takes the zeny, the items, or both, of one mail.
+message MailTake {
+  uint64 mail = 1;
+  bool zeny = 2;
+  bool items = 3;
+}
+
+// VendingCommand is one step of a vending shop, as rAthena's vending.cpp.
+// A shop opens after the Vending skill, which sends VendingSetup. The
+// server answers with VendingOpened, VendingList, VendingSold and
+// VendingResult.
+message VendingCommand {
+  oneof action {
+    // open opens the shop from cart slots, as vending_openvending.
+    VendingOpen open = 1;
+    // close closes the player's shop, as vending_closevending.
+    bool close = 2;
+    // browse asks for the shop of the player with this entity ID, as
+    // vending_vendinglistreq.
+    uint32 browse = 3;
+    // buy buys from a shop, as vending_purchasereq.
+    VendingBuy buy = 4;
+    // cancel closes the setup window without opening a shop.
+    bool cancel = 5;
+  }
+}
+
+message VendingOpen {
+  // title is 1 to 79 bytes, as MESSAGE_SIZE.
+  string title = 1;
+  // items are 1 to 2 + the Vending level lines, at most 12.
+  repeated VendingLine items = 2;
+}
+
+message VendingLine {
+  uint32 cart_slot = 1;
+  uint32 amount = 2;
+  // price is in zeny for one, at most vending_max_value.
+  uint32 price = 3;
+}
+
+message VendingBuy {
+  // vendor is the seller's entity ID, or 0 for the shop a store search
+  // opened.
+  uint32 vendor = 1;
+  // shop is VendingList.shop, which changes when the shop reopens.
+  uint32 shop = 2;
+  repeated VendingBuyLine items = 3;
+}
+
+message VendingBuyLine {
+  // index is VendingListItem.index.
+  uint32 index = 1;
+  uint32 amount = 2;
+}
+
+// BuyingStoreCommand is one step of a buying store, as rAthena's
+// buyingstore.cpp. A store opens after player:open_buying_store, which
+// sends BuyingStoreSetup.
+message BuyingStoreCommand {
+  oneof action {
+    // open opens the store, as buyingstore_create.
+    BuyingStoreOpen open = 1;
+    // close closes the player's store, as buyingstore_close.
+    bool close = 2;
+    // browse asks for the store of the player with this entity ID, as
+    // buyingstore_open.
+    uint32 browse = 3;
+    // sell sells inventory items to a store, as buyingstore_trade.
+    BuyingStoreSell sell = 4;
+    // cancel closes the setup window without opening a store.
+    bool cancel = 5;
+  }
+}
+
+message BuyingStoreOpen {
+  // title is 1 to 79 bytes.
+  string title = 1;
+  // zeny_limit is the most zeny the store spends, at most the player's
+  // zeny.
+  uint32 zeny_limit = 2;
+  // items are 1 to BuyingStoreSetup.slots lines, one per item.
+  repeated BuyingStoreLine items = 3;
+}
+
+message BuyingStoreLine {
+  uint32 item_id = 1;
+  // amount is 1 to 9999.
+  uint32 amount = 2;
+  // price is in zeny for one, 1 to 99,990,000.
+  uint32 price = 3;
+}
+
+message BuyingStoreSell {
+  // buyer is the store owner's entity ID, or 0 for the store a store
+  // search opened.
+  uint32 buyer = 1;
+  // store is BuyingStoreList.store.
+  uint32 store = 2;
+  repeated BuyingStoreSellLine items = 3;
+}
+
+message BuyingStoreSellLine {
+  // slot is the inventory slot to sell from.
+  uint32 slot = 1;
+  uint32 item_id = 2;
+  uint32 amount = 3;
+}
+
+// StoreSearchCommand searches vending shops and buying stores, as
+// rAthena's searchstore.cpp. The window opens from player:search_stores,
+// which sends StoreSearchOpen.
+message StoreSearchCommand {
+  oneof action {
+    // query runs a search, which uses one of the window's uses.
+    StoreSearchQuery query = 1;
+    // next shows the next page of results.
+    bool next = 2;
+    // click picks a result, as searchstore_click: it shows the store's
+    // place, or opens the store when the window allows it.
+    uint32 click = 3;
+    // close closes the window.
+    bool close = 4;
+  }
+}
+
+message StoreSearchQuery {
+  // buying searches buying stores; vending shops otherwise.
+  bool buying = 1;
+  // item_ids are the items to find, 1 to 10.
+  repeated uint32 item_ids = 2;
+  // card_ids keep results with one of these cards, at most 10.
+  repeated uint32 card_ids = 3;
+  // min_price and max_price bound the price, 0 for no bound.
+  uint32 min_price = 4;
+  uint32 max_price = 5;
+  // rolls and options keep results whose rolls or random options are in
+  // range (strategy section 5.4). At most 8 of each.
+  repeated StoreSearchRoll rolls = 6;
+  repeated StoreSearchRoll options = 7;
+}
+
+// StoreSearchRoll bounds one rolled value: a roll by its name, or a
+// random option by its name, such as VAR_MAXHPAMOUNT.
+message StoreSearchRoll {
+  string name = 1;
+  int32 min = 2;
+  int32 max = 3;
 }

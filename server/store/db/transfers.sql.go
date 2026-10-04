@@ -85,22 +85,25 @@ func (q *Queries) InsertItemLogs(ctx context.Context, arg InsertItemLogsParams) 
 }
 
 const insertZenyLogs = `-- name: InsertZenyLogs :exec
-INSERT INTO zeny_log (at, action, from_kind, from_id, to_kind, to_id, amount)
+INSERT INTO zeny_log (at, action, from_kind, from_id, to_kind, to_id, amount, currency)
 SELECT unnest($1::timestamptz[]), unnest($2::text[]), unnest($3::text[]),
     unnest($4::bigint[]), unnest($5::text[]), unnest($6::bigint[]),
-    unnest($7::bigint[])
+    unnest($7::bigint[]), unnest($8::integer[])
 `
 
 type InsertZenyLogsParams struct {
-	Ats       []pgtype.Timestamptz
-	Actions   []string
-	FromKinds []string
-	FromIds   []int64
-	ToKinds   []string
-	ToIds     []int64
-	Amounts   []int64
+	Ats        []pgtype.Timestamptz
+	Actions    []string
+	FromKinds  []string
+	FromIds    []int64
+	ToKinds    []string
+	ToIds      []int64
+	Amounts    []int64
+	Currencies []int
 }
 
+// InsertZenyLogs writes zeny and currency log lines. currency is 0 for
+// zeny.
 func (q *Queries) InsertZenyLogs(ctx context.Context, arg InsertZenyLogsParams) error {
 	_, err := q.db.Exec(ctx, insertZenyLogs,
 		arg.Ats,
@@ -110,6 +113,7 @@ func (q *Queries) InsertZenyLogs(ctx context.Context, arg InsertZenyLogsParams) 
 		arg.ToKinds,
 		arg.ToIds,
 		arg.Amounts,
+		arg.Currencies,
 	)
 	return err
 }

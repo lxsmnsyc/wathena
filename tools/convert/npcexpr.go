@@ -705,6 +705,9 @@ func (b *body) call(e *Call) (val, error) {
 	if v, ok, err := b.storageRead(name, args); ok {
 		return done(v, err)
 	}
+	if v, ok, err := b.shopRead(name); ok {
+		return done(v, err)
+	}
 	return val{}, unsupported(name, "")
 }
 
@@ -976,17 +979,16 @@ func (b *body) commandErr(name string, args []Expr) error {
 		}
 		b.line("player:mark_minimap(%s, %s, %s, %s)", vals[3].asInt(), vals[1].asInt(), vals[2].asInt(), vals[4].asInt())
 	case "callshop":
-		if len(args) < 1 {
+		// The option, the buy or sell window of a zeny shop, does not
+		// convert: player:open_shop shows the shop.
+		if len(args) < 1 || len(args) > 2 {
 			return unsupported(name, "arguments")
 		}
-		v, err := b.expr(args[0])
+		ref, err := b.shopNamed(name, args[0])
 		if err != nil {
 			return err
 		}
-		if v.str == nil {
-			return unsupported(name, "a computed shop")
-		}
-		b.line("player:open_shop(%s)", luaString("core:"+*v.str))
+		b.line("player:open_shop(%s)", luaString("core:"+ref.npc.Name))
 	case "announce":
 		if len(args) < 2 {
 			return unsupported(name, "arguments")
@@ -1062,6 +1064,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		if ok, err := b.storageCommand(name, args); ok {
+			return err
+		}
+		if ok, err := b.shopCommand(name, args); ok {
 			return err
 		}
 		return unsupported(name, "")

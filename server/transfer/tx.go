@@ -332,8 +332,18 @@ func (t *Tx) zeny(o *op, now time.Time, logs *Logs, emit func(Change)) Reason {
 	if o.wfrom != nil && o.wfrom.Zeny() < o.zeny {
 		return ReasonZeny
 	}
+	cur := uint32(0)
+	if o.wfrom != nil {
+		cur = currencyOf(o.wfrom)
+	} else if o.wto != nil {
+		cur = currencyOf(o.wto)
+	}
+	if o.wfrom != nil && o.wto != nil && currencyOf(o.wto) != cur {
+		// A move between two currencies is not a move.
+		return ReasonZeny
+	}
 	if o.wto != nil {
-		if room := MaxZeny - o.wto.Zeny(); got > room {
+		if room := limitOf(o.wto) - o.wto.Zeny(); got > room {
 			if !o.drop {
 				return ReasonZeny
 			}
@@ -356,7 +366,7 @@ func (t *Tx) zeny(o *op, now time.Time, logs *Logs, emit func(Change)) Reason {
 		}
 	}
 	if logs != nil && got > 0 {
-		logs.Zeny = append(logs.Zeny, ZenyLog{At: now, Action: t.Action, From: from, To: to, Amount: got})
+		logs.Zeny = append(logs.Zeny, ZenyLog{At: now, Action: t.Action, From: from, To: to, Amount: got, Currency: cur})
 	}
 	return 0
 }

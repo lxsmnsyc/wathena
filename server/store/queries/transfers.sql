@@ -23,10 +23,12 @@ SELECT unnest(@ats::timestamptz[]), unnest(@actions::text[]), unnest(@from_kinds
     unnest(@from_storages::integer[]), unnest(@to_storages::integer[]), unnest(@bounds::smallint[]);
 
 -- name: InsertZenyLogs :exec
-INSERT INTO zeny_log (at, action, from_kind, from_id, to_kind, to_id, amount)
+-- InsertZenyLogs writes zeny and currency log lines. currency is 0 for
+-- zeny.
+INSERT INTO zeny_log (at, action, from_kind, from_id, to_kind, to_id, amount, currency)
 SELECT unnest(@ats::timestamptz[]), unnest(@actions::text[]), unnest(@from_kinds::text[]),
     unnest(@from_ids::bigint[]), unnest(@to_kinds::text[]), unnest(@to_ids::bigint[]),
-    unnest(@amounts::bigint[]);
+    unnest(@amounts::bigint[]), unnest(@currencies::integer[]);
 
 -- name: EnsureLogPartitions :exec
 -- EnsureLogPartitions makes the month partitions of the logs for the

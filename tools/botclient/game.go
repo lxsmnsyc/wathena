@@ -129,6 +129,8 @@ type Game struct {
 	TradeRequest *wathenav1.TradeRequest
 	Trade        *Trade
 	TradeClosed  wathenav1.TradeOutcome
+	// Market is the bot's mail, stores, store search and currencies.
+	Market
 }
 
 // Count is the amount of an item in the inventory.
@@ -165,7 +167,7 @@ func (b *Bot) Game() Game {
 		Dialog: b.game.dialog, Shop: b.game.shop,
 		Party: party, Invite: invite, Friends: friends, FriendRequests: requests,
 		Guild: guild, GuildInvite: guildInvite, Storage: b.storageSt.window.clone(), Cart: b.storageSt.cart.clone(),
-		TradeRequest: request, Trade: trade, TradeClosed: b.tradeSt.closed,
+		TradeRequest: request, Trade: trade, TradeClosed: b.tradeSt.closed, Market: b.marketSt.clone(),
 	}
 }
 

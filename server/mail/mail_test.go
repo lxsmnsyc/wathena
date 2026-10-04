@@ -1,0 +1,95 @@
+package mail
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/transfer"
+)
+
+func testItems() *item.Table {
+	return item.New(&item.Data{Mode: "renewal", Items: []item.Def{{ID: 909, AegisName: "Jellopy", Type: "Etc", Weight: 10, Stackable: true}}})
+}
+
+// mailTo makes a mail from one key to another with an item and zeny,
+// in the recipient's mailbox.
+func mailTo(t *testing.T, r *Registry, from, to Key, sent time.Time, items, zeny int) *Mail {
+	t.Helper()
+	m := r.NewMail(5)
+	m.From, m.FromName, m.To, m.ToName, m.Title, m.Sent, m.Zeny = from, "Alice", to, "Bob", "Hi", sent, int64(zeny)
+	if items > 0 {
+		tx := transfer.New(transfer.ActionMail).Create(transfer.End(transfer.KindScript), item.Slot{ID: 909}, items, &m.Box, item.Serial{})
+		if _, err := tx.Apply(nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r.Deliver(m)
+	return m
+}
+
+// TestExpiry checks mail_return_days, mail_delete_days and
+// mail_return_empty: a mail goes back to its sender with its items and
+// zeny, a mail that came back is deleted later, a script's mail is
+// deleted, and an empty mail is deleted when mail_return_empty is off.
+func TestExpiry(t *testing.T) {
+	r := NewRegistry(nil, testItems())
+	alice, bob := KeyOf(0, "Alice"), KeyOf(0, "Bob")
+	r.names["alice"], r.names["bob"] = "Alice", "Bob"
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	full := mailTo(t, r, alice, bob, start, 3, 100)
+	empty := mailTo(t, r, alice, bob, start, 0, 0)
+	script := mailTo(t, r, Key{}, bob, start, 1, 0)
+	e := Expiry{ReturnDays: 15, DeleteDays: 15, ReturnEmpty: false, Slots: 5}
+	var writes []Write
+	var logs transfer.Logs
+	commit := func(w []Write, l transfer.Logs) { writes = append(writes, w...); logs.Add(l) }
+	// Not yet due.
+	if err := r.Expire(context.Background(), start.Add(14*24*time.Hour), e, commit); err != nil || len(writes) != 0 {
+		t.Fatalf("early: %v %v", writes, err)
+	}
+	if err := r.Expire(context.Background(), start.Add(15*24*time.Hour), e, commit); err != nil {
+		t.Fatal(err)
+	}
+	// A script's mail has no sender: it is deleted after mail_delete_days,
+	// which is due too.
+	if !full.Deleted() || !empty.Deleted() || !script.Deleted() {
+		t.Errorf("deleted: full %v, empty %v, script %v", full.Deleted(), empty.Deleted(), script.Deleted())
+	}
+	back := r.box(alice).Mails()
+	if len(back) != 1 || !back[0].Returned || back[0].Zeny != 100 || back[0].Count() != 1 || back[0].Title != "RE:Hi" || back[0].To != alice {
+		t.Fatalf("returned %+v", back)
+	}
+	if len(r.box(bob).Mails()) != 0 {
+		t.Errorf("bob keeps %d mails", len(r.box(bob).Mails()))
+	}
+	// The returned mail is deleted 15 days after it came back.
+	if err := r.Expire(context.Background(), start.Add(30*24*time.Hour), e, commit); err != nil {
+		t.Fatal(err)
+	}
+	if len(r.box(alice).Mails()) != 0 {
+		t.Error("the returned mail stays")
+	}
+	moved, destroyed := 0, 0
+	for _, l := range logs.Items {
+		switch l.To.Kind {
+		case transfer.KindMail:
+			moved += l.Amount
+		case transfer.KindUsed:
+			destroyed += l.Amount
+		}
+	}
+	if moved != 3 || destroyed != 4 {
+		t.Errorf("logs: %d moved, %d destroyed", moved, destroyed)
+	}
+	// With mail_return_empty on, an empty mail goes back.
+	e.ReturnEmpty = true
+	empty2 := mailTo(t, r, alice, bob, start.Add(30*24*time.Hour), 0, 0)
+	if err := r.Expire(context.Background(), start.Add(45*24*time.Hour), e, commit); err != nil {
+		t.Fatal(err)
+	}
+	if !empty2.Deleted() || len(r.box(alice).Mails()) != 1 {
+		t.Errorf("empty mail with mail_return_empty: deleted %v, alice has %d", empty2.Deleted(), len(r.box(alice).Mails()))
+	}
+}

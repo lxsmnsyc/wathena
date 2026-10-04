@@ -26,19 +26,22 @@ import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
 import {
+  BuyingStoreOutcome,
   DamageKind,
   GuildOutcome,
   InventoryRemoveReason,
+  MailOutcome,
   PartyOutcome,
   SanctionKind,
   StatId,
   StorageKind,
+  VendingOutcome,
 } from '../gen/wathena/v1/event_pb';
 import { ChannelAction } from '../gen/wathena/v1/command_pb';
 import { DisconnectReason } from '../gen/wathena/v1/session_pb';
 import { accountPage, accountURL, fetchTicket } from '../net/account';
 import gameServerURL from '../net/server';
-import { Connection } from '../net/connection';
+import { Connection, disconnectText } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import { Bubbles, ChatLog, ChatRate, chatLine, isTyping } from './chat';
 import { type ChatAction, parseChatInput } from './chatCommands';
@@ -119,6 +122,23 @@ import { ItemTexts } from './itemText';
 import { EquipmentWindow, INSERT_CARD_FAILED, equipMessage } from './equipment';
 import { DialogWindow } from './dialog';
 import { ShopWindow, shopMessage } from './shop';
+import { MailWindow, mailButtonText, mailMessage, mailNewText } from './mail';
+import {
+  VendingBrowseWindow,
+  VendingOwnWindow,
+  VendingSetupWindow,
+  vendingMessage,
+  vendingSoldText,
+} from './vending';
+import {
+  BuyingBrowseWindow,
+  BuyingOwnWindow,
+  BuyingSetupWindow,
+  buyingBoughtText,
+  buyingStoreMessage,
+  closesOwnStore,
+} from './buyingStore';
+import { StoreSearchWindow, storeSearchMessage } from './storeSearch';
 import { groundItemLabel } from './groundItems';
 import randomLook from './looks';
 import { StatusIconBar } from './statusIcons';
@@ -135,7 +155,7 @@ import {
   skillOf,
 } from './skills';
 import { TargetMode } from './targeting';
-import Online from './online';
+import Online, { type ShopBoard } from './online';
 import Player from './player';
 import Walkers from './walkers';
 
@@ -229,6 +249,9 @@ let inventoryWindow: InventoryWindow | undefined;
 let equipmentWindow: EquipmentWindow | undefined;
 let dialogWindow: DialogWindow | undefined;
 let shopWindow: ShopWindow | undefined;
+let mailWindow: MailWindow | undefined;
+let vendingOwnWindow: VendingOwnWindow | undefined;
+let buyingOwnWindow: BuyingOwnWindow | undefined;
 /** The player's skills, and the skill waiting for a target. */
 const skills = new SkillModel();
 const targetMode = new TargetMode();
@@ -529,7 +552,7 @@ if (serverURL === null) {
       view.handle(events);
     },
     closed: (message, reason) => {
-      status.value = message;
+      status.value = disconnectText(message, reason);
       // Status icons belong to the session that ended.
       statusIcons?.clear();
       if (account === undefined) {
@@ -981,6 +1004,10 @@ if (serverURL === null) {
     // A right click on an inventory row offers it in the trade, or puts it
     // into the open storage, or into the open cart window.
     inventoryWindow.onRowContext = (slot) => {
+      if (mailWindow?.writing === true) {
+        mailWindow.requestAttach(slot);
+        return true;
+      }
       if (trade.open && tradeWindow !== undefined) {
         tradeWindow.requestAdd(slot);
         return true;
@@ -1593,6 +1620,12 @@ if (serverURL === null) {
         reportGuild: (guildId, emblem) => {
           connection.reportGuild(guildId, emblem);
         },
+        browseShop: (id) => {
+          connection.vendingBrowse(id);
+        },
+        browseStore: (id) => {
+          connection.buyingStoreBrowse(id);
+        },
       });
       openPlayerMenu = (id, x, y) => {
         const name = view.nameOf(id);
@@ -1616,6 +1649,7 @@ if (serverURL === null) {
             partyInvite: leads(party, view.selfName),
             guildInvite: permissions(guild, view.selfName).invite,
             ownGuild: guild.id,
+            shop: shopKind(view.shopBoard(id)),
           },
           x,
           y,
@@ -1905,17 +1939,23 @@ if (serverURL === null) {
   };
   const shopRoot = document.querySelector<HTMLElement>('#shop-window');
   if (shopRoot !== null) {
-    const w = new ShopWindow(shopRoot, inventory, itemTexts, {
-      buy: (npc, lines) => {
-        connection.shopBuy(npc, lines);
+    const w = new ShopWindow(
+      shopRoot,
+      inventory,
+      itemTexts,
+      {
+        buy: (npc, lines) => {
+          connection.shopBuy(npc, lines);
+        },
+        sell: (npc, lines) => {
+          connection.shopSell(npc, lines);
+        },
+        close: (npc) => {
+          connection.shopClose(npc);
+        },
       },
-      sell: (npc, lines) => {
-        connection.shopSell(npc, lines);
-      },
-      close: (npc) => {
-        connection.shopClose(npc);
-      },
-    });
+      itemIcons,
+    );
     shopWindow = w;
     view.onShopOpen = (shop) => {
       itemTexts
@@ -1926,11 +1966,311 @@ if (serverURL === null) {
         })
         .catch(reportError);
     };
-    view.onShopResult = (outcome) => {
-      const text = shopMessage(outcome);
+    view.onShopResult = (outcome, itemId) => {
+      const text = shopMessage(outcome, itemId === 0 ? '' : itemTexts.label(itemId));
       if (text !== undefined) {
         logNotice(text);
       }
+    };
+  }
+  // Currencies show in the inventory window, and the shop window checks
+  // costs against them. Each CurrencyUpdate replaces the list.
+  view.onCurrencies = (list) => {
+    if (inventoryWindow !== undefined) {
+      inventoryWindow.currencies = list;
+    }
+    if (shopWindow !== undefined) {
+      shopWindow.currencies = list;
+    }
+  };
+  const zenyNow = (): number => Number(view.stats.get(StatId.ZENY) ?? 0n);
+  // Mail opens with its button or Alt+M. The server answers with the
+  // mailbox. A new mail shows a chat line and a count on the button.
+  const mailRoot = document.querySelector<HTMLElement>('#mail-window');
+  const mailToggle = document.querySelector<HTMLButtonElement>('#mail-toggle');
+  const setMailUnread = (n: number): void => {
+    if (mailToggle !== null) {
+      mailToggle.textContent = mailButtonText(n);
+      mailToggle.classList.toggle('unread', n > 0);
+    }
+  };
+  if (mailRoot !== null) {
+    const mail = new MailWindow(
+      mailRoot,
+      {
+        inventory: (slot) => inventory.get(slot),
+        stacks: () => inventory.list(),
+        zeny: zenyNow,
+        maxItems: () => connection.limits.mailItems,
+      },
+      {
+        read: (id) => {
+          connection.mailRead(id);
+        },
+        send: (d) => {
+          connection.mailSend({ ...d, items: [...d.items] });
+        },
+        take: (id, zeny, items) => {
+          connection.mailTake(id, zeny, items);
+        },
+        remove: (id) => {
+          connection.mailDelete(id);
+        },
+        close: () => {
+          connection.mailClose();
+        },
+      },
+      itemTexts,
+      itemIcons,
+    );
+    mailWindow = mail;
+    const toggle = (): void => {
+      if (mail.open) {
+        mail.requestClose();
+      } else {
+        connection.mailOpen();
+      }
+    };
+    if (mailToggle !== null) {
+      mailToggle.hidden = false;
+      mailToggle.addEventListener('click', toggle);
+    }
+    addEventListener('keydown', (e) => {
+      if (isTyping(e.target)) {
+        return;
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyM') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+    view.onMailBox = (mails, size, sentToday, daily) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          mail.showBox(mails, size, sentToday, daily);
+          setMailUnread(mail.unread);
+        })
+        .catch(reportError);
+    };
+    view.onMailRead = (m) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          mail.showMail(m);
+          setMailUnread(mail.unread);
+        })
+        .catch(reportError);
+    };
+    view.onMailResult = (r) => {
+      logNotice(mailMessage(r.outcome, r.message));
+      if (r.outcome === MailOutcome.SENT) {
+        mail.sent();
+      }
+    };
+  }
+  view.onMailNew = (m) => {
+    logNotice(mailNewText(m.from, m.title));
+    setMailUnread(m.unread);
+  };
+  // Vending. The Vending skill opens the setup window. The player's own
+  // shop shows in its window, and other shops open from their board.
+  const vendingSetupRoot = document.querySelector<HTMLElement>('#vending-setup');
+  const vendingOwnRoot = document.querySelector<HTMLElement>('#vending-own');
+  const vendingBrowseRoot = document.querySelector<HTMLElement>('#vending-browse');
+  if (vendingSetupRoot !== null && vendingOwnRoot !== null && vendingBrowseRoot !== null) {
+    const setup = new VendingSetupWindow(
+      vendingSetupRoot,
+      () => cart.list(),
+      {
+        open: (title, items) => {
+          connection.vendingOpen({ title, items });
+        },
+        cancel: () => {
+          connection.vendingCancel();
+        },
+      },
+      itemTexts,
+      itemIcons,
+    );
+    const own = new VendingOwnWindow(
+      vendingOwnRoot,
+      () => {
+        connection.vendingClose();
+        own.closed();
+      },
+      itemTexts,
+      itemIcons,
+    );
+    vendingOwnWindow = own;
+    const browse = new VendingBrowseWindow(
+      vendingBrowseRoot,
+      zenyNow,
+      {
+        buy: (vendor, shop, lines) => {
+          connection.vendingBuy(vendor, shop, lines);
+        },
+      },
+      itemTexts,
+      itemIcons,
+    );
+    view.onVendingSetup = (maxItems) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          setup.show(maxItems);
+        })
+        .catch(reportError);
+    };
+    view.onVendingOpened = (title, items) => {
+      setup.hide();
+      itemTexts
+        .loadNames()
+        .then(() => {
+          own.show(title, items);
+        })
+        .catch(reportError);
+    };
+    view.onVendingList = (shop) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          browse.show(shop);
+        })
+        .catch(reportError);
+    };
+    view.onVendingSold = (sold) => {
+      const itemId = own.sold(sold.index, sold.amount);
+      logItem(() => vendingSoldText(sold.buyer, sold.amount, itemTexts.label(itemId), sold.zeny));
+    };
+    view.onVendingResult = (r) => {
+      logNotice(vendingMessage(r.outcome, r.message));
+      // CLOSED while no other shop is browsed is the player's own shop.
+      if (r.outcome === VendingOutcome.CLOSED && !browse.open) {
+        own.closed();
+      }
+    };
+  }
+  // Buying stores, as vending shops.
+  const buyingSetupRoot = document.querySelector<HTMLElement>('#buying-setup');
+  const buyingOwnRoot = document.querySelector<HTMLElement>('#buying-own');
+  const buyingBrowseRoot = document.querySelector<HTMLElement>('#buying-browse');
+  if (buyingSetupRoot !== null && buyingOwnRoot !== null && buyingBrowseRoot !== null) {
+    const source = {
+      stacks: () => inventory.list(),
+      inventory: (slot: number) => inventory.get(slot),
+      zeny: zenyNow,
+    };
+    const setup = new BuyingSetupWindow(
+      buyingSetupRoot,
+      source,
+      {
+        open: (title, zenyLimit, items) => {
+          connection.buyingStoreOpen({ title, zenyLimit, items });
+        },
+        cancel: () => {
+          connection.buyingStoreCancel();
+        },
+      },
+      itemTexts,
+    );
+    const own = new BuyingOwnWindow(
+      buyingOwnRoot,
+      () => {
+        connection.buyingStoreClose();
+        own.closed();
+      },
+      itemTexts,
+      itemIcons,
+    );
+    buyingOwnWindow = own;
+    const browse = new BuyingBrowseWindow(
+      buyingBrowseRoot,
+      source,
+      {
+        sell: (buyer, storeId, lines) => {
+          connection.buyingStoreSell(buyer, storeId, lines);
+        },
+      },
+      itemTexts,
+      itemIcons,
+    );
+    view.onBuyingStoreSetup = (slots) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          setup.show(slots);
+        })
+        .catch(reportError);
+    };
+    view.onBuyingStoreOpened = (opened) => {
+      setup.hide();
+      itemTexts
+        .loadNames()
+        .then(() => {
+          own.show(opened.title, opened.zenyLimit, opened.items);
+        })
+        .catch(reportError);
+    };
+    view.onBuyingStoreList = (list) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          browse.show(list);
+        })
+        .catch(reportError);
+    };
+    view.onBuyingStoreBought = (b) => {
+      own.bought(b.itemId, b.amount, b.zenyLimit);
+      logItem(() => buyingBoughtText(b.seller, b.amount, itemTexts.label(b.itemId), b.zeny));
+    };
+    view.onBuyingStoreResult = (r) => {
+      logNotice(
+        buyingStoreMessage(r.outcome, r.itemId === 0 ? '' : itemTexts.label(r.itemId), r.message),
+      );
+      if (closesOwnStore(r.outcome) && (r.outcome !== BuyingStoreOutcome.CLOSED || !browse.open)) {
+        own.closed();
+      }
+    };
+  }
+  // Store search opens when the server sends StoreSearchOpen.
+  const storeSearchRoot = document.querySelector<HTMLElement>('#store-search');
+  if (storeSearchRoot !== null) {
+    const search = new StoreSearchWindow(
+      storeSearchRoot,
+      {
+        query: (q) => {
+          connection.storeSearchQuery(q);
+        },
+        next: () => {
+          connection.storeSearchNext();
+        },
+        click: (index) => {
+          connection.storeSearchClick(index);
+        },
+        close: () => {
+          connection.storeSearchClose();
+        },
+      },
+      itemTexts,
+      itemIcons,
+    );
+    view.onStoreSearchOpen = (o) => {
+      search.show(o.uses, o.open);
+    };
+    view.onStoreSearchResults = (results, uses, more) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          search.showResults(results, uses, more);
+        })
+        .catch(reportError);
+    };
+    view.onStoreSearchResult = (r) => {
+      // The client has no minimap yet, so a store's place shows as text.
+      const text = storeSearchMessage(r.outcome, r.map, r.x, r.y);
+      search.showStatus(text);
+      logNotice(text);
     };
   }
   // A warp moves the player to another map: the view clears, a loading
@@ -2084,6 +2424,9 @@ canvas.addEventListener('pointerup', (e) => {
       session.connection.pickUp(target.id);
     } else if (session.online.isNpc(target.id)) {
       session.connection.npcClick(target.id);
+    } else if (session.online.shopBoard(target.id) !== undefined) {
+      // A click on a player with an open shop browses it.
+      browseBoard(target.id);
     } else if ((weightPercent(session.online.stats) ?? 0) >= MAJOR_OVERWEIGHT) {
       // The server refuses attacks from 90% weight, as the game client.
       showMessage('You are carrying too much to attack.');
@@ -2253,6 +2596,86 @@ function showGuildLabels(): void {
     div.hidden = guildLabelAt.z > 1;
     div.style.left = `${((guildLabelAt.x + 1) / 2) * 100}%`;
     div.style.top = `${((1 - guildLabelAt.y) / 2) * 100}%`;
+  }
+}
+
+/** What kind of shop a board shows, for the player menu. */
+function shopKind(board: ShopBoard | undefined): 'vending' | 'buying' | undefined {
+  if (board === undefined) {
+    return undefined;
+  }
+  return board.buying ? 'buying' : 'vending';
+}
+
+/**
+ * Browses the shop of a player with a board: its vending shop or its
+ * buying store. The player's own board shows its own window.
+ */
+function browseBoard(id: number): void {
+  const s = session;
+  const board = s?.online.shopBoard(id);
+  if (s === undefined || board === undefined) {
+    return;
+  }
+  if (id === s.online.self) {
+    (board.buying ? buyingOwnWindow : vendingOwnWindow)?.toggle();
+  } else if (board.buying) {
+    s.connection.buyingStoreBrowse(id);
+  } else {
+    s.connection.vendingBrowse(id);
+  }
+}
+
+const shopBoardRoot = document.querySelector<HTMLDivElement>('#shop-boards');
+const shopBoardViews = new Map<number, HTMLButtonElement>();
+const shopBoardAt = new Vector3();
+
+/**
+ * Places the shop boards over the players with an open shop, as RO shows
+ * a vending board. A click on a board browses the shop.
+ */
+function showShopBoards(): void {
+  if (shopBoardRoot === null || session === undefined) {
+    return;
+  }
+  const view = session.online;
+  const boards = view.shopBoards();
+  for (const [id, div] of shopBoardViews) {
+    if (!boards.has(id)) {
+      div.remove();
+      shopBoardViews.delete(id);
+    }
+  }
+  for (const [id, board] of boards) {
+    let div = shopBoardViews.get(id);
+    if (div === undefined) {
+      div = document.createElement('button');
+      div.type = 'button';
+      div.addEventListener('click', () => {
+        browseBoard(id);
+      });
+      shopBoardRoot.append(div);
+      shopBoardViews.set(id, div);
+    }
+    const className = board.buying ? 'shop-board buying' : 'shop-board';
+    if (div.className !== className) {
+      div.className = className;
+    }
+    if (div.textContent !== board.title) {
+      div.textContent = board.title;
+      div.title = board.buying ? 'Buying store: click to browse' : 'Shop: click to browse';
+    }
+    const p = view.position(id);
+    if (p === undefined) {
+      div.hidden = true;
+      continue;
+    }
+    shopBoardAt.copy(p);
+    shopBoardAt.y += 3.8;
+    shopBoardAt.project(camera);
+    div.hidden = shopBoardAt.z > 1;
+    div.style.left = `${((shopBoardAt.x + 1) / 2) * 100}%`;
+    div.style.top = `${((1 - shopBoardAt.y) / 2) * 100}%`;
   }
 }
 
@@ -2447,6 +2870,7 @@ renderer.setAnimationLoop((time) => {
   statusIcons?.update(performance.now());
   showItemLabel();
   showGuildLabels();
+  showShopBoards();
   showProgress(performance.now());
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });

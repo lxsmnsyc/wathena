@@ -544,6 +544,9 @@ func (b *body) readVar(name string, index Expr) (val, error) {
 		}
 		idx = iv.asInt()
 	}
+	if cur, ok := b.n.c.currencyVar(name); ok {
+		return b.readCurrency(name, cur, index)
+	}
 	if prefix == "$@" {
 		if v, ok, err := b.partyMemberVar(name, idx, false); ok {
 			return v, err
@@ -581,6 +584,9 @@ func (b *body) readVar(name string, index Expr) (val, error) {
 
 // writeVar writes a variable, or one element of an array.
 func (b *body) writeVar(target *Var, value val) error {
+	if _, ok := b.n.c.currencyVar(target.Name); ok {
+		return unsupported(strings.ToUpper(target.Name), "written by a command, as only reads and assignments of a currency convert")
+	}
 	prefix, _, str := varName(target.Name)
 	code := value.asInt()
 	if str {
@@ -814,6 +820,9 @@ func (b *body) jump(kind string) error {
 
 func (b *body) assign(s *Assign) error {
 	t := s.Target
+	if cur, ok := b.n.c.currencyVar(t.Name); ok {
+		return b.assignCurrency(s, cur)
+	}
 	if p, _, _ := varName(t.Name); p == "" && t.Index == nil {
 		if _, param, ok := b.n.c.consts.Lookup(t.Name); ok && param {
 			return b.assignParam(s)

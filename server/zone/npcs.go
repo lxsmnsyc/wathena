@@ -11,6 +11,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
@@ -609,9 +610,9 @@ func (h scriptHost) OpenShop(id int64, name string) error {
 	if err != nil {
 		return err
 	}
-	var s *Shop
+	var s *shop.Shop
 	if h.z.Mods != nil {
-		s = h.z.Mods.Shops[name]
+		s = h.z.Mods.Shops.Get(name)
 	}
 	if s == nil {
 		return fmt.Errorf("player:open_shop: there is no shop %q", name)

@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	"log/slog"
+	"slices"
 	"testing"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/tools/convert"
 )
@@ -24,6 +27,7 @@ var sampleApprovals = map[string][]string{
 	"example.party-hall":   {"party.manage"},
 	"example.guild-hall":   {"guild.manage"},
 	"example.bank":         {"player.give_items", "rules.override"},
+	"example.arena":        {"mail.send", "rules.override"},
 }
 
 // TestLoadSampleMod loads mods/examples over the renewal reference data,
@@ -97,14 +101,14 @@ func TestLoadSampleMod(t *testing.T) {
 	if kafra == nil || kafra.Script != "core:scripts/npcs/kaf_prontera.lua" || kafra.DisplayName != "Kafra Employee" {
 		t.Errorf("kafra %+v", kafra)
 	}
-	if shop == nil || shop.Shop == nil || len(shop.Shop.Items) != 2 || shop.Shop.Items[0].Price != 15 || !shop.Shop.Discount {
+	if shop == nil || shop.Shop == nil || len(shopItems(shop.Shop)) != 2 || shopItems(shop.Shop)[0].Zeny != 15 || !shop.Shop.Discount {
 		t.Errorf("fruit shop %+v", shop)
 	}
-	if s := m.zone.Shops["example.greeter:Cookie Stand"]; s == nil || len(s.Items) != 2 || s.Items[1].Price != 10 {
+	if s := m.zone.Shops.Get("example.greeter:Cookie Stand"); s == nil || len(shopItems(s)) != 2 || shopItems(s)[1].Zeny != 10 {
 		t.Errorf("cookie stand %+v", s)
 	}
-	// core and the thirteen sample mods.
-	if len(m.zone.Scripts) != 14 || m.zone.ItemIDs["Red_Potion"] != 501 {
+	// core and the fourteen sample mods.
+	if len(m.zone.Scripts) != 15 || m.zone.ItemIDs["Red_Potion"] != 501 {
 		t.Errorf("zone mods: %d scripts", len(m.zone.Scripts))
 	}
 	// The Halloween mod's monsters, with the IDs of the mod range, and
@@ -136,4 +140,11 @@ func TestLoadSampleMod(t *testing.T) {
 	if m.set.Ruleset.Mod != mod.CoreRenewal {
 		t.Errorf("ruleset %s", m.set.Ruleset)
 	}
+}
+
+// shopItems copies a shop's items.
+func shopItems(s *shop.Shop) []shop.Item {
+	s.Lock()
+	defer s.Unlock()
+	return slices.Clone(s.Items(time.Now(), time.UTC))
 }

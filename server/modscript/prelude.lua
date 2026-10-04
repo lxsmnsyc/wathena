@@ -354,6 +354,67 @@ new_player, player_ids = handle_type("player", {
 	open_shop = function(self, shop)
 		return (call(H.player_open_shop, player_ids[self], shop))
 	end,
+	-- Currencies, mail, vending, buying stores and store search (review
+	-- decision 30).
+	get_currency = function(self, name)
+		return (call(H.player_get_currency, player_ids[self], name))
+	end,
+	give_currency = function(self, name, n)
+		call(H.player_change_currency, player_ids[self], name, n, false)
+	end,
+	take_currency = function(self, name, n)
+		return (call(H.player_change_currency, player_ids[self], name, n, true))
+	end,
+	send_mail = function(self, spec)
+		if type(spec) ~= "table" then
+			error("player:send_mail: want a table, such as { to = \"Name\", title = \"Hello\" }", 2)
+		end
+		local fields = { to = true, sender = true, title = true, body = true, zeny = true, items = true }
+		for k in pairs(spec) do
+			if not fields[k] then
+				error("player:send_mail: " .. tostring(k) .. " is not a field; a mail has to, sender, title, body, zeny and items", 2)
+			end
+		end
+		local to = spec.to
+		if type(to) == "table" then
+			to = player_ids[to]
+			if to == nil then
+				error("player:send_mail: to is a character's name, a character ID or a player handle", 2)
+			end
+		end
+		if spec.items ~= nil and type(spec.items) ~= "table" then
+			error("player:send_mail: items is a list of { item, amount, roll, bound }", 2)
+		end
+		call(H.player_send_mail, player_ids[self], to, spec.sender, spec.title, spec.body, spec.zeny, spec.items)
+	end,
+	open_mail = function(self)
+		return (call(H.player_market_call, player_ids[self], "open_mail"))
+	end,
+	autotrade = function(self)
+		return (call(H.player_market_call, player_ids[self], "autotrade"))
+	end,
+	search_stores = function(self, spec)
+		if type(spec) ~= "table" then
+			error("player:search_stores: want a table, such as { uses = 10, effect = \"show\" }", 2)
+		end
+		for k in pairs(spec) do
+			if k ~= "uses" and k ~= "effect" then
+				error("player:search_stores: " .. tostring(k) .. " is not a field; the fields are uses and effect", 2)
+			end
+		end
+		return (call(H.player_market_call, player_ids[self], "search_stores", spec.uses, spec.effect or "show"))
+	end,
+	open_buying_store = function(self, spec)
+		if type(spec) ~= "table" then
+			error("player:open_buying_store: want a table, such as { slots = 5 }", 2)
+		end
+		for k in pairs(spec) do
+			if k ~= "slots" then
+				error("player:open_buying_store: " .. tostring(k) .. " is not a field; the field is slots", 2)
+			end
+		end
+		return (call(H.player_market_call, player_ids[self], "open_buying_store", spec.slots))
+	end,
 	whisper = function(self, text, options)
 		if type(text) ~= "string" then
 			error("player:whisper: the text must be a string", 2)
@@ -918,12 +979,47 @@ api["wa.maps"] = readonly("wa.maps", {
 	end,
 })
 
-api["wa.world"] = readonly("wa.world", {
+-- Shops of data/npcs.yml (review decision 30). A shop handle names the
+-- shop's record.
+local shop_names
+local new_shop
+new_shop, shop_names = handle_type("shop", {
+	add_item = function(self, item, options)
+		check(options == nil or type(options) == "table", "shop:add_item: the options are a table of cost, stock and restock")
+		return (call(H.shop_call, shop_names[self], "add_item", item, options))
+	end,
+	remove_item = function(self, item)
+		return (call(H.shop_call, shop_names[self], "remove_item", item))
+	end,
+	set_stock = function(self, item, n)
+		return (call(H.shop_call, shop_names[self], "set_stock", item, n))
+	end,
+}, nil, true)
+
+local world_module
+local function get_shop(a, b)
+	-- world.get_shop(name), or world:get_shop(name) as review decision 30
+	-- writes it.
+	local name = a
+	if a == world_module then
+		name = b
+	end
+	check(type(name) == "string", "world.get_shop: want a shop's name of data/npcs.yml")
+	local full = call(H.world_get_shop, name)
+	if full == nil then
+		return nil
+	end
+	return new_shop(full)
+end
+
+world_module = readonly("wa.world", {
 	announce = function(text)
 		check(type(text) == "string", "world.announce: the text must be a string")
 		return (call(H.announce, nil, text))
 	end,
+	get_shop = get_shop,
 })
+api["wa.world"] = world_module
 
 -- Chat channels (proposal 0002, review decision 26). A channel is one
 -- for the whole world: every zone's handle of it is the same channel.
@@ -1486,6 +1582,24 @@ new_world, world_ids = handle_type("test world", {
 		check(id ~= nil, "world:close_storage: want a player from world:new_player")
 		world_call("close_storage", id)
 	end,
+	buy = function(self, player, shop, items)
+		local id = player_ids[player]
+		check(id ~= nil, "world:buy: want a player from world:new_player")
+		check(type(shop) == "string", "world:buy: the shop is a shop's full name of data/npcs.yml")
+		check(type(items) == "table", "world:buy: items is a table such as { [501] = 2 }")
+		return world_call("buy", id, shop, items)
+	end,
+	get_mails = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "world:get_mails: want a player from world:new_player")
+		return (world_call("get_mails", id))
+	end,
+	vend = function(self, seller, buyer, lines)
+		local is, ib = player_ids[seller], player_ids[buyer]
+		check(is ~= nil and ib ~= nil, "world:vend: want two players from world:new_player")
+		check(type(lines) == "table", "world:vend: lines is a list of { item, amount, price, buy }")
+		return world_call("vend", is, ib, lines)
+	end,
 	trade = function(self, a, b, offer_a, offer_b)
 		local ia, ib = player_ids[a], player_ids[b]
 		check(ia ~= nil and ib ~= nil, "world:trade: want two players from world:new_player")
@@ -1805,8 +1919,9 @@ end
 -- invoke calls a handler. Arguments come in pairs: a kind and a value.
 -- "player" makes a player handle, "monster" a monster handle, and
 -- "value" passes the value as it is.
--- trade_object is set below, with the hook objects.
+-- trade_object and sale_object are set below, with the hook objects.
 local trade_object
+local sale_object
 
 function R.invoke(fn, ...)
 	local n = select("#", ...)
@@ -1871,6 +1986,8 @@ function R.invoke(fn, ...)
 			})
 		elseif kind == "trade" then
 			value = trade_object(value)
+		elseif kind == "sale" then
+			value = sale_object(value)
 		end
 		args[#args + 1] = value
 	end
@@ -1894,6 +2011,26 @@ trade_object = function(fields)
 		items = readonly("traded items", items),
 		zeny = readonly("trade zeny", { fields.zeny[1], fields.zeny[2] }),
 	})
+end
+
+-- sale_object makes the object of the shop_buy, shop_sell, vend,
+-- buying_store_sale and mail events and hooks (review decision 30):
+-- player, seller and buyer are handles; a mail's from and to are names.
+sale_object = function(fields)
+	local items = {}
+	for i, it in ipairs(fields.items) do
+		items[i] = readonly("sold item", { item = it.item, amount = it.amount, price = it.price })
+	end
+	local o = { items = readonly("sold items", items), zeny = fields.zeny }
+	local name = fields.event
+	if name == "shop_buy" or name == "shop_sell" then
+		o.player, o.shop = new_player(fields.player), fields.shop
+	elseif name == "vend" or name == "buying_store_sale" then
+		o.seller, o.buyer = new_player(fields.seller), new_player(fields.buyer)
+	else
+		o.from, o.to = fields.from, fields.to
+	end
+	return readonly(name == "mail" and "mail" or "sale", o)
 end
 
 local hook_objects = {
@@ -1924,6 +2061,9 @@ local hook_messages = {
 local function hook_object(kind, fields)
 	if kind == "trade" then
 		return trade_object(fields)
+	end
+	if kind == "vend" or kind == "buying_store_sale" or kind == "mail" then
+		return sale_object(fields)
 	end
 	if kind == "item_roll" then
 		-- The server's roll is not a field: the innermost next returns
@@ -2002,10 +2142,10 @@ local function hook_result(kind, a, b, o)
 		end
 		return a
 	end
-	if kind == "trade" then
+	if kind == "trade" or kind == "vend" or kind == "buying_store_sale" or kind == "mail" then
 		-- true, or false and a message.
 		if type(a) ~= "boolean" or (b ~= nil and type(b) ~= "string") then
-			error("the trade hook must return true, or false and a message", 0)
+			error("the " .. kind .. " hook must return true, or false and a message", 0)
 		end
 		if a then
 			return true
@@ -2037,7 +2177,7 @@ local function innermost(kind, o, fields)
 	if kind == "monster_target" then
 		return hook_result(kind, o.current, nil, o)
 	end
-	if kind == "trade" then
+	if kind == "trade" or kind == "vend" or kind == "buying_store_sale" or kind == "mail" then
 		return true
 	end
 	return hook_result(kind, o[hook_values[kind]])

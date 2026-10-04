@@ -14,10 +14,12 @@ import (
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
+	"github.com/lxsmnsyc/wathena/server/currency"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/rules"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/storage"
@@ -67,6 +69,12 @@ type Mods struct {
 	// StorageOverlay their merge.
 	Storages       []*storage.Record
 	StorageOverlay *mod.Overlay
+	// Currencies are the currencies: core's with the mods'
+	// data/currencies.yml. CurrencyOverlay is their merge.
+	Currencies      *currency.Table
+	CurrencyOverlay *mod.Overlay
+	// Shops are the shops of the NPC records, which every zone shares.
+	Shops *shop.Registry
 	// Chat are the chat channels and filter: core's with the mods'
 	// data/channels.yml and data/chat_filter.yml. ChatOverlays are the two
 	// merges.
@@ -151,17 +159,24 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	if jobs != nil {
 		out.JobTables = jobs.WithJobs(jobRecs.StatusData())
 	}
-	shops, err := npcShops(placed, merged)
+	if out.Currencies, out.CurrencyOverlay, err = modCurrencies(ctx, set, assigned); err != nil {
+		return nil, err
+	}
+	for _, n := range out.CurrencyOverlay.Notes {
+		log.Warn("mods: " + n)
+	}
+	shops, err := npcShops(placed, merged, out.Currencies)
 	if err != nil {
 		return nil, err
 	}
+	out.Shops = shops
 	for _, n := range placed {
 		if !n.Placed {
 			continue
 		}
 		zn := zone.NPC{
 			Name: n.Name, DisplayName: n.DisplayName, X: n.X, Y: n.Y, Direction: n.Direction, Sprite: n.Sprite,
-			Shop: shops[n.Name],
+			Shop: shops.Get(n.Name),
 		}
 		if n.Script != "" {
 			zn.Script = n.ScriptMod + ":" + n.Script
@@ -209,7 +224,8 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 		log.Warn("mods: " + n)
 	}
 	for _, a := range assigned.Assigned {
-		if a.Kind == mod.SkillIDs.Kind || a.Kind == mod.CompanionIDs.Kind || a.Kind == mod.MountIDs.Kind || a.Kind == mod.StorageIDs.Kind {
+		if a.Kind == mod.SkillIDs.Kind || a.Kind == mod.CompanionIDs.Kind || a.Kind == mod.MountIDs.Kind || a.Kind == mod.StorageIDs.Kind ||
+			a.Kind == mod.CurrencyIDs.Kind {
 			log.Info("mods: new ID", "kind", a.Kind, "name", a.Name, "id", a.ID, "mod", a.Mod)
 		}
 	}
@@ -280,7 +296,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	out.Zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
 		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates,
 		RandomOptions: opts, ItemRolls: rl.ItemRolls, Rules: rl, Companions: out.Companions, Chat: out.Chat,
-		Storages: out.Storages}
+		Storages: out.Storages, Currencies: out.Currencies}
 	return out, nil
 }
 
@@ -349,35 +365,64 @@ func labelRolls(items *item.Data, opts *mod.RandomOptions, consts *constants.Dat
 	}
 }
 
-// npcShops makes the shops of NPC records, by record name. A price of -1
-// is the item's buy price. An item that does not exist is an error.
-func npcShops(npcs []mod.NPC, items *mod.Items) (map[string]*zone.Shop, error) {
+// npcShops makes the shops of NPC records. A price of -1 is the item's
+// buy price. An item or a currency that does not exist is an error.
+func npcShops(npcs []mod.NPC, items *mod.Items, currencies *currency.Table) (*shop.Registry, error) {
 	byID := make(map[uint32]*item.Def, len(items.Data.Items))
 	for i := range items.Data.Items {
 		byID[items.Data.Items[i].ID] = &items.Data.Items[i]
 	}
-	out := map[string]*zone.Shop{}
+	var out []*shop.Shop
 	var errs []error
 	for _, n := range npcs {
 		if n.Shop == nil {
 			continue
 		}
-		s := &zone.Shop{Name: n.Name, Discount: n.Discount}
-		for _, it := range n.Shop {
+		bad := func(format string, args ...any) {
+			errs = append(errs, fmt.Errorf("npcs %s: shop: %s", n.Name, fmt.Sprintf(format, args...)))
+		}
+		var list []shop.Item
+		for _, it := range n.Shop.Items {
 			id, ok := items.IDs[it.Item]
 			if !ok {
-				errs = append(errs, fmt.Errorf("npcs %s: shop: there is no item %q", n.Name, it.Item))
+				bad("there is no item %q", it.Item)
 				continue
 			}
-			price := it.Price
-			if price < 0 {
-				price = byID[id].Buy
+			si := shop.Item{ID: id, Zeny: it.Price, Stock: -1, Initial: -1}
+			if it.Cost != nil {
+				si.Zeny = it.Cost.Zeny
+				for _, c := range it.Cost.Items {
+					cid, ok := items.IDs[c.Item]
+					if !ok {
+						bad("%s: there is no item %q", it.Item, c.Item)
+						continue
+					}
+					si.Items = append(si.Items, shop.CostItem{ID: cid, Amount: c.Amount})
+				}
+				for _, name := range slices.Sorted(maps.Keys(it.Cost.Currencies)) {
+					r := currencies.Resolve(name, n.Mod)
+					if r == nil {
+						bad("%s: there is no currency %q in data/currencies.yml", it.Item, name)
+						continue
+					}
+					si.Currencies = append(si.Currencies, shop.CostCurrency{ID: r.ID, Amount: int64(it.Cost.Currencies[name])})
+				}
+			} else if si.Zeny < 0 {
+				si.Zeny = byID[id].Buy
 			}
-			s.Items = append(s.Items, zone.ShopItem{ID: id, Price: price})
+			if it.Stock > 0 {
+				si.Stock, si.Initial = it.Stock, it.Stock
+				si.Restock, _ = mod.ParseRestock(it.Restock)
+			}
+			list = append(list, si)
 		}
-		out[n.Name] = s
+		display := n.DisplayName
+		if display == "" {
+			display, _, _ = strings.Cut(mod.Local(n.Name), "#")
+		}
+		out = append(out, shop.New(n.Name, display, n.Shop.Discount, n.Shop.BuysFromPlayers, n.Mod, list))
 	}
-	return out, errors.Join(errs...)
+	return shop.NewRegistry(out), errors.Join(errs...)
 }
 
 // checkItemScripts checks that every item's script exists, so a typo in

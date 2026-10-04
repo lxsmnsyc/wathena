@@ -1,0 +1,18 @@
+# A ruleset for the mail duplication tests of the end-to-end tests
+# (e2e/README.md): renewal, with no mail fees. A mail then moves zeny and
+# items without taking any, so the test's totals hold. Only the tests that
+# pass Options.Ruleset use it.
+id: e2e.marketrules
+name: End-to-end market rules
+version: 0.1.0
+api: 1.0
+description: Renewal without mail fees, for the end-to-end tests.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+provides:
+  ruleset:
+    extends: core.ruleset.renewal
+    rules:
+      mail_zeny_fee: 0
+      mail_attachment_price: 0

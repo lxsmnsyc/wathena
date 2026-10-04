@@ -13,7 +13,7 @@ func TestPartyAndFriends(t *testing.T) {
 	b := dial(t, s, "Bob")
 	ctx := context.Background()
 	if l := a.WorldLimits(); l.PartyMembers != 12 || l.Friends != 40 || l.BlockList != 20 || l.InventorySlots != 100 || l.StorageSlots != 600 ||
-		l.CartSlots != 100 || len(l.Ranges) != 11 || l.Ranges["inventory_slots"] != (LimitRange{Base: 100, Max: 200}) ||
+		l.CartSlots != 100 || l.MailItems != 5 || l.Mailbox != 100 || len(l.Ranges) != 13 || l.Ranges["inventory_slots"] != (LimitRange{Base: 100, Max: 200}) ||
 		l.Ranges["guild_members"] != (LimitRange{Base: 16, Max: 76}) {
 		t.Errorf("limits %+v", l)
 	}

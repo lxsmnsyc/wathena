@@ -79,6 +79,9 @@ type Rules struct {
 	// Items holds the storage, cart and trade values of rAthena's
 	// player.conf (limits.go).
 	Items Items
+	// Market holds the vending, buying store, store search and mail
+	// values of rAthena's conf files (limits.go).
+	Market Market
 }
 
 // Base returns the rules of a core ruleset: every flag at the base's
@@ -89,7 +92,7 @@ func Base(renewal bool) *Rules {
 		LevelPenaltyExp: renewal, LevelPenaltyDrop: renewal, LevelDamageMod: renewal, ElementTable: renewal,
 		StatusResist: renewal, HealFormula: renewal, BossProtection: renewal, EnsembleSongs: renewal,
 		Homunculus: renewal, BusyRestrictions: renewal, FourthJobTraits: renewal,
-		Limits: DefaultLimits(), Party: DefaultParty(), Guild: DefaultGuild(), Items: DefaultItems(),
+		Limits: DefaultLimits(), Party: DefaultParty(), Guild: DefaultGuild(), Items: DefaultItems(), Market: DefaultMarket(),
 	}
 }
 

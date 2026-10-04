@@ -34,6 +34,9 @@ const (
 	// The login session that opened this connection ended, such as at
 	// logout or when a new login in the same browser replaced it.
 	DisconnectReason_DISCONNECT_REASON_LOGGED_OUT DisconnectReason = 8
+	// The player went on autotrade: the shop stays open while the
+	// connection closes (player:autotrade).
+	DisconnectReason_DISCONNECT_REASON_AUTOTRADE DisconnectReason = 9
 )
 
 // Enum value maps for DisconnectReason.
@@ -48,6 +51,7 @@ var (
 		6: "DISCONNECT_REASON_BANNED",
 		7: "DISCONNECT_REASON_SERVER_SHUTDOWN",
 		8: "DISCONNECT_REASON_LOGGED_OUT",
+		9: "DISCONNECT_REASON_AUTOTRADE",
 	}
 	DisconnectReason_value = map[string]int32{
 		"DISCONNECT_REASON_UNSPECIFIED":         0,
@@ -59,6 +63,7 @@ var (
 		"DISCONNECT_REASON_BANNED":              6,
 		"DISCONNECT_REASON_SERVER_SHUTDOWN":     7,
 		"DISCONNECT_REASON_LOGGED_OUT":          8,
+		"DISCONNECT_REASON_AUTOTRADE":           9,
 	}
 )
 
@@ -356,6 +361,8 @@ type Limits struct {
 	xxx_hidden_StorageSlots   uint32                 `protobuf:"varint,10,opt,name=storage_slots,json=storageSlots,proto3"`
 	xxx_hidden_CartSlots      uint32                 `protobuf:"varint,11,opt,name=cart_slots,json=cartSlots,proto3"`
 	xxx_hidden_Ranges         *[]*LimitRange         `protobuf:"bytes,12,rep,name=ranges,proto3"`
+	xxx_hidden_MailItems      uint32                 `protobuf:"varint,13,opt,name=mail_items,json=mailItems,proto3"`
+	xxx_hidden_Mailbox        uint32                 `protobuf:"varint,14,opt,name=mailbox,proto3"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -471,6 +478,20 @@ func (x *Limits) GetRanges() []*LimitRange {
 	return nil
 }
 
+func (x *Limits) GetMailItems() uint32 {
+	if x != nil {
+		return x.xxx_hidden_MailItems
+	}
+	return 0
+}
+
+func (x *Limits) GetMailbox() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Mailbox
+	}
+	return 0
+}
+
 func (x *Limits) SetPartyMembers(v uint32) {
 	x.xxx_hidden_PartyMembers = v
 }
@@ -519,6 +540,14 @@ func (x *Limits) SetRanges(v []*LimitRange) {
 	x.xxx_hidden_Ranges = &v
 }
 
+func (x *Limits) SetMailItems(v uint32) {
+	x.xxx_hidden_MailItems = v
+}
+
+func (x *Limits) SetMailbox(v uint32) {
+	x.xxx_hidden_Mailbox = v
+}
+
 type Limits_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -550,6 +579,10 @@ type Limits_builder struct {
 	// ranges lists every limit with its base and max, in the order of the
 	// server's rules.LimitBounds.
 	Ranges []*LimitRange
+	// mail_items is the most items one mail holds, as MAIL_MAX_ITEM.
+	MailItems uint32
+	// mailbox is the most mails a mailbox holds.
+	Mailbox uint32
 }
 
 func (b0 Limits_builder) Build() *Limits {
@@ -568,6 +601,8 @@ func (b0 Limits_builder) Build() *Limits {
 	x.xxx_hidden_StorageSlots = b.StorageSlots
 	x.xxx_hidden_CartSlots = b.CartSlots
 	x.xxx_hidden_Ranges = &b.Ranges
+	x.xxx_hidden_MailItems = b.MailItems
+	x.xxx_hidden_Mailbox = b.Mailbox
 	return m0
 }
 
@@ -877,7 +912,7 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\x04tick\x18\x03 \x01(\rR\x04tick\x12\x15\n" +
 	"\x06net_id\x18\x04 \x01(\rR\x05netId\x12\x10\n" +
 	"\x03map\x18\x05 \x01(\tR\x03map\x12*\n" +
-	"\x06limits\x18\x06 \x01(\v2\x12.wathena.v1.LimitsR\x06limits\"\xbe\x03\n" +
+	"\x06limits\x18\x06 \x01(\v2\x12.wathena.v1.LimitsR\x06limits\"\xf7\x03\n" +
 	"\x06Limits\x12#\n" +
 	"\rparty_members\x18\x01 \x01(\rR\fpartyMembers\x12\x18\n" +
 	"\afriends\x18\x02 \x01(\rR\afriends\x12\x1d\n" +
@@ -893,7 +928,10 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	" \x01(\rR\fstorageSlots\x12\x1d\n" +
 	"\n" +
 	"cart_slots\x18\v \x01(\rR\tcartSlots\x12.\n" +
-	"\x06ranges\x18\f \x03(\v2\x16.wathena.v1.LimitRangeR\x06ranges\"F\n" +
+	"\x06ranges\x18\f \x03(\v2\x16.wathena.v1.LimitRangeR\x06ranges\x12\x1d\n" +
+	"\n" +
+	"mail_items\x18\r \x01(\rR\tmailItems\x12\x18\n" +
+	"\amailbox\x18\x0e \x01(\rR\amailbox\"F\n" +
 	"\n" +
 	"LimitRange\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
@@ -907,7 +945,7 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"Disconnect\x124\n" +
 	"\x06reason\x18\x01 \x01(\x0e2\x1c.wathena.v1.DisconnectReasonR\x06reason\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage*\xe0\x02\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*\x81\x03\n" +
 	"\x10DisconnectReason\x12!\n" +
 	"\x1dDISCONNECT_REASON_UNSPECIFIED\x10\x00\x12)\n" +
 	"%DISCONNECT_REASON_VERSION_UNSUPPORTED\x10\x01\x12%\n" +
@@ -917,7 +955,8 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\x1dDISCONNECT_REASON_BAD_MESSAGE\x10\x05\x12\x1c\n" +
 	"\x18DISCONNECT_REASON_BANNED\x10\x06\x12%\n" +
 	"!DISCONNECT_REASON_SERVER_SHUTDOWN\x10\a\x12 \n" +
-	"\x1cDISCONNECT_REASON_LOGGED_OUT\x10\bB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
+	"\x1cDISCONNECT_REASON_LOGGED_OUT\x10\b\x12\x1f\n" +
+	"\x1bDISCONNECT_REASON_AUTOTRADE\x10\tB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_wathena_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)

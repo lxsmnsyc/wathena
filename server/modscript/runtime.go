@@ -407,6 +407,12 @@ func (r *Runtime) init() error {
 		{"player_set_save_point", r.playerSetSavePoint},
 		{"player_mark_minimap", r.playerMarkMinimap},
 		{"player_open_shop", r.playerOpenShop},
+		{"player_get_currency", r.playerGetCurrency},
+		{"player_change_currency", r.playerChangeCurrency},
+		{"player_send_mail", r.playerSendMail},
+		{"player_market_call", r.playerMarketCall},
+		{"world_get_shop", r.worldGetShop},
+		{"shop_call", r.shopCall},
 		{"items_name", r.itemsName},
 		{"text", r.text},
 		{"text_item_link", r.textItemLink},
@@ -903,6 +909,14 @@ var Events = map[string][]string{
 	// trade is a world event: any trade on the context's map (review
 	// decision 29).
 	"trade": {KindMod, KindNPC, KindEvent},
+	// The sales and mail of review decision 30 are world events of the
+	// context's map: the shop's player, the vending and buying store
+	// players, and a mail's sender.
+	"shop_buy":          {KindMod, KindNPC, KindEvent},
+	"shop_sell":         {KindMod, KindNPC, KindEvent},
+	"vend":              {KindMod, KindNPC, KindEvent},
+	"buying_store_sale": {KindMod, KindNPC, KindEvent},
+	"mail":              {KindMod, KindNPC, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

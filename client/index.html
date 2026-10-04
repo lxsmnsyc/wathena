@@ -9,6 +9,7 @@
   <body>
     <canvas id="view"></canvas>
     <div id="guild-labels"></div>
+    <div id="shop-boards"></div>
     <div id="bubbles"></div>
     <div id="item-label" hidden></div>
     <div id="cast-bars"></div>
@@ -31,6 +32,7 @@
         Booking
       </button>
       <button id="guild-toggle" type="button" title="Guild (Alt+G)" hidden>Guild</button>
+      <button id="mail-toggle" type="button" title="Mail (Alt+M)" hidden>Mail</button>
       <button id="characters" type="button" hidden>Characters</button>
       <output id="status"></output>
       <output id="hp"></output>
@@ -72,6 +74,19 @@
     <div id="cutins"></div>
     <section id="dialog-window" aria-label="NPC" hidden></section>
     <section id="shop-window" aria-label="Shop" hidden></section>
+    <section id="mail-window" aria-label="Mail" hidden></section>
+    <section id="vending-setup" class="store-window" aria-label="Open a shop" hidden></section>
+    <section id="vending-own" class="store-window" aria-label="Your shop" hidden></section>
+    <section id="vending-browse" class="store-window" aria-label="Shop" hidden></section>
+    <section
+      id="buying-setup"
+      class="store-window"
+      aria-label="Open a buying store"
+      hidden
+    ></section>
+    <section id="buying-own" class="store-window" aria-label="Your buying store" hidden></section>
+    <section id="buying-browse" class="store-window" aria-label="Buying store" hidden></section>
+    <section id="store-search" class="store-window" aria-label="Store search" hidden></section>
     <div id="progress" hidden><div></div></div>
     <script type="module" src="/src/viewer/main.ts"></script>
   </body>

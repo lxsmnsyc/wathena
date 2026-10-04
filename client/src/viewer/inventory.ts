@@ -185,6 +185,100 @@ export function rollLines(s: Stack, label: (itemId: number) => string): string[]
   return [...out, ...s.options.map(optionText)];
 }
 
+/** A currency balance, as CurrencyAmount. */
+export interface CurrencyBalance {
+  /** The record's full name, such as cash or example.arena:tokens. */
+  name: string;
+  displayName: string;
+  amount: bigint;
+}
+
+/** The balance of a currency by its full name, 0 when the player has none. */
+export function currencyBalance(currencies: readonly CurrencyBalance[], name: string): bigint {
+  return currencies.find((c) => c.name === name)?.amount ?? 0n;
+}
+
+/** A currency's name as players see it: its display name, or its full name. */
+export function currencyName(c: Pick<CurrencyBalance, 'name' | 'displayName'>): string {
+  return c.displayName === '' ? c.name : c.displayName;
+}
+
+/**
+ * The currencies line of the inventory window, such as "Currencies: Cash
+ * 1,000, Arena tokens 25", or "Currencies: none".
+ */
+export function currenciesText(currencies: readonly CurrencyBalance[]): string {
+  if (currencies.length === 0) {
+    return 'Currencies: none';
+  }
+  return `Currencies: ${currencies.map((c) => `${currencyName(c)} ${c.amount.toLocaleString('en-US')}`).join(', ')}`;
+}
+
+/** The zeny line of the inventory window, such as "Zeny 1,500". */
+export function zenyLine(stats: ReadonlyMap<StatId, bigint>): string {
+  const z = stats.get(StatId.ZENY);
+  return `Zeny ${z === undefined ? '-' : z.toLocaleString('en-US')}`;
+}
+
+/** How many of an item the stacks hold, leaving out worn items. */
+export function countItem(stacks: Iterable<Stack>, itemId: number): number {
+  let n = 0;
+  for (const s of stacks) {
+    if (s.itemId === itemId && s.equip === 0) {
+      n += s.amount;
+    }
+  }
+  return n;
+}
+
+/**
+ * The full text of a copy for a tooltip: its name with the refine level,
+ * its cards, its rolls and random options, and its rule lines, one per
+ * line.
+ */
+export function stackDetails(s: Stack, label: (itemId: number) => string): string {
+  const cards = cardNames(s, label);
+  return [
+    stackLabel(s, label),
+    ...(cards.length > 0 ? [`Cards: ${cards.join(', ')}`] : []),
+    ...rollLines(s, label),
+    ...itemRuleLines(s),
+  ].join('\n');
+}
+
+/**
+ * A list row for a copy in another window, such as a mail attachment or
+ * a shop line: its icon, its name, and its amount, with the copy's
+ * details as the tooltip. extra goes after the amount.
+ */
+export function stackRow(
+  s: Stack,
+  label: (itemId: number) => string,
+  icons: ItemIcons | undefined,
+  ...extra: (Node | string)[]
+): HTMLLIElement {
+  const li = document.createElement('li');
+  li.dataset.slot = String(s.slot);
+  if (icons !== undefined) {
+    const icon = document.createElement('img');
+    icon.alt = '';
+    icon.width = 24;
+    icon.height = 24;
+    icon.draggable = false;
+    icons.show(s.itemId, icon);
+    li.append(icon);
+  }
+  const name = document.createElement('span');
+  name.className = 'name';
+  name.textContent = stackLabel(s, label);
+  const amount = document.createElement('span');
+  amount.className = 'amount';
+  amount.textContent = `× ${String(s.amount)}`;
+  li.title = stackDetails(s, label);
+  li.append(name, amount, ...extra);
+  return li;
+}
+
 /** The inventory as the server last described it. */
 export class InventoryModel {
   private readonly slots = new Map<number, Stack>();
@@ -288,6 +382,11 @@ export class InventoryModel {
 
   get(slot: number): Stack | undefined {
     return this.slots.get(slot);
+  }
+
+  /** How many of an item the inventory holds, leaving out worn items. */
+  count(itemId: number): number {
+    return countItem(this.slots.values(), itemId);
   }
 
   /** The held stacks in slot order. */
@@ -462,6 +561,10 @@ export class InventoryWindow {
   private readonly list: HTMLUListElement;
   private readonly weight: HTMLOutputElement;
   private readonly count: HTMLOutputElement;
+  private readonly zeny: HTMLOutputElement;
+  private readonly currencyLine: HTMLOutputElement;
+  /** The player's currencies, from the last CurrencyUpdate. */
+  currencies: readonly CurrencyBalance[] = [];
   private readonly form: HTMLFormElement;
   private readonly prompt: HTMLSpanElement;
   private readonly detail: HTMLDivElement;
@@ -502,6 +605,13 @@ export class InventoryWindow {
     this.count = document.createElement('output');
     this.weight = document.createElement('output');
     head.append(this.count, this.weight);
+    const money = document.createElement('div');
+    money.className = 'inventory-money';
+    this.zeny = document.createElement('output');
+    this.zeny.className = 'inventory-zeny';
+    this.currencyLine = document.createElement('output');
+    this.currencyLine.className = 'inventory-currencies';
+    money.append(this.zeny, this.currencyLine);
     this.list = document.createElement('ul');
     this.list.setAttribute('aria-label', 'Items');
     this.form = document.createElement('form');
@@ -589,7 +699,7 @@ export class InventoryWindow {
         this.closeCards();
       }
     });
-    root.append(head, this.list, this.form, this.picker, this.detail);
+    root.append(head, money, this.list, this.form, this.picker, this.detail);
     texts.onLoad(() => {
       this.relabel();
     });
@@ -707,6 +817,8 @@ export class InventoryWindow {
     const percent = weightPercent(stats);
     set(this.weight, `Weight ${weightText(stats)}${percent === undefined ? '' : ` (${percent}%)`}`);
     this.weight.classList.toggle('heavy', percent !== undefined && percent >= MAJOR_OVERWEIGHT);
+    set(this.zeny, zenyLine(stats));
+    set(this.currencyLine, currenciesText(this.currencies));
     const seen = new Set<number>();
     let previous: HTMLLIElement | undefined;
     for (const s of stacks) {

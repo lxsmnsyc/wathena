@@ -45,7 +45,7 @@ const claimCharacter = `-- name: ClaimCharacter :one
 UPDATE characters
 SET save_version = save_version + 1, login_at = now()
 WHERE id = $1
-RETURNING id, account_id, slot, name, job, sex, hair, hair_color, cloth_color, base_level, job_level, base_exp, job_exp, status_points, skill_points, str, agi, vit, int, dex, luk, hp, sp, map, x, y, zeny, inventory_size, save_version, created_at, login_at, saved_at, save_map, save_x, save_y, job_change_level, rebirth_job, options, companion, mount
+RETURNING id, account_id, slot, name, job, sex, hair, hair_color, cloth_color, base_level, job_level, base_exp, job_exp, status_points, skill_points, str, agi, vit, int, dex, luk, hp, sp, map, x, y, zeny, inventory_size, save_version, created_at, login_at, saved_at, save_map, save_x, save_y, job_change_level, rebirth_job, options, companion, mount, mail_day, mail_sent
 `
 
 // ClaimCharacter starts a session: it raises the save version, so saves
@@ -94,6 +94,8 @@ func (q *Queries) ClaimCharacter(ctx context.Context, id int64) (Character, erro
 		&i.Options,
 		&i.Companion,
 		&i.Mount,
+		&i.MailDay,
+		&i.MailSent,
 	)
 	return i, err
 }
@@ -430,8 +432,9 @@ UPDATE characters SET
     save_map = $25, save_x = $26, save_y = $27,
     job_change_level = $28, rebirth_job = $29,
     options = $30, companion = $31, mount = $32,
+    mail_day = $33, mail_sent = $34,
     save_version = save_version + 1, saved_at = now()
-WHERE id = $33 AND save_version = $34
+WHERE id = $35 AND save_version = $36
 `
 
 type SaveCharacterParams struct {
@@ -467,6 +470,8 @@ type SaveCharacterParams struct {
 	Options        int
 	Companion      string
 	Mount          string
+	MailDay        int
+	MailSent       int
 	ID             int64
 	SaveVersion    int64
 }
@@ -507,6 +512,8 @@ func (q *Queries) SaveCharacter(ctx context.Context, arg SaveCharacterParams) (i
 		arg.Options,
 		arg.Companion,
 		arg.Mount,
+		arg.MailDay,
+		arg.MailSent,
 		arg.ID,
 		arg.SaveVersion,
 	)

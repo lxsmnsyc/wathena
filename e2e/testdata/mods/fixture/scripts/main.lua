@@ -11,9 +11,20 @@
 --   - "!storage [<name>]" opens the account's storage or the Vault.
 --   - "!cart" gives the speaker a cart, which needs Pushcart.
 --   - "!zeny <amount>" gives zeny.
+--   - "!currency <name> <amount>" gives a currency and answers with the
+--     new amount, and "!pay <name> <amount>" takes it.
+--   - "!mailbox" opens the mailbox.
+--   - "!mail <to> <item> <amount> [<zeny>]" sends a mail from the
+--     "Postmaster" with items made for it, to a character by name, or to
+--     the speaker with "self".
+--   - "!buyingstore <slots>" opens the buying store setup.
+--   - "!search <uses> <show|open>" opens the store search.
+--   - "!autotrade" keeps the speaker's store open without its connection.
+--   - "!stock <item> <n>" sets an item's stock at the Exchange.
 -- Each command but "!guild level" answers with a system line that starts
--- with "e2e <name>:". A trade hook refuses trades with Contraband, and
--- the trade event tells both players what changed hands.
+-- with "e2e <name>:". A trade hook and a vend hook refuse Contraband. The
+-- trade, vend and buying_store_sale events tell both players what changed
+-- hands.
 
 local context = require "wa.context"
 local events = require "wa.events"
@@ -22,6 +33,7 @@ local hooks = require "wa.hooks"
 local items = require "wa.items"
 local monsters = require "wa.monsters"
 local spawning = require "wa.spawning"
+local world = require "wa.world"
 
 local DUMMY = monsters.id "e2e.fixture:DUMMY"
 local CONTRABAND = items.id "e2e.fixture:Contraband"
@@ -82,7 +94,54 @@ local commands = {
     player:give_zeny(tonumber(words[2]))
     return true
   end,
+  currency = function(player, words)
+    player:give_currency(words[2], tonumber(words[3]))
+    return player:get_currency(words[2])
+  end,
+  pay = function(player, words)
+    return player:take_currency(words[2], tonumber(words[3]))
+  end,
+  mailbox = function(player)
+    return player:open_mail()
+  end,
+  mail = function(player, words)
+    local to = words[2]
+    if to == "self" then
+      to = nil
+    end
+    player:send_mail {
+      to = to,
+      sender = "Postmaster",
+      title = "Parcel",
+      body = "From the fixture.",
+      zeny = tonumber(words[5] or "0"),
+      items = { { item = items.id(words[3]), amount = tonumber(words[4]) } },
+    }
+    return true
+  end,
+  buyingstore = function(player, words)
+    return player:open_buying_store { slots = tonumber(words[2]) }
+  end,
+  search = function(player, words)
+    return player:search_stores { uses = tonumber(words[2]), effect = words[3] }
+  end,
+  autotrade = function(player)
+    return player:autotrade()
+  end,
+  stock = function(_, words)
+    return world.get_shop("Exchange#e2e"):set_stock(items.id(words[2]), tonumber(words[3]))
+  end,
 }
+
+-- sale_line is the line the vend and buying_store_sale events send.
+local function sale_line(name, sale)
+  local amount = 0
+  for _, it in ipairs(sale.items) do
+    amount = amount + it.amount
+  end
+  return "e2e " .. name .. ": " .. sale.buyer.name .. " bought " .. amount .. " items from " .. sale.seller.name
+    .. " for " .. sale.zeny .. " zeny"
+end
 
 return function()
   events.on("chat", function(message)
@@ -111,6 +170,23 @@ return function()
     end
     return next()
   end)
+
+  hooks.on("vend", function(sale, next)
+    for _, it in ipairs(sale.items) do
+      if it.item == CONTRABAND then
+        return false, "No contraband here."
+      end
+    end
+    return next()
+  end)
+
+  for _, name in ipairs({ "vend", "buying_store_sale" }) do
+    events.on(name, function(sale)
+      local line = sale_line(name, sale)
+      sale.seller:send_message(line)
+      sale.buyer:send_message(line)
+    end)
+  end
 
   events.on("trade", function(trade)
     local amount = 0

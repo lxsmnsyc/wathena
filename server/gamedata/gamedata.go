@@ -78,6 +78,16 @@ func LoadItemData(mode reference.Mode) (*item.Data, error) {
 	if err := reference.LoadFile("extracts/"+string(mode)+"/item_trade.json", &trade); err != nil {
 		return nil, err
 	}
+	// shops.json lists the items of rAthena's BuyingStore flag (decision
+	// 0024).
+	var shops struct {
+		BuyingStore []struct {
+			ID uint32 `json:"id"`
+		} `json:"buying_store"`
+	}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/shops.json", &shops); err != nil {
+		return nil, err
+	}
 	var equip item.EquipData
 	if err := reference.LoadFile("extracts/"+string(mode)+"/equipment.json", &equip); err != nil {
 		return nil, err
@@ -95,6 +105,11 @@ func LoadItemData(mode reference.Mode) (*item.Data, error) {
 	for _, p := range prices.Items {
 		if def := byID[p.ID]; def != nil {
 			def.Buy, def.Sell, def.NoSell = p.Buy, p.Sell, p.NoSell
+		}
+	}
+	for _, b := range shops.BuyingStore {
+		if def := byID[b.ID]; def != nil {
+			def.BuyingStore = true
 		}
 	}
 	// item_trade's flags become restrictions. trade_partner and

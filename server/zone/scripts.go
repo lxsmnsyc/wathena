@@ -15,10 +15,12 @@ import (
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
+	"github.com/lxsmnsyc/wathena/server/currency"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/rules"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/variables"
@@ -44,9 +46,10 @@ type Mods struct {
 	Groups *item.Groups
 	// MonsterIDs maps monster AegisNames, such as PORING, to IDs.
 	MonsterIDs map[string]int64
-	// Shops are the shops of mods' data, by full record name, for
-	// player:open_shop. Placed shop NPCs carry their own.
-	Shops map[string]*Shop
+	// Shops are the shops of mods' data, for player:open_shop and
+	// world:get_shop. Placed shop NPCs carry their own, which is the
+	// registry's too.
+	Shops *shop.Registry
 	// Server holds the server variables. Without it, server variables
 	// raise an error.
 	Server *variables.Server
@@ -74,6 +77,9 @@ type Mods struct {
 	Companions *companion.Set
 	// Storages are the extra storages of data/storages.yml, by ID.
 	Storages []*storage.Record
+	// Currencies are the currencies of data/currencies.yml. Without them
+	// the zone uses core's (currency.Core).
+	Currencies *currency.Table
 	// Chat is the chat channels and filter, for a zone that makes its own
 	// chat hub, such as a headless zone. Without it the zone uses core's
 	// (chat.Core).
@@ -98,7 +104,7 @@ type NPC struct {
 	// Script is the NPC's entry script, as <mod>:<path>, or "".
 	Script string
 	// Shop is the NPC's shop, or nil.
-	Shop *Shop
+	Shop *shop.Shop
 }
 
 type npc struct {
@@ -158,6 +164,9 @@ type scriptEvent struct {
 	guild *modscript.GuildEvent
 	// trade is set for the trade event, which runs with FireTrade.
 	trade *modscript.TradeEvent
+	// sale is set for the shop_buy, shop_sell, vend, buying_store_sale
+	// and mail events, which run with FireSale.
+	sale *modscript.SaleEvent
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -258,6 +267,8 @@ func (z *Zone) runScripts() {
 			z.scripts.FireChat(*ev.chat)
 		case ev.trade != nil:
 			z.scripts.FireTrade(*ev.trade)
+		case ev.sale != nil:
+			z.scripts.FireSale(ev.name, *ev.sale)
 		case ev.party != nil:
 			z.scripts.FireParty(*ev.party)
 		case ev.guild != nil:

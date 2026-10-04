@@ -126,3 +126,12 @@ func (w *World) JoinCharacter(ctx context.Context, c *character.Character, saver
 func (w *World) NewCharacter(name string, look zone.Look) character.Character {
 	return w.start.NewCharacter(name, look)
 }
+
+// EndAutotrade ends the autotrade of a character, if it has one, and
+// waits until it left, so a new login of the character loads its last
+// save. Every zone shares one list of autotraders.
+func (w *World) EndAutotrade(ctx context.Context, id int64) {
+	if w.start != nil && w.start.Autotraders != nil {
+		w.start.Autotraders.End(ctx, id)
+	}
+}

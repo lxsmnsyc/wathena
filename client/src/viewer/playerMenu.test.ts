@@ -44,3 +44,18 @@ describe('playerMenuItems', () => {
     expect(playerMenuItems({ ...base, badge, ownGuild: 9n })).toEqual(['whisper', 'trade']);
   });
 });
+
+describe('playerMenuItems shops', () => {
+  it('offers to browse an open vending shop or buying store', () => {
+    expect(playerMenuItems({ ...base, shop: 'vending' })).toEqual([
+      'whisper',
+      'trade',
+      'browseShop',
+    ]);
+    expect(playerMenuItems({ ...base, shop: 'buying' })).toEqual([
+      'whisper',
+      'trade',
+      'browseStore',
+    ]);
+  });
+});

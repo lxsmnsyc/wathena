@@ -49,7 +49,7 @@ func TestStoragePutAndTake(t *testing.T) {
 	srv := Start(t, Options{})
 	alice := srv.Join(t, "Alice")
 	l := alice.WorldLimits()
-	if l.InventorySlots != 100 || l.StorageSlots != 600 || l.CartSlots != 100 || len(l.Ranges) != 11 {
+	if l.InventorySlots != 100 || l.StorageSlots != 600 || l.CartSlots != 100 || len(l.Ranges) != 13 {
 		t.Errorf("limits %+v", l)
 	}
 	for name, want := range map[string]LimitRange{"inventory_slots": {Base: 100, Max: 200}, "storage_slots": {Base: 600, Max: 600}, "cart_slots": {Base: 100, Max: 100},

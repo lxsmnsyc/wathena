@@ -1,0 +1,5 @@
+# A currency each character owns, for the shop and currency scenarios.
+# Scripts give it with "!currency tokens <n>", and the Exchange takes it.
+- name: e2e.fixture:tokens
+  display_name: Arena Tokens
+  owner: character

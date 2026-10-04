@@ -1,12 +1,13 @@
 package zone
 
 import (
-	"github.com/lxsmnsyc/wathena/server/storage"
 	"sync"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/mail"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/storage"
 )
 
 // Session is one player's connection to the world. It stays the same
@@ -48,6 +49,9 @@ type Session struct {
 	// storage registry (storage.go). Only the zone the player is in uses
 	// them.
 	storages []*storage.Storage
+	// mailbox is the player's mailbox, from the world's mail registry
+	// (mail.go).
+	mailbox *mail.Mailbox
 }
 
 // ending is why a session ends.

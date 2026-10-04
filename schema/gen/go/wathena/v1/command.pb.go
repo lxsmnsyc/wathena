@@ -472,6 +472,42 @@ func (x *Command) GetTrade() *TradeCommand {
 	return nil
 }
 
+func (x *Command) GetMail() *MailCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Mail); ok {
+			return x.Mail
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetVending() *VendingCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Vending); ok {
+			return x.Vending
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetBuyingStore() *BuyingStoreCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_BuyingStore); ok {
+			return x.BuyingStore
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetStoreSearch() *StoreSearchCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_StoreSearch); ok {
+			return x.StoreSearch
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -678,6 +714,38 @@ func (x *Command) SetTrade(v *TradeCommand) {
 		return
 	}
 	x.xxx_hidden_Body = &command_Trade{v}
+}
+
+func (x *Command) SetMail(v *MailCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Mail{v}
+}
+
+func (x *Command) SetVending(v *VendingCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Vending{v}
+}
+
+func (x *Command) SetBuyingStore(v *BuyingStoreCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_BuyingStore{v}
+}
+
+func (x *Command) SetStoreSearch(v *StoreSearchCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_StoreSearch{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -895,6 +963,38 @@ func (x *Command) HasTrade() bool {
 	return ok
 }
 
+func (x *Command) HasMail() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Mail)
+	return ok
+}
+
+func (x *Command) HasVending() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Vending)
+	return ok
+}
+
+func (x *Command) HasBuyingStore() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_BuyingStore)
+	return ok
+}
+
+func (x *Command) HasStoreSearch() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_StoreSearch)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -1055,6 +1155,30 @@ func (x *Command) ClearTrade() {
 	}
 }
 
+func (x *Command) ClearMail() {
+	if _, ok := x.xxx_hidden_Body.(*command_Mail); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearVending() {
+	if _, ok := x.xxx_hidden_Body.(*command_Vending); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearBuyingStore() {
+	if _, ok := x.xxx_hidden_Body.(*command_BuyingStore); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearStoreSearch() {
+	if _, ok := x.xxx_hidden_Body.(*command_StoreSearch); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -1082,6 +1206,10 @@ const Command_PartyBooking_case case_Command_Body = 23
 const Command_Guild_case case_Command_Body = 24
 const Command_Storage_case case_Command_Body = 25
 const Command_Trade_case case_Command_Body = 26
+const Command_Mail_case case_Command_Body = 27
+const Command_Vending_case case_Command_Body = 28
+const Command_BuyingStore_case case_Command_Body = 29
+const Command_StoreSearch_case case_Command_Body = 30
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -1140,6 +1268,14 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_Storage_case
 	case *command_Trade:
 		return Command_Trade_case
+	case *command_Mail:
+		return Command_Mail_case
+	case *command_Vending:
+		return Command_Vending_case
+	case *command_BuyingStore:
+		return Command_BuyingStore_case
+	case *command_StoreSearch:
+		return Command_StoreSearch_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -1175,6 +1311,10 @@ type Command_builder struct {
 	Guild        *GuildCommand
 	Storage      *StorageCommand
 	Trade        *TradeCommand
+	Mail         *MailCommand
+	Vending      *VendingCommand
+	BuyingStore  *BuyingStoreCommand
+	StoreSearch  *StoreSearchCommand
 	// -- end of xxx_hidden_Body
 }
 
@@ -1259,6 +1399,18 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.Trade != nil {
 		x.xxx_hidden_Body = &command_Trade{b.Trade}
+	}
+	if b.Mail != nil {
+		x.xxx_hidden_Body = &command_Mail{b.Mail}
+	}
+	if b.Vending != nil {
+		x.xxx_hidden_Body = &command_Vending{b.Vending}
+	}
+	if b.BuyingStore != nil {
+		x.xxx_hidden_Body = &command_BuyingStore{b.BuyingStore}
+	}
+	if b.StoreSearch != nil {
+		x.xxx_hidden_Body = &command_StoreSearch{b.StoreSearch}
 	}
 	return m0
 }
@@ -1381,6 +1533,22 @@ type command_Trade struct {
 	Trade *TradeCommand `protobuf:"bytes,26,opt,name=trade,proto3,oneof"`
 }
 
+type command_Mail struct {
+	Mail *MailCommand `protobuf:"bytes,27,opt,name=mail,proto3,oneof"`
+}
+
+type command_Vending struct {
+	Vending *VendingCommand `protobuf:"bytes,28,opt,name=vending,proto3,oneof"`
+}
+
+type command_BuyingStore struct {
+	BuyingStore *BuyingStoreCommand `protobuf:"bytes,29,opt,name=buying_store,json=buyingStore,proto3,oneof"`
+}
+
+type command_StoreSearch struct {
+	StoreSearch *StoreSearchCommand `protobuf:"bytes,30,opt,name=store_search,json=storeSearch,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -1432,6 +1600,14 @@ func (*command_Guild) isCommand_Body() {}
 func (*command_Storage) isCommand_Body() {}
 
 func (*command_Trade) isCommand_Body() {}
+
+func (*command_Mail) isCommand_Body() {}
+
+func (*command_Vending) isCommand_Body() {}
+
+func (*command_BuyingStore) isCommand_Body() {}
+
+func (*command_StoreSearch) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -7064,13 +7240,2362 @@ func (*tradeCommand_Confirm) isTradeCommand_Action() {}
 
 func (*tradeCommand_Cancel) isTradeCommand_Action() {}
 
+// MailCommand is one step of mail (RODEX), as rAthena's mail.cpp and
+// the RODEX packets of clif.cpp. The server answers with MailBox,
+// MailRead and MailResult.
+type MailCommand struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Action isMailCommand_Action   `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *MailCommand) Reset() {
+	*x = MailCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailCommand) ProtoMessage() {}
+
+func (x *MailCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *MailCommand) GetOpen() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*mailCommand_Open); ok {
+			return x.Open
+		}
+	}
+	return false
+}
+
+func (x *MailCommand) GetRead() uint64 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*mailCommand_Read); ok {
+			return x.Read
+		}
+	}
+	return 0
+}
+
+func (x *MailCommand) GetSend() *MailSend {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*mailCommand_Send); ok {
+			return x.Send
+		}
+	}
+	return nil
+}
+
+func (x *MailCommand) GetTake() *MailTake {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*mailCommand_Take); ok {
+			return x.Take
+		}
+	}
+	return nil
+}
+
+func (x *MailCommand) GetDelete() uint64 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*mailCommand_Delete); ok {
+			return x.Delete
+		}
+	}
+	return 0
+}
+
+func (x *MailCommand) GetClose() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*mailCommand_Close); ok {
+			return x.Close
+		}
+	}
+	return false
+}
+
+func (x *MailCommand) SetOpen(v bool) {
+	x.xxx_hidden_Action = &mailCommand_Open{v}
+}
+
+func (x *MailCommand) SetRead(v uint64) {
+	x.xxx_hidden_Action = &mailCommand_Read{v}
+}
+
+func (x *MailCommand) SetSend(v *MailSend) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &mailCommand_Send{v}
+}
+
+func (x *MailCommand) SetTake(v *MailTake) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &mailCommand_Take{v}
+}
+
+func (x *MailCommand) SetDelete(v uint64) {
+	x.xxx_hidden_Action = &mailCommand_Delete{v}
+}
+
+func (x *MailCommand) SetClose(v bool) {
+	x.xxx_hidden_Action = &mailCommand_Close{v}
+}
+
+func (x *MailCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *MailCommand) HasOpen() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*mailCommand_Open)
+	return ok
+}
+
+func (x *MailCommand) HasRead() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*mailCommand_Read)
+	return ok
+}
+
+func (x *MailCommand) HasSend() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*mailCommand_Send)
+	return ok
+}
+
+func (x *MailCommand) HasTake() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*mailCommand_Take)
+	return ok
+}
+
+func (x *MailCommand) HasDelete() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*mailCommand_Delete)
+	return ok
+}
+
+func (x *MailCommand) HasClose() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*mailCommand_Close)
+	return ok
+}
+
+func (x *MailCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *MailCommand) ClearOpen() {
+	if _, ok := x.xxx_hidden_Action.(*mailCommand_Open); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *MailCommand) ClearRead() {
+	if _, ok := x.xxx_hidden_Action.(*mailCommand_Read); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *MailCommand) ClearSend() {
+	if _, ok := x.xxx_hidden_Action.(*mailCommand_Send); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *MailCommand) ClearTake() {
+	if _, ok := x.xxx_hidden_Action.(*mailCommand_Take); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *MailCommand) ClearDelete() {
+	if _, ok := x.xxx_hidden_Action.(*mailCommand_Delete); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *MailCommand) ClearClose() {
+	if _, ok := x.xxx_hidden_Action.(*mailCommand_Close); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const MailCommand_Action_not_set_case case_MailCommand_Action = 0
+const MailCommand_Open_case case_MailCommand_Action = 1
+const MailCommand_Read_case case_MailCommand_Action = 2
+const MailCommand_Send_case case_MailCommand_Action = 3
+const MailCommand_Take_case case_MailCommand_Action = 4
+const MailCommand_Delete_case case_MailCommand_Action = 5
+const MailCommand_Close_case case_MailCommand_Action = 6
+
+func (x *MailCommand) WhichAction() case_MailCommand_Action {
+	if x == nil {
+		return MailCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *mailCommand_Open:
+		return MailCommand_Open_case
+	case *mailCommand_Read:
+		return MailCommand_Read_case
+	case *mailCommand_Send:
+		return MailCommand_Send_case
+	case *mailCommand_Take:
+		return MailCommand_Take_case
+	case *mailCommand_Delete:
+		return MailCommand_Delete_case
+	case *mailCommand_Close:
+		return MailCommand_Close_case
+	default:
+		return MailCommand_Action_not_set_case
+	}
+}
+
+type MailCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// open opens the mailbox window and lists the mails, as
+	// clif_parse_Mail_refreshinbox. The mailbox does not open while the
+	// player trades, vends, runs a buying store or has a storage open.
+	Open *bool
+	// read shows a mail's text and attachments, as clif_parse_Mail_read.
+	Read *uint64
+	// send writes a mail, as clif_parse_Mail_send.
+	Send *MailSend
+	// take moves a mail's attachments into the inventory, as
+	// clif_parse_Mail_getattach.
+	Take *MailTake
+	// delete removes a mail without attachments, as
+	// clif_parse_Mail_delete.
+	Delete *uint64
+	// close closes the mailbox window.
+	Close *bool
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 MailCommand_builder) Build() *MailCommand {
+	m0 := &MailCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Open != nil {
+		x.xxx_hidden_Action = &mailCommand_Open{*b.Open}
+	}
+	if b.Read != nil {
+		x.xxx_hidden_Action = &mailCommand_Read{*b.Read}
+	}
+	if b.Send != nil {
+		x.xxx_hidden_Action = &mailCommand_Send{b.Send}
+	}
+	if b.Take != nil {
+		x.xxx_hidden_Action = &mailCommand_Take{b.Take}
+	}
+	if b.Delete != nil {
+		x.xxx_hidden_Action = &mailCommand_Delete{*b.Delete}
+	}
+	if b.Close != nil {
+		x.xxx_hidden_Action = &mailCommand_Close{*b.Close}
+	}
+	return m0
+}
+
+type case_MailCommand_Action protoreflect.FieldNumber
+
+func (x case_MailCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[44].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isMailCommand_Action interface {
+	isMailCommand_Action()
+}
+
+type mailCommand_Open struct {
+	// open opens the mailbox window and lists the mails, as
+	// clif_parse_Mail_refreshinbox. The mailbox does not open while the
+	// player trades, vends, runs a buying store or has a storage open.
+	Open bool `protobuf:"varint,1,opt,name=open,proto3,oneof"`
+}
+
+type mailCommand_Read struct {
+	// read shows a mail's text and attachments, as clif_parse_Mail_read.
+	Read uint64 `protobuf:"varint,2,opt,name=read,proto3,oneof"`
+}
+
+type mailCommand_Send struct {
+	// send writes a mail, as clif_parse_Mail_send.
+	Send *MailSend `protobuf:"bytes,3,opt,name=send,proto3,oneof"`
+}
+
+type mailCommand_Take struct {
+	// take moves a mail's attachments into the inventory, as
+	// clif_parse_Mail_getattach.
+	Take *MailTake `protobuf:"bytes,4,opt,name=take,proto3,oneof"`
+}
+
+type mailCommand_Delete struct {
+	// delete removes a mail without attachments, as
+	// clif_parse_Mail_delete.
+	Delete uint64 `protobuf:"varint,5,opt,name=delete,proto3,oneof"`
+}
+
+type mailCommand_Close struct {
+	// close closes the mailbox window.
+	Close bool `protobuf:"varint,6,opt,name=close,proto3,oneof"`
+}
+
+func (*mailCommand_Open) isMailCommand_Action() {}
+
+func (*mailCommand_Read) isMailCommand_Action() {}
+
+func (*mailCommand_Send) isMailCommand_Action() {}
+
+func (*mailCommand_Take) isMailCommand_Action() {}
+
+func (*mailCommand_Delete) isMailCommand_Action() {}
+
+func (*mailCommand_Close) isMailCommand_Action() {}
+
+// MailSend is a new mail. The attachments are checked as mail_setitem
+// checks each one, then the mail is sent as mail_send.
+type MailSend struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_To    string                 `protobuf:"bytes,1,opt,name=to,proto3"`
+	xxx_hidden_Title string                 `protobuf:"bytes,2,opt,name=title,proto3"`
+	xxx_hidden_Body  string                 `protobuf:"bytes,3,opt,name=body,proto3"`
+	xxx_hidden_Zeny  uint32                 `protobuf:"varint,4,opt,name=zeny,proto3"`
+	xxx_hidden_Items *[]*StorageMove        `protobuf:"bytes,5,rep,name=items,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *MailSend) Reset() {
+	*x = MailSend{}
+	mi := &file_wathena_v1_command_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailSend) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailSend) ProtoMessage() {}
+
+func (x *MailSend) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *MailSend) GetTo() string {
+	if x != nil {
+		return x.xxx_hidden_To
+	}
+	return ""
+}
+
+func (x *MailSend) GetTitle() string {
+	if x != nil {
+		return x.xxx_hidden_Title
+	}
+	return ""
+}
+
+func (x *MailSend) GetBody() string {
+	if x != nil {
+		return x.xxx_hidden_Body
+	}
+	return ""
+}
+
+func (x *MailSend) GetZeny() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Zeny
+	}
+	return 0
+}
+
+func (x *MailSend) GetItems() []*StorageMove {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *MailSend) SetTo(v string) {
+	x.xxx_hidden_To = v
+}
+
+func (x *MailSend) SetTitle(v string) {
+	x.xxx_hidden_Title = v
+}
+
+func (x *MailSend) SetBody(v string) {
+	x.xxx_hidden_Body = v
+}
+
+func (x *MailSend) SetZeny(v uint32) {
+	x.xxx_hidden_Zeny = v
+}
+
+func (x *MailSend) SetItems(v []*StorageMove) {
+	x.xxx_hidden_Items = &v
+}
+
+type MailSend_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// to is the recipient's character name. The recipient may be offline.
+	To string
+	// title is 1 to 39 bytes, and body at most 499.
+	Title string
+	Body  string
+	// zeny is the zeny to attach. The fee is on top of it.
+	Zeny uint32
+	// items are the inventory slots and amounts to attach, at most the
+	// mail_items limit.
+	Items []*StorageMove
+}
+
+func (b0 MailSend_builder) Build() *MailSend {
+	m0 := &MailSend{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_To = b.To
+	x.xxx_hidden_Title = b.Title
+	x.xxx_hidden_Body = b.Body
+	x.xxx_hidden_Zeny = b.Zeny
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+// MailTake takes the zeny, the items, or both, of one mail.
+type MailTake struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Mail  uint64                 `protobuf:"varint,1,opt,name=mail,proto3"`
+	xxx_hidden_Zeny  bool                   `protobuf:"varint,2,opt,name=zeny,proto3"`
+	xxx_hidden_Items bool                   `protobuf:"varint,3,opt,name=items,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *MailTake) Reset() {
+	*x = MailTake{}
+	mi := &file_wathena_v1_command_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailTake) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailTake) ProtoMessage() {}
+
+func (x *MailTake) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *MailTake) GetMail() uint64 {
+	if x != nil {
+		return x.xxx_hidden_Mail
+	}
+	return 0
+}
+
+func (x *MailTake) GetZeny() bool {
+	if x != nil {
+		return x.xxx_hidden_Zeny
+	}
+	return false
+}
+
+func (x *MailTake) GetItems() bool {
+	if x != nil {
+		return x.xxx_hidden_Items
+	}
+	return false
+}
+
+func (x *MailTake) SetMail(v uint64) {
+	x.xxx_hidden_Mail = v
+}
+
+func (x *MailTake) SetZeny(v bool) {
+	x.xxx_hidden_Zeny = v
+}
+
+func (x *MailTake) SetItems(v bool) {
+	x.xxx_hidden_Items = v
+}
+
+type MailTake_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Mail  uint64
+	Zeny  bool
+	Items bool
+}
+
+func (b0 MailTake_builder) Build() *MailTake {
+	m0 := &MailTake{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Mail = b.Mail
+	x.xxx_hidden_Zeny = b.Zeny
+	x.xxx_hidden_Items = b.Items
+	return m0
+}
+
+// VendingCommand is one step of a vending shop, as rAthena's vending.cpp.
+// A shop opens after the Vending skill, which sends VendingSetup. The
+// server answers with VendingOpened, VendingList, VendingSold and
+// VendingResult.
+type VendingCommand struct {
+	state             protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Action isVendingCommand_Action `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *VendingCommand) Reset() {
+	*x = VendingCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VendingCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VendingCommand) ProtoMessage() {}
+
+func (x *VendingCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *VendingCommand) GetOpen() *VendingOpen {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*vendingCommand_Open); ok {
+			return x.Open
+		}
+	}
+	return nil
+}
+
+func (x *VendingCommand) GetClose() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*vendingCommand_Close); ok {
+			return x.Close
+		}
+	}
+	return false
+}
+
+func (x *VendingCommand) GetBrowse() uint32 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*vendingCommand_Browse); ok {
+			return x.Browse
+		}
+	}
+	return 0
+}
+
+func (x *VendingCommand) GetBuy() *VendingBuy {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*vendingCommand_Buy); ok {
+			return x.Buy
+		}
+	}
+	return nil
+}
+
+func (x *VendingCommand) GetCancel() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*vendingCommand_Cancel); ok {
+			return x.Cancel
+		}
+	}
+	return false
+}
+
+func (x *VendingCommand) SetOpen(v *VendingOpen) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &vendingCommand_Open{v}
+}
+
+func (x *VendingCommand) SetClose(v bool) {
+	x.xxx_hidden_Action = &vendingCommand_Close{v}
+}
+
+func (x *VendingCommand) SetBrowse(v uint32) {
+	x.xxx_hidden_Action = &vendingCommand_Browse{v}
+}
+
+func (x *VendingCommand) SetBuy(v *VendingBuy) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &vendingCommand_Buy{v}
+}
+
+func (x *VendingCommand) SetCancel(v bool) {
+	x.xxx_hidden_Action = &vendingCommand_Cancel{v}
+}
+
+func (x *VendingCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *VendingCommand) HasOpen() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*vendingCommand_Open)
+	return ok
+}
+
+func (x *VendingCommand) HasClose() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*vendingCommand_Close)
+	return ok
+}
+
+func (x *VendingCommand) HasBrowse() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*vendingCommand_Browse)
+	return ok
+}
+
+func (x *VendingCommand) HasBuy() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*vendingCommand_Buy)
+	return ok
+}
+
+func (x *VendingCommand) HasCancel() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*vendingCommand_Cancel)
+	return ok
+}
+
+func (x *VendingCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *VendingCommand) ClearOpen() {
+	if _, ok := x.xxx_hidden_Action.(*vendingCommand_Open); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *VendingCommand) ClearClose() {
+	if _, ok := x.xxx_hidden_Action.(*vendingCommand_Close); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *VendingCommand) ClearBrowse() {
+	if _, ok := x.xxx_hidden_Action.(*vendingCommand_Browse); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *VendingCommand) ClearBuy() {
+	if _, ok := x.xxx_hidden_Action.(*vendingCommand_Buy); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *VendingCommand) ClearCancel() {
+	if _, ok := x.xxx_hidden_Action.(*vendingCommand_Cancel); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const VendingCommand_Action_not_set_case case_VendingCommand_Action = 0
+const VendingCommand_Open_case case_VendingCommand_Action = 1
+const VendingCommand_Close_case case_VendingCommand_Action = 2
+const VendingCommand_Browse_case case_VendingCommand_Action = 3
+const VendingCommand_Buy_case case_VendingCommand_Action = 4
+const VendingCommand_Cancel_case case_VendingCommand_Action = 5
+
+func (x *VendingCommand) WhichAction() case_VendingCommand_Action {
+	if x == nil {
+		return VendingCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *vendingCommand_Open:
+		return VendingCommand_Open_case
+	case *vendingCommand_Close:
+		return VendingCommand_Close_case
+	case *vendingCommand_Browse:
+		return VendingCommand_Browse_case
+	case *vendingCommand_Buy:
+		return VendingCommand_Buy_case
+	case *vendingCommand_Cancel:
+		return VendingCommand_Cancel_case
+	default:
+		return VendingCommand_Action_not_set_case
+	}
+}
+
+type VendingCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// open opens the shop from cart slots, as vending_openvending.
+	Open *VendingOpen
+	// close closes the player's shop, as vending_closevending.
+	Close *bool
+	// browse asks for the shop of the player with this entity ID, as
+	// vending_vendinglistreq.
+	Browse *uint32
+	// buy buys from a shop, as vending_purchasereq.
+	Buy *VendingBuy
+	// cancel closes the setup window without opening a shop.
+	Cancel *bool
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 VendingCommand_builder) Build() *VendingCommand {
+	m0 := &VendingCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Open != nil {
+		x.xxx_hidden_Action = &vendingCommand_Open{b.Open}
+	}
+	if b.Close != nil {
+		x.xxx_hidden_Action = &vendingCommand_Close{*b.Close}
+	}
+	if b.Browse != nil {
+		x.xxx_hidden_Action = &vendingCommand_Browse{*b.Browse}
+	}
+	if b.Buy != nil {
+		x.xxx_hidden_Action = &vendingCommand_Buy{b.Buy}
+	}
+	if b.Cancel != nil {
+		x.xxx_hidden_Action = &vendingCommand_Cancel{*b.Cancel}
+	}
+	return m0
+}
+
+type case_VendingCommand_Action protoreflect.FieldNumber
+
+func (x case_VendingCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[47].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isVendingCommand_Action interface {
+	isVendingCommand_Action()
+}
+
+type vendingCommand_Open struct {
+	// open opens the shop from cart slots, as vending_openvending.
+	Open *VendingOpen `protobuf:"bytes,1,opt,name=open,proto3,oneof"`
+}
+
+type vendingCommand_Close struct {
+	// close closes the player's shop, as vending_closevending.
+	Close bool `protobuf:"varint,2,opt,name=close,proto3,oneof"`
+}
+
+type vendingCommand_Browse struct {
+	// browse asks for the shop of the player with this entity ID, as
+	// vending_vendinglistreq.
+	Browse uint32 `protobuf:"varint,3,opt,name=browse,proto3,oneof"`
+}
+
+type vendingCommand_Buy struct {
+	// buy buys from a shop, as vending_purchasereq.
+	Buy *VendingBuy `protobuf:"bytes,4,opt,name=buy,proto3,oneof"`
+}
+
+type vendingCommand_Cancel struct {
+	// cancel closes the setup window without opening a shop.
+	Cancel bool `protobuf:"varint,5,opt,name=cancel,proto3,oneof"`
+}
+
+func (*vendingCommand_Open) isVendingCommand_Action() {}
+
+func (*vendingCommand_Close) isVendingCommand_Action() {}
+
+func (*vendingCommand_Browse) isVendingCommand_Action() {}
+
+func (*vendingCommand_Buy) isVendingCommand_Action() {}
+
+func (*vendingCommand_Cancel) isVendingCommand_Action() {}
+
+type VendingOpen struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Title string                 `protobuf:"bytes,1,opt,name=title,proto3"`
+	xxx_hidden_Items *[]*VendingLine        `protobuf:"bytes,2,rep,name=items,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *VendingOpen) Reset() {
+	*x = VendingOpen{}
+	mi := &file_wathena_v1_command_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VendingOpen) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VendingOpen) ProtoMessage() {}
+
+func (x *VendingOpen) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *VendingOpen) GetTitle() string {
+	if x != nil {
+		return x.xxx_hidden_Title
+	}
+	return ""
+}
+
+func (x *VendingOpen) GetItems() []*VendingLine {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *VendingOpen) SetTitle(v string) {
+	x.xxx_hidden_Title = v
+}
+
+func (x *VendingOpen) SetItems(v []*VendingLine) {
+	x.xxx_hidden_Items = &v
+}
+
+type VendingOpen_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// title is 1 to 79 bytes, as MESSAGE_SIZE.
+	Title string
+	// items are 1 to 2 + the Vending level lines, at most 12.
+	Items []*VendingLine
+}
+
+func (b0 VendingOpen_builder) Build() *VendingOpen {
+	m0 := &VendingOpen{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Title = b.Title
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+type VendingLine struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CartSlot uint32                 `protobuf:"varint,1,opt,name=cart_slot,json=cartSlot,proto3"`
+	xxx_hidden_Amount   uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	xxx_hidden_Price    uint32                 `protobuf:"varint,3,opt,name=price,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *VendingLine) Reset() {
+	*x = VendingLine{}
+	mi := &file_wathena_v1_command_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VendingLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VendingLine) ProtoMessage() {}
+
+func (x *VendingLine) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *VendingLine) GetCartSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_CartSlot
+	}
+	return 0
+}
+
+func (x *VendingLine) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *VendingLine) GetPrice() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Price
+	}
+	return 0
+}
+
+func (x *VendingLine) SetCartSlot(v uint32) {
+	x.xxx_hidden_CartSlot = v
+}
+
+func (x *VendingLine) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+func (x *VendingLine) SetPrice(v uint32) {
+	x.xxx_hidden_Price = v
+}
+
+type VendingLine_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	CartSlot uint32
+	Amount   uint32
+	// price is in zeny for one, at most vending_max_value.
+	Price uint32
+}
+
+func (b0 VendingLine_builder) Build() *VendingLine {
+	m0 := &VendingLine{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CartSlot = b.CartSlot
+	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Price = b.Price
+	return m0
+}
+
+type VendingBuy struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Vendor uint32                 `protobuf:"varint,1,opt,name=vendor,proto3"`
+	xxx_hidden_Shop   uint32                 `protobuf:"varint,2,opt,name=shop,proto3"`
+	xxx_hidden_Items  *[]*VendingBuyLine     `protobuf:"bytes,3,rep,name=items,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *VendingBuy) Reset() {
+	*x = VendingBuy{}
+	mi := &file_wathena_v1_command_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VendingBuy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VendingBuy) ProtoMessage() {}
+
+func (x *VendingBuy) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *VendingBuy) GetVendor() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Vendor
+	}
+	return 0
+}
+
+func (x *VendingBuy) GetShop() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Shop
+	}
+	return 0
+}
+
+func (x *VendingBuy) GetItems() []*VendingBuyLine {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *VendingBuy) SetVendor(v uint32) {
+	x.xxx_hidden_Vendor = v
+}
+
+func (x *VendingBuy) SetShop(v uint32) {
+	x.xxx_hidden_Shop = v
+}
+
+func (x *VendingBuy) SetItems(v []*VendingBuyLine) {
+	x.xxx_hidden_Items = &v
+}
+
+type VendingBuy_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// vendor is the seller's entity ID, or 0 for the shop a store search
+	// opened.
+	Vendor uint32
+	// shop is VendingList.shop, which changes when the shop reopens.
+	Shop  uint32
+	Items []*VendingBuyLine
+}
+
+func (b0 VendingBuy_builder) Build() *VendingBuy {
+	m0 := &VendingBuy{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Vendor = b.Vendor
+	x.xxx_hidden_Shop = b.Shop
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+type VendingBuyLine struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Index  uint32                 `protobuf:"varint,1,opt,name=index,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *VendingBuyLine) Reset() {
+	*x = VendingBuyLine{}
+	mi := &file_wathena_v1_command_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VendingBuyLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VendingBuyLine) ProtoMessage() {}
+
+func (x *VendingBuyLine) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *VendingBuyLine) GetIndex() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Index
+	}
+	return 0
+}
+
+func (x *VendingBuyLine) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *VendingBuyLine) SetIndex(v uint32) {
+	x.xxx_hidden_Index = v
+}
+
+func (x *VendingBuyLine) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+type VendingBuyLine_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// index is VendingListItem.index.
+	Index  uint32
+	Amount uint32
+}
+
+func (b0 VendingBuyLine_builder) Build() *VendingBuyLine {
+	m0 := &VendingBuyLine{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Index = b.Index
+	x.xxx_hidden_Amount = b.Amount
+	return m0
+}
+
+// BuyingStoreCommand is one step of a buying store, as rAthena's
+// buyingstore.cpp. A store opens after player:open_buying_store, which
+// sends BuyingStoreSetup.
+type BuyingStoreCommand struct {
+	state             protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Action isBuyingStoreCommand_Action `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *BuyingStoreCommand) Reset() {
+	*x = BuyingStoreCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuyingStoreCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuyingStoreCommand) ProtoMessage() {}
+
+func (x *BuyingStoreCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *BuyingStoreCommand) GetOpen() *BuyingStoreOpen {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Open); ok {
+			return x.Open
+		}
+	}
+	return nil
+}
+
+func (x *BuyingStoreCommand) GetClose() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Close); ok {
+			return x.Close
+		}
+	}
+	return false
+}
+
+func (x *BuyingStoreCommand) GetBrowse() uint32 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Browse); ok {
+			return x.Browse
+		}
+	}
+	return 0
+}
+
+func (x *BuyingStoreCommand) GetSell() *BuyingStoreSell {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Sell); ok {
+			return x.Sell
+		}
+	}
+	return nil
+}
+
+func (x *BuyingStoreCommand) GetCancel() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Cancel); ok {
+			return x.Cancel
+		}
+	}
+	return false
+}
+
+func (x *BuyingStoreCommand) SetOpen(v *BuyingStoreOpen) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &buyingStoreCommand_Open{v}
+}
+
+func (x *BuyingStoreCommand) SetClose(v bool) {
+	x.xxx_hidden_Action = &buyingStoreCommand_Close{v}
+}
+
+func (x *BuyingStoreCommand) SetBrowse(v uint32) {
+	x.xxx_hidden_Action = &buyingStoreCommand_Browse{v}
+}
+
+func (x *BuyingStoreCommand) SetSell(v *BuyingStoreSell) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &buyingStoreCommand_Sell{v}
+}
+
+func (x *BuyingStoreCommand) SetCancel(v bool) {
+	x.xxx_hidden_Action = &buyingStoreCommand_Cancel{v}
+}
+
+func (x *BuyingStoreCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *BuyingStoreCommand) HasOpen() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Open)
+	return ok
+}
+
+func (x *BuyingStoreCommand) HasClose() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Close)
+	return ok
+}
+
+func (x *BuyingStoreCommand) HasBrowse() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Browse)
+	return ok
+}
+
+func (x *BuyingStoreCommand) HasSell() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Sell)
+	return ok
+}
+
+func (x *BuyingStoreCommand) HasCancel() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Cancel)
+	return ok
+}
+
+func (x *BuyingStoreCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *BuyingStoreCommand) ClearOpen() {
+	if _, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Open); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *BuyingStoreCommand) ClearClose() {
+	if _, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Close); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *BuyingStoreCommand) ClearBrowse() {
+	if _, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Browse); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *BuyingStoreCommand) ClearSell() {
+	if _, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Sell); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *BuyingStoreCommand) ClearCancel() {
+	if _, ok := x.xxx_hidden_Action.(*buyingStoreCommand_Cancel); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const BuyingStoreCommand_Action_not_set_case case_BuyingStoreCommand_Action = 0
+const BuyingStoreCommand_Open_case case_BuyingStoreCommand_Action = 1
+const BuyingStoreCommand_Close_case case_BuyingStoreCommand_Action = 2
+const BuyingStoreCommand_Browse_case case_BuyingStoreCommand_Action = 3
+const BuyingStoreCommand_Sell_case case_BuyingStoreCommand_Action = 4
+const BuyingStoreCommand_Cancel_case case_BuyingStoreCommand_Action = 5
+
+func (x *BuyingStoreCommand) WhichAction() case_BuyingStoreCommand_Action {
+	if x == nil {
+		return BuyingStoreCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *buyingStoreCommand_Open:
+		return BuyingStoreCommand_Open_case
+	case *buyingStoreCommand_Close:
+		return BuyingStoreCommand_Close_case
+	case *buyingStoreCommand_Browse:
+		return BuyingStoreCommand_Browse_case
+	case *buyingStoreCommand_Sell:
+		return BuyingStoreCommand_Sell_case
+	case *buyingStoreCommand_Cancel:
+		return BuyingStoreCommand_Cancel_case
+	default:
+		return BuyingStoreCommand_Action_not_set_case
+	}
+}
+
+type BuyingStoreCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// open opens the store, as buyingstore_create.
+	Open *BuyingStoreOpen
+	// close closes the player's store, as buyingstore_close.
+	Close *bool
+	// browse asks for the store of the player with this entity ID, as
+	// buyingstore_open.
+	Browse *uint32
+	// sell sells inventory items to a store, as buyingstore_trade.
+	Sell *BuyingStoreSell
+	// cancel closes the setup window without opening a store.
+	Cancel *bool
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 BuyingStoreCommand_builder) Build() *BuyingStoreCommand {
+	m0 := &BuyingStoreCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Open != nil {
+		x.xxx_hidden_Action = &buyingStoreCommand_Open{b.Open}
+	}
+	if b.Close != nil {
+		x.xxx_hidden_Action = &buyingStoreCommand_Close{*b.Close}
+	}
+	if b.Browse != nil {
+		x.xxx_hidden_Action = &buyingStoreCommand_Browse{*b.Browse}
+	}
+	if b.Sell != nil {
+		x.xxx_hidden_Action = &buyingStoreCommand_Sell{b.Sell}
+	}
+	if b.Cancel != nil {
+		x.xxx_hidden_Action = &buyingStoreCommand_Cancel{*b.Cancel}
+	}
+	return m0
+}
+
+type case_BuyingStoreCommand_Action protoreflect.FieldNumber
+
+func (x case_BuyingStoreCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[52].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isBuyingStoreCommand_Action interface {
+	isBuyingStoreCommand_Action()
+}
+
+type buyingStoreCommand_Open struct {
+	// open opens the store, as buyingstore_create.
+	Open *BuyingStoreOpen `protobuf:"bytes,1,opt,name=open,proto3,oneof"`
+}
+
+type buyingStoreCommand_Close struct {
+	// close closes the player's store, as buyingstore_close.
+	Close bool `protobuf:"varint,2,opt,name=close,proto3,oneof"`
+}
+
+type buyingStoreCommand_Browse struct {
+	// browse asks for the store of the player with this entity ID, as
+	// buyingstore_open.
+	Browse uint32 `protobuf:"varint,3,opt,name=browse,proto3,oneof"`
+}
+
+type buyingStoreCommand_Sell struct {
+	// sell sells inventory items to a store, as buyingstore_trade.
+	Sell *BuyingStoreSell `protobuf:"bytes,4,opt,name=sell,proto3,oneof"`
+}
+
+type buyingStoreCommand_Cancel struct {
+	// cancel closes the setup window without opening a store.
+	Cancel bool `protobuf:"varint,5,opt,name=cancel,proto3,oneof"`
+}
+
+func (*buyingStoreCommand_Open) isBuyingStoreCommand_Action() {}
+
+func (*buyingStoreCommand_Close) isBuyingStoreCommand_Action() {}
+
+func (*buyingStoreCommand_Browse) isBuyingStoreCommand_Action() {}
+
+func (*buyingStoreCommand_Sell) isBuyingStoreCommand_Action() {}
+
+func (*buyingStoreCommand_Cancel) isBuyingStoreCommand_Action() {}
+
+type BuyingStoreOpen struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Title     string                 `protobuf:"bytes,1,opt,name=title,proto3"`
+	xxx_hidden_ZenyLimit uint32                 `protobuf:"varint,2,opt,name=zeny_limit,json=zenyLimit,proto3"`
+	xxx_hidden_Items     *[]*BuyingStoreLine    `protobuf:"bytes,3,rep,name=items,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *BuyingStoreOpen) Reset() {
+	*x = BuyingStoreOpen{}
+	mi := &file_wathena_v1_command_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuyingStoreOpen) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuyingStoreOpen) ProtoMessage() {}
+
+func (x *BuyingStoreOpen) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *BuyingStoreOpen) GetTitle() string {
+	if x != nil {
+		return x.xxx_hidden_Title
+	}
+	return ""
+}
+
+func (x *BuyingStoreOpen) GetZenyLimit() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ZenyLimit
+	}
+	return 0
+}
+
+func (x *BuyingStoreOpen) GetItems() []*BuyingStoreLine {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *BuyingStoreOpen) SetTitle(v string) {
+	x.xxx_hidden_Title = v
+}
+
+func (x *BuyingStoreOpen) SetZenyLimit(v uint32) {
+	x.xxx_hidden_ZenyLimit = v
+}
+
+func (x *BuyingStoreOpen) SetItems(v []*BuyingStoreLine) {
+	x.xxx_hidden_Items = &v
+}
+
+type BuyingStoreOpen_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// title is 1 to 79 bytes.
+	Title string
+	// zeny_limit is the most zeny the store spends, at most the player's
+	// zeny.
+	ZenyLimit uint32
+	// items are 1 to BuyingStoreSetup.slots lines, one per item.
+	Items []*BuyingStoreLine
+}
+
+func (b0 BuyingStoreOpen_builder) Build() *BuyingStoreOpen {
+	m0 := &BuyingStoreOpen{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Title = b.Title
+	x.xxx_hidden_ZenyLimit = b.ZenyLimit
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+type BuyingStoreLine struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ItemId uint32                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	xxx_hidden_Price  uint32                 `protobuf:"varint,3,opt,name=price,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *BuyingStoreLine) Reset() {
+	*x = BuyingStoreLine{}
+	mi := &file_wathena_v1_command_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuyingStoreLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuyingStoreLine) ProtoMessage() {}
+
+func (x *BuyingStoreLine) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *BuyingStoreLine) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *BuyingStoreLine) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *BuyingStoreLine) GetPrice() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Price
+	}
+	return 0
+}
+
+func (x *BuyingStoreLine) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *BuyingStoreLine) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+func (x *BuyingStoreLine) SetPrice(v uint32) {
+	x.xxx_hidden_Price = v
+}
+
+type BuyingStoreLine_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	ItemId uint32
+	// amount is 1 to 9999.
+	Amount uint32
+	// price is in zeny for one, 1 to 99,990,000.
+	Price uint32
+}
+
+func (b0 BuyingStoreLine_builder) Build() *BuyingStoreLine {
+	m0 := &BuyingStoreLine{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Price = b.Price
+	return m0
+}
+
+type BuyingStoreSell struct {
+	state            protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Buyer uint32                  `protobuf:"varint,1,opt,name=buyer,proto3"`
+	xxx_hidden_Store uint32                  `protobuf:"varint,2,opt,name=store,proto3"`
+	xxx_hidden_Items *[]*BuyingStoreSellLine `protobuf:"bytes,3,rep,name=items,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *BuyingStoreSell) Reset() {
+	*x = BuyingStoreSell{}
+	mi := &file_wathena_v1_command_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuyingStoreSell) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuyingStoreSell) ProtoMessage() {}
+
+func (x *BuyingStoreSell) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *BuyingStoreSell) GetBuyer() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Buyer
+	}
+	return 0
+}
+
+func (x *BuyingStoreSell) GetStore() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Store
+	}
+	return 0
+}
+
+func (x *BuyingStoreSell) GetItems() []*BuyingStoreSellLine {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *BuyingStoreSell) SetBuyer(v uint32) {
+	x.xxx_hidden_Buyer = v
+}
+
+func (x *BuyingStoreSell) SetStore(v uint32) {
+	x.xxx_hidden_Store = v
+}
+
+func (x *BuyingStoreSell) SetItems(v []*BuyingStoreSellLine) {
+	x.xxx_hidden_Items = &v
+}
+
+type BuyingStoreSell_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// buyer is the store owner's entity ID, or 0 for the store a store
+	// search opened.
+	Buyer uint32
+	// store is BuyingStoreList.store.
+	Store uint32
+	Items []*BuyingStoreSellLine
+}
+
+func (b0 BuyingStoreSell_builder) Build() *BuyingStoreSell {
+	m0 := &BuyingStoreSell{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Buyer = b.Buyer
+	x.xxx_hidden_Store = b.Store
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+type BuyingStoreSellLine struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_ItemId uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,3,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *BuyingStoreSellLine) Reset() {
+	*x = BuyingStoreSellLine{}
+	mi := &file_wathena_v1_command_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuyingStoreSellLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuyingStoreSellLine) ProtoMessage() {}
+
+func (x *BuyingStoreSellLine) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *BuyingStoreSellLine) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *BuyingStoreSellLine) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *BuyingStoreSellLine) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *BuyingStoreSellLine) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *BuyingStoreSellLine) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *BuyingStoreSellLine) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+type BuyingStoreSellLine_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// slot is the inventory slot to sell from.
+	Slot   uint32
+	ItemId uint32
+	Amount uint32
+}
+
+func (b0 BuyingStoreSellLine_builder) Build() *BuyingStoreSellLine {
+	m0 := &BuyingStoreSellLine{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_Amount = b.Amount
+	return m0
+}
+
+// StoreSearchCommand searches vending shops and buying stores, as
+// rAthena's searchstore.cpp. The window opens from player:search_stores,
+// which sends StoreSearchOpen.
+type StoreSearchCommand struct {
+	state             protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Action isStoreSearchCommand_Action `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *StoreSearchCommand) Reset() {
+	*x = StoreSearchCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoreSearchCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoreSearchCommand) ProtoMessage() {}
+
+func (x *StoreSearchCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *StoreSearchCommand) GetQuery() *StoreSearchQuery {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storeSearchCommand_Query); ok {
+			return x.Query
+		}
+	}
+	return nil
+}
+
+func (x *StoreSearchCommand) GetNext() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storeSearchCommand_Next); ok {
+			return x.Next
+		}
+	}
+	return false
+}
+
+func (x *StoreSearchCommand) GetClick() uint32 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storeSearchCommand_Click); ok {
+			return x.Click
+		}
+	}
+	return 0
+}
+
+func (x *StoreSearchCommand) GetClose() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storeSearchCommand_Close); ok {
+			return x.Close
+		}
+	}
+	return false
+}
+
+func (x *StoreSearchCommand) SetQuery(v *StoreSearchQuery) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &storeSearchCommand_Query{v}
+}
+
+func (x *StoreSearchCommand) SetNext(v bool) {
+	x.xxx_hidden_Action = &storeSearchCommand_Next{v}
+}
+
+func (x *StoreSearchCommand) SetClick(v uint32) {
+	x.xxx_hidden_Action = &storeSearchCommand_Click{v}
+}
+
+func (x *StoreSearchCommand) SetClose(v bool) {
+	x.xxx_hidden_Action = &storeSearchCommand_Close{v}
+}
+
+func (x *StoreSearchCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *StoreSearchCommand) HasQuery() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storeSearchCommand_Query)
+	return ok
+}
+
+func (x *StoreSearchCommand) HasNext() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storeSearchCommand_Next)
+	return ok
+}
+
+func (x *StoreSearchCommand) HasClick() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storeSearchCommand_Click)
+	return ok
+}
+
+func (x *StoreSearchCommand) HasClose() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storeSearchCommand_Close)
+	return ok
+}
+
+func (x *StoreSearchCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *StoreSearchCommand) ClearQuery() {
+	if _, ok := x.xxx_hidden_Action.(*storeSearchCommand_Query); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StoreSearchCommand) ClearNext() {
+	if _, ok := x.xxx_hidden_Action.(*storeSearchCommand_Next); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StoreSearchCommand) ClearClick() {
+	if _, ok := x.xxx_hidden_Action.(*storeSearchCommand_Click); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StoreSearchCommand) ClearClose() {
+	if _, ok := x.xxx_hidden_Action.(*storeSearchCommand_Close); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const StoreSearchCommand_Action_not_set_case case_StoreSearchCommand_Action = 0
+const StoreSearchCommand_Query_case case_StoreSearchCommand_Action = 1
+const StoreSearchCommand_Next_case case_StoreSearchCommand_Action = 2
+const StoreSearchCommand_Click_case case_StoreSearchCommand_Action = 3
+const StoreSearchCommand_Close_case case_StoreSearchCommand_Action = 4
+
+func (x *StoreSearchCommand) WhichAction() case_StoreSearchCommand_Action {
+	if x == nil {
+		return StoreSearchCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *storeSearchCommand_Query:
+		return StoreSearchCommand_Query_case
+	case *storeSearchCommand_Next:
+		return StoreSearchCommand_Next_case
+	case *storeSearchCommand_Click:
+		return StoreSearchCommand_Click_case
+	case *storeSearchCommand_Close:
+		return StoreSearchCommand_Close_case
+	default:
+		return StoreSearchCommand_Action_not_set_case
+	}
+}
+
+type StoreSearchCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// query runs a search, which uses one of the window's uses.
+	Query *StoreSearchQuery
+	// next shows the next page of results.
+	Next *bool
+	// click picks a result, as searchstore_click: it shows the store's
+	// place, or opens the store when the window allows it.
+	Click *uint32
+	// close closes the window.
+	Close *bool
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 StoreSearchCommand_builder) Build() *StoreSearchCommand {
+	m0 := &StoreSearchCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Query != nil {
+		x.xxx_hidden_Action = &storeSearchCommand_Query{b.Query}
+	}
+	if b.Next != nil {
+		x.xxx_hidden_Action = &storeSearchCommand_Next{*b.Next}
+	}
+	if b.Click != nil {
+		x.xxx_hidden_Action = &storeSearchCommand_Click{*b.Click}
+	}
+	if b.Close != nil {
+		x.xxx_hidden_Action = &storeSearchCommand_Close{*b.Close}
+	}
+	return m0
+}
+
+type case_StoreSearchCommand_Action protoreflect.FieldNumber
+
+func (x case_StoreSearchCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[57].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isStoreSearchCommand_Action interface {
+	isStoreSearchCommand_Action()
+}
+
+type storeSearchCommand_Query struct {
+	// query runs a search, which uses one of the window's uses.
+	Query *StoreSearchQuery `protobuf:"bytes,1,opt,name=query,proto3,oneof"`
+}
+
+type storeSearchCommand_Next struct {
+	// next shows the next page of results.
+	Next bool `protobuf:"varint,2,opt,name=next,proto3,oneof"`
+}
+
+type storeSearchCommand_Click struct {
+	// click picks a result, as searchstore_click: it shows the store's
+	// place, or opens the store when the window allows it.
+	Click uint32 `protobuf:"varint,3,opt,name=click,proto3,oneof"`
+}
+
+type storeSearchCommand_Close struct {
+	// close closes the window.
+	Close bool `protobuf:"varint,4,opt,name=close,proto3,oneof"`
+}
+
+func (*storeSearchCommand_Query) isStoreSearchCommand_Action() {}
+
+func (*storeSearchCommand_Next) isStoreSearchCommand_Action() {}
+
+func (*storeSearchCommand_Click) isStoreSearchCommand_Action() {}
+
+func (*storeSearchCommand_Close) isStoreSearchCommand_Action() {}
+
+type StoreSearchQuery struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Buying   bool                   `protobuf:"varint,1,opt,name=buying,proto3"`
+	xxx_hidden_ItemIds  []uint32               `protobuf:"varint,2,rep,packed,name=item_ids,json=itemIds,proto3"`
+	xxx_hidden_CardIds  []uint32               `protobuf:"varint,3,rep,packed,name=card_ids,json=cardIds,proto3"`
+	xxx_hidden_MinPrice uint32                 `protobuf:"varint,4,opt,name=min_price,json=minPrice,proto3"`
+	xxx_hidden_MaxPrice uint32                 `protobuf:"varint,5,opt,name=max_price,json=maxPrice,proto3"`
+	xxx_hidden_Rolls    *[]*StoreSearchRoll    `protobuf:"bytes,6,rep,name=rolls,proto3"`
+	xxx_hidden_Options  *[]*StoreSearchRoll    `protobuf:"bytes,7,rep,name=options,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *StoreSearchQuery) Reset() {
+	*x = StoreSearchQuery{}
+	mi := &file_wathena_v1_command_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoreSearchQuery) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoreSearchQuery) ProtoMessage() {}
+
+func (x *StoreSearchQuery) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *StoreSearchQuery) GetBuying() bool {
+	if x != nil {
+		return x.xxx_hidden_Buying
+	}
+	return false
+}
+
+func (x *StoreSearchQuery) GetItemIds() []uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemIds
+	}
+	return nil
+}
+
+func (x *StoreSearchQuery) GetCardIds() []uint32 {
+	if x != nil {
+		return x.xxx_hidden_CardIds
+	}
+	return nil
+}
+
+func (x *StoreSearchQuery) GetMinPrice() uint32 {
+	if x != nil {
+		return x.xxx_hidden_MinPrice
+	}
+	return 0
+}
+
+func (x *StoreSearchQuery) GetMaxPrice() uint32 {
+	if x != nil {
+		return x.xxx_hidden_MaxPrice
+	}
+	return 0
+}
+
+func (x *StoreSearchQuery) GetRolls() []*StoreSearchRoll {
+	if x != nil {
+		if x.xxx_hidden_Rolls != nil {
+			return *x.xxx_hidden_Rolls
+		}
+	}
+	return nil
+}
+
+func (x *StoreSearchQuery) GetOptions() []*StoreSearchRoll {
+	if x != nil {
+		if x.xxx_hidden_Options != nil {
+			return *x.xxx_hidden_Options
+		}
+	}
+	return nil
+}
+
+func (x *StoreSearchQuery) SetBuying(v bool) {
+	x.xxx_hidden_Buying = v
+}
+
+func (x *StoreSearchQuery) SetItemIds(v []uint32) {
+	x.xxx_hidden_ItemIds = v
+}
+
+func (x *StoreSearchQuery) SetCardIds(v []uint32) {
+	x.xxx_hidden_CardIds = v
+}
+
+func (x *StoreSearchQuery) SetMinPrice(v uint32) {
+	x.xxx_hidden_MinPrice = v
+}
+
+func (x *StoreSearchQuery) SetMaxPrice(v uint32) {
+	x.xxx_hidden_MaxPrice = v
+}
+
+func (x *StoreSearchQuery) SetRolls(v []*StoreSearchRoll) {
+	x.xxx_hidden_Rolls = &v
+}
+
+func (x *StoreSearchQuery) SetOptions(v []*StoreSearchRoll) {
+	x.xxx_hidden_Options = &v
+}
+
+type StoreSearchQuery_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// buying searches buying stores; vending shops otherwise.
+	Buying bool
+	// item_ids are the items to find, 1 to 10.
+	ItemIds []uint32
+	// card_ids keep results with one of these cards, at most 10.
+	CardIds []uint32
+	// min_price and max_price bound the price, 0 for no bound.
+	MinPrice uint32
+	MaxPrice uint32
+	// rolls and options keep results whose rolls or random options are in
+	// range (strategy section 5.4). At most 8 of each.
+	Rolls   []*StoreSearchRoll
+	Options []*StoreSearchRoll
+}
+
+func (b0 StoreSearchQuery_builder) Build() *StoreSearchQuery {
+	m0 := &StoreSearchQuery{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Buying = b.Buying
+	x.xxx_hidden_ItemIds = b.ItemIds
+	x.xxx_hidden_CardIds = b.CardIds
+	x.xxx_hidden_MinPrice = b.MinPrice
+	x.xxx_hidden_MaxPrice = b.MaxPrice
+	x.xxx_hidden_Rolls = &b.Rolls
+	x.xxx_hidden_Options = &b.Options
+	return m0
+}
+
+// StoreSearchRoll bounds one rolled value: a roll by its name, or a
+// random option by its name, such as VAR_MAXHPAMOUNT.
+type StoreSearchRoll struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Min  int32                  `protobuf:"varint,2,opt,name=min,proto3"`
+	xxx_hidden_Max  int32                  `protobuf:"varint,3,opt,name=max,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *StoreSearchRoll) Reset() {
+	*x = StoreSearchRoll{}
+	mi := &file_wathena_v1_command_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoreSearchRoll) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoreSearchRoll) ProtoMessage() {}
+
+func (x *StoreSearchRoll) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *StoreSearchRoll) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *StoreSearchRoll) GetMin() int32 {
+	if x != nil {
+		return x.xxx_hidden_Min
+	}
+	return 0
+}
+
+func (x *StoreSearchRoll) GetMax() int32 {
+	if x != nil {
+		return x.xxx_hidden_Max
+	}
+	return 0
+}
+
+func (x *StoreSearchRoll) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *StoreSearchRoll) SetMin(v int32) {
+	x.xxx_hidden_Min = v
+}
+
+func (x *StoreSearchRoll) SetMax(v int32) {
+	x.xxx_hidden_Max = v
+}
+
+type StoreSearchRoll_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name string
+	Min  int32
+	Max  int32
+}
+
+func (b0 StoreSearchRoll_builder) Build() *StoreSearchRoll {
+	m0 := &StoreSearchRoll{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Min = b.Min
+	x.xxx_hidden_Max = b.Max
+	return m0
+}
+
 var File_wathena_v1_command_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\xea\n" +
-	"\n" +
+	"wathena.v1\"\xdb\f\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -7103,7 +9628,11 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rparty_booking\x18\x17 \x01(\v2\x1f.wathena.v1.PartyBookingCommandH\x00R\fpartyBooking\x120\n" +
 	"\x05guild\x18\x18 \x01(\v2\x18.wathena.v1.GuildCommandH\x00R\x05guild\x126\n" +
 	"\astorage\x18\x19 \x01(\v2\x1a.wathena.v1.StorageCommandH\x00R\astorage\x120\n" +
-	"\x05trade\x18\x1a \x01(\v2\x18.wathena.v1.TradeCommandH\x00R\x05tradeB\x06\n" +
+	"\x05trade\x18\x1a \x01(\v2\x18.wathena.v1.TradeCommandH\x00R\x05trade\x12-\n" +
+	"\x04mail\x18\x1b \x01(\v2\x17.wathena.v1.MailCommandH\x00R\x04mail\x126\n" +
+	"\avending\x18\x1c \x01(\v2\x1a.wathena.v1.VendingCommandH\x00R\avending\x12C\n" +
+	"\fbuying_store\x18\x1d \x01(\v2\x1e.wathena.v1.BuyingStoreCommandH\x00R\vbuyingStore\x12C\n" +
+	"\fstore_search\x18\x1e \x01(\v2\x1e.wathena.v1.StoreSearchCommandH\x00R\vstoreSearchB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -7294,7 +9823,89 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x04lock\x18\x05 \x01(\bH\x00R\x04lock\x12\x1a\n" +
 	"\aconfirm\x18\x06 \x01(\bH\x00R\aconfirm\x12\x18\n" +
 	"\x06cancel\x18\a \x01(\bH\x00R\x06cancelB\b\n" +
-	"\x06action*\xf5\x01\n" +
+	"\x06action\"\xcd\x01\n" +
+	"\vMailCommand\x12\x14\n" +
+	"\x04open\x18\x01 \x01(\bH\x00R\x04open\x12\x14\n" +
+	"\x04read\x18\x02 \x01(\x04H\x00R\x04read\x12*\n" +
+	"\x04send\x18\x03 \x01(\v2\x14.wathena.v1.MailSendH\x00R\x04send\x12*\n" +
+	"\x04take\x18\x04 \x01(\v2\x14.wathena.v1.MailTakeH\x00R\x04take\x12\x18\n" +
+	"\x06delete\x18\x05 \x01(\x04H\x00R\x06delete\x12\x16\n" +
+	"\x05close\x18\x06 \x01(\bH\x00R\x05closeB\b\n" +
+	"\x06action\"\x87\x01\n" +
+	"\bMailSend\x12\x0e\n" +
+	"\x02to\x18\x01 \x01(\tR\x02to\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\tR\x04body\x12\x12\n" +
+	"\x04zeny\x18\x04 \x01(\rR\x04zeny\x12-\n" +
+	"\x05items\x18\x05 \x03(\v2\x17.wathena.v1.StorageMoveR\x05items\"H\n" +
+	"\bMailTake\x12\x12\n" +
+	"\x04mail\x18\x01 \x01(\x04R\x04mail\x12\x12\n" +
+	"\x04zeny\x18\x02 \x01(\bR\x04zeny\x12\x14\n" +
+	"\x05items\x18\x03 \x01(\bR\x05items\"\xc1\x01\n" +
+	"\x0eVendingCommand\x12-\n" +
+	"\x04open\x18\x01 \x01(\v2\x17.wathena.v1.VendingOpenH\x00R\x04open\x12\x16\n" +
+	"\x05close\x18\x02 \x01(\bH\x00R\x05close\x12\x18\n" +
+	"\x06browse\x18\x03 \x01(\rH\x00R\x06browse\x12*\n" +
+	"\x03buy\x18\x04 \x01(\v2\x16.wathena.v1.VendingBuyH\x00R\x03buy\x12\x18\n" +
+	"\x06cancel\x18\x05 \x01(\bH\x00R\x06cancelB\b\n" +
+	"\x06action\"R\n" +
+	"\vVendingOpen\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12-\n" +
+	"\x05items\x18\x02 \x03(\v2\x17.wathena.v1.VendingLineR\x05items\"X\n" +
+	"\vVendingLine\x12\x1b\n" +
+	"\tcart_slot\x18\x01 \x01(\rR\bcartSlot\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\x12\x14\n" +
+	"\x05price\x18\x03 \x01(\rR\x05price\"j\n" +
+	"\n" +
+	"VendingBuy\x12\x16\n" +
+	"\x06vendor\x18\x01 \x01(\rR\x06vendor\x12\x12\n" +
+	"\x04shop\x18\x02 \x01(\rR\x04shop\x120\n" +
+	"\x05items\x18\x03 \x03(\v2\x1a.wathena.v1.VendingBuyLineR\x05items\">\n" +
+	"\x0eVendingBuyLine\x12\x14\n" +
+	"\x05index\x18\x01 \x01(\rR\x05index\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\"\xd0\x01\n" +
+	"\x12BuyingStoreCommand\x121\n" +
+	"\x04open\x18\x01 \x01(\v2\x1b.wathena.v1.BuyingStoreOpenH\x00R\x04open\x12\x16\n" +
+	"\x05close\x18\x02 \x01(\bH\x00R\x05close\x12\x18\n" +
+	"\x06browse\x18\x03 \x01(\rH\x00R\x06browse\x121\n" +
+	"\x04sell\x18\x04 \x01(\v2\x1b.wathena.v1.BuyingStoreSellH\x00R\x04sell\x12\x18\n" +
+	"\x06cancel\x18\x05 \x01(\bH\x00R\x06cancelB\b\n" +
+	"\x06action\"y\n" +
+	"\x0fBuyingStoreOpen\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1d\n" +
+	"\n" +
+	"zeny_limit\x18\x02 \x01(\rR\tzenyLimit\x121\n" +
+	"\x05items\x18\x03 \x03(\v2\x1b.wathena.v1.BuyingStoreLineR\x05items\"X\n" +
+	"\x0fBuyingStoreLine\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\rR\x06itemId\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\x12\x14\n" +
+	"\x05price\x18\x03 \x01(\rR\x05price\"t\n" +
+	"\x0fBuyingStoreSell\x12\x14\n" +
+	"\x05buyer\x18\x01 \x01(\rR\x05buyer\x12\x14\n" +
+	"\x05store\x18\x02 \x01(\rR\x05store\x125\n" +
+	"\x05items\x18\x03 \x03(\v2\x1f.wathena.v1.BuyingStoreSellLineR\x05items\"Z\n" +
+	"\x13BuyingStoreSellLine\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\rR\x06itemId\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\rR\x06amount\"\x9a\x01\n" +
+	"\x12StoreSearchCommand\x124\n" +
+	"\x05query\x18\x01 \x01(\v2\x1c.wathena.v1.StoreSearchQueryH\x00R\x05query\x12\x14\n" +
+	"\x04next\x18\x02 \x01(\bH\x00R\x04next\x12\x16\n" +
+	"\x05click\x18\x03 \x01(\rH\x00R\x05click\x12\x16\n" +
+	"\x05close\x18\x04 \x01(\bH\x00R\x05closeB\b\n" +
+	"\x06action\"\x84\x02\n" +
+	"\x10StoreSearchQuery\x12\x16\n" +
+	"\x06buying\x18\x01 \x01(\bR\x06buying\x12\x19\n" +
+	"\bitem_ids\x18\x02 \x03(\rR\aitemIds\x12\x19\n" +
+	"\bcard_ids\x18\x03 \x03(\rR\acardIds\x12\x1b\n" +
+	"\tmin_price\x18\x04 \x01(\rR\bminPrice\x12\x1b\n" +
+	"\tmax_price\x18\x05 \x01(\rR\bmaxPrice\x121\n" +
+	"\x05rolls\x18\x06 \x03(\v2\x1b.wathena.v1.StoreSearchRollR\x05rolls\x125\n" +
+	"\aoptions\x18\a \x03(\v2\x1b.wathena.v1.StoreSearchRollR\aoptions\"I\n" +
+	"\x0fStoreSearchRoll\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x10\n" +
+	"\x03min\x18\x02 \x01(\x05R\x03min\x12\x10\n" +
+	"\x03max\x18\x03 \x01(\x05R\x03max*\xf5\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
@@ -7321,7 +9932,7 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
 var file_wathena_v1_command_proto_goTypes = []any{
 	(ChatChannel)(0),            // 0: wathena.v1.ChatChannel
 	(ChannelAction)(0),          // 1: wathena.v1.ChannelAction
@@ -7370,6 +9981,22 @@ var file_wathena_v1_command_proto_goTypes = []any{
 	(*StorageCommand)(nil),      // 44: wathena.v1.StorageCommand
 	(*StorageMove)(nil),         // 45: wathena.v1.StorageMove
 	(*TradeCommand)(nil),        // 46: wathena.v1.TradeCommand
+	(*MailCommand)(nil),         // 47: wathena.v1.MailCommand
+	(*MailSend)(nil),            // 48: wathena.v1.MailSend
+	(*MailTake)(nil),            // 49: wathena.v1.MailTake
+	(*VendingCommand)(nil),      // 50: wathena.v1.VendingCommand
+	(*VendingOpen)(nil),         // 51: wathena.v1.VendingOpen
+	(*VendingLine)(nil),         // 52: wathena.v1.VendingLine
+	(*VendingBuy)(nil),          // 53: wathena.v1.VendingBuy
+	(*VendingBuyLine)(nil),      // 54: wathena.v1.VendingBuyLine
+	(*BuyingStoreCommand)(nil),  // 55: wathena.v1.BuyingStoreCommand
+	(*BuyingStoreOpen)(nil),     // 56: wathena.v1.BuyingStoreOpen
+	(*BuyingStoreLine)(nil),     // 57: wathena.v1.BuyingStoreLine
+	(*BuyingStoreSell)(nil),     // 58: wathena.v1.BuyingStoreSell
+	(*BuyingStoreSellLine)(nil), // 59: wathena.v1.BuyingStoreSellLine
+	(*StoreSearchCommand)(nil),  // 60: wathena.v1.StoreSearchCommand
+	(*StoreSearchQuery)(nil),    // 61: wathena.v1.StoreSearchQuery
+	(*StoreSearchRoll)(nil),     // 62: wathena.v1.StoreSearchRoll
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
 	4,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
@@ -7398,39 +10025,57 @@ var file_wathena_v1_command_proto_depIdxs = []int32{
 	36, // 23: wathena.v1.Command.guild:type_name -> wathena.v1.GuildCommand
 	44, // 24: wathena.v1.Command.storage:type_name -> wathena.v1.StorageCommand
 	46, // 25: wathena.v1.Command.trade:type_name -> wathena.v1.TradeCommand
-	8,  // 26: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 27: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	1,  // 28: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
-	16, // 29: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
-	18, // 30: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
-	2,  // 31: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	28, // 32: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
-	29, // 33: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
-	30, // 34: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
-	30, // 35: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
-	32, // 36: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
-	34, // 37: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
-	35, // 38: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
-	37, // 39: wathena.v1.GuildCommand.reply:type_name -> wathena.v1.GuildReply
-	38, // 40: wathena.v1.GuildCommand.expel:type_name -> wathena.v1.GuildExpel
-	39, // 41: wathena.v1.GuildCommand.positions:type_name -> wathena.v1.GuildPositions
-	41, // 42: wathena.v1.GuildCommand.member_position:type_name -> wathena.v1.GuildMemberPosition
-	42, // 43: wathena.v1.GuildCommand.notice:type_name -> wathena.v1.GuildNotice
-	37, // 44: wathena.v1.GuildCommand.ally_reply:type_name -> wathena.v1.GuildReply
-	43, // 45: wathena.v1.GuildCommand.end_relation:type_name -> wathena.v1.GuildRelationEnd
-	40, // 46: wathena.v1.GuildPositions.positions:type_name -> wathena.v1.GuildPosition
-	45, // 47: wathena.v1.StorageCommand.put:type_name -> wathena.v1.StorageMove
-	45, // 48: wathena.v1.StorageCommand.take:type_name -> wathena.v1.StorageMove
-	45, // 49: wathena.v1.StorageCommand.cart_put:type_name -> wathena.v1.StorageMove
-	45, // 50: wathena.v1.StorageCommand.cart_take:type_name -> wathena.v1.StorageMove
-	45, // 51: wathena.v1.StorageCommand.cart_to_storage:type_name -> wathena.v1.StorageMove
-	45, // 52: wathena.v1.StorageCommand.storage_to_cart:type_name -> wathena.v1.StorageMove
-	45, // 53: wathena.v1.TradeCommand.add_item:type_name -> wathena.v1.StorageMove
-	54, // [54:54] is the sub-list for method output_type
-	54, // [54:54] is the sub-list for method input_type
-	54, // [54:54] is the sub-list for extension type_name
-	54, // [54:54] is the sub-list for extension extendee
-	0,  // [0:54] is the sub-list for field type_name
+	47, // 26: wathena.v1.Command.mail:type_name -> wathena.v1.MailCommand
+	50, // 27: wathena.v1.Command.vending:type_name -> wathena.v1.VendingCommand
+	55, // 28: wathena.v1.Command.buying_store:type_name -> wathena.v1.BuyingStoreCommand
+	60, // 29: wathena.v1.Command.store_search:type_name -> wathena.v1.StoreSearchCommand
+	8,  // 30: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 31: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	1,  // 32: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
+	16, // 33: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
+	18, // 34: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
+	2,  // 35: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	28, // 36: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
+	29, // 37: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
+	30, // 38: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
+	30, // 39: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
+	32, // 40: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
+	34, // 41: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
+	35, // 42: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
+	37, // 43: wathena.v1.GuildCommand.reply:type_name -> wathena.v1.GuildReply
+	38, // 44: wathena.v1.GuildCommand.expel:type_name -> wathena.v1.GuildExpel
+	39, // 45: wathena.v1.GuildCommand.positions:type_name -> wathena.v1.GuildPositions
+	41, // 46: wathena.v1.GuildCommand.member_position:type_name -> wathena.v1.GuildMemberPosition
+	42, // 47: wathena.v1.GuildCommand.notice:type_name -> wathena.v1.GuildNotice
+	37, // 48: wathena.v1.GuildCommand.ally_reply:type_name -> wathena.v1.GuildReply
+	43, // 49: wathena.v1.GuildCommand.end_relation:type_name -> wathena.v1.GuildRelationEnd
+	40, // 50: wathena.v1.GuildPositions.positions:type_name -> wathena.v1.GuildPosition
+	45, // 51: wathena.v1.StorageCommand.put:type_name -> wathena.v1.StorageMove
+	45, // 52: wathena.v1.StorageCommand.take:type_name -> wathena.v1.StorageMove
+	45, // 53: wathena.v1.StorageCommand.cart_put:type_name -> wathena.v1.StorageMove
+	45, // 54: wathena.v1.StorageCommand.cart_take:type_name -> wathena.v1.StorageMove
+	45, // 55: wathena.v1.StorageCommand.cart_to_storage:type_name -> wathena.v1.StorageMove
+	45, // 56: wathena.v1.StorageCommand.storage_to_cart:type_name -> wathena.v1.StorageMove
+	45, // 57: wathena.v1.TradeCommand.add_item:type_name -> wathena.v1.StorageMove
+	48, // 58: wathena.v1.MailCommand.send:type_name -> wathena.v1.MailSend
+	49, // 59: wathena.v1.MailCommand.take:type_name -> wathena.v1.MailTake
+	45, // 60: wathena.v1.MailSend.items:type_name -> wathena.v1.StorageMove
+	51, // 61: wathena.v1.VendingCommand.open:type_name -> wathena.v1.VendingOpen
+	53, // 62: wathena.v1.VendingCommand.buy:type_name -> wathena.v1.VendingBuy
+	52, // 63: wathena.v1.VendingOpen.items:type_name -> wathena.v1.VendingLine
+	54, // 64: wathena.v1.VendingBuy.items:type_name -> wathena.v1.VendingBuyLine
+	56, // 65: wathena.v1.BuyingStoreCommand.open:type_name -> wathena.v1.BuyingStoreOpen
+	58, // 66: wathena.v1.BuyingStoreCommand.sell:type_name -> wathena.v1.BuyingStoreSell
+	57, // 67: wathena.v1.BuyingStoreOpen.items:type_name -> wathena.v1.BuyingStoreLine
+	59, // 68: wathena.v1.BuyingStoreSell.items:type_name -> wathena.v1.BuyingStoreSellLine
+	61, // 69: wathena.v1.StoreSearchCommand.query:type_name -> wathena.v1.StoreSearchQuery
+	62, // 70: wathena.v1.StoreSearchQuery.rolls:type_name -> wathena.v1.StoreSearchRoll
+	62, // 71: wathena.v1.StoreSearchQuery.options:type_name -> wathena.v1.StoreSearchRoll
+	72, // [72:72] is the sub-list for method output_type
+	72, // [72:72] is the sub-list for method input_type
+	72, // [72:72] is the sub-list for extension type_name
+	72, // [72:72] is the sub-list for extension extendee
+	0,  // [0:72] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -7465,6 +10110,10 @@ func file_wathena_v1_command_proto_init() {
 		(*command_Guild)(nil),
 		(*command_Storage)(nil),
 		(*command_Trade)(nil),
+		(*command_Mail)(nil),
+		(*command_Vending)(nil),
+		(*command_BuyingStore)(nil),
+		(*command_StoreSearch)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
@@ -7531,13 +10180,41 @@ func file_wathena_v1_command_proto_init() {
 		(*tradeCommand_Confirm)(nil),
 		(*tradeCommand_Cancel)(nil),
 	}
+	file_wathena_v1_command_proto_msgTypes[44].OneofWrappers = []any{
+		(*mailCommand_Open)(nil),
+		(*mailCommand_Read)(nil),
+		(*mailCommand_Send)(nil),
+		(*mailCommand_Take)(nil),
+		(*mailCommand_Delete)(nil),
+		(*mailCommand_Close)(nil),
+	}
+	file_wathena_v1_command_proto_msgTypes[47].OneofWrappers = []any{
+		(*vendingCommand_Open)(nil),
+		(*vendingCommand_Close)(nil),
+		(*vendingCommand_Browse)(nil),
+		(*vendingCommand_Buy)(nil),
+		(*vendingCommand_Cancel)(nil),
+	}
+	file_wathena_v1_command_proto_msgTypes[52].OneofWrappers = []any{
+		(*buyingStoreCommand_Open)(nil),
+		(*buyingStoreCommand_Close)(nil),
+		(*buyingStoreCommand_Browse)(nil),
+		(*buyingStoreCommand_Sell)(nil),
+		(*buyingStoreCommand_Cancel)(nil),
+	}
+	file_wathena_v1_command_proto_msgTypes[57].OneofWrappers = []any{
+		(*storeSearchCommand_Query)(nil),
+		(*storeSearchCommand_Next)(nil),
+		(*storeSearchCommand_Click)(nil),
+		(*storeSearchCommand_Close)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   44,
+			NumMessages:   60,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

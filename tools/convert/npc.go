@@ -11,11 +11,13 @@ import (
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/constants"
+	"github.com/lxsmnsyc/wathena/server/currency"
 )
 
 // NPC conversion: rAthena's NPC lines (npcs.json) become core's NPC data
 // and scripts:
-//   - data/npcs.yml places every NPC that converts and every zeny shop.
+//   - data/npcs.yml places every NPC that converts, and holds every shop
+//     that converts (npcshop.go).
 //   - scripts/npcs/<name>.lua is the entry script of a script NPC. Its
 //     duplicates use the same file.
 //   - scripts/functions/<name>.lua is a function (callfunc), loaded when
@@ -41,6 +43,8 @@ type NPCInput struct {
 	// ClientTables is client_tables.json, for item names and NPC
 	// sprites.
 	ClientTables io.Reader
+	// Shops is shops.json, for barter shops. It may be nil.
+	Shops io.Reader
 }
 
 // npcLine is one line of npcs.json.
@@ -65,8 +69,15 @@ type npcLine struct {
 			Item  string `json:"item"`
 			ID    uint32 `json:"id"`
 			Price int    `json:"price"`
+			// Stock is a marketshop item's stock, -1 for no limit.
+			Stock *int `json:"stock,omitempty"`
 		} `json:"items"`
 		Discount bool `json:"discount"`
+		// Currency is an itemshop's item or a pointshop's variable.
+		Currency *struct {
+			Item     string `json:"item,omitempty"`
+			Variable string `json:"variable,omitempty"`
+		} `json:"currency,omitempty"`
 	} `json:"shop"`
 }
 
@@ -160,6 +171,16 @@ type npcConverter struct {
 	// and of a computed amount, which R checks.
 	zeroAmounts    map[string]bool
 	checkedAmounts map[string]bool
+	// shops are the shops and barters by rAthena's unique name, for
+	// callshop and the npcshop commands.
+	shops map[string]*shopRef
+	// currencyVars are the currencies of variables by lower-case name:
+	// #CASHPOINTS, #KAFRAPOINTS and pointshop variables. currencyErr
+	// says why a pointshop's variable is not one, and newCurrencies are
+	// the records added to core's data/currencies.yml.
+	currencyVars  map[string]string
+	currencyErr   map[string]string
+	newCurrencies []currencyRecord
 }
 
 // monsterInfo is a monster of client_tables.json: its AegisName, and
@@ -216,7 +237,11 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		items: map[uint32]string{}, itemIDs: map[string]uint32{}, sprites: map[string]uint32{}, spriteID: map[uint32]bool{},
 		jobs: map[string]string{}, functions: map[string]*npcLine{}, converted: map[string]*Function{}, paths: map[string]bool{},
 		zeroAmounts: map[string]bool{}, checkedAmounts: map[string]bool{},
-		monsters: map[int64]monsterInfo{}, monsterIDs: map[string]int64{},
+		monsters: map[int64]monsterInfo{}, monsterIDs: map[string]int64{}, shops: map[string]*shopRef{},
+	}
+	shopsIn, err := readShops(in.Shops)
+	if err != nil {
+		return nil, err
 	}
 	for _, m := range tables.Monsters {
 		c.monsters[m.ID] = monsterInfo{sprite: m.Sprite, name: m.Name}
@@ -238,17 +263,62 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		}
 	}
 	out := &NPCResult{Mode: extract.Mode, Functions: c.converted, ScriptFolders: extract.ScriptFolders, LeftOut: extract.LeftOut, conv: c}
+	c.prepareCurrencies(extract.NPCs)
+	// Record names first, in the extract's order, then the barters'.
+	// Shops convert before scripts, so callshop and the npcshop commands
+	// find them wherever they are.
 	names := map[string]bool{}
+	recordNames := make([]string, len(extract.NPCs))
+	shopNPCs := map[int]*NPC{}
+	for i := range extract.NPCs {
+		if l := &extract.NPCs[i]; l.Kind != "function" {
+			recordNames[i] = recordName(l.Name, names)
+		}
+	}
+	for i := range extract.NPCs {
+		l := &extract.NPCs[i]
+		if !isShopKind(l.Kind) {
+			continue
+		}
+		n := &NPC{Name: recordNames[i], Source: l.Name, Kind: l.Kind, File: l.File, Line: l.Line, Map: l.Map, DuplicateOf: l.DuplicateOf, Features: map[string]bool{}}
+		shopNPCs[i] = c.convertShop(n, l)
+		ref := &shopRef{npc: shopNPCs[i], line: l, items: map[uint32]bool{}}
+		if l.Shop != nil {
+			for _, it := range l.Shop.Items {
+				ref.items[it.ID] = true
+			}
+		}
+		if c.shops[l.Name] == nil {
+			c.shops[l.Name] = ref
+		}
+	}
+	var barters []*NPC
+	for i := range shopsIn.Barters {
+		bl := &shopsIn.Barters[i]
+		n := c.convertBarter(bl, recordName(bl.Name, names))
+		barters = append(barters, n)
+		if c.shops[bl.Name] == nil {
+			ref := &shopRef{npc: n, line: &npcLine{Kind: "barter", Name: bl.Name}, items: map[uint32]bool{}}
+			for _, it := range bl.Items {
+				ref.items[it.ID] = true
+			}
+			c.shops[bl.Name] = ref
+		}
+	}
 	bySource := map[string]*NPC{}
 	for i := range extract.NPCs {
 		l := &extract.NPCs[i]
 		if l.Kind == "function" {
 			continue
 		}
-		n := c.convertNPC(l, bySource, names)
+		n := shopNPCs[i]
+		if n == nil {
+			n = c.convertNPC(l, recordNames[i], bySource)
+		}
 		bySource[l.Name] = n
 		out.NPCs = append(out.NPCs, n)
 	}
+	out.NPCs = append(out.NPCs, barters...)
 	return out, nil
 }
 
@@ -304,9 +374,8 @@ func direction(dir int) string {
 	return []string{"south", "southwest", "west", "northwest", "north", "northeast", "east", "southeast"}[((4-dir)%8+8)%8]
 }
 
-func (c *npcConverter) convertNPC(l *npcLine, bySource map[string]*NPC, names map[string]bool) *NPC {
-	n := &NPC{Source: l.Name, Kind: l.Kind, File: l.File, Line: l.Line, Map: l.Map, DuplicateOf: l.DuplicateOf, Features: map[string]bool{}}
-	n.Name = recordName(l.Name, names)
+func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*NPC) *NPC {
+	n := &NPC{Name: name, Source: l.Name, Kind: l.Kind, File: l.File, Line: l.Line, Map: l.Map, DuplicateOf: l.DuplicateOf, Features: map[string]bool{}}
 	fail := func(feature, why string) *NPC {
 		n.Status = None
 		n.Features[feature] = false
@@ -317,14 +386,8 @@ func (c *npcConverter) convertNPC(l *npcLine, bySource map[string]*NPC, names ma
 		}
 		return n
 	}
-	switch l.Kind {
-	case "shop":
-		return c.convertShop(n, l)
-	case "script":
-	default:
-		// cashshop, itemshop, pointshop and marketshop need cash points,
-		// item and point currencies, and stock.
-		return fail(l.Kind, "only zeny shops convert")
+	if l.Kind != "script" {
+		return fail(l.Kind, "not an NPC kind the converter knows")
 	}
 	var src *NPC
 	if l.DuplicateOf != "" {
@@ -401,37 +464,6 @@ func (c *npcConverter) convertNPC(l *npcLine, bySource map[string]*NPC, names ma
 	return n
 }
 
-// convertShop makes a shop's record: placed when it has a map and a
-// sprite, and opened only by scripts otherwise.
-func (c *npcConverter) convertShop(n *NPC, l *npcLine) *NPC {
-	n.Shop, n.Status = true, Full
-	n.Features["shop"] = true
-	if l.Shop == nil || len(l.Shop.Items) == 0 {
-		n.Status = None
-		n.Unsupported = append(n.Unsupported, "shop: no items")
-		return n
-	}
-	var items []string
-	for _, it := range l.Shop.Items {
-		items = append(items, fmt.Sprintf("{item: %s, price: %d}", yamlString(it.Item), it.Price))
-	}
-	fields := []string{"name: " + yamlString(n.Name)}
-	view, ok := c.sprite(l.Sprite)
-	if l.Map != "" && ok && (l.State == "" || l.State == "enabled") {
-		n.Placed = true
-		fields = append(fields,
-			"map: "+yamlString(l.Map), fmt.Sprintf("x: %d", l.X), fmt.Sprintf("y: %d", l.Y),
-			"direction: "+direction(l.Dir), "sprite: "+yamlString(view),
-			"display_name: "+yamlString(displayName(l.Display)))
-	}
-	fields = append(fields, "shop: ["+strings.Join(items, ", ")+"]")
-	if !l.Shop.Discount {
-		fields = append(fields, "discount: false")
-	}
-	n.record = "- {" + strings.Join(fields, ", ") + "}"
-	return n
-}
-
 // ScriptPathIn is the file of a converted script in a folder: the name
 // with characters other than letters, digits, _ and - made _, such as
 // Shuger_pront for Shuger#pront, made unique without case by a number.
@@ -499,6 +531,7 @@ func (r *NPCResult) Files() map[string]string {
 		}
 	}
 	addCoreFiles(out)
+	out[currency.File] = r.currencyFile(out[currency.File])
 	return out
 }
 

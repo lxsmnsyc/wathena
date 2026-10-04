@@ -11,6 +11,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
@@ -26,7 +27,11 @@ func shopItems() *item.Table {
 	}})
 }
 
-var toolShop = &Shop{Name: "core:Tool Dealer", Discount: true, Items: []ShopItem{{ID: 501, Price: 50}, {ID: 1201, Price: 50}, {ID: 715, Price: 1}}}
+// newToolShop is a zeny shop that also buys from players.
+func newToolShop() *shop.Shop {
+	return shop.New("core:Tool Dealer", "Tool Dealer", true, true, "core", []shop.Item{
+		{ID: 501, Zeny: 50, Stock: -1, Initial: -1}, {ID: 1201, Zeny: 50, Stock: -1, Initial: -1}, {ID: 715, Zeny: 1, Stock: -1, Initial: -1}})
+}
 
 // shopZone is a zone with a shop NPC at 20,20 and a player next to it
 // with 1000 zeny. The player's first frame is already read.
@@ -36,7 +41,8 @@ func shopZone(t *testing.T) (*Zone, *Player, *entity) {
 	z.Items = shopItems()
 	z.Progress = testTables()
 	z.PlayerStatus = battle.Status{MaxHP: 200, MaxSP: 50, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
-	z.Mods = &Mods{Log: slog.New(slog.DiscardHandler), Shops: map[string]*Shop{toolShop.Name: toolShop}}
+	toolShop := newToolShop()
+	z.Mods = &Mods{Log: slog.New(slog.DiscardHandler), Shops: shop.NewRegistry([]*shop.Shop{toolShop})}
 	z.SetNPCs([]NPC{{Name: "core:Tool Dealer", DisplayName: "Tool Dealer", X: 20, Y: 20, Sprite: 53, Shop: toolShop}})
 	p := add(z, "a")
 	p.entity.x, p.entity.y = 21, 20
@@ -219,9 +225,9 @@ func TestShopNoDuplication(t *testing.T) {
 	z.Items = shopItems()
 	z.Progress = testTables()
 	z.PlayerStatus = battle.Status{MaxHP: 200, MaxSP: 50, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
-	shop := &Shop{Name: "core:Jellopy Trader", Items: []ShopItem{{ID: 909, Price: 6}}}
-	z.Mods = &Mods{Log: slog.New(slog.DiscardHandler), Shops: map[string]*Shop{shop.Name: shop}}
-	z.SetNPCs([]NPC{{Name: shop.Name, DisplayName: "Trader", X: 20, Y: 20, Sprite: 53, Shop: shop}})
+	trader := shop.New("core:Jellopy Trader", "Trader", false, true, "core", []shop.Item{{ID: 909, Zeny: 6, Stock: -1, Initial: -1}})
+	z.Mods = &Mods{Log: slog.New(slog.DiscardHandler), Shops: shop.NewRegistry([]*shop.Shop{trader})}
+	z.SetNPCs([]NPC{{Name: trader.Name, DisplayName: "Trader", X: 20, Y: 20, Sprite: 53, Shop: trader}})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go z.Run(ctx)

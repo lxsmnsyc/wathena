@@ -2,10 +2,14 @@ package zone
 
 import (
 	"context"
+	"slices"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mail"
+	"github.com/lxsmnsyc/wathena/server/market"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/transfer"
@@ -31,6 +35,24 @@ import (
 // character's later saves are written after its commits.
 type Committer interface {
 	Commit(saves []CommitSave, storages []StorageCommit, logs transfer.Logs)
+}
+
+// Writes are the other rows a commit saves with its characters and
+// storages (review decision 30): mails, shop stock, and the rows of
+// vending shops and buying stores.
+type Writes struct {
+	Mails  []mail.Write
+	Stock  []shop.StockRow
+	Stores []market.Write
+}
+
+// Empty reports whether there is nothing to write.
+func (w *Writes) Empty() bool { return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 }
+
+// WritesCommitter is a Committer that also saves Writes in the same
+// transaction.
+type WritesCommitter interface {
+	CommitWrites(saves []CommitSave, storages []StorageCommit, writes Writes, logs transfer.Logs)
 }
 
 // CommitSave is a character a commit saves, with the saver that saves
@@ -105,9 +127,16 @@ func (z *Zone) apply(p *Player, tx *transfer.Tx, reason wathenav1.InventoryRemov
 	logs, err := tx.Apply(func(c transfer.Change) {
 		switch {
 		case c.Wallet != nil:
+			if _, isCurrency := c.Wallet.(*transfer.CurrencyWallet); isCurrency {
+				// applyWithCurrencies sends the balances.
+				return
+			}
 			if s := z.battleStats(p); s != nil {
 				p.pending = append(p.pending, s)
 			}
+		case !inventoryOf(c.Box, p):
+			// Another box's change, such as a mail's, is not the
+			// player's to see.
 		case c.Amount > 0:
 			z.sendAdd(p, c.Slot, c.Amount)
 		default:
@@ -124,6 +153,13 @@ func (z *Zone) apply(p *Player, tx *transfer.Tx, reason wathenav1.InventoryRemov
 	}
 	z.recordTransfer(p, logs)
 	return nil
+}
+
+// inventoryOf reports whether a transfer's box is the player's
+// inventory.
+func inventoryOf(b transfer.Box, p *Player) bool {
+	ib, ok := b.(*transfer.InventoryBox)
+	return ok && ib.Inv == p.inventory
 }
 
 // sendAdd tells a player an amount entered a slot, as clif_additem, and
@@ -167,12 +203,17 @@ func (z *Zone) recordTransfer(p *Player, logs transfer.Logs) {
 // Committer: a copy of each character they changed and their log lines.
 // Without a Committer, the lines go to the log.
 func (z *Zone) commitTransfers() {
-	// Storages of players who logged out go once this commit is queued.
+	// Storages of players who logged out go once this commit is queued,
+	// and sent mails reach their mailboxes.
 	defer z.releaseStorages()
-	if len(z.txPlayers) == 0 && len(z.txStorageRefs) == 0 && len(z.txStorages) == 0 && len(z.txPersonal) == 0 {
+	defer z.deliverMails()
+	if len(z.txPlayers) == 0 && len(z.txStorageRefs) == 0 && len(z.txStorages) == 0 && len(z.txPersonal) == 0 &&
+		len(z.txMails) == 0 && len(z.txShops) == 0 && len(z.txStores) == 0 && z.txLogs.Empty() {
 		return
 	}
 	storages := z.storageCommits()
+	writes := Writes{Mails: z.mailWrites(), Stock: z.stockWrites(), Stores: z.txStores}
+	z.txStores = nil
 	logs, players := z.txLogs, z.txPlayers
 	z.txLogs, z.txPlayers = transfer.Logs{}, nil
 	var saves []CommitSave
@@ -183,6 +224,10 @@ func (z *Zone) commitTransfers() {
 			p.saved = c
 			saves = append(saves, CommitSave{Saver: s.saver, Character: c})
 		}
+	}
+	if wc, ok := z.Committer.(WritesCommitter); ok {
+		wc.CommitWrites(saves, storages, writes, logs)
+		return
 	}
 	if z.Committer != nil {
 		z.Committer.Commit(saves, storages, logs)
@@ -257,6 +302,24 @@ type Audit struct {
 	// Personal are what the storages and carts in memory hold, read the
 	// same way.
 	Personal []storage.Holding
+	// Mails are what the mails in memory hold: the world's mail registry,
+	// and the zone's sent mails that wait for the next commit to reach
+	// their mailboxes, read the same way.
+	Mails []mail.Holding
+}
+
+// sentMails are what the zone's sent mails hold while they wait for the
+// next commit to reach their mailboxes, leaving out the mails in listed.
+func (z *Zone) sentMails(listed []mail.Holding) []mail.Holding {
+	var out []mail.Holding
+	for _, m := range z.mailDeliver {
+		m.Lock()
+		if !m.Deleted() && !slices.ContainsFunc(listed, func(h mail.Holding) bool { return h.Mail == m.ID }) {
+			out = append(out, mail.Holding{Mail: m.ID, Zeny: m.Zeny, Items: m.Items()})
+		}
+		m.Unlock()
+	}
+	return out
 }
 
 // Audit lists what the zone's players and ground hold. It runs on the
@@ -282,6 +345,10 @@ func (z *Zone) Audit(ctx context.Context) (Audit, error) {
 		if z.Storages != nil {
 			a.Personal = z.Storages.Audit()
 		}
+		if z.Mail != nil {
+			a.Mails = z.Mail.Audit()
+		}
+		a.Mails = append(a.Mails, z.sentMails(a.Mails)...)
 		done <- a
 	}
 	select {

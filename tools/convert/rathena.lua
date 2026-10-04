@@ -224,6 +224,43 @@ function R.take_item(player, item, amount, options)
 	return player:take_item(item, amount, options)
 end
 
+-- add_currency changes a currency by an amount with a sign, as rAthena's
+-- #CASHPOINTS += n with a computed n. It gives for an amount above 0 and
+-- takes for one below 0. It returns false when the player has too
+-- little to take, and then changes nothing.
+function R.add_currency(player, name, n)
+	if n > 0 then
+		player:give_currency(name, n)
+	elseif n < 0 then
+		return player:take_currency(name, -n)
+	end
+	return true
+end
+
+-- set_currency sets a currency to an amount, as rAthena's
+-- set #CASHPOINTS, n. It gives or takes the difference. An amount below
+-- 0 is 0.
+function R.set_currency(player, name, n)
+	if n < 0 then
+		n = 0
+	end
+	return R.add_currency(player, name, n - player:get_currency(name))
+end
+
+-- mail_items is the items of rAthena's mail command for
+-- player:send_mail: the item IDs and the amounts, arrays from 0. It
+-- takes at most 5 items, as MAIL_MAX_ITEM.
+function R.mail_items(ids, amounts)
+	local out = {}
+	for i = 0, R.size(ids) - 1 do
+		if #out == 5 then
+			break
+		end
+		out[#out + 1] = { item = ids[i], amount = amounts[i] or 0 }
+	end
+	return out
+end
+
 -- basic_skill_check is rAthena's basicskillcheck: the ruleset rule
 -- basic_skill_check, which makes storage need Basic Skill level 6. Lua
 -- cannot read ruleset rules yet, so it returns rAthena's default, true.

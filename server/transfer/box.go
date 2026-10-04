@@ -210,3 +210,60 @@ func (w *ZenyWallet) Clone() Wallet {
 	z := *w.Z
 	return &ZenyWallet{Who: w.Who, Z: &z}
 }
+
+// CurrencyWallet is a holder's balance of one currency of
+// data/currencies.yml (proposal 0002, review decision 30). It moves as
+// zeny does, with its own limit, and its log lines name the currency.
+type CurrencyWallet struct {
+	Who Owner
+	// ID is the currency's ID, and Max the most the holder may hold.
+	ID  uint32
+	Max int64
+	// Balances are the holder's balances by currency ID. A balance at 0
+	// is not in the map.
+	Balances map[uint32]int64
+}
+
+// Owner returns the wallet's owner.
+func (w *CurrencyWallet) Owner() Owner { return w.Who }
+
+// Zeny returns the balance.
+func (w *CurrencyWallet) Zeny() int64 { return w.Balances[w.ID] }
+
+// SetZeny sets the balance.
+func (w *CurrencyWallet) SetZeny(n int64) {
+	if n == 0 {
+		delete(w.Balances, w.ID)
+		return
+	}
+	w.Balances[w.ID] = n
+}
+
+// Clone copies the wallet's balance.
+func (w *CurrencyWallet) Clone() Wallet {
+	c := *w
+	c.Balances = map[uint32]int64{w.ID: w.Balances[w.ID]}
+	return &c
+}
+
+// Limit is the most the wallet holds.
+func (w *CurrencyWallet) Limit() int64 { return w.Max }
+
+// Currency is the currency's ID, for the logs.
+func (w *CurrencyWallet) Currency() uint32 { return w.ID }
+
+// limitOf is the most a wallet holds: its Limit, or MaxZeny.
+func limitOf(w Wallet) int64 {
+	if l, ok := w.(interface{ Limit() int64 }); ok {
+		return l.Limit()
+	}
+	return MaxZeny
+}
+
+// currencyOf is a wallet's currency, or 0 for zeny.
+func currencyOf(w Wallet) uint32 {
+	if c, ok := w.(interface{ Currency() uint32 }); ok {
+		return c.Currency()
+	}
+	return 0
+}

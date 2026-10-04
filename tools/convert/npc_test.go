@@ -123,22 +123,37 @@ func TestParseNPCScripts(t *testing.T) {
 	}
 }
 
-// TestShopsConvert checks that every zeny shop becomes data, and other
-// shop types are reported.
+// TestShopsConvert checks that every shop line and barter shop becomes
+// data: zeny shops in the list form, and the other kinds in the table
+// form, which players cannot sell to. Only a barter whose items all fail
+// may be left out.
 func TestShopsConvert(t *testing.T) {
 	for _, mode := range reference.Modes {
 		res := loadCore(t, mode).NPCs
+		barters := 0
 		for _, n := range res.NPCs {
 			switch n.Kind {
 			case "shop":
 				if n.Status != Full || n.record == "" || !strings.Contains(n.record, "shop: [") {
 					t.Errorf("%s: shop %s did not convert: %v", mode, n.Name, n.Unsupported)
 				}
-			case "cashshop", "itemshop", "pointshop", "marketshop":
-				if n.Status != None || len(n.Unsupported) == 0 {
-					t.Errorf("%s: %s %s converted", mode, n.Kind, n.Name)
+			case "cashshop", "itemshop", "pointshop", "marketshop", "barter":
+				// A barter whose items all take refined items does not
+				// convert, with a reason for each item.
+				if n.Kind == "barter" && n.Status == None && len(n.Unsupported) > 1 {
+					barters++
+					continue
+				}
+				if n.Status == None || !strings.Contains(n.record, "shop: {buys_from_players: false") {
+					t.Errorf("%s: %s %s did not convert: %v", mode, n.Kind, n.Name, n.Unsupported)
+				}
+				if n.Kind == "barter" {
+					barters++
 				}
 			}
+		}
+		if mode == reference.Renewal && barters == 0 {
+			t.Errorf("%s: no barter shops", mode)
 		}
 	}
 }

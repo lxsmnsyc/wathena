@@ -190,6 +190,40 @@ export function renderDescription(parent: HTMLElement, lines: readonly string[])
   }
 }
 
+/**
+ * Finds an item by what the player typed: an item ID, or a name. A name
+ * that matches one item exactly, ignoring case, wins. Otherwise the items
+ * whose name holds the text are listed, by ID, up to limit.
+ */
+export function findItems(
+  names: ReadonlyMap<number, ItemName>,
+  query: string,
+  limit = 10,
+): number[] {
+  const q = query.trim();
+  if (/^\d{1,9}$/.test(q)) {
+    return [Number(q)];
+  }
+  const lower = q.toLowerCase();
+  if (lower === '') {
+    return [];
+  }
+  const exact: number[] = [];
+  const partial: number[] = [];
+  for (const [id, info] of names) {
+    const name = info.name.toLowerCase();
+    if (name === lower) {
+      exact.push(id);
+    } else if (name.includes(lower)) {
+      partial.push(id);
+    }
+  }
+  if (exact.length > 0) {
+    return exact.sort((a, b) => a - b).slice(0, limit);
+  }
+  return partial.sort((a, b) => a - b).slice(0, limit);
+}
+
 /** The item tables of a build, loaded when first needed. */
 export class ItemTexts {
   private names: Map<number, ItemName> | undefined;
@@ -228,6 +262,14 @@ export class ItemTexts {
       return undefined;
     }
     return this.names.get(id);
+  }
+
+  /** Finds items by ID or name, as findItems. Until the names load, only IDs work. */
+  find(query: string, limit = 10): number[] {
+    if (this.names === undefined) {
+      this.loadNames().catch(() => undefined);
+    }
+    return findItems(this.names ?? new Map<number, ItemName>(), query, limit);
   }
 
   /** How an item shows now. Until the names load, it shows by ID. */

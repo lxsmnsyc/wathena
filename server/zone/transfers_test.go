@@ -20,10 +20,15 @@ type commitCall struct {
 	saves    []CommitSave
 	storages []StorageCommit
 	logs     transfer.Logs
+	writes   Writes
 }
 
 func (c *commits) Commit(saves []CommitSave, storages []StorageCommit, logs transfer.Logs) {
-	c.got = append(c.got, commitCall{saves, storages, logs})
+	c.got = append(c.got, commitCall{saves: saves, storages: storages, logs: logs})
+}
+
+func (c *commits) CommitWrites(saves []CommitSave, storages []StorageCommit, w Writes, logs transfer.Logs) {
+	c.got = append(c.got, commitCall{saves: saves, storages: storages, logs: logs, writes: w})
 }
 
 // TestTransferCommits checks that a drop and a pick-up by another player

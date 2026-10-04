@@ -50,6 +50,9 @@ func RulesOf(r *mod.Ruleset, skills *skill.DB) (*rules.Rules, []string, error) {
 	if rl.Guild, err = rules.GuildOf(r.Rules); err != nil {
 		return nil, nil, fmt.Errorf("the ruleset %s: %w", r.Mod, err)
 	}
+	if rl.Market, err = rules.MarketOf(r.Rules); err != nil {
+		return nil, nil, fmt.Errorf("the ruleset %s: %w", r.Mod, err)
+	}
 	if rl.Items, err = rules.ItemsOf(r.Rules); err != nil {
 		return nil, nil, fmt.Errorf("the ruleset %s: %w", r.Mod, err)
 	}

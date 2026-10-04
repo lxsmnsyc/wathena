@@ -16,11 +16,15 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
+	"github.com/lxsmnsyc/wathena/server/currency"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mail"
+	"github.com/lxsmnsyc/wathena/server/market"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -128,6 +132,27 @@ type Player struct {
 	// asked it to trade and waits for an answer (trade.go).
 	trade    *trade
 	tradeAsk *Player
+	// currencies are the character's own currencies of
+	// data/currencies.yml, by ID (currency.go).
+	currencies map[uint32]int64
+	// prevend is the most lines of the vending setup the Vending skill
+	// opened, or 0; vend is the player's open shop. buySetup is the
+	// slots of the buying store setup, or 0; buying is the open store.
+	// search is the store search window (vending.go).
+	prevend  int
+	vend     *vendShop
+	buySetup int
+	buying   *buyStore
+	search   *storeSearch
+	// remote is the store a store search opened from afar, which the
+	// player may buy from or sell to without range checks.
+	remote market.Key
+	// autotrade is set while the player's store stays open without its
+	// connection, and detached once the connection closed: its messages
+	// go nowhere, and it stays in the zone.
+	autotrade, detached bool
+	// mail is the player's mail state (mail.go).
+	mail mailState
 
 	// load is the character the player enters as. When it is nil, the
 	// player enters as a new character.
@@ -261,6 +286,9 @@ type entity struct {
 	walkChanged bool
 	stopped     bool
 	lookChanged bool
+	// shopChanged is set when a player's store opened or closed, so
+	// viewers get EntityShop.
+	shopChanged bool
 	// guildChanged is set when a player's guild badge changed, so viewers
 	// get EntityGuild.
 	guildChanged bool
@@ -316,6 +344,12 @@ type command struct {
 	// useSkill and learnSkill are skill commands.
 	useSkill   *useSkillCommand
 	learnSkill *int
+	// mail, vending, buying and search are the commands of review
+	// decision 30 (mail.go, vending.go).
+	mail    *wathenav1.MailCommand
+	vending *wathenav1.VendingCommand
+	buying  *wathenav1.BuyingStoreCommand
+	search  *wathenav1.StoreSearchCommand
 }
 
 type useSkillCommand struct {
@@ -435,14 +469,35 @@ type Zone struct {
 	// left (guild.go).
 	txStorageRefs []*social.GuildStorage
 	txStorages    []StorageCommit
+	// Mail is the world's mail registry (mail.go), and Market its list
+	// of vending shops and buying stores (market.go). Without them, the
+	// zone makes its own on first use. Set them before Run.
+	Mail   *mail.Registry
+	Market *market.Registry
 	// Storages is the world's storage registry: accounts' storages,
 	// extra storages and carts (storage.go). Without it, the zone makes
 	// its own on first use. Set it before Run.
 	Storages *storage.Registry
+	// coreCurrencies are core's currencies, for a zone without mods.
+	coreCurrencies *currency.Table
 	// txPersonal are the storages and carts the transfers since the last
 	// commit changed, and storageRelease the storages of players who
 	// logged out, let go after the next commit (storage.go).
-	txPersonal     []*storage.Storage
+	txPersonal []*storage.Storage
+	// txShops are the shops whose stock changed since the last commit
+	// (shops.go), txMails the mails, and txStores the store rows
+	// (market.go). mailDeliver are sent mails that reach their mailbox
+	// once the commit is queued.
+	txShops     []*shop.Shop
+	txMails     []*mail.Mail
+	txStores    []market.Write
+	mailDeliver []*mail.Mail
+	// mailRelease are the mailboxes of players who logged out, let go
+	// after the next commit.
+	mailRelease []*mail.Mailbox
+	// Autotraders are the world's autotraders, which the gateway ends
+	// at a new login of their character (vending.go). Set it before Run.
+	Autotraders    *Autotraders
 	storageRelease []*storage.Storage
 	// storageLog are guild storage log lines that wait to go to the
 	// registry (guild.go).
@@ -785,6 +840,14 @@ func (z *Zone) JoinCharacter(ctx context.Context, c *character.Character, saver 
 			z.Storages.Release(st)
 		}
 		s.storages = nil
+		if s.mailbox != nil {
+			z.mailRegistry().Release(s.mailbox)
+			s.mailbox = nil
+		}
+	}
+	if err := z.acquireMailbox(ctx, s); err != nil {
+		release()
+		return nil, err
 	}
 	if n, ok := saver.(StaleNotifier); ok {
 		n.OnStale(s.stale)
@@ -814,6 +877,7 @@ func (z *Zone) join(p *Player) joinResult {
 	z.checkJob(c)
 	p.record = c.Info
 	p.blocks, p.sanctions = slices.Clone(c.Blocks), slices.Clone(c.Sanctions)
+	p.currencies = maps.Clone(c.Currencies)
 	z.restoreCompanions(p, c)
 	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), p.record.Options)), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
@@ -907,6 +971,9 @@ func (z *Zone) join(p *Player) joinResult {
 	z.updateWeight(p)
 	p.sendPages(z.inventoryPages(p))
 	z.sendCart(p)
+	// CurrencyUpdate comes at login, as its message says, when the
+	// player has a currency: the client starts with none.
+	z.sendCurrenciesHeld(p)
 	// Saved statuses and timed bonuses come back, as chrif_load_scdata
 	// and the bonus_script load. A login fires status_start; a map change
 	// does not, since they never ended.
@@ -978,6 +1045,10 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 	if p.entity == nil || !z.entities.has(p.entity) {
 		return
 	}
+	if reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT && z.detachedLeave(p) {
+		// An autotrader's connection closed: it stays with its store.
+		return
+	}
 	if reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT {
 		// Handlers see the player before it goes. map_quit ends the
 		// statuses that rAthena does not save, and timed bonuses that end
@@ -992,7 +1063,17 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		z.socialOffline(p)
 	}
 	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
+	z.closeStores(p)
+	if p.autotrade {
+		p.autotrade = false
+		if t := z.Autotraders; t != nil {
+			t.remove(p.record.ID, p.sess)
+		}
+	}
 	z.storagesLeave(p, reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+	if reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT {
+		z.mailLeave(p)
+	}
 	z.castCancel(p.entity, false)
 	z.clearUnitGroups(p.entity)
 	z.removeMap(p.entity)
@@ -1093,6 +1174,18 @@ func (z *Zone) handle(c command) {
 	if c.shopSell != nil {
 		z.sell(p, c.shopSell.npc, c.shopSell.lines)
 	}
+	if c.mail != nil {
+		z.mailCommand(p, c.mail)
+	}
+	if c.vending != nil {
+		z.vendingCommand(p, c.vending)
+	}
+	if c.buying != nil {
+		z.buyingCommand(p, c.buying)
+	}
+	if c.search != nil {
+		z.searchCommand(p, c.search)
+	}
 	me := p.entity
 	if me.dead {
 		return
@@ -1115,6 +1208,11 @@ func (z *Zone) handle(c command) {
 			z.busy(p)
 		}
 		return
+	}
+	if c.walkTo != nil && p.hasStore() {
+		// A vendor or a buying store owner does not walk, as
+		// clif_parse_WalkToXY with state.vending or state.buyingstore.
+		c.walkTo = nil
 	}
 	if c.walkTo != nil && !me.cant().Move && (me.cast == nil || freeCast(me)) && z.now >= me.canMove {
 		// unit_walktoxy: statuses that stop moving refuse the walk, and
@@ -1277,6 +1375,7 @@ func (z *Zone) stepAt(now int64) {
 	// Changes that no script's call made, such as a timer's bonuses that
 	// end, are computed here.
 	z.flushStats()
+	z.mailNotices()
 	acted := time.Now()
 	z.Metrics.Phase(metrics.PhaseAct, acted.Sub(moved))
 	if len(z.players) > 0 {
@@ -1293,6 +1392,7 @@ func (z *Zone) stepAt(now int64) {
 		e.stopped = false
 		e.lookChanged = false
 		e.guildChanged = false
+		e.shopChanged = false
 		e.optionChanged = false
 		e.hpChanged = false
 		if e.item != nil {
@@ -1378,6 +1478,9 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 					if len(e.path) > 0 {
 						events = append(events, z.move(id, e))
 					}
+					if e.player != nil && e.player.hasStore() {
+						events = append(events, entityShop(id, e.player))
+					}
 				case e.walkChanged:
 					events = append(events, z.move(id, e))
 				case e.stopped:
@@ -1388,6 +1491,9 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				}
 				if known && e.guildChanged && e.player != nil {
 					events = append(events, entityGuild(id, e.player))
+				}
+				if known && e.shopChanged && e.player != nil {
+					events = append(events, entityShop(id, e.player))
 				}
 				if known && e.optionChanged && (e != me || !p.fresh) {
 					events = append(events, optionChange(id, e))

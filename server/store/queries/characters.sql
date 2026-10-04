@@ -47,6 +47,7 @@ UPDATE characters SET
     save_map = @save_map, save_x = @save_x, save_y = @save_y,
     job_change_level = @job_change_level, rebirth_job = @rebirth_job,
     options = @options, companion = @companion, mount = @mount,
+    mail_day = @mail_day, mail_sent = @mail_sent,
     save_version = save_version + 1, saved_at = now()
 WHERE id = @id AND save_version = @save_version;
 

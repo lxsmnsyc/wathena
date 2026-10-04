@@ -12,6 +12,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/status"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/server/variables"
@@ -271,7 +272,7 @@ func scriptStatusZone(t *testing.T, npc, hat string) (*Zone, *Player, *entity, *
 	logs := &syncBuffer{}
 	z.Mods.Log = slog.New(slog.NewTextHandler(logs, nil))
 	z.Mods.Server = variables.NewServer(nil, nil)
-	z.Mods.Shops = map[string]*Shop{}
+	z.Mods.Shops = shop.NewRegistry(nil)
 	z.Mods.Scripts[0].Files["scripts/test_npc.lua"] = npc
 	z.Mods.Scripts[0].Files["scripts/items/test_hat.lua"] = hat
 	z.SetNPCs([]NPC{{Name: "core:Guide", DisplayName: "Guide", X: 20, Y: 20, Sprite: 112, Script: "core:scripts/test_npc.lua"}})

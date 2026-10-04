@@ -40,6 +40,11 @@ type Character struct {
 	// world's social registry keeps and saves the list after login, so a
 	// save of the character does not write it.
 	Friends []Friend
+	// Currencies are the character's own currencies of
+	// data/currencies.yml, by ID (proposal 0002, review decision 30).
+	// One at 0 is not in the map. An account's currencies are with its
+	// storage (server/storage).
+	Currencies map[uint32]int64
 }
 
 // Friend is one name on a friend list. CharID is 0 for a character that
@@ -171,6 +176,10 @@ type Info struct {
 	// CreatedAt is when the character was made. Chat limits are lower in
 	// its first hour (strategy section 7.10).
 	CreatedAt time.Time
+	// MailDay and MailSent count the mails the character sent on one
+	// day, for mail_daily_count, as rAthena's SC_DAILYSENDMAILCNT:
+	// MailDay is the day as YYYYMMDD on the server's clock.
+	MailDay, MailSent int
 }
 
 // Item is one filled inventory slot.
@@ -203,13 +212,15 @@ func (c *Character) Equal(o *Character) bool {
 		maps.Equal(c.Variables, o.Variables) && slices.Equal(c.Statuses, o.Statuses) &&
 		slices.EqualFunc(c.TimedBonuses, o.TimedBonuses, func(a, b TimedBonus) bool { return a.Equal(&b) }) &&
 		maps.Equal(c.Skills, o.Skills) && slices.Equal(c.Blocks, o.Blocks) &&
-		slices.EqualFunc(c.Sanctions, o.Sanctions, func(a, b Sanction) bool { return a.Equal(&b) })
+		slices.EqualFunc(c.Sanctions, o.Sanctions, func(a, b Sanction) bool { return a.Equal(&b) }) &&
+		maps.Equal(c.Currencies, o.Currencies)
 }
 
 // Clone returns a copy of c that shares no slices or maps with it.
 func (c *Character) Clone() *Character {
 	out := &Character{Info: c.Info, Variables: maps.Clone(c.Variables), Statuses: slices.Clone(c.Statuses),
-		Skills: maps.Clone(c.Skills), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions), Friends: slices.Clone(c.Friends)}
+		Skills: maps.Clone(c.Skills), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions), Friends: slices.Clone(c.Friends),
+		Currencies: maps.Clone(c.Currencies)}
 	for _, it := range c.Items {
 		it.Cards = slices.Clone(it.Cards)
 		it.Extra = it.Clone()

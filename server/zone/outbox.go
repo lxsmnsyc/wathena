@@ -72,6 +72,10 @@ func (p *Player) deliver(m *wathenav1.ServerMessage) {
 // gone reports whether the player's messages are closed, by the zone or
 // because its connection fell behind. Only the zone goroutine calls it.
 func (p *Player) gone() bool {
+	if p.detached {
+		// An autotrader stays without its connection.
+		return false
+	}
 	if !p.dropped && p.outState().closed.Load() {
 		p.dropped = true
 	}
@@ -80,7 +84,7 @@ func (p *Player) gone() bool {
 
 // queue sends a message to a player's connection.
 func (z *Zone) queue(p *Player, m *wathenav1.ServerMessage) {
-	if p.gone() {
+	if p.detached || p.gone() {
 		return
 	}
 	if z.sends == nil {

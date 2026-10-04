@@ -13,6 +13,12 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
 - `Start` builds `waserver` and an asset build once per test run, then starts a server for the test and stops it when the test ends.
 - The world has two maps: `placeholder/map`, where players start, and `e2e_field`, a copy of it for warps.
 - The mod in [testdata/mods/fixture](testdata/mods/fixture) places Dummies, which stand still and always drop a Jellopy and a Test Charm with a roll, a shop, and NPCs that give and take items and zeny, change jobs, warp and mute. It adds the word "badword" to the chat filter. It uses only the 1.0 Lua API.
+- The fixture also has a currency, `e2e.fixture:tokens`, that each character owns, and the Exchange, a shop of the table form at 3,12 that does not buy from players:
+  - An Apple costs 10 zeny, 2 Jellopy and 1 token, with a stock of 3 that fills again an hour after the last fill.
+  - A Red Potion costs 5 tokens.
+  - A Jellopy costs 1 Jellopy, so the duplication tests buy with an item cost and keep the totals.
+- Chat commands of the fixture reach the market calls: `!currency <name> <n>` and `!pay <name> <n>` give and take a currency, `!mailbox` opens the mailbox, `!mail <to|self> <item> <amount> [<zeny>]` sends a mail from the "Postmaster", `!buyingstore <slots>` opens the buying store setup, `!search <uses> <show|open>` opens the store search, `!autotrade` puts the speaker on autotrade, and `!stock <item> <n>` sets a stock at the Exchange. The fixture's vend hook refuses Contraband, and its vend and buying_store_sale events tell both players what changed hands. The server's config approves `mail.send`, `currencies.modify` and `shops.modify` for the fixture.
+- [testdata/mods/marketrules](testdata/mods/marketrules) is a ruleset mod, `e2e.marketrules`: renewal without mail fees, for the mail duplication test.
 - A player who says `!guild level <n>` in local chat gets the fixture to give its guild the exp that takes it to level n, with `guild:give_exp`. The tests reach the guild skills this way, without thousands of kills. The server's config approves `guild.manage` for the fixture.
 - [testdata/mods/guildrules](testdata/mods/guildrules) is a ruleset mod, `e2e.guildrules`: renewal with `emergency_call: 15`, so Emergency Call works outside GvG maps. `Options.Ruleset` passes it as `--ruleset`. Other tests use the core renewal ruleset, and the server logs that the mod is installed but not used.
 - The lower chat limits of new characters are off, since every test character is new.
@@ -86,6 +92,19 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestTradeRefused` | The fixture's `trade` hook refuses a trade with Contraband, and both players get its message. A player who blocks the requester refuses at once and sees no request. A player 3 cells away is too far. |
 | `TestRestrictions` | Items with one restriction each show it in `InventoryAdd`. A `no_trade` item cannot be offered, a `no_storage` item cannot be stored by a player or a script, and a `no_drop` item cannot be dropped. An equipped item cannot be offered or stored. |
 | `TestBoundItems` | Bound Jellopy do not stack with the others. An account-bound copy goes into storage. A character-bound copy cannot be stored, offered or dropped. A party-bound copy goes away when its owner leaves the party. |
+| `TestShopCostsAndStock` | The Exchange shows its costs, stock and name. Purchases fail without the zeny, the tokens, the Jellopy or the stock. A purchase takes zeny, items and tokens together, with `INVENTORY_REMOVE_REASON_PAID`. The stock runs out, fills again after `AdvanceClock` passes an hour, and `shop:set_stock` sets it. |
+| `TestShopStockInTheDatabase` | With PostgreSQL, the Exchange's stock is saved with the purchase and comes back after `Restart`. |
+| `TestCurrencies` | A script gives tokens, which the character owns, and cash, which the account owns. `CurrencyUpdate` lists both with their display names, and comes again at the next login. |
+| `TestCurrenciesInTheDatabase` | The same with PostgreSQL: the currencies come back after `Restart`, with their rows and zeny log lines. |
+| `TestMail` | Alice mails Bob 3 Jellopy and 1,000 zeny and pays 2% of the zeny and 2,500 for the item. A mail within `mail_delay`, to a name nobody has, or with too little zeny is refused. Bob gets `MailNew`, reads the mail, cannot delete it while it holds items, takes it and deletes it. The audit counts the mail while it waits. `player:open_mail` opens the mailbox. |
+| `TestScriptMailToOfflineCharacter` | A script mails Apples and zeny to Bob while he is offline. He finds the mail at his next login and takes it. |
+| `TestMailInTheDatabase` | With PostgreSQL, a player's mail and a script's mail to an offline character are saved, and their recipients take them after `Restart`. |
+| `TestMailExpiry` | After `AdvanceClock` passes `mail_return_days`, the expiry, which runs once a minute, sends Bob's untaken mail back to Alice as "RE:Hello", and Alice takes back her items and zeny. |
+| `TestVending` | A Merchant learns Vending and opens a shop from her cart. Bob sees its title, browses it and buys. She sees `VendingSold`, and the zeny and items move. A purchase needs the zeny and the stock, the vend hook refuses Contraband, and a purchase of 100,000,000 zeny pays the 5% vending tax. |
+| `TestVendingAutotrade` | The vendor goes on autotrade and her connection closes with `DISCONNECT_REASON_AUTOTRADE`. Bob still buys, and once the shop sells out she leaves. Her next login has the zeny. |
+| `TestVendingAutotradeInTheDatabase` | With PostgreSQL, the autotrade shop is saved, opens again after `Restart`, and still sells. The vendor's next login ends the autotrade. |
+| `TestStoreSearch` | A store search on the start map finds a shop on the other map, with its map and cell, and a click shows the place. A search too soon, without uses, or of buying stores with none open is refused or finds nothing, and a click that opens stores cannot open one on another map. |
+| `TestBuyingStore` | A script opens the buying store setup, and Alice opens a store that buys Jellopy. Bob sees its title, browses it, finds it with a store search and sells to it. Alice sees `BuyingStoreBought`, and the zeny and items move. A sale of more than the store buys is refused, and the store closes once it bought everything. |
 | `TestDuplicationDropsAndPickUps` | The duplication test below, in memory. |
 | `TestDuplicationWithDatabase` | The same, with PostgreSQL, then the database checks. |
 | `TestDuplicationPartyPickUps` | The same, in memory, with the bots in parties of 4 with even item share and shared pick-up. |
@@ -95,6 +114,10 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestDuplicationStorageAndCartWithDatabase` | The same, with PostgreSQL, with the saved storages and carts. |
 | `TestDuplicationTrades` | 8 bots trade Jellopy and zeny, and use their storages and carts, with connections closed in the middle of trades. |
 | `TestDuplicationTradesWithDatabase` | The same, with PostgreSQL, then the saved inventories, storages, carts and zeny. |
+| `TestDuplicationMarket` | 8 Merchants open vending shops and buy from each other, buy at the Exchange, and mail each other Jellopy and zeny, with connections closed in the middle of sales, purchases, mails and takes. |
+| `TestDuplicationMarketWithDatabase` | The same, with PostgreSQL, then the saved inventories, carts, mails and zeny. |
+| `TestDuplicationBuyingStores` | 8 bots open buying stores and sell to each other's, with connections closed in the middle of sales and with stores open. |
+| `TestDuplicationBuyingStoresWithDatabase` | The same, with PostgreSQL, then the saved inventories and zeny. |
 
 ## Duplication tests
 
@@ -128,7 +151,14 @@ Personal storage, carts and trades are part of the test too (phase 5 step 6):
 - `PersonalStorageMove` opens the bot's account storage through the fixture's `!storage`, and moves parts of Jellopy stacks one to four times between the inventory, the storage and the cart. One time in 8 it closes its connection instead, with the storage open. `CartMove` moves Jellopy between the inventory and the cart. `CartSetup` gives each bot Pushcart and a cart.
 - `TradeMove` has the bots with odd numbers ask a bot with an even number to trade. Each side offers up to two parts of Jellopy stacks and sometimes zeny, locks and confirms. One time in 15 at each of three points, before the lock, after it and right after the confirm, a bot closes its connection instead and logs in again. The trade must happen whole or not at all.
 
-With a database, `CheckDatabase` stops the server and checks the saved inventories, guild storages, storages and carts against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial. Later steps add moves for mail and vending.
+Mail, vending, the Exchange and buying stores are part of the test too (phase 5 step 7):
+
+- The audit lists each mail in memory in the `guild_storage` entry, named `mail:<ID>`, with its items and zeny. It includes a zone's sent mails that wait for its next commit to reach their mailboxes. The test counts them in the totals.
+- `MarketSetup` gives each Merchant a cart, zeny, Pushcart 3 and Vending. `VendMove` opens a shop of Jellopy from the cart, and closes it, or closes the connection with it open. `VendBuyMove` buys from a shop in view. `ExchangeMove` buys Jellopy that cost Jellopy. `MailMove` mails Jellopy and zeny to another bot, and `MailTakeMove` takes a mail. `BuyingStoreMove` opens a store that buys Jellopy, and `SellToStoreMove` sells to one. Each sends its sale, purchase, mail or take and closes the connection at once one time in 10.
+- The mail test runs `e2e.marketrules`, which has no mail fees, so the zeny total holds.
+- Items that a sale, a purchase or a take moved into an inventory are not pick-ups, so the counts of items that came in leave them out: the changes just before `VendingSold`, `VendingResult` BOUGHT, `BuyingStoreBought`, `ShopResult` BOUGHT and `MailResult` TAKEN.
+
+With a database, `CheckDatabase` stops the server and checks the saved inventories, guild storages, storages, carts and mails, and the zeny of characters and mails, against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial.
 
 A failure that shows a total below the start with a closed connection means a character left the world while the test still counted on it. See decision 0017, "A missing total in the duplication test". `botclient` writes with its own timeout for this reason: the WebSocket library closes the connection when a write's context ends during the write.
 

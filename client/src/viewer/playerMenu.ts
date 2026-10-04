@@ -1,6 +1,7 @@
 // The menu a right click on another player opens: whisper, trade, invite
-// to the party or the guild, and report the player's guild name or emblem. User
-// text is only ever set with textContent.
+// to the party or the guild, browse the player's vending shop or buying
+// store, and report the player's guild name or emblem. User text is only
+// ever set with textContent.
 
 import { reportButton } from './chat';
 import { badgeLine } from './guild';
@@ -25,6 +26,8 @@ export interface PlayerMenuInfo {
   guildInvite: boolean;
   /** The guild of the player who opens the menu, or 0n. */
   ownGuild: bigint;
+  /** The player's open shop: a vending shop, a buying store, or none. */
+  shop?: 'vending' | 'buying' | undefined;
 }
 
 export type PlayerMenuItem =
@@ -32,16 +35,24 @@ export type PlayerMenuItem =
   | 'trade'
   | 'partyInvite'
   | 'guildInvite'
+  | 'browseShop'
+  | 'browseStore'
   | 'reportGuildName'
   | 'reportEmblem';
 
 /**
  * The menu's items: whisper and trade always, the party invite for a party leader,
  * the guild invite for a player who may invite someone without a guild,
- * and reports for another guild's name and its emblem.
+ * Browse shop or Browse store for a player with an open shop, and reports
+ * for another guild's name and its emblem.
  */
 export function playerMenuItems(info: PlayerMenuInfo): PlayerMenuItem[] {
   const out: PlayerMenuItem[] = ['whisper', 'trade'];
+  if (info.shop === 'vending') {
+    out.push('browseShop');
+  } else if (info.shop === 'buying') {
+    out.push('browseStore');
+  }
   if (info.partyInvite) {
     out.push('partyInvite');
   }
@@ -65,6 +76,10 @@ export interface PlayerMenuActions {
   guildInvite: (name: string) => void;
   /** Reports a guild's name, or its emblem when emblem is set. */
   reportGuild: (guildId: bigint, emblem: boolean) => void;
+  /** Asks for the vending shop of the player with an entity ID. */
+  browseShop: (id: number) => void;
+  /** Asks for the buying store of the player with an entity ID. */
+  browseStore: (id: number) => void;
 }
 
 const LABELS: Record<PlayerMenuItem, string> = {
@@ -72,6 +87,8 @@ const LABELS: Record<PlayerMenuItem, string> = {
   trade: 'Trade',
   partyInvite: 'Invite to party',
   guildInvite: 'Invite to guild',
+  browseShop: 'Browse shop',
+  browseStore: 'Browse store',
   reportGuildName: 'Report guild name',
   reportEmblem: 'Report emblem',
 };
@@ -158,6 +175,10 @@ export class PlayerMenu {
         this.actions.whisper(info.name);
       } else if (item === 'trade') {
         this.actions.trade(info.id);
+      } else if (item === 'browseShop') {
+        this.actions.browseShop(info.id);
+      } else if (item === 'browseStore') {
+        this.actions.browseStore(info.id);
       } else if (item === 'partyInvite') {
         this.actions.partyInvite(info.name);
       } else {

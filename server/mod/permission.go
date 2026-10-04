@@ -43,6 +43,11 @@ var Permissions = []Permission{
 	{Name: "party.manage", Approval: true, Allows: "make parties and change their members, leader and options"},
 	// guild.manage is review decision 28's: wa.guilds' changes.
 	{Name: "guild.manage", Approval: true, Allows: "make guilds and change their members, master, notice, exp, and break them up"},
+	// mail.send, currencies.modify and shops.modify are review decision
+	// 30's.
+	{Name: "mail.send", Approval: true, Allows: "send mail with items and zeny to any character, online or not"},
+	{Name: "currencies.modify", Approval: true, Allows: "change other mods' currencies of players, such as cash points"},
+	{Name: "shops.modify", Approval: true, Allows: "change what shops sell, their costs and their stock"},
 }
 
 // LookupPermission returns a permission by name.

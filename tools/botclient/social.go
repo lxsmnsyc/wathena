@@ -18,6 +18,9 @@ type WorldLimits struct {
 	// InventorySlots, StorageSlots and CartSlots are the slots of a new
 	// character's inventory, an account's storage and a cart.
 	InventorySlots, StorageSlots, CartSlots int
+	// MailItems is the most items one mail holds, and Mailbox the most
+	// mails a mailbox holds.
+	MailItems, Mailbox int
 	// Ranges are every limit's base and max, by name.
 	Ranges map[string]LimitRange
 }
@@ -31,7 +34,7 @@ type LimitRange struct {
 func limitsOf(l *wathenav1.Limits) WorldLimits {
 	w := WorldLimits{PartyMembers: int(l.GetPartyMembers()), Friends: int(l.GetFriends()), BlockList: int(l.GetBlockList()),
 		InventorySlots: int(l.GetInventorySlots()), StorageSlots: int(l.GetStorageSlots()), CartSlots: int(l.GetCartSlots()),
-		Ranges: map[string]LimitRange{}}
+		MailItems: int(l.GetMailItems()), Mailbox: int(l.GetMailbox()), Ranges: map[string]LimitRange{}}
 	for _, r := range l.GetRanges() {
 		w.Ranges[r.GetName()] = LimitRange{Base: int(r.GetBase()), Max: int(r.GetMax())}
 	}

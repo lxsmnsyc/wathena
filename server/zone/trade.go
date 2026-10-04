@@ -447,3 +447,23 @@ func (z *Zone) runTradeHook(p, t *Player) (bool, string) {
 	return r.RunTrade(modscript.TradeEvent{Players: [2]int64{int64(p.charID), int64(t.charID)}, Items: items,
 		Zeny: [2]int64{p.trade.zeny, t.trade.zeny}})
 }
+
+// Mail runs a mail command (mail.go).
+func (s *Session) Mail(seq uint32, c *wathenav1.MailCommand) bool {
+	return s.send(command{seq: seq, mail: c})
+}
+
+// Vending runs a vending command (vending.go).
+func (s *Session) Vending(seq uint32, c *wathenav1.VendingCommand) bool {
+	return s.send(command{seq: seq, vending: c})
+}
+
+// BuyingStore runs a buying store command (vending.go).
+func (s *Session) BuyingStore(seq uint32, c *wathenav1.BuyingStoreCommand) bool {
+	return s.send(command{seq: seq, buying: c})
+}
+
+// StoreSearch runs a store search command (vending.go).
+func (s *Session) StoreSearch(seq uint32, c *wathenav1.StoreSearchCommand) bool {
+	return s.send(command{seq: seq, search: c})
+}

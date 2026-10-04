@@ -1,0 +1,22 @@
+# The arena master stands near the fountain in Prontera.
+- name: Arena Master#prontera
+  map: prontera
+  x: 152
+  y: 190
+  direction: south
+  sprite: 4_M_KNIGHT_BLACK
+  script: scripts/npc/arena_master.lua
+# The prize desk is a shop that only scripts open. Its costs mix zeny,
+# items and the mod's tokens. Fly Wings have a stock that every player
+# shares, which fills again each day.
+- name: Prize Desk
+  shop:
+    buys_from_players: false
+    discount: false
+    items:
+      - item: Red_Potion
+        cost: {zeny: 20, currency: {tokens: 2}}
+      - item: Wing_Of_Fly
+        cost: {items: [{item: Jellopy, amount: 5}], currency: {tokens: 1}}
+        stock: 3
+        restock: daily

@@ -37,6 +37,11 @@ local events = {}
 ---@overload fun(name: "guild_leave", handler: fun(leave: wa.GuildMembership)): wa.EventHandle
 ---@overload fun(name: "guild_change", handler: fun(change: wa.GuildChange)): wa.EventHandle
 ---@overload fun(name: "trade", handler: fun(trade: wa.Trade)): wa.EventHandle
+---@overload fun(name: "shop_buy", handler: fun(sale: wa.ShopSale)): wa.EventHandle
+---@overload fun(name: "shop_sell", handler: fun(sale: wa.ShopSale)): wa.EventHandle
+---@overload fun(name: "vend", handler: fun(sale: wa.StoreSale)): wa.EventHandle
+---@overload fun(name: "buying_store_sale", handler: fun(sale: wa.StoreSale)): wa.EventHandle
+---@overload fun(name: "mail", handler: fun(mail: wa.Mail)): wa.EventHandle
 function events.on(name, handler, options) end
 
 return events

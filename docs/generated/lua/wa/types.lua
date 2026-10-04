@@ -37,6 +37,11 @@
 ---| "guild_leave"
 ---| "guild_change"
 ---| "trade"
+---| "shop_buy"
+---| "shop_sell"
+---| "vend"
+---| "buying_store_sale"
+---| "mail"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -207,6 +212,9 @@
 ---| "item_roll"
 ---| "chat"
 ---| "trade"
+---| "vend"
+---| "buying_store_sale"
+---| "mail"
 
 ---Who a bound copy is bound to.
 ---@alias wa.Bound
@@ -316,6 +324,48 @@ function wa_Player:open_storage(name) end
 ---Opens the guild storage, as guildopenstorage. Returns true, or false and why: "no_guild", "no_storage", "no_permission", "in_use" or "already_open".
 ---@return boolean, string?
 function wa_Player:open_guild_storage() end
+
+---How much of a currency of data/currencies.yml the player has, such as cash for rAthena's #CASHPOINTS. An account's currency is its account's.
+---
+---Needs the permission `game.read`.
+---@param currency string A currency of data/currencies.yml: a full name, such as example.arena:tokens, or a plain name, which is the calling mod's record, then core's, such as cash or kafra.
+---@return integer
+function wa_Player:get_currency(currency) end
+
+---Gives a currency. An amount over the currency's max is lost, as pc_getcash. A mod changes its own currencies freely. Another mod's, and core's cash and kafra, need currencies.modify.
+---@param currency string A currency of data/currencies.yml: a full name, such as example.arena:tokens, or a plain name, which is the calling mod's record, then core's, such as cash or kafra.
+---@param amount integer 1 to 2147483647.
+function wa_Player:give_currency(currency, amount) end
+
+---Takes a currency, as pc_paycash. Returns false, and takes nothing, when the player has too little. A mod changes its own currencies freely. Another mod's, and core's, need currencies.modify.
+---@param currency string A currency of data/currencies.yml: a full name, such as example.arena:tokens, or a plain name, which is the calling mod's record, then core's, such as cash or kafra.
+---@param amount integer 1 to 2147483647.
+---@return boolean
+function wa_Player:take_currency(currency, amount) end
+
+---Sends a mail to a character, online or not, as rAthena's mail command. The items are made for the mail, and the zeny comes from nowhere: the player pays nothing. A mail to a character who is not online arrives after the call returns. Script mail is not returned to its sender when it expires; it is deleted after mail_delete_days, as int_mail.cpp does with mail of send_id 0.
+---
+---Needs the permission `mail.send`.
+---@param mail wa.MailSpec
+function wa_Player:send_mail(mail) end
+
+---Opens the player's mailbox window, as openmail. Returns false when the player is trading, vending, running a buying store or has a storage open, as mail_openmail.
+---@return boolean
+function wa_Player:open_mail() end
+
+---Closes the player's connection and keeps its vending shop or buying store open, as @autotrade. The store opens again after a restart, as autotrade_restore. The player leaves when its store closes or sells out, or when it logs in again. Returns false when the player has no store open.
+---@return boolean
+function wa_Player:autotrade() end
+
+---Opens the store search window, as searchstores, over the vending shops and buying stores of every map. Results can filter by price, cards and the ranges of rolls and random options. Returns false when the window is open already.
+---@param search wa.StoreSearchSpec
+---@return boolean
+function wa_Player:search_stores(search) end
+
+---Opens the buying store setup window, as buyingstore. The player then picks what to buy. Returns false when the player is vending, has a buying store open, or is trading, as buyingstore_setup.
+---@param store wa.BuyingStoreSpec
+---@return boolean
+function wa_Player:open_buying_store(store) end
 
 ---Whether the items fit, by weight and slots, as checkweight.
 ---
@@ -808,6 +858,33 @@ function wa_Conversation:hide_image() end
 ---@param seconds integer Up to 600.
 function wa_Conversation:show_progress(seconds) end
 
+---A shop of data/npcs.yml, from world.get_shop (review decision 30). Its changes hold for the whole world until the server stops: the shop's file sets it again at start. A stock the methods set is saved.
+---@class wa.Shop
+local wa_Shop = {}
+
+---Adds an item, or replaces the item of that ID, as npcshopadditem. Without a cost the price is the item's buy price. Returns false when a cost names an item or a currency that does not exist.
+---
+---Needs the permission `shops.modify`.
+---@param item integer An item from items.id.
+---@param options? wa.ShopItemOptions
+---@return boolean
+function wa_Shop:add_item(item, options) end
+
+---Takes an item out of the shop, as npcshopdelitem. Returns false when the shop does not sell it.
+---
+---Needs the permission `shops.modify`.
+---@param item integer An item from items.id.
+---@return boolean
+function wa_Shop:remove_item(item) end
+
+---Sets an item's stock, which every player shares, and the amount a restock fills it to, as npcshopupdate for a marketshop. Returns false when the shop does not sell the item.
+---
+---Needs the permission `shops.modify`.
+---@param item integer An item from items.id.
+---@param stock integer 0 to 2147483647, or -1 for no limit.
+---@return boolean
+function wa_Shop:set_stock(item, stock) end
+
 ---A chat channel, from channels.create or channels.get.
 ---@class wa.Channel
 local wa_Channel = {}
@@ -1048,6 +1125,8 @@ local wa_GuildChange = {}
 ---@field inventory_slots integer The inventory slots of a new character, as INVENTORY_BASE_SIZE. 100 by default, with the max 200, MAX_INVENTORY. Ceiling 1,000.
 ---@field storage_slots integer The slots of an account's storage, as MAX_STORAGE. 600 by default, ceiling 10,000.
 ---@field cart_slots integer The slots of a cart, as MAX_CART. 100 by default, ceiling 1,000.
+---@field mail_items integer The most item stacks one mail holds, as MAIL_MAX_ITEM. 5 by default, ceiling 20.
+---@field mailbox integer The most mails a mailbox holds. 100 by default, ceiling 1,000.
 local wa_Limits = {}
 
 ---The share of the experience hook's object.
@@ -1224,6 +1303,31 @@ function wa_TestWorld:trade(a, b, offer_a, offer_b) end
 ---Provisional: not reviewed in proposal 0002 yet.
 ---@param player wa.Player A player handle.
 function wa_TestWorld:close_storage(player) end
+
+---Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as "out_of_stock", "not_enough_items" or "not_enough_currency".
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param player wa.Player A player handle.
+---@param shop string A shop's full record name of data/npcs.yml, such as example.arena:Prize Desk.
+---@param items table<integer, integer> Item IDs and the amount of each to buy.
+---@return boolean, string?
+function wa_TestWorld:buy(player, shop, items) end
+
+---The player's mails, oldest first, after the mail sent so far arrived.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param player wa.Player A player handle.
+---@return wa.TestMail[]
+function wa_TestWorld:get_mails(player) end
+
+---Runs a whole vending sale, as two clients would: the seller puts each line's items in its cart and opens a shop, and the buyer buys. The shop closes after it. Returns true when the sale went through, or false and why: the vend hook's message, or an outcome such as "not_enough_zeny".
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param seller wa.Player Gets a cart and the Vending skill when it lacks them.
+---@param buyer wa.Player Steps next to the seller.
+---@param lines wa.TestVendLine[]
+---@return boolean, string?
+function wa_TestWorld:vend(seller, buyer, lines) end
 
 ---A check on a value, from testing.expect. Its functions are called with a dot: testing.expect(n).to_be(3).
 ---
@@ -1507,6 +1611,32 @@ local wa_HealSpec = {}
 ---@field bound wa.Bound? Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares.
 local wa_GiveItemOptions = {}
 
+---A mail as world:get_mails shows it.
+---
+---It exists only in tests that wactl mod test runs.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@class wa.TestMail
+---@field from string
+---@field title string
+---@field zeny integer
+---@field items table<integer, integer> Item IDs and amounts.
+---@field read boolean
+---@field returned boolean Set for a mail that came back to its sender.
+local wa_TestMail = {}
+
+---One line of world:vend.
+---
+---It exists only in tests that wactl mod test runs.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@class wa.TestVendLine
+---@field item integer An item the seller holds.
+---@field amount integer How many go on sale.
+---@field price integer The price of one.
+---@field buy integer? How many the buyer buys. None by default.
+local wa_TestVendLine = {}
+
 ---One side of world:trade.
 ---@class wa.TradeOffer
 ---@field items table<integer, integer>? Item IDs and the amount of each to offer.
@@ -1524,6 +1654,86 @@ local wa_FromOptions = {}
 ---@field items wa.TradedItem[] Each offered item.
 ---@field zeny integer[] The zeny each player gave, in the order of players.
 local wa_Trade = {}
+
+---A mail of player:send_mail (review decision 30).
+---@class wa.MailSpec
+---@field to string|integer|wa.Player|nil The recipient: a character's name, a character ID, or a player handle. The player itself by default.
+---@field sender string? The name shown as the sender, at most 23 characters. By default the NPC's name in an NPC context, else the mod's name.
+---@field title string 1 to 39 bytes.
+---@field body string? At most 499 bytes.
+---@field zeny integer? 0 to 2147483647.
+---@field items wa.MailItem[]? At most mail_items attachments. The items are made for the mail.
+local wa_MailSpec = {}
+
+---One attachment of player:send_mail.
+---@class wa.MailItem
+---@field item integer An item from items.id.
+---@field amount integer? 1 to 30000. 1 by default.
+---@field roll "random"|"default"|table<string, integer>|nil As give_item's roll. A table needs items.modify_rolls, except in a test case's own code.
+---@field bound wa.Bound? Binds the copies, as give_item's bound.
+local wa_MailItem = {}
+
+---The store search of player:search_stores.
+---@class wa.StoreSearchSpec
+---@field uses integer How many searches the window allows, 1 to 1000.
+---@field effect "show"|"open"|nil What a click on a result does: "show" (the default) shows the store's place, as SEARCHSTORE_EFFECT_NORMAL; "open" opens the store, as SEARCHSTORE_EFFECT_REMOTE, when it is on the player's map.
+local wa_StoreSearchSpec = {}
+
+---The buying store of player:open_buying_store.
+---@class wa.BuyingStoreSpec
+---@field slots integer How many items the store may buy, 1 to 5, as MAX_BUYINGSTORE_SLOTS.
+local wa_BuyingStoreSpec = {}
+
+---Options of shop:add_item.
+---@class wa.ShopItemOptions
+---@field cost wa.ShopCost? The cost of one. Without it, the item's buy price in zeny.
+---@field stock integer? How many the shop has for every player, 1 to 2147483647. No limit by default.
+---@field restock string? When the stock fills again: "daily", "weekly", or a time such as "6h", "30m" or "2d". It needs a stock.
+local wa_ShopItemOptions = {}
+
+---A cost: zeny, items and currencies, each optional, at most 5 items and currencies together.
+---@class wa.ShopCost
+---@field zeny integer? 0 to 2147483647. Discount lowers it when the shop allows it.
+---@field items wa.ShopCostItem[]? Items the purchase takes, for one bought.
+---@field currency table<string, integer>? Currencies of data/currencies.yml and the amount of each, for one bought, such as { cash = 100 }.
+local wa_ShopCost = {}
+
+---An item a cost takes.
+---@class wa.ShopCostItem
+---@field item integer An item from items.id.
+---@field amount integer? 1 to 30000. 1 by default.
+local wa_ShopCostItem = {}
+
+---The object of the shop_buy and shop_sell events: a purchase from a shop, or a sale to it.
+---@class wa.ShopSale
+---@field player wa.Player
+---@field shop string The shop's full record name.
+---@field items wa.SoldItem[] Each line.
+---@field zeny integer The zeny the player paid, or got for a sale.
+local wa_ShopSale = {}
+
+---The object of the vend and buying_store_sale events and hooks. The hook runs before the sale, and the event after.
+---@class wa.StoreSale
+---@field seller wa.Player The player who gives the items: the vendor, or the player who sells to a buying store.
+---@field buyer wa.Player The player who pays: the vendor's customer, or the buying store's owner.
+---@field items wa.SoldItem[] Each line, with its price.
+---@field zeny integer The zeny the buyer pays, before the vending tax.
+local wa_StoreSale = {}
+
+---The object of the mail event and hook. The hook runs before a player's mail goes out, and the event after any mail, a script's too.
+---@class wa.Mail
+---@field from string The sender's name.
+---@field to string The recipient's name.
+---@field items wa.SoldItem[] The attachments.
+---@field zeny integer The attached zeny.
+local wa_Mail = {}
+
+---One line of a sale or a mail.
+---@class wa.SoldItem
+---@field item integer The item's ID.
+---@field amount integer
+---@field price integer? The price of one, for vend and buying_store_sale.
+local wa_SoldItem = {}
 
 ---One item of a trade.
 ---@class wa.TradedItem

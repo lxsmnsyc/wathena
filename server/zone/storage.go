@@ -527,8 +527,13 @@ func (z *Zone) personalCommits() []StorageCommit {
 	for _, st := range z.txPersonal {
 		st.Lock()
 		base, cur := st.Commit()
+		c := StorageCommit{Key: st.Key(), Base: base, Cur: cur}
+		if st.Key().HoldsCurrencies() {
+			c.CurrencyBase, c.Currencies = st.CommitCurrencies()
+			c.HasCurrencies = true
+		}
 		st.Unlock()
-		out = append(out, StorageCommit{Key: st.Key(), Base: base, Cur: cur})
+		out = append(out, c)
 	}
 	z.txPersonal = nil
 	return out

@@ -44,6 +44,10 @@ type Entity struct {
 	Amount int
 	// Guild is a player's guild badge, or nil.
 	Guild *wathenav1.GuildBadge
+	// ShopTitle is the title of a player's vending shop or buying store,
+	// empty without one. ShopBuying is set for a buying store.
+	ShopTitle  string
+	ShopBuying bool
 }
 
 // Warp reports whether the entity is a warp portal.
@@ -102,6 +106,7 @@ type Bot struct {
 	guildSt   guildState
 	storageSt storageState
 	tradeSt   tradeState
+	marketSt  marketState
 	record    bool
 	events    []*wathenav1.Event
 	changed   chan struct{}
@@ -457,6 +462,7 @@ func (b *Bot) apply(m *wathenav1.ServerMessage) {
 		b.guildSt.apply(e)
 		b.storageSt.apply(e)
 		b.tradeSt.apply(e)
+		b.marketSt.apply(e)
 	}
 	if b.record {
 		b.events = append(b.events, f.GetEvents()...)
@@ -513,6 +519,14 @@ func (b *Bot) event(e *wathenav1.Event, now time.Time) {
 		g := e.GetEntityGuild()
 		if en := b.seen[g.GetId()]; en != nil {
 			en.Guild = g.GetGuild()
+		}
+	case e.HasEntityShop():
+		sh := e.GetEntityShop()
+		if en := b.seen[sh.GetId()]; en != nil {
+			en.ShopTitle, en.ShopBuying = sh.GetTitle(), sh.GetBuying()
+			if sh.GetRemove() {
+				en.ShopTitle, en.ShopBuying = "", false
+			}
 		}
 	case e.HasVanish():
 		v := e.GetVanish()

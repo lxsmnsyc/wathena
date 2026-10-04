@@ -89,6 +89,25 @@ message Event {
     TradeLock trade_lock = 77;
     TradeClose trade_close = 78;
     TradeResult trade_result = 79;
+    CurrencyUpdate currencies = 80;
+    MailBox mail_box = 81;
+    MailRead mail_read = 82;
+    MailNew mail_new = 83;
+    MailResult mail_result = 84;
+    VendingSetup vending_setup = 85;
+    VendingOpened vending_opened = 86;
+    VendingList vending_list = 87;
+    VendingSold vending_sold = 88;
+    VendingResult vending_result = 89;
+    EntityShop entity_shop = 90;
+    BuyingStoreSetup buying_store_setup = 91;
+    BuyingStoreOpened buying_store_opened = 92;
+    BuyingStoreList buying_store_list = 93;
+    BuyingStoreBought buying_store_bought = 94;
+    BuyingStoreResult buying_store_result = 95;
+    StoreSearchOpen store_search_open = 96;
+    StoreSearchResults store_search_results = 97;
+    StoreSearchResult store_search_result = 98;
   }
 }
 
@@ -739,11 +758,18 @@ message MinimapMark {
 
 // ShopOpen opens a shop window: what the NPC sells, with the prices
 // for this player after Discount, and the inventory slots the player
-// may sell, with the prices after Overcharge.
+// may sell, with the prices after Overcharge. A shop of data/npcs.yml
+// may cost items and currencies beside zeny, and may limit its stock
+// (proposal 0002, review decision 30).
 message ShopOpen {
   uint32 npc = 1;
   repeated ShopItem items = 2;
+  // sellable is empty for a shop that does not buy from players.
   repeated ShopSellable sellable = 3;
+  // name is the shop's display name.
+  string name = 4;
+  // buys_from_players is set for a shop with a sell tab.
+  bool buys_from_players = 5;
 }
 
 message ShopItem {
@@ -753,6 +779,27 @@ message ShopItem {
   // weight is the weight of one, in tenths, for the window's weight
   // check.
   uint32 weight = 3;
+  // cost_items and cost_currencies are the rest of the cost of one.
+  repeated ShopCostItem cost_items = 4;
+  repeated ShopCostCurrency cost_currencies = 5;
+  // stock is how many are left for every player, when the shop limits
+  // the item.
+  optional uint32 stock = 6;
+}
+
+// ShopCostItem is an item a purchase takes, for one bought.
+message ShopCostItem {
+  uint32 item_id = 1;
+  uint32 amount = 2;
+}
+
+// ShopCostCurrency is a currency a purchase takes, for one bought.
+message ShopCostCurrency {
+  // currency is the record's full name, such as cash or
+  // example.arena:tokens.
+  string currency = 1;
+  string display_name = 2;
+  uint32 amount = 3;
 }
 
 message ShopSellable {
@@ -764,6 +811,9 @@ message ShopSellable {
 // closes after it. Inventory and zeny changes come as their own events.
 message ShopResult {
   ShopOutcome outcome = 1;
+  // item_id is the item an outcome is about, such as the one out of
+  // stock.
+  uint32 item_id = 2;
 }
 
 enum ShopOutcome {
@@ -778,6 +828,14 @@ enum ShopOutcome {
   // The inventory has too few free slots, or the list was not valid.
   SHOP_OUTCOME_FAILED = 5;
   SHOP_OUTCOME_CLOSED = 6;
+  // NOT_ENOUGH_ITEMS: the player lacks the items the cost takes
+  // (PURCHASE_FAIL_GOODS).
+  SHOP_OUTCOME_NOT_ENOUGH_ITEMS = 7;
+  // NOT_ENOUGH_CURRENCY: the player lacks a currency the cost takes.
+  SHOP_OUTCOME_NOT_ENOUGH_CURRENCY = 8;
+  // OUT_OF_STOCK: the shop has fewer left than the purchase asks
+  // (PURCHASE_FAIL_STOCK_EMPTY).
+  SHOP_OUTCOME_OUT_OF_STOCK = 9;
 }
 
 message EffectPlay {
@@ -963,6 +1021,12 @@ enum InventoryRemoveReason {
   // A bound item went away with its bond, such as a party-bound item of
   // a player who left the party.
   INVENTORY_REMOVE_REASON_BOUND = 9;
+  // The item went into a mail.
+  INVENTORY_REMOVE_REASON_MAILED = 10;
+  // The item went to a buying store.
+  INVENTORY_REMOVE_REASON_SOLD_TO_STORE = 11;
+  // A shop took the item as part of a purchase's cost.
+  INVENTORY_REMOVE_REASON_PAID = 12;
 }
 
 // ItemUsed shows an entity using an item, as rAthena's clif_useitemack
@@ -1764,4 +1828,338 @@ enum TradeOutcome {
   TRADE_OUTCOME_EQUIPPED = 16;
   // REQUEST_SENT: the request reached the other player.
   TRADE_OUTCOME_REQUEST_SENT = 17;
+}
+
+// CurrencyUpdate lists the player's currencies of data/currencies.yml
+// that are above 0, with their amounts. It comes at login and after each
+// change, and replaces the list the client had.
+message CurrencyUpdate {
+  repeated CurrencyAmount currencies = 1;
+}
+
+message CurrencyAmount {
+  // name is the record's full name, such as cash or example.arena:tokens.
+  string name = 1;
+  string display_name = 2;
+  uint64 amount = 3;
+}
+
+// MailBox lists the player's mails, newest first, as
+// clif_Mail_refreshinbox. It opens the mailbox window, and comes again
+// after each change while the window is open.
+message MailBox {
+  repeated MailSummary mails = 1;
+  // size is the mailbox limit.
+  uint32 size = 2;
+  // sent_today is how many mails the player sent today, and daily the
+  // most per day, or 0 for no limit, as mail_daily_count.
+  uint32 sent_today = 3;
+  uint32 daily = 4;
+}
+
+message MailSummary {
+  uint64 id = 1;
+  // from is the sender's name: a character, or the name a script gave.
+  string from = 2;
+  string title = 3;
+  int64 sent_ms = 4;
+  bool read = 5;
+  uint32 zeny = 6;
+  // items is how many attachments the mail holds.
+  uint32 items = 7;
+  // returned is set for a mail that came back to its sender after it
+  // expired, as MAIL_INBOX_RETURNED.
+  bool returned = 8;
+  // expires_ms is when the mail goes back to its sender, or is
+  // deleted, as scheduled_deletion. It is 0 when it never expires.
+  int64 expires_ms = 9;
+}
+
+// MailRead shows one mail, as clif_Mail_read.
+message MailRead {
+  MailSummary mail = 1;
+  string body = 2;
+  // items are the attachments. Each slot is the attachment's index.
+  repeated InventoryItem items = 3;
+}
+
+// MailNew tells the player a mail arrived, as clif_Mail_new.
+message MailNew {
+  uint64 id = 1;
+  string from = 2;
+  string title = 3;
+  // unread is how many mails the player has not read.
+  uint32 unread = 4;
+}
+
+// MailResult tells how a mail action went.
+message MailResult {
+  MailOutcome outcome = 1;
+  uint64 mail = 2;
+  // message is a mod's reason from the mail hook.
+  string message = 3;
+}
+
+enum MailOutcome {
+  MAIL_OUTCOME_UNSPECIFIED = 0;
+  // SENT: the mail went out (WRITE_MAIL_SUCCESS).
+  MAIL_OUTCOME_SENT = 1;
+  // FAILED: the mail could not be sent, such as a title missing or the
+  // attachments changed (WRITE_MAIL_FAILED).
+  MAIL_OUTCOME_FAILED = 2;
+  // DAILY_LIMIT: the player sent mail_daily_count mails today
+  // (WRITE_MAIL_FAILED_CNT).
+  MAIL_OUTCOME_DAILY_LIMIT = 3;
+  // NO_RECIPIENT: no character has that name.
+  MAIL_OUTCOME_NO_RECIPIENT = 4;
+  // MAILBOX_FULL: the recipient's mailbox holds its limit.
+  MAIL_OUTCOME_MAILBOX_FULL = 5;
+  // TOO_FAST: mail_delay has not passed since the last mail (msg 675).
+  MAIL_OUTCOME_TOO_FAST = 6;
+  // ZENY: too little zeny for the zeny, the fee and the attachment price.
+  MAIL_OUTCOME_ZENY = 7;
+  // RESTRICTED: an item cannot be mailed: no_mail, equipped or bound
+  // (MAIL_ATTACH_UNTRADEABLE).
+  MAIL_OUTCOME_RESTRICTED = 8;
+  // TOO_MANY: more items than mail_items (MAIL_ATTACH_SPACE).
+  MAIL_OUTCOME_TOO_MANY = 9;
+  // TOO_HEAVY: the items pass mail_attachment_weight (MAIL_ATTACH_WEIGHT).
+  MAIL_OUTCOME_TOO_HEAVY = 10;
+  // HOOK: a mod's mail hook refused the mail; message says why.
+  MAIL_OUTCOME_HOOK = 11;
+  // TAKEN: the attachments moved into the inventory.
+  MAIL_OUTCOME_TAKEN = 12;
+  // CANNOT_CARRY: the inventory cannot take the items, or the zeny
+  // would pass the cap (clif_mail_getattachment's 1 and 2).
+  MAIL_OUTCOME_CANNOT_CARRY = 13;
+  // DELETED: the mail was deleted.
+  MAIL_OUTCOME_DELETED = 14;
+  // NOT_EMPTY: a mail with attachments cannot be deleted.
+  MAIL_OUTCOME_NOT_EMPTY = 15;
+  // BUSY: the player is trading, vending, running a buying store or
+  // has a storage open.
+  MAIL_OUTCOME_BUSY = 16;
+  // NOT_FOUND: the mail is gone, such as one that expired.
+  MAIL_OUTCOME_NOT_FOUND = 17;
+}
+
+// VendingSetup opens the vending setup window after the Vending skill,
+// as clif_openvendingreq.
+message VendingSetup {
+  // max_items is 2 + the skill's level, as vending_openvending allows.
+  uint32 max_items = 1;
+}
+
+// VendingOpened shows the player its own open shop, as clif_openvending.
+message VendingOpened {
+  string title = 1;
+  repeated VendingListItem items = 2;
+}
+
+// VendingList shows another player's shop, as clif_vendinglist.
+message VendingList {
+  // vendor is the seller's entity ID, or 0 for a shop a store search
+  // opened on another part of the map.
+  uint32 vendor = 1;
+  // shop is the shop's ID, which VendingBuy repeats.
+  uint32 shop = 2;
+  string title = 3;
+  string seller = 4;
+  repeated VendingListItem items = 5;
+}
+
+message VendingListItem {
+  // index is the line's index, which VendingBuy names.
+  uint32 index = 1;
+  // item is the copy, with its amount for sale and its cart slot as
+  // slot.
+  InventoryItem item = 2;
+  uint32 price = 3;
+}
+
+// VendingSold tells the seller a line sold, as clif_vendingreport.
+message VendingSold {
+  uint32 index = 1;
+  uint32 amount = 2;
+  string buyer = 3;
+  // zeny is what the seller got, after the tax.
+  uint32 zeny = 4;
+}
+
+// VendingResult tells how a vending step went.
+message VendingResult {
+  VendingOutcome outcome = 1;
+  uint32 index = 2;
+  string message = 3;
+}
+
+enum VendingOutcome {
+  VENDING_OUTCOME_UNSPECIFIED = 0;
+  // OPENED: the shop opened.
+  VENDING_OUTCOME_OPENED = 1;
+  // BOUGHT: the purchase went through.
+  VENDING_OUTCOME_BOUGHT = 2;
+  // FAILED: the shop could not open or the purchase failed, such as a
+  // line that is not valid.
+  VENDING_OUTCOME_FAILED = 3;
+  // NOT_ENOUGH_ZENY: PURCHASEMC_NO_ZENY.
+  VENDING_OUTCOME_NOT_ENOUGH_ZENY = 4;
+  // OVERWEIGHT: PURCHASEMC_OVERWEIGHT, or the inventory has no free slot.
+  VENDING_OUTCOME_OVERWEIGHT = 5;
+  // OUT_OF_STOCK: PURCHASEMC_OUT_OF_STOCK, or the seller would pass the
+  // zeny cap.
+  VENDING_OUTCOME_OUT_OF_STOCK = 6;
+  // STORE_CHANGED: PURCHASEMC_STORE_INCORRECT: the shop reopened.
+  VENDING_OUTCOME_STORE_CHANGED = 7;
+  // RESTRICTED: an item cannot be vended (msg 266).
+  VENDING_OUTCOME_RESTRICTED = 8;
+  // HOOK: a mod's vend hook refused the sale; message says why.
+  VENDING_OUTCOME_HOOK = 9;
+  // CLOSED: the shop closed.
+  VENDING_OUTCOME_CLOSED = 10;
+  // TOO_CLOSE: an NPC is within min_npc_vendchat_distance.
+  VENDING_OUTCOME_TOO_CLOSE = 11;
+}
+
+// EntityShop shows or hides the title of a player's shop over the
+// player, as clif_showvendingboard and clif_buyingstore_entry.
+message EntityShop {
+  uint32 id = 1;
+  string title = 2;
+  // buying is set for a buying store; a vending shop otherwise.
+  bool buying = 3;
+  // remove hides it.
+  bool remove = 4;
+}
+
+// BuyingStoreSetup opens the buying store setup window, as
+// clif_buyingstore_open.
+message BuyingStoreSetup {
+  uint32 slots = 1;
+}
+
+// BuyingStoreOpened shows the player its own open store, as
+// clif_buyingstore_myitemlist.
+message BuyingStoreOpened {
+  string title = 1;
+  uint32 zeny_limit = 2;
+  repeated BuyingStoreItem items = 3;
+}
+
+// BuyingStoreList shows another player's store, as
+// clif_buyingstore_itemlist.
+message BuyingStoreList {
+  uint32 buyer = 1;
+  uint32 store = 2;
+  string title = 3;
+  string owner = 4;
+  uint32 zeny_limit = 5;
+  repeated BuyingStoreItem items = 6;
+}
+
+message BuyingStoreItem {
+  uint32 item_id = 1;
+  uint32 amount = 2;
+  uint32 price = 3;
+}
+
+// BuyingStoreBought tells the store owner it bought items, as
+// clif_buyingstore_update_item.
+message BuyingStoreBought {
+  uint32 item_id = 1;
+  uint32 amount = 2;
+  string seller = 3;
+  uint32 zeny = 4;
+  // zeny_limit is what the store may still spend.
+  uint32 zeny_limit = 5;
+}
+
+message BuyingStoreResult {
+  BuyingStoreOutcome outcome = 1;
+  uint32 item_id = 2;
+  string message = 3;
+}
+
+enum BuyingStoreOutcome {
+  BUYING_STORE_OUTCOME_UNSPECIFIED = 0;
+  BUYING_STORE_OUTCOME_OPENED = 1;
+  // SOLD: the sale went through.
+  BUYING_STORE_OUTCOME_SOLD = 2;
+  // FAILED: BUYINGSTORE_CREATE or BUYINGSTORE_TRADE_SELLER_FAILED.
+  BUYING_STORE_OUTCOME_FAILED = 3;
+  // OVERWEIGHT: BUYINGSTORE_CREATE_OVERWEIGHT.
+  BUYING_STORE_OUTCOME_OVERWEIGHT = 4;
+  // COUNT: BUYINGSTORE_TRADE_SELLER_COUNT: more than the store buys.
+  BUYING_STORE_OUTCOME_COUNT = 5;
+  // ZENY: BUYINGSTORE_TRADE_SELLER_ZENY: the store lacks the zeny.
+  BUYING_STORE_OUTCOME_ZENY = 6;
+  // ALL_BOUGHT and LIMIT_REACHED close the owner's store:
+  // BUYINGSTORE_TRADE_BUYER_NO_ITEMS and BUYINGSTORE_TRADE_BUYER_ZENY.
+  BUYING_STORE_OUTCOME_ALL_BOUGHT = 7;
+  BUYING_STORE_OUTCOME_LIMIT_REACHED = 8;
+  // HOOK: a mod's buying_store_sale hook refused the sale.
+  BUYING_STORE_OUTCOME_HOOK = 9;
+  BUYING_STORE_OUTCOME_CLOSED = 10;
+}
+
+// StoreSearchOpen opens the store search window, as
+// clif_open_search_store_info.
+message StoreSearchOpen {
+  uint32 uses = 1;
+  // open is set when a result's store opens on a click
+  // (SEARCHSTORE_EFFECT_REMOTE); a click shows the store's place
+  // otherwise.
+  bool open = 2;
+}
+
+// StoreSearchResults is a page of results, as
+// clif_search_store_info_ack.
+message StoreSearchResults {
+  repeated StoreSearchHit results = 1;
+  uint32 uses = 2;
+  // more is set when next has another page.
+  bool more = 3;
+}
+
+message StoreSearchHit {
+  // index is what click names.
+  uint32 index = 1;
+  string title = 2;
+  string owner = 3;
+  // map is the store's map asset name, such as map/prontera.
+  string map = 4;
+  uint32 x = 5;
+  uint32 y = 6;
+  // item is the copy for sale, or the item a buying store wants, with
+  // its amount.
+  InventoryItem item = 7;
+  uint32 price = 8;
+  bool buying = 9;
+}
+
+message StoreSearchResult {
+  StoreSearchOutcome outcome = 1;
+  // map, x and y are the store's place for a click that shows it.
+  string map = 2;
+  uint32 x = 3;
+  uint32 y = 4;
+}
+
+enum StoreSearchOutcome {
+  STORE_SEARCH_OUTCOME_UNSPECIFIED = 0;
+  // NOTHING: SSI_FAILED_NOTHING_SEARCH_ITEM.
+  STORE_SEARCH_OUTCOME_NOTHING = 1;
+  // NO_USES: SSI_FAILED_SEARCH_CNT.
+  STORE_SEARCH_OUTCOME_NO_USES = 2;
+  // TOO_FAST: SSI_FAILED_LIMIT_SEARCH_TIME, searchstore_querydelay.
+  STORE_SEARCH_OUTCOME_TOO_FAST = 3;
+  // TOO_MANY: SSI_FAILED_OVER_MAXCOUNT; the results stop at
+  // searchstore_maxresults.
+  STORE_SEARCH_OUTCOME_TOO_MANY = 4;
+  // GONE: SSI_FAILED_SSILIST_CLICK_TO_OPEN_STORE.
+  STORE_SEARCH_OUTCOME_GONE = 5;
+  // POSITION: the click's store is at map, x and y.
+  STORE_SEARCH_OUTCOME_POSITION = 6;
+  // OTHER_MAP: the store is on another map, so it cannot open from here.
+  STORE_SEARCH_OUTCOME_OTHER_MAP = 7;
 }

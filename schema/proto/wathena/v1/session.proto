@@ -67,6 +67,10 @@ message Limits {
   // ranges lists every limit with its base and max, in the order of the
   // server's rules.LimitBounds.
   repeated LimitRange ranges = 12;
+  // mail_items is the most items one mail holds, as MAIL_MAX_ITEM.
+  uint32 mail_items = 13;
+  // mailbox is the most mails a mailbox holds.
+  uint32 mailbox = 14;
 }
 
 // LimitRange is one limit: base is what a player or guild starts with,
@@ -105,4 +109,7 @@ enum DisconnectReason {
   // The login session that opened this connection ended, such as at
   // logout or when a new login in the same browser replaced it.
   DISCONNECT_REASON_LOGGED_OUT = 8;
+  // The player went on autotrade: the shop stays open while the
+  // connection closes (player:autotrade).
+  DISCONNECT_REASON_AUTOTRADE = 9;
 }

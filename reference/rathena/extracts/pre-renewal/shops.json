@@ -1,0 +1,6197 @@
+{
+	"rathena_git_hash": "3e45adbd32a5b1dc772bf67974eafed9655e9641",
+	"mode": "pre-renewal",
+	"note": "barters is npc/barters.yml with its imports for the mode, as BarterDatabase loads it, sorted by name. A barter is a shop opened by callshop with its name. file is the file that first names it. map is null for a barter that is not on a map, and x and y are then 0. dir is rAthena's direction, 0 north, then counterclockwise. sprite is the Sprite constant as written, or null for JT_FAKENPC, which shows nothing. items are sorted by index. stock 0 is unlimited, and a stock above 0 is the stock the shop starts with (rAthena keeps the stock in its barter table). zeny is the zeny each one costs. refine is the refine of the item it gives. required lists the items it takes, sorted by index: amount for each one bought, and refine -1 for any refine. A required refine of 0 or more takes an item of that refine, or a higher one when none matches (npc_barter_purchase). extended is set for a barter that needs feature.barter_extended, as BarterDatabase::loadingFinished decides. buying_store lists the items whose item_db Flags.BuyingStore is true, which a buying store may buy. settings are the vending, store search and mail settings: the battle settings after conf/battle_athena.conf and its imports, as battle_config_read, with battle.cpp's default, min and max for the mode, and mail_return_days, mail_delete_days and mail_return_empty from conf/char_athena.conf and its imports, as char_config_read.",
+	"barter_files": [
+		"npc/barters.yml",
+		"npc/custom/barters.yml"
+	],
+	"barters": [],
+	"buying_store": [
+		{
+			"id": 506,
+			"aegis_name": "Green_Potion"
+		},
+		{
+			"id": 507,
+			"aegis_name": "Red_Herb"
+		},
+		{
+			"id": 508,
+			"aegis_name": "Yellow_Herb"
+		},
+		{
+			"id": 509,
+			"aegis_name": "White_Herb"
+		},
+		{
+			"id": 510,
+			"aegis_name": "Blue_Herb"
+		},
+		{
+			"id": 511,
+			"aegis_name": "Green_Herb"
+		},
+		{
+			"id": 512,
+			"aegis_name": "Apple"
+		},
+		{
+			"id": 513,
+			"aegis_name": "Banana"
+		},
+		{
+			"id": 514,
+			"aegis_name": "Grape"
+		},
+		{
+			"id": 515,
+			"aegis_name": "Carrot"
+		},
+		{
+			"id": 516,
+			"aegis_name": "Sweet_Potato"
+		},
+		{
+			"id": 517,
+			"aegis_name": "Meat"
+		},
+		{
+			"id": 518,
+			"aegis_name": "Honey"
+		},
+		{
+			"id": 519,
+			"aegis_name": "Milk"
+		},
+		{
+			"id": 520,
+			"aegis_name": "Leaflet_Of_Hinal"
+		},
+		{
+			"id": 521,
+			"aegis_name": "Leaflet_Of_Aloe"
+		},
+		{
+			"id": 522,
+			"aegis_name": "Fruit_Of_Mastela"
+		},
+		{
+			"id": 523,
+			"aegis_name": "Holy_Water"
+		},
+		{
+			"id": 525,
+			"aegis_name": "Panacea"
+		},
+		{
+			"id": 526,
+			"aegis_name": "Royal_Jelly"
+		},
+		{
+			"id": 528,
+			"aegis_name": "Monster's_Feed"
+		},
+		{
+			"id": 529,
+			"aegis_name": "Candy"
+		},
+		{
+			"id": 530,
+			"aegis_name": "Candy_Striper"
+		},
+		{
+			"id": 531,
+			"aegis_name": "Apple_Juice"
+		},
+		{
+			"id": 532,
+			"aegis_name": "Banana_Juice"
+		},
+		{
+			"id": 533,
+			"aegis_name": "Grape_Juice"
+		},
+		{
+			"id": 534,
+			"aegis_name": "Carrot_Juice"
+		},
+		{
+			"id": 535,
+			"aegis_name": "Pumpkin"
+		},
+		{
+			"id": 536,
+			"aegis_name": "Ice_Cream"
+		},
+		{
+			"id": 537,
+			"aegis_name": "Pet_Food"
+		},
+		{
+			"id": 538,
+			"aegis_name": "Well_Baked_Cookie"
+		},
+		{
+			"id": 539,
+			"aegis_name": "Piece_Of_Cake"
+		},
+		{
+			"id": 544,
+			"aegis_name": "Fish_Slice"
+		},
+		{
+			"id": 548,
+			"aegis_name": "Cheese"
+		},
+		{
+			"id": 549,
+			"aegis_name": "Nice_Sweet_Potato"
+		},
+		{
+			"id": 550,
+			"aegis_name": "Popped_Rice"
+		},
+		{
+			"id": 551,
+			"aegis_name": "Shusi"
+		},
+		{
+			"id": 553,
+			"aegis_name": "Bun"
+		},
+		{
+			"id": 564,
+			"aegis_name": "Rice_Ball"
+		},
+		{
+			"id": 566,
+			"aegis_name": "Tomyumkung"
+		},
+		{
+			"id": 567,
+			"aegis_name": "Prawn"
+		},
+		{
+			"id": 568,
+			"aegis_name": "Lemon"
+		},
+		{
+			"id": 569,
+			"aegis_name": "Novice_Potion"
+		},
+		{
+			"id": 570,
+			"aegis_name": "Lucky_Candy"
+		},
+		{
+			"id": 571,
+			"aegis_name": "Lucky_Candy_Cane"
+		},
+		{
+			"id": 572,
+			"aegis_name": "Lucky_Cookie"
+		},
+		{
+			"id": 574,
+			"aegis_name": "Egg"
+		},
+		{
+			"id": 576,
+			"aegis_name": "Prickly_Fruit"
+		},
+		{
+			"id": 577,
+			"aegis_name": "Grain"
+		},
+		{
+			"id": 578,
+			"aegis_name": "Strawberry"
+		},
+		{
+			"id": 579,
+			"aegis_name": "Delicious_Fish"
+		},
+		{
+			"id": 580,
+			"aegis_name": "Bread"
+		},
+		{
+			"id": 581,
+			"aegis_name": "Mushroom"
+		},
+		{
+			"id": 582,
+			"aegis_name": "Orange"
+		},
+		{
+			"id": 584,
+			"aegis_name": "Fish_Ball_Soup"
+		},
+		{
+			"id": 587,
+			"aegis_name": "Prickly_Fruit_"
+		},
+		{
+			"id": 591,
+			"aegis_name": "Caviar_Pancake"
+		},
+		{
+			"id": 592,
+			"aegis_name": "Jam_Pancake"
+		},
+		{
+			"id": 593,
+			"aegis_name": "Honey_Pancake"
+		},
+		{
+			"id": 594,
+			"aegis_name": "Sour_Cream_Pancake"
+		},
+		{
+			"id": 595,
+			"aegis_name": "Mushroom_Pancake"
+		},
+		{
+			"id": 601,
+			"aegis_name": "Wing_Of_Fly"
+		},
+		{
+			"id": 602,
+			"aegis_name": "Wing_Of_Butterfly"
+		},
+		{
+			"id": 603,
+			"aegis_name": "Old_Blue_Box"
+		},
+		{
+			"id": 604,
+			"aegis_name": "Branch_Of_Dead_Tree"
+		},
+		{
+			"id": 605,
+			"aegis_name": "Anodyne"
+		},
+		{
+			"id": 606,
+			"aegis_name": "Aloebera"
+		},
+		{
+			"id": 607,
+			"aegis_name": "Yggdrasilberry"
+		},
+		{
+			"id": 608,
+			"aegis_name": "Seed_Of_Yggdrasil"
+		},
+		{
+			"id": 609,
+			"aegis_name": "Amulet"
+		},
+		{
+			"id": 610,
+			"aegis_name": "Leaf_Of_Yggdrasil"
+		},
+		{
+			"id": 611,
+			"aegis_name": "Spectacles"
+		},
+		{
+			"id": 612,
+			"aegis_name": "Portable_Furnace"
+		},
+		{
+			"id": 613,
+			"aegis_name": "Iron_Hammer"
+		},
+		{
+			"id": 614,
+			"aegis_name": "Golden_Hammer"
+		},
+		{
+			"id": 615,
+			"aegis_name": "Oridecon_Hammer"
+		},
+		{
+			"id": 616,
+			"aegis_name": "Old_Card_Album"
+		},
+		{
+			"id": 617,
+			"aegis_name": "Old_Violet_Box"
+		},
+		{
+			"id": 618,
+			"aegis_name": "Worn_Out_Scroll"
+		},
+		{
+			"id": 619,
+			"aegis_name": "Unripe_Apple"
+		},
+		{
+			"id": 620,
+			"aegis_name": "Orange_Juice"
+		},
+		{
+			"id": 621,
+			"aegis_name": "Bitter_Herb"
+		},
+		{
+			"id": 622,
+			"aegis_name": "Rainbow_Carrot"
+		},
+		{
+			"id": 623,
+			"aegis_name": "Earthworm_The_Dude"
+		},
+		{
+			"id": 624,
+			"aegis_name": "Rotten_Fish"
+		},
+		{
+			"id": 625,
+			"aegis_name": "Lusty_Iron"
+		},
+		{
+			"id": 626,
+			"aegis_name": "Monster_Juice"
+		},
+		{
+			"id": 627,
+			"aegis_name": "Sweet_Milk"
+		},
+		{
+			"id": 628,
+			"aegis_name": "Well_Dried_Bone"
+		},
+		{
+			"id": 629,
+			"aegis_name": "Singing_Flower"
+		},
+		{
+			"id": 630,
+			"aegis_name": "Dew_Laden_Moss"
+		},
+		{
+			"id": 631,
+			"aegis_name": "Deadly_Noxious_Herb"
+		},
+		{
+			"id": 632,
+			"aegis_name": "Fatty_Chubby_Earthworm"
+		},
+		{
+			"id": 633,
+			"aegis_name": "Baked_Yam"
+		},
+		{
+			"id": 634,
+			"aegis_name": "Tropical_Banana"
+		},
+		{
+			"id": 635,
+			"aegis_name": "Horror_Of_Tribe"
+		},
+		{
+			"id": 636,
+			"aegis_name": "No_Recipient"
+		},
+		{
+			"id": 637,
+			"aegis_name": "Old_Broom"
+		},
+		{
+			"id": 638,
+			"aegis_name": "Silver_Knife_Of_Chaste"
+		},
+		{
+			"id": 639,
+			"aegis_name": "Armlet_Of_Obedience"
+		},
+		{
+			"id": 640,
+			"aegis_name": "Shining_Stone"
+		},
+		{
+			"id": 641,
+			"aegis_name": "Contracts_In_Shadow"
+		},
+		{
+			"id": 642,
+			"aegis_name": "Book_Of_Devil"
+		},
+		{
+			"id": 643,
+			"aegis_name": "Pet_Incubator"
+		},
+		{
+			"id": 644,
+			"aegis_name": "Gift_Box"
+		},
+		{
+			"id": 645,
+			"aegis_name": "Center_Potion"
+		},
+		{
+			"id": 656,
+			"aegis_name": "Awakening_Potion"
+		},
+		{
+			"id": 657,
+			"aegis_name": "Berserk_Potion"
+		},
+		{
+			"id": 658,
+			"aegis_name": "Union_Of_Tribe"
+		},
+		{
+			"id": 659,
+			"aegis_name": "Heart_Of_Her"
+		},
+		{
+			"id": 660,
+			"aegis_name": "Prohibition_Red_Candle"
+		},
+		{
+			"id": 661,
+			"aegis_name": "Sway_Apron"
+		},
+		{
+			"id": 662,
+			"aegis_name": "Inspector_Certificate"
+		},
+		{
+			"id": 663,
+			"aegis_name": "Korea_Rice_Cake"
+		},
+		{
+			"id": 664,
+			"aegis_name": "Gift_Box_1"
+		},
+		{
+			"id": 665,
+			"aegis_name": "Gift_Box_2"
+		},
+		{
+			"id": 666,
+			"aegis_name": "Gift_Box_3"
+		},
+		{
+			"id": 667,
+			"aegis_name": "Gift_Box_4"
+		},
+		{
+			"id": 668,
+			"aegis_name": "Handsei"
+		},
+		{
+			"id": 669,
+			"aegis_name": "Rice_Cake_Soup"
+		},
+		{
+			"id": 678,
+			"aegis_name": "Poison_Bottle"
+		},
+		{
+			"id": 679,
+			"aegis_name": "Gold_Pill"
+		},
+		{
+			"id": 681,
+			"aegis_name": "Memory_Of_Wedding"
+		},
+		{
+			"id": 682,
+			"aegis_name": "Realgar_Wine"
+		},
+		{
+			"id": 683,
+			"aegis_name": "Exorcize_Herb"
+		},
+		{
+			"id": 684,
+			"aegis_name": "Durian"
+		},
+		{
+			"id": 686,
+			"aegis_name": "Earth_Scroll_1_3"
+		},
+		{
+			"id": 687,
+			"aegis_name": "Earth_Scroll_1_5"
+		},
+		{
+			"id": 688,
+			"aegis_name": "Cold_Scroll_1_3"
+		},
+		{
+			"id": 689,
+			"aegis_name": "Cold_Scroll_1_5"
+		},
+		{
+			"id": 690,
+			"aegis_name": "Fire_Scroll_1_3"
+		},
+		{
+			"id": 691,
+			"aegis_name": "Fire_Scroll_1_5"
+		},
+		{
+			"id": 692,
+			"aegis_name": "Wind_Scroll_1_3"
+		},
+		{
+			"id": 693,
+			"aegis_name": "Wind_Scroll_1_5"
+		},
+		{
+			"id": 694,
+			"aegis_name": "Ghost_Scroll_1_3"
+		},
+		{
+			"id": 695,
+			"aegis_name": "Ghost_Scroll_1_5"
+		},
+		{
+			"id": 696,
+			"aegis_name": "Fire_Scroll_2_1"
+		},
+		{
+			"id": 697,
+			"aegis_name": "Fire_Scroll_2_5"
+		},
+		{
+			"id": 698,
+			"aegis_name": "Fire_Scroll_3_1"
+		},
+		{
+			"id": 699,
+			"aegis_name": "Fire_Scroll_3_5"
+		},
+		{
+			"id": 700,
+			"aegis_name": "Cold_Scroll_2_1"
+		},
+		{
+			"id": 701,
+			"aegis_name": "Ora_Ora"
+		},
+		{
+			"id": 702,
+			"aegis_name": "Animal_Blood"
+		},
+		{
+			"id": 703,
+			"aegis_name": "Hinalle"
+		},
+		{
+			"id": 704,
+			"aegis_name": "Aloe"
+		},
+		{
+			"id": 705,
+			"aegis_name": "Clover"
+		},
+		{
+			"id": 706,
+			"aegis_name": "Four_Leaf_Clover"
+		},
+		{
+			"id": 707,
+			"aegis_name": "Singing_Plant"
+		},
+		{
+			"id": 708,
+			"aegis_name": "Ment"
+		},
+		{
+			"id": 709,
+			"aegis_name": "Izidor"
+		},
+		{
+			"id": 710,
+			"aegis_name": "Illusion_Flower"
+		},
+		{
+			"id": 711,
+			"aegis_name": "Shoot"
+		},
+		{
+			"id": 712,
+			"aegis_name": "Flower"
+		},
+		{
+			"id": 713,
+			"aegis_name": "Empty_Bottle"
+		},
+		{
+			"id": 714,
+			"aegis_name": "Emperium"
+		},
+		{
+			"id": 715,
+			"aegis_name": "Yellow_Gemstone"
+		},
+		{
+			"id": 716,
+			"aegis_name": "Red_Gemstone"
+		},
+		{
+			"id": 717,
+			"aegis_name": "Blue_Gemstone"
+		},
+		{
+			"id": 718,
+			"aegis_name": "Dark_Red_Jewel"
+		},
+		{
+			"id": 719,
+			"aegis_name": "Violet_Jewel"
+		},
+		{
+			"id": 720,
+			"aegis_name": "Skyblue_Jewel"
+		},
+		{
+			"id": 721,
+			"aegis_name": "Azure_Jewel"
+		},
+		{
+			"id": 722,
+			"aegis_name": "Scarlet_Jewel"
+		},
+		{
+			"id": 723,
+			"aegis_name": "Cardinal_Jewel"
+		},
+		{
+			"id": 724,
+			"aegis_name": "Cardinal_Jewel_"
+		},
+		{
+			"id": 725,
+			"aegis_name": "Red_Jewel"
+		},
+		{
+			"id": 726,
+			"aegis_name": "Blue_Jewel"
+		},
+		{
+			"id": 727,
+			"aegis_name": "White_Jewel"
+		},
+		{
+			"id": 728,
+			"aegis_name": "Golden_Jewel"
+		},
+		{
+			"id": 729,
+			"aegis_name": "Bluish_Green_Jewel"
+		},
+		{
+			"id": 730,
+			"aegis_name": "Crystal_Jewel"
+		},
+		{
+			"id": 731,
+			"aegis_name": "Crystal_Jewel_"
+		},
+		{
+			"id": 732,
+			"aegis_name": "Crystal_Jewel__"
+		},
+		{
+			"id": 733,
+			"aegis_name": "Crystal_Jewel___"
+		},
+		{
+			"id": 734,
+			"aegis_name": "Red_Frame"
+		},
+		{
+			"id": 735,
+			"aegis_name": "Blue_Porcelain"
+		},
+		{
+			"id": 736,
+			"aegis_name": "White_Platter"
+		},
+		{
+			"id": 737,
+			"aegis_name": "Black_Ladle"
+		},
+		{
+			"id": 738,
+			"aegis_name": "Pencil_Case"
+		},
+		{
+			"id": 739,
+			"aegis_name": "Rouge"
+		},
+		{
+			"id": 740,
+			"aegis_name": "Stuffed_Doll"
+		},
+		{
+			"id": 741,
+			"aegis_name": "Poring_Doll"
+		},
+		{
+			"id": 742,
+			"aegis_name": "Chonchon_Doll"
+		},
+		{
+			"id": 743,
+			"aegis_name": "Spore_Doll"
+		},
+		{
+			"id": 744,
+			"aegis_name": "Bunch_Of_Flowers"
+		},
+		{
+			"id": 745,
+			"aegis_name": "Wedding_Bouquet"
+		},
+		{
+			"id": 746,
+			"aegis_name": "Glass_Bead"
+		},
+		{
+			"id": 747,
+			"aegis_name": "Crystal_Mirror"
+		},
+		{
+			"id": 748,
+			"aegis_name": "Witherless_Rose"
+		},
+		{
+			"id": 749,
+			"aegis_name": "Frozen_Rose"
+		},
+		{
+			"id": 750,
+			"aegis_name": "Baphomet_Doll"
+		},
+		{
+			"id": 751,
+			"aegis_name": "Osiris_Doll"
+		},
+		{
+			"id": 752,
+			"aegis_name": "Grasshopper_Doll"
+		},
+		{
+			"id": 753,
+			"aegis_name": "Monkey_Doll"
+		},
+		{
+			"id": 754,
+			"aegis_name": "Raccoondog_Doll"
+		},
+		{
+			"id": 756,
+			"aegis_name": "Oridecon_Stone"
+		},
+		{
+			"id": 757,
+			"aegis_name": "Elunium_Stone"
+		},
+		{
+			"id": 901,
+			"aegis_name": "Danggie"
+		},
+		{
+			"id": 902,
+			"aegis_name": "Tree_Root"
+		},
+		{
+			"id": 903,
+			"aegis_name": "Reptile_Tongue"
+		},
+		{
+			"id": 904,
+			"aegis_name": "Scorpion's_Tail"
+		},
+		{
+			"id": 905,
+			"aegis_name": "Stem"
+		},
+		{
+			"id": 906,
+			"aegis_name": "Pointed_Scale"
+		},
+		{
+			"id": 907,
+			"aegis_name": "Resin"
+		},
+		{
+			"id": 908,
+			"aegis_name": "Spawn"
+		},
+		{
+			"id": 909,
+			"aegis_name": "Jellopy"
+		},
+		{
+			"id": 910,
+			"aegis_name": "Garlet"
+		},
+		{
+			"id": 911,
+			"aegis_name": "Scell"
+		},
+		{
+			"id": 912,
+			"aegis_name": "Zargon"
+		},
+		{
+			"id": 913,
+			"aegis_name": "Tooth_Of_Bat"
+		},
+		{
+			"id": 914,
+			"aegis_name": "Fluff"
+		},
+		{
+			"id": 915,
+			"aegis_name": "Chrysalis"
+		},
+		{
+			"id": 916,
+			"aegis_name": "Feather_Of_Birds"
+		},
+		{
+			"id": 917,
+			"aegis_name": "Talon"
+		},
+		{
+			"id": 918,
+			"aegis_name": "Sticky_Webfoot"
+		},
+		{
+			"id": 919,
+			"aegis_name": "Animal's_Skin"
+		},
+		{
+			"id": 920,
+			"aegis_name": "Claw_Of_Wolves"
+		},
+		{
+			"id": 921,
+			"aegis_name": "Mushroom_Spore"
+		},
+		{
+			"id": 922,
+			"aegis_name": "Orcish_Cuspid"
+		},
+		{
+			"id": 923,
+			"aegis_name": "Evil_Horn"
+		},
+		{
+			"id": 924,
+			"aegis_name": "Powder_Of_Butterfly"
+		},
+		{
+			"id": 925,
+			"aegis_name": "Bill_Of_Birds"
+		},
+		{
+			"id": 926,
+			"aegis_name": "Scale_Of_Snakes"
+		},
+		{
+			"id": 928,
+			"aegis_name": "Insect_Feeler"
+		},
+		{
+			"id": 929,
+			"aegis_name": "Immortal_Heart"
+		},
+		{
+			"id": 930,
+			"aegis_name": "Rotten_Bandage"
+		},
+		{
+			"id": 931,
+			"aegis_name": "Orcish_Voucher"
+		},
+		{
+			"id": 932,
+			"aegis_name": "Skel_Bone"
+		},
+		{
+			"id": 934,
+			"aegis_name": "Mementos"
+		},
+		{
+			"id": 935,
+			"aegis_name": "Shell"
+		},
+		{
+			"id": 936,
+			"aegis_name": "Scales_Shell"
+		},
+		{
+			"id": 937,
+			"aegis_name": "Posionous_Canine"
+		},
+		{
+			"id": 938,
+			"aegis_name": "Sticky_Mucus"
+		},
+		{
+			"id": 939,
+			"aegis_name": "Bee_Sting"
+		},
+		{
+			"id": 940,
+			"aegis_name": "Grasshopper's_Leg"
+		},
+		{
+			"id": 941,
+			"aegis_name": "Nose_Ring"
+		},
+		{
+			"id": 942,
+			"aegis_name": "Yoyo_Tail"
+		},
+		{
+			"id": 943,
+			"aegis_name": "Solid_Shell"
+		},
+		{
+			"id": 944,
+			"aegis_name": "Horseshoe"
+		},
+		{
+			"id": 945,
+			"aegis_name": "Raccoon_Leaf"
+		},
+		{
+			"id": 946,
+			"aegis_name": "Snail's_Shell"
+		},
+		{
+			"id": 947,
+			"aegis_name": "Horn"
+		},
+		{
+			"id": 948,
+			"aegis_name": "Bear's_Foot"
+		},
+		{
+			"id": 949,
+			"aegis_name": "Feather"
+		},
+		{
+			"id": 950,
+			"aegis_name": "Heart_Of_Mermaid"
+		},
+		{
+			"id": 951,
+			"aegis_name": "Fin"
+		},
+		{
+			"id": 952,
+			"aegis_name": "Cactus_Needle"
+		},
+		{
+			"id": 953,
+			"aegis_name": "Stone_Heart"
+		},
+		{
+			"id": 954,
+			"aegis_name": "Shining_Scales"
+		},
+		{
+			"id": 955,
+			"aegis_name": "Worm_Peelings"
+		},
+		{
+			"id": 956,
+			"aegis_name": "Gill"
+		},
+		{
+			"id": 957,
+			"aegis_name": "Decayed_Nail"
+		},
+		{
+			"id": 958,
+			"aegis_name": "Horrendous_Mouth"
+		},
+		{
+			"id": 959,
+			"aegis_name": "Rotten_Scale"
+		},
+		{
+			"id": 960,
+			"aegis_name": "Nipper"
+		},
+		{
+			"id": 961,
+			"aegis_name": "Conch"
+		},
+		{
+			"id": 962,
+			"aegis_name": "Tentacle"
+		},
+		{
+			"id": 963,
+			"aegis_name": "Sharp_Scale"
+		},
+		{
+			"id": 964,
+			"aegis_name": "Crap_Shell"
+		},
+		{
+			"id": 965,
+			"aegis_name": "Clam_Shell"
+		},
+		{
+			"id": 966,
+			"aegis_name": "Flesh_Of_Clam"
+		},
+		{
+			"id": 967,
+			"aegis_name": "Turtle_Shell"
+		},
+		{
+			"id": 968,
+			"aegis_name": "Voucher_Of_Orcish_Hero"
+		},
+		{
+			"id": 969,
+			"aegis_name": "Gold"
+		},
+		{
+			"id": 970,
+			"aegis_name": "Alchol"
+		},
+		{
+			"id": 971,
+			"aegis_name": "Detrimindexta"
+		},
+		{
+			"id": 972,
+			"aegis_name": "Karvodailnirol"
+		},
+		{
+			"id": 973,
+			"aegis_name": "Counteragent"
+		},
+		{
+			"id": 974,
+			"aegis_name": "Mixture"
+		},
+		{
+			"id": 975,
+			"aegis_name": "Scarlet_Dyestuffs"
+		},
+		{
+			"id": 976,
+			"aegis_name": "Lemon_Dyestuffs"
+		},
+		{
+			"id": 978,
+			"aegis_name": "Cobaltblue_Dyestuffs"
+		},
+		{
+			"id": 979,
+			"aegis_name": "Darkgreen_Dyestuffs"
+		},
+		{
+			"id": 980,
+			"aegis_name": "Orange_Dyestuffs"
+		},
+		{
+			"id": 981,
+			"aegis_name": "Violet_Dyestuffs"
+		},
+		{
+			"id": 982,
+			"aegis_name": "White_Dyestuffs"
+		},
+		{
+			"id": 983,
+			"aegis_name": "Black_Dyestuffs"
+		},
+		{
+			"id": 984,
+			"aegis_name": "Oridecon"
+		},
+		{
+			"id": 985,
+			"aegis_name": "Elunium"
+		},
+		{
+			"id": 986,
+			"aegis_name": "Anvil"
+		},
+		{
+			"id": 987,
+			"aegis_name": "Oridecon_Anvil"
+		},
+		{
+			"id": 988,
+			"aegis_name": "Golden_Anvil"
+		},
+		{
+			"id": 989,
+			"aegis_name": "Emperium_Anvil"
+		},
+		{
+			"id": 990,
+			"aegis_name": "Boody_Red"
+		},
+		{
+			"id": 991,
+			"aegis_name": "Crystal_Blue"
+		},
+		{
+			"id": 992,
+			"aegis_name": "Wind_Of_Verdure"
+		},
+		{
+			"id": 993,
+			"aegis_name": "Yellow_Live"
+		},
+		{
+			"id": 994,
+			"aegis_name": "Flame_Heart"
+		},
+		{
+			"id": 995,
+			"aegis_name": "Mistic_Frozen"
+		},
+		{
+			"id": 996,
+			"aegis_name": "Rough_Wind"
+		},
+		{
+			"id": 997,
+			"aegis_name": "Great_Nature"
+		},
+		{
+			"id": 998,
+			"aegis_name": "Iron"
+		},
+		{
+			"id": 999,
+			"aegis_name": "Steel"
+		},
+		{
+			"id": 1000,
+			"aegis_name": "Star_Crumb"
+		},
+		{
+			"id": 1001,
+			"aegis_name": "Sparkling_Dust"
+		},
+		{
+			"id": 1002,
+			"aegis_name": "Iron_Ore"
+		},
+		{
+			"id": 1003,
+			"aegis_name": "Coal"
+		},
+		{
+			"id": 1004,
+			"aegis_name": "Patriotism_Marks"
+		},
+		{
+			"id": 1005,
+			"aegis_name": "Hammer_Of_Blacksmith"
+		},
+		{
+			"id": 1006,
+			"aegis_name": "Old_Magic_Book"
+		},
+		{
+			"id": 1007,
+			"aegis_name": "Penetration"
+		},
+		{
+			"id": 1008,
+			"aegis_name": "Frozen_Heart"
+		},
+		{
+			"id": 1009,
+			"aegis_name": "Sacred_Marks"
+		},
+		{
+			"id": 1010,
+			"aegis_name": "Phracon"
+		},
+		{
+			"id": 1011,
+			"aegis_name": "Emveretarcon"
+		},
+		{
+			"id": 1012,
+			"aegis_name": "Lizard_Scruff"
+		},
+		{
+			"id": 1013,
+			"aegis_name": "Colorful_Shell"
+		},
+		{
+			"id": 1014,
+			"aegis_name": "Jaws_Of_Ant"
+		},
+		{
+			"id": 1015,
+			"aegis_name": "Thin_N'_Long_Tongue"
+		},
+		{
+			"id": 1016,
+			"aegis_name": "Rat_Tail"
+		},
+		{
+			"id": 1017,
+			"aegis_name": "Moustache_Of_Mole"
+		},
+		{
+			"id": 1018,
+			"aegis_name": "Nail_Of_Mole"
+		},
+		{
+			"id": 1019,
+			"aegis_name": "Wooden_Block"
+		},
+		{
+			"id": 1020,
+			"aegis_name": "Long_Hair"
+		},
+		{
+			"id": 1021,
+			"aegis_name": "Dokkaebi_Horn"
+		},
+		{
+			"id": 1022,
+			"aegis_name": "Fox_Tail"
+		},
+		{
+			"id": 1023,
+			"aegis_name": "Fish_Tail"
+		},
+		{
+			"id": 1024,
+			"aegis_name": "Chinese_Ink"
+		},
+		{
+			"id": 1025,
+			"aegis_name": "Spiderweb"
+		},
+		{
+			"id": 1026,
+			"aegis_name": "Acorn"
+		},
+		{
+			"id": 1027,
+			"aegis_name": "Porcupine_Spike"
+		},
+		{
+			"id": 1028,
+			"aegis_name": "Wild_Boar's_Mane"
+		},
+		{
+			"id": 1029,
+			"aegis_name": "Tiger's_Skin"
+		},
+		{
+			"id": 1030,
+			"aegis_name": "Tiger_Footskin"
+		},
+		{
+			"id": 1031,
+			"aegis_name": "Limb_Of_Mantis"
+		},
+		{
+			"id": 1032,
+			"aegis_name": "Blossom_Of_Maneater"
+		},
+		{
+			"id": 1033,
+			"aegis_name": "Root_Of_Maneater"
+		},
+		{
+			"id": 1034,
+			"aegis_name": "Cobold_Hair"
+		},
+		{
+			"id": 1035,
+			"aegis_name": "Dragon_Canine"
+		},
+		{
+			"id": 1036,
+			"aegis_name": "Dragon_Scale"
+		},
+		{
+			"id": 1037,
+			"aegis_name": "Dragon_Train"
+		},
+		{
+			"id": 1038,
+			"aegis_name": "Petite_DiablOfs_Horn"
+		},
+		{
+			"id": 1039,
+			"aegis_name": "Petite_DiablOfs_Wing"
+		},
+		{
+			"id": 1040,
+			"aegis_name": "Elder_Pixie's_Beard"
+		},
+		{
+			"id": 1041,
+			"aegis_name": "Lantern"
+		},
+		{
+			"id": 1042,
+			"aegis_name": "Short_Leg"
+		},
+		{
+			"id": 1043,
+			"aegis_name": "Nail_Of_Orc"
+		},
+		{
+			"id": 1044,
+			"aegis_name": "Tooth_Of_"
+		},
+		{
+			"id": 1045,
+			"aegis_name": "Sacred_Masque"
+		},
+		{
+			"id": 1046,
+			"aegis_name": "Tweezer"
+		},
+		{
+			"id": 1047,
+			"aegis_name": "Head_Of_Medusa"
+		},
+		{
+			"id": 1048,
+			"aegis_name": "Slender_Snake"
+		},
+		{
+			"id": 1049,
+			"aegis_name": "Skirt_Of_Virgin"
+		},
+		{
+			"id": 1050,
+			"aegis_name": "Tendon"
+		},
+		{
+			"id": 1051,
+			"aegis_name": "Detonator"
+		},
+		{
+			"id": 1052,
+			"aegis_name": "Single_Cell"
+		},
+		{
+			"id": 1053,
+			"aegis_name": "Tooth_Of_Ancient_Fish"
+		},
+		{
+			"id": 1054,
+			"aegis_name": "Lip_Of_Ancient_Fish"
+		},
+		{
+			"id": 1055,
+			"aegis_name": "Earthworm_Peeling"
+		},
+		{
+			"id": 1056,
+			"aegis_name": "Grit"
+		},
+		{
+			"id": 1057,
+			"aegis_name": "Moth_Dust"
+		},
+		{
+			"id": 1058,
+			"aegis_name": "Wing_Of_Moth"
+		},
+		{
+			"id": 1059,
+			"aegis_name": "Transparent_Cloth"
+		},
+		{
+			"id": 1060,
+			"aegis_name": "Golden_Hair"
+		},
+		{
+			"id": 1061,
+			"aegis_name": "Starsand_Of_Witch"
+		},
+		{
+			"id": 1062,
+			"aegis_name": "Pumpkin_Head"
+		},
+		{
+			"id": 1063,
+			"aegis_name": "Sharpened_Cuspid"
+		},
+		{
+			"id": 1064,
+			"aegis_name": "Reins"
+		},
+		{
+			"id": 1065,
+			"aegis_name": "Booby_Trap"
+		},
+		{
+			"id": 1066,
+			"aegis_name": "Tree_Of_Archer_1"
+		},
+		{
+			"id": 1067,
+			"aegis_name": "Tree_Of_Archer_2"
+		},
+		{
+			"id": 1068,
+			"aegis_name": "Tree_Of_Archer_3"
+		},
+		{
+			"id": 1088,
+			"aegis_name": "Morocc_Potion"
+		},
+		{
+			"id": 1089,
+			"aegis_name": "Payon_Potion"
+		},
+		{
+			"id": 1092,
+			"aegis_name": "Empty_Cylinder"
+		},
+		{
+			"id": 1093,
+			"aegis_name": "Empty_Potion"
+		},
+		{
+			"id": 1094,
+			"aegis_name": "Short_Daenggie"
+		},
+		{
+			"id": 1095,
+			"aegis_name": "Needle_Of_Alarm"
+		},
+		{
+			"id": 1096,
+			"aegis_name": "Round_Shell"
+		},
+		{
+			"id": 1097,
+			"aegis_name": "Worn_Out_Page"
+		},
+		{
+			"id": 1098,
+			"aegis_name": "Manacles"
+		},
+		{
+			"id": 1099,
+			"aegis_name": "Worn_Out_Prison_Uniform"
+		},
+		{
+			"id": 4001,
+			"aegis_name": "Poring_Card"
+		},
+		{
+			"id": 4002,
+			"aegis_name": "Fabre_Card"
+		},
+		{
+			"id": 4003,
+			"aegis_name": "Pupa_Card"
+		},
+		{
+			"id": 4004,
+			"aegis_name": "Drops_Card"
+		},
+		{
+			"id": 4005,
+			"aegis_name": "Poring__Card"
+		},
+		{
+			"id": 4006,
+			"aegis_name": "Lunatic_Card"
+		},
+		{
+			"id": 4007,
+			"aegis_name": "Pecopeco_Egg_Card"
+		},
+		{
+			"id": 4008,
+			"aegis_name": "Picky_Card"
+		},
+		{
+			"id": 4009,
+			"aegis_name": "Chonchon_Card"
+		},
+		{
+			"id": 4010,
+			"aegis_name": "Wilow_Card"
+		},
+		{
+			"id": 4011,
+			"aegis_name": "Picky__Card"
+		},
+		{
+			"id": 4012,
+			"aegis_name": "Thief_Bug_Egg_Card"
+		},
+		{
+			"id": 4013,
+			"aegis_name": "Andre_Egg_Card"
+		},
+		{
+			"id": 4014,
+			"aegis_name": "Roda_Frog_Card"
+		},
+		{
+			"id": 4015,
+			"aegis_name": "Condor_Card"
+		},
+		{
+			"id": 4016,
+			"aegis_name": "Thief_Bug_Card"
+		},
+		{
+			"id": 4017,
+			"aegis_name": "Savage_Babe_Card"
+		},
+		{
+			"id": 4018,
+			"aegis_name": "Andre_Larva_Card"
+		},
+		{
+			"id": 4019,
+			"aegis_name": "Hornet_Card"
+		},
+		{
+			"id": 4020,
+			"aegis_name": "Farmiliar_Card"
+		},
+		{
+			"id": 4021,
+			"aegis_name": "Rocker_Card"
+		},
+		{
+			"id": 4022,
+			"aegis_name": "Spore_Card"
+		},
+		{
+			"id": 4023,
+			"aegis_name": "Desert_Wolf_Babe_Card"
+		},
+		{
+			"id": 4024,
+			"aegis_name": "Plankton_Card"
+		},
+		{
+			"id": 4025,
+			"aegis_name": "Skeleton_Card"
+		},
+		{
+			"id": 4026,
+			"aegis_name": "Thief_Bug_Female_Card"
+		},
+		{
+			"id": 4027,
+			"aegis_name": "Kukre_Card"
+		},
+		{
+			"id": 4028,
+			"aegis_name": "Tarou_Card"
+		},
+		{
+			"id": 4029,
+			"aegis_name": "Wolf_Card"
+		},
+		{
+			"id": 4030,
+			"aegis_name": "Mandragora_Card"
+		},
+		{
+			"id": 4031,
+			"aegis_name": "Pecopeco_Card"
+		},
+		{
+			"id": 4032,
+			"aegis_name": "Ambernite_Card"
+		},
+		{
+			"id": 4033,
+			"aegis_name": "Poporing_Card"
+		},
+		{
+			"id": 4034,
+			"aegis_name": "Worm_Tail_Card"
+		},
+		{
+			"id": 4035,
+			"aegis_name": "Hydra_Card"
+		},
+		{
+			"id": 4036,
+			"aegis_name": "Muka_Card"
+		},
+		{
+			"id": 4037,
+			"aegis_name": "Snake_Card"
+		},
+		{
+			"id": 4038,
+			"aegis_name": "Zombie_Card"
+		},
+		{
+			"id": 4039,
+			"aegis_name": "Stainer_Card"
+		},
+		{
+			"id": 4040,
+			"aegis_name": "Creamy_Card"
+		},
+		{
+			"id": 4041,
+			"aegis_name": "Coco_Card"
+		},
+		{
+			"id": 4042,
+			"aegis_name": "Steel_Chonchon_Card"
+		},
+		{
+			"id": 4043,
+			"aegis_name": "Andre_Card"
+		},
+		{
+			"id": 4044,
+			"aegis_name": "Smokie_Card"
+		},
+		{
+			"id": 4045,
+			"aegis_name": "Horn_Card"
+		},
+		{
+			"id": 4046,
+			"aegis_name": "Martin_Card"
+		},
+		{
+			"id": 4047,
+			"aegis_name": "Ghostring_Card"
+		},
+		{
+			"id": 4048,
+			"aegis_name": "Poison_Spore_Card"
+		},
+		{
+			"id": 4049,
+			"aegis_name": "Vadon_Card"
+		},
+		{
+			"id": 4050,
+			"aegis_name": "Thief_Bug_Male_Card"
+		},
+		{
+			"id": 4051,
+			"aegis_name": "Yoyo_Card"
+		},
+		{
+			"id": 4052,
+			"aegis_name": "Elder_Wilow_Card"
+		},
+		{
+			"id": 4053,
+			"aegis_name": "Vitata_Card"
+		},
+		{
+			"id": 4054,
+			"aegis_name": "Angeling_Card"
+		},
+		{
+			"id": 4055,
+			"aegis_name": "Marina_Card"
+		},
+		{
+			"id": 4056,
+			"aegis_name": "Dustiness_Card"
+		},
+		{
+			"id": 4057,
+			"aegis_name": "Metaller_Card"
+		},
+		{
+			"id": 4058,
+			"aegis_name": "Thara_Frog_Card"
+		},
+		{
+			"id": 4059,
+			"aegis_name": "Soldier_Andre_Card"
+		},
+		{
+			"id": 4060,
+			"aegis_name": "Goblin_Card"
+		},
+		{
+			"id": 4061,
+			"aegis_name": "Cornutus_Card"
+		},
+		{
+			"id": 4062,
+			"aegis_name": "Anacondaq_Card"
+		},
+		{
+			"id": 4063,
+			"aegis_name": "Caramel_Card"
+		},
+		{
+			"id": 4064,
+			"aegis_name": "Zerom_Card"
+		},
+		{
+			"id": 4065,
+			"aegis_name": "Kaho_Card"
+		},
+		{
+			"id": 4066,
+			"aegis_name": "Orc_Warrior_Card"
+		},
+		{
+			"id": 4067,
+			"aegis_name": "Megalodon_Card"
+		},
+		{
+			"id": 4068,
+			"aegis_name": "Scorpion_Card"
+		},
+		{
+			"id": 4069,
+			"aegis_name": "Drainliar_Card"
+		},
+		{
+			"id": 4070,
+			"aegis_name": "Eggyra_Card"
+		},
+		{
+			"id": 4071,
+			"aegis_name": "Orc_Zombie_Card"
+		},
+		{
+			"id": 4072,
+			"aegis_name": "Golem_Card"
+		},
+		{
+			"id": 4073,
+			"aegis_name": "Pirate_Skel_Card"
+		},
+		{
+			"id": 4074,
+			"aegis_name": "BigFoot_Card"
+		},
+		{
+			"id": 4075,
+			"aegis_name": "Argos_Card"
+		},
+		{
+			"id": 4076,
+			"aegis_name": "Magnolia_Card"
+		},
+		{
+			"id": 4077,
+			"aegis_name": "Phen_Card"
+		},
+		{
+			"id": 4078,
+			"aegis_name": "Savage_Card"
+		},
+		{
+			"id": 4079,
+			"aegis_name": "Mantis_Card"
+		},
+		{
+			"id": 4080,
+			"aegis_name": "Flora_Card"
+		},
+		{
+			"id": 4081,
+			"aegis_name": "Hode_Card"
+		},
+		{
+			"id": 4082,
+			"aegis_name": "Desert_Wolf_Card"
+		},
+		{
+			"id": 4083,
+			"aegis_name": "Rafflesia_Card"
+		},
+		{
+			"id": 4084,
+			"aegis_name": "Marine_Sphere_Card"
+		},
+		{
+			"id": 4085,
+			"aegis_name": "Orc_Skeleton_Card"
+		},
+		{
+			"id": 4086,
+			"aegis_name": "Soldier_Skeleton_Card"
+		},
+		{
+			"id": 4087,
+			"aegis_name": "Giearth_Card"
+		},
+		{
+			"id": 4088,
+			"aegis_name": "Frilldora_Card"
+		},
+		{
+			"id": 4089,
+			"aegis_name": "Sword_Fish_Card"
+		},
+		{
+			"id": 4090,
+			"aegis_name": "Munak_Card"
+		},
+		{
+			"id": 4091,
+			"aegis_name": "Kobold_Card"
+		},
+		{
+			"id": 4092,
+			"aegis_name": "Skel_Worker_Card"
+		},
+		{
+			"id": 4093,
+			"aegis_name": "Obeaune_Card"
+		},
+		{
+			"id": 4094,
+			"aegis_name": "Archer_Skeleton_Card"
+		},
+		{
+			"id": 4095,
+			"aegis_name": "Marse_Card"
+		},
+		{
+			"id": 4096,
+			"aegis_name": "Zenorc_Card"
+		},
+		{
+			"id": 4097,
+			"aegis_name": "Matyr_Card"
+		},
+		{
+			"id": 4098,
+			"aegis_name": "Dokebi_Card"
+		},
+		{
+			"id": 4099,
+			"aegis_name": "Pasana_Card"
+		},
+		{
+			"id": 4100,
+			"aegis_name": "Sohee_Card"
+		},
+		{
+			"id": 4101,
+			"aegis_name": "Sand_Man_Card"
+		},
+		{
+			"id": 4102,
+			"aegis_name": "Whisper_Card"
+		},
+		{
+			"id": 4103,
+			"aegis_name": "Horong_Card"
+		},
+		{
+			"id": 4104,
+			"aegis_name": "Requiem_Card"
+		},
+		{
+			"id": 4105,
+			"aegis_name": "Marc_Card"
+		},
+		{
+			"id": 4106,
+			"aegis_name": "Mummy_Card"
+		},
+		{
+			"id": 4107,
+			"aegis_name": "Verit_Card"
+		},
+		{
+			"id": 4108,
+			"aegis_name": "Myst_Card"
+		},
+		{
+			"id": 4109,
+			"aegis_name": "Jakk_Card"
+		},
+		{
+			"id": 4110,
+			"aegis_name": "Ghoul_Card"
+		},
+		{
+			"id": 4111,
+			"aegis_name": "Strouf_Card"
+		},
+		{
+			"id": 4112,
+			"aegis_name": "Marduk_Card"
+		},
+		{
+			"id": 4113,
+			"aegis_name": "Marionette_Card"
+		},
+		{
+			"id": 4114,
+			"aegis_name": "Argiope_Card"
+		},
+		{
+			"id": 4115,
+			"aegis_name": "Hunter_Fly_Card"
+		},
+		{
+			"id": 4116,
+			"aegis_name": "Isis_Card"
+		},
+		{
+			"id": 4117,
+			"aegis_name": "Side_Winder_Card"
+		},
+		{
+			"id": 4118,
+			"aegis_name": "Petit_Card"
+		},
+		{
+			"id": 4119,
+			"aegis_name": "Bathory_Card"
+		},
+		{
+			"id": 4120,
+			"aegis_name": "Petit__Card"
+		},
+		{
+			"id": 4121,
+			"aegis_name": "Phreeoni_Card"
+		},
+		{
+			"id": 4122,
+			"aegis_name": "Deviruchi_Card"
+		},
+		{
+			"id": 4123,
+			"aegis_name": "Eddga_Card"
+		},
+		{
+			"id": 4124,
+			"aegis_name": "Medusa_Card"
+		},
+		{
+			"id": 4125,
+			"aegis_name": "Deviace_Card"
+		},
+		{
+			"id": 4126,
+			"aegis_name": "Minorous_Card"
+		},
+		{
+			"id": 4127,
+			"aegis_name": "Nightmare_Card"
+		},
+		{
+			"id": 4128,
+			"aegis_name": "Golden_Bug_Card"
+		},
+		{
+			"id": 4129,
+			"aegis_name": "Baphomet__Card"
+		},
+		{
+			"id": 4130,
+			"aegis_name": "Scorpion_King_Card"
+		},
+		{
+			"id": 4131,
+			"aegis_name": "Moonlight_Flower_Card"
+		},
+		{
+			"id": 4132,
+			"aegis_name": "Mistress_Card"
+		},
+		{
+			"id": 4133,
+			"aegis_name": "Daydric_Card"
+		},
+		{
+			"id": 4134,
+			"aegis_name": "Dracula_Card"
+		},
+		{
+			"id": 4135,
+			"aegis_name": "Orc_Load_Card"
+		},
+		{
+			"id": 4136,
+			"aegis_name": "Khalitzburg_Card"
+		},
+		{
+			"id": 4137,
+			"aegis_name": "Drake_Card"
+		},
+		{
+			"id": 4138,
+			"aegis_name": "Anubis_Card"
+		},
+		{
+			"id": 4139,
+			"aegis_name": "Joker_Card"
+		},
+		{
+			"id": 4140,
+			"aegis_name": "Knight_Of_Abyss_Card"
+		},
+		{
+			"id": 4141,
+			"aegis_name": "Evil_Druid_Card"
+		},
+		{
+			"id": 4142,
+			"aegis_name": "Doppelganger_Card"
+		},
+		{
+			"id": 4143,
+			"aegis_name": "Orc_Hero_Card"
+		},
+		{
+			"id": 4144,
+			"aegis_name": "Osiris_Card"
+		},
+		{
+			"id": 4145,
+			"aegis_name": "Berzebub_Card"
+		},
+		{
+			"id": 4146,
+			"aegis_name": "Maya_Card"
+		},
+		{
+			"id": 4147,
+			"aegis_name": "Baphomet_Card"
+		},
+		{
+			"id": 4148,
+			"aegis_name": "Pharaoh_Card"
+		},
+		{
+			"id": 4149,
+			"aegis_name": "Gargoyle_Card"
+		},
+		{
+			"id": 4150,
+			"aegis_name": "Goat_Card"
+		},
+		{
+			"id": 4151,
+			"aegis_name": "Gajomart_Card"
+		},
+		{
+			"id": 4152,
+			"aegis_name": "Galapago_Card"
+		},
+		{
+			"id": 4153,
+			"aegis_name": "Crab_Card"
+		},
+		{
+			"id": 4154,
+			"aegis_name": "Rice_Cake_Boy_Card"
+		},
+		{
+			"id": 4155,
+			"aegis_name": "Goblin_Leader_Card"
+		},
+		{
+			"id": 4156,
+			"aegis_name": "Steam_Goblin_Card"
+		},
+		{
+			"id": 4157,
+			"aegis_name": "Goblin_Archer_Card"
+		},
+		{
+			"id": 4158,
+			"aegis_name": "Flying_Deleter_Card"
+		},
+		{
+			"id": 4159,
+			"aegis_name": "Nine_Tail_Card"
+		},
+		{
+			"id": 4160,
+			"aegis_name": "Antique_Firelock_Card"
+		},
+		{
+			"id": 4161,
+			"aegis_name": "Grand_Peco_Card"
+		},
+		{
+			"id": 4162,
+			"aegis_name": "Grizzly_Card"
+		},
+		{
+			"id": 4163,
+			"aegis_name": "Gryphon_Card"
+		},
+		{
+			"id": 4164,
+			"aegis_name": "Gullinbursti_Card"
+		},
+		{
+			"id": 4165,
+			"aegis_name": "Gig_Card"
+		},
+		{
+			"id": 4166,
+			"aegis_name": "Nightmare_Terror_Card"
+		},
+		{
+			"id": 4167,
+			"aegis_name": "Neraid_Card"
+		},
+		{
+			"id": 4168,
+			"aegis_name": "Dark_Lord_Card"
+		},
+		{
+			"id": 4169,
+			"aegis_name": "Dark_Illusion_Card"
+		},
+		{
+			"id": 4170,
+			"aegis_name": "Dark_Frame_Card"
+		},
+		{
+			"id": 4171,
+			"aegis_name": "Dark_Priest_Card"
+		},
+		{
+			"id": 4172,
+			"aegis_name": "The_Paper_Card"
+		},
+		{
+			"id": 4173,
+			"aegis_name": "Demon_Pungus_Card"
+		},
+		{
+			"id": 4174,
+			"aegis_name": "Deviling_Card"
+		},
+		{
+			"id": 4175,
+			"aegis_name": "Poison_Toad_Card"
+		},
+		{
+			"id": 4176,
+			"aegis_name": "Dullahan_Card"
+		},
+		{
+			"id": 4177,
+			"aegis_name": "Dryad_Card"
+		},
+		{
+			"id": 4178,
+			"aegis_name": "Dragon_Tail_Card"
+		},
+		{
+			"id": 4179,
+			"aegis_name": "Dragon_Fly_Card"
+		},
+		{
+			"id": 4180,
+			"aegis_name": "Driller_Card"
+		},
+		{
+			"id": 4181,
+			"aegis_name": "Disguise_Card"
+		},
+		{
+			"id": 4182,
+			"aegis_name": "Diabolic_Card"
+		},
+		{
+			"id": 4183,
+			"aegis_name": "Vagabond_Wolf_Card"
+		},
+		{
+			"id": 4184,
+			"aegis_name": "Lava_Golem_Card"
+		},
+		{
+			"id": 4185,
+			"aegis_name": "Rideword_Card"
+		},
+		{
+			"id": 4186,
+			"aegis_name": "Raggler_Card"
+		},
+		{
+			"id": 4187,
+			"aegis_name": "Raydric_Archer_Card"
+		},
+		{
+			"id": 4188,
+			"aegis_name": "Leib_Olmai_Card"
+		},
+		{
+			"id": 4189,
+			"aegis_name": "Wraith_Dead_Card"
+		},
+		{
+			"id": 4190,
+			"aegis_name": "Wraith_Card"
+		},
+		{
+			"id": 4191,
+			"aegis_name": "Loli_Ruri_Card"
+		},
+		{
+			"id": 4192,
+			"aegis_name": "Rotar_Zairo_Card"
+		},
+		{
+			"id": 4193,
+			"aegis_name": "Lude_Card"
+		},
+		{
+			"id": 4194,
+			"aegis_name": "Rybio_Card"
+		},
+		{
+			"id": 4195,
+			"aegis_name": "Leaf_Cat_Card"
+		},
+		{
+			"id": 4196,
+			"aegis_name": "Marin_Card"
+		},
+		{
+			"id": 4197,
+			"aegis_name": "Mastering_Card"
+		},
+		{
+			"id": 4198,
+			"aegis_name": "Maya_Puple_Card"
+		},
+		{
+			"id": 4199,
+			"aegis_name": "Merman_Card"
+		},
+		{
+			"id": 4200,
+			"aegis_name": "Megalith_Card"
+		},
+		{
+			"id": 4201,
+			"aegis_name": "Majoruros_Card"
+		},
+		{
+			"id": 4202,
+			"aegis_name": "Civil_Servant_Card"
+		},
+		{
+			"id": 4203,
+			"aegis_name": "Mutant_Dragon_Card"
+		},
+		{
+			"id": 4204,
+			"aegis_name": "Mini_Demon_Card"
+		},
+		{
+			"id": 4205,
+			"aegis_name": "Mimic_Card"
+		},
+		{
+			"id": 4206,
+			"aegis_name": "Mystcase_Card"
+		},
+		{
+			"id": 4207,
+			"aegis_name": "Mysteltainn_Card"
+		},
+		{
+			"id": 4208,
+			"aegis_name": "Miyabi_Ningyo_Card"
+		},
+		{
+			"id": 4209,
+			"aegis_name": "Violy_Card"
+		},
+		{
+			"id": 4210,
+			"aegis_name": "Wander_Man_Card"
+		},
+		{
+			"id": 4211,
+			"aegis_name": "Vocal_Card"
+		},
+		{
+			"id": 4212,
+			"aegis_name": "Bon_Gun_Card"
+		},
+		{
+			"id": 4213,
+			"aegis_name": "Brilight_Card"
+		},
+		{
+			"id": 4214,
+			"aegis_name": "Bloody_Murderer_Card"
+		},
+		{
+			"id": 4215,
+			"aegis_name": "Blazzer_Card"
+		},
+		{
+			"id": 4216,
+			"aegis_name": "Sasquatch_Card"
+		},
+		{
+			"id": 4217,
+			"aegis_name": "Live_Peach_Tree_Card"
+		},
+		{
+			"id": 4218,
+			"aegis_name": "Succubus_Card"
+		},
+		{
+			"id": 4219,
+			"aegis_name": "Sageworm_Card"
+		},
+		{
+			"id": 4220,
+			"aegis_name": "Solider_Card"
+		},
+		{
+			"id": 4221,
+			"aegis_name": "Skeleton_General_Card"
+		},
+		{
+			"id": 4222,
+			"aegis_name": "Skel_Prisoner_Card"
+		},
+		{
+			"id": 4223,
+			"aegis_name": "Stalactic_Golem_Card"
+		},
+		{
+			"id": 4224,
+			"aegis_name": "Stem_Worm_Card"
+		},
+		{
+			"id": 4225,
+			"aegis_name": "Stone_Shooter_Card"
+		},
+		{
+			"id": 4226,
+			"aegis_name": "Sting_Card"
+		},
+		{
+			"id": 4227,
+			"aegis_name": "Spring_Rabbit_Card"
+		},
+		{
+			"id": 4228,
+			"aegis_name": "Sleeper_Card"
+		},
+		{
+			"id": 4229,
+			"aegis_name": "C_Tower_Manager_Card"
+		},
+		{
+			"id": 4230,
+			"aegis_name": "Shinobi_Card"
+		},
+		{
+			"id": 4231,
+			"aegis_name": "Increase_Soil_Card"
+		},
+		{
+			"id": 4232,
+			"aegis_name": "Wild_Ginseng_Card"
+		},
+		{
+			"id": 4233,
+			"aegis_name": "Baby_Leopard_Card"
+		},
+		{
+			"id": 4234,
+			"aegis_name": "Anolian_Card"
+		},
+		{
+			"id": 4235,
+			"aegis_name": "Cookie_XMAS_Card"
+		},
+		{
+			"id": 4236,
+			"aegis_name": "Amon_Ra_Card"
+		},
+		{
+			"id": 4237,
+			"aegis_name": "Owl_Duke_Card"
+		},
+		{
+			"id": 4238,
+			"aegis_name": "Owl_Baron_Card"
+		},
+		{
+			"id": 4239,
+			"aegis_name": "Iron_Fist_Card"
+		},
+		{
+			"id": 4240,
+			"aegis_name": "Arclouse_Card"
+		},
+		{
+			"id": 4241,
+			"aegis_name": "Archangeling_Card"
+		},
+		{
+			"id": 4242,
+			"aegis_name": "Apocalips_Card"
+		},
+		{
+			"id": 4243,
+			"aegis_name": "Antonio_Card"
+		},
+		{
+			"id": 4244,
+			"aegis_name": "Alarm_Card"
+		},
+		{
+			"id": 4245,
+			"aegis_name": "Am_Mut_Card"
+		},
+		{
+			"id": 4246,
+			"aegis_name": "Assulter_Card"
+		},
+		{
+			"id": 4247,
+			"aegis_name": "Aster_Card"
+		},
+		{
+			"id": 4248,
+			"aegis_name": "Ancient_Mummy_Card"
+		},
+		{
+			"id": 4249,
+			"aegis_name": "Ancient_Worm_Card"
+		},
+		{
+			"id": 4250,
+			"aegis_name": "Executioner_Card"
+		},
+		{
+			"id": 4251,
+			"aegis_name": "Elder_Card"
+		},
+		{
+			"id": 4252,
+			"aegis_name": "Alligator_Card"
+		},
+		{
+			"id": 4253,
+			"aegis_name": "Alice_Card"
+		},
+		{
+			"id": 4254,
+			"aegis_name": "Tirfing_Card"
+		},
+		{
+			"id": 4255,
+			"aegis_name": "Orc_Lady_Card"
+		},
+		{
+			"id": 4256,
+			"aegis_name": "Orc_Archer_Card"
+		},
+		{
+			"id": 4257,
+			"aegis_name": "Wild_Rose_Card"
+		},
+		{
+			"id": 4258,
+			"aegis_name": "Wicked_Nymph_Card"
+		},
+		{
+			"id": 4259,
+			"aegis_name": "Wooden_Golem_Card"
+		},
+		{
+			"id": 4260,
+			"aegis_name": "Wootan_Shooter_Card"
+		},
+		{
+			"id": 4261,
+			"aegis_name": "Wootan_Fighter_Card"
+		},
+		{
+			"id": 4262,
+			"aegis_name": "Evil_Cloud_Hermit_Card"
+		},
+		{
+			"id": 4263,
+			"aegis_name": "Incant_Samurai_Card"
+		},
+		{
+			"id": 4264,
+			"aegis_name": "Wind_Ghost_Card"
+		},
+		{
+			"id": 4265,
+			"aegis_name": "Li_Me_Mang_Ryang_Card"
+		},
+		{
+			"id": 4266,
+			"aegis_name": "Eclipse_Card"
+		},
+		{
+			"id": 4267,
+			"aegis_name": "Explosion_Card"
+		},
+		{
+			"id": 4268,
+			"aegis_name": "Injustice_Card"
+		},
+		{
+			"id": 4269,
+			"aegis_name": "Incubus_Card"
+		},
+		{
+			"id": 4270,
+			"aegis_name": "Giant_Spider_Card"
+		},
+		{
+			"id": 4271,
+			"aegis_name": "Giant_Honet_Card"
+		},
+		{
+			"id": 4272,
+			"aegis_name": "Dancing_Dragon_Card"
+		},
+		{
+			"id": 4273,
+			"aegis_name": "Shellfish_Card"
+		},
+		{
+			"id": 4274,
+			"aegis_name": "Zombie_Master_Card"
+		},
+		{
+			"id": 4275,
+			"aegis_name": "Zombie_Prisoner_Card"
+		},
+		{
+			"id": 4276,
+			"aegis_name": "Lord_Of_Death_Card"
+		},
+		{
+			"id": 4277,
+			"aegis_name": "Zherlthsh_Card"
+		},
+		{
+			"id": 4278,
+			"aegis_name": "Gibbet_Card"
+		},
+		{
+			"id": 4279,
+			"aegis_name": "Deleter_Card"
+		},
+		{
+			"id": 4280,
+			"aegis_name": "Geographer_Card"
+		},
+		{
+			"id": 4281,
+			"aegis_name": "Zipper_Bear_Card"
+		},
+		{
+			"id": 4282,
+			"aegis_name": "Tengu_Card"
+		},
+		{
+			"id": 4283,
+			"aegis_name": "Greatest_General_Card"
+		},
+		{
+			"id": 4284,
+			"aegis_name": "Chepet_Card"
+		},
+		{
+			"id": 4285,
+			"aegis_name": "Choco_Card"
+		},
+		{
+			"id": 4286,
+			"aegis_name": "Karakasa_Card"
+		},
+		{
+			"id": 4287,
+			"aegis_name": "Kapha_Card"
+		},
+		{
+			"id": 4288,
+			"aegis_name": "Carat_Card"
+		},
+		{
+			"id": 4289,
+			"aegis_name": "Caterpillar_Card"
+		},
+		{
+			"id": 4290,
+			"aegis_name": "Cat_O_Nine_Tail_Card"
+		},
+		{
+			"id": 4291,
+			"aegis_name": "Kobold_Leader_Card"
+		},
+		{
+			"id": 4292,
+			"aegis_name": "Kobold_Archer_Card"
+		},
+		{
+			"id": 4293,
+			"aegis_name": "Cookie_Card"
+		},
+		{
+			"id": 4294,
+			"aegis_name": "Quve_Card"
+		},
+		{
+			"id": 4295,
+			"aegis_name": "Kraben_Card"
+		},
+		{
+			"id": 4296,
+			"aegis_name": "Cramp_Card"
+		},
+		{
+			"id": 4297,
+			"aegis_name": "Cruiser_Card"
+		},
+		{
+			"id": 4298,
+			"aegis_name": "Cremy_Fear_Card"
+		},
+		{
+			"id": 4299,
+			"aegis_name": "Clock_Card"
+		},
+		{
+			"id": 4300,
+			"aegis_name": "Chimera_Card"
+		},
+		{
+			"id": 4301,
+			"aegis_name": "Killer_Mantis_Card"
+		},
+		{
+			"id": 4302,
+			"aegis_name": "Tao_Gunka_Card"
+		},
+		{
+			"id": 4303,
+			"aegis_name": "Whisper_Boss_Card"
+		},
+		{
+			"id": 4304,
+			"aegis_name": "Tamruan_Card"
+		},
+		{
+			"id": 4305,
+			"aegis_name": "Turtle_General_Card"
+		},
+		{
+			"id": 4306,
+			"aegis_name": "Toad_Card"
+		},
+		{
+			"id": 4307,
+			"aegis_name": "Kind_Of_Beetle_Card"
+		},
+		{
+			"id": 4308,
+			"aegis_name": "Tri_Joint_Card"
+		},
+		{
+			"id": 4309,
+			"aegis_name": "Parasite_Card"
+		},
+		{
+			"id": 4310,
+			"aegis_name": "Panzer_Goblin_Card"
+		},
+		{
+			"id": 4311,
+			"aegis_name": "Permeter_Card"
+		},
+		{
+			"id": 4312,
+			"aegis_name": "Fur_Seal_Card"
+		},
+		{
+			"id": 4313,
+			"aegis_name": "Punk_Card"
+		},
+		{
+			"id": 4314,
+			"aegis_name": "Penomena_Card"
+		},
+		{
+			"id": 4315,
+			"aegis_name": "Pest_Card"
+		},
+		{
+			"id": 4316,
+			"aegis_name": "Fake_Angel_Card"
+		},
+		{
+			"id": 4317,
+			"aegis_name": "Mobster_Card"
+		},
+		{
+			"id": 4318,
+			"aegis_name": "Knight_Windstorm_Card"
+		},
+		{
+			"id": 4319,
+			"aegis_name": "Freezer_Card"
+		},
+		{
+			"id": 4320,
+			"aegis_name": "Bloody_Knight_Card"
+		},
+		{
+			"id": 4321,
+			"aegis_name": "Hylozoist_Card"
+		},
+		{
+			"id": 4322,
+			"aegis_name": "High_Orc_Card"
+		},
+		{
+			"id": 4323,
+			"aegis_name": "Garm_Baby_Card"
+		},
+		{
+			"id": 4324,
+			"aegis_name": "Garm_Card"
+		},
+		{
+			"id": 4325,
+			"aegis_name": "Harpy_Card"
+		},
+		{
+			"id": 4326,
+			"aegis_name": "See_Otter_Card"
+		},
+		{
+			"id": 4327,
+			"aegis_name": "Blood_Butterfly_Card"
+		},
+		{
+			"id": 4328,
+			"aegis_name": "Hyegun_Card"
+		},
+		{
+			"id": 4329,
+			"aegis_name": "Phendark_Card"
+		},
+		{
+			"id": 4330,
+			"aegis_name": "Dark_Snake_Lord_Card"
+		},
+		{
+			"id": 4331,
+			"aegis_name": "Heater_Card"
+		},
+		{
+			"id": 4332,
+			"aegis_name": "Waste_Stove_Card"
+		},
+		{
+			"id": 4333,
+			"aegis_name": "Venomous_Card"
+		},
+		{
+			"id": 4334,
+			"aegis_name": "Noxious_Card"
+		},
+		{
+			"id": 4335,
+			"aegis_name": "Pitman_Card"
+		},
+		{
+			"id": 4336,
+			"aegis_name": "Ungoliant_Card"
+		},
+		{
+			"id": 4337,
+			"aegis_name": "Porcellio_Card"
+		},
+		{
+			"id": 4338,
+			"aegis_name": "Obsidian_Card"
+		},
+		{
+			"id": 4339,
+			"aegis_name": "Mineral_Card"
+		},
+		{
+			"id": 4340,
+			"aegis_name": "Teddy_Bear_Card"
+		},
+		{
+			"id": 4341,
+			"aegis_name": "Metaling_Card"
+		},
+		{
+			"id": 4342,
+			"aegis_name": "Rsx_0806_Card"
+		},
+		{
+			"id": 4343,
+			"aegis_name": "Mole_Card"
+		},
+		{
+			"id": 4344,
+			"aegis_name": "Anopheles_Card"
+		},
+		{
+			"id": 4345,
+			"aegis_name": "Hill_Wind_Card"
+		},
+		{
+			"id": 4346,
+			"aegis_name": "Ygnizem_Card"
+		},
+		{
+			"id": 4347,
+			"aegis_name": "Armaia_Card"
+		},
+		{
+			"id": 4348,
+			"aegis_name": "Whikebain_Card"
+		},
+		{
+			"id": 4349,
+			"aegis_name": "Erend_Card"
+		},
+		{
+			"id": 4350,
+			"aegis_name": "Rawrel_Card"
+		},
+		{
+			"id": 4351,
+			"aegis_name": "Kavac_Card"
+		},
+		{
+			"id": 4352,
+			"aegis_name": "B_Ygnizem_Card"
+		},
+		{
+			"id": 4353,
+			"aegis_name": "Removal_Card"
+		},
+		{
+			"id": 4354,
+			"aegis_name": "Gemini_Card"
+		},
+		{
+			"id": 4355,
+			"aegis_name": "Gremlin_Card"
+		},
+		{
+			"id": 4356,
+			"aegis_name": "Beholder_Card"
+		},
+		{
+			"id": 4357,
+			"aegis_name": "B_Seyren_Card"
+		},
+		{
+			"id": 4358,
+			"aegis_name": "Seyren_Card"
+		},
+		{
+			"id": 4359,
+			"aegis_name": "B_Eremes_Card"
+		},
+		{
+			"id": 4360,
+			"aegis_name": "Eremes_Card"
+		},
+		{
+			"id": 4361,
+			"aegis_name": "B_Harword_Card"
+		},
+		{
+			"id": 4362,
+			"aegis_name": "Harword_Card"
+		},
+		{
+			"id": 4363,
+			"aegis_name": "B_Magaleta_Card"
+		},
+		{
+			"id": 4364,
+			"aegis_name": "Magaleta_Card"
+		},
+		{
+			"id": 4365,
+			"aegis_name": "B_Katrinn_Card"
+		},
+		{
+			"id": 4366,
+			"aegis_name": "Katrinn_Card"
+		},
+		{
+			"id": 4367,
+			"aegis_name": "B_Shecil_Card"
+		},
+		{
+			"id": 4368,
+			"aegis_name": "Shecil_Card"
+		},
+		{
+			"id": 4369,
+			"aegis_name": "Venatu_Card"
+		},
+		{
+			"id": 4370,
+			"aegis_name": "Dimik_Card"
+		},
+		{
+			"id": 4371,
+			"aegis_name": "Archdam_Card"
+		},
+		{
+			"id": 4372,
+			"aegis_name": "Bacsojin_Card"
+		},
+		{
+			"id": 4373,
+			"aegis_name": "Chung_E_Card"
+		},
+		{
+			"id": 4374,
+			"aegis_name": "Apocalips_H_Card"
+		},
+		{
+			"id": 4375,
+			"aegis_name": "Orc_Baby_Card"
+		},
+		{
+			"id": 4376,
+			"aegis_name": "Lady_Tanee_Card"
+		},
+		{
+			"id": 4377,
+			"aegis_name": "Green_Iguana_Card"
+		},
+		{
+			"id": 4378,
+			"aegis_name": "Acidus_Card"
+		},
+		{
+			"id": 4379,
+			"aegis_name": "Acidus__Card"
+		},
+		{
+			"id": 4380,
+			"aegis_name": "Ferus_Card"
+		},
+		{
+			"id": 4381,
+			"aegis_name": "Ferus__Card"
+		},
+		{
+			"id": 4382,
+			"aegis_name": "Novus__Card"
+		},
+		{
+			"id": 4383,
+			"aegis_name": "Novus_Card"
+		},
+		{
+			"id": 4384,
+			"aegis_name": "Hydro_Card"
+		},
+		{
+			"id": 4385,
+			"aegis_name": "Dragon_Egg_Card"
+		},
+		{
+			"id": 4386,
+			"aegis_name": "Detale_Card"
+		},
+		{
+			"id": 4387,
+			"aegis_name": "Ancient_Mimic_Card"
+		},
+		{
+			"id": 4388,
+			"aegis_name": "Deathword_Card"
+		},
+		{
+			"id": 4389,
+			"aegis_name": "Plasma_Card"
+		},
+		{
+			"id": 4390,
+			"aegis_name": "Breeze_Card"
+		},
+		{
+			"id": 4391,
+			"aegis_name": "Retribution_Card"
+		},
+		{
+			"id": 4392,
+			"aegis_name": "Observation_Card"
+		},
+		{
+			"id": 4393,
+			"aegis_name": "Shelter_Card"
+		},
+		{
+			"id": 4394,
+			"aegis_name": "Solace_Card"
+		},
+		{
+			"id": 4395,
+			"aegis_name": "Tha_Maero_Card"
+		},
+		{
+			"id": 4396,
+			"aegis_name": "Tha_Odium_Card"
+		},
+		{
+			"id": 4397,
+			"aegis_name": "Tha_Despero_Card"
+		},
+		{
+			"id": 4398,
+			"aegis_name": "Tha_Dolor_Card"
+		},
+		{
+			"id": 4399,
+			"aegis_name": "Thanatos_Card"
+		},
+		{
+			"id": 4400,
+			"aegis_name": "Aliza_Card"
+		},
+		{
+			"id": 4401,
+			"aegis_name": "Alicel_Card"
+		},
+		{
+			"id": 4402,
+			"aegis_name": "Aliot_Card"
+		},
+		{
+			"id": 4403,
+			"aegis_name": "Kiel_Card"
+		},
+		{
+			"id": 4404,
+			"aegis_name": "Skogul_Card"
+		},
+		{
+			"id": 4405,
+			"aegis_name": "Frus_Card"
+		},
+		{
+			"id": 4406,
+			"aegis_name": "Skeggiold_Card"
+		},
+		{
+			"id": 4407,
+			"aegis_name": "Randgris_Card"
+		},
+		{
+			"id": 4408,
+			"aegis_name": "Gloom_Under_Night_Card"
+		},
+		{
+			"id": 4409,
+			"aegis_name": "Agav_Card"
+		},
+		{
+			"id": 4410,
+			"aegis_name": "Echio_Card"
+		},
+		{
+			"id": 4411,
+			"aegis_name": "Vanberk_Card"
+		},
+		{
+			"id": 4412,
+			"aegis_name": "Isilla_Card"
+		},
+		{
+			"id": 4413,
+			"aegis_name": "Hodremlin_Card"
+		},
+		{
+			"id": 4414,
+			"aegis_name": "Seeker_Card"
+		},
+		{
+			"id": 4415,
+			"aegis_name": "Snowier_Card"
+		},
+		{
+			"id": 4416,
+			"aegis_name": "Siroma_Card"
+		},
+		{
+			"id": 4417,
+			"aegis_name": "Ice_Titan_Card"
+		},
+		{
+			"id": 4418,
+			"aegis_name": "Gazeti_Card"
+		},
+		{
+			"id": 4419,
+			"aegis_name": "Ktullanux_Card"
+		},
+		{
+			"id": 4420,
+			"aegis_name": "Muscipular_Card"
+		},
+		{
+			"id": 4421,
+			"aegis_name": "Drosera_Card"
+		},
+		{
+			"id": 4422,
+			"aegis_name": "Roween_Card"
+		},
+		{
+			"id": 4423,
+			"aegis_name": "Galion_Card"
+		},
+		{
+			"id": 4424,
+			"aegis_name": "Stapo_Card"
+		},
+		{
+			"id": 4425,
+			"aegis_name": "Atroce_Card"
+		},
+		{
+			"id": 4426,
+			"aegis_name": "Byorgue_Card"
+		},
+		{
+			"id": 4427,
+			"aegis_name": "Sword_Guardian_Card"
+		},
+		{
+			"id": 4428,
+			"aegis_name": "Bow_Guardian_Card"
+		},
+		{
+			"id": 4429,
+			"aegis_name": "Salamander_Card"
+		},
+		{
+			"id": 4430,
+			"aegis_name": "Ifrit_Card"
+		},
+		{
+			"id": 4431,
+			"aegis_name": "Kasa_Card"
+		},
+		{
+			"id": 4432,
+			"aegis_name": "Magmaring_Card"
+		},
+		{
+			"id": 4433,
+			"aegis_name": "Imp_Card"
+		},
+		{
+			"id": 4434,
+			"aegis_name": "Knocker_Card"
+		},
+		{
+			"id": 4435,
+			"aegis_name": "Zombie_Slaughter_Card"
+		},
+		{
+			"id": 4436,
+			"aegis_name": "Ragged_Zombie_Card"
+		},
+		{
+			"id": 4437,
+			"aegis_name": "Hell_Poodle_Card"
+		},
+		{
+			"id": 4438,
+			"aegis_name": "Banshee_Card"
+		},
+		{
+			"id": 4439,
+			"aegis_name": "Flame_Skull_Card"
+		},
+		{
+			"id": 4440,
+			"aegis_name": "Necromancer_Card"
+		},
+		{
+			"id": 4441,
+			"aegis_name": "Fallen_Bishop_Card"
+		},
+		{
+			"id": 4442,
+			"aegis_name": "Tatacho_Card"
+		},
+		{
+			"id": 4443,
+			"aegis_name": "Aqua_Elemental_Card"
+		},
+		{
+			"id": 4444,
+			"aegis_name": "Draco_Card"
+		},
+		{
+			"id": 4445,
+			"aegis_name": "Luciola_Vespa_Card"
+		},
+		{
+			"id": 4447,
+			"aegis_name": "Centipede_Card"
+		},
+		{
+			"id": 4448,
+			"aegis_name": "Cornus_Card"
+		},
+		{
+			"id": 4449,
+			"aegis_name": "Dark_Shadow_Card"
+		},
+		{
+			"id": 4450,
+			"aegis_name": "Banshee_Master_Card"
+		},
+		{
+			"id": 4451,
+			"aegis_name": "Ant_Buyanne_Card"
+		},
+		{
+			"id": 4452,
+			"aegis_name": "Centipede_Larva_Card"
+		},
+		{
+			"id": 4453,
+			"aegis_name": "Hilsrion_Card"
+		},
+		{
+			"id": 6001,
+			"aegis_name": "Essence_Of_Fire"
+		},
+		{
+			"id": 6002,
+			"aegis_name": "Token_Of_Apostle"
+		},
+		{
+			"id": 6003,
+			"aegis_name": "Soul_Pendant"
+		},
+		{
+			"id": 6004,
+			"aegis_name": "Bapho_Doll"
+		},
+		{
+			"id": 6008,
+			"aegis_name": "Wood"
+		},
+		{
+			"id": 6010,
+			"aegis_name": "Pickaxe"
+		},
+		{
+			"id": 6020,
+			"aegis_name": "Fur"
+		},
+		{
+			"id": 6021,
+			"aegis_name": "Peaked_Hat"
+		},
+		{
+			"id": 6022,
+			"aegis_name": "Hard_Skin"
+		},
+		{
+			"id": 6023,
+			"aegis_name": "Mystic_Horn"
+		},
+		{
+			"id": 6032,
+			"aegis_name": "Horn_Of_Hilsrion"
+		},
+		{
+			"id": 6033,
+			"aegis_name": "Horn_Of_Tendrilion"
+		},
+		{
+			"id": 6073,
+			"aegis_name": "Dragon's_Mane"
+		},
+		{
+			"id": 6075,
+			"aegis_name": "Crystalized_Teardrop"
+		},
+		{
+			"id": 6086,
+			"aegis_name": "Withered_Flower"
+		},
+		{
+			"id": 6087,
+			"aegis_name": "Crystal_Of_Soul_01"
+		},
+		{
+			"id": 6088,
+			"aegis_name": "Crystal_Of_Soul_02"
+		},
+		{
+			"id": 6089,
+			"aegis_name": "Piece_Of_Darkness"
+		},
+		{
+			"id": 6090,
+			"aegis_name": "Purified_Bradium"
+		},
+		{
+			"id": 6091,
+			"aegis_name": "Dark_Red_Scale"
+		},
+		{
+			"id": 6095,
+			"aegis_name": "Flavored_Alcohol"
+		},
+		{
+			"id": 6096,
+			"aegis_name": "Fish_With_Blue_Back"
+		},
+		{
+			"id": 6097,
+			"aegis_name": "Pumpkin_Pie_"
+		},
+		{
+			"id": 6098,
+			"aegis_name": "Small_Snow_Flower"
+		},
+		{
+			"id": 6099,
+			"aegis_name": "Grilled_Rice_Cake"
+		},
+		{
+			"id": 6100,
+			"aegis_name": "Damp_Darkness"
+		},
+		{
+			"id": 6104,
+			"aegis_name": "Big_Cell"
+		},
+		{
+			"id": 6105,
+			"aegis_name": "Morning_Dew"
+		},
+		{
+			"id": 6106,
+			"aegis_name": "Well_Ripened_Berry"
+		},
+		{
+			"id": 6107,
+			"aegis_name": "Sunset_On_The_Rock"
+		},
+		{
+			"id": 6108,
+			"aegis_name": "Apple_Pudding"
+		},
+		{
+			"id": 6109,
+			"aegis_name": "Plant_Neutrient"
+		},
+		{
+			"id": 6110,
+			"aegis_name": "Vital_Flower"
+		},
+		{
+			"id": 6111,
+			"aegis_name": "Mystic_Stone"
+		},
+		{
+			"id": 6112,
+			"aegis_name": "Fresh_Plant"
+		},
+		{
+			"id": 6113,
+			"aegis_name": "Vital_Flower_"
+		},
+		{
+			"id": 6114,
+			"aegis_name": "Flame_Gemstone"
+		},
+		{
+			"id": 6115,
+			"aegis_name": "Bun_"
+		},
+		{
+			"id": 6120,
+			"aegis_name": "Face_Paint"
+		},
+		{
+			"id": 6123,
+			"aegis_name": "Surface_Paint"
+		},
+		{
+			"id": 6128,
+			"aegis_name": "Guillotine_Antidote"
+		},
+		{
+			"id": 6144,
+			"aegis_name": "Heartbroken_Tears"
+		},
+		{
+			"id": 6145,
+			"aegis_name": "Vulcan_Bullet"
+		},
+		{
+			"id": 6146,
+			"aegis_name": "Magic_Gear_Fuel"
+		},
+		{
+			"id": 6147,
+			"aegis_name": "Liquid_Condensed_Bullet"
+		},
+		{
+			"id": 6186,
+			"aegis_name": "Monkey_Wrench"
+		},
+		{
+			"id": 6189,
+			"aegis_name": "Magic_Book_FB"
+		},
+		{
+			"id": 6190,
+			"aegis_name": "Magic_Book_CB"
+		},
+		{
+			"id": 6191,
+			"aegis_name": "Magic_Book_LB"
+		},
+		{
+			"id": 6192,
+			"aegis_name": "Magic_Book_SG"
+		},
+		{
+			"id": 6193,
+			"aegis_name": "Magic_Book_LOV"
+		},
+		{
+			"id": 6194,
+			"aegis_name": "Magic_Book_MS"
+		},
+		{
+			"id": 6195,
+			"aegis_name": "Magic_Book_CM"
+		},
+		{
+			"id": 6196,
+			"aegis_name": "Magic_Book_TV"
+		},
+		{
+			"id": 6197,
+			"aegis_name": "Magic_Book_TS"
+		},
+		{
+			"id": 6198,
+			"aegis_name": "Magic_Book_JT"
+		},
+		{
+			"id": 6199,
+			"aegis_name": "Magic_Book_WB"
+		},
+		{
+			"id": 6200,
+			"aegis_name": "Magic_Book_HD"
+		},
+		{
+			"id": 6201,
+			"aegis_name": "Magic_Book_ES"
+		},
+		{
+			"id": 6202,
+			"aegis_name": "Magic_Book_ES_"
+		},
+		{
+			"id": 6203,
+			"aegis_name": "Magic_Book_CL"
+		},
+		{
+			"id": 6204,
+			"aegis_name": "Magic_Book_CR"
+		},
+		{
+			"id": 6205,
+			"aegis_name": "Magic_Book_DL"
+		},
+		{
+			"id": 6210,
+			"aegis_name": "Seed_Of_Horny_Plant"
+		},
+		{
+			"id": 6211,
+			"aegis_name": "Bloodsuck_Plant_Seed"
+		},
+		{
+			"id": 6212,
+			"aegis_name": "Bomb_Mushroom_Spore"
+		},
+		{
+			"id": 6213,
+			"aegis_name": "Explosive_Powder"
+		},
+		{
+			"id": 6214,
+			"aegis_name": "Smoke_Powder"
+		},
+		{
+			"id": 6215,
+			"aegis_name": "Tear_Gas"
+		},
+		{
+			"id": 6216,
+			"aegis_name": "Oil_Bottle"
+		},
+		{
+			"id": 6217,
+			"aegis_name": "Mandragora_Flowerpot"
+		},
+		{
+			"id": 6223,
+			"aegis_name": "Carnium"
+		},
+		{
+			"id": 6224,
+			"aegis_name": "Bradium"
+		},
+		{
+			"id": 6244,
+			"aegis_name": "Gun_Powder"
+		},
+		{
+			"id": 6245,
+			"aegis_name": "Black_Powder"
+		},
+		{
+			"id": 6246,
+			"aegis_name": "Yellow_Powder"
+		},
+		{
+			"id": 6247,
+			"aegis_name": "White_Powder"
+		},
+		{
+			"id": 6248,
+			"aegis_name": "Melange_Pot"
+		},
+		{
+			"id": 6249,
+			"aegis_name": "Savage_Meat"
+		},
+		{
+			"id": 6250,
+			"aegis_name": "Cooking_Skewer"
+		},
+		{
+			"id": 6251,
+			"aegis_name": "Black_Charcoal"
+		},
+		{
+			"id": 6252,
+			"aegis_name": "Wolf_Blood"
+		},
+		{
+			"id": 6253,
+			"aegis_name": "Cold_Ice"
+		},
+		{
+			"id": 6254,
+			"aegis_name": "Beef_Head_Meat"
+		},
+		{
+			"id": 6255,
+			"aegis_name": "Large_Cookpot"
+		},
+		{
+			"id": 6256,
+			"aegis_name": "Ice_Fragment"
+		},
+		{
+			"id": 6257,
+			"aegis_name": "Ice_Crystal"
+		},
+		{
+			"id": 6258,
+			"aegis_name": "Comodo_Tropic_Fruit"
+		},
+		{
+			"id": 6259,
+			"aegis_name": "Drocera_Tentacle"
+		},
+		{
+			"id": 6260,
+			"aegis_name": "Petti_Tail"
+		},
+		{
+			"id": 6261,
+			"aegis_name": "Fine_Noodle"
+		},
+		{
+			"id": 6262,
+			"aegis_name": "Cool_Gravy"
+		},
+		{
+			"id": 6263,
+			"aegis_name": "Coconut_Fruit"
+		},
+		{
+			"id": 6264,
+			"aegis_name": "Melon"
+		},
+		{
+			"id": 6265,
+			"aegis_name": "Pineapple"
+		},
+		{
+			"id": 6279,
+			"aegis_name": "Apple_Bomb_CB"
+		},
+		{
+			"id": 6280,
+			"aegis_name": "Pinepple_Bomb_CB"
+		},
+		{
+			"id": 6281,
+			"aegis_name": "Coconut_Bomb_CB"
+		},
+		{
+			"id": 6282,
+			"aegis_name": "Melon_Bomb_CB"
+		},
+		{
+			"id": 6283,
+			"aegis_name": "Banana_Bomb_CB"
+		},
+		{
+			"id": 6284,
+			"aegis_name": "Plant_Genetic_Grow"
+		},
+		{
+			"id": 6285,
+			"aegis_name": "Quality_Potion_Book"
+		},
+		{
+			"id": 6297,
+			"aegis_name": "Bottle_To_Throw"
+		},
+		{
+			"id": 6321,
+			"aegis_name": "Rakehorn_Helm"
+		},
+		{
+			"id": 6322,
+			"aegis_name": "Antler_Helm"
+		},
+		{
+			"id": 6323,
+			"aegis_name": "Twinhorn_Helm"
+		},
+		{
+			"id": 6324,
+			"aegis_name": "Singlehorn_Helm"
+		},
+		{
+			"id": 6325,
+			"aegis_name": "White_Spider_Limb"
+		},
+		{
+			"id": 6326,
+			"aegis_name": "Queen_Wing_Piece"
+		},
+		{
+			"id": 6360,
+			"aegis_name": "Scarlet_Pts"
+		},
+		{
+			"id": 6361,
+			"aegis_name": "Indigo_Pts"
+		},
+		{
+			"id": 6362,
+			"aegis_name": "Yellow_Wish_Pts"
+		},
+		{
+			"id": 6363,
+			"aegis_name": "Lime_Green_Pts"
+		},
+		{
+			"id": 6381,
+			"aegis_name": "Field_Shovel"
+		},
+		{
+			"id": 6382,
+			"aegis_name": "Urn"
+		},
+		{
+			"id": 6393,
+			"aegis_name": "Round_Feather"
+		},
+		{
+			"id": 6394,
+			"aegis_name": "Golden_Feather"
+		},
+		{
+			"id": 6395,
+			"aegis_name": "Angel_Magic_Power"
+		},
+		{
+			"id": 6493,
+			"aegis_name": "Makibishi"
+		},
+		{
+			"id": 6499,
+			"aegis_name": "Ancient_Grudge"
+		},
+		{
+			"id": 6512,
+			"aegis_name": "Charm_Fire"
+		},
+		{
+			"id": 6513,
+			"aegis_name": "Charm_Ice"
+		},
+		{
+			"id": 6514,
+			"aegis_name": "Charm_Wind"
+		},
+		{
+			"id": 6515,
+			"aegis_name": "Charm_Earth"
+		},
+		{
+			"id": 7001,
+			"aegis_name": "Mould_Powder"
+		},
+		{
+			"id": 7002,
+			"aegis_name": "Ogre_Tooth"
+		},
+		{
+			"id": 7003,
+			"aegis_name": "Anolian_Skin"
+		},
+		{
+			"id": 7004,
+			"aegis_name": "Mud_Lump"
+		},
+		{
+			"id": 7005,
+			"aegis_name": "Skull"
+		},
+		{
+			"id": 7006,
+			"aegis_name": "Wing_Of_Red_Bat"
+		},
+		{
+			"id": 7007,
+			"aegis_name": "Claw_Of_Rat"
+		},
+		{
+			"id": 7008,
+			"aegis_name": "Stiff_Horn"
+		},
+		{
+			"id": 7009,
+			"aegis_name": "Glitter_Shell"
+		},
+		{
+			"id": 7010,
+			"aegis_name": "Tail_Of_Steel_Scorpion"
+		},
+		{
+			"id": 7011,
+			"aegis_name": "Claw_Of_Monkey"
+		},
+		{
+			"id": 7012,
+			"aegis_name": "Tough_Scalelike_Stem"
+		},
+		{
+			"id": 7013,
+			"aegis_name": "Coral_Reef"
+		},
+		{
+			"id": 7014,
+			"aegis_name": "Old_Portrait"
+		},
+		{
+			"id": 7015,
+			"aegis_name": "Bookclip_In_Memory"
+		},
+		{
+			"id": 7016,
+			"aegis_name": "Spoon_Stub"
+		},
+		{
+			"id": 7017,
+			"aegis_name": "Executioner's_Mitten"
+		},
+		{
+			"id": 7018,
+			"aegis_name": "Young_Twig"
+		},
+		{
+			"id": 7019,
+			"aegis_name": "Loki's_Whispers"
+		},
+		{
+			"id": 7020,
+			"aegis_name": "Mother's_Nightmare"
+		},
+		{
+			"id": 7021,
+			"aegis_name": "Foolishness_Of_Blind"
+		},
+		{
+			"id": 7022,
+			"aegis_name": "Old_Hilt"
+		},
+		{
+			"id": 7023,
+			"aegis_name": "Blade_Lost_In_Darkness"
+		},
+		{
+			"id": 7024,
+			"aegis_name": "Bloody_Edge"
+		},
+		{
+			"id": 7026,
+			"aegis_name": "Key_Of_Clock_Tower"
+		},
+		{
+			"id": 7027,
+			"aegis_name": "Underground_Key"
+		},
+		{
+			"id": 7030,
+			"aegis_name": "Claw_Of_Desert_Wolf"
+		},
+		{
+			"id": 7031,
+			"aegis_name": "Old_Frying_Pan"
+		},
+		{
+			"id": 7032,
+			"aegis_name": "Piece_Of_Egg_Shell"
+		},
+		{
+			"id": 7033,
+			"aegis_name": "Poison_Spore"
+		},
+		{
+			"id": 7034,
+			"aegis_name": "Red_Socks_With_Holes"
+		},
+		{
+			"id": 7035,
+			"aegis_name": "Matchstick"
+		},
+		{
+			"id": 7036,
+			"aegis_name": "Fang_Of_Garm"
+		},
+		{
+			"id": 7038,
+			"aegis_name": "Yarn"
+		},
+		{
+			"id": 7041,
+			"aegis_name": "Fine_Grit"
+		},
+		{
+			"id": 7043,
+			"aegis_name": "Fine_Sand"
+		},
+		{
+			"id": 7047,
+			"aegis_name": "Alice's_Apron"
+		},
+		{
+			"id": 7048,
+			"aegis_name": "Talon_Of_Griffin"
+		},
+		{
+			"id": 7049,
+			"aegis_name": "Stone"
+		},
+		{
+			"id": 7053,
+			"aegis_name": "Cyfar"
+		},
+		{
+			"id": 7054,
+			"aegis_name": "Brigan"
+		},
+		{
+			"id": 7055,
+			"aegis_name": "Animal_Pooopoo"
+		},
+		{
+			"id": 7056,
+			"aegis_name": "Payroll_Of_Kafra"
+		},
+		{
+			"id": 7057,
+			"aegis_name": "Gallar_Horn"
+		},
+		{
+			"id": 7058,
+			"aegis_name": "Gullraifnir"
+		},
+		{
+			"id": 7063,
+			"aegis_name": "Soft_Feather"
+		},
+		{
+			"id": 7064,
+			"aegis_name": "Dragon_Fly_Wing"
+		},
+		{
+			"id": 7065,
+			"aegis_name": "Sea_Otter_Leather"
+		},
+		{
+			"id": 7066,
+			"aegis_name": "Ice_Piece"
+		},
+		{
+			"id": 7067,
+			"aegis_name": "Stone_Piece"
+		},
+		{
+			"id": 7068,
+			"aegis_name": "Burn_Tree"
+		},
+		{
+			"id": 7069,
+			"aegis_name": "Broken_Armor_Piece"
+		},
+		{
+			"id": 7070,
+			"aegis_name": "Broken_Shell"
+		},
+		{
+			"id": 7071,
+			"aegis_name": "Tatters_Clothes"
+		},
+		{
+			"id": 7072,
+			"aegis_name": "Rust_Suriken"
+		},
+		{
+			"id": 7073,
+			"aegis_name": "Jewel_Of_Prayer"
+		},
+		{
+			"id": 7074,
+			"aegis_name": "Iron_Glove"
+		},
+		{
+			"id": 7075,
+			"aegis_name": "Iron_Maiden"
+		},
+		{
+			"id": 7076,
+			"aegis_name": "Mystery_Wheel"
+		},
+		{
+			"id": 7077,
+			"aegis_name": "Silver_Fancy"
+		},
+		{
+			"id": 7078,
+			"aegis_name": "Anger_Of_Valkurye"
+		},
+		{
+			"id": 7079,
+			"aegis_name": "Feather_Of_Angel"
+		},
+		{
+			"id": 7080,
+			"aegis_name": "Foot_Step_Of_Cat"
+		},
+		{
+			"id": 7081,
+			"aegis_name": "Beard_Of_Women"
+		},
+		{
+			"id": 7082,
+			"aegis_name": "Root_Of_Stone"
+		},
+		{
+			"id": 7083,
+			"aegis_name": "Soul_Of_Fish"
+		},
+		{
+			"id": 7084,
+			"aegis_name": "Saliva_Of_Bird"
+		},
+		{
+			"id": 7085,
+			"aegis_name": "Tendon_Of_Bear"
+		},
+		{
+			"id": 7086,
+			"aegis_name": "Symbol_Of_Sun"
+		},
+		{
+			"id": 7087,
+			"aegis_name": "Breath_Of_Soul"
+		},
+		{
+			"id": 7088,
+			"aegis_name": "Crystal_Of_Snow"
+		},
+		{
+			"id": 7089,
+			"aegis_name": "Indication_Of_Tempest"
+		},
+		{
+			"id": 7090,
+			"aegis_name": "Slilince_Wave"
+		},
+		{
+			"id": 7091,
+			"aegis_name": "Rough_Billows"
+		},
+		{
+			"id": 7092,
+			"aegis_name": "Air_Stream"
+		},
+		{
+			"id": 7093,
+			"aegis_name": "Wheel"
+		},
+		{
+			"id": 7094,
+			"aegis_name": "Mystery_Piece"
+		},
+		{
+			"id": 7095,
+			"aegis_name": "Broken_Steel_Piece"
+		},
+		{
+			"id": 7096,
+			"aegis_name": "Cold_Magma"
+		},
+		{
+			"id": 7097,
+			"aegis_name": "Burning_Heart"
+		},
+		{
+			"id": 7098,
+			"aegis_name": "Live_Coal"
+		},
+		{
+			"id": 7099,
+			"aegis_name": "Old_Magic_Circle"
+		},
+		{
+			"id": 7100,
+			"aegis_name": "Sharp_Leaf"
+		},
+		{
+			"id": 7101,
+			"aegis_name": "Peco_Wing_Feather"
+		},
+		{
+			"id": 7102,
+			"aegis_name": "Hideous_Dream"
+		},
+		{
+			"id": 7103,
+			"aegis_name": "Unknown_Liquid_Bottle"
+		},
+		{
+			"id": 7104,
+			"aegis_name": "Fake_Angel_Wing"
+		},
+		{
+			"id": 7105,
+			"aegis_name": "Fake_Angel_Loop"
+		},
+		{
+			"id": 7106,
+			"aegis_name": "Goat's_Horn"
+		},
+		{
+			"id": 7107,
+			"aegis_name": "Gaoat's_Skin"
+		},
+		{
+			"id": 7108,
+			"aegis_name": "Boroken_Shiled_Piece"
+		},
+		{
+			"id": 7109,
+			"aegis_name": "Shine_Spear_Blade"
+		},
+		{
+			"id": 7110,
+			"aegis_name": "Vroken_Sword"
+		},
+		{
+			"id": 7111,
+			"aegis_name": "Smooth_Paper"
+		},
+		{
+			"id": 7112,
+			"aegis_name": "Fright_Paper_Blade"
+		},
+		{
+			"id": 7113,
+			"aegis_name": "Broken_Pharaoh_Symbol"
+		},
+		{
+			"id": 7114,
+			"aegis_name": "Tutankhamen's_Mask"
+		},
+		{
+			"id": 7115,
+			"aegis_name": "Harpy's_Feather"
+		},
+		{
+			"id": 7116,
+			"aegis_name": "Harpy's_Claw"
+		},
+		{
+			"id": 7117,
+			"aegis_name": "Rent_Spell_Book"
+		},
+		{
+			"id": 7118,
+			"aegis_name": "Rent_Scroll"
+		},
+		{
+			"id": 7119,
+			"aegis_name": "Spawns"
+		},
+		{
+			"id": 7120,
+			"aegis_name": "Burning_Horse_Shoe"
+		},
+		{
+			"id": 7121,
+			"aegis_name": "Honey_Jar"
+		},
+		{
+			"id": 7122,
+			"aegis_name": "Hot_Hair"
+		},
+		{
+			"id": 7123,
+			"aegis_name": "Dragon's_Skin"
+		},
+		{
+			"id": 7124,
+			"aegis_name": "Sand_Lump"
+		},
+		{
+			"id": 7125,
+			"aegis_name": "Scropion's_Nipper"
+		},
+		{
+			"id": 7126,
+			"aegis_name": "Large_Jellopy"
+		},
+		{
+			"id": 7127,
+			"aegis_name": "Alcol_Create_Book"
+		},
+		{
+			"id": 7128,
+			"aegis_name": "FireBottle_Create_Book"
+		},
+		{
+			"id": 7129,
+			"aegis_name": "Acid_Create_Book"
+		},
+		{
+			"id": 7130,
+			"aegis_name": "Plant_Create_Book"
+		},
+		{
+			"id": 7131,
+			"aegis_name": "Mine_Create_Book"
+		},
+		{
+			"id": 7132,
+			"aegis_name": "Coating_Create_Book"
+		},
+		{
+			"id": 7133,
+			"aegis_name": "Slim_Potion_Create_Book"
+		},
+		{
+			"id": 7134,
+			"aegis_name": "Medicine_Bowl"
+		},
+		{
+			"id": 7140,
+			"aegis_name": "Seed_Of_Life"
+		},
+		{
+			"id": 7141,
+			"aegis_name": "Yggdrasilberry_Dew"
+		},
+		{
+			"id": 7143,
+			"aegis_name": "Life_Force_Pot"
+		},
+		{
+			"id": 7144,
+			"aegis_name": "Normal_Potion_Book"
+		},
+		{
+			"id": 7147,
+			"aegis_name": "Jasmin"
+		},
+		{
+			"id": 7149,
+			"aegis_name": "Yellow_Plate"
+		},
+		{
+			"id": 7150,
+			"aegis_name": "Bamboo_Cut"
+		},
+		{
+			"id": 7151,
+			"aegis_name": "Oil_Paper"
+		},
+		{
+			"id": 7152,
+			"aegis_name": "Glossy_Hair"
+		},
+		{
+			"id": 7153,
+			"aegis_name": "Old_Japaness_Clothes"
+		},
+		{
+			"id": 7154,
+			"aegis_name": "Poison_Powder"
+		},
+		{
+			"id": 7155,
+			"aegis_name": "Poison_Toad's_Skin"
+		},
+		{
+			"id": 7156,
+			"aegis_name": "Broken_Shuriken"
+		},
+		{
+			"id": 7157,
+			"aegis_name": "Black_Mask"
+		},
+		{
+			"id": 7158,
+			"aegis_name": "Broken_Wine_Vessel"
+		},
+		{
+			"id": 7159,
+			"aegis_name": "Tengu's_Nose"
+		},
+		{
+			"id": 7160,
+			"aegis_name": "Lord's_Passable_Ticket"
+		},
+		{
+			"id": 7161,
+			"aegis_name": "Black_Bear's_Skin"
+		},
+		{
+			"id": 7162,
+			"aegis_name": "Cloud_Piece"
+		},
+		{
+			"id": 7163,
+			"aegis_name": "Sharp_Feeler"
+		},
+		{
+			"id": 7164,
+			"aegis_name": "Hard_Peach"
+		},
+		{
+			"id": 7165,
+			"aegis_name": "Limpid_Celestial_Robe"
+		},
+		{
+			"id": 7166,
+			"aegis_name": "Soft_Silk_Cloth"
+		},
+		{
+			"id": 7167,
+			"aegis_name": "Mystery_Iron_Bit"
+		},
+		{
+			"id": 7168,
+			"aegis_name": "Great_Wing"
+		},
+		{
+			"id": 7169,
+			"aegis_name": "Taegeuk_Plate"
+		},
+		{
+			"id": 7170,
+			"aegis_name": "Tuxedo"
+		},
+		{
+			"id": 7171,
+			"aegis_name": "Leopard_Skin"
+		},
+		{
+			"id": 7172,
+			"aegis_name": "Leopard_Talon"
+		},
+		{
+			"id": 7174,
+			"aegis_name": "Packing_Ribbon"
+		},
+		{
+			"id": 7175,
+			"aegis_name": "Packing_Paper"
+		},
+		{
+			"id": 7182,
+			"aegis_name": "Cacao"
+		},
+		{
+			"id": 7186,
+			"aegis_name": "Thin_Stem"
+		},
+		{
+			"id": 7187,
+			"aegis_name": "Festival_Mask"
+		},
+		{
+			"id": 7188,
+			"aegis_name": "Browny_Root"
+		},
+		{
+			"id": 7189,
+			"aegis_name": "Heart_Of_Tree"
+		},
+		{
+			"id": 7190,
+			"aegis_name": "Solid_Peeling"
+		},
+		{
+			"id": 7191,
+			"aegis_name": "Lamplight"
+		},
+		{
+			"id": 7192,
+			"aegis_name": "Blade_Of_Pinwheel"
+		},
+		{
+			"id": 7193,
+			"aegis_name": "Germinating_Sprout"
+		},
+		{
+			"id": 7194,
+			"aegis_name": "Soft_Leaf"
+		},
+		{
+			"id": 7195,
+			"aegis_name": "Air_Rifle"
+		},
+		{
+			"id": 7196,
+			"aegis_name": "Shoulder_Protection"
+		},
+		{
+			"id": 7197,
+			"aegis_name": "Tough_Vines"
+		},
+		{
+			"id": 7198,
+			"aegis_name": "Great_Leaf"
+		},
+		{
+			"id": 7200,
+			"aegis_name": "Flexible_String"
+		},
+		{
+			"id": 7201,
+			"aegis_name": "Log"
+		},
+		{
+			"id": 7202,
+			"aegis_name": "Beetle_Nipper"
+		},
+		{
+			"id": 7203,
+			"aegis_name": "Solid_Twig"
+		},
+		{
+			"id": 7204,
+			"aegis_name": "Gunpowder"
+		},
+		{
+			"id": 7205,
+			"aegis_name": "Piece_Of_Black_Cloth"
+		},
+		{
+			"id": 7206,
+			"aegis_name": "Black_Kitty_Doll"
+		},
+		{
+			"id": 7207,
+			"aegis_name": "Old_Manteau"
+		},
+		{
+			"id": 7208,
+			"aegis_name": "Rusty_Cleaver"
+		},
+		{
+			"id": 7209,
+			"aegis_name": "Dullahan's_Helm"
+		},
+		{
+			"id": 7210,
+			"aegis_name": "Dullahan_Armor"
+		},
+		{
+			"id": 7211,
+			"aegis_name": "Rojerta_Piece"
+		},
+		{
+			"id": 7212,
+			"aegis_name": "Hanging_Doll"
+		},
+		{
+			"id": 7213,
+			"aegis_name": "Needle_Pouch"
+		},
+		{
+			"id": 7214,
+			"aegis_name": "Bat_Cage"
+		},
+		{
+			"id": 7215,
+			"aegis_name": "Broken_Needle"
+		},
+		{
+			"id": 7216,
+			"aegis_name": "Red_Scarf"
+		},
+		{
+			"id": 7217,
+			"aegis_name": "Spool"
+		},
+		{
+			"id": 7218,
+			"aegis_name": "Rotten_Rope"
+		},
+		{
+			"id": 7219,
+			"aegis_name": "Striped_Socks"
+		},
+		{
+			"id": 7220,
+			"aegis_name": "Ectoplasm"
+		},
+		{
+			"id": 7221,
+			"aegis_name": "Tangled_Chain"
+		},
+		{
+			"id": 7222,
+			"aegis_name": "Tree_Knot"
+		},
+		{
+			"id": 7223,
+			"aegis_name": "Distorted_Portrait"
+		},
+		{
+			"id": 7225,
+			"aegis_name": "Pumpkin_Bucket"
+		},
+		{
+			"id": 7226,
+			"aegis_name": "Pill"
+		},
+		{
+			"id": 7228,
+			"aegis_name": "Gold_Bullion"
+		},
+		{
+			"id": 7229,
+			"aegis_name": "Silver_Bullion"
+		},
+		{
+			"id": 7230,
+			"aegis_name": "White_Gold_Bullion"
+		},
+		{
+			"id": 7262,
+			"aegis_name": "Fan"
+		},
+		{
+			"id": 7263,
+			"aegis_name": "Cat_Eyed_Stone"
+		},
+		{
+			"id": 7264,
+			"aegis_name": "Dried_Sand"
+		},
+		{
+			"id": 7265,
+			"aegis_name": "Dragon_Horn"
+		},
+		{
+			"id": 7266,
+			"aegis_name": "Dragon_Fang"
+		},
+		{
+			"id": 7267,
+			"aegis_name": "Tiger_Skin_Panties"
+		},
+		{
+			"id": 7268,
+			"aegis_name": "Little_Blacky_Ghost"
+		},
+		{
+			"id": 7269,
+			"aegis_name": "Bib"
+		},
+		{
+			"id": 7270,
+			"aegis_name": "Milk_Bottle"
+		},
+		{
+			"id": 7277,
+			"aegis_name": "Munak_Doll"
+		},
+		{
+			"id": 7286,
+			"aegis_name": "Chilli"
+		},
+		{
+			"id": 7289,
+			"aegis_name": "Olivine"
+		},
+		{
+			"id": 7290,
+			"aegis_name": "Phlogopite"
+		},
+		{
+			"id": 7291,
+			"aegis_name": "Agate"
+		},
+		{
+			"id": 7292,
+			"aegis_name": "Muscovite"
+		},
+		{
+			"id": 7293,
+			"aegis_name": "Rose_Quartz"
+		},
+		{
+			"id": 7294,
+			"aegis_name": "Turquoise"
+		},
+		{
+			"id": 7295,
+			"aegis_name": "Citrine"
+		},
+		{
+			"id": 7296,
+			"aegis_name": "Pyroxene"
+		},
+		{
+			"id": 7297,
+			"aegis_name": "Biotite"
+		},
+		{
+			"id": 7298,
+			"aegis_name": "Leaf_Clothes"
+		},
+		{
+			"id": 7299,
+			"aegis_name": "Bamboo_Basket"
+		},
+		{
+			"id": 7300,
+			"aegis_name": "Gemstone"
+		},
+		{
+			"id": 7301,
+			"aegis_name": "Sword_Accessory"
+		},
+		{
+			"id": 7303,
+			"aegis_name": "Bag_Of_Rice"
+		},
+		{
+			"id": 7312,
+			"aegis_name": "Jubilee"
+		},
+		{
+			"id": 7315,
+			"aegis_name": "Dark_Crystal_Fragment"
+		},
+		{
+			"id": 7316,
+			"aegis_name": "Long_Limb"
+		},
+		{
+			"id": 7317,
+			"aegis_name": "Screw"
+		},
+		{
+			"id": 7318,
+			"aegis_name": "Old_Pick"
+		},
+		{
+			"id": 7319,
+			"aegis_name": "Old_Steel_Plate"
+		},
+		{
+			"id": 7320,
+			"aegis_name": "Air_Pollutant"
+		},
+		{
+			"id": 7321,
+			"aegis_name": "Fragment_Of_Crystal"
+		},
+		{
+			"id": 7322,
+			"aegis_name": "Poisonous_Gas"
+		},
+		{
+			"id": 7323,
+			"aegis_name": "Battered_Kettle"
+		},
+		{
+			"id": 7325,
+			"aegis_name": "Tube"
+		},
+		{
+			"id": 7326,
+			"aegis_name": "Fluorescent_Liquid"
+		},
+		{
+			"id": 7327,
+			"aegis_name": "Headlamp"
+		},
+		{
+			"id": 7340,
+			"aegis_name": "Will_Of_Darkness"
+		},
+		{
+			"id": 7345,
+			"aegis_name": "Armlet_Of_Prisoner"
+		},
+		{
+			"id": 7347,
+			"aegis_name": "Lab_Staff_Record"
+		},
+		{
+			"id": 7352,
+			"aegis_name": "Transparent_Plate01"
+		},
+		{
+			"id": 7353,
+			"aegis_name": "Transparent_Plate02"
+		},
+		{
+			"id": 7354,
+			"aegis_name": "Transparent_Plate03"
+		},
+		{
+			"id": 7355,
+			"aegis_name": "Transparent_Plate04"
+		},
+		{
+			"id": 7356,
+			"aegis_name": "Piece_Of_Crest1"
+		},
+		{
+			"id": 7357,
+			"aegis_name": "Piece_Of_Crest2"
+		},
+		{
+			"id": 7358,
+			"aegis_name": "Piece_Of_Crest3"
+		},
+		{
+			"id": 7359,
+			"aegis_name": "Piece_Of_Crest4"
+		},
+		{
+			"id": 7419,
+			"aegis_name": "Embryo_HandBook"
+		},
+		{
+			"id": 7433,
+			"aegis_name": "Scroll"
+		},
+		{
+			"id": 7434,
+			"aegis_name": "Elemental_Potion_Book"
+		},
+		{
+			"id": 7435,
+			"aegis_name": "Golden_Bracelet"
+		},
+		{
+			"id": 7436,
+			"aegis_name": "Piece_Of_Memory_Green"
+		},
+		{
+			"id": 7437,
+			"aegis_name": "Piece_Of_Memory_Purple"
+		},
+		{
+			"id": 7438,
+			"aegis_name": "Piece_Of_Memory_Blue"
+		},
+		{
+			"id": 7439,
+			"aegis_name": "Piece_Of_Memory_Red"
+		},
+		{
+			"id": 7440,
+			"aegis_name": "Red_Feather"
+		},
+		{
+			"id": 7441,
+			"aegis_name": "Blue_Feather"
+		},
+		{
+			"id": 7442,
+			"aegis_name": "Cursed_Seal"
+		},
+		{
+			"id": 7443,
+			"aegis_name": "Tri_Headed_Dragon_Head"
+		},
+		{
+			"id": 7444,
+			"aegis_name": "Treasure_Box"
+		},
+		{
+			"id": 7445,
+			"aegis_name": "Dragonball_Green"
+		},
+		{
+			"id": 7446,
+			"aegis_name": "Dragonball_Blue"
+		},
+		{
+			"id": 7447,
+			"aegis_name": "Dragonball_Red"
+		},
+		{
+			"id": 7448,
+			"aegis_name": "Dragonball_Yellow"
+		},
+		{
+			"id": 7449,
+			"aegis_name": "Bloody_Page"
+		},
+		{
+			"id": 7450,
+			"aegis_name": "Piece_Of_Bone_Armor"
+		},
+		{
+			"id": 7451,
+			"aegis_name": "Scale_Of_Red_Dragon"
+		},
+		{
+			"id": 7452,
+			"aegis_name": "Yellow_Spice"
+		},
+		{
+			"id": 7453,
+			"aegis_name": "Sweet_Sauce"
+		},
+		{
+			"id": 7454,
+			"aegis_name": "Plain_Sauce"
+		},
+		{
+			"id": 7455,
+			"aegis_name": "Hot_Sauce"
+		},
+		{
+			"id": 7456,
+			"aegis_name": "Red_Spice"
+		},
+		{
+			"id": 7457,
+			"aegis_name": "Cooking_Oil"
+		},
+		{
+			"id": 7472,
+			"aegis_name": "Cookbook01"
+		},
+		{
+			"id": 7473,
+			"aegis_name": "Cookbook02"
+		},
+		{
+			"id": 7474,
+			"aegis_name": "Cookbook03"
+		},
+		{
+			"id": 7475,
+			"aegis_name": "Cookbook04"
+		},
+		{
+			"id": 7476,
+			"aegis_name": "Cookbook05"
+		},
+		{
+			"id": 7477,
+			"aegis_name": "Cookbook06"
+		},
+		{
+			"id": 7478,
+			"aegis_name": "Cookbook07"
+		},
+		{
+			"id": 7479,
+			"aegis_name": "Cookbook08"
+		},
+		{
+			"id": 7480,
+			"aegis_name": "Cookbook09"
+		},
+		{
+			"id": 7481,
+			"aegis_name": "Cookbook10"
+		},
+		{
+			"id": 7482,
+			"aegis_name": "Pot"
+		},
+		{
+			"id": 7507,
+			"aegis_name": "Sturdy_Iron_Piece"
+		},
+		{
+			"id": 7510,
+			"aegis_name": "Valhalla_Flower"
+		},
+		{
+			"id": 7511,
+			"aegis_name": "Rune_Of_Darkness"
+		},
+		{
+			"id": 7512,
+			"aegis_name": "Burnt_Parts"
+		},
+		{
+			"id": 7513,
+			"aegis_name": "Pocket_Watch"
+		},
+		{
+			"id": 7521,
+			"aegis_name": "Flame_Stone"
+		},
+		{
+			"id": 7522,
+			"aegis_name": "Ice_Stone"
+		},
+		{
+			"id": 7523,
+			"aegis_name": "Wind_Stone"
+		},
+		{
+			"id": 7524,
+			"aegis_name": "Shadow_Orb"
+		},
+		{
+			"id": 7561,
+			"aegis_name": "Ice_Heart"
+		},
+		{
+			"id": 7562,
+			"aegis_name": "Ice_Scale"
+		},
+		{
+			"id": 7563,
+			"aegis_name": "Bloody_Rune"
+		},
+		{
+			"id": 7564,
+			"aegis_name": "Rotten_Meat"
+		},
+		{
+			"id": 7565,
+			"aegis_name": "Sticky_Poison"
+		},
+		{
+			"id": 7566,
+			"aegis_name": "Will_Of_Darkness_"
+		},
+		{
+			"id": 7567,
+			"aegis_name": "Suspicious_Hat"
+		},
+		{
+			"id": 7568,
+			"aegis_name": "White_Mask"
+		},
+		{
+			"id": 7574,
+			"aegis_name": "Ice_Particle"
+		},
+		{
+			"id": 7751,
+			"aegis_name": "Old_White_Cloth"
+		},
+		{
+			"id": 7752,
+			"aegis_name": "Clattering_Skull"
+		},
+		{
+			"id": 7753,
+			"aegis_name": "Broken_Farming_Utensil"
+		},
+		{
+			"id": 7754,
+			"aegis_name": "Broken_Crown"
+		},
+		{
+			"id": 7760,
+			"aegis_name": "Yaga_Magic_Book"
+		},
+		{
+			"id": 7762,
+			"aegis_name": "Yaga_Pestle"
+		},
+		{
+			"id": 7824,
+			"aegis_name": "Spirit_Liquor"
+		},
+		{
+			"id": 7830,
+			"aegis_name": "Goddess_Tear"
+		},
+		{
+			"id": 7831,
+			"aegis_name": "Valkyrie_Token"
+		},
+		{
+			"id": 7832,
+			"aegis_name": "Brynhild_Armor_Piece"
+		},
+		{
+			"id": 7833,
+			"aegis_name": "Hero_Remains"
+		},
+		{
+			"id": 7834,
+			"aegis_name": "Andvari_Ring"
+		},
+		{
+			"id": 7835,
+			"aegis_name": "Dusk_Glow"
+		},
+		{
+			"id": 7836,
+			"aegis_name": "Dawn_Essence"
+		},
+		{
+			"id": 7837,
+			"aegis_name": "Cold_Moonlight"
+		},
+		{
+			"id": 7838,
+			"aegis_name": "Hazy_Starlight"
+		},
+		{
+			"id": 7931,
+			"aegis_name": "Poison_Kit"
+		},
+		{
+			"id": 7932,
+			"aegis_name": "Poison_Herb_Nerium"
+		},
+		{
+			"id": 7933,
+			"aegis_name": "Poison_Herb_Rantana"
+		},
+		{
+			"id": 7934,
+			"aegis_name": "Poison_Herb_Makulata"
+		},
+		{
+			"id": 7935,
+			"aegis_name": "Poison_Herb_Seratum"
+		},
+		{
+			"id": 7936,
+			"aegis_name": "Poison_Herb_Scopolia"
+		},
+		{
+			"id": 7937,
+			"aegis_name": "Poison_Herb_Amoena"
+		},
+		{
+			"id": 7938,
+			"aegis_name": "Light_Granule"
+		},
+		{
+			"id": 7939,
+			"aegis_name": "Elder_Branch"
+		},
+		{
+			"id": 7940,
+			"aegis_name": "Special_Alloy_Trap"
+		},
+		{
+			"id": 11000,
+			"aegis_name": "Prontera_Book_01"
+		},
+		{
+			"id": 11001,
+			"aegis_name": "Adventure_Story01"
+		},
+		{
+			"id": 11002,
+			"aegis_name": "Great_Chef_Orleans01"
+		},
+		{
+			"id": 11003,
+			"aegis_name": "Legend_Of_Kafra01"
+		},
+		{
+			"id": 11004,
+			"aegis_name": "Mercenary_Rebellion"
+		},
+		{
+			"id": 11005,
+			"aegis_name": "Tyrant_Schmidt"
+		},
+		{
+			"id": 11006,
+			"aegis_name": "Blood_Flower01"
+		},
+		{
+			"id": 11007,
+			"aegis_name": "Blood_Flower02"
+		},
+		{
+			"id": 11008,
+			"aegis_name": "Barmund"
+		},
+		{
+			"id": 11009,
+			"aegis_name": "Adventure_Story02"
+		},
+		{
+			"id": 11020,
+			"aegis_name": "Japan_Book1"
+		},
+		{
+			"id": 11021,
+			"aegis_name": "Japan_Book2"
+		},
+		{
+			"id": 11022,
+			"aegis_name": "Mix_Cook_Book"
+		},
+		{
+			"id": 11023,
+			"aegis_name": "Increase_Stamina_Study"
+		},
+		{
+			"id": 11024,
+			"aegis_name": "Vital_Drink_CB"
+		},
+		{
+			"id": 11513,
+			"aegis_name": "Protect_Neck_Candy"
+		},
+		{
+			"id": 11515,
+			"aegis_name": "Coconut"
+		},
+		{
+			"id": 11516,
+			"aegis_name": "Asai_Fruit"
+		},
+		{
+			"id": 11517,
+			"aegis_name": "Puri_Potion"
+		},
+		{
+			"id": 11519,
+			"aegis_name": "Beef_Toast"
+		},
+		{
+			"id": 11520,
+			"aegis_name": "Mora_Mandarin"
+		},
+		{
+			"id": 11521,
+			"aegis_name": "Pingui_Berry_Juice"
+		},
+		{
+			"id": 11522,
+			"aegis_name": "Red_Raffle_Sap"
+		},
+		{
+			"id": 11523,
+			"aegis_name": "Yellow_Raffle_Sap"
+		},
+		{
+			"id": 11524,
+			"aegis_name": "White_Raffle_Sap"
+		},
+		{
+			"id": 11525,
+			"aegis_name": "Mora_Hip_Tea"
+		},
+		{
+			"id": 11526,
+			"aegis_name": "Rafflecino"
+		},
+		{
+			"id": 12000,
+			"aegis_name": "Cold_Scroll_2_5"
+		},
+		{
+			"id": 12001,
+			"aegis_name": "Holy_Scroll_1_3"
+		},
+		{
+			"id": 12002,
+			"aegis_name": "Holy_Scroll_1_5"
+		},
+		{
+			"id": 12003,
+			"aegis_name": "Holy_Scroll_2_1"
+		},
+		{
+			"id": 12004,
+			"aegis_name": "Arrow_Container"
+		},
+		{
+			"id": 12005,
+			"aegis_name": "Iron_Arrow_Container"
+		},
+		{
+			"id": 12006,
+			"aegis_name": "Steel_Arrow_Container"
+		},
+		{
+			"id": 12007,
+			"aegis_name": "Ori_Arrow_Container"
+		},
+		{
+			"id": 12008,
+			"aegis_name": "Fire_Arrow_Container"
+		},
+		{
+			"id": 12009,
+			"aegis_name": "Silver_Arrow_Container"
+		},
+		{
+			"id": 12010,
+			"aegis_name": "Wind_Arrow_Container"
+		},
+		{
+			"id": 12011,
+			"aegis_name": "Stone_Arrow_Container"
+		},
+		{
+			"id": 12012,
+			"aegis_name": "Crystal_Arrow_Container"
+		},
+		{
+			"id": 12013,
+			"aegis_name": "Shadow_Arrow_Container"
+		},
+		{
+			"id": 12014,
+			"aegis_name": "Imma_Arrow_Container"
+		},
+		{
+			"id": 12015,
+			"aegis_name": "Rusty_Arrow_Container"
+		},
+		{
+			"id": 12016,
+			"aegis_name": "Speed_Up_Potion"
+		},
+		{
+			"id": 12017,
+			"aegis_name": "Slow_Down_Potion"
+		},
+		{
+			"id": 12018,
+			"aegis_name": "Fire_Cracker"
+		},
+		{
+			"id": 12020,
+			"aegis_name": "Water_Of_Darkness"
+		},
+		{
+			"id": 12027,
+			"aegis_name": "Giggling_Box"
+		},
+		{
+			"id": 12028,
+			"aegis_name": "Box_Of_Thunder"
+		},
+		{
+			"id": 12029,
+			"aegis_name": "Gloomy_Box"
+		},
+		{
+			"id": 12030,
+			"aegis_name": "Box_Of_Grudge"
+		},
+		{
+			"id": 12031,
+			"aegis_name": "Sleepy_Box"
+		},
+		{
+			"id": 12032,
+			"aegis_name": "Box_Of_Storm"
+		},
+		{
+			"id": 12033,
+			"aegis_name": "Box_Of_Sunlight"
+		},
+		{
+			"id": 12034,
+			"aegis_name": "Painting_Box"
+		},
+		{
+			"id": 12040,
+			"aegis_name": "Stone_Of_Intelligence_"
+		},
+		{
+			"id": 12041,
+			"aegis_name": "Str_Dish01"
+		},
+		{
+			"id": 12042,
+			"aegis_name": "Str_Dish02"
+		},
+		{
+			"id": 12043,
+			"aegis_name": "Str_Dish03"
+		},
+		{
+			"id": 12044,
+			"aegis_name": "Str_Dish04"
+		},
+		{
+			"id": 12045,
+			"aegis_name": "Str_Dish05"
+		},
+		{
+			"id": 12046,
+			"aegis_name": "Int_Dish01"
+		},
+		{
+			"id": 12047,
+			"aegis_name": "Int_Dish02"
+		},
+		{
+			"id": 12048,
+			"aegis_name": "Int_Dish03"
+		},
+		{
+			"id": 12049,
+			"aegis_name": "Int_Dish04"
+		},
+		{
+			"id": 12050,
+			"aegis_name": "Int_Dish05"
+		},
+		{
+			"id": 12051,
+			"aegis_name": "Vit_Dish01"
+		},
+		{
+			"id": 12052,
+			"aegis_name": "Vit_Dish02"
+		},
+		{
+			"id": 12053,
+			"aegis_name": "Vit_Dish03"
+		},
+		{
+			"id": 12054,
+			"aegis_name": "Vit_Dish04"
+		},
+		{
+			"id": 12055,
+			"aegis_name": "Vit_Dish05"
+		},
+		{
+			"id": 12056,
+			"aegis_name": "Agi_Dish01"
+		},
+		{
+			"id": 12057,
+			"aegis_name": "Agi_Dish02"
+		},
+		{
+			"id": 12058,
+			"aegis_name": "Agi_Dish03"
+		},
+		{
+			"id": 12059,
+			"aegis_name": "Agi_Dish04"
+		},
+		{
+			"id": 12060,
+			"aegis_name": "Agi_Dish05"
+		},
+		{
+			"id": 12061,
+			"aegis_name": "Dex_Dish01"
+		},
+		{
+			"id": 12062,
+			"aegis_name": "Dex_Dish02"
+		},
+		{
+			"id": 12063,
+			"aegis_name": "Dex_Dish03"
+		},
+		{
+			"id": 12064,
+			"aegis_name": "Dex_Dish04"
+		},
+		{
+			"id": 12065,
+			"aegis_name": "Dex_Dish05"
+		},
+		{
+			"id": 12066,
+			"aegis_name": "Luk_Dish01"
+		},
+		{
+			"id": 12067,
+			"aegis_name": "Luk_Dish02"
+		},
+		{
+			"id": 12068,
+			"aegis_name": "Luk_Dish03"
+		},
+		{
+			"id": 12069,
+			"aegis_name": "Luk_Dish04"
+		},
+		{
+			"id": 12070,
+			"aegis_name": "Luk_Dish05"
+		},
+		{
+			"id": 12071,
+			"aegis_name": "Str_Dish06"
+		},
+		{
+			"id": 12072,
+			"aegis_name": "Str_Dish07"
+		},
+		{
+			"id": 12073,
+			"aegis_name": "Str_Dish08"
+		},
+		{
+			"id": 12074,
+			"aegis_name": "Str_Dish09"
+		},
+		{
+			"id": 12075,
+			"aegis_name": "Str_Dish10"
+		},
+		{
+			"id": 12076,
+			"aegis_name": "Int_Dish06"
+		},
+		{
+			"id": 12077,
+			"aegis_name": "Int_Dish07"
+		},
+		{
+			"id": 12078,
+			"aegis_name": "Int_Dish08"
+		},
+		{
+			"id": 12079,
+			"aegis_name": "Int_Dish09"
+		},
+		{
+			"id": 12080,
+			"aegis_name": "Int_Dish10"
+		},
+		{
+			"id": 12081,
+			"aegis_name": "Vit_Dish06"
+		},
+		{
+			"id": 12082,
+			"aegis_name": "Vit_Dish07"
+		},
+		{
+			"id": 12083,
+			"aegis_name": "Vit_Dish08"
+		},
+		{
+			"id": 12084,
+			"aegis_name": "Vit_Dish09"
+		},
+		{
+			"id": 12085,
+			"aegis_name": "Vit_Dish10"
+		},
+		{
+			"id": 12086,
+			"aegis_name": "Agi_Dish06"
+		},
+		{
+			"id": 12087,
+			"aegis_name": "Agi_Dish07"
+		},
+		{
+			"id": 12088,
+			"aegis_name": "Agi_Dish08"
+		},
+		{
+			"id": 12089,
+			"aegis_name": "Agi_Dish09"
+		},
+		{
+			"id": 12090,
+			"aegis_name": "Agi_Dish10"
+		},
+		{
+			"id": 12091,
+			"aegis_name": "Dex_Dish06"
+		},
+		{
+			"id": 12092,
+			"aegis_name": "Dex_Dish07"
+		},
+		{
+			"id": 12093,
+			"aegis_name": "Dex_Dish08"
+		},
+		{
+			"id": 12094,
+			"aegis_name": "Dex_Dish09"
+		},
+		{
+			"id": 12095,
+			"aegis_name": "Dex_Dish10"
+		},
+		{
+			"id": 12096,
+			"aegis_name": "Luk_Dish06"
+		},
+		{
+			"id": 12097,
+			"aegis_name": "Luk_Dish07"
+		},
+		{
+			"id": 12098,
+			"aegis_name": "Luk_Dish08"
+		},
+		{
+			"id": 12099,
+			"aegis_name": "Luk_Dish09"
+		},
+		{
+			"id": 12100,
+			"aegis_name": "Luk_Dish10"
+		},
+		{
+			"id": 12101,
+			"aegis_name": "Citron"
+		},
+		{
+			"id": 12102,
+			"aegis_name": "Meat_Skewer"
+		},
+		{
+			"id": 12103,
+			"aegis_name": "Bloody_Dead_Branch"
+		},
+		{
+			"id": 12104,
+			"aegis_name": "Random_Quiver"
+		},
+		{
+			"id": 12105,
+			"aegis_name": "Set_Of_Taiming_Item"
+		},
+		{
+			"id": 12106,
+			"aegis_name": "Accessory_Box"
+		},
+		{
+			"id": 12107,
+			"aegis_name": "Wrapped_Mask"
+		},
+		{
+			"id": 12108,
+			"aegis_name": "Bundle_Of_Magic_Scroll"
+		},
+		{
+			"id": 12109,
+			"aegis_name": "Poring_Box"
+		},
+		{
+			"id": 12110,
+			"aegis_name": "First_Aid_Kit"
+		},
+		{
+			"id": 12111,
+			"aegis_name": "Food_Package"
+		},
+		{
+			"id": 12112,
+			"aegis_name": "Tropical_Sograt"
+		},
+		{
+			"id": 12113,
+			"aegis_name": "Vermilion_The_Beach"
+		},
+		{
+			"id": 12114,
+			"aegis_name": "Elemental_Fire"
+		},
+		{
+			"id": 12115,
+			"aegis_name": "Elemental_Water"
+		},
+		{
+			"id": 12116,
+			"aegis_name": "Elemental_Earth"
+		},
+		{
+			"id": 12117,
+			"aegis_name": "Elemental_Wind"
+		},
+		{
+			"id": 12118,
+			"aegis_name": "Resist_Fire"
+		},
+		{
+			"id": 12119,
+			"aegis_name": "Resist_Water"
+		},
+		{
+			"id": 12120,
+			"aegis_name": "Resist_Earth"
+		},
+		{
+			"id": 12121,
+			"aegis_name": "Resist_Wind"
+		},
+		{
+			"id": 12122,
+			"aegis_name": "Sesame_Pastry"
+		},
+		{
+			"id": 12123,
+			"aegis_name": "Honey_Pastry"
+		},
+		{
+			"id": 12124,
+			"aegis_name": "Rainbow_Cake"
+		},
+		{
+			"id": 12125,
+			"aegis_name": "Outdoor_Cooking_Kits"
+		},
+		{
+			"id": 12126,
+			"aegis_name": "Indoor_Cooking_Kits"
+		},
+		{
+			"id": 12127,
+			"aegis_name": "High_end_Cooking_Kits"
+		},
+		{
+			"id": 12128,
+			"aegis_name": "Imperial_Cooking_Kits"
+		},
+		{
+			"id": 12129,
+			"aegis_name": "Fantastic_Cooking_Kits"
+		},
+		{
+			"id": 12130,
+			"aegis_name": "Cookie_Bag"
+		},
+		{
+			"id": 12132,
+			"aegis_name": "Red_Bag"
+		},
+		{
+			"id": 12144,
+			"aegis_name": "Sphere_Case_Wind"
+		},
+		{
+			"id": 12145,
+			"aegis_name": "Sphere_Case_Darkness"
+		},
+		{
+			"id": 12146,
+			"aegis_name": "Sphere_Case_Poison"
+		},
+		{
+			"id": 12147,
+			"aegis_name": "Sphere_Case_Water"
+		},
+		{
+			"id": 12148,
+			"aegis_name": "Sphere_Case_Fire"
+		},
+		{
+			"id": 12149,
+			"aegis_name": "Bullet_Case"
+		},
+		{
+			"id": 12150,
+			"aegis_name": "Bullet_Case_Blood"
+		},
+		{
+			"id": 12151,
+			"aegis_name": "Bullet_Case_Silver"
+		},
+		{
+			"id": 12183,
+			"aegis_name": "Holy_Arrow_Quiver"
+		},
+		{
+			"id": 12184,
+			"aegis_name": "Mercenary_Red_Potion"
+		},
+		{
+			"id": 12185,
+			"aegis_name": "Mercenary_Blue_Potion"
+		},
+		{
+			"id": 12194,
+			"aegis_name": "Hometown_Gift"
+		},
+		{
+			"id": 12195,
+			"aegis_name": "Plain_Rice_Cake"
+		},
+		{
+			"id": 12196,
+			"aegis_name": "Hearty_Rice_Cake"
+		},
+		{
+			"id": 12197,
+			"aegis_name": "Salty_Rice_Cake"
+		},
+		{
+			"id": 12198,
+			"aegis_name": "Lucky_Rice_Cake"
+		},
+		{
+			"id": 12241,
+			"aegis_name": "M_Center_Potion"
+		},
+		{
+			"id": 12242,
+			"aegis_name": "M_Awakening_Potion"
+		},
+		{
+			"id": 12243,
+			"aegis_name": "M_Berserk_Potion"
+		},
+		{
+			"id": 12246,
+			"aegis_name": "Magic_Card_Album"
+		},
+		{
+			"id": 12260,
+			"aegis_name": "Cool_Summer_Outfit"
+		},
+		{
+			"id": 12290,
+			"aegis_name": "Mysterious_Can"
+		},
+		{
+			"id": 12291,
+			"aegis_name": "Mysterious_PET_Bottle"
+		},
+		{
+			"id": 12292,
+			"aegis_name": "Unripe_Fruit"
+		},
+		{
+			"id": 12293,
+			"aegis_name": "Dried_Yggdrasilberry"
+		},
+		{
+			"id": 12329,
+			"aegis_name": "Recall_MaleGM"
+		},
+		{
+			"id": 12330,
+			"aegis_name": "Recall_FemaleGM"
+		},
+		{
+			"id": 12341,
+			"aegis_name": "Special_Alloy_Trap_Box"
+		},
+		{
+			"id": 12342,
+			"aegis_name": "Manuk's_Opportunity"
+		},
+		{
+			"id": 12343,
+			"aegis_name": "Manuk's_Courage"
+		},
+		{
+			"id": 12344,
+			"aegis_name": "Pinguicula's_fruit_Jam"
+		},
+		{
+			"id": 12345,
+			"aegis_name": "Luciola's_Honey_Jam"
+		},
+		{
+			"id": 12346,
+			"aegis_name": "Unripe_Acorn"
+		},
+		{
+			"id": 12347,
+			"aegis_name": "Acorn_Jelly"
+		},
+		{
+			"id": 12348,
+			"aegis_name": "Manuk's_Faith"
+		},
+		{
+			"id": 12349,
+			"aegis_name": "Cornus'_Tears"
+		},
+		{
+			"id": 12350,
+			"aegis_name": "Angeling_Potion"
+		},
+		{
+			"id": 12351,
+			"aegis_name": "Shout_Megaphone"
+		},
+		{
+			"id": 12353,
+			"aegis_name": "Tiny_Waterbottle"
+		},
+		{
+			"id": 12354,
+			"aegis_name": "Buche_De_Noel"
+		},
+		{
+			"id": 12355,
+			"aegis_name": "Xmas_Gift"
+		},
+		{
+			"id": 12356,
+			"aegis_name": "Louise_Costume_Box"
+		},
+		{
+			"id": 12358,
+			"aegis_name": "Fan_Of_Wind"
+		},
+		{
+			"id": 12359,
+			"aegis_name": "Very_Soft_Plant"
+		},
+		{
+			"id": 12360,
+			"aegis_name": "Very_Red_Juice"
+		},
+		{
+			"id": 12362,
+			"aegis_name": "Kuloren"
+		},
+		{
+			"id": 12364,
+			"aegis_name": "Staff_Of_Leader"
+		},
+		{
+			"id": 12365,
+			"aegis_name": "Charming_Lotus"
+		},
+		{
+			"id": 12366,
+			"aegis_name": "Gril_Doll"
+		},
+		{
+			"id": 12367,
+			"aegis_name": "Luxury_Whisky_Bottle"
+		},
+		{
+			"id": 12368,
+			"aegis_name": "Splendid_Mirror"
+		},
+		{
+			"id": 12369,
+			"aegis_name": "Oilpalm_Coconut"
+		},
+		{
+			"id": 12371,
+			"aegis_name": "Magical_Lithography"
+		},
+		{
+			"id": 12372,
+			"aegis_name": "Hell_Contract"
+		},
+		{
+			"id": 12373,
+			"aegis_name": "Boy's_Naivety"
+		},
+		{
+			"id": 12374,
+			"aegis_name": "Flaming_Ice"
+		},
+		{
+			"id": 12376,
+			"aegis_name": "Mysterious_Can2"
+		},
+		{
+			"id": 12377,
+			"aegis_name": "Mysterious_PET_Bottle2"
+		},
+		{
+			"id": 12379,
+			"aegis_name": "Pope's_Cookie"
+		},
+		{
+			"id": 12383,
+			"aegis_name": "Vulcan_Bullet_Magazine"
+		},
+		{
+			"id": 12392,
+			"aegis_name": "RepairA"
+		},
+		{
+			"id": 12393,
+			"aegis_name": "RepairB"
+		},
+		{
+			"id": 12394,
+			"aegis_name": "RepairC"
+		},
+		{
+			"id": 12395,
+			"aegis_name": "Tantanmen"
+		},
+		{
+			"id": 12414,
+			"aegis_name": "Guarana_Candy"
+		},
+		{
+			"id": 12418,
+			"aegis_name": "Full_SwingK"
+		},
+		{
+			"id": 12419,
+			"aegis_name": "Mana_Plus"
+		},
+		{
+			"id": 12422,
+			"aegis_name": "HP_Increase_PotionS"
+		},
+		{
+			"id": 12423,
+			"aegis_name": "HP_Increase_PotionM"
+		},
+		{
+			"id": 12424,
+			"aegis_name": "HP_Increase_PotionL"
+		},
+		{
+			"id": 12425,
+			"aegis_name": "SP_Increase_PotionS"
+		},
+		{
+			"id": 12426,
+			"aegis_name": "SP_Increase_PotionM"
+		},
+		{
+			"id": 12427,
+			"aegis_name": "SP_Increase_PotionL"
+		},
+		{
+			"id": 12428,
+			"aegis_name": "Enrich_White_PotionZ"
+		},
+		{
+			"id": 12429,
+			"aegis_name": "Savage_BBQ"
+		},
+		{
+			"id": 12430,
+			"aegis_name": "Wug_Blood_Cocktail"
+		},
+		{
+			"id": 12431,
+			"aegis_name": "Minor_Brisket"
+		},
+		{
+			"id": 12432,
+			"aegis_name": "Siroma_Icetea"
+		},
+		{
+			"id": 12433,
+			"aegis_name": "Drocera_Herb_Stew"
+		},
+		{
+			"id": 12434,
+			"aegis_name": "Petti_Tail_Noodle"
+		},
+		{
+			"id": 12436,
+			"aegis_name": "Vitata500"
+		},
+		{
+			"id": 12437,
+			"aegis_name": "Enrich_Celermine_Juice"
+		},
+		{
+			"id": 12475,
+			"aegis_name": "Cure_Free"
+		},
+		{
+			"id": 12490,
+			"aegis_name": "Vivid_Notation"
+		},
+		{
+			"id": 12536,
+			"aegis_name": "NY_Rice_Cake_Soup"
+		},
+		{
+			"id": 12539,
+			"aegis_name": "Splendid_Box"
+		},
+		{
+			"id": 12561,
+			"aegis_name": "Mysterious_Seed"
+		},
+		{
+			"id": 12574,
+			"aegis_name": "Mora_Berry"
+		},
+		{
+			"id": 12575,
+			"aegis_name": "Arrow_Of_Elf_Cntr"
+		},
+		{
+			"id": 12576,
+			"aegis_name": "Hunting_Arrow_Cntr"
+		},
+		{
+			"id": 12717,
+			"aegis_name": "Poison_Paralysis"
+		},
+		{
+			"id": 12718,
+			"aegis_name": "Poison_Leech"
+		},
+		{
+			"id": 12719,
+			"aegis_name": "Poison_Oblivion"
+		},
+		{
+			"id": 12720,
+			"aegis_name": "Poison_Contamination"
+		},
+		{
+			"id": 12721,
+			"aegis_name": "Poison_Numb"
+		},
+		{
+			"id": 12722,
+			"aegis_name": "Poison_Fever"
+		},
+		{
+			"id": 12723,
+			"aegis_name": "Poison_Laughing"
+		},
+		{
+			"id": 12724,
+			"aegis_name": "Poison_Fatigue"
+		},
+		{
+			"id": 12734,
+			"aegis_name": "Runstone_Quality"
+		},
+		{
+			"id": 12735,
+			"aegis_name": "Runstone_Ancient"
+		},
+		{
+			"id": 12736,
+			"aegis_name": "Runstone_Mystic"
+		},
+		{
+			"id": 12737,
+			"aegis_name": "Runstone_Ordinary"
+		},
+		{
+			"id": 12738,
+			"aegis_name": "Runstone_Rare"
+		},
+		{
+			"id": 12739,
+			"aegis_name": "Snow_Flower"
+		}
+	],
+	"settings": {
+		"vending_tax": {
+			"value": 500,
+			"default": 0,
+			"min": 0,
+			"max": 10000,
+			"set_in": "conf/battle/items.conf"
+		},
+		"vending_tax_min": {
+			"value": 100000000,
+			"default": 0,
+			"min": 0,
+			"max": 2147483647,
+			"set_in": "conf/battle/items.conf"
+		},
+		"vending_max_value": {
+			"value": 1000000000,
+			"default": 10000000,
+			"min": 1,
+			"max": 2147483647,
+			"set_in": "conf/battle/items.conf"
+		},
+		"vending_over_max": {
+			"value": 1,
+			"default": 1,
+			"min": 0,
+			"max": 1,
+			"set_in": "conf/battle/items.conf"
+		},
+		"min_npc_vendchat_distance": {
+			"value": 3,
+			"default": 3,
+			"min": 0,
+			"max": 100,
+			"set_in": "conf/battle/player.conf"
+		},
+		"feature.autotrade": {
+			"value": 1,
+			"default": 1,
+			"min": 0,
+			"max": 1,
+			"set_in": "conf/battle/feature.conf"
+		},
+		"searchstore_querydelay": {
+			"value": 10,
+			"default": 10,
+			"min": 0,
+			"max": 2147483647,
+			"set_in": "conf/battle/misc.conf"
+		},
+		"searchstore_maxresults": {
+			"value": 30,
+			"default": 30,
+			"min": 1,
+			"max": 2147483647,
+			"set_in": "conf/battle/misc.conf"
+		},
+		"mail_zeny_fee": {
+			"value": 2,
+			"default": 2,
+			"min": 0,
+			"max": 100,
+			"set_in": "conf/battle/misc.conf"
+		},
+		"mail_attachment_price": {
+			"value": 2500,
+			"default": 2500,
+			"min": 0,
+			"max": 2147483647,
+			"set_in": "conf/battle/misc.conf"
+		},
+		"mail_attachment_weight": {
+			"value": 2000,
+			"default": 2000,
+			"min": 0,
+			"max": 2147483647,
+			"set_in": "conf/battle/misc.conf"
+		},
+		"mail_daily_count": {
+			"value": 100,
+			"default": 100,
+			"min": 0,
+			"max": 2147483647,
+			"set_in": "conf/battle/misc.conf"
+		},
+		"mail_delay": {
+			"value": 1000,
+			"default": 1000,
+			"min": 1000,
+			"max": 2147483647,
+			"set_in": "conf/battle/misc.conf"
+		},
+		"mail_return_days": {
+			"value": 15,
+			"set_in": "conf/char_athena.conf"
+		},
+		"mail_delete_days": {
+			"value": 15,
+			"set_in": "conf/char_athena.conf"
+		},
+		"mail_return_empty": {
+			"value": 1,
+			"set_in": "conf/char_athena.conf"
+		}
+	}
+}

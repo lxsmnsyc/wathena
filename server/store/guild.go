@@ -230,6 +230,10 @@ type StorageWrite struct {
 	Guild     int64
 	Key       storage.Key
 	Base, Cur []character.Item
+	// Currencies are an account's currencies and what the last commit
+	// wrote, when HasCurrencies is set (market.go).
+	CurrencyBase, Currencies map[uint32]int64
+	HasCurrencies            bool
 }
 
 // writeStorages writes guild storages in a commit's transaction. A guild

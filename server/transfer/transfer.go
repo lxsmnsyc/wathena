@@ -47,7 +47,10 @@ type Kind uint8
 //   - Mail: the mail's ID.
 //   - Monster: the monster's ID, such as 1002 for a Poring.
 //   - Skill: the skill's ID.
-//   - Ground, Shop, Script and Used: 0.
+//   - Ground, Shop, Script, Used and Fee: 0.
+//
+// A currency's wallet (CurrencyWallet) is the inventory's owner for a
+// character's currency, and the account's storage for an account's.
 const (
 	KindNone Kind = iota
 	KindInventory
@@ -62,6 +65,9 @@ const (
 	KindScript
 	KindSkill
 	KindUsed
+	// KindFee is where fees and taxes go: the mail fee, the mail
+	// attachment price and the vending tax.
+	KindFee
 )
 
 var kindNames = [...]string{
@@ -78,6 +84,7 @@ var kindNames = [...]string{
 	KindScript:       "script",
 	KindSkill:        "skill",
 	KindUsed:         "used",
+	KindFee:          "fee",
 }
 
 // String is the kind's name in logs and in the database, such as
@@ -157,6 +164,14 @@ const (
 	// ActionBound is a bound copy that went away with its bond, such as
 	// a party-bound item of a player who left the party.
 	ActionBound Action = "bound"
+	// ActionMail is a mail's attachments and fees: sending, taking, and
+	// a mail that went back to its sender or was deleted when it
+	// expired.
+	ActionMail Action = "mail"
+	// ActionVend is a sale of a vending shop, with its tax.
+	ActionVend Action = "vend"
+	// ActionBuyingStore is a sale to a buying store.
+	ActionBuyingStore Action = "buying_store"
 )
 
 // ItemLog is one item move.
@@ -180,7 +195,7 @@ type ItemLog struct {
 	item.Extra
 }
 
-// ZenyLog is one zeny move.
+// ZenyLog is one zeny move, or one currency move.
 type ZenyLog struct {
 	At     time.Time
 	Action Action
@@ -189,6 +204,9 @@ type ZenyLog struct {
 	// Amount is what reached To. Zeny over MaxZeny that Earn drops is
 	// not in it.
 	Amount int64
+	// Currency is the currency's ID of data/currencies.yml, or 0 for
+	// zeny.
+	Currency uint32
 }
 
 // Logs are the log lines of one or more transfers.

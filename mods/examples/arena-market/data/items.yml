@@ -1,0 +1,5 @@
+# The trophy the arena master sends by mail. The vend hook of
+# scripts/main.lua keeps it out of vending shops.
+- name: example.arena:Arena_Trophy
+  display_name: Arena Trophy
+  weight: 10

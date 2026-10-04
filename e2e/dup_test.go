@@ -272,3 +272,118 @@ func TestDuplicationTradesWithDatabase(t *testing.T) {
 	d.CheckDatabase(t, rep)
 	srv.CheckLogs()
 }
+
+// marketTest is the duplication test of vending, the Exchange and mail:
+// 8 Merchants with carts, Vending and 5,000 zeny each stay on their
+// start cell. They open shops of Jellopy from their carts and buy from
+// each other's shops, buy Jellopy that cost Jellopy at the Exchange, and
+// mail each other Jellopy and zeny and take the mails. Connections close
+// in the middle of purchases, sales, mails and takes, and with shops
+// open. The world runs e2e.marketrules, which has no mail fees, so the
+// zeny total holds. Nothing is dropped.
+func marketTest(srv *Server, prefix string, c *MarketCounts) DupTest {
+	const bots = 8
+	vend, buy, exchange, mail, take := VendMove(Jellopy, c), VendBuyMove(c), ExchangeMove(c), MailMove(prefix, bots, c), MailTakeMove(c)
+	vend.Weight, buy.Weight, exchange.Weight, mail.Weight, take.Weight = 10, 20, 8, 8, 8
+	return DupTest{
+		Server:   srv,
+		Bots:     bots,
+		Prefix:   prefix,
+		Duration: 8 * time.Second,
+		Seed:     1,
+		Moves:    []Move{vend, buy, exchange, mail, take},
+		Setup:    MarketSetup(5000),
+	}
+}
+
+// checkMarketReport checks that the bots used every kind of move, and
+// that no item came into an inventory from a pick-up.
+func checkMarketReport(t *testing.T, rep DupReport, c *MarketCounts, buying bool) {
+	t.Helper()
+	t.Logf("shops: %d opened, %d closed, %d purchases; %d Exchange purchases; %d mails, %d taken; buying stores: %d opened, %d sales; %d refused, %d connections closed in a move; moves %v, %d audits and %d with a bot away, %d logins again; %d Jellopy, %d zeny, %d Jellopy in carts and mails",
+		c.ShopsOpened.Load(), c.ShopsClosed.Load(), c.Bought.Load(), c.Exchanged.Load(), c.Mailed.Load(), c.Taken.Load(),
+		c.StoresOpened.Load(), c.SoldToStores.Load(), c.Refused.Load(), c.Dropped.Load(),
+		rep.Moves, rep.Audits, rep.Partial, rep.Reconnects, rep.End.Items[Jellopy], rep.End.Zeny, rep.End.Stored[Jellopy])
+	enough := c.Dropped.Load() > 0 && rep.Audits >= 5
+	if buying {
+		enough = enough && c.StoresOpened.Load() > 0 && c.SoldToStores.Load() > 0
+	} else {
+		enough = enough && c.ShopsOpened.Load() > 0 && c.Bought.Load() > 0 && c.Exchanged.Load() > 0 && c.Mailed.Load() > 0 && c.Taken.Load() > 0
+	}
+	if !enough {
+		t.Errorf("too little happened")
+	}
+	if rep.Dropped != 0 || rep.Added > rep.Reconnects || -rep.Added > rep.Reconnects {
+		t.Errorf("%d drops and %d items came into inventories from elsewhere, with %d logins again", rep.Dropped, rep.Added, rep.Reconnects)
+	}
+}
+
+// TestDuplicationMarket runs the vending, Exchange and mail duplication
+// test without a database.
+func TestDuplicationMarket(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", StartJob: MerchantJob, Ruleset: "e2e.marketrules", Race: true})
+	var c MarketCounts
+	d := marketTest(srv, "Vendor", &c)
+	rep := d.Run(t)
+	checkMarketReport(t, rep, &c, false)
+	srv.CheckLogs()
+}
+
+// TestDuplicationMarketWithDatabase runs the vending, Exchange and mail
+// duplication test with PostgreSQL, then checks the saved inventories,
+// carts, mails and zeny.
+func TestDuplicationMarketWithDatabase(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", StartJob: MerchantJob, Ruleset: "e2e.marketrules", Database: true, Race: true})
+	var c MarketCounts
+	d := marketTest(srv, "SavedVendor", &c)
+	rep := d.Run(t)
+	checkMarketReport(t, rep, &c, false)
+	d.CheckDatabase(t, rep)
+	srv.CheckLogs()
+}
+
+// buyingStoreTest is the duplication test of buying stores: 8 bots with
+// 5,000 zeny each open stores that buy Jellopy, and sell Jellopy to each
+// other's stores. Connections close in the middle of sales, and with
+// stores open.
+func buyingStoreTest(srv *Server, prefix string, c *MarketCounts) DupTest {
+	open, sell := BuyingStoreMove(c), SellToStoreMove(c)
+	open.Weight, sell.Weight = 10, 20
+	return DupTest{
+		Server:   srv,
+		Bots:     8,
+		Prefix:   prefix,
+		Duration: 8 * time.Second,
+		Seed:     1,
+		Moves:    []Move{open, sell},
+		Setup:    CartSetup(5000),
+	}
+}
+
+// TestDuplicationBuyingStores runs the buying store duplication test
+// without a database.
+func TestDuplicationBuyingStores(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", StartJob: MerchantJob, Race: true})
+	var c MarketCounts
+	d := buyingStoreTest(srv, "Buyer", &c)
+	rep := d.Run(t)
+	checkMarketReport(t, rep, &c, true)
+	srv.CheckLogs()
+}
+
+// TestDuplicationBuyingStoresWithDatabase runs the buying store
+// duplication test with PostgreSQL, then checks the saved inventories
+// and zeny.
+func TestDuplicationBuyingStoresWithDatabase(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", StartJob: MerchantJob, Database: true, Race: true})
+	var c MarketCounts
+	d := buyingStoreTest(srv, "SavedBuyer", &c)
+	rep := d.Run(t)
+	checkMarketReport(t, rep, &c, true)
+	d.CheckDatabase(t, rep)
+	srv.CheckLogs()
+}

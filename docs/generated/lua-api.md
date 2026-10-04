@@ -381,6 +381,16 @@ Permission: `world.announce`.
 |---|---|---|
 | `text` | `string` | At most 255 bytes. |
 
+#### `world.get_shop(name) → wa.Shop?`
+
+A shop's handle, or nil when there is none. world:get_shop(name), as review decision 30 writes it, works too.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A shop of data/npcs.yml: a full record name, or a plain name, which is the calling mod's record, then core's. |
+
 ### wa.channels
 
 ```lua
@@ -1092,6 +1102,68 @@ Opens the account's storage or an extra storage, as openstorage and openstorage2
 #### `player:open_guild_storage() → boolean, string?`
 
 Opens the guild storage, as guildopenstorage. Returns true, or false and why: "no_guild", "no_storage", "no_permission", "in_use" or "already_open".
+
+#### `player:get_currency(currency) → integer`
+
+How much of a currency of data/currencies.yml the player has, such as cash for rAthena's #CASHPOINTS. An account's currency is its account's.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `currency` | `string` | A currency of data/currencies.yml: a full name, such as example.arena:tokens, or a plain name, which is the calling mod's record, then core's, such as cash or kafra. |
+
+#### `player:give_currency(currency, amount)`
+
+Gives a currency. An amount over the currency's max is lost, as pc_getcash. A mod changes its own currencies freely. Another mod's, and core's cash and kafra, need currencies.modify.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `currency` | `string` | A currency of data/currencies.yml: a full name, such as example.arena:tokens, or a plain name, which is the calling mod's record, then core's, such as cash or kafra. |
+| `amount` | `integer` | 1 to 2147483647. |
+
+#### `player:take_currency(currency, amount) → boolean`
+
+Takes a currency, as pc_paycash. Returns false, and takes nothing, when the player has too little. A mod changes its own currencies freely. Another mod's, and core's, need currencies.modify.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `currency` | `string` | A currency of data/currencies.yml: a full name, such as example.arena:tokens, or a plain name, which is the calling mod's record, then core's, such as cash or kafra. |
+| `amount` | `integer` | 1 to 2147483647. |
+
+#### `player:send_mail(mail)`
+
+Sends a mail to a character, online or not, as rAthena's mail command. The items are made for the mail, and the zeny comes from nowhere: the player pays nothing. A mail to a character who is not online arrives after the call returns. Script mail is not returned to its sender when it expires; it is deleted after mail_delete_days, as int_mail.cpp does with mail of send_id 0.
+
+Permission: `mail.send`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `mail` | `wa.MailSpec` |  |
+
+#### `player:open_mail() → boolean`
+
+Opens the player's mailbox window, as openmail. Returns false when the player is trading, vending, running a buying store or has a storage open, as mail_openmail.
+
+#### `player:autotrade() → boolean`
+
+Closes the player's connection and keeps its vending shop or buying store open, as @autotrade. The store opens again after a restart, as autotrade_restore. The player leaves when its store closes or sells out, or when it logs in again. Returns false when the player has no store open.
+
+#### `player:search_stores(search) → boolean`
+
+Opens the store search window, as searchstores, over the vending shops and buying stores of every map. Results can filter by price, cards and the ranges of rolls and random options. Returns false when the window is open already.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `search` | `wa.StoreSearchSpec` |  |
+
+#### `player:open_buying_store(store) → boolean`
+
+Opens the buying store setup window, as buyingstore. The player then picks what to buy. Returns false when the player is vending, has a buying store open, or is trading, as buyingstore_setup.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `store` | `wa.BuyingStoreSpec` |  |
 
 #### `player:can_carry(item, amount) → boolean`
 
@@ -1809,6 +1881,42 @@ Shows a progress bar and waits until it is full. A walk cancels it and ends the 
 |---|---|---|
 | `seconds` | `integer` | Up to 600. |
 
+### wa.Shop
+
+A shop of data/npcs.yml, from world.get_shop (review decision 30). Its changes hold for the whole world until the server stops: the shop's file sets it again at start. A stock the methods set is saved.
+
+#### `shop:add_item(item, options?) → boolean`
+
+Adds an item, or replaces the item of that ID, as npcshopadditem. Without a cost the price is the item's buy price. Returns false when a cost names an item or a currency that does not exist.
+
+Permission: `shops.modify`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
+| `options` | `wa.ShopItemOptions?` |  |
+
+#### `shop:remove_item(item) → boolean`
+
+Takes an item out of the shop, as npcshopdelitem. Returns false when the shop does not sell it.
+
+Permission: `shops.modify`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
+
+#### `shop:set_stock(item, stock) → boolean`
+
+Sets an item's stock, which every player shares, and the amount a restock fills it to, as npcshopupdate for a marketshop. Returns false when the shop does not sell the item.
+
+Permission: `shops.modify`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
+| `stock` | `integer` | 0 to 2147483647, or -1 for no limit. |
+
 ### wa.Channel
 
 A chat channel, from channels.create or channels.get.
@@ -2136,6 +2244,8 @@ The limits of the world's ruleset, as rules.limits: each limit's base, what a pl
 | `inventory_slots` | `integer` | The inventory slots of a new character, as INVENTORY_BASE_SIZE. 100 by default, with the max 200, MAX_INVENTORY. Ceiling 1,000. |
 | `storage_slots` | `integer` | The slots of an account's storage, as MAX_STORAGE. 600 by default, ceiling 10,000. |
 | `cart_slots` | `integer` | The slots of a cart, as MAX_CART. 100 by default, ceiling 1,000. |
+| `mail_items` | `integer` | The most item stacks one mail holds, as MAIL_MAX_ITEM. 5 by default, ceiling 20. |
+| `mailbox` | `integer` | The most mails a mailbox holds. 100 by default, ceiling 1,000. |
 
 ### wa.ExpShare
 
@@ -2379,6 +2489,40 @@ Provisional: not reviewed in proposal 0002 yet.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
+
+#### `testWorld:buy(player, shop, items) → boolean, string?`
+
+Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as "out_of_stock", "not_enough_items" or "not_enough_currency".
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+| `shop` | `string` | A shop's full record name of data/npcs.yml, such as example.arena:Prize Desk. |
+| `items` | `table<integer, integer>` | Item IDs and the amount of each to buy. |
+
+#### `testWorld:get_mails(player) → wa.TestMail[]`
+
+The player's mails, oldest first, after the mail sent so far arrived.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `testWorld:vend(seller, buyer, lines) → boolean, string?`
+
+Runs a whole vending sale, as two clients would: the seller puts each line's items in its cart and opens a shop, and the buyer buys. The shop closes after it. Returns true when the sale went through, or false and why: the vend hook's message, or an outcome such as "not_enough_zeny".
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `seller` | `wa.Player` | Gets a cart and the Vending skill when it lacks them. |
+| `buyer` | `wa.Player` | Steps next to the seller. |
+| `lines` | `wa.TestVendLine[]` |  |
 
 ### wa.Expectation
 
@@ -2771,6 +2915,34 @@ Options of player:give_item.
 | `to` | `string?` | Where the copies go: "storage", "cart" or an extra storage's name, instead of the inventory. They follow the place's restrictions and bound rules. |
 | `bound` | `wa.Bound?` | Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares. |
 
+### wa.TestMail
+
+A mail as world:get_mails shows it.
+
+It exists only in tests that `wactl mod test` runs.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `from` | `string` |  |
+| `title` | `string` |  |
+| `zeny` | `integer` |  |
+| `items` | `table<integer, integer>` | Item IDs and amounts. |
+| `read` | `boolean` |  |
+| `returned` | `boolean` | Set for a mail that came back to its sender. |
+
+### wa.TestVendLine
+
+One line of world:vend.
+
+It exists only in tests that `wactl mod test` runs.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item the seller holds. |
+| `amount` | `integer` | How many go on sale. |
+| `price` | `integer` | The price of one. |
+| `buy` | `integer?` | How many the buyer buys. None by default. |
+
 ### wa.TradeOffer
 
 One side of world:trade.
@@ -2797,6 +2969,119 @@ The object of the trade event and the trade hook: a trade between two players. T
 | `players` | `wa.Player[]` | The two players: the one who confirmed last first. |
 | `items` | `wa.TradedItem[]` | Each offered item. |
 | `zeny` | `integer[]` | The zeny each player gave, in the order of players. |
+
+### wa.MailSpec
+
+A mail of player:send_mail (review decision 30).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `to` | `string\|integer\|wa.Player\|nil` | The recipient: a character's name, a character ID, or a player handle. The player itself by default. |
+| `sender` | `string?` | The name shown as the sender, at most 23 characters. By default the NPC's name in an NPC context, else the mod's name. |
+| `title` | `string` | 1 to 39 bytes. |
+| `body` | `string?` | At most 499 bytes. |
+| `zeny` | `integer?` | 0 to 2147483647. |
+| `items` | `wa.MailItem[]?` | At most mail_items attachments. The items are made for the mail. |
+
+### wa.MailItem
+
+One attachment of player:send_mail.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
+| `amount` | `integer?` | 1 to 30000. 1 by default. |
+| `roll` | `"random"\|"default"\|table<string, integer>\|nil` | As give_item's roll. A table needs items.modify_rolls, except in a test case's own code. |
+| `bound` | `wa.Bound?` | Binds the copies, as give_item's bound. |
+
+### wa.StoreSearchSpec
+
+The store search of player:search_stores.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `uses` | `integer` | How many searches the window allows, 1 to 1000. |
+| `effect` | `"show"\|"open"\|nil` | What a click on a result does: "show" (the default) shows the store's place, as SEARCHSTORE_EFFECT_NORMAL; "open" opens the store, as SEARCHSTORE_EFFECT_REMOTE, when it is on the player's map. |
+
+### wa.BuyingStoreSpec
+
+The buying store of player:open_buying_store.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `slots` | `integer` | How many items the store may buy, 1 to 5, as MAX_BUYINGSTORE_SLOTS. |
+
+### wa.ShopItemOptions
+
+Options of shop:add_item.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `cost` | `wa.ShopCost?` | The cost of one. Without it, the item's buy price in zeny. |
+| `stock` | `integer?` | How many the shop has for every player, 1 to 2147483647. No limit by default. |
+| `restock` | `string?` | When the stock fills again: "daily", "weekly", or a time such as "6h", "30m" or "2d". It needs a stock. |
+
+### wa.ShopCost
+
+A cost: zeny, items and currencies, each optional, at most 5 items and currencies together.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `zeny` | `integer?` | 0 to 2147483647. Discount lowers it when the shop allows it. |
+| `items` | `wa.ShopCostItem[]?` | Items the purchase takes, for one bought. |
+| `currency` | `table<string, integer>?` | Currencies of data/currencies.yml and the amount of each, for one bought, such as { cash = 100 }. |
+
+### wa.ShopCostItem
+
+An item a cost takes.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
+| `amount` | `integer?` | 1 to 30000. 1 by default. |
+
+### wa.ShopSale
+
+The object of the shop_buy and shop_sell events: a purchase from a shop, or a sale to it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` |  |
+| `shop` | `string` | The shop's full record name. |
+| `items` | `wa.SoldItem[]` | Each line. |
+| `zeny` | `integer` | The zeny the player paid, or got for a sale. |
+
+### wa.StoreSale
+
+The object of the vend and buying_store_sale events and hooks. The hook runs before the sale, and the event after.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `seller` | `wa.Player` | The player who gives the items: the vendor, or the player who sells to a buying store. |
+| `buyer` | `wa.Player` | The player who pays: the vendor's customer, or the buying store's owner. |
+| `items` | `wa.SoldItem[]` | Each line, with its price. |
+| `zeny` | `integer` | The zeny the buyer pays, before the vending tax. |
+
+### wa.Mail
+
+The object of the mail event and hook. The hook runs before a player's mail goes out, and the event after any mail, a script's too.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `from` | `string` | The sender's name. |
+| `to` | `string` | The recipient's name. |
+| `items` | `wa.SoldItem[]` | The attachments. |
+| `zeny` | `integer` | The attached zeny. |
+
+### wa.SoldItem
+
+One line of a sale or a mail.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | The item's ID. |
+| `amount` | `integer` |  |
+| `price` | `integer?` | The price of one, for vend and buying_store_sale. |
 
 ### wa.TradedItem
 
@@ -3216,6 +3501,11 @@ Changes the value.
 | `guild_leave` | mod, event | `leave: wa.GuildMembership` | A player of the context's map left its guild. A member who is offline gets no event. |
 | `guild_change` | mod, event | `change: wa.GuildChange` | A guild got a new master, a level, a notice or an emblem, by a change made on the context's map. A new emblem from the account pages runs it on the map of the master, or of the first online member. |
 | `trade` | mod, npc, event | `trade: wa.Trade` | Two players on the context's map completed a trade. Options narrow it. |
+| `shop_buy` | mod, npc, event | `sale: wa.ShopSale` | A player on the context's map bought from a shop of data/npcs.yml. |
+| `shop_sell` | mod, npc, event | `sale: wa.ShopSale` | A player on the context's map sold items to a shop. |
+| `vend` | mod, npc, event | `sale: wa.StoreSale` | A player on the context's map bought from a vending shop. |
+| `buying_store_sale` | mod, npc, event | `sale: wa.StoreSale` | A player on the context's map sold items to a buying store. |
+| `mail` | mod, npc, event | `mail: wa.Mail` | A mail went out from the context's map: a player's, or a script's player:send_mail. |
 
 ## Named types
 
@@ -3229,7 +3519,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`
 
 ### wa.BonusName
 
@@ -3247,7 +3537,7 @@ An equipment slot.
 
 A hook name of wa.hooks.
 
-`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`, `chat`, `trade`
+`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`, `chat`, `trade`, `vend`, `buying_store_sale`, `mail`
 
 ### wa.Bound
 

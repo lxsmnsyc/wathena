@@ -192,6 +192,8 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	// character.
 	z.closeTalk(p)
 	p.shop = nil
+	z.closeStores(p)
+	p.mail.open = false
 	z.closeGuildStorage(p, true)
 	z.storagesLeave(p, false)
 	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)

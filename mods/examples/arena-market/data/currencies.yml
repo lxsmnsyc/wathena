@@ -1,0 +1,6 @@
+# Arena tokens: each character has its own, up to 1000. A plain name in
+# this mod is example.arena:tokens.
+- name: tokens
+  display_name: Arena Tokens
+  owner: character
+  max: 1000

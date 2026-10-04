@@ -218,8 +218,12 @@ var Modules = []Module{
 	},
 	{
 		Name: "wa.world", Local: "world",
-		Doc:   "The world.",
-		Funcs: []Func{{Name: "announce", Params: []Param{{"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of the world, as announce.", Permission: "world.announce"}},
+		Doc: "The world.",
+		Funcs: []Func{
+			{Name: "announce", Params: []Param{{"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of the world, as announce.", Permission: "world.announce"},
+			{Name: "get_shop", Params: []Param{{"name", "string", "A shop of data/npcs.yml: a full record name, or a plain name, which is the calling mod's record, then core's."}}, Returns: "wa.Shop?",
+				Doc: "A shop's handle, or nil when there is none. world:get_shop(name), as review decision 30 writes it, works too.", Permission: "game.read"},
+		},
 	},
 	{
 		Name: "wa.channels", Local: "channels",
@@ -411,6 +415,20 @@ var Classes = []Class{
 			{Name: "take_item", Params: []Param{itemParam, {"amount", "integer", "1 or more."}, {"options", "wa.FromOptions?", ""}}, Returns: "boolean", Doc: "Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. Returns false, and takes nothing, when there are too few."},
 			{Name: "open_storage", Params: []Param{{"name", "string?", "An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. Nothing opens the account's storage."}}, Returns: "boolean", Doc: "Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee."},
 			{Name: "open_guild_storage", Returns: "boolean, string?", Doc: "Opens the guild storage, as guildopenstorage. Returns true, or false and why: \"no_guild\", \"no_storage\", \"no_permission\", \"in_use\" or \"already_open\"."},
+			{Name: "get_currency", Params: []Param{currencyParam}, Returns: "integer", Doc: "How much of a currency of data/currencies.yml the player has, such as cash for rAthena's #CASHPOINTS. An account's currency is its account's.", Permission: "game.read"},
+			{Name: "give_currency", Params: []Param{currencyParam, {"amount", "integer", "1 to 2147483647."}},
+				Doc: "Gives a currency. An amount over the currency's max is lost, as pc_getcash. A mod changes its own currencies freely. Another mod's, and core's cash and kafra, need currencies.modify."},
+			{Name: "take_currency", Params: []Param{currencyParam, {"amount", "integer", "1 to 2147483647."}}, Returns: "boolean",
+				Doc: "Takes a currency, as pc_paycash. Returns false, and takes nothing, when the player has too little. A mod changes its own currencies freely. Another mod's, and core's, need currencies.modify."},
+			{Name: "send_mail", Params: []Param{{"mail", "wa.MailSpec", ""}},
+				Doc: "Sends a mail to a character, online or not, as rAthena's mail command. The items are made for the mail, and the zeny comes from nowhere: the player pays nothing. A mail to a character who is not online arrives after the call returns. Script mail is not returned to its sender when it expires; it is deleted after mail_delete_days, as int_mail.cpp does with mail of send_id 0.", Permission: "mail.send"},
+			{Name: "open_mail", Returns: "boolean", Doc: "Opens the player's mailbox window, as openmail. Returns false when the player is trading, vending, running a buying store or has a storage open, as mail_openmail."},
+			{Name: "autotrade", Returns: "boolean",
+				Doc: "Closes the player's connection and keeps its vending shop or buying store open, as @autotrade. The store opens again after a restart, as autotrade_restore. The player leaves when its store closes or sells out, or when it logs in again. Returns false when the player has no store open."},
+			{Name: "search_stores", Params: []Param{{"search", "wa.StoreSearchSpec", ""}}, Returns: "boolean",
+				Doc: "Opens the store search window, as searchstores, over the vending shops and buying stores of every map. Results can filter by price, cards and the ranges of rolls and random options. Returns false when the window is open already."},
+			{Name: "open_buying_store", Params: []Param{{"store", "wa.BuyingStoreSpec", ""}}, Returns: "boolean",
+				Doc: "Opens the buying store setup window, as buyingstore. The player then picks what to buy. Returns false when the player is vending, has a buying store open, or is trading, as buyingstore_setup."},
 			{Name: "can_carry", Params: []Param{itemParam, {"amount", "integer", ""}}, Returns: "boolean", Doc: "Whether the items fit, by weight and slots, as checkweight.", Permission: "game.read"},
 			{Name: "pay_zeny", Params: []Param{{"amount", "integer", ""}}, Returns: "boolean", Doc: "Takes zeny. Returns false, and takes nothing, when the player has too little."},
 			{Name: "give_zeny", Params: []Param{{"amount", "integer", ""}}, Doc: "Gives zeny. Zeny over 2,147,483,647 is lost.", Permission: "player.give_zeny"},
@@ -570,6 +588,16 @@ var Classes = []Class{
 		},
 	},
 	{
+		Name: "wa.Shop", Handle: "shop", Doc: "A shop of data/npcs.yml, from world.get_shop (review decision 30). Its changes hold for the whole world until the server stops: the shop's file sets it again at start. A stock the methods set is saved.",
+		Methods: []Func{
+			{Name: "add_item", Params: []Param{itemParam, {"options", "wa.ShopItemOptions?", ""}}, Returns: "boolean",
+				Doc: "Adds an item, or replaces the item of that ID, as npcshopadditem. Without a cost the price is the item's buy price. Returns false when a cost names an item or a currency that does not exist.", Permission: "shops.modify"},
+			{Name: "remove_item", Params: []Param{itemParam}, Returns: "boolean", Doc: "Takes an item out of the shop, as npcshopdelitem. Returns false when the shop does not sell it.", Permission: "shops.modify"},
+			{Name: "set_stock", Params: []Param{itemParam, {"stock", "integer", "0 to 2147483647, or -1 for no limit."}}, Returns: "boolean",
+				Doc: "Sets an item's stock, which every player shares, and the amount a restock fills it to, as npcshopupdate for a marketshop. Returns false when the shop does not sell the item.", Permission: "shops.modify"},
+		},
+	},
+	{
 		Name: "wa.Channel", Handle: "channel", Doc: "A chat channel, from channels.create or channels.get.",
 		Methods: []Func{
 			{Name: "send", Params: []Param{{"text", "string", "1 to 255 bytes."}}, Doc: "Shows a line of the channel itself to its members, as rAthena's channelmes. It does not pass the chat filter."},
@@ -697,6 +725,8 @@ var Classes = []Class{
 			{"inventory_slots", "integer", "The inventory slots of a new character, as INVENTORY_BASE_SIZE. 100 by default, with the max 200, MAX_INVENTORY. Ceiling 1,000."},
 			{"storage_slots", "integer", "The slots of an account's storage, as MAX_STORAGE. 600 by default, ceiling 10,000."},
 			{"cart_slots", "integer", "The slots of a cart, as MAX_CART. 100 by default, ceiling 1,000."},
+			{"mail_items", "integer", "The most item stacks one mail holds, as MAIL_MAX_ITEM. 5 by default, ceiling 20."},
+			{"mailbox", "integer", "The most mails a mailbox holds. 100 by default, ceiling 1,000."},
 		},
 	},
 	{
@@ -789,6 +819,11 @@ var Classes = []Class{
 			{Name: "trade", Params: []Param{{"a", "wa.Player", ""}, {"b", "wa.Player", "Steps next to a."}, {"offer_a", "wa.TradeOffer?", ""}, {"offer_b", "wa.TradeOffer?", ""}}, Returns: "boolean, string?",
 				Doc: "Runs a whole trade, as two clients would: a asks, b accepts, both offer, lock and confirm. Returns true when it completed, or false and why: the trade hook's message, or an outcome such as \"restricted\" or \"bound\". A refused offer ends the trade. Trading needs Basic Skill level 1, which a new player from world:new_player lacks: give it skills = { [skills.id(\"NV_BASIC\")] = 9 }.", Provisional: true},
 			{Name: "close_storage", Params: []Param{playerParam}, Doc: "Closes the player's storage window, as the client's close button.", Provisional: true},
+			{Name: "buy", Params: []Param{playerParam, {"shop", "string", "A shop's full record name of data/npcs.yml, such as example.arena:Prize Desk."}, {"items", "table<integer, integer>", "Item IDs and the amount of each to buy."}}, Returns: "boolean, string?",
+				Doc: "Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as \"out_of_stock\", \"not_enough_items\" or \"not_enough_currency\".", Provisional: true},
+			{Name: "get_mails", Params: []Param{playerParam}, Returns: "wa.TestMail[]", Doc: "The player's mails, oldest first, after the mail sent so far arrived.", Provisional: true},
+			{Name: "vend", Params: []Param{{"seller", "wa.Player", "Gets a cart and the Vending skill when it lacks them."}, {"buyer", "wa.Player", "Steps next to the seller."}, {"lines", "wa.TestVendLine[]", ""}}, Returns: "boolean, string?",
+				Doc: "Runs a whole vending sale, as two clients would: the seller puts each line's items in its cart and opens a shop, and the buyer buys. The shop closes after it. Returns true when the sale went through, or false and why: the vend hook's message, or an outcome such as \"not_enough_zeny\".", Provisional: true},
 		},
 	},
 	{
@@ -1039,6 +1074,15 @@ var Classes = []Class{
 			{"bound", "wa.Bound?", "Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares."}},
 	},
 	{
+		Name: "wa.TestMail", Doc: "A mail as world:get_mails shows it.", Testing: true, Provisional: true,
+		Fields: []Field{{"from", "string", ""}, {"title", "string", ""}, {"zeny", "integer", ""}, {"items", "table<integer, integer>", "Item IDs and amounts."},
+			{"read", "boolean", ""}, {"returned", "boolean", "Set for a mail that came back to its sender."}},
+	},
+	{
+		Name: "wa.TestVendLine", Doc: "One line of world:vend.", Testing: true, Provisional: true,
+		Fields: []Field{{"item", "integer", "An item the seller holds."}, {"amount", "integer", "How many go on sale."}, {"price", "integer", "The price of one."}, {"buy", "integer?", "How many the buyer buys. None by default."}},
+	},
+	{
 		Name: "wa.TradeOffer", Doc: "One side of world:trade.",
 		Fields: []Field{{"items", "table<integer, integer>?", "Item IDs and the amount of each to offer."}, {"zeny", "integer?", ""}},
 	},
@@ -1053,6 +1097,68 @@ var Classes = []Class{
 			{"items", "wa.TradedItem[]", "Each offered item."},
 			{"zeny", "integer[]", "The zeny each player gave, in the order of players."},
 		},
+	},
+	{
+		Name: "wa.MailSpec", Doc: "A mail of player:send_mail (review decision 30).",
+		Fields: []Field{
+			{"to", "string|integer|wa.Player|nil", "The recipient: a character's name, a character ID, or a player handle. The player itself by default."},
+			{"sender", "string?", "The name shown as the sender, at most 23 characters. By default the NPC's name in an NPC context, else the mod's name."},
+			{"title", "string", "1 to 39 bytes."},
+			{"body", "string?", "At most 499 bytes."},
+			{"zeny", "integer?", "0 to 2147483647."},
+			{"items", "wa.MailItem[]?", "At most mail_items attachments. The items are made for the mail."},
+		},
+	},
+	{
+		Name: "wa.MailItem", Doc: "One attachment of player:send_mail.",
+		Fields: []Field{{"item", "integer", "An item from items.id."}, {"amount", "integer?", "1 to 30000. 1 by default."},
+			{"roll", `"random"|"default"|table<string, integer>|nil`, "As give_item's roll. A table needs items.modify_rolls, except in a test case's own code."},
+			{"bound", "wa.Bound?", "Binds the copies, as give_item's bound."}},
+	},
+	{
+		Name: "wa.StoreSearchSpec", Doc: "The store search of player:search_stores.",
+		Fields: []Field{{"uses", "integer", "How many searches the window allows, 1 to 1000."},
+			{"effect", `"show"|"open"|nil`, `What a click on a result does: "show" (the default) shows the store's place, as SEARCHSTORE_EFFECT_NORMAL; "open" opens the store, as SEARCHSTORE_EFFECT_REMOTE, when it is on the player's map.`}},
+	},
+	{
+		Name: "wa.BuyingStoreSpec", Doc: "The buying store of player:open_buying_store.",
+		Fields: []Field{{"slots", "integer", "How many items the store may buy, 1 to 5, as MAX_BUYINGSTORE_SLOTS."}},
+	},
+	{
+		Name: "wa.ShopItemOptions", Doc: "Options of shop:add_item.",
+		Fields: []Field{{"cost", "wa.ShopCost?", "The cost of one. Without it, the item's buy price in zeny."},
+			{"stock", "integer?", "How many the shop has for every player, 1 to 2147483647. No limit by default."},
+			{"restock", "string?", `When the stock fills again: "daily", "weekly", or a time such as "6h", "30m" or "2d". It needs a stock.`}},
+	},
+	{
+		Name: "wa.ShopCost", Doc: "A cost: zeny, items and currencies, each optional, at most 5 items and currencies together.",
+		Fields: []Field{{"zeny", "integer?", "0 to 2147483647. Discount lowers it when the shop allows it."},
+			{"items", "wa.ShopCostItem[]?", "Items the purchase takes, for one bought."},
+			{"currency", "table<string, integer>?", "Currencies of data/currencies.yml and the amount of each, for one bought, such as { cash = 100 }."}},
+	},
+	{
+		Name: "wa.ShopCostItem", Doc: "An item a cost takes.",
+		Fields: []Field{{"item", "integer", "An item from items.id."}, {"amount", "integer?", "1 to 30000. 1 by default."}},
+	},
+	{
+		Name: "wa.ShopSale", Doc: "The object of the shop_buy and shop_sell events: a purchase from a shop, or a sale to it.",
+		Fields: []Field{{"player", "wa.Player", ""}, {"shop", "string", "The shop's full record name."},
+			{"items", "wa.SoldItem[]", "Each line."}, {"zeny", "integer", "The zeny the player paid, or got for a sale."}},
+	},
+	{
+		Name: "wa.StoreSale", Doc: "The object of the vend and buying_store_sale events and hooks. The hook runs before the sale, and the event after.",
+		Fields: []Field{{"seller", "wa.Player", "The player who gives the items: the vendor, or the player who sells to a buying store."},
+			{"buyer", "wa.Player", "The player who pays: the vendor's customer, or the buying store's owner."},
+			{"items", "wa.SoldItem[]", "Each line, with its price."}, {"zeny", "integer", "The zeny the buyer pays, before the vending tax."}},
+	},
+	{
+		Name: "wa.Mail", Doc: "The object of the mail event and hook. The hook runs before a player's mail goes out, and the event after any mail, a script's too.",
+		Fields: []Field{{"from", "string", "The sender's name."}, {"to", "string", "The recipient's name."},
+			{"items", "wa.SoldItem[]", "The attachments."}, {"zeny", "integer", "The attached zeny."}},
+	},
+	{
+		Name: "wa.SoldItem", Doc: "One line of a sale or a mail.",
+		Fields: []Field{{"item", "integer", "The item's ID."}, {"amount", "integer", ""}, {"price", "integer?", "The price of one, for vend and buying_store_sale."}},
 	},
 	{
 		Name: "wa.TradedItem", Doc: "One item of a trade.",
@@ -1282,7 +1388,15 @@ var Events = []Event{
 	{Name: "guild_leave", Kinds: []string{"mod", "event"}, Params: []Param{{"leave", "wa.GuildMembership", ""}}, Doc: "A player of the context's map left its guild. A member who is offline gets no event."},
 	{Name: "guild_change", Kinds: []string{"mod", "event"}, Params: []Param{{"change", "wa.GuildChange", ""}}, Doc: "A guild got a new master, a level, a notice or an emblem, by a change made on the context's map. A new emblem from the account pages runs it on the map of the master, or of the first online member."},
 	{Name: "trade", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"trade", "wa.Trade", ""}}, Doc: "Two players on the context's map completed a trade. Options narrow it."},
+	{Name: "shop_buy", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"sale", "wa.ShopSale", ""}}, Doc: "A player on the context's map bought from a shop of data/npcs.yml."},
+	{Name: "shop_sell", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"sale", "wa.ShopSale", ""}}, Doc: "A player on the context's map sold items to a shop."},
+	{Name: "vend", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"sale", "wa.StoreSale", ""}}, Doc: "A player on the context's map bought from a vending shop."},
+	{Name: "buying_store_sale", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"sale", "wa.StoreSale", ""}}, Doc: "A player on the context's map sold items to a buying store."},
+	{Name: "mail", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"mail", "wa.Mail", ""}}, Doc: "A mail went out from the context's map: a player's, or a script's player:send_mail."},
 }
+
+// currencyParam is the name of a currency.
+var currencyParam = Param{"currency", "string", "A currency of data/currencies.yml: a full name, such as example.arena:tokens, or a plain name, which is the calling mod's record, then core's, such as cash or kafra."}
 
 // EquipSlots are the slot names of player:get_equipped.
 var EquipSlots = []string{
@@ -1308,7 +1422,7 @@ func Aliases() []Alias {
 		{Name: "wa.EventName", Values: events, Doc: "An event name of wa.events."},
 		{Name: "wa.BonusName", Values: bonuses, Doc: "A bonus name of wa.bonuses (proposal 0002a)."},
 		{Name: "wa.EquipSlot", Values: EquipSlots, Doc: "An equipment slot."},
-		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat", "trade"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat", "trade", "vend", "buying_store_sale", "mail"}, Doc: "A hook name of wa.hooks."},
 		{Name: "wa.Bound", Values: []string{"account", "character", "party", "guild"}, Doc: "Who a bound copy is bound to."},
 		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},

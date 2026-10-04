@@ -25,8 +25,8 @@ import (
 // test asks the server for every item it holds. After every audit, and
 // at the end:
 //   - the amount of each item, players', guild storages', personal
-//     storages', carts' and ground items together, is what it was at the
-//     start,
+//     storages', carts', mails' and ground items together, is what it was
+//     at the start,
 //   - all zeny together is what it was at the start,
 //   - no serial is held twice,
 //   - each bot's inventory, as the server told it, is what the server
@@ -370,7 +370,13 @@ func (d DupTest) Run(t *testing.T) DupReport {
 		self := b.View().NetID
 		taken, added := 0, 0
 		trading := false
-		for _, e := range events {
+		market := marketEvents(events)
+		for i, e := range events {
+			if market[i] {
+				// A vending sale, a buying store sale, a shop purchase or a
+				// mail's take moved these items, not a pick-up.
+				continue
+			}
 			r := e.GetInventoryRemove()
 			if r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED {
 				rep.Dropped++
@@ -406,6 +412,32 @@ func (d DupTest) Run(t *testing.T) DupReport {
 		t.Logf("the server closed a connection: %s", c)
 	}
 	return rep
+}
+
+// marketEvents marks the events of market transfers: the inventory,
+// cart and stat changes that come right before the event that ends a
+// vending sale, a buying store sale, a shop purchase or a mail's take.
+// The zone sends a transfer's changes and then that event together, so
+// the changes are the events just before it.
+func marketEvents(events []*wathenav1.Event) []bool {
+	out := make([]bool, len(events))
+	in := false
+	for i := len(events) - 1; i >= 0; i-- {
+		e := events[i]
+		switch {
+		case e.HasVendingSold(), e.HasBuyingStoreBought(),
+			e.GetVendingResult().GetOutcome() == wathenav1.VendingOutcome_VENDING_OUTCOME_BOUGHT,
+			e.GetShopResult().GetOutcome() == wathenav1.ShopOutcome_SHOP_OUTCOME_BOUGHT,
+			e.GetMailResult().GetOutcome() == wathenav1.MailOutcome_MAIL_OUTCOME_TAKEN:
+			in = true
+		case in && (e.HasInventoryAdd() || e.HasInventoryRemove() || e.HasStorageRemove() || e.HasStorageAdd() || e.HasStats() ||
+			e.HasCurrencies() || e.HasVendingSold()):
+			out[i] = true
+		default:
+			in = false
+		}
+	}
+	return out
 }
 
 // name is bot i's name.
@@ -901,7 +933,27 @@ func (d DupTest) CheckDatabase(t *testing.T, rep DupReport) {
 		got.Serials[serial] = name
 	}
 	rows.Close()
-	if err := db.QueryRow(ctx, `SELECT coalesce(sum(zeny), 0) FROM characters WHERE name LIKE $1`, pattern).Scan(&got.Zeny); err != nil {
+	// So do mails, with their zeny.
+	rows, err = db.Query(ctx, `SELECT 'mail:' || mail_id, item_id, amount, serial::text FROM mail_items`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var name, serial string
+		var id uint32
+		var amount int
+		if err := rows.Scan(&name, &id, &amount, &serial); err != nil {
+			t.Fatal(err)
+		}
+		got.Items[id] += amount
+		if who, ok := got.Serials[serial]; ok {
+			t.Errorf("database: serial %s is held by %s and %s", serial, who, name)
+		}
+		got.Serials[serial] = name
+	}
+	rows.Close()
+	if err := db.QueryRow(ctx, `SELECT (SELECT coalesce(sum(zeny), 0) FROM characters WHERE name LIKE $1) + (SELECT coalesce(sum(zeny), 0) FROM mails)`,
+		pattern).Scan(&got.Zeny); err != nil {
 		t.Fatal(err)
 	}
 	for _, p := range compare(rep.Start, got) {

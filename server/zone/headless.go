@@ -14,6 +14,8 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/shop"
+	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -916,4 +918,164 @@ func (h *Headless) CloseStorage(player int64) error {
 	}
 	h.step(0)
 	return nil
+}
+
+// Buy buys from a shop of data/npcs.yml for wa.testing's world:buy, as
+// player:open_shop then the window's Buy. It returns true when the
+// purchase went through, and otherwise the outcome's name in lower
+// case, such as "out_of_stock".
+func (h *Headless) Buy(player int64, name string, items map[uint32]int) (bool, string, error) {
+	p, err := h.player(player)
+	if err != nil {
+		return false, "", err
+	}
+	z := h.z
+	var s *shop.Shop
+	if z.Mods != nil {
+		s = z.Mods.Shops.Get(name)
+	}
+	if s == nil {
+		return false, "", fmt.Errorf("there is no shop %q", name)
+	}
+	z.openShop(p, s, nil)
+	var lines []buyLine
+	for _, id := range slices.Sorted(maps.Keys(items)) {
+		lines = append(lines, buyLine{id: id, amount: items[id]})
+	}
+	before := len(p.pending)
+	z.buy(p, 0, lines)
+	out := ""
+	for _, e := range p.pending[min(before, len(p.pending)):] {
+		if r := e.GetShopResult(); r != nil {
+			out = strings.ToLower(strings.TrimPrefix(r.GetOutcome().String(), "SHOP_OUTCOME_"))
+		}
+	}
+	h.step(0)
+	return out == "bought", out, nil
+}
+
+// TestMail is a mail as wa.testing's world:get_mails shows it.
+type TestMail struct {
+	From, Title    string
+	Zeny           int64
+	Items          map[uint32]int
+	Read, Returned bool
+}
+
+// Mails lists a player's mails, oldest first, for world:get_mails.
+func (h *Headless) Mails(player int64) ([]TestMail, error) {
+	p, err := h.player(player)
+	if err != nil {
+		return nil, err
+	}
+	h.step(0)
+	b := h.z.mailboxOf(p)
+	if b == nil {
+		return nil, nil
+	}
+	var out []TestMail
+	for _, m := range b.Mails() {
+		m.Lock()
+		if !m.Deleted() {
+			t := TestMail{From: m.FromName, Title: m.Title, Zeny: m.Zeny, Items: map[uint32]int{}, Read: m.Read, Returned: m.Returned}
+			for _, s := range m.Box.Slots {
+				if s.ID != 0 {
+					t.Items[s.ID] += s.Amount
+				}
+			}
+			out = append(out, t)
+		}
+		m.Unlock()
+	}
+	return out, nil
+}
+
+// VendLine is one line of world:vend: an item of the seller, the amount
+// to put on sale, its price, and how many the buyer buys.
+type VendLine struct {
+	Item          uint32
+	Amount, Price int
+	Buy           int
+}
+
+// Vend runs a whole vending sale for wa.testing's world:vend: the seller
+// gets a cart and the Vending skill, puts the lines' items in the cart,
+// opens its shop, and the buyer, next to it, buys. It returns true when
+// the sale went through, and otherwise the outcome's name, or the vend
+// hook's message. The shop closes after it.
+func (h *Headless) Vend(seller, buyer int64, lines []VendLine) (bool, string, error) {
+	ps, err := h.player(seller)
+	if err != nil {
+		return false, "", err
+	}
+	pb, err := h.player(buyer)
+	if err != nil {
+		return false, "", err
+	}
+	if ps == pb {
+		return false, "", errors.New("a player cannot buy from itself")
+	}
+	z := h.z
+	pb.entity.x, pb.entity.y = ps.entity.x, ps.entity.y
+	if ps.char.Skills == nil {
+		ps.char.Skills = map[int]int{}
+	}
+	ps.char.Skills[skillPushCart] = max(ps.char.Skills[skillPushCart], 1)
+	ps.char.Skills[skill.IDVending] = max(ps.char.Skills[skill.IDVending], 10)
+	if !z.hasCart(ps) {
+		z.setCart(ps, 1)
+	}
+	h.step(0)
+	var open []*wathenav1.VendingLine
+	var buy []*wathenav1.VendingBuyLine
+	for i, l := range lines {
+		slot := -1
+		for j := range ps.inventory.Slots {
+			if s := &ps.inventory.Slots[j]; s.ID == l.Item && s.Equip == 0 && s.Amount >= l.Amount {
+				slot = j
+				break
+			}
+		}
+		if slot < 0 {
+			return false, "", fmt.Errorf("the seller has too few of item %d", l.Item)
+		}
+		z.storageMove(ps, &storageMove{kind: MoveCartPut, slot: slot, amount: l.Amount})
+		cart := z.cartOf(ps)
+		cartSlot := -1
+		cart.Lock()
+		for j, s := range cart.Box().Slots {
+			if s.ID == l.Item {
+				cartSlot = j
+			}
+		}
+		cart.Unlock()
+		if cartSlot < 0 {
+			return false, "", fmt.Errorf("item %d did not go into the cart", l.Item)
+		}
+		open = append(open, wathenav1.VendingLine_builder{CartSlot: uint32(cartSlot), Amount: uint32(l.Amount), Price: uint32(l.Price)}.Build()) // #nosec G115 -- small test values.
+		if l.Buy > 0 {
+			buy = append(buy, wathenav1.VendingBuyLine_builder{Index: uint32(i), Amount: uint32(l.Buy)}.Build()) // #nosec G115 -- as above.
+		}
+	}
+	ps.prevend = min(len(open)+2, maxVending)
+	z.openVending(ps, wathenav1.VendingOpen_builder{Title: "Test shop", Items: open}.Build())
+	if ps.vend == nil {
+		h.step(0)
+		return false, "failed", nil
+	}
+	before := len(pb.pending)
+	z.vendingBuy(pb, wathenav1.VendingBuy_builder{Vendor: pb.netID(ps.entity), Shop: ps.vend.id, Items: buy}.Build())
+	out := ""
+	for _, e := range pb.pending[min(before, len(pb.pending)):] {
+		if r := e.GetVendingResult(); r != nil {
+			out = strings.ToLower(strings.TrimPrefix(r.GetOutcome().String(), "VENDING_OUTCOME_"))
+			if m := r.GetMessage(); m != "" {
+				out = m
+			}
+		}
+	}
+	z.closeVending(ps)
+	h.step(0)
+	h.step(0)
+	return out == "bought", out, nil
 }

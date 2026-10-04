@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi9ggKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIABIpCgVndWlsZBgYIAEoCzIYLndhdGhlbmEudjEuR3VpbGRDb21tYW5kSAASLQoHc3RvcmFnZRgZIAEoCzIaLndhdGhlbmEudjEuU3RvcmFnZUNvbW1hbmRIABIpCgV0cmFkZRgaIAEoCzIYLndhdGhlbmEudjEuVHJhZGVDb21tYW5kSABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHgoKTGVhcm5Ta2lsbBIQCghza2lsbF9pZBgBIAEoDSIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJgCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkSFAoMY2hhbm5lbF9uYW1lGAQgASgJIkkKDkNoYW5uZWxDb21tYW5kEikKBmFjdGlvbhgBIAEoDjIZLndhdGhlbmEudjEuQ2hhbm5lbEFjdGlvbhIMCgRuYW1lGAIgASgJIiYKBUJsb2NrEgwKBG5hbWUYASABKAkSDwoHdW5ibG9jaxgCIAEoCCJZCgZSZXBvcnQSDAoEbmFtZRgBIAEoCRIPCgdsaW5lX2lkGAIgASgMEg4KBnJlYXNvbhgDIAEoCRIQCghndWlsZF9pZBgEIAEoBBIOCgZlbWJsZW0YBSABKAgiFwoITnBjQ2xpY2sSCwoDbnBjGAEgASgNIoMBCghOcGNSZXBseRIOCgZkaWFsb2cYASABKA0SDgoEbmV4dBgCIAEoCEgAEg4KBG1lbnUYAyABKA1IABIUCgppbnB1dF90ZXh0GAQgASgJSAASFgoMaW5wdXRfbnVtYmVyGAUgASgDSAASDwoFY2xvc2UYBiABKAhIAEIICgZhbnN3ZXIiPgoHU2hvcEJ1eRILCgNucGMYASABKA0SJgoFaXRlbXMYAiADKAsyFy53YXRoZW5hLnYxLlNob3BCdXlMaW5lIi4KC1Nob3BCdXlMaW5lEg8KB2l0ZW1faWQYASABKA0SDgoGYW1vdW50GAIgASgNIkAKCFNob3BTZWxsEgsKA25wYxgBIAEoDRInCgVpdGVtcxgCIAMoCzIYLndhdGhlbmEudjEuU2hvcFNlbGxMaW5lIiwKDFNob3BTZWxsTGluZRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDSIYCglTaG9wQ2xvc2USCwoDbnBjGAEgASgNIhcKB1VzZUl0ZW0SDAoEc2xvdBgBIAEoDSIoCghEcm9wSXRlbRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDSIWCgZQaWNrVXASDAoEaXRlbRgBIAEoDSI/CglSYWlzZVN0YXQSIgoEc3RhdBgBIAEoDjIULndhdGhlbmEudjEuQmFzZVN0YXQSDgoGYW1vdW50GAIgASgNIisKCUVxdWlwSXRlbRIMCgRzbG90GAEgASgNEhAKCHBvc2l0aW9uGAIgASgNIhsKC1VuZXF1aXBJdGVtEgwKBHNsb3QYASABKA0iMwoKSW5zZXJ0Q2FyZBIRCgljYXJkX3Nsb3QYASABKA0SEgoKZXF1aXBfc2xvdBgCIAEoDSLjAQoMUGFydHlDb21tYW5kEikKBmNyZWF0ZRgBIAEoCzIXLndhdGhlbmEudjEuUGFydHlDcmVhdGVIABIQCgZpbnZpdGUYAiABKAlIABInCgVyZXBseRgDIAEoCzIWLndhdGhlbmEudjEuUGFydHlSZXBseUgAEg8KBWxlYXZlGAQgASgISAASDwoFZXhwZWwYBSABKAlIABIUCgpzZXRfbGVhZGVyGAYgASgJSAASKwoHb3B0aW9ucxgHIAEoCzIYLndhdGhlbmEudjEuUGFydHlPcHRpb25zSABCCAoGYWN0aW9uIkYKC1BhcnR5Q3JlYXRlEgwKBG5hbWUYASABKAkSKQoHb3B0aW9ucxgCIAEoCzIYLndhdGhlbmEudjEuUGFydHlPcHRpb25zIi4KClBhcnR5UmVwbHkSEAoIcGFydHlfaWQYASABKAQSDgoGYWNjZXB0GAIgASgIIkoKDFBhcnR5T3B0aW9ucxIQCghleHBfZXZlbhgBIAEoCBIRCglpdGVtX2V2ZW4YAiABKAgSFQoNcGlja3VwX3NoYXJlZBgDIAEoCCJkCg1GcmllbmRDb21tYW5kEg0KA2FkZBgBIAEoCUgAEigKBXJlcGx5GAIgASgLMhcud2F0aGVuYS52MS5GcmllbmRSZXBseUgAEhAKBnJlbW92ZRgDIAEoCUgAQggKBmFjdGlvbiIrCgtGcmllbmRSZXBseRIMCgRuYW1lGAEgASgJEg4KBmFjY2VwdBgCIAEoCCKTAQoTUGFydHlCb29raW5nQ29tbWFuZBIuCghyZWdpc3RlchgBIAEoCzIaLndhdGhlbmEudjEuUGFydHlCb29raW5nQWRIABIwCgZzZWFyY2gYAiABKAsyHi53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ1NlYXJjaEgAEhAKBmRlbGV0ZRgDIAEoCEgAQggKBmFjdGlvbiJICg5QYXJ0eUJvb2tpbmdBZBINCgVsZXZlbBgBIAEoDRILCgNtYXAYAiABKAkSDAoEam9icxgDIAMoDRIMCgRub3RlGAQgASgJIj0KElBhcnR5Qm9va2luZ1NlYXJjaBINCgVsZXZlbBgBIAEoDRILCgNtYXAYAiABKAkSCwoDam9iGAMgASgNIuMDCgxHdWlsZENvbW1hbmQSEAoGY3JlYXRlGAEgASgJSAASEAoGaW52aXRlGAIgASgJSAASJwoFcmVwbHkYAyABKAsyFi53YXRoZW5hLnYxLkd1aWxkUmVwbHlIABIPCgVsZWF2ZRgEIAEoCUgAEicKBWV4cGVsGAUgASgLMhYud2F0aGVuYS52MS5HdWlsZEV4cGVsSAASLwoJcG9zaXRpb25zGAYgASgLMhoud2F0aGVuYS52MS5HdWlsZFBvc2l0aW9uc0gAEjoKD21lbWJlcl9wb3NpdGlvbhgHIAEoCzIfLndhdGhlbmEudjEuR3VpbGRNZW1iZXJQb3NpdGlvbkgAEikKBm5vdGljZRgIIAEoCzIXLndhdGhlbmEudjEuR3VpbGROb3RpY2VIABISCghza2lsbF91cBgJIAEoDUgAEg4KBGFsbHkYCiABKAlIABIsCgphbGx5X3JlcGx5GAsgASgLMhYud2F0aGVuYS52MS5HdWlsZFJlcGx5SAASDwoFZW5lbXkYDCABKAlIABI0CgxlbmRfcmVsYXRpb24YDSABKAsyHC53YXRoZW5hLnYxLkd1aWxkUmVsYXRpb25FbmRIABIRCgdkaXNiYW5kGA4gASgJSABCCAoGYWN0aW9uIi4KCkd1aWxkUmVwbHkSEAoIZ3VpbGRfaWQYASABKAQSDgoGYWNjZXB0GAIgASgIIioKCkd1aWxkRXhwZWwSDAoEbmFtZRgBIAEoCRIOCgZyZWFzb24YAiABKAkiPgoOR3VpbGRQb3NpdGlvbnMSLAoJcG9zaXRpb25zGAEgAygLMhkud2F0aGVuYS52MS5HdWlsZFBvc2l0aW9uIn0KDUd1aWxkUG9zaXRpb24SDQoFaW5kZXgYASABKA0SDAoEbmFtZRgCIAEoCRISCgpjYW5faW52aXRlGAMgASgIEhEKCWNhbl9leHBlbBgEIAEoCBIXCg9jYW5fdXNlX3N0b3JhZ2UYBSABKAgSDwoHZXhwX3RheBgGIAEoDSI1ChNHdWlsZE1lbWJlclBvc2l0aW9uEgwKBG5hbWUYASABKAkSEAoIcG9zaXRpb24YAiABKA0iKgoLR3VpbGROb3RpY2USDQoFdGl0bGUYASABKAkSDAoEdGV4dBgCIAEoCSIzChBHdWlsZFJlbGF0aW9uRW5kEhAKCGd1aWxkX2lkGAEgASgEEg0KBWVuZW15GAIgASgIIs4CCg5TdG9yYWdlQ29tbWFuZBImCgNwdXQYASABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASJwoEdGFrZRgCIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABIPCgVjbG9zZRgDIAEoCEgAEg0KA2xvZxgEIAEoCEgAEisKCGNhcnRfcHV0GAUgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEiwKCWNhcnRfdGFrZRgGIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABIyCg9jYXJ0X3RvX3N0b3JhZ2UYByABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASMgoPc3RvcmFnZV90b19jYXJ0GAggASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAQggKBmFjdGlvbiIrCgtTdG9yYWdlTW92ZRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDSK0AQoMVHJhZGVDb21tYW5kEhEKB3JlcXVlc3QYASABKA1IABIRCgdyZXNwb25kGAIgASgISAASKwoIYWRkX2l0ZW0YAyABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASEgoIYWRkX3plbnkYBCABKA1IABIOCgRsb2NrGAUgASgISAASEQoHY29uZmlybRgGIAEoCEgAEhAKBmNhbmNlbBgHIAEoCEgAQggKBmFjdGlvbir1AQoLQ2hhdENoYW5uZWwSHAoYQ0hBVF9DSEFOTkVMX1VOU1BFQ0lGSUVEEAASFgoSQ0hBVF9DSEFOTkVMX0xPQ0FMEAESFgoSQ0hBVF9DSEFOTkVMX1BBUlRZEAISFgoSQ0hBVF9DSEFOTkVMX0dVSUxEEAMSGAoUQ0hBVF9DSEFOTkVMX1dISVNQRVIQBBIWChJDSEFUX0NIQU5ORUxfV09STEQQBRIXChNDSEFUX0NIQU5ORUxfU1lTVEVNEAYSHQoZQ0hBVF9DSEFOTkVMX0FOTk9VTkNFTUVOVBAHEhYKEkNIQVRfQ0hBTk5FTF9OQU1FRBAIKpcBCg1DaGFubmVsQWN0aW9uEh4KGkNIQU5ORUxfQUNUSU9OX1VOU1BFQ0lGSUVEEAASFwoTQ0hBTk5FTF9BQ1RJT05fSk9JThABEhgKFENIQU5ORUxfQUNUSU9OX0xFQVZFEAISFwoTQ0hBTk5FTF9BQ1RJT05fTElTVBADEhoKFkNIQU5ORUxfQUNUSU9OX01FTUJFUlMQBCqXAQoIQmFzZVN0YXQSGQoVQkFTRV9TVEFUX1VOU1BFQ0lGSUVEEAASEQoNQkFTRV9TVEFUX1NUUhABEhEKDUJBU0VfU1RBVF9BR0kQAhIRCg1CQVNFX1NUQVRfVklUEAMSEQoNQkFTRV9TVEFUX0lOVBAEEhEKDUJBU0VfU1RBVF9ERVgQBRIRCg1CQVNFX1NUQVRfTFVLEAZCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEivgoKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIABIpCgVndWlsZBgYIAEoCzIYLndhdGhlbmEudjEuR3VpbGRDb21tYW5kSAASLQoHc3RvcmFnZRgZIAEoCzIaLndhdGhlbmEudjEuU3RvcmFnZUNvbW1hbmRIABIpCgV0cmFkZRgaIAEoCzIYLndhdGhlbmEudjEuVHJhZGVDb21tYW5kSAASJwoEbWFpbBgbIAEoCzIXLndhdGhlbmEudjEuTWFpbENvbW1hbmRIABItCgd2ZW5kaW5nGBwgASgLMhoud2F0aGVuYS52MS5WZW5kaW5nQ29tbWFuZEgAEjYKDGJ1eWluZ19zdG9yZRgdIAEoCzIeLndhdGhlbmEudjEuQnV5aW5nU3RvcmVDb21tYW5kSAASNgoMc3RvcmVfc2VhcmNoGB4gASgLMh4ud2F0aGVuYS52MS5TdG9yZVNlYXJjaENvbW1hbmRIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIeCgpMZWFyblNraWxsEhAKCHNraWxsX2lkGAEgASgNIhwKBENlbGwSCQoBeBgBIAEoDRIJCgF5GAIgASgNImAKBENoYXQSKAoHY2hhbm5lbBgBIAEoDjIXLndhdGhlbmEudjEuQ2hhdENoYW5uZWwSDAoEdGV4dBgCIAEoCRIKCgJ0bxgDIAEoCRIUCgxjaGFubmVsX25hbWUYBCABKAkiSQoOQ2hhbm5lbENvbW1hbmQSKQoGYWN0aW9uGAEgASgOMhkud2F0aGVuYS52MS5DaGFubmVsQWN0aW9uEgwKBG5hbWUYAiABKAkiJgoFQmxvY2sSDAoEbmFtZRgBIAEoCRIPCgd1bmJsb2NrGAIgASgIIlkKBlJlcG9ydBIMCgRuYW1lGAEgASgJEg8KB2xpbmVfaWQYAiABKAwSDgoGcmVhc29uGAMgASgJEhAKCGd1aWxkX2lkGAQgASgEEg4KBmVtYmxlbRgFIAEoCCIXCghOcGNDbGljaxILCgNucGMYASABKA0igwEKCE5wY1JlcGx5Eg4KBmRpYWxvZxgBIAEoDRIOCgRuZXh0GAIgASgISAASDgoEbWVudRgDIAEoDUgAEhQKCmlucHV0X3RleHQYBCABKAlIABIWCgxpbnB1dF9udW1iZXIYBSABKANIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFuc3dlciI+CgdTaG9wQnV5EgsKA25wYxgBIAEoDRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuU2hvcEJ1eUxpbmUiLgoLU2hvcEJ1eUxpbmUSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0iQAoIU2hvcFNlbGwSCwoDbnBjGAEgASgNEicKBWl0ZW1zGAIgAygLMhgud2F0aGVuYS52MS5TaG9wU2VsbExpbmUiLAoMU2hvcFNlbGxMaW5lEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhgKCVNob3BDbG9zZRILCgNucGMYASABKA0iFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIigKCERyb3BJdGVtEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0iKwoJRXF1aXBJdGVtEgwKBHNsb3QYASABKA0SEAoIcG9zaXRpb24YAiABKA0iGwoLVW5lcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDSIzCgpJbnNlcnRDYXJkEhEKCWNhcmRfc2xvdBgBIAEoDRISCgplcXVpcF9zbG90GAIgASgNIuMBCgxQYXJ0eUNvbW1hbmQSKQoGY3JlYXRlGAEgASgLMhcud2F0aGVuYS52MS5QYXJ0eUNyZWF0ZUgAEhAKBmludml0ZRgCIAEoCUgAEicKBXJlcGx5GAMgASgLMhYud2F0aGVuYS52MS5QYXJ0eVJlcGx5SAASDwoFbGVhdmUYBCABKAhIABIPCgVleHBlbBgFIAEoCUgAEhQKCnNldF9sZWFkZXIYBiABKAlIABIrCgdvcHRpb25zGAcgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnNIAEIICgZhY3Rpb24iRgoLUGFydHlDcmVhdGUSDAoEbmFtZRgBIAEoCRIpCgdvcHRpb25zGAIgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnMiLgoKUGFydHlSZXBseRIQCghwYXJ0eV9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiSgoMUGFydHlPcHRpb25zEhAKCGV4cF9ldmVuGAEgASgIEhEKCWl0ZW1fZXZlbhgCIAEoCBIVCg1waWNrdXBfc2hhcmVkGAMgASgIImQKDUZyaWVuZENvbW1hbmQSDQoDYWRkGAEgASgJSAASKAoFcmVwbHkYAiABKAsyFy53YXRoZW5hLnYxLkZyaWVuZFJlcGx5SAASEAoGcmVtb3ZlGAMgASgJSABCCAoGYWN0aW9uIisKC0ZyaWVuZFJlcGx5EgwKBG5hbWUYASABKAkSDgoGYWNjZXB0GAIgASgIIpMBChNQYXJ0eUJvb2tpbmdDb21tYW5kEi4KCHJlZ2lzdGVyGAEgASgLMhoud2F0aGVuYS52MS5QYXJ0eUJvb2tpbmdBZEgAEjAKBnNlYXJjaBgCIAEoCzIeLndhdGhlbmEudjEuUGFydHlCb29raW5nU2VhcmNoSAASEAoGZGVsZXRlGAMgASgISABCCAoGYWN0aW9uIkgKDlBhcnR5Qm9va2luZ0FkEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRIMCgRqb2JzGAMgAygNEgwKBG5vdGUYBCABKAkiPQoSUGFydHlCb29raW5nU2VhcmNoEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRILCgNqb2IYAyABKA0i4wMKDEd1aWxkQ29tbWFuZBIQCgZjcmVhdGUYASABKAlIABIQCgZpbnZpdGUYAiABKAlIABInCgVyZXBseRgDIAEoCzIWLndhdGhlbmEudjEuR3VpbGRSZXBseUgAEg8KBWxlYXZlGAQgASgJSAASJwoFZXhwZWwYBSABKAsyFi53YXRoZW5hLnYxLkd1aWxkRXhwZWxIABIvCglwb3NpdGlvbnMYBiABKAsyGi53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb25zSAASOgoPbWVtYmVyX3Bvc2l0aW9uGAcgASgLMh8ud2F0aGVuYS52MS5HdWlsZE1lbWJlclBvc2l0aW9uSAASKQoGbm90aWNlGAggASgLMhcud2F0aGVuYS52MS5HdWlsZE5vdGljZUgAEhIKCHNraWxsX3VwGAkgASgNSAASDgoEYWxseRgKIAEoCUgAEiwKCmFsbHlfcmVwbHkYCyABKAsyFi53YXRoZW5hLnYxLkd1aWxkUmVwbHlIABIPCgVlbmVteRgMIAEoCUgAEjQKDGVuZF9yZWxhdGlvbhgNIAEoCzIcLndhdGhlbmEudjEuR3VpbGRSZWxhdGlvbkVuZEgAEhEKB2Rpc2JhbmQYDiABKAlIAEIICgZhY3Rpb24iLgoKR3VpbGRSZXBseRIQCghndWlsZF9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiKgoKR3VpbGRFeHBlbBIMCgRuYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSI+Cg5HdWlsZFBvc2l0aW9ucxIsCglwb3NpdGlvbnMYASADKAsyGS53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb24ifQoNR3VpbGRQb3NpdGlvbhINCgVpbmRleBgBIAEoDRIMCgRuYW1lGAIgASgJEhIKCmNhbl9pbnZpdGUYAyABKAgSEQoJY2FuX2V4cGVsGAQgASgIEhcKD2Nhbl91c2Vfc3RvcmFnZRgFIAEoCBIPCgdleHBfdGF4GAYgASgNIjUKE0d1aWxkTWVtYmVyUG9zaXRpb24SDAoEbmFtZRgBIAEoCRIQCghwb3NpdGlvbhgCIAEoDSIqCgtHdWlsZE5vdGljZRINCgV0aXRsZRgBIAEoCRIMCgR0ZXh0GAIgASgJIjMKEEd1aWxkUmVsYXRpb25FbmQSEAoIZ3VpbGRfaWQYASABKAQSDQoFZW5lbXkYAiABKAgizgIKDlN0b3JhZ2VDb21tYW5kEiYKA3B1dBgBIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABInCgR0YWtlGAIgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEg8KBWNsb3NlGAMgASgISAASDQoDbG9nGAQgASgISAASKwoIY2FydF9wdXQYBSABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASLAoJY2FydF90YWtlGAYgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEjIKD2NhcnRfdG9fc3RvcmFnZRgHIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABIyCg9zdG9yYWdlX3RvX2NhcnQYCCABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSABCCAoGYWN0aW9uIisKC1N0b3JhZ2VNb3ZlEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIrQBCgxUcmFkZUNvbW1hbmQSEQoHcmVxdWVzdBgBIAEoDUgAEhEKB3Jlc3BvbmQYAiABKAhIABIrCghhZGRfaXRlbRgDIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABISCghhZGRfemVueRgEIAEoDUgAEg4KBGxvY2sYBSABKAhIABIRCgdjb25maXJtGAYgASgISAASEAoGY2FuY2VsGAcgASgISABCCAoGYWN0aW9uIqYBCgtNYWlsQ29tbWFuZBIOCgRvcGVuGAEgASgISAASDgoEcmVhZBgCIAEoBEgAEiQKBHNlbmQYAyABKAsyFC53YXRoZW5hLnYxLk1haWxTZW5kSAASJAoEdGFrZRgEIAEoCzIULndhdGhlbmEudjEuTWFpbFRha2VIABIQCgZkZWxldGUYBSABKARIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFjdGlvbiJpCghNYWlsU2VuZBIKCgJ0bxgBIAEoCRINCgV0aXRsZRgCIAEoCRIMCgRib2R5GAMgASgJEgwKBHplbnkYBCABKA0SJgoFaXRlbXMYBSADKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlIjUKCE1haWxUYWtlEgwKBG1haWwYASABKAQSDAoEemVueRgCIAEoCBINCgVpdGVtcxgDIAEoCCKfAQoOVmVuZGluZ0NvbW1hbmQSJwoEb3BlbhgBIAEoCzIXLndhdGhlbmEudjEuVmVuZGluZ09wZW5IABIPCgVjbG9zZRgCIAEoCEgAEhAKBmJyb3dzZRgDIAEoDUgAEiUKA2J1eRgEIAEoCzIWLndhdGhlbmEudjEuVmVuZGluZ0J1eUgAEhAKBmNhbmNlbBgFIAEoCEgAQggKBmFjdGlvbiJECgtWZW5kaW5nT3BlbhINCgV0aXRsZRgBIAEoCRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuVmVuZGluZ0xpbmUiPwoLVmVuZGluZ0xpbmUSEQoJY2FydF9zbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDRINCgVwcmljZRgDIAEoDSJVCgpWZW5kaW5nQnV5Eg4KBnZlbmRvchgBIAEoDRIMCgRzaG9wGAIgASgNEikKBWl0ZW1zGAMgAygLMhoud2F0aGVuYS52MS5WZW5kaW5nQnV5TGluZSIvCg5WZW5kaW5nQnV5TGluZRINCgVpbmRleBgBIAEoDRIOCgZhbW91bnQYAiABKA0irQEKEkJ1eWluZ1N0b3JlQ29tbWFuZBIrCgRvcGVuGAEgASgLMhsud2F0aGVuYS52MS5CdXlpbmdTdG9yZU9wZW5IABIPCgVjbG9zZRgCIAEoCEgAEhAKBmJyb3dzZRgDIAEoDUgAEisKBHNlbGwYBCABKAsyGy53YXRoZW5hLnYxLkJ1eWluZ1N0b3JlU2VsbEgAEhAKBmNhbmNlbBgFIAEoCEgAQggKBmFjdGlvbiJgCg9CdXlpbmdTdG9yZU9wZW4SDQoFdGl0bGUYASABKAkSEgoKemVueV9saW1pdBgCIAEoDRIqCgVpdGVtcxgDIAMoCzIbLndhdGhlbmEudjEuQnV5aW5nU3RvcmVMaW5lIkEKD0J1eWluZ1N0b3JlTGluZRIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDRINCgVwcmljZRgDIAEoDSJfCg9CdXlpbmdTdG9yZVNlbGwSDQoFYnV5ZXIYASABKA0SDQoFc3RvcmUYAiABKA0SLgoFaXRlbXMYAyADKAsyHy53YXRoZW5hLnYxLkJ1eWluZ1N0b3JlU2VsbExpbmUiRAoTQnV5aW5nU3RvcmVTZWxsTGluZRIMCgRzbG90GAEgASgNEg8KB2l0ZW1faWQYAiABKA0SDgoGYW1vdW50GAMgASgNIn8KElN0b3JlU2VhcmNoQ29tbWFuZBItCgVxdWVyeRgBIAEoCzIcLndhdGhlbmEudjEuU3RvcmVTZWFyY2hRdWVyeUgAEg4KBG5leHQYAiABKAhIABIPCgVjbGljaxgDIAEoDUgAEg8KBWNsb3NlGAQgASgISABCCAoGYWN0aW9uIsYBChBTdG9yZVNlYXJjaFF1ZXJ5Eg4KBmJ1eWluZxgBIAEoCBIQCghpdGVtX2lkcxgCIAMoDRIQCghjYXJkX2lkcxgDIAMoDRIRCgltaW5fcHJpY2UYBCABKA0SEQoJbWF4X3ByaWNlGAUgASgNEioKBXJvbGxzGAYgAygLMhsud2F0aGVuYS52MS5TdG9yZVNlYXJjaFJvbGwSLAoHb3B0aW9ucxgHIAMoCzIbLndhdGhlbmEudjEuU3RvcmVTZWFyY2hSb2xsIjkKD1N0b3JlU2VhcmNoUm9sbBIMCgRuYW1lGAEgASgJEgsKA21pbhgCIAEoBRILCgNtYXgYAyABKAUq9QEKC0NoYXRDaGFubmVsEhwKGENIQVRfQ0hBTk5FTF9VTlNQRUNJRklFRBAAEhYKEkNIQVRfQ0hBTk5FTF9MT0NBTBABEhYKEkNIQVRfQ0hBTk5FTF9QQVJUWRACEhYKEkNIQVRfQ0hBTk5FTF9HVUlMRBADEhgKFENIQVRfQ0hBTk5FTF9XSElTUEVSEAQSFgoSQ0hBVF9DSEFOTkVMX1dPUkxEEAUSFwoTQ0hBVF9DSEFOTkVMX1NZU1RFTRAGEh0KGUNIQVRfQ0hBTk5FTF9BTk5PVU5DRU1FTlQQBxIWChJDSEFUX0NIQU5ORUxfTkFNRUQQCCqXAQoNQ2hhbm5lbEFjdGlvbhIeChpDSEFOTkVMX0FDVElPTl9VTlNQRUNJRklFRBAAEhcKE0NIQU5ORUxfQUNUSU9OX0pPSU4QARIYChRDSEFOTkVMX0FDVElPTl9MRUFWRRACEhcKE0NIQU5ORUxfQUNUSU9OX0xJU1QQAxIaChZDSEFOTkVMX0FDVElPTl9NRU1CRVJTEAQqlwEKCEJhc2VTdGF0EhkKFUJBU0VfU1RBVF9VTlNQRUNJRklFRBAAEhEKDUJBU0VfU1RBVF9TVFIQARIRCg1CQVNFX1NUQVRfQUdJEAISEQoNQkFTRV9TVEFUX1ZJVBADEhEKDUJBU0VfU1RBVF9JTlQQBBIRCg1CQVNFX1NUQVRfREVYEAUSEQoNQkFTRV9TVEFUX0xVSxAGQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -178,6 +178,30 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: TradeCommand;
     case: "trade";
+  } | {
+    /**
+     * @generated from field: wathena.v1.MailCommand mail = 27;
+     */
+    value: MailCommand;
+    case: "mail";
+  } | {
+    /**
+     * @generated from field: wathena.v1.VendingCommand vending = 28;
+     */
+    value: VendingCommand;
+    case: "vending";
+  } | {
+    /**
+     * @generated from field: wathena.v1.BuyingStoreCommand buying_store = 29;
+     */
+    value: BuyingStoreCommand;
+    case: "buyingStore";
+  } | {
+    /**
+     * @generated from field: wathena.v1.StoreSearchCommand store_search = 30;
+     */
+    value: StoreSearchCommand;
+    case: "storeSearch";
   } | { case: undefined; value?: undefined };
 };
 
@@ -1760,6 +1784,661 @@ export type TradeCommand = Message<"wathena.v1.TradeCommand"> & {
  */
 export const TradeCommandSchema: GenMessage<TradeCommand> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 43);
+
+/**
+ * MailCommand is one step of mail (RODEX), as rAthena's mail.cpp and
+ * the RODEX packets of clif.cpp. The server answers with MailBox,
+ * MailRead and MailResult.
+ *
+ * @generated from message wathena.v1.MailCommand
+ */
+export type MailCommand = Message<"wathena.v1.MailCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.MailCommand.action
+   */
+  action: {
+    /**
+     * open opens the mailbox window and lists the mails, as
+     * clif_parse_Mail_refreshinbox. The mailbox does not open while the
+     * player trades, vends, runs a buying store or has a storage open.
+     *
+     * @generated from field: bool open = 1;
+     */
+    value: boolean;
+    case: "open";
+  } | {
+    /**
+     * read shows a mail's text and attachments, as clif_parse_Mail_read.
+     *
+     * @generated from field: uint64 read = 2;
+     */
+    value: bigint;
+    case: "read";
+  } | {
+    /**
+     * send writes a mail, as clif_parse_Mail_send.
+     *
+     * @generated from field: wathena.v1.MailSend send = 3;
+     */
+    value: MailSend;
+    case: "send";
+  } | {
+    /**
+     * take moves a mail's attachments into the inventory, as
+     * clif_parse_Mail_getattach.
+     *
+     * @generated from field: wathena.v1.MailTake take = 4;
+     */
+    value: MailTake;
+    case: "take";
+  } | {
+    /**
+     * delete removes a mail without attachments, as
+     * clif_parse_Mail_delete.
+     *
+     * @generated from field: uint64 delete = 5;
+     */
+    value: bigint;
+    case: "delete";
+  } | {
+    /**
+     * close closes the mailbox window.
+     *
+     * @generated from field: bool close = 6;
+     */
+    value: boolean;
+    case: "close";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.MailCommand.
+ * Use `create(MailCommandSchema)` to create a new message.
+ */
+export const MailCommandSchema: GenMessage<MailCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 44);
+
+/**
+ * MailSend is a new mail. The attachments are checked as mail_setitem
+ * checks each one, then the mail is sent as mail_send.
+ *
+ * @generated from message wathena.v1.MailSend
+ */
+export type MailSend = Message<"wathena.v1.MailSend"> & {
+  /**
+   * to is the recipient's character name. The recipient may be offline.
+   *
+   * @generated from field: string to = 1;
+   */
+  to: string;
+
+  /**
+   * title is 1 to 39 bytes, and body at most 499.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string body = 3;
+   */
+  body: string;
+
+  /**
+   * zeny is the zeny to attach. The fee is on top of it.
+   *
+   * @generated from field: uint32 zeny = 4;
+   */
+  zeny: number;
+
+  /**
+   * items are the inventory slots and amounts to attach, at most the
+   * mail_items limit.
+   *
+   * @generated from field: repeated wathena.v1.StorageMove items = 5;
+   */
+  items: StorageMove[];
+};
+
+/**
+ * Describes the message wathena.v1.MailSend.
+ * Use `create(MailSendSchema)` to create a new message.
+ */
+export const MailSendSchema: GenMessage<MailSend> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 45);
+
+/**
+ * MailTake takes the zeny, the items, or both, of one mail.
+ *
+ * @generated from message wathena.v1.MailTake
+ */
+export type MailTake = Message<"wathena.v1.MailTake"> & {
+  /**
+   * @generated from field: uint64 mail = 1;
+   */
+  mail: bigint;
+
+  /**
+   * @generated from field: bool zeny = 2;
+   */
+  zeny: boolean;
+
+  /**
+   * @generated from field: bool items = 3;
+   */
+  items: boolean;
+};
+
+/**
+ * Describes the message wathena.v1.MailTake.
+ * Use `create(MailTakeSchema)` to create a new message.
+ */
+export const MailTakeSchema: GenMessage<MailTake> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 46);
+
+/**
+ * VendingCommand is one step of a vending shop, as rAthena's vending.cpp.
+ * A shop opens after the Vending skill, which sends VendingSetup. The
+ * server answers with VendingOpened, VendingList, VendingSold and
+ * VendingResult.
+ *
+ * @generated from message wathena.v1.VendingCommand
+ */
+export type VendingCommand = Message<"wathena.v1.VendingCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.VendingCommand.action
+   */
+  action: {
+    /**
+     * open opens the shop from cart slots, as vending_openvending.
+     *
+     * @generated from field: wathena.v1.VendingOpen open = 1;
+     */
+    value: VendingOpen;
+    case: "open";
+  } | {
+    /**
+     * close closes the player's shop, as vending_closevending.
+     *
+     * @generated from field: bool close = 2;
+     */
+    value: boolean;
+    case: "close";
+  } | {
+    /**
+     * browse asks for the shop of the player with this entity ID, as
+     * vending_vendinglistreq.
+     *
+     * @generated from field: uint32 browse = 3;
+     */
+    value: number;
+    case: "browse";
+  } | {
+    /**
+     * buy buys from a shop, as vending_purchasereq.
+     *
+     * @generated from field: wathena.v1.VendingBuy buy = 4;
+     */
+    value: VendingBuy;
+    case: "buy";
+  } | {
+    /**
+     * cancel closes the setup window without opening a shop.
+     *
+     * @generated from field: bool cancel = 5;
+     */
+    value: boolean;
+    case: "cancel";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.VendingCommand.
+ * Use `create(VendingCommandSchema)` to create a new message.
+ */
+export const VendingCommandSchema: GenMessage<VendingCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 47);
+
+/**
+ * @generated from message wathena.v1.VendingOpen
+ */
+export type VendingOpen = Message<"wathena.v1.VendingOpen"> & {
+  /**
+   * title is 1 to 79 bytes, as MESSAGE_SIZE.
+   *
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * items are 1 to 2 + the Vending level lines, at most 12.
+   *
+   * @generated from field: repeated wathena.v1.VendingLine items = 2;
+   */
+  items: VendingLine[];
+};
+
+/**
+ * Describes the message wathena.v1.VendingOpen.
+ * Use `create(VendingOpenSchema)` to create a new message.
+ */
+export const VendingOpenSchema: GenMessage<VendingOpen> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 48);
+
+/**
+ * @generated from message wathena.v1.VendingLine
+ */
+export type VendingLine = Message<"wathena.v1.VendingLine"> & {
+  /**
+   * @generated from field: uint32 cart_slot = 1;
+   */
+  cartSlot: number;
+
+  /**
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+
+  /**
+   * price is in zeny for one, at most vending_max_value.
+   *
+   * @generated from field: uint32 price = 3;
+   */
+  price: number;
+};
+
+/**
+ * Describes the message wathena.v1.VendingLine.
+ * Use `create(VendingLineSchema)` to create a new message.
+ */
+export const VendingLineSchema: GenMessage<VendingLine> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 49);
+
+/**
+ * @generated from message wathena.v1.VendingBuy
+ */
+export type VendingBuy = Message<"wathena.v1.VendingBuy"> & {
+  /**
+   * vendor is the seller's entity ID, or 0 for the shop a store search
+   * opened.
+   *
+   * @generated from field: uint32 vendor = 1;
+   */
+  vendor: number;
+
+  /**
+   * shop is VendingList.shop, which changes when the shop reopens.
+   *
+   * @generated from field: uint32 shop = 2;
+   */
+  shop: number;
+
+  /**
+   * @generated from field: repeated wathena.v1.VendingBuyLine items = 3;
+   */
+  items: VendingBuyLine[];
+};
+
+/**
+ * Describes the message wathena.v1.VendingBuy.
+ * Use `create(VendingBuySchema)` to create a new message.
+ */
+export const VendingBuySchema: GenMessage<VendingBuy> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 50);
+
+/**
+ * @generated from message wathena.v1.VendingBuyLine
+ */
+export type VendingBuyLine = Message<"wathena.v1.VendingBuyLine"> & {
+  /**
+   * index is VendingListItem.index.
+   *
+   * @generated from field: uint32 index = 1;
+   */
+  index: number;
+
+  /**
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.v1.VendingBuyLine.
+ * Use `create(VendingBuyLineSchema)` to create a new message.
+ */
+export const VendingBuyLineSchema: GenMessage<VendingBuyLine> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 51);
+
+/**
+ * BuyingStoreCommand is one step of a buying store, as rAthena's
+ * buyingstore.cpp. A store opens after player:open_buying_store, which
+ * sends BuyingStoreSetup.
+ *
+ * @generated from message wathena.v1.BuyingStoreCommand
+ */
+export type BuyingStoreCommand = Message<"wathena.v1.BuyingStoreCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.BuyingStoreCommand.action
+   */
+  action: {
+    /**
+     * open opens the store, as buyingstore_create.
+     *
+     * @generated from field: wathena.v1.BuyingStoreOpen open = 1;
+     */
+    value: BuyingStoreOpen;
+    case: "open";
+  } | {
+    /**
+     * close closes the player's store, as buyingstore_close.
+     *
+     * @generated from field: bool close = 2;
+     */
+    value: boolean;
+    case: "close";
+  } | {
+    /**
+     * browse asks for the store of the player with this entity ID, as
+     * buyingstore_open.
+     *
+     * @generated from field: uint32 browse = 3;
+     */
+    value: number;
+    case: "browse";
+  } | {
+    /**
+     * sell sells inventory items to a store, as buyingstore_trade.
+     *
+     * @generated from field: wathena.v1.BuyingStoreSell sell = 4;
+     */
+    value: BuyingStoreSell;
+    case: "sell";
+  } | {
+    /**
+     * cancel closes the setup window without opening a store.
+     *
+     * @generated from field: bool cancel = 5;
+     */
+    value: boolean;
+    case: "cancel";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.BuyingStoreCommand.
+ * Use `create(BuyingStoreCommandSchema)` to create a new message.
+ */
+export const BuyingStoreCommandSchema: GenMessage<BuyingStoreCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 52);
+
+/**
+ * @generated from message wathena.v1.BuyingStoreOpen
+ */
+export type BuyingStoreOpen = Message<"wathena.v1.BuyingStoreOpen"> & {
+  /**
+   * title is 1 to 79 bytes.
+   *
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * zeny_limit is the most zeny the store spends, at most the player's
+   * zeny.
+   *
+   * @generated from field: uint32 zeny_limit = 2;
+   */
+  zenyLimit: number;
+
+  /**
+   * items are 1 to BuyingStoreSetup.slots lines, one per item.
+   *
+   * @generated from field: repeated wathena.v1.BuyingStoreLine items = 3;
+   */
+  items: BuyingStoreLine[];
+};
+
+/**
+ * Describes the message wathena.v1.BuyingStoreOpen.
+ * Use `create(BuyingStoreOpenSchema)` to create a new message.
+ */
+export const BuyingStoreOpenSchema: GenMessage<BuyingStoreOpen> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 53);
+
+/**
+ * @generated from message wathena.v1.BuyingStoreLine
+ */
+export type BuyingStoreLine = Message<"wathena.v1.BuyingStoreLine"> & {
+  /**
+   * @generated from field: uint32 item_id = 1;
+   */
+  itemId: number;
+
+  /**
+   * amount is 1 to 9999.
+   *
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+
+  /**
+   * price is in zeny for one, 1 to 99,990,000.
+   *
+   * @generated from field: uint32 price = 3;
+   */
+  price: number;
+};
+
+/**
+ * Describes the message wathena.v1.BuyingStoreLine.
+ * Use `create(BuyingStoreLineSchema)` to create a new message.
+ */
+export const BuyingStoreLineSchema: GenMessage<BuyingStoreLine> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 54);
+
+/**
+ * @generated from message wathena.v1.BuyingStoreSell
+ */
+export type BuyingStoreSell = Message<"wathena.v1.BuyingStoreSell"> & {
+  /**
+   * buyer is the store owner's entity ID, or 0 for the store a store
+   * search opened.
+   *
+   * @generated from field: uint32 buyer = 1;
+   */
+  buyer: number;
+
+  /**
+   * store is BuyingStoreList.store.
+   *
+   * @generated from field: uint32 store = 2;
+   */
+  store: number;
+
+  /**
+   * @generated from field: repeated wathena.v1.BuyingStoreSellLine items = 3;
+   */
+  items: BuyingStoreSellLine[];
+};
+
+/**
+ * Describes the message wathena.v1.BuyingStoreSell.
+ * Use `create(BuyingStoreSellSchema)` to create a new message.
+ */
+export const BuyingStoreSellSchema: GenMessage<BuyingStoreSell> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 55);
+
+/**
+ * @generated from message wathena.v1.BuyingStoreSellLine
+ */
+export type BuyingStoreSellLine = Message<"wathena.v1.BuyingStoreSellLine"> & {
+  /**
+   * slot is the inventory slot to sell from.
+   *
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * @generated from field: uint32 item_id = 2;
+   */
+  itemId: number;
+
+  /**
+   * @generated from field: uint32 amount = 3;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.v1.BuyingStoreSellLine.
+ * Use `create(BuyingStoreSellLineSchema)` to create a new message.
+ */
+export const BuyingStoreSellLineSchema: GenMessage<BuyingStoreSellLine> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 56);
+
+/**
+ * StoreSearchCommand searches vending shops and buying stores, as
+ * rAthena's searchstore.cpp. The window opens from player:search_stores,
+ * which sends StoreSearchOpen.
+ *
+ * @generated from message wathena.v1.StoreSearchCommand
+ */
+export type StoreSearchCommand = Message<"wathena.v1.StoreSearchCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.StoreSearchCommand.action
+   */
+  action: {
+    /**
+     * query runs a search, which uses one of the window's uses.
+     *
+     * @generated from field: wathena.v1.StoreSearchQuery query = 1;
+     */
+    value: StoreSearchQuery;
+    case: "query";
+  } | {
+    /**
+     * next shows the next page of results.
+     *
+     * @generated from field: bool next = 2;
+     */
+    value: boolean;
+    case: "next";
+  } | {
+    /**
+     * click picks a result, as searchstore_click: it shows the store's
+     * place, or opens the store when the window allows it.
+     *
+     * @generated from field: uint32 click = 3;
+     */
+    value: number;
+    case: "click";
+  } | {
+    /**
+     * close closes the window.
+     *
+     * @generated from field: bool close = 4;
+     */
+    value: boolean;
+    case: "close";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.StoreSearchCommand.
+ * Use `create(StoreSearchCommandSchema)` to create a new message.
+ */
+export const StoreSearchCommandSchema: GenMessage<StoreSearchCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 57);
+
+/**
+ * @generated from message wathena.v1.StoreSearchQuery
+ */
+export type StoreSearchQuery = Message<"wathena.v1.StoreSearchQuery"> & {
+  /**
+   * buying searches buying stores; vending shops otherwise.
+   *
+   * @generated from field: bool buying = 1;
+   */
+  buying: boolean;
+
+  /**
+   * item_ids are the items to find, 1 to 10.
+   *
+   * @generated from field: repeated uint32 item_ids = 2;
+   */
+  itemIds: number[];
+
+  /**
+   * card_ids keep results with one of these cards, at most 10.
+   *
+   * @generated from field: repeated uint32 card_ids = 3;
+   */
+  cardIds: number[];
+
+  /**
+   * min_price and max_price bound the price, 0 for no bound.
+   *
+   * @generated from field: uint32 min_price = 4;
+   */
+  minPrice: number;
+
+  /**
+   * @generated from field: uint32 max_price = 5;
+   */
+  maxPrice: number;
+
+  /**
+   * rolls and options keep results whose rolls or random options are in
+   * range (strategy section 5.4). At most 8 of each.
+   *
+   * @generated from field: repeated wathena.v1.StoreSearchRoll rolls = 6;
+   */
+  rolls: StoreSearchRoll[];
+
+  /**
+   * @generated from field: repeated wathena.v1.StoreSearchRoll options = 7;
+   */
+  options: StoreSearchRoll[];
+};
+
+/**
+ * Describes the message wathena.v1.StoreSearchQuery.
+ * Use `create(StoreSearchQuerySchema)` to create a new message.
+ */
+export const StoreSearchQuerySchema: GenMessage<StoreSearchQuery> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 58);
+
+/**
+ * StoreSearchRoll bounds one rolled value: a roll by its name, or a
+ * random option by its name, such as VAR_MAXHPAMOUNT.
+ *
+ * @generated from message wathena.v1.StoreSearchRoll
+ */
+export type StoreSearchRoll = Message<"wathena.v1.StoreSearchRoll"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int32 min = 2;
+   */
+  min: number;
+
+  /**
+   * @generated from field: int32 max = 3;
+   */
+  max: number;
+};
+
+/**
+ * Describes the message wathena.v1.StoreSearchRoll.
+ * Use `create(StoreSearchRollSchema)` to create a new message.
+ */
+export const StoreSearchRollSchema: GenMessage<StoreSearchRoll> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 59);
 
 /**
  * @generated from enum wathena.v1.ChatChannel

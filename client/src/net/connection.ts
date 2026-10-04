@@ -5,16 +5,20 @@
 import { type MessageInitShape, create, fromBinary, toBinary } from '@bufbuild/protobuf';
 import {
   type BaseStat,
+  BuyingStoreCommandSchema,
   type ChannelAction,
   ChatChannel,
   CommandSchema,
   FriendCommandSchema,
   GuildCommandSchema,
+  MailCommandSchema,
   type NpcReply,
   PartyBookingCommandSchema,
   PartyCommandSchema,
   StorageCommandSchema,
+  StoreSearchCommandSchema,
   TradeCommandSchema,
+  VendingCommandSchema,
 } from '../gen/wathena/v1/command_pb';
 import {
   type ClientMessage,
@@ -22,7 +26,7 @@ import {
   ServerMessageSchema,
 } from '../gen/wathena/v1/envelope_pb';
 import type { Event } from '../gen/wathena/v1/event_pb';
-import type { DisconnectReason, Welcome } from '../gen/wathena/v1/session_pb';
+import { DisconnectReason, type Welcome } from '../gen/wathena/v1/session_pb';
 
 /** A party's sharing options, as PartyOptions. */
 export interface PartyOptionValues {
@@ -74,6 +78,10 @@ export interface ClientLimits {
   storageSlots: number;
   /** The slots of a cart. */
   cartSlots: number;
+  /** The most items one mail holds. */
+  mailItems: number;
+  /** The most mails a mailbox holds. */
+  mailbox: number;
   /** Every limit's base and max by its name, such as cart_slots. */
   ranges: ReadonlyMap<string, LimitRangeValues>;
 }
@@ -82,7 +90,8 @@ export interface ClientLimits {
  * The base and max of each limit with a named field in Limits, as
  * rAthena's defaults: MAX_PARTY, MAX_FRIENDS, MAX_IGNORE_LIST, the 16
  * members of guild_calcinfo, MAX_GUILDPOSITION, max_guild_alliance, 500
- * guild storage slots, INVENTORY_BASE_SIZE, MAX_STORAGE and MAX_CART. max
+ * guild storage slots, INVENTORY_BASE_SIZE, MAX_STORAGE, MAX_CART, the 5
+ * items of a RODEX mail as MAIL_MAX_ITEM, and MAIL_MAX_INBOX. max
  * is where expansions stop by default, such as MAX_GUILD and
  * MAX_INVENTORY.
  */
@@ -98,6 +107,8 @@ const DEFAULT_RANGES: ReadonlyMap<string, LimitRangeValues> = new Map([
   ['inventory_slots', { base: 100, max: 200 }],
   ['storage_slots', { base: 600, max: 600 }],
   ['cart_slots', { base: 100, max: 100 }],
+  ['mail_items', { base: 5, max: 5 }],
+  ['mailbox', { base: 100, max: 100 }],
 ]);
 
 /**
@@ -139,6 +150,8 @@ export function limitsOf(welcome: Pick<Welcome, 'limits'>): ClientLimits {
     inventorySlots: base('inventory_slots', l?.inventorySlots),
     storageSlots: base('storage_slots', l?.storageSlots),
     cartSlots: base('cart_slots', l?.cartSlots),
+    mailItems: base('mail_items', l?.mailItems),
+    mailbox: base('mailbox', l?.mailbox),
     ranges,
   };
 }
@@ -158,6 +171,66 @@ type BookingAction = NonNullable<MessageInitShape<typeof PartyBookingCommandSche
 type GuildAction = NonNullable<MessageInitShape<typeof GuildCommandSchema>['action']>;
 type StorageAction = NonNullable<MessageInitShape<typeof StorageCommandSchema>['action']>;
 type TradeAction = NonNullable<MessageInitShape<typeof TradeCommandSchema>['action']>;
+type MailAction = NonNullable<MessageInitShape<typeof MailCommandSchema>['action']>;
+type VendingAction = NonNullable<MessageInitShape<typeof VendingCommandSchema>['action']>;
+type BuyingStoreAction = NonNullable<MessageInitShape<typeof BuyingStoreCommandSchema>['action']>;
+type StoreSearchAction = NonNullable<MessageInitShape<typeof StoreSearchCommandSchema>['action']>;
+
+/** A new mail, as MailSend. */
+export interface MailSendValues {
+  to: string;
+  title: string;
+  body: string;
+  zeny: number;
+  /** Inventory slots and amounts to attach. */
+  items: { slot: number; amount: number }[];
+}
+
+/** A vending shop to open, as VendingOpen. */
+export interface VendingOpenValues {
+  title: string;
+  items: { cartSlot: number; amount: number; price: number }[];
+}
+
+/** A buying store to open, as BuyingStoreOpen. */
+export interface BuyingStoreOpenValues {
+  title: string;
+  zenyLimit: number;
+  items: { itemId: number; amount: number; price: number }[];
+}
+
+/** A store search, as StoreSearchQuery. */
+export interface StoreSearchQueryValues {
+  buying: boolean;
+  itemIds: number[];
+  cardIds: number[];
+  minPrice: number;
+  maxPrice: number;
+  rolls: { name: string; min: number; max: number }[];
+  options: { name: string; min: number; max: number }[];
+}
+
+/**
+ * The line to show when the session ends: the server's message, or a
+ * line for its reason when the message is empty.
+ */
+export function disconnectText(message: string, reason?: DisconnectReason): string {
+  if (message !== '') {
+    return message;
+  }
+  switch (reason) {
+    case DisconnectReason.AUTOTRADE:
+      return 'Your shop stays open while you are away.';
+    case DisconnectReason.LOGGED_IN_ELSEWHERE:
+      return 'This character logged in elsewhere.';
+    case DisconnectReason.SERVER_SHUTDOWN:
+      return 'The server is shutting down.';
+    case DisconnectReason.LOGGED_OUT:
+      return 'You logged out.';
+    default:
+      return 'Disconnected from the server.';
+  }
+}
 
 /** A guild position, as GuildPosition. */
 export interface GuildPositionValues {
@@ -733,8 +806,148 @@ export class Connection {
     });
   }
 
+  /** Opens the mailbox. The server answers with MailBox. */
+  mailOpen(): void {
+    this.mail({ case: 'open', value: true });
+  }
+
+  /** Reads a mail. The server answers with MailRead. */
+  mailRead(id: bigint): void {
+    this.mail({ case: 'read', value: id });
+  }
+
+  /** Sends a mail. The server answers with MailResult. */
+  mailSend(m: MailSendValues): void {
+    this.mail({ case: 'send', value: m });
+  }
+
+  /** Takes a mail's zeny, items, or both. */
+  mailTake(mail: bigint, zeny: boolean, items: boolean): void {
+    this.mail({ case: 'take', value: { mail, zeny, items } });
+  }
+
+  /** Deletes a mail without attachments. */
+  mailDelete(id: bigint): void {
+    this.mail({ case: 'delete', value: id });
+  }
+
+  /** Closes the mailbox window. */
+  mailClose(): void {
+    this.mail({ case: 'close', value: true });
+  }
+
+  /** Opens a vending shop from cart slots, after VendingSetup. */
+  vendingOpen(shop: VendingOpenValues): void {
+    this.vending({ case: 'open', value: shop });
+  }
+
+  /** Closes the player's vending shop. */
+  vendingClose(): void {
+    this.vending({ case: 'close', value: true });
+  }
+
+  /** Closes the vending setup window without opening a shop. */
+  vendingCancel(): void {
+    this.vending({ case: 'cancel', value: true });
+  }
+
+  /** Asks for the shop of the player with an entity ID. The server answers with VendingList. */
+  vendingBrowse(id: number): void {
+    this.vending({ case: 'browse', value: id });
+  }
+
+  /** Buys lines of a shop, as VendingList showed it. */
+  vendingBuy(vendor: number, shop: number, items: { index: number; amount: number }[]): void {
+    this.vending({ case: 'buy', value: { vendor, shop, items } });
+  }
+
+  /** Opens a buying store, after BuyingStoreSetup. */
+  buyingStoreOpen(store: BuyingStoreOpenValues): void {
+    this.buyingStore({ case: 'open', value: store });
+  }
+
+  /** Closes the player's buying store. */
+  buyingStoreClose(): void {
+    this.buyingStore({ case: 'close', value: true });
+  }
+
+  /** Closes the buying store setup window without opening a store. */
+  buyingStoreCancel(): void {
+    this.buyingStore({ case: 'cancel', value: true });
+  }
+
+  /** Asks for the buying store of the player with an entity ID. */
+  buyingStoreBrowse(id: number): void {
+    this.buyingStore({ case: 'browse', value: id });
+  }
+
+  /** Sells inventory slots to a buying store, as BuyingStoreList showed it. */
+  buyingStoreSell(
+    buyer: number,
+    store: number,
+    items: { slot: number; itemId: number; amount: number }[],
+  ): void {
+    this.buyingStore({ case: 'sell', value: { buyer, store, items } });
+  }
+
+  /** Runs a store search. The server answers with StoreSearchResults. */
+  storeSearchQuery(q: StoreSearchQueryValues): void {
+    this.storeSearch({ case: 'query', value: q });
+  }
+
+  /** Asks for the next page of store search results. */
+  storeSearchNext(): void {
+    this.storeSearch({ case: 'next', value: true });
+  }
+
+  /** Picks a store search result by its index. */
+  storeSearchClick(index: number): void {
+    this.storeSearch({ case: 'click', value: index });
+  }
+
+  /** Closes the store search window. */
+  storeSearchClose(): void {
+    this.storeSearch({ case: 'close', value: true });
+  }
+
   close(): void {
     this.socket.close();
+  }
+
+  private mail(action: MailAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'mail', value: create(MailCommandSchema, { action }) },
+      }),
+    });
+  }
+
+  private vending(action: VendingAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'vending', value: create(VendingCommandSchema, { action }) },
+      }),
+    });
+  }
+
+  private buyingStore(action: BuyingStoreAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'buyingStore', value: create(BuyingStoreCommandSchema, { action }) },
+      }),
+    });
+  }
+
+  private storeSearch(action: StoreSearchAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'storeSearch', value: create(StoreSearchCommandSchema, { action }) },
+      }),
+    });
   }
 
   private party(action: PartyAction): void {

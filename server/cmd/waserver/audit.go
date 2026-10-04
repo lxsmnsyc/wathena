@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
+	"github.com/lxsmnsyc/wathena/server/mail"
 	"github.com/lxsmnsyc/wathena/server/world"
 )
 
@@ -41,8 +43,9 @@ type auditZone struct {
 }
 
 // guildStorageMap is the map name of the audit entry that lists the
-// guild storages, one "player" per guild named guild:<ID>, and the
-// storages and carts in memory, one per storage named storage:<key>.
+// guild storages, one "player" per guild named guild:<ID>, the storages
+// and carts in memory, one per storage named storage:<key>, and the
+// mails in memory, one per mail named mail:<ID> with its zeny.
 const guildStorageMap = "guild_storage"
 
 // auditHandler lists every item and all zeny that players and the
@@ -54,6 +57,10 @@ func auditHandler(w *world.World) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 		out := []auditZone{}
+		// The mails come from every zone's audit: the registry, which
+		// every zone shares, and each zone's sent mails that wait for its
+		// next commit.
+		var mails []mail.Holding
 		// The guild storages come from the audit of the first zone with
 		// players, read on its goroutine, so they agree with its players.
 		var storages *auditZone
@@ -79,6 +86,11 @@ func auditHandler(w *world.World) http.HandlerFunc {
 				az.Ground = append(az.Ground, ag)
 			}
 			out = append(out, az)
+			for _, m := range a.Mails {
+				if !slices.ContainsFunc(mails, func(h mail.Holding) bool { return h.Mail == m.Mail }) {
+					mails = append(mails, m)
+				}
+			}
 			if storages == nil && (len(a.Players) > 0 || z == w.Zones()[len(w.Zones())-1]) {
 				st := auditZone{Map: guildStorageMap, Players: []auditPlayer{}, Ground: []auditGround{}}
 				for _, s := range a.Storages {
@@ -99,6 +111,13 @@ func auditHandler(w *world.World) http.HandlerFunc {
 			}
 		}
 		if storages != nil {
+			for _, m := range mails {
+				ap := auditPlayer{Name: fmt.Sprintf("mail:%d", m.Mail), Zeny: m.Zeny, Items: []auditItem{}}
+				for _, it := range m.Items {
+					ap.Items = append(ap.Items, auditItem{Slot: it.Slot, Item: it.ID, Amount: it.Amount, Serial: it.Serial.String()})
+				}
+				storages.Players = append(storages.Players, ap)
+			}
 			out = append(out, *storages)
 		}
 		rw.Header().Set("Content-Type", "application/json")

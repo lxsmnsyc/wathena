@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // NPCKind is the NPC placement overlay: data/npcs.yml. Core's NPCs are
@@ -38,25 +40,63 @@ type NPC struct {
 	// ScriptMod.
 	Script    string
 	ScriptMod string
-	// Shop lists what the NPC sells, or nil. A record with a shop and no
+	// Shop is what the NPC sells, or nil. A record with a shop and no
 	// map is not placed: scripts open it with player:open_shop.
-	Shop []ShopItem
-	// Discount lets Discount and Compulsion Discount lower the shop's
-	// prices. It is true unless the record sets discount: false.
-	Discount bool
+	Shop *Shop
 	// Placed is set for an NPC on a map.
 	Placed bool
 }
 
-// ShopItem is one item of a shop: its name and its price in zeny, or -1
-// for the item's buy price.
+// Shop is a shop of an NPC record (proposal 0002, review decision 30).
+// The field shop is a list of items, or a table with items,
+// buys_from_players and discount. The list form takes discount beside
+// it, as before.
+type Shop struct {
+	Items []ShopItem
+	// Discount lets Discount and Compulsion Discount lower the zeny part
+	// of the prices. It is true unless the record sets discount: false.
+	Discount bool
+	// BuysFromPlayers gives the shop a sell tab, as rAthena's shop line.
+	// It is true unless the record sets buys_from_players: false.
+	BuysFromPlayers bool
+}
+
+// ShopItem is one item of a shop.
 type ShopItem struct {
-	Item  string
+	Item string
+	// Price is the zeny of an item without a cost: a number, or -1 for
+	// the item's buy price.
 	Price int
+	// Cost is the item's cost, when the record gives one. It replaces
+	// Price.
+	Cost *ShopCost
+	// Stock is how many the shop has for every player, or 0 for no
+	// limit. Restock is when the stock fills again: "", "daily",
+	// "weekly", or a time such as "6h" (RestockEvery).
+	Stock   int
+	Restock string
+}
+
+// ShopCost mixes zeny, items and currencies.
+type ShopCost struct {
+	Zeny  int
+	Items []ShopCostItem
+	// Currencies are amounts by currency name: a plain name is the
+	// shop's mod's record, then core's, and mod:name another mod's.
+	Currencies map[string]int
+}
+
+// ShopCostItem is an item a cost takes, for one bought.
+type ShopCostItem struct {
+	Item   string
+	Amount int
 }
 
 // npcFields are the fields of an NPC record.
 var npcFields = []string{"map", "x", "y", "direction", "sprite", "script", "display_name", "shop", "discount"}
+
+// shopFields are the fields of a shop table.
+var shopFields = []string{"items", "buys_from_players", "discount"}
 
 // MaxShopItems is the most items one shop may sell.
 const MaxShopItems = 200
@@ -98,19 +138,23 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 		return v, ok
 	}
 	if shop, ok := r.Fields["shop"]; ok {
-		items, err := readShop(shop)
+		sh, err := readShop(shop)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
-		n.Shop = items
-		n.Discount = true
+		n.Shop = sh
 	}
 	if v, ok := r.Fields["discount"]; ok {
 		b, isBool := v.(bool)
-		if !isBool || n.Shop == nil {
+		_, table := r.Fields["shop"].(map[string]any)
+		switch {
+		case !isBool || n.Shop == nil:
 			errs = append(errs, "discount is true or false, on a record with a shop")
+		case table:
+			errs = append(errs, "discount goes in the shop table, beside items")
+		default:
+			n.Shop.Discount = b
 		}
-		n.Discount = b
 	}
 	_, hasMap := r.Fields["map"]
 	if !hasMap && n.Shop != nil {
@@ -196,38 +240,201 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 	return n, nil
 }
 
-// readShop reads a shop field: a list of {item, price}, where price is
-// optional and -1 or a missing price is the item's buy price.
-func readShop(v any) ([]ShopItem, error) {
+// readShop reads a shop field: a list of items, or a table with items,
+// buys_from_players and discount.
+func readShop(v any) (*Shop, error) {
+	sh := &Shop{Discount: true, BuysFromPlayers: true}
 	list, ok := v.([]any)
-	if !ok || len(list) == 0 || len(list) > MaxShopItems {
-		return nil, fmt.Errorf("shop is a list of 1 to %d items, each {item: Red_Potion, price: 50}", MaxShopItems)
+	m, isTable := v.(map[string]any)
+	if isTable {
+		for k := range m {
+			if !slices.Contains(shopFields, k) {
+				return sh, fmt.Errorf("shop: %q is not a field; a shop has %s", k, strings.Join(shopFields, ", "))
+			}
+		}
+		for _, k := range []string{"buys_from_players", "discount"} {
+			if b, set := m[k]; set {
+				val, isBool := b.(bool)
+				if !isBool {
+					return sh, fmt.Errorf("shop: %s is true or false", k)
+				}
+				if k == "discount" {
+					sh.Discount = val
+				} else {
+					sh.BuysFromPlayers = val
+				}
+			}
+		}
+		list, ok = m["items"].([]any)
 	}
-	out := make([]ShopItem, 0, len(list))
+	if !ok || len(list) == 0 || len(list) > MaxShopItems {
+		return sh, fmt.Errorf("shop is a list of 1 to %d items, each {item: Red_Potion, price: 50}, or a table with items", MaxShopItems)
+	}
+	sh.Items = make([]ShopItem, 0, len(list))
+	seen := map[string]bool{}
 	for i, e := range list {
-		m, ok := e.(map[string]any)
+		im, ok := e.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("shop[%d] is {item: <name>, price: <zeny>}", i)
+			return sh, fmt.Errorf("shop[%d] is {item: <name>, price: <zeny>}", i)
 		}
-		name, ok := m["item"].(string)
+		name, ok := im["item"].(string)
 		if !ok || name == "" {
-			return nil, fmt.Errorf("shop[%d]: item is an item's name, such as Red_Potion", i)
+			return sh, fmt.Errorf("shop[%d]: item is an item's name, such as Red_Potion", i)
 		}
+		if seen[name] && isTable {
+			// A list may repeat an item, as rAthena's shop lines do; a
+			// purchase finds the first. A table names each item once.
+			return sh, fmt.Errorf("shop[%d]: %s is in the shop twice", i, name)
+		}
+		seen[name] = true
 		it := ShopItem{Item: name, Price: -1}
-		for k, val := range m {
+		for _, k := range slices.Sorted(maps.Keys(im)) {
+			val := im[k]
 			switch k {
 			case "item":
 			case "price":
 				p, ok := val.(int)
 				if !ok || p < -1 || p > 2_147_483_647 {
-					return nil, fmt.Errorf("shop[%d]: price is 0 to 2147483647 zeny, or -1 for the item's buy price", i)
+					return sh, fmt.Errorf("shop[%d]: price is 0 to 2147483647 zeny, or -1 for the item's buy price", i)
 				}
 				it.Price = p
+			case "cost":
+				c, err := readCost(val)
+				if err != nil {
+					return sh, fmt.Errorf("shop[%d]: cost: %w", i, err)
+				}
+				it.Cost = c
+			case "stock":
+				n, ok := val.(int)
+				if !ok || n < 1 || n > MaxStock {
+					return sh, fmt.Errorf("shop[%d]: stock is 1 to %d", i, MaxStock)
+				}
+				it.Stock = n
+			case "restock":
+				r, ok := val.(string)
+				if _, err := ParseRestock(r); !ok || err != nil {
+					return sh, fmt.Errorf("shop[%d]: restock is daily, weekly, or a time such as 6h or 30m, at least 1m", i)
+				}
+				it.Restock = r
 			default:
-				return nil, fmt.Errorf("shop[%d]: %q is not a field; shop items have item and price", i, k)
+				return sh, fmt.Errorf("shop[%d]: %q is not a field; shop items have item, price, cost, stock and restock", i, k)
 			}
 		}
-		out = append(out, it)
+		switch {
+		case it.Cost != nil && it.Price != -1:
+			return sh, fmt.Errorf("shop[%d]: price and cost do not go together; put zeny in the cost", i)
+		case it.Restock != "" && it.Stock == 0:
+			return sh, fmt.Errorf("shop[%d]: restock needs a stock", i)
+		}
+		sh.Items = append(sh.Items, it)
 	}
-	return out, nil
+	return sh, nil
+}
+
+// MaxStock is the most stock a shop item has, as rAthena's market and
+// barter stock.
+const MaxStock = 2_147_483_647
+
+// MaxCostLines is the most items and currencies one cost takes, as the
+// five required items of a barter (MAX_BARTER_REQUIREMENTS).
+const MaxCostLines = 5
+
+// readCost reads a cost: zeny, items and currency, each optional.
+func readCost(v any) (*ShopCost, error) {
+	m, ok := v.(map[string]any)
+	if !ok || len(m) == 0 {
+		return nil, errors.New("a cost is a table of zeny, items and currency")
+	}
+	c := &ShopCost{}
+	for _, k := range slices.Sorted(maps.Keys(m)) {
+		val := m[k]
+		switch k {
+		case "zeny":
+			n, ok := val.(int)
+			if !ok || n < 0 || n > 2_147_483_647 {
+				return nil, errors.New("zeny is 0 to 2147483647")
+			}
+			c.Zeny = n
+		case "items":
+			list, ok := val.([]any)
+			if !ok || len(list) == 0 || len(list) > MaxCostLines {
+				return nil, fmt.Errorf("items is a list of 1 to %d {item, amount}", MaxCostLines)
+			}
+			for j, e := range list {
+				im, ok := e.(map[string]any)
+				name, isText := im["item"].(string)
+				if !ok || !isText || name == "" {
+					return nil, fmt.Errorf("items[%d] is {item: <name>, amount: <n>}", j)
+				}
+				amount := 1
+				for ik, iv := range im {
+					switch ik {
+					case "item":
+					case "amount":
+						n, ok := iv.(int)
+						if !ok || n < 1 || n > 30000 {
+							return nil, fmt.Errorf("items[%d]: amount is 1 to 30000", j)
+						}
+						amount = n
+					default:
+						return nil, fmt.Errorf("items[%d]: %q is not a field; cost items have item and amount", j, ik)
+					}
+				}
+				c.Items = append(c.Items, ShopCostItem{Item: name, Amount: amount})
+			}
+		case "currency":
+			cm, ok := val.(map[string]any)
+			if !ok || len(cm) == 0 || len(cm) > MaxCostLines {
+				return nil, fmt.Errorf("currency is a table of 1 to %d currency names and amounts, such as {cash: 100}", MaxCostLines)
+			}
+			c.Currencies = map[string]int{}
+			for name, cv := range cm {
+				n, ok := cv.(int)
+				if !ok || n < 1 || n > 2_147_483_647 {
+					return nil, fmt.Errorf("currency %s: the amount is 1 to 2147483647", name)
+				}
+				c.Currencies[name] = n
+			}
+		default:
+			return nil, fmt.Errorf("%q is not a field; a cost has zeny, items and currency", k)
+		}
+	}
+	if len(c.Items)+len(c.Currencies) > MaxCostLines {
+		return nil, fmt.Errorf("a cost takes at most %d items and currencies together", MaxCostLines)
+	}
+	return c, nil
+}
+
+// Restock is when a shop item's stock fills again.
+type Restock struct {
+	// Daily and Weekly fill it at the start of each day, or each week
+	// from Monday, on the server's clock.
+	Daily, Weekly bool
+	// Every fills it this long after the last fill.
+	Every time.Duration
+}
+
+// ParseRestock reads a restock: "", "daily", "weekly", or a time of
+// whole minutes, hours or days, such as 30m, 6h or 2d.
+func ParseRestock(s string) (Restock, error) {
+	switch s {
+	case "":
+		return Restock{}, nil
+	case "daily":
+		return Restock{Daily: true}, nil
+	case "weekly":
+		return Restock{Weekly: true}, nil
+	}
+	if len(s) < 2 {
+		return Restock{}, fmt.Errorf("restock %q is not a time", s)
+	}
+	n, err := strconv.Atoi(s[:len(s)-1])
+	if err != nil || n < 1 || n > 1_000_000 {
+		return Restock{}, fmt.Errorf("restock %q is not a time", s)
+	}
+	unit := map[byte]time.Duration{'m': time.Minute, 'h': time.Hour, 'd': 24 * time.Hour}[s[len(s)-1]]
+	if unit == 0 {
+		return Restock{}, fmt.Errorf("restock %q is not a time: use m, h or d", s)
+	}
+	return Restock{Every: time.Duration(n) * unit}, nil
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -417,6 +418,73 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 		ok, why, err := w.h.Trade(a, b, offers[0], offers[1])
 		if err != nil {
 			return nil, fmt.Errorf("world:trade: %w", err)
+		}
+		if ok {
+			return []script.Value{script.Bool(true)}, nil
+		}
+		return []script.Value{script.Bool(false), script.String(why)}, nil
+	case "buy":
+		p, _ := args[0].AsInt()
+		name, _ := args[1].AsString()
+		items := map[uint32]int{}
+		if t, ok := args[2].AsTable(); ok {
+			for _, f := range t.Fields {
+				id, okID := f.Key.AsInt()
+				n, okN := f.Value.AsInt()
+				if !okID || !okN || id <= 0 || id > 1<<32-1 || n < 1 || n > 30000 {
+					return nil, errors.New("world:buy: items maps item IDs to amounts from 1 to 30000")
+				}
+				items[uint32(id)] += int(n)
+			}
+		}
+		ok, why, err := w.h.Buy(p, name, items)
+		if err != nil {
+			return nil, fmt.Errorf("world:buy: %w", err)
+		}
+		if ok {
+			return []script.Value{script.Bool(true)}, nil
+		}
+		return []script.Value{script.Bool(false), script.String(why)}, nil
+	case "get_mails":
+		p, _ := args[0].AsInt()
+		mails, err := w.h.Mails(p)
+		if err != nil {
+			return nil, fmt.Errorf("world:get_mails: %w", err)
+		}
+		var list []script.Value
+		for _, m := range mails {
+			var items []script.Field
+			for _, id := range slices.Sorted(maps.Keys(m.Items)) {
+				items = append(items, script.Field{Key: script.Int(int64(id)), Value: script.Int(int64(m.Items[id]))})
+			}
+			list = append(list, script.NewTable(script.KV("from", script.String(m.From)), script.KV("title", script.String(m.Title)),
+				script.KV("zeny", script.Int(m.Zeny)), script.KV("items", script.NewTable(items...)),
+				script.KV("read", script.Bool(m.Read)), script.KV("returned", script.Bool(m.Returned))))
+		}
+		return []script.Value{script.List(list...)}, nil
+	case "vend":
+		seller, _ := args[0].AsInt()
+		buyer, _ := args[1].AsInt()
+		var lines []zone.VendLine
+		if t, ok := args[2].AsTable(); ok {
+			for _, f := range t.Fields {
+				l, ok := f.Value.AsTable()
+				if !ok {
+					return nil, errors.New("world:vend: lines is a list of { item, amount, price, buy }")
+				}
+				id, _ := l.Get("item").AsInt()
+				amount, _ := l.Get("amount").AsInt()
+				price, _ := l.Get("price").AsInt()
+				buy, _ := l.Get("buy").AsInt()
+				if id <= 0 || id > 1<<32-1 || amount < 1 || amount > 30000 || price < 1 || price > 1_000_000_000 || buy < 0 || buy > amount {
+					return nil, errors.New("world:vend: a line is { item, amount = 1 to 30000, price = 1 to 1000000000, buy = 0 to amount }")
+				}
+				lines = append(lines, zone.VendLine{Item: uint32(id), Amount: int(amount), Price: int(price), Buy: int(buy)})
+			}
+		}
+		ok, why, err := w.h.Vend(seller, buyer, lines)
+		if err != nil {
+			return nil, fmt.Errorf("world:vend: %w", err)
 		}
 		if ok {
 			return []script.Value{script.Bool(true)}, nil

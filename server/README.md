@@ -696,11 +696,24 @@ Storage, carts, item restrictions, bound items and trades follow proposal 0002, 
 
 - **Storages.** The package `storage` holds the storages of the characters online in one registry per process: an account's storage, the extra storages of `data/storages.yml` (account or character owned), and each character's cart. A storage loads at login, on the loading goroutine, and leaves memory after the last character that uses it logged out and its last commit was queued. A later load waits for that commit. Two characters of one account share one storage object, one opener at a time.
 - **Moves.** `StorageCommand` puts and takes items in the open storage (personal or guild), puts and takes them in the cart, and moves them between the cart and the open storage, as rAthena's `storage.cpp` and `pc.cpp`. Every move goes through transfers, and the zone commits the storage's slots as a diff with the characters, in one transaction. The cart is open while the player has one; its weight limit is the rule `max_cart_weight` (8,000).
-- **Restrictions.** Item records have `restrictions` from rAthena's `item_trade` (the extract `item_trade.json`), checked on the item and its cards: drops, trades, sales, cart, storage and guild storage. `no_mail` waits for mail.
+- **Restrictions.** Item records have `restrictions` from rAthena's `item_trade` (the extract `item_trade.json`), checked on the item and its cards: drops, trades, sales, mail, cart, storage and guild storage.
 - **Bound items.** A copy's `bound` (account, guild, party or character) is saved in every item table, keeps bound and unbound copies apart, and follows rAthena's rules for drops, sales, trades, storage, guild storage and the cart. A player who leaves its party loses its party-bound items. One who leaves its guild puts its guild-bound items into the guild storage.
 - **Trade.** `TradeCommand` asks a player within 2 cells, answers, offers up to 10 items and zeny, locks and confirms, as rAthena's `trade.cpp`. A player who blocks the requester refuses at once. The `trade` hook may refuse the trade. Every item and zeny moves in one transfer, and one commit holds both characters. A map change or a logout ends the trade.
 - **Pages.** Storage, cart and inventory lists go out in pages of at most 100 slots and 32 KiB, 16 pages per tick, so the 64 KiB message limit and the connection's buffer do not cap them.
 - **Limits.** `inventory_slots` (base 100, max 200), `storage_slots` (600) and `cart_slots` (100), with the engine ceilings of decision 0023. An inventory holds its usable slots, not the max. Migration 00019 adds `storage_items`, the `bound` columns, the storage columns of `item_log`, and raises the checks to the ceilings. Serials are checked at the end of each transaction.
+
+## Mail, vending, shops and currencies
+
+Mail (RODEX), vending with autotrade and store search, buying stores, the one shop type and currencies follow proposal 0002, review decision 30 ([decision 0024](../docs/decisions/0024-mail-vending-shops.md), mods/README.md, "Mail, vending, shops and currencies").
+
+- **Currencies.** Records of `data/currencies.yml`, with core's `cash` and `kafra`. A character's own currencies save with it, and an account's with the account's storage, which its characters share. Every change goes through transfers, and `zeny_log` names the currency. The client gets `CurrencyUpdate`.
+- **Shops.** One registry of the shops of `data/npcs.yml` serves every zone. Costs mix zeny, items and currencies. A stock that every player shares fills again daily, weekly or after a time, and saves in the purchase's commit (`shop_stock`).
+- **Mail.** `MailCommand` opens the mailbox, reads, sends, takes and deletes mails, as rAthena's RODEX. The package `mail` holds the mailboxes of the characters online. A mail to an offline character goes to the database, found by name on another goroutine. The sender pays rAthena's fee. Expiry runs once a minute: a mail goes back to its sender after `mail_return_days`, and a returned mail or a script's mail is deleted after `mail_delete_days`.
+- **Vending.** The Vending skill opens the setup window. `VendingCommand` opens a shop from cart slots, browses another player's shop and buys from it, as `vending.cpp`, with `vending_tax`. One transfer moves the zeny, the tax and the cart's items, and one commit holds both characters, the cart and the store's row.
+- **Buying stores.** `player:open_buying_store` opens the setup, and `BuyingStoreCommand` opens the store, browses one and sells to it, as `buyingstore.cpp`.
+- **Autotrade.** `player:autotrade()` closes the connection and keeps the store. Stores save in `stores` and `store_items`. With a database and `autotrade_restore`, `waserver` opens autotrade stores again at start, each owner logged in without a connection. A login of the character ends its autotrade first.
+- **Store search.** The package `market` holds a copy of every open store of the world. `StoreSearchCommand` searches it with item, card, price, roll and random option filters, as `searchstore.cpp`. A store opens from a search only on the searcher's map.
+- **Migration 00020** adds the currency tables, `shop_stock`, `mails`, `mail_items`, `stores`, `store_items`, `zeny_log.currency`, the mail counters of `characters`, and the `currency` kind of `mod_ids`.
 
 ## NPCs
 
@@ -708,7 +721,7 @@ Storage, carts, item restrictions, bound items and trades follow proposal 0002, 
 
 - Clicking an NPC within 15 cells starts its `click` handler, or opens its shop. A player has one conversation at a time, and cannot act while it lasts.
 - A conversation ends when its script ends, when the player cancels it, leaves, dies, or changes map, and after rAthena's timeouts: 60 seconds for next, menus and close, and 180 seconds for text and number input.
-- Shops follow rAthena's buy and sell rules: Discount and Overcharge, weight, and zeny up to 2,147,483,647.
+- Shops follow rAthena's buy and sell rules: Discount and Overcharge, weight, and zeny up to 2,147,483,647. A shop's costs may also take items and currencies, and an item may have a stock.
 - Kafras save, teleport, heal, and open the account's storage and the guild storage, with rAthena's fee, the free ticket and the Basic Skill check. Pushcart rental says it is not available yet.
 - The save point is kept in the `characters` table. A dead character is saved at its save point, and a player who dies goes back there.
 - Character and account variables of `wa.variables` save with the character. Server variables save right after they change, and again when the server stops. Without a database they live in memory.

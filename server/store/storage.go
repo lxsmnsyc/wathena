@@ -96,6 +96,11 @@ func writePersonalStorages(ctx context.Context, q *db.Queries, ws []StorageWrite
 			return err
 		}
 	}
+	for i := range ws {
+		if err := writeAccountCurrencies(ctx, q, &ws[i]); err != nil {
+			return err
+		}
+	}
 	for _, w := range ws {
 		k := w.Key
 		if k.Holder == 0 || !k.Saved() {

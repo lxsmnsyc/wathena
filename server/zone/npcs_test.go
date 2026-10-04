@@ -8,6 +8,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -33,7 +34,7 @@ func npcZone(t *testing.T, src string) (*Zone, *Player, *entity, *syncBuffer) {
 	logs := &syncBuffer{}
 	ids := map[string]uint32{"Red_Potion": 501, "Jellopy": 909, "Knife": 1201, "Untradable": 7777}
 	z.Mods = &Mods{Scripts: []*mod.Scripts{npcMod(src)}, IDs: []string{"core", "example.test"}, ItemIDs: ids,
-		Log: slog.New(slog.NewTextHandler(logs, nil)), Server: variables.NewServer(nil, nil), Shops: map[string]*Shop{}}
+		Log: slog.New(slog.NewTextHandler(logs, nil)), Server: variables.NewServer(nil, nil), Shops: shop.NewRegistry(nil)}
 	z.SetNPCs([]NPC{{Name: "example.test:Guide", DisplayName: "Guide", X: 20, Y: 20, Sprite: 112, Script: "example.test:scripts/npc.lua"}})
 	t.Cleanup(z.stopScripts)
 	p := add(z, "a")

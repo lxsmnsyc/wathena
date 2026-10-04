@@ -116,10 +116,11 @@ var skillImpls = map[int]any{
 
 	// Skills that need windows the client does not have yet: Warp
 	// Portal's and Teleport's destination menus, Item Appraisal's list,
-	// Arrow Crafting's list, vending, carts and buying stores.
+	// Arrow Crafting's list, carts and the buying store skill, which
+	// player:open_buying_store replaces.
 	skill.IDWarp:        notPorted{},
 	skill.IDIdentify:    notPorted{},
-	skill.IDVending:     notPorted{},
+	skill.IDVending:     vendingSkill{},
 	skill.IDMakingArrow: notPorted{},
 	skill.IDChangeCart:  notPorted{},
 	idCallBaby:          notPorted{},

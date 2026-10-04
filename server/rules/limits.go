@@ -53,12 +53,16 @@ type Limits struct {
 	StorageSlots int
 	// CartSlots is MAX_CART: the slots of a cart.
 	CartSlots int
+	// MailItems is MAIL_MAX_ITEM: the most item stacks one mail holds.
+	MailItems int
+	// Mailbox is the most mails a mailbox holds.
+	Mailbox int
 	// Max are the limits' max values, in LimitBounds order.
 	Max [NumLimits]int
 }
 
 // NumLimits is the number of limits in LimitBounds.
-const NumLimits = 11
+const NumLimits = 13
 
 // Range is a limit's base and max.
 type Range struct {
@@ -167,6 +171,9 @@ var LimitBounds = []Bound{
 	{Name: "inventory_slots", Default: 100, DefaultMax: 200, Min: 1, Max: 1000, About: "the inventory slots of a new character, and with expansions (MAX_INVENTORY)"},
 	{Name: "storage_slots", Default: 600, DefaultMax: 600, Min: 1, Max: 10000, About: "the slots of an account's storage (MAX_STORAGE)"},
 	{Name: "cart_slots", Default: 100, DefaultMax: 100, Min: 1, Max: 1000, About: "the slots of a cart (MAX_CART)"},
+	// mail_items and mailbox are review decision 30's.
+	{Name: "mail_items", Default: 5, DefaultMax: 5, Min: 1, Max: 20, About: "the most item stacks one mail holds (MAIL_MAX_ITEM)"},
+	{Name: "mailbox", Default: 100, DefaultMax: 100, Min: 1, Max: 1000, About: "the most mails a mailbox holds"},
 }
 
 // Ceiling is a limit's engine ceiling, or 0 for a name that is not a
@@ -192,6 +199,102 @@ var RuleBounds = []Bound{
 	{Name: "guild_alliance_onlygm", Default: 0, Min: 0, Max: 1, Bool: true, About: "only a guild master may accept an alliance"},
 	{Name: "max_cart_weight", Default: 8000, Min: 0, Max: 1000000000, About: "the weight a cart holds, in tenths (max_cart_weight)"},
 	{Name: "basic_skill_check", Default: 1, Min: 0, Max: 1, Bool: true, About: "trading needs Basic Skill level 1, and storage level 6 (basic_skill_check)"},
+	// The vending, buying store, store search and mail rules of review
+	// decision 30, with the values of rAthena's conf/battle/items.conf,
+	// misc.conf, feature.conf, player.conf and char_athena.conf.
+	{Name: "vending_tax", Default: 500, Min: 0, Max: 10000, About: "the vending tax in hundredths of a percent (vending_tax)"},
+	{Name: "vending_tax_min", Default: 100000000, Min: 0, Max: 2147483647, About: "the smallest purchase the vending tax applies to (vending_tax_min)"},
+	{Name: "vending_max_value", Default: 1000000000, Min: 1, Max: 2147483647, About: "the highest price of a vended item (vending_max_value)"},
+	{Name: "vending_over_max", Default: 1, Min: 0, Max: 1, Bool: true, About: "a shop may open when its sales would pass the zeny cap (vending_over_max)"},
+	{Name: "min_npc_vendchat_distance", Default: 3, Min: 0, Max: 30, About: "how many cells a shop keeps from NPCs (min_npc_vendchat_distance)"},
+	{Name: "autotrade_restore", Default: 1, Min: 0, Max: 1, Bool: true, About: "autotrade stores open again after a restart (feature.autotrade)"},
+	{Name: "searchstore_querydelay", Default: 10, Min: 0, Max: 3600, About: "the seconds between store searches (searchstore_querydelay)"},
+	{Name: "searchstore_maxresults", Default: 30, Min: 1, Max: 1000, About: "the most results of one store search (searchstore_maxresults)"},
+	{Name: "mail_zeny_fee", Default: 2, Min: 0, Max: 100, About: "the fee of mailed zeny in percent (mail_zeny_fee)"},
+	{Name: "mail_attachment_price", Default: 2500, Min: 0, Max: 2147483647, About: "the zeny for each attached item (mail_attachment_price)"},
+	{Name: "mail_attachment_weight", Default: 2000, Min: 0, Max: 1000000000, About: "the most weight of a mail's items, in whole weight units, or 0 for none (mail_attachment_weight)"},
+	{Name: "mail_daily_count", Default: 100, Min: 0, Max: 1000000, About: "the most mails a character sends a day, or 0 for no limit (mail_daily_count)"},
+	{Name: "mail_delay", Default: 1000, Min: 1000, Max: 3600000, About: "the milliseconds between two mails of a character (mail_delay)"},
+	{Name: "mail_return_days", Default: 15, Min: 0, Max: 3650, About: "the days before a mail goes back to its sender, or 0 for never (mail_return_days)"},
+	{Name: "mail_delete_days", Default: 15, Min: 0, Max: 3650, About: "the days before a mail that came back is deleted, or 0 for never (mail_delete_days)"},
+	{Name: "mail_return_empty", Default: 1, Min: 0, Max: 1, Bool: true, About: "a mail without attachments goes back to its sender too (mail_return_empty)"},
+}
+
+// Market holds the vending, buying store, store search and mail rules of
+// a world (review decision 30).
+type Market struct {
+	// VendingTax is vending_tax in hundredths of a percent, and
+	// VendingTaxMin vending_tax_min: the tax applies to a purchase of at
+	// least that much zeny.
+	VendingTax, VendingTaxMin int64
+	// VendingMaxValue is vending_max_value: the highest price of a line.
+	VendingMaxValue int64
+	// VendingOverMax is vending_over_max: a shop may open when its sales
+	// would pass MAX_ZENY.
+	VendingOverMax bool
+	// NPCDistance is min_npc_vendchat_distance.
+	NPCDistance int
+	// AutotradeRestore is feature.autotrade: autotrade stores open again
+	// after a restart.
+	AutotradeRestore bool
+	// SearchDelay is searchstore_querydelay in seconds, and SearchMax
+	// searchstore_maxresults.
+	SearchDelay, SearchMax int
+	// MailZenyFee is mail_zeny_fee in percent, MailAttachmentPrice
+	// mail_attachment_price, and MailAttachmentWeight
+	// mail_attachment_weight in whole weight units, or 0 for no limit.
+	MailZenyFee, MailAttachmentPrice int64
+	MailAttachmentWeight             int
+	// MailDailyCount is mail_daily_count, 0 for no limit, and MailDelay
+	// mail_delay in milliseconds.
+	MailDailyCount, MailDelay int
+	// MailReturnDays and MailDeleteDays are mail_return_days and
+	// mail_delete_days, 0 for never. MailReturnEmpty is mail_return_empty.
+	MailReturnDays, MailDeleteDays int
+	MailReturnEmpty                bool
+	set                            bool
+}
+
+// MarketOf turns the rules a ruleset set into Market. A rule it does not
+// set has rAthena's value.
+func MarketOf(set map[string]int) (Market, error) {
+	v, err := valuesOf(RuleBounds, set)
+	if err != nil {
+		return Market{}, err
+	}
+	return Market{
+		VendingTax: int64(v["vending_tax"]), VendingTaxMin: int64(v["vending_tax_min"]), VendingMaxValue: int64(v["vending_max_value"]),
+		VendingOverMax: v["vending_over_max"] == 1, NPCDistance: v["min_npc_vendchat_distance"],
+		AutotradeRestore: v["autotrade_restore"] == 1, SearchDelay: v["searchstore_querydelay"], SearchMax: v["searchstore_maxresults"],
+		MailZenyFee: int64(v["mail_zeny_fee"]), MailAttachmentPrice: int64(v["mail_attachment_price"]),
+		MailAttachmentWeight: v["mail_attachment_weight"], MailDailyCount: v["mail_daily_count"], MailDelay: v["mail_delay"],
+		MailReturnDays: v["mail_return_days"], MailDeleteDays: v["mail_delete_days"], MailReturnEmpty: v["mail_return_empty"] == 1,
+		set: true,
+	}, nil
+}
+
+// DefaultMarket are rAthena's vending, store search and mail rules.
+func DefaultMarket() Market {
+	m, _ := MarketOf(nil)
+	return m
+}
+
+// MarketOrDefault returns r's market rules, or rAthena's for nil rules
+// or rules made without them.
+func MarketOrDefault(r *Rules) Market {
+	if r == nil || !r.Market.set {
+		return DefaultMarket()
+	}
+	return r.Market
+}
+
+// VendingTaxOf is vending_calc_tax: what the seller keeps of a purchase
+// of zeny. The tax applies to the whole purchase.
+func (m Market) VendingTaxOf(zeny int64) int64 {
+	if m.VendingTax > 0 && zeny >= m.VendingTaxMin {
+		return zeny - zeny*m.VendingTax/10000
+	}
+	return zeny
 }
 
 // Items holds the storage, cart and trade values of rAthena's
@@ -336,6 +439,7 @@ func LimitsOf(set map[string]RangeSet) (Limits, error) {
 	out.GuildMembers, out.GuildPositions, out.GuildAllies = base["guild_members"], base["guild_positions"], base["guild_allies"]
 	out.GuildEnemies, out.GuildStorage = base["guild_enemies"], base["guild_storage"]
 	out.InventorySlots, out.StorageSlots, out.CartSlots = base["inventory_slots"], base["storage_slots"], base["cart_slots"]
+	out.MailItems, out.Mailbox = base["mail_items"], base["mailbox"]
 	return out, nil
 }
 
@@ -384,13 +488,18 @@ func PartyOf(set map[string]int) (Party, error) {
 // Named returns the limits by name, in LimitBounds order, for Lua's
 // rules.limits and the client. Value is the base.
 func (l Limits) Named() []NamedValue {
-	v := []int{l.PartyMembers, l.Friends, l.BlockList, l.GuildMembers, l.GuildPositions, l.GuildAllies, l.GuildEnemies,
-		l.GuildStorage, l.InventorySlots, l.StorageSlots, l.CartSlots}
+	v := l.bases()
 	out := make([]NamedValue, len(LimitBounds))
 	for i, b := range LimitBounds {
 		out[i] = NamedValue{Name: b.Name, Value: v[i], Max: l.Max[i]}
 	}
 	return out
+}
+
+// bases are the limits' bases, in LimitBounds order.
+func (l Limits) bases() []int {
+	return []int{l.PartyMembers, l.Friends, l.BlockList, l.GuildMembers, l.GuildPositions, l.GuildAllies, l.GuildEnemies,
+		l.GuildStorage, l.InventorySlots, l.StorageSlots, l.CartSlots, l.MailItems, l.Mailbox}
 }
 
 // MaxOf is a limit's max by name, or 0 for a name that is not a limit.
@@ -429,10 +538,13 @@ func LimitsOrDefault(r *Rules) Limits {
 		// Rules made before the storage limits existed.
 		l.InventorySlots, l.StorageSlots, l.CartSlots = d.InventorySlots, d.StorageSlots, d.CartSlots
 	}
+	if l.MailItems == 0 {
+		// Rules made before the mail limits existed.
+		l.MailItems, l.Mailbox = d.MailItems, d.Mailbox
+	}
 	for i := range l.Max {
 		if l.Max[i] == 0 {
-			l.Max[i] = max(d.Max[i], []int{l.PartyMembers, l.Friends, l.BlockList, l.GuildMembers, l.GuildPositions, l.GuildAllies,
-				l.GuildEnemies, l.GuildStorage, l.InventorySlots, l.StorageSlots, l.CartSlots}[i])
+			l.Max[i] = max(d.Max[i], l.bases()[i])
 		}
 	}
 	return l

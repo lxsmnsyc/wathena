@@ -594,6 +594,7 @@ func TestSampleMod(t *testing.T) {
 		"example.party-hall":   {"party.manage"},
 		"example.guild-hall":   {"guild.manage"},
 		"example.bank":         {"player.give_items", "rules.override"},
+		"example.arena":        {"mail.send", "rules.override"},
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -603,23 +604,26 @@ func TestSampleMod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The Bank's card and the Desperado's hat load first, in ID order of
-	// the mods.
-	if items.IDs["example.bank:Bank_Card"] != 2_000_000 {
+	// The Arena's trophy, the Bank's card and the Desperado's hat load
+	// first, in ID order of the mods.
+	if items.IDs["example.arena:Arena_Trophy"] != 2_000_000 {
+		t.Errorf("trophy ID %d", items.IDs["example.arena:Arena_Trophy"])
+	}
+	if items.IDs["example.bank:Bank_Card"] != 2_000_001 {
 		t.Errorf("card ID %d", items.IDs["example.bank:Bank_Card"])
 	}
-	if items.IDs["example.greeter:Welcome_Cookie"] != 2_000_002 {
+	if items.IDs["example.greeter:Welcome_Cookie"] != 2_000_003 {
 		t.Errorf("cookie ID %d", items.IDs["example.greeter:Welcome_Cookie"])
 	}
-	if items.IDs["example.halloween:Pumpkin_Hat"] != 2_000_003 {
+	if items.IDs["example.halloween:Pumpkin_Hat"] != 2_000_004 {
 		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 9 || npcs[3].DisplayName != "Greeter" || npcs[3].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 11 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
 	// The cookie stand is a shop that only scripts open.
-	if shop := npcs[5]; shop.Placed || len(shop.Shop) != 2 || !shop.Discount || shop.Shop[1].Price != -1 {
+	if shop := npcs[7]; shop.Placed || shop.Shop == nil || len(shop.Shop.Items) != 2 || !shop.Shop.Discount || shop.Shop.Items[1].Price != -1 {
 		t.Errorf("shop %+v", shop)
 	}
 	sc, err := s.Scripts("example.greeter")

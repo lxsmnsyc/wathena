@@ -20,6 +20,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -121,6 +122,12 @@ type Loader interface {
 	LoadStorage(ctx context.Context, k Key) ([]character.Item, error)
 }
 
+// CurrencyLoader reads an account's currencies, for its storage
+// (Key.Currencies). A Loader may also be one.
+type CurrencyLoader interface {
+	LoadAccountCurrencies(ctx context.Context, account int64) (map[uint32]int64, error)
+}
+
 // Storage is one storage. Its zone reads and changes it with its lock
 // held.
 type Storage struct {
@@ -136,6 +143,33 @@ type Storage struct {
 	// weighed is set once the box's weight was counted with the item
 	// table.
 	weighed bool
+	// currencies are the account's currencies of data/currencies.yml,
+	// held by the account's storage, which the account's characters
+	// share (proposal 0002, review decision 30). savedCurrencies is what
+	// the last commit wrote.
+	currencies, savedCurrencies map[uint32]int64
+}
+
+// HoldsCurrencies reports whether a key's storage holds its account's
+// currencies: the account's storage.
+func (k Key) HoldsCurrencies() bool { return k.Holder == HolderAccount && k.Storage == 0 }
+
+// CurrenciesUnlocked are the account's currencies, by ID, for a currency
+// wallet. Read and change the map only with the lock held.
+func (st *Storage) CurrenciesUnlocked() map[uint32]int64 {
+	if st.currencies == nil {
+		st.currencies = map[uint32]int64{}
+	}
+	return st.currencies
+}
+
+// CommitCurrencies returns what the last commit wrote of the currencies
+// and what they are now, and keeps the second for the next commit. The
+// lock must be held.
+func (st *Storage) CommitCurrencies() (base, cur map[uint32]int64) {
+	cur = maps.Clone(st.currencies)
+	base, st.savedCurrencies = st.savedCurrencies, cur
+	return base, cur
 }
 
 // Prepare sets the box's item table, size and weight limit before a
@@ -281,10 +315,16 @@ func (r *Registry) acquire(ctx context.Context, k Key) (*Storage, error) {
 	}
 	r.mu.Unlock()
 	var slots []character.Item
+	var cur map[uint32]int64
 	if r.Loader != nil && k.Saved() {
 		var err error
 		if slots, err = r.Loader.LoadStorage(ctx, k); err != nil {
 			return nil, err
+		}
+		if cl, ok := r.Loader.(CurrencyLoader); ok && k.HoldsCurrencies() {
+			if cur, err = cl.LoadAccountCurrencies(ctx, k.ID); err != nil {
+				return nil, err
+			}
 		}
 	}
 	r.mu.Lock()
@@ -293,6 +333,7 @@ func (r *Registry) acquire(ctx context.Context, k Key) (*Storage, error) {
 	if st == nil {
 		// Another login may have loaded it meanwhile; the first wins.
 		st = newStorage(k, slots)
+		st.currencies, st.savedCurrencies = cur, maps.Clone(cur)
 		r.storage[k] = st
 	}
 	st.refs++

@@ -1,0 +1,26 @@
+# A sample mod for currencies, shops, mail and vending (proposal 0002,
+# review decision 30): arena tokens, a prize desk whose costs mix zeny,
+# items and tokens with a stock, a trophy sent by mail, and a vend hook
+# and event. mods/README.md, "Mail, vending, shops and currencies",
+# explains each part.
+id: example.arena
+name: Arena Market
+version: 0.1.0
+api: 1.0
+description: An arena master who pays tokens and mails trophies, a prize desk that sells for zeny, Jellopy and tokens, and a market rule that keeps trophies out of vending shops.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read
+  - mail.send
+  - rules.override
+scripts:
+  - scripts/main.lua

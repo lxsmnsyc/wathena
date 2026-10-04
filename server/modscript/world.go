@@ -97,6 +97,11 @@ var Hooks = map[string][]string{
 	"chat": {KindMod, KindNPC, KindEvent},
 	// Trade (review decision 29). It runs before a trade completes.
 	"trade": {KindMod, KindNPC, KindEvent},
+	// Vending, buying stores and mail (review decision 30). They run
+	// before a sale or a mail.
+	"vend":              {KindMod, KindNPC, KindEvent},
+	"buying_store_sale": {KindMod, KindNPC, KindEvent},
+	"mail":              {KindMod, KindNPC, KindEvent},
 }
 
 type scheduled struct {

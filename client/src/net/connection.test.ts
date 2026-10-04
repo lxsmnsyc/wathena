@@ -1,7 +1,7 @@
 import { create } from '@bufbuild/protobuf';
 import { describe, expect, it } from 'vitest';
-import { WelcomeSchema } from '../gen/wathena/v1/session_pb';
-import { DEFAULT_LIMITS, limitsOf, unpackSteps } from './connection';
+import { DisconnectReason, WelcomeSchema } from '../gen/wathena/v1/session_pb';
+import { DEFAULT_LIMITS, disconnectText, limitsOf, unpackSteps } from './connection';
 
 describe('limitsOf', () => {
   it('takes the limits Welcome gives', () => {
@@ -18,6 +18,8 @@ describe('limitsOf', () => {
         inventorySlots: 120,
         storageSlots: 1000,
         cartSlots: 150,
+        mailItems: 3,
+        mailbox: 50,
       },
     });
     const limits = limitsOf(welcome);
@@ -33,6 +35,8 @@ describe('limitsOf', () => {
       inventorySlots: 120,
       storageSlots: 1000,
       cartSlots: 150,
+      mailItems: 3,
+      mailbox: 50,
       ranges: undefined,
     });
     // Without ranges, max is rAthena's, and never under the base.
@@ -67,6 +71,8 @@ describe('limitsOf', () => {
   it("uses rAthena's defaults for missing limits", () => {
     expect(limitsOf(create(WelcomeSchema))).toEqual(DEFAULT_LIMITS);
     expect(DEFAULT_LIMITS.cartSlots).toBe(100);
+    expect(DEFAULT_LIMITS.mailItems).toBe(5);
+    expect(DEFAULT_LIMITS.mailbox).toBe(100);
     expect(DEFAULT_LIMITS.ranges.get('guild_members')).toEqual({ base: 16, max: 76 });
     const limits = limitsOf(create(WelcomeSchema, { limits: { friends: 10 } }));
     expect({ ...limits, ranges: undefined }).toEqual({
@@ -81,5 +87,15 @@ describe('limitsOf', () => {
 describe('unpackSteps', () => {
   it('reads facings low bits first and skips 0xF', () => {
     expect(unpackSteps(new Uint8Array([0x21, 0xf3]))).toEqual([1, 2, 3]);
+  });
+});
+
+describe('disconnectText', () => {
+  it("shows the server's message, or a line for the reason", () => {
+    expect(disconnectText('Bye.', DisconnectReason.AUTOTRADE)).toBe('Bye.');
+    expect(disconnectText('', DisconnectReason.AUTOTRADE)).toBe(
+      'Your shop stays open while you are away.',
+    );
+    expect(disconnectText('')).toBe('Disconnected from the server.');
   });
 });

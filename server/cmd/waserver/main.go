@@ -52,6 +52,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/lxsmnsyc/wathena/server/mail"
+	"github.com/lxsmnsyc/wathena/server/market"
 	"io/fs"
 	"log/slog"
 	"net"
@@ -443,6 +445,14 @@ func runAll(name string, args []string) error {
 	// Storages and carts load at login and leave memory after their last
 	// commit (decision 0023). Without a database they stay in memory.
 	storages := storage.NewRegistry(nil)
+	// Mailboxes load at login too, and the market lists every store of
+	// the world, for the store search (decision 0024).
+	mails := mail.NewRegistry(nil, items)
+	stores := market.NewRegistry()
+	autotraders := zone.NewAutotraders()
+	if loaded.zone.Shops != nil {
+		loaded.zone.Shops.Location = cfg.Location
+	}
 	zones := make([]*zone.Zone, len(names))
 	monsters, warpCount, npcCount := 0, 0, 0
 	for i, n := range names {
@@ -459,6 +469,7 @@ func runAll(name string, args []string) error {
 		}
 		z.SaveMap = name
 		z.Chat, z.Jail, z.Clock, z.Social, z.Storages = hub, jail, clock, socials, storages
+		z.Mail, z.Market, z.Autotraders = mails, stores, autotraders
 		z.SetWarps(warps[n])
 		z.SetNPCs(loaded.npcs[n])
 		z.Mods = loaded.zone
@@ -504,6 +515,19 @@ func runAll(name string, args []string) error {
 	if pool != nil {
 		st = store.New(pool, store.Options{Log: log})
 		storages.Loader = st
+		mails.Loader = st
+		floor, err := st.MailIDFloor(ctx)
+		if err != nil {
+			return fmt.Errorf("mail: %w", err)
+		}
+		mails.SetIDFloor(floor)
+		if loaded.zone.Shops != nil {
+			rows, err := st.ShopStock(ctx)
+			if err != nil {
+				return fmt.Errorf("shop stock: %w", err)
+			}
+			log.Info("shop stock loaded", "items", loaded.zone.Shops.LoadStock(rows))
+		}
 		gw.Characters = dbCharacters{store: st, world: w}
 		hc.checks = append(hc.checks, pool.Ping)
 		// Transfers commit the characters they change with their log
@@ -570,6 +594,10 @@ func runAll(name string, args []string) error {
 	}
 	go w.Run(ctx)
 	go scheduler.Run(ctx)
+	go expireMail(ctx, mails, st, worldRules, clock, log)
+	if st != nil {
+		restoreAutotraders(ctx, st, gw.Characters, w, rules.MarketOrDefault(worldRules), log)
+	}
 	if socialStore != nil {
 		// Party and friend changes are written once every zone stopped.
 		defer func() {
@@ -816,6 +844,12 @@ func (d dbCharacters) Find(ctx context.Context, name string, look zone.Look) (in
 type storeCommitter struct{ store *store.Store }
 
 func (c storeCommitter) Commit(saves []zone.CommitSave, storages []zone.StorageCommit, logs transfer.Logs) {
+	c.CommitWrites(saves, storages, zone.Writes{}, logs)
+}
+
+// CommitWrites hands a commit with mails, shop stock and store rows to
+// the store.
+func (c storeCommitter) CommitWrites(saves []zone.CommitSave, storages []zone.StorageCommit, w zone.Writes, logs transfer.Logs) {
 	entries := make([]store.Entry, 0, len(saves))
 	for _, s := range saves {
 		if x, ok := s.Saver.(*store.Session); ok {
@@ -824,9 +858,10 @@ func (c storeCommitter) Commit(saves []zone.CommitSave, storages []zone.StorageC
 	}
 	writes := make([]store.StorageWrite, 0, len(storages))
 	for _, s := range storages {
-		writes = append(writes, store.StorageWrite{Guild: s.Guild, Key: s.Key, Base: s.Base, Cur: s.Cur})
+		writes = append(writes, store.StorageWrite{Guild: s.Guild, Key: s.Key, Base: s.Base, Cur: s.Cur,
+			CurrencyBase: s.CurrencyBase, Currencies: s.Currencies, HasCurrencies: s.HasCurrencies})
 	}
-	c.store.CommitWith(entries, writes, logs)
+	c.store.CommitAll(entries, writes, store.Writes{Mails: w.Mails, Stock: w.Stock, Stores: w.Stores}, logs)
 }
 
 func (d dbCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {

@@ -31,6 +31,128 @@ type npcHost struct {
 	// spawned are the monsters that have not died yet, by handle ID.
 	spawned     map[int64]uint32
 	nextMonster int64
+	market      marketHost
+}
+
+// marketHost is the MarketHost of the NPC runtime tests: core's
+// currencies with balances by name, core's shops by record name with
+// the changes scripts make, and the mails scripts send.
+type marketHost struct {
+	balances map[string]int64
+	// shops are the shops by record name, each with its items' stock,
+	// -1 for no limit.
+	shops map[string]map[uint32]int
+	mails []modscript.ScriptMail
+	calls []string
+}
+
+// Currency finds any currency: core's own and the converted ones are
+// core's.
+func (m *marketHost) Currency(string, string) (string, bool) { return "core", true }
+func (m *marketHost) CurrencyBalance(_ int64, name, _ string) (int64, error) {
+	return m.balances[name], nil
+}
+func (m *marketHost) ChangeCurrency(_ int64, name, _ string, n int64) (bool, error) {
+	if m.balances == nil {
+		m.balances = map[string]int64{}
+	}
+	if m.balances[name]+n < 0 {
+		return false, nil
+	}
+	m.balances[name] += n
+	return true, nil
+}
+func (m *marketHost) SendMail(_ int64, mail modscript.ScriptMail) error {
+	m.mails = append(m.mails, mail)
+	return nil
+}
+func (m *marketHost) OpenMail(int64) (bool, error) {
+	m.calls = append(m.calls, "open_mail")
+	return true, nil
+}
+func (m *marketHost) Autotrade(int64) (bool, error) { return false, nil }
+func (m *marketHost) SearchStores(_ int64, uses int, open bool) (bool, error) {
+	m.calls = append(m.calls, fmt.Sprintf("search_stores %d %t", uses, open))
+	return true, nil
+}
+func (m *marketHost) OpenBuyingStore(_ int64, slots int) (bool, error) {
+	m.calls = append(m.calls, fmt.Sprintf("open_buying_store %d", slots))
+	return true, nil
+}
+func (m *marketHost) ShopFind(name, _ string) (string, bool) {
+	name = strings.TrimPrefix(name, "core:")
+	if _, ok := m.shops[name]; ok {
+		return "core:" + name, true
+	}
+	return "", false
+}
+func (m *marketHost) shop(full string) map[uint32]int {
+	return m.shops[strings.TrimPrefix(full, "core:")]
+}
+func (m *marketHost) ShopAdd(shop string, it modscript.ShopItemSpec, _ string) (bool, error) {
+	m.shop(shop)[it.Item] = it.Stock
+	return true, nil
+}
+func (m *marketHost) ShopRemove(shop string, item uint32) (bool, error) {
+	s := m.shop(shop)
+	_, ok := s[item]
+	delete(s, item)
+	return ok, nil
+}
+func (m *marketHost) ShopSetStock(shop string, item uint32, n int) (bool, error) {
+	s := m.shop(shop)
+	if _, ok := s[item]; !ok {
+		return false, nil
+	}
+	s[item] = n
+	return true, nil
+}
+
+func (h *npcHost) Currency(name, mod string) (string, bool) { return h.market.Currency(name, mod) }
+func (h *npcHost) CurrencyBalance(p int64, name, mod string) (int64, error) {
+	return h.market.CurrencyBalance(p, name, mod)
+}
+func (h *npcHost) ChangeCurrency(p int64, name, mod string, n int64) (bool, error) {
+	return h.market.ChangeCurrency(p, name, mod, n)
+}
+func (h *npcHost) SendMail(p int64, m modscript.ScriptMail) error { return h.market.SendMail(p, m) }
+func (h *npcHost) OpenMail(p int64) (bool, error)                 { return h.market.OpenMail(p) }
+func (h *npcHost) Autotrade(p int64) (bool, error)                { return h.market.Autotrade(p) }
+func (h *npcHost) SearchStores(p int64, uses int, open bool) (bool, error) {
+	return h.market.SearchStores(p, uses, open)
+}
+func (h *npcHost) OpenBuyingStore(p int64, slots int) (bool, error) {
+	return h.market.OpenBuyingStore(p, slots)
+}
+func (h *npcHost) ShopFind(name, mod string) (string, bool) { return h.market.ShopFind(name, mod) }
+func (h *npcHost) ShopAdd(shop string, it modscript.ShopItemSpec, mod string) (bool, error) {
+	return h.market.ShopAdd(shop, it, mod)
+}
+func (h *npcHost) ShopRemove(shop string, item uint32) (bool, error) {
+	return h.market.ShopRemove(shop, item)
+}
+func (h *npcHost) ShopSetStock(shop string, item uint32, n int) (bool, error) {
+	return h.market.ShopSetStock(shop, item, n)
+}
+
+// coreShops are the shops of a converted core, for marketHost: each
+// with the items of its line and no stock limit. Their stock is not
+// checked.
+func coreShops(core *Core) map[string]map[uint32]int {
+	out := map[string]map[uint32]int{}
+	for _, n := range core.NPCs.NPCs {
+		if !n.Shop || n.Status == None {
+			continue
+		}
+		items := map[uint32]int{}
+		if ref := core.NPCs.conv.shops[n.Source]; ref != nil {
+			for id := range ref.items {
+				items[id] = -1
+			}
+		}
+		out[n.Name] = items
+	}
+	return out
 }
 
 func (h *npcHost) SpawnMonsters(_ int64, s modscript.SpawnSpec) ([]int64, error) {
@@ -156,7 +278,7 @@ func TestRunConvertedNPCs(t *testing.T) {
 			_ = r
 			logs := &logRecorder{}
 			h := &npcHost{testHost: base, npcs: map[int64]*NPC{}, steps: map[int64]modscript.Step{}, ended: map[int64]bool{},
-				vars: map[modscript.VariableKey]string{}, zeny: 1_000_000}
+				vars: map[modscript.VariableKey]string{}, zeny: 1_000_000, market: marketHost{shops: coreShops(core)}}
 			rt := npcRuntime(t, core, h, logs)
 			var started, clicks, steps int
 			for i, n := range core.NPCs.NPCs {

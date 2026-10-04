@@ -43,3 +43,28 @@
   sprite: 4_F_KAFRA1
   display_name: Kafra
   script: scripts/npc/kafra.lua
+# A shop of the table form, for the shop and currency scenarios. It does
+# not buy from players.
+#   - An Apple costs 10 zeny, 2 Jellopy and 1 token. The shop has 3 for
+#     every player, and fills again an hour after the last fill.
+#   - A Red Potion costs 5 tokens.
+#   - A Jellopy costs 1 Jellopy, so the duplication tests can buy with an
+#     item cost and keep the totals.
+- name: Exchange#e2e
+  map: placeholder/map
+  x: 3
+  y: 12
+  sprite: 4_M_01
+  display_name: Exchange
+  shop:
+    buys_from_players: false
+    discount: false
+    items:
+      - item: Apple
+        cost: {zeny: 10, items: [{item: Jellopy, amount: 2}], currency: {"e2e.fixture:tokens": 1}}
+        stock: 3
+        restock: 1h
+      - item: Red_Potion
+        cost: {currency: {"e2e.fixture:tokens": 5}}
+      - item: Jellopy
+        cost: {items: [{item: Jellopy, amount: 1}]}

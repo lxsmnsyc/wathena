@@ -99,6 +99,9 @@ type Store struct {
 	// storageBusy counts, by storage, the commits that hold it and are
 	// not written yet (storage.go).
 	storageBusy map[storage.Key]int
+	// mailBusy counts, by recipient, the commits that hold its mails and
+	// are not written yet (market.go).
+	mailBusy map[int64]int
 }
 
 // New makes a store on a pool and starts its workers. Close stops them.
@@ -111,6 +114,7 @@ func New(pool *pgxpool.Pool, opt Options) *Store {
 		retry:       opt.RetryDelay,
 		busy:        map[int64]int{},
 		storageBusy: map[storage.Key]int{},
+		mailBusy:    map[int64]int{},
 		changed:     make(chan struct{}),
 		stop:        make(chan struct{}),
 	}
@@ -228,6 +232,9 @@ func (s *Store) Load(ctx context.Context, id int64) (*character.Character, *Sess
 			return err
 		}
 		if err := loadFriends(ctx, q, c); err != nil {
+			return err
+		}
+		if err := loadCurrencies(ctx, q, c); err != nil {
 			return err
 		}
 		return loadVariables(ctx, q, c)
@@ -473,6 +480,9 @@ func writeCharacter(ctx context.Context, q *db.Queries, id, version int64, base,
 	if err := writeModeration(ctx, q, id, base, c); err != nil {
 		return err
 	}
+	if err := writeCharacterCurrencies(ctx, q, id, base.Currencies, c.Currencies); err != nil {
+		return err
+	}
 	return writeVariables(ctx, q, c, base.Variables, c.Variables)
 }
 
@@ -670,7 +680,7 @@ func saveParams(c *character.Character, version int64) db.SaveCharacterParams {
 		InventorySize: c.InventorySize,
 		SaveMap:       c.SaveMap, SaveX: c.SaveX, SaveY: c.SaveY,
 		JobChangeLevel: c.JobChangeLevel, RebirthJob: c.RebirthJob, Options: c.Options,
-		Companion: c.Companion, Mount: c.Mount,
+		Companion: c.Companion, Mount: c.Mount, MailDay: c.MailDay, MailSent: c.MailSent,
 	}
 }
 
@@ -686,7 +696,7 @@ func fromRow(r *db.Character, items []db.InventoryRow) (*character.Character, er
 		Stats:         status.Stats{Str: r.Str, Agi: r.Agi, Vit: r.Vit, Int: r.Int, Dex: r.Dex, Luk: r.Luk},
 		SaveMap:       r.SaveMap, SaveX: r.SaveX, SaveY: r.SaveY,
 		JobChangeLevel: r.JobChangeLevel, RebirthJob: r.RebirthJob, Options: r.Options,
-		Companion: r.Companion, Mount: r.Mount, CreatedAt: r.CreatedAt.Time,
+		Companion: r.Companion, Mount: r.Mount, CreatedAt: r.CreatedAt.Time, MailDay: r.MailDay, MailSent: r.MailSent,
 	}}
 	for _, it := range items {
 		ci, err := inventoryItem(&it)

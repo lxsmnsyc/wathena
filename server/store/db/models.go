@@ -18,6 +18,12 @@ type Account struct {
 	Staff     bool
 }
 
+type AccountCurrency struct {
+	AccountID int64
+	Currency  int
+	Amount    int64
+}
+
 type AccountPasskey struct {
 	ID                int64
 	AccountID         int64
@@ -139,12 +145,20 @@ type Character struct {
 	Options        int
 	Companion      string
 	Mount          string
+	MailDay        int
+	MailSent       int
 }
 
 type CharacterBlock struct {
 	CharacterID int64
 	Position    int
 	Name        string
+}
+
+type CharacterCurrency struct {
+	CharacterID int64
+	Currency    int
+	Amount      int64
 }
 
 type CharacterFriend struct {
@@ -312,6 +326,35 @@ type ItemLogDefault struct {
 	Identified    bool
 }
 
+type Mail struct {
+	ID            int64
+	SenderID      pgtype.Int8
+	SenderName    string
+	RecipientID   int64
+	RecipientName string
+	Title         string
+	Body          string
+	Zeny          int64
+	SentAt        pgtype.Timestamptz
+	Read          bool
+	Returned      bool
+}
+
+type MailItem struct {
+	Serial        pgtype.UUID
+	MailID        int64
+	Slot          int
+	ItemID        int
+	Amount        int
+	Refine        int
+	Cards         []int
+	Rolls         []byte
+	CardRolls     []byte
+	RandomOptions []byte
+	Identified    bool
+	Bound         int
+}
+
 type ModAccountVariable struct {
 	AccountID int64
 	ModID     string
@@ -393,6 +436,13 @@ type Sanction struct {
 	ReturnY     int
 }
 
+type ShopStock struct {
+	Shop     string
+	ItemID   int
+	Stock    int
+	FilledAt pgtype.Timestamptz
+}
+
 type StorageItem struct {
 	Serial        pgtype.UUID
 	Holder        string
@@ -409,6 +459,28 @@ type StorageItem struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+}
+
+type Store struct {
+	CharacterID int64
+	Buying      bool
+	Title       string
+	Map         string
+	X           int
+	Y           int
+	Dir         int
+	ZenyLimit   int64
+	Autotrade   bool
+}
+
+type StoreItem struct {
+	CharacterID int64
+	Buying      bool
+	Idx         int
+	ItemID      int
+	CartSerial  pgtype.UUID
+	Amount      int
+	Price       int64
 }
 
 type World struct {
@@ -436,6 +508,7 @@ type ZenyLog struct {
 	ToKind   string
 	ToID     int64
 	Amount   int64
+	Currency int
 }
 
 type ZenyLogDefault struct {

@@ -173,6 +173,8 @@ Each limit has a range:
 | `inventory_slots` | 100 (`INVENTORY_BASE_SIZE`) | 200 (`MAX_INVENTORY`) | 1000 | Inventory slots of a new character. |
 | `storage_slots` | 600 (`MAX_STORAGE`) | 600 | 10000 | Slots of an account's storage. |
 | `cart_slots` | 100 (`MAX_CART`) | 100 | 1000 | Slots of a cart. |
+| `mail_items` | 5 (`MAIL_MAX_ITEM`) | 5 | 20 | Item stacks of one mail. |
+| `mailbox` | 100 | 100 | 1000 | Mails of a mailbox. |
 
 | Rule | rAthena's value | Values | What it changes |
 |---|---|---|---|
@@ -190,12 +192,28 @@ Each limit has a range:
 | `guild_alliance_onlygm` | no | yes, no | Only a guild master may accept an alliance. |
 | `max_cart_weight` | 8000 | 0 to 1000000000 | The weight a cart holds, in tenths, as item weights (`max_cart_weight`). |
 | `basic_skill_check` | yes | yes, no | Trading needs Basic Skill level 1, and core's Kafras ask for level 6 before storage (`basic_skill_check`). |
+| `vending_tax` | 500 | 0 to 10000 | The vending tax in hundredths of a percent. |
+| `vending_tax_min` | 100000000 | 0 to 2147483647 | The smallest purchase the vending tax applies to. |
+| `vending_max_value` | 1000000000 | 1 to 2147483647 | The highest price of a vending line. |
+| `vending_over_max` | yes | yes, no | A shop may open when its sales would pass the zeny cap. |
+| `min_npc_vendchat_distance` | 3 | 0 to 30 | How many cells a vending shop or a buying store keeps from NPCs. |
+| `autotrade_restore` | yes | yes, no | Autotrade stores open again after a restart (`feature.autotrade`). |
+| `searchstore_querydelay` | 10 | 0 to 3600 | Seconds between two store searches. |
+| `searchstore_maxresults` | 30 | 1 to 1000 | The most results of one store search. |
+| `mail_zeny_fee` | 2 | 0 to 100 | The fee of mailed zeny, in percent. |
+| `mail_attachment_price` | 2500 | 0 to 2147483647 | The zeny for each attached item. |
+| `mail_attachment_weight` | 2000 | 0 to 1000000000 | The most weight of a mail's items, in whole weight units, or 0 for no limit. |
+| `mail_daily_count` | 100 | 0 to 1000000 | The most mails a character sends a day, or 0 for no limit. |
+| `mail_delay` | 1000 | 1000 to 3600000 | Milliseconds between two mails of a character. |
+| `mail_return_days` | 15 | 0 to 3650 | Days before a mail goes back to its sender, or 0 for never (char_athena.conf). |
+| `mail_delete_days` | 15 | 0 to 3650 | Days before a mail that came back, or a script's mail, is deleted, or 0 for never. |
+| `mail_return_empty` | yes | yes, no | A mail without attachments goes back to its sender too. Off, it is deleted. |
 
 - A value outside its bounds, or a name that is not a limit or a rule, fails the mod's load.
 - A ruleset mod that does not set one keeps what it extends. The core rulesets have rAthena's values.
 - Lowering a limit deletes nothing. A list over the limit keeps its names and cannot grow.
 - The client gets every limit's base and max at login. Lua reads the base as `rules.limits.<name>` ("Parties and friends" below).
-- Phase 5 step 5 added the guild limits and rules, and step 6 the ranges, the ceilings, and the inventory, storage and cart limits. Card slots have the ceiling 16 (`slots` of `data/items.yml`) and no limit yet.
+- Phase 5 step 5 added the guild limits and rules, step 6 the ranges, the ceilings, and the inventory, storage and cart limits, and step 7 the mail limits and the vending, store search and mail rules. Card slots have the ceiling 16 (`slots` of `data/items.yml`) and no limit yet.
 - [examples/classic-casting](examples/classic-casting) is a sample ruleset mod: a renewal world with pre-renewal casting.
 
 ## Permissions
@@ -205,6 +223,8 @@ Each limit has a range:
 | `game.read`, `npc.create`, `event.listen`, `storage.mod` | Granted to every mod. |
 | `player.give_items`, `player.give_zeny`, `player.give_exp`, `player.warp`, `player.status`, `player.change_job`, `world.announce`, `events.schedule` | Needs the owner's approval. |
 | `party.manage` | Needs the owner's approval. It makes parties and changes their members, leader and options (review decision 27). |
+| `guild.manage` | Needs the owner's approval. It makes guilds and changes their members, master, notice and exp, and breaks them up (review decision 28). |
+| `mail.send`, `currencies.modify`, `shops.modify` | Needs the owner's approval. They send mail with items and zeny, change another mod's currencies, core's too, and change shops (review decision 30). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -272,6 +292,22 @@ Extra storages, as rAthena's premium storages of `inter_server.yml` (proposal 00
 - `slots` is 1 to the ceiling of `storage_slots`.
 - `owner` is `account`, which the account's characters share, or `character`. It is `account` when left out.
 
+### Currencies: data/currencies.yml
+
+Currencies, such as rAthena's cash points and Kafra points (proposal 0002, review decision 30). Core has `cash` (`#CASHPOINTS`) and `kafra` (`#KAFRAPOINTS`), on the account.
+
+```yaml
+- name: tokens
+  display_name: Arena Tokens
+  owner: character
+  max: 1000
+```
+
+- A record becomes `<mod ID>:<name>`, such as `example.arena:tokens`, with an ID from 10,000.
+- `display_name` is the name players see, 1 to 24 characters. It is the name without the mod prefix when left out.
+- `owner` is `account`, which the account's characters share, or `character`. It is `account` when left out.
+- `max` is the most a player holds, 1 to 2,147,483,647, the default. A give over it is lost.
+
 ### NPCs: data/npcs.yml
 
 ```yaml
@@ -288,8 +324,11 @@ Extra storages, as rAthena's premium storages of `inter_server.yml` (proposal 00
 - `map`, `x`, `y` and `sprite` are required. `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, or its number.
 - `direction` is `south` (the default), `southwest`, `west`, `northwest`, `north`, `northeast`, `east` or `southeast`.
 - `script` names the NPC's entry script. It must exist. Its setup function runs once for each NPC that names it ("NPC scripts" below).
-- `shop` makes the NPC a shop: a list of `{item, price}`. A price left out, or -1, is the item's `buy` price. A click on a shop without a click handler opens the shop.
-- `discount: false` keeps Discount and Compulsion Discount from lowering the shop's prices, as rAthena's `shop` line with `no`. It is on by default, as in rAthena.
+- `shop` makes the NPC a shop: a list of `{item, price}`, or a table with `items`, `buys_from_players` and `discount` (review decision 30). A price left out, or -1, is the item's `buy` price. A click on a shop without a click handler opens the shop.
+- An item of the table form may have a `cost` in place of its price: `zeny`, `items` (a list of `{item, amount}`) and `currency` (a map of currency names to amounts), each optional, at most 5 items and currencies together. This covers rAthena's itemshop, pointshop, cashshop and barter shops.
+- `stock` limits an item for every player, as a marketshop's stock. `restock` fills it again: `daily`, `weekly` (from Monday), or a time such as `30m`, `6h` or `2d` after the last fill. The stock is saved.
+- `buys_from_players: false` hides the sell tab. It is on by default.
+- `discount: false` keeps Discount and Compulsion Discount from lowering the shop's zeny prices, as rAthena's `shop` line with `no`. It is on by default, as in rAthena. Items and currencies are never discounted. In the list form, `discount` goes beside `shop`.
 - A record with `shop` and no `map` is a shop that only scripts open, with `player:open_shop`.
 
 ```yaml
@@ -304,6 +343,16 @@ Extra storages, as rAthena's premium storages of `inter_server.yml` (proposal 00
 - name: Cookie Stand
   shop:
     - {item: "example.greeter:Welcome_Cookie", price: 25}
+- name: Prize Desk
+  shop:
+    buys_from_players: false
+    items:
+      - item: Red_Potion
+        cost: {zeny: 20, currency: {tokens: 2}}
+      - item: Wing_Of_Fly
+        cost: {items: [{item: Jellopy, amount: 5}], currency: {tokens: 1}}
+        stock: 3
+        restock: daily
 ```
 
 ### Monsters: data/monsters.yml
@@ -1105,6 +1154,62 @@ Rules:
 - Bound copies cannot be traded, dropped or sold. Storage and carts take account-bound copies, guild storage guild-bound ones, and a trade takes a guild-bound copy to a guildmate. A player who leaves its party loses its party-bound items, and one who leaves its guild puts its guild-bound items into the guild storage.
 - A trade needs Basic Skill level 1 with `basic_skill_check`. In `wactl mod test`, give the players `NV_BASIC` before `world:trade`.
 - `wa.testing` has `world:trade(a, b, offer_a, offer_b)`, which runs a whole trade and returns true, or false and why, and `world:close_storage(player)`. Both are provisional.
+
+### Mail, vending, shops and currencies
+
+Mail (RODEX), vending, buying stores, shop changes and currencies follow proposal 0002, review decision 30. [examples/arena-market](examples/arena-market) uses each part.
+
+```lua
+local events = require "wa.events"
+local hooks = require "wa.hooks"
+local world = require "wa.world"
+
+return function()
+  hooks.on("vend", function(sale, next)
+    if sale.zeny > 1000000 then
+      return false, "Sales over a million zeny go through the guild."
+    end
+    return next(sale)
+  end)
+  events.on("vend", function(sale)
+    sale.seller:give_currency("tokens", 1)
+  end)
+  events.on("login", function(player)
+    player:send_mail({ title = "Welcome", body = "A gift.", items = { { item = 501, amount = 5 } } })
+  end)
+  world.get_shop("Prize Desk"):set_stock(601, 10)
+end
+```
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `player:get_currency(name)` | `game.read` | A currency's amount. An account's currency is its account's. |
+| `player:give_currency(name, n)` | `currencies.modify` for another mod's currency | Gives a currency. An amount over its max is lost, as `pc_getcash`. |
+| `player:take_currency(name, n)` | `currencies.modify` for another mod's currency | Takes a currency. Returns false, and takes nothing, when the player has too little. |
+| `player:send_mail({ to, sender, title, body, zeny, items })` | `mail.send` | Sends a mail, as rAthena's `mail` command. `to` is a name, a character ID or a player handle, the player by default. The recipient may be offline. `items` lists `{ item, amount, roll, bound }`, made for the mail. |
+| `player:open_mail()` | None | Opens the mailbox, as `openmail`. Returns false when the player trades, vends, runs a buying store or has a storage open. |
+| `player:autotrade()` | None | Closes the connection and keeps the player's store open, as `@autotrade`. Returns false without a store. |
+| `player:search_stores({ uses, effect })` | None | Opens the store search, as `searchstores`. `effect` is `"show"` (the default) or `"open"`. |
+| `player:open_buying_store({ slots })` | None | Opens the buying store setup with 1 to 5 slots, as `buyingstore`. |
+| `world.get_shop(name)` | `game.read` | A shop's handle, or nil. `world:get_shop(name)` works too. |
+| `shop:add_item(item, { cost, stock, restock })` | `shops.modify` | Adds or replaces an item, as `npcshopadditem`. |
+| `shop:remove_item(item)` | `shops.modify` | Takes an item out, as `npcshopdelitem`. |
+| `shop:set_stock(item, n)` | `shops.modify` | Sets an item's stock and its restock amount, -1 for no limit. |
+
+A currency name without a prefix is the calling mod's record, then core's: `cash` and `kafra`. A mod changes its own currencies without a permission.
+
+Events and hooks:
+
+- `shop_buy` and `shop_sell` get `{ player, shop, items, zeny }` after a purchase from a shop of `data/npcs.yml`, or a sale to it, on the context's map.
+- `vend` gets `{ seller, buyer, items, zeny }` after a vending sale, and `buying_store_sale` the same after a sale to a buying store: there the seller gives the items and the buyer is the store's owner. `items` lists `{ item, amount, price }`, and `zeny` is what the buyer paid, before the vending tax.
+- `mail` gets `{ from, to, items, zeny }` after a mail went out: a player's or a script's. `from` and `to` are names, since the recipient may be offline.
+- The `vend`, `buying_store_sale` and `mail` hooks get the same object before the sale or the player's mail, and return true, or false and a message. They need `rules.override`. Script mail skips the mail hook.
+
+Rules:
+
+- A vending shop opens with the Vending skill and a cart. Items with `no_trade`, bound copies and unidentified copies cannot be vended.
+- A buying store buys items of rAthena's `BuyingStore` flag that its owner holds one of already. Mod items have no field for the flag yet.
+- `wa.testing` has `world:buy(player, shop, items)`, `world:get_mails(player)` and `world:vend(seller, buyer, lines)`. They are provisional.
 
 ### Entity queries
 

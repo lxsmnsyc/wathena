@@ -50,8 +50,8 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 	read := func(name string) ([]byte, error) {
 		return reference.ReadFile("extracts/" + string(mode) + "/" + name + ".json")
 	}
-	var in [8][]byte
-	for i, name := range []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills", "random_options"} {
+	var in [9][]byte
+	for i, name := range []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills", "random_options", "shops"} {
 		data, err := read(name)
 		if err != nil {
 			return nil, err
@@ -65,7 +65,7 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 	if err != nil {
 		return nil, err
 	}
-	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in[4]), Constants: bytes.NewReader(in[1]), ClientTables: bytes.NewReader(in[3])})
+	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in[4]), Constants: bytes.NewReader(in[1]), ClientTables: bytes.NewReader(in[3]), Shops: bytes.NewReader(in[8])})
 	if err != nil {
 		return nil, err
 	}

@@ -732,6 +732,10 @@ type StorageCommit struct {
 	Guild     int64
 	Key       storage.Key
 	Base, Cur []social.StorageSlot
+	// Currencies are an account's currencies, with what the last commit
+	// wrote, when HasCurrencies is set. Key is the account's storage.
+	CurrencyBase, Currencies map[uint32]int64
+	HasCurrencies            bool
 }
 
 // storageCommits are the guild storages the transfers since the last

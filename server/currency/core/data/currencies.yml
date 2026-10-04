@@ -1,0 +1,15 @@
+# Core's currencies (proposal 0002, review decision 30). A mod changes
+# them by name and adds its own in its data/currencies.yml.
+#
+# cash is rAthena's #CASHPOINTS and kafra its #KAFRAPOINTS: account
+# variables that pc_getcash and pc_paycash cap at MAX_ZENY.
+- name: cash
+  id: 1
+  display_name: Cash Points
+  owner: account
+  max: 2147483647
+- name: kafra
+  id: 2
+  display_name: Kafra Points
+  owner: account
+  max: 2147483647

@@ -11,6 +11,9 @@ import {
   type Stack,
   USE_EFFECTS,
   actionWord,
+  countItem,
+  currenciesText,
+  currencyBalance,
   dropItemMessage,
   gotItemMessage,
   itemRuleLines,
@@ -22,6 +25,7 @@ import {
   usedItemMessage,
   weightPercent,
   weightText,
+  zenyLine,
 } from './inventory';
 
 /** A slot with no equipment details. */
@@ -300,5 +304,39 @@ describe('InventoryModel bound', () => {
     // Details left out keep what the slot has.
     m.add(0, 501, 1);
     expect(m.get(0)).toMatchObject({ amount: 4, restrictions: 6 });
+  });
+});
+
+describe('currencies', () => {
+  const list = [
+    { name: 'cash', displayName: 'Cash', amount: 1500n },
+    { name: 'example.arena:tokens', displayName: '', amount: 25n },
+  ];
+
+  it('finds a balance by its full name', () => {
+    expect(currencyBalance(list, 'cash')).toBe(1500n);
+    expect(currencyBalance(list, 'missing')).toBe(0n);
+  });
+
+  it('shows each balance by its display name, or its full name', () => {
+    expect(currenciesText(list)).toBe('Currencies: Cash 1,500, example.arena:tokens 25');
+    expect(currenciesText([])).toBe('Currencies: none');
+  });
+
+  it('shows the zeny', () => {
+    expect(zenyLine(new Map([[StatId.ZENY, 1234567n]]))).toBe('Zeny 1,234,567');
+    expect(zenyLine(new Map())).toBe('Zeny -');
+  });
+});
+
+describe('countItem', () => {
+  it('counts the held stacks of an item, leaving out worn ones', () => {
+    const worn = { ...plain(3, 2301, 1), equip: 16 };
+    const stacks = [plain(1, 909, 3), plain(2, 909, 4), plain(4, 2301, 1), worn];
+    expect(countItem(stacks, 909)).toBe(7);
+    expect(countItem(stacks, 2301)).toBe(1);
+    const m = new InventoryModel();
+    m.reset(stacks, 100);
+    expect(m.count(909)).toBe(7);
   });
 });

@@ -46,7 +46,10 @@ type commit struct {
 	// storages the guild storages the commit saves.
 	ops      []func(ctx context.Context, q *db.Queries) error
 	storages []StorageWrite
-	started  bool
+	// writes are the commit's mails, shop stock and store rows
+	// (market.go).
+	writes  Writes
+	started bool
 	// retryAt is when a commit that failed may run again.
 	retryAt time.Time
 }
@@ -130,7 +133,7 @@ func (s *Store) CommitWith(entries []Entry, storages []StorageWrite, logs transf
 			s.storageBusy[w.Key]++
 		}
 	}
-	if len(c.entries) == 0 && c.logs.Empty() && len(c.storages) == 0 && len(c.ops) == 0 {
+	if len(c.entries) == 0 && c.logs.Empty() && len(c.storages) == 0 && len(c.ops) == 0 && c.writes.empty() {
 		return
 	}
 	if len(s.lane) == 0 || s.lane[len(s.lane)-1] != c {
@@ -244,6 +247,9 @@ func (s *Store) writeCommit(ctx context.Context, c *commit, versions []int64, ba
 		if err := writeStorages(ctx, q, c.storages); err != nil {
 			return err
 		}
+		if err := writeAll(ctx, q, &c.writes); err != nil {
+			return err
+		}
 		return writeLogs(ctx, q, c.logs)
 	})
 	return stale, err
@@ -296,6 +302,7 @@ func (s *Store) finishCommit(c *commit, stale, skip []bool, err error) {
 			}
 		}
 	}
+	s.finishWrites(&c.writes)
 	s.lane[0] = nil
 	s.lane = s.lane[1:]
 	s.broadcast()
@@ -346,6 +353,7 @@ func writeLogs(ctx context.Context, q *db.Queries, logs transfer.Logs) error {
 			p.ToKinds = append(p.ToKinds, l.To.Kind.String())
 			p.ToIds = append(p.ToIds, l.To.ID)
 			p.Amounts = append(p.Amounts, l.Amount)
+			p.Currencies = append(p.Currencies, int(l.Currency))
 		}
 		return q.InsertZenyLogs(ctx, p)
 	}

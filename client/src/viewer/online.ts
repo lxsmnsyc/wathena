@@ -3,6 +3,10 @@ import { type Camera, Group, Vector3 } from 'three';
 import { effects as effectTable, jobs, looks, partEffect, weapons } from '../data/tables';
 import { type WMap, cellHeight } from '../formats/wmap';
 import {
+  type BuyingStoreBought,
+  type BuyingStoreList,
+  type BuyingStoreOpened,
+  type BuyingStoreResult,
   type ChannelFailure,
   type ChannelInfo,
   type ChannelJoined,
@@ -27,6 +31,9 @@ import {
   type InventoryItem,
   type InventoryRemoveReason,
   type Look as LookMessage,
+  type MailNew,
+  type MailResult,
+  type MailSummary,
   type MinimapMark,
   type NpcDialog,
   type Options,
@@ -45,9 +52,13 @@ import {
   StatId,
   type StorageKind,
   type StorageOutcome,
+  type StoreSearchOpen,
+  type StoreSearchResult,
   type TradeOutcome,
   type UseItemFailure,
   VanishReason,
+  type VendingResult,
+  type VendingSold,
   type WhisperResult,
 } from '../gen/wathena/v1/event_pb';
 import { ChatChannel } from '../gen/wathena/v1/command_pb';
@@ -60,10 +71,13 @@ import type { TextureSource } from '../render/textures';
 import type { Pathfinder } from '../world/pathfinder';
 import GroundItems from './groundItems';
 import {
+  type CurrencyBalance,
+  type Stack,
   type StackDetails,
   type StackInput,
   type StackRolls,
   USE_EFFECTS,
+  stack,
   stackRolls,
 } from './inventory';
 import { bodyLook, cartLook, companionLook, mountedBody } from './mounts';
@@ -95,7 +109,7 @@ export const WARP_SPRITE = 45;
 export const WARP_EFFECT = 321;
 
 /** A slot as InventoryItem gives it, for the inventory and storage windows. */
-function stackInput(i: InventoryItem): StackInput {
+export function stackInput(i: InventoryItem): StackInput {
   return {
     slot: i.slot,
     itemId: i.itemId,
@@ -127,6 +141,56 @@ export interface StorageOpenInfo {
   maxWeight: number;
   /** How many StorageItems pages follow. */
   pages: number;
+}
+
+/** A mail as MailRead shows it, with its attachments as stacks. */
+export interface MailView {
+  mail: MailSummary;
+  body: string;
+  /** The attachments. Each slot is the attachment's index. */
+  items: Stack[];
+}
+
+/** A line of a vending shop, as VendingListItem. */
+export interface VendingItem {
+  index: number;
+  /** The copy for sale, with its amount and its cart slot as slot. */
+  item: Stack;
+  price: number;
+}
+
+/** A vending shop of another player, as VendingList. */
+export interface VendingShop {
+  vendor: number;
+  shop: number;
+  title: string;
+  seller: string;
+  items: VendingItem[];
+}
+
+/** A store search result, as StoreSearchHit. */
+export interface StoreSearchHitView {
+  index: number;
+  title: string;
+  owner: string;
+  map: string;
+  x: number;
+  y: number;
+  item: Stack;
+  price: number;
+  buying: boolean;
+}
+
+/** The shop title over a player, as EntityShop. */
+export interface ShopBoard {
+  title: string;
+  /** Set for a buying store; a vending shop otherwise. */
+  buying: boolean;
+}
+
+/** An InventoryItem as a stack, or an empty stack when it is missing. */
+function itemStack(i: InventoryItem | undefined): Stack {
+  return stack(i === undefined ? { slot: 0, itemId: 0, amount: 0 } : stackInput(i));
 }
 
 /** An offer in the trade window, as TradeOffer. */
@@ -411,6 +475,46 @@ export default class Online {
   onTradeResult:
     | ((outcome: TradeOutcome, name: string, slot: number, message: string) => void)
     | undefined;
+  /** Called with the player's currencies, which replace the ones before. */
+  onCurrencies: ((currencies: CurrencyBalance[]) => void) | undefined;
+  /** Called with the player's mails, newest first, as MailBox. */
+  onMailBox:
+    | ((mails: MailSummary[], size: number, sentToday: number, daily: number) => void)
+    | undefined;
+  /** Called with a mail the player reads. */
+  onMailRead: ((mail: MailView) => void) | undefined;
+  /** Called when a mail arrives. */
+  onMailNew: ((mail: MailNew) => void) | undefined;
+  /** Called with how a mail action went. */
+  onMailResult: ((result: MailResult) => void) | undefined;
+  /** Called when the vending setup window opens, with the most lines. */
+  onVendingSetup: ((maxItems: number) => void) | undefined;
+  /** Called with the player's own open shop. */
+  onVendingOpened: ((title: string, items: VendingItem[]) => void) | undefined;
+  /** Called with another player's shop. */
+  onVendingList: ((shop: VendingShop) => void) | undefined;
+  /** Called when a line of the player's shop sold. */
+  onVendingSold: ((sold: VendingSold) => void) | undefined;
+  /** Called with how a vending step went. */
+  onVendingResult: ((result: VendingResult) => void) | undefined;
+  /** Called when the buying store setup window opens, with its lines. */
+  onBuyingStoreSetup: ((slots: number) => void) | undefined;
+  /** Called with the player's own open buying store. */
+  onBuyingStoreOpened: ((store: BuyingStoreOpened) => void) | undefined;
+  /** Called with another player's buying store. */
+  onBuyingStoreList: ((store: BuyingStoreList) => void) | undefined;
+  /** Called when the player's buying store bought items. */
+  onBuyingStoreBought: ((bought: BuyingStoreBought) => void) | undefined;
+  /** Called with how a buying store step went. */
+  onBuyingStoreResult: ((result: BuyingStoreResult) => void) | undefined;
+  /** Called when the store search window opens. */
+  onStoreSearchOpen: ((open: StoreSearchOpen) => void) | undefined;
+  /** Called with a page of store search results. */
+  onStoreSearchResults:
+    | ((results: StoreSearchHitView[], uses: number, more: boolean) => void)
+    | undefined;
+  /** Called with what a store search click or query did. */
+  onStoreSearchResult: ((result: StoreSearchResult) => void) | undefined;
   /** Called with the server's answer to the player's whisper. */
   onWhisperResult: ((result: WhisperResult) => void) | undefined;
   /** Called when a line the player said was not sent. */
@@ -451,8 +555,8 @@ export default class Online {
   onMinimapMark: ((mark: MinimapMark) => void) | undefined;
   /** Called when a shop window opens. */
   onShopOpen: ((shop: ShopOpen) => void) | undefined;
-  /** Called with a shop's answer. */
-  onShopResult: ((outcome: ShopOutcome) => void) | undefined;
+  /** Called with a shop's answer, and the item it is about or 0. */
+  onShopResult: ((outcome: ShopOutcome, itemId: number) => void) | undefined;
   /** Called with the player's skill list. */
   onSkillList: ((skills: SkillInfo[]) => void) | undefined;
   /** Called when the player's skill fails. */
@@ -499,6 +603,8 @@ export default class Online {
   private readonly names = new Map<number, string>();
   /** The guild shown with each entity in sight, by ID, from EntityAppear and EntityGuild. */
   private readonly badges = new Map<number, GuildBadge>();
+  /** The shop titles shown over players in sight, by ID, from EntityShop. */
+  private readonly boards = new Map<number, ShopBoard>();
   private map: WMap | undefined;
 
   constructor(
@@ -989,7 +1095,7 @@ export default class Online {
           this.onShopOpen?.(e.body.value);
           break;
         case 'shopResult':
-          this.onShopResult?.(e.body.value.outcome);
+          this.onShopResult?.(e.body.value.outcome, e.body.value.itemId);
           break;
         case 'whisperResult':
           this.onWhisperResult?.(e.body.value);
@@ -1152,6 +1258,116 @@ export default class Online {
           this.onTradeResult?.(r.outcome, r.name, r.slot, r.message);
           break;
         }
+        case 'currencies':
+          this.onCurrencies?.(
+            e.body.value.currencies.map((c) => ({
+              name: c.name,
+              displayName: c.displayName,
+              amount: c.amount,
+            })),
+          );
+          break;
+        case 'mailBox': {
+          const b = e.body.value;
+          this.onMailBox?.(b.mails, b.size, b.sentToday, b.daily);
+          break;
+        }
+        case 'mailRead': {
+          const r = e.body.value;
+          if (r.mail !== undefined) {
+            this.onMailRead?.({ mail: r.mail, body: r.body, items: r.items.map(itemStack) });
+          }
+          break;
+        }
+        case 'mailNew':
+          this.onMailNew?.(e.body.value);
+          break;
+        case 'mailResult':
+          this.onMailResult?.(e.body.value);
+          break;
+        case 'vendingSetup':
+          this.onVendingSetup?.(e.body.value.maxItems);
+          break;
+        case 'vendingOpened':
+          this.onVendingOpened?.(
+            e.body.value.title,
+            e.body.value.items.map((i) => ({
+              index: i.index,
+              item: itemStack(i.item),
+              price: i.price,
+            })),
+          );
+          break;
+        case 'vendingList': {
+          const l = e.body.value;
+          this.onVendingList?.({
+            vendor: l.vendor,
+            shop: l.shop,
+            title: l.title,
+            seller: l.seller,
+            items: l.items.map((i) => ({
+              index: i.index,
+              item: itemStack(i.item),
+              price: i.price,
+            })),
+          });
+          break;
+        }
+        case 'vendingSold':
+          this.onVendingSold?.(e.body.value);
+          break;
+        case 'vendingResult':
+          this.onVendingResult?.(e.body.value);
+          break;
+        case 'entityShop': {
+          const b = e.body.value;
+          if (b.remove) {
+            this.boards.delete(b.id);
+          } else {
+            this.boards.set(b.id, { title: b.title, buying: b.buying });
+          }
+          break;
+        }
+        case 'buyingStoreSetup':
+          this.onBuyingStoreSetup?.(e.body.value.slots);
+          break;
+        case 'buyingStoreOpened':
+          this.onBuyingStoreOpened?.(e.body.value);
+          break;
+        case 'buyingStoreList':
+          this.onBuyingStoreList?.(e.body.value);
+          break;
+        case 'buyingStoreBought':
+          this.onBuyingStoreBought?.(e.body.value);
+          break;
+        case 'buyingStoreResult':
+          this.onBuyingStoreResult?.(e.body.value);
+          break;
+        case 'storeSearchOpen':
+          this.onStoreSearchOpen?.(e.body.value);
+          break;
+        case 'storeSearchResults': {
+          const r = e.body.value;
+          this.onStoreSearchResults?.(
+            r.results.map((h) => ({
+              index: h.index,
+              title: h.title,
+              owner: h.owner,
+              map: h.map,
+              x: h.x,
+              y: h.y,
+              item: itemStack(h.item),
+              price: h.price,
+              buying: h.buying,
+            })),
+            r.uses,
+            r.more,
+          );
+          break;
+        }
+        case 'storeSearchResult':
+          this.onStoreSearchResult?.(e.body.value);
+          break;
         default:
           // Events this client does not show yet.
           break;
@@ -1303,6 +1519,16 @@ export default class Online {
     return this.badges;
   }
 
+  /** The shop title over a player in sight, if it has an open shop. */
+  shopBoard(id: number): ShopBoard | undefined {
+    return this.boards.get(id);
+  }
+
+  /** The players in sight that show a shop title, by ID. */
+  shopBoards(): ReadonlyMap<number, ShopBoard> {
+    return this.boards;
+  }
+
   /** Whether an entity is an NPC, which a click talks to. */
   isNpc(id: number): boolean {
     return this.kinds.get(id) === 'npc';
@@ -1314,6 +1540,7 @@ export default class Online {
     this.looksShown.delete(id);
     this.names.delete(id);
     this.badges.delete(id);
+    this.boards.delete(id);
     this.items.remove(id);
     const portal = this.portals.get(id);
     if (portal !== undefined) {
@@ -1379,6 +1606,7 @@ export default class Online {
     this.auras.clear();
     this.kinds.clear();
     this.badges.clear();
+    this.boards.clear();
     this.waiting = [];
   }
 

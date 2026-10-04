@@ -120,6 +120,10 @@ type Def struct {
 	// no_trade (restrict.go). no_drop and no_sell agree with NoDrop and
 	// NoSell.
 	Restrictions []string `json:"restrictions"`
+	// BuyingStore is item_db's Flags.BuyingStore: buying stores may buy
+	// the item. It comes from the shops extract; data/items.yml has no
+	// field for it yet.
+	BuyingStore bool `json:"-"`
 
 	// The equipment fields come from equipment.json (MergeEquipment).
 
