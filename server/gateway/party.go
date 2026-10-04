@@ -17,13 +17,17 @@ import (
 
 // limitsMessage is the protocol's Limits of a world's limits.
 func limitsMessage(l rules.Limits) *wathenav1.Limits {
-	if l == (rules.Limits{}) {
-		l = rules.DefaultLimits()
+	l = rules.LimitsOrDefault(&rules.Rules{Limits: l})
+	var ranges []*wathenav1.LimitRange
+	for _, n := range l.Named() {
+		ranges = append(ranges, wathenav1.LimitRange_builder{Name: n.Name, Base: uint32(n.Value), Max: uint32(n.Max)}.Build()) // #nosec G115 -- at most the engine's ceilings.
 	}
 	return wathenav1.Limits_builder{
 		PartyMembers: uint32(l.PartyMembers), Friends: uint32(l.Friends), BlockList: uint32(l.BlockList), // #nosec G115 -- small bounded limits.
 		GuildMembers: uint32(l.GuildMembers), GuildPositions: uint32(l.GuildPositions), GuildAllies: uint32(l.GuildAllies), // #nosec G115 -- as above.
 		GuildEnemies: uint32(l.GuildEnemies), GuildStorage: uint32(l.GuildStorage), // #nosec G115 -- as above.
+		InventorySlots: uint32(l.InventorySlots), StorageSlots: uint32(l.StorageSlots), CartSlots: uint32(l.CartSlots), // #nosec G115 -- as above.
+		Ranges: ranges,
 	}.Build()
 }
 

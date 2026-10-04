@@ -25,6 +25,8 @@ function item(slot: number, itemId: number, more: Partial<Stack> = {}): Stack {
     rolls: [],
     cardRolls: [],
     options: [],
+    bound: 0,
+    restrictions: 0,
     ...more,
   };
 }

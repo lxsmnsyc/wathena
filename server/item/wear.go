@@ -333,7 +333,7 @@ type Unequipped struct {
 // comes off.
 func (inv *Inventory) Equip(t *Table, slot int, reqPos uint32, w *Wearer) (Change, EquipResult) {
 	ch := Change{Equipped: -1}
-	if slot < 0 || slot >= MaxInventory {
+	if slot < 0 || slot >= len(inv.Slots) {
 		return ch, EquipFail
 	}
 	s := &inv.Slots[slot]
@@ -447,7 +447,7 @@ func ammoFits(ammo, weapon int, renewal bool) bool {
 // slot is not equipped.
 func (inv *Inventory) Unequip(t *Table, slot int) (Change, bool) {
 	ch := Change{Equipped: -1}
-	if slot < 0 || slot >= MaxInventory || inv.Slots[slot].Equip == 0 {
+	if slot < 0 || slot >= len(inv.Slots) || inv.Slots[slot].Equip == 0 {
 		return ch, false
 	}
 	s := &inv.Slots[slot]
@@ -499,7 +499,7 @@ func CanInsertCard(card, equip *Def, s *Slot, maxSlots int) bool {
 // InsertCard is pc_insert_card: a card from one slot goes into the first
 // free card slot of the item in another. The card slot loses one card.
 func (inv *Inventory) InsertCard(t *Table, cardSlot, equipSlot, maxSlots int) bool {
-	if cardSlot < 0 || cardSlot >= MaxInventory || equipSlot < 0 || equipSlot >= MaxInventory || cardSlot == equipSlot {
+	if cardSlot < 0 || cardSlot >= len(inv.Slots) || equipSlot < 0 || equipSlot >= len(inv.Slots) || cardSlot == equipSlot {
 		return false
 	}
 	cs, es := &inv.Slots[cardSlot], &inv.Slots[equipSlot]

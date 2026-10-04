@@ -1,0 +1,7 @@
+# The vault, an extra storage. The name has no prefix, so it is
+# example.bank:vault, and player:open_storage("vault") in this mod opens
+# it. The characters of an account share it.
+- name: vault
+  display_name: Bank Vault
+  slots: 50
+  owner: account

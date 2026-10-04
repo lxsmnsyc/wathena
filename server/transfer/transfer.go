@@ -40,7 +40,9 @@ type Kind uint8
 // Kinds. Holders keep items that are saved. Ends are where items come
 // from or go to outside any holder. Their IDs:
 //   - Inventory, Cart and Vending: the character's database ID.
-//   - Storage: the account's database ID.
+//   - Storage: the account's database ID, or for an extra storage that
+//     a character owns, the character's. Owner.Storage names the extra
+//     storage.
 //   - GuildStorage: the guild's ID.
 //   - Mail: the mail's ID.
 //   - Monster: the monster's ID, such as 1002 for a Poring.
@@ -104,10 +106,14 @@ func (k Kind) Holder() bool { return k >= KindInventory && k <= KindVending }
 type Owner struct {
 	Kind Kind
 	ID   int64
+	// Storage is the record ID of an extra storage (server/storage), or
+	// 0 for an account's storage and every other kind. ID is then the
+	// account's or the character's, as the record says.
+	Storage uint32
 }
 
 // Inventory is a character's inventory.
-func Inventory(characterID int64) Owner { return Owner{KindInventory, characterID} }
+func Inventory(characterID int64) Owner { return Owner{Kind: KindInventory, ID: characterID} }
 
 // End is an end of a kind with no ID.
 func End(k Kind) Owner { return Owner{Kind: k} }
@@ -141,6 +147,16 @@ const (
 	// ActionGuild is an item a guild took: the Emperium that makes a
 	// guild, and the guild storage of a guild that broke up.
 	ActionGuild Action = "guild"
+	// ActionStorage is a move between an inventory or a cart and a
+	// storage.
+	ActionStorage Action = "storage"
+	// ActionCart is a move between an inventory and a cart.
+	ActionCart Action = "cart"
+	// ActionTrade is a move of a trade between two players.
+	ActionTrade Action = "trade"
+	// ActionBound is a bound copy that went away with its bond, such as
+	// a party-bound item of a player who left the party.
+	ActionBound Action = "bound"
 )
 
 // ItemLog is one item move.

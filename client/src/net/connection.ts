@@ -14,6 +14,7 @@ import {
   PartyBookingCommandSchema,
   PartyCommandSchema,
   StorageCommandSchema,
+  TradeCommandSchema,
 } from '../gen/wathena/v1/command_pb';
 import {
   type ClientMessage,
@@ -47,6 +48,14 @@ export interface BookingSearchValues {
   job: number;
 }
 
+/** A limit's base and max, as LimitRange. */
+export interface LimitRangeValues {
+  /** What a player or guild starts with. */
+  base: number;
+  /** Where expansions stop. It is at least base. */
+  max: number;
+}
+
 /** The world's limits that size the client's windows, as Welcome.limits. */
 export interface ClientLimits {
   partyMembers: number;
@@ -59,40 +68,83 @@ export interface ClientLimits {
   guildEnemies: number;
   /** The most slots of a guild storage. */
   guildStorage: number;
+  /** The inventory slots of a new character. */
+  inventorySlots: number;
+  /** The slots of an account's storage. */
+  storageSlots: number;
+  /** The slots of a cart. */
+  cartSlots: number;
+  /** Every limit's base and max by its name, such as cart_slots. */
+  ranges: ReadonlyMap<string, LimitRangeValues>;
 }
 
 /**
- * rAthena's defaults, for a server that sends no limits: MAX_PARTY,
- * MAX_FRIENDS, MAX_IGNORE_LIST, the 16 members of guild_calcinfo,
- * MAX_GUILDPOSITION, max_guild_alliance, and 500 guild storage slots.
+ * The base and max of each limit with a named field in Limits, as
+ * rAthena's defaults: MAX_PARTY, MAX_FRIENDS, MAX_IGNORE_LIST, the 16
+ * members of guild_calcinfo, MAX_GUILDPOSITION, max_guild_alliance, 500
+ * guild storage slots, INVENTORY_BASE_SIZE, MAX_STORAGE and MAX_CART. max
+ * is where expansions stop by default, such as MAX_GUILD and
+ * MAX_INVENTORY.
  */
-export const DEFAULT_LIMITS: ClientLimits = {
-  partyMembers: 12,
-  friends: 40,
-  blockList: 20,
-  guildMembers: 16,
-  guildPositions: 20,
-  guildAllies: 3,
-  guildEnemies: 3,
-  guildStorage: 500,
-};
+const DEFAULT_RANGES: ReadonlyMap<string, LimitRangeValues> = new Map([
+  ['party_members', { base: 12, max: 12 }],
+  ['friends', { base: 40, max: 40 }],
+  ['block_list', { base: 20, max: 20 }],
+  ['guild_members', { base: 16, max: 76 }],
+  ['guild_positions', { base: 20, max: 20 }],
+  ['guild_allies', { base: 3, max: 3 }],
+  ['guild_enemies', { base: 3, max: 3 }],
+  ['guild_storage', { base: 500, max: 600 }],
+  ['inventory_slots', { base: 100, max: 200 }],
+  ['storage_slots', { base: 600, max: 600 }],
+  ['cart_slots', { base: 100, max: 100 }],
+]);
 
-/** The limits Welcome gives, with rAthena's defaults for the ones it leaves at 0. */
+/**
+ * The limits Welcome gives, with rAthena's defaults for the ones it leaves
+ * at 0. A named field gives the base, and ranges gives each limit's base
+ * and max. Limits the client does not know keep their range.
+ */
 export function limitsOf(welcome: Pick<Welcome, 'limits'>): ClientLimits {
   const l = welcome.limits;
-  const or = (v: number | undefined, fallback: number): number =>
-    v === undefined || v === 0 ? fallback : v;
+  const ranges = new Map<string, LimitRangeValues>();
+  for (const r of l?.ranges ?? []) {
+    if (r.name !== '') {
+      ranges.set(r.name, { base: r.base, max: Math.max(r.base, r.max) });
+    }
+  }
+  /** A named limit's base: its field, else its range, else the default. */
+  const base = (name: string, field: number | undefined): number => {
+    const d = DEFAULT_RANGES.get(name) ?? { base: 0, max: 0 };
+    const r = ranges.get(name);
+    let b = d.base;
+    if (field !== undefined && field !== 0) {
+      b = field;
+    } else if (r !== undefined && r.base !== 0) {
+      b = r.base;
+    }
+    const max = r === undefined || r.max === 0 ? d.max : r.max;
+    ranges.set(name, { base: b, max: Math.max(b, max) });
+    return b;
+  };
   return {
-    partyMembers: or(l?.partyMembers, DEFAULT_LIMITS.partyMembers),
-    friends: or(l?.friends, DEFAULT_LIMITS.friends),
-    blockList: or(l?.blockList, DEFAULT_LIMITS.blockList),
-    guildMembers: or(l?.guildMembers, DEFAULT_LIMITS.guildMembers),
-    guildPositions: or(l?.guildPositions, DEFAULT_LIMITS.guildPositions),
-    guildAllies: or(l?.guildAllies, DEFAULT_LIMITS.guildAllies),
-    guildEnemies: or(l?.guildEnemies, DEFAULT_LIMITS.guildEnemies),
-    guildStorage: or(l?.guildStorage, DEFAULT_LIMITS.guildStorage),
+    partyMembers: base('party_members', l?.partyMembers),
+    friends: base('friends', l?.friends),
+    blockList: base('block_list', l?.blockList),
+    guildMembers: base('guild_members', l?.guildMembers),
+    guildPositions: base('guild_positions', l?.guildPositions),
+    guildAllies: base('guild_allies', l?.guildAllies),
+    guildEnemies: base('guild_enemies', l?.guildEnemies),
+    guildStorage: base('guild_storage', l?.guildStorage),
+    inventorySlots: base('inventory_slots', l?.inventorySlots),
+    storageSlots: base('storage_slots', l?.storageSlots),
+    cartSlots: base('cart_slots', l?.cartSlots),
+    ranges,
   };
 }
+
+/** rAthena's defaults, for a server that sends no limits. */
+export const DEFAULT_LIMITS: ClientLimits = limitsOf({ limits: undefined });
 
 /** What a skill targets: an entity, a cell, or nothing for a self skill. */
 export type UseSkillTarget =
@@ -105,6 +157,7 @@ type FriendAction = NonNullable<MessageInitShape<typeof FriendCommandSchema>['ac
 type BookingAction = NonNullable<MessageInitShape<typeof PartyBookingCommandSchema>['action']>;
 type GuildAction = NonNullable<MessageInitShape<typeof GuildCommandSchema>['action']>;
 type StorageAction = NonNullable<MessageInitShape<typeof StorageCommandSchema>['action']>;
+type TradeAction = NonNullable<MessageInitShape<typeof TradeCommandSchema>['action']>;
 
 /** A guild position, as GuildPosition. */
 export interface GuildPositionValues {
@@ -585,6 +638,61 @@ export class Connection {
     this.storage({ case: 'log', value: true });
   }
 
+  /** Moves an amount from an inventory slot into the cart. */
+  cartPut(slot: number, amount: number): void {
+    this.storage({ case: 'cartPut', value: { slot, amount } });
+  }
+
+  /** Moves an amount from a cart slot into the inventory. */
+  cartTake(slot: number, amount: number): void {
+    this.storage({ case: 'cartTake', value: { slot, amount } });
+  }
+
+  /** Moves an amount from a cart slot into the open storage. */
+  cartToStorage(slot: number, amount: number): void {
+    this.storage({ case: 'cartToStorage', value: { slot, amount } });
+  }
+
+  /** Moves an amount from a slot of the open storage into the cart. */
+  storageToCart(slot: number, amount: number): void {
+    this.storage({ case: 'storageToCart', value: { slot, amount } });
+  }
+
+  /** Asks the player with an entity ID to trade. */
+  tradeRequest(id: number): void {
+    this.trade({ case: 'request', value: id });
+  }
+
+  /** Answers a TradeRequest. */
+  tradeRespond(accept: boolean): void {
+    this.trade({ case: 'respond', value: accept });
+  }
+
+  /** Offers an amount of an inventory slot in the open trade. */
+  tradeAddItem(slot: number, amount: number): void {
+    this.trade({ case: 'addItem', value: { slot, amount } });
+  }
+
+  /** Offers zeny in the open trade. */
+  tradeAddZeny(zeny: number): void {
+    this.trade({ case: 'addZeny', value: zeny });
+  }
+
+  /** Locks the player's offer. */
+  tradeLock(): void {
+    this.trade({ case: 'lock', value: true });
+  }
+
+  /** Completes the trade once both offers are locked. */
+  tradeConfirm(): void {
+    this.trade({ case: 'confirm', value: true });
+  }
+
+  /** Ends the trade. */
+  tradeCancel(): void {
+    this.trade({ case: 'cancel', value: true });
+  }
+
   /** Talks to an NPC, or opens its shop. */
   npcClick(npc: number): void {
     this.send({
@@ -670,6 +778,15 @@ export class Connection {
       case: 'command',
       value: create(CommandSchema, {
         body: { case: 'storage', value: create(StorageCommandSchema, { action }) },
+      }),
+    });
+  }
+
+  private trade(action: TradeAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'trade', value: create(TradeCommandSchema, { action }) },
       }),
     });
   }

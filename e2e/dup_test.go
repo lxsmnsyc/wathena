@@ -143,3 +143,132 @@ func TestDuplicationGuildStorageWithDatabase(t *testing.T) {
 	d.CheckDatabase(t, rep)
 	srv.CheckLogs()
 }
+
+// personalTest is the duplication test with personal storages and
+// carts: 8 Merchants with carts drop, pick up and disconnect as dupTest's
+// do, and also open their account storages with the fixture's
+// "!storage", and move parts of Jellopy stacks between the inventory,
+// the storage and the cart. A storage move closes the connection with
+// the storage open one time in 8, and a cart move closes it right after
+// its command one time in 15.
+func personalTest(srv *Server, counts *PersonalCounts) DupTest {
+	d := dupTest(srv)
+	d.Bots = 8
+	d.Prefix = "Kafra"
+	storage, cart := PersonalStorageMove(Jellopy, counts), CartMove(Jellopy, counts)
+	storage.Weight, cart.Weight = 12, 12
+	d.Moves = append(d.Moves, storage, cart)
+	d.Settle = SettleStorage(d.Settle)
+	d.Setup = CartSetup(0)
+	return d
+}
+
+// checkPersonalReport checks that the bots used their storages and
+// carts.
+func checkPersonalReport(t *testing.T, rep DupReport, c *PersonalCounts) {
+	t.Helper()
+	t.Logf("storages opened %d times; %d puts, %d takes, %d cart puts, %d cart takes, %d cart to storage, %d storage to cart, %d refused; %d connections closed in a storage or cart move; storages and carts hold %d Jellopy at the end",
+		c.Opened.Load(), c.Put.Load(), c.Take.Load(), c.CartPut.Load(), c.CartTake.Load(), c.CartToStorage.Load(), c.StorageToCart.Load(),
+		c.Refused.Load(), c.Dropped.Load(), rep.End.Stored[Jellopy])
+	if c.Opened.Load() == 0 || c.Put.Load() == 0 || c.Take.Load() == 0 || c.CartPut.Load() == 0 || c.CartTake.Load() == 0 ||
+		c.CartToStorage.Load() == 0 || c.StorageToCart.Load() == 0 || c.Dropped.Load() == 0 {
+		t.Errorf("too little happened in the storages and carts")
+	}
+}
+
+// TestDuplicationStorageAndCart runs the personal storage and cart
+// duplication test without a database.
+func TestDuplicationStorageAndCart(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", StartJob: MerchantJob, Race: true})
+	var counts PersonalCounts
+	d := personalTest(srv, &counts)
+	rep := d.Run(t)
+	checkDupReport(t, rep)
+	checkPersonalReport(t, rep, &counts)
+	srv.CheckLogs()
+}
+
+// TestDuplicationStorageAndCartWithDatabase runs the personal storage and
+// cart duplication test with PostgreSQL, then checks the saved
+// inventories, storages and carts.
+func TestDuplicationStorageAndCartWithDatabase(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", StartJob: MerchantJob, Database: true, Race: true})
+	var counts PersonalCounts
+	d := personalTest(srv, &counts)
+	d.Prefix = "SavedKafra"
+	rep := d.Run(t)
+	checkDupReport(t, rep)
+	checkPersonalReport(t, rep, &counts)
+	d.CheckDatabase(t, rep)
+	srv.CheckLogs()
+}
+
+// tradeTest is the duplication test with trades: 8 Merchants with carts
+// and 5,000 zeny each stay on their start cell, so all are within trade
+// range. The bots with odd numbers ask the ones with even numbers to
+// trade, and both sides offer Jellopy and zeny. Connections close before
+// the lock, after it and right after the confirm. The bots also use
+// their storages and carts. Nothing is dropped, so every item that came
+// into an inventory came from a storage, a cart or a trade.
+func tradeTest(srv *Server, prefix string, trades *TradeCounts, personal *PersonalCounts) DupTest {
+	const bots = 8
+	trade := TradeMove(prefix, bots, Jellopy, trades)
+	storage, cart := PersonalStorageMove(Jellopy, personal), CartMove(Jellopy, personal)
+	trade.Weight, storage.Weight, cart.Weight = 40, 4, 6
+	return DupTest{
+		Server:   srv,
+		Bots:     bots,
+		Prefix:   prefix,
+		Duration: 8 * time.Second,
+		Seed:     1,
+		Moves:    []Move{trade, storage, cart},
+		Settle:   SettleTrades,
+		Setup:    CartSetup(5000),
+	}
+}
+
+// checkTradeReport checks that the bots traded, and that no item came
+// into an inventory that is not explained by a move the bots saw.
+func checkTradeReport(t *testing.T, rep DupReport, c *TradeCounts) {
+	t.Helper()
+	t.Logf("trades: %d requests, %d refused, %d opened, %d completed, %d closed otherwise, %d connections closed in a trade; moves %v, %d audits and %d with a bot away, %d logins again; %d Jellopy, %d zeny",
+		c.Requested.Load(), c.Refused.Load(), c.Opened.Load(), c.Completed.Load(), c.Cancelled.Load(), c.Dropped.Load(),
+		rep.Moves, rep.Audits, rep.Partial, rep.Reconnects, rep.End.Items[Jellopy], rep.End.Zeny)
+	if c.Completed.Load() == 0 || c.Cancelled.Load() == 0 || c.Dropped.Load() == 0 || rep.Audits < 5 {
+		t.Errorf("too little happened: %d trades completed, %d closed otherwise, %d connections closed, %d audits",
+			c.Completed.Load(), c.Cancelled.Load(), c.Dropped.Load(), rep.Audits)
+	}
+	if rep.Dropped != 0 || rep.Added > rep.Reconnects || -rep.Added > rep.Reconnects {
+		t.Errorf("%d drops and %d items came into inventories from elsewhere, with %d logins again", rep.Dropped, rep.Added, rep.Reconnects)
+	}
+}
+
+// TestDuplicationTrades runs the trade duplication test without a
+// database.
+func TestDuplicationTrades(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", StartJob: MerchantJob, Race: true})
+	var trades TradeCounts
+	var personal PersonalCounts
+	d := tradeTest(srv, "Trader", &trades, &personal)
+	rep := d.Run(t)
+	checkTradeReport(t, rep, &trades)
+	srv.CheckLogs()
+}
+
+// TestDuplicationTradesWithDatabase runs the trade duplication test with
+// PostgreSQL, then checks the saved inventories, storages, carts and
+// zeny.
+func TestDuplicationTradesWithDatabase(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30", StartJob: MerchantJob, Database: true, Race: true})
+	var trades TradeCounts
+	var personal PersonalCounts
+	d := tradeTest(srv, "SavedTrader", &trades, &personal)
+	rep := d.Run(t)
+	checkTradeReport(t, rep, &trades)
+	d.CheckDatabase(t, rep)
+	srv.CheckLogs()
+}

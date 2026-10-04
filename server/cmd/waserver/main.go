@@ -90,6 +90,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 	"github.com/lxsmnsyc/wathena/server/variables"
@@ -439,6 +440,9 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
+	// Storages and carts load at login and leave memory after their last
+	// commit (decision 0023). Without a database they stay in memory.
+	storages := storage.NewRegistry(nil)
 	zones := make([]*zone.Zone, len(names))
 	monsters, warpCount, npcCount := 0, 0, 0
 	for i, n := range names {
@@ -454,7 +458,7 @@ func runAll(name string, args []string) error {
 			z.Start.Job, z.StartBaseLevel, z.StartJobLevel = sj.job, sj.base, sj.jobLevel
 		}
 		z.SaveMap = name
-		z.Chat, z.Jail, z.Clock, z.Social = hub, jail, clock, socials
+		z.Chat, z.Jail, z.Clock, z.Social, z.Storages = hub, jail, clock, socials, storages
 		z.SetWarps(warps[n])
 		z.SetNPCs(loaded.npcs[n])
 		z.Mods = loaded.zone
@@ -499,6 +503,7 @@ func runAll(name string, args []string) error {
 	worldName := worldRow.Name
 	if pool != nil {
 		st = store.New(pool, store.Options{Log: log})
+		storages.Loader = st
 		gw.Characters = dbCharacters{store: st, world: w}
 		hc.checks = append(hc.checks, pool.Ping)
 		// Transfers commit the characters they change with their log
@@ -625,6 +630,8 @@ func runAll(name string, args []string) error {
 			dbg.Handle("POST /debug/wathena/clock", clockHandler(dclock))
 			dbg.Handle("POST /debug/wathena/emblem", devEmblemHandler(socials))
 			dbg.Handle("POST /debug/wathena/guild-storage", devGuildStorageHandler(w))
+			dbg.Handle("POST /debug/wathena/storage", devStorageHandler(w))
+			dbg.Handle("POST /debug/wathena/cart", devCartHandler(w))
 		}
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
 	}
@@ -817,7 +824,7 @@ func (c storeCommitter) Commit(saves []zone.CommitSave, storages []zone.StorageC
 	}
 	writes := make([]store.StorageWrite, 0, len(storages))
 	for _, s := range storages {
-		writes = append(writes, store.StorageWrite{Guild: s.Guild, Base: s.Base, Cur: s.Cur})
+		writes = append(writes, store.StorageWrite{Guild: s.Guild, Key: s.Key, Base: s.Base, Cur: s.Cur})
 	}
 	c.store.CommitWith(entries, writes, logs)
 }

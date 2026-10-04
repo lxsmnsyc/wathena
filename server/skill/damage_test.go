@@ -267,7 +267,7 @@ func (f *damageFixture) attacker(t testing.TB, c *skillCase, def *Def) (*battle.
 	ch := status.Character{Job: c.Job, Male: c.male(), BaseLevel: 99, JobLevel: f.jobLevels[key], Stats: builds[b], Skills: skills}
 	ammo := uint32(0)
 	if c.Weapon != 0 {
-		inv := &item.Inventory{}
+		inv := item.NewInventory()
 		wd, ok := f.items.Lookup(c.Weapon)
 		if !ok {
 			return nil, fmt.Errorf("item %d missing", c.Weapon)

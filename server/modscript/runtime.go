@@ -262,6 +262,7 @@ type handler struct {
 	status *statusFilter
 	skill  *skillFilter
 	chat   *chatFilter
+	trade  *tradeFilter
 }
 
 type timer struct {
@@ -348,6 +349,8 @@ func (r *Runtime) init() error {
 		{"player_send_message", r.playerSendMessage},
 		{"player_give_item", r.playerGiveItem},
 		{"player_count_item", r.playerCountItem},
+		{"player_open_storage", r.playerOpenStorage},
+		{"player_open_guild_storage", r.playerOpenGuildStorage},
 		{"player_give_group", r.playerGiveGroup},
 		{"player_heal", r.playerHeal},
 		{"player_warp", r.playerWarp},
@@ -445,7 +448,6 @@ func (r *Runtime) init() error {
 		{"player_friend", r.playerFriend},
 		{"rules_limits", r.rulesLimits},
 		{"guild_field", r.guildField},
-		{"core_guild_storage", r.coreGuildStorage},
 		{"core_guild_storage_log", r.coreGuildStorageLog},
 		{"guild_call", r.guildCall},
 		{"guilds_create", r.guildsCreate},
@@ -898,6 +900,9 @@ var Events = map[string][]string{
 	"guild_join":   {KindMod, KindEvent},
 	"guild_leave":  {KindMod, KindEvent},
 	"guild_change": {KindMod, KindEvent},
+	// trade is a world event: any trade on the context's map (review
+	// decision 29).
+	"trade": {KindMod, KindNPC, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

@@ -11,7 +11,7 @@ import (
 // first as its leader, and gives each the party view, as the registry's
 // notices would. Players without a session join the registry without an
 // inbox. It returns the party's ID.
-func formParty(t *testing.T, z *Zone, opts social.Options, players ...*Player) int64 {
+func formParty(t testing.TB, z *Zone, opts social.Options, players ...*Player) int64 {
 	t.Helper()
 	reg := z.socialHub()
 	for _, p := range players {

@@ -239,12 +239,12 @@ func (q *Queries) DeleteTimedBonuses(ctx context.Context, characterID int64) err
 
 const insertInventory = `-- name: InsertInventory :exec
 INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards,
-    rolls, card_rolls, random_options, identified)
+    rolls, card_rolls, random_options, identified, bound)
 SELECT $1, unnest($2::smallint[]), unnest($3::integer[]),
     unnest($4::integer[]), unnest($5::uuid[]), unnest($6::integer[]),
     unnest($7::smallint[]), unnest($8::text[])::integer[],
     unnest($9::text[])::jsonb, unnest($10::text[])::jsonb,
-    unnest($11::text[])::jsonb, unnest($12::boolean[])
+    unnest($11::text[])::jsonb, unnest($12::boolean[]), unnest($13::smallint[])
 `
 
 type InsertInventoryParams struct {
@@ -260,6 +260,7 @@ type InsertInventoryParams struct {
 	CardRolls     []string
 	RandomOptions []string
 	Identified    []bool
+	Bounds        []int
 }
 
 // InsertInventory writes items in one statement. Each item's cards come
@@ -280,6 +281,7 @@ func (q *Queries) InsertInventory(ctx context.Context, arg InsertInventoryParams
 		arg.CardRolls,
 		arg.RandomOptions,
 		arg.Identified,
+		arg.Bounds,
 	)
 	return err
 }
@@ -363,7 +365,7 @@ func (q *Queries) InsertTimedBonus(ctx context.Context, arg InsertTimedBonusPara
 }
 
 const inventory = `-- name: Inventory :many
-SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified FROM inventory
+SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified, bound FROM inventory
 WHERE character_id = $1
 ORDER BY slot
 `
@@ -380,6 +382,7 @@ type InventoryRow struct {
 	CardRolls     []byte
 	RandomOptions []byte
 	Identified    bool
+	Bound         int
 }
 
 func (q *Queries) Inventory(ctx context.Context, characterID int64) ([]InventoryRow, error) {
@@ -403,6 +406,7 @@ func (q *Queries) Inventory(ctx context.Context, characterID int64) ([]Inventory
 			&i.CardRolls,
 			&i.RandomOptions,
 			&i.Identified,
+			&i.Bound,
 		); err != nil {
 			return nil, err
 		}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/social"
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/store/db"
 )
 
@@ -199,7 +200,8 @@ func storageItem(s db.GuildStorageRow) (character.Item, error) {
 		return character.Item{}, err
 	}
 	it := character.Item{Slot: s.Slot, ID: id, Amount: s.Amount, Serial: s.Serial.Bytes, Refine: s.Refine}
-	row := db.InventoryRow{Slot: s.Slot, Rolls: s.Rolls, CardRolls: s.CardRolls, RandomOptions: s.RandomOptions, Identified: s.Identified}
+	row := db.InventoryRow{Slot: s.Slot, Rolls: s.Rolls, CardRolls: s.CardRolls, RandomOptions: s.RandomOptions, Identified: s.Identified,
+		Bound: s.Bound}
 	if it.Extra, err = readExtra(&row); err != nil {
 		return character.Item{}, err
 	}
@@ -218,13 +220,15 @@ func storageParams(guild int64, items []character.Item) db.InsertGuildStoragePar
 	inv := insertParams(0, items)
 	return db.InsertGuildStorageParams{GuildID: guild, Slots: inv.Slots, ItemIds: inv.ItemIds, Amounts: inv.Amounts, Serials: inv.Serials,
 		Refines: inv.Refines, Cards: inv.Cards, Rolls: inv.Rolls, CardRolls: inv.CardRolls, RandomOptions: inv.RandomOptions,
-		Identified: inv.Identified}
+		Identified: inv.Identified, Bounds: inv.Bounds}
 }
 
-// StorageWrite is a guild storage that a commit saves: what the last
-// commit of it wrote, and what it holds now.
+// StorageWrite is a storage that a commit saves: what the last commit
+// of it wrote, and what it holds now. Guild names a guild storage. Key
+// names an account's storage, an extra storage or a cart (storage.go).
 type StorageWrite struct {
 	Guild     int64
+	Key       storage.Key
 	Base, Cur []character.Item
 }
 
@@ -235,11 +239,20 @@ func writeStorages(ctx context.Context, q *db.Queries, ws []StorageWrite) error 
 	if len(ws) == 0 {
 		return nil
 	}
+	if err := writePersonalStorages(ctx, q, ws); err != nil {
+		return err
+	}
 	var ids []int64
 	for _, w := range ws {
+		if w.Guild == 0 {
+			continue
+		}
 		if !slices.Contains(ids, w.Guild) {
 			ids = append(ids, w.Guild)
 		}
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	slices.Sort(ids)
 	found, err := q.LockGuilds(ctx, ids)
@@ -247,7 +260,7 @@ func writeStorages(ctx context.Context, q *db.Queries, ws []StorageWrite) error 
 		return err
 	}
 	for _, w := range ws {
-		if !slices.Contains(found, w.Guild) {
+		if w.Guild == 0 || !slices.Contains(found, w.Guild) {
 			continue
 		}
 		del, ins := diffItems(w.Base, w.Cur)

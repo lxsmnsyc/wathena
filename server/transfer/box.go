@@ -55,7 +55,7 @@ func (b *InventoryBox) Owner() Owner { return b.Who }
 
 // Slot returns slot i.
 func (b *InventoryBox) Slot(i int) *item.Slot {
-	if i < 0 || i >= item.MaxInventory {
+	if i < 0 || i >= len(b.Inv.Slots) {
 		return nil
 	}
 	return &b.Inv.Slots[i]
@@ -85,9 +85,8 @@ func (b *InventoryBox) Take(i, amount int) bool { return b.Inv.Delete(b.Items, i
 // Clone copies the inventory. Slices in slots are shared, since Put and
 // Take replace them and never change them in place.
 func (b *InventoryBox) Clone() Box {
-	inv := *b.Inv
 	c := *b
-	c.Inv = &inv
+	c.Inv = b.Inv.Clone()
 	return &c
 }
 
@@ -143,17 +142,31 @@ func (b *ListBox) Put(s *item.Slot, amount int) (int, item.AddResult) {
 			return i, item.AddSuccess
 		}
 	}
+	// storage_additem: a full box is one whose filled slots reach its
+	// size. A box over its size, after a limit was lowered, keeps its
+	// items and takes no new stack.
+	if b.used() >= b.Size {
+		return -1, item.AddOverItem
+	}
 	i := slices.IndexFunc(b.Slots, func(o item.Slot) bool { return o.ID == 0 })
 	if i < 0 {
-		if len(b.Slots) >= b.Size {
-			return -1, item.AddOverItem
-		}
 		b.Slots = append(b.Slots, item.Slot{})
 		i = len(b.Slots) - 1
 	}
 	b.Slots[i] = item.Slot{ID: s.ID, Amount: amount, Refine: s.Refine, Cards: slices.Clone(s.Cards), Broken: s.Broken, Extra: s.Clone()}
 	b.Weight += d.Weight * amount
 	return i, item.AddSuccess
+}
+
+// used is how many slots hold items.
+func (b *ListBox) used() int {
+	n := 0
+	for i := range b.Slots {
+		if b.Slots[i].ID != 0 {
+			n++
+		}
+	}
+	return n
 }
 
 // Take removes an amount from a slot.

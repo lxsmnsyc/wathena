@@ -26,8 +26,8 @@ func TestRulesetLimitsAndRules(t *testing.T) {
 	r := s.Ruleset
 	want := map[string]int{"party_members": 64, "friends": 80, "block_list": 5}
 	for k, v := range want {
-		if r.Limits[k] != v {
-			t.Errorf("limit %s = %d, want %d", k, r.Limits[k], v)
+		if r.Limits[k].Base != v || !r.Limits[k].HasBase || r.Limits[k].HasMax {
+			t.Errorf("limit %s = %+v, want %d", k, r.Limits[k], v)
 		}
 	}
 	if r.Rules["party_share_level"] != 30 || r.Rules["friend_auto_add"] != 0 || r.Rules["party_even_share_bonus"] != 10 {
@@ -36,6 +36,8 @@ func TestRulesetLimitsAndRules(t *testing.T) {
 	l, err := rules.LimitsOf(r.Limits)
 	wantLimits := rules.DefaultLimits()
 	wantLimits.PartyMembers, wantLimits.Friends, wantLimits.BlockList = 64, 80, 5
+	// A base above the default max raises the max with it.
+	wantLimits.Max[0], wantLimits.Max[1] = 64, 80
 	if err != nil || l != wantLimits {
 		t.Errorf("limits %+v %v", l, err)
 	}
@@ -45,9 +47,11 @@ func TestRulesetLimitsAndRules(t *testing.T) {
 	}
 
 	for _, c := range []struct{ yaml, msg string }{
-		{"limits:\n      party_members: 65", "party_members is 2 to 64, not 65"},
-		{"limits:\n      friends: 0", "friends is 1 to 200, not 0"},
-		{"limits:\n      block_list: 101", "block_list is 1 to 100, not 101"},
+		{"limits:\n      party_members: 257", "party_members is 2 to 256, not 257"},
+		{"limits:\n      friends: 0", "friends is 1 to 1000, not 0"},
+		{"limits:\n      block_list: 1001", "block_list is 1 to 1000, not 1001"},
+		{"limits:\n      inventory_slots: { base: 100, max: 1001 }", "inventory_slots: the max is at most 1000, the engine's ceiling, not 1001"},
+		{"limits:\n      storage_slots: { size: 5 }", "a limit has base and max, not size"},
 		{"limits:\n      card_slots: 8", `"card_slots" is not a ruleset limit`},
 		{"rules:\n      party_item_share_type: 4", "party_item_share_type is 0 to 3, not 4"},
 		{"rules:\n      party_share_level: high", "party_share_level is a whole number"},
@@ -62,8 +66,50 @@ func TestRulesetLimitsAndRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if l, _ := rules.LimitsOf(s.Ruleset.Limits); l != rules.DefaultLimits() || l.PartyMembers != 12 || l.Friends != 40 || l.BlockList != 20 {
+	if l, _ := rules.LimitsOf(s.Ruleset.Limits); l != rules.DefaultLimits() || l.PartyMembers != 12 || l.Friends != 40 || l.BlockList != 20 ||
+		l.InventorySlots != 100 || l.MaxOf("inventory_slots") != 200 || l.StorageSlots != 600 || l.CartSlots != 100 ||
+		l.GuildStorage != 600 || l.MaxOf("guild_members") != 76 {
 		t.Errorf("core limits %+v", l)
+	}
+}
+
+// TestRulesetLimitRanges checks the base and max of limits (review
+// decision 29): a range merges down the chain part by part, a base above
+// its max fails the load, and a max above the engine's ceiling fails.
+func TestRulesetLimitRanges(t *testing.T) {
+	dir := t.TempDir()
+	writeMod(t, dir, "wide", map[string]string{"mod.yaml": manifest("example.wide",
+		"provides:\n  ruleset:\n    extends: core.ruleset.renewal\n    limits:\n      inventory_slots: { base: 150, max: 400 }\n      storage_slots: 1200")})
+	writeMod(t, dir, "wider", map[string]string{"mod.yaml": manifest("example.wider",
+		"provides:\n  ruleset:\n    extends: example.wide\n    limits:\n      inventory_slots: { max: 600 }\n      cart_slots: { base: 50, max: 300 }")})
+	writeMod(t, dir, "bad", map[string]string{"mod.yaml": manifest("example.badrange",
+		"provides:\n  ruleset:\n    extends: example.wide\n    limits:\n      inventory_slots: { max: 120 }")})
+	s, err := resolve(t, dir, Config{Ruleset: "example.wider"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, err := rules.LimitsOf(s.Ruleset.Limits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l.InventorySlots != 150 || l.MaxOf("inventory_slots") != 600 || l.StorageSlots != 1200 || l.MaxOf("storage_slots") != 1200 ||
+		l.CartSlots != 50 || l.MaxOf("cart_slots") != 300 {
+		t.Errorf("limits %+v", l)
+	}
+	s, err = resolve(t, dir, Config{Ruleset: "example.badrange"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rules.LimitsOf(s.Ruleset.Limits); err == nil || !strings.Contains(err.Error(), "inventory_slots: the base, 150, is above the max, 120") {
+		t.Errorf("a base above the max: %v", err)
+	}
+	for _, b := range rules.LimitBounds {
+		if b.Default > b.DefaultMax || b.DefaultMax > b.Max || b.Min > b.Default {
+			t.Errorf("%s: the default range %d to %d does not fit %d to %d", b.Name, b.Default, b.DefaultMax, b.Min, b.Max)
+		}
+	}
+	if len(rules.LimitBounds) != rules.NumLimits {
+		t.Errorf("NumLimits is %d, and there are %d limits", rules.NumLimits, len(rules.LimitBounds))
 	}
 }
 
@@ -84,12 +130,17 @@ var boundTests = map[string][]string{
 	"guild_allies":                {"server/social:TestGuildRelations"},
 	"guild_enemies":               {"server/social:TestGuildRelations"},
 	"guild_storage":               {"server/social:TestGuildStorageOpen"},
+	"inventory_slots":             {"server/zone:TestInventorySlotsLimit"},
+	"storage_slots":               {"server/zone:TestStorageSlotsLimit"},
+	"cart_slots":                  {"server/zone:TestCartSlotsLimit"},
 	"guild_emperium_check":        {"server/zone:TestGuildAcrossZones", "server/zone:TestGuildEmperiumCheckOff"},
 	"guild_exp_limit":             {"server/social:TestGuildPositionsAndPermissions"},
 	"emergency_call":              {"server/zone:TestGuildEmergencyCall"},
 	"guild_skill_relog_delay":     {"server/zone:TestGuildSkillRelogDelay"},
 	"guild_leaderchange_delay":    {"server/social:TestGuildMasterChangeDelay"},
 	"guild_alliance_onlygm":       {"server/social:TestGuildAllianceOnlyMaster"},
+	"max_cart_weight":             {"server/zone:TestCartWeight"},
+	"basic_skill_check":           {"server/zone:TestTradeBasicSkill"},
 }
 
 // TestEveryLimitAndRuleTested fails for a limit or rule without a

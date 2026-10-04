@@ -14,9 +14,13 @@ import (
 
 // Limits from rAthena's mmo.hpp for recent clients.
 const (
-	// MaxInventory is MAX_INVENTORY: INVENTORY_BASE_SIZE plus
-	// INVENTORY_EXPANSION_SIZE.
-	MaxInventory = 200
+	// MaxInventory is the engine's ceiling of the inventory_slots limit:
+	// no inventory has more slots (decision 0023). A world's inventories
+	// have the limit's max, rAthena's MAX_INVENTORY of 200 by default.
+	MaxInventory = 1000
+	// DefaultSlots is MAX_INVENTORY: INVENTORY_BASE_SIZE plus
+	// INVENTORY_EXPANSION_SIZE, the inventory_slots limit's default max.
+	DefaultSlots = 200
 	// BaseSlots is INVENTORY_BASE_SIZE, the inventory_slots a new
 	// character has. Slots from it on are for inventory expansions.
 	BaseSlots = 100
@@ -112,6 +116,10 @@ type Def struct {
 	Sell int `json:"sell"`
 	// NoSell is Trade.NoSell: NPC shops do not buy the item.
 	NoSell bool `json:"no_sell"`
+	// Restrictions are rAthena's item_trade flags by name, such as
+	// no_trade (restrict.go). no_drop and no_sell agree with NoDrop and
+	// NoSell.
+	Restrictions []string `json:"restrictions"`
 
 	// The equipment fields come from equipment.json (MergeEquipment).
 

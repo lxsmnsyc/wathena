@@ -209,7 +209,7 @@ func TestCardsAndSaving(t *testing.T) {
 	if i < 0 || c.Items[i].Equip != item.EqpArmor || c.Items[i].Refine != 4 || !slices.Equal(c.Items[i].Cards, []uint32{4001}) {
 		t.Fatalf("saved items %+v", c.Items)
 	}
-	inv := restoreInventory(z.Items, c)
+	inv := restoreInventory(z.Items, c, z.limits())
 	if s := inv.Slots[c.Items[i].Slot]; s.Equip != item.EqpArmor || s.Refine != 4 || len(s.Cards) != 1 {
 		t.Errorf("restored slot %+v", s)
 	}

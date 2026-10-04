@@ -16,6 +16,10 @@ type Item struct {
 	Amount int
 	// Equip holds the positions the item is equipped in, or 0.
 	Equip uint32
+	// Bound is who the copy is bound to, and Restrictions the item's
+	// ItemRestriction bits.
+	Bound        wathenav1.ItemBound
+	Restrictions uint32
 }
 
 // gameState is what a bot knows about its own character. The caller of
@@ -36,9 +40,13 @@ func newGameState() gameState {
 func (g *gameState) apply(e *wathenav1.Event) {
 	switch {
 	case e.HasInventory():
-		clear(g.items)
+		// A page with more set adds to the list. Only the first page
+		// replaces it.
+		if !e.GetInventory().GetMore() {
+			clear(g.items)
+		}
 		for _, it := range e.GetInventory().GetItems() {
-			g.items[int(it.GetSlot())] = Item{Slot: int(it.GetSlot()), ID: it.GetItemId(), Amount: int(it.GetAmount()), Equip: it.GetEquip()}
+			g.items[int(it.GetSlot())] = itemOf(it)
 		}
 	case e.HasInventoryAdd():
 		a := e.GetInventoryAdd()
@@ -46,6 +54,7 @@ func (g *gameState) apply(e *wathenav1.Event) {
 		it := g.items[slot]
 		it.Slot, it.ID = slot, a.GetItemId()
 		it.Amount += int(a.GetAmount())
+		it.Bound, it.Restrictions = a.GetBound(), a.GetRestrictions()
 		g.items[slot] = it
 	case e.HasInventoryRemove():
 		r := e.GetInventoryRemove()
@@ -108,11 +117,18 @@ type Game struct {
 	Friends        []Friend
 	FriendRequests []string
 	// Guild is the bot's guild, or nil. GuildInvite is the last guild
-	// invite the bot has not answered, or nil. Storage is the storage
-	// window the bot has open, or nil.
+	// invite the bot has not answered, or nil.
 	Guild       *Guild
 	GuildInvite *wathenav1.GuildInvite
-	Storage     *Storage
+	// Storage is the storage window the bot has open, or nil. Cart is
+	// the bot's cart, or nil without one.
+	Storage, Cart *Storage
+	// TradeRequest is the last trade request the bot has not answered,
+	// or nil. Trade is the open trade window, or nil. TradeClosed is the
+	// outcome of the last TradeClose.
+	TradeRequest *wathenav1.TradeRequest
+	Trade        *Trade
+	TradeClosed  wathenav1.TradeOutcome
 }
 
 // Count is the amount of an item in the inventory.
@@ -142,12 +158,14 @@ func (b *Bot) Game() Game {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	party, invite, friends, requests := b.social.clone()
-	guild, guildInvite, storage := b.guildSt.clone()
+	guild, guildInvite := b.guildSt.clone()
+	request, trade := b.tradeSt.clone()
 	return Game{
 		Items: maps.Clone(b.game.items), Stats: maps.Clone(b.game.stats), Skills: maps.Clone(b.game.skills),
 		Dialog: b.game.dialog, Shop: b.game.shop,
 		Party: party, Invite: invite, Friends: friends, FriendRequests: requests,
-		Guild: guild, GuildInvite: guildInvite, Storage: storage,
+		Guild: guild, GuildInvite: guildInvite, Storage: b.storageSt.window.clone(), Cart: b.storageSt.cart.clone(),
+		TradeRequest: request, Trade: trade, TradeClosed: b.tradeSt.closed,
 	}
 }
 

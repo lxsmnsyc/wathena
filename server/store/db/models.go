@@ -250,6 +250,7 @@ type GuildStorage struct {
 	CardRolls     []byte
 	RandomOptions []byte
 	Identified    bool
+	Bound         int
 }
 
 type Inventory struct {
@@ -265,6 +266,7 @@ type Inventory struct {
 	CardRolls     []byte
 	RandomOptions []byte
 	Identified    bool
+	Bound         int
 }
 
 type ItemLog struct {
@@ -285,6 +287,9 @@ type ItemLog struct {
 	CardRolls     []byte
 	RandomOptions []byte
 	Identified    bool
+	FromStorage   int
+	ToStorage     int
+	Bound         int
 }
 
 type ItemLogDefault struct {
@@ -386,6 +391,24 @@ type Sanction struct {
 	ReturnMap   string
 	ReturnX     int
 	ReturnY     int
+}
+
+type StorageItem struct {
+	Serial        pgtype.UUID
+	Holder        string
+	AccountID     pgtype.Int8
+	CharacterID   pgtype.Int8
+	Storage       int
+	Slot          int
+	ItemID        int
+	Amount        int
+	Refine        int
+	Cards         []int
+	Rolls         []byte
+	CardRolls     []byte
+	RandomOptions []byte
+	Identified    bool
+	Bound         int
 }
 
 type World struct {

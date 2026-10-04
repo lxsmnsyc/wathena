@@ -101,7 +101,7 @@ func (r *NPCResult) NPCReport() string {
 	fmt.Fprintf(&b, "| Job change NPCs (script NPCs of the jobs folders) | %d | %d | %d | %d | %d |\n\n", jobNPCs.total, jobNPCs.placed, jobNPCs.full, jobNPCs.partial, jobNPCs.none)
 	b.WriteString("- Shops that are not placed have no map or no sprite: scripts open them with `callshop`, which converts to `player:open_shop`.\n")
 	b.WriteString("- cashshop, itemshop, pointshop and marketshop lines need cash points, item and point currencies, and stock, which wAthena does not have yet.\n")
-	b.WriteString("- Kafra storage and pushcart rental say they are not available yet.\n")
+	b.WriteString("- Pushcart rental says it is not available yet.\n")
 	fmt.Fprintf(&b, "- rAthena's getitem and delitem do nothing for an amount of 0 or less, and wAthena's calls raise an error. %d scripts and functions have a fixed amount of 0 or less, which converts to nothing. %d have a computed amount, which `R.give_item` and `R.take_item` check first.\n\n", len(r.conv.zeroAmounts), len(r.conv.checkedAmounts))
 	if len(r.LeftOut) > 0 {
 		b.WriteString("Script NPCs of these folders are not in the extract yet (reference/rathena/README.md, \"NPCs\"):\n\n| Folder | Script NPCs |\n|---|---:|\n")

@@ -129,7 +129,7 @@ return function()
         conversation:say("[Kafra Leilah]", "In the future, please", "ask the Kafra Employee on", "duty if you wish to use", "any of the Kafra Services.", "Thank you for your patronage.")
         require("core.functions.F_CheckKafCode")(player, conversation, npc)
         conversation:close()
-        R.not_available(conversation, "Storage")
+        player:open_storage()
         goto switch_end_2
         ::case_5::
         conversation:say("[Kafra Leilah]", "My apologies, but I'm", "not on duty. I'd assist you", "if I could, but actually don't", "have any available Pushcarts.", "Why don't you ask another Kafra", "Employee for assistance?")

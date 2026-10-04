@@ -41,7 +41,8 @@ type auditZone struct {
 }
 
 // guildStorageMap is the map name of the audit entry that lists the
-// guild storages, one "player" per guild named guild:<ID>.
+// guild storages, one "player" per guild named guild:<ID>, and the
+// storages and carts in memory, one per storage named storage:<key>.
 const guildStorageMap = "guild_storage"
 
 // auditHandler lists every item and all zeny that players and the
@@ -82,6 +83,13 @@ func auditHandler(w *world.World) http.HandlerFunc {
 				st := auditZone{Map: guildStorageMap, Players: []auditPlayer{}, Ground: []auditGround{}}
 				for _, s := range a.Storages {
 					ap := auditPlayer{Name: fmt.Sprintf("guild:%d", s.Guild), Items: []auditItem{}}
+					for _, it := range s.Items {
+						ap.Items = append(ap.Items, auditItem{Slot: it.Slot, Item: it.ID, Amount: it.Amount, Serial: it.Serial.String()})
+					}
+					st.Players = append(st.Players, ap)
+				}
+				for _, s := range a.Personal {
+					ap := auditPlayer{Name: "storage:" + s.Key.String(), Items: []auditItem{}}
 					for _, it := range s.Items {
 						ap.Items = append(ap.Items, auditItem{Slot: it.Slot, Item: it.ID, Amount: it.Amount, Serial: it.Serial.String()})
 					}

@@ -16,12 +16,14 @@ import (
 // their form; the zone and the social registry check the rest. A command
 // whose form is wrong is acknowledged and does nothing.
 
-// maxStorageSlot is past the highest guild storage slot, the hard maximum
-// of the guild_storage limit.
-var maxStorageSlot = func() uint32 {
-	b, _ := rules.FindBound(rules.LimitBounds, "guild_storage")
-	return uint32(b.Max) // #nosec G115 -- 2000.
-}()
+// maxStorageSlot is past the highest storage slot: the engine's ceiling
+// of storage_slots and guild_storage. Extra storage records are at most
+// the storage_slots ceiling too.
+var maxStorageSlot = uint32(max(rules.Ceiling("guild_storage"), rules.Ceiling("storage_slots"))) // #nosec G115 -- 10000.
+
+// maxCartSlot is past the highest cart slot, the engine's ceiling of
+// cart_slots.
+var maxCartSlot = uint32(rules.Ceiling("cart_slots")) // #nosec G115 -- 1000.
 
 // guildID reads a guild ID from the protocol.
 func guildID(v uint64) (int64, bool) {
@@ -144,23 +146,77 @@ func guildCommand(p *zone.Session, seq uint32, c *wathenav1.GuildCommand) bool {
 }
 
 func storageCommand(p *zone.Session, seq uint32, c *wathenav1.StorageCommand) bool {
+	move := func(m *wathenav1.StorageMove, limit uint32) (int, int, bool) {
+		if m.GetSlot() >= limit || m.GetAmount() < 1 || m.GetAmount() > item.MaxAmount {
+			return 0, 0, false
+		}
+		return int(m.GetSlot()), int(m.GetAmount()), true
+	}
+	var (
+		kind         zone.StorageMoveKind
+		slot, amount int
+		ok           bool
+	)
 	switch {
 	case c.HasPut():
-		m := c.GetPut()
-		if m.GetSlot() >= item.MaxInventory || m.GetAmount() < 1 || m.GetAmount() > item.MaxAmount {
-			return p.Ack(seq)
-		}
-		return p.StoragePut(seq, int(m.GetSlot()), int(m.GetAmount()))
+		kind = zone.MovePut
+		slot, amount, ok = move(c.GetPut(), item.MaxInventory)
 	case c.HasTake():
-		m := c.GetTake()
-		if m.GetSlot() >= maxStorageSlot || m.GetAmount() < 1 || m.GetAmount() > item.MaxAmount {
-			return p.Ack(seq)
-		}
-		return p.StorageTake(seq, int(m.GetSlot()), int(m.GetAmount()))
+		kind = zone.MoveTake
+		slot, amount, ok = move(c.GetTake(), maxStorageSlot)
+	case c.HasCartPut():
+		kind = zone.MoveCartPut
+		slot, amount, ok = move(c.GetCartPut(), item.MaxInventory)
+	case c.HasCartTake():
+		kind = zone.MoveCartTake
+		slot, amount, ok = move(c.GetCartTake(), maxCartSlot)
+	case c.HasCartToStorage():
+		kind = zone.MoveCartToStorage
+		slot, amount, ok = move(c.GetCartToStorage(), maxCartSlot)
+	case c.HasStorageToCart():
+		kind = zone.MoveStorageToCart
+		slot, amount, ok = move(c.GetStorageToCart(), maxStorageSlot)
 	case c.HasClose():
 		return p.StorageClose(seq)
 	case c.HasLog():
 		return p.StorageLog(seq)
 	}
-	return p.Ack(seq)
+	if !ok {
+		return p.Ack(seq)
+	}
+	return p.StorageMove(seq, kind, slot, amount)
+}
+
+// tradeCommand checks the form of a trade command.
+func tradeCommand(p *zone.Session, seq uint32, c *wathenav1.TradeCommand) bool {
+	t := zone.TradeAction{}
+	switch {
+	case c.HasRequest():
+		if c.GetRequest() == 0 {
+			return p.Ack(seq)
+		}
+		t.Request = c.GetRequest()
+	case c.HasRespond():
+		t.Respond, t.Accept = true, c.GetRespond()
+	case c.HasAddItem():
+		m := c.GetAddItem()
+		if m.GetSlot() >= item.MaxInventory || m.GetAmount() < 1 || m.GetAmount() > item.MaxAmount {
+			return p.Ack(seq)
+		}
+		t.AddSlot, t.AddAmount = int(m.GetSlot()), int(m.GetAmount())
+	case c.HasAddZeny():
+		if int64(c.GetAddZeny()) > item.MaxZeny {
+			return p.Ack(seq)
+		}
+		t.Zeny, t.HasZeny = int64(c.GetAddZeny()), true
+	case c.HasLock():
+		t.Lock = c.GetLock()
+	case c.HasConfirm():
+		t.Confirm = c.GetConfirm()
+	case c.HasCancel():
+		t.Cancel = c.GetCancel()
+	default:
+		return p.Ack(seq)
+	}
+	return p.Trade(seq, t)
 }

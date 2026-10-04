@@ -38,7 +38,7 @@ function R.unsupported(what)
 end
 
 -- not_available answers a service that wAthena does not have yet, such as
--- Kafra storage. It returns 1, as the functions it replaces do.
+-- pushcart rental. It returns 1, as the functions it replaces do.
 function R.not_available(conversation, what)
 	conversation:say(what .. " is not available yet.")
 	return 1
@@ -207,20 +207,28 @@ function R.aimplode(var, player, sep)
 end
 
 -- give_item and take_item are getitem and delitem with a computed
--- amount. rAthena does nothing for an amount of 0 or less, where
--- wAthena's calls raise an error.
-function R.give_item(player, item, amount)
+-- amount, and the storage and bound forms with their options. rAthena
+-- does nothing for an amount of 0 or less, where wAthena's calls raise
+-- an error.
+function R.give_item(player, item, amount, options)
 	if amount <= 0 then
 		return true
 	end
-	return player:give_item(item, amount)
+	return player:give_item(item, amount, options)
 end
 
-function R.take_item(player, item, amount)
+function R.take_item(player, item, amount, options)
 	if amount <= 0 then
 		return true
 	end
-	return player:take_item(item, amount)
+	return player:take_item(item, amount, options)
+end
+
+-- basic_skill_check is rAthena's basicskillcheck: the ruleset rule
+-- basic_skill_check, which makes storage need Basic Skill level 6. Lua
+-- cannot read ruleset rules yet, so it returns rAthena's default, true.
+function R.basic_skill_check()
+	return true
 end
 
 -- Monsters of rAthena's monster command. alive counts the living
@@ -375,15 +383,18 @@ local function core_internal()
 	return internal
 end
 
+-- guild_storage_codes are rAthena's GSTORAGE_ values of the reasons
+-- player:open_guild_storage gives.
+local guild_storage_codes = { already_open = 1, in_use = 2, no_guild = 3, no_storage = 4, no_permission = 5 }
+
 -- guild_storage is rAthena's guildopenstorage. It opens the player's
 -- guild storage and returns rAthena's GSTORAGE_ value, 0 when it opened.
--- Outside core it says that guild storage is not available, and returns 1.
 function R.guild_storage(conversation, player)
-	local m = core_internal()
-	if m == nil then
-		return R.not_available(conversation, "Guild storage")
+	local ok, why = player:open_guild_storage()
+	if ok then
+		return 0
 	end
-	return m.open_guild_storage(player)
+	return guild_storage_codes[why] or 2
 end
 
 -- guild_storage_log is rAthena's guildopenstorage_log. It sends the player

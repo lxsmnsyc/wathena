@@ -17,7 +17,7 @@ import (
 var goldenNPCs = []string{"kaf_prontera", "Kafra Service", "Woman#payon", "Wayne", "Inn Employee#Ahlma", "Tool Dealer#prt1",
 	"Slot Move Card Sales#slo", "Cursed Spirit#nif"}
 
-var goldenFunctions = []string{"f_kafra", "f_kafset", "f_kaftele", "f_kafend", "f_kafinfo", "f_setkafcode", "f_entkafcode", "f_checkkafcode", "f_innmaid"}
+var goldenFunctions = []string{"f_kafra", "f_kafset", "f_kaftele", "f_kafend", "f_kafinfo", "f_kafstor", "f_canopenstorage", "f_setkafcode", "f_entkafcode", "f_checkkafcode", "f_innmaid"}
 
 func TestNPCGolden(t *testing.T) {
 	res := loadCore(t, reference.Renewal).NPCs

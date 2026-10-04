@@ -20,6 +20,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/tools/convert"
@@ -62,6 +63,10 @@ type Mods struct {
 	// two merges.
 	Companions        *companion.Set
 	CompanionOverlays []*mod.Overlay
+	// Storages are the extra storages of data/storages.yml, by ID, and
+	// StorageOverlay their merge.
+	Storages       []*storage.Record
+	StorageOverlay *mod.Overlay
 	// Chat are the chat channels and filter: core's with the mods'
 	// data/channels.yml and data/chat_filter.yml. ChatOverlays are the two
 	// merges.
@@ -197,8 +202,14 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 			log.Warn("mods: " + n)
 		}
 	}
+	if out.Storages, out.StorageOverlay, err = modStorages(ctx, set, assigned); err != nil {
+		return nil, err
+	}
+	for _, n := range out.StorageOverlay.Notes {
+		log.Warn("mods: " + n)
+	}
 	for _, a := range assigned.Assigned {
-		if a.Kind == mod.SkillIDs.Kind || a.Kind == mod.CompanionIDs.Kind || a.Kind == mod.MountIDs.Kind {
+		if a.Kind == mod.SkillIDs.Kind || a.Kind == mod.CompanionIDs.Kind || a.Kind == mod.MountIDs.Kind || a.Kind == mod.StorageIDs.Kind {
 			log.Info("mods: new ID", "kind", a.Kind, "name", a.Name, "id", a.ID, "mod", a.Mod)
 		}
 	}
@@ -268,7 +279,8 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	labelRolls(merged.Data, opts, core.Constants)
 	out.Zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
 		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates,
-		RandomOptions: opts, ItemRolls: rl.ItemRolls, Rules: rl, Companions: out.Companions, Chat: out.Chat}
+		RandomOptions: opts, ItemRolls: rl.ItemRolls, Rules: rl, Companions: out.Companions, Chat: out.Chat,
+		Storages: out.Storages}
 	return out, nil
 }
 

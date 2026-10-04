@@ -33,6 +33,7 @@ message Command {
     PartyBookingCommand party_booking = 23;
     GuildCommand guild = 24;
     StorageCommand storage = 25;
+    TradeCommand trade = 26;
   }
 }
 
@@ -498,27 +499,70 @@ message GuildRelationEnd {
   bool enemy = 2;
 }
 
-// StorageCommand moves items between the inventory and the open storage
-// window, as rAthena's storage packets. The server answers with
-// StorageAdd and StorageRemove, InventoryAdd and InventoryRemove, or
-// StorageResult. Guild storage opens from an NPC.
+// StorageCommand moves items between the inventory, the open storage
+// window and the cart, as rAthena's storage and cart packets. The server
+// answers with StorageAdd and StorageRemove, InventoryAdd and
+// InventoryRemove, or StorageResult. Storage and guild storage open from
+// an NPC. A player has one storage open at a time. The cart is open while
+// the player has one.
 message StorageCommand {
   oneof action {
-    // put moves an amount from an inventory slot into the storage, as
-    // storage_guild_storageadd.
+    // put moves an amount from an inventory slot into the open storage,
+    // as storage_storageadd and storage_guild_storageadd.
     StorageMove put = 1;
-    // take moves an amount from a storage slot into the inventory, as
-    // storage_guild_storageget.
+    // take moves an amount from a slot of the open storage into the
+    // inventory, as storage_storageget and storage_guild_storageget.
     StorageMove take = 2;
-    // close closes the storage window, as storage_guild_storageclose.
+    // close closes the storage window, as storage_storageclose and
+    // storage_guild_storageclose.
     bool close = 3;
     // log asks for the guild storage log, as storage_guild_log_read.
     bool log = 4;
+    // cart_put moves an amount from an inventory slot into the cart, as
+    // pc_putitemtocart.
+    StorageMove cart_put = 5;
+    // cart_take moves an amount from a cart slot into the inventory, as
+    // pc_getitemfromcart.
+    StorageMove cart_take = 6;
+    // cart_to_storage moves an amount from a cart slot into the open
+    // storage, as storage_storageaddfromcart.
+    StorageMove cart_to_storage = 7;
+    // storage_to_cart moves an amount from a slot of the open storage
+    // into the cart, as storage_storagegettocart.
+    StorageMove storage_to_cart = 8;
   }
 }
 
 message StorageMove {
-  // slot is an inventory slot for put, and a storage slot for take.
+  // slot is the slot the amount leaves: an inventory slot for put and
+  // cart_put, a storage slot for take and storage_to_cart, and a cart
+  // slot for cart_take and cart_to_storage.
   uint32 slot = 1;
   uint32 amount = 2;
+}
+
+// TradeCommand is one step of a trade between two players, as rAthena's
+// trade packets (trade.cpp). The server answers with TradeRequest,
+// TradeOpen, TradeOffer, TradeLock, TradeClose and TradeResult.
+message TradeCommand {
+  oneof action {
+    // request asks the player with this entity ID to trade, as
+    // trade_traderequest.
+    uint32 request = 1;
+    // respond answers a TradeRequest, as trade_tradeack.
+    bool respond = 2;
+    // add_item offers an amount of an inventory slot, as
+    // trade_tradeadditem.
+    StorageMove add_item = 3;
+    // add_zeny offers zeny, as trade_tradeaddzeny. It sets the amount;
+    // a second offer is refused, as rAthena's client allows one.
+    uint32 add_zeny = 4;
+    // lock ends the offer, as trade_tradeok.
+    bool lock = 5;
+    // confirm completes the trade once both players locked, as
+    // trade_tradecommit. The trade completes when both confirmed.
+    bool confirm = 6;
+    // cancel ends the trade, as trade_tradecancel.
+    bool cancel = 7;
+  }
 }

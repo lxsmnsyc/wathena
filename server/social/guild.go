@@ -175,9 +175,9 @@ func (g *Guild) isMaster(p *Player) bool {
 func (g *Guild) skill(id int) int { return g.skills[id] }
 
 // maxMembers is guild_calcinfo's max_member: guild_members, and 6 more
-// for each level of Guild Extension.
+// for each level of Guild Extension, up to the limit's max, MAX_GUILD.
 func (r *Registry) maxMembers(g *Guild) int {
-	return r.limits.GuildMembers + g.skill(SkillExtension)*extensionMembers
+	return min(r.limits.GuildMembers+g.skill(SkillExtension)*extensionMembers, max(r.limits.MaxOf("guild_members"), r.limits.GuildMembers))
 }
 
 // position returns a member's position, or a zero one.
@@ -190,6 +190,10 @@ func (g *Guild) position(m *guildMember) Position {
 
 // defaultPositions are mapif_parse_CreateGuild's: GuildMaster with every
 // permission, "Position 2" to the one before the last, and Newbie last.
+// DefaultPositions are a new guild's n positions, as
+// mapif_parse_CreateGuild makes them.
+func DefaultPositions(n int) []Position { return defaultPositions(n) }
+
 func defaultPositions(n int) []Position {
 	out := make([]Position, n)
 	out[0] = Position{Name: "GuildMaster", Invite: true, Expel: true, Storage: true}

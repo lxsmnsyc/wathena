@@ -218,7 +218,7 @@ func (q *Queries) GuildRelations(ctx context.Context) ([]GuildRelationsRow, erro
 }
 
 const guildStorage = `-- name: GuildStorage :many
-SELECT guild_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified
+SELECT guild_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound
 FROM guild_storage
 ORDER BY guild_id, slot
 `
@@ -235,6 +235,7 @@ type GuildStorageRow struct {
 	CardRolls     []byte
 	RandomOptions []byte
 	Identified    bool
+	Bound         int
 }
 
 func (q *Queries) GuildStorage(ctx context.Context) ([]GuildStorageRow, error) {
@@ -258,6 +259,7 @@ func (q *Queries) GuildStorage(ctx context.Context) ([]GuildStorageRow, error) {
 			&i.CardRolls,
 			&i.RandomOptions,
 			&i.Identified,
+			&i.Bound,
 		); err != nil {
 			return nil, err
 		}
@@ -442,12 +444,12 @@ func (q *Queries) InsertGuildRelations(ctx context.Context, arg InsertGuildRelat
 
 const insertGuildStorage = `-- name: InsertGuildStorage :exec
 INSERT INTO guild_storage (guild_id, slot, item_id, amount, serial, refine, cards,
-    rolls, card_rolls, random_options, identified)
+    rolls, card_rolls, random_options, identified, bound)
 SELECT $1, unnest($2::smallint[]), unnest($3::integer[]),
     unnest($4::integer[]), unnest($5::uuid[]),
     unnest($6::smallint[]), unnest($7::text[])::integer[],
     unnest($8::text[])::jsonb, unnest($9::text[])::jsonb,
-    unnest($10::text[])::jsonb, unnest($11::boolean[])
+    unnest($10::text[])::jsonb, unnest($11::boolean[]), unnest($12::smallint[])
 `
 
 type InsertGuildStorageParams struct {
@@ -462,6 +464,7 @@ type InsertGuildStorageParams struct {
 	CardRolls     []string
 	RandomOptions []string
 	Identified    []bool
+	Bounds        []int
 }
 
 // InsertGuildStorage writes items as InsertInventory does.
@@ -478,6 +481,7 @@ func (q *Queries) InsertGuildStorage(ctx context.Context, arg InsertGuildStorage
 		arg.CardRolls,
 		arg.RandomOptions,
 		arg.Identified,
+		arg.Bounds,
 	)
 	return err
 }

@@ -212,9 +212,9 @@ return function(player, conversation, npc, ...)
       do return end
     elseif ((k_menu0[j] or "") == "Use Storage") then
       if (welcome == 2) then
-        R.not_available(conversation, "Storage")
+        require("core.functions.F_KafStor")(player, conversation, npc, 2, 0, 0)
       else
-        R.not_available(conversation, "Storage")
+        require("core.functions.F_KafStor")(player, conversation, npc, 0, R.arg(args, 3), welcome)
       end
       conversation:wait_for_next()
     elseif ((k_menu0[j] or "") == "Use Teleport Service") then
@@ -237,7 +237,7 @@ return function(player, conversation, npc, ...)
       require("core.functions.F_KafEnd")(player, conversation, npc, welcome, 0)
       R.stop()
     elseif ((k_menu0[j] or "") == "Use Guild Storage") then
-      R.not_available(conversation, "Storage")
+      require("core.functions.F_KafStor")(player, conversation, npc, 1, 0)
       conversation:wait_for_next()
     end
   end

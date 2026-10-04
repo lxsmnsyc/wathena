@@ -57,8 +57,8 @@ func TestShopLines(t *testing.T) {
 	sl := func(slot, n uint32) *wathenav1.ShopSellLine {
 		return wathenav1.ShopSellLine_builder{Slot: slot, Amount: n}.Build()
 	}
-	if _, ok := sellLines(wathenav1.ShopSell_builder{Items: []*wathenav1.ShopSellLine{sl(200, 1)}}.Build()); ok {
-		t.Error("slot 200 was accepted")
+	if _, ok := sellLines(wathenav1.ShopSell_builder{Items: []*wathenav1.ShopSellLine{sl(1000, 1)}}.Build()); ok {
+		t.Error("slot 1000 was accepted")
 	}
 	if l, ok := sellLines(wathenav1.ShopSell_builder{Items: []*wathenav1.ShopSellLine{sl(199, 2)}}.Build()); !ok || l[0].Slot != 199 {
 		t.Errorf("a good sale: %v %v", l, ok)

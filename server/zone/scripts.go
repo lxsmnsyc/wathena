@@ -20,6 +20,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/social"
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
 
@@ -71,6 +72,8 @@ type Mods struct {
 	// Companions are the companions and mounts. Without them the zone
 	// uses core's (companion.Core).
 	Companions *companion.Set
+	// Storages are the extra storages of data/storages.yml, by ID.
+	Storages []*storage.Record
 	// Chat is the chat channels and filter, for a zone that makes its own
 	// chat hub, such as a headless zone. Without it the zone uses core's
 	// (chat.Core).
@@ -153,6 +156,8 @@ type scriptEvent struct {
 	party *modscript.PartyEvent
 	// guild is set for a guild event, which runs with FireGuild.
 	guild *modscript.GuildEvent
+	// trade is set for the trade event, which runs with FireTrade.
+	trade *modscript.TradeEvent
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -251,6 +256,8 @@ func (z *Zone) runScripts() {
 			z.scripts.FireStatus(ev.name, *ev.status)
 		case ev.chat != nil:
 			z.scripts.FireChat(*ev.chat)
+		case ev.trade != nil:
+			z.scripts.FireTrade(*ev.trade)
 		case ev.party != nil:
 			z.scripts.FireParty(*ev.party)
 		case ev.guild != nil:

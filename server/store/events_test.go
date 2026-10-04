@@ -12,9 +12,12 @@ import (
 
 type runner struct{ started int }
 
-func (r *runner) Start(context.Context, worldevent.Def, worldevent.Run) error { r.started++; return nil }
-func (r *runner) End(context.Context, worldevent.Def, worldevent.Run) error   { return nil }
-func (r *runner) Condition(context.Context, worldevent.Def) (bool, error)     { return false, nil }
+func (r *runner) Start(context.Context, worldevent.Def, worldevent.Run) error {
+	r.started++
+	return nil
+}
+func (r *runner) End(context.Context, worldevent.Def, worldevent.Run) error { return nil }
+func (r *runner) Condition(context.Context, worldevent.Def) (bool, error)   { return false, nil }
 
 // TestEventRuns checks that a run recorded in PostgreSQL keeps a
 // restarted scheduler from running the same time again.

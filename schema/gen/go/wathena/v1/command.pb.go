@@ -463,6 +463,15 @@ func (x *Command) GetStorage() *StorageCommand {
 	return nil
 }
 
+func (x *Command) GetTrade() *TradeCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Trade); ok {
+			return x.Trade
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -661,6 +670,14 @@ func (x *Command) SetStorage(v *StorageCommand) {
 		return
 	}
 	x.xxx_hidden_Body = &command_Storage{v}
+}
+
+func (x *Command) SetTrade(v *TradeCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Trade{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -870,6 +887,14 @@ func (x *Command) HasStorage() bool {
 	return ok
 }
 
+func (x *Command) HasTrade() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Trade)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -1024,6 +1049,12 @@ func (x *Command) ClearStorage() {
 	}
 }
 
+func (x *Command) ClearTrade() {
+	if _, ok := x.xxx_hidden_Body.(*command_Trade); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -1050,6 +1081,7 @@ const Command_Friend_case case_Command_Body = 22
 const Command_PartyBooking_case case_Command_Body = 23
 const Command_Guild_case case_Command_Body = 24
 const Command_Storage_case case_Command_Body = 25
+const Command_Trade_case case_Command_Body = 26
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -1106,6 +1138,8 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_Guild_case
 	case *command_Storage:
 		return Command_Storage_case
+	case *command_Trade:
+		return Command_Trade_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -1140,6 +1174,7 @@ type Command_builder struct {
 	PartyBooking *PartyBookingCommand
 	Guild        *GuildCommand
 	Storage      *StorageCommand
+	Trade        *TradeCommand
 	// -- end of xxx_hidden_Body
 }
 
@@ -1221,6 +1256,9 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.Storage != nil {
 		x.xxx_hidden_Body = &command_Storage{b.Storage}
+	}
+	if b.Trade != nil {
+		x.xxx_hidden_Body = &command_Trade{b.Trade}
 	}
 	return m0
 }
@@ -1339,6 +1377,10 @@ type command_Storage struct {
 	Storage *StorageCommand `protobuf:"bytes,25,opt,name=storage,proto3,oneof"`
 }
 
+type command_Trade struct {
+	Trade *TradeCommand `protobuf:"bytes,26,opt,name=trade,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -1388,6 +1430,8 @@ func (*command_PartyBooking) isCommand_Body() {}
 func (*command_Guild) isCommand_Body() {}
 
 func (*command_Storage) isCommand_Body() {}
+
+func (*command_Trade) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -6091,10 +6135,12 @@ func (b0 GuildRelationEnd_builder) Build() *GuildRelationEnd {
 	return m0
 }
 
-// StorageCommand moves items between the inventory and the open storage
-// window, as rAthena's storage packets. The server answers with
-// StorageAdd and StorageRemove, InventoryAdd and InventoryRemove, or
-// StorageResult. Guild storage opens from an NPC.
+// StorageCommand moves items between the inventory, the open storage
+// window and the cart, as rAthena's storage and cart packets. The server
+// answers with StorageAdd and StorageRemove, InventoryAdd and
+// InventoryRemove, or StorageResult. Storage and guild storage open from
+// an NPC. A player has one storage open at a time. The cart is open while
+// the player has one.
 type StorageCommand struct {
 	state             protoimpl.MessageState  `protogen:"opaque.v1"`
 	xxx_hidden_Action isStorageCommand_Action `protobuf_oneof:"action"`
@@ -6163,6 +6209,42 @@ func (x *StorageCommand) GetLog() bool {
 	return false
 }
 
+func (x *StorageCommand) GetCartPut() *StorageMove {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storageCommand_CartPut); ok {
+			return x.CartPut
+		}
+	}
+	return nil
+}
+
+func (x *StorageCommand) GetCartTake() *StorageMove {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storageCommand_CartTake); ok {
+			return x.CartTake
+		}
+	}
+	return nil
+}
+
+func (x *StorageCommand) GetCartToStorage() *StorageMove {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storageCommand_CartToStorage); ok {
+			return x.CartToStorage
+		}
+	}
+	return nil
+}
+
+func (x *StorageCommand) GetStorageToCart() *StorageMove {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storageCommand_StorageToCart); ok {
+			return x.StorageToCart
+		}
+	}
+	return nil
+}
+
 func (x *StorageCommand) SetPut(v *StorageMove) {
 	if v == nil {
 		x.xxx_hidden_Action = nil
@@ -6185,6 +6267,38 @@ func (x *StorageCommand) SetClose(v bool) {
 
 func (x *StorageCommand) SetLog(v bool) {
 	x.xxx_hidden_Action = &storageCommand_Log{v}
+}
+
+func (x *StorageCommand) SetCartPut(v *StorageMove) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &storageCommand_CartPut{v}
+}
+
+func (x *StorageCommand) SetCartTake(v *StorageMove) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &storageCommand_CartTake{v}
+}
+
+func (x *StorageCommand) SetCartToStorage(v *StorageMove) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &storageCommand_CartToStorage{v}
+}
+
+func (x *StorageCommand) SetStorageToCart(v *StorageMove) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &storageCommand_StorageToCart{v}
 }
 
 func (x *StorageCommand) HasAction() bool {
@@ -6226,6 +6340,38 @@ func (x *StorageCommand) HasLog() bool {
 	return ok
 }
 
+func (x *StorageCommand) HasCartPut() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storageCommand_CartPut)
+	return ok
+}
+
+func (x *StorageCommand) HasCartTake() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storageCommand_CartTake)
+	return ok
+}
+
+func (x *StorageCommand) HasCartToStorage() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storageCommand_CartToStorage)
+	return ok
+}
+
+func (x *StorageCommand) HasStorageToCart() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storageCommand_StorageToCart)
+	return ok
+}
+
 func (x *StorageCommand) ClearAction() {
 	x.xxx_hidden_Action = nil
 }
@@ -6254,11 +6400,39 @@ func (x *StorageCommand) ClearLog() {
 	}
 }
 
+func (x *StorageCommand) ClearCartPut() {
+	if _, ok := x.xxx_hidden_Action.(*storageCommand_CartPut); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StorageCommand) ClearCartTake() {
+	if _, ok := x.xxx_hidden_Action.(*storageCommand_CartTake); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StorageCommand) ClearCartToStorage() {
+	if _, ok := x.xxx_hidden_Action.(*storageCommand_CartToStorage); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StorageCommand) ClearStorageToCart() {
+	if _, ok := x.xxx_hidden_Action.(*storageCommand_StorageToCart); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
 const StorageCommand_Action_not_set_case case_StorageCommand_Action = 0
 const StorageCommand_Put_case case_StorageCommand_Action = 1
 const StorageCommand_Take_case case_StorageCommand_Action = 2
 const StorageCommand_Close_case case_StorageCommand_Action = 3
 const StorageCommand_Log_case case_StorageCommand_Action = 4
+const StorageCommand_CartPut_case case_StorageCommand_Action = 5
+const StorageCommand_CartTake_case case_StorageCommand_Action = 6
+const StorageCommand_CartToStorage_case case_StorageCommand_Action = 7
+const StorageCommand_StorageToCart_case case_StorageCommand_Action = 8
 
 func (x *StorageCommand) WhichAction() case_StorageCommand_Action {
 	if x == nil {
@@ -6273,6 +6447,14 @@ func (x *StorageCommand) WhichAction() case_StorageCommand_Action {
 		return StorageCommand_Close_case
 	case *storageCommand_Log:
 		return StorageCommand_Log_case
+	case *storageCommand_CartPut:
+		return StorageCommand_CartPut_case
+	case *storageCommand_CartTake:
+		return StorageCommand_CartTake_case
+	case *storageCommand_CartToStorage:
+		return StorageCommand_CartToStorage_case
+	case *storageCommand_StorageToCart:
+		return StorageCommand_StorageToCart_case
 	default:
 		return StorageCommand_Action_not_set_case
 	}
@@ -6282,16 +6464,29 @@ type StorageCommand_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Fields of oneof xxx_hidden_Action:
-	// put moves an amount from an inventory slot into the storage, as
-	// storage_guild_storageadd.
+	// put moves an amount from an inventory slot into the open storage,
+	// as storage_storageadd and storage_guild_storageadd.
 	Put *StorageMove
-	// take moves an amount from a storage slot into the inventory, as
-	// storage_guild_storageget.
+	// take moves an amount from a slot of the open storage into the
+	// inventory, as storage_storageget and storage_guild_storageget.
 	Take *StorageMove
-	// close closes the storage window, as storage_guild_storageclose.
+	// close closes the storage window, as storage_storageclose and
+	// storage_guild_storageclose.
 	Close *bool
 	// log asks for the guild storage log, as storage_guild_log_read.
 	Log *bool
+	// cart_put moves an amount from an inventory slot into the cart, as
+	// pc_putitemtocart.
+	CartPut *StorageMove
+	// cart_take moves an amount from a cart slot into the inventory, as
+	// pc_getitemfromcart.
+	CartTake *StorageMove
+	// cart_to_storage moves an amount from a cart slot into the open
+	// storage, as storage_storageaddfromcart.
+	CartToStorage *StorageMove
+	// storage_to_cart moves an amount from a slot of the open storage
+	// into the cart, as storage_storagegettocart.
+	StorageToCart *StorageMove
 	// -- end of xxx_hidden_Action
 }
 
@@ -6311,6 +6506,18 @@ func (b0 StorageCommand_builder) Build() *StorageCommand {
 	if b.Log != nil {
 		x.xxx_hidden_Action = &storageCommand_Log{*b.Log}
 	}
+	if b.CartPut != nil {
+		x.xxx_hidden_Action = &storageCommand_CartPut{b.CartPut}
+	}
+	if b.CartTake != nil {
+		x.xxx_hidden_Action = &storageCommand_CartTake{b.CartTake}
+	}
+	if b.CartToStorage != nil {
+		x.xxx_hidden_Action = &storageCommand_CartToStorage{b.CartToStorage}
+	}
+	if b.StorageToCart != nil {
+		x.xxx_hidden_Action = &storageCommand_StorageToCart{b.StorageToCart}
+	}
 	return m0
 }
 
@@ -6329,25 +6536,50 @@ type isStorageCommand_Action interface {
 }
 
 type storageCommand_Put struct {
-	// put moves an amount from an inventory slot into the storage, as
-	// storage_guild_storageadd.
+	// put moves an amount from an inventory slot into the open storage,
+	// as storage_storageadd and storage_guild_storageadd.
 	Put *StorageMove `protobuf:"bytes,1,opt,name=put,proto3,oneof"`
 }
 
 type storageCommand_Take struct {
-	// take moves an amount from a storage slot into the inventory, as
-	// storage_guild_storageget.
+	// take moves an amount from a slot of the open storage into the
+	// inventory, as storage_storageget and storage_guild_storageget.
 	Take *StorageMove `protobuf:"bytes,2,opt,name=take,proto3,oneof"`
 }
 
 type storageCommand_Close struct {
-	// close closes the storage window, as storage_guild_storageclose.
+	// close closes the storage window, as storage_storageclose and
+	// storage_guild_storageclose.
 	Close bool `protobuf:"varint,3,opt,name=close,proto3,oneof"`
 }
 
 type storageCommand_Log struct {
 	// log asks for the guild storage log, as storage_guild_log_read.
 	Log bool `protobuf:"varint,4,opt,name=log,proto3,oneof"`
+}
+
+type storageCommand_CartPut struct {
+	// cart_put moves an amount from an inventory slot into the cart, as
+	// pc_putitemtocart.
+	CartPut *StorageMove `protobuf:"bytes,5,opt,name=cart_put,json=cartPut,proto3,oneof"`
+}
+
+type storageCommand_CartTake struct {
+	// cart_take moves an amount from a cart slot into the inventory, as
+	// pc_getitemfromcart.
+	CartTake *StorageMove `protobuf:"bytes,6,opt,name=cart_take,json=cartTake,proto3,oneof"`
+}
+
+type storageCommand_CartToStorage struct {
+	// cart_to_storage moves an amount from a cart slot into the open
+	// storage, as storage_storageaddfromcart.
+	CartToStorage *StorageMove `protobuf:"bytes,7,opt,name=cart_to_storage,json=cartToStorage,proto3,oneof"`
+}
+
+type storageCommand_StorageToCart struct {
+	// storage_to_cart moves an amount from a slot of the open storage
+	// into the cart, as storage_storagegettocart.
+	StorageToCart *StorageMove `protobuf:"bytes,8,opt,name=storage_to_cart,json=storageToCart,proto3,oneof"`
 }
 
 func (*storageCommand_Put) isStorageCommand_Action() {}
@@ -6357,6 +6589,14 @@ func (*storageCommand_Take) isStorageCommand_Action() {}
 func (*storageCommand_Close) isStorageCommand_Action() {}
 
 func (*storageCommand_Log) isStorageCommand_Action() {}
+
+func (*storageCommand_CartPut) isStorageCommand_Action() {}
+
+func (*storageCommand_CartTake) isStorageCommand_Action() {}
+
+func (*storageCommand_CartToStorage) isStorageCommand_Action() {}
+
+func (*storageCommand_StorageToCart) isStorageCommand_Action() {}
 
 type StorageMove struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
@@ -6416,7 +6656,9 @@ func (x *StorageMove) SetAmount(v uint32) {
 type StorageMove_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// slot is an inventory slot for put, and a storage slot for take.
+	// slot is the slot the amount leaves: an inventory slot for put and
+	// cart_put, a storage slot for take and storage_to_cart, and a cart
+	// slot for cart_take and cart_to_storage.
 	Slot   uint32
 	Amount uint32
 }
@@ -6430,12 +6672,404 @@ func (b0 StorageMove_builder) Build() *StorageMove {
 	return m0
 }
 
+// TradeCommand is one step of a trade between two players, as rAthena's
+// trade packets (trade.cpp). The server answers with TradeRequest,
+// TradeOpen, TradeOffer, TradeLock, TradeClose and TradeResult.
+type TradeCommand struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Action isTradeCommand_Action  `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *TradeCommand) Reset() {
+	*x = TradeCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TradeCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TradeCommand) ProtoMessage() {}
+
+func (x *TradeCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *TradeCommand) GetRequest() uint32 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*tradeCommand_Request); ok {
+			return x.Request
+		}
+	}
+	return 0
+}
+
+func (x *TradeCommand) GetRespond() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*tradeCommand_Respond); ok {
+			return x.Respond
+		}
+	}
+	return false
+}
+
+func (x *TradeCommand) GetAddItem() *StorageMove {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*tradeCommand_AddItem); ok {
+			return x.AddItem
+		}
+	}
+	return nil
+}
+
+func (x *TradeCommand) GetAddZeny() uint32 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*tradeCommand_AddZeny); ok {
+			return x.AddZeny
+		}
+	}
+	return 0
+}
+
+func (x *TradeCommand) GetLock() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*tradeCommand_Lock); ok {
+			return x.Lock
+		}
+	}
+	return false
+}
+
+func (x *TradeCommand) GetConfirm() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*tradeCommand_Confirm); ok {
+			return x.Confirm
+		}
+	}
+	return false
+}
+
+func (x *TradeCommand) GetCancel() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*tradeCommand_Cancel); ok {
+			return x.Cancel
+		}
+	}
+	return false
+}
+
+func (x *TradeCommand) SetRequest(v uint32) {
+	x.xxx_hidden_Action = &tradeCommand_Request{v}
+}
+
+func (x *TradeCommand) SetRespond(v bool) {
+	x.xxx_hidden_Action = &tradeCommand_Respond{v}
+}
+
+func (x *TradeCommand) SetAddItem(v *StorageMove) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &tradeCommand_AddItem{v}
+}
+
+func (x *TradeCommand) SetAddZeny(v uint32) {
+	x.xxx_hidden_Action = &tradeCommand_AddZeny{v}
+}
+
+func (x *TradeCommand) SetLock(v bool) {
+	x.xxx_hidden_Action = &tradeCommand_Lock{v}
+}
+
+func (x *TradeCommand) SetConfirm(v bool) {
+	x.xxx_hidden_Action = &tradeCommand_Confirm{v}
+}
+
+func (x *TradeCommand) SetCancel(v bool) {
+	x.xxx_hidden_Action = &tradeCommand_Cancel{v}
+}
+
+func (x *TradeCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *TradeCommand) HasRequest() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*tradeCommand_Request)
+	return ok
+}
+
+func (x *TradeCommand) HasRespond() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*tradeCommand_Respond)
+	return ok
+}
+
+func (x *TradeCommand) HasAddItem() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*tradeCommand_AddItem)
+	return ok
+}
+
+func (x *TradeCommand) HasAddZeny() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*tradeCommand_AddZeny)
+	return ok
+}
+
+func (x *TradeCommand) HasLock() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*tradeCommand_Lock)
+	return ok
+}
+
+func (x *TradeCommand) HasConfirm() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*tradeCommand_Confirm)
+	return ok
+}
+
+func (x *TradeCommand) HasCancel() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*tradeCommand_Cancel)
+	return ok
+}
+
+func (x *TradeCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *TradeCommand) ClearRequest() {
+	if _, ok := x.xxx_hidden_Action.(*tradeCommand_Request); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *TradeCommand) ClearRespond() {
+	if _, ok := x.xxx_hidden_Action.(*tradeCommand_Respond); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *TradeCommand) ClearAddItem() {
+	if _, ok := x.xxx_hidden_Action.(*tradeCommand_AddItem); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *TradeCommand) ClearAddZeny() {
+	if _, ok := x.xxx_hidden_Action.(*tradeCommand_AddZeny); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *TradeCommand) ClearLock() {
+	if _, ok := x.xxx_hidden_Action.(*tradeCommand_Lock); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *TradeCommand) ClearConfirm() {
+	if _, ok := x.xxx_hidden_Action.(*tradeCommand_Confirm); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *TradeCommand) ClearCancel() {
+	if _, ok := x.xxx_hidden_Action.(*tradeCommand_Cancel); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const TradeCommand_Action_not_set_case case_TradeCommand_Action = 0
+const TradeCommand_Request_case case_TradeCommand_Action = 1
+const TradeCommand_Respond_case case_TradeCommand_Action = 2
+const TradeCommand_AddItem_case case_TradeCommand_Action = 3
+const TradeCommand_AddZeny_case case_TradeCommand_Action = 4
+const TradeCommand_Lock_case case_TradeCommand_Action = 5
+const TradeCommand_Confirm_case case_TradeCommand_Action = 6
+const TradeCommand_Cancel_case case_TradeCommand_Action = 7
+
+func (x *TradeCommand) WhichAction() case_TradeCommand_Action {
+	if x == nil {
+		return TradeCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *tradeCommand_Request:
+		return TradeCommand_Request_case
+	case *tradeCommand_Respond:
+		return TradeCommand_Respond_case
+	case *tradeCommand_AddItem:
+		return TradeCommand_AddItem_case
+	case *tradeCommand_AddZeny:
+		return TradeCommand_AddZeny_case
+	case *tradeCommand_Lock:
+		return TradeCommand_Lock_case
+	case *tradeCommand_Confirm:
+		return TradeCommand_Confirm_case
+	case *tradeCommand_Cancel:
+		return TradeCommand_Cancel_case
+	default:
+		return TradeCommand_Action_not_set_case
+	}
+}
+
+type TradeCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// request asks the player with this entity ID to trade, as
+	// trade_traderequest.
+	Request *uint32
+	// respond answers a TradeRequest, as trade_tradeack.
+	Respond *bool
+	// add_item offers an amount of an inventory slot, as
+	// trade_tradeadditem.
+	AddItem *StorageMove
+	// add_zeny offers zeny, as trade_tradeaddzeny. It sets the amount;
+	// a second offer is refused, as rAthena's client allows one.
+	AddZeny *uint32
+	// lock ends the offer, as trade_tradeok.
+	Lock *bool
+	// confirm completes the trade once both players locked, as
+	// trade_tradecommit. The trade completes when both confirmed.
+	Confirm *bool
+	// cancel ends the trade, as trade_tradecancel.
+	Cancel *bool
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 TradeCommand_builder) Build() *TradeCommand {
+	m0 := &TradeCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Request != nil {
+		x.xxx_hidden_Action = &tradeCommand_Request{*b.Request}
+	}
+	if b.Respond != nil {
+		x.xxx_hidden_Action = &tradeCommand_Respond{*b.Respond}
+	}
+	if b.AddItem != nil {
+		x.xxx_hidden_Action = &tradeCommand_AddItem{b.AddItem}
+	}
+	if b.AddZeny != nil {
+		x.xxx_hidden_Action = &tradeCommand_AddZeny{*b.AddZeny}
+	}
+	if b.Lock != nil {
+		x.xxx_hidden_Action = &tradeCommand_Lock{*b.Lock}
+	}
+	if b.Confirm != nil {
+		x.xxx_hidden_Action = &tradeCommand_Confirm{*b.Confirm}
+	}
+	if b.Cancel != nil {
+		x.xxx_hidden_Action = &tradeCommand_Cancel{*b.Cancel}
+	}
+	return m0
+}
+
+type case_TradeCommand_Action protoreflect.FieldNumber
+
+func (x case_TradeCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[43].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isTradeCommand_Action interface {
+	isTradeCommand_Action()
+}
+
+type tradeCommand_Request struct {
+	// request asks the player with this entity ID to trade, as
+	// trade_traderequest.
+	Request uint32 `protobuf:"varint,1,opt,name=request,proto3,oneof"`
+}
+
+type tradeCommand_Respond struct {
+	// respond answers a TradeRequest, as trade_tradeack.
+	Respond bool `protobuf:"varint,2,opt,name=respond,proto3,oneof"`
+}
+
+type tradeCommand_AddItem struct {
+	// add_item offers an amount of an inventory slot, as
+	// trade_tradeadditem.
+	AddItem *StorageMove `protobuf:"bytes,3,opt,name=add_item,json=addItem,proto3,oneof"`
+}
+
+type tradeCommand_AddZeny struct {
+	// add_zeny offers zeny, as trade_tradeaddzeny. It sets the amount;
+	// a second offer is refused, as rAthena's client allows one.
+	AddZeny uint32 `protobuf:"varint,4,opt,name=add_zeny,json=addZeny,proto3,oneof"`
+}
+
+type tradeCommand_Lock struct {
+	// lock ends the offer, as trade_tradeok.
+	Lock bool `protobuf:"varint,5,opt,name=lock,proto3,oneof"`
+}
+
+type tradeCommand_Confirm struct {
+	// confirm completes the trade once both players locked, as
+	// trade_tradecommit. The trade completes when both confirmed.
+	Confirm bool `protobuf:"varint,6,opt,name=confirm,proto3,oneof"`
+}
+
+type tradeCommand_Cancel struct {
+	// cancel ends the trade, as trade_tradecancel.
+	Cancel bool `protobuf:"varint,7,opt,name=cancel,proto3,oneof"`
+}
+
+func (*tradeCommand_Request) isTradeCommand_Action() {}
+
+func (*tradeCommand_Respond) isTradeCommand_Action() {}
+
+func (*tradeCommand_AddItem) isTradeCommand_Action() {}
+
+func (*tradeCommand_AddZeny) isTradeCommand_Action() {}
+
+func (*tradeCommand_Lock) isTradeCommand_Action() {}
+
+func (*tradeCommand_Confirm) isTradeCommand_Action() {}
+
+func (*tradeCommand_Cancel) isTradeCommand_Action() {}
+
 var File_wathena_v1_command_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\xb8\n" +
+	"wathena.v1\"\xea\n" +
 	"\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
@@ -6468,7 +7102,8 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x06friend\x18\x16 \x01(\v2\x19.wathena.v1.FriendCommandH\x00R\x06friend\x12F\n" +
 	"\rparty_booking\x18\x17 \x01(\v2\x1f.wathena.v1.PartyBookingCommandH\x00R\fpartyBooking\x120\n" +
 	"\x05guild\x18\x18 \x01(\v2\x18.wathena.v1.GuildCommandH\x00R\x05guild\x126\n" +
-	"\astorage\x18\x19 \x01(\v2\x1a.wathena.v1.StorageCommandH\x00R\astorageB\x06\n" +
+	"\astorage\x18\x19 \x01(\v2\x1a.wathena.v1.StorageCommandH\x00R\astorage\x120\n" +
+	"\x05trade\x18\x1a \x01(\v2\x18.wathena.v1.TradeCommandH\x00R\x05tradeB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -6637,16 +7272,29 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"C\n" +
 	"\x10GuildRelationEnd\x12\x19\n" +
 	"\bguild_id\x18\x01 \x01(\x04R\aguildId\x12\x14\n" +
-	"\x05enemy\x18\x02 \x01(\bR\x05enemy\"\xa2\x01\n" +
+	"\x05enemy\x18\x02 \x01(\bR\x05enemy\"\x96\x03\n" +
 	"\x0eStorageCommand\x12+\n" +
 	"\x03put\x18\x01 \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\x03put\x12-\n" +
 	"\x04take\x18\x02 \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\x04take\x12\x16\n" +
 	"\x05close\x18\x03 \x01(\bH\x00R\x05close\x12\x12\n" +
-	"\x03log\x18\x04 \x01(\bH\x00R\x03logB\b\n" +
+	"\x03log\x18\x04 \x01(\bH\x00R\x03log\x124\n" +
+	"\bcart_put\x18\x05 \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\acartPut\x126\n" +
+	"\tcart_take\x18\x06 \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\bcartTake\x12A\n" +
+	"\x0fcart_to_storage\x18\a \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\rcartToStorage\x12A\n" +
+	"\x0fstorage_to_cart\x18\b \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\rstorageToCartB\b\n" +
 	"\x06action\"9\n" +
 	"\vStorageMove\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\rR\x06amount*\xf5\x01\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount\"\xef\x01\n" +
+	"\fTradeCommand\x12\x1a\n" +
+	"\arequest\x18\x01 \x01(\rH\x00R\arequest\x12\x1a\n" +
+	"\arespond\x18\x02 \x01(\bH\x00R\arespond\x124\n" +
+	"\badd_item\x18\x03 \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\aaddItem\x12\x1b\n" +
+	"\badd_zeny\x18\x04 \x01(\rH\x00R\aaddZeny\x12\x14\n" +
+	"\x04lock\x18\x05 \x01(\bH\x00R\x04lock\x12\x1a\n" +
+	"\aconfirm\x18\x06 \x01(\bH\x00R\aconfirm\x12\x18\n" +
+	"\x06cancel\x18\a \x01(\bH\x00R\x06cancelB\b\n" +
+	"\x06action*\xf5\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
@@ -6673,7 +7321,7 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_wathena_v1_command_proto_goTypes = []any{
 	(ChatChannel)(0),            // 0: wathena.v1.ChatChannel
 	(ChannelAction)(0),          // 1: wathena.v1.ChannelAction
@@ -6721,6 +7369,7 @@ var file_wathena_v1_command_proto_goTypes = []any{
 	(*GuildRelationEnd)(nil),    // 43: wathena.v1.GuildRelationEnd
 	(*StorageCommand)(nil),      // 44: wathena.v1.StorageCommand
 	(*StorageMove)(nil),         // 45: wathena.v1.StorageMove
+	(*TradeCommand)(nil),        // 46: wathena.v1.TradeCommand
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
 	4,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
@@ -6748,34 +7397,40 @@ var file_wathena_v1_command_proto_depIdxs = []int32{
 	33, // 22: wathena.v1.Command.party_booking:type_name -> wathena.v1.PartyBookingCommand
 	36, // 23: wathena.v1.Command.guild:type_name -> wathena.v1.GuildCommand
 	44, // 24: wathena.v1.Command.storage:type_name -> wathena.v1.StorageCommand
-	8,  // 25: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 26: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	1,  // 27: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
-	16, // 28: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
-	18, // 29: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
-	2,  // 30: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	28, // 31: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
-	29, // 32: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
-	30, // 33: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
-	30, // 34: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
-	32, // 35: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
-	34, // 36: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
-	35, // 37: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
-	37, // 38: wathena.v1.GuildCommand.reply:type_name -> wathena.v1.GuildReply
-	38, // 39: wathena.v1.GuildCommand.expel:type_name -> wathena.v1.GuildExpel
-	39, // 40: wathena.v1.GuildCommand.positions:type_name -> wathena.v1.GuildPositions
-	41, // 41: wathena.v1.GuildCommand.member_position:type_name -> wathena.v1.GuildMemberPosition
-	42, // 42: wathena.v1.GuildCommand.notice:type_name -> wathena.v1.GuildNotice
-	37, // 43: wathena.v1.GuildCommand.ally_reply:type_name -> wathena.v1.GuildReply
-	43, // 44: wathena.v1.GuildCommand.end_relation:type_name -> wathena.v1.GuildRelationEnd
-	40, // 45: wathena.v1.GuildPositions.positions:type_name -> wathena.v1.GuildPosition
-	45, // 46: wathena.v1.StorageCommand.put:type_name -> wathena.v1.StorageMove
-	45, // 47: wathena.v1.StorageCommand.take:type_name -> wathena.v1.StorageMove
-	48, // [48:48] is the sub-list for method output_type
-	48, // [48:48] is the sub-list for method input_type
-	48, // [48:48] is the sub-list for extension type_name
-	48, // [48:48] is the sub-list for extension extendee
-	0,  // [0:48] is the sub-list for field type_name
+	46, // 25: wathena.v1.Command.trade:type_name -> wathena.v1.TradeCommand
+	8,  // 26: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 27: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	1,  // 28: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
+	16, // 29: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
+	18, // 30: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
+	2,  // 31: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	28, // 32: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
+	29, // 33: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
+	30, // 34: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
+	30, // 35: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
+	32, // 36: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
+	34, // 37: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
+	35, // 38: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
+	37, // 39: wathena.v1.GuildCommand.reply:type_name -> wathena.v1.GuildReply
+	38, // 40: wathena.v1.GuildCommand.expel:type_name -> wathena.v1.GuildExpel
+	39, // 41: wathena.v1.GuildCommand.positions:type_name -> wathena.v1.GuildPositions
+	41, // 42: wathena.v1.GuildCommand.member_position:type_name -> wathena.v1.GuildMemberPosition
+	42, // 43: wathena.v1.GuildCommand.notice:type_name -> wathena.v1.GuildNotice
+	37, // 44: wathena.v1.GuildCommand.ally_reply:type_name -> wathena.v1.GuildReply
+	43, // 45: wathena.v1.GuildCommand.end_relation:type_name -> wathena.v1.GuildRelationEnd
+	40, // 46: wathena.v1.GuildPositions.positions:type_name -> wathena.v1.GuildPosition
+	45, // 47: wathena.v1.StorageCommand.put:type_name -> wathena.v1.StorageMove
+	45, // 48: wathena.v1.StorageCommand.take:type_name -> wathena.v1.StorageMove
+	45, // 49: wathena.v1.StorageCommand.cart_put:type_name -> wathena.v1.StorageMove
+	45, // 50: wathena.v1.StorageCommand.cart_take:type_name -> wathena.v1.StorageMove
+	45, // 51: wathena.v1.StorageCommand.cart_to_storage:type_name -> wathena.v1.StorageMove
+	45, // 52: wathena.v1.StorageCommand.storage_to_cart:type_name -> wathena.v1.StorageMove
+	45, // 53: wathena.v1.TradeCommand.add_item:type_name -> wathena.v1.StorageMove
+	54, // [54:54] is the sub-list for method output_type
+	54, // [54:54] is the sub-list for method input_type
+	54, // [54:54] is the sub-list for extension type_name
+	54, // [54:54] is the sub-list for extension extendee
+	0,  // [0:54] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -6809,6 +7464,7 @@ func file_wathena_v1_command_proto_init() {
 		(*command_PartyBooking)(nil),
 		(*command_Guild)(nil),
 		(*command_Storage)(nil),
+		(*command_Trade)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
@@ -6861,6 +7517,19 @@ func file_wathena_v1_command_proto_init() {
 		(*storageCommand_Take)(nil),
 		(*storageCommand_Close)(nil),
 		(*storageCommand_Log)(nil),
+		(*storageCommand_CartPut)(nil),
+		(*storageCommand_CartTake)(nil),
+		(*storageCommand_CartToStorage)(nil),
+		(*storageCommand_StorageToCart)(nil),
+	}
+	file_wathena_v1_command_proto_msgTypes[43].OneofWrappers = []any{
+		(*tradeCommand_Request)(nil),
+		(*tradeCommand_Respond)(nil),
+		(*tradeCommand_AddItem)(nil),
+		(*tradeCommand_AddZeny)(nil),
+		(*tradeCommand_Lock)(nil),
+		(*tradeCommand_Confirm)(nil),
+		(*tradeCommand_Cancel)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -6868,7 +7537,7 @@ func file_wathena_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   43,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

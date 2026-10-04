@@ -114,8 +114,9 @@ func (st *GuildStorage) takeAll() []StorageSlot {
 }
 
 // StorageSize is a guild storage's size, and false when the guild cannot
-// use it: renewal's Guild Storage skill is not learned. r.mu must be
-// held.
+// use it: renewal's Guild Storage skill is not learned. Without the
+// skill in the tree, the size is the guild_storage limit's base. The
+// skill's size stops at its max. r.mu must be held.
 func (r *Registry) storageSize(g *Guild) (int, bool) {
 	limit := r.limits.GuildStorage
 	if r.tables().Skill(SkillGuildStorage) == nil {
@@ -125,7 +126,7 @@ func (r *Registry) storageSize(g *Guild) (int, bool) {
 	if lv <= 0 {
 		return 0, false
 	}
-	return min(100+100*lv, limit), true
+	return min(100+100*lv, r.limits.MaxOf("guild_storage")), true
 }
 
 // StorageOutcome is why a guild storage action failed, as the
@@ -280,4 +281,42 @@ func (r *Registry) AuditStorages() []StorageHolding {
 	}
 	slices.SortFunc(out, func(a, b StorageHolding) int { return int(a.Guild - b.Guild) })
 	return out
+}
+
+// GuildStorageCount is the amount of an item in a guild's storage, as
+// guildstoragecountitem. It is 0 for a guild that does not run.
+func (r *Registry) GuildStorageCount(guild int64, id uint32) int {
+	r.mu.Lock()
+	g := r.guilds[guild]
+	r.mu.Unlock()
+	if g == nil || g.storage == nil {
+		return 0
+	}
+	st := g.storage
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	n := 0
+	for _, s := range st.box.Slots {
+		if s.ID == id {
+			n += s.Amount
+		}
+	}
+	return n
+}
+
+// StorageOf is a guild's storage and its size, for the guild-bound items
+// of a member who left, as guild_retrieveitembound. It is nil for a
+// guild that does not run.
+func (r *Registry) StorageOf(guild int64) (*GuildStorage, int) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	g := r.guilds[guild]
+	if g == nil {
+		return nil, 0
+	}
+	size, ok := r.storageSize(g)
+	if !ok {
+		size = r.limits.GuildStorage
+	}
+	return g.storage, size
 }

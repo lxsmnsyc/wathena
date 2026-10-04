@@ -318,7 +318,7 @@ func TestRollsLoadAndSplit(t *testing.T) {
 		{Slot: 0, ID: rollHat, Amount: 1, Extra: item.Extra{Rolls: item.RollsOf(map[string]int{"luck": 50, "old": 1})}},
 		{Slot: 1, ID: rollCard, Amount: 5, Extra: item.Extra{Rolls: item.RollsOf(map[string]int{"dodge": 4})}},
 	}}
-	q := &Player{Name: "c", inventory: restoreInventory(z.Items, c)}
+	q := &Player{Name: "c", inventory: restoreInventory(z.Items, c, z.limits())}
 	z.fixRolls(q)
 	if got := q.inventory.Slots[0].Rolls.Key(); got != "luck=5" {
 		t.Errorf("loaded rolls %q", got)

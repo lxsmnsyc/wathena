@@ -10,6 +10,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
 )
 
@@ -74,7 +75,7 @@ func (z *Zone) NewCharacter(name string, look Look) character.Character {
 		Name: name, Job: z.Start.Job, Male: look.Sex == 1,
 		Hair: int(look.Hair), HairColor: int(look.HairColor),
 		BaseLevel: 1, JobLevel: 1, Stats: z.Start.Stats,
-		Map: z.Map, InventorySize: item.BaseSlots, CreatedAt: z.wallClock(),
+		Map: z.Map, InventorySize: z.limits().InventorySlots, CreatedAt: z.wallClock(),
 	}}
 	c.X, c.Y = z.startCell()
 	if z.Progress != nil {
@@ -100,7 +101,7 @@ func (z *Zone) NewCharacter(name string, look Look) character.Character {
 		}
 	}
 	c.HP, c.SP = int64(st.MaxHP), int64(st.MaxSP)
-	inv := item.NewInventory()
+	inv := item.NewInventoryOf(c.InventorySize, z.limits().MaxOf("inventory_slots"))
 	for _, s := range z.StartItems {
 		// Items the inventory cannot take are left out.
 		if i, r := inv.Add(z.Items.Get(s.ID), s.Amount, maxWeight); r == item.AddSuccess && inv.Slots[i].Serial.IsZero() {
@@ -130,15 +131,23 @@ func (z *Zone) fixRolls(p *Player) {
 	}
 }
 
-// restoreInventory fills an inventory from a saved character. Slots
-// outside the inventory are left out.
-func restoreInventory(t *item.Table, c *character.Character) *item.Inventory {
-	inv := item.NewInventory()
-	if c.InventorySize > 0 && c.InventorySize <= item.MaxInventory {
-		inv.Size = c.InventorySize
+// restoreInventory fills an inventory from a saved character. Its size is
+// the saved one, at most the inventory_slots limit's max. It holds more
+// slots when the character holds items in later slots: lowering a limit
+// deletes nothing. Slots past the engine's ceiling are left out.
+func restoreInventory(t *item.Table, c *character.Character, l rules.Limits) *item.Inventory {
+	size := c.InventorySize
+	if size <= 0 {
+		size = l.InventorySlots
+	}
+	inv := item.NewInventoryOf(size, l.MaxOf("inventory_slots"))
+	for _, it := range c.Items {
+		if it.Slot >= 0 && it.Slot < item.MaxInventory {
+			inv.Grow(it.Slot + 1)
+		}
 	}
 	for _, it := range c.Items {
-		if it.Slot < 0 || it.Slot >= item.MaxInventory || it.ID == 0 || it.Amount <= 0 {
+		if it.Slot < 0 || it.Slot >= len(inv.Slots) || it.ID == 0 || it.Amount <= 0 {
 			continue
 		}
 		inv.Slots[it.Slot] = item.Slot{ID: it.ID, Amount: it.Amount, Serial: it.Serial, Equip: it.Equip, Refine: it.Refine,

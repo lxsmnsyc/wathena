@@ -759,6 +759,10 @@ func (b *body) stmt(s Stmt, deep bool) error {
 		if err != nil {
 			return b.unsupported(err)
 		}
+		// rAthena functions return numbers: a condition returns 1 or 0.
+		if v.t == tBool {
+			v.code = v.asInt()
+		}
 		b.line("do return %s end", v.code)
 	case *Command:
 		return b.command(s)

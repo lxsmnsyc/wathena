@@ -31,6 +31,8 @@ import {
   InventoryRemoveReason,
   PartyOutcome,
   SanctionKind,
+  StatId,
+  StorageKind,
 } from '../gen/wathena/v1/event_pb';
 import { ChannelAction } from '../gen/wathena/v1/command_pb';
 import { DisconnectReason } from '../gen/wathena/v1/session_pb';
@@ -65,7 +67,21 @@ import {
   permissions,
 } from './guild';
 import { PlayerMenu } from './playerMenu';
-import { STORAGE_DRAG_TYPE, StorageModel, StorageWindow, storageMessage } from './storage';
+import {
+  CART_DRAG_TYPE,
+  STORAGE_DRAG_TYPE,
+  StorageModel,
+  StorageWindow,
+  storageMessage,
+} from './storage';
+import {
+  NO_TRADE,
+  type TradeEvent,
+  TradeWindow,
+  tradeMessage,
+  tradeReducer,
+  tradeRequestText,
+} from './trade';
 import {
   NO_PARTY,
   PartyWindow,
@@ -578,8 +594,14 @@ if (serverURL === null) {
   };
   // The inventory window opens with its button or Alt+E, as in RO.
   const inventory = new InventoryModel();
-  view.onInventory = (items, size) => {
-    inventory.reset(items, size);
+  // A long inventory comes in pages: the first replaces the list, and
+  // the pages with more set add to it.
+  view.onInventory = (items, size, more) => {
+    if (more) {
+      inventory.addPage(items);
+    } else {
+      inventory.reset(items, size);
+    }
   };
   // Item lines wait for the names, so the first one is not shown by ID.
   const logItem = (text: () => string): void => {
@@ -711,13 +733,24 @@ if (serverURL === null) {
       }
     });
   }
-  // Storage. The window opens when the server sends StorageOpen, such as
-  // from a guild storage NPC. Items move in from the inventory window and
-  // out to it.
+  // Prompts that ask the player to accept or decline, such as a party
+  // invite or a trade request.
+  const promptRoot = document.querySelector<HTMLElement>('#social-prompts');
+  const prompts = promptRoot === null ? undefined : new Prompts(promptRoot);
+  const itemIcons = inventoryWindow?.icons ?? new ItemIcons(store);
+  // Storage and cart. The storage window opens when the server sends
+  // StorageOpen, such as from a storage NPC. The cart window opens with
+  // its button or Alt+W while the player has a cart. Items move between
+  // the inventory, the cart and the open storage.
   const storage = new StorageModel();
+  const cart = new StorageModel();
   const storageRoot = document.querySelector<HTMLElement>('#storage-window');
+  const cartRoot = document.querySelector<HTMLElement>('#cart-window');
+  const cartToggle = document.querySelector<HTMLButtonElement>('#cart-toggle');
+  let storageWindow: StorageWindow | undefined;
+  let cartWindow: StorageWindow | undefined;
   if (storageRoot !== null) {
-    const storageWindow = new StorageWindow(
+    storageWindow = new StorageWindow(
       storageRoot,
       storage,
       (slot) => inventory.get(slot),
@@ -728,77 +761,259 @@ if (serverURL === null) {
         take: (slot, amount) => {
           connection.storageTake(slot, amount);
         },
+        send: (slot, amount) => {
+          connection.storageToCart(slot, amount);
+        },
         close: () => {
           storage.close();
           connection.storageClose();
+          cartWindow?.render();
         },
         log: () => {
           connection.storageLog();
         },
       },
       itemTexts,
-      inventoryWindow?.icons ?? new ItemIcons(store),
+      itemIcons,
+      { dragType: STORAGE_DRAG_TYPE, cart: false, canSend: () => cart.isOpen },
     );
-    view.onStorageOpen = (kind, items, size) => {
-      storage.open(kind, items, size);
-      itemTexts
-        .loadNames()
-        .then(() => {
-          storageWindow.show();
-          if (inventoryWindow !== undefined && !inventoryWindow.open) {
-            inventoryWindow.toggle();
-            inventoryWindow.update(view.stats);
-          }
-        })
-        .catch(reportError);
+  }
+  if (cartRoot !== null) {
+    cartWindow = new StorageWindow(
+      cartRoot,
+      cart,
+      (slot) => inventory.get(slot),
+      {
+        put: (slot, amount) => {
+          connection.cartPut(slot, amount);
+        },
+        take: (slot, amount) => {
+          connection.cartTake(slot, amount);
+        },
+        send: (slot, amount) => {
+          connection.cartToStorage(slot, amount);
+        },
+        // The cart stays with the player. Closing only hides the window.
+        close: () => {},
+        log: () => {},
+      },
+      itemTexts,
+      itemIcons,
+      { dragType: CART_DRAG_TYPE, cart: true, canSend: () => storage.isOpen },
+    );
+    const toggle = (): void => {
+      if (cart.isOpen) {
+        cartWindow?.toggle();
+      }
     };
-    view.onStorageAdd = (_kind, item) => {
-      storage.add(item);
-      storageWindow.render();
-    };
-    view.onStorageRemove = (_kind, slot, amount) => {
-      storage.remove(slot, amount);
-      storageWindow.render();
-    };
-    view.onStorageClose = () => {
-      storage.close();
-      storageWindow.hide();
-    };
-    view.onStorageResult = (outcome) => {
-      logNotice(storageMessage(outcome));
-    };
-    view.onGuildStorageLog = (entries) => {
-      itemTexts
-        .loadNames()
-        .then(() => {
-          storageWindow.showLog(entries);
-        })
-        .catch(reportError);
-    };
-    if (inventoryWindow !== undefined && inventoryRoot !== null) {
-      // A right click on an inventory row puts it into the open storage.
-      inventoryWindow.onRowContext = (slot) => {
-        if (!storageWindow.open) {
-          return false;
+    cartToggle?.addEventListener('click', toggle);
+    addEventListener('keydown', (e) => {
+      if (isTyping(e.target)) {
+        return;
+      }
+      // e.code, since Alt changes e.key on some layouts, such as macOS.
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyW') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  }
+  // Cart rows dropped on the storage window go into the storage, and
+  // storage rows dropped on the cart window go into the cart.
+  storageWindow?.acceptDrop(CART_DRAG_TYPE, (slot) => {
+    cartWindow?.requestSend(slot);
+  });
+  cartWindow?.acceptDrop(STORAGE_DRAG_TYPE, (slot) => {
+    storageWindow?.requestSend(slot);
+  });
+  const storageOf = (kind: StorageKind): [StorageModel, StorageWindow | undefined] =>
+    kind === StorageKind.CART ? [cart, cartWindow] : [storage, storageWindow];
+  /** Draws both windows, since a change to one shows or hides the other's send buttons. */
+  const renderStorage = (): void => {
+    storageWindow?.render();
+    cartWindow?.render();
+  };
+  view.onStorageOpen = (info) => {
+    if (info.kind === StorageKind.CART) {
+      cart.open(info);
+      if (cartToggle !== null) {
+        cartToggle.hidden = false;
+      }
+      itemTexts.loadNames().then(renderStorage).catch(reportError);
+      return;
+    }
+    storage.open(info);
+    itemTexts
+      .loadNames()
+      .then(() => {
+        storageWindow?.show();
+        cartWindow?.render();
+        if (inventoryWindow !== undefined && !inventoryWindow.open) {
+          inventoryWindow.toggle();
+          inventoryWindow.update(view.stats);
         }
+      })
+      .catch(reportError);
+  };
+  view.onStorageItems = (kind, items, page) => {
+    const [model, win] = storageOf(kind);
+    if (model.addPage(kind, page, items)) {
+      win?.render();
+    }
+  };
+  view.onStorageAdd = (kind, item, weight) => {
+    const [model, win] = storageOf(kind);
+    model.add(item, weight);
+    win?.render();
+  };
+  view.onStorageRemove = (kind, slot, amount, weight) => {
+    const [model, win] = storageOf(kind);
+    model.remove(slot, amount, weight);
+    win?.render();
+  };
+  view.onStorageClose = (kind) => {
+    const [model, win] = storageOf(kind);
+    model.close();
+    win?.hide();
+    if (kind === StorageKind.CART && cartToggle !== null) {
+      cartToggle.hidden = true;
+    }
+    renderStorage();
+  };
+  view.onStorageResult = (outcome) => {
+    logNotice(storageMessage(outcome));
+  };
+  view.onGuildStorageLog = (entries) => {
+    itemTexts
+      .loadNames()
+      .then(() => {
+        storageWindow?.showLog(entries);
+      })
+      .catch(reportError);
+  };
+  // Trade. A trade request shows a prompt, and the trade window opens
+  // when both players agree.
+  let trade = NO_TRADE;
+  let tradeWindow: TradeWindow | undefined;
+  const setTrade = (e: TradeEvent): void => {
+    trade = tradeReducer(trade, e);
+    tradeWindow?.render();
+  };
+  const tradeRoot = document.querySelector<HTMLElement>('#trade-window');
+  if (tradeRoot !== null) {
+    tradeWindow = new TradeWindow(
+      tradeRoot,
+      {
+        state: () => trade,
+        inventory: (slot) => inventory.get(slot),
+        zeny: () => Number(view.stats.get(StatId.ZENY) ?? 0n),
+      },
+      {
+        addItem: (slot, amount) => {
+          connection.tradeAddItem(slot, amount);
+        },
+        addZeny: (zeny) => {
+          connection.tradeAddZeny(zeny);
+        },
+        lock: () => {
+          connection.tradeLock();
+        },
+        confirm: () => {
+          setTrade({ type: 'confirm' });
+          connection.tradeConfirm();
+        },
+        cancel: () => {
+          connection.tradeCancel();
+        },
+        message: (text) => {
+          showMessage(text);
+        },
+      },
+      itemTexts,
+      itemIcons,
+    );
+  }
+  view.onTradeRequest = (from, baseLevel) => {
+    const answer = (accept: boolean): void => {
+      connection.tradeRespond(accept);
+    };
+    if (prompts === undefined) {
+      answer(false);
+      return;
+    }
+    prompts.show({
+      key: 'trade',
+      text: tradeRequestText(from, baseLevel),
+      accept: () => {
+        answer(true);
+      },
+      decline: () => {
+        answer(false);
+      },
+    });
+  };
+  view.onTradeOpen = (partner, baseLevel) => {
+    prompts?.close('trade');
+    setTrade({ type: 'open', partner, baseLevel });
+    // Offered items show by name once the names load.
+    itemTexts.loadNames().catch(reportError);
+    if (inventoryWindow !== undefined && !inventoryWindow.open) {
+      inventoryWindow.toggle();
+      inventoryWindow.update(view.stats);
+    }
+  };
+  view.onTradeOffer = (mine, offer) => {
+    setTrade({ type: 'offer', mine, offer });
+  };
+  view.onTradeLock = (mine) => {
+    setTrade({ type: 'lock', mine });
+  };
+  view.onTradeClose = (outcome) => {
+    prompts?.close('trade');
+    setTrade({ type: 'close' });
+    logNotice(tradeMessage(outcome));
+  };
+  view.onTradeResult = (outcome, name, _slot, reason) => {
+    setTrade({ type: 'result', outcome });
+    logNotice(tradeMessage(outcome, name, reason));
+  };
+  if (inventoryWindow !== undefined && inventoryRoot !== null) {
+    // A right click on an inventory row offers it in the trade, or puts it
+    // into the open storage, or into the open cart window.
+    inventoryWindow.onRowContext = (slot) => {
+      if (trade.open && tradeWindow !== undefined) {
+        tradeWindow.requestAdd(slot);
+        return true;
+      }
+      if (storageWindow?.open === true) {
         storageWindow.requestPut(slot);
         return true;
-      };
-      // A storage row dropped on the inventory window takes the item out.
+      }
+      if (cartWindow?.open === true) {
+        cartWindow.requestPut(slot);
+        return true;
+      }
+      return false;
+    };
+    // A storage or cart row dropped on the inventory window takes the item out.
+    for (const [type, take] of [
+      [STORAGE_DRAG_TYPE, (slot: number) => storageWindow?.requestTake(slot)],
+      [CART_DRAG_TYPE, (slot: number) => cartWindow?.requestTake(slot)],
+    ] as const) {
       inventoryRoot.addEventListener('dragover', (e) => {
-        if (e.dataTransfer?.types.includes(STORAGE_DRAG_TYPE) === true) {
+        if (e.dataTransfer?.types.includes(type) === true) {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
         }
       });
       inventoryRoot.addEventListener('drop', (e) => {
-        if (e.dataTransfer?.types.includes(STORAGE_DRAG_TYPE) !== true) {
+        if (e.dataTransfer?.types.includes(type) !== true) {
           return;
         }
-        const slot = Number(e.dataTransfer.getData(STORAGE_DRAG_TYPE));
+        const slot = Number(e.dataTransfer.getData(type));
         if (Number.isInteger(slot)) {
           e.preventDefault();
-          storageWindow.requestTake(slot);
+          take(slot);
         }
       });
     }
@@ -1123,8 +1338,6 @@ if (serverURL === null) {
     // Parties. The party window opens with its button or Alt+Z, as in RO.
     // The Party tab shows while the player has a party.
     let party = NO_PARTY;
-    const promptRoot = document.querySelector<HTMLElement>('#social-prompts');
-    const prompts = promptRoot === null ? undefined : new Prompts(promptRoot);
     const partyRoot = document.querySelector<HTMLElement>('#party-window');
     const partyToggle = document.querySelector<HTMLButtonElement>('#party-toggle');
     const partyWindow =
@@ -1362,12 +1575,15 @@ if (serverURL === null) {
       log.guild(name, text, name === view.selfName, lineId);
       unread(GUILD_TAB);
     };
-    // A right click on another player opens its menu: whisper, invites,
+    // A right click on another player opens its menu: whisper, trade, invites,
     // and reports of its guild's name or emblem.
     const playerMenuRoot = document.querySelector<HTMLElement>('#player-menu');
     if (playerMenuRoot !== null) {
       const menu = new PlayerMenu(playerMenuRoot, {
         whisper: startWhisper,
+        trade: (id) => {
+          connection.tradeRequest(id);
+        },
         partyInvite: (name) => {
           connection.partyInvite(name);
         },
@@ -1386,6 +1602,7 @@ if (serverURL === null) {
         const badge = view.guildBadge(id);
         menu.show(
           {
+            id,
             name,
             badge:
               badge === undefined

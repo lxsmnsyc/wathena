@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/session.proto.
  */
 export const file_wathena_v1_session: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL3Nlc3Npb24ucHJvdG8SCndhdGhlbmEudjEiXwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIVCg1zZXNzaW9uX3Rva2VuGAIgASgMEhMKC2NsaWVudF9uYW1lGAMgASgJEhAKCGxhbmd1YWdlGAQgASgJIooBCgdXZWxjb21lEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQSDAoEdGljaxgDIAEoDRIOCgZuZXRfaWQYBCABKA0SCwoDbWFwGAUgASgJEiIKBmxpbWl0cxgGIAEoCzISLndhdGhlbmEudjEuTGltaXRzIrgBCgZMaW1pdHMSFQoNcGFydHlfbWVtYmVycxgBIAEoDRIPCgdmcmllbmRzGAIgASgNEhIKCmJsb2NrX2xpc3QYAyABKA0SFQoNZ3VpbGRfbWVtYmVycxgEIAEoDRIXCg9ndWlsZF9wb3NpdGlvbnMYBSABKA0SFAoMZ3VpbGRfYWxsaWVzGAYgASgNEhUKDWd1aWxkX2VuZW1pZXMYByABKA0SFQoNZ3VpbGRfc3RvcmFnZRgIIAEoDSIVCgRQaW5nEg0KBW5vbmNlGAEgASgNIi0KBFBvbmcSDQoFbm9uY2UYASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQiSwoKRGlzY29ubmVjdBIsCgZyZWFzb24YASABKA4yHC53YXRoZW5hLnYxLkRpc2Nvbm5lY3RSZWFzb24SDwoHbWVzc2FnZRgCIAEoCSrgAgoQRGlzY29ubmVjdFJlYXNvbhIhCh1ESVNDT05ORUNUX1JFQVNPTl9VTlNQRUNJRklFRBAAEikKJURJU0NPTk5FQ1RfUkVBU09OX1ZFUlNJT05fVU5TVVBQT1JURUQQARIlCiFESVNDT05ORUNUX1JFQVNPTl9TRVNTSU9OX0lOVkFMSUQQAhIpCiVESVNDT05ORUNUX1JFQVNPTl9MT0dHRURfSU5fRUxTRVdIRVJFEAMSIgoeRElTQ09OTkVDVF9SRUFTT05fUkFURV9MSU1JVEVEEAQSIQodRElTQ09OTkVDVF9SRUFTT05fQkFEX01FU1NBR0UQBRIcChhESVNDT05ORUNUX1JFQVNPTl9CQU5ORUQQBhIlCiFESVNDT05ORUNUX1JFQVNPTl9TRVJWRVJfU0hVVERPV04QBxIgChxESVNDT05ORUNUX1JFQVNPTl9MT0dHRURfT1VUEAhCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
+  fileDesc("Chh3YXRoZW5hL3YxL3Nlc3Npb24ucHJvdG8SCndhdGhlbmEudjEiXwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIVCg1zZXNzaW9uX3Rva2VuGAIgASgMEhMKC2NsaWVudF9uYW1lGAMgASgJEhAKCGxhbmd1YWdlGAQgASgJIooBCgdXZWxjb21lEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQSDAoEdGljaxgDIAEoDRIOCgZuZXRfaWQYBCABKA0SCwoDbWFwGAUgASgJEiIKBmxpbWl0cxgGIAEoCzISLndhdGhlbmEudjEuTGltaXRzIqQCCgZMaW1pdHMSFQoNcGFydHlfbWVtYmVycxgBIAEoDRIPCgdmcmllbmRzGAIgASgNEhIKCmJsb2NrX2xpc3QYAyABKA0SFQoNZ3VpbGRfbWVtYmVycxgEIAEoDRIXCg9ndWlsZF9wb3NpdGlvbnMYBSABKA0SFAoMZ3VpbGRfYWxsaWVzGAYgASgNEhUKDWd1aWxkX2VuZW1pZXMYByABKA0SFQoNZ3VpbGRfc3RvcmFnZRgIIAEoDRIXCg9pbnZlbnRvcnlfc2xvdHMYCSABKA0SFQoNc3RvcmFnZV9zbG90cxgKIAEoDRISCgpjYXJ0X3Nsb3RzGAsgASgNEiYKBnJhbmdlcxgMIAMoCzIWLndhdGhlbmEudjEuTGltaXRSYW5nZSI1CgpMaW1pdFJhbmdlEgwKBG5hbWUYASABKAkSDAoEYmFzZRgCIAEoDRILCgNtYXgYAyABKA0iFQoEUGluZxINCgVub25jZRgBIAEoDSItCgRQb25nEg0KBW5vbmNlGAEgASgNEhYKDnNlcnZlcl90aW1lX21zGAIgASgEIksKCkRpc2Nvbm5lY3QSLAoGcmVhc29uGAEgASgOMhwud2F0aGVuYS52MS5EaXNjb25uZWN0UmVhc29uEg8KB21lc3NhZ2UYAiABKAkq4AIKEERpc2Nvbm5lY3RSZWFzb24SIQodRElTQ09OTkVDVF9SRUFTT05fVU5TUEVDSUZJRUQQABIpCiVESVNDT05ORUNUX1JFQVNPTl9WRVJTSU9OX1VOU1VQUE9SVEVEEAESJQohRElTQ09OTkVDVF9SRUFTT05fU0VTU0lPTl9JTlZBTElEEAISKQolRElTQ09OTkVDVF9SRUFTT05fTE9HR0VEX0lOX0VMU0VXSEVSRRADEiIKHkRJU0NPTk5FQ1RfUkVBU09OX1JBVEVfTElNSVRFRBAEEiEKHURJU0NPTk5FQ1RfUkVBU09OX0JBRF9NRVNTQUdFEAUSHAoYRElTQ09OTkVDVF9SRUFTT05fQkFOTkVEEAYSJQohRElTQ09OTkVDVF9SRUFTT05fU0VSVkVSX1NIVVRET1dOEAcSIAocRElTQ09OTkVDVF9SRUFTT05fTE9HR0VEX09VVBAIQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
 
 /**
  * Hello is the first client message on a new connection.
@@ -114,7 +114,8 @@ export const WelcomeSchema: GenMessage<Welcome> = /*@__PURE__*/
 
 /**
  * Limits are limits that rAthena compiles in and a ruleset sets
- * (proposal 0002, review decision 27).
+ * (proposal 0002, review decisions 27 and 29). The named fields hold
+ * each limit's base. ranges holds every limit's base and max.
  *
  * @generated from message wathena.v1.Limits
  */
@@ -175,6 +176,36 @@ export type Limits = Message<"wathena.v1.Limits"> & {
    * @generated from field: uint32 guild_storage = 8;
    */
   guildStorage: number;
+
+  /**
+   * inventory_slots is the inventory slots of a new character, as
+   * INVENTORY_BASE_SIZE.
+   *
+   * @generated from field: uint32 inventory_slots = 9;
+   */
+  inventorySlots: number;
+
+  /**
+   * storage_slots is the slots of an account's storage, as MAX_STORAGE.
+   *
+   * @generated from field: uint32 storage_slots = 10;
+   */
+  storageSlots: number;
+
+  /**
+   * cart_slots is the slots of a cart, as MAX_CART.
+   *
+   * @generated from field: uint32 cart_slots = 11;
+   */
+  cartSlots: number;
+
+  /**
+   * ranges lists every limit with its base and max, in the order of the
+   * server's rules.LimitBounds.
+   *
+   * @generated from field: repeated wathena.v1.LimitRange ranges = 12;
+   */
+  ranges: LimitRange[];
 };
 
 /**
@@ -183,6 +214,36 @@ export type Limits = Message<"wathena.v1.Limits"> & {
  */
 export const LimitsSchema: GenMessage<Limits> = /*@__PURE__*/
   messageDesc(file_wathena_v1_session, 2);
+
+/**
+ * LimitRange is one limit: base is what a player or guild starts with,
+ * and max is where expansions stop.
+ *
+ * @generated from message wathena.v1.LimitRange
+ */
+export type LimitRange = Message<"wathena.v1.LimitRange"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: uint32 base = 2;
+   */
+  base: number;
+
+  /**
+   * @generated from field: uint32 max = 3;
+   */
+  max: number;
+};
+
+/**
+ * Describes the message wathena.v1.LimitRange.
+ * Use `create(LimitRangeSchema)` to create a new message.
+ */
+export const LimitRangeSchema: GenMessage<LimitRange> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_session, 3);
 
 /**
  * @generated from message wathena.v1.Ping
@@ -199,7 +260,7 @@ export type Ping = Message<"wathena.v1.Ping"> & {
  * Use `create(PingSchema)` to create a new message.
  */
 export const PingSchema: GenMessage<Ping> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 3);
+  messageDesc(file_wathena_v1_session, 4);
 
 /**
  * @generated from message wathena.v1.Pong
@@ -221,7 +282,7 @@ export type Pong = Message<"wathena.v1.Pong"> & {
  * Use `create(PongSchema)` to create a new message.
  */
 export const PongSchema: GenMessage<Pong> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 4);
+  messageDesc(file_wathena_v1_session, 5);
 
 /**
  * Disconnect is the last message before the server closes the connection.
@@ -247,7 +308,7 @@ export type Disconnect = Message<"wathena.v1.Disconnect"> & {
  * Use `create(DisconnectSchema)` to create a new message.
  */
 export const DisconnectSchema: GenMessage<Disconnect> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 5);
+  messageDesc(file_wathena_v1_session, 6);
 
 /**
  * @generated from enum wathena.v1.DisconnectReason

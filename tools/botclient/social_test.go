@@ -5,14 +5,16 @@ import (
 	"testing"
 )
 
-// TestPartyAndFriends: the bot keeps the limits from Welcome, its party
-// from PartyInfo, an open invite, and its friend list.
+// TestPartyAndFriends: the bot keeps the limits from Welcome with their
+// ranges, its party from PartyInfo, an open invite, and its friend list.
 func TestPartyAndFriends(t *testing.T) {
 	s := serve(t, nil)
 	a := dial(t, s, "Alice")
 	b := dial(t, s, "Bob")
 	ctx := context.Background()
-	if l := a.WorldLimits(); l != (WorldLimits{PartyMembers: 12, Friends: 40, BlockList: 20}) {
+	if l := a.WorldLimits(); l.PartyMembers != 12 || l.Friends != 40 || l.BlockList != 20 || l.InventorySlots != 100 || l.StorageSlots != 600 ||
+		l.CartSlots != 100 || len(l.Ranges) != 11 || l.Ranges["inventory_slots"] != (LimitRange{Base: 100, Max: 200}) ||
+		l.Ranges["guild_members"] != (LimitRange{Base: 16, Max: 76}) {
 		t.Errorf("limits %+v", l)
 	}
 

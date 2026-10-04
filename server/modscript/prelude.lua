@@ -167,7 +167,7 @@ new_player, player_ids = handle_type("player", {
 		return (call(H.player_send_message, player_ids[self], text))
 	end,
 	give_item = function(self, item, amount, options)
-		local rent, roll = 0, nil
+		local rent, roll, to, bound = 0, nil, nil, nil
 		if options ~= nil then
 			if type(options) ~= "table" then
 				error("player:give_item: the options must be a table, such as { rent_seconds = 3600 }", 2)
@@ -183,15 +183,46 @@ new_player, player_ids = handle_type("player", {
 						error("player:give_item: roll is \"random\", \"default\" or a table of values, such as { boss_damage = 31 }", 2)
 					end
 					roll = v
+				elseif k == "to" then
+					if type(v) ~= "string" then
+						error("player:give_item: to is \"storage\", \"cart\" or a storage's name", 2)
+					end
+					to = v
+				elseif k == "bound" then
+					if type(v) ~= "string" then
+						error("player:give_item: bound is \"account\", \"character\", \"party\" or \"guild\"", 2)
+					end
+					bound = v
 				else
-					error("player:give_item: the options are rent_seconds and roll", 2)
+					error("player:give_item: the options are rent_seconds, roll, to and bound", 2)
 				end
 			end
 		end
-		return (call(H.player_give_item, player_ids[self], item, amount, rent, roll))
+		return (call(H.player_give_item, player_ids[self], item, amount, rent, roll, to, bound))
 	end,
-	count_item = function(self, item)
-		return (call(H.player_count_item, player_ids[self], item))
+	count_item = function(self, item, options)
+		local from = nil
+		if options ~= nil then
+			if type(options) ~= "table" then
+				error("player:count_item: the options must be a table, such as { from = \"storage\" }", 2)
+			end
+			for k, v in pairs(options) do
+				if k ~= "from" then
+					error("player:count_item: the option is from", 2)
+				end
+				from = v
+			end
+			if from == nil then
+				error("player:count_item: from is \"storage\", \"cart\" or a storage's name", 2)
+			end
+		end
+		return (call(H.player_count_item, player_ids[self], item, from))
+	end,
+	open_storage = function(self, name)
+		return (call(H.player_open_storage, player_ids[self], name))
+	end,
+	open_guild_storage = function(self)
+		return call(H.player_open_guild_storage, player_ids[self])
 	end,
 	give_item_from_group = function(self, group)
 		return (call(H.player_give_group, player_ids[self], group))
@@ -287,8 +318,23 @@ new_player, player_ids = handle_type("player", {
 	give_zeny = function(self, amount)
 		return (call(H.player_give_zeny, player_ids[self], amount))
 	end,
-	take_item = function(self, item, amount)
-		return (call(H.player_take_item, player_ids[self], item, amount))
+	take_item = function(self, item, amount, options)
+		local from = nil
+		if options ~= nil then
+			if type(options) ~= "table" then
+				error("player:take_item: the options must be a table, such as { from = \"cart\" }", 2)
+			end
+			for k, v in pairs(options) do
+				if k ~= "from" then
+					error("player:take_item: the option is from", 2)
+				end
+				from = v
+			end
+			if from == nil then
+				error("player:take_item: from is \"storage\", \"cart\" or a storage's name", 2)
+			end
+		end
+		return (call(H.player_take_item, player_ids[self], item, amount, from))
 	end,
 	heal_fully = function(self)
 		return (call(H.player_heal, player_ids[self], true, 100, 100, 100, 100))
@@ -683,13 +729,14 @@ end
 
 -- chat_options turns the options of a chat handler into plain data: the
 -- player handle becomes its ID.
-local function chat_options(options)
-	check(type(options) == "table", "events.on(\"chat\"): the options must be a table")
+local function chat_options(options, name)
+	name = name or "chat"
+	check(type(options) == "table", "events.on(\"" .. name .. "\"): the options must be a table")
 	local out = {}
 	for k, v in pairs(options) do
 		if k == "player" then
 			local id = player_ids[v]
-			check(id ~= nil, "events.on(\"chat\"): player must be a player handle")
+			check(id ~= nil, "events.on(\"" .. name .. "\"): player must be a player handle")
 			out.player = id
 		else
 			out[k] = v
@@ -706,6 +753,8 @@ api["wa.events"] = readonly("wa.events", {
 			options = death_options(options)
 		elseif options ~= nil and name == "chat" then
 			options = chat_options(options)
+		elseif options ~= nil and name == "trade" then
+			options = chat_options(options, "trade")
 		end
 		return new_event_handle(call(H.events_on, name, handler, options))
 	end,
@@ -1017,6 +1066,10 @@ new_guild, guild_ids = handle_type("guild", {
 	get_skill_level = function(self, skill)
 		check(math_type(skill) == "integer", "guild:get_skill_level: want a skill ID, such as skills.id(\"GD_EXTENSION\")")
 		return (call(H.guild_call, "get_skill_level", guild_ids[self], skill))
+	end,
+	count_item = function(self, item)
+		check(math_type(item) == "integer", "guild:count_item: want an item ID from items.id")
+		return (call(H.guild_call, "count_item", guild_ids[self], item))
 	end,
 	is_allied = function(self, other)
 		local id = guild_ids[other]
@@ -1428,6 +1481,22 @@ new_world, world_ids = handle_type("test world", {
 	get_announcements = function(self)
 		return (world_call("get_announcements"))
 	end,
+	close_storage = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "world:close_storage: want a player from world:new_player")
+		world_call("close_storage", id)
+	end,
+	trade = function(self, a, b, offer_a, offer_b)
+		local ia, ib = player_ids[a], player_ids[b]
+		check(ia ~= nil and ib ~= nil, "world:trade: want two players from world:new_player")
+		for _, o in ipairs({ offer_a or {}, offer_b or {} }) do
+			check(type(o) == "table", "world:trade: an offer is a table, such as { items = { [909] = 2 }, zeny = 100 }")
+			for k in pairs(o) do
+				check(k == "items" or k == "zeny", "world:trade: an offer has items and zeny")
+			end
+		end
+		return world_call("trade", ia, ib, offer_a, offer_b)
+	end,
 	chat = function(self, player, text, options)
 		local id = player_ids[player]
 		check(id ~= nil, "world:chat: want a player from world:new_player")
@@ -1622,15 +1691,10 @@ end
 local load_file
 
 -- core_internal is what core's converted NPC scripts use and the API has
--- no call for yet, such as opening the guild storage. Only the core mod
--- may require it, as wa.internal, and Go checks the caller again. It is
--- not API: it may change without notice.
+-- no call for yet, such as the guild storage log. Only the core mod may
+-- require it, as wa.internal, and Go checks the caller again. It is not
+-- API: it may change without notice.
 local core_internal = readonly("wa.internal", {
-	open_guild_storage = function(player)
-		local id = player_ids[player]
-		check(id ~= nil, "open_guild_storage: want a player handle")
-		return (call(H.core_guild_storage, id))
-	end,
 	guild_storage_log = function(player)
 		local id = player_ids[player]
 		check(id ~= nil, "guild_storage_log: want a player handle")
@@ -1741,6 +1805,9 @@ end
 -- invoke calls a handler. Arguments come in pairs: a kind and a value.
 -- "player" makes a player handle, "monster" a monster handle, and
 -- "value" passes the value as it is.
+-- trade_object is set below, with the hook objects.
+local trade_object
+
 function R.invoke(fn, ...)
 	local n = select("#", ...)
 	local args = {}
@@ -1802,10 +1869,31 @@ function R.invoke(fn, ...)
 			value = readonly("chat message", {
 				player = new_player(value.player), channel = value.channel, text = value.text, to = value.to, map = value.map,
 			})
+		elseif kind == "trade" then
+			value = trade_object(value)
 		end
 		args[#args + 1] = value
 	end
 	return fn(unpack(args, 1, n // 2))
+end
+
+-- trade_object makes the object of the trade event and hook: players
+-- and each item's from are handles (review decision 29).
+trade_object = function(fields)
+	local players = { new_player(fields.players[1]), new_player(fields.players[2]) }
+	local items = {}
+	for i, it in ipairs(fields.items) do
+		local from = players[1]
+		if it.from == fields.players[2] then
+			from = players[2]
+		end
+		items[i] = readonly("traded item", { from = from, item = it.item, amount = it.amount })
+	end
+	return readonly("trade", {
+		players = readonly("trade players", players),
+		items = readonly("traded items", items),
+		zeny = readonly("trade zeny", { fields.zeny[1], fields.zeny[2] }),
+	})
 end
 
 local hook_objects = {
@@ -1834,6 +1922,9 @@ local hook_messages = {
 -- hook_object makes the read-only object of a hook from Go's fields:
 -- player, monster, target and source become handles.
 local function hook_object(kind, fields)
+	if kind == "trade" then
+		return trade_object(fields)
+	end
 	if kind == "item_roll" then
 		-- The server's roll is not a field: the innermost next returns
 		-- it. The source's monster is a handle.
@@ -1911,6 +2002,16 @@ local function hook_result(kind, a, b, o)
 		end
 		return a
 	end
+	if kind == "trade" then
+		-- true, or false and a message.
+		if type(a) ~= "boolean" or (b ~= nil and type(b) ~= "string") then
+			error("the trade hook must return true, or false and a message", 0)
+		end
+		if a then
+			return true
+		end
+		return false, b
+	end
 	if kind == "chat" then
 		-- The text, or nil to block the message.
 		if a ~= nil and type(a) ~= "string" then
@@ -1935,6 +2036,9 @@ local function innermost(kind, o, fields)
 	end
 	if kind == "monster_target" then
 		return hook_result(kind, o.current, nil, o)
+	end
+	if kind == "trade" then
+		return true
 	end
 	return hook_result(kind, o[hook_values[kind]])
 end

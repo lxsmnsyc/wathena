@@ -10,6 +10,8 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/desperado](examples/desperado) is the phase 4 exit check: a new job, the Desperado, with a new skill, Quick Draw, a hat only it wears, a mentor who changes jobs, and a `job_change` handler ("Jobs" below).
 - [examples/classic-casting](examples/classic-casting) is a ruleset mod: a renewal world with pre-renewal cast time, element table, cooldowns and Mystical Amplification ("Rulesets" below).
 - [examples/party-hall](examples/party-hall) makes parties with `wa.parties`, greets members on the party events, and reads `rules.limits` ("Parties and friends" below).
+- [examples/guild-hall](examples/guild-hall) makes guilds with `wa.guilds`, follows the guild events and reads the guild limits ("Guilds" below).
+- [examples/bank](examples/bank) has a banker who opens the account's storage and an extra storage, a bound Bank Card, and a `trade` hook and event ("Storage, cart and trade" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -137,7 +139,7 @@ What each flag changes ([decision 0019](../docs/decisions/0019-ruleset-flags.md)
 
 ### Limits and rules
 
-A ruleset mod also sets the limits that rAthena compiles in, and the values of rAthena's conf files that rulesets own (proposal 0002, review decision 27):
+A ruleset mod also sets the limits that rAthena compiles in, and the values of rAthena's conf files that rulesets own (proposal 0002, review decisions 27 and 29):
 
 ```yaml
 provides:
@@ -146,21 +148,31 @@ provides:
     limits:
       party_members: 20
       friends: 80
+      inventory_slots: { base: 150, max: 300 }
     rules:
       party_share_level: 30
       party_even_share_bonus: 10
 ```
 
-| Limit | rAthena's value | Bounds | What it limits |
-|---|---|---|---|
-| `party_members` | 12 (`MAX_PARTY`) | 2 to 64 | Members of a party. |
-| `friends` | 40 (`MAX_FRIENDS`) | 1 to 200 | Names on a friend list. |
-| `block_list` | 20 (`MAX_IGNORE_LIST`) | 1 to 100 | Names on a block list. |
-| `guild_members` | 16 | 1 to 200 | Members of a guild before Guild Extension, which adds 6 per level (`guild_calcinfo`). |
-| `guild_positions` | 20 (`MAX_GUILDPOSITION`) | 2 to 40 | Positions of a guild. |
-| `guild_allies` | 3 (`max_guild_alliance`) | 0 to 10 | Allied guilds of a guild. |
-| `guild_enemies` | 3 (`max_guild_alliance`) | 0 to 10 | Enemy guilds of a guild. |
-| `guild_storage` | 500 | 1 to 2000 | Slots of a guild storage. Renewal's Guild Storage skill gives 100 and 100 per level, up to it. |
+Each limit has a range:
+
+- `base` is what a player or guild starts with. `max` is where expansions stop, such as Guild Extension or, later, inventory expansions.
+- A plain number sets the base. A max left out is the default max, or the base when the base is higher.
+- The engine has a ceiling per limit. A base or a max above it, or a base above the max, fails the load. The ceilings come from the benchmark of [decision 0023](../docs/decisions/0023-storage-cart-trade.md).
+
+| Limit | rAthena's base | Default max | Ceiling | What it limits |
+|---|---|---|---|---|
+| `party_members` | 12 (`MAX_PARTY`) | 12 | 256 | Members of a party. |
+| `friends` | 40 (`MAX_FRIENDS`) | 40 | 1000 | Names on a friend list. |
+| `block_list` | 20 (`MAX_IGNORE_LIST`) | 20 | 1000 | Names on a block list. |
+| `guild_members` | 16 | 76 (`MAX_GUILD`) | 512 | Members of a guild. Guild Extension adds 6 per level, up to the max (`guild_calcinfo`). |
+| `guild_positions` | 20 (`MAX_GUILDPOSITION`) | 20 | 40 | Positions of a guild. |
+| `guild_allies` | 3 (`max_guild_alliance`) | 3 | 10 | Allied guilds of a guild. |
+| `guild_enemies` | 3 (`max_guild_alliance`) | 3 | 10 | Enemy guilds of a guild. |
+| `guild_storage` | 600 (`MAX_GUILD_STORAGE`) | 600 | 10000 | Slots of a guild storage without renewal's Guild Storage skill. The skill gives 100 and 100 per level, up to the max. |
+| `inventory_slots` | 100 (`INVENTORY_BASE_SIZE`) | 200 (`MAX_INVENTORY`) | 1000 | Inventory slots of a new character. |
+| `storage_slots` | 600 (`MAX_STORAGE`) | 600 | 10000 | Slots of an account's storage. |
+| `cart_slots` | 100 (`MAX_CART`) | 100 | 1000 | Slots of a cart. |
 
 | Rule | rAthena's value | Values | What it changes |
 |---|---|---|---|
@@ -176,12 +188,14 @@ provides:
 | `guild_skill_relog_delay` | 300000 | 0 to 86400000 | Milliseconds a master's guild skills wait after a login or becoming master, in pre-renewal (the `skill_cooldown` flag). |
 | `guild_leaderchange_delay` | 1440 | 0 to 1000000000 | The wait between master changes. rAthena compares it with seconds, though its comment says minutes. |
 | `guild_alliance_onlygm` | no | yes, no | Only a guild master may accept an alliance. |
+| `max_cart_weight` | 8000 | 0 to 1000000000 | The weight a cart holds, in tenths, as item weights (`max_cart_weight`). |
+| `basic_skill_check` | yes | yes, no | Trading needs Basic Skill level 1, and core's Kafras ask for level 6 before storage (`basic_skill_check`). |
 
 - A value outside its bounds, or a name that is not a limit or a rule, fails the mod's load.
 - A ruleset mod that does not set one keeps what it extends. The core rulesets have rAthena's values.
 - Lowering a limit deletes nothing. A list over the limit keeps its names and cannot grow.
-- The client gets the limits at login, and Lua reads them as `rules.limits.<name>` ("Parties and friends" below).
-- Phase 5 step 5 added the guild limits and rules. Later steps add the storage, cart, inventory and card slot limits.
+- The client gets every limit's base and max at login. Lua reads the base as `rules.limits.<name>` ("Parties and friends" below).
+- Phase 5 step 5 added the guild limits and rules, and step 6 the ranges, the ceilings, and the inventory, storage and cart limits. Card slots have the ceiling 16 (`slots` of `data/items.yml`) and no limit yet.
 - [examples/classic-casting](examples/classic-casting) is a sample ruleset mod: a renewal world with pre-renewal casting.
 
 ## Permissions
@@ -237,9 +251,26 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
     - A mod job's name lets that job wear the item, whatever its class.
     - A job with `equips_as` follows the masks of that job ("Jobs" below).
   - `no_equip`: the map types where its script does not run, as `item_noequip.txt`: 1 normal maps, 2 PvP, 4 GvG, 8 battlegrounds.
+- `restrictions` lists where the item may not go, from rAthena's `item_trade`: `no_drop`, `no_trade`, `no_sell`, `no_cart`, `no_storage`, `no_guild_storage` and `no_mail`. A record that sets it sets the whole list. `no_drop` and `no_sell` stay in step with it. A card's restrictions also hold for the item it is in, as `itemdb_isrestricted`.
 - `unsupported` says what the item's script needs that the server does not have yet. A usable item with it is refused, and the player sees the text. Core sets it on converted items.
 - `id` and `aegis_name` cannot be set.
 - A new item is an `Etc` item until `type` says otherwise.
+
+### Storages: data/storages.yml
+
+Extra storages, as rAthena's premium storages of `inter_server.yml` (proposal 0002, review decision 29). Core has none: the account's storage is not a record.
+
+```yaml
+- name: vault
+  display_name: Bank Vault
+  slots: 50
+  owner: account
+```
+
+- A record becomes `<mod ID>:<name>`, such as `example.bank:vault`, with an ID from 10,000.
+- `display_name` is the name the storage window shows, 1 to 24 characters. It is the name without the mod prefix when left out.
+- `slots` is 1 to the ceiling of `storage_slots`.
+- `owner` is `account`, which the account's characters share, or `character`. It is `account` when left out.
 
 ### NPCs: data/npcs.yml
 
@@ -1026,8 +1057,54 @@ Events:
 Rules:
 
 - A guild is one for the whole world. Its master and members are handles of players on this map.
-- Players make guilds from the client with an Emperium, invite by position, and the master changes positions, the notice, the skills and the relations. Guild storage opens from core's Guild Warehouse Manager in renewal towns. Mods have no call for it yet.
+- Players make guilds from the client with an Emperium, invite by position, and the master changes positions, the notice, the skills and the relations. Guild storage opens from core's Guild Warehouse Manager in renewal towns, and from `player:open_guild_storage()` ("Storage, cart and trade" below).
 - In `wactl mod test`, a test case's own code needs no permission to make and change guilds.
+
+### Storage, cart and trade
+
+Storage, carts, bound items and trades follow proposal 0002, review decision 29. [examples/bank](examples/bank) uses each part.
+
+```lua
+local events = require "wa.events"
+local hooks = require "wa.hooks"
+
+return function()
+  hooks.on("trade", function(trade, next)
+    if trade.zeny[1] > 100000 or trade.zeny[2] > 100000 then
+      return false, "Trades of more than 100000 zeny go through the bank."
+    end
+    return next(trade)
+  end)
+  events.on("trade", function(trade)
+    for _, p in ipairs(trade.players) do
+      p:send_message("Your trade went through.")
+    end
+  end)
+end
+```
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `player:open_storage()` | None | Opens the account's storage, as `openstorage`. Scripts charge any fee. |
+| `player:open_storage(name)` | None | Opens an extra storage of `data/storages.yml`, as `openstorage2`. A name without a prefix is the calling mod's record, then core's. Returns false when the player has a storage open, or another character of the account has this one open. |
+| `player:open_guild_storage()` | None | Opens the guild storage, as `guildopenstorage`. Returns true, or false and why: `"no_guild"`, `"no_storage"`, `"no_permission"`, `"in_use"` or `"already_open"`. |
+| `player:count_item(item, { from = place })` | `game.read` | The amount in a storage or the cart, as `storagecountitem` and `cartcountitem`. nil when it cannot be read: no cart, or a storage window open. |
+| `player:give_item(item, amount, { to = place, bound = kind })` | `player.give_items` | Gives items into a storage or the cart, with its restrictions and bound rules. `bound` is `"account"`, `"character"`, `"party"` or `"guild"`, as `getitembound`. |
+| `player:take_item(item, amount, { from = place })` | None | Takes items from a storage or the cart, as `storagedelitem` and `cartdelitem`. Takes nothing when there are too few. |
+| `guild:count_item(item)` | `game.read` | The amount in the guild storage, as `guildstoragecountitem`. |
+
+A place is `"storage"`, the account's storage, `"cart"`, or an extra storage's name.
+
+Events and hooks:
+
+- `trade` gets `{ players, items, zeny }` after a trade on the context's map completed. `items` lists `{ from, item, amount }`, and `zeny` the zeny each player gave, in the order of `players`. The option `player` narrows it to one player's trades.
+- The `trade` hook gets the same object before the trade completes, and returns true, or false and a message that both players see. It needs `rules.override`.
+
+Rules:
+
+- Bound copies cannot be traded, dropped or sold. Storage and carts take account-bound copies, guild storage guild-bound ones, and a trade takes a guild-bound copy to a guildmate. A player who leaves its party loses its party-bound items, and one who leaves its guild puts its guild-bound items into the guild storage.
+- A trade needs Basic Skill level 1 with `basic_skill_check`. In `wactl mod test`, give the players `NV_BASIC` before `world:trade`.
+- `wa.testing` has `world:trade(a, b, offer_a, offer_b)`, which runs a whole trade and returns true, or false and why, and `world:close_storage(player)`. Both are provisional.
 
 ### Entity queries
 
@@ -1671,7 +1748,7 @@ To read them:
 go run ./tools/wactl convert npcs --mode renewal --out /tmp/core-npcs
 ```
 
-To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`. Kafra storage and pushcart rental say they are not available yet.
+To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`. Kafra pushcart rental says it is not available yet.
 
 Core also has NPCs of its own, written for wAthena: the Job Master (see "Job changes and resets"). The converter maps `jobchange` to `player:change_job` with `force`, `jobchange Job_Novice_High` and the `resetlvl(1)` after it to `player:rebirth`, `resetskill` and `resetstatus` to the reset calls, and the `Upper` parameter to the job tests. The coverage report of each mode is in [docs/generated](../docs/generated).
 

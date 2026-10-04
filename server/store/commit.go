@@ -125,6 +125,11 @@ func (s *Store) CommitWith(entries []Entry, storages []StorageWrite, logs transf
 	}
 	c.logs.Add(logs)
 	c.storages = append(c.storages, storages...)
+	for _, w := range storages {
+		if w.Key.Holder != 0 {
+			s.storageBusy[w.Key]++
+		}
+	}
 	if len(c.entries) == 0 && c.logs.Empty() && len(c.storages) == 0 && len(c.ops) == 0 {
 		return
 	}
@@ -284,6 +289,13 @@ func (s *Store) finishCommit(c *commit, stale, skip []bool, err error) {
 			delete(s.busy, x.id)
 		}
 	}
+	for _, w := range c.storages {
+		if w.Key.Holder != 0 {
+			if s.storageBusy[w.Key]--; s.storageBusy[w.Key] <= 0 {
+				delete(s.storageBusy, w.Key)
+			}
+		}
+	}
 	s.lane[0] = nil
 	s.lane = s.lane[1:]
 	s.broadcast()
@@ -316,6 +328,9 @@ func writeLogs(ctx context.Context, q *db.Queries, logs transfer.Logs) error {
 			}
 			p.RandomOptions = append(p.RandomOptions, mustJSON(opts))
 			p.Identified = append(p.Identified, !l.Unidentified)
+			p.FromStorages = append(p.FromStorages, int(l.From.Storage))
+			p.ToStorages = append(p.ToStorages, int(l.To.Storage))
+			p.Bounds = append(p.Bounds, int(l.Bound))
 		}
 		if err := q.InsertItemLogs(ctx, p); err != nil {
 			return err

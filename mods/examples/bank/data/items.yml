@@ -1,0 +1,5 @@
+# The Bank Card. The banker gives it bound to the account, so it cannot
+# be traded, dropped or sold, and only storage of the account takes it.
+- name: example.bank:Bank_Card
+  display_name: Bank Card
+  weight: 1

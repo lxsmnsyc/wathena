@@ -76,11 +76,25 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestGuildEmblem` | A 24 x 24 BMP emblem reaches the members in `GuildInfo` and the players in sight in `EntityGuild`, with version 1. `GET /emblems/<guild>/1.png` returns a 24 x 24 PNG with `Access-Control-Allow-Origin: *`, and magenta is transparent. Another version is not found, and a 32 x 32 image is refused. |
 | `TestGuildStorage` | The storage fails before Guild Storage is learned, and for a position without storage rights. The master opens it, puts Jellopy in and takes some out. Another member gets `STORAGE_OUTCOME_IN_USE` while it is open, then sees what is in it. The audit counts the stored items. |
 | `TestGuildInTheDatabase` | With PostgreSQL, a guild's members, positions, notice, level, skills, emblem and storage come back after `Restart`, and their rows are saved. |
+| `TestStoragePutAndTake` | `Welcome` holds the storage limits with their ranges. The fixture's Kafra opens the account's storage. A player puts Jellopy in and takes some out, a script counts and takes what it holds, and the storage shows the same items when it opens again. |
+| `TestExtraStorage` | The Kafra opens the fixture's Vault, an extra storage of 50 slots. Its items stay apart from the account's storage, and a script gives items into it. |
+| `TestStorageInTheDatabase` | With PostgreSQL, the account's storage, the Vault and the cart come back after a login and after `Restart`, and their rows and item log lines are saved. |
+| `TestCart` | A Merchant learns Pushcart and gets a cart. It puts items in, takes them out, moves them between the cart and the storage, and the cart refuses what passes `max_cart_weight`. A player without a cart gets `STORAGE_OUTCOME_NO_CART`. |
+| `TestStoragePages` | A script fills a storage with 250 charms that do not stack. The list comes in pages after `StorageOpen`, each in its own frame under 64 KiB, and lists every charm. |
+| `TestTrade` | Two players trade items and zeny. Both inventories and zeny change, and the fixture's `trade` event tells both. |
+| `TestTradeInTheDatabase` | The same with PostgreSQL: the item and zeny log lines have the action `trade` and one transaction, and the saved characters hold the result. |
+| `TestTradeRefused` | The fixture's `trade` hook refuses a trade with Contraband, and both players get its message. A player who blocks the requester refuses at once and sees no request. A player 3 cells away is too far. |
+| `TestRestrictions` | Items with one restriction each show it in `InventoryAdd`. A `no_trade` item cannot be offered, a `no_storage` item cannot be stored by a player or a script, and a `no_drop` item cannot be dropped. An equipped item cannot be offered or stored. |
+| `TestBoundItems` | Bound Jellopy do not stack with the others. An account-bound copy goes into storage. A character-bound copy cannot be stored, offered or dropped. A party-bound copy goes away when its owner leaves the party. |
 | `TestDuplicationDropsAndPickUps` | The duplication test below, in memory. |
 | `TestDuplicationWithDatabase` | The same, with PostgreSQL, then the database checks. |
 | `TestDuplicationPartyPickUps` | The same, in memory, with the bots in parties of 4 with even item share and shared pick-up. |
 | `TestDuplicationGuildStorage` | The same with 8 bots in one guild, which also use the guild storage. |
 | `TestDuplicationGuildStorageWithDatabase` | The same, with PostgreSQL, then the database checks with the saved guild storage. |
+| `TestDuplicationStorageAndCart` | The drop and pick-up test with personal storage and cart moves, in memory. |
+| `TestDuplicationStorageAndCartWithDatabase` | The same, with PostgreSQL, with the saved storages and carts. |
+| `TestDuplicationTrades` | 8 bots trade Jellopy and zeny, and use their storages and carts, with connections closed in the middle of trades. |
+| `TestDuplicationTradesWithDatabase` | The same, with PostgreSQL, then the saved inventories, storages, carts and zeny. |
 
 ## Duplication tests
 
@@ -108,7 +122,13 @@ Guild storage is part of the test too:
 - `GuildStorageMove` opens the bot's guild storage through the debug endpoint. Only one bot at a time has it open, and the others get `STORAGE_OUTCOME_IN_USE`. The bot puts in and takes out parts of Jellopy stacks one to four times, and closes it. One time in 8 it closes its connection instead, with the storage open, and logs in again.
 - An item taken out of the storage enters the inventory, but it is not a pick-up, so the counts of items that came in leave it out.
 
-With a database, `CheckDatabase` stops the server and checks the saved inventories and guild storages against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial. Later steps add moves for trade, personal storage, mail and vending.
+Personal storage, carts and trades are part of the test too (phase 5 step 6):
+
+- The audit lists each storage and cart in memory in the `guild_storage` entry, named `storage:<key>`. The test counts their items in the totals.
+- `PersonalStorageMove` opens the bot's account storage through the fixture's `!storage`, and moves parts of Jellopy stacks one to four times between the inventory, the storage and the cart. One time in 8 it closes its connection instead, with the storage open. `CartMove` moves Jellopy between the inventory and the cart. `CartSetup` gives each bot Pushcart and a cart.
+- `TradeMove` has the bots with odd numbers ask a bot with an even number to trade. Each side offers up to two parts of Jellopy stacks and sometimes zeny, locks and confirms. One time in 15 at each of three points, before the lock, after it and right after the confirm, a bot closes its connection instead and logs in again. The trade must happen whole or not at all.
+
+With a database, `CheckDatabase` stops the server and checks the saved inventories, guild storages, storages and carts against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial. Later steps add moves for mail and vending.
 
 A failure that shows a total below the start with a closed connection means a character left the world while the test still counted on it. See decision 0017, "A missing total in the duplication test". `botclient` writes with its own timeout for this reason: the WebSocket library closes the connection when a write's context ends during the write.
 

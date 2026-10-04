@@ -122,7 +122,7 @@ var Modules = []Module{
 			Name: "on",
 			Params: []Param{{"name", "wa.EventName", "The event's name. An unknown name, or an event of another context kind, raises an error."},
 				{"handler", "function", "Runs each time the event fires, in registration order."},
-				{"options", "wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|wa.ChatOptions|nil", "Only the death, status, skill_used and chat events take options: they narrow which events run the handler."}},
+				{"options", "wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|wa.ChatOptions|wa.TradeOptions|nil", "Only the death, status, skill_used, chat and trade events take options: they narrow which events run the handler."}},
 			Returns:    "wa.EventHandle",
 			Doc:        "Registers a handler for an event.",
 			Permission: "event.listen",
@@ -134,7 +134,7 @@ var Modules = []Module{
 		Funcs: []Func{{
 			Name: "on",
 			Params: []Param{{"name", "wa.HookName", "The hook's name. An unknown name raises an error."},
-				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice|wa.ItemRoll|wa.ChatMessage, next: fun(object?: table): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer?): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer?", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message."},
+				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice|wa.ItemRoll|wa.ChatMessage|wa.Trade, next: fun(object?: table): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer|string|nil): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer|string|nil", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message; trade returns true, or false and a message to refuse the trade."},
 				{"options", "wa.HookOptions?", ""}},
 			Returns:    "wa.HookHandle",
 			Doc:        "Adds a hook. Higher priority runs first; equal priorities run in the order they were added.",
@@ -407,8 +407,10 @@ var Classes = []Class{
 			{Name: "send_message", Params: []Param{{"text", "string", "1 to 255 bytes."}}, Doc: "Shows a line in the player's chat log, as CHAT_CHANNEL_SYSTEM."},
 			{Name: "give_item", Params: []Param{itemParam, {"amount", "integer?", "1 to 30000. 1 by default."}, {"options", "wa.GiveItemOptions?", ""}}, Returns: "boolean", Doc: "Gives items, as getitem. Returns false when they do not fit.", Permission: "player.give_items"},
 			{Name: "give_item_from_group", Params: []Param{{"group", "integer", "A group from items.group."}}, Doc: "Gives one use of an item group, as getgroupitem.", Permission: "player.give_items"},
-			{Name: "count_item", Params: []Param{itemParam}, Returns: "integer", Doc: "How many of the item the player has, as countitem.", Permission: "game.read"},
-			{Name: "take_item", Params: []Param{itemParam, {"amount", "integer", "1 or more."}}, Returns: "boolean", Doc: "Takes items, as delitem. Returns false, and takes nothing, when the player has too few."},
+			{Name: "count_item", Params: []Param{itemParam, {"options", "wa.FromOptions?", ""}}, Returns: "integer?", Doc: "How many of the item the player has, as countitem. With from, how many a storage or the cart holds, as storagecountitem and cartcountitem; nil when it cannot be read: no cart, or a storage window open.", Permission: "game.read"},
+			{Name: "take_item", Params: []Param{itemParam, {"amount", "integer", "1 or more."}, {"options", "wa.FromOptions?", ""}}, Returns: "boolean", Doc: "Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. Returns false, and takes nothing, when there are too few."},
+			{Name: "open_storage", Params: []Param{{"name", "string?", "An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. Nothing opens the account's storage."}}, Returns: "boolean", Doc: "Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee."},
+			{Name: "open_guild_storage", Returns: "boolean, string?", Doc: "Opens the guild storage, as guildopenstorage. Returns true, or false and why: \"no_guild\", \"no_storage\", \"no_permission\", \"in_use\" or \"already_open\"."},
 			{Name: "can_carry", Params: []Param{itemParam, {"amount", "integer", ""}}, Returns: "boolean", Doc: "Whether the items fit, by weight and slots, as checkweight.", Permission: "game.read"},
 			{Name: "pay_zeny", Params: []Param{{"amount", "integer", ""}}, Returns: "boolean", Doc: "Takes zeny. Returns false, and takes nothing, when the player has too little."},
 			{Name: "give_zeny", Params: []Param{{"amount", "integer", ""}}, Doc: "Gives zeny. Zeny over 2,147,483,647 is lost.", Permission: "player.give_zeny"},
@@ -638,6 +640,7 @@ var Classes = []Class{
 			{Name: "get_member_names", Returns: "string[]", Doc: "Every member's name, online or not, in slot order.", Permission: "game.read"},
 			{Name: "get_position", Params: []Param{playerParam}, Returns: "wa.GuildPosition?", Doc: "The member's position, or nil for a player who is not a member.", Permission: "game.read"},
 			{Name: "get_skill_level", Params: []Param{{"skill", "integer", "A guild skill's ID, such as skills.id(\"GD_EXTENSION\")."}}, Returns: "integer", Doc: "The guild's level of a guild skill, as getgdskilllv.", Permission: "game.read"},
+			{Name: "count_item", Params: []Param{itemParam}, Returns: "integer", Doc: "How many of the item the guild storage holds, as guildstoragecountitem.", Permission: "game.read"},
 			{Name: "is_allied", Params: []Param{{"other", "wa.Guild", ""}}, Returns: "boolean", Doc: "Whether the guilds are allies.", Permission: "game.read"},
 			{Name: "is_enemy", Params: []Param{{"other", "wa.Guild", ""}}, Returns: "boolean", Doc: "Whether this guild has the other as an enemy. Enemies are on one side only.", Permission: "game.read"},
 			{Name: "add", Params: []Param{playerParam}, Returns: "boolean", Doc: "Puts the player in the guild with the last position. Returns false when the player has a guild or the guild is full. The guild_join event follows, with the reason \"script\".", Permission: "guild.manage"},
@@ -681,16 +684,19 @@ var Classes = []Class{
 		},
 	},
 	{
-		Name: "wa.Limits", Doc: "The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.",
+		Name: "wa.Limits", Doc: "The limits of the world's ruleset, as rules.limits: each limit's base, what a player or guild starts with. A list over a limit that a ruleset lowered keeps its entries and cannot grow. The engine's ceiling bounds each limit's max.",
 		Fields: []Field{
-			{"party_members", "integer", "The most members a party holds, as MAX_PARTY. 12 by default, at most 64."},
-			{"friends", "integer", "The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200."},
-			{"block_list", "integer", "The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100."},
-			{"guild_members", "integer", "The most members a guild holds before Guild Extension, which adds 6 per level. 16 by default, at most 200."},
-			{"guild_positions", "integer", "The positions of a guild, as MAX_GUILDPOSITION. 20 by default, at most 40."},
-			{"guild_allies", "integer", "The most allied guilds of a guild, as max_guild_alliance. 3 by default, at most 10."},
-			{"guild_enemies", "integer", "The most enemy guilds of a guild, as max_guild_alliance. 3 by default, at most 10."},
-			{"guild_storage", "integer", "The most slots a guild storage holds. 500 by default, at most 2,000."},
+			{"party_members", "integer", "The most members a party holds, as MAX_PARTY. 12 by default, ceiling 256."},
+			{"friends", "integer", "The most names a friend list holds, as MAX_FRIENDS. 40 by default, ceiling 1,000."},
+			{"block_list", "integer", "The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, ceiling 1,000."},
+			{"guild_members", "integer", "The most members a guild holds before Guild Extension, which adds 6 per level up to the max, 76 by default as MAX_GUILD. 16 by default, ceiling 512."},
+			{"guild_positions", "integer", "The positions of a guild, as MAX_GUILDPOSITION. 20 by default, ceiling 40."},
+			{"guild_allies", "integer", "The most allied guilds of a guild, as max_guild_alliance. 3 by default, ceiling 10."},
+			{"guild_enemies", "integer", "The most enemy guilds of a guild, as max_guild_alliance. 3 by default, ceiling 10."},
+			{"guild_storage", "integer", "The slots of a guild storage without renewal's Guild Storage skill, as MAX_GUILD_STORAGE. The skill gives 100 and 100 per level, up to the max. 600 by default, ceiling 10,000."},
+			{"inventory_slots", "integer", "The inventory slots of a new character, as INVENTORY_BASE_SIZE. 100 by default, with the max 200, MAX_INVENTORY. Ceiling 1,000."},
+			{"storage_slots", "integer", "The slots of an account's storage, as MAX_STORAGE. 600 by default, ceiling 10,000."},
+			{"cart_slots", "integer", "The slots of a cart, as MAX_CART. 100 by default, ceiling 1,000."},
 		},
 	},
 	{
@@ -780,6 +786,9 @@ var Classes = []Class{
 			{Name: "chat", Params: []Param{playerParam, {"text", "string", "1 to 255 characters."}, {"options", "wa.ChatTestOptions?", ""}},
 				Doc: "The player says a line, as a client's chat: it passes the mute, the chat filter and the chat hooks, then the chat event runs.", Provisional: true},
 			{Name: "get_chat", Params: []Param{playerParam}, Returns: "wa.HeardLine[]", Doc: "The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines.", Provisional: true},
+			{Name: "trade", Params: []Param{{"a", "wa.Player", ""}, {"b", "wa.Player", "Steps next to a."}, {"offer_a", "wa.TradeOffer?", ""}, {"offer_b", "wa.TradeOffer?", ""}}, Returns: "boolean, string?",
+				Doc: "Runs a whole trade, as two clients would: a asks, b accepts, both offer, lock and confirm. Returns true when it completed, or false and why: the trade hook's message, or an outcome such as \"restricted\" or \"bound\". A refused offer ends the trade. Trading needs Basic Skill level 1, which a new player from world:new_player lacks: give it skills = { [skills.id(\"NV_BASIC\")] = 9 }.", Provisional: true},
+			{Name: "close_storage", Params: []Param{playerParam}, Doc: "Closes the player's storage window, as the client's close button.", Provisional: true},
 		},
 	},
 	{
@@ -1025,7 +1034,33 @@ var Classes = []Class{
 	{
 		Name: "wa.GiveItemOptions", Doc: "Options of player:give_item.",
 		Fields: []Field{{"rent_seconds", "integer?", "Gives rentals, as rentitem. Rentals do not expire yet."},
-			{"roll", `"random"|"default"|table<string, integer>|nil`, "How the copies' rolls are set: \"random\" rolls each value, \"default\" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code."}},
+			{"roll", `"random"|"default"|table<string, integer>|nil`, "How the copies' rolls are set: \"random\" rolls each value, \"default\" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code."},
+			{"to", "string?", `Where the copies go: "storage", "cart" or an extra storage's name, instead of the inventory. They follow the place's restrictions and bound rules.`},
+			{"bound", "wa.Bound?", "Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares."}},
+	},
+	{
+		Name: "wa.TradeOffer", Doc: "One side of world:trade.",
+		Fields: []Field{{"items", "table<integer, integer>?", "Item IDs and the amount of each to offer."}, {"zeny", "integer?", ""}},
+	},
+	{
+		Name: "wa.FromOptions", Doc: "Options of player:count_item and player:take_item.",
+		Fields: []Field{{"from", "string", `"storage", "cart" or an extra storage's name of data/storages.yml.`}},
+	},
+	{
+		Name: "wa.Trade", Doc: "The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.",
+		Fields: []Field{
+			{"players", "wa.Player[]", "The two players: the one who confirmed last first."},
+			{"items", "wa.TradedItem[]", "Each offered item."},
+			{"zeny", "integer[]", "The zeny each player gave, in the order of players."},
+		},
+	},
+	{
+		Name: "wa.TradedItem", Doc: "One item of a trade.",
+		Fields: []Field{{"from", "wa.Player", "The player who gave it."}, {"item", "integer", "The item's ID."}, {"amount", "integer", ""}},
+	},
+	{
+		Name: "wa.TradeOptions", Doc: "The options of a trade handler.",
+		Fields: []Field{{"player", "wa.Player?", "Only trades of this player."}},
 	},
 	{
 		Name: "wa.WithBonusesOptions", Doc: "Options of timers.with_bonuses.",
@@ -1246,6 +1281,7 @@ var Events = []Event{
 	{Name: "guild_join", Kinds: []string{"mod", "event"}, Params: []Param{{"join", "wa.GuildMembership", ""}}, Doc: "A player of the context's map joined a guild: an accepted invite, or a wa.guilds call, which also fires it for the master of a new guild."},
 	{Name: "guild_leave", Kinds: []string{"mod", "event"}, Params: []Param{{"leave", "wa.GuildMembership", ""}}, Doc: "A player of the context's map left its guild. A member who is offline gets no event."},
 	{Name: "guild_change", Kinds: []string{"mod", "event"}, Params: []Param{{"change", "wa.GuildChange", ""}}, Doc: "A guild got a new master, a level, a notice or an emblem, by a change made on the context's map. A new emblem from the account pages runs it on the map of the master, or of the first online member."},
+	{Name: "trade", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"trade", "wa.Trade", ""}}, Doc: "Two players on the context's map completed a trade. Options narrow it."},
 }
 
 // EquipSlots are the slot names of player:get_equipped.
@@ -1272,7 +1308,8 @@ func Aliases() []Alias {
 		{Name: "wa.EventName", Values: events, Doc: "An event name of wa.events."},
 		{Name: "wa.BonusName", Values: bonuses, Doc: "A bonus name of wa.bonuses (proposal 0002a)."},
 		{Name: "wa.EquipSlot", Values: EquipSlots, Doc: "An equipment slot."},
-		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat", "trade"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.Bound", Values: []string{"account", "character", "party", "guild"}, Doc: "Who a bound copy is bound to."},
 		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
 	}

@@ -8,18 +8,22 @@ import (
 )
 
 // Limits and rules of a ruleset (strategy section 6.8, proposal 0002,
-// review decision 27):
+// review decisions 27 and 29):
 //   - A limit is a number rAthena compiles in, such as MAX_PARTY. A
-//     ruleset mod sets it in its limits block. Its default is rAthena's
-//     value, and it has a hard maximum so the database and the protocol
-//     can hold every value.
+//     ruleset mod sets it in its limits block. Each limit has a range:
+//     base, what a player or guild starts with, and max, where
+//     expansions such as items, Guild Extension or scripts stop.
+//   - The engine has a ceiling per limit (Bound.Max). The database and
+//     the protocol hold every value up to it, and a ruleset whose max is
+//     above it fails to load.
 //   - A rule is a value of rAthena's conf files, such as
 //     party_share_level. A ruleset mod sets it in its rules block.
 //   - A value outside its bounds fails the ruleset's load.
 //   - Lowering a limit deletes nothing. A list over the limit keeps its
 //     entries and cannot grow.
 
-// Limits are a world's limits.
+// Limits are a world's limits. Each int field is the limit's base. Max
+// holds each limit's max, in LimitBounds order: read it with MaxOf.
 type Limits struct {
 	// PartyMembers is MAX_PARTY: the most members a party holds.
 	PartyMembers int
@@ -29,7 +33,7 @@ type Limits struct {
 	BlockList int
 	// GuildMembers is the most members a guild holds before Guild
 	// Extension: the 16 of int_guild.cpp's guild_calcinfo. Each level of
-	// GD_EXTENSION adds 6.
+	// GD_EXTENSION adds 6, up to the limit's max, MAX_GUILD.
 	GuildMembers int
 	// GuildPositions is MAX_GUILDPOSITION: the positions of a guild.
 	GuildPositions int
@@ -37,9 +41,47 @@ type Limits struct {
 	// allied and enemy guilds a guild has. rAthena counts each against
 	// the one setting.
 	GuildAllies, GuildEnemies int
-	// GuildStorage is the most slots a guild storage holds. Renewal's
-	// Guild Storage skill gives 100 + 100 per level, up to it.
+	// GuildStorage is the most slots a guild storage holds without
+	// renewal's Guild Storage skill, MAX_GUILD_STORAGE. The skill gives
+	// 100 + 100 per level, up to the limit's max.
 	GuildStorage int
+	// InventorySlots is INVENTORY_BASE_SIZE: the inventory slots a new
+	// character has. Its max is MAX_INVENTORY, where inventory
+	// expansions stop.
+	InventorySlots int
+	// StorageSlots is MAX_STORAGE: the slots of an account's storage.
+	StorageSlots int
+	// CartSlots is MAX_CART: the slots of a cart.
+	CartSlots int
+	// Max are the limits' max values, in LimitBounds order.
+	Max [NumLimits]int
+}
+
+// NumLimits is the number of limits in LimitBounds.
+const NumLimits = 11
+
+// Range is a limit's base and max.
+type Range struct {
+	Base, Max int
+}
+
+// RangeSet is what a ruleset mod set of a limit: the base, the max, or
+// both. A plain number sets the base.
+type RangeSet struct {
+	Base, Max       int
+	HasBase, HasMax bool
+}
+
+// Merge returns s with the parts o sets replaced, for a ruleset that
+// extends another.
+func (s RangeSet) Merge(o RangeSet) RangeSet {
+	if o.HasBase {
+		s.Base, s.HasBase = o.Base, true
+	}
+	if o.HasMax {
+		s.Max, s.HasMax = o.Max, true
+	}
+	return s
 }
 
 // Guild holds the guild values of rAthena's conf/battle/guild.conf and
@@ -97,25 +139,41 @@ type Party struct {
 // Bound is one limit or rule: its name in a ruleset mod, rAthena's
 // default and the values it may take.
 type Bound struct {
-	Name     string
-	Default  int
+	Name    string
+	Default int
+	// Min and Max bound the value. For a limit, Default is the base and
+	// Max is the engine's ceiling: a ruleset's base and max must be at
+	// most Max.
 	Min, Max int
+	// DefaultMax is a limit's max when a ruleset sets none.
+	DefaultMax int
 	// Bool is set for a rule that is yes or no. It is stored as 1 or 0.
 	Bool bool
 	// About says what it is, for errors and the docs.
 	About string
 }
 
-// LimitBounds are the limits a ruleset may set.
+// LimitBounds are the limits a ruleset may set. The order is Limits.Max's.
+// Max is the engine's ceiling, set from the benchmark of decision 0023.
 var LimitBounds = []Bound{
-	{Name: "party_members", Default: 12, Min: 2, Max: 64, About: "the most members a party holds (MAX_PARTY)"},
-	{Name: "friends", Default: 40, Min: 1, Max: 200, About: "the most names a friend list holds (MAX_FRIENDS)"},
-	{Name: "block_list", Default: 20, Min: 1, Max: 100, About: "the most names a block list holds (MAX_IGNORE_LIST)"},
-	{Name: "guild_members", Default: 16, Min: 1, Max: 200, About: "the most members a guild holds before Guild Extension"},
-	{Name: "guild_positions", Default: 20, Min: 2, Max: 40, About: "the positions of a guild (MAX_GUILDPOSITION)"},
-	{Name: "guild_allies", Default: 3, Min: 0, Max: 10, About: "the most allied guilds of a guild (max_guild_alliance)"},
-	{Name: "guild_enemies", Default: 3, Min: 0, Max: 10, About: "the most enemy guilds of a guild (max_guild_alliance)"},
-	{Name: "guild_storage", Default: 500, Min: 1, Max: 2000, About: "the most slots a guild storage holds"},
+	{Name: "party_members", Default: 12, DefaultMax: 12, Min: 2, Max: 256, About: "the most members a party holds (MAX_PARTY)"},
+	{Name: "friends", Default: 40, DefaultMax: 40, Min: 1, Max: 1000, About: "the most names a friend list holds (MAX_FRIENDS)"},
+	{Name: "block_list", Default: 20, DefaultMax: 20, Min: 1, Max: 1000, About: "the most names a block list holds (MAX_IGNORE_LIST)"},
+	{Name: "guild_members", Default: 16, DefaultMax: 76, Min: 1, Max: 512, About: "the most members a guild holds before Guild Extension, and with it (MAX_GUILD)"},
+	{Name: "guild_positions", Default: 20, DefaultMax: 20, Min: 2, Max: 40, About: "the positions of a guild (MAX_GUILDPOSITION)"},
+	{Name: "guild_allies", Default: 3, DefaultMax: 3, Min: 0, Max: 10, About: "the most allied guilds of a guild (max_guild_alliance)"},
+	{Name: "guild_enemies", Default: 3, DefaultMax: 3, Min: 0, Max: 10, About: "the most enemy guilds of a guild (max_guild_alliance)"},
+	{Name: "guild_storage", Default: 600, DefaultMax: 600, Min: 1, Max: 10000, About: "the most slots a guild storage holds (MAX_GUILD_STORAGE)"},
+	{Name: "inventory_slots", Default: 100, DefaultMax: 200, Min: 1, Max: 1000, About: "the inventory slots of a new character, and with expansions (MAX_INVENTORY)"},
+	{Name: "storage_slots", Default: 600, DefaultMax: 600, Min: 1, Max: 10000, About: "the slots of an account's storage (MAX_STORAGE)"},
+	{Name: "cart_slots", Default: 100, DefaultMax: 100, Min: 1, Max: 1000, About: "the slots of a cart (MAX_CART)"},
+}
+
+// Ceiling is a limit's engine ceiling, or 0 for a name that is not a
+// limit.
+func Ceiling(name string) int {
+	b, _ := FindBound(LimitBounds, name)
+	return b.Max
 }
 
 // RuleBounds are the rules a ruleset may set.
@@ -132,6 +190,44 @@ var RuleBounds = []Bound{
 	{Name: "guild_skill_relog_delay", Default: 300000, Min: 0, Max: 86400000, About: "milliseconds a new master's guild skills wait in pre-renewal"},
 	{Name: "guild_leaderchange_delay", Default: 1440, Min: 0, Max: 1000000000, About: "the wait between guild master changes (guild_leaderchange_delay)"},
 	{Name: "guild_alliance_onlygm", Default: 0, Min: 0, Max: 1, Bool: true, About: "only a guild master may accept an alliance"},
+	{Name: "max_cart_weight", Default: 8000, Min: 0, Max: 1000000000, About: "the weight a cart holds, in tenths (max_cart_weight)"},
+	{Name: "basic_skill_check", Default: 1, Min: 0, Max: 1, Bool: true, About: "trading needs Basic Skill level 1, and storage level 6 (basic_skill_check)"},
+}
+
+// Items holds the storage, cart and trade values of rAthena's
+// conf/battle/player.conf.
+type Items struct {
+	// MaxCartWeight is max_cart_weight in tenths, as item weights.
+	MaxCartWeight int
+	// BasicSkillCheck is basic_skill_check: trading needs Basic Skill
+	// level 1, and the Kafras' storage level 6.
+	BasicSkillCheck bool
+	set             bool
+}
+
+// ItemsOf turns the rules a ruleset set into Items. A rule it does not
+// set has rAthena's value.
+func ItemsOf(set map[string]int) (Items, error) {
+	v, err := valuesOf(RuleBounds, set)
+	if err != nil {
+		return Items{}, err
+	}
+	return Items{MaxCartWeight: v["max_cart_weight"], BasicSkillCheck: v["basic_skill_check"] == 1, set: true}, nil
+}
+
+// DefaultItems are rAthena's storage, cart and trade rules.
+func DefaultItems() Items {
+	i, _ := ItemsOf(nil)
+	return i
+}
+
+// ItemsOrDefault returns r's item rules, or rAthena's for nil rules or
+// rules made without them.
+func ItemsOrDefault(r *Rules) Items {
+	if r == nil || !r.Items.set {
+		return DefaultItems()
+	}
+	return r.Items
 }
 
 // DefaultLimits are rAthena's limits.
@@ -207,15 +303,54 @@ func valuesOf(list []Bound, set map[string]int) (map[string]int, error) {
 }
 
 // LimitsOf turns the limits a ruleset set into Limits. A limit it does
-// not set has rAthena's value.
-func LimitsOf(set map[string]int) (Limits, error) {
-	v, err := valuesOf(LimitBounds, set)
-	if err != nil {
-		return Limits{}, err
+// not set has rAthena's range. A max it does not set is the default max,
+// or the base when the base is higher. The base must be at most the max,
+// and the max at most the engine's ceiling.
+func LimitsOf(set map[string]RangeSet) (Limits, error) {
+	var out Limits
+	base := map[string]int{}
+	for name := range set {
+		if _, ok := FindBound(LimitBounds, name); !ok {
+			return Limits{}, fmt.Errorf("there is no %s", name)
+		}
 	}
-	return Limits{PartyMembers: v["party_members"], Friends: v["friends"], BlockList: v["block_list"],
-		GuildMembers: v["guild_members"], GuildPositions: v["guild_positions"], GuildAllies: v["guild_allies"],
-		GuildEnemies: v["guild_enemies"], GuildStorage: v["guild_storage"]}, nil
+	for i, b := range LimitBounds {
+		s := set[b.Name]
+		r := Range{Base: b.Default, Max: b.DefaultMax}
+		if s.HasBase {
+			r.Base = s.Base
+		}
+		switch {
+		case s.HasMax:
+			r.Max = s.Max
+		case r.Base > r.Max:
+			r.Max = r.Base
+		}
+		if err := b.CheckRange(r); err != nil {
+			return Limits{}, err
+		}
+		base[b.Name] = r.Base
+		out.Max[i] = r.Max
+	}
+	out.PartyMembers, out.Friends, out.BlockList = base["party_members"], base["friends"], base["block_list"]
+	out.GuildMembers, out.GuildPositions, out.GuildAllies = base["guild_members"], base["guild_positions"], base["guild_allies"]
+	out.GuildEnemies, out.GuildStorage = base["guild_enemies"], base["guild_storage"]
+	out.InventorySlots, out.StorageSlots, out.CartSlots = base["inventory_slots"], base["storage_slots"], base["cart_slots"]
+	return out, nil
+}
+
+// CheckRange checks a limit's range: the base from Min, at most the max,
+// and the max at most the engine's ceiling.
+func (b Bound) CheckRange(r Range) error {
+	switch {
+	case r.Max > b.Max:
+		return fmt.Errorf("%s: the max is at most %d, the engine's ceiling, not %d", b.Name, b.Max, r.Max)
+	case r.Base < b.Min || r.Base > b.Max:
+		return fmt.Errorf("%s is %d to %d, not %d", b.Name, b.Min, b.Max, r.Base)
+	case r.Base > r.Max:
+		return fmt.Errorf("%s: the base, %d, is above the max, %d", b.Name, r.Base, r.Max)
+	}
+	return nil
 }
 
 // GuildOf turns the rules a ruleset set into Guild. A rule it does not
@@ -247,31 +382,58 @@ func PartyOf(set map[string]int) (Party, error) {
 }
 
 // Named returns the limits by name, in LimitBounds order, for Lua's
-// rules.limits and the client.
+// rules.limits and the client. Value is the base.
 func (l Limits) Named() []NamedValue {
-	return []NamedValue{{"party_members", l.PartyMembers}, {"friends", l.Friends}, {"block_list", l.BlockList},
-		{"guild_members", l.GuildMembers}, {"guild_positions", l.GuildPositions}, {"guild_allies", l.GuildAllies},
-		{"guild_enemies", l.GuildEnemies}, {"guild_storage", l.GuildStorage}}
+	v := []int{l.PartyMembers, l.Friends, l.BlockList, l.GuildMembers, l.GuildPositions, l.GuildAllies, l.GuildEnemies,
+		l.GuildStorage, l.InventorySlots, l.StorageSlots, l.CartSlots}
+	out := make([]NamedValue, len(LimitBounds))
+	for i, b := range LimitBounds {
+		out[i] = NamedValue{Name: b.Name, Value: v[i], Max: l.Max[i]}
+	}
+	return out
+}
+
+// MaxOf is a limit's max by name, or 0 for a name that is not a limit.
+func (l Limits) MaxOf(name string) int {
+	for i, b := range LimitBounds {
+		if b.Name == name {
+			return l.Max[i]
+		}
+	}
+	return 0
 }
 
 // NamedValue is a limit's name and value.
 type NamedValue struct {
 	Name  string
 	Value int
+	// Max is the limit's max.
+	Max int
 }
 
 // LimitsOrDefault returns r's limits, or rAthena's for nil rules or
-// rules made before limits existed.
+// rules made before limits existed. Limits made before a limit existed
+// get its default range.
 func LimitsOrDefault(r *Rules) Limits {
 	if r == nil || r.Limits == (Limits{}) {
 		return DefaultLimits()
 	}
 	l := r.Limits
+	d := DefaultLimits()
 	if l.GuildPositions == 0 {
 		// Rules made before the guild limits existed.
-		d := DefaultLimits()
 		l.GuildMembers, l.GuildPositions, l.GuildAllies, l.GuildEnemies, l.GuildStorage = d.GuildMembers, d.GuildPositions,
 			d.GuildAllies, d.GuildEnemies, d.GuildStorage
+	}
+	if l.InventorySlots == 0 {
+		// Rules made before the storage limits existed.
+		l.InventorySlots, l.StorageSlots, l.CartSlots = d.InventorySlots, d.StorageSlots, d.CartSlots
+	}
+	for i := range l.Max {
+		if l.Max[i] == 0 {
+			l.Max[i] = max(d.Max[i], []int{l.PartyMembers, l.Friends, l.BlockList, l.GuildMembers, l.GuildPositions, l.GuildAllies,
+				l.GuildEnemies, l.GuildStorage, l.InventorySlots, l.StorageSlots, l.CartSlots}[i])
+		}
 	}
 	return l
 }

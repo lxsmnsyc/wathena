@@ -9,3 +9,37 @@
     luck: {min: 1, max: 5, default: 3, distribution: uniform}
   bonuses:
     - [luk, {roll: luck}]
+# Items for the storage, cart and trade scenarios. They come after the
+# charm, so their IDs follow its ID in this order.
+# The trade hook in scripts/main.lua refuses any trade with Contraband.
+- name: e2e.fixture:Contraband
+  type: Etc
+  display_name: Contraband
+  weight: 10
+  stackable: true
+# One restriction each, as rAthena's item_trade flags.
+- name: e2e.fixture:Heirloom
+  type: Etc
+  display_name: Heirloom
+  weight: 10
+  stackable: true
+  restrictions: [no_trade]
+- name: e2e.fixture:Ledger
+  type: Etc
+  display_name: Ledger
+  weight: 10
+  stackable: true
+  restrictions: [no_storage]
+- name: e2e.fixture:Anchor
+  type: Etc
+  display_name: Anchor
+  weight: 10
+  stackable: true
+  restrictions: [no_drop]
+# A heavy item for the cart's weight limit of 8,000 tenths: 3 fit, 4 do
+# not.
+- name: e2e.fixture:Anvil
+  type: Etc
+  display_name: Anvil
+  weight: 2500
+  stackable: true

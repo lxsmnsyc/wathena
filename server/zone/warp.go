@@ -193,6 +193,8 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	z.closeTalk(p)
 	p.shop = nil
 	z.closeGuildStorage(p, true)
+	z.storagesLeave(p, false)
+	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
 	z.mapWarpStatuses(p)
 	// unit_remove_map: the cast stops and the player's ground skills end.
 	z.castCancel(p.entity, false)

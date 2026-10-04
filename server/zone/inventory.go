@@ -53,33 +53,62 @@ func wornLocation(d *item.Def) uint32 {
 	return 0
 }
 
-// inventoryList is the full inventory, for the first frame.
+// inventoryList is the full inventory in one event, for tests.
 func (z *Zone) inventoryList(p *Player) *wathenav1.Event {
+	return wathenav1.Event_builder{Inventory: wathenav1.InventoryUpdate_builder{
+		Items: z.inventoryItems(p),
+		Size:  uint32(p.inventory.Size), // #nosec G115 -- at most MaxInventory.
+	}.Build()}.Build()
+}
+
+// inventoryPages is the full inventory, for the first frame, in pages
+// (pages.go). The first page replaces the client's list, and the others
+// add to it.
+func (z *Zone) inventoryPages(p *Player) []*wathenav1.Event {
+	var out []*wathenav1.Event
+	for i, page := range pageItemsOf(z.inventoryItems(p)) {
+		out = append(out, wathenav1.Event_builder{Inventory: wathenav1.InventoryUpdate_builder{
+			Items: page,
+			Size:  uint32(p.inventory.Size), // #nosec G115 -- at most MaxInventory.
+			More:  i > 0,
+		}.Build()}.Build())
+	}
+	return out
+}
+
+// inventoryItems are the slots that hold items.
+func (z *Zone) inventoryItems(p *Player) []*wathenav1.InventoryItem {
 	var slots []*wathenav1.InventoryItem
-	for i, s := range p.inventory.Slots {
+	for i := range p.inventory.Slots {
+		s := &p.inventory.Slots[i]
 		if s.ID == 0 {
 			continue
 		}
-		d := z.Items.Get(s.ID)
-		rolls, cardRolls, opts := z.rollMessages(d, &s)
-		slots = append(slots, wathenav1.InventoryItem_builder{
-			Slot:      uint32(i), // #nosec G115 -- below MaxInventory.
-			ItemId:    s.ID,
-			Amount:    uint32(s.Amount), // #nosec G115 -- at most MaxAmount.
-			Equip:     s.Equip,
-			Refine:    uint32(max(s.Refine, 0)), // #nosec G115 -- at most the refine limit.
-			Cards:     s.Cards,
-			Location:  wornLocation(d),
-			Card:      d.IsCard(),
-			Rolls:     rolls,
-			CardRolls: cardRolls,
-			Options:   opts,
-		}.Build())
+		slots = append(slots, z.itemMessage(i, s, s.Amount))
 	}
-	return wathenav1.Event_builder{Inventory: wathenav1.InventoryUpdate_builder{
-		Items: slots,
-		Size:  uint32(p.inventory.Size), // #nosec G115 -- at most MaxInventory.
-	}.Build()}.Build()
+	return slots
+}
+
+// itemMessage is a slot as the client shows it, with amount as its
+// amount.
+func (z *Zone) itemMessage(i int, s *item.Slot, amount int) *wathenav1.InventoryItem {
+	d := z.Items.Get(s.ID)
+	rolls, cardRolls, opts := z.rollMessages(d, s)
+	return wathenav1.InventoryItem_builder{
+		Slot:         uint32(i), // #nosec G115 -- below the engine's ceilings.
+		ItemId:       s.ID,
+		Amount:       uint32(amount), // #nosec G115 -- at most MaxAmount.
+		Equip:        s.Equip,
+		Refine:       uint32(max(s.Refine, 0)), // #nosec G115 -- at most the refine limit.
+		Cards:        s.Cards,
+		Location:     wornLocation(d),
+		Card:         d.IsCard(),
+		Rolls:        rolls,
+		CardRolls:    cardRolls,
+		Options:      opts,
+		Bound:        wathenav1.ItemBound(s.Bound),
+		Restrictions: uint32(d.RestrictionMask()),
+	}.Build()
 }
 
 // addItem is pc_additem: it puts items in a player's inventory and sends
@@ -93,12 +122,12 @@ func (z *Zone) addItem(p *Player, id uint32, amount int, o origin) item.AddResul
 // removal and the new weight. An equipped item that leaves comes off
 // first, as pc_delitem unequips it.
 func (z *Zone) deleteItem(p *Player, slot, amount int, reason wathenav1.InventoryRemoveReason) bool {
-	if slot >= 0 && slot < item.MaxInventory {
+	if slot >= 0 && slot < len(p.inventory.Slots) {
 		if s := &p.inventory.Slots[slot]; s.Equip != 0 && s.Amount <= amount && s.Amount > 0 {
 			z.unequipItem(p, slot)
 		}
 	}
-	if slot < 0 || slot >= item.MaxInventory {
+	if slot < 0 || slot >= len(p.inventory.Slots) {
 		return false
 	}
 	action, to := removeEnd(reason)
@@ -236,7 +265,7 @@ func (z *Zone) itemDelay(p *Player, d *item.Def) bool {
 // something the server cannot do yet is refused before anything is
 // spent, and the player is told what is missing.
 func (z *Zone) useItem(p *Player, slot int) {
-	if slot < 0 || slot >= item.MaxInventory {
+	if slot < 0 || slot >= len(p.inventory.Slots) {
 		return
 	}
 	s := p.inventory.Slots[slot]
@@ -353,7 +382,7 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 	fail := func(r wathenav1.DropItemFailure) {
 		p.pending = append(p.pending, dropItemFailed(slot, r))
 	}
-	if slot < 0 || slot >= item.MaxInventory {
+	if slot < 0 || slot >= len(p.inventory.Slots) {
 		return
 	}
 	s := p.inventory.Slots[slot]
@@ -364,9 +393,16 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 	case amount <= 0 || s.Amount < amount:
 		fail(wathenav1.DropItemFailure_DROP_ITEM_FAILURE_BAD_AMOUNT)
 		return
-	case z.Items.Get(s.ID).NoDrop:
-		// pc_candrop: the item's trade restriction.
+	case p.trade != nil:
+		// pc_istrading: the client cannot drop while trading.
+		return
+	case z.Items.Restricted(&s, item.NoDrop):
+		// pc_candrop: the item's trade restriction, or a card's.
 		fail(wathenav1.DropItemFailure_DROP_ITEM_FAILURE_CANNOT_DROP)
+		return
+	case !item.BoundAllows(s.Bound, item.PlaceDrop, false):
+		// pc_candrop: msg 263 for a bound item.
+		fail(wathenav1.DropItemFailure_DROP_ITEM_FAILURE_BOUND)
 		return
 	}
 	lifetime := floorItemLifetime

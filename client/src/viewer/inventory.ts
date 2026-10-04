@@ -1,5 +1,11 @@
 import type { AssetStore } from '../assets/store';
-import { DropItemFailure, StatId, UseItemFailure } from '../gen/wathena/v1/event_pb';
+import {
+  DropItemFailure,
+  ItemBound,
+  ItemRestriction,
+  StatId,
+  UseItemFailure,
+} from '../gen/wathena/v1/event_pb';
 import { NO_CARD_TARGET, canEquip, cardNames, cardTargets, stackLabel } from './equipment';
 import {
   type ItemTexts,
@@ -42,6 +48,10 @@ export interface Stack {
   cardRolls: RollLine[][];
   /** The copy's random options. */
   options: OptionLine[];
+  /** Who the copy is bound to, or UNSPECIFIED when it is not bound. */
+  bound: ItemBound;
+  /** The item's restrictions, as the bits of ItemRestriction. */
+  restrictions: number;
 }
 
 /** The rolls of a slot, as ItemRollsChange. */
@@ -51,7 +61,16 @@ export type StackRolls = Pick<Stack, 'rolls' | 'cardRolls' | 'options'>;
 export type StackDetails = Partial<
   Pick<
     Stack,
-    'equip' | 'refine' | 'cards' | 'location' | 'card' | 'rolls' | 'cardRolls' | 'options'
+    | 'equip'
+    | 'refine'
+    | 'cards'
+    | 'location'
+    | 'card'
+    | 'rolls'
+    | 'cardRolls'
+    | 'options'
+    | 'bound'
+    | 'restrictions'
   >
 >;
 
@@ -72,7 +91,59 @@ export function stack(s: StackInput): Stack {
     rolls: [...(s.rolls ?? [])],
     cardRolls: (s.cardRolls ?? []).map((r) => [...r]),
     options: [...(s.options ?? [])],
+    bound: s.bound ?? ItemBound.UNSPECIFIED,
+    restrictions: s.restrictions ?? 0,
   };
+}
+
+/** What each restriction bit forbids, in the order the lines show. */
+const RESTRICTION_LINES: readonly [ItemRestriction, string][] = [
+  [ItemRestriction.NO_DROP, 'Cannot be dropped'],
+  [ItemRestriction.NO_TRADE, 'Cannot be traded'],
+  [ItemRestriction.NO_SELL, 'Cannot be sold'],
+  [ItemRestriction.NO_CART, 'Cannot be put in a cart'],
+  [ItemRestriction.NO_STORAGE, 'Cannot be stored'],
+  [ItemRestriction.NO_GUILD_STORAGE, 'Cannot be put in guild storage'],
+  [ItemRestriction.NO_MAIL, 'Cannot be mailed'],
+];
+
+/** The line for a bound copy, or undefined when it is not bound. */
+export function boundText(bound: ItemBound): string | undefined {
+  switch (bound) {
+    case ItemBound.ACCOUNT:
+      return 'Bound to account';
+    case ItemBound.GUILD:
+      return 'Bound to guild';
+    case ItemBound.PARTY:
+      return 'Bound to party';
+    case ItemBound.CHARACTER:
+      return 'Bound to character';
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * The lines that say who a copy is bound to and what its restrictions
+ * forbid, such as "Bound to account" and "Cannot be traded".
+ */
+export function itemRuleLines(s: Pick<Stack, 'bound' | 'restrictions'>): string[] {
+  const out: string[] = [];
+  const bound = boundText(s.bound);
+  if (bound !== undefined) {
+    out.push(bound);
+  }
+  for (const [bit, text] of RESTRICTION_LINES) {
+    if ((s.restrictions & bit) !== 0) {
+      out.push(text);
+    }
+  }
+  return out;
+}
+
+/** An item's name for a tooltip, with its rule lines after it on their own lines. */
+export function itemTooltip(name: string, s: Pick<Stack, 'bound' | 'restrictions'>): string {
+  return [name, ...itemRuleLines(s)].join('\n');
 }
 
 /** The roll fields of InventoryItem, InventoryAdd and ItemRollsChange. */
@@ -131,11 +202,30 @@ export class InventoryModel {
     this.size = size;
   }
 
+  /**
+   * Adds a later page of a long inventory, as InventoryUpdate with more
+   * set. The page's slots join the list instead of replacing it.
+   */
+  addPage(items: readonly StackInput[]): void {
+    for (const s of items) {
+      if (s.amount > 0) {
+        this.slots.set(s.slot, stack(s));
+      }
+    }
+  }
+
   /** Adds an amount to a slot, as InventoryAdd. */
   add(slot: number, itemId: number, amount: number, details: StackDetails = {}): void {
     const s = this.slots.get(slot);
     if (s?.itemId === itemId) {
       s.amount += amount;
+      // Bound and unbound copies never stack, so the slot keeps the newest values.
+      if (details.bound !== undefined) {
+        s.bound = details.bound;
+      }
+      if (details.restrictions !== undefined) {
+        s.restrictions = details.restrictions;
+      }
     } else {
       this.slots.set(slot, stack({ ...details, slot, itemId, amount, equip: 0 }));
     }
@@ -273,6 +363,7 @@ export function dropItemMessage(reason: DropItemFailure): string {
     case DropItemFailure.BAD_AMOUNT:
       return 'You do not have that many.';
     case DropItemFailure.CANNOT_DROP:
+    case DropItemFailure.BOUND:
       return 'This item cannot be dropped.';
     default:
       return 'The item was not dropped.';
@@ -377,6 +468,7 @@ export class InventoryWindow {
   private readonly detailName: HTMLDivElement;
   private readonly detailCards: HTMLDivElement;
   private readonly detailRolls: HTMLDivElement;
+  private readonly detailRules: HTMLDivElement;
   private readonly detailText: HTMLDivElement;
   private readonly picker: HTMLDivElement;
   private readonly pickerPrompt: HTMLDivElement;
@@ -468,8 +560,16 @@ export class InventoryWindow {
     this.detailCards.className = 'item-detail-cards';
     this.detailRolls = document.createElement('div');
     this.detailRolls.className = 'item-detail-rolls';
+    this.detailRules = document.createElement('div');
+    this.detailRules.className = 'item-detail-rules';
     this.detailText = document.createElement('div');
-    this.detail.append(this.detailName, this.detailCards, this.detailRolls, this.detailText);
+    this.detail.append(
+      this.detailName,
+      this.detailCards,
+      this.detailRolls,
+      this.detailRules,
+      this.detailText,
+    );
     this.picker = document.createElement('div');
     this.picker.className = 'card-picker';
     this.picker.hidden = true;
@@ -665,7 +765,11 @@ export class InventoryWindow {
     set(row.label, name);
     const cards = s === undefined ? [] : cardNames(s, label);
     const action = s === undefined ? 'use' : actionWord(s);
-    const title = `${name}${cards.length > 0 ? ` (${cards.join(', ')})` : ''}: double-click to ${action}, drag out to drop`;
+    const rules = s === undefined ? [] : itemRuleLines(s);
+    const title = [
+      `${name}${cards.length > 0 ? ` (${cards.join(', ')})` : ''}: double-click to ${action}, drag out to drop`,
+      ...rules,
+    ].join('\n');
     if (row.li.title !== title) {
       row.li.title = title;
     }
@@ -692,6 +796,15 @@ export class InventoryWindow {
     const rolls = rollLines(s, label);
     renderDescription(this.detailRolls, rolls);
     this.detailRolls.hidden = rolls.length === 0;
+    const rules = itemRuleLines(s);
+    this.detailRules.replaceChildren(
+      ...rules.map((line) => {
+        const div = document.createElement('div');
+        div.textContent = line;
+        return div;
+      }),
+    );
+    this.detailRules.hidden = rules.length === 0;
     this.detail.hidden = false;
     this.texts
       .description(id)

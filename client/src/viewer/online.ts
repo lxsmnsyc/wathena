@@ -45,6 +45,7 @@ import {
   StatId,
   type StorageKind,
   type StorageOutcome,
+  type TradeOutcome,
   type UseItemFailure,
   VanishReason,
   type WhisperResult,
@@ -105,8 +106,31 @@ function stackInput(i: InventoryItem): StackInput {
     location: i.location,
     card: i.card,
     ...stackRolls(i),
+    bound: i.bound,
+    restrictions: i.restrictions,
   };
 }
+
+/** A storage window as StorageOpen opens it. */
+export interface StorageOpenInfo {
+  kind: StorageKind;
+  /** How many slots the storage has. */
+  size: number;
+  /** The first page of the slots that hold items. */
+  items: StackInput[];
+  /** The extra storage's record name, empty for the others. */
+  name: string;
+  /** The storage's name as players see it. */
+  displayName: string;
+  /** The cart's weight and its limit, in tenths. 0 for storage. */
+  weight: number;
+  maxWeight: number;
+  /** How many StorageItems pages follow. */
+  pages: number;
+}
+
+/** An offer in the trade window, as TradeOffer. */
+export type TradeOfferValue = { case: 'item'; value: StackInput } | { case: 'zeny'; value: number };
 
 /** Something that plays until it is done. */
 interface Playing {
@@ -274,8 +298,8 @@ export default class Online {
   private readonly items: GroundItems;
   /** Called for every hit, at the moment it lands. */
   onHit: ((hit: Hit) => void) | undefined;
-  /** Called with the player's whole inventory. */
-  onInventory: ((items: StackInput[], size: number) => void) | undefined;
+  /** Called with the player's inventory, or with a later page of it when more is set. */
+  onInventory: ((items: StackInput[], size: number, more: boolean) => void) | undefined;
   /** Called when an item enters a slot of the player's inventory. */
   onInventoryAdd:
     | ((slot: number, itemId: number, amount: number, details: StackDetails) => void)
@@ -354,18 +378,39 @@ export default class Online {
   onGuildAllyRequest: ((request: GuildAllyRequest) => void) | undefined;
   /** Called with how a guild action went, or what happened to the guild. */
   onGuildResult: ((outcome: GuildOutcome, name: string) => void) | undefined;
-  /** Called when a storage window opens, with its items and size. */
-  onStorageOpen: ((kind: StorageKind, items: StackInput[], size: number) => void) | undefined;
-  /** Called with a storage slot after an amount entered it. */
-  onStorageAdd: ((kind: StorageKind, item: StackInput) => void) | undefined;
-  /** Called when an amount left a storage slot. */
-  onStorageRemove: ((kind: StorageKind, slot: number, amount: number) => void) | undefined;
+  /** Called when a storage window opens, or the player gets a cart, with the first page. */
+  onStorageOpen: ((info: StorageOpenInfo) => void) | undefined;
+  /** Called with a later page of a storage's slots. page counts from 1. */
+  onStorageItems: ((kind: StorageKind, items: StackInput[], page: number) => void) | undefined;
+  /**
+   * Called with a storage slot after an amount entered it. weight is the
+   * cart's weight after the change, in tenths, and 0 for storage.
+   */
+  onStorageAdd: ((kind: StorageKind, item: StackInput, weight: number) => void) | undefined;
+  /** Called when an amount left a storage slot, with weight as onStorageAdd. */
+  onStorageRemove:
+    | ((kind: StorageKind, slot: number, amount: number, weight: number) => void)
+    | undefined;
   /** Called when the server closes the storage window. */
   onStorageClose: ((kind: StorageKind) => void) | undefined;
   /** Called when a storage action failed. */
   onStorageResult: ((outcome: StorageOutcome) => void) | undefined;
   /** Called with the guild storage log, newest first. */
   onGuildStorageLog: ((entries: GuildStorageLogEntry[]) => void) | undefined;
+  /** Called when a player asks to trade. */
+  onTradeRequest: ((from: string, baseLevel: number) => void) | undefined;
+  /** Called when the trade window opens. */
+  onTradeOpen: ((partner: string, baseLevel: number) => void) | undefined;
+  /** Called with an item or zeny a player offered. mine is set for the player's own offer. */
+  onTradeOffer: ((mine: boolean, offer: TradeOfferValue) => void) | undefined;
+  /** Called when a player locked its offer. */
+  onTradeLock: ((mine: boolean) => void) | undefined;
+  /** Called when the trade window closes. */
+  onTradeClose: ((outcome: TradeOutcome) => void) | undefined;
+  /** Called with how a trade step went. */
+  onTradeResult:
+    | ((outcome: TradeOutcome, name: string, slot: number, message: string) => void)
+    | undefined;
   /** Called with the server's answer to the player's whisper. */
   onWhisperResult: ((result: WhisperResult) => void) | undefined;
   /** Called when a line the player said was not sent. */
@@ -821,7 +866,11 @@ export default class Online {
           break;
         }
         case 'inventory':
-          this.onInventory?.(e.body.value.items.map(stackInput), e.body.value.size);
+          this.onInventory?.(
+            e.body.value.items.map(stackInput),
+            e.body.value.size,
+            e.body.value.more,
+          );
           break;
         case 'inventoryAdd': {
           const a = e.body.value;
@@ -831,6 +880,8 @@ export default class Online {
             location: a.location,
             card: a.card,
             ...stackRolls(a),
+            bound: a.bound,
+            restrictions: a.restrictions,
           });
           break;
         }
@@ -1028,20 +1079,43 @@ export default class Online {
           }
           break;
         }
-        case 'storageOpen':
-          this.onStorageOpen?.(
+        case 'storageOpen': {
+          const o = e.body.value;
+          this.onStorageOpen?.({
+            kind: o.kind,
+            size: o.size,
+            items: o.items.map(stackInput),
+            name: o.name,
+            displayName: o.displayName,
+            weight: o.weight,
+            maxWeight: o.maxWeight,
+            pages: o.pages,
+          });
+          break;
+        }
+        case 'storageItems':
+          this.onStorageItems?.(
             e.body.value.kind,
             e.body.value.items.map(stackInput),
-            e.body.value.size,
+            e.body.value.page,
           );
           break;
         case 'storageAdd':
           if (e.body.value.item !== undefined) {
-            this.onStorageAdd?.(e.body.value.kind, stackInput(e.body.value.item));
+            this.onStorageAdd?.(
+              e.body.value.kind,
+              stackInput(e.body.value.item),
+              e.body.value.weight,
+            );
           }
           break;
         case 'storageRemove':
-          this.onStorageRemove?.(e.body.value.kind, e.body.value.slot, e.body.value.amount);
+          this.onStorageRemove?.(
+            e.body.value.kind,
+            e.body.value.slot,
+            e.body.value.amount,
+            e.body.value.weight,
+          );
           break;
         case 'storageClose':
           this.onStorageClose?.(e.body.value.kind);
@@ -1052,6 +1126,32 @@ export default class Online {
         case 'guildStorageLog':
           this.onGuildStorageLog?.(e.body.value.entries);
           break;
+        case 'tradeRequest':
+          this.onTradeRequest?.(e.body.value.from, e.body.value.baseLevel);
+          break;
+        case 'tradeOpen':
+          this.onTradeOpen?.(e.body.value.partner, e.body.value.baseLevel);
+          break;
+        case 'tradeOffer': {
+          const o = e.body.value;
+          if (o.offer.case === 'item') {
+            this.onTradeOffer?.(o.mine, { case: 'item', value: stackInput(o.offer.value) });
+          } else if (o.offer.case === 'zeny') {
+            this.onTradeOffer?.(o.mine, { case: 'zeny', value: o.offer.value });
+          }
+          break;
+        }
+        case 'tradeLock':
+          this.onTradeLock?.(e.body.value.mine);
+          break;
+        case 'tradeClose':
+          this.onTradeClose?.(e.body.value.outcome);
+          break;
+        case 'tradeResult': {
+          const r = e.body.value;
+          this.onTradeResult?.(r.outcome, r.name, r.slot, r.message);
+          break;
+        }
         default:
           // Events this client does not show yet.
           break;

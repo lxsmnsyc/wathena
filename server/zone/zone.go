@@ -25,6 +25,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/statuschange"
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -116,6 +117,17 @@ type Player struct {
 	regenTicks regenState
 	// pending are events for the player alone, sent with the next frame.
 	pending []*wathenav1.Event
+	// pages are events that each go in a frame of their own after the
+	// next frame, such as the later pages of a long list (pages.go).
+	pages []*wathenav1.Event
+	// storage is the personal storage the player has open, or nil, and
+	// ownStorages the storages of a player a test added (storage.go).
+	storage     *openStorage
+	ownStorages []*storage.Storage
+	// trade is the player's trade, or nil, and tradeAsk the player who
+	// asked it to trade and waits for an answer (trade.go).
+	trade    *trade
+	tradeAsk *Player
 
 	// load is the character the player enters as. When it is nil, the
 	// player enters as a new character.
@@ -285,6 +297,7 @@ type command struct {
 	// guild and storage guild commands (guild.go).
 	guild    *guildCommand
 	storage  *storageCommand
+	trade    *TradeAction
 	party    *partyCommand
 	friend   *friendCommand
 	booking  *bookingCommand
@@ -422,6 +435,15 @@ type Zone struct {
 	// left (guild.go).
 	txStorageRefs []*social.GuildStorage
 	txStorages    []StorageCommit
+	// Storages is the world's storage registry: accounts' storages,
+	// extra storages and carts (storage.go). Without it, the zone makes
+	// its own on first use. Set it before Run.
+	Storages *storage.Registry
+	// txPersonal are the storages and carts the transfers since the last
+	// commit changed, and storageRelease the storages of players who
+	// logged out, let go after the next commit (storage.go).
+	txPersonal     []*storage.Storage
+	storageRelease []*storage.Storage
 	// storageLog are guild storage log lines that wait to go to the
 	// registry (guild.go).
 	storageLog []storageLogBatch
@@ -755,6 +777,15 @@ func (z *Zone) JoinCharacter(ctx context.Context, c *character.Character, saver 
 	s := newSession(saver)
 	p := newPlayer(s, c)
 	s.zone, s.player = z, p
+	if err := z.acquireStorages(ctx, s); err != nil {
+		return nil, err
+	}
+	release := func() {
+		for _, st := range s.storages {
+			z.Storages.Release(st)
+		}
+		s.storages = nil
+	}
 	if n, ok := saver.(StaleNotifier); ok {
 		n.OnStale(s.stale)
 	}
@@ -762,8 +793,10 @@ func (z *Zone) JoinCharacter(ctx context.Context, c *character.Character, saver 
 	select {
 	case z.joins <- joinRequest{p, done}:
 	case <-ctx.Done():
+		release()
 		return nil, ctx.Err()
 	case <-z.stopped:
+		release()
 		return nil, ErrStopped
 	}
 	r := <-done
@@ -803,7 +836,7 @@ func (z *Zone) join(p *Player) joinResult {
 	z.nextChar++
 	p.charID = z.nextChar
 	z.players[p.charID] = p
-	p.inventory = restoreInventory(z.Items, c)
+	p.inventory = restoreInventory(z.Items, c, z.limits())
 	z.fixRolls(p)
 	// pc_authok starts the regen waits at login.
 	p.regenTicks = regenState{hp: z.now, sp: z.now}
@@ -872,7 +905,8 @@ func (z *Zone) join(p *Player) joinResult {
 		e.speed = e.status.Speed
 	}
 	z.updateWeight(p)
-	p.pending = append(p.pending, z.inventoryList(p))
+	p.sendPages(z.inventoryPages(p))
+	z.sendCart(p)
 	// Saved statuses and timed bonuses come back, as chrif_load_scdata
 	// and the bonus_script load. A login fires status_start; a map change
 	// does not, since they never ended.
@@ -957,6 +991,8 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		z.chatOffline(p)
 		z.socialOffline(p)
 	}
+	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
+	z.storagesLeave(p, reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
 	z.castCancel(p.entity, false)
 	z.clearUnitGroups(p.entity)
 	z.removeMap(p.entity)
@@ -1040,6 +1076,9 @@ func (z *Zone) handle(c command) {
 	if c.storage != nil {
 		z.storageCommand(p, c.storage)
 	}
+	if c.trade != nil {
+		z.tradeCommand(p, c.trade)
+	}
 	if c.npcReply != nil {
 		z.reply(p, c.npcReply)
 	}
@@ -1058,7 +1097,8 @@ func (z *Zone) handle(c command) {
 	if me.dead {
 		return
 	}
-	if c.npcClick != nil {
+	if c.npcClick != nil && p.trade == nil {
+		// npc_click: a player who trades cannot talk to NPCs.
 		z.click(p, *c.npcClick)
 	}
 	if p.talk != nil {
@@ -1087,7 +1127,10 @@ func (z *Zone) handle(c command) {
 		}
 		z.walk(me, x, y)
 	}
-	if c.use != nil {
+	if c.use != nil && p.trade != nil {
+		// pc_useitem: MSI_BUSY while trading.
+		z.busy(p)
+	} else if c.use != nil {
 		z.useItem(p, *c.use)
 	}
 	if c.drop != nil {
@@ -1295,12 +1338,14 @@ func (z *Zone) update(p *Player) {
 	events = append(events, p.pending...)
 	p.pending = nil
 	if len(events) == 0 {
+		z.flushPages(p)
 		return
 	}
 	z.queue(p, wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
 		Tick: z.tick, AckSeq: p.ackSeq, Events: events,
 	}.Build()}.Build())
 	p.fresh = false
+	z.flushPages(p)
 }
 
 // viewEvents adds the appear, move, stop and vanish events of what the

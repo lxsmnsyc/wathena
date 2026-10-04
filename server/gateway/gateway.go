@@ -529,6 +529,8 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			queued = guildCommand(p, seq, m.GetCommand().GetGuild())
 		case m.GetCommand().HasStorage():
 			queued = storageCommand(p, seq, m.GetCommand().GetStorage())
+		case m.GetCommand().HasTrade():
+			queued = tradeCommand(p, seq, m.GetCommand().GetTrade())
 		case m.GetCommand().HasPickUp():
 			queued = p.PickUp(seq, m.GetCommand().GetPickUp().GetItem())
 		case m.GetCommand().HasRaiseStat():

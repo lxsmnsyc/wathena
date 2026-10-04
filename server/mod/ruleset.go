@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/rules"
@@ -76,7 +77,8 @@ type Ruleset struct {
 	Flags map[string]string
 	// Limits and Rules hold the limits and rules the ruleset mods set, by
 	// name. One they do not set has rAthena's value (server/rules).
-	Limits, Rules map[string]int
+	Limits map[string]rules.RangeSet
+	Rules  map[string]int
 }
 
 // Flag returns a flag's value.
@@ -149,6 +151,42 @@ func checkBound(list []rules.Bound, kind, name, value string) (int, error) {
 		return 0, fmt.Errorf("%q is not a ruleset %s; the %ss are %s", name, kind, kind, strings.Join(names, ", "))
 	}
 	return b.ParseValue(value)
+}
+
+// checkLimit checks one limit of a ruleset mod: its name, and that the
+// base and max it sets are numbers within the engine's ceiling. The
+// base against the max is checked once the chain is merged.
+func checkLimit(name string, v limitValue) (rules.RangeSet, error) {
+	b, ok := rules.FindBound(rules.LimitBounds, name)
+	if !ok {
+		var names []string
+		for _, b := range rules.LimitBounds {
+			names = append(names, b.Name)
+		}
+		return rules.RangeSet{}, fmt.Errorf("%q is not a ruleset limit; the limits are %s", name, strings.Join(names, ", "))
+	}
+	var out rules.RangeSet
+	if v.base != "" {
+		n, err := b.ParseValue(v.base)
+		if err != nil {
+			return rules.RangeSet{}, err
+		}
+		out.Base, out.HasBase = n, true
+	}
+	if v.max != "" {
+		n, err := strconv.Atoi(v.max)
+		if err != nil {
+			return rules.RangeSet{}, fmt.Errorf("%s: the max is a whole number, not %q", name, v.max)
+		}
+		if n > b.Max {
+			return rules.RangeSet{}, fmt.Errorf("%s: the max is at most %d, the engine's ceiling, not %d", name, b.Max, n)
+		}
+		if n < b.Min {
+			return rules.RangeSet{}, fmt.Errorf("%s: the max is at least %d, not %d", name, b.Min, n)
+		}
+		out.Max, out.HasMax = n, true
+	}
+	return out, nil
 }
 
 // checkRuleset checks the dependencies between flags. Only

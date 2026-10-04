@@ -36,7 +36,8 @@ message Welcome {
 }
 
 // Limits are limits that rAthena compiles in and a ruleset sets
-// (proposal 0002, review decision 27).
+// (proposal 0002, review decisions 27 and 29). The named fields hold
+// each limit's base. ranges holds every limit's base and max.
 message Limits {
   // party_members is the most members a party holds, as MAX_PARTY.
   uint32 party_members = 1;
@@ -56,6 +57,24 @@ message Limits {
   uint32 guild_enemies = 7;
   // guild_storage is the most slots a guild storage holds.
   uint32 guild_storage = 8;
+  // inventory_slots is the inventory slots of a new character, as
+  // INVENTORY_BASE_SIZE.
+  uint32 inventory_slots = 9;
+  // storage_slots is the slots of an account's storage, as MAX_STORAGE.
+  uint32 storage_slots = 10;
+  // cart_slots is the slots of a cart, as MAX_CART.
+  uint32 cart_slots = 11;
+  // ranges lists every limit with its base and max, in the order of the
+  // server's rules.LimitBounds.
+  repeated LimitRange ranges = 12;
+}
+
+// LimitRange is one limit: base is what a player or guild starts with,
+// and max is where expansions stop.
+message LimitRange {
+  string name = 1;
+  uint32 base = 2;
+  uint32 max = 3;
 }
 
 message Ping {

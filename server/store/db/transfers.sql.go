@@ -24,13 +24,14 @@ func (q *Queries) EnsureLogPartitions(ctx context.Context, day pgtype.Timestampt
 
 const insertItemLogs = `-- name: InsertItemLogs :exec
 INSERT INTO item_log (at, action, from_kind, from_id, to_kind, to_id, serial, source,
-    item_id, amount, refine, cards, rolls, card_rolls, random_options, identified)
+    item_id, amount, refine, cards, rolls, card_rolls, random_options, identified, from_storage, to_storage, bound)
 SELECT unnest($1::timestamptz[]), unnest($2::text[]), unnest($3::text[]),
     unnest($4::bigint[]), unnest($5::text[]), unnest($6::bigint[]),
     unnest($7::uuid[]), unnest($8::uuid[]), unnest($9::integer[]),
     unnest($10::integer[]), unnest($11::smallint[]), unnest($12::text[])::integer[],
     unnest($13::text[])::jsonb, unnest($14::text[])::jsonb,
-    unnest($15::text[])::jsonb, unnest($16::boolean[])
+    unnest($15::text[])::jsonb, unnest($16::boolean[]),
+    unnest($17::integer[]), unnest($18::integer[]), unnest($19::smallint[])
 `
 
 type InsertItemLogsParams struct {
@@ -50,6 +51,9 @@ type InsertItemLogsParams struct {
 	CardRolls     []string
 	RandomOptions []string
 	Identified    []bool
+	FromStorages  []int
+	ToStorages    []int
+	Bounds        []int
 }
 
 // InsertItemLogs writes item log lines in one statement. source is NULL
@@ -73,6 +77,9 @@ func (q *Queries) InsertItemLogs(ctx context.Context, arg InsertItemLogsParams) 
 		arg.CardRolls,
 		arg.RandomOptions,
 		arg.Identified,
+		arg.FromStorages,
+		arg.ToStorages,
+		arg.Bounds,
 	)
 	return err
 }

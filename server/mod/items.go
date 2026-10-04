@@ -82,6 +82,15 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 			d.JobNames, d.JobIDs, d.Jobs = names, nil, &item.JobMask{}
 			d.JobRestricted = true
 		}
+		// restrictions and the older no_drop and no_sell fields agree.
+		// A record that sets restrictions sets the whole list.
+		if _, ok := fields["restrictions"]; ok {
+			d.SyncRestrictions(true)
+		} else if _, ok := fields["no_drop"]; ok {
+			d.SyncRestrictions(false)
+		} else if _, ok := fields["no_sell"]; ok {
+			d.SyncRestrictions(false)
+		}
 		if err := checkRollNames(fields["rolls"]); err != nil {
 			errs = append(errs, fmt.Errorf("%s: items %s: %w", r.Where, r.Name, err))
 			continue
@@ -230,6 +239,11 @@ func checkItem(d *item.Def) error {
 	}
 	if uint32(d.Location) > item.EqpShadowGear|item.EqpAmmo|0x3fff {
 		errs = append(errs, "location has a position that does not exist")
+	}
+	for _, r := range d.Restrictions {
+		if _, err := item.ParseRestriction(r); err != nil {
+			errs = append(errs, err.Error())
+		}
 	}
 	if len(d.Rolls) > item.MaxRolls {
 		errs = append(errs, fmt.Sprintf("an item has at most %d rolls", item.MaxRolls))

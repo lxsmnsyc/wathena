@@ -171,7 +171,6 @@ type monsterInfo struct {
 // unavailableFunctions are rAthena functions for services wAthena does
 // not have yet. A call says so instead of running them.
 var unavailableFunctions = map[string]string{
-	"f_kafstor": "Storage",
 	"f_kafcart": "Pushcart rental",
 }
 

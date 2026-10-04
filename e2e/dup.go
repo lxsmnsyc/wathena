@@ -24,8 +24,9 @@ import (
 // move items at the same time through the server's transfers, while the
 // test asks the server for every item it holds. After every audit, and
 // at the end:
-//   - the amount of each item, players', guild storages' and ground items
-//     together, is what it was at the start,
+//   - the amount of each item, players', guild storages', personal
+//     storages', carts' and ground items together, is what it was at the
+//     start,
 //   - all zeny together is what it was at the start,
 //   - no serial is held twice,
 //   - each bot's inventory, as the server told it, is what the server
@@ -100,7 +101,8 @@ type DupReport struct {
 	Closed     []string
 	// Dropped and Added count the drops and the items entering an
 	// inventory that the bots' messages showed, over the whole test.
-	// Added leaves out the items taken out of a storage.
+	// Added leaves out the items taken out of a storage or the cart, and
+	// the items a trade gave.
 	Dropped, Added int
 	// Taken counts the pick-ups the bots saw themselves make, from their
 	// own ItemTaken. Unmatched adds up, for each connection, how far its
@@ -121,8 +123,8 @@ type Totals struct {
 	Serials map[string]string
 	// Ground counts the ground items.
 	Ground int
-	// Stored are the amounts of each item in guild storages, which Items
-	// counts too.
+	// Stored are the amounts of each item in guild storages, account
+	// storages, extra storages and carts, which Items counts too.
 	Stored map[uint32]int
 }
 
@@ -367,16 +369,29 @@ func (d DupTest) Run(t *testing.T) DupReport {
 		events, _ := b.Events(0)
 		self := b.View().NetID
 		taken, added := 0, 0
+		trading := false
 		for _, e := range events {
-			if r := e.GetInventoryRemove(); r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED {
+			r := e.GetInventoryRemove()
+			if r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED {
 				rep.Dropped++
 			}
-			if e.HasInventoryAdd() {
+			switch {
+			case e.HasTradeOpen():
+				trading = true
+			case e.HasTradeClose():
+				trading = false
+			case e.HasInventoryAdd() && !trading:
+				// The items a trade gives come before its TradeClose.
 				added++
-			}
-			// An item taken out of a storage enters the inventory too,
-			// with a StorageRemove in the same frame.
-			if e.HasStorageRemove() {
+			// Moves between the inventory, storages and the cart leave
+			// added as it was: a StorageRemove with an InventoryAdd, an
+			// InventoryRemove with a StorageAdd, or a StorageRemove with a
+			// StorageAdd.
+			case e.HasStorageRemove():
+				added--
+			case e.HasStorageAdd():
+				added++
+			case r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_STORED:
 				added--
 			}
 			if e.GetItemTaken().GetSource() == self && e.HasItemTaken() {
@@ -443,10 +458,11 @@ func (s *dupBots) close() {
 }
 
 // GuildStorageMap is the map name of the audit's entry for the guild
-// storages: one "player" per guild, named guild:<ID>.
+// storages, one "player" per guild named guild:<ID>, and the storages
+// and carts in memory, one per storage named storage:<key>.
 const GuildStorageMap = "guild_storage"
 
-// playersIn counts the players of an audit, not the guild storages.
+// playersIn counts the players of an audit, not the storages.
 func playersIn(zones []AuditZone) int {
 	n := 0
 	for _, z := range zones {
@@ -814,7 +830,7 @@ func ignoreDone(ctx context.Context, err error) error {
 
 // CheckDatabase stops the server, then checks what it saved for a test
 // of drops and pick-ups: the totals of the start in the bots'
-// inventories, an item log line for each drop and each pick-up the bots
+// inventories, guild storages, storages and carts, an item log line for each drop and each pick-up the bots
 // saw (and at most one more for each time a bot logged in again), and a
 // history for every serial: each serial in the inventories
 // was there at the start or is in the item log, and each pick-up names
@@ -849,6 +865,25 @@ func (d DupTest) CheckDatabase(t *testing.T, rep DupReport) {
 	rows.Close()
 	// Guild storages hold items too.
 	rows, err = db.Query(ctx, `SELECT 'guild:' || guild_id, item_id, amount, serial::text FROM guild_storage`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var name, serial string
+		var id uint32
+		var amount int
+		if err := rows.Scan(&name, &id, &amount, &serial); err != nil {
+			t.Fatal(err)
+		}
+		got.Items[id] += amount
+		if who, ok := got.Serials[serial]; ok {
+			t.Errorf("database: serial %s is held by %s and %s", serial, who, name)
+		}
+		got.Serials[serial] = name
+	}
+	rows.Close()
+	// So do account storages, extra storages and carts.
+	rows, err = db.Query(ctx, `SELECT 'storage:' || holder || ':' || coalesce(account_id, character_id), item_id, amount, serial::text FROM storage_items`)
 	if err != nil {
 		t.Fatal(err)
 	}

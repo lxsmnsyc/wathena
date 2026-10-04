@@ -370,6 +370,7 @@ func (z *Zone) receiveSocial(in socialIn) {
 		ev := &modscript.PartyEvent{Kind: "party_join", Party: n.Event.Party, Player: int64(p.charID), Reason: n.Event.Reason}
 		if n.Event.Kind == social.EventLeave {
 			ev.Kind = "party_leave"
+			z.partyBoundLeft(p)
 		}
 		z.scriptEvents = append(z.scriptEvents, scriptEvent{party: ev})
 	case social.NoticeItemShared:
@@ -557,5 +558,8 @@ func (z *Zone) ShareHubs(from *Zone) {
 	}
 	if z.Social == nil {
 		z.Social = from.socialHub()
+	}
+	if z.Storages == nil {
+		z.Storages = from.storageRegistry()
 	}
 }

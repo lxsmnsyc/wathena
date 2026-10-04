@@ -94,6 +94,7 @@ func (z *Zone) recalc(p *Player) {
 	}
 	p.keepAspd = false
 	e.status = &st
+	z.syncCartWeight(p)
 	p.base, p.bonuses = res.Base, res.Bonuses
 	// The regen bonuses start their time again, as status_calc_pc
 	// rebuilds them.

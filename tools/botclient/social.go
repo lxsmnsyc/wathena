@@ -2,6 +2,7 @@ package botclient
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"strings"
 
@@ -14,6 +15,27 @@ import (
 // WorldLimits are the world's limits from Welcome.
 type WorldLimits struct {
 	PartyMembers, Friends, BlockList int
+	// InventorySlots, StorageSlots and CartSlots are the slots of a new
+	// character's inventory, an account's storage and a cart.
+	InventorySlots, StorageSlots, CartSlots int
+	// Ranges are every limit's base and max, by name.
+	Ranges map[string]LimitRange
+}
+
+// LimitRange is a limit's base and max.
+type LimitRange struct {
+	Base, Max int
+}
+
+// limitsOf reads Welcome's limits.
+func limitsOf(l *wathenav1.Limits) WorldLimits {
+	w := WorldLimits{PartyMembers: int(l.GetPartyMembers()), Friends: int(l.GetFriends()), BlockList: int(l.GetBlockList()),
+		InventorySlots: int(l.GetInventorySlots()), StorageSlots: int(l.GetStorageSlots()), CartSlots: int(l.GetCartSlots()),
+		Ranges: map[string]LimitRange{}}
+	for _, r := range l.GetRanges() {
+		w.Ranges[r.GetName()] = LimitRange{Base: int(r.GetBase()), Max: int(r.GetMax())}
+	}
+	return w
 }
 
 // PartyMember is one member of the bot's party, as the server last
@@ -138,7 +160,9 @@ func (s *socialState) clone() (*Party, *wathenav1.PartyInvite, []Friend, []strin
 func (b *Bot) WorldLimits() WorldLimits {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	return b.social.limits
+	l := b.social.limits
+	l.Ranges = maps.Clone(l.Ranges)
+	return l
 }
 
 func (b *Bot) party(ctx context.Context, c wathenav1.PartyCommand_builder) error {

@@ -36,6 +36,7 @@
 ---| "guild_join"
 ---| "guild_leave"
 ---| "guild_change"
+---| "trade"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -205,6 +206,14 @@
 ---| "monster_target"
 ---| "item_roll"
 ---| "chat"
+---| "trade"
+
+---Who a bound copy is bound to.
+---@alias wa.Bound
+---| "account"
+---| "character"
+---| "party"
+---| "guild"
 
 ---A monster's skill state, in the words of rAthena's mob_skill_db.
 ---@alias wa.MonsterState
@@ -284,18 +293,29 @@ function wa_Player:give_item(item, amount, options) end
 ---@param group integer A group from items.group.
 function wa_Player:give_item_from_group(group) end
 
----How many of the item the player has, as countitem.
+---How many of the item the player has, as countitem. With from, how many a storage or the cart holds, as storagecountitem and cartcountitem; nil when it cannot be read: no cart, or a storage window open.
 ---
 ---Needs the permission `game.read`.
 ---@param item integer An item from items.id.
----@return integer
-function wa_Player:count_item(item) end
+---@param options? wa.FromOptions
+---@return integer?
+function wa_Player:count_item(item, options) end
 
----Takes items, as delitem. Returns false, and takes nothing, when the player has too few.
+---Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. Returns false, and takes nothing, when there are too few.
 ---@param item integer An item from items.id.
 ---@param amount integer 1 or more.
+---@param options? wa.FromOptions
 ---@return boolean
-function wa_Player:take_item(item, amount) end
+function wa_Player:take_item(item, amount, options) end
+
+---Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee.
+---@param name? string An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. Nothing opens the account's storage.
+---@return boolean
+function wa_Player:open_storage(name) end
+
+---Opens the guild storage, as guildopenstorage. Returns true, or false and why: "no_guild", "no_storage", "no_permission", "in_use" or "already_open".
+---@return boolean, string?
+function wa_Player:open_guild_storage() end
 
 ---Whether the items fit, by weight and slots, as checkweight.
 ---
@@ -926,6 +946,13 @@ function wa_Guild:get_position(player) end
 ---@return integer
 function wa_Guild:get_skill_level(skill) end
 
+---How many of the item the guild storage holds, as guildstoragecountitem.
+---
+---Needs the permission `game.read`.
+---@param item integer An item from items.id.
+---@return integer
+function wa_Guild:count_item(item) end
+
 ---Whether the guilds are allies.
 ---
 ---Needs the permission `game.read`.
@@ -1008,16 +1035,19 @@ local wa_GuildMembership = {}
 ---@field change "master"|"level"|"notice"|"emblem" What changed.
 local wa_GuildChange = {}
 
----The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.
+---The limits of the world's ruleset, as rules.limits: each limit's base, what a player or guild starts with. A list over a limit that a ruleset lowered keeps its entries and cannot grow. The engine's ceiling bounds each limit's max.
 ---@class wa.Limits
----@field party_members integer The most members a party holds, as MAX_PARTY. 12 by default, at most 64.
----@field friends integer The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200.
----@field block_list integer The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100.
----@field guild_members integer The most members a guild holds before Guild Extension, which adds 6 per level. 16 by default, at most 200.
----@field guild_positions integer The positions of a guild, as MAX_GUILDPOSITION. 20 by default, at most 40.
----@field guild_allies integer The most allied guilds of a guild, as max_guild_alliance. 3 by default, at most 10.
----@field guild_enemies integer The most enemy guilds of a guild, as max_guild_alliance. 3 by default, at most 10.
----@field guild_storage integer The most slots a guild storage holds. 500 by default, at most 2,000.
+---@field party_members integer The most members a party holds, as MAX_PARTY. 12 by default, ceiling 256.
+---@field friends integer The most names a friend list holds, as MAX_FRIENDS. 40 by default, ceiling 1,000.
+---@field block_list integer The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, ceiling 1,000.
+---@field guild_members integer The most members a guild holds before Guild Extension, which adds 6 per level up to the max, 76 by default as MAX_GUILD. 16 by default, ceiling 512.
+---@field guild_positions integer The positions of a guild, as MAX_GUILDPOSITION. 20 by default, ceiling 40.
+---@field guild_allies integer The most allied guilds of a guild, as max_guild_alliance. 3 by default, ceiling 10.
+---@field guild_enemies integer The most enemy guilds of a guild, as max_guild_alliance. 3 by default, ceiling 10.
+---@field guild_storage integer The slots of a guild storage without renewal's Guild Storage skill, as MAX_GUILD_STORAGE. The skill gives 100 and 100 per level, up to the max. 600 by default, ceiling 10,000.
+---@field inventory_slots integer The inventory slots of a new character, as INVENTORY_BASE_SIZE. 100 by default, with the max 200, MAX_INVENTORY. Ceiling 1,000.
+---@field storage_slots integer The slots of an account's storage, as MAX_STORAGE. 600 by default, ceiling 10,000.
+---@field cart_slots integer The slots of a cart, as MAX_CART. 100 by default, ceiling 1,000.
 local wa_Limits = {}
 
 ---The share of the experience hook's object.
@@ -1178,6 +1208,22 @@ function wa_TestWorld:chat(player, text, options) end
 ---@param player wa.Player A player handle.
 ---@return wa.HeardLine[]
 function wa_TestWorld:get_chat(player) end
+
+---Runs a whole trade, as two clients would: a asks, b accepts, both offer, lock and confirm. Returns true when it completed, or false and why: the trade hook's message, or an outcome such as "restricted" or "bound". A refused offer ends the trade. Trading needs Basic Skill level 1, which a new player from world:new_player lacks: give it skills = { [skills.id("NV_BASIC")] = 9 }.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param a wa.Player
+---@param b wa.Player Steps next to a.
+---@param offer_a? wa.TradeOffer
+---@param offer_b? wa.TradeOffer
+---@return boolean, string?
+function wa_TestWorld:trade(a, b, offer_a, offer_b) end
+
+---Closes the player's storage window, as the client's close button.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param player wa.Player A player handle.
+function wa_TestWorld:close_storage(player) end
 
 ---A check on a value, from testing.expect. Its functions are called with a dot: testing.expect(n).to_be(3).
 ---
@@ -1457,7 +1503,39 @@ local wa_HealSpec = {}
 ---@class wa.GiveItemOptions
 ---@field rent_seconds integer? Gives rentals, as rentitem. Rentals do not expire yet.
 ---@field roll "random"|"default"|table<string, integer>|nil How the copies' rolls are set: "random" rolls each value, "default" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code.
+---@field to string? Where the copies go: "storage", "cart" or an extra storage's name, instead of the inventory. They follow the place's restrictions and bound rules.
+---@field bound wa.Bound? Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares.
 local wa_GiveItemOptions = {}
+
+---One side of world:trade.
+---@class wa.TradeOffer
+---@field items table<integer, integer>? Item IDs and the amount of each to offer.
+---@field zeny integer?
+local wa_TradeOffer = {}
+
+---Options of player:count_item and player:take_item.
+---@class wa.FromOptions
+---@field from string "storage", "cart" or an extra storage's name of data/storages.yml.
+local wa_FromOptions = {}
+
+---The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.
+---@class wa.Trade
+---@field players wa.Player[] The two players: the one who confirmed last first.
+---@field items wa.TradedItem[] Each offered item.
+---@field zeny integer[] The zeny each player gave, in the order of players.
+local wa_Trade = {}
+
+---One item of a trade.
+---@class wa.TradedItem
+---@field from wa.Player The player who gave it.
+---@field item integer The item's ID.
+---@field amount integer
+local wa_TradedItem = {}
+
+---The options of a trade handler.
+---@class wa.TradeOptions
+---@field player wa.Player? Only trades of this player.
+local wa_TradeOptions = {}
 
 ---Options of timers.with_bonuses.
 ---@class wa.WithBonusesOptions

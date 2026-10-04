@@ -381,8 +381,8 @@ func TestGuildStorageOpen(t *testing.T) {
 	w.r.guilds[id].skills[SkillGuildStorage] = 5
 	w.r.mu.Unlock()
 	st, size, o := w.r.OpenGuildStorage(w.ps["Ann"])
-	if o != StorageOpened || size != 500 {
-		t.Errorf("open: %v %d; level 5 is 600, capped by guild_storage 500", o, size)
+	if o != StorageOpened || size != 600 {
+		t.Errorf("open: %v %d; level 5 is 600, as rAthena's MAX_GUILD_STORAGE", o, size)
 	}
 	if _, _, o := w.r.OpenGuildStorage(w.ps["Bob"]); o != StorageNoPermission {
 		t.Errorf("newbie: %v", o)
@@ -414,7 +414,7 @@ func TestGuildStorageOpen(t *testing.T) {
 	}
 	// Pre-renewal has no Guild Storage skill: the limit is the size.
 	w.r.SetGuildData(CoreGuildTables(false), rules.DefaultGuild())
-	if _, size, o := w.r.OpenGuildStorage(ann); o != StorageOpened || size != 500 {
+	if _, size, o := w.r.OpenGuildStorage(ann); o != StorageOpened || size != 600 {
 		t.Errorf("pre-renewal: %v %d", o, size)
 	}
 }

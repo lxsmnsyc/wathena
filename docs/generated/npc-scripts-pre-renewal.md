@@ -8,16 +8,16 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 
 | Kind | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
-| script | 1702 | 813 | 749 | 64 | 889 |
+| script | 1702 | 813 | 754 | 59 | 889 |
 | script (duplicate) | 3330 | 150 | 145 | 5 | 3180 |
 | shop | 185 | 185 | 185 | 0 | 0 |
 | Kafras (scripts that call F_Kafra) | 43 | 42 | 0 | 42 | 1 |
 | Dialog NPCs (only talk, menus and emotions) | 697 | 629 | 629 | 0 | 68 |
-| Job change NPCs (script NPCs of the jobs folders) | 315 | 63 | 62 | 1 | 252 |
+| Job change NPCs (script NPCs of the jobs folders) | 315 | 63 | 63 | 0 | 252 |
 
 - Shops that are not placed have no map or no sprite: scripts open them with `callshop`, which converts to `player:open_shop`.
 - cashshop, itemshop, pointshop and marketshop lines need cash points, item and point currencies, and stock, which wAthena does not have yet.
-- Kafra storage and pushcart rental say they are not available yet.
+- Pushcart rental says it is not available yet.
 - rAthena's getitem and delitem do nothing for an amount of 0 or less, and wAthena's calls raise an error. 0 scripts and functions have a fixed amount of 0 or less, which converts to nothing. 15 have a computed amount, which `R.give_item` and `R.take_item` check first.
 
 Script NPCs of these folders are not in the extract yet (reference/rathena/README.md, "NPCs"):
@@ -40,40 +40,45 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 
 | Command | Scripts | NPC full | NPC partly | NPC not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| mes | 1008 | 742 | 64 | 202 | 1008 |  |
-| close | 909 | 699 | 64 | 146 | 909 |  |
-| next | 869 | 621 | 64 | 184 | 869 |  |
-| select | 447 | 254 | 63 | 130 | 447 |  |
-| variables | 283 | 113 | 63 | 107 | 277 | $@arena_picture is a temporary server variable (1); $@arn_1 is a temporary server variable (1); $@in_battle is a temporary server variable (1) |
-| end | 236 | 140 | 63 | 33 | 236 |  |
+| mes | 1008 | 747 | 59 | 202 | 1008 |  |
+| close | 909 | 704 | 59 | 146 | 909 |  |
+| next | 869 | 626 | 59 | 184 | 869 |  |
+| select | 447 | 258 | 59 | 130 | 447 |  |
+| variables | 283 | 117 | 59 | 107 | 277 | $@arena_picture is a temporary server variable (1); $@arn_1 is a temporary server variable (1); $@in_battle is a temporary server variable (1) |
+| end | 236 | 145 | 58 | 33 | 236 |  |
 | event ontouch_ | 228 | 0 | 0 | 228 | 0 |  |
-| warp | 173 | 96 | 48 | 29 | 169 | to a computed map (2) |
+| close2 | 194 | 105 | 43 | 46 | 194 |  |
+| warp | 173 | 101 | 43 | 29 | 169 | to a computed map (2) |
 | event onenable | 166 | 0 | 0 | 166 | 0 |  |
-| close2 | 153 | 101 | 7 | 45 | 153 |  |
-| callfunc | 138 | 53 | 64 | 21 | 138 |  |
-| Zeny | 135 | 58 | 59 | 18 | 135 |  |
-| getarg | 133 | 47 | 63 | 23 | 122 | outside a function (11) |
+| callfunc | 138 | 58 | 59 | 21 | 138 |  |
+| Zeny | 135 | 62 | 55 | 18 | 135 |  |
+| getarg | 133 | 51 | 59 | 23 | 122 | outside a function (11) |
 | strcharinfo | 116 | 39 | 41 | 36 | 116 |  |
-| countitem | 101 | 33 | 48 | 20 | 101 |  |
-| emotion | 95 | 35 | 45 | 15 | 91 | on a player or another NPC (4) |
-| cutin | 91 | 32 | 45 | 14 | 91 |  |
-| delitem | 91 | 32 | 48 | 11 | 91 |  |
-| input | 84 | 19 | 47 | 18 | 84 |  |
+| countitem | 101 | 37 | 44 | 20 | 101 |  |
+| emotion | 95 | 39 | 41 | 15 | 91 | on a player or another NPC (4) |
+| cutin | 91 | 36 | 41 | 14 | 91 |  |
+| delitem | 91 | 36 | 44 | 11 | 91 |  |
+| input | 84 | 23 | 43 | 18 | 84 |  |
 | viewpoint | 73 | 31 | 41 | 1 | 73 |  |
 | isequipped | 70 | 0 | 0 | 70 | 0 |  |
 | rand | 69 | 32 | 0 | 37 | 69 |  |
-| savepoint | 68 | 17 | 46 | 5 | 68 |  |
-| checkre | 67 | 14 | 46 | 7 | 67 |  |
+| savepoint | 68 | 22 | 41 | 5 | 68 |  |
+| checkre | 67 | 18 | 42 | 7 | 67 |  |
 | percentheal | 63 | 13 | 41 | 9 | 15 | a negative amount, which takes HP or SP (6) |
-| callsub | 61 | 1 | 45 | 15 | 61 |  |
+| callsub | 61 | 5 | 41 | 15 | 61 |  |
+| getskilllv | 58 | 6 | 41 | 11 | 58 |  |
 | setarray | 56 | 4 | 41 | 11 | 56 |  |
+| basicskillcheck | 54 | 5 | 41 | 8 | 54 |  |
 | getitem | 54 | 43 | 1 | 10 | 54 |  |
-| close3 | 50 | 1 | 45 | 4 | 50 |  |
+| close3 | 50 | 5 | 41 | 4 | 50 |  |
 | parameter | 49 | 0 | 0 | 49 | 0 |  |
-| logmes | 46 | 0 | 45 | 1 | 46 |  |
+| dispbottom | 47 | 5 | 41 | 1 | 47 |  |
+| openstorage | 47 | 5 | 41 | 1 | 47 |  |
+| logmes | 46 | 4 | 41 | 1 | 46 |  |
 | checkweight | 43 | 24 | 0 | 19 | 43 |  |
 | implode | 43 | 0 | 41 | 2 | 43 |  |
 | getguildname | 42 | 0 | 41 | 1 | 42 |  |
+| guildopenstorage | 42 | 0 | 41 | 1 | 42 |  |
 | event onreset | 41 | 0 | 0 | 41 | 0 |  |
 | strnpcinfo | 30 | 2 | 21 | 7 | 27 | other than the name and the map (3) |
 | changequest | 26 | 0 | 0 | 26 | 0 |  |
@@ -85,7 +90,6 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | mapannounce | 15 | 14 | 0 | 1 | 15 |  |
 | getbrokenid | 14 | 0 | 14 | 0 | 0 |  |
 | repair | 14 | 0 | 14 | 0 | 0 |  |
-| basicskillcheck | 12 | 0 | 5 | 7 | 0 |  |
 | event ontouch | 12 | 0 | 0 | 12 | 0 |  |
 | specialeffect2 | 12 | 6 | 0 | 6 | 12 |  |
 | checkquest | 10 | 0 | 0 | 10 | 0 |  |
@@ -95,23 +99,20 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getgmlevel | 10 | 0 | 2 | 8 | 0 |  |
 | event onwelcome | 8 | 0 | 0 | 8 | 0 |  |
 | getpartnerid | 8 | 0 | 0 | 8 | 0 |  |
-| getskilllv | 8 | 1 | 4 | 3 | 8 |  |
 | parse | 8 | 0 | 0 | 8 | 0 | at 116 near ",": set needs a variable (1); at 117 near ",": set needs a variable (1); at 319 near "mes": statement before the first case (1) |
 | skill | 8 | 0 | 0 | 8 | 0 |  |
 | getbattleflag | 7 | 0 | 0 | 7 | 0 |  |
 | getitemname | 7 | 2 | 0 | 5 | 7 |  |
 | specialeffect | 7 | 0 | 0 | 7 | 0 |  |
-| checkcart | 6 | 1 | 4 | 1 | 6 |  |
+| checkcart | 6 | 5 | 0 | 1 | 6 |  |
 | event onout | 6 | 0 | 0 | 6 | 0 |  |
 | getexp | 6 | 0 | 0 | 6 | 0 |  |
 | setquest | 6 | 0 | 0 | 6 | 0 |  |
 | disablenpc | 5 | 0 | 0 | 5 | 0 |  |
-| dispbottom | 5 | 1 | 4 | 0 | 5 |  |
 | event onon1 | 5 | 0 | 0 | 5 | 0 |  |
 | event ontimeover1 | 5 | 0 | 0 | 5 | 0 |  |
 | event ontouchnpc | 5 | 0 | 0 | 5 | 0 |  |
-| openstorage | 5 | 1 | 4 | 0 | 5 |  |
-| setcart | 5 | 1 | 4 | 0 | 5 |  |
+| setcart | 5 | 5 | 0 | 0 | 5 |  |
 | disable_items | 4 | 0 | 0 | 4 | 0 |  |
 | event onreset_01 | 4 | 0 | 0 | 4 | 0 |  |
 | event onsmile | 4 | 0 | 0 | 4 | 0 |  |
@@ -173,8 +174,8 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | Function | File | Converts | Parts that fail when reached |
 |---|---|---|---|
 | F_AuctionWarper | npc/other/auction.txt:37 | whole |  |
-| F_CanChangeJob | npc/other/Global_Functions.txt:626 | partly | basicskillcheck |
-| F_CanOpenStorage | npc/other/Global_Functions.txt:618 | partly | basicskillcheck |
+| F_CanChangeJob | npc/other/Global_Functions.txt:626 | whole |  |
+| F_CanOpenStorage | npc/other/Global_Functions.txt:618 | whole |  |
 | F_CheckKafCode | npc/kafras/functions_kafras.txt:475 | whole |  |
 | F_ClearJobVar | npc/other/Global_Functions.txt:56 | whole |  |
 | F_ClockTowerGate | npc/cities/aldebaran.txt:1494 | partly | warp: to a computed map |
@@ -192,6 +193,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | F_KafEnd | npc/kafras/functions_kafras.txt:448 | partly | percentheal: a negative amount, which takes HP or SP |
 | F_KafInfo | npc/kafras/functions_kafras.txt:399 | whole |  |
 | F_KafSet | npc/kafras/functions_kafras.txt:605 | whole |  |
+| F_KafStor | npc/kafras/functions_kafras.txt:198 | partly | percentheal: a negative amount, which takes HP or SP |
 | F_KafTele | npc/kafras/functions_kafras.txt:287 | whole |  |
 | F_Kafra | npc/kafras/functions_kafras.txt:75 | whole |  |
 | F_MercKafra | npc/pre-re/jobs/1-1/merchant.txt:1060 | whole |  |

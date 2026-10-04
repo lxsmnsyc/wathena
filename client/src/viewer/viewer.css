@@ -538,6 +538,15 @@ body {
   display: none;
 }
 
+#inventory-window .item-detail-rules {
+  margin-bottom: 4px;
+  color: #a03020;
+}
+
+#inventory-window .item-detail-rules[hidden] {
+  display: none;
+}
+
 #equipment-window {
   position: fixed;
   top: 64px;
@@ -1606,7 +1615,7 @@ body {
   color: #ffd84a;
 }
 
-#storage-window {
+.storage-window {
   position: fixed;
   right: min(324px, calc(100% - 312px));
   /* Above the hotkey bar. */
@@ -1622,29 +1631,29 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-#storage-window[hidden],
-#storage-window [hidden] {
+.storage-window[hidden],
+.storage-window [hidden] {
   display: none;
 }
 
-#storage-window .storage-head {
+.storage-window .storage-head {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-#storage-window h2 {
+.storage-window h2 {
   flex: 1;
   margin: 0;
   font-size: 14px;
 }
 
-#storage-window h3 {
+.storage-window h3 {
   margin: 0;
   font-size: 13px;
 }
 
-#storage-window .storage-items {
+.storage-window .storage-items {
   flex: 1;
   min-height: 60px;
   margin: 0;
@@ -1653,18 +1662,18 @@ body {
   list-style: none;
 }
 
-#storage-window .storage-items li {
+.storage-window .storage-items li {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 2px 0;
 }
 
-#storage-window .storage-items li:focus {
+.storage-window .storage-items li:focus {
   outline: 1px solid rgb(255 255 255 / 50%);
 }
 
-#storage-window .name {
+.storage-window .name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -1672,22 +1681,22 @@ body {
   white-space: nowrap;
 }
 
-#storage-window .storage-items button {
+.storage-window .storage-items button {
   padding: 0 4px;
   font-size: 11px;
 }
 
-#storage-window .storage-amount {
+.storage-window .storage-amount {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-#storage-window .storage-amount input {
+.storage-window .storage-amount input {
   width: 5em;
 }
 
-#storage-window .storage-log {
+.storage-window .storage-log {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1695,24 +1704,179 @@ body {
   overflow-y: auto;
 }
 
-#storage-window .storage-log-head {
+.storage-window .storage-log-head {
   display: flex;
   justify-content: space-between;
 }
 
-#storage-window .storage-log ol {
+.storage-window .storage-log ol {
   margin: 0;
   padding: 0;
   font-size: 12px;
   list-style: none;
 }
 
-#storage-window .storage-log time {
+.storage-window .storage-log time {
   color: #b8c8ff;
 }
 
-#storage-window .storage-log .taken {
+.storage-window .storage-log .taken {
   color: #ffc8a0;
+}
+
+/* The cart window sits above the storage window's place, so both show at
+   once. */
+#cart-window {
+  bottom: auto;
+  top: 64px;
+  max-height: calc(50% - 40px);
+}
+
+.storage-window .storage-weight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.storage-window .storage-weight meter {
+  flex: 1;
+}
+
+.storage-window .storage-loading {
+  margin: 0;
+  color: #b8c8ff;
+  font-size: 12px;
+}
+
+.storage-window .storage-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.storage-window .storage-items li:hover {
+  background: rgb(255 255 255 / 12%);
+}
+
+#trade-window {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(520px, calc(100% - 24px));
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 75%);
+  transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+}
+
+#trade-window[hidden],
+#trade-window [hidden] {
+  display: none !important;
+}
+
+#trade-window h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+#trade-window h3 {
+  flex: 1;
+  margin: 0;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#trade-window .trade-panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#trade-window .trade-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 4px;
+}
+
+#trade-window .trade-pane.locked {
+  border-color: #ffd84a;
+}
+
+#trade-window .trade-pane-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#trade-window .trade-locked {
+  color: #ffd84a;
+  font-size: 12px;
+}
+
+#trade-window .trade-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#trade-window .trade-items li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+}
+
+#trade-window .trade-items li.empty {
+  border-bottom: 1px dotted rgb(255 255 255 / 15%);
+}
+
+#trade-window img {
+  image-rendering: pixelated;
+}
+
+#trade-window .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#trade-window .amount,
+#trade-window .trade-zeny {
+  color: #b8c8ff;
+}
+
+#trade-window .trade-zeny-form,
+#trade-window .trade-amount,
+#trade-window .trade-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+#trade-window input {
+  width: 8em;
+}
+
+#trade-window .trade-hint {
+  margin: 0;
+  color: #b8c8ff;
+  font-size: 12px;
 }
 
 #player-menu {
@@ -1752,7 +1916,7 @@ body {
 /* The guild and storage windows show and hide their parts with the
    hidden attribute, which their display rules would override. */
 #guild-window [hidden],
-#storage-window [hidden],
+.storage-window [hidden],
 #guild-labels [hidden] {
   display: none !important;
 }

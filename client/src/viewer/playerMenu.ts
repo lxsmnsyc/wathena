@@ -1,5 +1,5 @@
-// The menu a right click on another player opens: whisper, invite to the
-// party or the guild, and report the player's guild name or emblem. User
+// The menu a right click on another player opens: whisper, trade, invite
+// to the party or the guild, and report the player's guild name or emblem. User
 // text is only ever set with textContent.
 
 import { reportButton } from './chat';
@@ -15,6 +15,8 @@ export interface BadgeView {
 
 /** What the menu knows about a player and about what the player may do. */
 export interface PlayerMenuInfo {
+  /** The player's entity ID, for a trade request. */
+  id: number;
   name: string;
   badge: BadgeView | undefined;
   /** Whether the player leads a party. */
@@ -27,18 +29,19 @@ export interface PlayerMenuInfo {
 
 export type PlayerMenuItem =
   | 'whisper'
+  | 'trade'
   | 'partyInvite'
   | 'guildInvite'
   | 'reportGuildName'
   | 'reportEmblem';
 
 /**
- * The menu's items: whisper always, the party invite for a party leader,
+ * The menu's items: whisper and trade always, the party invite for a party leader,
  * the guild invite for a player who may invite someone without a guild,
  * and reports for another guild's name and its emblem.
  */
 export function playerMenuItems(info: PlayerMenuInfo): PlayerMenuItem[] {
-  const out: PlayerMenuItem[] = ['whisper'];
+  const out: PlayerMenuItem[] = ['whisper', 'trade'];
   if (info.partyInvite) {
     out.push('partyInvite');
   }
@@ -56,6 +59,8 @@ export function playerMenuItems(info: PlayerMenuInfo): PlayerMenuItem[] {
 
 export interface PlayerMenuActions {
   whisper: (name: string) => void;
+  /** Asks the player with an entity ID to trade. */
+  trade: (id: number) => void;
   partyInvite: (name: string) => void;
   guildInvite: (name: string) => void;
   /** Reports a guild's name, or its emblem when emblem is set. */
@@ -64,6 +69,7 @@ export interface PlayerMenuActions {
 
 const LABELS: Record<PlayerMenuItem, string> = {
   whisper: 'Whisper',
+  trade: 'Trade',
   partyInvite: 'Invite to party',
   guildInvite: 'Invite to guild',
   reportGuildName: 'Report guild name',
@@ -150,6 +156,8 @@ export class PlayerMenu {
       this.close();
       if (item === 'whisper') {
         this.actions.whisper(info.name);
+      } else if (item === 'trade') {
+        this.actions.trade(info.id);
       } else if (item === 'partyInvite') {
         this.actions.partyInvite(info.name);
       } else {

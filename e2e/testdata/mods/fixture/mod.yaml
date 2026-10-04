@@ -1,8 +1,9 @@
 # The mod of the end-to-end tests (e2e/README.md): a monster that always
 # drops two items, a shop, NPCs that give and take items and zeny, change
-# jobs, warp and mute, a word for the chat filter, and a chat command
-# that levels up the speaker's guild, on the placeholder maps. It uses
-# only API 1.0.
+# jobs, warp, mute and open storage, a word for the chat filter, items
+# with restrictions, an extra storage, chat commands for the guild,
+# storage, cart and item scenarios, and a trade hook, on the placeholder
+# maps. It uses only API 1.0.
 id: e2e.fixture
 name: End-to-end fixture
 version: 0.1.0
@@ -25,5 +26,6 @@ permissions:
   - player.warp
   - player.sanction
   - guild.manage
+  - rules.override
 scripts:
   - scripts/main.lua

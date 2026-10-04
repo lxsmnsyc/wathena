@@ -100,9 +100,11 @@ func shopPrice(p *Player, s *Shop, it ShopItem) int {
 	return it.Price
 }
 
-// canSell is the part of pc_can_sell_item that applies: the item's trade
-// restriction. Equipment, rentals and bound items do not exist yet.
-func canSell(d *item.Def) bool { return !d.NoSell }
+// canSell is pc_can_sell_item's item checks: no_sell on the item or a
+// card in it, and a bound copy, as allow_bound_sell 0.
+func (z *Zone) canSell(s *item.Slot) bool {
+	return !z.Items.Restricted(s, item.NoSellFlag) && item.BoundAllows(s.Bound, item.PlaceSell, false)
+}
 
 // openShop shows a shop's window, as clif_npcbuysell with both lists.
 func (z *Zone) openShop(p *Player, s *Shop, npc *entity) {
@@ -124,7 +126,7 @@ func (z *Zone) openShop(p *Player, s *Shop, npc *entity) {
 			continue
 		}
 		d := z.Items.Get(st.ID)
-		if !canSell(d) {
+		if !z.canSell(&st) {
 			continue
 		}
 		sellable = append(sellable, wathenav1.ShopSellable_builder{
@@ -289,7 +291,7 @@ func (z *Zone) sell(p *Player, npc uint32, lines []sellLine) {
 	var total int64
 	seen := map[int]bool{}
 	for _, l := range lines {
-		if l.slot < 0 || l.slot >= item.MaxInventory || seen[l.slot] || l.amount < 1 {
+		if l.slot < 0 || l.slot >= len(p.inventory.Slots) || seen[l.slot] || l.amount < 1 {
 			fail()
 			return
 		}
@@ -300,7 +302,7 @@ func (z *Zone) sell(p *Player, npc uint32, lines []sellLine) {
 			return
 		}
 		d := z.Items.Get(s.ID)
-		if !canSell(d) {
+		if !z.canSell(&s) {
 			fail()
 			return
 		}

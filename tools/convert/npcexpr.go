@@ -662,6 +662,14 @@ func (b *body) call(e *Call) (val, error) {
 			return val{}, unsupported(name, "a computed skill")
 		}
 		return done(val{code: "player:get_skill_level(" + f.record("skills.id", skill) + ")", t: tInt}, nil)
+	case "basicskillcheck":
+		// basicskillcheck is the ruleset rule basic_skill_check. Lua
+		// cannot read rules yet, so R.basic_skill_check gives rAthena's
+		// default.
+		if len(args) != 0 {
+			return val{}, unsupported(name, "arguments")
+		}
+		return done(val{code: "R.basic_skill_check()", t: tBool}, nil)
 	case "getstatus":
 		return done(b.getstatus(args))
 	case "playerattached":
@@ -692,6 +700,9 @@ func (b *body) call(e *Call) (val, error) {
 		return done(v, err)
 	}
 	if v, ok, err := b.guildRead(name, args); ok {
+		return done(v, err)
+	}
+	if v, ok, err := b.storageRead(name, args); ok {
 		return done(v, err)
 	}
 	return val{}, unsupported(name, "")
@@ -898,19 +909,7 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		method := map[string]string{"getitem": "give_item", "delitem": "take_item"}[name]
-		// rAthena's getitem and delitem do nothing for an amount of 0 or
-		// less. wAthena's calls raise an error then, so such a call is
-		// left out, and a computed amount goes through R, which checks it.
-		switch {
-		case n.static != nil && *n.static <= 0:
-			b.n.c.zeroAmounts[b.n.line.Name] = true
-			b.line("-- %s with an amount of %d does nothing in rAthena.", name, *n.static)
-		case n.static != nil:
-			b.line("player:%s(%s, %s)", method, it, n.asInt())
-		default:
-			b.n.c.checkedAmounts[b.n.line.Name] = true
-			b.line("R.%s(player, %s, %s)", method, it, n.asInt())
-		}
+		b.giveTake(name, method, it, n, "")
 	case "specialeffect2":
 		if len(args) != 1 {
 			return unsupported(name, "on another character")
@@ -1037,8 +1036,6 @@ func (b *body) commandErr(name string, args []Expr) error {
 		b.line("player:reset_skills()")
 	case "resetstatus":
 		b.line("player:reset_stats()")
-	case "openstorage":
-		b.line(`R.not_available(conversation, "Storage")`)
 	case "setfalcon", "setriding", "setcart":
 		return b.setCompanion(name, args)
 	case "channel_create", "channel_chat", "channel_join", "channel_kick":
@@ -1062,6 +1059,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 		return unsupported(name, "the API cannot remove spawned monsters")
 	default:
 		if ok, err := b.guildCommand(name, args); ok {
+			return err
+		}
+		if ok, err := b.storageCommand(name, args); ok {
 			return err
 		}
 		return unsupported(name, "")

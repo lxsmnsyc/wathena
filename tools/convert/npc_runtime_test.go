@@ -13,6 +13,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/internal/testrace"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
@@ -104,6 +105,18 @@ func (h *npcHost) SetVariable(_ int64, v modscript.VariableKey, value string) er
 }
 func (h *npcHost) ItemName(id uint32) (string, bool) { return fmt.Sprintf("Item %d", id), true }
 func (h *npcHost) Announce(string, string) error     { return nil }
+
+// The storage calls: storage opens, and the storages are empty.
+func (h *npcHost) OpenStorage(int64, string, string) (bool, error) { return true, nil }
+func (h *npcHost) OpenGuildStorageFor(int64) (bool, string, error) { return true, "", nil }
+func (h *npcHost) StorageCount(int64, string, string, uint32) (int, bool, error) {
+	return 0, true, nil
+}
+func (h *npcHost) StorageGive(int64, string, string, uint32, int, modscript.GiveRoll, item.Bound) (bool, error) {
+	return true, nil
+}
+func (h *npcHost) StorageTake(int64, string, string, uint32, int) (bool, error) { return false, nil }
+func (h *npcHost) GuildCountItem(int64, uint32) (int, error)                    { return 0, nil }
 
 // logRecorder keeps the warnings a runtime logs, which are the errors of
 // its handlers.

@@ -343,12 +343,15 @@ func (s *Server) Restart() {
 
 // configYAML approves the fixture mod's permissions, and turns off the
 // lower chat limits of new characters, since every test character is
-// new.
+// new. The chat rate is high, since the tests say the fixture's chat
+// commands one after another.
 const configYAML = `mods:
   approve:
-    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction, guild.manage]
+    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction, guild.manage, rules.override]
 chat:
   new_character_period: 0s
+  burst: 100
+  refill: 10ms
 `
 
 // gameURL is the URL of a test database for the server, acting as the

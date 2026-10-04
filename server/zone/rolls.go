@@ -202,16 +202,16 @@ func (h scriptHost) GiveRolledItem(id int64, itemID uint32, amount int, rentSeco
 	if err != nil {
 		return false, err
 	}
-	ok, err := h.z.giveRolled(p, itemID, amount, roll)
+	ok, err := h.z.giveRolled(p, itemID, amount, roll, item.BoundNone)
 	if err != nil {
 		return false, fmt.Errorf("player:give_item: %w", err)
 	}
 	return ok, nil
 }
 
-// giveRolled gives items with the roll option of player:give_item. It
-// returns false when they do not fit.
-func (z *Zone) giveRolled(p *Player, itemID uint32, amount int, roll modscript.GiveRoll) (bool, error) {
+// giveRolled gives items with the roll option of player:give_item, bound
+// as bound. It returns false when they do not fit.
+func (z *Zone) giveRolled(p *Player, itemID uint32, amount int, roll modscript.GiveRoll, bound item.Bound) (bool, error) {
 	d := z.Items.Get(itemID)
 	if roll.Mode == modscript.RollSet {
 		for name := range roll.Values {
@@ -237,6 +237,7 @@ func (z *Zone) giveRolled(p *Player, itemID uint32, amount int, roll modscript.G
 		default:
 			x = z.newExtra(d, roll.Mode == modscript.RollRandom, rollSource{kind: sourceScript}, "")
 		}
+		x.Bound = bound
 		if r := z.addCopy(p, itemID, step, 0, nil, x, scriptOrigin); r != item.AddSuccess {
 			p.pending = append(p.pending, pickUpFailed(0, pickUpFailure(r)))
 			return false, nil

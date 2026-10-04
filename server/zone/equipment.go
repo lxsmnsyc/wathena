@@ -97,7 +97,7 @@ func (z *Zone) wearer(p *Player) *item.Wearer {
 
 // equipItem is clif_parse_EquipItem and pc_equipitem.
 func (z *Zone) equipItem(p *Player, slot int, position uint32) {
-	if z.Items == nil || slot < 0 || slot >= item.MaxInventory {
+	if z.Items == nil || slot < 0 || slot >= len(p.inventory.Slots) {
 		return
 	}
 	s := &p.inventory.Slots[slot]
@@ -144,7 +144,7 @@ func (z *Zone) equipItem(p *Player, slot int, position uint32) {
 
 // unequipItem is clif_parse_UnequipItem and pc_unequipitem.
 func (z *Zone) unequipItem(p *Player, slot int) {
-	if z.Items == nil || slot < 0 || slot >= item.MaxInventory {
+	if z.Items == nil || slot < 0 || slot >= len(p.inventory.Slots) {
 		return
 	}
 	ch, ok := p.inventory.Unequip(z.Items, slot)
@@ -171,7 +171,7 @@ func (z *Zone) insertCard(p *Player, cardSlot, equipSlot int) {
 			EquipSlot: uint32(max(equipSlot, 0)), // #nosec G115 -- as above.
 		}.Build()}.Build())
 	}
-	if cardSlot < 0 || cardSlot >= item.MaxInventory || equipSlot < 0 || equipSlot >= item.MaxInventory {
+	if cardSlot < 0 || cardSlot >= len(p.inventory.Slots) || equipSlot < 0 || equipSlot >= len(p.inventory.Slots) {
 		fail()
 		return
 	}

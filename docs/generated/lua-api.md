@@ -84,7 +84,7 @@ Permission: `event.listen`.
 |---|---|---|
 | `name` | `wa.EventName` | The event's name. An unknown name, or an event of another context kind, raises an error. |
 | `handler` | `function` | Runs each time the event fires, in registration order. |
-| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|wa.SkillUsedOptions\|wa.ChatOptions\|nil` | Only the death, status, skill_used and chat events take options: they narrow which events run the handler. |
+| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|wa.SkillUsedOptions\|wa.ChatOptions\|wa.TradeOptions\|nil` | Only the death, status, skill_used, chat and trade events take options: they narrow which events run the handler. |
 
 ### wa.hooks
 
@@ -94,7 +94,7 @@ local hooks = require "wa.hooks"
 
 Hooks change a game result in a chain ordered by priority. Each hook calls next to get the rest of the chain's result. The innermost result is rAthena's value. Hooks only compute: calls that change the game raise an error in them. The context owns them.
 
-#### `hooks.on(name, hook?, options?) → wa.HookHandle`
+#### `hooks.on(name, hook, options?) → wa.HookHandle`
 
 Adds a hook. Higher priority runs first; equal priorities run in the order they were added.
 
@@ -103,7 +103,7 @@ Permission: `rules.override`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `wa.HookName` | The hook's name. An unknown name raises an error. |
-| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice\|wa.ItemRoll\|wa.ChatMessage, next: fun(object?: table): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer?` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message. |
+| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice\|wa.ItemRoll\|wa.ChatMessage\|wa.Trade, next: fun(object?: table): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer\|string\|nil): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer\|string\|nil` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message; trade returns true, or false and a message to refuse the trade. |
 | `options` | `wa.HookOptions?` |  |
 
 ### wa.schedules
@@ -1060,24 +1060,38 @@ Permission: `player.give_items`.
 |---|---|---|
 | `group` | `integer` | A group from items.group. |
 
-#### `player:count_item(item) → integer`
+#### `player:count_item(item, options?) → integer?`
 
-How many of the item the player has, as countitem.
+How many of the item the player has, as countitem. With from, how many a storage or the cart holds, as storagecountitem and cartcountitem; nil when it cannot be read: no cart, or a storage window open.
 
 Permission: `game.read`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `item` | `integer` | An item from items.id. |
+| `options` | `wa.FromOptions?` |  |
 
-#### `player:take_item(item, amount) → boolean`
+#### `player:take_item(item, amount, options?) → boolean`
 
-Takes items, as delitem. Returns false, and takes nothing, when the player has too few.
+Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. Returns false, and takes nothing, when there are too few.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `item` | `integer` | An item from items.id. |
 | `amount` | `integer` | 1 or more. |
+| `options` | `wa.FromOptions?` |  |
+
+#### `player:open_storage(name?) → boolean`
+
+Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string?` | An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. Nothing opens the account's storage. |
+
+#### `player:open_guild_storage() → boolean, string?`
+
+Opens the guild storage, as guildopenstorage. Returns true, or false and why: "no_guild", "no_storage", "no_permission", "in_use" or "already_open".
 
 #### `player:can_carry(item, amount) → boolean`
 
@@ -1978,6 +1992,16 @@ Permission: `game.read`.
 |---|---|---|
 | `skill` | `integer` | A guild skill's ID, such as skills.id("GD_EXTENSION"). |
 
+#### `guild:count_item(item) → integer`
+
+How many of the item the guild storage holds, as guildstoragecountitem.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
+
 #### `guild:is_allied(other) → boolean`
 
 Whether the guilds are allies.
@@ -2097,18 +2121,21 @@ The object of the guild_change event.
 
 ### wa.Limits
 
-The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.
+The limits of the world's ruleset, as rules.limits: each limit's base, what a player or guild starts with. A list over a limit that a ruleset lowered keeps its entries and cannot grow. The engine's ceiling bounds each limit's max.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `party_members` | `integer` | The most members a party holds, as MAX_PARTY. 12 by default, at most 64. |
-| `friends` | `integer` | The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200. |
-| `block_list` | `integer` | The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100. |
-| `guild_members` | `integer` | The most members a guild holds before Guild Extension, which adds 6 per level. 16 by default, at most 200. |
-| `guild_positions` | `integer` | The positions of a guild, as MAX_GUILDPOSITION. 20 by default, at most 40. |
-| `guild_allies` | `integer` | The most allied guilds of a guild, as max_guild_alliance. 3 by default, at most 10. |
-| `guild_enemies` | `integer` | The most enemy guilds of a guild, as max_guild_alliance. 3 by default, at most 10. |
-| `guild_storage` | `integer` | The most slots a guild storage holds. 500 by default, at most 2,000. |
+| `party_members` | `integer` | The most members a party holds, as MAX_PARTY. 12 by default, ceiling 256. |
+| `friends` | `integer` | The most names a friend list holds, as MAX_FRIENDS. 40 by default, ceiling 1,000. |
+| `block_list` | `integer` | The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, ceiling 1,000. |
+| `guild_members` | `integer` | The most members a guild holds before Guild Extension, which adds 6 per level up to the max, 76 by default as MAX_GUILD. 16 by default, ceiling 512. |
+| `guild_positions` | `integer` | The positions of a guild, as MAX_GUILDPOSITION. 20 by default, ceiling 40. |
+| `guild_allies` | `integer` | The most allied guilds of a guild, as max_guild_alliance. 3 by default, ceiling 10. |
+| `guild_enemies` | `integer` | The most enemy guilds of a guild, as max_guild_alliance. 3 by default, ceiling 10. |
+| `guild_storage` | `integer` | The slots of a guild storage without renewal's Guild Storage skill, as MAX_GUILD_STORAGE. The skill gives 100 and 100 per level, up to the max. 600 by default, ceiling 10,000. |
+| `inventory_slots` | `integer` | The inventory slots of a new character, as INVENTORY_BASE_SIZE. 100 by default, with the max 200, MAX_INVENTORY. Ceiling 1,000. |
+| `storage_slots` | `integer` | The slots of an account's storage, as MAX_STORAGE. 600 by default, ceiling 10,000. |
+| `cart_slots` | `integer` | The slots of a cart, as MAX_CART. 100 by default, ceiling 1,000. |
 
 ### wa.ExpShare
 
@@ -2323,6 +2350,29 @@ Provisional: not reviewed in proposal 0002 yet.
 #### `testWorld:get_chat(player) → wa.HeardLine[]`
 
 The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `testWorld:trade(a, b, offer_a?, offer_b?) → boolean, string?`
+
+Runs a whole trade, as two clients would: a asks, b accepts, both offer, lock and confirm. Returns true when it completed, or false and why: the trade hook's message, or an outcome such as "restricted" or "bound". A refused offer ends the trade. Trading needs Basic Skill level 1, which a new player from world:new_player lacks: give it skills = { [skills.id("NV_BASIC")] = 9 }.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `a` | `wa.Player` |  |
+| `b` | `wa.Player` | Steps next to a. |
+| `offer_a` | `wa.TradeOffer?` |  |
+| `offer_b` | `wa.TradeOffer?` |  |
+
+#### `testWorld:close_storage(player)`
+
+Closes the player's storage window, as the client's close button.
 
 Provisional: not reviewed in proposal 0002 yet.
 
@@ -2718,6 +2768,53 @@ Options of player:give_item.
 |---|---|---|
 | `rent_seconds` | `integer?` | Gives rentals, as rentitem. Rentals do not expire yet. |
 | `roll` | `"random"\|"default"\|table<string, integer>\|nil` | How the copies' rolls are set: "random" rolls each value, "default" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code. |
+| `to` | `string?` | Where the copies go: "storage", "cart" or an extra storage's name, instead of the inventory. They follow the place's restrictions and bound rules. |
+| `bound` | `wa.Bound?` | Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares. |
+
+### wa.TradeOffer
+
+One side of world:trade.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `items` | `table<integer, integer>?` | Item IDs and the amount of each to offer. |
+| `zeny` | `integer?` |  |
+
+### wa.FromOptions
+
+Options of player:count_item and player:take_item.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `from` | `string` | "storage", "cart" or an extra storage's name of data/storages.yml. |
+
+### wa.Trade
+
+The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `players` | `wa.Player[]` | The two players: the one who confirmed last first. |
+| `items` | `wa.TradedItem[]` | Each offered item. |
+| `zeny` | `integer[]` | The zeny each player gave, in the order of players. |
+
+### wa.TradedItem
+
+One item of a trade.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `from` | `wa.Player` | The player who gave it. |
+| `item` | `integer` | The item's ID. |
+| `amount` | `integer` |  |
+
+### wa.TradeOptions
+
+The options of a trade handler.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player?` | Only trades of this player. |
 
 ### wa.WithBonusesOptions
 
@@ -3118,6 +3215,7 @@ Changes the value.
 | `guild_join` | mod, event | `join: wa.GuildMembership` | A player of the context's map joined a guild: an accepted invite, or a wa.guilds call, which also fires it for the master of a new guild. |
 | `guild_leave` | mod, event | `leave: wa.GuildMembership` | A player of the context's map left its guild. A member who is offline gets no event. |
 | `guild_change` | mod, event | `change: wa.GuildChange` | A guild got a new master, a level, a notice or an emblem, by a change made on the context's map. A new emblem from the account pages runs it on the map of the master, or of the first online member. |
+| `trade` | mod, npc, event | `trade: wa.Trade` | Two players on the context's map completed a trade. Options narrow it. |
 
 ## Named types
 
@@ -3131,7 +3229,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`
 
 ### wa.BonusName
 
@@ -3149,7 +3247,13 @@ An equipment slot.
 
 A hook name of wa.hooks.
 
-`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`, `chat`
+`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`, `chat`, `trade`
+
+### wa.Bound
+
+Who a bound copy is bound to.
+
+`account`, `character`, `party`, `guild`
 
 ### wa.MonsterState
 

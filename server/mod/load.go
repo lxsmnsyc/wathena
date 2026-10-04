@@ -392,18 +392,18 @@ func resolveRuleset(all map[string]*Mod, disabled map[string]bool, cfg Config) (
 		cur = m.Manifest.Provides.Ruleset.Extends
 	}
 	base := strings.TrimPrefix(chain[len(chain)-1], "core.ruleset.")
-	rs := &Ruleset{Mod: id, Base: base, Flags: coreFlags(base), Limits: map[string]int{}, Rules: map[string]int{}}
+	rs := &Ruleset{Mod: id, Base: base, Flags: coreFlags(base), Limits: map[string]rules.RangeSet{}, Rules: map[string]int{}}
 	for i := len(chain) - 1; i >= 0; i-- {
 		spec := all[chain[i]].Manifest.Provides.Ruleset
 		for name, v := range spec.Flags {
 			rs.Flags[name] = string(v)
 		}
 		for name, v := range spec.Limits {
-			n, err := checkBound(rules.LimitBounds, "limit", name, string(v))
+			n, err := checkLimit(name, v)
 			if err != nil {
 				return nil, nil, fmt.Errorf("the ruleset %s: %w", chain[i], err)
 			}
-			rs.Limits[name] = n
+			rs.Limits[name] = rs.Limits[name].Merge(n)
 		}
 		for name, v := range spec.Rules {
 			n, err := checkBound(rules.RuleBounds, "rule", name, string(v))

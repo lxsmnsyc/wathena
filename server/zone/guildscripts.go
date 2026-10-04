@@ -187,28 +187,32 @@ func (h scriptHost) FindGuild(id int64) bool { return h.z.socialHub().GuildRuns(
 // FindGuildNamed finds a guild by name.
 func (h scriptHost) FindGuildNamed(name string) (int64, bool) { return h.z.socialHub().FindGuild(name) }
 
-// OpenGuildStorage opens a player's guild storage for core's converted
-// NPC scripts, as guildopenstorage. It returns rAthena's
-// e_guild_storage_flags value: 0 GSTORAGE_OPEN, 2 GSTORAGE_ALREADY_OPEN,
-// 3 GSTORAGE_NO_GUILD, 4 GSTORAGE_NO_STORAGE and 5
-// GSTORAGE_NO_PERMISSION. 1, GSTORAGE_STORAGE_ALREADY_OPEN, needs the
-// personal storage of a later step.
-func (h scriptHost) OpenGuildStorage(player int64) (int, error) {
+// OpenGuildStorageFor is player:open_guild_storage, as
+// guildopenstorage. reason names rAthena's e_guild_storage_flags value:
+// already_open is GSTORAGE_STORAGE_ALREADY_OPEN, in_use
+// GSTORAGE_ALREADY_OPEN, and no_guild, no_storage and no_permission the
+// others.
+func (h scriptHost) OpenGuildStorageFor(player int64) (bool, string, error) {
 	p, err := h.player(player)
 	if err != nil {
-		return 0, err
+		return false, "", err
 	}
+	personal := p.storage != nil
 	switch h.z.openGuildStorage(p) {
 	case social.StorageOpened:
-		return 0, nil
+		return true, "", nil
 	case social.StorageNoGuild:
-		return 3, nil
+		return false, "no_guild", nil
 	case social.StorageNoStorage:
-		return 4, nil
+		return false, "no_storage", nil
 	case social.StorageNoPermission:
-		return 5, nil
+		return false, "no_permission", nil
+	case social.StorageAlreadyOpen:
+		if personal {
+			return false, "already_open", nil
+		}
 	}
-	return 2, nil
+	return false, "in_use", nil
 }
 
 // GuildStorageLog sends a player its guild's storage log, for core's

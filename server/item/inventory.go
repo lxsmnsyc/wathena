@@ -29,15 +29,49 @@ type Slot struct {
 // Inventory is a player's inventory, as mmo_charstatus's inventory with
 // map_session_data's weight.
 type Inventory struct {
-	Slots [MaxInventory]Slot
+	// Slots are the inventory's slots. A new inventory has Size of them,
+	// and grows up to Size when it holds more. A slot from Size on, from
+	// before a limit was lowered, keeps its item and takes no new one.
+	Slots []Slot
 	// Size is inventory_slots: slots from it on take no new items.
 	Size int
 	// Weight is the sum of weight times amount, in tenths.
 	Weight int
 }
 
-// NewInventory is an empty inventory of a new character.
-func NewInventory() *Inventory { return &Inventory{Size: BaseSlots} }
+// NewInventory is an empty inventory of a new character with rAthena's
+// limits, with all of MAX_INVENTORY's slots, for tests and tools that set
+// slots directly.
+func NewInventory() *Inventory {
+	inv := NewInventoryOf(BaseSlots, DefaultSlots)
+	inv.Grow(DefaultSlots)
+	return inv
+}
+
+// NewInventoryOf is an empty inventory of size usable slots, at most
+// capacity, the inventory_slots limit's max, and at most MaxInventory. It
+// holds size slots, so memory follows the usable slots and not the max
+// (decision 0023).
+func NewInventoryOf(size, capacity int) *Inventory {
+	size = min(max(size, 0), max(capacity, 1), MaxInventory)
+	return &Inventory{Size: size, Slots: make([]Slot, size)}
+}
+
+// Grow makes the inventory hold at least n slots, up to MaxInventory.
+func (inv *Inventory) Grow(n int) {
+	n = min(n, MaxInventory)
+	if n > len(inv.Slots) {
+		inv.Slots = append(inv.Slots, make([]Slot, n-len(inv.Slots))...)
+	}
+}
+
+// Clone copies the inventory. Slices inside slots are shared, since the
+// zone replaces them and never changes them in place.
+func (inv *Inventory) Clone() *Inventory {
+	c := *inv
+	c.Slots = slices.Clone(inv.Slots)
+	return &c
+}
 
 // AddResult is rAthena's e_additem_result.
 type AddResult int
@@ -109,8 +143,13 @@ func (inv *Inventory) AddExtra(d *Def, amount, maxWeight int, x Extra) (int, Add
 		}
 	}
 	if i < 0 {
-		// pc_search_inventory(sd, 0): the first empty slot.
+		// pc_search_inventory(sd, 0): the first empty slot. An inventory
+		// that holds fewer slots than its size grows by one.
 		i = inv.search(0)
+		if i < 0 && len(inv.Slots) < inv.Size {
+			inv.Slots = append(inv.Slots, Slot{})
+			i = len(inv.Slots) - 1
+		}
 		if i < 0 || i >= inv.Size {
 			return -1, AddOverItem
 		}
@@ -135,7 +174,7 @@ func (inv *Inventory) search(id uint32) int {
 // slot when none is left. It returns false for an empty slot or an
 // amount the slot does not hold.
 func (inv *Inventory) Delete(t *Table, slot, amount int) bool {
-	if slot < 0 || slot >= MaxInventory {
+	if slot < 0 || slot >= len(inv.Slots) {
 		return false
 	}
 	s := &inv.Slots[slot]
@@ -152,8 +191,8 @@ func (inv *Inventory) Delete(t *Table, slot, amount int) bool {
 
 // Blank is pc_inventoryblank: the empty slots below Size.
 func (inv *Inventory) Blank() int {
-	n := 0
-	for i := range inv.Size {
+	n := max(inv.Size-len(inv.Slots), 0)
+	for i := range min(inv.Size, len(inv.Slots)) {
 		if inv.Slots[i].ID == 0 {
 			n++
 		}

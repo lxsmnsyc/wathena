@@ -82,6 +82,13 @@ message Event {
     StorageClose storage_close = 70;
     StorageResult storage_result = 71;
     GuildStorageLog guild_storage_log = 72;
+    StorageItems storage_items = 73;
+    TradeRequest trade_request = 74;
+    TradeOpen trade_open = 75;
+    TradeOffer trade_offer = 76;
+    TradeLock trade_lock = 77;
+    TradeClose trade_close = 78;
+    TradeResult trade_result = 79;
   }
 }
 
@@ -794,6 +801,11 @@ message InventoryUpdate {
   repeated InventoryItem items = 1;
   // size is how many slots take new items, as rAthena's inventory_slots.
   uint32 size = 2;
+  // more is set when items is a page of a long inventory. The pages
+  // after the first come in later frames with more set, and add their
+  // slots to the list instead of replacing it. Only the first page
+  // replaces the list.
+  bool more = 3;
 }
 
 // InventoryItem is one inventory slot.
@@ -821,6 +833,36 @@ message InventoryItem {
   repeated ItemRoll rolls = 9;
   repeated CardRolls card_rolls = 10;
   repeated ItemOption options = 11;
+  // bound is who the copy is bound to, as rAthena's bound_type. A bound
+  // copy cannot be traded or dropped, and goes only into storage its
+  // owner shares.
+  ItemBound bound = 12;
+  // restrictions are the item's restrictions, as the bits of
+  // ItemRestriction, from rAthena's item_trade.
+  uint32 restrictions = 13;
+}
+
+// ItemBound is rAthena's bound_type.
+enum ItemBound {
+  // UNSPECIFIED: the copy is not bound.
+  ITEM_BOUND_UNSPECIFIED = 0;
+  ITEM_BOUND_ACCOUNT = 1;
+  ITEM_BOUND_GUILD = 2;
+  ITEM_BOUND_PARTY = 3;
+  ITEM_BOUND_CHARACTER = 4;
+}
+
+// ItemRestriction are the bits of InventoryItem.restrictions, from
+// rAthena's item_trade flags.
+enum ItemRestriction {
+  ITEM_RESTRICTION_UNSPECIFIED = 0;
+  ITEM_RESTRICTION_NO_DROP = 1;
+  ITEM_RESTRICTION_NO_TRADE = 2;
+  ITEM_RESTRICTION_NO_SELL = 4;
+  ITEM_RESTRICTION_NO_CART = 8;
+  ITEM_RESTRICTION_NO_STORAGE = 16;
+  ITEM_RESTRICTION_NO_GUILD_STORAGE = 32;
+  ITEM_RESTRICTION_NO_MAIL = 64;
 }
 
 // ItemRoll is one rolled value of an item copy, with its range, as the
@@ -887,6 +929,9 @@ message InventoryAdd {
   repeated ItemRoll rolls = 8;
   repeated CardRolls card_rolls = 9;
   repeated ItemOption options = 10;
+  // bound and restrictions are as in InventoryItem.
+  ItemBound bound = 11;
+  uint32 restrictions = 12;
 }
 
 // InventoryRemove tells the player an amount left a slot. A slot left
@@ -913,6 +958,11 @@ enum InventoryRemoveReason {
   INVENTORY_REMOVE_REASON_STORED = 6;
   // A guild skill took the item.
   INVENTORY_REMOVE_REASON_GUILD = 7;
+  // The item went to the other player of a trade.
+  INVENTORY_REMOVE_REASON_TRADED = 8;
+  // A bound item went away with its bond, such as a party-bound item of
+  // a player who left the party.
+  INVENTORY_REMOVE_REASON_BOUND = 9;
 }
 
 // ItemUsed shows an entity using an item, as rAthena's clif_useitemack
@@ -961,8 +1011,10 @@ enum DropItemFailure {
   DROP_ITEM_FAILURE_EMPTY_SLOT = 1;
   // The amount is 0 or more than the slot holds.
   DROP_ITEM_FAILURE_BAD_AMOUNT = 2;
-  // The item may not be dropped.
+  // The item may not be dropped: its no_drop restriction.
   DROP_ITEM_FAILURE_CANNOT_DROP = 3;
+  // The copy is bound, and bound items cannot be dropped.
+  DROP_ITEM_FAILURE_BOUND = 4;
 }
 
 // PickUpFailed tells the player why a PickUp did nothing.
@@ -1484,44 +1536,81 @@ enum GuildOutcome {
   GUILD_OUTCOME_POSITION_CHANGED = 43;
 }
 
-// StorageKind is the storage a storage event is about. Personal and
-// cart storage come in a later step.
+// StorageKind is the storage a storage event is about.
 enum StorageKind {
   STORAGE_KIND_UNSPECIFIED = 0;
   STORAGE_KIND_GUILD = 1;
+  // PERSONAL is the account's storage, or an extra storage of
+  // data/storages.yml, named by StorageOpen.name.
+  STORAGE_KIND_PERSONAL = 2;
+  STORAGE_KIND_CART = 3;
 }
 
 // StorageOpen opens the storage window, as clif_storagelist and
-// clif_updatestorageamount.
+// clif_updatestorageamount. For the cart, it comes at login and when the
+// player gets a cart, as clif_cartlist. items holds the first page of
+// the slots that hold items. StorageItems carries the rest, in later
+// frames, so no message passes the 64 KiB limit.
 message StorageOpen {
   StorageKind kind = 1;
   // size is how many slots hold items.
   uint32 size = 2;
   repeated InventoryItem items = 3;
+  // name is the extra storage's record name, empty for the account's
+  // storage, the guild storage and the cart.
+  string name = 4;
+  // display_name is the storage's name as players see it.
+  string display_name = 5;
+  // weight and max_weight are the cart's weight and its limit, in
+  // tenths, as clif_updatestatus(SP_CARTINFO). They are 0 for storage.
+  uint32 weight = 6;
+  uint32 max_weight = 7;
+  // pages is how many StorageItems follow.
+  uint32 pages = 8;
+}
+
+// StorageItems is a page of a storage's slots after StorageOpen. The
+// pages are what the storage held when it opened, and come in the frames
+// right after StorageOpen's, before any StorageAdd or StorageRemove of
+// that storage.
+message StorageItems {
+  StorageKind kind = 1;
+  repeated InventoryItem items = 2;
+  // page counts from 1. The last page has page equal to StorageOpen.pages.
+  uint32 page = 3;
 }
 
 // StorageAdd tells an amount entered a storage slot, as
-// clif_storageitemadded. item is the slot after the change.
+// clif_storageitemadded and clif_cart_additem. item is the slot after
+// the change.
 message StorageAdd {
   StorageKind kind = 1;
   InventoryItem item = 2;
   uint32 amount = 3;
+  // weight is the cart's weight after the change, in tenths. It is 0
+  // for storage.
+  uint32 weight = 4;
 }
 
 // StorageRemove tells an amount left a storage slot, as
-// clif_storageitemremoved. A slot left with nothing is empty.
+// clif_storageitemremoved and clif_cart_delitem. A slot left with
+// nothing is empty.
 message StorageRemove {
   StorageKind kind = 1;
   uint32 slot = 2;
   uint32 amount = 3;
+  // weight is the cart's weight after the change, in tenths. It is 0
+  // for storage.
+  uint32 weight = 4;
 }
 
-// StorageClose closes the storage window, as clif_storageclose.
+// StorageClose closes the storage window, as clif_storageclose. For the
+// cart, it comes when the player loses the cart.
 message StorageClose {
   StorageKind kind = 1;
 }
 
-// StorageResult tells why a storage action failed.
+// StorageResult tells why a storage or cart action failed.
 message StorageResult {
   StorageOutcome outcome = 1;
 }
@@ -1544,11 +1633,24 @@ enum StorageOutcome {
   STORAGE_OUTCOME_ALREADY_OPEN = 5;
   // FULL: the storage has no free slot or the stack would pass its limit.
   STORAGE_OUTCOME_FULL = 6;
-  // NOT_STORABLE: the item cannot go into guild storage.
+  // NOT_STORABLE: the item cannot go there, such as an equipped item.
   STORAGE_OUTCOME_NOT_STORABLE = 7;
   // CANNOT_CARRY: the inventory cannot take the item: no slot, or too
   // heavy.
   STORAGE_OUTCOME_CANNOT_CARRY = 8;
+  // RESTRICTED: the item's no_storage, no_guild_storage or no_cart
+  // restriction keeps it out (itemdb_canstore and the others).
+  STORAGE_OUTCOME_RESTRICTED = 9;
+  // BOUND: the copy is bound, and the storage is not one its owner
+  // shares.
+  STORAGE_OUTCOME_BOUND = 10;
+  // CART_OVERWEIGHT: the cart cannot take the weight.
+  STORAGE_OUTCOME_CART_OVERWEIGHT = 11;
+  // NO_CART: the player has no cart.
+  STORAGE_OUTCOME_NO_CART = 12;
+  // BUSY: the player is trading, or talking to an NPC that did not open
+  // the storage.
+  STORAGE_OUTCOME_BUSY = 13;
 }
 
 // GuildStorageLog answers StorageCommand.log: the guild storage's last
@@ -1566,4 +1668,100 @@ message GuildStorageLogEntry {
   int32 amount = 4;
   uint32 refine = 5;
   repeated uint32 cards = 6;
+}
+
+// TradeRequest asks the player to trade, as clif_traderequest. The
+// player answers with TradeCommand.respond.
+message TradeRequest {
+  // from is the name of the player who asks.
+  string from = 1;
+  uint32 base_level = 2;
+}
+
+// TradeOpen opens the trade window for both players, as
+// clif_tradestart(TRADE_ACK_OK).
+message TradeOpen {
+  // partner is the other player's name and base_level its level.
+  string partner = 1;
+  uint32 base_level = 2;
+}
+
+// TradeOffer shows an item or zeny that a player offered, as
+// clif_tradeadditem and clif_tradeitemok. The player who offered gets it
+// with mine set, and the other player without it.
+message TradeOffer {
+  bool mine = 1;
+  oneof offer {
+    // item is the offered copy. Its slot is the inventory slot it comes
+    // from, for mine, and the order of the partner's offers otherwise.
+    // Its amount is what this offer adds: offering a slot again adds to
+    // the amount of that slot.
+    InventoryItem item = 2;
+    uint32 zeny = 3;
+  }
+}
+
+// TradeLock tells a player locked its offer, as clif_tradedeal_lock.
+message TradeLock {
+  bool mine = 1;
+}
+
+// TradeClose closes the trade window, as clif_tradecancelled and
+// clif_tradecompleted.
+message TradeClose {
+  TradeOutcome outcome = 1;
+}
+
+// TradeResult tells how a trade step went, when it failed, as
+// clif_tradestart's codes and clif_tradeitemok's.
+message TradeResult {
+  TradeOutcome outcome = 1;
+  // name is the player the outcome is about.
+  string name = 2;
+  // slot is the inventory slot of a refused offer.
+  uint32 slot = 3;
+  // message is a mod's reason from the trade hook.
+  string message = 4;
+}
+
+enum TradeOutcome {
+  TRADE_OUTCOME_UNSPECIFIED = 0;
+  // TOO_FAR: the other player is too far away (TRADE_ACK_TOOFAR).
+  TRADE_OUTCOME_TOO_FAR = 1;
+  // NOT_FOUND: no such player in sight (TRADE_ACK_CHARNOTEXIST).
+  TRADE_OUTCOME_NOT_FOUND = 2;
+  // BUSY: the other player is trading or busy (TRADE_ACK_BUSY).
+  TRADE_OUTCOME_BUSY = 3;
+  // REFUSED: the other player said no, or blocks the player
+  // (TRADE_ACK_CANCEL).
+  TRADE_OUTCOME_REFUSED = 4;
+  // CANCELLED: a player cancelled, moved away or left.
+  TRADE_OUTCOME_CANCELLED = 5;
+  // COMPLETED: the items and zeny changed hands.
+  TRADE_OUTCOME_COMPLETED = 6;
+  // FAILED: a check at the end failed, such as weight or a free slot;
+  // nothing changed hands.
+  TRADE_OUTCOME_FAILED = 7;
+  // OVERWEIGHT: the partner cannot carry the offer (TRADE_ITEM_OVERWEIGHT).
+  TRADE_OUTCOME_OVERWEIGHT = 8;
+  // RESTRICTED: the item cannot be traded: no_trade
+  // (TRADE_ITEM_CANNOT_TRADE).
+  TRADE_OUTCOME_RESTRICTED = 9;
+  // BOUND: the copy is bound (msg 293).
+  TRADE_OUTCOME_BOUND = 10;
+  // TOO_MANY: the offer has its 10 items, or the partner has no free
+  // slot for another.
+  TRADE_OUTCOME_TOO_MANY = 11;
+  // LOCKED: the offer is locked.
+  TRADE_OUTCOME_LOCKED = 12;
+  // ZENY: not that much zeny, or the partner would pass the zeny cap.
+  TRADE_OUTCOME_ZENY = 13;
+  // HOOK: a mod's trade hook refused the trade; message says why.
+  TRADE_OUTCOME_HOOK = 14;
+  // WAITING: the player confirmed, and waits for the partner.
+  TRADE_OUTCOME_WAITING = 15;
+  // EQUIPPED: an equipped item cannot be offered.
+  TRADE_OUTCOME_EQUIPPED = 16;
+  // REQUEST_SENT: the request reached the other player.
+  TRADE_OUTCOME_REQUEST_SENT = 17;
 }

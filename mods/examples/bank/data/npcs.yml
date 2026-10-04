@@ -1,0 +1,8 @@
+# The banker stands near the fountain in Prontera.
+- name: Banker#prontera
+  map: prontera
+  x: 150
+  y: 190
+  direction: south
+  sprite: 4_M_MIDDLE1
+  script: scripts/npc/banker.lua

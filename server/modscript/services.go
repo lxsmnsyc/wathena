@@ -87,6 +87,9 @@ func itemAmount(c *script.Call, what string, least int64) (uint32, int, error) {
 }
 
 func (r *Runtime) playerTakeItem(c *script.Call) error {
+	if !c.Arg(3).IsNil() {
+		return r.playerStorageTake(c)
+	}
 	id, err := playerID(c)
 	if err != nil {
 		return err

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEiywgKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIABIpCgVndWlsZBgYIAEoCzIYLndhdGhlbmEudjEuR3VpbGRDb21tYW5kSAASLQoHc3RvcmFnZRgZIAEoCzIaLndhdGhlbmEudjEuU3RvcmFnZUNvbW1hbmRIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIeCgpMZWFyblNraWxsEhAKCHNraWxsX2lkGAEgASgNIhwKBENlbGwSCQoBeBgBIAEoDRIJCgF5GAIgASgNImAKBENoYXQSKAoHY2hhbm5lbBgBIAEoDjIXLndhdGhlbmEudjEuQ2hhdENoYW5uZWwSDAoEdGV4dBgCIAEoCRIKCgJ0bxgDIAEoCRIUCgxjaGFubmVsX25hbWUYBCABKAkiSQoOQ2hhbm5lbENvbW1hbmQSKQoGYWN0aW9uGAEgASgOMhkud2F0aGVuYS52MS5DaGFubmVsQWN0aW9uEgwKBG5hbWUYAiABKAkiJgoFQmxvY2sSDAoEbmFtZRgBIAEoCRIPCgd1bmJsb2NrGAIgASgIIlkKBlJlcG9ydBIMCgRuYW1lGAEgASgJEg8KB2xpbmVfaWQYAiABKAwSDgoGcmVhc29uGAMgASgJEhAKCGd1aWxkX2lkGAQgASgEEg4KBmVtYmxlbRgFIAEoCCIXCghOcGNDbGljaxILCgNucGMYASABKA0igwEKCE5wY1JlcGx5Eg4KBmRpYWxvZxgBIAEoDRIOCgRuZXh0GAIgASgISAASDgoEbWVudRgDIAEoDUgAEhQKCmlucHV0X3RleHQYBCABKAlIABIWCgxpbnB1dF9udW1iZXIYBSABKANIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFuc3dlciI+CgdTaG9wQnV5EgsKA25wYxgBIAEoDRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuU2hvcEJ1eUxpbmUiLgoLU2hvcEJ1eUxpbmUSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0iQAoIU2hvcFNlbGwSCwoDbnBjGAEgASgNEicKBWl0ZW1zGAIgAygLMhgud2F0aGVuYS52MS5TaG9wU2VsbExpbmUiLAoMU2hvcFNlbGxMaW5lEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhgKCVNob3BDbG9zZRILCgNucGMYASABKA0iFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIigKCERyb3BJdGVtEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0iKwoJRXF1aXBJdGVtEgwKBHNsb3QYASABKA0SEAoIcG9zaXRpb24YAiABKA0iGwoLVW5lcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDSIzCgpJbnNlcnRDYXJkEhEKCWNhcmRfc2xvdBgBIAEoDRISCgplcXVpcF9zbG90GAIgASgNIuMBCgxQYXJ0eUNvbW1hbmQSKQoGY3JlYXRlGAEgASgLMhcud2F0aGVuYS52MS5QYXJ0eUNyZWF0ZUgAEhAKBmludml0ZRgCIAEoCUgAEicKBXJlcGx5GAMgASgLMhYud2F0aGVuYS52MS5QYXJ0eVJlcGx5SAASDwoFbGVhdmUYBCABKAhIABIPCgVleHBlbBgFIAEoCUgAEhQKCnNldF9sZWFkZXIYBiABKAlIABIrCgdvcHRpb25zGAcgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnNIAEIICgZhY3Rpb24iRgoLUGFydHlDcmVhdGUSDAoEbmFtZRgBIAEoCRIpCgdvcHRpb25zGAIgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnMiLgoKUGFydHlSZXBseRIQCghwYXJ0eV9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiSgoMUGFydHlPcHRpb25zEhAKCGV4cF9ldmVuGAEgASgIEhEKCWl0ZW1fZXZlbhgCIAEoCBIVCg1waWNrdXBfc2hhcmVkGAMgASgIImQKDUZyaWVuZENvbW1hbmQSDQoDYWRkGAEgASgJSAASKAoFcmVwbHkYAiABKAsyFy53YXRoZW5hLnYxLkZyaWVuZFJlcGx5SAASEAoGcmVtb3ZlGAMgASgJSABCCAoGYWN0aW9uIisKC0ZyaWVuZFJlcGx5EgwKBG5hbWUYASABKAkSDgoGYWNjZXB0GAIgASgIIpMBChNQYXJ0eUJvb2tpbmdDb21tYW5kEi4KCHJlZ2lzdGVyGAEgASgLMhoud2F0aGVuYS52MS5QYXJ0eUJvb2tpbmdBZEgAEjAKBnNlYXJjaBgCIAEoCzIeLndhdGhlbmEudjEuUGFydHlCb29raW5nU2VhcmNoSAASEAoGZGVsZXRlGAMgASgISABCCAoGYWN0aW9uIkgKDlBhcnR5Qm9va2luZ0FkEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRIMCgRqb2JzGAMgAygNEgwKBG5vdGUYBCABKAkiPQoSUGFydHlCb29raW5nU2VhcmNoEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRILCgNqb2IYAyABKA0i4wMKDEd1aWxkQ29tbWFuZBIQCgZjcmVhdGUYASABKAlIABIQCgZpbnZpdGUYAiABKAlIABInCgVyZXBseRgDIAEoCzIWLndhdGhlbmEudjEuR3VpbGRSZXBseUgAEg8KBWxlYXZlGAQgASgJSAASJwoFZXhwZWwYBSABKAsyFi53YXRoZW5hLnYxLkd1aWxkRXhwZWxIABIvCglwb3NpdGlvbnMYBiABKAsyGi53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb25zSAASOgoPbWVtYmVyX3Bvc2l0aW9uGAcgASgLMh8ud2F0aGVuYS52MS5HdWlsZE1lbWJlclBvc2l0aW9uSAASKQoGbm90aWNlGAggASgLMhcud2F0aGVuYS52MS5HdWlsZE5vdGljZUgAEhIKCHNraWxsX3VwGAkgASgNSAASDgoEYWxseRgKIAEoCUgAEiwKCmFsbHlfcmVwbHkYCyABKAsyFi53YXRoZW5hLnYxLkd1aWxkUmVwbHlIABIPCgVlbmVteRgMIAEoCUgAEjQKDGVuZF9yZWxhdGlvbhgNIAEoCzIcLndhdGhlbmEudjEuR3VpbGRSZWxhdGlvbkVuZEgAEhEKB2Rpc2JhbmQYDiABKAlIAEIICgZhY3Rpb24iLgoKR3VpbGRSZXBseRIQCghndWlsZF9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiKgoKR3VpbGRFeHBlbBIMCgRuYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSI+Cg5HdWlsZFBvc2l0aW9ucxIsCglwb3NpdGlvbnMYASADKAsyGS53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb24ifQoNR3VpbGRQb3NpdGlvbhINCgVpbmRleBgBIAEoDRIMCgRuYW1lGAIgASgJEhIKCmNhbl9pbnZpdGUYAyABKAgSEQoJY2FuX2V4cGVsGAQgASgIEhcKD2Nhbl91c2Vfc3RvcmFnZRgFIAEoCBIPCgdleHBfdGF4GAYgASgNIjUKE0d1aWxkTWVtYmVyUG9zaXRpb24SDAoEbmFtZRgBIAEoCRIQCghwb3NpdGlvbhgCIAEoDSIqCgtHdWlsZE5vdGljZRINCgV0aXRsZRgBIAEoCRIMCgR0ZXh0GAIgASgJIjMKEEd1aWxkUmVsYXRpb25FbmQSEAoIZ3VpbGRfaWQYASABKAQSDQoFZW5lbXkYAiABKAgiiwEKDlN0b3JhZ2VDb21tYW5kEiYKA3B1dBgBIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABInCgR0YWtlGAIgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEg8KBWNsb3NlGAMgASgISAASDQoDbG9nGAQgASgISABCCAoGYWN0aW9uIisKC1N0b3JhZ2VNb3ZlEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNKvUBCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFEhcKE0NIQVRfQ0hBTk5FTF9TWVNURU0QBhIdChlDSEFUX0NIQU5ORUxfQU5OT1VOQ0VNRU5UEAcSFgoSQ0hBVF9DSEFOTkVMX05BTUVEEAgqlwEKDUNoYW5uZWxBY3Rpb24SHgoaQ0hBTk5FTF9BQ1RJT05fVU5TUEVDSUZJRUQQABIXChNDSEFOTkVMX0FDVElPTl9KT0lOEAESGAoUQ0hBTk5FTF9BQ1RJT05fTEVBVkUQAhIXChNDSEFOTkVMX0FDVElPTl9MSVNUEAMSGgoWQ0hBTk5FTF9BQ1RJT05fTUVNQkVSUxAEKpcBCghCYXNlU3RhdBIZChVCQVNFX1NUQVRfVU5TUEVDSUZJRUQQABIRCg1CQVNFX1NUQVRfU1RSEAESEQoNQkFTRV9TVEFUX0FHSRACEhEKDUJBU0VfU1RBVF9WSVQQAxIRCg1CQVNFX1NUQVRfSU5UEAQSEQoNQkFTRV9TVEFUX0RFWBAFEhEKDUJBU0VfU1RBVF9MVUsQBkJAWj5naXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL3YxO3dhdGhlbmF2MWIGcHJvdG8z");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi9ggKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIABIpCgVndWlsZBgYIAEoCzIYLndhdGhlbmEudjEuR3VpbGRDb21tYW5kSAASLQoHc3RvcmFnZRgZIAEoCzIaLndhdGhlbmEudjEuU3RvcmFnZUNvbW1hbmRIABIpCgV0cmFkZRgaIAEoCzIYLndhdGhlbmEudjEuVHJhZGVDb21tYW5kSABCBgoEYm9keSIeCgZXYWxrVG8SCQoBeBgBIAEoDRIJCgF5GAIgASgNIigKBkF0dGFjaxIOCgZ0YXJnZXQYASABKA0SDgoGcmVwZWF0GAIgASgIImkKCFVzZVNraWxsEhAKCHNraWxsX2lkGAEgASgNEg0KBWxldmVsGAIgASgNEhAKBmVudGl0eRgDIAEoDUgAEiAKBGNlbGwYBCABKAsyEC53YXRoZW5hLnYxLkNlbGxIAEIICgZ0YXJnZXQiHgoKTGVhcm5Ta2lsbBIQCghza2lsbF9pZBgBIAEoDSIcCgRDZWxsEgkKAXgYASABKA0SCQoBeRgCIAEoDSJgCgRDaGF0EigKB2NoYW5uZWwYASABKA4yFy53YXRoZW5hLnYxLkNoYXRDaGFubmVsEgwKBHRleHQYAiABKAkSCgoCdG8YAyABKAkSFAoMY2hhbm5lbF9uYW1lGAQgASgJIkkKDkNoYW5uZWxDb21tYW5kEikKBmFjdGlvbhgBIAEoDjIZLndhdGhlbmEudjEuQ2hhbm5lbEFjdGlvbhIMCgRuYW1lGAIgASgJIiYKBUJsb2NrEgwKBG5hbWUYASABKAkSDwoHdW5ibG9jaxgCIAEoCCJZCgZSZXBvcnQSDAoEbmFtZRgBIAEoCRIPCgdsaW5lX2lkGAIgASgMEg4KBnJlYXNvbhgDIAEoCRIQCghndWlsZF9pZBgEIAEoBBIOCgZlbWJsZW0YBSABKAgiFwoITnBjQ2xpY2sSCwoDbnBjGAEgASgNIoMBCghOcGNSZXBseRIOCgZkaWFsb2cYASABKA0SDgoEbmV4dBgCIAEoCEgAEg4KBG1lbnUYAyABKA1IABIUCgppbnB1dF90ZXh0GAQgASgJSAASFgoMaW5wdXRfbnVtYmVyGAUgASgDSAASDwoFY2xvc2UYBiABKAhIAEIICgZhbnN3ZXIiPgoHU2hvcEJ1eRILCgNucGMYASABKA0SJgoFaXRlbXMYAiADKAsyFy53YXRoZW5hLnYxLlNob3BCdXlMaW5lIi4KC1Nob3BCdXlMaW5lEg8KB2l0ZW1faWQYASABKA0SDgoGYW1vdW50GAIgASgNIkAKCFNob3BTZWxsEgsKA25wYxgBIAEoDRInCgVpdGVtcxgCIAMoCzIYLndhdGhlbmEudjEuU2hvcFNlbGxMaW5lIiwKDFNob3BTZWxsTGluZRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDSIYCglTaG9wQ2xvc2USCwoDbnBjGAEgASgNIhcKB1VzZUl0ZW0SDAoEc2xvdBgBIAEoDSIoCghEcm9wSXRlbRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDSIWCgZQaWNrVXASDAoEaXRlbRgBIAEoDSI/CglSYWlzZVN0YXQSIgoEc3RhdBgBIAEoDjIULndhdGhlbmEudjEuQmFzZVN0YXQSDgoGYW1vdW50GAIgASgNIisKCUVxdWlwSXRlbRIMCgRzbG90GAEgASgNEhAKCHBvc2l0aW9uGAIgASgNIhsKC1VuZXF1aXBJdGVtEgwKBHNsb3QYASABKA0iMwoKSW5zZXJ0Q2FyZBIRCgljYXJkX3Nsb3QYASABKA0SEgoKZXF1aXBfc2xvdBgCIAEoDSLjAQoMUGFydHlDb21tYW5kEikKBmNyZWF0ZRgBIAEoCzIXLndhdGhlbmEudjEuUGFydHlDcmVhdGVIABIQCgZpbnZpdGUYAiABKAlIABInCgVyZXBseRgDIAEoCzIWLndhdGhlbmEudjEuUGFydHlSZXBseUgAEg8KBWxlYXZlGAQgASgISAASDwoFZXhwZWwYBSABKAlIABIUCgpzZXRfbGVhZGVyGAYgASgJSAASKwoHb3B0aW9ucxgHIAEoCzIYLndhdGhlbmEudjEuUGFydHlPcHRpb25zSABCCAoGYWN0aW9uIkYKC1BhcnR5Q3JlYXRlEgwKBG5hbWUYASABKAkSKQoHb3B0aW9ucxgCIAEoCzIYLndhdGhlbmEudjEuUGFydHlPcHRpb25zIi4KClBhcnR5UmVwbHkSEAoIcGFydHlfaWQYASABKAQSDgoGYWNjZXB0GAIgASgIIkoKDFBhcnR5T3B0aW9ucxIQCghleHBfZXZlbhgBIAEoCBIRCglpdGVtX2V2ZW4YAiABKAgSFQoNcGlja3VwX3NoYXJlZBgDIAEoCCJkCg1GcmllbmRDb21tYW5kEg0KA2FkZBgBIAEoCUgAEigKBXJlcGx5GAIgASgLMhcud2F0aGVuYS52MS5GcmllbmRSZXBseUgAEhAKBnJlbW92ZRgDIAEoCUgAQggKBmFjdGlvbiIrCgtGcmllbmRSZXBseRIMCgRuYW1lGAEgASgJEg4KBmFjY2VwdBgCIAEoCCKTAQoTUGFydHlCb29raW5nQ29tbWFuZBIuCghyZWdpc3RlchgBIAEoCzIaLndhdGhlbmEudjEuUGFydHlCb29raW5nQWRIABIwCgZzZWFyY2gYAiABKAsyHi53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ1NlYXJjaEgAEhAKBmRlbGV0ZRgDIAEoCEgAQggKBmFjdGlvbiJICg5QYXJ0eUJvb2tpbmdBZBINCgVsZXZlbBgBIAEoDRILCgNtYXAYAiABKAkSDAoEam9icxgDIAMoDRIMCgRub3RlGAQgASgJIj0KElBhcnR5Qm9va2luZ1NlYXJjaBINCgVsZXZlbBgBIAEoDRILCgNtYXAYAiABKAkSCwoDam9iGAMgASgNIuMDCgxHdWlsZENvbW1hbmQSEAoGY3JlYXRlGAEgASgJSAASEAoGaW52aXRlGAIgASgJSAASJwoFcmVwbHkYAyABKAsyFi53YXRoZW5hLnYxLkd1aWxkUmVwbHlIABIPCgVsZWF2ZRgEIAEoCUgAEicKBWV4cGVsGAUgASgLMhYud2F0aGVuYS52MS5HdWlsZEV4cGVsSAASLwoJcG9zaXRpb25zGAYgASgLMhoud2F0aGVuYS52MS5HdWlsZFBvc2l0aW9uc0gAEjoKD21lbWJlcl9wb3NpdGlvbhgHIAEoCzIfLndhdGhlbmEudjEuR3VpbGRNZW1iZXJQb3NpdGlvbkgAEikKBm5vdGljZRgIIAEoCzIXLndhdGhlbmEudjEuR3VpbGROb3RpY2VIABISCghza2lsbF91cBgJIAEoDUgAEg4KBGFsbHkYCiABKAlIABIsCgphbGx5X3JlcGx5GAsgASgLMhYud2F0aGVuYS52MS5HdWlsZFJlcGx5SAASDwoFZW5lbXkYDCABKAlIABI0CgxlbmRfcmVsYXRpb24YDSABKAsyHC53YXRoZW5hLnYxLkd1aWxkUmVsYXRpb25FbmRIABIRCgdkaXNiYW5kGA4gASgJSABCCAoGYWN0aW9uIi4KCkd1aWxkUmVwbHkSEAoIZ3VpbGRfaWQYASABKAQSDgoGYWNjZXB0GAIgASgIIioKCkd1aWxkRXhwZWwSDAoEbmFtZRgBIAEoCRIOCgZyZWFzb24YAiABKAkiPgoOR3VpbGRQb3NpdGlvbnMSLAoJcG9zaXRpb25zGAEgAygLMhkud2F0aGVuYS52MS5HdWlsZFBvc2l0aW9uIn0KDUd1aWxkUG9zaXRpb24SDQoFaW5kZXgYASABKA0SDAoEbmFtZRgCIAEoCRISCgpjYW5faW52aXRlGAMgASgIEhEKCWNhbl9leHBlbBgEIAEoCBIXCg9jYW5fdXNlX3N0b3JhZ2UYBSABKAgSDwoHZXhwX3RheBgGIAEoDSI1ChNHdWlsZE1lbWJlclBvc2l0aW9uEgwKBG5hbWUYASABKAkSEAoIcG9zaXRpb24YAiABKA0iKgoLR3VpbGROb3RpY2USDQoFdGl0bGUYASABKAkSDAoEdGV4dBgCIAEoCSIzChBHdWlsZFJlbGF0aW9uRW5kEhAKCGd1aWxkX2lkGAEgASgEEg0KBWVuZW15GAIgASgIIs4CCg5TdG9yYWdlQ29tbWFuZBImCgNwdXQYASABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASJwoEdGFrZRgCIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABIPCgVjbG9zZRgDIAEoCEgAEg0KA2xvZxgEIAEoCEgAEisKCGNhcnRfcHV0GAUgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEiwKCWNhcnRfdGFrZRgGIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABIyCg9jYXJ0X3RvX3N0b3JhZ2UYByABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASMgoPc3RvcmFnZV90b19jYXJ0GAggASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAQggKBmFjdGlvbiIrCgtTdG9yYWdlTW92ZRIMCgRzbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDSK0AQoMVHJhZGVDb21tYW5kEhEKB3JlcXVlc3QYASABKA1IABIRCgdyZXNwb25kGAIgASgISAASKwoIYWRkX2l0ZW0YAyABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASEgoIYWRkX3plbnkYBCABKA1IABIOCgRsb2NrGAUgASgISAASEQoHY29uZmlybRgGIAEoCEgAEhAKBmNhbmNlbBgHIAEoCEgAQggKBmFjdGlvbir1AQoLQ2hhdENoYW5uZWwSHAoYQ0hBVF9DSEFOTkVMX1VOU1BFQ0lGSUVEEAASFgoSQ0hBVF9DSEFOTkVMX0xPQ0FMEAESFgoSQ0hBVF9DSEFOTkVMX1BBUlRZEAISFgoSQ0hBVF9DSEFOTkVMX0dVSUxEEAMSGAoUQ0hBVF9DSEFOTkVMX1dISVNQRVIQBBIWChJDSEFUX0NIQU5ORUxfV09STEQQBRIXChNDSEFUX0NIQU5ORUxfU1lTVEVNEAYSHQoZQ0hBVF9DSEFOTkVMX0FOTk9VTkNFTUVOVBAHEhYKEkNIQVRfQ0hBTk5FTF9OQU1FRBAIKpcBCg1DaGFubmVsQWN0aW9uEh4KGkNIQU5ORUxfQUNUSU9OX1VOU1BFQ0lGSUVEEAASFwoTQ0hBTk5FTF9BQ1RJT05fSk9JThABEhgKFENIQU5ORUxfQUNUSU9OX0xFQVZFEAISFwoTQ0hBTk5FTF9BQ1RJT05fTElTVBADEhoKFkNIQU5ORUxfQUNUSU9OX01FTUJFUlMQBCqXAQoIQmFzZVN0YXQSGQoVQkFTRV9TVEFUX1VOU1BFQ0lGSUVEEAASEQoNQkFTRV9TVEFUX1NUUhABEhEKDUJBU0VfU1RBVF9BR0kQAhIRCg1CQVNFX1NUQVRfVklUEAMSEQoNQkFTRV9TVEFUX0lOVBAEEhEKDUJBU0VfU1RBVF9ERVgQBRIRCg1CQVNFX1NUQVRfTFVLEAZCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -172,6 +172,12 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: StorageCommand;
     case: "storage";
+  } | {
+    /**
+     * @generated from field: wathena.v1.TradeCommand trade = 26;
+     */
+    value: TradeCommand;
+    case: "trade";
   } | { case: undefined; value?: undefined };
 };
 
@@ -1554,10 +1560,12 @@ export const GuildRelationEndSchema: GenMessage<GuildRelationEnd> = /*@__PURE__*
   messageDesc(file_wathena_v1_command, 40);
 
 /**
- * StorageCommand moves items between the inventory and the open storage
- * window, as rAthena's storage packets. The server answers with
- * StorageAdd and StorageRemove, InventoryAdd and InventoryRemove, or
- * StorageResult. Guild storage opens from an NPC.
+ * StorageCommand moves items between the inventory, the open storage
+ * window and the cart, as rAthena's storage and cart packets. The server
+ * answers with StorageAdd and StorageRemove, InventoryAdd and
+ * InventoryRemove, or StorageResult. Storage and guild storage open from
+ * an NPC. A player has one storage open at a time. The cart is open while
+ * the player has one.
  *
  * @generated from message wathena.v1.StorageCommand
  */
@@ -1567,8 +1575,8 @@ export type StorageCommand = Message<"wathena.v1.StorageCommand"> & {
    */
   action: {
     /**
-     * put moves an amount from an inventory slot into the storage, as
-     * storage_guild_storageadd.
+     * put moves an amount from an inventory slot into the open storage,
+     * as storage_storageadd and storage_guild_storageadd.
      *
      * @generated from field: wathena.v1.StorageMove put = 1;
      */
@@ -1576,8 +1584,8 @@ export type StorageCommand = Message<"wathena.v1.StorageCommand"> & {
     case: "put";
   } | {
     /**
-     * take moves an amount from a storage slot into the inventory, as
-     * storage_guild_storageget.
+     * take moves an amount from a slot of the open storage into the
+     * inventory, as storage_storageget and storage_guild_storageget.
      *
      * @generated from field: wathena.v1.StorageMove take = 2;
      */
@@ -1585,7 +1593,8 @@ export type StorageCommand = Message<"wathena.v1.StorageCommand"> & {
     case: "take";
   } | {
     /**
-     * close closes the storage window, as storage_guild_storageclose.
+     * close closes the storage window, as storage_storageclose and
+     * storage_guild_storageclose.
      *
      * @generated from field: bool close = 3;
      */
@@ -1599,6 +1608,42 @@ export type StorageCommand = Message<"wathena.v1.StorageCommand"> & {
      */
     value: boolean;
     case: "log";
+  } | {
+    /**
+     * cart_put moves an amount from an inventory slot into the cart, as
+     * pc_putitemtocart.
+     *
+     * @generated from field: wathena.v1.StorageMove cart_put = 5;
+     */
+    value: StorageMove;
+    case: "cartPut";
+  } | {
+    /**
+     * cart_take moves an amount from a cart slot into the inventory, as
+     * pc_getitemfromcart.
+     *
+     * @generated from field: wathena.v1.StorageMove cart_take = 6;
+     */
+    value: StorageMove;
+    case: "cartTake";
+  } | {
+    /**
+     * cart_to_storage moves an amount from a cart slot into the open
+     * storage, as storage_storageaddfromcart.
+     *
+     * @generated from field: wathena.v1.StorageMove cart_to_storage = 7;
+     */
+    value: StorageMove;
+    case: "cartToStorage";
+  } | {
+    /**
+     * storage_to_cart moves an amount from a slot of the open storage
+     * into the cart, as storage_storagegettocart.
+     *
+     * @generated from field: wathena.v1.StorageMove storage_to_cart = 8;
+     */
+    value: StorageMove;
+    case: "storageToCart";
   } | { case: undefined; value?: undefined };
 };
 
@@ -1614,7 +1659,9 @@ export const StorageCommandSchema: GenMessage<StorageCommand> = /*@__PURE__*/
  */
 export type StorageMove = Message<"wathena.v1.StorageMove"> & {
   /**
-   * slot is an inventory slot for put, and a storage slot for take.
+   * slot is the slot the amount leaves: an inventory slot for put and
+   * cart_put, a storage slot for take and storage_to_cart, and a cart
+   * slot for cart_take and cart_to_storage.
    *
    * @generated from field: uint32 slot = 1;
    */
@@ -1632,6 +1679,87 @@ export type StorageMove = Message<"wathena.v1.StorageMove"> & {
  */
 export const StorageMoveSchema: GenMessage<StorageMove> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 42);
+
+/**
+ * TradeCommand is one step of a trade between two players, as rAthena's
+ * trade packets (trade.cpp). The server answers with TradeRequest,
+ * TradeOpen, TradeOffer, TradeLock, TradeClose and TradeResult.
+ *
+ * @generated from message wathena.v1.TradeCommand
+ */
+export type TradeCommand = Message<"wathena.v1.TradeCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.TradeCommand.action
+   */
+  action: {
+    /**
+     * request asks the player with this entity ID to trade, as
+     * trade_traderequest.
+     *
+     * @generated from field: uint32 request = 1;
+     */
+    value: number;
+    case: "request";
+  } | {
+    /**
+     * respond answers a TradeRequest, as trade_tradeack.
+     *
+     * @generated from field: bool respond = 2;
+     */
+    value: boolean;
+    case: "respond";
+  } | {
+    /**
+     * add_item offers an amount of an inventory slot, as
+     * trade_tradeadditem.
+     *
+     * @generated from field: wathena.v1.StorageMove add_item = 3;
+     */
+    value: StorageMove;
+    case: "addItem";
+  } | {
+    /**
+     * add_zeny offers zeny, as trade_tradeaddzeny. It sets the amount;
+     * a second offer is refused, as rAthena's client allows one.
+     *
+     * @generated from field: uint32 add_zeny = 4;
+     */
+    value: number;
+    case: "addZeny";
+  } | {
+    /**
+     * lock ends the offer, as trade_tradeok.
+     *
+     * @generated from field: bool lock = 5;
+     */
+    value: boolean;
+    case: "lock";
+  } | {
+    /**
+     * confirm completes the trade once both players locked, as
+     * trade_tradecommit. The trade completes when both confirmed.
+     *
+     * @generated from field: bool confirm = 6;
+     */
+    value: boolean;
+    case: "confirm";
+  } | {
+    /**
+     * cancel ends the trade, as trade_tradecancel.
+     *
+     * @generated from field: bool cancel = 7;
+     */
+    value: boolean;
+    case: "cancel";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.TradeCommand.
+ * Use `create(TradeCommandSchema)` to create a new message.
+ */
+export const TradeCommandSchema: GenMessage<TradeCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 43);
 
 /**
  * @generated from enum wathena.v1.ChatChannel

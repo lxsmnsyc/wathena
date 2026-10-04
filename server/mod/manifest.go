@@ -81,8 +81,45 @@ type RulesetSpec struct {
 	// Limits and Rules set the limits that rAthena compiles in and the
 	// values of its conf files (proposal 0002, review decision 27). A
 	// ruleset mod that does not set one keeps what it extends.
-	Limits map[string]flagValue `yaml:"limits"`
-	Rules  map[string]flagValue `yaml:"rules"`
+	// A limit is a number, its base, or { base, max } (review decision
+	// 29).
+	Limits map[string]limitValue `yaml:"limits"`
+	Rules  map[string]flagValue  `yaml:"rules"`
+}
+
+// limitValue is a limit of a ruleset mod: a number, which sets the base,
+// or a mapping with base, max or both.
+type limitValue struct {
+	base, max string
+}
+
+func (l *limitValue) UnmarshalYAML(n *yaml.Node) error {
+	switch n.Kind {
+	case yaml.ScalarNode:
+		*l = limitValue{base: n.Value}
+		return nil
+	case yaml.MappingNode:
+		*l = limitValue{}
+		for i := 0; i+1 < len(n.Content); i += 2 {
+			k, v := n.Content[i], n.Content[i+1]
+			if v.Kind != yaml.ScalarNode {
+				return fmt.Errorf("line %d: %s is a number", v.Line, k.Value)
+			}
+			switch k.Value {
+			case "base":
+				l.base = v.Value
+			case "max":
+				l.max = v.Value
+			default:
+				return fmt.Errorf("line %d: a limit has base and max, not %s", k.Line, k.Value)
+			}
+		}
+		if l.base == "" && l.max == "" {
+			return fmt.Errorf("line %d: a limit sets base, max or both", n.Line)
+		}
+		return nil
+	}
+	return fmt.Errorf("line %d: a limit is a number or { base, max }", n.Line)
 }
 
 // flagValue is a flag's value. YAML 1.1 readers turn on and off into
@@ -250,7 +287,7 @@ func ParseManifest(file string, data []byte) (*Manifest, error) {
 			}
 		}
 		for name, v := range p.Limits {
-			if _, err := checkBound(rules.LimitBounds, "limit", name, string(v)); err != nil {
+			if _, err := checkLimit(name, v); err != nil {
 				bad("provides.ruleset.limits", "%v", err)
 			}
 		}

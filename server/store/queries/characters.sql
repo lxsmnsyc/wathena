@@ -51,7 +51,7 @@ UPDATE characters SET
 WHERE id = @id AND save_version = @save_version;
 
 -- name: Inventory :many
-SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified FROM inventory
+SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified, bound FROM inventory
 WHERE character_id = @character_id
 ORDER BY slot;
 
@@ -65,12 +65,12 @@ WHERE character_id = @character_id AND slot = ANY(@slots::smallint[]);
 -- arrays must all have the same length. Rolls and random options come
 -- as JSON text.
 INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards,
-    rolls, card_rolls, random_options, identified)
+    rolls, card_rolls, random_options, identified, bound)
 SELECT @character_id, unnest(@slots::smallint[]), unnest(@item_ids::integer[]),
     unnest(@amounts::integer[]), unnest(@serials::uuid[]), unnest(@equips::integer[]),
     unnest(@refines::smallint[]), unnest(@cards::text[])::integer[],
     unnest(@rolls::text[])::jsonb, unnest(@card_rolls::text[])::jsonb,
-    unnest(@random_options::text[])::jsonb, unnest(@identified::boolean[]);
+    unnest(@random_options::text[])::jsonb, unnest(@identified::boolean[]), unnest(@bounds::smallint[]);
 
 -- name: Statuses :many
 SELECT name, val1, val2, val3, val4, tick, end_ms FROM character_statuses

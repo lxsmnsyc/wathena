@@ -1,0 +1,6 @@
+# An extra storage that each character owns, opened by the Kafra and by
+# "!storage Vault".
+- name: e2e.fixture:Vault
+  display_name: Vault
+  slots: 50
+  owner: character

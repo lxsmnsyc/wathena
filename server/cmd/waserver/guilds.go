@@ -109,3 +109,57 @@ func devGuildStorageHandler(w *world.World) http.HandlerFunc {
 		http.Error(rw, "no such player is online", http.StatusNotFound)
 	}
 }
+
+// devStorageHandler opens a player's storage as an NPC would:
+// POST /debug/wathena/storage?name=<character>, with &storage=<record>
+// for an extra storage of data/storages.yml. The development stack uses
+// it, since the placeholder maps have no Kafra.
+func devStorageHandler(w *world.World) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		q := r.URL.Query()
+		for _, z := range w.Zones() {
+			opened, found, err := z.OpenStorageFor(ctx, q.Get("name"), q.Get("storage"))
+			if err != nil {
+				http.Error(rw, err.Error(), http.StatusServiceUnavailable)
+				return
+			}
+			if found {
+				rw.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(rw).Encode(map[string]bool{"opened": opened})
+				return
+			}
+		}
+		http.Error(rw, "no such player is online", http.StatusNotFound)
+	}
+}
+
+// devCartHandler gives a player a cart, as setcart:
+// POST /debug/wathena/cart?name=<character>&look=<1 to 5, or 0>. The
+// player needs Pushcart.
+func devCartHandler(w *world.World) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		q := r.URL.Query()
+		look, err := strconv.Atoi(q.Get("look"))
+		if err != nil {
+			http.Error(rw, "look is 0 to 5", http.StatusBadRequest)
+			return
+		}
+		for _, z := range w.Zones() {
+			ok, found, err := z.SetCartFor(ctx, q.Get("name"), look)
+			if err != nil {
+				http.Error(rw, err.Error(), http.StatusServiceUnavailable)
+				return
+			}
+			if found {
+				rw.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(rw).Encode(map[string]bool{"changed": ok})
+				return
+			}
+		}
+		http.Error(rw, "no such player is online", http.StatusNotFound)
+	}
+}

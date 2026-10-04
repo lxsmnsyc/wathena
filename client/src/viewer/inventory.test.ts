@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DropItemFailure, StatId, UseItemFailure } from '../gen/wathena/v1/event_pb';
+import {
+  DropItemFailure,
+  ItemBound,
+  ItemRestriction,
+  StatId,
+  UseItemFailure,
+} from '../gen/wathena/v1/event_pb';
 import {
   InventoryModel,
   type Stack,
@@ -7,6 +13,8 @@ import {
   actionWord,
   dropItemMessage,
   gotItemMessage,
+  itemRuleLines,
+  itemTooltip,
   parseDropAmount,
   rollLines,
   stackRolls,
@@ -30,6 +38,8 @@ function plain(slot: number, itemId: number, amount: number): Stack {
     rolls: [],
     cardRolls: [],
     options: [],
+    bound: 0,
+    restrictions: 0,
   };
 }
 
@@ -86,6 +96,8 @@ describe('InventoryModel', () => {
       rolls: [],
       cardRolls: [],
       options: [],
+      bound: 0,
+      restrictions: 0,
     });
     m.add(3, 4001, 1, { location: 0x2, card: true });
     expect(m.get(3)?.card).toBe(true);
@@ -167,6 +179,7 @@ describe('messages', () => {
     expect(useItemMessage(UseItemFailure.TOO_SOON)).toBe('You are using items too fast.');
     expect(useItemMessage(UseItemFailure.NOT_SUPPORTED)).toBe('This item does not work yet.');
     expect(dropItemMessage(DropItemFailure.CANNOT_DROP)).toBe('This item cannot be dropped.');
+    expect(dropItemMessage(DropItemFailure.BOUND)).toBe('This item cannot be dropped.');
     expect(dropItemMessage(DropItemFailure.UNSPECIFIED)).toBe('The item was not dropped.');
   });
 
@@ -220,5 +233,72 @@ describe('rolls', () => {
       'Item 4001: LUK +2 (1 to 5)',
       'Attack element: Fire',
     ]);
+  });
+});
+
+describe('itemRuleLines', () => {
+  it('says who a copy is bound to and what it cannot do', () => {
+    expect(itemRuleLines({ bound: ItemBound.UNSPECIFIED, restrictions: 0 })).toEqual([]);
+    expect(
+      itemRuleLines({
+        bound: ItemBound.ACCOUNT,
+        restrictions: ItemRestriction.NO_TRADE | ItemRestriction.NO_DROP,
+      }),
+    ).toEqual(['Bound to account', 'Cannot be dropped', 'Cannot be traded']);
+    expect(itemRuleLines({ bound: ItemBound.CHARACTER, restrictions: 0 })).toEqual([
+      'Bound to character',
+    ]);
+    expect(itemRuleLines({ bound: ItemBound.UNSPECIFIED, restrictions: 0x7f })).toEqual([
+      'Cannot be dropped',
+      'Cannot be traded',
+      'Cannot be sold',
+      'Cannot be put in a cart',
+      'Cannot be stored',
+      'Cannot be put in guild storage',
+      'Cannot be mailed',
+    ]);
+  });
+
+  it('adds the lines to a tooltip', () => {
+    expect(itemTooltip('Knife', { bound: ItemBound.GUILD, restrictions: 0 })).toBe(
+      'Knife\nBound to guild',
+    );
+    expect(itemTooltip('Knife', { bound: ItemBound.UNSPECIFIED, restrictions: 0 })).toBe('Knife');
+  });
+
+  it('keeps bound and restrictions from the server', () => {
+    const m = new InventoryModel();
+    m.reset([{ slot: 0, itemId: 501, amount: 1, bound: ItemBound.PARTY, restrictions: 2 }], 100);
+    expect(m.get(0)).toMatchObject({ bound: ItemBound.PARTY, restrictions: 2 });
+  });
+});
+
+describe('InventoryModel pages', () => {
+  it('adds the pages after the first InventoryUpdate', () => {
+    const m = new InventoryModel();
+    m.reset([{ slot: 0, itemId: 501, amount: 1 }], 1000);
+    m.addPage([
+      { slot: 600, itemId: 909, amount: 3 },
+      { slot: 601, itemId: 502, amount: 0 },
+    ]);
+    expect(m.list().map((s) => s.slot)).toEqual([0, 600]);
+    expect(m.size).toBe(1000);
+    // A new first page replaces everything.
+    m.reset([{ slot: 2, itemId: 501, amount: 1 }], 1000);
+    expect(m.list().map((s) => s.slot)).toEqual([2]);
+  });
+});
+
+describe('InventoryModel bound', () => {
+  it('keeps bound and restrictions from InventoryAdd', () => {
+    const m = new InventoryModel();
+    m.reset([], 100);
+    m.add(0, 501, 1, { bound: ItemBound.ACCOUNT, restrictions: 2 });
+    expect(m.get(0)).toMatchObject({ bound: ItemBound.ACCOUNT, restrictions: 2 });
+    m.add(0, 501, 2, { bound: ItemBound.ACCOUNT, restrictions: 6 });
+    expect(m.get(0)).toMatchObject({ amount: 3, bound: ItemBound.ACCOUNT, restrictions: 6 });
+    // Details left out keep what the slot has.
+    m.add(0, 501, 1);
+    expect(m.get(0)).toMatchObject({ amount: 4, restrictions: 6 });
   });
 });

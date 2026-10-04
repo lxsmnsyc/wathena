@@ -85,8 +85,10 @@ type Bot struct {
 	mapMoves int
 
 	bytesIn, bytesOut, msgsIn, msgsOut atomic.Uint64
-	chatsHeard, damage, kills          atomic.Uint64
-	ack                                *metrics.Histogram
+	// maxIn is the size of the largest message the bot got.
+	maxIn                     atomic.Uint64
+	chatsHeard, damage, kills atomic.Uint64
+	ack                       *metrics.Histogram
 
 	// ready closes when the bot first sees itself.
 	ready     chan struct{}
@@ -95,12 +97,14 @@ type Bot struct {
 	// game is the bot's own state from its events (game.go). record
 	// keeps every event, and changed closes and is replaced when events
 	// come.
-	game    gameState
-	social  socialState
-	guildSt guildState
-	record  bool
-	events  []*wathenav1.Event
-	changed chan struct{}
+	game      gameState
+	social    socialState
+	guildSt   guildState
+	storageSt storageState
+	tradeSt   tradeState
+	record    bool
+	events    []*wathenav1.Event
+	changed   chan struct{}
 
 	done chan struct{}
 	err  error
@@ -152,8 +156,7 @@ func Dial(ctx context.Context, url string, token []byte, opts Options) (*Bot, er
 		return nil, errors.New("botclient: the first message is not Welcome")
 	}
 	b.mapName, b.netID = w.GetMap(), w.GetNetId()
-	l := w.GetLimits()
-	b.social.limits = WorldLimits{PartyMembers: int(l.GetPartyMembers()), Friends: int(l.GetFriends()), BlockList: int(l.GetBlockList())}
+	b.social.limits = limitsOf(w.GetLimits())
 	go b.readLoop() // #nosec G118 -- the loop lasts as long as the connection, not the dial's context.
 	select {
 	case <-b.ready:
@@ -187,6 +190,12 @@ func (b *Bot) read(ctx context.Context) (*wathenav1.ServerMessage, error) {
 	}
 	b.bytesIn.Add(uint64(len(data)) + wsHeader(len(data)))
 	b.msgsIn.Add(1)
+	for n := uint64(len(data)); ; {
+		old := b.maxIn.Load()
+		if n <= old || b.maxIn.CompareAndSwap(old, n) {
+			break
+		}
+	}
 	if typ != websocket.MessageBinary {
 		return nil, errors.New("botclient: a text message")
 	}
@@ -334,6 +343,9 @@ type Counts struct {
 	Kills uint64
 	// MapChanges counts warps to other maps.
 	MapChanges int
+	// MaxMessage is the size in bytes of the largest message the bot
+	// got.
+	MaxMessage uint64
 }
 
 // Counts returns the bot's counts so far.
@@ -344,6 +356,7 @@ func (b *Bot) Counts() Counts {
 	return Counts{
 		BytesIn: b.bytesIn.Load(), BytesOut: b.bytesOut.Load(), MsgsIn: b.msgsIn.Load(), MsgsOut: b.msgsOut.Load(),
 		ChatsHeard: b.chatsHeard.Load(), Damage: b.damage.Load(), Kills: b.kills.Load(), MapChanges: moves,
+		MaxMessage: b.maxIn.Load(),
 	}
 }
 
@@ -442,6 +455,8 @@ func (b *Bot) apply(m *wathenav1.ServerMessage) {
 		b.game.apply(e)
 		b.social.apply(e)
 		b.guildSt.apply(e)
+		b.storageSt.apply(e)
+		b.tradeSt.apply(e)
 	}
 	if b.record {
 		b.events = append(b.events, f.GetEvents()...)

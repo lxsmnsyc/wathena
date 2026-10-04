@@ -7,6 +7,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/social"
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
@@ -142,6 +143,9 @@ func (z *Zone) sendAdd(p *Player, slot, amount int) {
 		Rolls:     rolls,
 		CardRolls: cardRolls,
 		Options:   opts,
+		Bound:     wathenav1.ItemBound(s.Bound),
+		// #nosec G115 -- seven bits.
+		Restrictions: uint32(d.RestrictionMask()),
 	}.Build()}.Build())
 	z.updateWeight(p)
 }
@@ -163,7 +167,9 @@ func (z *Zone) recordTransfer(p *Player, logs transfer.Logs) {
 // Committer: a copy of each character they changed and their log lines.
 // Without a Committer, the lines go to the log.
 func (z *Zone) commitTransfers() {
-	if len(z.txPlayers) == 0 && len(z.txStorageRefs) == 0 && len(z.txStorages) == 0 {
+	// Storages of players who logged out go once this commit is queued.
+	defer z.releaseStorages()
+	if len(z.txPlayers) == 0 && len(z.txStorageRefs) == 0 && len(z.txStorages) == 0 && len(z.txPersonal) == 0 {
 		return
 	}
 	storages := z.storageCommits()
@@ -248,6 +254,9 @@ type Audit struct {
 	// goroutine, so they agree with the zone's players while the zone's
 	// players are the ones who move guild storage items.
 	Storages []social.StorageHolding
+	// Personal are what the storages and carts in memory hold, read the
+	// same way.
+	Personal []storage.Holding
 }
 
 // Audit lists what the zone's players and ground hold. It runs on the
@@ -269,6 +278,9 @@ func (z *Zone) Audit(ctx context.Context) (Audit, error) {
 		}
 		if z.Social != nil {
 			a.Storages = z.Social.AuditStorages()
+		}
+		if z.Storages != nil {
+			a.Personal = z.Storages.Audit()
 		}
 		done <- a
 	}

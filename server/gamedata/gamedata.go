@@ -69,6 +69,15 @@ func LoadItemData(mode reference.Mode) (*item.Data, error) {
 	if err := reference.LoadFile("extracts/"+string(mode)+"/item_prices.json", &prices); err != nil {
 		return nil, err
 	}
+	var trade struct {
+		Items []struct {
+			ID           uint32   `json:"id"`
+			Restrictions []string `json:"restrictions"`
+		} `json:"items"`
+	}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/item_trade.json", &trade); err != nil {
+		return nil, err
+	}
 	var equip item.EquipData
 	if err := reference.LoadFile("extracts/"+string(mode)+"/equipment.json", &equip); err != nil {
 		return nil, err
@@ -87,6 +96,23 @@ func LoadItemData(mode reference.Mode) (*item.Data, error) {
 		if def := byID[p.ID]; def != nil {
 			def.Buy, def.Sell, def.NoSell = p.Buy, p.Sell, p.NoSell
 		}
+	}
+	// item_trade's flags become restrictions. trade_partner and
+	// no_auction have no use without marriage and auctions.
+	known := item.RestrictionNames()
+	for _, t := range trade.Items {
+		def := byID[t.ID]
+		if def == nil {
+			continue
+		}
+		for _, r := range t.Restrictions {
+			if slices.Contains(known, r) {
+				def.Restrictions = append(def.Restrictions, r)
+			}
+		}
+	}
+	for i := range d.Items {
+		d.Items[i].SyncRestrictions(false)
 	}
 	return &d, nil
 }

@@ -125,20 +125,20 @@ func TestConstraints(t *testing.T) {
 		t.Fatal(err)
 	}
 	bad := map[string]func(p *db.CreateCharacterParams){
-		"negative zeny":      func(p *db.CreateCharacterParams) { p.Zeny = -1 },
-		"zeny over MAX_ZENY": func(p *db.CreateCharacterParams) { p.Zeny = 2147483648 },
-		"negative base exp":  func(p *db.CreateCharacterParams) { p.BaseExp = -1 },
-		"negative job exp":   func(p *db.CreateCharacterParams) { p.JobExp = -5 },
-		"level 0":            func(p *db.CreateCharacterParams) { p.BaseLevel = 0 },
-		"level 276":          func(p *db.CreateCharacterParams) { p.JobLevel = 276 },
-		"negative points":    func(p *db.CreateCharacterParams) { p.StatusPoints = -1 },
-		"stat 0":             func(p *db.CreateCharacterParams) { p.Str = 0 },
-		"negative HP":        func(p *db.CreateCharacterParams) { p.Hp = -1 },
-		"cell off the map":   func(p *db.CreateCharacterParams) { p.X = 1024 },
-		"slot 15":            func(p *db.CreateCharacterParams) { p.Slot = 15 },
-		"sex 2":              func(p *db.CreateCharacterParams) { p.Sex = 2 },
-		"inventory over 200": func(p *db.CreateCharacterParams) { p.InventorySize = 201 },
-		"empty name":         func(p *db.CreateCharacterParams) { p.Name = "" },
+		"negative zeny":       func(p *db.CreateCharacterParams) { p.Zeny = -1 },
+		"zeny over MAX_ZENY":  func(p *db.CreateCharacterParams) { p.Zeny = 2147483648 },
+		"negative base exp":   func(p *db.CreateCharacterParams) { p.BaseExp = -1 },
+		"negative job exp":    func(p *db.CreateCharacterParams) { p.JobExp = -5 },
+		"level 0":             func(p *db.CreateCharacterParams) { p.BaseLevel = 0 },
+		"level 276":           func(p *db.CreateCharacterParams) { p.JobLevel = 276 },
+		"negative points":     func(p *db.CreateCharacterParams) { p.StatusPoints = -1 },
+		"stat 0":              func(p *db.CreateCharacterParams) { p.Str = 0 },
+		"negative HP":         func(p *db.CreateCharacterParams) { p.Hp = -1 },
+		"cell off the map":    func(p *db.CreateCharacterParams) { p.X = 1024 },
+		"slot 15":             func(p *db.CreateCharacterParams) { p.Slot = 15 },
+		"sex 2":               func(p *db.CreateCharacterParams) { p.Sex = 2 },
+		"inventory over 1000": func(p *db.CreateCharacterParams) { p.InventorySize = 1001 },
+		"empty name":          func(p *db.CreateCharacterParams) { p.Name = "" },
 	}
 	for name, change := range bad {
 		p := good
@@ -164,14 +164,15 @@ func TestConstraints(t *testing.T) {
 		return q.InsertInventory(ctx, db.InsertInventoryParams{
 			CharacterID: id, Slots: []int{slot}, ItemIds: []int{1101}, Amounts: []int{1}, Serials: []pgtype.UUID{s},
 			Equips: []int{0}, Refines: []int{0}, Cards: []string{cards},
-			Rolls: []string{rolls}, CardRolls: []string{cardRolls}, RandomOptions: []string{options}, Identified: []bool{true},
+			Rolls: []string{rolls}, CardRolls: []string{cardRolls}, RandomOptions: []string{options}, Identified: []bool{true}, Bounds: []int{0},
 		})
 	}
+	bound := 0
 	insertItem := func(slot, itemID, amount int, s pgtype.UUID, equip, refine int, cards string) error {
 		return q.InsertInventory(ctx, db.InsertInventoryParams{
 			CharacterID: id, Slots: []int{slot}, ItemIds: []int{itemID}, Amounts: []int{amount}, Serials: []pgtype.UUID{s},
 			Equips: []int{equip}, Refines: []int{refine}, Cards: []string{cards},
-			Rolls: []string{"{}"}, CardRolls: []string{"[]"}, RandomOptions: []string{"[]"}, Identified: []bool{true},
+			Rolls: []string{"{}"}, CardRolls: []string{"[]"}, RandomOptions: []string{"[]"}, Identified: []bool{true}, Bounds: []int{bound},
 		})
 	}
 	insert := func(slot, itemID, amount int, s pgtype.UUID) error {
@@ -184,7 +185,8 @@ func TestConstraints(t *testing.T) {
 	for name, err := range map[string]error{
 		"amount 0":     insert(1, 501, 0, fresh()),
 		"amount 30001": insert(1, 501, 30001, fresh()),
-		"slot 200":     insert(200, 501, 1, fresh()),
+		"slot 1000":    insert(1000, 501, 1, fresh()),
+		"bound 5":      func() error { bound = 5; defer func() { bound = 0 }(); return insert(1, 501, 1, fresh()) }(),
 		"item 0":       insert(1, 0, 1, fresh()),
 		"refine -1":    insertItem(1, 1101, 1, fresh(), 0, -1, "{}"),
 		"refine 256":   insertItem(1, 1101, 1, fresh(), 0, 256, "{}"),

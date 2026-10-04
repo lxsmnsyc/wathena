@@ -148,6 +148,11 @@ func (r *Runtime) guildCall(c *script.Call) error {
 			return err
 		}
 		return r.guildRead(c, h, op, id)
+	case "count_item":
+		if err := r.need(what, "game.read"); err != nil {
+			return err
+		}
+		return r.guildCountItem(c, id)
 	}
 	if err := r.mutating(what); err != nil {
 		return err
@@ -331,9 +336,6 @@ func IsGuildEvent(name string) bool { return slices.Contains(GuildEventNames, na
 // CoreGuildHost is what core's converted scripts use through wa.internal
 // and the API has no call for yet.
 type CoreGuildHost interface {
-	// OpenGuildStorage opens a player's guild storage, as
-	// guildopenstorage, and returns rAthena's GSTORAGE_ value.
-	OpenGuildStorage(player int64) (int, error)
 	// GuildStorageLog sends a player its guild's storage log, as
 	// guildopenstorage_log.
 	GuildStorageLog(player int64) error
@@ -349,23 +351,6 @@ func (r *Runtime) coreHost(what string) (CoreGuildHost, error) {
 		return nil, errors.New(what + ": guild storage does not exist here")
 	}
 	return h, nil
-}
-
-func (r *Runtime) coreGuildStorage(c *script.Call) error {
-	const what = "open_guild_storage"
-	h, err := r.coreHost(what)
-	if err != nil {
-		return err
-	}
-	if err := r.mutating(what); err != nil {
-		return err
-	}
-	n, err := h.OpenGuildStorage(c.Int(0))
-	if err != nil {
-		return err
-	}
-	c.Return(script.Int(int64(n)))
-	return nil
 }
 
 func (r *Runtime) coreGuildStorageLog(c *script.Call) error {

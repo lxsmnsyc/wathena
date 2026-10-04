@@ -659,7 +659,7 @@ func (h *Headless) Equip(player int64, itemID uint32, roll modscript.GiveRoll) (
 			had[i] = true
 		}
 	}
-	fits, err := z.giveRolled(p, itemID, 1, roll)
+	fits, err := z.giveRolled(p, itemID, 1, roll, item.BoundNone)
 	if err != nil {
 		return 0, err
 	}
@@ -797,4 +797,123 @@ func (h *Headless) SkillList(player int64) (map[int]bool, error) {
 		out[e.Skill] = e.Upgradable
 	}
 	return out, nil
+}
+
+// TradeOffer is one side of a test world's trade: items by ID with their
+// amounts, and zeny.
+type TradeOffer struct {
+	Items map[uint32]int
+	Zeny  int64
+}
+
+// Trade runs a whole trade between two players for wa.testing's
+// world:trade: b stands next to a, a asks, b accepts, both offer, lock
+// and confirm. It returns true when the trade completed, and otherwise
+// the outcome's name, or the trade hook's message.
+func (h *Headless) Trade(a, b int64, offerA, offerB TradeOffer) (bool, string, error) {
+	pa, err := h.player(a)
+	if err != nil {
+		return false, "", err
+	}
+	pb, err := h.player(b)
+	if err != nil {
+		return false, "", err
+	}
+	if pa == pb {
+		return false, "", errors.New("a player cannot trade with itself")
+	}
+	z := h.z
+	pb.entity.x, pb.entity.y = pa.entity.x, pa.entity.y
+	h.step(0)
+	last := ""
+	run := func(p *Player, t TradeAction) {
+		before := len(p.pending)
+		z.tradeCommand(p, &t)
+		for _, e := range p.pending[min(before, len(p.pending)):] {
+			switch {
+			case e.HasTradeResult() && e.GetTradeResult().GetOutcome() != wathenav1.TradeOutcome_TRADE_OUTCOME_REQUEST_SENT &&
+				e.GetTradeResult().GetOutcome() != wathenav1.TradeOutcome_TRADE_OUTCOME_WAITING:
+				last = tradeOutcomeName(e.GetTradeResult().GetOutcome())
+				if m := e.GetTradeResult().GetMessage(); m != "" {
+					last = m
+				}
+			}
+		}
+	}
+	run(pa, TradeAction{Request: pa.netID(pb.entity)})
+	run(pb, TradeAction{Respond: true, Accept: true})
+	if pa.trade == nil {
+		h.step(0)
+		return false, last, nil
+	}
+	for _, side := range []struct {
+		p *Player
+		o TradeOffer
+	}{{pa, offerA}, {pb, offerB}} {
+		for id, n := range side.o.Items {
+			for i := range side.p.inventory.Slots {
+				s := &side.p.inventory.Slots[i]
+				if n <= 0 {
+					break
+				}
+				if s.ID == id && s.Equip == 0 {
+					k := min(n, s.Amount)
+					run(side.p, TradeAction{AddSlot: i, AddAmount: k})
+					n -= k
+				}
+			}
+			if last != "" {
+				// A refused offer ends the trade.
+				z.tradeCancel(side.p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
+				h.step(0)
+				return false, last, nil
+			}
+			if n > 0 {
+				z.tradeCancel(side.p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
+				h.step(0)
+				return false, "", fmt.Errorf("the player has too few of item %d", id)
+			}
+		}
+		if side.o.Zeny > 0 {
+			run(side.p, TradeAction{Zeny: side.o.Zeny, HasZeny: true})
+		}
+	}
+	if pa.trade == nil || pb.trade == nil {
+		h.step(0)
+		return false, last, nil
+	}
+	run(pa, TradeAction{Lock: true})
+	run(pb, TradeAction{Lock: true})
+	run(pa, TradeAction{Confirm: true})
+	done := pb.trade != nil
+	run(pb, TradeAction{Confirm: true})
+	ok := done && pb.trade == nil && last == ""
+	if !ok {
+		z.tradeCancel(pa, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
+	}
+	h.step(0)
+	h.step(0)
+	return ok, last, nil
+}
+
+// tradeOutcomeName is an outcome's name in lower case, such as
+// "restricted".
+func tradeOutcomeName(o wathenav1.TradeOutcome) string {
+	return strings.ToLower(strings.TrimPrefix(o.String(), "TRADE_OUTCOME_"))
+}
+
+// CloseStorage closes a player's storage window, for wa.testing's
+// world:close_storage.
+func (h *Headless) CloseStorage(player int64) error {
+	p, err := h.player(player)
+	if err != nil {
+		return err
+	}
+	if p.storage != nil {
+		h.z.closeStorage(p)
+	} else {
+		h.z.closeGuildStorage(p, true)
+	}
+	h.step(0)
+	return nil
 }

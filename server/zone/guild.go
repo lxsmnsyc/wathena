@@ -4,10 +4,10 @@ import (
 	"context"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/chat"
-	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/social"
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
@@ -79,12 +79,34 @@ type guildRelationEnd struct {
 }
 
 type storageCommand struct {
-	put, take *storageMove
-	close     bool
-	log       bool
+	move  *storageMove
+	close bool
+	log   bool
 }
 
-type storageMove struct{ slot, amount int }
+type storageMove struct {
+	kind         StorageMoveKind
+	slot, amount int
+}
+
+// StorageMoveKind is which way a storage command moves items.
+type StorageMoveKind int
+
+// The storage moves.
+const (
+	// MovePut is from the inventory into the open storage.
+	MovePut StorageMoveKind = iota
+	// MoveTake is from the open storage into the inventory.
+	MoveTake
+	// MoveCartPut is from the inventory into the cart.
+	MoveCartPut
+	// MoveCartTake is from the cart into the inventory.
+	MoveCartTake
+	// MoveCartToStorage is from the cart into the open storage.
+	MoveCartToStorage
+	// MoveStorageToCart is from the open storage into the cart.
+	MoveStorageToCart
+)
 
 // The guild commands of a session.
 
@@ -167,12 +189,18 @@ func (s *Session) GuildChat(seq uint32, text string) bool {
 // StoragePut moves an amount from an inventory slot into the open
 // storage.
 func (s *Session) StoragePut(seq uint32, slot, amount int) bool {
-	return s.send(command{seq: seq, storage: &storageCommand{put: &storageMove{slot, amount}}})
+	return s.StorageMove(seq, MovePut, slot, amount)
 }
 
 // StorageTake moves an amount from a storage slot into the inventory.
 func (s *Session) StorageTake(seq uint32, slot, amount int) bool {
-	return s.send(command{seq: seq, storage: &storageCommand{take: &storageMove{slot, amount}}})
+	return s.StorageMove(seq, MoveTake, slot, amount)
+}
+
+// StorageMove moves an amount between the inventory, the open storage
+// and the cart. slot is in the holder the amount leaves.
+func (s *Session) StorageMove(seq uint32, kind StorageMoveKind, slot, amount int) bool {
+	return s.send(command{seq: seq, storage: &storageCommand{move: &storageMove{kind, slot, amount}}})
 }
 
 // StorageClose closes the storage window.
@@ -343,6 +371,7 @@ func (z *Zone) receiveGuild(p *Player, n social.Notice) bool {
 			ev.Kind = "guild_leave"
 			// guild_member_withdraw ends the guild auras of a member who
 			// left. They do not exist yet.
+			z.guildBoundLeft(p, n.Event.Party, n.Event.Reason)
 		}
 		z.scriptEvents = append(z.scriptEvents, scriptEvent{guild: ev})
 	case social.NoticeGuildChange:
@@ -603,7 +632,7 @@ func (z *Zone) openGuildStorage(p *Player) social.StorageOutcome {
 	if p.soc == nil {
 		return social.StorageNoGuild
 	}
-	if p.guild.storage != nil {
+	if p.guild.storage != nil || p.storage != nil {
 		p.pending = append(p.pending, storageResult(wathenav1.StorageOutcome_STORAGE_OUTCOME_ALREADY_OPEN))
 		return social.StorageAlreadyOpen
 	}
@@ -616,26 +645,11 @@ func (z *Zone) openGuildStorage(p *Player) social.StorageOutcome {
 	st.Lock()
 	box := st.Box()
 	box.Items = z.Items
-	b := wathenav1.StorageOpen_builder{Kind: wathenav1.StorageKind_STORAGE_KIND_GUILD, Size: uint32(size)} // #nosec G115 -- at most 2000.
-	for i := range box.Slots {
-		if s := &box.Slots[i]; s.ID != 0 && s.Amount > 0 {
-			b.Items = append(b.Items, z.storageItem(i, s))
-		}
-	}
+	items := z.storageItems(box)
 	st.Unlock()
-	p.pending = append(p.pending, wathenav1.Event_builder{StorageOpen: b.Build()}.Build())
+	z.sendStorageList(p, wathenav1.StorageOpen_builder{Kind: wathenav1.StorageKind_STORAGE_KIND_GUILD, Size: uint32(size), // #nosec G115 -- at most the ceiling.
+		DisplayName: "Guild storage"}.Build(), items)
 	return o
-}
-
-// storageItem is a storage slot as the client shows it.
-func (z *Zone) storageItem(i int, s *item.Slot) *wathenav1.InventoryItem {
-	d := z.Items.Get(s.ID)
-	rolls, cardRolls, opts := z.rollMessages(d, s)
-	return wathenav1.InventoryItem_builder{
-		Slot: uint32(i), ItemId: s.ID, Amount: uint32(s.Amount), // #nosec G115 -- a slot below 2000 and a stack of at most 30000.
-		Refine: uint32(max(s.Refine, 0)), Cards: s.Cards, Location: wornLocation(d), Card: d.IsCard(), // #nosec G115 -- a refine level.
-		Rolls: rolls, CardRolls: cardRolls, Options: opts,
-	}.Build()
 }
 
 // closeGuildStorage closes the player's guild storage window, as
@@ -654,10 +668,15 @@ func (z *Zone) closeGuildStorage(p *Player, release bool) {
 		Kind: wathenav1.StorageKind_STORAGE_KIND_GUILD}.Build()}.Build())
 }
 
-// storageCommand runs a storage command.
+// storageCommand runs a storage command. Moves go to the open personal
+// storage, else to the guild storage (storage.go).
 func (z *Zone) storageCommand(p *Player, c *storageCommand) {
 	switch {
 	case c.close:
+		if p.storage != nil {
+			z.closeStorage(p)
+			return
+		}
 		z.closeGuildStorage(p, true)
 	case c.log:
 		if p.soc == nil {
@@ -674,127 +693,10 @@ func (z *Zone) storageCommand(p *Player, c *storageCommand) {
 				Amount: int32(e.Amount), Refine: uint32(max(e.Refine, 0)), Cards: e.Cards}.Build()) // #nosec G115 -- a stack and a refine level.
 		}
 		p.pending = append(p.pending, wathenav1.Event_builder{GuildStorageLog: b.Build()}.Build())
-	case c.put != nil:
-		z.storagePut(p, c.put.slot, c.put.amount)
-		z.flushStorageLog()
-	case c.take != nil:
-		z.storageTake(p, c.take.slot, c.take.amount)
+	case c.move != nil:
+		z.storageMove(p, c.move)
 		z.flushStorageLog()
 	}
-}
-
-// storagePut is storage_guild_storageadd: an amount of an inventory slot
-// goes into the open guild storage, in one transfer.
-func (z *Zone) storagePut(p *Player, slot, amount int) {
-	st := p.guild.storage
-	if st == nil || slot < 0 || slot >= item.MaxInventory {
-		return
-	}
-	s := &p.inventory.Slots[slot]
-	if s.ID == 0 || amount < 1 || amount > s.Amount {
-		return
-	}
-	if s.Equip != 0 {
-		// An equipped item stays on: the client does not offer it.
-		p.pending = append(p.pending, storageResult(wathenav1.StorageOutcome_STORAGE_OUTCOME_NOT_STORABLE))
-		return
-	}
-	st.Lock()
-	defer st.Unlock()
-	if !st.OpenFor(p.soc) {
-		z.closeGuildStorage(p, false)
-		return
-	}
-	box := st.Box()
-	tx := transfer.New(transfer.ActionMove).Move(z.box(p), slot, s.Serial, amount, box)
-	var added []int
-	err := z.applyStorage(p, st, tx, func(c transfer.Change) {
-		if c.Box == transfer.Box(box) && c.Amount > 0 {
-			added = append(added, c.Slot, c.Amount)
-		}
-	})
-	if err != nil {
-		p.pending = append(p.pending, storageResult(wathenav1.StorageOutcome_STORAGE_OUTCOME_FULL))
-		return
-	}
-	for i := 0; i+1 < len(added); i += 2 {
-		p.pending = append(p.pending, wathenav1.Event_builder{StorageAdd: wathenav1.StorageAdd_builder{
-			Kind: wathenav1.StorageKind_STORAGE_KIND_GUILD, Item: z.storageItem(added[i], &box.Slots[added[i]]),
-			Amount: uint32(added[i+1]), // #nosec G115 -- a stack of at most 30000.
-		}.Build()}.Build())
-	}
-}
-
-// storageTake is storage_guild_storageget: an amount of a storage slot
-// goes into the inventory, in one transfer.
-func (z *Zone) storageTake(p *Player, slot, amount int) {
-	st := p.guild.storage
-	if st == nil {
-		return
-	}
-	st.Lock()
-	defer st.Unlock()
-	if !st.OpenFor(p.soc) {
-		z.closeGuildStorage(p, false)
-		return
-	}
-	box := st.Box()
-	s := box.Slot(slot)
-	if s == nil || s.ID == 0 || amount < 1 || amount > s.Amount {
-		return
-	}
-	tx := transfer.New(transfer.ActionMove).Move(box, slot, s.Serial, amount, z.box(p))
-	err := z.applyStorage(p, st, tx, func(c transfer.Change) {
-		if c.Box == transfer.Box(box) && c.Amount < 0 {
-			p.pending = append(p.pending, wathenav1.Event_builder{StorageRemove: wathenav1.StorageRemove_builder{
-				Kind: wathenav1.StorageKind_STORAGE_KIND_GUILD, Slot: uint32(c.Slot), Amount: uint32(-c.Amount), // #nosec G115 -- a slot below 2000 and a stack.
-			}.Build()}.Build())
-		}
-	})
-	if err != nil {
-		p.pending = append(p.pending, storageResult(wathenav1.StorageOutcome_STORAGE_OUTCOME_CANNOT_CARRY))
-	}
-}
-
-// applyStorage runs a transfer between a player's inventory and its
-// guild storage, whose lock is held. The player sees its inventory
-// change; storage changes go to each. The storage joins the next commit,
-// and the moves go to the guild storage log.
-func (z *Zone) applyStorage(p *Player, st *social.GuildStorage, tx *transfer.Tx, each func(transfer.Change)) error {
-	if z.Clock != nil {
-		tx.Now = z.Clock()
-	}
-	logs, err := tx.Apply(func(c transfer.Change) {
-		switch {
-		case c.Box != transfer.Box(st.Box()) && c.Amount > 0:
-			z.sendAdd(p, c.Slot, c.Amount)
-		case c.Box != transfer.Box(st.Box()) && c.Amount < 0:
-			p.pending = append(p.pending, wathenav1.Event_builder{InventoryRemove: wathenav1.InventoryRemove_builder{
-				Slot: uint32(c.Slot), Amount: uint32(-c.Amount), // #nosec G115 -- below MaxInventory and a stack.
-				Reason: wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_STORED,
-			}.Build()}.Build())
-			z.updateWeight(p)
-		default:
-			each(c)
-		}
-	})
-	if err != nil {
-		return err
-	}
-	z.recordTransfer(p, logs)
-	z.storageChanged(st)
-	var entries []social.StorageLogEntry
-	for _, l := range logs.Items {
-		e := social.StorageLogEntry{At: l.At, Name: p.Name, ItemID: l.ItemID, Amount: l.Amount, Refine: l.Refine, Cards: l.Cards}
-		if l.From.Kind == transfer.KindGuildStorage {
-			e.Amount = -l.Amount
-		}
-		entries = append(entries, e)
-	}
-	// The storage's lock is held, so the log waits for the caller: the
-	// registry takes its own lock before a storage's.
-	z.storageLog = append(z.storageLog, storageLogBatch{st.Guild(), entries})
-	return nil
 }
 
 // storageLogBatch is guild storage log lines that wait for the storage's
@@ -823,17 +725,19 @@ func (z *Zone) storageChanged(st *social.GuildStorage) {
 	z.txStorageRefs = append(z.txStorageRefs, st)
 }
 
-// StorageCommit is a guild storage a commit saves: what the last commit
-// of it wrote, and what it holds now.
+// StorageCommit is a storage a commit saves: what the last commit of it
+// wrote, and what it holds now. Guild names a guild storage. Key names
+// an account's storage, an extra storage or a cart (storage.go).
 type StorageCommit struct {
 	Guild     int64
+	Key       storage.Key
 	Base, Cur []social.StorageSlot
 }
 
 // storageCommits are the guild storages the transfers since the last
 // commit changed.
 func (z *Zone) storageCommits() []StorageCommit {
-	out := z.txStorages
+	out := append(z.txStorages, z.personalCommits()...)
 	z.txStorages = nil
 	for _, st := range z.txStorageRefs {
 		st.Lock()

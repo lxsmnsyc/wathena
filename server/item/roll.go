@@ -191,11 +191,14 @@ type Extra struct {
 	Options   []Option
 	// Unidentified copies show their hidden rolls only once identified.
 	Unidentified bool
+	// Bound is who the copy is bound to, as rAthena's item.bound. Bound
+	// and unbound copies never stack.
+	Bound Bound
 }
 
 // Equal reports whether two extras are the same.
 func (e *Extra) Equal(o *Extra) bool {
-	return slices.Equal(e.Rolls, o.Rolls) && slices.Equal(e.Options, o.Options) && e.Unidentified == o.Unidentified &&
+	return slices.Equal(e.Rolls, o.Rolls) && slices.Equal(e.Options, o.Options) && e.Unidentified == o.Unidentified && e.Bound == o.Bound &&
 		slices.EqualFunc(trimRolls(e.CardRolls), trimRolls(o.CardRolls), func(a, b Rolls) bool { return slices.Equal(a, b) })
 }
 
@@ -210,7 +213,7 @@ func trimRolls(r []Rolls) []Rolls {
 
 // Clone copies an extra.
 func (e Extra) Clone() Extra {
-	out := Extra{Rolls: slices.Clone(e.Rolls), Options: slices.Clone(e.Options), Unidentified: e.Unidentified}
+	out := Extra{Rolls: slices.Clone(e.Rolls), Options: slices.Clone(e.Options), Unidentified: e.Unidentified, Bound: e.Bound}
 	for _, r := range e.CardRolls {
 		out.CardRolls = append(out.CardRolls, slices.Clone(r))
 	}

@@ -17,7 +17,7 @@ import (
 // formGuild puts players in one guild of the zone's social registry, the
 // first as its master, and gives each the guild view, as the registry's
 // notices would. It returns the guild's ID.
-func formGuild(t *testing.T, z *Zone, players ...*Player) int64 {
+func formGuild(t testing.TB, z *Zone, players ...*Player) int64 {
 	t.Helper()
 	reg := z.socialHub()
 	for _, p := range players {
@@ -233,7 +233,7 @@ func TestGuildStorageMoves(t *testing.T) {
 	}
 	z.stepAt(100)
 	so := eventsOf(a, (*wathenav1.Event).GetStorageOpen, (*wathenav1.Event).HasStorageOpen)
-	if len(so) != 1 || so[0].GetSize() != 500 || len(so[0].GetItems()) != 0 {
+	if len(so) != 1 || so[0].GetSize() != 600 || len(so[0].GetItems()) != 0 {
 		t.Fatalf("open %v", so)
 	}
 	// Another member waits; the Newbie position has no storage right.
@@ -245,7 +245,7 @@ func TestGuildStorageMoves(t *testing.T) {
 	if o := z.openGuildStorage(b); o != social.StorageInUse {
 		t.Errorf("in use: %v", o)
 	}
-	z.handle(command{player: a, seq: 1, storage: &storageCommand{put: &storageMove{slot: 0, amount: 4}}})
+	z.handle(command{player: a, seq: 1, storage: &storageCommand{move: &storageMove{kind: MovePut, slot: 0, amount: 4}}})
 	z.commitTransfers()
 	z.stepAt(150)
 	ev := events(a)
@@ -262,7 +262,7 @@ func TestGuildStorageMoves(t *testing.T) {
 		t.Fatalf("commit %+v", last)
 	}
 	// Taking back 1 splits the stack, in the same way.
-	z.handle(command{player: a, seq: 2, storage: &storageCommand{take: &storageMove{slot: 0, amount: 1}}})
+	z.handle(command{player: a, seq: 2, storage: &storageCommand{move: &storageMove{kind: MoveTake, slot: 0, amount: 1}}})
 	z.commitTransfers()
 	z.stepAt(200)
 	ev = events(a)

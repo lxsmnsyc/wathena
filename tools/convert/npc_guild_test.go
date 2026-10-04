@@ -76,7 +76,6 @@ func TestGuildCommandsConvert(t *testing.T) {
 		{`{ .@r = guildopenstorage_log(); end; }`, "guildopenstorage_log: its result"},
 		{`{ guildskill "GD_EXTENSION",1; end; }`, "guildskill: the guild API cannot raise a guild skill"},
 		{`{ guildchangegm getcharid(2),"Bob"; end; }`, "guildchangegm: it names the new master by name"},
-		{`{ .@n = guildstoragecountitem(501); end; }`, "guildstoragecountitem: the guild API cannot read the guild storage"},
 		{`{ .@c = getguildmasterid(getcharid(2)); end; }`, "getguildmasterid: the guild API does not give character IDs"},
 		{`{ .@a = getguildalliance(1,2); end; }`, "getguildalliance: rAthena's relation codes"},
 		{`{ mes getguildinfo(getcharid(2),0); end; }`, "getguildinfo: the guild API does not give"},

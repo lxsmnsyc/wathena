@@ -185,7 +185,7 @@ func TestZeny(t *testing.T) {
 
 func TestListBox(t *testing.T) {
 	tb := testTable()
-	storage := &ListBox{Size: 2, Items: tb, Who: Owner{KindStorage, 7}}
+	storage := &ListBox{Size: 2, Items: tb, Who: Owner{Kind: KindStorage, ID: 7}}
 	a := inventory(t, tb, 1, 10000)
 	s := give(t, a, 909, 5)
 	w := give(t, a, 1201, 1)

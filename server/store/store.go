@@ -46,6 +46,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/store/db"
 )
 
@@ -95,19 +96,23 @@ type Store struct {
 	// laneWake wakes the commit worker.
 	lane     []*commit
 	laneWake chan struct{}
+	// storageBusy counts, by storage, the commits that hold it and are
+	// not written yet (storage.go).
+	storageBusy map[storage.Key]int
 }
 
 // New makes a store on a pool and starts its workers. Close stops them.
 // The pool stays open.
 func New(pool *pgxpool.Pool, opt Options) *Store {
 	s := &Store{
-		pool:    pool,
-		q:       db.New(pool),
-		log:     opt.Log,
-		retry:   opt.RetryDelay,
-		busy:    map[int64]int{},
-		changed: make(chan struct{}),
-		stop:    make(chan struct{}),
+		pool:        pool,
+		q:           db.New(pool),
+		log:         opt.Log,
+		retry:       opt.RetryDelay,
+		busy:        map[int64]int{},
+		storageBusy: map[storage.Key]int{},
+		changed:     make(chan struct{}),
+		stop:        make(chan struct{}),
 	}
 	if s.log == nil {
 		s.log = slog.Default()
@@ -593,6 +598,7 @@ func insertParams(id int64, items []character.Item) db.InsertInventoryParams {
 		}
 		p.RandomOptions = append(p.RandomOptions, mustJSON(opts))
 		p.Identified = append(p.Identified, !it.Unidentified)
+		p.Bounds = append(p.Bounds, int(it.Bound))
 	}
 	return p
 }
@@ -619,7 +625,7 @@ func mustJSON(v any) string {
 // options. The server checks their values against the item data when the
 // character enters a zone.
 func readExtra(it *db.InventoryRow) (item.Extra, error) {
-	x := item.Extra{Unidentified: !it.Identified}
+	x := item.Extra{Unidentified: !it.Identified, Bound: item.Bound(min(max(it.Bound, 0), 4))} // #nosec G115 -- 0 to 4.
 	if err := json.Unmarshal(it.Rolls, &x.Rolls); err != nil {
 		return x, fmt.Errorf("store: rolls of slot %d: %w", it.Slot, err)
 	}
@@ -683,28 +689,37 @@ func fromRow(r *db.Character, items []db.InventoryRow) (*character.Character, er
 		Companion: r.Companion, Mount: r.Mount, CreatedAt: r.CreatedAt.Time,
 	}}
 	for _, it := range items {
-		id, err := itemID(it.ItemID)
+		ci, err := inventoryItem(&it)
 		if err != nil {
 			return nil, err
-		}
-		ci := character.Item{Slot: it.Slot, ID: id, Amount: it.Amount, Serial: it.Serial.Bytes, Refine: it.Refine}
-		if ci.Extra, err = readExtra(&it); err != nil {
-			return nil, err
-		}
-		if it.Equip < 0 || it.Equip > math.MaxUint32 {
-			return nil, fmt.Errorf("store: equip %d out of range", it.Equip)
-		}
-		ci.Equip = uint32(it.Equip) // #nosec G115 -- checked above, and the CHECK constraint keeps it below 2^22.
-		for _, card := range it.Cards {
-			cid, err := itemID(card)
-			if err != nil {
-				return nil, err
-			}
-			ci.Cards = append(ci.Cards, cid)
 		}
 		c.Items = append(c.Items, ci)
 	}
 	return c, nil
+}
+
+// inventoryItem reads an inventory row, or a storage row in its form.
+func inventoryItem(it *db.InventoryRow) (character.Item, error) {
+	id, err := itemID(it.ItemID)
+	if err != nil {
+		return character.Item{}, err
+	}
+	ci := character.Item{Slot: it.Slot, ID: id, Amount: it.Amount, Serial: it.Serial.Bytes, Refine: it.Refine}
+	if ci.Extra, err = readExtra(it); err != nil {
+		return character.Item{}, err
+	}
+	if it.Equip < 0 || it.Equip > math.MaxUint32 {
+		return character.Item{}, fmt.Errorf("store: equip %d out of range", it.Equip)
+	}
+	ci.Equip = uint32(it.Equip) // #nosec G115 -- checked above, and the CHECK constraint keeps it below 2^22.
+	for _, card := range it.Cards {
+		cid, err := itemID(card)
+		if err != nil {
+			return character.Item{}, err
+		}
+		ci.Cards = append(ci.Cards, cid)
+	}
+	return ci, nil
 }
 
 // itemID checks an item ID from the database, which its CHECK constraint
@@ -743,9 +758,17 @@ func (s *Store) DevCharacter(ctx context.Context, c *character.Character) (int64
 			return err
 		}
 		if len(c.Items) > 0 {
-			return q.InsertInventory(ctx, insertParams(id, c.Items))
+			if err := q.InsertInventory(ctx, insertParams(id, c.Items)); err != nil {
+				return err
+			}
 		}
-		return nil
+		// The start skills, statuses and block list, such as the Basic
+		// Skill of --start-job, as a first save writes them.
+		empty := &character.Character{}
+		if err := writeStatuses(ctx, q, id, empty, c); err != nil {
+			return err
+		}
+		return writeModeration(ctx, q, id, empty, c)
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		// Another login made the character first, or the account's

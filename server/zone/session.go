@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/lxsmnsyc/wathena/server/storage"
 	"sync"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -43,6 +44,10 @@ type Session struct {
 	// left closes once the player's last save went to the saver.
 	left     chan struct{}
 	leftOnce sync.Once
+	// storages are the player's storages and cart, from the world's
+	// storage registry (storage.go). Only the zone the player is in uses
+	// them.
+	storages []*storage.Storage
 }
 
 // ending is why a session ends.

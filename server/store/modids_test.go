@@ -76,3 +76,21 @@ func TestModIDs(t *testing.T) {
 		}
 	}
 }
+
+// TestModIDKinds reserves an ID of every kind of mod.IDRanges, so a new
+// kind without a migration that lets mod_ids hold it fails here.
+func TestModIDKinds(t *testing.T) {
+	_, game := migrated(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	ids, err := mod.LoadIDs(ctx, store.NewModIDs(game))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range mod.IDRanges {
+		id, err := ids.ID(ctx, r, "example.kinds:"+r.Kind, "example.kinds")
+		if err != nil || id != r.Start {
+			t.Errorf("%s: %d %v", r.Kind, id, err)
+		}
+	}
+}

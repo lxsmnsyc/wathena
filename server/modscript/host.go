@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
@@ -130,6 +131,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	var sfilter *statusFilter
 	var kfilter *skillFilter
 	var cfilter *chatFilter
+	var tfilter *tradeFilter
 	if opts := c.Arg(2); !opts.IsNil() {
 		var err error
 		switch {
@@ -141,8 +143,10 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 			kfilter, err = readSkillFilter(opts)
 		case name == "chat":
 			cfilter, err = readChatFilter(opts)
+		case name == "trade":
+			tfilter, err = readTradeFilter(opts)
 		default:
-			return fmt.Errorf("events.on(%q): only the death, status, skill_used and chat events take options", name)
+			return fmt.Errorf("events.on(%q): only the death, status, skill_used, chat and trade events take options", name)
 		}
 		if err != nil {
 			return err
@@ -155,7 +159,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter, skill: kfilter, chat: cfilter}
+	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter, skill: kfilter, chat: cfilter, trade: tfilter}
 	ctx.handlers = append(ctx.handlers, h)
 	r.handlers[name] = append(r.handlers[name], h)
 	r.byID[h.id] = h
@@ -334,11 +338,11 @@ func (r *Runtime) playerGiveItem(c *script.Call) error {
 	if err := r.need("player:give_item", "player.give_items"); err != nil {
 		return err
 	}
-	item, amount := c.Int(1), int64(1)
+	itemID, amount := c.Int(1), int64(1)
 	if c.NArgs() > 2 && !c.Arg(2).IsNil() {
 		amount = c.Int(2)
 	}
-	if item <= 0 || item > 1<<32-1 || amount < 1 || amount > 30000 {
+	if itemID <= 0 || itemID > 1<<32-1 || amount < 1 || amount > 30000 {
 		return errors.New("player:give_item: want an item ID from items.id and an amount from 1 to 30000")
 	}
 	rent := c.Int(3)
@@ -349,11 +353,27 @@ func (r *Runtime) playerGiveItem(c *script.Call) error {
 	if err != nil {
 		return err
 	}
+	where, bound, err := giveOptions("player:give_item", c.Arg(5), c.Arg(6))
+	if err != nil {
+		return err
+	}
 	var ok bool
+	if where != "" || bound != item.BoundNone {
+		h, err := r.storageHost("player:give_item")
+		if err != nil {
+			return err
+		}
+		ok, err = h.StorageGive(id, where, r.actor(), uint32(itemID), int(amount), roll, bound) // #nosec G115 -- checked above.
+		if err != nil {
+			return err
+		}
+		c.Return(script.Bool(ok))
+		return nil
+	}
 	if h, isRoll := r.host.(RollHost); isRoll {
-		ok, err = h.GiveRolledItem(id, uint32(item), int(amount), rent, roll) // #nosec G115 -- checked above.
+		ok, err = h.GiveRolledItem(id, uint32(itemID), int(amount), rent, roll) // #nosec G115 -- checked above.
 	} else if roll.Mode == RollDefault {
-		ok, err = r.host.GiveItem(id, uint32(item), int(amount), rent) // #nosec G115 -- checked above.
+		ok, err = r.host.GiveItem(id, uint32(itemID), int(amount), rent) // #nosec G115 -- checked above.
 	} else {
 		err = errors.New("player:give_item: rolled values do not exist here")
 	}
@@ -705,6 +725,9 @@ func (r *Runtime) playerCountItem(c *script.Call) error {
 	id, err := playerID(c)
 	if err != nil {
 		return err
+	}
+	if !c.Arg(2).IsNil() {
+		return r.playerStorageCount(c)
 	}
 	if err := r.need("player:count_item", "game.read"); err != nil {
 		return err

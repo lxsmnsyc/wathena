@@ -9,8 +9,8 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 )
 
-// Guilds and guild storage (phase 5 step 5): what a bot knows of them
-// from the server's events, and the commands it sends.
+// Guilds (phase 5 step 5): what a bot knows of them from the server's
+// events, and the commands it sends. storage.go has the storage window.
 
 // GuildMember is one member of the bot's guild, as the server last told
 // the bot.
@@ -73,36 +73,12 @@ func (g *Guild) Skill(id uint32) int {
 	return g.Skills[id]
 }
 
-// Storage is the storage window the bot has open.
-type Storage struct {
-	Kind wathenav1.StorageKind
-	// Size is how many slots the storage has.
-	Size int
-	// Items are the filled slots, by slot.
-	Items map[int]Item
-}
-
-// Count is the amount of an item in the storage.
-func (s *Storage) Count(id uint32) int {
-	if s == nil {
-		return 0
-	}
-	n := 0
-	for _, it := range s.Items {
-		if it.ID == id {
-			n += it.Amount
-		}
-	}
-	return n
-}
-
-// guildState is what a bot knows of its guild and its storage window.
-// The caller of apply holds the bot's mu.
+// guildState is what a bot knows of its guild. The caller of apply
+// holds the bot's mu.
 type guildState struct {
 	guild *Guild
 	// invite is the last guild invite the bot has not answered.
-	invite  *wathenav1.GuildInvite
-	storage *Storage
+	invite *wathenav1.GuildInvite
 }
 
 func guildMemberOf(m *wathenav1.GuildMember) GuildMember {
@@ -142,42 +118,11 @@ func (s *guildState) apply(e *wathenav1.Event) {
 		}
 	case e.HasGuildInvite():
 		s.invite = e.GetGuildInvite()
-	case e.HasStorageOpen():
-		o := e.GetStorageOpen()
-		st := &Storage{Kind: o.GetKind(), Size: int(o.GetSize()), Items: map[int]Item{}}
-		for _, it := range o.GetItems() {
-			st.Items[int(it.GetSlot())] = Item{Slot: int(it.GetSlot()), ID: it.GetItemId(), Amount: int(it.GetAmount())}
-		}
-		s.storage = st
-	case e.HasStorageAdd():
-		a := e.GetStorageAdd()
-		if s.storage == nil {
-			return
-		}
-		it := a.GetItem()
-		slot := int(it.GetSlot())
-		// item is the slot after the change.
-		s.storage.Items[slot] = Item{Slot: slot, ID: it.GetItemId(), Amount: int(it.GetAmount())}
-	case e.HasStorageRemove():
-		r := e.GetStorageRemove()
-		if s.storage == nil {
-			return
-		}
-		slot := int(r.GetSlot())
-		it := s.storage.Items[slot]
-		it.Amount -= int(r.GetAmount())
-		if it.Amount <= 0 {
-			delete(s.storage.Items, slot)
-		} else {
-			s.storage.Items[slot] = it
-		}
-	case e.HasStorageClose():
-		s.storage = nil
 	}
 }
 
 // clone copies the state for Game.
-func (s *guildState) clone() (*Guild, *wathenav1.GuildInvite, *Storage) {
+func (s *guildState) clone() (*Guild, *wathenav1.GuildInvite) {
 	var g *Guild
 	if s.guild != nil {
 		c := *s.guild
@@ -187,13 +132,7 @@ func (s *guildState) clone() (*Guild, *wathenav1.GuildInvite, *Storage) {
 		c.Skills = maps.Clone(s.guild.Skills)
 		g = &c
 	}
-	var st *Storage
-	if s.storage != nil {
-		c := *s.storage
-		c.Items = maps.Clone(s.storage.Items)
-		st = &c
-	}
-	return g, s.invite, st
+	return g, s.invite
 }
 
 func (b *Bot) guild(ctx context.Context, c wathenav1.GuildCommand_builder) error {
@@ -283,33 +222,4 @@ func (b *Bot) GuildChat(ctx context.Context, text string) error {
 	return b.command(ctx, wathenav1.Command_builder{Chat: wathenav1.Chat_builder{
 		Channel: wathenav1.ChatChannel_CHAT_CHANNEL_GUILD, Text: text,
 	}.Build()})
-}
-
-func (b *Bot) storage(ctx context.Context, c wathenav1.StorageCommand_builder) error {
-	return b.command(ctx, wathenav1.Command_builder{Storage: c.Build()})
-}
-
-// StoragePut moves an amount from an inventory slot into the open
-// storage.
-func (b *Bot) StoragePut(ctx context.Context, slot, amount int) error {
-	return b.storage(ctx, wathenav1.StorageCommand_builder{Put: wathenav1.StorageMove_builder{
-		Slot: uint32(max(slot, 0)), Amount: uint32(max(amount, 0)), // #nosec G115 -- slots and amounts.
-	}.Build()})
-}
-
-// StorageTake moves an amount from a storage slot into the inventory.
-func (b *Bot) StorageTake(ctx context.Context, slot, amount int) error {
-	return b.storage(ctx, wathenav1.StorageCommand_builder{Take: wathenav1.StorageMove_builder{
-		Slot: uint32(max(slot, 0)), Amount: uint32(max(amount, 0)), // #nosec G115 -- slots and amounts.
-	}.Build()})
-}
-
-// StorageClose closes the storage window.
-func (b *Bot) StorageClose(ctx context.Context) error {
-	return b.storage(ctx, wathenav1.StorageCommand_builder{Close: new(true)})
-}
-
-// StorageLog asks for the guild storage log.
-func (b *Bot) StorageLog(ctx context.Context) error {
-	return b.storage(ctx, wathenav1.StorageCommand_builder{Log: new(true)})
 }

@@ -8,23 +8,35 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
+// kafraItems are the items the Kafra tests use: the free tickets of
+// storage and teleport.
+func kafraItems() *item.Table {
+	return item.New(&item.Data{Mode: "renewal", Items: []item.Def{
+		{ID: 501, AegisName: "Red_Potion", Type: "Healing", Weight: 70, Stackable: true, Script: "core:scripts/items/Red_Potion.lua"},
+		{ID: 7059, AegisName: "Cargo_Free_Ticket", Type: "Etc", Weight: 1, Stackable: true},
+		{ID: 7060, AegisName: "Warp_Free_Ticket", Type: "Etc", Weight: 1, Stackable: true},
+	}})
+}
+
 // kafraZone is prontera with core's converted Kafra kaf_prontera, as
-// waserver places it, and a player next to her with 5000 zeny.
-func kafraZone(t *testing.T) (*Zone, *Player, *entity, *syncBuffer) {
+// waserver places it, and a player next to her with 5000 zeny. setup
+// changes the player's character before it joins.
+func kafraZone(t *testing.T, setup ...func(*character.Character)) (*Zone, *Player, *entity, *syncBuffer) {
 	t.Helper()
 	z := New("map/prontera", open(400), rng.FromKey([32]byte{9}).Stream(), nil)
-	z.Items = testItems()
+	z.Items = kafraItems()
 	z.Progress = testTables()
 	z.PlayerStatus = battle.Status{MaxHP: 200, MaxSP: 50, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	coreMods(t, z)
 	logs := &syncBuffer{}
 	z.Mods.Log = slog.New(slog.NewTextHandler(logs, nil))
 	z.Mods.Server = variables.NewServer(nil, nil)
-	z.Mods.ItemIDs = map[string]uint32{"Warp_Free_Ticket": 7060, "Red_Potion": 501}
+	z.Mods.ItemIDs = map[string]uint32{"Cargo_Free_Ticket": 7059, "Warp_Free_Ticket": 7060, "Red_Potion": 501}
 	core, err := testCore()
 	if err != nil {
 		t.Fatal(err)
@@ -42,6 +54,9 @@ func kafraZone(t *testing.T) (*Zone, *Player, *entity, *syncBuffer) {
 	t.Cleanup(z.stopScripts)
 	c := savedCharacter()
 	c.Map, c.X, c.Y, c.Zeny = "map/prontera", 153, 326, 5000
+	for _, f := range setup {
+		f(c)
+	}
 	p := addCharacter(z, c, &saves{})
 	z.stepAt(50)
 	events(p)
@@ -85,10 +100,14 @@ func TestKafraSaves(t *testing.T) {
 	if strings.Join(menu, ",") != "Save,Use Storage,Use Teleport Service,Rent a Pushcart,Check Other Information,Cancel" {
 		t.Fatalf("menu %q", menu)
 	}
-	// Storage is not available yet, and the menu comes back.
+	// A Novice without Basic Skill level 6 cannot use storage, as
+	// F_CanOpenStorage, and the menu comes back.
 	ev = choose(z, p, ev, "Use Storage")
-	if lines(ev) != "Storage is not available yet." {
-		t.Fatalf("storage: %q", lines(ev))
+	if lines(ev) != "[Kafra Employee]|I'm sorry, but you|need the Novice's|Basic Skill Level 6 to|use the Storage Service." {
+		t.Fatalf("storage: %q, logs %s", lines(ev), logs)
+	}
+	if p.storage != nil || p.record.Zeny != 5000 {
+		t.Fatalf("storage %v, zeny %d", p.storage, p.record.Zeny)
 	}
 	ev = next(z, p, ev)
 	ev = choose(z, p, ev, "Save")
@@ -124,5 +143,61 @@ func TestKafraTeleportCharges(t *testing.T) {
 	// The script ended: only the Close button is left.
 	if p.talk != nil && !p.talk.ended {
 		t.Errorf("the conversation goes on after the teleport: %+v", p.talk)
+	}
+}
+
+// kafraStorage chooses Use Storage at the Kafra, and returns the events
+// up to the storage window.
+func kafraStorage(t *testing.T, z *Zone, p *Player, n *entity, logs *syncBuffer) []*wathenav1.Event {
+	t.Helper()
+	ev := next(z, p, click(z, p, n))
+	ev = choose(z, p, ev, "Use Storage")
+	if !strings.Contains(lines(ev), "Here, let me open|your Storage for you.") {
+		t.Fatalf("storage: %q, logs %s", lines(ev), logs)
+	}
+	// close2 waits for the Close button, and then the storage opens.
+	d := lastDialog(ev)
+	if d == nil || !d.HasClose() {
+		t.Fatalf("no Close button: %v", d)
+	}
+	return answer(z, p, reply(d.GetDialog(), func(b *wathenav1.NpcReply_builder) { b.Close = new(true) }))
+}
+
+// personalStorageOpened checks that the personal storage opened.
+func personalStorageOpened(t *testing.T, p *Player, ev []*wathenav1.Event) {
+	t.Helper()
+	so := eventsOf2(ev, (*wathenav1.Event).GetStorageOpen, (*wathenav1.Event).HasStorageOpen)
+	if len(so) != 1 || so[0].GetKind() != wathenav1.StorageKind_STORAGE_KIND_PERSONAL || p.storage == nil {
+		t.Fatalf("storage open %v, open %v", so, p.storage)
+	}
+}
+
+func TestKafraStorageCharges(t *testing.T) {
+	z, p, n, logs := kafraZone(t, func(c *character.Character) { c.Skills = map[int]int{skillBasic: 6} })
+	ev := kafraStorage(t, z, p, n, logs)
+	personalStorageOpened(t, p, ev)
+	// Prontera's fee is 40 zeny, and Special Reserve Points go up by
+	// 40 / 5.
+	if p.record.Zeny != 4960 {
+		t.Errorf("zeny %d, logs %s", p.record.Zeny, logs)
+	}
+	if v := p.vars[character.Variable{Mod: "core", Name: "resrvpts"}]; v != "8" {
+		t.Errorf("reserve points %q", v)
+	}
+	if p.talk != nil && !p.talk.ended {
+		t.Errorf("the conversation goes on after the storage opened: %+v", p.talk)
+	}
+}
+
+func TestKafraStorageTicket(t *testing.T) {
+	z, p, n, logs := kafraZone(t, func(c *character.Character) {
+		c.Skills = map[int]int{skillBasic: 9}
+		c.Items = []character.Item{{Slot: 0, ID: 7059, Amount: 2, Serial: item.NewSerial()}}
+	})
+	ev := kafraStorage(t, z, p, n, logs)
+	personalStorageOpened(t, p, ev)
+	// The Free Ticket for Kafra Storage pays instead of zeny.
+	if p.record.Zeny != 5000 || p.inventory.Count(7059) != 1 {
+		t.Errorf("zeny %d, tickets %d, logs %s", p.record.Zeny, p.inventory.Count(7059), logs)
 	}
 }

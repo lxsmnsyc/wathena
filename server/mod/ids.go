@@ -23,9 +23,14 @@ var (
 	JobIDs         = IDRange{Kind: "job", Start: 10_000}
 	CompanionIDs   = IDRange{Kind: "companion", Start: 10_000}
 	MountIDs       = IDRange{Kind: "mount", Start: 10_000}
+	StorageIDs     = IDRange{Kind: "storage", Start: 10_000}
 	QuestIDs       = IDRange{Kind: "quest", Start: 1_000_000}
 	AchievementIDs = IDRange{Kind: "achievement", Start: 1_000_000}
 )
+
+// IDRanges lists every kind of mod ID. The mod_ids table's check takes
+// each kind (migration 00019), and a store test reserves an ID of each.
+var IDRanges = []IDRange{ItemIDs, MonsterIDs, SkillIDs, JobIDs, CompanionIDs, MountIDs, StorageIDs, QuestIDs, AchievementIDs}
 
 // AssignedID is one ID that the server gave to a record a mod added.
 type AssignedID struct {

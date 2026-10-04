@@ -390,6 +390,44 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 			return nil, fmt.Errorf("world:chat: %w", err)
 		}
 		return nil, nil
+	case "trade":
+		a, _ := args[0].AsInt()
+		b, _ := args[1].AsInt()
+		offers := [2]zone.TradeOffer{}
+		for i := range offers {
+			t, ok := args[2+i].AsTable()
+			if !ok {
+				continue
+			}
+			offers[i].Items = map[uint32]int{}
+			if items, ok := t.Get("items").AsTable(); ok {
+				for _, f := range items.Fields {
+					id, okID := f.Key.AsInt()
+					n, okN := f.Value.AsInt()
+					if !okID || !okN || id <= 0 || id > 1<<32-1 || n < 1 || n > 30000 {
+						return nil, errors.New("world:trade: items maps item IDs to amounts from 1 to 30000")
+					}
+					offers[i].Items[uint32(id)] += int(n)
+				}
+			}
+			if z, ok := t.Get("zeny").AsInt(); ok {
+				offers[i].Zeny = z
+			}
+		}
+		ok, why, err := w.h.Trade(a, b, offers[0], offers[1])
+		if err != nil {
+			return nil, fmt.Errorf("world:trade: %w", err)
+		}
+		if ok {
+			return []script.Value{script.Bool(true)}, nil
+		}
+		return []script.Value{script.Bool(false), script.String(why)}, nil
+	case "close_storage":
+		p, _ := args[0].AsInt()
+		if err := w.h.CloseStorage(p); err != nil {
+			return nil, fmt.Errorf("world:close_storage: %w", err)
+		}
+		return nil, nil
 	case "get_chat":
 		p, _ := args[0].AsInt()
 		var list []script.Value

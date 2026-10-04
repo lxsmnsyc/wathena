@@ -226,6 +226,9 @@ func (z *Zone) setOptions(p *Player, o int) {
 	z.statsChanged(p)
 	p.entity.optionChanged = true
 	z.updateBodyLook(p)
+	if hadCart(old) != hadCart(o) {
+		z.cartChanged(p, hadCart(old))
+	}
 }
 
 // mountedJobs are the classes status_set_viewdata shows for a job that

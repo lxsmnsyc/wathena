@@ -16,9 +16,11 @@ import (
 // guildgetexp needs the guild.manage permission. Core is built in and
 // holds every permission, so the converted files need no manifest entry.
 //
-// guildopenstorage and guildopenstorage_log convert to R.guild_storage
-// and R.guild_storage_log. They use core's wa.internal module, which is
-// not API, and say that guild storage is not available elsewhere.
+// guildopenstorage converts to R.guild_storage, which calls
+// player:open_guild_storage and returns rAthena's GSTORAGE_ value.
+// guildopenstorage_log converts to R.guild_storage_log, which uses core's
+// wa.internal module, which is not API, and says that the log is not
+// available elsewhere.
 
 // The permission bits of guild_has_permission, as rAthena's
 // e_guild_permission, and the fields of a guild position they read.
@@ -169,8 +171,6 @@ func guildUnsupported(name string) string {
 		return "the guild API cannot raise a guild skill"
 	case "guildchangegm":
 		return "it names the new master by name, and guild:set_master takes a player handle"
-	case "guildstoragecountitem", "guildstoragecountitem2":
-		return "the guild API cannot read the guild storage"
 	case "getguildmasterid":
 		return "the guild API does not give character IDs"
 	case "getguildalliance":
