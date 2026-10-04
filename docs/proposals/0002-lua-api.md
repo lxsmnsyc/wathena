@@ -892,6 +892,16 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Limits**, with rAthena's defaults and hard maximums: `guild_members` before Guild Extension (16, at most 200), `guild_positions` (20, at most 40), `guild_allies` (3, at most 10), `guild_enemies` (3, at most 10) and `guild_storage` (500, at most 2,000).
     - Castles, sieges and guardians are tier 2 and come later.
 
+29. Storage, cart, trade and limit ranges (phase 5 step 6). The user approved these on 2026-10-04:
+    - **Storage.** `player:open_storage(name)` opens the account's main storage without a name, and replaces `openstorage` and `openstorage2`. `player:open_guild_storage()` replaces the core-only `wa.internal` call of step 5. Opening needs no permission; scripts charge any fee. Extra storages are records in `data/storages.yml`: `name`, `display_name`, `slots`, and whether the account or the character owns it.
+    - **Storage and cart items from scripts.** `player:count_item(item, { from })`, `player:give_item(item, amount, { to })` and `player:take_item(item, amount, { from })` take `"storage"`, `"cart"` or a storage name, with the permissions the calls already need. Without the option they act on the inventory, as before. `guild:count_item(item)` reads guild storage.
+    - **Item restrictions** in `data/items.yml`: `restrictions`, a list of `no_drop`, `no_trade`, `no_sell`, `no_cart`, `no_storage`, `no_guild_storage` and `no_mail`, from rAthena's `item_trade` table.
+    - **Bound items.** `give_item(..., { bound = "account" | "character" | "party" | "guild" })`. A bound item cannot be traded or dropped, and goes only into storage its owner shares.
+    - **Trade.** Event `trade`, with { `players`, `items`, `zeny` }, after a trade completes, filtered by `player`. Hook `trade` returns true, or false and a message, to refuse a trade before it completes, and needs `rules.override`.
+    - **Limit ranges.** Each limit in a ruleset has `base`, what a player or guild starts with, and `max`, where expansions such as items, Guild Extension or scripts stop: `inventory_slots: { base: 100, max: 200 }`. The engine has a fixed ceiling per limit that no ruleset may exceed; a `max` above it fails the load. This applies to the limits of steps 4 and 5 too. A call that expands a limit is new API for a later review.
+    - **New limits** with rAthena's values: `inventory_slots` (base 100, max 200), `storage_slots` (600), `cart_slots` (100), and `guild_storage` changes to rAthena's 600. The cart weight limit, 8,000, is a ruleset rule.
+    - **Engine ceilings** come from a benchmark at the ceiling (message size, save time and tick cost). Storage and cart lists are sent in pages, so the 64 KiB message limit does not cap them. Starting values to check: inventory 1,000, storage 10,000, cart 1,000, party 256, guild 512, friends 1,000, block list 1,000 and card slots 16.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
