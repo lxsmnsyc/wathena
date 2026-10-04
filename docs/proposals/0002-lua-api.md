@@ -884,6 +884,14 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Limits.** A ruleset mod's `limits` block sets limits that rAthena compiles in, with rAthena's values as defaults, such as `party_members` (12), `friends` (40) and `block_list` (20). rAthena's `battle_athena.conf` values, such as `party_share_level` (15), are ruleset rules. Each limit has a hard maximum, such as 64 party members, 200 friends, 100 blocked names, 8 card slots and 2,000 storage slots. A ruleset outside the bounds fails to load. Lowering a limit deletes nothing: an over-full list keeps its entries and cannot grow, and cards over the slot limit stay but give no bonus. The client gets the limits at login. Lua reads them as `rules.limits.<name>`, read-only. Step 4 adds the party, friend and block list limits, and later steps add the guild, storage, cart, inventory and card slot limits.
     - Test worlds call `parties.create` without the permission.
 
+28. Guilds (phase 5 step 5). The user approved these on 2026-10-04:
+    - **Guild handles.** `player.guild` is a guild or nil. Read-only fields: `id`, `name`, `master` (a handle, or nil when the master is offline or on another map), `master_name`, `level`, `exp`, `notice` (`{ title, text }`) and `member_count`. `guild:get_members()` returns handles of online members. `guild:get_member_names()` returns every member's name. `guild:get_position(player)` returns `{ name, can_invite, can_expel, can_use_storage, exp_tax }`. `guild:get_skill_level(skill)`, `guild:is_allied(other)` and `guild:is_enemy(other)`.
+    - **`wa.guilds`**: `guilds.create(master, name)` needs no Emperium, so the script decides the cost. It returns the guild, or nil when the name is taken or the master has a guild. `guild:add(player)`, `guild:remove(player)`, `guild:set_master(player)`, `guild:set_notice(title, text)`, `guild:give_exp(amount)` and `guild:disband()` need the new permission `guild.manage`. `guilds.get(id)` and `guilds.find(name)` find a guild. Reading needs `game.read`.
+    - **Events** `guild_join` and `guild_leave`, with { `guild`, `player`, `reason` }, and `guild_change` for a new master, a level up, a notice or an emblem.
+    - The `experience` hook's object gains `guild` and `guild_tax`, the share that goes to the guild.
+    - **Limits**, with rAthena's defaults and hard maximums: `guild_members` before Guild Extension (16, at most 200), `guild_positions` (20, at most 40), `guild_allies` (3, at most 10), `guild_enemies` (3, at most 10) and `guild_storage` (500, at most 2,000).
+    - Castles, sieges and guardians are tier 2 and come later.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
