@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi8QcKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIeCgpMZWFyblNraWxsEhAKCHNraWxsX2lkGAEgASgNIhwKBENlbGwSCQoBeBgBIAEoDRIJCgF5GAIgASgNImAKBENoYXQSKAoHY2hhbm5lbBgBIAEoDjIXLndhdGhlbmEudjEuQ2hhdENoYW5uZWwSDAoEdGV4dBgCIAEoCRIKCgJ0bxgDIAEoCRIUCgxjaGFubmVsX25hbWUYBCABKAkiSQoOQ2hhbm5lbENvbW1hbmQSKQoGYWN0aW9uGAEgASgOMhkud2F0aGVuYS52MS5DaGFubmVsQWN0aW9uEgwKBG5hbWUYAiABKAkiJgoFQmxvY2sSDAoEbmFtZRgBIAEoCRIPCgd1bmJsb2NrGAIgASgIIjcKBlJlcG9ydBIMCgRuYW1lGAEgASgJEg8KB2xpbmVfaWQYAiABKAwSDgoGcmVhc29uGAMgASgJIhcKCE5wY0NsaWNrEgsKA25wYxgBIAEoDSKDAQoITnBjUmVwbHkSDgoGZGlhbG9nGAEgASgNEg4KBG5leHQYAiABKAhIABIOCgRtZW51GAMgASgNSAASFAoKaW5wdXRfdGV4dBgEIAEoCUgAEhYKDGlucHV0X251bWJlchgFIAEoA0gAEg8KBWNsb3NlGAYgASgISABCCAoGYW5zd2VyIj4KB1Nob3BCdXkSCwoDbnBjGAEgASgNEiYKBWl0ZW1zGAIgAygLMhcud2F0aGVuYS52MS5TaG9wQnV5TGluZSIuCgtTaG9wQnV5TGluZRIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDSJACghTaG9wU2VsbBILCgNucGMYASABKA0SJwoFaXRlbXMYAiADKAsyGC53YXRoZW5hLnYxLlNob3BTZWxsTGluZSIsCgxTaG9wU2VsbExpbmUSDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iGAoJU2hvcENsb3NlEgsKA25wYxgBIAEoDSIXCgdVc2VJdGVtEgwKBHNsb3QYASABKA0iKAoIRHJvcEl0ZW0SDAoEc2xvdBgBIAEoDRIOCgZhbW91bnQYAiABKA0iFgoGUGlja1VwEgwKBGl0ZW0YASABKA0iPwoJUmFpc2VTdGF0EiIKBHN0YXQYASABKA4yFC53YXRoZW5hLnYxLkJhc2VTdGF0Eg4KBmFtb3VudBgCIAEoDSIrCglFcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDRIQCghwb3NpdGlvbhgCIAEoDSIbCgtVbmVxdWlwSXRlbRIMCgRzbG90GAEgASgNIjMKCkluc2VydENhcmQSEQoJY2FyZF9zbG90GAEgASgNEhIKCmVxdWlwX3Nsb3QYAiABKA0i4wEKDFBhcnR5Q29tbWFuZBIpCgZjcmVhdGUYASABKAsyFy53YXRoZW5hLnYxLlBhcnR5Q3JlYXRlSAASEAoGaW52aXRlGAIgASgJSAASJwoFcmVwbHkYAyABKAsyFi53YXRoZW5hLnYxLlBhcnR5UmVwbHlIABIPCgVsZWF2ZRgEIAEoCEgAEg8KBWV4cGVsGAUgASgJSAASFAoKc2V0X2xlYWRlchgGIAEoCUgAEisKB29wdGlvbnMYByABKAsyGC53YXRoZW5hLnYxLlBhcnR5T3B0aW9uc0gAQggKBmFjdGlvbiJGCgtQYXJ0eUNyZWF0ZRIMCgRuYW1lGAEgASgJEikKB29wdGlvbnMYAiABKAsyGC53YXRoZW5hLnYxLlBhcnR5T3B0aW9ucyIuCgpQYXJ0eVJlcGx5EhAKCHBhcnR5X2lkGAEgASgEEg4KBmFjY2VwdBgCIAEoCCJKCgxQYXJ0eU9wdGlvbnMSEAoIZXhwX2V2ZW4YASABKAgSEQoJaXRlbV9ldmVuGAIgASgIEhUKDXBpY2t1cF9zaGFyZWQYAyABKAgiZAoNRnJpZW5kQ29tbWFuZBINCgNhZGQYASABKAlIABIoCgVyZXBseRgCIAEoCzIXLndhdGhlbmEudjEuRnJpZW5kUmVwbHlIABIQCgZyZW1vdmUYAyABKAlIAEIICgZhY3Rpb24iKwoLRnJpZW5kUmVwbHkSDAoEbmFtZRgBIAEoCRIOCgZhY2NlcHQYAiABKAgikwEKE1BhcnR5Qm9va2luZ0NvbW1hbmQSLgoIcmVnaXN0ZXIYASABKAsyGi53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0FkSAASMAoGc2VhcmNoGAIgASgLMh4ud2F0aGVuYS52MS5QYXJ0eUJvb2tpbmdTZWFyY2hIABIQCgZkZWxldGUYAyABKAhIAEIICgZhY3Rpb24iSAoOUGFydHlCb29raW5nQWQSDQoFbGV2ZWwYASABKA0SCwoDbWFwGAIgASgJEgwKBGpvYnMYAyADKA0SDAoEbm90ZRgEIAEoCSI9ChJQYXJ0eUJvb2tpbmdTZWFyY2gSDQoFbGV2ZWwYASABKA0SCwoDbWFwGAIgASgJEgsKA2pvYhgDIAEoDSr1AQoLQ2hhdENoYW5uZWwSHAoYQ0hBVF9DSEFOTkVMX1VOU1BFQ0lGSUVEEAASFgoSQ0hBVF9DSEFOTkVMX0xPQ0FMEAESFgoSQ0hBVF9DSEFOTkVMX1BBUlRZEAISFgoSQ0hBVF9DSEFOTkVMX0dVSUxEEAMSGAoUQ0hBVF9DSEFOTkVMX1dISVNQRVIQBBIWChJDSEFUX0NIQU5ORUxfV09STEQQBRIXChNDSEFUX0NIQU5ORUxfU1lTVEVNEAYSHQoZQ0hBVF9DSEFOTkVMX0FOTk9VTkNFTUVOVBAHEhYKEkNIQVRfQ0hBTk5FTF9OQU1FRBAIKpcBCg1DaGFubmVsQWN0aW9uEh4KGkNIQU5ORUxfQUNUSU9OX1VOU1BFQ0lGSUVEEAASFwoTQ0hBTk5FTF9BQ1RJT05fSk9JThABEhgKFENIQU5ORUxfQUNUSU9OX0xFQVZFEAISFwoTQ0hBTk5FTF9BQ1RJT05fTElTVBADEhoKFkNIQU5ORUxfQUNUSU9OX01FTUJFUlMQBCqXAQoIQmFzZVN0YXQSGQoVQkFTRV9TVEFUX1VOU1BFQ0lGSUVEEAASEQoNQkFTRV9TVEFUX1NUUhABEhEKDUJBU0VfU1RBVF9BR0kQAhIRCg1CQVNFX1NUQVRfVklUEAMSEQoNQkFTRV9TVEFUX0lOVBAEEhEKDUJBU0VfU1RBVF9ERVgQBRIRCg1CQVNFX1NUQVRfTFVLEAZCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEiywgKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIABIpCgVndWlsZBgYIAEoCzIYLndhdGhlbmEudjEuR3VpbGRDb21tYW5kSAASLQoHc3RvcmFnZRgZIAEoCzIaLndhdGhlbmEudjEuU3RvcmFnZUNvbW1hbmRIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIeCgpMZWFyblNraWxsEhAKCHNraWxsX2lkGAEgASgNIhwKBENlbGwSCQoBeBgBIAEoDRIJCgF5GAIgASgNImAKBENoYXQSKAoHY2hhbm5lbBgBIAEoDjIXLndhdGhlbmEudjEuQ2hhdENoYW5uZWwSDAoEdGV4dBgCIAEoCRIKCgJ0bxgDIAEoCRIUCgxjaGFubmVsX25hbWUYBCABKAkiSQoOQ2hhbm5lbENvbW1hbmQSKQoGYWN0aW9uGAEgASgOMhkud2F0aGVuYS52MS5DaGFubmVsQWN0aW9uEgwKBG5hbWUYAiABKAkiJgoFQmxvY2sSDAoEbmFtZRgBIAEoCRIPCgd1bmJsb2NrGAIgASgIIlkKBlJlcG9ydBIMCgRuYW1lGAEgASgJEg8KB2xpbmVfaWQYAiABKAwSDgoGcmVhc29uGAMgASgJEhAKCGd1aWxkX2lkGAQgASgEEg4KBmVtYmxlbRgFIAEoCCIXCghOcGNDbGljaxILCgNucGMYASABKA0igwEKCE5wY1JlcGx5Eg4KBmRpYWxvZxgBIAEoDRIOCgRuZXh0GAIgASgISAASDgoEbWVudRgDIAEoDUgAEhQKCmlucHV0X3RleHQYBCABKAlIABIWCgxpbnB1dF9udW1iZXIYBSABKANIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFuc3dlciI+CgdTaG9wQnV5EgsKA25wYxgBIAEoDRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuU2hvcEJ1eUxpbmUiLgoLU2hvcEJ1eUxpbmUSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0iQAoIU2hvcFNlbGwSCwoDbnBjGAEgASgNEicKBWl0ZW1zGAIgAygLMhgud2F0aGVuYS52MS5TaG9wU2VsbExpbmUiLAoMU2hvcFNlbGxMaW5lEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhgKCVNob3BDbG9zZRILCgNucGMYASABKA0iFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIigKCERyb3BJdGVtEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0iKwoJRXF1aXBJdGVtEgwKBHNsb3QYASABKA0SEAoIcG9zaXRpb24YAiABKA0iGwoLVW5lcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDSIzCgpJbnNlcnRDYXJkEhEKCWNhcmRfc2xvdBgBIAEoDRISCgplcXVpcF9zbG90GAIgASgNIuMBCgxQYXJ0eUNvbW1hbmQSKQoGY3JlYXRlGAEgASgLMhcud2F0aGVuYS52MS5QYXJ0eUNyZWF0ZUgAEhAKBmludml0ZRgCIAEoCUgAEicKBXJlcGx5GAMgASgLMhYud2F0aGVuYS52MS5QYXJ0eVJlcGx5SAASDwoFbGVhdmUYBCABKAhIABIPCgVleHBlbBgFIAEoCUgAEhQKCnNldF9sZWFkZXIYBiABKAlIABIrCgdvcHRpb25zGAcgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnNIAEIICgZhY3Rpb24iRgoLUGFydHlDcmVhdGUSDAoEbmFtZRgBIAEoCRIpCgdvcHRpb25zGAIgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnMiLgoKUGFydHlSZXBseRIQCghwYXJ0eV9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiSgoMUGFydHlPcHRpb25zEhAKCGV4cF9ldmVuGAEgASgIEhEKCWl0ZW1fZXZlbhgCIAEoCBIVCg1waWNrdXBfc2hhcmVkGAMgASgIImQKDUZyaWVuZENvbW1hbmQSDQoDYWRkGAEgASgJSAASKAoFcmVwbHkYAiABKAsyFy53YXRoZW5hLnYxLkZyaWVuZFJlcGx5SAASEAoGcmVtb3ZlGAMgASgJSABCCAoGYWN0aW9uIisKC0ZyaWVuZFJlcGx5EgwKBG5hbWUYASABKAkSDgoGYWNjZXB0GAIgASgIIpMBChNQYXJ0eUJvb2tpbmdDb21tYW5kEi4KCHJlZ2lzdGVyGAEgASgLMhoud2F0aGVuYS52MS5QYXJ0eUJvb2tpbmdBZEgAEjAKBnNlYXJjaBgCIAEoCzIeLndhdGhlbmEudjEuUGFydHlCb29raW5nU2VhcmNoSAASEAoGZGVsZXRlGAMgASgISABCCAoGYWN0aW9uIkgKDlBhcnR5Qm9va2luZ0FkEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRIMCgRqb2JzGAMgAygNEgwKBG5vdGUYBCABKAkiPQoSUGFydHlCb29raW5nU2VhcmNoEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRILCgNqb2IYAyABKA0i4wMKDEd1aWxkQ29tbWFuZBIQCgZjcmVhdGUYASABKAlIABIQCgZpbnZpdGUYAiABKAlIABInCgVyZXBseRgDIAEoCzIWLndhdGhlbmEudjEuR3VpbGRSZXBseUgAEg8KBWxlYXZlGAQgASgJSAASJwoFZXhwZWwYBSABKAsyFi53YXRoZW5hLnYxLkd1aWxkRXhwZWxIABIvCglwb3NpdGlvbnMYBiABKAsyGi53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb25zSAASOgoPbWVtYmVyX3Bvc2l0aW9uGAcgASgLMh8ud2F0aGVuYS52MS5HdWlsZE1lbWJlclBvc2l0aW9uSAASKQoGbm90aWNlGAggASgLMhcud2F0aGVuYS52MS5HdWlsZE5vdGljZUgAEhIKCHNraWxsX3VwGAkgASgNSAASDgoEYWxseRgKIAEoCUgAEiwKCmFsbHlfcmVwbHkYCyABKAsyFi53YXRoZW5hLnYxLkd1aWxkUmVwbHlIABIPCgVlbmVteRgMIAEoCUgAEjQKDGVuZF9yZWxhdGlvbhgNIAEoCzIcLndhdGhlbmEudjEuR3VpbGRSZWxhdGlvbkVuZEgAEhEKB2Rpc2JhbmQYDiABKAlIAEIICgZhY3Rpb24iLgoKR3VpbGRSZXBseRIQCghndWlsZF9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiKgoKR3VpbGRFeHBlbBIMCgRuYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSI+Cg5HdWlsZFBvc2l0aW9ucxIsCglwb3NpdGlvbnMYASADKAsyGS53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb24ifQoNR3VpbGRQb3NpdGlvbhINCgVpbmRleBgBIAEoDRIMCgRuYW1lGAIgASgJEhIKCmNhbl9pbnZpdGUYAyABKAgSEQoJY2FuX2V4cGVsGAQgASgIEhcKD2Nhbl91c2Vfc3RvcmFnZRgFIAEoCBIPCgdleHBfdGF4GAYgASgNIjUKE0d1aWxkTWVtYmVyUG9zaXRpb24SDAoEbmFtZRgBIAEoCRIQCghwb3NpdGlvbhgCIAEoDSIqCgtHdWlsZE5vdGljZRINCgV0aXRsZRgBIAEoCRIMCgR0ZXh0GAIgASgJIjMKEEd1aWxkUmVsYXRpb25FbmQSEAoIZ3VpbGRfaWQYASABKAQSDQoFZW5lbXkYAiABKAgiiwEKDlN0b3JhZ2VDb21tYW5kEiYKA3B1dBgBIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABInCgR0YWtlGAIgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEg8KBWNsb3NlGAMgASgISAASDQoDbG9nGAQgASgISABCCAoGYWN0aW9uIisKC1N0b3JhZ2VNb3ZlEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNKvUBCgtDaGF0Q2hhbm5lbBIcChhDSEFUX0NIQU5ORUxfVU5TUEVDSUZJRUQQABIWChJDSEFUX0NIQU5ORUxfTE9DQUwQARIWChJDSEFUX0NIQU5ORUxfUEFSVFkQAhIWChJDSEFUX0NIQU5ORUxfR1VJTEQQAxIYChRDSEFUX0NIQU5ORUxfV0hJU1BFUhAEEhYKEkNIQVRfQ0hBTk5FTF9XT1JMRBAFEhcKE0NIQVRfQ0hBTk5FTF9TWVNURU0QBhIdChlDSEFUX0NIQU5ORUxfQU5OT1VOQ0VNRU5UEAcSFgoSQ0hBVF9DSEFOTkVMX05BTUVEEAgqlwEKDUNoYW5uZWxBY3Rpb24SHgoaQ0hBTk5FTF9BQ1RJT05fVU5TUEVDSUZJRUQQABIXChNDSEFOTkVMX0FDVElPTl9KT0lOEAESGAoUQ0hBTk5FTF9BQ1RJT05fTEVBVkUQAhIXChNDSEFOTkVMX0FDVElPTl9MSVNUEAMSGgoWQ0hBTk5FTF9BQ1RJT05fTUVNQkVSUxAEKpcBCghCYXNlU3RhdBIZChVCQVNFX1NUQVRfVU5TUEVDSUZJRUQQABIRCg1CQVNFX1NUQVRfU1RSEAESEQoNQkFTRV9TVEFUX0FHSRACEhEKDUJBU0VfU1RBVF9WSVQQAxIRCg1CQVNFX1NUQVRfSU5UEAQSEQoNQkFTRV9TVEFUX0RFWBAFEhEKDUJBU0VfU1RBVF9MVUsQBkJAWj5naXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL3YxO3dhdGhlbmF2MWIGcHJvdG8z");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -160,6 +160,18 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: PartyBookingCommand;
     case: "partyBooking";
+  } | {
+    /**
+     * @generated from field: wathena.v1.GuildCommand guild = 24;
+     */
+    value: GuildCommand;
+    case: "guild";
+  } | {
+    /**
+     * @generated from field: wathena.v1.StorageCommand storage = 25;
+     */
+    value: StorageCommand;
+    case: "storage";
   } | { case: undefined; value?: undefined };
 };
 
@@ -410,7 +422,8 @@ export const BlockSchema: GenMessage<Block> = /*@__PURE__*/
  */
 export type Report = Message<"wathena.v1.Report"> & {
   /**
-   * name is the reported character's name.
+   * name is the reported character's name. It is empty for a report of
+   * a guild.
    *
    * @generated from field: string name = 1;
    */
@@ -430,6 +443,19 @@ export type Report = Message<"wathena.v1.Report"> & {
    * @generated from field: string reason = 3;
    */
   reason: string;
+
+  /**
+   * guild_id reports a guild's name, or its emblem with emblem set, in
+   * place of a player (strategy section 7.10).
+   *
+   * @generated from field: uint64 guild_id = 4;
+   */
+  guildId: bigint;
+
+  /**
+   * @generated from field: bool emblem = 5;
+   */
+  emblem: boolean;
 };
 
 /**
@@ -1190,6 +1216,422 @@ export type PartyBookingSearch = Message<"wathena.v1.PartyBookingSearch"> & {
  */
 export const PartyBookingSearchSchema: GenMessage<PartyBookingSearch> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 32);
+
+/**
+ * GuildCommand is a guild action, as rAthena's guild packets. The server
+ * answers with GuildResult when the action fails or is refused, and with
+ * GuildInfo when the guild changed. Guild chat is Chat with
+ * CHAT_CHANNEL_GUILD.
+ *
+ * @generated from message wathena.v1.GuildCommand
+ */
+export type GuildCommand = Message<"wathena.v1.GuildCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.GuildCommand.action
+   */
+  action: {
+    /**
+     * create makes a guild with the player as its master, as
+     * guild_create. It takes an Emperium with guild_emperium_check.
+     *
+     * @generated from field: string create = 1;
+     */
+    value: string;
+    case: "create";
+  } | {
+    /**
+     * invite asks a player by name to join, as guild_invite. The
+     * player's position must allow invites.
+     *
+     * @generated from field: string invite = 2;
+     */
+    value: string;
+    case: "invite";
+  } | {
+    /**
+     * reply answers GuildInvite, as guild_reply_invite.
+     *
+     * @generated from field: wathena.v1.GuildReply reply = 3;
+     */
+    value: GuildReply;
+    case: "reply";
+  } | {
+    /**
+     * leave leaves the guild, as guild_leave, with a reason of at most
+     * 39 characters. The master cannot leave.
+     *
+     * @generated from field: string leave = 4;
+     */
+    value: string;
+    case: "leave";
+  } | {
+    /**
+     * expel removes a member, as guild_expulsion. The player's position
+     * must allow expelling, and the master cannot be expelled.
+     *
+     * @generated from field: wathena.v1.GuildExpel expel = 5;
+     */
+    value: GuildExpel;
+    case: "expel";
+  } | {
+    /**
+     * positions changes the guild's positions, as guild_change_position.
+     * Only the master may do it.
+     *
+     * @generated from field: wathena.v1.GuildPositions positions = 6;
+     */
+    value: GuildPositions;
+    case: "positions";
+  } | {
+    /**
+     * member_position gives a member a position, as
+     * guild_change_memberposition. Position 0 hands the guild to the
+     * member, as guild_gm_change. Only the master may do it.
+     *
+     * @generated from field: wathena.v1.GuildMemberPosition member_position = 7;
+     */
+    value: GuildMemberPosition;
+    case: "memberPosition";
+  } | {
+    /**
+     * notice changes the guild notice, as guild_change_notice. Only the
+     * master may do it.
+     *
+     * @generated from field: wathena.v1.GuildNotice notice = 8;
+     */
+    value: GuildNotice;
+    case: "notice";
+  } | {
+    /**
+     * skill_up raises a guild skill by its ID, as guild_skillup. Only the
+     * master may do it.
+     *
+     * @generated from field: uint32 skill_up = 9;
+     */
+    value: number;
+    case: "skillUp";
+  } | {
+    /**
+     * ally asks the guild of an online player by name to be allies, as
+     * guild_reqalliance. Only the master may do it.
+     *
+     * @generated from field: string ally = 10;
+     */
+    value: string;
+    case: "ally";
+  } | {
+    /**
+     * ally_reply answers GuildAllyRequest, as guild_reply_reqalliance.
+     *
+     * @generated from field: wathena.v1.GuildReply ally_reply = 11;
+     */
+    value: GuildReply;
+    case: "allyReply";
+  } | {
+    /**
+     * enemy makes the guild of an online player by name an enemy, as
+     * guild_opposition. Only the master may do it.
+     *
+     * @generated from field: string enemy = 12;
+     */
+    value: string;
+    case: "enemy";
+  } | {
+    /**
+     * end_relation ends an alliance or an enemy relation, as
+     * guild_delalliance. Only the master may do it.
+     *
+     * @generated from field: wathena.v1.GuildRelationEnd end_relation = 13;
+     */
+    value: GuildRelationEnd;
+    case: "endRelation";
+  } | {
+    /**
+     * disband breaks the guild up, as guild_break: the master must name
+     * the guild, and be its only member.
+     *
+     * @generated from field: string disband = 14;
+     */
+    value: string;
+    case: "disband";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.GuildCommand.
+ * Use `create(GuildCommandSchema)` to create a new message.
+ */
+export const GuildCommandSchema: GenMessage<GuildCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 33);
+
+/**
+ * @generated from message wathena.v1.GuildReply
+ */
+export type GuildReply = Message<"wathena.v1.GuildReply"> & {
+  /**
+   * guild_id is GuildInvite.guild_id or GuildAllyRequest.guild_id.
+   *
+   * @generated from field: uint64 guild_id = 1;
+   */
+  guildId: bigint;
+
+  /**
+   * @generated from field: bool accept = 2;
+   */
+  accept: boolean;
+};
+
+/**
+ * Describes the message wathena.v1.GuildReply.
+ * Use `create(GuildReplySchema)` to create a new message.
+ */
+export const GuildReplySchema: GenMessage<GuildReply> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 34);
+
+/**
+ * @generated from message wathena.v1.GuildExpel
+ */
+export type GuildExpel = Message<"wathena.v1.GuildExpel"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * reason is at most 39 characters, as the expulsion list keeps.
+   *
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message wathena.v1.GuildExpel.
+ * Use `create(GuildExpelSchema)` to create a new message.
+ */
+export const GuildExpelSchema: GenMessage<GuildExpel> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 35);
+
+/**
+ * @generated from message wathena.v1.GuildPositions
+ */
+export type GuildPositions = Message<"wathena.v1.GuildPositions"> & {
+  /**
+   * @generated from field: repeated wathena.v1.GuildPosition positions = 1;
+   */
+  positions: GuildPosition[];
+};
+
+/**
+ * Describes the message wathena.v1.GuildPositions.
+ * Use `create(GuildPositionsSchema)` to create a new message.
+ */
+export const GuildPositionsSchema: GenMessage<GuildPositions> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 36);
+
+/**
+ * GuildPosition is one of a guild's positions, as rAthena's
+ * guild_position.
+ *
+ * @generated from message wathena.v1.GuildPosition
+ */
+export type GuildPosition = Message<"wathena.v1.GuildPosition"> & {
+  /**
+   * index is the position's number, from 0. Position 0 is the master's.
+   *
+   * @generated from field: uint32 index = 1;
+   */
+  index: number;
+
+  /**
+   * name is 1 to 24 characters.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bool can_invite = 3;
+   */
+  canInvite: boolean;
+
+  /**
+   * @generated from field: bool can_expel = 4;
+   */
+  canExpel: boolean;
+
+  /**
+   * @generated from field: bool can_use_storage = 5;
+   */
+  canUseStorage: boolean;
+
+  /**
+   * exp_tax is the percent of base exp members of this position give the
+   * guild, at most guild_exp_limit.
+   *
+   * @generated from field: uint32 exp_tax = 6;
+   */
+  expTax: number;
+};
+
+/**
+ * Describes the message wathena.v1.GuildPosition.
+ * Use `create(GuildPositionSchema)` to create a new message.
+ */
+export const GuildPositionSchema: GenMessage<GuildPosition> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 37);
+
+/**
+ * @generated from message wathena.v1.GuildMemberPosition
+ */
+export type GuildMemberPosition = Message<"wathena.v1.GuildMemberPosition"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: uint32 position = 2;
+   */
+  position: number;
+};
+
+/**
+ * Describes the message wathena.v1.GuildMemberPosition.
+ * Use `create(GuildMemberPositionSchema)` to create a new message.
+ */
+export const GuildMemberPositionSchema: GenMessage<GuildMemberPosition> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 38);
+
+/**
+ * GuildNotice is the guild notice, as rAthena's mes1 and mes2.
+ *
+ * @generated from message wathena.v1.GuildNotice
+ */
+export type GuildNotice = Message<"wathena.v1.GuildNotice"> & {
+  /**
+   * title is at most 59 characters, and text at most 119.
+   *
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string text = 2;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message wathena.v1.GuildNotice.
+ * Use `create(GuildNoticeSchema)` to create a new message.
+ */
+export const GuildNoticeSchema: GenMessage<GuildNotice> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 39);
+
+/**
+ * @generated from message wathena.v1.GuildRelationEnd
+ */
+export type GuildRelationEnd = Message<"wathena.v1.GuildRelationEnd"> & {
+  /**
+   * @generated from field: uint64 guild_id = 1;
+   */
+  guildId: bigint;
+
+  /**
+   * enemy ends an enemy relation. An alliance ends otherwise.
+   *
+   * @generated from field: bool enemy = 2;
+   */
+  enemy: boolean;
+};
+
+/**
+ * Describes the message wathena.v1.GuildRelationEnd.
+ * Use `create(GuildRelationEndSchema)` to create a new message.
+ */
+export const GuildRelationEndSchema: GenMessage<GuildRelationEnd> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 40);
+
+/**
+ * StorageCommand moves items between the inventory and the open storage
+ * window, as rAthena's storage packets. The server answers with
+ * StorageAdd and StorageRemove, InventoryAdd and InventoryRemove, or
+ * StorageResult. Guild storage opens from an NPC.
+ *
+ * @generated from message wathena.v1.StorageCommand
+ */
+export type StorageCommand = Message<"wathena.v1.StorageCommand"> & {
+  /**
+   * @generated from oneof wathena.v1.StorageCommand.action
+   */
+  action: {
+    /**
+     * put moves an amount from an inventory slot into the storage, as
+     * storage_guild_storageadd.
+     *
+     * @generated from field: wathena.v1.StorageMove put = 1;
+     */
+    value: StorageMove;
+    case: "put";
+  } | {
+    /**
+     * take moves an amount from a storage slot into the inventory, as
+     * storage_guild_storageget.
+     *
+     * @generated from field: wathena.v1.StorageMove take = 2;
+     */
+    value: StorageMove;
+    case: "take";
+  } | {
+    /**
+     * close closes the storage window, as storage_guild_storageclose.
+     *
+     * @generated from field: bool close = 3;
+     */
+    value: boolean;
+    case: "close";
+  } | {
+    /**
+     * log asks for the guild storage log, as storage_guild_log_read.
+     *
+     * @generated from field: bool log = 4;
+     */
+    value: boolean;
+    case: "log";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message wathena.v1.StorageCommand.
+ * Use `create(StorageCommandSchema)` to create a new message.
+ */
+export const StorageCommandSchema: GenMessage<StorageCommand> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 41);
+
+/**
+ * @generated from message wathena.v1.StorageMove
+ */
+export type StorageMove = Message<"wathena.v1.StorageMove"> & {
+  /**
+   * slot is an inventory slot for put, and a storage slot for take.
+   *
+   * @generated from field: uint32 slot = 1;
+   */
+  slot: number;
+
+  /**
+   * @generated from field: uint32 amount = 2;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.v1.StorageMove.
+ * Use `create(StorageMoveSchema)` to create a new message.
+ */
+export const StorageMoveSchema: GenMessage<StorageMove> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 42);
 
 /**
  * @generated from enum wathena.v1.ChatChannel

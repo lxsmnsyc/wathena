@@ -45,6 +45,17 @@ message Limits {
   // block_list is the most names a block list holds, as
   // MAX_IGNORE_LIST.
   uint32 block_list = 3;
+  // guild_members is the most members a guild holds before Guild
+  // Extension, which adds 6 per level.
+  uint32 guild_members = 4;
+  // guild_positions is the positions of a guild, as MAX_GUILDPOSITION.
+  uint32 guild_positions = 5;
+  // guild_allies and guild_enemies are the most allied and enemy guilds,
+  // as max_guild_alliance.
+  uint32 guild_allies = 6;
+  uint32 guild_enemies = 7;
+  // guild_storage is the most slots a guild storage holds.
+  uint32 guild_storage = 8;
 }
 
 message Ping {

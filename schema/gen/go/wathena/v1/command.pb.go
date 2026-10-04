@@ -445,6 +445,24 @@ func (x *Command) GetPartyBooking() *PartyBookingCommand {
 	return nil
 }
 
+func (x *Command) GetGuild() *GuildCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Guild); ok {
+			return x.Guild
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetStorage() *StorageCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Storage); ok {
+			return x.Storage
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -627,6 +645,22 @@ func (x *Command) SetPartyBooking(v *PartyBookingCommand) {
 		return
 	}
 	x.xxx_hidden_Body = &command_PartyBooking{v}
+}
+
+func (x *Command) SetGuild(v *GuildCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Guild{v}
+}
+
+func (x *Command) SetStorage(v *StorageCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Storage{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -820,6 +854,22 @@ func (x *Command) HasPartyBooking() bool {
 	return ok
 }
 
+func (x *Command) HasGuild() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Guild)
+	return ok
+}
+
+func (x *Command) HasStorage() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Storage)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -962,6 +1012,18 @@ func (x *Command) ClearPartyBooking() {
 	}
 }
 
+func (x *Command) ClearGuild() {
+	if _, ok := x.xxx_hidden_Body.(*command_Guild); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
+func (x *Command) ClearStorage() {
+	if _, ok := x.xxx_hidden_Body.(*command_Storage); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -986,6 +1048,8 @@ const Command_Report_case case_Command_Body = 20
 const Command_Party_case case_Command_Body = 21
 const Command_Friend_case case_Command_Body = 22
 const Command_PartyBooking_case case_Command_Body = 23
+const Command_Guild_case case_Command_Body = 24
+const Command_Storage_case case_Command_Body = 25
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -1038,6 +1102,10 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_Friend_case
 	case *command_PartyBooking:
 		return Command_PartyBooking_case
+	case *command_Guild:
+		return Command_Guild_case
+	case *command_Storage:
+		return Command_Storage_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -1070,6 +1138,8 @@ type Command_builder struct {
 	Party        *PartyCommand
 	Friend       *FriendCommand
 	PartyBooking *PartyBookingCommand
+	Guild        *GuildCommand
+	Storage      *StorageCommand
 	// -- end of xxx_hidden_Body
 }
 
@@ -1145,6 +1215,12 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.PartyBooking != nil {
 		x.xxx_hidden_Body = &command_PartyBooking{b.PartyBooking}
+	}
+	if b.Guild != nil {
+		x.xxx_hidden_Body = &command_Guild{b.Guild}
+	}
+	if b.Storage != nil {
+		x.xxx_hidden_Body = &command_Storage{b.Storage}
 	}
 	return m0
 }
@@ -1255,6 +1331,14 @@ type command_PartyBooking struct {
 	PartyBooking *PartyBookingCommand `protobuf:"bytes,23,opt,name=party_booking,json=partyBooking,proto3,oneof"`
 }
 
+type command_Guild struct {
+	Guild *GuildCommand `protobuf:"bytes,24,opt,name=guild,proto3,oneof"`
+}
+
+type command_Storage struct {
+	Storage *StorageCommand `protobuf:"bytes,25,opt,name=storage,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -1300,6 +1384,10 @@ func (*command_Party) isCommand_Body() {}
 func (*command_Friend) isCommand_Body() {}
 
 func (*command_PartyBooking) isCommand_Body() {}
+
+func (*command_Guild) isCommand_Body() {}
+
+func (*command_Storage) isCommand_Body() {}
 
 type WalkTo struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
@@ -2034,12 +2122,14 @@ func (b0 Block_builder) Build() *Block {
 // section 7.10). The report keeps the chat the player saw in the last 5
 // minutes. The server answers with ReportResult.
 type Report struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3"`
-	xxx_hidden_LineId []byte                 `protobuf:"bytes,2,opt,name=line_id,json=lineId,proto3"`
-	xxx_hidden_Reason string                 `protobuf:"bytes,3,opt,name=reason,proto3"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_LineId  []byte                 `protobuf:"bytes,2,opt,name=line_id,json=lineId,proto3"`
+	xxx_hidden_Reason  string                 `protobuf:"bytes,3,opt,name=reason,proto3"`
+	xxx_hidden_GuildId uint64                 `protobuf:"varint,4,opt,name=guild_id,json=guildId,proto3"`
+	xxx_hidden_Emblem  bool                   `protobuf:"varint,5,opt,name=emblem,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *Report) Reset() {
@@ -2088,6 +2178,20 @@ func (x *Report) GetReason() string {
 	return ""
 }
 
+func (x *Report) GetGuildId() uint64 {
+	if x != nil {
+		return x.xxx_hidden_GuildId
+	}
+	return 0
+}
+
+func (x *Report) GetEmblem() bool {
+	if x != nil {
+		return x.xxx_hidden_Emblem
+	}
+	return false
+}
+
 func (x *Report) SetName(v string) {
 	x.xxx_hidden_Name = v
 }
@@ -2103,16 +2207,29 @@ func (x *Report) SetReason(v string) {
 	x.xxx_hidden_Reason = v
 }
 
+func (x *Report) SetGuildId(v uint64) {
+	x.xxx_hidden_GuildId = v
+}
+
+func (x *Report) SetEmblem(v bool) {
+	x.xxx_hidden_Emblem = v
+}
+
 type Report_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// name is the reported character's name.
+	// name is the reported character's name. It is empty for a report of
+	// a guild.
 	Name string
 	// line_id is ChatMessage.line_id of the reported line, or empty to
 	// report the player.
 	LineId []byte
 	// reason is the player's own words, at most 255 characters.
 	Reason string
+	// guild_id reports a guild's name, or its emblem with emblem set, in
+	// place of a player (strategy section 7.10).
+	GuildId uint64
+	Emblem  bool
 }
 
 func (b0 Report_builder) Build() *Report {
@@ -2122,6 +2239,8 @@ func (b0 Report_builder) Build() *Report {
 	x.xxx_hidden_Name = b.Name
 	x.xxx_hidden_LineId = b.LineId
 	x.xxx_hidden_Reason = b.Reason
+	x.xxx_hidden_GuildId = b.GuildId
+	x.xxx_hidden_Emblem = b.Emblem
 	return m0
 }
 
@@ -4691,12 +4810,1633 @@ func (b0 PartyBookingSearch_builder) Build() *PartyBookingSearch {
 	return m0
 }
 
+// GuildCommand is a guild action, as rAthena's guild packets. The server
+// answers with GuildResult when the action fails or is refused, and with
+// GuildInfo when the guild changed. Guild chat is Chat with
+// CHAT_CHANNEL_GUILD.
+type GuildCommand struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Action isGuildCommand_Action  `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GuildCommand) Reset() {
+	*x = GuildCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildCommand) ProtoMessage() {}
+
+func (x *GuildCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GuildCommand) GetCreate() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Create); ok {
+			return x.Create
+		}
+	}
+	return ""
+}
+
+func (x *GuildCommand) GetInvite() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Invite); ok {
+			return x.Invite
+		}
+	}
+	return ""
+}
+
+func (x *GuildCommand) GetReply() *GuildReply {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Reply); ok {
+			return x.Reply
+		}
+	}
+	return nil
+}
+
+func (x *GuildCommand) GetLeave() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Leave); ok {
+			return x.Leave
+		}
+	}
+	return ""
+}
+
+func (x *GuildCommand) GetExpel() *GuildExpel {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Expel); ok {
+			return x.Expel
+		}
+	}
+	return nil
+}
+
+func (x *GuildCommand) GetPositions() *GuildPositions {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Positions); ok {
+			return x.Positions
+		}
+	}
+	return nil
+}
+
+func (x *GuildCommand) GetMemberPosition() *GuildMemberPosition {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_MemberPosition); ok {
+			return x.MemberPosition
+		}
+	}
+	return nil
+}
+
+func (x *GuildCommand) GetNotice() *GuildNotice {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Notice); ok {
+			return x.Notice
+		}
+	}
+	return nil
+}
+
+func (x *GuildCommand) GetSkillUp() uint32 {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_SkillUp); ok {
+			return x.SkillUp
+		}
+	}
+	return 0
+}
+
+func (x *GuildCommand) GetAlly() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Ally); ok {
+			return x.Ally
+		}
+	}
+	return ""
+}
+
+func (x *GuildCommand) GetAllyReply() *GuildReply {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_AllyReply); ok {
+			return x.AllyReply
+		}
+	}
+	return nil
+}
+
+func (x *GuildCommand) GetEnemy() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Enemy); ok {
+			return x.Enemy
+		}
+	}
+	return ""
+}
+
+func (x *GuildCommand) GetEndRelation() *GuildRelationEnd {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_EndRelation); ok {
+			return x.EndRelation
+		}
+	}
+	return nil
+}
+
+func (x *GuildCommand) GetDisband() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*guildCommand_Disband); ok {
+			return x.Disband
+		}
+	}
+	return ""
+}
+
+func (x *GuildCommand) SetCreate(v string) {
+	x.xxx_hidden_Action = &guildCommand_Create{v}
+}
+
+func (x *GuildCommand) SetInvite(v string) {
+	x.xxx_hidden_Action = &guildCommand_Invite{v}
+}
+
+func (x *GuildCommand) SetReply(v *GuildReply) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &guildCommand_Reply{v}
+}
+
+func (x *GuildCommand) SetLeave(v string) {
+	x.xxx_hidden_Action = &guildCommand_Leave{v}
+}
+
+func (x *GuildCommand) SetExpel(v *GuildExpel) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &guildCommand_Expel{v}
+}
+
+func (x *GuildCommand) SetPositions(v *GuildPositions) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &guildCommand_Positions{v}
+}
+
+func (x *GuildCommand) SetMemberPosition(v *GuildMemberPosition) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &guildCommand_MemberPosition{v}
+}
+
+func (x *GuildCommand) SetNotice(v *GuildNotice) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &guildCommand_Notice{v}
+}
+
+func (x *GuildCommand) SetSkillUp(v uint32) {
+	x.xxx_hidden_Action = &guildCommand_SkillUp{v}
+}
+
+func (x *GuildCommand) SetAlly(v string) {
+	x.xxx_hidden_Action = &guildCommand_Ally{v}
+}
+
+func (x *GuildCommand) SetAllyReply(v *GuildReply) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &guildCommand_AllyReply{v}
+}
+
+func (x *GuildCommand) SetEnemy(v string) {
+	x.xxx_hidden_Action = &guildCommand_Enemy{v}
+}
+
+func (x *GuildCommand) SetEndRelation(v *GuildRelationEnd) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &guildCommand_EndRelation{v}
+}
+
+func (x *GuildCommand) SetDisband(v string) {
+	x.xxx_hidden_Action = &guildCommand_Disband{v}
+}
+
+func (x *GuildCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *GuildCommand) HasCreate() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Create)
+	return ok
+}
+
+func (x *GuildCommand) HasInvite() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Invite)
+	return ok
+}
+
+func (x *GuildCommand) HasReply() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Reply)
+	return ok
+}
+
+func (x *GuildCommand) HasLeave() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Leave)
+	return ok
+}
+
+func (x *GuildCommand) HasExpel() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Expel)
+	return ok
+}
+
+func (x *GuildCommand) HasPositions() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Positions)
+	return ok
+}
+
+func (x *GuildCommand) HasMemberPosition() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_MemberPosition)
+	return ok
+}
+
+func (x *GuildCommand) HasNotice() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Notice)
+	return ok
+}
+
+func (x *GuildCommand) HasSkillUp() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_SkillUp)
+	return ok
+}
+
+func (x *GuildCommand) HasAlly() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Ally)
+	return ok
+}
+
+func (x *GuildCommand) HasAllyReply() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_AllyReply)
+	return ok
+}
+
+func (x *GuildCommand) HasEnemy() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Enemy)
+	return ok
+}
+
+func (x *GuildCommand) HasEndRelation() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_EndRelation)
+	return ok
+}
+
+func (x *GuildCommand) HasDisband() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*guildCommand_Disband)
+	return ok
+}
+
+func (x *GuildCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *GuildCommand) ClearCreate() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Create); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearInvite() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Invite); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearReply() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Reply); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearLeave() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Leave); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearExpel() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Expel); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearPositions() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Positions); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearMemberPosition() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_MemberPosition); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearNotice() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Notice); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearSkillUp() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_SkillUp); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearAlly() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Ally); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearAllyReply() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_AllyReply); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearEnemy() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Enemy); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearEndRelation() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_EndRelation); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *GuildCommand) ClearDisband() {
+	if _, ok := x.xxx_hidden_Action.(*guildCommand_Disband); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const GuildCommand_Action_not_set_case case_GuildCommand_Action = 0
+const GuildCommand_Create_case case_GuildCommand_Action = 1
+const GuildCommand_Invite_case case_GuildCommand_Action = 2
+const GuildCommand_Reply_case case_GuildCommand_Action = 3
+const GuildCommand_Leave_case case_GuildCommand_Action = 4
+const GuildCommand_Expel_case case_GuildCommand_Action = 5
+const GuildCommand_Positions_case case_GuildCommand_Action = 6
+const GuildCommand_MemberPosition_case case_GuildCommand_Action = 7
+const GuildCommand_Notice_case case_GuildCommand_Action = 8
+const GuildCommand_SkillUp_case case_GuildCommand_Action = 9
+const GuildCommand_Ally_case case_GuildCommand_Action = 10
+const GuildCommand_AllyReply_case case_GuildCommand_Action = 11
+const GuildCommand_Enemy_case case_GuildCommand_Action = 12
+const GuildCommand_EndRelation_case case_GuildCommand_Action = 13
+const GuildCommand_Disband_case case_GuildCommand_Action = 14
+
+func (x *GuildCommand) WhichAction() case_GuildCommand_Action {
+	if x == nil {
+		return GuildCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *guildCommand_Create:
+		return GuildCommand_Create_case
+	case *guildCommand_Invite:
+		return GuildCommand_Invite_case
+	case *guildCommand_Reply:
+		return GuildCommand_Reply_case
+	case *guildCommand_Leave:
+		return GuildCommand_Leave_case
+	case *guildCommand_Expel:
+		return GuildCommand_Expel_case
+	case *guildCommand_Positions:
+		return GuildCommand_Positions_case
+	case *guildCommand_MemberPosition:
+		return GuildCommand_MemberPosition_case
+	case *guildCommand_Notice:
+		return GuildCommand_Notice_case
+	case *guildCommand_SkillUp:
+		return GuildCommand_SkillUp_case
+	case *guildCommand_Ally:
+		return GuildCommand_Ally_case
+	case *guildCommand_AllyReply:
+		return GuildCommand_AllyReply_case
+	case *guildCommand_Enemy:
+		return GuildCommand_Enemy_case
+	case *guildCommand_EndRelation:
+		return GuildCommand_EndRelation_case
+	case *guildCommand_Disband:
+		return GuildCommand_Disband_case
+	default:
+		return GuildCommand_Action_not_set_case
+	}
+}
+
+type GuildCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// create makes a guild with the player as its master, as
+	// guild_create. It takes an Emperium with guild_emperium_check.
+	Create *string
+	// invite asks a player by name to join, as guild_invite. The
+	// player's position must allow invites.
+	Invite *string
+	// reply answers GuildInvite, as guild_reply_invite.
+	Reply *GuildReply
+	// leave leaves the guild, as guild_leave, with a reason of at most
+	// 39 characters. The master cannot leave.
+	Leave *string
+	// expel removes a member, as guild_expulsion. The player's position
+	// must allow expelling, and the master cannot be expelled.
+	Expel *GuildExpel
+	// positions changes the guild's positions, as guild_change_position.
+	// Only the master may do it.
+	Positions *GuildPositions
+	// member_position gives a member a position, as
+	// guild_change_memberposition. Position 0 hands the guild to the
+	// member, as guild_gm_change. Only the master may do it.
+	MemberPosition *GuildMemberPosition
+	// notice changes the guild notice, as guild_change_notice. Only the
+	// master may do it.
+	Notice *GuildNotice
+	// skill_up raises a guild skill by its ID, as guild_skillup. Only the
+	// master may do it.
+	SkillUp *uint32
+	// ally asks the guild of an online player by name to be allies, as
+	// guild_reqalliance. Only the master may do it.
+	Ally *string
+	// ally_reply answers GuildAllyRequest, as guild_reply_reqalliance.
+	AllyReply *GuildReply
+	// enemy makes the guild of an online player by name an enemy, as
+	// guild_opposition. Only the master may do it.
+	Enemy *string
+	// end_relation ends an alliance or an enemy relation, as
+	// guild_delalliance. Only the master may do it.
+	EndRelation *GuildRelationEnd
+	// disband breaks the guild up, as guild_break: the master must name
+	// the guild, and be its only member.
+	Disband *string
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 GuildCommand_builder) Build() *GuildCommand {
+	m0 := &GuildCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Create != nil {
+		x.xxx_hidden_Action = &guildCommand_Create{*b.Create}
+	}
+	if b.Invite != nil {
+		x.xxx_hidden_Action = &guildCommand_Invite{*b.Invite}
+	}
+	if b.Reply != nil {
+		x.xxx_hidden_Action = &guildCommand_Reply{b.Reply}
+	}
+	if b.Leave != nil {
+		x.xxx_hidden_Action = &guildCommand_Leave{*b.Leave}
+	}
+	if b.Expel != nil {
+		x.xxx_hidden_Action = &guildCommand_Expel{b.Expel}
+	}
+	if b.Positions != nil {
+		x.xxx_hidden_Action = &guildCommand_Positions{b.Positions}
+	}
+	if b.MemberPosition != nil {
+		x.xxx_hidden_Action = &guildCommand_MemberPosition{b.MemberPosition}
+	}
+	if b.Notice != nil {
+		x.xxx_hidden_Action = &guildCommand_Notice{b.Notice}
+	}
+	if b.SkillUp != nil {
+		x.xxx_hidden_Action = &guildCommand_SkillUp{*b.SkillUp}
+	}
+	if b.Ally != nil {
+		x.xxx_hidden_Action = &guildCommand_Ally{*b.Ally}
+	}
+	if b.AllyReply != nil {
+		x.xxx_hidden_Action = &guildCommand_AllyReply{b.AllyReply}
+	}
+	if b.Enemy != nil {
+		x.xxx_hidden_Action = &guildCommand_Enemy{*b.Enemy}
+	}
+	if b.EndRelation != nil {
+		x.xxx_hidden_Action = &guildCommand_EndRelation{b.EndRelation}
+	}
+	if b.Disband != nil {
+		x.xxx_hidden_Action = &guildCommand_Disband{*b.Disband}
+	}
+	return m0
+}
+
+type case_GuildCommand_Action protoreflect.FieldNumber
+
+func (x case_GuildCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[33].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isGuildCommand_Action interface {
+	isGuildCommand_Action()
+}
+
+type guildCommand_Create struct {
+	// create makes a guild with the player as its master, as
+	// guild_create. It takes an Emperium with guild_emperium_check.
+	Create string `protobuf:"bytes,1,opt,name=create,proto3,oneof"`
+}
+
+type guildCommand_Invite struct {
+	// invite asks a player by name to join, as guild_invite. The
+	// player's position must allow invites.
+	Invite string `protobuf:"bytes,2,opt,name=invite,proto3,oneof"`
+}
+
+type guildCommand_Reply struct {
+	// reply answers GuildInvite, as guild_reply_invite.
+	Reply *GuildReply `protobuf:"bytes,3,opt,name=reply,proto3,oneof"`
+}
+
+type guildCommand_Leave struct {
+	// leave leaves the guild, as guild_leave, with a reason of at most
+	// 39 characters. The master cannot leave.
+	Leave string `protobuf:"bytes,4,opt,name=leave,proto3,oneof"`
+}
+
+type guildCommand_Expel struct {
+	// expel removes a member, as guild_expulsion. The player's position
+	// must allow expelling, and the master cannot be expelled.
+	Expel *GuildExpel `protobuf:"bytes,5,opt,name=expel,proto3,oneof"`
+}
+
+type guildCommand_Positions struct {
+	// positions changes the guild's positions, as guild_change_position.
+	// Only the master may do it.
+	Positions *GuildPositions `protobuf:"bytes,6,opt,name=positions,proto3,oneof"`
+}
+
+type guildCommand_MemberPosition struct {
+	// member_position gives a member a position, as
+	// guild_change_memberposition. Position 0 hands the guild to the
+	// member, as guild_gm_change. Only the master may do it.
+	MemberPosition *GuildMemberPosition `protobuf:"bytes,7,opt,name=member_position,json=memberPosition,proto3,oneof"`
+}
+
+type guildCommand_Notice struct {
+	// notice changes the guild notice, as guild_change_notice. Only the
+	// master may do it.
+	Notice *GuildNotice `protobuf:"bytes,8,opt,name=notice,proto3,oneof"`
+}
+
+type guildCommand_SkillUp struct {
+	// skill_up raises a guild skill by its ID, as guild_skillup. Only the
+	// master may do it.
+	SkillUp uint32 `protobuf:"varint,9,opt,name=skill_up,json=skillUp,proto3,oneof"`
+}
+
+type guildCommand_Ally struct {
+	// ally asks the guild of an online player by name to be allies, as
+	// guild_reqalliance. Only the master may do it.
+	Ally string `protobuf:"bytes,10,opt,name=ally,proto3,oneof"`
+}
+
+type guildCommand_AllyReply struct {
+	// ally_reply answers GuildAllyRequest, as guild_reply_reqalliance.
+	AllyReply *GuildReply `protobuf:"bytes,11,opt,name=ally_reply,json=allyReply,proto3,oneof"`
+}
+
+type guildCommand_Enemy struct {
+	// enemy makes the guild of an online player by name an enemy, as
+	// guild_opposition. Only the master may do it.
+	Enemy string `protobuf:"bytes,12,opt,name=enemy,proto3,oneof"`
+}
+
+type guildCommand_EndRelation struct {
+	// end_relation ends an alliance or an enemy relation, as
+	// guild_delalliance. Only the master may do it.
+	EndRelation *GuildRelationEnd `protobuf:"bytes,13,opt,name=end_relation,json=endRelation,proto3,oneof"`
+}
+
+type guildCommand_Disband struct {
+	// disband breaks the guild up, as guild_break: the master must name
+	// the guild, and be its only member.
+	Disband string `protobuf:"bytes,14,opt,name=disband,proto3,oneof"`
+}
+
+func (*guildCommand_Create) isGuildCommand_Action() {}
+
+func (*guildCommand_Invite) isGuildCommand_Action() {}
+
+func (*guildCommand_Reply) isGuildCommand_Action() {}
+
+func (*guildCommand_Leave) isGuildCommand_Action() {}
+
+func (*guildCommand_Expel) isGuildCommand_Action() {}
+
+func (*guildCommand_Positions) isGuildCommand_Action() {}
+
+func (*guildCommand_MemberPosition) isGuildCommand_Action() {}
+
+func (*guildCommand_Notice) isGuildCommand_Action() {}
+
+func (*guildCommand_SkillUp) isGuildCommand_Action() {}
+
+func (*guildCommand_Ally) isGuildCommand_Action() {}
+
+func (*guildCommand_AllyReply) isGuildCommand_Action() {}
+
+func (*guildCommand_Enemy) isGuildCommand_Action() {}
+
+func (*guildCommand_EndRelation) isGuildCommand_Action() {}
+
+func (*guildCommand_Disband) isGuildCommand_Action() {}
+
+type GuildReply struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_GuildId uint64                 `protobuf:"varint,1,opt,name=guild_id,json=guildId,proto3"`
+	xxx_hidden_Accept  bool                   `protobuf:"varint,2,opt,name=accept,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GuildReply) Reset() {
+	*x = GuildReply{}
+	mi := &file_wathena_v1_command_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildReply) ProtoMessage() {}
+
+func (x *GuildReply) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GuildReply) GetGuildId() uint64 {
+	if x != nil {
+		return x.xxx_hidden_GuildId
+	}
+	return 0
+}
+
+func (x *GuildReply) GetAccept() bool {
+	if x != nil {
+		return x.xxx_hidden_Accept
+	}
+	return false
+}
+
+func (x *GuildReply) SetGuildId(v uint64) {
+	x.xxx_hidden_GuildId = v
+}
+
+func (x *GuildReply) SetAccept(v bool) {
+	x.xxx_hidden_Accept = v
+}
+
+type GuildReply_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// guild_id is GuildInvite.guild_id or GuildAllyRequest.guild_id.
+	GuildId uint64
+	Accept  bool
+}
+
+func (b0 GuildReply_builder) Build() *GuildReply {
+	m0 := &GuildReply{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_GuildId = b.GuildId
+	x.xxx_hidden_Accept = b.Accept
+	return m0
+}
+
+type GuildExpel struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Reason string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GuildExpel) Reset() {
+	*x = GuildExpel{}
+	mi := &file_wathena_v1_command_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildExpel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildExpel) ProtoMessage() {}
+
+func (x *GuildExpel) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GuildExpel) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *GuildExpel) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *GuildExpel) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *GuildExpel) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+type GuildExpel_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name string
+	// reason is at most 39 characters, as the expulsion list keeps.
+	Reason string
+}
+
+func (b0 GuildExpel_builder) Build() *GuildExpel {
+	m0 := &GuildExpel{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+type GuildPositions struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Positions *[]*GuildPosition      `protobuf:"bytes,1,rep,name=positions,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GuildPositions) Reset() {
+	*x = GuildPositions{}
+	mi := &file_wathena_v1_command_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildPositions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildPositions) ProtoMessage() {}
+
+func (x *GuildPositions) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GuildPositions) GetPositions() []*GuildPosition {
+	if x != nil {
+		if x.xxx_hidden_Positions != nil {
+			return *x.xxx_hidden_Positions
+		}
+	}
+	return nil
+}
+
+func (x *GuildPositions) SetPositions(v []*GuildPosition) {
+	x.xxx_hidden_Positions = &v
+}
+
+type GuildPositions_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Positions []*GuildPosition
+}
+
+func (b0 GuildPositions_builder) Build() *GuildPositions {
+	m0 := &GuildPositions{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Positions = &b.Positions
+	return m0
+}
+
+// GuildPosition is one of a guild's positions, as rAthena's
+// guild_position.
+type GuildPosition struct {
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Index         uint32                 `protobuf:"varint,1,opt,name=index,proto3"`
+	xxx_hidden_Name          string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_CanInvite     bool                   `protobuf:"varint,3,opt,name=can_invite,json=canInvite,proto3"`
+	xxx_hidden_CanExpel      bool                   `protobuf:"varint,4,opt,name=can_expel,json=canExpel,proto3"`
+	xxx_hidden_CanUseStorage bool                   `protobuf:"varint,5,opt,name=can_use_storage,json=canUseStorage,proto3"`
+	xxx_hidden_ExpTax        uint32                 `protobuf:"varint,6,opt,name=exp_tax,json=expTax,proto3"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *GuildPosition) Reset() {
+	*x = GuildPosition{}
+	mi := &file_wathena_v1_command_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildPosition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildPosition) ProtoMessage() {}
+
+func (x *GuildPosition) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GuildPosition) GetIndex() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Index
+	}
+	return 0
+}
+
+func (x *GuildPosition) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *GuildPosition) GetCanInvite() bool {
+	if x != nil {
+		return x.xxx_hidden_CanInvite
+	}
+	return false
+}
+
+func (x *GuildPosition) GetCanExpel() bool {
+	if x != nil {
+		return x.xxx_hidden_CanExpel
+	}
+	return false
+}
+
+func (x *GuildPosition) GetCanUseStorage() bool {
+	if x != nil {
+		return x.xxx_hidden_CanUseStorage
+	}
+	return false
+}
+
+func (x *GuildPosition) GetExpTax() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ExpTax
+	}
+	return 0
+}
+
+func (x *GuildPosition) SetIndex(v uint32) {
+	x.xxx_hidden_Index = v
+}
+
+func (x *GuildPosition) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *GuildPosition) SetCanInvite(v bool) {
+	x.xxx_hidden_CanInvite = v
+}
+
+func (x *GuildPosition) SetCanExpel(v bool) {
+	x.xxx_hidden_CanExpel = v
+}
+
+func (x *GuildPosition) SetCanUseStorage(v bool) {
+	x.xxx_hidden_CanUseStorage = v
+}
+
+func (x *GuildPosition) SetExpTax(v uint32) {
+	x.xxx_hidden_ExpTax = v
+}
+
+type GuildPosition_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// index is the position's number, from 0. Position 0 is the master's.
+	Index uint32
+	// name is 1 to 24 characters.
+	Name          string
+	CanInvite     bool
+	CanExpel      bool
+	CanUseStorage bool
+	// exp_tax is the percent of base exp members of this position give the
+	// guild, at most guild_exp_limit.
+	ExpTax uint32
+}
+
+func (b0 GuildPosition_builder) Build() *GuildPosition {
+	m0 := &GuildPosition{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Index = b.Index
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_CanInvite = b.CanInvite
+	x.xxx_hidden_CanExpel = b.CanExpel
+	x.xxx_hidden_CanUseStorage = b.CanUseStorage
+	x.xxx_hidden_ExpTax = b.ExpTax
+	return m0
+}
+
+type GuildMemberPosition struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name     string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Position uint32                 `protobuf:"varint,2,opt,name=position,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *GuildMemberPosition) Reset() {
+	*x = GuildMemberPosition{}
+	mi := &file_wathena_v1_command_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildMemberPosition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildMemberPosition) ProtoMessage() {}
+
+func (x *GuildMemberPosition) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GuildMemberPosition) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *GuildMemberPosition) GetPosition() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Position
+	}
+	return 0
+}
+
+func (x *GuildMemberPosition) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *GuildMemberPosition) SetPosition(v uint32) {
+	x.xxx_hidden_Position = v
+}
+
+type GuildMemberPosition_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name     string
+	Position uint32
+}
+
+func (b0 GuildMemberPosition_builder) Build() *GuildMemberPosition {
+	m0 := &GuildMemberPosition{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Position = b.Position
+	return m0
+}
+
+// GuildNotice is the guild notice, as rAthena's mes1 and mes2.
+type GuildNotice struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Title string                 `protobuf:"bytes,1,opt,name=title,proto3"`
+	xxx_hidden_Text  string                 `protobuf:"bytes,2,opt,name=text,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GuildNotice) Reset() {
+	*x = GuildNotice{}
+	mi := &file_wathena_v1_command_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildNotice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildNotice) ProtoMessage() {}
+
+func (x *GuildNotice) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GuildNotice) GetTitle() string {
+	if x != nil {
+		return x.xxx_hidden_Title
+	}
+	return ""
+}
+
+func (x *GuildNotice) GetText() string {
+	if x != nil {
+		return x.xxx_hidden_Text
+	}
+	return ""
+}
+
+func (x *GuildNotice) SetTitle(v string) {
+	x.xxx_hidden_Title = v
+}
+
+func (x *GuildNotice) SetText(v string) {
+	x.xxx_hidden_Text = v
+}
+
+type GuildNotice_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// title is at most 59 characters, and text at most 119.
+	Title string
+	Text  string
+}
+
+func (b0 GuildNotice_builder) Build() *GuildNotice {
+	m0 := &GuildNotice{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Title = b.Title
+	x.xxx_hidden_Text = b.Text
+	return m0
+}
+
+type GuildRelationEnd struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_GuildId uint64                 `protobuf:"varint,1,opt,name=guild_id,json=guildId,proto3"`
+	xxx_hidden_Enemy   bool                   `protobuf:"varint,2,opt,name=enemy,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GuildRelationEnd) Reset() {
+	*x = GuildRelationEnd{}
+	mi := &file_wathena_v1_command_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildRelationEnd) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildRelationEnd) ProtoMessage() {}
+
+func (x *GuildRelationEnd) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GuildRelationEnd) GetGuildId() uint64 {
+	if x != nil {
+		return x.xxx_hidden_GuildId
+	}
+	return 0
+}
+
+func (x *GuildRelationEnd) GetEnemy() bool {
+	if x != nil {
+		return x.xxx_hidden_Enemy
+	}
+	return false
+}
+
+func (x *GuildRelationEnd) SetGuildId(v uint64) {
+	x.xxx_hidden_GuildId = v
+}
+
+func (x *GuildRelationEnd) SetEnemy(v bool) {
+	x.xxx_hidden_Enemy = v
+}
+
+type GuildRelationEnd_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	GuildId uint64
+	// enemy ends an enemy relation. An alliance ends otherwise.
+	Enemy bool
+}
+
+func (b0 GuildRelationEnd_builder) Build() *GuildRelationEnd {
+	m0 := &GuildRelationEnd{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_GuildId = b.GuildId
+	x.xxx_hidden_Enemy = b.Enemy
+	return m0
+}
+
+// StorageCommand moves items between the inventory and the open storage
+// window, as rAthena's storage packets. The server answers with
+// StorageAdd and StorageRemove, InventoryAdd and InventoryRemove, or
+// StorageResult. Guild storage opens from an NPC.
+type StorageCommand struct {
+	state             protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Action isStorageCommand_Action `protobuf_oneof:"action"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *StorageCommand) Reset() {
+	*x = StorageCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StorageCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StorageCommand) ProtoMessage() {}
+
+func (x *StorageCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *StorageCommand) GetPut() *StorageMove {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storageCommand_Put); ok {
+			return x.Put
+		}
+	}
+	return nil
+}
+
+func (x *StorageCommand) GetTake() *StorageMove {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storageCommand_Take); ok {
+			return x.Take
+		}
+	}
+	return nil
+}
+
+func (x *StorageCommand) GetClose() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storageCommand_Close); ok {
+			return x.Close
+		}
+	}
+	return false
+}
+
+func (x *StorageCommand) GetLog() bool {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Action.(*storageCommand_Log); ok {
+			return x.Log
+		}
+	}
+	return false
+}
+
+func (x *StorageCommand) SetPut(v *StorageMove) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &storageCommand_Put{v}
+}
+
+func (x *StorageCommand) SetTake(v *StorageMove) {
+	if v == nil {
+		x.xxx_hidden_Action = nil
+		return
+	}
+	x.xxx_hidden_Action = &storageCommand_Take{v}
+}
+
+func (x *StorageCommand) SetClose(v bool) {
+	x.xxx_hidden_Action = &storageCommand_Close{v}
+}
+
+func (x *StorageCommand) SetLog(v bool) {
+	x.xxx_hidden_Action = &storageCommand_Log{v}
+}
+
+func (x *StorageCommand) HasAction() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Action != nil
+}
+
+func (x *StorageCommand) HasPut() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storageCommand_Put)
+	return ok
+}
+
+func (x *StorageCommand) HasTake() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storageCommand_Take)
+	return ok
+}
+
+func (x *StorageCommand) HasClose() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storageCommand_Close)
+	return ok
+}
+
+func (x *StorageCommand) HasLog() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Action.(*storageCommand_Log)
+	return ok
+}
+
+func (x *StorageCommand) ClearAction() {
+	x.xxx_hidden_Action = nil
+}
+
+func (x *StorageCommand) ClearPut() {
+	if _, ok := x.xxx_hidden_Action.(*storageCommand_Put); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StorageCommand) ClearTake() {
+	if _, ok := x.xxx_hidden_Action.(*storageCommand_Take); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StorageCommand) ClearClose() {
+	if _, ok := x.xxx_hidden_Action.(*storageCommand_Close); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+func (x *StorageCommand) ClearLog() {
+	if _, ok := x.xxx_hidden_Action.(*storageCommand_Log); ok {
+		x.xxx_hidden_Action = nil
+	}
+}
+
+const StorageCommand_Action_not_set_case case_StorageCommand_Action = 0
+const StorageCommand_Put_case case_StorageCommand_Action = 1
+const StorageCommand_Take_case case_StorageCommand_Action = 2
+const StorageCommand_Close_case case_StorageCommand_Action = 3
+const StorageCommand_Log_case case_StorageCommand_Action = 4
+
+func (x *StorageCommand) WhichAction() case_StorageCommand_Action {
+	if x == nil {
+		return StorageCommand_Action_not_set_case
+	}
+	switch x.xxx_hidden_Action.(type) {
+	case *storageCommand_Put:
+		return StorageCommand_Put_case
+	case *storageCommand_Take:
+		return StorageCommand_Take_case
+	case *storageCommand_Close:
+		return StorageCommand_Close_case
+	case *storageCommand_Log:
+		return StorageCommand_Log_case
+	default:
+		return StorageCommand_Action_not_set_case
+	}
+}
+
+type StorageCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Action:
+	// put moves an amount from an inventory slot into the storage, as
+	// storage_guild_storageadd.
+	Put *StorageMove
+	// take moves an amount from a storage slot into the inventory, as
+	// storage_guild_storageget.
+	Take *StorageMove
+	// close closes the storage window, as storage_guild_storageclose.
+	Close *bool
+	// log asks for the guild storage log, as storage_guild_log_read.
+	Log *bool
+	// -- end of xxx_hidden_Action
+}
+
+func (b0 StorageCommand_builder) Build() *StorageCommand {
+	m0 := &StorageCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Put != nil {
+		x.xxx_hidden_Action = &storageCommand_Put{b.Put}
+	}
+	if b.Take != nil {
+		x.xxx_hidden_Action = &storageCommand_Take{b.Take}
+	}
+	if b.Close != nil {
+		x.xxx_hidden_Action = &storageCommand_Close{*b.Close}
+	}
+	if b.Log != nil {
+		x.xxx_hidden_Action = &storageCommand_Log{*b.Log}
+	}
+	return m0
+}
+
+type case_StorageCommand_Action protoreflect.FieldNumber
+
+func (x case_StorageCommand_Action) String() string {
+	md := file_wathena_v1_command_proto_msgTypes[41].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isStorageCommand_Action interface {
+	isStorageCommand_Action()
+}
+
+type storageCommand_Put struct {
+	// put moves an amount from an inventory slot into the storage, as
+	// storage_guild_storageadd.
+	Put *StorageMove `protobuf:"bytes,1,opt,name=put,proto3,oneof"`
+}
+
+type storageCommand_Take struct {
+	// take moves an amount from a storage slot into the inventory, as
+	// storage_guild_storageget.
+	Take *StorageMove `protobuf:"bytes,2,opt,name=take,proto3,oneof"`
+}
+
+type storageCommand_Close struct {
+	// close closes the storage window, as storage_guild_storageclose.
+	Close bool `protobuf:"varint,3,opt,name=close,proto3,oneof"`
+}
+
+type storageCommand_Log struct {
+	// log asks for the guild storage log, as storage_guild_log_read.
+	Log bool `protobuf:"varint,4,opt,name=log,proto3,oneof"`
+}
+
+func (*storageCommand_Put) isStorageCommand_Action() {}
+
+func (*storageCommand_Take) isStorageCommand_Action() {}
+
+func (*storageCommand_Close) isStorageCommand_Action() {}
+
+func (*storageCommand_Log) isStorageCommand_Action() {}
+
+type StorageMove struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Slot   uint32                 `protobuf:"varint,1,opt,name=slot,proto3"`
+	xxx_hidden_Amount uint32                 `protobuf:"varint,2,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *StorageMove) Reset() {
+	*x = StorageMove{}
+	mi := &file_wathena_v1_command_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StorageMove) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StorageMove) ProtoMessage() {}
+
+func (x *StorageMove) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *StorageMove) GetSlot() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *StorageMove) GetAmount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *StorageMove) SetSlot(v uint32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *StorageMove) SetAmount(v uint32) {
+	x.xxx_hidden_Amount = v
+}
+
+type StorageMove_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// slot is an inventory slot for put, and a storage slot for take.
+	Slot   uint32
+	Amount uint32
+}
+
+func (b0 StorageMove_builder) Build() *StorageMove {
+	m0 := &StorageMove{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Amount = b.Amount
+	return m0
+}
+
 var File_wathena_v1_command_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\xce\t\n" +
+	"wathena.v1\"\xb8\n" +
+	"\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -4726,7 +6466,9 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x06report\x18\x14 \x01(\v2\x12.wathena.v1.ReportH\x00R\x06report\x120\n" +
 	"\x05party\x18\x15 \x01(\v2\x18.wathena.v1.PartyCommandH\x00R\x05party\x123\n" +
 	"\x06friend\x18\x16 \x01(\v2\x19.wathena.v1.FriendCommandH\x00R\x06friend\x12F\n" +
-	"\rparty_booking\x18\x17 \x01(\v2\x1f.wathena.v1.PartyBookingCommandH\x00R\fpartyBookingB\x06\n" +
+	"\rparty_booking\x18\x17 \x01(\v2\x1f.wathena.v1.PartyBookingCommandH\x00R\fpartyBooking\x120\n" +
+	"\x05guild\x18\x18 \x01(\v2\x18.wathena.v1.GuildCommandH\x00R\x05guild\x126\n" +
+	"\astorage\x18\x19 \x01(\v2\x1a.wathena.v1.StorageCommandH\x00R\astorageB\x06\n" +
 	"\x04body\"$\n" +
 	"\x06WalkTo\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
@@ -4756,11 +6498,13 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"5\n" +
 	"\x05Block\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\aunblock\x18\x02 \x01(\bR\aunblock\"M\n" +
+	"\aunblock\x18\x02 \x01(\bR\aunblock\"\x80\x01\n" +
 	"\x06Report\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
 	"\aline_id\x18\x02 \x01(\fR\x06lineId\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"\x1c\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x19\n" +
+	"\bguild_id\x18\x04 \x01(\x04R\aguildId\x12\x16\n" +
+	"\x06emblem\x18\x05 \x01(\bR\x06emblem\"\x1c\n" +
 	"\bNpcClick\x12\x10\n" +
 	"\x03npc\x18\x01 \x01(\rR\x03npc\"\xb6\x01\n" +
 	"\bNpcReply\x12\x16\n" +
@@ -4848,7 +6592,61 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\x12PartyBookingSearch\x12\x14\n" +
 	"\x05level\x18\x01 \x01(\rR\x05level\x12\x10\n" +
 	"\x03map\x18\x02 \x01(\tR\x03map\x12\x10\n" +
-	"\x03job\x18\x03 \x01(\rR\x03job*\xf5\x01\n" +
+	"\x03job\x18\x03 \x01(\rR\x03job\"\xe2\x04\n" +
+	"\fGuildCommand\x12\x18\n" +
+	"\x06create\x18\x01 \x01(\tH\x00R\x06create\x12\x18\n" +
+	"\x06invite\x18\x02 \x01(\tH\x00R\x06invite\x12.\n" +
+	"\x05reply\x18\x03 \x01(\v2\x16.wathena.v1.GuildReplyH\x00R\x05reply\x12\x16\n" +
+	"\x05leave\x18\x04 \x01(\tH\x00R\x05leave\x12.\n" +
+	"\x05expel\x18\x05 \x01(\v2\x16.wathena.v1.GuildExpelH\x00R\x05expel\x12:\n" +
+	"\tpositions\x18\x06 \x01(\v2\x1a.wathena.v1.GuildPositionsH\x00R\tpositions\x12J\n" +
+	"\x0fmember_position\x18\a \x01(\v2\x1f.wathena.v1.GuildMemberPositionH\x00R\x0ememberPosition\x121\n" +
+	"\x06notice\x18\b \x01(\v2\x17.wathena.v1.GuildNoticeH\x00R\x06notice\x12\x1b\n" +
+	"\bskill_up\x18\t \x01(\rH\x00R\askillUp\x12\x14\n" +
+	"\x04ally\x18\n" +
+	" \x01(\tH\x00R\x04ally\x127\n" +
+	"\n" +
+	"ally_reply\x18\v \x01(\v2\x16.wathena.v1.GuildReplyH\x00R\tallyReply\x12\x16\n" +
+	"\x05enemy\x18\f \x01(\tH\x00R\x05enemy\x12A\n" +
+	"\fend_relation\x18\r \x01(\v2\x1c.wathena.v1.GuildRelationEndH\x00R\vendRelation\x12\x1a\n" +
+	"\adisband\x18\x0e \x01(\tH\x00R\adisbandB\b\n" +
+	"\x06action\"?\n" +
+	"\n" +
+	"GuildReply\x12\x19\n" +
+	"\bguild_id\x18\x01 \x01(\x04R\aguildId\x12\x16\n" +
+	"\x06accept\x18\x02 \x01(\bR\x06accept\"8\n" +
+	"\n" +
+	"GuildExpel\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"I\n" +
+	"\x0eGuildPositions\x127\n" +
+	"\tpositions\x18\x01 \x03(\v2\x19.wathena.v1.GuildPositionR\tpositions\"\xb6\x01\n" +
+	"\rGuildPosition\x12\x14\n" +
+	"\x05index\x18\x01 \x01(\rR\x05index\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"can_invite\x18\x03 \x01(\bR\tcanInvite\x12\x1b\n" +
+	"\tcan_expel\x18\x04 \x01(\bR\bcanExpel\x12&\n" +
+	"\x0fcan_use_storage\x18\x05 \x01(\bR\rcanUseStorage\x12\x17\n" +
+	"\aexp_tax\x18\x06 \x01(\rR\x06expTax\"E\n" +
+	"\x13GuildMemberPosition\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
+	"\bposition\x18\x02 \x01(\rR\bposition\"7\n" +
+	"\vGuildNotice\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"C\n" +
+	"\x10GuildRelationEnd\x12\x19\n" +
+	"\bguild_id\x18\x01 \x01(\x04R\aguildId\x12\x14\n" +
+	"\x05enemy\x18\x02 \x01(\bR\x05enemy\"\xa2\x01\n" +
+	"\x0eStorageCommand\x12+\n" +
+	"\x03put\x18\x01 \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\x03put\x12-\n" +
+	"\x04take\x18\x02 \x01(\v2\x17.wathena.v1.StorageMoveH\x00R\x04take\x12\x16\n" +
+	"\x05close\x18\x03 \x01(\bH\x00R\x05close\x12\x12\n" +
+	"\x03log\x18\x04 \x01(\bH\x00R\x03logB\b\n" +
+	"\x06action\"9\n" +
+	"\vStorageMove\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\rR\x06amount*\xf5\x01\n" +
 	"\vChatChannel\x12\x1c\n" +
 	"\x18CHAT_CHANNEL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12CHAT_CHANNEL_LOCAL\x10\x01\x12\x16\n" +
@@ -4875,7 +6673,7 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_wathena_v1_command_proto_goTypes = []any{
 	(ChatChannel)(0),            // 0: wathena.v1.ChatChannel
 	(ChannelAction)(0),          // 1: wathena.v1.ChannelAction
@@ -4913,6 +6711,16 @@ var file_wathena_v1_command_proto_goTypes = []any{
 	(*PartyBookingCommand)(nil), // 33: wathena.v1.PartyBookingCommand
 	(*PartyBookingAd)(nil),      // 34: wathena.v1.PartyBookingAd
 	(*PartyBookingSearch)(nil),  // 35: wathena.v1.PartyBookingSearch
+	(*GuildCommand)(nil),        // 36: wathena.v1.GuildCommand
+	(*GuildReply)(nil),          // 37: wathena.v1.GuildReply
+	(*GuildExpel)(nil),          // 38: wathena.v1.GuildExpel
+	(*GuildPositions)(nil),      // 39: wathena.v1.GuildPositions
+	(*GuildPosition)(nil),       // 40: wathena.v1.GuildPosition
+	(*GuildMemberPosition)(nil), // 41: wathena.v1.GuildMemberPosition
+	(*GuildNotice)(nil),         // 42: wathena.v1.GuildNotice
+	(*GuildRelationEnd)(nil),    // 43: wathena.v1.GuildRelationEnd
+	(*StorageCommand)(nil),      // 44: wathena.v1.StorageCommand
+	(*StorageMove)(nil),         // 45: wathena.v1.StorageMove
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
 	4,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
@@ -4938,24 +6746,36 @@ var file_wathena_v1_command_proto_depIdxs = []int32{
 	27, // 20: wathena.v1.Command.party:type_name -> wathena.v1.PartyCommand
 	31, // 21: wathena.v1.Command.friend:type_name -> wathena.v1.FriendCommand
 	33, // 22: wathena.v1.Command.party_booking:type_name -> wathena.v1.PartyBookingCommand
-	8,  // 23: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 24: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	1,  // 25: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
-	16, // 26: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
-	18, // 27: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
-	2,  // 28: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	28, // 29: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
-	29, // 30: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
-	30, // 31: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
-	30, // 32: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
-	32, // 33: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
-	34, // 34: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
-	35, // 35: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
-	36, // [36:36] is the sub-list for method output_type
-	36, // [36:36] is the sub-list for method input_type
-	36, // [36:36] is the sub-list for extension type_name
-	36, // [36:36] is the sub-list for extension extendee
-	0,  // [0:36] is the sub-list for field type_name
+	36, // 23: wathena.v1.Command.guild:type_name -> wathena.v1.GuildCommand
+	44, // 24: wathena.v1.Command.storage:type_name -> wathena.v1.StorageCommand
+	8,  // 25: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 26: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	1,  // 27: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
+	16, // 28: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
+	18, // 29: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
+	2,  // 30: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	28, // 31: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
+	29, // 32: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
+	30, // 33: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
+	30, // 34: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
+	32, // 35: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
+	34, // 36: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
+	35, // 37: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
+	37, // 38: wathena.v1.GuildCommand.reply:type_name -> wathena.v1.GuildReply
+	38, // 39: wathena.v1.GuildCommand.expel:type_name -> wathena.v1.GuildExpel
+	39, // 40: wathena.v1.GuildCommand.positions:type_name -> wathena.v1.GuildPositions
+	41, // 41: wathena.v1.GuildCommand.member_position:type_name -> wathena.v1.GuildMemberPosition
+	42, // 42: wathena.v1.GuildCommand.notice:type_name -> wathena.v1.GuildNotice
+	37, // 43: wathena.v1.GuildCommand.ally_reply:type_name -> wathena.v1.GuildReply
+	43, // 44: wathena.v1.GuildCommand.end_relation:type_name -> wathena.v1.GuildRelationEnd
+	40, // 45: wathena.v1.GuildPositions.positions:type_name -> wathena.v1.GuildPosition
+	45, // 46: wathena.v1.StorageCommand.put:type_name -> wathena.v1.StorageMove
+	45, // 47: wathena.v1.StorageCommand.take:type_name -> wathena.v1.StorageMove
+	48, // [48:48] is the sub-list for method output_type
+	48, // [48:48] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -4987,6 +6807,8 @@ func file_wathena_v1_command_proto_init() {
 		(*command_Party)(nil),
 		(*command_Friend)(nil),
 		(*command_PartyBooking)(nil),
+		(*command_Guild)(nil),
+		(*command_Storage)(nil),
 	}
 	file_wathena_v1_command_proto_msgTypes[3].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
@@ -5018,13 +6840,35 @@ func file_wathena_v1_command_proto_init() {
 		(*partyBookingCommand_Search)(nil),
 		(*partyBookingCommand_Delete)(nil),
 	}
+	file_wathena_v1_command_proto_msgTypes[33].OneofWrappers = []any{
+		(*guildCommand_Create)(nil),
+		(*guildCommand_Invite)(nil),
+		(*guildCommand_Reply)(nil),
+		(*guildCommand_Leave)(nil),
+		(*guildCommand_Expel)(nil),
+		(*guildCommand_Positions)(nil),
+		(*guildCommand_MemberPosition)(nil),
+		(*guildCommand_Notice)(nil),
+		(*guildCommand_SkillUp)(nil),
+		(*guildCommand_Ally)(nil),
+		(*guildCommand_AllyReply)(nil),
+		(*guildCommand_Enemy)(nil),
+		(*guildCommand_EndRelation)(nil),
+		(*guildCommand_Disband)(nil),
+	}
+	file_wathena_v1_command_proto_msgTypes[41].OneofWrappers = []any{
+		(*storageCommand_Put)(nil),
+		(*storageCommand_Take)(nil),
+		(*storageCommand_Close)(nil),
+		(*storageCommand_Log)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   33,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

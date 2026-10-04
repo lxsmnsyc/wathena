@@ -13,9 +13,12 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
 - `Start` builds `waserver` and an asset build once per test run, then starts a server for the test and stops it when the test ends.
 - The world has two maps: `placeholder/map`, where players start, and `e2e_field`, a copy of it for warps.
 - The mod in [testdata/mods/fixture](testdata/mods/fixture) places Dummies, which stand still and always drop a Jellopy and a Test Charm with a roll, a shop, and NPCs that give and take items and zeny, change jobs, warp and mute. It adds the word "badword" to the chat filter. It uses only the 1.0 Lua API.
+- A player who says `!guild level <n>` in local chat gets the fixture to give its guild the exp that takes it to level n, with `guild:give_exp`. The tests reach the guild skills this way, without thousands of kills. The server's config approves `guild.manage` for the fixture.
+- [testdata/mods/guildrules](testdata/mods/guildrules) is a ruleset mod, `e2e.guildrules`: renewal with `emergency_call: 15`, so Emergency Call works outside GvG maps. `Options.Ruleset` passes it as `--ruleset`. Other tests use the core renewal ruleset, and the server logs that the mod is installed but not used.
 - The lower chat limits of new characters are off, since every test character is new.
 - `Restart` stops the server and starts it again with the same options, addresses and database. Players join again.
 - `AdvanceClock` moves the server clock with `--dev`'s `POST /debug/wathena/clock`, and `Reports` reads `GET /debug/wathena/reports`.
+- `UploadEmblem` sets a guild's emblem with `POST /debug/wathena/emblem`, and `OpenGuildStorage` opens a player's guild storage with `POST /debug/wathena/guild-storage`, as an NPC would. Both are `--dev` only. `HTTP` is the game server's base URL, for `GET /emblems/<guild>/<version>.png`.
 - Players are `--dev` characters. Without a database they stay in memory while the server runs, so a player who logs in again gets its character back. They start as Swordmen at base level 50 and job level 40, with 10 Red Potions and 20 Jellopy, unless `Options` says otherwise. `Options.StartJob` `4:50:40` makes them Acolytes.
 - `--seed` fixes the random streams, so the same test makes the same draws.
 - With `Options.Database`, the server gets a new PostgreSQL database and connects as the game role. Without `WATHENA_TEST_DATABASE_URL`, those tests skip.
@@ -62,15 +65,28 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestFriends` | A friend request that is accepted puts each player on the other's list, online. The friend logs out and in again, and the other player sees both changes. |
 | `TestPartySkill` | An Acolyte in a party casts Angelus. A member near it gets the status icon, and a player near it outside the party does not. |
 | `TestPartyAndFriendsInTheDatabase` | With PostgreSQL, a party and a friendship come back after `Restart`, and their rows are saved. |
+| `TestGuildCreateAndInvite` | A player with an Emperium makes a guild, and the Emperium leaves its inventory. It invites a player, who accepts, and both see the two members with their positions. A player in sight sees the new member's badge in `EntityGuild`, and a player who joins later sees both badges, guild name and position name, in `EntityAppear`. |
+| `TestGuildInviteBlocked` | A player without an Emperium cannot make a guild. A player who blocks the master refuses its invite at once and sees no invite. |
+| `TestGuildPositions` | A Newbie's invite fails with `GUILD_OUTCOME_NO_PERMISSION`, and a member cannot change positions. The master lets position 1 invite and moves the member there. A player in sight sees the new position name, and the member's invite works. |
+| `TestGuildChat` | A guild line reaches a member on the other map, and not a player outside the guild on the speaker's map. A player without a guild cannot say a guild line. |
+| `TestGuildExpTax` | The master sets an exp tax of 50% on the Newbie position. A member kills a Dummy, worth 10 base exp: the guild's exp and the member's paid exp grow by 5, and the member keeps 5 base exp and all 10 job exp. |
+| `TestGuildLevelAndSkill` | The fixture gives the guild a level. Both members see `GUILD_OUTCOME_LEVEL_UP` and a skill point. A skill whose requirement is missing is refused, a member cannot raise a skill, and the master raises Approval, which both see. |
+| `TestGuildEmergencyCall` | With `e2e.guildrules`, the master of a guild at level 11 raises the skills up to Emergency Call and casts it. A member on the other map warps to a cell next to the master. |
+| `TestGuildEmergencyCallRefused` | With the core ruleset, Emergency Call fails, since it works on GvG maps only. |
+| `TestGuildEmblem` | A 24 x 24 BMP emblem reaches the members in `GuildInfo` and the players in sight in `EntityGuild`, with version 1. `GET /emblems/<guild>/1.png` returns a 24 x 24 PNG with `Access-Control-Allow-Origin: *`, and magenta is transparent. Another version is not found, and a 32 x 32 image is refused. |
+| `TestGuildStorage` | The storage fails before Guild Storage is learned, and for a position without storage rights. The master opens it, puts Jellopy in and takes some out. Another member gets `STORAGE_OUTCOME_IN_USE` while it is open, then sees what is in it. The audit counts the stored items. |
+| `TestGuildInTheDatabase` | With PostgreSQL, a guild's members, positions, notice, level, skills, emblem and storage come back after `Restart`, and their rows are saved. |
 | `TestDuplicationDropsAndPickUps` | The duplication test below, in memory. |
 | `TestDuplicationWithDatabase` | The same, with PostgreSQL, then the database checks. |
 | `TestDuplicationPartyPickUps` | The same, in memory, with the bots in parties of 4 with even item share and shared pick-up. |
+| `TestDuplicationGuildStorage` | The same with 8 bots in one guild, which also use the guild storage. |
+| `TestDuplicationGuildStorageWithDatabase` | The same, with PostgreSQL, then the database checks with the saved guild storage. |
 
 ## Duplication tests
 
 `DupTest` runs many bots that make `Move`s at the same time, such as `DropMove` and `PickUpMove`, while the test asks the server for every item it holds (`GET /debug/wathena/items`, with `--dev` only). After every audit and at the end:
 
-- the amount of each item, in inventories and on the ground together, is what it was at the start,
+- the amount of each item, in inventories, guild storages and on the ground together, is what it was at the start,
 - all zeny together is what it was at the start,
 - no serial is held twice,
 - each bot's inventory, from the server's messages, is what the server holds for it.
@@ -84,7 +100,15 @@ Disconnects are part of the test:
 
 `DupTest.Setup` runs once every bot is online, before the start audit. `PartySetup` puts the bots in parties there. With even item share, a pick-up gives the item to a random member on the map, so the test also checks that each bot's items that came in differ from its own pick-ups, which it sees in its own `ItemTaken`. Without sharing they differ only for a connection that closed in the middle of a pick-up.
 
-With a database, `CheckDatabase` stops the server and checks the saved inventories against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial. Later steps add moves for trade, storage, mail and vending.
+Guild storage is part of the test too:
+
+- The audit lists the guild storages as one more entry, with the map `guild_storage` and one player per guild, named `guild:<ID>`. The test counts their items in the totals, and not as players.
+- The audit reads the guild storages on the zone of the first map with players, so the bots that use the storage stay on the start map.
+- `GuildStorageSetup` puts every bot in one guild. The fixture takes it to level 21, the master raises the skills up to Guild Storage, and the Newbie position may use the storage. The first bot needs an Emperium.
+- `GuildStorageMove` opens the bot's guild storage through the debug endpoint. Only one bot at a time has it open, and the others get `STORAGE_OUTCOME_IN_USE`. The bot puts in and takes out parts of Jellopy stacks one to four times, and closes it. One time in 8 it closes its connection instead, with the storage open, and logs in again.
+- An item taken out of the storage enters the inventory, but it is not a pick-up, so the counts of items that came in leave it out.
+
+With a database, `CheckDatabase` stops the server and checks the saved inventories and guild storages against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial. Later steps add moves for trade, personal storage, mail and vending.
 
 A failure that shows a total below the start with a closed connection means a character left the world while the test still counted on it. See decision 0017, "A missing total in the duplication test". `botclient` writes with its own timeout for this reason: the WebSocket library closes the connection when a write's context ends during the write.
 

@@ -135,8 +135,12 @@ const (
 	ActionUse Action = "use"
 	// ActionSkill is an item or zeny a skill made or cost.
 	ActionSkill Action = "skill"
-	// ActionMove is a move between two holders, such as a trade.
+	// ActionMove is a move between two holders, such as a trade or the
+	// guild storage.
 	ActionMove Action = "move"
+	// ActionGuild is an item a guild took: the Emperium that makes a
+	// guild, and the guild storage of a guild that broke up.
+	ActionGuild Action = "guild"
 )
 
 // ItemLog is one item move.

@@ -123,6 +123,9 @@ type Config struct {
 	// Issuer names the server in authenticator apps. "wAthena" when
 	// empty.
 	Issuer string
+	// Guilds lets guild masters upload emblems. Without it the emblem
+	// page lists no guild.
+	Guilds Guilds
 	// Ended is told which login sessions ended, such as at logout, so it
 	// can close the game connections they opened. The gateway is one.
 	Ended SessionEnder
@@ -275,6 +278,8 @@ func (s *Service) routes() {
 	m.HandleFunc("GET /account/characters", s.getCharacters)
 	m.HandleFunc("POST /account/characters", s.postCharacters)
 	m.HandleFunc("POST /account/play", s.play)
+	m.HandleFunc("GET /account/guild/emblem", s.getEmblem)
+	m.HandleFunc("POST /account/guild/emblem", s.postEmblem)
 	m.HandleFunc("POST /account/ticket", s.ticket)
 	m.HandleFunc("OPTIONS /account/ticket", s.ticket)
 	s.mux = m
@@ -358,6 +363,9 @@ type page struct {
 	AttemptsLeft                       int
 
 	Characters []characterView
+	// Guilds are the guilds the account's characters master, on the
+	// emblem page.
+	Guilds     []guildView
 	FreeSlots  []int
 	Hairs      []int
 	HairColors []int

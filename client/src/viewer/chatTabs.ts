@@ -1,5 +1,5 @@
 // The tabs above the chat log: All, Party while the player has a party,
-// one tab per chat channel the player is in, and one tab per whisper
+// Guild while the player has a guild, one tab per chat channel the player is in, and one tab per whisper
 // partner. The chat input sends to the
 // active tab. User text is only ever set with textContent.
 
@@ -8,6 +8,9 @@ export const ALL_TAB = 'all';
 
 /** The key of the Party tab, and of party lines. */
 export const PARTY_TAB = 'party';
+
+/** The key of the Guild tab, and of guild lines. */
+export const GUILD_TAB = 'guild';
 
 /** The key of local chat lines, which only the All tab shows. */
 export const LOCAL_LINES = 'local';
@@ -19,13 +22,14 @@ export const MAX_WHISPER_TABS = 10;
 export type ChatTarget =
   | { kind: 'local' }
   | { kind: 'party' }
+  | { kind: 'guild' }
   | { kind: 'channel'; name: string }
   | { kind: 'whisper'; name: string };
 
 export interface ChatTab {
-  /** ALL_TAB, PARTY_TAB, channel:#name in lower case, or whisper:Name. */
+  /** ALL_TAB, PARTY_TAB, GUILD_TAB, channel:#name in lower case, or whisper:Name. */
   key: string;
-  kind: 'all' | 'party' | 'channel' | 'whisper';
+  kind: 'all' | 'party' | 'guild' | 'channel' | 'whisper';
   /** The channel's name with its #, or the whisper partner's name. */
   name: string;
   /** What the tab shows. */
@@ -68,6 +72,8 @@ export function placeholder(target: ChatTarget): string {
       return `Whisper to ${target.name}`;
     case 'party':
       return 'Say to your party';
+    case 'guild':
+      return 'Say to your guild';
     default:
       return 'Press Enter to chat';
   }
@@ -91,7 +97,7 @@ export class ChatTabs {
   /** The active tab's key. */
   active = ALL_TAB;
 
-  /** The tabs in order: All, Party, the channels, then the whispers. */
+  /** The tabs in order: All, Party, Guild, the channels, then the whispers. */
   get tabs(): readonly ChatTab[] {
     return this.list;
   }
@@ -166,6 +172,33 @@ export class ChatTabs {
     this.close(PARTY_TAB);
   }
 
+  /** Whether the Guild tab shows. */
+  get hasGuild(): boolean {
+    return this.get(GUILD_TAB) !== undefined;
+  }
+
+  /** Shows the Guild tab, after All and Party, while the player has a guild. */
+  showGuild(): void {
+    if (this.hasGuild) {
+      return;
+    }
+    this.list.splice(this.hasParty ? 2 : 1, 0, {
+      key: GUILD_TAB,
+      kind: 'guild',
+      name: '',
+      label: 'Guild',
+      alias: '',
+      color: 0,
+      closable: false,
+      unread: false,
+    });
+  }
+
+  /** Removes the Guild tab, when the player has no guild. All becomes active if it was. */
+  hideGuild(): void {
+    this.close(GUILD_TAB);
+  }
+
   /**
    * Opens the whisper tab of a character, or finds it. Returns its key.
    * Past MAX_WHISPER_TABS the oldest whisper tab that is not active closes.
@@ -238,6 +271,9 @@ export class ChatTabs {
     }
     if (tab?.kind === 'party') {
       return { kind: 'party' };
+    }
+    if (tab?.kind === 'guild') {
+      return { kind: 'guild' };
     }
     return { kind: 'local' };
   }

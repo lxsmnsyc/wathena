@@ -61,13 +61,14 @@ const (
 	LineWhisper = "whisper"
 	LineChannel = "channel"
 	LineParty   = "party"
+	LineGuild   = "guild"
 )
 
 // Line is one line a player said, as the chat log keeps it.
 type Line struct {
 	ID LineID
 	At time.Time
-	// Kind is LineLocal, LineWhisper, LineChannel or LineParty.
+	// Kind is LineLocal, LineWhisper, LineChannel, LineParty or LineGuild.
 	Kind string
 	// CharacterID is the speaker's database ID, or 0 for a character that
 	// only lives in memory.
@@ -95,6 +96,13 @@ type Report struct {
 	Line   LineID
 	Reason string
 	Map    string
+	// Guild is the reported guild's ID for a report of a guild's name or
+	// emblem, with Target its name. Emblem is the reported emblem's
+	// version and EmblemPNG a copy of it, for a report of an emblem
+	// (strategy section 7.10).
+	Guild     int64
+	Emblem    int
+	EmblemPNG []byte
 	// Context is the chat the reporter saw in the ContextWindow before
 	// the report, oldest first.
 	Context []Line

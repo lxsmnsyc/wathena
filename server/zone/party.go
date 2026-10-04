@@ -187,6 +187,7 @@ func (z *Zone) socialHub() *social.Registry {
 	if z.Social == nil {
 		r := z.worldRules()
 		z.Social = social.New(rules.LimitsOrDefault(r), rules.PartyOrDefault(r))
+		z.Social.SetGuildData(z.guildTables(), rules.GuildOrDefault(r))
 		hub := z.chatHub()
 		z.Social.Blocks = hub.BlocksName
 		z.Social.Clock = z.wallClock
@@ -222,6 +223,7 @@ func (z *Zone) socialOnline(p *Player, h *handoff, friends []social.Friend) {
 
 // socialOffline takes a player that logged out out of the registry.
 func (z *Zone) socialOffline(p *Player) {
+	z.closeGuildStorage(p, true)
 	if p.soc != nil && p.sess != nil {
 		z.socialHub().Offline(p.soc, p.sess)
 		p.soc = nil
@@ -376,6 +378,8 @@ func (z *Zone) receiveSocial(in socialIn) {
 		}.Build()}.Build())
 	case social.NoticeBooking:
 		p.pending = append(p.pending, bookingList(n.Booking))
+	default:
+		z.receiveGuild(p, n)
 	}
 }
 

@@ -73,6 +73,9 @@ type Rules struct {
 	// Party holds the party and friend values of rAthena's
 	// battle_athena.conf and inter_athena.conf (limits.go).
 	Party Party
+	// Guild holds the guild values of rAthena's battle conf files
+	// (limits.go).
+	Guild Guild
 }
 
 // Base returns the rules of a core ruleset: every flag at the base's
@@ -83,7 +86,7 @@ func Base(renewal bool) *Rules {
 		LevelPenaltyExp: renewal, LevelPenaltyDrop: renewal, LevelDamageMod: renewal, ElementTable: renewal,
 		StatusResist: renewal, HealFormula: renewal, BossProtection: renewal, EnsembleSongs: renewal,
 		Homunculus: renewal, BusyRestrictions: renewal, FourthJobTraits: renewal,
-		Limits: DefaultLimits(), Party: DefaultParty(),
+		Limits: DefaultLimits(), Party: DefaultParty(), Guild: DefaultGuild(),
 	}
 }
 

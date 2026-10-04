@@ -62,6 +62,12 @@ type Player struct {
 	// invite is the party invite the player has open, as
 	// sd->party_invite.
 	invite *invite
+	// guild is the player's guild, guildInvite its open guild invite, as
+	// sd->guild_invite, and allyInvite its open alliance request, as
+	// sd->guild_alliance.
+	guild       *Guild
+	guildInvite *guildInvite
+	allyInvite  *allyInvite
 }
 
 // Name is the player's character name.
@@ -95,8 +101,10 @@ type Registry struct {
 	// Clock is the server clock. time.Now when nil.
 	Clock func() time.Time
 
-	limits rules.Limits
-	rules  rules.Party
+	limits      rules.Limits
+	rules       rules.Party
+	guildRules  rules.Guild
+	guildTables *GuildTables
 
 	mu       sync.Mutex
 	players  map[string]*Player
@@ -106,6 +114,12 @@ type Registry struct {
 	endedIDs []int64
 	nextID   int64
 	booking  booking
+
+	guilds        map[int64]*Guild
+	guildNames    map[string]*Guild
+	endedGuilds   map[int64]*Guild
+	endedGuildIDs []int64
+	nextGuild     int64
 }
 
 // maxEnded is how many broken up parties stay readable, so a handle in
@@ -117,8 +131,9 @@ func New(limits rules.Limits, party rules.Party) *Registry {
 	if limits == (rules.Limits{}) {
 		limits = rules.DefaultLimits()
 	}
-	return &Registry{limits: limits, rules: party, players: map[string]*Player{}, parties: map[int64]*Party{},
-		names: map[string]*Party{}, ended: map[int64]*Party{}, nextID: 1}
+	return &Registry{limits: limits, rules: party, guildRules: rules.DefaultGuild(), players: map[string]*Player{},
+		parties: map[int64]*Party{}, names: map[string]*Party{}, ended: map[int64]*Party{}, nextID: 1,
+		guilds: map[int64]*Guild{}, guildNames: map[string]*Guild{}, endedGuilds: map[int64]*Guild{}, nextGuild: 1}
 }
 
 // Limits are the registry's limits.
@@ -213,6 +228,7 @@ func (r *Registry) Online(l Login) *Player {
 	} else {
 		deliver(p, Notice{Kind: NoticeParty})
 	}
+	r.guildOnline(p, !was)
 	return p
 }
 
@@ -230,11 +246,18 @@ func (r *Registry) Offline(p *Player, inbox Inbox) {
 	}
 	p.online, p.inbox = false, nil
 	p.invite, p.friendReq = nil, ""
+	p.guildInvite, p.allyInvite = nil, nil
 	r.booking.remove(p.key)
 	r.friendToggle(p, false)
 	if pt := p.party; pt != nil {
 		r.memberChanged(pt, p)
 		r.checkLevels(pt, p)
+	}
+	if g := p.guild; g != nil {
+		r.closeStorageOf(g, p)
+		if m := g.member(p); m != nil {
+			r.guildMemberChanged(g, m)
+		}
 	}
 }
 
@@ -249,6 +272,12 @@ func (r *Registry) Move(p *Player, inbox Inbox, mapName string, x, y int) {
 		// so it gets its party again.
 		deliver(p, Notice{Kind: NoticeParty, Party: pt.view()})
 		r.memberChanged(pt, p)
+	}
+	if g := p.guild; g != nil {
+		deliver(p, Notice{Kind: NoticeGuild, Guild: r.guildView(g)})
+		if m := g.member(p); m != nil {
+			r.guildMemberChanged(g, m)
+		}
 	}
 }
 
@@ -267,6 +296,11 @@ func (r *Registry) Update(p *Player, hp, maxHP int64, x, y, level, job int) {
 		r.memberChanged(pt, p)
 		if levelChanged {
 			r.checkLevels(pt, p)
+		}
+	}
+	if g := p.guild; g != nil && changed {
+		if m := g.member(p); m != nil {
+			r.guildMemberChanged(g, m)
 		}
 	}
 }

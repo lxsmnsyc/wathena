@@ -1342,3 +1342,417 @@ body {
 .social-prompt p {
   margin: 0 0 6px;
 }
+
+#chat-log .guild {
+  color: #9ee7ff;
+}
+
+#guild-labels {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.guild-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 5px;
+  transform: translate(-50%, 8px);
+  border-radius: 3px;
+  background: rgb(0 0 0 / 55%);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.guild-label[hidden],
+.guild-label img[hidden] {
+  display: none;
+}
+
+.guild-label > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.guild-label-guild {
+  color: #9ee7ff;
+}
+
+.guild-label img {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+
+#guild-window {
+  position: fixed;
+  top: 64px;
+  left: min(344px, calc(100% - 352px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(340px, calc(100% - 24px));
+  max-height: calc(100% - 300px);
+  padding: 8px 10px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+  font-variant-numeric: tabular-nums;
+}
+
+#guild-window[hidden],
+#guild-window [hidden] {
+  display: none;
+}
+
+#guild-window h2,
+#guild-window h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+#guild-window h3 {
+  font-size: 13px;
+  color: #b8c8ff;
+}
+
+#guild-window .guild-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+#guild-window .guild-tab {
+  padding: 1px 6px;
+  font-size: 12px;
+}
+
+#guild-window .guild-tab.active {
+  border-color: #fff;
+  font-weight: 600;
+}
+
+#guild-window .guild-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#guild-window .guild-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#guild-window .guild-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+#guild-window .guild-info-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+#guild-window .guild-emblem {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+
+#guild-window .guild-info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  margin: 0;
+}
+
+#guild-window .guild-info dt {
+  color: #b8c8ff;
+}
+
+#guild-window .guild-info dd {
+  margin: 0;
+}
+
+#guild-window .guild-exp {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 15%);
+}
+
+#guild-window .guild-exp-fill {
+  height: 100%;
+  background: #6fb6ff;
+}
+
+#guild-window .guild-exp-text,
+#guild-window .guild-detail,
+#guild-window .guild-hint {
+  color: #ccc;
+  font-size: 11px;
+}
+
+#guild-window p {
+  margin: 0;
+}
+
+#guild-window ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#guild-window .guild-members li,
+#guild-window .guild-skills li {
+  padding: 3px 0;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+}
+
+#guild-window .guild-members li.offline {
+  color: #aaa;
+}
+
+#guild-window .guild-member-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+#guild-window .guild-master {
+  color: #ffd84a;
+}
+
+#guild-window .guild-member-position {
+  color: #b8c8ff;
+  font-size: 12px;
+}
+
+#guild-window .guild-member-tools {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+#guild-window .guild-member-tools button,
+#guild-window .guild-skills button,
+#guild-window .guild-allies button,
+#guild-window .guild-enemies button {
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+#guild-window .guild-positions table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+#guild-window .guild-positions th {
+  color: #b8c8ff;
+  font-weight: normal;
+  text-align: left;
+}
+
+#guild-window .guild-position-name {
+  width: 8em;
+}
+
+#guild-window .guild-position-tax {
+  width: 3.5em;
+}
+
+#guild-window .guild-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#guild-window .guild-notice-text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+#guild-window .empty {
+  color: #aaa;
+}
+
+#guild-window .report {
+  padding: 0 4px;
+  color: #ff9a9a;
+  font-size: 11px;
+}
+
+#guild-window .guild-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 4px;
+  background: rgb(0 0 0 / 50%);
+}
+
+#guild-window .guild-error {
+  color: #ffd84a;
+}
+
+#storage-window {
+  position: fixed;
+  right: min(324px, calc(100% - 312px));
+  /* Above the hotkey bar. */
+  bottom: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(300px, calc(100% - 24px));
+  max-height: calc(100% - 120px);
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+  font-variant-numeric: tabular-nums;
+}
+
+#storage-window[hidden],
+#storage-window [hidden] {
+  display: none;
+}
+
+#storage-window .storage-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#storage-window h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+}
+
+#storage-window h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+#storage-window .storage-items {
+  flex: 1;
+  min-height: 60px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+#storage-window .storage-items li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+#storage-window .storage-items li:focus {
+  outline: 1px solid rgb(255 255 255 / 50%);
+}
+
+#storage-window .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#storage-window .storage-items button {
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+#storage-window .storage-amount {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+#storage-window .storage-amount input {
+  width: 5em;
+}
+
+#storage-window .storage-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+#storage-window .storage-log-head {
+  display: flex;
+  justify-content: space-between;
+}
+
+#storage-window .storage-log ol {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  list-style: none;
+}
+
+#storage-window .storage-log time {
+  color: #b8c8ff;
+}
+
+#storage-window .storage-log .taken {
+  color: #ffc8a0;
+}
+
+#player-menu {
+  position: fixed;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+  padding: 6px;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 85%);
+}
+
+#player-menu[hidden] {
+  display: none;
+}
+
+#player-menu .player-menu-name {
+  font-weight: 600;
+}
+
+#player-menu .player-menu-guild {
+  color: #9ee7ff;
+  font-size: 12px;
+}
+
+#player-menu button {
+  text-align: left;
+}
+
+#player-menu .report {
+  color: #ff9a9a;
+}
+
+/* The guild and storage windows show and hide their parts with the
+   hidden attribute, which their display rules would override. */
+#guild-window [hidden],
+#storage-window [hidden],
+#guild-labels [hidden] {
+  display: none !important;
+}

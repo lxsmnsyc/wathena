@@ -16,7 +16,15 @@ import {
   type Event,
   type Friend,
   type FriendOutcome,
+  type GuildAllyRequest,
+  type GuildBadge,
+  type GuildInfo,
+  type GuildInvite,
+  type GuildMember,
+  type GuildOutcome,
+  type GuildStorageLogEntry,
   type ImagePosition,
+  type InventoryItem,
   type InventoryRemoveReason,
   type Look as LookMessage,
   type MinimapMark,
@@ -35,6 +43,8 @@ import {
   type SkillFailure,
   type SkillInfo,
   StatId,
+  type StorageKind,
+  type StorageOutcome,
   type UseItemFailure,
   VanishReason,
   type WhisperResult,
@@ -82,6 +92,21 @@ import {
 export const WARP_SPRITE = 45;
 /** EF_WARPZONE2, the effect roBrowser plays on warp portals. */
 export const WARP_EFFECT = 321;
+
+/** A slot as InventoryItem gives it, for the inventory and storage windows. */
+function stackInput(i: InventoryItem): StackInput {
+  return {
+    slot: i.slot,
+    itemId: i.itemId,
+    amount: i.amount,
+    equip: i.equip,
+    refine: i.refine,
+    cards: [...i.cards],
+    location: i.location,
+    card: i.card,
+    ...stackRolls(i),
+  };
+}
 
 /** Something that plays until it is done. */
 interface Playing {
@@ -317,6 +342,30 @@ export default class Online {
   onFriendResult: ((outcome: FriendOutcome, name: string) => void) | undefined;
   /** Called with party booking ads, or the player's own ad. */
   onPartyBookingList: ((list: PartyBookingList) => void) | undefined;
+  /** Called for a line said to the player's guild. */
+  onGuildChat: ((name: string, text: string, lineId: Uint8Array) => void) | undefined;
+  /** Called with the player's guild, after login and after each change. An id of 0 means none. */
+  onGuildInfo: ((info: GuildInfo) => void) | undefined;
+  /** Called when one guild member's values change, such as its online state. */
+  onGuildMember: ((member: GuildMember) => void) | undefined;
+  /** Called when a guild member invites the player to a guild. */
+  onGuildInvite: ((invite: GuildInvite) => void) | undefined;
+  /** Called when another guild asks the player's guild to be allies. */
+  onGuildAllyRequest: ((request: GuildAllyRequest) => void) | undefined;
+  /** Called with how a guild action went, or what happened to the guild. */
+  onGuildResult: ((outcome: GuildOutcome, name: string) => void) | undefined;
+  /** Called when a storage window opens, with its items and size. */
+  onStorageOpen: ((kind: StorageKind, items: StackInput[], size: number) => void) | undefined;
+  /** Called with a storage slot after an amount entered it. */
+  onStorageAdd: ((kind: StorageKind, item: StackInput) => void) | undefined;
+  /** Called when an amount left a storage slot. */
+  onStorageRemove: ((kind: StorageKind, slot: number, amount: number) => void) | undefined;
+  /** Called when the server closes the storage window. */
+  onStorageClose: ((kind: StorageKind) => void) | undefined;
+  /** Called when a storage action failed. */
+  onStorageResult: ((outcome: StorageOutcome) => void) | undefined;
+  /** Called with the guild storage log, newest first. */
+  onGuildStorageLog: ((entries: GuildStorageLogEntry[]) => void) | undefined;
   /** Called with the server's answer to the player's whisper. */
   onWhisperResult: ((result: WhisperResult) => void) | undefined;
   /** Called when a line the player said was not sent. */
@@ -403,6 +452,8 @@ export default class Online {
   private waiting: Event[] = [];
   /** Entity names, by ID, from EntityAppear. */
   private readonly names = new Map<number, string>();
+  /** The guild shown with each entity in sight, by ID, from EntityAppear and EntityGuild. */
+  private readonly badges = new Map<number, GuildBadge>();
   private map: WMap | undefined;
 
   constructor(
@@ -500,6 +551,9 @@ export default class Online {
           }
           this.kinds.set(a.id, kindOf(a.kind));
           this.names.set(a.id, a.name);
+          if (a.guild !== undefined && a.guild.guildId !== 0n) {
+            this.badges.set(a.id, a.guild);
+          }
           const map = this.map;
           // A placeholder holds the entity's place until its sprites load.
           const pending: Pending = {
@@ -767,20 +821,7 @@ export default class Online {
           break;
         }
         case 'inventory':
-          this.onInventory?.(
-            e.body.value.items.map((i) => ({
-              slot: i.slot,
-              itemId: i.itemId,
-              amount: i.amount,
-              equip: i.equip,
-              refine: i.refine,
-              cards: [...i.cards],
-              location: i.location,
-              card: i.card,
-              ...stackRolls(i),
-            })),
-            e.body.value.size,
-          );
+          this.onInventory?.(e.body.value.items.map(stackInput), e.body.value.size);
           break;
         case 'inventoryAdd': {
           const a = e.body.value;
@@ -865,6 +906,8 @@ export default class Online {
             this.onWhisper?.(c.fromName, c.text, c.lineId);
           } else if (c.channel === ChatChannel.PARTY) {
             this.onPartyChat?.(c.fromName, c.text, c.lineId);
+          } else if (c.channel === ChatChannel.GUILD) {
+            this.onGuildChat?.(c.fromName, c.text, c.lineId);
           } else if (c.channel === ChatChannel.NAMED) {
             this.onChannelChat?.(c.channelName, c.fromName, c.text, c.color, c.lineId);
           } else if (c.channel === ChatChannel.SYSTEM) {
@@ -958,6 +1001,56 @@ export default class Online {
           break;
         case 'partyBookingList':
           this.onPartyBookingList?.(e.body.value);
+          break;
+        case 'guildInfo':
+          this.onGuildInfo?.(e.body.value);
+          break;
+        case 'guildMember':
+          if (e.body.value.member !== undefined) {
+            this.onGuildMember?.(e.body.value.member);
+          }
+          break;
+        case 'guildInvite':
+          this.onGuildInvite?.(e.body.value);
+          break;
+        case 'guildAllyRequest':
+          this.onGuildAllyRequest?.(e.body.value);
+          break;
+        case 'guildResult':
+          this.onGuildResult?.(e.body.value.outcome, e.body.value.name);
+          break;
+        case 'entityGuild': {
+          const g = e.body.value;
+          if (g.guild === undefined || g.guild.guildId === 0n) {
+            this.badges.delete(g.id);
+          } else if (this.names.has(g.id)) {
+            this.badges.set(g.id, g.guild);
+          }
+          break;
+        }
+        case 'storageOpen':
+          this.onStorageOpen?.(
+            e.body.value.kind,
+            e.body.value.items.map(stackInput),
+            e.body.value.size,
+          );
+          break;
+        case 'storageAdd':
+          if (e.body.value.item !== undefined) {
+            this.onStorageAdd?.(e.body.value.kind, stackInput(e.body.value.item));
+          }
+          break;
+        case 'storageRemove':
+          this.onStorageRemove?.(e.body.value.kind, e.body.value.slot, e.body.value.amount);
+          break;
+        case 'storageClose':
+          this.onStorageClose?.(e.body.value.kind);
+          break;
+        case 'storageResult':
+          this.onStorageResult?.(e.body.value.outcome);
+          break;
+        case 'guildStorageLog':
+          this.onGuildStorageLog?.(e.body.value.entries);
           break;
         default:
           // Events this client does not show yet.
@@ -1090,6 +1183,26 @@ export default class Online {
       .catch(reportError);
   }
 
+  /** Whether an entity is a player character. */
+  isPlayer(id: number): boolean {
+    return this.kinds.get(id) === 'player';
+  }
+
+  /** An entity's name, while it is in sight. */
+  nameOf(id: number): string | undefined {
+    return this.names.get(id);
+  }
+
+  /** The guild shown with an entity in sight, if it has one. */
+  guildBadge(id: number): GuildBadge | undefined {
+    return this.badges.get(id);
+  }
+
+  /** The entities in sight that show a guild, by ID. */
+  guildBadges(): ReadonlyMap<number, GuildBadge> {
+    return this.badges;
+  }
+
   /** Whether an entity is an NPC, which a click talks to. */
   isNpc(id: number): boolean {
     return this.kinds.get(id) === 'npc';
@@ -1100,6 +1213,7 @@ export default class Online {
     this.lookLoads.delete(id);
     this.looksShown.delete(id);
     this.names.delete(id);
+    this.badges.delete(id);
     this.items.remove(id);
     const portal = this.portals.get(id);
     if (portal !== undefined) {
@@ -1164,6 +1278,7 @@ export default class Online {
     this.playing = [];
     this.auras.clear();
     this.kinds.clear();
+    this.badges.clear();
     this.waiting = [];
   }
 

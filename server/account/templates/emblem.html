@@ -1,0 +1,18 @@
+{{define "emblem.html"}}{{template "head" .}}
+<p class="account">Logged in as <strong>{{.Account}}</strong>. <a href="/account/characters">Characters</a></p>
+{{if .Guilds}}
+<p>An emblem is a BMP, GIF or PNG image of 24 by 24 pixels, at most 50,000 bytes. Magenta (255, 0, 255) is transparent. Players can report an emblem to the staff.</p>
+{{range .Guilds}}
+<form method="post" action="/account/guild/emblem" enctype="multipart/form-data" class="emblem">
+{{template "hidden" $}}
+<input type="hidden" name="slot" value="{{.Slot}}">
+<span class="name">{{.Name}}</span>
+<span class="info">Master: {{.Character}}</span>
+<label>Emblem <input type="file" name="emblem" accept="image/bmp,image/gif,image/png" required></label>
+<button type="submit">Upload</button>
+</form>
+{{end}}
+{{else}}
+<p>None of your characters is a guild's master.</p>
+{{end}}
+{{template "foot" .}}{{end}}

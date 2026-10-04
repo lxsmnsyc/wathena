@@ -99,6 +99,10 @@ type NPC struct {
 	Lua string
 	// record is the npcs.yml record.
 	record string
+	// converted is how the script converted, before the checks that
+	// place it. Duplicates use their source's script, so a source that is
+	// not placed, such as one without a map, still serves them.
+	converted Status
 }
 
 // Function is one converted rAthena function.
@@ -330,12 +334,12 @@ func (c *npcConverter) convertNPC(l *npcLine, bySource map[string]*NPC, names ma
 			return fail("duplicate", "the source "+l.DuplicateOf+" is not in the extract")
 		}
 		n.Features, n.Functions = src.Features, src.Functions
-		if src.Status == None {
+		if src.converted == "" || src.converted == None {
 			n.Status = None
 			n.Unsupported = append(n.Unsupported, "duplicate: the source "+l.DuplicateOf+" did not convert")
 			return n
 		}
-		n.Status, n.Script = src.Status, src.Script
+		n.Status, n.Script = src.converted, src.Script
 	} else {
 		nc := c.newNPCConv(l)
 		lua, err := nc.npcScript()
@@ -359,9 +363,17 @@ func (c *npcConverter) convertNPC(l *npcLine, bySource map[string]*NPC, names ma
 			n.Lua = lua
 			n.Script = ScriptPathIn("scripts/npcs/", l.Name, c.paths)
 		}
+		n.converted = n.Status
 	}
 	if l.Map == "" {
 		n.Unsupported = append(n.Unsupported, "floating: a script NPC without a map runs only through events")
+		n.Status = None
+		return n
+	}
+	if strings.Contains(l.Map, "@") {
+		// rAthena copies the NPCs of an instance's maps, such as 1@tower,
+		// into each instance. wAthena has no instances yet.
+		n.Unsupported = append(n.Unsupported, "instance: "+l.Map+" is an instance map, which wAthena does not have yet")
 		n.Status = None
 		return n
 	}
@@ -463,20 +475,28 @@ func (r *NPCResult) Files() map[string]string {
 	var data strings.Builder
 	data.WriteString("# NPCs and shops converted from rAthena's npc/ by wactl convert npcs.\n")
 	data.WriteString("# Generated; do not edit. See mods/README.md, \"Core's NPCs\".\n")
+	// A script is written when a placed NPC uses it. A source that is
+	// not placed can serve its duplicates.
+	used := map[string]bool{}
 	for _, n := range r.NPCs {
-		if n.Lua != "" && n.Script != "" && n.Status != None {
-			out[n.Script] = n.Lua
-		}
 		if n.record != "" && (n.Placed || n.Shop) && n.Status != None {
 			data.WriteString(n.record + "\n")
+			if n.Script != "" {
+				used[n.Script] = true
+			}
+		}
+	}
+	for _, n := range r.NPCs {
+		if n.Lua != "" && used[n.Script] {
+			out[n.Script] = n.Lua
 		}
 	}
 	out["data/npcs.yml"] = data.String()
-	used := map[string]bool{}
+	written := map[string]bool{}
 	for _, f := range r.sortedFunctions() {
-		if f.Lua != "" && !used[f.Path] {
+		if f.Lua != "" && !written[f.Path] {
 			out[f.Path] = f.Lua
-			used[f.Path] = true
+			written[f.Path] = true
 		}
 	}
 	addCoreFiles(out)

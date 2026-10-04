@@ -85,3 +85,61 @@ func TestDuplicationPartyPickUps(t *testing.T) {
 	}
 	srv.CheckLogs()
 }
+
+// guildStorageTest is the duplication test with guild storage: 8 bots
+// in one guild drop, pick up and disconnect as dupTest's do, and also
+// open the guild storage in turn, as an NPC would, and put Jellopy in
+// and take it out. Only one bot at a time has the storage open; the
+// others get STORAGE_OUTCOME_IN_USE. Every bot stays on the start map,
+// whose zone the audit reads the guild storages on.
+func guildStorageTest(srv *Server, counts *StorageCounts) DupTest {
+	d := dupTest(srv)
+	d.Bots = 8
+	d.Prefix = "Guild"
+	storage := GuildStorageMove(srv, Jellopy, counts)
+	storage.Weight = 15
+	d.Moves = append(d.Moves, storage)
+	d.Settle = SettleStorage(d.Settle)
+	d.Setup = GuildStorageSetup("Vault")
+	return d
+}
+
+// checkStorageReport checks that the bots used the guild storage, and
+// that the storage holds what the audit counts in it.
+func checkStorageReport(t *testing.T, rep DupReport, counts *StorageCounts) {
+	t.Helper()
+	t.Logf("guild storage: opened %d times, %d refused as in use, %d puts and %d takes, %d connections closed with it open; it holds %d Jellopy at the end",
+		counts.Opened.Load(), counts.InUse.Load(), counts.Put.Load(), counts.Taken.Load(), counts.Dropped.Load(), rep.End.Stored[Jellopy])
+	if counts.Opened.Load() == 0 || counts.InUse.Load() == 0 || counts.Put.Load() == 0 || counts.Taken.Load() == 0 {
+		t.Errorf("too little happened in the guild storage")
+	}
+}
+
+// TestDuplicationGuildStorage runs the guild storage duplication test
+// without a database.
+func TestDuplicationGuildStorage(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30,714:1", Race: true})
+	var counts StorageCounts
+	d := guildStorageTest(srv, &counts)
+	rep := d.Run(t)
+	checkDupReport(t, rep)
+	checkStorageReport(t, rep, &counts)
+	srv.CheckLogs()
+}
+
+// TestDuplicationGuildStorageWithDatabase runs the guild storage
+// duplication test with PostgreSQL, then checks the saved inventories
+// and guild storage.
+func TestDuplicationGuildStorageWithDatabase(t *testing.T) {
+	t.Parallel()
+	srv := Start(t, Options{StartItems: "909:30,714:1", Database: true, Race: true})
+	var counts StorageCounts
+	d := guildStorageTest(srv, &counts)
+	d.Prefix = "SavedGuild"
+	rep := d.Run(t)
+	checkDupReport(t, rep)
+	checkStorageReport(t, rep, &counts)
+	d.CheckDatabase(t, rep)
+	srv.CheckLogs()
+}

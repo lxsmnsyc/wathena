@@ -6,6 +6,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 )
 
@@ -28,7 +29,7 @@ import (
 // must not block. Commits are written in the order they come, and a
 // character's later saves are written after its commits.
 type Committer interface {
-	Commit(saves []CommitSave, logs transfer.Logs)
+	Commit(saves []CommitSave, storages []StorageCommit, logs transfer.Logs)
 }
 
 // CommitSave is a character a commit saves, with the saver that saves
@@ -86,6 +87,8 @@ func removeEnd(r wathenav1.InventoryRemoveReason) (transfer.Action, transfer.Own
 		return transfer.ActionTake, transfer.End(transfer.KindScript)
 	case wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_SOLD:
 		return transfer.ActionSell, transfer.End(transfer.KindShop)
+	case wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_GUILD:
+		return transfer.ActionGuild, transfer.End(transfer.KindUsed)
 	}
 	return transfer.ActionUse, transfer.End(transfer.KindUsed)
 }
@@ -160,9 +163,10 @@ func (z *Zone) recordTransfer(p *Player, logs transfer.Logs) {
 // Committer: a copy of each character they changed and their log lines.
 // Without a Committer, the lines go to the log.
 func (z *Zone) commitTransfers() {
-	if len(z.txPlayers) == 0 {
+	if len(z.txPlayers) == 0 && len(z.txStorageRefs) == 0 && len(z.txStorages) == 0 {
 		return
 	}
+	storages := z.storageCommits()
 	logs, players := z.txLogs, z.txPlayers
 	z.txLogs, z.txPlayers = transfer.Logs{}, nil
 	var saves []CommitSave
@@ -175,7 +179,7 @@ func (z *Zone) commitTransfers() {
 		}
 	}
 	if z.Committer != nil {
-		z.Committer.Commit(saves, logs)
+		z.Committer.Commit(saves, storages, logs)
 		return
 	}
 	z.logTransfers(logs)
@@ -240,6 +244,10 @@ type Audit struct {
 	Map     string
 	Players []Holding
 	Ground  []GroundHolding
+	// Storages are what every guild storage holds, read on the zone's
+	// goroutine, so they agree with the zone's players while the zone's
+	// players are the ones who move guild storage items.
+	Storages []social.StorageHolding
 }
 
 // Audit lists what the zone's players and ground hold. It runs on the
@@ -258,6 +266,9 @@ func (z *Zone) Audit(ctx context.Context) (Audit, error) {
 			if g := e.item; g != nil {
 				a.Ground = append(a.Ground, GroundHolding{ItemID: g.id, Amount: g.amount, Origin: g.origin})
 			}
+		}
+		if z.Social != nil {
+			a.Storages = z.Social.AuditStorages()
 		}
 		done <- a
 	}

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ALL_TAB,
   ChatTabs,
+  GUILD_TAB,
   LOCAL_LINES,
   MAX_WHISPER_TABS,
   PARTY_TAB,
@@ -60,6 +61,29 @@ describe('ChatTabs', () => {
     expect(tabs.active).toBe(ALL_TAB);
   });
 
+  it('shows the Guild tab after All and Party while the player has a guild', () => {
+    const tabs = new ChatTabs();
+    tabs.joinChannel('#trade', '[Trade]', 0, true);
+    expect(tabs.hasGuild).toBe(false);
+    tabs.showGuild();
+    tabs.showGuild();
+    expect(tabs.tabs.map((t) => t.key)).toEqual([ALL_TAB, GUILD_TAB, channelKey('#trade')]);
+    tabs.hideGuild();
+    tabs.showParty();
+    tabs.showGuild();
+    expect(tabs.tabs.map((t) => t.key)).toEqual([
+      ALL_TAB,
+      PARTY_TAB,
+      GUILD_TAB,
+      channelKey('#trade'),
+    ]);
+    tabs.activate(GUILD_TAB);
+    expect(tabs.target()).toEqual({ kind: 'guild' });
+    tabs.hideGuild();
+    expect(tabs.hasGuild).toBe(false);
+    expect(tabs.active).toBe(ALL_TAB);
+  });
+
   it('goes back to All when the active tab closes', () => {
     const tabs = new ChatTabs();
     tabs.joinChannel('#trade', '[Trade]', 0, true);
@@ -106,6 +130,8 @@ describe('showsLine', () => {
     expect(showsLine(ALL_TAB, PARTY_TAB)).toBe(true);
     expect(showsLine(PARTY_TAB, PARTY_TAB)).toBe(true);
     expect(showsLine(PARTY_TAB, LOCAL_LINES)).toBe(false);
+    expect(showsLine(GUILD_TAB, GUILD_TAB)).toBe(true);
+    expect(showsLine(GUILD_TAB, PARTY_TAB)).toBe(false);
   });
 });
 
@@ -115,5 +141,6 @@ describe('placeholder', () => {
     expect(placeholder({ kind: 'channel', name: '#trade' })).toBe('Say in #trade');
     expect(placeholder({ kind: 'whisper', name: 'Bob' })).toBe('Whisper to Bob');
     expect(placeholder({ kind: 'party' })).toBe('Say to your party');
+    expect(placeholder({ kind: 'guild' })).toBe('Say to your guild');
   });
 });

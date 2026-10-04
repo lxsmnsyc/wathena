@@ -17,12 +17,13 @@ type commits struct {
 }
 
 type commitCall struct {
-	saves []CommitSave
-	logs  transfer.Logs
+	saves    []CommitSave
+	storages []StorageCommit
+	logs     transfer.Logs
 }
 
-func (c *commits) Commit(saves []CommitSave, logs transfer.Logs) {
-	c.got = append(c.got, commitCall{saves, logs})
+func (c *commits) Commit(saves []CommitSave, storages []StorageCommit, logs transfer.Logs) {
+	c.got = append(c.got, commitCall{saves, storages, logs})
 }
 
 // TestTransferCommits checks that a drop and a pick-up by another player

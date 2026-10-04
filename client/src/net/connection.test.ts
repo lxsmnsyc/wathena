@@ -6,9 +6,27 @@ import { DEFAULT_LIMITS, limitsOf, unpackSteps } from './connection';
 describe('limitsOf', () => {
   it('takes the limits Welcome gives', () => {
     const welcome = create(WelcomeSchema, {
-      limits: { partyMembers: 8, friends: 20, blockList: 30 },
+      limits: {
+        partyMembers: 8,
+        friends: 20,
+        blockList: 30,
+        guildMembers: 10,
+        guildPositions: 8,
+        guildAllies: 2,
+        guildEnemies: 4,
+        guildStorage: 600,
+      },
     });
-    expect(limitsOf(welcome)).toEqual({ partyMembers: 8, friends: 20, blockList: 30 });
+    expect(limitsOf(welcome)).toEqual({
+      partyMembers: 8,
+      friends: 20,
+      blockList: 30,
+      guildMembers: 10,
+      guildPositions: 8,
+      guildAllies: 2,
+      guildEnemies: 4,
+      guildStorage: 600,
+    });
   });
 
   it("uses rAthena's defaults for missing limits", () => {

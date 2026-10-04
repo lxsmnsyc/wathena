@@ -156,7 +156,7 @@ func (h *testHost) PlayerField(id int64, field string) (script.Value, error) {
 		return script.String("prontera"), nil
 	case "character_id", "account_id", "x", "y":
 		return script.Int(1), nil
-	case "party":
+	case "party", "guild":
 		return script.Nil, nil
 	}
 	return script.Nil, fmt.Errorf("player has no field %q", field)

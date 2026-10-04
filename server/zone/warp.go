@@ -192,6 +192,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	// character.
 	z.closeTalk(p)
 	p.shop = nil
+	z.closeGuildStorage(p, true)
 	z.mapWarpStatuses(p)
 	// unit_remove_map: the cast stops and the player's ground skills end.
 	z.castCancel(p.entity, false)

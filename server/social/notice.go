@@ -36,6 +36,38 @@ const (
 	NoticeItemShared
 	// NoticeBooking answers a party booking command.
 	NoticeBooking
+	// NoticeGuild is the player's whole guild, after a change. Guild is
+	// nil when the player has no guild.
+	NoticeGuild
+	// NoticeGuildMember is one guild member's values.
+	NoticeGuildMember
+	// NoticeGuildExp is the guild after exp that did not level it up.
+	NoticeGuildExp
+	// NoticeGuildInvite is a guild invite for the player.
+	NoticeGuildInvite
+	// NoticeGuildAllyRequest asks the player's guild to be allies.
+	NoticeGuildAllyRequest
+	// NoticeGuildResult tells how a guild action went, or what happened
+	// to the guild.
+	NoticeGuildResult
+	// NoticeGuildChat is a guild chat line.
+	NoticeGuildChat
+	// NoticeGuildEvent is a guild_join or guild_leave event about the
+	// player, which the zone that holds it runs.
+	NoticeGuildEvent
+	// NoticeGuildChange is a guild_change event made outside a zone, which
+	// the zone that holds the player runs.
+	NoticeGuildChange
+	// NoticeGuildBadge tells the zone the player's guild badge may have
+	// changed, so players in sight see it again.
+	NoticeGuildBadge
+	// NoticeGuildSkillBlock blocks a new master's guild skills, as
+	// guild_block_skill in pre-renewal.
+	NoticeGuildSkillBlock
+	// NoticeEmergencyCall sends the player to its master's cell.
+	NoticeEmergencyCall
+	// NoticeStorageClose closes the player's guild storage window.
+	NoticeStorageClose
 )
 
 // Notice is one thing for one player. Its values are copies, so a zone
@@ -56,6 +88,62 @@ type Notice struct {
 	Event   Event
 	Shared  ItemShared
 	Booking BookingView
+	// Guild, GuildMember, GuildOutcome, Change and Call are the guild
+	// notices' values.
+	Guild        *GuildView
+	GuildMember  GuildMemberView
+	GuildOutcome GuildOutcome
+	Change       GuildChange
+	Call         Call
+}
+
+// GuildView is what members see of a guild.
+type GuildView struct {
+	ID           int64
+	Name         string
+	Level        int
+	Exp, NextExp int64
+	SkillPoints  int
+	MaxMembers   int
+	Master       string
+	Notice       GuildNotice
+	Emblem       int
+	AverageLevel int
+	// Members are in slot order, as clif_guild_memberlist.
+	Members   []GuildMemberView
+	Positions []Position
+	Relations []Relation
+	Skills    []GuildSkillView
+}
+
+// Member returns a member's view by name.
+func (v *GuildView) Member(name string) (GuildMemberView, bool) {
+	k := Key(name)
+	for _, m := range v.Members {
+		if Key(m.Name) == k {
+			return m, true
+		}
+	}
+	return GuildMemberView{}, false
+}
+
+// GuildMemberView is what members see of a member.
+type GuildMemberView struct {
+	Name     string
+	Position int
+	Online   bool
+	Map      string
+	Job      int
+	Level    int
+	Exp      int64
+	X, Y     int
+	Master   bool
+}
+
+// GuildSkillView is one guild skill of the tree.
+type GuildSkillView struct {
+	ID, Level, Max int
+	CanRaise       bool
 }
 
 // PartyView is what members see of a party.
@@ -164,6 +252,57 @@ const (
 	PartyExpShareOff
 	PartyOptionsChanged
 	PartyNoParty
+)
+
+// GuildOutcome is the outcome of a guild action, as the protocol's
+// GuildOutcome.
+type GuildOutcome int
+
+// The guild outcomes.
+const (
+	GuildCreated GuildOutcome = iota + 1
+	GuildAlreadyInGuild
+	GuildNameTaken
+	GuildNoEmperium
+	GuildBadName
+	GuildNoGuild
+	GuildNoPermission
+	GuildNotMaster
+	GuildNotOnline
+	GuildTargetInGuild
+	GuildFull
+	GuildInviteSent
+	GuildRefused
+	GuildAccepted
+	GuildJoined
+	GuildLeft
+	GuildExpelled
+	GuildDisbanded
+	GuildNotMember
+	GuildMasterCannotLeave
+	GuildMasterChanged
+	GuildMasterChangeTooSoon
+	GuildPositionsChanged
+	GuildNoticeChanged
+	GuildSkillRaised
+	GuildSkillRefused
+	GuildLevelUp
+	GuildAllyRequestSent
+	GuildAllied
+	GuildAllyRefused
+	GuildAllyLimit
+	GuildTheirAllyLimit
+	GuildAlreadyAllied
+	GuildTargetBusy
+	GuildTargetNotMaster
+	GuildEnemyAdded
+	GuildEnemyLimit
+	GuildAlreadyEnemy
+	GuildRelationEnded
+	GuildSameGuild
+	GuildNotEmpty
+	GuildEmblemChanged
+	GuildPositionChanged
 )
 
 // FriendOutcome is the outcome of a friend action, as the protocol's

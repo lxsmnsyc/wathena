@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -39,6 +40,10 @@ type auditZone struct {
 	Ground  []auditGround `json:"ground"`
 }
 
+// guildStorageMap is the map name of the audit entry that lists the
+// guild storages, one "player" per guild named guild:<ID>.
+const guildStorageMap = "guild_storage"
+
 // auditHandler lists every item and all zeny that players and the
 // ground hold, zone by zone, with serials, for the duplication tests
 // (decision 0017): GET /debug/wathena/items. It is for development
@@ -48,6 +53,9 @@ func auditHandler(w *world.World) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 		out := []auditZone{}
+		// The guild storages come from the audit of the first zone with
+		// players, read on its goroutine, so they agree with its players.
+		var storages *auditZone
 		for _, z := range w.Zones() {
 			a, err := z.Audit(ctx)
 			if err != nil {
@@ -70,6 +78,20 @@ func auditHandler(w *world.World) http.HandlerFunc {
 				az.Ground = append(az.Ground, ag)
 			}
 			out = append(out, az)
+			if storages == nil && (len(a.Players) > 0 || z == w.Zones()[len(w.Zones())-1]) {
+				st := auditZone{Map: guildStorageMap, Players: []auditPlayer{}, Ground: []auditGround{}}
+				for _, s := range a.Storages {
+					ap := auditPlayer{Name: fmt.Sprintf("guild:%d", s.Guild), Items: []auditItem{}}
+					for _, it := range s.Items {
+						ap.Items = append(ap.Items, auditItem{Slot: it.Slot, Item: it.ID, Amount: it.Amount, Serial: it.Serial.String()})
+					}
+					st.Players = append(st.Players, ap)
+				}
+				storages = &st
+			}
+		}
+		if storages != nil {
+			out = append(out, *storages)
 		}
 		rw.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(rw).Encode(out)

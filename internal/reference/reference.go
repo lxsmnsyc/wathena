@@ -49,6 +49,7 @@ var Systems = []string{
 	"status_effects",
 	"level_penalty",
 	"party_share",
+	"guild",
 	"random_option_rolls",
 }
 

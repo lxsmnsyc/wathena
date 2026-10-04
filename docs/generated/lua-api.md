@@ -27,6 +27,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.world`](#waworld) | The world. |
 | [`wa.channels`](#wachannels) | Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world. |
 | [`wa.parties`](#waparties) | Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do. |
+| [`wa.guilds`](#waguilds) | Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later. |
 | [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decision 27). Read-only. |
 | [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
@@ -444,6 +445,45 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string` | A party's name, without regard to case. |
+
+### wa.guilds
+
+```lua
+local guilds = require "wa.guilds"
+```
+
+Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later.
+
+#### `guilds.create(master, name) → wa.Guild?`
+
+Makes a guild with the player as its master and returns it. It takes no Emperium, so the script decides the cost. nil when the name is taken or the master has a guild. The guild_join event follows, with the reason "script". A test case needs no permission for it.
+
+Permission: `guild.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `master` | `wa.Player` |  |
+| `name` | `string` | 1 to 24 characters. |
+
+#### `guilds.get(id) → wa.Guild?`
+
+A guild by ID, or nil.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `id` | `integer` | A guild's ID, such as player.guild.id. |
+
+#### `guilds.find(name) → wa.Guild?`
+
+A guild by name, or nil.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A guild's name, without regard to case. |
 
 ### wa.rules
 
@@ -972,6 +1012,7 @@ A player. Each access looks the player up again. A handle to a player who left t
 | `character_id` | `integer` | The database ID, 0 without a database. |
 | `account_id` | `integer` | The database ID, 0 without a database. |
 | `party` | `wa.Party?` | The player's party, or nil. |
+| `guild` | `wa.Guild?` | The player's guild, or nil. |
 | `sex` | `"male"\|"female"` |  |
 | `companion` | `integer?` | The player's companion, from companions.id, or nil. |
 | `mount` | `integer?` | The player's mount, from mounts.id, or nil. |
@@ -1890,6 +1931,170 @@ The object of the party_change event.
 | `leader` | `wa.Player?` | The leader, or nil when it is on another map. |
 | `options` | `wa.PartyOptions` | The party's options after the change. |
 
+### wa.Guild
+
+A guild, from player.guild or wa.guilds. Its master and members are players of this map: a member on another map is nil or left out.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | `integer` |  |
+| `name` | `string` |  |
+| `master` | `wa.Player?` | The master, or nil when it is offline or on another map. |
+| `master_name` | `string` | The master's name, online or not. |
+| `level` | `integer` | 1 to 50, from exp_guild.yml. |
+| `exp` | `integer` | The exp toward the next level. |
+| `notice` | `wa.GuildNotice` |  |
+| `member_count` | `integer` | Every member, online or not. |
+
+#### `guild:get_members() → wa.Player[]`
+
+The online members on this map, in the guild's slot order. The master is first.
+
+Permission: `game.read`.
+
+#### `guild:get_member_names() → string[]`
+
+Every member's name, online or not, in slot order.
+
+Permission: `game.read`.
+
+#### `guild:get_position(player) → wa.GuildPosition?`
+
+The member's position, or nil for a player who is not a member.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `guild:get_skill_level(skill) → integer`
+
+The guild's level of a guild skill, as getgdskilllv.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | A guild skill's ID, such as skills.id("GD_EXTENSION"). |
+
+#### `guild:is_allied(other) → boolean`
+
+Whether the guilds are allies.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `other` | `wa.Guild` |  |
+
+#### `guild:is_enemy(other) → boolean`
+
+Whether this guild has the other as an enemy. Enemies are on one side only.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `other` | `wa.Guild` |  |
+
+#### `guild:add(player) → boolean`
+
+Puts the player in the guild with the last position. Returns false when the player has a guild or the guild is full. The guild_join event follows, with the reason "script".
+
+Permission: `guild.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `guild:remove(player) → boolean`
+
+Takes a member out of the guild. Returns false for a player who is not a member, and for the master. The guild_leave event follows, with the reason "script".
+
+Permission: `guild.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `guild:set_master(player) → boolean`
+
+Makes a member the master, as guildchangegm, without guild_leaderchange_delay. Returns false for a player who is not a member, or is the master. The guild_change event follows.
+
+Permission: `guild.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `guild:set_notice(title, text) → boolean`
+
+Sets the guild notice. Returns false when a part is too long. The guild_change event follows.
+
+Permission: `guild.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `title` | `string` | At most 59 characters. |
+| `text` | `string` | At most 119 characters. |
+
+#### `guild:give_exp(amount)`
+
+Adds exp to the guild, as guildgetexp, which may level it up. The guild_change event follows a level up.
+
+Permission: `guild.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `amount` | `integer` | 1 to 2147483647. |
+
+#### `guild:disband()`
+
+Breaks the guild up, with its members. Its storage is lost, as in rAthena. Each member gets the guild_leave event, with the reason "disbanded".
+
+Permission: `guild.manage`.
+
+### wa.GuildNotice
+
+A guild's notice.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `title` | `string` |  |
+| `text` | `string` |  |
+
+### wa.GuildPosition
+
+A member's position, from guild:get_position.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` |  |
+| `can_invite` | `boolean` |  |
+| `can_expel` | `boolean` |  |
+| `can_use_storage` | `boolean` |  |
+| `exp_tax` | `integer` | The percent of base exp the member gives the guild. |
+
+### wa.GuildMembership
+
+The object of the guild_join and guild_leave events.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `guild` | `wa.Guild` | The guild. After it broke up, its fields still read. |
+| `player` | `wa.Player` | The player who joined or left. |
+| `reason` | `"invited"\|"left"\|"expelled"\|"disbanded"\|"script"` | Why: an accepted invite, a leave, an expel, a break up, or a wa.guilds call. |
+
+### wa.GuildChange
+
+The object of the guild_change event.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `guild` | `wa.Guild` | The guild, whose fields hold the new values. |
+| `change` | `"master"\|"level"\|"notice"\|"emblem"` | What changed. |
+
 ### wa.Limits
 
 The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.
@@ -1899,6 +2104,11 @@ The limits of the world's ruleset, as rules.limits. A list over a limit that a r
 | `party_members` | `integer` | The most members a party holds, as MAX_PARTY. 12 by default, at most 64. |
 | `friends` | `integer` | The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200. |
 | `block_list` | `integer` | The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100. |
+| `guild_members` | `integer` | The most members a guild holds before Guild Extension, which adds 6 per level. 16 by default, at most 200. |
+| `guild_positions` | `integer` | The positions of a guild, as MAX_GUILDPOSITION. 20 by default, at most 40. |
+| `guild_allies` | `integer` | The most allied guilds of a guild, as max_guild_alliance. 3 by default, at most 10. |
+| `guild_enemies` | `integer` | The most enemy guilds of a guild, as max_guild_alliance. 3 by default, at most 10. |
+| `guild_storage` | `integer` | The most slots a guild storage holds. 500 by default, at most 2,000. |
 
 ### wa.ExpShare
 
@@ -2255,6 +2465,8 @@ The object of the experience hook: the exp one player gets for a kill, after the
 | `job` | `integer` |  |
 | `party` | `wa.Party?` | The player's party, or nil. |
 | `share` | `wa.ExpShare` | The player's own share of the kill, before the even party split and the level penalty. 0 and 0 for a member who did not fight. |
+| `guild` | `wa.Guild?` | The player's guild, or nil. |
+| `guild_tax` | `integer` | The share of base that goes to the guild, by the exp tax of the player's position. The tax applies at the same rate to the base the hook returns. |
 
 ### wa.HookOptions
 
@@ -2903,6 +3115,9 @@ Changes the value.
 | `party_join` | mod, event | `join: wa.PartyMembership` | A player of the context's map joined a party: an accepted invite, or a wa.parties call. It does not fire for a player who makes a party itself. |
 | `party_leave` | mod, event | `leave: wa.PartyMembership` | A player of the context's map left its party. A member who is offline gets no event. |
 | `party_change` | mod, event | `change: wa.PartyChange` | A party's leader or options changed, by a change made on the context's map. |
+| `guild_join` | mod, event | `join: wa.GuildMembership` | A player of the context's map joined a guild: an accepted invite, or a wa.guilds call, which also fires it for the master of a new guild. |
+| `guild_leave` | mod, event | `leave: wa.GuildMembership` | A player of the context's map left its guild. A member who is offline gets no event. |
+| `guild_change` | mod, event | `change: wa.GuildChange` | A guild got a new master, a level, a notice or an emblem, by a change made on the context's map. A new emblem from the account pages runs it on the map of the master, or of the first online member. |
 
 ## Named types
 
@@ -2916,7 +3131,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`
 
 ### wa.BonusName
 

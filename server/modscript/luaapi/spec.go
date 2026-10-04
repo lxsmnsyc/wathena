@@ -241,6 +241,16 @@ var Modules = []Module{
 		},
 	},
 	{
+		Name: "wa.guilds", Local: "guilds",
+		Doc: "Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later.",
+		Funcs: []Func{
+			{Name: "create", Params: []Param{{"master", "wa.Player", ""}, {"name", "string", "1 to 24 characters."}}, Returns: "wa.Guild?",
+				Doc: "Makes a guild with the player as its master and returns it. It takes no Emperium, so the script decides the cost. nil when the name is taken or the master has a guild. The guild_join event follows, with the reason \"script\". A test case needs no permission for it.", Permission: "guild.manage"},
+			{Name: "get", Params: []Param{{"id", "integer", "A guild's ID, such as player.guild.id."}}, Returns: "wa.Guild?", Doc: "A guild by ID, or nil.", Permission: "game.read"},
+			{Name: "find", Params: []Param{{"name", "string", "A guild's name, without regard to case."}}, Returns: "wa.Guild?", Doc: "A guild by name, or nil.", Permission: "game.read"},
+		},
+	},
+	{
 		Name: "wa.rules", Local: "rules",
 		Doc: "The world's ruleset (strategy section 3.6, review decision 27). Read-only.",
 		Fields: []Field{
@@ -371,6 +381,7 @@ func playerFields() []Field {
 		{"character_id", "integer", "The database ID, 0 without a database."},
 		{"account_id", "integer", "The database ID, 0 without a database."},
 		{"party", "wa.Party?", "The player's party, or nil."},
+		{"guild", "wa.Guild?", "The player's guild, or nil."},
 		{"sex", `"male"|"female"`, ""},
 		{"companion", "integer?", "The player's companion, from companions.id, or nil."},
 		{"mount", "integer?", "The player's mount, from mounts.id, or nil."},
@@ -611,11 +622,75 @@ var Classes = []Class{
 		},
 	},
 	{
+		Name: "wa.Guild", Handle: "guild", Doc: "A guild, from player.guild or wa.guilds. Its master and members are players of this map: a member on another map is nil or left out.",
+		Fields: []Field{
+			{"id", "integer", ""},
+			{"name", "string", ""},
+			{"master", "wa.Player?", "The master, or nil when it is offline or on another map."},
+			{"master_name", "string", "The master's name, online or not."},
+			{"level", "integer", "1 to 50, from exp_guild.yml."},
+			{"exp", "integer", "The exp toward the next level."},
+			{"notice", "wa.GuildNotice", ""},
+			{"member_count", "integer", "Every member, online or not."},
+		},
+		Methods: []Func{
+			{Name: "get_members", Returns: "wa.Player[]", Doc: "The online members on this map, in the guild's slot order. The master is first.", Permission: "game.read"},
+			{Name: "get_member_names", Returns: "string[]", Doc: "Every member's name, online or not, in slot order.", Permission: "game.read"},
+			{Name: "get_position", Params: []Param{playerParam}, Returns: "wa.GuildPosition?", Doc: "The member's position, or nil for a player who is not a member.", Permission: "game.read"},
+			{Name: "get_skill_level", Params: []Param{{"skill", "integer", "A guild skill's ID, such as skills.id(\"GD_EXTENSION\")."}}, Returns: "integer", Doc: "The guild's level of a guild skill, as getgdskilllv.", Permission: "game.read"},
+			{Name: "is_allied", Params: []Param{{"other", "wa.Guild", ""}}, Returns: "boolean", Doc: "Whether the guilds are allies.", Permission: "game.read"},
+			{Name: "is_enemy", Params: []Param{{"other", "wa.Guild", ""}}, Returns: "boolean", Doc: "Whether this guild has the other as an enemy. Enemies are on one side only.", Permission: "game.read"},
+			{Name: "add", Params: []Param{playerParam}, Returns: "boolean", Doc: "Puts the player in the guild with the last position. Returns false when the player has a guild or the guild is full. The guild_join event follows, with the reason \"script\".", Permission: "guild.manage"},
+			{Name: "remove", Params: []Param{playerParam}, Returns: "boolean", Doc: "Takes a member out of the guild. Returns false for a player who is not a member, and for the master. The guild_leave event follows, with the reason \"script\".", Permission: "guild.manage"},
+			{Name: "set_master", Params: []Param{playerParam}, Returns: "boolean", Doc: "Makes a member the master, as guildchangegm, without guild_leaderchange_delay. Returns false for a player who is not a member, or is the master. The guild_change event follows.", Permission: "guild.manage"},
+			{Name: "set_notice", Params: []Param{{"title", "string", "At most 59 characters."}, {"text", "string", "At most 119 characters."}}, Returns: "boolean", Doc: "Sets the guild notice. Returns false when a part is too long. The guild_change event follows.", Permission: "guild.manage"},
+			{Name: "give_exp", Params: []Param{{"amount", "integer", "1 to 2147483647."}}, Doc: "Adds exp to the guild, as guildgetexp, which may level it up. The guild_change event follows a level up.", Permission: "guild.manage"},
+			{Name: "disband", Doc: "Breaks the guild up, with its members. Its storage is lost, as in rAthena. Each member gets the guild_leave event, with the reason \"disbanded\".", Permission: "guild.manage"},
+		},
+	},
+	{
+		Name: "wa.GuildNotice", Doc: "A guild's notice.",
+		Fields: []Field{
+			{"title", "string", ""},
+			{"text", "string", ""},
+		},
+	},
+	{
+		Name: "wa.GuildPosition", Doc: "A member's position, from guild:get_position.",
+		Fields: []Field{
+			{"name", "string", ""},
+			{"can_invite", "boolean", ""},
+			{"can_expel", "boolean", ""},
+			{"can_use_storage", "boolean", ""},
+			{"exp_tax", "integer", "The percent of base exp the member gives the guild."},
+		},
+	},
+	{
+		Name: "wa.GuildMembership", Doc: "The object of the guild_join and guild_leave events.",
+		Fields: []Field{
+			{"guild", "wa.Guild", "The guild. After it broke up, its fields still read."},
+			{"player", "wa.Player", "The player who joined or left."},
+			{"reason", `"invited"|"left"|"expelled"|"disbanded"|"script"`, "Why: an accepted invite, a leave, an expel, a break up, or a wa.guilds call."},
+		},
+	},
+	{
+		Name: "wa.GuildChange", Doc: "The object of the guild_change event.",
+		Fields: []Field{
+			{"guild", "wa.Guild", "The guild, whose fields hold the new values."},
+			{"change", `"master"|"level"|"notice"|"emblem"`, "What changed."},
+		},
+	},
+	{
 		Name: "wa.Limits", Doc: "The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.",
 		Fields: []Field{
 			{"party_members", "integer", "The most members a party holds, as MAX_PARTY. 12 by default, at most 64."},
 			{"friends", "integer", "The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200."},
 			{"block_list", "integer", "The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100."},
+			{"guild_members", "integer", "The most members a guild holds before Guild Extension, which adds 6 per level. 16 by default, at most 200."},
+			{"guild_positions", "integer", "The positions of a guild, as MAX_GUILDPOSITION. 20 by default, at most 40."},
+			{"guild_allies", "integer", "The most allied guilds of a guild, as max_guild_alliance. 3 by default, at most 10."},
+			{"guild_enemies", "integer", "The most enemy guilds of a guild, as max_guild_alliance. 3 by default, at most 10."},
+			{"guild_storage", "integer", "The most slots a guild storage holds. 500 by default, at most 2,000."},
 		},
 	},
 	{
@@ -780,6 +855,8 @@ var Classes = []Class{
 			{"job", "integer", ""},
 			{"party", "wa.Party?", "The player's party, or nil."},
 			{"share", "wa.ExpShare", "The player's own share of the kill, before the even party split and the level penalty. 0 and 0 for a member who did not fight."},
+			{"guild", "wa.Guild?", "The player's guild, or nil."},
+			{"guild_tax", "integer", "The share of base that goes to the guild, by the exp tax of the player's position. The tax applies at the same rate to the base the hook returns."},
 		},
 	},
 	{
@@ -1166,6 +1243,9 @@ var Events = []Event{
 	{Name: "party_join", Kinds: []string{"mod", "event"}, Params: []Param{{"join", "wa.PartyMembership", ""}}, Doc: "A player of the context's map joined a party: an accepted invite, or a wa.parties call. It does not fire for a player who makes a party itself."},
 	{Name: "party_leave", Kinds: []string{"mod", "event"}, Params: []Param{{"leave", "wa.PartyMembership", ""}}, Doc: "A player of the context's map left its party. A member who is offline gets no event."},
 	{Name: "party_change", Kinds: []string{"mod", "event"}, Params: []Param{{"change", "wa.PartyChange", ""}}, Doc: "A party's leader or options changed, by a change made on the context's map."},
+	{Name: "guild_join", Kinds: []string{"mod", "event"}, Params: []Param{{"join", "wa.GuildMembership", ""}}, Doc: "A player of the context's map joined a guild: an accepted invite, or a wa.guilds call, which also fires it for the master of a new guild."},
+	{Name: "guild_leave", Kinds: []string{"mod", "event"}, Params: []Param{{"leave", "wa.GuildMembership", ""}}, Doc: "A player of the context's map left its guild. A member who is offline gets no event."},
+	{Name: "guild_change", Kinds: []string{"mod", "event"}, Params: []Param{{"change", "wa.GuildChange", ""}}, Doc: "A guild got a new master, a level, a notice or an emblem, by a change made on the context's map. A new emblem from the account pages runs it on the map of the master, or of the first online member."},
 }
 
 // EquipSlots are the slot names of player:get_equipped.

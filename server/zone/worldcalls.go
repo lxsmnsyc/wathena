@@ -11,6 +11,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/social"
 )
 
 // The world calls of mod scripts in a zone: monsters that scripts
@@ -85,8 +86,14 @@ func (z *Zone) killHooks(e, killer *entity) *progression.Hooks {
 	}
 	if r.HasHooks("experience") {
 		h.Experience = func(g progression.ExpGain) (int64, int64) {
-			return r.RunExperience(modscript.Experience{Player: int64(g.CharID), Monster: monster, Base: g.Base, Job: g.Job,
-				Party: g.Party, ShareBase: g.ShareBase, ShareJob: g.ShareJob})
+			ex := modscript.Experience{Player: int64(g.CharID), Monster: monster, Base: g.Base, Job: g.Job,
+				Party: g.Party, ShareBase: g.ShareBase, ShareJob: g.ShareJob}
+			if p := z.players[g.CharID]; p != nil {
+				var tax int
+				ex.Guild, tax = z.guildTax(p)
+				ex.GuildTax = social.TaxOf(g.Base, tax)
+			}
+			return r.RunExperience(ex)
 		}
 	}
 	return h

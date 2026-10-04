@@ -41,8 +41,10 @@ SELECT unnest(@ids::uuid[]), unnest(@ats::timestamptz[]), unnest(@kinds::text[])
 ON CONFLICT (id) DO NOTHING;
 
 -- name: InsertReport :one
-INSERT INTO reports (created_at, reporter_id, reporter_name, target_id, target_name, line_id, reason, map)
-VALUES (@created_at, @reporter_id, @reporter_name, @target_id, @target_name, sqlc.narg('line_id'), @reason, @map)
+INSERT INTO reports (created_at, reporter_id, reporter_name, target_id, target_name, line_id, reason, map,
+    guild_id, emblem_version, emblem_png)
+VALUES (@created_at, @reporter_id, @reporter_name, @target_id, @target_name, sqlc.narg('line_id'), @reason, @map,
+    @guild_id, @emblem_version, sqlc.narg('emblem_png'))
 RETURNING id;
 
 -- name: InsertReportLines :exec
@@ -68,7 +70,7 @@ WHERE id IN (
 
 -- name: Reports :many
 -- Reports lists the newest reports, for the staff tools and tests.
-SELECT id, created_at, reporter_id, reporter_name, target_id, target_name, line_id, reason, map, status
+SELECT id, created_at, reporter_id, reporter_name, target_id, target_name, line_id, reason, map, status, guild_id, emblem_version
 FROM reports
 ORDER BY id DESC
 LIMIT @max_rows;

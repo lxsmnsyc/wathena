@@ -452,8 +452,7 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			text, valid := CleanChat(ch.GetText())
 			// Lines over the rate are dropped, as rAthena's
 			// min_chat_delay does, and the player is told, since the
-			// client does not know a new character's lower limits. Guild
-			// chat does not exist yet, so it is ignored.
+			// client does not know a new character's lower limits.
 			if !ok {
 				queued = p.ChatTooFast(seq, ch.GetChannel(), ch.GetTo()+ch.GetChannelName())
 				break
@@ -476,6 +475,8 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 				queued = p.ChannelChat(seq, ch.GetChannelName(), text)
 			case wathenav1.ChatChannel_CHAT_CHANNEL_PARTY:
 				queued = p.PartyChat(seq, text)
+			case wathenav1.ChatChannel_CHAT_CHANNEL_GUILD:
+				queued = p.GuildChat(seq, text)
 			default:
 				queued = p.Ack(seq)
 			}
@@ -503,6 +504,14 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 					break
 				}
 			}
+			if g := r.GetGuildId(); g != 0 {
+				if g > math.MaxInt64 {
+					queued = p.Ack(seq)
+					break
+				}
+				queued = p.ReportGuild(seq, int64(g), r.GetEmblem(), reason) // #nosec G115 -- checked above.
+				break
+			}
 			line, isLine := chatpkg.LineIDFrom(r.GetLineId())
 			if !ValidName(r.GetName()) || len(r.GetLineId()) > 0 && !isLine {
 				// The zone answers an empty name with REPORT_OUTCOME_BAD_NAME.
@@ -516,6 +525,10 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			queued = friendCommand(p, seq, m.GetCommand().GetFriend())
 		case m.GetCommand().HasPartyBooking():
 			queued = bookingCommand(p, seq, m.GetCommand().GetPartyBooking())
+		case m.GetCommand().HasGuild():
+			queued = guildCommand(p, seq, m.GetCommand().GetGuild())
+		case m.GetCommand().HasStorage():
+			queued = storageCommand(p, seq, m.GetCommand().GetStorage())
 		case m.GetCommand().HasPickUp():
 			queued = p.PickUp(seq, m.GetCommand().GetPickUp().GetItem())
 		case m.GetCommand().HasRaiseStat():

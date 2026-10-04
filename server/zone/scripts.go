@@ -19,6 +19,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/rules"
+	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
 
@@ -74,6 +75,9 @@ type Mods struct {
 	// chat hub, such as a headless zone. Without it the zone uses core's
 	// (chat.Core).
 	Chat *chat.Data
+	// Guilds are the guild tables. Without them the zone uses core's
+	// tables of its base (social.CoreGuildTables).
+	Guilds *social.GuildTables
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -147,6 +151,8 @@ type scriptEvent struct {
 	chat *modscript.ChatMessage
 	// party is set for a party event, which runs with FireParty.
 	party *modscript.PartyEvent
+	// guild is set for a guild event, which runs with FireGuild.
+	guild *modscript.GuildEvent
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -247,6 +253,8 @@ func (z *Zone) runScripts() {
 			z.scripts.FireChat(*ev.chat)
 		case ev.party != nil:
 			z.scripts.FireParty(*ev.party)
+		case ev.guild != nil:
+			z.scripts.FireGuild(*ev.guild)
 		default:
 			z.scripts.Fire(ev.name, ev.args...)
 		}
@@ -378,6 +386,15 @@ var playerFields = map[string]func(h scriptHost, p *Player) script.Value{
 			return script.Nil
 		}
 		if id := h.z.socialHub().PartyOf(p.soc); id != 0 {
+			return script.Int(id)
+		}
+		return script.Nil
+	},
+	"guild": func(h scriptHost, p *Player) script.Value {
+		if p.soc == nil {
+			return script.Nil
+		}
+		if id := h.z.socialHub().GuildIDOf(p.soc); id != 0 {
 			return script.Int(id)
 		}
 		return script.Nil

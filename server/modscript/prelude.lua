@@ -157,8 +157,10 @@ local function heal(self, spec, percent, what)
 	return (call(H.player_heal, player_ids[self], percent, hp1, hp2, sp1, sp2))
 end
 
--- Party handles are made after the player handle, which reads them.
+-- Party and guild handles are made after the player handle, which reads
+-- them.
 local new_party, party_ids
+local new_guild, guild_ids
 
 new_player, player_ids = handle_type("player", {
 	send_message = function(self, text)
@@ -373,6 +375,9 @@ new_player, player_ids = handle_type("player", {
 	end
 	if key == "party" and value ~= nil then
 		return new_party(value)
+	end
+	if key == "guild" and value ~= nil then
+		return new_guild(value)
 	end
 	return value
 end, true, "player")
@@ -986,6 +991,112 @@ api["wa.parties"] = readonly("wa.parties", {
 	end,
 })
 
+-- Guilds (proposal 0002, review decision 28). A guild is one for the
+-- whole world. Its master and members are handles of players in this
+-- zone, so a member on another map is nil or left out.
+new_guild, guild_ids = handle_type("guild", {
+	get_members = function(self)
+		local out = {}
+		for i, id in ipairs(call(H.guild_call, "get_members", guild_ids[self])) do
+			out[i] = new_player(id)
+		end
+		return out
+	end,
+	get_member_names = function(self)
+		return (call(H.guild_call, "get_member_names", guild_ids[self]))
+	end,
+	get_position = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "guild:get_position: want a player handle")
+		local p = call(H.guild_call, "get_position", guild_ids[self], id)
+		if p == nil then
+			return nil
+		end
+		return readonly("guild position", p)
+	end,
+	get_skill_level = function(self, skill)
+		check(math_type(skill) == "integer", "guild:get_skill_level: want a skill ID, such as skills.id(\"GD_EXTENSION\")")
+		return (call(H.guild_call, "get_skill_level", guild_ids[self], skill))
+	end,
+	is_allied = function(self, other)
+		local id = guild_ids[other]
+		check(id ~= nil, "guild:is_allied: want a guild handle")
+		return (call(H.guild_call, "is_allied", guild_ids[self], id))
+	end,
+	is_enemy = function(self, other)
+		local id = guild_ids[other]
+		check(id ~= nil, "guild:is_enemy: want a guild handle")
+		return (call(H.guild_call, "is_enemy", guild_ids[self], id))
+	end,
+	add = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "guild:add: want a player handle")
+		return (call(H.guild_call, "add", guild_ids[self], id))
+	end,
+	remove = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "guild:remove: want a player handle")
+		return (call(H.guild_call, "remove", guild_ids[self], id))
+	end,
+	set_master = function(self, player)
+		local id = player_ids[player]
+		check(id ~= nil, "guild:set_master: want a player handle")
+		return (call(H.guild_call, "set_master", guild_ids[self], id))
+	end,
+	set_notice = function(self, title, text)
+		check(type(title) == "string" and type(text) == "string", "guild:set_notice: want a title and a text")
+		return (call(H.guild_call, "set_notice", guild_ids[self], title, text))
+	end,
+	give_exp = function(self, amount)
+		check(math_type(amount) == "integer", "guild:give_exp: the amount must be an integer")
+		call(H.guild_call, "give_exp", guild_ids[self], amount)
+	end,
+	disband = function(self)
+		call(H.guild_call, "disband", guild_ids[self])
+	end,
+}, function(id, key)
+	local ok, value = pcall(H.guild_field, id, key)
+	if not ok then
+		error(value, 3)
+	end
+	if key == "master" and value ~= nil then
+		return new_player(value)
+	end
+	if key == "notice" then
+		return readonly("guild notice", value)
+	end
+	return value
+end, true)
+
+api["wa.guilds"] = readonly("wa.guilds", {
+	create = function(master, name)
+		local id = player_ids[master]
+		check(id ~= nil, "guilds.create: want a player handle as the master")
+		check(type(name) == "string", "guilds.create: the name must be a string")
+		local guild = call(H.guilds_create, id, name)
+		if guild == nil then
+			return nil
+		end
+		return new_guild(guild)
+	end,
+	get = function(id)
+		check(math_type(id) == "integer", "guilds.get: the ID must be an integer")
+		local guild = call(H.guilds_find, "get", id)
+		if guild == nil then
+			return nil
+		end
+		return new_guild(guild)
+	end,
+	find = function(name)
+		check(type(name) == "string", "guilds.find: the name must be a string")
+		local guild = call(H.guilds_find, "find", name)
+		if guild == nil then
+			return nil
+		end
+		return new_guild(guild)
+	end,
+})
+
 -- The world's ruleset (proposal 0002, review decision 27): its limits,
 -- read-only.
 api["wa.rules"] = readonly("wa.rules", {
@@ -1510,9 +1621,29 @@ end
 
 local load_file
 
+-- core_internal is what core's converted NPC scripts use and the API has
+-- no call for yet, such as opening the guild storage. Only the core mod
+-- may require it, as wa.internal, and Go checks the caller again. It is
+-- not API: it may change without notice.
+local core_internal = readonly("wa.internal", {
+	open_guild_storage = function(player)
+		local id = player_ids[player]
+		check(id ~= nil, "open_guild_storage: want a player handle")
+		return (call(H.core_guild_storage, id))
+	end,
+	guild_storage_log = function(player)
+		local id = player_ids[player]
+		check(id ~= nil, "guild_storage_log: want a player handle")
+		call(H.core_guild_storage_log, id)
+	end,
+})
+
 local function require_from(mod_id, name)
 	if type(name) ~= "string" then
 		error("require: the module name must be a string", 3)
+	end
+	if name == "wa.internal" and mod_id == "core" then
+		return core_internal
 	end
 	if name:sub(1, 3) == "wa." then
 		local m = api[name]
@@ -1658,6 +1789,14 @@ function R.invoke(fn, ...)
 				fields.options = readonly("party options", value.options)
 			end
 			value = readonly("party event", fields)
+		elseif kind == "guild_event" then
+			-- The guild_join, guild_leave and guild_change objects: guild
+			-- and player are handles.
+			local fields = { guild = new_guild(value.guild), reason = value.reason, change = value.change }
+			if value.player ~= nil then
+				fields.player = new_player(value.player)
+			end
+			value = readonly("guild event", fields)
 		elseif kind == "chat" then
 			-- The chat message: player is a handle.
 			value = readonly("chat message", {
@@ -1721,6 +1860,10 @@ local function hook_object(kind, fields)
 		end
 		if fields.share ~= nil then
 			o.share = readonly("exp share", { base = fields.share.base, job = fields.share.job })
+		end
+		-- The player's guild, and the share of base exp it takes.
+		if fields.guild ~= nil then
+			o.guild = new_guild(fields.guild)
 		end
 	end
 	if kind == "monster_target" then

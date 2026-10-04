@@ -1,8 +1,9 @@
-// The text of party and friend notices in the chat log: how a party or
-// friend action went, what happened to the party, friends who log in or
-// out, and items that even item share gave. One plain sentence each.
+// The text of party, friend and guild notices in the chat log: how a
+// party, friend or guild action went, what happened to the party or the
+// guild, friends who log in or out, and items that even item share gave.
+// One plain sentence each.
 
-import { FriendOutcome, PartyOutcome } from '../gen/wathena/v1/event_pb';
+import { FriendOutcome, GuildOutcome, PartyOutcome } from '../gen/wathena/v1/event_pb';
 
 /**
  * The notice for a PartyResult. name is the player or party the outcome
@@ -109,4 +110,121 @@ export function partyInviteText(from: string, party: string): string {
 /** The prompt text for a friend request. */
 export function friendRequestText(from: string): string {
   return `${from} wants to be friends.`;
+}
+
+/**
+ * The notice for a GuildResult. name is the player, guild or skill the
+ * outcome is about. self is the player's own name, so "You left the
+ * guild." can read as such.
+ */
+export function guildMessage(outcome: GuildOutcome, name: string, self?: string): string {
+  const you = name !== '' && name === self;
+  const who = name === '' ? 'That player' : name;
+  const guild = name === '' ? 'That guild' : `The guild ${name}`;
+  switch (outcome) {
+    case GuildOutcome.CREATED:
+      return name === '' ? 'You made a guild.' : `You made the guild ${name}.`;
+    case GuildOutcome.ALREADY_IN_GUILD:
+      return 'You are in a guild already.';
+    case GuildOutcome.NAME_TAKEN:
+      return name === ''
+        ? 'A guild of that name exists already.'
+        : `A guild named ${name} exists already.`;
+    case GuildOutcome.NO_EMPERIUM:
+      return 'Making a guild takes an Emperium.';
+    case GuildOutcome.BAD_NAME:
+      return 'That guild name is not allowed.';
+    case GuildOutcome.NO_GUILD:
+      return 'You are not in a guild.';
+    case GuildOutcome.NO_PERMISSION:
+      return 'Your guild position does not allow that.';
+    case GuildOutcome.NOT_MASTER:
+      return 'Only the guild master can do that.';
+    case GuildOutcome.NOT_ONLINE:
+      return `${who} is not online.`;
+    case GuildOutcome.TARGET_IN_GUILD:
+      return `${who} is in a guild already or has an invite open.`;
+    case GuildOutcome.FULL:
+      return 'The guild is full.';
+    case GuildOutcome.INVITE_SENT:
+      return name === '' ? 'You sent the guild invite.' : `You invited ${name} to the guild.`;
+    case GuildOutcome.REFUSED:
+      return `${who} refused the guild invite.`;
+    case GuildOutcome.ACCEPTED:
+      return `${who} accepted the guild invite.`;
+    case GuildOutcome.JOINED:
+      return you ? 'You joined the guild.' : `${who} joined the guild.`;
+    case GuildOutcome.LEFT:
+      return you ? 'You left the guild.' : `${who} left the guild.`;
+    case GuildOutcome.EXPELLED:
+      return you ? 'You were expelled from the guild.' : `${who} was expelled from the guild.`;
+    case GuildOutcome.DISBANDED:
+      return 'The guild was disbanded.';
+    case GuildOutcome.NOT_MEMBER:
+      return `${who} is not in the guild.`;
+    case GuildOutcome.MASTER_CANNOT_LEAVE:
+      return 'The guild master cannot leave. Hand the guild over or disband it first.';
+    case GuildOutcome.MASTER_CHANGED:
+      return you ? 'You are the guild master now.' : `${who} is the guild master now.`;
+    case GuildOutcome.MASTER_CHANGE_TOO_SOON:
+      return 'The guild master changed too recently to change again.';
+    case GuildOutcome.POSITIONS_CHANGED:
+      return 'The guild positions changed.';
+    case GuildOutcome.NOTICE_CHANGED:
+      return 'The guild notice changed.';
+    case GuildOutcome.SKILL_RAISED:
+      return name === '' ? 'A guild skill was raised.' : `The guild raised ${name}.`;
+    case GuildOutcome.SKILL_REFUSED:
+      return 'That guild skill cannot be raised now.';
+    case GuildOutcome.LEVEL_UP:
+      return 'The guild reached a new level.';
+    case GuildOutcome.ALLY_REQUEST_SENT:
+      return name === ''
+        ? 'You asked for an alliance.'
+        : `You asked the guild of ${name} for an alliance.`;
+    case GuildOutcome.ALLIED:
+      return name === '' ? 'The guilds are allies now.' : `The guild ${name} is an ally now.`;
+    case GuildOutcome.ALLY_REFUSED:
+      return `${guild} refused the alliance.`;
+    case GuildOutcome.ALLY_LIMIT:
+      return 'Your guild has the most allies it can have.';
+    case GuildOutcome.THEIR_ALLY_LIMIT:
+      return `${guild} has the most allies it can have.`;
+    case GuildOutcome.ALREADY_ALLIED:
+      return `${guild} is an ally already.`;
+    case GuildOutcome.TARGET_BUSY:
+      return `${who} has another request open.`;
+    case GuildOutcome.TARGET_NOT_MASTER:
+      return `${who} is not a guild master.`;
+    case GuildOutcome.ENEMY_ADDED:
+      return name === '' ? 'The guild is an enemy now.' : `The guild ${name} is an enemy now.`;
+    case GuildOutcome.ENEMY_LIMIT:
+      return 'Your guild has the most enemies it can have.';
+    case GuildOutcome.ALREADY_ENEMY:
+      return `${guild} is an enemy already.`;
+    case GuildOutcome.RELATION_ENDED:
+      return name === ''
+        ? 'The guild relation ended.'
+        : `The relation with the guild ${name} ended.`;
+    case GuildOutcome.SAME_GUILD:
+      return `${who} is in your guild.`;
+    case GuildOutcome.NOT_EMPTY:
+      return 'The guild can only be disbanded when the master is its only member.';
+    case GuildOutcome.EMBLEM_CHANGED:
+      return 'The guild has a new emblem.';
+    case GuildOutcome.POSITION_CHANGED:
+      return you ? 'You have a new guild position.' : `${who} has a new guild position.`;
+    default:
+      return 'The guild action did nothing.';
+  }
+}
+
+/** The prompt text for a guild invite. */
+export function guildInviteText(from: string, guild: string): string {
+  return `${from} invites you to the guild ${guild}.`;
+}
+
+/** The prompt text for an alliance request. */
+export function guildAllyRequestText(from: string, guild: string): string {
+  return `${from} of the guild ${guild} asks your guild to be allies.`;
 }

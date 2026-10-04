@@ -374,6 +374,10 @@ func runAll(name string, args []string) error {
 	}
 	socials := social.New(rules.LimitsOrDefault(worldRules), rules.PartyOrDefault(worldRules))
 	socials.Blocks, socials.Clock = hub.BlocksName, clock
+	// Guilds use the tables of the world's base (decision 0021).
+	guildTables := social.CoreGuildTables(worldRules.Renewal)
+	loaded.zone.Guilds = guildTables
+	socials.SetGuildData(guildTables, rules.GuildOrDefault(worldRules))
 	var socialStore *store.SocialStore
 	if pool != nil {
 		parties, err := store.LoadParties(ctx, pool)
@@ -384,6 +388,20 @@ func runAll(name string, args []string) error {
 		socials.Store = socialStore
 		socials.Load(parties)
 		log.Info("parties loaded", "parties", len(parties))
+		guilds, storageLogs, err := store.LoadGuilds(ctx, pool)
+		if err != nil {
+			return fmt.Errorf("guilds: %w", err)
+		}
+		socials.LoadGuilds(guilds)
+		floor, err := store.GuildIDFloor(ctx, pool)
+		if err != nil {
+			return fmt.Errorf("guilds: %w", err)
+		}
+		socials.SetGuildIDFloor(floor)
+		for id, l := range storageLogs {
+			socials.SetStorageLog(id, l)
+		}
+		log.Info("guilds loaded", "guilds", len(guilds))
 	}
 	jail := zone.Jail{Map: assetName(cfg.Jail.Map), Cells: cfg.Jail.Cells}
 	if !slices.Contains(names, jail.Map) {
@@ -488,6 +506,11 @@ func runAll(name string, args []string) error {
 		for _, z := range zones {
 			z.Committer = storeCommitter{st}
 		}
+		// Guild writes run in order with the commits, so a guild's row is
+		// there before a commit writes its storage (decision 0021).
+		if socialStore != nil {
+			socialStore.Lane = st.Lane
+		}
 	}
 	// The chat log and reports go to the database, or stay in memory
 	// without one.
@@ -521,7 +544,7 @@ func runAll(name string, args []string) error {
 		}
 		accounts, err = account.New(account.Config{
 			Pool: pool, PublicURL: cfg.Public, ClientOrigins: cfg.Origins, PlayURL: playURL,
-			CheckName: hub.Filter.CheckName,
+			CheckName: hub.Filter.CheckName, Guilds: accountGuilds{socials},
 			NewCharacter: func(name string, look account.Look) character.Character {
 				sex := uint32(0)
 				if look.Male {
@@ -583,6 +606,7 @@ func runAll(name string, args []string) error {
 	if accounts != nil {
 		mux.Handle(account.Prefix, accounts)
 	}
+	mux.HandleFunc("GET /emblems/{guild}/{file}", emblemHandler(socials))
 	mux.HandleFunc("GET /healthz", hc.live)
 	mux.HandleFunc("GET /readyz", hc.readyz)
 	if web != nil {
@@ -599,6 +623,8 @@ func runAll(name string, args []string) error {
 			dbg.Handle("GET /debug/wathena/items", auditHandler(w))
 			dbg.Handle("GET /debug/wathena/reports", reportsHandler(memoryLog, chatLog))
 			dbg.Handle("POST /debug/wathena/clock", clockHandler(dclock))
+			dbg.Handle("POST /debug/wathena/emblem", devEmblemHandler(socials))
+			dbg.Handle("POST /debug/wathena/guild-storage", devGuildStorageHandler(w))
 		}
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
 	}
@@ -782,14 +808,18 @@ func (d dbCharacters) Find(ctx context.Context, name string, look zone.Look) (in
 // storeCommitter hands the zones' transfer commits to the store.
 type storeCommitter struct{ store *store.Store }
 
-func (c storeCommitter) Commit(saves []zone.CommitSave, logs transfer.Logs) {
+func (c storeCommitter) Commit(saves []zone.CommitSave, storages []zone.StorageCommit, logs transfer.Logs) {
 	entries := make([]store.Entry, 0, len(saves))
 	for _, s := range saves {
 		if x, ok := s.Saver.(*store.Session); ok {
 			entries = append(entries, store.Entry{Session: x, Char: s.Character})
 		}
 	}
-	c.store.Commit(entries, logs)
+	writes := make([]store.StorageWrite, 0, len(storages))
+	for _, s := range storages {
+		writes = append(writes, store.StorageWrite{Guild: s.Guild, Base: s.Base, Cur: s.Cur})
+	}
+	c.store.CommitWith(entries, writes, logs)
 }
 
 func (d dbCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {

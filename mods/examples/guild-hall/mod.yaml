@@ -1,0 +1,24 @@
+# A sample mod for guilds (proposal 0002, review decision 28): it makes
+# guilds with wa.guilds, greets members on the guild events, and tells
+# the members on the map when their guild changes. mods/README.md,
+# "Guilds", explains each part.
+id: example.guild-hall
+name: Guild Hall
+version: 0.1.0
+api: 1.0
+description: Makes a guild when a player says !guild, sets its notice with !notice, greets members who join or leave, and tells the members when their guild levels up.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read
+  - guild.manage
+scripts:
+  - scripts/main.lua

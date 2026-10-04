@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FriendOutcome, PartyOutcome } from '../gen/wathena/v1/event_pb';
+import { FriendOutcome, GuildOutcome, PartyOutcome } from '../gen/wathena/v1/event_pb';
 import {
   friendMessage,
   friendRequestText,
   friendStatusMessage,
+  guildAllyRequestText,
+  guildInviteText,
+  guildMessage,
   itemSharedMessage,
   partyInviteText,
   partyMessage,
@@ -71,5 +74,54 @@ describe('other notices', () => {
     expect(itemSharedMessage('Bob', 'Jellopy', 3)).toBe('Bob got Jellopy (3).');
     expect(partyInviteText('Alice', 'Heroes')).toBe('Alice invites you to the party Heroes.');
     expect(friendRequestText('Alice')).toBe('Alice wants to be friends.');
+  });
+});
+
+describe('guildMessage', () => {
+  it('says what happened to the guild', () => {
+    expect(guildMessage(GuildOutcome.CREATED, 'Knights')).toBe('You made the guild Knights.');
+    expect(guildMessage(GuildOutcome.JOINED, 'Bob')).toBe('Bob joined the guild.');
+    expect(guildMessage(GuildOutcome.JOINED, 'Bob', 'Bob')).toBe('You joined the guild.');
+    expect(guildMessage(GuildOutcome.LEFT, 'Bob', 'Bob')).toBe('You left the guild.');
+    expect(guildMessage(GuildOutcome.EXPELLED, 'Bob')).toBe('Bob was expelled from the guild.');
+    expect(guildMessage(GuildOutcome.DISBANDED, 'Knights')).toBe('The guild was disbanded.');
+    expect(guildMessage(GuildOutcome.MASTER_CHANGED, 'Bob', 'Bob')).toBe(
+      'You are the guild master now.',
+    );
+    expect(guildMessage(GuildOutcome.SKILL_RAISED, 'Guild Extension')).toBe(
+      'The guild raised Guild Extension.',
+    );
+    expect(guildMessage(GuildOutcome.ALLIED, 'Lions')).toBe('The guild Lions is an ally now.');
+    expect(guildMessage(GuildOutcome.RELATION_ENDED, 'Lions')).toBe(
+      'The relation with the guild Lions ended.',
+    );
+  });
+
+  it('says why an action failed', () => {
+    expect(guildMessage(GuildOutcome.NO_EMPERIUM, '')).toBe('Making a guild takes an Emperium.');
+    expect(guildMessage(GuildOutcome.NOT_MASTER, '')).toBe('Only the guild master can do that.');
+    expect(guildMessage(GuildOutcome.NOT_ONLINE, '')).toBe('That player is not online.');
+    expect(guildMessage(GuildOutcome.NOT_ONLINE, 'Eve')).toBe('Eve is not online.');
+    expect(guildMessage(GuildOutcome.ALLY_REFUSED, '')).toBe('That guild refused the alliance.');
+    expect(guildMessage(GuildOutcome.NOT_EMPTY, '')).toBe(
+      'The guild can only be disbanded when the master is its only member.',
+    );
+    expect(guildMessage(GuildOutcome.UNSPECIFIED, '')).toBe('The guild action did nothing.');
+  });
+
+  it('has one sentence for every outcome', () => {
+    for (const value of Object.values(GuildOutcome)) {
+      if (typeof value === 'number') {
+        expect(guildMessage(value, 'Bob')).toMatch(/^[A-Z].*\.$/);
+        expect(guildMessage(value, '')).toMatch(/^[A-Z].*\.$/);
+      }
+    }
+  });
+
+  it('formats the prompts', () => {
+    expect(guildInviteText('Alice', 'Knights')).toBe('Alice invites you to the guild Knights.');
+    expect(guildAllyRequestText('Alice', 'Knights')).toBe(
+      'Alice of the guild Knights asks your guild to be allies.',
+    );
   });
 });

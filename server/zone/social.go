@@ -58,6 +58,8 @@ const (
 	chatChannel
 	// chatParty is party chat (party.go).
 	chatParty
+	// chatGuild is guild chat (guild.go).
+	chatGuild
 )
 
 type chatCommand struct {
@@ -84,6 +86,9 @@ type reportCommand struct {
 	name   string
 	line   chat.LineID
 	reason string
+	// guild and emblem report a guild's name or emblem.
+	guild  int64
+	emblem bool
 }
 
 // chatIn is a delivery from the hub for a player of this zone.
@@ -137,7 +142,13 @@ func (s *Session) Block(seq uint32, name string, unblock bool) bool {
 // Report reports a player, or a line by its ID. An empty name is
 // answered with REPORT_OUTCOME_BAD_NAME.
 func (s *Session) Report(seq uint32, name string, line chat.LineID, reason string) bool {
-	return s.send(command{seq: seq, report: &reportCommand{name, line, reason}})
+	return s.send(command{seq: seq, report: &reportCommand{name: name, line: line, reason: reason}})
+}
+
+// ReportGuild reports a guild's name, or its emblem (strategy section
+// 7.10).
+func (s *Session) ReportGuild(seq uint32, guild int64, emblem bool, reason string) bool {
+	return s.send(command{seq: seq, report: &reportCommand{guild: guild, emblem: emblem, reason: reason}})
 }
 
 // chatHub is the world's chat hub, or one of the zone's own, made on
@@ -217,6 +228,9 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 	}
 	if cmd.kind == chatParty {
 		ev.Channel, protoChannel = "party", wathenav1.ChatChannel_CHAT_CHANNEL_PARTY
+	}
+	if cmd.kind == chatGuild {
+		ev.Channel, protoChannel = "guild", wathenav1.ChatChannel_CHAT_CHANNEL_GUILD
 	}
 	if cmd.kind == chatChannel {
 		protoChannel, ev.To = wathenav1.ChatChannel_CHAT_CHANNEL_NAMED, ""
@@ -314,6 +328,16 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 			return
 		}
 		if v := p.partyState.view; v != nil {
+			line.To = v.Name
+		}
+	case chatGuild:
+		// guild_send_message: a player without a guild says nothing.
+		line.Kind = chat.LineGuild
+		if p.soc == nil || !z.socialHub().GuildChat(p.soc, line) {
+			refuse(wathenav1.ChatRefusal_CHAT_REFUSAL_NOT_IN_CHANNEL)
+			return
+		}
+		if v := p.guild.view; v != nil {
 			line.To = v.Name
 		}
 	}
@@ -519,6 +543,10 @@ func (z *Zone) block(p *Player, c *blockCommand) {
 func (z *Zone) report(p *Player, c *reportCommand) {
 	hub := z.chatHub()
 	now := hub.Now()
+	if c.guild != 0 && p.member != nil {
+		z.reportGuild(p, c, now)
+		return
+	}
 	if c.name == "" || p.member == nil {
 		p.pending = append(p.pending, reportResult(wathenav1.ReportOutcome_REPORT_OUTCOME_BAD_NAME))
 		return
@@ -537,6 +565,34 @@ func (z *Zone) report(p *Player, c *reportCommand) {
 		p.pending = append(p.pending, reportResult(wathenav1.ReportOutcome_REPORT_OUTCOME_TOO_MANY))
 		return
 	}
+	r.Context = slices.Clone(p.seen)
+	hub.ChatLog().Report(r)
+	p.pending = append(p.pending, reportResult(wathenav1.ReportOutcome_REPORT_OUTCOME_SENT))
+}
+
+// reportGuild saves a report of a guild's name or emblem, with a copy of
+// the emblem as it is now.
+func (z *Zone) reportGuild(p *Player, c *reportCommand, now time.Time) {
+	hub := z.chatHub()
+	in, ok := z.socialHub().Guild(c.guild)
+	if !ok || in.Ended {
+		p.pending = append(p.pending, reportResult(wathenav1.ReportOutcome_REPORT_OUTCOME_BAD_NAME))
+		return
+	}
+	r := chat.Report{At: now, ReporterID: p.record.ID, Reporter: p.Name, Target: in.Name, Reason: c.reason, Map: z.Map, Guild: c.guild}
+	if c.emblem {
+		e, ok := z.socialHub().EmblemOf(c.guild)
+		if !ok {
+			p.pending = append(p.pending, reportResult(wathenav1.ReportOutcome_REPORT_OUTCOME_BAD_NAME))
+			return
+		}
+		r.Emblem, r.EmblemPNG = e.Version, e.PNG
+	}
+	if !hub.AllowReport(p.member, now) {
+		p.pending = append(p.pending, reportResult(wathenav1.ReportOutcome_REPORT_OUTCOME_TOO_MANY))
+		return
+	}
+	p.trimSeen(now)
 	r.Context = slices.Clone(p.seen)
 	hub.ChatLog().Report(r)
 	p.pending = append(p.pending, reportResult(wathenav1.ReportOutcome_REPORT_OUTCOME_SENT))

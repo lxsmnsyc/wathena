@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/session.proto.
  */
 export const file_wathena_v1_session: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL3Nlc3Npb24ucHJvdG8SCndhdGhlbmEudjEiXwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIVCg1zZXNzaW9uX3Rva2VuGAIgASgMEhMKC2NsaWVudF9uYW1lGAMgASgJEhAKCGxhbmd1YWdlGAQgASgJIooBCgdXZWxjb21lEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQSDAoEdGljaxgDIAEoDRIOCgZuZXRfaWQYBCABKA0SCwoDbWFwGAUgASgJEiIKBmxpbWl0cxgGIAEoCzISLndhdGhlbmEudjEuTGltaXRzIkQKBkxpbWl0cxIVCg1wYXJ0eV9tZW1iZXJzGAEgASgNEg8KB2ZyaWVuZHMYAiABKA0SEgoKYmxvY2tfbGlzdBgDIAEoDSIVCgRQaW5nEg0KBW5vbmNlGAEgASgNIi0KBFBvbmcSDQoFbm9uY2UYASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQiSwoKRGlzY29ubmVjdBIsCgZyZWFzb24YASABKA4yHC53YXRoZW5hLnYxLkRpc2Nvbm5lY3RSZWFzb24SDwoHbWVzc2FnZRgCIAEoCSrgAgoQRGlzY29ubmVjdFJlYXNvbhIhCh1ESVNDT05ORUNUX1JFQVNPTl9VTlNQRUNJRklFRBAAEikKJURJU0NPTk5FQ1RfUkVBU09OX1ZFUlNJT05fVU5TVVBQT1JURUQQARIlCiFESVNDT05ORUNUX1JFQVNPTl9TRVNTSU9OX0lOVkFMSUQQAhIpCiVESVNDT05ORUNUX1JFQVNPTl9MT0dHRURfSU5fRUxTRVdIRVJFEAMSIgoeRElTQ09OTkVDVF9SRUFTT05fUkFURV9MSU1JVEVEEAQSIQodRElTQ09OTkVDVF9SRUFTT05fQkFEX01FU1NBR0UQBRIcChhESVNDT05ORUNUX1JFQVNPTl9CQU5ORUQQBhIlCiFESVNDT05ORUNUX1JFQVNPTl9TRVJWRVJfU0hVVERPV04QBxIgChxESVNDT05ORUNUX1JFQVNPTl9MT0dHRURfT1VUEAhCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
+  fileDesc("Chh3YXRoZW5hL3YxL3Nlc3Npb24ucHJvdG8SCndhdGhlbmEudjEiXwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIVCg1zZXNzaW9uX3Rva2VuGAIgASgMEhMKC2NsaWVudF9uYW1lGAMgASgJEhAKCGxhbmd1YWdlGAQgASgJIooBCgdXZWxjb21lEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQSDAoEdGljaxgDIAEoDRIOCgZuZXRfaWQYBCABKA0SCwoDbWFwGAUgASgJEiIKBmxpbWl0cxgGIAEoCzISLndhdGhlbmEudjEuTGltaXRzIrgBCgZMaW1pdHMSFQoNcGFydHlfbWVtYmVycxgBIAEoDRIPCgdmcmllbmRzGAIgASgNEhIKCmJsb2NrX2xpc3QYAyABKA0SFQoNZ3VpbGRfbWVtYmVycxgEIAEoDRIXCg9ndWlsZF9wb3NpdGlvbnMYBSABKA0SFAoMZ3VpbGRfYWxsaWVzGAYgASgNEhUKDWd1aWxkX2VuZW1pZXMYByABKA0SFQoNZ3VpbGRfc3RvcmFnZRgIIAEoDSIVCgRQaW5nEg0KBW5vbmNlGAEgASgNIi0KBFBvbmcSDQoFbm9uY2UYASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQiSwoKRGlzY29ubmVjdBIsCgZyZWFzb24YASABKA4yHC53YXRoZW5hLnYxLkRpc2Nvbm5lY3RSZWFzb24SDwoHbWVzc2FnZRgCIAEoCSrgAgoQRGlzY29ubmVjdFJlYXNvbhIhCh1ESVNDT05ORUNUX1JFQVNPTl9VTlNQRUNJRklFRBAAEikKJURJU0NPTk5FQ1RfUkVBU09OX1ZFUlNJT05fVU5TVVBQT1JURUQQARIlCiFESVNDT05ORUNUX1JFQVNPTl9TRVNTSU9OX0lOVkFMSUQQAhIpCiVESVNDT05ORUNUX1JFQVNPTl9MT0dHRURfSU5fRUxTRVdIRVJFEAMSIgoeRElTQ09OTkVDVF9SRUFTT05fUkFURV9MSU1JVEVEEAQSIQodRElTQ09OTkVDVF9SRUFTT05fQkFEX01FU1NBR0UQBRIcChhESVNDT05ORUNUX1JFQVNPTl9CQU5ORUQQBhIlCiFESVNDT05ORUNUX1JFQVNPTl9TRVJWRVJfU0hVVERPV04QBxIgChxESVNDT05ORUNUX1JFQVNPTl9MT0dHRURfT1VUEAhCQFo+Z2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS92MTt3YXRoZW5hdjFiBnByb3RvMw");
 
 /**
  * Hello is the first client message on a new connection.
@@ -140,6 +140,41 @@ export type Limits = Message<"wathena.v1.Limits"> & {
    * @generated from field: uint32 block_list = 3;
    */
   blockList: number;
+
+  /**
+   * guild_members is the most members a guild holds before Guild
+   * Extension, which adds 6 per level.
+   *
+   * @generated from field: uint32 guild_members = 4;
+   */
+  guildMembers: number;
+
+  /**
+   * guild_positions is the positions of a guild, as MAX_GUILDPOSITION.
+   *
+   * @generated from field: uint32 guild_positions = 5;
+   */
+  guildPositions: number;
+
+  /**
+   * guild_allies and guild_enemies are the most allied and enemy guilds,
+   * as max_guild_alliance.
+   *
+   * @generated from field: uint32 guild_allies = 6;
+   */
+  guildAllies: number;
+
+  /**
+   * @generated from field: uint32 guild_enemies = 7;
+   */
+  guildEnemies: number;
+
+  /**
+   * guild_storage is the most slots a guild storage holds.
+   *
+   * @generated from field: uint32 guild_storage = 8;
+   */
+  guildStorage: number;
 };
 
 /**

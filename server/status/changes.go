@@ -79,6 +79,9 @@ func calcStr(l *sc.List, v int) int {
 	}
 	v += l.Val1(sc.SCIncallstatus)
 	v += l.Val1(sc.SCChasewalk2)
+	if l.Has(sc.SCBattleOrders) {
+		v += 5
+	}
 	if l.Has(sc.SCLoud) {
 		v += 4
 	}
@@ -157,6 +160,9 @@ func calcInt(l *sc.List, v int) int {
 		return capStat(v)
 	}
 	v += l.Val1(sc.SCIncallstatus)
+	if l.Has(sc.SCBattleOrders) {
+		v += 5
+	}
 	if l.Has(sc.SCTruesight) {
 		v += 5
 	}
@@ -192,6 +198,9 @@ func calcDex(l *sc.List, v int) int {
 		v += (v - e.Val4) * e.Val2 / 100
 	}
 	v += l.Val1(sc.SCIncallstatus)
+	if l.Has(sc.SCBattleOrders) {
+		v += 5
+	}
 	v -= l.Val2(sc.SCQuagmire)
 	if l.Has(sc.SCTruesight) {
 		v += 5

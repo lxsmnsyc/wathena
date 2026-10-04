@@ -42,7 +42,11 @@ type Entry struct {
 type commit struct {
 	entries []Entry
 	logs    transfer.Logs
-	started bool
+	// ops are guild writes that run in order with the commits (Lane), and
+	// storages the guild storages the commit saves.
+	ops      []func(ctx context.Context, q *db.Queries) error
+	storages []StorageWrite
+	started  bool
 	// retryAt is when a commit that failed may run again.
 	retryAt time.Time
 }
@@ -51,6 +55,45 @@ type commit struct {
 // The store owns the characters afterwards. Each entry's copy must be
 // newer than the session's saves that came before.
 func (s *Store) Commit(entries []Entry, logs transfer.Logs) {
+	s.CommitWith(entries, nil, logs)
+}
+
+// Lane queues a write that runs in order with the commits, in the
+// transaction of the commit it joins, in a savepoint of its own: a write
+// that fails is logged and dropped, and the commit goes on. SocialStore
+// runs the guild writes through it.
+func (s *Store) Lane(f func(ctx context.Context, q *db.Queries) error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c := s.openCommit()
+	c.ops = append(c.ops, f)
+	s.queueCommit(c)
+}
+
+// openCommit returns the last commit when it has not started, or a new
+// one. s.mu must be held.
+func (s *Store) openCommit() *commit {
+	if n := len(s.lane); n > 0 && !s.lane[n-1].started {
+		return s.lane[n-1]
+	}
+	return &commit{}
+}
+
+// queueCommit puts a commit at the end of the lane when it is new, and
+// wakes the worker. s.mu must be held.
+func (s *Store) queueCommit(c *commit) {
+	if len(s.lane) == 0 || s.lane[len(s.lane)-1] != c {
+		s.lane = append(s.lane, c)
+	}
+	select {
+	case s.laneWake <- struct{}{}:
+	default:
+	}
+}
+
+// CommitWith is Commit with guild storages that the transfers changed.
+// They are written in the same transaction as the characters.
+func (s *Store) CommitWith(entries []Entry, storages []StorageWrite, logs transfer.Logs) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var c *commit
@@ -81,14 +124,15 @@ func (s *Store) Commit(entries []Entry, logs transfer.Logs) {
 		added = true
 	}
 	c.logs.Add(logs)
-	if len(c.entries) == 0 && c.logs.Empty() {
+	c.storages = append(c.storages, storages...)
+	if len(c.entries) == 0 && c.logs.Empty() && len(c.storages) == 0 && len(c.ops) == 0 {
 		return
 	}
 	if len(s.lane) == 0 || s.lane[len(s.lane)-1] != c {
 		s.lane = append(s.lane, c)
 		added = true
 	}
-	if added || !logs.Empty() {
+	if added || !logs.Empty() || len(storages) > 0 {
 		select {
 		case s.laneWake <- struct{}{}:
 		default:
@@ -168,6 +212,14 @@ func (s *Store) writeCommit(ctx context.Context, c *commit, versions []int64, ba
 	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		clear(stale)
 		q := s.q.WithTx(tx)
+		for _, f := range c.ops {
+			err := pgx.BeginFunc(ctx, tx, func(sp pgx.Tx) error { return f(ctx, s.q.WithTx(sp)) })
+			if err != nil && ctx.Err() == nil {
+				s.log.Error("cannot save a guild change", "err", err)
+			} else if err != nil {
+				return err
+			}
+		}
 		if len(ids) > 0 {
 			if _, err := q.LockCharacters(ctx, ids); err != nil {
 				return err
@@ -183,6 +235,9 @@ func (s *Store) writeCommit(ctx context.Context, c *commit, versions []int64, ba
 			if err != nil {
 				return err
 			}
+		}
+		if err := writeStorages(ctx, q, c.storages); err != nil {
+			return err
 		}
 		return writeLogs(ctx, q, c.logs)
 	})

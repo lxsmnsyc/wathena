@@ -58,7 +58,8 @@ export type StackDetails = Partial<
 /** A slot as the server sends it: slot, item and amount, and the details it has. */
 export type StackInput = Pick<Stack, 'slot' | 'itemId' | 'amount'> & StackDetails;
 
-function stack(s: StackInput): Stack {
+/** A stack from what the server sent, with defaults for the details it left out. */
+export function stack(s: StackInput): Stack {
   return {
     slot: s.slot,
     itemId: s.itemId,
@@ -310,6 +311,40 @@ export const USE_EFFECTS: ReadonlyMap<number, number> = new Map([
 /** The drag data type that carries a slot. */
 export const SLOT_DRAG_TYPE = 'application/x-wathena-slot';
 
+/** Item icons, icon/item/<id>, loaded once per item as blob URLs. */
+export class ItemIcons {
+  private readonly urls = new Map<number, Promise<string | undefined>>();
+
+  constructor(private readonly store: AssetStore) {}
+
+  /** Shows an item's icon in an image. Items without one show none. */
+  show(id: number, img: HTMLImageElement): void {
+    let url = this.urls.get(id);
+    if (url === undefined) {
+      url = this.store
+        .bytes(`icon/item/${id}`, 'texture')
+        .then((data) =>
+          data === undefined
+            ? undefined
+            : URL.createObjectURL(new Blob([data], { type: 'image/webp' })),
+        );
+      this.urls.set(id, url);
+    }
+    url
+      .then((src) => {
+        if (src === undefined) {
+          img.style.visibility = 'hidden';
+        } else {
+          img.src = src;
+        }
+      })
+      .catch((error: unknown) => {
+        img.style.visibility = 'hidden';
+        console.error(`icon ${id}:`, error);
+      });
+  }
+}
+
 /** What the window asks the server to do. */
 export interface InventoryActions {
   use: (slot: number) => void;
@@ -352,17 +387,24 @@ export class InventoryWindow {
   private selected: number | undefined;
   private readonly amountInput: HTMLInputElement;
   private readonly rows = new Map<number, Row>();
-  private readonly icons = new Map<number, Promise<string | undefined>>();
+  /** The item icons, which other windows can share. */
+  readonly icons: ItemIcons;
+  /**
+   * Called on a right click on a row. It returns true when it used the
+   * click, such as to put the item into an open storage.
+   */
+  onRowContext: ((slot: number) => boolean) | undefined;
   /** The slot the drop form asks about. */
   private dropping: number | undefined;
 
   constructor(
     private readonly root: HTMLElement,
-    private readonly store: AssetStore,
+    store: AssetStore,
     private readonly model: InventoryModel,
     private readonly actions: InventoryActions,
     private readonly texts: ItemTexts,
   ) {
+    this.icons = new ItemIcons(store);
     const head = document.createElement('div');
     head.className = 'inventory-head';
     this.count = document.createElement('output');
@@ -690,6 +732,11 @@ export class InventoryWindow {
     li.addEventListener('dblclick', () => {
       this.activate(slot);
     });
+    li.addEventListener('contextmenu', (e) => {
+      if (this.onRowContext?.(slot) === true) {
+        e.preventDefault();
+      }
+    });
     li.addEventListener('keydown', (e) => {
       if (e.target !== li) {
         return;
@@ -717,29 +764,7 @@ export class InventoryWindow {
 
   /** Loads an item's icon, icon/item/<id>. Items without one show none. */
   private icon(id: number, img: HTMLImageElement): void {
-    let url = this.icons.get(id);
-    if (url === undefined) {
-      url = this.store
-        .bytes(`icon/item/${id}`, 'texture')
-        .then((data) =>
-          data === undefined
-            ? undefined
-            : URL.createObjectURL(new Blob([data], { type: 'image/webp' })),
-        );
-      this.icons.set(id, url);
-    }
-    url
-      .then((src) => {
-        if (src === undefined) {
-          img.style.visibility = 'hidden';
-        } else {
-          img.src = src;
-        }
-      })
-      .catch((error: unknown) => {
-        img.style.visibility = 'hidden';
-        console.error(`icon ${id}:`, error);
-      });
+    this.icons.show(id, img);
   }
 }
 

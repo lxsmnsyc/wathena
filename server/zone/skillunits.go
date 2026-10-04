@@ -23,12 +23,16 @@ const unitTimerInterval = 100
 
 // Battle check flags of units, as rAthena's BCT_ values.
 const (
-	bctSelf    = 0x010000
-	bctEnemy   = 0x020000
-	bctParty   = 0x040000
-	bctGuild   = 0x080000 | 0x200000
-	bctNeutral = 0x100000
-	bctAll     = 0x3F0000
+	bctSelf  = 0x010000
+	bctEnemy = 0x020000
+	bctParty = 0x040000
+	bctGuild = bctGuildAlly | bctSameGuild
+	// bctGuildAlly is allies, not guildmates, and bctSameGuild guildmates,
+	// not allies.
+	bctGuildAlly = 0x080000
+	bctSameGuild = 0x200000
+	bctNeutral   = 0x100000
+	bctAll       = 0x3F0000
 )
 
 // unitGroup is skill_unit_group.
@@ -573,6 +577,14 @@ func checkTarget(src, t *entity, flag int) bool {
 	}
 	if (flag&bctParty != 0 || state&bctEnemy != 0) && sameParty(battleMaster(src), battleMaster(t)) {
 		state |= bctParty
+		if state&bctEnemy != 0 && (t.monster == nil || !t.monster.playersHit) {
+			state &^= bctEnemy
+		}
+	}
+	// The same guild, or an allied one unless the flag has
+	// BCT_SAMEGUILD, which BCT_GUILD holds.
+	if (flag&bctGuild != 0 || state&bctEnemy != 0) && sameGuildOrAlly(src, t, flag&bctSameGuild != 0) {
+		state |= bctGuild
 		if state&bctEnemy != 0 && (t.monster == nil || !t.monster.playersHit) {
 			state &^= bctEnemy
 		}

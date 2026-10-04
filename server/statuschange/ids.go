@@ -231,6 +231,7 @@ const (
 	SCParrying       = 109 // SC_PARRYING
 	SCTensionrelax   = 111 // SC_TENSIONRELAX
 	SCOnehand        = 150 // SC_ONEHAND
+	SCBattleOrders   = 152 // SC_BATTLEORDERS
 	SCRegeneration   = 153 // SC_REGENERATION
 )
 

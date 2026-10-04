@@ -31,6 +31,8 @@ message Command {
     PartyCommand party = 21;
     FriendCommand friend = 22;
     PartyBookingCommand party_booking = 23;
+    GuildCommand guild = 24;
+    StorageCommand storage = 25;
   }
 }
 
@@ -140,13 +142,18 @@ message Block {
 // section 7.10). The report keeps the chat the player saw in the last 5
 // minutes. The server answers with ReportResult.
 message Report {
-  // name is the reported character's name.
+  // name is the reported character's name. It is empty for a report of
+  // a guild.
   string name = 1;
   // line_id is ChatMessage.line_id of the reported line, or empty to
   // report the player.
   bytes line_id = 2;
   // reason is the player's own words, at most 255 characters.
   string reason = 3;
+  // guild_id reports a guild's name, or its emblem with emblem set, in
+  // place of a player (strategy section 7.10).
+  uint64 guild_id = 4;
+  bool emblem = 5;
 }
 
 // NpcClick talks to an NPC, or opens its shop, as rAthena's npc_click.
@@ -390,4 +397,128 @@ message PartyBookingSearch {
   // job is a job ID the ad must want, or 0 for any job. rAthena searches
   // by map or by job: a search with both finds nothing.
   uint32 job = 3;
+}
+
+// GuildCommand is a guild action, as rAthena's guild packets. The server
+// answers with GuildResult when the action fails or is refused, and with
+// GuildInfo when the guild changed. Guild chat is Chat with
+// CHAT_CHANNEL_GUILD.
+message GuildCommand {
+  oneof action {
+    // create makes a guild with the player as its master, as
+    // guild_create. It takes an Emperium with guild_emperium_check.
+    string create = 1;
+    // invite asks a player by name to join, as guild_invite. The
+    // player's position must allow invites.
+    string invite = 2;
+    // reply answers GuildInvite, as guild_reply_invite.
+    GuildReply reply = 3;
+    // leave leaves the guild, as guild_leave, with a reason of at most
+    // 39 characters. The master cannot leave.
+    string leave = 4;
+    // expel removes a member, as guild_expulsion. The player's position
+    // must allow expelling, and the master cannot be expelled.
+    GuildExpel expel = 5;
+    // positions changes the guild's positions, as guild_change_position.
+    // Only the master may do it.
+    GuildPositions positions = 6;
+    // member_position gives a member a position, as
+    // guild_change_memberposition. Position 0 hands the guild to the
+    // member, as guild_gm_change. Only the master may do it.
+    GuildMemberPosition member_position = 7;
+    // notice changes the guild notice, as guild_change_notice. Only the
+    // master may do it.
+    GuildNotice notice = 8;
+    // skill_up raises a guild skill by its ID, as guild_skillup. Only the
+    // master may do it.
+    uint32 skill_up = 9;
+    // ally asks the guild of an online player by name to be allies, as
+    // guild_reqalliance. Only the master may do it.
+    string ally = 10;
+    // ally_reply answers GuildAllyRequest, as guild_reply_reqalliance.
+    GuildReply ally_reply = 11;
+    // enemy makes the guild of an online player by name an enemy, as
+    // guild_opposition. Only the master may do it.
+    string enemy = 12;
+    // end_relation ends an alliance or an enemy relation, as
+    // guild_delalliance. Only the master may do it.
+    GuildRelationEnd end_relation = 13;
+    // disband breaks the guild up, as guild_break: the master must name
+    // the guild, and be its only member.
+    string disband = 14;
+  }
+}
+
+message GuildReply {
+  // guild_id is GuildInvite.guild_id or GuildAllyRequest.guild_id.
+  uint64 guild_id = 1;
+  bool accept = 2;
+}
+
+message GuildExpel {
+  string name = 1;
+  // reason is at most 39 characters, as the expulsion list keeps.
+  string reason = 2;
+}
+
+message GuildPositions {
+  repeated GuildPosition positions = 1;
+}
+
+// GuildPosition is one of a guild's positions, as rAthena's
+// guild_position.
+message GuildPosition {
+  // index is the position's number, from 0. Position 0 is the master's.
+  uint32 index = 1;
+  // name is 1 to 24 characters.
+  string name = 2;
+  bool can_invite = 3;
+  bool can_expel = 4;
+  bool can_use_storage = 5;
+  // exp_tax is the percent of base exp members of this position give the
+  // guild, at most guild_exp_limit.
+  uint32 exp_tax = 6;
+}
+
+message GuildMemberPosition {
+  string name = 1;
+  uint32 position = 2;
+}
+
+// GuildNotice is the guild notice, as rAthena's mes1 and mes2.
+message GuildNotice {
+  // title is at most 59 characters, and text at most 119.
+  string title = 1;
+  string text = 2;
+}
+
+message GuildRelationEnd {
+  uint64 guild_id = 1;
+  // enemy ends an enemy relation. An alliance ends otherwise.
+  bool enemy = 2;
+}
+
+// StorageCommand moves items between the inventory and the open storage
+// window, as rAthena's storage packets. The server answers with
+// StorageAdd and StorageRemove, InventoryAdd and InventoryRemove, or
+// StorageResult. Guild storage opens from an NPC.
+message StorageCommand {
+  oneof action {
+    // put moves an amount from an inventory slot into the storage, as
+    // storage_guild_storageadd.
+    StorageMove put = 1;
+    // take moves an amount from a storage slot into the inventory, as
+    // storage_guild_storageget.
+    StorageMove take = 2;
+    // close closes the storage window, as storage_guild_storageclose.
+    bool close = 3;
+    // log asks for the guild storage log, as storage_guild_log_read.
+    bool log = 4;
+  }
+}
+
+message StorageMove {
+  // slot is an inventory slot for put, and a storage slot for take.
+  uint32 slot = 1;
+  uint32 amount = 2;
 }

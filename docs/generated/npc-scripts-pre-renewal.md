@@ -9,10 +9,10 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 | Kind | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
 | script | 1702 | 813 | 749 | 64 | 889 |
-| script (duplicate) | 3330 | 92 | 92 | 0 | 3238 |
+| script (duplicate) | 3330 | 150 | 145 | 5 | 3180 |
 | shop | 185 | 185 | 185 | 0 | 0 |
-| Kafras (scripts that call F_Kafra) | 43 | 41 | 0 | 41 | 2 |
-| Dialog NPCs (only talk, menus and emotions) | 697 | 599 | 599 | 0 | 98 |
+| Kafras (scripts that call F_Kafra) | 43 | 42 | 0 | 42 | 1 |
+| Dialog NPCs (only talk, menus and emotions) | 697 | 629 | 629 | 0 | 68 |
 | Job change NPCs (script NPCs of the jobs folders) | 315 | 63 | 62 | 1 | 252 |
 
 - Shops that are not placed have no map or no sprite: scripts open them with `callshop`, which converts to `player:open_shop`.
@@ -73,7 +73,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | logmes | 46 | 0 | 45 | 1 | 46 |  |
 | checkweight | 43 | 24 | 0 | 19 | 43 |  |
 | implode | 43 | 0 | 41 | 2 | 43 |  |
-| getguildname | 42 | 0 | 41 | 1 | 0 |  |
+| getguildname | 42 | 0 | 41 | 1 | 42 |  |
 | event onreset | 41 | 0 | 0 | 41 | 0 |  |
 | strnpcinfo | 30 | 2 | 21 | 7 | 27 | other than the name and the map (3) |
 | changequest | 26 | 0 | 0 | 26 | 0 |  |
@@ -193,7 +193,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | F_KafInfo | npc/kafras/functions_kafras.txt:399 | whole |  |
 | F_KafSet | npc/kafras/functions_kafras.txt:605 | whole |  |
 | F_KafTele | npc/kafras/functions_kafras.txt:287 | whole |  |
-| F_Kafra | npc/kafras/functions_kafras.txt:75 | partly | getguildname |
+| F_Kafra | npc/kafras/functions_kafras.txt:75 | whole |  |
 | F_MercKafra | npc/pre-re/jobs/1-1/merchant.txt:1060 | whole |  |
 | F_MotherMart | npc/jobs/2-1/priest.txt:1756 | whole |  |
 | F_SetKafCode | npc/kafras/functions_kafras.txt:492 | whole |  |
@@ -236,10 +236,10 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/cities/lutie.txt | 10 | 9 | 1 |
 | npc/cities/manuk.txt | 31 | 0 | 31 |
 | npc/cities/morocc.txt | 33 | 30 | 3 |
-| npc/cities/moscovia.txt | 8 | 2 | 6 |
+| npc/cities/moscovia.txt | 8 | 6 | 2 |
 | npc/cities/niflheim.txt | 6 | 2 | 4 |
 | npc/cities/payon.txt | 15 | 11 | 4 |
-| npc/cities/prontera.txt | 23 | 19 | 4 |
+| npc/cities/prontera.txt | 23 | 22 | 1 |
 | npc/cities/rachel.txt | 30 | 29 | 1 |
 | npc/cities/splendide.txt | 36 | 1 | 35 |
 | npc/cities/umbala.txt | 18 | 14 | 4 |
@@ -279,7 +279,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/jobs/novice/supernovice.txt | 3 | 2 | 1 |
 | npc/jobs/valkyrie.txt | 5 | 2 | 3 |
 | npc/kafras/cool_event_corp.txt | 4 | 4 | 0 |
-| npc/kafras/dts_warper.txt | 24 | 8 | 16 |
+| npc/kafras/dts_warper.txt | 24 | 16 | 8 |
 | npc/kafras/kafras.txt | 42 | 41 | 1 |
 | npc/merchants/advanced_refiner.txt | 1 | 0 | 1 |
 | npc/merchants/alchemist.txt | 1 | 0 | 1 |
@@ -301,7 +301,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/merchants/refine.txt | 37 | 30 | 7 |
 | npc/merchants/renters.txt | 3 | 0 | 3 |
 | npc/merchants/shops.txt | 155 | 155 | 0 |
-| npc/merchants/socket_enchant.txt | 10 | 0 | 10 |
+| npc/merchants/socket_enchant.txt | 10 | 8 | 2 |
 | npc/merchants/socket_enchant2.txt | 4 | 0 | 4 |
 | npc/merchants/wander_pet_food.txt | 2 | 1 | 1 |
 | npc/other/arena/arena_aco.txt | 55 | 4 | 51 |
@@ -312,7 +312,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/arena/arena_party.txt | 37 | 1 | 36 |
 | npc/other/arena/arena_point.txt | 1 | 0 | 1 |
 | npc/other/arena/arena_room.txt | 28 | 7 | 21 |
-| npc/other/auction.txt | 24 | 4 | 20 |
+| npc/other/auction.txt | 24 | 8 | 16 |
 | npc/other/books.txt | 9 | 9 | 0 |
 | npc/other/bulletin_boards.txt | 19 | 19 | 0 |
 | npc/other/comodo_gambling.txt | 4 | 2 | 2 |
@@ -328,15 +328,15 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/monster_race.txt | 202 | 10 | 192 |
 | npc/other/poring_war.txt | 37 | 1 | 36 |
 | npc/other/powernpc.txt | 5 | 2 | 3 |
-| npc/other/pvp.txt | 26 | 1 | 25 |
+| npc/other/pvp.txt | 26 | 7 | 19 |
 | npc/other/turbo_track.txt | 2141 | 20 | 2121 |
-| npc/pre-re/airports/izlude.txt | 1 | 0 | 1 |
-| npc/pre-re/cities/alberta.txt | 5 | 0 | 5 |
-| npc/pre-re/cities/izlude.txt | 9 | 0 | 9 |
+| npc/pre-re/airports/izlude.txt | 1 | 1 | 0 |
+| npc/pre-re/cities/alberta.txt | 5 | 5 | 0 |
+| npc/pre-re/cities/izlude.txt | 9 | 9 | 0 |
 | npc/pre-re/cities/jawaii.txt | 1 | 0 | 1 |
-| npc/pre-re/cities/lutie.txt | 1 | 0 | 1 |
-| npc/pre-re/cities/prontera.txt | 1 | 0 | 1 |
-| npc/pre-re/cities/yuno.txt | 7 | 0 | 7 |
+| npc/pre-re/cities/lutie.txt | 1 | 1 | 0 |
+| npc/pre-re/cities/prontera.txt | 1 | 1 | 0 |
+| npc/pre-re/cities/yuno.txt | 7 | 7 | 0 |
 | npc/pre-re/guides/guides_alberta.txt | 2 | 2 | 0 |
 | npc/pre-re/guides/guides_aldebaran.txt | 2 | 2 | 0 |
 | npc/pre-re/guides/guides_amatsu.txt | 2 | 2 | 0 |
@@ -367,7 +367,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/pre-re/jobs/1-1e/taekwon.txt | 1 | 0 | 1 |
 | npc/pre-re/jobs/2-2/crusader.txt | 5 | 0 | 5 |
 | npc/pre-re/jobs/novice/novice.txt | 48 | 32 | 16 |
-| npc/pre-re/kafras/kafras.txt | 1 | 0 | 1 |
+| npc/pre-re/kafras/kafras.txt | 1 | 1 | 0 |
 | npc/pre-re/merchants/ammo_boxes.txt | 2 | 0 | 2 |
 | npc/pre-re/merchants/ammo_dealer.txt | 3 | 0 | 3 |
 | npc/pre-re/merchants/hair_dyer.txt | 1 | 0 | 1 |

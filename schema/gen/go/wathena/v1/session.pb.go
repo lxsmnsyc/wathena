@@ -342,12 +342,17 @@ func (b0 Welcome_builder) Build() *Welcome {
 // Limits are limits that rAthena compiles in and a ruleset sets
 // (proposal 0002, review decision 27).
 type Limits struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PartyMembers uint32                 `protobuf:"varint,1,opt,name=party_members,json=partyMembers,proto3"`
-	xxx_hidden_Friends      uint32                 `protobuf:"varint,2,opt,name=friends,proto3"`
-	xxx_hidden_BlockList    uint32                 `protobuf:"varint,3,opt,name=block_list,json=blockList,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_PartyMembers   uint32                 `protobuf:"varint,1,opt,name=party_members,json=partyMembers,proto3"`
+	xxx_hidden_Friends        uint32                 `protobuf:"varint,2,opt,name=friends,proto3"`
+	xxx_hidden_BlockList      uint32                 `protobuf:"varint,3,opt,name=block_list,json=blockList,proto3"`
+	xxx_hidden_GuildMembers   uint32                 `protobuf:"varint,4,opt,name=guild_members,json=guildMembers,proto3"`
+	xxx_hidden_GuildPositions uint32                 `protobuf:"varint,5,opt,name=guild_positions,json=guildPositions,proto3"`
+	xxx_hidden_GuildAllies    uint32                 `protobuf:"varint,6,opt,name=guild_allies,json=guildAllies,proto3"`
+	xxx_hidden_GuildEnemies   uint32                 `protobuf:"varint,7,opt,name=guild_enemies,json=guildEnemies,proto3"`
+	xxx_hidden_GuildStorage   uint32                 `protobuf:"varint,8,opt,name=guild_storage,json=guildStorage,proto3"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *Limits) Reset() {
@@ -396,6 +401,41 @@ func (x *Limits) GetBlockList() uint32 {
 	return 0
 }
 
+func (x *Limits) GetGuildMembers() uint32 {
+	if x != nil {
+		return x.xxx_hidden_GuildMembers
+	}
+	return 0
+}
+
+func (x *Limits) GetGuildPositions() uint32 {
+	if x != nil {
+		return x.xxx_hidden_GuildPositions
+	}
+	return 0
+}
+
+func (x *Limits) GetGuildAllies() uint32 {
+	if x != nil {
+		return x.xxx_hidden_GuildAllies
+	}
+	return 0
+}
+
+func (x *Limits) GetGuildEnemies() uint32 {
+	if x != nil {
+		return x.xxx_hidden_GuildEnemies
+	}
+	return 0
+}
+
+func (x *Limits) GetGuildStorage() uint32 {
+	if x != nil {
+		return x.xxx_hidden_GuildStorage
+	}
+	return 0
+}
+
 func (x *Limits) SetPartyMembers(v uint32) {
 	x.xxx_hidden_PartyMembers = v
 }
@@ -408,6 +448,26 @@ func (x *Limits) SetBlockList(v uint32) {
 	x.xxx_hidden_BlockList = v
 }
 
+func (x *Limits) SetGuildMembers(v uint32) {
+	x.xxx_hidden_GuildMembers = v
+}
+
+func (x *Limits) SetGuildPositions(v uint32) {
+	x.xxx_hidden_GuildPositions = v
+}
+
+func (x *Limits) SetGuildAllies(v uint32) {
+	x.xxx_hidden_GuildAllies = v
+}
+
+func (x *Limits) SetGuildEnemies(v uint32) {
+	x.xxx_hidden_GuildEnemies = v
+}
+
+func (x *Limits) SetGuildStorage(v uint32) {
+	x.xxx_hidden_GuildStorage = v
+}
+
 type Limits_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -418,6 +478,17 @@ type Limits_builder struct {
 	// block_list is the most names a block list holds, as
 	// MAX_IGNORE_LIST.
 	BlockList uint32
+	// guild_members is the most members a guild holds before Guild
+	// Extension, which adds 6 per level.
+	GuildMembers uint32
+	// guild_positions is the positions of a guild, as MAX_GUILDPOSITION.
+	GuildPositions uint32
+	// guild_allies and guild_enemies are the most allied and enemy guilds,
+	// as max_guild_alliance.
+	GuildAllies  uint32
+	GuildEnemies uint32
+	// guild_storage is the most slots a guild storage holds.
+	GuildStorage uint32
 }
 
 func (b0 Limits_builder) Build() *Limits {
@@ -427,6 +498,11 @@ func (b0 Limits_builder) Build() *Limits {
 	x.xxx_hidden_PartyMembers = b.PartyMembers
 	x.xxx_hidden_Friends = b.Friends
 	x.xxx_hidden_BlockList = b.BlockList
+	x.xxx_hidden_GuildMembers = b.GuildMembers
+	x.xxx_hidden_GuildPositions = b.GuildPositions
+	x.xxx_hidden_GuildAllies = b.GuildAllies
+	x.xxx_hidden_GuildEnemies = b.GuildEnemies
+	x.xxx_hidden_GuildStorage = b.GuildStorage
 	return m0
 }
 
@@ -649,12 +725,17 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\x04tick\x18\x03 \x01(\rR\x04tick\x12\x15\n" +
 	"\x06net_id\x18\x04 \x01(\rR\x05netId\x12\x10\n" +
 	"\x03map\x18\x05 \x01(\tR\x03map\x12*\n" +
-	"\x06limits\x18\x06 \x01(\v2\x12.wathena.v1.LimitsR\x06limits\"f\n" +
+	"\x06limits\x18\x06 \x01(\v2\x12.wathena.v1.LimitsR\x06limits\"\xa1\x02\n" +
 	"\x06Limits\x12#\n" +
 	"\rparty_members\x18\x01 \x01(\rR\fpartyMembers\x12\x18\n" +
 	"\afriends\x18\x02 \x01(\rR\afriends\x12\x1d\n" +
 	"\n" +
-	"block_list\x18\x03 \x01(\rR\tblockList\"\x1c\n" +
+	"block_list\x18\x03 \x01(\rR\tblockList\x12#\n" +
+	"\rguild_members\x18\x04 \x01(\rR\fguildMembers\x12'\n" +
+	"\x0fguild_positions\x18\x05 \x01(\rR\x0eguildPositions\x12!\n" +
+	"\fguild_allies\x18\x06 \x01(\rR\vguildAllies\x12#\n" +
+	"\rguild_enemies\x18\a \x01(\rR\fguildEnemies\x12#\n" +
+	"\rguild_storage\x18\b \x01(\rR\fguildStorage\"\x1c\n" +
 	"\x04Ping\x12\x14\n" +
 	"\x05nonce\x18\x01 \x01(\rR\x05nonce\"B\n" +
 	"\x04Pong\x12\x14\n" +

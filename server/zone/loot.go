@@ -311,6 +311,8 @@ func (z *Zone) mvpReward(e *entity, m *progression.Mob, kill progression.Kill) {
 // pc_checkjoblevelup call status_calc_pc. A base level up then heals HP
 // and SP fully, as status_percent_heal.
 func (z *Zone) gainExp(p *Player, base, job int64) {
+	// pc_gainexp: the guild takes its tax of base exp first.
+	base = z.payGuildTax(p, base)
 	before := z.progressStats(p, nil)
 	g := z.Progress.GainExp(&p.progress, base, job)
 	if changed := z.progressStats(p, before); changed != nil {

@@ -1,0 +1,590 @@
+{
+	"rathena_git_hash": "f30328d043b8cd3cc21e3335930463aba845f2e7",
+	"mode": "renewal",
+	"note": "exp is exp_guild.yml with its imports for the mode, as GuildExpDatabase loads it: next_exp of a level is the guild exp needed to go from that level to the next. Levels run from 1 to MAX_GUILDLEVEL - 1, and a later file replaces a level. skills is guild_skill_tree.yml with its imports for the mode, as GuildSkillTreeDatabase loads it, by skill ID. Skills outside GD_SKILLBASE to GD_SKILLBASE + MAX_GUILDSKILL - 1 are skipped, and a required level of 0 is skipped. required is sorted by skill ID. With require_glory_guild on, GD_GLORYGUILD's MaxLevel 0 becomes 1. It is off by default, so its max_level stays as written. constants are the values rAthena compiles in the mode at PACKETVER 20211103, from src/common/mmo.hpp and src/config/const.hpp. GUILD_PERM_* are the position mode bits. storage: with OFFICIAL_GUILD_STORAGE (PACKETVER 20131223 or later), the guild storage holds 100 + 100 * the GD_GUILD_STORAGE level, and a guild without the skill cannot open it (storage_guild_storageopen and inter_guild_storagemax). skill is GD_GUILD_STORAGE's ID in skill_db.yml, or null when the mode's skill_db.yml does not have it. skill_in_range is false when the skill is missing or outside the mode's guild skill range. guild_checkskill then returns 0 for GD_GUILD_STORAGE (10016 in the source), so with OFFICIAL_GUILD_STORAGE no guild can open its storage, and size_by_level is empty. battle_config lists the guild settings after conf/battle_athena.conf and its imports, as battle_config_read, with battle.cpp's default, min and max for the mode. A value outside min and max falls back to the default. guild_max_member is 16 + 6 * the GD_EXTENSION level, capped at MAX_GUILD (guild_calcinfo in the char server).",
+	"exp_files": [
+		"db/exp_guild.yml",
+		"db/re/exp_guild.yml"
+	],
+	"exp": [
+		{
+			"level": 1,
+			"next_exp": 100000
+		},
+		{
+			"level": 2,
+			"next_exp": 400000
+		},
+		{
+			"level": 3,
+			"next_exp": 900000
+		},
+		{
+			"level": 4,
+			"next_exp": 1600000
+		},
+		{
+			"level": 5,
+			"next_exp": 2500000
+		},
+		{
+			"level": 6,
+			"next_exp": 3600000
+		},
+		{
+			"level": 7,
+			"next_exp": 4900000
+		},
+		{
+			"level": 8,
+			"next_exp": 6400000
+		},
+		{
+			"level": 9,
+			"next_exp": 8100000
+		},
+		{
+			"level": 10,
+			"next_exp": 10000000
+		},
+		{
+			"level": 11,
+			"next_exp": 12100000
+		},
+		{
+			"level": 12,
+			"next_exp": 14400000
+		},
+		{
+			"level": 13,
+			"next_exp": 16900000
+		},
+		{
+			"level": 14,
+			"next_exp": 19600000
+		},
+		{
+			"level": 15,
+			"next_exp": 22500000
+		},
+		{
+			"level": 16,
+			"next_exp": 25600000
+		},
+		{
+			"level": 17,
+			"next_exp": 28900000
+		},
+		{
+			"level": 18,
+			"next_exp": 32400000
+		},
+		{
+			"level": 19,
+			"next_exp": 36100000
+		},
+		{
+			"level": 20,
+			"next_exp": 40000000
+		},
+		{
+			"level": 21,
+			"next_exp": 44100000
+		},
+		{
+			"level": 22,
+			"next_exp": 48400000
+		},
+		{
+			"level": 23,
+			"next_exp": 52900000
+		},
+		{
+			"level": 24,
+			"next_exp": 57600000
+		},
+		{
+			"level": 25,
+			"next_exp": 62500000
+		},
+		{
+			"level": 26,
+			"next_exp": 67600000
+		},
+		{
+			"level": 27,
+			"next_exp": 72900000
+		},
+		{
+			"level": 28,
+			"next_exp": 78400000
+		},
+		{
+			"level": 29,
+			"next_exp": 84100000
+		},
+		{
+			"level": 30,
+			"next_exp": 90000000
+		},
+		{
+			"level": 31,
+			"next_exp": 96100000
+		},
+		{
+			"level": 32,
+			"next_exp": 102400000
+		},
+		{
+			"level": 33,
+			"next_exp": 108900000
+		},
+		{
+			"level": 34,
+			"next_exp": 115600000
+		},
+		{
+			"level": 35,
+			"next_exp": 122500000
+		},
+		{
+			"level": 36,
+			"next_exp": 129600000
+		},
+		{
+			"level": 37,
+			"next_exp": 136900000
+		},
+		{
+			"level": 38,
+			"next_exp": 144400000
+		},
+		{
+			"level": 39,
+			"next_exp": 152100000
+		},
+		{
+			"level": 40,
+			"next_exp": 160000000
+		},
+		{
+			"level": 41,
+			"next_exp": 168100000
+		},
+		{
+			"level": 42,
+			"next_exp": 176400000
+		},
+		{
+			"level": 43,
+			"next_exp": 184900000
+		},
+		{
+			"level": 44,
+			"next_exp": 193600000
+		},
+		{
+			"level": 45,
+			"next_exp": 202500000
+		},
+		{
+			"level": 46,
+			"next_exp": 211600000
+		},
+		{
+			"level": 47,
+			"next_exp": 220900000
+		},
+		{
+			"level": 48,
+			"next_exp": 230400000
+		},
+		{
+			"level": 49,
+			"next_exp": 240100000
+		}
+	],
+	"exp_missing_levels": [],
+	"skill_tree_files": [
+		"db/guild_skill_tree.yml",
+		"db/re/guild_skill_tree.yml"
+	],
+	"skills": [
+		{
+			"id": 10000,
+			"name": "GD_APPROVAL",
+			"max_level": 1,
+			"required": []
+		},
+		{
+			"id": 10001,
+			"name": "GD_KAFRACONTRACT",
+			"max_level": 1,
+			"required": [
+				{
+					"id": 10000,
+					"name": "GD_APPROVAL",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10002,
+			"name": "GD_GUARDRESEARCH",
+			"max_level": 1,
+			"required": [
+				{
+					"id": 10000,
+					"name": "GD_APPROVAL",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10003,
+			"name": "GD_GUARDUP",
+			"max_level": 3,
+			"required": []
+		},
+		{
+			"id": 10004,
+			"name": "GD_EXTENSION",
+			"max_level": 10,
+			"required": []
+		},
+		{
+			"id": 10005,
+			"name": "GD_GLORYGUILD",
+			"max_level": 0,
+			"required": []
+		},
+		{
+			"id": 10006,
+			"name": "GD_LEADERSHIP",
+			"max_level": 5,
+			"required": []
+		},
+		{
+			"id": 10007,
+			"name": "GD_GLORYWOUNDS",
+			"max_level": 5,
+			"required": []
+		},
+		{
+			"id": 10008,
+			"name": "GD_SOULCOLD",
+			"max_level": 5,
+			"required": [
+				{
+					"id": 10007,
+					"name": "GD_GLORYWOUNDS",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10009,
+			"name": "GD_HAWKEYES",
+			"max_level": 5,
+			"required": [
+				{
+					"id": 10006,
+					"name": "GD_LEADERSHIP",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10010,
+			"name": "GD_BATTLEORDER",
+			"max_level": 1,
+			"required": [
+				{
+					"id": 10000,
+					"name": "GD_APPROVAL",
+					"level": 1
+				},
+				{
+					"id": 10004,
+					"name": "GD_EXTENSION",
+					"level": 2
+				}
+			]
+		},
+		{
+			"id": 10011,
+			"name": "GD_REGENERATION",
+			"max_level": 3,
+			"required": [
+				{
+					"id": 10000,
+					"name": "GD_APPROVAL",
+					"level": 1
+				},
+				{
+					"id": 10004,
+					"name": "GD_EXTENSION",
+					"level": 5
+				},
+				{
+					"id": 10010,
+					"name": "GD_BATTLEORDER",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10012,
+			"name": "GD_RESTORE",
+			"max_level": 1,
+			"required": [
+				{
+					"id": 10011,
+					"name": "GD_REGENERATION",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10013,
+			"name": "GD_EMERGENCYCALL",
+			"max_level": 1,
+			"required": [
+				{
+					"id": 10000,
+					"name": "GD_APPROVAL",
+					"level": 1
+				},
+				{
+					"id": 10002,
+					"name": "GD_GUARDRESEARCH",
+					"level": 1
+				},
+				{
+					"id": 10004,
+					"name": "GD_EXTENSION",
+					"level": 5
+				},
+				{
+					"id": 10010,
+					"name": "GD_BATTLEORDER",
+					"level": 1
+				},
+				{
+					"id": 10011,
+					"name": "GD_REGENERATION",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10014,
+			"name": "GD_DEVELOPMENT",
+			"max_level": 1,
+			"required": []
+		},
+		{
+			"id": 10016,
+			"name": "GD_GUILD_STORAGE",
+			"max_level": 5,
+			"required": [
+				{
+					"id": 10004,
+					"name": "GD_EXTENSION",
+					"level": 10
+				},
+				{
+					"id": 10008,
+					"name": "GD_SOULCOLD",
+					"level": 1
+				},
+				{
+					"id": 10009,
+					"name": "GD_HAWKEYES",
+					"level": 1
+				},
+				{
+					"id": 10013,
+					"name": "GD_EMERGENCYCALL",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10017,
+			"name": "GD_CHARGESHOUT_FLAG",
+			"max_level": 1,
+			"required": [
+				{
+					"id": 10013,
+					"name": "GD_EMERGENCYCALL",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10018,
+			"name": "GD_CHARGESHOUT_BEATING",
+			"max_level": 1,
+			"required": [
+				{
+					"id": 10017,
+					"name": "GD_CHARGESHOUT_FLAG",
+					"level": 1
+				}
+			]
+		},
+		{
+			"id": 10019,
+			"name": "GD_EMERGENCY_MOVE",
+			"max_level": 1,
+			"required": [
+				{
+					"id": 10006,
+					"name": "GD_LEADERSHIP",
+					"level": 1
+				},
+				{
+					"id": 10007,
+					"name": "GD_GLORYWOUNDS",
+					"level": 1
+				}
+			]
+		}
+	],
+	"constants": {
+		"MAX_GUILD": 76,
+		"MAX_GUILDPOSITION": 20,
+		"MAX_GUILDALLIANCE": 16,
+		"MAX_GUILDEXPULSION": 32,
+		"MAX_GUILDLEVEL": 50,
+		"MAX_GUILDSKILL": 20,
+		"MAX_GUILD_STORAGE": 600,
+		"MAX_GUILDMES1": 60,
+		"MAX_GUILDMES2": 120,
+		"MAX_GUILD_EXP": 2147483647,
+		"GUILD_PERM_INVITE": 1,
+		"GUILD_PERM_EXPEL": 16,
+		"GUILD_PERM_STORAGE": 256,
+		"GUILD_PERM_ALL": 273,
+		"GUILD_PERM_DEFAULT": 273
+	},
+	"guild_max_member": {
+		"base": 16,
+		"per_extension_level": 6,
+		"max": 76
+	},
+	"storage": {
+		"official_guild_storage": true,
+		"skill": 10016,
+		"skill_in_range": true,
+		"size_by_level": [
+			200,
+			300,
+			400,
+			500,
+			600
+		],
+		"size_without_official": 600
+	},
+	"battle_config": {
+		"guild_exp_limit": {
+			"value": 50,
+			"default": 50,
+			"min": 0,
+			"max": 99,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"max_guild_alliance": {
+			"value": 3,
+			"default": 3,
+			"min": 0,
+			"max": 3,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"emergency_call": {
+			"value": 11,
+			"default": 11,
+			"min": 0,
+			"max": 31,
+			"set_in": "conf/battle/skill.conf"
+		},
+		"guild_aura": {
+			"value": 31,
+			"default": 31,
+			"min": 0,
+			"max": 31,
+			"set_in": "conf/battle/skill.conf"
+		},
+		"guild_skill_relog_delay": {
+			"value": 300000,
+			"default": 300000,
+			"min": 0,
+			"max": 2147483647,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"guild_skill_relog_type": {
+			"value": 0,
+			"default": 0,
+			"min": 0,
+			"max": 1,
+			"set_in": null
+		},
+		"guild_emperium_check": {
+			"value": 1,
+			"default": 1,
+			"min": 0,
+			"max": 1,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"guild_leaderchange_delay": {
+			"value": 1440,
+			"default": 1440,
+			"min": 0,
+			"max": 2147483647,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"guild_leaderchange_woe": {
+			"value": 0,
+			"default": 0,
+			"min": 0,
+			"max": 1,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"guild_alliance_onlygm": {
+			"value": 0,
+			"default": 0,
+			"min": 0,
+			"max": 1,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"guild_notice_changemap": {
+			"value": 2,
+			"default": 2,
+			"min": 0,
+			"max": 2,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"require_glory_guild": {
+			"value": 0,
+			"default": 0,
+			"min": 0,
+			"max": 1,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"guild_max_castles": {
+			"value": 0,
+			"default": 0,
+			"min": 0,
+			"max": 2147483647,
+			"set_in": "conf/battle/guild.conf"
+		},
+		"guild_maprespawn_clones": {
+			"value": 0,
+			"default": 0,
+			"min": 0,
+			"max": 1,
+			"set_in": "conf/battle/guild.conf"
+		}
+	}
+}

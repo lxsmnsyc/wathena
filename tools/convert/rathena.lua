@@ -322,4 +322,80 @@ function R.party_members(party)
 	return out, #names
 end
 
+-- guild_field reads a field of a guild handle, such as its name. Without
+-- a guild it returns the default, as rAthena's guild reads return "null"
+-- for a guild that does not exist.
+R.guild_field = R.party_field
+
+-- guild_skill is rAthena's getgdskilllv: the guild's level of a guild
+-- skill, or -1 without a guild.
+function R.guild_skill(guild, skill)
+	if guild == nil then
+		return -1
+	end
+	return guild:get_skill_level(skill)
+end
+
+-- guild_permission is rAthena's guild_has_permission for the player: true
+-- when the player's guild position has every named permission, such as
+-- "can_use_storage".
+function R.guild_permission(player, ...)
+	local guild = player.guild
+	if guild == nil then
+		return false
+	end
+	local position = guild:get_position(player)
+	if position == nil then
+		return false
+	end
+	for i = 1, select("#", ...) do
+		if not position[select(i, ...)] then
+			return false
+		end
+	end
+	return true
+end
+
+-- guild_members is rAthena's getguildmember for names: every member's
+-- name in an array from 0, and the count. Without a guild the array is
+-- empty and the count is 0.
+R.guild_members = R.party_members
+
+-- internal is core's wa.internal module, or nil in any other mod. It is
+-- not API, so the helpers that use it fall back to R.not_available.
+local internal_loaded, internal
+local function core_internal()
+	if not internal_loaded then
+		internal_loaded = true
+		local ok, m = pcall(require, "wa.internal")
+		if ok then
+			internal = m
+		end
+	end
+	return internal
+end
+
+-- guild_storage is rAthena's guildopenstorage. It opens the player's
+-- guild storage and returns rAthena's GSTORAGE_ value, 0 when it opened.
+-- Outside core it says that guild storage is not available, and returns 1.
+function R.guild_storage(conversation, player)
+	local m = core_internal()
+	if m == nil then
+		return R.not_available(conversation, "Guild storage")
+	end
+	return m.open_guild_storage(player)
+end
+
+-- guild_storage_log is rAthena's guildopenstorage_log. It sends the player
+-- the guild storage log. Outside core it says that the log is not
+-- available.
+function R.guild_storage_log(conversation, player)
+	local m = core_internal()
+	if m == nil then
+		R.not_available(conversation, "The guild storage log")
+		return
+	end
+	m.guild_storage_log(player)
+end
+
 return R

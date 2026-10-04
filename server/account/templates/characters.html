@@ -1,5 +1,5 @@
 {{define "characters.html"}}{{template "head" .}}
-<p class="account">Logged in as <strong>{{.Account}}</strong>. <a href="/account/settings{{if .Return}}?return={{.Return}}{{end}}">Account settings</a></p>
+<p class="account">Logged in as <strong>{{.Account}}</strong>. <a href="/account/settings{{if .Return}}?return={{.Return}}{{end}}">Account settings</a> <a href="/account/guild/emblem">Guild emblem</a></p>
 {{if .Characters}}
 <ul class="characters">
 {{range .Characters}}

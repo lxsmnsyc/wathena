@@ -156,6 +156,11 @@ provides:
 | `party_members` | 12 (`MAX_PARTY`) | 2 to 64 | Members of a party. |
 | `friends` | 40 (`MAX_FRIENDS`) | 1 to 200 | Names on a friend list. |
 | `block_list` | 20 (`MAX_IGNORE_LIST`) | 1 to 100 | Names on a block list. |
+| `guild_members` | 16 | 1 to 200 | Members of a guild before Guild Extension, which adds 6 per level (`guild_calcinfo`). |
+| `guild_positions` | 20 (`MAX_GUILDPOSITION`) | 2 to 40 | Positions of a guild. |
+| `guild_allies` | 3 (`max_guild_alliance`) | 0 to 10 | Allied guilds of a guild. |
+| `guild_enemies` | 3 (`max_guild_alliance`) | 0 to 10 | Enemy guilds of a guild. |
+| `guild_storage` | 500 | 1 to 2000 | Slots of a guild storage. Renewal's Guild Storage skill gives 100 and 100 per level, up to it. |
 
 | Rule | rAthena's value | Values | What it changes |
 |---|---|---|---|
@@ -165,12 +170,18 @@ provides:
 | `change_party_leader_samemap` | yes | yes, no | A new leader must be on the leader's map. |
 | `block_account_in_same_party` | yes | yes, no | Two characters of one account cannot be in one party. |
 | `friend_auto_add` | yes | yes, no | An accepted friend request puts each player on the other's list. |
+| `guild_emperium_check` | yes | yes, no | Making a guild from the client takes an Emperium. |
+| `guild_exp_limit` | 50 | 0 to 99 | The highest exp tax of a guild position. |
+| `emergency_call` | 11 | 0 to 31 | Where Emergency Call works. Bits: 1 outside sieges, 2 in sieges, 4 outside GvG maps, 8 on GvG maps, 16 not on nowarpto maps. |
+| `guild_skill_relog_delay` | 300000 | 0 to 86400000 | Milliseconds a master's guild skills wait after a login or becoming master, in pre-renewal (the `skill_cooldown` flag). |
+| `guild_leaderchange_delay` | 1440 | 0 to 1000000000 | The wait between master changes. rAthena compares it with seconds, though its comment says minutes. |
+| `guild_alliance_onlygm` | no | yes, no | Only a guild master may accept an alliance. |
 
 - A value outside its bounds, or a name that is not a limit or a rule, fails the mod's load.
 - A ruleset mod that does not set one keeps what it extends. The core rulesets have rAthena's values.
 - Lowering a limit deletes nothing. A list over the limit keeps its names and cannot grow.
 - The client gets the limits at login, and Lua reads them as `rules.limits.<name>` ("Parties and friends" below).
-- Later steps add the guild, storage, cart, inventory and card slot limits.
+- Phase 5 step 5 added the guild limits and rules. Later steps add the storage, cart, inventory and card slot limits.
 - [examples/classic-casting](examples/classic-casting) is a sample ruleset mod: a renewal world with pre-renewal casting.
 
 ## Permissions
@@ -963,6 +974,60 @@ Rules:
 - A party is one for the whole world, and lives on after its members log out. Its leader and members are handles of players on this map: a member on another map is nil in `party.leader`, and left out of `get_members`.
 - The leader leaving breaks the party up, as in rAthena.
 - In `wactl mod test`, a test case's own code needs no permission to make and change parties.
+
+### Guilds
+
+Guilds follow proposal 0002, review decision 28. [examples/guild-hall](examples/guild-hall) uses each part.
+
+```lua
+local events = require "wa.events"
+local guilds = require "wa.guilds"
+
+return function()
+  events.on("chat", function(message)
+    if message.text == "!guild" and message.player.guild == nil then
+      guilds.create(message.player, message.player.name .. "'s Guild")
+    end
+  end, { channel = "public" })
+  events.on("guild_change", function(change)
+    if change.change == "level" then
+      for _, member in ipairs(change.guild:get_members()) do
+        member:send_message(change.guild.name .. " is level " .. change.guild.level .. ".")
+      end
+    end
+  end)
+end
+```
+
+`player.guild` is the player's guild, or nil. A guild has the read-only fields `id`, `name`, `master` (a player of this map, or nil), `master_name`, `level`, `exp`, `notice` (`{ title, text }`) and `member_count`.
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `guild:get_members()` | `game.read` | The online members on this map, in slot order. The master is first. |
+| `guild:get_member_names()` | `game.read` | Every member's name, online or not. |
+| `guild:get_position(player)` | `game.read` | `{ name, can_invite, can_expel, can_use_storage, exp_tax }`, or nil for a player who is not a member. |
+| `guild:get_skill_level(skill)` | `game.read` | A guild skill's level, as `getgdskilllv`. Take the ID from `skills.id`. |
+| `guild:is_allied(other)`, `guild:is_enemy(other)` | `game.read` | The relation with another guild. Enemies are on one side only. |
+| `guilds.create(master, name)` | `guild.manage` | Makes a guild. It takes no Emperium, so the script decides the cost. Returns nil when the name is taken or the master has a guild. |
+| `guild:add(player)`, `guild:remove(player)` | `guild.manage` | They return false when nothing changed. The master cannot be removed. |
+| `guild:set_master(player)` | `guild.manage` | As `guildchangegm`, without the master change delay. |
+| `guild:set_notice(title, text)` | `guild.manage` | Returns false for a title over 59 characters or a text over 119. |
+| `guild:give_exp(amount)` | `guild.manage` | As `guildgetexp`. The guild may level up. |
+| `guild:disband()` | `guild.manage` | Breaks the guild up with its members. Its storage is lost, as in rAthena. |
+| `guilds.get(id)`, `guilds.find(name)` | `game.read` | Find a guild, or nil. |
+| `rules.limits.<name>` | None | Also `guild_members`, `guild_positions`, `guild_allies`, `guild_enemies` and `guild_storage`. |
+
+Events:
+
+- `guild_join` and `guild_leave` get `{ guild, player, reason }`, with the reasons of the party events. They run on the map of the player who joined or left. `guilds.create` fires `guild_join` with `"script"` for the master.
+- `guild_change` gets `{ guild, change }`, where `change` is `"master"`, `"level"`, `"notice"` or `"emblem"`. It runs on the map where the change was made. A new emblem from the account pages runs it on the map of the master, or of the first online member.
+- The `experience` hook's object has `guild` (or nil) and `guild_tax`: the share of `base` that the player's position gives the guild. The tax applies at the same rate to the base the hook returns.
+
+Rules:
+
+- A guild is one for the whole world. Its master and members are handles of players on this map.
+- Players make guilds from the client with an Emperium, invite by position, and the master changes positions, the notice, the skills and the relations. Guild storage opens from core's Guild Warehouse Manager in renewal towns. Mods have no call for it yet.
+- In `wactl mod test`, a test case's own code needs no permission to make and change guilds.
 
 ### Entity queries
 

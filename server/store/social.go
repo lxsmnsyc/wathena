@@ -69,11 +69,21 @@ type SocialStore struct {
 	q    *db.Queries
 	log  *slog.Logger
 
-	mu      sync.Mutex
-	queue   []func(ctx context.Context, q *db.Queries) error
-	wake    chan struct{}
-	stop    chan struct{}
-	stopped chan struct{}
+	// Lane, when set, runs guild writes in order with the transfer
+	// commits (Store.Lane), so a commit that writes a guild's storage
+	// comes after the guild's row and before its deletion.
+	Lane func(func(ctx context.Context, q *db.Queries) error)
+
+	mu sync.Mutex
+	// seq numbers the exp writes. expSeq and memberSeq hold the last one
+	// of each guild and member, which is the only one that writes.
+	seq       uint64
+	expSeq    map[int64]uint64
+	memberSeq map[[2]int64]uint64
+	queue     []func(ctx context.Context, q *db.Queries) error
+	wake      chan struct{}
+	stop      chan struct{}
+	stopped   chan struct{}
 }
 
 // NewSocialStore starts a SocialStore on a pool. Close stops it.

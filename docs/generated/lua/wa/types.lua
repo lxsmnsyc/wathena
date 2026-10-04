@@ -33,6 +33,9 @@
 ---| "party_join"
 ---| "party_leave"
 ---| "party_change"
+---| "guild_join"
+---| "guild_leave"
+---| "guild_change"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -243,6 +246,7 @@
 ---@field character_id integer The database ID, 0 without a database.
 ---@field account_id integer The database ID, 0 without a database.
 ---@field party wa.Party? The player's party, or nil.
+---@field guild wa.Guild? The player's guild, or nil.
 ---@field sex "male"|"female"
 ---@field companion integer? The player's companion, from companions.id, or nil.
 ---@field mount integer? The player's mount, from mounts.id, or nil.
@@ -884,11 +888,136 @@ local wa_PartyMembership = {}
 ---@field options wa.PartyOptions The party's options after the change.
 local wa_PartyChange = {}
 
+---A guild, from player.guild or wa.guilds. Its master and members are players of this map: a member on another map is nil or left out.
+---@class wa.Guild
+---@field id integer
+---@field name string
+---@field master wa.Player? The master, or nil when it is offline or on another map.
+---@field master_name string The master's name, online or not.
+---@field level integer 1 to 50, from exp_guild.yml.
+---@field exp integer The exp toward the next level.
+---@field notice wa.GuildNotice
+---@field member_count integer Every member, online or not.
+local wa_Guild = {}
+
+---The online members on this map, in the guild's slot order. The master is first.
+---
+---Needs the permission `game.read`.
+---@return wa.Player[]
+function wa_Guild:get_members() end
+
+---Every member's name, online or not, in slot order.
+---
+---Needs the permission `game.read`.
+---@return string[]
+function wa_Guild:get_member_names() end
+
+---The member's position, or nil for a player who is not a member.
+---
+---Needs the permission `game.read`.
+---@param player wa.Player A player handle.
+---@return wa.GuildPosition?
+function wa_Guild:get_position(player) end
+
+---The guild's level of a guild skill, as getgdskilllv.
+---
+---Needs the permission `game.read`.
+---@param skill integer A guild skill's ID, such as skills.id("GD_EXTENSION").
+---@return integer
+function wa_Guild:get_skill_level(skill) end
+
+---Whether the guilds are allies.
+---
+---Needs the permission `game.read`.
+---@param other wa.Guild
+---@return boolean
+function wa_Guild:is_allied(other) end
+
+---Whether this guild has the other as an enemy. Enemies are on one side only.
+---
+---Needs the permission `game.read`.
+---@param other wa.Guild
+---@return boolean
+function wa_Guild:is_enemy(other) end
+
+---Puts the player in the guild with the last position. Returns false when the player has a guild or the guild is full. The guild_join event follows, with the reason "script".
+---
+---Needs the permission `guild.manage`.
+---@param player wa.Player A player handle.
+---@return boolean
+function wa_Guild:add(player) end
+
+---Takes a member out of the guild. Returns false for a player who is not a member, and for the master. The guild_leave event follows, with the reason "script".
+---
+---Needs the permission `guild.manage`.
+---@param player wa.Player A player handle.
+---@return boolean
+function wa_Guild:remove(player) end
+
+---Makes a member the master, as guildchangegm, without guild_leaderchange_delay. Returns false for a player who is not a member, or is the master. The guild_change event follows.
+---
+---Needs the permission `guild.manage`.
+---@param player wa.Player A player handle.
+---@return boolean
+function wa_Guild:set_master(player) end
+
+---Sets the guild notice. Returns false when a part is too long. The guild_change event follows.
+---
+---Needs the permission `guild.manage`.
+---@param title string At most 59 characters.
+---@param text string At most 119 characters.
+---@return boolean
+function wa_Guild:set_notice(title, text) end
+
+---Adds exp to the guild, as guildgetexp, which may level it up. The guild_change event follows a level up.
+---
+---Needs the permission `guild.manage`.
+---@param amount integer 1 to 2147483647.
+function wa_Guild:give_exp(amount) end
+
+---Breaks the guild up, with its members. Its storage is lost, as in rAthena. Each member gets the guild_leave event, with the reason "disbanded".
+---
+---Needs the permission `guild.manage`.
+function wa_Guild:disband() end
+
+---A guild's notice.
+---@class wa.GuildNotice
+---@field title string
+---@field text string
+local wa_GuildNotice = {}
+
+---A member's position, from guild:get_position.
+---@class wa.GuildPosition
+---@field name string
+---@field can_invite boolean
+---@field can_expel boolean
+---@field can_use_storage boolean
+---@field exp_tax integer The percent of base exp the member gives the guild.
+local wa_GuildPosition = {}
+
+---The object of the guild_join and guild_leave events.
+---@class wa.GuildMembership
+---@field guild wa.Guild The guild. After it broke up, its fields still read.
+---@field player wa.Player The player who joined or left.
+---@field reason "invited"|"left"|"expelled"|"disbanded"|"script" Why: an accepted invite, a leave, an expel, a break up, or a wa.guilds call.
+local wa_GuildMembership = {}
+
+---The object of the guild_change event.
+---@class wa.GuildChange
+---@field guild wa.Guild The guild, whose fields hold the new values.
+---@field change "master"|"level"|"notice"|"emblem" What changed.
+local wa_GuildChange = {}
+
 ---The limits of the world's ruleset, as rules.limits. A list over a limit that a ruleset lowered keeps its entries and cannot grow.
 ---@class wa.Limits
 ---@field party_members integer The most members a party holds, as MAX_PARTY. 12 by default, at most 64.
 ---@field friends integer The most names a friend list holds, as MAX_FRIENDS. 40 by default, at most 200.
 ---@field block_list integer The most names a block list holds, as MAX_IGNORE_LIST. 20 by default, at most 100.
+---@field guild_members integer The most members a guild holds before Guild Extension, which adds 6 per level. 16 by default, at most 200.
+---@field guild_positions integer The positions of a guild, as MAX_GUILDPOSITION. 20 by default, at most 40.
+---@field guild_allies integer The most allied guilds of a guild, as max_guild_alliance. 3 by default, at most 10.
+---@field guild_enemies integer The most enemy guilds of a guild, as max_guild_alliance. 3 by default, at most 10.
+---@field guild_storage integer The most slots a guild storage holds. 500 by default, at most 2,000.
 local wa_Limits = {}
 
 ---The share of the experience hook's object.
@@ -1141,6 +1270,8 @@ local wa_Drop = {}
 ---@field job integer
 ---@field party wa.Party? The player's party, or nil.
 ---@field share wa.ExpShare The player's own share of the kill, before the even party split and the level penalty. 0 and 0 for a member who did not fight.
+---@field guild wa.Guild? The player's guild, or nil.
+---@field guild_tax integer The share of base that goes to the guild, by the exp tax of the player's position. The tax applies at the same rate to the base the hook returns.
 local wa_Exp = {}
 
 ---The options of hooks.on.

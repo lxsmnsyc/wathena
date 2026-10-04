@@ -160,7 +160,7 @@ var reserved = map[string]bool{
 	"effects": true, "jobs": true, "text": true, "maps": true, "world": true, "require": true, "self": true,
 	"string": true, "table": true, "math": true, "select": true, "type": true, "tostring": true, "tonumber": true,
 	"pairs": true, "ipairs": true, "error": true, "pcall": true, "schedules": true, "spawning": true, "monsters": true,
-	"channels": true, "parties": true,
+	"channels": true, "parties": true, "guilds": true,
 }
 
 // luaName turns an rAthena name into a Lua name: lower case, letters,
@@ -330,6 +330,9 @@ type body struct {
 	// partyNames and partyCount are the locals that getpartymember sets,
 	// for reads of $@partymembername$ and $@partymembercount.
 	partyNames, partyCount string
+	// guildNames and guildCount are the locals that getguildmember sets,
+	// for reads of $@guildmembername$ and $@guildmembercount.
+	guildNames, guildCount string
 }
 
 // breakable is a loop or a switch, which break leaves.
@@ -543,6 +546,9 @@ func (b *body) readVar(name string, index Expr) (val, error) {
 	}
 	if prefix == "$@" {
 		if v, ok, err := b.partyMemberVar(name, idx, false); ok {
+			return v, err
+		}
+		if v, ok, err := b.guildMemberVar(name, idx, false); ok {
 			return v, err
 		}
 	}

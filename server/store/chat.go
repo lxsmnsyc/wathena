@@ -280,7 +280,10 @@ func (l *ChatLog) writeBatch(ctx context.Context, items []chatItem) error {
 
 func writeReport(ctx context.Context, q *db.Queries, r *chat.Report) error {
 	p := db.InsertReportParams{CreatedAt: timestamp(r.At), ReporterID: r.ReporterID, ReporterName: r.Reporter,
-		TargetID: r.TargetID, TargetName: r.Target, Reason: r.Reason, Map: r.Map}
+		TargetID: r.TargetID, TargetName: r.Target, Reason: r.Reason, Map: r.Map, GuildID: r.Guild, EmblemVersion: r.Emblem}
+	if len(r.EmblemPNG) > 0 {
+		p.EmblemPng = r.EmblemPNG
+	}
 	if !r.Line.IsZero() {
 		p.LineID = uuidOf(r.Line)
 	}
@@ -351,7 +354,7 @@ func readReports(ctx context.Context, q *db.Queries, limit int) ([]StoredReport,
 	for _, r := range rows {
 		s := StoredReport{ID: r.ID, Status: r.Status, Report: chat.Report{
 			At: r.CreatedAt.Time, ReporterID: r.ReporterID, Reporter: r.ReporterName, TargetID: r.TargetID,
-			Target: r.TargetName, Reason: r.Reason, Map: r.Map,
+			Target: r.TargetName, Reason: r.Reason, Map: r.Map, Guild: r.GuildID, Emblem: r.EmblemVersion,
 		}}
 		if r.LineID.Valid {
 			s.Line = r.LineID.Bytes

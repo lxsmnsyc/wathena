@@ -1,0 +1,17 @@
+# A ruleset for the Emergency Call scenario of the end-to-end tests
+# (e2e/README.md): renewal, with Emergency Call allowed outside GvG maps
+# too. emergency_call 15 is rAthena's 11 with bit 4, "outside GvG maps".
+# Only the tests that pass Options.Ruleset use it.
+id: e2e.guildrules
+name: End-to-end guild rules
+version: 0.1.0
+api: 1.0
+description: Renewal with Emergency Call on every map, for the end-to-end tests.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+provides:
+  ruleset:
+    extends: core.ruleset.renewal
+    rules:
+      emergency_call: 15

@@ -42,6 +42,8 @@ type Entity struct {
 	// ItemID and Amount are a ground item's.
 	ItemID uint32
 	Amount int
+	// Guild is a player's guild badge, or nil.
+	Guild *wathenav1.GuildBadge
 }
 
 // Warp reports whether the entity is a warp portal.
@@ -95,6 +97,7 @@ type Bot struct {
 	// come.
 	game    gameState
 	social  socialState
+	guildSt guildState
 	record  bool
 	events  []*wathenav1.Event
 	changed chan struct{}
@@ -353,7 +356,9 @@ type View struct {
 	// Walking is set while the bot's last walk has steps left.
 	Walking   bool
 	HP, MaxHP int64
-	Entities  []Entity
+	// Guild is the bot's own guild badge, as others see it, or nil.
+	Guild    *wathenav1.GuildBadge
+	Entities []Entity
 }
 
 // View returns what the bot knows now.
@@ -363,6 +368,9 @@ func (b *Bot) View() View {
 	x, y, walking := b.position(time.Now())
 	v := View{Map: b.mapName, NetID: b.netID, X: x, Y: y, Walking: walking, HP: b.hp, MaxHP: b.maxH}
 	v.Entities = make([]Entity, 0, len(b.seen))
+	if self := b.seen[b.netID]; self != nil {
+		v.Guild = self.Guild
+	}
 	for _, e := range b.seen {
 		if e.ID != b.netID {
 			v.Entities = append(v.Entities, *e)
@@ -433,6 +441,7 @@ func (b *Bot) apply(m *wathenav1.ServerMessage) {
 		b.event(e, now)
 		b.game.apply(e)
 		b.social.apply(e)
+		b.guildSt.apply(e)
 	}
 	if b.record {
 		b.events = append(b.events, f.GetEvents()...)
@@ -455,7 +464,7 @@ func (b *Bot) event(e *wathenav1.Event, now time.Time) {
 		a := e.GetAppear()
 		x, y := int(a.GetX()), int(a.GetY())
 		b.seen[a.GetId()] = &Entity{ID: a.GetId(), Kind: a.GetKind(), X: x, Y: y, DestX: x, DestY: y, Name: a.GetName(), Body: a.GetLook().GetBody(),
-			ItemID: a.GetItem().GetItemId(), Amount: int(a.GetItem().GetAmount())}
+			ItemID: a.GetItem().GetItemId(), Amount: int(a.GetItem().GetAmount()), Guild: a.GetGuild()}
 		if a.GetId() == b.netID {
 			b.x, b.y, b.walk = x, y, nil
 			b.readyOnce.Do(func() { close(b.ready) })
@@ -484,6 +493,11 @@ func (b *Bot) event(e *wathenav1.Event, now time.Time) {
 		}
 		if s.GetId() == b.netID {
 			b.x, b.y, b.walk = x, y, nil
+		}
+	case e.HasEntityGuild():
+		g := e.GetEntityGuild()
+		if en := b.seen[g.GetId()]; en != nil {
+			en.Guild = g.GetGuild()
 		}
 	case e.HasVanish():
 		v := e.GetVanish()

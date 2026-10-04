@@ -188,20 +188,25 @@ func (q *Queries) InsertChatLines(ctx context.Context, arg InsertChatLinesParams
 }
 
 const insertReport = `-- name: InsertReport :one
-INSERT INTO reports (created_at, reporter_id, reporter_name, target_id, target_name, line_id, reason, map)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO reports (created_at, reporter_id, reporter_name, target_id, target_name, line_id, reason, map,
+    guild_id, emblem_version, emblem_png)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+    $9, $10, $11)
 RETURNING id
 `
 
 type InsertReportParams struct {
-	CreatedAt    pgtype.Timestamptz
-	ReporterID   int64
-	ReporterName string
-	TargetID     int64
-	TargetName   string
-	LineID       pgtype.UUID
-	Reason       string
-	Map          string
+	CreatedAt     pgtype.Timestamptz
+	ReporterID    int64
+	ReporterName  string
+	TargetID      int64
+	TargetName    string
+	LineID        pgtype.UUID
+	Reason        string
+	Map           string
+	GuildID       int64
+	EmblemVersion int
+	EmblemPng     []byte
 }
 
 func (q *Queries) InsertReport(ctx context.Context, arg InsertReportParams) (int64, error) {
@@ -214,6 +219,9 @@ func (q *Queries) InsertReport(ctx context.Context, arg InsertReportParams) (int
 		arg.LineID,
 		arg.Reason,
 		arg.Map,
+		arg.GuildID,
+		arg.EmblemVersion,
+		arg.EmblemPng,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -300,23 +308,25 @@ func (q *Queries) ReportLines(ctx context.Context, reportID int64) ([]ChatLog, e
 }
 
 const reports = `-- name: Reports :many
-SELECT id, created_at, reporter_id, reporter_name, target_id, target_name, line_id, reason, map, status
+SELECT id, created_at, reporter_id, reporter_name, target_id, target_name, line_id, reason, map, status, guild_id, emblem_version
 FROM reports
 ORDER BY id DESC
 LIMIT $1
 `
 
 type ReportsRow struct {
-	ID           int64
-	CreatedAt    pgtype.Timestamptz
-	ReporterID   int64
-	ReporterName string
-	TargetID     int64
-	TargetName   string
-	LineID       pgtype.UUID
-	Reason       string
-	Map          string
-	Status       string
+	ID            int64
+	CreatedAt     pgtype.Timestamptz
+	ReporterID    int64
+	ReporterName  string
+	TargetID      int64
+	TargetName    string
+	LineID        pgtype.UUID
+	Reason        string
+	Map           string
+	Status        string
+	GuildID       int64
+	EmblemVersion int
 }
 
 // Reports lists the newest reports, for the staff tools and tests.
@@ -340,6 +350,8 @@ func (q *Queries) Reports(ctx context.Context, maxRows int32) ([]ReportsRow, err
 			&i.Reason,
 			&i.Map,
 			&i.Status,
+			&i.GuildID,
+			&i.EmblemVersion,
 		); err != nil {
 			return nil, err
 		}

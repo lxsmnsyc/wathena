@@ -107,6 +107,12 @@ type Game struct {
 	// asked to be friends and got no answer yet.
 	Friends        []Friend
 	FriendRequests []string
+	// Guild is the bot's guild, or nil. GuildInvite is the last guild
+	// invite the bot has not answered, or nil. Storage is the storage
+	// window the bot has open, or nil.
+	Guild       *Guild
+	GuildInvite *wathenav1.GuildInvite
+	Storage     *Storage
 }
 
 // Count is the amount of an item in the inventory.
@@ -136,10 +142,12 @@ func (b *Bot) Game() Game {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	party, invite, friends, requests := b.social.clone()
+	guild, guildInvite, storage := b.guildSt.clone()
 	return Game{
 		Items: maps.Clone(b.game.items), Stats: maps.Clone(b.game.stats), Skills: maps.Clone(b.game.skills),
 		Dialog: b.game.dialog, Shop: b.game.shop,
 		Party: party, Invite: invite, Friends: friends, FriendRequests: requests,
+		Guild: guild, GuildInvite: guildInvite, Storage: storage,
 	}
 }
 

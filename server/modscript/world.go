@@ -305,6 +305,9 @@ type Experience struct {
 	// the player's own share before rAthena's party split.
 	Party               int64
 	ShareBase, ShareJob int64
+	// Guild is the player's guild ID, or 0, and GuildTax the share of
+	// Base that goes to the guild (review decision 28).
+	Guild, GuildTax int64
 }
 
 // RunDropRate runs the drop_rate hooks and returns the rate they give,
@@ -337,6 +340,10 @@ func (r *Runtime) RunExperience(e Experience) (int64, int64) {
 	if e.Party != 0 {
 		fields = append(fields, script.KV("party", script.Int(e.Party)))
 	}
+	if e.Guild != 0 {
+		fields = append(fields, script.KV("guild", script.Int(e.Guild)))
+	}
+	fields = append(fields, script.KV("guild_tax", script.Int(e.GuildTax)))
 	vals, ok := r.runHooks("experience", fields)
 	if !ok || len(vals) < 2 {
 		return e.Base, e.Job

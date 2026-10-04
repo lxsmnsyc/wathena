@@ -27,6 +27,7 @@ import { Character } from '../render/characters';
 import { EffectCache, EffectView } from '../render/effects';
 import {
   DamageKind,
+  GuildOutcome,
   InventoryRemoveReason,
   PartyOutcome,
   SanctionKind,
@@ -49,10 +50,22 @@ import {
   sanctionMessage,
   whisperMessage,
 } from './chatNotices';
-import { ChatTabBar, ChatTabs, PARTY_TAB, placeholder, whisperKey } from './chatTabs';
+import { ChatTabBar, ChatTabs, GUILD_TAB, PARTY_TAB, placeholder, whisperKey } from './chatTabs';
 import { BlockPanel, blockChanges } from './blockList';
 import { BOOKING_REFUSED, BookingWindow, entryView } from './booking';
+import { EmblemCache } from './emblems';
 import { FriendPanel, friendsFromList, setFriendOnline } from './friends';
+import {
+  GuildWindow,
+  NO_GUILD,
+  badgeLine,
+  guildAfterResult,
+  guildFromInfo,
+  mergeGuildMember,
+  permissions,
+} from './guild';
+import { PlayerMenu } from './playerMenu';
+import { STORAGE_DRAG_TYPE, StorageModel, StorageWindow, storageMessage } from './storage';
 import {
   NO_PARTY,
   PartyWindow,
@@ -66,6 +79,9 @@ import {
   friendMessage,
   friendRequestText,
   friendStatusMessage,
+  guildAllyRequestText,
+  guildInviteText,
+  guildMessage,
   itemSharedMessage,
   partyInviteText,
   partyMessage,
@@ -74,6 +90,7 @@ import { expLine, hpLine, pickUpMessage } from './hud';
 import {
   InventoryModel,
   InventoryWindow,
+  ItemIcons,
   MAJOR_OVERWEIGHT,
   SLOT_DRAG_TYPE,
   dropItemMessage,
@@ -215,6 +232,13 @@ let showMessage: (text: string) => void = () => {};
 let logNotice: (text: string) => void = () => {};
 /** The ground item under the pointer, whose name shows. */
 let hoveredItem: number | undefined;
+/** Guild emblems, once a game server is known. */
+let emblems: EmblemCache | undefined;
+/**
+ * Opens the menu of another player at a point of the page, once the chat
+ * exists. Returns false for an entity that is not another player.
+ */
+let openPlayerMenu: ((id: number, x: number, y: number) => boolean) | undefined;
 const bubbles = new Bubbles();
 const bubbleRoot = document.querySelector<HTMLDivElement>('#bubbles');
 const bubbleViews = new Map<number, HTMLDivElement>();
@@ -508,6 +532,8 @@ if (serverURL === null) {
     },
   });
   view.self = connection.welcome.netId;
+  const emblemCache = new EmblemCache(serverURL);
+  emblems = emblemCache;
   const hits = document.querySelector<HTMLDivElement>('#hits');
   view.onHit = (h) => {
     if (hits === null) {
@@ -684,6 +710,98 @@ if (serverURL === null) {
         toggle();
       }
     });
+  }
+  // Storage. The window opens when the server sends StorageOpen, such as
+  // from a guild storage NPC. Items move in from the inventory window and
+  // out to it.
+  const storage = new StorageModel();
+  const storageRoot = document.querySelector<HTMLElement>('#storage-window');
+  if (storageRoot !== null) {
+    const storageWindow = new StorageWindow(
+      storageRoot,
+      storage,
+      (slot) => inventory.get(slot),
+      {
+        put: (slot, amount) => {
+          connection.storagePut(slot, amount);
+        },
+        take: (slot, amount) => {
+          connection.storageTake(slot, amount);
+        },
+        close: () => {
+          storage.close();
+          connection.storageClose();
+        },
+        log: () => {
+          connection.storageLog();
+        },
+      },
+      itemTexts,
+      inventoryWindow?.icons ?? new ItemIcons(store),
+    );
+    view.onStorageOpen = (kind, items, size) => {
+      storage.open(kind, items, size);
+      itemTexts
+        .loadNames()
+        .then(() => {
+          storageWindow.show();
+          if (inventoryWindow !== undefined && !inventoryWindow.open) {
+            inventoryWindow.toggle();
+            inventoryWindow.update(view.stats);
+          }
+        })
+        .catch(reportError);
+    };
+    view.onStorageAdd = (_kind, item) => {
+      storage.add(item);
+      storageWindow.render();
+    };
+    view.onStorageRemove = (_kind, slot, amount) => {
+      storage.remove(slot, amount);
+      storageWindow.render();
+    };
+    view.onStorageClose = () => {
+      storage.close();
+      storageWindow.hide();
+    };
+    view.onStorageResult = (outcome) => {
+      logNotice(storageMessage(outcome));
+    };
+    view.onGuildStorageLog = (entries) => {
+      itemTexts
+        .loadNames()
+        .then(() => {
+          storageWindow.showLog(entries);
+        })
+        .catch(reportError);
+    };
+    if (inventoryWindow !== undefined && inventoryRoot !== null) {
+      // A right click on an inventory row puts it into the open storage.
+      inventoryWindow.onRowContext = (slot) => {
+        if (!storageWindow.open) {
+          return false;
+        }
+        storageWindow.requestPut(slot);
+        return true;
+      };
+      // A storage row dropped on the inventory window takes the item out.
+      inventoryRoot.addEventListener('dragover', (e) => {
+        if (e.dataTransfer?.types.includes(STORAGE_DRAG_TYPE) === true) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }
+      });
+      inventoryRoot.addEventListener('drop', (e) => {
+        if (e.dataTransfer?.types.includes(STORAGE_DRAG_TYPE) !== true) {
+          return;
+        }
+        const slot = Number(e.dataTransfer.getData(STORAGE_DRAG_TYPE));
+        if (Number.isInteger(slot)) {
+          e.preventDefault();
+          storageWindow.requestTake(slot);
+        }
+      });
+    }
   }
   // The player's status icons. They last until the server hides them, and
   // the server sends them again after a map change.
@@ -1105,6 +1223,189 @@ if (serverURL === null) {
       log.party(name, text, name === view.selfName, lineId);
       unread(PARTY_TAB);
     };
+    // Guilds. The guild window opens with its button or Alt+G, as in RO.
+    // The Guild tab shows while the player has a guild.
+    let guild = NO_GUILD;
+    const guildRoot = document.querySelector<HTMLElement>('#guild-window');
+    const guildToggle = document.querySelector<HTMLButtonElement>('#guild-toggle');
+    const guildWindow =
+      guildRoot === null
+        ? undefined
+        : new GuildWindow(
+            guildRoot,
+            {
+              create: (name) => {
+                connection.guildCreate(name);
+              },
+              invite: (name) => {
+                connection.guildInvite(name);
+              },
+              leave: (reason) => {
+                connection.guildLeave(reason);
+              },
+              expel: (name, reason) => {
+                connection.guildExpel(name, reason);
+              },
+              setPosition: (name, position) => {
+                connection.guildMemberPosition(name, position);
+              },
+              positions: (positions) => {
+                connection.guildPositions(positions);
+              },
+              notice: (title, text) => {
+                connection.guildNotice(title, text);
+              },
+              skillUp: (skillId) => {
+                connection.guildSkillUp(skillId);
+              },
+              ally: (name) => {
+                connection.guildAlly(name);
+              },
+              enemy: (name) => {
+                connection.guildEnemy(name);
+              },
+              endRelation: (guildId, enemy) => {
+                connection.guildEndRelation(guildId, enemy);
+              },
+              disband: (name) => {
+                connection.guildDisband(name);
+              },
+              report: (guildId) => {
+                connection.reportGuild(guildId, false);
+              },
+            },
+            connection.limits,
+          );
+    if (guildWindow !== undefined) {
+      guildWindow.selfName = () => view.selfName;
+      guildWindow.jobNames = view.jobNames;
+      guildWindow.emblem = (id, version) => emblemCache.get(id, version);
+      emblemCache.onLoad = () => {
+        if (guildWindow.open) {
+          guildWindow.render();
+        }
+      };
+      const toggle = (): void => {
+        guildWindow.toggle();
+      };
+      if (guildToggle !== null) {
+        guildToggle.hidden = false;
+        guildToggle.addEventListener('click', toggle);
+      }
+      altKey('KeyG', toggle);
+    }
+    /** Shows a new guild state in the window and the tabs. */
+    const setGuild = (next: typeof guild): void => {
+      guild = next;
+      guildWindow?.show(guild);
+      if (guild.id === 0n) {
+        tabs.hideGuild();
+        showTab(tabs.active);
+      } else if (!tabs.hasGuild) {
+        tabs.showGuild();
+        tabBar.render();
+      }
+    };
+    view.onGuildInfo = (info) => {
+      setGuild(guildFromInfo(info));
+    };
+    view.onGuildMember = (member) => {
+      const next = mergeGuildMember(guild, member);
+      if (next !== guild) {
+        guild = next;
+        guildWindow?.show(guild);
+      }
+    };
+    view.onGuildResult = (outcome, name) => {
+      log.notice(guildMessage(outcome, name, view.selfName));
+      setGuild(guildAfterResult(guild, outcome, name, view.selfName));
+    };
+    view.onGuildInvite = (invite) => {
+      const answer = (accept: boolean): void => {
+        connection.guildReply(invite.guildId, accept);
+      };
+      if (prompts === undefined) {
+        answer(false);
+        return;
+      }
+      prompts.show({
+        key: `guild:${String(invite.guildId)}`,
+        text: guildInviteText(invite.from, invite.guildName),
+        accept: () => {
+          answer(true);
+        },
+        decline: () => {
+          answer(false);
+        },
+      });
+    };
+    view.onGuildAllyRequest = (request) => {
+      const answer = (accept: boolean): void => {
+        connection.guildAllyReply(request.guildId, accept);
+      };
+      if (prompts === undefined) {
+        answer(false);
+        return;
+      }
+      prompts.show({
+        key: `ally:${String(request.guildId)}`,
+        text: guildAllyRequestText(request.from, request.guildName),
+        accept: () => {
+          answer(true);
+        },
+        decline: () => {
+          answer(false);
+        },
+      });
+    };
+    view.onGuildChat = (name, text, lineId) => {
+      log.guild(name, text, name === view.selfName, lineId);
+      unread(GUILD_TAB);
+    };
+    // A right click on another player opens its menu: whisper, invites,
+    // and reports of its guild's name or emblem.
+    const playerMenuRoot = document.querySelector<HTMLElement>('#player-menu');
+    if (playerMenuRoot !== null) {
+      const menu = new PlayerMenu(playerMenuRoot, {
+        whisper: startWhisper,
+        partyInvite: (name) => {
+          connection.partyInvite(name);
+        },
+        guildInvite: (name) => {
+          connection.guildInvite(name);
+        },
+        reportGuild: (guildId, emblem) => {
+          connection.reportGuild(guildId, emblem);
+        },
+      });
+      openPlayerMenu = (id, x, y) => {
+        const name = view.nameOf(id);
+        if (id === view.self || !view.isPlayer(id) || name === undefined) {
+          return false;
+        }
+        const badge = view.guildBadge(id);
+        menu.show(
+          {
+            name,
+            badge:
+              badge === undefined
+                ? undefined
+                : {
+                    guildId: badge.guildId,
+                    name: badge.name,
+                    emblemVersion: badge.emblemVersion,
+                    position: badge.position,
+                  },
+            partyInvite: leads(party, view.selfName),
+            guildInvite: permissions(guild, view.selfName).invite,
+            ownGuild: guild.id,
+          },
+          x,
+          y,
+        );
+        return true;
+      };
+    }
     // Friends. The friend list opens with the Friends button or Alt+H.
     const friendRoot = document.querySelector<HTMLElement>('#friend-panel');
     const friendToggle = document.querySelector<HTMLButtonElement>('#friend-toggle');
@@ -1234,6 +1535,8 @@ if (serverURL === null) {
               connection.channelChat(target.name, action.text);
             } else if (target.kind === 'party') {
               connection.partyChat(action.text);
+            } else if (target.kind === 'guild') {
+              connection.guildChat(action.text);
             } else if (target.kind === 'whisper') {
               connection.whisper(target.name, action.text);
             } else {
@@ -1267,6 +1570,21 @@ if (serverURL === null) {
             return false;
           }
           showTab(PARTY_TAB);
+          return true;
+        case 'guild':
+          if (guild.id === 0n) {
+            log.notice(guildMessage(GuildOutcome.NO_GUILD, ''));
+            return false;
+          }
+          return sendLine(() => {
+            connection.guildChat(action.text);
+          });
+        case 'openGuild':
+          if (!tabs.hasGuild) {
+            log.notice(guildMessage(GuildOutcome.NO_GUILD, ''));
+            return false;
+          }
+          showTab(GUILD_TAB);
           return true;
         case 'openChannel': {
           const tab = tabs.channel(action.name);
@@ -1530,6 +1848,15 @@ canvas.addEventListener('pointerup', (e) => {
     showTargeting();
     return;
   }
+  // A right click on another player opens its menu.
+  if (
+    e.button === 2 &&
+    target !== undefined &&
+    !target.item &&
+    openPlayerMenu?.(target.id, e.clientX, e.clientY) === true
+  ) {
+    return;
+  }
   // While the player talks to an NPC, the game does nothing on a click,
   // as the server ignores it (pc_cant_act).
   if (dialogWindow?.open === true && progressBar === undefined) {
@@ -1633,6 +1960,83 @@ function showItemLabel(): void {
   itemLabelView.hidden = itemLabelAt.z > 1;
   itemLabelView.style.left = `${((itemLabelAt.x + 1) / 2) * 100}%`;
   itemLabelView.style.top = `${((1 - itemLabelAt.y) / 2) * 100}%`;
+}
+
+const guildLabelRoot = document.querySelector<HTMLDivElement>('#guild-labels');
+const guildLabelViews = new Map<number, HTMLDivElement>();
+const guildLabelAt = new Vector3();
+
+/**
+ * Places the guild labels under the players that show a guild, as RO
+ * shows the emblem, the name, and "Guild [Position]" under a player. An
+ * emblem that has not loaded, or failed to, shows nothing.
+ */
+function showGuildLabels(): void {
+  if (guildLabelRoot === null || session === undefined) {
+    return;
+  }
+  const view = session.online;
+  const badges = view.guildBadges();
+  for (const [id, div] of guildLabelViews) {
+    if (!badges.has(id)) {
+      div.remove();
+      guildLabelViews.delete(id);
+    }
+  }
+  for (const [id, badge] of badges) {
+    let div = guildLabelViews.get(id);
+    if (div === undefined) {
+      div = document.createElement('div');
+      div.className = 'guild-label';
+      const img = document.createElement('img');
+      img.className = 'guild-label-emblem';
+      img.alt = '';
+      img.width = 24;
+      img.height = 24;
+      img.hidden = true;
+      const text = document.createElement('div');
+      const name = document.createElement('bdi');
+      name.className = 'guild-label-name';
+      const guild = document.createElement('bdi');
+      guild.className = 'guild-label-guild';
+      text.append(name, guild);
+      div.append(img, text);
+      guildLabelRoot.append(div);
+      guildLabelViews.set(id, div);
+    }
+    const [img, text] = div.children;
+    const name = text?.firstElementChild;
+    const guild = text?.lastElementChild;
+    const playerName = view.nameOf(id) ?? '';
+    if (name instanceof HTMLElement && name.textContent !== playerName) {
+      name.textContent = playerName;
+    }
+    const line = badgeLine(badge);
+    if (guild instanceof HTMLElement && guild.textContent !== line) {
+      guild.textContent = line;
+    }
+    if (img instanceof HTMLImageElement) {
+      const url = emblems?.get(badge.guildId, badge.emblemVersion);
+      if (url === undefined) {
+        img.hidden = true;
+      } else {
+        if (img.getAttribute('src') !== url) {
+          img.crossOrigin = 'anonymous';
+          img.src = url;
+        }
+        img.hidden = false;
+      }
+    }
+    const p = view.position(id);
+    if (p === undefined) {
+      div.hidden = true;
+      continue;
+    }
+    guildLabelAt.copy(p).project(camera);
+    div.hidden = guildLabelAt.z > 1;
+    div.style.left = `${((guildLabelAt.x + 1) / 2) * 100}%`;
+    div.style.top = `${((1 - guildLabelAt.y) / 2) * 100}%`;
+  }
 }
 
 const bubbleAt = new Vector3();
@@ -1825,6 +2229,7 @@ renderer.setAnimationLoop((time) => {
   showBubbles(performance.now());
   statusIcons?.update(performance.now());
   showItemLabel();
+  showGuildLabels();
   showProgress(performance.now());
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });

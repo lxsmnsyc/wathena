@@ -3,7 +3,7 @@
 // rules only keep the client from sending lines the server drops.
 // User text is only ever set with textContent.
 
-import { ALL_TAB, LOCAL_LINES, PARTY_TAB, showsLine } from './chatTabs';
+import { ALL_TAB, GUILD_TAB, LOCAL_LINES, PARTY_TAB, showsLine } from './chatTabs';
 
 /** The most characters a line may have, as Unicode code points. */
 export const MAX_CHAT = 255;
@@ -264,6 +264,20 @@ export class ChatLog {
     this.append(row);
   }
 
+  /**
+   * Adds a guild line under the Guild tab, as "Name : text" in the guild
+   * color. The All tab shows it too.
+   */
+  guild(name: string, text: string, mine: boolean, lineId?: Uint8Array): void {
+    const row = this.row(GUILD_TAB);
+    row.classList.add('guild');
+    row.append(bdi(name), ' : ', bdi(text));
+    if (!mine) {
+      this.reportButton(row, name, lineId);
+    }
+    this.append(row);
+  }
+
   /** Adds a whisper under its tab, as "(From Name) : text" or "(To Name) : text". */
   whisper(tab: string, incoming: boolean, name: string, text: string, lineId?: Uint8Array): void {
     const row = this.row(tab);
@@ -322,25 +336,9 @@ export class ChatLog {
     if (lineId === undefined || lineId.length === 0 || name === '') {
       return;
     }
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'report';
-    button.textContent = '!';
-    button.title = 'Report this line';
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    button.addEventListener('click', () => {
-      if (button.classList.contains('armed')) {
-        clearTimeout(timer);
-        button.remove();
-        this.onReport?.(name, lineId);
-        return;
-      }
-      button.classList.add('armed');
-      button.textContent = 'Report?';
-      timer = setTimeout(() => {
-        button.classList.remove('armed');
-        button.textContent = '!';
-      }, REPORT_CONFIRM_MS);
+    const button = reportButton('!', 'Report this line', () => {
+      button.remove();
+      this.onReport?.(name, lineId);
     });
     row.append(' ', button);
   }
@@ -356,6 +354,36 @@ export class ChatLog {
       this.list.scrollTop = this.list.scrollHeight;
     }
   }
+}
+
+/**
+ * A button.report that asks for a second click within REPORT_CONFIRM_MS,
+ * showing "Report?", and then calls report. It is the chat log's report
+ * button, also used to report a guild's name or emblem.
+ */
+export function reportButton(text: string, title: string, report: () => void): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'report';
+  button.textContent = text;
+  button.title = title;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  button.addEventListener('click', () => {
+    if (button.classList.contains('armed')) {
+      clearTimeout(timer);
+      button.classList.remove('armed');
+      button.textContent = text;
+      report();
+      return;
+    }
+    button.classList.add('armed');
+    button.textContent = 'Report?';
+    timer = setTimeout(() => {
+      button.classList.remove('armed');
+      button.textContent = text;
+    }, REPORT_CONFIRM_MS);
+  });
+  return button;
 }
 
 /** Text in its own bidirectional isolate. */

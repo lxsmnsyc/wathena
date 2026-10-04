@@ -201,6 +201,57 @@ type GameTicket struct {
 	ExpiresAt   pgtype.Timestamptz
 }
 
+type Guild struct {
+	ID               int64
+	Name             string
+	Level            int
+	Exp              int64
+	SkillPoints      int
+	Skills           []byte
+	Positions        []byte
+	NoticeTitle      string
+	NoticeText       string
+	Expulsions       []byte
+	LastMasterChange pgtype.Timestamptz
+	CreatedAt        pgtype.Timestamptz
+}
+
+type GuildEmblem struct {
+	GuildID    int64
+	Version    int
+	Png        []byte
+	UploadedBy int64
+	UploadedAt pgtype.Timestamptz
+}
+
+type GuildMember struct {
+	GuildID     int64
+	CharacterID int64
+	Slot        int
+	Position    int
+	Exp         int64
+}
+
+type GuildRelation struct {
+	GuildID int64
+	OtherID int64
+	Enemy   bool
+}
+
+type GuildStorage struct {
+	Serial        pgtype.UUID
+	GuildID       int64
+	Slot          int
+	ItemID        int
+	Amount        int
+	Refine        int
+	Cards         []int
+	Rolls         []byte
+	CardRolls     []byte
+	RandomOptions []byte
+	Identified    bool
+}
+
 type Inventory struct {
 	Serial        pgtype.UUID
 	CharacterID   int64
@@ -302,17 +353,20 @@ type PartyMember struct {
 }
 
 type Report struct {
-	ID           int64
-	CreatedAt    pgtype.Timestamptz
-	ReporterID   int64
-	ReporterName string
-	TargetID     int64
-	TargetName   string
-	LineID       pgtype.UUID
-	Reason       string
-	Map          string
-	Status       string
-	ClosedAt     pgtype.Timestamptz
+	ID            int64
+	CreatedAt     pgtype.Timestamptz
+	ReporterID    int64
+	ReporterName  string
+	TargetID      int64
+	TargetName    string
+	LineID        pgtype.UUID
+	Reason        string
+	Map           string
+	Status        string
+	ClosedAt      pgtype.Timestamptz
+	GuildID       int64
+	EmblemVersion int
+	EmblemPng     []byte
 }
 
 type ReportLine struct {

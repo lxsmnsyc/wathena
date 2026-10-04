@@ -70,6 +70,18 @@ message Event {
     FriendResult friend_result = 58;
     PartyBookingList party_booking_list = 59;
     PartyItemShared party_item_shared = 60;
+    GuildInfo guild_info = 61;
+    GuildMemberUpdate guild_member = 62;
+    GuildInvite guild_invite = 63;
+    GuildResult guild_result = 64;
+    GuildAllyRequest guild_ally_request = 65;
+    EntityGuild entity_guild = 66;
+    StorageOpen storage_open = 67;
+    StorageAdd storage_add = 68;
+    StorageRemove storage_remove = 69;
+    StorageClose storage_close = 70;
+    StorageResult storage_result = 71;
+    GuildStorageLog guild_storage_log = 72;
   }
 }
 
@@ -138,6 +150,28 @@ message EntityAppear {
   // skill_unit is set for ENTITY_KIND_SKILL_UNIT: a cell of a ground
   // skill, such as one fire of Fire Wall.
   SkillUnit skill_unit = 12;
+  // guild is a player's guild, shown with its name, or unset.
+  GuildBadge guild = 13;
+}
+
+// GuildBadge is what others see of a player's guild, as clif_name's
+// guild name and position, and the emblem.
+message GuildBadge {
+  uint64 guild_id = 1;
+  string name = 2;
+  // emblem_version is 0 for a guild without an emblem. The emblem is the
+  // PNG at /emblems/<guild_id>/<emblem_version>.png on the game server.
+  uint32 emblem_version = 3;
+  // position is the name of the player's position.
+  string position = 4;
+}
+
+// EntityGuild changes the guild shown with an entity in sight, as
+// clif_guild_emblem_area and clif_name_area: after a join, a leave, a
+// new position name or a new emblem. guild is unset for none.
+message EntityGuild {
+  uint32 id = 1;
+  GuildBadge guild = 2;
 }
 
 // SkillUnit is one cell of a ground skill, as rAthena's skill_unit.
@@ -875,6 +909,10 @@ enum InventoryRemoveReason {
   INVENTORY_REMOVE_REASON_SOLD = 4;
   // The player put the card into an item.
   INVENTORY_REMOVE_REASON_CARD_INSERTED = 5;
+  // The player put the item into a storage.
+  INVENTORY_REMOVE_REASON_STORED = 6;
+  // A guild skill took the item.
+  INVENTORY_REMOVE_REASON_GUILD = 7;
 }
 
 // ItemUsed shows an entity using an item, as rAthena's clif_useitemack
@@ -1238,4 +1276,294 @@ message PartyItemShared {
   string name = 1;
   uint32 item_id = 2;
   uint32 amount = 3;
+}
+
+// GuildInfo is the player's guild: after login, and after every change
+// of its members, positions, notice, skills, relations, level or emblem.
+// An id of 0 means the player has no guild, such as after it left.
+message GuildInfo {
+  uint64 id = 1;
+  string name = 2;
+  // level is 1 to 50. exp is the exp toward the next level, and next_exp
+  // what the next level needs, or 0 at the top, as guild_calcinfo.
+  uint32 level = 3;
+  int64 exp = 4;
+  int64 next_exp = 5;
+  uint32 skill_points = 6;
+  // max_members is guild_members plus 6 per level of Guild Extension.
+  uint32 max_members = 7;
+  // master is the master's name.
+  string master = 8;
+  GuildNotice notice = 9;
+  // emblem_version is 0 without an emblem, as GuildBadge.
+  uint32 emblem_version = 10;
+  // members are every member, online or not, in slot order, as
+  // clif_guild_memberlist. The master is first.
+  repeated GuildMember members = 11;
+  repeated GuildPosition positions = 12;
+  repeated GuildRelation relations = 13;
+  // skills are the guild skills of the world's tree, in skill ID order.
+  repeated GuildSkill skills = 14;
+  // position is the player's own position index.
+  uint32 position = 15;
+  // average_level is the members' average base level.
+  uint32 average_level = 16;
+}
+
+// GuildMember is one member of the player's guild.
+message GuildMember {
+  string name = 1;
+  // position is the member's position index.
+  uint32 position = 2;
+  bool online = 3;
+  // map is the member's map's asset name, the last one for a member who
+  // is offline.
+  string map = 4;
+  uint32 job = 5;
+  uint32 base_level = 6;
+  // exp is the exp the member gave the guild through the exp tax.
+  int64 exp = 7;
+  // x and y are the member's cell, for the minimap, as clif_guild_xy.
+  // Members on the player's map get them every 5 seconds.
+  uint32 x = 8;
+  uint32 y = 9;
+  bool master = 10;
+}
+
+// GuildMemberUpdate changes one member's values in the guild window: the
+// online state, map, level, job, exp and cell.
+message GuildMemberUpdate {
+  GuildMember member = 1;
+}
+
+// GuildRelation is an allied or enemy guild.
+message GuildRelation {
+  uint64 guild_id = 1;
+  string name = 2;
+  bool enemy = 3;
+}
+
+// GuildSkill is one guild skill and its level.
+message GuildSkill {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  // max_level is the tree's maximum level.
+  uint32 max_level = 3;
+  // can_raise is set when the master may raise the skill now: the guild
+  // has a skill point and the skill's requirements are met.
+  bool can_raise = 4;
+}
+
+// GuildInvite asks the player to join a guild, as clif_guild_invite. The
+// player answers with GuildCommand.reply.
+message GuildInvite {
+  uint64 guild_id = 1;
+  string guild_name = 2;
+  string from = 3;
+}
+
+// GuildAllyRequest asks the player's guild to be allies with another, as
+// clif_guild_reqalliance. The player answers with
+// GuildCommand.ally_reply.
+message GuildAllyRequest {
+  uint64 guild_id = 1;
+  string guild_name = 2;
+  string from = 3;
+}
+
+// GuildResult tells the player how a guild action went, and what happened
+// to the guild, such as a member who left.
+message GuildResult {
+  GuildOutcome outcome = 1;
+  // name is the player or guild the outcome is about.
+  string name = 2;
+}
+
+enum GuildOutcome {
+  GUILD_OUTCOME_UNSPECIFIED = 0;
+  // CREATED: the player made a guild, as clif_guild_created 0.
+  GUILD_OUTCOME_CREATED = 1;
+  // ALREADY_IN_GUILD: the player is in a guild, as clif_guild_created 1.
+  GUILD_OUTCOME_ALREADY_IN_GUILD = 2;
+  // NAME_TAKEN: a guild of that name exists, as clif_guild_created 2.
+  GUILD_OUTCOME_NAME_TAKEN = 3;
+  // NO_EMPERIUM: making a guild takes an Emperium, as
+  // clif_guild_created 3.
+  GUILD_OUTCOME_NO_EMPERIUM = 4;
+  // BAD_NAME: the chat filter does not allow the name.
+  GUILD_OUTCOME_BAD_NAME = 5;
+  // NO_GUILD: the player has no guild.
+  GUILD_OUTCOME_NO_GUILD = 6;
+  // NO_PERMISSION: the player's position does not allow it.
+  GUILD_OUTCOME_NO_PERMISSION = 7;
+  // NOT_MASTER: only the guild master may do it.
+  GUILD_OUTCOME_NOT_MASTER = 8;
+  // NOT_ONLINE: no player of that name is online (clif_guild_inviteack
+  // 1).
+  GUILD_OUTCOME_NOT_ONLINE = 9;
+  // TARGET_IN_GUILD: the player is in a guild or has an invite open
+  // (clif_guild_inviteack 0).
+  GUILD_OUTCOME_TARGET_IN_GUILD = 10;
+  // FULL: the guild holds the most members it may hold
+  // (clif_guild_inviteack 3).
+  GUILD_OUTCOME_FULL = 11;
+  // INVITE_SENT: the invite went out.
+  GUILD_OUTCOME_INVITE_SENT = 12;
+  // REFUSED: the player refused the invite, or blocks the inviter
+  // (clif_guild_inviteack 1).
+  GUILD_OUTCOME_REFUSED = 13;
+  // ACCEPTED: the player joined (clif_guild_inviteack 2).
+  GUILD_OUTCOME_ACCEPTED = 14;
+  // JOINED, LEFT, EXPELLED and DISBANDED tell about members: name joined,
+  // left, was expelled, or the guild broke up.
+  GUILD_OUTCOME_JOINED = 15;
+  GUILD_OUTCOME_LEFT = 16;
+  GUILD_OUTCOME_EXPELLED = 17;
+  GUILD_OUTCOME_DISBANDED = 18;
+  // NOT_MEMBER: no member of that name is in the guild.
+  GUILD_OUTCOME_NOT_MEMBER = 19;
+  // MASTER_CANNOT_LEAVE: the master must hand the guild over or break
+  // it up.
+  GUILD_OUTCOME_MASTER_CANNOT_LEAVE = 20;
+  // MASTER_CHANGED: name is the new master (msg 679).
+  GUILD_OUTCOME_MASTER_CHANGED = 21;
+  // MASTER_CHANGE_TOO_SOON: guild_leaderchange_delay has not passed
+  // (MSI_IMPOSSIBLE_CHANGE_GUILD_MASTER_NOT_TIME).
+  GUILD_OUTCOME_MASTER_CHANGE_TOO_SOON = 22;
+  // POSITIONS_CHANGED: the master changed the positions.
+  GUILD_OUTCOME_POSITIONS_CHANGED = 23;
+  // NOTICE_CHANGED: the master changed the notice.
+  GUILD_OUTCOME_NOTICE_CHANGED = 24;
+  // SKILL_RAISED: name is the skill the master raised.
+  GUILD_OUTCOME_SKILL_RAISED = 25;
+  // SKILL_REFUSED: the skill cannot be raised: no point, its maximum, or
+  // a requirement is missing.
+  GUILD_OUTCOME_SKILL_REFUSED = 26;
+  // LEVEL_UP: the guild reached a new level.
+  GUILD_OUTCOME_LEVEL_UP = 27;
+  // ALLY_REQUEST_SENT: the alliance request went out.
+  GUILD_OUTCOME_ALLY_REQUEST_SENT = 28;
+  // ALLIED: the guilds are allies now (clif_guild_allianceack 2).
+  GUILD_OUTCOME_ALLIED = 29;
+  // ALLY_REFUSED: the other guild refused (clif_guild_allianceack 3).
+  GUILD_OUTCOME_ALLY_REFUSED = 30;
+  // ALLY_LIMIT: the player's guild has the most allies
+  // (clif_guild_allianceack 4).
+  GUILD_OUTCOME_ALLY_LIMIT = 31;
+  // THEIR_ALLY_LIMIT: the other guild has the most allies
+  // (clif_guild_allianceack 3).
+  GUILD_OUTCOME_THEIR_ALLY_LIMIT = 32;
+  // ALREADY_ALLIED: the guilds are allies already
+  // (clif_guild_allianceack 0).
+  GUILD_OUTCOME_ALREADY_ALLIED = 33;
+  // TARGET_BUSY: the player has a request open (clif_guild_allianceack
+  // 1).
+  GUILD_OUTCOME_TARGET_BUSY = 34;
+  // TARGET_NOT_MASTER: with guild_alliance_onlygm, the player must be a
+  // master (clif_guild_allianceack 5).
+  GUILD_OUTCOME_TARGET_NOT_MASTER = 35;
+  // ENEMY_ADDED: name is an enemy guild now (clif_guild_oppositionack
+  // 0).
+  GUILD_OUTCOME_ENEMY_ADDED = 36;
+  // ENEMY_LIMIT: the guild has the most enemies
+  // (clif_guild_oppositionack 1).
+  GUILD_OUTCOME_ENEMY_LIMIT = 37;
+  // ALREADY_ENEMY: name is an enemy guild already
+  // (clif_guild_oppositionack 2).
+  GUILD_OUTCOME_ALREADY_ENEMY = 38;
+  // RELATION_ENDED: the alliance or enemy relation with name ended.
+  GUILD_OUTCOME_RELATION_ENDED = 39;
+  // SAME_GUILD: the player is in the player's own guild.
+  GUILD_OUTCOME_SAME_GUILD = 40;
+  // NOT_EMPTY: the guild breaks up only when the master is its only
+  // member (clif_guild_broken 2).
+  GUILD_OUTCOME_NOT_EMPTY = 41;
+  // EMBLEM_CHANGED: the guild has a new emblem.
+  GUILD_OUTCOME_EMBLEM_CHANGED = 42;
+  // POSITION_CHANGED: name got a new position.
+  GUILD_OUTCOME_POSITION_CHANGED = 43;
+}
+
+// StorageKind is the storage a storage event is about. Personal and
+// cart storage come in a later step.
+enum StorageKind {
+  STORAGE_KIND_UNSPECIFIED = 0;
+  STORAGE_KIND_GUILD = 1;
+}
+
+// StorageOpen opens the storage window, as clif_storagelist and
+// clif_updatestorageamount.
+message StorageOpen {
+  StorageKind kind = 1;
+  // size is how many slots hold items.
+  uint32 size = 2;
+  repeated InventoryItem items = 3;
+}
+
+// StorageAdd tells an amount entered a storage slot, as
+// clif_storageitemadded. item is the slot after the change.
+message StorageAdd {
+  StorageKind kind = 1;
+  InventoryItem item = 2;
+  uint32 amount = 3;
+}
+
+// StorageRemove tells an amount left a storage slot, as
+// clif_storageitemremoved. A slot left with nothing is empty.
+message StorageRemove {
+  StorageKind kind = 1;
+  uint32 slot = 2;
+  uint32 amount = 3;
+}
+
+// StorageClose closes the storage window, as clif_storageclose.
+message StorageClose {
+  StorageKind kind = 1;
+}
+
+// StorageResult tells why a storage action failed.
+message StorageResult {
+  StorageOutcome outcome = 1;
+}
+
+enum StorageOutcome {
+  STORAGE_OUTCOME_UNSPECIFIED = 0;
+  // IN_USE: another member has the guild storage open
+  // (GSTORAGE_ALREADY_OPEN).
+  STORAGE_OUTCOME_IN_USE = 1;
+  // NO_GUILD: the player has no guild (GSTORAGE_NO_GUILD).
+  STORAGE_OUTCOME_NO_GUILD = 2;
+  // NO_STORAGE: the guild has not learned Guild Storage
+  // (GSTORAGE_NO_STORAGE).
+  STORAGE_OUTCOME_NO_STORAGE = 3;
+  // NO_PERMISSION: the player's position does not allow storage
+  // (GSTORAGE_NO_PERMISSION).
+  STORAGE_OUTCOME_NO_PERMISSION = 4;
+  // ALREADY_OPEN: the player has a storage open
+  // (GSTORAGE_STORAGE_ALREADY_OPEN).
+  STORAGE_OUTCOME_ALREADY_OPEN = 5;
+  // FULL: the storage has no free slot or the stack would pass its limit.
+  STORAGE_OUTCOME_FULL = 6;
+  // NOT_STORABLE: the item cannot go into guild storage.
+  STORAGE_OUTCOME_NOT_STORABLE = 7;
+  // CANNOT_CARRY: the inventory cannot take the item: no slot, or too
+  // heavy.
+  STORAGE_OUTCOME_CANNOT_CARRY = 8;
+}
+
+// GuildStorageLog answers StorageCommand.log: the guild storage's last
+// moves, newest first, as storage_guild_log_read.
+message GuildStorageLog {
+  repeated GuildStorageLogEntry entries = 1;
+}
+
+message GuildStorageLogEntry {
+  int64 at_ms = 1;
+  // name is the member who moved the item.
+  string name = 2;
+  uint32 item_id = 3;
+  // amount is positive for an item put in, negative for one taken out.
+  int32 amount = 4;
+  uint32 refine = 5;
+  repeated uint32 cards = 6;
 }

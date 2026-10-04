@@ -217,6 +217,8 @@ type Player struct {
 	// its party as this zone knows it (party.go).
 	soc        *social.Player
 	partyState partyState
+	// guild is the player's guild as this zone knows it (guild.go).
+	guild guildState
 }
 
 type entity struct {
@@ -247,6 +249,9 @@ type entity struct {
 	walkChanged bool
 	stopped     bool
 	lookChanged bool
+	// guildChanged is set when a player's guild badge changed, so viewers
+	// get EntityGuild.
+	guildChanged bool
 	// optionChanged is set when the entity's status options changed, so
 	// viewers get OptionChange.
 	optionChanged bool
@@ -276,7 +281,10 @@ type command struct {
 	channel *channelCommand
 	block   *blockCommand
 	report  *reportCommand
-	// party, friend and booking are social commands (party.go).
+	// party, friend and booking are social commands (party.go), and
+	// guild and storage guild commands (guild.go).
+	guild    *guildCommand
+	storage  *storageCommand
 	party    *partyCommand
 	friend   *friendCommand
 	booking  *bookingCommand
@@ -389,6 +397,9 @@ type Zone struct {
 	// MaxCardSlots is MAX_SLOTS, the most cards an item holds. It is
 	// DefaultMaxCardSlots when 0. Set it before Run.
 	MaxCardSlots int
+	// GvG marks a GvG map, as MF_GVG. No map is one until sieges come;
+	// tests set it.
+	GvG bool
 	// Committer saves the characters that transfers changed, with the
 	// transfers' log lines (transfers.go). Without it, the lines go to
 	// the log. Set it before Run.
@@ -406,6 +417,14 @@ type Zone struct {
 	// booking (party.go). Without it, the zone makes its own on first
 	// use. Set it before Run.
 	Social *social.Registry
+	// txStorageRefs are the guild storages the transfers since the last
+	// commit changed, and txStorages the storages a guild that broke up
+	// left (guild.go).
+	txStorageRefs []*social.GuildStorage
+	txStorages    []StorageCommit
+	// storageLog are guild storage log lines that wait to go to the
+	// registry (guild.go).
+	storageLog []storageLogBatch
 	// socialIn gets the registry's notices for this zone's players.
 	socialIn chan socialIn
 	// channelHandles are the chat channels script handles point to, by
@@ -1015,6 +1034,12 @@ func (z *Zone) handle(c command) {
 	if c.booking != nil {
 		z.bookingCommand(p, c.booking)
 	}
+	if c.guild != nil {
+		z.guildCommand(p, c.guild)
+	}
+	if c.storage != nil {
+		z.storageCommand(p, c.storage)
+	}
 	if c.npcReply != nil {
 		z.reply(p, c.npcReply)
 	}
@@ -1196,6 +1221,7 @@ func (z *Zone) stepAt(now int64) {
 	z.advanceStatuses()
 	z.checkSanctions()
 	z.partyUpdates()
+	z.guildUpdates()
 	z.autosave()
 	z.runScripts()
 	z.talkTimers()
@@ -1223,6 +1249,7 @@ func (z *Zone) stepAt(now int64) {
 		e.walkChanged = false
 		e.stopped = false
 		e.lookChanged = false
+		e.guildChanged = false
 		e.optionChanged = false
 		e.hpChanged = false
 		if e.item != nil {
@@ -1314,6 +1341,9 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				if known && e.lookChanged && e.player != nil {
 					events = append(events, lookChange(id, e.player))
 				}
+				if known && e.guildChanged && e.player != nil {
+					events = append(events, entityGuild(id, e.player))
+				}
 				if known && e.optionChanged && (e != me || !p.fresh) {
 					events = append(events, optionChange(id, e))
 				}
@@ -1392,6 +1422,7 @@ func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {
 		WalkMs:     uint32(e.speed), // #nosec G115 -- a small speed.
 		HpPermille: e.hpPermille(),
 		Options:    e.options(),
+		Guild:      p.guild.badge,
 	}.Build()}.Build()
 }
 

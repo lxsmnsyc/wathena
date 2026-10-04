@@ -444,6 +444,12 @@ func (r *Runtime) init() error {
 		{"parties_find", r.partiesFind},
 		{"player_friend", r.playerFriend},
 		{"rules_limits", r.rulesLimits},
+		{"guild_field", r.guildField},
+		{"core_guild_storage", r.coreGuildStorage},
+		{"core_guild_storage_log", r.coreGuildStorageLog},
+		{"guild_call", r.guildCall},
+		{"guilds_create", r.guildsCreate},
+		{"guilds_find", r.guildsFind},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -886,6 +892,12 @@ var Events = map[string][]string{
 	"party_join":   {KindMod, KindEvent},
 	"party_leave":  {KindMod, KindEvent},
 	"party_change": {KindMod, KindEvent},
+	// Guilds (review decision 28). guild_join and guild_leave run in the
+	// zone of the player who joined or left, and guild_change in the zone
+	// where the change was made.
+	"guild_join":   {KindMod, KindEvent},
+	"guild_leave":  {KindMod, KindEvent},
+	"guild_change": {KindMod, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

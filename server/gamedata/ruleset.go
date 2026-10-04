@@ -47,6 +47,9 @@ func RulesOf(r *mod.Ruleset, skills *skill.DB) (*rules.Rules, []string, error) {
 	if rl.Party, err = rules.PartyOf(r.Rules); err != nil {
 		return nil, nil, fmt.Errorf("the ruleset %s: %w", r.Mod, err)
 	}
+	if rl.Guild, err = rules.GuildOf(r.Rules); err != nil {
+		return nil, nil, fmt.Errorf("the ruleset %s: %w", r.Mod, err)
+	}
 	var notes []string
 	var errs []string
 	for _, name := range slices.Sorted(maps.Keys(r.Flags)) {

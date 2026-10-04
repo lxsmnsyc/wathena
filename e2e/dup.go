@@ -24,8 +24,8 @@ import (
 // move items at the same time through the server's transfers, while the
 // test asks the server for every item it holds. After every audit, and
 // at the end:
-//   - the amount of each item, players' and ground items together, is
-//     what it was at the start,
+//   - the amount of each item, players', guild storages' and ground items
+//     together, is what it was at the start,
 //   - all zeny together is what it was at the start,
 //   - no serial is held twice,
 //   - each bot's inventory, as the server told it, is what the server
@@ -100,6 +100,7 @@ type DupReport struct {
 	Closed     []string
 	// Dropped and Added count the drops and the items entering an
 	// inventory that the bots' messages showed, over the whole test.
+	// Added leaves out the items taken out of a storage.
 	Dropped, Added int
 	// Taken counts the pick-ups the bots saw themselves make, from their
 	// own ItemTaken. Unmatched adds up, for each connection, how far its
@@ -120,18 +121,24 @@ type Totals struct {
 	Serials map[string]string
 	// Ground counts the ground items.
 	Ground int
+	// Stored are the amounts of each item in guild storages, which Items
+	// counts too.
+	Stored map[uint32]int
 }
 
 // TotalsOf adds up an audit. It returns the serials held more than
 // once.
 func TotalsOf(zones []AuditZone) (Totals, []string) {
-	t := Totals{Items: map[uint32]int{}, Serials: map[string]string{}}
+	t := Totals{Items: map[uint32]int{}, Serials: map[string]string{}, Stored: map[uint32]int{}}
 	var twice []string
 	for _, z := range zones {
 		for _, p := range z.Players {
 			t.Zeny += p.Zeny
 			for _, it := range p.Items {
 				t.Items[it.Item] += it.Amount
+				if z.Map == GuildStorageMap {
+					t.Stored[it.Item] += it.Amount
+				}
 				if who, ok := t.Serials[it.Serial]; ok {
 					twice = append(twice, fmt.Sprintf("serial %s is held by %s and %s", it.Serial, who, p.Name))
 				}
@@ -367,6 +374,11 @@ func (d DupTest) Run(t *testing.T) DupReport {
 			if e.HasInventoryAdd() {
 				added++
 			}
+			// An item taken out of a storage enters the inventory too,
+			// with a StorageRemove in the same frame.
+			if e.HasStorageRemove() {
+				added--
+			}
 			if e.GetItemTaken().GetSource() == self && e.HasItemTaken() {
 				taken++
 			}
@@ -430,6 +442,21 @@ func (s *dupBots) close() {
 	}
 }
 
+// GuildStorageMap is the map name of the audit's entry for the guild
+// storages: one "player" per guild, named guild:<ID>.
+const GuildStorageMap = "guild_storage"
+
+// playersIn counts the players of an audit, not the guild storages.
+func playersIn(zones []AuditZone) int {
+	n := 0
+	for _, z := range zones {
+		if z.Map != GuildStorageMap {
+			n += len(z.Players)
+		}
+	}
+	return n
+}
+
 // online waits until every bot's character is in the world, and returns
 // that audit.
 func (d DupTest) online(ctx context.Context) ([]AuditZone, error) {
@@ -438,11 +465,7 @@ func (d DupTest) online(ctx context.Context) ([]AuditZone, error) {
 		if err != nil {
 			return nil, err
 		}
-		n := 0
-		for _, z := range zones {
-			n += len(z.Players)
-		}
-		if n >= d.Bots {
+		if playersIn(zones) >= d.Bots {
 			return zones, nil
 		}
 		select {
@@ -461,11 +484,7 @@ func (d DupTest) audit(ctx context.Context, players int) (Totals, error) {
 		if err != nil {
 			return Totals{}, err
 		}
-		n := 0
-		for _, z := range zones {
-			n += len(z.Players)
-		}
-		if n >= players {
+		if playersIn(zones) >= players {
 			t, twice := TotalsOf(zones)
 			if len(twice) > 0 {
 				return t, errors.New(strings.Join(twice, "; "))
@@ -485,11 +504,7 @@ func (d DupTest) audit(ctx context.Context, players int) (Totals, error) {
 // the audit, so only totals above the start fail.
 func (d DupTest) check(t *testing.T, start Totals, zones []AuditZone, when string) (full, ok bool) {
 	t.Helper()
-	n := 0
-	for _, z := range zones {
-		n += len(z.Players)
-	}
-	full = n >= d.Bots
+	full = playersIn(zones) >= d.Bots
 	now, twice := TotalsOf(zones)
 	problems := slices.Clone(twice)
 	if full {
@@ -829,6 +844,25 @@ func (d DupTest) CheckDatabase(t *testing.T, rep DupReport) {
 			t.Fatal(err)
 		}
 		got.Items[id] += amount
+		got.Serials[serial] = name
+	}
+	rows.Close()
+	// Guild storages hold items too.
+	rows, err = db.Query(ctx, `SELECT 'guild:' || guild_id, item_id, amount, serial::text FROM guild_storage`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var name, serial string
+		var id uint32
+		var amount int
+		if err := rows.Scan(&name, &id, &amount, &serial); err != nil {
+			t.Fatal(err)
+		}
+		got.Items[id] += amount
+		if who, ok := got.Serials[serial]; ok {
+			t.Errorf("database: serial %s is held by %s and %s", serial, who, name)
+		}
 		got.Serials[serial] = name
 	}
 	rows.Close()

@@ -9,9 +9,11 @@ import {
   ChatChannel,
   CommandSchema,
   FriendCommandSchema,
+  GuildCommandSchema,
   type NpcReply,
   PartyBookingCommandSchema,
   PartyCommandSchema,
+  StorageCommandSchema,
 } from '../gen/wathena/v1/command_pb';
 import {
   type ClientMessage,
@@ -50,10 +52,30 @@ export interface ClientLimits {
   partyMembers: number;
   friends: number;
   blockList: number;
+  /** The most members of a guild before Guild Extension. */
+  guildMembers: number;
+  guildPositions: number;
+  guildAllies: number;
+  guildEnemies: number;
+  /** The most slots of a guild storage. */
+  guildStorage: number;
 }
 
-/** rAthena's defaults, for a server that sends no limits: MAX_PARTY, MAX_FRIENDS and MAX_IGNORE_LIST. */
-export const DEFAULT_LIMITS: ClientLimits = { partyMembers: 12, friends: 40, blockList: 20 };
+/**
+ * rAthena's defaults, for a server that sends no limits: MAX_PARTY,
+ * MAX_FRIENDS, MAX_IGNORE_LIST, the 16 members of guild_calcinfo,
+ * MAX_GUILDPOSITION, max_guild_alliance, and 500 guild storage slots.
+ */
+export const DEFAULT_LIMITS: ClientLimits = {
+  partyMembers: 12,
+  friends: 40,
+  blockList: 20,
+  guildMembers: 16,
+  guildPositions: 20,
+  guildAllies: 3,
+  guildEnemies: 3,
+  guildStorage: 500,
+};
 
 /** The limits Welcome gives, with rAthena's defaults for the ones it leaves at 0. */
 export function limitsOf(welcome: Pick<Welcome, 'limits'>): ClientLimits {
@@ -64,6 +86,11 @@ export function limitsOf(welcome: Pick<Welcome, 'limits'>): ClientLimits {
     partyMembers: or(l?.partyMembers, DEFAULT_LIMITS.partyMembers),
     friends: or(l?.friends, DEFAULT_LIMITS.friends),
     blockList: or(l?.blockList, DEFAULT_LIMITS.blockList),
+    guildMembers: or(l?.guildMembers, DEFAULT_LIMITS.guildMembers),
+    guildPositions: or(l?.guildPositions, DEFAULT_LIMITS.guildPositions),
+    guildAllies: or(l?.guildAllies, DEFAULT_LIMITS.guildAllies),
+    guildEnemies: or(l?.guildEnemies, DEFAULT_LIMITS.guildEnemies),
+    guildStorage: or(l?.guildStorage, DEFAULT_LIMITS.guildStorage),
   };
 }
 
@@ -76,6 +103,18 @@ export type UseSkillTarget =
 type PartyAction = NonNullable<MessageInitShape<typeof PartyCommandSchema>['action']>;
 type FriendAction = NonNullable<MessageInitShape<typeof FriendCommandSchema>['action']>;
 type BookingAction = NonNullable<MessageInitShape<typeof PartyBookingCommandSchema>['action']>;
+type GuildAction = NonNullable<MessageInitShape<typeof GuildCommandSchema>['action']>;
+type StorageAction = NonNullable<MessageInitShape<typeof StorageCommandSchema>['action']>;
+
+/** A guild position, as GuildPosition. */
+export interface GuildPositionValues {
+  index: number;
+  name: string;
+  canInvite: boolean;
+  canExpel: boolean;
+  canUseStorage: boolean;
+  expTax: number;
+}
 
 /** An answer to an NPC dialog step. */
 export type NpcAnswer = NpcReply['answer'];
@@ -347,6 +386,19 @@ export class Connection {
   }
 
   /**
+   * Reports a guild's name, or its emblem when emblem is set. The server
+   * answers with ReportResult.
+   */
+  reportGuild(guildId: bigint, emblem: boolean): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'report', value: { name: '', guildId, emblem, reason: '' } },
+      }),
+    });
+  }
+
+  /**
    * Says a line to the player's party. The caller cleans it with
    * cleanChat.
    */
@@ -430,6 +482,109 @@ export class Connection {
     this.booking({ case: 'delete', value: true });
   }
 
+  /**
+   * Says a line to the player's guild. The caller cleans it with
+   * cleanChat.
+   */
+  guildChat(text: string): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.GUILD, text } },
+      }),
+    });
+  }
+
+  /** Makes a guild with the player as its master. The server answers with GuildResult. */
+  guildCreate(name: string): void {
+    this.guild({ case: 'create', value: name });
+  }
+
+  /** Invites a player by name to the player's guild. */
+  guildInvite(name: string): void {
+    this.guild({ case: 'invite', value: name });
+  }
+
+  /** Answers GuildInvite. */
+  guildReply(guildId: bigint, accept: boolean): void {
+    this.guild({ case: 'reply', value: { guildId, accept } });
+  }
+
+  /** Leaves the guild, with a reason of at most 39 characters. */
+  guildLeave(reason: string): void {
+    this.guild({ case: 'leave', value: reason });
+  }
+
+  /** Removes a member from the guild, with a reason of at most 39 characters. */
+  guildExpel(name: string, reason: string): void {
+    this.guild({ case: 'expel', value: { name, reason } });
+  }
+
+  /** Changes the guild's positions. Only the master may. */
+  guildPositions(positions: GuildPositionValues[]): void {
+    this.guild({ case: 'positions', value: { positions } });
+  }
+
+  /** Gives a member a position. Position 0 hands the guild to the member. */
+  guildMemberPosition(name: string, position: number): void {
+    this.guild({ case: 'memberPosition', value: { name, position } });
+  }
+
+  /** Changes the guild notice. */
+  guildNotice(title: string, text: string): void {
+    this.guild({ case: 'notice', value: { title, text } });
+  }
+
+  /** Raises a guild skill by its ID. */
+  guildSkillUp(skillId: number): void {
+    this.guild({ case: 'skillUp', value: skillId });
+  }
+
+  /** Asks the guild of an online player by name to be allies. */
+  guildAlly(name: string): void {
+    this.guild({ case: 'ally', value: name });
+  }
+
+  /** Answers GuildAllyRequest. */
+  guildAllyReply(guildId: bigint, accept: boolean): void {
+    this.guild({ case: 'allyReply', value: { guildId, accept } });
+  }
+
+  /** Makes the guild of an online player by name an enemy. */
+  guildEnemy(name: string): void {
+    this.guild({ case: 'enemy', value: name });
+  }
+
+  /** Ends an alliance, or an enemy relation when enemy is set. */
+  guildEndRelation(guildId: bigint, enemy: boolean): void {
+    this.guild({ case: 'endRelation', value: { guildId, enemy } });
+  }
+
+  /** Breaks the guild up. The master names the guild to confirm. */
+  guildDisband(name: string): void {
+    this.guild({ case: 'disband', value: name });
+  }
+
+  /** Moves an amount from an inventory slot into the open storage. */
+  storagePut(slot: number, amount: number): void {
+    this.storage({ case: 'put', value: { slot, amount } });
+  }
+
+  /** Moves an amount from a storage slot into the inventory. */
+  storageTake(slot: number, amount: number): void {
+    this.storage({ case: 'take', value: { slot, amount } });
+  }
+
+  /** Closes the open storage window. */
+  storageClose(): void {
+    this.storage({ case: 'close', value: true });
+  }
+
+  /** Asks for the guild storage log. The server answers with GuildStorageLog. */
+  storageLog(): void {
+    this.storage({ case: 'log', value: true });
+  }
+
   /** Talks to an NPC, or opens its shop. */
   npcClick(npc: number): void {
     this.send({
@@ -497,6 +652,24 @@ export class Connection {
       case: 'command',
       value: create(CommandSchema, {
         body: { case: 'partyBooking', value: create(PartyBookingCommandSchema, { action }) },
+      }),
+    });
+  }
+
+  private guild(action: GuildAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'guild', value: create(GuildCommandSchema, { action }) },
+      }),
+    });
+  }
+
+  private storage(action: StorageAction): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'storage', value: create(StorageCommandSchema, { action }) },
       }),
     });
   }

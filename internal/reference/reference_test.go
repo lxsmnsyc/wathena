@@ -135,9 +135,99 @@ func TestPartyShare(t *testing.T) {
 	}
 }
 
+func TestGuild(t *testing.T) {
+	for _, mode := range Modes {
+		var g struct {
+			GuildExpLimit        int `json:"guild_exp_limit"`
+			EmergencyCall        int `json:"emergency_call"`
+			GuildAura            int `json:"guild_aura"`
+			GuildSkillRelogDelay int `json:"guild_skill_relog_delay"`
+			TaxCases             []struct {
+				Rate     int   `json:"rate"`
+				Base     int64 `json:"base"`
+				ExpFlag  int   `json:"exp_flag"`
+				Expboost int   `json:"expboost"`
+				TaxTaken int64 `json:"tax_taken"`
+				Added    *struct {
+					Base int64 `json:"base"`
+					Job  int64 `json:"job"`
+				} `json:"added"`
+			} `json:"tax_cases"`
+			KillCases []struct {
+				Name   string `json:"name"`
+				Gained []any  `json:"gained"`
+				Taxed  []any  `json:"taxed"`
+				Added  []any  `json:"added"`
+			} `json:"kill_cases"`
+			SkillCases []struct {
+				Name string `json:"name"`
+				Cast struct {
+					Used int `json:"used"`
+				} `json:"cast"`
+				Players []struct {
+					Role     string `json:"role"`
+					Statuses []struct {
+						Type int    `json:"type"`
+						Name string `json:"name"`
+					} `json:"statuses"`
+				} `json:"players"`
+			} `json:"skill_cases"`
+			RelogCases []struct {
+				Name   string           `json:"name"`
+				Blocks map[string]int64 `json:"blocks"`
+			} `json:"relog_cases"`
+		}
+		if err := Load(mode, "guild", &g); err != nil {
+			t.Fatal(err)
+		}
+		if g.GuildExpLimit != 50 || g.EmergencyCall != 11 || g.GuildAura != 31 || g.GuildSkillRelogDelay != 300000 {
+			t.Errorf("%s: guild settings are %d, %d, %d, %d, want rAthena's defaults 50, 11, 31, 300000", mode, g.GuildExpLimit, g.EmergencyCall, g.GuildAura, g.GuildSkillRelogDelay)
+		}
+		if len(g.TaxCases) == 0 || len(g.KillCases) == 0 || len(g.SkillCases) == 0 || len(g.RelogCases) == 0 {
+			t.Fatalf("%s: guild has %d tax, %d kill, %d skill and %d relog cases, want some of each", mode, len(g.TaxCases), len(g.KillCases), len(g.SkillCases), len(g.RelogCases))
+		}
+		// Without bonuses, the tax is base * rate / 100, or all of it at 100, and exp_flag 2 is not taxed.
+		for _, c := range g.TaxCases {
+			if c.Expboost != 0 {
+				continue
+			}
+			want := c.Base * int64(c.Rate) / 100
+			if c.Rate >= 100 {
+				want = c.Base
+			}
+			if c.ExpFlag&2 != 0 {
+				want = 0
+			}
+			if c.TaxTaken != want {
+				t.Errorf("%s: tax case rate %d base %d flag %d took %d, want %d", mode, c.Rate, c.Base, c.ExpFlag, c.TaxTaken, want)
+			}
+		}
+		for _, c := range g.KillCases {
+			if len(c.Gained) == 0 || len(c.Taxed) == 0 || len(c.Added) == 0 {
+				t.Errorf("%s: kill case %s has no gains, taxes or added exp", mode, c.Name)
+			}
+		}
+		used, statuses := 0, 0
+		for _, c := range g.SkillCases {
+			used += c.Cast.Used
+			for _, p := range c.Players {
+				for _, s := range p.Statuses {
+					if s.Name == "" {
+						t.Errorf("%s: skill case %s: status %d has no name", mode, c.Name, s.Type)
+					}
+					statuses++
+				}
+			}
+		}
+		if used == 0 || statuses == 0 {
+			t.Errorf("%s: guild skill cases cast %d skills and started %d statuses, want some", mode, used, statuses)
+		}
+	}
+}
+
 func TestExtracts(t *testing.T) {
 	for _, mode := range Modes {
-		for _, name := range []string{"spawns", "client_tables", "progression", "job_stats", "items", "equipment", "refine_db", "monster_groups", "status", "skills", "skill_trees", "random_options"} {
+		for _, name := range []string{"spawns", "client_tables", "progression", "job_stats", "items", "equipment", "refine_db", "monster_groups", "status", "skills", "skill_trees", "random_options", "guilds"} {
 			var h struct {
 				Mode Mode `json:"mode"`
 			}

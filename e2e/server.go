@@ -91,6 +91,9 @@ type Options struct {
 	// with -race. A server with it starts about ten times slower, so
 	// only the tests that move items at the same time ask for it.
 	Race bool
+	// Ruleset is waserver's --ruleset, such as e2e.guildrules from
+	// testdata/mods. Empty uses the core renewal ruleset.
+	Ruleset string
 }
 
 // Server is a running waserver.
@@ -269,6 +272,9 @@ func Start(t testing.TB, o Options) *Server {
 		"--maps", StartMap + "," + strings.TrimPrefix(FieldMap, "map/"), "--dev", "--mode", "renewal",
 		"--addr", addr, "--debug-addr", debug, "--origins", "", "--shutdown-countdown", "0",
 		"--seed", o.Seed, "--start-job", o.StartJob, "--start-items", o.StartItems, "--mods", b.mods}
+	if o.Ruleset != "" {
+		args = append(args, "--ruleset", o.Ruleset)
+	}
 	s := &Server{t: t, WS: "ws://" + addr + "/ws", Debug: "http://" + debug, DB: admin, bin: bin, args: args,
 		// The server's database is the test's, or none.
 		env: append(os.Environ(), "WATHENA_DATABASE_URL="+dbURL), logs: &logBuffer{}}
@@ -339,7 +345,7 @@ func (s *Server) Restart() {
 // new.
 const configYAML = `mods:
   approve:
-    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction]
+    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction, guild.manage]
 chat:
   new_character_period: 0s
 `

@@ -85,7 +85,7 @@ func TestPartyCommandsConvert(t *testing.T) {
 		{`{ mes getpartyleader(getcharid(1),3); end; }`, "getpartyleader: the leader's job (type 3)"},
 		{`{ mes getpartyleader(getcharid(1),4); end; }`, "getpartyleader: the leader's map (type 4)"},
 		{`{ .@p = getcharid(1,"Bob"); end; }`, "getcharid: of another character"},
-		{`{ .@g = getcharid(2); end; }`, "getcharid: guilds, battlegrounds, clans and other IDs"},
+		{`{ .@g = getcharid(4); end; }`, "getcharid: battlegrounds, clans and other IDs"},
 		{`{ warpparty "prontera",150,150,getcharid(1); end; }`, "warpparty: the party API cannot warp a party"},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})

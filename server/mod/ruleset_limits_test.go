@@ -34,7 +34,9 @@ func TestRulesetLimitsAndRules(t *testing.T) {
 		t.Errorf("rules %v", r.Rules)
 	}
 	l, err := rules.LimitsOf(r.Limits)
-	if err != nil || l != (rules.Limits{PartyMembers: 64, Friends: 80, BlockList: 5}) {
+	wantLimits := rules.DefaultLimits()
+	wantLimits.PartyMembers, wantLimits.Friends, wantLimits.BlockList = 64, 80, 5
+	if err != nil || l != wantLimits {
 		t.Errorf("limits %+v %v", l, err)
 	}
 	p, err := rules.PartyOf(r.Rules)
@@ -77,6 +79,17 @@ var boundTests = map[string][]string{
 	"change_party_leader_samemap": {"server/social:TestSetLeaderSameMap"},
 	"block_account_in_same_party": {"server/social:TestInviteRespectsBlocksAndLimits"},
 	"friend_auto_add":             {"server/social:TestFriends", "server/social:TestFriendAutoAddOff"},
+	"guild_members":               {"server/social:TestGuildInviteRespectsBlocksAndLimits"},
+	"guild_positions":             {"server/social:TestGuildPositionsLimit"},
+	"guild_allies":                {"server/social:TestGuildRelations"},
+	"guild_enemies":               {"server/social:TestGuildRelations"},
+	"guild_storage":               {"server/social:TestGuildStorageOpen"},
+	"guild_emperium_check":        {"server/zone:TestGuildAcrossZones", "server/zone:TestGuildEmperiumCheckOff"},
+	"guild_exp_limit":             {"server/social:TestGuildPositionsAndPermissions"},
+	"emergency_call":              {"server/zone:TestGuildEmergencyCall"},
+	"guild_skill_relog_delay":     {"server/zone:TestGuildSkillRelogDelay"},
+	"guild_leaderchange_delay":    {"server/social:TestGuildMasterChangeDelay"},
+	"guild_alliance_onlygm":       {"server/social:TestGuildAllianceOnlyMaster"},
 }
 
 // TestEveryLimitAndRuleTested fails for a limit or rule without a

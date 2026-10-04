@@ -6,6 +6,7 @@ import (
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/social"
 )
 
 // Skills: a player's learned skills, its skill list and skill points, as
@@ -40,6 +41,9 @@ type unitSkill struct {
 // skillLevel is pc_checkskill: the level of a skill the player learned,
 // or the level an item grants when it is higher.
 func (p *Player) skillLevel(id int) int {
+	if social.IsGuildSkill(id) {
+		return p.guildSkillLevel(id)
+	}
 	lv := p.char.Skills[id]
 	if st := p.entity.status; st != nil && st.Player != nil {
 		lv = max(lv, st.Player.Skills[id])

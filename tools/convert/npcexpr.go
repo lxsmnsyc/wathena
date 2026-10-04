@@ -523,12 +523,15 @@ func (b *body) call(e *Call) (val, error) {
 				case 1:
 					// rAthena returns "" without a party.
 					return done(val{code: `(player.party and player.party.name or "")`, t: tStr}, nil)
+				case 2:
+					// rAthena returns "" without a guild.
+					return done(val{code: `(player.guild and player.guild.name or "")`, t: tStr}, nil)
 				case 3:
 					return done(val{code: "player.map", t: tStr}, nil)
 				}
 			}
 		}
-		return val{}, unsupported("strcharinfo", "other than the name, the party and the map")
+		return val{}, unsupported("strcharinfo", "other than the name, the party, the guild and the map")
 	case "strnpcinfo":
 		if len(args) == 1 {
 			if v, err := b.expr(args[0]); err == nil && v.static != nil {
@@ -550,6 +553,9 @@ func (b *body) call(e *Call) (val, error) {
 				case 1:
 					// The party ID is 0 without a party.
 					return done(val{code: "(player.party and player.party.id or 0)", t: tInt}, nil)
+				case 2:
+					// The guild ID is 0 without a guild.
+					return done(val{code: "(player.guild and player.guild.id or 0)", t: tInt}, nil)
 				case 3:
 					return done(val{code: "player.account_id", t: tInt}, nil)
 				}
@@ -558,7 +564,7 @@ func (b *body) call(e *Call) (val, error) {
 		if len(args) == 2 {
 			return val{}, unsupported("getcharid", "of another character")
 		}
-		return val{}, unsupported("getcharid", "guilds, battlegrounds, clans and other IDs")
+		return val{}, unsupported("getcharid", "battlegrounds, clans and other IDs")
 	case "getitemname":
 		if len(args) != 1 {
 			return val{}, unsupported(name, "arguments")
@@ -598,6 +604,9 @@ func (b *body) call(e *Call) (val, error) {
 		p, _, _ := varName(target.Name)
 		if p == "$@" && name == "getarraysize" {
 			if v, ok, err := b.partyMemberVar(target.Name, "", true); ok {
+				return done(v, err)
+			}
+			if v, ok, err := b.guildMemberVar(target.Name, "", true); ok {
 				return done(v, err)
 			}
 		}
@@ -676,12 +685,13 @@ func (b *body) call(e *Call) (val, error) {
 			return val{}, err
 		}
 		return done(val{code: "#" + v.asText(), t: tInt}, nil)
-	case "guildopenstorage":
-		return done(val{code: `R.not_available(conversation, "Guild storage")`, t: tInt}, nil)
 	case "mobcount":
 		return done(b.mobcount(args))
 	}
 	if v, ok, err := b.partyRead(name, args); ok {
+		return done(v, err)
+	}
+	if v, ok, err := b.guildRead(name, args); ok {
 		return done(v, err)
 	}
 	return val{}, unsupported(name, "")
@@ -1051,6 +1061,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 	case "killmonster":
 		return unsupported(name, "the API cannot remove spawned monsters")
 	default:
+		if ok, err := b.guildCommand(name, args); ok {
+			return err
+		}
 		return unsupported(name, "")
 	}
 	return nil

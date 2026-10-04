@@ -425,7 +425,7 @@ type aidCondensedPotion struct{}
 // castendPos is SkillAidCondensedPotion::castendPos2. The caster's
 // skills raise the potion's heal before it lands. The heal reaches the
 // caster, its own summons and its party members in the splash
-// (BCT_PARTY and BCT_GUILD). Guilds do not exist yet.
+// (BCT_PARTY and BCT_GUILD), and its guild members.
 func (aidCondensedPotion) castendPos(z *Zone, src *entity, x, y int, d *skill.Def, lv int, flag *int) {
 	p := src.player
 	if p == nil {

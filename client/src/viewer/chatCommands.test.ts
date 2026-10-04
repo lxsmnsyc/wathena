@@ -87,6 +87,21 @@ describe('parseChatInput', () => {
     expect(parseChatInput('/pm x').kind).toBe('error');
   });
 
+  it('reads guild lines with /g, /guild and $', () => {
+    expect(parseChatInput('/g hello all')).toEqual({ kind: 'guild', text: 'hello all' });
+    expect(parseChatInput('/G  hi ')).toEqual({ kind: 'guild', text: 'hi' });
+    expect(parseChatInput('/guild hi')).toEqual({ kind: 'guild', text: 'hi' });
+    expect(parseChatInput('$hello')).toEqual({ kind: 'guild', text: 'hello' });
+    expect(parseChatInput('$ hello')).toEqual({ kind: 'guild', text: 'hello' });
+    expect(parseChatInput('/g')).toEqual({ kind: 'openGuild' });
+    expect(parseChatInput('/guild')).toEqual({ kind: 'openGuild' });
+    expect(parseChatInput('$')).toEqual({ kind: 'openGuild' });
+    // A line that only has $ inside is a plain line.
+    expect(parseChatInput('S> Knife 5$')).toEqual({ kind: 'say', text: 'S> Knife 5$' });
+    // /gm is not /g.
+    expect(parseChatInput('/gm x').kind).toBe('error');
+  });
+
   it('names unknown commands', () => {
     const action = parseChatInput('/dance now');
     expect(action.kind).toBe('error');

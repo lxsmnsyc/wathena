@@ -1,5 +1,5 @@
 // The commands a player types in the chat input, such as "/w Name text",
-// "/join #trade" or "/p text". A line that is not a command goes to the
+// "/join #trade", "/p text" or "/g text". A line that is not a command goes to the
 // active chat tab.
 
 import { cleanChat } from './chat';
@@ -23,6 +23,10 @@ export type ChatAction =
   | { kind: 'party'; text: string }
   /** Shows the party tab. */
   | { kind: 'openParty' }
+  /** A line to the player's guild. */
+  | { kind: 'guild'; text: string }
+  /** Shows the guild tab. */
+  | { kind: 'openGuild' }
   /** Shows the tab of a chat channel. */
   | { kind: 'openChannel'; name: string }
   | { kind: 'join'; name: string }
@@ -130,6 +134,11 @@ export function parseChatInput(input: string): ChatAction {
     const text = cleanChat(line.slice(1));
     return text === undefined ? { kind: 'openParty' } : { kind: 'party', text };
   }
+  if (line.startsWith('$')) {
+    // RO's guild prefix: "$text" says text to the guild.
+    const text = cleanChat(line.slice(1));
+    return text === undefined ? { kind: 'openGuild' } : { kind: 'guild', text };
+  }
   if (!line.startsWith('/')) {
     const text = cleanChat(input);
     return text === undefined ? { kind: 'empty' } : { kind: 'say', text };
@@ -157,6 +166,11 @@ export function parseChatInput(input: string): ChatAction {
       const text = cleanChat(rest);
       return text === undefined ? { kind: 'openParty' } : { kind: 'party', text };
     }
+    case '/g':
+    case '/guild': {
+      const text = cleanChat(rest);
+      return text === undefined ? { kind: 'openGuild' } : { kind: 'guild', text };
+    }
     case '/join':
       return channelCommand('join', rest, '/join #channel');
     case '/leave':
@@ -180,7 +194,7 @@ export function parseChatInput(input: string): ChatAction {
     default:
       return {
         kind: 'error',
-        message: `Unknown command ${command}. Commands: /w, /p, /join, /leave, /channels, /members, /block, /unblock, /report.`,
+        message: `Unknown command ${command}. Commands: /w, /p, /g, /join, /leave, /channels, /members, /block, /unblock, /report.`,
       };
   }
 }

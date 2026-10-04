@@ -1082,7 +1082,7 @@ Planned work to give mods more control than rAthena's scripts have:
   - A limit comes from the world's ruleset, so every zone and the database agree on it.
   - The database schema and the protocol store values that fit the highest limit allowed, not rAthena's. For example, card slots are a list, not four columns.
   - Lowering a limit deletes nothing: a list over the limit keeps its entries and cannot grow, and cards over the slot limit stay but give no bonus (proposal 0002, review decision 27, which replaced refusing to start).
-  - Each limit has a hard maximum, and a ruleset outside the bounds fails to load. Phase 5 step 4 added `party_members`, `friends` and `block_list` ([decision 0020](decisions/0020-parties-and-friends.md)).
+  - Each limit has a hard maximum, and a ruleset outside the bounds fails to load. Phase 5 step 4 added `party_members`, `friends` and `block_list` ([decision 0020](decisions/0020-parties-and-friends.md)). Step 5 added `guild_members`, `guild_positions`, `guild_allies`, `guild_enemies` and `guild_storage` ([decision 0021](decisions/0021-guilds.md)).
   - The client reads the limits at login and sizes its windows from them.
 
 ### 6.9 Tooling
@@ -2555,7 +2555,17 @@ The order from here:
       - The Lua API of review decision 27, the party script commands in the converter, the party window, the friend list and party booking in the client, and the sample mod [examples/party-hall](../mods/examples/party-hall).
       - e2e scenarios for invites, blocks, party chat, exp and item share, a leader leaving, friends, a party skill, and parties and friends after a restart. A duplication test with shared pick-ups found a bug where the picker got a shared item twice. It is fixed.
       - Left: guild reach of skills, the Devotion link line, family exp share, offline member events, and the registry across processes.
-   5. Guilds: guild skills, guild storage and emblems.
+   5. Guilds: guild skills, guild storage and emblems. Done on 2026-10-04 ([decision 0021](decisions/0021-guilds.md), proposal 0002 review decision 28, server/README.md, "Guilds", and mods/README.md, "Guilds"):
+      - The social registry of step 4 keeps the guilds: invites that respect block lists, positions with names, rights and exp tax, the notice, alliances and enemies, master changes, expulsions and breaking up, as rAthena's `guild.cpp` and `int_guild.cpp`. Migration 00018 saves them.
+      - Members pay their position's exp tax of base exp, and guilds level up by `exp_guild.yml` with a skill point per level. The master raises skills by `guild_skill_tree.yml`.
+      - Battle Orders, Regeneration, Restore and Emergency Call work as rAthena: the first three on GvG maps only, Emergency Call where `emergency_call` allows it, with renewal's cooldowns and pre-renewal's shared blocks. Guild Extension and renewal's Guild Storage work. GuildOnly skills and `BCT_GUILD` reach guildmates.
+      - Guild storage moves through transfers, one opener at a time with the storage right, committed with the inventory in one transaction, with a storage log. Core's converted Guild Warehouse Manager opens it in renewal towns.
+      - Emblems are uploaded on the account pages, checked and re-encoded as section 7.6 asks, served at `/emblems/<guild>/<version>.png`, shown over players, and reported with `Report.guild_id`.
+      - Guild chat, the guild limits and rules, the Lua API of review decision 28, the converter's guild commands, the guild window, the storage window and emblems in the client, and the sample mod [examples/guild-hall](../mods/examples/guild-hall).
+      - Parity with a new recording, `guild.json`, and an extract, `guilds.json` (rAthena fork commit `f30328d04`): 225 of 225 taxed exp gains, 10 of 10 kills and 17 of 17 guild skill casts in each mode, and the tables.
+      - e2e scenarios: create and invite, a block that refuses an invite, positions and rights, guild chat across maps, the exp tax on a kill, a level up and a skill, Emergency Call across maps, guild storage, an emblem upload and its display, and a restart with PostgreSQL. The duplication test gained guild storage moves by 8 bots, with one opener at a time and dropped connections; totals and serials held with and without PostgreSQL.
+      - Checked in Chrome with the development stack: two players formed a guild through the guild window and an invite prompt, spoke in guild chat, saw the emblem and the guild name over both players after an upload, and moved 5 Jellopy into the guild storage window.
+      - Left: sieges, castles, guardians and the siege-only guild skills, the guild auras, guild storage item restrictions, the Kafras' guild storage option, public API to open guild storage, and guilds across processes.
    6. Storage, cart and trade: personal storage, cart storage, Kafra storage and trade.
    7. Mail, vending and shops: mail (RODEX), vending with autotrade and vending search, and barter shops.
    8. Automatic events (boss spawns, invasions and treasure hunts), and the phase 5 exit check, with duplication tests under bot load.

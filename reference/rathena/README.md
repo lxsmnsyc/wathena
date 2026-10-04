@@ -18,7 +18,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. `random_options.json` is what random options read, described below. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. `random_options.json` is what random options read, described below. `guilds.json` is what guilds read, described below. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -43,6 +43,7 @@ Each file starts with `system`, `mode`, `rathena_git_hash`, `data_path`, and `ci
 | `status_effects.json` | Chance, duration, and whether ten common ailments start, for many sources and targets. |
 | `level_penalty.json` | Renewal exp and drop modifiers by level difference. Empty in pre-renewal. |
 | `party_share.json` | Exp sharing among attackers and parties when a monster dies, and party item pick-up rights and distribution. |
+| `guild.json` | Guild exp tax, the guild skills Battle Orders, Regeneration, Restore and Emergency Call, and guild skill blocks at login. |
 | `random_option_rolls.json` | rAthena's random option groups applied with every draw at its lowest, and statistics of seeded applications, and the options of each monster drop with a group. |
 
 ## Warps
@@ -236,6 +237,41 @@ They come from rAthena fork commit `50df331ca`, which adds `record_party_share` 
 ```text
 WATHENA_RECORD_ONLY=party_share bash tools/wathena/record.sh renewal pre-renewal
 ```
+
+## Guilds
+
+Guilds read one extract and one recording per mode:
+
+- `extracts/<mode>/guilds.json`: `exp_guild.yml` and `guild_skill_tree.yml` with their imports for the mode, as `GuildExpDatabase` and `GuildSkillTreeDatabase` load them. It also has the guild constants rAthena compiles in the mode (`MAX_GUILD`, `MAX_GUILDPOSITION`, `MAX_GUILDALLIANCE`, `MAX_GUILDEXPULSION`, `MAX_GUILDLEVEL`, `MAX_GUILDSKILL`, `MAX_GUILD_STORAGE`, `GUILD_PERM_*`), the guild storage size, and the guild battle settings with their defaults and limits.
+- `guild.json`: cases that run rAthena's own code. The file's `note` explains every field.
+
+`guild.json` has four kinds of cases:
+
+- `tax_cases` give exp through `pc_gainexp` to a member whose position has a tax rate of 0, 1, 5, 10, 33, 50, 99 or 100, with `exp_flag` 0, 1 and 2, for base exp from 1 to 2147483647. Each case has the tax `guild_payexp` took and the exp the player got. A few cases add a Battle Manual, to show that the tax comes before `pc_calcexp`.
+- `kill_cases` kill Orc Warrior (1023) and Raydric (1163) through `mob_dead`, with taxed members alone and in parties with even share and each take. They list every `pc_gainexp` call, every tax, and the exp each player got, so the order of party share, level penalty and tax shows.
+- `skill_cases` cast Battle Orders, Regeneration (levels 1 to 3), Restore and Emergency Call through `unit_skilluse_id`, on a map with and without `MF_GVG`. The guild has members in range, at the edge of the range, out of range, dead, on another map, and with calls turned off, plus a player of another guild and a player of an allied guild. Each case has the check results, the statuses, HP and SP and stats of every player, the caster's skill blocks, and where Emergency Call put each player. Some cases cast as a member who is not the master, cast a second skill right after the first, or change `emergency_call`.
+- `relog_cases` show the master's skill blocks after `guild_recv_info` and `guild_member_joined`. Pre-renewal blocks the four skills for `guild_skill_relog_delay` when the first guild info arrives with the master online, and when the master logs in. Renewal does not.
+
+Points to know:
+
+- Renewal blocks only the cast skill for its `Cooldown`. Pre-renewal blocks all four skills for the cast skill's `Duration2`.
+- In pre-renewal, `GD_GUILD_STORAGE` is not a guild skill (`MAX_GUILDSKILL` is 15), so with `OFFICIAL_GUILD_STORAGE` at `PACKETVER` 20211103 no guild can open its storage. `guilds.json` shows this in `storage`.
+- Times of timers and blocks come from the real clock, so they can be 1 or 2 ms more than the setting.
+- `guild_gm_changed` is not recorded. It blocks the new master's skills only for a player with a client connection, which recorder players do not have.
+
+| Mode | Tax cases | Kill cases | Skill cases | Relog cases | Guild levels | Guild skills |
+|---|---:|---:|---:|---:|---:|---:|
+| renewal | 225 | 10 | 17 | 4 | 49 | 19 |
+| pre-renewal | 225 | 10 | 17 | 4 | 49 | 15 |
+
+They come from rAthena fork commit `f30328d04`, which adds `record_guild` to the recorder, `build_guilds` to `tools/wathena/extract.py`, and small hooks in `guild.cpp`, `pc.cpp` and `clif.cpp` for the recorder. With it:
+
+```text
+WATHENA_RECORD_ONLY=guild bash tools/wathena/record.sh renewal pre-renewal
+python3 tools/wathena/extract.py guilds
+```
+
+`extract.py guilds` writes only `guilds.json`, so the other extracts stay as they are.
 
 ## How random rolls are recorded
 

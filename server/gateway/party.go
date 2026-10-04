@@ -22,6 +22,8 @@ func limitsMessage(l rules.Limits) *wathenav1.Limits {
 	}
 	return wathenav1.Limits_builder{
 		PartyMembers: uint32(l.PartyMembers), Friends: uint32(l.Friends), BlockList: uint32(l.BlockList), // #nosec G115 -- small bounded limits.
+		GuildMembers: uint32(l.GuildMembers), GuildPositions: uint32(l.GuildPositions), GuildAllies: uint32(l.GuildAllies), // #nosec G115 -- as above.
+		GuildEnemies: uint32(l.GuildEnemies), GuildStorage: uint32(l.GuildStorage), // #nosec G115 -- as above.
 	}.Build()
 }
 

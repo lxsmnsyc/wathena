@@ -33,6 +33,9 @@ local events = {}
 ---@overload fun(name: "party_join", handler: fun(join: wa.PartyMembership)): wa.EventHandle
 ---@overload fun(name: "party_leave", handler: fun(leave: wa.PartyMembership)): wa.EventHandle
 ---@overload fun(name: "party_change", handler: fun(change: wa.PartyChange)): wa.EventHandle
+---@overload fun(name: "guild_join", handler: fun(join: wa.GuildMembership)): wa.EventHandle
+---@overload fun(name: "guild_leave", handler: fun(leave: wa.GuildMembership)): wa.EventHandle
+---@overload fun(name: "guild_change", handler: fun(change: wa.GuildChange)): wa.EventHandle
 function events.on(name, handler, options) end
 
 return events

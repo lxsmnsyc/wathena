@@ -31,7 +31,7 @@ Tests:
 NPCs ([decision 0008](../../docs/decisions/0008-converted-npcs.md)):
 
 - `parse.go` also reads NPC scripts: labels, `goto`, `menu`, `callsub`, `function` and `switch`.
-- `npc.go` places NPCs and shops from `npcs.json`, and writes core's `data/npcs.yml`. Shops become data. A script NPC is placed when its own script converts whole.
+- `npc.go` places NPCs and shops from `npcs.json`, and writes core's `data/npcs.yml`. Shops become data. A script NPC is placed when its own script converts whole. A duplicate uses its source's script, which converts even when the source is not placed, such as a source without a map. NPCs on instance maps, such as `1@tower`, are not placed, as wAthena has no instances yet.
 - `npcstatus.go` converts `sc_start`, `sc_start2`, `sc_start4`, `sc_end` and `getstatus` in NPC scripts. NPC scripts set `cannot_be_avoided`, as rAthena's default flag for NPCs is `SCSTART_NOAVOID`.
 - `npclua.go`, `npcexpr.go` and `npcscript.go` translate scripts to Lua with the API of proposal 0002: conversations, `wa.variables`, zeny, items and save points. Labels become Lua labels, and a function's `end` becomes `R.stop()`.
 - Event labels run on into the next label until an `end`, as in rAthena. These event labels convert:
@@ -40,6 +40,7 @@ NPCs ([decision 0008](../../docs/decisions/0008-converted-npcs.md)):
   - A label that a `monster` command of the same NPC names runs when each of its monsters dies, with the player that killed it.
 - `monster` converts on the NPC's own map, with the monster's own name, the default size and AI, and an event label of the NPC or none. `mobcount` converts for such a label. `killmonster` does not convert.
 - `npcparty.go` converts the party commands and reads to `player.party` and `wa.parties` (proposal 0002, review decision 27). A party ID of `getcharid(1)` becomes `player.party`, and any other ID `parties.get(id)`. The write commands convert as statements for the attached player only. `getpartymember` converts for names, and `$@partymembername$` and `$@partymembercount` read its result in the same function. Character IDs, account IDs and the leader's job, map and level do not convert.
+- `npcguild.go` converts the guild reads and commands to `player.guild` and `wa.guilds` (proposal 0002, review decision 28). A guild ID of `getcharid(2)` becomes `player.guild`, and any other ID `guilds.get(id)`. `guild_has_permission` converts for a fixed permission, and `getguildmember` for names, as `getpartymember` does. `guildgetexp` converts for the attached player's guild. `guildopenstorage` and `guildopenstorage_log` call `R.guild_storage` and `R.guild_storage_log`, which use core's `wa.internal` module and say that guild storage is not available in other mods. Character IDs, guild skill raises, castles and the other guild commands do not convert, with the reason in the report.
 - `rathena.lua` is `scripts/lib/rathena.lua`: helpers for what Lua lacks, such as rAthena's arrays, `menu`, `getarg`, `input` with its bounds, `getitem` and `delitem` with a computed amount, which do nothing for 0 or less, and `monster` and `mobcount`.
 - `npcreport.go` writes the coverage report.
 

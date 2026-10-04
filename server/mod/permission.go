@@ -41,6 +41,8 @@ var Permissions = []Permission{
 	{Name: "player.sanction", Approval: true, Flagged: true, Allows: "mute and jail players"},
 	// party.manage is review decision 27's: wa.parties' changes.
 	{Name: "party.manage", Approval: true, Allows: "make parties and change their members, leader and options"},
+	// guild.manage is review decision 28's: wa.guilds' changes.
+	{Name: "guild.manage", Approval: true, Allows: "make guilds and change their members, master, notice, exp, and break them up"},
 }
 
 // LookupPermission returns a permission by name.
