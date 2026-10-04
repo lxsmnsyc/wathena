@@ -586,7 +586,7 @@ func TestScriptsAndModulePaths(t *testing.T) {
 // TestSampleMod loads mods/examples, which the docs point mod authors to.
 func TestSampleMod(t *testing.T) {
 	s, err := resolve(t, filepath.Join("..", "..", "mods", "examples"), Config{Approve: map[string][]string{
-		"example.halloween":    {"player.give_items", "world.announce", "events.schedule", "rules.override"},
+		"example.halloween":    {"player.give_items", "player.give_zeny", "world.announce", "events.schedule", "events.control", "rules.override"},
 		"example.wolf-pack":    {"rules.override"},
 		"example.lucky-clover": {"rules.override", "items.modify_rolls", "player.give_items"},
 		"example.town-crier":   {"rules.override"},
@@ -631,11 +631,11 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("scripts %+v, %v", sc, err)
 	}
 	monsters, err := s.Monsters(func(name string) bool { return name == "PORING" || name == "JAKK" || name == "WOLF" })
-	if err != nil || len(monsters.Records) != 5 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
+	if err != nil || len(monsters.Records) != 7 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
 		t.Errorf("monsters %+v, %v", monsters, err)
 	}
 	events, err := s.Events()
-	if err != nil || len(events.Records) != 2 || events.Records[0].Name != "example.halloween:Pumpkin_King" {
+	if err != nil || len(events.Records) != 5 || events.Records[0].Name != "example.halloween:Pumpkin_King" {
 		t.Errorf("events %+v, %v", events, err)
 	}
 }

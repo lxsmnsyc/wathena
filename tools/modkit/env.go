@@ -49,6 +49,29 @@ type Env struct {
 
 	mu    sync.Mutex
 	grids map[string]*path.Grid
+	// levels are the fields' levels, by asset name, read once.
+	levelsOnce sync.Once
+	levels     map[string]int
+}
+
+// fieldLevels are the levels of the fields among the maps a test world
+// runs: its one map, when it is a field with monsters.
+func (e *Env) fieldLevels(asset string) map[string]int {
+	e.levelsOnce.Do(func() {
+		e.levels = map[string]int{}
+		spawns, err := gamedata.SpawnsOf(e.Mode, e.Monsters)
+		if err != nil {
+			return
+		}
+		for id, l := range gamedata.FieldLevels(spawns) {
+			e.levels["map/"+id] = l
+		}
+	})
+	out := map[string]int{}
+	if l, ok := e.levels[asset]; ok {
+		out[asset] = l
+	}
+	return out
 }
 
 // LoadEnv loads a mode's data. assets may be "".

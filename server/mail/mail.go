@@ -291,7 +291,10 @@ type Registry struct {
 	names map[string]string
 	// recent are mails sent to mailboxes that were not loaded, kept a
 	// while so a login that loaded before their commit still sees them.
+	// sent counts the mails put in recent, so a load knows which came
+	// after it started.
 	recent []recentMail
+	sent   int64
 	// gone are mails that expired, so a mailbox that loaded before the
 	// expiry's commit leaves them out.
 	gone map[int64]bool
@@ -300,6 +303,8 @@ type Registry struct {
 type recentMail struct {
 	m  *Mail
 	at time.Time
+	// seq is the value of the registry's sent for this mail.
+	seq int64
 }
 
 // recentFor is how long a mail sent to a mailbox that was not loaded
@@ -347,6 +352,9 @@ func (r *Registry) Acquire(ctx context.Context, k Key, name string, slots int) (
 		r.mu.Unlock()
 		return b, nil
 	}
+	// The load waits for the commits queued so far, so it holds every
+	// mail that recent holds now, or what became of it.
+	since := r.sent
 	r.mu.Unlock()
 	var rows []Row
 	if r.Loader != nil && k.Saved() {
@@ -366,15 +374,22 @@ func (r *Registry) Acquire(ctx context.Context, k Key, name string, slots int) (
 			}
 		}
 		r.boxes[k] = b
-		// Mails sent while it loaded.
-		for _, rm := range r.recent {
+		// Mails sent while it loaded. The mailbox holds its mails from
+		// now on, so recent lets go of them. A mail of recent sent before
+		// the load started is in the rows as it is now: it may be taken
+		// or deleted since, and recent's copy is out of date.
+		r.recent = slices.DeleteFunc(r.recent, func(rm recentMail) bool {
 			rm.m.Lock()
 			to, deleted := rm.m.To, rm.m.deleted
 			rm.m.Unlock()
-			if to == k && !deleted {
+			if to != k {
+				return false
+			}
+			if rm.seq > since && !deleted {
 				b.add(rm.m, false)
 			}
-		}
+			return true
+		})
 	}
 	b.refs++
 	return b, nil
@@ -430,7 +445,8 @@ func (r *Registry) Deliver(m *Mail) {
 	defer r.mu.Unlock()
 	now := time.Now()
 	r.recent = slices.DeleteFunc(r.recent, func(rm recentMail) bool { return now.Sub(rm.at) > recentFor })
-	r.recent = append(r.recent, recentMail{m: m, at: now})
+	r.sent++
+	r.recent = append(r.recent, recentMail{m: m, at: now, seq: r.sent})
 }
 
 // Find finds a recipient by name, or by ID when id is above 0, among

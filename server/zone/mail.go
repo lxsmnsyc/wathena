@@ -615,13 +615,20 @@ func (z *Zone) deleteMail(p *Player, id int64) {
 // are made for it, to a character online or not. The mail event runs
 // once it went out.
 func (z *Zone) sendScriptMail(p *Player, sm modscript.ScriptMail) error {
+	return z.mailFrom(p, sm, transfer.ActionMail, transfer.End(transfer.KindScript), true)
+}
+
+// mailFrom sends a mail whose items and zeny are made for it, from an
+// end such as a script or a world event, with action in the logs. The
+// mail event runs for it when event is set.
+func (z *Zone) mailFrom(p *Player, sm modscript.ScriptMail, action transfer.Action, from transfer.Owner, event bool) error {
 	reg := z.mailRegistry()
 	finish := func(rc mail.Recipient) {
 		m := reg.NewMail(max(z.limits().MailItems, len(sm.Items)))
 		m.Lock()
 		m.FromName, m.To, m.ToName = sm.Sender, rc.Key, rc.Name
 		m.Title, m.Body, m.Sent, m.Zeny = sm.Title, sm.Body, z.wallClock(), 0
-		tx := transfer.New(transfer.ActionMail)
+		tx := transfer.New(action)
 		if z.Clock != nil {
 			tx.Now = z.Clock()
 		}
@@ -638,12 +645,12 @@ func (z *Zone) sendScriptMail(p *Player, sm modscript.ScriptMail) error {
 			for given := 0; given < it.Amount; given += step {
 				x := z.rolledExtra(d, it.Roll)
 				x.Bound = it.Bound
-				tx.Create(transfer.End(transfer.KindScript), item.Slot{ID: it.Item, Extra: x}, step, &m.Box, item.Serial{})
+				tx.Create(from, item.Slot{ID: it.Item, Extra: x}, step, &m.Box, item.Serial{})
 			}
 			sold = append(sold, modscript.SaleItem{Item: it.Item, Amount: it.Amount})
 		}
 		if sm.Zeny > 0 {
-			tx.Earn(transfer.End(transfer.KindScript), sm.Zeny, &transfer.ZenyWallet{Who: m.Owner(), Z: &m.Zeny}, true)
+			tx.Earn(from, sm.Zeny, &transfer.ZenyWallet{Who: m.Owner(), Z: &m.Zeny}, true)
 		}
 		logs, err := tx.Apply(nil)
 		m.Touch()
@@ -655,8 +662,10 @@ func (z *Zone) sendScriptMail(p *Player, sm modscript.ScriptMail) error {
 		z.txLogs.Add(logs)
 		z.mailChanged(m)
 		z.mailDeliver = append(z.mailDeliver, m)
-		z.scriptEvents = append(z.scriptEvents, scriptEvent{name: "mail", sale: &modscript.SaleEvent{
-			From: sm.Sender, To: rc.Name, Items: sold, Zeny: sm.Zeny}})
+		if event {
+			z.scriptEvents = append(z.scriptEvents, scriptEvent{name: "mail", sale: &modscript.SaleEvent{
+				From: sm.Sender, To: rc.Name, Items: sold, Zeny: sm.Zeny}})
+		}
 	}
 	name, id := sm.To, sm.ToID
 	if name == "" && id == 0 {

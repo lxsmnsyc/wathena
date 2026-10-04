@@ -54,6 +54,58 @@ body {
   display: none;
 }
 
+/* World events: a banner for each start and end, and the runs that last. */
+#event-banner {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  z-index: 20;
+  max-width: 80vw;
+  padding: 8px 18px;
+  transform: translateX(-50%);
+  border: 1px solid #c9a227;
+  border-radius: 6px;
+  background: rgb(30 22 6 / 85%);
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffe08a;
+  text-align: center;
+  pointer-events: none;
+}
+
+#event-banner[hidden],
+#world-events[hidden] {
+  display: none;
+}
+
+#world-events {
+  position: fixed;
+  top: 64px;
+  right: 8px;
+  z-index: 10;
+  min-width: 180px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+  font-size: 12px;
+  color: #fff;
+}
+
+#world-events h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+#world-events ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#world-events li strong {
+  color: #ffe08a;
+}
+
 #hits {
   position: fixed;
   inset: 0;

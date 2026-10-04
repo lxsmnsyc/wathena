@@ -425,6 +425,7 @@ local current_season = exports.get("example.seasonal-lib", "current_season")
 | `wa.integers` | `divide_truncated` and `remainder_truncated` with C rounding, for converted scripts | None |
 | `wa.text` | Translated text for the player's language, and `text.item_link(item)` | None |
 | `wa.maps`, `wa.world` | `maps.announce(map, text)` and `world.announce(text)` | None for `maps.announce`; `world.announce` for `world.announce` |
+| `wa.world_events` | `world_events.start(name)` and `world_events.stop(name)` (review decision 31) | `events.control` |
 | `wa.emotions` | Constants of `npc:show_emotion` | None |
 | `wa.exports` | Functions shared between mods | None |
 | `wa.effects`, `wa.races`, `wa.statuses`, `wa.jobs`, `wa.sizes`, `wa.elements`, `wa.monster_classes`, `wa.weapon_types`, `wa.monster_groups` | Constants | None |
@@ -1045,3 +1046,16 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - The shop table's `buys_from_players` and `discount` default to true, as rAthena's `shop` line. Discount lowers only the zeny part of a cost. A list form shop may repeat an item; a table may not.
    - `wa.testing` gained `world:buy(player, shop, items)`, `world:get_mails(player)` and `world:vend(seller, buyer, lines)`, provisional.
    - The converter maps `mail`, `openmail`, `searchstores`, `buyingstore`, `npcshopadditem`, `npcshopdelitem`, `npcshopupdate`, `callshop` of every shop kind, and the reads and writes of `#CASHPOINTS`, `#KAFRAPOINTS` and pointshop variables. Needed for the rest: listing a shop's items (`npcshopitem`), a script that takes over a shop's sales (`npcshopattach` with `OnBuyItem` and `OnSellItem`), a barter cost of a refined item or of 6 items, Kafra points that pay part of a cash shop price, the refine, bound, card and option arrays of `mail`, and `searchstores` for another map.
+17. Build automatic events (review decision 31). Done on 2026-10-05 ([decision 0025](../decisions/0025-automatic-events.md)). Details to review:
+   - A typed event's fields sit beside `type` in its record, such as `monsters` and `level_band` for a boss, not in a mapping under the type's name.
+   - `level_band` is `[lowest, highest]`. It picks fields, maps whose ID has `_fild`, by the middle level of their spawns without bosses. A map type in map data would let it pick other maps.
+   - `announce` is true or false, true by default. A wave's `monsters` is a list of `{ monster, amount }`, and `start` takes `cleared` or a time in `s`, `m` or `h`. `hint_npcs` is a list of `{ map, x, y, sprite, display_name }`, with `4_M_MANAGER` and "Treasure Hunter" by default.
+   - `rewards` is one mapping, with `min_share` in percent, from above 0 to 100, and `exp` as `{ base, job }`. Each kind of reward needs the permission a script needs to give it. A list of rewards, such as one for the killer and one for the participants, needs review.
+   - Rewards go only to players on the map of the boss, the chest or the town. An invasion's `killer` is the player who killed its last invader.
+   - A typed run that a stop cut short goes on after the restart while its window is open, from its saved progress. A script event's run still does not.
+   - Core's samples are `core:Field_Boss`, `core:Prontera_Invasion` and `core:Treasure_Hunt`, off until `mods.events.<name>.enabled` is true. `enabled` is a new field of `mods.events`.
+   - `context:get_event()` returns nil outside a typed event's script. The run handle has the three methods and no fields.
+   - `run:get_monsters()` and `run:get_participants()` need `game.read` and read the context's map only. `run:finish` takes effect within a second, and an invasion that finishes won gives its rewards.
+   - `world_event_start` and `world_event_end` run in mod, NPC and event contexts. `type` is `"script"` for an event without one, and `result` is `"won"`, `"lost"`, `"stopped"` or nil.
+   - `world_events.start` and `stop` return whether the request was taken. A plain name is the calling mod's event. An event the config turned off does not exist for them.
+   - The announcements and the hint NPCs' text are English in Go, with map IDs, until core has locale text.

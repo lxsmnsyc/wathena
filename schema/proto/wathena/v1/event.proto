@@ -108,6 +108,8 @@ message Event {
     StoreSearchOpen store_search_open = 96;
     StoreSearchResults store_search_results = 97;
     StoreSearchResult store_search_result = 98;
+    WorldEventNotice world_event_notice = 99;
+    WorldEventList world_event_list = 100;
   }
 }
 
@@ -2162,4 +2164,36 @@ enum StoreSearchOutcome {
   STORE_SEARCH_OUTCOME_POSITION = 6;
   // OTHER_MAP: the store is on another map, so it cannot open from here.
   STORE_SEARCH_OUTCOME_OTHER_MAP = 7;
+}
+
+// WorldEventInfo is a run of a world event (strategy section 8.8,
+// proposal 0002, review decision 31).
+message WorldEventInfo {
+  // name is the event's full name, such as core:Field_Boss.
+  string name = 1;
+  // display_name is the name players see.
+  string display_name = 2;
+  // type is "boss", "invasion", "treasure_hunt" or "script".
+  string type = 3;
+  // map is the asset name of the map where it happens, such as
+  // "map/prontera", or empty.
+  string map = 4;
+  // ends_at_ms is when the run ends, in Unix milliseconds, or 0.
+  uint64 ends_at_ms = 5;
+}
+
+// WorldEventNotice is a world event's run that started or ended. Every
+// player gets it.
+message WorldEventNotice {
+  WorldEventInfo event = 1;
+  // started is set when the run started, and unset when it ended.
+  bool started = 2;
+  // result is how the run ended: "won", "lost" or "stopped", or empty.
+  string result = 3;
+}
+
+// WorldEventList is the runs of world events that last now. A player
+// gets it at login when there are any.
+message WorldEventList {
+  repeated WorldEventInfo events = 1;
 }

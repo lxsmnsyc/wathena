@@ -132,6 +132,9 @@ type monster struct {
 	specialAI  int
 	playersHit bool
 	deleteAt   int64
+	// event marks a typed world event's monster (autoevents.go), or is
+	// nil.
+	event *eventTag
 }
 
 // Random walk timing, as rAthena's mob.cpp.

@@ -34,9 +34,14 @@ type Writes struct {
 	Mails  []mail.Write
 	Stock  []shop.StockRow
 	Stores []market.Write
+	// Events are the units of world events' progress whose rewards the
+	// commit saves.
+	Events []EventUnit
 }
 
-func (w *Writes) empty() bool { return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 }
+func (w *Writes) empty() bool {
+	return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 && len(w.Events) == 0
+}
 
 // CommitAll queues a commit with characters, storages, other rows and
 // log lines.
@@ -50,6 +55,7 @@ func (s *Store) CommitAll(entries []Entry, storages []StorageWrite, w Writes, lo
 	c.writes.Mails = append(c.writes.Mails, w.Mails...)
 	c.writes.Stock = append(c.writes.Stock, w.Stock...)
 	c.writes.Stores = append(c.writes.Stores, w.Stores...)
+	c.writes.Events = append(c.writes.Events, w.Events...)
 	for _, m := range w.Mails {
 		if m.To.Saved() {
 			s.mailBusy[m.To.ID]++
@@ -82,6 +88,9 @@ func writeAll(ctx context.Context, q *db.Queries, w *Writes) error {
 		return err
 	}
 	if err := writeMails(ctx, q, w.Mails); err != nil {
+		return err
+	}
+	if err := writeEventUnits(ctx, q, w.Events); err != nil {
 		return err
 	}
 	return writeStores(ctx, q, w.Stores)

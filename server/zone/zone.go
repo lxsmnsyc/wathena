@@ -31,6 +31,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/transfer"
+	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -441,6 +442,10 @@ type Zone struct {
 	// Clock is the server clock, which schedules and world events
 	// follow. It is the system clock when nil. Set it before Run.
 	Clock func() time.Time
+	// WorldEvents is the world's event manager, which runs typed world
+	// events (autoevents.go). Without it, hint NPCs say nothing and
+	// world_events calls raise an error. Set it before Run.
+	WorldEvents worldevent.Sink
 	// MaxCardSlots is MAX_SLOTS, the most cards an item holds. It is
 	// DefaultMaxCardSlots when 0. Set it before Run.
 	MaxCardSlots int
@@ -570,6 +575,14 @@ type Zone struct {
 	owned map[int64][]*Spawn
 	// eventRuns are the runs of world events in the zone, by run ID.
 	eventRuns map[int64]*modscript.Context
+	// typedRuns are the zone's parts of typed runs (autoevents.go), by
+	// run ID, and nextHint counts their hint NPCs. txEventUnits are the
+	// units of progress the next commit saves.
+	typedRuns    map[int64]*zoneRun
+	nextHint     int64
+	txEventUnits []EventUnit
+	// notices get the starts and ends of world events.
+	notices chan worldevent.Notice
 	// control gets work that must run on the zone's goroutine, such as a
 	// mod reload.
 	control chan func()
@@ -677,6 +690,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		groups:    map[int64]*unitGroup{},
 		control:   make(chan func()),
 		announces: make(chan announcement, 256),
+		notices:   make(chan worldevent.Notice, 64),
 		chatIn:    make(chan chatIn, 1024),
 		socialIn:  make(chan socialIn, 1024),
 		stopped:   make(chan struct{}),
@@ -765,6 +779,8 @@ func (z *Zone) Run(ctx context.Context) {
 			f()
 		case a := <-z.announces:
 			z.announce(a)
+		case n := <-z.notices:
+			z.worldNotice(n)
 		case in := <-z.chatIn:
 			z.receiveChat(in)
 		case in := <-z.socialIn:
@@ -969,6 +985,9 @@ func (z *Zone) join(p *Player) joinResult {
 		e.speed = e.status.Speed
 	}
 	z.updateWeight(p)
+	if h == nil {
+		z.sendWorldEvents(p)
+	}
 	p.sendPages(z.inventoryPages(p))
 	z.sendCart(p)
 	// CurrencyUpdate comes at login, as its message says, when the

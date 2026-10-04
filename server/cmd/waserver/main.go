@@ -484,17 +484,34 @@ func runAll(name string, args []string) error {
 		return err
 	}
 	// World events start without staff action, on the server clock.
-	var runStore worldevent.Store
+	// Typed events pick fields by the level of their monsters (decision
+	// 0025).
+	var runStore interface {
+		worldevent.Store
+		worldevent.ProgressStore
+	} = &worldevent.MemoryStore{}
 	if pool != nil {
 		runStore = store.NewEventRuns(pool)
 	}
 	for _, d := range events {
-		if _, err := w.EventZone(d); err != nil {
+		if err := w.CheckEvent(d); err != nil {
 			return fmt.Errorf("mods: %s: events %s: %w", d.Where, d.Name, err)
 		}
 	}
-	scheduler := worldevent.New(events, worldevent.Options{Runner: w.Events(), Store: runStore, Location: cfg.Location,
-		Rand: root.Child("events").SecretStream(), Log: log})
+	levels := map[string]int{}
+	for id, l := range gamedata.FieldLevels(spawns) {
+		if w.Zone("map/"+id) != nil {
+			levels["map/"+id] = l
+		}
+	}
+	eventRand := root.Child("events").SecretStream()
+	runs := worldevent.NewRuns(w.Events(), worldevent.RunsOptions{Levels: levels, Rand: eventRand, Progress: runStore, Log: log})
+	for _, z := range zones {
+		z.WorldEvents = runs
+	}
+	scheduler := worldevent.New(events, worldevent.Options{Runner: runs, Store: runStore, Location: cfg.Location,
+		Rand: eventRand, Log: log})
+	runs.SetEvents(scheduler.Defs())
 	if err := scheduler.Load(ctx, time.Now()); err != nil {
 		return fmt.Errorf("world events: %w", err)
 	}
@@ -861,7 +878,11 @@ func (c storeCommitter) CommitWrites(saves []zone.CommitSave, storages []zone.St
 		writes = append(writes, store.StorageWrite{Guild: s.Guild, Key: s.Key, Base: s.Base, Cur: s.Cur,
 			CurrencyBase: s.CurrencyBase, Currencies: s.Currencies, HasCurrencies: s.HasCurrencies})
 	}
-	c.store.CommitAll(entries, writes, store.Writes{Mails: w.Mails, Stock: w.Stock, Stores: w.Stores}, logs)
+	units := make([]store.EventUnit, 0, len(w.Events))
+	for _, u := range w.Events {
+		units = append(units, store.EventUnit{Event: u.Event, Scheduled: u.Scheduled, Unit: u.Unit})
+	}
+	c.store.CommitAll(entries, writes, store.Writes{Mails: w.Mails, Stock: w.Stock, Stores: w.Stores, Events: units}, logs)
 }
 
 func (d dbCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {

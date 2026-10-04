@@ -150,6 +150,10 @@ func (z *Zone) click(p *Player, netID uint32) {
 		return
 	}
 	n := e.npc
+	if n.hint != 0 {
+		z.hintTalk(p, e)
+		return
+	}
 	if n.script != nil && n.script.Clickable() {
 		z.closeShop(p, false)
 		p.entity.target, p.entity.pickItem = nil, nil

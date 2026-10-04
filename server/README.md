@@ -733,7 +733,7 @@ To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing. T
 mods:
   dir: mods/examples
   approve:
-    example.halloween: [player.give_items, world.announce, events.schedule, rules.override]
+    example.halloween: [player.give_items, player.give_zeny, world.announce, events.schedule, events.control, rules.override]
 ```
 
 ```text
@@ -777,6 +777,31 @@ mods:
 - `trigger` takes the forms of `data/events.yml`. `duration_minutes` is 1 to 10,080.
 - An event that does not exist is an error, so a typo does not pass.
 - For a quick test, set the trigger a minute or two ahead.
+
+### Typed events and core's samples
+
+Typed events (mods/README.md, "Typed events", [decision 0025](../docs/decisions/0025-automatic-events.md)) place a boss, an invasion or treasure chests. Core ships one of each, off by default. `enabled: true` turns one on, and may come with a new trigger or duration:
+
+```yaml
+mods:
+  events:
+    core:Field_Boss:         # a Prontera field boss on a field of levels 1 to 30
+      enabled: true
+      trigger: { daily: "21:00" }
+    core:Prontera_Invasion:  # three waves on Prontera
+      enabled: true
+    core:Treasure_Hunt:      # five chests on fields of levels 1 to 30, a guide in Prontera
+      enabled: true
+      duration_minutes: 90
+```
+
+- A sample's maps must run: `core:Prontera_Invasion` needs `prontera`, and the others need fields of levels 1 to 30, such as `--maps prontera,prt_fild05,prt_fild06,prt_fild07,prt_fild08`. A level band with no field that runs logs an error when the run starts.
+- A field's level is the middle level of its spawns, without bosses, from the mode's recorded spawns. Only maps whose ID has `_fild` are fields.
+- The zones place the monsters and NPCs. One event manager per process reads what happens to them once a second: deaths of bosses and chests, invasion waves, and the scripts' `run:finish`.
+- Rewards go through transfers with the action `event`. Each reward writes a row of `world_event_progress` (migration 00021) in the same transaction as the characters it changed, so a reward is never given twice.
+- A typed run that a stop cut short goes on after the restart while its window is open, from its rows: a boss that did not die comes back, opened chests stay opened, and an invasion starts again at the wave it was in. A run that ended before its time has an `end` row and does not.
+- A script with `events.control` starts and stops events with `wa.world_events`, and so does a quick test from a mod's NPC.
+- Each start and end goes to every player as `WorldEventNotice`, and a player who logs in during a run gets `WorldEventList`. The client shows a banner and a list of the runs.
 
 ## Load tests and metrics
 

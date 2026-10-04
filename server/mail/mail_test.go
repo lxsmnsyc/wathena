@@ -93,3 +93,87 @@ func TestExpiry(t *testing.T) {
 		t.Errorf("empty mail with mail_return_empty: deleted %v, alice has %d", empty2.Deleted(), len(r.box(alice).Mails()))
 	}
 }
+
+// fakeLoader is a database of mail rows by recipient.
+type fakeLoader struct{ rows map[int64][]Row }
+
+func (f *fakeLoader) LoadMailbox(_ context.Context, character int64) ([]Row, error) {
+	return f.rows[character], nil
+}
+
+func (f *fakeLoader) FindRecipient(context.Context, string, int64) (Recipient, bool, error) {
+	return Recipient{}, false, nil
+}
+
+// TestDeletedMailStaysDeleted: a mail sent to a mailbox that was not
+// loaded waits in recent. Its recipient logs in, takes it and deletes
+// it, and logs in again. The mail must not come back from recent with
+// its items, which the recipient already took, and the audit must not
+// count recent's copy of it. The phase 5 exit check found this.
+func TestDeletedMailStaysDeleted(t *testing.T) {
+	db := &fakeLoader{rows: map[int64][]Row{}}
+	r := NewRegistry(db, testItems())
+	alice, bob := KeyOf(1, "alice"), KeyOf(2, "bob")
+	sent := mailTo(t, r, alice, bob, time.Now(), 3, 100)
+	if a := r.Audit(); len(a) != 1 || a[0].Zeny != 100 {
+		t.Fatalf("audit of the mail in recent: %+v", a)
+	}
+	// Its commit is written: the row holds the mail.
+	sent.Lock()
+	w, _ := sent.Snapshot()
+	sent.Unlock()
+	db.rows[2] = []Row{*w.Row}
+	box, err := r.Acquire(context.Background(), bob, "Bob", 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Bob takes the zeny and the items from the loaded copy, and deletes
+	// the mail. Its commit removes the row.
+	m := box.Find(sent.ID)
+	m.Lock()
+	m.Zeny = 0
+	m.Box.Slots = nil
+	m.Delete()
+	m.Unlock()
+	box.Remove(sent.ID)
+	delete(db.rows, 2)
+	if a := r.Audit(); len(a) != 0 {
+		t.Errorf("audit after the take and the delete: %+v", a)
+	}
+	r.Release(box)
+	box, err = r.Acquire(context.Background(), bob, "Bob", 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := box.Mails(); len(got) != 0 {
+		t.Errorf("the deleted mail came back with %d zeny", got[0].Zeny)
+	}
+}
+
+// TestMailSentWhileLoading: a mail sent while its recipient's mailbox
+// loads, after the load read the rows, still reaches the mailbox.
+func TestMailSentWhileLoading(t *testing.T) {
+	r := NewRegistry(nil, testItems())
+	alice, bob := KeyOf(1, "alice"), KeyOf(2, "bob")
+	var sent *Mail
+	r.Loader = loaderFunc(func() { sent = mailTo(t, r, alice, bob, time.Now(), 1, 5) })
+	box, err := r.Acquire(context.Background(), bob, "Bob", 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := box.Mails(); len(got) != 1 || got[0] != sent {
+		t.Errorf("mailbox %v, want the mail sent while it loaded", got)
+	}
+}
+
+// loaderFunc runs a function while it loads, and finds no rows.
+type loaderFunc func()
+
+func (f loaderFunc) LoadMailbox(context.Context, int64) ([]Row, error) {
+	f()
+	return nil, nil
+}
+
+func (f loaderFunc) FindRecipient(context.Context, string, int64) (Recipient, bool, error) {
+	return Recipient{}, false, nil
+}

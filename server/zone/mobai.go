@@ -377,6 +377,8 @@ func (z *Zone) mobThinkLazy(e *entity) {
 		return
 	}
 	z.mobUnlockTarget(e)
+	// An invader far from players walks toward them.
+	z.invaderMarch(e)
 }
 
 // mobThink is mob_ai_sub_hard. It reports whether the AI did something.
@@ -508,6 +510,10 @@ func (z *Zone) mobThink(e *entity) bool {
 	}
 	if tbl == nil {
 		z.mobUnlockTarget(e)
+		// An invader walks toward the players.
+		if m.master == nil && z.invaderMarch(e) {
+			return true
+		}
 		// Random walk.
 		if m.master == nil && z.now >= m.nextWalk && !z.mobRandomWalk(e) {
 			if m.nextWalk < e.canMove {

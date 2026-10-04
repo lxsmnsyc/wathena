@@ -1,11 +1,12 @@
 # The phase 3 exit check (strategy section 15): a mod that adds an NPC,
 # an item, a monster, a hook and a scheduled boss event without changes
-# to the server. mods/README.md explains each part.
+# to the server. Phase 5 added typed events: a boss, an invasion and a
+# treasure hunt (review decision 31). mods/README.md explains each part.
 id: example.halloween
 name: Halloween
 version: 0.1.0
 api: 1.0
-description: Pumpkin Porings on the Prontera fields, a witch with a hat, a night that doubles their drops, and the Pumpkin King every evening.
+description: Pumpkin Porings on the Prontera fields, a witch with a hat, a night that doubles their drops, the Pumpkin King every evening, the Headless Rider, a raid on Prontera and a candy hunt.
 authors:
   - name: wAthena contributors
 license: GPL-3.0-or-later
@@ -17,8 +18,10 @@ supports:
     base: [renewal, pre_renewal]
 permissions:
   - player.give_items
+  - player.give_zeny
   - world.announce
   - events.schedule
+  - events.control
   - rules.override
 scripts:
   - scripts/main.lua

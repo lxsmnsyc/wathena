@@ -25,6 +25,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.text`](#watext) | Text for players, from the mod's locales/en.yml. Call the module with a key: text "greeter.hello". |
 | [`wa.maps`](#wamaps) | Maps. |
 | [`wa.world`](#waworld) | The world. |
+| [`wa.world_events`](#waworld_events) | Starting and stopping world events of data/events.yml (review decision 31). A request takes effect within a second, on the scheduler's next check. |
 | [`wa.channels`](#wachannels) | Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world. |
 | [`wa.parties`](#waparties) | Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do. |
 | [`wa.guilds`](#waguilds) | Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later. |
@@ -65,6 +66,10 @@ The context's kind.
 #### `context:get_mod() → string`
 
 The ID of the context's mod.
+
+#### `context:get_event() → wa.EventRun?`
+
+The run of a typed world event, in the event context of its script (review decision 31), or nil in other contexts.
 
 ### wa.events
 
@@ -390,6 +395,34 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string` | A shop of data/npcs.yml: a full record name, or a plain name, which is the calling mod's record, then core's. |
+
+### wa.world_events
+
+```lua
+local world_events = require "wa.world_events"
+```
+
+Starting and stopping world events of data/events.yml (review decision 31). A request takes effect within a second, on the scheduler's next check.
+
+#### `world_events.start(name) → boolean`
+
+Starts a run of the event now, for its duration, as if its trigger fired. Returns false when there is no such event, or it runs already. An event the config turned off does not exist.
+
+Permission: `events.control`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | An event's full name, such as core:Field_Boss, or a plain name, which is the calling mod's event. |
+
+#### `world_events.stop(name) → boolean`
+
+Ends the event's run now, with the result "stopped". Its monsters and NPCs go. Returns false when there is no such event, or it does not run.
+
+Permission: `events.control`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | An event's full name, or a plain name, which is the calling mod's event. |
 
 ### wa.channels
 
@@ -1881,6 +1914,30 @@ Shows a progress bar and waits until it is full. A walk cancels it and ends the 
 |---|---|---|
 | `seconds` | `integer` | Up to 600. |
 
+### wa.EventRun
+
+A run of a typed world event, from context:get_event() (review decision 31). Its monsters and participants are those on the context's map.
+
+#### `eventRun:get_monsters() → wa.Monster[]`
+
+The run's monsters that live on the context's map: the boss, the invasion's monsters, or the treasure chests, in the order they spawned.
+
+Permission: `game.read`.
+
+#### `eventRun:get_participants() → wa.Player[]`
+
+The players on the context's map who did at least the rewards' min_share of the damage to the run's monsters there, 1% by default, sorted by name.
+
+Permission: `game.read`.
+
+#### `eventRun:finish(result)`
+
+Ends the run before its time, within a second. An invasion that finishes "won" gives its rewards, as when its last wave dies. world_event_end carries the result.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `result` | `"won"\|"lost"` |  |
+
 ### wa.Shop
 
 A shop of data/npcs.yml, from world.get_shop (review decision 30). Its changes hold for the whole world until the server stops: the shop's file sets it again at start. A stock the methods set is saved.
@@ -2960,6 +3017,16 @@ Options of player:count_item and player:take_item.
 |---|---|---|
 | `from` | `string` | "storage", "cart" or an extra storage's name of data/storages.yml. |
 
+### wa.WorldEvent
+
+The object of world_event_start and world_event_end (review decision 31).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` | The event's full name, such as core:Field_Boss. |
+| `type` | `"boss"\|"invasion"\|"treasure_hunt"\|"script"` | The event's type: "script" for an event without one. |
+| `result` | `"won"\|"lost"\|"stopped"\|nil` | How the run ended, at world_event_end. A boss is won when it dies, an invasion when its last wave dies, and a treasure hunt when every chest is opened. A run whose time ran out is lost. nil at world_event_start, and for a script event that ran its time. |
+
 ### wa.Trade
 
 The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.
@@ -3506,6 +3573,8 @@ Changes the value.
 | `vend` | mod, npc, event | `sale: wa.StoreSale` | A player on the context's map bought from a vending shop. |
 | `buying_store_sale` | mod, npc, event | `sale: wa.StoreSale` | A player on the context's map sold items to a buying store. |
 | `mail` | mod, npc, event | `mail: wa.Mail` | A mail went out from the context's map: a player's, or a script's player:send_mail. |
+| `world_event_start` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event started, on any map. Every zone's handlers run. |
+| `world_event_end` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event ended, on any map, with its result. Every zone's handlers run. |
 
 ## Named types
 
@@ -3519,7 +3588,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`
 
 ### wa.BonusName
 

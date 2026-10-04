@@ -59,22 +59,58 @@ type Def struct {
 	Map string
 	// Where is the file and line of the record, for messages.
 	Where string
+	// Type is the event's type: TypeScript (""), TypeBoss, TypeInvasion
+	// or TypeTreasure. The type's own fields are in Boss, Invasion or
+	// Treasure, and Rewards are what a typed event gives.
+	Type     string
+	Boss     *Boss
+	Invasion *Invasion
+	Treasure *Treasure
+	Rewards  *Rewards
 }
+
+// typeOfField is the type that has a field, or "".
+func typeOfField(k string) string {
+	for _, t := range []string{TypeBoss, TypeInvasion, TypeTreasure} {
+		if slices.Contains(typedFields[t], k) {
+			return t
+		}
+	}
+	return ""
+}
+
+// Typed reports whether the event is a typed event.
+func (d Def) Typed() bool { return d.Type != TypeScript }
 
 // MaxDuration is the longest run, in minutes: a week.
 const MaxDuration = 7 * 24 * 60
-
-// fields are the fields of an event record.
-var fields = []string{"trigger", "duration_minutes", "script", "map"}
 
 // Parse reads an event record of data/events.yml.
 func Parse(r *mod.Record) (Def, error) {
 	d := Def{Name: r.Name, Mod: r.Mod, Where: r.Where}
 	var errs []string
-	for k := range r.Fields {
-		if !slices.Contains(fields, k) {
-			errs = append(errs, fmt.Sprintf("%q is not a field; events have %s", k, strings.Join(fields, ", ")))
+	if v, ok := r.Fields["type"]; ok {
+		t, _ := v.(string)
+		if _, known := typedFields[t]; !known {
+			errs = append(errs, "type must be boss, invasion or treasure_hunt; an event without type is a script event")
+		} else {
+			d.Type = t
 		}
+	}
+	fields := knownFields(d.Type)
+	for k := range r.Fields {
+		if slices.Contains(fields, k) {
+			continue
+		}
+		if d.Type == TypeScript {
+			if typ := typeOfField(k); typ != "" {
+				errs = append(errs, fmt.Sprintf("%q is a field of typed events; set type, such as type: %s", k, typ))
+				continue
+			}
+			errs = append(errs, fmt.Sprintf("%q is not a field; events have %s", k, strings.Join(fields, ", ")))
+			continue
+		}
+		errs = append(errs, fmt.Sprintf("%q is not a field; events of type %s have %s", k, d.Type, strings.Join(fields, ", ")))
 	}
 	t, err := ParseTrigger(r.Fields["trigger"])
 	if err != nil {
@@ -87,16 +123,23 @@ func Parse(r *mod.Record) (Def, error) {
 	}
 	d.Duration = time.Duration(n) * time.Minute
 	if _, ok := r.Fields["script"]; !ok {
-		errs = append(errs, "script is required: the entry script that runs the event")
+		if !d.Typed() {
+			errs = append(errs, "script is required: the entry script that runs the event, or a type such as type: boss")
+		}
 	} else if d.Script, err = mod.ScriptOf(r); err != nil {
 		errs = append(errs, "script: "+err.Error())
+	}
+	if d.Typed() {
+		errs = append(errs, parseTyped(&d, r.Fields)...)
+	} else if _, ok := r.Fields["rewards"]; ok {
+		errs = append(errs, "rewards are given by typed events; set type, such as type: boss")
 	}
 	if v, ok := r.Fields["map"]; ok {
 		m, ok := v.(string)
 		if !ok || m == "" || strings.ContainsAny(m, " \\") {
 			errs = append(errs, "map must be a map name, such as prt_fild08")
 		} else {
-			d.Map = "map/" + strings.TrimPrefix(m, "map/")
+			d.Map = AssetOf(m)
 		}
 	}
 	if len(errs) > 0 {
@@ -227,16 +270,18 @@ func parseKind(kind string, arg any) (Trigger, error) {
 
 // Override is what the server owner changes about an event in the
 // config (mods.events): a new trigger, a new duration, or neither when
-// the event is disabled.
+// the event is disabled. Enabled turns on one of core's events, which
+// are off by default.
 type Override struct {
 	Trigger         any  `yaml:"trigger"`
 	DurationMinutes int  `yaml:"duration_minutes"`
 	Disabled        bool `yaml:"disabled"`
+	Enabled         bool `yaml:"enabled"`
 }
 
 // Apply applies the owner's overrides to the events, by full name. A
-// disabled event is left out. An override of an event that does not
-// exist is an error.
+// disabled event is left out, and so is a core event that is not
+// enabled. An override of an event that does not exist is an error.
 func Apply(defs []Def, overrides map[string]Override) ([]Def, error) {
 	var errs []error
 	byName := map[string]bool{}
@@ -244,11 +289,17 @@ func Apply(defs []Def, overrides map[string]Override) ([]Def, error) {
 	for _, d := range defs {
 		byName[d.Name] = true
 		o, ok := overrides[d.Name]
-		if !ok {
-			out = append(out, d)
+		if o.Disabled && o.Enabled {
+			errs = append(errs, fmt.Errorf("mods.events.%s: enabled and disabled cannot both be set", d.Name))
 			continue
 		}
-		if o.Disabled {
+		if d.Mod == mod.Core && !o.Enabled || o.Disabled {
+			// Core's events are samples, off until the owner turns them
+			// on.
+			continue
+		}
+		if !ok {
+			out = append(out, d)
 			continue
 		}
 		if o.Trigger != nil {

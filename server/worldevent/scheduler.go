@@ -26,6 +26,11 @@ import (
 //   - A condition runs once a minute, in the zone of the event's map.
 //     The event starts once the condition has held for its lasting
 //     minutes. After the run ends, it must hold that long again.
+//   - A typed event's run that a stop cut short goes on after the
+//     restart while its window is still open, from its progress, unless
+//     it ended before (review decision 31). A script event's does not.
+//   - With a Controller, world_events.start and world_events.stop start
+//     and stop runs, and typed runs may finish before their time.
 
 // Run is one run of an event.
 type Run struct {
@@ -35,6 +40,9 @@ type Run struct {
 	// Scheduled is the time the trigger gave. Started is when it
 	// started, and Ends when it ends.
 	Scheduled, Started, Ends time.Time
+	// Resume is set for a typed run that a restart cut short, which goes
+	// on from its progress.
+	Resume bool
 }
 
 // Runner runs events in the zones.
@@ -46,6 +54,19 @@ type Runner interface {
 	// Condition runs a condition trigger's function in the zone of the
 	// event's map.
 	Condition(ctx context.Context, d Def) (bool, error)
+}
+
+// Controller is a Runner that also starts and stops runs on request and
+// finishes typed runs before their time (Runs).
+type Controller interface {
+	Runner
+	// Requests returns the start and stop requests since the last call.
+	Requests() []Request
+	// Stop ends a run before its time.
+	Stop(ctx context.Context, d Def, r Run) error
+	// Tick moves the typed runs on at now, and returns the events whose
+	// runs finished.
+	Tick(ctx context.Context, now time.Time) []string
 }
 
 // Store keeps the last run of each event, so runs survive a restart.
@@ -91,8 +112,9 @@ type state struct {
 	// next is the next time of a clock trigger, or the start of the next
 	// hour for a random trigger.
 	next time.Time
-	// late is a run whose window was open at the start.
-	late *Run
+	// late is a run whose window was open at the start. resume is a
+	// typed run that the last stop cut short.
+	late, resume *Run
 	// held is when a condition started to hold, and polled the minute
 	// it last ran.
 	held, polled time.Time
@@ -131,13 +153,26 @@ func (s *Scheduler) Load(ctx context.Context, now time.Time) error {
 	if err != nil {
 		return err
 	}
-	last := map[string]time.Time{}
+	last := map[string]Run{}
 	for _, r := range runs {
-		last[r.Event] = r.Scheduled
+		last[r.Event] = r
 	}
+	progress, _ := s.opts.Store.(ProgressStore)
 	for _, d := range s.defs {
-		st := &state{last: last[d.Name]}
+		lr, ran := last[d.Name]
+		st := &state{last: lr.Scheduled}
 		s.state[d.Name] = st
+		if ran && d.Typed() && progress != nil && now.Before(lr.Ends) && !lr.Started.IsZero() {
+			units, err := progress.EventProgress(ctx, d.Name, lr.Scheduled)
+			if err != nil {
+				return err
+			}
+			if !slices.Contains(units, UnitEnd) {
+				r := lr
+				r.Resume = true
+				st.resume = &r
+			}
+		}
 		switch d.Trigger.Kind {
 		case Clock:
 			// The latest time at or before now whose window is still
@@ -150,6 +185,11 @@ func (s *Scheduler) Load(ctx context.Context, now time.Time) error {
 				st.late = &Run{Event: d.Name, Scheduled: latest, Ends: latest.Add(d.Duration)}
 			}
 			st.next = schedule.Next(d.Trigger.Spec, now, s.opts.Location)
+			if st.late != nil {
+				// A newer run whose window is open wins over the run
+				// the stop cut short: an event has one run at a time.
+				st.resume = nil
+			}
 		case Random:
 			hour := now.Truncate(time.Hour)
 			st.next = hour.Add(time.Hour)
@@ -188,6 +228,10 @@ func (s *Scheduler) Active() []Run {
 // now.
 func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 	minute := schedule.MinuteStart(now)
+	ctrl, _ := s.opts.Runner.(Controller)
+	if ctrl != nil {
+		s.requests(ctx, ctrl, now)
+	}
 	for _, d := range s.defs {
 		st := s.state[d.Name]
 		if st == nil {
@@ -195,6 +239,13 @@ func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 		}
 		if st.active != nil && !now.Before(st.active.Ends) {
 			s.end(ctx, d, st)
+		}
+		if st.resume != nil {
+			r := st.resume
+			st.resume = nil
+			if st.active == nil && now.Before(r.Ends) {
+				s.resume(ctx, d, st, now, *r)
+			}
 		}
 		switch d.Trigger.Kind {
 		case Clock:
@@ -258,6 +309,58 @@ func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 			}
 		}
 	}
+	if ctrl != nil {
+		s.finished(ctrl.Tick(ctx, now))
+	}
+}
+
+// requests starts and stops the runs that world_events asked for.
+func (s *Scheduler) requests(ctx context.Context, ctrl Controller, now time.Time) {
+	for _, q := range ctrl.Requests() {
+		i := slices.IndexFunc(s.defs, func(d Def) bool { return d.Name == q.Event })
+		if i < 0 {
+			continue
+		}
+		d, st := s.defs[i], s.state[q.Event]
+		if st == nil {
+			continue
+		}
+		switch {
+		case q.Start && st.active == nil:
+			at := now.Truncate(time.Second)
+			s.start(ctx, d, st, now, at, at.Add(d.Duration))
+		case !q.Start && st.active != nil:
+			r := *st.active
+			st.active = nil
+			if err := ctrl.Stop(ctx, d, r); err != nil {
+				s.opts.Log.Error("world event failed to stop", "event", d.Name, "err", err)
+			}
+			s.opts.Log.Info("world event stopped", "event", d.Name)
+		}
+	}
+}
+
+// finished clears the runs that finished before their time.
+func (s *Scheduler) finished(names []string) {
+	for _, n := range names {
+		if st := s.state[n]; st != nil && st.active != nil {
+			st.active = nil
+			s.opts.Log.Info("world event finished before its time", "event", n)
+		}
+	}
+}
+
+// resume starts again a typed run that a restart cut short. It was
+// recorded before.
+func (s *Scheduler) resume(ctx context.Context, d Def, st *state, now time.Time, r Run) {
+	s.nextID++
+	r.ID, r.Started = s.nextID, now
+	if err := s.opts.Runner.Start(ctx, d, r); err != nil {
+		s.opts.Log.Warn("world event not resumed", "event", d.Name, "err", err)
+		return
+	}
+	st.active = &r
+	s.opts.Log.Info("world event resumed after a restart", "event", d.Name, "scheduled", r.Scheduled, "ends", r.Ends)
 }
 
 // start records a run, then starts it. A run that cannot be recorded
@@ -302,11 +405,37 @@ func (s *Scheduler) Run(ctx context.Context) {
 	}
 }
 
-// MemoryStore keeps runs in memory, for a server without a database and
-// for tests.
+// MemoryStore keeps runs and their progress in memory, for a server
+// without a database and for tests.
 type MemoryStore struct {
-	mu   sync.Mutex
-	runs map[string]Run
+	mu       sync.Mutex
+	runs     map[string]Run
+	progress map[string][]string
+}
+
+func progressKey(event string, scheduled time.Time) string {
+	return event + " " + scheduled.UTC().Format(time.RFC3339Nano)
+}
+
+// EventProgress returns a run's units of progress.
+func (m *MemoryStore) EventProgress(_ context.Context, event string, scheduled time.Time) ([]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return slices.Clone(m.progress[progressKey(event, scheduled)]), nil
+}
+
+// RecordEventProgress records a unit of a run's progress.
+func (m *MemoryStore) RecordEventProgress(_ context.Context, event string, scheduled time.Time, unit string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.progress == nil {
+		m.progress = map[string][]string{}
+	}
+	k := progressKey(event, scheduled)
+	if !slices.Contains(m.progress[k], unit) {
+		m.progress[k] = append(m.progress[k], unit)
+	}
+	return nil
 }
 
 // EventRuns returns the last run of each event.

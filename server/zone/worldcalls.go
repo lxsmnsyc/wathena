@@ -204,6 +204,9 @@ type EventRun struct {
 	// Name is the event's full name, and Entry its script, as
 	// <mod>:<path>.
 	Name, Entry string
+	// Typed is set for a typed event's script, whose context:get_event()
+	// returns the run.
+	Typed bool
 }
 
 // StartEvent starts a run of a world event: its script's setup function
@@ -260,7 +263,11 @@ func (z *Zone) startEvent(run EventRun) error {
 	if z.eventRuns[run.ID] != nil {
 		return fmt.Errorf("run %d of %s already started", run.ID, run.Name)
 	}
-	c, err := r.StartEvent(run.Name, run.Entry)
+	var typed int64
+	if run.Typed {
+		typed = run.ID
+	}
+	c, err := r.StartEventRun(run.Name, run.Entry, typed)
 	if err != nil {
 		return err
 	}

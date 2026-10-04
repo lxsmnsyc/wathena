@@ -733,6 +733,32 @@ end
 
 local api = {}
 
+-- The run of a typed world event (proposal 0002, review decision 31),
+-- from context:get_event(). Its monsters and participants are those on
+-- the context's map.
+local event_run_ids
+local new_event_run
+new_event_run, event_run_ids = handle_type("event run", {
+	get_monsters = function(self)
+		local out = {}
+		for i, id in ipairs(call(H.event_run_call, "get_monsters", event_run_ids[self])) do
+			out[i] = new_monster(id)
+		end
+		return out
+	end,
+	get_participants = function(self)
+		local out = {}
+		for i, id in ipairs(call(H.event_run_call, "get_participants", event_run_ids[self])) do
+			out[i] = new_player(id)
+		end
+		return out
+	end,
+	finish = function(self, result)
+		check(result == "won" or result == "lost", "run:finish: the result is \"won\" or \"lost\"")
+		call(H.event_run_call, "finish", event_run_ids[self], result)
+	end,
+}, nil, true)
+
 api["wa.context"] = readonly("wa.context", {
 	get_instance = function()
 		local fields = call(H.context_instance)
@@ -757,6 +783,25 @@ api["wa.context"] = readonly("wa.context", {
 	end,
 	get_mod = function()
 		return (call(H.context_mod))
+	end,
+	get_event = function()
+		local id = call(H.context_event)
+		if id == nil then
+			return nil
+		end
+		return new_event_run(id)
+	end,
+})
+
+-- Starting and stopping world events (review decision 31).
+api["wa.world_events"] = readonly("wa.world_events", {
+	start = function(name)
+		check(type(name) == "string", "world_events.start: want an event's name of data/events.yml")
+		return (call(H.world_events_request, name, true))
+	end,
+	stop = function(name)
+		check(type(name) == "string", "world_events.stop: want an event's name of data/events.yml")
+		return (call(H.world_events_request, name, false))
 	end,
 })
 
@@ -1984,6 +2029,9 @@ function R.invoke(fn, ...)
 			value = readonly("chat message", {
 				player = new_player(value.player), channel = value.channel, text = value.text, to = value.to, map = value.map,
 			})
+		elseif kind == "world_event" then
+			-- world_event_start and world_event_end: { name, type, result }.
+			value = readonly("world event", value)
 		elseif kind == "trade" then
 			value = trade_object(value)
 		elseif kind == "sale" then

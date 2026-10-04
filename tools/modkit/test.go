@@ -239,20 +239,35 @@ func (w *testWorld) bind(name string) error {
 
 // startEvents starts the world event scheduler for the events of the
 // world's map, and of no map, on the world's clock. It runs after
-// every tick.
+// every tick. A typed event runs when the world's map is one of its
+// maps: a boss's or treasure hunt's maps or level band, or an
+// invasion's town.
 func (w *testWorld) startEvents(asset string) error {
+	levels := w.env.fieldLevels(asset)
 	var defs []worldevent.Def
 	for _, d := range w.l.Events {
-		if d.Map == "" || d.Map == asset {
-			defs = append(defs, d)
+		if d.Map != "" && d.Map != asset {
+			continue
 		}
+		switch {
+		case d.Boss != nil && !slices.Contains(worldevent.MapsOf(d.Boss.Band, d.Boss.Maps, levels), asset),
+			d.Treasure != nil && !slices.Contains(worldevent.MapsOf(d.Treasure.Band, d.Treasure.Maps, levels), asset),
+			d.Invasion != nil && d.Invasion.Town != asset:
+			continue
+		}
+		defs = append(defs, d)
 	}
 	if len(defs) == 0 {
 		return nil
 	}
 	seed := sha256.Sum256(append(Seed[:], "events"...))
-	w.events = worldevent.New(defs, worldevent.Options{Runner: headlessRunner{w.h}, Location: w.h.Location(),
-		Rand: rng.FromKey(seed).Stream(), Log: w.h.Zone().Mods.Log})
+	rand := rng.FromKey(seed).Stream()
+	store := &worldevent.MemoryStore{}
+	runs := worldevent.NewRuns(headlessField{w.h}, worldevent.RunsOptions{Levels: levels, Rand: rand, Progress: store, Log: w.h.Zone().Mods.Log})
+	w.h.Zone().WorldEvents = runs
+	w.events = worldevent.New(defs, worldevent.Options{Runner: runs, Store: store, Location: w.h.Location(),
+		Rand: rand, Log: w.h.Zone().Mods.Log})
+	runs.SetEvents(w.events.Defs())
 	ctx := context.Background()
 	if err := w.events.Load(ctx, w.h.Now()); err != nil {
 		return err
@@ -262,21 +277,74 @@ func (w *testWorld) startEvents(asset string) error {
 	return nil
 }
 
-// headlessRunner runs world events in a test world's zone.
-type headlessRunner struct{ h *zone.Headless }
+// headlessField is the worldevent.Field of a test world: its one map.
+type headlessField struct{ h *zone.Headless }
 
-func (r headlessRunner) Start(_ context.Context, d worldevent.Def, run worldevent.Run) error {
-	return r.h.StartEvent(zone.EventRun{ID: run.ID, Name: d.Name, Entry: d.Script})
+func (f headlessField) Has(mapName string) bool {
+	m, ok := f.h.Bound()
+	return ok && m == mapName
 }
 
-func (r headlessRunner) End(_ context.Context, _ worldevent.Def, run worldevent.Run) error {
-	r.h.EndEvent(run.ID)
+func (f headlessField) StartMap() string {
+	m, _ := f.h.Bound()
+	return m
+}
+
+func (f headlessField) check(mapName string) error {
+	if !f.Has(mapName) {
+		return fmt.Errorf("a test world runs one map, and %s is not it", worldevent.MapID(mapName))
+	}
 	return nil
 }
 
-func (r headlessRunner) Condition(_ context.Context, d worldevent.Def) (bool, error) {
-	return r.h.EventCondition(d.Mod, d.Trigger.Module, d.Trigger.Function)
+func (f headlessField) StartScript(_ context.Context, mapName string, s worldevent.ScriptRun) error {
+	if err := f.check(mapName); err != nil {
+		return err
+	}
+	return f.h.StartEvent(zone.EventRun{ID: s.ID, Name: s.Event, Entry: s.Entry, Typed: s.Type != worldevent.TypeScript})
 }
+
+func (f headlessField) EndScript(_ context.Context, _ string, run int64) error {
+	f.h.EndEvent(run)
+	return nil
+}
+
+func (f headlessField) Condition(_ context.Context, _ string, mod, module, fn string) (bool, error) {
+	return f.h.EventCondition(mod, module, fn)
+}
+
+func (f headlessField) Spawn(_ context.Context, s worldevent.Spawn) ([]worldevent.Placed, error) {
+	return f.h.SpawnEvent(s)
+}
+
+func (f headlessField) Alive(_ context.Context, _ string, run int64) (int, error) {
+	return f.h.EventAlive(run), nil
+}
+
+func (f headlessField) Hints(_ context.Context, mapName string, run int64, hints []worldevent.Hint) error {
+	if err := f.check(mapName); err != nil {
+		return err
+	}
+	f.h.EventHints(run, hints)
+	return nil
+}
+
+func (f headlessField) Reward(_ context.Context, r worldevent.RewardRun) error {
+	if err := f.check(r.Map); err != nil {
+		return err
+	}
+	f.h.EventReward(r)
+	return nil
+}
+
+func (f headlessField) Clear(_ context.Context, _ string, run int64) error {
+	f.h.ClearEvent(run)
+	return nil
+}
+
+func (f headlessField) Announce(text string) { f.h.Zone().Announce(text, 0) }
+
+func (f headlessField) Notice(n worldevent.Notice) { f.h.Zone().WorldEventNotice(n) }
 
 // timeLayout is how world:set_time and world:get_time write times.
 const timeLayout = "2006-01-02 15:04"

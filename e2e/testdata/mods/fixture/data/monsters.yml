@@ -13,3 +13,40 @@
   drops:
     - {item: Jellopy, rate: 10000}
     - {item: "e2e.fixture:Charm", rate: 10000}
+
+# The boss of the Boss event: it stands still and never attacks, so a
+# test kills it at its own pace. It starts from the Poring's stats.
+- name: e2e.fixture:BOSS
+  sprite: PORING
+  display_name: Boss
+  level: 50
+  hp: 60
+  base_exp: 10
+  job_exp: 10
+  class: boss
+  ai: 6
+  drops:
+    - {item: Jellopy, rate: 10000}
+
+# The invaders of the Raid event. AI type 04 attacks players on sight;
+# they hit for 1.
+- name: e2e.fixture:RAIDER
+  sprite: PORING
+  display_name: Raider
+  level: 50
+  hp: 40
+  attack: 1
+  base_exp: 1
+  job_exp: 1
+  ai: 4
+
+# The chest of the Hunt event. Its drop is the loot.
+- name: e2e.fixture:CHEST
+  sprite: TREASURE_BOX1
+  display_name: Chest
+  level: 50
+  hp: 1
+  class: event
+  ai: 6
+  drops:
+    - {item: Jellopy, rate: 10000}

@@ -494,8 +494,9 @@ func (m Monster) Template(id uint32) zone.Spawn {
 }
 
 // worldEvents reads the mods' world events, and checks that each
-// script exists.
-func worldEvents(set *mod.Set) ([]worldevent.Def, *mod.Overlay, error) {
+// script exists. Typed events (review decision 31) name monsters, items,
+// currencies and NPC sprites: names finds them.
+func worldEvents(set *mod.Set, names eventNames) ([]worldevent.Def, *mod.Overlay, error) {
 	o, err := set.Events()
 	if err != nil {
 		return nil, nil, err
@@ -508,12 +509,189 @@ func worldEvents(set *mod.Set) ([]worldevent.Def, *mod.Overlay, error) {
 			errs = append(errs, fmt.Errorf("%s: events %s: %w", r.Where, r.Name, err))
 			continue
 		}
-		owner, path, _ := strings.Cut(d.Script, ":")
-		if !set.HasFile(owner, path) {
-			errs = append(errs, fmt.Errorf("%s: events %s: script %s does not exist", r.Where, r.Name, d.Script))
-			continue
+		if d.Script != "" {
+			owner, path, _ := strings.Cut(d.Script, ":")
+			if !set.HasFile(owner, path) {
+				errs = append(errs, fmt.Errorf("%s: events %s: script %s does not exist", r.Where, r.Name, d.Script))
+				continue
+			}
+		}
+		if d.Typed() {
+			if err := names.resolve(set, r, &d); err != nil {
+				errs = append(errs, fmt.Errorf("%s: events %s: %w", r.Where, r.Name, err))
+				continue
+			}
 		}
 		out = append(out, d)
 	}
 	return out, o, errors.Join(errs...)
+}
+
+// eventNames finds the names that typed events use.
+type eventNames struct {
+	// monster finds a monster that can spawn, by its AegisName or a
+	// mod's full name.
+	monster func(name string) (uint32, bool)
+	// item finds an item by its AegisName or a mod's full name.
+	item func(name string) (uint32, bool)
+	// currency finds a currency for a mod, and reports the mod that owns
+	// it.
+	currency func(name, mod string) (owner string, ok bool)
+	// sprite finds an NPC sprite.
+	sprite func(name string) (uint32, bool)
+}
+
+// resolve fills a typed event's IDs, and checks the permissions its
+// rewards need: each kind of reward needs the permission a script needs
+// to give it.
+func (n eventNames) resolve(set *mod.Set, r *mod.Record, d *worldevent.Def) error {
+	var errs []string
+	owner := r.Mod
+	local := func(name string) []string {
+		if strings.Contains(name, ":") || owner == mod.Core {
+			return []string{name}
+		}
+		return []string{owner + ":" + name, name}
+	}
+	monster := func(name string) (uint32, bool) {
+		if n.monster == nil {
+			// Without monster data, as --mode none, no monster spawns:
+			// the names are left for a server that has the data.
+			return 0, true
+		}
+		for _, c := range local(name) {
+			if id, ok := n.monster(c); ok {
+				return id, true
+			}
+		}
+		return 0, false
+	}
+	switch {
+	case d.Boss != nil:
+		for _, m := range d.Boss.Monsters {
+			id, ok := monster(m)
+			if !ok {
+				errs = append(errs, fmt.Sprintf("monsters: %s is not a monster with stats", m))
+				continue
+			}
+			if id != 0 {
+				d.Boss.MonsterIDs = append(d.Boss.MonsterIDs, id)
+			}
+		}
+	case d.Invasion != nil:
+		for i := range d.Invasion.Waves {
+			w := &d.Invasion.Waves[i]
+			for j := range w.Monsters {
+				id, ok := monster(w.Monsters[j].Monster)
+				if !ok {
+					errs = append(errs, fmt.Sprintf("waves: wave %d: %s is not a monster with stats", i+1, w.Monsters[j].Monster))
+					continue
+				}
+				w.Monsters[j].ID = id
+			}
+		}
+	case d.Treasure != nil:
+		id, ok := monster(d.Treasure.Chest)
+		if !ok {
+			errs = append(errs, fmt.Sprintf("chest: %s is not a monster with stats", d.Treasure.Chest))
+		}
+		d.Treasure.ChestID = id
+		for i := range d.Treasure.Hints {
+			h := &d.Treasure.Hints[i]
+			id, ok := uint32(0), false
+			if n.sprite != nil {
+				id, ok = n.sprite(h.Sprite)
+			}
+			if !ok {
+				errs = append(errs, fmt.Sprintf("hint_npcs: NPC %d: sprite %q is not an NPC sprite name, such as 4_M_MANAGER", i+1, h.Sprite))
+			}
+			h.SpriteID = id
+		}
+	}
+	if rw := d.Rewards; rw != nil {
+		by := set.Mod(r.SetBy["rewards"])
+		need := func(perm, what string) {
+			if by != nil && !by.Grants.Has(perm) {
+				errs = append(errs, fmt.Sprintf("rewards: %s needs the permission %s to give %s", by.ID(), perm, what))
+			}
+		}
+		for i := range rw.Items {
+			found := false
+			for _, c := range local(rw.Items[i].Item) {
+				if id, ok := n.item(c); ok {
+					rw.Items[i].ID, found = id, true
+					break
+				}
+			}
+			if !found {
+				errs = append(errs, fmt.Sprintf("rewards: items: %s is not an item", rw.Items[i].Item))
+			}
+		}
+		if len(rw.Items) > 0 {
+			need("player.give_items", "items")
+		}
+		if rw.Zeny > 0 {
+			need("player.give_zeny", "zeny")
+		}
+		if rw.BaseExp > 0 || rw.JobExp > 0 {
+			need("player.give_exp", "exp")
+		}
+		for _, name := range slices.Sorted(maps.Keys(rw.Currency)) {
+			cOwner, ok := "", false
+			if n.currency != nil {
+				cOwner, ok = n.currency(name, owner)
+			}
+			if !ok {
+				errs = append(errs, fmt.Sprintf("rewards: currency: %s is not a currency of data/currencies.yml", name))
+				continue
+			}
+			if by != nil && cOwner != by.ID() {
+				need("currencies.modify", "another mod's currency "+name)
+			}
+		}
+	}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// IsField reports whether a map is a field: a map whose ID has "_fild",
+// as rAthena names its fields, such as prt_fild08. Typed events with a
+// level band use fields only.
+func IsField(id string) bool { return strings.Contains(id, "_fild") }
+
+// FieldLevels is the level of each field with spawns, by map ID: the
+// middle level of its monsters, weighted by their amounts, leaving out
+// bosses (review decision 31).
+func FieldLevels(spawns map[string][]zone.Spawn) map[string]int {
+	out := map[string]int{}
+	for id, list := range spawns {
+		if !IsField(id) {
+			continue
+		}
+		type lv struct{ level, amount int }
+		var levels []lv
+		total := 0
+		for _, s := range list {
+			if s.Reward == nil || s.Reward.Boss() != progression.BossNone || s.Amount <= 0 {
+				continue
+			}
+			levels = append(levels, lv{s.Reward.Level, s.Amount})
+			total += s.Amount
+		}
+		if total == 0 {
+			continue
+		}
+		slices.SortFunc(levels, func(a, b lv) int { return a.level - b.level })
+		seen := 0
+		for _, l := range levels {
+			seen += l.amount
+			if 2*seen >= total {
+				out[id] = l.level
+				break
+			}
+		}
+	}
+	return out
 }

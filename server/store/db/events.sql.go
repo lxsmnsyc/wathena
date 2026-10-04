@@ -11,6 +11,49 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const deleteOldEventProgress = `-- name: DeleteOldEventProgress :exec
+DELETE FROM world_event_progress WHERE event = $1 AND scheduled_at < $2
+`
+
+type DeleteOldEventProgressParams struct {
+	Event       string
+	ScheduledAt pgtype.Timestamptz
+}
+
+func (q *Queries) DeleteOldEventProgress(ctx context.Context, arg DeleteOldEventProgressParams) error {
+	_, err := q.db.Exec(ctx, deleteOldEventProgress, arg.Event, arg.ScheduledAt)
+	return err
+}
+
+const eventProgress = `-- name: EventProgress :many
+SELECT unit FROM world_event_progress WHERE event = $1 AND scheduled_at = $2 ORDER BY unit
+`
+
+type EventProgressParams struct {
+	Event       string
+	ScheduledAt pgtype.Timestamptz
+}
+
+func (q *Queries) EventProgress(ctx context.Context, arg EventProgressParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, eventProgress, arg.Event, arg.ScheduledAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var unit string
+		if err := rows.Scan(&unit); err != nil {
+			return nil, err
+		}
+		items = append(items, unit)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const eventRuns = `-- name: EventRuns :many
 
 SELECT event, scheduled_at, started_at, ends_at FROM world_event_runs
@@ -41,6 +84,22 @@ func (q *Queries) EventRuns(ctx context.Context) ([]WorldEventRun, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const recordEventProgress = `-- name: RecordEventProgress :exec
+INSERT INTO world_event_progress (event, scheduled_at, unit) VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING
+`
+
+type RecordEventProgressParams struct {
+	Event       string
+	ScheduledAt pgtype.Timestamptz
+	Unit        string
+}
+
+func (q *Queries) RecordEventProgress(ctx context.Context, arg RecordEventProgressParams) error {
+	_, err := q.db.Exec(ctx, recordEventProgress, arg.Event, arg.ScheduledAt, arg.Unit)
+	return err
 }
 
 const recordEventRun = `-- name: RecordEventRun :exec

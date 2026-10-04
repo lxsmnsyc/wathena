@@ -113,6 +113,7 @@ var Modules = []Module{
 				Doc: "The instance the context owns: the mod, the NPC, the equipped copy, the used item, the event run, the skill, a passive skill of one owner, or the monster of a monster's AI script."},
 			{Name: "get_kind", Returns: "wa.ContextKind", Doc: "The context's kind."},
 			{Name: "get_mod", Returns: "string", Doc: "The ID of the context's mod."},
+			{Name: "get_event", Returns: "wa.EventRun?", Doc: "The run of a typed world event, in the event context of its script (review decision 31), or nil in other contexts."},
 		},
 	},
 	{
@@ -223,6 +224,16 @@ var Modules = []Module{
 			{Name: "announce", Params: []Param{{"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of the world, as announce.", Permission: "world.announce"},
 			{Name: "get_shop", Params: []Param{{"name", "string", "A shop of data/npcs.yml: a full record name, or a plain name, which is the calling mod's record, then core's."}}, Returns: "wa.Shop?",
 				Doc: "A shop's handle, or nil when there is none. world:get_shop(name), as review decision 30 writes it, works too.", Permission: "game.read"},
+		},
+	},
+	{
+		Name: "wa.world_events", Local: "world_events",
+		Doc: "Starting and stopping world events of data/events.yml (review decision 31). A request takes effect within a second, on the scheduler's next check.",
+		Funcs: []Func{
+			{Name: "start", Params: []Param{{"name", "string", "An event's full name, such as core:Field_Boss, or a plain name, which is the calling mod's event."}}, Returns: "boolean",
+				Doc: "Starts a run of the event now, for its duration, as if its trigger fired. Returns false when there is no such event, or it runs already. An event the config turned off does not exist.", Permission: "events.control"},
+			{Name: "stop", Params: []Param{{"name", "string", "An event's full name, or a plain name, which is the calling mod's event."}}, Returns: "boolean",
+				Doc: "Ends the event's run now, with the result \"stopped\". Its monsters and NPCs go. Returns false when there is no such event, or it does not run.", Permission: "events.control"},
 		},
 	},
 	{
@@ -585,6 +596,15 @@ var Classes = []Class{
 			{Name: "show_image", Params: []Param{{"name", "string", "An image of image/illust."}, {"position", `"left"|"center"|"right"`, ""}}, Doc: "Shows an NPC image, as cutin."},
 			{Name: "hide_image", Doc: "Hides the NPC image."},
 			{Name: "show_progress", Params: []Param{{"seconds", "integer", "Up to 600."}}, Doc: "Shows a progress bar and waits until it is full. A walk cancels it and ends the conversation."},
+		},
+	},
+	{
+		Name: "wa.EventRun", Handle: "event run", Doc: "A run of a typed world event, from context:get_event() (review decision 31). Its monsters and participants are those on the context's map.",
+		Methods: []Func{
+			{Name: "get_monsters", Returns: "wa.Monster[]", Doc: "The run's monsters that live on the context's map: the boss, the invasion's monsters, or the treasure chests, in the order they spawned.", Permission: "game.read"},
+			{Name: "get_participants", Returns: "wa.Player[]", Doc: "The players on the context's map who did at least the rewards' min_share of the damage to the run's monsters there, 1% by default, sorted by name.", Permission: "game.read"},
+			{Name: "finish", Params: []Param{{"result", `"won"|"lost"`, ""}},
+				Doc: "Ends the run before its time, within a second. An invasion that finishes \"won\" gives its rewards, as when its last wave dies. world_event_end carries the result."},
 		},
 	},
 	{
@@ -1091,6 +1111,14 @@ var Classes = []Class{
 		Fields: []Field{{"from", "string", `"storage", "cart" or an extra storage's name of data/storages.yml.`}},
 	},
 	{
+		Name: "wa.WorldEvent", Doc: "The object of world_event_start and world_event_end (review decision 31).",
+		Fields: []Field{
+			{"name", "string", "The event's full name, such as core:Field_Boss."},
+			{"type", `"boss"|"invasion"|"treasure_hunt"|"script"`, `The event's type: "script" for an event without one.`},
+			{"result", `"won"|"lost"|"stopped"|nil`, "How the run ended, at world_event_end. A boss is won when it dies, an invasion when its last wave dies, and a treasure hunt when every chest is opened. A run whose time ran out is lost. nil at world_event_start, and for a script event that ran its time."},
+		},
+	},
+	{
 		Name: "wa.Trade", Doc: "The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.",
 		Fields: []Field{
 			{"players", "wa.Player[]", "The two players: the one who confirmed last first."},
@@ -1393,6 +1421,8 @@ var Events = []Event{
 	{Name: "vend", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"sale", "wa.StoreSale", ""}}, Doc: "A player on the context's map bought from a vending shop."},
 	{Name: "buying_store_sale", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"sale", "wa.StoreSale", ""}}, Doc: "A player on the context's map sold items to a buying store."},
 	{Name: "mail", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"mail", "wa.Mail", ""}}, Doc: "A mail went out from the context's map: a player's, or a script's player:send_mail."},
+	{Name: "world_event_start", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.WorldEvent", ""}}, Doc: "A run of a world event started, on any map. Every zone's handlers run."},
+	{Name: "world_event_end", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.WorldEvent", ""}}, Doc: "A run of a world event ended, on any map, with its result. Every zone's handlers run."},
 }
 
 // currencyParam is the name of a currency.

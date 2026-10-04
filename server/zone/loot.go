@@ -115,6 +115,7 @@ func (z *Zone) logDamage(src, target *entity, damage int64) {
 			logged = z.Progress.LoggedDamage(damage, target.hp)
 		}
 		target.monster.dmglog.Add(src.player.charID, logged, 0)
+		z.eventDamage(src, target, logged)
 	case src.monster != nil && target.player != nil:
 		src.monster.dmglog.Add(target.player.charID, 0, damage)
 	}

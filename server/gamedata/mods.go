@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"maps"
+	"math"
 	"slices"
 	"strings"
 
@@ -261,7 +262,34 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 			log.Warn("mods: " + n)
 		}
 	}
-	if out.Events, out.EventOverlay, err = worldEvents(set); err != nil {
+	names := eventNames{
+		item: func(name string) (uint32, bool) {
+			id, ok := merged.IDs[name]
+			return id, ok
+		},
+		currency: func(name, m string) (string, bool) {
+			r := out.Currencies.Resolve(name, m)
+			if r == nil {
+				return "", false
+			}
+			return r.Mod, true
+		},
+		sprite: func(name string) (uint32, bool) {
+			id, ok := sprites[strings.ToUpper(name)]
+			return id, ok
+		},
+	}
+	if monsters != nil {
+		names.monster = func(name string) (uint32, bool) {
+			id, ok := monsterIDs[strings.ToUpper(name)]
+			if !ok || id <= 0 || id > math.MaxUint32 {
+				return 0, false
+			}
+			m, ok := out.Monsters[uint32(id)]
+			return uint32(id), ok && m.Status != nil
+		}
+	}
+	if out.Events, out.EventOverlay, err = worldEvents(set, names); err != nil {
 		return nil, err
 	}
 	for _, n := range out.EventOverlay.Notes {

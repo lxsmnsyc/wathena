@@ -13,6 +13,40 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
+## Where work stopped (2026-10-05)
+
+Work paused on 2026-10-05 and resumes the week after.
+
+Done:
+
+- Phases 0a to 4. The Lua API is 1.0.
+- Phase 5, all 8 steps (section 15, "Phase 5 in full"). The 30-minute exit check passed: bots traded, stored, mailed, vended and bought at the same time, with disconnects and a restart, and every item, zeny, currency and serial total held.
+- Test speed work (decision 0022). The full `scripts/check.sh` run takes about 12 minutes plus e2e.
+
+Open review items. Each step lists them in proposal 0002, "Next steps":
+
+- Step 2, chat: core channel names, silent hook blocks, whisper bypasses, sanction rules, `world:chat` and `world:get_chat`.
+- Step 3, rulesets: `rules.is`, rebalance record swaps, and the busy message parity fix.
+- Step 4, parties: `wa.rules`, `share` as `{ base, job }`, no `party_join` event for a self-made party, 1,024 disbanded parties kept readable, and block lists stopping friend requests.
+- Step 5, guilds: the `wa.internal` core-only module, guild commands that need API, a guild master who cannot leave, and guild skill checks on the server.
+- Step 6, storage and trade: next step 15.
+- Step 7, mail, vending and shops: next step 16.
+- Step 8, automatic events: next step 17.
+
+Known issues:
+
+- Step 8 was committed after a partial check. After the last change, `scripts/check.sh` passed vet, test (both passes, with e2e) and mods, and was then stopped. The other steps (lua, loadtest, schema, queries, lint, security, fuzz, client and tinygo) each passed during the build, but not after the last change. Run `scripts/check.sh` first when work resumes.
+- `TestTradeRefused` (step 6) failed once under full load and passed 3 of 3 times alone. It may be a timing flake.
+- The disk was nearly full on 2026-10-05, and builds failed with "no space left on device". Keep at least 10 GB free. Test PostgreSQL containers that are killed leave unnamed Docker volumes behind. `docker volume prune` removes them.
+- The kRO client is extracted at `data/kro/client` (gitignored), and the original zip is deleted. It is the only copy. Build assets with `wactl assets build` and the source `grf:data/kro/client`.
+- GitHub Actions is off, because the repository is private. Run `scripts/check.sh` locally.
+
+Next:
+
+1. Go through the open review items above.
+2. Start phase 6, the web client tier 1 (section 15): the admin tools, the account page actions, mod assets, touch input, and a check that a player can do every tier 1 activity in the web client.
+3. Phase 7, procedural mode, is the largest phase left.
+
 ## 1. Current state
 
 rAthena runs as four C++ processes.
@@ -2592,7 +2626,21 @@ The order from here:
       - A bug the duplication test found is fixed: a mail's items showed to the sender and the taker as inventory changes of the wrong slots.
       - Checked in Chrome with the development stack and placeholder assets: a player bought 2 Red Potions at a shop that took 20 zeny, 4 Jellopy and 2 tokens, and its stock went from 5 to 3; a second player mailed it 3 Jellopy and 100 zeny for a fee of 2,502 zeny, and it took them from the mail window; it opened a vending shop from its cart with the Vending skill, and the second player saw the shop's title, browsed it and bought 4 Jellopy for 200 zeny.
       - Left: real-money cash purchases, auctions, a stock limit per player, Lua-priced costs, opening a store from a search across maps, a field for the buying store flag in `data/items.yml`, and the converter commands of proposal 0002, next step 16.
-   8. Automatic events (boss spawns, invasions and treasure hunts), and the phase 5 exit check, with duplication tests under bot load.
+   8. Automatic events (boss spawns, invasions and treasure hunts), and the phase 5 exit check, with duplication tests under bot load. Done on 2026-10-05 ([decision 0025](decisions/0025-automatic-events.md), proposal 0002 review decision 31, server/README.md, "World events", and mods/README.md, "Typed events"):
+      - Typed events in `data/events.yml`: `boss`, `invasion` and `treasure_hunt`, with their fields beside `type`, checked when the mods load, so `wactl mod validate` reports bad fields and names. A typed event's script is optional.
+      - Level bands pick fields, maps whose ID has `_fild`, by the middle level of their recorded spawns without bosses. `maps` lists maps of any kind.
+      - A boss lands on a random walkable cell of a picked map, with rAthena's boss announcement and the MVP of `mob_dead`. Invasion waves enter at the town's edges, are aggressive, chase players with rAthena's AI and walk toward the nearest player, start when the waves before died or after a time, and are won or lost with announcements. Treasure chests are monsters on random walkable cells, with hint NPCs that tell the map and direction of the chests still there.
+      - Rewards go to the killer, the participants with at least `min_share` of the damage (1% by default), or everyone on the map, each the whole reward: items, zeny, exp and currencies through transfers with the action `event`, and mail for what does not fit.
+      - One event manager per process runs every event through the zones. Each reward writes its progress row in the commit of the characters it changed (migration 00021), so it is never given twice, and a typed run that a restart cut short goes on from its progress while its window is open.
+      - The Lua API of review decision 31: `context:get_event()` with `get_monsters`, `get_participants` and `finish`, the world events `world_event_start` and `world_event_end`, and `wa.world_events` with the new permission `events.control`.
+      - Core ships `core:Field_Boss`, `core:Prontera_Invasion` and `core:Treasure_Hunt`, off until the config's `mods.events.<name>.enabled`.
+      - The client shows a banner for each start and end, a list of the runs with their time left, and now the announcements and server lines in the chat log, which it dropped before.
+      - examples/halloween gained an event of each type, a boss script that uses the run, the Pumpkin Witch starting a candy hunt with `world_events.start`, and seven `wactl mod test` cases that drive the clock.
+      - e2e scenarios for a boss, an invasion, a treasure hunt and a restart with PostgreSQL.
+      - The phase 5 exit check, `TestPhase5ExitCheck`: 24 bots in 5 groups on both maps trade, store, mail, vend, sell to buying stores, buy at the Exchange with items and with a currency, and drop and pick up items at the same time, with connections closed in the middle of moves and a server restart half way, with PostgreSQL. Item, zeny, currency and serial totals held. 40 seconds of moves run in the default `test` step, and 30 minutes in `scripts/check.sh e2e`: the 30-minute run made 14,416 trades, 10,370 storage openings with about 40,000 storage and cart moves, 508 mails sent and 538 taken, 47 vending sales, 762 buying store sales, 58,938 Exchange purchases with items and 77 with tokens, and 26,957 drops, with 20,538 connections closed in the middle of moves and a restart after 15 minutes. 3,227 full audits and 379 with a bot away all held: 720 Jellopy, 80,000 zeny, and 1,200 tokens given, 775 spent for 155 Red Potions, and 425 held.
+      - The exit check found a mail duplication: a mail kept in the registry's recent list could come back after it was taken and deleted, for a login within 5 minutes. It is fixed, with a test.
+      - Checked in Chrome with the development stack and placeholder assets: `world_events.start` from a chat command started a boss, which showed the banner, the list entry and the announcements; a click killed it, and the reward and the win came. An invasion's raiders entered at the map's edges and walked to the player, its second wave came a minute later, and the win gave 2 Apples. The Treasure Hunter's dialog told the direction of both chests, and a click opened one, with its reward and announcement.
+      - Left: a map type for level bands, rewards to players on other maps and lists of rewards, sieges, rotating dungeons and world changes, locale text for announcements, and event times on `--dev`'s clock.
    Steps 2 and 4 to 8 add Lua API. Each step's API goes to review before it is built.
 
 Reasons for this order:
@@ -2817,6 +2865,11 @@ Exit criteria:
 
 - Each system passes its scripted tests.
 - Duplication tests for trade, storage, mail, and vending pass with bots under concurrent load.
+
+Done on 2026-10-05. Against the exit criteria:
+
+- Each system passes its scripted tests. Decision 0025, "Phase 5 systems and their tests", lists them: chat, channels, moderation, friends, parties, guilds, guild storage, emblems, storage, cart, trade, mail, vending, buying stores, NPC shops, currencies and automatic events, each with e2e scenarios and package tests, and most with a sample mod.
+- Duplication tests for trade, storage, mail and vending pass with bots under concurrent load: one test per system and its database variant, and the exit check, which runs them all at once on two maps with disconnects and a restart.
 
 ### Phase 6: Web client, tier 1
 

@@ -23,8 +23,11 @@
 #   fuzz      every fuzz test for 10 seconds, 4 at once           (fuzz)
 #   client    pnpm check, lint, format:check, test and build      (client)
 #   tinygo    the shared packages under TinyGo, and path.wasm     (tinygo)
-#   e2e       the e2e package alone, with -race. test runs it
-#             too, so it is not a default step.
+#   e2e       the e2e package alone, with -race, with the phase 5
+#             exit check for 30 minutes (WATHENA_EXIT_MINUTES=30,
+#             e2e/README.md), and prints its numbers. test runs
+#             the package with a short
+#             exit check, so it is not a default step.
 #   compose   the Compose stack smoke test. Only with all.        (compose)
 #   browsers  the client in Chromium. Only with all.              (browsers)
 #
@@ -166,7 +169,17 @@ step_test() {
 	go test -race -timeout 45m ./...
 }
 
-step_e2e() { go test -race -count=1 -timeout 45m ./e2e/; }
+# The e2e package takes about 16 minutes with -race and a database.
+# The exit check adds 30 minutes of moves and its restart.
+step_e2e() {
+	local code=0
+	WATHENA_EXIT_MINUTES=30 WATHENA_EXIT_REPORT="$work/exit-report.txt" go test -race -count=1 -timeout 90m ./e2e/ || code=$?
+	if [ -f "$work/exit-report.txt" ]; then
+		echo "the exit check's numbers:"
+		cat "$work/exit-report.txt"
+	fi
+	return "$code"
+}
 
 step_mods() {
 	local wactl="$work/wactl"

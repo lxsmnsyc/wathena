@@ -60,6 +60,7 @@ import {
   type VendingResult,
   type VendingSold,
   type WhisperResult,
+  type WorldEventInfo,
 } from '../gen/wathena/v1/event_pb';
 import { ChatChannel } from '../gen/wathena/v1/command_pb';
 import { unpackSteps } from '../net/connection';
@@ -84,6 +85,7 @@ import { bodyLook, cartLook, companionLook, mountedBody } from './mounts';
 import { appearance } from './options';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
+import type { WorldEventRun } from './worldEvents';
 import {
   HEAL_SKILLS,
   HIT_GAP_MS,
@@ -107,6 +109,17 @@ import {
 export const WARP_SPRITE = 45;
 /** EF_WARPZONE2, the effect roBrowser plays on warp portals. */
 export const WARP_EFFECT = 321;
+
+/** A run of a world event as the world events view keeps it. */
+export function worldEventRun(i: WorldEventInfo): WorldEventRun {
+  return {
+    name: i.name,
+    displayName: i.displayName,
+    type: i.type,
+    map: i.map,
+    endsAtMs: Number(i.endsAtMs),
+  };
+}
 
 /** A slot as InventoryItem gives it, for the inventory and storage windows. */
 export function stackInput(i: InventoryItem): StackInput {
@@ -485,6 +498,10 @@ export default class Online {
   onMailRead: ((mail: MailView) => void) | undefined;
   /** Called when a mail arrives. */
   onMailNew: ((mail: MailNew) => void) | undefined;
+  /** Called when a run of a world event starts or ends. */
+  onWorldEventNotice: ((run: WorldEventRun, started: boolean, result: string) => void) | undefined;
+  /** Called at login with the runs of world events that last. */
+  onWorldEventList: ((runs: WorldEventRun[]) => void) | undefined;
   /** Called with how a mail action went. */
   onMailResult: ((result: MailResult) => void) | undefined;
   /** Called when the vending setup window opens, with the most lines. */
@@ -1281,6 +1298,16 @@ export default class Online {
         }
         case 'mailNew':
           this.onMailNew?.(e.body.value);
+          break;
+        case 'worldEventNotice': {
+          const notice = e.body.value;
+          if (notice.event !== undefined) {
+            this.onWorldEventNotice?.(worldEventRun(notice.event), notice.started, notice.result);
+          }
+          break;
+        }
+        case 'worldEventList':
+          this.onWorldEventList?.(e.body.value.events.map(worldEventRun));
           break;
         case 'mailResult':
           this.onMailResult?.(e.body.value);

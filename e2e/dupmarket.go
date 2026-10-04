@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"slices"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -23,8 +24,8 @@ type MarketCounts struct {
 	// closed by their owner, and Bought the purchases from them.
 	ShopsOpened, ShopsClosed, Bought atomic.Int64
 	// Exchanged counts the Exchange purchases that paid Jellopy for
-	// Jellopy.
-	Exchanged atomic.Int64
+	// Jellopy, and TokenBuys the ones that paid tokens for Red Potions.
+	Exchanged, TokenBuys atomic.Int64
 	// Mailed and Taken count the mails sent and taken.
 	Mailed, Taken atomic.Int64
 	// StoresOpened counts the buying stores opened, and SoldToStores the
@@ -227,51 +228,81 @@ func VendBuyMove(c *MarketCounts) Move {
 // and closes its connection at once.
 func ExchangeMove(c *MarketCounts) Move {
 	return Move{Name: "exchange", Do: func(ctx context.Context, b *botclient.Bot, rnd *rand.Rand) (bool, error) {
-		have := b.Game().Count(Jellopy)
-		if have == 0 {
-			return false, pause(ctx)
-		}
-		var npc uint32
-		for _, e := range b.View().Entities {
-			if e.Kind == wathenav1.EntityKind_ENTITY_KIND_NPC && e.Name == ExchangeName {
-				npc = e.ID
-			}
-		}
-		if npc == 0 {
-			return false, pause(ctx)
-		}
-		mark := b.Mark()
-		if err := b.Click(ctx, npc); err != nil {
-			return false, ignoreDone(ctx, err)
-		}
-		e, err := waitStep(ctx, b, mark, (*wathenav1.Event).HasShopOpen)
-		if err != nil || e == nil {
-			if err == nil {
-				err = errors.New("the Exchange did not open")
-			}
-			return false, ignoreDone(ctx, err)
-		}
-		n := 1 + rnd.IntN(min(have, 3))
-		mark = b.Mark()
-		if err := b.Buy(ctx, npc, map[uint32]int{Jellopy: n}); err != nil {
-			return false, ignoreDone(ctx, err)
-		}
-		if rnd.IntN(10) == 0 {
-			return true, drop(b, rnd, c)
-		}
-		e, err = waitStep(ctx, b, mark, (*wathenav1.Event).HasShopResult)
-		switch {
-		case err != nil:
-			return false, ignoreDone(ctx, err)
-		case e == nil:
-			return false, fmt.Errorf("buying %d Jellopy at the Exchange: no answer in %s", n, stepWait)
-		case e.GetShopResult().GetOutcome() != wathenav1.ShopOutcome_SHOP_OUTCOME_BOUGHT:
-			c.Refused.Add(1)
-			return false, nil
-		}
-		c.Exchanged.Add(1)
-		return true, nil
+		return exchangeBuy(ctx, b, rnd, c, Jellopy, b.Game().Count(Jellopy), &c.Exchanged)
 	}}
+}
+
+// TokenMove opens the fixture's Exchange and buys 1 to 3 Red Potions,
+// which cost 5 tokens each, while the bot has the tokens, at most once
+// in every. One time in 10 the bot sends the purchase and closes its
+// connection at once. Only this move makes Red Potions or takes tokens,
+// so the tokens plus 5 for each Red Potion stay constant.
+func TokenMove(c *MarketCounts, every time.Duration) Move {
+	var mu sync.Mutex
+	last := map[string]time.Time{}
+	return Move{Name: "tokens", Do: func(ctx context.Context, b *botclient.Bot, rnd *rand.Rand) (bool, error) {
+		mu.Lock()
+		soon := time.Since(last[b.Name]) < every
+		if !soon {
+			last[b.Name] = time.Now()
+		}
+		mu.Unlock()
+		if soon {
+			return false, pause(ctx)
+		}
+		return exchangeBuy(ctx, b, rnd, c, RedPotion, int(b.Game().Currencies[Tokens]/TokensPerPotion), &c.TokenBuys)
+	}}
+}
+
+// TokensPerPotion is the Exchange's price of a Red Potion in tokens.
+const TokensPerPotion = 5
+
+// exchangeBuy opens the Exchange and buys 1 to 3 of an item, at most
+// can. It counts a purchase the server confirmed in bought.
+func exchangeBuy(ctx context.Context, b *botclient.Bot, rnd *rand.Rand, c *MarketCounts, item uint32, can int, bought *atomic.Int64) (bool, error) {
+	if can <= 0 {
+		return false, pause(ctx)
+	}
+	var npc uint32
+	for _, e := range b.View().Entities {
+		if e.Kind == wathenav1.EntityKind_ENTITY_KIND_NPC && e.Name == ExchangeName {
+			npc = e.ID
+		}
+	}
+	if npc == 0 {
+		return false, pause(ctx)
+	}
+	mark := b.Mark()
+	if err := b.Click(ctx, npc); err != nil {
+		return false, ignoreDone(ctx, err)
+	}
+	e, err := waitStep(ctx, b, mark, (*wathenav1.Event).HasShopOpen)
+	if err != nil || e == nil {
+		if err == nil {
+			err = errors.New("the Exchange did not open")
+		}
+		return false, ignoreDone(ctx, err)
+	}
+	n := 1 + rnd.IntN(min(can, 3))
+	mark = b.Mark()
+	if err := b.Buy(ctx, npc, map[uint32]int{item: n}); err != nil {
+		return false, ignoreDone(ctx, err)
+	}
+	if rnd.IntN(10) == 0 {
+		return true, drop(b, rnd, c)
+	}
+	e, err = waitStep(ctx, b, mark, (*wathenav1.Event).HasShopResult)
+	switch {
+	case err != nil:
+		return false, ignoreDone(ctx, err)
+	case e == nil:
+		return false, fmt.Errorf("buying %d of item %d at the Exchange: no answer in %s", n, item, stepWait)
+	case e.GetShopResult().GetOutcome() != wathenav1.ShopOutcome_SHOP_OUTCOME_BOUGHT:
+		c.Refused.Add(1)
+		return false, nil
+	}
+	bought.Add(1)
+	return true, nil
 }
 
 // MailMove mails parts of up to two Jellopy stacks, and sometimes zeny,

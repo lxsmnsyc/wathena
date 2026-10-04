@@ -48,6 +48,9 @@ var Permissions = []Permission{
 	{Name: "mail.send", Approval: true, Allows: "send mail with items and zeny to any character, online or not"},
 	{Name: "currencies.modify", Approval: true, Allows: "change other mods' currencies of players, such as cash points"},
 	{Name: "shops.modify", Approval: true, Allows: "change what shops sell, their costs and their stock"},
+	// events.control is review decision 31's: world_events.start and
+	// world_events.stop.
+	{Name: "events.control", Approval: true, Allows: "start and stop world events at any time"},
 }
 
 // LookupPermission returns a permission by name.

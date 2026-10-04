@@ -113,6 +113,8 @@ type npc struct {
 	// instance, once the zone started it.
 	handle int64
 	script *modscript.NPC
+	// hint is the typed run of a hint NPC (autoevents.go), or 0.
+	hint int64
 }
 
 // SetNPCs places NPCs on the map. It replaces the NPCs set before. Call

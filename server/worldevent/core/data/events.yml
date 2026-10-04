@@ -1,0 +1,67 @@
+# Core's sample typed events (proposal 0002, review decision 31). They
+# are off by default. The server owner turns one on in the config, and
+# may move it there too:
+#
+#   mods:
+#     events:
+#       core:Field_Boss:
+#         enabled: true
+#         trigger: { daily: "21:00" }
+#
+# A mod changes them by their full names, such as core:Field_Boss.
+
+# A field boss: one of the Prontera field bosses appears on a field of
+# levels 1 to 30, with an announcement. The players who did at least 1%
+# of its damage each get the reward. It leaves after an hour.
+- name: Field_Boss
+  type: boss
+  trigger: { daily: "20:00" }
+  duration_minutes: 60
+  monsters: [ECLIPSE, MASTERING, TOAD, DRAGON_FLY, VOCAL]
+  level_band: [1, 30]
+  announce: true
+  rewards:
+    to: participants
+    zeny: 5000
+    exp: { base: 2000, job: 1000 }
+    items:
+      - { item: Old_Blue_Box, amount: 1 }
+
+# An invasion of Prontera in three waves. The second wave comes two
+# minutes after the first starts, and the third once both died. Every
+# player in Prontera when the last wave dies gets the reward. The raid
+# is lost when the half hour ends first.
+- name: Prontera_Invasion
+  type: invasion
+  trigger: { weekly: { day: saturday, time: "20:00" } }
+  duration_minutes: 30
+  town: prontera
+  waves:
+    - monsters: [{ monster: PORING, amount: 20 }, { monster: LUNATIC, amount: 10 }]
+      start: cleared
+    - monsters: [{ monster: SAVAGE_BABE, amount: 10 }, { monster: CHONCHON, amount: 10 }]
+      start: "120s"
+    - monsters: [{ monster: MASTERING, amount: 1 }, { monster: POPORING, amount: 10 }]
+      start: cleared
+  rewards:
+    to: everyone_on_map
+    zeny: 3000
+    items:
+      - { item: Red_Potion, amount: 10 }
+
+# A treasure hunt: five chests on fields of levels 1 to 30. A guide in
+# Prontera tells the map and the direction of a chest that is still
+# there. The chest's drops are the loot, and the player who opens it
+# gets the reward too.
+- name: Treasure_Hunt
+  type: treasure_hunt
+  trigger: { daily: "15:00" }
+  duration_minutes: 60
+  chests: 5
+  level_band: [1, 30]
+  chest: TREASURE_BOX1
+  hint_npcs:
+    - { map: prontera, x: 156, y: 191, sprite: 4_M_MANAGER, display_name: Treasure Guide }
+  rewards:
+    to: killer
+    zeny: 1000

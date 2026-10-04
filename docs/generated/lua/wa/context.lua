@@ -17,4 +17,8 @@ function context:get_kind() end
 ---@return string
 function context:get_mod() end
 
+---The run of a typed world event, in the event context of its script (review decision 31), or nil in other contexts.
+---@return wa.EventRun?
+function context:get_event() end
+
 return context

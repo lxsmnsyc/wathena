@@ -1,0 +1,42 @@
+# Typed world events of the end-to-end tests (review decision 31). Their
+# condition never holds, so they start only from "!event start <name>",
+# which calls world_events.start.
+
+- name: Boss
+  type: boss
+  trigger: { condition: { module: e2e.fixture.conditions, function: never } }
+  duration_minutes: 60
+  monsters: [e2e.fixture:BOSS]
+  maps: [placeholder/map]
+  announce: true
+  rewards:
+    to: participants
+    zeny: 100
+
+- name: Raid
+  type: invasion
+  trigger: { condition: { module: e2e.fixture.conditions, function: never } }
+  duration_minutes: 30
+  town: placeholder/map
+  waves:
+    - monsters: [{ monster: e2e.fixture:RAIDER, amount: 3 }]
+      start: cleared
+    - monsters: [{ monster: e2e.fixture:RAIDER, amount: 2 }]
+      start: cleared
+  rewards:
+    to: everyone_on_map
+    items:
+      - { item: Apple, amount: 2 }
+
+- name: Hunt
+  type: treasure_hunt
+  trigger: { condition: { module: e2e.fixture.conditions, function: never } }
+  duration_minutes: 30
+  chests: 2
+  maps: [e2e_field]
+  chest: e2e.fixture:CHEST
+  hint_npcs:
+    - { map: placeholder/map, x: 18, y: 12, display_name: Treasure Hunter }
+  rewards:
+    to: killer
+    zeny: 50

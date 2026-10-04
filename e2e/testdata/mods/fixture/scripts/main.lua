@@ -21,6 +21,8 @@
 --   - "!search <uses> <show|open>" opens the store search.
 --   - "!autotrade" keeps the speaker's store open without its connection.
 --   - "!stock <item> <n>" sets an item's stock at the Exchange.
+--   - "!event start <name>" and "!event stop <name>" start and stop a
+--     world event of data/events.yml, with world_events.
 -- Each command but "!guild level" answers with a system line that starts
 -- with "e2e <name>:". A trade hook and a vend hook refuse Contraband. The
 -- trade, vend and buying_store_sale events tell both players what changed
@@ -34,6 +36,7 @@ local items = require "wa.items"
 local monsters = require "wa.monsters"
 local spawning = require "wa.spawning"
 local world = require "wa.world"
+local world_events = require "wa.world_events"
 
 local DUMMY = monsters.id "e2e.fixture:DUMMY"
 local CONTRABAND = items.id "e2e.fixture:Contraband"
@@ -130,6 +133,12 @@ local commands = {
   end,
   stock = function(_, words)
     return world.get_shop("Exchange#e2e"):set_stock(items.id(words[2]), tonumber(words[3]))
+  end,
+  event = function(_, words)
+    if words[2] == "start" then
+      return world_events.start(words[3])
+    end
+    return world_events.stop(words[3])
   end,
 }
 

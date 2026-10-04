@@ -158,6 +158,7 @@ import { TargetMode } from './targeting';
 import Online, { type ShopBoard } from './online';
 import Player from './player';
 import Walkers from './walkers';
+import { WorldEventsView } from './worldEvents';
 
 // Shaders work on stored color values directly, as RO does.
 ColorManagement.enabled = false;
@@ -571,6 +572,23 @@ if (serverURL === null) {
     },
   });
   view.self = connection.welcome.netId;
+  // World events: a banner for each start and end, and a panel of the
+  // runs that last, on the server's clock.
+  const eventBanner = document.querySelector<HTMLElement>('#event-banner');
+  const eventPanel = document.querySelector<HTMLElement>('#world-events');
+  if (eventBanner !== null && eventPanel !== null) {
+    const offset = Number(connection.welcome.serverTimeMs) - Date.now();
+    const worldEvents = new WorldEventsView(eventBanner, eventPanel, () => Date.now() + offset);
+    view.onWorldEventList = (runs) => {
+      worldEvents.set(runs);
+    };
+    view.onWorldEventNotice = (run, started, result) => {
+      logNotice(worldEvents.notice(run, started, result));
+    };
+    setInterval(() => {
+      worldEvents.tick();
+    }, 1000);
+  }
   const emblemCache = new EmblemCache(serverURL);
   emblems = emblemCache;
   const hits = document.querySelector<HTMLDivElement>('#hits');
@@ -1242,6 +1260,14 @@ if (serverURL === null) {
     view.onChat = (from, speaker, text, color, lineId) => {
       log.add(speaker, text, from === view.self, color, lineId);
       bubbles.say(from, chatLine(speaker, text), performance.now());
+    };
+    // Server lines and announcements, such as a world event's boss that
+    // appears, show in every tab.
+    view.onServerText = (text) => {
+      log.server(text);
+    };
+    view.onAnnouncement = (text, color) => {
+      log.announce(text, color);
     };
     view.onChannelChat = (channel, speaker, text, color, lineId) => {
       const tab = tabs.channel(channel);

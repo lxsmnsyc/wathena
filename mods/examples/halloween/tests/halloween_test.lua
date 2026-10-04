@@ -31,7 +31,7 @@ return function()
     testing.expect(said).to_contain("Take this hat.")
     testing.expect(player:count_item(HAT)).to_be(1)
     testing.expect(got_hat:get(player)).to_be_true()
-    said = world:talk(player, "Pumpkin Witch", {})
+    said = world:talk(player, "Pumpkin Witch", { 1 })
     testing.expect(said).to_contain("You already have my hat.")
     testing.expect(player:count_item(HAT)).to_be(1)
     -- Another character gets its own.

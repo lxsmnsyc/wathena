@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/tools/botclient"
@@ -124,18 +125,23 @@ type Totals struct {
 	// Ground counts the ground items.
 	Ground int
 	// Stored are the amounts of each item in guild storages, account
-	// storages, extra storages and carts, which Items counts too.
+	// storages, extra storages, carts and mails, which Items counts too.
 	Stored map[uint32]int
+	// Currencies are the characters' own currencies, by full name.
+	Currencies map[string]int64
 }
 
 // TotalsOf adds up an audit. It returns the serials held more than
 // once.
 func TotalsOf(zones []AuditZone) (Totals, []string) {
-	t := Totals{Items: map[uint32]int{}, Serials: map[string]string{}, Stored: map[uint32]int{}}
+	t := Totals{Items: map[uint32]int{}, Serials: map[string]string{}, Stored: map[uint32]int{}, Currencies: map[string]int64{}}
 	var twice []string
 	for _, z := range zones {
 		for _, p := range z.Players {
 			t.Zeny += p.Zeny
+			for name, n := range p.Currencies {
+				t.Currencies[name] += n
+			}
 			for _, it := range p.Items {
 				t.Items[it.Item] += it.Amount
 				if z.Map == GuildStorageMap {
@@ -155,7 +161,7 @@ func TotalsOf(zones []AuditZone) (Totals, []string) {
 	return t, twice
 }
 
-// compare lists how b differs from a in items and zeny.
+// compare lists how b differs from a in items, zeny and currencies.
 func compare(a, b Totals) []string {
 	var out []string
 	for _, id := range slices.Sorted(maps.Keys(mergeKeys(a.Items, b.Items))) {
@@ -166,7 +172,24 @@ func compare(a, b Totals) []string {
 	if a.Zeny != b.Zeny {
 		out = append(out, fmt.Sprintf("zeny: %d, was %d", b.Zeny, a.Zeny))
 	}
+	for _, name := range currencyNames(a, b) {
+		if a.Currencies[name] != b.Currencies[name] {
+			out = append(out, fmt.Sprintf("currency %s: %d, was %d", name, b.Currencies[name], a.Currencies[name]))
+		}
+	}
 	return out
+}
+
+// currencyNames are the currencies of a and b, sorted.
+func currencyNames(a, b Totals) []string {
+	names := slices.Collect(maps.Keys(a.Currencies))
+	for name := range b.Currencies {
+		if _, ok := a.Currencies[name]; !ok {
+			names = append(names, name)
+		}
+	}
+	slices.Sort(names)
+	return names
 }
 
 func mergeKeys(a, b map[uint32]int) map[uint32]int {
@@ -366,52 +389,59 @@ func (d DupTest) Run(t *testing.T) DupReport {
 	rep.End, _ = TotalsOf(zones)
 	d.checkBots(ctx, t, bots.all())
 	for _, b := range bots.every() {
-		events, _ := b.Events(0)
-		self := b.View().NetID
-		taken, added := 0, 0
-		trading := false
-		market := marketEvents(events)
-		for i, e := range events {
-			if market[i] {
-				// A vending sale, a buying store sale, a shop purchase or a
-				// mail's take moved these items, not a pick-up.
-				continue
-			}
-			r := e.GetInventoryRemove()
-			if r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED {
-				rep.Dropped++
-			}
-			switch {
-			case e.HasTradeOpen():
-				trading = true
-			case e.HasTradeClose():
-				trading = false
-			case e.HasInventoryAdd() && !trading:
-				// The items a trade gives come before its TradeClose.
-				added++
-			// Moves between the inventory, storages and the cart leave
-			// added as it was: a StorageRemove with an InventoryAdd, an
-			// InventoryRemove with a StorageAdd, or a StorageRemove with a
-			// StorageAdd.
-			case e.HasStorageRemove():
-				added--
-			case e.HasStorageAdd():
-				added++
-			case r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_STORED:
-				added--
-			}
-			if e.GetItemTaken().GetSource() == self && e.HasItemTaken() {
-				taken++
-			}
-		}
-		rep.Added += added
-		rep.Taken += taken
-		rep.Unmatched += max(taken-added, added-taken)
+		rep.count(b)
 	}
 	for _, c := range rep.Closed {
 		t.Logf("the server closed a connection: %s", c)
 	}
 	return rep
+}
+
+// count adds what one connection's events show to the report: its drops,
+// the items that came into its inventory from elsewhere than a storage,
+// the cart, a trade or a market transfer, and its own pick-ups.
+func (rep *DupReport) count(b *botclient.Bot) {
+	events, _ := b.Events(0)
+	self := b.View().NetID
+	taken, added := 0, 0
+	trading := false
+	market := marketEvents(events)
+	for i, e := range events {
+		if market[i] {
+			// A vending sale, a buying store sale, a shop purchase or a
+			// mail's take moved these items, not a pick-up.
+			continue
+		}
+		r := e.GetInventoryRemove()
+		if r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED {
+			rep.Dropped++
+		}
+		switch {
+		case e.HasTradeOpen():
+			trading = true
+		case e.HasTradeClose():
+			trading = false
+		case e.HasInventoryAdd() && !trading:
+			// The items a trade gives come before its TradeClose.
+			added++
+		// Moves between the inventory, storages and the cart leave
+		// added as it was: a StorageRemove with an InventoryAdd, an
+		// InventoryRemove with a StorageAdd, or a StorageRemove with a
+		// StorageAdd.
+		case e.HasStorageRemove():
+			added--
+		case e.HasStorageAdd():
+			added++
+		case r != nil && r.GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_STORED:
+			added--
+		}
+		if e.GetItemTaken().GetSource() == self && e.HasItemTaken() {
+			taken++
+		}
+	}
+	rep.Added += added
+	rep.Taken += taken
+	rep.Unmatched += max(taken-added, added-taken)
 }
 
 // marketEvents marks the events of market transfers: the inventory,
@@ -566,11 +596,24 @@ func (d DupTest) check(t *testing.T, start Totals, zones []AuditZone, when strin
 		if now.Zeny > start.Zeny {
 			problems = append(problems, fmt.Sprintf("zeny: %d with a player away, more than the %d of the start", now.Zeny, start.Zeny))
 		}
+		problems = append(problems, aboveStart(start, now)...)
 	}
 	for _, p := range problems {
 		t.Errorf("%s: %s", when, p)
 	}
 	return full, len(problems) == 0
+}
+
+// aboveStart lists the currencies of now above the start, for an audit
+// with a player away.
+func aboveStart(start, now Totals) []string {
+	var out []string
+	for _, name := range currencyNames(start, now) {
+		if now.Currencies[name] > start.Currencies[name] {
+			out = append(out, fmt.Sprintf("currency %s: %d with a player away, more than the %d of the start", name, now.Currencies[name], start.Currencies[name]))
+		}
+	}
+	return out
 }
 
 // checkBots checks that each bot's inventory, from the server's
@@ -877,84 +920,12 @@ func (d DupTest) CheckDatabase(t *testing.T, rep DupReport) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	db := srv.DB
-	pattern := d.Prefix + "%"
-	got := Totals{Items: map[uint32]int{}, Serials: map[string]string{}}
-	rows, err := db.Query(ctx, `SELECT c.name, i.item_id, i.amount, i.serial::text FROM inventory i JOIN characters c ON c.id = i.character_id
-		WHERE c.name LIKE $1`, pattern)
+	got, twice, err := SavedTotals(ctx, db, d.Prefix+"%")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for rows.Next() {
-		var name, serial string
-		var id uint32
-		var amount int
-		if err := rows.Scan(&name, &id, &amount, &serial); err != nil {
-			t.Fatal(err)
-		}
-		got.Items[id] += amount
-		got.Serials[serial] = name
-	}
-	rows.Close()
-	// Guild storages hold items too.
-	rows, err = db.Query(ctx, `SELECT 'guild:' || guild_id, item_id, amount, serial::text FROM guild_storage`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for rows.Next() {
-		var name, serial string
-		var id uint32
-		var amount int
-		if err := rows.Scan(&name, &id, &amount, &serial); err != nil {
-			t.Fatal(err)
-		}
-		got.Items[id] += amount
-		if who, ok := got.Serials[serial]; ok {
-			t.Errorf("database: serial %s is held by %s and %s", serial, who, name)
-		}
-		got.Serials[serial] = name
-	}
-	rows.Close()
-	// So do account storages, extra storages and carts.
-	rows, err = db.Query(ctx, `SELECT 'storage:' || holder || ':' || coalesce(account_id, character_id), item_id, amount, serial::text FROM storage_items`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for rows.Next() {
-		var name, serial string
-		var id uint32
-		var amount int
-		if err := rows.Scan(&name, &id, &amount, &serial); err != nil {
-			t.Fatal(err)
-		}
-		got.Items[id] += amount
-		if who, ok := got.Serials[serial]; ok {
-			t.Errorf("database: serial %s is held by %s and %s", serial, who, name)
-		}
-		got.Serials[serial] = name
-	}
-	rows.Close()
-	// So do mails, with their zeny.
-	rows, err = db.Query(ctx, `SELECT 'mail:' || mail_id, item_id, amount, serial::text FROM mail_items`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for rows.Next() {
-		var name, serial string
-		var id uint32
-		var amount int
-		if err := rows.Scan(&name, &id, &amount, &serial); err != nil {
-			t.Fatal(err)
-		}
-		got.Items[id] += amount
-		if who, ok := got.Serials[serial]; ok {
-			t.Errorf("database: serial %s is held by %s and %s", serial, who, name)
-		}
-		got.Serials[serial] = name
-	}
-	rows.Close()
-	if err := db.QueryRow(ctx, `SELECT (SELECT coalesce(sum(zeny), 0) FROM characters WHERE name LIKE $1) + (SELECT coalesce(sum(zeny), 0) FROM mails)`,
-		pattern).Scan(&got.Zeny); err != nil {
-		t.Fatal(err)
+	for _, p := range twice {
+		t.Errorf("database: %s", p)
 	}
 	for _, p := range compare(rep.Start, got) {
 		t.Errorf("database: %s", p)
@@ -975,7 +946,7 @@ func (d DupTest) CheckDatabase(t *testing.T, rep DupReport) {
 	dropped := map[string]bool{}
 	type pick struct{ serial, source string }
 	var picks []pick
-	rows, err = db.Query(ctx, `SELECT action, serial::text, source FROM item_log`)
+	rows, err := db.Query(ctx, `SELECT action, serial::text, source FROM item_log`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1004,6 +975,82 @@ func (d DupTest) CheckDatabase(t *testing.T, rep DupReport) {
 			t.Errorf("database: a pick-up into %s names %q, which no drop wrote", p.serial, p.source)
 		}
 	}
+}
+
+// SavedTotals adds up what a stopped server saved: the inventories,
+// zeny and own currencies of the characters whose names match pattern
+// (as SQL LIKE), every guild storage, account storage, extra storage
+// and cart, and every mail with its zeny. It returns the serials held
+// more than once.
+func SavedTotals(ctx context.Context, db *pgxpool.Pool, pattern string) (Totals, []string, error) {
+	got := Totals{Items: map[uint32]int{}, Serials: map[string]string{}, Stored: map[uint32]int{}, Currencies: map[string]int64{}}
+	var twice []string
+	// Each query lists a holder's name, an item, its amount and its
+	// serial. stored marks the storages, carts and mails, which the
+	// audit lists in its GuildStorageMap entry.
+	queries := []struct {
+		sql    string
+		args   []any
+		stored bool
+	}{
+		{`SELECT c.name, i.item_id, i.amount, i.serial::text FROM inventory i JOIN characters c ON c.id = i.character_id
+			WHERE c.name LIKE $1`, []any{pattern}, false},
+		// Guild storages hold items too.
+		{`SELECT 'guild:' || guild_id, item_id, amount, serial::text FROM guild_storage`, nil, true},
+		// So do account storages, extra storages and carts.
+		{`SELECT 'storage:' || holder || ':' || coalesce(account_id, character_id), item_id, amount, serial::text FROM storage_items`, nil, true},
+		// So do mails, with their zeny.
+		{`SELECT 'mail:' || mail_id, item_id, amount, serial::text FROM mail_items`, nil, true},
+	}
+	for _, q := range queries {
+		rows, err := db.Query(ctx, q.sql, q.args...)
+		if err != nil {
+			return got, nil, err
+		}
+		for rows.Next() {
+			var name, serial string
+			var id uint32
+			var amount int
+			if err := rows.Scan(&name, &id, &amount, &serial); err != nil {
+				rows.Close()
+				return got, nil, err
+			}
+			got.Items[id] += amount
+			if q.stored {
+				got.Stored[id] += amount
+			}
+			if who, ok := got.Serials[serial]; ok {
+				twice = append(twice, fmt.Sprintf("serial %s is held by %s and %s", serial, who, name))
+			}
+			got.Serials[serial] = name
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return got, nil, err
+		}
+	}
+	if err := db.QueryRow(ctx, `SELECT (SELECT coalesce(sum(zeny), 0) FROM characters WHERE name LIKE $1) + (SELECT coalesce(sum(zeny), 0) FROM mails)`,
+		pattern).Scan(&got.Zeny); err != nil {
+		return got, nil, err
+	}
+	// A mod's currency has its full name in mod_ids.
+	rows, err := db.Query(ctx, `SELECT coalesce(m.name, cc.currency::text), cc.amount FROM character_currencies cc
+		JOIN characters c ON c.id = cc.character_id
+		LEFT JOIN mod_ids m ON m.kind = 'currency' AND m.id = cc.currency
+		WHERE c.name LIKE $1`, pattern)
+	if err != nil {
+		return got, nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var name string
+		var amount int64
+		if err := rows.Scan(&name, &amount); err != nil {
+			return got, nil, err
+		}
+		got.Currencies[name] += amount
+	}
+	return got, twice, rows.Err()
 }
 
 func uuidText(u pgtype.UUID) string {

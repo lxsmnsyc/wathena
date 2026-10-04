@@ -40,3 +40,36 @@
   drops:
     - {item: "example.halloween:Pumpkin_Hat", rate: 5000}
     - {item: Pumpkin_Head, rate: 10000}
+
+# The boss of the Headless_Rider event, a typed boss event: core places
+# it, announces it and gives the reward.
+- name: example.halloween:HEADLESS_RIDER
+  sprite: DULLAHAN
+  display_name: Headless Rider
+  level: 50
+  hp: 20000
+  attack: 300
+  defense: 25
+  magic_defense: 20
+  dex: 70
+  agi: 40
+  class: boss
+  # AI type 04: it attacks players on sight.
+  ai: 4
+  base_exp: 9000
+  job_exp: 7000
+  drops:
+    - {item: Pumpkin_Head, rate: 10000}
+
+# The chest of the Candy_Hunt event. Its drops are the loot. It has one
+# HP, so one hit opens it, and it never moves.
+- name: example.halloween:CANDY_CHEST
+  sprite: TREASURE_BOX1
+  display_name: Candy Chest
+  level: 1
+  hp: 1
+  class: event
+  ai: 6
+  drops:
+    - {item: Candy, rate: 10000}
+    - {item: Candy_Striper, rate: 5000}

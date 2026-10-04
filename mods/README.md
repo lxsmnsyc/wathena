@@ -225,6 +225,7 @@ Each limit has a range:
 | `party.manage` | Needs the owner's approval. It makes parties and changes their members, leader and options (review decision 27). |
 | `guild.manage` | Needs the owner's approval. It makes guilds and changes their members, master, notice and exp, and breaks them up (review decision 28). |
 | `mail.send`, `currencies.modify`, `shops.modify` | Needs the owner's approval. They send mail with items and zeny, change another mod's currencies, core's too, and change shops (review decision 30). |
+| `events.control` | Needs the owner's approval. It starts and stops world events at any time with `wa.world_events` (review decision 31). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -411,8 +412,10 @@ The world event scheduler starts events without staff action (strategy section 8
 |---|---|
 | `trigger` | What starts the event (below). |
 | `duration_minutes` | How long a run lasts: 1 to 10,080 minutes. |
-| `script` | The entry script of a run. Its setup function runs in a new event context. |
+| `script` | The entry script of a run. Its setup function runs in a new event context. Optional for a typed event. |
 | `map` | The map whose zone runs the event. Without it, the world's start map. |
+| `type` | `boss`, `invasion` or `treasure_hunt` for a typed event ("Typed events" below). Without it, a script event. |
+| `rewards` | What a typed event gives ("Typed events" below). |
 
 | Trigger | Starts the event |
 |---|---|
@@ -450,6 +453,121 @@ return function()
   end, { victim = king })
 end
 ```
+
+#### Typed events
+
+An event with `type` is a typed event (review decision 31): core runs it from its fields, and a script is optional. The types are `boss`, `invasion` and `treasure_hunt`. The type's fields sit beside `trigger` and `duration_minutes`.
+
+```yaml
+# A boss on a field of levels 20 to 40. The players who did at least 1%
+# of its damage each get the whole reward.
+- name: Orc_Night
+  type: boss
+  trigger: { daily: "21:00" }
+  duration_minutes: 60
+  monsters: [ORK_HERO, ORC_LORD]
+  level_band: [20, 40]
+  announce: true
+  rewards: { to: participants, zeny: 10000, items: [{ item: Old_Blue_Box, amount: 1 }] }
+
+# Waves of monsters attack a town.
+- name: Prontera_Raid
+  type: invasion
+  trigger: { weekly: { day: saturday, time: "20:00" } }
+  duration_minutes: 30
+  town: prontera
+  waves:
+    - monsters: [{ monster: PORING, amount: 20 }]
+      start: cleared
+    - monsters: [{ monster: SAVAGE_BABE, amount: 10 }]
+      start: "120s"
+  rewards: { to: everyone_on_map, items: [{ item: Red_Potion, amount: 10 }] }
+
+# Chests on random cells, with NPCs that give hints.
+- name: Hunt
+  type: treasure_hunt
+  trigger: { daily: "15:00" }
+  duration_minutes: 60
+  chests: 5
+  maps: [prt_fild08, prt_fild07]
+  chest: TREASURE_BOX1
+  hint_npcs:
+    - { map: prontera, x: 156, y: 191, sprite: 4_M_MANAGER, display_name: Treasure Guide }
+  rewards: { to: killer, zeny: 1000 }
+```
+
+| Type | Fields |
+|---|---|
+| `boss` | `monsters`: a list of monster names; the run picks one. `level_band: [lowest, highest]` or `maps`. `announce`: true by default. |
+| `invasion` | `town`: a map. `waves`: each with `monsters`, a list of `{ monster, amount }` (amount 1 by default, at most 500 per wave), and `start`: `cleared`, or a time after the wave before started, such as `"120s"`, `"5m"` or `"1h"`. At most 50 waves. |
+| `treasure_hunt` | `chests`: 1 to 200. `level_band` or `maps`. `chest`: a monster name, whose drops are the loot. `hint_npcs`: at most 20 `{ map, x, y, sprite, display_name }`; the sprite is `4_M_MANAGER` and the name "Treasure Hunter" by default. |
+
+- A monster name is an AegisName or a mod's full name. A plain name is the event's mod's record first. The monster must have stats.
+- `level_band` picks the fields whose level falls in the band. A field is a map whose ID has `_fild`, as rAthena names its fields, and its level is the middle level of its spawns, weighted by their amounts, without bosses. `maps` lists maps of any kind instead.
+- A boss lands on a random walkable cell of a random map, and leaves when the run ends. With `announce`, the world hears when it appears, who killed it with the MVP, the player with the most damage dealt and taken, as `mob_dead` finds it, and when it leaves.
+- Invaders enter at walkable cells at the town's edges. They attack players on sight, chase them as rAthena's monster AI does, and with no target walk toward the nearest player on the map. The raid is won when the last wave has started and every invader died, and lost when the time runs out. Each wave and the result are announced.
+- Each chest lands on a random walkable cell of a random map of the event. A hint NPC tells how many chests are still there, and for up to three of them the direction and distance from the NPC on its map, or the map and the rough cell. The hunt is won when every chest is opened.
+- `map` sets the zone that runs the script. Without it, the script runs on the boss's map, the town, or the first hint NPC's map.
+- A map an event names must run, or the server does not start. A hint NPC on a map that does not run is skipped, with a warning.
+
+`rewards` is `{ to, items, zeny, exp, currency, min_share }`:
+
+| Field | Meaning |
+|---|---|
+| `to` | `killer`: the player who killed the boss or opened the chest, or for an invasion the player who killed its last monster. `participants`: the players on the map who did at least `min_share` percent of the damage, 1 by default. `everyone_on_map`: every player on the map. Each gets the whole reward. |
+| `items` | A list of `{ item, amount }`. It needs `player.give_items`. |
+| `zeny` | It needs `player.give_zeny`. |
+| `exp` | `{ base, job }`. It needs `player.give_exp`. |
+| `currency` | A mapping of currency names to amounts. Another mod's currency, core's too, needs `currencies.modify`. |
+
+- A boss's and a chest's rewards come at their death, an invasion's when it is won. Only players on the map get them.
+- Items that do not fit, and zeny past 2,147,483,647, come by mail from the event.
+- Rewards go through transfers, with the action `event` in the item and zeny logs.
+- A reward is saved with its progress in one commit, so a restart never gives it twice.
+
+A typed event's script gets the run:
+
+```lua
+local context = require "wa.context"
+local events = require "wa.events"
+
+return function()
+  local run = context:get_event()
+  local boss = run:get_monsters()[1]
+  events.on("death", function()
+    for _, player in ipairs(run:get_participants()) do
+      player:send_message("Thank you, " .. player.name .. ".")
+    end
+  end, { victim = boss })
+end
+```
+
+- `context:get_event()` is the run in a typed event's script, and nil elsewhere.
+- `run:get_monsters()` returns the run's living monsters on the context's map. `run:get_participants()` returns the players on the map with at least `min_share` of the damage to the run's monsters there. Both need `game.read`.
+- `run:finish("won")` or `run:finish("lost")` ends the run within a second. An invasion that finishes won gives its rewards.
+
+World events of any type:
+
+```lua
+local events = require "wa.events"
+local world_events = require "wa.world_events"
+
+return function()
+  events.on("world_event_end", function(event)
+    -- event.name, event.type ("boss", "invasion", "treasure_hunt" or
+    -- "script") and event.result ("won", "lost", "stopped" or nil).
+  end)
+  world_events.start("Prontera_Raid")
+  world_events.stop("example.other:Night")
+end
+```
+
+- `world_event_start` and `world_event_end` run in every zone for every run.
+- `world_events.start(name)` starts a run now for its duration, and `world_events.stop(name)` ends the run, with the result `stopped`. They take effect within a second and return false when the event does not exist, already runs, or does not run. A plain name is the calling mod's event. They need `events.control`.
+- Restarts: a typed run that a stop cut short goes on while its window is open, from its progress: a boss that did not die comes back, chests that were opened stay opened, and an invasion starts again at the wave it was in. A run that ended before its time, such as a boss that died, does not.
+- Core has one sample event of each type: `core:Field_Boss`, `core:Prontera_Invasion` and `core:Treasure_Hunt`. They are off until the server owner turns them on (server/README.md, "World events").
+- The client shows each start and end, and a list of the runs that last.
+- [examples/halloween](examples/halloween) has an event of each type, a script that uses the run, and tests that drive the clock.
 
 ### Skills: data/skills.yml
 
@@ -754,6 +872,7 @@ end
 | `skill_used` | `use` | A skill took effect on the context's map, after its cast time ("Skills" below). Mod, event and item contexts. |
 | `chat` | `message` | A player on the context's map said a line, after it went out ("Chat" below). Mod, NPC and event contexts. |
 | `cast` | `cast` | Skill contexts only: the skill takes effect ("Skills" below). |
+| `world_event_start`, `world_event_end` | `event` | A run of a world event started or ended, on any map: `event` is `{ name, type, result }` ("Typed events" below). Mod, NPC and event contexts. |
 
 Event contexts can listen to the events of mod contexts.
 
@@ -1815,6 +1934,7 @@ Modules:
 | `wa.emotions` | The constants of `npc:show_emotion`, from rAthena's `ET_` names, such as `emotions.thanks`. |
 | `wa.variables`, `wa.text`, `wa.maps`, `wa.world` | Saved variables, text, and announcements ("NPC scripts"). |
 | `wa.schedules`, `wa.spawning`, `wa.hooks` | Schedules, monsters and hooks ("Schedules", "Spawning monsters", "Hooks"). |
+| `wa.world_events` | `world_events.start` and `world_events.stop` ("Typed events"). |
 
 Constant names come from rAthena's by a fixed rule (0002a, "Constants used in arguments", lists the spelled-out names): the prefix goes, the rest is in lower case, and a few names are spelled out. So `RC_DemiHuman` is `races.demi_human`, `SC_STUN` is `statuses.stun`, `EF_HEAL` is `effects.heal`, and `W_2HSWORD` is `weapon_types.two_handed_sword`. A name that starts with a digit gets an `n`: `statuses.n2011rwc_scroll`.
 

@@ -347,7 +347,7 @@ func (s *Server) Restart() {
 // commands one after another.
 const configYAML = `mods:
   approve:
-    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction, guild.manage, rules.override, mail.send, currencies.modify, shops.modify]
+    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction, guild.manage, rules.override, mail.send, currencies.modify, shops.modify, events.schedule, events.control]
 chat:
   new_character_period: 0s
   burst: 100
@@ -429,6 +429,8 @@ type AuditPlayer struct {
 	CharacterID int64       `json:"character_id"`
 	Zeny        int64       `json:"zeny"`
 	Items       []AuditItem `json:"items"`
+	// Currencies are a character's own currencies above 0, by full name.
+	Currencies map[string]int64 `json:"currencies"`
 }
 
 // AuditGround is one ground item.

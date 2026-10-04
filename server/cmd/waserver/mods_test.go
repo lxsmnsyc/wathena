@@ -19,7 +19,7 @@ import (
 
 // sampleApprovals approves what the sample mods request.
 var sampleApprovals = map[string][]string{
-	"example.halloween":    {"player.give_items", "world.announce", "events.schedule", "rules.override"},
+	"example.halloween":    {"player.give_items", "player.give_zeny", "world.announce", "events.schedule", "events.control", "rules.override"},
 	"example.wolf-pack":    {"rules.override"},
 	"example.lucky-clover": {"rules.override", "items.modify_rolls", "player.give_items"},
 	"example.town-crier":   {"rules.override"},
@@ -124,8 +124,21 @@ func TestLoadSampleMod(t *testing.T) {
 	if s := m.zone.Monsters[100_001]; s.Status.Class != 1 || s.Status.Mode&0x4000000 == 0 || s.Sprite != 1130 {
 		t.Errorf("pumpkin king %+v", s.Status)
 	}
-	if len(m.all.Events) != 2 || m.all.Events[0].Map != "map/prt_fild08" || m.all.Events[0].Script != "example.halloween:scripts/events/pumpkin_king.lua" {
+	// Core's three sample typed events, which are off until the config
+	// turns them on, and the Halloween mod's five.
+	var names []string
+	for _, d := range m.all.Events {
+		names = append(names, d.Name)
+	}
+	if len(m.all.Events) != 8 || !slices.Contains(names, "core:Field_Boss") || !slices.Contains(names, "example.halloween:Candy_Hunt") {
+		t.Errorf("events %q", names)
+	}
+	if i := slices.Index(names, "example.halloween:Pumpkin_King"); i < 0 || m.all.Events[i].Map != "map/prt_fild08" ||
+		m.all.Events[i].Script != "example.halloween:scripts/events/pumpkin_king.lua" {
 		t.Errorf("events %+v", m.all.Events)
+	}
+	if i := slices.Index(names, "example.halloween:Pumpkin_Raid"); i < 0 || m.all.Events[i].Invasion.Waves[0].Monsters[0].ID != 100_000 {
+		t.Errorf("the raid's monsters %+v", m.all.Events)
 	}
 	// The Chain Lightning mod's skill, which Mages learn.
 	chain := m.all.Skills.ByName("example.chain-lightning:CHAIN_LIGHTNING")

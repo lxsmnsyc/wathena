@@ -17,6 +17,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/status"
+	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -138,6 +139,9 @@ func (h *Headless) drain() {
 		case a := <-h.z.announces:
 			h.z.announce(a)
 			h.announcements = append(h.announcements, a.text)
+			continue
+		case n := <-h.z.notices:
+			h.z.worldNotice(n)
 			continue
 		default:
 		}
@@ -1079,3 +1083,23 @@ func (h *Headless) Vend(seller, buyer int64, lines []VendLine) (bool, string, er
 	h.step(0)
 	return out == "bought", out, nil
 }
+
+// SpawnEvent places a typed run's monsters, on the calling goroutine.
+func (h *Headless) SpawnEvent(s worldevent.Spawn) ([]worldevent.Placed, error) {
+	if !h.bound || s.Map != h.z.Map {
+		return nil, fmt.Errorf("the map %s does not run in this world", worldevent.MapID(s.Map))
+	}
+	return h.z.spawnEvent(s)
+}
+
+// EventAlive counts a run's monsters that live.
+func (h *Headless) EventAlive(run int64) int { return h.z.eventAlive(run) }
+
+// EventHints places a treasure hunt's hint NPCs.
+func (h *Headless) EventHints(run int64, hints []worldevent.Hint) { h.z.eventHints(run, hints) }
+
+// EventReward gives a run's rewards for a unit of progress.
+func (h *Headless) EventReward(rr worldevent.RewardRun) { h.z.eventReward(rr) }
+
+// ClearEvent removes a run's monsters and NPCs.
+func (h *Headless) ClearEvent(run int64) { h.z.clearEvent(run) }

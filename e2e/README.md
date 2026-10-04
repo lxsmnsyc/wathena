@@ -13,6 +13,7 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
 - `Start` builds `waserver` and an asset build once per test run, then starts a server for the test and stops it when the test ends.
 - The world has two maps: `placeholder/map`, where players start, and `e2e_field`, a copy of it for warps.
 - The mod in [testdata/mods/fixture](testdata/mods/fixture) places Dummies, which stand still and always drop a Jellopy and a Test Charm with a roll, a shop, and NPCs that give and take items and zeny, change jobs, warp and mute. It adds the word "badword" to the chat filter. It uses only the 1.0 Lua API.
+- The fixture has three typed world events (decision 0025): `Boss` on the start map, `Raid`, an invasion of the start map in two waves of Raiders, and `Hunt`, two chests on `e2e_field` with a Treasure Hunter on the start map. Their condition never holds, so they start only from `!event start <name>` and stop with `!event stop <name>`, which call `wa.world_events`. The config approves `events.schedule` and `events.control` for the fixture.
 - The fixture also has a currency, `e2e.fixture:tokens`, that each character owns, and the Exchange, a shop of the table form at 3,12 that does not buy from players:
   - An Apple costs 10 zeny, 2 Jellopy and 1 token, with a stock of 3 that fills again an hour after the last fill.
   - A Red Potion costs 5 tokens.
@@ -118,6 +119,11 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestDuplicationMarketWithDatabase` | The same, with PostgreSQL, then the saved inventories, carts, mails and zeny. |
 | `TestDuplicationBuyingStores` | 8 bots open buying stores and sell to each other's, with connections closed in the middle of sales and with stores open. |
 | `TestDuplicationBuyingStoresWithDatabase` | The same, with PostgreSQL, then the saved inventories and zeny. |
+| `TestWorldEventBoss` | `!event start Boss` starts the fixture's boss event with `world_events.start`. Alice gets `WorldEventNotice` and the announcement, a second start is refused, and Bob, who logs in during the run, gets `WorldEventList`. Alice kills the boss: the announcement names her, the end notice says won, and she gets the 100 zeny of a participant while Bob gets none. A stop ends a second run with "stopped". |
+| `TestWorldEventInvasion` | The Raid's two waves of Raiders enter at the map's edges and come to the players. Alice kills them, the second wave comes once the first died, and the raid is won: Bob, who did not fight, gets the 2 Apples of everyone on the map. |
+| `TestWorldEventTreasureHunt` | The Hunt hides 2 chests on `e2e_field`. The Treasure Hunter on the start map tells their map and cells. Alice warps there and opens both: each gives 50 zeny and drops its Jellopy, and the hunt is won. |
+| `TestWorldEventRestartInTheDatabase` | With PostgreSQL, a boss run that `Restart` cut short goes on after it, and Alice, back after the restart, gets it in `WorldEventList`. She kills the boss once. After another restart the boss stays dead, her zeny holds the reward once, `world_event_progress` has the rows `boss` and `end`, and the zeny log has one `event` line. |
+| `TestPhase5ExitCheck` | The phase 5 exit check below: 24 bots in 5 groups on both maps trade, store, mail, vend, sell to buying stores, buy at the Exchange and drop items at the same time, with a restart in the middle, with PostgreSQL. |
 
 ## Duplication tests
 
@@ -154,13 +160,35 @@ Personal storage, carts and trades are part of the test too (phase 5 step 6):
 Mail, vending, the Exchange and buying stores are part of the test too (phase 5 step 7):
 
 - The audit lists each mail in memory in the `guild_storage` entry, named `mail:<ID>`, with its items and zeny. It includes a zone's sent mails that wait for its next commit to reach their mailboxes. The test counts them in the totals.
+- The audit reads the mail registry on the same zone as the storages, the first map with players by name. So the bots that use mail, storages and carts stay on one map, as the bots that use the guild storage do.
 - `MarketSetup` gives each Merchant a cart, zeny, Pushcart 3 and Vending. `VendMove` opens a shop of Jellopy from the cart, and closes it, or closes the connection with it open. `VendBuyMove` buys from a shop in view. `ExchangeMove` buys Jellopy that cost Jellopy. `MailMove` mails Jellopy and zeny to another bot, and `MailTakeMove` takes a mail. `BuyingStoreMove` opens a store that buys Jellopy, and `SellToStoreMove` sells to one. Each sends its sale, purchase, mail or take and closes the connection at once one time in 10.
 - The mail test runs `e2e.marketrules`, which has no mail fees, so the zeny total holds.
 - Items that a sale, a purchase or a take moved into an inventory are not pick-ups, so the counts of items that came in leave them out: the changes just before `VendingSold`, `VendingResult` BOUGHT, `BuyingStoreBought`, `ShopResult` BOUGHT and `MailResult` TAKEN.
 
+The audit also lists each player's own currencies, such as the fixture's tokens, by full name. The test counts them in the totals, and `SavedTotals` reads them from `character_currencies`.
+
 With a database, `CheckDatabase` stops the server and checks the saved inventories, guild storages, storages, carts and mails, and the zeny of characters and mails, against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial.
 
 A failure that shows a total below the start with a closed connection means a character left the world while the test still counted on it. See decision 0017, "A missing total in the duplication test". `botclient` writes with its own timeout for this reason: the WebSocket library closes the connection when a write's context ends during the write.
+
+## The phase 5 exit check
+
+`TestPhase5ExitCheck` is the exit check of phase 5 (docs/strategy.md, "Phase 5"): the duplication tests' moves, all at the same time, under load, with a restart. It needs PostgreSQL, and skips without `WATHENA_TEST_DATABASE_URL`.
+
+What runs:
+
+- 24 Merchants in 5 groups. On `e2e_field`, 6 open vending shops and buy from each other and mail each other, and 6 trade and use their storages and carts. On the start map, 4 buy at the Exchange, 4 open buying stores and sell to each other's, and 4 drop Jellopy and pick up each other's.
+- The moves close their connections in the middle one time in 8 to 15, as in the duplication tests, and the bots log in again.
+- The shoppers buy Jellopy for Jellopy, and Red Potions for 5 tokens each, at most 20 times each over the run. Only this move takes tokens, so the audits count each Red Potion as 5 tokens, and the tokens stay constant.
+- After half the time, the bots that drop items stop and pick up every ground item, since ground items are not saved. Then the server stops while the other groups move. The saved totals must be the totals of the start. The server starts again, every bot logs in again and waits, and the first audit with every bot must equal what the database saved. Then the bots go on.
+- At the end, `CheckDatabase` checks the saved totals against the last audit, the item log of drops and pick-ups, and a history for every serial. The zeny log must show the tokens given at the start, less the tokens the Exchange took, as the tokens the characters hold, and 5 tokens for each Red Potion the item log shows bought.
+- The test logs a summary: the bots, maps and minutes, the moves by kind, the disconnects and logins again, the audits, the restart, and the totals at the start, at the restart, after it and at the end.
+
+How long:
+
+- By default the moves run for 40 seconds, the restart left out, so the `test` step stays short.
+- `WATHENA_EXIT_MINUTES` sets the minutes of moves. The `e2e` step of `scripts/check.sh` sets it to 30.
+- `WATHENA_EXIT_REPORT` names a file the test writes its numbers to. The `e2e` step prints that file, since `go test` without `-v` hides the log of a test that passed.
 
 ## Running every check
 

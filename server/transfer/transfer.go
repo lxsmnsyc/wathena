@@ -68,6 +68,9 @@ const (
 	// KindFee is where fees and taxes go: the mail fee, the mail
 	// attachment price and the vending tax.
 	KindFee
+	// KindEvent is where a world event's rewards come from (review
+	// decision 31).
+	KindEvent
 )
 
 var kindNames = [...]string{
@@ -85,6 +88,7 @@ var kindNames = [...]string{
 	KindSkill:        "skill",
 	KindUsed:         "used",
 	KindFee:          "fee",
+	KindEvent:        "event",
 }
 
 // String is the kind's name in logs and in the database, such as
@@ -172,6 +176,9 @@ const (
 	ActionVend Action = "vend"
 	// ActionBuyingStore is a sale to a buying store.
 	ActionBuyingStore Action = "buying_store"
+	// ActionEvent is a world event's reward, and its mail when it did
+	// not fit.
+	ActionEvent Action = "event"
 )
 
 // ItemLog is one item move.

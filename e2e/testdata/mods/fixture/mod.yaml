@@ -3,8 +3,9 @@
 # jobs, warp, mute and open storage, a word for the chat filter, items
 # with restrictions, an extra storage, chat commands for the guild,
 # storage, cart and item scenarios, a trade hook, a currency, a shop with
-# costs and stock, and chat commands for mail, stores and currencies, on
-# the placeholder maps. It uses only API 1.0.
+# costs and stock, chat commands for mail, stores and currencies, and a
+# boss, an invasion and a treasure hunt, on the placeholder maps. It uses
+# only API 1.0.
 id: e2e.fixture
 name: End-to-end fixture
 version: 0.1.0
@@ -31,5 +32,7 @@ permissions:
   - mail.send
   - currencies.modify
   - shops.modify
+  - events.schedule
+  - events.control
 scripts:
   - scripts/main.lua

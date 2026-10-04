@@ -244,6 +244,9 @@ type Context struct {
 	spawned   bool
 	// channels is set once the context made a chat channel.
 	channels bool
+	// run is the typed run of an event context, for
+	// context:get_event(), or 0.
+	run int64
 }
 
 // Ended reports whether the context has ended.
@@ -458,6 +461,9 @@ func (r *Runtime) init() error {
 		{"guild_call", r.guildCall},
 		{"guilds_create", r.guildsCreate},
 		{"guilds_find", r.guildsFind},
+		{"context_event", r.contextEvent},
+		{"event_run_call", r.eventRunCall},
+		{"world_events_request", r.worldEventsRequest},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -917,6 +923,10 @@ var Events = map[string][]string{
 	"vend":              {KindMod, KindNPC, KindEvent},
 	"buying_store_sale": {KindMod, KindNPC, KindEvent},
 	"mail":              {KindMod, KindNPC, KindEvent},
+	// A run of a world event started or ended, in any zone (review
+	// decision 31).
+	"world_event_start": {KindMod, KindNPC, KindEvent},
+	"world_event_end":   {KindMod, KindNPC, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

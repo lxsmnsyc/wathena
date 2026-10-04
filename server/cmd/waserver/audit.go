@@ -26,6 +26,8 @@ type auditPlayer struct {
 	CharacterID int64       `json:"character_id"`
 	Zeny        int64       `json:"zeny"`
 	Items       []auditItem `json:"items"`
+	// Currencies are a character's own currencies above 0, by full name.
+	Currencies map[string]int64 `json:"currencies,omitempty"`
 }
 
 // auditGround is one ground item.
@@ -49,7 +51,8 @@ type auditZone struct {
 const guildStorageMap = "guild_storage"
 
 // auditHandler lists every item and all zeny that players and the
-// ground hold, zone by zone, with serials, for the duplication tests
+// ground hold, and the players' own currencies, zone by zone, with
+// serials, for the duplication tests
 // (decision 0017): GET /debug/wathena/items. It is for development
 // only, since it shows serials.
 func auditHandler(w *world.World) http.HandlerFunc {
@@ -57,7 +60,7 @@ func auditHandler(w *world.World) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 		out := []auditZone{}
-		// The mails come from every zone's audit: the registry, which
+		// The mails come from the zones' audits: the registry, which
 		// every zone shares, and each zone's sent mails that wait for its
 		// next commit.
 		var mails []mail.Holding
@@ -72,7 +75,7 @@ func auditHandler(w *world.World) http.HandlerFunc {
 			}
 			az := auditZone{Map: a.Map, Players: []auditPlayer{}, Ground: []auditGround{}}
 			for _, p := range a.Players {
-				ap := auditPlayer{Name: p.Name, CharacterID: p.Owner.ID, Zeny: p.Zeny, Items: []auditItem{}}
+				ap := auditPlayer{Name: p.Name, CharacterID: p.Owner.ID, Zeny: p.Zeny, Items: []auditItem{}, Currencies: p.Currencies}
 				for _, it := range p.Items {
 					ap.Items = append(ap.Items, auditItem{Slot: it.Slot, Item: it.ID, Amount: it.Amount, Serial: it.Serial.String()})
 				}
@@ -86,7 +89,15 @@ func auditHandler(w *world.World) http.HandlerFunc {
 				az.Ground = append(az.Ground, ag)
 			}
 			out = append(out, az)
-			for _, m := range a.Mails {
+			// The registry's mails come from the same zone as the
+			// storages, for the same reason. Each zone adds its own sent
+			// mails. A registry listed by two zones at two moments could
+			// count a mail and the items it took or gave twice.
+			listed := a.Sent
+			if storages == nil && (len(a.Players) > 0 || z == w.Zones()[len(w.Zones())-1]) {
+				listed = a.Mails
+			}
+			for _, m := range listed {
 				if !slices.ContainsFunc(mails, func(h mail.Holding) bool { return h.Mail == m.Mail }) {
 					mails = append(mails, m)
 				}

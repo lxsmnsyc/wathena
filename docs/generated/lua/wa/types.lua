@@ -42,6 +42,8 @@
 ---| "vend"
 ---| "buying_store_sale"
 ---| "mail"
+---| "world_event_start"
+---| "world_event_end"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -858,6 +860,26 @@ function wa_Conversation:hide_image() end
 ---@param seconds integer Up to 600.
 function wa_Conversation:show_progress(seconds) end
 
+---A run of a typed world event, from context:get_event() (review decision 31). Its monsters and participants are those on the context's map.
+---@class wa.EventRun
+local wa_EventRun = {}
+
+---The run's monsters that live on the context's map: the boss, the invasion's monsters, or the treasure chests, in the order they spawned.
+---
+---Needs the permission `game.read`.
+---@return wa.Monster[]
+function wa_EventRun:get_monsters() end
+
+---The players on the context's map who did at least the rewards' min_share of the damage to the run's monsters there, 1% by default, sorted by name.
+---
+---Needs the permission `game.read`.
+---@return wa.Player[]
+function wa_EventRun:get_participants() end
+
+---Ends the run before its time, within a second. An invasion that finishes "won" gives its rewards, as when its last wave dies. world_event_end carries the result.
+---@param result "won"|"lost"
+function wa_EventRun:finish(result) end
+
 ---A shop of data/npcs.yml, from world.get_shop (review decision 30). Its changes hold for the whole world until the server stops: the shop's file sets it again at start. A stock the methods set is saved.
 ---@class wa.Shop
 local wa_Shop = {}
@@ -1647,6 +1669,13 @@ local wa_TradeOffer = {}
 ---@class wa.FromOptions
 ---@field from string "storage", "cart" or an extra storage's name of data/storages.yml.
 local wa_FromOptions = {}
+
+---The object of world_event_start and world_event_end (review decision 31).
+---@class wa.WorldEvent
+---@field name string The event's full name, such as core:Field_Boss.
+---@field type "boss"|"invasion"|"treasure_hunt"|"script" The event's type: "script" for an event without one.
+---@field result "won"|"lost"|"stopped"|nil How the run ended, at world_event_end. A boss is won when it dies, an invasion when its last wave dies, and a treasure hunt when every chest is opened. A run whose time ran out is lost. nil at world_event_start, and for a script event that ran its time.
+local wa_WorldEvent = {}
 
 ---The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.
 ---@class wa.Trade

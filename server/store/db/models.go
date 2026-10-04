@@ -492,6 +492,13 @@ type World struct {
 	CreatedAt        pgtype.Timestamptz
 }
 
+type WorldEventProgress struct {
+	Event       string
+	ScheduledAt pgtype.Timestamptz
+	Unit        string
+	At          pgtype.Timestamptz
+}
+
 type WorldEventRun struct {
 	Event       string
 	ScheduledAt pgtype.Timestamptz

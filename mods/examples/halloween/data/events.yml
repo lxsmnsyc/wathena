@@ -15,3 +15,58 @@
   duration_minutes: 720
   script: scripts/events/pumpkin_night.lua
   map: prt_fild08
+
+# Typed events (review decision 31). Core runs them from their fields;
+# a script is optional.
+
+# A boss event: the Headless Rider appears on the Prontera fields at
+# 22:00, with an announcement. Every player who did at least 5% of its
+# damage gets the reward. Its script uses the run.
+- name: Headless_Rider
+  type: boss
+  trigger: { daily: "22:00" }
+  duration_minutes: 30
+  monsters: [example.halloween:HEADLESS_RIDER]
+  maps: [prt_fild08]
+  announce: true
+  script: scripts/events/headless_rider.lua
+  rewards:
+    to: participants
+    min_share: 5
+    zeny: 3000
+    items:
+      - { item: Pumpkin, amount: 5 }
+
+# An invasion: Pumpkin Porings raid Prontera at 23:00 in two waves. The
+# second comes a minute after the first. Every player in Prontera when
+# the last one dies gets the reward.
+- name: Pumpkin_Raid
+  type: invasion
+  trigger: { daily: "23:00" }
+  duration_minutes: 20
+  town: prontera
+  waves:
+    - monsters: [{ monster: example.halloween:PUMPKIN_PORING, amount: 5 }]
+      start: cleared
+    - monsters: [{ monster: example.halloween:PUMPKIN_PORING, amount: 3 }]
+      start: "60s"
+  rewards:
+    to: everyone_on_map
+    items:
+      - { item: Candy, amount: 3 }
+
+# A treasure hunt: three Candy Chests on the Prontera fields at noon. The
+# Candy Witch tells where they are. The player who opens one gets its
+# drops and the reward. The Pumpkin Witch also starts one on request.
+- name: Candy_Hunt
+  type: treasure_hunt
+  trigger: { daily: "12:00" }
+  duration_minutes: 60
+  chests: 3
+  maps: [prt_fild08]
+  chest: example.halloween:CANDY_CHEST
+  hint_npcs:
+    - { map: prt_fild08, x: 197, y: 204, sprite: 4_F_KAFRA1, display_name: Candy Witch }
+  rewards:
+    to: killer
+    zeny: 500

@@ -3,6 +3,7 @@ package zone
 import (
 	"context"
 	"slices"
+	"strconv"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
@@ -44,10 +45,15 @@ type Writes struct {
 	Mails  []mail.Write
 	Stock  []shop.StockRow
 	Stores []market.Write
+	// Events are the units of world events' progress whose rewards the
+	// commit saves (autoevents.go).
+	Events []EventUnit
 }
 
 // Empty reports whether there is nothing to write.
-func (w *Writes) Empty() bool { return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 }
+func (w *Writes) Empty() bool {
+	return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 && len(w.Events) == 0
+}
 
 // WritesCommitter is a Committer that also saves Writes in the same
 // transaction.
@@ -208,12 +214,12 @@ func (z *Zone) commitTransfers() {
 	defer z.releaseStorages()
 	defer z.deliverMails()
 	if len(z.txPlayers) == 0 && len(z.txStorageRefs) == 0 && len(z.txStorages) == 0 && len(z.txPersonal) == 0 &&
-		len(z.txMails) == 0 && len(z.txShops) == 0 && len(z.txStores) == 0 && z.txLogs.Empty() {
+		len(z.txMails) == 0 && len(z.txShops) == 0 && len(z.txStores) == 0 && len(z.txEventUnits) == 0 && z.txLogs.Empty() {
 		return
 	}
 	storages := z.storageCommits()
-	writes := Writes{Mails: z.mailWrites(), Stock: z.stockWrites(), Stores: z.txStores}
-	z.txStores = nil
+	writes := Writes{Mails: z.mailWrites(), Stock: z.stockWrites(), Stores: z.txStores, Events: z.txEventUnits}
+	z.txStores, z.txEventUnits = nil, nil
 	logs, players := z.txLogs, z.txPlayers
 	z.txLogs, z.txPlayers = transfer.Logs{}, nil
 	var saves []CommitSave
@@ -277,6 +283,9 @@ type Holding struct {
 	Owner transfer.Owner
 	Zeny  int64
 	Items []character.Item
+	// Currencies are the character's own currencies above 0, by the
+	// currency's full name. Account currencies are not in it.
+	Currencies map[string]int64
 }
 
 // GroundHolding is one ground item, for Audit.
@@ -306,6 +315,8 @@ type Audit struct {
 	// and the zone's sent mails that wait for the next commit to reach
 	// their mailboxes, read the same way.
 	Mails []mail.Holding
+	// Sent are the zone's sent mails of Mails alone.
+	Sent []mail.Holding
 }
 
 // sentMails are what the zone's sent mails hold while they wait for the
@@ -322,6 +333,26 @@ func (z *Zone) sentMails(listed []mail.Holding) []mail.Holding {
 	return out
 }
 
+// auditCurrencies are the player's own currencies above 0 by full name,
+// for Audit. A currency without a record keeps its ID as its name.
+func (z *Zone) auditCurrencies(p *Player) map[string]int64 {
+	var out map[string]int64
+	for id, n := range p.currencies {
+		if n <= 0 {
+			continue
+		}
+		name := strconv.FormatUint(uint64(id), 10)
+		if r := z.currencies().ByID(id); r != nil {
+			name = r.Name
+		}
+		if out == nil {
+			out = map[string]int64{}
+		}
+		out[name] += n
+	}
+	return out
+}
+
 // Audit lists what the zone's players and ground hold. It runs on the
 // zone's goroutine.
 func (z *Zone) Audit(ctx context.Context) (Audit, error) {
@@ -332,7 +363,8 @@ func (z *Zone) Audit(ctx context.Context) (Audit, error) {
 			if p.inventory == nil {
 				continue
 			}
-			a.Players = append(a.Players, Holding{Name: p.Name, Owner: p.owner(), Zeny: p.record.Zeny, Items: savedItems(p.inventory)})
+			a.Players = append(a.Players, Holding{Name: p.Name, Owner: p.owner(), Zeny: p.record.Zeny, Items: savedItems(p.inventory),
+				Currencies: z.auditCurrencies(p)})
 		}
 		for e := range z.entities.all() {
 			if g := e.item; g != nil {
@@ -348,7 +380,8 @@ func (z *Zone) Audit(ctx context.Context) (Audit, error) {
 		if z.Mail != nil {
 			a.Mails = z.Mail.Audit()
 		}
-		a.Mails = append(a.Mails, z.sentMails(a.Mails)...)
+		a.Sent = z.sentMails(a.Mails)
+		a.Mails = append(a.Mails, a.Sent...)
 		done <- a
 	}
 	select {
