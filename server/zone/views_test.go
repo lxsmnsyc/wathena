@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -116,6 +117,7 @@ func frameText(p *Player, seen map[string]int) []string {
 // one with viewEvents and one with a scan of every entity, and checks
 // that every player gets the same messages from both.
 func TestViewsMatchFullScan(t *testing.T) {
+	testrace.SkipUnderRace(t, "its two zones run on one goroutine")
 	a, b := twinZone(), twinZone()
 	b.viewsForTest = fullScanViews(b)
 	r := rand.New(rand.NewPCG(8, 9))

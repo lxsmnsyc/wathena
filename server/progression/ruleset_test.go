@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/rules/rulestest"
 )
 
@@ -55,6 +56,7 @@ func checkPenalty(t *testing.T, name string, tb *Tables, exp, drop bool) {
 // off, a renewal base gives 100% as pre-renewal does. Without renewal's
 // data a pre-renewal base cannot turn them on.
 func TestLevelPenaltyFlags(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	re, _ := load(t, reference.Renewal)
 	for _, mode := range reference.Modes {
 		tb := tables(t, mode)
@@ -84,6 +86,7 @@ func TestLevelPenaltyFlags(t *testing.T) {
 // TestMixedRulesetsLevelPenalty runs level_penalty.json for each sampled
 // mixed ruleset (rulestest.Mixes), with the rates each mix's flags pick.
 func TestMixedRulesetsLevelPenalty(t *testing.T) {
+	testrace.SkipUnderRace(t, "it checks sampled mixed rulesets on one goroutine")
 	re, _ := load(t, reference.Renewal)
 	for _, rl := range rulestest.Mixes() {
 		mode := reference.PreRenewal

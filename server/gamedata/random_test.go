@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -65,6 +66,7 @@ func (p pcg) IntN(n int) int { return p.r.IntN(n) }
 //     copy, each option's share at each index, and the values' range and
 //     mean match rAthena's statistics within six standard errors.
 func TestRandomOptionParity(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			core, err := convert.LoadCore(mode)

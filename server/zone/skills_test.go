@@ -3,6 +3,8 @@ package zone
 import (
 	"log/slog"
 	"os"
+	"slices"
+	"sync"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
@@ -13,9 +15,20 @@ import (
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
 
-// testSkills is a mode's skill data and trees.
-func testSkills(t *testing.T, mode reference.Mode) (*skill.DB, *skill.Trees) {
+// skillSource is a mode's skills.json and skill_trees.json, read once
+// per test binary. Tests get copies from testSkills.
+type skillSource struct {
+	db    *skill.DB
+	trees *skill.TreeData
+}
+
+var skillSources sync.Map // reference.Mode -> *skillSource
+
+func loadSkillSource(t *testing.T, mode reference.Mode) *skillSource {
 	t.Helper()
+	if v, ok := skillSources.Load(mode); ok {
+		return v.(*skillSource)
+	}
 	var d skill.Data
 	if err := reference.LoadFile("extracts/"+string(mode)+"/skills.json", &d); err != nil {
 		t.Fatal(err)
@@ -27,6 +40,27 @@ func testSkills(t *testing.T, mode reference.Mode) (*skill.DB, *skill.Trees) {
 	var td skill.TreeData
 	if err := reference.LoadFile("extracts/"+string(mode)+"/skill_trees.json", &td); err != nil {
 		t.Fatal(err)
+	}
+	v, _ := skillSources.LoadOrStore(mode, &skillSource{db: db, trees: &td})
+	return v.(*skillSource)
+}
+
+// testSkills is a mode's skill data and trees. Each call returns new
+// copies, which a test may change.
+func testSkills(t *testing.T, mode reference.Mode) (*skill.DB, *skill.Trees) {
+	t.Helper()
+	src := loadSkillSource(t, mode)
+	db := src.db.Clone()
+	for _, d := range src.db.All() {
+		db.Put(d.Copy())
+	}
+	td := *src.trees
+	td.Trees = slices.Clone(td.Trees)
+	for i := range td.Trees {
+		td.Trees[i].Skills = slices.Clone(td.Trees[i].Skills)
+		for j := range td.Trees[i].Skills {
+			td.Trees[i].Skills[j].Requires = slices.Clone(td.Trees[i].Skills[j].Requires)
+		}
 	}
 	return db, skill.LoadTrees(&td)
 }

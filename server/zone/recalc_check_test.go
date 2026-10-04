@@ -11,13 +11,13 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/shared/rng"
-	"github.com/lxsmnsyc/wathena/tools/convert"
 )
 
 // The full-recalculation check of strategy section 5.3. A player's
@@ -37,8 +37,8 @@ import (
 //     command, then the item is equipped, the level rises and the item
 //     comes off.
 //
-// The race detector makes the Lua contexts slow, so under it the check
-// takes every 25th item and card.
+// The race detector makes the Lua contexts slow, so the check runs
+// without it only.
 
 // recalcFixture is a zone with one mode's core items and scripts.
 type recalcFixture struct {
@@ -59,13 +59,7 @@ type recalcFixture struct {
 
 func loadRecalcFixture(t *testing.T, mode reference.Mode) *recalcFixture {
 	t.Helper()
-	var core *convert.Core
-	var err error
-	if mode == reference.Renewal {
-		core, err = testCore()
-	} else {
-		core, err = convert.LoadCore(mode)
-	}
+	core, err := testCores[mode]()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,10 +333,7 @@ func isEquipment(d *item.Def) bool {
 }
 
 func TestFullRecalculationEveryItem(t *testing.T) {
-	every := 1
-	if raceEnabled {
-		every = 25
-	}
+	testrace.SkipUnderRace(t, "it equips every item on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			f := loadRecalcFixture(t, mode)
@@ -357,10 +348,7 @@ func TestFullRecalculationEveryItem(t *testing.T) {
 					equipment = append(equipment, d)
 				}
 			}
-			for i, d := range equipment {
-				if i%every != 0 {
-					continue
-				}
+			for _, d := range equipment {
 				who, ok := f.wearerFor(d)
 				if !ok {
 					res.skip("no job and sex that the job tables compute can wear it", d.ID)
@@ -409,10 +397,7 @@ func TestFullRecalculationEveryItem(t *testing.T) {
 					slotted = append(slotted, d)
 				}
 			}
-			for i, c := range cards {
-				if i%every != 0 {
-					continue
-				}
+			for _, c := range cards {
 				var host *item.Def
 				var who wearing
 				for _, d := range slotted {
@@ -470,8 +455,8 @@ func TestFullRecalculationEveryItem(t *testing.T) {
 			for _, reason := range slices.Sorted(maps.Keys(res.skipped)) {
 				skipped = append(skipped, fmt.Sprintf("%s: %d", reason, len(res.skipped[reason])))
 			}
-			t.Logf("%s: every %d of %d equipment items and %d cards; checked %d items and %d cards in %d steps; %d mismatches; skipped %s",
-				mode, every, len(equipment), len(cards), nItems, res.checked-nItems, res.steps, len(res.mismatches), strings.Join(skipped, ", "))
+			t.Logf("%s: %d equipment items and %d cards; checked %d items and %d cards in %d steps; %d mismatches; skipped %s",
+				mode, len(equipment), len(cards), nItems, res.checked-nItems, res.steps, len(res.mismatches), strings.Join(skipped, ", "))
 			for _, m := range res.mismatches[:min(len(res.mismatches), 20)] {
 				t.Errorf("mismatch: %s", m)
 			}

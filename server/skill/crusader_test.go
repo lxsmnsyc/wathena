@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 )
 
@@ -50,6 +51,7 @@ func plainTarget(f *damageFixture) *battle.Status {
 // and the rolls' range and mean. The hit rate of each target compares
 // over its five levels, as one level's 50 rolls drifted far.
 func TestShieldChainGolden(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			f := loadDamageFixture(t, mode)
@@ -124,6 +126,7 @@ func (f fixedRandSeq) IntN(n int) int { return int(f) % n }
 //     200% per level, its own shield part, and its constant addition of
 //     at least 100, for 5 hits.
 func TestShieldBaseDamage(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	const weight, refine = 100, 4
 	shield := func(src *battle.Status) *battle.Status {
 		cp := *src
@@ -165,6 +168,7 @@ func TestShieldBaseDamage(t *testing.T) {
 // 20 hit after the cap of 5, so a roll of 24 hits and 25 misses, while
 // Holy Cross only hits on rolls below 5.
 func TestShieldChainHitBonus(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	f, src := crusaderAttacker(t, reference.PreRenewal, 4015, "melee", 0)
 	target := *f.mobs[1039]
 	target.Flee = 1000
@@ -188,6 +192,7 @@ func TestShieldChainHitBonus(t *testing.T) {
 // TestSacrificeLuckyDodge checks battle_calc_weapon_attack's lucky dodge:
 // Martyr's Reckoning can be lucky dodged, Holy Cross cannot.
 func TestSacrificeLuckyDodge(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	for _, mode := range reference.Modes {
 		f, src := crusaderAttacker(t, mode, 4015, "melee", 0)
 		target := *f.mobs[1002]
@@ -208,6 +213,7 @@ func TestSacrificeLuckyDodge(t *testing.T) {
 // damage after the element table, and the element table does not apply
 // a second time; another unit takes nothing.
 func TestGrandCrossOnCaster(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	for _, mode := range reference.Modes {
 		f, src := crusaderAttacker(t, mode, 14, "magic", 0)
 		def := f.db.Get(IDGrandCross)
@@ -233,6 +239,7 @@ func TestGrandCrossOnCaster(t *testing.T) {
 // lowest rolls: flag 1 deals 1500, flag 0 deals 3000 less the target's
 // DEF (renewal) or its percent (pre-renewal), and its soft DEF.
 func TestGospelDamage(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	for _, mode := range reference.Modes {
 		f, src := crusaderAttacker(t, mode, 4015, "melee", 0)
 		def := f.db.Get(IDGospel)
@@ -254,6 +261,7 @@ func TestGospelDamage(t *testing.T) {
 // TestDefenderRanged checks SC_DEFENDER in battle_calc_damage: a ranged
 // weapon hit loses val2 percent, a melee one nothing.
 func TestDefenderRanged(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	for _, mode := range reference.Modes {
 		f := loadDamageFixture(t, mode)
 		archer := *f.mobs[1040]

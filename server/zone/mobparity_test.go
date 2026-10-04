@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -200,6 +201,7 @@ type mobAICase struct {
 // decision of the hard AI of a probe monster with each AI type's modes,
 // and compares what the monster does.
 func TestMobAIParity(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			var rec struct {
@@ -457,6 +459,7 @@ type mobSkillCase struct {
 // "selection" counts. The effects of the skill are compared too, and
 // counted apart, since many monster skills have no port yet.
 func TestMobSkillUseParity(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			var rec struct {

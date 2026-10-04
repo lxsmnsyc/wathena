@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/rules/rulestest"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
@@ -171,6 +172,7 @@ func TestRebalancedStatusEffects(t *testing.T) {
 // lesson with the renewal songs. The other flags must not change the
 // recorded players, who have no equipment, statuses or trait stats.
 func TestMixedRulesetsStatus(t *testing.T) {
+	testrace.SkipUnderRace(t, "it checks sampled mixed rulesets on one goroutine")
 	ran := 0
 	for i, rl := range rulestest.Mixes() {
 		if rl.ASPD != rl.Renewal || rl.EnsembleSongs != rl.Renewal {

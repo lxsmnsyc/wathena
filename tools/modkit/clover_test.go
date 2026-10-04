@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
@@ -16,6 +17,7 @@ import (
 // and get a random option of the mod's group, and the smith rerolls a
 // worn charm.
 func TestLuckyClover(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	e := env(t)
 	l, err := e.Load(context.Background(), "../../mods/examples/lucky-clover", "", mod.Renewal, nil)
 	if err != nil {

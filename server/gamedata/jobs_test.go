@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -33,6 +34,7 @@ func modeConstants(t *testing.T, mode reference.Mode) *constants.Data {
 // tables built from core's job records are rAthena's: every job's stats
 // at several levels and builds, its maximum stats, and its exp tables.
 func TestCoreJobRecordsMatchRAthena(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range []reference.Mode{reference.Renewal, reference.PreRenewal} {
 		t.Run(string(mode), func(t *testing.T) {
 			var d status.Data

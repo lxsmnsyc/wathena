@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -27,6 +28,7 @@ var sampleApprovals = map[string][]string{
 // TestLoadSampleMod loads mods/examples over the renewal reference data,
 // as waserver does at startup.
 func TestLoadSampleMod(t *testing.T) {
+	testrace.SkipUnderRace(t, "loading core and the sample mods runs on one goroutine")
 	data, err := loadItemData(reference.Renewal)
 	if err != nil {
 		t.Fatal(err)

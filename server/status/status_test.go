@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/rules"
 )
 
@@ -36,6 +37,7 @@ func load(t *testing.T, mode reference.Mode) *Tables {
 // TestRecordedPlayers checks every player in pc_status.json. The recorder
 // makes male characters with no equipment.
 func TestRecordedPlayers(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			checkRecordedPlayers(t, mode, nil)

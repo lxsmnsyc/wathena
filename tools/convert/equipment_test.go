@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -395,6 +396,7 @@ func recordedChange(raw json.RawMessage) (string, string) {
 // scripts convert fully with item_bonuses.json, and every refine level
 // of refine.json, in both modes.
 func TestEquipmentParity(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			f := loadEquipFixture(t, mode)

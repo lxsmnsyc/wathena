@@ -43,6 +43,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/lxsmnsyc/wathena/internal/assets/build"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/store/storetest"
 )
@@ -241,7 +242,7 @@ func Start(t testing.TB, o Options) *Server {
 		admin = storetest.Migrated(t)
 		dbURL = gameURL(t, admin)
 	}
-	race := raceEnabled && o.Race
+	race := testrace.Enabled && o.Race
 	bin, b, err := prepare(race)
 	if err != nil {
 		t.Fatal(err)

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 func TestPreRenewalAttributeMatchesReference(t *testing.T) {
@@ -301,6 +302,7 @@ func TestPreRenewalMobDamageForcedMin(t *testing.T) {
 // TestPreRenewalMobDamageRolls runs the checks of TestMobDamageRolls on
 // the pre-renewal monster pairs.
 func TestPreRenewalMobDamageRolls(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	checkMobDamageRolls(t, reference.PreRenewal, AttackPreRenewal)
 }
 
@@ -313,5 +315,6 @@ func TestPreRenewalPCDamageForcedMin(t *testing.T) {
 // TestPreRenewalPCDamageRolls runs the checks of TestPCDamageRolls on the
 // pre-renewal player cases.
 func TestPreRenewalPCDamageRolls(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine per job")
 	checkPCDamageRolls(t, loadModePCFixture(t, reference.PreRenewal))
 }

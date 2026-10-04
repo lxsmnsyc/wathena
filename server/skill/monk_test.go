@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 )
 
@@ -44,6 +45,7 @@ func TestFingerOffensiveCastTimePerSphere(t *testing.T) {
 // (pre-renewal hits are the spheres thrown) and
 // battle_get_spiritball_damage (3 damage per sphere).
 func TestSpheresInDamage(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	f := loadDamageFixture(t, reference.PreRenewal)
 	var fo *skillCase
 	for i := range f.cases {

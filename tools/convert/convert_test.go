@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 // goldenItems are sample items whose converted output is kept in
@@ -21,6 +22,7 @@ var goldenItems = []string{
 }
 
 func TestGolden(t *testing.T) {
+	testrace.SkipUnderRace(t, "it converts or runs all of core's scripts on one goroutine")
 	res := loadCore(t, reference.Renewal).Result
 	byName := map[string]*Item{}
 	for _, it := range res.Items {
@@ -65,6 +67,7 @@ func TestGolden(t *testing.T) {
 // heal_percent call with the same amounts. The Go heal path that these
 // scripts replace read the same amounts, so the server heals as before.
 func TestHealParity(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		var d struct {
 			Items []struct {

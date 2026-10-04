@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -259,6 +260,7 @@ func sameRules(a, b *rules.Rules) bool {
 //     RulesOf gives the same rules, and its fingerprint equals that of
 //     the flags the fingerprint reads, so the other flags do not leak.
 func TestSampledMixedRulesets(t *testing.T) {
+	testrace.SkipUnderRace(t, "it checks sampled mixed rulesets on one goroutine")
 	mixes := rulestest.Mixes()
 	for _, base := range []string{mod.Renewal, mod.PreRenewal} {
 		t.Run(base, func(t *testing.T) {

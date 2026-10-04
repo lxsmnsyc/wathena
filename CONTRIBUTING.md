@@ -22,6 +22,7 @@
 
 - Game formulas must match the reference data in `reference/rathena` for the ruleset they implement.
 - New systems need tests before they merge.
+- A heavy test that runs on one goroutine, such as a parity or golden test, calls `testrace.SkipUnderRace` from `internal/testrace`. It then runs only in the pass without `-race`. A test that starts goroutines must not call it ([decision 0022](docs/decisions/0022-test-speed.md)).
 
 ## License
 

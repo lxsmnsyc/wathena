@@ -35,6 +35,10 @@ jobs:
           go-version-file: go.mod
           cache-dependency-path: go.mod
       - run: go vet ./...
+      # Every test but e2e runs without the race detector. With it, every
+      # package runs, and the heavy tests on one goroutine skip
+      # (docs/decisions/0022-test-speed.md).
+      - run: go test $(go list ./... | grep -v '/e2e$')
       - run: go test -race ./...
 
   # The mod tools (mods/README.md, "Tools"): validate and test the

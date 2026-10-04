@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/variables"
@@ -229,6 +230,7 @@ func (h *eventHost) SendMessage(_ int64, text string) error {
 // TestRunNPCEvents runs the converted eventNPCs: schedules at their
 // times, and monsters that die.
 func TestRunNPCEvents(t *testing.T) {
+	testrace.SkipUnderRace(t, "it converts or runs all of core's scripts on one goroutine")
 	res := eventResult(t)
 	_, base, core := testRuntime(t, reference.Renewal)
 	h := &eventHost{npcHost: &npcHost{testHost: base, npcs: map[int64]*NPC{}, steps: map[int64]modscript.Step{}, ended: map[int64]bool{},

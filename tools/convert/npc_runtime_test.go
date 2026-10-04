@@ -12,6 +12,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
@@ -135,6 +136,7 @@ func (l *logRecorder) WithGroup(string) slog.Handler      { return l }
 // player, and every schedule runs once. A part of a function that did
 // not convert may fail when reached. Any other error fails the test.
 func TestRunConvertedNPCs(t *testing.T) {
+	testrace.SkipUnderRace(t, "it converts or runs all of core's scripts on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			r, base, core := testRuntime(t, mode)

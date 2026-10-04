@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/rules"
@@ -75,6 +76,7 @@ type guildSkillCase struct {
 // blocks. rAthena's disable_call, a player setting wAthena does not have
 // yet, is the one difference: that player is left out of the compare.
 func TestGuildSkillsMatchReference(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			var ref guildSkillRef

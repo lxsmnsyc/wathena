@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 // forcedMin is rAthena's rnd_force_min: rnd() returns 0, so every roll is
@@ -234,6 +235,7 @@ func sample(t *testing.T, attack attackFunc, src, dst *Status, r Rand, attacks i
 // change the damage roll. The seed is fixed, so the result does not change
 // between runs.
 func TestMobDamageRolls(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	checkMobDamageRolls(t, reference.Renewal, Attack)
 }
 

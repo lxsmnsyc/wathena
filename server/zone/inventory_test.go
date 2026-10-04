@@ -33,8 +33,15 @@ func testItems() *item.Table {
 	}})
 }
 
-// testCore is core's converted renewal item scripts, made once.
-var testCore = sync.OnceValues(func() (*convert.Core, error) { return convert.LoadCore(reference.Renewal) })
+// testCores is core's converted data of each mode, made once per test
+// binary. Tests only read it.
+var testCores = map[reference.Mode]func() (*convert.Core, error){
+	reference.Renewal:    sync.OnceValues(func() (*convert.Core, error) { return convert.LoadCore(reference.Renewal) }),
+	reference.PreRenewal: sync.OnceValues(func() (*convert.Core, error) { return convert.LoadCore(reference.PreRenewal) }),
+}
+
+// testCore is core's converted renewal item scripts.
+var testCore = testCores[reference.Renewal]
 
 // coreMods gives a zone core's item scripts, with every permission, as
 // waserver does.

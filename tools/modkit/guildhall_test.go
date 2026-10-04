@@ -4,11 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
 // TestGuildHall runs the Guild Hall sample mod's tests on both bases.
 func TestGuildHall(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	e := env(t)
 	for _, base := range []string{mod.Renewal, mod.PreRenewal} {
 		l, err := e.Load(context.Background(), "../../mods/examples/guild-hall", "", base, nil)

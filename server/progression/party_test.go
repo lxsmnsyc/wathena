@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 // partyShare is the exp part of party_share.json (rAthena fork commit
@@ -48,6 +49,7 @@ type partyShare struct {
 // is left out of both sides: rAthena calls pc_gainexp with them, which
 // changes nothing.
 func TestPartyExpShareMatchesReference(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range []reference.Mode{reference.Renewal, reference.PreRenewal} {
 		t.Run(string(mode), func(t *testing.T) { checkPartyExp(t, mode, tables(t, mode)) })
 	}
@@ -57,6 +59,7 @@ func TestPartyExpShareMatchesReference(t *testing.T) {
 // level_penalty_exp set to the recording's mode (RENEWAL_EXP): the level
 // penalty inside party_exp_share follows the flag, not the base.
 func TestPartyExpShareFlag(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	re, _ := load(t, reference.Renewal)
 	pre, err := tables(t, reference.PreRenewal).WithLevelPenalty(true, true, re)
 	if err != nil {

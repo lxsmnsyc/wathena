@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
@@ -25,6 +26,7 @@ func env(t *testing.T) *Env {
 
 // TestGreeterTests runs the sample mod's tests.
 func TestGreeterTests(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	e := env(t)
 	l, err := e.Load(context.Background(), "../../mods/examples/greeter", "", mod.Renewal, nil)
 	if err != nil {
@@ -74,6 +76,7 @@ scripts:
 // core's converted Kafra, timers on the zone clock, a monster kill,
 // items, and checks that fail on purpose.
 func TestWorldMethods(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	dir := writeMod(t, map[string]string{
 		"mod.yaml": testManifest,
 		"scripts/main.lua": `
@@ -210,6 +213,7 @@ end`,
 // and monsters, the status events and hooks, a mod status, and timed
 // bonuses.
 func TestStatusAPI(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	dir := writeMod(t, map[string]string{
 		"mod.yaml": `id: example.statuses
 name: Statuses

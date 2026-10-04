@@ -843,7 +843,9 @@ scripts/check.sh all          # also the Compose stack and the browser tests
 scripts/check.sh lint e2e     # some steps
 ```
 
-- The `test` step runs `go test -race ./...`, which includes the end-to-end tests in [e2e](../e2e/README.md).
+- The `test` step runs `go test` without `-race` on every package but `e2e`, then `go test -race ./...`, which includes the end-to-end tests in [e2e](../e2e/README.md).
+- Under `-race`, the heavy tests that run on one goroutine skip with `testrace.SkipUnderRace` ([decision 0022](../docs/decisions/0022-test-speed.md)). They run in the first pass.
+- The `fuzz` step runs each fuzz test for 10 seconds, 4 at once.
 - Without `WATHENA_TEST_DATABASE_URL`, the script starts a `postgres:18` container for the database tests when Docker runs, and removes it at the end. `CHECK_NO_DOCKER=1` turns that off.
 - Checks of generated files compare the files before and after the generator, so uncommitted work does not fail them.
 - A step whose tool is missing, such as `tinygo` or `pnpm`, is reported as skipped with the reason.

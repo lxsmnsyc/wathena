@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 type pcCase struct {
@@ -265,6 +266,7 @@ func pcSample(t *testing.T, attack attackFunc, src, dst *Status, r Rand, attacks
 // also checks the critical rate. The recorded rolls count a double attack
 // as one hit with the damage of both hits.
 func TestPCDamageRolls(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine per job")
 	checkPCDamageRolls(t, loadPCFixture(t))
 }
 
@@ -272,8 +274,7 @@ func TestPCDamageRolls(t *testing.T) {
 // a fixture.
 func checkPCDamageRolls(t *testing.T, f *pcFixture) {
 	t.Helper()
-	// Each job runs as a parallel subtest, because the race detector
-	// makes the player formula slow.
+	// Each job runs as a parallel subtest, so the cases use every CPU.
 	byJob := make(map[int][]int)
 	var jobs []int
 	for i, c := range f.ref.Cases {

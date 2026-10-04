@@ -4,12 +4,14 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 // battle_calc_misc_attack: in pre-renewal an automatic Blitz Beat (mflag
 // above 1, the number of targets) splits its damage among its targets;
 // a cast Blitz Beat (mflag 0) and renewal's do not.
 func TestAutoBlitzBeatSplit(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			f := loadDamageFixture(t, mode)

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 )
@@ -25,6 +26,7 @@ const taurusSword = 1100
 // 50 + BaseLevel). It covers the pre-renewal weight formula and the
 // renewal one of battle_calc_skill_base_damage.
 func TestSpiralPierceGolden(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			f := loadDamageFixture(t, mode)
@@ -192,6 +194,7 @@ func TestKnightStatusDamage(t *testing.T) {
 // and SkillCounterAttack::modifyDamageData: the counter is critical and
 // counts as a normal attack.
 func TestAutoCounterCritical(t *testing.T) {
+	testrace.SkipUnderRace(t, "it loads the recorded damage data and runs on one goroutine")
 	for _, mode := range reference.Modes {
 		f, src := knightAttacker(t, mode, 7, 0)
 		def := f.db.Get(IDAutoCounter)

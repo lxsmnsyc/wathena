@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/social"
 )
 
@@ -52,6 +53,7 @@ type guildKills struct {
 // guild_payexp: after the party split and the level penalty. It checks
 // every tax rAthena took and the exp each player kept.
 func TestGuildTaxOnKillsMatchesReference(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range []reference.Mode{reference.Renewal, reference.PreRenewal} {
 		t.Run(string(mode), func(t *testing.T) {
 			tb := tables(t, mode)

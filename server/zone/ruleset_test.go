@@ -3,9 +3,11 @@ package zone
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/rules/rulestest"
@@ -47,10 +49,7 @@ func zoneRules(t *testing.T, z *Zone, rl *rules.Rules) {
 		tb := *z.Status
 		var other *status.Data
 		if rl.ASPD != tb.Renewal() {
-			other = &status.Data{}
-			if err := reference.LoadFile("extracts/"+string(baseMode(rl.ASPD))+"/job_stats.json", other); err != nil {
-				t.Fatal(err)
-			}
+			other = jobStatsOf(t, baseMode(rl.ASPD))
 		}
 		if err := tb.SetASPD(rl.ASPD, other); err != nil {
 			t.Fatal(err)
@@ -60,7 +59,7 @@ func zoneRules(t *testing.T, z *Zone, rl *rules.Rules) {
 		z.Status = &tb
 	}
 	if z.Skills != nil {
-		otherDB, _ := testSkills(t, otherMode(baseMode(z.Skills.Renewal())))
+		otherDB := readOnlySkills(t, otherMode(baseMode(z.Skills.Renewal())))
 		db := z.Skills.Clone()
 		for id, v := range rl.Skills {
 			if v == rl.Renewal {
@@ -78,6 +77,35 @@ func zoneRules(t *testing.T, z *Zone, rl *rules.Rules) {
 			z.recalc(e.player)
 		}
 	}
+}
+
+// readOnly holds the job tables that zoneRules reads and never
+// changes, loaded once per test binary. Loading them and the skill
+// database for each zone made TestMixedRulesetsZone take most of the
+// package's time.
+var readOnly sync.Map
+
+// jobStatsOf returns a mode's job_stats.json. Callers must not change
+// it.
+func jobStatsOf(t *testing.T, mode reference.Mode) *status.Data {
+	t.Helper()
+	key := "job_stats " + string(mode)
+	if v, ok := readOnly.Load(key); ok {
+		return v.(*status.Data)
+	}
+	d := &status.Data{}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/job_stats.json", d); err != nil {
+		t.Fatal(err)
+	}
+	v, _ := readOnly.LoadOrStore(key, d)
+	return v.(*status.Data)
+}
+
+// readOnlySkills returns a mode's skill database. Callers must not
+// change it or its skills: zoneRules only reads and copies them.
+func readOnlySkills(t *testing.T, mode reference.Mode) *skill.DB {
+	t.Helper()
+	return loadSkillSource(t, mode).db
 }
 
 // with returns the core rules of a base, changed by set.
@@ -292,15 +320,13 @@ func TestSkillRebalanceZone(t *testing.T) {
 // sampled mixed ruleset (rulestest.Mixes), each part of a case when the
 // flags it reads keep the base's value (statusParts). Each case builds
 // its own zone, so it runs the first two mixes of each base that run
-// cases, and one under the race detector.
+// cases.
 func TestMixedRulesetsZone(t *testing.T) {
+	testrace.SkipUnderRace(t, "it checks sampled mixed rulesets on one goroutine")
 	if testing.Short() {
 		t.Skip("the golden skill cases run once per mix")
 	}
-	limit := 2
-	if raceEnabled {
-		limit = 1
-	}
+	const limit = 2
 	ran := 0
 	done := map[bool]int{}
 	for i, rl := range rulestest.Mixes() {

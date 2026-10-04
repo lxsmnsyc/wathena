@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -360,6 +361,7 @@ func goldenDamage(name string, id int) bool {
 // skill_damage.json: rAthena's forced_min result exactly, and the seeded
 // rolls' range and mean. Skills without behavior are counted only.
 func TestSkillDamage(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			f := loadDamageFixture(t, mode)

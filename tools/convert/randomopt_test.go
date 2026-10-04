@@ -6,21 +6,19 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 // TestRandomOptions converts the random options of both modes. Renewal
 // has 249 options: every one converts but the 10 of bSubRace with a
 // BF_WEAPON flag, which has no damage_taken sum. Pre-renewal has none.
 func TestRandomOptions(t *testing.T) {
+	testrace.SkipUnderRace(t, "it converts or runs all of core's scripts on one goroutine")
 	for _, c := range []struct {
 		mode              reference.Mode
 		converted, failed int
 	}{{reference.Renewal, 239, 10}, {reference.PreRenewal, 0, 0}} {
-		core, err := LoadCore(c.mode)
-		if err != nil {
-			t.Fatal(err)
-		}
-		o := core.RandomOptions
+		o := loadCore(t, c.mode).RandomOptions
 		if len(o.Options) != c.converted || len(o.Failed) != c.failed {
 			t.Errorf("%s: %d converted, %d failed", c.mode, len(o.Options), len(o.Failed))
 		}

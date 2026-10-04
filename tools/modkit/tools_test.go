@@ -12,11 +12,14 @@ import (
 	"testing"
 
 	"golang.org/x/crypto/blake2b"
+
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 // TestNewModPasses makes a mod from the template, and checks that it
 // validates, its tests pass, and it packs the same twice.
 func TestNewModPasses(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	e := env(t)
 	dir := filepath.Join(t.TempDir(), "example.demo-mod")
 	if _, err := New("example.demo-mod", dir, e.Core.Constants); err != nil {
@@ -62,6 +65,7 @@ func TestNewModPasses(t *testing.T) {
 // TestValidateFindsProblems checks that validate reports each problem
 // with its file and line.
 func TestValidateFindsProblems(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	dir := writeMod(t, map[string]string{
 		"mod.yaml":              testManifest,
 		"scripts/main.lua":      "local lib = require \"example.tested.lib.missing\"\nlocal x = require \"wa.nothing\"\nreturn function() end\n",

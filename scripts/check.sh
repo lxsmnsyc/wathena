@@ -9,7 +9,9 @@
 #
 # Steps, with the CI job each one replaces:
 #   vet       go vet ./...                                        (test)
-#   test      go test -race ./..., which includes ./e2e           (test)
+#   test      go test without -race on every package but ./e2e,
+#             then go test -race ./.... Heavy tests on one
+#             goroutine skip under -race (decision 0022).         (test)
 #   mods      generated Lua files, the sample mods, a new mod     (mods)
 #   lua       vendored Lua, lua.wasm, the WebAssembly build,
 #             and the release builds with zig                     (lua, lua-macos)
@@ -18,7 +20,7 @@
 #   queries   the generated sqlc code                             (queries)
 #   lint      golangci-lint                                       (lint)
 #   security  govulncheck, gosec and sqlcheck.sh                  (security)
-#   fuzz      every fuzz test for 10 seconds                      (fuzz)
+#   fuzz      every fuzz test for 10 seconds, 4 at once           (fuzz)
 #   client    pnpm check, lint, format:check, test and build      (client)
 #   tinygo    the shared packages under TinyGo, and path.wasm     (tinygo)
 #   e2e       the e2e package alone, with -race. test runs it
@@ -150,7 +152,19 @@ database() {
 
 step_vet() { go vet ./...; }
 
-step_test() { go test -race -timeout 45m ./...; }
+# The race detector only finds races in code that runs goroutines, and
+# it makes code 5 to 20 times slower. So the tests run twice:
+#   - Without it, every test of every package but ./e2e runs.
+#   - With it, every package runs, ./e2e too. The heavy tests that run
+#     on one goroutine, such as the parity and golden tests, skip
+#     (internal/testrace).
+# ./e2e runs in the second pass only, as before. Beside the busy first
+# pass, its duplication tests did too little work in their time.
+step_test() {
+	# shellcheck disable=SC2046 # one argument per package.
+	go test -timeout 45m $(go list ./... | grep -v '/e2e$')
+	go test -race -timeout 45m ./...
+}
 
 step_e2e() { go test -race -count=1 -timeout 45m ./e2e/; }
 

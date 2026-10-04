@@ -14,7 +14,7 @@
 - A new flag, `--seed`, fixes the random streams of the zones and world events. It needs `--dev`, since a known seed lets players predict drops.
 - `Player` methods send a command and wait for the events that show the result, so each check is on what the server sent. Waits time out after 15 seconds and fail the test.
 - `botclient` gained what the tests need: the inventory, stats, skill list, dialog and shop window from the events, a record of every event with `Wait`, and the NPC, shop, item and skill commands.
-- With `-race`, the servers of the duplication tests are built with `-race`. The scenario servers are not, since the race detector makes a server start about ten times slower. Every server package already runs its own tests with `-race`.
+- With `-race`, the servers of the duplication tests are built with `-race`. The scenario servers are not, since the race detector makes a server start about ten times slower. Every server package already runs its own concurrency tests with `-race`.
 
 ### Transfers
 
@@ -71,6 +71,7 @@
 ### Local checks
 
 - GitHub Actions does not run for this repository. `scripts/check.sh` runs the jobs of `ci.yml` locally, one step per job, and the `test` step includes `./e2e`.
+- [Decision 0022](0022-test-speed.md) runs the `test` step twice, without and with `-race`, and runs the fuzz tests 4 at once.
 - It starts a PostgreSQL container when no test database is set, compares generated files before and after their generators, and reports a step whose tool is missing as skipped.
 - The workflow files did not change.
 

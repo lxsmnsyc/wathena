@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 // scripted returns set values and records each draw's n.
@@ -59,6 +60,7 @@ func TestLoggedDamage(t *testing.T) {
 }
 
 func TestKillExp(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	tb := tables(t, reference.Renewal)
 	// Scorpion: level 16, 169 base and 115 job exp.
 	scorpion := &Mob{ID: 1001, Level: 16, MaxHP: 136, BaseExp: 169, JobExp: 115}

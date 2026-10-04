@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/rules"
 )
@@ -21,6 +22,7 @@ import (
 //     lets it burn.
 //   - Angelus has pre-renewal's cooldown, none.
 func TestClassicCasting(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	e := env(t)
 	ctx := context.Background()
 	l, err := e.Load(ctx, "../../mods/examples/classic-casting", "", mod.Renewal, nil)

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 )
@@ -15,6 +16,7 @@ import (
 // list, with the new skill once Single Action is at level 3, and a cast
 // of the new skill that shoots twice.
 func TestDesperado(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
 	e := env(t)
 	l, err := e.Load(context.Background(), "../../mods/examples/desperado", "", mod.Renewal, nil)
 	if err != nil {

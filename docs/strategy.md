@@ -2778,7 +2778,7 @@ Phase 4 exit check, done on 2026-10-03:
 - Full recalculation (section 5.3): `TestFullRecalculationEveryItem` equips, levels and unequips every core item and card, saves and loads the player after each step, and compares the whole battle status and weight.
   - Renewal: 12,222 items and 1,545 cards, 40,892 steps, 0 mismatches.
   - Pre-renewal: 1,955 items and 452 cards, 7,203 steps, 0 mismatches.
-  - Left out: Doram items (summoners are not ported), enchants without a position, and some ammunition. Under `-race` it checks every 25th item.
+  - Left out: Doram items (summoners are not ported), enchants without a position, and some ammunition. It runs without `-race` only ([decision 0022](decisions/0022-test-speed.md)).
 - Rolled items: `TestRolledDropDistributions` makes 100,000 drops through the zone's drop code with `item_rolls` on. Every value is in range. The chi-square values are 26.5 of a 57.9 limit (uniform), 7.2 of 34.5 (triangular) and 9.1 of 34.5 (weighted). With the flag off, every roll is its default, and items match rAthena by `TestEquipmentParity` and `TestRandomOptionParity`.
 - Sample mod: [examples/desperado](../mods/examples/desperado) adds the Desperado job and the Quick Draw skill. Its 6 `wactl mod test` cases and `TestDesperado` pass, and Chrome showed the job change in the HUD (step 7 above).
 

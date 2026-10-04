@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 )
 
 // load reads a mode's progression.json and item types.
@@ -110,6 +111,7 @@ func TestPenaltyPreRenewal(t *testing.T) {
 }
 
 func TestPenaltyGaps(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	tb := tables(t, reference.Renewal)
 	// Differences from db/re/level_penalty.yml and the gaps between them.
 	for _, c := range []struct{ diff, exp, drop int }{

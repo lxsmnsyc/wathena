@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/rules/rulestest"
@@ -288,6 +289,7 @@ func TestSkillRebalanceFlag(t *testing.T) {
 //     skill keeps its mode's version, when element_table is the base's,
 //     and heal_formula for Heal's damage.
 func TestMixedRulesetsSkills(t *testing.T) {
+	testrace.SkipUnderRace(t, "it checks sampled mixed rulesets on one goroutine")
 	fixtures := map[reference.Mode]*damageFixture{}
 	cases := 0
 	for i, rl := range rulestest.Mixes() {

@@ -14,6 +14,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -309,6 +310,7 @@ func scriptPaths(res *Result) map[uint32]string {
 // a hit dealt, a hit taken, a skill use, and unequip, against a
 // recording bonus sink. Static bonuses are read as item data.
 func TestRunConvertedScripts(t *testing.T) {
+	testrace.SkipUnderRace(t, "it converts or runs all of core's scripts on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			r, h, core := testRuntime(t, mode)

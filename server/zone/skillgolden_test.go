@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/rules"
@@ -18,7 +19,6 @@ import (
 	"github.com/lxsmnsyc/wathena/server/status"
 	sc "github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/shared/rng"
-	"github.com/lxsmnsyc/wathena/tools/convert"
 )
 
 // The golden tests of skill_status.json: the statuses a skill starts
@@ -134,7 +134,7 @@ func loadGoldenData(t *testing.T, mode reference.Mode) *goldenData {
 	if g.tables, err = status.New(&jd); err != nil {
 		t.Fatal(err)
 	}
-	core, err := convert.LoadCore(mode)
+	core, err := testCores[mode]()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,6 +296,7 @@ func sameAttack(got battle.Result, want *goldenDamage) bool {
 // behavior, as the recorder's skill_castend_nodamage_id, and compares the
 // statuses, the stats and the normal attack damage with rAthena's.
 func TestSkillStatusGolden(t *testing.T) {
+	testrace.SkipUnderRace(t, "it compares recorded reference cases on one goroutine")
 	for _, mode := range reference.Modes {
 		t.Run(string(mode), func(t *testing.T) {
 			checkSkillStatusGolden(t, mode, nil)
