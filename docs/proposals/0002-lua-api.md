@@ -911,6 +911,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Shop changes.** `world:get_shop(name)` returns a handle with `add_item(item, { cost, stock, restock })`, `remove_item(item)` and `set_stock(item, n)`. They replace `npcshopadditem`, `npcshopdelitem`, `npcshopitem` and `npcshopupdate`, and need a new permission, `shops.modify`. Events `shop_buy` and `shop_sell` with { `player`, `shop`, `items`, `zeny` }.
     - Later: real-money cash purchases, auctions (rAthena removed them), a stock limit per player, and costs priced by a Lua function.
 
+31. Built-in automatic events (phase 5 step 8). The user approved these on 2026-10-05:
+    - **Typed events.** An event in `data/events.yml` takes `type`: `boss`, `invasion` or `treasure_hunt`. An event without `type` is a script event, as before. A typed event may still have a `script`.
+    - **Boss spawn.** `boss` has `monsters` (one is picked), `level_band` (fields whose spawns fall in that range) or `maps`, and `announce`. The boss leaves when the duration ends.
+    - **Invasion.** `invasion` has `town` and `waves`. Each wave has `monsters` and `start`, which is `cleared` or a time such as `"120s"`. Monsters enter from the town's edges and attack players. The raid is won when the last wave dies and lost when time runs out. Waves and the result are announced.
+    - **Treasure hunt.** `treasure_hunt` has `chests`, `level_band` or `maps`, `chest` (a monster record whose drops are the loot) and `hint_npcs`, which tell the map and direction of a chest that is still there.
+    - **Rewards.** `rewards` is `{ to, items, zeny, exp, currency }`. `to` is `killer`, `participants` or `everyone_on_map`. Participants are players who did at least `min_share` of the damage (default 1%), and each gets the full reward. Rewards that do not fit the inventory are mailed.
+    - **Lua.** A typed event's script gets the run with `context:get_event()`: `run:get_monsters()`, `run:get_participants()` and `run:finish(result)` with `"won"` or `"lost"`. World events `world_event_start` and `world_event_end` carry { `name`, `type`, `result` }. `world_events.start(name)` and `world_events.stop(name)` need a new permission, `events.control`.
+    - **Core events.** Core ships one sample event of each type, turned off by default. The server owner turns them on in the config.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
