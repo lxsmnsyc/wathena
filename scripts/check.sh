@@ -1,35 +1,56 @@
 #!/usr/bin/env bash
-# Runs the checks of .github/workflows/ci.yml on this machine
-# (decision 0017). GitHub Actions does not run for this repository, so
-# this script is the check before a commit.
+# Runs the project's checks on this machine. The repository has no CI
+# (decision 0026), so this script is the check before a commit and
+# before a push.
 #
-#   scripts/check.sh              the default steps
+#   scripts/check.sh quick        vet, unit and lint: before each commit
+#   scripts/check.sh quick client the quick steps and the client's checks
+#   scripts/check.sh              the default steps: before a push
 #   scripts/check.sh all          the default steps, then compose and browsers
 #   scripts/check.sh lint e2e     only the steps named
 #
-# Steps, with the CI job each one replaces:
-#   vet       go vet ./...                                        (test)
-#   test      go test without -race on every package but ./e2e,
-#             then go test -race ./.... Heavy tests on one
-#             goroutine skip under -race (decision 0022).         (test)
-#   mods      generated Lua files, the sample mods, a new mod     (mods)
+# Steps:
+#   vet       go vet ./...
+#   unit      go test without -race on every package but ./e2e.
+#             Results of unchanged packages come from Go's test
+#             cache.
+#   test      unit, then go test -race ./.... Heavy tests on one
+#             goroutine skip under -race (decision 0022).
+#   mods      generated Lua files, the sample mods, a new mod
 #   lua       vendored Lua, lua.wasm, the WebAssembly build,
-#             and the release builds with zig                     (lua, lua-macos)
-#   loadtest  the 50-bot smoke test                               (loadtest)
-#   schema    buf lint and the generated protocol code            (schema)
-#   queries   the generated sqlc code                             (queries)
-#   lint      golangci-lint                                       (lint)
-#   security  govulncheck, gosec and sqlcheck.sh                  (security)
-#   fuzz      every fuzz test for 10 seconds, 4 at once           (fuzz)
-#   client    pnpm check, lint, format:check, test and build      (client)
-#   tinygo    the shared packages under TinyGo, and path.wasm     (tinygo)
+#             and the release builds with zig
+#   loadtest  the 50-bot smoke test
+#   schema    buf lint and the generated protocol code
+#   queries   the generated sqlc code
+#   lint      golangci-lint
+#   security  govulncheck, gosec and sqlcheck.sh
+#   fuzz      every fuzz test for 10 seconds, 4 at once.
+#             scripts/fuzz.sh 5m fuzzes longer.
+#   client    pnpm check, lint, format:check, test and build
+#   tinygo    the shared packages under TinyGo, and path.wasm
 #   e2e       the e2e package alone, with -race, with the phase 5
 #             exit check for 30 minutes (WATHENA_EXIT_MINUTES=30,
 #             e2e/README.md), and prints its numbers. test runs
 #             the package with a short
 #             exit check, so it is not a default step.
-#   compose   the Compose stack smoke test. Only with all.        (compose)
-#   browsers  the client in Chromium. Only with all.              (browsers)
+#   compose   the Compose stack smoke test. Only with all.
+#   browsers  the client in Chromium. Only with all.
+#
+# Tool versions. The script runs the tools on PATH and does not install
+# them. These are the versions the checks were written for:
+#   - Go: the version in go.mod. Node 26 and pnpm, for the client.
+#   - zig 0.16.0. SHA-256 of the release archives:
+#       x86_64-linux   70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
+#       aarch64-macos  b23d70deaa879b5c2d486ed3316f7eaa53e84acf6fc9cc747de152450d401489
+#     The Dockerfile pins the same version.
+#   - wasi-sdk 34, x86_64-linux archive:
+#       b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4
+#   - TinyGo 0.42.0, amd64 .deb:
+#       2082c4762fea6d5cc4cd1f4a243eaacf07b12f576717d4c6b74828bd163cb563
+#   - wasmtime 49.0.1, x86_64-linux archive:
+#       c71f7e0d30a92e418f0d17db7c6d8f6664c1ad764340a1278678f4209deab534
+#   - buf, sqlc, golangci-lint, govulncheck and gosec: the variables
+#     below. The script runs them with go run at those versions.
 #
 # Rules:
 #   - Tests that need PostgreSQL read WATHENA_TEST_DATABASE_URL. When it
@@ -46,7 +67,7 @@ set -uo pipefail
 root=$(git rev-parse --show-toplevel)
 cd "$root"
 
-# Versions pinned as in ci.yml.
+# Versions of the tools that go run fetches.
 buf_version=v1.73.0
 sqlc_version=v1.31.1
 golangci_version=2.14.0
@@ -55,7 +76,8 @@ gosec_version=v2.29.0
 
 default_steps="vet test mods lua loadtest schema queries lint security fuzz client tinygo"
 all_steps="$default_steps compose browsers"
-known_steps="$all_steps e2e"
+known_steps="$all_steps unit e2e"
+quick_steps="vet unit lint"
 
 steps=()
 if [ $# -eq 0 ]; then
@@ -64,10 +86,15 @@ elif [ "$1" = all ] && [ $# -eq 1 ]; then
 	read -r -a steps <<<"$all_steps"
 else
 	for s in "$@"; do
+		if [ "$s" = quick ]; then
+			read -r -a quick <<<"$quick_steps"
+			steps+=("${quick[@]}")
+			continue
+		fi
 		case " $known_steps " in
 		*" $s "*) steps+=("$s") ;;
 		*)
-			echo "check.sh: unknown step $s; the steps are: $known_steps" >&2
+			echo "check.sh: unknown step $s; the steps are: quick $known_steps" >&2
 			exit 2
 			;;
 		esac
@@ -163,9 +190,13 @@ step_vet() { go vet ./...; }
 #     (internal/testrace).
 # ./e2e runs in the second pass only, as before. Beside the busy first
 # pass, its duplication tests did too little work in their time.
-step_test() {
+step_unit() {
 	# shellcheck disable=SC2046 # one argument per package.
 	go test -timeout 45m $(go list ./... | grep -v '/e2e$')
+}
+
+step_test() {
+	step_unit
 	go test -race -timeout 45m ./...
 }
 
@@ -282,10 +313,10 @@ step_lint() {
 step_security() {
 	go run "golang.org/x/vuln/cmd/govulncheck@$govulncheck_version" ./...
 	go run "github.com/securego/gosec/v2/cmd/gosec@$gosec_version" -exclude-generated ./...
-	.github/scripts/sqlcheck.sh
+	scripts/sqlcheck.sh
 }
 
-step_fuzz() { .github/scripts/fuzz.sh 10s; }
+step_fuzz() { scripts/fuzz.sh 10s; }
 
 step_client() {
 	client_install
@@ -314,7 +345,7 @@ step_tinygo() {
 step_compose() {
 	have docker || skip "the Compose test needs Docker"
 	(cd deploy/compose && docker compose --env-file .env.example --profile tools config --quiet)
-	.github/scripts/compose-smoke.sh
+	scripts/compose-smoke.sh
 }
 
 step_browsers() {

@@ -39,7 +39,7 @@ Known issues:
 - `TestTradeRefused` (step 6) failed once under full load and passed 3 of 3 times alone. It may be a timing flake.
 - The disk was nearly full on 2026-10-05, and builds failed with "no space left on device". Keep at least 10 GB free. Test PostgreSQL containers that are killed leave unnamed Docker volumes behind. `docker volume prune` removes them.
 - The kRO client is extracted at `data/kro/client` (gitignored), and the original zip is deleted. It is the only copy. Build assets with `wactl assets build` and the source `grf:data/kro/client`.
-- GitHub Actions is off, because the repository is private. Run `scripts/check.sh` locally.
+- The repository has no CI ([decision 0026](decisions/0026-local-checks.md)). Run `scripts/check.sh quick` before each commit and `scripts/check.sh` before a push.
 
 Next:
 
@@ -2400,7 +2400,7 @@ The order from here:
    - `wactl world backup` and `restore` wrap `pg_dump` and `pg_restore`. Restore only loads into an empty database, in one transaction.
    - On SIGTERM, `waserver` stops being ready, ends each game connection with `DISCONNECT_REASON_SERVER_SHUTDOWN`, saves every character, and stops its zones.
    - Checked on an Apple M2 with Docker Desktop, from new volumes and secrets: the images built, migrations ran, `waserver` started all 988 maps of the kRO build (an existing build copied into the volume) in 3.3 seconds and became healthy, and Chrome loaded the client through Caddy over HTTPS with Caddy's local authority. Two players signed up, turned on TOTP, made characters, and played. One spent status points, and its chat line came back from the server. Their progress was the same after a restart, after a stop while a player was in the game, and after a backup restored into a new database.
-   - CI's `compose` job builds both images and runs `.github/scripts/compose-smoke.sh`: the stack with the placeholder pack, HTTPS through Caddy, and a backup and restore.
+   - The `compose` step of `scripts/check.sh all` builds both images and runs `scripts/compose-smoke.sh`: the stack with the placeholder pack, HTTPS through Caddy, and a backup and restore.
    - Left: a countdown announced to players before a restart, which needs a world chat channel, and staff tools for staff accounts.
 6. Phase 3. The Lua runtime and mod loader. Skills, item scripts, and NPCs need it. It runs in these steps:
    1. Lua runtime. Done on 2026-10-01 ([internal/script](../internal/script/README.md), and [decision 0002](decisions/0002-lua-runtime-c-lua.md), "Production binding"):

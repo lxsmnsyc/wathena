@@ -172,9 +172,9 @@ The boundaries are:
 
 | Threat | Mitigation | Status | Reference |
 |---|---|---|---|
-| A compromised GitHub Action. | Actions are pinned by commit hash. Workflows have read-only permissions. | Done. | `.github/workflows` |
-| A compromised download: Lua, TinyGo, wasmtime, or wasi-sdk. | Each download is checked against a pinned SHA-256. | Done. | `.github/workflows/ci.yml`, `tools/luabench/wasm/build.sh` |
-| A vulnerable Go module. | `go.sum` pins modules. `govulncheck` and `gosec` run on every push. | Done. | Strategy 7.9 |
+| A compromised GitHub Action. | The repository has no workflows. | Not applicable. | [Decision 0026](../decisions/0026-local-checks.md) |
+| A compromised download: Lua, zig, TinyGo, wasmtime, or wasi-sdk. | The Dockerfile and the build scripts check each download against a pinned SHA-256. Developers install the local tools themselves, and the header of `scripts/check.sh` lists the pinned versions and hashes to check them against. | Partial. | `Dockerfile`, `scripts/check.sh`, `tools/luabench/wasm/build.sh` |
+| A vulnerable Go module. | `go.sum` pins modules. `govulncheck` and `gosec` run in `scripts/check.sh` before every push. | Done. | Strategy 7.9 |
 | A tampered release. | Signed release binaries and a software bill of materials. | Decided. | Strategy 7.9 |
 
 ## Findings from phase 0b

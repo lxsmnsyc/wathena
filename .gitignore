@@ -28,7 +28,7 @@ node_modules/
 .env
 # Secrets that deploy/compose/secrets.sh makes.
 /deploy/compose/secrets/
-# Files of .github/scripts/compose-smoke.sh while it runs.
+# Files of scripts/compose-smoke.sh while it runs.
 /deploy/compose/smoke.*/
 *.log
 

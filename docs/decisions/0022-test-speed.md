@@ -2,7 +2,7 @@
 
 - Status: proposed.
 - Date: 2026-10-04.
-- Code: [internal/testrace](../../internal/testrace), [scripts/check.sh](../../scripts/check.sh), [.github/scripts/fuzz.sh](../../.github/scripts/fuzz.sh), [.github/workflows/ci.yml](../../.github/workflows/ci.yml), the tests of [server/zone](../../server/zone) (`ruleset_test.go`, `skills_test.go`, `inventory_test.go`), [tools/modkit](../../tools/modkit) and the packages listed below.
+- Code: [internal/testrace](../../internal/testrace), [scripts/check.sh](../../scripts/check.sh), [scripts/fuzz.sh](../../scripts/fuzz.sh), `ci.yml` (removed by [decision 0026](0026-local-checks.md)), the tests of [server/zone](../../server/zone) (`ruleset_test.go`, `skills_test.go`, `inventory_test.go`), [tools/modkit](../../tools/modkit) and the packages listed below.
 - Builds on [decision 0017](0017-e2e-and-transfers.md), "Local checks". It changes no game code and no assertion.
 
 ## Decision

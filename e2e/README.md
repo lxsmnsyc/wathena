@@ -192,4 +192,4 @@ How long:
 
 ## Running every check
 
-`scripts/check.sh` runs the checks of `.github/workflows/ci.yml` on this machine, and its `test` step runs these tests (server/README.md, "Local checks").
+`scripts/check.sh` runs the project's checks on this machine, and its `test` step runs these tests (server/README.md, "Local checks").

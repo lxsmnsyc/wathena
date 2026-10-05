@@ -198,7 +198,7 @@ Rate limits, session lifetimes and Argon2id parameters are in [decision 0004](..
 ### Changing the schema or queries
 
 - Add a migration as the next numbered file in `server/store/migrations`, with `-- +goose Up` and `-- +goose Down` sections. Grant `wathena_game` only the rights it needs, as the first migration does.
-- Add queries to `server/store/queries`. Game code only runs queries that sqlc generates. `.github/scripts/sqlcheck.sh` rejects `fmt.Sprintf` and raw query calls in database code.
+- Add queries to `server/store/queries`. Game code only runs queries that sqlc generates. `scripts/sqlcheck.sh` rejects `fmt.Sprintf` and raw query calls in database code.
 - Generate the code, and commit it:
 
 ```text
@@ -886,21 +886,24 @@ A zone does not wake each connection's goroutine itself. While a zone runs, its 
 
 ### Local checks
 
-GitHub Actions does not run for this repository. `scripts/check.sh` runs the jobs of `.github/workflows/ci.yml` on the local machine instead, one step per job, and lists the result of each at the end:
+The repository has no CI ([decision 0026](../docs/decisions/0026-local-checks.md)). `scripts/check.sh` runs the checks on the local machine, one step at a time, and lists the result of each at the end:
 
 ```text
-scripts/check.sh              # the default steps
+scripts/check.sh quick        # vet, unit and lint, before each commit
+scripts/check.sh quick client # the same, and the client's checks
+scripts/check.sh              # the default steps, before a push
 scripts/check.sh all          # also the Compose stack and the browser tests
 scripts/check.sh lint e2e     # some steps
 ```
 
-- The `test` step runs `go test` without `-race` on every package but `e2e`, then `go test -race ./...`, which includes the end-to-end tests in [e2e](../e2e/README.md).
+- The `unit` step runs `go test` without `-race` on every package but `e2e`. Go's test cache keeps the results of packages that did not change, so after a small change it reruns only that package and the packages that import it. It does not start PostgreSQL: the database tests skip unless `WATHENA_TEST_DATABASE_URL` is set.
+- The `test` step runs the `unit` step, then `go test -race ./...`, which includes the end-to-end tests in [e2e](../e2e/README.md).
 - Under `-race`, the heavy tests that run on one goroutine skip with `testrace.SkipUnderRace` ([decision 0022](../docs/decisions/0022-test-speed.md)). They run in the first pass.
 - The `fuzz` step runs each fuzz test for 10 seconds, 4 at once.
 - Without `WATHENA_TEST_DATABASE_URL`, the script starts a `postgres:18` container for the database tests when Docker runs, and removes it at the end. `CHECK_NO_DOCKER=1` turns that off.
 - Checks of generated files compare the files before and after the generator, so uncommitted work does not fail them.
 - A step whose tool is missing, such as `tinygo` or `pnpm`, is reported as skipped with the reason.
-- The script header lists the steps and the CI job each one replaces.
+- The script header lists the steps and the versions of the tools they need.
 
 The `loadtest` step runs `TestLoadSmoke` in `tools/botclient`: it builds `waserver` and the placeholder assets, starts the server in its own process, and runs the `smoke` scenario for 20 seconds. No bot may fail. Tick work must stay under 25 ms at p99 and 100 ms at most, 2.5 and 4 times the budgets, since shared machines are noisy. Bandwidth keeps its budgets. The test is skipped unless `WATHENA_LOAD_TEST=1`:
 

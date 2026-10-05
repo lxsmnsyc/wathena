@@ -28,11 +28,11 @@ goose is enough for hand-written, reviewed SQL, and it keeps `wactl migrate` a n
 
 ## How sqlc is run
 
-sqlc is run by version with `go run`, the same way CI runs `buf`. It is not a `tool` directive in `go.mod`.
+sqlc is run by version with `go run`, the same way `scripts/check.sh` runs `buf`. It is not a `tool` directive in `go.mod`.
 
 - sqlc requires about 45 modules, including a cgo PostgreSQL parser and MySQL and SQLite engines. As a `tool` directive, they would all enter the main `go.mod` and `go.sum`, next to the game server's own dependencies.
 - Only people who change queries need sqlc. Everyone else uses the committed code.
-- The version is written in one place, the `queries` job in `.github/workflows/ci.yml`, and in `server/README.md`.
+- The version is written in one place, `sqlc_version` in `scripts/check.sh`, and in `server/README.md`.
 
 sqlc settings, in [server/store/sqlc.yaml](../../server/store/sqlc.yaml):
 
@@ -42,7 +42,7 @@ sqlc settings, in [server/store/sqlc.yaml](../../server/store/sqlc.yaml):
 ## Keeping queries safe
 
 - Game code only calls the functions sqlc generates. They always bind parameters.
-- `.github/scripts/sqlcheck.sh` runs in the `security` CI job. In every Go file that imports pgx or `database/sql`, outside tests and the generated code, it rejects:
+- `scripts/sqlcheck.sh` runs in the `security` step of `scripts/check.sh`. In every Go file that imports pgx or `database/sql`, outside tests and the generated code, it rejects:
   - `fmt.Sprint`, `fmt.Sprintf` and `fmt.Sprintln`.
   - Raw query calls: `Exec`, `Query`, `QueryRow`, `SendBatch` and `CopyFrom`.
 - It is a text check. It does not catch SQL built with `+`, or a string built in one file and run in another. Code review covers those. The raw call rule makes them unlikely, since only generated code runs queries.
