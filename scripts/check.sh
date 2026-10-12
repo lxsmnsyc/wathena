@@ -49,8 +49,9 @@
 #       2082c4762fea6d5cc4cd1f4a243eaacf07b12f576717d4c6b74828bd163cb563
 #   - wasmtime 49.0.1, x86_64-linux archive:
 #       c71f7e0d30a92e418f0d17db7c6d8f6664c1ad764340a1278678f4209deab534
-#   - buf, sqlc, golangci-lint, govulncheck and gosec: the variables
-#     below. The script runs them with go run at those versions.
+#   - buf, sqlc, golangci-lint and govulncheck: the variables below.
+#     The script runs them with go run at those versions.
+#   - gosec: tools/gosec/go.mod. The script builds it from there.
 #
 # Rules:
 #   - Tests that need PostgreSQL read WATHENA_TEST_DATABASE_URL. When it
@@ -72,7 +73,8 @@ buf_version=v1.73.0
 sqlc_version=v1.31.1
 golangci_version=2.14.0
 govulncheck_version=v1.8.0
-gosec_version=v2.29.0
+# gosec is pinned in tools/gosec/go.mod, with a newer golang.org/x/tools
+# than its own go.mod asks for.
 
 default_steps="vet test mods lua loadtest schema queries lint security fuzz client tinygo"
 all_steps="$default_steps compose browsers"
@@ -312,7 +314,8 @@ step_lint() {
 
 step_security() {
 	go run "golang.org/x/vuln/cmd/govulncheck@$govulncheck_version" ./...
-	go run "github.com/securego/gosec/v2/cmd/gosec@$gosec_version" -exclude-generated ./...
+	go build -C tools/gosec -o "$work/gosec" github.com/securego/gosec/v2/cmd/gosec
+	"$work/gosec" -exclude-generated ./...
 	scripts/sqlcheck.sh
 }
 

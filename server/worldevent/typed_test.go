@@ -164,7 +164,9 @@ func (f *fakeField) Spawn(_ context.Context, s Spawn) ([]Placed, error) {
 	return out, nil
 }
 
-func (f *fakeField) Alive(_ context.Context, _ string, run int64) (int, error) { return f.alive[run], nil }
+func (f *fakeField) Alive(_ context.Context, _ string, run int64) (int, error) {
+	return f.alive[run], nil
+}
 
 func (f *fakeField) Hints(_ context.Context, m string, _ int64, hints []Hint) error {
 	f.log = append(f.log, fmt.Sprintf("hints %s %d", MapID(m), len(hints)))

@@ -1,6 +1,6 @@
 module github.com/lxsmnsyc/wathena
 
-go 1.27.1
+go 1.27.2
 
 tool google.golang.org/protobuf/cmd/protoc-gen-go
 
