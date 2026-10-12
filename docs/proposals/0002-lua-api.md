@@ -921,6 +921,16 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Lua.** A typed event's script gets the run with `context:get_event()`: `run:get_monsters()`, `run:get_participants()` and `run:finish(result)` with `"won"` or `"lost"`. World events `world_event_start` and `world_event_end` carry { `name`, `type`, `result` }. `world_events.start(name)` and `world_events.stop(name)` need a new permission, `events.control`.
     - **Core events.** Core ships one sample event of each type, turned off by default. The server owner turns them on in the config.
 
+32. Phase 5 review and rule reading (2026-10-12). The user approved these on 2026-10-12:
+    - **Details accepted as built.** The details to review of next steps 11 to 17 are accepted as built, except as this decision changes them. So are the behavior notes of phase 5 step 3 in [decision 0019](../decisions/0019-ruleset-flags.md).
+    - **Reading rules.** `wa.rules` gains `rules.is(flag)`, true when a ruleset flag is on, `rules.get(name)`, the value of a ruleset rule, and `rules.get_limit(name)`, which returns a limit's base and max. `rules.limits.<name>` stays the base. They need no permission.
+    - **Expanding a limit.** `player:expand(limit, amount)` raises one of the player's limits, such as `inventory_slots`, up to the limit's max, and returns the new value. A negative amount lowers it, not below the base. It needs a new permission, `player.expand_limits`. The value saves with the character, or with the account for account storage.
+    - **Joins on create.** A player who makes a party or a guild gets `party_join` or `guild_join` with the reason `"create"`.
+    - **Block lists and trades.** A new ruleset rule, `block_list_refuses_trade`, on by default, controls whether a block list refuses trade requests.
+    - **Test helpers.** The provisional `wa.testing` helpers are stable: `world:chat`, `world:get_chat`, `world:trade`, `world:close_storage`, `world:buy`, `world:get_mails`, `world:vend`, and those of review decision 15.
+    - **Converter commands.** The script commands that need new API, listed in next steps 11 to 16, wait for one converter review, ordered by how many core scripts each blocks.
+    - **Script events** still do not resume after a restart.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
