@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-12)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and its step 1 is built.
 
 Done:
 
@@ -29,10 +29,16 @@ Done:
   - The ruleset rule `block_list_refuses_trade`, on by default.
   - The `wa.testing` helpers of phase 5 are stable.
   - The converter reads the rule of `basicskillcheck` and the flags of `checkre(1)` to `checkre(5)`.
+- Phase 6 step 1, staff roles and the GM audit log ([decision 0028](decisions/0028-staff-roles-and-audit.md)):
+  - `staff.owners` and `staff.roles`, with a fixed permission list, and the two-factor rule for every role.
+  - The admin API at `/admin/api/v1/` with `/me`, `/staff` and `/audit`, and the GM audit log, which the game and account roles can only add to.
+  - The admin screens at `/admin`, a bundle that players never load.
+  - `player:get_staff_role()` and `player:has_staff_permission(name)`.
 
 Open review items:
 
 - Next step 18's details to review, in proposal 0002, "Next steps".
+- Next step 19's details to review, in proposal 0002, "Next steps".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -45,7 +51,7 @@ Known issues:
 
 Next:
 
-1. Phase 6 (section 15, "Phase 6 in full"), starting with step 1, staff roles and the audit log.
+1. Phase 6 (section 15, "Phase 6 in full"), with step 2, player search and item history, once next step 19 is reviewed.
 2. The open review items above, between phase 6 steps.
 3. Phase 7, procedural mode, is the largest phase left.
 
@@ -2645,7 +2651,15 @@ The order from here:
       - Left: a map type for level bands, rewards to players on other maps and lists of rewards, sieges, rotating dungeons and world changes, locale text for announcements, and event times on `--dev`'s clock.
    Steps 2 and 4 to 8 add Lua API. Each step's API goes to review before it is built.
 9. Phase 6 in full. Web client, tier 1. It runs in these steps, approved on 2026-10-12:
-   1. Staff roles and the GM audit log. Roles are defined in the config, each with a list of permissions, with four defaults: `owner`, `admin`, `game_master` and `moderator`. An admin API on the account and world services checks the role on every call. Staff accounts need two-factor login. Every staff action writes to the GM audit log (section 7.8). The admin screens load only after the server confirms the role. Lua reads a player's staff role and permissions through API that this step drafts for review.
+   1. Staff roles and the GM audit log. Roles are defined in the config, each with a list of permissions, with four defaults: `owner`, `admin`, `game_master` and `moderator`. An admin API on the account and world services checks the role on every call. Staff accounts need two-factor login. Every staff action writes to the GM audit log (section 7.8). The admin screens load only after the server confirms the role. Lua reads a player's staff role and permissions through API that this step drafts for review. Done on 2026-10-12 ([decision 0028](decisions/0028-staff-roles-and-audit.md), proposal 0002 review decision 33, server/README.md, "Staff and admin tools", and mods/README.md, "Staff roles"):
+      - `staff.owners` and `staff.roles` in the config, checked against a fixed list of permissions in Go with `group.*` matching. The defaults are `admin`, `game_master` and `moderator`. The list names the permissions of steps 2 to 4 already.
+      - Migration 00023: `staff_roles`, the GM audit log `staff_audit` and `staff_audit_reviews`. The game and account roles can only add audit rows. Game tickets record whether their session logged in with a second factor.
+      - The two-factor rule: a role counts only for a session that logged in with TOTP, a recovery code or a passkey, on an account that still has one on. Role changes need a login from the last 10 minutes.
+      - The admin API at `/admin/api/v1/`: `GET /me`, `GET`, `POST` and `DELETE /staff`, and `GET /audit`, with protobuf messages in JSON, the session cookie, a CSRF header, a permission check and a rate limit on every call, and an audit row in the transaction of every change. It reaches the world through the `admin.World` interface.
+      - The admin screens at `/admin`, a separate bundle that loads only after `/me` returns a role: the staff list with roles to give and remove, and the audit log viewer with filters and pages.
+      - `player:get_staff_role()` and `player:has_staff_permission(name)`, and a provisional `world:set_staff_role` for `wactl mod test`. The greeter sample has a staff-only Staff Desk with four test cases.
+      - Checked in Chrome with a local server, PostgreSQL and placeholder assets: the owner's `/admin` said two-factor login was missing until it turned TOTP on and logged in with a code; then it showed the staff list and the audit log, gave PlayerOne the moderator role, and the `staff.give` row showed in the viewer. A player's game page and `/admin` loaded no admin chunk, and `/admin` said "This page is for staff."
+      - Left: staff actions in the game and their audit rows (step 3), audit reviews (step 2), the 2-year deletion job (phase 8), and a network form of `admin.World` for the distributed build.
    2. Player search and item history. Find accounts and characters by name, ID, IP address range or item serial. View a player's status, position, inventory and storage. Show every move of an item serial. Restore stolen items, with a reason, marked for review.
    3. Moderation and GM commands. The report queue with reported chat in context. Mute, kick, jail and account bans, each with a duration and reason, shown to the player. Reported chat is kept until its report closes. A first set of in-game commands with the same permissions and audit log: `@warp`, `@jumpto`, `@recall`, `@hide`, `@kick`, `@mute`, `@jail`, and `@item` with a reason, marked for review.
    4. World, events and mods tools. Zones, player counts and tick times. Announcements, and planned restarts with a countdown. Start, stop and schedule events. Installed mods with their permissions and error counts, and turning a mod off in a zone.

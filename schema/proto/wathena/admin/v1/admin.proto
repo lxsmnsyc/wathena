@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package wathena.admin.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1";
+
+// The admin API's messages (decision 0028). The API is JSON at
+// /admin/api/v1/, in the protobuf JSON form of these messages, with
+// lowerCamelCase field names.
+
+// Me answers GET /me: who the session is and what it may do.
+message Me {
+  // account is the session's account name.
+  string account = 1;
+  // role is the role that counts now, or empty. A role counts only when
+  // the session logged in with a second factor and the account still
+  // has TOTP or a passkey on.
+  string role = 2;
+  // permissions are the role's permissions.
+  repeated string permissions = 3;
+  // two_factor is set when the session counts for a role.
+  bool two_factor = 4;
+  // assigned_role is the account's role whether or not it counts, so
+  // the screens can say that two-factor login is missing.
+  string assigned_role = 5;
+  // recent_login is set when the session logged in, or proved who it
+  // is on the reauth page, within 10 minutes. Role changes need it.
+  bool recent_login = 6;
+  // csrf_token goes in the X-CSRF-Token header of each change.
+  string csrf_token = 7;
+  // reauth_url is the account page that renews recent_login and comes
+  // back to the admin screens.
+  string reauth_url = 8;
+}
+
+// Role is a configured role and its permissions.
+message Role {
+  string name = 1;
+  repeated string permissions = 2;
+}
+
+// StaffMember is one account with a role.
+message StaffMember {
+  int64 account_id = 1;
+  string account = 2;
+  string role = 3;
+  // from_config is set for the owners of the config's staff.owners.
+  // Their role cannot be changed from the admin screens.
+  bool from_config = 4;
+  // given_by is the account that gave the role, or empty.
+  string given_by = 5;
+  google.protobuf.Timestamp given_at = 6;
+  // two_factor is set when the account has TOTP or a passkey on.
+  bool two_factor = 7;
+}
+
+// StaffList answers GET /staff.
+message StaffList {
+  repeated StaffMember members = 1;
+  // roles are the roles of the config, which POST /staff gives.
+  repeated Role roles = 2;
+}
+
+// GiveRoleRequest is the body of POST /staff.
+message GiveRoleRequest {
+  // account is an account name.
+  string account = 1;
+  // role is a role of the config. It replaces the account's role.
+  string role = 2;
+  // reason is optional, at most 255 characters.
+  string reason = 3;
+}
+
+// AuditEntry is one row of the GM audit log.
+message AuditEntry {
+  int64 id = 1;
+  google.protobuf.Timestamp at = 2;
+  // account is the staff account that acted, and role the role it
+  // acted with.
+  string account = 3;
+  string role = 4;
+  // action is what it did, such as staff.give.
+  string action = 5;
+  // source is admin for the admin API, or game.
+  string source = 6;
+  string target = 7;
+  google.protobuf.Struct arguments = 8;
+  string reason = 9;
+  bool needs_review = 10;
+  // reviewed_at and reviewed_by are set once a review is recorded.
+  google.protobuf.Timestamp reviewed_at = 11;
+  string reviewed_by = 12;
+}
+
+// AuditPage answers GET /audit: rows newest first.
+message AuditPage {
+  repeated AuditEntry entries = 1;
+  // next_before_id is the before_id of the next page, or 0 at the end.
+  int64 next_before_id = 2;
+}
+
+// Error is the body of every answer that is not 2xx.
+message Error {
+  // code is one of: login, two_factor, forbidden, reauth, csrf, rate,
+  // bad_request, not_found, conflict, unavailable.
+  string code = 1;
+  // message is for people.
+  string message = 2;
+  // reauth_url is set for reauth.
+  string reauth_url = 3;
+}

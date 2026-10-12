@@ -8,6 +8,8 @@
 //   - the gateway and a world of zones, one zone per map, over WebSocket
 //     at /ws,
 //   - the account service's pages under /account/,
+//   - the admin API under /admin/api/v1/, and the admin screens at
+//     /admin when the client is served,
 //   - the asset build under /assets/,
 //   - the web client at /, when the binary embeds it (the webclient
 //     build tag) or --client-dir names a build.
@@ -80,6 +82,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/reference/rathena"
 	"github.com/lxsmnsyc/wathena/server/account"
+	"github.com/lxsmnsyc/wathena/server/admin"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
@@ -91,6 +94,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/social"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/store"
@@ -453,6 +457,21 @@ func runAll(name string, args []string) error {
 	if loaded.zone.Shops != nil {
 		loaded.zone.Shops.Location = cfg.Location
 	}
+	// The staff roles: the config's owners, and the roles the admin
+	// screens gave, which the database keeps (decision 0028).
+	staffRoles := staff.NewRegistry(cfg.Roles, cfg.Staff.Owners)
+	if pool != nil {
+		given, err := store.LoadStaffRoles(ctx, pool)
+		if err != nil {
+			return fmt.Errorf("staff roles: %w", err)
+		}
+		for account, role := range given {
+			if !cfg.Roles.Exists(role) {
+				log.Warn("an account has a staff role the config does not have; it counts as no role", "account", account, "role", role)
+			}
+		}
+		staffRoles.Load(given)
+	}
 	zones := make([]*zone.Zone, len(names))
 	monsters, warpCount, npcCount := 0, 0, 0
 	for i, n := range names {
@@ -470,6 +489,7 @@ func runAll(name string, args []string) error {
 		z.SaveMap = name
 		z.Chat, z.Jail, z.Clock, z.Social, z.Storages = hub, jail, clock, socials, storages
 		z.Mail, z.Market, z.Autotraders = mails, stores, autotraders
+		z.Staff = staffRoles
 		z.SetWarps(warps[n])
 		z.SetNPCs(loaded.npcs[n])
 		z.Mods = loaded.zone
@@ -569,6 +589,7 @@ func runAll(name string, args []string) error {
 		hub.Log = memoryLog
 	}
 	var accounts *account.Service
+	var adminAPI *admin.Handler
 	if !cfg.Dev {
 		pool, err := openDatabase(ctx, cfg.Secrets.AccountDatabase, "waserver-account")
 		if err != nil {
@@ -608,6 +629,14 @@ func runAll(name string, args []string) error {
 		}
 		gw.Sessions = account.GameTickets{Store: st}
 		go accounts.Run(ctx)
+		// The admin API runs on the account service's origin and pool. It
+		// tells the world's staff registry of role changes in this
+		// process.
+		adminAPI, err = admin.New(admin.Config{Pool: pool, Auth: accounts, World: staffRoles, Roles: cfg.Roles,
+			Owners: cfg.Staff.Owners, Log: log})
+		if err != nil {
+			return err
+		}
 	}
 	go w.Run(ctx)
 	go scheduler.Run(ctx)
@@ -655,6 +684,7 @@ func runAll(name string, args []string) error {
 	mux.Handle("/ws", gw)
 	if accounts != nil {
 		mux.Handle(account.Prefix, accounts)
+		mux.Handle(admin.Prefix, adminAPI)
 	}
 	mux.HandleFunc("GET /emblems/{guild}/{file}", emblemHandler(socials))
 	mux.HandleFunc("GET /healthz", hc.live)

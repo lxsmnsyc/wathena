@@ -213,6 +213,7 @@ type GameTicket struct {
 	CharacterID int64
 	CreatedAt   pgtype.Timestamptz
 	ExpiresAt   pgtype.Timestamptz
+	TwoFactor   bool
 }
 
 type Guild struct {
@@ -441,6 +442,36 @@ type ShopStock struct {
 	ItemID   int
 	Stock    int
 	FilledAt pgtype.Timestamptz
+}
+
+type StaffAudit struct {
+	ID              int64
+	At              pgtype.Timestamptz
+	AccountID       int64
+	AccountName     string
+	Role            string
+	Action          string
+	Source          string
+	Target          string
+	TargetAccountID pgtype.Int8
+	Arguments       []byte
+	Reason          string
+	NeedsReview     bool
+}
+
+type StaffAuditReview struct {
+	AuditID      int64
+	ReviewerID   int64
+	ReviewerName string
+	ReviewedAt   pgtype.Timestamptz
+	Note         string
+}
+
+type StaffRole struct {
+	AccountID int64
+	Role      string
+	GivenBy   pgtype.Int8
+	GivenAt   pgtype.Timestamptz
 }
 
 type StorageItem struct {

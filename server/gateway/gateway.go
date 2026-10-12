@@ -27,6 +27,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/rules"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
@@ -58,6 +59,9 @@ type Login struct {
 	SessionID int64
 	Name      string
 	Look      zone.Look
+	// Staff is how the login logged in, for its staff role. A dev token
+	// has no second factor, so it has no role.
+	Staff staff.Login
 }
 
 // ErrSessionInvalid is a session token that is not valid, used, or
@@ -356,6 +360,7 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 	if err != nil {
 		return g.loadFailed(ctx, c, err)
 	}
+	char.Staff = login.Staff
 	p, err := g.World.JoinCharacter(ctx, char, saver)
 	if err != nil {
 		if saver != nil {

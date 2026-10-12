@@ -558,6 +558,13 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 			return []script.Value{script.Bool(true)}, nil
 		}
 		return []script.Value{script.Bool(false), script.String(why)}, nil
+	case "set_staff_role":
+		p, _ := args[0].AsInt()
+		role, _ := args[1].AsString()
+		if err := w.h.SetStaffRole(p, role); err != nil {
+			return nil, fmt.Errorf("world:set_staff_role: %w", err)
+		}
+		return nil, nil
 	case "close_storage":
 		p, _ := args[0].AsInt()
 		if err := w.h.CloseStorage(p); err != nil {

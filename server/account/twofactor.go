@@ -235,12 +235,17 @@ func (s *Service) needRecent(w http.ResponseWriter, r *http.Request, sess db.Use
 	return false
 }
 
-// safeNext returns a path under Prefix to go to after the reauth page,
-// or the settings page for anything else.
+// AdminPath is the admin screens' path. The reauth page may go back
+// there.
+const AdminPath = "/admin"
+
+// safeNext returns a path under Prefix, or the admin screens, to go to
+// after the reauth page, or the settings page for anything else.
 func safeNext(raw string) string {
 	u, err := url.Parse(raw)
 	if err != nil || raw == "" || len(raw) > 512 || u.Scheme != "" || u.Host != "" || u.User != nil ||
-		!strings.HasPrefix(u.Path, Prefix) || strings.Contains(raw, "\\") || strings.HasPrefix(raw, "//") {
+		!strings.HasPrefix(u.Path, Prefix) && u.Path != AdminPath && !strings.HasPrefix(u.Path, AdminPath+"/") ||
+		strings.Contains(raw, "\\") || strings.HasPrefix(raw, "//") || strings.Contains(u.Path, "..") {
 		return Prefix + "settings"
 	}
 	return u.RequestURI()

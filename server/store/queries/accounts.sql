@@ -79,8 +79,11 @@ FROM characters c
 WHERE s.id = @session_id AND c.account_id = s.account_id AND c.slot = @slot;
 
 -- name: CreateTicket :exec
-INSERT INTO game_tickets (token_hash, session_id, account_id, character_id, expires_at)
-VALUES (@token_hash, @session_id, @account_id, @character_id, @expires_at);
+-- CreateTicket makes a game ticket. two_factor is set when the session
+-- logged in with a second factor and the account still has TOTP or a
+-- passkey on, so a staff role counts in the game (decision 0028).
+INSERT INTO game_tickets (token_hash, session_id, account_id, character_id, expires_at, two_factor)
+VALUES (@token_hash, @session_id, @account_id, @character_id, @expires_at, @two_factor);
 
 -- name: RedeemTicket :one
 -- RedeemTicket uses a ticket up and returns its character. The DELETE
@@ -89,12 +92,13 @@ VALUES (@token_hash, @session_id, @account_id, @character_id, @expires_at);
 -- No row comes back when the character left the ticket's account.
 WITH t AS (
     DELETE FROM game_tickets WHERE token_hash = @token_hash
-    RETURNING session_id, account_id, character_id, expires_at
+    RETURNING session_id, account_id, character_id, expires_at, two_factor
 )
 SELECT t.session_id, t.account_id, t.character_id, t.expires_at > now() AS live,
-    c.name, c.job, c.sex, c.hair, c.hair_color
+    c.name, c.job, c.sex, c.hair, c.hair_color, t.two_factor, a.name AS account_name
 FROM t
-JOIN characters c ON c.id = t.character_id AND c.account_id = t.account_id;
+JOIN characters c ON c.id = t.character_id AND c.account_id = t.account_id
+JOIN accounts a ON a.id = t.account_id;
 
 -- name: DeleteExpired :one
 -- DeleteExpired removes expired tickets, pending logins and passkey

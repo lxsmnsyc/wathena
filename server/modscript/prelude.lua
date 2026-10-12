@@ -483,6 +483,15 @@ new_player, player_ids = handle_type("player", {
 	get_friend_names = function(self)
 		return (call(H.player_friend, player_ids[self], "get_friend_names"))
 	end,
+	get_staff_role = function(self)
+		return (call(H.player_staff, player_ids[self], "role"))
+	end,
+	has_staff_permission = function(self, name)
+		if type(name) ~= "string" then
+			error("player:has_staff_permission: the permission must be a string, such as \"moderation.mute\"", 2)
+		end
+		return (call(H.player_staff, player_ids[self], "has", name))
+	end,
 }, function(id, key)
 	-- Level 3 is the script line that read the field.
 	local ok, value = pcall(H.player_field, id, key)
@@ -1647,6 +1656,12 @@ new_world, world_ids = handle_type("test world", {
 		local id = player_ids[player]
 		check(id ~= nil, "world:close_storage: want a player from world:new_player")
 		world_call("close_storage", id)
+	end,
+	set_staff_role = function(self, player, role)
+		local id = player_ids[player]
+		check(id ~= nil, "world:set_staff_role: want a player from world:new_player")
+		check(role == nil or type(role) == "string", "world:set_staff_role: the role is a string, or nil to take it away")
+		world_call("set_staff_role", id, role or "")
 	end,
 	buy = function(self, player, shop, items)
 		local id = player_ids[player]

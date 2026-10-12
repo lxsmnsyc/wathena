@@ -553,6 +553,19 @@ function wa_Player:is_friend(other) end
 ---@return string[]
 function wa_Player:get_friend_names() end
 
+---The player's staff role, such as "game_master", or nil. The owner role is "owner". A role counts only when the player logged in with a second factor, a TOTP code, a recovery code or a passkey, and the account has TOTP or a passkey on, as on the admin screens.
+---
+---Needs the permission `game.read`.
+---@return string?
+function wa_Player:get_staff_role() end
+
+---Whether the player's staff role has a permission. The owner has every permission. It follows the two-factor rule of get_staff_role.
+---
+---Needs the permission `game.read`.
+---@param permission string A staff permission, such as "moderation.mute". An unknown name raises an error that lists the names.
+---@return boolean
+function wa_Player:has_staff_permission(permission) end
+
 ---Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
 ---
 ---Needs the permission `player.sanction`.
@@ -1327,6 +1340,13 @@ function wa_TestWorld:trade(a, b, offer_a, offer_b) end
 ---Closes the player's storage window, as the client's close button.
 ---@param player wa.Player A player handle.
 function wa_TestWorld:close_storage(player) end
+
+---Gives the player's account a staff role, as if it logged in with two-factor login, so player:get_staff_role and player:has_staff_permission see it.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param player wa.Player A player handle.
+---@param role? string A role of the default staff roles: admin, game_master or moderator. nil takes the role away.
+function wa_TestWorld:set_staff_role(player, role) end
 
 ---Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as "out_of_stock", "not_enough_items" or "not_enough_currency".
 ---@param player wa.Player A player handle.

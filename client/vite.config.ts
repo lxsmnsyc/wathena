@@ -59,7 +59,9 @@ export default defineConfig({
     // own files go elsewhere.
     assetsDir: 'app',
     rolldownOptions: {
-      input: { main: 'index.html', sw: 'src/sw/sw.ts' },
+      // admin.html is the admin screens' page. Its script loads the
+      // admin bundle only after the server confirms a staff role.
+      input: { main: 'index.html', admin: 'admin.html', sw: 'src/sw/sw.ts' },
       output: {
         entryFileNames: (chunk) => (chunk.name === 'sw' ? 'sw.js' : 'app/[name]-[hash].js'),
       },

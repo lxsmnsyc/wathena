@@ -21,6 +21,8 @@ type Limits struct {
 	// Each client address (an IPv4 address, or an IPv6 /64) has a
 	// bucket per action: Burst attempts, refilled one every Every.
 	Login, Signup, Ticket Bucket
+	// Admin is the bucket of the admin API's calls (decision 0028).
+	Admin Bucket
 	// After AccountCaptcha failed logins for one account name, or
 	// IPCaptcha from one address, the login form asks for a captcha.
 	AccountCaptcha, IPCaptcha int
@@ -50,6 +52,7 @@ type Bucket struct {
 //     per address.
 //   - Signup: 3 at once, then 1 every 10 minutes per address.
 //   - Ticket: 20 at once, then 1 every 3 seconds per address.
+//   - Admin: 60 calls at once, then 1 a second per address.
 //   - A captcha after 3 failures for a name or 10 from an address.
 //   - From 5 failures for a name, a wait of 1 s, 2 s, 4 s and so on, up
 //     to 15 minutes.
@@ -58,6 +61,7 @@ var DefaultLimits = Limits{
 	Login:          Bucket{Burst: 10, Every: 6 * time.Second},
 	Signup:         Bucket{Burst: 3, Every: 10 * time.Minute},
 	Ticket:         Bucket{Burst: 20, Every: 3 * time.Second},
+	Admin:          Bucket{Burst: 60, Every: time.Second},
 	AccountCaptcha: 3,
 	IPCaptcha:      10,
 	BackoffAfter:   5,
@@ -73,6 +77,7 @@ const (
 	actLogin action = iota
 	actSignup
 	actTicket
+	actAdmin
 )
 
 type bucketKey struct {
@@ -130,6 +135,8 @@ func (l *limiter) bucketOf(act action) Bucket {
 		return l.lim.Signup
 	case actTicket:
 		return l.lim.Ticket
+	case actAdmin:
+		return l.lim.Admin
 	default:
 		return l.lim.Login
 	}

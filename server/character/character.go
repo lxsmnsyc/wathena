@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/status"
 )
 
@@ -45,6 +46,9 @@ type Character struct {
 	// One at 0 is not in the map. An account's currencies are with its
 	// storage (server/storage).
 	Currencies map[uint32]int64
+	// Staff is how the player logged in, for its staff role (decision
+	// 0028). The gateway sets it from the game ticket. It is not saved.
+	Staff staff.Login
 }
 
 // Friend is one name on a friend list. CharID is 0 for a character that

@@ -1,0 +1,15 @@
+/* The admin page before the admin screens load. */
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+#admin {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1rem;
+}

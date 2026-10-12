@@ -20,6 +20,7 @@ func testClient(t *testing.T) *clientHandler {
 	js := strings.Repeat("console.log('wathena');\n", 200)
 	h, err := newClientHandler(fstest.MapFS{
 		"index.html":           {Data: []byte("<!doctype html><title>wAthena</title>")},
+		"admin.html":           {Data: []byte("<!doctype html><title>wAthena admin</title>")},
 		"sw.js":                {Data: []byte(js)},
 		"app/main-abc123.js":   {Data: []byte(js)},
 		"app/path-abc123.wasm": {Data: []byte("\x00asm\x01\x00\x00\x00")},
@@ -47,6 +48,8 @@ func TestClientCaching(t *testing.T) {
 	}{
 		{"/", "text/html; charset=utf-8", "no-cache"},
 		{"/index.html", "text/html; charset=utf-8", "no-cache"},
+		{"/admin", "text/html; charset=utf-8", "no-cache"},
+		{"/admin/", "text/html; charset=utf-8", "no-cache"},
 		{"/sw.js", "text/javascript; charset=utf-8", "no-cache"},
 		{"/app/main-abc123.js", "text/javascript; charset=utf-8", "public, max-age=31536000, immutable"},
 		{"/app/path-abc123.wasm", "application/wasm", "public, max-age=31536000, immutable"},
@@ -68,7 +71,10 @@ func TestClientCaching(t *testing.T) {
 			}
 		}
 	}
-	for _, p := range []string{"/app/", "/app", "/nope.js", "/../go.mod", "/account"} {
+	if b, _ := io.ReadAll(get(h, http.MethodGet, "/admin").Body); !strings.Contains(string(b), "wAthena admin") {
+		t.Errorf("/admin serves %q", b)
+	}
+	for _, p := range []string{"/app/", "/app", "/nope.js", "/../go.mod", "/account", "/admin/staff"} {
 		if resp := get(h, http.MethodGet, p); resp.StatusCode != http.StatusNotFound {
 			t.Errorf("%s: status %d", p, resp.StatusCode)
 		}

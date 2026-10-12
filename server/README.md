@@ -209,18 +209,18 @@ sqlc needs a C compiler for its PostgreSQL parser. CI generates the code again a
 
 ### Tests
 
-The integration tests of `store` and `account` need a PostgreSQL 18 server and a role that can create databases and roles. Each test makes its own database and drops it afterwards, and acts as the service roles with `SET ROLE`. Without `WATHENA_TEST_DATABASE_URL`, they are skipped.
+The integration tests of `store`, `account` and `admin` need a PostgreSQL 18 server and a role that can create databases and roles. Each test makes its own database and drops it afterwards, and acts as the service roles with `SET ROLE`. Without `WATHENA_TEST_DATABASE_URL`, they are skipped.
 
 ```text
 docker run -d --name wathena-test-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:18
-WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' go test ./server/store/ ./server/account/
+WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' go test ./server/store/ ./server/account/ ./server/admin/
 ```
 
 CI's `test` job runs them against a `postgres:18` service container.
 
 ## All-in-one
 
-`waserver all` runs every service in one process (strategy section 3.9): the gateway and the world's zones at `/ws`, the account pages at `/account/`, the asset build at `/assets/`, and the web client at `/`. `waserver` with flags and no command does the same. deploy/README.md runs it with PostgreSQL and Caddy in Docker Compose.
+`waserver all` runs every service in one process (strategy section 3.9): the gateway and the world's zones at `/ws`, the account pages at `/account/`, the admin API at `/admin/api/v1/`, the asset build at `/assets/`, and the web client at `/`, with the admin screens at `/admin`. `waserver` with flags and no command does the same. deploy/README.md runs it with PostgreSQL and Caddy in Docker Compose.
 
 ```text
 waserver all --config waserver.yml
@@ -262,6 +262,8 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `chat.new_character_burst`, `chat.new_character_refill`, `chat.new_character_period` | none | `3`, `3s`, `1h` | Lower limits for a character's first period after it was made. A period of `0s` turns them off. |
 | `chat.log_days` | none | `30` | Days the chat log keeps lines, except lines of open reports. More than 30 logs a warning. |
 | `jail.map`, `jail.cells` | none | `sec_pri`, `[[49, 75], [24, 75]]` | Where jailed players go, as rAthena's `MAP_JAIL` and `pc_jail`. A jail map that does not run logs a warning. |
+| `staff.owners` | none | none | Account names with the `owner` role. See "Staff and admin tools". |
+| `staff.roles` | none | `admin`, `game_master`, `moderator` | Role names and their permissions. A list replaces the defaults. |
 
 `waserver` checks everything before it starts, and lists every problem by key. With a database it also refuses to start:
 
@@ -656,6 +658,58 @@ SELECT r.id, r.reporter_name, r.target_name, r.reason, c.at, c.name, c.text
 FROM reports r JOIN report_lines rl ON rl.report_id = r.id JOIN chat_log c ON c.id = rl.line_id
 WHERE r.status = 'open' ORDER BY r.id, c.at;
 ```
+
+## Staff and admin tools
+
+Staff roles, the admin API, the GM audit log and the first admin screens follow strategy sections 7.8 and 10.6, and proposal 0002, review decision 33 ([decision 0028](../docs/decisions/0028-staff-roles-and-audit.md)).
+
+Roles come from the config:
+
+```yaml
+staff:
+  # Accounts with the owner role, which has every permission. It comes
+  # only from here.
+  owners: [Alice]
+  # Optional. A list replaces the defaults below.
+  roles:
+    admin: [staff.*, audit.*, players.*, items.*, moderation.*, commands.*, world.*, events.*, mods.*]
+    game_master: [audit.read, players.read, items.history, items.restore, moderation.*, commands.*, world.read, world.announce, events.control]
+    moderator: [players.read, moderation.reports, moderation.mute, moderation.kick, moderation.jail]
+```
+
+- Permission names come from a fixed list, `staff.Catalog`. `group.*` names a whole group. An unknown name stops the server from starting.
+- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). The other names are for the later steps of phase 6 and do nothing yet. Decision 0028 lists them.
+- Owners and holders of `staff.assign` give the other roles on the admin screens. The database keeps them in `staff_roles`. No one changes their own role or an owner's, and a caller gives or takes only roles whose permissions it holds all of.
+- A role counts only for a login with TOTP, a recovery code or a passkey, on an account that still has TOTP or a passkey on. Giving and removing roles also needs a login, or a proof on `/account/reauth`, from the last 10 minutes.
+
+The admin screens are at `/admin` of the server's public URL. The page asks the admin API who you are, and loads the admin bundle only for a role that counts. A player who opens `/admin` sees "This page is for staff." and downloads nothing more. To try it:
+
+1. Put your account's name in `staff.owners` and start `waserver` with accounts (see "Running with accounts") and a client build.
+2. Turn TOTP on in `/account/settings`, log out, and log in again with the code.
+3. Open `/admin`. The staff list gives and removes roles, and the audit log viewer filters rows by staff account, action, target, dates and review.
+
+The admin API is JSON at `/admin/api/v1/` on the account service's origin. The messages are protobuf in `schema/proto/wathena/admin/v1`, in their JSON form:
+
+| Call | Permission | Does |
+|---|---|---|
+| `GET /me` | none | The account, the role that counts, its permissions, the CSRF token and the reauth URL. |
+| `GET /staff` | `staff.assign` | The owners and the given roles, and the config's roles. |
+| `POST /staff` | `staff.assign` | Gives an account a role: `{"account": "Bobby", "role": "moderator", "reason": "..."}`. |
+| `DELETE /staff/{account}` | `staff.assign` | Takes an account's role away. `?reason=` is optional. |
+| `GET /audit` | `audit.read` | Audit rows, newest first. Filters: `account`, `action`, `target`, `since`, `until`, `review` (`pending` or `reviewed`). Pages: `limit` (1 to 100) and `before_id`. |
+
+- Every call needs the account session cookie. A change also needs the CSRF token of `/me` in the `X-CSRF-Token` header.
+- Errors are JSON with a `code`: `login`, `two_factor`, `forbidden`, `reauth` (with `reauthUrl`), `csrf`, `rate`, `bad_request`, `not_found`, `conflict` or `unavailable`.
+- Calls share the account service's rate limits per address: 60 at once, then 1 a second.
+
+The GM audit log is `staff_audit` (migration 00023). Each staff action adds a row with the time, the account, the role, the action, the target, the arguments, the reason and a review mark. Reviews go in `staff_audit_reviews`. The game and account roles can add rows, and neither can change or delete them. Only the account role reads them. Rows are kept 2 years; the deletion job comes with phase 8. To read the newest rows in psql:
+
+```sql
+SELECT at, account_name, role, action, target, arguments, reason, needs_review
+FROM staff_audit ORDER BY id DESC LIMIT 20;
+```
+
+In the game, `player:get_staff_role()` and `player:has_staff_permission(name)` read the same roles, with the same two-factor rule ([mods/README.md](../mods/README.md), "Staff roles"). A role given or taken on the admin screens applies at once.
 
 ## Parties and friends
 

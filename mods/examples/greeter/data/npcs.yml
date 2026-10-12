@@ -20,3 +20,12 @@
   shop:
     - {item: "example.greeter:Welcome_Cookie", price: 25}
     - {item: Red_Potion}
+# A staff-only NPC. Its script reads the player's staff role, which
+# counts only after a login with two-factor login.
+- name: Staff Desk#prontera
+  map: prontera
+  x: 160
+  y: 200
+  direction: south
+  sprite: 4_M_MANAGER
+  script: scripts/npc/staff_desk.lua

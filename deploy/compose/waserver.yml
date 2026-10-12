@@ -35,3 +35,10 @@ captcha: none
 #   dir: /srv/mods
 #   approve:
 #     example.halloween-event: [player.give_items]
+
+# Staff (server/README.md, "Staff and admin tools"). Owners have every
+# permission and give the other roles at /admin. A role counts only
+# after a login with TOTP or a passkey. Name the staff account of
+# `wactl world new --admin` here.
+# staff:
+#   owners: [Admin]

@@ -56,7 +56,7 @@ The boundaries are:
 1. **Browser to gateway and account service.** Everything the client sends is untrusted. The client is open source and easy to modify.
 2. **Mod code to the zone.** Mod scripts are untrusted code that runs inside the zone process, in C Lua states.
 3. **Services to each other.** Services authenticate each other with mutual TLS. A compromised service must not gain more database rights than its own role.
-4. **Staff to the admin API.** Staff are trusted with their role, but every action is logged.
+4. **Staff to the admin API.** Staff are trusted with their role, but every action is logged. The admin API runs on the account service's origin and pool, and reaches the world through one interface, `admin.World` ([decision 0028](../decisions/0028-staff-roles-and-audit.md)).
 5. **Build to release.** Third-party code and tools enter through Go modules, GitHub Actions, and downloaded compilers.
 
 ## Attackers
@@ -104,7 +104,8 @@ The boundaries are:
 | TOTP secrets leak from a database copy or backup. | Secrets are sealed with AES-256-GCM under a key from the environment, bound to their account. Recovery codes are stored as SHA-256 of 80 random bits. Only `wathena_account` can read these tables. | Done. Someone who reads both the database and the environment gets the secrets. | Decision 0005 |
 | A cloned passkey. | The signature counter must go up. A passkey whose counter does not is blocked. | Done. Synced passkeys report no counter, so this cannot detect their copies. | Decision 0005 |
 | Script injection on the account pages. | Only three pages load a script: one same-origin file, with `script-src 'self'` and no inline scripts or eval. Other pages allow no script. | Done. | Decision 0005 |
-| Staff account takeover. | Staff must use TOTP or a passkey before GM commands or admin tools work. | Decided. | Strategy 7.3, 10.6 |
+| Staff account takeover. | A staff role counts only for a session that logged in with a TOTP code, a recovery code or a passkey, on an account that still has TOTP or a passkey on. The admin API checks this on every call. In the game, the game ticket records it for the session. A stolen password alone gets no role. | Done for the admin API and the Lua calls. A game session keeps its ticket's answer until the next login, so turning TOTP off during play applies then. GM commands come with phase 6 step 3. | Strategy 7.3, 10.6, [decision 0028](../decisions/0028-staff-roles-and-audit.md) |
+| A stolen staff session cookie changes roles. | Giving and removing roles needs a login, or a proof on the reauth page, from the last 10 minutes, as login method changes do. | Done. | Decision 0028 |
 
 ### Game integrity
 
@@ -133,7 +134,12 @@ The boundaries are:
 
 | Threat | Mitigation | Status | Reference |
 |---|---|---|---|
-| A staff member creates items or reads data without cause. | Role-based permissions per command. An audit log of every action. A reason is required for item and zeny creation. | Decided. | Strategy 7.8, 10.6 |
+| A staff member creates items or reads data without cause. | Role-based permissions from a fixed list, checked on every admin API call. An audit log of every action, written in the transaction of the change. A reason is required for item and zeny creation, and such rows are marked for review, by a database check. | Done for roles, the admin API and its audit rows. Item restores, sanctions and GM commands, with their rows and reasons, come with phase 6 steps 2 and 3. | Strategy 7.8, 10.6, decision 0028 |
+| A staff member gives themselves or a friend more power. | Owners come only from the config. No one changes their own role or an owner's. A caller gives or takes only roles whose permissions it holds all of. Every change writes an audit row. | Done. With the default roles, an admin holds every permission, so admins can make other admins. | Decision 0028 |
+| A staff member or a compromised service hides their tracks in the audit log. | `wathena_game` and `wathena_account` can only add audit rows: neither can update, delete or truncate them, by database rights. Reviews go in their own table, so a review never changes a row. Rows keep the account's name and have no foreign keys, so they outlive accounts. | Done. The table's owner, `wathena_migrator`, can still change rows. The 2-year deletion job comes with phase 8. | Decision 0028 |
+| A cross-site page calls the admin API as a staff member. | `SameSite=Strict` session cookie. Every change needs the CSRF token of `/me` in the `X-CSRF-Token` header, an HMAC of the CSRF and session cookies. A `Sec-Fetch-Site` or `Origin` header, when the browser sends one, must name the service's own origin. The API sends no CORS headers, so other origins cannot read its answers. | Done. | Decision 0028 |
+| Players download or probe the admin tools. | The admin screens are a separate bundle that the `/admin` page loads only after `/me` returns a role. The game page never loads it. Every call checks the permission on the server, so the bundle holds no secret. Calls are rate limited per address. | Done. | Strategy 10.6, decision 0028 |
+| The world misses a role change and keeps a removed role. | The admin API tells the world through `admin.World` after the commit. In the all-in-one build that is a call in the same process. The database is the source the world loads at start. | Done for the all-in-one build. A network form for the distributed build is open. | Decision 0028 |
 | A compromised service reaches all data. | One PostgreSQL role per service, with only the tables and rights it needs. Mutual TLS between services. | Done for the game and account roles: `wathena_game` has no DDL rights, cannot delete accounts or characters, and cannot read passwords or sessions. `wathena_account` alone reads passwords, and cannot change or delete characters. Migrations run as `wathena_migrator`. Other services' roles and mutual TLS are decided. | Strategy 7.8, decisions 0003 and 0004 |
 | The database password leaks through process lists or logs. | `waserver` and `wactl migrate` read the database URL from an environment variable. The URL is never logged, and parse errors do not quote it. | Done. | Decision 0003 |
 | Secrets committed to the repository. | Secrets come from environment variables or a secret manager. | Decided. | Strategy 7.8 |
@@ -146,6 +152,7 @@ The boundaries are:
 | Script injection through chat, names, or NPC text. | Text is shown with `textContent`, never `innerHTML`. A strict Content Security Policy. | Decided. | Strategy 7.6 |
 | Malicious guild emblem files. | Size limits, decoding, checks, and re-encoding. The original file is never served. | Decided. | Strategy 7.6 |
 | Cross-site requests. | `SameSite=Strict` cookies. Every account form has a CSRF token bound to the session, and posts with a foreign `Origin` or `Sec-Fetch-Site` are refused. The ticket endpoint answers only trusted origins. The gateway checks the WebSocket `Origin` against the trusted client origins, with the scheme. | Done. | Strategy 7.4, 7.6, decision 0004 |
+| Script injection on the admin screens through names, reasons or audit arguments. | The screens set text with `textContent` only. They load from the client's origin under its Content Security Policy, which allows no inline scripts. | Done. | Decision 0028 |
 | Script injection or framing on the account pages. | The pages have no scripts. `Content-Security-Policy` allows no scripts, no frames, and no framing, and forms only post to the service. Templates escape every value. | Done. | Decision 0004 |
 | Anyone plays any character on a development server. | `waserver --dev` refuses a listen address other than loopback. | Done. | Decision 0004 |
 

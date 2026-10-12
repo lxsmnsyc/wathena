@@ -60,6 +60,7 @@ type clientFile struct {
 //     releases, so browsers check them each time (no-cache with an ETag).
 //   - Files are compressed once at startup, with Brotli and gzip.
 //   - Every response has the client page's security headers.
+//   - /admin serves admin.html, the admin screens' page.
 type clientHandler struct {
 	files   map[string]*clientFile
 	headers http.Header
@@ -178,8 +179,13 @@ func (h *clientHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := strings.TrimPrefix(r.URL.Path, "/")
-	if p == "" {
+	switch p {
+	case "":
 		p = "index.html"
+	case "admin", "admin/":
+		// The admin screens' page. It loads the admin bundle only after
+		// the admin API confirms a staff role (decision 0028).
+		p = "admin.html"
 	}
 	f := h.files[p]
 	if f == nil {

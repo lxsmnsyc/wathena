@@ -1,0 +1,57 @@
+/* The admin screens. They load with the admin bundle, after /me
+   confirmed a staff role. */
+#admin header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-who {
+  color: GrayText;
+}
+
+.admin-notice:empty {
+  display: none;
+}
+
+.admin-error {
+  color: #c62828;
+}
+
+#admin section {
+  margin-block: 1.5rem;
+}
+
+#admin table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+#admin th,
+#admin td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  text-align: left;
+  vertical-align: top;
+}
+
+#admin form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem 1rem;
+  margin-block: 0.75rem;
+}
+
+#admin form h3 {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+#admin label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}

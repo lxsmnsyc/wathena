@@ -955,10 +955,21 @@ func (s *Service) ticket(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": "character"})
 		return
 	}
+	// The ticket records whether the login counts for a staff role
+	// (decision 0028).
+	twoFactor := false
+	if secondFactor(sess.Factors) {
+		if twoFactor, err = s.q.TwoFactorOn(ctx, sess.AccountID); err != nil {
+			s.log.Error("cannot check two-factor login", "err", err)
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "unavailable"})
+			return
+		}
+	}
 	token, hash := newToken()
 	err = s.q.CreateTicket(ctx, db.CreateTicketParams{
 		TokenHash: hash, SessionID: sess.ID, AccountID: sess.AccountID, CharacterID: sess.CharacterID.Int64,
 		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(s.cfg.TicketLifetime), Valid: true},
+		TwoFactor: twoFactor,
 	})
 	if err != nil {
 		s.log.Error("cannot make a game ticket", "err", err)

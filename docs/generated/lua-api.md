@@ -1484,6 +1484,22 @@ The names on the player's friend list, in the order they were added.
 
 Permission: `game.read`.
 
+#### `player:get_staff_role() → string?`
+
+The player's staff role, such as "game_master", or nil. The owner role is "owner". A role counts only when the player logged in with a second factor, a TOTP code, a recovery code or a passkey, and the account has TOTP or a passkey on, as on the admin screens.
+
+Permission: `game.read`.
+
+#### `player:has_staff_permission(permission) → boolean`
+
+Whether the player's staff role has a permission. The owner has every permission. It follows the two-factor rule of get_staff_role.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `permission` | `string` | A staff permission, such as "moderation.mute". An unknown name raises an error that lists the names. |
+
 #### `player:mute(minutes, reason)`
 
 Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
@@ -2573,6 +2589,17 @@ Closes the player's storage window, as the client's close button.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
+
+#### `testWorld:set_staff_role(player, role?)`
+
+Gives the player's account a staff role, as if it logged in with two-factor login, so player:get_staff_role and player:has_staff_permission see it.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+| `role` | `string?` | A role of the default staff roles: admin, game_master or moderator. nil takes the role away. |
 
 #### `testWorld:buy(player, shop, items) → boolean, string?`
 

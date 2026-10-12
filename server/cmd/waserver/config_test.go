@@ -287,3 +287,41 @@ func TestSeedNeedsDev(t *testing.T) {
 		t.Errorf("--seed: %q, %v", o.Seed, err)
 	}
 }
+
+// TestStaffConfig checks the staff section: the default roles, a list
+// that replaces them, and the load errors for unknown names.
+func TestStaffConfig(t *testing.T) {
+	assets := assetDir(t)
+	p := writeConfig(t, `
+assets: `+assets+`
+staff:
+  owners: [Alice]
+  roles:
+    helper: [audit.read, moderation.*]
+`)
+	o, _, err := parseOptions("waserver all", []string{"--config", p}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := validate(o, dbSecrets)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(st.Staff.Owners, []string{"Alice"}) || !slices.Equal(st.Roles.Names(), []string{"helper"}) ||
+		!st.Roles.Has("helper", "moderation.ban") || st.Roles.Has("helper", "staff.assign") {
+		t.Errorf("staff %+v %v", st.Staff, st.Roles.Names())
+	}
+	o = defaultOptions()
+	o.Assets = assets
+	if st, err := validate(o, dbSecrets); err != nil || !slices.Equal(st.Roles.Names(), []string{"admin", "game_master", "moderator"}) {
+		t.Errorf("default roles: %v", err)
+	}
+	o.Staff.Roles = map[string][]string{"helper": {"audit.write"}, "owner": {"audit.read"}}
+	o.Staff.Owners = []string{"no"}
+	_, err = validate(o, dbSecrets)
+	for _, want := range []string{`staff.roles.helper: "audit.write" is not a permission`, "owner comes only from staff.owners", `staff.owners: "no" is not an account name`} {
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("error %v lacks %q", err, want)
+		}
+	}
+}

@@ -3,7 +3,7 @@
 A mod adds or changes game content without changes to the server (strategy section 6). This guide covers what the mod loader and tools support today, at the end of phase 4. The scripting API is [proposal 0002](../docs/proposals/0002-lua-api.md), at version 1.0. It follows semantic versioning (strategy section 6.12): breaking changes only come with a new major version, and new API starts under `wa.experimental`.
 
 - [core](core) is the base game as a mod. It is built into the server. Its files are rAthena's item scripts, NPCs and shops, which the server converts when it starts ("Item scripts" and "Core's NPCs" below).
-- [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a shop, a script that greets players, and tests.
+- [examples/greeter](examples/greeter) is a small sample: an item, an NPC with a conversation and saved variables, a staff-only NPC, a shop, a script that greets players, and tests.
 - [examples/halloween](examples/halloween) is the phase 3 exit check: a hat, a witch who gives it once, Pumpkin Porings with drops, a night that doubles their drops through a `drop_rate` hook, and the Pumpkin King, a boss that a world event brings every evening.
 - [examples/verve](examples/verve) adds a status effect: `statuses.define`, a `status_tick` handler, and a tonic that starts the status, with tests.
 - [examples/lucky-clover](examples/lucky-clover) adds a charm with rolled values, a monster that drops it with random options, an `item_roll` hook, and a smith who rerolls it ("Rolled item values" below).
@@ -1309,6 +1309,36 @@ Rules:
 - A saved value stays within the limit's range: a ruleset that raises the base or lowers the max applies at the next read. Lowering deletes nothing. Slots past the size keep their items and take no new one.
 - The player gets the new values at once, and at each login.
 - rAthena's inventory expansion uses its own client window and the vouchers' item IDs. wAthena has no such window yet: a mod sells slots from an NPC, as the Bank does.
+
+### Staff roles
+
+Scripts read a player's staff role, as proposal 0002, review decision 33. The roles come from the server's config and the admin screens (server/README.md, "Staff and admin tools"). [examples/greeter](examples/greeter) has a Staff Desk that talks only to staff.
+
+```lua
+local events = require "wa.events"
+
+return function()
+  events.on("click", function(player, conversation)
+    if not player:has_staff_permission("moderation.mute") then
+      conversation:say("This desk is for staff.")
+      return
+    end
+    conversation:say("Welcome back. Your role is " .. player:get_staff_role() .. ".")
+  end)
+end
+```
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `player:get_staff_role()` | `game.read` | The role's name, such as `"game_master"`, `"owner"` for the config's owners, or nil. |
+| `player:has_staff_permission(name)` | `game.read` | Whether the role has a staff permission, such as `"moderation.mute"`. The owner has every permission. |
+
+Rules:
+
+- A role counts only when the player logged in with two-factor login: a TOTP code, a recovery code or a passkey, on an account that has TOTP or a passkey on. Otherwise both calls answer as for a player without a role.
+- A role given or taken on the admin screens applies at once.
+- The staff permissions are their own list, not mod permissions: `staff.assign`, `audit.read`, `audit.review`, `players.read`, `items.history`, `items.restore`, `moderation.reports`, `moderation.mute`, `moderation.kick`, `moderation.jail`, `moderation.ban`, `commands.warp`, `commands.hide`, `commands.item`, `world.read`, `world.announce`, `world.restart`, `events.control`, `mods.read` and `mods.disable`. An unknown name raises an error that lists them. `group.*` is a config form and is not a name here.
+- In `wactl mod test`, `world:set_staff_role(player, role)` gives a test player a role of the default roles, `admin`, `game_master` or `moderator`, as if it logged in with two-factor login. nil takes it away. It is provisional.
 
 ### Mail, vending, shops and currencies
 

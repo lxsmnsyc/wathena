@@ -1093,3 +1093,20 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - `block_list_refuses_trade` is yes by default. No matches rAthena.
    - A runtime without a ruleset, such as the converter's test runtimes, reads rAthena's renewal rules.
    - The `wa.testing` helpers of phase 5 are stable. The definitions keep the `Provisional` field for later API.
+19. Build review decision 33: staff roles, the admin API, the GM audit log, the first admin screens, `player:get_staff_role()` and `player:has_staff_permission(name)`. Done on 2026-10-12 ([decision 0028](../decisions/0028-staff-roles-and-audit.md)). Details to review:
+   - The permission list has step 1's `staff.assign` and `audit.read`, and names for steps 2 to 4 that do nothing yet: `audit.review`, `players.read`, `items.history`, `items.restore`, `moderation.reports`, `moderation.mute`, `moderation.kick`, `moderation.jail`, `moderation.ban`, `commands.warp`, `commands.hide`, `commands.item`, `world.read`, `world.announce`, `world.restart`, `events.control`, `mods.read` and `mods.disable`.
+   - The default roles: `admin` has every group, `game_master` has `audit.read`, `players.read`, `items.history`, `items.restore`, `moderation.*`, `commands.*`, `world.read`, `world.announce` and `events.control`, and `moderator` has `players.read`, `moderation.reports`, `moderation.mute`, `moderation.kick` and `moderation.jail`.
+   - A `staff.roles` list replaces the default roles. It does not add to them.
+   - `*` alone is not a pattern. Only `group.*` is.
+   - A caller gives or takes only roles whose permissions it holds all of. No one changes their own role or an owner's. With the default roles, admins can make other admins.
+   - A recovery code counts as a second factor for the two-factor rule, as a TOTP code does.
+   - Giving the role an account already has changes nothing and writes no audit row. A reason is optional for role changes.
+   - The account role reads the audit log for the admin API, and adds rows. It cannot change or delete them. The game role only adds rows.
+   - `GET /me` needs a session and no permission. It returns the role the account has even when it does not count, so the screens can say two-factor login is missing.
+   - The admin API's JSON uses protobuf's lowerCamelCase names, and int64 values are strings, as protobuf's JSON form has them.
+   - `GET /audit` filters by the staff account's name, the action, the target, `since` and `until` dates, and `pending` or `reviewed`. Pages go by `before_id`, 50 rows by default and 100 at most.
+   - The admin screens are at `/admin` of the server, not inside the game page. The game page has no link to them.
+   - `player:has_staff_permission` takes a full name only, and raises an error for an unknown one.
+   - A game session keeps the two-factor answer of its ticket. Turning TOTP off during play applies at the next login.
+   - `wa.testing` gained `world:set_staff_role(player, role)`, provisional, for the default roles. The owner role is not offered there.
+   - `wactl world new --admin` still marks its account with `accounts.staff`, which gives no role. The owner names that account in `staff.owners`. Whether to drop the column, or make that account an owner, needs review.

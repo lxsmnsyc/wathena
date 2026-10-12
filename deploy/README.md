@@ -56,6 +56,8 @@ Run these in `deploy/compose`.
    ```
 
    `--ruleset` must match `mode` in `waserver.yml`. The command applies the migrations first, and makes the world's secret seed.
+
+   To give the account the owner role, put its name in `staff.owners` in `waserver.yml`. The role counts once the account turns on TOTP or a passkey and logs in with it. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
 6. Start: `docker compose up -d --wait`. It waits until every service is healthy. Open `https://WATHENA_DOMAIN/`, sign up, make a character and press Play.
 
 `waserver` refuses to start while migrations are pending or before step 5. Its log then says why: `docker compose logs waserver`.

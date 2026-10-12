@@ -124,8 +124,8 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (i
 }
 
 const createTicket = `-- name: CreateTicket :exec
-INSERT INTO game_tickets (token_hash, session_id, account_id, character_id, expires_at)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO game_tickets (token_hash, session_id, account_id, character_id, expires_at, two_factor)
+VALUES ($1, $2, $3, $4, $5, $6)
 `
 
 type CreateTicketParams struct {
@@ -134,8 +134,12 @@ type CreateTicketParams struct {
 	AccountID   int64
 	CharacterID int64
 	ExpiresAt   pgtype.Timestamptz
+	TwoFactor   bool
 }
 
+// CreateTicket makes a game ticket. two_factor is set when the session
+// logged in with a second factor and the account still has TOTP or a
+// passkey on, so a staff role counts in the game (decision 0028).
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) error {
 	_, err := q.db.Exec(ctx, createTicket,
 		arg.TokenHash,
@@ -143,6 +147,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 		arg.AccountID,
 		arg.CharacterID,
 		arg.ExpiresAt,
+		arg.TwoFactor,
 	)
 	return err
 }
@@ -234,12 +239,13 @@ func (q *Queries) Reauthenticate(ctx context.Context, sessionID int64) error {
 const redeemTicket = `-- name: RedeemTicket :one
 WITH t AS (
     DELETE FROM game_tickets WHERE token_hash = $1
-    RETURNING session_id, account_id, character_id, expires_at
+    RETURNING session_id, account_id, character_id, expires_at, two_factor
 )
 SELECT t.session_id, t.account_id, t.character_id, t.expires_at > now() AS live,
-    c.name, c.job, c.sex, c.hair, c.hair_color
+    c.name, c.job, c.sex, c.hair, c.hair_color, t.two_factor, a.name AS account_name
 FROM t
 JOIN characters c ON c.id = t.character_id AND c.account_id = t.account_id
+JOIN accounts a ON a.id = t.account_id
 `
 
 type RedeemTicketRow struct {
@@ -252,6 +258,8 @@ type RedeemTicketRow struct {
 	Sex         int
 	Hair        int
 	HairColor   int
+	TwoFactor   bool
+	AccountName string
 }
 
 // RedeemTicket uses a ticket up and returns its character. The DELETE
@@ -271,6 +279,8 @@ func (q *Queries) RedeemTicket(ctx context.Context, tokenHash []byte) (RedeemTic
 		&i.Sex,
 		&i.Hair,
 		&i.HairColor,
+		&i.TwoFactor,
+		&i.AccountName,
 	)
 	return i, err
 }

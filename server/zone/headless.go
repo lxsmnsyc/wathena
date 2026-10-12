@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"maps"
@@ -16,6 +17,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/shared/path"
@@ -75,6 +77,8 @@ func NewHeadless(mods *Mods, seed [32]byte) (*Headless, error) {
 	}
 	z := New("", nil, rng.FromKey(seed).Stream(), nil)
 	z.Mods = mods
+	// The default roles, and nobody has one until SetStaffRole.
+	z.Staff = staff.NewRegistry(staff.MustDefaultRoles(), nil)
 	h := &Headless{z: z, events: map[int64][]*wathenav1.Event{}, Start: DefaultTestTime}
 	z.Clock = func() time.Time { return h.Start.Add(time.Duration(z.now) * time.Millisecond) }
 	if z.itemScripts() == nil {
@@ -1103,3 +1107,18 @@ func (h *Headless) EventReward(rr worldevent.RewardRun) { h.z.eventReward(rr) }
 
 // ClearEvent removes a run's monsters and NPCs.
 func (h *Headless) ClearEvent(run int64) { h.z.clearEvent(run) }
+
+// SetStaffRole gives a test player's account a role of the default
+// staff roles, as if it logged in with a second factor. "" takes the
+// role away.
+func (h *Headless) SetStaffRole(player int64, role string) error {
+	p, err := h.player(player)
+	if err != nil {
+		return err
+	}
+	if role != "" && (role == staff.Owner || !h.z.Staff.Roles().Exists(role)) {
+		return fmt.Errorf("%q is not a role; the roles are %s", role, strings.Join(h.z.Staff.Roles().Names(), ", "))
+	}
+	p.sess.staff = staff.Login{AccountName: p.Name, TwoFactor: true}
+	return h.z.Staff.StaffChanged(context.Background(), p.record.AccountID, role)
+}

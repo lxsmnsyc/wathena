@@ -27,6 +27,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/social"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/statuschange"
 	"github.com/lxsmnsyc/wathena/server/storage"
@@ -465,6 +466,10 @@ type Zone struct {
 	Jail Jail
 	// chatIn gets the hub's deliveries for this zone's players.
 	chatIn chan chatIn
+	// Staff is the world's staff registry, which player:get_staff_role
+	// reads (decision 0028). Without it, no player has a role. Set it
+	// before Run.
+	Staff *staff.Registry
 	// Social is the world's social registry: parties, friends and party
 	// booking (party.go). Without it, the zone makes its own on first
 	// use. Set it before Run.
@@ -846,6 +851,7 @@ func (z *Zone) Join(ctx context.Context, name string, look Look) (*Session, erro
 // world and when it leaves. Zones never wait on saver.
 func (z *Zone) JoinCharacter(ctx context.Context, c *character.Character, saver Saver) (*Session, error) {
 	s := newSession(saver)
+	s.staff = c.Staff
 	p := newPlayer(s, c)
 	s.zone, s.player = z, p
 	if err := z.acquireStorages(ctx, s); err != nil {

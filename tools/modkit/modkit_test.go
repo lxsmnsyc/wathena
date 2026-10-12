@@ -38,7 +38,7 @@ func TestGreeterTests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(results) != 4 {
+	if len(results) != 8 {
 		t.Fatalf("%d results", len(results))
 	}
 	for _, r := range results {

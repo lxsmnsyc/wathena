@@ -6,6 +6,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/mail"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/storage"
 )
@@ -29,6 +30,9 @@ type Session struct {
 
 	out   chan *wathenav1.ServerMessage
 	saver Saver
+	// staff is how the player logged in, for its staff role. It is set
+	// once, at the first join, and moves with the player between zones.
+	staff staff.Login
 	// outClosed closes out once, from whichever zone or handoff ends
 	// the session.
 	outClosed outClosed

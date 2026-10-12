@@ -458,6 +458,7 @@ func (r *Runtime) init() error {
 		{"rules_limits", r.rulesLimits},
 		{"rules_read", r.rulesRead},
 		{"player_expand", r.playerExpand},
+		{"player_staff", r.playerStaff},
 		{"guild_field", r.guildField},
 		{"core_guild_storage_log", r.coreGuildStorageLog},
 		{"guild_call", r.guildCall},

@@ -21,6 +21,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/secretenv"
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 )
 
@@ -60,6 +61,8 @@ type options struct {
 	Chat chatOptions `yaml:"chat"`
 	// Jail is where jailed players go.
 	Jail jailOptions `yaml:"jail"`
+	// Staff are the staff owners and roles (decision 0028).
+	Staff staff.Config `yaml:"staff"`
 }
 
 // chatOptions are the chat settings (server/README.md, "Chat and
@@ -321,6 +324,8 @@ type settings struct {
 	Secrets        secrets
 	// Location is the time zone of TimeZone.
 	Location *time.Location
+	// Roles are the checked staff roles.
+	Roles *staff.Roles
 }
 
 // validate checks the options and secrets together and lists every
@@ -448,6 +453,13 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if o.Seed != "" && !o.Dev {
 		bad("seed", "is for development and needs dev: a known seed lets players predict drops")
+	}
+	if roles, err := o.Staff.Build(); err != nil {
+		for _, e := range strings.Split(err.Error(), "\n") {
+			errs = append(errs, errors.New(e))
+		}
+	} else {
+		st.Roles = roles
 	}
 	if o.Mods.Dir != "" {
 		if fi, err := os.Stat(o.Mods.Dir); err != nil || !fi.IsDir() {

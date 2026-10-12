@@ -4,6 +4,9 @@
 //   exact length (src/audio/testdata).
 // - render: the map viewer draws a map with sprites and no page errors.
 // - cache: on a second visit, the Service Worker serves every asset.
+// - admin: the admin page loads the admin screens for a staff account,
+//   and a player's page never loads the admin bundle. The admin API is
+//   faked with page.route, so no server or database is needed.
 //
 // By default it builds the placeholder pack with wactl and serves it, so
 // it needs no game files. Set WATHENA_ASSETS to an asset server, such as
@@ -239,6 +242,83 @@ async function checkCache(name: string, browser: Browser, base: string): Promise
   await context.close();
 }
 
+/** Fakes the admin API: /me answers with me, and the lists are empty. */
+async function fakeAdminAPI(page: Page, me: object): Promise<void> {
+  await page.route('**/admin/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const bodies: Record<string, object> = {
+      '/admin/api/v1/me': me,
+      '/admin/api/v1/staff': {
+        members: [
+          { accountId: '1', account: 'Owner', role: 'owner', fromConfig: true, twoFactor: true },
+        ],
+        roles: [{ name: 'moderator', permissions: ['moderation.mute'] }],
+      },
+      '/admin/api/v1/audit': {
+        entries: [
+          { id: '1', account: 'Owner', role: 'owner', action: 'staff.give', target: 'Bobby' },
+        ],
+      },
+    };
+    await route.fulfill({
+      contentType: 'application/json',
+      json: bodies[path] ?? { code: 'not_found' },
+    });
+  });
+}
+
+async function checkAdmin(name: string, browser: Browser, base: string): Promise<void> {
+  const visit = async (
+    me: object,
+  ): Promise<{ text: string; loaded: boolean; errors: string[] }> => {
+    const page = await browser.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    let bundle = false;
+    page.on('request', (r) => {
+      if (/\/src\/admin\/app\.ts|\/app\/app-[\w-]+\.js/.test(r.url())) {
+        bundle = true;
+      }
+    });
+    await fakeAdminAPI(page, me);
+    await page.goto(`${base}/admin.html`);
+    await page.waitForFunction(
+      () => !/Checking|Loading/.test(document.querySelector('#admin')?.textContent ?? 'Checking'),
+      null,
+      { timeout: 30_000 },
+    );
+    await page.waitForTimeout(500);
+    const text = (await page.textContent('#admin')) ?? '';
+    await page.close();
+    return { text, loaded: bundle, errors };
+  };
+  const staff = await visit({
+    account: 'Owner',
+    role: 'owner',
+    permissions: ['staff.assign', 'audit.read'],
+    twoFactor: true,
+    csrfToken: 't',
+  });
+  check(
+    name,
+    'admin staff',
+    staff.loaded &&
+      staff.text.includes('Staff') &&
+      staff.text.includes('staff.give') &&
+      staff.errors.length === 0,
+    staff.loaded
+      ? `admin bundle loaded; errors: ${staff.errors.join('; ') || 'none'}`
+      : 'admin bundle not loaded',
+  );
+  const player = await visit({ account: 'Player', csrfToken: 't' });
+  check(
+    name,
+    'admin player',
+    !player.loaded && player.text.includes('This page is for staff'),
+    player.loaded ? 'the admin bundle loaded for a player' : 'no admin bundle',
+  );
+}
+
 const assets = await assetServer();
 process.env.WATHENA_ASSETS = assets.url;
 const vite = await createServer({
@@ -255,6 +335,7 @@ try {
       await checkAudio(name, browser, base);
       await checkRender(name, browser, base);
       await checkCache(name, browser, base);
+      await checkAdmin(name, browser, base);
     } finally {
       await browser.close();
     }
