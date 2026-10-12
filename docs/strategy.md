@@ -13,9 +13,9 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
-## Where work stopped (2026-10-12)
+## Where work stands (2026-10-12)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day.
 
 Done:
 
@@ -37,7 +37,7 @@ Open review items:
 
 Known issues:
 
-- Step 8 was committed after a partial check. After the last change, `scripts/check.sh` passed vet, test (both passes, with e2e) and mods, and was then stopped. The other steps (lua, loadtest, schema, queries, lint, security, fuzz, client and tinygo) each passed during the build, but not after the last change. Run `scripts/check.sh` first when work resumes.
+- Go is 1.27.2, which fixes 13 standard library bugs that govulncheck found in 1.27.1. gosec is built from `tools/gosec`, which asks for a newer golang.org/x/tools than gosec's own go.mod. Drop that module once a gosec release reads Go 1.27.2's export data.
 - `TestTradeRefused` (step 6) failed once under full load and passed 3 of 3 times alone. It may be a timing flake.
 - The disk was nearly full on 2026-10-05, and builds failed with "no space left on device". Keep at least 10 GB free. Test PostgreSQL containers that are killed leave unnamed Docker volumes behind. `docker volume prune` removes them.
 - The kRO client is extracted at `data/kro/client` (gitignored), and the original zip is deleted. It is the only copy. Build assets with `wactl assets build` and the source `grf:data/kro/client`.
@@ -45,8 +45,8 @@ Known issues:
 
 Next:
 
-1. Go through the open review items above, starting with the converter review.
-2. Start phase 6, the web client tier 1 (section 15): the admin tools, the account page actions, mod assets, touch input, and a check that a player can do every tier 1 activity in the web client.
+1. Phase 6 (section 15, "Phase 6 in full"), starting with step 1, staff roles and the audit log.
+2. The open review items above, between phase 6 steps.
 3. Phase 7, procedural mode, is the largest phase left.
 
 ## 1. Current state
@@ -2644,6 +2644,16 @@ The order from here:
       - Checked in Chrome with the development stack and placeholder assets: `world_events.start` from a chat command started a boss, which showed the banner, the list entry and the announcements; a click killed it, and the reward and the win came. An invasion's raiders entered at the map's edges and walked to the player, its second wave came a minute later, and the win gave 2 Apples. The Treasure Hunter's dialog told the direction of both chests, and a click opened one, with its reward and announcement.
       - Left: a map type for level bands, rewards to players on other maps and lists of rewards, sieges, rotating dungeons and world changes, locale text for announcements, and event times on `--dev`'s clock.
    Steps 2 and 4 to 8 add Lua API. Each step's API goes to review before it is built.
+9. Phase 6 in full. Web client, tier 1. It runs in these steps, approved on 2026-10-12:
+   1. Staff roles and the GM audit log. Roles are defined in the config, each with a list of permissions, with four defaults: `owner`, `admin`, `game_master` and `moderator`. An admin API on the account and world services checks the role on every call. Staff accounts need two-factor login. Every staff action writes to the GM audit log (section 7.8). The admin screens load only after the server confirms the role. Lua reads a player's staff role and permissions through API that this step drafts for review.
+   2. Player search and item history. Find accounts and characters by name, ID, IP address range or item serial. View a player's status, position, inventory and storage. Show every move of an item serial. Restore stolen items, with a reason, marked for review.
+   3. Moderation and GM commands. The report queue with reported chat in context. Mute, kick, jail and account bans, each with a duration and reason, shown to the player. Reported chat is kept until its report closes. A first set of in-game commands with the same permissions and audit log: `@warp`, `@jumpto`, `@recall`, `@hide`, `@kick`, `@mute`, `@jail`, and `@item` with a reason, marked for review.
+   4. World, events and mods tools. Zones, player counts and tick times. Announcements, and planned restarts with a countdown. Start, stop and schedule events. Installed mods with their permissions and error counts, and turning a mod off in a zone.
+   5. The account page. The block list and the player's own reports. A JSON export of the account's data. Account deletion after 14 days. A privacy notice that the server owner fills in.
+   6. Mod assets. Mods ship sprites, icons, maps and client data tables (section 10.5), and the client loads them.
+   7. Touch input for mobile browsers.
+   8. The phase 6 exit check: a scripted browser run of every tier 1 activity, an admin run that finds a player, reads their item history and applies a sanction, and a mod whose items, monsters, skills and jobs display correctly.
+   Left for later: the economy dashboards come with the simulator of phase 7 (section 8.13), and retention jobs and encrypted backups come with phase 8. Each step drafts its admin API and any Lua API for review before it is built.
 
 Reasons for this order:
 
