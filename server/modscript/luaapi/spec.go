@@ -13,6 +13,7 @@ import (
 	"slices"
 
 	"github.com/lxsmnsyc/wathena/server/bonus"
+	"github.com/lxsmnsyc/wathena/server/rules"
 )
 
 // Param is one parameter. A Type that ends in "?" is optional.
@@ -267,9 +268,17 @@ var Modules = []Module{
 	},
 	{
 		Name: "wa.rules", Local: "rules",
-		Doc: "The world's ruleset (strategy section 3.6, review decision 27). Read-only.",
+		Doc: "The world's ruleset (strategy section 3.6, review decisions 27 and 32). Read-only. Its calls need no permission. An unknown name raises an error that lists the valid names.",
+		Funcs: []Func{
+			{Name: "is", Params: []Param{{"flag", "string", "A ruleset flag, such as \"cast_time\", or \"skill_rebalance.<skill>\" for a rebalanced skill or a song, such as \"skill_rebalance.MG_FIREBALL\"."}}, Returns: "boolean",
+				Doc: "Whether a ruleset flag is on: true at its renewal value or at on. A skill_rebalance flag is the flag the skill follows: its own, or the base."},
+			{Name: "get", Params: []Param{{"name", "string", "A ruleset rule, such as \"basic_skill_check\" or \"party_share_level\"."}}, Returns: "integer|boolean",
+				Doc: "The value of a ruleset rule: a boolean for a rule that is yes or no, else an integer."},
+			{Name: "get_limit", Params: []Param{{"name", "string", "A limit, such as \"inventory_slots\"."}}, Returns: "integer, integer",
+				Doc: "A limit's base, what a player or guild starts with, and its max, where expansions stop. rules.limits holds the base too."},
+		},
 		Fields: []Field{
-			{"limits", "wa.Limits", "The limits that rAthena compiles in, as the ruleset sets them, such as rules.limits.party_members."},
+			{"limits", "wa.Limits", "The limits that rAthena compiles in, as the ruleset sets them, such as rules.limits.party_members. Each is the limit's base."},
 		},
 	},
 	{
@@ -486,6 +495,8 @@ var Classes = []Class{
 			{Name: "jail", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
 				Doc: "Jails the player, as rAthena's pc_jail: it goes to the jail map and cannot warp until the end, then goes back to where it was. It replaces a jail that has not ended. The player sees the reason and the end time. The jail is saved.", Permission: "player.sanction"},
 			{Name: "unmute", Returns: "boolean", Doc: "Ends the player's mute. Returns false when it was not muted.", Permission: "player.sanction"},
+			{Name: "expand", Params: []Param{{"limit", "wa.ExpandableLimit", "The limit to change."}, {"amount", "integer", "-10,000 to 10,000. A negative amount lowers the limit."}}, Returns: "integer",
+				Doc: "Raises one of the player's limits by amount, up to the limit's max, and returns the new value, as rAthena's inventory expansion. A negative amount lowers it, not below the base, and deletes nothing. inventory_slots and cart_slots save with the character, storage_slots with the account, whose characters share it. 0 changes nothing and returns the current value.", Permission: "player.expand_limits"},
 			{Name: "reset_stat", Params: []Param{{"stat", `"str"|"agi"|"vit"|"int"|"dex"|"luk"`, ""}, {"options", "wa.ResetStatOptions?", ""}}, Returns: "boolean",
 				Doc: "Lowers one stat, to 1 by default, and refunds what raising it cost, by rAthena's cost table. Returns false when the stat is not above the value."},
 		}, statusMethods...),
@@ -660,7 +671,7 @@ var Classes = []Class{
 		Fields: []Field{
 			{"party", "wa.Party", "The party. After it broke up, its fields still read."},
 			{"player", "wa.Player", "The player who joined or left."},
-			{"reason", `"invited"|"left"|"expelled"|"disbanded"|"script"`, "Why: an accepted invite, a leave, an expel, a break up, or a wa.parties call."},
+			{"reason", `"invited"|"create"|"left"|"expelled"|"disbanded"|"script"`, "Why: an accepted invite, a party the player made from the client, a leave, an expel, a break up, or a wa.parties call."},
 		},
 	},
 	{
@@ -721,7 +732,7 @@ var Classes = []Class{
 		Fields: []Field{
 			{"guild", "wa.Guild", "The guild. After it broke up, its fields still read."},
 			{"player", "wa.Player", "The player who joined or left."},
-			{"reason", `"invited"|"left"|"expelled"|"disbanded"|"script"`, "Why: an accepted invite, a leave, an expel, a break up, or a wa.guilds call."},
+			{"reason", `"invited"|"create"|"left"|"expelled"|"disbanded"|"script"`, "Why: an accepted invite, a guild the player made from the client, a leave, an expel, a break up, or a wa.guilds call."},
 		},
 	},
 	{
@@ -788,14 +799,14 @@ var Classes = []Class{
 		},
 	},
 	{
-		Name: "wa.ChatTestOptions", Testing: true, Provisional: true, Doc: "The options of world:chat.",
+		Name: "wa.ChatTestOptions", Testing: true, Doc: "The options of world:chat.",
 		Fields: []Field{
 			{"channel", "string?", `"public", the default, "whisper", or a channel's name.`},
 			{"to", "string?", "A whisper's target name."},
 		},
 	},
 	{
-		Name: "wa.HeardLine", Testing: true, Provisional: true, Doc: "A chat line a test player got, from world:get_chat.",
+		Name: "wa.HeardLine", Testing: true, Doc: "A chat line a test player got, from world:get_chat.",
 		Fields: []Field{
 			{"channel", "string", `"public", "whisper", "system", or a channel's name with its #.`},
 			{"from", "string", "The speaker's name, or empty for a system line or a channel's own line."},
@@ -834,16 +845,16 @@ var Classes = []Class{
 			{Name: "get_announcements", Returns: "string[]", Doc: "Every line announced to the world or the map so far, in order."},
 			{Name: "count_floor_items", Params: []Param{itemParam}, Returns: "integer", Doc: "How many of the item lie on the map, with drops about to fall."},
 			{Name: "chat", Params: []Param{playerParam, {"text", "string", "1 to 255 characters."}, {"options", "wa.ChatTestOptions?", ""}},
-				Doc: "The player says a line, as a client's chat: it passes the mute, the chat filter and the chat hooks, then the chat event runs.", Provisional: true},
-			{Name: "get_chat", Params: []Param{playerParam}, Returns: "wa.HeardLine[]", Doc: "The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines.", Provisional: true},
+				Doc: "The player says a line, as a client's chat: it passes the mute, the chat filter and the chat hooks, then the chat event runs."},
+			{Name: "get_chat", Params: []Param{playerParam}, Returns: "wa.HeardLine[]", Doc: "The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines."},
 			{Name: "trade", Params: []Param{{"a", "wa.Player", ""}, {"b", "wa.Player", "Steps next to a."}, {"offer_a", "wa.TradeOffer?", ""}, {"offer_b", "wa.TradeOffer?", ""}}, Returns: "boolean, string?",
-				Doc: "Runs a whole trade, as two clients would: a asks, b accepts, both offer, lock and confirm. Returns true when it completed, or false and why: the trade hook's message, or an outcome such as \"restricted\" or \"bound\". A refused offer ends the trade. Trading needs Basic Skill level 1, which a new player from world:new_player lacks: give it skills = { [skills.id(\"NV_BASIC\")] = 9 }.", Provisional: true},
-			{Name: "close_storage", Params: []Param{playerParam}, Doc: "Closes the player's storage window, as the client's close button.", Provisional: true},
+				Doc: "Runs a whole trade, as two clients would: a asks, b accepts, both offer, lock and confirm. Returns true when it completed, or false and why: the trade hook's message, or an outcome such as \"restricted\" or \"bound\". A refused offer ends the trade. Trading needs Basic Skill level 1, which a new player from world:new_player lacks: give it skills = { [skills.id(\"NV_BASIC\")] = 9 }."},
+			{Name: "close_storage", Params: []Param{playerParam}, Doc: "Closes the player's storage window, as the client's close button."},
 			{Name: "buy", Params: []Param{playerParam, {"shop", "string", "A shop's full record name of data/npcs.yml, such as example.arena:Prize Desk."}, {"items", "table<integer, integer>", "Item IDs and the amount of each to buy."}}, Returns: "boolean, string?",
-				Doc: "Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as \"out_of_stock\", \"not_enough_items\" or \"not_enough_currency\".", Provisional: true},
-			{Name: "get_mails", Params: []Param{playerParam}, Returns: "wa.TestMail[]", Doc: "The player's mails, oldest first, after the mail sent so far arrived.", Provisional: true},
+				Doc: "Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as \"out_of_stock\", \"not_enough_items\" or \"not_enough_currency\"."},
+			{Name: "get_mails", Params: []Param{playerParam}, Returns: "wa.TestMail[]", Doc: "The player's mails, oldest first, after the mail sent so far arrived."},
 			{Name: "vend", Params: []Param{{"seller", "wa.Player", "Gets a cart and the Vending skill when it lacks them."}, {"buyer", "wa.Player", "Steps next to the seller."}, {"lines", "wa.TestVendLine[]", ""}}, Returns: "boolean, string?",
-				Doc: "Runs a whole vending sale, as two clients would: the seller puts each line's items in its cart and opens a shop, and the buyer buys. The shop closes after it. Returns true when the sale went through, or false and why: the vend hook's message, or an outcome such as \"not_enough_zeny\".", Provisional: true},
+				Doc: "Runs a whole vending sale, as two clients would: the seller puts each line's items in its cart and opens a shop, and the buyer buys. The shop closes after it. Returns true when the sale went through, or false and why: the vend hook's message, or an outcome such as \"not_enough_zeny\"."},
 		},
 	},
 	{
@@ -1094,12 +1105,12 @@ var Classes = []Class{
 			{"bound", "wa.Bound?", "Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares."}},
 	},
 	{
-		Name: "wa.TestMail", Doc: "A mail as world:get_mails shows it.", Testing: true, Provisional: true,
+		Name: "wa.TestMail", Doc: "A mail as world:get_mails shows it.", Testing: true,
 		Fields: []Field{{"from", "string", ""}, {"title", "string", ""}, {"zeny", "integer", ""}, {"items", "table<integer, integer>", "Item IDs and amounts."},
 			{"read", "boolean", ""}, {"returned", "boolean", "Set for a mail that came back to its sender."}},
 	},
 	{
-		Name: "wa.TestVendLine", Doc: "One line of world:vend.", Testing: true, Provisional: true,
+		Name: "wa.TestVendLine", Doc: "One line of world:vend.", Testing: true,
 		Fields: []Field{{"item", "integer", "An item the seller holds."}, {"amount", "integer", "How many go on sale."}, {"price", "integer", "The price of one."}, {"buy", "integer?", "How many the buyer buys. None by default."}},
 	},
 	{
@@ -1454,6 +1465,7 @@ func Aliases() []Alias {
 		{Name: "wa.EquipSlot", Values: EquipSlots, Doc: "An equipment slot."},
 		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat", "trade", "vend", "buying_store_sale", "mail"}, Doc: "A hook name of wa.hooks."},
 		{Name: "wa.Bound", Values: []string{"account", "character", "party", "guild"}, Doc: "Who a bound copy is bound to."},
+		{Name: "wa.ExpandableLimit", Values: rules.ExpandableLimits, Doc: "A limit that one player holds, which player:expand changes."},
 		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
 	}

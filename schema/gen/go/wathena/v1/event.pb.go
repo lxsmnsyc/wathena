@@ -3300,6 +3300,15 @@ func (x *Event) GetWorldEventList() *WorldEventList {
 	return nil
 }
 
+func (x *Event) GetPlayerLimits() *PlayerLimits {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*event_PlayerLimits); ok {
+			return x.PlayerLimits
+		}
+	}
+	return nil
+}
+
 func (x *Event) SetAppear(v *EntityAppear) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -4098,6 +4107,14 @@ func (x *Event) SetWorldEventList(v *WorldEventList) {
 		return
 	}
 	x.xxx_hidden_Body = &event_WorldEventList{v}
+}
+
+func (x *Event) SetPlayerLimits(v *PlayerLimits) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &event_PlayerLimits{v}
 }
 
 func (x *Event) HasBody() bool {
@@ -4907,6 +4924,14 @@ func (x *Event) HasWorldEventList() bool {
 	return ok
 }
 
+func (x *Event) HasPlayerLimits() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*event_PlayerLimits)
+	return ok
+}
+
 func (x *Event) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -5511,6 +5536,12 @@ func (x *Event) ClearWorldEventList() {
 	}
 }
 
+func (x *Event) ClearPlayerLimits() {
+	if _, ok := x.xxx_hidden_Body.(*event_PlayerLimits); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Event_Body_not_set_case case_Event_Body = 0
 const Event_Appear_case case_Event_Body = 1
 const Event_Vanish_case case_Event_Body = 2
@@ -5612,6 +5643,7 @@ const Event_StoreSearchResults_case case_Event_Body = 97
 const Event_StoreSearchResult_case case_Event_Body = 98
 const Event_WorldEventNotice_case case_Event_Body = 99
 const Event_WorldEventList_case case_Event_Body = 100
+const Event_PlayerLimits_case case_Event_Body = 101
 
 func (x *Event) WhichBody() case_Event_Body {
 	if x == nil {
@@ -5818,6 +5850,8 @@ func (x *Event) WhichBody() case_Event_Body {
 		return Event_WorldEventNotice_case
 	case *event_WorldEventList:
 		return Event_WorldEventList_case
+	case *event_PlayerLimits:
+		return Event_PlayerLimits_case
 	default:
 		return Event_Body_not_set_case
 	}
@@ -5927,6 +5961,7 @@ type Event_builder struct {
 	StoreSearchResult  *StoreSearchResult
 	WorldEventNotice   *WorldEventNotice
 	WorldEventList     *WorldEventList
+	PlayerLimits       *PlayerLimits
 	// -- end of xxx_hidden_Body
 }
 
@@ -6233,6 +6268,9 @@ func (b0 Event_builder) Build() *Event {
 	}
 	if b.WorldEventList != nil {
 		x.xxx_hidden_Body = &event_WorldEventList{b.WorldEventList}
+	}
+	if b.PlayerLimits != nil {
+		x.xxx_hidden_Body = &event_PlayerLimits{b.PlayerLimits}
 	}
 	return m0
 }
@@ -6651,6 +6689,10 @@ type event_WorldEventList struct {
 	WorldEventList *WorldEventList `protobuf:"bytes,100,opt,name=world_event_list,json=worldEventList,proto3,oneof"`
 }
 
+type event_PlayerLimits struct {
+	PlayerLimits *PlayerLimits `protobuf:"bytes,101,opt,name=player_limits,json=playerLimits,proto3,oneof"`
+}
+
 func (*event_Appear) isEvent_Body() {}
 
 func (*event_Vanish) isEvent_Body() {}
@@ -6850,6 +6892,8 @@ func (*event_StoreSearchResult) isEvent_Body() {}
 func (*event_WorldEventNotice) isEvent_Body() {}
 
 func (*event_WorldEventList) isEvent_Body() {}
+
+func (*event_PlayerLimits) isEvent_Body() {}
 
 // JobName names the player's job, from its record's display_name. It
 // comes after login and after each job change, since the client data
@@ -20641,12 +20685,150 @@ func (b0 WorldEventList_builder) Build() *WorldEventList {
 	return m0
 }
 
+// PlayerLimits are the player's own values of the limits that one player
+// holds, which scripts expand (proposal 0002, review decision 32):
+// inventory_slots, storage_slots and cart_slots. They come at login and
+// after each change. Each value is within the limit's base and max of
+// Welcome.limits.ranges. storage_slots is shared by the account's
+// characters.
+type PlayerLimits struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Limits *[]*PlayerLimit        `protobuf:"bytes,1,rep,name=limits,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PlayerLimits) Reset() {
+	*x = PlayerLimits{}
+	mi := &file_wathena_v1_event_proto_msgTypes[132]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerLimits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerLimits) ProtoMessage() {}
+
+func (x *PlayerLimits) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[132]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PlayerLimits) GetLimits() []*PlayerLimit {
+	if x != nil {
+		if x.xxx_hidden_Limits != nil {
+			return *x.xxx_hidden_Limits
+		}
+	}
+	return nil
+}
+
+func (x *PlayerLimits) SetLimits(v []*PlayerLimit) {
+	x.xxx_hidden_Limits = &v
+}
+
+type PlayerLimits_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Limits []*PlayerLimit
+}
+
+func (b0 PlayerLimits_builder) Build() *PlayerLimits {
+	m0 := &PlayerLimits{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Limits = &b.Limits
+	return m0
+}
+
+// PlayerLimit is one limit's value for the player.
+type PlayerLimit struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name  string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Value uint32                 `protobuf:"varint,2,opt,name=value,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *PlayerLimit) Reset() {
+	*x = PlayerLimit{}
+	mi := &file_wathena_v1_event_proto_msgTypes[133]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerLimit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerLimit) ProtoMessage() {}
+
+func (x *PlayerLimit) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_event_proto_msgTypes[133]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PlayerLimit) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *PlayerLimit) GetValue() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Value
+	}
+	return 0
+}
+
+func (x *PlayerLimit) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *PlayerLimit) SetValue(v uint32) {
+	x.xxx_hidden_Value = v
+}
+
+type PlayerLimit_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the limit's name, such as inventory_slots.
+	Name  string
+	Value uint32
+}
+
+func (b0 PlayerLimit_builder) Build() *PlayerLimit {
+	m0 := &PlayerLimit{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Value = b.Value
+	return m0
+}
+
 var File_wathena_v1_event_proto protoreflect.FileDescriptor
 
 const file_wathena_v1_event_proto_rawDesc = "" +
 	"\n" +
 	"\x16wathena/v1/event.proto\x12\n" +
-	"wathena.v1\x1a\x18wathena/v1/command.proto\"\xc91\n" +
+	"wathena.v1\x1a\x18wathena/v1/command.proto\"\x8a2\n" +
 	"\x05Event\x122\n" +
 	"\x06appear\x18\x01 \x01(\v2\x18.wathena.v1.EntityAppearH\x00R\x06appear\x122\n" +
 	"\x06vanish\x18\x02 \x01(\v2\x18.wathena.v1.EntityVanishH\x00R\x06vanish\x12,\n" +
@@ -20769,7 +20951,8 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x14store_search_results\x18a \x01(\v2\x1e.wathena.v1.StoreSearchResultsH\x00R\x12storeSearchResults\x12O\n" +
 	"\x13store_search_result\x18b \x01(\v2\x1d.wathena.v1.StoreSearchResultH\x00R\x11storeSearchResult\x12L\n" +
 	"\x12world_event_notice\x18c \x01(\v2\x1c.wathena.v1.WorldEventNoticeH\x00R\x10worldEventNotice\x12F\n" +
-	"\x10world_event_list\x18d \x01(\v2\x1a.wathena.v1.WorldEventListH\x00R\x0eworldEventListB\x06\n" +
+	"\x10world_event_list\x18d \x01(\v2\x1a.wathena.v1.WorldEventListH\x00R\x0eworldEventList\x12?\n" +
+	"\rplayer_limits\x18e \x01(\v2\x18.wathena.v1.PlayerLimitsH\x00R\fplayerLimitsB\x06\n" +
 	"\x04body\"/\n" +
 	"\aJobName\x12\x10\n" +
 	"\x03job\x18\x01 \x01(\rR\x03job\x12\x12\n" +
@@ -21454,7 +21637,12 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\astarted\x18\x02 \x01(\bR\astarted\x12\x16\n" +
 	"\x06result\x18\x03 \x01(\tR\x06result\"D\n" +
 	"\x0eWorldEventList\x122\n" +
-	"\x06events\x18\x01 \x03(\v2\x1a.wathena.v1.WorldEventInfoR\x06events*\xed\x01\n" +
+	"\x06events\x18\x01 \x03(\v2\x1a.wathena.v1.WorldEventInfoR\x06events\"?\n" +
+	"\fPlayerLimits\x12/\n" +
+	"\x06limits\x18\x01 \x03(\v2\x17.wathena.v1.PlayerLimitR\x06limits\"7\n" +
+	"\vPlayerLimit\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value*\xed\x01\n" +
 	"\n" +
 	"EntityKind\x12\x1b\n" +
 	"\x17ENTITY_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
@@ -21839,7 +22027,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x1eSTORE_SEARCH_OUTCOME_OTHER_MAP\x10\aB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_event_proto_enumTypes = make([]protoimpl.EnumInfo, 30)
-var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 132)
+var file_wathena_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 134)
 var file_wathena_v1_event_proto_goTypes = []any{
 	(EntityKind)(0),              // 0: wathena.v1.EntityKind
 	(VanishReason)(0),            // 1: wathena.v1.VanishReason
@@ -22003,12 +22191,14 @@ var file_wathena_v1_event_proto_goTypes = []any{
 	(*WorldEventInfo)(nil),       // 159: wathena.v1.WorldEventInfo
 	(*WorldEventNotice)(nil),     // 160: wathena.v1.WorldEventNotice
 	(*WorldEventList)(nil),       // 161: wathena.v1.WorldEventList
-	(*Cell)(nil),                 // 162: wathena.v1.Cell
-	(ChatChannel)(0),             // 163: wathena.v1.ChatChannel
-	(*PartyOptions)(nil),         // 164: wathena.v1.PartyOptions
-	(*PartyBookingAd)(nil),       // 165: wathena.v1.PartyBookingAd
-	(*GuildNotice)(nil),          // 166: wathena.v1.GuildNotice
-	(*GuildPosition)(nil),        // 167: wathena.v1.GuildPosition
+	(*PlayerLimits)(nil),         // 162: wathena.v1.PlayerLimits
+	(*PlayerLimit)(nil),          // 163: wathena.v1.PlayerLimit
+	(*Cell)(nil),                 // 164: wathena.v1.Cell
+	(ChatChannel)(0),             // 165: wathena.v1.ChatChannel
+	(*PartyOptions)(nil),         // 166: wathena.v1.PartyOptions
+	(*PartyBookingAd)(nil),       // 167: wathena.v1.PartyBookingAd
+	(*GuildNotice)(nil),          // 168: wathena.v1.GuildNotice
+	(*GuildPosition)(nil),        // 169: wathena.v1.GuildPosition
 }
 var file_wathena_v1_event_proto_depIdxs = []int32{
 	33,  // 0: wathena.v1.Event.appear:type_name -> wathena.v1.EntityAppear
@@ -22111,110 +22301,112 @@ var file_wathena_v1_event_proto_depIdxs = []int32{
 	158, // 97: wathena.v1.Event.store_search_result:type_name -> wathena.v1.StoreSearchResult
 	160, // 98: wathena.v1.Event.world_event_notice:type_name -> wathena.v1.WorldEventNotice
 	161, // 99: wathena.v1.Event.world_event_list:type_name -> wathena.v1.WorldEventList
-	0,   // 100: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
-	38,  // 101: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
-	37,  // 102: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
-	98,  // 103: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
-	36,  // 104: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
-	34,  // 105: wathena.v1.EntityAppear.guild:type_name -> wathena.v1.GuildBadge
-	34,  // 106: wathena.v1.EntityGuild.guild:type_name -> wathena.v1.GuildBadge
-	1,   // 107: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
-	43,  // 108: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
-	2,   // 109: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
-	3,   // 110: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
-	162, // 111: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
-	162, // 112: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
-	4,   // 113: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
-	51,  // 114: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
-	5,   // 115: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
-	52,  // 116: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
-	163, // 117: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
-	6,   // 118: wathena.v1.WhisperResult.outcome:type_name -> wathena.v1.WhisperOutcome
-	163, // 119: wathena.v1.ChatRefused.channel:type_name -> wathena.v1.ChatChannel
-	7,   // 120: wathena.v1.ChatRefused.reason:type_name -> wathena.v1.ChatRefusal
-	59,  // 121: wathena.v1.ChannelList.channels:type_name -> wathena.v1.ChannelInfo
-	8,   // 122: wathena.v1.ChannelFailed.reason:type_name -> wathena.v1.ChannelFailure
-	9,   // 123: wathena.v1.SanctionNotice.kind:type_name -> wathena.v1.SanctionKind
-	10,  // 124: wathena.v1.ReportResult.outcome:type_name -> wathena.v1.ReportOutcome
-	66,  // 125: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
-	11,  // 126: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
-	72,  // 127: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
-	75,  // 128: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
-	73,  // 129: wathena.v1.ShopItem.cost_items:type_name -> wathena.v1.ShopCostItem
-	74,  // 130: wathena.v1.ShopItem.cost_currencies:type_name -> wathena.v1.ShopCostCurrency
-	12,  // 131: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
-	162, // 132: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
-	80,  // 133: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
-	81,  // 134: wathena.v1.InventoryItem.rolls:type_name -> wathena.v1.ItemRoll
-	82,  // 135: wathena.v1.InventoryItem.card_rolls:type_name -> wathena.v1.CardRolls
-	83,  // 136: wathena.v1.InventoryItem.options:type_name -> wathena.v1.ItemOption
-	13,  // 137: wathena.v1.InventoryItem.bound:type_name -> wathena.v1.ItemBound
-	81,  // 138: wathena.v1.CardRolls.rolls:type_name -> wathena.v1.ItemRoll
-	81,  // 139: wathena.v1.ItemRollsChange.rolls:type_name -> wathena.v1.ItemRoll
-	82,  // 140: wathena.v1.ItemRollsChange.card_rolls:type_name -> wathena.v1.CardRolls
-	83,  // 141: wathena.v1.ItemRollsChange.options:type_name -> wathena.v1.ItemOption
-	81,  // 142: wathena.v1.InventoryAdd.rolls:type_name -> wathena.v1.ItemRoll
-	82,  // 143: wathena.v1.InventoryAdd.card_rolls:type_name -> wathena.v1.CardRolls
-	83,  // 144: wathena.v1.InventoryAdd.options:type_name -> wathena.v1.ItemOption
-	13,  // 145: wathena.v1.InventoryAdd.bound:type_name -> wathena.v1.ItemBound
-	15,  // 146: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
-	16,  // 147: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
-	17,  // 148: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
-	18,  // 149: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
-	19,  // 150: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
-	38,  // 151: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
-	98,  // 152: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
-	164, // 153: wathena.v1.PartyInfo.options:type_name -> wathena.v1.PartyOptions
-	101, // 154: wathena.v1.PartyInfo.members:type_name -> wathena.v1.PartyMember
-	101, // 155: wathena.v1.PartyMemberUpdate.member:type_name -> wathena.v1.PartyMember
-	20,  // 156: wathena.v1.PartyResult.outcome:type_name -> wathena.v1.PartyOutcome
-	106, // 157: wathena.v1.FriendList.friends:type_name -> wathena.v1.Friend
-	21,  // 158: wathena.v1.FriendResult.outcome:type_name -> wathena.v1.FriendOutcome
-	111, // 159: wathena.v1.PartyBookingList.entries:type_name -> wathena.v1.PartyBookingEntry
-	111, // 160: wathena.v1.PartyBookingList.own:type_name -> wathena.v1.PartyBookingEntry
-	165, // 161: wathena.v1.PartyBookingEntry.ad:type_name -> wathena.v1.PartyBookingAd
-	166, // 162: wathena.v1.GuildInfo.notice:type_name -> wathena.v1.GuildNotice
-	114, // 163: wathena.v1.GuildInfo.members:type_name -> wathena.v1.GuildMember
-	167, // 164: wathena.v1.GuildInfo.positions:type_name -> wathena.v1.GuildPosition
-	116, // 165: wathena.v1.GuildInfo.relations:type_name -> wathena.v1.GuildRelation
-	117, // 166: wathena.v1.GuildInfo.skills:type_name -> wathena.v1.GuildSkill
-	114, // 167: wathena.v1.GuildMemberUpdate.member:type_name -> wathena.v1.GuildMember
-	22,  // 168: wathena.v1.GuildResult.outcome:type_name -> wathena.v1.GuildOutcome
-	23,  // 169: wathena.v1.StorageOpen.kind:type_name -> wathena.v1.StorageKind
-	80,  // 170: wathena.v1.StorageOpen.items:type_name -> wathena.v1.InventoryItem
-	23,  // 171: wathena.v1.StorageItems.kind:type_name -> wathena.v1.StorageKind
-	80,  // 172: wathena.v1.StorageItems.items:type_name -> wathena.v1.InventoryItem
-	23,  // 173: wathena.v1.StorageAdd.kind:type_name -> wathena.v1.StorageKind
-	80,  // 174: wathena.v1.StorageAdd.item:type_name -> wathena.v1.InventoryItem
-	23,  // 175: wathena.v1.StorageRemove.kind:type_name -> wathena.v1.StorageKind
-	23,  // 176: wathena.v1.StorageClose.kind:type_name -> wathena.v1.StorageKind
-	24,  // 177: wathena.v1.StorageResult.outcome:type_name -> wathena.v1.StorageOutcome
-	128, // 178: wathena.v1.GuildStorageLog.entries:type_name -> wathena.v1.GuildStorageLogEntry
-	80,  // 179: wathena.v1.TradeOffer.item:type_name -> wathena.v1.InventoryItem
-	25,  // 180: wathena.v1.TradeClose.outcome:type_name -> wathena.v1.TradeOutcome
-	25,  // 181: wathena.v1.TradeResult.outcome:type_name -> wathena.v1.TradeOutcome
-	136, // 182: wathena.v1.CurrencyUpdate.currencies:type_name -> wathena.v1.CurrencyAmount
-	138, // 183: wathena.v1.MailBox.mails:type_name -> wathena.v1.MailSummary
-	138, // 184: wathena.v1.MailRead.mail:type_name -> wathena.v1.MailSummary
-	80,  // 185: wathena.v1.MailRead.items:type_name -> wathena.v1.InventoryItem
-	26,  // 186: wathena.v1.MailResult.outcome:type_name -> wathena.v1.MailOutcome
-	145, // 187: wathena.v1.VendingOpened.items:type_name -> wathena.v1.VendingListItem
-	145, // 188: wathena.v1.VendingList.items:type_name -> wathena.v1.VendingListItem
-	80,  // 189: wathena.v1.VendingListItem.item:type_name -> wathena.v1.InventoryItem
-	27,  // 190: wathena.v1.VendingResult.outcome:type_name -> wathena.v1.VendingOutcome
-	152, // 191: wathena.v1.BuyingStoreOpened.items:type_name -> wathena.v1.BuyingStoreItem
-	152, // 192: wathena.v1.BuyingStoreList.items:type_name -> wathena.v1.BuyingStoreItem
-	28,  // 193: wathena.v1.BuyingStoreResult.outcome:type_name -> wathena.v1.BuyingStoreOutcome
-	157, // 194: wathena.v1.StoreSearchResults.results:type_name -> wathena.v1.StoreSearchHit
-	80,  // 195: wathena.v1.StoreSearchHit.item:type_name -> wathena.v1.InventoryItem
-	29,  // 196: wathena.v1.StoreSearchResult.outcome:type_name -> wathena.v1.StoreSearchOutcome
-	159, // 197: wathena.v1.WorldEventNotice.event:type_name -> wathena.v1.WorldEventInfo
-	159, // 198: wathena.v1.WorldEventList.events:type_name -> wathena.v1.WorldEventInfo
-	199, // [199:199] is the sub-list for method output_type
-	199, // [199:199] is the sub-list for method input_type
-	199, // [199:199] is the sub-list for extension type_name
-	199, // [199:199] is the sub-list for extension extendee
-	0,   // [0:199] is the sub-list for field type_name
+	162, // 100: wathena.v1.Event.player_limits:type_name -> wathena.v1.PlayerLimits
+	0,   // 101: wathena.v1.EntityAppear.kind:type_name -> wathena.v1.EntityKind
+	38,  // 102: wathena.v1.EntityAppear.look:type_name -> wathena.v1.Look
+	37,  // 103: wathena.v1.EntityAppear.item:type_name -> wathena.v1.GroundItem
+	98,  // 104: wathena.v1.EntityAppear.options:type_name -> wathena.v1.Options
+	36,  // 105: wathena.v1.EntityAppear.skill_unit:type_name -> wathena.v1.SkillUnit
+	34,  // 106: wathena.v1.EntityAppear.guild:type_name -> wathena.v1.GuildBadge
+	34,  // 107: wathena.v1.EntityGuild.guild:type_name -> wathena.v1.GuildBadge
+	1,   // 108: wathena.v1.EntityVanish.reason:type_name -> wathena.v1.VanishReason
+	43,  // 109: wathena.v1.StatUpdate.stats:type_name -> wathena.v1.Stat
+	2,   // 110: wathena.v1.Stat.id:type_name -> wathena.v1.StatId
+	3,   // 111: wathena.v1.Damage.kind:type_name -> wathena.v1.DamageKind
+	164, // 112: wathena.v1.SkillCast.cell:type_name -> wathena.v1.Cell
+	164, // 113: wathena.v1.SkillEffect.cell:type_name -> wathena.v1.Cell
+	4,   // 114: wathena.v1.SkillFailed.reason:type_name -> wathena.v1.SkillFailure
+	51,  // 115: wathena.v1.SkillList.skills:type_name -> wathena.v1.SkillInfo
+	5,   // 116: wathena.v1.SkillInfo.target:type_name -> wathena.v1.SkillTarget
+	52,  // 117: wathena.v1.SkillInfo.requires:type_name -> wathena.v1.SkillRequirement
+	165, // 118: wathena.v1.ChatMessage.channel:type_name -> wathena.v1.ChatChannel
+	6,   // 119: wathena.v1.WhisperResult.outcome:type_name -> wathena.v1.WhisperOutcome
+	165, // 120: wathena.v1.ChatRefused.channel:type_name -> wathena.v1.ChatChannel
+	7,   // 121: wathena.v1.ChatRefused.reason:type_name -> wathena.v1.ChatRefusal
+	59,  // 122: wathena.v1.ChannelList.channels:type_name -> wathena.v1.ChannelInfo
+	8,   // 123: wathena.v1.ChannelFailed.reason:type_name -> wathena.v1.ChannelFailure
+	9,   // 124: wathena.v1.SanctionNotice.kind:type_name -> wathena.v1.SanctionKind
+	10,  // 125: wathena.v1.ReportResult.outcome:type_name -> wathena.v1.ReportOutcome
+	66,  // 126: wathena.v1.NpcDialog.menu:type_name -> wathena.v1.NpcMenu
+	11,  // 127: wathena.v1.NpcImage.position:type_name -> wathena.v1.ImagePosition
+	72,  // 128: wathena.v1.ShopOpen.items:type_name -> wathena.v1.ShopItem
+	75,  // 129: wathena.v1.ShopOpen.sellable:type_name -> wathena.v1.ShopSellable
+	73,  // 130: wathena.v1.ShopItem.cost_items:type_name -> wathena.v1.ShopCostItem
+	74,  // 131: wathena.v1.ShopItem.cost_currencies:type_name -> wathena.v1.ShopCostCurrency
+	12,  // 132: wathena.v1.ShopResult.outcome:type_name -> wathena.v1.ShopOutcome
+	164, // 133: wathena.v1.EffectPlay.cell:type_name -> wathena.v1.Cell
+	80,  // 134: wathena.v1.InventoryUpdate.items:type_name -> wathena.v1.InventoryItem
+	81,  // 135: wathena.v1.InventoryItem.rolls:type_name -> wathena.v1.ItemRoll
+	82,  // 136: wathena.v1.InventoryItem.card_rolls:type_name -> wathena.v1.CardRolls
+	83,  // 137: wathena.v1.InventoryItem.options:type_name -> wathena.v1.ItemOption
+	13,  // 138: wathena.v1.InventoryItem.bound:type_name -> wathena.v1.ItemBound
+	81,  // 139: wathena.v1.CardRolls.rolls:type_name -> wathena.v1.ItemRoll
+	81,  // 140: wathena.v1.ItemRollsChange.rolls:type_name -> wathena.v1.ItemRoll
+	82,  // 141: wathena.v1.ItemRollsChange.card_rolls:type_name -> wathena.v1.CardRolls
+	83,  // 142: wathena.v1.ItemRollsChange.options:type_name -> wathena.v1.ItemOption
+	81,  // 143: wathena.v1.InventoryAdd.rolls:type_name -> wathena.v1.ItemRoll
+	82,  // 144: wathena.v1.InventoryAdd.card_rolls:type_name -> wathena.v1.CardRolls
+	83,  // 145: wathena.v1.InventoryAdd.options:type_name -> wathena.v1.ItemOption
+	13,  // 146: wathena.v1.InventoryAdd.bound:type_name -> wathena.v1.ItemBound
+	15,  // 147: wathena.v1.InventoryRemove.reason:type_name -> wathena.v1.InventoryRemoveReason
+	16,  // 148: wathena.v1.UseItemFailed.reason:type_name -> wathena.v1.UseItemFailure
+	17,  // 149: wathena.v1.DropItemFailed.reason:type_name -> wathena.v1.DropItemFailure
+	18,  // 150: wathena.v1.PickUpFailed.reason:type_name -> wathena.v1.PickUpFailure
+	19,  // 151: wathena.v1.EquipFailed.reason:type_name -> wathena.v1.EquipFailure
+	38,  // 152: wathena.v1.LookChange.look:type_name -> wathena.v1.Look
+	98,  // 153: wathena.v1.OptionChange.options:type_name -> wathena.v1.Options
+	166, // 154: wathena.v1.PartyInfo.options:type_name -> wathena.v1.PartyOptions
+	101, // 155: wathena.v1.PartyInfo.members:type_name -> wathena.v1.PartyMember
+	101, // 156: wathena.v1.PartyMemberUpdate.member:type_name -> wathena.v1.PartyMember
+	20,  // 157: wathena.v1.PartyResult.outcome:type_name -> wathena.v1.PartyOutcome
+	106, // 158: wathena.v1.FriendList.friends:type_name -> wathena.v1.Friend
+	21,  // 159: wathena.v1.FriendResult.outcome:type_name -> wathena.v1.FriendOutcome
+	111, // 160: wathena.v1.PartyBookingList.entries:type_name -> wathena.v1.PartyBookingEntry
+	111, // 161: wathena.v1.PartyBookingList.own:type_name -> wathena.v1.PartyBookingEntry
+	167, // 162: wathena.v1.PartyBookingEntry.ad:type_name -> wathena.v1.PartyBookingAd
+	168, // 163: wathena.v1.GuildInfo.notice:type_name -> wathena.v1.GuildNotice
+	114, // 164: wathena.v1.GuildInfo.members:type_name -> wathena.v1.GuildMember
+	169, // 165: wathena.v1.GuildInfo.positions:type_name -> wathena.v1.GuildPosition
+	116, // 166: wathena.v1.GuildInfo.relations:type_name -> wathena.v1.GuildRelation
+	117, // 167: wathena.v1.GuildInfo.skills:type_name -> wathena.v1.GuildSkill
+	114, // 168: wathena.v1.GuildMemberUpdate.member:type_name -> wathena.v1.GuildMember
+	22,  // 169: wathena.v1.GuildResult.outcome:type_name -> wathena.v1.GuildOutcome
+	23,  // 170: wathena.v1.StorageOpen.kind:type_name -> wathena.v1.StorageKind
+	80,  // 171: wathena.v1.StorageOpen.items:type_name -> wathena.v1.InventoryItem
+	23,  // 172: wathena.v1.StorageItems.kind:type_name -> wathena.v1.StorageKind
+	80,  // 173: wathena.v1.StorageItems.items:type_name -> wathena.v1.InventoryItem
+	23,  // 174: wathena.v1.StorageAdd.kind:type_name -> wathena.v1.StorageKind
+	80,  // 175: wathena.v1.StorageAdd.item:type_name -> wathena.v1.InventoryItem
+	23,  // 176: wathena.v1.StorageRemove.kind:type_name -> wathena.v1.StorageKind
+	23,  // 177: wathena.v1.StorageClose.kind:type_name -> wathena.v1.StorageKind
+	24,  // 178: wathena.v1.StorageResult.outcome:type_name -> wathena.v1.StorageOutcome
+	128, // 179: wathena.v1.GuildStorageLog.entries:type_name -> wathena.v1.GuildStorageLogEntry
+	80,  // 180: wathena.v1.TradeOffer.item:type_name -> wathena.v1.InventoryItem
+	25,  // 181: wathena.v1.TradeClose.outcome:type_name -> wathena.v1.TradeOutcome
+	25,  // 182: wathena.v1.TradeResult.outcome:type_name -> wathena.v1.TradeOutcome
+	136, // 183: wathena.v1.CurrencyUpdate.currencies:type_name -> wathena.v1.CurrencyAmount
+	138, // 184: wathena.v1.MailBox.mails:type_name -> wathena.v1.MailSummary
+	138, // 185: wathena.v1.MailRead.mail:type_name -> wathena.v1.MailSummary
+	80,  // 186: wathena.v1.MailRead.items:type_name -> wathena.v1.InventoryItem
+	26,  // 187: wathena.v1.MailResult.outcome:type_name -> wathena.v1.MailOutcome
+	145, // 188: wathena.v1.VendingOpened.items:type_name -> wathena.v1.VendingListItem
+	145, // 189: wathena.v1.VendingList.items:type_name -> wathena.v1.VendingListItem
+	80,  // 190: wathena.v1.VendingListItem.item:type_name -> wathena.v1.InventoryItem
+	27,  // 191: wathena.v1.VendingResult.outcome:type_name -> wathena.v1.VendingOutcome
+	152, // 192: wathena.v1.BuyingStoreOpened.items:type_name -> wathena.v1.BuyingStoreItem
+	152, // 193: wathena.v1.BuyingStoreList.items:type_name -> wathena.v1.BuyingStoreItem
+	28,  // 194: wathena.v1.BuyingStoreResult.outcome:type_name -> wathena.v1.BuyingStoreOutcome
+	157, // 195: wathena.v1.StoreSearchResults.results:type_name -> wathena.v1.StoreSearchHit
+	80,  // 196: wathena.v1.StoreSearchHit.item:type_name -> wathena.v1.InventoryItem
+	29,  // 197: wathena.v1.StoreSearchResult.outcome:type_name -> wathena.v1.StoreSearchOutcome
+	159, // 198: wathena.v1.WorldEventNotice.event:type_name -> wathena.v1.WorldEventInfo
+	159, // 199: wathena.v1.WorldEventList.events:type_name -> wathena.v1.WorldEventInfo
+	163, // 200: wathena.v1.PlayerLimits.limits:type_name -> wathena.v1.PlayerLimit
+	201, // [201:201] is the sub-list for method output_type
+	201, // [201:201] is the sub-list for method input_type
+	201, // [201:201] is the sub-list for extension type_name
+	201, // [201:201] is the sub-list for extension extendee
+	0,   // [0:201] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_event_proto_init() }
@@ -22324,6 +22516,7 @@ func file_wathena_v1_event_proto_init() {
 		(*event_StoreSearchResult)(nil),
 		(*event_WorldEventNotice)(nil),
 		(*event_WorldEventList)(nil),
+		(*event_PlayerLimits)(nil),
 	}
 	file_wathena_v1_event_proto_msgTypes[15].OneofWrappers = []any{
 		(*skillCast_Entity)(nil),
@@ -22356,7 +22549,7 @@ func file_wathena_v1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_event_proto_rawDesc), len(file_wathena_v1_event_proto_rawDesc)),
 			NumEnums:      30,
-			NumMessages:   132,
+			NumMessages:   134,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

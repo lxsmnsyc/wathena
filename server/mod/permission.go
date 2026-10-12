@@ -51,6 +51,8 @@ var Permissions = []Permission{
 	// events.control is review decision 31's: world_events.start and
 	// world_events.stop.
 	{Name: "events.control", Approval: true, Allows: "start and stop world events at any time"},
+	// player.expand_limits is review decision 32's: player:expand.
+	{Name: "player.expand_limits", Approval: true, Allows: "raise and lower a player's inventory, cart and storage slots within the ruleset's limits"},
 }
 
 // LookupPermission returns a permission by name.

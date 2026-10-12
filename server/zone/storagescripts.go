@@ -47,7 +47,7 @@ func (z *Zone) prepare(pl place) *transfer.ListBox {
 	case pl.rec != nil:
 		return pl.st.Prepare(z.Items, pl.rec.Slots, 0)
 	}
-	return pl.st.Prepare(z.Items, z.limits().StorageSlots, 0)
+	return pl.st.Prepare(z.Items, z.storageSize(pl.st, nil), 0)
 }
 
 // shownKind is the kind of a place the player sees: its open storage or

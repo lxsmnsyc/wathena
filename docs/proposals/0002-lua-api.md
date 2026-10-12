@@ -1069,3 +1069,19 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - `world_event_start` and `world_event_end` run in mod, NPC and event contexts. `type` is `"script"` for an event without one, and `result` is `"won"`, `"lost"`, `"stopped"` or nil.
    - `world_events.start` and `stop` return whether the request was taken. A plain name is the calling mod's event. An event the config turned off does not exist for them.
    - The announcements and the hint NPCs' text are English in Go, with map IDs, until core has locale text.
+18. Build review decision 32: rule reading, limit expansion, joins on create, the block list trade rule, and stable test helpers. Done on 2026-10-12 ([decision 0027](../decisions/0027-rule-reading-and-limits.md)). Details to review:
+   - `rules.is` is true at a flag's renewal value or at `on`. `skill_rebalance.<skill>` takes the skills of `rules.RebalancedSkills` and the songs, and is the flag the skill follows, its own or the base. The base itself has no flag, so `checkre(0)` stays the converter's mode.
+   - `rules.get` returns a boolean for a yes or no rule, else an integer. `rules.get_limit` returns two values, the base and the max.
+   - An unknown flag, rule or limit raises an error that lists the valid names.
+   - The limits `player:expand` takes are `inventory_slots`, `storage_slots` and `cart_slots`. `friends`, `block_list`, `mailbox`, the guild limits and extra storages are not expandable. The amount is -10,000 to 10,000.
+   - `player:expand(limit, 0)` returns the value without a change, but needs `player.expand_limits` like any call. A read of the value without the permission needs API.
+   - `player.expand_limits` needs the owner's approval and is not flagged.
+   - `inventory_slots` saves in `characters.inventory_size`. `storage_slots` saves with the account's storage and `cart_slots` with the cart, in `storage_sizes`. A storage or cart at the base has no row. Each read clamps the saved value to the range, so a ruleset change applies at once.
+   - The cart's size changes and saves while the player has no cart.
+   - The client gets `PlayerLimits` at login and after each change. It sizes the inventory, the account's storage and the cart from it.
+   - rAthena's inventory expansion vouchers (25791, 25792 and 25793) work through a client window, not item scripts, and the reference fork has no `expandinventory` or `getinventorysize` command. None converts. A window for the vouchers needs review.
+   - The converter turns `basicskillcheck` into `rules.get("basic_skill_check")`, and `checkre(1)` to `checkre(5)` into `rules.is` with `cast_time`, `level_penalty_drop`, `level_penalty_exp`, `level_damage_mod` and `aspd`. `getbattleflag` does not convert: its names are conf settings that are not ruleset rules.
+   - `party_join` and `guild_join` with `"create"` come after the client's created result.
+   - `block_list_refuses_trade` is yes by default. No matches rAthena.
+   - A runtime without a ruleset, such as the converter's test runtimes, reads rAthena's renewal rules.
+   - The `wa.testing` helpers of phase 5 are stable. The definitions keep the `Provisional` field for later API.

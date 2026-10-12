@@ -184,6 +184,26 @@ func TestTradeBasicSkill(t *testing.T) {
 	}
 }
 
+// TestTradeBlockListRule checks block_list_refuses_trade: on, a player who
+// blocks the asker refuses at once; off, the request goes through, as
+// rAthena.
+func TestTradeBlockListRule(t *testing.T) {
+	z, a, b, _ := storageZone(t)
+	b.blocks = []string{a.Name}
+	if got := tradeOutcomes(doTrade(z, a, TradeAction{Request: netIDOf(a, b)})); len(got) != 1 || got[0] != wathenav1.TradeOutcome_TRADE_OUTCOME_REFUSED {
+		t.Errorf("with the rule on: %v", got)
+	}
+	r := rules.Base(true)
+	r.Items, _ = rules.ItemsOf(map[string]int{"block_list_refuses_trade": 0})
+	z.Mods = &Mods{Rules: r}
+	if got := tradeOutcomes(doTrade(z, a, TradeAction{Request: netIDOf(a, b)})); len(got) != 1 || got[0] != wathenav1.TradeOutcome_TRADE_OUTCOME_REQUEST_SENT {
+		t.Errorf("with the rule off: %v", got)
+	}
+	if rq := eventsOf(b, (*wathenav1.Event).GetTradeRequest, (*wathenav1.Event).HasTradeRequest); len(rq) != 1 {
+		t.Errorf("with the rule off, the blocking player saw %d requests, want 1", len(rq))
+	}
+}
+
 // TestTradeEndsAtLogout checks that a player who leaves in the middle of a
 // trade ends it for the other, and nothing moves.
 func TestTradeEndsAtLogout(t *testing.T) {

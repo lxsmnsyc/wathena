@@ -1,0 +1,20 @@
+# A ruleset for the limit and trade scenarios of the end-to-end tests
+# (e2e/README.md): renewal, with room to expand the account's storage and
+# the cart, and block lists that do not refuse trades, as rAthena. Only
+# the tests that pass Options.Ruleset use it.
+id: e2e.limitrules
+name: End-to-end limit rules
+version: 0.1.0
+api: 1.0
+description: Renewal with expandable storage and carts, and trades past block lists, for the end-to-end tests.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+provides:
+  ruleset:
+    extends: core.ruleset.renewal
+    limits:
+      storage_slots: { base: 600, max: 700 }
+      cart_slots: { base: 100, max: 150 }
+    rules:
+      block_list_refuses_trade: no

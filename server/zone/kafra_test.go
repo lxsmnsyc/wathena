@@ -9,6 +9,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -28,11 +29,21 @@ func kafraItems() *item.Table {
 // changes the player's character before it joins.
 func kafraZone(t *testing.T, setup ...func(*character.Character)) (*Zone, *Player, *entity, *syncBuffer) {
 	t.Helper()
+	return kafraZoneWith(t, nil, setup...)
+}
+
+// kafraZoneWith is kafraZone with a world's ruleset, or the core one for
+// nil.
+func kafraZoneWith(t *testing.T, rl *rules.Rules, setup ...func(*character.Character)) (*Zone, *Player, *entity, *syncBuffer) {
+	t.Helper()
 	z := New("map/prontera", open(400), rng.FromKey([32]byte{9}).Stream(), nil)
 	z.Items = kafraItems()
 	z.Progress = testTables()
 	z.PlayerStatus = battle.Status{MaxHP: 200, MaxSP: 50, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	coreMods(t, z)
+	if rl != nil {
+		z.Mods.Rules = rl
+	}
 	logs := &syncBuffer{}
 	z.Mods.Log = slog.New(slog.NewTextHandler(logs, nil))
 	z.Mods.Server = variables.NewServer(nil, nil)
@@ -120,6 +131,23 @@ func TestKafraSaves(t *testing.T) {
 	if d := lastDialog(ev); d == nil || !d.HasClose() {
 		t.Fatalf("no Close button: %v", d)
 	}
+}
+
+// TestKafraBasicSkillRule runs the converted F_CanOpenStorage with the
+// rule basic_skill_check off: its basicskillcheck() reads the rule with
+// rules.get (review decision 32), so a Novice without Basic Skill level
+// 6 opens storage.
+func TestKafraBasicSkillRule(t *testing.T) {
+	rl := rules.Base(true)
+	var err error
+	if rl.Values, err = rules.RuleValuesOf(map[string]int{"basic_skill_check": 0}); err != nil {
+		t.Fatal(err)
+	}
+	if rl.Items, err = rules.ItemsOf(map[string]int{"basic_skill_check": 0}); err != nil {
+		t.Fatal(err)
+	}
+	z, p, n, logs := kafraZoneWith(t, rl)
+	personalStorageOpened(t, p, kafraStorage(t, z, p, n, logs))
 }
 
 func TestKafraTeleportCharges(t *testing.T) {

@@ -128,6 +128,20 @@ type CurrencyLoader interface {
 	LoadAccountCurrencies(ctx context.Context, account int64) (map[uint32]int64, error)
 }
 
+// SizeLoader reads the slots a script expanded a storage to
+// (Key.Expandable), or 0 for none. A Loader may also be one.
+type SizeLoader interface {
+	LoadStorageSize(ctx context.Context, k Key) (int, error)
+}
+
+// Expandable reports whether a key's storage has a size that
+// player:expand changes (review decision 32): an account's storage, by
+// storage_slots, and a cart, by cart_slots. Extra storages keep their
+// record's size.
+func (k Key) Expandable() bool {
+	return k.Storage == 0 && (k.Holder == HolderAccount || k.Holder == HolderCart)
+}
+
 // Storage is one storage. Its zone reads and changes it with its lock
 // held.
 type Storage struct {
@@ -148,6 +162,26 @@ type Storage struct {
 	// share (proposal 0002, review decision 30). savedCurrencies is what
 	// the last commit wrote.
 	currencies, savedCurrencies map[uint32]int64
+	// size is the slots a script expanded the storage to, or 0 for the
+	// limit's base. Its zone keeps it within the limit's range. savedSize
+	// is what the last commit wrote.
+	size, savedSize int
+}
+
+// Size is the slots a script expanded the storage to, or 0 for none. The
+// lock must be held.
+func (st *Storage) Size() int { return st.size }
+
+// SetSize sets the slots a script expanded the storage to. The lock must
+// be held.
+func (st *Storage) SetSize(n int) { st.size = n }
+
+// CommitSize returns what the last commit wrote of the size and what it
+// is now, and keeps the second for the next commit. The lock must be
+// held.
+func (st *Storage) CommitSize() (base, cur int) {
+	base, st.savedSize = st.savedSize, st.size
+	return base, st.size
 }
 
 // HoldsCurrencies reports whether a key's storage holds its account's
@@ -316,6 +350,7 @@ func (r *Registry) acquire(ctx context.Context, k Key) (*Storage, error) {
 	r.mu.Unlock()
 	var slots []character.Item
 	var cur map[uint32]int64
+	size := 0
 	if r.Loader != nil && k.Saved() {
 		var err error
 		if slots, err = r.Loader.LoadStorage(ctx, k); err != nil {
@@ -323,6 +358,11 @@ func (r *Registry) acquire(ctx context.Context, k Key) (*Storage, error) {
 		}
 		if cl, ok := r.Loader.(CurrencyLoader); ok && k.HoldsCurrencies() {
 			if cur, err = cl.LoadAccountCurrencies(ctx, k.ID); err != nil {
+				return nil, err
+			}
+		}
+		if sl, ok := r.Loader.(SizeLoader); ok && k.Expandable() {
+			if size, err = sl.LoadStorageSize(ctx, k); err != nil {
 				return nil, err
 			}
 		}
@@ -334,6 +374,7 @@ func (r *Registry) acquire(ctx context.Context, k Key) (*Storage, error) {
 		// Another login may have loaded it meanwhile; the first wins.
 		st = newStorage(k, slots)
 		st.currencies, st.savedCurrencies = cur, maps.Clone(cur)
+		st.size, st.savedSize = size, size
 		r.storage[k] = st
 	}
 	st.refs++

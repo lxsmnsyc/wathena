@@ -73,6 +73,58 @@ func (q *Queries) AccountStorage(ctx context.Context, arg AccountStorageParams) 
 	return items, nil
 }
 
+const accountStorageSize = `-- name: AccountStorageSize :many
+SELECT slots FROM storage_sizes WHERE holder = 'account' AND account_id = $1
+`
+
+// AccountStorageSize is the slots a script expanded an account's storage
+// to: no row for none.
+func (q *Queries) AccountStorageSize(ctx context.Context, accountID pgtype.Int8) ([]int, error) {
+	rows, err := q.db.Query(ctx, accountStorageSize, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int
+	for rows.Next() {
+		var slots int
+		if err := rows.Scan(&slots); err != nil {
+			return nil, err
+		}
+		items = append(items, slots)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const cartSize = `-- name: CartSize :many
+SELECT slots FROM storage_sizes WHERE holder = 'cart' AND character_id = $1
+`
+
+// CartSize is the slots a script expanded a character's cart to: no row
+// for none.
+func (q *Queries) CartSize(ctx context.Context, characterID pgtype.Int8) ([]int, error) {
+	rows, err := q.db.Query(ctx, cartSize, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int
+	for rows.Next() {
+		var slots int
+		if err := rows.Scan(&slots); err != nil {
+			return nil, err
+		}
+		items = append(items, slots)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const characterStorage = `-- name: CharacterStorage :many
 SELECT slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound
 FROM storage_items
@@ -134,6 +186,15 @@ func (q *Queries) CharacterStorage(ctx context.Context, arg CharacterStoragePara
 	return items, nil
 }
 
+const deleteAccountStorageSize = `-- name: DeleteAccountStorageSize :exec
+DELETE FROM storage_sizes WHERE holder = 'account' AND account_id = $1
+`
+
+func (q *Queries) DeleteAccountStorageSize(ctx context.Context, accountID pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, deleteAccountStorageSize, accountID)
+	return err
+}
+
 const deleteAccountStorageSlots = `-- name: DeleteAccountStorageSlots :exec
 DELETE FROM storage_items
 WHERE holder = 'account' AND account_id = $1 AND storage = $2 AND slot = ANY($3::smallint[])
@@ -147,6 +208,15 @@ type DeleteAccountStorageSlotsParams struct {
 
 func (q *Queries) DeleteAccountStorageSlots(ctx context.Context, arg DeleteAccountStorageSlotsParams) error {
 	_, err := q.db.Exec(ctx, deleteAccountStorageSlots, arg.AccountID, arg.Storage, arg.Slots)
+	return err
+}
+
+const deleteCartSize = `-- name: DeleteCartSize :exec
+DELETE FROM storage_sizes WHERE holder = 'cart' AND character_id = $1
+`
+
+func (q *Queries) DeleteCartSize(ctx context.Context, characterID pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, deleteCartSize, characterID)
 	return err
 }
 
@@ -234,5 +304,35 @@ ORDER BY id
 // rows, so the lock is advisory: bit 62 set, with the account ID.
 func (q *Queries) LockAccountStorages(ctx context.Context, ids []int64) error {
 	_, err := q.db.Exec(ctx, lockAccountStorages, ids)
+	return err
+}
+
+const setAccountStorageSize = `-- name: SetAccountStorageSize :exec
+INSERT INTO storage_sizes (holder, account_id, slots) VALUES ('account', $1, $2)
+ON CONFLICT (account_id) WHERE holder = 'account' DO UPDATE SET slots = excluded.slots
+`
+
+type SetAccountStorageSizeParams struct {
+	AccountID pgtype.Int8
+	Slots     int
+}
+
+func (q *Queries) SetAccountStorageSize(ctx context.Context, arg SetAccountStorageSizeParams) error {
+	_, err := q.db.Exec(ctx, setAccountStorageSize, arg.AccountID, arg.Slots)
+	return err
+}
+
+const setCartSize = `-- name: SetCartSize :exec
+INSERT INTO storage_sizes (holder, character_id, slots) VALUES ('cart', $1, $2)
+ON CONFLICT (character_id) WHERE holder = 'cart' DO UPDATE SET slots = excluded.slots
+`
+
+type SetCartSizeParams struct {
+	CharacterID pgtype.Int8
+	Slots       int
+}
+
+func (q *Queries) SetCartSize(ctx context.Context, arg SetCartSizeParams) error {
+	_, err := q.db.Exec(ctx, setCartSize, arg.CharacterID, arg.Slots)
 	return err
 }

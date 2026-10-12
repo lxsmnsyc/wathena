@@ -461,6 +461,13 @@ type StorageItem struct {
 	Bound         int
 }
 
+type StorageSize struct {
+	Holder      string
+	AccountID   pgtype.Int8
+	CharacterID pgtype.Int8
+	Slots       int
+}
+
 type Store struct {
 	CharacterID int64
 	Buying      bool

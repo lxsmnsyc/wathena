@@ -72,6 +72,12 @@ func TestGuildCreateInviteAccept(t *testing.T) {
 	if ev.Event != (Event{Kind: EventJoin, Party: id, Reason: ReasonInvited}) {
 		t.Errorf("Bob's event %+v", ev.Event)
 	}
+	// The master who made the guild gets guild_join with "create" (review
+	// decision 32).
+	ev, _ = w.boxes["Ann"].last(NoticeGuildEvent)
+	if ev.Event != (Event{Kind: EventJoin, Party: id, Reason: ReasonCreate}) {
+		t.Errorf("Ann's event %+v", ev.Event)
+	}
 	// Newbie has no invite permission.
 	if o := w.r.GuildInvite(w.ps["Bob"], "Cid"); o != GuildNoPermission {
 		t.Errorf("member invite: %v", o)

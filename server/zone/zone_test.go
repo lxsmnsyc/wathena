@@ -47,10 +47,11 @@ func TestSeeAndWalk(t *testing.T) {
 	a := add(z, "a")
 	b := add(z, "b")
 	z.stepAt(50)
-	// Each sees itself and the other, then gets its inventory.
+	// Each sees itself and the other, then gets its inventory and its
+	// limits.
 	for _, p := range []*Player{a, b} {
 		ev := events(p)
-		if len(ev) != 3 || ev[0].GetAppear() == nil || ev[1].GetAppear() == nil || ev[2].GetInventory() == nil {
+		if len(ev) != 4 || ev[0].GetAppear() == nil || ev[1].GetAppear() == nil || ev[2].GetInventory() == nil || ev[3].GetPlayerLimits() == nil {
 			t.Fatalf("%s: %v", p.Name, ev)
 		}
 	}

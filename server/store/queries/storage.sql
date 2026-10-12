@@ -42,3 +42,27 @@ SELECT @holder, sqlc.narg('account_id')::bigint, sqlc.narg('character_id')::bigi
 SELECT pg_advisory_xact_lock((1::bigint << 62) | id)
 FROM unnest(@ids::bigint[]) AS id
 ORDER BY id;
+
+-- name: AccountStorageSize :many
+-- AccountStorageSize is the slots a script expanded an account's storage
+-- to: no row for none.
+SELECT slots FROM storage_sizes WHERE holder = 'account' AND account_id = @account_id;
+
+-- name: CartSize :many
+-- CartSize is the slots a script expanded a character's cart to: no row
+-- for none.
+SELECT slots FROM storage_sizes WHERE holder = 'cart' AND character_id = @character_id;
+
+-- name: SetAccountStorageSize :exec
+INSERT INTO storage_sizes (holder, account_id, slots) VALUES ('account', @account_id, @slots)
+ON CONFLICT (account_id) WHERE holder = 'account' DO UPDATE SET slots = excluded.slots;
+
+-- name: SetCartSize :exec
+INSERT INTO storage_sizes (holder, character_id, slots) VALUES ('cart', @character_id, @slots)
+ON CONFLICT (character_id) WHERE holder = 'cart' DO UPDATE SET slots = excluded.slots;
+
+-- name: DeleteAccountStorageSize :exec
+DELETE FROM storage_sizes WHERE holder = 'account' AND account_id = @account_id;
+
+-- name: DeleteCartSize :exec
+DELETE FROM storage_sizes WHERE holder = 'cart' AND character_id = @character_id;

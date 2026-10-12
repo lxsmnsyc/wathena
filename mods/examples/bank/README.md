@@ -5,8 +5,9 @@ A sample mod for storage, bound items and trades, proposal 0002, review decision
 - `data/storages.yml` adds the vault, an extra storage of 50 slots that the characters of an account share. Its name has no prefix, so it is `example.bank:vault`.
 - `data/items.yml` adds the Bank Card.
 - `scripts/npc/banker.lua` is the banker in Prontera. "My storage" opens the account's storage with `player:open_storage()`. "The vault" opens the vault with `player:open_storage("vault")` for players who have a Bank Card, and charges 100 zeny once it opened. "A Bank Card" gives one card with `player:give_item(card, 1, { bound = "account" })`. A bound card cannot be traded, dropped or sold.
+- "A bigger bag" sells 10 more inventory slots for 5,000 zeny with `player:expand("inventory_slots", 10)`, as rAthena's Inventory Expansion Coupon, up to the ruleset's max, which `rules.get_limit("inventory_slots")` reads (review decision 32). The slots save with the character.
 - `scripts/main.lua` adds a `trade` hook that refuses a trade when a player gives more than 100,000 zeny, with a message, and a `trade` event that whispers to both players what changed hands.
 
-`player:give_item` needs `player.give_items`, and `hooks.on` needs `rules.override`, which the server owner approves.
+`player:give_item` needs `player.give_items`, `player:expand` needs `player.expand_limits`, and `hooks.on` needs `rules.override`, which the server owner approves.
 
 Run `wactl mod test mods/examples/bank`.

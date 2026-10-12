@@ -464,6 +464,15 @@ new_player, player_ids = handle_type("player", {
 	unmute = function(self)
 		return (call(H.player_sanction, player_ids[self], "unmute"))
 	end,
+	expand = function(self, limit, amount)
+		if type(limit) ~= "string" then
+			error("player:expand: the limit must be a string", 2)
+		end
+		if math_type(amount) ~= "integer" then
+			error("player:expand: the amount must be an integer", 2)
+		end
+		return (call(H.player_expand, player_ids[self], limit, amount))
+	end,
 	is_friend = function(self, other)
 		local id = player_ids[other]
 		if id == nil then
@@ -1291,10 +1300,22 @@ api["wa.guilds"] = readonly("wa.guilds", {
 	end,
 })
 
--- The world's ruleset (proposal 0002, review decision 27): its limits,
--- read-only.
+-- The world's ruleset (proposal 0002, review decisions 27 and 32): its
+-- limits, flags and rules, read-only.
 api["wa.rules"] = readonly("wa.rules", {
 	limits = readonly("rules.limits", H.rules_limits()),
+	is = function(flag)
+		check(type(flag) == "string", "rules.is: the flag must be a string")
+		return (call(H.rules_read, "is", flag))
+	end,
+	get = function(name)
+		check(type(name) == "string", "rules.get: the name must be a string")
+		return (call(H.rules_read, "get", name))
+	end,
+	get_limit = function(name)
+		check(type(name) == "string", "rules.get_limit: the name must be a string")
+		return call(H.rules_read, "limit", name)
+	end,
 })
 
 -- Saved variables (proposal 0002, "Variables"). A declaration names the

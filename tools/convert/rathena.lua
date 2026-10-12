@@ -261,13 +261,6 @@ function R.mail_items(ids, amounts)
 	return out
 end
 
--- basic_skill_check is rAthena's basicskillcheck: the ruleset rule
--- basic_skill_check, which makes storage need Basic Skill level 6. Lua
--- cannot read ruleset rules yet, so it returns rAthena's default, true.
-function R.basic_skill_check()
-	return true
-end
-
 -- Monsters of rAthena's monster command. alive counts the living
 -- monsters of each NPC by event label, for mobcount. Its keys are weak,
 -- so an NPC that ends leaves it.

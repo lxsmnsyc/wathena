@@ -990,6 +990,7 @@ func (z *Zone) join(p *Player) joinResult {
 	}
 	p.sendPages(z.inventoryPages(p))
 	z.sendCart(p)
+	z.sendPlayerLimits(p)
 	// CurrencyUpdate comes at login, as its message says, when the
 	// player has a currency: the client starts with none.
 	z.sendCurrenciesHeld(p)

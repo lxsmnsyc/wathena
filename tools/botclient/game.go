@@ -31,10 +31,14 @@ type gameState struct {
 	// dialog is the last NPC dialog step, and shop the last shop window.
 	dialog *wathenav1.NpcDialog
 	shop   *wathenav1.ShopOpen
+	// limits are the player's values of the limits it holds, from
+	// PlayerLimits.
+	limits map[string]int
 }
 
 func newGameState() gameState {
-	return gameState{items: map[int]Item{}, stats: map[wathenav1.StatId]int64{}, skills: map[uint32]*wathenav1.SkillInfo{}}
+	return gameState{items: map[int]Item{}, stats: map[wathenav1.StatId]int64{}, skills: map[uint32]*wathenav1.SkillInfo{},
+		limits: map[string]int{}}
 }
 
 func (g *gameState) apply(e *wathenav1.Event) {
@@ -92,6 +96,10 @@ func (g *gameState) apply(e *wathenav1.Event) {
 		g.shop = e.GetShopOpen()
 	case e.HasShopResult():
 		g.shop = nil
+	case e.HasPlayerLimits():
+		for _, l := range e.GetPlayerLimits().GetLimits() {
+			g.limits[l.GetName()] = int(l.GetValue())
+		}
 	}
 }
 
@@ -131,6 +139,9 @@ type Game struct {
 	TradeClosed  wathenav1.TradeOutcome
 	// Market is the bot's mail, stores, store search and currencies.
 	Market
+	// Limits are the player's values of the limits it holds, such as
+	// inventory_slots, from PlayerLimits.
+	Limits map[string]int
 }
 
 // Count is the amount of an item in the inventory.
@@ -168,6 +179,7 @@ func (b *Bot) Game() Game {
 		Party: party, Invite: invite, Friends: friends, FriendRequests: requests,
 		Guild: guild, GuildInvite: guildInvite, Storage: b.storageSt.window.clone(), Cart: b.storageSt.cart.clone(),
 		TradeRequest: request, Trade: trade, TradeClosed: b.tradeSt.closed, Market: b.marketSt.clone(),
+		Limits: maps.Clone(b.game.limits),
 	}
 }
 

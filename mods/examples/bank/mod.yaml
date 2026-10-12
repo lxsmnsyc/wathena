@@ -1,12 +1,13 @@
 # A sample mod for storage, bound items and trades (proposal 0002, review
 # decision 29): a banker who opens an extra storage for a fee, gives a
-# bound card, and a trade hook and event. mods/README.md, "Storage, cart
-# and trade", explains each part.
+# bound card, sells more inventory slots (review decision 32), and a trade
+# hook and event. mods/README.md, "Storage, cart and trade" and "Rules
+# and limits", explains each part.
 id: example.bank
 name: Bank
 version: 0.1.0
 api: 1.0
-description: A banker in Prontera who opens the account's storage, and a vault for card holders for a fee, and a bank that refuses large zeny trades and records the others.
+description: A banker in Prontera who opens the account's storage, a vault for card holders for a fee, and sells inventory slots, and a bank that refuses large zeny trades and records the others.
 authors:
   - name: wAthena contributors
 license: GPL-3.0-or-later
@@ -21,5 +22,6 @@ permissions:
   - game.read
   - player.give_items
   - rules.override
+  - player.expand_limits
 scripts:
   - scripts/main.lua

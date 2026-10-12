@@ -21,7 +21,7 @@ func TestBank(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(results) != 7 {
+		if len(results) != 8 {
 			t.Errorf("%s: %d cases", base, len(results))
 		}
 		for _, r := range results {

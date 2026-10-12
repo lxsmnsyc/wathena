@@ -118,6 +118,7 @@ import {
   usedItemMessage,
   weightPercent,
 } from './inventory';
+import { applyPlayerLimits } from './limits';
 import { ItemTexts } from './itemText';
 import { EquipmentWindow, INSERT_CARD_FAILED, equipMessage } from './equipment';
 import { DialogWindow } from './dialog';
@@ -873,6 +874,13 @@ if (serverURL === null) {
   const renderStorage = (): void => {
     storageWindow?.render();
     cartWindow?.render();
+  };
+  // The player's limits size the inventory, the account's storage and the
+  // cart. A script may expand them (review decision 32).
+  view.onPlayerLimits = (limits) => {
+    if (applyPlayerLimits(limits, inventory, storage, cart)) {
+      renderStorage();
+    }
   };
   view.onStorageOpen = (info) => {
     if (info.kind === StorageKind.CART) {

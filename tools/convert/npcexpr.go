@@ -633,8 +633,7 @@ func (b *body) call(e *Call) (val, error) {
 		}
 		return done(val{code: fmt.Sprintf("R.asize(%s, %s)", v.local, v.owner()), t: tInt}, nil)
 	case "checkre":
-		// The converter runs per mode, as rAthena's RENEWAL defines.
-		return done(intVal(b2i(b.n.c.mode == "renewal")), nil)
+		return done(b.checkre(args))
 	case "input":
 		code, err := b.input(args)
 		if err != nil {
@@ -663,13 +662,12 @@ func (b *body) call(e *Call) (val, error) {
 		}
 		return done(val{code: "player:get_skill_level(" + f.record("skills.id", skill) + ")", t: tInt}, nil)
 	case "basicskillcheck":
-		// basicskillcheck is the ruleset rule basic_skill_check. Lua
-		// cannot read rules yet, so R.basic_skill_check gives rAthena's
-		// default.
+		// basicskillcheck is the ruleset rule basic_skill_check (review
+		// decision 32).
 		if len(args) != 0 {
 			return val{}, unsupported(name, "arguments")
 		}
-		return done(val{code: "R.basic_skill_check()", t: tBool}, nil)
+		return done(val{code: f.need("rules") + `.get("basic_skill_check")`, t: tBool}, nil)
 	case "getstatus":
 		return done(b.getstatus(args))
 	case "playerattached":
@@ -1578,4 +1576,29 @@ func (b *body) resetlvl(args []Expr) error {
 	}
 	b.line("-- resetlvl(1): player:rebirth reset the levels.")
 	return nil
+}
+
+// checkreFlags are the ruleset flags of checkre's arguments 1 to 5:
+// RENEWAL_CAST, RENEWAL_DROP, RENEWAL_EXP, RENEWAL_LVDMG and
+// RENEWAL_ASPD.
+var checkreFlags = []string{1: "cast_time", 2: "level_penalty_drop", 3: "level_penalty_exp", 4: "level_damage_mod", 5: "aspd"}
+
+// checkre writes checkre(n). checkre(0) is RENEWAL, the ruleset's base,
+// which the converter's mode fixes. checkre(1) to checkre(5) read the
+// ruleset flag of their define with rules.is (review decision 32).
+func (b *body) checkre(args []Expr) (val, error) {
+	if len(args) != 1 {
+		return val{}, unsupported("checkre", "arguments")
+	}
+	v, err := b.expr(args[0])
+	if err != nil {
+		return val{}, err
+	}
+	if v.static == nil || *v.static < 0 || *v.static >= int64(len(checkreFlags)) {
+		return val{}, unsupported("checkre", "an argument other than 0 to 5")
+	}
+	if *v.static == 0 {
+		return intVal(b2i(b.n.c.mode == "renewal")), nil
+	}
+	return val{code: b.n.file.need("rules") + `.is("` + checkreFlags[*v.static] + `")`, t: tBool}, nil
 }

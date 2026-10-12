@@ -456,6 +456,8 @@ func (r *Runtime) init() error {
 		{"parties_find", r.partiesFind},
 		{"player_friend", r.playerFriend},
 		{"rules_limits", r.rulesLimits},
+		{"rules_read", r.rulesRead},
+		{"player_expand", r.playerExpand},
 		{"guild_field", r.guildField},
 		{"core_guild_storage_log", r.coreGuildStorageLog},
 		{"guild_call", r.guildCall},

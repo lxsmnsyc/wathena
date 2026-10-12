@@ -199,6 +199,10 @@ var RuleBounds = []Bound{
 	{Name: "guild_alliance_onlygm", Default: 0, Min: 0, Max: 1, Bool: true, About: "only a guild master may accept an alliance"},
 	{Name: "max_cart_weight", Default: 8000, Min: 0, Max: 1000000000, About: "the weight a cart holds, in tenths (max_cart_weight)"},
 	{Name: "basic_skill_check", Default: 1, Min: 0, Max: 1, Bool: true, About: "trading needs Basic Skill level 1, and storage level 6 (basic_skill_check)"},
+	// block_list_refuses_trade is review decision 32's, on by default.
+	// rAthena does not check its ignore list for trades, so off matches
+	// rAthena.
+	{Name: "block_list_refuses_trade", Default: 1, Min: 0, Max: 1, Bool: true, About: "a player who blocks the requester refuses a trade request at once"},
 	// The vending, buying store, store search and mail rules of review
 	// decision 30, with the values of rAthena's conf/battle/items.conf,
 	// misc.conf, feature.conf, player.conf and char_athena.conf.
@@ -305,7 +309,10 @@ type Items struct {
 	// BasicSkillCheck is basic_skill_check: trading needs Basic Skill
 	// level 1, and the Kafras' storage level 6.
 	BasicSkillCheck bool
-	set             bool
+	// BlockListRefusesTrade is block_list_refuses_trade: a player who
+	// blocks the requester refuses a trade request at once.
+	BlockListRefusesTrade bool
+	set                   bool
 }
 
 // ItemsOf turns the rules a ruleset set into Items. A rule it does not
@@ -315,7 +322,8 @@ func ItemsOf(set map[string]int) (Items, error) {
 	if err != nil {
 		return Items{}, err
 	}
-	return Items{MaxCartWeight: v["max_cart_weight"], BasicSkillCheck: v["basic_skill_check"] == 1, set: true}, nil
+	return Items{MaxCartWeight: v["max_cart_weight"], BasicSkillCheck: v["basic_skill_check"] == 1,
+		BlockListRefusesTrade: v["block_list_refuses_trade"] == 1, set: true}, nil
 }
 
 // DefaultItems are rAthena's storage, cart and trade rules.

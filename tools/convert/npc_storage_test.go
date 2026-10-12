@@ -31,7 +31,6 @@ func TestStorageCommandsConvert(t *testing.T) {
 		{`{ getitembound 501,.@n,Bound_Char,getcharid(3); end; }`, []string{`R.give_item(player, RED_POTION, n, { bound = "character" })`}},
 		{`{ getitembound 501,1,0; end; }`, []string{"player:give_item(RED_POTION, 1)"}},
 		{`{ getitembound2 501,1,1,0,0,0,0,0,0,Bound_Account; end; }`, []string{`player:give_item(RED_POTION, 1, { bound = "account" })`}},
-		{`{ if (basicskillcheck()) end; end; }`, []string{"R.basic_skill_check()"}},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		lua, err := n.npcScript()

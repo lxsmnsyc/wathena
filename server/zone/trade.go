@@ -11,7 +11,8 @@ import (
 // Trade (phase 5 step 6, decision 0023), as rAthena's trade.cpp:
 //   - A player asks another on the map, within 2 cells, to trade. A
 //     player who blocks the other refuses at once, as invites do
-//     (decision 0018); rAthena has no such check.
+//     (decision 0018), with the rule block_list_refuses_trade (review
+//     decision 32). rAthena has no such check.
 //   - Each side offers up to 10 items and an amount of zeny, then locks
 //     its offer. Once both locked, each confirms. The trade completes
 //     when both confirmed.
@@ -136,7 +137,7 @@ func (z *Zone) tradeRequest(p *Player, netID uint32) {
 	if p.trade != nil {
 		z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
 	}
-	if t.blocking(p.Name) {
+	if rules.ItemsOrDefault(z.worldRules()).BlockListRefusesTrade && t.blocking(p.Name) {
 		p.pending = append(p.pending, tradeResult(wathenav1.TradeOutcome_TRADE_OUTCOME_REFUSED, t.Name))
 		return
 	}

@@ -156,7 +156,7 @@ provides:
 
 Each limit has a range:
 
-- `base` is what a player or guild starts with. `max` is where expansions stop, such as Guild Extension or, later, inventory expansions.
+- `base` is what a player or guild starts with. `max` is where expansions stop, such as Guild Extension or `player:expand` ("Rules and limits" below).
 - A plain number sets the base. A max left out is the default max, or the base when the base is higher.
 - The engine has a ceiling per limit. A base or a max above it, or a base above the max, fails the load. The ceilings come from the benchmark of [decision 0023](../docs/decisions/0023-storage-cart-trade.md).
 
@@ -192,6 +192,7 @@ Each limit has a range:
 | `guild_alliance_onlygm` | no | yes, no | Only a guild master may accept an alliance. |
 | `max_cart_weight` | 8000 | 0 to 1000000000 | The weight a cart holds, in tenths, as item weights (`max_cart_weight`). |
 | `basic_skill_check` | yes | yes, no | Trading needs Basic Skill level 1, and core's Kafras ask for level 6 before storage (`basic_skill_check`). |
+| `block_list_refuses_trade` | yes | yes, no | A player who blocks the requester refuses a trade request at once (review decision 32). rAthena does not check its ignore list for trades, so no matches rAthena. |
 | `vending_tax` | 500 | 0 to 10000 | The vending tax in hundredths of a percent. |
 | `vending_tax_min` | 100000000 | 0 to 2147483647 | The smallest purchase the vending tax applies to. |
 | `vending_max_value` | 1000000000 | 1 to 2147483647 | The highest price of a vending line. |
@@ -212,7 +213,7 @@ Each limit has a range:
 - A value outside its bounds, or a name that is not a limit or a rule, fails the mod's load.
 - A ruleset mod that does not set one keeps what it extends. The core rulesets have rAthena's values.
 - Lowering a limit deletes nothing. A list over the limit keeps its names and cannot grow.
-- The client gets every limit's base and max at login. Lua reads the base as `rules.limits.<name>` ("Parties and friends" below).
+- The client gets every limit's base and max at login, and the player's own values of the limits it holds. Lua reads the base as `rules.limits.<name>`, the base and max with `rules.get_limit(name)`, and the rules with `rules.get(name)` ("Rules and limits" below).
 - Phase 5 step 5 added the guild limits and rules, step 6 the ranges, the ceilings, and the inventory, storage and cart limits, and step 7 the mail limits and the vending, store search and mail rules. Card slots have the ceiling 16 (`slots` of `data/items.yml`) and no limit yet.
 - [examples/classic-casting](examples/classic-casting) is a sample ruleset mod: a renewal world with pre-renewal casting.
 
@@ -226,6 +227,7 @@ Each limit has a range:
 | `guild.manage` | Needs the owner's approval. It makes guilds and changes their members, master, notice and exp, and breaks them up (review decision 28). |
 | `mail.send`, `currencies.modify`, `shops.modify` | Needs the owner's approval. They send mail with items and zeny, change another mod's currencies, core's too, and change shops (review decision 30). |
 | `events.control` | Needs the owner's approval. It starts and stops world events at any time with `wa.world_events` (review decision 31). |
+| `player.expand_limits` | Needs the owner's approval. It raises and lowers a player's inventory, cart and storage slots with `player:expand`, within the ruleset's limits (review decision 32). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -1164,7 +1166,7 @@ end
 
 Events:
 
-- `party_join` and `party_leave` get `{ party, player, reason }`. `reason` is `"invited"`, `"left"`, `"expelled"`, `"disbanded"` or `"script"`. They run on the map of the player who joined or left. A member who is offline gets no event, and a player who makes a party itself gets no `party_join`.
+- `party_join` and `party_leave` get `{ party, player, reason }`. `reason` is `"invited"`, `"create"`, `"left"`, `"expelled"`, `"disbanded"` or `"script"`. They run on the map of the player who joined or left. A member who is offline gets no event. A player who makes a party from the client gets `party_join` with `"create"` (review decision 32).
 - `party_change` gets `{ party, leader, options }`, after a change of the leader or the options. It runs on the map where the change was made.
 - The `experience` hook's object has `party` (or nil) and `share`, `{ base, job }`: the player's own share of the kill, before the even split and the level penalty. With even exp share, the hook runs once for each member on the map.
 
@@ -1218,7 +1220,7 @@ end
 
 Events:
 
-- `guild_join` and `guild_leave` get `{ guild, player, reason }`, with the reasons of the party events. They run on the map of the player who joined or left. `guilds.create` fires `guild_join` with `"script"` for the master.
+- `guild_join` and `guild_leave` get `{ guild, player, reason }`, with the reasons of the party events. They run on the map of the player who joined or left. `guilds.create` fires `guild_join` with `"script"` for the master. A player who makes a guild from the client gets `guild_join` with `"create"` (review decision 32).
 - `guild_change` gets `{ guild, change }`, where `change` is `"master"`, `"level"`, `"notice"` or `"emblem"`. It runs on the map where the change was made. A new emblem from the account pages runs it on the map of the master, or of the first online member.
 - The `experience` hook's object has `guild` (or nil) and `guild_tax`: the share of `base` that the player's position gives the guild. The tax applies at the same rate to the base the hook returns.
 
@@ -1272,7 +1274,41 @@ Rules:
 
 - Bound copies cannot be traded, dropped or sold. Storage and carts take account-bound copies, guild storage guild-bound ones, and a trade takes a guild-bound copy to a guildmate. A player who leaves its party loses its party-bound items, and one who leaves its guild puts its guild-bound items into the guild storage.
 - A trade needs Basic Skill level 1 with `basic_skill_check`. In `wactl mod test`, give the players `NV_BASIC` before `world:trade`.
-- `wa.testing` has `world:trade(a, b, offer_a, offer_b)`, which runs a whole trade and returns true, or false and why, and `world:close_storage(player)`. Both are provisional.
+- A player who blocks the requester refuses a trade request at once with `block_list_refuses_trade`, which is on by default.
+- `wa.testing` has `world:trade(a, b, offer_a, offer_b)`, which runs a whole trade and returns true, or false and why, and `world:close_storage(player)`.
+
+### Rules and limits
+
+Scripts read the world's ruleset, and change the limits one player holds, as proposal 0002, review decision 32. [examples/bank](examples/bank) sells inventory slots, and [examples/classic-casting](examples/classic-casting) reads its flags in a test.
+
+```lua
+local rules = require "wa.rules"
+
+-- A bigger bag, up to the ruleset's max.
+local function expand_bag(player)
+  local _, max = rules.get_limit("inventory_slots")
+  if player:expand("inventory_slots", 0) >= max then
+    return false
+  end
+  return player:expand("inventory_slots", 10)
+end
+```
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `rules.is(flag)` | None | True when a ruleset flag is on: at its renewal value, or at `on`. `skill_rebalance.<skill>` is the flag the skill follows, its own or the base, for a rebalanced skill or a song. |
+| `rules.get(name)` | None | A ruleset rule's value: a boolean for a yes or no rule, else an integer. |
+| `rules.get_limit(name)` | None | A limit's base and max, as two values. |
+| `rules.limits.<name>` | None | A limit's base. |
+| `player:expand(limit, amount)` | `player.expand_limits` | Raises one of the player's limits by amount, up to the limit's max, and returns the new value. A negative amount lowers it, not below the base. 0 returns the value. |
+
+Rules:
+
+- An unknown flag, rule or limit raises an error that lists the valid names.
+- `player:expand` takes `inventory_slots`, `storage_slots` and `cart_slots`, from -10,000 to 10,000. `inventory_slots` and `cart_slots` save with the character, and `storage_slots` with the account, whose characters share it.
+- A saved value stays within the limit's range: a ruleset that raises the base or lowers the max applies at the next read. Lowering deletes nothing. Slots past the size keep their items and take no new one.
+- The player gets the new values at once, and at each login.
+- rAthena's inventory expansion uses its own client window and the vouchers' item IDs. wAthena has no such window yet: a mod sells slots from an NPC, as the Bank does.
 
 ### Mail, vending, shops and currencies
 
@@ -1328,7 +1364,7 @@ Rules:
 
 - A vending shop opens with the Vending skill and a cart. Items with `no_trade`, bound copies and unidentified copies cannot be vended.
 - A buying store buys items of rAthena's `BuyingStore` flag that its owner holds one of already. Mod items have no field for the flag yet.
-- `wa.testing` has `world:buy(player, shop, items)`, `world:get_mails(player)` and `world:vend(seller, buyer, lines)`. They are provisional.
+- `wa.testing` has `world:buy(player, shop, items)`, `world:get_mails(player)` and `world:vend(seller, buyer, lines)`.
 
 ### Entity queries
 
@@ -2067,10 +2103,10 @@ end
 | `world:get_monsters(monster)` | Handles of the living monsters of the map, of one ID or all, in the order they spawned. |
 | `world:get_announcements()` | Every line announced to the world or the map so far. |
 | `world:count_floor_items(item)` | How many of an item lie on the map. |
-| `world:chat(player, text, { channel, to })` | Provisional. The player says a line, as a client's chat: `channel` is `"public"` (the default), `"whisper"` with `to`, or a channel's name. It passes the mute, the filter and the hooks, then the `chat` event runs. |
-| `world:get_chat(player)` | Provisional. The chat lines the player got so far, each `{ channel, from, text }`: `channel` is `"public"`, `"whisper"`, `"system"`, or a channel's name with its `#`. |
+| `world:chat(player, text, { channel, to })` | The player says a line, as a client's chat: `channel` is `"public"` (the default), `"whisper"` with `to`, or a channel's name. It passes the mute, the filter and the hooks, then the `chat` event runs. |
+| `world:get_chat(player)` | The chat lines the player got so far, each `{ channel, from, text }`: `channel` is `"public"`, `"whisper"`, `"system"`, or a channel's name with its `#`. |
 
-The last five, and world events in test worlds, were added in phase 3 step 6 (proposal 0002, review decisions 16 and 17). A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
+The last five, and world events in test worlds, were added in phase 3 step 6 (proposal 0002, review decisions 16 and 17). `world:chat`, `world:get_chat`, `world:trade`, `world:close_storage`, `world:buy`, `world:get_mails` and `world:vend` came with phase 5, and review decision 32 made them stable. A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
 | `testing.expect(value)` | Checks a value with `.to_be(x)`, `.to_equal(table)` (deep), `.to_contain(text_or_value)`, `.to_be_true()`, `.to_be_false()`, `.to_be_nil()`, or `.to_fail_with(text)` for a function that should raise an error containing the text. |
 
 A failed check stops the case and prints the file and line of the check. A case also fails when the server logs a warning that names the mod, such as a handler that failed. `wactl mod test` exits with status 1 when any case fails, so CI can run it.

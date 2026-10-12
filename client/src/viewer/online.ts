@@ -81,6 +81,7 @@ import {
   stack,
   stackRolls,
 } from './inventory';
+import { playerLimitsOf } from './limits';
 import { bodyLook, cartLook, companionLook, mountedBody } from './mounts';
 import { appearance } from './options';
 import nearest, { type Target } from './pick';
@@ -490,6 +491,11 @@ export default class Online {
     | undefined;
   /** Called with the player's currencies, which replace the ones before. */
   onCurrencies: ((currencies: CurrencyBalance[]) => void) | undefined;
+  /**
+   * Called with the player's values of the limits it holds, such as
+   * inventory_slots, at login and after a script changes one.
+   */
+  onPlayerLimits: ((limits: ReadonlyMap<string, number>) => void) | undefined;
   /** Called with the player's mails, newest first, as MailBox. */
   onMailBox:
     | ((mails: MailSummary[], size: number, sentToday: number, daily: number) => void)
@@ -1275,6 +1281,9 @@ export default class Online {
           this.onTradeResult?.(r.outcome, r.name, r.slot, r.message);
           break;
         }
+        case 'playerLimits':
+          this.onPlayerLimits?.(playerLimitsOf(e.body.value.limits));
+          break;
         case 'currencies':
           this.onCurrencies?.(
             e.body.value.currencies.map((c) => ({

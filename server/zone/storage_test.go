@@ -189,7 +189,6 @@ func TestStorageSlotsLimit(t *testing.T) {
 	// Lowering the limit deletes nothing: the storage keeps both stacks
 	// and takes no new one, but a stack may still grow.
 	r.Limits, _ = rules.LimitsOf(map[string]rules.RangeSet{"storage_slots": {Base: 1, HasBase: true}})
-	a.storage.size = 1
 	st := z.findStorage(a, nil)
 	st.Lock()
 	n := st.Used()

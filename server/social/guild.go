@@ -427,9 +427,11 @@ func ValidGuildName(name string) bool {
 	return name != "" && utf8.ValidString(name) && utf8.RuneCountInString(name) <= MaxGuildName
 }
 
-// GuildCreate makes a guild with a master, as guild_create and the char
-// server's mapif_parse_CreateGuild. The caller checks and takes the
-// Emperium. It returns the guild's ID, or 0 and why not.
+// GuildCreate makes a guild with a master from the client, as
+// guild_create and the char server's mapif_parse_CreateGuild. The caller
+// checks and takes the Emperium. The master gets guild_join with the
+// reason "create" (review decision 32). It returns the guild's ID, or 0
+// and why not.
 func (r *Registry) GuildCreate(master *Player, name string) (int64, GuildOutcome) {
 	name = trimName(name)
 	r.mu.Lock()
@@ -437,7 +439,9 @@ func (r *Registry) GuildCreate(master *Player, name string) (int64, GuildOutcome
 	id, o := r.guildCreate(master, name)
 	if o != GuildCreated {
 		guildResult(master, o, name)
+		return id, o
 	}
+	guildEvent(master, EventJoin, id, ReasonCreate)
 	return id, o
 }
 

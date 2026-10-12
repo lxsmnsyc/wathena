@@ -4,6 +4,7 @@
 --   	return (!basicskillcheck() || !(getskilllv("NV_BASIC") < 6 && getskilllv("SU_BASIC_SKILL") < 1));
 --   }
 local skills = require "wa.skills"
+local rules = require "wa.rules"
 
 local R = require "core.lib.rathena"
 local NV_BASIC = skills.id "NV_BASIC"
@@ -11,5 +12,5 @@ local SU_BASIC_SKILL = skills.id "SU_BASIC_SKILL"
 
 return function(player, conversation, npc, ...)
   local args = table.pack(...)
-  do return (((not R.basic_skill_check()) or (not ((player:get_skill_level(NV_BASIC) < 6) and (player:get_skill_level(SU_BASIC_SKILL) < 1)))) and 1 or 0) end
+  do return (((not rules.get("basic_skill_check")) or (not ((player:get_skill_level(NV_BASIC) < 6) and (player:get_skill_level(SU_BASIC_SKILL) < 1)))) and 1 or 0) end
 end

@@ -113,5 +113,27 @@ return function()
     new_player(world, {})
     expect(rules.limits.storage_slots).to_be(600)
     expect(rules.limits.cart_slots).to_be(100)
+    local base, max = rules.get_limit("inventory_slots")
+    expect(base).to_be(100)
+    expect(max).to_be(200)
+    expect(rules.get("basic_skill_check")).to_be_true()
+    expect(rules.get("block_list_refuses_trade")).to_be_true()
+    expect(rules.is("item_rolls")).to_be_false()
+    expect(function() rules.get("no_such_rule") end).to_fail_with("there is no rule \"no_such_rule\"")
+  end)
+
+  testing.case("the banker sells inventory slots up to the max", function(world)
+    local player = new_player(world, { zeny = 100000 })
+    expect(world:talk(player, "Banker#prontera", { 4 })).to_contain("Your bag holds 110 items now.")
+    expect(player.zeny).to_be(95000)
+    -- player:expand stops at the limit's max and returns the new value.
+    expect(player:expand("inventory_slots", 1000)).to_be(200)
+    expect(world:talk(player, "Banker#prontera", { 4 })).to_contain("Your bag cannot grow any more.")
+    expect(player.zeny).to_be(95000)
+    -- A negative amount lowers the slots, not below the base.
+    expect(player:expand("inventory_slots", -1000)).to_be(100)
+    -- The account's storage is at its max, 600, by default.
+    expect(player:expand("storage_slots", 50)).to_be(600)
+    expect(function() player:expand("party_members", 1) end).to_fail_with("not a limit a player expands")
   end)
 end

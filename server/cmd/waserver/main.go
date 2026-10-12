@@ -876,7 +876,7 @@ func (c storeCommitter) CommitWrites(saves []zone.CommitSave, storages []zone.St
 	writes := make([]store.StorageWrite, 0, len(storages))
 	for _, s := range storages {
 		writes = append(writes, store.StorageWrite{Guild: s.Guild, Key: s.Key, Base: s.Base, Cur: s.Cur,
-			CurrencyBase: s.CurrencyBase, Currencies: s.Currencies, HasCurrencies: s.HasCurrencies})
+			CurrencyBase: s.CurrencyBase, Currencies: s.Currencies, HasCurrencies: s.HasCurrencies, SizeBase: s.SizeBase, Size: s.Size})
 	}
 	units := make([]store.EventUnit, 0, len(w.Events))
 	for _, u := range w.Events {

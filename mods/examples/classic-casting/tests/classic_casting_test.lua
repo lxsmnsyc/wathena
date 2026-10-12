@@ -8,6 +8,7 @@ local testing = require "wa.testing"
 local items = require "wa.items"
 local jobs = require "wa.jobs"
 local monsters = require "wa.monsters"
+local rules = require "wa.rules"
 local skills = require "wa.skills"
 
 local FIRE_BOLT = skills.id "MG_FIREBOLT"
@@ -33,5 +34,17 @@ return function()
     -- Renewal's would deal 90% to water 1, three fifths of earth's.
     testing.expect(wet > 0).to_be_true()
     testing.expect(math.abs(wet * 3 - dry) <= 3).to_be_true()
+  end)
+
+  testing.case("scripts read the ruleset's flags", function()
+    -- rules.is is true at a flag's renewal value or at on.
+    testing.expect(rules.is("cast_time")).to_be_false()
+    testing.expect(rules.is("element_table")).to_be_false()
+    testing.expect(rules.is("skill_cooldown")).to_be_false()
+    testing.expect(rules.is("aspd")).to_be_true()
+    -- A skill_rebalance flag is the one the skill follows: its own, or
+    -- the base.
+    testing.expect(rules.is("skill_rebalance.HW_MAGICPOWER")).to_be_false()
+    testing.expect(rules.is("skill_rebalance.MG_FIREBALL")).to_be_true()
   end)
 end

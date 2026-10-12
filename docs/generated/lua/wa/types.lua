@@ -225,6 +225,12 @@
 ---| "party"
 ---| "guild"
 
+---A limit that one player holds, which player:expand changes.
+---@alias wa.ExpandableLimit
+---| "inventory_slots"
+---| "storage_slots"
+---| "cart_slots"
+
 ---A monster's skill state, in the words of rAthena's mob_skill_db.
 ---@alias wa.MonsterState
 ---| "idle"
@@ -566,6 +572,14 @@ function wa_Player:jail(minutes, reason) end
 ---Needs the permission `player.sanction`.
 ---@return boolean
 function wa_Player:unmute() end
+
+---Raises one of the player's limits by amount, up to the limit's max, and returns the new value, as rAthena's inventory expansion. A negative amount lowers it, not below the base, and deletes nothing. inventory_slots and cart_slots save with the character, storage_slots with the account, whose characters share it. 0 changes nothing and returns the current value.
+---
+---Needs the permission `player.expand_limits`.
+---@param limit wa.ExpandableLimit The limit to change.
+---@param amount integer -10,000 to 10,000. A negative amount lowers the limit.
+---@return integer
+function wa_Player:expand(limit, amount) end
 
 ---Lowers one stat, to 1 by default, and refunds what raising it cost, by rAthena's cost table. Returns false when the stat is not above the value.
 ---@param stat "str"|"agi"|"vit"|"int"|"dex"|"luk"
@@ -997,7 +1011,7 @@ local wa_PartyOptions = {}
 ---@class wa.PartyMembership
 ---@field party wa.Party The party. After it broke up, its fields still read.
 ---@field player wa.Player The player who joined or left.
----@field reason "invited"|"left"|"expelled"|"disbanded"|"script" Why: an accepted invite, a leave, an expel, a break up, or a wa.parties call.
+---@field reason "invited"|"create"|"left"|"expelled"|"disbanded"|"script" Why: an accepted invite, a party the player made from the client, a leave, an expel, a break up, or a wa.parties call.
 local wa_PartyMembership = {}
 
 ---The object of the party_change event.
@@ -1125,7 +1139,7 @@ local wa_GuildPosition = {}
 ---@class wa.GuildMembership
 ---@field guild wa.Guild The guild. After it broke up, its fields still read.
 ---@field player wa.Player The player who joined or left.
----@field reason "invited"|"left"|"expelled"|"disbanded"|"script" Why: an accepted invite, a leave, an expel, a break up, or a wa.guilds call.
+---@field reason "invited"|"create"|"left"|"expelled"|"disbanded"|"script" Why: an accepted invite, a guild the player made from the client, a leave, an expel, a break up, or a wa.guilds call.
 local wa_GuildMembership = {}
 
 ---The object of the guild_change event.
@@ -1189,8 +1203,6 @@ local wa_ChatOptions = {}
 ---The options of world:chat.
 ---
 ---It exists only in tests that wactl mod test runs.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@class wa.ChatTestOptions
 ---@field channel string? "public", the default, "whisper", or a channel's name.
 ---@field to string? A whisper's target name.
@@ -1199,8 +1211,6 @@ local wa_ChatTestOptions = {}
 ---A chat line a test player got, from world:get_chat.
 ---
 ---It exists only in tests that wactl mod test runs.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@class wa.HeardLine
 ---@field channel string "public", "whisper", "system", or a channel's name with its #.
 ---@field from string The speaker's name, or empty for a system line or a channel's own line.
@@ -1296,23 +1306,17 @@ function wa_TestWorld:get_announcements() end
 function wa_TestWorld:count_floor_items(item) end
 
 ---The player says a line, as a client's chat: it passes the mute, the chat filter and the chat hooks, then the chat event runs.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@param player wa.Player A player handle.
 ---@param text string 1 to 255 characters.
 ---@param options? wa.ChatTestOptions
 function wa_TestWorld:chat(player, text, options) end
 
 ---The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@param player wa.Player A player handle.
 ---@return wa.HeardLine[]
 function wa_TestWorld:get_chat(player) end
 
 ---Runs a whole trade, as two clients would: a asks, b accepts, both offer, lock and confirm. Returns true when it completed, or false and why: the trade hook's message, or an outcome such as "restricted" or "bound". A refused offer ends the trade. Trading needs Basic Skill level 1, which a new player from world:new_player lacks: give it skills = { [skills.id("NV_BASIC")] = 9 }.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@param a wa.Player
 ---@param b wa.Player Steps next to a.
 ---@param offer_a? wa.TradeOffer
@@ -1321,14 +1325,10 @@ function wa_TestWorld:get_chat(player) end
 function wa_TestWorld:trade(a, b, offer_a, offer_b) end
 
 ---Closes the player's storage window, as the client's close button.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@param player wa.Player A player handle.
 function wa_TestWorld:close_storage(player) end
 
 ---Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as "out_of_stock", "not_enough_items" or "not_enough_currency".
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@param player wa.Player A player handle.
 ---@param shop string A shop's full record name of data/npcs.yml, such as example.arena:Prize Desk.
 ---@param items table<integer, integer> Item IDs and the amount of each to buy.
@@ -1336,15 +1336,11 @@ function wa_TestWorld:close_storage(player) end
 function wa_TestWorld:buy(player, shop, items) end
 
 ---The player's mails, oldest first, after the mail sent so far arrived.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@param player wa.Player A player handle.
 ---@return wa.TestMail[]
 function wa_TestWorld:get_mails(player) end
 
 ---Runs a whole vending sale, as two clients would: the seller puts each line's items in its cart and opens a shop, and the buyer buys. The shop closes after it. Returns true when the sale went through, or false and why: the vend hook's message, or an outcome such as "not_enough_zeny".
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@param seller wa.Player Gets a cart and the Vending skill when it lacks them.
 ---@param buyer wa.Player Steps next to the seller.
 ---@param lines wa.TestVendLine[]
@@ -1636,8 +1632,6 @@ local wa_GiveItemOptions = {}
 ---A mail as world:get_mails shows it.
 ---
 ---It exists only in tests that wactl mod test runs.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@class wa.TestMail
 ---@field from string
 ---@field title string
@@ -1650,8 +1644,6 @@ local wa_TestMail = {}
 ---One line of world:vend.
 ---
 ---It exists only in tests that wactl mod test runs.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@class wa.TestVendLine
 ---@field item integer An item the seller holds.
 ---@field amount integer How many go on sale.

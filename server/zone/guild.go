@@ -736,6 +736,10 @@ type StorageCommit struct {
 	// wrote, when HasCurrencies is set. Key is the account's storage.
 	CurrencyBase, Currencies map[uint32]int64
 	HasCurrencies            bool
+	// Size is the slots a script expanded an account's storage or a cart
+	// to, or 0 for none, and SizeBase what the last commit wrote (review
+	// decision 32). The store writes it when they differ.
+	SizeBase, Size int
 }
 
 // storageCommits are the guild storages the transfers since the last

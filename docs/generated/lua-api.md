@@ -29,7 +29,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.channels`](#wachannels) | Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world. |
 | [`wa.parties`](#waparties) | Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do. |
 | [`wa.guilds`](#waguilds) | Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later. |
-| [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decision 27). Read-only. |
+| [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decisions 27 and 32). Read-only. Its calls need no permission. An unknown name raises an error that lists the valid names. |
 | [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
 | [`wa.integers`](#waintegers) | Integer division that rounds as C does, toward zero, for scripts converted from rAthena. |
@@ -534,11 +534,35 @@ Permission: `game.read`.
 local rules = require "wa.rules"
 ```
 
-The world's ruleset (strategy section 3.6, review decision 27). Read-only.
+The world's ruleset (strategy section 3.6, review decisions 27 and 32). Read-only. Its calls need no permission. An unknown name raises an error that lists the valid names.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `limits` | `wa.Limits` | The limits that rAthena compiles in, as the ruleset sets them, such as rules.limits.party_members. |
+| `limits` | `wa.Limits` | The limits that rAthena compiles in, as the ruleset sets them, such as rules.limits.party_members. Each is the limit's base. |
+
+#### `rules.is(flag) → boolean`
+
+Whether a ruleset flag is on: true at its renewal value or at on. A skill_rebalance flag is the flag the skill follows: its own, or the base.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `flag` | `string` | A ruleset flag, such as "cast_time", or "skill_rebalance.<skill>" for a rebalanced skill or a song, such as "skill_rebalance.MG_FIREBALL". |
+
+#### `rules.get(name) → integer|boolean`
+
+The value of a ruleset rule: a boolean for a rule that is yes or no, else an integer.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A ruleset rule, such as "basic_skill_check" or "party_share_level". |
+
+#### `rules.get_limit(name) → integer, integer`
+
+A limit's base, what a player or guild starts with, and its max, where expansions stop. rules.limits holds the base too.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A limit, such as "inventory_slots". |
 
 ### wa.variables
 
@@ -1488,6 +1512,17 @@ Ends the player's mute. Returns false when it was not muted.
 
 Permission: `player.sanction`.
 
+#### `player:expand(limit, amount) → integer`
+
+Raises one of the player's limits by amount, up to the limit's max, and returns the new value, as rAthena's inventory expansion. A negative amount lowers it, not below the base, and deletes nothing. inventory_slots and cart_slots save with the character, storage_slots with the account, whose characters share it. 0 changes nothing and returns the current value.
+
+Permission: `player.expand_limits`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `limit` | `wa.ExpandableLimit` | The limit to change. |
+| `amount` | `integer` | -10,000 to 10,000. A negative amount lowers the limit. |
+
 #### `player:reset_stat(stat, options?) → boolean`
 
 Lowers one stat, to 1 by default, and refunds what raising it cost, by rAthena's cost table. Returns false when the stat is not above the value.
@@ -2098,7 +2133,7 @@ The object of the party_join and party_leave events.
 |---|---|---|
 | `party` | `wa.Party` | The party. After it broke up, its fields still read. |
 | `player` | `wa.Player` | The player who joined or left. |
-| `reason` | `"invited"\|"left"\|"expelled"\|"disbanded"\|"script"` | Why: an accepted invite, a leave, an expel, a break up, or a wa.parties call. |
+| `reason` | `"invited"\|"create"\|"left"\|"expelled"\|"disbanded"\|"script"` | Why: an accepted invite, a party the player made from the client, a leave, an expel, a break up, or a wa.parties call. |
 
 ### wa.PartyChange
 
@@ -2273,7 +2308,7 @@ The object of the guild_join and guild_leave events.
 |---|---|---|
 | `guild` | `wa.Guild` | The guild. After it broke up, its fields still read. |
 | `player` | `wa.Player` | The player who joined or left. |
-| `reason` | `"invited"\|"left"\|"expelled"\|"disbanded"\|"script"` | Why: an accepted invite, a leave, an expel, a break up, or a wa.guilds call. |
+| `reason` | `"invited"\|"create"\|"left"\|"expelled"\|"disbanded"\|"script"` | Why: an accepted invite, a guild the player made from the client, a leave, an expel, a break up, or a wa.guilds call. |
 
 ### wa.GuildChange
 
@@ -2506,8 +2541,6 @@ How many of the item lie on the map, with drops about to fall.
 
 The player says a line, as a client's chat: it passes the mute, the chat filter and the chat hooks, then the chat event runs.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
@@ -2518,8 +2551,6 @@ Provisional: not reviewed in proposal 0002 yet.
 
 The chat lines the player got so far, oldest first: local chat, whispers, channel lines and system lines.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
@@ -2527,8 +2558,6 @@ Provisional: not reviewed in proposal 0002 yet.
 #### `testWorld:trade(a, b, offer_a?, offer_b?) → boolean, string?`
 
 Runs a whole trade, as two clients would: a asks, b accepts, both offer, lock and confirm. Returns true when it completed, or false and why: the trade hook's message, or an outcome such as "restricted" or "bound". A refused offer ends the trade. Trading needs Basic Skill level 1, which a new player from world:new_player lacks: give it skills = { [skills.id("NV_BASIC")] = 9 }.
-
-Provisional: not reviewed in proposal 0002 yet.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2541,8 +2570,6 @@ Provisional: not reviewed in proposal 0002 yet.
 
 Closes the player's storage window, as the client's close button.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
@@ -2550,8 +2577,6 @@ Provisional: not reviewed in proposal 0002 yet.
 #### `testWorld:buy(player, shop, items) → boolean, string?`
 
 Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as "out_of_stock", "not_enough_items" or "not_enough_currency".
-
-Provisional: not reviewed in proposal 0002 yet.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2563,8 +2588,6 @@ Provisional: not reviewed in proposal 0002 yet.
 
 The player's mails, oldest first, after the mail sent so far arrived.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
@@ -2572,8 +2595,6 @@ Provisional: not reviewed in proposal 0002 yet.
 #### `testWorld:vend(seller, buyer, lines) → boolean, string?`
 
 Runs a whole vending sale, as two clients would: the seller puts each line's items in its cart and opens a shop, and the buyer buys. The shop closes after it. Returns true when the sale went through, or false and why: the vend hook's message, or an outcome such as "not_enough_zeny".
-
-Provisional: not reviewed in proposal 0002 yet.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -3613,6 +3634,12 @@ A hook name of wa.hooks.
 Who a bound copy is bound to.
 
 `account`, `character`, `party`, `guild`
+
+### wa.ExpandableLimit
+
+A limit that one player holds, which player:expand changes.
+
+`inventory_slots`, `storage_slots`, `cart_slots`
 
 ### wa.MonsterState
 

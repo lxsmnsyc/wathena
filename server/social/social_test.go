@@ -86,6 +86,12 @@ func TestCreateInviteAccept(t *testing.T) {
 	if ev.Event != (Event{Kind: EventJoin, Party: id, Reason: ReasonInvited}) {
 		t.Errorf("Bob's event %+v", ev.Event)
 	}
+	// The leader who made the party gets party_join with "create" (review
+	// decision 32).
+	ev, _ = w.boxes["Ann"].last(NoticeEvent)
+	if ev.Event != (Event{Kind: EventJoin, Party: id, Reason: ReasonCreate}) {
+		t.Errorf("Ann's event %+v", ev.Event)
+	}
 	// Only the leader invites; a member cannot.
 	if o := w.r.Invite(w.ps["Bob"], "Cid"); o != PartyNotLeader {
 		t.Errorf("Bob invites: %v", o)

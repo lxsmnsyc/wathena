@@ -234,6 +234,10 @@ type StorageWrite struct {
 	// wrote, when HasCurrencies is set (market.go).
 	CurrencyBase, Currencies map[uint32]int64
 	HasCurrencies            bool
+	// Size is the slots a script expanded an account's storage or a cart
+	// to, 0 for none, and SizeBase what the last commit wrote (review
+	// decision 32). The commit writes it when they differ.
+	SizeBase, Size int
 }
 
 // writeStorages writes guild storages in a commit's transaction. A guild

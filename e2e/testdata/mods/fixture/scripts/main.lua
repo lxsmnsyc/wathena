@@ -23,6 +23,8 @@
 --   - "!stock <item> <n>" sets an item's stock at the Exchange.
 --   - "!event start <name>" and "!event stop <name>" start and stop a
 --     world event of data/events.yml, with world_events.
+--   - "!expand <limit> <amount>" changes one of the speaker's limits with
+--     player:expand and answers with the new value.
 -- Each command but "!guild level" answers with a system line that starts
 -- with "e2e <name>:". A trade hook and a vend hook refuse Contraband. The
 -- trade, vend and buying_store_sale events tell both players what changed
@@ -133,6 +135,9 @@ local commands = {
   end,
   stock = function(_, words)
     return world.get_shop("Exchange#e2e"):set_stock(items.id(words[2]), tonumber(words[3]))
+  end,
+  expand = function(player, words)
+    return player:expand(words[2], tonumber(words[3]))
   end,
   event = function(_, words)
     if words[2] == "start" then

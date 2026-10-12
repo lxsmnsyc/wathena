@@ -13,25 +13,27 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
-## Where work stopped (2026-10-05)
+## Where work stopped (2026-10-12)
 
-Work paused on 2026-10-05 and resumes the week after.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review.
 
 Done:
 
 - Phases 0a to 4. The Lua API is 1.0.
 - Phase 5, all 8 steps (section 15, "Phase 5 in full"). The 30-minute exit check passed: bots traded, stored, mailed, vended and bought at the same time, with disconnects and a restart, and every item, zeny, currency and serial total held.
 - Test speed work (decision 0022). The full `scripts/check.sh` run takes about 12 minutes plus e2e.
+- The phase 5 review. Review decision 32 accepted the details to review of next steps 11 to 17, and next step 18 built the API it added ([decision 0027](decisions/0027-rule-reading-and-limits.md)):
+  - `rules.is`, `rules.get` and `rules.get_limit`.
+  - `player:expand` with the permission `player.expand_limits`, saved with the character or the account, and `PlayerLimits` for the client.
+  - `party_join` and `guild_join` with the reason `"create"` for a player who makes a party or guild from the client.
+  - The ruleset rule `block_list_refuses_trade`, on by default.
+  - The `wa.testing` helpers of phase 5 are stable.
+  - The converter reads the rule of `basicskillcheck` and the flags of `checkre(1)` to `checkre(5)`.
 
-Open review items. Each step lists them in proposal 0002, "Next steps":
+Open review items:
 
-- Step 2, chat: core channel names, silent hook blocks, whisper bypasses, sanction rules, `world:chat` and `world:get_chat`.
-- Step 3, rulesets: `rules.is`, rebalance record swaps, and the busy message parity fix.
-- Step 4, parties: `wa.rules`, `share` as `{ base, job }`, no `party_join` event for a self-made party, 1,024 disbanded parties kept readable, and block lists stopping friend requests.
-- Step 5, guilds: the `wa.internal` core-only module, guild commands that need API, a guild master who cannot leave, and guild skill checks on the server.
-- Step 6, storage and trade: next step 15.
-- Step 7, mail, vending and shops: next step 16.
-- Step 8, automatic events: next step 17.
+- Next step 18's details to review, in proposal 0002, "Next steps".
+- The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
 
@@ -43,7 +45,7 @@ Known issues:
 
 Next:
 
-1. Go through the open review items above.
+1. Go through the open review items above, starting with the converter review.
 2. Start phase 6, the web client tier 1 (section 15): the admin tools, the account page actions, mod assets, touch input, and a check that a player can do every tier 1 activity in the web client.
 3. Phase 7, procedural mode, is the largest phase left.
 

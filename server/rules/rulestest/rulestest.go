@@ -36,6 +36,7 @@ func Mixes() []*rules.Rules {
 				EnsembleSongs: coin(), Homunculus: coin(), BusyRestrictions: coin(), FourthJobTraits: coin() && base,
 				ItemRolls: coin(), Skills: map[int]bool{},
 				Limits: rules.DefaultLimits(), Party: rules.DefaultParty(), Guild: rules.DefaultGuild(), Items: rules.DefaultItems(), Market: rules.DefaultMarket(),
+				Values: rules.DefaultValues(),
 			}
 			for _, id := range ids {
 				if rnd.IntN(4) == 0 {

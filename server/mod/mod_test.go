@@ -593,7 +593,7 @@ func TestSampleMod(t *testing.T) {
 		"example.desperado":    {"player.give_items"},
 		"example.party-hall":   {"party.manage"},
 		"example.guild-hall":   {"guild.manage"},
-		"example.bank":         {"player.give_items", "rules.override"},
+		"example.bank":         {"player.give_items", "rules.override", "player.expand_limits"},
 		"example.arena":        {"mail.send", "rules.override"},
 	}})
 	if err != nil {

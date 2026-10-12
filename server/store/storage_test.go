@@ -138,3 +138,74 @@ func TestDevCharacterSkills(t *testing.T) {
 		t.Errorf("loaded %v %v %v", got.Skills, got.Blocks, err)
 	}
 }
+
+// TestStorageSizes saves the sizes player:expand sets (review decision
+// 32): an account's storage and a cart. Each loads back when the storage
+// comes into memory again, and a size of 0 deletes the row.
+func TestStorageSizes(t *testing.T) {
+	admin, game := migrated(t)
+	ctx := timeout(t)
+	s := newStore(t, game, store.Options{RetryDelay: time.Second})
+	id, err := s.DevCharacter(ctx, newCharacter("Alice"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, _, err := s.Load(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reg := storage.NewRegistry(s)
+	keys := storage.Keys(&c.Info, nil)
+	acquire := func() []*storage.Storage {
+		t.Helper()
+		sts, err := reg.Acquire(ctx, keys)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return sts
+	}
+	sizes := func(sts []*storage.Storage) [2]int {
+		var out [2]int
+		for i, st := range sts {
+			st.Lock()
+			out[i] = st.Size()
+			st.Unlock()
+		}
+		return out
+	}
+	commit := func(sts []*storage.Storage, account, cart int) {
+		t.Helper()
+		var ws []store.StorageWrite
+		for i, n := range []int{account, cart} {
+			st := sts[i]
+			st.Lock()
+			st.SetSize(n)
+			base, cur := st.Commit()
+			sb, sc := st.CommitSize()
+			st.Unlock()
+			ws = append(ws, store.StorageWrite{Key: st.Key(), Base: base, Cur: cur, SizeBase: sb, Size: sc})
+		}
+		s.CommitWith(nil, ws, transfer.Logs{})
+		for _, st := range sts {
+			reg.Release(st)
+		}
+	}
+	sts := acquire()
+	if got := sizes(sts); got != [2]int{0, 0} {
+		t.Fatalf("new sizes %v", got)
+	}
+	commit(sts, 650, 120)
+	sts = acquire()
+	if got := sizes(sts); got != [2]int{650, 120} {
+		t.Fatalf("saved sizes %v", got)
+	}
+	commit(sts, 0, 130)
+	sts = acquire()
+	if got := sizes(sts); got != [2]int{0, 130} {
+		t.Fatalf("sizes after lowering %v", got)
+	}
+	var rows int
+	if err := admin.QueryRow(ctx, `SELECT count(*) FROM storage_sizes WHERE holder = 'account'`).Scan(&rows); err != nil || rows != 0 {
+		t.Errorf("account storage size rows %d, %v", rows, err)
+	}
+}

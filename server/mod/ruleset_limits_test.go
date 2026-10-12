@@ -1,6 +1,7 @@
 package mod
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -141,6 +142,7 @@ var boundTests = map[string][]string{
 	"guild_alliance_onlygm":       {"server/social:TestGuildAllianceOnlyMaster"},
 	"max_cart_weight":             {"server/zone:TestCartWeight"},
 	"basic_skill_check":           {"server/zone:TestTradeBasicSkill"},
+	"block_list_refuses_trade":    {"server/zone:TestTradeBlockListRule"},
 	"mail_items":                  {"server/zone:TestMailSendRules"},
 	"mailbox":                     {"server/zone:TestMailboxLimit"},
 	"vending_tax":                 {"server/zone:TestVendingTax"},
@@ -189,5 +191,23 @@ func TestEveryLimitAndRuleTested(t *testing.T) {
 				t.Errorf("%s: %s does not exist", b.Name, ref)
 			}
 		}
+	}
+}
+
+// TestFlagNamesRead checks that rules.FlagNames, which rules.is reads,
+// names every ruleset flag a mod may set, and that each reads.
+func TestFlagNamesRead(t *testing.T) {
+	if got := slices.Sorted(maps.Keys(flagValues)); !slices.Equal(got, rules.FlagNames) {
+		t.Errorf("rules.FlagNames %v, the flags %v", rules.FlagNames, got)
+	}
+	r := rules.Base(true)
+	for _, name := range rules.FlagNames {
+		on, ok := r.Is(name)
+		if !ok || on != (name != "item_rolls") {
+			t.Errorf("%s: %v, %v on the renewal base", name, on, ok)
+		}
+	}
+	if _, ok := r.Is(skillRebalance + "NOT_A_SKILL"); ok {
+		t.Error("an unknown skill_rebalance flag reads")
 	}
 }

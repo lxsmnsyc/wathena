@@ -132,15 +132,13 @@ func (z *Zone) fixRolls(p *Player) {
 }
 
 // restoreInventory fills an inventory from a saved character. Its size is
-// the saved one, at most the inventory_slots limit's max. It holds more
-// slots when the character holds items in later slots: lowering a limit
-// deletes nothing. Slots past the engine's ceiling are left out.
+// the saved one, within the inventory_slots limit's base and max (review
+// decision 32). It holds more slots when the character holds items in
+// later slots: lowering a limit deletes nothing. Slots past the engine's
+// ceiling are left out.
 func restoreInventory(t *item.Table, c *character.Character, l rules.Limits) *item.Inventory {
-	size := c.InventorySize
-	if size <= 0 {
-		size = l.InventorySlots
-	}
-	inv := item.NewInventoryOf(size, l.MaxOf("inventory_slots"))
+	r, _ := l.RangeOf("inventory_slots")
+	inv := item.NewInventoryOf(r.Clamp(c.InventorySize), l.MaxOf("inventory_slots"))
 	for _, it := range c.Items {
 		if it.Slot >= 0 && it.Slot < item.MaxInventory {
 			inv.Grow(it.Slot + 1)

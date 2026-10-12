@@ -32,8 +32,23 @@ import (
 type openStorage struct {
 	st *storage.Storage
 	// rec is the extra storage's record, or nil for the account's.
-	rec  *storage.Record
-	size int
+	rec *storage.Record
+}
+
+// storageSize is the slots of a personal storage: an extra storage's
+// record's, or the account's storage_slots with its expansion (review
+// decision 32). The lock must be held.
+func (z *Zone) storageSize(st *storage.Storage, rec *storage.Record) int {
+	if rec != nil {
+		return rec.Slots
+	}
+	return z.limitRange("storage_slots").Clamp(st.Size())
+}
+
+// cartSize is the slots of a cart: cart_slots with its expansion. The
+// lock must be held.
+func (z *Zone) cartSize(st *storage.Storage) int {
+	return z.limitRange("cart_slots").Clamp(st.Size())
 }
 
 // storageRegistry is the world's storage registry, made on first use for
@@ -132,7 +147,7 @@ func (z *Zone) cartMaxWeight() int {
 // prepareCart sets up the cart box for a move or a list. The lock must
 // be held.
 func (z *Zone) prepareCart(st *storage.Storage) *transfer.ListBox {
-	return st.Prepare(z.Items, z.limits().CartSlots, max(z.cartMaxWeight(), 1))
+	return st.Prepare(z.Items, z.cartSize(st), max(z.cartMaxWeight(), 1))
 }
 
 // storageItems lists a box's filled slots as the client shows them.
@@ -172,12 +187,10 @@ func (z *Zone) openPersonalStorage(p *Player, rec *storage.Record) bool {
 		// storage_flag is set: rAthena returns without a message.
 		return false
 	}
-	var st *storage.Storage
-	size := z.limits().StorageSlots
 	name, display := "", "Storage"
-	st = z.findStorage(p, rec)
+	st := z.findStorage(p, rec)
 	if rec != nil {
-		size, name, display = rec.Slots, rec.Name, rec.DisplayName
+		name, display = rec.Name, rec.DisplayName
 	}
 	if st == nil {
 		return false
@@ -186,8 +199,9 @@ func (z *Zone) openPersonalStorage(p *Player, rec *storage.Record) bool {
 		p.pending = append(p.pending, storageResult(wathenav1.StorageOutcome_STORAGE_OUTCOME_IN_USE))
 		return false
 	}
-	p.storage = &openStorage{st: st, rec: rec, size: size}
+	p.storage = &openStorage{st: st, rec: rec}
 	st.Lock()
+	size := z.storageSize(st, rec)
 	box := st.Prepare(z.Items, size, 0)
 	items := z.storageItems(box)
 	st.Unlock()
@@ -217,10 +231,10 @@ func (z *Zone) sendCart(p *Player) {
 	}
 	st.Lock()
 	box := z.prepareCart(st)
-	items, weight := z.storageItems(box), box.Weight
+	items, weight, size := z.storageItems(box), box.Weight, box.Size
 	st.Unlock()
 	z.sendStorageList(p, wathenav1.StorageOpen_builder{Kind: wathenav1.StorageKind_STORAGE_KIND_CART,
-		Size: uint32(z.limits().CartSlots), DisplayName: "Cart", // #nosec G115 -- at most the cart ceiling.
+		Size: uint32(size), DisplayName: "Cart", // #nosec G115 -- at most the cart ceiling.
 		Weight: uint32(max(weight, 0)), MaxWeight: uint32(max(z.cartMaxWeight(), 0))}.Build(), items) // #nosec G115 -- weights fit.
 }
 
@@ -388,7 +402,7 @@ func (z *Zone) lockEnds(p *Player, ends ...*end) (unlock func(), ok bool) {
 				unlock()
 				return nil, false
 			}
-			e.box = e.st.Prepare(z.Items, p.storage.size, 0)
+			e.box = e.st.Prepare(z.Items, z.storageSize(e.st, p.storage.rec), 0)
 		}
 	}
 	return unlock, true
@@ -531,6 +545,9 @@ func (z *Zone) personalCommits() []StorageCommit {
 		if st.Key().HoldsCurrencies() {
 			c.CurrencyBase, c.Currencies = st.CommitCurrencies()
 			c.HasCurrencies = true
+		}
+		if st.Key().Expandable() {
+			c.SizeBase, c.Size = st.CommitSize()
 		}
 		st.Unlock()
 		out = append(out, c)

@@ -347,7 +347,7 @@ func (s *Server) Restart() {
 // commands one after another.
 const configYAML = `mods:
   approve:
-    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction, guild.manage, rules.override, mail.send, currencies.modify, shops.modify, events.schedule, events.control]
+    e2e.fixture: [player.give_items, player.give_zeny, player.warp, player.sanction, guild.manage, rules.override, mail.send, currencies.modify, shops.modify, events.schedule, events.control, player.expand_limits]
 chat:
   new_character_period: 0s
   burst: 100

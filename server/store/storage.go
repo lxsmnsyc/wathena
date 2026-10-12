@@ -65,6 +65,49 @@ func (s *Store) LoadStorage(ctx context.Context, k storage.Key) ([]character.Ite
 	return out, nil
 }
 
+// LoadStorageSize reads the slots a script expanded an account's storage
+// or a cart to, or 0 for none (review decision 32). It waits for the
+// storage's commits that are not written yet.
+func (s *Store) LoadStorageSize(ctx context.Context, k storage.Key) (int, error) {
+	if !k.Saved() || !k.Expandable() {
+		return 0, nil
+	}
+	if err := s.storageIdle(ctx, k); err != nil {
+		return 0, err
+	}
+	id := pgtype.Int8{Int64: k.ID, Valid: true}
+	var rows []int
+	var err error
+	if k.Holder == storage.HolderAccount {
+		rows, err = s.q.AccountStorageSize(ctx, id)
+	} else {
+		rows, err = s.q.CartSize(ctx, id)
+	}
+	if err != nil || len(rows) == 0 {
+		return 0, err
+	}
+	return rows[0], nil
+}
+
+// writeStorageSize writes the size of an account's storage or a cart
+// when a commit changed it. A size of 0 deletes the row.
+func writeStorageSize(ctx context.Context, q *db.Queries, w *StorageWrite) error {
+	k := w.Key
+	if !k.Saved() || !k.Expandable() || w.Size == w.SizeBase {
+		return nil
+	}
+	id := pgtype.Int8{Int64: k.ID, Valid: true}
+	switch {
+	case k.Holder == storage.HolderAccount && w.Size <= 0:
+		return q.DeleteAccountStorageSize(ctx, id)
+	case k.Holder == storage.HolderAccount:
+		return q.SetAccountStorageSize(ctx, db.SetAccountStorageSizeParams{AccountID: id, Slots: w.Size})
+	case w.Size <= 0:
+		return q.DeleteCartSize(ctx, id)
+	}
+	return q.SetCartSize(ctx, db.SetCartSizeParams{CharacterID: id, Slots: w.Size})
+}
+
 // storageIdle waits until no commit of a storage waits or runs.
 func (s *Store) storageIdle(ctx context.Context, k storage.Key) error {
 	for {
@@ -98,6 +141,9 @@ func writePersonalStorages(ctx context.Context, q *db.Queries, ws []StorageWrite
 	}
 	for i := range ws {
 		if err := writeAccountCurrencies(ctx, q, &ws[i]); err != nil {
+			return err
+		}
+		if err := writeStorageSize(ctx, q, &ws[i]); err != nil {
 			return err
 		}
 	}

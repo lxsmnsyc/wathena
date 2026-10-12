@@ -238,13 +238,23 @@ func ValidPartyName(name string) bool {
 	return name != "" && utf8.ValidString(name) && utf8.RuneCountInString(name) <= MaxPartyName
 }
 
-// Create makes a party with a leader, as party_create and the char
-// server's mapif_parse_CreateParty. Exp share starts as each. It returns
-// the party's ID, or 0 and why not.
+// Create makes a party with a leader from the client, as party_create
+// and the char server's mapif_parse_CreateParty. Exp share starts as
+// each. The leader gets party_join with the reason "create" (review
+// decision 32). It returns the party's ID, or 0 and why not.
 func (r *Registry) Create(leader *Player, name string, opts Options) (int64, PartyOutcome) {
-	name = trimName(name)
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	id, o := r.create(leader, name, opts)
+	if id != 0 {
+		deliver(leader, Notice{Kind: NoticeEvent, Event: Event{Kind: EventJoin, Party: id, Reason: ReasonCreate}})
+	}
+	return id, o
+}
+
+// create makes a party with a leader. r.mu must be held.
+func (r *Registry) create(leader *Player, name string, opts Options) (int64, PartyOutcome) {
+	name = trimName(name)
 	switch {
 	case !ValidPartyName(name):
 		result(leader, PartyBadName, name)
@@ -592,11 +602,11 @@ func (r *Registry) ScriptCreate(leader *Player, name string) int64 {
 	if taken {
 		return 0
 	}
-	id, _ := r.Create(leader, name, Options{})
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	id, _ := r.create(leader, name, Options{})
 	if id != 0 {
-		r.mu.Lock()
 		deliver(leader, Notice{Kind: NoticeEvent, Event: Event{Kind: EventJoin, Party: id, Reason: ReasonScript}})
-		r.mu.Unlock()
 	}
 	return id
 }

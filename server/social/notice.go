@@ -197,6 +197,9 @@ const (
 	ReasonExpelled  = "expelled"
 	ReasonDisbanded = "disbanded"
 	ReasonScript    = "script"
+	// ReasonCreate is a player who made the party or guild from the
+	// client (review decision 32).
+	ReasonCreate = "create"
 )
 
 // Event is a party_join or party_leave event.

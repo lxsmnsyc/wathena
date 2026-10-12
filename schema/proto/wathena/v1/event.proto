@@ -110,6 +110,7 @@ message Event {
     StoreSearchResult store_search_result = 98;
     WorldEventNotice world_event_notice = 99;
     WorldEventList world_event_list = 100;
+    PlayerLimits player_limits = 101;
   }
 }
 
@@ -2196,4 +2197,21 @@ message WorldEventNotice {
 // gets it at login when there are any.
 message WorldEventList {
   repeated WorldEventInfo events = 1;
+}
+
+// PlayerLimits are the player's own values of the limits that one player
+// holds, which scripts expand (proposal 0002, review decision 32):
+// inventory_slots, storage_slots and cart_slots. They come at login and
+// after each change. Each value is within the limit's base and max of
+// Welcome.limits.ranges. storage_slots is shared by the account's
+// characters.
+message PlayerLimits {
+  repeated PlayerLimit limits = 1;
+}
+
+// PlayerLimit is one limit's value for the player.
+message PlayerLimit {
+  // name is the limit's name, such as inventory_slots.
+  string name = 1;
+  uint32 value = 2;
 }

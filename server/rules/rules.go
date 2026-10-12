@@ -82,6 +82,9 @@ type Rules struct {
 	// Market holds the vending, buying store, store search and mail
 	// values of rAthena's conf files (limits.go).
 	Market Market
+	// Values holds every rule's value by name, for scripts' rules.get
+	// (read.go). Rules made without it read rAthena's values.
+	Values map[string]int
 }
 
 // Base returns the rules of a core ruleset: every flag at the base's
@@ -93,6 +96,7 @@ func Base(renewal bool) *Rules {
 		StatusResist: renewal, HealFormula: renewal, BossProtection: renewal, EnsembleSongs: renewal,
 		Homunculus: renewal, BusyRestrictions: renewal, FourthJobTraits: renewal,
 		Limits: DefaultLimits(), Party: DefaultParty(), Guild: DefaultGuild(), Items: DefaultItems(), Market: DefaultMarket(),
+		Values: DefaultValues(),
 	}
 }
 
