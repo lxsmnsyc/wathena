@@ -931,6 +931,14 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Converter commands.** The script commands that need new API, listed in next steps 11 to 16, wait for one converter review, ordered by how many core scripts each blocks.
     - **Script events** still do not resume after a restart.
 
+33. Staff roles, the admin API and the GM audit log (phase 6 step 1). The user approved these on 2026-10-12:
+    - **Roles.** The config's `staff.owners` lists account names with the `owner` role, which has every permission and comes only from the config. `staff.roles` maps role names to permission lists, with defaults `admin`, `game_master` and `moderator`. Owners and admins give the other roles to accounts from the admin screens, and the database keeps them. Permission names come from a fixed list in the server, and the config is checked against it. `*` matches a group, such as `moderation.*`.
+    - **Two-factor login.** A role counts only when the account has TOTP or a passkey turned on and the session logged in with it. Role changes, item restores and bans also need a re-login within 10 minutes (`/account/reauth`).
+    - **Admin API.** JSON at `/admin/api/v1/`, with the account session cookie and a CSRF token, and a permission check on every call. Messages are protobuf under `schema/proto/wathena/admin/v1`, encoded as JSON. Step 1 has `GET /me`, `GET /staff`, `POST /staff`, `DELETE /staff/{account}` (`staff.assign`) and `GET /audit` (`audit.read`).
+    - **GM audit log.** Each staff action writes a row with the time, account, role, action, target, arguments, reason and a review mark. The game's database roles can only insert rows. Reviews are kept in a separate table. Actions that create items or zeny need a reason and are marked for review. Rows are kept 2 years; the deletion job comes with phase 8.
+    - **Admin screens.** At `/admin` in the web client, as a separate bundle that loads only after `/me` returns a role. Step 1 has the staff list and the audit log viewer.
+    - **Lua.** `player:get_staff_role()` returns the role name or nil, and `player:has_staff_permission(name)` returns a boolean. Both need `game.read` and follow the two-factor rule.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
