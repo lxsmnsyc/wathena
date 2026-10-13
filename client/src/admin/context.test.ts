@@ -21,6 +21,17 @@ describe('tabsFor', () => {
       'bans',
     ]);
   });
+
+  it('shows the world, events and mods tabs by their permissions', () => {
+    expect(tabsFor(['world.read', 'world.announce', 'events.control']).map((t) => t.kind)).toEqual([
+      'world',
+      'events',
+    ]);
+    expect(tabsFor(['mods.read', 'mods.disable']).map((t) => t.kind)).toEqual(['mods']);
+    // The announcement box and the planner are on the world screen, which
+    // needs world.read.
+    expect(tabsFor(['world.announce', 'world.restart'])).toEqual([]);
+  });
 });
 
 describe('isSelf', () => {

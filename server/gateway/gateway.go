@@ -170,6 +170,10 @@ type Gateway struct {
 	// Bans refuses the logins of banned accounts (decision 0030). It may
 	// be nil, as without a database.
 	Bans Bans
+	// Closed refuses new logins, with the text the player sees, such as
+	// in the last minute before a planned restart (decision 0031). It
+	// may be nil.
+	Closed func() (text string, closed bool)
 
 	mu     sync.Mutex
 	online map[int64]*online
@@ -328,6 +332,13 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 	}
 	if v := hello.GetProtocolVersion(); v < schema.MinVersion || v > schema.Version {
 		return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_VERSION_UNSUPPORTED, "This client is too old or too new for the server.")
+	}
+	// In the last minute before a planned restart, no one new joins. The
+	// ticket is not used, so it works after the restart while it lasts.
+	if g.Closed != nil {
+		if text, closed := g.Closed(); closed {
+			return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_RESTART, text)
+		}
 	}
 	login, err := g.Sessions.Check(ctx, hello.GetSessionToken())
 	if errors.Is(err, ErrSessionInvalid) {
@@ -698,6 +709,13 @@ type conn struct {
 // zone, which saves its character. waserver calls it on SIGTERM, before
 // it stops the zones.
 func (g *Gateway) Shutdown() {
+	g.ShutdownWith(wathenav1.DisconnectReason_DISCONNECT_REASON_SERVER_SHUTDOWN, shutdownText)
+}
+
+// ShutdownWith ends every session as Shutdown does, with another reason
+// and text, such as DISCONNECT_REASON_RESTART for a planned restart
+// (decision 0031).
+func (g *Gateway) ShutdownWith(reason wathenav1.DisconnectReason, text string) {
 	g.mu.Lock()
 	all := make([]*online, 0, len(g.online))
 	for _, o := range g.online {
@@ -705,7 +723,7 @@ func (g *Gateway) Shutdown() {
 	}
 	g.mu.Unlock()
 	for _, o := range all {
-		o.end(wathenav1.DisconnectReason_DISCONNECT_REASON_SERVER_SHUTDOWN, shutdownText)
+		o.end(reason, text)
 	}
 }
 

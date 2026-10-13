@@ -73,7 +73,7 @@ func (r *Runtime) UseItem(player int64, itemID uint32, entry string) error {
 	c := &Context{ID: r.newID(), Kind: KindItem, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}, player: player}
 	c.Instance = script.NewTable(script.KV("item", script.Int(int64(itemID))))
 	defer r.end(c)
-	if err := r.run(c, setup); err != nil {
+	if err := r.runSetup(c, setup); err != nil {
 		return fmt.Errorf("%s: setup: %w", entry, err)
 	}
 	return r.fireContext(c, "use", Player(player))
@@ -90,7 +90,7 @@ func (r *Runtime) Equip(entry string, equipped, wearer int64, sink BonusSink) (*
 	sc := r.scripts[mod]
 	c := &Context{ID: r.newID(), Kind: KindItem, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}, sink: sink, player: wearer}
 	c.Instance = script.NewTable(script.KV("equipped", script.Int(equipped)))
-	if err := r.run(c, setup); err != nil {
+	if err := r.runSetup(c, setup); err != nil {
 		r.end(c)
 		return nil, fmt.Errorf("%s: setup: %w", entry, err)
 	}
@@ -120,7 +120,7 @@ func (r *Runtime) EndEquip(c *Context) {
 // Listens reports whether a context has handlers for an event, so the
 // zone builds an event's object only when a handler will read it.
 func (r *Runtime) Listens(c *Context, event string) bool {
-	if c.ended {
+	if c.ended || r.off(c) {
 		return false
 	}
 	for _, h := range c.handlers {
@@ -195,6 +195,9 @@ func (r *Runtime) setup(entry string) (script.Value, string, error) {
 	if !ok {
 		return script.Nil, "", fmt.Errorf("item script %q is not <mod>:<path>", entry)
 	}
+	if r.offMods[mod] {
+		return script.Nil, mod, ErrModOff
+	}
 	if ref := r.setups[entry]; ref != nil {
 		return ref.Value(), mod, nil
 	}
@@ -211,6 +214,7 @@ func (r *Runtime) setup(entry string) (script.Value, string, error) {
 	r.loading = ""
 	if err != nil {
 		r.afterError()
+		r.countError(mod, err)
 		return script.Nil, "", err
 	}
 	ref, err := r.s.Keep(fn)
@@ -246,7 +250,7 @@ func (r *Runtime) dropSetup(entry string) {
 func (r *Runtime) fireContext(c *Context, event string, args ...Arg) error {
 	var first error
 	for _, h := range append([]*handler(nil), c.handlers...) {
-		if h.removed || h.event != event || c.ended {
+		if h.removed || h.event != event || c.ended || r.off(c) {
 			continue
 		}
 		vals := []script.Value{h.fn.Value()}

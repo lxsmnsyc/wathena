@@ -283,9 +283,29 @@ type Override struct {
 // disabled event is left out, and so is a core event that is not
 // enabled. An override of an event that does not exist is an error.
 func Apply(defs []Def, overrides map[string]Override) ([]Def, error) {
+	settings, err := Settings(defs, overrides)
+	var out []Def
+	for _, s := range settings {
+		if s.On {
+			out = append(out, s.Def)
+		}
+	}
+	return out, err
+}
+
+// Setting is an event and whether it is on (decision 0031).
+type Setting struct {
+	Def Def
+	On  bool
+}
+
+// Settings applies the owner's overrides to the events, by full name, as
+// Apply does, and keeps the events that are off, with On false. An
+// override of an event that does not exist is an error.
+func Settings(defs []Def, overrides map[string]Override) ([]Setting, error) {
 	var errs []error
 	byName := map[string]bool{}
-	var out []Def
+	var out []Setting
 	for _, d := range defs {
 		byName[d.Name] = true
 		o, ok := overrides[d.Name]
@@ -293,13 +313,10 @@ func Apply(defs []Def, overrides map[string]Override) ([]Def, error) {
 			errs = append(errs, fmt.Errorf("mods.events.%s: enabled and disabled cannot both be set", d.Name))
 			continue
 		}
-		if d.Mod == mod.Core && !o.Enabled || o.Disabled {
-			// Core's events are samples, off until the owner turns them
-			// on.
-			continue
-		}
+		// Core's events are samples, off until the owner turns them on.
+		on := (d.Mod != mod.Core || o.Enabled) && !o.Disabled
 		if !ok {
-			out = append(out, d)
+			out = append(out, Setting{Def: d, On: on})
 			continue
 		}
 		if o.Trigger != nil {
@@ -318,7 +335,7 @@ func Apply(defs []Def, overrides map[string]Override) ([]Def, error) {
 			}
 			d.Duration = time.Duration(n) * time.Minute
 		}
-		out = append(out, d)
+		out = append(out, Setting{Def: d, On: on})
 	}
 	for _, name := range sortedNames(overrides) {
 		if !byName[name] {

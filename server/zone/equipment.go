@@ -295,7 +295,7 @@ func (z *Zone) startEquipScript(p *Player, handle int64, d *item.Def) *equipScri
 	sink := &bonusSink{z: z, p: p}
 	ctx, err := r.Equip(d.Script, handle, int64(p.charID), sink)
 	if err != nil {
-		if z.Mods != nil && z.Mods.Log != nil {
+		if !quietOff(err) && z.Mods != nil && z.Mods.Log != nil {
 			z.Mods.Log.Warn("equip script failed", "map", z.Map, "item", d.AegisName, "script", d.Script, "err", err)
 		}
 		return nil

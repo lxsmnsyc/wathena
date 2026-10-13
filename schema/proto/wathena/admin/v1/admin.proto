@@ -7,9 +7,9 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1";
 
-// The admin API's messages (decisions 0028, 0029 and 0030). The API is JSON
-// at /admin/api/v1/, in the protobuf JSON form of these messages, with
-// lowerCamelCase field names.
+// The admin API's messages (decisions 0028, 0029, 0030 and 0031). The API
+// is JSON at /admin/api/v1/, in the protobuf JSON form of these messages,
+// with lowerCamelCase field names.
 
 // Me answers GET /me: who the session is and what it may do.
 message Me {
@@ -540,6 +540,250 @@ message RestoreResult {
   int64 mail_id = 1;
   repeated RestoredItem items = 2;
   int64 zeny = 3;
+}
+
+// ZoneView is one zone of the world view (decision 0031).
+message ZoneView {
+  // map is the map's name, such as prontera.
+  string map = 1;
+  int32 players = 2;
+  // monsters counts the living monsters.
+  int32 monsters = 3;
+  // ticks counts the zone's ticks in the last minute. A zone without
+  // players sleeps and does not tick.
+  int32 ticks = 4;
+  // The work of the last minute's ticks, in microseconds: the tick and
+  // what the zone handled since the tick before.
+  int64 p50_us = 5;
+  int64 p99_us = 6;
+  int64 max_us = 7;
+  // over_budget counts the last minute's ticks over the 10 ms budget.
+  int32 over_budget = 8;
+  // asleep is set when the zone sleeps because it has no players.
+  bool asleep = 9;
+}
+
+// ProcessView is the server process of the world view.
+message ProcessView {
+  // cpu_cores is the CPU time per second of wall time since the start,
+  // so 1.0 is one core. It is 0 where the system does not report it.
+  double cpu_cores = 1;
+  uint64 heap_bytes = 2;
+  uint64 total_bytes = 3;
+  uint64 goroutines = 4;
+  google.protobuf.Timestamp started_at = 5;
+  int64 uptime_seconds = 6;
+  string version = 7;
+}
+
+// OnlinePlayer is a player in the game.
+message OnlinePlayer {
+  int64 character_id = 1;
+  string name = 2;
+  string map = 3;
+  int32 x = 4;
+  int32 y = 5;
+  int32 base_level = 6;
+  string job_name = 7;
+}
+
+// WorldView answers GET /world.
+message WorldView {
+  repeated ZoneView zones = 1;
+  ProcessView process = 2;
+  // players are the players online, by name, at most 1,000.
+  repeated OnlinePlayer players = 3;
+  // players_online counts every player online.
+  int32 players_online = 4;
+  // restart is the planned restart, or unset.
+  RestartPlan restart = 5;
+  // now is the server clock.
+  google.protobuf.Timestamp now = 6;
+}
+
+// AnnounceRequest is the body of POST /announce.
+message AnnounceRequest {
+  // text is 1 to 255 characters.
+  string text = 1;
+  // map is a map's name for one map, or empty for the world.
+  string map = 2;
+}
+
+// AnnounceResult answers POST /announce.
+message AnnounceResult {
+  string text = 1;
+  string map = 2;
+}
+
+// RestartRequest is the body of POST /restart.
+message RestartRequest {
+  // at is from 1 minute to 7 days ahead of the server clock.
+  google.protobuf.Timestamp at = 1;
+  // reason is 1 to 255 characters. Players see it when they are
+  // disconnected, and restart_planned gets it.
+  string reason = 2;
+  // message is what the announcements say, at most 255 characters. The
+  // reason when empty.
+  string message = 3;
+}
+
+// RestartPlan is a planned restart. POST and DELETE /restart answer
+// with it.
+message RestartPlan {
+  google.protobuf.Timestamp at = 1;
+  string reason = 2;
+  string message = 3;
+  string planned_by = 4;
+  google.protobuf.Timestamp planned_at = 5;
+  // logins_closed is set in the last minute, when new logins are
+  // refused.
+  bool logins_closed = 6;
+}
+
+// EventRun is a run of a world event that lasts.
+message EventRun {
+  google.protobuf.Timestamp scheduled = 1;
+  google.protobuf.Timestamp started = 2;
+  google.protobuf.Timestamp ends = 3;
+}
+
+// EventResult is how a run ended: won, lost, stopped, or ended for a
+// script event that ran its time.
+message EventResult {
+  google.protobuf.Timestamp scheduled = 1;
+  google.protobuf.Timestamp started = 2;
+  google.protobuf.Timestamp ended = 3;
+  string result = 4;
+}
+
+// EventOverride is a staff change of an event, saved over the config.
+message EventOverride {
+  // on is set when the change turned the event on or off.
+  optional bool on = 1;
+  // trigger is set when the change set the trigger.
+  google.protobuf.Struct trigger = 2;
+  // duration_minutes is set when the change set the duration.
+  int32 duration_minutes = 3;
+  string changed_by = 4;
+  google.protobuf.Timestamp changed_at = 5;
+}
+
+// EventInfo is one world event of GET /events.
+message EventInfo {
+  // name is the full name, such as core:Field_Boss.
+  string name = 1;
+  string display_name = 2;
+  string mod = 3;
+  // type is boss, invasion, treasure_hunt or script.
+  string type = 4;
+  bool on = 5;
+  // trigger is the trigger in the form of data/events.yml, such as
+  // {"daily": "20:00"}, and trigger_text says it for people.
+  google.protobuf.Struct trigger = 6;
+  string trigger_text = 7;
+  int32 duration_minutes = 8;
+  // next_run is the trigger's next time, or unset.
+  google.protobuf.Timestamp next_run = 9;
+  repeated EventRun runs = 10;
+  // results are the latest results since the server started, newest
+  // first.
+  repeated EventResult results = 11;
+  // override is the staff change, or unset.
+  EventOverride override = 12;
+  // What the config says, for a reset.
+  bool config_on = 13;
+  string config_trigger_text = 14;
+  int32 config_duration_minutes = 15;
+  // failed is the error of the last run that did not start.
+  string failed = 16;
+  google.protobuf.Timestamp failed_at = 17;
+}
+
+// EventList answers GET /events.
+message EventList {
+  repeated EventInfo events = 1;
+}
+
+// EventChange is the body of PATCH /events/{name}. Fields that are not
+// set keep their value.
+message EventChange {
+  optional bool on = 1;
+  google.protobuf.Struct trigger = 2;
+  // duration_minutes is 1 to 10,080, or 0 to keep it.
+  int32 duration_minutes = 3;
+  // reason is optional, at most 255 characters.
+  string reason = 4;
+}
+
+// EventAction is the body of POST /events/{name}/start, /stop and
+// /reset.
+message EventAction {
+  // reason is optional, at most 255 characters.
+  string reason = 1;
+}
+
+// ModSwitch is a mod that staff turned off.
+message ModSwitch {
+  // map is a map's name, or empty for every zone.
+  string map = 1;
+  string reason = 2;
+  string changed_by = 3;
+  google.protobuf.Timestamp changed_at = 4;
+}
+
+// ModZone is a mod's state in one zone.
+message ModZone {
+  string map = 1;
+  bool off = 2;
+  // errors counts the mod's script errors in the zone since the server
+  // started, with the last error and its time.
+  int64 errors = 3;
+  string last_error = 4;
+  google.protobuf.Timestamp last_error_at = 5;
+}
+
+// ModInfo is one loaded mod of GET /mods.
+message ModInfo {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  // builtin is set for core and the core ruleset mods. Core cannot be
+  // turned off.
+  bool builtin = 4;
+  // signature is builtin, folder, unsigned or unverified: a .zip file
+  // with a .minisig file next to it, which the server does not check.
+  string signature = 5;
+  // granted are the permissions the mod holds. requested are those its
+  // manifest asks for. pending are requested permissions the owner has
+  // not approved. A mod with any does not load, so a loaded mod has
+  // none.
+  repeated string granted = 6;
+  repeated string requested = 7;
+  repeated string pending = 8;
+  // switches are the zones where staff turned it off.
+  repeated ModSwitch switches = 9;
+  // zones are the zones where it is off or had errors.
+  repeated ModZone zones = 10;
+  // errors counts its script errors in every zone.
+  int64 errors = 11;
+  // scripts is set when it has Lua scripts.
+  bool scripts = 12;
+}
+
+// ModList answers GET /mods.
+message ModList {
+  repeated ModInfo mods = 1;
+  // maps are the maps that run, for the zone choice.
+  repeated string maps = 2;
+}
+
+// ModSwitchRequest is the body of POST /mods/{id}/disable and /enable.
+message ModSwitchRequest {
+  // map is a map's name, or empty for every zone.
+  string map = 1;
+  // reason is 1 to 255 characters to turn a mod off, and optional to
+  // turn it on.
+  string reason = 2;
 }
 
 // Error is the body of every answer that is not 2xx.

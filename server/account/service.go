@@ -127,6 +127,10 @@ type Config struct {
 	// Guilds lets guild masters upload emblems. Without it the emblem
 	// page lists no guild.
 	Guilds Guilds
+	// Closed refuses game tickets, with the text the player sees, such
+	// as in the last minute before a planned restart (decision 0031). It
+	// may be nil.
+	Closed func() (text string, closed bool)
 	// Ended is told which login sessions ended, such as at logout, so it
 	// can close the game connections they opened. The gateway is one.
 	Ended SessionEnder
@@ -967,6 +971,14 @@ func (s *Service) ticket(w http.ResponseWriter, r *http.Request) {
 	if !sess.CharacterID.Valid {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": "character"})
 		return
+	}
+	// No tickets in the last minute before a planned restart (decision
+	// 0031). The client shows the message.
+	if s.cfg.Closed != nil {
+		if text, closed := s.cfg.Closed(); closed {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "restarting", "message": text})
+			return
+		}
 	}
 	// A banned account gets no ticket. The client shows the reason and
 	// the end time (decision 0030).

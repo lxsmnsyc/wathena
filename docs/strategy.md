@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-13)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 3 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 4 are built.
 
 Done:
 
@@ -45,6 +45,12 @@ Done:
   - Mutes, jails, kicks and account bans from the admin API, with lifts and a list per target. A ban closes the account's connections and refuses its logins and game tickets, with the reason and the end time.
   - `@warp`, `@jumpto`, `@recall`, `@hide`, `@kick`, `@mute`, `@jail` and `@item`, parsed on the server with the role's permissions and the two-factor rule, each with an audit row, never shown as chat. Others get "Unknown command.".
   - The admin screens for reports, sanctions and bans, and guild emblem reports from the guild window.
+- Phase 6 step 4, the world, events and mods tools ([decision 0031](decisions/0031-world-events-and-mods-tools.md)):
+  - `GET /world` with each zone's players, monsters and last minute of tick times, the process, and the players online. `POST /announce` to the world or a map.
+  - Planned restarts with announcements from 30 minutes before, no new logins in the last minute, and a save, a disconnect with the reason and exit status 75 at the time. The plan lives in memory.
+  - The events tool: every event with its state, next run, run that lasts and latest results, staff starts and stops, and changes saved over the config that apply at once, with a reset.
+  - The mods tool: version, signature status, permissions, and Lua error counts by zone, and turning a mod off and on by zone, saved across restarts. Core cannot be turned off.
+  - The world event `restart_planned`, and the admin screens for all of it.
 
 Open review items:
 
@@ -52,6 +58,7 @@ Open review items:
 - Next step 19's details to review, in proposal 0002, "Next steps".
 - Next step 20's details to review, in proposal 0002, "Next steps".
 - Next step 21's details to review, in proposal 0002, "Next steps".
+- Next step 22's details to review, in proposal 0002, "Next steps".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -64,7 +71,7 @@ Known issues:
 
 Next:
 
-1. Phase 6 (section 15, "Phase 6 in full"), with step 4, the world, events and mods tools, once next steps 19 to 21 are reviewed.
+1. Phase 6 (section 15, "Phase 6 in full"), with step 5, the account page, once next steps 19 to 22 are reviewed.
 2. The open review items above, between phase 6 steps.
 3. Phase 7, procedural mode, is the largest phase left.
 
@@ -2693,7 +2700,18 @@ The order from here:
       - End-to-end tests with bots: a ban kicks and refuses the login, a mute refuses chat, `@jail` moves the player and `@kick` closes the connection, and commands without the permission answer "Unknown command.".
       - Checked in Chrome with a local server, PostgreSQL and placeholder assets. Ruffian said "you are all noobs and I hate you" and Witness reported the line ("Your report was sent to the staff."). The owner, logged in with TOTP, opened the report on `/admin`, saw the line marked "Reported", and closed it with "Sanction and close" as a 30-minute mute ("Report 1 closed with a mute."). Ruffian's chat showed "You are muted until 11:14 (reason: insults in chat)." and Witness did not hear Ruffian's next line. The owner's character Keeper typed `@warp placeholder/map 20 21` ("Warped."), `@hide` ("Invisible: On") and `@item 501 5 browser check` ("Item created: 5 x Red Potion."). Witness typed `@item 501 1 free potions` and got "Unknown command.". The owner banned Ruffian's account for a day from the Sanctions tab. Ruffian's game page showed "Your account is banned until 2026-10-14 02:44 UTC. Reason: repeat offender", the login page refused Ruffian1 with the same text, and the Bans tab listed the ban.
       - Left: IP bans, `@` commands from mods, `@hide` across logins, and a network form of `admin.World` and the kicks.
-   4. World, events and mods tools. Zones, player counts and tick times. Announcements, and planned restarts with a countdown. Start, stop and schedule events. Installed mods with their permissions and error counts, and turning a mod off in a zone.
+   4. World, events and mods tools. Zones, player counts and tick times. Announcements, and planned restarts with a countdown. Start, stop and schedule events. Installed mods with their permissions and error counts, and turning a mod off in a zone. Done on 2026-10-13 ([decision 0031](decisions/0031-world-events-and-mods-tools.md), proposal 0002 review decision 36, server/README.md, "Staff and admin tools", mods/README.md, "Planned restarts" and "Mods turned off by staff", and deploy/README.md, "Planned restarts"):
+      - Migration 00026: `event_overrides` and `mod_switches`, which only the game role reads and writes.
+      - The admin API: `GET /world`, `POST /announce`, `POST` and `DELETE /restart` (with a login from the last 10 minutes), `GET /events`, `POST /events/{name}/start`, `/stop` and `/reset`, `PATCH /events/{name}`, `GET /mods`, and `POST /mods/{id}/disable` and `/enable`. Each change writes an audit row.
+      - Each zone keeps its last 1,280 ticks for the world view, made at its first tick. Monsters and players are read on the zones' goroutines.
+      - `server/restart`: one plan at a time, announcements at 30, 15, 10, 5 and 1 minute and 30 seconds, the gateway and the game tickets refuse new logins in the last minute, and at the time waserver saves everyone, disconnects them with `DISCONNECT_REASON_RESTART` and exits with status 75, which Compose's `restart: unless-stopped` and a systemd `Restart=on-failure` start again.
+      - The scheduler keeps the events that are off, takes staff changes through a queue it applies within a second, and shows each event's state. The database's changes go over the config at each start. The latest results are kept in memory.
+      - The runtime pauses a mod that is off in a zone: its handlers, timers, hooks, schedules, NPC clicks and item, skill and monster AI scripts do not run there, and its contexts and data stay. It counts each mod's script errors by zone.
+      - The world event `restart_planned`, with `{ at, reason }` or `{ cancelled = true }`.
+      - The admin screens: the world view loaded every 5 seconds, the announcement box, the restart planner with a countdown, the events table with a change form, and the mods table with errors and switches. The game client shows the restart's reason when it disconnects.
+      - End-to-end tests with bots: announcements reach the world and a map, a planned restart announces itself at 1 minute and 30 seconds, refuses a new login, disconnects the player with its reason, and the server exits with status 75 and starts again with the saved character. A cancel is announced, and the fixture mod's `restart_planned` handler sees both.
+      - Checked in Chrome with a local server, PostgreSQL, placeholder assets and a sample mod, example.lantern, with a login message, an NPC and a script event. The owner logged in with TOTP and opened the World tab: placeholder/map with 1 player and its tick times, the process line, and Lamplighter online at 12,12. "Lantern festival tonight in town!" went to the world and showed in Lamplighter's chat. The owner planned a restart about 2 minutes ahead with the reason "browser check": the countdown showed "Restart in 1:56", then "1:53", and Lamplighter's chat showed "The server restarts in 1 minute. The lanterns go out for maintenance." as the countdown reached 1:00. The cancel showed "The planned server restart is cancelled." to Lamplighter, and the World tab said "No restart is planned.". On the Events tab, Start began a run of example.lantern:Lantern_Night with "30:00 left", Lamplighter's page showed the run, and Stop ended it with the result "stopped". Edit changed the trigger to "weekly on friday at 21:30" for 45 minutes, with the next run on Friday and "Admin" as who changed it, and Reset to config brought back "daily at 20:00". On the Mods tab, the mod showed "a folder, not signed" and its permissions. Turning it off on placeholder/map showed "placeholder/map: off", and Lamplighter's next login got no welcome line. Turning it on brought the welcome back at the next login. The audit log listed `world.announce`, `world.restart`, `world.restart_cancel`, `events.start`, `events.stop`, `events.change`, `events.reset`, `mods.disable` and `mods.enable`.
+      - Left: signature checks on the server, results that survive a restart, a `wa.testing` helper for `restart_planned`, and a network form of the tools for the distributed build.
    5. The account page. The block list and the player's own reports. A JSON export of the account's data. Account deletion after 14 days. A privacy notice that the server owner fills in.
    6. Mod assets. Mods ship sprites, icons, maps and client data tables (section 10.5), and the client loads them.
    7. Touch input for mobile browsers.

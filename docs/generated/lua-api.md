@@ -3075,6 +3075,16 @@ The object of world_event_start and world_event_end (review decision 31).
 | `type` | `"boss"\|"invasion"\|"treasure_hunt"\|"script"` | The event's type: "script" for an event without one. |
 | `result` | `"won"\|"lost"\|"stopped"\|nil` | How the run ended, at world_event_end. A boss is won when it dies, an invasion when its last wave dies, and a treasure hunt when every chest is opened. A run whose time ran out is lost. nil at world_event_start, and for a script event that ran its time. |
 
+### wa.RestartPlan
+
+The object of restart_planned (review decision 36): { at, reason } when staff plan a restart, and { cancelled = true } when they cancel it.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `at` | `integer?` | When the server restarts, in Unix seconds. nil when the restart was cancelled. |
+| `reason` | `string?` | Why the server restarts, as staff wrote it. nil when the restart was cancelled. |
+| `cancelled` | `boolean?` | true when staff cancelled the planned restart. |
+
 ### wa.Trade
 
 The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.
@@ -3623,6 +3633,7 @@ Changes the value.
 | `mail` | mod, npc, event | `mail: wa.Mail` | A mail went out from the context's map: a player's, or a script's player:send_mail. |
 | `world_event_start` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event started, on any map. Every zone's handlers run. |
 | `world_event_end` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event ended, on any map, with its result. Every zone's handlers run. |
+| `restart_planned` | mod, npc, event | `restart: wa.RestartPlan` | Staff planned a server restart from the admin screens, or cancelled it. Every zone's handlers run. At the restart time the server saves every character, disconnects every player and stops, so a handler can end a mod's event in time. |
 
 ## Named types
 
@@ -3636,7 +3647,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`
 
 ### wa.BonusName
 

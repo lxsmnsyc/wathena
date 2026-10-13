@@ -11,6 +11,9 @@ import {
   toJson,
 } from '@bufbuild/protobuf';
 import {
+  AnnounceRequestSchema,
+  type AnnounceResult,
+  AnnounceResultSchema,
   type AuditEntry,
   AuditEntrySchema,
   type AuditPage,
@@ -21,9 +24,21 @@ import {
   CharacterLogsSchema,
   CloseReportRequestSchema,
   ErrorSchema,
+  EventActionSchema,
+  type EventChange,
+  EventChangeSchema,
+  type EventInfo,
+  EventInfoSchema,
+  type EventList,
+  EventListSchema,
   GiveRoleRequestSchema,
   type ItemHistory,
   ItemHistorySchema,
+  type ModInfo,
+  ModInfoSchema,
+  type ModList,
+  ModListSchema,
+  ModSwitchRequestSchema,
   type PlayerSearch,
   PlayerSearchSchema,
   type ReportDetail,
@@ -32,6 +47,10 @@ import {
   ReportPageSchema,
   type ReportSummary,
   ReportSummarySchema,
+  type RestartPlan,
+  RestartPlanSchema,
+  type RestartRequest,
+  RestartRequestSchema,
   type RestoreRequest,
   RestoreRequestSchema,
   type RestoreResult,
@@ -47,6 +66,8 @@ import {
   StaffListSchema,
   type StaffMember,
   StaffMemberSchema,
+  type WorldView,
+  WorldViewSchema,
 } from '../gen/wathena/admin/v1/admin_pb';
 import { ADMIN_API } from './access';
 
@@ -451,6 +472,90 @@ export class AdminAPI {
     return decode(
       SanctionListSchema,
       await this.call('GET', `sanctions?${sanctionsQuery(filter, beforeId, limit)}`),
+    );
+  }
+
+  /** GET /world: the zones, the process, the players and the restart. */
+  async world(): Promise<Result<WorldView>> {
+    return decode(WorldViewSchema, await this.call('GET', 'world'));
+  }
+
+  /** POST /announce: a line to the world, or to one map's players. */
+  async announce(text: string, map: string): Promise<Result<AnnounceResult>> {
+    const req = create(AnnounceRequestSchema, { text, map });
+    return decode(
+      AnnounceResultSchema,
+      await this.call('POST', 'announce', toJson(AnnounceRequestSchema, req)),
+    );
+  }
+
+  /** POST /restart: plans a restart. */
+  async planRestart(req: RestartRequest): Promise<Result<RestartPlan>> {
+    return decode(
+      RestartPlanSchema,
+      await this.call('POST', 'restart', toJson(RestartRequestSchema, req)),
+    );
+  }
+
+  /** DELETE /restart: cancels the planned restart. */
+  async cancelRestart(reason: string): Promise<Result<RestartPlan>> {
+    const q =
+      reason.trim() === '' ? '' : `?${new URLSearchParams({ reason: reason.trim() }).toString()}`;
+    return decode(RestartPlanSchema, await this.call('DELETE', `restart${q}`));
+  }
+
+  /** GET /events: the world events. */
+  async events(): Promise<Result<EventList>> {
+    return decode(EventListSchema, await this.call('GET', 'events'));
+  }
+
+  /** POST /events/{name}/start, /stop or /reset. */
+  async eventAction(
+    name: string,
+    action: 'start' | 'stop' | 'reset',
+    reason: string,
+  ): Promise<Result<EventInfo>> {
+    const req = create(EventActionSchema, { reason: reason.trim() });
+    return decode(
+      EventInfoSchema,
+      await this.call(
+        'POST',
+        `events/${encodeURIComponent(name)}/${action}`,
+        toJson(EventActionSchema, req),
+      ),
+    );
+  }
+
+  /** PATCH /events/{name}: whether it is on, its trigger and duration. */
+  async changeEvent(name: string, change: EventChange): Promise<Result<EventInfo>> {
+    return decode(
+      EventInfoSchema,
+      await this.call(
+        'PATCH',
+        `events/${encodeURIComponent(name)}`,
+        toJson(EventChangeSchema, change),
+      ),
+    );
+  }
+
+  /** GET /mods: the loaded mods with their errors. */
+  async mods(): Promise<Result<ModList>> {
+    return decode(ModListSchema, await this.call('GET', 'mods'));
+  }
+
+  /**
+   * POST /mods/{id}/disable or /enable, in one zone, or in every zone
+   * when map is empty.
+   */
+  async switchMod(id: string, off: boolean, map: string, reason: string): Promise<Result<ModInfo>> {
+    const req = create(ModSwitchRequestSchema, { map, reason: reason.trim() });
+    return decode(
+      ModInfoSchema,
+      await this.call(
+        'POST',
+        `mods/${encodeURIComponent(id)}/${off ? 'disable' : 'enable'}`,
+        toJson(ModSwitchRequestSchema, req),
+      ),
     );
   }
 }

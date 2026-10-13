@@ -149,7 +149,7 @@ func (r *Runtime) FireChat(m ChatMessage) {
 	}
 	obj := script.NewTable(r.chatFields(m)...)
 	for _, h := range slices.Clone(list) {
-		if h.removed || h.ctx.ended {
+		if h.removed || h.ctx.ended || r.off(h.ctx) {
 			continue
 		}
 		if h.chat != nil && !h.chat.match(m, r.host.Map()) {

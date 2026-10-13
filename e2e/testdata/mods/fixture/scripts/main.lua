@@ -26,7 +26,8 @@
 --   - "!expand <limit> <amount>" changes one of the speaker's limits with
 --     player:expand and answers with the new value.
 -- Each command but "!guild level" answers with a system line that starts
--- with "e2e <name>:". A trade hook and a vend hook refuse Contraband. The
+-- with "e2e <name>:". restart_planned tells the map's players about a
+-- planned restart, with a line that starts with "e2e restart:". A trade hook and a vend hook refuse Contraband. The
 -- trade, vend and buying_store_sale events tell both players what changed
 -- hands.
 
@@ -211,6 +212,23 @@ return function()
       .. trade.zeny[1] .. " and " .. trade.zeny[2] .. " zeny"
     for _, p in ipairs(trade.players) do
       p:send_message(line)
+    end
+  end)
+
+  -- The players of this map, for restart_planned.
+  local here = {}
+  events.on("login", function(player) here[player.name] = player end)
+  events.on("map_enter", function(player) here[player.name] = player end)
+  events.on("logout", function(player) here[player.name] = nil end)
+  events.on("restart_planned", function(restart)
+    local line = "e2e restart: cancelled"
+    if not restart.cancelled then
+      line = "e2e restart: at " .. restart.at .. " for " .. restart.reason
+    end
+    for name, player in pairs(here) do
+      if not pcall(player.send_message, player, line) then
+        here[name] = nil
+      end
     end
   end)
 

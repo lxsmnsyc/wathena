@@ -44,6 +44,7 @@ local events = {}
 ---@overload fun(name: "mail", handler: fun(mail: wa.Mail)): wa.EventHandle
 ---@overload fun(name: "world_event_start", handler: fun(event: wa.WorldEvent)): wa.EventHandle
 ---@overload fun(name: "world_event_end", handler: fun(event: wa.WorldEvent)): wa.EventHandle
+---@overload fun(name: "restart_planned", handler: fun(restart: wa.RestartPlan)): wa.EventHandle
 function events.on(name, handler, options) end
 
 return events

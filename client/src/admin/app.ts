@@ -1,7 +1,9 @@
-// The admin screens (decisions 0028, 0029 and 0030): the staff list, the
-// GM audit log viewer, the review queue, the player search with character
-// details and sanctions, item histories, restores, the report queue and
-// the bans in effect. This bundle loads only after
+// The admin screens (decisions 0028, 0029, 0030 and 0031): the staff
+// list, the GM audit log viewer, the review queue, the player search with
+// character details and sanctions, item histories, restores, the report
+// queue, the bans in effect, the world view with announcements and
+// planned restarts, the world events and the mods. This bundle loads only
+// after
 // /me returned a staff role. User text is only ever set with
 // textContent.
 
@@ -15,10 +17,13 @@ import { type Context, type Tab, type View, tabsFor } from './context';
 import { el, field, input, timeText } from './dom';
 import { renderHistory } from './history';
 import { renderCharacter, renderPlayers } from './players';
+import { renderEvents } from './events';
+import { renderMods } from './mods';
 import { renderReport, renderReports } from './reports';
 import { renderRestore } from './restore';
 import { renderReviews } from './review';
 import { renderBans } from './sanctions';
+import { renderWorld } from './world';
 
 export { argumentsText, reviewText } from './audit';
 export { timeText } from './dom';
@@ -184,6 +189,15 @@ class Screens implements Context {
         return;
       case 'bans':
         renderBans(this, s);
+        return;
+      case 'world':
+        renderWorld(this, s);
+        return;
+      case 'events':
+        renderEvents(this, s);
+        return;
+      case 'mods':
+        renderMods(this, s);
     }
   }
 

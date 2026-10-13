@@ -1,0 +1,108 @@
+import { create } from '@bufbuild/protobuf';
+import { timestampDate, timestampFromDate } from '@bufbuild/protobuf/wkt';
+import { describe, expect, it } from 'vitest';
+import { RestartPlanSchema, ZoneViewSchema } from '../gen/wathena/admin/v1/admin_pb';
+import {
+  announceError,
+  bytesText,
+  countdownText,
+  localInput,
+  msText,
+  planText,
+  restartRequest,
+  shownZones,
+  uptimeText,
+} from './world';
+
+describe('dashboard cells', () => {
+  it('writes tick times, memory and uptime', () => {
+    expect(msText(1250n)).toBe('1.25');
+    expect(msText(0n)).toBe('0.00');
+    expect(bytesText(120n * 1024n * 1024n)).toBe('120 MB');
+    expect(uptimeText(45n)).toBe('45 s');
+    expect(uptimeText(125n * 60n)).toBe('2 h 5 min');
+    expect(uptimeText(3n * 86_400n + 4n * 3600n)).toBe('3 d 4 h');
+    expect(uptimeText(600n)).toBe('10 min');
+  });
+
+  it('counts down to a restart', () => {
+    expect(countdownText(0)).toBe('now');
+    expect(countdownText(-5)).toBe('now');
+    expect(countdownText(30_000)).toBe('0:30');
+    expect(countdownText(29_001)).toBe('0:30');
+    expect(countdownText(12 * 60_000 + 5000)).toBe('12:05');
+    expect(countdownText(3600_000 + 5 * 60_000 + 9000)).toBe('1:05:09');
+  });
+
+  it('shows awake zones first, most players first', () => {
+    const zones = [
+      create(ZoneViewSchema, { map: 'geffen', players: 2 }),
+      create(ZoneViewSchema, { map: 'alberta', asleep: true }),
+      create(ZoneViewSchema, { map: 'prontera', players: 9 }),
+      create(ZoneViewSchema, { map: 'izlude', players: 2 }),
+    ];
+    expect(shownZones(zones, false).map((z) => z.map)).toEqual(['prontera', 'geffen', 'izlude']);
+    expect(shownZones(zones, true).map((z) => z.map)).toEqual([
+      'prontera',
+      'geffen',
+      'izlude',
+      'alberta',
+    ]);
+  });
+});
+
+describe('announceError', () => {
+  it('needs one line of at most 255 characters', () => {
+    expect(announceError(' Market day! ')).toBe('');
+    expect(announceError('  ')).not.toBe('');
+    expect(announceError('a'.repeat(256))).not.toBe('');
+    expect(announceError('two\nlines')).not.toBe('');
+  });
+});
+
+describe('restartRequest', () => {
+  const now = new Date(2026, 9, 13, 20, 0, 0);
+  const at = (minutes: number): string => localInput(new Date(now.getTime() + minutes * 60_000));
+
+  it('plans from 1 minute to 7 days ahead of the server clock', () => {
+    const r = restartRequest({ at: at(30), reason: ' update ', message: ' New maps! ' }, now);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.reason).toBe('update');
+      expect(r.value.message).toBe('New maps!');
+      expect(r.value.at === undefined ? 0 : timestampDate(r.value.at).getTime()).toBe(
+        now.getTime() + 30 * 60_000,
+      );
+    }
+    expect(restartRequest({ at: at(0), reason: 'x', message: '' }, now).ok).toBe(false);
+    expect(restartRequest({ at: at(8 * 24 * 60), reason: 'x', message: '' }, now).ok).toBe(false);
+    expect(restartRequest({ at: '', reason: 'x', message: '' }, now).ok).toBe(false);
+    expect(restartRequest({ at: 'soon', reason: 'x', message: '' }, now).ok).toBe(false);
+  });
+
+  it('needs a reason, and keeps the texts short', () => {
+    expect(restartRequest({ at: at(30), reason: '  ', message: '' }, now).ok).toBe(false);
+    expect(restartRequest({ at: at(30), reason: 'r'.repeat(256), message: '' }, now).ok).toBe(
+      false,
+    );
+    expect(restartRequest({ at: at(30), reason: 'x', message: 'm'.repeat(256) }, now).ok).toBe(
+      false,
+    );
+  });
+
+  it('says who planned it and whether logins are closed', () => {
+    const p = create(RestartPlanSchema, {
+      at: timestampFromDate(now),
+      reason: 'update',
+      plannedBy: 'Admin',
+      loginsClosed: true,
+    });
+    expect(planText(p)).toContain('planned by Admin. Reason: update. New logins are refused.');
+  });
+});
+
+describe('localInput', () => {
+  it('writes a datetime-local value in the viewer time zone', () => {
+    expect(localInput(new Date(2026, 0, 2, 3, 4, 59))).toBe('2026-01-02T03:04');
+  });
+});

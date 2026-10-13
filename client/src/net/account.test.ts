@@ -76,6 +76,14 @@ describe('fetchTicket', () => {
     expect((await fetchTicket(account, back, answer(403, {}))).kind).toBe('error');
   });
 
+  it('says when to come back during a planned restart', async () => {
+    const message =
+      'The server restarts in less than a minute: update. Come back in a few minutes.';
+    expect(await fetchTicket(account, back, answer(503, { error: 'restarting', message }))).toEqual(
+      { kind: 'error', message },
+    );
+  });
+
   it('reports other failures', async () => {
     expect((await fetchTicket(account, back, answer(503))).kind).toBe('error');
     expect((await fetchTicket(account, back, answer(200, {}))).kind).toBe('error');

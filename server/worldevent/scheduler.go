@@ -92,6 +92,9 @@ type Options struct {
 	// Rand draws random triggers. It must be a secret stream.
 	Rand Rand
 	Log  *slog.Logger
+	// Changed gets the events that are on after a staff change
+	// (control.go), such as Runs.SetEvents.
+	Changed func(on []Def)
 }
 
 // Scheduler starts and ends the runs of world events. Check does the
@@ -100,8 +103,15 @@ type Options struct {
 type Scheduler struct {
 	opts   Options
 	defs   []Def
+	on     map[string]bool
 	state  map[string]*state
 	nextID int64
+
+	// mu guards the queue of staff changes and the status copy
+	// (control.go).
+	mu     sync.Mutex
+	queue  []queued
+	status []Status
 }
 
 type state struct {
@@ -118,10 +128,31 @@ type state struct {
 	// held is when a condition started to hold, and polled the minute
 	// it last ran.
 	held, polled time.Time
+	// failed is the error of the last run that did not start, and
+	// failedAt when.
+	failed   string
+	failedAt time.Time
 }
 
-// New makes a scheduler for events. Call Load before Check.
+// New makes a scheduler for events, all on. Call Load before Check.
 func New(defs []Def, opts Options) *Scheduler {
+	settings := make([]Setting, len(defs))
+	for i, d := range defs {
+		settings[i] = Setting{Def: d, On: true}
+	}
+	return NewFrom(settings, opts)
+}
+
+// NewFrom makes a scheduler for events that may be off (decision 0031).
+// An event that is off starts no runs by its trigger. Call Load before
+// Check.
+func NewFrom(settings []Setting, opts Options) *Scheduler {
+	defs := make([]Def, len(settings))
+	on := map[string]bool{}
+	for i, s := range settings {
+		defs[i] = s.Def
+		on[s.Def.Name] = s.On
+	}
 	if opts.Log == nil {
 		opts.Log = slog.New(slog.DiscardHandler)
 	}
@@ -141,11 +172,11 @@ func New(defs []Def, opts Options) *Scheduler {
 		}
 		return 0
 	})
-	return &Scheduler{opts: opts, defs: defs, state: map[string]*state{}}
+	return &Scheduler{opts: opts, defs: defs, on: on, state: map[string]*state{}}
 }
 
-// Defs returns the events, sorted by name.
-func (s *Scheduler) Defs() []Def { return slices.Clone(s.defs) }
+// Defs returns the events that are on, sorted by name.
+func (s *Scheduler) Defs() []Def { return s.onDefs() }
 
 // Load reads the recorded runs and plans each event from now.
 func (s *Scheduler) Load(ctx context.Context, now time.Time) error {
@@ -162,6 +193,12 @@ func (s *Scheduler) Load(ctx context.Context, now time.Time) error {
 		lr, ran := last[d.Name]
 		st := &state{last: lr.Scheduled}
 		s.state[d.Name] = st
+		if !s.on[d.Name] {
+			// An event that is off starts nothing, and a run of it that
+			// a stop cut short does not go on.
+			st.next = s.firstTime(d, now)
+			continue
+		}
 		if ran && d.Typed() && progress != nil && now.Before(lr.Ends) && !lr.Started.IsZero() {
 			units, err := progress.EventProgress(ctx, d.Name, lr.Scheduled)
 			if err != nil {
@@ -198,6 +235,7 @@ func (s *Scheduler) Load(ctx context.Context, now time.Time) error {
 			}
 		}
 	}
+	s.publish()
 	return nil
 }
 
@@ -206,7 +244,7 @@ func (s *Scheduler) Load(ctx context.Context, now time.Time) error {
 func (s *Scheduler) Next() map[string]time.Time {
 	out := map[string]time.Time{}
 	for _, d := range s.defs {
-		if st := s.state[d.Name]; st != nil && !st.next.IsZero() {
+		if st := s.state[d.Name]; st != nil && s.on[d.Name] && !st.next.IsZero() {
 			out[d.Name] = st.next
 		}
 	}
@@ -228,6 +266,8 @@ func (s *Scheduler) Active() []Run {
 // now.
 func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 	minute := schedule.MinuteStart(now)
+	defer s.publish()
+	s.applyQueue(ctx, now)
 	ctrl, _ := s.opts.Runner.(Controller)
 	if ctrl != nil {
 		s.requests(ctx, ctrl, now)
@@ -239,6 +279,9 @@ func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 		}
 		if st.active != nil && !now.Before(st.active.Ends) {
 			s.end(ctx, d, st)
+		}
+		if !s.on[d.Name] {
+			continue
 		}
 		if st.resume != nil {
 			r := st.resume
@@ -253,7 +296,7 @@ func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 				r := st.late
 				st.late = nil
 				if now.Before(r.Ends) {
-					s.start(ctx, d, st, now, r.Scheduled, r.Ends)
+					_ = s.start(ctx, d, st, now, r.Scheduled, r.Ends)
 				}
 			}
 			if st.next.After(now) {
@@ -267,7 +310,7 @@ func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 			case st.active != nil:
 				s.opts.Log.Warn("world event skipped: its last run still lasts", "event", d.Name, "at", at)
 			default:
-				s.start(ctx, d, st, now, at, at.Add(d.Duration))
+				_ = s.start(ctx, d, st, now, at, at.Add(d.Duration))
 			}
 		case Random:
 			if st.next.After(now) {
@@ -281,7 +324,7 @@ func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 			if s.opts.Rand == nil || s.opts.Rand.IntN(10000) >= d.Trigger.Chance {
 				continue
 			}
-			s.start(ctx, d, st, now, at, now.Add(d.Duration))
+			_ = s.start(ctx, d, st, now, at, now.Add(d.Duration))
 		case Condition:
 			if !st.polled.Before(minute) {
 				continue
@@ -305,7 +348,7 @@ func (s *Scheduler) Check(ctx context.Context, now time.Time) {
 			}
 			if now.Sub(st.held) >= d.Trigger.Lasting {
 				st.held = time.Time{}
-				s.start(ctx, d, st, now, minute, now.Add(d.Duration))
+				_ = s.start(ctx, d, st, now, minute, now.Add(d.Duration))
 			}
 		}
 	}
@@ -328,7 +371,7 @@ func (s *Scheduler) requests(ctx context.Context, ctrl Controller, now time.Time
 		switch {
 		case q.Start && st.active == nil:
 			at := now.Truncate(time.Second)
-			s.start(ctx, d, st, now, at, at.Add(d.Duration))
+			_ = s.start(ctx, d, st, now, at, at.Add(d.Duration))
 		case !q.Start && st.active != nil:
 			r := *st.active
 			st.active = nil
@@ -365,20 +408,23 @@ func (s *Scheduler) resume(ctx context.Context, d Def, st *state, now time.Time,
 
 // start records a run, then starts it. A run that cannot be recorded
 // does not start, so a restart cannot run it again.
-func (s *Scheduler) start(ctx context.Context, d Def, st *state, now, scheduled, ends time.Time) {
+func (s *Scheduler) start(ctx context.Context, d Def, st *state, now, scheduled, ends time.Time) error {
 	s.nextID++
 	r := Run{ID: s.nextID, Event: d.Name, Scheduled: scheduled, Started: now, Ends: ends}
 	if err := s.opts.Store.RecordEventRun(ctx, r); err != nil {
 		s.opts.Log.Error("world event not started: its run could not be recorded", "event", d.Name, "err", err)
-		return
+		st.failed, st.failedAt = "its run could not be recorded", now
+		return err
 	}
 	st.last = scheduled
 	if err := s.opts.Runner.Start(ctx, d, r); err != nil {
 		s.opts.Log.Error("world event failed to start", "event", d.Name, "mod", d.Mod, "err", err)
-		return
+		st.failed, st.failedAt = err.Error(), now
+		return err
 	}
 	st.active = &r
 	s.opts.Log.Info("world event started", "event", d.Name, "scheduled", scheduled, "ends", ends)
+	return nil
 }
 
 func (s *Scheduler) end(ctx context.Context, d Def, st *state) {

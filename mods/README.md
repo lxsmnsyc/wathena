@@ -837,7 +837,7 @@ Scripts are Lua 5.4 in a sandbox (internal/script/README.md). There are no globa
 
 ### The context
 
-The runtime sets a hidden context before it calls a setup function, a handler, or a timer. It owns what they create. When it ends, its handlers and timers go with it. A mod's context ends when the mod is reloaded, or when its handlers fail 10 times in a minute in that zone.
+The runtime sets a hidden context before it calls a setup function, a handler, or a timer. It owns what they create. When it ends, its handlers and timers go with it. A mod's context ends when the mod is reloaded, or when its handlers fail 10 times in a minute in that zone. Staff can also turn a mod off in a zone, which pauses its code there without ending its contexts ("Mods turned off by staff" below).
 
 ```lua
 local context = require "wa.context"
@@ -875,6 +875,7 @@ end
 | `chat` | `message` | A player on the context's map said a line, after it went out ("Chat" below). Mod, NPC and event contexts. |
 | `cast` | `cast` | Skill contexts only: the skill takes effect ("Skills" below). |
 | `world_event_start`, `world_event_end` | `event` | A run of a world event started or ended, on any map: `event` is `{ name, type, result }` ("Typed events" below). Mod, NPC and event contexts. |
+| `restart_planned` | `restart` | Staff planned a server restart, or cancelled it, in every zone: `restart` is `{ at, reason }` or `{ cancelled = true }` ("Planned restarts" below). Mod, NPC and event contexts. |
 
 Event contexts can listen to the events of mod contexts.
 
@@ -1309,6 +1310,59 @@ Rules:
 - A saved value stays within the limit's range: a ruleset that raises the base or lowers the max applies at the next read. Lowering deletes nothing. Slots past the size keep their items and take no new one.
 - The player gets the new values at once, and at each login.
 - rAthena's inventory expansion uses its own client window and the vouchers' item IDs. wAthena has no such window yet: a mod sells slots from an NPC, as the Bank does.
+
+### Planned restarts
+
+Staff plan server restarts from the admin screens (proposal 0002, review decision 36, server/README.md, "Staff and admin tools"). `restart_planned` tells every zone's mod, NPC and event contexts:
+
+```lua
+local events = require "wa.events"
+local world = require "wa.world"
+
+return function()
+  events.on("restart_planned", function(restart)
+    if restart.cancelled then
+      return
+    end
+    -- restart.at is the restart's time in Unix seconds, restart.reason
+    -- what staff wrote.
+    world.announce("The arena closes before the restart: " .. restart.reason)
+  end)
+end
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `at` | integer or nil | When the server restarts, in Unix seconds. nil for a cancel. |
+| `reason` | string or nil | Why, as staff wrote it. nil for a cancel. |
+| `cancelled` | `true` or nil | Set when staff cancelled the planned restart. |
+
+Rules:
+
+- It runs once per plan and once per cancel, in every zone, after the plan or the cancel.
+- The server announces the restart to players itself, 30, 15, 10, 5 and 1 minute before and 30 seconds before. A mod need not.
+- At the restart's time, the server saves every character, disconnects every player and stops. Contexts end as at any stop. Data a mod keeps in `wa.variables` is saved as usual.
+- A plan lives only in the running server. A restart before its time drops it without a cancel event.
+
+### Mods turned off by staff
+
+Staff with `mods.disable` turn a mod off in one zone or every zone from the admin screens (review decision 36, [decision 0031](../docs/decisions/0031-world-events-and-mods-tools.md)). It stays off across restarts until it is turned on. Core and its ruleset mods cannot be turned off.
+
+In a zone where a mod is off:
+
+- Its event handlers, timers, hooks, schedules and world event conditions do not run.
+- Its NPCs stay on the map and do not answer clicks. A conversation with one of them closes at once, and its script does not go on.
+- Its item scripts, skill scripts and monster AI scripts do not start. A usable item whose script is the mod's is not used up.
+- A timer that comes due while it is off is skipped: a timer that runs once is dropped, and a repeating one keeps its rhythm.
+- Its contexts stay. Its handlers, timers and hooks run again when it is turned on, with the Lua values they had.
+- Its data stays: variables, server variables and saved rows are not touched.
+- Monsters it spawned stay on the map. Their AI scripts' contexts stay, and run again when it is on.
+- Bonuses it already gave stay until they end.
+- A world event run of its own goes on in the scheduler. Its event context is skipped in that zone, and ends with the run.
+
+A mod that is off when the zone starts runs no entry script and no NPC setup there. They run when it is turned on. Equipment worn while it is off gives its script's bonuses after it is worn again, and a monster spawned while it is off runs its AI script after it spawns again.
+
+The admin screens count each mod's script errors by zone since the server started: failed handlers, timers, hooks, schedules, clicks and setup functions, with the last error and its time.
 
 ### Staff roles
 

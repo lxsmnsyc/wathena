@@ -5568,6 +5568,2670 @@ func (b0 RestoreResult_builder) Build() *RestoreResult {
 	return m0
 }
 
+// ZoneView is one zone of the world view (decision 0031).
+type ZoneView struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Map        string                 `protobuf:"bytes,1,opt,name=map,proto3"`
+	xxx_hidden_Players    int32                  `protobuf:"varint,2,opt,name=players,proto3"`
+	xxx_hidden_Monsters   int32                  `protobuf:"varint,3,opt,name=monsters,proto3"`
+	xxx_hidden_Ticks      int32                  `protobuf:"varint,4,opt,name=ticks,proto3"`
+	xxx_hidden_P50Us      int64                  `protobuf:"varint,5,opt,name=p50_us,json=p50Us,proto3"`
+	xxx_hidden_P99Us      int64                  `protobuf:"varint,6,opt,name=p99_us,json=p99Us,proto3"`
+	xxx_hidden_MaxUs      int64                  `protobuf:"varint,7,opt,name=max_us,json=maxUs,proto3"`
+	xxx_hidden_OverBudget int32                  `protobuf:"varint,8,opt,name=over_budget,json=overBudget,proto3"`
+	xxx_hidden_Asleep     bool                   `protobuf:"varint,9,opt,name=asleep,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *ZoneView) Reset() {
+	*x = ZoneView{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ZoneView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ZoneView) ProtoMessage() {}
+
+func (x *ZoneView) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ZoneView) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *ZoneView) GetPlayers() int32 {
+	if x != nil {
+		return x.xxx_hidden_Players
+	}
+	return 0
+}
+
+func (x *ZoneView) GetMonsters() int32 {
+	if x != nil {
+		return x.xxx_hidden_Monsters
+	}
+	return 0
+}
+
+func (x *ZoneView) GetTicks() int32 {
+	if x != nil {
+		return x.xxx_hidden_Ticks
+	}
+	return 0
+}
+
+func (x *ZoneView) GetP50Us() int64 {
+	if x != nil {
+		return x.xxx_hidden_P50Us
+	}
+	return 0
+}
+
+func (x *ZoneView) GetP99Us() int64 {
+	if x != nil {
+		return x.xxx_hidden_P99Us
+	}
+	return 0
+}
+
+func (x *ZoneView) GetMaxUs() int64 {
+	if x != nil {
+		return x.xxx_hidden_MaxUs
+	}
+	return 0
+}
+
+func (x *ZoneView) GetOverBudget() int32 {
+	if x != nil {
+		return x.xxx_hidden_OverBudget
+	}
+	return 0
+}
+
+func (x *ZoneView) GetAsleep() bool {
+	if x != nil {
+		return x.xxx_hidden_Asleep
+	}
+	return false
+}
+
+func (x *ZoneView) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *ZoneView) SetPlayers(v int32) {
+	x.xxx_hidden_Players = v
+}
+
+func (x *ZoneView) SetMonsters(v int32) {
+	x.xxx_hidden_Monsters = v
+}
+
+func (x *ZoneView) SetTicks(v int32) {
+	x.xxx_hidden_Ticks = v
+}
+
+func (x *ZoneView) SetP50Us(v int64) {
+	x.xxx_hidden_P50Us = v
+}
+
+func (x *ZoneView) SetP99Us(v int64) {
+	x.xxx_hidden_P99Us = v
+}
+
+func (x *ZoneView) SetMaxUs(v int64) {
+	x.xxx_hidden_MaxUs = v
+}
+
+func (x *ZoneView) SetOverBudget(v int32) {
+	x.xxx_hidden_OverBudget = v
+}
+
+func (x *ZoneView) SetAsleep(v bool) {
+	x.xxx_hidden_Asleep = v
+}
+
+type ZoneView_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// map is the map's name, such as prontera.
+	Map     string
+	Players int32
+	// monsters counts the living monsters.
+	Monsters int32
+	// ticks counts the zone's ticks in the last minute. A zone without
+	// players sleeps and does not tick.
+	Ticks int32
+	// The work of the last minute's ticks, in microseconds: the tick and
+	// what the zone handled since the tick before.
+	P50Us int64
+	P99Us int64
+	MaxUs int64
+	// over_budget counts the last minute's ticks over the 10 ms budget.
+	OverBudget int32
+	// asleep is set when the zone sleeps because it has no players.
+	Asleep bool
+}
+
+func (b0 ZoneView_builder) Build() *ZoneView {
+	m0 := &ZoneView{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Players = b.Players
+	x.xxx_hidden_Monsters = b.Monsters
+	x.xxx_hidden_Ticks = b.Ticks
+	x.xxx_hidden_P50Us = b.P50Us
+	x.xxx_hidden_P99Us = b.P99Us
+	x.xxx_hidden_MaxUs = b.MaxUs
+	x.xxx_hidden_OverBudget = b.OverBudget
+	x.xxx_hidden_Asleep = b.Asleep
+	return m0
+}
+
+// ProcessView is the server process of the world view.
+type ProcessView struct {
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CpuCores      float64                `protobuf:"fixed64,1,opt,name=cpu_cores,json=cpuCores,proto3"`
+	xxx_hidden_HeapBytes     uint64                 `protobuf:"varint,2,opt,name=heap_bytes,json=heapBytes,proto3"`
+	xxx_hidden_TotalBytes    uint64                 `protobuf:"varint,3,opt,name=total_bytes,json=totalBytes,proto3"`
+	xxx_hidden_Goroutines    uint64                 `protobuf:"varint,4,opt,name=goroutines,proto3"`
+	xxx_hidden_StartedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=started_at,json=startedAt,proto3"`
+	xxx_hidden_UptimeSeconds int64                  `protobuf:"varint,6,opt,name=uptime_seconds,json=uptimeSeconds,proto3"`
+	xxx_hidden_Version       string                 `protobuf:"bytes,7,opt,name=version,proto3"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *ProcessView) Reset() {
+	*x = ProcessView{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessView) ProtoMessage() {}
+
+func (x *ProcessView) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ProcessView) GetCpuCores() float64 {
+	if x != nil {
+		return x.xxx_hidden_CpuCores
+	}
+	return 0
+}
+
+func (x *ProcessView) GetHeapBytes() uint64 {
+	if x != nil {
+		return x.xxx_hidden_HeapBytes
+	}
+	return 0
+}
+
+func (x *ProcessView) GetTotalBytes() uint64 {
+	if x != nil {
+		return x.xxx_hidden_TotalBytes
+	}
+	return 0
+}
+
+func (x *ProcessView) GetGoroutines() uint64 {
+	if x != nil {
+		return x.xxx_hidden_Goroutines
+	}
+	return 0
+}
+
+func (x *ProcessView) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_StartedAt
+	}
+	return nil
+}
+
+func (x *ProcessView) GetUptimeSeconds() int64 {
+	if x != nil {
+		return x.xxx_hidden_UptimeSeconds
+	}
+	return 0
+}
+
+func (x *ProcessView) GetVersion() string {
+	if x != nil {
+		return x.xxx_hidden_Version
+	}
+	return ""
+}
+
+func (x *ProcessView) SetCpuCores(v float64) {
+	x.xxx_hidden_CpuCores = v
+}
+
+func (x *ProcessView) SetHeapBytes(v uint64) {
+	x.xxx_hidden_HeapBytes = v
+}
+
+func (x *ProcessView) SetTotalBytes(v uint64) {
+	x.xxx_hidden_TotalBytes = v
+}
+
+func (x *ProcessView) SetGoroutines(v uint64) {
+	x.xxx_hidden_Goroutines = v
+}
+
+func (x *ProcessView) SetStartedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_StartedAt = v
+}
+
+func (x *ProcessView) SetUptimeSeconds(v int64) {
+	x.xxx_hidden_UptimeSeconds = v
+}
+
+func (x *ProcessView) SetVersion(v string) {
+	x.xxx_hidden_Version = v
+}
+
+func (x *ProcessView) HasStartedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_StartedAt != nil
+}
+
+func (x *ProcessView) ClearStartedAt() {
+	x.xxx_hidden_StartedAt = nil
+}
+
+type ProcessView_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// cpu_cores is the CPU time per second of wall time since the start,
+	// so 1.0 is one core. It is 0 where the system does not report it.
+	CpuCores      float64
+	HeapBytes     uint64
+	TotalBytes    uint64
+	Goroutines    uint64
+	StartedAt     *timestamppb.Timestamp
+	UptimeSeconds int64
+	Version       string
+}
+
+func (b0 ProcessView_builder) Build() *ProcessView {
+	m0 := &ProcessView{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CpuCores = b.CpuCores
+	x.xxx_hidden_HeapBytes = b.HeapBytes
+	x.xxx_hidden_TotalBytes = b.TotalBytes
+	x.xxx_hidden_Goroutines = b.Goroutines
+	x.xxx_hidden_StartedAt = b.StartedAt
+	x.xxx_hidden_UptimeSeconds = b.UptimeSeconds
+	x.xxx_hidden_Version = b.Version
+	return m0
+}
+
+// OnlinePlayer is a player in the game.
+type OnlinePlayer struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CharacterId int64                  `protobuf:"varint,1,opt,name=character_id,json=characterId,proto3"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Map         string                 `protobuf:"bytes,3,opt,name=map,proto3"`
+	xxx_hidden_X           int32                  `protobuf:"varint,4,opt,name=x,proto3"`
+	xxx_hidden_Y           int32                  `protobuf:"varint,5,opt,name=y,proto3"`
+	xxx_hidden_BaseLevel   int32                  `protobuf:"varint,6,opt,name=base_level,json=baseLevel,proto3"`
+	xxx_hidden_JobName     string                 `protobuf:"bytes,7,opt,name=job_name,json=jobName,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *OnlinePlayer) Reset() {
+	*x = OnlinePlayer{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OnlinePlayer) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OnlinePlayer) ProtoMessage() {}
+
+func (x *OnlinePlayer) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *OnlinePlayer) GetCharacterId() int64 {
+	if x != nil {
+		return x.xxx_hidden_CharacterId
+	}
+	return 0
+}
+
+func (x *OnlinePlayer) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *OnlinePlayer) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *OnlinePlayer) GetX() int32 {
+	if x != nil {
+		return x.xxx_hidden_X
+	}
+	return 0
+}
+
+func (x *OnlinePlayer) GetY() int32 {
+	if x != nil {
+		return x.xxx_hidden_Y
+	}
+	return 0
+}
+
+func (x *OnlinePlayer) GetBaseLevel() int32 {
+	if x != nil {
+		return x.xxx_hidden_BaseLevel
+	}
+	return 0
+}
+
+func (x *OnlinePlayer) GetJobName() string {
+	if x != nil {
+		return x.xxx_hidden_JobName
+	}
+	return ""
+}
+
+func (x *OnlinePlayer) SetCharacterId(v int64) {
+	x.xxx_hidden_CharacterId = v
+}
+
+func (x *OnlinePlayer) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *OnlinePlayer) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *OnlinePlayer) SetX(v int32) {
+	x.xxx_hidden_X = v
+}
+
+func (x *OnlinePlayer) SetY(v int32) {
+	x.xxx_hidden_Y = v
+}
+
+func (x *OnlinePlayer) SetBaseLevel(v int32) {
+	x.xxx_hidden_BaseLevel = v
+}
+
+func (x *OnlinePlayer) SetJobName(v string) {
+	x.xxx_hidden_JobName = v
+}
+
+type OnlinePlayer_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	CharacterId int64
+	Name        string
+	Map         string
+	X           int32
+	Y           int32
+	BaseLevel   int32
+	JobName     string
+}
+
+func (b0 OnlinePlayer_builder) Build() *OnlinePlayer {
+	m0 := &OnlinePlayer{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CharacterId = b.CharacterId
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_X = b.X
+	x.xxx_hidden_Y = b.Y
+	x.xxx_hidden_BaseLevel = b.BaseLevel
+	x.xxx_hidden_JobName = b.JobName
+	return m0
+}
+
+// WorldView answers GET /world.
+type WorldView struct {
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Zones         *[]*ZoneView           `protobuf:"bytes,1,rep,name=zones,proto3"`
+	xxx_hidden_Process       *ProcessView           `protobuf:"bytes,2,opt,name=process,proto3"`
+	xxx_hidden_Players       *[]*OnlinePlayer       `protobuf:"bytes,3,rep,name=players,proto3"`
+	xxx_hidden_PlayersOnline int32                  `protobuf:"varint,4,opt,name=players_online,json=playersOnline,proto3"`
+	xxx_hidden_Restart       *RestartPlan           `protobuf:"bytes,5,opt,name=restart,proto3"`
+	xxx_hidden_Now           *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=now,proto3"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *WorldView) Reset() {
+	*x = WorldView{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorldView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorldView) ProtoMessage() {}
+
+func (x *WorldView) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *WorldView) GetZones() []*ZoneView {
+	if x != nil {
+		if x.xxx_hidden_Zones != nil {
+			return *x.xxx_hidden_Zones
+		}
+	}
+	return nil
+}
+
+func (x *WorldView) GetProcess() *ProcessView {
+	if x != nil {
+		return x.xxx_hidden_Process
+	}
+	return nil
+}
+
+func (x *WorldView) GetPlayers() []*OnlinePlayer {
+	if x != nil {
+		if x.xxx_hidden_Players != nil {
+			return *x.xxx_hidden_Players
+		}
+	}
+	return nil
+}
+
+func (x *WorldView) GetPlayersOnline() int32 {
+	if x != nil {
+		return x.xxx_hidden_PlayersOnline
+	}
+	return 0
+}
+
+func (x *WorldView) GetRestart() *RestartPlan {
+	if x != nil {
+		return x.xxx_hidden_Restart
+	}
+	return nil
+}
+
+func (x *WorldView) GetNow() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Now
+	}
+	return nil
+}
+
+func (x *WorldView) SetZones(v []*ZoneView) {
+	x.xxx_hidden_Zones = &v
+}
+
+func (x *WorldView) SetProcess(v *ProcessView) {
+	x.xxx_hidden_Process = v
+}
+
+func (x *WorldView) SetPlayers(v []*OnlinePlayer) {
+	x.xxx_hidden_Players = &v
+}
+
+func (x *WorldView) SetPlayersOnline(v int32) {
+	x.xxx_hidden_PlayersOnline = v
+}
+
+func (x *WorldView) SetRestart(v *RestartPlan) {
+	x.xxx_hidden_Restart = v
+}
+
+func (x *WorldView) SetNow(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Now = v
+}
+
+func (x *WorldView) HasProcess() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Process != nil
+}
+
+func (x *WorldView) HasRestart() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Restart != nil
+}
+
+func (x *WorldView) HasNow() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Now != nil
+}
+
+func (x *WorldView) ClearProcess() {
+	x.xxx_hidden_Process = nil
+}
+
+func (x *WorldView) ClearRestart() {
+	x.xxx_hidden_Restart = nil
+}
+
+func (x *WorldView) ClearNow() {
+	x.xxx_hidden_Now = nil
+}
+
+type WorldView_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Zones   []*ZoneView
+	Process *ProcessView
+	// players are the players online, by name, at most 1,000.
+	Players []*OnlinePlayer
+	// players_online counts every player online.
+	PlayersOnline int32
+	// restart is the planned restart, or unset.
+	Restart *RestartPlan
+	// now is the server clock.
+	Now *timestamppb.Timestamp
+}
+
+func (b0 WorldView_builder) Build() *WorldView {
+	m0 := &WorldView{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Zones = &b.Zones
+	x.xxx_hidden_Process = b.Process
+	x.xxx_hidden_Players = &b.Players
+	x.xxx_hidden_PlayersOnline = b.PlayersOnline
+	x.xxx_hidden_Restart = b.Restart
+	x.xxx_hidden_Now = b.Now
+	return m0
+}
+
+// AnnounceRequest is the body of POST /announce.
+type AnnounceRequest struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Text string                 `protobuf:"bytes,1,opt,name=text,proto3"`
+	xxx_hidden_Map  string                 `protobuf:"bytes,2,opt,name=map,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *AnnounceRequest) Reset() {
+	*x = AnnounceRequest{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnnounceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnnounceRequest) ProtoMessage() {}
+
+func (x *AnnounceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *AnnounceRequest) GetText() string {
+	if x != nil {
+		return x.xxx_hidden_Text
+	}
+	return ""
+}
+
+func (x *AnnounceRequest) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *AnnounceRequest) SetText(v string) {
+	x.xxx_hidden_Text = v
+}
+
+func (x *AnnounceRequest) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+type AnnounceRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// text is 1 to 255 characters.
+	Text string
+	// map is a map's name for one map, or empty for the world.
+	Map string
+}
+
+func (b0 AnnounceRequest_builder) Build() *AnnounceRequest {
+	m0 := &AnnounceRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Text = b.Text
+	x.xxx_hidden_Map = b.Map
+	return m0
+}
+
+// AnnounceResult answers POST /announce.
+type AnnounceResult struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Text string                 `protobuf:"bytes,1,opt,name=text,proto3"`
+	xxx_hidden_Map  string                 `protobuf:"bytes,2,opt,name=map,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *AnnounceResult) Reset() {
+	*x = AnnounceResult{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnnounceResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnnounceResult) ProtoMessage() {}
+
+func (x *AnnounceResult) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *AnnounceResult) GetText() string {
+	if x != nil {
+		return x.xxx_hidden_Text
+	}
+	return ""
+}
+
+func (x *AnnounceResult) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *AnnounceResult) SetText(v string) {
+	x.xxx_hidden_Text = v
+}
+
+func (x *AnnounceResult) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+type AnnounceResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Text string
+	Map  string
+}
+
+func (b0 AnnounceResult_builder) Build() *AnnounceResult {
+	m0 := &AnnounceResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Text = b.Text
+	x.xxx_hidden_Map = b.Map
+	return m0
+}
+
+// RestartRequest is the body of POST /restart.
+type RestartRequest struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_At      *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=at,proto3"`
+	xxx_hidden_Reason  string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
+	xxx_hidden_Message string                 `protobuf:"bytes,3,opt,name=message,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *RestartRequest) Reset() {
+	*x = RestartRequest{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestartRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestartRequest) ProtoMessage() {}
+
+func (x *RestartRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RestartRequest) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_At
+	}
+	return nil
+}
+
+func (x *RestartRequest) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *RestartRequest) GetMessage() string {
+	if x != nil {
+		return x.xxx_hidden_Message
+	}
+	return ""
+}
+
+func (x *RestartRequest) SetAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_At = v
+}
+
+func (x *RestartRequest) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+func (x *RestartRequest) SetMessage(v string) {
+	x.xxx_hidden_Message = v
+}
+
+func (x *RestartRequest) HasAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_At != nil
+}
+
+func (x *RestartRequest) ClearAt() {
+	x.xxx_hidden_At = nil
+}
+
+type RestartRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// at is from 1 minute to 7 days ahead of the server clock.
+	At *timestamppb.Timestamp
+	// reason is 1 to 255 characters. Players see it when they are
+	// disconnected, and restart_planned gets it.
+	Reason string
+	// message is what the announcements say, at most 255 characters. The
+	// reason when empty.
+	Message string
+}
+
+func (b0 RestartRequest_builder) Build() *RestartRequest {
+	m0 := &RestartRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_At = b.At
+	x.xxx_hidden_Reason = b.Reason
+	x.xxx_hidden_Message = b.Message
+	return m0
+}
+
+// RestartPlan is a planned restart. POST and DELETE /restart answer
+// with it.
+type RestartPlan struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_At           *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=at,proto3"`
+	xxx_hidden_Reason       string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
+	xxx_hidden_Message      string                 `protobuf:"bytes,3,opt,name=message,proto3"`
+	xxx_hidden_PlannedBy    string                 `protobuf:"bytes,4,opt,name=planned_by,json=plannedBy,proto3"`
+	xxx_hidden_PlannedAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=planned_at,json=plannedAt,proto3"`
+	xxx_hidden_LoginsClosed bool                   `protobuf:"varint,6,opt,name=logins_closed,json=loginsClosed,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *RestartPlan) Reset() {
+	*x = RestartPlan{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestartPlan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestartPlan) ProtoMessage() {}
+
+func (x *RestartPlan) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RestartPlan) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_At
+	}
+	return nil
+}
+
+func (x *RestartPlan) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *RestartPlan) GetMessage() string {
+	if x != nil {
+		return x.xxx_hidden_Message
+	}
+	return ""
+}
+
+func (x *RestartPlan) GetPlannedBy() string {
+	if x != nil {
+		return x.xxx_hidden_PlannedBy
+	}
+	return ""
+}
+
+func (x *RestartPlan) GetPlannedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_PlannedAt
+	}
+	return nil
+}
+
+func (x *RestartPlan) GetLoginsClosed() bool {
+	if x != nil {
+		return x.xxx_hidden_LoginsClosed
+	}
+	return false
+}
+
+func (x *RestartPlan) SetAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_At = v
+}
+
+func (x *RestartPlan) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+func (x *RestartPlan) SetMessage(v string) {
+	x.xxx_hidden_Message = v
+}
+
+func (x *RestartPlan) SetPlannedBy(v string) {
+	x.xxx_hidden_PlannedBy = v
+}
+
+func (x *RestartPlan) SetPlannedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_PlannedAt = v
+}
+
+func (x *RestartPlan) SetLoginsClosed(v bool) {
+	x.xxx_hidden_LoginsClosed = v
+}
+
+func (x *RestartPlan) HasAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_At != nil
+}
+
+func (x *RestartPlan) HasPlannedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_PlannedAt != nil
+}
+
+func (x *RestartPlan) ClearAt() {
+	x.xxx_hidden_At = nil
+}
+
+func (x *RestartPlan) ClearPlannedAt() {
+	x.xxx_hidden_PlannedAt = nil
+}
+
+type RestartPlan_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	At        *timestamppb.Timestamp
+	Reason    string
+	Message   string
+	PlannedBy string
+	PlannedAt *timestamppb.Timestamp
+	// logins_closed is set in the last minute, when new logins are
+	// refused.
+	LoginsClosed bool
+}
+
+func (b0 RestartPlan_builder) Build() *RestartPlan {
+	m0 := &RestartPlan{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_At = b.At
+	x.xxx_hidden_Reason = b.Reason
+	x.xxx_hidden_Message = b.Message
+	x.xxx_hidden_PlannedBy = b.PlannedBy
+	x.xxx_hidden_PlannedAt = b.PlannedAt
+	x.xxx_hidden_LoginsClosed = b.LoginsClosed
+	return m0
+}
+
+// EventRun is a run of a world event that lasts.
+type EventRun struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Scheduled *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=scheduled,proto3"`
+	xxx_hidden_Started   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=started,proto3"`
+	xxx_hidden_Ends      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=ends,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *EventRun) Reset() {
+	*x = EventRun{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventRun) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventRun) ProtoMessage() {}
+
+func (x *EventRun) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EventRun) GetScheduled() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Scheduled
+	}
+	return nil
+}
+
+func (x *EventRun) GetStarted() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Started
+	}
+	return nil
+}
+
+func (x *EventRun) GetEnds() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Ends
+	}
+	return nil
+}
+
+func (x *EventRun) SetScheduled(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Scheduled = v
+}
+
+func (x *EventRun) SetStarted(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Started = v
+}
+
+func (x *EventRun) SetEnds(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Ends = v
+}
+
+func (x *EventRun) HasScheduled() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Scheduled != nil
+}
+
+func (x *EventRun) HasStarted() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Started != nil
+}
+
+func (x *EventRun) HasEnds() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Ends != nil
+}
+
+func (x *EventRun) ClearScheduled() {
+	x.xxx_hidden_Scheduled = nil
+}
+
+func (x *EventRun) ClearStarted() {
+	x.xxx_hidden_Started = nil
+}
+
+func (x *EventRun) ClearEnds() {
+	x.xxx_hidden_Ends = nil
+}
+
+type EventRun_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Scheduled *timestamppb.Timestamp
+	Started   *timestamppb.Timestamp
+	Ends      *timestamppb.Timestamp
+}
+
+func (b0 EventRun_builder) Build() *EventRun {
+	m0 := &EventRun{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Scheduled = b.Scheduled
+	x.xxx_hidden_Started = b.Started
+	x.xxx_hidden_Ends = b.Ends
+	return m0
+}
+
+// EventResult is how a run ended: won, lost, stopped, or ended for a
+// script event that ran its time.
+type EventResult struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Scheduled *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=scheduled,proto3"`
+	xxx_hidden_Started   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=started,proto3"`
+	xxx_hidden_Ended     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=ended,proto3"`
+	xxx_hidden_Result    string                 `protobuf:"bytes,4,opt,name=result,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *EventResult) Reset() {
+	*x = EventResult{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventResult) ProtoMessage() {}
+
+func (x *EventResult) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EventResult) GetScheduled() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Scheduled
+	}
+	return nil
+}
+
+func (x *EventResult) GetStarted() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Started
+	}
+	return nil
+}
+
+func (x *EventResult) GetEnded() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Ended
+	}
+	return nil
+}
+
+func (x *EventResult) GetResult() string {
+	if x != nil {
+		return x.xxx_hidden_Result
+	}
+	return ""
+}
+
+func (x *EventResult) SetScheduled(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Scheduled = v
+}
+
+func (x *EventResult) SetStarted(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Started = v
+}
+
+func (x *EventResult) SetEnded(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Ended = v
+}
+
+func (x *EventResult) SetResult(v string) {
+	x.xxx_hidden_Result = v
+}
+
+func (x *EventResult) HasScheduled() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Scheduled != nil
+}
+
+func (x *EventResult) HasStarted() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Started != nil
+}
+
+func (x *EventResult) HasEnded() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Ended != nil
+}
+
+func (x *EventResult) ClearScheduled() {
+	x.xxx_hidden_Scheduled = nil
+}
+
+func (x *EventResult) ClearStarted() {
+	x.xxx_hidden_Started = nil
+}
+
+func (x *EventResult) ClearEnded() {
+	x.xxx_hidden_Ended = nil
+}
+
+type EventResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Scheduled *timestamppb.Timestamp
+	Started   *timestamppb.Timestamp
+	Ended     *timestamppb.Timestamp
+	Result    string
+}
+
+func (b0 EventResult_builder) Build() *EventResult {
+	m0 := &EventResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Scheduled = b.Scheduled
+	x.xxx_hidden_Started = b.Started
+	x.xxx_hidden_Ended = b.Ended
+	x.xxx_hidden_Result = b.Result
+	return m0
+}
+
+// EventOverride is a staff change of an event, saved over the config.
+type EventOverride struct {
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_On              bool                   `protobuf:"varint,1,opt,name=on,proto3,oneof"`
+	xxx_hidden_Trigger         *structpb.Struct       `protobuf:"bytes,2,opt,name=trigger,proto3"`
+	xxx_hidden_DurationMinutes int32                  `protobuf:"varint,3,opt,name=duration_minutes,json=durationMinutes,proto3"`
+	xxx_hidden_ChangedBy       string                 `protobuf:"bytes,4,opt,name=changed_by,json=changedBy,proto3"`
+	xxx_hidden_ChangedAt       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=changed_at,json=changedAt,proto3"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *EventOverride) Reset() {
+	*x = EventOverride{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventOverride) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventOverride) ProtoMessage() {}
+
+func (x *EventOverride) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EventOverride) GetOn() bool {
+	if x != nil {
+		return x.xxx_hidden_On
+	}
+	return false
+}
+
+func (x *EventOverride) GetTrigger() *structpb.Struct {
+	if x != nil {
+		return x.xxx_hidden_Trigger
+	}
+	return nil
+}
+
+func (x *EventOverride) GetDurationMinutes() int32 {
+	if x != nil {
+		return x.xxx_hidden_DurationMinutes
+	}
+	return 0
+}
+
+func (x *EventOverride) GetChangedBy() string {
+	if x != nil {
+		return x.xxx_hidden_ChangedBy
+	}
+	return ""
+}
+
+func (x *EventOverride) GetChangedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ChangedAt
+	}
+	return nil
+}
+
+func (x *EventOverride) SetOn(v bool) {
+	x.xxx_hidden_On = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+}
+
+func (x *EventOverride) SetTrigger(v *structpb.Struct) {
+	x.xxx_hidden_Trigger = v
+}
+
+func (x *EventOverride) SetDurationMinutes(v int32) {
+	x.xxx_hidden_DurationMinutes = v
+}
+
+func (x *EventOverride) SetChangedBy(v string) {
+	x.xxx_hidden_ChangedBy = v
+}
+
+func (x *EventOverride) SetChangedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ChangedAt = v
+}
+
+func (x *EventOverride) HasOn() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *EventOverride) HasTrigger() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Trigger != nil
+}
+
+func (x *EventOverride) HasChangedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ChangedAt != nil
+}
+
+func (x *EventOverride) ClearOn() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_On = false
+}
+
+func (x *EventOverride) ClearTrigger() {
+	x.xxx_hidden_Trigger = nil
+}
+
+func (x *EventOverride) ClearChangedAt() {
+	x.xxx_hidden_ChangedAt = nil
+}
+
+type EventOverride_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// on is set when the change turned the event on or off.
+	On *bool
+	// trigger is set when the change set the trigger.
+	Trigger *structpb.Struct
+	// duration_minutes is set when the change set the duration.
+	DurationMinutes int32
+	ChangedBy       string
+	ChangedAt       *timestamppb.Timestamp
+}
+
+func (b0 EventOverride_builder) Build() *EventOverride {
+	m0 := &EventOverride{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.On != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		x.xxx_hidden_On = *b.On
+	}
+	x.xxx_hidden_Trigger = b.Trigger
+	x.xxx_hidden_DurationMinutes = b.DurationMinutes
+	x.xxx_hidden_ChangedBy = b.ChangedBy
+	x.xxx_hidden_ChangedAt = b.ChangedAt
+	return m0
+}
+
+// EventInfo is one world event of GET /events.
+type EventInfo struct {
+	state                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name                  string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_DisplayName           string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3"`
+	xxx_hidden_Mod                   string                 `protobuf:"bytes,3,opt,name=mod,proto3"`
+	xxx_hidden_Type                  string                 `protobuf:"bytes,4,opt,name=type,proto3"`
+	xxx_hidden_On                    bool                   `protobuf:"varint,5,opt,name=on,proto3"`
+	xxx_hidden_Trigger               *structpb.Struct       `protobuf:"bytes,6,opt,name=trigger,proto3"`
+	xxx_hidden_TriggerText           string                 `protobuf:"bytes,7,opt,name=trigger_text,json=triggerText,proto3"`
+	xxx_hidden_DurationMinutes       int32                  `protobuf:"varint,8,opt,name=duration_minutes,json=durationMinutes,proto3"`
+	xxx_hidden_NextRun               *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=next_run,json=nextRun,proto3"`
+	xxx_hidden_Runs                  *[]*EventRun           `protobuf:"bytes,10,rep,name=runs,proto3"`
+	xxx_hidden_Results               *[]*EventResult        `protobuf:"bytes,11,rep,name=results,proto3"`
+	xxx_hidden_Override              *EventOverride         `protobuf:"bytes,12,opt,name=override,proto3"`
+	xxx_hidden_ConfigOn              bool                   `protobuf:"varint,13,opt,name=config_on,json=configOn,proto3"`
+	xxx_hidden_ConfigTriggerText     string                 `protobuf:"bytes,14,opt,name=config_trigger_text,json=configTriggerText,proto3"`
+	xxx_hidden_ConfigDurationMinutes int32                  `protobuf:"varint,15,opt,name=config_duration_minutes,json=configDurationMinutes,proto3"`
+	xxx_hidden_Failed                string                 `protobuf:"bytes,16,opt,name=failed,proto3"`
+	xxx_hidden_FailedAt              *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=failed_at,json=failedAt,proto3"`
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
+}
+
+func (x *EventInfo) Reset() {
+	*x = EventInfo{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventInfo) ProtoMessage() {}
+
+func (x *EventInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EventInfo) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *EventInfo) GetDisplayName() string {
+	if x != nil {
+		return x.xxx_hidden_DisplayName
+	}
+	return ""
+}
+
+func (x *EventInfo) GetMod() string {
+	if x != nil {
+		return x.xxx_hidden_Mod
+	}
+	return ""
+}
+
+func (x *EventInfo) GetType() string {
+	if x != nil {
+		return x.xxx_hidden_Type
+	}
+	return ""
+}
+
+func (x *EventInfo) GetOn() bool {
+	if x != nil {
+		return x.xxx_hidden_On
+	}
+	return false
+}
+
+func (x *EventInfo) GetTrigger() *structpb.Struct {
+	if x != nil {
+		return x.xxx_hidden_Trigger
+	}
+	return nil
+}
+
+func (x *EventInfo) GetTriggerText() string {
+	if x != nil {
+		return x.xxx_hidden_TriggerText
+	}
+	return ""
+}
+
+func (x *EventInfo) GetDurationMinutes() int32 {
+	if x != nil {
+		return x.xxx_hidden_DurationMinutes
+	}
+	return 0
+}
+
+func (x *EventInfo) GetNextRun() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_NextRun
+	}
+	return nil
+}
+
+func (x *EventInfo) GetRuns() []*EventRun {
+	if x != nil {
+		if x.xxx_hidden_Runs != nil {
+			return *x.xxx_hidden_Runs
+		}
+	}
+	return nil
+}
+
+func (x *EventInfo) GetResults() []*EventResult {
+	if x != nil {
+		if x.xxx_hidden_Results != nil {
+			return *x.xxx_hidden_Results
+		}
+	}
+	return nil
+}
+
+func (x *EventInfo) GetOverride() *EventOverride {
+	if x != nil {
+		return x.xxx_hidden_Override
+	}
+	return nil
+}
+
+func (x *EventInfo) GetConfigOn() bool {
+	if x != nil {
+		return x.xxx_hidden_ConfigOn
+	}
+	return false
+}
+
+func (x *EventInfo) GetConfigTriggerText() string {
+	if x != nil {
+		return x.xxx_hidden_ConfigTriggerText
+	}
+	return ""
+}
+
+func (x *EventInfo) GetConfigDurationMinutes() int32 {
+	if x != nil {
+		return x.xxx_hidden_ConfigDurationMinutes
+	}
+	return 0
+}
+
+func (x *EventInfo) GetFailed() string {
+	if x != nil {
+		return x.xxx_hidden_Failed
+	}
+	return ""
+}
+
+func (x *EventInfo) GetFailedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_FailedAt
+	}
+	return nil
+}
+
+func (x *EventInfo) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *EventInfo) SetDisplayName(v string) {
+	x.xxx_hidden_DisplayName = v
+}
+
+func (x *EventInfo) SetMod(v string) {
+	x.xxx_hidden_Mod = v
+}
+
+func (x *EventInfo) SetType(v string) {
+	x.xxx_hidden_Type = v
+}
+
+func (x *EventInfo) SetOn(v bool) {
+	x.xxx_hidden_On = v
+}
+
+func (x *EventInfo) SetTrigger(v *structpb.Struct) {
+	x.xxx_hidden_Trigger = v
+}
+
+func (x *EventInfo) SetTriggerText(v string) {
+	x.xxx_hidden_TriggerText = v
+}
+
+func (x *EventInfo) SetDurationMinutes(v int32) {
+	x.xxx_hidden_DurationMinutes = v
+}
+
+func (x *EventInfo) SetNextRun(v *timestamppb.Timestamp) {
+	x.xxx_hidden_NextRun = v
+}
+
+func (x *EventInfo) SetRuns(v []*EventRun) {
+	x.xxx_hidden_Runs = &v
+}
+
+func (x *EventInfo) SetResults(v []*EventResult) {
+	x.xxx_hidden_Results = &v
+}
+
+func (x *EventInfo) SetOverride(v *EventOverride) {
+	x.xxx_hidden_Override = v
+}
+
+func (x *EventInfo) SetConfigOn(v bool) {
+	x.xxx_hidden_ConfigOn = v
+}
+
+func (x *EventInfo) SetConfigTriggerText(v string) {
+	x.xxx_hidden_ConfigTriggerText = v
+}
+
+func (x *EventInfo) SetConfigDurationMinutes(v int32) {
+	x.xxx_hidden_ConfigDurationMinutes = v
+}
+
+func (x *EventInfo) SetFailed(v string) {
+	x.xxx_hidden_Failed = v
+}
+
+func (x *EventInfo) SetFailedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_FailedAt = v
+}
+
+func (x *EventInfo) HasTrigger() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Trigger != nil
+}
+
+func (x *EventInfo) HasNextRun() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_NextRun != nil
+}
+
+func (x *EventInfo) HasOverride() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Override != nil
+}
+
+func (x *EventInfo) HasFailedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_FailedAt != nil
+}
+
+func (x *EventInfo) ClearTrigger() {
+	x.xxx_hidden_Trigger = nil
+}
+
+func (x *EventInfo) ClearNextRun() {
+	x.xxx_hidden_NextRun = nil
+}
+
+func (x *EventInfo) ClearOverride() {
+	x.xxx_hidden_Override = nil
+}
+
+func (x *EventInfo) ClearFailedAt() {
+	x.xxx_hidden_FailedAt = nil
+}
+
+type EventInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// name is the full name, such as core:Field_Boss.
+	Name        string
+	DisplayName string
+	Mod         string
+	// type is boss, invasion, treasure_hunt or script.
+	Type string
+	On   bool
+	// trigger is the trigger in the form of data/events.yml, such as
+	// {"daily": "20:00"}, and trigger_text says it for people.
+	Trigger         *structpb.Struct
+	TriggerText     string
+	DurationMinutes int32
+	// next_run is the trigger's next time, or unset.
+	NextRun *timestamppb.Timestamp
+	Runs    []*EventRun
+	// results are the latest results since the server started, newest
+	// first.
+	Results []*EventResult
+	// override is the staff change, or unset.
+	Override *EventOverride
+	// What the config says, for a reset.
+	ConfigOn              bool
+	ConfigTriggerText     string
+	ConfigDurationMinutes int32
+	// failed is the error of the last run that did not start.
+	Failed   string
+	FailedAt *timestamppb.Timestamp
+}
+
+func (b0 EventInfo_builder) Build() *EventInfo {
+	m0 := &EventInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_DisplayName = b.DisplayName
+	x.xxx_hidden_Mod = b.Mod
+	x.xxx_hidden_Type = b.Type
+	x.xxx_hidden_On = b.On
+	x.xxx_hidden_Trigger = b.Trigger
+	x.xxx_hidden_TriggerText = b.TriggerText
+	x.xxx_hidden_DurationMinutes = b.DurationMinutes
+	x.xxx_hidden_NextRun = b.NextRun
+	x.xxx_hidden_Runs = &b.Runs
+	x.xxx_hidden_Results = &b.Results
+	x.xxx_hidden_Override = b.Override
+	x.xxx_hidden_ConfigOn = b.ConfigOn
+	x.xxx_hidden_ConfigTriggerText = b.ConfigTriggerText
+	x.xxx_hidden_ConfigDurationMinutes = b.ConfigDurationMinutes
+	x.xxx_hidden_Failed = b.Failed
+	x.xxx_hidden_FailedAt = b.FailedAt
+	return m0
+}
+
+// EventList answers GET /events.
+type EventList struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Events *[]*EventInfo          `protobuf:"bytes,1,rep,name=events,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *EventList) Reset() {
+	*x = EventList{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventList) ProtoMessage() {}
+
+func (x *EventList) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EventList) GetEvents() []*EventInfo {
+	if x != nil {
+		if x.xxx_hidden_Events != nil {
+			return *x.xxx_hidden_Events
+		}
+	}
+	return nil
+}
+
+func (x *EventList) SetEvents(v []*EventInfo) {
+	x.xxx_hidden_Events = &v
+}
+
+type EventList_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Events []*EventInfo
+}
+
+func (b0 EventList_builder) Build() *EventList {
+	m0 := &EventList{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Events = &b.Events
+	return m0
+}
+
+// EventChange is the body of PATCH /events/{name}. Fields that are not
+// set keep their value.
+type EventChange struct {
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_On              bool                   `protobuf:"varint,1,opt,name=on,proto3,oneof"`
+	xxx_hidden_Trigger         *structpb.Struct       `protobuf:"bytes,2,opt,name=trigger,proto3"`
+	xxx_hidden_DurationMinutes int32                  `protobuf:"varint,3,opt,name=duration_minutes,json=durationMinutes,proto3"`
+	xxx_hidden_Reason          string                 `protobuf:"bytes,4,opt,name=reason,proto3"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *EventChange) Reset() {
+	*x = EventChange{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventChange) ProtoMessage() {}
+
+func (x *EventChange) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EventChange) GetOn() bool {
+	if x != nil {
+		return x.xxx_hidden_On
+	}
+	return false
+}
+
+func (x *EventChange) GetTrigger() *structpb.Struct {
+	if x != nil {
+		return x.xxx_hidden_Trigger
+	}
+	return nil
+}
+
+func (x *EventChange) GetDurationMinutes() int32 {
+	if x != nil {
+		return x.xxx_hidden_DurationMinutes
+	}
+	return 0
+}
+
+func (x *EventChange) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *EventChange) SetOn(v bool) {
+	x.xxx_hidden_On = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+}
+
+func (x *EventChange) SetTrigger(v *structpb.Struct) {
+	x.xxx_hidden_Trigger = v
+}
+
+func (x *EventChange) SetDurationMinutes(v int32) {
+	x.xxx_hidden_DurationMinutes = v
+}
+
+func (x *EventChange) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+func (x *EventChange) HasOn() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *EventChange) HasTrigger() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Trigger != nil
+}
+
+func (x *EventChange) ClearOn() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_On = false
+}
+
+func (x *EventChange) ClearTrigger() {
+	x.xxx_hidden_Trigger = nil
+}
+
+type EventChange_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	On      *bool
+	Trigger *structpb.Struct
+	// duration_minutes is 1 to 10,080, or 0 to keep it.
+	DurationMinutes int32
+	// reason is optional, at most 255 characters.
+	Reason string
+}
+
+func (b0 EventChange_builder) Build() *EventChange {
+	m0 := &EventChange{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.On != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_On = *b.On
+	}
+	x.xxx_hidden_Trigger = b.Trigger
+	x.xxx_hidden_DurationMinutes = b.DurationMinutes
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// EventAction is the body of POST /events/{name}/start, /stop and
+// /reset.
+type EventAction struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Reason string                 `protobuf:"bytes,1,opt,name=reason,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *EventAction) Reset() {
+	*x = EventAction{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventAction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventAction) ProtoMessage() {}
+
+func (x *EventAction) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *EventAction) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *EventAction) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+type EventAction_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// reason is optional, at most 255 characters.
+	Reason string
+}
+
+func (b0 EventAction_builder) Build() *EventAction {
+	m0 := &EventAction{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// ModSwitch is a mod that staff turned off.
+type ModSwitch struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Map       string                 `protobuf:"bytes,1,opt,name=map,proto3"`
+	xxx_hidden_Reason    string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
+	xxx_hidden_ChangedBy string                 `protobuf:"bytes,3,opt,name=changed_by,json=changedBy,proto3"`
+	xxx_hidden_ChangedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=changed_at,json=changedAt,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ModSwitch) Reset() {
+	*x = ModSwitch{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModSwitch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModSwitch) ProtoMessage() {}
+
+func (x *ModSwitch) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ModSwitch) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *ModSwitch) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *ModSwitch) GetChangedBy() string {
+	if x != nil {
+		return x.xxx_hidden_ChangedBy
+	}
+	return ""
+}
+
+func (x *ModSwitch) GetChangedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ChangedAt
+	}
+	return nil
+}
+
+func (x *ModSwitch) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *ModSwitch) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+func (x *ModSwitch) SetChangedBy(v string) {
+	x.xxx_hidden_ChangedBy = v
+}
+
+func (x *ModSwitch) SetChangedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ChangedAt = v
+}
+
+func (x *ModSwitch) HasChangedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ChangedAt != nil
+}
+
+func (x *ModSwitch) ClearChangedAt() {
+	x.xxx_hidden_ChangedAt = nil
+}
+
+type ModSwitch_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// map is a map's name, or empty for every zone.
+	Map       string
+	Reason    string
+	ChangedBy string
+	ChangedAt *timestamppb.Timestamp
+}
+
+func (b0 ModSwitch_builder) Build() *ModSwitch {
+	m0 := &ModSwitch{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Reason = b.Reason
+	x.xxx_hidden_ChangedBy = b.ChangedBy
+	x.xxx_hidden_ChangedAt = b.ChangedAt
+	return m0
+}
+
+// ModZone is a mod's state in one zone.
+type ModZone struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Map         string                 `protobuf:"bytes,1,opt,name=map,proto3"`
+	xxx_hidden_Off         bool                   `protobuf:"varint,2,opt,name=off,proto3"`
+	xxx_hidden_Errors      int64                  `protobuf:"varint,3,opt,name=errors,proto3"`
+	xxx_hidden_LastError   string                 `protobuf:"bytes,4,opt,name=last_error,json=lastError,proto3"`
+	xxx_hidden_LastErrorAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_error_at,json=lastErrorAt,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *ModZone) Reset() {
+	*x = ModZone{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModZone) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModZone) ProtoMessage() {}
+
+func (x *ModZone) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ModZone) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *ModZone) GetOff() bool {
+	if x != nil {
+		return x.xxx_hidden_Off
+	}
+	return false
+}
+
+func (x *ModZone) GetErrors() int64 {
+	if x != nil {
+		return x.xxx_hidden_Errors
+	}
+	return 0
+}
+
+func (x *ModZone) GetLastError() string {
+	if x != nil {
+		return x.xxx_hidden_LastError
+	}
+	return ""
+}
+
+func (x *ModZone) GetLastErrorAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_LastErrorAt
+	}
+	return nil
+}
+
+func (x *ModZone) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *ModZone) SetOff(v bool) {
+	x.xxx_hidden_Off = v
+}
+
+func (x *ModZone) SetErrors(v int64) {
+	x.xxx_hidden_Errors = v
+}
+
+func (x *ModZone) SetLastError(v string) {
+	x.xxx_hidden_LastError = v
+}
+
+func (x *ModZone) SetLastErrorAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_LastErrorAt = v
+}
+
+func (x *ModZone) HasLastErrorAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_LastErrorAt != nil
+}
+
+func (x *ModZone) ClearLastErrorAt() {
+	x.xxx_hidden_LastErrorAt = nil
+}
+
+type ModZone_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Map string
+	Off bool
+	// errors counts the mod's script errors in the zone since the server
+	// started, with the last error and its time.
+	Errors      int64
+	LastError   string
+	LastErrorAt *timestamppb.Timestamp
+}
+
+func (b0 ModZone_builder) Build() *ModZone {
+	m0 := &ModZone{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Off = b.Off
+	x.xxx_hidden_Errors = b.Errors
+	x.xxx_hidden_LastError = b.LastError
+	x.xxx_hidden_LastErrorAt = b.LastErrorAt
+	return m0
+}
+
+// ModInfo is one loaded mod of GET /mods.
+type ModInfo struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id        string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Name      string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Version   string                 `protobuf:"bytes,3,opt,name=version,proto3"`
+	xxx_hidden_Builtin   bool                   `protobuf:"varint,4,opt,name=builtin,proto3"`
+	xxx_hidden_Signature string                 `protobuf:"bytes,5,opt,name=signature,proto3"`
+	xxx_hidden_Granted   []string               `protobuf:"bytes,6,rep,name=granted,proto3"`
+	xxx_hidden_Requested []string               `protobuf:"bytes,7,rep,name=requested,proto3"`
+	xxx_hidden_Pending   []string               `protobuf:"bytes,8,rep,name=pending,proto3"`
+	xxx_hidden_Switches  *[]*ModSwitch          `protobuf:"bytes,9,rep,name=switches,proto3"`
+	xxx_hidden_Zones     *[]*ModZone            `protobuf:"bytes,10,rep,name=zones,proto3"`
+	xxx_hidden_Errors    int64                  `protobuf:"varint,11,opt,name=errors,proto3"`
+	xxx_hidden_Scripts   bool                   `protobuf:"varint,12,opt,name=scripts,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ModInfo) Reset() {
+	*x = ModInfo{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModInfo) ProtoMessage() {}
+
+func (x *ModInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ModInfo) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *ModInfo) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ModInfo) GetVersion() string {
+	if x != nil {
+		return x.xxx_hidden_Version
+	}
+	return ""
+}
+
+func (x *ModInfo) GetBuiltin() bool {
+	if x != nil {
+		return x.xxx_hidden_Builtin
+	}
+	return false
+}
+
+func (x *ModInfo) GetSignature() string {
+	if x != nil {
+		return x.xxx_hidden_Signature
+	}
+	return ""
+}
+
+func (x *ModInfo) GetGranted() []string {
+	if x != nil {
+		return x.xxx_hidden_Granted
+	}
+	return nil
+}
+
+func (x *ModInfo) GetRequested() []string {
+	if x != nil {
+		return x.xxx_hidden_Requested
+	}
+	return nil
+}
+
+func (x *ModInfo) GetPending() []string {
+	if x != nil {
+		return x.xxx_hidden_Pending
+	}
+	return nil
+}
+
+func (x *ModInfo) GetSwitches() []*ModSwitch {
+	if x != nil {
+		if x.xxx_hidden_Switches != nil {
+			return *x.xxx_hidden_Switches
+		}
+	}
+	return nil
+}
+
+func (x *ModInfo) GetZones() []*ModZone {
+	if x != nil {
+		if x.xxx_hidden_Zones != nil {
+			return *x.xxx_hidden_Zones
+		}
+	}
+	return nil
+}
+
+func (x *ModInfo) GetErrors() int64 {
+	if x != nil {
+		return x.xxx_hidden_Errors
+	}
+	return 0
+}
+
+func (x *ModInfo) GetScripts() bool {
+	if x != nil {
+		return x.xxx_hidden_Scripts
+	}
+	return false
+}
+
+func (x *ModInfo) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *ModInfo) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *ModInfo) SetVersion(v string) {
+	x.xxx_hidden_Version = v
+}
+
+func (x *ModInfo) SetBuiltin(v bool) {
+	x.xxx_hidden_Builtin = v
+}
+
+func (x *ModInfo) SetSignature(v string) {
+	x.xxx_hidden_Signature = v
+}
+
+func (x *ModInfo) SetGranted(v []string) {
+	x.xxx_hidden_Granted = v
+}
+
+func (x *ModInfo) SetRequested(v []string) {
+	x.xxx_hidden_Requested = v
+}
+
+func (x *ModInfo) SetPending(v []string) {
+	x.xxx_hidden_Pending = v
+}
+
+func (x *ModInfo) SetSwitches(v []*ModSwitch) {
+	x.xxx_hidden_Switches = &v
+}
+
+func (x *ModInfo) SetZones(v []*ModZone) {
+	x.xxx_hidden_Zones = &v
+}
+
+func (x *ModInfo) SetErrors(v int64) {
+	x.xxx_hidden_Errors = v
+}
+
+func (x *ModInfo) SetScripts(v bool) {
+	x.xxx_hidden_Scripts = v
+}
+
+type ModInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id      string
+	Name    string
+	Version string
+	// builtin is set for core and the core ruleset mods. Core cannot be
+	// turned off.
+	Builtin bool
+	// signature is builtin, folder, unsigned or unverified: a .zip file
+	// with a .minisig file next to it, which the server does not check.
+	Signature string
+	// granted are the permissions the mod holds. requested are those its
+	// manifest asks for. pending are requested permissions the owner has
+	// not approved. A mod with any does not load, so a loaded mod has
+	// none.
+	Granted   []string
+	Requested []string
+	Pending   []string
+	// switches are the zones where staff turned it off.
+	Switches []*ModSwitch
+	// zones are the zones where it is off or had errors.
+	Zones []*ModZone
+	// errors counts its script errors in every zone.
+	Errors int64
+	// scripts is set when it has Lua scripts.
+	Scripts bool
+}
+
+func (b0 ModInfo_builder) Build() *ModInfo {
+	m0 := &ModInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Version = b.Version
+	x.xxx_hidden_Builtin = b.Builtin
+	x.xxx_hidden_Signature = b.Signature
+	x.xxx_hidden_Granted = b.Granted
+	x.xxx_hidden_Requested = b.Requested
+	x.xxx_hidden_Pending = b.Pending
+	x.xxx_hidden_Switches = &b.Switches
+	x.xxx_hidden_Zones = &b.Zones
+	x.xxx_hidden_Errors = b.Errors
+	x.xxx_hidden_Scripts = b.Scripts
+	return m0
+}
+
+// ModList answers GET /mods.
+type ModList struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Mods *[]*ModInfo            `protobuf:"bytes,1,rep,name=mods,proto3"`
+	xxx_hidden_Maps []string               `protobuf:"bytes,2,rep,name=maps,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ModList) Reset() {
+	*x = ModList{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModList) ProtoMessage() {}
+
+func (x *ModList) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ModList) GetMods() []*ModInfo {
+	if x != nil {
+		if x.xxx_hidden_Mods != nil {
+			return *x.xxx_hidden_Mods
+		}
+	}
+	return nil
+}
+
+func (x *ModList) GetMaps() []string {
+	if x != nil {
+		return x.xxx_hidden_Maps
+	}
+	return nil
+}
+
+func (x *ModList) SetMods(v []*ModInfo) {
+	x.xxx_hidden_Mods = &v
+}
+
+func (x *ModList) SetMaps(v []string) {
+	x.xxx_hidden_Maps = v
+}
+
+type ModList_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Mods []*ModInfo
+	// maps are the maps that run, for the zone choice.
+	Maps []string
+}
+
+func (b0 ModList_builder) Build() *ModList {
+	m0 := &ModList{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Mods = &b.Mods
+	x.xxx_hidden_Maps = b.Maps
+	return m0
+}
+
+// ModSwitchRequest is the body of POST /mods/{id}/disable and /enable.
+type ModSwitchRequest struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Map    string                 `protobuf:"bytes,1,opt,name=map,proto3"`
+	xxx_hidden_Reason string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ModSwitchRequest) Reset() {
+	*x = ModSwitchRequest{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModSwitchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModSwitchRequest) ProtoMessage() {}
+
+func (x *ModSwitchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ModSwitchRequest) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *ModSwitchRequest) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *ModSwitchRequest) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *ModSwitchRequest) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+type ModSwitchRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// map is a map's name, or empty for every zone.
+	Map string
+	// reason is 1 to 255 characters to turn a mod off, and optional to
+	// turn it on.
+	Reason string
+}
+
+func (b0 ModSwitchRequest_builder) Build() *ModSwitchRequest {
+	m0 := &ModSwitchRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
 // Error is the body of every answer that is not 2xx.
 type Error struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
@@ -5580,7 +8244,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[36]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5592,7 +8256,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[36]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5995,14 +8659,154 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\rRestoreResult\x12\x17\n" +
 	"\amail_id\x18\x01 \x01(\x03R\x06mailId\x124\n" +
 	"\x05items\x18\x02 \x03(\v2\x1e.wathena.admin.v1.RestoredItemR\x05items\x12\x12\n" +
-	"\x04zeny\x18\x03 \x01(\x03R\x04zeny\"T\n" +
+	"\x04zeny\x18\x03 \x01(\x03R\x04zeny\"\xe6\x01\n" +
+	"\bZoneView\x12\x10\n" +
+	"\x03map\x18\x01 \x01(\tR\x03map\x12\x18\n" +
+	"\aplayers\x18\x02 \x01(\x05R\aplayers\x12\x1a\n" +
+	"\bmonsters\x18\x03 \x01(\x05R\bmonsters\x12\x14\n" +
+	"\x05ticks\x18\x04 \x01(\x05R\x05ticks\x12\x15\n" +
+	"\x06p50_us\x18\x05 \x01(\x03R\x05p50Us\x12\x15\n" +
+	"\x06p99_us\x18\x06 \x01(\x03R\x05p99Us\x12\x15\n" +
+	"\x06max_us\x18\a \x01(\x03R\x05maxUs\x12\x1f\n" +
+	"\vover_budget\x18\b \x01(\x05R\n" +
+	"overBudget\x12\x16\n" +
+	"\x06asleep\x18\t \x01(\bR\x06asleep\"\x86\x02\n" +
+	"\vProcessView\x12\x1b\n" +
+	"\tcpu_cores\x18\x01 \x01(\x01R\bcpuCores\x12\x1d\n" +
+	"\n" +
+	"heap_bytes\x18\x02 \x01(\x04R\theapBytes\x12\x1f\n" +
+	"\vtotal_bytes\x18\x03 \x01(\x04R\n" +
+	"totalBytes\x12\x1e\n" +
+	"\n" +
+	"goroutines\x18\x04 \x01(\x04R\n" +
+	"goroutines\x129\n" +
+	"\n" +
+	"started_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12%\n" +
+	"\x0euptime_seconds\x18\x06 \x01(\x03R\ruptimeSeconds\x12\x18\n" +
+	"\aversion\x18\a \x01(\tR\aversion\"\xad\x01\n" +
+	"\fOnlinePlayer\x12!\n" +
+	"\fcharacter_id\x18\x01 \x01(\x03R\vcharacterId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
+	"\x03map\x18\x03 \x01(\tR\x03map\x12\f\n" +
+	"\x01x\x18\x04 \x01(\x05R\x01x\x12\f\n" +
+	"\x01y\x18\x05 \x01(\x05R\x01y\x12\x1d\n" +
+	"\n" +
+	"base_level\x18\x06 \x01(\x05R\tbaseLevel\x12\x19\n" +
+	"\bjob_name\x18\a \x01(\tR\ajobName\"\xbe\x02\n" +
+	"\tWorldView\x120\n" +
+	"\x05zones\x18\x01 \x03(\v2\x1a.wathena.admin.v1.ZoneViewR\x05zones\x127\n" +
+	"\aprocess\x18\x02 \x01(\v2\x1d.wathena.admin.v1.ProcessViewR\aprocess\x128\n" +
+	"\aplayers\x18\x03 \x03(\v2\x1e.wathena.admin.v1.OnlinePlayerR\aplayers\x12%\n" +
+	"\x0eplayers_online\x18\x04 \x01(\x05R\rplayersOnline\x127\n" +
+	"\arestart\x18\x05 \x01(\v2\x1d.wathena.admin.v1.RestartPlanR\arestart\x12,\n" +
+	"\x03now\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\"7\n" +
+	"\x0fAnnounceRequest\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12\x10\n" +
+	"\x03map\x18\x02 \x01(\tR\x03map\"6\n" +
+	"\x0eAnnounceResult\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12\x10\n" +
+	"\x03map\x18\x02 \x01(\tR\x03map\"n\n" +
+	"\x0eRestartRequest\x12*\n" +
+	"\x02at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xea\x01\n" +
+	"\vRestartPlan\x12*\n" +
+	"\x02at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x1d\n" +
+	"\n" +
+	"planned_by\x18\x04 \x01(\tR\tplannedBy\x129\n" +
+	"\n" +
+	"planned_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tplannedAt\x12#\n" +
+	"\rlogins_closed\x18\x06 \x01(\bR\floginsClosed\"\xaa\x01\n" +
+	"\bEventRun\x128\n" +
+	"\tscheduled\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tscheduled\x124\n" +
+	"\astarted\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\astarted\x12.\n" +
+	"\x04ends\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04ends\"\xc7\x01\n" +
+	"\vEventResult\x128\n" +
+	"\tscheduled\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tscheduled\x124\n" +
+	"\astarted\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\astarted\x120\n" +
+	"\x05ended\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x05ended\x12\x16\n" +
+	"\x06result\x18\x04 \x01(\tR\x06result\"\xe3\x01\n" +
+	"\rEventOverride\x12\x13\n" +
+	"\x02on\x18\x01 \x01(\bH\x00R\x02on\x88\x01\x01\x121\n" +
+	"\atrigger\x18\x02 \x01(\v2\x17.google.protobuf.StructR\atrigger\x12)\n" +
+	"\x10duration_minutes\x18\x03 \x01(\x05R\x0fdurationMinutes\x12\x1d\n" +
+	"\n" +
+	"changed_by\x18\x04 \x01(\tR\tchangedBy\x129\n" +
+	"\n" +
+	"changed_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tchangedAtB\x05\n" +
+	"\x03_on\"\xac\x05\n" +
+	"\tEventInfo\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x10\n" +
+	"\x03mod\x18\x03 \x01(\tR\x03mod\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x0e\n" +
+	"\x02on\x18\x05 \x01(\bR\x02on\x121\n" +
+	"\atrigger\x18\x06 \x01(\v2\x17.google.protobuf.StructR\atrigger\x12!\n" +
+	"\ftrigger_text\x18\a \x01(\tR\vtriggerText\x12)\n" +
+	"\x10duration_minutes\x18\b \x01(\x05R\x0fdurationMinutes\x125\n" +
+	"\bnext_run\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\anextRun\x12.\n" +
+	"\x04runs\x18\n" +
+	" \x03(\v2\x1a.wathena.admin.v1.EventRunR\x04runs\x127\n" +
+	"\aresults\x18\v \x03(\v2\x1d.wathena.admin.v1.EventResultR\aresults\x12;\n" +
+	"\boverride\x18\f \x01(\v2\x1f.wathena.admin.v1.EventOverrideR\boverride\x12\x1b\n" +
+	"\tconfig_on\x18\r \x01(\bR\bconfigOn\x12.\n" +
+	"\x13config_trigger_text\x18\x0e \x01(\tR\x11configTriggerText\x126\n" +
+	"\x17config_duration_minutes\x18\x0f \x01(\x05R\x15configDurationMinutes\x12\x16\n" +
+	"\x06failed\x18\x10 \x01(\tR\x06failed\x127\n" +
+	"\tfailed_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\bfailedAt\"@\n" +
+	"\tEventList\x123\n" +
+	"\x06events\x18\x01 \x03(\v2\x1b.wathena.admin.v1.EventInfoR\x06events\"\x9f\x01\n" +
+	"\vEventChange\x12\x13\n" +
+	"\x02on\x18\x01 \x01(\bH\x00R\x02on\x88\x01\x01\x121\n" +
+	"\atrigger\x18\x02 \x01(\v2\x17.google.protobuf.StructR\atrigger\x12)\n" +
+	"\x10duration_minutes\x18\x03 \x01(\x05R\x0fdurationMinutes\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reasonB\x05\n" +
+	"\x03_on\"%\n" +
+	"\vEventAction\x12\x16\n" +
+	"\x06reason\x18\x01 \x01(\tR\x06reason\"\x8f\x01\n" +
+	"\tModSwitch\x12\x10\n" +
+	"\x03map\x18\x01 \x01(\tR\x03map\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x1d\n" +
+	"\n" +
+	"changed_by\x18\x03 \x01(\tR\tchangedBy\x129\n" +
+	"\n" +
+	"changed_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tchangedAt\"\xa4\x01\n" +
+	"\aModZone\x12\x10\n" +
+	"\x03map\x18\x01 \x01(\tR\x03map\x12\x10\n" +
+	"\x03off\x18\x02 \x01(\bR\x03off\x12\x16\n" +
+	"\x06errors\x18\x03 \x01(\x03R\x06errors\x12\x1d\n" +
+	"\n" +
+	"last_error\x18\x04 \x01(\tR\tlastError\x12>\n" +
+	"\rlast_error_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vlastErrorAt\"\xed\x02\n" +
+	"\aModInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\tR\aversion\x12\x18\n" +
+	"\abuiltin\x18\x04 \x01(\bR\abuiltin\x12\x1c\n" +
+	"\tsignature\x18\x05 \x01(\tR\tsignature\x12\x18\n" +
+	"\agranted\x18\x06 \x03(\tR\agranted\x12\x1c\n" +
+	"\trequested\x18\a \x03(\tR\trequested\x12\x18\n" +
+	"\apending\x18\b \x03(\tR\apending\x127\n" +
+	"\bswitches\x18\t \x03(\v2\x1b.wathena.admin.v1.ModSwitchR\bswitches\x12/\n" +
+	"\x05zones\x18\n" +
+	" \x03(\v2\x19.wathena.admin.v1.ModZoneR\x05zones\x12\x16\n" +
+	"\x06errors\x18\v \x01(\x03R\x06errors\x12\x18\n" +
+	"\ascripts\x18\f \x01(\bR\ascripts\"L\n" +
+	"\aModList\x12-\n" +
+	"\x04mods\x18\x01 \x03(\v2\x19.wathena.admin.v1.ModInfoR\x04mods\x12\x12\n" +
+	"\x04maps\x18\x02 \x03(\tR\x04maps\"<\n" +
+	"\x10ModSwitchRequest\x12\x10\n" +
+	"\x03map\x18\x01 \x01(\tR\x03map\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"T\n" +
 	"\x05Error\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1d\n" +
 	"\n" +
 	"reauth_url\x18\x03 \x01(\tR\treauthUrlBDZBgithub.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1b\x06proto3"
 
-var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
+var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 58)
 var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*Me)(nil),                    // 0: wathena.admin.v1.Me
 	(*Role)(nil),                  // 1: wathena.admin.v1.Role
@@ -6040,44 +8844,64 @@ var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*RestoreRequest)(nil),        // 33: wathena.admin.v1.RestoreRequest
 	(*RestoredItem)(nil),          // 34: wathena.admin.v1.RestoredItem
 	(*RestoreResult)(nil),         // 35: wathena.admin.v1.RestoreResult
-	(*Error)(nil),                 // 36: wathena.admin.v1.Error
-	nil,                           // 37: wathena.admin.v1.Item.RollsEntry
-	(*timestamppb.Timestamp)(nil), // 38: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),       // 39: google.protobuf.Struct
+	(*ZoneView)(nil),              // 36: wathena.admin.v1.ZoneView
+	(*ProcessView)(nil),           // 37: wathena.admin.v1.ProcessView
+	(*OnlinePlayer)(nil),          // 38: wathena.admin.v1.OnlinePlayer
+	(*WorldView)(nil),             // 39: wathena.admin.v1.WorldView
+	(*AnnounceRequest)(nil),       // 40: wathena.admin.v1.AnnounceRequest
+	(*AnnounceResult)(nil),        // 41: wathena.admin.v1.AnnounceResult
+	(*RestartRequest)(nil),        // 42: wathena.admin.v1.RestartRequest
+	(*RestartPlan)(nil),           // 43: wathena.admin.v1.RestartPlan
+	(*EventRun)(nil),              // 44: wathena.admin.v1.EventRun
+	(*EventResult)(nil),           // 45: wathena.admin.v1.EventResult
+	(*EventOverride)(nil),         // 46: wathena.admin.v1.EventOverride
+	(*EventInfo)(nil),             // 47: wathena.admin.v1.EventInfo
+	(*EventList)(nil),             // 48: wathena.admin.v1.EventList
+	(*EventChange)(nil),           // 49: wathena.admin.v1.EventChange
+	(*EventAction)(nil),           // 50: wathena.admin.v1.EventAction
+	(*ModSwitch)(nil),             // 51: wathena.admin.v1.ModSwitch
+	(*ModZone)(nil),               // 52: wathena.admin.v1.ModZone
+	(*ModInfo)(nil),               // 53: wathena.admin.v1.ModInfo
+	(*ModList)(nil),               // 54: wathena.admin.v1.ModList
+	(*ModSwitchRequest)(nil),      // 55: wathena.admin.v1.ModSwitchRequest
+	(*Error)(nil),                 // 56: wathena.admin.v1.Error
+	nil,                           // 57: wathena.admin.v1.Item.RollsEntry
+	(*timestamppb.Timestamp)(nil), // 58: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 59: google.protobuf.Struct
 }
 var file_wathena_admin_v1_admin_proto_depIdxs = []int32{
-	38, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
+	58, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
 	2,  // 1: wathena.admin.v1.StaffList.members:type_name -> wathena.admin.v1.StaffMember
 	1,  // 2: wathena.admin.v1.StaffList.roles:type_name -> wathena.admin.v1.Role
-	38, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
-	39, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
-	38, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
+	58, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
+	59, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
+	58, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
 	5,  // 6: wathena.admin.v1.AuditPage.entries:type_name -> wathena.admin.v1.AuditEntry
-	38, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
-	38, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
-	38, // 9: wathena.admin.v1.Sanction.lifted_at:type_name -> google.protobuf.Timestamp
+	58, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
+	58, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
+	58, // 9: wathena.admin.v1.Sanction.lifted_at:type_name -> google.protobuf.Timestamp
 	9,  // 10: wathena.admin.v1.SanctionList.sanctions:type_name -> wathena.admin.v1.Sanction
-	38, // 11: wathena.admin.v1.ReportSummary.created_at:type_name -> google.protobuf.Timestamp
-	38, // 12: wathena.admin.v1.ReportSummary.closed_at:type_name -> google.protobuf.Timestamp
+	58, // 11: wathena.admin.v1.ReportSummary.created_at:type_name -> google.protobuf.Timestamp
+	58, // 12: wathena.admin.v1.ReportSummary.closed_at:type_name -> google.protobuf.Timestamp
 	12, // 13: wathena.admin.v1.ReportPage.reports:type_name -> wathena.admin.v1.ReportSummary
-	38, // 14: wathena.admin.v1.ChatLine.at:type_name -> google.protobuf.Timestamp
+	58, // 14: wathena.admin.v1.ChatLine.at:type_name -> google.protobuf.Timestamp
 	12, // 15: wathena.admin.v1.ReportDetail.report:type_name -> wathena.admin.v1.ReportSummary
 	14, // 16: wathena.admin.v1.ReportDetail.lines:type_name -> wathena.admin.v1.ChatLine
 	12, // 17: wathena.admin.v1.ReportDetail.earlier:type_name -> wathena.admin.v1.ReportSummary
 	9,  // 18: wathena.admin.v1.ReportDetail.sanctions:type_name -> wathena.admin.v1.Sanction
 	8,  // 19: wathena.admin.v1.CharacterSummary.position:type_name -> wathena.admin.v1.Position
 	9,  // 20: wathena.admin.v1.CharacterSummary.sanctions:type_name -> wathena.admin.v1.Sanction
-	38, // 21: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
-	38, // 22: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
-	38, // 23: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
+	58, // 21: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
+	58, // 22: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
+	58, // 23: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
 	17, // 24: wathena.admin.v1.AccountSummary.characters:type_name -> wathena.admin.v1.CharacterSummary
 	18, // 25: wathena.admin.v1.AccountSummary.logins:type_name -> wathena.admin.v1.LoginRecord
 	9,  // 26: wathena.admin.v1.AccountSummary.ban:type_name -> wathena.admin.v1.Sanction
 	20, // 27: wathena.admin.v1.PlayerSearch.accounts:type_name -> wathena.admin.v1.AccountSummary
 	19, // 28: wathena.admin.v1.PlayerSearch.holder:type_name -> wathena.admin.v1.Owner
-	37, // 29: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
+	57, // 29: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
 	22, // 30: wathena.admin.v1.Storage.items:type_name -> wathena.admin.v1.Item
-	38, // 31: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
+	58, // 31: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
 	22, // 32: wathena.admin.v1.Mail.items:type_name -> wathena.admin.v1.Item
 	26, // 33: wathena.admin.v1.CharacterDetail.stats:type_name -> wathena.admin.v1.Stats
 	25, // 34: wathena.admin.v1.CharacterDetail.currencies:type_name -> wathena.admin.v1.Currency
@@ -6087,25 +8911,55 @@ var file_wathena_admin_v1_admin_proto_depIdxs = []int32{
 	23, // 38: wathena.admin.v1.CharacterDetail.storages:type_name -> wathena.admin.v1.Storage
 	24, // 39: wathena.admin.v1.CharacterDetail.mails:type_name -> wathena.admin.v1.Mail
 	9,  // 40: wathena.admin.v1.CharacterDetail.sanctions:type_name -> wathena.admin.v1.Sanction
-	38, // 41: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
+	58, // 41: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
 	9,  // 42: wathena.admin.v1.CharacterDetail.ban:type_name -> wathena.admin.v1.Sanction
-	38, // 43: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
+	58, // 43: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
 	19, // 44: wathena.admin.v1.ItemMove.from:type_name -> wathena.admin.v1.Owner
 	19, // 45: wathena.admin.v1.ItemMove.to:type_name -> wathena.admin.v1.Owner
 	28, // 46: wathena.admin.v1.ItemHistory.moves:type_name -> wathena.admin.v1.ItemMove
 	19, // 47: wathena.admin.v1.ItemHistory.holder:type_name -> wathena.admin.v1.Owner
-	38, // 48: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
+	58, // 48: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
 	19, // 49: wathena.admin.v1.LogEntry.from:type_name -> wathena.admin.v1.Owner
 	19, // 50: wathena.admin.v1.LogEntry.to:type_name -> wathena.admin.v1.Owner
 	30, // 51: wathena.admin.v1.CharacterLogs.entries:type_name -> wathena.admin.v1.LogEntry
 	32, // 52: wathena.admin.v1.RestoreRequest.items:type_name -> wathena.admin.v1.RestoreItem
 	19, // 53: wathena.admin.v1.RestoredItem.from:type_name -> wathena.admin.v1.Owner
 	34, // 54: wathena.admin.v1.RestoreResult.items:type_name -> wathena.admin.v1.RestoredItem
-	55, // [55:55] is the sub-list for method output_type
-	55, // [55:55] is the sub-list for method input_type
-	55, // [55:55] is the sub-list for extension type_name
-	55, // [55:55] is the sub-list for extension extendee
-	0,  // [0:55] is the sub-list for field type_name
+	58, // 55: wathena.admin.v1.ProcessView.started_at:type_name -> google.protobuf.Timestamp
+	36, // 56: wathena.admin.v1.WorldView.zones:type_name -> wathena.admin.v1.ZoneView
+	37, // 57: wathena.admin.v1.WorldView.process:type_name -> wathena.admin.v1.ProcessView
+	38, // 58: wathena.admin.v1.WorldView.players:type_name -> wathena.admin.v1.OnlinePlayer
+	43, // 59: wathena.admin.v1.WorldView.restart:type_name -> wathena.admin.v1.RestartPlan
+	58, // 60: wathena.admin.v1.WorldView.now:type_name -> google.protobuf.Timestamp
+	58, // 61: wathena.admin.v1.RestartRequest.at:type_name -> google.protobuf.Timestamp
+	58, // 62: wathena.admin.v1.RestartPlan.at:type_name -> google.protobuf.Timestamp
+	58, // 63: wathena.admin.v1.RestartPlan.planned_at:type_name -> google.protobuf.Timestamp
+	58, // 64: wathena.admin.v1.EventRun.scheduled:type_name -> google.protobuf.Timestamp
+	58, // 65: wathena.admin.v1.EventRun.started:type_name -> google.protobuf.Timestamp
+	58, // 66: wathena.admin.v1.EventRun.ends:type_name -> google.protobuf.Timestamp
+	58, // 67: wathena.admin.v1.EventResult.scheduled:type_name -> google.protobuf.Timestamp
+	58, // 68: wathena.admin.v1.EventResult.started:type_name -> google.protobuf.Timestamp
+	58, // 69: wathena.admin.v1.EventResult.ended:type_name -> google.protobuf.Timestamp
+	59, // 70: wathena.admin.v1.EventOverride.trigger:type_name -> google.protobuf.Struct
+	58, // 71: wathena.admin.v1.EventOverride.changed_at:type_name -> google.protobuf.Timestamp
+	59, // 72: wathena.admin.v1.EventInfo.trigger:type_name -> google.protobuf.Struct
+	58, // 73: wathena.admin.v1.EventInfo.next_run:type_name -> google.protobuf.Timestamp
+	44, // 74: wathena.admin.v1.EventInfo.runs:type_name -> wathena.admin.v1.EventRun
+	45, // 75: wathena.admin.v1.EventInfo.results:type_name -> wathena.admin.v1.EventResult
+	46, // 76: wathena.admin.v1.EventInfo.override:type_name -> wathena.admin.v1.EventOverride
+	58, // 77: wathena.admin.v1.EventInfo.failed_at:type_name -> google.protobuf.Timestamp
+	47, // 78: wathena.admin.v1.EventList.events:type_name -> wathena.admin.v1.EventInfo
+	59, // 79: wathena.admin.v1.EventChange.trigger:type_name -> google.protobuf.Struct
+	58, // 80: wathena.admin.v1.ModSwitch.changed_at:type_name -> google.protobuf.Timestamp
+	58, // 81: wathena.admin.v1.ModZone.last_error_at:type_name -> google.protobuf.Timestamp
+	51, // 82: wathena.admin.v1.ModInfo.switches:type_name -> wathena.admin.v1.ModSwitch
+	52, // 83: wathena.admin.v1.ModInfo.zones:type_name -> wathena.admin.v1.ModZone
+	53, // 84: wathena.admin.v1.ModList.mods:type_name -> wathena.admin.v1.ModInfo
+	85, // [85:85] is the sub-list for method output_type
+	85, // [85:85] is the sub-list for method input_type
+	85, // [85:85] is the sub-list for extension type_name
+	85, // [85:85] is the sub-list for extension extendee
+	0,  // [0:85] is the sub-list for field type_name
 }
 
 func init() { file_wathena_admin_v1_admin_proto_init() }
@@ -6113,13 +8967,15 @@ func file_wathena_admin_v1_admin_proto_init() {
 	if File_wathena_admin_v1_admin_proto != nil {
 		return
 	}
+	file_wathena_admin_v1_admin_proto_msgTypes[46].OneofWrappers = []any{}
+	file_wathena_admin_v1_admin_proto_msgTypes[49].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_admin_v1_admin_proto_rawDesc), len(file_wathena_admin_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   38,
+			NumMessages:   58,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

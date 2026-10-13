@@ -89,7 +89,7 @@ func (r *Runtime) FireTrade(t TradeEvent) {
 	}
 	obj := script.NewTable(r.tradeFields(t)...)
 	for _, h := range slices.Clone(list) {
-		if h.removed || h.ctx.ended {
+		if h.removed || h.ctx.ended || r.off(h.ctx) {
 			continue
 		}
 		if h.trade != nil && !h.trade.match(t) {

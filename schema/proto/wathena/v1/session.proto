@@ -117,4 +117,8 @@ enum DisconnectReason {
   // Staff kicked the player, with @kick or the admin screens. message
   // has the reason (decision 0030).
   DISCONNECT_REASON_KICKED = 10;
+  // The server restarts as staff planned it. message has the reason. A
+  // new login in the last minute before the restart gets it too
+  // (decision 0031).
+  DISCONNECT_REASON_RESTART = 11;
 }

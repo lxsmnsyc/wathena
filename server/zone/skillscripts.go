@@ -74,7 +74,7 @@ func (z *Zone) runSkillScript(src, target *entity, d *skill.Def, lv, x, y int, g
 		c.Target = z.refPtr(target)
 	}
 	ran, err := z.scripts.RunCast(d.Script, c)
-	if err != nil && z.Mods != nil && z.Mods.Log != nil {
+	if err != nil && !quietOff(err) && z.Mods != nil && z.Mods.Log != nil {
 		z.Mods.Log.Warn("skill script failed", "map", z.Map, "skill", d.Name, "err", err)
 	}
 	z.flushDeferred()
@@ -221,7 +221,7 @@ func (z *Zone) passiveChanged(p *Player, id int) {
 		return
 	}
 	if err := z.scripts.StartPassive(d.Script, int64(id), owner, int64(lv)); err != nil {
-		if z.Mods != nil && z.Mods.Log != nil {
+		if !quietOff(err) && z.Mods != nil && z.Mods.Log != nil {
 			z.Mods.Log.Warn("passive skill script failed", "map", z.Map, "skill", d.Name, "err", err)
 		}
 		return

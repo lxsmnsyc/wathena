@@ -214,6 +214,16 @@ type ChatLog struct {
 	Text        string
 }
 
+type EventOverride struct {
+	Event           string
+	Enabled         pgtype.Bool
+	Trigger         []byte
+	DurationMinutes pgtype.Int4
+	ChangedBy       string
+	ChangedByID     int64
+	ChangedAt       pgtype.Timestamptz
+}
+
 type GameTicket struct {
 	TokenHash   []byte
 	SessionID   int64
@@ -391,6 +401,15 @@ type ModServerVariable struct {
 	Name      string
 	Value     []byte
 	UpdatedAt pgtype.Timestamptz
+}
+
+type ModSwitch struct {
+	Mod         string
+	Map         string
+	Reason      string
+	ChangedBy   string
+	ChangedByID int64
+	ChangedAt   pgtype.Timestamptz
 }
 
 type Party struct {

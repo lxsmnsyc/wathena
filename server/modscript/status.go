@@ -216,7 +216,7 @@ func (r *Runtime) FireStatus(event string, ev StatusEvent) {
 	}
 	obj := statusObject(ev)
 	for _, h := range slices.Clone(list) {
-		if h.removed || h.ctx.ended {
+		if h.removed || h.ctx.ended || r.off(h.ctx) {
 			continue
 		}
 		if f := h.status; f != nil {
@@ -792,7 +792,7 @@ func (r *Runtime) hookChainBegin(c *script.Call) error {
 	}
 	var chain []*hook
 	for _, h := range r.hooks[name] {
-		if !h.removed && !h.ctx.ended && !h.ctx.retiring {
+		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) {
 			chain = append(chain, h)
 		}
 	}

@@ -2068,6 +2068,9 @@ function R.invoke(fn, ...)
 		elseif kind == "world_event" then
 			-- world_event_start and world_event_end: { name, type, result }.
 			value = readonly("world event", value)
+		elseif kind == "restart" then
+			-- restart_planned: { at, reason } or { cancelled = true }.
+			value = readonly("restart", value)
 		elseif kind == "trade" then
 			value = trade_object(value)
 		elseif kind == "sale" then

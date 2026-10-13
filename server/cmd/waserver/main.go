@@ -67,6 +67,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 	// The time zone database, for time_zone on systems without one,
@@ -92,7 +93,9 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/restart"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/social"
@@ -154,9 +157,13 @@ func dispatch(args []string) (int, error) {
 		fmt.Fprint(os.Stderr, usage)
 		return 2, fmt.Errorf("unknown command %q", cmd)
 	}
+	var planned *plannedRestart
 	switch {
 	case errors.Is(err, flag.ErrHelp):
 		return 0, nil
+	case errors.As(err, &planned):
+		// main prints the error, so the log says why it exited.
+		return restart.ExitCode, err
 	case err != nil:
 		return 1, err
 	}
@@ -359,7 +366,9 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
-	events, err := worldevent.Apply(loaded.all.Events, cfg.Mods.Events)
+	// Every event, with whether it is on: the config's settings, which
+	// staff changes from the database go over below (decision 0031).
+	eventConfig, err := worldevent.Settings(loaded.all.Events, cfg.Mods.Events)
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
@@ -515,9 +524,54 @@ func runAll(name string, args []string) error {
 	if pool != nil {
 		runStore = store.NewEventRuns(pool)
 	}
-	for _, d := range events {
-		if err := w.CheckEvent(d); err != nil {
-			return fmt.Errorf("mods: %s: events %s: %w", d.Where, d.Name, err)
+	for _, s := range eventConfig {
+		if !s.On {
+			continue
+		}
+		if err := w.CheckEvent(s.Def); err != nil {
+			return fmt.Errorf("mods: %s: events %s: %w", s.Def.Where, s.Def.Name, err)
+		}
+	}
+	// Staff changes of events and mods, which the database keeps over the
+	// config (decision 0031).
+	events := eventConfig
+	var eventOverrides []store.EventOverride
+	var modSwitches []store.ModSwitch
+	if pool != nil {
+		if eventOverrides, err = store.LoadEventOverrides(ctx, pool); err != nil {
+			return fmt.Errorf("event changes: %w", err)
+		}
+		var warnings []string
+		events, warnings = adminworld.ApplyOverrides(eventConfig, eventOverrides)
+		for _, m := range warnings {
+			log.Warn(m)
+		}
+		for i, s := range events {
+			if s.On {
+				if err := w.CheckEvent(s.Def); err != nil {
+					log.Warn("an event that staff turned on stays off: its maps do not run", "event", s.Def.Name, "err", err)
+					events[i].On = false
+				}
+			}
+		}
+		if modSwitches, err = store.LoadModSwitches(ctx, pool); err != nil {
+			return fmt.Errorf("mod switches: %w", err)
+		}
+		offAt := adminworld.OffAt(modSwitches)
+		for _, sw := range modSwitches {
+			if loaded.set.Mod(sw.Mod) == nil {
+				log.Warn("staff turned off a mod that does not load", "mod", sw.Mod)
+			}
+			if sw.Map != "" && w.Zone(sw.Map) == nil {
+				log.Warn("staff turned off a mod on a map that does not run", "mod", sw.Mod, "map", sw.Map)
+			}
+		}
+		for _, z := range zones {
+			off := append(slices.Clone(offAt[""]), offAt[z.Map]...)
+			z.SetModsOff(off)
+			if len(off) > 0 {
+				log.Info("mods turned off by staff", "map", z.Map, "mods", strings.Join(off, ","))
+			}
 		}
 	}
 	levels := map[string]int{}
@@ -531,8 +585,8 @@ func runAll(name string, args []string) error {
 	for _, z := range zones {
 		z.WorldEvents = runs
 	}
-	scheduler := worldevent.New(events, worldevent.Options{Runner: runs, Store: runStore, Location: cfg.Location,
-		Rand: eventRand, Log: log})
+	scheduler := worldevent.NewFrom(events, worldevent.Options{Runner: runs, Store: runStore, Location: cfg.Location,
+		Rand: eventRand, Log: log, Changed: runs.SetEvents})
 	runs.SetEvents(scheduler.Defs())
 	if err := scheduler.Load(ctx, time.Now()); err != nil {
 		return fmt.Errorf("world events: %w", err)
@@ -545,8 +599,28 @@ func runAll(name string, args []string) error {
 		}
 		log.Info("world event", attrs...)
 	}
+	// Planned restarts (decision 0031): announcements, then no new
+	// logins in the last minute, then a save, a disconnect and an exit
+	// that the process manager restarts.
+	restartNow := make(chan restart.Plan, 1)
+	planner := restart.New(restart.Options{Clock: clock, Log: log,
+		Announce: func(text string) { w.Announce(text, 0xFFFF00) },
+		Notify: func(p *restart.Plan) {
+			ev := modscript.RestartPlanned{Cancelled: p == nil}
+			if p != nil {
+				ev.At, ev.Reason = p.At, p.Reason
+			}
+			w.RestartPlanned(ev)
+		},
+		Due: func(p restart.Plan) {
+			select {
+			case restartNow <- p:
+			default:
+			}
+		},
+	})
 	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: cfg.Origins, Log: log, Metrics: &reg.Conns,
-		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName, Limits: rules.LimitsOrDefault(worldRules)}
+		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName, Limits: rules.LimitsOrDefault(worldRules), Closed: planner.Closed}
 	go reg.Conns.Run(ctx)
 	hc := &health{}
 	var st *store.Store
@@ -595,9 +669,15 @@ func runAll(name string, args []string) error {
 	// The world side of the admin API: online players from their zones,
 	// offline ones and the logs from the database, and restores
 	// (decision 0029).
+	var scriptMods []string
+	for _, sc := range loaded.zone.Scripts {
+		scriptMods = append(scriptMods, sc.Mod)
+	}
 	staffWorld := adminworld.New(adminworld.Config{Staff: staffRoles, World: w, Store: st, Chat: hub, Items: items, Jobs: jobs,
 		StorageRecords: loaded.zone.Storages, Currencies: loaded.zone.Currencies, Storages: storages, Mail: mails, Social: socials,
-		Kicker: kicker{gw, w}, Clock: clock, Log: log})
+		Kicker: kicker{gw, w}, Clock: clock, Log: log,
+		Tools: adminworld.Tools{Metrics: reg, Started: started, Version: version(), Restart: planner, Scheduler: scheduler, Runs: runs,
+			Events: eventConfig, Overrides: eventOverrides, Mods: loaded.set, ScriptMods: scriptMods, Switches: modSwitches}})
 	// GM commands give their sanctions through the same world side, and
 	// banned accounts cannot join (decision 0030).
 	for _, z := range zones {
@@ -627,7 +707,7 @@ func runAll(name string, args []string) error {
 		}
 		accounts, err = account.New(account.Config{
 			Pool: pool, PublicURL: cfg.Public, ClientOrigins: cfg.Origins, PlayURL: playURL,
-			CheckName: hub.Filter.CheckName, Guilds: accountGuilds{socials},
+			CheckName: hub.Filter.CheckName, Guilds: accountGuilds{socials}, Closed: planner.Closed,
 			NewCharacter: func(name string, look account.Look) character.Character {
 				sex := uint32(0)
 				if look.Male {
@@ -655,6 +735,7 @@ func runAll(name string, args []string) error {
 	}
 	go w.Run(ctx)
 	go scheduler.Run(ctx)
+	go planner.Run(ctx)
 	go expireMail(ctx, mails, st, worldRules, clock, log)
 	if st != nil {
 		restoreAutotraders(ctx, st, gw.Characters, w, rules.MarketOrDefault(worldRules), log)
@@ -723,6 +804,9 @@ func runAll(name string, args []string) error {
 			dbg.Handle("POST /debug/wathena/storage", devStorageHandler(w))
 			dbg.Handle("POST /debug/wathena/cart", devCartHandler(w))
 			dbg.Handle("POST /debug/wathena/staff", devStaffHandler(hub, staffRoles))
+			dbg.Handle("POST /debug/wathena/announce", devAnnounceHandler(staffWorld))
+			dbg.Handle("POST /debug/wathena/restart", devRestartHandler(staffWorld))
+			dbg.Handle("DELETE /debug/wathena/restart", devRestartHandler(staffWorld))
 			if st != nil {
 				dbg.Handle("POST /debug/wathena/restore", devRestoreHandler(staffWorld, st))
 				dbg.Handle("POST /debug/wathena/sanction", devSanctionHandler(staffWorld, st))
@@ -730,19 +814,35 @@ func runAll(name string, args []string) error {
 		}
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
 	}
+	// planned is the restart that stopped the server, if one did.
+	var planned atomic.Pointer[restart.Plan]
 	go func() {
 		select {
 		case <-signals:
 		case <-ctx.Done():
+		case p := <-restartNow:
+			planned.Store(&p)
 		}
 		// Not ready from now, so a proxy stops sending new players.
 		hc.ready.Store(false)
-		countdown(cfg.ShutdownCountdown, func(text string) { w.Announce(text, 0xFFFF00) }, signals, log)
+		p := planned.Load()
+		if p == nil {
+			// A planned restart counted down already.
+			countdown(cfg.ShutdownCountdown, func(text string) { w.Announce(text, 0xFFFF00) }, signals, log)
+		} else {
+			// The players get the restart's reason before the zones
+			// stop, since a zone that stops closes its connections
+			// without one. Each leaves its zone, which saves it.
+			gw.ShutdownWith(wathenav1.DisconnectReason_DISCONNECT_REASON_RESTART, restart.DisconnectText(*p))
+			time.Sleep(time.Second)
+		}
 		stop()
 		log.Info("shutting down: saving characters")
 		// Players see why the game stopped, and each session's last
 		// save is queued as it leaves its zone.
-		gw.Shutdown()
+		if p == nil {
+			gw.Shutdown()
+		}
 		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		for _, s := range servers {
@@ -786,8 +886,19 @@ func runAll(name string, args []string) error {
 		return err
 	}
 	fmt.Fprint(os.Stderr, "\nmeasurements since the start or the last reset:\n", reg.Snapshot().Text())
+	if p := planned.Load(); p != nil {
+		// The saves are written as runAll returns. Then waserver exits
+		// with restart.ExitCode, and the process manager starts it again.
+		return &plannedRestart{reason: p.Reason}
+	}
 	return nil
 }
+
+// plannedRestart is runAll's result after a planned restart, which
+// dispatch turns into restart.ExitCode.
+type plannedRestart struct{ reason string }
+
+func (p *plannedRestart) Error() string { return "restarting as planned: " + p.reason }
 
 // loadClient returns the web client's handler, and where the client
 // comes from for the log: client_dir, the build inside the binary, or

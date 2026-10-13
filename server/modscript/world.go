@@ -163,7 +163,7 @@ func (r *Runtime) FireDeath(d Death) {
 	}
 	obj := script.NewTable(fields...)
 	for _, h := range slices.Clone(list) {
-		if h.removed || h.ctx.ended {
+		if h.removed || h.ctx.ended || r.off(h.ctx) {
 			continue
 		}
 		if f := h.death; f != nil {
@@ -365,7 +365,7 @@ func (r *Runtime) RunExperience(e Experience) (int64, int64) {
 func (r *Runtime) runHooks(name string, fields []script.Field) ([]script.Value, bool) {
 	var chain []*hook
 	for _, h := range r.hooks[name] {
-		if !h.removed && !h.ctx.ended && !h.ctx.retiring {
+		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) {
 			chain = append(chain, h)
 		}
 	}
@@ -395,7 +395,7 @@ func (r *Runtime) runHooks(name string, fields []script.Field) ([]script.Value, 
 func (r *Runtime) runHookNested(name string, fields []script.Field) (script.Value, bool) {
 	var chain []*hook
 	for _, h := range r.hooks[name] {
-		if !h.removed && !h.ctx.ended && !h.ctx.retiring {
+		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) {
 			chain = append(chain, h)
 		}
 	}
@@ -614,6 +614,15 @@ func (r *Runtime) RunSchedules(now time.Time) {
 		if sc.canceled || sc.ctx.ended || sc.ctx.retiring {
 			continue
 		}
+		if r.off(sc.ctx) {
+			// A schedule of a mod that is off skips its times.
+			if sc.cond == nil {
+				sc.next = schedule.Next(sc.spec, now, r.location())
+			} else {
+				sc.polled, sc.heldSince, sc.fired = minute, time.Time{}, false
+			}
+			continue
+		}
 		if sc.cond == nil {
 			sc.next = schedule.Next(sc.spec, now, r.location())
 			if err := r.run(sc.ctx, sc.fn.Value()); err != nil {
@@ -825,7 +834,7 @@ func (r *Runtime) StartEvent(name, entry string) (*Context, error) {
 	c := &Context{ID: r.newID(), Kind: KindEvent, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}}
 	c.Instance = script.NewTable(script.KV("name", script.String(name)), script.KV("map", script.String(r.host.Map())))
 	r.events[c.ID] = c
-	if err := r.run(c, setup); err != nil {
+	if err := r.runSetup(c, setup); err != nil {
 		r.EndContext(c)
 		return nil, fmt.Errorf("%s: setup: %w", entry, err)
 	}
@@ -846,6 +855,9 @@ func (r *Runtime) CheckCondition(mod, module, fn string) (bool, error) {
 	sc := r.scripts[mod]
 	if sc == nil {
 		return false, fmt.Errorf("%s has no scripts in this zone", mod)
+	}
+	if r.offMods[mod] {
+		return false, ErrModOff
 	}
 	c := &Context{ID: r.newID(), Kind: KindEvent, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}}
 	c.Instance = script.NewTable(script.KV("map", script.String(r.host.Map())))

@@ -65,12 +65,16 @@ type Config struct {
 	// time.Now when nil.
 	Clock func() time.Time
 	Log   *slog.Logger
+	// Tools are what the world, events and mods tools need (decision
+	// 0031).
+	Tools Tools
 }
 
 // World is admin.World for the all-in-one build.
 type World struct {
-	cfg Config
-	log *slog.Logger
+	cfg   Config
+	log   *slog.Logger
+	tools tools
 }
 
 var _ admin.World = (*World)(nil)
@@ -81,6 +85,7 @@ func New(cfg Config) *World {
 	if w.log == nil {
 		w.log = slog.Default()
 	}
+	w.initTools()
 	return w
 }
 

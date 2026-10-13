@@ -81,7 +81,7 @@ func (r *Runtime) FireSale(name string, ev SaleEvent) {
 	}
 	obj := script.NewTable(saleFields(name, ev)...)
 	for _, h := range slices.Clone(list) {
-		if h.removed || h.ctx.ended {
+		if h.removed || h.ctx.ended || r.off(h.ctx) {
 			continue
 		}
 		if err := r.run(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("sale"), obj); err != nil {

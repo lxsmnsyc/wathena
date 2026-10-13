@@ -71,17 +71,29 @@ export async function fetchTicket(
       return { kind: 'redirect', url: accountPage(account, 'characters', back) };
     case 403: {
       // A banned account gets its ban's message (decision 0030).
-      const body: unknown = await res.json().catch(() => null);
-      const message =
-        typeof body === 'object' && body !== null && 'message' in body ? body.message : undefined;
-      if (typeof message === 'string' && message !== '') {
-        return { kind: 'error', message };
-      }
-      return { kind: 'error', message: 'The account service refused a ticket.' };
+      const message = await messageOf(res);
+      return { kind: 'error', message: message ?? 'The account service refused a ticket.' };
     }
     case 429:
       return { kind: 'error', message: 'Too many tries. Wait a moment and reload the page.' };
+    case 503: {
+      // In the last minute before a planned restart, the server says
+      // when to come back (decision 0031).
+      const message = await messageOf(res);
+      return {
+        kind: 'error',
+        message: message ?? 'The account service cannot give a ticket right now.',
+      };
+    }
     default:
       return { kind: 'error', message: 'The account service cannot give a ticket right now.' };
   }
+}
+
+/** The message of an answer's JSON body, or undefined. */
+async function messageOf(res: Response): Promise<string | undefined> {
+  const body: unknown = await res.json().catch(() => null);
+  const message =
+    typeof body === 'object' && body !== null && 'message' in body ? body.message : undefined;
+  return typeof message === 'string' && message !== '' ? message : undefined;
 }

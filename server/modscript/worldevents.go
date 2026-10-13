@@ -3,6 +3,7 @@ package modscript
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 )
@@ -60,7 +61,7 @@ func (r *Runtime) StartEventRun(name, entry string, run int64) (*Context, error)
 	c := &Context{ID: r.newID(), Kind: KindEvent, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}, run: run}
 	c.Instance = script.NewTable(script.KV("name", script.String(name)), script.KV("map", script.String(r.host.Map())))
 	r.events[c.ID] = c
-	if err := r.run(c, setup); err != nil {
+	if err := r.runSetup(c, setup); err != nil {
 		r.EndContext(c)
 		return nil, fmt.Errorf("%s: setup: %w", entry, err)
 	}
@@ -159,4 +160,24 @@ func (r *Runtime) worldEventsRequest(c *script.Call) error {
 	}
 	c.Return(script.Bool(done))
 	return nil
+}
+
+// RestartPlanned is the object of restart_planned (review decision 36):
+// { at, reason } when staff plan a restart, and { cancelled = true }
+// when they cancel it. at is the restart's time in Unix seconds.
+type RestartPlanned struct {
+	At        time.Time
+	Reason    string
+	Cancelled bool
+}
+
+// FireRestartPlanned runs the handlers of restart_planned.
+func (r *Runtime) FireRestartPlanned(ev RestartPlanned) {
+	var fields []script.Field
+	if ev.Cancelled {
+		fields = []script.Field{script.KV("cancelled", script.Bool(true))}
+	} else {
+		fields = []script.Field{script.KV("at", script.Int(ev.At.Unix())), script.KV("reason", script.String(ev.Reason))}
+	}
+	r.Fire("restart_planned", Arg{"restart", script.NewTable(fields...)})
 }

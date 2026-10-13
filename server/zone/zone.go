@@ -605,6 +605,12 @@ type Zone struct {
 	txEventUnits []EventUnit
 	// notices get the starts and ends of world events.
 	notices chan worldevent.Notice
+	// restarts get planned and cancelled restarts (worldtools.go).
+	restarts chan modscript.RestartPlanned
+	// modsOff are the mods that are off in the zone, and modErrors
+	// counts the mods' script errors (decision 0031).
+	modsOff   map[string]bool
+	modErrors *modscript.ErrorLog
 	// control gets work that must run on the zone's goroutine, such as a
 	// mod reload.
 	control chan func()
@@ -713,6 +719,8 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		control:   make(chan func()),
 		announces: make(chan announcement, 256),
 		notices:   make(chan worldevent.Notice, 64),
+		restarts:  make(chan modscript.RestartPlanned, 8),
+		modErrors: &modscript.ErrorLog{},
 		chatIn:    make(chan chatIn, 1024),
 		socialIn:  make(chan socialIn, 1024),
 		stopped:   make(chan struct{}),
@@ -803,6 +811,8 @@ func (z *Zone) Run(ctx context.Context) {
 			z.announce(a)
 		case n := <-z.notices:
 			z.worldNotice(n)
+		case ev := <-z.restarts:
+			z.restartPlanned(ev)
 		case in := <-z.chatIn:
 			z.receiveChat(in)
 		case in := <-z.socialIn:

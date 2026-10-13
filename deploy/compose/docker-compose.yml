@@ -96,6 +96,9 @@ services:
       context: ../..
       args:
         VERSION: ${WATHENA_VERSION:-local}
+    # unless-stopped also starts waserver again after a planned restart
+    # from the admin screens, which exits with status 75 (deploy/README.md,
+    # "Planned restarts").
     restart: unless-stopped
     command:
       - all

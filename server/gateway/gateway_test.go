@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -420,5 +421,47 @@ func TestMemoryCharacterComesBack(t *testing.T) {
 				t.Errorf("inventory after logging in again: %v", l)
 			}
 		}
+	}
+}
+
+// TestClosedRefusesLogins: while Closed says so, as in the last minute
+// before a planned restart, a login gets DISCONNECT_REASON_RESTART with
+// the text. Afterwards logins work again (decision 0031).
+func TestClosedRefusesLogins(t *testing.T) {
+	g := &path.Grid{Width: 40, Height: 40, Cells: make([]uint8, 1600)}
+	for i := range g.Cells {
+		g.Cells[i] = path.Walkable | path.Shootable
+	}
+	z := zone.New("map/test", g, rng.FromKey([32]byte{}).Stream(), nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go z.Run(ctx)
+	var mu sync.Mutex
+	closed := true
+	gw := &Gateway{World: z, Sessions: DevSessions{}, Closed: func() (string, bool) {
+		mu.Lock()
+		defer mu.Unlock()
+		return "The server restarts in less than a minute: update. Come back in a few minutes.", closed
+	}}
+	s := httptest.NewServer(gw)
+	t.Cleanup(s.Close)
+	url := "ws" + strings.TrimPrefix(s.URL, "http")
+	c := dial(t, url)
+	c.hello("Alice", schema.Version)
+	m := c.next(func(m *wathenav1.ServerMessage) bool { return m.HasDisconnect() })
+	if m.GetDisconnect().GetReason() != wathenav1.DisconnectReason_DISCONNECT_REASON_RESTART || !strings.Contains(m.GetDisconnect().GetMessage(), "restarts in less than a minute") {
+		t.Fatalf("got %v", m)
+	}
+	mu.Lock()
+	closed = false
+	mu.Unlock()
+	c = dial(t, url)
+	c.hello("Alice", schema.Version)
+	c.next(func(m *wathenav1.ServerMessage) bool { return m.HasWelcome() })
+	// A planned restart's shutdown gives every player its reason.
+	gw.ShutdownWith(wathenav1.DisconnectReason_DISCONNECT_REASON_RESTART, "The server is restarting: update.")
+	m = c.next(func(m *wathenav1.ServerMessage) bool { return m.HasDisconnect() })
+	if m.GetDisconnect().GetReason() != wathenav1.DisconnectReason_DISCONNECT_REASON_RESTART || m.GetDisconnect().GetMessage() != "The server is restarting: update." {
+		t.Fatalf("at the restart: %v", m)
 	}
 }

@@ -116,6 +116,18 @@ describe('disconnectText', () => {
     expect(disconnectText('', DisconnectReason.KICKED)).toBe('A game master disconnected you.');
     expect(disconnectText('', DisconnectReason.BANNED)).toBe('Your account is banned.');
   });
+
+  it('shows the reason of a planned restart', () => {
+    expect(
+      disconnectText(
+        'The server is restarting: update. Come back in a few minutes.',
+        DisconnectReason.RESTART,
+      ),
+    ).toBe('The server is restarting: update. Come back in a few minutes.');
+    expect(disconnectText('', DisconnectReason.RESTART)).toBe(
+      'The server is restarting. Come back in a few minutes.',
+    );
+  });
 });
 
 describe('disconnectDelay', () => {
@@ -123,6 +135,7 @@ describe('disconnectDelay', () => {
     expect(disconnectDelay(DisconnectReason.SESSION_INVALID)).toBe(0);
     expect(disconnectDelay(DisconnectReason.KICKED)).toBe(10_000);
     expect(disconnectDelay(DisconnectReason.BANNED)).toBe(10_000);
+    expect(disconnectDelay(DisconnectReason.RESTART)).toBe(10_000);
     expect(disconnectDelay(DisconnectReason.LOGGED_OUT)).toBe(3000);
     expect(disconnectDelay()).toBe(3000);
   });

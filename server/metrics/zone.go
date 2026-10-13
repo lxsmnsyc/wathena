@@ -55,6 +55,8 @@ type Zone struct {
 	overBudget atomic.Uint64
 	overMax    atomic.Uint64
 	players    atomic.Int64
+	asleep     atomic.Bool
+	window     window
 
 	// Used by the zone goroutine only.
 	pending time.Duration
@@ -77,6 +79,8 @@ func (z *Zone) Tick(step time.Duration, players int) {
 	z.Work.Record(work)
 	z.ticks.Add(1)
 	z.players.Store(int64(players))
+	z.asleep.Store(false)
+	z.window.record(time.Now(), work)
 	if work > TickMax {
 		z.overMax.Add(1)
 	}
@@ -99,6 +103,7 @@ func (z *Zone) Tick(step time.Duration, players int) {
 // players.
 func (z *Zone) Asleep() {
 	z.players.Store(0)
+	z.asleep.Store(true)
 	z.pending = 0
 	z.streak = 0
 }

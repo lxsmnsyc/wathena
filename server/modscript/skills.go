@@ -318,7 +318,7 @@ func (r *Runtime) FireSkillUsed(ev SkillUsed) {
 	}
 	obj := skillUsedObject(ev.Caster, ev.Skill, ev.Level, ev.Target, ev.X, ev.Y)
 	for _, h := range slices.Clone(list) {
-		if h.removed || h.ctx.ended || h.ctx.Kind == KindItem {
+		if h.removed || h.ctx.ended || h.ctx.Kind == KindItem || r.off(h.ctx) {
 			continue
 		}
 		if f := h.skill; f != nil {
@@ -351,7 +351,7 @@ func (r *Runtime) skillContext(entry string, skill int64) (*Context, error) {
 	sc := r.scripts[mod]
 	c := &Context{ID: r.newID(), Kind: KindSkill, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}}
 	c.Instance = script.NewTable(script.KV("skill", script.Int(skill)))
-	if err := r.run(c, setup); err != nil {
+	if err := r.runSetup(c, setup); err != nil {
 		r.end(c)
 		return nil, fmt.Errorf("%s: setup: %w", entry, err)
 	}
@@ -435,7 +435,7 @@ func (r *Runtime) StartPassive(entry string, skill int64, owner Entity, level in
 		script.KV("owner", script.Int(owner.ID)), script.KV("owner_kind", script.String(owner.Kind)),
 	)
 	r.passives[key] = &passive{ctx: c, entry: entry, level: level}
-	if err := r.run(c, setup); err != nil {
+	if err := r.runSetup(c, setup); err != nil {
 		r.end(c)
 		delete(r.passives, key)
 		return fmt.Errorf("%s: setup: %w", entry, err)

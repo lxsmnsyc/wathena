@@ -1136,6 +1136,14 @@ var Classes = []Class{
 		},
 	},
 	{
+		Name: "wa.RestartPlan", Doc: "The object of restart_planned (review decision 36): { at, reason } when staff plan a restart, and { cancelled = true } when they cancel it.",
+		Fields: []Field{
+			{"at", "integer?", "When the server restarts, in Unix seconds. nil when the restart was cancelled."},
+			{"reason", "string?", "Why the server restarts, as staff wrote it. nil when the restart was cancelled."},
+			{"cancelled", "boolean?", "true when staff cancelled the planned restart."},
+		},
+	},
+	{
 		Name: "wa.Trade", Doc: "The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.",
 		Fields: []Field{
 			{"players", "wa.Player[]", "The two players: the one who confirmed last first."},
@@ -1440,6 +1448,7 @@ var Events = []Event{
 	{Name: "mail", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"mail", "wa.Mail", ""}}, Doc: "A mail went out from the context's map: a player's, or a script's player:send_mail."},
 	{Name: "world_event_start", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.WorldEvent", ""}}, Doc: "A run of a world event started, on any map. Every zone's handlers run."},
 	{Name: "world_event_end", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.WorldEvent", ""}}, Doc: "A run of a world event ended, on any map, with its result. Every zone's handlers run."},
+	{Name: "restart_planned", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"restart", "wa.RestartPlan", ""}}, Doc: "Staff planned a server restart from the admin screens, or cancelled it. Every zone's handlers run. At the restart time the server saves every character, disconnects every player and stops, so a handler can end a mod's event in time."},
 }
 
 // currencyParam is the name of a currency.

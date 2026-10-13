@@ -172,3 +172,22 @@
 .admin-active {
   font-weight: bold;
 }
+
+/* The world screen (decision 0031). A zone over the tick budget in the
+   last minute, and the planned restart with its countdown. */
+.admin-over {
+  color: #c62828;
+}
+
+.admin-countdown {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A mod that is off somewhere. */
+.admin-off {
+  color: color-mix(in srgb, currentColor 70%, transparent);
+}
+
+.admin-event-form .admin-row {
+  flex-basis: auto;
+}

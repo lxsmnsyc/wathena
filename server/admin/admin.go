@@ -16,7 +16,8 @@
 // (decision 0029) has GET /players, GET /characters/{id} and its /logs,
 // GET /items/{serial}/history, POST /restore and POST
 // /audit/{id}/review. Step 3 (decision 0030) has the report queue and
-// the sanctions (moderation.go).
+// the sanctions (moderation.go). Step 4 (decision 0031) has the world,
+// events and mods tools (tools.go).
 //
 // The API reaches the world through World, so a distributed build can
 // put the world service behind the network.
@@ -130,6 +131,18 @@ func New(cfg Config) (*Handler, error) {
 	m.HandleFunc("POST "+Prefix+"sanctions", h.call(anyModeration, change, h.sanction))
 	m.HandleFunc("DELETE "+Prefix+"sanctions/{id}", h.call(anyModeration, change, h.liftSanction))
 	m.HandleFunc("GET "+Prefix+"sanctions", h.call(anyModeration, read, h.searchSanctions))
+	m.HandleFunc("GET "+Prefix+"world", h.call("world.read", read, h.worldView))
+	m.HandleFunc("POST "+Prefix+"announce", h.call("world.announce", change, h.announce))
+	m.HandleFunc("POST "+Prefix+"restart", h.call("world.restart", changeRecent, h.planRestart))
+	m.HandleFunc("DELETE "+Prefix+"restart", h.call("world.restart", changeRecent, h.cancelRestart))
+	m.HandleFunc("GET "+Prefix+"events", h.call("events.control", read, h.events))
+	m.HandleFunc("PATCH "+Prefix+"events/{name}", h.call("events.control", change, h.changeEvent))
+	m.HandleFunc("POST "+Prefix+"events/{name}/start", h.call("events.control", change, h.eventAction(EventStart)))
+	m.HandleFunc("POST "+Prefix+"events/{name}/stop", h.call("events.control", change, h.eventAction(EventStop)))
+	m.HandleFunc("POST "+Prefix+"events/{name}/reset", h.call("events.control", change, h.eventAction(EventReset)))
+	m.HandleFunc("GET "+Prefix+"mods", h.call("mods.read", read, h.mods))
+	m.HandleFunc("POST "+Prefix+"mods/{id}/disable", h.call("mods.disable", change, h.switchMod(true)))
+	m.HandleFunc("POST "+Prefix+"mods/{id}/enable", h.call("mods.disable", change, h.switchMod(false)))
 	m.HandleFunc(Prefix, func(w http.ResponseWriter, _ *http.Request) {
 		h.fail(w, http.StatusNotFound, "not_found", "There is no such call.")
 	})
@@ -160,7 +173,8 @@ const (
 	// change needs the CSRF token.
 	change
 	// changeRecent needs the CSRF token and a login within 10 minutes:
-	// role changes and restores (review decisions 33 and 34).
+	// role changes, restores and planned restarts (review decisions 33,
+	// 34 and 36).
 	changeRecent
 )
 

@@ -2,6 +2,9 @@ package admin_test
 
 import (
 	"context"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	adminv1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1"
 	"github.com/lxsmnsyc/wathena/server/admin"
@@ -144,4 +147,81 @@ func (w *world) Bans(_ context.Context, accounts []int64) (map[int64]*adminv1.Sa
 		}
 	}
 	return out, nil
+}
+
+// The tools of step 4 (decision 0031).
+
+func (w *world) WorldView(context.Context) (*adminv1.WorldView, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	v := adminv1.WorldView_builder{Zones: []*adminv1.ZoneView{adminv1.ZoneView_builder{Map: "prontera", Players: 1, Ticks: 1200}.Build()},
+		PlayersOnline: 1, Players: []*adminv1.OnlinePlayer{adminv1.OnlinePlayer_builder{Name: "Alice", Map: "prontera"}.Build()}}
+	if w.restart != nil {
+		v.Restart = adminv1.RestartPlan_builder{At: timestamppb.New(w.restart.At), Reason: w.restart.Reason}.Build()
+	}
+	return v.Build(), nil
+}
+
+func (w *world) Announce(_ context.Context, text, mapName string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if mapName == "nowhere" {
+		return admin.ErrNotFound
+	}
+	w.announcements = append(w.announcements, mapName+": "+text)
+	return nil
+}
+
+func (w *world) PlanRestart(_ context.Context, o admin.RestartOrder) (*adminv1.RestartPlan, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.restart != nil {
+		return nil, &admin.WorldError{Code: "conflict", Message: "A restart is planned already."}
+	}
+	if o.At.Before(time.Now().Add(time.Minute)) {
+		return nil, &admin.WorldError{Code: "bad_request", Message: "Too soon."}
+	}
+	w.restart = &o
+	return adminv1.RestartPlan_builder{At: timestamppb.New(o.At), Reason: o.Reason, Message: o.Message, PlannedBy: o.AccountName}.Build(), nil
+}
+
+func (w *world) CancelRestart(context.Context) (*adminv1.RestartPlan, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.restart == nil {
+		return nil, &admin.WorldError{Code: "not_found", Message: "No restart is planned."}
+	}
+	p := adminv1.RestartPlan_builder{At: timestamppb.New(w.restart.At), Reason: w.restart.Reason}.Build()
+	w.restart = nil
+	return p, nil
+}
+
+func (w *world) Events(context.Context) (*adminv1.EventList, error) {
+	return adminv1.EventList_builder{Events: []*adminv1.EventInfo{
+		adminv1.EventInfo_builder{Name: "core:Field_Boss", Type: "boss", TriggerText: "daily at 20:00", DurationMinutes: 60}.Build()}}.Build(), nil
+}
+
+func (w *world) EventAction(_ context.Context, o admin.EventOrder) (*adminv1.EventInfo, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if o.Name != "core:Field_Boss" {
+		return nil, admin.ErrNotFound
+	}
+	w.eventOrders = append(w.eventOrders, o)
+	return adminv1.EventInfo_builder{Name: o.Name, On: o.On != nil && *o.On}.Build(), nil
+}
+
+func (w *world) Mods(context.Context) (*adminv1.ModList, error) {
+	return adminv1.ModList_builder{Mods: []*adminv1.ModInfo{adminv1.ModInfo_builder{Id: "core", Builtin: true}.Build(),
+		adminv1.ModInfo_builder{Id: "example.a", Version: "1.0.0", Errors: 2}.Build()}, Maps: []string{"prontera"}}.Build(), nil
+}
+
+func (w *world) SwitchMod(_ context.Context, o admin.ModOrder) (*adminv1.ModInfo, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if o.Mod != "example.a" {
+		return nil, &admin.WorldError{Code: "not_found", Message: "No loaded mod has that ID."}
+	}
+	w.modOrders = append(w.modOrders, o)
+	return adminv1.ModInfo_builder{Id: o.Mod}.Build(), nil
 }

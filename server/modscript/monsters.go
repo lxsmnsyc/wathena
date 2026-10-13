@@ -227,7 +227,7 @@ func (r *Runtime) StartMonster(monster int64, entry string) error {
 	c := &Context{ID: r.newID(), Kind: KindMonster, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}}
 	c.Instance = script.NewTable(script.KV("monster", script.Int(monster)))
 	r.monsterCtxs[monster] = c
-	if err := r.run(c, setup); err != nil {
+	if err := r.runSetup(c, setup); err != nil {
 		r.end(c)
 		delete(r.monsterCtxs, monster)
 		return fmt.Errorf("%s: setup: %w", entry, err)

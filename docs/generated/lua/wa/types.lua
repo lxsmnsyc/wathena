@@ -44,6 +44,7 @@
 ---| "mail"
 ---| "world_event_start"
 ---| "world_event_end"
+---| "restart_planned"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -1688,6 +1689,13 @@ local wa_FromOptions = {}
 ---@field type "boss"|"invasion"|"treasure_hunt"|"script" The event's type: "script" for an event without one.
 ---@field result "won"|"lost"|"stopped"|nil How the run ended, at world_event_end. A boss is won when it dies, an invasion when its last wave dies, and a treasure hunt when every chest is opened. A run whose time ran out is lost. nil at world_event_start, and for a script event that ran its time.
 local wa_WorldEvent = {}
+
+---The object of restart_planned (review decision 36): { at, reason } when staff plan a restart, and { cancelled = true } when they cancel it.
+---@class wa.RestartPlan
+---@field at integer? When the server restarts, in Unix seconds. nil when the restart was cancelled.
+---@field reason string? Why the server restarts, as staff wrote it. nil when the restart was cancelled.
+---@field cancelled boolean? true when staff cancelled the planned restart.
+local wa_RestartPlan = {}
 
 ---The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.
 ---@class wa.Trade

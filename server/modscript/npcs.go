@@ -149,6 +149,7 @@ type NPC struct {
 	ID    int64
 	Entry string
 	ctx   *Context
+	rt    *Runtime
 }
 
 func (r *Runtime) npcHost() (NPCHost, error) {
@@ -163,7 +164,12 @@ func (r *Runtime) npcHost() (NPCHost, error) {
 // NPC's handle, which the NPCHost's NPCField reads. The NPC keeps its
 // context until ReloadNPCs or Close.
 func (r *Runtime) StartNPC(id int64, entry string) (*NPC, error) {
-	n := &NPC{ID: id, Entry: entry}
+	n := &NPC{ID: id, Entry: entry, rt: r}
+	if r.OffEntry(entry) {
+		// The NPC starts when its mod is turned on (switches.go).
+		r.npcs = append(r.npcs, n)
+		return n, nil
+	}
 	if err := r.startNPC(n); err != nil {
 		return nil, err
 	}
@@ -180,7 +186,7 @@ func (r *Runtime) startNPC(n *NPC) error {
 	c := &Context{ID: r.newID(), Kind: KindNPC, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}, npc: n.ID}
 	c.Instance = script.NewTable(script.KV("npc", script.Int(n.ID)))
 	n.ctx = c
-	if err := r.run(c, setup); err != nil {
+	if err := r.runSetup(c, setup); err != nil {
 		r.end(c)
 		return fmt.Errorf("%s: setup: %w", n.Entry, err)
 	}
@@ -189,7 +195,7 @@ func (r *Runtime) startNPC(n *NPC) error {
 
 // Context returns the NPC's context, or nil when its script failed.
 func (n *NPC) Context() *Context {
-	if n.ctx == nil || n.ctx.ended || n.ctx.retiring {
+	if n.ctx == nil || n.ctx.ended || n.ctx.retiring || n.rt != nil && n.rt.off(n.ctx) {
 		return nil
 	}
 	return n.ctx

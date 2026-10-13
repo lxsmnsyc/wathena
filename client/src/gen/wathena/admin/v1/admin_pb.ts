@@ -12,7 +12,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file wathena/admin/v1/admin.proto.
  */
 export const file_wathena_admin_v1_admin: GenFile = /*@__PURE__*/
-  fileDesc("Chx3YXRoZW5hL2FkbWluL3YxL2FkbWluLnByb3RvEhB3YXRoZW5hLmFkbWluLnYxIqEBCgJNZRIPCgdhY2NvdW50GAEgASgJEgwKBHJvbGUYAiABKAkSEwoLcGVybWlzc2lvbnMYAyADKAkSEgoKdHdvX2ZhY3RvchgEIAEoCBIVCg1hc3NpZ25lZF9yb2xlGAUgASgJEhQKDHJlY2VudF9sb2dpbhgGIAEoCBISCgpjc3JmX3Rva2VuGAcgASgJEhIKCnJlYXV0aF91cmwYCCABKAkiKQoEUm9sZRIMCgRuYW1lGAEgASgJEhMKC3Blcm1pc3Npb25zGAIgAygJIqkBCgtTdGFmZk1lbWJlchISCgphY2NvdW50X2lkGAEgASgDEg8KB2FjY291bnQYAiABKAkSDAoEcm9sZRgDIAEoCRITCgtmcm9tX2NvbmZpZxgEIAEoCBIQCghnaXZlbl9ieRgFIAEoCRIsCghnaXZlbl9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKdHdvX2ZhY3RvchgHIAEoCCJiCglTdGFmZkxpc3QSLgoHbWVtYmVycxgBIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuU3RhZmZNZW1iZXISJQoFcm9sZXMYAiADKAsyFi53YXRoZW5hLmFkbWluLnYxLlJvbGUiQAoPR2l2ZVJvbGVSZXF1ZXN0Eg8KB2FjY291bnQYASABKAkSDAoEcm9sZRgCIAEoCRIOCgZyZWFzb24YAyABKAki4QIKCkF1ZGl0RW50cnkSCgoCaWQYASABKAMSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2FjY291bnQYAyABKAkSDAoEcm9sZRgEIAEoCRIOCgZhY3Rpb24YBSABKAkSDgoGc291cmNlGAYgASgJEg4KBnRhcmdldBgHIAEoCRIqCglhcmd1bWVudHMYCCABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0Eg4KBnJlYXNvbhgJIAEoCRIUCgxuZWVkc19yZXZpZXcYCiABKAgSLwoLcmV2aWV3ZWRfYXQYCyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC3Jldmlld2VkX2J5GAwgASgJEg8KB3ZlcmRpY3QYDSABKAkSEwoLcmV2aWV3X25vdGUYDiABKAkSEgoKYWNjb3VudF9pZBgPIAEoAyJSCglBdWRpdFBhZ2USLQoHZW50cmllcxgBIAMoCzIcLndhdGhlbmEuYWRtaW4udjEuQXVkaXRFbnRyeRIWCg5uZXh0X2JlZm9yZV9pZBgCIAEoAyIuCg1SZXZpZXdSZXF1ZXN0Eg8KB3ZlcmRpY3QYASABKAkSDAoEbm90ZRgCIAEoCSItCghQb3NpdGlvbhILCgNtYXAYASABKAkSCQoBeBgCIAEoBRIJCgF5GAMgASgFIuwCCghTYW5jdGlvbhIMCgRraW5kGAEgASgJEg4KBnJlYXNvbhgCIAEoCRIuCgpzdGFydGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbmRzX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglpc3N1ZWRfYnkYBSABKAkSCgoCaWQYBiABKAMSFAoMY2hhcmFjdGVyX2lkGAcgASgDEhEKCWNoYXJhY3RlchgIIAEoCRISCgphY2NvdW50X2lkGAkgASgDEg8KB2FjY291bnQYCiABKAkSEQoJcGVybWFuZW50GAsgASgIEi0KCWxpZnRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEQoJbGlmdGVkX2J5GA0gASgJEhMKC2xpZnRfcmVhc29uGA4gASgJEg4KBmFjdGl2ZRgPIAEoCCJqCg9TYW5jdGlvblJlcXVlc3QSDAoEa2luZBgBIAEoCRIUCgxjaGFyYWN0ZXJfaWQYAiABKAMSEgoKYWNjb3VudF9pZBgDIAEoAxIPCgdtaW51dGVzGAQgASgFEg4KBnJlYXNvbhgFIAEoCSJVCgxTYW5jdGlvbkxpc3QSLQoJc2FuY3Rpb25zGAEgAygLMhoud2F0aGVuYS5hZG1pbi52MS5TYW5jdGlvbhIWCg5uZXh0X2JlZm9yZV9pZBgCIAEoAyKEAwoNUmVwb3J0U3VtbWFyeRIKCgJpZBgBIAEoAxIuCgpjcmVhdGVkX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIQCghyZXBvcnRlchgDIAEoCRITCgtyZXBvcnRlcl9pZBgEIAEoAxIOCgZ0YXJnZXQYBSABKAkSEQoJdGFyZ2V0X2lkGAYgASgDEgwKBGtpbmQYByABKAkSDgoGcmVhc29uGAggASgJEgsKA21hcBgJIAEoCRIOCgZzdGF0dXMYCiABKAkSLQoJY2xvc2VkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgdvdXRjb21lGAwgASgJEgwKBG5vdGUYDSABKAkSEQoJY2xvc2VkX2J5GA4gASgJEhMKC3NhbmN0aW9uX2lkGA8gASgDEhAKCGd1aWxkX2lkGBAgASgDEg8KB2xpbmVfaWQYESABKAkSGQoRdGFyZ2V0X2FjY291bnRfaWQYEiABKAMiVgoKUmVwb3J0UGFnZRIwCgdyZXBvcnRzGAEgAygLMh8ud2F0aGVuYS5hZG1pbi52MS5SZXBvcnRTdW1tYXJ5EhYKDm5leHRfYmVmb3JlX2lkGAIgASgDIrsBCghDaGF0TGluZRIKCgJpZBgBIAEoCRImCgJhdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgDIAEoCRIUCgxjaGFyYWN0ZXJfaWQYBCABKAMSDAoEbmFtZRgFIAEoCRIOCgZ0YXJnZXQYBiABKAkSCwoDbWFwGAcgASgJEgwKBHRleHQYCCABKAkSEAoIcmVwb3J0ZWQYCSABKAgSDAoEc2VlbhgKIAEoCCLfAQoMUmVwb3J0RGV0YWlsEi8KBnJlcG9ydBgBIAEoCzIfLndhdGhlbmEuYWRtaW4udjEuUmVwb3J0U3VtbWFyeRIpCgVsaW5lcxgCIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuQ2hhdExpbmUSMAoHZWFybGllchgDIAMoCzIfLndhdGhlbmEuYWRtaW4udjEuUmVwb3J0U3VtbWFyeRItCglzYW5jdGlvbnMYBCADKAsyGi53YXRoZW5hLmFkbWluLnYxLlNhbmN0aW9uEhIKCmVtYmxlbV9wbmcYBSABKAwiSAoSQ2xvc2VSZXBvcnRSZXF1ZXN0Eg8KB291dGNvbWUYASABKAkSDAoEbm90ZRgCIAEoCRITCgtzYW5jdGlvbl9pZBgDIAEoAyLfAQoQQ2hhcmFjdGVyU3VtbWFyeRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEgsKA2pvYhgDIAEoBRIQCghqb2JfbmFtZRgEIAEoCRISCgpiYXNlX2xldmVsGAUgASgFEhEKCWpvYl9sZXZlbBgGIAEoBRIOCgZvbmxpbmUYByABKAgSLAoIcG9zaXRpb24YCCABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEi0KCXNhbmN0aW9ucxgJIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuU2FuY3Rpb24iVQoLTG9naW5SZWNvcmQSCgoCaXAYASABKAkSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhIKCnVzZXJfYWdlbnQYAyABKAkiagoFT3duZXISDAoEa2luZBgBIAEoCRIKCgJpZBgCIAEoAxIPCgdzdG9yYWdlGAMgASgNEgwKBG5hbWUYBCABKAkSFAoMY2hhcmFjdGVyX2lkGAUgASgDEhIKCmFjY291bnRfaWQYBiABKAMipQIKDkFjY291bnRTdW1tYXJ5EhIKCmFjY291bnRfaWQYASABKAMSDwoHYWNjb3VudBgCIAEoCRIuCgpjcmVhdGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpsYXN0X2xvZ2luGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI2CgpjaGFyYWN0ZXJzGAUgAygLMiIud2F0aGVuYS5hZG1pbi52MS5DaGFyYWN0ZXJTdW1tYXJ5Ei0KBmxvZ2lucxgGIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuTG9naW5SZWNvcmQSJwoDYmFuGAcgASgLMhoud2F0aGVuYS5hZG1pbi52MS5TYW5jdGlvbiKAAQoMUGxheWVyU2VhcmNoEjIKCGFjY291bnRzGAEgAygLMiAud2F0aGVuYS5hZG1pbi52MS5BY2NvdW50U3VtbWFyeRITCgtuZXh0X2N1cnNvchgCIAEoCRInCgZob2xkZXIYAyABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyIoQCCgRJdGVtEg4KBnNlcmlhbBgBIAEoCRIPCgdpdGVtX2lkGAIgASgNEgwKBG5hbWUYAyABKAkSDgoGYW1vdW50GAQgASgFEgwKBHNsb3QYBSABKAUSDgoGcmVmaW5lGAYgASgFEg0KBWNhcmRzGAcgAygNEg0KBWVxdWlwGAggASgNEhIKCmlkZW50aWZpZWQYCSABKAgSDQoFYm91bmQYCiABKAUSMAoFcm9sbHMYCyADKAsyIS53YXRoZW5hLmFkbWluLnYxLkl0ZW0uUm9sbHNFbnRyeRosCgpSb2xsc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAEiXQoHU3RvcmFnZRIMCgRraW5kGAEgASgJEg8KB3N0b3JhZ2UYAiABKA0SDAoEbmFtZRgDIAEoCRIlCgVpdGVtcxgEIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbSKxAQoETWFpbBIKCgJpZBgBIAEoAxIMCgRmcm9tGAIgASgJEg0KBXRpdGxlGAMgASgJEisKB3NlbnRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgwKBHplbnkYBSABKAMSDAoEcmVhZBgGIAEoCBIQCghyZXR1cm5lZBgHIAEoCBIlCgVpdGVtcxgIIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbSJFCghDdXJyZW5jeRIKCgJpZBgBIAEoDRIMCgRuYW1lGAIgASgJEg4KBmFtb3VudBgDIAEoAxIPCgdhY2NvdW50GAQgASgIIlUKBVN0YXRzEgsKA3N0chgBIAEoBRILCgNhZ2kYAiABKAUSCwoDdml0GAMgASgFEgsKA2ludBgEIAEoBRILCgNkZXgYBSABKAUSCwoDbHVrGAYgASgFIoUGCg9DaGFyYWN0ZXJEZXRhaWwSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRISCgphY2NvdW50X2lkGAMgASgDEg8KB2FjY291bnQYBCABKAkSCwoDam9iGAUgASgFEhAKCGpvYl9uYW1lGAYgASgJEgwKBG1hbGUYByABKAgSEgoKYmFzZV9sZXZlbBgIIAEoBRIRCglqb2JfbGV2ZWwYCSABKAUSEAoIYmFzZV9leHAYCiABKAMSDwoHam9iX2V4cBgLIAEoAxImCgVzdGF0cxgMIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuU3RhdHMSFQoNc3RhdHVzX3BvaW50cxgNIAEoBRIUCgxza2lsbF9wb2ludHMYDiABKAUSCgoCaHAYDyABKAMSCgoCc3AYECABKAMSDAoEemVueRgRIAEoAxIuCgpjdXJyZW5jaWVzGBIgAygLMhoud2F0aGVuYS5hZG1pbi52MS5DdXJyZW5jeRIOCgZvbmxpbmUYEyABKAgSLAoIcG9zaXRpb24YFCABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEi4KCnNhdmVfcG9pbnQYFSABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEg0KBXBhcnR5GBYgASgJEg0KBWd1aWxkGBcgASgJEikKCWludmVudG9yeRgYIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbRIrCghzdG9yYWdlcxgZIAMoCzIZLndhdGhlbmEuYWRtaW4udjEuU3RvcmFnZRIlCgVtYWlscxgaIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuTWFpbBItCglzYW5jdGlvbnMYGyADKAsyGi53YXRoZW5hLmFkbWluLnYxLlNhbmN0aW9uEi4KCmNyZWF0ZWRfYXQYHCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEicKA2JhbhgdIAEoCzIaLndhdGhlbmEuYWRtaW4udjEuU2FuY3Rpb24inwIKCEl0ZW1Nb3ZlEgoKAmlkGAEgASgDEiYKAmF0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgFEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghyZWxhdGlvbhgNIAEoCSKVAQoLSXRlbUhpc3RvcnkSDgoGc2VyaWFsGAEgASgJEikKBW1vdmVzGAIgAygLMhoud2F0aGVuYS5hZG1pbi52MS5JdGVtTW92ZRIPCgdzZXJpYWxzGAMgAygJEhEKCXRydW5jYXRlZBgEIAEoCBInCgZob2xkZXIYBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyIsQCCghMb2dFbnRyeRImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgCIAEoCRIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgDEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghjdXJyZW5jeRgNIAEoDRIVCg1jdXJyZW5jeV9uYW1lGA4gASgJEgoKAmlkGA8gASgDIlEKDUNoYXJhY3RlckxvZ3MSKwoHZW50cmllcxgBIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuTG9nRW50cnkSEwoLbmV4dF9jdXJzb3IYAiABKAkiLQoLUmVzdG9yZUl0ZW0SDgoGc2VyaWFsGAEgASgJEg4KBmFtb3VudBgCIAEoBSJyCg5SZXN0b3JlUmVxdWVzdBIUCgxjaGFyYWN0ZXJfaWQYASABKAMSLAoFaXRlbXMYAiADKAsyHS53YXRoZW5hLmFkbWluLnYxLlJlc3RvcmVJdGVtEgwKBHplbnkYAyABKAMSDgoGcmVhc29uGAQgASgJIpsBCgxSZXN0b3JlZEl0ZW0SDgoGc2VyaWFsGAEgASgJEhIKCm5ld19zZXJpYWwYAiABKAkSDAoEY29weRgDIAEoCBIPCgdpdGVtX2lkGAQgASgNEhEKCWl0ZW1fbmFtZRgFIAEoCRIOCgZhbW91bnQYBiABKAUSJQoEZnJvbRgHIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXIiXQoNUmVzdG9yZVJlc3VsdBIPCgdtYWlsX2lkGAEgASgDEi0KBWl0ZW1zGAIgAygLMh4ud2F0aGVuYS5hZG1pbi52MS5SZXN0b3JlZEl0ZW0SDAoEemVueRgDIAEoAyI6CgVFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEgoKcmVhdXRoX3VybBgDIAEoCUJEWkJnaXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw", [file_google_protobuf_struct, file_google_protobuf_timestamp]);
+  fileDesc("Chx3YXRoZW5hL2FkbWluL3YxL2FkbWluLnByb3RvEhB3YXRoZW5hLmFkbWluLnYxIqEBCgJNZRIPCgdhY2NvdW50GAEgASgJEgwKBHJvbGUYAiABKAkSEwoLcGVybWlzc2lvbnMYAyADKAkSEgoKdHdvX2ZhY3RvchgEIAEoCBIVCg1hc3NpZ25lZF9yb2xlGAUgASgJEhQKDHJlY2VudF9sb2dpbhgGIAEoCBISCgpjc3JmX3Rva2VuGAcgASgJEhIKCnJlYXV0aF91cmwYCCABKAkiKQoEUm9sZRIMCgRuYW1lGAEgASgJEhMKC3Blcm1pc3Npb25zGAIgAygJIqkBCgtTdGFmZk1lbWJlchISCgphY2NvdW50X2lkGAEgASgDEg8KB2FjY291bnQYAiABKAkSDAoEcm9sZRgDIAEoCRITCgtmcm9tX2NvbmZpZxgEIAEoCBIQCghnaXZlbl9ieRgFIAEoCRIsCghnaXZlbl9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKdHdvX2ZhY3RvchgHIAEoCCJiCglTdGFmZkxpc3QSLgoHbWVtYmVycxgBIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuU3RhZmZNZW1iZXISJQoFcm9sZXMYAiADKAsyFi53YXRoZW5hLmFkbWluLnYxLlJvbGUiQAoPR2l2ZVJvbGVSZXF1ZXN0Eg8KB2FjY291bnQYASABKAkSDAoEcm9sZRgCIAEoCRIOCgZyZWFzb24YAyABKAki4QIKCkF1ZGl0RW50cnkSCgoCaWQYASABKAMSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2FjY291bnQYAyABKAkSDAoEcm9sZRgEIAEoCRIOCgZhY3Rpb24YBSABKAkSDgoGc291cmNlGAYgASgJEg4KBnRhcmdldBgHIAEoCRIqCglhcmd1bWVudHMYCCABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0Eg4KBnJlYXNvbhgJIAEoCRIUCgxuZWVkc19yZXZpZXcYCiABKAgSLwoLcmV2aWV3ZWRfYXQYCyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC3Jldmlld2VkX2J5GAwgASgJEg8KB3ZlcmRpY3QYDSABKAkSEwoLcmV2aWV3X25vdGUYDiABKAkSEgoKYWNjb3VudF9pZBgPIAEoAyJSCglBdWRpdFBhZ2USLQoHZW50cmllcxgBIAMoCzIcLndhdGhlbmEuYWRtaW4udjEuQXVkaXRFbnRyeRIWCg5uZXh0X2JlZm9yZV9pZBgCIAEoAyIuCg1SZXZpZXdSZXF1ZXN0Eg8KB3ZlcmRpY3QYASABKAkSDAoEbm90ZRgCIAEoCSItCghQb3NpdGlvbhILCgNtYXAYASABKAkSCQoBeBgCIAEoBRIJCgF5GAMgASgFIuwCCghTYW5jdGlvbhIMCgRraW5kGAEgASgJEg4KBnJlYXNvbhgCIAEoCRIuCgpzdGFydGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbmRzX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglpc3N1ZWRfYnkYBSABKAkSCgoCaWQYBiABKAMSFAoMY2hhcmFjdGVyX2lkGAcgASgDEhEKCWNoYXJhY3RlchgIIAEoCRISCgphY2NvdW50X2lkGAkgASgDEg8KB2FjY291bnQYCiABKAkSEQoJcGVybWFuZW50GAsgASgIEi0KCWxpZnRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEQoJbGlmdGVkX2J5GA0gASgJEhMKC2xpZnRfcmVhc29uGA4gASgJEg4KBmFjdGl2ZRgPIAEoCCJqCg9TYW5jdGlvblJlcXVlc3QSDAoEa2luZBgBIAEoCRIUCgxjaGFyYWN0ZXJfaWQYAiABKAMSEgoKYWNjb3VudF9pZBgDIAEoAxIPCgdtaW51dGVzGAQgASgFEg4KBnJlYXNvbhgFIAEoCSJVCgxTYW5jdGlvbkxpc3QSLQoJc2FuY3Rpb25zGAEgAygLMhoud2F0aGVuYS5hZG1pbi52MS5TYW5jdGlvbhIWCg5uZXh0X2JlZm9yZV9pZBgCIAEoAyKEAwoNUmVwb3J0U3VtbWFyeRIKCgJpZBgBIAEoAxIuCgpjcmVhdGVkX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIQCghyZXBvcnRlchgDIAEoCRITCgtyZXBvcnRlcl9pZBgEIAEoAxIOCgZ0YXJnZXQYBSABKAkSEQoJdGFyZ2V0X2lkGAYgASgDEgwKBGtpbmQYByABKAkSDgoGcmVhc29uGAggASgJEgsKA21hcBgJIAEoCRIOCgZzdGF0dXMYCiABKAkSLQoJY2xvc2VkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgdvdXRjb21lGAwgASgJEgwKBG5vdGUYDSABKAkSEQoJY2xvc2VkX2J5GA4gASgJEhMKC3NhbmN0aW9uX2lkGA8gASgDEhAKCGd1aWxkX2lkGBAgASgDEg8KB2xpbmVfaWQYESABKAkSGQoRdGFyZ2V0X2FjY291bnRfaWQYEiABKAMiVgoKUmVwb3J0UGFnZRIwCgdyZXBvcnRzGAEgAygLMh8ud2F0aGVuYS5hZG1pbi52MS5SZXBvcnRTdW1tYXJ5EhYKDm5leHRfYmVmb3JlX2lkGAIgASgDIrsBCghDaGF0TGluZRIKCgJpZBgBIAEoCRImCgJhdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgDIAEoCRIUCgxjaGFyYWN0ZXJfaWQYBCABKAMSDAoEbmFtZRgFIAEoCRIOCgZ0YXJnZXQYBiABKAkSCwoDbWFwGAcgASgJEgwKBHRleHQYCCABKAkSEAoIcmVwb3J0ZWQYCSABKAgSDAoEc2VlbhgKIAEoCCLfAQoMUmVwb3J0RGV0YWlsEi8KBnJlcG9ydBgBIAEoCzIfLndhdGhlbmEuYWRtaW4udjEuUmVwb3J0U3VtbWFyeRIpCgVsaW5lcxgCIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuQ2hhdExpbmUSMAoHZWFybGllchgDIAMoCzIfLndhdGhlbmEuYWRtaW4udjEuUmVwb3J0U3VtbWFyeRItCglzYW5jdGlvbnMYBCADKAsyGi53YXRoZW5hLmFkbWluLnYxLlNhbmN0aW9uEhIKCmVtYmxlbV9wbmcYBSABKAwiSAoSQ2xvc2VSZXBvcnRSZXF1ZXN0Eg8KB291dGNvbWUYASABKAkSDAoEbm90ZRgCIAEoCRITCgtzYW5jdGlvbl9pZBgDIAEoAyLfAQoQQ2hhcmFjdGVyU3VtbWFyeRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEgsKA2pvYhgDIAEoBRIQCghqb2JfbmFtZRgEIAEoCRISCgpiYXNlX2xldmVsGAUgASgFEhEKCWpvYl9sZXZlbBgGIAEoBRIOCgZvbmxpbmUYByABKAgSLAoIcG9zaXRpb24YCCABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEi0KCXNhbmN0aW9ucxgJIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuU2FuY3Rpb24iVQoLTG9naW5SZWNvcmQSCgoCaXAYASABKAkSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhIKCnVzZXJfYWdlbnQYAyABKAkiagoFT3duZXISDAoEa2luZBgBIAEoCRIKCgJpZBgCIAEoAxIPCgdzdG9yYWdlGAMgASgNEgwKBG5hbWUYBCABKAkSFAoMY2hhcmFjdGVyX2lkGAUgASgDEhIKCmFjY291bnRfaWQYBiABKAMipQIKDkFjY291bnRTdW1tYXJ5EhIKCmFjY291bnRfaWQYASABKAMSDwoHYWNjb3VudBgCIAEoCRIuCgpjcmVhdGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpsYXN0X2xvZ2luGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI2CgpjaGFyYWN0ZXJzGAUgAygLMiIud2F0aGVuYS5hZG1pbi52MS5DaGFyYWN0ZXJTdW1tYXJ5Ei0KBmxvZ2lucxgGIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuTG9naW5SZWNvcmQSJwoDYmFuGAcgASgLMhoud2F0aGVuYS5hZG1pbi52MS5TYW5jdGlvbiKAAQoMUGxheWVyU2VhcmNoEjIKCGFjY291bnRzGAEgAygLMiAud2F0aGVuYS5hZG1pbi52MS5BY2NvdW50U3VtbWFyeRITCgtuZXh0X2N1cnNvchgCIAEoCRInCgZob2xkZXIYAyABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyIoQCCgRJdGVtEg4KBnNlcmlhbBgBIAEoCRIPCgdpdGVtX2lkGAIgASgNEgwKBG5hbWUYAyABKAkSDgoGYW1vdW50GAQgASgFEgwKBHNsb3QYBSABKAUSDgoGcmVmaW5lGAYgASgFEg0KBWNhcmRzGAcgAygNEg0KBWVxdWlwGAggASgNEhIKCmlkZW50aWZpZWQYCSABKAgSDQoFYm91bmQYCiABKAUSMAoFcm9sbHMYCyADKAsyIS53YXRoZW5hLmFkbWluLnYxLkl0ZW0uUm9sbHNFbnRyeRosCgpSb2xsc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAEiXQoHU3RvcmFnZRIMCgRraW5kGAEgASgJEg8KB3N0b3JhZ2UYAiABKA0SDAoEbmFtZRgDIAEoCRIlCgVpdGVtcxgEIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbSKxAQoETWFpbBIKCgJpZBgBIAEoAxIMCgRmcm9tGAIgASgJEg0KBXRpdGxlGAMgASgJEisKB3NlbnRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgwKBHplbnkYBSABKAMSDAoEcmVhZBgGIAEoCBIQCghyZXR1cm5lZBgHIAEoCBIlCgVpdGVtcxgIIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbSJFCghDdXJyZW5jeRIKCgJpZBgBIAEoDRIMCgRuYW1lGAIgASgJEg4KBmFtb3VudBgDIAEoAxIPCgdhY2NvdW50GAQgASgIIlUKBVN0YXRzEgsKA3N0chgBIAEoBRILCgNhZ2kYAiABKAUSCwoDdml0GAMgASgFEgsKA2ludBgEIAEoBRILCgNkZXgYBSABKAUSCwoDbHVrGAYgASgFIoUGCg9DaGFyYWN0ZXJEZXRhaWwSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRISCgphY2NvdW50X2lkGAMgASgDEg8KB2FjY291bnQYBCABKAkSCwoDam9iGAUgASgFEhAKCGpvYl9uYW1lGAYgASgJEgwKBG1hbGUYByABKAgSEgoKYmFzZV9sZXZlbBgIIAEoBRIRCglqb2JfbGV2ZWwYCSABKAUSEAoIYmFzZV9leHAYCiABKAMSDwoHam9iX2V4cBgLIAEoAxImCgVzdGF0cxgMIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuU3RhdHMSFQoNc3RhdHVzX3BvaW50cxgNIAEoBRIUCgxza2lsbF9wb2ludHMYDiABKAUSCgoCaHAYDyABKAMSCgoCc3AYECABKAMSDAoEemVueRgRIAEoAxIuCgpjdXJyZW5jaWVzGBIgAygLMhoud2F0aGVuYS5hZG1pbi52MS5DdXJyZW5jeRIOCgZvbmxpbmUYEyABKAgSLAoIcG9zaXRpb24YFCABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEi4KCnNhdmVfcG9pbnQYFSABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEg0KBXBhcnR5GBYgASgJEg0KBWd1aWxkGBcgASgJEikKCWludmVudG9yeRgYIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbRIrCghzdG9yYWdlcxgZIAMoCzIZLndhdGhlbmEuYWRtaW4udjEuU3RvcmFnZRIlCgVtYWlscxgaIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuTWFpbBItCglzYW5jdGlvbnMYGyADKAsyGi53YXRoZW5hLmFkbWluLnYxLlNhbmN0aW9uEi4KCmNyZWF0ZWRfYXQYHCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEicKA2JhbhgdIAEoCzIaLndhdGhlbmEuYWRtaW4udjEuU2FuY3Rpb24inwIKCEl0ZW1Nb3ZlEgoKAmlkGAEgASgDEiYKAmF0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgFEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghyZWxhdGlvbhgNIAEoCSKVAQoLSXRlbUhpc3RvcnkSDgoGc2VyaWFsGAEgASgJEikKBW1vdmVzGAIgAygLMhoud2F0aGVuYS5hZG1pbi52MS5JdGVtTW92ZRIPCgdzZXJpYWxzGAMgAygJEhEKCXRydW5jYXRlZBgEIAEoCBInCgZob2xkZXIYBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyIsQCCghMb2dFbnRyeRImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgCIAEoCRIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgDEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghjdXJyZW5jeRgNIAEoDRIVCg1jdXJyZW5jeV9uYW1lGA4gASgJEgoKAmlkGA8gASgDIlEKDUNoYXJhY3RlckxvZ3MSKwoHZW50cmllcxgBIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuTG9nRW50cnkSEwoLbmV4dF9jdXJzb3IYAiABKAkiLQoLUmVzdG9yZUl0ZW0SDgoGc2VyaWFsGAEgASgJEg4KBmFtb3VudBgCIAEoBSJyCg5SZXN0b3JlUmVxdWVzdBIUCgxjaGFyYWN0ZXJfaWQYASABKAMSLAoFaXRlbXMYAiADKAsyHS53YXRoZW5hLmFkbWluLnYxLlJlc3RvcmVJdGVtEgwKBHplbnkYAyABKAMSDgoGcmVhc29uGAQgASgJIpsBCgxSZXN0b3JlZEl0ZW0SDgoGc2VyaWFsGAEgASgJEhIKCm5ld19zZXJpYWwYAiABKAkSDAoEY29weRgDIAEoCBIPCgdpdGVtX2lkGAQgASgNEhEKCWl0ZW1fbmFtZRgFIAEoCRIOCgZhbW91bnQYBiABKAUSJQoEZnJvbRgHIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXIiXQoNUmVzdG9yZVJlc3VsdBIPCgdtYWlsX2lkGAEgASgDEi0KBWl0ZW1zGAIgAygLMh4ud2F0aGVuYS5hZG1pbi52MS5SZXN0b3JlZEl0ZW0SDAoEemVueRgDIAEoAyKeAQoIWm9uZVZpZXcSCwoDbWFwGAEgASgJEg8KB3BsYXllcnMYAiABKAUSEAoIbW9uc3RlcnMYAyABKAUSDQoFdGlja3MYBCABKAUSDgoGcDUwX3VzGAUgASgDEg4KBnA5OV91cxgGIAEoAxIOCgZtYXhfdXMYByABKAMSEwoLb3Zlcl9idWRnZXQYCCABKAUSDgoGYXNsZWVwGAkgASgIIrYBCgtQcm9jZXNzVmlldxIRCgljcHVfY29yZXMYASABKAESEgoKaGVhcF9ieXRlcxgCIAEoBBITCgt0b3RhbF9ieXRlcxgDIAEoBBISCgpnb3JvdXRpbmVzGAQgASgEEi4KCnN0YXJ0ZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhYKDnVwdGltZV9zZWNvbmRzGAYgASgDEg8KB3ZlcnNpb24YByABKAkiewoMT25saW5lUGxheWVyEhQKDGNoYXJhY3Rlcl9pZBgBIAEoAxIMCgRuYW1lGAIgASgJEgsKA21hcBgDIAEoCRIJCgF4GAQgASgFEgkKAXkYBSABKAUSEgoKYmFzZV9sZXZlbBgGIAEoBRIQCghqb2JfbmFtZRgHIAEoCSKIAgoJV29ybGRWaWV3EikKBXpvbmVzGAEgAygLMhoud2F0aGVuYS5hZG1pbi52MS5ab25lVmlldxIuCgdwcm9jZXNzGAIgASgLMh0ud2F0aGVuYS5hZG1pbi52MS5Qcm9jZXNzVmlldxIvCgdwbGF5ZXJzGAMgAygLMh4ud2F0aGVuYS5hZG1pbi52MS5PbmxpbmVQbGF5ZXISFgoOcGxheWVyc19vbmxpbmUYBCABKAUSLgoHcmVzdGFydBgFIAEoCzIdLndhdGhlbmEuYWRtaW4udjEuUmVzdGFydFBsYW4SJwoDbm93GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIsCg9Bbm5vdW5jZVJlcXVlc3QSDAoEdGV4dBgBIAEoCRILCgNtYXAYAiABKAkiKwoOQW5ub3VuY2VSZXN1bHQSDAoEdGV4dBgBIAEoCRILCgNtYXAYAiABKAkiWQoOUmVzdGFydFJlcXVlc3QSJgoCYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBnJlYXNvbhgCIAEoCRIPCgdtZXNzYWdlGAMgASgJIrEBCgtSZXN0YXJ0UGxhbhImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDgoGcmVhc29uGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSEgoKcGxhbm5lZF9ieRgEIAEoCRIuCgpwbGFubmVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIVCg1sb2dpbnNfY2xvc2VkGAYgASgIIpABCghFdmVudFJ1bhItCglzY2hlZHVsZWQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEisKB3N0YXJ0ZWQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEigKBGVuZHMYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIqQBCgtFdmVudFJlc3VsdBItCglzY2hlZHVsZWQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEisKB3N0YXJ0ZWQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEikKBWVuZGVkGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZyZXN1bHQYBCABKAkirwEKDUV2ZW50T3ZlcnJpZGUSDwoCb24YASABKAhIAIgBARIoCgd0cmlnZ2VyGAIgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIYChBkdXJhdGlvbl9taW51dGVzGAMgASgFEhIKCmNoYW5nZWRfYnkYBCABKAkSLgoKY2hhbmdlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBQoDX29uIvsDCglFdmVudEluZm8SDAoEbmFtZRgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkSCwoDbW9kGAMgASgJEgwKBHR5cGUYBCABKAkSCgoCb24YBSABKAgSKAoHdHJpZ2dlchgGIAEoCzIXLmdvb2dsZS5wcm90b2J1Zi5TdHJ1Y3QSFAoMdHJpZ2dlcl90ZXh0GAcgASgJEhgKEGR1cmF0aW9uX21pbnV0ZXMYCCABKAUSLAoIbmV4dF9ydW4YCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEigKBHJ1bnMYCiADKAsyGi53YXRoZW5hLmFkbWluLnYxLkV2ZW50UnVuEi4KB3Jlc3VsdHMYCyADKAsyHS53YXRoZW5hLmFkbWluLnYxLkV2ZW50UmVzdWx0EjEKCG92ZXJyaWRlGAwgASgLMh8ud2F0aGVuYS5hZG1pbi52MS5FdmVudE92ZXJyaWRlEhEKCWNvbmZpZ19vbhgNIAEoCBIbChNjb25maWdfdHJpZ2dlcl90ZXh0GA4gASgJEh8KF2NvbmZpZ19kdXJhdGlvbl9taW51dGVzGA8gASgFEg4KBmZhaWxlZBgQIAEoCRItCglmYWlsZWRfYXQYESABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjgKCUV2ZW50TGlzdBIrCgZldmVudHMYASADKAsyGy53YXRoZW5hLmFkbWluLnYxLkV2ZW50SW5mbyJ5CgtFdmVudENoYW5nZRIPCgJvbhgBIAEoCEgAiAEBEigKB3RyaWdnZXIYAiABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhgKEGR1cmF0aW9uX21pbnV0ZXMYAyABKAUSDgoGcmVhc29uGAQgASgJQgUKA19vbiIdCgtFdmVudEFjdGlvbhIOCgZyZWFzb24YASABKAkibAoJTW9kU3dpdGNoEgsKA21hcBgBIAEoCRIOCgZyZWFzb24YAiABKAkSEgoKY2hhbmdlZF9ieRgDIAEoCRIuCgpjaGFuZ2VkX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJ6CgdNb2Rab25lEgsKA21hcBgBIAEoCRILCgNvZmYYAiABKAgSDgoGZXJyb3JzGAMgASgDEhIKCmxhc3RfZXJyb3IYBCABKAkSMQoNbGFzdF9lcnJvcl9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAihwIKB01vZEluZm8SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEg8KB2J1aWx0aW4YBCABKAgSEQoJc2lnbmF0dXJlGAUgASgJEg8KB2dyYW50ZWQYBiADKAkSEQoJcmVxdWVzdGVkGAcgAygJEg8KB3BlbmRpbmcYCCADKAkSLQoIc3dpdGNoZXMYCSADKAsyGy53YXRoZW5hLmFkbWluLnYxLk1vZFN3aXRjaBIoCgV6b25lcxgKIAMoCzIZLndhdGhlbmEuYWRtaW4udjEuTW9kWm9uZRIOCgZlcnJvcnMYCyABKAMSDwoHc2NyaXB0cxgMIAEoCCJACgdNb2RMaXN0EicKBG1vZHMYASADKAsyGS53YXRoZW5hLmFkbWluLnYxLk1vZEluZm8SDAoEbWFwcxgCIAMoCSIvChBNb2RTd2l0Y2hSZXF1ZXN0EgsKA21hcBgBIAEoCRIOCgZyZWFzb24YAiABKAkiOgoFRXJyb3ISDAoEY29kZRgBIAEoCRIPCgdtZXNzYWdlGAIgASgJEhIKCnJlYXV0aF91cmwYAyABKAlCRFpCZ2l0aHViLmNvbS9seHNtbnN5Yy93YXRoZW5hL3NjaGVtYS9nZW4vZ28vd2F0aGVuYS9hZG1pbi92MTthZG1pbnYxYgZwcm90bzM", [file_google_protobuf_struct, file_google_protobuf_timestamp]);
 
 /**
  * Me answers GET /me: who the session is and what it may do.
@@ -1990,6 +1990,901 @@ export const RestoreResultSchema: GenMessage<RestoreResult> = /*@__PURE__*/
   messageDesc(file_wathena_admin_v1_admin, 35);
 
 /**
+ * ZoneView is one zone of the world view (decision 0031).
+ *
+ * @generated from message wathena.admin.v1.ZoneView
+ */
+export type ZoneView = Message<"wathena.admin.v1.ZoneView"> & {
+  /**
+   * map is the map's name, such as prontera.
+   *
+   * @generated from field: string map = 1;
+   */
+  map: string;
+
+  /**
+   * @generated from field: int32 players = 2;
+   */
+  players: number;
+
+  /**
+   * monsters counts the living monsters.
+   *
+   * @generated from field: int32 monsters = 3;
+   */
+  monsters: number;
+
+  /**
+   * ticks counts the zone's ticks in the last minute. A zone without
+   * players sleeps and does not tick.
+   *
+   * @generated from field: int32 ticks = 4;
+   */
+  ticks: number;
+
+  /**
+   * The work of the last minute's ticks, in microseconds: the tick and
+   * what the zone handled since the tick before.
+   *
+   * @generated from field: int64 p50_us = 5;
+   */
+  p50Us: bigint;
+
+  /**
+   * @generated from field: int64 p99_us = 6;
+   */
+  p99Us: bigint;
+
+  /**
+   * @generated from field: int64 max_us = 7;
+   */
+  maxUs: bigint;
+
+  /**
+   * over_budget counts the last minute's ticks over the 10 ms budget.
+   *
+   * @generated from field: int32 over_budget = 8;
+   */
+  overBudget: number;
+
+  /**
+   * asleep is set when the zone sleeps because it has no players.
+   *
+   * @generated from field: bool asleep = 9;
+   */
+  asleep: boolean;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ZoneView.
+ * Use `create(ZoneViewSchema)` to create a new message.
+ */
+export const ZoneViewSchema: GenMessage<ZoneView> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 36);
+
+/**
+ * ProcessView is the server process of the world view.
+ *
+ * @generated from message wathena.admin.v1.ProcessView
+ */
+export type ProcessView = Message<"wathena.admin.v1.ProcessView"> & {
+  /**
+   * cpu_cores is the CPU time per second of wall time since the start,
+   * so 1.0 is one core. It is 0 where the system does not report it.
+   *
+   * @generated from field: double cpu_cores = 1;
+   */
+  cpuCores: number;
+
+  /**
+   * @generated from field: uint64 heap_bytes = 2;
+   */
+  heapBytes: bigint;
+
+  /**
+   * @generated from field: uint64 total_bytes = 3;
+   */
+  totalBytes: bigint;
+
+  /**
+   * @generated from field: uint64 goroutines = 4;
+   */
+  goroutines: bigint;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp started_at = 5;
+   */
+  startedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: int64 uptime_seconds = 6;
+   */
+  uptimeSeconds: bigint;
+
+  /**
+   * @generated from field: string version = 7;
+   */
+  version: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ProcessView.
+ * Use `create(ProcessViewSchema)` to create a new message.
+ */
+export const ProcessViewSchema: GenMessage<ProcessView> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 37);
+
+/**
+ * OnlinePlayer is a player in the game.
+ *
+ * @generated from message wathena.admin.v1.OnlinePlayer
+ */
+export type OnlinePlayer = Message<"wathena.admin.v1.OnlinePlayer"> & {
+  /**
+   * @generated from field: int64 character_id = 1;
+   */
+  characterId: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string map = 3;
+   */
+  map: string;
+
+  /**
+   * @generated from field: int32 x = 4;
+   */
+  x: number;
+
+  /**
+   * @generated from field: int32 y = 5;
+   */
+  y: number;
+
+  /**
+   * @generated from field: int32 base_level = 6;
+   */
+  baseLevel: number;
+
+  /**
+   * @generated from field: string job_name = 7;
+   */
+  jobName: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.OnlinePlayer.
+ * Use `create(OnlinePlayerSchema)` to create a new message.
+ */
+export const OnlinePlayerSchema: GenMessage<OnlinePlayer> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 38);
+
+/**
+ * WorldView answers GET /world.
+ *
+ * @generated from message wathena.admin.v1.WorldView
+ */
+export type WorldView = Message<"wathena.admin.v1.WorldView"> & {
+  /**
+   * @generated from field: repeated wathena.admin.v1.ZoneView zones = 1;
+   */
+  zones: ZoneView[];
+
+  /**
+   * @generated from field: wathena.admin.v1.ProcessView process = 2;
+   */
+  process?: ProcessView | undefined;
+
+  /**
+   * players are the players online, by name, at most 1,000.
+   *
+   * @generated from field: repeated wathena.admin.v1.OnlinePlayer players = 3;
+   */
+  players: OnlinePlayer[];
+
+  /**
+   * players_online counts every player online.
+   *
+   * @generated from field: int32 players_online = 4;
+   */
+  playersOnline: number;
+
+  /**
+   * restart is the planned restart, or unset.
+   *
+   * @generated from field: wathena.admin.v1.RestartPlan restart = 5;
+   */
+  restart?: RestartPlan | undefined;
+
+  /**
+   * now is the server clock.
+   *
+   * @generated from field: google.protobuf.Timestamp now = 6;
+   */
+  now?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.WorldView.
+ * Use `create(WorldViewSchema)` to create a new message.
+ */
+export const WorldViewSchema: GenMessage<WorldView> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 39);
+
+/**
+ * AnnounceRequest is the body of POST /announce.
+ *
+ * @generated from message wathena.admin.v1.AnnounceRequest
+ */
+export type AnnounceRequest = Message<"wathena.admin.v1.AnnounceRequest"> & {
+  /**
+   * text is 1 to 255 characters.
+   *
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * map is a map's name for one map, or empty for the world.
+   *
+   * @generated from field: string map = 2;
+   */
+  map: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.AnnounceRequest.
+ * Use `create(AnnounceRequestSchema)` to create a new message.
+ */
+export const AnnounceRequestSchema: GenMessage<AnnounceRequest> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 40);
+
+/**
+ * AnnounceResult answers POST /announce.
+ *
+ * @generated from message wathena.admin.v1.AnnounceResult
+ */
+export type AnnounceResult = Message<"wathena.admin.v1.AnnounceResult"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * @generated from field: string map = 2;
+   */
+  map: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.AnnounceResult.
+ * Use `create(AnnounceResultSchema)` to create a new message.
+ */
+export const AnnounceResultSchema: GenMessage<AnnounceResult> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 41);
+
+/**
+ * RestartRequest is the body of POST /restart.
+ *
+ * @generated from message wathena.admin.v1.RestartRequest
+ */
+export type RestartRequest = Message<"wathena.admin.v1.RestartRequest"> & {
+  /**
+   * at is from 1 minute to 7 days ahead of the server clock.
+   *
+   * @generated from field: google.protobuf.Timestamp at = 1;
+   */
+  at?: Timestamp | undefined;
+
+  /**
+   * reason is 1 to 255 characters. Players see it when they are
+   * disconnected, and restart_planned gets it.
+   *
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+
+  /**
+   * message is what the announcements say, at most 255 characters. The
+   * reason when empty.
+   *
+   * @generated from field: string message = 3;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.RestartRequest.
+ * Use `create(RestartRequestSchema)` to create a new message.
+ */
+export const RestartRequestSchema: GenMessage<RestartRequest> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 42);
+
+/**
+ * RestartPlan is a planned restart. POST and DELETE /restart answer
+ * with it.
+ *
+ * @generated from message wathena.admin.v1.RestartPlan
+ */
+export type RestartPlan = Message<"wathena.admin.v1.RestartPlan"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp at = 1;
+   */
+  at?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+
+  /**
+   * @generated from field: string message = 3;
+   */
+  message: string;
+
+  /**
+   * @generated from field: string planned_by = 4;
+   */
+  plannedBy: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp planned_at = 5;
+   */
+  plannedAt?: Timestamp | undefined;
+
+  /**
+   * logins_closed is set in the last minute, when new logins are
+   * refused.
+   *
+   * @generated from field: bool logins_closed = 6;
+   */
+  loginsClosed: boolean;
+};
+
+/**
+ * Describes the message wathena.admin.v1.RestartPlan.
+ * Use `create(RestartPlanSchema)` to create a new message.
+ */
+export const RestartPlanSchema: GenMessage<RestartPlan> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 43);
+
+/**
+ * EventRun is a run of a world event that lasts.
+ *
+ * @generated from message wathena.admin.v1.EventRun
+ */
+export type EventRun = Message<"wathena.admin.v1.EventRun"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp scheduled = 1;
+   */
+  scheduled?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp started = 2;
+   */
+  started?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp ends = 3;
+   */
+  ends?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.EventRun.
+ * Use `create(EventRunSchema)` to create a new message.
+ */
+export const EventRunSchema: GenMessage<EventRun> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 44);
+
+/**
+ * EventResult is how a run ended: won, lost, stopped, or ended for a
+ * script event that ran its time.
+ *
+ * @generated from message wathena.admin.v1.EventResult
+ */
+export type EventResult = Message<"wathena.admin.v1.EventResult"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp scheduled = 1;
+   */
+  scheduled?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp started = 2;
+   */
+  started?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp ended = 3;
+   */
+  ended?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string result = 4;
+   */
+  result: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.EventResult.
+ * Use `create(EventResultSchema)` to create a new message.
+ */
+export const EventResultSchema: GenMessage<EventResult> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 45);
+
+/**
+ * EventOverride is a staff change of an event, saved over the config.
+ *
+ * @generated from message wathena.admin.v1.EventOverride
+ */
+export type EventOverride = Message<"wathena.admin.v1.EventOverride"> & {
+  /**
+   * on is set when the change turned the event on or off.
+   *
+   * @generated from field: optional bool on = 1;
+   */
+  on?: boolean | undefined;
+
+  /**
+   * trigger is set when the change set the trigger.
+   *
+   * @generated from field: google.protobuf.Struct trigger = 2;
+   */
+  trigger?: JsonObject | undefined;
+
+  /**
+   * duration_minutes is set when the change set the duration.
+   *
+   * @generated from field: int32 duration_minutes = 3;
+   */
+  durationMinutes: number;
+
+  /**
+   * @generated from field: string changed_by = 4;
+   */
+  changedBy: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp changed_at = 5;
+   */
+  changedAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.EventOverride.
+ * Use `create(EventOverrideSchema)` to create a new message.
+ */
+export const EventOverrideSchema: GenMessage<EventOverride> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 46);
+
+/**
+ * EventInfo is one world event of GET /events.
+ *
+ * @generated from message wathena.admin.v1.EventInfo
+ */
+export type EventInfo = Message<"wathena.admin.v1.EventInfo"> & {
+  /**
+   * name is the full name, such as core:Field_Boss.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string display_name = 2;
+   */
+  displayName: string;
+
+  /**
+   * @generated from field: string mod = 3;
+   */
+  mod: string;
+
+  /**
+   * type is boss, invasion, treasure_hunt or script.
+   *
+   * @generated from field: string type = 4;
+   */
+  type: string;
+
+  /**
+   * @generated from field: bool on = 5;
+   */
+  on: boolean;
+
+  /**
+   * trigger is the trigger in the form of data/events.yml, such as
+   * {"daily": "20:00"}, and trigger_text says it for people.
+   *
+   * @generated from field: google.protobuf.Struct trigger = 6;
+   */
+  trigger?: JsonObject | undefined;
+
+  /**
+   * @generated from field: string trigger_text = 7;
+   */
+  triggerText: string;
+
+  /**
+   * @generated from field: int32 duration_minutes = 8;
+   */
+  durationMinutes: number;
+
+  /**
+   * next_run is the trigger's next time, or unset.
+   *
+   * @generated from field: google.protobuf.Timestamp next_run = 9;
+   */
+  nextRun?: Timestamp | undefined;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.EventRun runs = 10;
+   */
+  runs: EventRun[];
+
+  /**
+   * results are the latest results since the server started, newest
+   * first.
+   *
+   * @generated from field: repeated wathena.admin.v1.EventResult results = 11;
+   */
+  results: EventResult[];
+
+  /**
+   * override is the staff change, or unset.
+   *
+   * @generated from field: wathena.admin.v1.EventOverride override = 12;
+   */
+  override?: EventOverride | undefined;
+
+  /**
+   * What the config says, for a reset.
+   *
+   * @generated from field: bool config_on = 13;
+   */
+  configOn: boolean;
+
+  /**
+   * @generated from field: string config_trigger_text = 14;
+   */
+  configTriggerText: string;
+
+  /**
+   * @generated from field: int32 config_duration_minutes = 15;
+   */
+  configDurationMinutes: number;
+
+  /**
+   * failed is the error of the last run that did not start.
+   *
+   * @generated from field: string failed = 16;
+   */
+  failed: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp failed_at = 17;
+   */
+  failedAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.EventInfo.
+ * Use `create(EventInfoSchema)` to create a new message.
+ */
+export const EventInfoSchema: GenMessage<EventInfo> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 47);
+
+/**
+ * EventList answers GET /events.
+ *
+ * @generated from message wathena.admin.v1.EventList
+ */
+export type EventList = Message<"wathena.admin.v1.EventList"> & {
+  /**
+   * @generated from field: repeated wathena.admin.v1.EventInfo events = 1;
+   */
+  events: EventInfo[];
+};
+
+/**
+ * Describes the message wathena.admin.v1.EventList.
+ * Use `create(EventListSchema)` to create a new message.
+ */
+export const EventListSchema: GenMessage<EventList> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 48);
+
+/**
+ * EventChange is the body of PATCH /events/{name}. Fields that are not
+ * set keep their value.
+ *
+ * @generated from message wathena.admin.v1.EventChange
+ */
+export type EventChange = Message<"wathena.admin.v1.EventChange"> & {
+  /**
+   * @generated from field: optional bool on = 1;
+   */
+  on?: boolean | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Struct trigger = 2;
+   */
+  trigger?: JsonObject | undefined;
+
+  /**
+   * duration_minutes is 1 to 10,080, or 0 to keep it.
+   *
+   * @generated from field: int32 duration_minutes = 3;
+   */
+  durationMinutes: number;
+
+  /**
+   * reason is optional, at most 255 characters.
+   *
+   * @generated from field: string reason = 4;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.EventChange.
+ * Use `create(EventChangeSchema)` to create a new message.
+ */
+export const EventChangeSchema: GenMessage<EventChange> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 49);
+
+/**
+ * EventAction is the body of POST /events/{name}/start, /stop and
+ * /reset.
+ *
+ * @generated from message wathena.admin.v1.EventAction
+ */
+export type EventAction = Message<"wathena.admin.v1.EventAction"> & {
+  /**
+   * reason is optional, at most 255 characters.
+   *
+   * @generated from field: string reason = 1;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.EventAction.
+ * Use `create(EventActionSchema)` to create a new message.
+ */
+export const EventActionSchema: GenMessage<EventAction> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 50);
+
+/**
+ * ModSwitch is a mod that staff turned off.
+ *
+ * @generated from message wathena.admin.v1.ModSwitch
+ */
+export type ModSwitch = Message<"wathena.admin.v1.ModSwitch"> & {
+  /**
+   * map is a map's name, or empty for every zone.
+   *
+   * @generated from field: string map = 1;
+   */
+  map: string;
+
+  /**
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+
+  /**
+   * @generated from field: string changed_by = 3;
+   */
+  changedBy: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp changed_at = 4;
+   */
+  changedAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ModSwitch.
+ * Use `create(ModSwitchSchema)` to create a new message.
+ */
+export const ModSwitchSchema: GenMessage<ModSwitch> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 51);
+
+/**
+ * ModZone is a mod's state in one zone.
+ *
+ * @generated from message wathena.admin.v1.ModZone
+ */
+export type ModZone = Message<"wathena.admin.v1.ModZone"> & {
+  /**
+   * @generated from field: string map = 1;
+   */
+  map: string;
+
+  /**
+   * @generated from field: bool off = 2;
+   */
+  off: boolean;
+
+  /**
+   * errors counts the mod's script errors in the zone since the server
+   * started, with the last error and its time.
+   *
+   * @generated from field: int64 errors = 3;
+   */
+  errors: bigint;
+
+  /**
+   * @generated from field: string last_error = 4;
+   */
+  lastError: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp last_error_at = 5;
+   */
+  lastErrorAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ModZone.
+ * Use `create(ModZoneSchema)` to create a new message.
+ */
+export const ModZoneSchema: GenMessage<ModZone> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 52);
+
+/**
+ * ModInfo is one loaded mod of GET /mods.
+ *
+ * @generated from message wathena.admin.v1.ModInfo
+ */
+export type ModInfo = Message<"wathena.admin.v1.ModInfo"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string version = 3;
+   */
+  version: string;
+
+  /**
+   * builtin is set for core and the core ruleset mods. Core cannot be
+   * turned off.
+   *
+   * @generated from field: bool builtin = 4;
+   */
+  builtin: boolean;
+
+  /**
+   * signature is builtin, folder, unsigned or unverified: a .zip file
+   * with a .minisig file next to it, which the server does not check.
+   *
+   * @generated from field: string signature = 5;
+   */
+  signature: string;
+
+  /**
+   * granted are the permissions the mod holds. requested are those its
+   * manifest asks for. pending are requested permissions the owner has
+   * not approved. A mod with any does not load, so a loaded mod has
+   * none.
+   *
+   * @generated from field: repeated string granted = 6;
+   */
+  granted: string[];
+
+  /**
+   * @generated from field: repeated string requested = 7;
+   */
+  requested: string[];
+
+  /**
+   * @generated from field: repeated string pending = 8;
+   */
+  pending: string[];
+
+  /**
+   * switches are the zones where staff turned it off.
+   *
+   * @generated from field: repeated wathena.admin.v1.ModSwitch switches = 9;
+   */
+  switches: ModSwitch[];
+
+  /**
+   * zones are the zones where it is off or had errors.
+   *
+   * @generated from field: repeated wathena.admin.v1.ModZone zones = 10;
+   */
+  zones: ModZone[];
+
+  /**
+   * errors counts its script errors in every zone.
+   *
+   * @generated from field: int64 errors = 11;
+   */
+  errors: bigint;
+
+  /**
+   * scripts is set when it has Lua scripts.
+   *
+   * @generated from field: bool scripts = 12;
+   */
+  scripts: boolean;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ModInfo.
+ * Use `create(ModInfoSchema)` to create a new message.
+ */
+export const ModInfoSchema: GenMessage<ModInfo> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 53);
+
+/**
+ * ModList answers GET /mods.
+ *
+ * @generated from message wathena.admin.v1.ModList
+ */
+export type ModList = Message<"wathena.admin.v1.ModList"> & {
+  /**
+   * @generated from field: repeated wathena.admin.v1.ModInfo mods = 1;
+   */
+  mods: ModInfo[];
+
+  /**
+   * maps are the maps that run, for the zone choice.
+   *
+   * @generated from field: repeated string maps = 2;
+   */
+  maps: string[];
+};
+
+/**
+ * Describes the message wathena.admin.v1.ModList.
+ * Use `create(ModListSchema)` to create a new message.
+ */
+export const ModListSchema: GenMessage<ModList> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 54);
+
+/**
+ * ModSwitchRequest is the body of POST /mods/{id}/disable and /enable.
+ *
+ * @generated from message wathena.admin.v1.ModSwitchRequest
+ */
+export type ModSwitchRequest = Message<"wathena.admin.v1.ModSwitchRequest"> & {
+  /**
+   * map is a map's name, or empty for every zone.
+   *
+   * @generated from field: string map = 1;
+   */
+  map: string;
+
+  /**
+   * reason is 1 to 255 characters to turn a mod off, and optional to
+   * turn it on.
+   *
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ModSwitchRequest.
+ * Use `create(ModSwitchRequestSchema)` to create a new message.
+ */
+export const ModSwitchRequestSchema: GenMessage<ModSwitchRequest> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 55);
+
+/**
  * Error is the body of every answer that is not 2xx.
  *
  * @generated from message wathena.admin.v1.Error
@@ -2023,5 +2918,5 @@ export type Error = Message<"wathena.admin.v1.Error"> & {
  * Use `create(ErrorSchema)` to create a new message.
  */
 export const ErrorSchema: GenMessage<Error> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 36);
+  messageDesc(file_wathena_admin_v1_admin, 56);
 

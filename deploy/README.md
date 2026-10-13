@@ -120,7 +120,42 @@ docker compose up -d --wait
 
 - `migrate` applies new migrations before `waserver` starts.
 - On `docker compose stop`, `restart` or `down`, Docker sends SIGTERM to `waserver`. It stops taking players, tells each player "The server is restarting" (`DISCONNECT_REASON_SERVER_SHUTDOWN`), saves every character, and stops its zones. Compose gives it 30 seconds.
-- A countdown announced to players before the restart is not built yet. It needs a world chat channel.
+- `shutdown_countdown` in `waserver.yml`, 10 seconds by default and at most 10 minutes, is a countdown players see before a SIGTERM stops `waserver`. Compose's `stop_grace_period` of 30 seconds must stay longer than it plus the last saves.
+
+### Planned restarts
+
+Staff with `world.restart` plan a restart from the admin screens, with a time, a reason and a message (server/README.md, "Staff and admin tools", [decision 0031](../docs/decisions/0031-world-events-and-mods-tools.md)):
+
+- Players get announcements 30, 15, 10, 5 and 1 minute before, and 30 seconds before.
+- New logins are refused in the last minute.
+- At the time, `waserver` saves every character, disconnects every player with the reason, writes what waits, and exits with status 75 (`EX_TEMPFAIL` of sysexits.h). The log's last line says `waserver: restarting as planned: <reason>`.
+- The process manager must start it again:
+  - Compose: `waserver` has `restart: unless-stopped`, so Docker starts it again after any exit, unless someone stopped it with `docker compose stop`. The stack needs no change. `docker compose ps` shows it `Up` again within seconds, and `docker compose logs waserver` shows both runs.
+  - systemd: use `Restart=on-failure` or `Restart=always`. Both restart on status 75. With `Restart=on-failure`, a stop with status 0 does not restart, as you want for `systemctl stop`.
+  - Another supervisor: restart on a non-zero exit status, or on 75 alone.
+- The plan lives in memory. A restart before the time, such as a crash, a `docker compose restart` or an update, drops it. Plan it again afterwards.
+- A planned restart starts the same container again, with the same image. To run a new image, use `docker compose up -d --wait` as above.
+
+A systemd unit for `waserver` without Docker:
+
+```ini
+[Unit]
+Description=wAthena server
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+User=wathena
+ExecStart=/usr/local/bin/waserver all --config /etc/wathena/waserver.yml
+EnvironmentFile=/etc/wathena/secrets.env
+Restart=on-failure
+RestartSec=2
+# Long enough for --shutdown-countdown and the last saves.
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ### Backups
 

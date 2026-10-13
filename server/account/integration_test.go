@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -597,4 +598,28 @@ func hello(t *testing.T, url, token string) *wathenav1.ServerMessage {
 		t.Fatal(err)
 	}
 	return m
+}
+
+// TestTicketsClosedForRestart: in the last minute before a planned
+// restart, the ticket call answers 503 restarting. Account pages still
+// work (decision 0031).
+func TestTicketsClosedForRestart(t *testing.T) {
+	var closed atomic.Bool
+	closed.Store(true)
+	e := setup(t, func(cfg *account.Config) {
+		cfg.Closed = func() (string, bool) {
+			return "The server restarts in less than a minute: update. Come back in a few minutes.", closed.Load()
+		}
+	})
+	c := e.c
+	e.signup(c, "Alice_1", "a fine long password")
+	e.makeCharacter(c, "Alice Hero", "0")
+	e.play(c, "0")
+	if code, msg := e.ticket(c, clientOrigin); code != http.StatusServiceUnavailable || msg != "restarting" {
+		t.Errorf("ticket while closed: %d %s", code, msg)
+	}
+	closed.Store(false)
+	if code, ticket := e.ticket(c, clientOrigin); code != http.StatusOK || len(ticket) != account.TokenLen {
+		t.Errorf("ticket after: %d %q", code, ticket)
+	}
 }

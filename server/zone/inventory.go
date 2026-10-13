@@ -296,7 +296,9 @@ func (z *Zone) useItem(p *Player, slot int) {
 		return
 	}
 	r := z.itemScripts()
-	if r == nil {
+	if r == nil || r.OffEntry(d.Script) {
+		// The item's mod is off in this zone (decision 0031): the item
+		// is not spent.
 		p.pending = append(p.pending, useItemFailed(slot, wathenav1.UseItemFailure_USE_ITEM_FAILURE_NOT_SUPPORTED))
 		return
 	}

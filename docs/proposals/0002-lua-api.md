@@ -1167,3 +1167,23 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - A dead or jailed staff member cannot `@warp` or `@jumpto`, and a dead or jailed player cannot be recalled.
    - Events a player has not seen when it changes maps now go out before the map change, so a command's answer arrives.
    - With `--dev`, `POST /debug/wathena/staff` gives a role to an online character, and `POST /debug/wathena/sanction` gives a sanction, for the end-to-end tests.
+22. Build review decision 36: the world view, announcements, planned restarts, the events tool, the mods tool, their admin screens, and the world event `restart_planned`. Done on 2026-10-13 ([decision 0031](../decisions/0031-world-events-and-mods-tools.md)). Details to review:
+   - `restart_planned` runs in mod, NPC and event contexts, in every zone. `at` is in Unix seconds. A cancel sends `{ cancelled = true }` alone. A restart of the server before the time drops the plan without a cancel event.
+   - `wa.testing` has no way to plan a restart, so a mod test cannot fire `restart_planned`. A test helper, such as `world:plan_restart(minutes, reason)`, needs review.
+   - A mod that staff turn off is paused, not ended: its contexts, handlers, timers and hooks stay and run again once it is on, and its Lua values stay. Timers that come due meanwhile are skipped. Monsters it spawned stay with their AI contexts, bonuses it gave stay, and its world event runs go on in the scheduler. Conversations with its NPCs close at once.
+   - A mod that is off when a zone starts runs no entry script or NPC setup there until it is turned on. Equipment worn while it is off gives its script's bonuses after it is worn again, and a monster spawned meanwhile has no AI script until it spawns again.
+   - A usable item whose script belongs to a mod that is off is refused, and not used up.
+   - Core's ruleset mods cannot be turned off either, as core cannot.
+   - Turning a mod on in one zone while it is off everywhere answers `conflict`. Off everywhere replaces its zone rows.
+   - The signature status is `builtin`, `folder`, `unsigned`, or `unverified` for a `.zip` with a `.minisig` file next to it. The server has no trusted keys, so it checks no signature.
+   - A loaded mod has no pending permissions, since the loader refuses to start with one. Mods off in `mods.disable` do not show.
+   - Error counts start at zero at each start, and keep the last error's last 500 bytes.
+   - Staff may start an event that is off. Turning an event off lets a run that lasts go on until its end. `world_events.start` and `.stop` still see only the events that are on.
+   - A change keeps the fields of the change before it. A reset of an event without a change answers `conflict`. The latest 5 results of each event are kept in memory, since the start.
+   - The planned restart shows in `GET /world`. There is no `GET /restart`.
+   - A restart is planned 1 minute to 7 days ahead. The message is optional and the announcements say the reason without one. A cancel is announced. When the clock passes several marks at once, only the last one is announced.
+   - New logins in the last minute get `DISCONNECT_REASON_RESTART` before their ticket is used, and `POST /account/ticket` answers 503 `restarting`. The new reason is 11.
+   - At the time, waserver exits with status 75 (`EX_TEMPFAIL`), and skips the shutdown countdown.
+   - The world view lists every zone, sleeping ones too, and at most 1,000 players. CPU is measured since the start or the metrics' last reset. Reading it writes no audit row.
+   - Announcements go out in the default announcement color. Restart announcements are yellow, as the shutdown countdown's.
+   - With `--dev`, `POST /debug/wathena/announce` and `POST` and `DELETE /debug/wathena/restart` serve the end-to-end tests.

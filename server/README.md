@@ -664,7 +664,7 @@ WHERE r.status = 'open' ORDER BY r.id, c.at;
 
 ## Staff and admin tools
 
-Staff roles, the admin API, the GM audit log, moderation, GM commands and the admin screens follow strategy sections 7.8 and 10.6, and proposal 0002, review decisions 33 to 35 ([decision 0028](../docs/decisions/0028-staff-roles-and-audit.md), [decision 0029](../docs/decisions/0029-player-search-and-item-history.md), [decision 0030](../docs/decisions/0030-moderation-and-gm-commands.md)).
+Staff roles, the admin API, the GM audit log, moderation, GM commands, the world, events and mods tools and the admin screens follow strategy sections 7.8 and 10.6, and proposal 0002, review decisions 33 to 36 ([decision 0028](../docs/decisions/0028-staff-roles-and-audit.md), [decision 0029](../docs/decisions/0029-player-search-and-item-history.md), [decision 0030](../docs/decisions/0030-moderation-and-gm-commands.md), [decision 0031](../docs/decisions/0031-world-events-and-mods-tools.md)).
 
 Roles come from the config:
 
@@ -681,14 +681,14 @@ staff:
 ```
 
 - Permission names come from a fixed list, `staff.Catalog`. `group.*` names a whole group. An unknown name stops the server from starting.
-- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). Step 2 uses `audit.review`, `players.read`, `players.read_ip`, `items.history`, `items.restore` and `items.create`. Step 3 uses `moderation.reports`, `moderation.mute`, `moderation.jail`, `moderation.kick`, `moderation.ban`, `moderation.ban_permanent`, `commands.warp`, `commands.recall` and `commands.hide`, and `items.create` for `@item`. The other names are for step 4 and do nothing yet. Decision 0028 lists them.
+- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). Step 2 uses `audit.review`, `players.read`, `players.read_ip`, `items.history`, `items.restore` and `items.create`. Step 3 uses `moderation.reports`, `moderation.mute`, `moderation.jail`, `moderation.kick`, `moderation.ban`, `moderation.ban_permanent`, `commands.warp`, `commands.recall` and `commands.hide`, and `items.create` for `@item`. Step 4 uses `world.read`, `world.announce`, `world.restart`, `events.control`, `mods.read` and `mods.disable`.
 - Only `admin` has `moderation.ban_permanent` and `items.create` among the default roles. `game_master` and `moderator` keep the moderation permissions of the table below.
 
-| Role | Moderation and commands |
-|---|---|
-| `admin` | Every permission. |
-| `game_master` | `moderation.reports`, `.mute`, `.kick`, `.jail` and `.ban`, and `commands.warp`, `.recall` and `.hide`. |
-| `moderator` | `moderation.reports`, `.mute`, `.kick` and `.jail`. |
+| Role | Moderation and commands | World, events and mods |
+|---|---|---|
+| `admin` | Every permission. | Every permission. |
+| `game_master` | `moderation.reports`, `.mute`, `.kick`, `.jail` and `.ban`, and `commands.warp`, `.recall` and `.hide`. | `world.read`, `world.announce` and `events.control`. |
+| `moderator` | `moderation.reports`, `.mute`, `.kick` and `.jail`. | None. |
 - Owners and holders of `staff.assign` give the other roles on the admin screens. The database keeps them in `staff_roles`. No one changes their own role or an owner's, and a caller gives or takes only roles whose permissions it holds all of.
 - A role counts only for a login with TOTP, a recovery code or a passkey, on an account that still has TOTP or a passkey on. Giving and removing roles also needs a login, or a proof on `/account/reauth`, from the last 10 minutes.
 
@@ -705,6 +705,9 @@ The admin screens are at `/admin` of the server's public URL. The page asks the 
    - Reviews: the rows marked for review, with ok and flag.
    - Reports: the report queue, and each report with its chat, the target's earlier reports and sanctions, sanction buttons, and the forms that close it.
    - Bans: the bans in effect, with a lift button.
+   - World: the zones with their tick times of the last minute, the process, the players online and the planned restart with a countdown, loaded again every 5 seconds. With `world.announce`, an announcement box. With `world.restart`, the restart planner.
+   - Events: every world event with whether it is on, its trigger, its next run, the run that lasts and the latest results, with start, stop, edit and reset buttons.
+   - Mods: every loaded mod with its version, signature status, permissions and Lua errors by zone. With `mods.disable`, off and on buttons by zone.
    - The player page's Sanctions tab gives a mute, a jail or a kick to the character and a ban to its account, and lists its sanctions with lift buttons.
 
 The admin API is JSON at `/admin/api/v1/` on the account service's origin. The messages are protobuf in `schema/proto/wathena/admin/v1`, in their JSON form:
@@ -728,11 +731,42 @@ The admin API is JSON at `/admin/api/v1/` on the account service's origin. The m
 | `POST /sanctions` | the kind's: `moderation.mute`, `.jail`, `.kick` or `.ban` | `{"kind": "mute", "characterId": "42", "minutes": 30, "reason": "..."}`. A mute and a jail last 1 to 525,600 minutes, a kick takes 0, and a ban names an `accountId` and lasts 1 to 5,256,000 minutes, or 0 for a permanent ban with `moderation.ban_permanent`. A ban needs a login from the last 10 minutes. |
 | `DELETE /sanctions/{id}` | the kind's | Lifts a mute, a jail or a ban early. `?reason=` is required. A ban needs a login from the last 10 minutes. |
 | `GET /sanctions` | any `moderation.*` | Sanctions, newest first. Filters: `character` (its sanctions and its account's bans), `account`, `kind` and `active=true`. Pages: `limit` (1 to 100) and `before_id`. |
+| `GET /world` | `world.read` | Each zone's map, players, monsters and ticks of the last minute (p50, p99, maximum, ticks over 10 ms), the process's CPU, memory, goroutines, uptime and version, the players online (at most 1,000 listed), the planned restart and the server clock. |
+| `POST /announce` | `world.announce` | `{"text": "...", "map": "prontera"}`. An empty map is the world. The text is 1 to 255 characters. |
+| `POST /restart` | `world.restart` | Plans a restart: `{"at": "2026-10-13T22:00:00Z", "reason": "update", "message": "New maps arrive!"}`, 1 minute to 7 days ahead. Needs a login from the last 10 minutes. |
+| `DELETE /restart` | `world.restart` | Cancels the planned restart. `?reason=` is optional. Needs a login from the last 10 minutes. |
+| `GET /events` | `events.control` | Every world event, the ones that are off too, with its trigger, next run, the run that lasts, the latest results and the staff change over the config. |
+| `POST /events/{name}/start`, `/stop` | `events.control` | Starts a run now, or ends the run that lasts. `{"reason": "..."}`, optional. The name is URL-escaped, such as `core%3AField_Boss`. |
+| `PATCH /events/{name}` | `events.control` | `{"on": false, "trigger": {"weekly": {"day": "saturday", "time": "21:00"}}, "durationMinutes": 90, "reason": "..."}`. Fields left out keep their value. Applies at once, and is saved over the config. |
+| `POST /events/{name}/reset` | `events.control` | Deletes the staff change: the event follows the config again. |
+| `GET /mods` | `mods.read` | Each loaded mod's version, signature status, permissions granted, requested and pending, the zones where it is off, and its Lua errors by zone with the last error. |
+| `POST /mods/{id}/disable`, `/enable` | `mods.disable` | `{"map": "prontera", "reason": "..."}`. An empty map is every zone. Turning off needs a reason. Core and its ruleset mods cannot be turned off. |
 
 - Every call needs the account session cookie. A change also needs the CSRF token of `/me` in the `X-CSRF-Token` header.
 - Errors are JSON with a `code`: `login`, `two_factor`, `forbidden`, `reauth` (with `reauthUrl`), `csrf`, `rate`, `bad_request`, `not_found`, `conflict` or `unavailable`.
 - Calls share the account service's rate limits per address: 60 at once, then 1 a second.
-- Detail views and IP searches write audit rows (`players.view`, `players.search_ip`). Name, ID and serial searches do not. Restores (`items.restore`) and reviews (`audit.review`) write theirs too, and so do sanctions (`moderation.mute`, `.jail`, `.kick`, `.ban`), lifts (`moderation.lift`) and closed reports (`moderation.close_report`).
+- Detail views and IP searches write audit rows (`players.view`, `players.search_ip`). Name, ID and serial searches do not. Restores (`items.restore`) and reviews (`audit.review`) write theirs too, and so do sanctions (`moderation.mute`, `.jail`, `.kick`, `.ban`), lifts (`moderation.lift`), closed reports (`moderation.close_report`), announcements (`world.announce`), restarts (`world.restart`, `world.restart_cancel`), event actions (`events.start`, `.stop`, `.change`, `.reset`) and mod switches (`mods.disable`, `mods.enable`).
+
+Planned restarts (decision 0031):
+
+- One plan at a time. Players get announcements 30, 15, 10, 5 and 1 minute before, and 30 seconds before. A plan made later than a mark skips it.
+- In the last minute, the gateway refuses new game logins with `DISCONNECT_REASON_RESTART`, and `POST /account/ticket` answers 503 `restarting`. Players already in the game stay.
+- At the time, waserver saves every character, disconnects every player with `DISCONNECT_REASON_RESTART` and the reason, and exits with status 75. The process manager starts it again (deploy/README.md, "Planned restarts").
+- The plan lives in memory. A restart of the server before its time, such as a crash or a stop, drops it, and staff plan it again.
+- Mods get the world event `restart_planned` (mods/README.md, "Planned restarts").
+
+World event changes (decision 0031):
+
+- Staff changes go over the config's `mods.events`, in `event_overrides` (migration 00026), with who made them and when. They apply to the scheduler within a second, and again at each start. A reset deletes the change.
+- At start, a change of an event that no longer exists, or a saved trigger that no longer reads, is left out with a warning. An event that staff turned on whose maps do not run stays off, with a warning.
+- An event that is off starts no runs by its trigger. A run that lasts goes on until its end. Staff may start an event that is off.
+- The latest results are kept in memory, 5 per event, since the server started.
+
+Mods turned off (decision 0031):
+
+- Staff turn a mod off in a zone or every zone, in `mod_switches` (migration 00026). waserver reads the switches at start, so a mod stays off across restarts until it is turned on.
+- A mod that is off in a zone runs no code there: its event handlers, timers, hooks, schedules and NPC clicks stop, and its item, skill and monster AI scripts do not start. Its data stays, its contexts stay, and its spawned monsters stay on the map. mods/README.md, "Mods turned off by staff", has the details.
+- `GET /mods` counts each mod's script errors by zone since the server started: failed handlers, timers, hooks, schedules, clicks and setups.
 
 Sanctions (decision 0030):
 
@@ -900,6 +934,7 @@ mods:
 - `trigger` takes the forms of `data/events.yml`. `duration_minutes` is 1 to 10,080.
 - An event that does not exist is an error, so a typo does not pass.
 - For a quick test, set the trigger a minute or two ahead.
+- Staff changes from the admin screens go over these settings, and win until they are reset ("Staff and admin tools").
 
 ### Typed events and core's samples
 
@@ -943,6 +978,8 @@ curl 'http://127.0.0.1:8301/debug/wathena/metrics?format=text'
 | `GET /debug/wathena/metrics` | Every measurement since the start or the last reset, as JSON. `?format=text` gives tables. |
 | `POST /debug/wathena/reset` | Starts every count again, such as after the bots of a load test have joined. |
 | `GET /debug/wathena/items` | With `--dev` only: every item, with its serial, and all zeny that the players and the ground of each zone hold, as JSON, for the duplication tests. |
+| `POST /debug/wathena/announce?text=&map=` | With `--dev` only: an announcement, as the admin API's `POST /announce`. |
+| `POST /debug/wathena/restart?in=2m&reason=&message=` | With `--dev` only: plans a restart that long from the server clock. `DELETE` cancels it. |
 | `/debug/pprof/` | Go's CPU, heap, goroutine and trace profiles. |
 
 `waserver` also prints the tables when it stops.
@@ -950,6 +987,7 @@ curl 'http://127.0.0.1:8301/debug/wathena/metrics?format=text'
 What it measures:
 
 - Per zone, the work of each tick: the tick itself, plus the commands, joins and leaves the zone goroutine handled since the tick before. It shows p50, p99, p99.9 and the maximum, ticks over 10 ms (the p99 budget) and over 25 ms (the maximum), and the mean time of each part of a tick: `move` (walks and warps), `act` (monsters, combat, items, regen, saves) and `send` (each player's frame). `step` is the tick alone. Quantiles are within 12.5%.
+- Per zone, the last minute of ticks too, for the admin API's world view: each tick's work and time in a ring of 1,280 ticks, made at the zone's first tick (decision 0031).
 - A zone over 10 ms for 10 ticks in a row logs a warning with its last 10 tick times. With `--profile-dir`, it also records a 10-second CPU profile there. Warnings for one zone come at most once a minute, and profiles at most once every 5 minutes.
 - For the process: CPU in cores, garbage collector CPU, cycles and pause times, scheduler latency, allocation rate, heap, total memory, the `GOMEMLIMIT` in effect, and goroutines.
 - Per connection: WebSocket bytes and messages each way, as averages since the connection opened or the last reset, and as the most bytes in one second. Bytes include the WebSocket frame header and the client's mask key. TCP, IP and TLS headers are not counted. TLS adds about 22 bytes per message.

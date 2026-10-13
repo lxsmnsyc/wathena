@@ -119,6 +119,11 @@ type Options struct {
 	// Rules are the world's ruleset, for rules.limits. Without them, the
 	// limits are rAthena's.
 	Rules *rules.Rules
+	// Off are the mods that are off in this zone when it starts
+	// (decision 0031). Their entry scripts wait for SetOff.
+	Off []string
+	// Errors counts the mods' errors in this zone. It may be nil.
+	Errors *ErrorLog
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -208,6 +213,13 @@ type Runtime struct {
 	// monsterCtxs are the contexts of monsters' AI scripts, by monster
 	// handle.
 	monsterCtxs map[int64]*Context
+	// offMods are the mods that are off in this zone, and notStarted
+	// those whose entry scripts did not run because they were off
+	// (switches.go).
+	offMods, notStarted map[string]bool
+	// reloadedOff are the mods reloaded while off, whose monster and
+	// skill contexts start again when they are turned on.
+	reloadedOff map[string]bool
 }
 
 // Context owns what a setup function and its handlers create
@@ -302,6 +314,14 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		return nil, err
 	}
 	r.s = s
+	for _, id := range opts.Off {
+		if id != mod.Core {
+			if r.offMods == nil {
+				r.offMods = map[string]bool{}
+			}
+			r.offMods[id] = true
+		}
+	}
 	if err := r.init(); err != nil {
 		s.Close()
 		return nil, err
@@ -324,6 +344,13 @@ func (r *Runtime) StartMods() error {
 	var errs []error
 	for _, id := range r.order {
 		sc := r.scripts[id]
+		if r.offMods[id] {
+			if r.notStarted == nil {
+				r.notStarted = map[string]bool{}
+			}
+			r.notStarted[id] = true
+			continue
+		}
 		if err := r.start(sc); err != nil {
 			r.log.Error("mod scripts failed to load; the mod is off in this zone", "map", r.host.Map(), "mod", sc.Mod, "err", err)
 			errs = append(errs, fmt.Errorf("%s: %w", sc.Mod, err))
@@ -587,6 +614,7 @@ func (r *Runtime) start(sc *mod.Scripts) error {
 		if err != nil {
 			r.loading = ""
 			r.afterError()
+			r.countError(sc.Mod, err)
 			return err
 		}
 		ref, err := r.s.Keep(fn)
@@ -601,7 +629,9 @@ func (r *Runtime) start(sc *mod.Scripts) error {
 	for i, s := range setups {
 		if err := r.run(c, s.Value()); err != nil {
 			r.end(c)
-			return fmt.Errorf("%s/%s: setup: %w", sc.Mod, sc.Entries[i], err)
+			err = fmt.Errorf("%s/%s: setup: %w", sc.Mod, sc.Entries[i], err)
+			r.countError(sc.Mod, err)
+			return err
 		}
 	}
 	return nil
@@ -630,6 +660,24 @@ func (r *Runtime) Reload(sc *mod.Scripts) error {
 		r.order = append(r.order, sc.Mod)
 	}
 	r.scripts[sc.Mod] = sc
+	if r.offMods[sc.Mod] {
+		// A mod that is off starts its new scripts when it is on.
+		if r.notStarted == nil {
+			r.notStarted = map[string]bool{}
+		}
+		r.notStarted[sc.Mod] = true
+		if r.reloadedOff == nil {
+			r.reloadedOff = map[string]bool{}
+		}
+		r.reloadedOff[sc.Mod] = true
+		for _, n := range r.npcs {
+			if m, _, _ := strings.Cut(n.Entry, ":"); m == sc.Mod && n.ctx != nil {
+				r.end(n.ctx)
+				n.ctx = nil
+			}
+		}
+		return nil
+	}
 	err := r.start(sc)
 	r.reloadMonsters(sc.Mod)
 	return errors.Join(err, r.reloadNPCs(sc.Mod), r.reloadSkills(sc.Mod))
@@ -742,6 +790,7 @@ func (r *Runtime) afterError() {
 // too often.
 func (r *Runtime) failed(c *Context, what string, err error) {
 	r.log.Warn("mod handler failed", "map", r.host.Map(), "mod", c.Mod, "kind", c.Kind, "in", what, "err", err)
+	r.countError(c.Mod, fmt.Errorf("%s: %w", what, err))
 	now := r.host.Now()
 	c.failures = append(c.failures, now)
 	for len(c.failures) > 0 && c.failures[0] <= now-FailureWindow {
@@ -788,7 +837,7 @@ func (r *Runtime) Fire(event string, args ...Arg) {
 	list = slices.Clone(list)
 	vals := make([]script.Value, 0, 1+2*len(args))
 	for _, h := range list {
-		if h.removed || h.ctx.ended {
+		if h.removed || h.ctx.ended || r.off(h.ctx) {
 			continue
 		}
 		vals = append(vals[:0], h.fn.Value())
@@ -823,6 +872,7 @@ func (r *Runtime) Advance(now int64) {
 		if t.canceled || t.ctx.ended {
 			continue
 		}
+		skip := t.fn != nil && r.off(t.ctx)
 		if t.fn == nil {
 			// A with_bonuses timer: its bonuses end.
 			r.dropTimer(t)
@@ -839,8 +889,11 @@ func (r *Runtime) Advance(now int64) {
 		} else {
 			r.dropTimer(t)
 		}
-		if err := r.run(t.ctx, t.fn.Value()); err != nil {
-			r.failed(t.ctx, "timer", err)
+		// A timer of a mod that is off is skipped (switches.go).
+		if !skip {
+			if err := r.run(t.ctx, t.fn.Value()); err != nil {
+				r.failed(t.ctx, "timer", err)
+			}
 		}
 		if t.every == 0 {
 			t.fn.Release()
@@ -930,6 +983,9 @@ var Events = map[string][]string{
 	// decision 31).
 	"world_event_start": {KindMod, KindNPC, KindEvent},
 	"world_event_end":   {KindMod, KindNPC, KindEvent},
+	// A restart was planned or cancelled, in every zone (review decision
+	// 36).
+	"restart_planned": {KindMod, KindNPC, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

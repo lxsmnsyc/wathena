@@ -69,6 +69,71 @@ type World interface {
 	Sanctions(ctx context.Context, q SanctionQuery) (*adminv1.SanctionList, error)
 	// Bans returns the bans in effect of some accounts, by account.
 	Bans(ctx context.Context, accounts []int64) (map[int64]*adminv1.Sanction, error)
+
+	// The world, events and mods tools (decision 0031). Each call
+	// returns a *WorldError for what the caller did wrong.
+
+	// WorldView reads the zones with their last minute of ticks, the
+	// process, the players online and the planned restart.
+	WorldView(ctx context.Context) (*adminv1.WorldView, error)
+	// Announce shows a line to every player, or to the players of one
+	// map. It returns ErrNotFound for a map that does not run.
+	Announce(ctx context.Context, text, mapName string) error
+	// PlanRestart plans a restart.
+	PlanRestart(ctx context.Context, o RestartOrder) (*adminv1.RestartPlan, error)
+	// CancelRestart cancels the planned restart, and returns it.
+	CancelRestart(ctx context.Context) (*adminv1.RestartPlan, error)
+	// Events lists the world events.
+	Events(ctx context.Context) (*adminv1.EventList, error)
+	// EventAction starts, stops, changes or resets an event, writes its
+	// audit row, and returns the event after it.
+	EventAction(ctx context.Context, o EventOrder) (*adminv1.EventInfo, error)
+	// Mods lists the loaded mods.
+	Mods(ctx context.Context) (*adminv1.ModList, error)
+	// SwitchMod turns a mod off or on, writes its audit row, and returns
+	// the mod after it.
+	SwitchMod(ctx context.Context, o ModOrder) (*adminv1.ModInfo, error)
+}
+
+// RestartOrder is POST /restart.
+type RestartOrder struct {
+	Actor
+	At              time.Time
+	Reason, Message string
+}
+
+// Actions of EventOrder.
+const (
+	EventStart  = "start"
+	EventStop   = "stop"
+	EventChange = "change"
+	EventReset  = "reset"
+)
+
+// EventOrder is a staff action on a world event: POST
+// /events/{name}/start, /stop and /reset, and PATCH /events/{name}.
+type EventOrder struct {
+	Actor
+	Name string
+	// Action is EventStart, EventStop, EventChange or EventReset.
+	Action string
+	// On, Trigger and DurationMinutes are a change. Nil and 0 keep the
+	// event's value. Trigger has the form of data/events.yml, as JSON
+	// gives it.
+	On              *bool
+	Trigger         map[string]any
+	DurationMinutes int
+	Reason          string
+}
+
+// ModOrder is POST /mods/{id}/disable or /enable.
+type ModOrder struct {
+	Actor
+	Mod string
+	// Map is a map's name, or "" for every zone.
+	Map    string
+	Off    bool
+	Reason string
 }
 
 // Actor is the staff member behind a call, for its audit row.

@@ -79,6 +79,12 @@ type world struct {
 	sanctionQueries []admin.SanctionQuery
 	sanctionKinds   map[int64]string
 	banned          map[int64]bool
+	// The tools' calls of step 4 (decision 0031): announcements as
+	// "map: text", the planned restart, and the event and mod orders.
+	announcements []string
+	restart       *admin.RestartOrder
+	eventOrders   []admin.EventOrder
+	modOrders     []admin.ModOrder
 }
 
 func (w *world) StaffChanged(_ context.Context, _ int64, role string) error {

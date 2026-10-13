@@ -46,6 +46,35 @@ type Runs struct {
 	running map[int64]Notice
 	// defs are the scheduler's events, by name.
 	defs map[string]Def
+	// results are each event's latest results, newest first, for the
+	// admin screens (decision 0031).
+	results map[string][]Result
+}
+
+// MaxResults is how many results of each event Runs keeps.
+const MaxResults = 5
+
+// Result is how a run ended. Runs keeps them in memory: a restart
+// forgets them.
+type Result struct {
+	Scheduled, Started, Ended time.Time
+	// Result is won, lost or stopped, or ended for a script event that
+	// ran its time.
+	Result string
+}
+
+// ResultEnded is the result of a script event that ran its time.
+const ResultEnded = "ended"
+
+// Results returns each event's latest results, newest first, by name.
+func (r *Runs) Results() map[string][]Result {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make(map[string][]Result, len(r.results))
+	for k, v := range r.results {
+		out[k] = slices.Clone(v)
+	}
+	return out
 }
 
 // RunsOptions configure Runs.
@@ -60,6 +89,8 @@ type RunsOptions struct {
 	// memory.
 	Progress ProgressStore
 	Log      *slog.Logger
+	// Clock gives the end times of results. It is time.Now when nil.
+	Clock func() time.Time
 }
 
 // ProgressStore keeps the units of a run's progress, so a run that a
@@ -99,9 +130,10 @@ type chest struct {
 }
 
 type activeRun struct {
-	def  Def
-	info RunInfo
-	ends time.Time
+	def   Def
+	info  RunInfo
+	began time.Time
+	ends  time.Time
 	// maps are the maps with the run's monsters or NPCs, and scriptMap
 	// the map whose zone runs its script, or "".
 	maps      []string
@@ -142,8 +174,11 @@ func NewRuns(field Field, opts RunsOptions) *Runs {
 	if opts.Progress == nil {
 		opts.Progress = &MemoryStore{}
 	}
+	if opts.Clock == nil {
+		opts.Clock = time.Now
+	}
 	return &Runs{field: field, opts: opts, active: map[int64]*activeRun{}, chests: map[int64][]chest{},
-		running: map[int64]Notice{}, defs: map[string]Def{}}
+		running: map[int64]Notice{}, defs: map[string]Def{}, results: map[string][]Result{}}
 }
 
 // SetEvents sets the events that requests may name.
@@ -323,7 +358,7 @@ func (r *Runs) maps(band *Band, list []string) []string {
 // Start starts a run. A run with Resume set goes on from its progress.
 func (r *Runs) Start(ctx context.Context, d Def, run Run) error {
 	info := RunInfo{ID: run.ID, Event: d.Name, Display: d.DisplayName(), Type: d.Type, Scheduled: run.Scheduled}
-	a := &activeRun{def: d, info: info, ends: run.Ends, done: map[string]bool{}, waveAt: run.Started}
+	a := &activeRun{def: d, info: info, began: run.Started, ends: run.Ends, done: map[string]bool{}, waveAt: run.Started}
 	if run.Resume {
 		units, err := r.opts.Progress.EventProgress(ctx, d.Name, run.Scheduled)
 		if err != nil {
@@ -710,9 +745,12 @@ func (r *Runs) finishAt(ctx context.Context, a *activeRun, result string, early 
 			r.opts.Log.Warn("world event progress not saved", "event", a.def.Name, "unit", UnitEnd, "err", err)
 		}
 	}
+	res := Result{Scheduled: a.info.Scheduled, Started: a.began, Ended: r.opts.Clock(), Result: cmpOr(result, ResultEnded)}
 	r.mu.Lock()
 	delete(r.running, a.info.ID)
 	delete(r.chests, a.info.ID)
+	list := append([]Result{res}, r.results[a.def.Name]...)
+	r.results[a.def.Name] = list[:min(len(list), MaxResults)]
 	r.mu.Unlock()
 	r.field.Notice(Notice{Name: a.def.Name, DisplayName: a.info.Display, Type: a.def.Type, Result: result, Map: a.where})
 	r.opts.Log.Info("world event finished", "event", a.def.Name, "result", result)

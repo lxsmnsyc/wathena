@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { create } from '@bufbuild/protobuf';
-import { RestoreRequestSchema, SanctionRequestSchema } from '../gen/wathena/admin/v1/admin_pb';
+import { timestampFromDate } from '@bufbuild/protobuf/wkt';
+import {
+  EventChangeSchema,
+  RestartRequestSchema,
+  RestoreRequestSchema,
+  SanctionRequestSchema,
+} from '../gen/wathena/admin/v1/admin_pb';
 import {
   ACTIVE_BANS,
   AdminAPI,
@@ -352,5 +358,91 @@ describe('AdminAPI', () => {
       message: 'The sanction already ended.',
       reauthUrl: '',
     });
+  });
+
+  it('reads the world view and posts an announcement', async () => {
+    const seen: Seen[] = [];
+    const view = {
+      zones: [{ map: 'prontera', players: 3, ticks: 1200, p99Us: '1500' }],
+      process: { goroutines: '40', heapBytes: '1048576', uptimeSeconds: '3600' },
+      playersOnline: 3,
+      restart: { reason: 'update', loginsClosed: true },
+    };
+    const api = new AdminAPI('tok', server(200, view, seen));
+    const r = await api.world();
+    expect(r.ok && r.value.zones[0]?.p99Us).toBe(1500n);
+    expect(r.ok && r.value.process?.goroutines).toBe(40n);
+    expect(r.ok && r.value.restart?.loginsClosed).toBe(true);
+    await api.announce('Market day!', 'prontera');
+    expect(seen[0]).toEqual({ url: '/admin/api/v1/world', method: 'GET', headers: {}, body: '' });
+    expect(seen[1]).toEqual({
+      url: '/admin/api/v1/announce',
+      method: 'POST',
+      headers: { 'X-CSRF-Token': 'tok', 'Content-Type': 'application/json' },
+      body: '{"text":"Market day!","map":"prontera"}',
+    });
+  });
+
+  it('plans and cancels a restart', async () => {
+    const seen: Seen[] = [];
+    const api = new AdminAPI('tok', server(200, { reason: 'update' }, seen));
+    const at = new Date(Date.UTC(2026, 9, 13, 22, 0, 0));
+    const req = create(RestartRequestSchema, {
+      at: timestampFromDate(at),
+      reason: 'update',
+      message: 'New maps!',
+    });
+    const r = await api.planRestart(req);
+    expect(r.ok && r.value.reason).toBe('update');
+    expect(seen[0]?.url).toBe('/admin/api/v1/restart');
+    expect(JSON.parse(seen[0]?.body ?? '')).toEqual({
+      at: '2026-10-13T22:00:00Z',
+      reason: 'update',
+      message: 'New maps!',
+    });
+    await api.cancelRestart(' done early ');
+    await api.cancelRestart('');
+    expect(seen[1]?.url).toBe('/admin/api/v1/restart?reason=done+early');
+    expect(seen[1]?.method).toBe('DELETE');
+    expect(seen[1]?.headers).toEqual({ 'X-CSRF-Token': 'tok' });
+    expect(seen[2]?.url).toBe('/admin/api/v1/restart');
+  });
+
+  it('lists, starts, changes and resets events by their escaped names', async () => {
+    const seen: Seen[] = [];
+    const api = new AdminAPI('tok', server(200, { name: 'core:Field_Boss', on: true }, seen));
+    await api.events();
+    await api.eventAction('core:Field_Boss', 'start', ' weekend ');
+    await api.eventAction('core:Field_Boss', 'reset', '');
+    const change = create(EventChangeSchema, { on: false, trigger: { daily: '21:00' } });
+    const r = await api.changeEvent('core:Field_Boss', change);
+    expect(r.ok && r.value.on).toBe(true);
+    expect(seen.map((s) => `${s.method} ${s.url}`)).toEqual([
+      'GET /admin/api/v1/events',
+      'POST /admin/api/v1/events/core%3AField_Boss/start',
+      'POST /admin/api/v1/events/core%3AField_Boss/reset',
+      'PATCH /admin/api/v1/events/core%3AField_Boss',
+    ]);
+    expect(seen[1]?.body).toBe('{"reason":"weekend"}');
+    expect(seen[2]?.body).toBe('{}');
+    expect(JSON.parse(seen[3]?.body ?? '')).toEqual({ on: false, trigger: { daily: '21:00' } });
+  });
+
+  it('lists mods and turns one off and on', async () => {
+    const seen: Seen[] = [];
+    const list = {
+      mods: [{ id: 'example.a', errors: '3', zones: [{ map: 'prontera', errors: '3' }] }],
+      maps: ['prontera'],
+    };
+    const api = new AdminAPI('tok', server(200, list, seen));
+    const r = await api.mods();
+    expect(r.ok && r.value.mods[0]?.errors).toBe(3n);
+    await api.switchMod('example.a', true, 'prontera', ' broken quest ');
+    await api.switchMod('example.a', false, '', '');
+    expect(seen.map((s) => `${s.method} ${s.url} ${s.body}`)).toEqual([
+      'GET /admin/api/v1/mods ',
+      'POST /admin/api/v1/mods/example.a/disable {"map":"prontera","reason":"broken quest"}',
+      'POST /admin/api/v1/mods/example.a/enable {}',
+    ]);
   });
 });

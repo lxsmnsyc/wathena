@@ -6,7 +6,9 @@
 // - cache: on a second visit, the Service Worker serves every asset.
 // - admin: the admin page loads the admin screens for a staff account,
 //   and a player's page never loads the admin bundle. The admin API is
-//   faked with page.route, so no server or database is needed.
+//   faked with page.route, so no server or database is needed. The world
+//   screen shows its zones and the restart countdown, the events screen
+//   opens an event's form, and the mods screen shows errors and switches.
 //
 // By default it builds the placeholder pack with wactl and serves it, so
 // it needs no game files. Set WATHENA_ASSETS to an asset server, such as
@@ -365,6 +367,59 @@ async function fakeAdminAPI(page: Page, me: object): Promise<void> {
       },
       '/admin/api/v1/reports/10': { report: EMBLEM_REPORT, emblemPng: EMBLEM_PNG },
       '/admin/api/v1/sanctions': { sanctions: [BAN] },
+      '/admin/api/v1/world': {
+        zones: [
+          { map: 'prontera', players: 1, monsters: 20, ticks: 1200, p50Us: '800', p99Us: '2500' },
+          { map: 'geffen', monsters: 30, asleep: true },
+        ],
+        process: {
+          version: 'check',
+          uptimeSeconds: '3600',
+          goroutines: '40',
+          heapBytes: '1048576',
+        },
+        players: [
+          { name: 'Bob', map: 'prontera', x: 150, y: 180, baseLevel: 50, jobName: 'Swordman' },
+        ],
+        playersOnline: 1,
+        restart: {
+          at: new Date(Date.now() + 10 * 60_000).toISOString(),
+          reason: 'update',
+          plannedBy: 'Admin',
+        },
+        now: new Date().toISOString(),
+      },
+      '/admin/api/v1/events': {
+        events: [
+          {
+            name: 'core:Field_Boss',
+            displayName: 'Field Boss',
+            type: 'boss',
+            on: true,
+            trigger: { daily: '20:00' },
+            triggerText: 'daily at 20:00',
+            durationMinutes: 60,
+            results: [{ result: 'won', ended: new Date().toISOString() }],
+            configTriggerText: 'daily at 20:00',
+            configDurationMinutes: 60,
+          },
+        ],
+      },
+      '/admin/api/v1/mods': {
+        mods: [
+          { id: 'core', name: 'Core', version: '0.1.0', builtin: true, signature: 'builtin' },
+          {
+            id: 'example.a',
+            name: 'Example',
+            version: '1.0.0',
+            signature: 'folder',
+            granted: ['game.read'],
+            errors: '2',
+            zones: [{ map: 'prontera', errors: '2', lastError: 'timer: boom' }],
+          },
+        ],
+        maps: ['prontera', 'geffen'],
+      },
       [`/admin/api/v1/items/${SERIAL}/history`]: {
         serial: SERIAL,
         serials: [SERIAL],
@@ -536,6 +591,58 @@ async function checkAdmin(name: string, browser: Browser, base: string): Promise
       mod.text.includes('Sanction history') &&
       mod.errors.length === 0,
     `errors: ${mod.errors.join('; ') || 'none'}`,
+  );
+  // An admin opens the world view with its zones and countdown, an
+  // event's form, and the mods with their errors and switches.
+  const tools = await visit(
+    {
+      account: 'Admin',
+      role: 'admin',
+      permissions: [
+        'world.read',
+        'world.announce',
+        'world.restart',
+        'events.control',
+        'mods.read',
+        'mods.disable',
+      ],
+      twoFactor: true,
+      csrfToken: 't',
+    },
+    async (page) => {
+      await page.click('.admin-nav button:has-text("World")');
+      await page.waitForSelector('.admin-world tr[data-map="prontera"]', { timeout: 10_000 });
+      await page.waitForSelector('.admin-countdown:has-text("Restart in")', { timeout: 10_000 });
+      await page.waitForSelector('.admin-announce button:has-text("Announce")', {
+        timeout: 10_000,
+      });
+      await page.click('.admin-nav button:has-text("Events")');
+      await page.click('.admin-events tr[data-name="core:Field_Boss"] button[data-action="edit"]');
+      await page.waitForSelector('.admin-event-form select[name="kind"]', { timeout: 10_000 });
+      // Each kind shows its fields, and the kinds share the time field.
+      await page.selectOption('.admin-event-form select[name="kind"]', 'weekly');
+      await page.waitForSelector('.admin-event-form select[name="weekday"]', { timeout: 10_000 });
+      await page.fill('.admin-event-form input[name="time"]', '21:30');
+      await page.selectOption('.admin-event-form select[name="kind"]', 'hourly');
+      await page.waitForSelector('.admin-event-form input[name="minute"]', { timeout: 10_000 });
+      await page.click('.admin-nav button:has-text("Mods")');
+      await page.waitForSelector(
+        '.admin-mods tr[data-mod="example.a"] button[data-action="disable"]',
+        {
+          timeout: 10_000,
+        },
+      );
+    },
+  );
+  check(
+    name,
+    'admin tools',
+    tools.loaded &&
+      tools.text.includes('Players online: 1') &&
+      tools.text.includes('timer: boom') &&
+      tools.text.includes('won') &&
+      tools.errors.length === 0,
+    `errors: ${tools.errors.join('; ') || 'none'}`,
   );
   const player = await visit({ account: 'Player', csrfToken: 't' });
   check(

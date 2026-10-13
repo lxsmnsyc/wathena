@@ -42,6 +42,10 @@ const (
 	// Staff kicked the player, with @kick or the admin screens. message
 	// has the reason (decision 0030).
 	DisconnectReason_DISCONNECT_REASON_KICKED DisconnectReason = 10
+	// The server restarts as staff planned it. message has the reason. A
+	// new login in the last minute before the restart gets it too
+	// (decision 0031).
+	DisconnectReason_DISCONNECT_REASON_RESTART DisconnectReason = 11
 )
 
 // Enum value maps for DisconnectReason.
@@ -58,6 +62,7 @@ var (
 		8:  "DISCONNECT_REASON_LOGGED_OUT",
 		9:  "DISCONNECT_REASON_AUTOTRADE",
 		10: "DISCONNECT_REASON_KICKED",
+		11: "DISCONNECT_REASON_RESTART",
 	}
 	DisconnectReason_value = map[string]int32{
 		"DISCONNECT_REASON_UNSPECIFIED":         0,
@@ -71,6 +76,7 @@ var (
 		"DISCONNECT_REASON_LOGGED_OUT":          8,
 		"DISCONNECT_REASON_AUTOTRADE":           9,
 		"DISCONNECT_REASON_KICKED":              10,
+		"DISCONNECT_REASON_RESTART":             11,
 	}
 )
 
@@ -952,7 +958,7 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"Disconnect\x124\n" +
 	"\x06reason\x18\x01 \x01(\x0e2\x1c.wathena.v1.DisconnectReasonR\x06reason\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage*\x9f\x03\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*\xbe\x03\n" +
 	"\x10DisconnectReason\x12!\n" +
 	"\x1dDISCONNECT_REASON_UNSPECIFIED\x10\x00\x12)\n" +
 	"%DISCONNECT_REASON_VERSION_UNSUPPORTED\x10\x01\x12%\n" +
@@ -965,7 +971,8 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\x1cDISCONNECT_REASON_LOGGED_OUT\x10\b\x12\x1f\n" +
 	"\x1bDISCONNECT_REASON_AUTOTRADE\x10\t\x12\x1c\n" +
 	"\x18DISCONNECT_REASON_KICKED\x10\n" +
-	"B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
+	"\x12\x1d\n" +
+	"\x19DISCONNECT_REASON_RESTART\x10\vB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_wathena_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)

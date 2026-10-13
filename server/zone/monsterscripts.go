@@ -226,7 +226,7 @@ func (z *Zone) runMonsterScript(e *entity) {
 	}
 	id := z.monsterHandle(e)
 	e.monster.ctx = id
-	if err := z.scripts.StartMonster(id, e.monster.spawn.Script); err != nil && z.Mods != nil && z.Mods.Log != nil {
+	if err := z.scripts.StartMonster(id, e.monster.spawn.Script); err != nil && !quietOff(err) && z.Mods != nil && z.Mods.Log != nil {
 		z.Mods.Log.Warn("monster script failed", "map", z.Map, "monster", e.monster.spawn.Mob, "err", err)
 	}
 }

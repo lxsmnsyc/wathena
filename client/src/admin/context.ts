@@ -16,7 +16,10 @@ export type View =
   | { kind: 'restore'; characterId: bigint; serials: readonly string[] }
   | { kind: 'reports' }
   | { kind: 'report'; id: bigint }
-  | { kind: 'bans' };
+  | { kind: 'bans' }
+  | { kind: 'world' }
+  | { kind: 'events' }
+  | { kind: 'mods' };
 
 export interface Context {
   readonly api: AdminAPI;
@@ -35,7 +38,18 @@ export interface Context {
 
 /** A tab of the navigation. */
 export interface Tab {
-  kind: 'staff' | 'audit' | 'reviews' | 'players' | 'item' | 'restore' | 'reports' | 'bans';
+  kind:
+    | 'staff'
+    | 'audit'
+    | 'reviews'
+    | 'players'
+    | 'item'
+    | 'restore'
+    | 'reports'
+    | 'bans'
+    | 'world'
+    | 'events'
+    | 'mods';
   label: string;
   /** The permission that shows the tab. */
   permission: string;
@@ -50,6 +64,9 @@ export const TABS: readonly Tab[] = [
   { kind: 'restore', label: 'Restore', permission: 'items.restore' },
   { kind: 'reports', label: 'Reports', permission: 'moderation.reports' },
   { kind: 'bans', label: 'Bans', permission: 'moderation.ban' },
+  { kind: 'world', label: 'World', permission: 'world.read' },
+  { kind: 'events', label: 'Events', permission: 'events.control' },
+  { kind: 'mods', label: 'Mods', permission: 'mods.read' },
 ];
 
 /** The tabs a role's permissions show, in order. */
