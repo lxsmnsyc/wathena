@@ -948,6 +948,13 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Lookups in the audit log.** Player detail views and IP searches write audit rows. Name searches do not.
     - **Default roles.** `players.read` for every default role, `items.history` for admin and game_master, and `players.read_ip`, `items.restore`, `items.create` and `audit.review` for admin.
 
+35. Moderation and GM commands (phase 6 step 3). The user approved these on 2026-10-13. No Lua API changes:
+    - **Reports.** `GET /reports` with filters for status, target and kind, `GET /reports/{id}` with the reported lines, the chat around them, and the target's earlier reports and sanctions, and `POST /reports/{id}/close` with an outcome (`no_action`, `warned` or `sanctioned`, linking the sanction) and a note. They need `moderation.reports`. Players can also report guild names and guild emblems from the guild window. After a report closes, its lines follow the normal chat log limit again.
+    - **Sanctions.** `POST /sanctions` with a target, a kind, a duration and a reason: `mute`, `jail` and `kick` act on a character, and the new `ban` acts on an account. `DELETE /sanctions/{id}` lifts one early with a reason. `GET /sanctions?target=` lists a target's sanctions. A ban kicks the account's characters and refuses its logins, showing the reason and end time. A kick shows its reason. Permissions are `moderation.mute`, `moderation.jail`, `moderation.kick` and `moderation.ban`. Bans need a login within 10 minutes. A permanent ban needs `moderation.ban_permanent`, which only the default `admin` role has.
+    - **GM commands** typed in chat: `@warp <map> [x y]` and `@jumpto <name>` (`commands.warp`), `@recall <name>` (`commands.recall`), `@hide` (`commands.hide`; invisible to players and ignored by monsters, as rAthena), `@kick <name> <reason>`, `@mute` and `@jail <name> <minutes> <reason>` (the moderation permissions), and `@item <item> <amount> <reason>` (`items.create`, marked for review). They follow the two-factor rule, write audit rows, never show in chat or the chat log, and answer "Unknown command" without the permission.
+    - **Screens.** The report queue with chat context, sanction buttons on the player page, a target's sanction history, and the list of active bans.
+    - Later: IP bans, and `@` commands from mods.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
