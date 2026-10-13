@@ -955,6 +955,14 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Screens.** The report queue with chat context, sanction buttons on the player page, a target's sanction history, and the list of active bans.
     - Later: IP bans, and `@` commands from mods.
 
+36. World, events and mods tools (phase 6 step 4). The user approved these on 2026-10-13:
+    - **World view.** `GET /world` with `world.read`: each zone's map, players, monsters, and tick times over the last minute (p50, p99, maximum, ticks over budget); the process's CPU, memory, goroutines, uptime and version; and the players online. The screen refreshes every 5 seconds.
+    - **Announcements.** `POST /announce` with `{ text, map }`, for the world or one map, with `world.announce` and an audit row.
+    - **Planned restarts.** `POST /restart` with a time, a reason and a message, and `DELETE /restart` to cancel, with `world.restart` and a login within 10 minutes. Players get announcements 30, 15, 10, 5 and 1 minute before and 30 seconds before. New logins are refused in the last minute. At zero the server saves everyone, disconnects players with the reason and exits, and the process manager starts it again.
+    - **Events.** `GET /events` lists core's and mods' events with whether each is on, its trigger, its next run, the runs in progress with their time left, and the latest results. `POST /events/{name}/start` and `/stop`, and `PATCH /events/{name}` for whether it is on, its trigger and its duration, with `events.control`. Changes are saved in the database over the config, show who made them, and can be reset to the config.
+    - **Mods.** `GET /mods` with `mods.read`: version, signature status, granted and pending permissions, and Lua error counts per zone with the last error and its time. `POST /mods/{id}/disable` with a zone or all zones and a reason, and `/enable`, with `mods.disable`. A disabled mod's scripts stop in that zone (event handlers, hooks, timers and NPC clicks), and its data stays. It stays off until turned on again, across restarts. The core mod cannot be turned off.
+    - **Lua.** A world event `restart_planned` with `{ at, reason }` when a restart is planned, and with `{ cancelled = true }` when it is cancelled.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
