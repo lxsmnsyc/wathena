@@ -939,6 +939,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Admin screens.** At `/admin` in the web client, as a separate bundle that loads only after `/me` returns a role. Step 1 has the staff list and the audit log viewer.
     - **Lua.** `player:get_staff_role()` returns the role name or nil, and `player:has_staff_permission(name)` returns a boolean. Both need `game.read` and follow the two-factor rule.
 
+34. Player search, item history, restores and audit reviews (phase 6 step 2). The user approved these on 2026-10-13. No Lua API changes:
+    - **Search.** `GET /players` finds accounts and characters by account or character name (prefix, any case), account or character ID, item serial (the current holder), or IP range in CIDR form against login records of the last 90 days. The IP search needs `players.read_ip`. Results show the account, its characters, online status and position, the last login, and sanctions in effect.
+    - **Details.** `GET /characters/{id}` shows job, levels, stats, zeny, currencies, position, party, guild, inventory, equipment, cart, account and extra storages, and mail with items. Online players are read from the game, offline players from the database.
+    - **History.** `GET /items/{serial}/history` lists every move of a serial and follows splits and merges. `GET /characters/{id}/logs` lists a character's item and zeny log by date. Both need `items.history`.
+    - **Restore.** `POST /restore` takes a character, items or zeny, and a reason, needs a login within 10 minutes and `items.restore`, and is marked for review. A serial that still exists moves back from its holder through the transfers. A serial that is gone is made again as a copy, which needs `items.create`. Restored items arrive by mail.
+    - **Reviews.** `GET /audit?needs_review=true` and `POST /audit/{id}/review` with `ok` or `flag` and a note, with `audit.review`. No one reviews their own action.
+    - **Lookups in the audit log.** Player detail views and IP searches write audit rows. Name searches do not.
+    - **Default roles.** `players.read` for every default role, `items.history` for admin and game_master, and `players.read_ip`, `items.restore`, `items.create` and `audit.review` for admin.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
