@@ -81,6 +81,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/reference/rathena"
+	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/admin"
 	"github.com/lxsmnsyc/wathena/server/adminworld"
@@ -596,7 +597,15 @@ func runAll(name string, args []string) error {
 	// (decision 0029).
 	staffWorld := adminworld.New(adminworld.Config{Staff: staffRoles, World: w, Store: st, Chat: hub, Items: items, Jobs: jobs,
 		StorageRecords: loaded.zone.Storages, Currencies: loaded.zone.Currencies, Storages: storages, Mail: mails, Social: socials,
-		Log: log})
+		Kicker: kicker{gw, w}, Clock: clock, Log: log})
+	// GM commands give their sanctions through the same world side, and
+	// banned accounts cannot join (decision 0030).
+	for _, z := range zones {
+		z.Moderator = staffWorld
+	}
+	if st != nil {
+		gw.Bans = gameBans{st}
+	}
 	if !cfg.Dev {
 		pool, err := openDatabase(ctx, cfg.Secrets.AccountDatabase, "waserver-account")
 		if err != nil {
@@ -713,8 +722,10 @@ func runAll(name string, args []string) error {
 			dbg.Handle("POST /debug/wathena/guild-storage", devGuildStorageHandler(w))
 			dbg.Handle("POST /debug/wathena/storage", devStorageHandler(w))
 			dbg.Handle("POST /debug/wathena/cart", devCartHandler(w))
+			dbg.Handle("POST /debug/wathena/staff", devStaffHandler(hub, staffRoles))
 			if st != nil {
 				dbg.Handle("POST /debug/wathena/restore", devRestoreHandler(staffWorld, st))
+				dbg.Handle("POST /debug/wathena/sanction", devSanctionHandler(staffWorld, st))
 			}
 		}
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
@@ -886,6 +897,32 @@ func rulesetBase(mode, worldRuleset string) string {
 // character's ID. Find is only for --dev sessions, whose token is the
 // character name: the first login with a name makes an account and a
 // character of that name.
+// kicker closes game connections for the staff tools: the gateway's,
+// and the characters' autotrade.
+type kicker struct {
+	gw *gateway.Gateway
+	w  *world.World
+}
+
+func (k kicker) Kick(ctx context.Context, ids []int64, reason wathenav1.DisconnectReason, text string) []int64 {
+	kicked := k.gw.Kick(ids, reason, text)
+	for _, id := range ids {
+		k.w.EndAutotrade(ctx, id)
+	}
+	return kicked
+}
+
+// gameBans refuses the game logins of banned accounts.
+type gameBans struct{ store *store.Store }
+
+func (b gameBans) Banned(ctx context.Context, character int64) (string, bool, error) {
+	ban, ok, err := b.store.ActiveBan(ctx, character)
+	if err != nil || !ok {
+		return "", false, err
+	}
+	return staff.BanText(ban.Reason, ban.End, ban.Permanent), true, nil
+}
+
 type dbCharacters struct {
 	store *store.Store
 	world *world.World

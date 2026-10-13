@@ -642,16 +642,19 @@ Chat follows strategy section 7.10 and proposal 0002, review decision 26 ([decis
 - **Blocking.** `Block` adds a name to the character's block list, up to the ruleset's `block_list` limit (20 by default, rAthena's `MAX_IGNORE_LIST`), or removes it. A blocked name cannot whisper to the player, and the player does not see its local, channel or party lines. The list is saved with the character, in `character_blocks`. Party invites, friend requests and trade requests check it.
 - **The chat filter** of `data/chat_filter.yml` replaces or rejects words in every line, and refuses new character names that have a word or a reserved name, on the account pages and for `--dev` logins.
 - **Rate limits** are the `chat.*` settings, per connection. A character made less than `chat.new_character_period` ago has the lower limits. Lines over the rate are dropped, and the player gets `ChatRefused` with `TOO_FAST`, since the client does not know a new character's limits. A flood ends the connection, as before.
-- **Mutes and jails** come from mods with `player.sanction` for now, and from the staff tools later. A muted player's lines come back as `ChatRefused` with a `SanctionNotice` that has the reason and the end time. A jailed player goes to the jail map, cannot use warps, scripts' warps or wings, comes back in jail after death, and goes back to where it was when the jail ends. Sanctions run on the server clock and are saved in `sanctions`, which keeps ended ones too.
-- **Reports.** `Report` reports a player, or a line by its `line_id`. The report keeps the lines the reporter saw in the last 5 minutes. A player may send 10 reports an hour.
-- **The chat log** keeps every line players say: local, whisper and channel. With a database, `chat_log` keeps lines for `chat.log_days` days, and `report_lines` ties a report to its lines, which stay while the report is open. A worker writes lines and reports in batches, in order, and deletes old lines every 12 hours. Without a database, the last 10,000 lines and 1,000 reports stay in memory.
+- **Mutes and jails** come from mods with `player.sanction`, from the admin screens, and from `@mute` and `@jail` (see "Staff and admin tools"). A muted player's lines come back as `ChatRefused` with a `SanctionNotice` that has the reason and the end time. A jailed player goes to the jail map, cannot use warps, scripts' warps or wings, comes back in jail after death, and goes back to where it was when the jail ends or staff lift it. Sanctions run on the server clock and are saved in `sanctions`, which keeps ended ones too, with kicks and bans ([decision 0030](../docs/decisions/0030-moderation-and-gm-commands.md)).
+- **Reports.** `Report` reports a player, or a line by its `line_id`, or a guild's name or emblem by `guild_id` and `emblem`, from the player menu and the guild window. The report keeps the lines the reporter saw in the last 5 minutes. A player may send 10 reports an hour. Staff work through them in the admin screens' report queue, and close each with an outcome.
+- **GM commands.** A line that starts with `@` is a GM command, never chat. It is not shown, logged, or passed to the chat hooks or the chat event. Without the permission, the answer is "Unknown command.".
+- **The chat log** keeps every line players say: local, whisper and channel. With a database, `chat_log` keeps lines for `chat.log_days` days, and `report_lines` ties a report to its lines, which stay while the report is open. Once a report closes, its lines follow the normal limit again. A worker writes lines and reports in batches, in order, and deletes old lines every 12 hours. Without a database, the last 10,000 lines and 1,000 reports stay in memory.
 
 With `--dev`, the debug address serves two more endpoints for development and the end-to-end tests:
 
 - `GET /debug/wathena/reports` lists the newest reports with their lines.
 - `POST /debug/wathena/clock?advance=90s` moves the server clock forward, which mutes, jails, schedules and world events in zones follow.
+- `POST /debug/wathena/staff?name=<character>&role=<role>` gives an online character's account a staff role, as if it logged in with a second factor, for the GM command tests.
+- `POST /debug/wathena/sanction?kind=<kind>&name=<character>&minutes=<n>&reason=<text>` gives a sanction as the admin API's `POST /sanctions` does. A ban bans the character's account. It needs a database.
 
-Migration 00016 adds `character_blocks`, `sanctions`, `chat_log`, `reports` and `report_lines`. To read the open reports:
+Migration 00016 adds `character_blocks`, `sanctions`, `chat_log`, `reports` and `report_lines`. Migration 00025 adds kicks, bans and lifts to `sanctions`, and outcomes to `reports`. To read the open reports:
 
 ```sql
 SELECT r.id, r.reporter_name, r.target_name, r.reason, c.at, c.name, c.text
@@ -661,7 +664,7 @@ WHERE r.status = 'open' ORDER BY r.id, c.at;
 
 ## Staff and admin tools
 
-Staff roles, the admin API, the GM audit log and the admin screens follow strategy sections 7.8 and 10.6, and proposal 0002, review decisions 33 and 34 ([decision 0028](../docs/decisions/0028-staff-roles-and-audit.md), [decision 0029](../docs/decisions/0029-player-search-and-item-history.md)).
+Staff roles, the admin API, the GM audit log, moderation, GM commands and the admin screens follow strategy sections 7.8 and 10.6, and proposal 0002, review decisions 33 to 35 ([decision 0028](../docs/decisions/0028-staff-roles-and-audit.md), [decision 0029](../docs/decisions/0029-player-search-and-item-history.md), [decision 0030](../docs/decisions/0030-moderation-and-gm-commands.md)).
 
 Roles come from the config:
 
@@ -673,12 +676,19 @@ staff:
   # Optional. A list replaces the defaults below.
   roles:
     admin: [staff.*, audit.*, players.*, items.*, moderation.*, commands.*, world.*, events.*, mods.*]
-    game_master: [audit.read, players.read, items.history, moderation.*, commands.*, world.read, world.announce, events.control]
+    game_master: [audit.read, players.read, items.history, moderation.reports, moderation.mute, moderation.kick, moderation.jail, moderation.ban, commands.*, world.read, world.announce, events.control]
     moderator: [players.read, moderation.reports, moderation.mute, moderation.kick, moderation.jail]
 ```
 
 - Permission names come from a fixed list, `staff.Catalog`. `group.*` names a whole group. An unknown name stops the server from starting.
-- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). Step 2 uses `audit.review`, `players.read`, `players.read_ip`, `items.history`, `items.restore` and `items.create`. The other names are for the later steps of phase 6 and do nothing yet. Decision 0028 lists them.
+- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). Step 2 uses `audit.review`, `players.read`, `players.read_ip`, `items.history`, `items.restore` and `items.create`. Step 3 uses `moderation.reports`, `moderation.mute`, `moderation.jail`, `moderation.kick`, `moderation.ban`, `moderation.ban_permanent`, `commands.warp`, `commands.recall` and `commands.hide`, and `items.create` for `@item`. The other names are for step 4 and do nothing yet. Decision 0028 lists them.
+- Only `admin` has `moderation.ban_permanent` and `items.create` among the default roles. `game_master` and `moderator` keep the moderation permissions of the table below.
+
+| Role | Moderation and commands |
+|---|---|
+| `admin` | Every permission. |
+| `game_master` | `moderation.reports`, `.mute`, `.kick`, `.jail` and `.ban`, and `commands.warp`, `.recall` and `.hide`. |
+| `moderator` | `moderation.reports`, `.mute`, `.kick` and `.jail`. |
 - Owners and holders of `staff.assign` give the other roles on the admin screens. The database keeps them in `staff_roles`. No one changes their own role or an owner's, and a caller gives or takes only roles whose permissions it holds all of.
 - A role counts only for a login with TOTP, a recovery code or a passkey, on an account that still has TOTP or a passkey on. Giving and removing roles also needs a login, or a proof on `/account/reauth`, from the last 10 minutes.
 
@@ -693,6 +703,9 @@ The admin screens are at `/admin` of the server's public URL. The page asks the 
    - Item history: every move of a serial, of the stacks it came from and of the stacks it went into.
    - Restore: gives items back to a character by mail.
    - Reviews: the rows marked for review, with ok and flag.
+   - Reports: the report queue, and each report with its chat, the target's earlier reports and sanctions, sanction buttons, and the forms that close it.
+   - Bans: the bans in effect, with a lift button.
+   - The player page's Sanctions tab gives a mute, a jail or a kick to the character and a ban to its account, and lists its sanctions with lift buttons.
 
 The admin API is JSON at `/admin/api/v1/` on the account service's origin. The messages are protobuf in `schema/proto/wathena/admin/v1`, in their JSON form:
 
@@ -709,11 +722,42 @@ The admin API is JSON at `/admin/api/v1/` on the account service's origin. The m
 | `GET /characters/{id}/logs` | `items.history` | The character's item and zeny log, newest first. Filters: `since` and `until`. Pages: `limit` (1 to 100) and `cursor`. |
 | `GET /items/{serial}/history` | `items.history` | Every move of the serial, following splits and merges both ways, oldest first, with where it is now. |
 | `POST /restore` | `items.restore` | Gives serials, and zeny, back to a character by mail: `{"characterId": "42", "items": [{"serial": "...", "amount": 0}], "reason": "..."}`. A copy of a gone serial and any zeny need `items.create`. Needs a login from the last 10 minutes. |
+| `GET /reports` | `moderation.reports` | Reports, newest first. Filters: `status` (`open` by default, `closed` or `all`), `target` and `kind` (`player`, `line`, `guild_name` or `guild_emblem`). Pages: `limit` (1 to 100) and `before_id`. |
+| `GET /reports/{id}` | `moderation.reports` | A report with the lines the reporter saw, the target's own lines from 5 minutes before to 5 minutes after it, the target's earlier reports and sanctions, and the emblem of an emblem report. |
+| `POST /reports/{id}/close` | `moderation.reports` | Closes a report: `{"outcome": "sanctioned", "note": "...", "sanctionId": "7"}`. The outcome is `no_action`, `warned` or `sanctioned`, and only `sanctioned` links a sanction of the reported player. |
+| `POST /sanctions` | the kind's: `moderation.mute`, `.jail`, `.kick` or `.ban` | `{"kind": "mute", "characterId": "42", "minutes": 30, "reason": "..."}`. A mute and a jail last 1 to 525,600 minutes, a kick takes 0, and a ban names an `accountId` and lasts 1 to 5,256,000 minutes, or 0 for a permanent ban with `moderation.ban_permanent`. A ban needs a login from the last 10 minutes. |
+| `DELETE /sanctions/{id}` | the kind's | Lifts a mute, a jail or a ban early. `?reason=` is required. A ban needs a login from the last 10 minutes. |
+| `GET /sanctions` | any `moderation.*` | Sanctions, newest first. Filters: `character` (its sanctions and its account's bans), `account`, `kind` and `active=true`. Pages: `limit` (1 to 100) and `before_id`. |
 
 - Every call needs the account session cookie. A change also needs the CSRF token of `/me` in the `X-CSRF-Token` header.
 - Errors are JSON with a `code`: `login`, `two_factor`, `forbidden`, `reauth` (with `reauthUrl`), `csrf`, `rate`, `bad_request`, `not_found`, `conflict` or `unavailable`.
 - Calls share the account service's rate limits per address: 60 at once, then 1 a second.
-- Detail views and IP searches write audit rows (`players.view`, `players.search_ip`). Name, ID and serial searches do not. Restores (`items.restore`) and reviews (`audit.review`) write theirs too.
+- Detail views and IP searches write audit rows (`players.view`, `players.search_ip`). Name, ID and serial searches do not. Restores (`items.restore`) and reviews (`audit.review`) write theirs too, and so do sanctions (`moderation.mute`, `.jail`, `.kick`, `.ban`), lifts (`moderation.lift`) and closed reports (`moderation.close_report`).
+
+Sanctions (decision 0030):
+
+- A mute or a jail of an online character starts in its zone at once. An offline character gets it at its next login.
+- A kick closes the player's connection with the reason. It needs the player online.
+- A ban closes the connections of every character of the account, with the reason and the end time. While it lasts, the account cannot log in on the account pages, get a game ticket, or join the game, and each refusal shows the reason and the end time in UTC.
+- No one sanctions their own account or lifts its sanctions.
+
+GM commands, typed in the game's chat by a staff member whose role counts for the login:
+
+| Command | Permission | Does |
+|---|---|---|
+| `@warp <map> [x y]` | `commands.warp` | Goes to a map. A cell that is not walkable becomes a random one. |
+| `@jumpto <name>` | `commands.warp` | Goes to a player on any map. |
+| `@recall <name>` | `commands.recall` | Brings a player on any map here. |
+| `@hide` | `commands.hide` | Hides from players, staff too, and monsters, as rAthena's `OPTION_INVISIBLE`, until the next `@hide` or logout. |
+| `@kick <name> <reason>` | `moderation.kick` | Kicks a player. |
+| `@mute <name> <minutes> <reason>` | `moderation.mute` | Mutes a player. |
+| `@jail <name> <minutes> <reason>` | `moderation.jail` | Jails a player. |
+| `@item <item> <amount> <reason>` | `items.create` | Makes items, by ID or Aegis name, marked for review. |
+
+- A name with spaces goes in double quotes: `@mute "Big Bob" 10 spam`.
+- Each command writes an audit row with the source `game`. The lines never show as chat or reach the chat log.
+- Without the permission, or for a command that does not exist, the answer is "Unknown command.".
+- `@mute`, `@jail` and `@kick` need the game's database.
 
 Restores (decision 0029):
 

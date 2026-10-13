@@ -59,6 +59,23 @@ describe('fetchTicket', () => {
     });
   });
 
+  it('shows a banned account its ban message', async () => {
+    const message = 'Your account is banned until 2026-10-20 15:04 UTC. Reason: spam';
+    expect(
+      await fetchTicket(
+        account,
+        back,
+        answer(403, {
+          error: 'banned',
+          reason: 'spam',
+          ends_at: '2026-10-20T15:04:00Z',
+          message,
+        }),
+      ),
+    ).toEqual({ kind: 'error', message });
+    expect((await fetchTicket(account, back, answer(403, {}))).kind).toBe('error');
+  });
+
   it('reports other failures', async () => {
     expect((await fetchTicket(account, back, answer(503))).kind).toBe('error');
     expect((await fetchTicket(account, back, answer(200, {}))).kind).toBe('error');

@@ -7,7 +7,7 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1";
 
-// The admin API's messages (decisions 0028 and 0029). The API is JSON
+// The admin API's messages (decisions 0028, 0029 and 0030). The API is JSON
 // at /admin/api/v1/, in the protobuf JSON form of these messages, with
 // lowerCamelCase field names.
 
@@ -124,14 +124,152 @@ message Position {
   int32 y = 3;
 }
 
-// Sanction is a mute or a jail in effect.
+// Sanction is a mute, a jail, a kick or a ban (decision 0030). The
+// search and the character details show the ones in effect. GET
+// /sanctions lists ended and lifted ones too.
 message Sanction {
-  // kind is mute or jail.
+  // kind is mute, jail, kick or ban.
   string kind = 1;
   string reason = 2;
   google.protobuf.Timestamp started_at = 3;
+  // ends_at is when it ends. It equals started_at for a kick, and is
+  // unset for a permanent ban.
   google.protobuf.Timestamp ends_at = 4;
+  // issued_by is the staff account, or the mod, that gave it.
   string issued_by = 5;
+  // id is the sanction's ID, for DELETE /sanctions/{id}, or 0 for a
+  // sanction a mod gave that is not saved yet.
+  int64 id = 6;
+  // character_id and character are the character of a mute, a jail or
+  // a kick. A ban has none.
+  int64 character_id = 7;
+  string character = 8;
+  // account_id and account are the account: the banned one, or the
+  // character's.
+  int64 account_id = 9;
+  string account = 10;
+  // permanent is set for a ban without an end.
+  bool permanent = 11;
+  // lifted_at, lifted_by and lift_reason are set when staff lifted it
+  // early.
+  google.protobuf.Timestamp lifted_at = 12;
+  string lifted_by = 13;
+  string lift_reason = 14;
+  // active is set while it is in effect.
+  bool active = 15;
+}
+
+// SanctionRequest is the body of POST /sanctions.
+message SanctionRequest {
+  // kind is mute, jail, kick or ban.
+  string kind = 1;
+  // character_id is the character of a mute, a jail or a kick.
+  int64 character_id = 2;
+  // account_id is the account of a ban.
+  int64 account_id = 3;
+  // minutes is how long a mute, a jail or a ban lasts. A kick takes 0.
+  // A ban of 0 minutes is permanent and needs
+  // moderation.ban_permanent.
+  int32 minutes = 4;
+  // reason is required, at most 255 characters. The player sees it.
+  string reason = 5;
+}
+
+// SanctionList answers GET /sanctions, newest first.
+message SanctionList {
+  repeated Sanction sanctions = 1;
+  // next_before_id is the before_id of the next page, or 0 at the end.
+  int64 next_before_id = 2;
+}
+
+// ReportSummary is one report in the queue.
+message ReportSummary {
+  int64 id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  string reporter = 3;
+  int64 reporter_id = 4;
+  // target is the reported character's name, or the guild's name.
+  string target = 5;
+  // target_id is the reported character's ID, or 0.
+  int64 target_id = 6;
+  // kind is player, line, guild_name or guild_emblem.
+  string kind = 7;
+  // reason is the reporter's own words.
+  string reason = 8;
+  string map = 9;
+  // status is open or closed.
+  string status = 10;
+  google.protobuf.Timestamp closed_at = 11;
+  // outcome is no_action, warned or sanctioned, once closed.
+  string outcome = 12;
+  string note = 13;
+  // closed_by is the staff account that closed it.
+  string closed_by = 14;
+  // sanction_id is the sanction of a sanctioned report, or 0.
+  int64 sanction_id = 15;
+  // guild_id is the reported guild, or 0.
+  int64 guild_id = 16;
+  // line_id is the reported line's ID, or empty.
+  string line_id = 17;
+  // target_account_id is the reported character's account, or 0.
+  int64 target_account_id = 18;
+}
+
+// ReportPage answers GET /reports: reports newest first.
+message ReportPage {
+  repeated ReportSummary reports = 1;
+  // next_before_id is the before_id of the next page, or 0 at the end.
+  int64 next_before_id = 2;
+}
+
+// ChatLine is one line of the chat log.
+message ChatLine {
+  // id is the line's UUID.
+  string id = 1;
+  google.protobuf.Timestamp at = 2;
+  // kind is local, whisper, channel, party or guild.
+  string kind = 3;
+  int64 character_id = 4;
+  // name is who said it.
+  string name = 5;
+  // target is a whisper's target, or a channel's, party's or guild's
+  // name.
+  string target = 6;
+  string map = 7;
+  string text = 8;
+  // reported is set for the reported line.
+  bool reported = 9;
+  // seen is set for the lines the reporter saw, which the report keeps.
+  // The others are the target's own lines around the report.
+  bool seen = 10;
+}
+
+// ReportDetail answers GET /reports/{id}.
+message ReportDetail {
+  ReportSummary report = 1;
+  // lines are the lines the reporter saw and the target's lines around
+  // the report, oldest first. Lines older than the chat log keeps are
+  // gone once the report is closed.
+  repeated ChatLine lines = 2;
+  // earlier are the target's earlier reports, newest first.
+  repeated ReportSummary earlier = 3;
+  // sanctions are the target's sanctions, and its account's, newest
+  // first.
+  repeated Sanction sanctions = 4;
+  // emblem_png is the reported emblem as it was, for a guild_emblem
+  // report.
+  bytes emblem_png = 5;
+}
+
+// CloseReportRequest is the body of POST /reports/{id}/close.
+message CloseReportRequest {
+  // outcome is no_action, warned or sanctioned.
+  string outcome = 1;
+  // note is optional, at most 255 characters.
+  string note = 2;
+  // sanction_id links the sanction of a sanctioned report. It is
+  // required for sanctioned, and not allowed otherwise.
+  int64 sanction_id = 3;
 }
 
 // CharacterSummary is a character in the search results.
@@ -187,6 +325,8 @@ message AccountSummary {
   repeated CharacterSummary characters = 5;
   // logins are the logins of an IP search that matched, newest first.
   repeated LoginRecord logins = 6;
+  // ban is the account's ban in effect, or unset.
+  Sanction ban = 7;
 }
 
 // PlayerSearch answers GET /players.
@@ -293,6 +433,8 @@ message CharacterDetail {
   repeated Mail mails = 26;
   repeated Sanction sanctions = 27;
   google.protobuf.Timestamp created_at = 28;
+  // ban is the account's ban in effect, or unset.
+  Sanction ban = 29;
 }
 
 // ItemMove is one line of the item log.

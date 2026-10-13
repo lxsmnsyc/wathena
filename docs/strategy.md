@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-13)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 and 2 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 3 are built.
 
 Done:
 
@@ -40,12 +40,18 @@ Done:
   - `POST /restore`, which moves serials back by mail from any holder, online or offline, or makes copies with `items.create`, in one transaction.
   - The review queue and `POST /audit/{id}/review`.
   - Login records kept 90 days for the IP search, and the admin screens for all of it.
+- Phase 6 step 3, moderation and GM commands ([decision 0030](decisions/0030-moderation-and-gm-commands.md)):
+  - The report queue with the chat around each report, the target's earlier reports and sanctions, and closing with an outcome that links its sanction.
+  - Mutes, jails, kicks and account bans from the admin API, with lifts and a list per target. A ban closes the account's connections and refuses its logins and game tickets, with the reason and the end time.
+  - `@warp`, `@jumpto`, `@recall`, `@hide`, `@kick`, `@mute`, `@jail` and `@item`, parsed on the server with the role's permissions and the two-factor rule, each with an audit row, never shown as chat. Others get "Unknown command.".
+  - The admin screens for reports, sanctions and bans, and guild emblem reports from the guild window.
 
 Open review items:
 
 - Next step 18's details to review, in proposal 0002, "Next steps".
 - Next step 19's details to review, in proposal 0002, "Next steps".
 - Next step 20's details to review, in proposal 0002, "Next steps".
+- Next step 21's details to review, in proposal 0002, "Next steps".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -58,7 +64,7 @@ Known issues:
 
 Next:
 
-1. Phase 6 (section 15, "Phase 6 in full"), with step 3, moderation and GM commands, once next steps 19 and 20 are reviewed.
+1. Phase 6 (section 15, "Phase 6 in full"), with step 4, the world, events and mods tools, once next steps 19 to 21 are reviewed.
 2. The open review items above, between phase 6 steps.
 3. Phase 7, procedural mode, is the largest phase left.
 
@@ -2677,7 +2683,16 @@ The order from here:
       - An end-to-end duplication test runs restores while bots trade, use storages and carts, and lose their connections. No serial was held twice and every total held.
       - Checked in Chrome with a local server, PostgreSQL and placeholder assets. Thief played on the placeholder map. The owner, logged in with TOTP, gave Admin2 the admin role, found Thief by "thi" as a Novice online at placeholder/map 12,12, opened its inventory, followed its Jellopy serial to the history ("Now: Thief (inventory)"), and restored 5 Jellopy to Victim with a reason. The history then showed the restore into "mail 1 to Victim", and the review queue showed the row as "Your own action". Admin2 logged in with TOTP, saw OK and Flag on the row, reviewed it as ok with a note, and the audit log showed "Reviewed by Admin2: ok". Victim's mail tab showed the mail from Staff with the 5 Jellopy.
       - Left: restores of items held on two maps in one call, and a network form of `admin.World`.
-   3. Moderation and GM commands. The report queue with reported chat in context. Mute, kick, jail and account bans, each with a duration and reason, shown to the player. Reported chat is kept until its report closes. A first set of in-game commands with the same permissions and audit log: `@warp`, `@jumpto`, `@recall`, `@hide`, `@kick`, `@mute`, `@jail`, and `@item` with a reason, marked for review.
+   3. Moderation and GM commands. The report queue with reported chat in context. Mute, kick, jail and account bans, each with a duration and reason, shown to the player. Reported chat is kept until its report closes. A first set of in-game commands with the same permissions and audit log: `@warp`, `@jumpto`, `@recall`, `@hide`, `@kick`, `@mute`, `@jail`, and `@item` with a reason, marked for review. Done on 2026-10-13 ([decision 0030](decisions/0030-moderation-and-gm-commands.md), proposal 0002 review decision 35, server/README.md, "Staff and admin tools" and "Chat and moderation"):
+      - The permissions `commands.recall` and `moderation.ban_permanent`, without `commands.item`. Only `admin` has `moderation.ban_permanent` by default.
+      - Migration 00025: kicks, bans and lifts in `sanctions`, outcomes in `reports`, and the account role's read of bans.
+      - The admin API: `GET /reports`, `GET /reports/{id}`, `POST /reports/{id}/close`, `POST /sanctions`, `DELETE /sanctions/{id}` and `GET /sanctions`. Bans and their lifts need a login from the last 10 minutes. Each change writes its audit row in its transaction.
+      - Sanctions through `server/adminworld`: online mutes and jails in their zones, offline ones under a store hold, kicks through the gateway, and bans that close every connection of the account. The gateway, the login pages and the game tickets refuse a banned account with the reason and the end time.
+      - GM commands in `server/zone`, which answer "Unknown command." without the permission and never reach chat. `@hide` hides from players, staff too, and monsters, across map changes, as rAthena.
+      - The admin screens: the report queue, a report with its chat and a "Sanction and close" form, the player page's Sanctions tab with the history, and the bans. The guild window reports emblems too.
+      - End-to-end tests with bots: a ban kicks and refuses the login, a mute refuses chat, `@jail` moves the player and `@kick` closes the connection, and commands without the permission answer "Unknown command.".
+      - Checked in Chrome with a local server, PostgreSQL and placeholder assets. Ruffian said "you are all noobs and I hate you" and Witness reported the line ("Your report was sent to the staff."). The owner, logged in with TOTP, opened the report on `/admin`, saw the line marked "Reported", and closed it with "Sanction and close" as a 30-minute mute ("Report 1 closed with a mute."). Ruffian's chat showed "You are muted until 11:14 (reason: insults in chat)." and Witness did not hear Ruffian's next line. The owner's character Keeper typed `@warp placeholder/map 20 21` ("Warped."), `@hide` ("Invisible: On") and `@item 501 5 browser check` ("Item created: 5 x Red Potion."). Witness typed `@item 501 1 free potions` and got "Unknown command.". The owner banned Ruffian's account for a day from the Sanctions tab. Ruffian's game page showed "Your account is banned until 2026-10-14 02:44 UTC. Reason: repeat offender", the login page refused Ruffian1 with the same text, and the Bans tab listed the ban.
+      - Left: IP bans, `@` commands from mods, `@hide` across logins, and a network form of `admin.World` and the kicks.
    4. World, events and mods tools. Zones, player counts and tick times. Announcements, and planned restarts with a countdown. Start, stop and schedule events. Installed mods with their permissions and error counts, and turning a mod off in a zone.
    5. The account page. The block list and the player's own reports. A JSON export of the account's data. Account deletion after 14 days. A privacy notice that the server owner fills in.
    6. Mod assets. Mods ship sprites, icons, maps and client data tables (section 10.5), and the client loads them.

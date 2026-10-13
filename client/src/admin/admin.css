@@ -145,3 +145,30 @@
   flex-direction: column;
   gap: 0.25rem;
 }
+
+/* The chat lines of a report. The reporter's lines and the target's
+   own lines have different borders. The reported line is bold. */
+.admin-line-seen td:first-child {
+  border-left: 3px solid #1565c0;
+}
+
+.admin-line-target td:first-child {
+  border-left: 3px solid #6d4c41;
+}
+
+.admin-reported {
+  font-weight: bold;
+  background: color-mix(in srgb, #f9a825 20%, transparent);
+}
+
+.admin-emblem {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+}
+
+/* A sanction in effect. */
+.admin-active {
+  font-weight: bold;
+}

@@ -152,6 +152,8 @@ type handoff struct {
 	// soc is the player in the social registry, and social the registry.
 	soc    *social.Player
 	social *social.Registry
+	// gmHidden is @hide, which lasts across map changes.
+	gmHidden bool
 }
 
 // warp sends a player through a warp, as npc_touch_areanpc and
@@ -205,7 +207,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	z.removeMap(p.entity)
 	z.stopPassives(p)
 	h := &handoff{sess: s, char: z.snapshot(p), ackSeq: p.ackSeq, rewarp: p.rewarp, temp: p.temp,
-		member: p.member, hub: z.Chat, seen: p.seen, soc: p.soc, social: z.Social,
+		member: p.member, hub: z.Chat, seen: p.seen, soc: p.soc, social: z.Social, gmHidden: p.gmHidden,
 		canUseItem:   max(p.canUseItem-z.now, 0),
 		itemDelays:   map[uint32]int64{},
 		statusDelays: map[string]int64{},
@@ -230,6 +232,14 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 		}
 	}
 	h.spiritBalls = z.spheresLeft(p)
+	// What the player has not seen yet goes out before it leaves, such
+	// as the answer of a GM command that moved it.
+	if len(p.pending) > 0 {
+		z.queue(p, wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
+			Tick: z.tick, AckSeq: p.ackSeq, Events: p.pending,
+		}.Build()}.Build())
+		p.pending = nil
+	}
 	z.remove(p, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT)
 	z.dropStatuses(p.entity)
 	// Worn items end their equip contexts here, and start them again in

@@ -214,6 +214,11 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 		}.Build()}.Build())
 		return
 	}
+	if strings.HasPrefix(cmd.text, "@") {
+		// A GM command: never chat, never logged (gmcommands.go).
+		z.gmCommand(p, cmd.text)
+		return
+	}
 	hub := z.chatHub()
 	now := hub.Now()
 	ev := modscript.ChatMessage{Player: int64(p.charID), Channel: "public", To: cmd.to}

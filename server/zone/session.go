@@ -96,6 +96,13 @@ func (s *Session) where() (*Zone, *Player) {
 	return s.zone, s.player
 }
 
+// ended reports whether the session must end.
+func (s *Session) ended() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.end != endNone
+}
+
 // send queues a command in the session's zone. It returns false when the
 // zone's queue is full, which the caller should treat as too many
 // commands. A command sent while the player moves between zones is

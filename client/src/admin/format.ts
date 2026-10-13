@@ -71,10 +71,15 @@ export function positionText(p: Position | undefined): string {
   return `${p.map} ${String(p.x)},${String(p.y)}`;
 }
 
-/** A sanction in effect, such as "mute until ...: spam". */
+/**
+ * A sanction in effect, such as "mute until ...: spam" or "ban,
+ * permanent: bot".
+ */
 export function sanctionText(s: Sanction): string {
   let text = s.kind;
-  if (s.endsAt !== undefined) {
+  if (s.permanent) {
+    text += ', permanent';
+  } else if (s.endsAt !== undefined && s.kind !== 'kick') {
     text += ` until ${timestampDate(s.endsAt).toLocaleString()}`;
   }
   if (s.reason !== '') {

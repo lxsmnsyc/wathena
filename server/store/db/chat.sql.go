@@ -14,7 +14,7 @@ import (
 const activeSanctions = `-- name: ActiveSanctions :many
 SELECT kind, reason, started_at, ends_at, issued_by, return_map, return_x, return_y
 FROM sanctions
-WHERE character_id = $1 AND lifted_at IS NULL AND ends_at > now()
+WHERE character_id = $1::bigint AND kind IN ('mute', 'jail') AND lifted_at IS NULL AND ends_at > now()
 ORDER BY started_at, id
 `
 
@@ -29,7 +29,8 @@ type ActiveSanctionsRow struct {
 	ReturnY   int
 }
 
-// ActiveSanctions are a character's sanctions that have not ended.
+// ActiveSanctions are a character's mutes and jails that have not
+// ended.
 func (q *Queries) ActiveSanctions(ctx context.Context, characterID int64) ([]ActiveSanctionsRow, error) {
 	rows, err := q.db.Query(ctx, activeSanctions, characterID)
 	if err != nil {
@@ -248,7 +249,7 @@ func (q *Queries) InsertReportLines(ctx context.Context, arg InsertReportLinesPa
 
 const liftSanction = `-- name: LiftSanction :exec
 UPDATE sanctions SET lifted_at = $1
-WHERE character_id = $2 AND kind = $3 AND started_at = $4
+WHERE character_id = $2::bigint AND kind = $3 AND started_at = $4
     AND lifted_at IS NULL AND ends_at > $1
 `
 
@@ -364,8 +365,9 @@ func (q *Queries) Reports(ctx context.Context, maxRows int32) ([]ReportsRow, err
 }
 
 const upsertSanction = `-- name: UpsertSanction :exec
-INSERT INTO sanctions (character_id, kind, reason, started_at, ends_at, issued_by, return_map, return_x, return_y)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO sanctions (character_id, account_id, kind, reason, started_at, ends_at, issued_by, return_map, return_x, return_y)
+SELECT $1::bigint, c.account_id, $2, $3, $4, $5, $6, $7, $8, $9
+FROM characters c WHERE c.id = $1::bigint
 ON CONFLICT (character_id, kind, started_at) DO UPDATE SET
     reason = EXCLUDED.reason, ends_at = EXCLUDED.ends_at, issued_by = EXCLUDED.issued_by,
     return_map = EXCLUDED.return_map, return_x = EXCLUDED.return_x, return_y = EXCLUDED.return_y

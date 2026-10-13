@@ -551,6 +551,14 @@ func (s *Service) finishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ret := s.safeReturn(queryValue(r, "return"))
+	if text, banned, err := s.ban(ctx, user.account); err != nil || banned {
+		if err != nil {
+			s.passkeyUnavailable(w, err)
+			return
+		}
+		jsonError(w, http.StatusForbidden, "banned", text)
+		return
+	}
 	if !verified && on {
 		// The passkey proved possession only. The TOTP code is still
 		// needed.

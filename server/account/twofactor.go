@@ -202,6 +202,16 @@ func (s *Service) postLoginCode(w http.ResponseWriter, r *http.Request) {
 	}
 	s.setCookie(w, pendingCookie, "", -1)
 	s.limit.succeed(pending.AccountName)
+	if text, banned, err := s.ban(ctx, pending.AccountID); err != nil || banned {
+		if err != nil {
+			s.unavailable(w, r, err)
+			return
+		}
+		lp := s.loginPage(w, r)
+		lp.Error = text
+		s.render(w, http.StatusForbidden, "login.html", lp)
+		return
+	}
 	if err := s.startSession(ctx, w, r, pending.AccountID, []string{pending.Factor, factor}); err != nil {
 		s.unavailable(w, r, err)
 		return

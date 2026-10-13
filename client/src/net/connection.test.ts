@@ -1,7 +1,13 @@
 import { create } from '@bufbuild/protobuf';
 import { describe, expect, it } from 'vitest';
 import { DisconnectReason, WelcomeSchema } from '../gen/wathena/v1/session_pb';
-import { DEFAULT_LIMITS, disconnectText, limitsOf, unpackSteps } from './connection';
+import {
+  DEFAULT_LIMITS,
+  disconnectDelay,
+  disconnectText,
+  limitsOf,
+  unpackSteps,
+} from './connection';
 
 describe('limitsOf', () => {
   it('takes the limits Welcome gives', () => {
@@ -97,5 +103,27 @@ describe('disconnectText', () => {
       'Your shop stays open while you are away.',
     );
     expect(disconnectText('')).toBe('Disconnected from the server.');
+  });
+
+  it('shows the message of a kick and a ban', () => {
+    expect(disconnectText('Kicked: spam', DisconnectReason.KICKED)).toBe('Kicked: spam');
+    expect(
+      disconnectText(
+        'Your account is banned until 2026-10-20 15:04 UTC. Reason: bot',
+        DisconnectReason.BANNED,
+      ),
+    ).toBe('Your account is banned until 2026-10-20 15:04 UTC. Reason: bot');
+    expect(disconnectText('', DisconnectReason.KICKED)).toBe('A game master disconnected you.');
+    expect(disconnectText('', DisconnectReason.BANNED)).toBe('Your account is banned.');
+  });
+});
+
+describe('disconnectDelay', () => {
+  it('leaves at once for a bad ticket and waits longer for a kick or a ban', () => {
+    expect(disconnectDelay(DisconnectReason.SESSION_INVALID)).toBe(0);
+    expect(disconnectDelay(DisconnectReason.KICKED)).toBe(10_000);
+    expect(disconnectDelay(DisconnectReason.BANNED)).toBe(10_000);
+    expect(disconnectDelay(DisconnectReason.LOGGED_OUT)).toBe(3000);
+    expect(disconnectDelay()).toBe(3000);
   });
 });

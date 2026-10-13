@@ -64,6 +64,13 @@ type Login struct {
 	Staff staff.Login
 }
 
+// Bans says whether a character's account is banned.
+type Bans interface {
+	// Banned returns the text a banned player sees, with the reason
+	// and the end time, and whether the account is banned now.
+	Banned(ctx context.Context, character int64) (text string, banned bool, err error)
+}
+
 // ErrSessionInvalid is a session token that is not valid, used, or
 // expired. The client gets DISCONNECT_REASON_SESSION_INVALID.
 var ErrSessionInvalid = errors.New("gateway: the session token is not valid")
@@ -160,6 +167,9 @@ type Gateway struct {
 	// the chat filter and the reserved names (strategy section 7.10). It
 	// may be nil.
 	CheckName func(name string) error
+	// Bans refuses the logins of banned accounts (decision 0030). It may
+	// be nil, as without a database.
+	Bans Bans
 
 	mu     sync.Mutex
 	online map[int64]*online
@@ -348,6 +358,17 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 	case <-me.kick:
 		return disconnect(ctx, c, me.reason, me.text)
 	default:
+	}
+	// A banned account cannot play. The check comes after the claim, so
+	// a ban that lands during the login kicks this session.
+	if g.Bans != nil {
+		text, banned, err := g.Bans.Banned(ctx, id)
+		if err != nil {
+			return g.loadFailed(ctx, c, err)
+		}
+		if banned {
+			return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_BANNED, text)
+		}
 	}
 	// An autotrader of the character leaves first, so the load sees its
 	// last save (review decision 30).
@@ -718,6 +739,26 @@ func (g *Gateway) claim(id int64) *online {
 		}
 	}
 	return me
+}
+
+// Kick closes the connections of characters, such as for a staff kick
+// or a ban (decision 0030). The client gets the reason and the text. It
+// returns the characters it closed.
+func (g *Gateway) Kick(ids []int64, reason wathenav1.DisconnectReason, text string) []int64 {
+	var kicked []int64
+	var ends []*online
+	g.mu.Lock()
+	for _, id := range ids {
+		if o := g.online[id]; o != nil {
+			kicked = append(kicked, id)
+			ends = append(ends, o)
+		}
+	}
+	g.mu.Unlock()
+	for _, o := range ends {
+		o.end(reason, text)
+	}
+	return kicked
 }
 
 // release ends a session's claim on its character.

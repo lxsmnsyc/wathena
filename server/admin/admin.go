@@ -15,7 +15,8 @@
 // 1 has GET /me, GET, POST and DELETE /staff, and GET /audit. Step 2
 // (decision 0029) has GET /players, GET /characters/{id} and its /logs,
 // GET /items/{serial}/history, POST /restore and POST
-// /audit/{id}/review.
+// /audit/{id}/review. Step 3 (decision 0030) has the report queue and
+// the sanctions (moderation.go).
 //
 // The API reaches the world through World, so a distributed build can
 // put the world service behind the network.
@@ -123,6 +124,12 @@ func New(cfg Config) (*Handler, error) {
 	m.HandleFunc("GET "+Prefix+"characters/{id}/logs", h.call("items.history", read, h.characterLogs))
 	m.HandleFunc("GET "+Prefix+"items/{serial}/history", h.call("items.history", read, h.itemHistory))
 	m.HandleFunc("POST "+Prefix+"restore", h.call("items.restore", changeRecent, h.restore))
+	m.HandleFunc("GET "+Prefix+"reports", h.call("moderation.reports", read, h.searchReports))
+	m.HandleFunc("GET "+Prefix+"reports/{id}", h.call("moderation.reports", read, h.report))
+	m.HandleFunc("POST "+Prefix+"reports/{id}/close", h.call("moderation.reports", change, h.closeReport))
+	m.HandleFunc("POST "+Prefix+"sanctions", h.call(anyModeration, change, h.sanction))
+	m.HandleFunc("DELETE "+Prefix+"sanctions/{id}", h.call(anyModeration, change, h.liftSanction))
+	m.HandleFunc("GET "+Prefix+"sanctions", h.call(anyModeration, read, h.searchSanctions))
 	m.HandleFunc(Prefix, func(w http.ResponseWriter, _ *http.Request) {
 		h.fail(w, http.StatusNotFound, "not_found", "There is no such call.")
 	})
@@ -194,7 +201,7 @@ func (h *Handler) call(permission string, kind callKind, f func(ctx context.Cont
 			case c.role == "" && c.assigned != "" && !c.twoFactor:
 				h.fail(w, http.StatusForbidden, "two_factor", "Staff roles need two-factor login. Turn on TOTP or a passkey, then log in with it.")
 				return
-			case !h.cfg.Roles.Has(c.role, permission):
+			case !h.has(c, permission):
 				h.fail(w, http.StatusForbidden, "forbidden", "Your role does not allow this.")
 				return
 			}
@@ -207,6 +214,41 @@ func (h *Handler) call(permission string, kind callKind, f func(ctx context.Cont
 		}
 		f(ctx, w, r, c)
 	}
+}
+
+// anyModeration is the permission of the calls that need any permission
+// of the moderation group, such as GET /sanctions. Each sanction call
+// then checks the permission of its kind.
+const anyModeration = "moderation.*"
+
+// has reports whether the caller's role has a permission, or for
+// anyModeration any permission of the moderation group.
+func (h *Handler) has(c caller, permission string) bool {
+	if permission == anyModeration {
+		for _, p := range staff.Match(anyModeration) {
+			if h.cfg.Roles.Has(c.role, p) {
+				return true
+			}
+		}
+		return false
+	}
+	return h.cfg.Roles.Has(c.role, permission)
+}
+
+// need checks a permission inside a call, and a recent login when
+// recent is set. It writes the error and returns false when not.
+func (h *Handler) need(w http.ResponseWriter, c caller, permission string, recent bool) bool {
+	if !h.cfg.Roles.Has(c.role, permission) {
+		h.fail(w, http.StatusForbidden, "forbidden", "Your role does not allow this: it needs "+permission+".")
+		return false
+	}
+	if recent && !h.cfg.Auth.Recent(c.sess) {
+		h.write(w, http.StatusForbidden, adminv1.Error_builder{Code: "reauth",
+			Message:   "Confirm it is you: log in again on the account page, then try again.",
+			ReauthUrl: account.ReauthURL(account.AdminPath)}.Build())
+		return false
+	}
+	return true
 }
 
 // caller finds a session's role: owner for the config's owners, else

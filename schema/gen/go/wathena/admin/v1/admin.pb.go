@@ -1117,16 +1117,28 @@ func (b0 Position_builder) Build() *Position {
 	return m0
 }
 
-// Sanction is a mute or a jail in effect.
+// Sanction is a mute, a jail, a kick or a ban (decision 0030). The
+// search and the character details show the ones in effect. GET
+// /sanctions lists ended and lifted ones too.
 type Sanction struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Kind      string                 `protobuf:"bytes,1,opt,name=kind,proto3"`
-	xxx_hidden_Reason    string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
-	xxx_hidden_StartedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=started_at,json=startedAt,proto3"`
-	xxx_hidden_EndsAt    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3"`
-	xxx_hidden_IssuedBy  string                 `protobuf:"bytes,5,opt,name=issued_by,json=issuedBy,proto3"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind        string                 `protobuf:"bytes,1,opt,name=kind,proto3"`
+	xxx_hidden_Reason      string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
+	xxx_hidden_StartedAt   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=started_at,json=startedAt,proto3"`
+	xxx_hidden_EndsAt      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3"`
+	xxx_hidden_IssuedBy    string                 `protobuf:"bytes,5,opt,name=issued_by,json=issuedBy,proto3"`
+	xxx_hidden_Id          int64                  `protobuf:"varint,6,opt,name=id,proto3"`
+	xxx_hidden_CharacterId int64                  `protobuf:"varint,7,opt,name=character_id,json=characterId,proto3"`
+	xxx_hidden_Character   string                 `protobuf:"bytes,8,opt,name=character,proto3"`
+	xxx_hidden_AccountId   int64                  `protobuf:"varint,9,opt,name=account_id,json=accountId,proto3"`
+	xxx_hidden_Account     string                 `protobuf:"bytes,10,opt,name=account,proto3"`
+	xxx_hidden_Permanent   bool                   `protobuf:"varint,11,opt,name=permanent,proto3"`
+	xxx_hidden_LiftedAt    *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=lifted_at,json=liftedAt,proto3"`
+	xxx_hidden_LiftedBy    string                 `protobuf:"bytes,13,opt,name=lifted_by,json=liftedBy,proto3"`
+	xxx_hidden_LiftReason  string                 `protobuf:"bytes,14,opt,name=lift_reason,json=liftReason,proto3"`
+	xxx_hidden_Active      bool                   `protobuf:"varint,15,opt,name=active,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Sanction) Reset() {
@@ -1189,6 +1201,76 @@ func (x *Sanction) GetIssuedBy() string {
 	return ""
 }
 
+func (x *Sanction) GetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *Sanction) GetCharacterId() int64 {
+	if x != nil {
+		return x.xxx_hidden_CharacterId
+	}
+	return 0
+}
+
+func (x *Sanction) GetCharacter() string {
+	if x != nil {
+		return x.xxx_hidden_Character
+	}
+	return ""
+}
+
+func (x *Sanction) GetAccountId() int64 {
+	if x != nil {
+		return x.xxx_hidden_AccountId
+	}
+	return 0
+}
+
+func (x *Sanction) GetAccount() string {
+	if x != nil {
+		return x.xxx_hidden_Account
+	}
+	return ""
+}
+
+func (x *Sanction) GetPermanent() bool {
+	if x != nil {
+		return x.xxx_hidden_Permanent
+	}
+	return false
+}
+
+func (x *Sanction) GetLiftedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_LiftedAt
+	}
+	return nil
+}
+
+func (x *Sanction) GetLiftedBy() string {
+	if x != nil {
+		return x.xxx_hidden_LiftedBy
+	}
+	return ""
+}
+
+func (x *Sanction) GetLiftReason() string {
+	if x != nil {
+		return x.xxx_hidden_LiftReason
+	}
+	return ""
+}
+
+func (x *Sanction) GetActive() bool {
+	if x != nil {
+		return x.xxx_hidden_Active
+	}
+	return false
+}
+
 func (x *Sanction) SetKind(v string) {
 	x.xxx_hidden_Kind = v
 }
@@ -1209,6 +1291,46 @@ func (x *Sanction) SetIssuedBy(v string) {
 	x.xxx_hidden_IssuedBy = v
 }
 
+func (x *Sanction) SetId(v int64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *Sanction) SetCharacterId(v int64) {
+	x.xxx_hidden_CharacterId = v
+}
+
+func (x *Sanction) SetCharacter(v string) {
+	x.xxx_hidden_Character = v
+}
+
+func (x *Sanction) SetAccountId(v int64) {
+	x.xxx_hidden_AccountId = v
+}
+
+func (x *Sanction) SetAccount(v string) {
+	x.xxx_hidden_Account = v
+}
+
+func (x *Sanction) SetPermanent(v bool) {
+	x.xxx_hidden_Permanent = v
+}
+
+func (x *Sanction) SetLiftedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_LiftedAt = v
+}
+
+func (x *Sanction) SetLiftedBy(v string) {
+	x.xxx_hidden_LiftedBy = v
+}
+
+func (x *Sanction) SetLiftReason(v string) {
+	x.xxx_hidden_LiftReason = v
+}
+
+func (x *Sanction) SetActive(v bool) {
+	x.xxx_hidden_Active = v
+}
+
 func (x *Sanction) HasStartedAt() bool {
 	if x == nil {
 		return false
@@ -1223,6 +1345,13 @@ func (x *Sanction) HasEndsAt() bool {
 	return x.xxx_hidden_EndsAt != nil
 }
 
+func (x *Sanction) HasLiftedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_LiftedAt != nil
+}
+
 func (x *Sanction) ClearStartedAt() {
 	x.xxx_hidden_StartedAt = nil
 }
@@ -1231,15 +1360,42 @@ func (x *Sanction) ClearEndsAt() {
 	x.xxx_hidden_EndsAt = nil
 }
 
+func (x *Sanction) ClearLiftedAt() {
+	x.xxx_hidden_LiftedAt = nil
+}
+
 type Sanction_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// kind is mute or jail.
+	// kind is mute, jail, kick or ban.
 	Kind      string
 	Reason    string
 	StartedAt *timestamppb.Timestamp
-	EndsAt    *timestamppb.Timestamp
-	IssuedBy  string
+	// ends_at is when it ends. It equals started_at for a kick, and is
+	// unset for a permanent ban.
+	EndsAt *timestamppb.Timestamp
+	// issued_by is the staff account, or the mod, that gave it.
+	IssuedBy string
+	// id is the sanction's ID, for DELETE /sanctions/{id}, or 0 for a
+	// sanction a mod gave that is not saved yet.
+	Id int64
+	// character_id and character are the character of a mute, a jail or
+	// a kick. A ban has none.
+	CharacterId int64
+	Character   string
+	// account_id and account are the account: the banned one, or the
+	// character's.
+	AccountId int64
+	Account   string
+	// permanent is set for a ban without an end.
+	Permanent bool
+	// lifted_at, lifted_by and lift_reason are set when staff lifted it
+	// early.
+	LiftedAt   *timestamppb.Timestamp
+	LiftedBy   string
+	LiftReason string
+	// active is set while it is in effect.
+	Active bool
 }
 
 func (b0 Sanction_builder) Build() *Sanction {
@@ -1251,6 +1407,1051 @@ func (b0 Sanction_builder) Build() *Sanction {
 	x.xxx_hidden_StartedAt = b.StartedAt
 	x.xxx_hidden_EndsAt = b.EndsAt
 	x.xxx_hidden_IssuedBy = b.IssuedBy
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_CharacterId = b.CharacterId
+	x.xxx_hidden_Character = b.Character
+	x.xxx_hidden_AccountId = b.AccountId
+	x.xxx_hidden_Account = b.Account
+	x.xxx_hidden_Permanent = b.Permanent
+	x.xxx_hidden_LiftedAt = b.LiftedAt
+	x.xxx_hidden_LiftedBy = b.LiftedBy
+	x.xxx_hidden_LiftReason = b.LiftReason
+	x.xxx_hidden_Active = b.Active
+	return m0
+}
+
+// SanctionRequest is the body of POST /sanctions.
+type SanctionRequest struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind        string                 `protobuf:"bytes,1,opt,name=kind,proto3"`
+	xxx_hidden_CharacterId int64                  `protobuf:"varint,2,opt,name=character_id,json=characterId,proto3"`
+	xxx_hidden_AccountId   int64                  `protobuf:"varint,3,opt,name=account_id,json=accountId,proto3"`
+	xxx_hidden_Minutes     int32                  `protobuf:"varint,4,opt,name=minutes,proto3"`
+	xxx_hidden_Reason      string                 `protobuf:"bytes,5,opt,name=reason,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *SanctionRequest) Reset() {
+	*x = SanctionRequest{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SanctionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SanctionRequest) ProtoMessage() {}
+
+func (x *SanctionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SanctionRequest) GetKind() string {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ""
+}
+
+func (x *SanctionRequest) GetCharacterId() int64 {
+	if x != nil {
+		return x.xxx_hidden_CharacterId
+	}
+	return 0
+}
+
+func (x *SanctionRequest) GetAccountId() int64 {
+	if x != nil {
+		return x.xxx_hidden_AccountId
+	}
+	return 0
+}
+
+func (x *SanctionRequest) GetMinutes() int32 {
+	if x != nil {
+		return x.xxx_hidden_Minutes
+	}
+	return 0
+}
+
+func (x *SanctionRequest) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *SanctionRequest) SetKind(v string) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *SanctionRequest) SetCharacterId(v int64) {
+	x.xxx_hidden_CharacterId = v
+}
+
+func (x *SanctionRequest) SetAccountId(v int64) {
+	x.xxx_hidden_AccountId = v
+}
+
+func (x *SanctionRequest) SetMinutes(v int32) {
+	x.xxx_hidden_Minutes = v
+}
+
+func (x *SanctionRequest) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+type SanctionRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// kind is mute, jail, kick or ban.
+	Kind string
+	// character_id is the character of a mute, a jail or a kick.
+	CharacterId int64
+	// account_id is the account of a ban.
+	AccountId int64
+	// minutes is how long a mute, a jail or a ban lasts. A kick takes 0.
+	// A ban of 0 minutes is permanent and needs
+	// moderation.ban_permanent.
+	Minutes int32
+	// reason is required, at most 255 characters. The player sees it.
+	Reason string
+}
+
+func (b0 SanctionRequest_builder) Build() *SanctionRequest {
+	m0 := &SanctionRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_CharacterId = b.CharacterId
+	x.xxx_hidden_AccountId = b.AccountId
+	x.xxx_hidden_Minutes = b.Minutes
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// SanctionList answers GET /sanctions, newest first.
+type SanctionList struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Sanctions    *[]*Sanction           `protobuf:"bytes,1,rep,name=sanctions,proto3"`
+	xxx_hidden_NextBeforeId int64                  `protobuf:"varint,2,opt,name=next_before_id,json=nextBeforeId,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *SanctionList) Reset() {
+	*x = SanctionList{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SanctionList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SanctionList) ProtoMessage() {}
+
+func (x *SanctionList) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SanctionList) GetSanctions() []*Sanction {
+	if x != nil {
+		if x.xxx_hidden_Sanctions != nil {
+			return *x.xxx_hidden_Sanctions
+		}
+	}
+	return nil
+}
+
+func (x *SanctionList) GetNextBeforeId() int64 {
+	if x != nil {
+		return x.xxx_hidden_NextBeforeId
+	}
+	return 0
+}
+
+func (x *SanctionList) SetSanctions(v []*Sanction) {
+	x.xxx_hidden_Sanctions = &v
+}
+
+func (x *SanctionList) SetNextBeforeId(v int64) {
+	x.xxx_hidden_NextBeforeId = v
+}
+
+type SanctionList_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Sanctions []*Sanction
+	// next_before_id is the before_id of the next page, or 0 at the end.
+	NextBeforeId int64
+}
+
+func (b0 SanctionList_builder) Build() *SanctionList {
+	m0 := &SanctionList{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Sanctions = &b.Sanctions
+	x.xxx_hidden_NextBeforeId = b.NextBeforeId
+	return m0
+}
+
+// ReportSummary is one report in the queue.
+type ReportSummary struct {
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id              int64                  `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_Reporter        string                 `protobuf:"bytes,3,opt,name=reporter,proto3"`
+	xxx_hidden_ReporterId      int64                  `protobuf:"varint,4,opt,name=reporter_id,json=reporterId,proto3"`
+	xxx_hidden_Target          string                 `protobuf:"bytes,5,opt,name=target,proto3"`
+	xxx_hidden_TargetId        int64                  `protobuf:"varint,6,opt,name=target_id,json=targetId,proto3"`
+	xxx_hidden_Kind            string                 `protobuf:"bytes,7,opt,name=kind,proto3"`
+	xxx_hidden_Reason          string                 `protobuf:"bytes,8,opt,name=reason,proto3"`
+	xxx_hidden_Map             string                 `protobuf:"bytes,9,opt,name=map,proto3"`
+	xxx_hidden_Status          string                 `protobuf:"bytes,10,opt,name=status,proto3"`
+	xxx_hidden_ClosedAt        *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=closed_at,json=closedAt,proto3"`
+	xxx_hidden_Outcome         string                 `protobuf:"bytes,12,opt,name=outcome,proto3"`
+	xxx_hidden_Note            string                 `protobuf:"bytes,13,opt,name=note,proto3"`
+	xxx_hidden_ClosedBy        string                 `protobuf:"bytes,14,opt,name=closed_by,json=closedBy,proto3"`
+	xxx_hidden_SanctionId      int64                  `protobuf:"varint,15,opt,name=sanction_id,json=sanctionId,proto3"`
+	xxx_hidden_GuildId         int64                  `protobuf:"varint,16,opt,name=guild_id,json=guildId,proto3"`
+	xxx_hidden_LineId          string                 `protobuf:"bytes,17,opt,name=line_id,json=lineId,proto3"`
+	xxx_hidden_TargetAccountId int64                  `protobuf:"varint,18,opt,name=target_account_id,json=targetAccountId,proto3"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *ReportSummary) Reset() {
+	*x = ReportSummary{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportSummary) ProtoMessage() {}
+
+func (x *ReportSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ReportSummary) GetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *ReportSummary) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_CreatedAt
+	}
+	return nil
+}
+
+func (x *ReportSummary) GetReporter() string {
+	if x != nil {
+		return x.xxx_hidden_Reporter
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetReporterId() int64 {
+	if x != nil {
+		return x.xxx_hidden_ReporterId
+	}
+	return 0
+}
+
+func (x *ReportSummary) GetTarget() string {
+	if x != nil {
+		return x.xxx_hidden_Target
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetTargetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_TargetId
+	}
+	return 0
+}
+
+func (x *ReportSummary) GetKind() string {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetStatus() string {
+	if x != nil {
+		return x.xxx_hidden_Status
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetClosedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ClosedAt
+	}
+	return nil
+}
+
+func (x *ReportSummary) GetOutcome() string {
+	if x != nil {
+		return x.xxx_hidden_Outcome
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetNote() string {
+	if x != nil {
+		return x.xxx_hidden_Note
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetClosedBy() string {
+	if x != nil {
+		return x.xxx_hidden_ClosedBy
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetSanctionId() int64 {
+	if x != nil {
+		return x.xxx_hidden_SanctionId
+	}
+	return 0
+}
+
+func (x *ReportSummary) GetGuildId() int64 {
+	if x != nil {
+		return x.xxx_hidden_GuildId
+	}
+	return 0
+}
+
+func (x *ReportSummary) GetLineId() string {
+	if x != nil {
+		return x.xxx_hidden_LineId
+	}
+	return ""
+}
+
+func (x *ReportSummary) GetTargetAccountId() int64 {
+	if x != nil {
+		return x.xxx_hidden_TargetAccountId
+	}
+	return 0
+}
+
+func (x *ReportSummary) SetId(v int64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *ReportSummary) SetCreatedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *ReportSummary) SetReporter(v string) {
+	x.xxx_hidden_Reporter = v
+}
+
+func (x *ReportSummary) SetReporterId(v int64) {
+	x.xxx_hidden_ReporterId = v
+}
+
+func (x *ReportSummary) SetTarget(v string) {
+	x.xxx_hidden_Target = v
+}
+
+func (x *ReportSummary) SetTargetId(v int64) {
+	x.xxx_hidden_TargetId = v
+}
+
+func (x *ReportSummary) SetKind(v string) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *ReportSummary) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+func (x *ReportSummary) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *ReportSummary) SetStatus(v string) {
+	x.xxx_hidden_Status = v
+}
+
+func (x *ReportSummary) SetClosedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ClosedAt = v
+}
+
+func (x *ReportSummary) SetOutcome(v string) {
+	x.xxx_hidden_Outcome = v
+}
+
+func (x *ReportSummary) SetNote(v string) {
+	x.xxx_hidden_Note = v
+}
+
+func (x *ReportSummary) SetClosedBy(v string) {
+	x.xxx_hidden_ClosedBy = v
+}
+
+func (x *ReportSummary) SetSanctionId(v int64) {
+	x.xxx_hidden_SanctionId = v
+}
+
+func (x *ReportSummary) SetGuildId(v int64) {
+	x.xxx_hidden_GuildId = v
+}
+
+func (x *ReportSummary) SetLineId(v string) {
+	x.xxx_hidden_LineId = v
+}
+
+func (x *ReportSummary) SetTargetAccountId(v int64) {
+	x.xxx_hidden_TargetAccountId = v
+}
+
+func (x *ReportSummary) HasCreatedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreatedAt != nil
+}
+
+func (x *ReportSummary) HasClosedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ClosedAt != nil
+}
+
+func (x *ReportSummary) ClearCreatedAt() {
+	x.xxx_hidden_CreatedAt = nil
+}
+
+func (x *ReportSummary) ClearClosedAt() {
+	x.xxx_hidden_ClosedAt = nil
+}
+
+type ReportSummary_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id         int64
+	CreatedAt  *timestamppb.Timestamp
+	Reporter   string
+	ReporterId int64
+	// target is the reported character's name, or the guild's name.
+	Target string
+	// target_id is the reported character's ID, or 0.
+	TargetId int64
+	// kind is player, line, guild_name or guild_emblem.
+	Kind string
+	// reason is the reporter's own words.
+	Reason string
+	Map    string
+	// status is open or closed.
+	Status   string
+	ClosedAt *timestamppb.Timestamp
+	// outcome is no_action, warned or sanctioned, once closed.
+	Outcome string
+	Note    string
+	// closed_by is the staff account that closed it.
+	ClosedBy string
+	// sanction_id is the sanction of a sanctioned report, or 0.
+	SanctionId int64
+	// guild_id is the reported guild, or 0.
+	GuildId int64
+	// line_id is the reported line's ID, or empty.
+	LineId string
+	// target_account_id is the reported character's account, or 0.
+	TargetAccountId int64
+}
+
+func (b0 ReportSummary_builder) Build() *ReportSummary {
+	m0 := &ReportSummary{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_Reporter = b.Reporter
+	x.xxx_hidden_ReporterId = b.ReporterId
+	x.xxx_hidden_Target = b.Target
+	x.xxx_hidden_TargetId = b.TargetId
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_Reason = b.Reason
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Status = b.Status
+	x.xxx_hidden_ClosedAt = b.ClosedAt
+	x.xxx_hidden_Outcome = b.Outcome
+	x.xxx_hidden_Note = b.Note
+	x.xxx_hidden_ClosedBy = b.ClosedBy
+	x.xxx_hidden_SanctionId = b.SanctionId
+	x.xxx_hidden_GuildId = b.GuildId
+	x.xxx_hidden_LineId = b.LineId
+	x.xxx_hidden_TargetAccountId = b.TargetAccountId
+	return m0
+}
+
+// ReportPage answers GET /reports: reports newest first.
+type ReportPage struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Reports      *[]*ReportSummary      `protobuf:"bytes,1,rep,name=reports,proto3"`
+	xxx_hidden_NextBeforeId int64                  `protobuf:"varint,2,opt,name=next_before_id,json=nextBeforeId,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *ReportPage) Reset() {
+	*x = ReportPage{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportPage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportPage) ProtoMessage() {}
+
+func (x *ReportPage) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ReportPage) GetReports() []*ReportSummary {
+	if x != nil {
+		if x.xxx_hidden_Reports != nil {
+			return *x.xxx_hidden_Reports
+		}
+	}
+	return nil
+}
+
+func (x *ReportPage) GetNextBeforeId() int64 {
+	if x != nil {
+		return x.xxx_hidden_NextBeforeId
+	}
+	return 0
+}
+
+func (x *ReportPage) SetReports(v []*ReportSummary) {
+	x.xxx_hidden_Reports = &v
+}
+
+func (x *ReportPage) SetNextBeforeId(v int64) {
+	x.xxx_hidden_NextBeforeId = v
+}
+
+type ReportPage_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Reports []*ReportSummary
+	// next_before_id is the before_id of the next page, or 0 at the end.
+	NextBeforeId int64
+}
+
+func (b0 ReportPage_builder) Build() *ReportPage {
+	m0 := &ReportPage{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Reports = &b.Reports
+	x.xxx_hidden_NextBeforeId = b.NextBeforeId
+	return m0
+}
+
+// ChatLine is one line of the chat log.
+type ChatLine struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_At          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=at,proto3"`
+	xxx_hidden_Kind        string                 `protobuf:"bytes,3,opt,name=kind,proto3"`
+	xxx_hidden_CharacterId int64                  `protobuf:"varint,4,opt,name=character_id,json=characterId,proto3"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,5,opt,name=name,proto3"`
+	xxx_hidden_Target      string                 `protobuf:"bytes,6,opt,name=target,proto3"`
+	xxx_hidden_Map         string                 `protobuf:"bytes,7,opt,name=map,proto3"`
+	xxx_hidden_Text        string                 `protobuf:"bytes,8,opt,name=text,proto3"`
+	xxx_hidden_Reported    bool                   `protobuf:"varint,9,opt,name=reported,proto3"`
+	xxx_hidden_Seen        bool                   `protobuf:"varint,10,opt,name=seen,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *ChatLine) Reset() {
+	*x = ChatLine{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChatLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChatLine) ProtoMessage() {}
+
+func (x *ChatLine) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ChatLine) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *ChatLine) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_At
+	}
+	return nil
+}
+
+func (x *ChatLine) GetKind() string {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ""
+}
+
+func (x *ChatLine) GetCharacterId() int64 {
+	if x != nil {
+		return x.xxx_hidden_CharacterId
+	}
+	return 0
+}
+
+func (x *ChatLine) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *ChatLine) GetTarget() string {
+	if x != nil {
+		return x.xxx_hidden_Target
+	}
+	return ""
+}
+
+func (x *ChatLine) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *ChatLine) GetText() string {
+	if x != nil {
+		return x.xxx_hidden_Text
+	}
+	return ""
+}
+
+func (x *ChatLine) GetReported() bool {
+	if x != nil {
+		return x.xxx_hidden_Reported
+	}
+	return false
+}
+
+func (x *ChatLine) GetSeen() bool {
+	if x != nil {
+		return x.xxx_hidden_Seen
+	}
+	return false
+}
+
+func (x *ChatLine) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *ChatLine) SetAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_At = v
+}
+
+func (x *ChatLine) SetKind(v string) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *ChatLine) SetCharacterId(v int64) {
+	x.xxx_hidden_CharacterId = v
+}
+
+func (x *ChatLine) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *ChatLine) SetTarget(v string) {
+	x.xxx_hidden_Target = v
+}
+
+func (x *ChatLine) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *ChatLine) SetText(v string) {
+	x.xxx_hidden_Text = v
+}
+
+func (x *ChatLine) SetReported(v bool) {
+	x.xxx_hidden_Reported = v
+}
+
+func (x *ChatLine) SetSeen(v bool) {
+	x.xxx_hidden_Seen = v
+}
+
+func (x *ChatLine) HasAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_At != nil
+}
+
+func (x *ChatLine) ClearAt() {
+	x.xxx_hidden_At = nil
+}
+
+type ChatLine_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// id is the line's UUID.
+	Id string
+	At *timestamppb.Timestamp
+	// kind is local, whisper, channel, party or guild.
+	Kind        string
+	CharacterId int64
+	// name is who said it.
+	Name string
+	// target is a whisper's target, or a channel's, party's or guild's
+	// name.
+	Target string
+	Map    string
+	Text   string
+	// reported is set for the reported line.
+	Reported bool
+	// seen is set for the lines the reporter saw, which the report keeps.
+	// The others are the target's own lines around the report.
+	Seen bool
+}
+
+func (b0 ChatLine_builder) Build() *ChatLine {
+	m0 := &ChatLine{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_At = b.At
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_CharacterId = b.CharacterId
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Target = b.Target
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_Text = b.Text
+	x.xxx_hidden_Reported = b.Reported
+	x.xxx_hidden_Seen = b.Seen
+	return m0
+}
+
+// ReportDetail answers GET /reports/{id}.
+type ReportDetail struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Report    *ReportSummary         `protobuf:"bytes,1,opt,name=report,proto3"`
+	xxx_hidden_Lines     *[]*ChatLine           `protobuf:"bytes,2,rep,name=lines,proto3"`
+	xxx_hidden_Earlier   *[]*ReportSummary      `protobuf:"bytes,3,rep,name=earlier,proto3"`
+	xxx_hidden_Sanctions *[]*Sanction           `protobuf:"bytes,4,rep,name=sanctions,proto3"`
+	xxx_hidden_EmblemPng []byte                 `protobuf:"bytes,5,opt,name=emblem_png,json=emblemPng,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ReportDetail) Reset() {
+	*x = ReportDetail{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportDetail) ProtoMessage() {}
+
+func (x *ReportDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ReportDetail) GetReport() *ReportSummary {
+	if x != nil {
+		return x.xxx_hidden_Report
+	}
+	return nil
+}
+
+func (x *ReportDetail) GetLines() []*ChatLine {
+	if x != nil {
+		if x.xxx_hidden_Lines != nil {
+			return *x.xxx_hidden_Lines
+		}
+	}
+	return nil
+}
+
+func (x *ReportDetail) GetEarlier() []*ReportSummary {
+	if x != nil {
+		if x.xxx_hidden_Earlier != nil {
+			return *x.xxx_hidden_Earlier
+		}
+	}
+	return nil
+}
+
+func (x *ReportDetail) GetSanctions() []*Sanction {
+	if x != nil {
+		if x.xxx_hidden_Sanctions != nil {
+			return *x.xxx_hidden_Sanctions
+		}
+	}
+	return nil
+}
+
+func (x *ReportDetail) GetEmblemPng() []byte {
+	if x != nil {
+		return x.xxx_hidden_EmblemPng
+	}
+	return nil
+}
+
+func (x *ReportDetail) SetReport(v *ReportSummary) {
+	x.xxx_hidden_Report = v
+}
+
+func (x *ReportDetail) SetLines(v []*ChatLine) {
+	x.xxx_hidden_Lines = &v
+}
+
+func (x *ReportDetail) SetEarlier(v []*ReportSummary) {
+	x.xxx_hidden_Earlier = &v
+}
+
+func (x *ReportDetail) SetSanctions(v []*Sanction) {
+	x.xxx_hidden_Sanctions = &v
+}
+
+func (x *ReportDetail) SetEmblemPng(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_EmblemPng = v
+}
+
+func (x *ReportDetail) HasReport() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Report != nil
+}
+
+func (x *ReportDetail) ClearReport() {
+	x.xxx_hidden_Report = nil
+}
+
+type ReportDetail_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Report *ReportSummary
+	// lines are the lines the reporter saw and the target's lines around
+	// the report, oldest first. Lines older than the chat log keeps are
+	// gone once the report is closed.
+	Lines []*ChatLine
+	// earlier are the target's earlier reports, newest first.
+	Earlier []*ReportSummary
+	// sanctions are the target's sanctions, and its account's, newest
+	// first.
+	Sanctions []*Sanction
+	// emblem_png is the reported emblem as it was, for a guild_emblem
+	// report.
+	EmblemPng []byte
+}
+
+func (b0 ReportDetail_builder) Build() *ReportDetail {
+	m0 := &ReportDetail{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Report = b.Report
+	x.xxx_hidden_Lines = &b.Lines
+	x.xxx_hidden_Earlier = &b.Earlier
+	x.xxx_hidden_Sanctions = &b.Sanctions
+	x.xxx_hidden_EmblemPng = b.EmblemPng
+	return m0
+}
+
+// CloseReportRequest is the body of POST /reports/{id}/close.
+type CloseReportRequest struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Outcome    string                 `protobuf:"bytes,1,opt,name=outcome,proto3"`
+	xxx_hidden_Note       string                 `protobuf:"bytes,2,opt,name=note,proto3"`
+	xxx_hidden_SanctionId int64                  `protobuf:"varint,3,opt,name=sanction_id,json=sanctionId,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *CloseReportRequest) Reset() {
+	*x = CloseReportRequest{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CloseReportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CloseReportRequest) ProtoMessage() {}
+
+func (x *CloseReportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CloseReportRequest) GetOutcome() string {
+	if x != nil {
+		return x.xxx_hidden_Outcome
+	}
+	return ""
+}
+
+func (x *CloseReportRequest) GetNote() string {
+	if x != nil {
+		return x.xxx_hidden_Note
+	}
+	return ""
+}
+
+func (x *CloseReportRequest) GetSanctionId() int64 {
+	if x != nil {
+		return x.xxx_hidden_SanctionId
+	}
+	return 0
+}
+
+func (x *CloseReportRequest) SetOutcome(v string) {
+	x.xxx_hidden_Outcome = v
+}
+
+func (x *CloseReportRequest) SetNote(v string) {
+	x.xxx_hidden_Note = v
+}
+
+func (x *CloseReportRequest) SetSanctionId(v int64) {
+	x.xxx_hidden_SanctionId = v
+}
+
+type CloseReportRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// outcome is no_action, warned or sanctioned.
+	Outcome string
+	// note is optional, at most 255 characters.
+	Note string
+	// sanction_id links the sanction of a sanctioned report. It is
+	// required for sanctioned, and not allowed otherwise.
+	SanctionId int64
+}
+
+func (b0 CloseReportRequest_builder) Build() *CloseReportRequest {
+	m0 := &CloseReportRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Outcome = b.Outcome
+	x.xxx_hidden_Note = b.Note
+	x.xxx_hidden_SanctionId = b.SanctionId
 	return m0
 }
 
@@ -1272,7 +2473,7 @@ type CharacterSummary struct {
 
 func (x *CharacterSummary) Reset() {
 	*x = CharacterSummary{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[10]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1284,7 +2485,7 @@ func (x *CharacterSummary) String() string {
 func (*CharacterSummary) ProtoMessage() {}
 
 func (x *CharacterSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[10]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1451,7 +2652,7 @@ type LoginRecord struct {
 
 func (x *LoginRecord) Reset() {
 	*x = LoginRecord{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[11]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1463,7 +2664,7 @@ func (x *LoginRecord) String() string {
 func (*LoginRecord) ProtoMessage() {}
 
 func (x *LoginRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[11]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1552,7 +2753,7 @@ type Owner struct {
 
 func (x *Owner) Reset() {
 	*x = Owner{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[12]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1564,7 +2765,7 @@ func (x *Owner) String() string {
 func (*Owner) ProtoMessage() {}
 
 func (x *Owner) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[12]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1683,13 +2884,14 @@ type AccountSummary struct {
 	xxx_hidden_LastLogin  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_login,json=lastLogin,proto3"`
 	xxx_hidden_Characters *[]*CharacterSummary   `protobuf:"bytes,5,rep,name=characters,proto3"`
 	xxx_hidden_Logins     *[]*LoginRecord        `protobuf:"bytes,6,rep,name=logins,proto3"`
+	xxx_hidden_Ban        *Sanction              `protobuf:"bytes,7,opt,name=ban,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
 
 func (x *AccountSummary) Reset() {
 	*x = AccountSummary{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[13]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1701,7 +2903,7 @@ func (x *AccountSummary) String() string {
 func (*AccountSummary) ProtoMessage() {}
 
 func (x *AccountSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[13]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1758,6 +2960,13 @@ func (x *AccountSummary) GetLogins() []*LoginRecord {
 	return nil
 }
 
+func (x *AccountSummary) GetBan() *Sanction {
+	if x != nil {
+		return x.xxx_hidden_Ban
+	}
+	return nil
+}
+
 func (x *AccountSummary) SetAccountId(v int64) {
 	x.xxx_hidden_AccountId = v
 }
@@ -1782,6 +2991,10 @@ func (x *AccountSummary) SetLogins(v []*LoginRecord) {
 	x.xxx_hidden_Logins = &v
 }
 
+func (x *AccountSummary) SetBan(v *Sanction) {
+	x.xxx_hidden_Ban = v
+}
+
 func (x *AccountSummary) HasCreatedAt() bool {
 	if x == nil {
 		return false
@@ -1796,12 +3009,23 @@ func (x *AccountSummary) HasLastLogin() bool {
 	return x.xxx_hidden_LastLogin != nil
 }
 
+func (x *AccountSummary) HasBan() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Ban != nil
+}
+
 func (x *AccountSummary) ClearCreatedAt() {
 	x.xxx_hidden_CreatedAt = nil
 }
 
 func (x *AccountSummary) ClearLastLogin() {
 	x.xxx_hidden_LastLogin = nil
+}
+
+func (x *AccountSummary) ClearBan() {
+	x.xxx_hidden_Ban = nil
 }
 
 type AccountSummary_builder struct {
@@ -1816,6 +3040,8 @@ type AccountSummary_builder struct {
 	Characters []*CharacterSummary
 	// logins are the logins of an IP search that matched, newest first.
 	Logins []*LoginRecord
+	// ban is the account's ban in effect, or unset.
+	Ban *Sanction
 }
 
 func (b0 AccountSummary_builder) Build() *AccountSummary {
@@ -1828,6 +3054,7 @@ func (b0 AccountSummary_builder) Build() *AccountSummary {
 	x.xxx_hidden_LastLogin = b.LastLogin
 	x.xxx_hidden_Characters = &b.Characters
 	x.xxx_hidden_Logins = &b.Logins
+	x.xxx_hidden_Ban = b.Ban
 	return m0
 }
 
@@ -1843,7 +3070,7 @@ type PlayerSearch struct {
 
 func (x *PlayerSearch) Reset() {
 	*x = PlayerSearch{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[14]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1855,7 +3082,7 @@ func (x *PlayerSearch) String() string {
 func (*PlayerSearch) ProtoMessage() {}
 
 func (x *PlayerSearch) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[14]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1952,7 +3179,7 @@ type Item struct {
 
 func (x *Item) Reset() {
 	*x = Item{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[15]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1964,7 +3191,7 @@ func (x *Item) String() string {
 func (*Item) ProtoMessage() {}
 
 func (x *Item) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[15]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2148,7 +3375,7 @@ type Storage struct {
 
 func (x *Storage) Reset() {
 	*x = Storage{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[16]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2160,7 +3387,7 @@ func (x *Storage) String() string {
 func (*Storage) ProtoMessage() {}
 
 func (x *Storage) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[16]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2258,7 +3485,7 @@ type Mail struct {
 
 func (x *Mail) Reset() {
 	*x = Mail{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[17]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2270,7 +3497,7 @@ func (x *Mail) String() string {
 func (*Mail) ProtoMessage() {}
 
 func (x *Mail) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[17]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2423,7 +3650,7 @@ type Currency struct {
 
 func (x *Currency) Reset() {
 	*x = Currency{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[18]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2435,7 +3662,7 @@ func (x *Currency) String() string {
 func (*Currency) ProtoMessage() {}
 
 func (x *Currency) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[18]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2526,7 +3753,7 @@ type Stats struct {
 
 func (x *Stats) Reset() {
 	*x = Stats{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[19]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2538,7 +3765,7 @@ func (x *Stats) String() string {
 func (*Stats) ProtoMessage() {}
 
 func (x *Stats) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[19]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2671,13 +3898,14 @@ type CharacterDetail struct {
 	xxx_hidden_Mails        *[]*Mail               `protobuf:"bytes,26,rep,name=mails,proto3"`
 	xxx_hidden_Sanctions    *[]*Sanction           `protobuf:"bytes,27,rep,name=sanctions,proto3"`
 	xxx_hidden_CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,28,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_Ban          *Sanction              `protobuf:"bytes,29,opt,name=ban,proto3"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
 
 func (x *CharacterDetail) Reset() {
 	*x = CharacterDetail{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[20]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2689,7 +3917,7 @@ func (x *CharacterDetail) String() string {
 func (*CharacterDetail) ProtoMessage() {}
 
 func (x *CharacterDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[20]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2906,6 +4134,13 @@ func (x *CharacterDetail) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *CharacterDetail) GetBan() *Sanction {
+	if x != nil {
+		return x.xxx_hidden_Ban
+	}
+	return nil
+}
+
 func (x *CharacterDetail) SetId(v int64) {
 	x.xxx_hidden_Id = v
 }
@@ -3018,6 +4253,10 @@ func (x *CharacterDetail) SetCreatedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreatedAt = v
 }
 
+func (x *CharacterDetail) SetBan(v *Sanction) {
+	x.xxx_hidden_Ban = v
+}
+
 func (x *CharacterDetail) HasStats() bool {
 	if x == nil {
 		return false
@@ -3046,6 +4285,13 @@ func (x *CharacterDetail) HasCreatedAt() bool {
 	return x.xxx_hidden_CreatedAt != nil
 }
 
+func (x *CharacterDetail) HasBan() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Ban != nil
+}
+
 func (x *CharacterDetail) ClearStats() {
 	x.xxx_hidden_Stats = nil
 }
@@ -3060,6 +4306,10 @@ func (x *CharacterDetail) ClearSavePoint() {
 
 func (x *CharacterDetail) ClearCreatedAt() {
 	x.xxx_hidden_CreatedAt = nil
+}
+
+func (x *CharacterDetail) ClearBan() {
+	x.xxx_hidden_Ban = nil
 }
 
 type CharacterDetail_builder struct {
@@ -3094,6 +4344,8 @@ type CharacterDetail_builder struct {
 	Mails     []*Mail
 	Sanctions []*Sanction
 	CreatedAt *timestamppb.Timestamp
+	// ban is the account's ban in effect, or unset.
+	Ban *Sanction
 }
 
 func (b0 CharacterDetail_builder) Build() *CharacterDetail {
@@ -3128,6 +4380,7 @@ func (b0 CharacterDetail_builder) Build() *CharacterDetail {
 	x.xxx_hidden_Mails = &b.Mails
 	x.xxx_hidden_Sanctions = &b.Sanctions
 	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_Ban = b.Ban
 	return m0
 }
 
@@ -3153,7 +4406,7 @@ type ItemMove struct {
 
 func (x *ItemMove) Reset() {
 	*x = ItemMove{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[21]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3165,7 +4418,7 @@ func (x *ItemMove) String() string {
 func (*ItemMove) ProtoMessage() {}
 
 func (x *ItemMove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[21]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3411,7 +4664,7 @@ type ItemHistory struct {
 
 func (x *ItemHistory) Reset() {
 	*x = ItemHistory{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[22]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3423,7 +4676,7 @@ func (x *ItemHistory) String() string {
 func (*ItemHistory) ProtoMessage() {}
 
 func (x *ItemHistory) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[22]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3551,7 +4804,7 @@ type LogEntry struct {
 
 func (x *LogEntry) Reset() {
 	*x = LogEntry{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[23]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3563,7 +4816,7 @@ func (x *LogEntry) String() string {
 func (*LogEntry) ProtoMessage() {}
 
 func (x *LogEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[23]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3827,7 +5080,7 @@ type CharacterLogs struct {
 
 func (x *CharacterLogs) Reset() {
 	*x = CharacterLogs{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[24]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3839,7 +5092,7 @@ func (x *CharacterLogs) String() string {
 func (*CharacterLogs) ProtoMessage() {}
 
 func (x *CharacterLogs) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[24]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3902,7 +5155,7 @@ type RestoreItem struct {
 
 func (x *RestoreItem) Reset() {
 	*x = RestoreItem{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[25]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3914,7 +5167,7 @@ func (x *RestoreItem) String() string {
 func (*RestoreItem) ProtoMessage() {}
 
 func (x *RestoreItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[25]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3979,7 +5232,7 @@ type RestoreRequest struct {
 
 func (x *RestoreRequest) Reset() {
 	*x = RestoreRequest{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[26]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3991,7 +5244,7 @@ func (x *RestoreRequest) String() string {
 func (*RestoreRequest) ProtoMessage() {}
 
 func (x *RestoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[26]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4087,7 +5340,7 @@ type RestoredItem struct {
 
 func (x *RestoredItem) Reset() {
 	*x = RestoredItem{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[27]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4099,7 +5352,7 @@ func (x *RestoredItem) String() string {
 func (*RestoredItem) ProtoMessage() {}
 
 func (x *RestoredItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[27]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4239,7 +5492,7 @@ type RestoreResult struct {
 
 func (x *RestoreResult) Reset() {
 	*x = RestoreResult{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[28]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4251,7 +5504,7 @@ func (x *RestoreResult) String() string {
 func (*RestoreResult) ProtoMessage() {}
 
 func (x *RestoreResult) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[28]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4327,7 +5580,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[29]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4339,7 +5592,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[29]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4474,14 +5727,88 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\bPosition\x12\x10\n" +
 	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
 	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x03 \x01(\x05R\x01y\"\xc3\x01\n" +
+	"\x01y\x18\x03 \x01(\x05R\x01y\"\xfa\x03\n" +
 	"\bSanction\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x129\n" +
 	"\n" +
 	"started_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x123\n" +
 	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12\x1b\n" +
-	"\tissued_by\x18\x05 \x01(\tR\bissuedBy\"\xa9\x02\n" +
+	"\tissued_by\x18\x05 \x01(\tR\bissuedBy\x12\x0e\n" +
+	"\x02id\x18\x06 \x01(\x03R\x02id\x12!\n" +
+	"\fcharacter_id\x18\a \x01(\x03R\vcharacterId\x12\x1c\n" +
+	"\tcharacter\x18\b \x01(\tR\tcharacter\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\t \x01(\x03R\taccountId\x12\x18\n" +
+	"\aaccount\x18\n" +
+	" \x01(\tR\aaccount\x12\x1c\n" +
+	"\tpermanent\x18\v \x01(\bR\tpermanent\x127\n" +
+	"\tlifted_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\bliftedAt\x12\x1b\n" +
+	"\tlifted_by\x18\r \x01(\tR\bliftedBy\x12\x1f\n" +
+	"\vlift_reason\x18\x0e \x01(\tR\n" +
+	"liftReason\x12\x16\n" +
+	"\x06active\x18\x0f \x01(\bR\x06active\"\x99\x01\n" +
+	"\x0fSanctionRequest\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12!\n" +
+	"\fcharacter_id\x18\x02 \x01(\x03R\vcharacterId\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x03 \x01(\x03R\taccountId\x12\x18\n" +
+	"\aminutes\x18\x04 \x01(\x05R\aminutes\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason\"n\n" +
+	"\fSanctionList\x128\n" +
+	"\tsanctions\x18\x01 \x03(\v2\x1a.wathena.admin.v1.SanctionR\tsanctions\x12$\n" +
+	"\x0enext_before_id\x18\x02 \x01(\x03R\fnextBeforeId\"\xa7\x04\n" +
+	"\rReportSummary\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x129\n" +
+	"\n" +
+	"created_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1a\n" +
+	"\breporter\x18\x03 \x01(\tR\breporter\x12\x1f\n" +
+	"\vreporter_id\x18\x04 \x01(\x03R\n" +
+	"reporterId\x12\x16\n" +
+	"\x06target\x18\x05 \x01(\tR\x06target\x12\x1b\n" +
+	"\ttarget_id\x18\x06 \x01(\x03R\btargetId\x12\x12\n" +
+	"\x04kind\x18\a \x01(\tR\x04kind\x12\x16\n" +
+	"\x06reason\x18\b \x01(\tR\x06reason\x12\x10\n" +
+	"\x03map\x18\t \x01(\tR\x03map\x12\x16\n" +
+	"\x06status\x18\n" +
+	" \x01(\tR\x06status\x127\n" +
+	"\tclosed_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\bclosedAt\x12\x18\n" +
+	"\aoutcome\x18\f \x01(\tR\aoutcome\x12\x12\n" +
+	"\x04note\x18\r \x01(\tR\x04note\x12\x1b\n" +
+	"\tclosed_by\x18\x0e \x01(\tR\bclosedBy\x12\x1f\n" +
+	"\vsanction_id\x18\x0f \x01(\x03R\n" +
+	"sanctionId\x12\x19\n" +
+	"\bguild_id\x18\x10 \x01(\x03R\aguildId\x12\x17\n" +
+	"\aline_id\x18\x11 \x01(\tR\x06lineId\x12*\n" +
+	"\x11target_account_id\x18\x12 \x01(\x03R\x0ftargetAccountId\"m\n" +
+	"\n" +
+	"ReportPage\x129\n" +
+	"\areports\x18\x01 \x03(\v2\x1f.wathena.admin.v1.ReportSummaryR\areports\x12$\n" +
+	"\x0enext_before_id\x18\x02 \x01(\x03R\fnextBeforeId\"\xff\x01\n" +
+	"\bChatLine\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12*\n" +
+	"\x02at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x12\n" +
+	"\x04kind\x18\x03 \x01(\tR\x04kind\x12!\n" +
+	"\fcharacter_id\x18\x04 \x01(\x03R\vcharacterId\x12\x12\n" +
+	"\x04name\x18\x05 \x01(\tR\x04name\x12\x16\n" +
+	"\x06target\x18\x06 \x01(\tR\x06target\x12\x10\n" +
+	"\x03map\x18\a \x01(\tR\x03map\x12\x12\n" +
+	"\x04text\x18\b \x01(\tR\x04text\x12\x1a\n" +
+	"\breported\x18\t \x01(\bR\breported\x12\x12\n" +
+	"\x04seen\x18\n" +
+	" \x01(\bR\x04seen\"\x8d\x02\n" +
+	"\fReportDetail\x127\n" +
+	"\x06report\x18\x01 \x01(\v2\x1f.wathena.admin.v1.ReportSummaryR\x06report\x120\n" +
+	"\x05lines\x18\x02 \x03(\v2\x1a.wathena.admin.v1.ChatLineR\x05lines\x129\n" +
+	"\aearlier\x18\x03 \x03(\v2\x1f.wathena.admin.v1.ReportSummaryR\aearlier\x128\n" +
+	"\tsanctions\x18\x04 \x03(\v2\x1a.wathena.admin.v1.SanctionR\tsanctions\x12\x1d\n" +
+	"\n" +
+	"emblem_png\x18\x05 \x01(\fR\temblemPng\"c\n" +
+	"\x12CloseReportRequest\x12\x18\n" +
+	"\aoutcome\x18\x01 \x01(\tR\aoutcome\x12\x12\n" +
+	"\x04note\x18\x02 \x01(\tR\x04note\x12\x1f\n" +
+	"\vsanction_id\x18\x03 \x01(\x03R\n" +
+	"sanctionId\"\xa9\x02\n" +
 	"\x10CharacterSummary\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
@@ -4505,7 +5832,7 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\x04name\x18\x04 \x01(\tR\x04name\x12!\n" +
 	"\fcharacter_id\x18\x05 \x01(\x03R\vcharacterId\x12\x1d\n" +
 	"\n" +
-	"account_id\x18\x06 \x01(\x03R\taccountId\"\xba\x02\n" +
+	"account_id\x18\x06 \x01(\x03R\taccountId\"\xe8\x02\n" +
 	"\x0eAccountSummary\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\x03R\taccountId\x12\x18\n" +
@@ -4517,7 +5844,8 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"characters\x18\x05 \x03(\v2\".wathena.admin.v1.CharacterSummaryR\n" +
 	"characters\x125\n" +
-	"\x06logins\x18\x06 \x03(\v2\x1d.wathena.admin.v1.LoginRecordR\x06logins\"\x9e\x01\n" +
+	"\x06logins\x18\x06 \x03(\v2\x1d.wathena.admin.v1.LoginRecordR\x06logins\x12,\n" +
+	"\x03ban\x18\a \x01(\v2\x1a.wathena.admin.v1.SanctionR\x03ban\"\x9e\x01\n" +
 	"\fPlayerSearch\x12<\n" +
 	"\baccounts\x18\x01 \x03(\v2 .wathena.admin.v1.AccountSummaryR\baccounts\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\tR\n" +
@@ -4567,7 +5895,7 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\x03vit\x18\x03 \x01(\x05R\x03vit\x12\x10\n" +
 	"\x03int\x18\x04 \x01(\x05R\x03int\x12\x10\n" +
 	"\x03dex\x18\x05 \x01(\x05R\x03dex\x12\x10\n" +
-	"\x03luk\x18\x06 \x01(\x05R\x03luk\"\xcd\a\n" +
+	"\x03luk\x18\x06 \x01(\x05R\x03luk\"\xfb\a\n" +
 	"\x0fCharacterDetail\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -4603,7 +5931,8 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\x05mails\x18\x1a \x03(\v2\x16.wathena.admin.v1.MailR\x05mails\x128\n" +
 	"\tsanctions\x18\x1b \x03(\v2\x1a.wathena.admin.v1.SanctionR\tsanctions\x129\n" +
 	"\n" +
-	"created_at\x18\x1c \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xfc\x02\n" +
+	"created_at\x18\x1c \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12,\n" +
+	"\x03ban\x18\x1d \x01(\v2\x1a.wathena.admin.v1.SanctionR\x03ban\"\xfc\x02\n" +
 	"\bItemMove\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x16\n" +
@@ -4673,7 +6002,7 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"reauth_url\x18\x03 \x01(\tR\treauthUrlBDZBgithub.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1b\x06proto3"
 
-var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
 var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*Me)(nil),                    // 0: wathena.admin.v1.Me
 	(*Role)(nil),                  // 1: wathena.admin.v1.Role
@@ -4685,79 +6014,98 @@ var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*ReviewRequest)(nil),         // 7: wathena.admin.v1.ReviewRequest
 	(*Position)(nil),              // 8: wathena.admin.v1.Position
 	(*Sanction)(nil),              // 9: wathena.admin.v1.Sanction
-	(*CharacterSummary)(nil),      // 10: wathena.admin.v1.CharacterSummary
-	(*LoginRecord)(nil),           // 11: wathena.admin.v1.LoginRecord
-	(*Owner)(nil),                 // 12: wathena.admin.v1.Owner
-	(*AccountSummary)(nil),        // 13: wathena.admin.v1.AccountSummary
-	(*PlayerSearch)(nil),          // 14: wathena.admin.v1.PlayerSearch
-	(*Item)(nil),                  // 15: wathena.admin.v1.Item
-	(*Storage)(nil),               // 16: wathena.admin.v1.Storage
-	(*Mail)(nil),                  // 17: wathena.admin.v1.Mail
-	(*Currency)(nil),              // 18: wathena.admin.v1.Currency
-	(*Stats)(nil),                 // 19: wathena.admin.v1.Stats
-	(*CharacterDetail)(nil),       // 20: wathena.admin.v1.CharacterDetail
-	(*ItemMove)(nil),              // 21: wathena.admin.v1.ItemMove
-	(*ItemHistory)(nil),           // 22: wathena.admin.v1.ItemHistory
-	(*LogEntry)(nil),              // 23: wathena.admin.v1.LogEntry
-	(*CharacterLogs)(nil),         // 24: wathena.admin.v1.CharacterLogs
-	(*RestoreItem)(nil),           // 25: wathena.admin.v1.RestoreItem
-	(*RestoreRequest)(nil),        // 26: wathena.admin.v1.RestoreRequest
-	(*RestoredItem)(nil),          // 27: wathena.admin.v1.RestoredItem
-	(*RestoreResult)(nil),         // 28: wathena.admin.v1.RestoreResult
-	(*Error)(nil),                 // 29: wathena.admin.v1.Error
-	nil,                           // 30: wathena.admin.v1.Item.RollsEntry
-	(*timestamppb.Timestamp)(nil), // 31: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),       // 32: google.protobuf.Struct
+	(*SanctionRequest)(nil),       // 10: wathena.admin.v1.SanctionRequest
+	(*SanctionList)(nil),          // 11: wathena.admin.v1.SanctionList
+	(*ReportSummary)(nil),         // 12: wathena.admin.v1.ReportSummary
+	(*ReportPage)(nil),            // 13: wathena.admin.v1.ReportPage
+	(*ChatLine)(nil),              // 14: wathena.admin.v1.ChatLine
+	(*ReportDetail)(nil),          // 15: wathena.admin.v1.ReportDetail
+	(*CloseReportRequest)(nil),    // 16: wathena.admin.v1.CloseReportRequest
+	(*CharacterSummary)(nil),      // 17: wathena.admin.v1.CharacterSummary
+	(*LoginRecord)(nil),           // 18: wathena.admin.v1.LoginRecord
+	(*Owner)(nil),                 // 19: wathena.admin.v1.Owner
+	(*AccountSummary)(nil),        // 20: wathena.admin.v1.AccountSummary
+	(*PlayerSearch)(nil),          // 21: wathena.admin.v1.PlayerSearch
+	(*Item)(nil),                  // 22: wathena.admin.v1.Item
+	(*Storage)(nil),               // 23: wathena.admin.v1.Storage
+	(*Mail)(nil),                  // 24: wathena.admin.v1.Mail
+	(*Currency)(nil),              // 25: wathena.admin.v1.Currency
+	(*Stats)(nil),                 // 26: wathena.admin.v1.Stats
+	(*CharacterDetail)(nil),       // 27: wathena.admin.v1.CharacterDetail
+	(*ItemMove)(nil),              // 28: wathena.admin.v1.ItemMove
+	(*ItemHistory)(nil),           // 29: wathena.admin.v1.ItemHistory
+	(*LogEntry)(nil),              // 30: wathena.admin.v1.LogEntry
+	(*CharacterLogs)(nil),         // 31: wathena.admin.v1.CharacterLogs
+	(*RestoreItem)(nil),           // 32: wathena.admin.v1.RestoreItem
+	(*RestoreRequest)(nil),        // 33: wathena.admin.v1.RestoreRequest
+	(*RestoredItem)(nil),          // 34: wathena.admin.v1.RestoredItem
+	(*RestoreResult)(nil),         // 35: wathena.admin.v1.RestoreResult
+	(*Error)(nil),                 // 36: wathena.admin.v1.Error
+	nil,                           // 37: wathena.admin.v1.Item.RollsEntry
+	(*timestamppb.Timestamp)(nil), // 38: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 39: google.protobuf.Struct
 }
 var file_wathena_admin_v1_admin_proto_depIdxs = []int32{
-	31, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
+	38, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
 	2,  // 1: wathena.admin.v1.StaffList.members:type_name -> wathena.admin.v1.StaffMember
 	1,  // 2: wathena.admin.v1.StaffList.roles:type_name -> wathena.admin.v1.Role
-	31, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
-	32, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
-	31, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
+	38, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
+	39, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
+	38, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
 	5,  // 6: wathena.admin.v1.AuditPage.entries:type_name -> wathena.admin.v1.AuditEntry
-	31, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
-	31, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
-	8,  // 9: wathena.admin.v1.CharacterSummary.position:type_name -> wathena.admin.v1.Position
-	9,  // 10: wathena.admin.v1.CharacterSummary.sanctions:type_name -> wathena.admin.v1.Sanction
-	31, // 11: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
-	31, // 12: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
-	31, // 13: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
-	10, // 14: wathena.admin.v1.AccountSummary.characters:type_name -> wathena.admin.v1.CharacterSummary
-	11, // 15: wathena.admin.v1.AccountSummary.logins:type_name -> wathena.admin.v1.LoginRecord
-	13, // 16: wathena.admin.v1.PlayerSearch.accounts:type_name -> wathena.admin.v1.AccountSummary
-	12, // 17: wathena.admin.v1.PlayerSearch.holder:type_name -> wathena.admin.v1.Owner
-	30, // 18: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
-	15, // 19: wathena.admin.v1.Storage.items:type_name -> wathena.admin.v1.Item
-	31, // 20: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
-	15, // 21: wathena.admin.v1.Mail.items:type_name -> wathena.admin.v1.Item
-	19, // 22: wathena.admin.v1.CharacterDetail.stats:type_name -> wathena.admin.v1.Stats
-	18, // 23: wathena.admin.v1.CharacterDetail.currencies:type_name -> wathena.admin.v1.Currency
-	8,  // 24: wathena.admin.v1.CharacterDetail.position:type_name -> wathena.admin.v1.Position
-	8,  // 25: wathena.admin.v1.CharacterDetail.save_point:type_name -> wathena.admin.v1.Position
-	15, // 26: wathena.admin.v1.CharacterDetail.inventory:type_name -> wathena.admin.v1.Item
-	16, // 27: wathena.admin.v1.CharacterDetail.storages:type_name -> wathena.admin.v1.Storage
-	17, // 28: wathena.admin.v1.CharacterDetail.mails:type_name -> wathena.admin.v1.Mail
-	9,  // 29: wathena.admin.v1.CharacterDetail.sanctions:type_name -> wathena.admin.v1.Sanction
-	31, // 30: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
-	31, // 31: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
-	12, // 32: wathena.admin.v1.ItemMove.from:type_name -> wathena.admin.v1.Owner
-	12, // 33: wathena.admin.v1.ItemMove.to:type_name -> wathena.admin.v1.Owner
-	21, // 34: wathena.admin.v1.ItemHistory.moves:type_name -> wathena.admin.v1.ItemMove
-	12, // 35: wathena.admin.v1.ItemHistory.holder:type_name -> wathena.admin.v1.Owner
-	31, // 36: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
-	12, // 37: wathena.admin.v1.LogEntry.from:type_name -> wathena.admin.v1.Owner
-	12, // 38: wathena.admin.v1.LogEntry.to:type_name -> wathena.admin.v1.Owner
-	23, // 39: wathena.admin.v1.CharacterLogs.entries:type_name -> wathena.admin.v1.LogEntry
-	25, // 40: wathena.admin.v1.RestoreRequest.items:type_name -> wathena.admin.v1.RestoreItem
-	12, // 41: wathena.admin.v1.RestoredItem.from:type_name -> wathena.admin.v1.Owner
-	27, // 42: wathena.admin.v1.RestoreResult.items:type_name -> wathena.admin.v1.RestoredItem
-	43, // [43:43] is the sub-list for method output_type
-	43, // [43:43] is the sub-list for method input_type
-	43, // [43:43] is the sub-list for extension type_name
-	43, // [43:43] is the sub-list for extension extendee
-	0,  // [0:43] is the sub-list for field type_name
+	38, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
+	38, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
+	38, // 9: wathena.admin.v1.Sanction.lifted_at:type_name -> google.protobuf.Timestamp
+	9,  // 10: wathena.admin.v1.SanctionList.sanctions:type_name -> wathena.admin.v1.Sanction
+	38, // 11: wathena.admin.v1.ReportSummary.created_at:type_name -> google.protobuf.Timestamp
+	38, // 12: wathena.admin.v1.ReportSummary.closed_at:type_name -> google.protobuf.Timestamp
+	12, // 13: wathena.admin.v1.ReportPage.reports:type_name -> wathena.admin.v1.ReportSummary
+	38, // 14: wathena.admin.v1.ChatLine.at:type_name -> google.protobuf.Timestamp
+	12, // 15: wathena.admin.v1.ReportDetail.report:type_name -> wathena.admin.v1.ReportSummary
+	14, // 16: wathena.admin.v1.ReportDetail.lines:type_name -> wathena.admin.v1.ChatLine
+	12, // 17: wathena.admin.v1.ReportDetail.earlier:type_name -> wathena.admin.v1.ReportSummary
+	9,  // 18: wathena.admin.v1.ReportDetail.sanctions:type_name -> wathena.admin.v1.Sanction
+	8,  // 19: wathena.admin.v1.CharacterSummary.position:type_name -> wathena.admin.v1.Position
+	9,  // 20: wathena.admin.v1.CharacterSummary.sanctions:type_name -> wathena.admin.v1.Sanction
+	38, // 21: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
+	38, // 22: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
+	38, // 23: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
+	17, // 24: wathena.admin.v1.AccountSummary.characters:type_name -> wathena.admin.v1.CharacterSummary
+	18, // 25: wathena.admin.v1.AccountSummary.logins:type_name -> wathena.admin.v1.LoginRecord
+	9,  // 26: wathena.admin.v1.AccountSummary.ban:type_name -> wathena.admin.v1.Sanction
+	20, // 27: wathena.admin.v1.PlayerSearch.accounts:type_name -> wathena.admin.v1.AccountSummary
+	19, // 28: wathena.admin.v1.PlayerSearch.holder:type_name -> wathena.admin.v1.Owner
+	37, // 29: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
+	22, // 30: wathena.admin.v1.Storage.items:type_name -> wathena.admin.v1.Item
+	38, // 31: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
+	22, // 32: wathena.admin.v1.Mail.items:type_name -> wathena.admin.v1.Item
+	26, // 33: wathena.admin.v1.CharacterDetail.stats:type_name -> wathena.admin.v1.Stats
+	25, // 34: wathena.admin.v1.CharacterDetail.currencies:type_name -> wathena.admin.v1.Currency
+	8,  // 35: wathena.admin.v1.CharacterDetail.position:type_name -> wathena.admin.v1.Position
+	8,  // 36: wathena.admin.v1.CharacterDetail.save_point:type_name -> wathena.admin.v1.Position
+	22, // 37: wathena.admin.v1.CharacterDetail.inventory:type_name -> wathena.admin.v1.Item
+	23, // 38: wathena.admin.v1.CharacterDetail.storages:type_name -> wathena.admin.v1.Storage
+	24, // 39: wathena.admin.v1.CharacterDetail.mails:type_name -> wathena.admin.v1.Mail
+	9,  // 40: wathena.admin.v1.CharacterDetail.sanctions:type_name -> wathena.admin.v1.Sanction
+	38, // 41: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 42: wathena.admin.v1.CharacterDetail.ban:type_name -> wathena.admin.v1.Sanction
+	38, // 43: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
+	19, // 44: wathena.admin.v1.ItemMove.from:type_name -> wathena.admin.v1.Owner
+	19, // 45: wathena.admin.v1.ItemMove.to:type_name -> wathena.admin.v1.Owner
+	28, // 46: wathena.admin.v1.ItemHistory.moves:type_name -> wathena.admin.v1.ItemMove
+	19, // 47: wathena.admin.v1.ItemHistory.holder:type_name -> wathena.admin.v1.Owner
+	38, // 48: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
+	19, // 49: wathena.admin.v1.LogEntry.from:type_name -> wathena.admin.v1.Owner
+	19, // 50: wathena.admin.v1.LogEntry.to:type_name -> wathena.admin.v1.Owner
+	30, // 51: wathena.admin.v1.CharacterLogs.entries:type_name -> wathena.admin.v1.LogEntry
+	32, // 52: wathena.admin.v1.RestoreRequest.items:type_name -> wathena.admin.v1.RestoreItem
+	19, // 53: wathena.admin.v1.RestoredItem.from:type_name -> wathena.admin.v1.Owner
+	34, // 54: wathena.admin.v1.RestoreResult.items:type_name -> wathena.admin.v1.RestoredItem
+	55, // [55:55] is the sub-list for method output_type
+	55, // [55:55] is the sub-list for method input_type
+	55, // [55:55] is the sub-list for extension type_name
+	55, // [55:55] is the sub-list for extension extendee
+	0,  // [0:55] is the sub-list for field type_name
 }
 
 func init() { file_wathena_admin_v1_admin_proto_init() }
@@ -4771,7 +6119,7 @@ func file_wathena_admin_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_admin_v1_admin_proto_rawDesc), len(file_wathena_admin_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   38,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

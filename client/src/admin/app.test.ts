@@ -2,7 +2,7 @@ import { create } from '@bufbuild/protobuf';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { describe, expect, it } from 'vitest';
 import { AuditEntrySchema } from '../gen/wathena/admin/v1/admin_pb';
-import { argumentsText, canGive, reviewText } from './app';
+import { argumentsText, canGive, reviewText, tabOf } from './app';
 
 describe('audit cells', () => {
   it('writes arguments sorted by key', () => {
@@ -40,5 +40,13 @@ describe('canGive', () => {
   it('offers only roles the caller holds every permission of', () => {
     expect(canGive(['audit.read', 'staff.assign'], ['audit.read'])).toBe(true);
     expect(canGive(['audit.read'], ['audit.read', 'moderation.ban'])).toBe(false);
+  });
+});
+
+describe('tabOf', () => {
+  it('marks the tab of a screen opened from another one', () => {
+    expect(tabOf('character')).toBe('players');
+    expect(tabOf('report')).toBe('reports');
+    expect(tabOf('bans')).toBe('bans');
   });
 });

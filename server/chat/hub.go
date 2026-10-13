@@ -263,6 +263,28 @@ func (h *Hub) IsOnline(name string) (string, bool) {
 	return "", false
 }
 
+// Online is an online player that Find found.
+type Online struct {
+	// Name is the character's name as it is spelled.
+	Name        string
+	CharacterID int64
+	// Map is the map the player is on, and Inbox what reaches it there.
+	Map   string
+	Inbox Inbox
+}
+
+// Find finds an online player by name, in any case, for the GM
+// commands (decision 0030).
+func (h *Hub) Find(name string) (Online, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	m := h.online[Key(name)]
+	if m == nil {
+		return Online{}, false
+	}
+	return Online{Name: m.name, CharacterID: m.characterID, Map: m.mapName, Inbox: m.inbox}, true
+}
+
 // Locate returns the maps of the online players among some character
 // IDs, for the staff tools (decision 0029). IDs that are not online are
 // left out.

@@ -12,7 +12,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file wathena/admin/v1/admin.proto.
  */
 export const file_wathena_admin_v1_admin: GenFile = /*@__PURE__*/
-  fileDesc("Chx3YXRoZW5hL2FkbWluL3YxL2FkbWluLnByb3RvEhB3YXRoZW5hLmFkbWluLnYxIqEBCgJNZRIPCgdhY2NvdW50GAEgASgJEgwKBHJvbGUYAiABKAkSEwoLcGVybWlzc2lvbnMYAyADKAkSEgoKdHdvX2ZhY3RvchgEIAEoCBIVCg1hc3NpZ25lZF9yb2xlGAUgASgJEhQKDHJlY2VudF9sb2dpbhgGIAEoCBISCgpjc3JmX3Rva2VuGAcgASgJEhIKCnJlYXV0aF91cmwYCCABKAkiKQoEUm9sZRIMCgRuYW1lGAEgASgJEhMKC3Blcm1pc3Npb25zGAIgAygJIqkBCgtTdGFmZk1lbWJlchISCgphY2NvdW50X2lkGAEgASgDEg8KB2FjY291bnQYAiABKAkSDAoEcm9sZRgDIAEoCRITCgtmcm9tX2NvbmZpZxgEIAEoCBIQCghnaXZlbl9ieRgFIAEoCRIsCghnaXZlbl9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKdHdvX2ZhY3RvchgHIAEoCCJiCglTdGFmZkxpc3QSLgoHbWVtYmVycxgBIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuU3RhZmZNZW1iZXISJQoFcm9sZXMYAiADKAsyFi53YXRoZW5hLmFkbWluLnYxLlJvbGUiQAoPR2l2ZVJvbGVSZXF1ZXN0Eg8KB2FjY291bnQYASABKAkSDAoEcm9sZRgCIAEoCRIOCgZyZWFzb24YAyABKAki4QIKCkF1ZGl0RW50cnkSCgoCaWQYASABKAMSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2FjY291bnQYAyABKAkSDAoEcm9sZRgEIAEoCRIOCgZhY3Rpb24YBSABKAkSDgoGc291cmNlGAYgASgJEg4KBnRhcmdldBgHIAEoCRIqCglhcmd1bWVudHMYCCABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0Eg4KBnJlYXNvbhgJIAEoCRIUCgxuZWVkc19yZXZpZXcYCiABKAgSLwoLcmV2aWV3ZWRfYXQYCyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC3Jldmlld2VkX2J5GAwgASgJEg8KB3ZlcmRpY3QYDSABKAkSEwoLcmV2aWV3X25vdGUYDiABKAkSEgoKYWNjb3VudF9pZBgPIAEoAyJSCglBdWRpdFBhZ2USLQoHZW50cmllcxgBIAMoCzIcLndhdGhlbmEuYWRtaW4udjEuQXVkaXRFbnRyeRIWCg5uZXh0X2JlZm9yZV9pZBgCIAEoAyIuCg1SZXZpZXdSZXF1ZXN0Eg8KB3ZlcmRpY3QYASABKAkSDAoEbm90ZRgCIAEoCSItCghQb3NpdGlvbhILCgNtYXAYASABKAkSCQoBeBgCIAEoBRIJCgF5GAMgASgFIpgBCghTYW5jdGlvbhIMCgRraW5kGAEgASgJEg4KBnJlYXNvbhgCIAEoCRIuCgpzdGFydGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbmRzX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglpc3N1ZWRfYnkYBSABKAki3wEKEENoYXJhY3RlclN1bW1hcnkSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRILCgNqb2IYAyABKAUSEAoIam9iX25hbWUYBCABKAkSEgoKYmFzZV9sZXZlbBgFIAEoBRIRCglqb2JfbGV2ZWwYBiABKAUSDgoGb25saW5lGAcgASgIEiwKCHBvc2l0aW9uGAggASgLMhoud2F0aGVuYS5hZG1pbi52MS5Qb3NpdGlvbhItCglzYW5jdGlvbnMYCSADKAsyGi53YXRoZW5hLmFkbWluLnYxLlNhbmN0aW9uIlUKC0xvZ2luUmVjb3JkEgoKAmlwGAEgASgJEiYKAmF0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBISCgp1c2VyX2FnZW50GAMgASgJImoKBU93bmVyEgwKBGtpbmQYASABKAkSCgoCaWQYAiABKAMSDwoHc3RvcmFnZRgDIAEoDRIMCgRuYW1lGAQgASgJEhQKDGNoYXJhY3Rlcl9pZBgFIAEoAxISCgphY2NvdW50X2lkGAYgASgDIvwBCg5BY2NvdW50U3VtbWFyeRISCgphY2NvdW50X2lkGAEgASgDEg8KB2FjY291bnQYAiABKAkSLgoKY3JlYXRlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKbGFzdF9sb2dpbhgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNgoKY2hhcmFjdGVycxgFIAMoCzIiLndhdGhlbmEuYWRtaW4udjEuQ2hhcmFjdGVyU3VtbWFyeRItCgZsb2dpbnMYBiADKAsyHS53YXRoZW5hLmFkbWluLnYxLkxvZ2luUmVjb3JkIoABCgxQbGF5ZXJTZWFyY2gSMgoIYWNjb3VudHMYASADKAsyIC53YXRoZW5hLmFkbWluLnYxLkFjY291bnRTdW1tYXJ5EhMKC25leHRfY3Vyc29yGAIgASgJEicKBmhvbGRlchgDIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXIihAIKBEl0ZW0SDgoGc2VyaWFsGAEgASgJEg8KB2l0ZW1faWQYAiABKA0SDAoEbmFtZRgDIAEoCRIOCgZhbW91bnQYBCABKAUSDAoEc2xvdBgFIAEoBRIOCgZyZWZpbmUYBiABKAUSDQoFY2FyZHMYByADKA0SDQoFZXF1aXAYCCABKA0SEgoKaWRlbnRpZmllZBgJIAEoCBINCgVib3VuZBgKIAEoBRIwCgVyb2xscxgLIAMoCzIhLndhdGhlbmEuYWRtaW4udjEuSXRlbS5Sb2xsc0VudHJ5GiwKClJvbGxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4ASJdCgdTdG9yYWdlEgwKBGtpbmQYASABKAkSDwoHc3RvcmFnZRgCIAEoDRIMCgRuYW1lGAMgASgJEiUKBWl0ZW1zGAQgAygLMhYud2F0aGVuYS5hZG1pbi52MS5JdGVtIrEBCgRNYWlsEgoKAmlkGAEgASgDEgwKBGZyb20YAiABKAkSDQoFdGl0bGUYAyABKAkSKwoHc2VudF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEemVueRgFIAEoAxIMCgRyZWFkGAYgASgIEhAKCHJldHVybmVkGAcgASgIEiUKBWl0ZW1zGAggAygLMhYud2F0aGVuYS5hZG1pbi52MS5JdGVtIkUKCEN1cnJlbmN5EgoKAmlkGAEgASgNEgwKBG5hbWUYAiABKAkSDgoGYW1vdW50GAMgASgDEg8KB2FjY291bnQYBCABKAgiVQoFU3RhdHMSCwoDc3RyGAEgASgFEgsKA2FnaRgCIAEoBRILCgN2aXQYAyABKAUSCwoDaW50GAQgASgFEgsKA2RleBgFIAEoBRILCgNsdWsYBiABKAUi3AUKD0NoYXJhY3RlckRldGFpbBIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhIKCmFjY291bnRfaWQYAyABKAMSDwoHYWNjb3VudBgEIAEoCRILCgNqb2IYBSABKAUSEAoIam9iX25hbWUYBiABKAkSDAoEbWFsZRgHIAEoCBISCgpiYXNlX2xldmVsGAggASgFEhEKCWpvYl9sZXZlbBgJIAEoBRIQCghiYXNlX2V4cBgKIAEoAxIPCgdqb2JfZXhwGAsgASgDEiYKBXN0YXRzGAwgASgLMhcud2F0aGVuYS5hZG1pbi52MS5TdGF0cxIVCg1zdGF0dXNfcG9pbnRzGA0gASgFEhQKDHNraWxsX3BvaW50cxgOIAEoBRIKCgJocBgPIAEoAxIKCgJzcBgQIAEoAxIMCgR6ZW55GBEgASgDEi4KCmN1cnJlbmNpZXMYEiADKAsyGi53YXRoZW5hLmFkbWluLnYxLkN1cnJlbmN5Eg4KBm9ubGluZRgTIAEoCBIsCghwb3NpdGlvbhgUIAEoCzIaLndhdGhlbmEuYWRtaW4udjEuUG9zaXRpb24SLgoKc2F2ZV9wb2ludBgVIAEoCzIaLndhdGhlbmEuYWRtaW4udjEuUG9zaXRpb24SDQoFcGFydHkYFiABKAkSDQoFZ3VpbGQYFyABKAkSKQoJaW52ZW50b3J5GBggAygLMhYud2F0aGVuYS5hZG1pbi52MS5JdGVtEisKCHN0b3JhZ2VzGBkgAygLMhkud2F0aGVuYS5hZG1pbi52MS5TdG9yYWdlEiUKBW1haWxzGBogAygLMhYud2F0aGVuYS5hZG1pbi52MS5NYWlsEi0KCXNhbmN0aW9ucxgbIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuU2FuY3Rpb24SLgoKY3JlYXRlZF9hdBgcIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAinwIKCEl0ZW1Nb3ZlEgoKAmlkGAEgASgDEiYKAmF0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgFEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghyZWxhdGlvbhgNIAEoCSKVAQoLSXRlbUhpc3RvcnkSDgoGc2VyaWFsGAEgASgJEikKBW1vdmVzGAIgAygLMhoud2F0aGVuYS5hZG1pbi52MS5JdGVtTW92ZRIPCgdzZXJpYWxzGAMgAygJEhEKCXRydW5jYXRlZBgEIAEoCBInCgZob2xkZXIYBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyIsQCCghMb2dFbnRyeRImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgCIAEoCRIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgDEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghjdXJyZW5jeRgNIAEoDRIVCg1jdXJyZW5jeV9uYW1lGA4gASgJEgoKAmlkGA8gASgDIlEKDUNoYXJhY3RlckxvZ3MSKwoHZW50cmllcxgBIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuTG9nRW50cnkSEwoLbmV4dF9jdXJzb3IYAiABKAkiLQoLUmVzdG9yZUl0ZW0SDgoGc2VyaWFsGAEgASgJEg4KBmFtb3VudBgCIAEoBSJyCg5SZXN0b3JlUmVxdWVzdBIUCgxjaGFyYWN0ZXJfaWQYASABKAMSLAoFaXRlbXMYAiADKAsyHS53YXRoZW5hLmFkbWluLnYxLlJlc3RvcmVJdGVtEgwKBHplbnkYAyABKAMSDgoGcmVhc29uGAQgASgJIpsBCgxSZXN0b3JlZEl0ZW0SDgoGc2VyaWFsGAEgASgJEhIKCm5ld19zZXJpYWwYAiABKAkSDAoEY29weRgDIAEoCBIPCgdpdGVtX2lkGAQgASgNEhEKCWl0ZW1fbmFtZRgFIAEoCRIOCgZhbW91bnQYBiABKAUSJQoEZnJvbRgHIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXIiXQoNUmVzdG9yZVJlc3VsdBIPCgdtYWlsX2lkGAEgASgDEi0KBWl0ZW1zGAIgAygLMh4ud2F0aGVuYS5hZG1pbi52MS5SZXN0b3JlZEl0ZW0SDAoEemVueRgDIAEoAyI6CgVFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEgoKcmVhdXRoX3VybBgDIAEoCUJEWkJnaXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw", [file_google_protobuf_struct, file_google_protobuf_timestamp]);
+  fileDesc("Chx3YXRoZW5hL2FkbWluL3YxL2FkbWluLnByb3RvEhB3YXRoZW5hLmFkbWluLnYxIqEBCgJNZRIPCgdhY2NvdW50GAEgASgJEgwKBHJvbGUYAiABKAkSEwoLcGVybWlzc2lvbnMYAyADKAkSEgoKdHdvX2ZhY3RvchgEIAEoCBIVCg1hc3NpZ25lZF9yb2xlGAUgASgJEhQKDHJlY2VudF9sb2dpbhgGIAEoCBISCgpjc3JmX3Rva2VuGAcgASgJEhIKCnJlYXV0aF91cmwYCCABKAkiKQoEUm9sZRIMCgRuYW1lGAEgASgJEhMKC3Blcm1pc3Npb25zGAIgAygJIqkBCgtTdGFmZk1lbWJlchISCgphY2NvdW50X2lkGAEgASgDEg8KB2FjY291bnQYAiABKAkSDAoEcm9sZRgDIAEoCRITCgtmcm9tX2NvbmZpZxgEIAEoCBIQCghnaXZlbl9ieRgFIAEoCRIsCghnaXZlbl9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKdHdvX2ZhY3RvchgHIAEoCCJiCglTdGFmZkxpc3QSLgoHbWVtYmVycxgBIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuU3RhZmZNZW1iZXISJQoFcm9sZXMYAiADKAsyFi53YXRoZW5hLmFkbWluLnYxLlJvbGUiQAoPR2l2ZVJvbGVSZXF1ZXN0Eg8KB2FjY291bnQYASABKAkSDAoEcm9sZRgCIAEoCRIOCgZyZWFzb24YAyABKAki4QIKCkF1ZGl0RW50cnkSCgoCaWQYASABKAMSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2FjY291bnQYAyABKAkSDAoEcm9sZRgEIAEoCRIOCgZhY3Rpb24YBSABKAkSDgoGc291cmNlGAYgASgJEg4KBnRhcmdldBgHIAEoCRIqCglhcmd1bWVudHMYCCABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0Eg4KBnJlYXNvbhgJIAEoCRIUCgxuZWVkc19yZXZpZXcYCiABKAgSLwoLcmV2aWV3ZWRfYXQYCyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC3Jldmlld2VkX2J5GAwgASgJEg8KB3ZlcmRpY3QYDSABKAkSEwoLcmV2aWV3X25vdGUYDiABKAkSEgoKYWNjb3VudF9pZBgPIAEoAyJSCglBdWRpdFBhZ2USLQoHZW50cmllcxgBIAMoCzIcLndhdGhlbmEuYWRtaW4udjEuQXVkaXRFbnRyeRIWCg5uZXh0X2JlZm9yZV9pZBgCIAEoAyIuCg1SZXZpZXdSZXF1ZXN0Eg8KB3ZlcmRpY3QYASABKAkSDAoEbm90ZRgCIAEoCSItCghQb3NpdGlvbhILCgNtYXAYASABKAkSCQoBeBgCIAEoBRIJCgF5GAMgASgFIuwCCghTYW5jdGlvbhIMCgRraW5kGAEgASgJEg4KBnJlYXNvbhgCIAEoCRIuCgpzdGFydGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbmRzX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglpc3N1ZWRfYnkYBSABKAkSCgoCaWQYBiABKAMSFAoMY2hhcmFjdGVyX2lkGAcgASgDEhEKCWNoYXJhY3RlchgIIAEoCRISCgphY2NvdW50X2lkGAkgASgDEg8KB2FjY291bnQYCiABKAkSEQoJcGVybWFuZW50GAsgASgIEi0KCWxpZnRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEQoJbGlmdGVkX2J5GA0gASgJEhMKC2xpZnRfcmVhc29uGA4gASgJEg4KBmFjdGl2ZRgPIAEoCCJqCg9TYW5jdGlvblJlcXVlc3QSDAoEa2luZBgBIAEoCRIUCgxjaGFyYWN0ZXJfaWQYAiABKAMSEgoKYWNjb3VudF9pZBgDIAEoAxIPCgdtaW51dGVzGAQgASgFEg4KBnJlYXNvbhgFIAEoCSJVCgxTYW5jdGlvbkxpc3QSLQoJc2FuY3Rpb25zGAEgAygLMhoud2F0aGVuYS5hZG1pbi52MS5TYW5jdGlvbhIWCg5uZXh0X2JlZm9yZV9pZBgCIAEoAyKEAwoNUmVwb3J0U3VtbWFyeRIKCgJpZBgBIAEoAxIuCgpjcmVhdGVkX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIQCghyZXBvcnRlchgDIAEoCRITCgtyZXBvcnRlcl9pZBgEIAEoAxIOCgZ0YXJnZXQYBSABKAkSEQoJdGFyZ2V0X2lkGAYgASgDEgwKBGtpbmQYByABKAkSDgoGcmVhc29uGAggASgJEgsKA21hcBgJIAEoCRIOCgZzdGF0dXMYCiABKAkSLQoJY2xvc2VkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgdvdXRjb21lGAwgASgJEgwKBG5vdGUYDSABKAkSEQoJY2xvc2VkX2J5GA4gASgJEhMKC3NhbmN0aW9uX2lkGA8gASgDEhAKCGd1aWxkX2lkGBAgASgDEg8KB2xpbmVfaWQYESABKAkSGQoRdGFyZ2V0X2FjY291bnRfaWQYEiABKAMiVgoKUmVwb3J0UGFnZRIwCgdyZXBvcnRzGAEgAygLMh8ud2F0aGVuYS5hZG1pbi52MS5SZXBvcnRTdW1tYXJ5EhYKDm5leHRfYmVmb3JlX2lkGAIgASgDIrsBCghDaGF0TGluZRIKCgJpZBgBIAEoCRImCgJhdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgDIAEoCRIUCgxjaGFyYWN0ZXJfaWQYBCABKAMSDAoEbmFtZRgFIAEoCRIOCgZ0YXJnZXQYBiABKAkSCwoDbWFwGAcgASgJEgwKBHRleHQYCCABKAkSEAoIcmVwb3J0ZWQYCSABKAgSDAoEc2VlbhgKIAEoCCLfAQoMUmVwb3J0RGV0YWlsEi8KBnJlcG9ydBgBIAEoCzIfLndhdGhlbmEuYWRtaW4udjEuUmVwb3J0U3VtbWFyeRIpCgVsaW5lcxgCIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuQ2hhdExpbmUSMAoHZWFybGllchgDIAMoCzIfLndhdGhlbmEuYWRtaW4udjEuUmVwb3J0U3VtbWFyeRItCglzYW5jdGlvbnMYBCADKAsyGi53YXRoZW5hLmFkbWluLnYxLlNhbmN0aW9uEhIKCmVtYmxlbV9wbmcYBSABKAwiSAoSQ2xvc2VSZXBvcnRSZXF1ZXN0Eg8KB291dGNvbWUYASABKAkSDAoEbm90ZRgCIAEoCRITCgtzYW5jdGlvbl9pZBgDIAEoAyLfAQoQQ2hhcmFjdGVyU3VtbWFyeRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEgsKA2pvYhgDIAEoBRIQCghqb2JfbmFtZRgEIAEoCRISCgpiYXNlX2xldmVsGAUgASgFEhEKCWpvYl9sZXZlbBgGIAEoBRIOCgZvbmxpbmUYByABKAgSLAoIcG9zaXRpb24YCCABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEi0KCXNhbmN0aW9ucxgJIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuU2FuY3Rpb24iVQoLTG9naW5SZWNvcmQSCgoCaXAYASABKAkSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhIKCnVzZXJfYWdlbnQYAyABKAkiagoFT3duZXISDAoEa2luZBgBIAEoCRIKCgJpZBgCIAEoAxIPCgdzdG9yYWdlGAMgASgNEgwKBG5hbWUYBCABKAkSFAoMY2hhcmFjdGVyX2lkGAUgASgDEhIKCmFjY291bnRfaWQYBiABKAMipQIKDkFjY291bnRTdW1tYXJ5EhIKCmFjY291bnRfaWQYASABKAMSDwoHYWNjb3VudBgCIAEoCRIuCgpjcmVhdGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpsYXN0X2xvZ2luGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI2CgpjaGFyYWN0ZXJzGAUgAygLMiIud2F0aGVuYS5hZG1pbi52MS5DaGFyYWN0ZXJTdW1tYXJ5Ei0KBmxvZ2lucxgGIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuTG9naW5SZWNvcmQSJwoDYmFuGAcgASgLMhoud2F0aGVuYS5hZG1pbi52MS5TYW5jdGlvbiKAAQoMUGxheWVyU2VhcmNoEjIKCGFjY291bnRzGAEgAygLMiAud2F0aGVuYS5hZG1pbi52MS5BY2NvdW50U3VtbWFyeRITCgtuZXh0X2N1cnNvchgCIAEoCRInCgZob2xkZXIYAyABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyIoQCCgRJdGVtEg4KBnNlcmlhbBgBIAEoCRIPCgdpdGVtX2lkGAIgASgNEgwKBG5hbWUYAyABKAkSDgoGYW1vdW50GAQgASgFEgwKBHNsb3QYBSABKAUSDgoGcmVmaW5lGAYgASgFEg0KBWNhcmRzGAcgAygNEg0KBWVxdWlwGAggASgNEhIKCmlkZW50aWZpZWQYCSABKAgSDQoFYm91bmQYCiABKAUSMAoFcm9sbHMYCyADKAsyIS53YXRoZW5hLmFkbWluLnYxLkl0ZW0uUm9sbHNFbnRyeRosCgpSb2xsc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAEiXQoHU3RvcmFnZRIMCgRraW5kGAEgASgJEg8KB3N0b3JhZ2UYAiABKA0SDAoEbmFtZRgDIAEoCRIlCgVpdGVtcxgEIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbSKxAQoETWFpbBIKCgJpZBgBIAEoAxIMCgRmcm9tGAIgASgJEg0KBXRpdGxlGAMgASgJEisKB3NlbnRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgwKBHplbnkYBSABKAMSDAoEcmVhZBgGIAEoCBIQCghyZXR1cm5lZBgHIAEoCBIlCgVpdGVtcxgIIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbSJFCghDdXJyZW5jeRIKCgJpZBgBIAEoDRIMCgRuYW1lGAIgASgJEg4KBmFtb3VudBgDIAEoAxIPCgdhY2NvdW50GAQgASgIIlUKBVN0YXRzEgsKA3N0chgBIAEoBRILCgNhZ2kYAiABKAUSCwoDdml0GAMgASgFEgsKA2ludBgEIAEoBRILCgNkZXgYBSABKAUSCwoDbHVrGAYgASgFIoUGCg9DaGFyYWN0ZXJEZXRhaWwSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRISCgphY2NvdW50X2lkGAMgASgDEg8KB2FjY291bnQYBCABKAkSCwoDam9iGAUgASgFEhAKCGpvYl9uYW1lGAYgASgJEgwKBG1hbGUYByABKAgSEgoKYmFzZV9sZXZlbBgIIAEoBRIRCglqb2JfbGV2ZWwYCSABKAUSEAoIYmFzZV9leHAYCiABKAMSDwoHam9iX2V4cBgLIAEoAxImCgVzdGF0cxgMIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuU3RhdHMSFQoNc3RhdHVzX3BvaW50cxgNIAEoBRIUCgxza2lsbF9wb2ludHMYDiABKAUSCgoCaHAYDyABKAMSCgoCc3AYECABKAMSDAoEemVueRgRIAEoAxIuCgpjdXJyZW5jaWVzGBIgAygLMhoud2F0aGVuYS5hZG1pbi52MS5DdXJyZW5jeRIOCgZvbmxpbmUYEyABKAgSLAoIcG9zaXRpb24YFCABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEi4KCnNhdmVfcG9pbnQYFSABKAsyGi53YXRoZW5hLmFkbWluLnYxLlBvc2l0aW9uEg0KBXBhcnR5GBYgASgJEg0KBWd1aWxkGBcgASgJEikKCWludmVudG9yeRgYIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuSXRlbRIrCghzdG9yYWdlcxgZIAMoCzIZLndhdGhlbmEuYWRtaW4udjEuU3RvcmFnZRIlCgVtYWlscxgaIAMoCzIWLndhdGhlbmEuYWRtaW4udjEuTWFpbBItCglzYW5jdGlvbnMYGyADKAsyGi53YXRoZW5hLmFkbWluLnYxLlNhbmN0aW9uEi4KCmNyZWF0ZWRfYXQYHCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEicKA2JhbhgdIAEoCzIaLndhdGhlbmEuYWRtaW4udjEuU2FuY3Rpb24inwIKCEl0ZW1Nb3ZlEgoKAmlkGAEgASgDEiYKAmF0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgFEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghyZWxhdGlvbhgNIAEoCSKVAQoLSXRlbUhpc3RvcnkSDgoGc2VyaWFsGAEgASgJEikKBW1vdmVzGAIgAygLMhoud2F0aGVuYS5hZG1pbi52MS5JdGVtTW92ZRIPCgdzZXJpYWxzGAMgAygJEhEKCXRydW5jYXRlZBgEIAEoCBInCgZob2xkZXIYBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyIsQCCghMb2dFbnRyeRImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgCIAEoCRIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgDEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghjdXJyZW5jeRgNIAEoDRIVCg1jdXJyZW5jeV9uYW1lGA4gASgJEgoKAmlkGA8gASgDIlEKDUNoYXJhY3RlckxvZ3MSKwoHZW50cmllcxgBIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuTG9nRW50cnkSEwoLbmV4dF9jdXJzb3IYAiABKAkiLQoLUmVzdG9yZUl0ZW0SDgoGc2VyaWFsGAEgASgJEg4KBmFtb3VudBgCIAEoBSJyCg5SZXN0b3JlUmVxdWVzdBIUCgxjaGFyYWN0ZXJfaWQYASABKAMSLAoFaXRlbXMYAiADKAsyHS53YXRoZW5hLmFkbWluLnYxLlJlc3RvcmVJdGVtEgwKBHplbnkYAyABKAMSDgoGcmVhc29uGAQgASgJIpsBCgxSZXN0b3JlZEl0ZW0SDgoGc2VyaWFsGAEgASgJEhIKCm5ld19zZXJpYWwYAiABKAkSDAoEY29weRgDIAEoCBIPCgdpdGVtX2lkGAQgASgNEhEKCWl0ZW1fbmFtZRgFIAEoCRIOCgZhbW91bnQYBiABKAUSJQoEZnJvbRgHIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXIiXQoNUmVzdG9yZVJlc3VsdBIPCgdtYWlsX2lkGAEgASgDEi0KBWl0ZW1zGAIgAygLMh4ud2F0aGVuYS5hZG1pbi52MS5SZXN0b3JlZEl0ZW0SDAoEemVueRgDIAEoAyI6CgVFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEgoKcmVhdXRoX3VybBgDIAEoCUJEWkJnaXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw", [file_google_protobuf_struct, file_google_protobuf_timestamp]);
 
 /**
  * Me answers GET /me: who the session is and what it may do.
@@ -419,13 +419,15 @@ export const PositionSchema: GenMessage<Position> = /*@__PURE__*/
   messageDesc(file_wathena_admin_v1_admin, 8);
 
 /**
- * Sanction is a mute or a jail in effect.
+ * Sanction is a mute, a jail, a kick or a ban (decision 0030). The
+ * search and the character details show the ones in effect. GET
+ * /sanctions lists ended and lifted ones too.
  *
  * @generated from message wathena.admin.v1.Sanction
  */
 export type Sanction = Message<"wathena.admin.v1.Sanction"> & {
   /**
-   * kind is mute or jail.
+   * kind is mute, jail, kick or ban.
    *
    * @generated from field: string kind = 1;
    */
@@ -442,14 +444,85 @@ export type Sanction = Message<"wathena.admin.v1.Sanction"> & {
   startedAt?: Timestamp | undefined;
 
   /**
+   * ends_at is when it ends. It equals started_at for a kick, and is
+   * unset for a permanent ban.
+   *
    * @generated from field: google.protobuf.Timestamp ends_at = 4;
    */
   endsAt?: Timestamp | undefined;
 
   /**
+   * issued_by is the staff account, or the mod, that gave it.
+   *
    * @generated from field: string issued_by = 5;
    */
   issuedBy: string;
+
+  /**
+   * id is the sanction's ID, for DELETE /sanctions/{id}, or 0 for a
+   * sanction a mod gave that is not saved yet.
+   *
+   * @generated from field: int64 id = 6;
+   */
+  id: bigint;
+
+  /**
+   * character_id and character are the character of a mute, a jail or
+   * a kick. A ban has none.
+   *
+   * @generated from field: int64 character_id = 7;
+   */
+  characterId: bigint;
+
+  /**
+   * @generated from field: string character = 8;
+   */
+  character: string;
+
+  /**
+   * account_id and account are the account: the banned one, or the
+   * character's.
+   *
+   * @generated from field: int64 account_id = 9;
+   */
+  accountId: bigint;
+
+  /**
+   * @generated from field: string account = 10;
+   */
+  account: string;
+
+  /**
+   * permanent is set for a ban without an end.
+   *
+   * @generated from field: bool permanent = 11;
+   */
+  permanent: boolean;
+
+  /**
+   * lifted_at, lifted_by and lift_reason are set when staff lifted it
+   * early.
+   *
+   * @generated from field: google.protobuf.Timestamp lifted_at = 12;
+   */
+  liftedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string lifted_by = 13;
+   */
+  liftedBy: string;
+
+  /**
+   * @generated from field: string lift_reason = 14;
+   */
+  liftReason: string;
+
+  /**
+   * active is set while it is in effect.
+   *
+   * @generated from field: bool active = 15;
+   */
+  active: boolean;
 };
 
 /**
@@ -458,6 +531,400 @@ export type Sanction = Message<"wathena.admin.v1.Sanction"> & {
  */
 export const SanctionSchema: GenMessage<Sanction> = /*@__PURE__*/
   messageDesc(file_wathena_admin_v1_admin, 9);
+
+/**
+ * SanctionRequest is the body of POST /sanctions.
+ *
+ * @generated from message wathena.admin.v1.SanctionRequest
+ */
+export type SanctionRequest = Message<"wathena.admin.v1.SanctionRequest"> & {
+  /**
+   * kind is mute, jail, kick or ban.
+   *
+   * @generated from field: string kind = 1;
+   */
+  kind: string;
+
+  /**
+   * character_id is the character of a mute, a jail or a kick.
+   *
+   * @generated from field: int64 character_id = 2;
+   */
+  characterId: bigint;
+
+  /**
+   * account_id is the account of a ban.
+   *
+   * @generated from field: int64 account_id = 3;
+   */
+  accountId: bigint;
+
+  /**
+   * minutes is how long a mute, a jail or a ban lasts. A kick takes 0.
+   * A ban of 0 minutes is permanent and needs
+   * moderation.ban_permanent.
+   *
+   * @generated from field: int32 minutes = 4;
+   */
+  minutes: number;
+
+  /**
+   * reason is required, at most 255 characters. The player sees it.
+   *
+   * @generated from field: string reason = 5;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.SanctionRequest.
+ * Use `create(SanctionRequestSchema)` to create a new message.
+ */
+export const SanctionRequestSchema: GenMessage<SanctionRequest> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 10);
+
+/**
+ * SanctionList answers GET /sanctions, newest first.
+ *
+ * @generated from message wathena.admin.v1.SanctionList
+ */
+export type SanctionList = Message<"wathena.admin.v1.SanctionList"> & {
+  /**
+   * @generated from field: repeated wathena.admin.v1.Sanction sanctions = 1;
+   */
+  sanctions: Sanction[];
+
+  /**
+   * next_before_id is the before_id of the next page, or 0 at the end.
+   *
+   * @generated from field: int64 next_before_id = 2;
+   */
+  nextBeforeId: bigint;
+};
+
+/**
+ * Describes the message wathena.admin.v1.SanctionList.
+ * Use `create(SanctionListSchema)` to create a new message.
+ */
+export const SanctionListSchema: GenMessage<SanctionList> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 11);
+
+/**
+ * ReportSummary is one report in the queue.
+ *
+ * @generated from message wathena.admin.v1.ReportSummary
+ */
+export type ReportSummary = Message<"wathena.admin.v1.ReportSummary"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 2;
+   */
+  createdAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string reporter = 3;
+   */
+  reporter: string;
+
+  /**
+   * @generated from field: int64 reporter_id = 4;
+   */
+  reporterId: bigint;
+
+  /**
+   * target is the reported character's name, or the guild's name.
+   *
+   * @generated from field: string target = 5;
+   */
+  target: string;
+
+  /**
+   * target_id is the reported character's ID, or 0.
+   *
+   * @generated from field: int64 target_id = 6;
+   */
+  targetId: bigint;
+
+  /**
+   * kind is player, line, guild_name or guild_emblem.
+   *
+   * @generated from field: string kind = 7;
+   */
+  kind: string;
+
+  /**
+   * reason is the reporter's own words.
+   *
+   * @generated from field: string reason = 8;
+   */
+  reason: string;
+
+  /**
+   * @generated from field: string map = 9;
+   */
+  map: string;
+
+  /**
+   * status is open or closed.
+   *
+   * @generated from field: string status = 10;
+   */
+  status: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp closed_at = 11;
+   */
+  closedAt?: Timestamp | undefined;
+
+  /**
+   * outcome is no_action, warned or sanctioned, once closed.
+   *
+   * @generated from field: string outcome = 12;
+   */
+  outcome: string;
+
+  /**
+   * @generated from field: string note = 13;
+   */
+  note: string;
+
+  /**
+   * closed_by is the staff account that closed it.
+   *
+   * @generated from field: string closed_by = 14;
+   */
+  closedBy: string;
+
+  /**
+   * sanction_id is the sanction of a sanctioned report, or 0.
+   *
+   * @generated from field: int64 sanction_id = 15;
+   */
+  sanctionId: bigint;
+
+  /**
+   * guild_id is the reported guild, or 0.
+   *
+   * @generated from field: int64 guild_id = 16;
+   */
+  guildId: bigint;
+
+  /**
+   * line_id is the reported line's ID, or empty.
+   *
+   * @generated from field: string line_id = 17;
+   */
+  lineId: string;
+
+  /**
+   * target_account_id is the reported character's account, or 0.
+   *
+   * @generated from field: int64 target_account_id = 18;
+   */
+  targetAccountId: bigint;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ReportSummary.
+ * Use `create(ReportSummarySchema)` to create a new message.
+ */
+export const ReportSummarySchema: GenMessage<ReportSummary> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 12);
+
+/**
+ * ReportPage answers GET /reports: reports newest first.
+ *
+ * @generated from message wathena.admin.v1.ReportPage
+ */
+export type ReportPage = Message<"wathena.admin.v1.ReportPage"> & {
+  /**
+   * @generated from field: repeated wathena.admin.v1.ReportSummary reports = 1;
+   */
+  reports: ReportSummary[];
+
+  /**
+   * next_before_id is the before_id of the next page, or 0 at the end.
+   *
+   * @generated from field: int64 next_before_id = 2;
+   */
+  nextBeforeId: bigint;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ReportPage.
+ * Use `create(ReportPageSchema)` to create a new message.
+ */
+export const ReportPageSchema: GenMessage<ReportPage> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 13);
+
+/**
+ * ChatLine is one line of the chat log.
+ *
+ * @generated from message wathena.admin.v1.ChatLine
+ */
+export type ChatLine = Message<"wathena.admin.v1.ChatLine"> & {
+  /**
+   * id is the line's UUID.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp at = 2;
+   */
+  at?: Timestamp | undefined;
+
+  /**
+   * kind is local, whisper, channel, party or guild.
+   *
+   * @generated from field: string kind = 3;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: int64 character_id = 4;
+   */
+  characterId: bigint;
+
+  /**
+   * name is who said it.
+   *
+   * @generated from field: string name = 5;
+   */
+  name: string;
+
+  /**
+   * target is a whisper's target, or a channel's, party's or guild's
+   * name.
+   *
+   * @generated from field: string target = 6;
+   */
+  target: string;
+
+  /**
+   * @generated from field: string map = 7;
+   */
+  map: string;
+
+  /**
+   * @generated from field: string text = 8;
+   */
+  text: string;
+
+  /**
+   * reported is set for the reported line.
+   *
+   * @generated from field: bool reported = 9;
+   */
+  reported: boolean;
+
+  /**
+   * seen is set for the lines the reporter saw, which the report keeps.
+   * The others are the target's own lines around the report.
+   *
+   * @generated from field: bool seen = 10;
+   */
+  seen: boolean;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ChatLine.
+ * Use `create(ChatLineSchema)` to create a new message.
+ */
+export const ChatLineSchema: GenMessage<ChatLine> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 14);
+
+/**
+ * ReportDetail answers GET /reports/{id}.
+ *
+ * @generated from message wathena.admin.v1.ReportDetail
+ */
+export type ReportDetail = Message<"wathena.admin.v1.ReportDetail"> & {
+  /**
+   * @generated from field: wathena.admin.v1.ReportSummary report = 1;
+   */
+  report?: ReportSummary | undefined;
+
+  /**
+   * lines are the lines the reporter saw and the target's lines around
+   * the report, oldest first. Lines older than the chat log keeps are
+   * gone once the report is closed.
+   *
+   * @generated from field: repeated wathena.admin.v1.ChatLine lines = 2;
+   */
+  lines: ChatLine[];
+
+  /**
+   * earlier are the target's earlier reports, newest first.
+   *
+   * @generated from field: repeated wathena.admin.v1.ReportSummary earlier = 3;
+   */
+  earlier: ReportSummary[];
+
+  /**
+   * sanctions are the target's sanctions, and its account's, newest
+   * first.
+   *
+   * @generated from field: repeated wathena.admin.v1.Sanction sanctions = 4;
+   */
+  sanctions: Sanction[];
+
+  /**
+   * emblem_png is the reported emblem as it was, for a guild_emblem
+   * report.
+   *
+   * @generated from field: bytes emblem_png = 5;
+   */
+  emblemPng: Uint8Array;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ReportDetail.
+ * Use `create(ReportDetailSchema)` to create a new message.
+ */
+export const ReportDetailSchema: GenMessage<ReportDetail> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 15);
+
+/**
+ * CloseReportRequest is the body of POST /reports/{id}/close.
+ *
+ * @generated from message wathena.admin.v1.CloseReportRequest
+ */
+export type CloseReportRequest = Message<"wathena.admin.v1.CloseReportRequest"> & {
+  /**
+   * outcome is no_action, warned or sanctioned.
+   *
+   * @generated from field: string outcome = 1;
+   */
+  outcome: string;
+
+  /**
+   * note is optional, at most 255 characters.
+   *
+   * @generated from field: string note = 2;
+   */
+  note: string;
+
+  /**
+   * sanction_id links the sanction of a sanctioned report. It is
+   * required for sanctioned, and not allowed otherwise.
+   *
+   * @generated from field: int64 sanction_id = 3;
+   */
+  sanctionId: bigint;
+};
+
+/**
+ * Describes the message wathena.admin.v1.CloseReportRequest.
+ * Use `create(CloseReportRequestSchema)` to create a new message.
+ */
+export const CloseReportRequestSchema: GenMessage<CloseReportRequest> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 16);
 
 /**
  * CharacterSummary is a character in the search results.
@@ -519,7 +986,7 @@ export type CharacterSummary = Message<"wathena.admin.v1.CharacterSummary"> & {
  * Use `create(CharacterSummarySchema)` to create a new message.
  */
 export const CharacterSummarySchema: GenMessage<CharacterSummary> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 10);
+  messageDesc(file_wathena_admin_v1_admin, 17);
 
 /**
  * LoginRecord is one login of an account, for an IP search.
@@ -548,7 +1015,7 @@ export type LoginRecord = Message<"wathena.admin.v1.LoginRecord"> & {
  * Use `create(LoginRecordSchema)` to create a new message.
  */
 export const LoginRecordSchema: GenMessage<LoginRecord> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 11);
+  messageDesc(file_wathena_admin_v1_admin, 18);
 
 /**
  * Owner is where an item or zeny was or went: a holder or an end of the
@@ -607,7 +1074,7 @@ export type Owner = Message<"wathena.admin.v1.Owner"> & {
  * Use `create(OwnerSchema)` to create a new message.
  */
 export const OwnerSchema: GenMessage<Owner> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 12);
+  messageDesc(file_wathena_admin_v1_admin, 19);
 
 /**
  * AccountSummary is one account in the search results.
@@ -649,6 +1116,13 @@ export type AccountSummary = Message<"wathena.admin.v1.AccountSummary"> & {
    * @generated from field: repeated wathena.admin.v1.LoginRecord logins = 6;
    */
   logins: LoginRecord[];
+
+  /**
+   * ban is the account's ban in effect, or unset.
+   *
+   * @generated from field: wathena.admin.v1.Sanction ban = 7;
+   */
+  ban?: Sanction | undefined;
 };
 
 /**
@@ -656,7 +1130,7 @@ export type AccountSummary = Message<"wathena.admin.v1.AccountSummary"> & {
  * Use `create(AccountSummarySchema)` to create a new message.
  */
 export const AccountSummarySchema: GenMessage<AccountSummary> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 13);
+  messageDesc(file_wathena_admin_v1_admin, 20);
 
 /**
  * PlayerSearch answers GET /players.
@@ -689,7 +1163,7 @@ export type PlayerSearch = Message<"wathena.admin.v1.PlayerSearch"> & {
  * Use `create(PlayerSearchSchema)` to create a new message.
  */
 export const PlayerSearchSchema: GenMessage<PlayerSearch> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 14);
+  messageDesc(file_wathena_admin_v1_admin, 21);
 
 /**
  * Item is one stack or instance of an item.
@@ -768,7 +1242,7 @@ export type Item = Message<"wathena.admin.v1.Item"> & {
  * Use `create(ItemSchema)` to create a new message.
  */
 export const ItemSchema: GenMessage<Item> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 15);
+  messageDesc(file_wathena_admin_v1_admin, 22);
 
 /**
  * Storage is a storage or a cart of a character.
@@ -809,7 +1283,7 @@ export type Storage = Message<"wathena.admin.v1.Storage"> & {
  * Use `create(StorageSchema)` to create a new message.
  */
 export const StorageSchema: GenMessage<Storage> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 16);
+  messageDesc(file_wathena_admin_v1_admin, 23);
 
 /**
  * Mail is a mail in a character's mailbox.
@@ -863,7 +1337,7 @@ export type Mail = Message<"wathena.admin.v1.Mail"> & {
  * Use `create(MailSchema)` to create a new message.
  */
 export const MailSchema: GenMessage<Mail> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 17);
+  messageDesc(file_wathena_admin_v1_admin, 24);
 
 /**
  * Currency is an amount of a currency of data/currencies.yml.
@@ -899,7 +1373,7 @@ export type Currency = Message<"wathena.admin.v1.Currency"> & {
  * Use `create(CurrencySchema)` to create a new message.
  */
 export const CurrencySchema: GenMessage<Currency> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 18);
+  messageDesc(file_wathena_admin_v1_admin, 25);
 
 /**
  * Stats are the raised stats.
@@ -943,7 +1417,7 @@ export type Stats = Message<"wathena.admin.v1.Stats"> & {
  * Use `create(StatsSchema)` to create a new message.
  */
 export const StatsSchema: GenMessage<Stats> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 19);
+  messageDesc(file_wathena_admin_v1_admin, 26);
 
 /**
  * CharacterDetail answers GET /characters/{id}. An online character is
@@ -1093,6 +1567,13 @@ export type CharacterDetail = Message<"wathena.admin.v1.CharacterDetail"> & {
    * @generated from field: google.protobuf.Timestamp created_at = 28;
    */
   createdAt?: Timestamp | undefined;
+
+  /**
+   * ban is the account's ban in effect, or unset.
+   *
+   * @generated from field: wathena.admin.v1.Sanction ban = 29;
+   */
+  ban?: Sanction | undefined;
 };
 
 /**
@@ -1100,7 +1581,7 @@ export type CharacterDetail = Message<"wathena.admin.v1.CharacterDetail"> & {
  * Use `create(CharacterDetailSchema)` to create a new message.
  */
 export const CharacterDetailSchema: GenMessage<CharacterDetail> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 20);
+  messageDesc(file_wathena_admin_v1_admin, 27);
 
 /**
  * ItemMove is one line of the item log.
@@ -1187,7 +1668,7 @@ export type ItemMove = Message<"wathena.admin.v1.ItemMove"> & {
  * Use `create(ItemMoveSchema)` to create a new message.
  */
 export const ItemMoveSchema: GenMessage<ItemMove> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 21);
+  messageDesc(file_wathena_admin_v1_admin, 28);
 
 /**
  * ItemHistory answers GET /items/{serial}/history: every move of the
@@ -1234,7 +1715,7 @@ export type ItemHistory = Message<"wathena.admin.v1.ItemHistory"> & {
  * Use `create(ItemHistorySchema)` to create a new message.
  */
 export const ItemHistorySchema: GenMessage<ItemHistory> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 22);
+  messageDesc(file_wathena_admin_v1_admin, 29);
 
 /**
  * LogEntry is one line of a character's item or zeny log.
@@ -1327,7 +1808,7 @@ export type LogEntry = Message<"wathena.admin.v1.LogEntry"> & {
  * Use `create(LogEntrySchema)` to create a new message.
  */
 export const LogEntrySchema: GenMessage<LogEntry> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 23);
+  messageDesc(file_wathena_admin_v1_admin, 30);
 
 /**
  * CharacterLogs answers GET /characters/{id}/logs, newest first.
@@ -1353,7 +1834,7 @@ export type CharacterLogs = Message<"wathena.admin.v1.CharacterLogs"> & {
  * Use `create(CharacterLogsSchema)` to create a new message.
  */
 export const CharacterLogsSchema: GenMessage<CharacterLogs> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 24);
+  messageDesc(file_wathena_admin_v1_admin, 31);
 
 /**
  * RestoreItem is one serial of a restore.
@@ -1382,7 +1863,7 @@ export type RestoreItem = Message<"wathena.admin.v1.RestoreItem"> & {
  * Use `create(RestoreItemSchema)` to create a new message.
  */
 export const RestoreItemSchema: GenMessage<RestoreItem> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 25);
+  messageDesc(file_wathena_admin_v1_admin, 32);
 
 /**
  * RestoreRequest is the body of POST /restore.
@@ -1422,7 +1903,7 @@ export type RestoreRequest = Message<"wathena.admin.v1.RestoreRequest"> & {
  * Use `create(RestoreRequestSchema)` to create a new message.
  */
 export const RestoreRequestSchema: GenMessage<RestoreRequest> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 26);
+  messageDesc(file_wathena_admin_v1_admin, 33);
 
 /**
  * RestoredItem is what a restore did with one serial.
@@ -1477,7 +1958,7 @@ export type RestoredItem = Message<"wathena.admin.v1.RestoredItem"> & {
  * Use `create(RestoredItemSchema)` to create a new message.
  */
 export const RestoredItemSchema: GenMessage<RestoredItem> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 27);
+  messageDesc(file_wathena_admin_v1_admin, 34);
 
 /**
  * RestoreResult answers POST /restore.
@@ -1506,7 +1987,7 @@ export type RestoreResult = Message<"wathena.admin.v1.RestoreResult"> & {
  * Use `create(RestoreResultSchema)` to create a new message.
  */
 export const RestoreResultSchema: GenMessage<RestoreResult> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 28);
+  messageDesc(file_wathena_admin_v1_admin, 35);
 
 /**
  * Error is the body of every answer that is not 2xx.
@@ -1542,5 +2023,5 @@ export type Error = Message<"wathena.admin.v1.Error"> & {
  * Use `create(ErrorSchema)` to create a new message.
  */
 export const ErrorSchema: GenMessage<Error> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 29);
+  messageDesc(file_wathena_admin_v1_admin, 36);
 

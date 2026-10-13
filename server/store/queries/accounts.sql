@@ -132,3 +132,13 @@ SELECT id, slot, name, job, sex, hair, hair_color, base_level, job_level, map
 FROM characters
 WHERE account_id = @account_id
 ORDER BY slot;
+
+-- name: AccountBan :one
+-- AccountBan is the account's ban in effect that ends last, which
+-- refuses logins and game tickets (decision 0030). The account role
+-- reads only these columns of sanctions.
+SELECT reason, ends_at
+FROM sanctions
+WHERE account_id = @account_id AND kind = 'ban' AND lifted_at IS NULL AND ends_at > now()
+ORDER BY ends_at DESC
+LIMIT 1;

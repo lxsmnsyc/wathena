@@ -95,6 +95,9 @@ type Options struct {
 	// Ruleset is waserver's --ruleset, such as e2e.guildrules from
 	// testdata/mods. Empty uses the core renewal ruleset.
 	Ruleset string
+	// Config is more of waserver's config, in YAML, after the test
+	// config, such as a jail map.
+	Config string
 }
 
 // Server is a running waserver.
@@ -265,7 +268,7 @@ func Start(t testing.TB, o Options) *Server {
 	}
 	dir := t.TempDir()
 	config := filepath.Join(dir, "waserver.yml")
-	if err := os.WriteFile(config, []byte(configYAML), 0o600); err != nil {
+	if err := os.WriteFile(config, []byte(configYAML+o.Config), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	addr, debug := freeAddr(t), freeAddr(t)

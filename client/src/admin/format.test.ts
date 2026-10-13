@@ -1,4 +1,5 @@
 import { create } from '@bufbuild/protobuf';
+import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { describe, expect, it } from 'vitest';
 import {
   ItemSchema,
@@ -78,6 +79,11 @@ describe('places, sanctions and storages', () => {
     expect(sanctionText(create(SanctionSchema, { kind: 'mute', reason: 'spam' }))).toBe(
       'mute: spam',
     );
+    expect(
+      sanctionText(create(SanctionSchema, { kind: 'ban', permanent: true, reason: 'bot' })),
+    ).toBe('ban, permanent: bot');
+    const at = timestampFromDate(new Date(0));
+    expect(sanctionText(create(SanctionSchema, { kind: 'kick', endsAt: at }))).toBe('kick');
   });
 
   it('titles each storage', () => {

@@ -38,10 +38,9 @@ import {
   VendingOutcome,
 } from '../gen/wathena/v1/event_pb';
 import { ChannelAction } from '../gen/wathena/v1/command_pb';
-import { DisconnectReason } from '../gen/wathena/v1/session_pb';
 import { accountPage, accountURL, fetchTicket } from '../net/account';
 import gameServerURL from '../net/server';
-import { Connection, disconnectText } from '../net/connection';
+import { Connection, disconnectDelay, disconnectText } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
 import { Bubbles, ChatLog, ChatRate, chatLine, isTyping } from './chat';
 import { type ChatAction, parseChatInput } from './chatCommands';
@@ -561,15 +560,12 @@ if (serverURL === null) {
         return;
       }
       // Back to the character list, which sends a player whose login
-      // ended on to the login page. A used or expired ticket goes at
-      // once. Other endings wait so the message can be read.
+      // ended on to the login page. disconnectDelay gives the time to
+      // read the message.
       const back = accountPage(account, 'characters', location.href);
-      setTimeout(
-        () => {
-          location.assign(back);
-        },
-        reason === DisconnectReason.SESSION_INVALID ? 0 : 3000,
-      );
+      setTimeout(() => {
+        location.assign(back);
+      }, disconnectDelay(reason));
     },
   });
   view.self = connection.welcome.netId;
@@ -1544,8 +1540,8 @@ if (serverURL === null) {
               disband: (name) => {
                 connection.guildDisband(name);
               },
-              report: (guildId) => {
-                connection.reportGuild(guildId, false);
+              report: (guildId, emblem) => {
+                connection.reportGuild(guildId, emblem);
               },
             },
             connection.limits,
@@ -1829,6 +1825,11 @@ if (serverURL === null) {
             }
           });
         }
+        case 'gm':
+          // GM commands go to local chat whatever the tab is.
+          return sendLine(() => {
+            connection.chat(action.text);
+          });
         case 'whisper':
           return sendLine(() => {
             connection.whisper(action.to, action.text);

@@ -17,6 +17,7 @@ import {
   guildAfterResult,
   guildFromInfo,
   guildMemberCount,
+  guildReportTitle,
   guildSkillName,
   isMaster,
   mergeGuildMember,
@@ -273,5 +274,12 @@ describe('guild helpers', () => {
   it('writes the guild line under a name', () => {
     expect(badgeLine({ name: 'Knights', position: 'Officer' })).toBe('Knights [Officer]');
     expect(badgeLine({ name: 'Knights', position: '' })).toBe('Knights');
+  });
+});
+
+describe('guildReportTitle', () => {
+  it('names the guild of a name report and an emblem report', () => {
+    expect(guildReportTitle('Wolves', false)).toBe('Report the guild name Wolves');
+    expect(guildReportTitle('Wolves', true)).toBe('Report the emblem of the guild Wolves');
   });
 });

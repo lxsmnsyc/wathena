@@ -22,6 +22,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Owner is the role of the config's staff.owners. It has every
@@ -50,15 +51,16 @@ var Catalog = []Permission{
 	{Name: "players.read_ip", Step: 2, Allows: "find accounts by the IP addresses of their logins"},
 	{Name: "items.history", Step: 2, Allows: "show every move of an item serial, and a character's item and zeny log"},
 	{Name: "items.restore", Step: 2, Allows: "move items that still exist back to a character, with a reason, marked for review"},
-	{Name: "items.create", Step: 2, Allows: "make a copy of an item that is gone, or zeny, in a restore"},
-	{Name: "moderation.reports", Step: 3, Allows: "work through the report queue and read reported chat"},
-	{Name: "moderation.mute", Step: 3, Allows: "mute and unmute players"},
-	{Name: "moderation.kick", Step: 3, Allows: "kick players"},
-	{Name: "moderation.jail", Step: 3, Allows: "jail and release players"},
-	{Name: "moderation.ban", Step: 3, Allows: "ban and unban accounts"},
-	{Name: "commands.warp", Step: 3, Allows: "@warp, @jumpto and @recall"},
+	{Name: "items.create", Step: 2, Allows: "make a copy of an item that is gone, or zeny, in a restore, and make items with @item"},
+	{Name: "moderation.reports", Step: 3, Allows: "work through the report queue, read reported chat and close reports"},
+	{Name: "moderation.mute", Step: 3, Allows: "mute players and lift mutes, from the admin screens and with @mute"},
+	{Name: "moderation.kick", Step: 3, Allows: "kick players, from the admin screens and with @kick"},
+	{Name: "moderation.jail", Step: 3, Allows: "jail players and lift jails, from the admin screens and with @jail"},
+	{Name: "moderation.ban", Step: 3, Allows: "ban accounts for a time and lift bans"},
+	{Name: "moderation.ban_permanent", Step: 3, Allows: "ban accounts without an end"},
+	{Name: "commands.warp", Step: 3, Allows: "@warp and @jumpto"},
+	{Name: "commands.recall", Step: 3, Allows: "@recall"},
 	{Name: "commands.hide", Step: 3, Allows: "@hide"},
-	{Name: "commands.item", Step: 3, Allows: "@item, with a reason, marked for review"},
 	{Name: "world.read", Step: 4, Allows: "view zones, player counts and tick times"},
 	{Name: "world.announce", Step: 4, Allows: "announce messages"},
 	{Name: "world.restart", Step: 4, Allows: "plan restarts with a countdown"},
@@ -69,10 +71,13 @@ var Catalog = []Permission{
 
 // DefaultRoles are the roles when the config's staff.roles is not set.
 // Review decision 34 gives players.read to every role, items.history to
-// admin and game_master, and the rest of step 2 to admin alone.
+// admin and game_master, and the rest of step 2 to admin alone. Review
+// decision 35 gives moderation.ban_permanent to admin alone, so
+// game_master lists its moderation permissions.
 var DefaultRoles = map[string][]string{
 	"admin": {"staff.*", "audit.*", "players.*", "items.*", "moderation.*", "commands.*", "world.*", "events.*", "mods.*"},
-	"game_master": {"audit.read", "players.read", "items.history", "moderation.*", "commands.*",
+	"game_master": {"audit.read", "players.read", "items.history",
+		"moderation.reports", "moderation.mute", "moderation.kick", "moderation.jail", "moderation.ban", "commands.*",
 		"world.read", "world.announce", "events.control"},
 	"moderator": {"players.read", "moderation.reports", "moderation.mute", "moderation.kick", "moderation.jail"},
 }
@@ -356,3 +361,16 @@ type AuditRow struct {
 	// NeedsReview marks the row for review. It needs a reason.
 	NeedsReview bool
 }
+
+// BanText is what a banned player sees at login and when the ban kicks
+// it: the end time in UTC, or that it has none, and the reason
+// (decision 0030).
+func BanText(reason string, end time.Time, permanent bool) string {
+	if permanent || end.IsZero() {
+		return "Your account is banned permanently. Reason: " + reason
+	}
+	return "Your account is banned until " + end.UTC().Format("2006-01-02 15:04 MST") + ". Reason: " + reason
+}
+
+// KickText is what a kicked player sees.
+func KickText(reason string) string { return "Staff kicked you from the game. Reason: " + reason }

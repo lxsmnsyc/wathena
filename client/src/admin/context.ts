@@ -13,7 +13,10 @@ export type View =
   | { kind: 'character'; id: bigint }
   /** characterId is the character the history was opened from, or 0. */
   | { kind: 'item'; serial: string; characterId: bigint }
-  | { kind: 'restore'; characterId: bigint; serials: readonly string[] };
+  | { kind: 'restore'; characterId: bigint; serials: readonly string[] }
+  | { kind: 'reports' }
+  | { kind: 'report'; id: bigint }
+  | { kind: 'bans' };
 
 export interface Context {
   readonly api: AdminAPI;
@@ -32,7 +35,7 @@ export interface Context {
 
 /** A tab of the navigation. */
 export interface Tab {
-  kind: 'staff' | 'audit' | 'reviews' | 'players' | 'item' | 'restore';
+  kind: 'staff' | 'audit' | 'reviews' | 'players' | 'item' | 'restore' | 'reports' | 'bans';
   label: string;
   /** The permission that shows the tab. */
   permission: string;
@@ -45,6 +48,8 @@ export const TABS: readonly Tab[] = [
   { kind: 'players', label: 'Players', permission: 'players.read' },
   { kind: 'item', label: 'Item history', permission: 'items.history' },
   { kind: 'restore', label: 'Restore', permission: 'items.restore' },
+  { kind: 'reports', label: 'Reports', permission: 'moderation.reports' },
+  { kind: 'bans', label: 'Bans', permission: 'moderation.ban' },
 ];
 
 /** The tabs a role's permissions show, in order. */

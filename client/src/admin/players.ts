@@ -1,5 +1,6 @@
 // The player search and the character detail screens. Every serial
-// opens the item history with items.history.
+// opens the item history with items.history. The Sanctions tab gives
+// and lifts sanctions with the moderation permissions.
 
 import type {
   AccountSummary,
@@ -22,6 +23,13 @@ import {
   worn,
 } from './format';
 import { holderCell, serialCell } from './history';
+import {
+  type SanctionTarget,
+  canModerate,
+  characterKindsFor,
+  sanctionForm,
+  sanctionHistory,
+} from './sanctions';
 
 const KIND_LABELS: Record<SearchKind, string> = {
   name: 'Name',
@@ -111,6 +119,9 @@ function accountBlock(ctx: Context, a: AccountSummary): HTMLElement {
   const lines = [`Created ${when(a.createdAt)}`];
   lines.push(a.lastLogin === undefined ? 'No login yet' : `Last login ${when(a.lastLogin)}`);
   block.append(el('p', lines.join('. '), 'admin-who'));
+  if (a.ban !== undefined) {
+    block.append(el('p', `Banned: ${sanctionText(a.ban)}`, 'admin-error'));
+  }
   const { table: t, body } = table(['Character', 'Job', 'Levels', 'Where', 'Sanctions']);
   for (const c of a.characters) {
     const open = button(
@@ -147,7 +158,14 @@ function accountBlock(ctx: Context, a: AccountSummary): HTMLElement {
 }
 
 /** The tabs of the character detail screen. */
-export type DetailTab = 'overview' | 'inventory' | 'equipment' | 'storage' | 'mail' | 'logs';
+export type DetailTab =
+  | 'overview'
+  | 'inventory'
+  | 'equipment'
+  | 'storage'
+  | 'mail'
+  | 'logs'
+  | 'sanctions';
 
 const DETAIL_TABS: readonly { tab: DetailTab; label: string }[] = [
   { tab: 'overview', label: 'Overview' },
@@ -156,13 +174,39 @@ const DETAIL_TABS: readonly { tab: DetailTab; label: string }[] = [
   { tab: 'storage', label: 'Storage' },
   { tab: 'mail', label: 'Mail' },
   { tab: 'logs', label: 'Logs' },
+  { tab: 'sanctions', label: 'Sanctions' },
 ];
 
 /** The tabs of the character detail screen that a role's permissions show. */
 export function detailTabsFor(permissions: readonly string[]): DetailTab[] {
-  return DETAIL_TABS.map((t) => t.tab).filter(
-    (t) => t !== 'logs' || permissions.includes('items.history'),
-  );
+  return DETAIL_TABS.map((t) => t.tab).filter((t) => {
+    switch (t) {
+      case 'logs':
+        return permissions.includes('items.history');
+      case 'sanctions':
+        return canModerate(permissions);
+      default:
+        return true;
+    }
+  });
+}
+
+/** The sanction form's target and kinds for a character and its account. */
+export function sanctionTargetOf(
+  permissions: readonly string[],
+  c: { id: bigint; name: string; accountId: bigint; account: string },
+): SanctionTarget {
+  const kinds = characterKindsFor(permissions);
+  if (permissions.includes('moderation.ban')) {
+    kinds.push('ban');
+  }
+  return {
+    characterId: c.id,
+    character: c.name,
+    accountId: c.accountId,
+    account: c.account,
+    kinds,
+  };
 }
 
 /** Renders a character's details into a section. */
@@ -171,17 +215,27 @@ export function renderCharacter(ctx: Context, section: HTMLElement, id: bigint):
   ctx.run(loadCharacter(ctx, section, id));
 }
 
-async function loadCharacter(ctx: Context, section: HTMLElement, id: bigint): Promise<void> {
+async function loadCharacter(
+  ctx: Context,
+  section: HTMLElement,
+  id: bigint,
+  tab: DetailTab = 'overview',
+): Promise<void> {
   const r = await ctx.api.character(id);
   if (!r.ok) {
     section.replaceChildren(el('h2', `Character ${id.toString()}`));
     ctx.fail(r);
     return;
   }
-  showCharacter(ctx, section, r.value);
+  showCharacter(ctx, section, r.value, tab);
 }
 
-function showCharacter(ctx: Context, section: HTMLElement, c: CharacterDetail): void {
+function showCharacter(
+  ctx: Context,
+  section: HTMLElement,
+  c: CharacterDetail,
+  first: DetailTab,
+): void {
   const where = positionText(c.position);
   section.replaceChildren(el('h2', c.name));
   section.append(
@@ -195,6 +249,9 @@ function showCharacter(ctx: Context, section: HTMLElement, c: CharacterDetail): 
       'admin-facts',
     ),
   );
+  if (c.ban !== undefined) {
+    section.append(el('p', `The account is banned: ${sanctionText(c.ban)}`, 'admin-error'));
+  }
   if (ctx.can('items.restore')) {
     section.append(
       button('Restore to this character', () => {
@@ -213,7 +270,9 @@ function showCharacter(ctx: Context, section: HTMLElement, c: CharacterDetail): 
         b.removeAttribute('aria-current');
       }
     }
-    panel.replaceChildren(detailPanel(ctx, c, tab));
+    panel.replaceChildren(
+      detailPanel(ctx, c, tab, async () => loadCharacter(ctx, section, c.id, 'sanctions')),
+    );
   };
   for (const tab of detailTabsFor(ctx.me.permissions)) {
     const label = DETAIL_TABS.find((t) => t.tab === tab)?.label ?? tab;
@@ -224,10 +283,15 @@ function showCharacter(ctx: Context, section: HTMLElement, c: CharacterDetail): 
     nav.append(b);
   }
   section.append(nav, panel);
-  show('overview');
+  show(buttons.has(first) ? first : 'overview');
 }
 
-function detailPanel(ctx: Context, c: CharacterDetail, tab: DetailTab): HTMLElement {
+function detailPanel(
+  ctx: Context,
+  c: CharacterDetail,
+  tab: DetailTab,
+  reload: () => Promise<void>,
+): HTMLElement {
   switch (tab) {
     case 'overview':
       return overview(c);
@@ -239,9 +303,26 @@ function detailPanel(ctx: Context, c: CharacterDetail, tab: DetailTab): HTMLElem
       return storages(ctx, c);
     case 'mail':
       return mails(ctx, c);
+    case 'sanctions':
+      return sanctions(ctx, c, reload);
     default:
       return logs(ctx, c.id);
   }
+}
+
+/** The sanction form and the sanction history of a character. */
+function sanctions(ctx: Context, c: CharacterDetail, reload: () => Promise<void>): HTMLElement {
+  const div = el('div');
+  const target = sanctionTargetOf(ctx.me.permissions, c);
+  if (target.kinds.length > 0) {
+    div.append(
+      sanctionForm(ctx, target, async () => {
+        await reload();
+      }),
+    );
+  }
+  div.append(sanctionHistory(ctx, c.id));
+  return div;
 }
 
 /** Facts as a two-column table. */
@@ -280,6 +361,7 @@ function overview(c: CharacterDetail): HTMLElement {
       ['Party', c.party],
       ['Guild', c.guild],
       ['Created', when(c.createdAt)],
+      ['Account ban', c.ban === undefined ? 'None' : sanctionText(c.ban)],
     ]),
   );
   div.append(el('h3', 'Currencies'));

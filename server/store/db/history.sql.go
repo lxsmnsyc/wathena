@@ -643,13 +643,14 @@ func (q *Queries) ReadCharacter(ctx context.Context, id int64) (Character, error
 }
 
 const sanctionsOf = `-- name: SanctionsOf :many
-SELECT character_id, kind, reason, started_at, ends_at, issued_by
+SELECT id, character_id::bigint AS character_id, kind, reason, started_at, ends_at, issued_by
 FROM sanctions
 WHERE character_id = ANY($1::bigint[]) AND lifted_at IS NULL AND ends_at > now()
 ORDER BY character_id, started_at, id
 `
 
 type SanctionsOfRow struct {
+	ID          int64
 	CharacterID int64
 	Kind        string
 	Reason      string
@@ -669,6 +670,7 @@ func (q *Queries) SanctionsOf(ctx context.Context, ids []int64) ([]SanctionsOfRo
 	for rows.Next() {
 		var i SanctionsOfRow
 		if err := rows.Scan(
+			&i.ID,
 			&i.CharacterID,
 			&i.Kind,
 			&i.Reason,

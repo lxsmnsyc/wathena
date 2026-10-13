@@ -424,6 +424,10 @@ type Report struct {
 	GuildID       int64
 	EmblemVersion int
 	EmblemPng     []byte
+	Outcome       pgtype.Text
+	Note          string
+	ClosedBy      string
+	SanctionID    pgtype.Int8
 }
 
 type ReportLine struct {
@@ -433,7 +437,7 @@ type ReportLine struct {
 
 type Sanction struct {
 	ID          int64
-	CharacterID int64
+	CharacterID pgtype.Int8
 	Kind        string
 	Reason      string
 	StartedAt   pgtype.Timestamptz
@@ -443,6 +447,9 @@ type Sanction struct {
 	ReturnMap   string
 	ReturnX     int
 	ReturnY     int
+	AccountID   int64
+	LiftedBy    string
+	LiftReason  string
 }
 
 type ShopStock struct {

@@ -12,6 +12,29 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const accountBan = `-- name: AccountBan :one
+SELECT reason, ends_at
+FROM sanctions
+WHERE account_id = $1 AND kind = 'ban' AND lifted_at IS NULL AND ends_at > now()
+ORDER BY ends_at DESC
+LIMIT 1
+`
+
+type AccountBanRow struct {
+	Reason string
+	EndsAt pgtype.Timestamptz
+}
+
+// AccountBan is the account's ban in effect that ends last, which
+// refuses logins and game tickets (decision 0030). The account role
+// reads only these columns of sanctions.
+func (q *Queries) AccountBan(ctx context.Context, accountID int64) (AccountBanRow, error) {
+	row := q.db.QueryRow(ctx, accountBan, accountID)
+	var i AccountBanRow
+	err := row.Scan(&i.Reason, &i.EndsAt)
+	return i, err
+}
+
 const accountCharacters = `-- name: AccountCharacters :many
 SELECT id, slot, name, job, sex, hair, hair_color, base_level, job_level, map
 FROM characters

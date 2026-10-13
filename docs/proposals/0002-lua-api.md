@@ -1141,3 +1141,21 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - A review needs a row marked for review, and a flag needs a note. A review needs no recent login. Reviews write an `audit.review` row.
    - The default `game_master` no longer has `items.restore`, as review decision 34 lists. Configs that list it keep it.
    - With `--dev` and a database, `POST /debug/wathena/restore` runs restores for the duplication tests.
+21. Build review decision 35: the report queue, sanctions with account bans, GM commands and their admin screens. No Lua API changes. Done on 2026-10-13 ([decision 0030](../decisions/0030-moderation-and-gm-commands.md)). Details to review:
+   - The catalog drops `commands.item`, since `@item` needs `items.create`. A config that lists `commands.item` no longer starts. It gains `commands.recall` and `moderation.ban_permanent`.
+   - The default `game_master` lists its five moderation permissions in place of `moderation.*`, so it does not get `moderation.ban_permanent`.
+   - Kicks and bans are rows of `sanctions`, with mutes and jails. A permanent ban ends at `'infinity'`. A kick is a row that ends when it starts, for the history.
+   - `GET /sanctions` needs any permission of the moderation group. `?character=` lists the character's sanctions and its account's bans.
+   - Mutes and jails last 1 to 525,600 minutes, and bans 1 to 5,256,000 minutes or 0 for permanent. Lifting a ban needs `moderation.ban` and a recent login, not `moderation.ban_permanent`.
+   - No one sanctions their own account or lifts its sanctions.
+   - The chat around a report is the lines the reporter saw, and the target's own lines from 5 minutes before to 5 minutes after the report. The detail shows the target's 20 newest earlier reports by name and 20 newest sanctions.
+   - A sanctioned report links a sanction of the reported character or its account. Linking is checked when the report closes.
+   - A ban closes the account's game connections and refuses logins and tickets. It does not end the account's web sessions. The login page shows the ban only after the right password.
+   - Every line that starts with `@` is a command, in any chat tab. A player's `@hello` answers "Unknown command." and is not said. rAthena sends such a line as chat for players without a group level.
+   - Commands run before the mute check, so a muted staff member can use them.
+   - `@kick` reads the longest run of words that names an online player as the name. `@mute` and `@jail` read the words before the minutes. Double quotes work for both.
+   - `@mute`, `@jail` and `@kick` need the game's database, since characters without one have no ID. `@item` takes an ID or an Aegis name, and makes at most 100 of an item that does not stack.
+   - `@hide` hides from other staff too, as rAthena. It ends at logout, where rAthena keeps it. A hidden staff member's local chat does not show to others, where rAthena shows it.
+   - A dead or jailed staff member cannot `@warp` or `@jumpto`, and a dead or jailed player cannot be recalled.
+   - Events a player has not seen when it changes maps now go out before the map change, so a command's answer arrives.
+   - With `--dev`, `POST /debug/wathena/staff` gives a role to an online character, and `POST /debug/wathena/sanction` gives a sanction, for the end-to-end tests.

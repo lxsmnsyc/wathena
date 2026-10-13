@@ -13,6 +13,13 @@ describe('tabsFor', () => {
       'restore',
     ]);
     expect(tabsFor([])).toEqual([]);
+    expect(tabsFor(['moderation.reports', 'moderation.mute']).map((t) => t.kind)).toEqual([
+      'reports',
+    ]);
+    expect(tabsFor(['moderation.reports', 'moderation.ban']).map((t) => t.kind)).toEqual([
+      'reports',
+      'bans',
+    ]);
   });
 });
 

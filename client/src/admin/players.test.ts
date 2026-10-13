@@ -1,7 +1,7 @@
 import { create } from '@bufbuild/protobuf';
 import { describe, expect, it } from 'vitest';
 import { LogEntrySchema } from '../gen/wathena/admin/v1/admin_pb';
-import { detailTabsFor, logAmount, rollsText, searchKindsFor } from './players';
+import { detailTabsFor, logAmount, rollsText, sanctionTargetOf, searchKindsFor } from './players';
 
 describe('permission gating', () => {
   it('offers the IP search only with players.read_ip', () => {
@@ -24,6 +24,31 @@ describe('permission gating', () => {
       'mail',
       'logs',
     ]);
+  });
+
+  it('shows the Sanctions tab with any moderation permission', () => {
+    expect(detailTabsFor(['players.read'])).not.toContain('sanctions');
+    expect(detailTabsFor(['players.read', 'moderation.reports'])).toContain('sanctions');
+  });
+
+  it('offers the sanctions of the role, with a ban of the account', () => {
+    const c = { id: 150000n, name: 'Bob', accountId: 2000001n, account: 'bob' };
+    expect(sanctionTargetOf(['moderation.mute', 'moderation.kick'], c).kinds).toEqual([
+      'mute',
+      'kick',
+    ]);
+    const all = sanctionTargetOf(
+      ['moderation.mute', 'moderation.jail', 'moderation.kick', 'moderation.ban'],
+      c,
+    );
+    expect(all).toEqual({
+      characterId: 150000n,
+      character: 'Bob',
+      accountId: 2000001n,
+      account: 'bob',
+      kinds: ['mute', 'jail', 'kick', 'ban'],
+    });
+    expect(sanctionTargetOf(['moderation.reports'], c).kinds).toEqual([]);
   });
 });
 

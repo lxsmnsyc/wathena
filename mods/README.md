@@ -1337,7 +1337,7 @@ Rules:
 
 - A role counts only when the player logged in with two-factor login: a TOTP code, a recovery code or a passkey, on an account that has TOTP or a passkey on. Otherwise both calls answer as for a player without a role.
 - A role given or taken on the admin screens applies at once.
-- The staff permissions are their own list, not mod permissions: `staff.assign`, `audit.read`, `audit.review`, `players.read`, `items.history`, `items.restore`, `moderation.reports`, `moderation.mute`, `moderation.kick`, `moderation.jail`, `moderation.ban`, `commands.warp`, `commands.hide`, `commands.item`, `world.read`, `world.announce`, `world.restart`, `events.control`, `mods.read` and `mods.disable`. An unknown name raises an error that lists them. `group.*` is a config form and is not a name here.
+- The staff permissions are their own list, not mod permissions: `staff.assign`, `audit.read`, `audit.review`, `players.read`, `players.read_ip`, `items.history`, `items.restore`, `items.create`, `moderation.reports`, `moderation.mute`, `moderation.kick`, `moderation.jail`, `moderation.ban`, `moderation.ban_permanent`, `commands.warp`, `commands.recall`, `commands.hide`, `world.read`, `world.announce`, `world.restart`, `events.control`, `mods.read` and `mods.disable`. An unknown name raises an error that lists them. `group.*` is a config form and is not a name here.
 - In `wactl mod test`, `world:set_staff_role(player, role)` gives a test player a role of the default roles, `admin`, `game_master` or `moderator`, as if it logged in with two-factor login. nil takes it away. It is provisional.
 
 ### Mail, vending, shops and currencies

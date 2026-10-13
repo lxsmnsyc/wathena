@@ -69,6 +69,16 @@ export async function fetchTicket(
       return { kind: 'redirect', url: accountPage(account, 'login', back) };
     case 409:
       return { kind: 'redirect', url: accountPage(account, 'characters', back) };
+    case 403: {
+      // A banned account gets its ban's message (decision 0030).
+      const body: unknown = await res.json().catch(() => null);
+      const message =
+        typeof body === 'object' && body !== null && 'message' in body ? body.message : undefined;
+      if (typeof message === 'string' && message !== '') {
+        return { kind: 'error', message };
+      }
+      return { kind: 'error', message: 'The account service refused a ticket.' };
+    }
     case 429:
       return { kind: 'error', message: 'Too many tries. Wait a moment and reload the page.' };
     default:

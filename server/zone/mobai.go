@@ -278,6 +278,10 @@ func (z *Zone) visible(e, t *entity, checkBlind bool) bool {
 	if chebyshev(e, t) > r {
 		return false
 	}
+	if gmHidden(t) {
+		// status_check_visibility: no one sees a hidden GM.
+		return false
+	}
 	l := t.sc
 	if l.Empty() || t.player == nil {
 		return true
@@ -311,6 +315,10 @@ func (z *Zone) canTargetAI(e, t *entity) bool {
 	}
 	if t.item != nil {
 		return e.status.Mode&mob.ModeLooter != 0
+	}
+	if gmHidden(t) {
+		// status_check_skilluse: a hidden GM is no target.
+		return false
 	}
 	l := t.sc
 	if l.Empty() {

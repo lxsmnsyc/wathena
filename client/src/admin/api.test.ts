@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { create } from '@bufbuild/protobuf';
-import { RestoreRequestSchema } from '../gen/wathena/admin/v1/admin_pb';
-import { AdminAPI, NO_FILTER, REVIEW_QUEUE, auditQuery, logsQuery, playersQuery } from './api';
+import { RestoreRequestSchema, SanctionRequestSchema } from '../gen/wathena/admin/v1/admin_pb';
+import {
+  ACTIVE_BANS,
+  AdminAPI,
+  NO_FILTER,
+  OPEN_REPORTS,
+  REVIEW_QUEUE,
+  auditQuery,
+  logsQuery,
+  playersQuery,
+  reportsQuery,
+  sanctionsQuery,
+} from './api';
 
 function urlOf(input: RequestInfo | URL): string {
   if (typeof input === 'string') {
@@ -70,6 +81,30 @@ describe('logsQuery', () => {
     expect(logsQuery({ since: '2026-10-01', until: ' 2026-10-12 ' }, 'next', 10)).toBe(
       'cursor=next&limit=10&since=2026-10-01&until=2026-10-12',
     );
+  });
+});
+
+describe('reportsQuery', () => {
+  it('sends the status, target and kind, and leaves out empty ones', () => {
+    expect(reportsQuery(OPEN_REPORTS, 0n, 50)).toBe('status=open&limit=50');
+    expect(reportsQuery({ status: '', kind: '', target: '' }, 0n, 50)).toBe('limit=50');
+    expect(
+      reportsQuery({ status: 'all', kind: 'guild_emblem', target: ' Bad Guy ' }, 12n, 10),
+    ).toBe('status=all&target=Bad+Guy&kind=guild_emblem&before_id=12&limit=10');
+  });
+});
+
+describe('sanctionsQuery', () => {
+  it('asks for the active bans', () => {
+    expect(sanctionsQuery(ACTIVE_BANS, 0n, 50)).toBe('kind=ban&active=true&limit=50');
+  });
+
+  it('sends a character or an account and the page', () => {
+    expect(sanctionsQuery({ character: 150000n }, 0n, 50)).toBe('character=150000&limit=50');
+    expect(sanctionsQuery({ account: 2000001n, kind: 'mute', active: false }, 9n, 20)).toBe(
+      'account=2000001&kind=mute&before_id=9&limit=20',
+    );
+    expect(sanctionsQuery({ character: 0n }, 0n, 1)).toBe('limit=1');
   });
 });
 
@@ -220,5 +255,102 @@ describe('AdminAPI', () => {
       server(403, { code: 'reauth', message: 'Log in again.', reauthUrl: '/account/reauth' }, []),
     ).restore(req);
     expect(!stale.ok && stale.reauthUrl).toBe('/account/reauth');
+  });
+
+  it('reads the report queue and a report with its emblem', async () => {
+    const seen: Seen[] = [];
+    const page = {
+      reports: [{ id: '5', kind: 'line', target: 'Bob', targetId: '150000', status: 'open' }],
+      nextBeforeId: '5',
+    };
+    const api = new AdminAPI('tok', server(200, page, seen));
+    const r = await api.reports({ status: 'open', kind: 'line', target: 'bob' }, 0n, 50);
+    expect(r.ok && r.value.reports[0]?.targetId).toBe(150000n);
+    expect(r.ok && r.value.nextBeforeId).toBe(5n);
+    const detail = {
+      report: { id: '6', kind: 'guild_emblem', guildId: '3' },
+      lines: [{ id: 'l1', text: 'hi', seen: true, reported: true }],
+      emblemPng: 'iVBORw==',
+    };
+    const d = await new AdminAPI('tok', server(200, detail, seen)).report(6n);
+    expect(d.ok && d.value.report?.guildId).toBe(3n);
+    expect(d.ok && d.value.lines[0]?.reported).toBe(true);
+    expect(d.ok && Array.from(d.value.emblemPng)).toEqual([0x89, 0x50, 0x4e, 0x47]);
+    expect(seen.map((s) => s.url)).toEqual([
+      '/admin/api/v1/reports?status=open&target=bob&kind=line&limit=50',
+      '/admin/api/v1/reports/6',
+    ]);
+    expect(seen.every((s) => s.method === 'GET' && Object.keys(s.headers).length === 0)).toBe(true);
+  });
+
+  it('closes a report with the CSRF token and the linked sanction', async () => {
+    const seen: Seen[] = [];
+    const api = new AdminAPI('tok', server(200, { id: '6', status: 'closed' }, seen));
+    const r = await api.closeReport(6n, 'sanctioned', 'muted', 41n);
+    expect(r.ok && r.value.status).toBe('closed');
+    expect(seen[0]).toEqual({
+      url: '/admin/api/v1/reports/6/close',
+      method: 'POST',
+      headers: { 'X-CSRF-Token': 'tok', 'Content-Type': 'application/json' },
+      body: '{"outcome":"sanctioned","note":"muted","sanctionId":"41"}',
+    });
+    await api.closeReport(7n, 'no_action', '', 0n);
+    expect(seen[1]?.body).toBe('{"outcome":"no_action"}');
+  });
+
+  it('gives a sanction and lifts one with a reason', async () => {
+    const seen: Seen[] = [];
+    const api = new AdminAPI('tok', server(200, { id: '41', kind: 'mute', active: true }, seen));
+    const req = create(SanctionRequestSchema, {
+      kind: 'mute',
+      characterId: 150000n,
+      minutes: 30,
+      reason: 'spam',
+    });
+    const r = await api.sanction(req);
+    expect(r.ok && r.value.id).toBe(41n);
+    expect(seen[0]?.url).toBe('/admin/api/v1/sanctions');
+    expect(seen[0]?.method).toBe('POST');
+    expect(seen[0]?.headers['X-CSRF-Token']).toBe('tok');
+    expect(JSON.parse(seen[0]?.body ?? '')).toEqual({
+      kind: 'mute',
+      characterId: '150000',
+      minutes: 30,
+      reason: 'spam',
+    });
+    await api.lift(41n, ' served time ');
+    expect(seen[1]?.url).toBe('/admin/api/v1/sanctions/41?reason=served+time');
+    expect(seen[1]?.method).toBe('DELETE');
+    expect(seen[1]?.headers).toEqual({ 'X-CSRF-Token': 'tok' });
+  });
+
+  it('lists sanctions without a token', async () => {
+    const seen: Seen[] = [];
+    const list = { sanctions: [{ id: '2', kind: 'ban', permanent: true }], nextBeforeId: '0' };
+    const r = await new AdminAPI('tok', server(200, list, seen)).sanctions(ACTIVE_BANS, 0n, 50);
+    expect(r.ok && r.value.sanctions[0]?.permanent).toBe(true);
+    expect(r.ok && r.value.nextBeforeId).toBe(0n);
+    expect(seen[0]?.url).toBe('/admin/api/v1/sanctions?kind=ban&active=true&limit=50');
+    expect(seen[0]?.headers).toEqual({});
+  });
+
+  it('passes on a ban reauth error and a lift conflict', async () => {
+    const req = create(SanctionRequestSchema, { kind: 'ban', accountId: 2n, reason: 'bot' });
+    const stale = await new AdminAPI(
+      'tok',
+      server(403, { code: 'reauth', message: 'Log in again.', reauthUrl: '/account/reauth' }, []),
+    ).sanction(req);
+    expect(!stale.ok && stale.code).toBe('reauth');
+    expect(!stale.ok && stale.reauthUrl).toBe('/account/reauth');
+    const ended = await new AdminAPI(
+      'tok',
+      server(409, { code: 'conflict', message: 'The sanction already ended.' }, []),
+    ).lift(2n, 'r');
+    expect(ended).toEqual({
+      ok: false,
+      code: 'conflict',
+      message: 'The sanction already ended.',
+      reauthUrl: '',
+    });
   });
 });

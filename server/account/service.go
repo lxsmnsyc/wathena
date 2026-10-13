@@ -32,6 +32,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/store/db"
 )
@@ -565,6 +566,18 @@ func (s *Service) postLogin(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusBadRequest, "login.html", p)
 		return
 	}
+	// A banned account cannot log in. The password was right, so the
+	// page may say why (decision 0030).
+	if text, banned, err := s.ban(ctx, account); err != nil || banned {
+		if err != nil {
+			s.unavailable(w, r, err)
+			return
+		}
+		s.limit.succeed(name)
+		p.Error = text
+		s.render(w, http.StatusForbidden, "login.html", p)
+		return
+	}
 	// An account with TOTP gets a pending login and the code page. Its
 	// failure count for the name is only reset once the code passes.
 	on, err := s.totpOn(ctx, account)
@@ -955,6 +968,21 @@ func (s *Service) ticket(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": "character"})
 		return
 	}
+	// A banned account gets no ticket. The client shows the reason and
+	// the end time (decision 0030).
+	if ban, err := s.q.AccountBan(ctx, sess.AccountID); err == nil {
+		end, permanent := "", ban.EndsAt.InfinityModifier == pgtype.Infinity
+		if !permanent {
+			end = ban.EndsAt.Time.UTC().Format(time.RFC3339)
+		}
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "banned", "reason": ban.Reason, "ends_at": end,
+			"message": staff.BanText(ban.Reason, ban.EndsAt.Time, permanent)})
+		return
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		s.log.Error("cannot check a ban", "err", err)
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "unavailable"})
+		return
+	}
 	// The ticket records whether the login counts for a staff role
 	// (decision 0028).
 	twoFactor := false
@@ -1011,4 +1039,17 @@ func shorten(s string, n int) string {
 		return ""
 	}
 	return s
+}
+
+// ban returns the text of the account's ban in effect, with its reason
+// and end time, and whether the account is banned (decision 0030).
+func (s *Service) ban(ctx context.Context, account int64) (string, bool, error) {
+	b, err := s.q.AccountBan(ctx, account)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	return staff.BanText(b.Reason, b.EndsAt.Time, b.EndsAt.InfinityModifier == pgtype.Infinity), true, nil
 }

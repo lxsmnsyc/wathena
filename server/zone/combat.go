@@ -620,6 +620,10 @@ func (z *Zone) canTarget(e, t *entity) bool {
 			return false
 		}
 	}
+	if t != e && gmHidden(t) {
+		// status_check_skilluse: no one targets a hidden GM.
+		return false
+	}
 	l := t.sc
 	if l.Empty() {
 		return true

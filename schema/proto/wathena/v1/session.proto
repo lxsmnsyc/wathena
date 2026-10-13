@@ -104,6 +104,8 @@ enum DisconnectReason {
   DISCONNECT_REASON_LOGGED_IN_ELSEWHERE = 3;
   DISCONNECT_REASON_RATE_LIMITED = 4;
   DISCONNECT_REASON_BAD_MESSAGE = 5;
+  // The account is banned. message has the reason and the end time
+  // (decision 0030).
   DISCONNECT_REASON_BANNED = 6;
   DISCONNECT_REASON_SERVER_SHUTDOWN = 7;
   // The login session that opened this connection ended, such as at
@@ -112,4 +114,7 @@ enum DisconnectReason {
   // The player went on autotrade: the shop stays open while the
   // connection closes (player:autotrade).
   DISCONNECT_REASON_AUTOTRADE = 9;
+  // Staff kicked the player, with @kick or the admin screens. message
+  // has the reason (decision 0030).
+  DISCONNECT_REASON_KICKED = 10;
 }

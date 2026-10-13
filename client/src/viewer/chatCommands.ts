@@ -1,6 +1,7 @@
 // The commands a player types in the chat input, such as "/w Name text",
 // "/join #trade", "/p text" or "/g text". A line that is not a command goes to the
-// active chat tab.
+// active chat tab. A line that starts with @ is a GM command for the
+// server (decision 0030). It goes as a local chat line in any tab.
 
 import { cleanChat } from './chat';
 
@@ -13,6 +14,8 @@ export type ChatAction =
   | { kind: 'empty' }
   /** A line for the active tab. */
   | { kind: 'say'; text: string }
+  /** A GM command, such as "@hide", sent as a local chat line as typed. */
+  | { kind: 'gm'; text: string }
   /** A whisper to a character. */
   | { kind: 'whisper'; to: string; text: string }
   /** Opens the whisper tab of a character. */
@@ -128,6 +131,12 @@ export function parseChatInput(input: string): ChatAction {
     }
     const text = space < 0 ? undefined : cleanChat(line.slice(space + 1));
     return text === undefined ? { kind: 'openChannel', name } : { kind: 'channel', name, text };
+  }
+  if (line.startsWith('@')) {
+    // The server reads GM commands from local chat and answers on the
+    // system channel, such as "Unknown command.".
+    const text = cleanChat(input);
+    return text === undefined || text === '@' ? { kind: 'empty' } : { kind: 'gm', text };
   }
   if (line.startsWith('%')) {
     // rAthena's party prefix: "%text" says text to the party.

@@ -214,6 +214,24 @@ func (t *Table) Lookup(id uint32) (*Def, bool) {
 	return d, ok
 }
 
+// ByName finds an item by its Aegis name or its name, in any case, as
+// rAthena's itemdb_searchname for @item. Aegis names come first.
+func (t *Table) ByName(name string) (*Def, bool) {
+	if t == nil || name == "" {
+		return nil, false
+	}
+	var byName *Def
+	for _, d := range t.items {
+		if strings.EqualFold(d.AegisName, name) {
+			return d, true
+		}
+		if byName == nil && strings.EqualFold(d.Name, name) || byName != nil && strings.EqualFold(d.Name, name) && d.ID < byName.ID {
+			byName = d
+		}
+	}
+	return byName, byName != nil
+}
+
 // Get is itemdb_search: the item, or the dummy item. A nil table knows no
 // items.
 func (t *Table) Get(id uint32) *Def {

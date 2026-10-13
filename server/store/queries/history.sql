@@ -108,7 +108,7 @@ SELECT coalesce((SELECT p.name FROM party_members m JOIN parties p ON p.id = m.p
 
 -- name: SanctionsOf :many
 -- SanctionsOf lists the sanctions in effect of some characters.
-SELECT character_id, kind, reason, started_at, ends_at, issued_by
+SELECT id, character_id::bigint AS character_id, kind, reason, started_at, ends_at, issued_by
 FROM sanctions
 WHERE character_id = ANY(@ids::bigint[]) AND lifted_at IS NULL AND ends_at > now()
 ORDER BY character_id, started_at, id;

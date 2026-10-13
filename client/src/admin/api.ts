@@ -19,17 +19,30 @@ import {
   CharacterDetailSchema,
   type CharacterLogs,
   CharacterLogsSchema,
+  CloseReportRequestSchema,
   ErrorSchema,
   GiveRoleRequestSchema,
   type ItemHistory,
   ItemHistorySchema,
   type PlayerSearch,
   PlayerSearchSchema,
+  type ReportDetail,
+  ReportDetailSchema,
+  type ReportPage,
+  ReportPageSchema,
+  type ReportSummary,
+  ReportSummarySchema,
   type RestoreRequest,
   RestoreRequestSchema,
   type RestoreResult,
   RestoreResultSchema,
   ReviewRequestSchema,
+  type Sanction,
+  type SanctionList,
+  SanctionListSchema,
+  type SanctionRequest,
+  SanctionRequestSchema,
+  SanctionSchema,
   type StaffList,
   StaffListSchema,
   type StaffMember,
@@ -133,6 +146,89 @@ export function logsQuery(range: LogRange, cursor: string, limit: number): strin
       q.set(key, v);
     }
   }
+  return q.toString();
+}
+
+/** The kinds of report. */
+export type ReportKind = 'player' | 'line' | 'guild_name' | 'guild_emblem';
+
+export const REPORT_KINDS: readonly ReportKind[] = ['player', 'line', 'guild_name', 'guild_emblem'];
+
+/** The filters of the report queue. Empty fields do not filter. */
+export interface ReportFilter {
+  /** The server shows open reports for an empty status. */
+  status: '' | 'open' | 'closed' | 'all';
+  kind: '' | ReportKind;
+  /** A character or guild name, in any case. */
+  target: string;
+}
+
+/** The filter of the report queue when it opens: open reports. */
+export const OPEN_REPORTS: ReportFilter = { status: 'open', kind: '', target: '' };
+
+/** Rows per page of the report queue, from 1 to 100. */
+export const REPORT_PAGE = 50;
+
+/** The query of GET /reports for a filter and a page. */
+export function reportsQuery(filter: ReportFilter, beforeId: bigint, limit: number): string {
+  const q = new URLSearchParams();
+  for (const key of ['status', 'target', 'kind'] as const) {
+    const v = filter[key].trim();
+    if (v !== '') {
+      q.set(key, v);
+    }
+  }
+  if (beforeId > 0n) {
+    q.set('before_id', beforeId.toString());
+  }
+  q.set('limit', String(limit));
+  return q.toString();
+}
+
+/** The outcomes that close a report. */
+export type Outcome = 'no_action' | 'warned' | 'sanctioned';
+
+/** The kinds of sanction. */
+export type SanctionKind = 'mute' | 'jail' | 'kick' | 'ban';
+
+export const SANCTION_KINDS: readonly SanctionKind[] = ['mute', 'jail', 'kick', 'ban'];
+
+/** The filters of GET /sanctions. Unset fields do not filter. */
+export interface SanctionFilter {
+  /** A character: its sanctions and its account's bans. */
+  character?: bigint;
+  /** An account: every sanction of the account. */
+  account?: bigint;
+  kind?: SanctionKind;
+  /** Only the sanctions in effect. */
+  active?: boolean;
+}
+
+/** The filter of the list of bans in effect. */
+export const ACTIVE_BANS: SanctionFilter = { kind: 'ban', active: true };
+
+/** Rows per page of a sanction list, from 1 to 100. */
+export const SANCTION_PAGE = 50;
+
+/** The query of GET /sanctions for a filter and a page. */
+export function sanctionsQuery(filter: SanctionFilter, beforeId: bigint, limit: number): string {
+  const q = new URLSearchParams();
+  if (filter.character !== undefined && filter.character > 0n) {
+    q.set('character', filter.character.toString());
+  }
+  if (filter.account !== undefined && filter.account > 0n) {
+    q.set('account', filter.account.toString());
+  }
+  if (filter.kind !== undefined) {
+    q.set('kind', filter.kind);
+  }
+  if (filter.active === true) {
+    q.set('active', 'true');
+  }
+  if (beforeId > 0n) {
+    q.set('before_id', beforeId.toString());
+  }
+  q.set('limit', String(limit));
   return q.toString();
 }
 
@@ -291,6 +387,70 @@ export class AdminAPI {
     return decode(
       RestoreResultSchema,
       await this.call('POST', 'restore', toJson(RestoreRequestSchema, req)),
+    );
+  }
+
+  /** GET /reports: a page of the report queue, newest first. */
+  async reports(
+    filter: ReportFilter,
+    beforeId: bigint,
+    limit: number,
+  ): Promise<Result<ReportPage>> {
+    return decode(
+      ReportPageSchema,
+      await this.call('GET', `reports?${reportsQuery(filter, beforeId, limit)}`),
+    );
+  }
+
+  /** GET /reports/{id}: one report with its chat lines and history. */
+  async report(id: bigint): Promise<Result<ReportDetail>> {
+    return decode(ReportDetailSchema, await this.call('GET', `reports/${id.toString()}`));
+  }
+
+  /**
+   * POST /reports/{id}/close: closes a report. sanctionId links the
+   * sanction of a sanctioned report, and is 0 otherwise.
+   */
+  async closeReport(
+    id: bigint,
+    outcome: Outcome,
+    note: string,
+    sanctionId: bigint,
+  ): Promise<Result<ReportSummary>> {
+    const req = create(CloseReportRequestSchema, { outcome, note, sanctionId });
+    return decode(
+      ReportSummarySchema,
+      await this.call(
+        'POST',
+        `reports/${id.toString()}/close`,
+        toJson(CloseReportRequestSchema, req),
+      ),
+    );
+  }
+
+  /** POST /sanctions: gives a mute, a jail, a kick or a ban. */
+  async sanction(req: SanctionRequest): Promise<Result<Sanction>> {
+    return decode(
+      SanctionSchema,
+      await this.call('POST', 'sanctions', toJson(SanctionRequestSchema, req)),
+    );
+  }
+
+  /** DELETE /sanctions/{id}: lifts a mute, a jail or a ban early. */
+  async lift(id: bigint, reason: string): Promise<Result<Sanction>> {
+    const q = new URLSearchParams({ reason: reason.trim() }).toString();
+    return decode(SanctionSchema, await this.call('DELETE', `sanctions/${id.toString()}?${q}`));
+  }
+
+  /** GET /sanctions: a page of sanctions, newest first. */
+  async sanctions(
+    filter: SanctionFilter,
+    beforeId: bigint,
+    limit: number,
+  ): Promise<Result<SanctionList>> {
+    return decode(
+      SanctionListSchema,
+      await this.call('GET', `sanctions?${sanctionsQuery(filter, beforeId, limit)}`),
     );
   }
 }

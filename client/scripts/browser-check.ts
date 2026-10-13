@@ -242,10 +242,51 @@ async function checkCache(name: string, browser: Browser, base: string): Promise
   await context.close();
 }
 
-/** Fakes the admin API: /me answers with me, and the lists are empty. */
 /** The item serial of the faked admin API. */
 const SERIAL = '0198a3c4-0000-7000-8000-000000000001';
 
+/** A 1x1 PNG, the emblem of the faked emblem report. */
+const EMBLEM_PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+/** The faked admin API's ban of Bob's account. */
+const BAN = {
+  id: '3',
+  kind: 'ban',
+  reason: 'botting',
+  issuedBy: 'Admin',
+  accountId: '2000001',
+  account: 'bobby',
+  permanent: true,
+  active: true,
+};
+
+/** A report of a chat line of Bob's. */
+const LINE_REPORT = {
+  id: '9',
+  kind: 'line',
+  reporter: 'Ann',
+  target: 'Bob',
+  targetId: '150000',
+  targetAccountId: '2000001',
+  reason: 'insults',
+  map: 'prontera',
+  status: 'open',
+};
+
+/** A report of a guild's emblem. */
+const EMBLEM_REPORT = {
+  id: '10',
+  kind: 'guild_emblem',
+  reporter: 'Ann',
+  target: 'Wolves',
+  guildId: '7',
+  status: 'closed',
+  outcome: 'no_action',
+  closedBy: 'Gm',
+};
+
+/** Fakes the admin API: /me answers with me, and the lists are small. */
 async function fakeAdminAPI(page: Page, me: object): Promise<void> {
   await page.route('**/admin/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -299,8 +340,31 @@ async function fakeAdminAPI(page: Page, me: object): Promise<void> {
         jobLevel: 30,
         zeny: '1000',
         inventory: [{ serial: SERIAL, itemId: 1201, name: 'Knife', amount: 1 }],
+        ban: BAN,
       },
       '/admin/api/v1/characters/150000/logs': { entries: [] },
+      '/admin/api/v1/reports': { reports: [LINE_REPORT, EMBLEM_REPORT] },
+      '/admin/api/v1/reports/9': {
+        report: LINE_REPORT,
+        lines: [
+          { id: 'a', kind: 'local', name: 'Ann', map: 'prontera', text: 'hello', seen: true },
+          {
+            id: 'b',
+            kind: 'local',
+            name: 'Bob',
+            characterId: '150000',
+            map: 'prontera',
+            text: 'go away',
+            seen: true,
+            reported: true,
+          },
+          { id: 'c', kind: 'whisper', name: 'Bob', target: 'Cid', text: 'spam spam' },
+        ],
+        earlier: [EMBLEM_REPORT],
+        sanctions: [BAN],
+      },
+      '/admin/api/v1/reports/10': { report: EMBLEM_REPORT, emblemPng: EMBLEM_PNG },
+      '/admin/api/v1/sanctions': { sanctions: [BAN] },
       [`/admin/api/v1/items/${SERIAL}/history`]: {
         serial: SERIAL,
         serials: [SERIAL],
@@ -416,6 +480,62 @@ async function checkAdmin(name: string, browser: Browser, base: string): Promise
       gm.text.includes('Now: Bob (inventory)') &&
       gm.errors.length === 0,
     `errors: ${gm.errors.join('; ') || 'none'}`,
+  );
+  // A moderator reads a report and its emblem report, the bans, and a
+  // player's sanctions.
+  const mod = await visit(
+    {
+      account: 'Mod',
+      role: 'moderator',
+      permissions: [
+        'players.read',
+        'moderation.reports',
+        'moderation.mute',
+        'moderation.jail',
+        'moderation.kick',
+        'moderation.ban',
+      ],
+      twoFactor: true,
+      csrfToken: 't',
+    },
+    async (page) => {
+      await page.click('.admin-nav button:has-text("Reports")');
+      await page.click('.admin-reports tr[data-id="9"] button.admin-link');
+      await page.waitForSelector('.admin-report .admin-reported:has-text("go away")', {
+        timeout: 10_000,
+      });
+      await page.waitForSelector('.admin-report button:has-text("Sanction and close")', {
+        timeout: 10_000,
+      });
+      await page.click('.admin-report tr[data-id="10"] button.admin-link');
+      await page.waitForFunction(
+        () => (document.querySelector<HTMLImageElement>('.admin-emblem')?.naturalWidth ?? 0) > 0,
+        null,
+        { timeout: 10_000 },
+      );
+      await page.click('.admin-nav button:has-text("Bans")');
+      await page.waitForSelector('.admin-bans tr[data-id="3"]:has-text("permanent")', {
+        timeout: 10_000,
+      });
+      await page.click('.admin-nav button:has-text("Players")');
+      await page.fill('.admin-players input[name="q"]', 'bob');
+      await page.click('.admin-players button[type="submit"]');
+      await page.click('.admin-players button.admin-link:has-text("Bob")');
+      await page.click('.admin-character .admin-tabs button:has-text("Sanctions")');
+      await page.waitForSelector('.admin-character button[data-kind="ban"]', { timeout: 10_000 });
+      await page.waitForSelector('.admin-character .admin-sanctions tr[data-id="3"]', {
+        timeout: 10_000,
+      });
+    },
+  );
+  check(
+    name,
+    'admin moderator',
+    mod.loaded &&
+      mod.text.includes('The account is banned') &&
+      mod.text.includes('Sanction history') &&
+      mod.errors.length === 0,
+    `errors: ${mod.errors.join('; ') || 'none'}`,
   );
   const player = await visit({ account: 'Player', csrfToken: 't' });
   check(

@@ -59,6 +59,8 @@ type env struct {
 	w     *world.World
 	aw    *adminworld.World
 	items *item.Table
+	// kicker records the kicks of the moderation tests.
+	kicker *kicker
 }
 
 func grid() *path.Grid {
@@ -112,9 +114,10 @@ func setup(t *testing.T) *env {
 			t.Error(err)
 		}
 	})
+	k := &kicker{st: st}
 	aw := adminworld.New(adminworld.Config{World: w, Store: st, Chat: hub, Items: items, Storages: storages, Mail: mails,
-		Social: zones[0].Social, Log: slog.New(slog.DiscardHandler)})
-	return &env{t: t, ctx: ctx, admin: adminPool, st: st, w: w, aw: aw, items: items}
+		Social: zones[0].Social, Kicker: k, Log: slog.New(slog.DiscardHandler)})
+	return &env{t: t, ctx: ctx, admin: adminPool, st: st, w: w, aw: aw, items: items, kicker: k}
 }
 
 // character makes a saved character with items.

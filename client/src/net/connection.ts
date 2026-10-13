@@ -227,8 +227,31 @@ export function disconnectText(message: string, reason?: DisconnectReason): stri
       return 'The server is shutting down.';
     case DisconnectReason.LOGGED_OUT:
       return 'You logged out.';
+    case DisconnectReason.KICKED:
+      return 'A game master disconnected you.';
+    case DisconnectReason.BANNED:
+      return 'Your account is banned.';
     default:
       return 'Disconnected from the server.';
+  }
+}
+
+/**
+ * How long the page waits, in milliseconds, before it leaves for the
+ * character list after the session ends:
+ *   - A used or expired ticket goes at once.
+ *   - A kick or a ban waits longer, so its reason can be read.
+ *   - Other endings wait a little.
+ */
+export function disconnectDelay(reason?: DisconnectReason): number {
+  switch (reason) {
+    case DisconnectReason.SESSION_INVALID:
+      return 0;
+    case DisconnectReason.KICKED:
+    case DisconnectReason.BANNED:
+      return 10_000;
+    default:
+      return 3000;
   }
 }
 

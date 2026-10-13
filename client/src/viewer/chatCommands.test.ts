@@ -102,6 +102,15 @@ describe('parseChatInput', () => {
     expect(parseChatInput('/gm x').kind).toBe('error');
   });
 
+  it('sends @ lines to the server as GM commands', () => {
+    expect(parseChatInput(' @hide ')).toEqual({ kind: 'gm', text: '@hide' });
+    expect(parseChatInput('@kick "Bad Guy" spam')).toEqual({
+      kind: 'gm',
+      text: '@kick "Bad Guy" spam',
+    });
+    expect(parseChatInput('@')).toEqual({ kind: 'empty' });
+  });
+
   it('names unknown commands', () => {
     const action = parseChatInput('/dance now');
     expect(action.kind).toBe('error');

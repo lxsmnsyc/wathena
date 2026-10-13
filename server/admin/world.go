@@ -42,6 +42,94 @@ type World interface {
 	// returns a *WorldError for what the caller did wrong or must try
 	// again.
 	Restore(ctx context.Context, r Restore) (*adminv1.RestoreResult, error)
+
+	// Moderation (decision 0030). Each call returns a *WorldError for
+	// what the caller did wrong.
+
+	// Reports lists reports newest first.
+	Reports(ctx context.Context, q ReportQuery) (*adminv1.ReportPage, error)
+	// Report reads a report with its chat, the target's earlier reports
+	// and its sanctions. It returns ErrNotFound for a report that does
+	// not exist.
+	Report(ctx context.Context, id int64) (*adminv1.ReportDetail, error)
+	// CloseReport closes an open report with an outcome, and writes its
+	// audit row.
+	CloseReport(ctx context.Context, c CloseReport) (*adminv1.ReportSummary, error)
+	// Sanction mutes, jails or kicks a character, or bans an account,
+	// and writes its audit row. A kick and a ban close the game
+	// connections.
+	Sanction(ctx context.Context, o SanctionOrder) (*adminv1.Sanction, error)
+	// SanctionByID reads a sanction. It returns ErrNotFound for one that
+	// does not exist.
+	SanctionByID(ctx context.Context, id int64) (*adminv1.Sanction, error)
+	// LiftSanction ends a mute, a jail or a ban early, and writes its
+	// audit row.
+	LiftSanction(ctx context.Context, l Lift) (*adminv1.Sanction, error)
+	// Sanctions lists sanctions newest first.
+	Sanctions(ctx context.Context, q SanctionQuery) (*adminv1.SanctionList, error)
+	// Bans returns the bans in effect of some accounts, by account.
+	Bans(ctx context.Context, accounts []int64) (map[int64]*adminv1.Sanction, error)
+}
+
+// Actor is the staff member behind a call, for its audit row.
+type Actor struct {
+	AccountID   int64
+	AccountName string
+	Role        string
+}
+
+// ReportQuery filters GET /reports. Empty fields do not filter.
+type ReportQuery struct {
+	// Status is open or closed.
+	Status string
+	Target string
+	// Kind is player, line, guild_name or guild_emblem.
+	Kind     string
+	BeforeID int64
+	Limit    int
+}
+
+// CloseReport is POST /reports/{id}/close.
+type CloseReport struct {
+	Actor
+	ID int64
+	// Outcome is no_action, warned or sanctioned.
+	Outcome, Note string
+	// SanctionID links the sanction of a sanctioned report, or 0.
+	SanctionID int64
+}
+
+// SanctionOrder is POST /sanctions.
+type SanctionOrder struct {
+	Actor
+	// Kind is mute, jail, kick or ban.
+	Kind string
+	// Character is the character of a mute, a jail or a kick, and
+	// Account the account of a ban.
+	Character, Account int64
+	// Minutes is how long it lasts. A ban of 0 minutes is permanent.
+	Minutes int
+	Reason  string
+}
+
+// Lift is DELETE /sanctions/{id}.
+type Lift struct {
+	Actor
+	ID     int64
+	Reason string
+}
+
+// SanctionQuery filters GET /sanctions. Zero fields do not filter.
+type SanctionQuery struct {
+	// Character finds a character's sanctions and its account's bans.
+	Character int64
+	// Account finds every sanction of an account.
+	Account int64
+	Kind    string
+	// Active keeps the sanctions in effect.
+	Active   bool
+	BeforeID int64
+	Limit    int
 }
 
 // CharacterState is what the search shows of a character from the game.

@@ -277,9 +277,20 @@ func (h *Handler) summaries(ctx context.Context, accounts []accountRow, cidr net
 			return nil, err
 		}
 	}
+	bans := map[int64]*adminv1.Sanction{}
+	if h.cfg.World != nil && len(accounts) > 0 {
+		accountIDs := make([]int64, len(accounts))
+		for i, a := range accounts {
+			accountIDs[i] = a.id
+		}
+		if bans, err = h.cfg.World.Bans(ctx, accountIDs); err != nil {
+			return nil, err
+		}
+	}
 	out := make([]*adminv1.AccountSummary, 0, len(accounts))
 	for _, a := range accounts {
-		s := adminv1.AccountSummary_builder{AccountId: a.id, Account: a.name, CreatedAt: timestamppb.New(a.created.Time)}
+		s := adminv1.AccountSummary_builder{AccountId: a.id, Account: a.name, CreatedAt: timestamppb.New(a.created.Time),
+			Ban: bans[a.id]}
 		for _, l := range last {
 			if l.AccountID == a.id && l.At.Valid {
 				s.LastLogin = timestamppb.New(l.At.Time)

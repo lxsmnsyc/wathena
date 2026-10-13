@@ -251,6 +251,10 @@ type Player struct {
 	sanctions   []character.Sanction
 	seen        []chat.Line
 	jailPending bool
+	// gmHidden is set while the player is hidden with @hide: other
+	// players do not see it and monsters ignore it, as rAthena's
+	// OPTION_INVISIBLE. It lasts across map changes.
+	gmHidden bool
 
 	// soc is the player in the world's social registry, and partyState
 	// its party as this zone knows it (party.go).
@@ -346,6 +350,9 @@ type command struct {
 	// useSkill and learnSkill are skill commands.
 	useSkill   *useSkillCommand
 	learnSkill *int
+	// staff runs work of a GM command on the zone the player is in now,
+	// such as the second half of @jumpto (gmcommands.go).
+	staff func(z *Zone, p *Player)
 	// mail, vending, buying and search are the commands of review
 	// decision 30 (mail.go, vending.go).
 	mail    *wathenav1.MailCommand
@@ -470,6 +477,10 @@ type Zone struct {
 	// reads (decision 0028). Without it, no player has a role. Set it
 	// before Run.
 	Staff *staff.Registry
+	// Moderator gives the sanctions of @mute, @jail and @kick, with
+	// their rows and audit rows (gmcommands.go). Without it, those
+	// commands answer that moderation is not available.
+	Moderator Moderator
 	// Social is the world's social registry: parties, friends and party
 	// booking (party.go). Without it, the zone makes its own on first
 	// use. Set it before Run.
@@ -916,6 +927,7 @@ func (z *Zone) join(p *Player) joinResult {
 		// A warp places the player as pc_setpos does.
 		x, y = z.arrivalCell(x, y)
 		p.ackSeq, p.rewarp, p.mapChange = h.ackSeq, h.rewarp, true
+		p.gmHidden = h.gmHidden
 	case c.Map != z.Map || z.grid.NoPass(x, y):
 		// A character from another map, or one on a cell that is no
 		// longer walkable, starts at the start cell. A character that
@@ -1163,6 +1175,9 @@ func (z *Zone) handle(c command) {
 		// Dead players can talk too: clif_process_message only checks
 		// for mutes.
 		z.say(p, c.chat)
+	}
+	if c.staff != nil {
+		c.staff(z, p)
 	}
 	if c.channel != nil {
 		z.channelCommand(p, c.channel)
@@ -1498,6 +1513,11 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				if e.unit != nil && (e.unit.hidden || trapHiddenFrom(e, me)) {
 					continue
 				}
+				if e != me && gmHidden(e) {
+					// rAthena sends a hidden GM as JT_INVISIBLE, which no
+					// client draws, to staff too.
+					continue
+				}
 				id, known := p.netIDs.get(e)
 				switch {
 				case !known || e == me && p.fresh:
@@ -1537,7 +1557,7 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 	// of view.
 	for i := 0; i < len(p.netIDs.known); {
 		e := p.netIDs.known[i]
-		if (abs(e.x-me.x) <= ViewRange && abs(e.y-me.y) <= ViewRange) || !z.entities.has(e) {
+		if (abs(e.x-me.x) <= ViewRange && abs(e.y-me.y) <= ViewRange && (e == me || !gmHidden(e))) || !z.entities.has(e) {
 			i++
 			continue
 		}

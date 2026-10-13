@@ -473,8 +473,13 @@ export interface GuildActions {
   enemy: (name: string) => void;
   endRelation: (guildId: bigint, enemy: boolean) => void;
   disband: (name: string) => void;
-  /** Reports another guild's name. */
-  report: (guildId: bigint) => void;
+  /** Reports another guild's name, or its emblem with emblem set. */
+  report: (guildId: bigint, emblem: boolean) => void;
+}
+
+/** The title of a button that reports another guild's name or emblem. */
+export function guildReportTitle(name: string, emblem: boolean): string {
+  return emblem ? `Report the emblem of the guild ${name}` : `Report the guild name ${name}`;
 }
 
 /** The limits that size the window, from Welcome.limits. */
@@ -1168,12 +1173,14 @@ export class GuildWindow {
           });
           li.append(' ', end);
         }
-        li.append(
-          ' ',
-          reportButton('!', `Report the guild name ${r.name}`, () => {
-            this.actions.report(r.guildId);
-          }),
-        );
+        for (const emblem of [false, true]) {
+          li.append(
+            ' ',
+            reportButton(emblem ? '!E' : '!', guildReportTitle(r.name, emblem), () => {
+              this.actions.report(r.guildId, emblem);
+            }),
+          );
+        }
         ul.append(li);
       }
       if (list.length === 0) {

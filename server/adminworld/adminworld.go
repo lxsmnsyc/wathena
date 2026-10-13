@@ -58,7 +58,13 @@ type Config struct {
 	Storages *storage.Registry
 	Mail     *mail.Registry
 	Social   *social.Registry
-	Log      *slog.Logger
+	// Kicker closes game connections, for kicks and bans (decision
+	// 0030). Without it, kicks find no one online.
+	Kicker Kicker
+	// Clock is the server clock, which mutes and jails run on.
+	// time.Now when nil.
+	Clock func() time.Time
+	Log   *slog.Logger
 }
 
 // World is admin.World for the all-in-one build.
@@ -149,8 +155,11 @@ func (w *World) Characters(ctx context.Context, ids []int64) (map[int64]admin.Ch
 		}
 		for _, r := range rows {
 			st := out[r.CharacterID]
-			st.Sanctions = append(st.Sanctions, sanction(character.Sanction{Kind: r.Kind, Reason: r.Reason, Start: r.StartedAt.Time,
-				End: r.EndsAt.Time, By: r.IssuedBy}))
+			m := sanction(character.Sanction{Kind: r.Kind, Reason: r.Reason, Start: r.StartedAt.Time, End: r.EndsAt.Time, By: r.IssuedBy})
+			m.SetId(r.ID)
+			m.SetCharacterId(r.CharacterID)
+			m.SetActive(true)
+			st.Sanctions = append(st.Sanctions, m)
 			out[r.CharacterID] = st
 		}
 	}
@@ -178,7 +187,7 @@ func (w *World) Character(ctx context.Context, id int64) (*adminv1.CharacterDeta
 				AccountCurrencies: v.AccountCurrencies})
 			d.SetOnline(true)
 			d.SetPosition(position(v.Map, v.X, v.Y))
-			return d, nil
+			return d, w.addBan(ctx, d)
 		}
 	}
 	if w.cfg.Store == nil {
@@ -191,7 +200,17 @@ func (w *World) Character(ctx context.Context, id int64) (*adminv1.CharacterDeta
 	if err != nil {
 		return nil, err
 	}
-	return w.detail(v), nil
+	d := w.detail(v)
+	return d, w.addBan(ctx, d)
+}
+
+// addBan adds the account's ban in effect to a character's details.
+func (w *World) addBan(ctx context.Context, d *adminv1.CharacterDetail) error {
+	b, err := w.banOf(ctx, d.GetAccountId())
+	if b != nil {
+		d.SetBan(b)
+	}
+	return err
 }
 
 // detail builds a character's details from what was read.

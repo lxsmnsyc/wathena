@@ -73,8 +73,8 @@ const (
 	// decision 31).
 	KindEvent
 	// KindStaff is where a restore's copies and zeny come from, when the
-	// staff tools make them (decision 0029). Its ID is the staff
-	// account's.
+	// staff tools make them (decision 0029), and the items of @item
+	// (decision 0030). Its ID is the staff account's.
 	KindStaff
 )
 
@@ -189,6 +189,9 @@ const (
 	// back from their holder, and the copies and zeny it makes, into the
 	// mail that brings them (decision 0029).
 	ActionRestore Action = "restore"
+	// ActionCommand is an item a GM command made, such as @item, from
+	// the staff end (decision 0030).
+	ActionCommand Action = "command"
 )
 
 // ItemLog is one item move.

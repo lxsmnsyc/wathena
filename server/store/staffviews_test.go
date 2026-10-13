@@ -137,8 +137,8 @@ func TestStaffQueries(t *testing.T) {
 			[]any{id}},
 		{"INSERT INTO mail_items (serial, mail_id, slot, item_id, amount) VALUES ($1, 77, 0, 607, 2)",
 			[]any{pgtype.UUID{Bytes: mailSerial, Valid: true}}},
-		{"INSERT INTO sanctions (character_id, kind, reason, started_at, ends_at) VALUES ($1, 'mute', 'spam', now(), now() + interval '1 hour')",
-			[]any{id}},
+		{"INSERT INTO sanctions (character_id, account_id, kind, reason, started_at, ends_at) VALUES ($1, $2, 'mute', 'spam', now(), now() + interval '1 hour')",
+			[]any{id, account}},
 	} {
 		if _, err := admin.Exec(ctx, q.sql, q.args...); err != nil {
 			t.Fatal(err)

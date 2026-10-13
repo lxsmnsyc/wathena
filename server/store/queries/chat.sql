@@ -14,15 +14,17 @@ INSERT INTO character_blocks (character_id, position, name)
 SELECT @character_id, unnest(@positions::smallint[]), unnest(@names::text[]);
 
 -- name: ActiveSanctions :many
--- ActiveSanctions are a character's sanctions that have not ended.
+-- ActiveSanctions are a character's mutes and jails that have not
+-- ended.
 SELECT kind, reason, started_at, ends_at, issued_by, return_map, return_x, return_y
 FROM sanctions
-WHERE character_id = @character_id AND lifted_at IS NULL AND ends_at > now()
+WHERE character_id = @character_id::bigint AND kind IN ('mute', 'jail') AND lifted_at IS NULL AND ends_at > now()
 ORDER BY started_at, id;
 
 -- name: UpsertSanction :exec
-INSERT INTO sanctions (character_id, kind, reason, started_at, ends_at, issued_by, return_map, return_x, return_y)
-VALUES (@character_id, @kind, @reason, @started_at, @ends_at, @issued_by, @return_map, @return_x, @return_y)
+INSERT INTO sanctions (character_id, account_id, kind, reason, started_at, ends_at, issued_by, return_map, return_x, return_y)
+SELECT @character_id::bigint, c.account_id, @kind, @reason, @started_at, @ends_at, @issued_by, @return_map, @return_x, @return_y
+FROM characters c WHERE c.id = @character_id::bigint
 ON CONFLICT (character_id, kind, started_at) DO UPDATE SET
     reason = EXCLUDED.reason, ends_at = EXCLUDED.ends_at, issued_by = EXCLUDED.issued_by,
     return_map = EXCLUDED.return_map, return_x = EXCLUDED.return_x, return_y = EXCLUDED.return_y;
@@ -30,7 +32,7 @@ ON CONFLICT (character_id, kind, started_at) DO UPDATE SET
 -- name: LiftSanction :exec
 -- LiftSanction records that a sanction ended before its time.
 UPDATE sanctions SET lifted_at = @at
-WHERE character_id = @character_id AND kind = @kind AND started_at = @started_at
+WHERE character_id = @character_id::bigint AND kind = @kind AND started_at = @started_at
     AND lifted_at IS NULL AND ends_at > @at;
 
 -- name: InsertChatLines :exec

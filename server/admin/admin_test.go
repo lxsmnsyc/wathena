@@ -70,6 +70,15 @@ type world struct {
 	restores []admin.Restore
 	// restoreErr is what Restore fails with.
 	restoreErr error
+	// The moderation calls, and the sanctions SanctionByID knows by ID,
+	// and the banned accounts of Bans.
+	reportQueries   []admin.ReportQuery
+	closes          []admin.CloseReport
+	orders          []admin.SanctionOrder
+	lifts           []admin.Lift
+	sanctionQueries []admin.SanctionQuery
+	sanctionKinds   map[int64]string
+	banned          map[int64]bool
 }
 
 func (w *world) StaffChanged(_ context.Context, _ int64, role string) error {
