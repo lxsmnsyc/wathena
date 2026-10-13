@@ -13,9 +13,9 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
-## Where work stands (2026-10-12)
+## Where work stands (2026-10-13)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and its step 1 is built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 and 2 are built.
 
 Done:
 
@@ -34,11 +34,18 @@ Done:
   - The admin API at `/admin/api/v1/` with `/me`, `/staff` and `/audit`, and the GM audit log, which the game and account roles can only add to.
   - The admin screens at `/admin`, a bundle that players never load.
   - `player:get_staff_role()` and `player:has_staff_permission(name)`.
+- Phase 6 step 2, player search, item history, restores and audit reviews ([decision 0029](decisions/0029-player-search-and-item-history.md)):
+  - `GET /players` by name, ID, item serial or IP range, `GET /characters/{id}` from the zone or the database, and the character's item and zeny log.
+  - `GET /items/{serial}/history`, which follows splits and merges both ways.
+  - `POST /restore`, which moves serials back by mail from any holder, online or offline, or makes copies with `items.create`, in one transaction.
+  - The review queue and `POST /audit/{id}/review`.
+  - Login records kept 90 days for the IP search, and the admin screens for all of it.
 
 Open review items:
 
 - Next step 18's details to review, in proposal 0002, "Next steps".
 - Next step 19's details to review, in proposal 0002, "Next steps".
+- Next step 20's details to review, in proposal 0002, "Next steps".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -51,7 +58,7 @@ Known issues:
 
 Next:
 
-1. Phase 6 (section 15, "Phase 6 in full"), with step 2, player search and item history, once next step 19 is reviewed.
+1. Phase 6 (section 15, "Phase 6 in full"), with step 3, moderation and GM commands, once next steps 19 and 20 are reviewed.
 2. The open review items above, between phase 6 steps.
 3. Phase 7, procedural mode, is the largest phase left.
 
@@ -2660,7 +2667,16 @@ The order from here:
       - `player:get_staff_role()` and `player:has_staff_permission(name)`, and a provisional `world:set_staff_role` for `wactl mod test`. The greeter sample has a staff-only Staff Desk with four test cases.
       - Checked in Chrome with a local server, PostgreSQL and placeholder assets: the owner's `/admin` said two-factor login was missing until it turned TOTP on and logged in with a code; then it showed the staff list and the audit log, gave PlayerOne the moderator role, and the `staff.give` row showed in the viewer. A player's game page and `/admin` loaded no admin chunk, and `/admin` said "This page is for staff."
       - Left: staff actions in the game and their audit rows (step 3), audit reviews (step 2), the 2-year deletion job (phase 8), and a network form of `admin.World` for the distributed build.
-   2. Player search and item history. Find accounts and characters by name, ID, IP address range or item serial. View a player's status, position, inventory and storage. Show every move of an item serial. Restore stolen items, with a reason, marked for review.
+   2. Player search and item history. Find accounts and characters by name, ID, IP address range or item serial. View a player's status, position, inventory and storage. Show every move of an item serial. Restore stolen items, with a reason, marked for review. Done on 2026-10-13 ([decision 0029](decisions/0029-player-search-and-item-history.md), proposal 0002 review decision 34, server/README.md, "Staff and admin tools"):
+      - The permissions `players.read_ip` and `items.create`, and the default roles of review decision 34.
+      - Migration 00024: `account_logins`, kept 90 days, for the IP search, the review's verdict, and indexes for name prefixes and IP ranges.
+      - The admin API: `GET /players`, `GET /characters/{id}` and its `/logs`, `GET /items/{serial}/history`, `POST /restore`, `GET /audit?needs_review=true` and `POST /audit/{id}/review`. Detail views, IP searches, restores and reviews write audit rows.
+      - `server/adminworld`, the world side of `admin.World`: online characters from their zones, offline ones and the logs from the database.
+      - Restores through the transfers and the mail, in one commit, from any holder online or offline. Offline holders are held in the store so no login reads them meanwhile. A gone serial is copied from its last log line with `items.create`.
+      - The admin screens: the player search, the character's details with tabs, the item history, the restore form and the review queue.
+      - An end-to-end duplication test runs restores while bots trade, use storages and carts, and lose their connections. No serial was held twice and every total held.
+      - Checked in Chrome with a local server, PostgreSQL and placeholder assets. Thief played on the placeholder map. The owner, logged in with TOTP, gave Admin2 the admin role, found Thief by "thi" as a Novice online at placeholder/map 12,12, opened its inventory, followed its Jellopy serial to the history ("Now: Thief (inventory)"), and restored 5 Jellopy to Victim with a reason. The history then showed the restore into "mail 1 to Victim", and the review queue showed the row as "Your own action". Admin2 logged in with TOTP, saw OK and Flag on the row, reviewed it as ok with a note, and the audit log showed "Reviewed by Admin2: ok". Victim's mail tab showed the mail from Staff with the 5 Jellopy.
+      - Left: restores of items held on two maps in one call, and a network form of `admin.World`.
    3. Moderation and GM commands. The report queue with reported chat in context. Mute, kick, jail and account bans, each with a duration and reason, shown to the player. Reported chat is kept until its report closes. A first set of in-game commands with the same permissions and audit log: `@warp`, `@jumpto`, `@recall`, `@hide`, `@kick`, `@mute`, `@jail`, and `@item` with a reason, marked for review.
    4. World, events and mods tools. Zones, player counts and tick times. Announcements, and planned restarts with a countdown. Start, stop and schedule events. Installed mods with their permissions and error counts, and turning a mod off in a zone.
    5. The account page. The block list and the player's own reports. A JSON export of the account's data. Account deletion after 14 days. A privacy notice that the server owner fills in.

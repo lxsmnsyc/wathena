@@ -52,6 +52,8 @@ type commit struct {
 	started bool
 	// retryAt is when a commit that failed may run again.
 	retryAt time.Time
+	// seq is the commit's place in the order of the lane, from 1.
+	seq int64
 }
 
 // Commit queues the saves and log lines of transfers. It never blocks.
@@ -86,6 +88,8 @@ func (s *Store) openCommit() *commit {
 // wakes the worker. s.mu must be held.
 func (s *Store) queueCommit(c *commit) {
 	if len(s.lane) == 0 || s.lane[len(s.lane)-1] != c {
+		s.seq++
+		c.seq = s.seq
 		s.lane = append(s.lane, c)
 	}
 	select {
@@ -99,14 +103,14 @@ func (s *Store) queueCommit(c *commit) {
 func (s *Store) CommitWith(entries []Entry, storages []StorageWrite, logs transfer.Logs) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var c *commit
-	if n := len(s.lane); n > 0 && !s.lane[n-1].started {
-		c = s.lane[n-1]
-	}
-	if c == nil {
-		c = &commit{}
-	}
-	added := false
+	s.addCommit(s.openCommit(), entries, storages, logs, false)
+}
+
+// addCommit adds characters, storages and log lines to a commit that has
+// not started, and queues it when it is new and holds anything. other
+// is set when the caller added other rows to it. s.mu must be held.
+func (s *Store) addCommit(c *commit, entries []Entry, storages []StorageWrite, logs transfer.Logs, other bool) {
+	added := other
 	for _, e := range entries {
 		x := e.Session
 		if x == nil || x.ended {
@@ -137,6 +141,8 @@ func (s *Store) CommitWith(entries []Entry, storages []StorageWrite, logs transf
 		return
 	}
 	if len(s.lane) == 0 || s.lane[len(s.lane)-1] != c {
+		s.seq++
+		c.seq = s.seq
 		s.lane = append(s.lane, c)
 		added = true
 	}
@@ -303,6 +309,7 @@ func (s *Store) finishCommit(c *commit, stale, skip []bool, err error) {
 		}
 	}
 	s.finishWrites(&c.writes)
+	s.written = c.seq
 	s.lane[0] = nil
 	s.lane = s.lane[1:]
 	s.broadcast()

@@ -7,8 +7,8 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1";
 
-// The admin API's messages (decision 0028). The API is JSON at
-// /admin/api/v1/, in the protobuf JSON form of these messages, with
+// The admin API's messages (decisions 0028 and 0029). The API is JSON
+// at /admin/api/v1/, in the protobuf JSON form of these messages, with
 // lowerCamelCase field names.
 
 // Me answers GET /me: who the session is and what it may do.
@@ -93,6 +93,12 @@ message AuditEntry {
   // reviewed_at and reviewed_by are set once a review is recorded.
   google.protobuf.Timestamp reviewed_at = 11;
   string reviewed_by = 12;
+  // verdict is the review's ok or flag, and review_note its note.
+  string verdict = 13;
+  string review_note = 14;
+  // account_id is the staff account's ID, so the screens can tell the
+  // caller's own rows, which the caller may not review.
+  int64 account_id = 15;
 }
 
 // AuditPage answers GET /audit: rows newest first.
@@ -100,6 +106,298 @@ message AuditPage {
   repeated AuditEntry entries = 1;
   // next_before_id is the before_id of the next page, or 0 at the end.
   int64 next_before_id = 2;
+}
+
+// ReviewRequest is the body of POST /audit/{id}/review.
+message ReviewRequest {
+  // verdict is ok or flag.
+  string verdict = 1;
+  // note is optional, at most 255 characters. A flag needs one.
+  string note = 2;
+}
+
+// Position is a place on a map.
+message Position {
+  // map is the map's name, such as prontera.
+  string map = 1;
+  int32 x = 2;
+  int32 y = 3;
+}
+
+// Sanction is a mute or a jail in effect.
+message Sanction {
+  // kind is mute or jail.
+  string kind = 1;
+  string reason = 2;
+  google.protobuf.Timestamp started_at = 3;
+  google.protobuf.Timestamp ends_at = 4;
+  string issued_by = 5;
+}
+
+// CharacterSummary is a character in the search results.
+message CharacterSummary {
+  int64 id = 1;
+  string name = 2;
+  int32 job = 3;
+  string job_name = 4;
+  int32 base_level = 5;
+  int32 job_level = 6;
+  bool online = 7;
+  // position is where the character is now when online, else where it
+  // was saved.
+  Position position = 8;
+  repeated Sanction sanctions = 9;
+}
+
+// LoginRecord is one login of an account, for an IP search.
+message LoginRecord {
+  string ip = 1;
+  google.protobuf.Timestamp at = 2;
+  string user_agent = 3;
+}
+
+// Owner is where an item or zeny was or went: a holder or an end of the
+// transfers (decision 0017).
+message Owner {
+  // kind is inventory, storage, cart, guild_storage, mail, vending,
+  // ground, monster, shop, script, skill, used, fee, event or staff.
+  string kind = 1;
+  // id is the character, account, guild, mail, monster or skill ID, or
+  // 0.
+  int64 id = 2;
+  // storage is the record ID of an extra storage, or 0.
+  uint32 storage = 3;
+  // name names the owner for people, such as a character's name, or a
+  // mail and its recipient. It is empty when the owner is gone.
+  string name = 4;
+  // character_id and account_id are the character and the account that
+  // the holder belongs to, when there are.
+  int64 character_id = 5;
+  int64 account_id = 6;
+}
+
+// AccountSummary is one account in the search results.
+message AccountSummary {
+  int64 account_id = 1;
+  string account = 2;
+  google.protobuf.Timestamp created_at = 3;
+  // last_login is the account's last login on the account pages, or
+  // unset.
+  google.protobuf.Timestamp last_login = 4;
+  repeated CharacterSummary characters = 5;
+  // logins are the logins of an IP search that matched, newest first.
+  repeated LoginRecord logins = 6;
+}
+
+// PlayerSearch answers GET /players.
+message PlayerSearch {
+  repeated AccountSummary accounts = 1;
+  // next_cursor is the cursor of the next page, or empty at the end.
+  string next_cursor = 2;
+  // holder is where a searched serial is now.
+  Owner holder = 3;
+}
+
+// Item is one stack or instance of an item.
+message Item {
+  // serial is the stack's serial, as a UUID.
+  string serial = 1;
+  uint32 item_id = 2;
+  // name is the item's name in the item database.
+  string name = 3;
+  int32 amount = 4;
+  int32 slot = 5;
+  int32 refine = 6;
+  repeated uint32 cards = 7;
+  // equip holds the positions it is worn in, as EQP_ bits, or 0.
+  uint32 equip = 8;
+  bool identified = 9;
+  // bound is the bond, as rAthena's bound_type, or 0.
+  int32 bound = 10;
+  // rolls are the copy's rolled values, by name.
+  map<string, int32> rolls = 11;
+}
+
+// Storage is a storage or a cart of a character.
+message Storage {
+  // kind is cart, storage for the account's storage, or extra for an
+  // extra storage.
+  string kind = 1;
+  // storage is the extra storage's record ID, or 0.
+  uint32 storage = 2;
+  // name is the extra storage's name, or empty.
+  string name = 3;
+  repeated Item items = 4;
+}
+
+// Mail is a mail in a character's mailbox.
+message Mail {
+  int64 id = 1;
+  string from = 2;
+  string title = 3;
+  google.protobuf.Timestamp sent_at = 4;
+  int64 zeny = 5;
+  bool read = 6;
+  bool returned = 7;
+  repeated Item items = 8;
+}
+
+// Currency is an amount of a currency of data/currencies.yml.
+message Currency {
+  uint32 id = 1;
+  string name = 2;
+  int64 amount = 3;
+  // account is set for a currency the account holds.
+  bool account = 4;
+}
+
+// Stats are the raised stats.
+message Stats {
+  int32 str = 1;
+  int32 agi = 2;
+  int32 vit = 3;
+  int32 int = 4;
+  int32 dex = 5;
+  int32 luk = 6;
+}
+
+// CharacterDetail answers GET /characters/{id}. An online character is
+// read from its zone, an offline one from the database.
+message CharacterDetail {
+  int64 id = 1;
+  string name = 2;
+  int64 account_id = 3;
+  string account = 4;
+  int32 job = 5;
+  string job_name = 6;
+  bool male = 7;
+  int32 base_level = 8;
+  int32 job_level = 9;
+  int64 base_exp = 10;
+  int64 job_exp = 11;
+  Stats stats = 12;
+  int32 status_points = 13;
+  int32 skill_points = 14;
+  int64 hp = 15;
+  int64 sp = 16;
+  int64 zeny = 17;
+  repeated Currency currencies = 18;
+  bool online = 19;
+  Position position = 20;
+  Position save_point = 21;
+  string party = 22;
+  string guild = 23;
+  // inventory holds every item, worn ones too, which have equip set.
+  repeated Item inventory = 24;
+  repeated Storage storages = 25;
+  repeated Mail mails = 26;
+  repeated Sanction sanctions = 27;
+  google.protobuf.Timestamp created_at = 28;
+}
+
+// ItemMove is one line of the item log.
+message ItemMove {
+  int64 id = 1;
+  google.protobuf.Timestamp at = 2;
+  // action is why it moved, such as trade, drop or restore.
+  string action = 3;
+  Owner from = 4;
+  Owner to = 5;
+  // serial is the stack the amount ended in, or the stack it left for
+  // an end. source is the serial it came from when that differs.
+  string serial = 6;
+  string source = 7;
+  uint32 item_id = 8;
+  string item_name = 9;
+  int32 amount = 10;
+  int32 refine = 11;
+  repeated uint32 cards = 12;
+  // relation is self for the serial asked for, ancestor for a stack it
+  // came from, and descendant for a stack it went into.
+  string relation = 13;
+}
+
+// ItemHistory answers GET /items/{serial}/history: every move of the
+// serial, of the stacks it came from and of the stacks it went into,
+// oldest first.
+message ItemHistory {
+  string serial = 1;
+  repeated ItemMove moves = 2;
+  // serials are the serials it followed.
+  repeated string serials = 3;
+  // truncated is set when it stopped at its limits.
+  bool truncated = 4;
+  // holder is where the serial is now, or unset when it is gone.
+  Owner holder = 5;
+}
+
+// LogEntry is one line of a character's item or zeny log.
+message LogEntry {
+  google.protobuf.Timestamp at = 1;
+  // kind is item or zeny.
+  string kind = 2;
+  string action = 3;
+  Owner from = 4;
+  Owner to = 5;
+  string serial = 6;
+  string source = 7;
+  uint32 item_id = 8;
+  string item_name = 9;
+  int64 amount = 10;
+  int32 refine = 11;
+  repeated uint32 cards = 12;
+  // currency is the currency's ID for a zeny line, 0 for zeny.
+  uint32 currency = 13;
+  string currency_name = 14;
+  int64 id = 15;
+}
+
+// CharacterLogs answers GET /characters/{id}/logs, newest first.
+message CharacterLogs {
+  repeated LogEntry entries = 1;
+  // next_cursor is the cursor of the next page, or empty at the end.
+  string next_cursor = 2;
+}
+
+// RestoreItem is one serial of a restore.
+message RestoreItem {
+  // serial is the stack to give back.
+  string serial = 1;
+  // amount is how many. 0 is the whole stack, or for a copy the amount
+  // of the serial's last log line.
+  int32 amount = 2;
+}
+
+// RestoreRequest is the body of POST /restore.
+message RestoreRequest {
+  // character_id is the character that gets the items, by mail.
+  int64 character_id = 1;
+  repeated RestoreItem items = 2;
+  // zeny is made for the restore, which needs items.create.
+  int64 zeny = 3;
+  // reason is required, at most 255 characters.
+  string reason = 4;
+}
+
+// RestoredItem is what a restore did with one serial.
+message RestoredItem {
+  string serial = 1;
+  // new_serial is the serial in the mail.
+  string new_serial = 2;
+  // copy is set when the serial was gone and a copy was made.
+  bool copy = 3;
+  uint32 item_id = 4;
+  string item_name = 5;
+  int32 amount = 6;
+  // from is the holder it was taken from, or the staff end for a copy.
+  Owner from = 7;
+}
+
+// RestoreResult answers POST /restore.
+message RestoreResult {
+  int64 mail_id = 1;
+  repeated RestoredItem items = 2;
+  int64 zeny = 3;
 }
 
 // Error is the body of every answer that is not 2xx.

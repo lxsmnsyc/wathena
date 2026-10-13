@@ -525,6 +525,12 @@ type Zone struct {
 	// and txPlayers the players they changed.
 	txLogs    transfer.Logs
 	txPlayers []*Player
+	// txOffline are the offline characters a restore changed, txMailRows
+	// the rows of the mails it changed, read under their locks, and
+	// txAudit its audit rows (stafftools.go).
+	txOffline  []CommitSave
+	txMailRows []mail.Write
+	txAudit    []staff.AuditRow
 
 	// Statuses is the status database. Without it, no status starts. Set
 	// it before Run.

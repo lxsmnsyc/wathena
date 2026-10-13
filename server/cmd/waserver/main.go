@@ -83,6 +83,7 @@ import (
 	"github.com/lxsmnsyc/wathena/reference/rathena"
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/admin"
+	"github.com/lxsmnsyc/wathena/server/adminworld"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
@@ -590,6 +591,12 @@ func runAll(name string, args []string) error {
 	}
 	var accounts *account.Service
 	var adminAPI *admin.Handler
+	// The world side of the admin API: online players from their zones,
+	// offline ones and the logs from the database, and restores
+	// (decision 0029).
+	staffWorld := adminworld.New(adminworld.Config{Staff: staffRoles, World: w, Store: st, Chat: hub, Items: items, Jobs: jobs,
+		StorageRecords: loaded.zone.Storages, Currencies: loaded.zone.Currencies, Storages: storages, Mail: mails, Social: socials,
+		Log: log})
 	if !cfg.Dev {
 		pool, err := openDatabase(ctx, cfg.Secrets.AccountDatabase, "waserver-account")
 		if err != nil {
@@ -630,9 +637,8 @@ func runAll(name string, args []string) error {
 		gw.Sessions = account.GameTickets{Store: st}
 		go accounts.Run(ctx)
 		// The admin API runs on the account service's origin and pool. It
-		// tells the world's staff registry of role changes in this
-		// process.
-		adminAPI, err = admin.New(admin.Config{Pool: pool, Auth: accounts, World: staffRoles, Roles: cfg.Roles,
+		// reaches the world in this process through staffWorld.
+		adminAPI, err = admin.New(admin.Config{Pool: pool, Auth: accounts, World: staffWorld, Roles: cfg.Roles,
 			Owners: cfg.Staff.Owners, Log: log})
 		if err != nil {
 			return err
@@ -707,6 +713,9 @@ func runAll(name string, args []string) error {
 			dbg.Handle("POST /debug/wathena/guild-storage", devGuildStorageHandler(w))
 			dbg.Handle("POST /debug/wathena/storage", devStorageHandler(w))
 			dbg.Handle("POST /debug/wathena/cart", devCartHandler(w))
+			if st != nil {
+				dbg.Handle("POST /debug/wathena/restore", devRestoreHandler(staffWorld, st))
+			}
 		}
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
 	}
@@ -912,7 +921,7 @@ func (c storeCommitter) CommitWrites(saves []zone.CommitSave, storages []zone.St
 	for _, u := range w.Events {
 		units = append(units, store.EventUnit{Event: u.Event, Scheduled: u.Scheduled, Unit: u.Unit})
 	}
-	c.store.CommitAll(entries, writes, store.Writes{Mails: w.Mails, Stock: w.Stock, Stores: w.Stores, Events: units}, logs)
+	c.store.CommitAll(entries, writes, store.Writes{Mails: w.Mails, Stock: w.Stock, Stores: w.Stores, Events: units, Audit: w.Audit}, logs)
 }
 
 func (d dbCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {

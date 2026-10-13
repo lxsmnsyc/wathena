@@ -48,6 +48,7 @@ type Kind uint8
 //   - Monster: the monster's ID, such as 1002 for a Poring.
 //   - Skill: the skill's ID.
 //   - Ground, Shop, Script, Used and Fee: 0.
+//   - Staff: the staff account's ID.
 //
 // A currency's wallet (CurrencyWallet) is the inventory's owner for a
 // character's currency, and the account's storage for an account's.
@@ -71,6 +72,10 @@ const (
 	// KindEvent is where a world event's rewards come from (review
 	// decision 31).
 	KindEvent
+	// KindStaff is where a restore's copies and zeny come from, when the
+	// staff tools make them (decision 0029). Its ID is the staff
+	// account's.
+	KindStaff
 )
 
 var kindNames = [...]string{
@@ -89,6 +94,7 @@ var kindNames = [...]string{
 	KindUsed:         "used",
 	KindFee:          "fee",
 	KindEvent:        "event",
+	KindStaff:        "staff",
 }
 
 // String is the kind's name in logs and in the database, such as
@@ -179,6 +185,10 @@ const (
 	// ActionEvent is a world event's reward, and its mail when it did
 	// not fit.
 	ActionEvent Action = "event"
+	// ActionRestore is a restore of the staff tools: items that move
+	// back from their holder, and the copies and zeny it makes, into the
+	// mail that brings them (decision 0029).
+	ActionRestore Action = "restore"
 )
 
 // ItemLog is one item move.

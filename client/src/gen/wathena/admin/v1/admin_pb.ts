@@ -12,7 +12,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file wathena/admin/v1/admin.proto.
  */
 export const file_wathena_admin_v1_admin: GenFile = /*@__PURE__*/
-  fileDesc("Chx3YXRoZW5hL2FkbWluL3YxL2FkbWluLnByb3RvEhB3YXRoZW5hLmFkbWluLnYxIqEBCgJNZRIPCgdhY2NvdW50GAEgASgJEgwKBHJvbGUYAiABKAkSEwoLcGVybWlzc2lvbnMYAyADKAkSEgoKdHdvX2ZhY3RvchgEIAEoCBIVCg1hc3NpZ25lZF9yb2xlGAUgASgJEhQKDHJlY2VudF9sb2dpbhgGIAEoCBISCgpjc3JmX3Rva2VuGAcgASgJEhIKCnJlYXV0aF91cmwYCCABKAkiKQoEUm9sZRIMCgRuYW1lGAEgASgJEhMKC3Blcm1pc3Npb25zGAIgAygJIqkBCgtTdGFmZk1lbWJlchISCgphY2NvdW50X2lkGAEgASgDEg8KB2FjY291bnQYAiABKAkSDAoEcm9sZRgDIAEoCRITCgtmcm9tX2NvbmZpZxgEIAEoCBIQCghnaXZlbl9ieRgFIAEoCRIsCghnaXZlbl9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKdHdvX2ZhY3RvchgHIAEoCCJiCglTdGFmZkxpc3QSLgoHbWVtYmVycxgBIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuU3RhZmZNZW1iZXISJQoFcm9sZXMYAiADKAsyFi53YXRoZW5hLmFkbWluLnYxLlJvbGUiQAoPR2l2ZVJvbGVSZXF1ZXN0Eg8KB2FjY291bnQYASABKAkSDAoEcm9sZRgCIAEoCRIOCgZyZWFzb24YAyABKAkipwIKCkF1ZGl0RW50cnkSCgoCaWQYASABKAMSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2FjY291bnQYAyABKAkSDAoEcm9sZRgEIAEoCRIOCgZhY3Rpb24YBSABKAkSDgoGc291cmNlGAYgASgJEg4KBnRhcmdldBgHIAEoCRIqCglhcmd1bWVudHMYCCABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0Eg4KBnJlYXNvbhgJIAEoCRIUCgxuZWVkc19yZXZpZXcYCiABKAgSLwoLcmV2aWV3ZWRfYXQYCyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC3Jldmlld2VkX2J5GAwgASgJIlIKCUF1ZGl0UGFnZRItCgdlbnRyaWVzGAEgAygLMhwud2F0aGVuYS5hZG1pbi52MS5BdWRpdEVudHJ5EhYKDm5leHRfYmVmb3JlX2lkGAIgASgDIjoKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCRISCgpyZWF1dGhfdXJsGAMgASgJQkRaQmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvYWRtaW4vdjE7YWRtaW52MWIGcHJvdG8z", [file_google_protobuf_struct, file_google_protobuf_timestamp]);
+  fileDesc("Chx3YXRoZW5hL2FkbWluL3YxL2FkbWluLnByb3RvEhB3YXRoZW5hLmFkbWluLnYxIqEBCgJNZRIPCgdhY2NvdW50GAEgASgJEgwKBHJvbGUYAiABKAkSEwoLcGVybWlzc2lvbnMYAyADKAkSEgoKdHdvX2ZhY3RvchgEIAEoCBIVCg1hc3NpZ25lZF9yb2xlGAUgASgJEhQKDHJlY2VudF9sb2dpbhgGIAEoCBISCgpjc3JmX3Rva2VuGAcgASgJEhIKCnJlYXV0aF91cmwYCCABKAkiKQoEUm9sZRIMCgRuYW1lGAEgASgJEhMKC3Blcm1pc3Npb25zGAIgAygJIqkBCgtTdGFmZk1lbWJlchISCgphY2NvdW50X2lkGAEgASgDEg8KB2FjY291bnQYAiABKAkSDAoEcm9sZRgDIAEoCRITCgtmcm9tX2NvbmZpZxgEIAEoCBIQCghnaXZlbl9ieRgFIAEoCRIsCghnaXZlbl9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKdHdvX2ZhY3RvchgHIAEoCCJiCglTdGFmZkxpc3QSLgoHbWVtYmVycxgBIAMoCzIdLndhdGhlbmEuYWRtaW4udjEuU3RhZmZNZW1iZXISJQoFcm9sZXMYAiADKAsyFi53YXRoZW5hLmFkbWluLnYxLlJvbGUiQAoPR2l2ZVJvbGVSZXF1ZXN0Eg8KB2FjY291bnQYASABKAkSDAoEcm9sZRgCIAEoCRIOCgZyZWFzb24YAyABKAki4QIKCkF1ZGl0RW50cnkSCgoCaWQYASABKAMSJgoCYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2FjY291bnQYAyABKAkSDAoEcm9sZRgEIAEoCRIOCgZhY3Rpb24YBSABKAkSDgoGc291cmNlGAYgASgJEg4KBnRhcmdldBgHIAEoCRIqCglhcmd1bWVudHMYCCABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0Eg4KBnJlYXNvbhgJIAEoCRIUCgxuZWVkc19yZXZpZXcYCiABKAgSLwoLcmV2aWV3ZWRfYXQYCyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC3Jldmlld2VkX2J5GAwgASgJEg8KB3ZlcmRpY3QYDSABKAkSEwoLcmV2aWV3X25vdGUYDiABKAkSEgoKYWNjb3VudF9pZBgPIAEoAyJSCglBdWRpdFBhZ2USLQoHZW50cmllcxgBIAMoCzIcLndhdGhlbmEuYWRtaW4udjEuQXVkaXRFbnRyeRIWCg5uZXh0X2JlZm9yZV9pZBgCIAEoAyIuCg1SZXZpZXdSZXF1ZXN0Eg8KB3ZlcmRpY3QYASABKAkSDAoEbm90ZRgCIAEoCSItCghQb3NpdGlvbhILCgNtYXAYASABKAkSCQoBeBgCIAEoBRIJCgF5GAMgASgFIpgBCghTYW5jdGlvbhIMCgRraW5kGAEgASgJEg4KBnJlYXNvbhgCIAEoCRIuCgpzdGFydGVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgdlbmRzX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglpc3N1ZWRfYnkYBSABKAki3wEKEENoYXJhY3RlclN1bW1hcnkSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRILCgNqb2IYAyABKAUSEAoIam9iX25hbWUYBCABKAkSEgoKYmFzZV9sZXZlbBgFIAEoBRIRCglqb2JfbGV2ZWwYBiABKAUSDgoGb25saW5lGAcgASgIEiwKCHBvc2l0aW9uGAggASgLMhoud2F0aGVuYS5hZG1pbi52MS5Qb3NpdGlvbhItCglzYW5jdGlvbnMYCSADKAsyGi53YXRoZW5hLmFkbWluLnYxLlNhbmN0aW9uIlUKC0xvZ2luUmVjb3JkEgoKAmlwGAEgASgJEiYKAmF0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBISCgp1c2VyX2FnZW50GAMgASgJImoKBU93bmVyEgwKBGtpbmQYASABKAkSCgoCaWQYAiABKAMSDwoHc3RvcmFnZRgDIAEoDRIMCgRuYW1lGAQgASgJEhQKDGNoYXJhY3Rlcl9pZBgFIAEoAxISCgphY2NvdW50X2lkGAYgASgDIvwBCg5BY2NvdW50U3VtbWFyeRISCgphY2NvdW50X2lkGAEgASgDEg8KB2FjY291bnQYAiABKAkSLgoKY3JlYXRlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKbGFzdF9sb2dpbhgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNgoKY2hhcmFjdGVycxgFIAMoCzIiLndhdGhlbmEuYWRtaW4udjEuQ2hhcmFjdGVyU3VtbWFyeRItCgZsb2dpbnMYBiADKAsyHS53YXRoZW5hLmFkbWluLnYxLkxvZ2luUmVjb3JkIoABCgxQbGF5ZXJTZWFyY2gSMgoIYWNjb3VudHMYASADKAsyIC53YXRoZW5hLmFkbWluLnYxLkFjY291bnRTdW1tYXJ5EhMKC25leHRfY3Vyc29yGAIgASgJEicKBmhvbGRlchgDIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXIihAIKBEl0ZW0SDgoGc2VyaWFsGAEgASgJEg8KB2l0ZW1faWQYAiABKA0SDAoEbmFtZRgDIAEoCRIOCgZhbW91bnQYBCABKAUSDAoEc2xvdBgFIAEoBRIOCgZyZWZpbmUYBiABKAUSDQoFY2FyZHMYByADKA0SDQoFZXF1aXAYCCABKA0SEgoKaWRlbnRpZmllZBgJIAEoCBINCgVib3VuZBgKIAEoBRIwCgVyb2xscxgLIAMoCzIhLndhdGhlbmEuYWRtaW4udjEuSXRlbS5Sb2xsc0VudHJ5GiwKClJvbGxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4ASJdCgdTdG9yYWdlEgwKBGtpbmQYASABKAkSDwoHc3RvcmFnZRgCIAEoDRIMCgRuYW1lGAMgASgJEiUKBWl0ZW1zGAQgAygLMhYud2F0aGVuYS5hZG1pbi52MS5JdGVtIrEBCgRNYWlsEgoKAmlkGAEgASgDEgwKBGZyb20YAiABKAkSDQoFdGl0bGUYAyABKAkSKwoHc2VudF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEemVueRgFIAEoAxIMCgRyZWFkGAYgASgIEhAKCHJldHVybmVkGAcgASgIEiUKBWl0ZW1zGAggAygLMhYud2F0aGVuYS5hZG1pbi52MS5JdGVtIkUKCEN1cnJlbmN5EgoKAmlkGAEgASgNEgwKBG5hbWUYAiABKAkSDgoGYW1vdW50GAMgASgDEg8KB2FjY291bnQYBCABKAgiVQoFU3RhdHMSCwoDc3RyGAEgASgFEgsKA2FnaRgCIAEoBRILCgN2aXQYAyABKAUSCwoDaW50GAQgASgFEgsKA2RleBgFIAEoBRILCgNsdWsYBiABKAUi3AUKD0NoYXJhY3RlckRldGFpbBIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhIKCmFjY291bnRfaWQYAyABKAMSDwoHYWNjb3VudBgEIAEoCRILCgNqb2IYBSABKAUSEAoIam9iX25hbWUYBiABKAkSDAoEbWFsZRgHIAEoCBISCgpiYXNlX2xldmVsGAggASgFEhEKCWpvYl9sZXZlbBgJIAEoBRIQCghiYXNlX2V4cBgKIAEoAxIPCgdqb2JfZXhwGAsgASgDEiYKBXN0YXRzGAwgASgLMhcud2F0aGVuYS5hZG1pbi52MS5TdGF0cxIVCg1zdGF0dXNfcG9pbnRzGA0gASgFEhQKDHNraWxsX3BvaW50cxgOIAEoBRIKCgJocBgPIAEoAxIKCgJzcBgQIAEoAxIMCgR6ZW55GBEgASgDEi4KCmN1cnJlbmNpZXMYEiADKAsyGi53YXRoZW5hLmFkbWluLnYxLkN1cnJlbmN5Eg4KBm9ubGluZRgTIAEoCBIsCghwb3NpdGlvbhgUIAEoCzIaLndhdGhlbmEuYWRtaW4udjEuUG9zaXRpb24SLgoKc2F2ZV9wb2ludBgVIAEoCzIaLndhdGhlbmEuYWRtaW4udjEuUG9zaXRpb24SDQoFcGFydHkYFiABKAkSDQoFZ3VpbGQYFyABKAkSKQoJaW52ZW50b3J5GBggAygLMhYud2F0aGVuYS5hZG1pbi52MS5JdGVtEisKCHN0b3JhZ2VzGBkgAygLMhkud2F0aGVuYS5hZG1pbi52MS5TdG9yYWdlEiUKBW1haWxzGBogAygLMhYud2F0aGVuYS5hZG1pbi52MS5NYWlsEi0KCXNhbmN0aW9ucxgbIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuU2FuY3Rpb24SLgoKY3JlYXRlZF9hdBgcIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAinwIKCEl0ZW1Nb3ZlEgoKAmlkGAEgASgDEiYKAmF0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgFEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghyZWxhdGlvbhgNIAEoCSKVAQoLSXRlbUhpc3RvcnkSDgoGc2VyaWFsGAEgASgJEikKBW1vdmVzGAIgAygLMhoud2F0aGVuYS5hZG1pbi52MS5JdGVtTW92ZRIPCgdzZXJpYWxzGAMgAygJEhEKCXRydW5jYXRlZBgEIAEoCBInCgZob2xkZXIYBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyIsQCCghMb2dFbnRyeRImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgCIAEoCRIOCgZhY3Rpb24YAyABKAkSJQoEZnJvbRgEIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXISIwoCdG8YBSABKAsyFy53YXRoZW5hLmFkbWluLnYxLk93bmVyEg4KBnNlcmlhbBgGIAEoCRIOCgZzb3VyY2UYByABKAkSDwoHaXRlbV9pZBgIIAEoDRIRCglpdGVtX25hbWUYCSABKAkSDgoGYW1vdW50GAogASgDEg4KBnJlZmluZRgLIAEoBRINCgVjYXJkcxgMIAMoDRIQCghjdXJyZW5jeRgNIAEoDRIVCg1jdXJyZW5jeV9uYW1lGA4gASgJEgoKAmlkGA8gASgDIlEKDUNoYXJhY3RlckxvZ3MSKwoHZW50cmllcxgBIAMoCzIaLndhdGhlbmEuYWRtaW4udjEuTG9nRW50cnkSEwoLbmV4dF9jdXJzb3IYAiABKAkiLQoLUmVzdG9yZUl0ZW0SDgoGc2VyaWFsGAEgASgJEg4KBmFtb3VudBgCIAEoBSJyCg5SZXN0b3JlUmVxdWVzdBIUCgxjaGFyYWN0ZXJfaWQYASABKAMSLAoFaXRlbXMYAiADKAsyHS53YXRoZW5hLmFkbWluLnYxLlJlc3RvcmVJdGVtEgwKBHplbnkYAyABKAMSDgoGcmVhc29uGAQgASgJIpsBCgxSZXN0b3JlZEl0ZW0SDgoGc2VyaWFsGAEgASgJEhIKCm5ld19zZXJpYWwYAiABKAkSDAoEY29weRgDIAEoCBIPCgdpdGVtX2lkGAQgASgNEhEKCWl0ZW1fbmFtZRgFIAEoCRIOCgZhbW91bnQYBiABKAUSJQoEZnJvbRgHIAEoCzIXLndhdGhlbmEuYWRtaW4udjEuT3duZXIiXQoNUmVzdG9yZVJlc3VsdBIPCgdtYWlsX2lkGAEgASgDEi0KBWl0ZW1zGAIgAygLMh4ud2F0aGVuYS5hZG1pbi52MS5SZXN0b3JlZEl0ZW0SDAoEemVueRgDIAEoAyI6CgVFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEgoKcmVhdXRoX3VybBgDIAEoCUJEWkJnaXRodWIuY29tL2x4c21uc3ljL3dhdGhlbmEvc2NoZW1hL2dlbi9nby93YXRoZW5hL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw", [file_google_protobuf_struct, file_google_protobuf_timestamp]);
 
 /**
  * Me answers GET /me: who the session is and what it may do.
@@ -304,6 +304,26 @@ export type AuditEntry = Message<"wathena.admin.v1.AuditEntry"> & {
    * @generated from field: string reviewed_by = 12;
    */
   reviewedBy: string;
+
+  /**
+   * verdict is the review's ok or flag, and review_note its note.
+   *
+   * @generated from field: string verdict = 13;
+   */
+  verdict: string;
+
+  /**
+   * @generated from field: string review_note = 14;
+   */
+  reviewNote: string;
+
+  /**
+   * account_id is the staff account's ID, so the screens can tell the
+   * caller's own rows, which the caller may not review.
+   *
+   * @generated from field: int64 account_id = 15;
+   */
+  accountId: bigint;
 };
 
 /**
@@ -340,6 +360,1155 @@ export const AuditPageSchema: GenMessage<AuditPage> = /*@__PURE__*/
   messageDesc(file_wathena_admin_v1_admin, 6);
 
 /**
+ * ReviewRequest is the body of POST /audit/{id}/review.
+ *
+ * @generated from message wathena.admin.v1.ReviewRequest
+ */
+export type ReviewRequest = Message<"wathena.admin.v1.ReviewRequest"> & {
+  /**
+   * verdict is ok or flag.
+   *
+   * @generated from field: string verdict = 1;
+   */
+  verdict: string;
+
+  /**
+   * note is optional, at most 255 characters. A flag needs one.
+   *
+   * @generated from field: string note = 2;
+   */
+  note: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ReviewRequest.
+ * Use `create(ReviewRequestSchema)` to create a new message.
+ */
+export const ReviewRequestSchema: GenMessage<ReviewRequest> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 7);
+
+/**
+ * Position is a place on a map.
+ *
+ * @generated from message wathena.admin.v1.Position
+ */
+export type Position = Message<"wathena.admin.v1.Position"> & {
+  /**
+   * map is the map's name, such as prontera.
+   *
+   * @generated from field: string map = 1;
+   */
+  map: string;
+
+  /**
+   * @generated from field: int32 x = 2;
+   */
+  x: number;
+
+  /**
+   * @generated from field: int32 y = 3;
+   */
+  y: number;
+};
+
+/**
+ * Describes the message wathena.admin.v1.Position.
+ * Use `create(PositionSchema)` to create a new message.
+ */
+export const PositionSchema: GenMessage<Position> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 8);
+
+/**
+ * Sanction is a mute or a jail in effect.
+ *
+ * @generated from message wathena.admin.v1.Sanction
+ */
+export type Sanction = Message<"wathena.admin.v1.Sanction"> & {
+  /**
+   * kind is mute or jail.
+   *
+   * @generated from field: string kind = 1;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp started_at = 3;
+   */
+  startedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp ends_at = 4;
+   */
+  endsAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string issued_by = 5;
+   */
+  issuedBy: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.Sanction.
+ * Use `create(SanctionSchema)` to create a new message.
+ */
+export const SanctionSchema: GenMessage<Sanction> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 9);
+
+/**
+ * CharacterSummary is a character in the search results.
+ *
+ * @generated from message wathena.admin.v1.CharacterSummary
+ */
+export type CharacterSummary = Message<"wathena.admin.v1.CharacterSummary"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int32 job = 3;
+   */
+  job: number;
+
+  /**
+   * @generated from field: string job_name = 4;
+   */
+  jobName: string;
+
+  /**
+   * @generated from field: int32 base_level = 5;
+   */
+  baseLevel: number;
+
+  /**
+   * @generated from field: int32 job_level = 6;
+   */
+  jobLevel: number;
+
+  /**
+   * @generated from field: bool online = 7;
+   */
+  online: boolean;
+
+  /**
+   * position is where the character is now when online, else where it
+   * was saved.
+   *
+   * @generated from field: wathena.admin.v1.Position position = 8;
+   */
+  position?: Position | undefined;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.Sanction sanctions = 9;
+   */
+  sanctions: Sanction[];
+};
+
+/**
+ * Describes the message wathena.admin.v1.CharacterSummary.
+ * Use `create(CharacterSummarySchema)` to create a new message.
+ */
+export const CharacterSummarySchema: GenMessage<CharacterSummary> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 10);
+
+/**
+ * LoginRecord is one login of an account, for an IP search.
+ *
+ * @generated from message wathena.admin.v1.LoginRecord
+ */
+export type LoginRecord = Message<"wathena.admin.v1.LoginRecord"> & {
+  /**
+   * @generated from field: string ip = 1;
+   */
+  ip: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp at = 2;
+   */
+  at?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string user_agent = 3;
+   */
+  userAgent: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.LoginRecord.
+ * Use `create(LoginRecordSchema)` to create a new message.
+ */
+export const LoginRecordSchema: GenMessage<LoginRecord> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 11);
+
+/**
+ * Owner is where an item or zeny was or went: a holder or an end of the
+ * transfers (decision 0017).
+ *
+ * @generated from message wathena.admin.v1.Owner
+ */
+export type Owner = Message<"wathena.admin.v1.Owner"> & {
+  /**
+   * kind is inventory, storage, cart, guild_storage, mail, vending,
+   * ground, monster, shop, script, skill, used, fee, event or staff.
+   *
+   * @generated from field: string kind = 1;
+   */
+  kind: string;
+
+  /**
+   * id is the character, account, guild, mail, monster or skill ID, or
+   * 0.
+   *
+   * @generated from field: int64 id = 2;
+   */
+  id: bigint;
+
+  /**
+   * storage is the record ID of an extra storage, or 0.
+   *
+   * @generated from field: uint32 storage = 3;
+   */
+  storage: number;
+
+  /**
+   * name names the owner for people, such as a character's name, or a
+   * mail and its recipient. It is empty when the owner is gone.
+   *
+   * @generated from field: string name = 4;
+   */
+  name: string;
+
+  /**
+   * character_id and account_id are the character and the account that
+   * the holder belongs to, when there are.
+   *
+   * @generated from field: int64 character_id = 5;
+   */
+  characterId: bigint;
+
+  /**
+   * @generated from field: int64 account_id = 6;
+   */
+  accountId: bigint;
+};
+
+/**
+ * Describes the message wathena.admin.v1.Owner.
+ * Use `create(OwnerSchema)` to create a new message.
+ */
+export const OwnerSchema: GenMessage<Owner> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 12);
+
+/**
+ * AccountSummary is one account in the search results.
+ *
+ * @generated from message wathena.admin.v1.AccountSummary
+ */
+export type AccountSummary = Message<"wathena.admin.v1.AccountSummary"> & {
+  /**
+   * @generated from field: int64 account_id = 1;
+   */
+  accountId: bigint;
+
+  /**
+   * @generated from field: string account = 2;
+   */
+  account: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 3;
+   */
+  createdAt?: Timestamp | undefined;
+
+  /**
+   * last_login is the account's last login on the account pages, or
+   * unset.
+   *
+   * @generated from field: google.protobuf.Timestamp last_login = 4;
+   */
+  lastLogin?: Timestamp | undefined;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.CharacterSummary characters = 5;
+   */
+  characters: CharacterSummary[];
+
+  /**
+   * logins are the logins of an IP search that matched, newest first.
+   *
+   * @generated from field: repeated wathena.admin.v1.LoginRecord logins = 6;
+   */
+  logins: LoginRecord[];
+};
+
+/**
+ * Describes the message wathena.admin.v1.AccountSummary.
+ * Use `create(AccountSummarySchema)` to create a new message.
+ */
+export const AccountSummarySchema: GenMessage<AccountSummary> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 13);
+
+/**
+ * PlayerSearch answers GET /players.
+ *
+ * @generated from message wathena.admin.v1.PlayerSearch
+ */
+export type PlayerSearch = Message<"wathena.admin.v1.PlayerSearch"> & {
+  /**
+   * @generated from field: repeated wathena.admin.v1.AccountSummary accounts = 1;
+   */
+  accounts: AccountSummary[];
+
+  /**
+   * next_cursor is the cursor of the next page, or empty at the end.
+   *
+   * @generated from field: string next_cursor = 2;
+   */
+  nextCursor: string;
+
+  /**
+   * holder is where a searched serial is now.
+   *
+   * @generated from field: wathena.admin.v1.Owner holder = 3;
+   */
+  holder?: Owner | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.PlayerSearch.
+ * Use `create(PlayerSearchSchema)` to create a new message.
+ */
+export const PlayerSearchSchema: GenMessage<PlayerSearch> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 14);
+
+/**
+ * Item is one stack or instance of an item.
+ *
+ * @generated from message wathena.admin.v1.Item
+ */
+export type Item = Message<"wathena.admin.v1.Item"> & {
+  /**
+   * serial is the stack's serial, as a UUID.
+   *
+   * @generated from field: string serial = 1;
+   */
+  serial: string;
+
+  /**
+   * @generated from field: uint32 item_id = 2;
+   */
+  itemId: number;
+
+  /**
+   * name is the item's name in the item database.
+   *
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int32 amount = 4;
+   */
+  amount: number;
+
+  /**
+   * @generated from field: int32 slot = 5;
+   */
+  slot: number;
+
+  /**
+   * @generated from field: int32 refine = 6;
+   */
+  refine: number;
+
+  /**
+   * @generated from field: repeated uint32 cards = 7;
+   */
+  cards: number[];
+
+  /**
+   * equip holds the positions it is worn in, as EQP_ bits, or 0.
+   *
+   * @generated from field: uint32 equip = 8;
+   */
+  equip: number;
+
+  /**
+   * @generated from field: bool identified = 9;
+   */
+  identified: boolean;
+
+  /**
+   * bound is the bond, as rAthena's bound_type, or 0.
+   *
+   * @generated from field: int32 bound = 10;
+   */
+  bound: number;
+
+  /**
+   * rolls are the copy's rolled values, by name.
+   *
+   * @generated from field: map<string, int32> rolls = 11;
+   */
+  rolls: { [key: string]: number };
+};
+
+/**
+ * Describes the message wathena.admin.v1.Item.
+ * Use `create(ItemSchema)` to create a new message.
+ */
+export const ItemSchema: GenMessage<Item> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 15);
+
+/**
+ * Storage is a storage or a cart of a character.
+ *
+ * @generated from message wathena.admin.v1.Storage
+ */
+export type Storage = Message<"wathena.admin.v1.Storage"> & {
+  /**
+   * kind is cart, storage for the account's storage, or extra for an
+   * extra storage.
+   *
+   * @generated from field: string kind = 1;
+   */
+  kind: string;
+
+  /**
+   * storage is the extra storage's record ID, or 0.
+   *
+   * @generated from field: uint32 storage = 2;
+   */
+  storage: number;
+
+  /**
+   * name is the extra storage's name, or empty.
+   *
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.Item items = 4;
+   */
+  items: Item[];
+};
+
+/**
+ * Describes the message wathena.admin.v1.Storage.
+ * Use `create(StorageSchema)` to create a new message.
+ */
+export const StorageSchema: GenMessage<Storage> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 16);
+
+/**
+ * Mail is a mail in a character's mailbox.
+ *
+ * @generated from message wathena.admin.v1.Mail
+ */
+export type Mail = Message<"wathena.admin.v1.Mail"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string from = 2;
+   */
+  from: string;
+
+  /**
+   * @generated from field: string title = 3;
+   */
+  title: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp sent_at = 4;
+   */
+  sentAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: int64 zeny = 5;
+   */
+  zeny: bigint;
+
+  /**
+   * @generated from field: bool read = 6;
+   */
+  read: boolean;
+
+  /**
+   * @generated from field: bool returned = 7;
+   */
+  returned: boolean;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.Item items = 8;
+   */
+  items: Item[];
+};
+
+/**
+ * Describes the message wathena.admin.v1.Mail.
+ * Use `create(MailSchema)` to create a new message.
+ */
+export const MailSchema: GenMessage<Mail> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 17);
+
+/**
+ * Currency is an amount of a currency of data/currencies.yml.
+ *
+ * @generated from message wathena.admin.v1.Currency
+ */
+export type Currency = Message<"wathena.admin.v1.Currency"> & {
+  /**
+   * @generated from field: uint32 id = 1;
+   */
+  id: number;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int64 amount = 3;
+   */
+  amount: bigint;
+
+  /**
+   * account is set for a currency the account holds.
+   *
+   * @generated from field: bool account = 4;
+   */
+  account: boolean;
+};
+
+/**
+ * Describes the message wathena.admin.v1.Currency.
+ * Use `create(CurrencySchema)` to create a new message.
+ */
+export const CurrencySchema: GenMessage<Currency> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 18);
+
+/**
+ * Stats are the raised stats.
+ *
+ * @generated from message wathena.admin.v1.Stats
+ */
+export type Stats = Message<"wathena.admin.v1.Stats"> & {
+  /**
+   * @generated from field: int32 str = 1;
+   */
+  str: number;
+
+  /**
+   * @generated from field: int32 agi = 2;
+   */
+  agi: number;
+
+  /**
+   * @generated from field: int32 vit = 3;
+   */
+  vit: number;
+
+  /**
+   * @generated from field: int32 int = 4;
+   */
+  int: number;
+
+  /**
+   * @generated from field: int32 dex = 5;
+   */
+  dex: number;
+
+  /**
+   * @generated from field: int32 luk = 6;
+   */
+  luk: number;
+};
+
+/**
+ * Describes the message wathena.admin.v1.Stats.
+ * Use `create(StatsSchema)` to create a new message.
+ */
+export const StatsSchema: GenMessage<Stats> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 19);
+
+/**
+ * CharacterDetail answers GET /characters/{id}. An online character is
+ * read from its zone, an offline one from the database.
+ *
+ * @generated from message wathena.admin.v1.CharacterDetail
+ */
+export type CharacterDetail = Message<"wathena.admin.v1.CharacterDetail"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int64 account_id = 3;
+   */
+  accountId: bigint;
+
+  /**
+   * @generated from field: string account = 4;
+   */
+  account: string;
+
+  /**
+   * @generated from field: int32 job = 5;
+   */
+  job: number;
+
+  /**
+   * @generated from field: string job_name = 6;
+   */
+  jobName: string;
+
+  /**
+   * @generated from field: bool male = 7;
+   */
+  male: boolean;
+
+  /**
+   * @generated from field: int32 base_level = 8;
+   */
+  baseLevel: number;
+
+  /**
+   * @generated from field: int32 job_level = 9;
+   */
+  jobLevel: number;
+
+  /**
+   * @generated from field: int64 base_exp = 10;
+   */
+  baseExp: bigint;
+
+  /**
+   * @generated from field: int64 job_exp = 11;
+   */
+  jobExp: bigint;
+
+  /**
+   * @generated from field: wathena.admin.v1.Stats stats = 12;
+   */
+  stats?: Stats | undefined;
+
+  /**
+   * @generated from field: int32 status_points = 13;
+   */
+  statusPoints: number;
+
+  /**
+   * @generated from field: int32 skill_points = 14;
+   */
+  skillPoints: number;
+
+  /**
+   * @generated from field: int64 hp = 15;
+   */
+  hp: bigint;
+
+  /**
+   * @generated from field: int64 sp = 16;
+   */
+  sp: bigint;
+
+  /**
+   * @generated from field: int64 zeny = 17;
+   */
+  zeny: bigint;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.Currency currencies = 18;
+   */
+  currencies: Currency[];
+
+  /**
+   * @generated from field: bool online = 19;
+   */
+  online: boolean;
+
+  /**
+   * @generated from field: wathena.admin.v1.Position position = 20;
+   */
+  position?: Position | undefined;
+
+  /**
+   * @generated from field: wathena.admin.v1.Position save_point = 21;
+   */
+  savePoint?: Position | undefined;
+
+  /**
+   * @generated from field: string party = 22;
+   */
+  party: string;
+
+  /**
+   * @generated from field: string guild = 23;
+   */
+  guild: string;
+
+  /**
+   * inventory holds every item, worn ones too, which have equip set.
+   *
+   * @generated from field: repeated wathena.admin.v1.Item inventory = 24;
+   */
+  inventory: Item[];
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.Storage storages = 25;
+   */
+  storages: Storage[];
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.Mail mails = 26;
+   */
+  mails: Mail[];
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.Sanction sanctions = 27;
+   */
+  sanctions: Sanction[];
+
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 28;
+   */
+  createdAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.CharacterDetail.
+ * Use `create(CharacterDetailSchema)` to create a new message.
+ */
+export const CharacterDetailSchema: GenMessage<CharacterDetail> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 20);
+
+/**
+ * ItemMove is one line of the item log.
+ *
+ * @generated from message wathena.admin.v1.ItemMove
+ */
+export type ItemMove = Message<"wathena.admin.v1.ItemMove"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp at = 2;
+   */
+  at?: Timestamp | undefined;
+
+  /**
+   * action is why it moved, such as trade, drop or restore.
+   *
+   * @generated from field: string action = 3;
+   */
+  action: string;
+
+  /**
+   * @generated from field: wathena.admin.v1.Owner from = 4;
+   */
+  from?: Owner | undefined;
+
+  /**
+   * @generated from field: wathena.admin.v1.Owner to = 5;
+   */
+  to?: Owner | undefined;
+
+  /**
+   * serial is the stack the amount ended in, or the stack it left for
+   * an end. source is the serial it came from when that differs.
+   *
+   * @generated from field: string serial = 6;
+   */
+  serial: string;
+
+  /**
+   * @generated from field: string source = 7;
+   */
+  source: string;
+
+  /**
+   * @generated from field: uint32 item_id = 8;
+   */
+  itemId: number;
+
+  /**
+   * @generated from field: string item_name = 9;
+   */
+  itemName: string;
+
+  /**
+   * @generated from field: int32 amount = 10;
+   */
+  amount: number;
+
+  /**
+   * @generated from field: int32 refine = 11;
+   */
+  refine: number;
+
+  /**
+   * @generated from field: repeated uint32 cards = 12;
+   */
+  cards: number[];
+
+  /**
+   * relation is self for the serial asked for, ancestor for a stack it
+   * came from, and descendant for a stack it went into.
+   *
+   * @generated from field: string relation = 13;
+   */
+  relation: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ItemMove.
+ * Use `create(ItemMoveSchema)` to create a new message.
+ */
+export const ItemMoveSchema: GenMessage<ItemMove> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 21);
+
+/**
+ * ItemHistory answers GET /items/{serial}/history: every move of the
+ * serial, of the stacks it came from and of the stacks it went into,
+ * oldest first.
+ *
+ * @generated from message wathena.admin.v1.ItemHistory
+ */
+export type ItemHistory = Message<"wathena.admin.v1.ItemHistory"> & {
+  /**
+   * @generated from field: string serial = 1;
+   */
+  serial: string;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.ItemMove moves = 2;
+   */
+  moves: ItemMove[];
+
+  /**
+   * serials are the serials it followed.
+   *
+   * @generated from field: repeated string serials = 3;
+   */
+  serials: string[];
+
+  /**
+   * truncated is set when it stopped at its limits.
+   *
+   * @generated from field: bool truncated = 4;
+   */
+  truncated: boolean;
+
+  /**
+   * holder is where the serial is now, or unset when it is gone.
+   *
+   * @generated from field: wathena.admin.v1.Owner holder = 5;
+   */
+  holder?: Owner | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.ItemHistory.
+ * Use `create(ItemHistorySchema)` to create a new message.
+ */
+export const ItemHistorySchema: GenMessage<ItemHistory> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 22);
+
+/**
+ * LogEntry is one line of a character's item or zeny log.
+ *
+ * @generated from message wathena.admin.v1.LogEntry
+ */
+export type LogEntry = Message<"wathena.admin.v1.LogEntry"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp at = 1;
+   */
+  at?: Timestamp | undefined;
+
+  /**
+   * kind is item or zeny.
+   *
+   * @generated from field: string kind = 2;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: string action = 3;
+   */
+  action: string;
+
+  /**
+   * @generated from field: wathena.admin.v1.Owner from = 4;
+   */
+  from?: Owner | undefined;
+
+  /**
+   * @generated from field: wathena.admin.v1.Owner to = 5;
+   */
+  to?: Owner | undefined;
+
+  /**
+   * @generated from field: string serial = 6;
+   */
+  serial: string;
+
+  /**
+   * @generated from field: string source = 7;
+   */
+  source: string;
+
+  /**
+   * @generated from field: uint32 item_id = 8;
+   */
+  itemId: number;
+
+  /**
+   * @generated from field: string item_name = 9;
+   */
+  itemName: string;
+
+  /**
+   * @generated from field: int64 amount = 10;
+   */
+  amount: bigint;
+
+  /**
+   * @generated from field: int32 refine = 11;
+   */
+  refine: number;
+
+  /**
+   * @generated from field: repeated uint32 cards = 12;
+   */
+  cards: number[];
+
+  /**
+   * currency is the currency's ID for a zeny line, 0 for zeny.
+   *
+   * @generated from field: uint32 currency = 13;
+   */
+  currency: number;
+
+  /**
+   * @generated from field: string currency_name = 14;
+   */
+  currencyName: string;
+
+  /**
+   * @generated from field: int64 id = 15;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message wathena.admin.v1.LogEntry.
+ * Use `create(LogEntrySchema)` to create a new message.
+ */
+export const LogEntrySchema: GenMessage<LogEntry> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 23);
+
+/**
+ * CharacterLogs answers GET /characters/{id}/logs, newest first.
+ *
+ * @generated from message wathena.admin.v1.CharacterLogs
+ */
+export type CharacterLogs = Message<"wathena.admin.v1.CharacterLogs"> & {
+  /**
+   * @generated from field: repeated wathena.admin.v1.LogEntry entries = 1;
+   */
+  entries: LogEntry[];
+
+  /**
+   * next_cursor is the cursor of the next page, or empty at the end.
+   *
+   * @generated from field: string next_cursor = 2;
+   */
+  nextCursor: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.CharacterLogs.
+ * Use `create(CharacterLogsSchema)` to create a new message.
+ */
+export const CharacterLogsSchema: GenMessage<CharacterLogs> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 24);
+
+/**
+ * RestoreItem is one serial of a restore.
+ *
+ * @generated from message wathena.admin.v1.RestoreItem
+ */
+export type RestoreItem = Message<"wathena.admin.v1.RestoreItem"> & {
+  /**
+   * serial is the stack to give back.
+   *
+   * @generated from field: string serial = 1;
+   */
+  serial: string;
+
+  /**
+   * amount is how many. 0 is the whole stack, or for a copy the amount
+   * of the serial's last log line.
+   *
+   * @generated from field: int32 amount = 2;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message wathena.admin.v1.RestoreItem.
+ * Use `create(RestoreItemSchema)` to create a new message.
+ */
+export const RestoreItemSchema: GenMessage<RestoreItem> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 25);
+
+/**
+ * RestoreRequest is the body of POST /restore.
+ *
+ * @generated from message wathena.admin.v1.RestoreRequest
+ */
+export type RestoreRequest = Message<"wathena.admin.v1.RestoreRequest"> & {
+  /**
+   * character_id is the character that gets the items, by mail.
+   *
+   * @generated from field: int64 character_id = 1;
+   */
+  characterId: bigint;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.RestoreItem items = 2;
+   */
+  items: RestoreItem[];
+
+  /**
+   * zeny is made for the restore, which needs items.create.
+   *
+   * @generated from field: int64 zeny = 3;
+   */
+  zeny: bigint;
+
+  /**
+   * reason is required, at most 255 characters.
+   *
+   * @generated from field: string reason = 4;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message wathena.admin.v1.RestoreRequest.
+ * Use `create(RestoreRequestSchema)` to create a new message.
+ */
+export const RestoreRequestSchema: GenMessage<RestoreRequest> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 26);
+
+/**
+ * RestoredItem is what a restore did with one serial.
+ *
+ * @generated from message wathena.admin.v1.RestoredItem
+ */
+export type RestoredItem = Message<"wathena.admin.v1.RestoredItem"> & {
+  /**
+   * @generated from field: string serial = 1;
+   */
+  serial: string;
+
+  /**
+   * new_serial is the serial in the mail.
+   *
+   * @generated from field: string new_serial = 2;
+   */
+  newSerial: string;
+
+  /**
+   * copy is set when the serial was gone and a copy was made.
+   *
+   * @generated from field: bool copy = 3;
+   */
+  copy: boolean;
+
+  /**
+   * @generated from field: uint32 item_id = 4;
+   */
+  itemId: number;
+
+  /**
+   * @generated from field: string item_name = 5;
+   */
+  itemName: string;
+
+  /**
+   * @generated from field: int32 amount = 6;
+   */
+  amount: number;
+
+  /**
+   * from is the holder it was taken from, or the staff end for a copy.
+   *
+   * @generated from field: wathena.admin.v1.Owner from = 7;
+   */
+  from?: Owner | undefined;
+};
+
+/**
+ * Describes the message wathena.admin.v1.RestoredItem.
+ * Use `create(RestoredItemSchema)` to create a new message.
+ */
+export const RestoredItemSchema: GenMessage<RestoredItem> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 27);
+
+/**
+ * RestoreResult answers POST /restore.
+ *
+ * @generated from message wathena.admin.v1.RestoreResult
+ */
+export type RestoreResult = Message<"wathena.admin.v1.RestoreResult"> & {
+  /**
+   * @generated from field: int64 mail_id = 1;
+   */
+  mailId: bigint;
+
+  /**
+   * @generated from field: repeated wathena.admin.v1.RestoredItem items = 2;
+   */
+  items: RestoredItem[];
+
+  /**
+   * @generated from field: int64 zeny = 3;
+   */
+  zeny: bigint;
+};
+
+/**
+ * Describes the message wathena.admin.v1.RestoreResult.
+ * Use `create(RestoreResultSchema)` to create a new message.
+ */
+export const RestoreResultSchema: GenMessage<RestoreResult> = /*@__PURE__*/
+  messageDesc(file_wathena_admin_v1_admin, 28);
+
+/**
  * Error is the body of every answer that is not 2xx.
  *
  * @generated from message wathena.admin.v1.Error
@@ -373,5 +1542,5 @@ export type Error = Message<"wathena.admin.v1.Error"> & {
  * Use `create(ErrorSchema)` to create a new message.
  */
 export const ErrorSchema: GenMessage<Error> = /*@__PURE__*/
-  messageDesc(file_wathena_admin_v1_admin, 7);
+  messageDesc(file_wathena_admin_v1_admin, 29);
 

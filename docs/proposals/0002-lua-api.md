@@ -1119,3 +1119,18 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - A game session keeps the two-factor answer of its ticket. Turning TOTP off during play applies at the next login.
    - `wa.testing` gained `world:set_staff_role(player, role)`, provisional, for the default roles. The owner role is not offered there.
    - `wactl world new --admin` still marks its account with `accounts.staff`, which gives no role. The owner names that account in `staff.owners`. Whether to drop the column, or make that account an owner, needs review.
+20. Build review decision 34: player search, player details, item history, the character logs, restores, audit reviews and their admin screens. No Lua API changes. Done on 2026-10-13 ([decision 0029](../decisions/0029-player-search-and-item-history.md)). Details to review:
+   - Login records are a new table, `account_logins`, kept 90 days, since sessions are deleted when they expire or go idle. The migration copies the sessions of the last 90 days into it.
+   - `GET /players` pages by account ID with an opaque `cursor`, 20 accounts by default and 50 at most. A name search matches a prefix of an account name or of a character name. An ID search matches an account ID or a character ID. An IP search takes one address or a CIDR range of any size.
+   - The search shows the logins of an IP search, at most 20 per account. It shows no IP address otherwise, not even with `players.read_ip`.
+   - `GET /characters/{id}/logs` lists the lines of the character's inventory, cart and vending shop, not those of its account's storage, which other characters of the account share.
+   - The item history follows ancestors back and descendants forward, and not the ancestors of descendants. It stops at 100 serials or 2,000 lines.
+   - A restore's mail comes from "Staff", with the title "Restored items", and puts each serial in a slot of its own, so no stack merges. It ignores the mailbox limit, as a script's mail does, and has no sender, so it is deleted after `mail_delete_days` and never goes back.
+   - A copy of a gone serial takes the item, refine, cards, rolls, options and bond of the serial's last log line, and the line's amount unless the request names one.
+   - Zeny in a restore is always made, so it needs `items.create`, even with `items.restore`.
+   - A restore of items held by players on two maps is refused. The staff member restores them in separate calls.
+   - A restore from a storage or a guild storage that someone has open waits and tries again, up to 8 times, then answers `conflict`.
+   - The holder's trade closes, a worn item comes off, and a vending shop loses the restored stack's lines, or closes with none left.
+   - A review needs a row marked for review, and a flag needs a note. A review needs no recent login. Reviews write an `audit.review` row.
+   - The default `game_master` no longer has `items.restore`, as review decision 34 lists. Configs that list it keep it.
+   - With `--dev` and a database, `POST /debug/wathena/restore` runs restores for the duplication tests.

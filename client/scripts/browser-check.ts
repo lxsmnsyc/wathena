@@ -243,6 +243,9 @@ async function checkCache(name: string, browser: Browser, base: string): Promise
 }
 
 /** Fakes the admin API: /me answers with me, and the lists are empty. */
+/** The item serial of the faked admin API. */
+const SERIAL = '0198a3c4-0000-7000-8000-000000000001';
+
 async function fakeAdminAPI(page: Page, me: object): Promise<void> {
   await page.route('**/admin/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -256,8 +259,65 @@ async function fakeAdminAPI(page: Page, me: object): Promise<void> {
       },
       '/admin/api/v1/audit': {
         entries: [
-          { id: '1', account: 'Owner', role: 'owner', action: 'staff.give', target: 'Bobby' },
+          {
+            id: '1',
+            account: 'Owner',
+            role: 'owner',
+            action: 'staff.give',
+            target: 'Bobby',
+            needsReview: true,
+            reason: 'helps',
+          },
         ],
+      },
+      '/admin/api/v1/players': {
+        accounts: [
+          {
+            accountId: '2000001',
+            account: 'bobby',
+            characters: [
+              {
+                id: '150000',
+                name: 'Bob',
+                jobName: 'Swordman',
+                baseLevel: 50,
+                jobLevel: 30,
+                online: true,
+                position: { map: 'prontera', x: 150, y: 180 },
+              },
+            ],
+          },
+        ],
+      },
+      '/admin/api/v1/characters/150000': {
+        id: '150000',
+        name: 'Bob',
+        accountId: '2000001',
+        account: 'bobby',
+        jobName: 'Swordman',
+        baseLevel: 50,
+        jobLevel: 30,
+        zeny: '1000',
+        inventory: [{ serial: SERIAL, itemId: 1201, name: 'Knife', amount: 1 }],
+      },
+      '/admin/api/v1/characters/150000/logs': { entries: [] },
+      [`/admin/api/v1/items/${SERIAL}/history`]: {
+        serial: SERIAL,
+        serials: [SERIAL],
+        moves: [
+          {
+            id: '1',
+            action: 'drop',
+            from: { kind: 'monster', id: '1002' },
+            to: { kind: 'inventory', id: '150000', name: 'Bob', characterId: '150000' },
+            serial: SERIAL,
+            itemId: 1201,
+            itemName: 'Knife',
+            amount: 1,
+            relation: 'self',
+          },
+        ],
+        holder: { kind: 'inventory', id: '150000', name: 'Bob', characterId: '150000' },
       },
     };
     await route.fulfill({
@@ -270,6 +330,7 @@ async function fakeAdminAPI(page: Page, me: object): Promise<void> {
 async function checkAdmin(name: string, browser: Browser, base: string): Promise<void> {
   const visit = async (
     me: object,
+    steps?: (page: Page) => Promise<void>,
   ): Promise<{ text: string; loaded: boolean; errors: string[] }> => {
     const page = await browser.newPage();
     const errors: string[] = [];
@@ -288,17 +349,31 @@ async function checkAdmin(name: string, browser: Browser, base: string): Promise
       { timeout: 30_000 },
     );
     await page.waitForTimeout(500);
+    if (steps !== undefined) {
+      try {
+        await steps(page);
+      } catch (e) {
+        errors.push(e instanceof Error ? e.message : String(e));
+      }
+    }
     const text = (await page.textContent('#admin')) ?? '';
     await page.close();
     return { text, loaded: bundle, errors };
   };
-  const staff = await visit({
-    account: 'Owner',
-    role: 'owner',
-    permissions: ['staff.assign', 'audit.read'],
-    twoFactor: true,
-    csrfToken: 't',
-  });
+  // The audit log loads when its tab opens.
+  const staff = await visit(
+    {
+      account: 'Owner',
+      role: 'owner',
+      permissions: ['staff.assign', 'audit.read'],
+      twoFactor: true,
+      csrfToken: 't',
+    },
+    async (page) => {
+      await page.click('.admin-nav button:has-text("Audit log")');
+      await page.waitForSelector('text=staff.give', { timeout: 10_000 });
+    },
+  );
   check(
     name,
     'admin staff',
@@ -309,6 +384,38 @@ async function checkAdmin(name: string, browser: Browser, base: string): Promise
     staff.loaded
       ? `admin bundle loaded; errors: ${staff.errors.join('; ') || 'none'}`
       : 'admin bundle not loaded',
+  );
+  // A game master searches a player, opens the character, follows a
+  // serial to its history and opens the review queue.
+  const gm = await visit(
+    {
+      account: 'Gm',
+      role: 'game_master',
+      permissions: ['audit.read', 'audit.review', 'players.read', 'items.history', 'items.restore'],
+      twoFactor: true,
+      csrfToken: 't',
+    },
+    async (page) => {
+      await page.click('.admin-nav button:has-text("Players")');
+      await page.fill('.admin-players input[name="q"]', 'bob');
+      await page.click('.admin-players button[type="submit"]');
+      await page.click('.admin-players button.admin-link:has-text("Bob")');
+      await page.click('.admin-character .admin-tabs button:has-text("Inventory")');
+      await page.click(`.admin-character button:has-text("${SERIAL}")`);
+      await page.waitForSelector('.admin-item .admin-holder', { timeout: 10_000 });
+      await page.click('.admin-nav button:has-text("Review queue")');
+      await page.waitForSelector('.admin-reviews button:has-text("Flag")', { timeout: 10_000 });
+    },
+  );
+  check(
+    name,
+    'admin players',
+    gm.loaded &&
+      gm.text.includes('Review queue') &&
+      gm.text.includes('Swordman') &&
+      gm.text.includes('Now: Bob (inventory)') &&
+      gm.errors.length === 0,
+    `errors: ${gm.errors.join('; ') || 'none'}`,
   );
   const player = await visit({ account: 'Player', csrfToken: 't' });
   check(

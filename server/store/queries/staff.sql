@@ -72,9 +72,11 @@ VALUES (@account_id, @account_name, @role, @action, @source, @target, sqlc.narg(
 -- name: SearchStaffAudit :many
 -- SearchStaffAudit lists audit rows, newest first, before a row ID.
 -- Each filter applies when it is not NULL. review is pending for rows
--- that wait for a review, reviewed for rows that have one.
+-- that wait for a review, reviewed for rows that have one. needs_review
+-- keeps the rows marked for review, or the rows that are not.
 SELECT a.id, a.at, a.account_id, a.account_name, a.role, a.action, a.source, a.target,
-    a.arguments, a.reason, a.needs_review, r.reviewed_at, coalesce(r.reviewer_name, '')::text AS reviewer_name
+    a.arguments, a.reason, a.needs_review, r.reviewed_at, coalesce(r.reviewer_name, '')::text AS reviewer_name,
+    coalesce(r.verdict, '')::text AS verdict, coalesce(r.note, '')::text AS review_note
 FROM staff_audit a
 LEFT JOIN staff_audit_reviews r ON r.audit_id = a.id
 WHERE (sqlc.narg('before_id')::bigint IS NULL OR a.id < sqlc.narg('before_id')::bigint)
@@ -83,6 +85,7 @@ WHERE (sqlc.narg('before_id')::bigint IS NULL OR a.id < sqlc.narg('before_id')::
     AND (sqlc.narg('target')::text IS NULL OR lower(a.target) = lower(sqlc.narg('target')::text))
     AND (sqlc.narg('since')::timestamptz IS NULL OR a.at >= sqlc.narg('since')::timestamptz)
     AND (sqlc.narg('until')::timestamptz IS NULL OR a.at < sqlc.narg('until')::timestamptz)
+    AND (sqlc.narg('needs_review')::boolean IS NULL OR a.needs_review = sqlc.narg('needs_review')::boolean)
     AND (sqlc.narg('review')::text IS NULL
         OR sqlc.narg('review')::text = 'pending' AND a.needs_review AND r.audit_id IS NULL
         OR sqlc.narg('review')::text = 'reviewed' AND r.audit_id IS NOT NULL)

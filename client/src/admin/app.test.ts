@@ -22,6 +22,17 @@ describe('audit cells', () => {
         }),
       ),
     ).toBe('Reviewed by Owner');
+    expect(
+      reviewText(
+        create(AuditEntrySchema, {
+          needsReview: true,
+          reviewedBy: 'Owner',
+          reviewedAt: timestampFromDate(new Date()),
+          verdict: 'flag',
+          reviewNote: 'too much zeny',
+        }),
+      ),
+    ).toBe('Reviewed by Owner: flag, too much zeny');
   });
 });
 

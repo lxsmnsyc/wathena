@@ -68,6 +68,9 @@ func (r *Registry) Expire(ctx context.Context, now time.Time, e Expiry, commit f
 	}
 	var due []*Mail
 	seen := map[int64]bool{}
+	// copies are the mails read from rows, whose mailboxes were not in
+	// memory.
+	copies := map[*Mail]bool{}
 	r.mu.Lock()
 	for _, b := range r.boxes {
 		b.mu.Lock()
@@ -112,22 +115,41 @@ func (r *Registry) Expire(ctx context.Context, now time.Time, e Expiry, commit f
 				continue
 			}
 			r.mu.Unlock()
-			due = append(due, FromRow(&rows[i], r.Items, max(e.Slots, len(rows[i].Items))))
+			m := FromRow(&rows[i], r.Items, max(e.Slots, len(rows[i].Items)))
+			copies[m] = true
+			due = append(due, m)
 		}
 	}
 	slices.SortFunc(due, func(a, b *Mail) int { return int(a.ID - b.ID) })
 	for _, m := range due {
-		r.expireOne(m, now, e, commit)
+		r.expireOne(m, copies[m], now, e, commit)
 	}
 	return nil
 }
 
-// expireOne returns or deletes one mail.
-func (r *Registry) expireOne(m *Mail, now time.Time, e Expiry, commit func([]Write, transfer.Logs)) {
+// expireOne returns or deletes one mail. fromRow is set for a mail read
+// from its row, whose mailbox was not in memory: it is marked gone
+// before it changes, unless its mailbox loaded meanwhile, such as for a
+// restore (decision 0029), which then holds the live mail. Either a
+// load leaves the mail out, or the expiry leaves it to the next run.
+func (r *Registry) expireOne(m *Mail, fromRow bool, now time.Time, e Expiry, commit func([]Write, transfer.Logs)) {
+	if fromRow {
+		r.mu.Lock()
+		if r.boxes[m.To] != nil || r.gone[m.ID] {
+			r.mu.Unlock()
+			return
+		}
+		if r.gone == nil {
+			r.gone = map[int64]bool{}
+		}
+		r.gone[m.ID] = true
+		r.mu.Unlock()
+	}
 	m.Lock()
 	d, ret := e.due(m, now)
 	if !d || m.deleted {
 		m.Unlock()
+		r.unmark(m, fromRow)
 		return
 	}
 	tx := transfer.New(transfer.ActionMail)
@@ -165,6 +187,7 @@ func (r *Registry) expireOne(m *Mail, now time.Time, e Expiry, commit func([]Wri
 	logs, err := tx.Apply(nil)
 	if err != nil {
 		m.Unlock()
+		r.unmark(m, fromRow)
 		return
 	}
 	m.Delete()
@@ -194,6 +217,16 @@ func (r *Registry) expireOne(m *Mail, now time.Time, e Expiry, commit func([]Wri
 	if back != nil {
 		r.Deliver(back)
 	}
+}
+
+// unmark takes back the gone mark of a copy that did not change.
+func (r *Registry) unmark(m *Mail, fromRow bool) {
+	if !fromRow {
+		return
+	}
+	r.mu.Lock()
+	delete(r.gone, m.ID)
+	r.mu.Unlock()
 }
 
 func validUTF8(s string) bool { return strings.ToValidUTF8(s, "�") == s }

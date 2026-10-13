@@ -102,6 +102,14 @@ type Store struct {
 	// mailBusy counts, by recipient, the commits that hold its mails and
 	// are not written yet (market.go).
 	mailBusy map[int64]int
+	// seq numbers the commits of the lane, and written is the seq of the
+	// last commit written (Settle).
+	seq, written int64
+	// live counts, by character ID, the sessions that loaded the
+	// character and have not ended. held marks the characters a Hold
+	// keeps from loading (hold.go).
+	live map[int64]int
+	held map[int64]bool
 }
 
 // New makes a store on a pool and starts its workers. Close stops them.
@@ -115,6 +123,8 @@ func New(pool *pgxpool.Pool, opt Options) *Store {
 		busy:        map[int64]int{},
 		storageBusy: map[storage.Key]int{},
 		mailBusy:    map[int64]int{},
+		live:        map[int64]int{},
+		held:        map[int64]bool{},
 		changed:     make(chan struct{}),
 		stop:        make(chan struct{}),
 	}
@@ -196,14 +206,54 @@ type Session struct {
 	// then, on its own goroutine.
 	stale   bool
 	onStale func()
+	// counted is set while the session counts in the store's live.
+	counted bool
 }
 
 // Load starts a session for a character and returns the character. It
 // first waits for saves that earlier sessions of the character still
-// have in the queue.
+// have in the queue, and while a Hold keeps the character.
 func (s *Store) Load(ctx context.Context, id int64) (*character.Character, *Session, error) {
-	if err := s.idle(ctx, id); err != nil {
+	return s.load(ctx, id, false)
+}
+
+// load starts a session. Unless held is set, it first waits while a
+// Hold keeps the character. The session counts as live from before the
+// claim, so a Hold that comes later sees it.
+func (s *Store) load(ctx context.Context, id int64, held bool) (*character.Character, *Session, error) {
+	x := &Session{s: s, id: id}
+	for {
+		s.mu.Lock()
+		if held || !s.held[id] {
+			s.live[id]++
+			x.counted = true
+			s.mu.Unlock()
+			break
+		}
+		ch := s.changed
+		s.mu.Unlock()
+		select {
+		case <-ch:
+		case <-ctx.Done():
+			return nil, nil, ctx.Err()
+		}
+	}
+	c, err := s.loadSession(ctx, x)
+	if err != nil {
+		s.mu.Lock()
+		s.uncount(x)
+		s.broadcast()
+		s.mu.Unlock()
 		return nil, nil, err
+	}
+	return c, x, nil
+}
+
+// loadSession claims a character for a session and reads it.
+func (s *Store) loadSession(ctx context.Context, x *Session) (*character.Character, error) {
+	id := x.id
+	if err := s.idle(ctx, id); err != nil {
+		return nil, err
 	}
 	var c *character.Character
 	var version int64
@@ -240,9 +290,21 @@ func (s *Store) Load(ctx context.Context, id int64) (*character.Character, *Sess
 		return loadVariables(ctx, q, c)
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return c, &Session{s: s, id: id, version: version, saved: c}, nil
+	x.version, x.saved = version, c
+	return c, nil
+}
+
+// uncount takes an ended session out of live. s.mu must be held.
+func (s *Store) uncount(x *Session) {
+	if !x.counted {
+		return
+	}
+	x.counted = false
+	if s.live[x.id]--; s.live[x.id] <= 0 {
+		delete(s.live, x.id)
+	}
 }
 
 // idle waits until no session of a character has a save waiting or
@@ -404,6 +466,7 @@ func (s *Store) finish(x *Session, c *character.Character, final bool, err error
 	}
 	if final {
 		x.ended = true
+		s.uncount(x)
 	}
 	s.idleSession(x)
 }
@@ -412,6 +475,7 @@ func (s *Store) finish(x *Session, c *character.Character, final bool, err error
 // s.mu must be held.
 func (s *Store) goStale(x *Session) {
 	x.pending, x.ended = nil, true
+	s.uncount(x)
 	if !x.stale {
 		x.stale = true
 		if x.onStale != nil {

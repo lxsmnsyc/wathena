@@ -47,8 +47,10 @@ var Catalog = []Permission{
 	{Name: "audit.read", Step: 1, Allows: "read the GM audit log"},
 	{Name: "audit.review", Step: 2, Allows: "mark audit rows as reviewed"},
 	{Name: "players.read", Step: 2, Allows: "find accounts and characters, and view their status, position, inventory and storage"},
-	{Name: "items.history", Step: 2, Allows: "show every move of an item serial"},
-	{Name: "items.restore", Step: 2, Allows: "restore stolen items, with a reason, marked for review"},
+	{Name: "players.read_ip", Step: 2, Allows: "find accounts by the IP addresses of their logins"},
+	{Name: "items.history", Step: 2, Allows: "show every move of an item serial, and a character's item and zeny log"},
+	{Name: "items.restore", Step: 2, Allows: "move items that still exist back to a character, with a reason, marked for review"},
+	{Name: "items.create", Step: 2, Allows: "make a copy of an item that is gone, or zeny, in a restore"},
 	{Name: "moderation.reports", Step: 3, Allows: "work through the report queue and read reported chat"},
 	{Name: "moderation.mute", Step: 3, Allows: "mute and unmute players"},
 	{Name: "moderation.kick", Step: 3, Allows: "kick players"},
@@ -66,9 +68,11 @@ var Catalog = []Permission{
 }
 
 // DefaultRoles are the roles when the config's staff.roles is not set.
+// Review decision 34 gives players.read to every role, items.history to
+// admin and game_master, and the rest of step 2 to admin alone.
 var DefaultRoles = map[string][]string{
 	"admin": {"staff.*", "audit.*", "players.*", "items.*", "moderation.*", "commands.*", "world.*", "events.*", "mods.*"},
-	"game_master": {"audit.read", "players.read", "items.history", "items.restore", "moderation.*", "commands.*",
+	"game_master": {"audit.read", "players.read", "items.history", "moderation.*", "commands.*",
 		"world.read", "world.announce", "events.control"},
 	"moderator": {"players.read", "moderation.reports", "moderation.mute", "moderation.kick", "moderation.jail"},
 }
@@ -332,4 +336,23 @@ func (r *Registry) RoleOfLogin(account int64, l Login) string {
 		return ""
 	}
 	return r.RoleOf(account, l.AccountName)
+}
+
+// AuditRow is one row of the GM audit log, as the game side writes it:
+// in the commit of the change it records, such as a restore.
+type AuditRow struct {
+	AccountID   int64
+	AccountName string
+	Role        string
+	// Action is what the staff member did, such as items.restore.
+	Action string
+	// Source is admin or game.
+	Source string
+	Target string
+	// TargetAccount is the target's account ID, or 0.
+	TargetAccount int64
+	Arguments     map[string]any
+	Reason        string
+	// NeedsReview marks the row for review. It needs a reason.
+	NeedsReview bool
 }

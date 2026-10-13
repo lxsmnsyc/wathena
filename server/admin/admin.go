@@ -12,7 +12,10 @@
 //   - Calls are rate limited per address, as the account pages are.
 //
 // The messages are protobuf, wathena.admin.v1, in their JSON form. Step
-// 1 has GET /me, GET, POST and DELETE /staff, and GET /audit.
+// 1 has GET /me, GET, POST and DELETE /staff, and GET /audit. Step 2
+// (decision 0029) has GET /players, GET /characters/{id} and its /logs,
+// GET /items/{serial}/history, POST /restore and POST
+// /audit/{id}/review.
 //
 // The API reaches the world through World, so a distributed build can
 // put the world service behind the network.
@@ -20,7 +23,6 @@ package admin
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -75,15 +77,6 @@ type Auth interface {
 	SecurityHeaders(w http.ResponseWriter)
 }
 
-// World is what the API needs from the world service. In the all-in-one
-// build it is the world's *staff.Registry, in the same process. A
-// distributed build can put a network client here.
-type World interface {
-	// StaffChanged tells the world an account's new role, or "" for
-	// none, so the game's Lua calls see it at once.
-	StaffChanged(ctx context.Context, account int64, role string) error
-}
-
 // Config configures a Handler.
 type Config struct {
 	// Pool connects as the wathena_account role.
@@ -119,11 +112,17 @@ func New(cfg Config) (*Handler, error) {
 		h.owners[strings.ToLower(o)] = true
 	}
 	m := http.NewServeMux()
-	m.HandleFunc("GET "+Prefix+"me", h.call("", false, h.me))
-	m.HandleFunc("GET "+Prefix+"staff", h.call("staff.assign", false, h.listStaff))
-	m.HandleFunc("POST "+Prefix+"staff", h.call("staff.assign", true, h.giveRole))
-	m.HandleFunc("DELETE "+Prefix+"staff/{account}", h.call("staff.assign", true, h.removeRole))
-	m.HandleFunc("GET "+Prefix+"audit", h.call("audit.read", false, h.searchAudit))
+	m.HandleFunc("GET "+Prefix+"me", h.call("", read, h.me))
+	m.HandleFunc("GET "+Prefix+"staff", h.call("staff.assign", read, h.listStaff))
+	m.HandleFunc("POST "+Prefix+"staff", h.call("staff.assign", changeRecent, h.giveRole))
+	m.HandleFunc("DELETE "+Prefix+"staff/{account}", h.call("staff.assign", changeRecent, h.removeRole))
+	m.HandleFunc("GET "+Prefix+"audit", h.call("audit.read", read, h.searchAudit))
+	m.HandleFunc("POST "+Prefix+"audit/{id}/review", h.call("audit.review", change, h.review))
+	m.HandleFunc("GET "+Prefix+"players", h.call("players.read", read, h.searchPlayers))
+	m.HandleFunc("GET "+Prefix+"characters/{id}", h.call("players.read", read, h.character))
+	m.HandleFunc("GET "+Prefix+"characters/{id}/logs", h.call("items.history", read, h.characterLogs))
+	m.HandleFunc("GET "+Prefix+"items/{serial}/history", h.call("items.history", read, h.itemHistory))
+	m.HandleFunc("POST "+Prefix+"restore", h.call("items.restore", changeRecent, h.restore))
 	m.HandleFunc(Prefix, func(w http.ResponseWriter, _ *http.Request) {
 		h.fail(w, http.StatusNotFound, "not_found", "There is no such call.")
 	})
@@ -145,10 +144,25 @@ type caller struct {
 	twoFactor      bool
 }
 
+// callKind says what a call needs beyond its permission.
+type callKind int
+
+const (
+	// read needs nothing more.
+	read callKind = iota
+	// change needs the CSRF token.
+	change
+	// changeRecent needs the CSRF token and a login within 10 minutes:
+	// role changes and restores (review decisions 33 and 34).
+	changeRecent
+)
+
 // call wraps a call with the checks every call has: the rate limit, the
-// CSRF token of a change, the session, the role and the permission. A
-// change also needs a recent login. permission "" needs only a session.
-func (h *Handler) call(permission string, change bool, f func(ctx context.Context, w http.ResponseWriter, r *http.Request, c caller)) http.HandlerFunc {
+// CSRF token of a change, the session, the role and the permission.
+// Role changes and restores also need a recent login. permission ""
+// needs only a session.
+func (h *Handler) call(permission string, kind callKind, f func(ctx context.Context, w http.ResponseWriter, r *http.Request, c caller)) http.HandlerFunc {
+	change := kind != read
 	return func(w http.ResponseWriter, r *http.Request) {
 		if ok, wait := h.cfg.Auth.AllowAdmin(r); !ok {
 			w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
@@ -184,7 +198,7 @@ func (h *Handler) call(permission string, change bool, f func(ctx context.Contex
 				h.fail(w, http.StatusForbidden, "forbidden", "Your role does not allow this.")
 				return
 			}
-			if change && !h.cfg.Auth.Recent(sess) {
+			if kind == changeRecent && !h.cfg.Auth.Recent(sess) {
 				h.write(w, http.StatusForbidden, adminv1.Error_builder{Code: "reauth",
 					Message:   "Confirm it is you: log in again on the account page, then try again.",
 					ReauthUrl: account.ReauthURL(account.AdminPath)}.Build())
@@ -433,15 +447,7 @@ func (h *Handler) removeRole(ctx context.Context, w http.ResponseWriter, r *http
 
 // audit writes the audit row of a change made through the API.
 func (h *Handler) audit(ctx context.Context, q *db.Queries, c caller, action string, t target, args map[string]any, reason string) error {
-	b, err := json.Marshal(args)
-	if err != nil {
-		return err
-	}
-	_, err = q.AddStaffAudit(ctx, db.AddStaffAuditParams{
-		AccountID: c.sess.AccountID, AccountName: c.sess.AccountName, Role: c.role, Action: action, Source: "admin",
-		Target: t.name, TargetAccountID: pgtype.Int8{Int64: t.id, Valid: t.id > 0}, Arguments: b, Reason: reason,
-	})
-	return err
+	return h.writeAudit(ctx, q, c, action, t, args, reason, false)
 }
 
 // tellWorld passes a role change to the world. The database has the
@@ -506,6 +512,14 @@ func (h *Handler) searchAudit(ctx context.Context, w http.ResponseWriter, r *htt
 	if p.Until, ok = when("until"); !ok {
 		return
 	}
+	switch v := q.Get("needs_review"); v {
+	case "":
+	case "true", "false":
+		p.NeedsReview = pgtype.Bool{Bool: v == "true", Valid: true}
+	default:
+		bad("needs_review is true or false.")
+		return
+	}
 	switch v := q.Get("review"); v {
 	case "":
 	case "pending", "reviewed":
@@ -544,23 +558,33 @@ func (h *Handler) searchAudit(ctx context.Context, w http.ResponseWriter, r *htt
 	}
 	entries := make([]*adminv1.AuditEntry, 0, len(rows))
 	for _, row := range rows {
-		args := &structpb.Struct{}
-		if err := protojson.Unmarshal(row.Arguments, args); err != nil {
+		e, err := auditEntry(db.StaffAuditEntryRow(row))
+		if err != nil {
 			h.unavailable(w, r, err)
 			return
 		}
-		e := adminv1.AuditEntry_builder{
-			Id: row.ID, At: timestamppb.New(row.At.Time), Account: row.AccountName, Role: row.Role,
-			Action: row.Action, Source: row.Source, Target: row.Target, Arguments: args, Reason: row.Reason,
-			NeedsReview: row.NeedsReview, ReviewedBy: row.ReviewerName,
-		}
-		if row.ReviewedAt.Valid {
-			e.ReviewedAt = timestamppb.New(row.ReviewedAt.Time)
-		}
-		entries = append(entries, e.Build())
+		entries = append(entries, e)
 	}
 	page.SetEntries(entries)
 	h.write(w, http.StatusOK, page)
+}
+
+// auditEntry is an audit row as the API shows it.
+func auditEntry(row db.StaffAuditEntryRow) (*adminv1.AuditEntry, error) {
+	args := &structpb.Struct{}
+	if err := protojson.Unmarshal(row.Arguments, args); err != nil {
+		return nil, err
+	}
+	e := adminv1.AuditEntry_builder{
+		Id: row.ID, At: timestamppb.New(row.At.Time), Account: row.AccountName, Role: row.Role,
+		Action: row.Action, Source: row.Source, Target: row.Target, Arguments: args, Reason: row.Reason,
+		NeedsReview: row.NeedsReview, ReviewedBy: row.ReviewerName, Verdict: row.Verdict, ReviewNote: row.ReviewNote,
+		AccountId: row.AccountID,
+	}
+	if row.ReviewedAt.Valid {
+		e.ReviewedAt = timestamppb.New(row.ReviewedAt.Time)
+	}
+	return e.Build(), nil
 }
 
 func validReason(s string) bool {
@@ -593,7 +617,7 @@ func (h *Handler) write(w http.ResponseWriter, status int, m proto.Message) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_, _ = w.Write(b)
+	_, _ = w.Write(b) // #nosec G705 -- protobuf JSON as application/json, with nosniff and the account service's CSP, which allows no scripts.
 }
 
 func (h *Handler) fail(w http.ResponseWriter, status int, code, msg string) {

@@ -37,33 +37,32 @@ type Writes struct {
 	// Events are the units of world events' progress whose rewards the
 	// commit saves.
 	Events []EventUnit
+	// Audit are rows of the GM audit log of the changes in the commit,
+	// such as a restore's (decision 0029).
+	Audit []AuditRow
 }
 
 func (w *Writes) empty() bool {
-	return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 && len(w.Events) == 0
+	return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 && len(w.Events) == 0 && len(w.Audit) == 0
 }
 
 // CommitAll queues a commit with characters, storages, other rows and
-// log lines.
+// log lines. They all join one commit, so one transaction writes them.
 func (s *Store) CommitAll(entries []Entry, storages []StorageWrite, w Writes, logs transfer.Logs) {
-	if w.empty() {
-		s.CommitWith(entries, storages, logs)
-		return
-	}
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	c := s.openCommit()
 	c.writes.Mails = append(c.writes.Mails, w.Mails...)
 	c.writes.Stock = append(c.writes.Stock, w.Stock...)
 	c.writes.Stores = append(c.writes.Stores, w.Stores...)
 	c.writes.Events = append(c.writes.Events, w.Events...)
+	c.writes.Audit = append(c.writes.Audit, w.Audit...)
 	for _, m := range w.Mails {
 		if m.To.Saved() {
 			s.mailBusy[m.To.ID]++
 		}
 	}
-	s.queueCommit(c)
-	s.mu.Unlock()
-	s.CommitWith(entries, storages, logs)
+	s.addCommit(c, entries, storages, logs, !w.empty())
 }
 
 // CommitMail queues the writes and log lines of mail that expired.
@@ -92,6 +91,11 @@ func writeAll(ctx context.Context, q *db.Queries, w *Writes) error {
 	}
 	if err := writeEventUnits(ctx, q, w.Events); err != nil {
 		return err
+	}
+	for _, a := range w.Audit {
+		if err := writeAudit(ctx, q, a); err != nil {
+			return err
+		}
 	}
 	return writeStores(ctx, q, w.Stores)
 }

@@ -54,10 +54,22 @@ func (c *clock) step() {
 	c.now = c.now.Add(30 * time.Second)
 }
 
-// world records the role changes the API passes on.
+// world records the role changes the API passes on, and answers the
+// game calls of step 2 with what a test set.
 type world struct {
 	mu      sync.Mutex
 	changes []string
+	// online are the characters online, with their maps.
+	online map[int64]string
+	// holder is where FindSerial says a serial is.
+	holder *adminv1.Owner
+	// history is what ItemHistory answers, nil for not found.
+	history *adminv1.ItemHistory
+	// logs are the LogQuery calls, and restores the Restore calls.
+	logs     []admin.LogQuery
+	restores []admin.Restore
+	// restoreErr is what Restore fails with.
+	restoreErr error
 }
 
 func (w *world) StaffChanged(_ context.Context, _ int64, role string) error {

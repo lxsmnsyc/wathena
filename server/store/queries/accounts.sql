@@ -35,10 +35,17 @@ SELECT hash FROM account_passwords WHERE account_id = @account_id;
 
 -- name: CreateSession :one
 -- CreateSession makes a login session. factors names what the player
--- proved to open it, such as {password,totp} or {passkey}.
-INSERT INTO account_sessions (token_hash, account_id, expires_at, user_agent, ip, factors)
-VALUES (@token_hash, @account_id, @expires_at, @user_agent, @ip, @factors::text[])
-RETURNING id;
+-- proved to open it, such as {password,totp} or {passkey}. It also
+-- writes the login record, which outlives the session for 90 days.
+WITH s AS (
+    INSERT INTO account_sessions (token_hash, account_id, expires_at, user_agent, ip, factors)
+    VALUES (@token_hash, @account_id, @expires_at, @user_agent, @ip, @factors::text[])
+    RETURNING id, account_id, created_at, ip, user_agent
+), l AS (
+    INSERT INTO account_logins (account_id, at, ip, user_agent)
+    SELECT account_id, created_at, ip, user_agent FROM s
+)
+SELECT id FROM s;
 
 -- name: UseSession :one
 -- UseSession finds a live session by its token hash and marks it used.
@@ -102,14 +109,16 @@ JOIN accounts a ON a.id = t.account_id;
 
 -- name: DeleteExpired :one
 -- DeleteExpired removes expired tickets, pending logins and passkey
--- ceremonies, and sessions that expired or were revoked. It returns how
--- many sessions went.
+-- ceremonies, sessions that expired or were revoked, and login records
+-- older than 90 days. It returns how many sessions went.
 WITH t AS (
     DELETE FROM game_tickets WHERE expires_at <= now()
 ), p AS (
     DELETE FROM account_pending_logins WHERE expires_at <= now()
 ), w AS (
     DELETE FROM account_webauthn_ceremonies WHERE expires_at <= now()
+), l AS (
+    DELETE FROM account_logins WHERE at <= now() - interval '90 days'
 ), s AS (
     DELETE FROM account_sessions
     WHERE expires_at <= now() OR revoked_at IS NOT NULL

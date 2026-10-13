@@ -99,6 +99,23 @@ type PersonalCounts struct {
 	// Dropped counts the connections closed with the storage open or in
 	// the middle of a cart move.
 	Dropped atomic.Int64
+	// Restored counts the moves that got no answer because a restore
+	// took the stack away first (decision 0029).
+	Restored atomic.Int64
+}
+
+// restoredSince reports whether a restore took an item from the bot's
+// inventory or cart since a mark: the server sends those as taken, and
+// as a cart removal the bot did not ask for.
+func restoredSince(b *botclient.Bot, mark int) bool {
+	events, _ := b.Events(mark)
+	for _, e := range events {
+		if e.GetInventoryRemove().GetReason() == wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_TAKEN ||
+			e.HasStorageRemove() && e.GetStorageRemove().GetKind() == wathenav1.StorageKind_STORAGE_KIND_CART {
+			return true
+		}
+	}
+	return false
 }
 
 // kindMove is one move between the inventory, the open storage and the
@@ -166,6 +183,11 @@ func personalStep(ctx context.Context, b *botclient.Bot, id uint32, rnd *rand.Ra
 		switch {
 		case err != nil:
 			return err
+		case e == nil && restoredSince(b, mark):
+			// The server ignores a move of a stack that is gone, as
+			// rAthena does.
+			c.Restored.Add(1)
+			return nil
 		case e == nil:
 			return fmt.Errorf("%s of %d Jellopy from slot %d: no answer in %s", m.name, amount, it.Slot, stepWait)
 		case e.HasStorageResult():

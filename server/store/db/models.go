@@ -24,6 +24,14 @@ type AccountCurrency struct {
 	Amount    int64
 }
 
+type AccountLogin struct {
+	ID        int64
+	AccountID int64
+	At        pgtype.Timestamptz
+	Ip        *netip.Addr
+	UserAgent string
+}
+
 type AccountPasskey struct {
 	ID                int64
 	AccountID         int64
@@ -465,6 +473,7 @@ type StaffAuditReview struct {
 	ReviewerName string
 	ReviewedAt   pgtype.Timestamptz
 	Note         string
+	Verdict      string
 }
 
 type StaffRole struct {

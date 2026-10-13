@@ -263,6 +263,27 @@ func (h *Hub) IsOnline(name string) (string, bool) {
 	return "", false
 }
 
+// Locate returns the maps of the online players among some character
+// IDs, for the staff tools (decision 0029). IDs that are not online are
+// left out.
+func (h *Hub) Locate(ids []int64) map[int64]string {
+	want := make(map[int64]bool, len(ids))
+	for _, id := range ids {
+		if id > 0 {
+			want[id] = true
+		}
+	}
+	out := map[int64]string{}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for _, m := range h.online {
+		if want[m.characterID] {
+			out[m.characterID] = m.mapName
+		}
+	}
+	return out
+}
+
 // WhisperOutcome is what a whisper did.
 type WhisperOutcome int
 

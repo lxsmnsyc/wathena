@@ -152,7 +152,8 @@ func (q *Queries) RemoveStaffRole(ctx context.Context, accountID int64) (int64, 
 
 const searchStaffAudit = `-- name: SearchStaffAudit :many
 SELECT a.id, a.at, a.account_id, a.account_name, a.role, a.action, a.source, a.target,
-    a.arguments, a.reason, a.needs_review, r.reviewed_at, coalesce(r.reviewer_name, '')::text AS reviewer_name
+    a.arguments, a.reason, a.needs_review, r.reviewed_at, coalesce(r.reviewer_name, '')::text AS reviewer_name,
+    coalesce(r.verdict, '')::text AS verdict, coalesce(r.note, '')::text AS review_note
 FROM staff_audit a
 LEFT JOIN staff_audit_reviews r ON r.audit_id = a.id
 WHERE ($1::bigint IS NULL OR a.id < $1::bigint)
@@ -161,22 +162,24 @@ WHERE ($1::bigint IS NULL OR a.id < $1::bigint)
     AND ($4::text IS NULL OR lower(a.target) = lower($4::text))
     AND ($5::timestamptz IS NULL OR a.at >= $5::timestamptz)
     AND ($6::timestamptz IS NULL OR a.at < $6::timestamptz)
-    AND ($7::text IS NULL
-        OR $7::text = 'pending' AND a.needs_review AND r.audit_id IS NULL
-        OR $7::text = 'reviewed' AND r.audit_id IS NOT NULL)
+    AND ($7::boolean IS NULL OR a.needs_review = $7::boolean)
+    AND ($8::text IS NULL
+        OR $8::text = 'pending' AND a.needs_review AND r.audit_id IS NULL
+        OR $8::text = 'reviewed' AND r.audit_id IS NOT NULL)
 ORDER BY a.id DESC
-LIMIT $8
+LIMIT $9
 `
 
 type SearchStaffAuditParams struct {
-	BeforeID pgtype.Int8
-	Actor    pgtype.Text
-	Action   pgtype.Text
-	Target   pgtype.Text
-	Since    pgtype.Timestamptz
-	Until    pgtype.Timestamptz
-	Review   pgtype.Text
-	MaxRows  int32
+	BeforeID    pgtype.Int8
+	Actor       pgtype.Text
+	Action      pgtype.Text
+	Target      pgtype.Text
+	Since       pgtype.Timestamptz
+	Until       pgtype.Timestamptz
+	NeedsReview pgtype.Bool
+	Review      pgtype.Text
+	MaxRows     int32
 }
 
 type SearchStaffAuditRow struct {
@@ -193,11 +196,14 @@ type SearchStaffAuditRow struct {
 	NeedsReview  bool
 	ReviewedAt   pgtype.Timestamptz
 	ReviewerName string
+	Verdict      string
+	ReviewNote   string
 }
 
 // SearchStaffAudit lists audit rows, newest first, before a row ID.
 // Each filter applies when it is not NULL. review is pending for rows
-// that wait for a review, reviewed for rows that have one.
+// that wait for a review, reviewed for rows that have one. needs_review
+// keeps the rows marked for review, or the rows that are not.
 func (q *Queries) SearchStaffAudit(ctx context.Context, arg SearchStaffAuditParams) ([]SearchStaffAuditRow, error) {
 	rows, err := q.db.Query(ctx, searchStaffAudit,
 		arg.BeforeID,
@@ -206,6 +212,7 @@ func (q *Queries) SearchStaffAudit(ctx context.Context, arg SearchStaffAuditPara
 		arg.Target,
 		arg.Since,
 		arg.Until,
+		arg.NeedsReview,
 		arg.Review,
 		arg.MaxRows,
 	)
@@ -230,6 +237,8 @@ func (q *Queries) SearchStaffAudit(ctx context.Context, arg SearchStaffAuditPara
 			&i.NeedsReview,
 			&i.ReviewedAt,
 			&i.ReviewerName,
+			&i.Verdict,
+			&i.ReviewNote,
 		); err != nil {
 			return nil, err
 		}

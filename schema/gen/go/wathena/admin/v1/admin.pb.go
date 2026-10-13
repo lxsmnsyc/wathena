@@ -601,6 +601,9 @@ type AuditEntry struct {
 	xxx_hidden_NeedsReview bool                   `protobuf:"varint,10,opt,name=needs_review,json=needsReview,proto3"`
 	xxx_hidden_ReviewedAt  *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=reviewed_at,json=reviewedAt,proto3"`
 	xxx_hidden_ReviewedBy  string                 `protobuf:"bytes,12,opt,name=reviewed_by,json=reviewedBy,proto3"`
+	xxx_hidden_Verdict     string                 `protobuf:"bytes,13,opt,name=verdict,proto3"`
+	xxx_hidden_ReviewNote  string                 `protobuf:"bytes,14,opt,name=review_note,json=reviewNote,proto3"`
+	xxx_hidden_AccountId   int64                  `protobuf:"varint,15,opt,name=account_id,json=accountId,proto3"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -714,6 +717,27 @@ func (x *AuditEntry) GetReviewedBy() string {
 	return ""
 }
 
+func (x *AuditEntry) GetVerdict() string {
+	if x != nil {
+		return x.xxx_hidden_Verdict
+	}
+	return ""
+}
+
+func (x *AuditEntry) GetReviewNote() string {
+	if x != nil {
+		return x.xxx_hidden_ReviewNote
+	}
+	return ""
+}
+
+func (x *AuditEntry) GetAccountId() int64 {
+	if x != nil {
+		return x.xxx_hidden_AccountId
+	}
+	return 0
+}
+
 func (x *AuditEntry) SetId(v int64) {
 	x.xxx_hidden_Id = v
 }
@@ -760,6 +784,18 @@ func (x *AuditEntry) SetReviewedAt(v *timestamppb.Timestamp) {
 
 func (x *AuditEntry) SetReviewedBy(v string) {
 	x.xxx_hidden_ReviewedBy = v
+}
+
+func (x *AuditEntry) SetVerdict(v string) {
+	x.xxx_hidden_Verdict = v
+}
+
+func (x *AuditEntry) SetReviewNote(v string) {
+	x.xxx_hidden_ReviewNote = v
+}
+
+func (x *AuditEntry) SetAccountId(v int64) {
+	x.xxx_hidden_AccountId = v
 }
 
 func (x *AuditEntry) HasAt() bool {
@@ -815,6 +851,12 @@ type AuditEntry_builder struct {
 	// reviewed_at and reviewed_by are set once a review is recorded.
 	ReviewedAt *timestamppb.Timestamp
 	ReviewedBy string
+	// verdict is the review's ok or flag, and review_note its note.
+	Verdict    string
+	ReviewNote string
+	// account_id is the staff account's ID, so the screens can tell the
+	// caller's own rows, which the caller may not review.
+	AccountId int64
 }
 
 func (b0 AuditEntry_builder) Build() *AuditEntry {
@@ -833,6 +875,9 @@ func (b0 AuditEntry_builder) Build() *AuditEntry {
 	x.xxx_hidden_NeedsReview = b.NeedsReview
 	x.xxx_hidden_ReviewedAt = b.ReviewedAt
 	x.xxx_hidden_ReviewedBy = b.ReviewedBy
+	x.xxx_hidden_Verdict = b.Verdict
+	x.xxx_hidden_ReviewNote = b.ReviewNote
+	x.xxx_hidden_AccountId = b.AccountId
 	return m0
 }
 
@@ -911,6 +956,3365 @@ func (b0 AuditPage_builder) Build() *AuditPage {
 	return m0
 }
 
+// ReviewRequest is the body of POST /audit/{id}/review.
+type ReviewRequest struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Verdict string                 `protobuf:"bytes,1,opt,name=verdict,proto3"`
+	xxx_hidden_Note    string                 `protobuf:"bytes,2,opt,name=note,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ReviewRequest) Reset() {
+	*x = ReviewRequest{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewRequest) ProtoMessage() {}
+
+func (x *ReviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ReviewRequest) GetVerdict() string {
+	if x != nil {
+		return x.xxx_hidden_Verdict
+	}
+	return ""
+}
+
+func (x *ReviewRequest) GetNote() string {
+	if x != nil {
+		return x.xxx_hidden_Note
+	}
+	return ""
+}
+
+func (x *ReviewRequest) SetVerdict(v string) {
+	x.xxx_hidden_Verdict = v
+}
+
+func (x *ReviewRequest) SetNote(v string) {
+	x.xxx_hidden_Note = v
+}
+
+type ReviewRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// verdict is ok or flag.
+	Verdict string
+	// note is optional, at most 255 characters. A flag needs one.
+	Note string
+}
+
+func (b0 ReviewRequest_builder) Build() *ReviewRequest {
+	m0 := &ReviewRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Verdict = b.Verdict
+	x.xxx_hidden_Note = b.Note
+	return m0
+}
+
+// Position is a place on a map.
+type Position struct {
+	state          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Map string                 `protobuf:"bytes,1,opt,name=map,proto3"`
+	xxx_hidden_X   int32                  `protobuf:"varint,2,opt,name=x,proto3"`
+	xxx_hidden_Y   int32                  `protobuf:"varint,3,opt,name=y,proto3"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Position) Reset() {
+	*x = Position{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Position) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Position) ProtoMessage() {}
+
+func (x *Position) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Position) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *Position) GetX() int32 {
+	if x != nil {
+		return x.xxx_hidden_X
+	}
+	return 0
+}
+
+func (x *Position) GetY() int32 {
+	if x != nil {
+		return x.xxx_hidden_Y
+	}
+	return 0
+}
+
+func (x *Position) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *Position) SetX(v int32) {
+	x.xxx_hidden_X = v
+}
+
+func (x *Position) SetY(v int32) {
+	x.xxx_hidden_Y = v
+}
+
+type Position_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// map is the map's name, such as prontera.
+	Map string
+	X   int32
+	Y   int32
+}
+
+func (b0 Position_builder) Build() *Position {
+	m0 := &Position{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_X = b.X
+	x.xxx_hidden_Y = b.Y
+	return m0
+}
+
+// Sanction is a mute or a jail in effect.
+type Sanction struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind      string                 `protobuf:"bytes,1,opt,name=kind,proto3"`
+	xxx_hidden_Reason    string                 `protobuf:"bytes,2,opt,name=reason,proto3"`
+	xxx_hidden_StartedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=started_at,json=startedAt,proto3"`
+	xxx_hidden_EndsAt    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3"`
+	xxx_hidden_IssuedBy  string                 `protobuf:"bytes,5,opt,name=issued_by,json=issuedBy,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *Sanction) Reset() {
+	*x = Sanction{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Sanction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Sanction) ProtoMessage() {}
+
+func (x *Sanction) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Sanction) GetKind() string {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ""
+}
+
+func (x *Sanction) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *Sanction) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_StartedAt
+	}
+	return nil
+}
+
+func (x *Sanction) GetEndsAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_EndsAt
+	}
+	return nil
+}
+
+func (x *Sanction) GetIssuedBy() string {
+	if x != nil {
+		return x.xxx_hidden_IssuedBy
+	}
+	return ""
+}
+
+func (x *Sanction) SetKind(v string) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *Sanction) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+func (x *Sanction) SetStartedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_StartedAt = v
+}
+
+func (x *Sanction) SetEndsAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_EndsAt = v
+}
+
+func (x *Sanction) SetIssuedBy(v string) {
+	x.xxx_hidden_IssuedBy = v
+}
+
+func (x *Sanction) HasStartedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_StartedAt != nil
+}
+
+func (x *Sanction) HasEndsAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_EndsAt != nil
+}
+
+func (x *Sanction) ClearStartedAt() {
+	x.xxx_hidden_StartedAt = nil
+}
+
+func (x *Sanction) ClearEndsAt() {
+	x.xxx_hidden_EndsAt = nil
+}
+
+type Sanction_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// kind is mute or jail.
+	Kind      string
+	Reason    string
+	StartedAt *timestamppb.Timestamp
+	EndsAt    *timestamppb.Timestamp
+	IssuedBy  string
+}
+
+func (b0 Sanction_builder) Build() *Sanction {
+	m0 := &Sanction{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_Reason = b.Reason
+	x.xxx_hidden_StartedAt = b.StartedAt
+	x.xxx_hidden_EndsAt = b.EndsAt
+	x.xxx_hidden_IssuedBy = b.IssuedBy
+	return m0
+}
+
+// CharacterSummary is a character in the search results.
+type CharacterSummary struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id        int64                  `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_Name      string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Job       int32                  `protobuf:"varint,3,opt,name=job,proto3"`
+	xxx_hidden_JobName   string                 `protobuf:"bytes,4,opt,name=job_name,json=jobName,proto3"`
+	xxx_hidden_BaseLevel int32                  `protobuf:"varint,5,opt,name=base_level,json=baseLevel,proto3"`
+	xxx_hidden_JobLevel  int32                  `protobuf:"varint,6,opt,name=job_level,json=jobLevel,proto3"`
+	xxx_hidden_Online    bool                   `protobuf:"varint,7,opt,name=online,proto3"`
+	xxx_hidden_Position  *Position              `protobuf:"bytes,8,opt,name=position,proto3"`
+	xxx_hidden_Sanctions *[]*Sanction           `protobuf:"bytes,9,rep,name=sanctions,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *CharacterSummary) Reset() {
+	*x = CharacterSummary{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CharacterSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CharacterSummary) ProtoMessage() {}
+
+func (x *CharacterSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CharacterSummary) GetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *CharacterSummary) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *CharacterSummary) GetJob() int32 {
+	if x != nil {
+		return x.xxx_hidden_Job
+	}
+	return 0
+}
+
+func (x *CharacterSummary) GetJobName() string {
+	if x != nil {
+		return x.xxx_hidden_JobName
+	}
+	return ""
+}
+
+func (x *CharacterSummary) GetBaseLevel() int32 {
+	if x != nil {
+		return x.xxx_hidden_BaseLevel
+	}
+	return 0
+}
+
+func (x *CharacterSummary) GetJobLevel() int32 {
+	if x != nil {
+		return x.xxx_hidden_JobLevel
+	}
+	return 0
+}
+
+func (x *CharacterSummary) GetOnline() bool {
+	if x != nil {
+		return x.xxx_hidden_Online
+	}
+	return false
+}
+
+func (x *CharacterSummary) GetPosition() *Position {
+	if x != nil {
+		return x.xxx_hidden_Position
+	}
+	return nil
+}
+
+func (x *CharacterSummary) GetSanctions() []*Sanction {
+	if x != nil {
+		if x.xxx_hidden_Sanctions != nil {
+			return *x.xxx_hidden_Sanctions
+		}
+	}
+	return nil
+}
+
+func (x *CharacterSummary) SetId(v int64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *CharacterSummary) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *CharacterSummary) SetJob(v int32) {
+	x.xxx_hidden_Job = v
+}
+
+func (x *CharacterSummary) SetJobName(v string) {
+	x.xxx_hidden_JobName = v
+}
+
+func (x *CharacterSummary) SetBaseLevel(v int32) {
+	x.xxx_hidden_BaseLevel = v
+}
+
+func (x *CharacterSummary) SetJobLevel(v int32) {
+	x.xxx_hidden_JobLevel = v
+}
+
+func (x *CharacterSummary) SetOnline(v bool) {
+	x.xxx_hidden_Online = v
+}
+
+func (x *CharacterSummary) SetPosition(v *Position) {
+	x.xxx_hidden_Position = v
+}
+
+func (x *CharacterSummary) SetSanctions(v []*Sanction) {
+	x.xxx_hidden_Sanctions = &v
+}
+
+func (x *CharacterSummary) HasPosition() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Position != nil
+}
+
+func (x *CharacterSummary) ClearPosition() {
+	x.xxx_hidden_Position = nil
+}
+
+type CharacterSummary_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id        int64
+	Name      string
+	Job       int32
+	JobName   string
+	BaseLevel int32
+	JobLevel  int32
+	Online    bool
+	// position is where the character is now when online, else where it
+	// was saved.
+	Position  *Position
+	Sanctions []*Sanction
+}
+
+func (b0 CharacterSummary_builder) Build() *CharacterSummary {
+	m0 := &CharacterSummary{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Job = b.Job
+	x.xxx_hidden_JobName = b.JobName
+	x.xxx_hidden_BaseLevel = b.BaseLevel
+	x.xxx_hidden_JobLevel = b.JobLevel
+	x.xxx_hidden_Online = b.Online
+	x.xxx_hidden_Position = b.Position
+	x.xxx_hidden_Sanctions = &b.Sanctions
+	return m0
+}
+
+// LoginRecord is one login of an account, for an IP search.
+type LoginRecord struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Ip        string                 `protobuf:"bytes,1,opt,name=ip,proto3"`
+	xxx_hidden_At        *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=at,proto3"`
+	xxx_hidden_UserAgent string                 `protobuf:"bytes,3,opt,name=user_agent,json=userAgent,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *LoginRecord) Reset() {
+	*x = LoginRecord{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginRecord) ProtoMessage() {}
+
+func (x *LoginRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *LoginRecord) GetIp() string {
+	if x != nil {
+		return x.xxx_hidden_Ip
+	}
+	return ""
+}
+
+func (x *LoginRecord) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_At
+	}
+	return nil
+}
+
+func (x *LoginRecord) GetUserAgent() string {
+	if x != nil {
+		return x.xxx_hidden_UserAgent
+	}
+	return ""
+}
+
+func (x *LoginRecord) SetIp(v string) {
+	x.xxx_hidden_Ip = v
+}
+
+func (x *LoginRecord) SetAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_At = v
+}
+
+func (x *LoginRecord) SetUserAgent(v string) {
+	x.xxx_hidden_UserAgent = v
+}
+
+func (x *LoginRecord) HasAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_At != nil
+}
+
+func (x *LoginRecord) ClearAt() {
+	x.xxx_hidden_At = nil
+}
+
+type LoginRecord_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Ip        string
+	At        *timestamppb.Timestamp
+	UserAgent string
+}
+
+func (b0 LoginRecord_builder) Build() *LoginRecord {
+	m0 := &LoginRecord{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Ip = b.Ip
+	x.xxx_hidden_At = b.At
+	x.xxx_hidden_UserAgent = b.UserAgent
+	return m0
+}
+
+// Owner is where an item or zeny was or went: a holder or an end of the
+// transfers (decision 0017).
+type Owner struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind        string                 `protobuf:"bytes,1,opt,name=kind,proto3"`
+	xxx_hidden_Id          int64                  `protobuf:"varint,2,opt,name=id,proto3"`
+	xxx_hidden_Storage     uint32                 `protobuf:"varint,3,opt,name=storage,proto3"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,4,opt,name=name,proto3"`
+	xxx_hidden_CharacterId int64                  `protobuf:"varint,5,opt,name=character_id,json=characterId,proto3"`
+	xxx_hidden_AccountId   int64                  `protobuf:"varint,6,opt,name=account_id,json=accountId,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *Owner) Reset() {
+	*x = Owner{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Owner) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Owner) ProtoMessage() {}
+
+func (x *Owner) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Owner) GetKind() string {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ""
+}
+
+func (x *Owner) GetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *Owner) GetStorage() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Storage
+	}
+	return 0
+}
+
+func (x *Owner) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *Owner) GetCharacterId() int64 {
+	if x != nil {
+		return x.xxx_hidden_CharacterId
+	}
+	return 0
+}
+
+func (x *Owner) GetAccountId() int64 {
+	if x != nil {
+		return x.xxx_hidden_AccountId
+	}
+	return 0
+}
+
+func (x *Owner) SetKind(v string) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *Owner) SetId(v int64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *Owner) SetStorage(v uint32) {
+	x.xxx_hidden_Storage = v
+}
+
+func (x *Owner) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Owner) SetCharacterId(v int64) {
+	x.xxx_hidden_CharacterId = v
+}
+
+func (x *Owner) SetAccountId(v int64) {
+	x.xxx_hidden_AccountId = v
+}
+
+type Owner_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// kind is inventory, storage, cart, guild_storage, mail, vending,
+	// ground, monster, shop, script, skill, used, fee, event or staff.
+	Kind string
+	// id is the character, account, guild, mail, monster or skill ID, or
+	// 0.
+	Id int64
+	// storage is the record ID of an extra storage, or 0.
+	Storage uint32
+	// name names the owner for people, such as a character's name, or a
+	// mail and its recipient. It is empty when the owner is gone.
+	Name string
+	// character_id and account_id are the character and the account that
+	// the holder belongs to, when there are.
+	CharacterId int64
+	AccountId   int64
+}
+
+func (b0 Owner_builder) Build() *Owner {
+	m0 := &Owner{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Storage = b.Storage
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_CharacterId = b.CharacterId
+	x.xxx_hidden_AccountId = b.AccountId
+	return m0
+}
+
+// AccountSummary is one account in the search results.
+type AccountSummary struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AccountId  int64                  `protobuf:"varint,1,opt,name=account_id,json=accountId,proto3"`
+	xxx_hidden_Account    string                 `protobuf:"bytes,2,opt,name=account,proto3"`
+	xxx_hidden_CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_LastLogin  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_login,json=lastLogin,proto3"`
+	xxx_hidden_Characters *[]*CharacterSummary   `protobuf:"bytes,5,rep,name=characters,proto3"`
+	xxx_hidden_Logins     *[]*LoginRecord        `protobuf:"bytes,6,rep,name=logins,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *AccountSummary) Reset() {
+	*x = AccountSummary{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountSummary) ProtoMessage() {}
+
+func (x *AccountSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *AccountSummary) GetAccountId() int64 {
+	if x != nil {
+		return x.xxx_hidden_AccountId
+	}
+	return 0
+}
+
+func (x *AccountSummary) GetAccount() string {
+	if x != nil {
+		return x.xxx_hidden_Account
+	}
+	return ""
+}
+
+func (x *AccountSummary) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_CreatedAt
+	}
+	return nil
+}
+
+func (x *AccountSummary) GetLastLogin() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_LastLogin
+	}
+	return nil
+}
+
+func (x *AccountSummary) GetCharacters() []*CharacterSummary {
+	if x != nil {
+		if x.xxx_hidden_Characters != nil {
+			return *x.xxx_hidden_Characters
+		}
+	}
+	return nil
+}
+
+func (x *AccountSummary) GetLogins() []*LoginRecord {
+	if x != nil {
+		if x.xxx_hidden_Logins != nil {
+			return *x.xxx_hidden_Logins
+		}
+	}
+	return nil
+}
+
+func (x *AccountSummary) SetAccountId(v int64) {
+	x.xxx_hidden_AccountId = v
+}
+
+func (x *AccountSummary) SetAccount(v string) {
+	x.xxx_hidden_Account = v
+}
+
+func (x *AccountSummary) SetCreatedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *AccountSummary) SetLastLogin(v *timestamppb.Timestamp) {
+	x.xxx_hidden_LastLogin = v
+}
+
+func (x *AccountSummary) SetCharacters(v []*CharacterSummary) {
+	x.xxx_hidden_Characters = &v
+}
+
+func (x *AccountSummary) SetLogins(v []*LoginRecord) {
+	x.xxx_hidden_Logins = &v
+}
+
+func (x *AccountSummary) HasCreatedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreatedAt != nil
+}
+
+func (x *AccountSummary) HasLastLogin() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_LastLogin != nil
+}
+
+func (x *AccountSummary) ClearCreatedAt() {
+	x.xxx_hidden_CreatedAt = nil
+}
+
+func (x *AccountSummary) ClearLastLogin() {
+	x.xxx_hidden_LastLogin = nil
+}
+
+type AccountSummary_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	AccountId int64
+	Account   string
+	CreatedAt *timestamppb.Timestamp
+	// last_login is the account's last login on the account pages, or
+	// unset.
+	LastLogin  *timestamppb.Timestamp
+	Characters []*CharacterSummary
+	// logins are the logins of an IP search that matched, newest first.
+	Logins []*LoginRecord
+}
+
+func (b0 AccountSummary_builder) Build() *AccountSummary {
+	m0 := &AccountSummary{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_AccountId = b.AccountId
+	x.xxx_hidden_Account = b.Account
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_LastLogin = b.LastLogin
+	x.xxx_hidden_Characters = &b.Characters
+	x.xxx_hidden_Logins = &b.Logins
+	return m0
+}
+
+// PlayerSearch answers GET /players.
+type PlayerSearch struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Accounts   *[]*AccountSummary     `protobuf:"bytes,1,rep,name=accounts,proto3"`
+	xxx_hidden_NextCursor string                 `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3"`
+	xxx_hidden_Holder     *Owner                 `protobuf:"bytes,3,opt,name=holder,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *PlayerSearch) Reset() {
+	*x = PlayerSearch{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerSearch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerSearch) ProtoMessage() {}
+
+func (x *PlayerSearch) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PlayerSearch) GetAccounts() []*AccountSummary {
+	if x != nil {
+		if x.xxx_hidden_Accounts != nil {
+			return *x.xxx_hidden_Accounts
+		}
+	}
+	return nil
+}
+
+func (x *PlayerSearch) GetNextCursor() string {
+	if x != nil {
+		return x.xxx_hidden_NextCursor
+	}
+	return ""
+}
+
+func (x *PlayerSearch) GetHolder() *Owner {
+	if x != nil {
+		return x.xxx_hidden_Holder
+	}
+	return nil
+}
+
+func (x *PlayerSearch) SetAccounts(v []*AccountSummary) {
+	x.xxx_hidden_Accounts = &v
+}
+
+func (x *PlayerSearch) SetNextCursor(v string) {
+	x.xxx_hidden_NextCursor = v
+}
+
+func (x *PlayerSearch) SetHolder(v *Owner) {
+	x.xxx_hidden_Holder = v
+}
+
+func (x *PlayerSearch) HasHolder() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Holder != nil
+}
+
+func (x *PlayerSearch) ClearHolder() {
+	x.xxx_hidden_Holder = nil
+}
+
+type PlayerSearch_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Accounts []*AccountSummary
+	// next_cursor is the cursor of the next page, or empty at the end.
+	NextCursor string
+	// holder is where a searched serial is now.
+	Holder *Owner
+}
+
+func (b0 PlayerSearch_builder) Build() *PlayerSearch {
+	m0 := &PlayerSearch{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Accounts = &b.Accounts
+	x.xxx_hidden_NextCursor = b.NextCursor
+	x.xxx_hidden_Holder = b.Holder
+	return m0
+}
+
+// Item is one stack or instance of an item.
+type Item struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Serial     string                 `protobuf:"bytes,1,opt,name=serial,proto3"`
+	xxx_hidden_ItemId     uint32                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_Name       string                 `protobuf:"bytes,3,opt,name=name,proto3"`
+	xxx_hidden_Amount     int32                  `protobuf:"varint,4,opt,name=amount,proto3"`
+	xxx_hidden_Slot       int32                  `protobuf:"varint,5,opt,name=slot,proto3"`
+	xxx_hidden_Refine     int32                  `protobuf:"varint,6,opt,name=refine,proto3"`
+	xxx_hidden_Cards      []uint32               `protobuf:"varint,7,rep,packed,name=cards,proto3"`
+	xxx_hidden_Equip      uint32                 `protobuf:"varint,8,opt,name=equip,proto3"`
+	xxx_hidden_Identified bool                   `protobuf:"varint,9,opt,name=identified,proto3"`
+	xxx_hidden_Bound      int32                  `protobuf:"varint,10,opt,name=bound,proto3"`
+	xxx_hidden_Rolls      map[string]int32       `protobuf:"bytes,11,rep,name=rolls,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *Item) Reset() {
+	*x = Item{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Item) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Item) ProtoMessage() {}
+
+func (x *Item) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Item) GetSerial() string {
+	if x != nil {
+		return x.xxx_hidden_Serial
+	}
+	return ""
+}
+
+func (x *Item) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *Item) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *Item) GetAmount() int32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *Item) GetSlot() int32 {
+	if x != nil {
+		return x.xxx_hidden_Slot
+	}
+	return 0
+}
+
+func (x *Item) GetRefine() int32 {
+	if x != nil {
+		return x.xxx_hidden_Refine
+	}
+	return 0
+}
+
+func (x *Item) GetCards() []uint32 {
+	if x != nil {
+		return x.xxx_hidden_Cards
+	}
+	return nil
+}
+
+func (x *Item) GetEquip() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Equip
+	}
+	return 0
+}
+
+func (x *Item) GetIdentified() bool {
+	if x != nil {
+		return x.xxx_hidden_Identified
+	}
+	return false
+}
+
+func (x *Item) GetBound() int32 {
+	if x != nil {
+		return x.xxx_hidden_Bound
+	}
+	return 0
+}
+
+func (x *Item) GetRolls() map[string]int32 {
+	if x != nil {
+		return x.xxx_hidden_Rolls
+	}
+	return nil
+}
+
+func (x *Item) SetSerial(v string) {
+	x.xxx_hidden_Serial = v
+}
+
+func (x *Item) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *Item) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Item) SetAmount(v int32) {
+	x.xxx_hidden_Amount = v
+}
+
+func (x *Item) SetSlot(v int32) {
+	x.xxx_hidden_Slot = v
+}
+
+func (x *Item) SetRefine(v int32) {
+	x.xxx_hidden_Refine = v
+}
+
+func (x *Item) SetCards(v []uint32) {
+	x.xxx_hidden_Cards = v
+}
+
+func (x *Item) SetEquip(v uint32) {
+	x.xxx_hidden_Equip = v
+}
+
+func (x *Item) SetIdentified(v bool) {
+	x.xxx_hidden_Identified = v
+}
+
+func (x *Item) SetBound(v int32) {
+	x.xxx_hidden_Bound = v
+}
+
+func (x *Item) SetRolls(v map[string]int32) {
+	x.xxx_hidden_Rolls = v
+}
+
+type Item_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// serial is the stack's serial, as a UUID.
+	Serial string
+	ItemId uint32
+	// name is the item's name in the item database.
+	Name   string
+	Amount int32
+	Slot   int32
+	Refine int32
+	Cards  []uint32
+	// equip holds the positions it is worn in, as EQP_ bits, or 0.
+	Equip      uint32
+	Identified bool
+	// bound is the bond, as rAthena's bound_type, or 0.
+	Bound int32
+	// rolls are the copy's rolled values, by name.
+	Rolls map[string]int32
+}
+
+func (b0 Item_builder) Build() *Item {
+	m0 := &Item{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Serial = b.Serial
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Slot = b.Slot
+	x.xxx_hidden_Refine = b.Refine
+	x.xxx_hidden_Cards = b.Cards
+	x.xxx_hidden_Equip = b.Equip
+	x.xxx_hidden_Identified = b.Identified
+	x.xxx_hidden_Bound = b.Bound
+	x.xxx_hidden_Rolls = b.Rolls
+	return m0
+}
+
+// Storage is a storage or a cart of a character.
+type Storage struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind    string                 `protobuf:"bytes,1,opt,name=kind,proto3"`
+	xxx_hidden_Storage uint32                 `protobuf:"varint,2,opt,name=storage,proto3"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,3,opt,name=name,proto3"`
+	xxx_hidden_Items   *[]*Item               `protobuf:"bytes,4,rep,name=items,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *Storage) Reset() {
+	*x = Storage{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Storage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Storage) ProtoMessage() {}
+
+func (x *Storage) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Storage) GetKind() string {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ""
+}
+
+func (x *Storage) GetStorage() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Storage
+	}
+	return 0
+}
+
+func (x *Storage) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *Storage) GetItems() []*Item {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *Storage) SetKind(v string) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *Storage) SetStorage(v uint32) {
+	x.xxx_hidden_Storage = v
+}
+
+func (x *Storage) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Storage) SetItems(v []*Item) {
+	x.xxx_hidden_Items = &v
+}
+
+type Storage_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// kind is cart, storage for the account's storage, or extra for an
+	// extra storage.
+	Kind string
+	// storage is the extra storage's record ID, or 0.
+	Storage uint32
+	// name is the extra storage's name, or empty.
+	Name  string
+	Items []*Item
+}
+
+func (b0 Storage_builder) Build() *Storage {
+	m0 := &Storage{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_Storage = b.Storage
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+// Mail is a mail in a character's mailbox.
+type Mail struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id       int64                  `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_From     string                 `protobuf:"bytes,2,opt,name=from,proto3"`
+	xxx_hidden_Title    string                 `protobuf:"bytes,3,opt,name=title,proto3"`
+	xxx_hidden_SentAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=sent_at,json=sentAt,proto3"`
+	xxx_hidden_Zeny     int64                  `protobuf:"varint,5,opt,name=zeny,proto3"`
+	xxx_hidden_Read     bool                   `protobuf:"varint,6,opt,name=read,proto3"`
+	xxx_hidden_Returned bool                   `protobuf:"varint,7,opt,name=returned,proto3"`
+	xxx_hidden_Items    *[]*Item               `protobuf:"bytes,8,rep,name=items,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Mail) Reset() {
+	*x = Mail{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Mail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Mail) ProtoMessage() {}
+
+func (x *Mail) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Mail) GetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *Mail) GetFrom() string {
+	if x != nil {
+		return x.xxx_hidden_From
+	}
+	return ""
+}
+
+func (x *Mail) GetTitle() string {
+	if x != nil {
+		return x.xxx_hidden_Title
+	}
+	return ""
+}
+
+func (x *Mail) GetSentAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_SentAt
+	}
+	return nil
+}
+
+func (x *Mail) GetZeny() int64 {
+	if x != nil {
+		return x.xxx_hidden_Zeny
+	}
+	return 0
+}
+
+func (x *Mail) GetRead() bool {
+	if x != nil {
+		return x.xxx_hidden_Read
+	}
+	return false
+}
+
+func (x *Mail) GetReturned() bool {
+	if x != nil {
+		return x.xxx_hidden_Returned
+	}
+	return false
+}
+
+func (x *Mail) GetItems() []*Item {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *Mail) SetId(v int64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *Mail) SetFrom(v string) {
+	x.xxx_hidden_From = v
+}
+
+func (x *Mail) SetTitle(v string) {
+	x.xxx_hidden_Title = v
+}
+
+func (x *Mail) SetSentAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_SentAt = v
+}
+
+func (x *Mail) SetZeny(v int64) {
+	x.xxx_hidden_Zeny = v
+}
+
+func (x *Mail) SetRead(v bool) {
+	x.xxx_hidden_Read = v
+}
+
+func (x *Mail) SetReturned(v bool) {
+	x.xxx_hidden_Returned = v
+}
+
+func (x *Mail) SetItems(v []*Item) {
+	x.xxx_hidden_Items = &v
+}
+
+func (x *Mail) HasSentAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SentAt != nil
+}
+
+func (x *Mail) ClearSentAt() {
+	x.xxx_hidden_SentAt = nil
+}
+
+type Mail_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id       int64
+	From     string
+	Title    string
+	SentAt   *timestamppb.Timestamp
+	Zeny     int64
+	Read     bool
+	Returned bool
+	Items    []*Item
+}
+
+func (b0 Mail_builder) Build() *Mail {
+	m0 := &Mail{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_From = b.From
+	x.xxx_hidden_Title = b.Title
+	x.xxx_hidden_SentAt = b.SentAt
+	x.xxx_hidden_Zeny = b.Zeny
+	x.xxx_hidden_Read = b.Read
+	x.xxx_hidden_Returned = b.Returned
+	x.xxx_hidden_Items = &b.Items
+	return m0
+}
+
+// Currency is an amount of a currency of data/currencies.yml.
+type Currency struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id      uint32                 `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_Name    string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Amount  int64                  `protobuf:"varint,3,opt,name=amount,proto3"`
+	xxx_hidden_Account bool                   `protobuf:"varint,4,opt,name=account,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *Currency) Reset() {
+	*x = Currency{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Currency) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Currency) ProtoMessage() {}
+
+func (x *Currency) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Currency) GetId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *Currency) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *Currency) GetAmount() int64 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *Currency) GetAccount() bool {
+	if x != nil {
+		return x.xxx_hidden_Account
+	}
+	return false
+}
+
+func (x *Currency) SetId(v uint32) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *Currency) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Currency) SetAmount(v int64) {
+	x.xxx_hidden_Amount = v
+}
+
+func (x *Currency) SetAccount(v bool) {
+	x.xxx_hidden_Account = v
+}
+
+type Currency_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id     uint32
+	Name   string
+	Amount int64
+	// account is set for a currency the account holds.
+	Account bool
+}
+
+func (b0 Currency_builder) Build() *Currency {
+	m0 := &Currency{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Account = b.Account
+	return m0
+}
+
+// Stats are the raised stats.
+type Stats struct {
+	state          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Str int32                  `protobuf:"varint,1,opt,name=str,proto3"`
+	xxx_hidden_Agi int32                  `protobuf:"varint,2,opt,name=agi,proto3"`
+	xxx_hidden_Vit int32                  `protobuf:"varint,3,opt,name=vit,proto3"`
+	xxx_hidden_Int int32                  `protobuf:"varint,4,opt,name=int,proto3"`
+	xxx_hidden_Dex int32                  `protobuf:"varint,5,opt,name=dex,proto3"`
+	xxx_hidden_Luk int32                  `protobuf:"varint,6,opt,name=luk,proto3"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Stats) Reset() {
+	*x = Stats{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Stats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Stats) ProtoMessage() {}
+
+func (x *Stats) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Stats) GetStr() int32 {
+	if x != nil {
+		return x.xxx_hidden_Str
+	}
+	return 0
+}
+
+func (x *Stats) GetAgi() int32 {
+	if x != nil {
+		return x.xxx_hidden_Agi
+	}
+	return 0
+}
+
+func (x *Stats) GetVit() int32 {
+	if x != nil {
+		return x.xxx_hidden_Vit
+	}
+	return 0
+}
+
+func (x *Stats) GetInt() int32 {
+	if x != nil {
+		return x.xxx_hidden_Int
+	}
+	return 0
+}
+
+func (x *Stats) GetDex() int32 {
+	if x != nil {
+		return x.xxx_hidden_Dex
+	}
+	return 0
+}
+
+func (x *Stats) GetLuk() int32 {
+	if x != nil {
+		return x.xxx_hidden_Luk
+	}
+	return 0
+}
+
+func (x *Stats) SetStr(v int32) {
+	x.xxx_hidden_Str = v
+}
+
+func (x *Stats) SetAgi(v int32) {
+	x.xxx_hidden_Agi = v
+}
+
+func (x *Stats) SetVit(v int32) {
+	x.xxx_hidden_Vit = v
+}
+
+func (x *Stats) SetInt(v int32) {
+	x.xxx_hidden_Int = v
+}
+
+func (x *Stats) SetDex(v int32) {
+	x.xxx_hidden_Dex = v
+}
+
+func (x *Stats) SetLuk(v int32) {
+	x.xxx_hidden_Luk = v
+}
+
+type Stats_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Str int32
+	Agi int32
+	Vit int32
+	Int int32
+	Dex int32
+	Luk int32
+}
+
+func (b0 Stats_builder) Build() *Stats {
+	m0 := &Stats{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Str = b.Str
+	x.xxx_hidden_Agi = b.Agi
+	x.xxx_hidden_Vit = b.Vit
+	x.xxx_hidden_Int = b.Int
+	x.xxx_hidden_Dex = b.Dex
+	x.xxx_hidden_Luk = b.Luk
+	return m0
+}
+
+// CharacterDetail answers GET /characters/{id}. An online character is
+// read from its zone, an offline one from the database.
+type CharacterDetail struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id           int64                  `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_Name         string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_AccountId    int64                  `protobuf:"varint,3,opt,name=account_id,json=accountId,proto3"`
+	xxx_hidden_Account      string                 `protobuf:"bytes,4,opt,name=account,proto3"`
+	xxx_hidden_Job          int32                  `protobuf:"varint,5,opt,name=job,proto3"`
+	xxx_hidden_JobName      string                 `protobuf:"bytes,6,opt,name=job_name,json=jobName,proto3"`
+	xxx_hidden_Male         bool                   `protobuf:"varint,7,opt,name=male,proto3"`
+	xxx_hidden_BaseLevel    int32                  `protobuf:"varint,8,opt,name=base_level,json=baseLevel,proto3"`
+	xxx_hidden_JobLevel     int32                  `protobuf:"varint,9,opt,name=job_level,json=jobLevel,proto3"`
+	xxx_hidden_BaseExp      int64                  `protobuf:"varint,10,opt,name=base_exp,json=baseExp,proto3"`
+	xxx_hidden_JobExp       int64                  `protobuf:"varint,11,opt,name=job_exp,json=jobExp,proto3"`
+	xxx_hidden_Stats        *Stats                 `protobuf:"bytes,12,opt,name=stats,proto3"`
+	xxx_hidden_StatusPoints int32                  `protobuf:"varint,13,opt,name=status_points,json=statusPoints,proto3"`
+	xxx_hidden_SkillPoints  int32                  `protobuf:"varint,14,opt,name=skill_points,json=skillPoints,proto3"`
+	xxx_hidden_Hp           int64                  `protobuf:"varint,15,opt,name=hp,proto3"`
+	xxx_hidden_Sp           int64                  `protobuf:"varint,16,opt,name=sp,proto3"`
+	xxx_hidden_Zeny         int64                  `protobuf:"varint,17,opt,name=zeny,proto3"`
+	xxx_hidden_Currencies   *[]*Currency           `protobuf:"bytes,18,rep,name=currencies,proto3"`
+	xxx_hidden_Online       bool                   `protobuf:"varint,19,opt,name=online,proto3"`
+	xxx_hidden_Position     *Position              `protobuf:"bytes,20,opt,name=position,proto3"`
+	xxx_hidden_SavePoint    *Position              `protobuf:"bytes,21,opt,name=save_point,json=savePoint,proto3"`
+	xxx_hidden_Party        string                 `protobuf:"bytes,22,opt,name=party,proto3"`
+	xxx_hidden_Guild        string                 `protobuf:"bytes,23,opt,name=guild,proto3"`
+	xxx_hidden_Inventory    *[]*Item               `protobuf:"bytes,24,rep,name=inventory,proto3"`
+	xxx_hidden_Storages     *[]*Storage            `protobuf:"bytes,25,rep,name=storages,proto3"`
+	xxx_hidden_Mails        *[]*Mail               `protobuf:"bytes,26,rep,name=mails,proto3"`
+	xxx_hidden_Sanctions    *[]*Sanction           `protobuf:"bytes,27,rep,name=sanctions,proto3"`
+	xxx_hidden_CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,28,opt,name=created_at,json=createdAt,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *CharacterDetail) Reset() {
+	*x = CharacterDetail{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CharacterDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CharacterDetail) ProtoMessage() {}
+
+func (x *CharacterDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CharacterDetail) GetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *CharacterDetail) GetAccountId() int64 {
+	if x != nil {
+		return x.xxx_hidden_AccountId
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetAccount() string {
+	if x != nil {
+		return x.xxx_hidden_Account
+	}
+	return ""
+}
+
+func (x *CharacterDetail) GetJob() int32 {
+	if x != nil {
+		return x.xxx_hidden_Job
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetJobName() string {
+	if x != nil {
+		return x.xxx_hidden_JobName
+	}
+	return ""
+}
+
+func (x *CharacterDetail) GetMale() bool {
+	if x != nil {
+		return x.xxx_hidden_Male
+	}
+	return false
+}
+
+func (x *CharacterDetail) GetBaseLevel() int32 {
+	if x != nil {
+		return x.xxx_hidden_BaseLevel
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetJobLevel() int32 {
+	if x != nil {
+		return x.xxx_hidden_JobLevel
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetBaseExp() int64 {
+	if x != nil {
+		return x.xxx_hidden_BaseExp
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetJobExp() int64 {
+	if x != nil {
+		return x.xxx_hidden_JobExp
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetStats() *Stats {
+	if x != nil {
+		return x.xxx_hidden_Stats
+	}
+	return nil
+}
+
+func (x *CharacterDetail) GetStatusPoints() int32 {
+	if x != nil {
+		return x.xxx_hidden_StatusPoints
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetSkillPoints() int32 {
+	if x != nil {
+		return x.xxx_hidden_SkillPoints
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetHp() int64 {
+	if x != nil {
+		return x.xxx_hidden_Hp
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetSp() int64 {
+	if x != nil {
+		return x.xxx_hidden_Sp
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetZeny() int64 {
+	if x != nil {
+		return x.xxx_hidden_Zeny
+	}
+	return 0
+}
+
+func (x *CharacterDetail) GetCurrencies() []*Currency {
+	if x != nil {
+		if x.xxx_hidden_Currencies != nil {
+			return *x.xxx_hidden_Currencies
+		}
+	}
+	return nil
+}
+
+func (x *CharacterDetail) GetOnline() bool {
+	if x != nil {
+		return x.xxx_hidden_Online
+	}
+	return false
+}
+
+func (x *CharacterDetail) GetPosition() *Position {
+	if x != nil {
+		return x.xxx_hidden_Position
+	}
+	return nil
+}
+
+func (x *CharacterDetail) GetSavePoint() *Position {
+	if x != nil {
+		return x.xxx_hidden_SavePoint
+	}
+	return nil
+}
+
+func (x *CharacterDetail) GetParty() string {
+	if x != nil {
+		return x.xxx_hidden_Party
+	}
+	return ""
+}
+
+func (x *CharacterDetail) GetGuild() string {
+	if x != nil {
+		return x.xxx_hidden_Guild
+	}
+	return ""
+}
+
+func (x *CharacterDetail) GetInventory() []*Item {
+	if x != nil {
+		if x.xxx_hidden_Inventory != nil {
+			return *x.xxx_hidden_Inventory
+		}
+	}
+	return nil
+}
+
+func (x *CharacterDetail) GetStorages() []*Storage {
+	if x != nil {
+		if x.xxx_hidden_Storages != nil {
+			return *x.xxx_hidden_Storages
+		}
+	}
+	return nil
+}
+
+func (x *CharacterDetail) GetMails() []*Mail {
+	if x != nil {
+		if x.xxx_hidden_Mails != nil {
+			return *x.xxx_hidden_Mails
+		}
+	}
+	return nil
+}
+
+func (x *CharacterDetail) GetSanctions() []*Sanction {
+	if x != nil {
+		if x.xxx_hidden_Sanctions != nil {
+			return *x.xxx_hidden_Sanctions
+		}
+	}
+	return nil
+}
+
+func (x *CharacterDetail) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_CreatedAt
+	}
+	return nil
+}
+
+func (x *CharacterDetail) SetId(v int64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *CharacterDetail) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *CharacterDetail) SetAccountId(v int64) {
+	x.xxx_hidden_AccountId = v
+}
+
+func (x *CharacterDetail) SetAccount(v string) {
+	x.xxx_hidden_Account = v
+}
+
+func (x *CharacterDetail) SetJob(v int32) {
+	x.xxx_hidden_Job = v
+}
+
+func (x *CharacterDetail) SetJobName(v string) {
+	x.xxx_hidden_JobName = v
+}
+
+func (x *CharacterDetail) SetMale(v bool) {
+	x.xxx_hidden_Male = v
+}
+
+func (x *CharacterDetail) SetBaseLevel(v int32) {
+	x.xxx_hidden_BaseLevel = v
+}
+
+func (x *CharacterDetail) SetJobLevel(v int32) {
+	x.xxx_hidden_JobLevel = v
+}
+
+func (x *CharacterDetail) SetBaseExp(v int64) {
+	x.xxx_hidden_BaseExp = v
+}
+
+func (x *CharacterDetail) SetJobExp(v int64) {
+	x.xxx_hidden_JobExp = v
+}
+
+func (x *CharacterDetail) SetStats(v *Stats) {
+	x.xxx_hidden_Stats = v
+}
+
+func (x *CharacterDetail) SetStatusPoints(v int32) {
+	x.xxx_hidden_StatusPoints = v
+}
+
+func (x *CharacterDetail) SetSkillPoints(v int32) {
+	x.xxx_hidden_SkillPoints = v
+}
+
+func (x *CharacterDetail) SetHp(v int64) {
+	x.xxx_hidden_Hp = v
+}
+
+func (x *CharacterDetail) SetSp(v int64) {
+	x.xxx_hidden_Sp = v
+}
+
+func (x *CharacterDetail) SetZeny(v int64) {
+	x.xxx_hidden_Zeny = v
+}
+
+func (x *CharacterDetail) SetCurrencies(v []*Currency) {
+	x.xxx_hidden_Currencies = &v
+}
+
+func (x *CharacterDetail) SetOnline(v bool) {
+	x.xxx_hidden_Online = v
+}
+
+func (x *CharacterDetail) SetPosition(v *Position) {
+	x.xxx_hidden_Position = v
+}
+
+func (x *CharacterDetail) SetSavePoint(v *Position) {
+	x.xxx_hidden_SavePoint = v
+}
+
+func (x *CharacterDetail) SetParty(v string) {
+	x.xxx_hidden_Party = v
+}
+
+func (x *CharacterDetail) SetGuild(v string) {
+	x.xxx_hidden_Guild = v
+}
+
+func (x *CharacterDetail) SetInventory(v []*Item) {
+	x.xxx_hidden_Inventory = &v
+}
+
+func (x *CharacterDetail) SetStorages(v []*Storage) {
+	x.xxx_hidden_Storages = &v
+}
+
+func (x *CharacterDetail) SetMails(v []*Mail) {
+	x.xxx_hidden_Mails = &v
+}
+
+func (x *CharacterDetail) SetSanctions(v []*Sanction) {
+	x.xxx_hidden_Sanctions = &v
+}
+
+func (x *CharacterDetail) SetCreatedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *CharacterDetail) HasStats() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Stats != nil
+}
+
+func (x *CharacterDetail) HasPosition() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Position != nil
+}
+
+func (x *CharacterDetail) HasSavePoint() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SavePoint != nil
+}
+
+func (x *CharacterDetail) HasCreatedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreatedAt != nil
+}
+
+func (x *CharacterDetail) ClearStats() {
+	x.xxx_hidden_Stats = nil
+}
+
+func (x *CharacterDetail) ClearPosition() {
+	x.xxx_hidden_Position = nil
+}
+
+func (x *CharacterDetail) ClearSavePoint() {
+	x.xxx_hidden_SavePoint = nil
+}
+
+func (x *CharacterDetail) ClearCreatedAt() {
+	x.xxx_hidden_CreatedAt = nil
+}
+
+type CharacterDetail_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id           int64
+	Name         string
+	AccountId    int64
+	Account      string
+	Job          int32
+	JobName      string
+	Male         bool
+	BaseLevel    int32
+	JobLevel     int32
+	BaseExp      int64
+	JobExp       int64
+	Stats        *Stats
+	StatusPoints int32
+	SkillPoints  int32
+	Hp           int64
+	Sp           int64
+	Zeny         int64
+	Currencies   []*Currency
+	Online       bool
+	Position     *Position
+	SavePoint    *Position
+	Party        string
+	Guild        string
+	// inventory holds every item, worn ones too, which have equip set.
+	Inventory []*Item
+	Storages  []*Storage
+	Mails     []*Mail
+	Sanctions []*Sanction
+	CreatedAt *timestamppb.Timestamp
+}
+
+func (b0 CharacterDetail_builder) Build() *CharacterDetail {
+	m0 := &CharacterDetail{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_AccountId = b.AccountId
+	x.xxx_hidden_Account = b.Account
+	x.xxx_hidden_Job = b.Job
+	x.xxx_hidden_JobName = b.JobName
+	x.xxx_hidden_Male = b.Male
+	x.xxx_hidden_BaseLevel = b.BaseLevel
+	x.xxx_hidden_JobLevel = b.JobLevel
+	x.xxx_hidden_BaseExp = b.BaseExp
+	x.xxx_hidden_JobExp = b.JobExp
+	x.xxx_hidden_Stats = b.Stats
+	x.xxx_hidden_StatusPoints = b.StatusPoints
+	x.xxx_hidden_SkillPoints = b.SkillPoints
+	x.xxx_hidden_Hp = b.Hp
+	x.xxx_hidden_Sp = b.Sp
+	x.xxx_hidden_Zeny = b.Zeny
+	x.xxx_hidden_Currencies = &b.Currencies
+	x.xxx_hidden_Online = b.Online
+	x.xxx_hidden_Position = b.Position
+	x.xxx_hidden_SavePoint = b.SavePoint
+	x.xxx_hidden_Party = b.Party
+	x.xxx_hidden_Guild = b.Guild
+	x.xxx_hidden_Inventory = &b.Inventory
+	x.xxx_hidden_Storages = &b.Storages
+	x.xxx_hidden_Mails = &b.Mails
+	x.xxx_hidden_Sanctions = &b.Sanctions
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	return m0
+}
+
+// ItemMove is one line of the item log.
+type ItemMove struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id       int64                  `protobuf:"varint,1,opt,name=id,proto3"`
+	xxx_hidden_At       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=at,proto3"`
+	xxx_hidden_Action   string                 `protobuf:"bytes,3,opt,name=action,proto3"`
+	xxx_hidden_From     *Owner                 `protobuf:"bytes,4,opt,name=from,proto3"`
+	xxx_hidden_To       *Owner                 `protobuf:"bytes,5,opt,name=to,proto3"`
+	xxx_hidden_Serial   string                 `protobuf:"bytes,6,opt,name=serial,proto3"`
+	xxx_hidden_Source   string                 `protobuf:"bytes,7,opt,name=source,proto3"`
+	xxx_hidden_ItemId   uint32                 `protobuf:"varint,8,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_ItemName string                 `protobuf:"bytes,9,opt,name=item_name,json=itemName,proto3"`
+	xxx_hidden_Amount   int32                  `protobuf:"varint,10,opt,name=amount,proto3"`
+	xxx_hidden_Refine   int32                  `protobuf:"varint,11,opt,name=refine,proto3"`
+	xxx_hidden_Cards    []uint32               `protobuf:"varint,12,rep,packed,name=cards,proto3"`
+	xxx_hidden_Relation string                 `protobuf:"bytes,13,opt,name=relation,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ItemMove) Reset() {
+	*x = ItemMove{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemMove) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemMove) ProtoMessage() {}
+
+func (x *ItemMove) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ItemMove) GetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *ItemMove) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_At
+	}
+	return nil
+}
+
+func (x *ItemMove) GetAction() string {
+	if x != nil {
+		return x.xxx_hidden_Action
+	}
+	return ""
+}
+
+func (x *ItemMove) GetFrom() *Owner {
+	if x != nil {
+		return x.xxx_hidden_From
+	}
+	return nil
+}
+
+func (x *ItemMove) GetTo() *Owner {
+	if x != nil {
+		return x.xxx_hidden_To
+	}
+	return nil
+}
+
+func (x *ItemMove) GetSerial() string {
+	if x != nil {
+		return x.xxx_hidden_Serial
+	}
+	return ""
+}
+
+func (x *ItemMove) GetSource() string {
+	if x != nil {
+		return x.xxx_hidden_Source
+	}
+	return ""
+}
+
+func (x *ItemMove) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *ItemMove) GetItemName() string {
+	if x != nil {
+		return x.xxx_hidden_ItemName
+	}
+	return ""
+}
+
+func (x *ItemMove) GetAmount() int32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *ItemMove) GetRefine() int32 {
+	if x != nil {
+		return x.xxx_hidden_Refine
+	}
+	return 0
+}
+
+func (x *ItemMove) GetCards() []uint32 {
+	if x != nil {
+		return x.xxx_hidden_Cards
+	}
+	return nil
+}
+
+func (x *ItemMove) GetRelation() string {
+	if x != nil {
+		return x.xxx_hidden_Relation
+	}
+	return ""
+}
+
+func (x *ItemMove) SetId(v int64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *ItemMove) SetAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_At = v
+}
+
+func (x *ItemMove) SetAction(v string) {
+	x.xxx_hidden_Action = v
+}
+
+func (x *ItemMove) SetFrom(v *Owner) {
+	x.xxx_hidden_From = v
+}
+
+func (x *ItemMove) SetTo(v *Owner) {
+	x.xxx_hidden_To = v
+}
+
+func (x *ItemMove) SetSerial(v string) {
+	x.xxx_hidden_Serial = v
+}
+
+func (x *ItemMove) SetSource(v string) {
+	x.xxx_hidden_Source = v
+}
+
+func (x *ItemMove) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *ItemMove) SetItemName(v string) {
+	x.xxx_hidden_ItemName = v
+}
+
+func (x *ItemMove) SetAmount(v int32) {
+	x.xxx_hidden_Amount = v
+}
+
+func (x *ItemMove) SetRefine(v int32) {
+	x.xxx_hidden_Refine = v
+}
+
+func (x *ItemMove) SetCards(v []uint32) {
+	x.xxx_hidden_Cards = v
+}
+
+func (x *ItemMove) SetRelation(v string) {
+	x.xxx_hidden_Relation = v
+}
+
+func (x *ItemMove) HasAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_At != nil
+}
+
+func (x *ItemMove) HasFrom() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_From != nil
+}
+
+func (x *ItemMove) HasTo() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_To != nil
+}
+
+func (x *ItemMove) ClearAt() {
+	x.xxx_hidden_At = nil
+}
+
+func (x *ItemMove) ClearFrom() {
+	x.xxx_hidden_From = nil
+}
+
+func (x *ItemMove) ClearTo() {
+	x.xxx_hidden_To = nil
+}
+
+type ItemMove_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id int64
+	At *timestamppb.Timestamp
+	// action is why it moved, such as trade, drop or restore.
+	Action string
+	From   *Owner
+	To     *Owner
+	// serial is the stack the amount ended in, or the stack it left for
+	// an end. source is the serial it came from when that differs.
+	Serial   string
+	Source   string
+	ItemId   uint32
+	ItemName string
+	Amount   int32
+	Refine   int32
+	Cards    []uint32
+	// relation is self for the serial asked for, ancestor for a stack it
+	// came from, and descendant for a stack it went into.
+	Relation string
+}
+
+func (b0 ItemMove_builder) Build() *ItemMove {
+	m0 := &ItemMove{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_At = b.At
+	x.xxx_hidden_Action = b.Action
+	x.xxx_hidden_From = b.From
+	x.xxx_hidden_To = b.To
+	x.xxx_hidden_Serial = b.Serial
+	x.xxx_hidden_Source = b.Source
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_ItemName = b.ItemName
+	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Refine = b.Refine
+	x.xxx_hidden_Cards = b.Cards
+	x.xxx_hidden_Relation = b.Relation
+	return m0
+}
+
+// ItemHistory answers GET /items/{serial}/history: every move of the
+// serial, of the stacks it came from and of the stacks it went into,
+// oldest first.
+type ItemHistory struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Serial    string                 `protobuf:"bytes,1,opt,name=serial,proto3"`
+	xxx_hidden_Moves     *[]*ItemMove           `protobuf:"bytes,2,rep,name=moves,proto3"`
+	xxx_hidden_Serials   []string               `protobuf:"bytes,3,rep,name=serials,proto3"`
+	xxx_hidden_Truncated bool                   `protobuf:"varint,4,opt,name=truncated,proto3"`
+	xxx_hidden_Holder    *Owner                 `protobuf:"bytes,5,opt,name=holder,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ItemHistory) Reset() {
+	*x = ItemHistory{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemHistory) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemHistory) ProtoMessage() {}
+
+func (x *ItemHistory) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ItemHistory) GetSerial() string {
+	if x != nil {
+		return x.xxx_hidden_Serial
+	}
+	return ""
+}
+
+func (x *ItemHistory) GetMoves() []*ItemMove {
+	if x != nil {
+		if x.xxx_hidden_Moves != nil {
+			return *x.xxx_hidden_Moves
+		}
+	}
+	return nil
+}
+
+func (x *ItemHistory) GetSerials() []string {
+	if x != nil {
+		return x.xxx_hidden_Serials
+	}
+	return nil
+}
+
+func (x *ItemHistory) GetTruncated() bool {
+	if x != nil {
+		return x.xxx_hidden_Truncated
+	}
+	return false
+}
+
+func (x *ItemHistory) GetHolder() *Owner {
+	if x != nil {
+		return x.xxx_hidden_Holder
+	}
+	return nil
+}
+
+func (x *ItemHistory) SetSerial(v string) {
+	x.xxx_hidden_Serial = v
+}
+
+func (x *ItemHistory) SetMoves(v []*ItemMove) {
+	x.xxx_hidden_Moves = &v
+}
+
+func (x *ItemHistory) SetSerials(v []string) {
+	x.xxx_hidden_Serials = v
+}
+
+func (x *ItemHistory) SetTruncated(v bool) {
+	x.xxx_hidden_Truncated = v
+}
+
+func (x *ItemHistory) SetHolder(v *Owner) {
+	x.xxx_hidden_Holder = v
+}
+
+func (x *ItemHistory) HasHolder() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Holder != nil
+}
+
+func (x *ItemHistory) ClearHolder() {
+	x.xxx_hidden_Holder = nil
+}
+
+type ItemHistory_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Serial string
+	Moves  []*ItemMove
+	// serials are the serials it followed.
+	Serials []string
+	// truncated is set when it stopped at its limits.
+	Truncated bool
+	// holder is where the serial is now, or unset when it is gone.
+	Holder *Owner
+}
+
+func (b0 ItemHistory_builder) Build() *ItemHistory {
+	m0 := &ItemHistory{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Serial = b.Serial
+	x.xxx_hidden_Moves = &b.Moves
+	x.xxx_hidden_Serials = b.Serials
+	x.xxx_hidden_Truncated = b.Truncated
+	x.xxx_hidden_Holder = b.Holder
+	return m0
+}
+
+// LogEntry is one line of a character's item or zeny log.
+type LogEntry struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_At           *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=at,proto3"`
+	xxx_hidden_Kind         string                 `protobuf:"bytes,2,opt,name=kind,proto3"`
+	xxx_hidden_Action       string                 `protobuf:"bytes,3,opt,name=action,proto3"`
+	xxx_hidden_From         *Owner                 `protobuf:"bytes,4,opt,name=from,proto3"`
+	xxx_hidden_To           *Owner                 `protobuf:"bytes,5,opt,name=to,proto3"`
+	xxx_hidden_Serial       string                 `protobuf:"bytes,6,opt,name=serial,proto3"`
+	xxx_hidden_Source       string                 `protobuf:"bytes,7,opt,name=source,proto3"`
+	xxx_hidden_ItemId       uint32                 `protobuf:"varint,8,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_ItemName     string                 `protobuf:"bytes,9,opt,name=item_name,json=itemName,proto3"`
+	xxx_hidden_Amount       int64                  `protobuf:"varint,10,opt,name=amount,proto3"`
+	xxx_hidden_Refine       int32                  `protobuf:"varint,11,opt,name=refine,proto3"`
+	xxx_hidden_Cards        []uint32               `protobuf:"varint,12,rep,packed,name=cards,proto3"`
+	xxx_hidden_Currency     uint32                 `protobuf:"varint,13,opt,name=currency,proto3"`
+	xxx_hidden_CurrencyName string                 `protobuf:"bytes,14,opt,name=currency_name,json=currencyName,proto3"`
+	xxx_hidden_Id           int64                  `protobuf:"varint,15,opt,name=id,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *LogEntry) Reset() {
+	*x = LogEntry{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntry) ProtoMessage() {}
+
+func (x *LogEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *LogEntry) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_At
+	}
+	return nil
+}
+
+func (x *LogEntry) GetKind() string {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ""
+}
+
+func (x *LogEntry) GetAction() string {
+	if x != nil {
+		return x.xxx_hidden_Action
+	}
+	return ""
+}
+
+func (x *LogEntry) GetFrom() *Owner {
+	if x != nil {
+		return x.xxx_hidden_From
+	}
+	return nil
+}
+
+func (x *LogEntry) GetTo() *Owner {
+	if x != nil {
+		return x.xxx_hidden_To
+	}
+	return nil
+}
+
+func (x *LogEntry) GetSerial() string {
+	if x != nil {
+		return x.xxx_hidden_Serial
+	}
+	return ""
+}
+
+func (x *LogEntry) GetSource() string {
+	if x != nil {
+		return x.xxx_hidden_Source
+	}
+	return ""
+}
+
+func (x *LogEntry) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *LogEntry) GetItemName() string {
+	if x != nil {
+		return x.xxx_hidden_ItemName
+	}
+	return ""
+}
+
+func (x *LogEntry) GetAmount() int64 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *LogEntry) GetRefine() int32 {
+	if x != nil {
+		return x.xxx_hidden_Refine
+	}
+	return 0
+}
+
+func (x *LogEntry) GetCards() []uint32 {
+	if x != nil {
+		return x.xxx_hidden_Cards
+	}
+	return nil
+}
+
+func (x *LogEntry) GetCurrency() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Currency
+	}
+	return 0
+}
+
+func (x *LogEntry) GetCurrencyName() string {
+	if x != nil {
+		return x.xxx_hidden_CurrencyName
+	}
+	return ""
+}
+
+func (x *LogEntry) GetId() int64 {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return 0
+}
+
+func (x *LogEntry) SetAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_At = v
+}
+
+func (x *LogEntry) SetKind(v string) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *LogEntry) SetAction(v string) {
+	x.xxx_hidden_Action = v
+}
+
+func (x *LogEntry) SetFrom(v *Owner) {
+	x.xxx_hidden_From = v
+}
+
+func (x *LogEntry) SetTo(v *Owner) {
+	x.xxx_hidden_To = v
+}
+
+func (x *LogEntry) SetSerial(v string) {
+	x.xxx_hidden_Serial = v
+}
+
+func (x *LogEntry) SetSource(v string) {
+	x.xxx_hidden_Source = v
+}
+
+func (x *LogEntry) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *LogEntry) SetItemName(v string) {
+	x.xxx_hidden_ItemName = v
+}
+
+func (x *LogEntry) SetAmount(v int64) {
+	x.xxx_hidden_Amount = v
+}
+
+func (x *LogEntry) SetRefine(v int32) {
+	x.xxx_hidden_Refine = v
+}
+
+func (x *LogEntry) SetCards(v []uint32) {
+	x.xxx_hidden_Cards = v
+}
+
+func (x *LogEntry) SetCurrency(v uint32) {
+	x.xxx_hidden_Currency = v
+}
+
+func (x *LogEntry) SetCurrencyName(v string) {
+	x.xxx_hidden_CurrencyName = v
+}
+
+func (x *LogEntry) SetId(v int64) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *LogEntry) HasAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_At != nil
+}
+
+func (x *LogEntry) HasFrom() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_From != nil
+}
+
+func (x *LogEntry) HasTo() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_To != nil
+}
+
+func (x *LogEntry) ClearAt() {
+	x.xxx_hidden_At = nil
+}
+
+func (x *LogEntry) ClearFrom() {
+	x.xxx_hidden_From = nil
+}
+
+func (x *LogEntry) ClearTo() {
+	x.xxx_hidden_To = nil
+}
+
+type LogEntry_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	At *timestamppb.Timestamp
+	// kind is item or zeny.
+	Kind     string
+	Action   string
+	From     *Owner
+	To       *Owner
+	Serial   string
+	Source   string
+	ItemId   uint32
+	ItemName string
+	Amount   int64
+	Refine   int32
+	Cards    []uint32
+	// currency is the currency's ID for a zeny line, 0 for zeny.
+	Currency     uint32
+	CurrencyName string
+	Id           int64
+}
+
+func (b0 LogEntry_builder) Build() *LogEntry {
+	m0 := &LogEntry{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_At = b.At
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_Action = b.Action
+	x.xxx_hidden_From = b.From
+	x.xxx_hidden_To = b.To
+	x.xxx_hidden_Serial = b.Serial
+	x.xxx_hidden_Source = b.Source
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_ItemName = b.ItemName
+	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_Refine = b.Refine
+	x.xxx_hidden_Cards = b.Cards
+	x.xxx_hidden_Currency = b.Currency
+	x.xxx_hidden_CurrencyName = b.CurrencyName
+	x.xxx_hidden_Id = b.Id
+	return m0
+}
+
+// CharacterLogs answers GET /characters/{id}/logs, newest first.
+type CharacterLogs struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Entries    *[]*LogEntry           `protobuf:"bytes,1,rep,name=entries,proto3"`
+	xxx_hidden_NextCursor string                 `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *CharacterLogs) Reset() {
+	*x = CharacterLogs{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CharacterLogs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CharacterLogs) ProtoMessage() {}
+
+func (x *CharacterLogs) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CharacterLogs) GetEntries() []*LogEntry {
+	if x != nil {
+		if x.xxx_hidden_Entries != nil {
+			return *x.xxx_hidden_Entries
+		}
+	}
+	return nil
+}
+
+func (x *CharacterLogs) GetNextCursor() string {
+	if x != nil {
+		return x.xxx_hidden_NextCursor
+	}
+	return ""
+}
+
+func (x *CharacterLogs) SetEntries(v []*LogEntry) {
+	x.xxx_hidden_Entries = &v
+}
+
+func (x *CharacterLogs) SetNextCursor(v string) {
+	x.xxx_hidden_NextCursor = v
+}
+
+type CharacterLogs_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Entries []*LogEntry
+	// next_cursor is the cursor of the next page, or empty at the end.
+	NextCursor string
+}
+
+func (b0 CharacterLogs_builder) Build() *CharacterLogs {
+	m0 := &CharacterLogs{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Entries = &b.Entries
+	x.xxx_hidden_NextCursor = b.NextCursor
+	return m0
+}
+
+// RestoreItem is one serial of a restore.
+type RestoreItem struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Serial string                 `protobuf:"bytes,1,opt,name=serial,proto3"`
+	xxx_hidden_Amount int32                  `protobuf:"varint,2,opt,name=amount,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *RestoreItem) Reset() {
+	*x = RestoreItem{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreItem) ProtoMessage() {}
+
+func (x *RestoreItem) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RestoreItem) GetSerial() string {
+	if x != nil {
+		return x.xxx_hidden_Serial
+	}
+	return ""
+}
+
+func (x *RestoreItem) GetAmount() int32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *RestoreItem) SetSerial(v string) {
+	x.xxx_hidden_Serial = v
+}
+
+func (x *RestoreItem) SetAmount(v int32) {
+	x.xxx_hidden_Amount = v
+}
+
+type RestoreItem_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// serial is the stack to give back.
+	Serial string
+	// amount is how many. 0 is the whole stack, or for a copy the amount
+	// of the serial's last log line.
+	Amount int32
+}
+
+func (b0 RestoreItem_builder) Build() *RestoreItem {
+	m0 := &RestoreItem{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Serial = b.Serial
+	x.xxx_hidden_Amount = b.Amount
+	return m0
+}
+
+// RestoreRequest is the body of POST /restore.
+type RestoreRequest struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CharacterId int64                  `protobuf:"varint,1,opt,name=character_id,json=characterId,proto3"`
+	xxx_hidden_Items       *[]*RestoreItem        `protobuf:"bytes,2,rep,name=items,proto3"`
+	xxx_hidden_Zeny        int64                  `protobuf:"varint,3,opt,name=zeny,proto3"`
+	xxx_hidden_Reason      string                 `protobuf:"bytes,4,opt,name=reason,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *RestoreRequest) Reset() {
+	*x = RestoreRequest{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreRequest) ProtoMessage() {}
+
+func (x *RestoreRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RestoreRequest) GetCharacterId() int64 {
+	if x != nil {
+		return x.xxx_hidden_CharacterId
+	}
+	return 0
+}
+
+func (x *RestoreRequest) GetItems() []*RestoreItem {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *RestoreRequest) GetZeny() int64 {
+	if x != nil {
+		return x.xxx_hidden_Zeny
+	}
+	return 0
+}
+
+func (x *RestoreRequest) GetReason() string {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return ""
+}
+
+func (x *RestoreRequest) SetCharacterId(v int64) {
+	x.xxx_hidden_CharacterId = v
+}
+
+func (x *RestoreRequest) SetItems(v []*RestoreItem) {
+	x.xxx_hidden_Items = &v
+}
+
+func (x *RestoreRequest) SetZeny(v int64) {
+	x.xxx_hidden_Zeny = v
+}
+
+func (x *RestoreRequest) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+type RestoreRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// character_id is the character that gets the items, by mail.
+	CharacterId int64
+	Items       []*RestoreItem
+	// zeny is made for the restore, which needs items.create.
+	Zeny int64
+	// reason is required, at most 255 characters.
+	Reason string
+}
+
+func (b0 RestoreRequest_builder) Build() *RestoreRequest {
+	m0 := &RestoreRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CharacterId = b.CharacterId
+	x.xxx_hidden_Items = &b.Items
+	x.xxx_hidden_Zeny = b.Zeny
+	x.xxx_hidden_Reason = b.Reason
+	return m0
+}
+
+// RestoredItem is what a restore did with one serial.
+type RestoredItem struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Serial    string                 `protobuf:"bytes,1,opt,name=serial,proto3"`
+	xxx_hidden_NewSerial string                 `protobuf:"bytes,2,opt,name=new_serial,json=newSerial,proto3"`
+	xxx_hidden_Copy      bool                   `protobuf:"varint,3,opt,name=copy,proto3"`
+	xxx_hidden_ItemId    uint32                 `protobuf:"varint,4,opt,name=item_id,json=itemId,proto3"`
+	xxx_hidden_ItemName  string                 `protobuf:"bytes,5,opt,name=item_name,json=itemName,proto3"`
+	xxx_hidden_Amount    int32                  `protobuf:"varint,6,opt,name=amount,proto3"`
+	xxx_hidden_From      *Owner                 `protobuf:"bytes,7,opt,name=from,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *RestoredItem) Reset() {
+	*x = RestoredItem{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoredItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoredItem) ProtoMessage() {}
+
+func (x *RestoredItem) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RestoredItem) GetSerial() string {
+	if x != nil {
+		return x.xxx_hidden_Serial
+	}
+	return ""
+}
+
+func (x *RestoredItem) GetNewSerial() string {
+	if x != nil {
+		return x.xxx_hidden_NewSerial
+	}
+	return ""
+}
+
+func (x *RestoredItem) GetCopy() bool {
+	if x != nil {
+		return x.xxx_hidden_Copy
+	}
+	return false
+}
+
+func (x *RestoredItem) GetItemId() uint32 {
+	if x != nil {
+		return x.xxx_hidden_ItemId
+	}
+	return 0
+}
+
+func (x *RestoredItem) GetItemName() string {
+	if x != nil {
+		return x.xxx_hidden_ItemName
+	}
+	return ""
+}
+
+func (x *RestoredItem) GetAmount() int32 {
+	if x != nil {
+		return x.xxx_hidden_Amount
+	}
+	return 0
+}
+
+func (x *RestoredItem) GetFrom() *Owner {
+	if x != nil {
+		return x.xxx_hidden_From
+	}
+	return nil
+}
+
+func (x *RestoredItem) SetSerial(v string) {
+	x.xxx_hidden_Serial = v
+}
+
+func (x *RestoredItem) SetNewSerial(v string) {
+	x.xxx_hidden_NewSerial = v
+}
+
+func (x *RestoredItem) SetCopy(v bool) {
+	x.xxx_hidden_Copy = v
+}
+
+func (x *RestoredItem) SetItemId(v uint32) {
+	x.xxx_hidden_ItemId = v
+}
+
+func (x *RestoredItem) SetItemName(v string) {
+	x.xxx_hidden_ItemName = v
+}
+
+func (x *RestoredItem) SetAmount(v int32) {
+	x.xxx_hidden_Amount = v
+}
+
+func (x *RestoredItem) SetFrom(v *Owner) {
+	x.xxx_hidden_From = v
+}
+
+func (x *RestoredItem) HasFrom() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_From != nil
+}
+
+func (x *RestoredItem) ClearFrom() {
+	x.xxx_hidden_From = nil
+}
+
+type RestoredItem_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Serial string
+	// new_serial is the serial in the mail.
+	NewSerial string
+	// copy is set when the serial was gone and a copy was made.
+	Copy     bool
+	ItemId   uint32
+	ItemName string
+	Amount   int32
+	// from is the holder it was taken from, or the staff end for a copy.
+	From *Owner
+}
+
+func (b0 RestoredItem_builder) Build() *RestoredItem {
+	m0 := &RestoredItem{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Serial = b.Serial
+	x.xxx_hidden_NewSerial = b.NewSerial
+	x.xxx_hidden_Copy = b.Copy
+	x.xxx_hidden_ItemId = b.ItemId
+	x.xxx_hidden_ItemName = b.ItemName
+	x.xxx_hidden_Amount = b.Amount
+	x.xxx_hidden_From = b.From
+	return m0
+}
+
+// RestoreResult answers POST /restore.
+type RestoreResult struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_MailId int64                  `protobuf:"varint,1,opt,name=mail_id,json=mailId,proto3"`
+	xxx_hidden_Items  *[]*RestoredItem       `protobuf:"bytes,2,rep,name=items,proto3"`
+	xxx_hidden_Zeny   int64                  `protobuf:"varint,3,opt,name=zeny,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *RestoreResult) Reset() {
+	*x = RestoreResult{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreResult) ProtoMessage() {}
+
+func (x *RestoreResult) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RestoreResult) GetMailId() int64 {
+	if x != nil {
+		return x.xxx_hidden_MailId
+	}
+	return 0
+}
+
+func (x *RestoreResult) GetItems() []*RestoredItem {
+	if x != nil {
+		if x.xxx_hidden_Items != nil {
+			return *x.xxx_hidden_Items
+		}
+	}
+	return nil
+}
+
+func (x *RestoreResult) GetZeny() int64 {
+	if x != nil {
+		return x.xxx_hidden_Zeny
+	}
+	return 0
+}
+
+func (x *RestoreResult) SetMailId(v int64) {
+	x.xxx_hidden_MailId = v
+}
+
+func (x *RestoreResult) SetItems(v []*RestoredItem) {
+	x.xxx_hidden_Items = &v
+}
+
+func (x *RestoreResult) SetZeny(v int64) {
+	x.xxx_hidden_Zeny = v
+}
+
+type RestoreResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	MailId int64
+	Items  []*RestoredItem
+	Zeny   int64
+}
+
+func (b0 RestoreResult_builder) Build() *RestoreResult {
+	m0 := &RestoreResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_MailId = b.MailId
+	x.xxx_hidden_Items = &b.Items
+	x.xxx_hidden_Zeny = b.Zeny
+	return m0
+}
+
 // Error is the body of every answer that is not 2xx.
 type Error struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
@@ -923,7 +4327,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[7]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -935,7 +4339,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[7]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1038,7 +4442,7 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\x0fGiveRoleRequest\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x12\n" +
 	"\x04role\x18\x02 \x01(\tR\x04role\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"\x8e\x03\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"\xe8\x03\n" +
 	"\n" +
 	"AuditEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12*\n" +
@@ -1055,17 +4459,221 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\vreviewed_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"reviewedAt\x12\x1f\n" +
 	"\vreviewed_by\x18\f \x01(\tR\n" +
-	"reviewedBy\"i\n" +
+	"reviewedBy\x12\x18\n" +
+	"\averdict\x18\r \x01(\tR\averdict\x12\x1f\n" +
+	"\vreview_note\x18\x0e \x01(\tR\n" +
+	"reviewNote\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x0f \x01(\x03R\taccountId\"i\n" +
 	"\tAuditPage\x126\n" +
 	"\aentries\x18\x01 \x03(\v2\x1c.wathena.admin.v1.AuditEntryR\aentries\x12$\n" +
-	"\x0enext_before_id\x18\x02 \x01(\x03R\fnextBeforeId\"T\n" +
+	"\x0enext_before_id\x18\x02 \x01(\x03R\fnextBeforeId\"=\n" +
+	"\rReviewRequest\x12\x18\n" +
+	"\averdict\x18\x01 \x01(\tR\averdict\x12\x12\n" +
+	"\x04note\x18\x02 \x01(\tR\x04note\"8\n" +
+	"\bPosition\x12\x10\n" +
+	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
+	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
+	"\x01y\x18\x03 \x01(\x05R\x01y\"\xc3\x01\n" +
+	"\bSanction\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x129\n" +
+	"\n" +
+	"started_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x123\n" +
+	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12\x1b\n" +
+	"\tissued_by\x18\x05 \x01(\tR\bissuedBy\"\xa9\x02\n" +
+	"\x10CharacterSummary\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
+	"\x03job\x18\x03 \x01(\x05R\x03job\x12\x19\n" +
+	"\bjob_name\x18\x04 \x01(\tR\ajobName\x12\x1d\n" +
+	"\n" +
+	"base_level\x18\x05 \x01(\x05R\tbaseLevel\x12\x1b\n" +
+	"\tjob_level\x18\x06 \x01(\x05R\bjobLevel\x12\x16\n" +
+	"\x06online\x18\a \x01(\bR\x06online\x126\n" +
+	"\bposition\x18\b \x01(\v2\x1a.wathena.admin.v1.PositionR\bposition\x128\n" +
+	"\tsanctions\x18\t \x03(\v2\x1a.wathena.admin.v1.SanctionR\tsanctions\"h\n" +
+	"\vLoginRecord\x12\x0e\n" +
+	"\x02ip\x18\x01 \x01(\tR\x02ip\x12*\n" +
+	"\x02at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x1d\n" +
+	"\n" +
+	"user_agent\x18\x03 \x01(\tR\tuserAgent\"\x9b\x01\n" +
+	"\x05Owner\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\x03R\x02id\x12\x18\n" +
+	"\astorage\x18\x03 \x01(\rR\astorage\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12!\n" +
+	"\fcharacter_id\x18\x05 \x01(\x03R\vcharacterId\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x06 \x01(\x03R\taccountId\"\xba\x02\n" +
+	"\x0eAccountSummary\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x01 \x01(\x03R\taccountId\x12\x18\n" +
+	"\aaccount\x18\x02 \x01(\tR\aaccount\x129\n" +
+	"\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"last_login\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tlastLogin\x12B\n" +
+	"\n" +
+	"characters\x18\x05 \x03(\v2\".wathena.admin.v1.CharacterSummaryR\n" +
+	"characters\x125\n" +
+	"\x06logins\x18\x06 \x03(\v2\x1d.wathena.admin.v1.LoginRecordR\x06logins\"\x9e\x01\n" +
+	"\fPlayerSearch\x12<\n" +
+	"\baccounts\x18\x01 \x03(\v2 .wathena.admin.v1.AccountSummaryR\baccounts\x12\x1f\n" +
+	"\vnext_cursor\x18\x02 \x01(\tR\n" +
+	"nextCursor\x12/\n" +
+	"\x06holder\x18\x03 \x01(\v2\x17.wathena.admin.v1.OwnerR\x06holder\"\xe4\x02\n" +
+	"\x04Item\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\rR\x06itemId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x16\n" +
+	"\x06amount\x18\x04 \x01(\x05R\x06amount\x12\x12\n" +
+	"\x04slot\x18\x05 \x01(\x05R\x04slot\x12\x16\n" +
+	"\x06refine\x18\x06 \x01(\x05R\x06refine\x12\x14\n" +
+	"\x05cards\x18\a \x03(\rR\x05cards\x12\x14\n" +
+	"\x05equip\x18\b \x01(\rR\x05equip\x12\x1e\n" +
+	"\n" +
+	"identified\x18\t \x01(\bR\n" +
+	"identified\x12\x14\n" +
+	"\x05bound\x18\n" +
+	" \x01(\x05R\x05bound\x127\n" +
+	"\x05rolls\x18\v \x03(\v2!.wathena.admin.v1.Item.RollsEntryR\x05rolls\x1a8\n" +
+	"\n" +
+	"RollsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"y\n" +
+	"\aStorage\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x18\n" +
+	"\astorage\x18\x02 \x01(\rR\astorage\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12,\n" +
+	"\x05items\x18\x04 \x03(\v2\x16.wathena.admin.v1.ItemR\x05items\"\xe7\x01\n" +
+	"\x04Mail\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"\x04from\x18\x02 \x01(\tR\x04from\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x123\n" +
+	"\asent_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06sentAt\x12\x12\n" +
+	"\x04zeny\x18\x05 \x01(\x03R\x04zeny\x12\x12\n" +
+	"\x04read\x18\x06 \x01(\bR\x04read\x12\x1a\n" +
+	"\breturned\x18\a \x01(\bR\breturned\x12,\n" +
+	"\x05items\x18\b \x03(\v2\x16.wathena.admin.v1.ItemR\x05items\"`\n" +
+	"\bCurrency\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\x03R\x06amount\x12\x18\n" +
+	"\aaccount\x18\x04 \x01(\bR\aaccount\"s\n" +
+	"\x05Stats\x12\x10\n" +
+	"\x03str\x18\x01 \x01(\x05R\x03str\x12\x10\n" +
+	"\x03agi\x18\x02 \x01(\x05R\x03agi\x12\x10\n" +
+	"\x03vit\x18\x03 \x01(\x05R\x03vit\x12\x10\n" +
+	"\x03int\x18\x04 \x01(\x05R\x03int\x12\x10\n" +
+	"\x03dex\x18\x05 \x01(\x05R\x03dex\x12\x10\n" +
+	"\x03luk\x18\x06 \x01(\x05R\x03luk\"\xcd\a\n" +
+	"\x0fCharacterDetail\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x03 \x01(\x03R\taccountId\x12\x18\n" +
+	"\aaccount\x18\x04 \x01(\tR\aaccount\x12\x10\n" +
+	"\x03job\x18\x05 \x01(\x05R\x03job\x12\x19\n" +
+	"\bjob_name\x18\x06 \x01(\tR\ajobName\x12\x12\n" +
+	"\x04male\x18\a \x01(\bR\x04male\x12\x1d\n" +
+	"\n" +
+	"base_level\x18\b \x01(\x05R\tbaseLevel\x12\x1b\n" +
+	"\tjob_level\x18\t \x01(\x05R\bjobLevel\x12\x19\n" +
+	"\bbase_exp\x18\n" +
+	" \x01(\x03R\abaseExp\x12\x17\n" +
+	"\ajob_exp\x18\v \x01(\x03R\x06jobExp\x12-\n" +
+	"\x05stats\x18\f \x01(\v2\x17.wathena.admin.v1.StatsR\x05stats\x12#\n" +
+	"\rstatus_points\x18\r \x01(\x05R\fstatusPoints\x12!\n" +
+	"\fskill_points\x18\x0e \x01(\x05R\vskillPoints\x12\x0e\n" +
+	"\x02hp\x18\x0f \x01(\x03R\x02hp\x12\x0e\n" +
+	"\x02sp\x18\x10 \x01(\x03R\x02sp\x12\x12\n" +
+	"\x04zeny\x18\x11 \x01(\x03R\x04zeny\x12:\n" +
+	"\n" +
+	"currencies\x18\x12 \x03(\v2\x1a.wathena.admin.v1.CurrencyR\n" +
+	"currencies\x12\x16\n" +
+	"\x06online\x18\x13 \x01(\bR\x06online\x126\n" +
+	"\bposition\x18\x14 \x01(\v2\x1a.wathena.admin.v1.PositionR\bposition\x129\n" +
+	"\n" +
+	"save_point\x18\x15 \x01(\v2\x1a.wathena.admin.v1.PositionR\tsavePoint\x12\x14\n" +
+	"\x05party\x18\x16 \x01(\tR\x05party\x12\x14\n" +
+	"\x05guild\x18\x17 \x01(\tR\x05guild\x124\n" +
+	"\tinventory\x18\x18 \x03(\v2\x16.wathena.admin.v1.ItemR\tinventory\x125\n" +
+	"\bstorages\x18\x19 \x03(\v2\x19.wathena.admin.v1.StorageR\bstorages\x12,\n" +
+	"\x05mails\x18\x1a \x03(\v2\x16.wathena.admin.v1.MailR\x05mails\x128\n" +
+	"\tsanctions\x18\x1b \x03(\v2\x1a.wathena.admin.v1.SanctionR\tsanctions\x129\n" +
+	"\n" +
+	"created_at\x18\x1c \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xfc\x02\n" +
+	"\bItemMove\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12*\n" +
+	"\x02at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x16\n" +
+	"\x06action\x18\x03 \x01(\tR\x06action\x12+\n" +
+	"\x04from\x18\x04 \x01(\v2\x17.wathena.admin.v1.OwnerR\x04from\x12'\n" +
+	"\x02to\x18\x05 \x01(\v2\x17.wathena.admin.v1.OwnerR\x02to\x12\x16\n" +
+	"\x06serial\x18\x06 \x01(\tR\x06serial\x12\x16\n" +
+	"\x06source\x18\a \x01(\tR\x06source\x12\x17\n" +
+	"\aitem_id\x18\b \x01(\rR\x06itemId\x12\x1b\n" +
+	"\titem_name\x18\t \x01(\tR\bitemName\x12\x16\n" +
+	"\x06amount\x18\n" +
+	" \x01(\x05R\x06amount\x12\x16\n" +
+	"\x06refine\x18\v \x01(\x05R\x06refine\x12\x14\n" +
+	"\x05cards\x18\f \x03(\rR\x05cards\x12\x1a\n" +
+	"\brelation\x18\r \x01(\tR\brelation\"\xc0\x01\n" +
+	"\vItemHistory\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\x120\n" +
+	"\x05moves\x18\x02 \x03(\v2\x1a.wathena.admin.v1.ItemMoveR\x05moves\x12\x18\n" +
+	"\aserials\x18\x03 \x03(\tR\aserials\x12\x1c\n" +
+	"\ttruncated\x18\x04 \x01(\bR\ttruncated\x12/\n" +
+	"\x06holder\x18\x05 \x01(\v2\x17.wathena.admin.v1.OwnerR\x06holder\"\xb5\x03\n" +
+	"\bLogEntry\x12*\n" +
+	"\x02at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x16\n" +
+	"\x06action\x18\x03 \x01(\tR\x06action\x12+\n" +
+	"\x04from\x18\x04 \x01(\v2\x17.wathena.admin.v1.OwnerR\x04from\x12'\n" +
+	"\x02to\x18\x05 \x01(\v2\x17.wathena.admin.v1.OwnerR\x02to\x12\x16\n" +
+	"\x06serial\x18\x06 \x01(\tR\x06serial\x12\x16\n" +
+	"\x06source\x18\a \x01(\tR\x06source\x12\x17\n" +
+	"\aitem_id\x18\b \x01(\rR\x06itemId\x12\x1b\n" +
+	"\titem_name\x18\t \x01(\tR\bitemName\x12\x16\n" +
+	"\x06amount\x18\n" +
+	" \x01(\x03R\x06amount\x12\x16\n" +
+	"\x06refine\x18\v \x01(\x05R\x06refine\x12\x14\n" +
+	"\x05cards\x18\f \x03(\rR\x05cards\x12\x1a\n" +
+	"\bcurrency\x18\r \x01(\rR\bcurrency\x12#\n" +
+	"\rcurrency_name\x18\x0e \x01(\tR\fcurrencyName\x12\x0e\n" +
+	"\x02id\x18\x0f \x01(\x03R\x02id\"f\n" +
+	"\rCharacterLogs\x124\n" +
+	"\aentries\x18\x01 \x03(\v2\x1a.wathena.admin.v1.LogEntryR\aentries\x12\x1f\n" +
+	"\vnext_cursor\x18\x02 \x01(\tR\n" +
+	"nextCursor\"=\n" +
+	"\vRestoreItem\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\x05R\x06amount\"\x94\x01\n" +
+	"\x0eRestoreRequest\x12!\n" +
+	"\fcharacter_id\x18\x01 \x01(\x03R\vcharacterId\x123\n" +
+	"\x05items\x18\x02 \x03(\v2\x1d.wathena.admin.v1.RestoreItemR\x05items\x12\x12\n" +
+	"\x04zeny\x18\x03 \x01(\x03R\x04zeny\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"\xd4\x01\n" +
+	"\fRestoredItem\x12\x16\n" +
+	"\x06serial\x18\x01 \x01(\tR\x06serial\x12\x1d\n" +
+	"\n" +
+	"new_serial\x18\x02 \x01(\tR\tnewSerial\x12\x12\n" +
+	"\x04copy\x18\x03 \x01(\bR\x04copy\x12\x17\n" +
+	"\aitem_id\x18\x04 \x01(\rR\x06itemId\x12\x1b\n" +
+	"\titem_name\x18\x05 \x01(\tR\bitemName\x12\x16\n" +
+	"\x06amount\x18\x06 \x01(\x05R\x06amount\x12+\n" +
+	"\x04from\x18\a \x01(\v2\x17.wathena.admin.v1.OwnerR\x04from\"r\n" +
+	"\rRestoreResult\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\x03R\x06mailId\x124\n" +
+	"\x05items\x18\x02 \x03(\v2\x1e.wathena.admin.v1.RestoredItemR\x05items\x12\x12\n" +
+	"\x04zeny\x18\x03 \x01(\x03R\x04zeny\"T\n" +
 	"\x05Error\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1d\n" +
 	"\n" +
 	"reauth_url\x18\x03 \x01(\tR\treauthUrlBDZBgithub.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1b\x06proto3"
 
-var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*Me)(nil),                    // 0: wathena.admin.v1.Me
 	(*Role)(nil),                  // 1: wathena.admin.v1.Role
@@ -1074,23 +4682,82 @@ var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*GiveRoleRequest)(nil),       // 4: wathena.admin.v1.GiveRoleRequest
 	(*AuditEntry)(nil),            // 5: wathena.admin.v1.AuditEntry
 	(*AuditPage)(nil),             // 6: wathena.admin.v1.AuditPage
-	(*Error)(nil),                 // 7: wathena.admin.v1.Error
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),       // 9: google.protobuf.Struct
+	(*ReviewRequest)(nil),         // 7: wathena.admin.v1.ReviewRequest
+	(*Position)(nil),              // 8: wathena.admin.v1.Position
+	(*Sanction)(nil),              // 9: wathena.admin.v1.Sanction
+	(*CharacterSummary)(nil),      // 10: wathena.admin.v1.CharacterSummary
+	(*LoginRecord)(nil),           // 11: wathena.admin.v1.LoginRecord
+	(*Owner)(nil),                 // 12: wathena.admin.v1.Owner
+	(*AccountSummary)(nil),        // 13: wathena.admin.v1.AccountSummary
+	(*PlayerSearch)(nil),          // 14: wathena.admin.v1.PlayerSearch
+	(*Item)(nil),                  // 15: wathena.admin.v1.Item
+	(*Storage)(nil),               // 16: wathena.admin.v1.Storage
+	(*Mail)(nil),                  // 17: wathena.admin.v1.Mail
+	(*Currency)(nil),              // 18: wathena.admin.v1.Currency
+	(*Stats)(nil),                 // 19: wathena.admin.v1.Stats
+	(*CharacterDetail)(nil),       // 20: wathena.admin.v1.CharacterDetail
+	(*ItemMove)(nil),              // 21: wathena.admin.v1.ItemMove
+	(*ItemHistory)(nil),           // 22: wathena.admin.v1.ItemHistory
+	(*LogEntry)(nil),              // 23: wathena.admin.v1.LogEntry
+	(*CharacterLogs)(nil),         // 24: wathena.admin.v1.CharacterLogs
+	(*RestoreItem)(nil),           // 25: wathena.admin.v1.RestoreItem
+	(*RestoreRequest)(nil),        // 26: wathena.admin.v1.RestoreRequest
+	(*RestoredItem)(nil),          // 27: wathena.admin.v1.RestoredItem
+	(*RestoreResult)(nil),         // 28: wathena.admin.v1.RestoreResult
+	(*Error)(nil),                 // 29: wathena.admin.v1.Error
+	nil,                           // 30: wathena.admin.v1.Item.RollsEntry
+	(*timestamppb.Timestamp)(nil), // 31: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 32: google.protobuf.Struct
 }
 var file_wathena_admin_v1_admin_proto_depIdxs = []int32{
-	8, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
-	2, // 1: wathena.admin.v1.StaffList.members:type_name -> wathena.admin.v1.StaffMember
-	1, // 2: wathena.admin.v1.StaffList.roles:type_name -> wathena.admin.v1.Role
-	8, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
-	9, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
-	8, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
-	5, // 6: wathena.admin.v1.AuditPage.entries:type_name -> wathena.admin.v1.AuditEntry
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	31, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
+	2,  // 1: wathena.admin.v1.StaffList.members:type_name -> wathena.admin.v1.StaffMember
+	1,  // 2: wathena.admin.v1.StaffList.roles:type_name -> wathena.admin.v1.Role
+	31, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
+	32, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
+	31, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
+	5,  // 6: wathena.admin.v1.AuditPage.entries:type_name -> wathena.admin.v1.AuditEntry
+	31, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
+	31, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
+	8,  // 9: wathena.admin.v1.CharacterSummary.position:type_name -> wathena.admin.v1.Position
+	9,  // 10: wathena.admin.v1.CharacterSummary.sanctions:type_name -> wathena.admin.v1.Sanction
+	31, // 11: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
+	31, // 12: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
+	31, // 13: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
+	10, // 14: wathena.admin.v1.AccountSummary.characters:type_name -> wathena.admin.v1.CharacterSummary
+	11, // 15: wathena.admin.v1.AccountSummary.logins:type_name -> wathena.admin.v1.LoginRecord
+	13, // 16: wathena.admin.v1.PlayerSearch.accounts:type_name -> wathena.admin.v1.AccountSummary
+	12, // 17: wathena.admin.v1.PlayerSearch.holder:type_name -> wathena.admin.v1.Owner
+	30, // 18: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
+	15, // 19: wathena.admin.v1.Storage.items:type_name -> wathena.admin.v1.Item
+	31, // 20: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
+	15, // 21: wathena.admin.v1.Mail.items:type_name -> wathena.admin.v1.Item
+	19, // 22: wathena.admin.v1.CharacterDetail.stats:type_name -> wathena.admin.v1.Stats
+	18, // 23: wathena.admin.v1.CharacterDetail.currencies:type_name -> wathena.admin.v1.Currency
+	8,  // 24: wathena.admin.v1.CharacterDetail.position:type_name -> wathena.admin.v1.Position
+	8,  // 25: wathena.admin.v1.CharacterDetail.save_point:type_name -> wathena.admin.v1.Position
+	15, // 26: wathena.admin.v1.CharacterDetail.inventory:type_name -> wathena.admin.v1.Item
+	16, // 27: wathena.admin.v1.CharacterDetail.storages:type_name -> wathena.admin.v1.Storage
+	17, // 28: wathena.admin.v1.CharacterDetail.mails:type_name -> wathena.admin.v1.Mail
+	9,  // 29: wathena.admin.v1.CharacterDetail.sanctions:type_name -> wathena.admin.v1.Sanction
+	31, // 30: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
+	31, // 31: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
+	12, // 32: wathena.admin.v1.ItemMove.from:type_name -> wathena.admin.v1.Owner
+	12, // 33: wathena.admin.v1.ItemMove.to:type_name -> wathena.admin.v1.Owner
+	21, // 34: wathena.admin.v1.ItemHistory.moves:type_name -> wathena.admin.v1.ItemMove
+	12, // 35: wathena.admin.v1.ItemHistory.holder:type_name -> wathena.admin.v1.Owner
+	31, // 36: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
+	12, // 37: wathena.admin.v1.LogEntry.from:type_name -> wathena.admin.v1.Owner
+	12, // 38: wathena.admin.v1.LogEntry.to:type_name -> wathena.admin.v1.Owner
+	23, // 39: wathena.admin.v1.CharacterLogs.entries:type_name -> wathena.admin.v1.LogEntry
+	25, // 40: wathena.admin.v1.RestoreRequest.items:type_name -> wathena.admin.v1.RestoreItem
+	12, // 41: wathena.admin.v1.RestoredItem.from:type_name -> wathena.admin.v1.Owner
+	27, // 42: wathena.admin.v1.RestoreResult.items:type_name -> wathena.admin.v1.RestoredItem
+	43, // [43:43] is the sub-list for method output_type
+	43, // [43:43] is the sub-list for method input_type
+	43, // [43:43] is the sub-list for extension type_name
+	43, // [43:43] is the sub-list for extension extendee
+	0,  // [0:43] is the sub-list for field type_name
 }
 
 func init() { file_wathena_admin_v1_admin_proto_init() }
@@ -1104,7 +4771,7 @@ func file_wathena_admin_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_admin_v1_admin_proto_rawDesc), len(file_wathena_admin_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

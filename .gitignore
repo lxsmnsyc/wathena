@@ -38,3 +38,5 @@ node_modules/
 .vscode/
 
 build/
+# A waserver binary built at the repository root.
+/waserver

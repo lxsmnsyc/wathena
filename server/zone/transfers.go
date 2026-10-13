@@ -12,6 +12,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/market"
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/social"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 )
@@ -48,11 +49,14 @@ type Writes struct {
 	// Events are the units of world events' progress whose rewards the
 	// commit saves (autoevents.go).
 	Events []EventUnit
+	// Audit are the GM audit rows of the changes, such as a restore's
+	// (stafftools.go).
+	Audit []staff.AuditRow
 }
 
 // Empty reports whether there is nothing to write.
 func (w *Writes) Empty() bool {
-	return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 && len(w.Events) == 0
+	return len(w.Mails) == 0 && len(w.Stock) == 0 && len(w.Stores) == 0 && len(w.Events) == 0 && len(w.Audit) == 0
 }
 
 // WritesCommitter is a Committer that also saves Writes in the same
@@ -214,15 +218,18 @@ func (z *Zone) commitTransfers() {
 	defer z.releaseStorages()
 	defer z.deliverMails()
 	if len(z.txPlayers) == 0 && len(z.txStorageRefs) == 0 && len(z.txStorages) == 0 && len(z.txPersonal) == 0 &&
-		len(z.txMails) == 0 && len(z.txShops) == 0 && len(z.txStores) == 0 && len(z.txEventUnits) == 0 && z.txLogs.Empty() {
+		len(z.txMails) == 0 && len(z.txShops) == 0 && len(z.txStores) == 0 && len(z.txEventUnits) == 0 && z.txLogs.Empty() &&
+		len(z.txOffline) == 0 && len(z.txMailRows) == 0 && len(z.txAudit) == 0 {
 		return
 	}
 	storages := z.storageCommits()
-	writes := Writes{Mails: z.mailWrites(), Stock: z.stockWrites(), Stores: z.txStores, Events: z.txEventUnits}
-	z.txStores, z.txEventUnits = nil, nil
+	writes := Writes{Mails: append(z.mailWrites(), z.txMailRows...), Stock: z.stockWrites(), Stores: z.txStores,
+		Events: z.txEventUnits, Audit: z.txAudit}
+	z.txStores, z.txEventUnits, z.txMailRows, z.txAudit = nil, nil, nil, nil
 	logs, players := z.txLogs, z.txPlayers
 	z.txLogs, z.txPlayers = transfer.Logs{}, nil
-	var saves []CommitSave
+	saves := z.txOffline
+	z.txOffline = nil
 	for _, p := range players {
 		p.transferred = false
 		if s := p.sess; s != nil && s.saver != nil && z.Committer != nil {

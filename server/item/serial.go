@@ -48,3 +48,16 @@ func (s Serial) String() string {
 	hex.Encode(b[24:], s[10:])
 	return string(b[:])
 }
+
+// ParseSerial reads a serial in the UUID's text form, in any case. ok
+// is false for any other text and for the zero UUID.
+func ParseSerial(text string) (s Serial, ok bool) {
+	if len(text) != 36 || text[8] != '-' || text[13] != '-' || text[18] != '-' || text[23] != '-' {
+		return Serial{}, false
+	}
+	hexText := text[0:8] + text[9:13] + text[14:18] + text[19:23] + text[24:]
+	if _, err := hex.Decode(s[:], []byte(hexText)); err != nil {
+		return Serial{}, false
+	}
+	return s, !s.IsZero()
+}

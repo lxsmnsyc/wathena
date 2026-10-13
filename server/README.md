@@ -661,7 +661,7 @@ WHERE r.status = 'open' ORDER BY r.id, c.at;
 
 ## Staff and admin tools
 
-Staff roles, the admin API, the GM audit log and the first admin screens follow strategy sections 7.8 and 10.6, and proposal 0002, review decision 33 ([decision 0028](../docs/decisions/0028-staff-roles-and-audit.md)).
+Staff roles, the admin API, the GM audit log and the admin screens follow strategy sections 7.8 and 10.6, and proposal 0002, review decisions 33 and 34 ([decision 0028](../docs/decisions/0028-staff-roles-and-audit.md), [decision 0029](../docs/decisions/0029-player-search-and-item-history.md)).
 
 Roles come from the config:
 
@@ -673,12 +673,12 @@ staff:
   # Optional. A list replaces the defaults below.
   roles:
     admin: [staff.*, audit.*, players.*, items.*, moderation.*, commands.*, world.*, events.*, mods.*]
-    game_master: [audit.read, players.read, items.history, items.restore, moderation.*, commands.*, world.read, world.announce, events.control]
+    game_master: [audit.read, players.read, items.history, moderation.*, commands.*, world.read, world.announce, events.control]
     moderator: [players.read, moderation.reports, moderation.mute, moderation.kick, moderation.jail]
 ```
 
 - Permission names come from a fixed list, `staff.Catalog`. `group.*` names a whole group. An unknown name stops the server from starting.
-- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). The other names are for the later steps of phase 6 and do nothing yet. Decision 0028 lists them.
+- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). Step 2 uses `audit.review`, `players.read`, `players.read_ip`, `items.history`, `items.restore` and `items.create`. The other names are for the later steps of phase 6 and do nothing yet. Decision 0028 lists them.
 - Owners and holders of `staff.assign` give the other roles on the admin screens. The database keeps them in `staff_roles`. No one changes their own role or an owner's, and a caller gives or takes only roles whose permissions it holds all of.
 - A role counts only for a login with TOTP, a recovery code or a passkey, on an account that still has TOTP or a passkey on. Giving and removing roles also needs a login, or a proof on `/account/reauth`, from the last 10 minutes.
 
@@ -686,7 +686,13 @@ The admin screens are at `/admin` of the server's public URL. The page asks the 
 
 1. Put your account's name in `staff.owners` and start `waserver` with accounts (see "Running with accounts") and a client build.
 2. Turn TOTP on in `/account/settings`, log out, and log in again with the code.
-3. Open `/admin`. The staff list gives and removes roles, and the audit log viewer filters rows by staff account, action, target, dates and review.
+3. Open `/admin`. The tabs are the ones your role allows:
+   - Staff: gives and removes roles.
+   - Audit log: filters rows by staff account, action, target, dates and review.
+   - Players: finds accounts and characters by name, ID, item serial or IP range, and opens a character's details: overview, inventory, equipment, storages, mail and logs.
+   - Item history: every move of a serial, of the stacks it came from and of the stacks it went into.
+   - Restore: gives items back to a character by mail.
+   - Reviews: the rows marked for review, with ok and flag.
 
 The admin API is JSON at `/admin/api/v1/` on the account service's origin. The messages are protobuf in `schema/proto/wathena/admin/v1`, in their JSON form:
 
@@ -696,13 +702,30 @@ The admin API is JSON at `/admin/api/v1/` on the account service's origin. The m
 | `GET /staff` | `staff.assign` | The owners and the given roles, and the config's roles. |
 | `POST /staff` | `staff.assign` | Gives an account a role: `{"account": "Bobby", "role": "moderator", "reason": "..."}`. |
 | `DELETE /staff/{account}` | `staff.assign` | Takes an account's role away. `?reason=` is optional. |
-| `GET /audit` | `audit.read` | Audit rows, newest first. Filters: `account`, `action`, `target`, `since`, `until`, `review` (`pending` or `reviewed`). Pages: `limit` (1 to 100) and `before_id`. |
+| `GET /audit` | `audit.read` | Audit rows, newest first. Filters: `account`, `action`, `target`, `since`, `until`, `review` (`pending` or `reviewed`) and `needs_review` (`true` or `false`). Pages: `limit` (1 to 100) and `before_id`. |
+| `POST /audit/{id}/review` | `audit.review` | Reviews a row marked for review: `{"verdict": "ok", "note": "..."}`, or `flag` with a note. No one reviews their own row. Needs no recent login. |
+| `GET /players` | `players.read` | Accounts with their characters, online state, position, last login and sanctions. One of `name` (a prefix of an account or a character name), `id` (an account or a character ID), `serial` (its holder) or `ip` (a CIDR range of the logins of the last 90 days, with `players.read_ip`). Pages: `limit` (1 to 50) and `cursor`. |
+| `GET /characters/{id}` | `players.read` | A character's details. An online one is read from its zone. |
+| `GET /characters/{id}/logs` | `items.history` | The character's item and zeny log, newest first. Filters: `since` and `until`. Pages: `limit` (1 to 100) and `cursor`. |
+| `GET /items/{serial}/history` | `items.history` | Every move of the serial, following splits and merges both ways, oldest first, with where it is now. |
+| `POST /restore` | `items.restore` | Gives serials, and zeny, back to a character by mail: `{"characterId": "42", "items": [{"serial": "...", "amount": 0}], "reason": "..."}`. A copy of a gone serial and any zeny need `items.create`. Needs a login from the last 10 minutes. |
 
 - Every call needs the account session cookie. A change also needs the CSRF token of `/me` in the `X-CSRF-Token` header.
 - Errors are JSON with a `code`: `login`, `two_factor`, `forbidden`, `reauth` (with `reauthUrl`), `csrf`, `rate`, `bad_request`, `not_found`, `conflict` or `unavailable`.
 - Calls share the account service's rate limits per address: 60 at once, then 1 a second.
+- Detail views and IP searches write audit rows (`players.view`, `players.search_ip`). Name, ID and serial searches do not. Restores (`items.restore`) and reviews (`audit.review`) write theirs too.
 
-The GM audit log is `staff_audit` (migration 00023). Each staff action adds a row with the time, the account, the role, the action, the target, the arguments, the reason and a review mark. Reviews go in `staff_audit_reviews`. The game and account roles can add rows, and neither can change or delete them. Only the account role reads them. Rows are kept 2 years; the deletion job comes with phase 8. To read the newest rows in psql:
+Restores (decision 0029):
+
+- A restore moves each serial from wherever it is now: an inventory, a cart, a vending shop's cart stack, an account or extra storage, a guild storage or a mail, of a character online or not. A serial that is gone is made again from its last item log line, with the restore's serial as its source.
+- The items arrive in one mail from "Staff", one slot per serial, so each keeps its serial. The mail, the holders, the item log lines and the audit row are written in one transaction.
+- An online holder's items move in its zone, on the zone's goroutine. An offline holder's characters cannot log in while the restore runs. A storage someone has open, or items that keep moving, make the restore try again a few times, then answer `conflict`.
+- The holder loses an open trade, and a vending shop loses the lines of the stack.
+- The world side is `server/adminworld`. The admin API reaches it through `admin.World`.
+
+Logins of the account pages are kept 90 days in `account_logins`, with their IP address, for the IP search (migration 00024). The account service's cleanup deletes older rows.
+
+The GM audit log is `staff_audit` (migration 00023). Each staff action adds a row with the time, the account, the role, the action, the target, the arguments, the reason and a review mark. Reviews go in `staff_audit_reviews`, with the verdict `ok` or `flag` and a note (migration 00024). The game and account roles can add rows, and neither can change or delete them. Only the account role reads them. Rows are kept 2 years; the deletion job comes with phase 8. To read the newest rows in psql:
 
 ```sql
 SELECT at, account_name, role, action, target, arguments, reason, needs_review

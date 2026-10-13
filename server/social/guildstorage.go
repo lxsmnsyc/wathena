@@ -320,3 +320,7 @@ func (r *Registry) StorageOf(guild int64) (*GuildStorage, int) {
 	}
 	return g.storage, size
 }
+
+// IsOpen reports whether a member has the storage open. The lock must be
+// held.
+func (st *GuildStorage) IsOpen() bool { return st.opener != nil }

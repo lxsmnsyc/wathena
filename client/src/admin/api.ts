@@ -11,10 +11,25 @@ import {
   toJson,
 } from '@bufbuild/protobuf';
 import {
+  type AuditEntry,
+  AuditEntrySchema,
   type AuditPage,
   AuditPageSchema,
+  type CharacterDetail,
+  CharacterDetailSchema,
+  type CharacterLogs,
+  CharacterLogsSchema,
   ErrorSchema,
   GiveRoleRequestSchema,
+  type ItemHistory,
+  ItemHistorySchema,
+  type PlayerSearch,
+  PlayerSearchSchema,
+  type RestoreRequest,
+  RestoreRequestSchema,
+  type RestoreResult,
+  RestoreResultSchema,
+  ReviewRequestSchema,
   type StaffList,
   StaffListSchema,
   type StaffMember,
@@ -35,6 +50,8 @@ export interface AuditFilter {
   since: string;
   until: string;
   review: '' | 'pending' | 'reviewed';
+  /** Only rows that need a review. */
+  needsReview: boolean;
 }
 
 export const NO_FILTER: AuditFilter = {
@@ -44,7 +61,11 @@ export const NO_FILTER: AuditFilter = {
   since: '',
   until: '',
   review: '',
+  needsReview: false,
 };
+
+/** The filter of the review queue: rows that wait for a review. */
+export const REVIEW_QUEUE: AuditFilter = { ...NO_FILTER, review: 'pending', needsReview: true };
 
 /** The query of GET /audit for a filter and a page. */
 export function auditQuery(filter: AuditFilter, beforeId: bigint, limit: number): string {
@@ -55,10 +76,63 @@ export function auditQuery(filter: AuditFilter, beforeId: bigint, limit: number)
       q.set(key, v);
     }
   }
+  if (filter.needsReview) {
+    q.set('needs_review', 'true');
+  }
   if (beforeId > 0n) {
     q.set('before_id', beforeId.toString());
   }
   q.set('limit', String(limit));
+  return q.toString();
+}
+
+/** The kinds of player search. ip needs players.read_ip. */
+export type SearchKind = 'name' | 'id' | 'serial' | 'ip';
+
+export const SEARCH_KINDS: readonly SearchKind[] = ['name', 'id', 'serial', 'ip'];
+
+/** Rows per page of the player search, from 1 to 50. */
+export const PLAYER_PAGE = 20;
+
+/** The query of GET /players for a search and a page. */
+export function playersQuery(
+  kind: SearchKind,
+  value: string,
+  cursor: string,
+  limit: number,
+): string {
+  const q = new URLSearchParams();
+  q.set(kind, value.trim());
+  if (cursor !== '') {
+    q.set('cursor', cursor);
+  }
+  q.set('limit', String(limit));
+  return q.toString();
+}
+
+/** The dates of a character's log. Empty fields do not filter. */
+export interface LogRange {
+  /** Dates, such as 2026-10-12. until is the day after the last. */
+  since: string;
+  until: string;
+}
+
+/** Rows per page of a character's log, from 1 to 100. */
+export const LOG_PAGE = 50;
+
+/** The query of GET /characters/{id}/logs for a range and a page. */
+export function logsQuery(range: LogRange, cursor: string, limit: number): string {
+  const q = new URLSearchParams();
+  if (cursor !== '') {
+    q.set('cursor', cursor);
+  }
+  q.set('limit', String(limit));
+  for (const key of ['since', 'until'] as const) {
+    const v = range[key].trim();
+    if (v !== '') {
+      q.set(key, v);
+    }
+  }
   return q.toString();
 }
 
@@ -161,6 +235,62 @@ export class AdminAPI {
     return decode(
       AuditPageSchema,
       await this.call('GET', `audit?${auditQuery(filter, beforeId, limit)}`),
+    );
+  }
+
+  /** POST /audit/{id}/review: records a verdict of ok or flag. */
+  async review(id: bigint, verdict: 'ok' | 'flag', note: string): Promise<Result<AuditEntry>> {
+    const req = create(ReviewRequestSchema, { verdict, note });
+    return decode(
+      AuditEntrySchema,
+      await this.call('POST', `audit/${id.toString()}/review`, toJson(ReviewRequestSchema, req)),
+    );
+  }
+
+  /** GET /players: accounts and their characters. */
+  async players(
+    kind: SearchKind,
+    value: string,
+    cursor: string,
+    limit: number,
+  ): Promise<Result<PlayerSearch>> {
+    return decode(
+      PlayerSearchSchema,
+      await this.call('GET', `players?${playersQuery(kind, value, cursor, limit)}`),
+    );
+  }
+
+  /** GET /characters/{id}: one character in full. */
+  async character(id: bigint): Promise<Result<CharacterDetail>> {
+    return decode(CharacterDetailSchema, await this.call('GET', `characters/${id.toString()}`));
+  }
+
+  /** GET /characters/{id}/logs: a page of a character's log, newest first. */
+  async logs(
+    id: bigint,
+    range: LogRange,
+    cursor: string,
+    limit: number,
+  ): Promise<Result<CharacterLogs>> {
+    return decode(
+      CharacterLogsSchema,
+      await this.call('GET', `characters/${id.toString()}/logs?${logsQuery(range, cursor, limit)}`),
+    );
+  }
+
+  /** GET /items/{serial}/history: every move of a serial, oldest first. */
+  async history(serial: string): Promise<Result<ItemHistory>> {
+    return decode(
+      ItemHistorySchema,
+      await this.call('GET', `items/${encodeURIComponent(serial.trim())}/history`),
+    );
+  }
+
+  /** POST /restore: gives items or zeny back by mail. */
+  async restore(req: RestoreRequest): Promise<Result<RestoreResult>> {
+    return decode(
+      RestoreResultSchema,
+      await this.call('POST', 'restore', toJson(RestoreRequestSchema, req)),
     );
   }
 }

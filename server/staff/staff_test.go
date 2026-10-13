@@ -36,6 +36,8 @@ func TestMatch(t *testing.T) {
 	}{
 		{"staff.assign", []string{"staff.assign"}},
 		{"audit.*", []string{"audit.read", "audit.review"}},
+		{"players.*", []string{"players.read", "players.read_ip"}},
+		{"items.*", []string{"items.history", "items.restore", "items.create"}},
 		{"moderation.*", []string{"moderation.reports", "moderation.mute", "moderation.kick", "moderation.jail", "moderation.ban"}},
 		{"staff.give", nil},
 		{"nothing.*", nil},
@@ -73,6 +75,18 @@ func TestDefaultRoles(t *testing.T) {
 		{"moderator", "moderation.ban", false},
 		{"moderator", "moderation.mute", true},
 		{"moderator", "audit.read", false},
+		// Review decision 34's step 2 permissions.
+		{"admin", "players.read_ip", true},
+		{"admin", "items.create", true},
+		{"admin", "audit.review", true},
+		{"game_master", "players.read", true},
+		{"game_master", "items.history", true},
+		{"game_master", "items.restore", false},
+		{"game_master", "items.create", false},
+		{"game_master", "players.read_ip", false},
+		{"game_master", "audit.review", false},
+		{"moderator", "players.read", true},
+		{"moderator", "items.history", false},
 		{"", "audit.read", false},
 		{"missing", "audit.read", false},
 	} {

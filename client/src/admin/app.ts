@@ -1,86 +1,56 @@
-// The admin screens (decision 0028): the staff list, with roles to give
-// and remove, and the GM audit log viewer with filters. This bundle
-// loads only after /me returned a staff role. User text is only ever
-// set with textContent.
+// The admin screens (decisions 0028 and 0029): the staff list, the GM
+// audit log viewer, the review queue, the player search with character
+// details, item histories and restores. This bundle loads only after
+// /me returned a staff role. User text is only ever set with
+// textContent.
 
 import './admin.css';
 import { fromJson } from '@bufbuild/protobuf';
 import { timestampDate } from '@bufbuild/protobuf/wkt';
-import {
-  type AuditEntry,
-  type Me,
-  MeSchema,
-  type StaffList,
-} from '../gen/wathena/admin/v1/admin_pb';
+import { type Me, MeSchema, type StaffList } from '../gen/wathena/admin/v1/admin_pb';
 import { AdminAPI, type AuditFilter, NO_FILTER, type Result, isJson } from './api';
+import { argumentsText, reviewText } from './audit';
+import { type Context, type Tab, type View, tabsFor } from './context';
+import { el, field, input, timeText } from './dom';
+import { renderHistory } from './history';
+import { renderCharacter, renderPlayers } from './players';
+import { renderRestore } from './restore';
+import { renderReviews } from './review';
+
+export { argumentsText, reviewText } from './audit';
+export { timeText } from './dom';
 
 /** Rows per page of the audit log. */
 export const AUDIT_PAGE = 50;
-
-/** Makes an element with text. */
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  text = '',
-  className = '',
-): HTMLElementTagNameMap[K] {
-  const e = document.createElement(tag);
-  if (text !== '') {
-    e.textContent = text;
-  }
-  if (className !== '') {
-    e.className = className;
-  }
-  return e;
-}
-
-/** A labelled input. */
-function field(label: string, control: HTMLInputElement | HTMLSelectElement): HTMLLabelElement {
-  const l = el('label', label);
-  l.append(control);
-  return l;
-}
-
-function input(name: string, type = 'text'): HTMLInputElement {
-  const i = el('input');
-  i.name = name;
-  i.type = type;
-  i.autocomplete = 'off';
-  i.spellcheck = false;
-  return i;
-}
-
-/** A time for a table cell, in the viewer's local time. */
-export function timeText(at: Date | undefined): string {
-  return at === undefined ? '' : at.toLocaleString();
-}
-
-/** An audit row's arguments as key=value pairs. */
-export function argumentsText(entry: AuditEntry): string {
-  const fields = entry.arguments ?? {};
-  return Object.keys(fields)
-    .sort()
-    .map((k) => `${k}=${JSON.stringify(fields[k])}`)
-    .join(' ');
-}
-
-/** The review cell of an audit row. */
-export function reviewText(entry: AuditEntry): string {
-  if (entry.reviewedAt !== undefined) {
-    return `Reviewed by ${entry.reviewedBy}`;
-  }
-  return entry.needsReview ? 'Needs review' : '';
-}
 
 /** Whether a role's permissions are all in the caller's. */
 export function canGive(mine: readonly string[], role: readonly string[]): boolean {
   return role.every((p) => mine.includes(p));
 }
 
-class Screens {
-  private readonly api: AdminAPI;
+/** The screen that a tab opens. */
+function tabView(kind: Tab['kind']): View {
+  switch (kind) {
+    case 'item':
+      return { kind, serial: '', characterId: 0n };
+    case 'restore':
+      return { kind, characterId: 0n, serials: [] };
+    default:
+      return { kind };
+  }
+}
+
+/** The sections of the page, one per screen. */
+type SectionKind = View['kind'];
+
+class Screens implements Context {
+  readonly api: AdminAPI;
   private readonly notice = el('p', '', 'admin-notice');
-  private readonly staffSection = el('section');
-  private readonly auditSection = el('section');
+  private readonly nav = el('nav', '', 'admin-nav');
+  private readonly tabButtons = new Map<Tab['kind'], HTMLButtonElement>();
+  private readonly sections = new Map<SectionKind, HTMLElement>();
+  private readonly staffSection: HTMLElement;
+  private readonly auditSection: HTMLElement;
   private filter: AuditFilter = { ...NO_FILTER };
   private nextBefore = 0n;
   private readonly auditBody = el('tbody');
@@ -90,13 +60,27 @@ class Screens {
 
   constructor(
     private readonly root: HTMLElement,
-    private readonly me: Me,
+    readonly me: Me,
   ) {
     this.api = new AdminAPI(me.csrfToken);
+    this.staffSection = this.section('staff');
+    this.auditSection = this.section('audit');
   }
 
-  private can(permission: string): boolean {
+  can(permission: string): boolean {
     return this.me.permissions.includes(permission);
+  }
+
+  /** The section of a screen, made the first time. */
+  private section(kind: SectionKind): HTMLElement {
+    let s = this.sections.get(kind);
+    if (s === undefined) {
+      s = el('section', '', `admin-${kind}`);
+      s.hidden = true;
+      this.sections.set(kind, s);
+      this.root.append(s);
+    }
+    return s;
   }
 
   render(): void {
@@ -107,25 +91,80 @@ class Screens {
       el('p', `${this.me.account}, ${this.me.role}`, 'admin-who'),
     );
     this.notice.setAttribute('role', 'status');
-    this.root.append(header, this.notice);
+    this.root.append(header, this.nav, this.notice);
+    const tabs = tabsFor(this.me.permissions);
+    for (const t of tabs) {
+      const b = el('button', t.label);
+      b.type = 'button';
+      b.addEventListener('click', () => {
+        this.open(tabView(t.kind));
+      });
+      this.tabButtons.set(t.kind, b);
+      this.nav.append(b);
+    }
+    // The staff list loads at once, as in step 1. The audit log loads
+    // each time its tab opens.
+    this.root.append(this.staffSection, this.auditSection);
     if (this.can('staff.assign')) {
-      this.staffSection.className = 'admin-staff';
-      this.root.append(this.staffSection);
       this.run(this.loadStaff());
     }
     if (this.can('audit.read')) {
-      this.auditSection.className = 'admin-audit';
-      this.root.append(this.auditSection);
       this.renderAudit();
-      this.run(this.loadAudit(true));
     }
-    if (!this.can('staff.assign') && !this.can('audit.read')) {
+    const first = tabs[0];
+    if (first === undefined) {
       this.root.append(el('p', 'Your role has no tools on this page yet.'));
+      return;
+    }
+    this.open(tabView(first.kind));
+  }
+
+  /** Shows one screen and hides the others. */
+  open(view: View): void {
+    this.say('');
+    const s = this.section(view.kind);
+    for (const [kind, section] of this.sections) {
+      section.hidden = kind !== view.kind;
+    }
+    const tab = view.kind === 'character' ? 'players' : view.kind;
+    for (const [kind, b] of this.tabButtons) {
+      if (kind === tab) {
+        b.setAttribute('aria-current', 'page');
+      } else {
+        b.removeAttribute('aria-current');
+      }
+    }
+    switch (view.kind) {
+      case 'staff':
+        return;
+      case 'audit':
+        // Rows that came since, such as reviews, show when the tab opens.
+        if (this.can('audit.read')) {
+          this.run(this.loadAudit(true));
+        }
+        return;
+      case 'reviews':
+        renderReviews(this, s);
+        return;
+      case 'players':
+        // The search keeps its results when the screen comes back.
+        if (s.childElementCount === 0) {
+          renderPlayers(this, s);
+        }
+        return;
+      case 'character':
+        renderCharacter(this, s, view.id);
+        return;
+      case 'item':
+        renderHistory(this, s, view.serial, view.characterId);
+        return;
+      case 'restore':
+        renderRestore(this, s, view.characterId, view.serials);
     }
   }
 
   /** Runs a call from an event, and shows a failure that throws. */
-  private run(p: Promise<void>): void {
+  run(p: Promise<void>): void {
     p.catch(() => {
       this.notice.className = 'admin-notice admin-error';
       this.notice.textContent = 'Something went wrong. Reload the page.';
@@ -133,7 +172,7 @@ class Screens {
   }
 
   /** Shows a call's error, with the reauth link when it needs one. */
-  private fail(r: Result<unknown>): void {
+  fail(r: Result<unknown>): void {
     if (r.ok) {
       return;
     }
@@ -146,7 +185,7 @@ class Screens {
     }
   }
 
-  private say(text: string): void {
+  say(text: string): void {
     this.notice.className = 'admin-notice';
     this.notice.textContent = text;
   }
@@ -296,6 +335,7 @@ class Screens {
         since: inputs.since.value,
         until: inputs.until.value,
         review: r === 'pending' || r === 'reviewed' ? r : '',
+        needsReview: false,
       };
       this.run(this.loadAudit(true));
     });

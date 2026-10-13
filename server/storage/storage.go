@@ -307,6 +307,10 @@ func (st *Storage) Close(who any) {
 // held.
 func (st *Storage) OpenFor(who any) bool { return who != nil && st.opener == who }
 
+// IsOpen reports whether anyone has the storage open. The lock must be
+// held.
+func (st *Storage) IsOpen() bool { return st.opener != nil }
+
 // Registry holds the storages of the characters online.
 type Registry struct {
 	// Loader reads saved storages. Without one, storages live in memory
@@ -379,6 +383,13 @@ func (r *Registry) acquire(ctx context.Context, k Key) (*Storage, error) {
 	}
 	st.refs++
 	return st, nil
+}
+
+// Loaded returns a storage that is in memory, or nil.
+func (r *Registry) Loaded(k Key) *Storage {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.storage[k]
 }
 
 // Release ends a use of a storage. A saved storage that no character
