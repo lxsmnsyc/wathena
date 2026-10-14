@@ -970,6 +970,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Account deletion.** It needs a login within 10 minutes and the account name typed to confirm. After a 14-day wait, a job deletes the email, password, two-factor settings, sessions, login records, the characters and their chat lines. Logs other players need keep the character ID without the account link. During the wait the characters cannot be played, and a login shows the date and a cancel button. A request is refused while one of the account's characters leads a guild with other members. A banned account may ask for deletion.
     - **Privacy notice.** `/account/privacy` with the owner's contact details and text from the config, and the retention periods in effect.
 
+38. Mod assets (phase 6 step 6). The user approved these on 2026-10-14. No Lua API changes:
+    - **Sources.** A mod ships art sources in `art/`: the pack format of assets-v1 ("Pack format for original art", with `pack.yaml` naming the license), and loose RO files (`.spr`, `.act`, `.bmp`, `.tga`, `.wav`, `.rsm`, `.str`, and maps as `.gat`, `.gnd` and `.rsw`).
+    - **Builds.** `wactl mod pack` builds `art/` into an asset build with its own manifest inside the package. `wactl mod build-art` builds it for a folder mod. The server checks every file when it loads a mod (hashes, decoding and the asset limits) and converts nothing.
+    - **Names.** Mod art is named `mod/<mod id>/<namespace>/<record name>`, such as `mod/example.lantern/icon/item/Paper_Lantern`, since mod IDs differ per server. The server tells the client which art each mod ID uses.
+    - **Record fields.** Items: `icon`, `image`, `drop_sprite` and `view_sprite`. Monsters: `sprite` and `sounds`. NPCs: `sprite`. Jobs: `look` with body sprites per sex. Skills: `icon` and `effects`. Companions and mounts: `look`. Maps: `map/<name>` with music and minimap. A field names the mod's art or core's. Missing art falls back to a placeholder, and the client logs it once.
+    - **Client data tables.** A mod may ship `client/*.yml` tables that override matching entries of core's. The server merges and serves one set. `wactl client-data validate` checks them against the schema.
+    - **Serving.** A mod's build is served at `/assets/mods/<mod id>/<version>/`, cached by content hash. The client loads core's manifest, then each active mod's. Each mod's build is limited to 200 MB by default, set in the config.
+    - **Tooling.** `wactl mod validate` reports art names a record refers to that the mod does not provide. `docs/client-data.md` is the guide. A sample mod has original art for an item icon, a monster sprite and an NPC.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
