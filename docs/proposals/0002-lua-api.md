@@ -979,6 +979,16 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Serving.** A mod's build is served at `/assets/mods/<mod id>/<version>/`, cached by content hash. The client loads core's manifest, then each active mod's. Each mod's build is limited to 200 MB by default, set in the config.
     - **Tooling.** `wactl mod validate` reports art names a record refers to that the mod does not provide. `docs/client-data.md` is the guide. A sample mod has original art for an item icon, a monster sprite and an NPC.
 
+39. Touch input (phase 6 step 7). The user approved these on 2026-10-15. No Lua API or protocol changes:
+    - **Gestures**, chosen by pointer type, so mouse and touch work on one device: a tap does what a left click does; holding on the ground keeps walking toward the finger; a long press of half a second on a unit opens the right-click menu; a two-finger pinch zooms; a two-finger twist or drag turns the camera.
+    - **Virtual joystick.** A joystick in a lower corner walks the player in the direction it is pushed, for as long as it is held. It shows when touch is used and can be hidden in the options. Tap to walk still works.
+    - **On-screen controls** when touch is used: a larger hotbar for the F1 to F9 slots, buttons for the windows that keyboard shortcuts open, a chat button, and a cancel button while choosing a skill target.
+    - **Small screens.** Below 600 pixels wide, windows open as full-width panels. Buttons and item slots are at least 44 pixels. Windows move by their title bar with any pointer.
+    - **Item drags** start with a long press, in every place items move.
+    - **Browser behavior.** No double-tap zoom, pull-to-refresh or text selection in the game view. Chat stays visible above the on-screen keyboard. Landscape and portrait both work. The account pages and admin screens are usable on a phone.
+    - **Performance.** 30 FPS on mid-range phones, with the rendering resolution capped at twice the CSS size.
+    - **Checks.** Phone and tablet emulation in `pnpm check:browsers` with a scripted touch run, and a test by the user on a real phone against the dev server on the local network.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
