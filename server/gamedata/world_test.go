@@ -197,3 +197,39 @@ func TestMonsterOverlayErrors(t *testing.T) {
 		}
 	}
 }
+
+// TestMonsterArt: a monster's sprite may name art, and a new monster
+// with art starts from a Poring. sounds names its sounds (decision 0033).
+func TestMonsterArt(t *testing.T) {
+	ids, _ := mod.LoadIDs(context.Background(), &mod.MemoryIDs{})
+	tables := progression.New(&progression.Data{}, nil, progression.DefaultConfig)
+	out, _, _, err := monsterOverlay(context.Background(), overlaySet(t, `
+- name: example.a:GHOST
+  sprite: mod/example.a/sprite/mob/Ghost
+  sounds: {attack: mod/example.a/sound/boo, die: sound/die}
+  hp: 30
+- name: PORING
+  sprite: mod/example.a/sprite/mob/Shiny
+`), baseMonsters(), testConstants(t), map[string]uint32{}, testSkills(t), tables, ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ghost := out[mod.MonsterIDs.Start]
+	if ghost.Art.Sprite != "mod/example.a/sprite/mob/Ghost" || ghost.Art.Sounds["attack"] != "mod/example.a/sound/boo" || ghost.Sprite != 0 ||
+		ghost.Def.Level != out[1002].Def.Level {
+		t.Errorf("ghost %+v %+v", ghost.Art, ghost.Def)
+	}
+	if out[1002].Art.Sprite != "mod/example.a/sprite/mob/Shiny" {
+		t.Errorf("poring art %+v", out[1002].Art)
+	}
+	_, _, _, err = monsterOverlay(context.Background(), overlaySet(t, `
+- name: example.a:BAD
+  sprite: mod/example.a/icon/item/Ghost
+  sounds: {sing: sound/x, die: texture/y}
+`), baseMonsters(), testConstants(t), map[string]uint32{}, testSkills(t), tables, ids)
+	for _, want := range []string{"is not a sprite name", "is not a sound name"} {
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("missing %q in %v", want, err)
+		}
+	}
+}

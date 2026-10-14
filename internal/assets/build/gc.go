@@ -27,7 +27,7 @@ func GC(dir string, dryRun bool) (*GCReport, error) {
 		return nil, err
 	}
 	defer func() { _ = root.Close() }()
-	m, all, err := loadEntries(root)
+	m, all, err := loadEntries(root.FS())
 	if err != nil {
 		return nil, err
 	}

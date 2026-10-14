@@ -16,6 +16,7 @@ Rules:
 - Segments are separated by `/`. A segment is not empty, not `.` or `..`, and has no control characters, `\`, or `:`.
 - A name has no file extension. Its type comes from its first segment.
 - A name is at most 255 bytes.
+- A mod's art is named `mod/<mod id>/<namespace>/<record name>`, below.
 
 Game data never refers to files or GRF paths. It refers to names. The client data tables (strategy section 10.5) map game IDs to names, for example monster 1002 to `sprite/mob/poring`.
 
@@ -51,6 +52,18 @@ Game data never refers to files or GRF paths. It refers to names. The client dat
 | `music/<name>` | Music | `music/08` | Background music. |
 | `table/<name>` | Table | `table/items` | Data tables in JSON, such as item names and descriptions. |
 | `placeholder/<type>` | Any | `placeholder/sprite` | Fallbacks, below. |
+| `mod/<mod id>/<namespace>/<name>` | By namespace | `mod/example.lantern/icon/item/Paper_Lantern` | A mod's art, below. |
+
+### Mod art
+
+A mod's art has names under `mod/<mod id>/` ([decision 0033](../decisions/0033-mod-assets.md)), since the IDs of a mod's records differ per server. After the mod ID come the namespaces above, and the record's name, such as `mod/example.lantern/sprite/mob/Lantern_Ghost`.
+
+- The second segment is a valid mod ID, and at least one segment follows the namespace.
+- Upper case letters are allowed after `mod/<mod id>/<namespace>/`, since record names keep their case. Before it, ASCII letters are lowercase.
+- The type comes from the first segment after the mod ID.
+- A mod's build holds only names under its own `mod/<mod id>/`.
+
+These rules were added within `assets-v1` on 2026-10-14. Readers never checked names, so the contract version did not change.
 
 ### Textures from a game client
 
@@ -259,7 +272,7 @@ colors   256 × 4 bytes RGBA. Index 0 is transparent.
 - Sources at other rates are resampled to 48 kHz with the speexdsp resampler at its highest quality.
 - The decoded sound has exactly the source's length. The track's `CodecDelay` holds the encoder's pre-skip, and the last block's `DiscardPadding` removes the padding in the last packet. Chrome 154, Firefox 153, and WebKit 26.5 apply both: `decodeAudioData` returns the exact length, aligned with the source, for the test sounds in `client/src/audio/testdata`, which the encoder's tests write.
 - Music can be Opus in WebM, or MP3. The build passes MP3 through unchanged, because re-encoding lossy audio loses quality. New music in packs should be Opus.
-- Accepted inputs: WAV (8- to 32-bit PCM, IEEE float, IMA ADPCM, and Microsoft ADPCM), MP3, Ogg Vorbis, and Opus in Ogg or WebM. The GRF importer reads WAV now. The other inputs come with the pack importer.
+- Accepted inputs: WAV (8- to 32-bit PCM, IEEE float, IMA ADPCM, and Microsoft ADPCM), and Opus in WebM, which packs pass through after a check. MP3 is accepted for music. Ogg Vorbis, Opus in Ogg, and MP3 sounds are not converted yet, and a pack's build rejects them.
 - For ADPCM WAV files, the `fact` chunk gives the length, since the last block is usually only partly filled.
 - libopus and the resampler are compiled to WebAssembly and run by the build tool, like libwebp. Tests pin the encoder's output bytes, so a platform or build change that alters them fails.
 - The container is WebM because browsers have supported Opus in WebM the longest. If a browser fails, the container can change to Ogg without re-encoding.
@@ -504,11 +517,12 @@ wactl assets build \
   --out /srv/wathena/assets
 ```
 
-- **Layering.** Sources are applied in order. A later source replaces names an earlier one provides. Mods are applied after all `--source` values, in mod load order.
+- **Layering.** Sources are applied in order. A later source replaces names an earlier one provides. Mods do not change the server's build: each mod has a build of its own, below.
 - **Sources.** Each source is an importer:
   - `placeholder`: the placeholder pack, drawn by code.
   - `grf:<folder>`: a game client folder with `DATA.INI` (strategy section 10.1). The importer maps game paths to names with its own rules, such as `data\sprite\몬스터\poring.spr` to `sprite/mob/1002`.
   - `pack:<folder>`: original art in authoring formats (below).
+  - `ro:<folder>`: loose RO files, named by their paths (below).
 - **Output.** Each asset is stored under the SHA-256 of its content, as `<first 2 hex digits>/<hash>.<extension>`. Binary formats (WSPR, WPAL, WMAP, WEFF, and glTF) and tables are stored only as Brotli, as `<hash>.<extension>.br`. The server sends them with `Content-Encoding: br`, and decompresses them itself for the rare client that does not accept Brotli. The hash is of the uncompressed content, so the client can check it after the browser decompresses. Shards and dependency indexes (below) are JSON, also stored only as Brotli, as `<hash>.json.br`. Clients request every file by its path without `.br`, as `<first 2 hex digits>/<hash>.<extension>`, or `<first 2 hex digits>/<hash>.json`.
 - **Cache.** The build keeps `.cache.json` in the output folder, keyed by each input's identity and converter version. A later build reuses an asset whose key and stored file are unchanged, so slow compression happens once per changed asset.
 - **Report.** The build prints how many names each source provided and replaced, and every asset it rejected, with the reason.
@@ -553,11 +567,71 @@ our-art/
   map/home_village/              map folder, strategy section 8.12
 ```
 
-- A file's path without its extension is its name.
-- Sprite images can be 8-bit indexed PNG, which keeps the palette and allows dyes, or RGBA PNG.
+- A file's path without its extension is its name. A file must be in a namespace of its type, such as a sprite under `sprite/`. A pack in a server's own build has lowercase names.
+- Sprite images can be 8-bit indexed PNG, which keeps the palette and allows dyes, or RGBA PNG. In an indexed PNG, index 0 is transparent.
 - Textures can be PNG, JPEG, or WebP. The build converts them to lossless WebP.
-- Models are glTF, converted to the profile above.
-- Every pack must state its license in `pack.yaml`.
+- Models are glTF binary files that fit the profile above. Their `asset:` image names that the pack has get the pack's prefix, such as a mod's. Other glTF files, such as ones with embedded images, are not converted yet.
+- Sounds are WAV, or Opus in WebM. Music is MP3, or Opus in WebM. Tables are JSON objects.
+- Every pack must state its license in `pack.yaml`: `license`, required, `name`, and `contract`, `assets-v1` when left out. Unknown fields are errors.
+- Map folders (strategy section 8.12) are not read yet. Loose RO maps are.
+- Files the build cannot use, such as a file in the wrong folder, are left out and listed with the reason.
+
+#### Pack sprites
+
+A sprite is a PNG with an optional frame file of the same name, `<name>.yaml`:
+
+```yaml
+grid: [40, 48]          # frames of 40 x 48, left to right, then top to bottom
+origin: [20, 46]        # the pixel on the entity's cell; the default is the middle of the bottom row
+actions:                # in RO's order: action number x 8 + direction
+  - frames: [0, 1]      # the same frames in all 8 directions
+    interval_ms: 400    # 150 by default
+  - directions: [[0], [1], [0], [1], [0], [1], [0], [1]]
+  - frames: [0, 2, 2, 0]
+    events: {2: atk}    # position in the list: a sound name, or a marker
+```
+
+| Field | Meaning |
+|---|---|
+| `grid` | `[width, height]` of each frame. |
+| `frames` | `[[x, y, width, height], ...]`, in place of `grid`. |
+| `origin` | `[x, y]` in each frame. |
+| `anchors` | `[[x, y], ...]` from the origin, with y down, the same on every frame. |
+| `actions` | Each has `frames`, or `directions` with 8 lists, `interval_ms`, and `events`. |
+
+- Without a frame file, the whole image is one frame, shown in 8 directions.
+- Limits: an image of at most 4096 × 4096, at most 4,096 frames, 64 actions, and 256 frames per direction, and the limits of WSPR.
+- An event that names a sound the pack has gets the pack's prefix.
+
+### Loose RO files
+
+`ro:<folder>`, and a mod's `art/`, read RO's own formats with the GRF importer's parsers. A file's path without its extension is its name, as in a pack:
+
+| Files | Name |
+|---|---|
+| `<path>.spr` and `<path>.act` | A sprite. Both are needed. |
+| `<path>.bmp`, `<path>.tga` | A texture. When both exist, BMP gets the plain name and TGA `~tga`, as in the GRF importer. |
+| `<path>.wav` | A sound. |
+| `<path>.pal` | A palette. |
+| `<path>.rsm`, `<path>.rsm2` | A model. RSM2 gets `~rsm2` when both exist. |
+| `<path>.str` | An effect. |
+| `map/<name>.rsw` with `.gnd` and `.gat` | `map/<name>` and `lightmap/<name>`. All three are needed. |
+
+References inside the files find the folder's own files first, without regard to case, and otherwise get the names the GRF importer gives:
+
+- A model's or map's texture path `p`, relative to `data\texture`, is the folder's `texture/<p>`, else `texture/<p>`.
+- A map's model path is `model/<p>`, and a sound path is `sound/<p>`, the same way.
+- An effect at `effect/<path>.str` finds its textures in `texture/effect/<folder of path>/`, as RO keeps them in `data\texture\effect`.
+- A sprite's sound event is the folder's sound when it has one.
+
+### Mod builds
+
+A mod's build is a build like the server's, with the names of its art only ([decision 0033](../decisions/0033-mod-assets.md)):
+
+- `wactl mod build-art` builds a folder mod's `art/` into its `assets/`, with `manifest.json` at its root. `wactl mod pack` builds it into `assets/` inside the `.zip` file, with a fixed build time, so the same files pack to the same bytes.
+- The server checks every file of each mod's build when it starts, as `wactl assets check` does, and converts nothing. Every name must be under the mod's `mod/<mod id>/` and in a namespace of its type. The build's distinct files hold at most 200 MiB before compression by default (`mods.max_asset_mb`). A problem stops the start.
+- The server serves the build at `/assets/mods/<mod id>/<version>/`, with the headers and caching of its own build.
+- The game server's `/client-data.json` lists the active mods' builds in load order and the art of each record by ID. The client loads the server's manifest, then each mod's, and resolves a name under `mod/<mod id>/` in that mod's build.
 
 ## Checks
 
@@ -566,6 +640,7 @@ our-art/
 - Every stored file must exist, match its SHA-256 and size in the manifest, and decode as its type within the limits below. A table must be a JSON object. Any failure is an error, and the command exits with status 1.
 - It lists names that something refers to but no source provides, grouped by kind. The client shows placeholders for them. It also checks that each dependency index lists exactly the names its asset uses. References come from maps' dependency lists, models' textures, sprites' sound events, effects' textures, and the client data tables, such as a body sprite for each look in `jobs.yml` and each sex the look exists for.
 - `--list` shows every missing name, and `--json` prints the report as JSON.
+- `--mod <mod id>` checks a mod's build with the server's rules for it: names under `mod/<mod id>/` in namespaces of their types, and the size limit, `--max-mb`.
 
 `wactl assets gc --build <folder>` removes stored files the current manifest does not use, such as outputs of older converter versions, and temporary files an interrupted build left. It only removes files named as the build names them, in its two-letter folders. `--dry-run` reports without removing.
 

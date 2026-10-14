@@ -323,3 +323,32 @@ func modTypes(args []string) error {
 	fmt.Printf("wrote %d files to %s, and %s if it was missing\n", n, filepath.Join(p, modkit.TypesDir), modkit.LuaRCFile)
 	return nil
 }
+
+// modBuildArt is wactl mod build-art [<folder>]: it builds a folder
+// mod's art/ into its assets/, which the server reads (decision 0033).
+func modBuildArt(args []string) error {
+	fs := newFlags("mod build-art")
+	out := fs.String("out", "", "folder to build into; the mod's assets/ by default")
+	fast := fs.Bool("fast", false, "use a low Brotli level, for development builds")
+	arg, err := parseArgs(fs, args)
+	if err != nil {
+		return err
+	}
+	p, err := modkit.ModPath(arg)
+	if err != nil {
+		return err
+	}
+	quality := 11
+	if *fast {
+		quality = 5
+	}
+	rep, err := modkit.BuildArt(p, *out, quality)
+	if rep != nil {
+		for _, r := range rep.Rejected {
+			fmt.Println("rejected:", r)
+		}
+		fmt.Printf("build %s: %d assets, %d converted, %d from cache, %.1f MB, %s\n",
+			rep.BuildID, rep.Assets, rep.Converted, rep.Cached, float64(rep.Bytes)/(1<<20), rep.Duration.Round(time.Millisecond))
+	}
+	return err
+}

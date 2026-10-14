@@ -241,7 +241,7 @@ CI's `test` job runs them against a `postgres:18` service container.
 
 ## All-in-one
 
-`waserver all` runs every service in one process (strategy section 3.9): the gateway and the world's zones at `/ws`, the account pages at `/account/`, the admin API at `/admin/api/v1/`, the asset build at `/assets/`, and the web client at `/`, with the admin screens at `/admin`. `waserver` with flags and no command does the same. deploy/README.md runs it with PostgreSQL and Caddy in Docker Compose.
+`waserver all` runs every service in one process (strategy section 3.9): the gateway and the world's zones at `/ws`, the account pages at `/account/`, the admin API at `/admin/api/v1/`, the asset build at `/assets/`, the mods' asset builds at `/assets/mods/<mod id>/<version>/` with the client data at `/client-data.json`, and the web client at `/`, with the admin screens at `/admin`. `waserver` with flags and no command does the same. deploy/README.md runs it with PostgreSQL and Caddy in Docker Compose.
 
 ```text
 waserver all --config waserver.yml
@@ -279,6 +279,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `mods.approve` | none | none | Approved permissions, by mod ID. |
 | `mods.disable` | none | none | Installed mods that must not load. |
 | `mods.events` | none | none | Changes to world events, by event name. See "World events". |
+| `mods.max_asset_mb` | none | `200` | The largest asset build of one mod, in MiB before compression. See "Mod art". |
 | `chat.burst`, `chat.refill` | none | `5`, `1s` | Chat rate limits: lines at once, and the time for one more. See "Chat and moderation". |
 | `chat.new_character_burst`, `chat.new_character_refill`, `chat.new_character_period` | none | `3`, `3s`, `1h` | Lower limits for a character's first period after it was made. A period of `0s` turns them off. |
 | `chat.log_days` | none | `30` | Days the chat log keeps lines, except lines of open reports. More than 30 logs a warning. |
@@ -293,7 +294,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 - while migrations are pending (`wactl migrate up`),
 - before `wactl world new` made the world, except with `--dev`,
 - when `mode` is not the world's ruleset, except `none`,
-- when a mod cannot load (see "Mods").
+- when a mod cannot load (see "Mods"), or a mod's asset build fails its checks (see "Mod art").
 
 The web client:
 
@@ -336,6 +337,15 @@ What it does:
 - Skills and skill trees come from the extracts `skills.json` and `skill_trees.json` of the mode, with each mod's `data/skills.yml` and `data/skill_trees.yml` over them. Every zone shares the result.
 - Each zone runs the mods' scripts in its own Lua state. A mod whose scripts fail is logged and left off in that zone. A mod whose handlers fail 10 times in a minute is turned off in that zone.
 - A zone makes its Lua state at start when a mod has entry scripts, and otherwise when a player first uses an item there.
+
+### Mod art
+
+A mod's art is an asset build of its own ([decision 0033](../docs/decisions/0033-mod-assets.md), mods/README.md, "Art"). `mods/examples/lantern` is a sample with an item icon, a monster sprite and an NPC sprite.
+
+- At startup, `waserver` checks each mod's `assets/`, in its folder or its `.zip` file: every file's hash and size, its decoding and the asset limits, names under `mod/<mod id>/` only, and the size, at most `mods.max_asset_mb` MiB. A problem stops the start with the list. Nothing is converted.
+- A mod with `art/` and no `assets/` starts with a warning, and its records show placeholders. `wactl mod build-art` builds it.
+- A build is served at `/assets/mods/<mod id>/<version>/`, as the server's own build: `manifest.json` checked each time, other files kept a year, binary formats as Brotli.
+- `/client-data.json` lists the active mods' builds, the art each record uses by ID, and the client data tables merged with the mods' `client/*.yml` (docs/client-data.md). It is checked each time, with an ETag. The web client loads it before it connects.
 
 ## Rulesets
 

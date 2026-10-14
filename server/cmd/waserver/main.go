@@ -10,7 +10,9 @@
 //   - the account service's pages under /account/,
 //   - the admin API under /admin/api/v1/, and the admin screens at
 //     /admin when the client is served,
-//   - the asset build under /assets/,
+//   - the asset build under /assets/, the mods' builds under
+//     /assets/mods/<mod id>/<version>/, and the client data at
+//     /client-data.json,
 //   - the web client at /, when the binary embeds it (the webclient
 //     build tag) or --client-dir names a build.
 //
@@ -93,6 +95,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/modassets"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/restart"
@@ -353,6 +356,13 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
+	// The mods' asset builds are checked now, and served with the client
+	// data (decision 0033).
+	modArt, err := modassets.Load(loaded.all, modassets.Options{MaxBytes: int64(cfg.Mods.MaxAssetMB) << 20, Log: log})
+	if err != nil {
+		return fmt.Errorf("mods:\n%w", indent(err))
+	}
+	defer func() { _ = modArt.Close() }()
 	// The job tables come from the job records: core's and the mods'.
 	// LoadMods set the ruleset's flags that player stats read on them.
 	jobs = loaded.all.JobTables
@@ -785,6 +795,8 @@ func runAll(name string, args []string) error {
 
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", http.StripPrefix("/assets", files))
+	mux.Handle(modassets.Prefix, modArt)
+	mux.Handle(modassets.ClientDataPath, modArt)
 	mux.Handle("/ws", gw)
 	if accounts != nil {
 		mux.Handle(account.Prefix, accounts)

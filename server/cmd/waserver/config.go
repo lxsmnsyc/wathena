@@ -110,6 +110,9 @@ type modOptions struct {
 	// Events change the trigger or the duration of world events, or
 	// turn them off, by the event's full name.
 	Events map[string]worldevent.Override `yaml:"events"`
+	// MaxAssetMB limits each mod's asset build, in MiB before
+	// compression. 0 is the default, 200 (decision 0033).
+	MaxAssetMB int `yaml:"max_asset_mb"`
 }
 
 // list is a list of strings. In the config file it is a YAML sequence
@@ -483,6 +486,9 @@ func validate(o options, s secrets) (settings, error) {
 		if fi, err := os.Stat(o.Mods.Dir); err != nil || !fi.IsDir() {
 			bad("mods.dir", "%s is not a folder", o.Mods.Dir)
 		}
+	}
+	if o.Mods.MaxAssetMB < 0 || o.Mods.MaxAssetMB > 64<<10 {
+		bad("mods.max_asset_mb", "must be 0 for the default of 200, or up to 65536")
 	}
 
 	if !o.Dev && (s.Database == "" || s.AccountDatabase == "") {

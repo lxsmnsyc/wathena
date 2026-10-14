@@ -108,9 +108,10 @@ func LoadWeapons() (*Weapons, error) { return ParseWeapons(weaponsYAML) }
 // LoadEffects parses and checks the embedded effects.yml.
 func LoadEffects() (*Effects, error) { return ParseEffects(effectsYAML) }
 
-// checkName checks an asset name in a table and its namespace.
+// checkName checks an asset name in a table and its namespace. A mod's
+// table may name its own art, such as mod/example.lantern/effect/glow.
 func checkName(table, name, prefix string) error {
-	if !strings.HasPrefix(name, prefix) || assets.ValidName(name) != nil {
+	if assets.Namespace(name) != strings.TrimSuffix(prefix, "/") || assets.ValidName(name) != nil {
 		return fmt.Errorf("%s: %q is not a %s name", table, name, strings.TrimSuffix(prefix, "/"))
 	}
 	return nil

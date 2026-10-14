@@ -1,0 +1,28 @@
+# The Paper Lantern needs no art field: its art is found by its name,
+# mod/example.lantern/icon/item/Paper_Lantern for the icon and
+# mod/example.lantern/sprite/item/Paper_Lantern for the dropped sprite.
+- name: example.lantern:Paper_Lantern
+  type: Etc
+  display_name: Paper Lantern
+  weight: 10
+  buy: 50
+  sell: 10
+  stackable: true
+# Lantern Oil names the lantern's icon with the icon field.
+- name: example.lantern:Lantern_Oil
+  type: Etc
+  display_name: Lantern Oil
+  weight: 5
+  buy: 20
+  sell: 5
+  stackable: true
+  icon: mod/example.lantern/icon/item/Paper_Lantern
+# The Unlit Lantern has no art, so the client shows the placeholder
+# icon, and logs the missing name once.
+- name: example.lantern:Unlit_Lantern
+  type: Etc
+  display_name: Unlit Lantern
+  weight: 10
+  buy: 10
+  sell: 2
+  stackable: true

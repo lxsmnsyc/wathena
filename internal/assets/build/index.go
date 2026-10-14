@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/andybalholm/brotli"
@@ -51,9 +52,9 @@ func fileRefs(t string, data []byte) []string {
 }
 
 // readStored reads a stored asset and removes its Brotli layer.
-func readStored(root *os.Root, e entry) ([]byte, error) {
+func readStored(fsys fs.FS, e entry) ([]byte, error) {
 	ext := extOf[e.T]
-	f, err := root.Open(StoredPath(e.H, ext))
+	f, err := fsys.Open(filepath.ToSlash(StoredPath(e.H, ext)))
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +64,23 @@ func readStored(root *os.Root, e entry) ([]byte, error) {
 		r = brotli.NewReader(f)
 	}
 	return io.ReadAll(io.LimitReader(r, 64<<20+1))
+}
+
+// readLimited reads a file of at most limit bytes.
+func readLimited(fsys fs.FS, p string, limit int64) ([]byte, error) {
+	f, err := fsys.Open(p)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	data, err := io.ReadAll(io.LimitReader(f, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > limit {
+		return nil, fmt.Errorf("%s is over %d bytes", p, limit)
+	}
+	return data, nil
 }
 
 // jsonPath is where a shard or index is stored. Both are stored only as
@@ -94,8 +112,8 @@ func storeJSON(root *os.Root, data []byte, quality int) (string, error) {
 }
 
 // readJSON reads a stored shard or index and checks its hash.
-func readJSON(root *os.Root, h string) ([]byte, error) {
-	f, err := root.Open(jsonPath(h))
+func readJSON(fsys fs.FS, h string) ([]byte, error) {
+	f, err := fsys.Open(filepath.ToSlash(jsonPath(h)))
 	if err != nil {
 		return nil, err
 	}

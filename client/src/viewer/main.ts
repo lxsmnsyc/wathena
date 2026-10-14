@@ -18,6 +18,8 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { AssetStore } from '../assets/store';
+import { setArt } from '../assets/art';
+import { loadClientData } from '../data/clientData';
 import { AudioSystem } from '../audio/audio';
 import Soundscape from '../audio/soundscape';
 import { cellHeight } from '../formats/wmap';
@@ -544,6 +546,15 @@ if (serverURL === null) {
         location.assign(accountPage(account, 'characters', location.href));
       });
     }
+  }
+  // The server's client data comes before the connection, so the first
+  // entities already find their mods' art: core's manifest is open, and
+  // each active mod's build loads now (decision 0033). Without it, mod
+  // records show placeholders.
+  try {
+    setArt(await loadClientData(serverURL, store));
+  } catch (error) {
+    console.error('client data:', error);
   }
   // Events can follow Welcome at once, so the view exists first. It learns
   // the player's own ID from Welcome.

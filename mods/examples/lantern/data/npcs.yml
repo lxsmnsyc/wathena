@@ -1,0 +1,23 @@
+# The Lamplighter sells lanterns. Its sprite is the mod's art. The second
+# placement is on the placeholder map, where a server with only the
+# placeholder pack starts its players.
+- name: Lamplighter#prontera
+  map: prontera
+  x: 152
+  y: 191
+  direction: south
+  sprite: mod/example.lantern/sprite/npc/Lamplighter
+  shop:
+    - {item: "example.lantern:Paper_Lantern"}
+    - {item: "example.lantern:Lantern_Oil"}
+    - {item: "example.lantern:Unlit_Lantern"}
+- name: Lamplighter#placeholder
+  map: placeholder/map
+  x: 14
+  y: 14
+  direction: south
+  sprite: mod/example.lantern/sprite/npc/Lamplighter
+  shop:
+    - {item: "example.lantern:Paper_Lantern"}
+    - {item: "example.lantern:Lantern_Oil"}
+    - {item: "example.lantern:Unlit_Lantern"}

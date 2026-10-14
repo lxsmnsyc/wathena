@@ -30,8 +30,16 @@ var monsterFields = []string{
 	"resistance", "magic_resistance", "str", "agi", "vit", "int", "dex", "luk", "speed", "attack_range",
 	"skill_range", "chase_range", "attack_delay", "attack_motion", "damage_motion", "element", "element_level",
 	"race", "size", "class", "ai", "modes", "base_exp", "job_exp", "mvp_exp", "drops", "mvp_drops",
-	"damage_taken", "skills", "script",
+	"damage_taken", "skills", "script", "sounds",
 }
+
+// artBaseMonster is the monster a new monster with a sprite of its own
+// art starts from (decision 0033).
+const artBaseMonster = "PORING"
+
+// MonsterSounds are the keys of a monster's sounds field: its sounds,
+// as the client's monster sound table has them.
+var MonsterSounds = []string{"attack", "damage", "die", "move"}
 
 // Monster classes of class, as rAthena's e_aegis_monsterclass.
 var monsterClasses = map[string]int{"normal": 0, "boss": 1, "guardian": 2, "battlefield": 4, "event": 5}
@@ -153,9 +161,13 @@ func monsterOverlay(ctx context.Context, set *mod.Set, base map[uint32]Monster, 
 			continue
 		}
 		spriteName, _ := r.Fields["sprite"].(string)
+		if mod.IsArtName(spriteName) {
+			// A sprite of the mod's art: the stats start from Poring's.
+			spriteName = artBaseMonster
+		}
 		from, ok := byName[spriteName]
 		if !ok {
-			errs = append(errs, fmt.Errorf("%s: monsters %s: a new monster needs sprite: the AegisName of a monster whose sprite it shows, such as PORING", r.Where, r.Name))
+			errs = append(errs, fmt.Errorf("%s: monsters %s: a new monster needs sprite: the AegisName of a monster whose sprite it shows, such as PORING, or an art name, such as mod/example.town/sprite/mob/Ghost", r.Where, r.Name))
 			continue
 		}
 		id, err := ids.ID(ctx, mod.MonsterIDs, r.Name, r.Mod)
@@ -291,11 +303,24 @@ func applyMonster(m *Monster, r *mod.Record, set *mod.Set, consts *constants.Dat
 	if v, ok := f["sprite"]; ok {
 		s, _ := v.(string)
 		from, ok := names.byName[s]
-		if !ok {
+		switch {
+		case mod.IsArtName(s):
+			if err := mod.CheckArtName(s, "sprite"); err != nil {
+				bad("sprite: %v", err)
+			}
+			m.Art.Sprite, m.Sprite = s, 0
+		case !ok:
 			bad("sprite: there is no monster %q", s)
-		} else {
-			m.Sprite = from
+		default:
+			m.Sprite, m.Art.Sprite = from, ""
 		}
+	}
+	if v, ok := f["sounds"]; ok {
+		sounds, err := mod.ArtTable(v, MonsterSounds, "sound")
+		if err != nil {
+			bad("sounds: %v", err)
+		}
+		m.Art.Sounds = sounds
 	}
 	num("level", 1, 999, &d.Level)
 	num("hp", 1, 1<<31-1, &d.HP)

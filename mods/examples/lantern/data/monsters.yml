@@ -1,0 +1,15 @@
+# A new monster with a sprite of the mod's art. Its stats start from a
+# Poring's, and the record sets the rest.
+- name: example.lantern:LANTERN_GHOST
+  display_name: Lantern Ghost
+  sprite: mod/example.lantern/sprite/mob/Lantern_Ghost
+  level: 5
+  hp: 80
+  base_exp: 40
+  job_exp: 30
+  element: ghost
+  element_level: 1
+  race: demon
+  drops:
+    - {item: "example.lantern:Paper_Lantern", rate: 10000}
+    - {item: "example.lantern:Unlit_Lantern", rate: 5000}

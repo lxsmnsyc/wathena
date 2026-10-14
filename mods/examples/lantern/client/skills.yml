@@ -1,0 +1,8 @@
+# A client data table that overrides core's (docs/client-data.md): Bash
+# also plays Magnum Break's flash (effect 17) on each hit. The entry
+# replaces core's entry for skill 5, so it lists core's effects too.
+skills:
+  - id: 5
+    constant: SM_BASH
+    caster: [16]
+    hit: [1, 17]

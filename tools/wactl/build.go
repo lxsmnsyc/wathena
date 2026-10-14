@@ -9,6 +9,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/assets/build"
 	"github.com/lxsmnsyc/wathena/internal/assets/grfimport"
+	"github.com/lxsmnsyc/wathena/internal/assets/pack"
 )
 
 // sourceList collects repeated --source flags.
@@ -20,7 +21,7 @@ func (s *sourceList) Set(v string) error { *s = append(*s, v); return nil }
 func assetsBuild(args []string) error {
 	fs := newFlags("assets build")
 	var sources sourceList
-	fs.Var(&sources, "source", "a source, applied in order: placeholder, or grf:<client folder>")
+	fs.Var(&sources, "source", "a source, applied in order: placeholder, grf:<client folder>, pack:<pack folder> or ro:<folder of loose RO files>")
 	out := fs.String("out", "", "output folder")
 	fast := fs.Bool("fast", false, "use a low Brotli level, for development builds")
 	codePage := fs.String("codepage", grfimport.DefaultCodePage, "code page of the text in grf sources, such as cp949 or cp1252")
@@ -48,6 +49,14 @@ func assetsBuild(args []string) error {
 			g := &build.GRF{Dir: arg, CodePage: *codePage}
 			srcs = append(srcs, g)
 			closers = append(closers, g)
+		case "pack", "ro":
+			formats := pack.Authoring
+			if kind == "ro" {
+				formats = pack.RO
+			}
+			p := &pack.Source{Dir: arg, Formats: formats}
+			srcs = append(srcs, p)
+			closers = append(closers, p)
 		default:
 			return fmt.Errorf("unknown source %q", s)
 		}

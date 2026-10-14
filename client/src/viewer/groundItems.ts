@@ -1,9 +1,11 @@
+import { dropSprite } from '../assets/art';
 import { Group, Vector3 } from 'three';
 import { type WMap, cellHeight } from '../formats/wmap';
 import type { GroundItem } from '../gen/wathena/v1/event_pb';
 import { type SpriteCache, SpriteView } from '../render/sprites';
 
-// Items lying on the ground, drawn with their item sprites, sprite/item/<id>.
+// Items lying on the ground, drawn with their item sprites, sprite/item/<id>,
+// or the art the server's client data names for a mod's item (art.ts).
 // Each lies at a place inside its cell that the server chooses. An item
 // that has just dropped jumps up, falls, and bounces once.
 
@@ -85,7 +87,7 @@ export default class GroundItems {
     this.items.set(id, item);
     // A missing item sprite shows the placeholder sprite.
     this.sprites
-      .get(`sprite/item/${g.itemId}`)
+      .get(dropSprite(g.itemId))
       .then((s) => {
         if (s === undefined || this.items.get(id) !== item) {
           return;

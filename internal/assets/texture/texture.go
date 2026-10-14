@@ -10,6 +10,8 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"image/png"
+
+	"golang.org/x/image/webp"
 )
 
 // MaxSize is the largest width or height of a texture.
@@ -25,6 +27,9 @@ const (
 	TGA
 	PNG
 	JPEG
+	// WEBP is accepted from packs (assets-v1, "Pack format for original
+	// art"). The GRF importer never sees it.
+	WEBP
 )
 
 // FormatOf returns the format for a file extension, such as ".bmp".
@@ -38,6 +43,8 @@ func FormatOf(ext string) (Format, bool) {
 		return PNG, true
 	case ".jpg", ".jpeg":
 		return JPEG, true
+	case ".webp":
+		return WEBP, true
 	}
 	return 0, false
 }
@@ -62,6 +69,11 @@ func Decode(f Format, data []byte) (*image.NRGBA, error) {
 			return nil, err
 		}
 		img, err = jpeg.Decode(bytes.NewReader(data))
+	case WEBP:
+		if err := checkConfig(webp.DecodeConfig(bytes.NewReader(data))); err != nil {
+			return nil, err
+		}
+		img, err = webp.Decode(bytes.NewReader(data))
 	default:
 		return nil, fmt.Errorf("%w: unknown format", ErrFormat)
 	}

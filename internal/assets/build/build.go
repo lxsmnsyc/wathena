@@ -40,6 +40,12 @@ type Source interface {
 	Items() ([]Item, error)
 }
 
+// Rejecter is a source that leaves out files it cannot use, such as a
+// pack's file in the wrong folder. Run adds them to the report.
+type Rejecter interface {
+	Rejected() []string
+}
+
 // Options control a build.
 type Options struct {
 	Out     string
@@ -48,6 +54,10 @@ type Options struct {
 	Brotli int
 	// Workers is the number of parallel conversions. 0 means one per CPU.
 	Workers int
+	// Time is the build ID's timestamp. The zero time is now. A fixed
+	// time makes the same sources give the same build, as a mod's
+	// package needs.
+	Time time.Time
 }
 
 // SourceReport counts what one source did.
@@ -129,6 +139,9 @@ func Run(opts Options) (*Report, error) {
 		if err != nil {
 			return nil, fmt.Errorf("source %s: %w", src.Name(), err)
 		}
+		if r, ok := src.(Rejecter); ok {
+			rep.Rejected = append(rep.Rejected, r.Rejected()...)
+		}
 		sr := SourceReport{Name: src.Name()}
 		for _, it := range items {
 			if err := assets.ValidName(it.Name); err != nil {
@@ -203,7 +216,7 @@ func Run(opts Options) (*Report, error) {
 	if err := writeIndexes(root, entries, refs, opts.Brotli, workers); err != nil {
 		return nil, err
 	}
-	id, err := writeManifest(root, entries, opts.Brotli)
+	id, err := writeManifest(root, entries, opts.Brotli, opts.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +238,7 @@ func produce(root *os.Root, it Item, cache map[string]cacheEntry, quality int) (
 			if !ce.HasRefs {
 				// Builds before dependency indexes did not record
 				// references.
-				data, err := readStored(root, ce.entry)
+				data, err := readStored(root.FS(), ce.entry)
 				if err != nil {
 					return cacheEntry{}, false, err
 				}
@@ -307,7 +320,7 @@ func ShardOf(name string) int {
 	return int(sum[0])
 }
 
-func writeManifest(root *os.Root, entries map[string]entry, quality int) (string, error) {
+func writeManifest(root *os.Root, entries map[string]entry, quality int, at time.Time) (string, error) {
 	shards := make([]map[string]entry, 256)
 	for i := range shards {
 		shards[i] = map[string]entry{}
@@ -330,7 +343,10 @@ func writeManifest(root *os.Root, entries map[string]entry, quality int) (string
 		m.Shards[i] = h
 		all.Write([]byte(h))
 	}
-	m.Build = time.Now().UTC().Format("20060102T150405Z") + "-" + hex.EncodeToString(all.Sum(nil))[:12]
+	if at.IsZero() {
+		at = time.Now()
+	}
+	m.Build = at.UTC().Format("20060102T150405Z") + "-" + hex.EncodeToString(all.Sum(nil))[:12]
 	data, err := json.MarshalIndent(m, "", "\t")
 	if err != nil {
 		return "", err

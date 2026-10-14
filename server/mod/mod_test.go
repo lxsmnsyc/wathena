@@ -619,7 +619,7 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 12 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 14 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
 	// The cookie stand is a shop that only scripts open.
@@ -631,7 +631,7 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("scripts %+v, %v", sc, err)
 	}
 	monsters, err := s.Monsters(func(name string) bool { return name == "PORING" || name == "JAKK" || name == "WOLF" })
-	if err != nil || len(monsters.Records) != 7 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
+	if err != nil || len(monsters.Records) != 8 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
 		t.Errorf("monsters %+v, %v", monsters, err)
 	}
 	events, err := s.Events()

@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	clientdata "github.com/lxsmnsyc/wathena/client/data"
+	"github.com/lxsmnsyc/wathena/internal/assets"
 	"github.com/lxsmnsyc/wathena/internal/assets/build"
+	"github.com/lxsmnsyc/wathena/server/modassets"
 )
 
 func assetsCheck(args []string) error {
@@ -17,6 +19,8 @@ func assetsCheck(args []string) error {
 	dir := fs.String("build", "", "build folder to check")
 	list := fs.Bool("list", false, "list every missing name")
 	asJSON := fs.Bool("json", false, "print the report as JSON")
+	modID := fs.String("mod", "", "check a mod's build, such as a mod's assets/ folder, with the rules of a mod's art: names under mod/<id>/ only")
+	maxMB := fs.Int("max-mb", 0, "with --mod, the build's size limit in MiB, as the server's mods.max_asset_mb; 0 is 200")
 	_ = fs.Parse(args)
 	if *dir == "" {
 		return errors.New("--build is required")
@@ -32,8 +36,26 @@ func assetsCheck(args []string) error {
 		refs = append(refs, build.Reference{From: r.Table, Name: r.Name})
 	}
 
-	rep, err := build.Check(*dir, refs)
-	if err != nil {
+	var rep *build.CheckReport
+	if *modID != "" {
+		if !assets.ValidModID(*modID) {
+			return fmt.Errorf("--mod %q is not a mod ID", *modID)
+		}
+		limit := int64(*maxMB) << 20
+		if limit == 0 {
+			limit = modassets.DefaultMaxBytes
+		}
+		root, err := os.OpenRoot(*dir)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = root.Close() }()
+		// Core's tables do not refer to a mod's names.
+		rep, err = build.CheckFS(root.FS(), nil, build.CheckOptions{Prefix: assets.ModPrefix(*modID), MaxBytes: limit})
+		if err != nil {
+			return err
+		}
+	} else if rep, err = build.Check(*dir, refs); err != nil {
 		return err
 	}
 	if *asJSON {

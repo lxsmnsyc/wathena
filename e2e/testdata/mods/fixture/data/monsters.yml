@@ -1,9 +1,10 @@
 # A monster that stands still, never attacks, and always drops a Jellopy
 # and a Test Charm. AI type 6 has no modes: it cannot move or attack. Its
 # level is the test players' base level, so renewal's drop penalty for a
-# level difference does not apply.
+# level difference does not apply. Its sprite is the fixture's art, so its
+# stats start from a Poring's.
 - name: e2e.fixture:DUMMY
-  sprite: PORING
+  sprite: mod/e2e.fixture/sprite/mob/Dummy
   display_name: Dummy
   level: 50
   hp: 40

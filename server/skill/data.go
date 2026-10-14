@@ -127,6 +127,13 @@ type Unit struct {
 	Flags  []string
 }
 
+// SkillArt is the art a skill record names: its icon, a texture, and
+// the effects it plays, by moment (EffectMoments).
+type SkillArt struct {
+	Icon    string              `json:"icon,omitempty"`
+	Effects map[string][]string `json:"effects,omitempty"`
+}
+
 // Def is one skill: rAthena's s_skill_db, with the fields of proposal
 // 0002, review decision 20, that mods set.
 type Def struct {
@@ -176,6 +183,8 @@ type Def struct {
 	// Icon is the skill whose icon and animation the skill shows, for a
 	// mod's skill. It is 0 for the skill's own.
 	Icon int
+	// Art is the art the skill's record names (decision 0033).
+	Art SkillArt
 
 	// fixedCastSet is set when the skill's data has a FixedCastTime:
 	// every skill of renewal's skill_db, and a mod skill whose record

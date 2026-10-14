@@ -1,0 +1,5 @@
+# Art for the art test (TestModArt): the Test Charm's icon, found by its
+# name, and the Dummy's sprite, which its record names. Copies of the
+# lantern sample's art, drawn by code.
+name: e2e fixture art
+license: CC0-1.0

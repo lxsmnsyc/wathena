@@ -49,7 +49,7 @@ func readManifest(t *testing.T, out string) (Manifest, map[string]entry) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		raw, err := readJSON(root, h)
+		raw, err := readJSON(root.FS(), h)
 		_ = root.Close()
 		if err != nil {
 			t.Fatalf("shard %d: %v", i, err)

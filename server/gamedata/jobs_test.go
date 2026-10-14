@@ -313,3 +313,36 @@ func TestItemJobNames(t *testing.T) {
 		}
 	}
 }
+
+// TestJobLookArt: a job's look may be a table with the job it starts
+// from and body sprites of art (decision 0033).
+func TestJobLookArt(t *testing.T) {
+	set := skillSet(t, "", map[string]string{"data/jobs.yml": `
+- name: example.a:Lamplighter
+  look: {job: acolyte, m: mod/example.a/sprite/body/Lamplighter/m, f: mod/example.a/sprite/body/Lamplighter/f}
+  tier: first
+- name: knight
+  look: {f: mod/example.a/sprite/body/Lady_Knight/f}
+`})
+	jobs, _, _, err := jobSet(t, set)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, _ := jobs.ID("example.a:Lamplighter")
+	if art := jobs.Records[id].Art; art["m"] != "mod/example.a/sprite/body/Lamplighter/m" || art["f"] == "" {
+		t.Errorf("lamplighter art %v", art)
+	}
+	knight, _ := jobs.ID("knight")
+	if art := jobs.Records[knight].Art; art["f"] != "mod/example.a/sprite/body/Lady_Knight/f" || art["m"] != "" {
+		t.Errorf("knight art %v", art)
+	}
+	for _, bad := range []string{
+		"- name: example.a:X\n  look: {m: mod/example.a/sprite/body/X/m}\n  tier: first\n",
+		"- name: knight\n  look: {m: icon/item/501}\n",
+		"- name: knight\n  look: {hat: sprite/body/x/m}\n",
+	} {
+		if _, _, _, err := jobSet(t, skillSet(t, "", map[string]string{"data/jobs.yml": bad})); err == nil {
+			t.Errorf("%q accepted", bad)
+		}
+	}
+}

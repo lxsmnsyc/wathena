@@ -87,7 +87,15 @@ type Mods struct {
 	Rules *rules.Rules
 	// Zone is what every zone gets.
 	Zone *zone.Mods
+	// NPCArt maps the sprite IDs this start gave to NPC sprites of art to
+	// their asset names (decision 0033).
+	NPCArt map[uint32]string
 }
+
+// NPCArtSprites is the first sprite ID given to NPC sprites of art. The
+// IDs are given at each start, in the order of the names, and the client
+// learns them from the client data.
+const NPCArtSprites = 1_000_000
 
 // LoadMods checks the found mods against each other and the config, and
 // merges their data over the core data. ids keeps the IDs of the records
@@ -171,9 +179,26 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 		return nil, err
 	}
 	out.Shops = shops
+	out.NPCArt = map[uint32]string{}
+	artIDs := map[string]uint32{}
+	var artNames []string
+	for _, n := range placed {
+		if n.Art != "" && artIDs[n.Art] == 0 {
+			artIDs[n.Art] = 1
+			artNames = append(artNames, n.Art)
+		}
+	}
+	slices.Sort(artNames)
+	for i, name := range artNames {
+		id := NPCArtSprites + uint32(i) // #nosec G115 -- one per NPC record.
+		artIDs[name], out.NPCArt[id] = id, name
+	}
 	for _, n := range placed {
 		if !n.Placed {
 			continue
+		}
+		if n.Art != "" {
+			n.Sprite = artIDs[n.Art]
 		}
 		zn := zone.NPC{
 			Name: n.Name, DisplayName: n.DisplayName, X: n.X, Y: n.Y, Direction: n.Direction, Sprite: n.Sprite,

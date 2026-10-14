@@ -1,0 +1,20 @@
+# The Lantern Ghost's frames, from Lantern_Ghost.png beside this file: 4
+# frames of 40 x 48 pixels in a row. Frames 0 and 1 float, frame 2
+# lunges, and frame 3 is the ghost fallen flat.
+grid: [40, 48]
+# The pixel that stands on the monster's cell.
+origin: [20, 46]
+# Monster actions, in RO's order: idle, walk, attack, hurt and dead. Each
+# has the same frames in all 8 directions.
+actions:
+  - frames: [0, 1]
+    interval_ms: 400
+  - frames: [0, 1]
+    interval_ms: 160
+  - frames: [0, 2, 2, 0]
+    interval_ms: 120
+    # The hit lands on the third frame.
+    events: {2: atk}
+  - frames: [2, 0]
+    interval_ms: 100
+  - frames: [3]

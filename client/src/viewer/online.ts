@@ -1,3 +1,4 @@
+import { jobBody, monsterSprite, npcSprite } from '../assets/art';
 import { create } from '@bufbuild/protobuf';
 import { type Camera, Group, Vector3 } from 'three';
 import { effects as effectTable, jobs, looks, partEffect, weapons } from '../data/tables';
@@ -240,7 +241,8 @@ export function lookOf(m: LookMessage | undefined, option = 0): Look {
   const race = info?.race ?? 'human';
   const hair = Math.max(m?.hair ?? 1, 1);
   const look: Look = {
-    body: `sprite/body/${bodyLook(body, option)}/${sex}`,
+    // A mod's job may name body sprites of its art.
+    body: jobBody(mountedBody(body, option), sex) ?? `sprite/body/${bodyLook(body, option)}/${sex}`,
     head: `sprite/head/${race}/${sex}/${hair}`,
     hairPalette: `palette/hair/${race}/${sex}/${hair}/${m?.hairColor ?? 0}`,
   };
@@ -302,9 +304,12 @@ function kindOf(kind: EntityKind): keyof typeof ACTIONS {
   return kind === EntityKind.NPC ? 'npc' : 'player';
 }
 
-/** The asset an entity's single sprite comes from: monsters and NPCs by ID. */
+/**
+ * The asset an entity's single sprite comes from: monsters and NPCs by ID,
+ * or the art the server's client data names for a mod's record (art.ts).
+ */
 function spriteOf(kind: EntityKind, body: number): string {
-  return kind === EntityKind.MONSTER ? `sprite/mob/${body}` : `sprite/npc/${body}`;
+  return kind === EntityKind.MONSTER ? monsterSprite(body) : npcSprite(body);
 }
 
 /** An entity whose sprites are still loading, and what happened to it meanwhile. */

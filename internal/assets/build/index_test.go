@@ -44,7 +44,7 @@ func TestIndexes(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = root.Close() }()
-	data, err := readJSON(root, m.D)
+	data, err := readJSON(root.FS(), m.D)
 	if err != nil {
 		t.Fatal(err)
 	}

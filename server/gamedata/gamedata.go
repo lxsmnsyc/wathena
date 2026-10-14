@@ -148,6 +148,8 @@ type Monster struct {
 	// Sprite is the monster ID whose sprite players see, or 0 for its
 	// own.
 	Sprite uint32
+	// Art is the art its record names (decision 0033).
+	Art MonsterArt
 	// Skills are the monster's skills (mob_skill_db), from core's and the
 	// mods' data/monsters.yml.
 	Skills []mob.Skill
@@ -160,6 +162,15 @@ type Monster struct {
 	renewal           bool
 	// mvpDrops are the drops before the drop rate settings.
 	drops, mvpDrops []progression.Drop
+}
+
+// MonsterArt is the art a monster record names: asset names of a mod's
+// art or of core's.
+type MonsterArt struct {
+	// Sprite replaces the sprite of Sprite.
+	Sprite string `json:"sprite,omitempty"`
+	// Sounds are by MonsterSounds key.
+	Sounds map[string]string `json:"sounds,omitempty"`
 }
 
 // LoadMonsters reads every monster of monsters.json, the mob_db that

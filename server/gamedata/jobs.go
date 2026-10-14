@@ -31,6 +31,32 @@ type JobRecord struct {
 	// none, such as a mounted job's ID.
 	Exp    progression.JobExp
 	HasExp bool
+	// Art is the body sprites of the record's look, by sex: m and f
+	// (decision 0033). Empty keeps the look's own sprites.
+	Art map[string]string
+}
+
+// lookJob reads a job's look field: a job name, or a table with the job
+// it starts from and body sprites by sex, such as
+// { job: knight, m: mod/example.jobs/sprite/body/Desperado/m }.
+func lookJob(v any) (string, map[string]string, error) {
+	switch l := v.(type) {
+	case string:
+		return l, nil, nil
+	case map[string]any:
+		job, _ := l["job"].(string)
+		if _, ok := l["job"]; ok && job == "" {
+			return "", nil, errors.New("look: job is a job's name")
+		}
+		rest := maps.Clone(l)
+		delete(rest, "job")
+		art, err := mod.ArtTable(rest, []string{"m", "f"}, "sprite")
+		if err != nil {
+			return "", nil, fmt.Errorf("look: %w", err)
+		}
+		return job, art, nil
+	}
+	return "", nil, errors.New("look is a job's name, or a table with job, m and f")
 }
 
 // clone copies a record, so a change does not reach the original.
@@ -267,7 +293,7 @@ func (b *jobBuilder) build(r *mod.Record) error {
 			}
 		}
 	} else {
-		lookName, _ := r.Fields["look"].(string)
+		lookName, _, _ := lookJob(r.Fields["look"])
 		lookID, ok := b.jobs.names[lookName]
 		if !ok {
 			return fmt.Errorf("%s: jobs %s: a new job needs look: the job whose sprites it shows and whose fields it starts from, such as knight", r.Where, r.Name)
@@ -291,7 +317,8 @@ func (b *jobBuilder) build(r *mod.Record) error {
 		return err
 	}
 	if isNew {
-		look := b.jobs.Records[b.jobs.names[r.Fields["look"].(string)]]
+		lookName, _, _ := lookJob(r.Fields["look"])
+		look := b.jobs.Records[b.jobs.names[lookName]]
 		m := status.ModMapID(uint64(look.Data.MapID), rec.Data.Info.Tier, rec.Data.Info.Transcendent, rec.Data.Info.Baby) // #nosec G115 -- map job IDs are positive.
 		rec.Data.MapID = int64(m)                                                                                         // #nosec G115 -- below 2^22.
 	}
@@ -349,10 +376,19 @@ func (b *jobBuilder) apply(rec *JobRecord, r *mod.Record, isNew bool) error {
 		}
 		info.DisplayName = s
 	}
-	if v, ok := f["look"]; ok && !isNew {
-		// A core job's look changes only its sprites.
-		if id, ok := job("look", v); ok {
-			info.Look = b.jobs.Records[id].Data.Info.Look
+	if v, ok := f["look"]; ok {
+		name, art, err := lookJob(v)
+		switch {
+		case err != nil:
+			bad("%v", err)
+		case !isNew && name != "":
+			// A core job's look changes only its sprites.
+			if id, ok := job("look", name); ok {
+				info.Look = b.jobs.Records[id].Data.Info.Look
+			}
+		}
+		if len(art) > 0 {
+			rec.Art = art
 		}
 	}
 	if v, ok := f["tier"]; ok {

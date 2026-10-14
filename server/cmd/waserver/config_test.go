@@ -356,3 +356,23 @@ privacy:
 		t.Errorf("long texts: %v", err)
 	}
 }
+
+func TestModAssetLimitConfig(t *testing.T) {
+	p := writeConfig(t, `
+assets: `+assetDir(t)+`
+dev: true
+mods:
+  max_asset_mb: 50
+`)
+	o, _, err := parseOptions("waserver all", []string{"--config", p}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validate(o, secrets{}); err != nil || o.Mods.MaxAssetMB != 50 {
+		t.Fatalf("%v, %d", err, o.Mods.MaxAssetMB)
+	}
+	o.Mods.MaxAssetMB = -1
+	if _, err := validate(o, secrets{}); err == nil || !strings.Contains(err.Error(), "mods.max_asset_mb") {
+		t.Errorf("a negative limit: %v", err)
+	}
+}

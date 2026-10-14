@@ -12,6 +12,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/party-hall](examples/party-hall) makes parties with `wa.parties`, greets members on the party events, and reads `rules.limits` ("Parties and friends" below).
 - [examples/guild-hall](examples/guild-hall) makes guilds with `wa.guilds`, follows the guild events and reads the guild limits ("Guilds" below).
 - [examples/bank](examples/bank) has a banker who opens the account's storage and an extra storage, a bound Bank Card, and a `trade` hook and event ("Storage, cart and trade" below).
+- [examples/lantern](examples/lantern) has art of its own: an item icon, a monster sprite, an NPC sprite, and a client data table ("Art" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -36,6 +37,10 @@ greeter/
     lib/messages.lua    a helper module
   tests/
     greeter_test.lua    tests that wactl mod test runs
+  art/                  the art's sources ("Art" below)
+  assets/               the art's build, which wactl mod build-art makes
+  client/
+    skills.yml          client data tables over core's ("Art" below)
   .luarc.json           editor settings for the Lua Language Server
 ```
 
@@ -276,6 +281,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
   - `no_equip`: the map types where its script does not run, as `item_noequip.txt`: 1 normal maps, 2 PvP, 4 GvG, 8 battlegrounds.
 - `restrictions` lists where the item may not go, from rAthena's `item_trade`: `no_drop`, `no_trade`, `no_sell`, `no_cart`, `no_storage`, `no_guild_storage` and `no_mail`. A record that sets it sets the whole list. `no_drop` and `no_sell` stay in step with it. A card's restrictions also hold for the item it is in, as `itemdb_isrestricted`.
 - `unsupported` says what the item's script needs that the server does not have yet. A usable item with it is refused, and the player sees the text. Core sets it on converted items.
+- `icon`, `image`, `drop_sprite` and `view_sprite` name the item's art ("Art" below).
 - `id` and `aegis_name` cannot be set.
 - A new item is an `Etc` item until `type` says otherwise.
 
@@ -324,7 +330,7 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 
 - A name without a prefix is the mod's own NPC: `Greeter#prontera` in `example.greeter` is `example.greeter:Greeter#prontera`. Core's NPCs are named `core:<rAthena's unique name>`, such as `core:kaf_prontera`.
 - Players see the name up to `#`, or `display_name` when it is set. An empty `display_name` shows no name.
-- `map`, `x`, `y` and `sprite` are required. `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, or its number.
+- `map`, `x`, `y` and `sprite` are required. `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, its number, or a sprite of art, such as `mod/example.lantern/sprite/npc/Lamplighter` ("Art" below).
 - `direction` is `south` (the default), `southwest`, `west`, `northwest`, `north`, `northeast`, `east` or `southeast`.
 - `script` names the NPC's entry script. It must exist. Its setup function runs once for each NPC that names it ("NPC scripts" below).
 - `shop` makes the NPC a shop: a list of `{item, price}`, or a table with `items`, `buys_from_players` and `discount` (review decision 30). A price left out, or -1, is the item's `buy` price. A click on a shop without a click handler opens the shop.
@@ -379,7 +385,8 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 ```
 
 - Names are AegisNames in upper case, such as `PORING`. A new monster is named with the mod's ID.
-- `sprite` names the monster whose sprite players see. A new monster needs it, and starts from that monster's stats, with no exp and no drops.
+- `sprite` names the monster whose sprite players see. A new monster needs it, and starts from that monster's stats, with no exp and no drops. `sprite` may name a sprite of art instead, such as `mod/example.lantern/sprite/mob/Lantern_Ghost`. A new monster then starts from a Poring's stats.
+- `sounds` names the monster's sounds of art, by `attack`, `damage`, `die` and `move` ("Art" below).
 - The fields are rAthena's `mob_db.yml` values. The server computes the rest from them, as rAthena's `status_calc_mob`: hit, flee, the defense and magic defense from stats, the attack range of each hit, and the magic attack. There are no fields to set those; a mod raises them with stats or bonuses.
   - `hp`, `sp`, `level`, `str`, `agi`, `vit`, `int`, `dex` and `luk`.
   - `attack`: one number, rAthena's `Attack`. In pre-renewal it can also be `[minimum, maximum]`, rAthena's `Attack` and `Attack2`.
@@ -598,7 +605,8 @@ A number is one value for every level, or a list with one value per level from l
 | Field | Meaning |
 |---|---|
 | `display_name` | The name players see. |
-| `icon` | An existing skill, such as `MG_LIGHTNINGBOLT`, whose icon and animation the skill shows. |
+| `icon` | An existing skill, such as `MG_LIGHTNINGBOLT`, whose icon and animation the skill shows, or an icon of art, a texture ("Art" below). |
+| `effects` | Effects of art by moment: `caster`, `effect` and `hit`, each a list of effect names. |
 | `max_level` | 1 to 13. A new skill has 1 by default. |
 | `type` | `weapon`, `magic`, `misc` or `none`, as rAthena's `BF_` types. |
 | `target` | `passive`, `enemy`, `ground`, `self` or `support`. A new skill is passive by default. |
@@ -674,7 +682,7 @@ Job records follow proposal 0002, review decision 24. Core's jobs are records to
 | Field | Meaning |
 |---|---|
 | `display_name` | The name players see. A new job without it shows its name without the mod prefix. |
-| `look` | A job whose sprites the job shows, until the client data tables of phase 6. A new job needs it. Every field a new job leaves out comes from its look. On a core job, `look` changes only the sprites. |
+| `look` | A job whose sprites the job shows. A new job needs it. Every field a new job leaves out comes from its look. On a core job, `look` changes only the sprites. It may also be a table with `job`, the job a new job starts from, and `m` and `f`, body sprites of art ("Art" below). |
 | `tier` | `novice`, `first`, `second`, `third`, `fourth` or `expanded`. |
 | `transcendent`, `baby` | Whether the job is a transcendent or a baby job. |
 | `base_job` | rAthena's `BaseJob`, which `jobs.base_job` returns. |
@@ -727,7 +735,7 @@ Companion and mount records follow proposal 0002, review decision 25. Core's rec
 | Field | Meaning |
 |---|---|
 | `display_name` | The name players see. By default the name without the mod prefix. |
-| `look` | The sprite. Companions: `falcon` or `warg`. Mounts: `peco_peco`, `grand_peco`, `gryphon`, `dragon`, `dragon_brown`, `dragon_gray`, `dragon_blue`, `dragon_red`, `warg` or `madogear`. |
+| `look` | The sprite. Companions: `falcon` or `warg`. Mounts: `peco_peco`, `grand_peco`, `gryphon`, `dragon`, `dragon_brown`, `dragon_gray`, `dragon_blue`, `dragon_red`, `warg` or `madogear`. Or a sprite of art, with `acts_as`, whose option bit shows it ("Art" below). |
 | `acts_as` | The core record whose rules apply. A companion that acts as `falcon` works with the falcon's skills, such as Blitz Beat. A mount that acts as `peco_peco`, `grand_peco` or `gryphon` follows the riding rules, and `dragon`, `warg` and `madogear` their own: walk speed, the mounted ASPD rule with Cavalier Mastery or Dragon Training, the weight limit, and spears against medium targets. A core record acts as itself. A new record without `acts_as` has a look and bonuses only. |
 | `requires` | Skills the player needs, each `{ skill, level }`. `level` is 1 by default. |
 | `bonuses` | Static bonuses while the player has the record, as an item's `bonuses`, such as `[[dex, 2]]`. |
@@ -784,6 +792,79 @@ Chat records follow proposal 0002, review decision 26. Core's records are files 
 - Every word, whatever its action, refuses new character names that have it. The account pages and `--dev` logins check names.
 
 Kinds not overlaid yet: spawns, quests and achievements.
+
+## Art
+
+A mod ships its own art ([decision 0033](../docs/decisions/0033-mod-assets.md)). [examples/lantern](examples/lantern) has an item icon, a dropped item sprite, an animated monster sprite and an NPC sprite, drawn by code, and a client data table.
+
+### Sources: art/
+
+`art/` holds the sources, in two kinds that can mix:
+
+- The pack format of [assets-v1](../docs/specs/assets-v1.md), "Pack format for original art": `art/pack.yaml` with the art's `license`, PNG sprites with an optional YAML frame file, PNG, JPEG and WebP textures, glTF binary models, WAV sounds, Opus in WebM, MP3 music and JSON tables.
+- Loose RO files ("Loose RO files" there): `.spr` with `.act`, `.bmp`, `.tga`, `.wav`, `.pal`, `.rsm`, `.str`, and maps as `.rsw` with `.gnd` and `.gat`.
+
+```text
+art/
+  pack.yaml                        name: Lantern Festival art, license: CC0-1.0
+  icon/item/Paper_Lantern.png      a 24 x 24 icon
+  sprite/item/Paper_Lantern.png    the item on the ground
+  sprite/mob/Lantern_Ghost.png     4 frames of 40 x 48 in a row
+  sprite/mob/Lantern_Ghost.yaml    its frames and actions
+  sprite/npc/Lamplighter.png       one still frame
+```
+
+A file's path without its extension is its name, under `mod/<mod id>/`: `art/icon/item/Paper_Lantern.png` is `mod/example.lantern/icon/item/Paper_Lantern`. The folder is the namespace, so it says the type: sprites under `sprite/`, icons under `icon/`, textures under `texture/`, and so on. Names keep their case after the namespace.
+
+A sprite's frame file cuts the image into frames and lists the actions, in RO's order: idle, walk, attack, hurt and dead for a monster. assets-v1, "Pack sprites", has every field:
+
+```yaml
+grid: [40, 48]
+origin: [20, 46]
+actions:
+  - {frames: [0, 1], interval_ms: 400}
+  - {frames: [0, 1], interval_ms: 160}
+  - {frames: [0, 2, 2, 0], interval_ms: 120, events: {2: atk}}
+  - {frames: [2, 0], interval_ms: 100}
+  - {frames: [3]}
+```
+
+### Building: assets/
+
+- `wactl mod build-art` builds `art/` into the mod's `assets/`, which the server reads for a folder mod. Run it after each change to `art/`. `--fast` builds quicker for development.
+- `wactl mod pack` builds `art/` into the `.zip` file. A build in the folder is not packed.
+- A file the build cannot use, such as a sprite in `icon/` or a sound in a format that is not converted yet, fails both with the reason.
+- The server checks every file of `assets/` at startup, and refuses to start with a broken build, one over the size limit (`mods.max_asset_mb`, 200 MiB by default), or one with names outside `mod/<its mod id>/`. A mod with `art/` and no `assets/` starts, and shows placeholders.
+
+### Art fields
+
+A record names its art with these fields. The value is an asset name: the mod's own art, another mod's, or core's.
+
+| Records | Field | Names |
+|---|---|---|
+| Items | `icon`, `image` | An icon and a large image, textures. |
+| Items | `drop_sprite`, `view_sprite` | The sprite on the ground, and the sprite drawn on a character. |
+| Monsters | `sprite`, `sounds` | The sprite, and sounds by `attack`, `damage`, `die` and `move`. |
+| NPCs | `sprite` | The sprite. |
+| Jobs | `look` | A table with `m` and `f` body sprites, and `job`, the job a new job starts from. |
+| Skills | `icon`, `effects` | An icon, a texture, and effects by `caster`, `effect` and `hit`. |
+| Companions, mounts | `look` | The sprite, with `acts_as`. |
+
+```yaml
+- name: example.lantern:Lantern_Oil
+  type: Etc
+  icon: mod/example.lantern/icon/item/Paper_Lantern
+```
+
+A mod's own record without a field uses the art named after it, when the build has it: `icon/item/<name>`, `image/item/<name>` and `sprite/item/<name>` for items, `sprite/body/<name>/<m or f>` for jobs, and `icon/skill/<name>` for skills. So `example.lantern:Paper_Lantern` shows `mod/example.lantern/icon/item/Paper_Lantern` without a field.
+
+The client shows a placeholder for art the builds lack, and logs the name once. `wactl mod validate` reports each art name a record names under `mod/` that the mod it names does not provide.
+
+The web client draws item icons, dropped items, monster and NPC sprites, and job bodies from art. Skill icons and effects, monster sounds, view sprites and companions' looks are recorded and sent to the client, which does not draw them yet.
+
+### Client data tables: client/
+
+A mod may change the web client's tables with `client/jobs.yml`, `client/weapons.yml`, `client/effects.yml` and `client/skills.yml`. An entry replaces core's entry with the same key, and others are added. [docs/client-data.md](../docs/client-data.md) explains each table. `wactl client-data validate <mod folder>` checks them.
 
 ## Text: locales/en.yml
 
@@ -2232,13 +2313,13 @@ curl -X POST 'http://127.0.0.1:8301/debug/wathena/mods/reload?mod=example.greete
 
 ### Packing and installing
 
-`wactl mod pack` validates the mod, then writes `dist/<id>-<version>.zip`, with the files in one top folder, and `dist/<id>-<version>.zip.sha256` in `sha256sum`'s format. The same files give the same archive.
+`wactl mod pack` validates the mod, then writes `dist/<id>-<version>.zip`, with the files in one top folder, and `dist/<id>-<version>.zip.sha256` in `sha256sum`'s format. A mod with `art/` gets its art built into `assets/` in the archive ("Art"). The same files give the same archive.
 
 `wactl mod install <source> --mods-dir <folder>` installs a mod into a server's mods folder:
 
 - A Git URL is cloned. `--ref` checks out a tag, branch or commit, and the commit is printed.
 - A `.zip` file is checked against `--sha256`, or against `<file>.sha256` when it exists. With `--public-key`, `<file>.minisig` must be a matching [minisign](https://jedisct1.github.io/minisign/) signature. Authors sign with `minisign -Sm <file>`.
-- A folder is copied as it is.
+- A folder is copied as it is. A folder or Git mod with `art/` and no `assets/` needs `wactl mod build-art` in the mods folder, or it shows placeholders.
 - The mod must pass `wactl mod validate` against core and the mods already installed.
 - The permissions it requests are shown, with those that need approval. Nothing is approved: the owner reviews them and adds the printed lines to the server config.
 - A mod with the same ID already installed is an error, unless `--replace` is given.

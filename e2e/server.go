@@ -6,7 +6,8 @@
 //   - with --dev sessions, the placeholder map as the start map, and a
 //     second placeholder map, e2e_field, for warps;
 //   - with the mod in testdata/mods/fixture, which places monsters, a
-//     shop and NPCs;
+//     shop and NPCs, from a copy of testdata/mods with each mod's art
+//     built;
 //   - with a fixed --seed, so the zones' random streams repeat;
 //   - with PostgreSQL when Options.Database is set and
 //     WATHENA_TEST_DATABASE_URL names a server: each server gets a new
@@ -46,6 +47,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/store/storetest"
+	"github.com/lxsmnsyc/wathena/tools/modkit"
 )
 
 // Maps of the test world. Players start at the middle of StartMap.
@@ -159,16 +161,34 @@ func prepare(race bool) (string, *built, error) {
 	buildOnce.Do(func() {
 		servers = make(chan struct{}, max(runtime.NumCPU()/2, 1))
 		shared.err = func() error {
-			mods, err := filepath.Abs(filepath.Join("testdata", "mods"))
+			src, err := filepath.Abs(filepath.Join("testdata", "mods"))
 			if err != nil {
 				return err
 			}
-			if _, err := os.Stat(filepath.Join(mods, "fixture", "mod.yaml")); err != nil {
+			if _, err := os.Stat(filepath.Join(src, "fixture", "mod.yaml")); err != nil {
 				return fmt.Errorf("the fixture mod is missing: %w", err)
 			}
-			shared.mods = mods
 			if shared.dir, err = os.MkdirTemp("", "wathena-e2e-"); err != nil {
 				return err
+			}
+			// The mods are copied, so their art builds into the copy and
+			// not into the repository.
+			shared.mods = filepath.Join(shared.dir, "mods")
+			if err := os.CopyFS(shared.mods, os.DirFS(src)); err != nil {
+				return fmt.Errorf("mods: %w", err)
+			}
+			entries, err := os.ReadDir(shared.mods)
+			if err != nil {
+				return err
+			}
+			for _, e := range entries {
+				dir := filepath.Join(shared.mods, e.Name())
+				if !modkit.HasArt(dir) {
+					continue
+				}
+				if _, err := modkit.BuildArt(dir, "", 1); err != nil {
+					return fmt.Errorf("art of %s: %w", e.Name(), err)
+				}
 			}
 			shared.assets = filepath.Join(shared.dir, "assets")
 			if _, err := build.Run(build.Options{Out: shared.assets, Sources: []build.Source{build.Placeholder{}, fieldSource{}}, Brotli: 1}); err != nil {

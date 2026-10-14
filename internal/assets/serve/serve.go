@@ -3,7 +3,9 @@
 package serve
 
 import (
+	"bytes"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -33,7 +35,8 @@ var contentTypes = map[string]string{
 // Handler serves a build folder. It serves manifest.json and files named
 // by a content hash, and nothing else.
 type Handler struct {
-	root *os.Root
+	fsys  fs.FS
+	close func() error
 }
 
 // New opens a build folder.
@@ -42,11 +45,21 @@ func New(dir string) (*Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Handler{root: root}, nil
+	return &Handler{fsys: root.FS(), close: root.Close}, nil
+}
+
+// NewFS serves a build in a file system, such as the assets/ folder of a
+// mod's .zip file. Close does not close it.
+func NewFS(fsys fs.FS) *Handler {
+	return &Handler{fsys: fsys, close: func() error { return nil }}
 }
 
 // Close closes the build folder.
-func (h *Handler) Close() error { return h.root.Close() }
+func (h *Handler) Close() error { return h.close() }
+
+// maxServed is the largest file read into memory when its file system
+// cannot seek, such as a file in a .zip.
+const maxServed = 64 << 20
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
@@ -83,7 +96,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Few clients lack Brotli, so decompressing for them is fine.
-	f, err := h.root.Open(p + ".br")
+	f, err := h.fsys.Open(p + ".br")
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -99,7 +112,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // serveFile serves a stored file. It supports range requests, which
 // browsers use for music.
 func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, p, ext string) {
-	f, err := h.root.Open(p)
+	f, err := h.fsys.Open(p)
 	if err != nil {
 		w.Header().Del("Content-Encoding")
 		http.NotFound(w, r)
@@ -113,8 +126,17 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, p, ext strin
 		return
 	}
 	w.Header().Set("Content-Type", contentTypes[ext])
+	content, ok := f.(io.ReadSeeker)
+	if !ok {
+		data, err := io.ReadAll(io.LimitReader(f, maxServed+1))
+		if err != nil || len(data) > maxServed {
+			http.Error(w, "file not readable", http.StatusInternalServerError)
+			return
+		}
+		content = bytes.NewReader(data)
+	}
 	// Hashed files never change, so their modification time says nothing.
-	http.ServeContent(w, r, "", time.Time{}, f)
+	http.ServeContent(w, r, "", time.Time{}, content)
 }
 
 // serveEncoded sends a stored Brotli file as it is. http.ServeContent
@@ -124,7 +146,7 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, p, ext strin
 // file, which HTTP allows. Only music needs ranges, and it is not stored
 // as Brotli.
 func (h *Handler) serveEncoded(w http.ResponseWriter, r *http.Request, p, ext string) {
-	f, err := h.root.Open(p)
+	f, err := h.fsys.Open(p)
 	if err != nil {
 		http.NotFound(w, r)
 		return

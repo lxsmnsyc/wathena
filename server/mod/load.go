@@ -543,3 +543,17 @@ func (m *Mod) file(name string) string {
 	}
 	return path.Join(filepath.ToSlash(m.Path), name)
 }
+
+// Folders of a mod for its art and client tables (proposal 0002, review
+// decision 38).
+const (
+	// ArtDir holds the art's sources: the pack format and loose RO files.
+	ArtDir = "art"
+	// AssetsDir holds the art's asset build, with its manifest.json.
+	// wactl mod pack builds it into the .zip file, and wactl mod
+	// build-art into a mod's folder.
+	AssetsDir = "assets"
+	// ClientDir holds client data tables, such as client/jobs.yml, that
+	// override core's.
+	ClientDir = "client"
+)

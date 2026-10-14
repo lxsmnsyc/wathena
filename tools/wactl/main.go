@@ -18,6 +18,7 @@ commands:
   assets serve     serve a build over HTTP for development
   assets scan      list what a game client folder contains
   assets sprites   convert monster and NPC sprites and report sizes
+  client-data validate check client data tables against their schema
   convert items    convert rAthena item scripts to Lua and item data
   convert npcs     convert rAthena NPC scripts and shops to Lua and NPC data
   convert monsters convert rAthena monster skills to monster data
@@ -26,7 +27,8 @@ commands:
   mod new          make a mod from a template
   mod validate     check a mod's manifest, data, permissions, scripts and tests
   mod test         run a mod's tests in a headless world
-  mod pack         build a mod's .zip and checksum file
+  mod pack         build a mod's .zip and checksum file, with its art built
+  mod build-art    build a folder mod's art/ into its assets/
   mod install      check a mod from Git, a .zip or a folder, and install it
   mod types        write the Lua Language Server definitions into a mod
   migrate status   list the database migrations and which are applied
@@ -86,6 +88,10 @@ func main() {
 		err = modTest(os.Args[3:])
 	case "mod pack":
 		err = modPack(os.Args[3:])
+	case "mod build-art":
+		err = modBuildArt(os.Args[3:])
+	case "client-data validate":
+		err = clientDataValidate(os.Args[3:])
 	case "mod install":
 		err = modInstall(os.Args[3:])
 	case "mod types":

@@ -54,7 +54,7 @@ flowchart LR
 The boundaries are:
 
 1. **Browser to gateway and account service.** Everything the client sends is untrusted. The client is open source and easy to modify.
-2. **Mod code to the zone.** Mod scripts are untrusted code that runs inside the zone process, in C Lua states.
+2. **Mod code to the zone.** Mod scripts are untrusted code that runs inside the zone process, in C Lua states. A mod's art and client data tables are untrusted input to the build tools, the server's checks, and every player's client ([decision 0033](../decisions/0033-mod-assets.md)).
 3. **Services to each other.** Services authenticate each other with mutual TLS. A compromised service must not gain more database rights than its own role.
 4. **Staff to the admin API.** Staff are trusted with their role, but every action is logged. The admin API runs on the account service's origin and pool, and reaches the world through one interface, `admin.World` ([decision 0028](../decisions/0028-staff-roles-and-audit.md)).
 5. **Build to release.** Third-party code and tools enter through Go modules, GitHub Actions, and downloaded compilers.
@@ -185,6 +185,11 @@ The boundaries are:
 | Path traversal or wrong content types on the asset server. | Files are served only by valid content hash, with a fixed content type per extension and `nosniff`. No directory listing. | Decided. | Strategy 10.1 |
 | Hotlinking and bandwidth abuse. | Optional signed cookie from the account service. A CDN absorbs traffic. | Decided. | Strategy 10.1 |
 | A stale or poisoned cache in players' browsers. | Names are content hashes, so a cached file always matches its name. The client checks the hash of each file it downloads. | Decided. | Strategy 10.1 |
+| A mod's art is crafted to exploit a converter or the client's decoders. | Mod art is untrusted input. `wactl mod build-art` and `wactl mod pack` run the same importers as the server's build, with length checks and fuzz tests, including the new pack sprite and frame file parsers. The server converts nothing at startup: it checks every file of a mod's build against its hash and size, decodes it within the asset limits, and refuses to start with a broken build. The client checks each file's hash and size before it decodes it. | Done. | [Decision 0033](../decisions/0033-mod-assets.md) |
+| A mod's art replaces core's or another mod's art. | A mod's build may hold only names under `mod/<its mod id>/`. The server refuses a build with any other name. A record that uses another mod's art names it in a field, which `wactl mod validate` shows. | Done. | Decision 0033 |
+| A mod's art fills the server's disk or memory, or players' bandwidth. | Each mod's build is limited to `mods.max_asset_mb`, 200 MiB by default, checked before any file is read. Files are served from the mod's folder or `.zip` file, and a file of a `.zip` that cannot seek is read into memory up to 64 MiB, the largest asset type's limit. Client data tables are at most 4 MiB each, and YAML aliases are refused. | Done. | Decision 0033 |
+| A mod's art leaves its folder or its `.zip` file. | Builds are read through `os.Root` or the zip's file system, by content hash paths that the server checks. A mod's sources are read through `os.Root`, and symbolic links in `art/` are refused. | Done. | Decision 0033 |
+| A mod's art breaks a license. | `art/pack.yaml` must name a license, which the build checks. The owner reviews mods before installing them. | Done for the license field. Checking the art itself is the owner's. | Decision 0033 |
 
 ### Availability
 

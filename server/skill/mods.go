@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
 // Mods' skills and skill trees (proposal 0002, review decision 20).
@@ -42,7 +43,12 @@ const (
 var SkillFields = []string{
 	"display_name", "icon", "max_level", "type", "target", "element", "range", "cast_time", "fixed_cast_time",
 	"after_cast_delay", "cooldown", "requirements", "script", "hit", "hit_count", "damage_flags", "splash", "knockback",
+	"effects",
 }
+
+// EffectMoments are the keys of a skill's effects field, as the client's
+// skill effects table has them (decision 0033).
+var EffectMoments = []string{"caster", "effect", "hit"}
 
 // RequirementFields are the fields of requirements in data/skills.yml.
 var RequirementFields = []string{"sp", "hp", "sp_rate", "hp_rate", "zeny", "spirit_spheres", "weapons", "items", "companion"}
@@ -158,12 +164,40 @@ func Apply(d *Def, fields map[string]any, names Names) error {
 			d.DisplayName = s
 		case "icon":
 			s, ok := v.(string)
+			if ok && mod.IsArtName(s) {
+				if err := mod.CheckArtName(s, "texture"); err != nil {
+					bad(key, err)
+					continue
+				}
+				d.Art.Icon = s
+				continue
+			}
 			id, found := names.Skill(s)
 			if !ok || !found {
 				bad(key, fmt.Errorf("want the name of a skill, such as MG_LIGHTNINGBOLT, and %v is none", v))
 				continue
 			}
 			d.Icon = id
+		case "effects":
+			m, ok := v.(map[string]any)
+			if !ok {
+				bad(key, fmt.Errorf("want a table with %s, each a list of effect names", strings.Join(EffectMoments, ", ")))
+				continue
+			}
+			effects := map[string][]string{}
+			for _, k := range slices.Sorted(maps.Keys(m)) {
+				if !slices.Contains(EffectMoments, k) {
+					bad(key, fmt.Errorf("%q is not a key; the keys are %s", k, strings.Join(EffectMoments, ", ")))
+					continue
+				}
+				list, err := mod.ArtList(m[k], "effect")
+				if err != nil {
+					bad(key, fmt.Errorf("%s: %w", k, err))
+					continue
+				}
+				effects[k] = list
+			}
+			d.Art.Effects = effects
 		case "max_level":
 			n, ok := v.(int)
 			if !ok || n < 1 || n > MaxLevel {

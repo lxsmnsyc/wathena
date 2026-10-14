@@ -37,6 +37,32 @@ func Pack(dir, outDir string) (zipPath, sumPath, sum string, err error) {
 	if err != nil {
 		return "", "", "", err
 	}
+	// The art is built again from art/, so the package holds the build of
+	// its own sources. A build left in the folder's assets/ is not packed.
+	files = slices.DeleteFunc(files, func(p string) bool { return strings.HasPrefix(p, mod.AssetsDir+"/") })
+	type entry struct{ name, from string }
+	var entries []entry
+	for _, rel := range files {
+		entries = append(entries, entry{rel, filepath.Join(dir, filepath.FromSlash(rel))})
+	}
+	if HasArt(dir) {
+		tmp, err := os.MkdirTemp("", "wathena-art-")
+		if err != nil {
+			return "", "", "", err
+		}
+		defer func() { _ = os.RemoveAll(tmp) }()
+		if _, err := buildArt(dir, tmp, 11, zipTime); err != nil {
+			return "", "", "", fmt.Errorf("art: %w; run wactl mod build-art for the list", err)
+		}
+		built, err := buildFiles(tmp)
+		if err != nil {
+			return "", "", "", err
+		}
+		for _, rel := range built {
+			entries = append(entries, entry{mod.AssetsDir + "/" + rel, filepath.Join(tmp, filepath.FromSlash(rel))})
+		}
+		slices.SortFunc(entries, func(a, b entry) int { return strings.Compare(a.name, b.name) })
+	}
 	name := m.ID() + "-" + m.Manifest.Version + ".zip"
 	zipPath = filepath.Join(outDir, name)
 	if err := os.MkdirAll(outDir, 0o750); err != nil {
@@ -48,13 +74,18 @@ func Pack(dir, outDir string) (zipPath, sumPath, sum string, err error) {
 	}
 	h := sha256.New()
 	zw := zip.NewWriter(io.MultiWriter(f, h))
-	for _, rel := range files {
-		w, err := zw.CreateHeader(&zip.FileHeader{Name: m.ID() + "/" + rel, Method: zip.Deflate, Modified: zipTime})
+	for _, e := range entries {
+		// Built files are Brotli or WebP already, so they are stored.
+		method := zip.Deflate
+		if strings.HasPrefix(e.name, mod.AssetsDir+"/") {
+			method = zip.Store
+		}
+		w, err := zw.CreateHeader(&zip.FileHeader{Name: m.ID() + "/" + e.name, Method: method, Modified: zipTime})
 		if err != nil {
 			_ = f.Close()
 			return "", "", "", err
 		}
-		data, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(rel))) // #nosec G304 -- a file of the mod.
+		data, err := os.ReadFile(e.from) // #nosec G304 -- a file of the mod or of its build.
 		if err != nil {
 			_ = f.Close()
 			return "", "", "", err

@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/bonus"
+	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
 // CoreFiles are core's data/companions.yml and data/mounts.yml, in
@@ -120,8 +121,12 @@ type Record struct {
 	// mod's such as example.familiars:Owl.
 	Name        string
 	DisplayName string
-	// Look is the sprite, a key of CompanionLooks or MountLooks.
+	// Look is the sprite, a key of CompanionLooks or MountLooks, or an
+	// asset name.
 	Look string
+	// Art is Look when it names art, such as
+	// mod/example.familiars/sprite/companion/Owl (decision 0033).
+	Art string
 	// ActsAs is the core record whose rules apply, and Rule its rule.
 	ActsAs string
 	Rule   Rule
@@ -255,11 +260,6 @@ func (k Kind) Build(name, modID string, id int, fields map[string]any, names Nam
 		r.DisplayName = s
 	}
 	r.Look, _ = fields["look"].(string)
-	if opt, ok := k.looks[r.Look]; ok {
-		r.Option = opt
-	} else {
-		bad("look must be one of %s", strings.Join(slices.Sorted(maps.Keys(k.looks)), ", "))
-	}
 	r.ActsAs, _ = fields["acts_as"].(string)
 	if _, ok := fields["acts_as"]; !ok {
 		r.ActsAs = name
@@ -271,6 +271,24 @@ func (k Kind) Build(name, modID string, id int, fields map[string]any, names Nam
 	} else {
 		// A new record without acts_as has no core rules.
 		r.ActsAs = ""
+	}
+	switch opt, ok := k.looks[r.Look]; {
+	case ok:
+		r.Option = opt
+	case mod.IsArtName(r.Look):
+		// A sprite of art shows with the option bit of the core record
+		// it acts as (decision 0033).
+		if err := mod.CheckArtName(r.Look, "sprite"); err != nil {
+			bad("look: %v", err)
+		}
+		r.Art = r.Look
+		if opt, ok := k.looks[r.ActsAs]; ok {
+			r.Option = opt
+		} else {
+			bad("look: a sprite of art needs acts_as, the core record whose option bit shows it")
+		}
+	default:
+		bad("look must be one of %s, or an art name", strings.Join(slices.Sorted(maps.Keys(k.looks)), ", "))
 	}
 	if v, ok := fields["requires"]; ok {
 		list, ok := v.([]any)

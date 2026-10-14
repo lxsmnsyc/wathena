@@ -35,10 +35,17 @@ func New(wasm []byte) *Module {
 	return &Module{wasm: wasm, idle: make(chan *Instance, maxIdle)}
 }
 
+// newRuntime serializes making runtimes. wazero 1.12 reads and sets its
+// version string without a lock the first time, so two modules set up at
+// once, such as a build's texture and sound encoders, race.
+var newRuntime sync.Mutex
+
 func (m *Module) setup() error {
 	m.once.Do(func() {
 		ctx := context.Background()
+		newRuntime.Lock()
 		m.rt = wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithMemoryLimitPages(maxMemoryPages))
+		newRuntime.Unlock()
 		if _, err := wasi_snapshot_preview1.Instantiate(ctx, m.rt); err != nil {
 			m.err = err
 			return

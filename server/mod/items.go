@@ -32,7 +32,22 @@ type Items struct {
 	IDs map[string]uint32
 	// Overlay is the merge, with its notes.
 	Overlay *Overlay
+	// Art is the art that records name, by item ID (decision 0033).
+	Art map[uint32]ItemArt
 }
+
+// ItemArt is the art an item record names: asset names of a mod's art
+// or of core's. Empty fields keep the default name, such as
+// icon/item/<id>.
+type ItemArt struct {
+	Icon       string `json:"icon,omitempty"`
+	Image      string `json:"image,omitempty"`
+	DropSprite string `json:"drop_sprite,omitempty"`
+	ViewSprite string `json:"view_sprite,omitempty"`
+}
+
+// itemArtFields are an item's art fields and the type each names.
+var itemArtFields = map[string]string{"icon": "texture", "image": "texture", "drop_sprite": "sprite", "view_sprite": "sprite"}
 
 // Items applies the mods' item overlays to the core items. New items get
 // IDs in the mod range from ids. base is not changed. bonusNames resolves the
@@ -47,6 +62,7 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 		return nil, err
 	}
 	out := &item.Data{Mode: base.Mode, Items: append([]item.Def(nil), base.Items...)}
+	art := map[uint32]ItemArt{}
 	var errs []error
 	for _, r := range o.Records {
 		var d item.Def
@@ -60,6 +76,39 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 			d = item.Def{ID: id, AegisName: r.Name, Type: "Etc"}
 		}
 		fields := r.Fields
+		// Art fields are not item data: they are kept apart for the
+		// client.
+		var a ItemArt
+		hasArt := false
+		for k, typ := range itemArtFields {
+			v, ok := fields[k]
+			if !ok {
+				continue
+			}
+			if !hasArt {
+				fields = maps.Clone(fields)
+				hasArt = true
+			}
+			delete(fields, k)
+			name, err := ArtName(v, typ)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: items %s: %s: %w", r.Where, r.Name, k, err))
+				continue
+			}
+			switch k {
+			case "icon":
+				a.Icon = name
+			case "image":
+				a.Image = name
+			case "drop_sprite":
+				a.DropSprite = name
+			case "view_sprite":
+				a.ViewSprite = name
+			}
+		}
+		if hasArt {
+			art[d.ID] = a
+		}
 		if v, ok := fields["display_name"]; ok {
 			// The record's name is its key, so the name players see is
 			// display_name, as for NPCs.
@@ -137,7 +186,7 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 	for _, d := range out.Items {
 		names[d.AegisName] = d.ID
 	}
-	return &Items{Data: out, IDs: names, Overlay: o}, nil
+	return &Items{Data: out, IDs: names, Overlay: o, Art: art}, nil
 }
 
 // jobNameList reads an item's jobs field as a list of job names, such as

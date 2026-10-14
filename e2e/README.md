@@ -19,6 +19,7 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
   - A Red Potion costs 5 tokens.
   - A Jellopy costs 1 Jellopy, so the duplication tests buy with an item cost and keep the totals.
 - Chat commands of the fixture reach the market calls: `!currency <name> <n>` and `!pay <name> <n>` give and take a currency, `!mailbox` opens the mailbox, `!mail <to|self> <item> <amount> [<zeny>]` sends a mail from the "Postmaster", `!buyingstore <slots>` opens the buying store setup, `!search <uses> <show|open>` opens the store search, `!autotrade` puts the speaker on autotrade, and `!stock <item> <n>` sets a stock at the Exchange. The fixture's vend hook refuses Contraband, and its vend and buying_store_sale events tell both players what changed hands. The server's config approves `mail.send`, `currencies.modify` and `shops.modify` for the fixture.
+- The fixture has art in `art/`: the Test Charm's icon, found by its name, and the Dummy's sprite, which its record names. `Start` copies `testdata/mods` to its temporary folder and builds each mod's art there with `wactl mod build-art`'s code, so nothing is written into the repository.
 - [testdata/mods/marketrules](testdata/mods/marketrules) is a ruleset mod, `e2e.marketrules`: renewal without mail fees, for the mail duplication test.
 - A player who says `!guild level <n>` in local chat gets the fixture to give its guild the exp that takes it to level n, with `guild:give_exp`. The tests reach the guild skills this way, without thousands of kills. The server's config approves `guild.manage` for the fixture.
 - [testdata/mods/limitrules](testdata/mods/limitrules) is a ruleset mod, `e2e.limitrules`: renewal with `storage_slots` up to 700, `cart_slots` up to 150, and `block_list_refuses_trade: no`, for the limit and trade tests. The fixture's `!expand <limit> <amount>` calls `player:expand`, and the config approves `player.expand_limits` for the fixture.
@@ -133,6 +134,7 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestDeletionBlocksPlayUntilCancelled` | With PostgreSQL, a character whose account is set to be deleted cannot log in: the login gets `DISCONNECT_REASON_ACCOUNT_DELETION` with the date. The job does nothing before the date. After a cancel the character plays again. |
 | `TestDeletionRunsAfterTheWait` | With PostgreSQL, a party leader's account is set to be deleted. After `AdvanceClock` moves 15 days, the job deletes the account, the character, its inventory and its chat lines. The party breaks up for the member who stays, and the item log keeps the character's ID. |
 | `TestPhase5ExitCheck` | The phase 5 exit check below: 24 bots in 5 groups on both maps trade, store, mail, vend, sell to buying stores, buy at the Exchange and drop items at the same time, with a restart in the middle, with PostgreSQL. |
+| `TestModArt` | The client data names the fixture's art for the Test Charm and the Dummy by the IDs the server gave, and the server serves both from `/assets/mods/e2e.fixture/0.1.0/` through the build's manifest and shards, with hashes that match (decision 0033). |
 
 ## Duplication tests
 

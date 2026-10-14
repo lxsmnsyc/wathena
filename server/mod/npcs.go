@@ -36,6 +36,10 @@ type NPC struct {
 	Direction int
 	// Sprite is the NPC sprite ID, as the protocol's Look.body.
 	Sprite uint32
+	// Art is the sprite's asset name when the sprite field names art,
+	// such as mod/example.lantern/sprite/npc/Lamplighter. The server
+	// then gives the sprite an ID of its own (decision 0033).
+	Art string
 	// Script is the NPC's entry script, relative to the folder of
 	// ScriptMod.
 	Script    string
@@ -193,6 +197,13 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 	}
 	switch v := r.Fields["sprite"].(type) {
 	case string:
+		if IsArtName(v) {
+			if err := CheckArtName(v, "sprite"); err != nil {
+				errs = append(errs, fmt.Sprintf("sprite: %v", err))
+			}
+			n.Art = v
+			break
+		}
 		id, ok := sprite(v)
 		if !ok {
 			if num, err := strconv.ParseUint(v, 10, 32); err == nil {

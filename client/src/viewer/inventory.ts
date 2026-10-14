@@ -1,3 +1,4 @@
+import { itemIcon } from '../assets/art';
 import type { AssetStore } from '../assets/store';
 import {
   DropItemFailure,
@@ -501,23 +502,21 @@ export const USE_EFFECTS: ReadonlyMap<number, number> = new Map([
 /** The drag data type that carries a slot. */
 export const SLOT_DRAG_TYPE = 'application/x-wathena-slot';
 
-/** Item icons, icon/item/<id>, loaded once per item as blob URLs. */
+/**
+ * Item icons, loaded once per item as blob URLs: icon/item/<id>, or the
+ * art the server's client data names for a mod's item (art.ts). A missing
+ * icon shows placeholder/texture, and the store logs the name once.
+ */
 export class ItemIcons {
   private readonly urls = new Map<number, Promise<string | undefined>>();
 
   constructor(private readonly store: AssetStore) {}
 
-  /** Shows an item's icon in an image. Items without one show none. */
+  /** Shows an item's icon in an image. Without an icon or a placeholder, it shows none. */
   show(id: number, img: HTMLImageElement): void {
     let url = this.urls.get(id);
     if (url === undefined) {
-      url = this.store
-        .bytes(`icon/item/${id}`, 'texture')
-        .then((data) =>
-          data === undefined
-            ? undefined
-            : URL.createObjectURL(new Blob([data], { type: 'image/webp' })),
-        );
+      url = this.load(id);
       this.urls.set(id, url);
     }
     url
@@ -532,6 +531,15 @@ export class ItemIcons {
         img.style.visibility = 'hidden';
         console.error(`icon ${id}:`, error);
       });
+  }
+
+  private async load(id: number): Promise<string | undefined> {
+    const data =
+      (await this.store.bytes(itemIcon(id), 'texture')) ??
+      (await this.store.bytes('placeholder/texture', 'texture'));
+    return data === undefined
+      ? undefined
+      : URL.createObjectURL(new Blob([data], { type: 'image/webp' }));
   }
 }
 
@@ -987,7 +995,7 @@ export class InventoryWindow {
     return row;
   }
 
-  /** Loads an item's icon, icon/item/<id>. Items without one show none. */
+  /** Loads an item's icon. A missing icon shows the placeholder. */
   private icon(id: number, img: HTMLImageElement): void {
     this.icons.show(id, img);
   }

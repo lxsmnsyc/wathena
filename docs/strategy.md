@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-14)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 5 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 6 are built.
 
 Done:
 
@@ -56,6 +56,12 @@ Done:
   - A JSON data export with a format version, which needs a login from the last 10 minutes, works once a day, and holds no secrets.
   - Account deletion after 14 days, with the account name typed again. Play is blocked meanwhile, and a login shows the date and a Cancel button. An hourly job deletes the personal data and the characters, and keeps the logs other players need with the character IDs.
   - The privacy notice at `/account/privacy`, with the owner's contact and text from the config and the retention periods in effect.
+- Phase 6 step 6, mod assets ([decision 0033](decisions/0033-mod-assets.md)):
+  - A mod's `art/` holds the pack format and loose RO files. `wactl mod build-art` and `wactl mod pack` build it under `mod/<mod id>/`, and `wactl assets build` gains the sources `pack:` and `ro:`.
+  - The server checks each mod's build at start and serves it at `/assets/mods/<mod id>/<version>/`, limited to 200 MiB by default. `/client-data.json` tells the client each record's art by ID and sends the client data tables merged with the mods' `client/*.yml`.
+  - Art fields on items, monsters, NPCs, jobs, skills, companions and mounts, checked by `wactl mod validate`, and `wactl client-data validate` with `docs/client-data.md`.
+  - The client loads core's manifest, then each mod's, and draws mod item icons, dropped items, monster and NPC sprites and job bodies, with placeholders for missing art.
+  - The lantern sample mod with original art.
 
 Open review items:
 
@@ -65,6 +71,7 @@ Open review items:
 - Next step 21's details to review, in proposal 0002, "Next steps".
 - Next step 22's details to review, in proposal 0002, "Next steps".
 - Next step 23's details to review, in proposal 0002, "Next steps".
+- Next step 24's details to review, in proposal 0002, "Next steps".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -77,7 +84,7 @@ Known issues:
 
 Next:
 
-1. Phase 6 (section 15, "Phase 6 in full"), with step 6, mod assets, once next steps 19 to 23 are reviewed.
+1. Phase 6 (section 15, "Phase 6 in full"), with step 7, touch input, once next steps 19 to 24 are reviewed.
 2. The open review items above, between phase 6 steps.
 3. Phase 7, procedural mode, is the largest phase left.
 
@@ -2727,7 +2734,18 @@ The order from here:
       - `privacy.contact` and `privacy.text` in the config, shown as plain text with the retention periods in effect.
       - Checked in Chrome with a local server, PostgreSQL, placeholder assets and the web client. Keeper1 played Keeper Hero, typed `/block Pester` and `/report Pester spamming trade offers` ("You blocked Pester.", "Your report was sent to the staff."). The safety page showed "Keeper Hero (online)" with Pester and an Unblock button, and the open report. Unblock showed "The name is off the block list.", and the game's chat showed "You unblocked Pester.". Once the report was closed as warned and a past mute was written as staff would, the page showed the report as "Action taken" and the mute as "Ended". After the game tab closed, "Download my data" saved `wathena-Keeper1-2026-10-14.json` with format version 1, the account without an email or secrets, the login from 127.0.0.1, the character, the report as `action_taken` and the mute. The page then said "The next download is possible after" a day later. A deletion with the name Keeper2 was refused with "Type your account name, Keeper1, to confirm.", and with Keeper1 the page showed the date 14 days ahead and a Cancel button. The characters page hid Play, and the client showed "This account is set to be deleted on 2026-10-28 13:16 UTC. Its characters cannot play until then. Cancel the deletion on the account page to play again.". After a logout and a login the characters page showed the date and Cancel, the cancel showed "The deletion is cancelled. Your characters can play again.", and Play entered the game. `/account/privacy` showed the owner's text and contact from the config, chat lines kept 30 days, login records 90 days, item and zeny logs 180 days and the staff audit log 2 years.
       - Left: the export has no email, since accounts have none, and no mod variables. A network form of `account.Game` and the job for the distributed build.
-   6. Mod assets. Mods ship sprites, icons, maps and client data tables (section 10.5), and the client loads them.
+   6. Mod assets. Mods ship sprites, icons, maps and client data tables (section 10.5), and the client loads them. Done on 2026-10-14 ([decision 0033](decisions/0033-mod-assets.md), proposal 0002 review decision 38, mods/README.md, "Art", server/README.md, "Mod art", and docs/client-data.md):
+      - `internal/assets/pack` reads the pack format and loose RO files with the GRF importer's parsers. Pack sprites are PNG with a YAML frame file of grid or listed frames, an origin, anchors, and actions with events. `wactl assets build` gains `pack:` and `ro:`.
+      - Mod art is named `mod/<mod id>/<namespace>/<record name>`, which keeps the record's case. assets-v1 gains the rules without a new version, since readers never checked names.
+      - `wactl mod build-art` builds a folder mod's `art/` into its `assets/`, and `wactl mod pack` into the `.zip` file with a fixed build time. `wactl assets check --mod` checks a mod's build with the server's rules.
+      - `server/modassets` checks every file of each mod's build at start (hash, size, decoding, limits, names under the mod's own prefix, `mods.max_asset_mb`), and refuses to start on a problem. It serves the builds with the headers and caching of core's, and `/client-data.json` with the active builds, each record's art by ID, and the merged client data tables. NPC sprites of art get IDs from 1,000,000 at each start.
+      - Art fields: items' `icon`, `image`, `drop_sprite` and `view_sprite`, monsters' `sprite` and `sounds`, NPCs' `sprite`, jobs' `look` as a table with `m` and `f`, skills' `icon` and `effects`, and companions' and mounts' `look`. A mod's own record without a field uses the art named after it. `wactl mod validate` reports names a mod does not provide.
+      - Mods' `client/*.yml` tables replace core's entries with the same key, checked by the schema of core's tables. `wactl client-data validate` checks them, and docs/client-data.md is the guide.
+      - The client loads the client data before it connects, then each mod's manifest after core's, resolves `mod/<id>/` names in the mod's build, draws icons, dropped items, monster and NPC sprites and job bodies by the server's mapping, shows placeholders for missing art and logs each name once, and caches mod files in the Service Worker.
+      - `mods/examples/lantern` has original art drawn by code: a Paper Lantern with an icon and a dropped sprite, a Lantern Ghost with an animated indexed sprite, the Lamplighter with an RGBA sprite, an Unlit Lantern without art, and `client/skills.yml`.
+      - Tests: the pack and loose sources with fuzz tests for the frame file, the PNG and `pack.yaml`, loose files from the kRO client with `WATHENA_CLIENT`, the table merge with a fuzz test, the server's checks of corrupt, rehashed, missing, oversized and foreign builds, the serving of folder and `.zip` builds, the client's loading in vitest, and `TestModArt`, which downloads the fixture's icon and monster sprite by the IDs the server gave.
+      - Checked in Chrome with a local server, placeholder assets and the lantern mod built with `wactl mod build-art`: the inventory showed the lantern icon for the Paper Lantern and Lantern Oil and the grey checkerboard placeholder for the Unlit Lantern, and the console logged `asset missing: icon/item/2000002` once. Three Lantern Ghosts stood on the placeholder map with their sprite, and screenshots 170 ms apart showed a ghost's body moving up and down in place between its idle frames. The Lamplighter showed its blue coat and lantern pole at 14,14. The network log showed `client-data.json`, then the mod's `manifest.json`, two shards, two WSPR files and one WebP from `/assets/mods/example.lantern/0.1.0/`.
+      - Left: converting glTF files that do not fit the profile, Ogg and MP3 sounds, pack map folders (section 8.12), zones on mods' maps with music and minimap fields, drawing skill icons and effects, monster sounds, view sprites and companions of art in the client, and mod items' display names in the client, which show as `Item <id>`.
    7. Touch input for mobile browsers.
    8. The phase 6 exit check: a scripted browser run of every tier 1 activity, an admin run that finds a player, reads their item history and applies a sanction, and a mod whose items, monsters, skills and jobs display correctly.
    Left for later: the economy dashboards come with the simulator of phase 7 (section 8.13), and retention jobs and encrypted backups come with phase 8. Each step drafts its admin API and any Lua API for review before it is built.

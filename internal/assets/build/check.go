@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"maps"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
@@ -17,6 +19,7 @@ import (
 	"github.com/andybalholm/brotli"
 	"golang.org/x/image/webp"
 
+	"github.com/lxsmnsyc/wathena/internal/assets"
 	"github.com/lxsmnsyc/wathena/internal/assets/effect"
 	"github.com/lxsmnsyc/wathena/internal/assets/model"
 	"github.com/lxsmnsyc/wathena/internal/assets/sound"
@@ -45,6 +48,9 @@ type CheckReport struct {
 	Build  string
 	Assets int
 	Files  int
+	// Bytes is the size of the build's distinct files, before
+	// compression.
+	Bytes int64
 	// Broken lists files that are missing, do not match their hash, or do
 	// not decode, as "name: reason".
 	Broken []string
@@ -54,8 +60,8 @@ type CheckReport struct {
 }
 
 // Manifest entries, loaded from a build folder.
-func loadEntries(root *os.Root) (*Manifest, map[string]entry, error) {
-	data, err := root.ReadFile("manifest.json")
+func loadEntries(fsys fs.FS) (*Manifest, map[string]entry, error) {
+	data, err := readLimited(fsys, "manifest.json", maxJSONBytes)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -71,7 +77,7 @@ func loadEntries(root *os.Root) (*Manifest, map[string]entry, error) {
 		if !validHash(h) {
 			return nil, nil, fmt.Errorf("manifest.json: shard %d hash %q", i, h)
 		}
-		sb, err := readJSON(root, h)
+		sb, err := readJSON(fsys, h)
 		if err != nil {
 			return nil, nil, fmt.Errorf("shard %d: %w", i, err)
 		}
@@ -115,11 +121,42 @@ func Check(dir string, refs []Reference) (*CheckReport, error) {
 		return nil, err
 	}
 	defer func() { _ = root.Close() }()
-	m, all, err := loadEntries(root)
+	return CheckFS(root.FS(), refs, CheckOptions{})
+}
+
+// CheckOptions are the extra rules of a mod's build.
+type CheckOptions struct {
+	// Prefix is what every name must start with, such as
+	// mod/example.lantern/. Every name must then also be valid and in a
+	// namespace of its type. Empty checks no names.
+	Prefix string
+	// MaxBytes limits the build's content: the sizes of its distinct
+	// files, before compression. 0 is no limit.
+	MaxBytes int64
+	// Workers is the number of files checked at once. 0 means one per CPU.
+	Workers int
+}
+
+// CheckFS checks a build in a file system, such as a folder inside a
+// mod's .zip file.
+func CheckFS(fsys fs.FS, refs []Reference, opts CheckOptions) (*CheckReport, error) {
+	m, all, err := loadEntries(fsys)
 	if err != nil {
 		return nil, err
 	}
 	rep := &CheckReport{Build: m.Build, Assets: len(all), Missing: map[string][]string{}}
+	if opts.Prefix != "" {
+		for n, e := range all {
+			switch {
+			case !strings.HasPrefix(n, opts.Prefix):
+				rep.Broken = append(rep.Broken, fmt.Sprintf("%s: the name is not under %s", n, opts.Prefix))
+			case assets.ValidName(n) != nil:
+				rep.Broken = append(rep.Broken, fmt.Sprintf("%s: the name is not valid", n))
+			case assets.TypeOf(n) != e.T:
+				rep.Broken = append(rep.Broken, fmt.Sprintf("%s: a %s in the namespace of %ss", n, e.T, assets.TypeOf(n)))
+			}
+		}
+	}
 
 	// Each stored file is checked once, for the first name that uses it.
 	type job struct {
@@ -139,15 +176,28 @@ func Check(dir string, refs []Reference) (*CheckReport, error) {
 		}
 	}
 	rep.Files = len(byHash)
+	for _, j := range byHash {
+		rep.Bytes += int64(j.e.S)
+	}
+	if opts.MaxBytes > 0 && rep.Bytes > opts.MaxBytes {
+		// Nothing is read: the build is refused as a whole.
+		rep.Broken = append(rep.Broken, fmt.Sprintf("the build holds %d bytes, over the limit of %d", rep.Bytes, opts.MaxBytes))
+		sort.Strings(rep.Broken)
+		return rep, nil
+	}
+	workers := opts.Workers
+	if workers <= 0 {
+		workers = runtime.NumCPU()
+	}
 
 	var mu sync.Mutex
 	found := map[string][]string{} // referring name -> names it refers to
 	work := make(chan job)
 	var wg sync.WaitGroup
-	for range runtime.NumCPU() {
+	for range workers {
 		wg.Go(func() {
 			for j := range work {
-				out, err := checkFile(root, j.e)
+				out, err := checkFile(fsys, j.e)
 				mu.Lock()
 				if err != nil {
 					rep.Broken = append(rep.Broken, fmt.Sprintf("%s: %v", j.name, err))
@@ -173,7 +223,7 @@ func Check(dir string, refs []Reference) (*CheckReport, error) {
 			refs = append(refs, Reference{From: n, Name: to})
 		}
 	}
-	rep.Broken = append(rep.Broken, checkIndexes(root, names, all, refsOf)...)
+	rep.Broken = append(rep.Broken, checkIndexes(fsys, names, all, refsOf)...)
 	for _, r := range refs {
 		if _, ok := all[r.Name]; !ok {
 			rep.Missing[r.Name] = append(rep.Missing[r.Name], r.From)
@@ -188,12 +238,12 @@ func Check(dir string, refs []Reference) (*CheckReport, error) {
 
 // checkFile reads, verifies, and decodes one stored file, and returns the
 // names it refers to.
-func checkFile(root *os.Root, e entry) ([]string, error) {
+func checkFile(fsys fs.FS, e entry) ([]string, error) {
 	ext := extOf[e.T]
 	if ext == "" {
 		return nil, fmt.Errorf("unknown type %q", e.T)
 	}
-	f, err := root.Open(StoredPath(e.H, ext))
+	f, err := fsys.Open(filepath.ToSlash(StoredPath(e.H, ext)))
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +336,7 @@ func decodeRefs(t string, data []byte) ([]string, error) {
 
 // checkIndexes checks that each asset's dependency index lists exactly the
 // entries of the names it uses.
-func checkIndexes(root *os.Root, names []string, all map[string]entry, refsOf map[string][]string) []string {
+func checkIndexes(fsys fs.FS, names []string, all map[string]entry, refsOf map[string][]string) []string {
 	var broken []string
 	indexes := map[string]map[string]entry{}
 	for _, n := range names {
@@ -300,7 +350,7 @@ func checkIndexes(root *os.Root, names []string, all map[string]entry, refsOf ma
 		}
 		got, ok := indexes[e.D]
 		if !ok {
-			data, err := readJSON(root, e.D)
+			data, err := readJSON(fsys, e.D)
 			if err == nil {
 				err = json.Unmarshal(data, &got)
 			}
@@ -331,7 +381,12 @@ func List(dir string) (map[string]Listed, error) {
 		return nil, err
 	}
 	defer func() { _ = root.Close() }()
-	_, all, err := loadEntries(root)
+	return ListFS(root.FS())
+}
+
+// ListFS is List for a build in a file system.
+func ListFS(fsys fs.FS) (map[string]Listed, error) {
+	_, all, err := loadEntries(fsys)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +414,7 @@ func ReadAsset(dir, name string) ([]byte, string, error) {
 	if err := json.Unmarshal(m, &man); err != nil || len(man.Shards) != 256 {
 		return nil, "", fmt.Errorf("manifest.json: invalid")
 	}
-	data, err := readJSON(root, man.Shards[h[0]])
+	data, err := readJSON(root.FS(), man.Shards[h[0]])
 	if err != nil {
 		return nil, "", err
 	}
@@ -371,7 +426,7 @@ func ReadAsset(dir, name string) ([]byte, string, error) {
 	if !ok {
 		return nil, "", fmt.Errorf("%s is not in the build", name)
 	}
-	content, err := readStored(root, e)
+	content, err := readStored(root.FS(), e)
 	if err != nil {
 		return nil, "", err
 	}

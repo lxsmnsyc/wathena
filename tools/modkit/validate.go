@@ -123,6 +123,7 @@ func (e *Env) Validate(ctx context.Context, p, depsDir string) *Report {
 		return rep
 	}
 	rep.Loaded = l
+	checkArt(l, rep)
 	checkRequires(l, files, rep)
 	e.checkEntries(l, rep)
 	rep.Records = records(l)

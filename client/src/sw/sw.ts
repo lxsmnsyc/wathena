@@ -8,6 +8,8 @@
 //   cache.
 // - manifest.json changes between builds, so it comes from the network
 //   first, and from the cache only when the network fails.
+// - Mods' builds, under mods/<mod id>/<version>/ (decision 0033), are
+//   cached the same way as core's.
 // - The cache has a byte budget. When it is over, the files used least
 //   recently are removed, which also clears out old builds.
 //
@@ -38,6 +40,9 @@
 
   /** "<2 hex>/<64 hex>.<ext>", with the first two digits of the hash. */
   const HASHED = /^([0-9a-f]{2})\/([0-9a-f]{64})\.[a-z0-9]+$/;
+
+  /** A mod's build: "mods/<mod id>/<version>/", then the file. */
+  const MOD = /^(mods\/[a-z0-9._-]+\/[^/]+\/)(.*)$/;
 
   interface FileRecord {
     url: string;
@@ -71,7 +76,15 @@
     if (request.method !== 'GET' || !request.url.startsWith(ASSETS)) {
       return;
     }
-    const path = request.url.slice(ASSETS.length).split('?')[0] ?? '';
+    let path = request.url.slice(ASSETS.length).split('?')[0] ?? '';
+    // A mod's files are kept apart from core's, so evicting one does not
+    // drop the other.
+    let scope = '';
+    const mod = MOD.exec(path);
+    if (mod !== null) {
+      scope = mod[1]!;
+      path = mod[2]!;
+    }
     if (path === 'manifest.json') {
       event.respondWith(networkFirst(request));
       return;
@@ -80,7 +93,7 @@
     if (m === null || m[1] !== m[2]!.slice(0, 2)) {
       return;
     }
-    event.respondWith(cacheFirst(request, m[2]!, event.clientId));
+    event.respondWith(cacheFirst(request, m[2]!, scope + m[2]!, event.clientId));
   });
 
   async function networkFirst(request: Request): Promise<Response> {
@@ -100,11 +113,16 @@
     }
   }
 
-  async function cacheFirst(request: Request, hash: string, clientId: string): Promise<Response> {
+  async function cacheFirst(
+    request: Request,
+    hash: string,
+    key: string,
+    clientId: string,
+  ): Promise<Response> {
     const cache = await caches.open(CACHE);
     const hit = await cache.match(request.url);
     if (hit !== undefined) {
-      touch(hash, request.url);
+      touch(key, request.url);
       return hit;
     }
     const res = await fetch(request);
@@ -131,7 +149,7 @@
         client?.postMessage({ type: 'wathena-downloaded', bytes: sent });
       })
       .catch(() => undefined);
-    await record(hash, { url: request.url, size: body.byteLength, used: Date.now() });
+    await record(key, { url: request.url, size: body.byteLength, used: Date.now() });
     return copy;
   }
 

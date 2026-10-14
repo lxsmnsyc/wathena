@@ -118,6 +118,15 @@ export async function sha256(data: BufferSource): Promise<string> {
 
 const encoder = new TextEncoder();
 
+/** The mod ID of a name under mod/<mod id>/, or undefined for core's names. */
+export function modOf(name: string): string | undefined {
+  if (!name.startsWith('mod/')) {
+    return undefined;
+  }
+  const end = name.indexOf('/', 4);
+  return end > 4 ? name.slice(4, end) : undefined;
+}
+
 /** The manifest shard of a name: the first byte of its SHA-256. */
 export async function shardOf(name: string): Promise<number> {
   const digest = await crypto.subtle.digest('SHA-256', encoder.encode(name));
@@ -147,6 +156,10 @@ export class AssetStore {
   private readonly known = new Map<string, Entry>();
   private readonly files = new Map<string, Promise<Uint8Array<ArrayBuffer>>>();
   private readonly missing = new Set<string>();
+  /** The builds of mods, by mod ID, for names under mod/<mod id>/. */
+  private readonly mods = new Map<string, AssetStore>();
+  /** The mod whose build this is, or undefined for core's. */
+  private ownMod: string | undefined;
 
   private constructor(
     private readonly base: string,
@@ -175,8 +188,50 @@ export class AssetStore {
     return new AssetStore(base, m, fetcher);
   }
 
+  /**
+   * Adds a mod's build (decision 0033). Names under mod/<mod id>/ then
+   * resolve in it. Core's build loads first, then each active mod's.
+   */
+  addMod(id: string, build: AssetStore): void {
+    build.ownMod = id;
+    this.mods.set(id, build);
+  }
+
+  /** The mods whose builds are loaded. */
+  modIds(): string[] {
+    return [...this.mods.keys()];
+  }
+
+  /**
+   * The build of another mod that holds a name under mod/<mod id>/, or
+   * "missing" for a mod without a loaded build. Undefined is a name this
+   * build holds itself.
+   */
+  private modStore(name: string): AssetStore | 'missing' | undefined {
+    const id = modOf(name);
+    if (id === undefined || id === this.ownMod) {
+      return undefined;
+    }
+    return this.mods.get(id) ?? 'missing';
+  }
+
+  /** Logs a missing name once. */
+  private logMissing(name: string): void {
+    if (!this.missing.has(name)) {
+      this.missing.add(name);
+      console.warn(`asset missing: ${name}`);
+    }
+  }
+
   /** Looks up a name. Undefined means the build does not have it. */
   async entry(name: string): Promise<Entry | undefined> {
+    const owner = this.modStore(name);
+    if (owner === 'missing') {
+      return undefined;
+    }
+    if (owner !== undefined) {
+      return owner.entry(name);
+    }
     const known = this.known.get(name);
     if (known !== undefined) {
       return known;
@@ -192,12 +247,17 @@ export class AssetStore {
    * it uses resolve without manifest shards.
    */
   async bytes(name: string, expected: AssetType): Promise<Uint8Array<ArrayBuffer> | undefined> {
+    const owner = this.modStore(name);
+    if (owner === 'missing') {
+      this.logMissing(name);
+      return undefined;
+    }
+    if (owner !== undefined) {
+      return owner.bytes(name, expected);
+    }
     const e = await this.entry(name);
     if (e === undefined) {
-      if (!this.missing.has(name)) {
-        this.missing.add(name);
-        console.warn(`asset missing: ${name}`);
-      }
+      this.logMissing(name);
       return undefined;
     }
     if (e.t !== expected) {
