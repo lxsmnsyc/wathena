@@ -963,6 +963,13 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Mods.** `GET /mods` with `mods.read`: version, signature status, granted and pending permissions, and Lua error counts per zone with the last error and its time. `POST /mods/{id}/disable` with a zone or all zones and a reason, and `/enable`, with `mods.disable`. A disabled mod's scripts stop in that zone (event handlers, hooks, timers and NPC clicks), and its data stays. It stays off until turned on again, across restarts. The core mod cannot be turned off.
     - **Lua.** A world event `restart_planned` with `{ at, reason }` when a restart is planned, and with `{ cancelled = true }` when it is cancelled.
 
+37. The account page (phase 6 step 5). The user approved these on 2026-10-14. No Lua API changes:
+    - **Block lists.** Each character's block list, with unblock. Blocks stay per character.
+    - **Reports and sanctions.** The reports the account's characters filed, with date, target, reason and status. A closed report shows only "action taken" or "no action". The sanctions on the account and its characters, active and past, with reason and end time.
+    - **Data export.** A JSON file with the account (name, email, creation date, whether two-factor is on, no secrets), login records of the last 90 days with IP addresses, each character's stats, skills, inventory, equipment, cart, storage, mail and currencies, the characters' chat lines still kept and their item and zeny logs, the reports filed and the sanctions. It needs a login within 10 minutes, is limited to once a day, and is built on request and downloaded at once.
+    - **Account deletion.** It needs a login within 10 minutes and the account name typed to confirm. After a 14-day wait, a job deletes the email, password, two-factor settings, sessions, login records, the characters and their chat lines. Logs other players need keep the character ID without the account link. During the wait the characters cannot be played, and a login shows the date and a cancel button. A request is refused while one of the account's characters leads a guild with other members. A banned account may ask for deletion.
+    - **Privacy notice.** `/account/privacy` with the owner's contact details and text from the config, and the retention periods in effect.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
