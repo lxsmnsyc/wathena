@@ -94,3 +94,21 @@ func devSanctionHandler(aw *adminworld.World, st *store.Store) http.HandlerFunc 
 		_ = json.NewEncoder(rw).Encode(out)
 	}
 }
+
+// devDeletionsHandler runs the account deletion job at once, on the
+// server clock, for the end-to-end tests (decision 0032): POST
+// /debug/wathena/deletions. It answers with how many accounts it
+// deleted. It needs --dev and a database.
+func devDeletionsHandler(aw *adminworld.World) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+		defer cancel()
+		n, err := aw.DeleteDue(ctx)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		rw.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(rw).Encode(map[string]int{"deleted": n})
+	}
+}

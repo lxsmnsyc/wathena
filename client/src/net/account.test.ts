@@ -76,6 +76,18 @@ describe('fetchTicket', () => {
     expect((await fetchTicket(account, back, answer(403, {}))).kind).toBe('error');
   });
 
+  it('shows an account set to be deleted the date', async () => {
+    const message =
+      'This account is set to be deleted on 2026-10-28 09:00 UTC. Its characters cannot play until then.';
+    expect(
+      await fetchTicket(
+        account,
+        back,
+        answer(403, { error: 'deleting', delete_after: '2026-10-28T09:00:00Z', message }),
+      ),
+    ).toEqual({ kind: 'error', message });
+  });
+
   it('says when to come back during a planned restart', async () => {
     const message =
       'The server restarts in less than a minute: update. Come back in a few minutes.';

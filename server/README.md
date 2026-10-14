@@ -138,7 +138,7 @@ docker exec -it wathena-pg psql -U postgres -c '\password wathena_migrator' -c '
 `deploy/postgres/roles.sql` makes the `wathena` database and three roles:
 
 - `wathena_migrator` owns the schema. Only `wactl migrate` uses it.
-- `wathena_game` is what the game side of `waserver` uses. It reads and writes rows, and cannot change the schema, delete accounts and characters, or read passwords and login sessions. It only reads and deletes game tickets.
+- `wathena_game` is what the game side of `waserver` uses. It reads and writes rows, and cannot change the schema, delete accounts and characters, or read passwords and login sessions. It only reads and deletes game tickets. The account deletion job deletes an account through one function, `delete_account`, which only works for an account whose deletion is due (see "The account page").
 - `wathena_account` is what the account service uses. It alone reads password hashes, login sessions, TOTP secrets, recovery codes and passkeys. It makes accounts and characters, and cannot change or delete characters.
 
 Set the passwords of all three with `\password` in psql, as the header of `roles.sql` shows. Apply the migrations as the migrator:
@@ -180,7 +180,7 @@ Use the same host name, such as `localhost`, for the client and the account serv
 
 Two-factor login and passkeys:
 
-- `/account/settings` turns TOTP on and off, makes new recovery codes, and adds and removes passkeys. The characters page links to it.
+- `/account/settings` turns TOTP on and off, makes new recovery codes, and adds and removes passkeys. The menu of every account page links to it.
 - Turning TOTP on, new recovery codes, and passkey changes need a login from the last 10 minutes. Otherwise the player confirms the password (and code) or a passkey first.
 - Passkeys need `--public-url` with a domain name, such as `http://localhost:8300`. The browser only allows passkeys on https pages and on `localhost`.
 - A logout, or a new login in the same browser, closes the game connection that its session opened, with `DISCONNECT_REASON_LOGGED_OUT`.
@@ -193,7 +193,28 @@ Flags of the account service, all in "All-in-one" with their config keys:
 - `--trusted-proxies`: proxy addresses or CIDR blocks whose `X-Forwarded-For` gives the client address, for rate limits.
 - `--captcha`: `none` (default), or `dev` for a checkbox that shows where a real captcha goes. A real provider is not built yet.
 
+The account page, with block lists, reports, sanctions, the data export, account deletion and the privacy notice, is in "The account page" below.
+
 Rate limits, session lifetimes and Argon2id parameters are in [decision 0004](../docs/decisions/0004-account-service-and-game-tickets.md). TOTP, recovery code, pending login and passkey parameters are in [decision 0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). The rate limits live in the memory of the process.
+
+### The account page
+
+Every account page of a logged in player has a menu: Characters, Account settings, Blocks, reports and sanctions, Your data, Guild emblem and Privacy ([decision 0032](../docs/decisions/0032-account-page.md)).
+
+- `/account/safety` lists each character's block list with an Unblock button, which works whether the character plays or not. It lists the reports the characters filed, with Open, Action taken or No action, and the sanctions on the account and its characters, active and past.
+- `/account/data` downloads the data export, a JSON file in the format of decision 0032. It needs a login from the last 10 minutes, works once a day, and is refused while a character of the account is in the game or on autotrade. It holds no password, codes, keys or tokens.
+- `/account/data` also deletes the account. The player confirms the password if the last login is older than 10 minutes, and types the account name. A request is refused while a character leads a guild with other members, and for an account that `staff.owners` names. A banned account may ask.
+- For 14 days the characters cannot play: their connections close with `DISCONNECT_REASON_ACCOUNT_DELETION`, game tickets and Play answer with the date, and the gateway refuses their logins. A login shows the date and a Cancel button on the characters page.
+- The deletion job runs in `waserver` every hour, on the game role. It takes the characters out of parties, guilds and friend lists in memory, then calls `delete_account`, which deletes the account's personal data, its characters and their chat lines in one transaction. The logs, reports and mails that other players need keep the character IDs, without a link to the account. Decision 0032 lists what each table keeps.
+- `/account/privacy` is the privacy notice. It needs no login. It shows `privacy.text` and `privacy.contact` from the config, as plain text, and the retention periods in effect.
+- The page's changes have their own rate limit: 10 at once, then 1 every 6 seconds per address.
+
+With `--dev` and a database, `POST /debug/wathena/deletions` on the debug address runs the deletion job at once, on the server clock. Migration 00027 adds `account_exports`, `account_deletions` and `delete_account`. To see the waiting deletions:
+
+```sql
+SELECT a.name, d.requested_at, d.delete_after
+FROM account_deletions d JOIN accounts a ON a.id = d.account_id ORDER BY d.delete_after;
+```
 
 ### Changing the schema or queries
 
@@ -264,6 +285,8 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `jail.map`, `jail.cells` | none | `sec_pri`, `[[49, 75], [24, 75]]` | Where jailed players go, as rAthena's `MAP_JAIL` and `pc_jail`. A jail map that does not run logs a warning. |
 | `staff.owners` | none | none | Account names with the `owner` role. See "Staff and admin tools". |
 | `staff.roles` | none | `admin`, `game_master`, `moderator` | Role names and their permissions. A list replaces the defaults. |
+| `privacy.contact` | none | none | How players reach the owner about their data, such as an email address, on `/account/privacy`. At most 1,000 bytes. |
+| `privacy.text` | none | none | The owner's privacy notice, as plain text with paragraphs at blank lines. At most 20,000 bytes. See "The account page". |
 
 `waserver` checks everything before it starts, and lists every problem by key. With a database it also refuses to start:
 
@@ -647,12 +670,13 @@ Chat follows strategy section 7.10 and proposal 0002, review decision 26 ([decis
 - **GM commands.** A line that starts with `@` is a GM command, never chat. It is not shown, logged, or passed to the chat hooks or the chat event. Without the permission, the answer is "Unknown command.".
 - **The chat log** keeps every line players say: local, whisper and channel. With a database, `chat_log` keeps lines for `chat.log_days` days, and `report_lines` ties a report to its lines, which stay while the report is open. Once a report closes, its lines follow the normal limit again. A worker writes lines and reports in batches, in order, and deletes old lines every 12 hours. Without a database, the last 10,000 lines and 1,000 reports stay in memory.
 
-With `--dev`, the debug address serves two more endpoints for development and the end-to-end tests:
+With `--dev`, the debug address serves more endpoints for development and the end-to-end tests:
 
 - `GET /debug/wathena/reports` lists the newest reports with their lines.
 - `POST /debug/wathena/clock?advance=90s` moves the server clock forward, which mutes, jails, schedules and world events in zones follow.
 - `POST /debug/wathena/staff?name=<character>&role=<role>` gives an online character's account a staff role, as if it logged in with a second factor, for the GM command tests.
 - `POST /debug/wathena/sanction?kind=<kind>&name=<character>&minutes=<n>&reason=<text>` gives a sanction as the admin API's `POST /sanctions` does. A ban bans the character's account. It needs a database.
+- `POST /debug/wathena/deletions` runs the account deletion job at once, on the server clock. It needs a database. See "The account page".
 
 Migration 00016 adds `character_blocks`, `sanctions`, `chat_log`, `reports` and `report_lines`. Migration 00025 adds kicks, bans and lifts to `sanctions`, and outcomes to `reports`. To read the open reports:
 

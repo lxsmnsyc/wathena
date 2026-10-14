@@ -63,6 +63,18 @@ type options struct {
 	Jail jailOptions `yaml:"jail"`
 	// Staff are the staff owners and roles (decision 0028).
 	Staff staff.Config `yaml:"staff"`
+	// Privacy is the privacy notice at /account/privacy (decision 0032).
+	Privacy privacyOptions `yaml:"privacy"`
+}
+
+// privacyOptions are the owner's parts of the privacy notice. The page
+// shows them as plain text.
+type privacyOptions struct {
+	// Contact is how players reach the owner about their data, such as
+	// an email address.
+	Contact string `yaml:"contact"`
+	// Text is the owner's own notice. Blank lines start paragraphs.
+	Text string `yaml:"text"`
 }
 
 // chatOptions are the chat settings (server/README.md, "Chat and
@@ -385,6 +397,12 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if st.Chat.LogDays < 1 || st.Chat.LogDays > 3650 {
 		bad("chat.log_days", "is 1 to 3650")
+	}
+	if len(o.Privacy.Contact) > 1000 {
+		bad("privacy.contact", "is at most 1,000 bytes")
+	}
+	if len(o.Privacy.Text) > 20000 {
+		bad("privacy.text", "is at most 20,000 bytes")
 	}
 	for _, c := range st.Jail.Cells {
 		if c[0] < 0 || c[1] < 0 || c[0] > 1023 || c[1] > 1023 {

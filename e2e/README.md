@@ -26,6 +26,7 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
 - The lower chat limits of new characters are off, since every test character is new.
 - `Restart` stops the server and starts it again with the same options, addresses and database. Players join again.
 - `AdvanceClock` moves the server clock with `--dev`'s `POST /debug/wathena/clock`, and `Reports` reads `GET /debug/wathena/reports`.
+- The account deletion tests write the deletion request as the account page does, since `--dev` has no account pages, and run the deletion job with `--dev`'s `POST /debug/wathena/deletions` (decision 0032).
 - `UploadEmblem` sets a guild's emblem with `POST /debug/wathena/emblem`, and `OpenGuildStorage` opens a player's guild storage with `POST /debug/wathena/guild-storage`, as an NPC would. Both are `--dev` only. `HTTP` is the game server's base URL, for `GET /emblems/<guild>/<version>.png`.
 - Players are `--dev` characters. Without a database they stay in memory while the server runs, so a player who logs in again gets its character back. They start as Swordmen at base level 50 and job level 40, with 10 Red Potions and 20 Jellopy, unless `Options` says otherwise. `Options.StartJob` `4:50:40` makes them Acolytes.
 - `--seed` fixes the random streams, so the same test makes the same draws.
@@ -129,6 +130,8 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestWorldEventRestartInTheDatabase` | With PostgreSQL, a boss run that `Restart` cut short goes on after it, and Alice, back after the restart, gets it in `WorldEventList`. She kills the boss once. After another restart the boss stays dead, her zeny holds the reward once, `world_event_progress` has the rows `boss` and `end`, and the zeny log has one `event` line. |
 | `TestAnnouncementsAndCancel` | `POST /debug/wathena/announce` reaches the player for the world and its own map, not for the other map. A planned restart fires the fixture's `restart_planned` handler with its time and reason, a cancel is announced and fires it again, and the old time passes without a restart. |
 | `TestPlannedRestart` | With PostgreSQL, a restart planned 2 minutes ahead, with `AdvanceClock`, announces itself at 1 minute and at 30 seconds, refuses a new login with `DISCONNECT_REASON_RESTART` in its last minute, disconnects the player with its reason, and the server exits with status 75. After `Restart` the character comes back as saved. |
+| `TestDeletionBlocksPlayUntilCancelled` | With PostgreSQL, a character whose account is set to be deleted cannot log in: the login gets `DISCONNECT_REASON_ACCOUNT_DELETION` with the date. The job does nothing before the date. After a cancel the character plays again. |
+| `TestDeletionRunsAfterTheWait` | With PostgreSQL, a party leader's account is set to be deleted. After `AdvanceClock` moves 15 days, the job deletes the account, the character, its inventory and its chat lines. The party breaks up for the member who stays, and the item log keeps the character's ID. |
 | `TestPhase5ExitCheck` | The phase 5 exit check below: 24 bots in 5 groups on both maps trade, store, mail, vend, sell to buying stores, buy at the Exchange and drop items at the same time, with a restart in the middle, with PostgreSQL. |
 
 ## Duplication tests

@@ -1194,3 +1194,24 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - The world view lists every zone, sleeping ones too, and at most 1,000 players. CPU is measured since the start or the metrics' last reset. Reading it writes no audit row.
    - Announcements go out in the default announcement color. Restart announcements are yellow, as the shutdown countdown's.
    - With `--dev`, `POST /debug/wathena/announce` and `POST` and `DELETE /debug/wathena/restart` serve the end-to-end tests.
+23. Build review decision 37: the account page's block lists, reports and sanctions, the data export, account deletion and the privacy notice. No Lua API changes. Done on 2026-10-14 ([decision 0032](../decisions/0032-account-page.md)). Details to review:
+   - The pages are `/account/safety` (block lists, reports, sanctions), `/account/data` (the export and deletion) and `/account/privacy`, with a menu on every account page.
+   - The export is refused while a character of the account plays or is on autotrade, and reads offline characters from the database. The refusal does not use up the day's export.
+   - The export's `email` is always `null`, since the account service stores no email. Mod variables are not in it, since review decision 37 does not list them.
+   - A log in the export holds at most 100,000 lines, the oldest, and names itself in `truncated`.
+   - The export's format is `wathena-account-export` version 1. A field that goes, changes name or changes meaning raises the version. New fields keep it.
+   - "Once a day" is 24 hours after the last export, not a calendar day.
+   - The typed account name is compared in any case.
+   - A cancel needs no recent login.
+   - An account that `staff.owners` names cannot ask for deletion, since a new account of the same name would become an owner.
+   - A character that becomes a guild master with members during the 14 days hands the guild to the member in the lowest slot when the job runs, as `guildchangegm`. A master alone breaks its guild up, and the guild storage's items go with it.
+   - A party the deleted character led breaks up, as the char server does when a leader leaves.
+   - Mails from the deleted characters stay, with the sender's name and no sender ID, so they never return. Mails to them go with their items.
+   - Sanctions go with the account. The staff audit log keeps a row of each.
+   - Reports keep the character IDs and names of the reporter and the target. The deleted character's reported lines go with its chat lines.
+   - The item and zeny log lines of the account's storages name storage 0 in place of the account.
+   - The job runs at start and every hour, on the server clock, at most 100 accounts a run. An account with a character that has a session waits for the next run, and the character is disconnected.
+   - An autotrade store saved before a restart does not open while its account is set to be deleted.
+   - The new disconnect reason is `DISCONNECT_REASON_ACCOUNT_DELETION`, 12.
+   - The account page's changes have their own rate limit, `Limits.Account`: 10 at once, then 1 every 6 seconds per address.
+   - With `--dev` and a database, `POST /debug/wathena/deletions` runs the deletion job for the end-to-end tests.

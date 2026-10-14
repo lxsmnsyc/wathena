@@ -1,5 +1,14 @@
 {{define "characters.html"}}{{template "head" .}}
-<p class="account">Logged in as <strong>{{.Account}}</strong>. <a href="/account/settings{{if .Return}}?return={{.Return}}{{end}}">Account settings</a> <a href="/account/guild/emblem">Guild emblem</a></p>
+{{template "nav" .}}
+{{if .Deletion}}
+<div class="deletion" role="status">
+<p>Your account is set to be deleted on <strong>{{.Deletion.After}}</strong>. Until then your characters cannot play.</p>
+<form method="post" action="/account/data/cancel">
+{{template "hidden" .}}
+<button type="submit">Cancel the deletion</button>
+</form>
+</div>
+{{end}}
 {{if .Characters}}
 <ul class="characters">
 {{range .Characters}}
@@ -9,7 +18,7 @@
 <input type="hidden" name="slot" value="{{.Slot}}">
 <span class="name">{{.Name}}</span>
 <span class="info">{{.Job}}, base level {{.BaseLevel}}, job level {{.JobLevel}}, {{.Map}}</span>
-<button type="submit">Play</button>
+{{if not $.Deletion}}<button type="submit">Play</button>{{end}}
 </form>
 </li>
 {{end}}

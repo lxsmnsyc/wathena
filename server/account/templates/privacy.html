@@ -1,0 +1,24 @@
+{{define "privacy.html"}}{{template "head" .}}
+{{if .OwnerText}}{{range .OwnerText}}<p class="owner">{{.}}</p>
+{{end}}{{end}}
+<h2>Contact</h2>
+{{if .Contact}}<p class="owner">{{.Contact}}</p>
+{{else}}<p>The owner of this server has not given contact details.</p>{{end}}
+
+<h2>What the server keeps</h2>
+<table>
+<thead><tr><th>Data</th><th>Kept for</th><th>Notes</th></tr></thead>
+<tbody>
+{{range .Retention}}<tr><td>{{.Data}}</td><td>{{.Kept}}</td><td>{{.Notes}}</td></tr>
+{{end}}</tbody>
+</table>
+
+<h2>Your rights</h2>
+<ul>
+<li>You can download your data as a JSON file from <a href="/account/data">Your data</a>, once a day.</li>
+<li>You can delete your account there. The deletion happens {{.DeletionDays}} days after you ask, and you can cancel until then.</li>
+<li>You can see your block lists, the reports you filed and the sanctions on your account on <a href="/account/safety">Blocks, reports and sanctions</a>.</li>
+</ul>
+<p class="hint">The owner of this server is responsible for following the laws that apply to them.</p>
+<p><a href="/account/">Back to your account</a></p>
+{{template "foot" .}}{{end}}

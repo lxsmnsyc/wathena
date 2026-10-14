@@ -24,6 +24,17 @@ type AccountCurrency struct {
 	Amount    int64
 }
 
+type AccountDeletion struct {
+	AccountID   int64
+	RequestedAt pgtype.Timestamptz
+	DeleteAfter pgtype.Timestamptz
+}
+
+type AccountExport struct {
+	AccountID  int64
+	ExportedAt pgtype.Timestamptz
+}
+
 type AccountLogin struct {
 	ID        int64
 	AccountID int64

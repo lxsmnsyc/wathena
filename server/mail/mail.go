@@ -512,3 +512,36 @@ func (r *Registry) Audit() []Holding {
 	slices.SortFunc(out, func(a, b Holding) int { return int(a.Mail - b.Mail) })
 	return out
 }
+
+// ForgetSenders clears the sender of the mails in memory from some
+// characters, for the deletion of their account (decision 0032). Such a
+// mail then counts as a script's mail, as its saved row does once its
+// sender_id is NULL: it never returns, and its expiry deletes it. The
+// sender's name stays.
+func (r *Registry) ForgetSenders(ids []int64) {
+	gone := map[int64]bool{}
+	for _, id := range ids {
+		if id > 0 {
+			gone[id] = true
+		}
+	}
+	forget := func(m *Mail) {
+		m.Lock()
+		if gone[m.From.ID] {
+			m.From = Key{}
+		}
+		m.Unlock()
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, b := range r.boxes {
+		b.mu.Lock()
+		for _, m := range b.mails {
+			forget(m)
+		}
+		b.mu.Unlock()
+	}
+	for _, rm := range r.recent {
+		forget(rm.m)
+	}
+}

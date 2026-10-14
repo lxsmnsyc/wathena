@@ -325,3 +325,34 @@ staff:
 		}
 	}
 }
+
+// TestPrivacyConfig reads the privacy notice's keys, and refuses texts
+// that are too long (decision 0032).
+func TestPrivacyConfig(t *testing.T) {
+	p := writeConfig(t, `
+assets: `+assetDir(t)+`
+dev: true
+privacy:
+  contact: privacy@example.com
+  text: |
+    We run this server.
+
+    We keep little.
+`)
+	o, _, err := parseOptions("waserver all", []string{"--config", p}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validate(o, secrets{}); err != nil {
+		t.Fatal(err)
+	}
+	if o.Privacy.Contact != "privacy@example.com" || !strings.Contains(o.Privacy.Text, "\n\nWe keep little.") {
+		t.Errorf("privacy %+v", o.Privacy)
+	}
+	o.Privacy.Contact = strings.Repeat("x", 1001)
+	o.Privacy.Text = strings.Repeat("x", 20001)
+	_, err = validate(o, secrets{})
+	if err == nil || !strings.Contains(err.Error(), "privacy.contact") || !strings.Contains(err.Error(), "privacy.text") {
+		t.Errorf("long texts: %v", err)
+	}
+}

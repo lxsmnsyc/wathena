@@ -42,3 +42,11 @@ captcha: none
 # `wactl world new --admin` here.
 # staff:
 #   owners: [Admin]
+
+# The privacy notice at /account/privacy (server/README.md, "The account
+# page"). Players see both as plain text. Fill them in with how players
+# reach you about their data.
+# privacy:
+#   contact: privacy@example.com
+#   text: |
+#     Who runs this server, and what you do with players' data.

@@ -13,9 +13,9 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
-## Where work stands (2026-10-13)
+## Where work stands (2026-10-14)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 4 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 5 are built.
 
 Done:
 
@@ -51,6 +51,11 @@ Done:
   - The events tool: every event with its state, next run, run that lasts and latest results, staff starts and stops, and changes saved over the config that apply at once, with a reset.
   - The mods tool: version, signature status, permissions, and Lua error counts by zone, and turning a mod off and on by zone, saved across restarts. Core cannot be turned off.
   - The world event `restart_planned`, and the admin screens for all of it.
+- Phase 6 step 5, the account page ([decision 0032](decisions/0032-account-page.md)):
+  - Each character's block list with unblock, online or not, the reports the characters filed with only "Action taken" or "No action" once closed, and the sanctions on the account and its characters.
+  - A JSON data export with a format version, which needs a login from the last 10 minutes, works once a day, and holds no secrets.
+  - Account deletion after 14 days, with the account name typed again. Play is blocked meanwhile, and a login shows the date and a Cancel button. An hourly job deletes the personal data and the characters, and keeps the logs other players need with the character IDs.
+  - The privacy notice at `/account/privacy`, with the owner's contact and text from the config and the retention periods in effect.
 
 Open review items:
 
@@ -59,6 +64,7 @@ Open review items:
 - Next step 20's details to review, in proposal 0002, "Next steps".
 - Next step 21's details to review, in proposal 0002, "Next steps".
 - Next step 22's details to review, in proposal 0002, "Next steps".
+- Next step 23's details to review, in proposal 0002, "Next steps".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -71,7 +77,7 @@ Known issues:
 
 Next:
 
-1. Phase 6 (section 15, "Phase 6 in full"), with step 5, the account page, once next steps 19 to 22 are reviewed.
+1. Phase 6 (section 15, "Phase 6 in full"), with step 6, mod assets, once next steps 19 to 23 are reviewed.
 2. The open review items above, between phase 6 steps.
 3. Phase 7, procedural mode, is the largest phase left.
 
@@ -1348,9 +1354,9 @@ Server owners can shorten these periods. Lengthening them is a setting with a wa
 
 Player rights:
 
-- **Data export.** Players can download their account data (account, characters, inventories, and their own chat logs still kept) as a JSON file from the account page.
+- **Data export.** Players can download their account data (account, characters, inventories, and their own chat logs still kept) as a JSON file from the account page ([decision 0032](decisions/0032-account-page.md)).
 - **Account deletion.** Players can delete their account. After a 14-day waiting period, personal data is deleted. Logs that other players need, such as trade records, keep the character ID but drop the account email and IP addresses.
-- **Privacy notice.** The account page shows what is stored and for how long. Server owners fill in their own contact details.
+- **Privacy notice.** The account page shows what is stored and for how long. Server owners fill in their own contact details. Phase 6 step 5 built the export, the deletion and the notice.
 
 The project provides these tools. Each server owner is responsible for following the laws that apply to them, such as the GDPR for players in the EU.
 
@@ -2712,7 +2718,15 @@ The order from here:
       - End-to-end tests with bots: announcements reach the world and a map, a planned restart announces itself at 1 minute and 30 seconds, refuses a new login, disconnects the player with its reason, and the server exits with status 75 and starts again with the saved character. A cancel is announced, and the fixture mod's `restart_planned` handler sees both.
       - Checked in Chrome with a local server, PostgreSQL, placeholder assets and a sample mod, example.lantern, with a login message, an NPC and a script event. The owner logged in with TOTP and opened the World tab: placeholder/map with 1 player and its tick times, the process line, and Lamplighter online at 12,12. "Lantern festival tonight in town!" went to the world and showed in Lamplighter's chat. The owner planned a restart about 2 minutes ahead with the reason "browser check": the countdown showed "Restart in 1:56", then "1:53", and Lamplighter's chat showed "The server restarts in 1 minute. The lanterns go out for maintenance." as the countdown reached 1:00. The cancel showed "The planned server restart is cancelled." to Lamplighter, and the World tab said "No restart is planned.". On the Events tab, Start began a run of example.lantern:Lantern_Night with "30:00 left", Lamplighter's page showed the run, and Stop ended it with the result "stopped". Edit changed the trigger to "weekly on friday at 21:30" for 45 minutes, with the next run on Friday and "Admin" as who changed it, and Reset to config brought back "daily at 20:00". On the Mods tab, the mod showed "a folder, not signed" and its permissions. Turning it off on placeholder/map showed "placeholder/map: off", and Lamplighter's next login got no welcome line. Turning it on brought the welcome back at the next login. The audit log listed `world.announce`, `world.restart`, `world.restart_cancel`, `events.start`, `events.stop`, `events.change`, `events.reset`, `mods.disable` and `mods.enable`.
       - Left: signature checks on the server, results that survive a restart, a `wa.testing` helper for `restart_planned`, and a network form of the tools for the distributed build.
-   5. The account page. The block list and the player's own reports. A JSON export of the account's data. Account deletion after 14 days. A privacy notice that the server owner fills in.
+   5. The account page. The block list and the player's own reports. A JSON export of the account's data. Account deletion after 14 days. A privacy notice that the server owner fills in. Done on 2026-10-14 ([decision 0032](decisions/0032-account-page.md), proposal 0002 review decision 37, server/README.md, "The account page"):
+      - The account pages gain `/account/safety` (block lists, reports filed, sanctions), `/account/data` (the export and deletion) and `/account/privacy`, with a menu on every page. Every change needs the session, the CSRF token and a rate limit of its own. The export and a deletion request need a login from the last 10 minutes.
+      - The account service asks the game side through `account.Game`, which `server/adminworld` implements: online block lists in their zones, offline ones in the database under a store hold. The export reads offline characters only, and is refused while a character plays or is on autotrade.
+      - The export is JSON with `format` and `version` 1: the account without secrets, 90 days of login records, each character's stats, skills, inventory with equipment, cart, storages, mail, currencies and block list, the account's storages and currencies, the chat lines and item and zeny logs still kept, the reports filed and the sanctions. Once a day, built at the request.
+      - Migration 00027: `account_exports`, `account_deletions`, and `delete_account`, a function the game role may run only for a due request. The deletion job runs every hour in `waserver`: it holds the characters, lets parties, guilds, friend lists and mails in memory let them go, and deletes the account in one transaction. Decision 0032 lists what each table keeps.
+      - During the 14 days, tickets, Play and game logins are refused with the date and `DISCONNECT_REASON_ACCOUNT_DELETION`, the characters are disconnected, autotrade shops close and do not reopen after a restart, and the characters page shows the date with a Cancel button. A request is refused while a character leads a guild with other members, and for an account that `staff.owners` names.
+      - `privacy.contact` and `privacy.text` in the config, shown as plain text with the retention periods in effect.
+      - Checked in Chrome with a local server, PostgreSQL, placeholder assets and the web client. Keeper1 played Keeper Hero, typed `/block Pester` and `/report Pester spamming trade offers` ("You blocked Pester.", "Your report was sent to the staff."). The safety page showed "Keeper Hero (online)" with Pester and an Unblock button, and the open report. Unblock showed "The name is off the block list.", and the game's chat showed "You unblocked Pester.". Once the report was closed as warned and a past mute was written as staff would, the page showed the report as "Action taken" and the mute as "Ended". After the game tab closed, "Download my data" saved `wathena-Keeper1-2026-10-14.json` with format version 1, the account without an email or secrets, the login from 127.0.0.1, the character, the report as `action_taken` and the mute. The page then said "The next download is possible after" a day later. A deletion with the name Keeper2 was refused with "Type your account name, Keeper1, to confirm.", and with Keeper1 the page showed the date 14 days ahead and a Cancel button. The characters page hid Play, and the client showed "This account is set to be deleted on 2026-10-28 13:16 UTC. Its characters cannot play until then. Cancel the deletion on the account page to play again.". After a logout and a login the characters page showed the date and Cancel, the cancel showed "The deletion is cancelled. Your characters can play again.", and Play entered the game. `/account/privacy` showed the owner's text and contact from the config, chat lines kept 30 days, login records 90 days, item and zeny logs 180 days and the staff audit log 2 years.
+      - Left: the export has no email, since accounts have none, and no mod variables. A network form of `account.Game` and the job for the distributed build.
    6. Mod assets. Mods ship sprites, icons, maps and client data tables (section 10.5), and the client loads them.
    7. Touch input for mobile browsers.
    8. The phase 6 exit check: a scripted browser run of every tier 1 activity, an admin run that finds a player, reads their item history and applies a sanction, and a mod whose items, monsters, skills and jobs display correctly.

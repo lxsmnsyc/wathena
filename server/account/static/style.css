@@ -9,7 +9,7 @@ body {
   color: CanvasText;
 }
 main {
-  max-width: 32rem;
+  max-width: 40rem;
   margin: 2rem auto;
   padding: 0 1rem;
 }
@@ -121,4 +121,48 @@ button {
 .codes {
   columns: 2;
   padding-left: 1.2rem;
+}
+.pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-bottom: 1.5rem;
+}
+.list {
+  list-style: none;
+  padding: 0;
+}
+.list form {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid GrayText;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.3rem 0.4rem 0.3rem 0;
+  border-bottom: 1px solid GrayText;
+}
+.deletion {
+  padding: 0.5rem;
+  border: 1px solid #c80;
+  margin-bottom: 1rem;
+}
+.danger button {
+  border: 1px solid #c33;
+}
+.note {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+.owner {
+  white-space: pre-line;
 }

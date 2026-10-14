@@ -1,0 +1,58 @@
+{{define "safety.html"}}{{template "head" .}}
+{{template "nav" .}}
+{{if .NoGame}}
+<p>Block lists, reports and sanctions are not available on this server.</p>
+{{else}}
+<h2>Block lists</h2>
+<p>A character does not hear the chat of the names it blocks, and gets no whispers, trades or invites from them. Each character has its own list.</p>
+{{if .Blocks}}
+{{range .Blocks}}
+<h3>{{.Name}}{{if .Online}} <span class="info">(online)</span>{{end}}</h3>
+{{if .Names}}
+<ul class="list">
+{{$c := .}}{{range .Names}}
+<li>
+<form method="post" action="/account/safety/unblock">
+{{template "hidden" $}}
+<input type="hidden" name="character" value="{{$c.ID}}">
+<input type="hidden" name="name" value="{{.}}">
+<span class="name">{{.}}</span>
+<button type="submit">Unblock</button>
+</form>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>Blocks no one.</p>
+{{end}}
+{{end}}
+{{else}}
+<p>You have no characters.</p>
+{{end}}
+
+<h2>Reports you filed</h2>
+{{if .Reports}}
+<table>
+<thead><tr><th>Date</th><th>By</th><th>About</th><th>Reason</th><th>Status</th></tr></thead>
+<tbody>
+{{range .Reports}}<tr><td>{{.Date}}</td><td>{{.Character}}</td><td>{{.Kind}}: {{.Target}}</td><td>{{.Reason}}</td><td>{{.Status}}</td></tr>
+{{end}}</tbody>
+</table>
+<p class="note">Staff read each report. A closed report says whether they took action. It does not say which.</p>
+{{else}}
+<p>Your characters have filed no reports.</p>
+{{end}}
+
+<h2>Sanctions</h2>
+{{if .Sanctions}}
+<table>
+<thead><tr><th>Kind</th><th>On</th><th>Reason</th><th>From</th><th>Until</th><th>State</th></tr></thead>
+<tbody>
+{{range .Sanctions}}<tr><td>{{.Kind}}</td><td>{{.Who}}</td><td>{{.Reason}}</td><td>{{.Start}}</td><td>{{.End}}</td><td>{{.State}}</td></tr>
+{{end}}</tbody>
+</table>
+{{else}}
+<p>There are no sanctions on your account or its characters.</p>
+{{end}}
+{{end}}
+{{template "foot" .}}{{end}}

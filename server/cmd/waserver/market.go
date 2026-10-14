@@ -76,6 +76,14 @@ func restoreAutotraders(ctx context.Context, st *store.Store, chars gateway.Char
 	}
 	opened := 0
 	for _, s := range list {
+		// An account set to be deleted does not play, autotrade either
+		// (decision 0032). Its store opens again if the player cancels.
+		if _, deleting, err := st.DeletionOf(ctx, s.Owner); err != nil || deleting {
+			if err != nil {
+				log.Warn("an autotrade store did not open", "character", s.Owner, "err", err)
+			}
+			continue
+		}
 		c, saver, err := chars.Load(ctx, s.Owner)
 		if err != nil {
 			log.Warn("an autotrade store did not open", "character", s.Owner, "err", err)

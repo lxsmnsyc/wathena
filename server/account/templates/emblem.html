@@ -1,5 +1,5 @@
 {{define "emblem.html"}}{{template "head" .}}
-<p class="account">Logged in as <strong>{{.Account}}</strong>. <a href="/account/characters">Characters</a></p>
+{{template "nav" .}}
 {{if .Guilds}}
 <p>An emblem is a BMP, GIF or PNG image of 24 by 24 pixels, at most 50,000 bytes. Magenta (255, 0, 255) is transparent. Players can report an emblem to the staff.</p>
 {{range .Guilds}}

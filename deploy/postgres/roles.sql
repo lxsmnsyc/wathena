@@ -9,7 +9,9 @@
 --   - wathena_game is what the game side of waserver connects as. It
 --     can read and write rows in the tables it needs, and cannot change
 --     the schema. It cannot read password hashes or login sessions. It
---     only reads and deletes game tickets.
+--     only reads and deletes game tickets. It deletes accounts only
+--     through delete_account, for a deletion whose time has come
+--     (decision 0032).
 --   - wathena_account is what the account service connects as. It
 --     reads and writes passwords, login sessions, game tickets, TOTP
 --     secrets, recovery codes and passkeys, and makes accounts and

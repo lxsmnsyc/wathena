@@ -71,6 +71,14 @@ type Bans interface {
 	Banned(ctx context.Context, character int64) (text string, banned bool, err error)
 }
 
+// Deletions says whether a character's account is set to be deleted
+// (decision 0032).
+type Deletions interface {
+	// Deleting returns the text the player sees, with the date, and
+	// whether the account is set to be deleted.
+	Deleting(ctx context.Context, character int64) (text string, deleting bool, err error)
+}
+
 // ErrSessionInvalid is a session token that is not valid, used, or
 // expired. The client gets DISCONNECT_REASON_SESSION_INVALID.
 var ErrSessionInvalid = errors.New("gateway: the session token is not valid")
@@ -170,6 +178,9 @@ type Gateway struct {
 	// Bans refuses the logins of banned accounts (decision 0030). It may
 	// be nil, as without a database.
 	Bans Bans
+	// Deletions refuses the logins of accounts set to be deleted
+	// (decision 0032). It may be nil, as without a database.
+	Deletions Deletions
 	// Closed refuses new logins, with the text the player sees, such as
 	// in the last minute before a planned restart (decision 0031). It
 	// may be nil.
@@ -379,6 +390,16 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 		}
 		if banned {
 			return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_BANNED, text)
+		}
+	}
+	// Nor can an account set to be deleted, until the player cancels.
+	if g.Deletions != nil {
+		text, deleting, err := g.Deletions.Deleting(ctx, id)
+		if err != nil {
+			return g.loadFailed(ctx, c, err)
+		}
+		if deleting {
+			return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_ACCOUNT_DELETION, text)
 		}
 	}
 	// An autotrader of the character leaves first, so the load sees its

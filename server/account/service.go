@@ -1,9 +1,11 @@
 // Package account is the account service: signup, login and logout,
 // two-factor login with TOTP codes, passkeys, login sessions, the
-// character list with character creation, and the one-time game tickets
-// that open a game connection. See
-// docs/decisions/0004-account-service-and-game-tickets.md and
-// docs/decisions/0005-two-factor-login-and-passkeys.md.
+// character list with character creation, the one-time game tickets
+// that open a game connection, and the account page with block lists,
+// reports, sanctions, the data export, account deletion and the privacy
+// notice. See docs/decisions/0004-account-service-and-game-tickets.md,
+// docs/decisions/0005-two-factor-login-and-passkeys.md and
+// docs/decisions/0032-account-page.md.
 //
 // Its pages are plain HTML forms. Only the pages with passkey buttons
 // load a script, from the service's own origin. It runs its queries as
@@ -146,6 +148,18 @@ type Config struct {
 	// Clock gives the time that TOTP codes are checked against. time.Now
 	// when nil. Tests set it.
 	Clock func() time.Time
+	// Game answers the account page's questions about block lists,
+	// reports, sanctions and the characters' data, and closes the game
+	// connections of an account set to be deleted (decision 0032).
+	// Without it, those sections say they are not available.
+	Game Game
+	// Privacy is the privacy notice's contact details, text and chat log
+	// retention.
+	Privacy Privacy
+	// Owners are the account names of staff.owners. Such an account
+	// cannot ask for deletion while the config names it: a new account
+	// that took the name would become an owner.
+	Owners []string
 }
 
 // SessionEnder closes what a login session opened when the session
@@ -195,6 +209,9 @@ func New(cfg Config) (*Service, error) {
 	}
 	if s.cfg.Limits == (Limits{}) {
 		s.cfg.Limits = DefaultLimits
+	}
+	if s.cfg.Limits.Account == (Bucket{}) {
+		s.cfg.Limits.Account = DefaultLimits.Account
 	}
 	s.limit = newLimiter(s.cfg.Limits)
 	if s.cfg.SessionLifetime <= 0 {
@@ -285,6 +302,13 @@ func (s *Service) routes() {
 	m.HandleFunc("POST /account/play", s.play)
 	m.HandleFunc("GET /account/guild/emblem", s.getEmblem)
 	m.HandleFunc("POST /account/guild/emblem", s.postEmblem)
+	m.HandleFunc("GET /account/safety", s.getSafety)
+	m.HandleFunc("POST /account/safety/unblock", s.unblock)
+	m.HandleFunc("GET /account/data", s.getData)
+	m.HandleFunc("POST /account/data/export", s.export)
+	m.HandleFunc("POST /account/data/delete", s.requestDeletion)
+	m.HandleFunc("POST /account/data/cancel", s.cancelDeletion)
+	m.HandleFunc("GET /account/privacy", s.getPrivacy)
 	m.HandleFunc("POST /account/ticket", s.ticket)
 	m.HandleFunc("OPTIONS /account/ticket", s.ticket)
 	s.mux = m
@@ -374,6 +398,25 @@ type page struct {
 	FreeSlots  []int
 	Hairs      []int
 	HairColors []int
+
+	// The account page (decision 0032). NoGame is set when the server
+	// has no game side to ask.
+	NoGame    bool
+	Blocks    []blockView
+	Reports   []reportView
+	Sanctions []sanctionView
+	// Recent is set when the session logged in within the reauth window.
+	Recent bool
+	// LastExport is the last export's time, and NextExport when the next
+	// one may be, when that is still to come.
+	LastExport, NextExport string
+	// Deletion is the account's deletion request, or nil.
+	Deletion *deletionView
+	// The privacy notice.
+	Contact      string
+	OwnerText    []string
+	Retention    []retentionRow
+	DeletionDays int
 }
 
 type characterView struct {
@@ -801,6 +844,10 @@ func (s *Service) getCharacters(w http.ResponseWriter, r *http.Request) {
 		s.unavailable(w, r, err)
 		return
 	}
+	if err := s.fillDeletion(ctx, p, sess.AccountID); err != nil {
+		s.unavailable(w, r, err)
+		return
+	}
 	s.render(w, http.StatusOK, "characters.html", p)
 }
 
@@ -848,6 +895,10 @@ func (s *Service) postCharacters(w http.ResponseWriter, r *http.Request) {
 	}
 	p := s.newPage(w, r, "Characters")
 	if err := s.fillCharacters(ctx, p, sess); err != nil {
+		s.unavailable(w, r, err)
+		return
+	}
+	if err := s.fillDeletion(ctx, p, sess.AccountID); err != nil {
 		s.unavailable(w, r, err)
 		return
 	}
@@ -908,6 +959,15 @@ func (s *Service) play(w http.ResponseWriter, r *http.Request) {
 	slot, err := strconv.Atoi(r.PostForm.Get("slot"))
 	if err != nil || slot < 0 || slot >= 15 {
 		s.render(w, http.StatusBadRequest, "message.html", &page{Title: "Bad request", Error: "Choose a character."})
+		return
+	}
+	// An account set to be deleted cannot play (decision 0032).
+	if d, err := s.deletion(ctx, sess.AccountID); err != nil || d != nil {
+		if err != nil {
+			s.unavailable(w, r, err)
+			return
+		}
+		s.render(w, http.StatusForbidden, "message.html", &page{Title: "Account set to be deleted", Error: DeletionText(d.DeleteAfter.Time)})
 		return
 	}
 	n, err := s.q.SelectCharacter(ctx, db.SelectCharacterParams{SessionID: sess.ID, Slot: slot})
@@ -993,6 +1053,18 @@ func (s *Service) ticket(w http.ResponseWriter, r *http.Request) {
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		s.log.Error("cannot check a ban", "err", err)
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "unavailable"})
+		return
+	}
+	// An account set to be deleted gets no ticket (decision 0032). The
+	// client shows the message.
+	if d, err := s.deletion(ctx, sess.AccountID); err != nil || d != nil {
+		if err != nil {
+			s.log.Error("cannot check a deletion request", "err", err)
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "unavailable"})
+			return
+		}
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "deleting",
+			"delete_after": d.DeleteAfter.Time.UTC().Format(time.RFC3339), "message": DeletionText(d.DeleteAfter.Time)})
 		return
 	}
 	// The ticket records whether the login counts for a staff role

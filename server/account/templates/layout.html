@@ -20,6 +20,10 @@
 </html>
 {{end}}
 
+{{define "nav"}}<p class="account">Logged in as <strong>{{.Account}}</strong>{{if .Factors}} with {{.Factors}}{{end}}.</p>
+<nav class="pages"><a href="/account/characters{{if .Return}}?return={{.Return}}{{end}}">Characters</a> <a href="/account/settings{{if .Return}}?return={{.Return}}{{end}}">Account settings</a> <a href="/account/safety">Blocks, reports and sanctions</a> <a href="/account/data">Your data</a> <a href="/account/guild/emblem">Guild emblem</a> <a href="/account/privacy">Privacy</a></nav>
+{{end}}
+
 {{define "hidden"}}<input type="hidden" name="csrf" value="{{.CSRF}}">{{if .Return}}<input type="hidden" name="return" value="{{.Return}}">{{end}}{{end}}
 
 {{define "passkey"}}{{if .Passkey}}<div class="passkey" data-passkey="{{.Passkey}}" data-csrf="{{.CSRF}}"{{if .Return}} data-return="{{.Return}}"{{end}}{{if .Next}} data-next="{{.Next}}"{{end}} hidden>

@@ -128,6 +128,14 @@ describe('disconnectText', () => {
       'The server is restarting. Come back in a few minutes.',
     );
   });
+
+  it('shows the date of an account set to be deleted', () => {
+    const message = 'This account is set to be deleted on 2026-10-28 09:00 UTC.';
+    expect(disconnectText(message, DisconnectReason.ACCOUNT_DELETION)).toBe(message);
+    expect(disconnectText('', DisconnectReason.ACCOUNT_DELETION)).toBe(
+      'This account is set to be deleted. Cancel the deletion on the account page to play.',
+    );
+  });
 });
 
 describe('disconnectDelay', () => {
@@ -136,6 +144,7 @@ describe('disconnectDelay', () => {
     expect(disconnectDelay(DisconnectReason.KICKED)).toBe(10_000);
     expect(disconnectDelay(DisconnectReason.BANNED)).toBe(10_000);
     expect(disconnectDelay(DisconnectReason.RESTART)).toBe(10_000);
+    expect(disconnectDelay(DisconnectReason.ACCOUNT_DELETION)).toBe(10_000);
     expect(disconnectDelay(DisconnectReason.LOGGED_OUT)).toBe(3000);
     expect(disconnectDelay()).toBe(3000);
   });

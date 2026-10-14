@@ -66,6 +66,7 @@ Run these in `deploy/compose`.
 
 - `.env` sets the domain, the host ports, the images, where the assets are, and the edge network. `.env.example` explains each one.
 - `waserver.yml` sets the game: the maps, the start map, the rAthena mode and the captcha. server/README.md, "All-in-one", lists every key.
+- Fill in `privacy.contact` and `privacy.text` in `waserver.yml`. Players read them on `/account/privacy`, with the retention periods in effect. Players can download their data and delete their accounts on `/account/data`. You are responsible for following the laws that apply to you, such as the GDPR.
 - `docker-compose.yml` passes `--public-url` and `--trusted-proxies` from `.env`.
 - Change a setting, then run `docker compose up -d --wait`.
 
@@ -197,7 +198,7 @@ docker compose up -d --wait
 | Role | Used by | Rights |
 |---|---|---|
 | `wathena_migrator` | `wactl migrate`, `wactl world` | Owns the database and the schema. Alone makes the world and staff accounts. |
-| `wathena_game` | The game side of `waserver`, through `WATHENA_DATABASE_URL` | Reads and writes characters and inventories, reads and deletes game tickets, and reads the world without its seed. No DDL, and no access to passwords or login sessions. |
+| `wathena_game` | The game side of `waserver`, through `WATHENA_DATABASE_URL` | Reads and writes characters and inventories, reads and deletes game tickets, and reads the world without its seed. No DDL, and no access to passwords or login sessions. Deletes an account only through `delete_account`, once its player's deletion request is due (decision 0032). |
 | `wathena_account` | The account service, through `WATHENA_ACCOUNT_DATABASE_URL` | Reads and writes passwords, login sessions, game tickets, TOTP secrets, recovery codes and passkeys, and makes accounts and characters. No DDL, and cannot change or delete characters. |
 
 The migrations grant the table rights, and only to roles that exist when they run. A database made with an older `roles.sql`, before `wathena_account` existed, needs the role made and granted by hand before `wactl migrate up` applies migration 00002:

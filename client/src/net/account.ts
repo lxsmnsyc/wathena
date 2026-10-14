@@ -70,7 +70,8 @@ export async function fetchTicket(
     case 409:
       return { kind: 'redirect', url: accountPage(account, 'characters', back) };
     case 403: {
-      // A banned account gets its ban's message (decision 0030).
+      // A banned account gets its ban's message (decision 0030), and an
+      // account set to be deleted the date (decision 0032).
       const message = await messageOf(res);
       return { kind: 'error', message: message ?? 'The account service refused a ticket.' };
     }

@@ -685,6 +685,7 @@ func runAll(name string, args []string) error {
 	}
 	if st != nil {
 		gw.Bans = gameBans{st}
+		gw.Deletions = gameDeletions{st}
 	}
 	if !cfg.Dev {
 		pool, err := openDatabase(ctx, cfg.Secrets.AccountDatabase, "waserver-account")
@@ -708,6 +709,11 @@ func runAll(name string, args []string) error {
 		accounts, err = account.New(account.Config{
 			Pool: pool, PublicURL: cfg.Public, ClientOrigins: cfg.Origins, PlayURL: playURL,
 			CheckName: hub.Filter.CheckName, Guilds: accountGuilds{socials}, Closed: planner.Closed,
+			// The account page asks the world about block lists, reports,
+			// sanctions and exports (decision 0032).
+			Game:    staffWorld.AccountPage(),
+			Privacy: account.Privacy{Contact: cfg.Privacy.Contact, Text: cfg.Privacy.Text, ChatLogDays: cfg.Chat.LogDays},
+			Owners:  cfg.Staff.Owners,
 			NewCharacter: func(name string, look account.Look) character.Character {
 				sex := uint32(0)
 				if look.Male {
@@ -739,6 +745,8 @@ func runAll(name string, args []string) error {
 	go expireMail(ctx, mails, st, worldRules, clock, log)
 	if st != nil {
 		restoreAutotraders(ctx, st, gw.Characters, w, rules.MarketOrDefault(worldRules), log)
+		// The account deletion job runs every hour (decision 0032).
+		go staffWorld.RunDeletions(ctx)
 	}
 	if socialStore != nil {
 		// Party and friend changes are written once every zone stopped.
@@ -810,6 +818,7 @@ func runAll(name string, args []string) error {
 			if st != nil {
 				dbg.Handle("POST /debug/wathena/restore", devRestoreHandler(staffWorld, st))
 				dbg.Handle("POST /debug/wathena/sanction", devSanctionHandler(staffWorld, st))
+				dbg.Handle("POST /debug/wathena/deletions", devDeletionsHandler(staffWorld))
 			}
 		}
 		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
@@ -1032,6 +1041,18 @@ func (b gameBans) Banned(ctx context.Context, character int64) (string, bool, er
 		return "", false, err
 	}
 	return staff.BanText(ban.Reason, ban.End, ban.Permanent), true, nil
+}
+
+// gameDeletions refuses the game logins of accounts set to be deleted
+// (decision 0032).
+type gameDeletions struct{ store *store.Store }
+
+func (d gameDeletions) Deleting(ctx context.Context, character int64) (string, bool, error) {
+	del, ok, err := d.store.DeletionOf(ctx, character)
+	if err != nil || !ok {
+		return "", false, err
+	}
+	return account.DeletionText(del.After), true, nil
 }
 
 type dbCharacters struct {

@@ -58,6 +58,8 @@ type env struct {
 	st    *store.Store
 	w     *world.World
 	aw    *adminworld.World
+	// cfg is aw's config, for tests that need another clock.
+	cfg   adminworld.Config
 	items *item.Table
 	// kicker records the kicks of the moderation tests.
 	kicker *kicker
@@ -115,9 +117,9 @@ func setup(t *testing.T) *env {
 		}
 	})
 	k := &kicker{st: st}
-	aw := adminworld.New(adminworld.Config{World: w, Store: st, Chat: hub, Items: items, Storages: storages, Mail: mails,
-		Social: zones[0].Social, Kicker: k, Log: slog.New(slog.DiscardHandler)})
-	return &env{t: t, ctx: ctx, admin: adminPool, st: st, w: w, aw: aw, items: items, kicker: k}
+	cfg := adminworld.Config{World: w, Store: st, Chat: hub, Items: items, Storages: storages, Mail: mails,
+		Social: zones[0].Social, Kicker: k, Log: slog.New(slog.DiscardHandler)}
+	return &env{t: t, ctx: ctx, admin: adminPool, st: st, w: w, aw: adminworld.New(cfg), cfg: cfg, items: items, kicker: k}
 }
 
 // character makes a saved character with items.

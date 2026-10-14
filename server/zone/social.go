@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -542,6 +543,42 @@ func (z *Zone) block(p *Player, c *blockCommand) {
 		z.chatHub().SetBlocks(p.member, p.blocks)
 	}
 	p.pending = append(p.pending, blockList(p.blocks, full))
+}
+
+// AccountUnblock takes a name off an online player's block list, from
+// the account page (decision 0032). found is false when the player is
+// not in the zone, and removed when the list did not hold the name. The
+// player gets its new list.
+func (z *Zone) AccountUnblock(ctx context.Context, id int64, name string) (found, removed bool, err error) {
+	err = z.do(ctx, func() error {
+		p := z.playerByID(id)
+		if p == nil {
+			return nil
+		}
+		found = true
+		k := chat.Key(name)
+		removed = slices.ContainsFunc(p.blocks, func(b string) bool { return chat.Key(b) == k })
+		if removed {
+			z.block(p, &blockCommand{name: name, unblock: true})
+		}
+		return nil
+	})
+	return found, removed, err
+}
+
+// AccountBlocks reads the block lists of online players, by ID, for the
+// account page. Players not in the zone are left out.
+func (z *Zone) AccountBlocks(ctx context.Context, ids []int64) (map[int64][]string, error) {
+	out := map[int64][]string{}
+	err := z.do(ctx, func() error {
+		for _, id := range ids {
+			if p := z.playerByID(id); p != nil {
+				out[id] = slices.Clone(p.blocks)
+			}
+		}
+		return nil
+	})
+	return out, err
 }
 
 // report saves a player's report with the chat it saw.

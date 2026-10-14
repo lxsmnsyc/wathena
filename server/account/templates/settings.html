@@ -1,5 +1,5 @@
 {{define "settings.html"}}{{template "head" .}}
-<p class="account">Logged in as <strong>{{.Account}}</strong>{{if .Factors}} with {{.Factors}}{{end}}. <a href="/account/characters{{if .Return}}?return={{.Return}}{{end}}">Characters</a></p>
+{{template "nav" .}}
 
 <h2>Two-factor login</h2>
 {{if .TOTPOn}}

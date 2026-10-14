@@ -121,4 +121,7 @@ enum DisconnectReason {
   // new login in the last minute before the restart gets it too
   // (decision 0031).
   DISCONNECT_REASON_RESTART = 11;
+  // The account is set to be deleted. Its characters cannot play until
+  // the deletion is cancelled. message has the date (decision 0032).
+  DISCONNECT_REASON_ACCOUNT_DELETION = 12;
 }

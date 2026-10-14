@@ -1,0 +1,38 @@
+{{define "data.html"}}{{template "head" .}}
+{{template "nav" .}}
+{{if .Deletion}}
+<div class="deletion" role="status">
+<p>Your account is set to be deleted on <strong>{{.Deletion.After}}</strong>. You asked on {{.Deletion.Requested}}. Until then your characters cannot play.</p>
+<form method="post" action="/account/data/cancel">
+{{template "hidden" .}}
+<button type="submit">Cancel the deletion</button>
+</form>
+</div>
+{{end}}
+
+<h2>Download your data</h2>
+<p>One JSON file with your account, your login records of the last 90 days, each character with its items, storage, mail and currencies, the chat lines and item logs still kept, your reports and your sanctions. It holds no password, codes or keys.</p>
+<p>You can download it once a day. Every character must be logged out.{{if .LastExport}} Last download: {{.LastExport}}.{{end}}</p>
+{{if .NextExport}}
+<p>The next download is possible after {{.NextExport}}.</p>
+{{else}}
+<form method="post" action="/account/data/export">
+{{template "hidden" .}}
+<button type="submit">Download my data</button>
+</form>
+{{if not .Recent}}<p class="hint">You will be asked for your password first.</p>{{end}}
+{{end}}
+
+{{if not .Deletion}}
+<h2>Delete your account</h2>
+<p>After {{if .DeletionDays}}{{.DeletionDays}}{{else}}14{{end}} days, the server deletes your account, your login records, your characters with their items and mail, and their chat lines. Logs that other players need keep your characters' IDs, without a link to your account. Until then your characters cannot play, and you can cancel.</p>
+<p>A character that leads a guild with other members must first make another member the guild's master.</p>
+<form method="post" action="/account/data/delete" class="danger">
+{{template "hidden" .}}
+<label>Type your account name, <strong>{{.Account}}</strong>, to confirm <input name="name" autocomplete="off" required maxlength="24" spellcheck="false" autocapitalize="off"></label>
+<button type="submit">Delete my account</button>
+</form>
+{{if not .Recent}}<p class="hint">You will be asked for your password first.</p>{{end}}
+{{end}}
+<p><a href="/account/privacy">Privacy notice</a></p>
+{{template "foot" .}}{{end}}

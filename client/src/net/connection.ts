@@ -233,6 +233,8 @@ export function disconnectText(message: string, reason?: DisconnectReason): stri
       return 'Your account is banned.';
     case DisconnectReason.RESTART:
       return 'The server is restarting. Come back in a few minutes.';
+    case DisconnectReason.ACCOUNT_DELETION:
+      return 'This account is set to be deleted. Cancel the deletion on the account page to play.';
     default:
       return 'Disconnected from the server.';
   }
@@ -242,8 +244,8 @@ export function disconnectText(message: string, reason?: DisconnectReason): stri
  * How long the page waits, in milliseconds, before it leaves for the
  * character list after the session ends:
  *   - A used or expired ticket goes at once.
- *   - A kick, a ban or a planned restart waits longer, so its reason
- *     can be read.
+ *   - A kick, a ban, a planned restart or an account set to be deleted
+ *     waits longer, so its reason can be read.
  *   - Other endings wait a little.
  */
 export function disconnectDelay(reason?: DisconnectReason): number {
@@ -253,6 +255,7 @@ export function disconnectDelay(reason?: DisconnectReason): number {
     case DisconnectReason.KICKED:
     case DisconnectReason.BANNED:
     case DisconnectReason.RESTART:
+    case DisconnectReason.ACCOUNT_DELETION:
       return 10_000;
     default:
       return 3000;
