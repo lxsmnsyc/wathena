@@ -35,7 +35,7 @@ func worldZone(t *testing.T, files ...string) (*Zone, *Player, *entity, *syncBuf
 	bigger := poring
 	bigger.Mob, bigger.Name, bigger.Sprite = 100_000, "Pumpkin Poring", 1002
 	logs := &syncBuffer{}
-	z.Mods = &Mods{Scripts: []*mod.Scripts{sc}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.NewTextHandler(logs, nil)),
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{sc}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.NewTextHandler(logs, nil)),
 		Monsters: map[uint32]Spawn{1002: poring, 100_000: bigger}}
 	z.startScripts()
 	t.Cleanup(z.stopScripts)

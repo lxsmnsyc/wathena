@@ -56,7 +56,7 @@ func scriptZone(t *testing.T, src string) (*Zone, *Player, *entity, *syncBuffer)
 	z.Progress = testTables()
 	z.PlayerStatus = battle.Status{MaxHP: 100, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	logs := &syncBuffer{}
-	z.Mods = &Mods{Scripts: []*mod.Scripts{testMod(src)}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.NewTextHandler(logs, nil))}
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{testMod(src)}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.NewTextHandler(logs, nil))}
 	z.startScripts()
 	t.Cleanup(z.stopScripts)
 	if z.scripts == nil || z.scripts.Context("example.test") == nil {
@@ -234,7 +234,7 @@ func TestModReloadWhileRunning(t *testing.T) {
 	v1 := testMod(`
 local events = require "wa.events"
 return function() events.on("login", function(p) p:send_message("v1") end) end`)
-	z.Mods = &Mods{Scripts: []*mod.Scripts{v1}, IDs: []string{"example.test"}, Log: slog.New(slog.NewTextHandler(logs, nil))}
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{v1}, IDs: []string{"example.test"}, Log: slog.New(slog.NewTextHandler(logs, nil))}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go z.Run(ctx)
@@ -278,7 +278,7 @@ func TestModReloadBeforeLuaState(t *testing.T) {
 	z := New("map/test", open(40), rng.FromKey([32]byte{3}).Stream(), nil)
 	v1 := testMod(`return function() end`)
 	v1.Entries = nil
-	z.Mods = &Mods{Scripts: []*mod.Scripts{v1}, IDs: []string{"example.test"}}
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{v1}, IDs: []string{"example.test"}}
 	t.Cleanup(z.stopScripts)
 	v2 := testMod(`
 local events = require "wa.events"

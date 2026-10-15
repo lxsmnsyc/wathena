@@ -8,8 +8,8 @@ import "iter"
 //
 // remove leaves a nil in the slice, so removing while walking the set is
 // safe. compact drops the nils and frees the slots of removed entities.
-// The zone calls it at the start of a tick, after every player saw the
-// removals of the tick before.
+// The zone calls it at the end of a tick, after every player saw the
+// removals of the tick and of the commands handled before it.
 type entitySet struct {
 	list  []*entity
 	count int

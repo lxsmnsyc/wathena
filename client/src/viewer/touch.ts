@@ -10,6 +10,9 @@
 //   handlers that a mouse drag uses. A long press lifted without moving
 //   does the right click.
 // - Two taps on one element do what a double click does.
+// - Times come from the events' timeStamp, when the finger moved, not
+//   from when the page handles them. A busy page may handle the two
+//   events of a quick tap a long frame apart.
 //
 // The browser's own long press menu, drag and double tap are turned off
 // for touch, so each action happens once. Text fields keep theirs. The
@@ -147,6 +150,8 @@ function newDataTransfer(): DataTransfer {
 
 interface Press {
   id: number;
+  /** When the finger went down, as the event's timeStamp. */
+  at: number;
   target: Element;
   /** The draggable element under the finger, if any. */
   source: HTMLElement | undefined;
@@ -177,14 +182,14 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
   let quietUntil = 0;
   let lastTap: { target: Element; x: number; y: number; at: number } | undefined;
 
-  const end = (): void => {
+  const end = (now: number): void => {
     if (press === undefined) {
       return;
     }
     clearTimeout(press.timer);
     press.drag?.ghost.remove();
     if (press.fired) {
-      quietUntil = performance.now() + 400;
+      quietUntil = now + 400;
     }
     press = undefined;
   };
@@ -213,6 +218,30 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
       over: undefined,
     };
     source.classList.add('touch-dragging');
+  };
+
+  /** Ends the long press time: a right click, or a drag of a draggable row. */
+  const fire = (p: Press): void => {
+    if (p.fired) {
+      return;
+    }
+    p.fired = true;
+    if (p.source === undefined) {
+      p.target.dispatchEvent(mouseEvent('contextmenu', p.x, p.y));
+    } else {
+      startDrag(p, p.source);
+    }
+  };
+
+  /**
+   * Fires a press that is due by the event's time, before the event
+   * counts. A busy page may handle a finger's events after the long press
+   * time without its timer having run.
+   */
+  const due = (p: Press, e: PointerEvent): void => {
+    if (!p.fired && e.timeStamp - p.at >= LONG_PRESS_MS) {
+      fire(p);
+    }
   };
 
   /** Sends dragover to what is under a point. Returns the element, if it takes the drop. */
@@ -244,7 +273,7 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
           press.source?.dispatchEvent(dragEvent('dragend', press.drag.data, e.clientX, e.clientY));
           press.source?.classList.remove('touch-dragging');
         }
-        end();
+        end(e.timeStamp);
         return;
       }
       const target = e.target;
@@ -254,6 +283,7 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
       const source = target.closest<HTMLElement>('[draggable="true"]') ?? undefined;
       const p: Press = {
         id: e.pointerId,
+        at: e.timeStamp,
         target,
         source,
         x: e.clientX,
@@ -261,14 +291,8 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
         fired: false,
         drag: undefined,
         timer: setTimeout(() => {
-          if (press !== p) {
-            return;
-          }
-          p.fired = true;
-          if (p.source === undefined) {
-            p.target.dispatchEvent(mouseEvent('contextmenu', p.x, p.y));
-          } else {
-            startDrag(p, p.source);
+          if (press === p) {
+            fire(p);
           }
         }, LONG_PRESS_MS),
       };
@@ -284,11 +308,12 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
       if (p === undefined || e.pointerId !== p.id) {
         return;
       }
+      due(p, e);
       const d = p.drag;
       if (d === undefined) {
         if (!p.fired && Math.hypot(e.clientX - p.x, e.clientY - p.y) > SLOP) {
           // A swipe or a scroll, not a press.
-          end();
+          end(e.timeStamp);
         }
         return;
       }
@@ -322,6 +347,7 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
       if (p === undefined || e.pointerId !== p.id) {
         return;
       }
+      due(p, e);
       const d = p.drag;
       if (d !== undefined && p.source !== undefined) {
         if (d.moved) {
@@ -334,7 +360,7 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
         p.source.dispatchEvent(dragEvent('dragend', d.data, e.clientX, e.clientY));
         p.source.classList.remove('touch-dragging');
       }
-      end();
+      end(e.timeStamp);
     },
     { capture: true },
   );
@@ -350,7 +376,7 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
         p.source?.dispatchEvent(dragEvent('dragend', p.drag.data, e.clientX, e.clientY));
         p.source?.classList.remove('touch-dragging');
       }
-      end();
+      end(e.timeStamp);
     },
     { capture: true },
   );
@@ -393,7 +419,9 @@ export function installTouchUI(mode: InputMode, view: HTMLElement): void {
       if (!e.isTrusted || !mode.touch) {
         return;
       }
-      const now = performance.now();
+      // The time of the tap, not of this handler: a busy page may handle
+      // two quick taps far apart.
+      const now = e.timeStamp;
       if (now < quietUntil) {
         e.preventDefault();
         e.stopImmediatePropagation();

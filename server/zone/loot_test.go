@@ -351,3 +351,34 @@ func TestDamageLog(t *testing.T) {
 		t.Errorf("%+v", l)
 	}
 }
+
+// A monster that dies between ticks, as a skill command kills it, still
+// vanishes for the player who saw it. Its drops come in the next tick,
+// and an item must not take the monster's slot before the player saw the
+// death: the player's ID for the monster would be lost without a vanish,
+// and the client would show the monster forever.
+func TestKillBetweenTicksVanishes(t *testing.T) {
+	z, p, m := lootZone(t, &progression.Mob{ID: 1002, Level: 1, MaxHP: 30, Drops: []progression.Drop{{Item: 909, Rate: 10000}}})
+	z.stepAt(50)
+	events(p)
+	id, ok := p.netIDs.get(m)
+	if !ok {
+		t.Fatal("the player does not see the monster")
+	}
+	m.hp = 0
+	z.die(m, p.entity)
+	z.stepAt(z.now + 50)
+	ev := events(p)
+	died := false
+	for _, e := range ev {
+		if v := e.GetVanish(); v != nil && v.GetId() == id && v.GetReason() == wathenav1.VanishReason_VANISH_REASON_DIED {
+			died = true
+		}
+	}
+	if !died {
+		t.Errorf("no vanish of the monster %d in %v", id, ev)
+	}
+	if len(items(ev)) == 0 {
+		t.Error("the drop did not show")
+	}
+}

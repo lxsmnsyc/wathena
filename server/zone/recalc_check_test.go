@@ -122,7 +122,7 @@ func loadRecalcFixture(t *testing.T, mode reference.Mode) *recalcFixture {
 	z.Status = tb
 	z.Progress = prog
 	z.Start = status.Character{Male: true, Stats: status.Stats{Str: 90, Agi: 50, Vit: 30, Int: 1, Dex: 40, Luk: 1}}
-	z.Mods = &Mods{Scripts: scripts, IDs: []string{mod.Core}, Log: slog.New(slog.DiscardHandler), Constants: core.Constants, ItemIDs: merged.IDs}
+	z.Mods = &Mods{Limits: testLimits, Scripts: scripts, IDs: []string{mod.Core}, Log: slog.New(slog.DiscardHandler), Constants: core.Constants, ItemIDs: merged.IDs}
 	z.startScripts()
 	t.Cleanup(z.stopScripts)
 	f := &recalcFixture{z: z, prog: prog, tb: tb}

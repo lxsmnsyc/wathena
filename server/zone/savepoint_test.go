@@ -24,7 +24,7 @@ return function()
     conversation:say(tostring(player:set_save_point("b", 30, 31)), tostring(player:set_save_point("nowhere", 1, 1)))
   end)
 end`
-	a.Mods = &Mods{Scripts: []*mod.Scripts{npcMod(src)}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.DiscardHandler),
+	a.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{npcMod(src)}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.DiscardHandler),
 		Server: variables.NewServer(nil, nil)}
 	a.SetNPCs([]NPC{{Name: "example.test:Kafra", DisplayName: "Kafra", X: 10, Y: 10, Sprite: 112, Script: "example.test:scripts/npc.lua"}})
 	t.Cleanup(a.stopScripts)

@@ -115,7 +115,7 @@ The final run of `scripts/check.sh browsers` on 2026-10-15, on the development M
 - The slowest steps: the phone's NPC, equip and skill step (58 s), the mod skill with the Merchant's 38 points spent first (49 s), the cart and vending setup (43 s), the mail taken on the phone (38 s), and the mod monster and drop (33 s).
 - Taps through the Chrome DevTools Protocol take about 300 ms each on this machine, and SwiftShader draws three pages at 15 to 25 frames a second, so the phone's steps are the slow ones.
 
-The steps retry what a moving unit can spoil: a click that a walking ghost takes, a cast on a monster that walked off, and a long press on a player who moves. A step that fails reports its line in `exit-check.ts`, and `SCREENSHOTS` saves each player's page.
+The steps retried what a moving unit can spoil: a click that a walking ghost takes, a cast on a monster that walked off, and a long press on a player who moves. [Decision 0037](0037-reliable-browser-checks.md) replaced the retries with waits for a still view and still ghosts. A step that fails reports its line in `exit-check.ts` and the state of each player's page, and `SCREENSHOTS` saves each player's page.
 
 ## Tests
 

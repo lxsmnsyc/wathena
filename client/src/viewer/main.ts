@@ -2457,8 +2457,20 @@ if (import.meta.env.DEV) {
           player: o.isPlayer(id),
           self: id === o.self,
           cell: p === undefined ? undefined : [Math.floor(p.x), Math.floor(-p.z)],
+          walking: o.walking(id),
         };
       });
+    },
+    // Whether the view is still: the player stands, and the camera,
+    // which follows it, has reached it. Screen points of standing units
+    // hold until the next walk.
+    settled: () => {
+      const me = session?.online.me;
+      if (me === undefined || me.walking) {
+        return false;
+      }
+      const at = me.character.group.position;
+      return Math.hypot(at.x - controls.target.x, at.z - controls.target.z) < 0.01;
     },
     screenOf: (id: number) => {
       const p = session?.online.position(id)?.clone();
@@ -2831,19 +2843,22 @@ function runGestures(list: Gesture[]): void {
   }
 }
 
+// Gestures take the events' times, when the finger moved, not when the
+// page handles them: a busy page may handle a tap's down and up a long
+// frame apart, which would make the tap a press.
 canvas.addEventListener('pointerdown', (e) => {
   if (e.pointerType === 'touch') {
-    runGestures(gestures.down(e.pointerId, e.clientX, e.clientY, performance.now()));
+    runGestures(gestures.down(e.pointerId, e.clientX, e.clientY, e.timeStamp));
   }
 });
 canvas.addEventListener('pointermove', (e) => {
   if (e.pointerType === 'touch') {
-    runGestures(gestures.move(e.pointerId, e.clientX, e.clientY, performance.now()));
+    runGestures(gestures.move(e.pointerId, e.clientX, e.clientY, e.timeStamp));
   }
 });
 canvas.addEventListener('pointerup', (e) => {
   if (e.pointerType === 'touch') {
-    runGestures(gestures.up(e.pointerId, e.clientX, e.clientY, performance.now()));
+    runGestures(gestures.up(e.pointerId, e.clientX, e.clientY, e.timeStamp));
   }
 });
 canvas.addEventListener('pointercancel', (e) => {

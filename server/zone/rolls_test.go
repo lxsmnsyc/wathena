@@ -85,7 +85,7 @@ func rollZone(t *testing.T, src string) (*Zone, *Player, *syncBuffer) {
 	for _, g := range []string{"items.modify_rolls", "rules.override", "player.give_items", "game.read", "event.listen"} {
 		sc.Grants[g] = true
 	}
-	z.Mods = &Mods{Scripts: []*mod.Scripts{sc}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.NewTextHandler(logs, nil)),
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{sc}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.NewTextHandler(logs, nil)),
 		RandomOptions: rollOptions(t), ItemRolls: true}
 	z.startScripts()
 	t.Cleanup(z.stopScripts)

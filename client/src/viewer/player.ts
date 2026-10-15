@@ -63,6 +63,11 @@ export default class Player {
     return [this.x + dx, this.y + dy];
   }
 
+  /** Whether the player walks, or has a walk to take after this step. */
+  get walking(): boolean {
+    return this.path.length > 0 || this.next !== undefined;
+  }
+
   /** What the player draws. */
   get character(): Body {
     return this.body;

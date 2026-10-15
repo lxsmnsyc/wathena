@@ -13,7 +13,7 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
-## Where work stands (2026-10-15)
+## Where work stands (2026-10-16)
 
 Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built.
 
@@ -80,6 +80,11 @@ Done:
   - `wa.testing` has `world:plan_restart(minutes, reason)`, which fires `restart_planned`. The Town Crier sample uses it.
   - The data export holds the mods' variables of the account and its characters, in format version 1.
   - Looks carry the record IDs of the companion and the mount, and `weapon_view`, so the client draws companions and mounts of art and the worn sprites of weapons and shields. The lantern sample gains a shield and a companion of art, and the exit check's mod run checks both.
+- Reliable browser checks ([decision 0037](decisions/0037-reliable-browser-checks.md)):
+  - A monster that a skill command killed between ticks lost its vanish when its drop took its slot, and the client kept it. The zone now frees slots at the end of a tick.
+  - The client reads touch gesture times from the events, so a long frame no longer turns a tap into a press or splits a double tap.
+  - The checks wait for a still view (`viewer.settled()`) and still units, the checks' Lantern Ghosts do not wander, and the steps no longer retry a click that missed.
+  - The zone tests' Lua states have no wall-clock limit, which failed `TestFoodRaisesStr` when the machine paused the test.
 
 Open review items:
 
@@ -92,6 +97,8 @@ Known issues:
 - Go is 1.27.2, which fixes 13 standard library bugs that govulncheck found in 1.27.1. gosec is built from `tools/gosec`, which asks for a newer golang.org/x/tools than gosec's own go.mod. Drop that module once a gosec release reads Go 1.27.2's export data.
 - The disk was nearly full on 2026-10-05, and builds failed with "no space left on device". Keep at least 10 GB free. Test PostgreSQL containers that are killed leave unnamed Docker volumes behind. `docker volume prune` removes them.
 - The kRO client is extracted at `data/kro/client` (gitignored), and the original zip is deleted. It is the only copy. Build assets with `wactl assets build` and the source `grf:data/kro/client`.
+- `scripts/check.sh` removes its PostgreSQL container with `docker rm -f`, without `-v`, so each run that starts one leaves an unnamed volume.
+- A pause of `waserver` over one second while a zone makes its Lua state ends the prelude at the wall-clock limit, and the zone's scripts stay off until a restart (decision 0037, "Left").
 - The repository has no CI ([decision 0026](decisions/0026-local-checks.md)). Run `scripts/check.sh quick` before each commit and `scripts/check.sh` before a push.
 
 Next:

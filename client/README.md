@@ -164,4 +164,16 @@ pnpm check:browsers   # render, audio, and cache checks in real browsers, and th
 
 `check:browsers` builds and serves the placeholder pack, then checks in Chromium that the viewer renders a map without errors, that Opus test sounds decode to their exact length, and that a second visit loads assets from the Service Worker. It also checks the admin screens and the account pages at 375 pixels wide, and plays on a `waserver --dev` with the end-to-end fixture mod: a scripted touch run on an iPhone and an Android phone profile, a tablet and a phone held sideways, a mouse run on a desktop page, and frame times at phone size with Chrome's CPU throttling, printed as `info` lines. It then runs the phase 6 exit check (`exit-check.ts`, docs/decisions/0035-phase-6-exit-check.md): three players on a desktop and a Pixel 7 play every tier 1 system against a real `waserver` with PostgreSQL, a staff account with TOTP mutes a player, and the lantern mod's item, monster, skill and job show their names and art. It needs `WATHENA_TEST_DATABASE_URL`, which `scripts/check.sh browsers` sets, and `EXIT_STEPS`, a regular expression, runs only the steps it matches. `CHECKS=touch,phone` runs only the checks named. `SCREENSHOTS` names a folder for screenshots of failed steps. `BROWSERS=chromium,firefox,webkit` adds the other engines, after `pnpm exec playwright-core install`. `scripts/check.sh browsers` runs it in Chromium.
 
+### Writing a browser check
+
+A check must pass on a busy machine, where a frame of SwiftShader can take half a second. It waits for the signal that a state changed, not for a time (docs/decisions/0037-reliable-browser-checks.md):
+
+- Wait for what the page shows once the server answered: a window that opens, a row that goes, a button that turns enabled, a line in the chat log, or a damage number.
+- Before a tap or a click on a unit or a cell, wait for a still view. `settle(page)` waits until the player stands and the camera has reached it (`viewer.settled()`). `unitScreen` and the exit check's `Player.still` also wait until the unit stands (`walking` in `viewer.units()`).
+- After a walk, wait for the player's cell with `walkedTo`, not for a time.
+- Touch events carry their own times. `Fingers.tap` and `Fingers.doubleTap` send their events together, 60 ms apart, and the client reads gesture times from `event.timeStamp`. A busy page sees the gesture as a phone would send it.
+- Targets stand still. The fixture's Dummies cannot move, and the checks give the lantern mod's Lantern Ghosts `no_random_walk`.
+- Do not retry a step that missed. A retry hides the cause. Retry only what a player would do again.
+- Timeouts are upper bounds for a busy machine, such as 10 or 15 seconds. Keep fixed waits for what lasts a time on purpose, such as a finger on the joystick.
+
 The WMAP decoder test reads `src/formats/testdata/sample.wmap`, which the Go encoder's tests write. After changing the format, run `go test ./internal/assets/wmap -update` from the repository root.

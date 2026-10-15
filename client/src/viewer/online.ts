@@ -1603,6 +1603,11 @@ export default class Online {
     return this.kinds.get(id) === 'player';
   }
 
+  /** Whether a unit in sight walks. */
+  walking(id: number): boolean {
+    return this.units.get(id)?.walking ?? false;
+  }
+
   /** An entity's name, while it is in sight. */
   nameOf(id: number): string | undefined {
     return this.names.get(id);

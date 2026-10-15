@@ -1367,7 +1367,6 @@ func (z *Zone) step() { z.stepAt(time.Since(z.start).Milliseconds()) }
 // stepAt advances one tick to a time in zone milliseconds.
 func (z *Zone) stepAt(now int64) {
 	began := time.Now()
-	z.entities.compact()
 	z.tick++
 	z.now = now
 	var warped []warpTouch
@@ -1474,6 +1473,12 @@ func (z *Zone) stepAt(now int64) {
 	}
 	z.hits = z.hits[:0]
 	z.removed = z.removed[:0]
+	// Every player has seen the removals now, those of this tick and those
+	// of commands handled since the last one, so their slots may be used
+	// again. Freed at the start of a tick instead, a slot of a monster
+	// that a command killed could go to its drop before the players saw
+	// the death, and they would keep the monster.
+	z.entities.compact()
 	z.takes = z.takes[:0]
 	z.effects = z.effects[:0]
 	z.emotions = z.emotions[:0]

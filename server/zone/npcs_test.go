@@ -33,7 +33,7 @@ func npcZone(t *testing.T, src string) (*Zone, *Player, *entity, *syncBuffer) {
 	z.PlayerStatus = battle.Status{MaxHP: 200, MaxSP: 50, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	logs := &syncBuffer{}
 	ids := map[string]uint32{"Red_Potion": 501, "Jellopy": 909, "Knife": 1201, "Untradable": 7777}
-	z.Mods = &Mods{Scripts: []*mod.Scripts{npcMod(src)}, IDs: []string{"core", "example.test"}, ItemIDs: ids,
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{npcMod(src)}, IDs: []string{"core", "example.test"}, ItemIDs: ids,
 		Log: slog.New(slog.NewTextHandler(logs, nil)), Server: variables.NewServer(nil, nil), Shops: shop.NewRegistry(nil)}
 	z.SetNPCs([]NPC{{Name: "example.test:Guide", DisplayName: "Guide", X: 20, Y: 20, Sprite: 112, Script: "example.test:scripts/npc.lua"}})
 	t.Cleanup(z.stopScripts)

@@ -87,7 +87,7 @@ func TestModOffStopsNPCClicks(t *testing.T) {
 func TestModsOffAtStart(t *testing.T) {
 	z := New("map/test", open(40), rng.FromKey([32]byte{3}).Stream(), nil)
 	logs := &syncBuffer{}
-	z.Mods = &Mods{Scripts: []*mod.Scripts{testMod(`return function() error("setup ran") end`)}, IDs: []string{"example.test"},
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{testMod(`return function() error("setup ran") end`)}, IDs: []string{"example.test"},
 		Log: slog.New(slog.NewTextHandler(logs, nil))}
 	z.SetModsOff([]string{"example.test"})
 	ctx, cancel := context.WithCancel(context.Background())

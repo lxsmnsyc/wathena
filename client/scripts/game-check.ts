@@ -133,6 +133,18 @@ function installMods(repo: string, dir: string, wactl: string, extra: readonly s
     });
     built.push(to);
   }
+  // Lantern Ghosts stand still in the checks, as the Dummies do. A ghost
+  // that wanders may walk off before a click lands, or cover an NPC or a
+  // Dummy. They still fight back when attacked.
+  const ghosts = join(mods, 'lantern', 'data', 'monsters.yml');
+  if (existsSync(ghosts)) {
+    const yml = readFileSync(ghosts, 'utf8');
+    const still = yml.replace('  ai: 1\n', '  ai: 1\n  modes: [no_random_walk]\n');
+    if (still === yml) {
+      throw new Error('the lantern mod has no Lantern Ghost of AI type 1');
+    }
+    writeFileSync(ghosts, still);
+  }
   for (const m of built) {
     execFileSync(wactl, ['mod', 'build-art', m], { stdio: 'ignore' });
   }
@@ -267,6 +279,7 @@ export interface UnitView {
   player: boolean;
   self: boolean;
   cell: [number, number] | undefined;
+  walking: boolean;
 }
 
 /** Calls a function of the page's development hook, globalThis.viewer. */
@@ -299,11 +312,55 @@ export async function units(page: Page): Promise<UnitView[]> {
   return hook<UnitView[]>(page, 'units');
 }
 
-/** A unit's place on the screen, by a test on it. */
+/**
+ * Waits until the view is still: the player stands and the camera, which
+ * follows it, has reached it. A screen point read before then is where a
+ * unit was, not where a tap finds it.
+ */
+export async function settle(page: Page, timeout = 15_000): Promise<void> {
+  await page.waitForFunction(
+    () => {
+      const v: unknown = Reflect.get(globalThis, 'viewer');
+      const f: unknown =
+        typeof v === 'object' && v !== null ? Reflect.get(v, 'settled') : undefined;
+      return typeof f === 'function' && Reflect.apply(f, v, []) === true;
+    },
+    null,
+    { timeout, polling: 50 },
+  );
+}
+
+/** Waits until the player's cell passes a test, and returns it. */
+export async function walkedTo(
+  page: Page,
+  test: (cell: [number, number]) => boolean,
+  timeout = 10_000,
+): Promise<[number, number]> {
+  const end = Date.now() + timeout;
+  for (;;) {
+    const c = await selfCell(page);
+    if (test(c)) {
+      return c;
+    }
+    if (Date.now() > end) {
+      throw new Error(`the player stayed at ${c}`);
+    }
+    await sleep(100);
+  }
+}
+
+/**
+ * A unit's place on the screen, by a test on it, once the view is still
+ * and the unit stands.
+ */
 export async function unitScreen(
   page: Page,
   test: (u: UnitView) => boolean,
 ): Promise<[number, number]> {
+  await settle(page);
+  for (let i = 0; i < 100 && (await units(page)).some((u) => test(u) && u.walking); i++) {
+    await sleep(100);
+  }
   const list = await units(page);
   const me = list.find((u) => u.self)?.cell ?? [0, 0];
   const size = page.viewportSize();
@@ -314,18 +371,25 @@ export async function unitScreen(
       shown.push({ u, at });
     }
   }
-  // The nearest match, preferring one that no other unit covers, since a
-  // tap picks the unit nearest the finger.
+  // The nearest match on the screen, preferring one that no other unit
+  // covers, since a tap picks the unit nearest the finger. The player
+  // covers nothing: a tap never picks the player itself.
+  const onScreen = ([x, y]: [number, number]): boolean =>
+    size === null || (x >= 0 && y >= 0 && x <= size.width && y <= size.height);
   const found = shown
     .filter((s) => test(s.u))
     .map((s) => ({
       ...s,
+      off: !onScreen(s.at),
       covered: shown.some(
-        (o) => o.u.id !== s.u.id && Math.hypot(o.at[0] - s.at[0], o.at[1] - s.at[1]) < 45,
+        (o) =>
+          o.u.id !== s.u.id && !o.u.self && Math.hypot(o.at[0] - s.at[0], o.at[1] - s.at[1]) < 45,
       ),
       d: Math.hypot((s.u.cell?.[0] ?? 0) - me[0], (s.u.cell?.[1] ?? 0) - me[1]),
     }))
-    .sort((a, b) => Number(a.covered) - Number(b.covered) || a.d - b.d)[0];
+    .sort(
+      (a, b) => Number(a.off) - Number(b.off) || Number(a.covered) - Number(b.covered) || a.d - b.d,
+    )[0];
   if (found === undefined) {
     throw new Error(`no unit found among ${list.map((u) => u.name).join(', ')}`);
   }
@@ -354,14 +418,26 @@ export async function inGame(page: Page): Promise<void> {
     null,
     { timeout: 60_000 },
   );
-  await page.waitForTimeout(1000);
+  await settle(page);
 }
 
-/** Fingers on a page, through the Chrome DevTools Protocol. */
+/**
+ * Fingers on a page, through the Chrome DevTools Protocol.
+ *
+ * Each event carries the time the finger moved, as a phone's events do.
+ * The page reads gesture times from those times (event.timeStamp), not
+ * from when it gets to the event. The protocol waits until the page has
+ * handled each event, so on a busy machine a tap sent as two awaited
+ * events would last as long as the page's slowest frame. Taps and double
+ * taps send their events together, with times 60 ms apart that end now.
+ */
 export class Fingers {
   private readonly points = new Map<number, { x: number; y: number }>();
 
   private readonly cdp: CDPSession;
+
+  /** The time of the last event, in seconds since 1970. */
+  private last = 0;
 
   private constructor(cdp: CDPSession) {
     this.cdp = cdp;
@@ -371,23 +447,30 @@ export class Fingers {
     return new Fingers(await page.context().newCDPSession(page));
   }
 
-  private async send(type: 'touchStart' | 'touchMove' | 'touchEnd'): Promise<void> {
-    await this.cdp.send('Input.dispatchTouchEvent', {
-      type,
-      touchPoints: [...this.points].map(([id, p]) => ({
-        x: p.x,
-        y: p.y,
-        id,
-        radiusX: 2,
-        radiusY: 2,
-        force: 1,
-      })),
-    });
+  /** The time of a new event: now, and after the last event. */
+  private stamp(): number {
+    this.last = Math.max(Date.now() / 1000, this.last + 0.001);
+    return this.last;
   }
 
-  async down(id: number, x: number, y: number): Promise<void> {
+  private async send(
+    type: 'touchStart' | 'touchMove' | 'touchEnd',
+    timestamp = this.stamp(),
+  ): Promise<void> {
+    const touchPoints = [...this.points].map(([id, p]) => ({
+      x: p.x,
+      y: p.y,
+      id,
+      radiusX: 2,
+      radiusY: 2,
+      force: 1,
+    }));
+    await this.cdp.send('Input.dispatchTouchEvent', { type, touchPoints, timestamp });
+  }
+
+  async down(id: number, x: number, y: number, timestamp?: number): Promise<void> {
     this.points.set(id, { x, y });
-    await this.send('touchStart');
+    await this.send('touchStart', timestamp);
   }
 
   async move(id: number, x: number, y: number): Promise<void> {
@@ -395,45 +478,45 @@ export class Fingers {
     await this.send('touchMove');
   }
 
-  async up(id: number): Promise<void> {
+  async up(id: number, timestamp?: number): Promise<void> {
     this.points.delete(id);
-    await this.send('touchEnd');
+    await this.send('touchEnd', timestamp);
   }
 
-  async tap(x: number, y: number): Promise<void> {
-    await this.down(1, x, y);
-    await sleep(60);
-    await this.up(1);
-  }
-
-  /**
-   * A double tap whose four events go out together, so the protocol's
-   * wait for each event does not stretch it past the double tap time on
-   * a busy machine.
-   */
-  async quickDoubleTap(x: number, y: number): Promise<void> {
+  /** Taps, at the given times after now, in seconds: down, up, down, up. */
+  private async taps(x: number, y: number, times: number[]): Promise<void> {
+    // The taps end now, so no event has a time in the future.
+    const span = times.at(-1) ?? 0;
+    const start = Math.max(Date.now() / 1000 - span, this.last + 0.001);
     const point = [{ x, y, id: 1, radiusX: 2, radiusY: 2, force: 1 }];
-    await Promise.all([
-      this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point }),
-      this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }),
-      this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point }),
-      this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }),
-    ]);
+    this.last = start + span;
+    await Promise.all(
+      times.map(async (t, i) =>
+        this.cdp.send('Input.dispatchTouchEvent', {
+          type: i % 2 === 0 ? 'touchStart' : 'touchEnd',
+          touchPoints: i % 2 === 0 ? point : [],
+          timestamp: start + t,
+        }),
+      ),
+    );
   }
 
+  /** A tap of 60 ms. */
+  async tap(x: number, y: number): Promise<void> {
+    await this.taps(x, y, [0, 0.06]);
+  }
+
+  /** Two taps of 60 ms, 100 ms apart. */
   async doubleTap(x: number, y: number): Promise<void> {
-    // Without waits: the protocol's own delay is long on a busy machine.
-    await this.down(1, x, y);
-    await this.up(1);
-    await this.down(1, x, y);
-    await this.up(1);
+    await this.taps(x, y, [0, 0.06, 0.16, 0.22]);
   }
 
   /** Holds a finger still for a time. */
   async press(x: number, y: number, ms: number): Promise<void> {
-    await this.down(1, x, y);
+    const start = this.stamp();
+    await this.down(1, x, y, start);
     await sleep(ms);
-    await this.up(1);
+    await this.up(1, Math.max(this.stamp(), start + ms / 1000));
   }
 
   /** A long press, then a drag to a point, then a lift. */
@@ -503,7 +586,7 @@ export async function approach(
     await f.move(7, x + ((s[0] - m[0]) / d) * 50, y + ((s[1] - m[1]) / d) * 50);
     await sleep(450);
     await f.up(7);
-    await sleep(700);
+    await settle(page);
   }
 }
 
@@ -557,7 +640,10 @@ export async function step(
     ok = errs.length === 0;
     check(name, ok, ok ? detail : `page errors: ${errs.join('; ')}`);
   } catch (e) {
-    check(name, false, e instanceof Error ? (e.message.split('\n')[0] ?? '') : String(e));
+    const msg = e instanceof Error ? (e.message.split('\n')[0] ?? '') : String(e);
+    const errs = on.errors.splice(0);
+    const also = errs.length === 0 ? '' : `; page errors: ${errs.join('; ')}`;
+    check(name, false, `${msg}${also} [${await pageState(on.page)}]`);
   }
   // SCREENSHOTS names a folder for a screenshot of each failed step.
   const shots = process.env.SCREENSHOTS;
@@ -566,6 +652,29 @@ export async function step(
     await on.page
       .screenshot({ path: join(shots, `${name.replaceAll(/\W+/g, '-')}.png`) })
       .catch(() => undefined);
+  }
+}
+
+/**
+ * What a failed step's report tells about the page: the player's cell,
+ * the target mode, the units in sight and the end of the chat log.
+ */
+export async function pageState(page: Page): Promise<string> {
+  try {
+    const list = await units(page);
+    const shown = list
+      .filter((u) => !u.self)
+      .map((u) => `${u.name ?? ''}#${u.id}@${u.cell?.join(',')}${u.walking ? ' walking' : ''}`)
+      .join(', ');
+    const me = list.find((u) => u.self);
+    const targeting = await hook<string | undefined>(page, 'targeting');
+    const chat = ((await page.locator('#chat-log').textContent()) ?? '').slice(-160);
+    const items = (await hook<{ id: number; itemId: number }[]>(page, 'groundItems'))
+      .map((g) => `${g.itemId}#${g.id}`)
+      .join(' ');
+    return `me@${me?.cell?.join(',')}${me?.walking === true ? ' walking' : ''}, targeting ${targeting ?? 'none'}; units: ${shown}; ground: ${items}; chat ends: ${chat}`;
+  } catch (e) {
+    return `no state: ${e instanceof Error ? e.message.split('\n')[0] : String(e)}`;
   }
 }
 
@@ -652,11 +761,7 @@ export async function checkPhones(
         const before = await selfCell(page);
         const me = await unitScreen(page, (u) => u.self);
         await f.tap(me[0], me[1] - 90);
-        await page.waitForTimeout(2000);
-        const after = await selfCell(page);
-        if (after[1] <= before[1]) {
-          throw new Error(`from ${before} to ${after}`);
-        }
+        const after = await walkedTo(page, (cell) => cell[1] > before[1]);
         return `walked north from ${before} to ${after}`;
       },
       alice,
@@ -763,23 +868,12 @@ export async function checkPhones(
       'attack',
       async () => {
         await approach(page, f, (u) => u.name === 'Dummy');
-        // A Dummy that a walking unit covers may miss the tap, which then
-        // goes again where the Dummy is.
-        for (let i = 0; ; i++) {
-          await markHits(page);
-          const at = await unitScreen(page, (u) => u.name === 'Dummy');
-          await f.tap(at[0], at[1]);
-          const hit = await newHit(page, 6000)
-            .then(() => true)
-            .catch(() => false);
-          if (hit) {
-            break;
-          }
-          if (i === 2) {
-            throw new Error('no damage showed after three taps');
-          }
-          await approach(page, f, (u) => u.name === 'Dummy');
-        }
+        await markHits(page);
+        const at = await unitScreen(page, (u) => u.name === 'Dummy');
+        await f.tap(at[0], at[1]);
+        await newHit(page, 15_000).catch(() => {
+          throw new Error('no damage showed after a tap on a Dummy');
+        });
         return 'tapped a Dummy, and damage showed';
       },
       alice,
@@ -789,7 +883,6 @@ export async function checkPhones(
       c,
       'NPC talk',
       async () => {
-        await page.waitForTimeout(1500);
         await approach(page, f, (u) => u.name === 'Quartermaster');
         const at = await unitScreen(page, (u) => u.name === 'Quartermaster');
         await f.tap(at[0], at[1]);
@@ -820,7 +913,6 @@ export async function checkPhones(
         const from = await middle(page, `${row} .skill-text, ${row}`);
         const slot = await middle(page, '#hotkeys .hotkey >> nth=0');
         await f.longDrag(from, slot);
-        await page.waitForTimeout(300);
         const keys = await hook<({ skillId: number } | undefined)[]>(page, 'hotkeys');
         if (keys[0]?.skillId !== 5) {
           throw new Error(`slot F1 holds ${JSON.stringify(keys[0])}`);
@@ -842,27 +934,15 @@ export async function checkPhones(
         if (cancelled !== undefined) {
           throw new Error('the cancel button did not cancel');
         }
-        await page.waitForTimeout(1500);
         await approach(page, f, (u) => u.name === 'Dummy');
-        // A Dummy that a walking unit covers may miss the tap, which then
-        // goes again.
-        for (let i = 0; ; i++) {
-          if ((await hook<string | undefined>(page, 'targeting')) === undefined) {
-            await tapOn(page, f, '#hotkeys .hotkey >> nth=0');
-          }
-          await markHits(page);
-          const at = await unitScreen(page, (u) => u.name === 'Dummy');
-          await f.tap(at[0], at[1]);
-          const hit = await newHit(page, 6000)
-            .then(() => true)
-            .catch(() => false);
-          if (hit) {
-            break;
-          }
-          if (i === 2) {
-            throw new Error('Bash showed no damage');
-          }
-        }
+        await tapOn(page, f, '#hotkeys .hotkey >> nth=0');
+        await page.locator('#target-cancel').waitFor({ state: 'visible', timeout: 5000 });
+        await markHits(page);
+        const at = await unitScreen(page, (u) => u.name === 'Dummy');
+        await f.tap(at[0], at[1]);
+        await newHit(page, 15_000).catch(() => {
+          throw new Error('Bash showed no damage');
+        });
         const left = await hook<string | undefined>(page, 'targeting');
         const hidden = await page.locator('#target-cancel').isHidden();
         if (left !== undefined || !hidden) {
@@ -899,18 +979,9 @@ export async function checkPhones(
         }
         const knife = '#inventory-window li:has-text("1201")';
         await page.locator(knife).waitFor({ timeout: 10_000 });
-        // The protocol waits for each touch event, which can stretch two
-        // taps past the double tap time on a busy machine: the four events
-        // go out together, and again while the knife stays.
-        for (let i = 0; i < 3 && (await page.locator(knife).count()) > 0; i++) {
-          const [x, y] = await middle(page, `${knife} .name`);
-          await f.quickDoubleTap(x, y);
-          await page
-            .locator(knife)
-            .waitFor({ state: 'detached', timeout: 4000 })
-            .catch(() => undefined);
-        }
-        await page.locator(knife).waitFor({ state: 'detached', timeout: 1000 });
+        const [x, y] = await middle(page, `${knife} .name`);
+        await f.doubleTap(x, y);
+        await page.locator(knife).waitFor({ state: 'detached', timeout: 10_000 });
         await openWindow(page, f, '#equipment-toggle');
         const worn = (await page.textContent('#equipment-window')) ?? '';
         await openWindow(page, f, '#equipment-toggle');
@@ -1067,24 +1138,16 @@ export async function checkPhones(
           );
           if (side !== undefined) {
             await f.tap(side[0], side[1]);
-            await page.waitForTimeout(2000);
+            await walkedTo(
+              page,
+              (cell) => Math.hypot(bob0[0] - cell[0], bob0[1] - cell[1]) <= 2,
+            ).catch(() => undefined);
           }
         }
-        // A long press on Bob opens his menu. Bob may still be moving, so
-        // a press that misses him goes again where he is now.
-        for (let i = 0; i < 3; i++) {
-          const at = await unitScreen(page, (u) => u.name === 'Bob');
-          await f.press(at[0], at[1], 800);
-          const shown = await page
-            .locator('#player-menu button:has-text("Trade")')
-            .waitFor({ timeout: 5000 })
-            .then(() => true)
-            .catch(() => false);
-          if (shown || i === 2) {
-            break;
-          }
-        }
-        await page.locator('#player-menu button:has-text("Trade")').waitFor({ timeout: 1000 });
+        // A long press on Bob opens his menu.
+        const at = await unitScreen(page, (u) => u.name === 'Bob');
+        await f.press(at[0], at[1], 800);
+        await page.locator('#player-menu button:has-text("Trade")').waitFor({ timeout: 10_000 });
         await tapOn(page, f, '#player-menu button:has-text("Trade")');
         await tapOn(bob.page, g, '.social-prompt .prompt-accept');
         await page.locator('#trade-window').waitFor({ state: 'visible', timeout: 10_000 });
@@ -1099,7 +1162,9 @@ export async function checkPhones(
           .waitFor({ timeout: 10_000 });
         await tapOn(page, f, '#trade-window .trade-lock');
         await tapOn(bob.page, g, '#trade-window .trade-lock');
-        await page.waitForTimeout(500);
+        // Trade is enabled once the server says both offers are locked.
+        await page.locator('#trade-window .trade-confirm:enabled').waitFor({ timeout: 10_000 });
+        await bob.page.locator('#trade-window .trade-confirm:enabled').waitFor({ timeout: 10_000 });
         await tapOn(page, f, '#trade-window .trade-confirm');
         await tapOn(bob.page, g, '#trade-window .trade-confirm');
         await page.locator('#trade-window').waitFor({ state: 'hidden', timeout: 10_000 });
@@ -1207,8 +1272,8 @@ export async function checkTablet(
         const before = await selfCell(page);
         const me = await unitScreen(page, (u) => u.self);
         await f.tap(me[0] - 120, me[1]);
-        await page.waitForTimeout(2000);
-        const tapped = await selfCell(page);
+        const tapped = await walkedTo(page, (cell) => cell[0] < before[0]);
+        await settle(page);
         const [x, y] = await middle(page, '#joystick');
         await f.down(3, x, y);
         for (let i = 1; i <= 8; i++) {
@@ -1337,11 +1402,7 @@ export async function checkMouse(browser: Browser, base: string, check: Check): 
         const before = await selfCell(page);
         const me = await unitScreen(page, (u) => u.self);
         await page.mouse.click(me[0] + 120, me[1]);
-        await page.waitForTimeout(2000);
-        const after = await selfCell(page);
-        if (after[0] <= before[0]) {
-          throw new Error(`from ${before} to ${after}`);
-        }
+        const after = await walkedTo(page, (cell) => cell[0] > before[0]);
         return `walked east from ${before} to ${after}`;
       },
       desk,

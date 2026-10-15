@@ -33,7 +33,9 @@ import {
   hook,
   inGame,
   middle,
+  pageState,
   selfCell,
+  settle,
   sleep,
   startGame,
   units,
@@ -240,6 +242,8 @@ class Player {
    */
   async walkTo(x: number, y: number): Promise<void> {
     for (let leg = 0; leg < 5; leg++) {
+      // Screen points of cells hold once the camera stops.
+      await settle(this.page).catch(() => undefined);
       const me = await selfCell(this.page);
       if (Math.abs(me[0] - x) <= 1 && Math.abs(me[1] - y) <= 1) {
         return;
@@ -327,9 +331,8 @@ class Player {
       }
       return true;
     };
+    await this.still(test);
     let at = await this.screenOf(test);
-    // Units walk, so the walk goes again while the unit is off the view
-    // or under a window or another unit.
     // The first walk goes to the near side of the unit. On a phone the
     // controls cover the bottom of the view, so later walks try each
     // side, which puts the unit elsewhere on the screen.
@@ -348,13 +351,24 @@ class Player {
       ];
       const [dx, dy] = sides[i] ?? [0, 1];
       await this.walkTo(u.cell[0] + dx * near, u.cell[1] + dy * near).catch(() => undefined);
-      await sleep(300);
+      await this.still(test);
       at = await this.screenOf(test);
     }
     if (at === undefined || !(await this.onView(at))) {
       throw new Error('the unit is not on the view');
     }
     return at;
+  }
+
+  /**
+   * Waits until the view is still and the units a test finds stand, so
+   * a screen point read next is where a click finds the unit.
+   */
+  async still(test: (u: UnitView) => boolean): Promise<void> {
+    await settle(this.page);
+    for (let i = 0; i < 100 && (await this.units()).some((u) => test(u) && u.walking); i++) {
+      await sleep(100);
+    }
   }
 
   /**
@@ -377,36 +391,66 @@ class Player {
       );
       if (at !== undefined && (await this.onView(at)) && (await this.clearOfUnits(at))) {
         await this.click(at[0], at[1]);
-        await sleep(600);
+        await settle(this.page).catch(() => undefined);
         return;
       }
     }
   }
 
   /**
-   * Opens the player menu of another player: a right click, or a long
-   * press. A press that misses a player who moves goes again.
+   * Steps off a cell that another unit shares or touches, so a click on
+   * the player finds the player and not the unit: a click picks the unit
+   * nearest the pointer, and two units on one cell are at one point.
    */
-  async menuOf(name: string): Promise<void> {
-    for (let i = 0; ; i++) {
-      const at = await this.screenOf((u) => u.name === name);
-      if (at === undefined) {
-        throw new Error(`${name} is not shown`);
-      }
-      if (this.fingers === undefined) {
-        await this.page.mouse.click(at[0], at[1], { button: 'right' });
-      } else {
-        await this.fingers.press(at[0], at[1], 800);
-      }
-      try {
-        await this.page.locator('#player-menu').waitFor({ state: 'visible', timeout: 4000 });
+  async standClear(): Promise<void> {
+    const crowded = (cell: [number, number], list: UnitView[]): boolean =>
+      list.some(
+        (u) =>
+          !u.self &&
+          u.cell !== undefined &&
+          Math.max(Math.abs(u.cell[0] - cell[0]), Math.abs(u.cell[1] - cell[1])) <= 1,
+      );
+    const list = await this.units();
+    const me = await selfCell(this.page);
+    if (!crowded(me, list)) {
+      return;
+    }
+    for (const [dx, dy] of [
+      [0, -2],
+      [2, 0],
+      [0, 2],
+      [-2, 0],
+      [2, -2],
+      [-2, -2],
+      [2, 2],
+      [-2, 2],
+    ] as const) {
+      const cell: [number, number] = [me[0] + dx, me[1] + dy];
+      if (!crowded(cell, list)) {
+        await this.walkTo(cell[0], cell[1]);
+        await settle(this.page);
         return;
-      } catch (e) {
-        if (i >= 2) {
-          throw e;
-        }
       }
     }
+    throw new Error(`no clear cell near ${me}`);
+  }
+
+  /**
+   * Opens the player menu of another player: a right click, or a long
+   * press, once the view is still and the player stands.
+   */
+  async menuOf(name: string): Promise<void> {
+    await this.still((u) => u.name === name);
+    const at = await this.screenOf((u) => u.name === name);
+    if (at === undefined) {
+      throw new Error(`${name} is not shown`);
+    }
+    if (this.fingers === undefined) {
+      await this.page.mouse.click(at[0], at[1], { button: 'right' });
+    } else {
+      await this.fingers.press(at[0], at[1], 800);
+    }
+    await this.page.locator('#player-menu').waitFor({ state: 'visible', timeout: 10_000 });
   }
 
   /** Accepts the prompt whose key starts with a prefix, such as party. */
@@ -550,6 +594,9 @@ async function play(c: Check, label: string, players: Player[], run: Run): Promi
     if (at !== undefined) {
       detail += ` (exit-check.ts line ${at})`;
     }
+    for (const p of players) {
+      detail += ` [${p.name}: ${await pageState(p.page)}]`;
+    }
   }
   c(label, ok, `${detail} (${((Date.now() - began) / 1000).toFixed(1)} s)`);
   const shots = process.env.SCREENSHOTS;
@@ -677,20 +724,8 @@ async function levels(p: Player): Promise<string> {
 
 /** Clicks an NPC and waits for its dialog or shop. */
 async function talk(p: Player, npc: string, opens = '#dialog-window'): Promise<void> {
-  // A Lantern Ghost that walks over the NPC may take the click, which
-  // starts an attack: a step stops it, and the click goes again.
-  for (let i = 0; ; i++) {
-    await p.clickUnit((u) => u.npc && u.name === npc);
-    try {
-      await p.page.locator(opens).waitFor({ state: 'visible', timeout: 6000 });
-      return;
-    } catch (e) {
-      if (i >= 2) {
-        throw e;
-      }
-      await p.stopAction();
-    }
-  }
+  await p.clickUnit((u) => u.npc && u.name === npc);
+  await p.page.locator(opens).waitFor({ state: 'visible', timeout: 15_000 });
 }
 
 /** Picks a menu option of the dialog by its whole text. */
@@ -760,96 +795,73 @@ async function kill(p: Player, monster: string): Promise<[number, number]> {
       )
       .then(() => true)
       .catch(() => false);
-  // Another unit may take the click: a step stops that attack, and the
-  // click goes again.
-  for (let i = 0; i < 3; i++) {
-    if (await gone(10)) {
-      break;
-    }
-    await p
-      .clickUnit((u) => u.id === target.id)
-      .catch(async (e: unknown) => {
-        // It may have died meanwhile.
-        if (!(await gone(10))) {
-          throw e;
-        }
-      });
-    if (await gone(8000)) {
-      break;
-    }
-    if (i === 2) {
-      throw new Error(`the ${monster} did not die`);
-    }
-    await p.stopAction();
+  await p.clickUnit((u) => u.id === target.id);
+  if (!(await gone(20_000))) {
+    throw new Error(`the ${monster} did not die`);
   }
   return target.cell;
 }
 
-/**
- * Kills monsters until one leaves a drop that a test finds, up to three,
- * since a click can land on a Lantern Ghost that walks past.
- */
+/** Kills a monster, and waits for its drop that a test finds. */
 async function killForDrop(
   p: Player,
   monster: string,
   test: (g: Ground) => boolean,
 ): Promise<[number, number]> {
-  for (let i = 0; ; i++) {
-    const at = await kill(p, monster);
-    for (let j = 0; j < 16; j++) {
-      if ((await ground(p)).some(test)) {
-        return at;
-      }
-      await sleep(250);
+  const at = await kill(p, monster);
+  for (let j = 0; j < 40; j++) {
+    if ((await ground(p)).some(test)) {
+      return at;
     }
-    if (i >= 2) {
-      throw new Error(`no ${monster} left a drop`);
-    }
+    await sleep(250);
   }
+  throw new Error(`the ${monster} left no drop`);
 }
 
 /**
  * Casts a skill on a unit: reaches it, starts the skill's targeting, and
- * clicks or taps the unit where it is now, until damage shows. A unit
- * that walks may miss the click, which goes again from closer.
+ * clicks or taps the unit once the view is still, until damage shows.
  */
 async function castOn(
   p: Player,
   test: (u: UnitView) => boolean,
   target: () => Promise<void>,
 ): Promise<void> {
-  for (let i = 0; ; i++) {
-    await p.reach(test, 2);
-    await target();
-    // Earlier numbers fade and go, so new ones are told apart by a mark
-    // on the old ones, not by a count.
-    await p.page.evaluate(() => {
-      for (const h of document.querySelectorAll<HTMLElement>('#hits .hit')) {
-        h.dataset.seen = '1';
-      }
-    });
-    const at = await p.screenOf(test);
-    if (at !== undefined) {
-      await p.click(at[0], at[1]);
+  await p.reach(test, 2);
+  await target();
+  await p.page.waitForFunction(
+    () => {
+      const v: unknown = Reflect.get(globalThis, 'viewer');
+      const f: unknown =
+        typeof v === 'object' && v !== null ? Reflect.get(v, 'targeting') : undefined;
+      return typeof f === 'function' && Reflect.apply(f, v, []) !== undefined;
+    },
+    null,
+    { timeout: 10_000 },
+  );
+  // Earlier numbers fade and go, so new ones are told apart by a mark
+  // on the old ones, not by a count.
+  await p.page.evaluate(() => {
+    for (const h of document.querySelectorAll<HTMLElement>('#hits .hit')) {
+      h.dataset.seen = '1';
     }
-    const hit = await p.page
-      .waitForFunction(() => document.querySelector('#hits .hit:not([data-seen])') !== null, null, {
-        timeout: 6000,
-      })
-      .then(() => true)
-      .catch(() => false);
-    if (hit) {
-      return;
-    }
-    if (i === 2) {
-      throw new Error(
-        `no damage showed; the chat ends: ${(await textOf(p, '#chat-log')).slice(-120)}`,
-      );
-    }
-    if ((await hook<string | undefined>(p.page, 'targeting')) !== undefined) {
-      await p.page.keyboard.press('Escape');
-    }
-    await p.stopAction();
+  });
+  await p.still(test);
+  const at = await p.screenOf(test);
+  if (at === undefined) {
+    throw new Error('the target is not shown');
+  }
+  await p.click(at[0], at[1]);
+  const hit = await p.page
+    .waitForFunction(() => document.querySelector('#hits .hit:not([data-seen])') !== null, null, {
+      timeout: 15_000,
+    })
+    .then(() => true)
+    .catch(() => false);
+  if (!hit) {
+    throw new Error(
+      `no damage showed; the chat ends: ${(await textOf(p, '#chat-log')).slice(-120)}`,
+    );
   }
 }
 
@@ -1095,17 +1107,9 @@ async function phaseOneSteps(
     await endDialog(bob);
     await bob.show('#inventory-window', '#inventory-toggle');
     const knife = inv('1201');
-    // Two taps within 450 ms are a double tap. A busy machine may stretch
-    // them, so the taps go again while the knife stays.
-    for (let i = 0; i < 3 && (await bob.page.locator(knife).count()) > 0; i++) {
-      const [x, y] = await middle(bob.page, `${knife} .name`);
-      await bob.fingers!.quickDoubleTap(x, y);
-      await bob.page
-        .locator(knife)
-        .waitFor({ state: 'detached', timeout: 4000 })
-        .catch(() => undefined);
-    }
-    await bob.page.locator(knife).waitFor({ state: 'detached', timeout: 1000 });
+    const [x, y] = await middle(bob.page, `${knife} .name`);
+    await bob.fingers!.doubleTap(x, y);
+    await bob.page.locator(knife).waitFor({ state: 'detached', timeout: 10_000 });
     await bob.hide('#inventory-window', '#inventory-toggle');
     await bob.show('#skill-window', '#skill-toggle');
     const row = '#skill-window li:has(.name:text-is("Mammonite"))';
@@ -1272,6 +1276,7 @@ async function socialSteps(c: Check, ann: Player, bob: Player, cid: Player): Pro
 async function economySteps(c: Check, ann: Player, bob: Player, cid: Player): Promise<void> {
   await play(c, 'trade', [ann, bob], async () => {
     await ann.hide('#inventory-window', '#inventory-toggle');
+    await bob.standClear();
     const at = (await bob.units()).find((u) => u.self)?.cell;
     if (at === undefined) {
       throw new Error('Bob has no cell');
@@ -1574,21 +1579,11 @@ async function modSteps(c: Check, base: string, ann: Player): Promise<void> {
   });
   await play(c, 'mod monster and drop', [ann], async () => {
     await inSight(ann, ghost);
-    // The ghost walks, so the mouse follows it until its name shows.
-    let named = false;
-    for (let i = 0; i < 10 && !named; i++) {
-      await ann.reach(ghost, 3);
-      const at = await ann.screenOf(ghost);
-      if (at !== undefined) {
-        await ann.page.mouse.move(at[0], at[1] - 10);
-      }
-      named = await waitText(ann, '#item-label:not([hidden])', 'Lantern Ghost', 1500)
-        .then(() => true)
-        .catch(() => false);
-    }
-    if (!named) {
+    const at = await ann.reach(ghost, 3);
+    await ann.page.mouse.move(at[0], at[1] - 10);
+    await waitText(ann, '#item-label:not([hidden])', 'Lantern Ghost', 10_000).catch(() => {
       throw new Error('hovering a Lantern Ghost showed no name');
-    }
+    });
     await kill(ann, 'Lantern Ghost');
     await fetchedArt(ann, base, 'mod/example.lantern/sprite/mob/Lantern_Ghost');
     // Renewal's level penalty makes the low ghost's drops rare, so Ann

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -80,8 +81,13 @@ func coreMods(t *testing.T, z *Zone) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	z.Mods = &Mods{Scripts: []*mod.Scripts{sc}, IDs: []string{mod.Core}, Constants: core.Constants, Groups: groups, MonsterIDs: core.Monsters}
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{sc}, IDs: []string{mod.Core}, Constants: core.Constants, Groups: groups, MonsterIDs: core.Monsters}
 }
+
+// testLimits are the Lua limits of the test zones: the defaults without
+// the wall-clock limit. A test must not fail because the machine paused
+// it, and the CPU budget still stops a script that runs too long.
+var testLimits = script.Limits{Timeout: -1}
 
 // maxWeight is the test players' maximum weight: 100.0.
 const maxWeight = 1000
