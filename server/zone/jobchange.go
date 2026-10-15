@@ -257,9 +257,10 @@ func (z *Zone) updateBodyLook(p *Player) {
 	}
 }
 
-// lookJob is the job whose sprites a job shows.
+// lookJob is the job whose sprites a job shows. A mod's job shows its
+// own ID, which the client data maps to its art and look.
 func (z *Zone) lookJob(job int) int {
-	if z.Status == nil {
+	if z.Status == nil || z.Mods != nil && z.Mods.OwnLookJobs[job] {
 		return job
 	}
 	return z.Status.LookJob(job)

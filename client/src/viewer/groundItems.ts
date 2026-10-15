@@ -101,6 +101,11 @@ export default class GroundItems {
       });
   }
 
+  /** The IDs of the items on the ground. */
+  ids(): number[] {
+    return [...this.items.keys()];
+  }
+
   has(id: number): boolean {
     return this.items.has(id);
   }

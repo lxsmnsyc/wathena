@@ -97,6 +97,34 @@ type Mods struct {
 // learns them from the client data.
 const NPCArtSprites = 1_000_000
 
+// ItemArtViews is the first view ID given to items with a view_sprite.
+// The IDs are given at each start, in the order of the item IDs, over
+// the item's view field. A look sends them as the views of headgear and
+// garments, and the client learns them from the client data (review
+// decision 40).
+const ItemArtViews = 1_000_000
+
+// giveArtViews gives each item whose record names a view_sprite a view ID
+// of its own from ItemArtViews.
+func giveArtViews(items *mod.Items) {
+	if items == nil || items.Data == nil {
+		return
+	}
+	index := make(map[uint32]int, len(items.Data.Items))
+	for i := range items.Data.Items {
+		index[items.Data.Items[i].ID] = i
+	}
+	next := ItemArtViews
+	for _, id := range slices.Sorted(maps.Keys(items.Art)) {
+		i, ok := index[id]
+		if !ok || items.Art[id].ViewSprite == "" {
+			continue
+		}
+		items.Data.Items[i].View = next
+		next++
+	}
+}
+
 // LoadMods checks the found mods against each other and the config, and
 // merges their data over the core data. ids keeps the IDs of the records
 // mods add. core is the mode's item and NPC scripts, converted from
@@ -164,6 +192,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	for _, n := range append(merged.Overlay.Notes, npcOverlay.Notes...) {
 		log.Warn("mods: " + n)
 	}
+	giveArtViews(merged)
 	out := &Mods{Set: set, Items: merged, NPCs: map[string][]zone.NPC{}, NPCOverlay: npcOverlay, Jobs: jobRecs}
 	if jobs != nil {
 		out.JobTables = jobs.WithJobs(jobRecs.StatusData())
@@ -349,8 +378,23 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	out.Zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
 		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates,
 		RandomOptions: opts, ItemRolls: rl.ItemRolls, Rules: rl, Companions: out.Companions, Chat: out.Chat,
-		Storages: out.Storages, Currencies: out.Currencies}
+		Storages: out.Storages, Currencies: out.Currencies, OwnLookJobs: ownLookJobs(jobRecs)}
 	return out, nil
+}
+
+// ownLookJobs are the jobs a look shows by their own ID: mods' jobs, and
+// jobs whose records name body sprites.
+func ownLookJobs(j *Jobs) map[int]bool {
+	out := map[int]bool{}
+	if j == nil {
+		return out
+	}
+	for id, r := range j.Records {
+		if (r.Data.Info.Mod != "" && r.Data.Info.Mod != mod.Core) || len(r.Art) > 0 {
+			out[id] = true
+		}
+	}
+	return out
 }
 
 // checkOptionGroups checks that every drop's random option group exists.

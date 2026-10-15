@@ -3,6 +3,11 @@
 - name: example.lantern:LANTERN_GHOST
   display_name: Lantern Ghost
   sprite: mod/example.lantern/sprite/mob/Lantern_Ghost
+  # Sounds of the mod's art for its attacks, its hurts and its death.
+  sounds:
+    attack: mod/example.lantern/sound/Lantern_Ghost/attack
+    damage: mod/example.lantern/sound/Lantern_Ghost/damage
+    die: mod/example.lantern/sound/Lantern_Ghost/die
   level: 5
   hp: 80
   base_exp: 40
@@ -10,6 +15,9 @@
   element: ghost
   element_level: 1
   race: demon
+  # A Poring loots items from the ground. The ghost only wanders, and
+  # fights back when attacked.
+  ai: 1
   drops:
     - {item: "example.lantern:Paper_Lantern", rate: 10000}
     - {item: "example.lantern:Unlit_Lantern", rate: 5000}

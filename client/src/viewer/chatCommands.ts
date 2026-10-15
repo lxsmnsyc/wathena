@@ -134,7 +134,8 @@ export function parseChatInput(input: string): ChatAction {
   }
   if (line.startsWith('@')) {
     // The server reads GM commands from local chat and answers on the
-    // system channel, such as "Unknown command.".
+    // system channel, such as "Unknown command.". For a player without
+    // any command, the server says the line as local chat.
     const text = cleanChat(input);
     return text === undefined || text === '@' ? { kind: 'empty' } : { kind: 'gm', text };
   }

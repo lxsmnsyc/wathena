@@ -1,0 +1,19 @@
+# One still frame for each of a character's 13 actions, in RO's
+# order, in all 8 directions.
+origin: [20, 63]
+# The point heads and headgear attach at, from the origin.
+anchors: [[0, -50]]
+actions:
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]

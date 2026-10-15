@@ -1,8 +1,10 @@
 import { create } from '@bufbuild/protobuf';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { setArt } from '../assets/art';
 import { SkillFailure, SkillInfoSchema, SkillTarget, StatId } from '../gen/wathena/v1/event_pb';
 import {
   type Skill,
+  SkillIcons,
   SkillModel,
   castLevel,
   castable,
@@ -84,6 +86,48 @@ describe('SkillModel', () => {
     expect(m.all().map((s) => s.id)).toEqual([2, 5, 7, 3001]);
     expect(m.label(5)).toBe('Bash');
     expect(m.label(99)).toBe('Skill 99');
+  });
+
+  it('names mod skills by the client data, and loads their icons', async () => {
+    setArt({
+      version: 2,
+      mods: [],
+      items: {},
+      monsters: {},
+      npc_sprites: {},
+      jobs: {},
+      skills: {
+        '3001': { name: 'Lantern Flare', icon: 'mod/example.lantern/icon/skill/LANTERN_FLARE' },
+        '20001': { name: 'Far Flare' },
+      },
+      companions: {},
+      mounts: {},
+    });
+    try {
+      const m = model();
+      expect(m.label(3001)).toBe('Lantern Flare');
+      expect(m.label(20001)).toBe('Far Flare');
+      expect(skillRows(m, 0n).find((r) => r.id === 3001)?.name).toBe('Lantern Flare');
+      const asked: string[] = [];
+      const icons = new SkillIcons({
+        bytes: async (name: string) => {
+          asked.push(name);
+          return Promise.resolve(name.startsWith('mod/') ? new Uint8Array([1]) : undefined);
+        },
+      });
+      const blob = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:icon');
+      expect(icons.url(5)).toBeUndefined();
+      expect(icons.url(3001)).toBeUndefined();
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      blob.mockRestore();
+      expect(icons.url(3001)).toBe('blob:icon');
+      expect(icons.version).toBe(1);
+      expect(asked).toEqual(['mod/example.lantern/icon/skill/LANTERN_FLARE']);
+    } finally {
+      setArt(undefined);
+    }
   });
 
   it('uses the icon skill of mod skills', () => {

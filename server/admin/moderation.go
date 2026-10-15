@@ -19,7 +19,8 @@ import (
 //     moderation.jail, moderation.kick or moderation.ban. A ban also
 //     needs a recent login, and a permanent ban moderation.ban_permanent.
 //   - DELETE /sanctions/{id} needs the permission of the sanction's kind,
-//     and a recent login for a ban.
+//     and a recent login for a ban. Lifting a permanent ban also needs
+//     moderation.ban_permanent (review decision 40).
 //   - GET /sanctions needs any permission of the moderation group.
 
 // Limits of the moderation calls.
@@ -250,6 +251,9 @@ func (h *Handler) liftSanction(ctx context.Context, w http.ResponseWriter, r *ht
 		return
 	}
 	if !h.need(w, c, perm, s.GetKind() == "ban") {
+		return
+	}
+	if s.GetKind() == "ban" && s.GetPermanent() && !h.need(w, c, "moderation.ban_permanent", true) {
 		return
 	}
 	s, err = h.cfg.World.LiftSanction(ctx, Lift{Actor: c.actor(), ID: id, Reason: reason})

@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setArt } from '../assets/art';
+import type { ClientData } from '../data/clientData';
 import {
   ITEM_DESCRIPTIONS,
   ITEM_NAMES,
@@ -78,6 +80,10 @@ describe('colorRuns', () => {
   });
 });
 
+afterEach(() => {
+  setArt(undefined);
+});
+
 describe('ItemTexts', () => {
   it('loads names once, on first need, and descriptions on demand', async () => {
     const table = vi.fn(async (name: string): Promise<unknown> => {
@@ -103,6 +109,39 @@ describe('ItemTexts', () => {
     expect(await texts.description(501)).toEqual(['line']);
     expect(await texts.description(502)).toBeUndefined();
     expect(table).toHaveBeenCalledTimes(2);
+  });
+
+  it('names mod items by the client data, before and over the tables', async () => {
+    const data: ClientData = {
+      version: 2,
+      mods: [],
+      items: {
+        '2000000': { name: 'Paper Lantern', description: ['A lantern of paper.'] },
+        '2000001': { name: 'Lantern Shield', slots: 1 },
+        '501': { name: 'Lantern Potion' },
+      },
+      monsters: {},
+      npc_sprites: {},
+      jobs: {},
+      skills: {},
+      companions: {},
+      mounts: {},
+    };
+    setArt(data);
+    const texts = new ItemTexts({
+      table: async (name: string) =>
+        Promise.resolve(
+          name === ITEM_NAMES ? { '501': { n: 'Red Potion' }, '502': { n: 'Orange Potion' } } : {},
+        ),
+    });
+    expect(texts.label(2000000)).toBe('Paper Lantern');
+    expect(texts.label(2000001)).toBe('Lantern Shield [1]');
+    await texts.loadNames();
+    expect(texts.label(501)).toBe('Lantern Potion');
+    expect(texts.label(502)).toBe('Orange Potion');
+    expect(await texts.description(2000000)).toEqual(['A lantern of paper.']);
+    expect(texts.find('lantern')).toEqual([501, 2000000, 2000001]);
+    expect(texts.find('paper lantern')).toEqual([2000000]);
   });
 
   it('keeps IDs when the build has no table', async () => {

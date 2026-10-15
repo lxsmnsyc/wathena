@@ -1,0 +1,19 @@
+# The Lantern Keeper: a new second job for Merchants, who sell and tend
+# the festival's lanterns, with body sprites of the mod's art. They are
+# found by the job's name: mod/example.lantern/sprite/body/Lantern_Keeper/m
+# and /f. The server gives the job an ID in the mod range (from 10,000)
+# the first time it loads. A field that is left out comes from the look
+# job, the Merchant.
+- name: example.lantern:Lantern_Keeper
+  display_name: Lantern Keeper
+  look: merchant
+  tier: second
+  # A Merchant at job level 40 may become a Lantern Keeper.
+  changes_from:
+    - {job: merchant, job_level: 40}
+  # Its skill tree starts with the Novice's and the Merchant's, so it
+  # keeps its cart and Vending.
+  inherits: [novice, merchant]
+  max_job_level: 50
+  # The Knight's exp tables, which have 50 job levels.
+  exp_table: knight

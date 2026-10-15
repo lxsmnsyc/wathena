@@ -51,7 +51,7 @@ skills:
 - Each merged table must pass the checks of core's table. A mod whose table fails does not load.
 - A table is at most 4 MiB, and YAML aliases are not allowed.
 
-The server merges core's tables with every active mod's and sends them in `/client-data.json`. The client replaces its built-in tables with them before it connects.
+The server merges core's tables with every active mod's and sends them in `/client-data.json`. The client replaces its built-in tables with them before it connects. The same file, in format version 2, also names the art and the names of mods' records ([decision 0035](decisions/0035-phase-6-exit-check.md)).
 
 ## Testing a change
 

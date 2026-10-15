@@ -8,6 +8,11 @@
   buy: 50
   sell: 10
   stackable: true
+  # The client shows the description under the name. Lines keep RO's
+  # color codes: ^ and six hex digits set the color of the text after it.
+  description: |-
+    A lantern of thin paper that Lantern Ghosts carry.
+    ^777777Weight:^000000 1
 # Lantern Oil names the lantern's icon with the icon field.
 - name: example.lantern:Lantern_Oil
   type: Etc
@@ -26,3 +31,17 @@
   buy: 10
   sell: 2
   stackable: true
+# The Lantern Hat shows its own sprite on the head that wears it. The
+# view_sprite field names it, and the icon is found by the hat's name.
+- name: example.lantern:Lantern_Hat
+  type: Armor
+  display_name: Lantern Hat
+  weight: 30
+  buy: 200
+  sell: 50
+  location: [head_top]
+  def: 1
+  view_sprite: mod/example.lantern/sprite/headgear/Lantern_Hat
+  description: |-
+    A felt hat with a small lantern on top.
+    ^777777Defense:^000000 1

@@ -124,6 +124,19 @@ Map ready after a warp, measured in Chrome on an Apple M2 with `waserver` and th
 | Map already in the page's memory | | | 167 to 183 ms |
 | After a reload, from the Service Worker cache | | 102 to 153 ms | 246 to 283 ms |
 
+## Mod names and art
+
+The server's `/client-data.json`, format version 2, names the records of mods and their art (docs/decisions/0035-phase-6-exit-check.md). The client shows:
+
+- mod items' names, card slots and descriptions everywhere item names show: the inventory and its details, tooltips, shops, trade, mail, storage, the cart, vending, store search, chat lines and items on the ground;
+- mod monsters' names on hover, mod skills' names in the skill window and on the hotkey bar, and mod jobs' names in the level line, the party, guild and booking windows;
+- skill icons of art in the skill window and on the hotkey bar, in place of the text badge, and a skill's `effects` at their moments;
+- monster sounds of art for attacks, hurts, deaths and walks, while sound is on;
+- an item's `view_sprite` on the head or back, by the view the server gave it;
+- a mod job's body sprites, with the head, weapon and other parts of the job it looks like.
+
+The name of a unit or an item on the ground shows under it while the mouse is over it.
+
 ## Touch
 
 Phones and tablets play with touch (docs/decisions/0034-touch-input.md). The client follows the pointer last used, so a mouse and a finger work on one device, and the mouse and keyboard work as before. While touch is used:
@@ -135,7 +148,7 @@ Phones and tablets play with touch (docs/decisions/0034-touch-input.md). The cli
 - Below 600 pixels wide, windows are full-width panels under the top bar, the window buttons fold into a Menu button, and buttons and slots are at least 44 pixels. Every window moves by its title bar, with any pointer.
 - The page does not zoom on a double tap, reload on a pull or select text on a long press.
 
-For a test on a phone, the dev server can forward the game and serve HTTPS: `WATHENA_GAME=http://127.0.0.1:8300` forwards `/ws`, `/client-data.json` and `/emblems` to a game server, and `WATHENA_HTTPS_CERT` and `WATHENA_HTTPS_KEY` name a certificate and its key. The decision's "Test on a real phone" has the steps.
+For a test on a phone, the dev server can forward the game and serve HTTPS: `WATHENA_GAME=http://127.0.0.1:8300` forwards `/ws`, `/client-data.json`, `/emblems`, the account pages at `/account/` and the admin API at `/admin/api/` to a game server, so the login cookie and the client share one site, and `WATHENA_HTTPS_CERT` and `WATHENA_HTTPS_KEY` name a certificate and its key. The decision's "Test on a real phone" has the steps.
 
 ## Checks
 
@@ -145,9 +158,9 @@ pnpm lint
 pnpm format:check
 pnpm test
 pnpm build
-pnpm check:browsers   # render, audio, and cache checks in real browsers
+pnpm check:browsers   # render, audio, and cache checks in real browsers, and the exit check
 ```
 
-`check:browsers` builds and serves the placeholder pack, then checks in Chromium that the viewer renders a map without errors, that Opus test sounds decode to their exact length, and that a second visit loads assets from the Service Worker. It also checks the admin screens and the account pages at 375 pixels wide, and plays on a `waserver --dev` with the end-to-end fixture mod: a scripted touch run on an iPhone and an Android phone profile, a tablet and a phone held sideways, a mouse run on a desktop page, and frame times at phone size with Chrome's CPU throttling, printed as `info` lines. `CHECKS=touch,phone` runs only the checks named. `SCREENSHOTS` names a folder for screenshots of failed steps. `BROWSERS=chromium,firefox,webkit` adds the other engines, after `pnpm exec playwright-core install`. CI runs it in Chromium.
+`check:browsers` builds and serves the placeholder pack, then checks in Chromium that the viewer renders a map without errors, that Opus test sounds decode to their exact length, and that a second visit loads assets from the Service Worker. It also checks the admin screens and the account pages at 375 pixels wide, and plays on a `waserver --dev` with the end-to-end fixture mod: a scripted touch run on an iPhone and an Android phone profile, a tablet and a phone held sideways, a mouse run on a desktop page, and frame times at phone size with Chrome's CPU throttling, printed as `info` lines. It then runs the phase 6 exit check (`exit-check.ts`, docs/decisions/0035-phase-6-exit-check.md): three players on a desktop and a Pixel 7 play every tier 1 system against a real `waserver` with PostgreSQL, a staff account with TOTP mutes a player, and the lantern mod's item, monster, skill and job show their names and art. It needs `WATHENA_TEST_DATABASE_URL`, which `scripts/check.sh browsers` sets, and `EXIT_STEPS`, a regular expression, runs only the steps it matches. `CHECKS=touch,phone` runs only the checks named. `SCREENSHOTS` names a folder for screenshots of failed steps. `BROWSERS=chromium,firefox,webkit` adds the other engines, after `pnpm exec playwright-core install`. `scripts/check.sh browsers` runs it in Chromium.
 
 The WMAP decoder test reads `src/formats/testdata/sample.wmap`, which the Go encoder's tests write. After changing the format, run `go test ./internal/assets/wmap -update` from the repository root.

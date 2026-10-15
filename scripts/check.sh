@@ -34,7 +34,9 @@
 #             the package with a short
 #             exit check, so it is not a default step.
 #   compose   the Compose stack smoke test. Only with all.
-#   browsers  the client in Chromium. Only with all.
+#   browsers  the client in Chromium, with the phase 6 exit check
+#             (decision 0035) against waserver and PostgreSQL. Only
+#             with all.
 #
 # Tool versions. The script runs the tools on PATH and does not install
 # them. These are the versions the checks were written for:
@@ -54,9 +56,10 @@
 #   - gosec: tools/gosec/go.mod. The script builds it from there.
 #
 # Rules:
-#   - Tests that need PostgreSQL read WATHENA_TEST_DATABASE_URL. When it
-#     is not set and Docker runs, the script starts a postgres:18
-#     container for the run and removes it at the end.
+#   - Tests that need PostgreSQL read WATHENA_TEST_DATABASE_URL, and so
+#     does the browsers step's exit check. When it is not set and Docker
+#     runs, the script starts a postgres:18 container for the run and
+#     removes it at the end.
 #     CHECK_NO_DOCKER=1 turns that off, and those tests skip.
 #   - A check of generated files compares them before and after the
 #     generator runs, so uncommitted changes do not fail it.
@@ -359,7 +362,7 @@ step_browsers() {
 # The database starts here, not in a step's subshell, so the cleanup
 # sees its container.
 case " ${steps[*]} " in
-*" test "* | *" e2e "*) database ;;
+*" test "* | *" e2e "* | *" browsers "*) database ;;
 esac
 
 for s in "${steps[@]}"; do

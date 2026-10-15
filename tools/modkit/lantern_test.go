@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/testrace"
+	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modassets"
 )
@@ -31,7 +32,7 @@ func TestLantern(t *testing.T) {
 		t.Fatal(err)
 	}
 	b, err := BuildArt(dir, "", 1)
-	if err != nil || b.Assets != 4 {
+	if err != nil || b.Assets != 14 {
 		t.Fatalf("art: %v, %+v", err, b)
 	}
 	l, err := e.Load(ctx, dir, "", mod.Renewal, nil)
@@ -39,7 +40,7 @@ func TestLantern(t *testing.T) {
 		t.Fatal(err)
 	}
 	results, err := e.RunTests(ctx, l, "", func(CaseResult) {})
-	if err != nil || len(results) != 2 {
+	if err != nil || len(results) != 5 {
 		t.Fatalf("tests: %v, %d cases", err, len(results))
 	}
 	for _, r := range results {
@@ -64,8 +65,25 @@ func TestLantern(t *testing.T) {
 	if oil := doc.Items[id("example.lantern:Lantern_Oil")]; oil.Icon != "mod/example.lantern/icon/item/Paper_Lantern" {
 		t.Errorf("oil art %+v", oil)
 	}
-	if unlit, ok := doc.Items[id("example.lantern:Unlit_Lantern")]; ok {
+	if unlit := doc.Items[id("example.lantern:Unlit_Lantern")]; unlit.ItemArt != (modassets.ItemArt{}) || unlit.Name != "Unlit Lantern" {
 		t.Errorf("the unlit lantern has art %+v", unlit)
+	}
+	// Version 2: the names of the mod's records and the item text.
+	if lantern.Name != "Paper Lantern" || len(lantern.Description) != 2 || lantern.Description[1] != "^777777Weight:^000000 1" {
+		t.Errorf("lantern text %+v", lantern)
+	}
+	hat := doc.Items[id("example.lantern:Lantern_Hat")]
+	if hat.Name != "Lantern Hat" || hat.ViewSprite != "mod/example.lantern/sprite/headgear/Lantern_Hat" ||
+		hat.View != gamedata.ItemArtViews || hat.Icon != "mod/example.lantern/icon/item/Lantern_Hat" {
+		t.Errorf("hat %+v", hat)
+	}
+	for _, d := range l.Items.Data.Items {
+		if d.AegisName == "example.lantern:Lantern_Hat" && d.View != gamedata.ItemArtViews {
+			t.Errorf("the hat's view is %d", d.View)
+		}
+	}
+	if _, ok := doc.Items["501"]; ok {
+		t.Error("a core item without art has an entry")
 	}
 	ghost := ""
 	for monsterID, m := range doc.Monsters {
@@ -75,6 +93,19 @@ func TestLantern(t *testing.T) {
 	}
 	if n, _ := strconv.Atoi(ghost); n < int(mod.MonsterIDs.Start) {
 		t.Errorf("ghost sprite under monster %q", ghost)
+	}
+	if g := doc.Monsters[ghost]; g.Name != "Lantern Ghost" || g.Sounds["die"] != "mod/example.lantern/sound/Lantern_Ghost/die" {
+		t.Errorf("ghost %+v", g)
+	}
+	keeper, ok := l.Jobs.ID("example.lantern:Lantern_Keeper")
+	if j := doc.Jobs[strconv.Itoa(keeper)]; !ok || j.Name != "Lantern Keeper" || j.Body["m"] != "mod/example.lantern/sprite/body/Lantern_Keeper/m" ||
+		j.Body["f"] != "mod/example.lantern/sprite/body/Lantern_Keeper/f" || j.Look != 5 || !l.Zone.OwnLookJobs[keeper] {
+		t.Errorf("keeper %d: %+v", keeper, j)
+	}
+	flare := l.Skills.ByName("example.lantern:LANTERN_FLARE")
+	if s := doc.Skills[strconv.Itoa(flare.ID)]; s.Name != "Lantern Flare" || s.Icon != "mod/example.lantern/icon/skill/LANTERN_FLARE" ||
+		len(s.Effects["hit"]) != 1 || s.Effects["hit"][0] != "mod/example.lantern/effect/flare" {
+		t.Errorf("flare %+v", s)
 	}
 	if doc.NPCSprites["1000000"] != "mod/example.lantern/sprite/npc/Lamplighter" {
 		t.Errorf("npc sprites %v", doc.NPCSprites)

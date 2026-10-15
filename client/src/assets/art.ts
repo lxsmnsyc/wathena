@@ -8,10 +8,18 @@
 import type { ClientData } from '../data/clientData';
 
 let data: ClientData | undefined;
+/** The view sprites of items, by the view ID the server gave them. */
+let views = new Map<number, string>();
 
 /** Uses the server's client data from now on. Undefined forgets it. */
 export function setArt(d: ClientData | undefined): void {
   data = d;
+  views = new Map();
+  for (const item of Object.values(d?.items ?? {})) {
+    if (item.view !== undefined && item.view_sprite !== undefined) {
+      views.set(item.view, item.view_sprite);
+    }
+  }
 }
 
 /** An item's icon. */
@@ -46,10 +54,75 @@ export function npcSprite(id: number): string {
 
 /** A job's body sprite for a sex, when its record names art. */
 export function jobBody(job: number, sex: 'm' | 'f'): string | undefined {
-  return data?.jobs[String(job)]?.[sex];
+  return data?.jobs[String(job)]?.body?.[sex];
 }
 
 /** A skill's icon, when its record names art. */
 export function skillIcon(id: number): string | undefined {
   return data?.skills[String(id)]?.icon;
+}
+
+/**
+ * The effects a skill's record names for a moment: caster, effect or hit.
+ * Undefined when the record names none for it, so the client tables'
+ * effects play.
+ */
+export function skillArtEffects(id: number, moment: string): readonly string[] | undefined {
+  return data?.skills[String(id)]?.effects?.[moment];
+}
+
+/**
+ * The sprite a worn item shows, by the view ID in a look, when the item's
+ * record names a view_sprite. Other views keep their sprite by ID.
+ */
+export function viewSprite(view: number): string | undefined {
+  return views.get(view);
+}
+
+// The names of mods' records (review decision 40). Core's records keep
+// the names of the asset build's tables and of the client's tables.
+
+/** A mod item's name, card slots and description, when the server names it. */
+export function modItem(
+  id: number,
+): { name?: string; slots: number; description?: readonly string[] } | undefined {
+  const item = data?.items[String(id)];
+  if (item?.name === undefined && item?.description === undefined) {
+    return undefined;
+  }
+  return {
+    ...(item.name === undefined ? {} : { name: item.name }),
+    slots: item.slots ?? 0,
+    ...(item.description === undefined ? {} : { description: item.description }),
+  };
+}
+
+/** The names of every item the server names, for item search. */
+export function modItemNames(): [number, string][] {
+  return Object.entries(data?.items ?? {}).flatMap(([id, item]) =>
+    item.name === undefined ? [] : [[Number(id), item.name] as [number, string]],
+  );
+}
+
+/** A mod monster's name, by the ID its look shows. */
+export function modMonsterName(id: number): string | undefined {
+  return data?.monsters[String(id)]?.name;
+}
+
+/** A mod skill's name. */
+export function modSkillName(id: number): string | undefined {
+  return data?.skills[String(id)]?.name;
+}
+
+/**
+ * The job whose sprites and tables a job uses beside its body art: the
+ * look a mod's job starts from, or the job itself.
+ */
+export function lookJob(id: number): number {
+  return data?.jobs[String(id)]?.look ?? id;
+}
+
+/** A mod job's name. */
+export function modJobName(id: number): string | undefined {
+  return data?.jobs[String(id)]?.name;
 }

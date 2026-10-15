@@ -60,6 +60,11 @@ type Mods struct {
 	// Monsters are every monster's spawn of one, by monster ID, with
 	// its stats, for spawning.monsters.
 	Monsters map[uint32]Spawn
+	// OwnLookJobs are the jobs that a look shows by their own ID: mods'
+	// jobs, and jobs whose records name body sprites of art. The client
+	// finds their art and the job they look like in the client data
+	// (review decision 40).
+	OwnLookJobs map[int]bool
 	// Location is the server's time zone, where schedules match their
 	// times. It is UTC when nil.
 	Location *time.Location

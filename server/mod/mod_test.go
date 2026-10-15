@@ -385,6 +385,7 @@ func TestItemOverlay(t *testing.T) {
 - name: example.a:Cookie
   stackable: true
 - name: example.b:Candy
+  description: "A sweet.\r\n^ff0000Red^000000 inside.  \n\n"
 `,
 	})
 	s, err := resolve(t, dir, Config{})
@@ -410,6 +411,10 @@ func TestItemOverlay(t *testing.T) {
 	}
 	if candy := table.Get(got.IDs["example.b:Candy"]); candy.ID != 2_000_001 || candy.Type != "Etc" {
 		t.Errorf("candy %+v", candy)
+	}
+	// A description is kept for the client as lines (review decision 40).
+	if d := got.Descriptions[2_000_001]; len(d) != 2 || d[0] != "A sweet." || d[1] != "^ff0000Red^000000 inside." {
+		t.Errorf("candy description %q", d)
 	}
 	if len(baseItems.Items) != 2 || baseItems.Items[0].Weight != 70 {
 		t.Error("the base items changed")
@@ -441,6 +446,8 @@ func TestItemOverlayErrors(t *testing.T) {
 		"- name: Jellopy\n  bonuses: [[luk, 1, {when: x}]]":                   {`when is a function, so it only works in Lua`},
 		"- name: Jellopy\n  bonuses: [[luk, 1, {percent: true}]]":             {`takes no percent option`},
 		"- name: Jellopy\n  bonuses: [[damage, 5, {against: {race: elves}}]]": {`there is no race "elves"`},
+		"- name: Jellopy\n  description: 5":                                   {"description is text of 1 to 4096 bytes"},
+		"- name: Jellopy\n  description: \" \"":                               {"description is text of 1 to 4096 bytes"},
 	}
 	for text, parts := range cases {
 		dir := t.TempDir()
@@ -619,7 +626,7 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 14 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 16 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
 	// The cookie stand is a shop that only scripts open.

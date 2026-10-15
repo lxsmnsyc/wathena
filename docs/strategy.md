@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-15)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 7 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done.
 
 Done:
 
@@ -69,6 +69,11 @@ Done:
   - No double-tap zoom, pull-to-refresh or selection in the game view, the chat above the on-screen keyboard, and account pages and admin screens that fit 375 pixels.
   - `pnpm check:browsers` plays a scripted touch run on iPhone, Android, tablet and landscape profiles, a mouse run, and prints frame times with CPU throttling.
 
+- Phase 6 step 8, the phase 6 exit check ([decision 0035](decisions/0035-phase-6-exit-check.md)):
+  - `/client-data.json` format version 2 names mods' items, monsters, skills and jobs, with items' descriptions. The client shows the names, and draws skill icons and effects, monster sounds, worn item sprites and mod jobs' bodies.
+  - A player without any command permission says `@` lines as chat. Lifting a permanent ban needs `moderation.ban_permanent`.
+  - `scripts/check.sh browsers` plays the exit check against `waserver` and PostgreSQL: three players on a desktop and a phone profile through the basic game and every tier 1 system, an admin run with TOTP, and the lantern mod's records.
+
 Open review items:
 
 - Next step 18's details to review, in proposal 0002, "Next steps".
@@ -79,6 +84,7 @@ Open review items:
 - Next step 23's details to review, in proposal 0002, "Next steps".
 - Next step 24's details to review, in proposal 0002, "Next steps".
 - Next step 25's details to review, in proposal 0002, "Next steps".
+- Next step 26's details to review, in proposal 0002, "Next steps".
 - The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
@@ -91,9 +97,8 @@ Known issues:
 
 Next:
 
-1. Phase 6 (section 15, "Phase 6 in full"), with step 8, the phase 6 exit check, once next steps 19 to 25 are reviewed and the real-phone test is done.
-2. The open review items above, between phase 6 steps.
-3. Phase 7, procedural mode, is the largest phase left.
+1. The phase 6 review: the details to review of next steps 19 to 25 in proposal 0002, as review decision 40 planned, with next step 26's, and the user's test on a real phone.
+2. Phase 7, procedural mode, is the largest phase left.
 
 ## 1. Current state
 
@@ -2764,7 +2769,20 @@ The order from here:
       - Tests: vitest for the gesture recognizer, the joystick math and the walk limit, and the settings. `pnpm check:browsers` gains `phone` (the admin screens and account pages at 375 px, the pages rendered by `TestPageSamples`) and `touch`: a `waserver --dev` with the fixture mod, an iPhone 13 run of every touch activity with a trade against a Pixel 7, an iPad and a landscape phone, a mouse run, and frame times.
       - Frame times at Pixel 7 size: 60 FPS at 1×, 4× and 6× CPU throttling in Chrome with the GPU, online and with 40 characters. Playwright's Chromium with SwiftShader, which draws on the CPU, gives 20.6 to 34.5 FPS, and is the check's floor, not a phone.
       - Left: item drops on the equipment window and items on the hotkey bar, which the mouse lacks too, pen input as touch, and frame times on a real phone in a kRO town.
-   8. The phase 6 exit check: a scripted browser run of every tier 1 activity, an admin run that finds a player, reads their item history and applies a sanction, and a mod whose items, monsters, skills and jobs display correctly.
+   8. The phase 6 exit check: a scripted browser run of every tier 1 activity, an admin run that finds a player, reads their item history and applies a sanction, and a mod whose items, monsters, skills and jobs display correctly. Done on 2026-10-15 ([decision 0035](decisions/0035-phase-6-exit-check.md), proposal 0002 review decision 40, client/README.md, "Mod names and art", server/README.md, "Mod art" and "Chat and moderation", and mods/README.md, "Art"):
+      - `/client-data.json` format version 2: the names of mods' items, monsters, skills and jobs, items' card slots and `description` lines, the view of an item with a `view_sprite`, and a mod job's look. A job's body sprites moved under `body`. Item records gain `description`.
+      - The client shows mods' names everywhere names show, and the name of a unit under the mouse. It draws skill icons on the skill window and hotkey bar, skills' effects of art, monster sounds, and worn item sprites on heads and backs. Items with a `view_sprite` get views from 1,000,000, and looks send a mod's job by its own ID, so its body art shows. A window that opens comes to the front.
+      - A line that starts with `@` is chat for a player without any command permission, as in rAthena. Lifting a permanent ban needs `moderation.ban_permanent`.
+      - `pnpm check:browsers` runs the exit check (`exit-check.ts`), and `scripts/check.sh browsers` gives it PostgreSQL. `tools/testdb` makes and drops its database. Phase 1 plays `waserver --dev` with three players, Ann and Cid on desktop pages with the mouse and Bob on a Pixel 7 profile with touch. Phase 2 plays `waserver` with accounts: Dora signs up on a phone, uploads a guild emblem on the account page and plays, and Admin logs in with TOTP, reads Dora's item history and mutes her.
+      - The lantern sample gains the Lantern Hat with a worn sprite, the Lantern Keeper job with body sprites, its skill Lantern Flare with an icon and an effect, and the Lantern Ghost's sounds. The fixture gains the Training Dummy and guild storage at the Kafra.
+      - Result: `scripts/check.sh browsers` passed all 71 checks in 912 seconds on 2026-10-15. The exit check took 504 of them, with its 30 steps and the server logs and page errors of both phases clean. The default `scripts/check.sh` passed every step after the last change.
+      - Left: companions and mounts of art, which looks cannot name without a protocol field, and weapons and shields with a `view_sprite`.
+
+   Phase 6 is done. Against its exit criteria (decision 0035 lists each check):
+
+   - A player can do every tier 1 activity in the web client: the exit check walks, fights, loots, levels up, changes job, equips, uses skills and talks to NPCs, on a desktop and on a phone, and plays chat of every kind, friends, party and booking, guild with skills, storage and an emblem, trade, vending with store search, mail, NPC shops of every cost kind, storage and the cart, each with a player on the phone in it.
+   - Staff can find a player, view item history, and apply a sanction from the admin tools: Admin, logged in with TOTP, finds Dora, follows her item to its history, and mutes her, and Dora sees the mute in the game.
+   - Items, monsters, skills, and jobs added by a mod display correctly: the lantern mod's item, monster, skill and job show their names in the page and their art, checked by the network and by pixels.
    Left for later: the economy dashboards come with the simulator of phase 7 (section 8.13), and retention jobs and encrypted backups come with phase 8. Each step drafts its admin API and any Lua API for review before it is built.
 
 Reasons for this order:

@@ -978,7 +978,8 @@ body {
   font-size: 11px;
 }
 
-/* A text badge stands in for a skill icon, which the asset build lacks. */
+/* A text badge stands in for a skill icon, which the asset build lacks.
+   A skill whose record names art shows its icon instead. */
 #skill-window .badge,
 .hotkey .badge {
   display: flex;
@@ -991,6 +992,18 @@ body {
   background: rgb(80 110 170 / 70%);
   font-size: 11px;
   font-weight: 600;
+}
+
+#skill-window .badge.has-icon,
+.hotkey .badge.has-icon {
+  background: none;
+}
+
+.badge .skill-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 #hotkeys {

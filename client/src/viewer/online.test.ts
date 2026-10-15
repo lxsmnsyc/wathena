@@ -1,6 +1,8 @@
 import { create } from '@bufbuild/protobuf';
 import { Texture } from 'three';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setArt } from '../assets/art';
+import type { ClientData } from '../data/clientData';
 import type { Sprite } from '../formats/wspr';
 import type { WMap } from '../formats/wmap';
 import { ChatChannel } from '../gen/wathena/v1/command_pb';
@@ -9,6 +11,38 @@ import type { EffectCache } from '../render/effects';
 import { SpriteAsset, type SpriteCache } from '../render/sprites';
 import type { Pathfinder } from '../world/pathfinder';
 import Online, { WARP_SPRITE, lookOf } from './online';
+
+/** Client data with a mod's monster, skill and hat (review decision 40). */
+const MOD_DATA: ClientData = {
+  version: 2,
+  mods: [],
+  items: {
+    '2000003': {
+      name: 'Lantern Hat',
+      view_sprite: 'mod/example.lantern/sprite/headgear/Lantern_Hat',
+      view: 1000000,
+    },
+  },
+  monsters: {
+    '1002': {
+      name: 'Lantern Ghost',
+      sounds: {
+        attack: 'mod/example.lantern/sound/ghost_attack',
+        damage: 'mod/example.lantern/sound/ghost_damage',
+        die: 'mod/example.lantern/sound/ghost_die',
+      },
+    },
+  },
+  npc_sprites: {},
+  jobs: {},
+  skills: { '20000': { effects: { hit: ['mod/example.lantern/effect/flare'] } } },
+  companions: {},
+  mounts: {},
+};
+
+afterEach(() => {
+  setArt(undefined);
+});
 
 function map(): WMap {
   const n = 10;
@@ -804,5 +838,69 @@ describe('skill numbers', () => {
       }),
     ]);
     expect(hits).toEqual(['120 5 true']);
+  });
+
+  it('names a mod monster, plays its sounds, and plays the effects a mod skill names', async () => {
+    setArt(MOD_DATA);
+    const o = await loaded();
+    const asked: string[] = [];
+    o.effects = {
+      cache: {
+        get: async (name: string) => {
+          asked.push(name);
+          return Promise.resolve(undefined);
+        },
+      } as unknown as EffectCache,
+      textures: { uniform: () => ({ value: new Texture() }) },
+    };
+    const sounds: string[] = [];
+    o.onSound = (name) => {
+      sounds.push(name);
+    };
+    expect(o.nameOf(2)).toBe('Lantern Ghost');
+    vi.useFakeTimers();
+    try {
+      o.handle([
+        create(EventSchema, {
+          body: {
+            case: 'damage',
+            value: {
+              source: 1,
+              target: 2,
+              amount: 10n,
+              hits: 1,
+              kind: 1,
+              delayMs: 0,
+              skillId: 20000,
+            },
+          },
+        }),
+        create(EventSchema, {
+          body: {
+            case: 'damage',
+            value: { source: 2, target: 1, amount: 3n, hits: 1, kind: 1, delayMs: 0 },
+          },
+        }),
+      ]);
+      vi.advanceTimersByTime(10);
+      o.handle([create(EventSchema, { body: { case: 'vanish', value: { id: 2, reason: 2 } } })]);
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(sounds).toEqual([
+      'mod/example.lantern/sound/ghost_attack',
+      'mod/example.lantern/sound/ghost_damage',
+      'mod/example.lantern/sound/ghost_die',
+    ]);
+    expect(asked).toEqual(['mod/example.lantern/effect/flare']);
+  });
+});
+
+describe('view sprites', () => {
+  it('draws the view sprite the client data names for an item view', () => {
+    setArt(MOD_DATA);
+    const look = lookOf(create(LookSchema, { body: 0, sex: 1, headTop: 1000000, headMid: 17 }));
+    expect(look.headgearTop).toBe('mod/example.lantern/sprite/headgear/Lantern_Hat');
+    expect(look.headgearMid).toBe('sprite/headgear/m/17');
   });
 });

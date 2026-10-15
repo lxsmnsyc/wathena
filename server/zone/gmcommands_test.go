@@ -128,9 +128,12 @@ func lastSystem(p *Player) string {
 	return l[len(l)-1]
 }
 
-// TestGMCommandsNeedRoles: a command without the permission, without a
-// second factor, or that does not exist answers "Unknown command.", and
-// no command line is chat or reaches the chat log.
+// TestGMCommandsNeedRoles: a staff member's command without the
+// permission, or that does not exist, answers "Unknown command.", and no
+// command line is chat or reaches the chat log. A player without the
+// permission of any command, or a staff member who logged in without a
+// second factor, says a line that starts with @ as normal chat, as in
+// rAthena (review decision 40).
 func TestGMCommandsNeedRoles(t *testing.T) {
 	w := newGMWorld()
 	z := w.a
@@ -147,14 +150,12 @@ func TestGMCommandsNeedRoles(t *testing.T) {
 		line string
 		want string
 	}{
-		{plain, "@item 501 1 testing", UnknownCommand},
-		{plain, "@hide", UnknownCommand},
-		{lazy, "@hide", UnknownCommand},
 		{admin, "@nonsense", UnknownCommand},
 		{admin, "@", UnknownCommand},
 		{gm, "@item 501 1 testing", UnknownCommand},
 		{mod, "@warp map/b", UnknownCommand},
 		{mod, "@recall Plain", UnknownCommand},
+		{mod, "@nonsense", UnknownCommand},
 		{gm, "@hide", "Invisible: On"},
 		{admin, "@ITEM 501 1 testing", "Item created: 1 x Red_Potion."},
 	} {
@@ -167,10 +168,30 @@ func TestGMCommandsNeedRoles(t *testing.T) {
 	if len(z.chats) != 0 || len(log.Lines()) != 0 {
 		t.Errorf("command lines went out as chat: %d local, %d logged", len(z.chats), len(log.Lines()))
 	}
-	// Plain chat still works.
-	say(z, plain, "hello @there")
-	if len(z.chats) != 1 {
-		t.Error("a line with @ inside is not chat")
+	// Players without a command go out as chat, and get no answer.
+	for i, c := range []struct {
+		p    *Player
+		line string
+	}{
+		{plain, "@item 501 1 testing"},
+		{plain, "@hide"},
+		{lazy, "@hide"},
+		{plain, "hello @there"},
+	} {
+		c.p.pending = nil
+		say(z, c.p, c.line)
+		if got := lastSystem(c.p); got != "" {
+			t.Errorf("%s %q: answered %q", c.p.Name, c.line, got)
+		}
+		if len(z.chats) != i+1 || z.chats[i].text != c.line {
+			t.Errorf("%s %q is not chat: %d lines", c.p.Name, c.line, len(z.chats))
+		}
+	}
+	if n := len(log.Lines()); n != 4 {
+		t.Errorf("%d chat lines logged, want 4", n)
+	}
+	if lazy.gmHidden || plain.gmHidden {
+		t.Error("an @hide of a player without the permission hid them")
 	}
 }
 

@@ -1,5 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { dropSprite, itemIcon, jobBody, monsterSprite, npcSprite, setArt } from '../assets/art';
+import {
+  dropSprite,
+  itemIcon,
+  jobBody,
+  modItem,
+  modItemNames,
+  modJobName,
+  modMonsterName,
+  modSkillName,
+  monsterSound,
+  monsterSprite,
+  npcSprite,
+  setArt,
+  skillArtEffects,
+  skillIcon,
+  viewSprite,
+} from '../assets/art';
 import { AssetStore, type Entry, type Fetch, modOf, sha256, shardOf } from '../assets/store';
 import { type ClientData, httpOrigin, loadClientData, parseClientData } from './clientData';
 import { skillEffects } from './tables';
@@ -36,13 +52,37 @@ const placeholder = encoder.encode('placeholder');
 
 function doc(over: Partial<ClientData> = {}): ClientData {
   return {
-    version: 1,
+    version: 2,
     mods: [{ id: 'example.lantern', version: '0.1.0', assets: '/assets/mods/example.lantern/0.1.0/' }],
-    items: { '2000000': { icon: 'mod/example.lantern/icon/item/Paper_Lantern' } },
-    monsters: { '100000': { sprite: 'mod/example.lantern/sprite/mob/Lantern_Ghost' } },
+    items: {
+      '2000000': {
+        icon: 'mod/example.lantern/icon/item/Paper_Lantern',
+        name: 'Paper Lantern',
+        description: ['A lantern of paper.', '^0000ffWeight:^000000 1'],
+      },
+      '2000003': {
+        name: 'Lantern Hat',
+        slots: 1,
+        view_sprite: 'mod/example.lantern/sprite/headgear/Lantern_Hat',
+        view: 1000000,
+      },
+    },
+    monsters: {
+      '100000': {
+        sprite: 'mod/example.lantern/sprite/mob/Lantern_Ghost',
+        sounds: { die: 'mod/example.lantern/sound/Lantern_Ghost_die' },
+        name: 'Lantern Ghost',
+      },
+    },
     npc_sprites: { '1000000': 'mod/example.lantern/sprite/npc/Lamplighter' },
-    jobs: { '10000': { m: 'mod/example.jobs/sprite/body/Desperado/m' } },
-    skills: {},
+    jobs: { '10000': { name: 'Desperado', body: { m: 'mod/example.jobs/sprite/body/Desperado/m' } } },
+    skills: {
+      '20000': {
+        name: 'Lantern Flare',
+        icon: 'mod/example.lantern/icon/skill/LANTERN_FLARE',
+        effects: { hit: ['mod/example.lantern/effect/flare'] },
+      },
+    },
     companions: {},
     mounts: {},
     ...over,
@@ -135,7 +175,7 @@ describe('loadClientData', () => {
   });
 
   it('refuses client data of another shape', async () => {
-    const s = await server({ ...doc(), version: 2 });
+    const s = await server({ ...doc(), version: 1 });
     const store = await AssetStore.open('/assets/', s.fetcher);
     await expect(loadClientData('ws://game/ws', store, s.fetcher)).rejects.toThrow('unknown version');
   });
@@ -150,6 +190,14 @@ describe('parseClientData', () => {
       doc({ npc_sprites: { '1': '' } }),
       doc({ mods: [{ id: 'Bad', version: '1', assets: '/x/' }] }),
       doc({ mods: [{ id: 'a', version: '1', assets: 'http://elsewhere/' }] }),
+      doc({ items: { '1': { name: '' } } }),
+      doc({ items: { '1': { description: 'one line' as unknown as string[] } } }),
+      doc({ items: { '1': { slots: 9 } } }),
+      doc({ items: { '1': { view: -1 } } }),
+      doc({ monsters: { '1': { name: 7 as unknown as string } } }),
+      // Version 1's job shape.
+      doc({ jobs: { '1': { m: 'sprite/body/x/m' } as unknown as { name: string } } }),
+      doc({ skills: { '1': { effects: { hit: ['sprite/mob/1'] } } } }),
     ]) {
       expect(() => parseClientData(bad)).toThrow('invalid');
     }
@@ -169,6 +217,35 @@ describe('art', () => {
     expect(npcSprite(117)).toBe('sprite/npc/117');
     expect(jobBody(10000, 'm')).toBe('mod/example.jobs/sprite/body/Desperado/m');
     expect(jobBody(10000, 'f')).toBeUndefined();
+    expect(skillIcon(20000)).toBe('mod/example.lantern/icon/skill/LANTERN_FLARE');
+    expect(skillArtEffects(20000, 'hit')).toEqual(['mod/example.lantern/effect/flare']);
+    expect(skillArtEffects(20000, 'caster')).toBeUndefined();
+    expect(skillArtEffects(5, 'hit')).toBeUndefined();
+    expect(monsterSound(100000, 'die')).toBe('mod/example.lantern/sound/Lantern_Ghost_die');
+    expect(monsterSound(100000, 'attack')).toBeUndefined();
+    expect(viewSprite(1000000)).toBe('mod/example.lantern/sprite/headgear/Lantern_Hat');
+    expect(viewSprite(17)).toBeUndefined();
+  });
+
+  it('names the records of mods', () => {
+    expect(modItem(2000000)).toBeUndefined();
+    expect(modJobName(10000)).toBeUndefined();
+    setArt(doc());
+    expect(modItem(2000000)).toEqual({
+      name: 'Paper Lantern',
+      slots: 0,
+      description: ['A lantern of paper.', '^0000ffWeight:^000000 1'],
+    });
+    expect(modItem(2000003)).toEqual({ name: 'Lantern Hat', slots: 1 });
+    expect(modItem(501)).toBeUndefined();
+    expect(modItemNames()).toEqual([
+      [2000000, 'Paper Lantern'],
+      [2000003, 'Lantern Hat'],
+    ]);
+    expect(modMonsterName(100000)).toBe('Lantern Ghost');
+    expect(modMonsterName(1002)).toBeUndefined();
+    expect(modSkillName(20000)).toBe('Lantern Flare');
+    expect(modJobName(10000)).toBe('Desperado');
   });
 
   it('finds the mod of a name', () => {

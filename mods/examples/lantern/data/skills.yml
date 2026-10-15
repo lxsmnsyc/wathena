@@ -1,0 +1,17 @@
+# Lantern Flare: a burst of lantern fire at one enemy. Its icon is found
+# by its name, mod/example.lantern/icon/skill/LANTERN_FLARE, and its hits
+# show the mod's flare effect. The server gives it an ID in the mod range
+# (from 20,000) the first time it loads.
+- name: example.lantern:LANTERN_FLARE
+  display_name: Lantern Flare
+  max_level: 3
+  type: magic
+  target: enemy
+  element: fire
+  range: 9
+  after_cast_delay: 500
+  requirements:
+    sp: [10, 12, 14]
+  effects:
+    hit: [mod/example.lantern/effect/flare]
+  script: scripts/skills/lantern_flare.lua

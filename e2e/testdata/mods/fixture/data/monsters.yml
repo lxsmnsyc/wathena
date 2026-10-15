@@ -51,3 +51,15 @@
   ai: 6
   drops:
     - {item: Jellopy, rate: 10000}
+
+# The Training Dummy of the browser checks' exit check: a Dummy worth a
+# million base and job exp, so one kill takes a player up a level. It
+# shows the Dummy's sprite. "!trainer" places one next to the speaker.
+- name: e2e.fixture:TRAINER
+  sprite: mod/e2e.fixture/sprite/mob/Dummy
+  display_name: Training Dummy
+  level: 50
+  hp: 40
+  base_exp: 1000000
+  job_exp: 1000000
+  ai: 6

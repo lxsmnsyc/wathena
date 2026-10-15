@@ -13,9 +13,9 @@
 // - frameTimes measures frames at phone size with the CPU slowed down.
 
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
-import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer as netServer } from 'node:net';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import {
   type Browser,
   type BrowserContext,
@@ -26,7 +26,7 @@ import {
 import { type ViteDevServer, createServer } from 'vite';
 
 /** Waits for a time, in milliseconds. */
-async function sleep(ms: number): Promise<void> {
+export async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
@@ -62,7 +62,81 @@ chat:
 export interface Game {
   /** The Vite dev server's base URL, which forwards to the game. */
   base: string;
+  /** The game server's own URL. */
+  game: string;
   stop: () => Promise<void>;
+  /** The end of the server's log. */
+  log: () => string;
+  /** The server's ERROR lines so far, up to 50. */
+  errors: string[];
+}
+
+/** How startGame runs the server. */
+export interface GameOptions {
+  /**
+   * Development sessions, where a name is a session token. Without them
+   * the server serves the account pages and needs both databases.
+   */
+  dev?: boolean;
+  /** --start-job, for development sessions. */
+  startJob?: string;
+  /** --start-items. */
+  startItems?: string;
+  /** More of the config, after the fixture's permissions and chat limits. */
+  config?: string;
+  /** More environment variables, such as the database URLs. */
+  env?: Record<string, string>;
+  /** Mods of the repository to install beside the fixture, such as mods/examples/lantern. */
+  mods?: string[];
+  /** A name for this server's files in dir, so two servers can share it. */
+  name?: string;
+}
+
+/**
+ * Builds waserver into dir once, and returns its path.
+ */
+function buildServer(repo: string, dir: string): string {
+  const waserver = join(dir, 'waserver');
+  if (!existsSync(waserver)) {
+    execFileSync('go', ['build', '-o', waserver, './server/cmd/waserver'], {
+      cwd: repo,
+      stdio: 'inherit',
+    });
+  }
+  return waserver;
+}
+
+/**
+ * Copies the fixture and the mods asked for into a mods folder of dir,
+ * and builds their art.
+ */
+function installMods(repo: string, dir: string, wactl: string, extra: readonly string[]): string {
+  const mods = join(dir, `mods-${extra.length}`);
+  if (existsSync(mods)) {
+    return mods;
+  }
+  cpSync(join(repo, 'e2e', 'testdata', 'mods'), mods, { recursive: true });
+  // The end-to-end world has a second map for the treasure hunt. This
+  // world has one, so the hunt's chests go on it.
+  const events = join(mods, 'fixture', 'data', 'events.yml');
+  writeFileSync(
+    events,
+    readFileSync(events, 'utf8').replace('maps: [e2e_field]', 'maps: [placeholder/map]'),
+  );
+  const built = [join(mods, 'fixture')];
+  for (const m of extra) {
+    const to = join(mods, basename(m));
+    cpSync(join(repo, m), to, {
+      recursive: true,
+      // A build in the mod's folder is the author's, not this check's.
+      filter: (src) => !src.startsWith(join(repo, m, 'assets')),
+    });
+    built.push(to);
+  }
+  for (const m of built) {
+    execFileSync(wactl, ['mod', 'build-art', m], { stdio: 'ignore' });
+  }
+  return mods;
 }
 
 /**
@@ -76,47 +150,49 @@ export async function startGame(
   dir: string,
   wactl: string,
   build: string,
+  opts: GameOptions = {},
 ): Promise<Game> {
-  const waserver = join(dir, 'waserver');
-  execFileSync('go', ['build', '-o', waserver, './server/cmd/waserver'], {
-    cwd: repo,
-    stdio: 'inherit',
-  });
-  const mods = join(dir, 'mods');
-  cpSync(join(repo, 'e2e', 'testdata', 'mods'), mods, { recursive: true });
-  // The end-to-end world has a second map for the treasure hunt. This
-  // world has one, so the hunt's chests go on it.
-  const events = join(mods, 'fixture', 'data', 'events.yml');
-  writeFileSync(
-    events,
-    readFileSync(events, 'utf8').replace('maps: [e2e_field]', 'maps: [placeholder/map]'),
-  );
-  execFileSync(wactl, ['mod', 'build-art', join(mods, 'fixture')], { stdio: 'inherit' });
-  const config = join(dir, 'waserver.yml');
-  writeFileSync(config, CONFIG);
+  const waserver = buildServer(repo, dir);
+  const mods = installMods(repo, dir, wactl, opts.mods ?? []);
+  const config = join(dir, `waserver-${opts.name ?? 'game'}.yml`);
+  writeFileSync(config, CONFIG + (opts.config ?? ''));
   const port = await freePort();
   const debug = await freePort();
   const vitePort = await freePort();
   const game = `http://127.0.0.1:${port}`;
   const origin = `http://localhost:${vitePort}`;
+  const dev = opts.dev ?? true;
   const server: ChildProcess = spawn(
     waserver,
     [
-      ...['--config', config, '--assets', build, '--map', 'placeholder/map', '--dev'],
+      ...['--config', config, '--assets', build, '--map', 'placeholder/map'],
       ...['--mode', 'renewal', '--addr', `127.0.0.1:${port}`, '--debug-addr', `127.0.0.1:${debug}`],
-      ...['--origins', origin, '--shutdown-countdown', '0', '--seed', 'browser-check'],
-      ...['--start-job', '1:50:40', '--start-items', '501:10,909:20,1201:1,2101:1', '--mods', mods],
+      ...['--origins', origin, '--shutdown-countdown', '0', '--mods', mods],
+      ...['--start-items', opts.startItems ?? '501:10,909:20,1201:1,2101:1'],
+      ...(dev
+        ? ['--dev', '--seed', 'browser-check', '--start-job', opts.startJob ?? '1:50:40']
+        : ['--play-url', `${origin}/`]),
     ],
-    { stdio: ['ignore', 'ignore', 'pipe'] },
+    { stdio: ['ignore', 'ignore', 'pipe'], env: { ...process.env, ...opts.env } },
   );
   // A crash of the check must not leave the server running.
   process.once('exit', () => {
     server.kill('SIGKILL');
   });
+  let log = '';
+  let partial = '';
+  const errors: string[] = [];
   const serving = new Promise<void>((resolve, reject) => {
-    let log = '';
     server.stderr?.on('data', (b: Buffer) => {
-      log += b.toString();
+      const text = b.toString();
+      const lines = (partial + text).split('\n');
+      partial = lines.pop() ?? '';
+      for (const line of lines) {
+        if (line.includes('level=ERROR') && errors.length < 50) {
+          errors.push(line);
+        }
+      }
+      log += text;
       if (log.includes('msg=serving')) {
         resolve();
       }
@@ -168,20 +244,23 @@ export async function startGame(
   };
   return {
     base: origin,
+    game,
     stop: async () => {
       await vite.close();
       await stopServer();
     },
+    log: () => log,
+    errors,
   };
 }
 
 /** The game page of a --dev character, through the dev server's proxy. */
-function gameURL(base: string, name: string): string {
+export function gameURL(base: string, name: string): string {
   const ws = `${base.replace(/^http/, 'ws')}/ws`;
   return `${base}/?server=${encodeURIComponent(ws)}&name=${name}&nosw`;
 }
 
-interface UnitView {
+export interface UnitView {
   id: number;
   name: string | undefined;
   npc: boolean;
@@ -191,7 +270,7 @@ interface UnitView {
 }
 
 /** Calls a function of the page's development hook, globalThis.viewer. */
-async function hook<T>(page: Page, fn: string, ...args: unknown[]): Promise<T> {
+export async function hook<T>(page: Page, fn: string, ...args: unknown[]): Promise<T> {
   const r: unknown = await page.evaluate(
     ([f, a]) => {
       const v: unknown = Reflect.get(globalThis, 'viewer');
@@ -208,7 +287,7 @@ async function hook<T>(page: Page, fn: string, ...args: unknown[]): Promise<T> {
   return r as T;
 }
 
-async function selfCell(page: Page): Promise<[number, number]> {
+export async function selfCell(page: Page): Promise<[number, number]> {
   const c = await hook<[number, number] | undefined>(page, 'selfCell');
   if (c === undefined) {
     throw new Error('the player has no cell');
@@ -216,12 +295,15 @@ async function selfCell(page: Page): Promise<[number, number]> {
   return c;
 }
 
-async function units(page: Page): Promise<UnitView[]> {
+export async function units(page: Page): Promise<UnitView[]> {
   return hook<UnitView[]>(page, 'units');
 }
 
 /** A unit's place on the screen, by a test on it. */
-async function unitScreen(page: Page, test: (u: UnitView) => boolean): Promise<[number, number]> {
+export async function unitScreen(
+  page: Page,
+  test: (u: UnitView) => boolean,
+): Promise<[number, number]> {
   const list = await units(page);
   const me = list.find((u) => u.self)?.cell ?? [0, 0];
   const size = page.viewportSize();
@@ -255,7 +337,7 @@ async function unitScreen(page: Page, test: (u: UnitView) => boolean): Promise<[
 }
 
 /** Waits for the game to show the player and the units around. */
-async function inGame(page: Page): Promise<void> {
+export async function inGame(page: Page): Promise<void> {
   await page.waitForFunction(
     () => {
       const v: unknown = Reflect.get(globalThis, 'viewer');
@@ -276,7 +358,7 @@ async function inGame(page: Page): Promise<void> {
 }
 
 /** Fingers on a page, through the Chrome DevTools Protocol. */
-class Fingers {
+export class Fingers {
   private readonly points = new Map<number, { x: number; y: number }>();
 
   private readonly cdp: CDPSession;
@@ -324,6 +406,21 @@ class Fingers {
     await this.up(1);
   }
 
+  /**
+   * A double tap whose four events go out together, so the protocol's
+   * wait for each event does not stretch it past the double tap time on
+   * a busy machine.
+   */
+  async quickDoubleTap(x: number, y: number): Promise<void> {
+    const point = [{ x, y, id: 1, radiusX: 2, radiusY: 2, force: 1 }];
+    await Promise.all([
+      this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point }),
+      this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }),
+      this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point }),
+      this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }),
+    ]);
+  }
+
   async doubleTap(x: number, y: number): Promise<void> {
     // Without waits: the protocol's own delay is long on a busy machine.
     await this.down(1, x, y);
@@ -357,7 +454,7 @@ class Fingers {
 }
 
 /** The middle of an element. */
-async function middle(page: Page, selector: string): Promise<[number, number]> {
+export async function middle(page: Page, selector: string): Promise<[number, number]> {
   await page.locator(selector).first().scrollIntoViewIfNeeded({ timeout: 10_000 });
   const box = await page.locator(selector).first().boundingBox();
   if (box === null) {
@@ -370,7 +467,11 @@ async function middle(page: Page, selector: string): Promise<[number, number]> {
  * Walks with the joystick toward a unit until it is on the open part of
  * the screen, clear of the panels and the controls.
  */
-async function approach(page: Page, f: Fingers, test: (u: UnitView) => boolean): Promise<void> {
+export async function approach(
+  page: Page,
+  f: Fingers,
+  test: (u: UnitView) => boolean,
+): Promise<void> {
   const size = page.viewportSize() ?? { width: 390, height: 660 };
   for (let i = 0; i < 8; i++) {
     const list = await units(page);
@@ -406,15 +507,36 @@ async function approach(page: Page, f: Fingers, test: (u: UnitView) => boolean):
   }
 }
 
+/**
+ * Marks the damage numbers on the page, so newHit sees only later ones.
+ * Old numbers fade and go, so a count would miss a new one.
+ */
+export async function markHits(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    for (const h of document.querySelectorAll<HTMLElement>('#hits .hit')) {
+      h.dataset.seen = '1';
+    }
+  });
+}
+
+/** Waits for a damage number that came after markHits. */
+export async function newHit(page: Page, timeout: number): Promise<void> {
+  await page.waitForFunction(
+    () => document.querySelector('#hits .hit:not([data-seen])') !== null,
+    null,
+    { timeout },
+  );
+}
+
 /** Taps an element with a finger. */
-async function tapOn(page: Page, f: Fingers, selector: string): Promise<void> {
+export async function tapOn(page: Page, f: Fingers, selector: string): Promise<void> {
   await page.locator(selector).first().waitFor({ state: 'visible', timeout: 10_000 });
   const [x, y] = await middle(page, selector);
   await f.tap(x, y);
 }
 
 /** Opens a window by its button: on a small screen, through the menu. */
-async function openWindow(page: Page, f: Fingers, button: string): Promise<void> {
+export async function openWindow(page: Page, f: Fingers, button: string): Promise<void> {
   if (!(await page.locator(button).isVisible())) {
     await tapOn(page, f, '#menu-toggle');
   }
@@ -422,7 +544,7 @@ async function openWindow(page: Page, f: Fingers, button: string): Promise<void>
 }
 
 /** Runs one step, and reports it as a check. */
-async function step(
+export async function step(
   check: Check,
   name: string,
   run: () => Promise<string>,
@@ -447,7 +569,7 @@ async function step(
   }
 }
 
-async function open(
+export async function open(
   browser: Browser,
   options: Parameters<Browser['newContext']>[0],
   url: string,
@@ -641,16 +763,23 @@ export async function checkPhones(
       'attack',
       async () => {
         await approach(page, f, (u) => u.name === 'Dummy');
-        const hits = await page.locator('#hits .hit').count();
-        const at = await unitScreen(page, (u) => u.name === 'Dummy');
-        await f.tap(at[0], at[1]);
-        await page.waitForFunction(
-          (n) => document.querySelectorAll('#hits .hit').length > n,
-          hits,
-          {
-            timeout: 15_000,
-          },
-        );
+        // A Dummy that a walking unit covers may miss the tap, which then
+        // goes again where the Dummy is.
+        for (let i = 0; ; i++) {
+          await markHits(page);
+          const at = await unitScreen(page, (u) => u.name === 'Dummy');
+          await f.tap(at[0], at[1]);
+          const hit = await newHit(page, 6000)
+            .then(() => true)
+            .catch(() => false);
+          if (hit) {
+            break;
+          }
+          if (i === 2) {
+            throw new Error('no damage showed after three taps');
+          }
+          await approach(page, f, (u) => u.name === 'Dummy');
+        }
         return 'tapped a Dummy, and damage showed';
       },
       alice,
@@ -715,17 +844,25 @@ export async function checkPhones(
         }
         await page.waitForTimeout(1500);
         await approach(page, f, (u) => u.name === 'Dummy');
-        await tapOn(page, f, '#hotkeys .hotkey >> nth=0');
-        const hits = await page.locator('#hits .hit').count();
-        const at = await unitScreen(page, (u) => u.name === 'Dummy');
-        await f.tap(at[0], at[1]);
-        await page.waitForFunction(
-          (n) => document.querySelectorAll('#hits .hit').length > n,
-          hits,
-          {
-            timeout: 15_000,
-          },
-        );
+        // A Dummy that a walking unit covers may miss the tap, which then
+        // goes again.
+        for (let i = 0; ; i++) {
+          if ((await hook<string | undefined>(page, 'targeting')) === undefined) {
+            await tapOn(page, f, '#hotkeys .hotkey >> nth=0');
+          }
+          await markHits(page);
+          const at = await unitScreen(page, (u) => u.name === 'Dummy');
+          await f.tap(at[0], at[1]);
+          const hit = await newHit(page, 6000)
+            .then(() => true)
+            .catch(() => false);
+          if (hit) {
+            break;
+          }
+          if (i === 2) {
+            throw new Error('Bash showed no damage');
+          }
+        }
         const left = await hook<string | undefined>(page, 'targeting');
         const hidden = await page.locator('#target-cancel').isHidden();
         if (left !== undefined || !hidden) {
@@ -762,9 +899,18 @@ export async function checkPhones(
         }
         const knife = '#inventory-window li:has-text("1201")';
         await page.locator(knife).waitFor({ timeout: 10_000 });
-        const [x, y] = await middle(page, `${knife} .name`);
-        await f.doubleTap(x, y);
-        await page.locator(knife).waitFor({ state: 'detached', timeout: 10_000 });
+        // The protocol waits for each touch event, which can stretch two
+        // taps past the double tap time on a busy machine: the four events
+        // go out together, and again while the knife stays.
+        for (let i = 0; i < 3 && (await page.locator(knife).count()) > 0; i++) {
+          const [x, y] = await middle(page, `${knife} .name`);
+          await f.quickDoubleTap(x, y);
+          await page
+            .locator(knife)
+            .waitFor({ state: 'detached', timeout: 4000 })
+            .catch(() => undefined);
+        }
+        await page.locator(knife).waitFor({ state: 'detached', timeout: 1000 });
         await openWindow(page, f, '#equipment-toggle');
         const worn = (await page.textContent('#equipment-window')) ?? '';
         await openWindow(page, f, '#equipment-toggle');
@@ -908,9 +1054,37 @@ export async function checkPhones(
           await openWindow(page, f, '#inventory-toggle');
         }
         await approach(page, f, (u) => u.name === 'Bob');
-        const at = await unitScreen(page, (u) => u.name === 'Bob');
-        await f.press(at[0], at[1], 800);
-        await page.locator('#player-menu button:has-text("Trade")').waitFor({ timeout: 5000 });
+        // Trades need the players within a few cells: a tap beside Bob
+        // walks there.
+        const bob0 = (await units(page)).find((u) => u.name === 'Bob')?.cell;
+        const me0 = await selfCell(page);
+        if (bob0 !== undefined && Math.hypot(bob0[0] - me0[0], bob0[1] - me0[1]) > 2) {
+          const side = await hook<[number, number] | undefined>(
+            page,
+            'screenOfCell',
+            bob0[0] + Math.sign(me0[0] - bob0[0]),
+            bob0[1] + Math.sign(me0[1] - bob0[1]),
+          );
+          if (side !== undefined) {
+            await f.tap(side[0], side[1]);
+            await page.waitForTimeout(2000);
+          }
+        }
+        // A long press on Bob opens his menu. Bob may still be moving, so
+        // a press that misses him goes again where he is now.
+        for (let i = 0; i < 3; i++) {
+          const at = await unitScreen(page, (u) => u.name === 'Bob');
+          await f.press(at[0], at[1], 800);
+          const shown = await page
+            .locator('#player-menu button:has-text("Trade")')
+            .waitFor({ timeout: 5000 })
+            .then(() => true)
+            .catch(() => false);
+          if (shown || i === 2) {
+            break;
+          }
+        }
+        await page.locator('#player-menu button:has-text("Trade")').waitFor({ timeout: 1000 });
         await tapOn(page, f, '#player-menu button:has-text("Trade")');
         await tapOn(bob.page, g, '.social-prompt .prompt-accept');
         await page.locator('#trade-window').waitFor({ state: 'visible', timeout: 10_000 });
@@ -1296,5 +1470,3 @@ export async function frameTimes(
     await context.close();
   }
 }
-
-export { inGame };

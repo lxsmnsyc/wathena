@@ -119,6 +119,8 @@ export function draggedSkill(h: Hotkey): string {
 /** How a slot shows: its badge and title, and its cooldown. */
 export interface SlotView {
   badge: string;
+  /** The skill's icon as a URL, for a skill whose record names art. */
+  icon?: string;
   title: string;
   /** The cooldown's text, or '' when the skill is ready. */
   cooldown: string;
@@ -223,7 +225,7 @@ export class HotkeyBar {
     this.elements.forEach((el, i) => {
       const h = this.slots[i];
       const v = h === undefined ? undefined : view(h);
-      setText(el.badge, v?.badge ?? '');
+      showBadge(el.badge, v?.badge ?? '', v?.icon);
       setText(el.cooldown, v?.cooldown ?? '');
       const title = v === undefined ? `F${i + 1}: drag a skill here` : `F${i + 1}: ${v.title}`;
       if (el.li.title !== title) {
@@ -233,6 +235,31 @@ export class HotkeyBar {
       el.li.classList.toggle('waiting', v !== undefined && !v.usable);
     });
   }
+}
+
+/**
+ * Shows a skill badge: an icon when there is one, or else its text. An icon
+ * keeps the text as its alt text.
+ */
+export function showBadge(badge: HTMLElement, text: string, icon: string | undefined): void {
+  if (icon === undefined) {
+    if (badge.firstElementChild !== null || badge.textContent !== text) {
+      badge.textContent = text;
+    }
+    badge.classList.remove('has-icon');
+    return;
+  }
+  const img = badge.firstElementChild;
+  if (img instanceof HTMLImageElement && img.getAttribute('src') === icon) {
+    return;
+  }
+  const next = document.createElement('img');
+  next.className = 'skill-icon';
+  next.src = icon;
+  next.alt = text;
+  next.draggable = false;
+  badge.replaceChildren(next);
+  badge.classList.add('has-icon');
 }
 
 function setText(el: HTMLElement, text: string): void {

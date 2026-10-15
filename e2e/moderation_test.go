@@ -101,9 +101,11 @@ func TestJailMovesPlayer(t *testing.T) {
 	srv.CheckLogs()
 }
 
-// TestCommandsNeedPermission: a player, and a role without the
-// permission, get "Unknown command." for a command, which no one else
-// hears. A game master warps, hides and recalls.
+// TestCommandsNeedPermission: a player without the permission of any
+// command says a line that starts with @ as chat, as in rAthena (review
+// decision 40). A role without a command's permission gets "Unknown
+// command." for it, which no one else hears. A game master warps, hides
+// and recalls.
 func TestCommandsNeedPermission(t *testing.T) {
 	t.Parallel()
 	srv := Start(t, Options{Database: true})
@@ -112,10 +114,9 @@ func TestCommandsNeedPermission(t *testing.T) {
 	admin := srv.Join(t, "Overseer")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	for _, line := range []string{"@item 501 10 free potions", "@hide", "@warp e2e_field", "@kick Gamemaster bye"} {
-		if got := player.GMCommand(line); got != "Unknown command." {
-			t.Errorf("player %q: %q", line, got)
-		}
+	for _, line := range []string{"@hide", "@warp e2e_field", "@kick Gamemaster bye"} {
+		player.Say(line)
+		gm.Hears("Player", line)
 	}
 	if err := srv.GiveStaffRole(ctx, "Gamemaster", "game_master"); err != nil {
 		t.Fatal(err)
@@ -157,7 +158,7 @@ func TestCommandsNeedPermission(t *testing.T) {
 	}
 	// Command lines are never chat.
 	for _, p := range []*Player{player, admin} {
-		if p.HeardText("free potions") || p.HeardText("event prize") {
+		if p.HeardText("free potions") || p.HeardText("event prize") || p.HeardText("Unknown command.") {
 			t.Errorf("%s heard a command line", p.Name)
 		}
 	}

@@ -12,7 +12,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/party-hall](examples/party-hall) makes parties with `wa.parties`, greets members on the party events, and reads `rules.limits` ("Parties and friends" below).
 - [examples/guild-hall](examples/guild-hall) makes guilds with `wa.guilds`, follows the guild events and reads the guild limits ("Guilds" below).
 - [examples/bank](examples/bank) has a banker who opens the account's storage and an extra storage, a bound Bank Card, and a `trade` hook and event ("Storage, cart and trade" below).
-- [examples/lantern](examples/lantern) has art of its own: an item icon, a monster sprite, an NPC sprite, and a client data table ("Art" below).
+- [examples/lantern](examples/lantern) has art of its own: item icons, a hat's worn sprite, a monster sprite with sounds, an NPC sprite, the Lantern Keeper job with body sprites and its skill Lantern Flare with an icon and an effect, and a client data table ("Art" below). It is the phase 6 exit check's mod run.
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -267,13 +267,14 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 - Names are AegisNames, such as `Red_Potion`.
 - Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`, and `display_name`, `buy`, `sell` and `no_sell`: the name `items.name` gives, the prices of NPC shops in zeny, and whether shops buy the item. `name` is the record's key, so the name players see is `display_name`, as for NPCs.
 - `script` is the item's entry script, a path under the mod's `scripts/`. It belongs to the mod that sets it.
+- `description` is the item's description in the client, text of up to 4,096 bytes ("Names in the client" below).
 - `bonuses` are static bonuses of an equipment item ("Static bonuses" below).
 - `rolls` are values each new copy rolls, at most 8 ("Rolled item values" below).
 - Equipment has the fields of the equipment extract, as rAthena's item_db names them:
   - `location`: the positions the item is worn in, as a list such as `[head_top, head_middle]`. The names are the slot names of `player:get_equipped`, and `both_hand` and `both_accessory`. A card's location is where it can be put.
   - `subtype`: the weapon type of a weapon, or the ammunition type of ammunition, as rAthena's `W_` and `AMMO_` numbers.
   - `atk`, `matk` (renewal only), `def`, `range`, `slots` (up to 16; the world uses at most 4, rAthena's `MAX_SLOTS`), `weapon_level`, `armor_level` and `refineable`.
-  - `view`: the sprite the item shows on a character, as item_db's `View`.
+  - `view`: the sprite the item shows on a character, as item_db's `View`. An item with a `view_sprite` gets a view of its own ("Art" below).
   - `jobs` and `classes`: who may wear it. `jobs` is a list of job names, such as `[knight, example.desperado:Desperado]`, or three decimal strings of rAthena's job bit masks. `classes` holds the `ITEMJ_` bits. Leave them out for everyone.
     - A core job's name sets the bits of rAthena's `Jobs` for its class, as item_db does: `knight` also lets a Lord Knight or a Rune Knight wear the item, unless `classes` leaves them out.
     - A mod job's name lets that job wear the item, whatever its class.
@@ -795,7 +796,14 @@ Kinds not overlaid yet: spawns, quests and achievements.
 
 ## Art
 
-A mod ships its own art ([decision 0033](../docs/decisions/0033-mod-assets.md)). [examples/lantern](examples/lantern) has an item icon, a dropped item sprite, an animated monster sprite and an NPC sprite, drawn by code, and a client data table.
+A mod ships its own art ([decision 0033](../docs/decisions/0033-mod-assets.md)). [examples/lantern](examples/lantern) has, drawn by code:
+
+- item icons, a dropped item sprite, and a hat's worn sprite;
+- an animated monster sprite with sounds;
+- an NPC sprite;
+- a job's body sprites;
+- a skill's icon, and its hit effect as a loose RO `.str` file with its texture;
+- a client data table.
 
 ### Sources: art/
 
@@ -812,6 +820,12 @@ art/
   sprite/mob/Lantern_Ghost.png     4 frames of 40 x 48 in a row
   sprite/mob/Lantern_Ghost.yaml    its frames and actions
   sprite/npc/Lamplighter.png       one still frame
+  sprite/headgear/Lantern_Hat.png  the hat on a head, with a frame file
+  sprite/body/Lantern_Keeper/m.png the job's body, with a frame file
+  icon/skill/LANTERN_FLARE.png     a skill icon
+  effect/flare.str                 a loose RO effect
+  texture/effect/flare.bmp         its texture
+  sound/Lantern_Ghost/die.wav      a monster sound
 ```
 
 A file's path without its extension is its name, under `mod/<mod id>/`: `art/icon/item/Paper_Lantern.png` is `mod/example.lantern/icon/item/Paper_Lantern`. The folder is the namespace, so it says the type: sprites under `sprite/`, icons under `icon/`, textures under `texture/`, and so on. Names keep their case after the namespace.
@@ -860,7 +874,26 @@ A mod's own record without a field uses the art named after it, when the build h
 
 The client shows a placeholder for art the builds lack, and logs the name once. `wactl mod validate` reports each art name a record names under `mod/` that the mod it names does not provide.
 
-The web client draws item icons, dropped items, monster and NPC sprites, and job bodies from art. Skill icons and effects, monster sounds, view sprites and companions' looks are recorded and sent to the client, which does not draw them yet.
+The web client draws item icons, dropped items, monster and NPC sprites, job bodies, skill icons and effects, monster sounds and worn item sprites from art (review decision 40):
+
+- An item with a `view_sprite` gets a view ID of its own from 1,000,000 at each start, which looks send for headgear and garments. Weapons and shields keep their sprites by type.
+- A mod's job comes in looks by its own ID, and the client data names the job it looks like. Its body is its art, and its weapon, head and other parts are those of that job.
+- A skill's `effects` replace the effects of the client tables at their moments.
+- Companions' and mounts' looks of art are sent and not drawn: a look carries only the option bit of the record a companion acts as, so the client cannot tell which record a player has.
+
+### Names in the client
+
+The client shows the names of a mod's records from the server's client data (review decision 40): items, monsters, skills and jobs that a mod adds, and the `display_name` a mod sets on core's records. An item's `description` field is shown under its name in the inventory:
+
+```yaml
+- name: example.lantern:Paper_Lantern
+  display_name: Paper Lantern
+  description: |-
+    A lantern of thin paper that Lantern Ghosts carry.
+    ^777777Weight:^000000 1
+```
+
+A description is text of up to 4,096 bytes, one line per line break. `^` and six hex digits set the color of the text after them, as in RO's item descriptions.
 
 ### Client data tables: client/
 

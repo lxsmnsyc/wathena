@@ -1271,3 +1271,16 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - The equipment window and the hotkey bar take no item drops, as with the mouse. An item is equipped by a double tap.
    - The dev server's `WATHENA_GAME` forwards `/ws`, `/client-data.json` and `/emblems`, and `WATHENA_HTTPS_CERT` and `WATHENA_HTTPS_KEY` serve HTTPS, since `crypto.subtle` needs a secure page.
    - `check:browsers` runs the touch checks in Chromium only, through the Chrome DevTools Protocol, and prints frame times without failing on them.
+26. Build review decision 40: mod text and art in the client with `/client-data.json` format version 2, the two moderation changes of step 3, and the phase 6 exit check. No Lua API changes. Done on 2026-10-15 ([decision 0035](../decisions/0035-phase-6-exit-check.md)). Details to review:
+   - Item records gain `description`, text of up to 4,096 bytes with RO's color codes. Only the client reads it.
+   - Version 2 sends names for the records a mod adds, and for core records whose `display_name` a mod set. Items also send their card slots, for labels such as "Lantern Shield [1]".
+   - A job's body sprites moved under `body`, and a mod's job has `look`, the job it looks like. The version changed for this move.
+   - Looks sent a mod's job as the job it looks like, so step 6's job bodies never showed. A look now sends a mod's job, and a job whose record names body sprites, by its own ID. Rules such as ASPD still read the look job.
+   - Looks carry view IDs, not items, so an item with a `view_sprite` gets a view of its own from 1,000,000 at each start, in item ID order, as NPC sprites of art do. Headgear and garments draw it. Weapons and shields keep their type's sprites.
+   - Companions and mounts of art are not drawn: a look carries only the option bit of the core record they act as. A protocol field would let the client draw them.
+   - The client shows the name of a unit under the mouse, so monsters' names show in the page, and a window that opens comes to the front, which a shop opened from the store search on a phone needs.
+   - A staff role counts for `@` commands only when it has the permission of at least one command. A staff member who logged in without a second factor says `@` lines as chat.
+   - The exit check runs two servers on one database, since `--dev` has no account pages and accounts have no `--start-job`. `tools/testdb` makes and drops the database.
+   - The check's phone renders at one device pixel per CSS pixel to keep SwiftShader fast. The touch check keeps the full ratio.
+   - The e2e fixture gains the Training Dummy, worth a million exp, placed by `!trainer`, and "Guild storage" at the Kafra. The Lantern Ghost no longer loots, so drops stay for players.
+   - A second job learns its own skills only once the first job's points are spent, as rAthena's `player_skillup_limit`, so the check spends the Merchant's points before Lantern Flare shows.

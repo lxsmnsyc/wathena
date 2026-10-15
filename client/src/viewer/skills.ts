@@ -1,6 +1,8 @@
+import { modSkillName, skillIcon } from '../assets/art';
+import type { AssetStore } from '../assets/store';
 import { SkillFailure, type SkillInfo, SkillTarget, StatId } from '../gen/wathena/v1/event_pb';
 import { cooldownText } from './cooldowns';
-import { SKILL_DRAG_TYPE, draggedSkill } from './hotkeys';
+import { SKILL_DRAG_TYPE, draggedSkill, showBadge } from './hotkeys';
 
 // The skill window, as RO's Alt+S window: the player's skills with their
 // level, SP cost, and a "+" button while skill points remain. Skills not
@@ -25,6 +27,14 @@ export interface Skill {
   /** The skill whose icon and effects show. */
   icon: number;
   requires: { skillId: number; level: number }[];
+}
+
+/**
+ * A skill's name to show: the name the server's client data gives a mod's
+ * skill, or the skill list's display name, or its key.
+ */
+export function skillName(s: Pick<Skill, 'id' | 'displayName' | 'name'>): string {
+  return modSkillName(s.id) ?? (s.displayName || s.name);
 }
 
 /** A skill from the server's SkillInfo. */
@@ -76,7 +86,52 @@ export class SkillModel {
   /** A skill's name to show, or "Skill <id>" for one not in the list. */
   label(id: number): string {
     const s = this.skills.get(id);
-    return s === undefined ? `Skill ${id}` : s.displayName || s.name;
+    return s === undefined ? (modSkillName(id) ?? `Skill ${id}`) : skillName(s);
+  }
+}
+
+/**
+ * The icons of skills whose records name art (art.ts), loaded once per
+ * skill as blob URLs. Other skills keep their text badge. A missing icon
+ * shows placeholder/texture, and the store logs the name once.
+ */
+export class SkillIcons {
+  private readonly urls = new Map<number, string | undefined>();
+  private readonly loading = new Set<number>();
+  /** Goes up when an icon loads, so views know to show it. */
+  version = 0;
+
+  constructor(private readonly store: Pick<AssetStore, 'bytes'>) {}
+
+  /** A skill's icon as a URL once loaded. Asking starts the load. */
+  url(id: number): string | undefined {
+    const known = this.urls.get(id);
+    if (known !== undefined || this.loading.has(id)) {
+      return known;
+    }
+    const name = skillIcon(id);
+    if (name === undefined) {
+      return undefined;
+    }
+    this.loading.add(id);
+    this.load(name)
+      .then((url) => {
+        this.urls.set(id, url);
+        this.version++;
+      })
+      .catch((error: unknown) => {
+        console.error(`skill icon ${id}:`, error);
+      });
+    return undefined;
+  }
+
+  private async load(name: string): Promise<string | undefined> {
+    const data =
+      (await this.store.bytes(name, 'texture')) ??
+      (await this.store.bytes('placeholder/texture', 'texture'));
+    return data === undefined
+      ? undefined
+      : URL.createObjectURL(new Blob([data], { type: 'image/webp' }));
   }
 }
 
@@ -146,8 +201,8 @@ export function skillRows(model: SkillModel, points: bigint | undefined): SkillR
     const passive = s.target === SkillTarget.PASSIVE;
     return {
       id: s.id,
-      name: s.displayName || s.name,
-      badge: skillBadge(s.displayName || s.name),
+      name: skillName(s),
+      badge: skillBadge(skillName(s)),
       level: `Lv ${s.level} / ${s.maxLevel}`,
       sp: s.level > 0 && !passive && s.sp > 0 ? `${s.sp} SP` : '',
       passive,
@@ -220,6 +275,7 @@ export class SkillWindow {
   private readonly list: HTMLUListElement;
   private rows = new Map<number, RowElements>();
   private shownVersion = -1;
+  private shownIcons = -1;
   /** The level the player chose for each skill, when lower than learned. */
   private readonly chosen = new Map<number, number>();
 
@@ -232,6 +288,7 @@ export class SkillWindow {
       /** Puts a skill at a level in the first empty hotkey slot. */
       assign: (skillId: number, level: number | undefined) => void;
     },
+    private readonly icons?: SkillIcons,
   ) {
     const head = document.createElement('div');
     head.className = 'skill-head';
@@ -264,8 +321,10 @@ export class SkillWindow {
   update(stats: ReadonlyMap<StatId, bigint>, cooldown: (skillId: number) => number): void {
     const points = skillPoints(stats);
     const rows = skillRows(this.model, points);
-    if (this.shownVersion !== this.model.version) {
+    const icons = this.icons?.version ?? 0;
+    if (this.shownVersion !== this.model.version || this.shownIcons !== icons) {
       this.shownVersion = this.model.version;
+      this.shownIcons = icons;
       this.build(rows);
     }
     setText(this.points, `Skill Points: ${points ?? '-'}`);
@@ -297,7 +356,7 @@ export class SkillWindow {
       li.className = r.learned ? 'skill' : 'skill unlearned';
       const badge = document.createElement('span');
       badge.className = 'badge';
-      badge.textContent = r.badge;
+      showBadge(badge, r.badge, this.icons?.url(r.id));
       const text = document.createElement('div');
       text.className = 'skill-text';
       const name = document.createElement('span');

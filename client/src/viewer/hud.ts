@@ -1,3 +1,4 @@
+import { modJobName } from '../assets/art';
 import { jobs } from '../data/tables';
 import { PickUpFailure, StatId } from '../gen/wathena/v1/event_pb';
 
@@ -41,9 +42,14 @@ const JOB_NAMES = new Map<string, string>([
 /**
  * A job's name from its rAthena constant: JOB_LORD_KNIGHT is Lord Knight,
  * JOB_SWORDMAN_HIGH is High Swordman, and the mounted JOB_KNIGHT2 is
- * Knight. Unknown jobs show their ID.
+ * Knight. A mod's job has the name the server's client data gives it.
+ * Unknown jobs show their ID.
  */
 export function jobName(id: number): string {
+  const named = modJobName(id);
+  if (named !== undefined) {
+    return named;
+  }
   const constant = jobs.get(id)?.constant;
   if (constant === undefined) {
     return `Job ${id}`;

@@ -340,12 +340,15 @@ What it does:
 
 ### Mod art
 
-A mod's art is an asset build of its own ([decision 0033](../docs/decisions/0033-mod-assets.md), mods/README.md, "Art"). `mods/examples/lantern` is a sample with an item icon, a monster sprite and an NPC sprite.
+A mod's art is an asset build of its own ([decision 0033](../docs/decisions/0033-mod-assets.md), mods/README.md, "Art"). `mods/examples/lantern` is a sample with item icons, a hat's worn sprite, a monster sprite with sounds, an NPC sprite, a job's body sprites, and a skill's icon and effect.
 
 - At startup, `waserver` checks each mod's `assets/`, in its folder or its `.zip` file: every file's hash and size, its decoding and the asset limits, names under `mod/<mod id>/` only, and the size, at most `mods.max_asset_mb` MiB. A problem stops the start with the list. Nothing is converted.
 - A mod with `art/` and no `assets/` starts with a warning, and its records show placeholders. `wactl mod build-art` builds it.
 - A build is served at `/assets/mods/<mod id>/<version>/`, as the server's own build: `manifest.json` checked each time, other files kept a year, binary formats as Brotli.
 - `/client-data.json` lists the active mods' builds, the art each record uses by ID, and the client data tables merged with the mods' `client/*.yml` (docs/client-data.md). It is checked each time, with an ETag. The web client loads it before it connects.
+- Format version 2 (review decision 40, [decision 0035](../docs/decisions/0035-phase-6-exit-check.md)) adds the names of the items, monsters, skills and jobs that mods add or rename, items' card slots and `description` lines, the view of an item with a `view_sprite`, and for a mod's job the job it looks like. A job's body sprites moved under `body`.
+- An item with a `view_sprite` gets a view of its own from 1,000,000 at each start, in item ID order, which looks send for headgear and garments.
+- A look sends a mod's job, and a job whose record names body sprites, by its own ID (`zone.Mods.OwnLookJobs`). Other jobs send the job they look like, as before.
 
 ## Rulesets
 
@@ -677,7 +680,7 @@ Chat follows strategy section 7.10 and proposal 0002, review decision 26 ([decis
 - **Rate limits** are the `chat.*` settings, per connection. A character made less than `chat.new_character_period` ago has the lower limits. Lines over the rate are dropped, and the player gets `ChatRefused` with `TOO_FAST`, since the client does not know a new character's limits. A flood ends the connection, as before.
 - **Mutes and jails** come from mods with `player.sanction`, from the admin screens, and from `@mute` and `@jail` (see "Staff and admin tools"). A muted player's lines come back as `ChatRefused` with a `SanctionNotice` that has the reason and the end time. A jailed player goes to the jail map, cannot use warps, scripts' warps or wings, comes back in jail after death, and goes back to where it was when the jail ends or staff lift it. Sanctions run on the server clock and are saved in `sanctions`, which keeps ended ones too, with kicks and bans ([decision 0030](../docs/decisions/0030-moderation-and-gm-commands.md)).
 - **Reports.** `Report` reports a player, or a line by its `line_id`, or a guild's name or emblem by `guild_id` and `emblem`, from the player menu and the guild window. The report keeps the lines the reporter saw in the last 5 minutes. A player may send 10 reports an hour. Staff work through them in the admin screens' report queue, and close each with an outcome.
-- **GM commands.** A line that starts with `@` is a GM command, never chat. It is not shown, logged, or passed to the chat hooks or the chat event. Without the permission, the answer is "Unknown command.".
+- **GM commands.** For a player whose staff role has the permission of at least one command, with a login with a second factor, a line that starts with `@` is a GM command, never chat. It is not shown, logged, or passed to the chat hooks or the chat event. A command the role lacks, or one that does not exist, answers "Unknown command.". For every other player, such a line is normal chat, as in rAthena (review decision 40).
 - **The chat log** keeps every line players say: local, whisper and channel. With a database, `chat_log` keeps lines for `chat.log_days` days, and `report_lines` ties a report to its lines, which stay while the report is open. Once a report closes, its lines follow the normal limit again. A worker writes lines and reports in batches, in order, and deletes old lines every 12 hours. Without a database, the last 10,000 lines and 1,000 reports stay in memory.
 
 With `--dev`, the debug address serves more endpoints for development and the end-to-end tests:
@@ -738,7 +741,7 @@ The admin screens are at `/admin` of the server's public URL. The page asks the 
    - Restore: gives items back to a character by mail.
    - Reviews: the rows marked for review, with ok and flag.
    - Reports: the report queue, and each report with its chat, the target's earlier reports and sanctions, sanction buttons, and the forms that close it.
-   - Bans: the bans in effect, with a lift button.
+   - Bans: the bans in effect, with a lift button. A permanent ban shows it only with `moderation.ban_permanent`.
    - World: the zones with their tick times of the last minute, the process, the players online and the planned restart with a countdown, loaded again every 5 seconds. With `world.announce`, an announcement box. With `world.restart`, the restart planner.
    - Events: every world event with whether it is on, its trigger, its next run, the run that lasts and the latest results, with start, stop, edit and reset buttons.
    - Mods: every loaded mod with its version, signature status, permissions and Lua errors by zone. With `mods.disable`, off and on buttons by zone.
@@ -763,7 +766,7 @@ The admin API is JSON at `/admin/api/v1/` on the account service's origin. The m
 | `GET /reports/{id}` | `moderation.reports` | A report with the lines the reporter saw, the target's own lines from 5 minutes before to 5 minutes after it, the target's earlier reports and sanctions, and the emblem of an emblem report. |
 | `POST /reports/{id}/close` | `moderation.reports` | Closes a report: `{"outcome": "sanctioned", "note": "...", "sanctionId": "7"}`. The outcome is `no_action`, `warned` or `sanctioned`, and only `sanctioned` links a sanction of the reported player. |
 | `POST /sanctions` | the kind's: `moderation.mute`, `.jail`, `.kick` or `.ban` | `{"kind": "mute", "characterId": "42", "minutes": 30, "reason": "..."}`. A mute and a jail last 1 to 525,600 minutes, a kick takes 0, and a ban names an `accountId` and lasts 1 to 5,256,000 minutes, or 0 for a permanent ban with `moderation.ban_permanent`. A ban needs a login from the last 10 minutes. |
-| `DELETE /sanctions/{id}` | the kind's | Lifts a mute, a jail or a ban early. `?reason=` is required. A ban needs a login from the last 10 minutes. |
+| `DELETE /sanctions/{id}` | the kind's | Lifts a mute, a jail or a ban early. `?reason=` is required. A ban needs a login from the last 10 minutes, and a permanent ban also `moderation.ban_permanent` (review decision 40). |
 | `GET /sanctions` | any `moderation.*` | Sanctions, newest first. Filters: `character` (its sanctions and its account's bans), `account`, `kind` and `active=true`. Pages: `limit` (1 to 100) and `before_id`. |
 | `GET /world` | `world.read` | Each zone's map, players, monsters and ticks of the last minute (p50, p99, maximum, ticks over 10 ms), the process's CPU, memory, goroutines, uptime and version, the players online (at most 1,000 listed), the planned restart and the server clock. |
 | `POST /announce` | `world.announce` | `{"text": "...", "map": "prontera"}`. An empty map is the world. The text is 1 to 255 characters. |
@@ -824,7 +827,7 @@ GM commands, typed in the game's chat by a staff member whose role counts for th
 
 - A name with spaces goes in double quotes: `@mute "Big Bob" 10 spam`.
 - Each command writes an audit row with the source `game`. The lines never show as chat or reach the chat log.
-- Without the permission, or for a command that does not exist, the answer is "Unknown command.".
+- Only a staff member whose role has the permission of at least one command types commands. A command without the permission, or one that does not exist, answers "Unknown command.". For anyone else, including staff who logged in without a second factor, a line that starts with `@` is normal chat (review decision 40).
 - `@mute`, `@jail` and `@kick` need the game's database.
 
 Restores (decision 0029):

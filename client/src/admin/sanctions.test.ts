@@ -57,6 +57,12 @@ describe('permission gating', () => {
     expect(canLift(['moderation.mute'], create(SanctionSchema, { ...active, id: 0n }))).toBe(false);
     const kick = create(SanctionSchema, { id: 5n, kind: 'kick', active: true });
     expect(canLift(['moderation.kick'], kick)).toBe(false);
+    const ban = create(SanctionSchema, { id: 6n, kind: 'ban', active: true, permanent: true });
+    expect(canLift(['moderation.ban'], ban)).toBe(false);
+    expect(canLift(['moderation.ban', 'moderation.ban_permanent'], ban)).toBe(true);
+    expect(canLift(['moderation.ban'], create(SanctionSchema, { ...ban, permanent: false }))).toBe(
+      true,
+    );
   });
 });
 

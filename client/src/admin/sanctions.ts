@@ -38,10 +38,17 @@ export function canModerate(permissions: readonly string[]): boolean {
   return permissions.some((p) => p.startsWith('moderation.'));
 }
 
-/** Whether the caller may lift a sanction: one in effect, not a kick. */
+/**
+ * Whether the caller may lift a sanction: one in effect, not a kick. A
+ * permanent ban also needs moderation.ban_permanent.
+ */
 export function canLift(permissions: readonly string[], s: Sanction): boolean {
   return (
-    s.id !== 0n && s.active && s.kind !== 'kick' && permissions.includes(sanctionPermission(s.kind))
+    s.id !== 0n &&
+    s.active &&
+    s.kind !== 'kick' &&
+    permissions.includes(sanctionPermission(s.kind)) &&
+    (!(s.kind === 'ban' && s.permanent) || permissions.includes('moderation.ban_permanent'))
   );
 }
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { setArt } from '../assets/art';
 import { PickUpFailure, StatId } from '../gen/wathena/v1/event_pb';
 import { expLine, expPercent, hpLine, jobName, pickUpMessage } from './hud';
 
@@ -81,6 +82,27 @@ describe('jobName', () => {
     expect(jobName(4021)).toBe('Gypsy');
     expect(jobName(23)).toBe('Super Novice');
     expect(jobName(999999)).toBe('Job 999999');
+  });
+
+  it('names a mod job by the client data', () => {
+    setArt({
+      version: 2,
+      mods: [],
+      items: {},
+      monsters: {},
+      npc_sprites: {},
+      jobs: { '10000': { name: 'Lantern Keeper' }, '7': { name: 'Lantern Knight' } },
+      skills: {},
+      companions: {},
+      mounts: {},
+    });
+    try {
+      expect(jobName(10000)).toBe('Lantern Keeper');
+      expect(jobName(7)).toBe('Lantern Knight');
+      expect(jobName(2)).toBe('Mage');
+    } finally {
+      setArt(undefined);
+    }
   });
 });
 

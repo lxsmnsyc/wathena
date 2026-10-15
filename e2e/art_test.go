@@ -23,7 +23,8 @@ import (
 // TestModArt: the client data names the fixture's art for the Test
 // Charm's icon and the Dummy's sprite, by the IDs the server gave them,
 // and the server serves both from the fixture's build, as the client
-// loads them (decision 0033).
+// loads them (decision 0033). Version 2 of the client data names both
+// records, and holds the charm's description (review decision 40).
 func TestModArt(t *testing.T) {
 	t.Parallel()
 	srv := Start(t, Options{})
@@ -35,13 +36,19 @@ func TestModArt(t *testing.T) {
 	if len(doc.Mods) != 1 || doc.Mods[0].ID != "e2e.fixture" || doc.Mods[0].Assets != "/assets/mods/e2e.fixture/0.1.0/" {
 		t.Fatalf("mods %+v", doc.Mods)
 	}
-	icon := doc.Items[strconv.FormatUint(uint64(Charm), 10)].Icon
-	if icon != "mod/e2e.fixture/icon/item/Charm" {
-		t.Errorf("the charm's icon is %q", icon)
+	if doc.Version != 2 {
+		t.Errorf("client data version %d", doc.Version)
 	}
-	sprite := doc.Monsters[strconv.FormatUint(uint64(dummy.Body), 10)].Sprite
-	if sprite != "mod/e2e.fixture/sprite/mob/Dummy" {
-		t.Errorf("the dummy, body %d, has the sprite %q", dummy.Body, sprite)
+	charm := doc.Items[strconv.FormatUint(uint64(Charm), 10)]
+	icon := charm.Icon
+	if icon != "mod/e2e.fixture/icon/item/Charm" || charm.Name != "Test Charm" ||
+		len(charm.Description) != 1 || charm.Description[0] != "A charm for the end-to-end tests." {
+		t.Errorf("the charm is %+v", charm)
+	}
+	mob := doc.Monsters[strconv.FormatUint(uint64(dummy.Body), 10)]
+	sprite := mob.Sprite
+	if sprite != "mod/e2e.fixture/sprite/mob/Dummy" || mob.Name != "Dummy" {
+		t.Errorf("the dummy, body %d, is %+v", dummy.Body, mob)
 	}
 
 	base := srv.HTTP() + doc.Mods[0].Assets

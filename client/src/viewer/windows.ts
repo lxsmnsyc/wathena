@@ -7,7 +7,18 @@ export const SMALL_SCREEN = '(width < 600px)';
 
 let front = 100;
 
-/** Adds a title bar to a window, which moves it and brings it to the front. */
+/** Puts a window over every other. */
+function toFront(win: HTMLElement): void {
+  front++;
+  win.style.zIndex = String(front);
+}
+
+/**
+ * Adds a title bar to a window, which moves it and brings it to the front.
+ * A window that opens comes to the front too, so a shop opened from the
+ * store search shows over it on a small screen, where windows are panels
+ * in one place.
+ */
 export function makeMovable(win: HTMLElement, title: string): void {
   const bar = document.createElement('div');
   bar.className = 'window-bar';
@@ -19,11 +30,15 @@ export function makeMovable(win: HTMLElement, title: string): void {
   win.addEventListener(
     'pointerdown',
     () => {
-      front++;
-      win.style.zIndex = String(front);
+      toFront(win);
     },
     { capture: true },
   );
+  new MutationObserver(() => {
+    if (!win.hidden) {
+      toFront(win);
+    }
+  }).observe(win, { attributes: true, attributeFilter: ['hidden'] });
   bar.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) {
       return;

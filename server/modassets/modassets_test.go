@@ -141,7 +141,7 @@ func TestServeModBuild(t *testing.T) {
 	if err := json.Unmarshal(a.ClientData, &doc); err != nil {
 		t.Fatal(err)
 	}
-	if doc.Version != 1 || len(doc.Mods) != 1 || doc.Mods[0].Assets != "/assets/mods/example.lantern/0.1.0/" {
+	if doc.Version != 2 || len(doc.Mods) != 1 || doc.Mods[0].Assets != "/assets/mods/example.lantern/0.1.0/" {
 		t.Errorf("client data %s", a.ClientData)
 	}
 	if doc.Tables == nil || !strings.Contains(string(a.ClientData), `"hit":[1,17]`) {

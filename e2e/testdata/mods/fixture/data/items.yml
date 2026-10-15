@@ -2,6 +2,7 @@
 - name: e2e.fixture:Charm
   type: Armor
   display_name: Test Charm
+  description: A charm for the end-to-end tests.
   weight: 10
   sell: 100
   location: [both_accessory]

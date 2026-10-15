@@ -215,8 +215,9 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 		}.Build()}.Build())
 		return
 	}
-	if strings.HasPrefix(cmd.text, "@") {
-		// A GM command: never chat, never logged (gmcommands.go).
+	if strings.HasPrefix(cmd.text, "@") && z.commandUser(p) {
+		// A GM command of a staff member: never chat, never logged
+		// (gmcommands.go). For other players the line is chat.
 		z.gmCommand(p, cmd.text)
 		return
 	}

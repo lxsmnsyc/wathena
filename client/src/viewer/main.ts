@@ -148,12 +148,14 @@ import { StatusWindow } from './statusWindow';
 import { CastBars, Cooldowns, cooldownText } from './cooldowns';
 import { HotkeyBar, hotkeySlot, loadHotkeys, saveHotkeys } from './hotkeys';
 import {
+  SkillIcons,
   SkillModel,
   SkillWindow,
   castLevel,
   castable,
   skillBadge,
   skillFailureMessage,
+  skillName,
   skillOf,
 } from './skills';
 import { TargetMode } from './targeting';
@@ -241,6 +243,8 @@ if ('serviceWorker' in navigator && !new URL(location.href).searchParams.has('no
 const store = await AssetStore.open(base);
 // Item names load on first need, and descriptions when first shown.
 const itemTexts = new ItemTexts(store);
+/** The icons of skills whose records name art. */
+const skillIcons = new SkillIcons(store);
 let current: MapScene | undefined;
 let session: { connection: Connection; online: Online } | undefined;
 const pathfinder = await Pathfinder.load();
@@ -291,6 +295,8 @@ let openChat: () => void = () => {};
 let logNotice: (text: string) => void = () => {};
 /** The ground item under the pointer, whose name shows. */
 let hoveredItem: number | undefined;
+/** The unit under the mouse, whose name shows under it, as in RO. */
+let hoveredUnit: number | undefined;
 /** Guild emblems, once a game server is known. */
 let emblems: EmblemCache | undefined;
 /**
@@ -1188,22 +1194,27 @@ if (serverURL === null) {
   const skillRoot = document.querySelector<HTMLElement>('#skill-window');
   const skillToggle = document.querySelector<HTMLButtonElement>('#skill-toggle');
   if (skillRoot !== null) {
-    skillWindow = new SkillWindow(skillRoot, skills, {
-      learn: (skillId) => {
-        connection.learnSkill(skillId);
+    skillWindow = new SkillWindow(
+      skillRoot,
+      skills,
+      {
+        learn: (skillId) => {
+          connection.learnSkill(skillId);
+        },
+        use: (skillId, level) => {
+          castSkill(skillId, level);
+        },
+        assign: (skillId, level) => {
+          const slot = hotkeys.firstEmpty();
+          if (slot === undefined) {
+            showMessage('The hotkey bar is full. Right-click a key to clear it.');
+            return;
+          }
+          hotkeys.assign(slot, level === undefined ? { skillId } : { skillId, level });
+        },
       },
-      use: (skillId, level) => {
-        castSkill(skillId, level);
-      },
-      assign: (skillId, level) => {
-        const slot = hotkeys.firstEmpty();
-        if (slot === undefined) {
-          showMessage('The hotkey bar is full. Right-click a key to clear it.');
-          return;
-        }
-        hotkeys.assign(slot, level === undefined ? { skillId } : { skillId, level });
-      },
-    });
+      skillIcons,
+    );
     const toggle = (): void => {
       skillWindow?.toggle();
       skillWindow?.update(view.stats, (id) => cooldowns.remaining(id, performance.now()));
@@ -2455,6 +2466,44 @@ if (import.meta.env.DEV) {
       const rect = canvas.getBoundingClientRect();
       return [rect.left + ((p.x + 1) / 2) * rect.width, rect.top + ((1 - p.y) / 2) * rect.height];
     },
+    // The items on the ground, with their place on the screen, for the
+    // exit check's pick-ups.
+    groundItems: () => {
+      const o = session?.online;
+      if (o === undefined) {
+        return [];
+      }
+      const rect = canvas.getBoundingClientRect();
+      return o.groundItemIds().flatMap((id) => {
+        const g = o.groundItem(id);
+        if (g === undefined) {
+          return [];
+        }
+        const p = g.position.clone().project(camera);
+        return [
+          {
+            id,
+            itemId: g.itemId,
+            name: itemTexts.label(g.itemId),
+            screen: [
+              rect.left + ((p.x + 1) / 2) * rect.width,
+              rect.top + ((1 - p.y) / 2) * rect.height,
+            ],
+          },
+        ];
+      });
+    },
+    // The middle of a cell on the screen, for the exit check's clicks on
+    // the ground.
+    screenOfCell: (x: number, y: number) => {
+      if (current === undefined) {
+        return undefined;
+      }
+      const p = new Vector3(x + 0.5, cellHeight(current.map, x + 0.5, y + 0.5), -(y + 0.5));
+      p.project(camera);
+      const rect = canvas.getBoundingClientRect();
+      return [rect.left + ((p.x + 1) / 2) * rect.width, rect.top + ((1 - p.y) / 2) * rect.height];
+    },
     selfCell: () =>
       session?.online.selfCell ?? (player === undefined ? undefined : [player.x, player.y]),
     azimuth: () => controls.getAzimuthalAngle(),
@@ -2621,10 +2670,12 @@ function markCell(e: PointerEvent): void {
   cellMarker.visible = true;
 }
 
-// The name of the ground item under the pointer shows under it, as in RO.
+// The name of the ground item or unit under the pointer shows under it,
+// as in RO.
 canvas.addEventListener('pointermove', (e) => {
   if (session === undefined || e.pointerType === 'touch') {
     hoveredItem = undefined;
+    hoveredUnit = undefined;
     return;
   }
   markCell(e);
@@ -2637,9 +2688,11 @@ canvas.addEventListener('pointermove', (e) => {
     rect.height,
   );
   hoveredItem = target?.item === true ? target.id : undefined;
+  hoveredUnit = target?.item === false ? target.id : undefined;
 });
 canvas.addEventListener('pointerleave', () => {
   hoveredItem = undefined;
+  hoveredUnit = undefined;
 });
 
 // Touch on the game view (review decision 39). A tap does what a left
@@ -2921,21 +2974,32 @@ if (visual !== null) {
 const itemLabelView = document.querySelector<HTMLDivElement>('#item-label');
 const itemLabelAt = new Vector3();
 
-/** Places the hovered ground item's name under it. */
+/**
+ * Places the name of the hovered ground item or unit under it. A mod's
+ * monster has the name the server's client data gives it.
+ */
 function showItemLabel(): void {
   if (itemLabelView === null) {
     return;
   }
   const g = hoveredItem === undefined ? undefined : session?.online.groundItem(hoveredItem);
-  if (g === undefined) {
+  const unit = hoveredUnit === undefined ? undefined : session?.online.position(hoveredUnit);
+  const unitName = hoveredUnit === undefined ? undefined : session?.online.nameOf(hoveredUnit);
+  let text: string;
+  if (g !== undefined) {
+    text = groundItemLabel(itemTexts.label(g.itemId), g.amount);
+    itemLabelAt.copy(g.position);
+  } else if (unit !== undefined && unitName !== undefined && unitName !== '') {
+    text = unitName;
+    itemLabelAt.copy(unit);
+  } else {
     itemLabelView.hidden = true;
     return;
   }
-  const text = groundItemLabel(itemTexts.label(g.itemId), g.amount);
   if (itemLabelView.textContent !== text) {
     itemLabelView.textContent = text;
   }
-  itemLabelAt.copy(g.position).project(camera);
+  itemLabelAt.project(camera);
   itemLabelView.hidden = itemLabelAt.z > 1;
   itemLabelView.style.left = `${((itemLabelAt.x + 1) / 2) * 100}%`;
   itemLabelView.style.top = `${((1 - itemLabelAt.y) / 2) * 100}%`;
@@ -3194,11 +3258,13 @@ function showHotkeys(now: number): void {
     const s = skills.get(h.skillId);
     const left = cooldowns.remaining(h.skillId, now);
     if (s === undefined) {
-      return { badge: '?', title: `Skill ${h.skillId}`, cooldown: '', usable: false };
+      return { badge: '?', title: skills.label(h.skillId), cooldown: '', usable: false };
     }
-    const label = s.displayName || s.name;
+    const label = skillName(s);
+    const icon = skillIcons.url(h.skillId);
     return {
       badge: skillBadge(label),
+      ...(icon === undefined ? {} : { icon }),
       title: `${label} Lv ${castLevel(s, h.level)}`,
       cooldown: cooldownText(left),
       usable: castable(s) && left === 0,

@@ -1,4 +1,13 @@
-import { jobBody, monsterSprite, npcSprite } from '../assets/art';
+import {
+  jobBody,
+  lookJob,
+  modMonsterName,
+  monsterSound,
+  monsterSprite,
+  npcSprite,
+  skillArtEffects,
+  viewSprite,
+} from '../assets/art';
 import { create } from '@bufbuild/protobuf';
 import { type Camera, Group, Vector3 } from 'three';
 import { effects as effectTable, jobs, looks, partEffect, weapons } from '../data/tables';
@@ -226,14 +235,18 @@ interface Playing {
  * - Headgear, sprite/headgear/<sex>/<view>.
  * - The garment, sprite/garment/<job>/<sex>/<view>.
  *
- * A view of 0 draws nothing. The option bits add a mount, a companion
+ * A view of 0 draws nothing. A view the server gave an item with a
+ * view_sprite draws that sprite (art.ts). The option bits add a mount, a companion
  * and a cart (mounts.ts):
  * - A mounted player's body, sprite/body/<mounted look>/<sex>.
  * - A companion, sprite/companion/<look>.
  * - A cart, sprite/cart/<n>.
  */
 export function lookOf(m: LookMessage | undefined, option = 0): Look {
-  const body = m?.body ?? 0;
+  // A mod's job comes by its own ID: its body art by that ID, and the
+  // rest from the job it looks like (review decision 40).
+  const own = m?.body ?? 0;
+  const body = lookJob(own);
   const job = jobs.get(mountedBody(body, option)) ?? jobs.get(0);
   const name = job?.look ?? 'novice';
   const info = looks.get(name);
@@ -242,7 +255,10 @@ export function lookOf(m: LookMessage | undefined, option = 0): Look {
   const hair = Math.max(m?.hair ?? 1, 1);
   const look: Look = {
     // A mod's job may name body sprites of its art.
-    body: jobBody(mountedBody(body, option), sex) ?? `sprite/body/${bodyLook(body, option)}/${sex}`,
+    body:
+      jobBody(own, sex) ??
+      jobBody(mountedBody(body, option), sex) ??
+      `sprite/body/${bodyLook(body, option)}/${sex}`,
     head: `sprite/head/${race}/${sex}/${hair}`,
     hairPalette: `palette/hair/${race}/${sex}/${hair}/${m?.hairColor ?? 0}`,
   };
@@ -265,16 +281,16 @@ export function lookOf(m: LookMessage | undefined, option = 0): Look {
     look.shield = `sprite/shield/${name}/${sex}/${m.shield}`;
   }
   if (m.headTop !== 0) {
-    look.headgearTop = `sprite/headgear/${sex}/${m.headTop}`;
+    look.headgearTop = viewSprite(m.headTop) ?? `sprite/headgear/${sex}/${m.headTop}`;
   }
   if (m.headMid !== 0) {
-    look.headgearMid = `sprite/headgear/${sex}/${m.headMid}`;
+    look.headgearMid = viewSprite(m.headMid) ?? `sprite/headgear/${sex}/${m.headMid}`;
   }
   if (m.headBottom !== 0) {
-    look.headgearBottom = `sprite/headgear/${sex}/${m.headBottom}`;
+    look.headgearBottom = viewSprite(m.headBottom) ?? `sprite/headgear/${sex}/${m.headBottom}`;
   }
   if (m.robe !== 0) {
-    look.garment = `sprite/garment/${name}/${sex}/${m.robe}`;
+    look.garment = viewSprite(m.robe) ?? `sprite/garment/${name}/${sex}/${m.robe}`;
   }
   return look;
 }
@@ -629,6 +645,8 @@ export default class Online {
   private waiting: Event[] = [];
   /** Entity names, by ID, from EntityAppear. */
   private readonly names = new Map<number, string>();
+  /** The look ID of each monster in sight, for its sounds. */
+  private readonly monsterLooks = new Map<number, number>();
   /** The guild shown with each entity in sight, by ID, from EntityAppear and EntityGuild. */
   private readonly badges = new Map<number, GuildBadge>();
   /** The shop titles shown over players in sight, by ID, from EntityShop. */
@@ -676,6 +694,11 @@ export default class Online {
   /** A ground item's item ID, amount, and position, while it is shown. */
   groundItem(id: number): { itemId: number; amount: number; position: Vector3 } | undefined {
     return this.items.info(id);
+  }
+
+  /** The IDs of the items on the ground in sight. */
+  groundItemIds(): number[] {
+    return this.items.ids();
   }
 
   /** The IDs of the units in sight, the player's own too. */
@@ -734,7 +757,15 @@ export default class Online {
             break;
           }
           this.kinds.set(a.id, kindOf(a.kind));
-          this.names.set(a.id, a.name);
+          // A mod's monster has the name the client data gives it.
+          this.names.set(
+            a.id,
+            (a.kind === EntityKind.MONSTER ? modMonsterName(a.look?.body ?? 0) : undefined) ??
+              a.name,
+          );
+          if (a.kind === EntityKind.MONSTER) {
+            this.monsterLooks.set(a.id, a.look?.body ?? 0);
+          }
           if (a.guild !== undefined && a.guild.guildId !== 0n) {
             this.badges.set(a.id, a.guild);
           }
@@ -806,6 +837,7 @@ export default class Online {
           } else {
             unit.follow(...walk);
           }
+          this.monsterSound(m.id, 'move');
           break;
         }
         case 'stop': {
@@ -822,6 +854,8 @@ export default class Online {
           const unit = this.units.get(v.id);
           if (v.reason === VanishReason.DIED && unit !== undefined) {
             // The body plays its death, then goes.
+            this.monsterSound(v.id, 'die');
+            this.monsterLooks.delete(v.id);
             unit.act(this.actions(v.id).dead, Infinity);
             this.units.delete(v.id);
             setTimeout(() => {
@@ -853,13 +887,14 @@ export default class Online {
             source.face(target.x, target.y);
             source.act(this.actions(d.source).attack, Math.max(d.delayMs, 300));
           }
-          const skill = d.skillId === 0 ? 0 : this.iconOf(d.skillId);
+          const skill = d.skillId;
           const on: EffectAt = { case: 'entity', value: d.target };
           if (skill !== 0) {
             this.endAura(d.source);
             this.playSkill(skill, 'caster', { case: 'entity', value: d.source });
           }
           const missed = d.kind === DamageKind.MISS || d.kind === DamageKind.LUCKY_DODGE;
+          this.monsterSound(d.source, 'attack');
           const total = Number(d.amount);
           const hits = missed ? [total] : splitHits(total, d.hits);
           setTimeout(() => {
@@ -873,6 +908,7 @@ export default class Online {
               target.act(this.actions(d.target).dead, Infinity);
             } else if (!missed) {
               target.act(this.actions(d.target).hurt, 300);
+              this.monsterSound(d.target, 'damage');
             }
           }, d.delayMs);
           // A multi-hit attack shows each hit's number, then the total.
@@ -943,7 +979,7 @@ export default class Online {
         }
         case 'skillEffect': {
           const f = e.body.value;
-          const skill = this.iconOf(f.skillId);
+          const skill = f.skillId;
           const source = this.units.get(f.source);
           let on: EffectAt = { case: 'entity', value: f.source };
           if (f.target.case === 'entity') {
@@ -965,7 +1001,7 @@ export default class Online {
           }
           // Heal and First Aid show the HP healed.
           const healed = on.case === 'entity' ? this.units.get(on.value) : undefined;
-          if (HEAL_SKILLS.has(skill) && f.value > 0n && healed !== undefined) {
+          if (HEAL_SKILLS.has(this.iconOf(skill)) && f.value > 0n && healed !== undefined) {
             this.onHit?.({
               position: healed.character.group.position.clone(),
               amount: Number(f.value),
@@ -1585,6 +1621,7 @@ export default class Online {
     this.lookLoads.delete(id);
     this.looksShown.delete(id);
     this.names.delete(id);
+    this.monsterLooks.delete(id);
     this.badges.delete(id);
     this.boards.delete(id);
     this.items.remove(id);
@@ -1690,9 +1727,11 @@ export default class Online {
   }
 
   /**
-   * Plays a skill's effects for a moment, by the skill whose effects it
-   * uses. The caster effect of one use, and the effect of a ground skill
-   * on one cell, play once when several events ask for them together.
+   * Plays a skill's effects for a moment: the effects its record names in
+   * the client data, or else those of the skill whose effects it uses, by
+   * the client tables. The caster effect of one use, and the effect of a
+   * ground skill on one cell, play once when several events ask for them
+   * together.
    */
   private playSkill(skill: number, phase: SkillPhase, at: EffectAt): void {
     const now = this.clock?.() ?? performance.now();
@@ -1708,9 +1747,61 @@ export default class Online {
     if (this.map === undefined) {
       return;
     }
-    for (const id of skillEffectIds(skill, phase)) {
+    const named = skillArtEffects(skill, phase);
+    if (named !== undefined) {
+      for (const name of named) {
+        this.playNamed(name, at, this.map);
+      }
+      return;
+    }
+    for (const id of skillEffectIds(this.iconOf(skill), phase)) {
       this.play(id, at, this.map);
     }
+  }
+
+  /** Plays a monster's sound for a moment, when its record names one. */
+  private monsterSound(id: number, moment: string): void {
+    const look = this.monsterLooks.get(id);
+    if (look === undefined) {
+      return;
+    }
+    const name = monsterSound(look, moment);
+    const at = this.units.get(id)?.character.group.position;
+    if (name !== undefined && at !== undefined) {
+      this.onSound?.(name, at.clone());
+    }
+  }
+
+  /** Plays an STR effect by its asset name on an entity or a cell, once. */
+  private playNamed(name: string, on: EffectAt, map: WMap): void {
+    const source = this.effects;
+    const unit = on.case === 'entity' ? this.units.get(on.value) : undefined;
+    const cell = on.case === 'cell' ? on.value : this.pending.get(on.value);
+    if (source === undefined || (unit === undefined && cell === undefined)) {
+      return;
+    }
+    const at = new Vector3();
+    let parent: Group = this.group;
+    if (unit !== undefined) {
+      parent = unit.character.group;
+    } else if (cell !== undefined) {
+      const x = cell.x + 0.5;
+      const y = cell.y + 0.5;
+      at.set(x, cellHeight(map, x, y), -y);
+    }
+    source.cache
+      .get(name)
+      .then((effect) => {
+        if (effect === undefined) {
+          return;
+        }
+        const v = new EffectView(effect, source.textures);
+        v.loop = false;
+        v.group.position.copy(at);
+        parent.add(v.group);
+        this.playing.push(v);
+      })
+      .catch(reportError);
   }
 
   /** The skill whose effects a skill plays. */
@@ -1821,7 +1912,7 @@ export default class Online {
       return;
     }
     if ('once' in shown) {
-      this.playSkill(skill, 'effect', { case: 'cell', value: { x, y } });
+      this.playSkill(skillId, 'effect', { case: 'cell', value: { x, y } });
       return;
     }
     const g = new Group();

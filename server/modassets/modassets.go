@@ -33,6 +33,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/assets/serve"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
@@ -51,8 +52,9 @@ const (
 
 // ClientDataVersion is the version of the client data's format. A field
 // that goes, changes name or changes meaning raises it. New fields keep
-// it.
-const ClientDataVersion = 1
+// it. Version 2 added the names of mods' records, and a job's body
+// sprites moved under body (review decision 40).
+const ClientDataVersion = 2
 
 // Options configure Load.
 type Options struct {
@@ -277,14 +279,14 @@ type ClientData struct {
 	Version int `json:"version"`
 	// Mods are the builds to load after core's, in load order.
 	Mods []ModBuild `json:"mods"`
-	// The art of records, by ID as a decimal string.
-	Items      map[string]ItemArt             `json:"items"`
-	Monsters   map[string]gamedata.MonsterArt `json:"monsters"`
-	NPCSprites map[string]string              `json:"npc_sprites"`
-	Jobs       map[string]map[string]string   `json:"jobs"`
-	Skills     map[string]SkillArt            `json:"skills"`
-	Companions map[string]string              `json:"companions"`
-	Mounts     map[string]string              `json:"mounts"`
+	// The art and names of records, by ID as a decimal string.
+	Items      map[string]ItemEntry    `json:"items"`
+	Monsters   map[string]MonsterEntry `json:"monsters"`
+	NPCSprites map[string]string       `json:"npc_sprites"`
+	Jobs       map[string]JobEntry     `json:"jobs"`
+	Skills     map[string]SkillEntry   `json:"skills"`
+	Companions map[string]string       `json:"companions"`
+	Mounts     map[string]string       `json:"mounts"`
 	// Tables are the client data tables merged with the mods', by file
 	// name, when a mod has any.
 	Tables clientdata.Merged `json:"tables,omitempty"`
@@ -301,18 +303,61 @@ type ModBuild struct {
 // ItemArt is an item's art in the client data.
 type ItemArt = mod.ItemArt
 
+// ItemEntry is an item in the client data: its art, and for a mod's item
+// or a name a mod set, its name, card slots and description lines.
+type ItemEntry struct {
+	ItemArt
+	// View is the view ID the server gave an item with a view_sprite, as
+	// looks send it (gamedata.ItemArtViews).
+	View        int      `json:"view,omitempty"`
+	Name        string   `json:"name,omitempty"`
+	Slots       int      `json:"slots,omitempty"`
+	Description []string `json:"description,omitempty"`
+}
+
+// MonsterEntry is a monster in the client data: its art, and the name
+// of a mod's monster or a name a mod set.
+type MonsterEntry struct {
+	gamedata.MonsterArt
+	Name string `json:"name,omitempty"`
+}
+
+// JobEntry is a job in the client data: the name of a mod's job or a
+// name a mod set, its body sprites by sex, m and f, and for a job that
+// looks show by its own ID, the job it looks like.
+type JobEntry struct {
+	Name string            `json:"name,omitempty"`
+	Body map[string]string `json:"body,omitempty"`
+	// Look is the job whose sprites and client tables the job uses
+	// beside its body. Looks send a mod's job by its own ID.
+	Look int `json:"look,omitempty"`
+}
+
 // SkillArt is a skill's art in the client data.
 type SkillArt struct {
 	Icon    string              `json:"icon,omitempty"`
 	Effects map[string][]string `json:"effects,omitempty"`
 }
 
+// SkillEntry is a skill in the client data: its art, and the name of a
+// mod's skill or a name a mod set.
+type SkillEntry struct {
+	SkillArt
+	Name string `json:"name,omitempty"`
+}
+
+// modSet reports whether a mod other than core added a record or set its
+// display_name, so the client shows the server's name.
+func modSet(r *mod.Record) bool {
+	return r.Mod != mod.Core || (r.SetBy["display_name"] != "" && r.SetBy["display_name"] != mod.Core)
+}
+
 // clientData collects the art of every record: the fields records set,
 // and for a mod's own records without a field, the art its build has
 // under the record's name, such as mod/example.lantern/icon/item/Paper_Lantern.
 func (a *Assets) clientData(m *gamedata.Mods) *ClientData {
-	d := &ClientData{Version: ClientDataVersion, Mods: []ModBuild{}, Items: map[string]ItemArt{}, Monsters: map[string]gamedata.MonsterArt{},
-		NPCSprites: map[string]string{}, Jobs: map[string]map[string]string{}, Skills: map[string]SkillArt{},
+	d := &ClientData{Version: ClientDataVersion, Mods: []ModBuild{}, Items: map[string]ItemEntry{}, Monsters: map[string]MonsterEntry{},
+		NPCSprites: map[string]string{}, Jobs: map[string]JobEntry{}, Skills: map[string]SkillEntry{},
 		Companions: map[string]string{}, Mounts: map[string]string{}}
 	for _, b := range a.Builds {
 		d.Mods = append(d.Mods, ModBuild{ID: b.Mod, Version: b.Version, Assets: b.URL})
@@ -344,33 +389,77 @@ func (a *Assets) clientData(m *gamedata.Mods) *ClientData {
 	}
 	if m.Items != nil {
 		for _, itemID := range slices.Sorted(maps.Keys(m.Items.Art)) {
-			d.Items[id(itemID)] = m.Items.Art[itemID]
+			d.Items[id(itemID)] = ItemEntry{ItemArt: m.Items.Art[itemID]}
+		}
+		for itemID, lines := range m.Items.Descriptions {
+			e := d.Items[id(itemID)]
+			e.Description = lines
+			d.Items[id(itemID)] = e
+		}
+		byID := map[uint32]*item.Def{}
+		if m.Items.Data != nil {
+			for i := range m.Items.Data.Items {
+				byID[m.Items.Data.Items[i].ID] = &m.Items.Data.Items[i]
+			}
 		}
 		if m.Items.Overlay != nil {
 			for _, r := range m.Items.Overlay.Records {
 				itemID, ok := m.Items.IDs[r.Name]
-				if !ok || r.Mod == mod.Core {
+				if !ok {
 					continue
 				}
-				art := d.Items[id(itemID)]
-				art.Icon = cmpOr(art.Icon, convention(r.Name, "icon/item"))
-				art.Image = cmpOr(art.Image, convention(r.Name, "image/item"))
-				art.DropSprite = cmpOr(art.DropSprite, convention(r.Name, "sprite/item"))
-				if art != (ItemArt{}) {
-					d.Items[id(itemID)] = art
+				e := d.Items[id(itemID)]
+				def := byID[itemID]
+				if def != nil && modSet(r) {
+					e.Name, e.Slots = def.Name, def.Slots
+				}
+				if def != nil && e.ViewSprite != "" {
+					e.View = def.View
+				}
+				if r.Mod != mod.Core {
+					e.Icon = cmpOr(e.Icon, convention(r.Name, "icon/item"))
+					e.Image = cmpOr(e.Image, convention(r.Name, "image/item"))
+					e.DropSprite = cmpOr(e.DropSprite, convention(r.Name, "sprite/item"))
+				}
+				if !e.empty() {
+					d.Items[id(itemID)] = e
 				}
 			}
 		}
 	}
+	monsterNames := map[uint32]bool{}
+	if m.MonsterOverlay != nil {
+		byName := map[string]uint32{}
+		for monsterID, mon := range m.Monsters {
+			byName[strings.ToUpper(mon.AegisName)] = monsterID
+		}
+		for _, r := range m.MonsterOverlay.Records {
+			if monsterID, ok := byName[strings.ToUpper(r.Name)]; ok && modSet(r) {
+				monsterNames[monsterID] = true
+			}
+		}
+	}
 	for monsterID, mon := range m.Monsters {
-		if mon.Art.Sprite != "" || len(mon.Art.Sounds) > 0 {
-			d.Monsters[id(monsterID)] = mon.Art
+		e := MonsterEntry{MonsterArt: mon.Art}
+		if monsterNames[monsterID] {
+			e.Name = mon.Name
+		}
+		if e.Sprite != "" || len(e.Sounds) > 0 || e.Name != "" {
+			d.Monsters[id(monsterID)] = e
 		}
 	}
 	for spriteID, name := range m.NPCArt {
 		d.NPCSprites[id(spriteID)] = name
 	}
 	if m.Jobs != nil {
+		jobNames := map[int]bool{}
+		if m.Jobs.Overlay != nil {
+			for _, r := range m.Jobs.Overlay.Records {
+				if jobID, ok := m.Jobs.ID(r.Name); ok && modSet(r) {
+					jobNames[jobID] = true
+				}
+			}
+		}
 		for jobID, r := range m.Jobs.Records {
 			art := maps.Clone(r.Art)
 			if r.Data.Info.Mod != "" && r.Data.Info.Mod != mod.Core {
@@ -385,19 +474,40 @@ func (a *Assets) clientData(m *gamedata.Mods) *ClientData {
 					}
 				}
 			}
-			if len(art) > 0 {
-				d.Jobs[strconv.Itoa(jobID)] = art
+			e := JobEntry{Body: art}
+			modJob := r.Data.Info.Mod != "" && r.Data.Info.Mod != mod.Core
+			if jobNames[jobID] || modJob {
+				e.Name = r.Data.Info.DisplayName
+			}
+			if modJob || len(r.Art) > 0 {
+				e.Look = r.Data.Info.Look
+			}
+			if len(art) > 0 || e.Name != "" {
+				d.Jobs[strconv.Itoa(jobID)] = e
 			}
 		}
 	}
 	if m.Skills != nil {
-		for _, s := range m.Skills.All() {
-			art := SkillArt{Icon: s.Art.Icon, Effects: s.Art.Effects}
-			if s.Mod != "" && art.Icon == "" {
-				art.Icon = convention(s.Mod+":"+s.Name, "icon/skill")
+		skillNames := map[int]bool{}
+		if m.SkillOverlay != nil {
+			for _, r := range m.SkillOverlay.Records {
+				if s := m.Skills.ByName(r.Name); s != nil && modSet(r) {
+					skillNames[s.ID] = true
+				}
 			}
-			if art.Icon != "" || len(art.Effects) > 0 {
-				d.Skills[strconv.Itoa(s.ID)] = art
+		}
+		for _, s := range m.Skills.All() {
+			e := SkillEntry{SkillArt: SkillArt{Icon: s.Art.Icon, Effects: s.Art.Effects}}
+			if s.Mod != "" && e.Icon == "" {
+				// A mod's skill's name is its full name, such as
+				// example.lantern:LANTERN_FLARE.
+				e.Icon = convention(s.Name, "icon/skill")
+			}
+			if s.Mod != "" || skillNames[s.ID] {
+				e.Name = cmpOr(s.DisplayName, s.Name)
+			}
+			if e.Icon != "" || len(e.Effects) > 0 || e.Name != "" {
+				d.Skills[strconv.Itoa(s.ID)] = e
 			}
 		}
 	}
@@ -418,6 +528,11 @@ func (a *Assets) clientData(m *gamedata.Mods) *ClientData {
 		}
 	}
 	return d
+}
+
+// empty reports whether an item has no art and no text.
+func (e ItemEntry) empty() bool {
+	return e.ItemArt == (ItemArt{}) && e.Name == "" && len(e.Description) == 0
 }
 
 func cmpOr(a, b string) string {

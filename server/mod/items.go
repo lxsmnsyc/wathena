@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/lxsmnsyc/wathena/server/bonus"
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -34,6 +35,32 @@ type Items struct {
 	Overlay *Overlay
 	// Art is the art that records name, by item ID (decision 0033).
 	Art map[uint32]ItemArt
+	// Descriptions are the description fields of records, by item ID, as
+	// lines (review decision 40). The client shows them. The server does
+	// not use them.
+	Descriptions map[uint32][]string
+}
+
+// MaxItemDescription is the longest description field of an item, in
+// bytes.
+const MaxItemDescription = 4096
+
+// itemDescription reads an item's description field: text of 1 to
+// MaxItemDescription bytes. Lines are split at line breaks, and trailing
+// space and empty lines at the end go.
+func itemDescription(v any) ([]string, error) {
+	s, ok := v.(string)
+	if !ok || strings.TrimSpace(s) == "" || len(s) > MaxItemDescription || !utf8.ValidString(s) {
+		return nil, fmt.Errorf("description is text of 1 to %d bytes", MaxItemDescription)
+	}
+	lines := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
+	for i, l := range lines {
+		lines[i] = strings.TrimRight(l, " \t\r")
+	}
+	for len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+	return lines, nil
 }
 
 // ItemArt is the art an item record names: asset names of a mod's art
@@ -63,6 +90,7 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 	}
 	out := &item.Data{Mode: base.Mode, Items: append([]item.Def(nil), base.Items...)}
 	art := map[uint32]ItemArt{}
+	descriptions := map[uint32][]string{}
 	var errs []error
 	for _, r := range o.Records {
 		var d item.Def
@@ -108,6 +136,16 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 		}
 		if hasArt {
 			art[d.ID] = a
+		}
+		if v, ok := fields["description"]; ok {
+			fields = maps.Clone(fields)
+			delete(fields, "description")
+			lines, err := itemDescription(v)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: items %s: %w", r.Where, r.Name, err))
+				continue
+			}
+			descriptions[d.ID] = lines
 		}
 		if v, ok := fields["display_name"]; ok {
 			// The record's name is its key, so the name players see is
@@ -186,7 +224,7 @@ func (s *Set) Items(ctx context.Context, base *item.Data, ids *IDs, bonusNames b
 	for _, d := range out.Items {
 		names[d.AegisName] = d.ID
 	}
-	return &Items{Data: out, IDs: names, Overlay: o, Art: art}, nil
+	return &Items{Data: out, IDs: names, Overlay: o, Art: art, Descriptions: descriptions}, nil
 }
 
 // jobNameList reads an item's jobs field as a list of job names, such as

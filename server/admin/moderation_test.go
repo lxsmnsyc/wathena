@@ -89,7 +89,8 @@ func TestReportCalls(t *testing.T) {
 }
 
 // TestSanctionCalls: each kind needs its permission, a ban needs a
-// recent login, and a permanent ban moderation.ban_permanent.
+// recent login, and a permanent ban moderation.ban_permanent, to give
+// and to lift (review decision 40).
 func TestSanctionCalls(t *testing.T) {
 	e := setup(t, options{limits: manyCalls, roles: map[string][]string{
 		"admin":       {"staff.*", "audit.*", "players.*", "items.*", "moderation.*", "commands.*"},
@@ -170,10 +171,10 @@ func TestSanctionCalls(t *testing.T) {
 		t.Errorf("a stale mute: %d %s", status, b)
 	}
 
-	// Lifting needs the kind's permission, a reason, and for a ban a
-	// recent login.
+	// Lifting needs the kind's permission, a reason, for a ban a recent
+	// login, and for a permanent ban moderation.ban_permanent.
 	e.world.mu.Lock()
-	e.world.sanctionKinds = map[int64]string{1: "mute", 2: "jail", 3: "ban", 4: "kick"}
+	e.world.sanctionKinds = map[int64]string{1: "mute", 2: "jail", 3: "ban", 4: "kick", 5: "permanent ban"}
 	e.world.mu.Unlock()
 	status, b := e.call(muter, "DELETE", "sanctions/1?reason="+url.QueryEscape("appealed"), csrf(muter), nil)
 	if status != http.StatusOK || !strings.Contains(string(b), "appealed") {
@@ -189,10 +190,16 @@ func TestSanctionCalls(t *testing.T) {
 	if status, b := e.call(fresh, "DELETE", "sanctions/3?reason=x", csrf(fresh), nil); status != http.StatusOK {
 		t.Errorf("lift a ban: %d %s", status, b)
 	}
+	e.errorCode(fresh, "DELETE", "sanctions/5?reason=x", csrf(fresh), nil, http.StatusForbidden, "forbidden")
+	freshAdmin := e.loginTOTP("Admin")
+	if status, b := e.call(freshAdmin, "DELETE", "sanctions/5?reason=x", csrf(freshAdmin), nil); status != http.StatusOK {
+		t.Errorf("lift a permanent ban: %d %s", status, b)
+	}
 	e.world.mu.Lock()
 	lifts := e.world.lifts
 	e.world.mu.Unlock()
-	if len(lifts) != 2 || lifts[0].ID != 1 || lifts[0].Reason != "appealed" || lifts[1].AccountName != "Gamemaster" {
+	if len(lifts) != 3 || lifts[0].ID != 1 || lifts[0].Reason != "appealed" || lifts[1].AccountName != "Gamemaster" ||
+		lifts[2].ID != 5 || lifts[2].AccountName != "Admin" {
 		t.Errorf("lifts %+v", lifts)
 	}
 

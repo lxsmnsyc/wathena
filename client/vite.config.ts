@@ -46,8 +46,10 @@ const assets = process.env.WATHENA_ASSETS ?? 'http://127.0.0.1:8200';
 
 // For a test on a phone (docs/decisions/0034-touch-input.md),
 // WATHENA_GAME names a game server, such as http://127.0.0.1:8300, and
-// the dev server forwards the game's WebSocket, client data and emblems
-// to it, so the phone needs to reach the dev server alone.
+// the dev server forwards the game's WebSocket, client data, emblems,
+// account pages and admin API to it, so the phone needs to reach the dev
+// server alone. The account pages and the client then share one site,
+// which the login cookie needs.
 const game = process.env.WATHENA_GAME;
 const gameProxy: Record<string, ProxyOptions> =
   game === undefined
@@ -56,6 +58,8 @@ const gameProxy: Record<string, ProxyOptions> =
         '/ws': { target: game, ws: true },
         '/client-data.json': { target: game },
         '/emblems': { target: game },
+        '/account': { target: game },
+        '/admin/api': { target: game },
       };
 
 // Browsers give crypto.subtle, which checks every asset, only to secure

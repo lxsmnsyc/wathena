@@ -349,6 +349,14 @@ func TestChangeIntoModJob(t *testing.T) {
 	if p.Look.Job != 24 {
 		t.Errorf("the mod job shows sprites of job %d", p.Look.Job)
 	}
+	// With the mods' data, a look sends the mod job by its own ID, and
+	// the client data maps it to its art and look (review decision 40).
+	z.Mods = &Mods{OwnLookJobs: map[int]bool{id: true}}
+	z.updateBodyLook(p)
+	if p.Look.Job != uint32(id) { // #nosec G115 -- a job ID.
+		t.Errorf("with the mods' data, the mod job shows job %d", p.Look.Job)
+	}
+	z.Mods = nil
 	z.stepAt(z.now + 50)
 	var name string
 	for _, e := range events(p) {

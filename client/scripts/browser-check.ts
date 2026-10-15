@@ -16,6 +16,13 @@
 //   and a tablet with touch, a desktop page with the mouse, and frame
 //   times at phone size with the CPU slowed down. Chromium only.
 //
+// - exit: the phase 6 exit check (exit-check.ts): three players on a
+//   desktop and a phone play every tier 1 system against waserver with
+//   PostgreSQL, a staff account with TOTP mutes a player, and a sample
+//   mod's records show their names and art. It needs
+//   WATHENA_TEST_DATABASE_URL, which scripts/check.sh browsers sets.
+//   Chromium only.
+//
 // CHECKS picks checks by name, such as CHECKS=touch,phone. All run by
 // default.
 //
@@ -53,6 +60,7 @@ import {
   inGame,
   startGame,
 } from './game-check.ts';
+import { checkExit } from './exit-check.ts';
 
 const repo = join(import.meta.dirname, '..', '..');
 const client = join(repo, 'client');
@@ -887,6 +895,13 @@ try {
       }
       if (wanted('touch')) {
         await checkGame(name, browser, assets, base);
+      }
+      if (wanted('exit')) {
+        if (name === 'chromium') {
+          await checkExit(name, browser, { repo, client, ...assets }, check);
+        } else {
+          console.log(`skip ${name} exit: its phone runs through the Chrome DevTools Protocol`);
+        }
       }
     } finally {
       await browser.close();

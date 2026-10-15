@@ -1,14 +1,16 @@
 # A sample mod with art of its own (decision 0033): a Paper Lantern with
-# an icon and a dropped sprite, Lantern Ghosts with an animated sprite,
-# and the Lamplighter, an NPC with a sprite, who sells lanterns. The
-# art's sources are in art/. wactl mod build-art builds them into
-# assets/, and wactl mod pack builds them into the .zip file.
+# an icon and a dropped sprite, Lantern Ghosts with an animated sprite
+# and sounds, the Lamplighter, an NPC with a sprite, who sells lanterns
+# and a Lantern Hat with a worn sprite, and the Lantern Keeper, a job
+# with its own body sprites and a skill, Lantern Flare, with an icon and
+# an effect. The art's sources are in art/. wactl mod build-art builds
+# them into assets/, and wactl mod pack builds them into the .zip file.
 # mods/README.md, "Art", explains each part.
 id: example.lantern
 name: Lantern Festival
 version: 0.1.0
 api: 1.0
-description: Paper lanterns, lantern ghosts that drop them, and a lamplighter who sells them, all with art of the mod's own.
+description: Paper lanterns, lantern ghosts that drop them, a lamplighter who sells them, and Lantern Keepers with their own skill, all with art of the mod's own.
 authors:
   - name: wAthena contributors
 license: GPL-3.0-or-later

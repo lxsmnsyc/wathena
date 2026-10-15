@@ -25,6 +25,8 @@
 --     world event of data/events.yml, with world_events.
 --   - "!expand <limit> <amount>" changes one of the speaker's limits with
 --     player:expand and answers with the new value.
+--   - "!trainer" places a Training Dummy, worth a level, next to the
+--     speaker.
 -- Each command but "!guild level" answers with a system line that starts
 -- with "e2e <name>:". restart_planned tells the map's players about a
 -- planned restart, with a line that starts with "e2e restart:". A trade hook and a vend hook refuse Contraband. The
@@ -42,6 +44,7 @@ local world = require "wa.world"
 local world_events = require "wa.world_events"
 
 local DUMMY = monsters.id "e2e.fixture:DUMMY"
+local TRAINER = monsters.id "e2e.fixture:TRAINER"
 local CONTRABAND = items.id "e2e.fixture:Contraband"
 
 -- next_exp is renewal's exp_guild.yml: level n needs n * n * 100000 exp
@@ -139,6 +142,10 @@ local commands = {
   end,
   expand = function(player, words)
     return player:expand(words[2], tonumber(words[3]))
+  end,
+  trainer = function(player)
+    spawning.monsters { monster = TRAINER, amount = 1, x = player.x + 1, y = player.y }
+    return true
   end,
   event = function(_, words)
     if words[2] == "start" then

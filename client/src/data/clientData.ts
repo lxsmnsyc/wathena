@@ -1,12 +1,15 @@
 // The client data the game server serves at /client-data.json (decision
 // 0033): the active mods' asset builds, the art that records of mods use,
-// by ID, and the client data tables merged with the mods' tables.
+// by ID, and the client data tables merged with the mods' tables. Version
+// 2 adds the names of mods' items, monsters, skills and jobs, and the
+// descriptions of items, and moves a job's body sprites under body
+// (review decision 40).
 
 import { AssetStore, type Fetch } from '../assets/store';
 import { applyTables } from './tables';
 
 /** The client data format this client reads. */
-export const CLIENT_DATA_VERSION = 1;
+export const CLIENT_DATA_VERSION = 2;
 
 export interface ModBuild {
   id: string;
@@ -20,16 +23,37 @@ export interface ItemArt {
   image?: string;
   drop_sprite?: string;
   view_sprite?: string;
+  /** The view ID the server gave an item with a view_sprite. */
+  view?: number;
+  /** The name of a mod's item, or a name a mod set. */
+  name?: string;
+  /** Card slots, with a name. */
+  slots?: number;
+  /** Description lines, with RO's color codes. */
+  description?: string[];
 }
 
 export interface MonsterArt {
   sprite?: string;
   sounds?: Record<string, string>;
+  name?: string;
 }
 
 export interface SkillArt {
   icon?: string;
   effects?: Record<string, string[]>;
+  name?: string;
+}
+
+export interface JobArt {
+  name?: string;
+  /** Body sprites by sex, m and f. */
+  body?: Record<string, string>;
+  /**
+   * The job whose sprites and client tables the job uses beside its body,
+   * for a job that looks send by its own ID, such as a mod's job.
+   */
+  look?: number;
 }
 
 export interface ClientData {
@@ -38,7 +62,7 @@ export interface ClientData {
   items: Record<string, ItemArt>;
   monsters: Record<string, MonsterArt>;
   npc_sprites: Record<string, string>;
-  jobs: Record<string, Record<string, string>>;
+  jobs: Record<string, JobArt>;
   skills: Record<string, SkillArt>;
   companions: Record<string, string>;
   mounts: Record<string, string>;
@@ -65,13 +89,28 @@ function names(v: unknown, types: readonly string[]): v is Record<string, string
 const TEXTURE = ['icon', 'image', 'texture', 'ui'] as const;
 const SPRITE = ['sprite'] as const;
 
+/** The longest name and description line the client keeps, in UTF-16 units. */
+const MAX_TEXT = 1024;
+
+/** A record's name: text of 1 to MAX_TEXT units, or none. */
+function isText(v: unknown): boolean {
+  return v === undefined || (typeof v === 'string' && v.length > 0 && v.length <= MAX_TEXT);
+}
+
 function isItemArt(v: unknown): v is ItemArt {
   return (
     isObject(v) &&
     (v.icon === undefined || isName(v.icon, TEXTURE)) &&
     (v.image === undefined || isName(v.image, TEXTURE)) &&
     (v.drop_sprite === undefined || isName(v.drop_sprite, SPRITE)) &&
-    (v.view_sprite === undefined || isName(v.view_sprite, SPRITE))
+    (v.view_sprite === undefined || isName(v.view_sprite, SPRITE)) &&
+    (v.view === undefined || (Number.isInteger(v.view) && typeof v.view === 'number' && v.view > 0)) &&
+    isText(v.name) &&
+    (v.slots === undefined || (Number.isInteger(v.slots) && typeof v.slots === 'number' && v.slots >= 0 && v.slots <= 4)) &&
+    (v.description === undefined ||
+      (Array.isArray(v.description) &&
+        v.description.length <= 256 &&
+        v.description.every((l) => typeof l === 'string' && l.length <= MAX_TEXT)))
   );
 }
 
@@ -79,7 +118,8 @@ function isMonsterArt(v: unknown): v is MonsterArt {
   return (
     isObject(v) &&
     (v.sprite === undefined || isName(v.sprite, SPRITE)) &&
-    (v.sounds === undefined || names(v.sounds, ['sound']))
+    (v.sounds === undefined || names(v.sounds, ['sound'])) &&
+    isText(v.name)
   );
 }
 
@@ -89,7 +129,19 @@ function isSkillArt(v: unknown): v is SkillArt {
     (v.icon === undefined || isName(v.icon, TEXTURE)) &&
     (v.effects === undefined ||
       (isObject(v.effects) &&
-        Object.values(v.effects).every((l) => Array.isArray(l) && l.every((n) => isName(n, ['effect'])))))
+        Object.values(v.effects).every((l) => Array.isArray(l) && l.every((n) => isName(n, ['effect']))))) &&
+    isText(v.name)
+  );
+}
+
+/** A job: its name and body sprites. Version 1's sex keys are refused. */
+function isJobArt(v: unknown): v is JobArt {
+  return (
+    isObject(v) &&
+    Object.keys(v).every((k) => k === 'name' || k === 'body' || k === 'look') &&
+    isText(v.name) &&
+    (v.look === undefined || (typeof v.look === 'number' && Number.isInteger(v.look) && v.look >= 0)) &&
+    (v.body === undefined || names(v.body, SPRITE))
   );
 }
 
@@ -122,7 +174,7 @@ export function parseClientData(v: unknown): ClientData {
   if (!all(items, isItemArt) || !all(monsters, isMonsterArt) || !all(skills, isSkillArt)) {
     throw invalid;
   }
-  if (!all(jobs, (j): j is Record<string, string> => names(j, SPRITE))) {
+  if (!all(jobs, isJobArt)) {
     throw invalid;
   }
   const sprites = (x: unknown): Record<string, string> => {

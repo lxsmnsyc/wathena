@@ -1,7 +1,10 @@
+import { modItem, modItemNames } from '../assets/art';
 import type { AssetStore } from '../assets/store';
 
 // Item names and descriptions from the asset build's item tables,
-// table/items and table/itemdesc (docs/specs/assets-v1.md, "Tables").
+// table/items and table/itemdesc (docs/specs/assets-v1.md, "Tables"). The
+// names and descriptions of mods' items come from the server's client
+// data (art.ts) and win over the tables.
 // Names load once, on first need. Descriptions are larger, so they load
 // only when a description is first shown. Items the build does not name
 // show as "Item <id>".
@@ -257,6 +260,10 @@ export class ItemTexts {
 
   /** An item's names, if loaded. Asking starts the load. */
   info(id: number): ItemName | undefined {
+    const named = modItem(id);
+    if (named?.name !== undefined) {
+      return { name: named.name, unidentified: named.name, slots: named.slots };
+    }
     if (this.names === undefined) {
       this.loadNames().catch(() => undefined);
       return undefined;
@@ -269,7 +276,11 @@ export class ItemTexts {
     if (this.names === undefined) {
       this.loadNames().catch(() => undefined);
     }
-    return findItems(this.names ?? new Map<number, ItemName>(), query, limit);
+    const names = new Map(this.names);
+    for (const [id, name] of modItemNames()) {
+      names.set(id, { name, unidentified: name, slots: 0 });
+    }
+    return findItems(names, query, limit);
   }
 
   /** How an item shows now. Until the names load, it shows by ID. */
@@ -278,7 +289,11 @@ export class ItemTexts {
   }
 
   /** An item's description lines. Undefined if the build has none for it. */
-  async description(id: number): Promise<string[] | undefined> {
+  async description(id: number): Promise<readonly string[] | undefined> {
+    const named = modItem(id)?.description;
+    if (named !== undefined) {
+      return named;
+    }
     this.descriptions ??= this.store
       .table(ITEM_DESCRIPTIONS)
       .then(parseItemDescriptions)

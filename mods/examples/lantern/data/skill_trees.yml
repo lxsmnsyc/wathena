@@ -1,0 +1,4 @@
+# Lantern Keepers learn Lantern Flare.
+- job: example.lantern:Lantern_Keeper
+  skill: example.lantern:LANTERN_FLARE
+  max_level: 3

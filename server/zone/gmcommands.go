@@ -18,8 +18,11 @@ import (
 
 // GM commands typed in chat (proposal 0002 review decision 35, decision
 // 0030), as rAthena's atcommand.cpp:
-//   - A line that starts with @ is a command. It never goes out as chat,
-//     never reaches the chat log, the chat hooks or the chat event.
+//   - A line that starts with @ is a command when the player's staff
+//     role has the permission of at least one command. It never goes out
+//     as chat, never reaches the chat log, the chat hooks or the chat
+//     event. For anyone else, such a line is normal chat, as in rAthena
+//     (review decision 40).
 //   - Each command needs a permission of the player's staff role, which
 //     counts only for a login with a second factor. Without it, and for
 //     a command that does not exist, the answer is "Unknown command.".
@@ -92,6 +95,22 @@ var gmCommands = map[string]gmCommand{
 	"mute":   {"moderation.mute", "@mute <name> <minutes> <reason>", (*Zone).commandSanction},
 	"jail":   {"moderation.jail", "@jail <name> <minutes> <reason>", (*Zone).commandSanction},
 	"item":   {"items.create", "@item <item> <amount> <reason>", (*Zone).commandItem},
+}
+
+// commandUser reports whether the player's role, for this login, has the
+// permission of at least one command. Only then is a line that starts
+// with @ a command.
+func (z *Zone) commandUser(p *Player) bool {
+	role := z.staffRole(p)
+	if role == "" {
+		return false
+	}
+	for _, c := range gmCommands {
+		if z.Staff.Roles().Has(role, c.permission) {
+			return true
+		}
+	}
+	return false
 }
 
 // gmCommand runs a line that starts with @.
