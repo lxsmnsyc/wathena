@@ -45,3 +45,19 @@
   description: |-
     A felt hat with a small lantern on top.
     ^777777Defense:^000000 1
+# The Lantern Shield shows its own sprite on the arm that carries it, as
+# the Lantern Hat does on the head (decision 0036). The icon is found by
+# the shield's name.
+- name: example.lantern:Lantern_Shield
+  type: Armor
+  display_name: Lantern Shield
+  weight: 60
+  buy: 400
+  sell: 100
+  location: [left_hand]
+  def: 3
+  slots: 1
+  view_sprite: mod/example.lantern/sprite/shield/Lantern_Shield
+  description: |-
+    A light shield with a lantern painted on its face.
+    ^777777Defense:^000000 3

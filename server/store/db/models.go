@@ -15,7 +15,6 @@ type Account struct {
 	Name      string
 	CreatedAt pgtype.Timestamptz
 	Dev       bool
-	Staff     bool
 }
 
 type AccountCurrency struct {

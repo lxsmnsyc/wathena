@@ -1,0 +1,18 @@
+# One still frame for each of a character's 13 actions, in RO's
+# order, in all 8 directions. The canvas is the body's, so the shield
+# sits on the left of the body.
+origin: [20, 63]
+actions:
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]
+  - frames: [0]

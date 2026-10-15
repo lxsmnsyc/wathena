@@ -15,7 +15,8 @@ export interface SpriteSource {
 // drawn apart from the body:
 // - The companion sits half a cell to the right of the body and up.
 // - The cart sits one cell behind the body, in its facing direction.
-// Both play their own idle or walk action and face the body's direction.
+// - A mount of art sits at the body's cell, behind the body's parts.
+// They play their own idle or walk action and face the body's direction.
 
 /** Asset names for a character's parts. Only body is required. */
 export interface Look {
@@ -32,6 +33,8 @@ export interface Look {
   hairPalette?: string;
   /** A companion drawn beside the character, such as a falcon. */
   companion?: string;
+  /** A mount of art drawn under the character, at its cell. */
+  mount?: string;
   /** A cart drawn behind the character. */
   cart?: string;
 }
@@ -117,6 +120,7 @@ export class Character {
     private readonly parts: Map<Part, SpriteView[]>,
     private readonly companion: SpriteView | undefined,
     private readonly cart: SpriteView | undefined,
+    private readonly mount: SpriteView | undefined = undefined,
   ) {
     for (const v of this.views()) {
       this.group.add(v.group);
@@ -133,6 +137,9 @@ export class Character {
     }
     if (this.cart !== undefined) {
       yield this.cart;
+    }
+    if (this.mount !== undefined) {
+      yield this.mount;
     }
   }
 
@@ -159,6 +166,7 @@ export class Character {
       hairPalette,
       companion,
       cart,
+      mount,
     ] = await Promise.all([
       sprites.get(look.body),
       optional(look.head),
@@ -174,6 +182,7 @@ export class Character {
       // placeholder build shows the placeholder sprite.
       optional(look.companion, true),
       optional(look.cart, true),
+      optional(look.mount, true),
     ]);
     if (bodyAsset === undefined) {
       return undefined;
@@ -193,7 +202,7 @@ export class Character {
       ['shield', shield],
       ['garment', garment],
     ]);
-    return new Character(body, parts, companion[0], cart[0]);
+    return new Character(body, parts, companion[0], cart[0], mount[0]);
   }
 
   /** Whether an object is one of the character's own sprites, not something added to its group. */
@@ -250,6 +259,9 @@ export class Character {
     const bodyFrame = this.body.draw(actionIndex, frame, 0, 0);
     const anchor = bodyFrame?.anchors[0];
 
+    // A mount of art is drawn first, behind every part.
+    this.mount?.group.position.copy(towardCamera).multiplyScalar(-LAYER_GAP);
+    this.drawFollower(this.mount, cameraSteps, [0, 0]);
     let depth = 0;
     for (const part of drawOrder(actionIndex % 8)) {
       for (const v of this.parts.get(part) ?? []) {
@@ -276,7 +288,7 @@ export class Character {
     }
   }
 
-  /** Draws a companion or cart with the body's facing, walking or standing. */
+  /** Draws a companion, cart or mount with the body's facing, walking or standing. */
   private drawFollower(v: SpriteView | undefined, cameraSteps: number, at: [number, number]): void {
     if (v === undefined) {
       return;

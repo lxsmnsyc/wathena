@@ -119,4 +119,21 @@ describe('Character', () => {
     expect(cart!.position.x).toBeCloseTo(-1);
     expect(cart!.position.z).toBeCloseTo(0);
   });
+
+  it('draws a mount of art at the body, behind every part', async () => {
+    const withMount: SpriteSource = {
+      get: async (name) => Promise.resolve(assets[name === 'pony' ? 'garment' : name]),
+      palette: async () => Promise.resolve(undefined),
+    };
+    const c = (await Character.load(withMount, { body: 'body', head: 'head', mount: 'pony' }))!;
+    const [body, head, mount] = c.group.children;
+    expect(c.isPart(mount!)).toBe(true);
+    for (const dir of [0, 4]) {
+      c.direction = dir;
+      c.update(0, 0, new Vector3(0, 0, 1));
+      expect(mount!.position.z).toBeLessThan(body!.position.z);
+      expect(mount!.position.z).toBeLessThan(head!.position.z);
+      expect(offsetOf(c, 2)).toEqual([0, 0]);
+    }
+  });
 });

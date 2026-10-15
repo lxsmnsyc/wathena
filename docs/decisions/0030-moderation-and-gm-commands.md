@@ -148,6 +148,6 @@ With `--dev`:
 ## Left
 
 - IP bans, and `@` commands from mods (review decision 35).
-- `@hide` ends at logout. rAthena saves `OPTION_INVISIBLE` with the character.
-- A hidden staff member's local chat does not show to others, since they do not know its entity. rAthena shows it.
+- `@hide` ends at logout. rAthena saves `OPTION_INVISIBLE` with the character. Closed: [decision 0036](0036-phase-6-review-changes.md) saves it, and a login with `commands.hide` comes back hidden.
+- A hidden staff member's local chat does not show to others, since they do not know its entity. rAthena shows it. Closed: [decision 0036](0036-phase-6-review-changes.md) sends it with `from` 0 and the speaker's name.
 - A network form of `admin.World`, and of the kicks, for the distributed build (phase 10).

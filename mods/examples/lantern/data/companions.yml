@@ -1,0 +1,9 @@
+# The Lantern Wisp: a companion with a sprite of the mod's art. The
+# protocol sends its record ID in looks, so the client draws the wisp
+# beside the player (decision 0036). A look of art needs acts_as, whose
+# option bit older clients show, so it acts as a falcon. It has no
+# requires: the Lantern Master gives it to any Lantern Keeper.
+- name: example.lantern:Lantern_Wisp
+  display_name: Lantern Wisp
+  look: mod/example.lantern/sprite/companion/Lantern_Wisp
+  acts_as: falcon

@@ -128,6 +128,10 @@ func TestAccountPageExport(t *testing.T) {
 	e.exec(`INSERT INTO item_log (at, action, from_kind, from_id, to_kind, to_id, serial, item_id, amount) VALUES
 		(now(), 'storage', 'inventory', $1, 'storage', $2, uuidv7(), 909, 4), (now(), 'pick_up', 'ground', 0, 'inventory', $1, uuidv7(), 501, 3)`, id, acc)
 	e.exec(`INSERT INTO zeny_log (at, action, from_kind, from_id, to_kind, to_id, amount) VALUES (now(), 'sell', 'shop', 0, 'inventory', $1, 25)`, id)
+	// Mods' variables of the character and the account (decision 0036).
+	e.exec(`INSERT INTO mod_character_variables (character_id, mod_id, name, value) VALUES
+		($1, 'example.lantern', 'lit', 'true'), ($1, 'example.bank', 'visits', '3')`, id)
+	e.exec(`INSERT INTO mod_account_variables (account_id, mod_id, name, value) VALUES ($1, 'example.bank', 'balance', '{"zeny": 500}')`, acc)
 	ex, err := page.Export(e.ctx, acc)
 	if err != nil {
 		t.Fatal(err)
@@ -140,6 +144,13 @@ func TestAccountPageExport(t *testing.T) {
 		len(c.Skills) != 1 || c.Skills[0].Level != 10 || len(c.Mail) != 1 || c.Mail[0].Body != "A gift" ||
 		!slices.Equal(c.BlockList, []string{"Pest"}) {
 		t.Errorf("character %+v", c)
+	}
+	if len(c.Variables) != 2 || c.Variables[0].Mod != "example.bank" || c.Variables[0].Name != "visits" || string(c.Variables[0].Value) != "3" ||
+		c.Variables[1].Mod != "example.lantern" || string(c.Variables[1].Value) != "true" {
+		t.Errorf("character variables %+v", c.Variables)
+	}
+	if len(ex.Variables) != 1 || ex.Variables[0].Name != "balance" || string(ex.Variables[0].Value) != `{"zeny": 500}` {
+		t.Errorf("account variables %+v", ex.Variables)
 	}
 	if len(ex.Storages) != 1 || ex.Storages[0].Kind != "storage" || ex.Storages[0].Items[0].Amount != 4 {
 		t.Errorf("storages %+v", ex.Storages)

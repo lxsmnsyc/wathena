@@ -151,14 +151,14 @@ go run ./tools/wactl migrate up
 
 Use `sslmode=disable` only for a database on the same machine.
 
-Without `--dev`, `waserver` also needs a world. `wactl world new` applies pending migrations, then makes the world's row with its secret seed and the first staff account:
+Without `--dev`, `waserver` also needs a world. `wactl world new` applies pending migrations, then makes the world's row with its secret seed and the first account:
 
 ```text
 read -rs PASSWORD
 printf '%s\n' "$PASSWORD" | go run ./tools/wactl world new --admin Admin --admin-password-file -
 ```
 
-`--ruleset` is `renewal` by default, and must match `waserver`'s `--mode`. Staff accounts have no staff tools yet.
+`--ruleset` is `renewal` by default, and must match `waserver`'s `--mode`. The account has no staff role. The command prints the `staff.owners` lines that make it the owner (see "Staff and admin tools").
 
 ### Running with accounts
 
@@ -202,7 +202,7 @@ Rate limits, session lifetimes and Argon2id parameters are in [decision 0004](..
 Every account page of a logged in player has a menu: Characters, Account settings, Blocks, reports and sanctions, Your data, Guild emblem and Privacy ([decision 0032](../docs/decisions/0032-account-page.md)).
 
 - `/account/safety` lists each character's block list with an Unblock button, which works whether the character plays or not. It lists the reports the characters filed, with Open, Action taken or No action, and the sanctions on the account and its characters, active and past.
-- `/account/data` downloads the data export, a JSON file in the format of decision 0032. It needs a login from the last 10 minutes, works once a day, and is refused while a character of the account is in the game or on autotrade. It holds no password, codes, keys or tokens.
+- `/account/data` downloads the data export, a JSON file in the format of decision 0032, with the mods' saved variables of the account and its characters (decision 0036). It needs a login from the last 10 minutes, works once a day, and is refused while a character of the account is in the game or on autotrade. It holds no password, codes, keys or tokens.
 - `/account/data` also deletes the account. The player confirms the password if the last login is older than 10 minutes, and types the account name. A request is refused while a character leads a guild with other members, and for an account that `staff.owners` names. A banned account may ask.
 - For 14 days the characters cannot play: their connections close with `DISCONNECT_REASON_ACCOUNT_DELETION`, game tickets and Play answer with the date, and the gateway refuses their logins. A login shows the date and a Cancel button on the characters page.
 - The deletion job runs in `waserver` every hour, on the game role. It takes the characters out of parties, guilds and friend lists in memory, then calls `delete_account`, which deletes the account's personal data, its characters and their chat lines in one transaction. The logs, reports and mails that other players need keep the character IDs, without a link to the account. Decision 0032 lists what each table keeps.
@@ -340,7 +340,7 @@ What it does:
 
 ### Mod art
 
-A mod's art is an asset build of its own ([decision 0033](../docs/decisions/0033-mod-assets.md), mods/README.md, "Art"). `mods/examples/lantern` is a sample with item icons, a hat's worn sprite, a monster sprite with sounds, an NPC sprite, a job's body sprites, and a skill's icon and effect.
+A mod's art is an asset build of its own ([decision 0033](../docs/decisions/0033-mod-assets.md), mods/README.md, "Art"). `mods/examples/lantern` is a sample with item icons, a hat's and a shield's worn sprites, a companion's sprite, a monster sprite with sounds, an NPC sprite, a job's body sprites, and a skill's icon and effect.
 
 - At startup, `waserver` checks each mod's `assets/`, in its folder or its `.zip` file: every file's hash and size, its decoding and the asset limits, names under `mod/<mod id>/` only, and the size, at most `mods.max_asset_mb` MiB. A problem stops the start with the list. Nothing is converted.
 - A mod with `art/` and no `assets/` starts with a warning, and its records show placeholders. `wactl mod build-art` builds it.
@@ -809,7 +809,7 @@ Sanctions (decision 0030):
 
 - A mute or a jail of an online character starts in its zone at once. An offline character gets it at its next login.
 - A kick closes the player's connection with the reason. It needs the player online.
-- A ban closes the connections of every character of the account, with the reason and the end time. While it lasts, the account cannot log in on the account pages, get a game ticket, or join the game, and each refusal shows the reason and the end time in UTC.
+- A ban closes the connections of every character of the account, with the reason and the end time. It also ends the account's sessions on the account pages and the admin screens, its logins that wait for a second factor, and its unused game tickets (decision 0036). While it lasts, the account cannot log in on the account pages, get a game ticket, or join the game, and each refusal shows the reason and the end time in UTC.
 - No one sanctions their own account or lifts its sanctions.
 
 GM commands, typed in the game's chat by a staff member whose role counts for the login:
@@ -819,7 +819,7 @@ GM commands, typed in the game's chat by a staff member whose role counts for th
 | `@warp <map> [x y]` | `commands.warp` | Goes to a map. A cell that is not walkable becomes a random one. |
 | `@jumpto <name>` | `commands.warp` | Goes to a player on any map. |
 | `@recall <name>` | `commands.recall` | Brings a player on any map here. |
-| `@hide` | `commands.hide` | Hides from players, staff too, and monsters, as rAthena's `OPTION_INVISIBLE`, until the next `@hide` or logout. |
+| `@hide` | `commands.hide` | Hides from players, staff too, and monsters, as rAthena's `OPTION_INVISIBLE`, until the next `@hide`. The character saves it, so the next login is hidden too while the role still has `commands.hide` and the login used a second factor. Local chat still reaches players in range, by name, without a bubble (decision 0036). |
 | `@kick <name> <reason>` | `moderation.kick` | Kicks a player. |
 | `@mute <name> <minutes> <reason>` | `moderation.mute` | Mutes a player. |
 | `@jail <name> <minutes> <reason>` | `moderation.jail` | Jails a player. |

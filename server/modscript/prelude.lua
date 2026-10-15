@@ -1670,6 +1670,11 @@ new_world, world_ids = handle_type("test world", {
 		check(type(items) == "table", "world:buy: items is a table such as { [501] = 2 }")
 		return world_call("buy", id, shop, items)
 	end,
+	plan_restart = function(self, minutes, reason)
+		check(math_type(minutes) == "integer", "world:plan_restart: the minutes are an integer from 1 to 10080")
+		check(type(reason) == "string", "world:plan_restart: the reason is a string that players see")
+		world_call("plan_restart", minutes, reason)
+	end,
 	get_mails = function(self, player)
 		local id = player_ids[player]
 		check(id ~= nil, "world:get_mails: want a player from world:new_player")

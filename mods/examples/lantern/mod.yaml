@@ -1,9 +1,10 @@
 # A sample mod with art of its own (decision 0033): a Paper Lantern with
 # an icon and a dropped sprite, Lantern Ghosts with an animated sprite
-# and sounds, the Lamplighter, an NPC with a sprite, who sells lanterns
-# and a Lantern Hat with a worn sprite, and the Lantern Keeper, a job
-# with its own body sprites and a skill, Lantern Flare, with an icon and
-# an effect. The art's sources are in art/. wactl mod build-art builds
+# and sounds, the Lamplighter, an NPC with a sprite, who sells lanterns,
+# a Lantern Hat and a Lantern Shield with worn sprites, and the Lantern
+# Keeper, a job with its own body sprites and a skill, Lantern Flare,
+# with an icon and an effect. The Lantern Master gives a Lantern Keeper a
+# Lantern Wisp, a companion with a sprite (decision 0036). The art's sources are in art/. wactl mod build-art builds
 # them into assets/, and wactl mod pack builds them into the .zip file.
 # mods/README.md, "Art", explains each part.
 id: example.lantern

@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-15)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built.
 
 Done:
 
@@ -73,18 +73,17 @@ Done:
   - `/client-data.json` format version 2 names mods' items, monsters, skills and jobs, with items' descriptions. The client shows the names, and draws skill icons and effects, monster sounds, worn item sprites and mod jobs' bodies.
   - A player without any command permission says `@` lines as chat. Lifting a permanent ban needs `moderation.ban_permanent`.
   - `scripts/check.sh browsers` plays the exit check against `waserver` and PostgreSQL: three players on a desktop and a phone profile through the basic game and every tier 1 system, an admin run with TOTP, and the lantern mod's records.
+- The phase 6 review. Review decision 41 accepted the details to review of next steps 18 to 26, and next step 27 built its changes ([decision 0036](decisions/0036-phase-6-review-changes.md)):
+  - `accounts.staff` is gone. `wactl world new --admin` prints the `staff.owners` lines for its account.
+  - `@hide` is saved with the character and lasts across logins while the role may still use it, and a hidden staff member's local chat reaches players in range, as in rAthena.
+  - A ban also ends the account's sessions on the account pages, its logins that wait for a code, and its unused game tickets.
+  - `wa.testing` has `world:plan_restart(minutes, reason)`, which fires `restart_planned`. The Town Crier sample uses it.
+  - The data export holds the mods' variables of the account and its characters, in format version 1.
+  - Looks carry the record IDs of the companion and the mount, and `weapon_view`, so the client draws companions and mounts of art and the worn sprites of weapons and shields. The lantern sample gains a shield and a companion of art, and the exit check's mod run checks both.
 
 Open review items:
 
-- Next step 18's details to review, in proposal 0002, "Next steps".
-- Next step 19's details to review, in proposal 0002, "Next steps".
-- Next step 20's details to review, in proposal 0002, "Next steps".
-- Next step 21's details to review, in proposal 0002, "Next steps".
-- Next step 22's details to review, in proposal 0002, "Next steps".
-- Next step 23's details to review, in proposal 0002, "Next steps".
-- Next step 24's details to review, in proposal 0002, "Next steps".
-- Next step 25's details to review, in proposal 0002, "Next steps".
-- Next step 26's details to review, in proposal 0002, "Next steps".
+- Next step 27's details to review, in proposal 0002, "Next steps".
 - The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
@@ -97,8 +96,10 @@ Known issues:
 
 Next:
 
-1. The phase 6 review: the details to review of next steps 19 to 25 in proposal 0002, as review decision 40 planned, with next step 26's, and the user's test on a real phone.
+1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 2. Phase 7, procedural mode, is the largest phase left.
+
+The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
 ## 1. Current state
 

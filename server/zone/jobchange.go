@@ -250,11 +250,39 @@ func viewJob(job, options int) int {
 // viewers when it changed (clif_changelook with LOOK_BASE). A job shows
 // the sprites of its look.
 func (z *Zone) updateBodyLook(p *Player) {
-	j := uint32(viewJob(z.lookJob(p.char.Job), p.record.Options)) // #nosec G115 -- job IDs are positive.
+	j := uint32(viewJob(z.lookJob(p.char.Job), bodyOptions(p))) // #nosec G115 -- job IDs are positive.
 	if p.Look.Job != j {
 		p.Look.Job = j
 		p.entity.lookChanged = true
 	}
+	if c, m := companionLookIDs(p); p.Look.Companion != c || p.Look.Mount != m {
+		p.Look.Companion, p.Look.Mount = c, m
+		p.entity.lookChanged = true
+	}
+}
+
+// bodyOptions are the option bits that pick a player's body: its
+// options, without the mount's bits when the mount's record names art.
+// The client then draws the body on foot over the mount's art (decision
+// 0036).
+func bodyOptions(p *Player) int {
+	if p.mount != nil && p.mount.Art != "" {
+		return p.record.Options &^ companion.OptionLooks
+	}
+	return p.record.Options
+}
+
+// companionLookIDs are the record IDs of a player's companion and mount
+// that looks send, or 0, so the client draws the art of a record that
+// has it (decision 0036).
+func companionLookIDs(p *Player) (companionID, mountID uint32) {
+	if p.companion != nil {
+		companionID = uint32(max(p.companion.ID, 0)) // #nosec G115 -- record IDs are small.
+	}
+	if p.mount != nil {
+		mountID = uint32(max(p.mount.ID, 0)) // #nosec G115 -- record IDs are small.
+	}
+	return companionID, mountID
 }
 
 // lookJob is the job whose sprites a job shows. A mod's job shows its

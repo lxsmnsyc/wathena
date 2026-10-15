@@ -100,4 +100,4 @@
 - The deletion job for rows older than 2 years comes with phase 8.
 - A game session keeps the two-factor answer of its ticket. Turning TOTP off during play takes effect at the next login. The admin API checks it on every call.
 - A network form of `admin.World` for the distributed build (phase 10).
-- `wactl world new --admin` marks its account with the old `accounts.staff` column, which gives no role. The server owner names the account in `staff.owners`.
+- `wactl world new --admin` marks its account with the old `accounts.staff` column, which gives no role. The server owner names the account in `staff.owners`. Closed: [decision 0036](0036-phase-6-review-changes.md) drops the column, and the command prints the `staff.owners` lines.

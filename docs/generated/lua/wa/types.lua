@@ -1356,6 +1356,13 @@ function wa_TestWorld:set_staff_role(player, role) end
 ---@return boolean, string?
 function wa_TestWorld:buy(player, shop, items) end
 
+---Plans a restart that many minutes from the test's time, as staff do on the admin screens: restart_planned runs with { at, reason } in the world's zone, and the lines its handlers send go out. Nothing restarts.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param minutes integer 1 to 10080, as the admin screens allow.
+---@param reason string 1 to 255 characters.
+function wa_TestWorld:plan_restart(minutes, reason) end
+
 ---The player's mails, oldest first, after the mail sent so far arrived.
 ---@param player wa.Player A player handle.
 ---@return wa.TestMail[]

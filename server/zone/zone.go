@@ -56,6 +56,12 @@ type Look struct {
 	// Weapon is the weapon type, Shield the shield's view, and the rest
 	// the views of headgear and garment (rAthena's view_data).
 	Weapon, Shield, HeadTop, HeadMid, HeadBottom, Robe uint32
+	// WeaponView is the view of the right hand's weapon when its record
+	// names a view_sprite, or 0 (decision 0036).
+	WeaponView uint32
+	// Companion and Mount are the record IDs of the player's companion
+	// and mount, or 0 (decision 0036).
+	Companion, Mount uint32
 }
 
 // message is the protocol's Look.
@@ -63,6 +69,7 @@ func (l Look) message() *wathenav1.Look {
 	return wathenav1.Look_builder{
 		Body: l.Job, Sex: l.Sex, Hair: l.Hair, HairColor: l.HairColor,
 		Weapon: l.Weapon, Shield: l.Shield, HeadTop: l.HeadTop, HeadMid: l.HeadMid, HeadBottom: l.HeadBottom, Robe: l.Robe,
+		WeaponView: l.WeaponView, Companion: l.Companion, Mount: l.Mount,
 	}.Build()
 }
 
@@ -253,7 +260,8 @@ type Player struct {
 	jailPending bool
 	// gmHidden is set while the player is hidden with @hide: other
 	// players do not see it and monsters ignore it, as rAthena's
-	// OPTION_INVISIBLE. It lasts across map changes.
+	// OPTION_INVISIBLE. It lasts across map changes, and across logins
+	// while the login may still use @hide (decision 0036).
 	gmHidden bool
 
 	// soc is the player in the world's social registry, and partyState
@@ -924,11 +932,14 @@ func (z *Zone) join(p *Player) joinResult {
 	}
 	p.load = nil
 	z.checkJob(c)
+	// The saved @hide bit stays out of the options that looks send.
+	savedHidden := c.Options&companion.OptionInvisible != 0
+	c.Options &^= companion.OptionInvisible
 	p.record = c.Info
 	p.blocks, p.sanctions = slices.Clone(c.Blocks), slices.Clone(c.Sanctions)
 	p.currencies = maps.Clone(c.Currencies)
 	z.restoreCompanions(p, c)
-	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), p.record.Options)), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
+	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), bodyOptions(p))), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
 	h := p.arrival
 	p.arrival = nil
@@ -943,6 +954,11 @@ func (z *Zone) join(p *Player) joinResult {
 		// longer walkable, starts at the start cell. A character that
 		// logged out dead was saved at its save point.
 		x, y = z.startCell()
+	}
+	if h == nil {
+		// pc_authok: a character saved hidden stays hidden while its
+		// login may still use @hide.
+		p.gmHidden = savedHidden && z.mayHide(p)
 	}
 	e := &entity{player: p, x: x, y: y, speed: WalkSpeed}
 	p.entity = e

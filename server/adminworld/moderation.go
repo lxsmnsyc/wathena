@@ -296,6 +296,17 @@ func (w *World) ban(ctx context.Context, o order) (store.SanctionRow, error) {
 	if w.cfg.Kicker != nil && len(ids) > 0 {
 		w.cfg.Kicker.Kick(ctx, ids, wathenav1.DisconnectReason_DISCONNECT_REASON_BANNED, staff.BanText(o.reason, row.End, row.Permanent))
 	}
+	// The ban logs the account out of the account pages too, and ends
+	// its logins that wait for a second factor (decision 0036). Logins
+	// and tickets already refuse a banned account, so a failure here
+	// leaves the ban in effect.
+	if w.sessions != nil {
+		if n, err := w.sessions.EndAccountSessions(ctx, o.account); err != nil {
+			w.log.Error("the ban did not end the account's sessions", "account", o.account, "err", err)
+		} else if n > 0 {
+			w.log.Info("the ban ended the account's sessions", "account", o.account, "sessions", n)
+		}
+	}
 	return row, nil
 }
 

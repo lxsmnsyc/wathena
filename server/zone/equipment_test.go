@@ -288,3 +288,39 @@ func findEvent(events []*wathenav1.Event, has func(*wathenav1.Event) bool) *wath
 	}
 	return nil
 }
+
+// TestArtViewsInLooks: a weapon whose record names a view_sprite sends
+// its view in weapon_view, beside its weapon type, and a shield's view
+// is the shield's, as headgear's views are (decision 0036).
+func TestArtViewsInLooks(t *testing.T) {
+	z, a, b := equipZone(t)
+	z.Items.Get(1101).View = item.ArtViews
+	z.Items.Get(2101).View = item.ArtViews + 1
+	sword := give(t, z, a, 1101, 1)
+	shield := give(t, z, a, 2101, 1)
+	equip(z, a, sword)
+	equip(z, a, shield)
+	z.stepAt(100)
+	events(a)
+	if a.Look.Weapon != 2 || a.Look.WeaponView != item.ArtViews || a.Look.Shield != item.ArtViews+1 {
+		t.Errorf("look %+v", a.Look)
+	}
+	if !slices.ContainsFunc(events(b), func(e *wathenav1.Event) bool {
+		l := e.GetLookChange().GetLook()
+		return l != nil && l.GetWeaponView() == item.ArtViews && l.GetWeapon() == 2
+	}) {
+		t.Error("the other player saw no weapon_view")
+	}
+	unequip(z, a, sword)
+	z.stepAt(150)
+	if a.Look.WeaponView != 0 {
+		t.Errorf("weapon view %d after unequip", a.Look.WeaponView)
+	}
+	// A weapon without art sends no view.
+	z.Items.Get(1101).View = 1
+	equip(z, a, sword)
+	z.stepAt(200)
+	if a.Look.WeaponView != 0 {
+		t.Errorf("weapon view %d of a weapon without art", a.Look.WeaponView)
+	}
+}

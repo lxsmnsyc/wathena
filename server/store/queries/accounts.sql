@@ -142,3 +142,20 @@ FROM sanctions
 WHERE account_id = @account_id AND kind = 'ban' AND lifted_at IS NULL AND ends_at > now()
 ORDER BY ends_at DESC
 LIMIT 1;
+
+-- name: RevokeAccountSessions :many
+-- RevokeAccountSessions ends every live session of an account, for a
+-- ban (decision 0036), and returns their IDs.
+UPDATE account_sessions SET revoked_at = now()
+WHERE account_id = @account_id AND revoked_at IS NULL
+RETURNING id;
+
+-- name: DeleteAccountTickets :exec
+-- DeleteAccountTickets removes the game tickets of an account that
+-- nobody used.
+DELETE FROM game_tickets WHERE account_id = @account_id;
+
+-- name: DeleteAccountPendingLogins :exec
+-- DeleteAccountPendingLogins removes the logins of an account that wait
+-- for a second factor.
+DELETE FROM account_pending_logins WHERE account_id = @account_id;

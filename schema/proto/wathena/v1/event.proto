@@ -242,6 +242,17 @@ message Look {
   uint32 head_bottom = 9;
   uint32 robe = 10;
   uint32 sex = 11;
+  // weapon_view is the view the server gave the right hand's weapon when
+  // its record names a view_sprite, from 1,000,000, or 0. The client data
+  // names its sprite. weapon stays the weapon type. A shield's view is in
+  // shield, as before.
+  uint32 weapon_view = 12;
+  // companion and mount are the record IDs of the player's companion and
+  // mount, from data/companions.yml and data/mounts.yml, or 0 for none.
+  // The client data names the art of records that have it. The option
+  // bits still show the core record each acts as.
+  uint32 companion = 13;
+  uint32 mount = 14;
 }
 
 message EntityVanish {
@@ -500,7 +511,9 @@ enum SkillTarget {
 message ChatMessage {
   ChatChannel channel = 1;
   // from is the speaker's entity ID for local chat, 0 otherwise. An NPC
-  // that speaks aloud, as rAthena's npctalk, is a speaker too.
+  // that speaks aloud, as rAthena's npctalk, is a speaker too. A staff
+  // member hidden with @hide has no entity the player knows, so its
+  // local chat has from 0 and from_name set.
   uint32 from = 2;
   string from_name = 3;
   string text = 4;

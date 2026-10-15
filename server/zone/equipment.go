@@ -457,7 +457,8 @@ func (z *Zone) updateLook(p *Player) {
 // (pc_set_costume_view).
 func (z *Zone) lookOf(p *Player) Look {
 	l := p.Look
-	l.Weapon, l.Shield, l.HeadTop, l.HeadMid, l.HeadBottom, l.Robe = 0, 0, 0, 0, 0, 0
+	l.Weapon, l.Shield, l.HeadTop, l.HeadMid, l.HeadBottom, l.Robe, l.WeaponView = 0, 0, 0, 0, 0, 0, 0
+	l.Companion, l.Mount = companionLookIDs(p)
 	if z.Items == nil || p.inventory == nil {
 		return l
 	}
@@ -468,6 +469,11 @@ func (z *Zone) lookOf(p *Player) Look {
 			return uint32(max(z.Items.Get(p.inventory.Slots[i].ID).View, 0)) // #nosec G115 -- views are small.
 		}
 		return 0
+	}
+	// A weapon whose record names a view_sprite shows it, as headgear
+	// does. Weapon stays the weapon type of attacks.
+	if v := view(item.EqiHandR); item.ArtView(int(v)) {
+		l.WeaponView = v
 	}
 	same := func(a, b int) bool { return worn.Index[a] >= 0 && worn.Index[a] == worn.Index[b] }
 	l.HeadTop = view(item.EqiHeadTop)

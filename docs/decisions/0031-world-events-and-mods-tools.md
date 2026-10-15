@@ -191,7 +191,7 @@ With `--dev`:
 - A network form of the tools for the distributed build (phase 10).
 - Signature checks on the server: it has no trusted keys, and `wactl mod install` does not keep the `.minisig`.
 - Results of event runs survive only until a restart.
-- `wa.testing` has no way to plan a restart, so a mod test cannot fire `restart_planned` (review item).
+- `wa.testing` has no way to plan a restart, so a mod test cannot fire `restart_planned` (review item). Closed: [decision 0036](0036-phase-6-review-changes.md) adds `world:plan_restart`.
 - A start or stop whose HTTP call times out still runs at the scheduler's next check, without its audit row.
 - A restart plan or cancel whose audit row fails to write stays in effect, and the call answers `unavailable`.
 - A cancel that comes as a mark is announced may show before that mark's line.

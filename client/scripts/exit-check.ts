@@ -1487,7 +1487,10 @@ async function selfScreen(p: Player): Promise<[number, number]> {
   return at;
 }
 
-/** The mod run: the lantern mod's item, monster, skill and job (review decision 40). */
+/**
+ * The mod run: the lantern mod's item, monster, skill and job (review
+ * decision 40), and its shield and companion of art (decision 0036).
+ */
 async function modSteps(c: Check, base: string, ann: Player): Promise<void> {
   const ghost = (u: UnitView): boolean => u.name === 'Lantern Ghost' && !u.npc && !u.player;
   await play(c, 'mod item names and icons', [ann], async () => {
@@ -1495,7 +1498,13 @@ async function modSteps(c: Check, base: string, ann: Player): Promise<void> {
     await ann.hide('#mail-window', '#mail-toggle');
     await talk(ann, 'Lamplighter', '#shop-window');
     const shop = await textOf(ann, '#shop-window .shop-buy');
-    for (const name of ['Paper Lantern', 'Lantern Oil', 'Unlit Lantern', 'Lantern Hat']) {
+    for (const name of [
+      'Paper Lantern',
+      'Lantern Oil',
+      'Unlit Lantern',
+      'Lantern Hat',
+      'Lantern Shield',
+    ]) {
       if (!shop.includes(name)) {
         throw new Error(`the shop does not list ${name}: ${shop}`);
       }
@@ -1510,9 +1519,10 @@ async function modSteps(c: Check, base: string, ann: Player): Promise<void> {
       null,
       { timeout: 10_000 },
     );
-    await buy(ann, { 'Paper Lantern': 1, 'Lantern Hat': 1 });
+    await buy(ann, { 'Paper Lantern': 1, 'Lantern Hat': 1, 'Lantern Shield': 1 });
     await ann.show('#inventory-window', '#inventory-toggle');
     await waitText(ann, '#inventory-window li', 'Lantern Hat');
+    await waitText(ann, '#inventory-window li', 'Lantern Shield');
     await ann.page.click(`${inv('Paper Lantern')} .name`);
     await waitText(ann, '#inventory-window', 'A lantern of thin paper that Lantern Ghosts carry.');
     await ann.page.waitForFunction(
@@ -1527,7 +1537,8 @@ async function modSteps(c: Check, base: string, ann: Player): Promise<void> {
     );
     await fetchedArt(ann, base, 'mod/example.lantern/icon/item/Paper_Lantern');
     await fetchedArt(ann, base, 'mod/example.lantern/icon/item/Lantern_Hat');
-    return "the Lamplighter's shop lists Paper Lantern, Lantern Oil, Unlit Lantern and Lantern Hat; the inventory names the bought lantern and hat and shows the lantern's description; both icons loaded from the mod's build";
+    await fetchedArt(ann, base, 'mod/example.lantern/icon/item/Lantern_Shield');
+    return "the Lamplighter's shop lists Paper Lantern, Lantern Oil, Unlit Lantern, Lantern Hat and Lantern Shield; the inventory names the bought lantern, hat and shield and shows the lantern's description; their icons loaded from the mod's build";
   });
   await play(c, 'mod worn sprite', [ann], async () => {
     await ann.show('#inventory-window', '#inventory-toggle');
@@ -1543,7 +1554,23 @@ async function modSteps(c: Check, base: string, ann: Player): Promise<void> {
     if (red < 20) {
       throw new Error(`${red} hat pixels show`);
     }
-    return `the Lantern Hat went on with a double click; its worn sprite came from the mod's build, and ${red} pixels of its red show above Ann`;
+    // The shield's worn sprite comes by its view, as the hat's does
+    // (decision 0036). Only blue that the shield adds counts.
+    const blueBefore = await pixelsNear(ann, await selfScreen(ann), [40, 90, 200]);
+    await ann.show('#inventory-window', '#inventory-toggle');
+    await ann.page.dblclick(`${inv('Lantern Shield')} .name`);
+    await ann.page.locator(inv('Lantern Shield')).waitFor({ state: 'detached', timeout: 10_000 });
+    await ann.hide('#inventory-window', '#inventory-toggle');
+    await fetchedArt(ann, base, 'mod/example.lantern/sprite/shield/Lantern_Shield');
+    let blue = 0;
+    for (let i = 0; i < 10 && blue < 20; i++) {
+      await sleep(500);
+      blue = (await pixelsNear(ann, await selfScreen(ann), [40, 90, 200])) - blueBefore;
+    }
+    if (blue < 20) {
+      throw new Error(`${blue} shield pixels show`);
+    }
+    return `the Lantern Hat and the Lantern Shield went on with double clicks; their worn sprites came from the mod's build, and ${red} pixels of the hat's red and ${blue} of the shield's blue show on Ann`;
   });
   await play(c, 'mod monster and drop', [ann], async () => {
     await inSight(ann, ghost);
@@ -1677,6 +1704,27 @@ async function modSteps(c: Check, base: string, ann: Player): Promise<void> {
     });
     await fetchedArt(ann, base, 'mod/example.lantern/effect/flare');
     return 'the skill window lists "Lantern Flare" with its icon from the mod; Ann learned it and cast it on a Lantern Ghost, and its hit effect came from the mod\'s build';
+  });
+  await play(c, 'mod companion', [ann], async () => {
+    // The Lantern Master gives a Lantern Keeper a Lantern Wisp. Looks
+    // carry its record ID, and the client draws its art (decision 0036).
+    // Only the glow that the wisp adds counts.
+    const glow = async (): Promise<number> =>
+      pixelsNear(ann, await selfScreen(ann), [130, 230, 240], 120);
+    const before = await glow();
+    await talk(ann, 'Lantern Master');
+    await waitText(ann, '#dialog-window', 'Take this wisp. It lights your way.');
+    await endDialog(ann);
+    await fetchedArt(ann, base, 'mod/example.lantern/sprite/companion/Lantern_Wisp');
+    let wisp = 0;
+    for (let i = 0; i < 10 && wisp < 20; i++) {
+      await sleep(500);
+      wisp = (await glow()) - before;
+    }
+    if (wisp < 20) {
+      throw new Error(`${wisp} wisp pixels show`);
+    }
+    return `the Lantern Master gave Ann a Lantern Wisp; its sprite came from the mod's build, and ${wisp} pixels of its glow show beside Ann`;
   });
 }
 

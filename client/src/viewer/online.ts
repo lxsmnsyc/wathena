@@ -1,9 +1,11 @@
 import {
+  companionSprite,
   jobBody,
   lookJob,
   modMonsterName,
   monsterSound,
   monsterSprite,
+  mountSprite,
   npcSprite,
   skillArtEffects,
   viewSprite,
@@ -92,7 +94,7 @@ import {
   stackRolls,
 } from './inventory';
 import { playerLimitsOf } from './limits';
-import { bodyLook, cartLook, companionLook, mountedBody } from './mounts';
+import { bodyLook, cartLook, companionLook, mountedBody, withoutMount } from './mounts';
 import { appearance } from './options';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
@@ -236,18 +238,24 @@ interface Playing {
  * - The garment, sprite/garment/<job>/<sex>/<view>.
  *
  * A view of 0 draws nothing. A view the server gave an item with a
- * view_sprite draws that sprite (art.ts). The option bits add a mount, a companion
+ * view_sprite draws that sprite (art.ts): headgear, garments, shields, and
+ * a weapon by its weapon_view. The option bits add a mount, a companion
  * and a cart (mounts.ts):
  * - A mounted player's body, sprite/body/<mounted look>/<sex>.
  * - A companion, sprite/companion/<look>.
  * - A cart, sprite/cart/<n>.
+ *
+ * A companion or mount record with art draws its art by the record ID in
+ * the look (decision 0036). A mount of art keeps the body on foot.
  */
 export function lookOf(m: LookMessage | undefined, option = 0): Look {
+  const mount = mountSprite(m?.mount ?? 0);
+  const bits = mount === undefined ? option : withoutMount(option);
   // A mod's job comes by its own ID: its body art by that ID, and the
   // rest from the job it looks like (review decision 40).
   const own = m?.body ?? 0;
   const body = lookJob(own);
-  const job = jobs.get(mountedBody(body, option)) ?? jobs.get(0);
+  const job = jobs.get(mountedBody(body, bits)) ?? jobs.get(0);
   const name = job?.look ?? 'novice';
   const info = looks.get(name);
   const sex = info?.sex ?? (m?.sex === 1 ? 'm' : 'f');
@@ -257,16 +265,22 @@ export function lookOf(m: LookMessage | undefined, option = 0): Look {
     // A mod's job may name body sprites of its art.
     body:
       jobBody(own, sex) ??
-      jobBody(mountedBody(body, option), sex) ??
-      `sprite/body/${bodyLook(body, option)}/${sex}`,
+      jobBody(mountedBody(body, bits), sex) ??
+      `sprite/body/${bodyLook(body, bits)}/${sex}`,
     head: `sprite/head/${race}/${sex}/${hair}`,
     hairPalette: `palette/hair/${race}/${sex}/${hair}/${m?.hairColor ?? 0}`,
   };
-  const companion = companionLook(option);
-  if (companion !== undefined) {
+  const companion = companionLook(bits);
+  const companionArt = companionSprite(m?.companion ?? 0);
+  if (companionArt !== undefined) {
+    look.companion = companionArt;
+  } else if (companion !== undefined) {
     look.companion = `sprite/companion/${companion}`;
   }
-  const cart = cartLook(option);
+  if (mount !== undefined) {
+    look.mount = mount;
+  }
+  const cart = cartLook(bits);
   if (cart !== undefined) {
     look.cart = `sprite/cart/${cart}`;
   }
@@ -274,11 +288,14 @@ export function lookOf(m: LookMessage | undefined, option = 0): Look {
     return look;
   }
   const weapon = m.weapon === 0 ? 0 : (weapons.get(m.weapon)?.view ?? 0);
-  if (weapon !== 0) {
+  const weaponArt = m.weaponView === 0 ? undefined : viewSprite(m.weaponView);
+  if (weaponArt !== undefined) {
+    look.weapon = weaponArt;
+  } else if (weapon !== 0) {
     look.weapon = `sprite/weapon/${name}/${sex}/${weapon}`;
   }
   if (m.shield !== 0) {
-    look.shield = `sprite/shield/${name}/${sex}/${m.shield}`;
+    look.shield = viewSprite(m.shield) ?? `sprite/shield/${name}/${sex}/${m.shield}`;
   }
   if (m.headTop !== 0) {
     look.headgearTop = viewSprite(m.headTop) ?? `sprite/headgear/${sex}/${m.headTop}`;

@@ -43,7 +43,10 @@ type Export struct {
 	// Storages are the account's storages, which its characters share.
 	Storages []ExportStorage `json:"storages"`
 	// Currencies are the account's currencies.
-	Currencies []ExportCurrency  `json:"currencies"`
+	Currencies []ExportCurrency `json:"currencies"`
+	// Variables are the mods' saved variables of the account (decision
+	// 0036).
+	Variables  []ExportVariable  `json:"variables"`
 	Characters []ExportCharacter `json:"characters"`
 	// Chat holds the lines the characters said that the chat log still
 	// keeps.
@@ -84,6 +87,7 @@ type ExportLogin struct {
 type GameExport struct {
 	Storages   []ExportStorage
 	Currencies []ExportCurrency
+	Variables  []ExportVariable
 	Characters []ExportCharacter
 	Chat       []ExportChatLine
 	ItemLog    []ExportItemLine
@@ -131,6 +135,19 @@ type ExportCharacter struct {
 	Mail       []ExportMail     `json:"mail"`
 	Currencies []ExportCurrency `json:"currencies"`
 	BlockList  []string         `json:"block_list"`
+	// Variables are the mods' saved variables of the character (decision
+	// 0036).
+	Variables []ExportVariable `json:"variables"`
+}
+
+// ExportVariable is a mod's saved variable (proposal 0002, "Variables"):
+// the mod's ID, the variable's name, and its value as the mod saved it,
+// a JSON number, boolean, string or object. A variable at its default
+// value is not saved, so it is not in the export.
+type ExportVariable struct {
+	Mod   string          `json:"mod"`
+	Name  string          `json:"name"`
+	Value json.RawMessage `json:"value"`
 }
 
 // ExportStats are the raised stats, without bonuses.
@@ -319,13 +336,17 @@ func (s *Service) buildExport(ctx context.Context, account int64) (*Export, erro
 		if err != nil {
 			return nil, err
 		}
-		e.Storages, e.Currencies, e.Characters = g.Storages, g.Currencies, g.Characters
+		e.Storages, e.Currencies, e.Variables, e.Characters = g.Storages, g.Currencies, g.Variables, g.Characters
 		e.Chat, e.ItemLog, e.ZenyLog = g.Chat, g.ItemLog, g.ZenyLog
 		e.Reports, e.Sanctions, e.Truncated = g.Reports, g.Sanctions, g.Truncated
 	}
 	nonNil(&e.Storages)
 	nonNil(&e.Currencies)
+	nonNil(&e.Variables)
 	nonNil(&e.Characters)
+	for i := range e.Characters {
+		nonNil(&e.Characters[i].Variables)
+	}
 	nonNil(&e.Chat)
 	nonNil(&e.ItemLog)
 	nonNil(&e.ZenyLog)

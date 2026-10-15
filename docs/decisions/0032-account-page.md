@@ -64,6 +64,7 @@ The format is stable. A change that removes or renames a field, or changes its m
 | `logins` | The login records of the last 90 days, newest first: `at`, `ip`, `user_agent`. |
 | `storages` | The account's storages, which its characters share: `kind` (`storage` or `extra`), `storage` (the record ID, 0 for the account's storage), `name`, `items`. |
 | `currencies` | The account's currencies: `id`, `name`, `amount`. |
+| `variables` | The mods' saved variables of the account: `mod`, `name`, and `value`, the JSON value the mod saved. A variable at its default value is not saved, so it is not here. Added by [decision 0036](0036-phase-6-review-changes.md), in version 1. |
 | `characters` | Each character, in slot order. |
 | `chat` | The lines the characters said that the chat log still keeps, oldest first: `at`, `character`, `kind`, `target`, `map`, `text`. |
 | `item_log` | The item log lines of the characters' inventories, carts, vending shops and own extra storages, and of the account's storages, oldest first: `at`, `action`, `from` and `to` (`kind`, `id`, `storage`), `serial`, `source`, `item_id`, `name`, `amount`, `refine`, `cards`, `bound`. |
@@ -80,8 +81,9 @@ A character has:
 - `skills`: `id` and `level`.
 - `inventory`: the items, with the equipment. An item has `serial`, `item_id`, `name`, `amount`, `slot`, `refine`, `cards`, `equip` (the equip location bits where it is worn, or 0), `identified`, `bound` and `rolls` (name to value).
 - `cart`, `storages` (the character's own extra storages), `mail` (`id`, `from`, `title`, `body`, `sent_at`, `zeny`, `read`, `returned`, `items`), `currencies` and `block_list`.
+- `variables`: the mods' saved variables of the character, as the account's `variables`. Added by decision 0036.
 
-What it never holds: the password or its hash, the TOTP secret, recovery codes or their hashes, passkey credentials, public keys or user handles, session or ticket tokens or their hashes, and other accounts' data beyond the names and IDs in the logs and reports. `TestExportHasNoSecrets` checks the file for each of them in text, hex and base64.
+What it never holds: the password or its hash, the TOTP secret, recovery codes or their hashes, passkey credentials, public keys or user handles, session or ticket tokens or their hashes, and other accounts' data beyond the names and IDs in the logs and reports. `TestExportHasNoSecrets` checks the file for each of them in text, hex and base64, and checks that no field name starts with a word such as `token` or `session`. Since decision 0036 it checks the field names alone, so a mod variable's name or value may hold such a word.
 
 The time of the last export is in `account_exports`. An export within 24 hours of the last one is refused with the time the next one is possible. The time is recorded after the file is built, with a statement that changes nothing when another export won the race.
 
@@ -202,7 +204,7 @@ With `--dev` and a database, `POST /debug/wathena/deletions` runs the deletion j
 ## Left
 
 - The account service stores no email, so the export's `email` is always `null` (review item).
-- Mod variables are not in the export. Review decision 37 does not list them (review item).
+- Mod variables are not in the export. Review decision 37 does not list them (review item). Closed: [decision 0036](0036-phase-6-review-changes.md) adds them.
 - A player who sends mail to a character in the second its account is deleted can see the send fail.
 - The guild storage items of a guild that the account led alone go with the guild, without item log lines.
 - A network form of `account.Game` and the job for the distributed build (phase 10).

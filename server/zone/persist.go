@@ -9,6 +9,7 @@ import (
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -170,6 +171,11 @@ func savedItems(inv *item.Inventory) []character.Item {
 func (z *Zone) snapshot(p *Player) *character.Character {
 	c := &character.Character{Info: p.record}
 	c.Name = p.Name
+	if p.gmHidden {
+		// pc_makesavestatus saves OPTION_INVISIBLE, so @hide lasts
+		// across logins.
+		c.Options |= companion.OptionInvisible
+	}
 	c.Job, c.Male, c.Stats = p.char.Job, p.char.Male, p.char.Stats
 	if z.Progress != nil {
 		c.BaseLevel, c.JobLevel = p.progress.BaseLevel, p.progress.JobLevel

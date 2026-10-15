@@ -1,6 +1,6 @@
--- Queries for the world row and staff accounts. `wactl world new` runs
--- CreateWorld and CreateStaffAccount as the migrator role. waserver runs
--- World as wathena_game.
+-- Queries for the world row and its first account. `wactl world new`
+-- runs CreateWorld and CreateAdminAccount as the migrator role. waserver
+-- runs World as wathena_game.
 
 -- name: CreateWorld :execrows
 -- CreateWorld makes the world row. It makes nothing when the world
@@ -13,11 +13,11 @@ ON CONFLICT (id) DO NOTHING;
 -- World returns the world without its seed.
 SELECT name, ruleset, generator_version, created_at FROM world WHERE id = 1;
 
--- name: CreateStaffAccount :one
--- CreateStaffAccount makes a staff account and its password in one
+-- name: CreateAdminAccount :one
+-- CreateAdminAccount makes the first account and its password in one
 -- statement. It returns no row when the name is taken.
 WITH a AS (
-    INSERT INTO accounts (name, staff) VALUES (@name, true)
+    INSERT INTO accounts (name) VALUES (@name)
     ON CONFLICT DO NOTHING
     RETURNING id
 )

@@ -156,6 +156,24 @@ func TestCommandsNeedPermission(t *testing.T) {
 			t.Error("the player saw the hidden game master on the field")
 		}
 	}
+	// The hidden game master's local chat shows by name, as rAthena's
+	// (decision 0036).
+	gm.Say("nobody here but us")
+	if c := player.Hears("Gamemaster", "nobody here but us"); c.GetFrom() != 0 {
+		t.Errorf("the hidden game master's line names entity %d", c.GetFrom())
+	}
+	// The character saves @hide as OPTION_INVISIBLE. A --dev login has no
+	// second factor, so no role counts and the next login is not hidden,
+	// as pc_authok clears the bit without the hide command.
+	_ = gm.Close()
+	var options int
+	if err := srv.DB.QueryRow(ctx, "SELECT options FROM characters WHERE name = 'Gamemaster'").Scan(&options); err != nil || options&0x40 == 0 {
+		t.Errorf("saved options %#x, %v: want OPTION_INVISIBLE", options, err)
+	}
+	srv.Join(t, "Gamemaster")
+	player.Expect("the game master to appear after a login without a second factor", func(e *wathenav1.Event) bool {
+		return e.GetAppear().GetName() == "Gamemaster"
+	})
 	// Command lines are never chat.
 	for _, p := range []*Player{player, admin} {
 		if p.HeardText("free potions") || p.HeardText("event prize") || p.HeardText("Unknown command.") {

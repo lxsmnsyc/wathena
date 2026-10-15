@@ -47,7 +47,7 @@ Run these in `deploy/compose`.
    - Run the same command again after a client update. Unchanged assets come from the build's cache.
    - To use a build you already have, set `WATHENA_ASSETS` in `.env` to its absolute path instead. The user 65532 must be able to read it.
    - For a test without game files, use `--source placeholder`, and set `start_map: placeholder/map` and `mode: none` in `waserver.yml`.
-5. World. Make the world and the first staff account. The password is read from standard input, so it stays out of the shell history and process lists:
+5. World. Make the world and the first account. The password is read from standard input, so it stays out of the shell history and process lists:
 
    ```text
    read -rs PASSWORD
@@ -57,7 +57,7 @@ Run these in `deploy/compose`.
 
    `--ruleset` must match `mode` in `waserver.yml`. The command applies the migrations first, and makes the world's secret seed.
 
-   To give the account the owner role, put its name in `staff.owners` in `waserver.yml`. The role counts once the account turns on TOTP or a passkey and logs in with it. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
+   To give the account the owner role, put its name in `staff.owners` in `waserver.yml`, as the command prints. The role counts once the account turns on TOTP or a passkey and logs in with it. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
 6. Start: `docker compose up -d --wait`. It waits until every service is healthy. Open `https://WATHENA_DOMAIN/`, sign up, make a character and press Play.
 
 `waserver` refuses to start while migrations are pending or before step 5. Its log then says why: `docker compose logs waserver`.
@@ -197,7 +197,7 @@ docker compose up -d --wait
 
 | Role | Used by | Rights |
 |---|---|---|
-| `wathena_migrator` | `wactl migrate`, `wactl world` | Owns the database and the schema. Alone makes the world and staff accounts. |
+| `wathena_migrator` | `wactl migrate`, `wactl world` | Owns the database and the schema. Alone makes the world and its first account. |
 | `wathena_game` | The game side of `waserver`, through `WATHENA_DATABASE_URL` | Reads and writes characters and inventories, reads and deletes game tickets, and reads the world without its seed. No DDL, and no access to passwords or login sessions. Deletes an account only through `delete_account`, once its player's deletion request is due (decision 0032). |
 | `wathena_account` | The account service, through `WATHENA_ACCOUNT_DATABASE_URL` | Reads and writes passwords, login sessions, game tickets, TOTP secrets, recovery codes and passkeys, and makes accounts and characters. No DDL, and cannot change or delete characters. |
 

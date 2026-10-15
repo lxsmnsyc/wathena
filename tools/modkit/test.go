@@ -565,6 +565,18 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 			return nil, fmt.Errorf("world:set_staff_role: %w", err)
 		}
 		return nil, nil
+	case "plan_restart":
+		minutes, _ := args[0].AsInt()
+		reason, _ := args[1].AsString()
+		if _, ok := w.h.Bound(); !ok {
+			if err := w.bind(""); err != nil {
+				return nil, fmt.Errorf("world:plan_restart: %w", err)
+			}
+		}
+		if err := w.h.PlanRestart(minutes, reason); err != nil {
+			return nil, fmt.Errorf("world:plan_restart: %w", err)
+		}
+		return nil, nil
 	case "close_storage":
 		p, _ := args[0].AsInt()
 		if err := w.h.CloseStorage(p); err != nil {

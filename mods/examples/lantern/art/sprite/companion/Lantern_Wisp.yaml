@@ -1,0 +1,11 @@
+# The Lantern Wisp's frames, from Lantern_Wisp.png beside this file: 2
+# frames of 20 x 24 pixels in a row. The wisp bobs up and down.
+grid: [20, 24]
+# The pixel on the cell beside the player.
+origin: [10, 23]
+# A companion's actions: idle and walk, the same in all 8 directions.
+actions:
+  - frames: [0, 1]
+    interval_ms: 400
+  - frames: [0, 1]
+    interval_ms: 160

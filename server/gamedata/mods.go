@@ -102,7 +102,7 @@ const NPCArtSprites = 1_000_000
 // the item's view field. A look sends them as the views of headgear and
 // garments, and the client learns them from the client data (review
 // decision 40).
-const ItemArtViews = 1_000_000
+const ItemArtViews = item.ArtViews
 
 // giveArtViews gives each item whose record names a view_sprite a view ID
 // of its own from ItemArtViews.

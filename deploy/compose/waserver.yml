@@ -38,8 +38,8 @@ captcha: none
 
 # Staff (server/README.md, "Staff and admin tools"). Owners have every
 # permission and give the other roles at /admin. A role counts only
-# after a login with TOTP or a passkey. Name the staff account of
-# `wactl world new --admin` here.
+# after a login with TOTP or a passkey. Name the account of
+# `wactl world new --admin` here, as the command prints.
 # staff:
 #   owners: [Admin]
 

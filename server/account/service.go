@@ -732,6 +732,28 @@ func (s *Service) revoke(ctx context.Context, hash []byte) error {
 	return err
 }
 
+// EndAccountSessions ends every session of an account, and deletes its
+// pending logins and the game tickets nobody used, in one transaction. A
+// ban calls it, so a banned player is logged out of the account pages
+// too (decision 0036). It does not close game connections: the ban
+// closes those with its own reason. It returns how many sessions ended.
+func (s *Service) EndAccountSessions(ctx context.Context, account int64) (int, error) {
+	var ids []int64
+	err := pgx.BeginFunc(ctx, s.cfg.Pool, func(tx pgx.Tx) error {
+		q := s.q.WithTx(tx)
+		if err := q.DeleteAccountPendingLogins(ctx, account); err != nil {
+			return err
+		}
+		if err := q.DeleteAccountTickets(ctx, account); err != nil {
+			return err
+		}
+		var err error
+		ids, err = q.RevokeAccountSessions(ctx, account)
+		return err
+	})
+	return len(ids), err
+}
+
 func (s *Service) getSignup(w http.ResponseWriter, r *http.Request) {
 	p := s.newPage(w, r, "Sign up")
 	if s.limit.captchaFor(s.clientAddr(r), time.Now()) {

@@ -22,6 +22,16 @@ const MOD_DATA: ClientData = {
       view_sprite: 'mod/example.lantern/sprite/headgear/Lantern_Hat',
       view: 1000000,
     },
+    '2000004': {
+      name: 'Lantern Shield',
+      view_sprite: 'mod/example.lantern/sprite/shield/Lantern_Shield',
+      view: 1000001,
+    },
+    '2000005': {
+      name: 'Lantern Staff',
+      view_sprite: 'mod/example.lantern/sprite/weapon/Lantern_Staff',
+      view: 1000002,
+    },
   },
   monsters: {
     '1002': {
@@ -36,8 +46,8 @@ const MOD_DATA: ClientData = {
   npc_sprites: {},
   jobs: {},
   skills: { '20000': { effects: { hit: ['mod/example.lantern/effect/flare'] } } },
-  companions: {},
-  mounts: {},
+  companions: { '10000': 'mod/example.lantern/sprite/companion/Wisp' },
+  mounts: { '10000': 'mod/example.lantern/sprite/mount/Lantern_Strider' },
 };
 
 afterEach(() => {
@@ -902,5 +912,43 @@ describe('view sprites', () => {
     const look = lookOf(create(LookSchema, { body: 0, sex: 1, headTop: 1000000, headMid: 17 }));
     expect(look.headgearTop).toBe('mod/example.lantern/sprite/headgear/Lantern_Hat');
     expect(look.headgearMid).toBe('sprite/headgear/m/17');
+  });
+
+  it('draws the view sprites of a weapon and a shield', () => {
+    setArt(MOD_DATA);
+    const look = lookOf(
+      create(LookSchema, { body: 1, sex: 1, weapon: 2, weaponView: 1000002, shield: 1000001 }),
+    );
+    expect(look.weapon).toBe('mod/example.lantern/sprite/weapon/Lantern_Staff');
+    expect(look.shield).toBe('mod/example.lantern/sprite/shield/Lantern_Shield');
+    // Without a view of art, the weapon type and the shield's view show.
+    const plain = lookOf(create(LookSchema, { body: 1, sex: 1, weapon: 2, shield: 4 }));
+    expect(plain.weapon).toBe('sprite/weapon/swordman/m/2');
+    expect(plain.shield).toBe('sprite/shield/swordman/m/4');
+  });
+
+  it('draws the art of companion and mount records', () => {
+    setArt(MOD_DATA);
+    // A Knight on a mount of art that acts as a Peco Peco, with a
+    // companion of art that acts as a falcon: the body stays on foot.
+    const look = lookOf(
+      create(LookSchema, { body: 7, sex: 1, companion: 10000, mount: 10000 }),
+      0x20 | 0x10,
+    );
+    expect(look).toMatchObject({
+      body: 'sprite/body/knight/m',
+      companion: 'mod/example.lantern/sprite/companion/Wisp',
+      mount: 'mod/example.lantern/sprite/mount/Lantern_Strider',
+    });
+    // Records without art keep the option bits' looks.
+    const core = lookOf(
+      create(LookSchema, { body: 11, sex: 0, companion: 1, mount: 1 }),
+      0x20 | 0x10,
+    );
+    expect(core).toMatchObject({
+      body: 'sprite/body/ostrich_hunter/f',
+      companion: 'sprite/companion/falcon',
+    });
+    expect(core.mount).toBeUndefined();
   });
 });

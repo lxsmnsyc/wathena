@@ -64,6 +64,11 @@ const (
 	OptionLooks = OptionFalcon | OptionRiding | OptionDragon | OptionWug | OptionWugRider | OptionMadogear
 )
 
+// OptionInvisible is rAthena's OPTION_INVISIBLE, the bit of @hide. The
+// character saves it with the other bits, as pc_makesavestatus does, and
+// the zone keeps it apart from them while the player plays.
+const OptionInvisible = 0x0040
+
 // CartOptions are the option bits of each cart look, as pc_setcart's
 // table without NEW_CARTS: 0 is no cart, then OPTION_CART1 to
 // OPTION_CART5.

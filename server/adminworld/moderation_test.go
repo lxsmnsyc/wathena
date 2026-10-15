@@ -3,6 +3,7 @@ package adminworld_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -128,9 +129,16 @@ func TestSanctions(t *testing.T) {
 	if err := e.admin.QueryRow(e.ctx, "SELECT account_id FROM characters WHERE id = $1", loud).Scan(&account); err != nil {
 		t.Fatal(err)
 	}
+	// It also ends the account's sessions on the account pages (decision
+	// 0036).
+	ended := &sessionEnder{}
+	e.aw.SetSessions(ended)
 	b, err := e.aw.Sanction(e.ctx, admin.SanctionOrder{Actor: moderator, Kind: "ban", Account: account, Minutes: 0, Reason: "scam"})
 	if err != nil || !b.GetPermanent() || b.GetAccountId() != account || b.HasEndsAt() {
 		t.Fatalf("ban %v %v", b, err)
+	}
+	if !slices.Equal(ended.accounts, []int64{account}) {
+		t.Errorf("the ban ended the sessions of %v, want %d", ended.accounts, account)
 	}
 	kicks := e.kicker.got()
 	if len(kicks) != 3 || !strings.HasPrefix(kicks[2], "DISCONNECT_REASON_BANNED Your account is banned permanently. Reason: scam") ||
@@ -269,4 +277,12 @@ func TestReportQueue(t *testing.T) {
 		closed.GetReports()[0].GetClosedBy() != "Moddy" || closed.GetReports()[0].GetOutcome() != "sanctioned" {
 		t.Errorf("closed %v %v", closed, err)
 	}
+}
+
+// sessionEnder records the accounts whose sessions a ban ended.
+type sessionEnder struct{ accounts []int64 }
+
+func (s *sessionEnder) EndAccountSessions(_ context.Context, account int64) (int, error) {
+	s.accounts = append(s.accounts, account)
+	return 1, nil
 }

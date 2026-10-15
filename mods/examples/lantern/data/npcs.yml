@@ -12,6 +12,7 @@
     - {item: "example.lantern:Lantern_Oil"}
     - {item: "example.lantern:Unlit_Lantern"}
     - {item: "example.lantern:Lantern_Hat"}
+    - {item: "example.lantern:Lantern_Shield"}
 - name: Lamplighter#placeholder
   map: placeholder/map
   x: 14
@@ -23,6 +24,7 @@
     - {item: "example.lantern:Lantern_Oil"}
     - {item: "example.lantern:Unlit_Lantern"}
     - {item: "example.lantern:Lantern_Hat"}
+    - {item: "example.lantern:Lantern_Shield"}
 # The Lantern Master makes Merchants at job level 40 into Lantern Keepers.
 # It shows core's Knight master sprite.
 - name: Lantern_Master#prontera

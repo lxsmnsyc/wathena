@@ -77,6 +77,14 @@ const MOUNTED_JOBS: ReadonlySet<number> = new Set([
   ...MOUNTED.flatMap(([, m]) => [...m.values()]),
 ]);
 
+/**
+ * The option bits without the mount's, for a mount whose record has art:
+ * the body is then drawn on foot, over the mount's sprite.
+ */
+export function withoutMount(option: number): number {
+  return option & ~MOUNTS;
+}
+
 /** The companion drawn beside a player, if any. */
 export function companionLook(option: number): 'falcon' | 'warg' | undefined {
   if ((option & OPTION_FALCON) !== 0) {

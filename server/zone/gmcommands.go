@@ -157,6 +157,13 @@ func (z *Zone) actor(p *Player, role string) staff.AuditRow {
 	return staff.AuditRow{AccountID: p.record.AccountID, AccountName: z.staffName(p), Role: role, Source: "game"}
 }
 
+// mayHide reports whether a player's login may use @hide, as
+// pc_can_use_command(sd, "hide") in pc_authok.
+func (z *Zone) mayHide(p *Player) bool {
+	role := z.staffRole(p)
+	return role != "" && z.Staff.Roles().Has(role, gmCommands["hide"].permission)
+}
+
 // gmHidden reports whether an entity is a player hidden with @hide.
 func gmHidden(e *entity) bool { return e.player != nil && e.player.gmHidden }
 
@@ -371,7 +378,7 @@ func (z *Zone) commandRecall(p *Player, c gmCall) {
 
 // commandHide is @hide, as atcommand_hide: other players do not see the
 // staff member, and monsters ignore it, until the next @hide. It lasts
-// across map changes.
+// across map changes, and across logins while the login may use @hide.
 func (z *Zone) commandHide(p *Player, c gmCall) {
 	if c.args != "" {
 		z.usage(p, c)

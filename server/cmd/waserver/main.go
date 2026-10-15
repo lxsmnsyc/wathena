@@ -740,6 +740,9 @@ func runAll(name string, args []string) error {
 			return err
 		}
 		gw.Sessions = account.GameTickets{Store: st}
+		// A ban ends the account's sessions on the account pages
+		// (decision 0036).
+		staffWorld.SetSessions(accounts)
 		go accounts.Run(ctx)
 		// The admin API runs on the account service's origin and pool. It
 		// reaches the world in this process through staffWorld.

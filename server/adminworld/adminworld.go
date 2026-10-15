@@ -70,12 +70,25 @@ type Config struct {
 	Tools Tools
 }
 
+// SessionEnder ends an account's login sessions on the account pages.
+// *account.Service is one.
+type SessionEnder interface {
+	EndAccountSessions(ctx context.Context, account int64) (int, error)
+}
+
 // World is admin.World for the all-in-one build.
 type World struct {
 	cfg   Config
 	log   *slog.Logger
 	tools tools
+	// sessions ends a banned account's sessions on the account pages.
+	sessions SessionEnder
 }
+
+// SetSessions sets what ends a banned account's sessions on the account
+// pages (decision 0036). The account service is made after the World,
+// so it comes here. Call it before the World serves.
+func (w *World) SetSessions(s SessionEnder) { w.sessions = s }
 
 var _ admin.World = (*World)(nil)
 

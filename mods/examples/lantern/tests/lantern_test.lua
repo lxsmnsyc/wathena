@@ -6,13 +6,16 @@ local items = require "wa.items"
 local jobs = require "wa.jobs"
 local monsters = require "wa.monsters"
 local skills = require "wa.skills"
+local companions = require "wa.companions"
 
 local LANTERN = items.id "example.lantern:Paper_Lantern"
 local UNLIT = items.id "example.lantern:Unlit_Lantern"
 local HAT = items.id "example.lantern:Lantern_Hat"
+local SHIELD = items.id "example.lantern:Lantern_Shield"
 local GHOST = monsters.id "example.lantern:LANTERN_GHOST"
 local KEEPER = jobs.id "example.lantern:Lantern_Keeper"
 local FLARE = skills.id "example.lantern:LANTERN_FLARE"
+local WISP = companions.id "example.lantern:Lantern_Wisp"
 
 return function()
   testing.case("the lantern and the ghost are mod records", function()
@@ -50,5 +53,24 @@ return function()
     local player = world:new_player { map = "prontera", x = 150, y = 191 }
     local hat = world:equip(player, HAT)
     testing.expect(hat.item).to_be(HAT)
+  end)
+
+  testing.case("the Lantern Shield goes on the left hand", function(world)
+    local player = world:new_player { map = "prontera", x = 150, y = 191 }
+    local shield = world:equip(player, SHIELD)
+    testing.expect(shield.item).to_be(SHIELD)
+    testing.expect(player:get_equipped("left_hand").item).to_be(SHIELD)
+  end)
+
+  testing.case("the Lantern Master gives a Lantern Keeper a wisp", function(world)
+    testing.expect(WISP >= 10000).to_be_true()
+    local player = world:new_player { map = "prontera", x = 153, y = 191, job = KEEPER, base_level = 50, job_level = 10 }
+    testing.expect(player.companion).to_be_nil()
+    local said = world:talk(player, "Lantern_Master#prontera", {})
+    testing.expect(said).to_contain("Take this wisp. It lights your way.")
+    testing.expect(player.companion).to_be(WISP)
+    said = world:talk(player, "Lantern_Master#prontera", {})
+    testing.expect(said).to_contain("Your wisp rests now.")
+    testing.expect(player.companion).to_be_nil()
   end)
 end

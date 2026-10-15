@@ -1,9 +1,11 @@
 package adminworld
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"time"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -244,6 +246,14 @@ func (w AccountPage) Export(ctx context.Context, acc int64) (*account.GameExport
 			return nil, err
 		}
 		ec := w.exportCharacter(v, skills, blocks[c.ID])
+		vars, err := q.CharacterVariables(ctx, c.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range vars {
+			ec.Variables = append(ec.Variables, account.ExportVariable{Mod: r.ModID, Name: r.Name, Value: r.Value})
+		}
+		sortVariables(ec.Variables)
 		for _, s := range v.Storages {
 			switch {
 			case s.Key.Holder == storage.HolderCart:
@@ -260,6 +270,16 @@ func (w AccountPage) Export(ctx context.Context, acc int64) (*account.GameExport
 		accountShown = true
 		out.Characters = append(out.Characters, ec)
 	}
+	// The account's variables, which every character shares. An account
+	// without characters may still have some.
+	vars, err := q.AccountVariables(ctx, acc)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range vars {
+		out.Variables = append(out.Variables, account.ExportVariable{Mod: r.ModID, Name: r.Name, Value: r.Value})
+	}
+	sortVariables(out.Variables)
 	if err := w.exportLogs(ctx, acc, ids, out); err != nil {
 		return nil, err
 	}
@@ -288,6 +308,13 @@ func (w AccountPage) Export(ctx context.Context, acc int64) (*account.GameExport
 		out.Sanctions = append(out.Sanctions, e)
 	}
 	return out, nil
+}
+
+// sortVariables sorts exported variables by mod and name.
+func sortVariables(vs []account.ExportVariable) {
+	slices.SortFunc(vs, func(a, b account.ExportVariable) int {
+		return cmp.Or(strings.Compare(a.Mod, b.Mod), strings.Compare(a.Name, b.Name))
+	})
 }
 
 // exportLogs reads the chat lines and the item and zeny logs.

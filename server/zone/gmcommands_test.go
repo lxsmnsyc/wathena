@@ -11,6 +11,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/transfer"
 )
@@ -312,6 +313,28 @@ func TestGMHide(t *testing.T) {
 	if len(w.a.txAudit) != 1 || w.a.txAudit[0].Action != "commands.hide" || w.a.txAudit[0].Arguments["hidden"] != true {
 		t.Errorf("audit %+v", w.a.txAudit)
 	}
+	// The hidden game master's local chat shows to others in range, as
+	// rAthena sends it to the area. They do not know its entity, so the
+	// line has no speaker ID (decision 0036).
+	far := w.player(w.a, 13, 4, "Faraway", 10, 25, true)
+	w.a.stepAt(150)
+	events(far)
+	say(w.a, gm, "nothing to see here")
+	w.a.stepAt(200)
+	heard := false
+	for _, e := range events(other) {
+		if c := e.GetChat(); c != nil && c.GetText() == "nothing to see here" {
+			heard = c.GetFrom() == 0 && c.GetFromName() == "Gamemaster" && len(c.GetLineId()) > 0
+		}
+	}
+	if !heard {
+		t.Error("the other player did not hear the hidden game master by name")
+	}
+	for _, e := range events(far) {
+		if c := e.GetChat(); c != nil && c.GetText() == "nothing to see here" {
+			t.Error("a player out of chat range heard the hidden game master")
+		}
+	}
 	// Across a map change.
 	watcher := w.player(w.b, 12, 9, "Watcher", 7, 8, true)
 	w.b.stepAt(50)
@@ -340,6 +363,77 @@ func TestGMHide(t *testing.T) {
 	}
 	if !seen {
 		t.Error("the watcher did not see the game master after the second @hide")
+	}
+}
+
+// TestGMHideLastsAcrossLogins: the character saves @hide with the option
+// bit OPTION_INVISIBLE, as pc_makesavestatus, and the next login starts
+// hidden while its role may still use @hide, as pc_authok (decision
+// 0036). Looks never carry the bit.
+func TestGMHideLastsAcrossLogins(t *testing.T) {
+	w := newGMWorld()
+	gm := w.player(w.a, 10, 2, "Gamemaster", 10, 10, true)
+	say(w.a, gm, "@hide")
+	saved := w.a.snapshot(gm)
+	if saved.Options&companion.OptionInvisible == 0 {
+		t.Fatalf("the save has options %#x, without OPTION_INVISIBLE", saved.Options)
+	}
+	if gm.record.Options&companion.OptionInvisible != 0 {
+		t.Error("the playing record carries OPTION_INVISIBLE")
+	}
+	w.a.leave(gm, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+
+	login := func(id int64, account int64, twoFactor bool) *Player {
+		c := *saved
+		c.ID, c.AccountID = id, account
+		c.Staff = staff.Login{AccountName: "GamemasterAccount", TwoFactor: twoFactor}
+		sess := newSession(&saves{})
+		sess.staff = c.Staff
+		p := newPlayer(sess, &c)
+		sess.zone, sess.player = w.a, p
+		w.a.join(p)
+		return p
+	}
+	back := login(10, 2, true)
+	other := w.player(w.a, 11, 3, "Moddy", 12, 10, true)
+	w.a.stepAt(50)
+	events(other)
+	if !back.gmHidden {
+		t.Fatal("the game master is not hidden after a new login")
+	}
+	if _, ok := other.netIDs.get(back.entity); ok {
+		t.Error("another player sees the game master who logged in hidden")
+	}
+	if back.record.Options&companion.OptionInvisible != 0 {
+		t.Error("the restored record carries OPTION_INVISIBLE")
+	}
+	if s := w.a.snapshot(back); s.Options&companion.OptionInvisible == 0 {
+		t.Error("the next save lost OPTION_INVISIBLE")
+	}
+	say(w.a, back, "@hide")
+	if back.gmHidden || w.a.snapshot(back).Options&companion.OptionInvisible != 0 {
+		t.Error("the second @hide did not end the saved hide")
+	}
+	w.a.leave(back, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+
+	// A login without a second factor has no role, so the hide ends, as
+	// pc_authok clears the bit without the hide command.
+	plain := login(10, 2, false)
+	if plain.gmHidden || w.a.snapshot(plain).Options&companion.OptionInvisible != 0 {
+		t.Error("a login that may not use @hide stayed hidden")
+	}
+	w.a.leave(plain, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+	// So does an account whose role lacks commands.hide.
+	c := *saved
+	c.ID, c.AccountID, c.Name = 14, 3, "Moderator"
+	c.Staff = staff.Login{AccountName: "ModeratorAccount", TwoFactor: true}
+	sess := newSession(&saves{})
+	sess.staff = c.Staff
+	p := newPlayer(sess, &c)
+	sess.zone, sess.player = w.a, p
+	w.a.join(p)
+	if p.gmHidden {
+		t.Error("a moderator without commands.hide logged in hidden")
 	}
 }
 

@@ -29,9 +29,16 @@ func TestNewWorld(t *testing.T) {
 	if err != nil || got.Name != "Test" || got.Ruleset != "renewal" || got.Seed != nil {
 		t.Errorf("load: %+v, %v", got, err)
 	}
-	var staff bool
-	if err := admin.QueryRow(ctx, "SELECT staff FROM accounts WHERE id = $1", id).Scan(&staff); err != nil || !staff {
-		t.Errorf("staff: %v, %v", staff, err)
+	var name string
+	if err := admin.QueryRow(ctx, "SELECT name FROM accounts WHERE id = $1", id).Scan(&name); err != nil || name != "Admin1" {
+		t.Errorf("account: %q, %v", name, err)
+	}
+	// accounts.staff is gone (decision 0036). Roles come from the config
+	// and staff_roles.
+	var cols int
+	if err := admin.QueryRow(ctx, `SELECT count(*) FROM information_schema.columns
+		WHERE table_name = 'accounts' AND column_name = 'staff'`).Scan(&cols); err != nil || cols != 0 {
+		t.Errorf("accounts.staff columns: %d, %v", cols, err)
 	}
 
 	// A second world, or a taken name, changes nothing.
@@ -44,16 +51,13 @@ func TestNewWorld(t *testing.T) {
 	}
 
 	// The game role cannot read the seed. Neither service role can make
-	// a staff account or a world.
+	// a world.
 	if _, err := game.Exec(ctx, "SELECT seed FROM world"); !isCode(err, "42501") {
 		t.Errorf("game reads the seed: %v", err)
 	}
 	for role, pool := range map[string]*pgxpool.Pool{"game": game, "account": account} {
-		if _, err := pool.Exec(ctx, "INSERT INTO accounts (name, staff) VALUES ('Sneaky1', true)"); !isCode(err, "42501") {
-			t.Errorf("%s makes a staff account: %v", role, err)
-		}
-		if _, err := pool.Exec(ctx, "UPDATE accounts SET staff = true"); !isCode(err, "42501") {
-			t.Errorf("%s makes staff: %v", role, err)
+		if _, err := pool.Exec(ctx, "INSERT INTO world (name, ruleset, seed) VALUES ('W', 'renewal', $1)", seed); !isCode(err, "42501") {
+			t.Errorf("%s makes a world: %v", role, err)
 		}
 		if _, err := pool.Exec(ctx, "DELETE FROM world"); !isCode(err, "42501") {
 			t.Errorf("%s deletes the world: %v", role, err)

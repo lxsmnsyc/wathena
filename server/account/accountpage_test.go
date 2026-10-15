@@ -72,7 +72,12 @@ func (g *fakeGame) Export(context.Context, int64) (*account.GameExport, error) {
 	if g.online {
 		return nil, account.ErrCharacterOnline
 	}
-	return &account.GameExport{Characters: []account.ExportCharacter{{ID: 7, Name: "Alice Hero", BlockList: g.blocks[7]}},
+	// Mod variables are data a mod chose to save. Their names are not
+	// fields of the format, even when one sounds like a secret.
+	return &account.GameExport{
+		Variables: []account.ExportVariable{{Mod: "example.bank", Name: "session_count", Value: json.RawMessage(`2`)}},
+		Characters: []account.ExportCharacter{{ID: 7, Name: "Alice Hero", BlockList: g.blocks[7],
+			Variables: []account.ExportVariable{{Mod: "example.lantern", Name: "lit", Value: json.RawMessage(`true`)}}}},
 		Chat: []account.ExportChatLine{{At: time.Now(), Character: "Alice Hero", Kind: "local", Map: "map/test", Text: "hello"}}}, nil
 }
 
@@ -277,7 +282,15 @@ func TestExport(t *testing.T) {
 	if chars, _ := ex["characters"].([]any); len(chars) != 1 {
 		t.Errorf("characters %v", ex["characters"])
 	}
-	for _, k := range []string{"storages", "currencies", "chat", "item_log", "zeny_log", "reports", "sanctions", "truncated"} {
+	if vars, _ := ex["variables"].([]any); len(vars) != 1 || vars[0].(map[string]any)["value"] != float64(2) {
+		t.Errorf("account variables %v", ex["variables"])
+	}
+	if chars, _ := ex["characters"].([]any); len(chars) == 1 {
+		if vars, _ := chars[0].(map[string]any)["variables"].([]any); len(vars) != 1 || vars[0].(map[string]any)["value"] != true {
+			t.Errorf("character variables %v", chars[0])
+		}
+	}
+	for _, k := range []string{"storages", "currencies", "variables", "chat", "item_log", "zeny_log", "reports", "sanctions", "truncated"} {
 		if _, ok := ex[k].([]any); !ok {
 			t.Errorf("%s is %v, not a list", k, ex[k])
 		}
@@ -384,9 +397,37 @@ func TestExportHasNoSecrets(t *testing.T) {
 			t.Errorf("the export holds a secret: %s", s)
 		}
 	}
-	for _, field := range []string{"hash", "secret", "recovery", "passkey", "token", "credential", "public_key", "session"} {
-		if bytes.Contains(bytes.ToLower(b), []byte(`"`+field)) {
-			t.Errorf("the export has a field that starts with %q", field)
+	// No field of the format names a secret. The check reads the keys of
+	// the JSON objects, so data such as a mod variable's name may hold
+	// these words (decision 0036).
+	var tree any
+	if err := json.Unmarshal(b, &tree); err != nil {
+		t.Fatal(err)
+	}
+	keys := map[string]bool{}
+	var walk func(v any)
+	walk = func(v any) {
+		switch v := v.(type) {
+		case map[string]any:
+			for k, x := range v {
+				keys[strings.ToLower(k)] = true
+				walk(x)
+			}
+		case []any:
+			for _, x := range v {
+				walk(x)
+			}
+		}
+	}
+	walk(tree)
+	if !keys["variables"] || !keys["mod"] {
+		t.Errorf("the export has no variables: %v", keys)
+	}
+	for k := range keys {
+		for _, field := range []string{"hash", "secret", "recovery", "passkey", "token", "credential", "public_key", "session"} {
+			if strings.HasPrefix(k, field) {
+				t.Errorf("the export has the field %q, which starts with %q", k, field)
+			}
 		}
 	}
 	var ex account.Export

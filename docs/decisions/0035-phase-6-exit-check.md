@@ -135,6 +135,6 @@ The steps retry what a moving unit can spoil: a click that a walking ghost takes
 
 ## Left
 
-- Companions and mounts of art are not drawn, since looks do not say which record a player has.
-- Weapons and shields with a `view_sprite` keep their type's sprites.
+- Companions and mounts of art are not drawn, since looks do not say which record a player has. Closed: [decision 0036](0036-phase-6-review-changes.md) sends the record IDs in looks, and the client draws their art.
+- Weapons and shields with a `view_sprite` keep their type's sprites. Closed: [decision 0036](0036-phase-6-review-changes.md) draws a shield's art by its view and a weapon's by `weapon_view`.
 - The check plays one map. Warps between maps are in the end-to-end tests.

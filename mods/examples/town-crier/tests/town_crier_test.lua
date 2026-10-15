@@ -55,6 +55,13 @@ return function()
     end
   end)
 
+  testing.case("a planned restart is told to the channel", function(world)
+    local alice = world:new_player { map = "prontera", x = 150, y = 150 }
+    world:chat(alice, "!events")
+    world:plan_restart(10, "new maps")
+    expect(texts(world, alice)).to_contain("#events : A restart is planned: new maps. Finish what you are doing.")
+  end)
+
   testing.case("a player is blocked or not", function(world)
     local alice = world:new_player { map = "prontera", x = 150, y = 150 }
     local bob = world:new_player { map = "prontera", x = 152, y = 150 }

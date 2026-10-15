@@ -12,7 +12,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/party-hall](examples/party-hall) makes parties with `wa.parties`, greets members on the party events, and reads `rules.limits` ("Parties and friends" below).
 - [examples/guild-hall](examples/guild-hall) makes guilds with `wa.guilds`, follows the guild events and reads the guild limits ("Guilds" below).
 - [examples/bank](examples/bank) has a banker who opens the account's storage and an extra storage, a bound Bank Card, and a `trade` hook and event ("Storage, cart and trade" below).
-- [examples/lantern](examples/lantern) has art of its own: item icons, a hat's worn sprite, a monster sprite with sounds, an NPC sprite, the Lantern Keeper job with body sprites and its skill Lantern Flare with an icon and an effect, and a client data table ("Art" below). It is the phase 6 exit check's mod run.
+- [examples/lantern](examples/lantern) has art of its own: item icons, a hat's and a shield's worn sprites, a companion's sprite, a monster sprite with sounds, an NPC sprite, the Lantern Keeper job with body sprites and its skill Lantern Flare with an icon and an effect, and a client data table ("Art" below). It is the phase 6 exit check's mod run.
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -752,7 +752,7 @@ Companion and mount records follow proposal 0002, review decision 25. Core's rec
 
 - A player has at most one companion and one mount.
 - A job change removes a companion or a mount whose `requires` the new job does not meet, and a cart without Pushcart, as `pc_jobchange`. It always removes the Madogear, as rAthena does. `player:reset_skills` removes those whose skills it resets, as `resetskill`, and `player:reset_skill` those whose skills the player no longer has.
-- The client shows the look: the falcon or warg beside the player, the cart behind it, and the mounted sprite of the player's job. A job without a mounted sprite, such as a Hunter on a Peco Peco, shows its costume mount.
+- The client shows the look: the falcon or warg beside the player, the cart behind it, and the mounted sprite of the player's job. A job without a mounted sprite, such as a Hunter on a Peco Peco, shows its costume mount. A record whose `look` is art shows its art instead ("Art" below).
 - The character saves the record names and the option bits of their looks. A record whose mod was removed goes when the character loads, with a warning in the log.
 - The converter maps `setfalcon`, `setriding` and `setcart` to these calls, and `checkfalcon`, `checkriding` and `checkcart` to `player.companion ~= nil`, `player.mount ~= nil` and `player.cart ~= nil`.
 
@@ -798,7 +798,8 @@ Kinds not overlaid yet: spawns, quests and achievements.
 
 A mod ships its own art ([decision 0033](../docs/decisions/0033-mod-assets.md)). [examples/lantern](examples/lantern) has, drawn by code:
 
-- item icons, a dropped item sprite, and a hat's worn sprite;
+- item icons, a dropped item sprite, and the worn sprites of a hat and a shield;
+- a companion's sprite, the Lantern Wisp, which the Lantern Master gives a Lantern Keeper;
 - an animated monster sprite with sounds;
 - an NPC sprite;
 - a job's body sprites;
@@ -874,12 +875,12 @@ A mod's own record without a field uses the art named after it, when the build h
 
 The client shows a placeholder for art the builds lack, and logs the name once. `wactl mod validate` reports each art name a record names under `mod/` that the mod it names does not provide.
 
-The web client draws item icons, dropped items, monster and NPC sprites, job bodies, skill icons and effects, monster sounds and worn item sprites from art (review decision 40):
+The web client draws item icons, dropped items, monster and NPC sprites, job bodies, skill icons and effects, monster sounds, worn item sprites, and companions and mounts from art (review decisions 40 and 41):
 
-- An item with a `view_sprite` gets a view ID of its own from 1,000,000 at each start, which looks send for headgear and garments. Weapons and shields keep their sprites by type.
+- An item with a `view_sprite` gets a view ID of its own from 1,000,000 at each start. Looks send it for headgear, garments and shields, and in `weapon_view` for the right hand's weapon, so all of them draw their sprite (decision 0036).
 - A mod's job comes in looks by its own ID, and the client data names the job it looks like. Its body is its art, and its weapon, head and other parts are those of that job.
 - A skill's `effects` replace the effects of the client tables at their moments.
-- Companions' and mounts' looks of art are sent and not drawn: a look carries only the option bit of the record a companion acts as, so the client cannot tell which record a player has.
+- Looks carry the record IDs of a player's companion and mount (decision 0036). The client draws a companion of art beside the player, as the falcon, and a mount of art at the player's cell, under the body. A player on a mount of art shows its job's body on foot, not the mounted sprite of the record it acts as.
 
 ### Names in the client
 
@@ -1457,6 +1458,7 @@ Rules:
 - The server announces the restart to players itself, 30, 15, 10, 5 and 1 minute before and 30 seconds before. A mod need not.
 - At the restart's time, the server saves every character, disconnects every player and stops. Contexts end as at any stop. Data a mod keeps in `wa.variables` is saved as usual.
 - A plan lives only in the running server. A restart before its time drops it without a cancel event.
+- In `wactl mod test`, `world:plan_restart(minutes, reason)` fires it ("Testing a mod"). [examples/town-crier](examples/town-crier) tells its channel about a planned restart, and its test plans one.
 
 ### Mods turned off by staff
 
@@ -2303,8 +2305,9 @@ end
 | `world:count_floor_items(item)` | How many of an item lie on the map. |
 | `world:chat(player, text, { channel, to })` | The player says a line, as a client's chat: `channel` is `"public"` (the default), `"whisper"` with `to`, or a channel's name. It passes the mute, the filter and the hooks, then the `chat` event runs. |
 | `world:get_chat(player)` | The chat lines the player got so far, each `{ channel, from, text }`: `channel` is `"public"`, `"whisper"`, `"system"`, or a channel's name with its `#`. |
+| `world:plan_restart(minutes, reason)` | Plans a restart that many minutes from the world's time, 1 to 10,080, with a reason of 1 to 255 characters, as staff do on the admin screens. `restart_planned` runs with `{ at, reason }`, and the lines its handlers send go out. Nothing restarts. It is provisional. |
 
-The last five, and world events in test worlds, were added in phase 3 step 6 (proposal 0002, review decisions 16 and 17). `world:chat`, `world:get_chat`, `world:trade`, `world:close_storage`, `world:buy`, `world:get_mails` and `world:vend` came with phase 5, and review decision 32 made them stable. A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
+The last five, and world events in test worlds, were added in phase 3 step 6 (proposal 0002, review decisions 16 and 17). `world:chat`, `world:get_chat`, `world:trade`, `world:close_storage`, `world:buy`, `world:get_mails` and `world:vend` came with phase 5, and review decision 32 made them stable. `world:plan_restart` came with review decision 41. A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
 | `testing.expect(value)` | Checks a value with `.to_be(x)`, `.to_equal(table)` (deep), `.to_contain(text_or_value)`, `.to_be_true()`, `.to_be_false()`, `.to_be_nil()`, or `.to_fail_with(text)` for a function that should raise an error containing the text. |
 
 A failed check stops the case and prints the file and line of the check. A case also fails when the server logs a warning that names the mod, such as a handler that failed. `wactl mod test` exits with status 1 when any case fails, so CI can run it.

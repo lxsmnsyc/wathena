@@ -149,6 +149,48 @@ func TestModMountActsAsPeco(t *testing.T) {
 	}
 }
 
+// Looks carry the record IDs of the companion and the mount, so the
+// client draws a record's art. A mount of art keeps the body on foot,
+// which the client draws over the mount (decision 0036).
+func TestLooksCarryCompanionsAndMounts(t *testing.T) {
+	z, p := hunterZone(t, reference.Renewal, 11, mobLunatic)
+	owl, _ := withModCompanions(t, z)
+	p.char.Skills[skill.IDFalcon] = 1
+	z.recalc(p)
+	p.entity.lookChanged = false
+	if !z.setCompanion(p, owl) || p.Look.Companion != 10000 || !p.entity.lookChanged || p.Look.message().GetCompanion() != 10000 {
+		t.Fatalf("look %+v with the owl", p.Look)
+	}
+	z.setCompanion(p, nil)
+	if p.Look.Companion != 0 {
+		t.Errorf("look %+v without a companion", p.Look)
+	}
+
+	k, knight, _ := knightZone(t, reference.Renewal, javelin, 0)
+	_, horse := withModCompanions(t, k)
+	art, err := companion.Mounts.Build("example.test:Pony", "example.test", 10001, map[string]any{
+		"look": "mod/example.test/sprite/mount/Pony", "acts_as": "peco_peco",
+		"requires": []any{map[string]any{"skill": "KN_RIDING"}},
+	}, testCompanionNames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	k.Mods.Companions.Add(companion.Mounts, art)
+	if !k.setMount(knight, horse) || knight.Look.Mount != 10000 || knight.Look.Job != 4014 {
+		t.Errorf("look %+v on a horse without art", knight.Look)
+	}
+	if !k.setMount(knight, art) || knight.Look.Mount != 10001 || knight.Look.Job != 4008 || !knight.riding() {
+		t.Errorf("look %+v on a pony of art: want the mount and the body on foot", knight.Look)
+	}
+	if knight.record.Options&companion.OptionRiding == 0 {
+		t.Error("the pony of art does not set the riding bit")
+	}
+	k.setMount(knight, nil)
+	if knight.Look.Mount != 0 || knight.Look.Job != 4008 {
+		t.Errorf("look %+v after the ride", knight.Look)
+	}
+}
+
 // pc_jobchange removes the companion and mount the new job does not meet
 // requires for, and always the Madogear.
 func TestJobChangeDropsCompanions(t *testing.T) {

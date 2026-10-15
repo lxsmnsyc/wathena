@@ -2611,6 +2611,17 @@ Opens a shop for the player, as player:open_shop, and buys, as the shop window's
 | `shop` | `string` | A shop's full record name of data/npcs.yml, such as example.arena:Prize Desk. |
 | `items` | `table<integer, integer>` | Item IDs and the amount of each to buy. |
 
+#### `testWorld:plan_restart(minutes, reason)`
+
+Plans a restart that many minutes from the test's time, as staff do on the admin screens: restart_planned runs with { at, reason } in the world's zone, and the lines its handlers send go out. Nothing restarts.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `minutes` | `integer` | 1 to 10080, as the admin screens allow. |
+| `reason` | `string` | 1 to 255 characters. |
+
 #### `testWorld:get_mails(player) → wa.TestMail[]`
 
 The player's mails, oldest first, after the mail sent so far arrived.

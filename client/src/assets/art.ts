@@ -79,6 +79,19 @@ export function viewSprite(view: number): string | undefined {
   return views.get(view);
 }
 
+/**
+ * The art of a companion record, by the record ID in a look, when the
+ * record names art (decision 0036).
+ */
+export function companionSprite(id: number): string | undefined {
+  return id === 0 ? undefined : data?.companions[String(id)];
+}
+
+/** The art of a mount record, by the record ID in a look, when it names art. */
+export function mountSprite(id: number): string | undefined {
+  return id === 0 ? undefined : data?.mounts[String(id)];
+}
+
 // The names of mods' records (review decision 40). Core's records keep
 // the names of the asset build's tables and of the client's tables.
 

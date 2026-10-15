@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"go.yaml.in/yaml/v3"
 )
 
 func TestSplitPassword(t *testing.T) {
@@ -35,5 +37,23 @@ func TestReadPassword(t *testing.T) {
 	}
 	if _, err := readPassword(filepath.Join(t.TempDir(), "missing")); err == nil {
 		t.Error("a missing file was read")
+	}
+}
+
+// TestOwnersHint: the lines that world new prints are YAML that names the
+// account in staff.owners (decision 0036).
+func TestOwnersHint(t *testing.T) {
+	hint := ownersHint("Admin")
+	_, block, ok := strings.Cut(hint, "\n")
+	if !ok {
+		t.Fatalf("no config lines: %q", hint)
+	}
+	var cfg struct {
+		Staff struct {
+			Owners []string `yaml:"owners"`
+		} `yaml:"staff"`
+	}
+	if err := yaml.Unmarshal([]byte(block), &cfg); err != nil || len(cfg.Staff.Owners) != 1 || cfg.Staff.Owners[0] != "Admin" {
+		t.Errorf("%q: %+v, %v", block, cfg, err)
 	}
 }

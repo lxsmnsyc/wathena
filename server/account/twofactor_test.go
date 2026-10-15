@@ -700,3 +700,67 @@ func newGateway(t *testing.T, gw *gateway.Gateway) string {
 	t.Cleanup(srv.Close)
 	return "ws" + strings.TrimPrefix(srv.URL, "http")
 }
+
+// TestBanEndsAccountSessions: a ban ends every session of the account on
+// the account pages, its logins that wait for a code, and its unused
+// game tickets (decision 0036). Other accounts keep theirs.
+func TestBanEndsAccountSessions(t *testing.T) {
+	clock := &fakeClock{now: time.Now()}
+	e := setup(t, twoFactor(t, clock))
+	c := e.c
+	e.signup(c, "Banned_1", password)
+	e.makeCharacter(c, "Banned Hero", "0")
+	e.play(c, "0")
+	e.enableTOTP(c, clock)
+	if code, _ := e.ticket(c, clientOrigin); code != http.StatusOK {
+		t.Fatalf("ticket: %d", code)
+	}
+	// A second browser waits for its code.
+	waiting := e.newClient()
+	if resp, body := e.login(waiting, "Banned_1", password, nil); resp.StatusCode != http.StatusSeeOther ||
+		!strings.HasPrefix(resp.Header.Get("Location"), "/account/login/code") {
+		t.Fatalf("login: %d %s", resp.StatusCode, body)
+	}
+	other := e.newClient()
+	e.signup(other, "Bystander_1", password)
+
+	ctx := context.Background()
+	var id int64
+	if err := e.admin.QueryRow(ctx, "SELECT id FROM accounts WHERE name = 'Banned_1'").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	n, err := e.svc.EndAccountSessions(ctx, id)
+	if err != nil || n != 1 {
+		t.Fatalf("ended %d sessions, %v", n, err)
+	}
+	var sessions, pending, tickets int
+	if err := e.admin.QueryRow(ctx, `SELECT
+		(SELECT count(*) FROM account_sessions WHERE account_id = $1 AND revoked_at IS NULL),
+		(SELECT count(*) FROM account_pending_logins WHERE account_id = $1),
+		(SELECT count(*) FROM game_tickets WHERE account_id = $1)`, id).Scan(&sessions, &pending, &tickets); err != nil {
+		t.Fatal(err)
+	}
+	if sessions != 0 || pending != 0 || tickets != 0 {
+		t.Errorf("after the ban: %d live sessions, %d pending logins, %d tickets", sessions, pending, tickets)
+	}
+	resp, err := c.Get(e.srv.URL + "/account/characters")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusSeeOther || !strings.HasPrefix(resp.Header.Get("Location"), "/account/login") {
+		t.Errorf("characters page after the ban: %d %s", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	// The waiting login's code page is gone.
+	resp, err = waiting.Get(e.srv.URL + "/account/login/code")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusSeeOther || !strings.HasPrefix(resp.Header.Get("Location"), "/account/login?") {
+		t.Errorf("code page after the ban: %d %s", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	if body, _ := e.page(other, "/account/characters"); !strings.Contains(body, "Bystander_1") {
+		t.Errorf("another account lost its session: %s", body)
+	}
+}

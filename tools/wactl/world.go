@@ -19,7 +19,8 @@ import (
 // worldNew makes a world in a database that roles.sql prepared:
 //  1. It applies pending migrations.
 //  2. It makes the world row with a new secret root seed.
-//  3. It makes the first staff account with a password.
+//  3. It makes the first account with a password.
+//  4. It prints the staff.owners line that makes the account an owner.
 //
 // Steps 2 and 3 run in one transaction, so a failure leaves no world.
 func worldNew(args []string) error {
@@ -27,8 +28,8 @@ func worldNew(args []string) error {
 	database := fs.String("database", "", "PostgreSQL URL of the migrator role; prefer the "+migrateEnv+" environment variable")
 	name := fs.String("name", "wAthena", "the world's name, 1 to 64 characters")
 	ruleset := fs.String("ruleset", "renewal", "the base ruleset: renewal or pre-renewal. waserver's mode must match it")
-	admin := fs.String("admin", "", "name of the first staff account: 4 to 24 ASCII letters, digits and underscores, starting with a letter")
-	passwordFile := fs.String("admin-password-file", "", "file with the staff account's password on its first line, or - for standard input")
+	admin := fs.String("admin", "", "name of the first account, for the config's staff.owners: 4 to 24 ASCII letters, digits and underscores, starting with a letter")
+	passwordFile := fs.String("admin-password-file", "", "file with the account's password on its first line, or - for standard input")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -82,8 +83,18 @@ func worldNew(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("made the world %q (%s) and the staff account %s (id %d)\n", *name, *ruleset, *admin, id)
+	fmt.Printf("made the world %q (%s) and the account %s (id %d)\n", *name, *ruleset, *admin, id)
+	fmt.Print(ownersHint(*admin))
 	return nil
+}
+
+// ownersHint tells the operator how to make the account an owner. Roles
+// come only from the config and the admin screens (decision 0028), so
+// the account has none until waserver.yml names it.
+func ownersHint(admin string) string {
+	return "The account has no staff role yet. To make it the owner, add staff.owners to waserver.yml and restart waserver:\n" +
+		"staff:\n" +
+		"  owners: [" + admin + "]\n"
 }
 
 // readPassword reads the first line of a file, or of standard input for

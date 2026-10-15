@@ -32,7 +32,7 @@ func TestLantern(t *testing.T) {
 		t.Fatal(err)
 	}
 	b, err := BuildArt(dir, "", 1)
-	if err != nil || b.Assets != 14 {
+	if err != nil || b.Assets != 17 {
 		t.Fatalf("art: %v, %+v", err, b)
 	}
 	l, err := e.Load(ctx, dir, "", mod.Renewal, nil)
@@ -40,7 +40,7 @@ func TestLantern(t *testing.T) {
 		t.Fatal(err)
 	}
 	results, err := e.RunTests(ctx, l, "", func(CaseResult) {})
-	if err != nil || len(results) != 5 {
+	if err != nil || len(results) != 7 {
 		t.Fatalf("tests: %v, %d cases", err, len(results))
 	}
 	for _, r := range results {
@@ -81,6 +81,17 @@ func TestLantern(t *testing.T) {
 		if d.AegisName == "example.lantern:Lantern_Hat" && d.View != gamedata.ItemArtViews {
 			t.Errorf("the hat's view is %d", d.View)
 		}
+	}
+	// The shield and the wisp of decision 0036: a shield's worn sprite
+	// under the next view, and the wisp's art under its record ID.
+	shield := doc.Items[id("example.lantern:Lantern_Shield")]
+	if shield.ViewSprite != "mod/example.lantern/sprite/shield/Lantern_Shield" || shield.View != gamedata.ItemArtViews+1 ||
+		shield.Icon != "mod/example.lantern/icon/item/Lantern_Shield" || shield.Slots != 1 {
+		t.Errorf("shield %+v", shield)
+	}
+	wisp := l.Zone.Companions.Companions.ByName("example.lantern:Lantern_Wisp")
+	if wisp == nil || doc.Companions[strconv.Itoa(wisp.ID)] != "mod/example.lantern/sprite/companion/Lantern_Wisp" {
+		t.Errorf("wisp %+v, companions %v", wisp, doc.Companions)
 	}
 	if _, ok := doc.Items["501"]; ok {
 		t.Error("a core item without art has an entry")

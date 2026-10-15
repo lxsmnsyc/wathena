@@ -48,10 +48,11 @@ Lists the database migrations, or applies the pending ones. They need the migrat
 
 `wactl world new --admin <name> --admin-password-file <file or -> [--name <world name>] [--ruleset renewal|pre-renewal]`
 
-Makes a world in a database that `deploy/postgres/roles.sql` prepared. It applies pending migrations, then makes the world's row and the first staff account in one transaction:
+Makes a world in a database that `deploy/postgres/roles.sql` prepared. It applies pending migrations, then makes the world's row and the first account in one transaction:
 
 - The world row has the name, the ruleset, and a secret 32-byte root seed from `crypto/rand` (docs/specs/rng-v1.md). `waserver` refuses to start without it, and when its `--mode` is not the ruleset.
-- The staff account has the given name and password, with the account service's rules. The password is the first line of the file, or of standard input for `-`. Staff accounts have no staff tools yet.
+- The account has the given name and password, with the account service's rules. The password is the first line of the file, or of standard input for `-`.
+- The account has no staff role. The command prints the `staff.owners` lines to add to `waserver.yml`, which make it the owner (decision 0036).
 
 It refuses a database that already has a world. It needs the migrator role, as `wactl migrate` does.
 

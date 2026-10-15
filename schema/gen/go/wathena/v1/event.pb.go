@@ -7786,6 +7786,9 @@ type Look struct {
 	xxx_hidden_HeadBottom uint32                 `protobuf:"varint,9,opt,name=head_bottom,json=headBottom,proto3"`
 	xxx_hidden_Robe       uint32                 `protobuf:"varint,10,opt,name=robe,proto3"`
 	xxx_hidden_Sex        uint32                 `protobuf:"varint,11,opt,name=sex,proto3"`
+	xxx_hidden_WeaponView uint32                 `protobuf:"varint,12,opt,name=weapon_view,json=weaponView,proto3"`
+	xxx_hidden_Companion  uint32                 `protobuf:"varint,13,opt,name=companion,proto3"`
+	xxx_hidden_Mount      uint32                 `protobuf:"varint,14,opt,name=mount,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -7892,6 +7895,27 @@ func (x *Look) GetSex() uint32 {
 	return 0
 }
 
+func (x *Look) GetWeaponView() uint32 {
+	if x != nil {
+		return x.xxx_hidden_WeaponView
+	}
+	return 0
+}
+
+func (x *Look) GetCompanion() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Companion
+	}
+	return 0
+}
+
+func (x *Look) GetMount() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Mount
+	}
+	return 0
+}
+
 func (x *Look) SetBody(v uint32) {
 	x.xxx_hidden_Body = v
 }
@@ -7936,6 +7960,18 @@ func (x *Look) SetSex(v uint32) {
 	x.xxx_hidden_Sex = v
 }
 
+func (x *Look) SetWeaponView(v uint32) {
+	x.xxx_hidden_WeaponView = v
+}
+
+func (x *Look) SetCompanion(v uint32) {
+	x.xxx_hidden_Companion = v
+}
+
+func (x *Look) SetMount(v uint32) {
+	x.xxx_hidden_Mount = v
+}
+
 type Look_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -7950,6 +7986,17 @@ type Look_builder struct {
 	HeadBottom uint32
 	Robe       uint32
 	Sex        uint32
+	// weapon_view is the view the server gave the right hand's weapon when
+	// its record names a view_sprite, from 1,000,000, or 0. The client data
+	// names its sprite. weapon stays the weapon type. A shield's view is in
+	// shield, as before.
+	WeaponView uint32
+	// companion and mount are the record IDs of the player's companion and
+	// mount, from data/companions.yml and data/mounts.yml, or 0 for none.
+	// The client data names the art of records that have it. The option
+	// bits still show the core record each acts as.
+	Companion uint32
+	Mount     uint32
 }
 
 func (b0 Look_builder) Build() *Look {
@@ -7967,6 +8014,9 @@ func (b0 Look_builder) Build() *Look {
 	x.xxx_hidden_HeadBottom = b.HeadBottom
 	x.xxx_hidden_Robe = b.Robe
 	x.xxx_hidden_Sex = b.Sex
+	x.xxx_hidden_WeaponView = b.WeaponView
+	x.xxx_hidden_Companion = b.Companion
+	x.xxx_hidden_Mount = b.Mount
 	return m0
 }
 
@@ -9709,7 +9759,9 @@ type ChatMessage_builder struct {
 
 	Channel ChatChannel
 	// from is the speaker's entity ID for local chat, 0 otherwise. An NPC
-	// that speaks aloud, as rAthena's npctalk, is a speaker too.
+	// that speaks aloud, as rAthena's npctalk, is a speaker too. A staff
+	// member hidden with @hide has no entity the player knows, so its
+	// local chat has from 0 and from_name set.
 	From     uint32
 	FromName string
 	Text     string
@@ -20998,7 +21050,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x06amount\x18\x02 \x01(\rR\x06amount\x12\x13\n" +
 	"\x05sub_x\x18\x03 \x01(\rR\x04subX\x12\x13\n" +
 	"\x05sub_y\x18\x04 \x01(\rR\x04subY\x12\x18\n" +
-	"\adropped\x18\x05 \x01(\bR\adropped\"\x9b\x02\n" +
+	"\adropped\x18\x05 \x01(\bR\adropped\"\xf0\x02\n" +
 	"\x04Look\x12\x12\n" +
 	"\x04body\x18\x01 \x01(\rR\x04body\x12\x12\n" +
 	"\x04hair\x18\x02 \x01(\rR\x04hair\x12\x1d\n" +
@@ -21014,7 +21066,11 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"headBottom\x12\x12\n" +
 	"\x04robe\x18\n" +
 	" \x01(\rR\x04robe\x12\x10\n" +
-	"\x03sex\x18\v \x01(\rR\x03sex\"P\n" +
+	"\x03sex\x18\v \x01(\rR\x03sex\x12\x1f\n" +
+	"\vweapon_view\x18\f \x01(\rR\n" +
+	"weaponView\x12\x1c\n" +
+	"\tcompanion\x18\r \x01(\rR\tcompanion\x12\x14\n" +
+	"\x05mount\x18\x0e \x01(\rR\x05mount\"P\n" +
 	"\fEntityVanish\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x120\n" +
 	"\x06reason\x18\x02 \x01(\x0e2\x18.wathena.v1.VanishReasonR\x06reason\"\x94\x01\n" +

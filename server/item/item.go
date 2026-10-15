@@ -145,7 +145,8 @@ type Def struct {
 	ArmorLevel  int  `json:"armor_level"`
 	Refineable  bool `json:"refineable"`
 	// View is the sprite the item shows on a character, as item_data's
-	// look.
+	// look. An item whose record names a view_sprite gets a view from
+	// ArtViews.
 	View int `json:"view"`
 	// Jobs is item_data's class_base. nil is every job.
 	Jobs *JobMask `json:"jobs"`
@@ -259,3 +260,12 @@ func (d *Def) Consumable() bool {
 // itemdb_isstackable2, and no unique ID, since each new copy of an item
 // with UniqueId gets its own.
 func (d *Def) stacks() bool { return d.Stackable && !d.UniqueID }
+
+// ArtViews is the first view ID given to items whose record names a
+// view_sprite (review decision 40). The server gives them at each start,
+// in item ID order, and the client data names their sprites.
+const ArtViews = 1_000_000
+
+// ArtView reports whether a view is one the server gave an item with a
+// view_sprite.
+func ArtView(view int) bool { return view >= ArtViews }

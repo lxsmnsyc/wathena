@@ -11,9 +11,9 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createStaffAccount = `-- name: CreateStaffAccount :one
+const createAdminAccount = `-- name: CreateAdminAccount :one
 WITH a AS (
-    INSERT INTO accounts (name, staff) VALUES ($2, true)
+    INSERT INTO accounts (name) VALUES ($2)
     ON CONFLICT DO NOTHING
     RETURNING id
 )
@@ -22,15 +22,15 @@ SELECT id, $1 FROM a
 RETURNING account_id
 `
 
-type CreateStaffAccountParams struct {
+type CreateAdminAccountParams struct {
 	Hash string
 	Name string
 }
 
-// CreateStaffAccount makes a staff account and its password in one
+// CreateAdminAccount makes the first account and its password in one
 // statement. It returns no row when the name is taken.
-func (q *Queries) CreateStaffAccount(ctx context.Context, arg CreateStaffAccountParams) (int64, error) {
-	row := q.db.QueryRow(ctx, createStaffAccount, arg.Hash, arg.Name)
+func (q *Queries) CreateAdminAccount(ctx context.Context, arg CreateAdminAccountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createAdminAccount, arg.Hash, arg.Name)
 	var account_id int64
 	err := row.Scan(&account_id)
 	return account_id, err
@@ -50,9 +50,9 @@ type CreateWorldParams struct {
 	GeneratorVersion int
 }
 
-// Queries for the world row and staff accounts. `wactl world new` runs
-// CreateWorld and CreateStaffAccount as the migrator role. waserver runs
-// World as wathena_game.
+// Queries for the world row and its first account. `wactl world new`
+// runs CreateWorld and CreateAdminAccount as the migrator role. waserver
+// runs World as wathena_game.
 // CreateWorld makes the world row. It makes nothing when the world
 // exists.
 func (q *Queries) CreateWorld(ctx context.Context, arg CreateWorldParams) (int64, error) {

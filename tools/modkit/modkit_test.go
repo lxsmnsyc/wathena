@@ -85,7 +85,13 @@ local timers = require "wa.timers"
 local variables = require "wa.variables"
 local ticks = variables.server_integer "ticks"
 local kills = variables.character_integer "kills"
+local restart_reason = variables.server_string "restart_reason"
+local restart_at = variables.server_integer "restart_at"
 return function()
+  events.on("restart_planned", function(restart)
+    restart_reason:set(restart.reason)
+    restart_at:set(restart.at)
+  end)
   events.on("login", function(player)
     timers.after(5000, function() ticks:add(1) end)
   end)
@@ -161,6 +167,16 @@ return function()
     testing.expect(function() testing.expect(1).to_be(2) end).to_fail_with("expected 2, got 1")
   end)
 
+  testing.case("a planned restart fires restart_planned", function(world)
+    world:set_time("2026-10-31 19:58", "UTC")
+    world:plan_restart(10, "new maps")
+    testing.expect(variables.server_string("restart_reason"):get()).to_be("new maps")
+    testing.expect(variables.server_integer("restart_at"):get()).to_be(1793477280)
+    testing.expect(function() world:plan_restart(0, "now") end).to_fail_with("the minutes are 1 to 10080")
+    testing.expect(function() world:plan_restart(5, "") end).to_fail_with("the reason is 1 to 255 characters")
+    testing.expect(function() world:plan_restart(1.5, "x") end).to_fail_with("the minutes are an integer")
+  end)
+
   testing.case("a world runs one map", function(world)
     world:new_player { map = "prontera", x = 150, y = 150 }
     testing.expect(function() world:new_player { map = "izlude", x = 1, y = 1 } end).to_fail_with("runs one map")
@@ -197,7 +213,7 @@ end`,
 			t.Errorf("%s: %v %v", r.Name, r.Err, r.Logs)
 		}
 	}
-	if len(results) != 9 {
+	if len(results) != 10 {
 		t.Errorf("%d results", len(results))
 	}
 	if got := failures["fails at its line"]; got != "tests/fail_test.lua:5: expected 3, got 2" {

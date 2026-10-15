@@ -33,7 +33,7 @@ commands:
   mod types        write the Lua Language Server definitions into a mod
   migrate status   list the database migrations and which are applied
   migrate up       apply pending database migrations
-  world new        apply migrations, make the world and its first staff account
+  world new        apply migrations, make the world and its first account
   world backup     write the database to a file with pg_dump
   world restore    load a backup into an empty database with pg_restore
 `

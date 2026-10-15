@@ -45,7 +45,7 @@ The server places every character and item:
 - Double-click a card, or press Enter on it, to put it into an item. A list shows the items that can take it: not worn, not a card, worn where the card fits, and with a free card slot. Choose one to insert the card. When no item can take it, the client says so.
 - The Equip button or Alt+Q opens the equipment window: head top, head mid, head low, armor, right and left hand, garment, shoes, right and left accessory, and ammo. Each shows the worn item with its refine level and its cards. Costumes and shadow gear share one row at the end. Click a worn item to take it off. Failed equips and card inserts say why in the chat log.
 - Players show their weapon, shield, headgear and garment. The weapon sprite comes from the weapon type's view in `data/weapons.yml`. When a player's equipment changes, the client loads the new look and keeps the player's place, direction and action.
-- Players show their falcon or warg beside them, `sprite/companion/<look>`, and their cart one cell behind, `sprite/cart/<n>`, from their option bits. A mounted player shows its mounted body: a Peco Peco rider, a third class mount such as a Rune Knight's dragon, or the job's costume mount look from `data/jobs.yml`. They change when the options or look change.
+- Players show their falcon or warg beside them, `sprite/companion/<look>`, and their cart one cell behind, `sprite/cart/<n>`, from their option bits. A companion or mount record with art shows its art instead ("Mod names and art"). A mounted player shows its mounted body: a Peco Peco rider, a third class mount such as a Rune Knight's dragon, or the job's costume mount look from `data/jobs.yml`. They change when the options or look change.
 - The top bar shows HP, base and job levels, and exp as a percent of the next level.
 - The Status button or Alt+A opens the status window: STR to LUK with the cost of the next point and a "+" button that raises the stat by 1, and ATK, MATK, DEF, MDEF, HIT, FLEE, CRIT, ASPD, status points and weight. "+" is enabled when the status points pay for the raise.
 - The Skills button or Alt+S opens the skill window: each skill with its level, maximum level and SP cost, the skill points left, and a "+" button that learns a level while points remain. Skills not learned yet show the skills they need. Passive skills are listed but cannot be cast. Double-click a skill or press Use to cast it, and pick a lower level in its level list. Skills show as text badges, since the asset build has no skill icons yet.
@@ -132,7 +132,8 @@ The server's `/client-data.json`, format version 2, names the records of mods an
 - mod monsters' names on hover, mod skills' names in the skill window and on the hotkey bar, and mod jobs' names in the level line, the party, guild and booking windows;
 - skill icons of art in the skill window and on the hotkey bar, in place of the text badge, and a skill's `effects` at their moments;
 - monster sounds of art for attacks, hurts, deaths and walks, while sound is on;
-- an item's `view_sprite` on the head or back, by the view the server gave it;
+- an item's `view_sprite` on the head, the back, the arm or in the hand, by the view the server gave it: headgear, garments and shields by their view, and a weapon by the look's `weapon_view` (docs/decisions/0036-phase-6-review-changes.md);
+- companions and mounts of art, by the record IDs in the look: a companion beside the player, as the falcon, and a mount at the player's cell, under the body on foot;
 - a mod job's body sprites, with the head, weapon and other parts of the job it looks like.
 
 The name of a unit or an item on the ground shows under it while the mouse is over it.

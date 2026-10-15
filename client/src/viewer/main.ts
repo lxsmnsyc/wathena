@@ -1302,7 +1302,11 @@ if (serverURL === null) {
     };
     view.onChat = (from, speaker, text, color, lineId) => {
       log.add(speaker, text, from === view.self, color, lineId);
-      bubbles.say(from, chatLine(speaker, text), performance.now());
+      // A staff member hidden with @hide speaks without an entity, so its
+      // line shows in the log only.
+      if (from !== 0) {
+        bubbles.say(from, chatLine(speaker, text), performance.now());
+      }
     };
     // Server lines and announcements, such as a world event's boss that
     // appears, show in every tab.

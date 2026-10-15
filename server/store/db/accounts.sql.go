@@ -182,6 +182,28 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 	return err
 }
 
+const deleteAccountPendingLogins = `-- name: DeleteAccountPendingLogins :exec
+DELETE FROM account_pending_logins WHERE account_id = $1
+`
+
+// DeleteAccountPendingLogins removes the logins of an account that wait
+// for a second factor.
+func (q *Queries) DeleteAccountPendingLogins(ctx context.Context, accountID int64) error {
+	_, err := q.db.Exec(ctx, deleteAccountPendingLogins, accountID)
+	return err
+}
+
+const deleteAccountTickets = `-- name: DeleteAccountTickets :exec
+DELETE FROM game_tickets WHERE account_id = $1
+`
+
+// DeleteAccountTickets removes the game tickets of an account that
+// nobody used.
+func (q *Queries) DeleteAccountTickets(ctx context.Context, accountID int64) error {
+	_, err := q.db.Exec(ctx, deleteAccountTickets, accountID)
+	return err
+}
+
 const deleteExpired = `-- name: DeleteExpired :one
 WITH t AS (
     DELETE FROM game_tickets WHERE expires_at <= now()
@@ -315,6 +337,34 @@ func (q *Queries) RedeemTicket(ctx context.Context, tokenHash []byte) (RedeemTic
 		&i.AccountName,
 	)
 	return i, err
+}
+
+const revokeAccountSessions = `-- name: RevokeAccountSessions :many
+UPDATE account_sessions SET revoked_at = now()
+WHERE account_id = $1 AND revoked_at IS NULL
+RETURNING id
+`
+
+// RevokeAccountSessions ends every live session of an account, for a
+// ban (decision 0036), and returns their IDs.
+func (q *Queries) RevokeAccountSessions(ctx context.Context, accountID int64) ([]int64, error) {
+	rows, err := q.db.Query(ctx, revokeAccountSessions, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const revokeSession = `-- name: RevokeSession :many

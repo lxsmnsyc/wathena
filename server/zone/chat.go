@@ -24,13 +24,18 @@ const ChatRange = ViewRange - 5
 // chatEvents are the chat lines a player hears this tick: those of every
 // player within ChatRange that it sees, itself included. rAthena sends a
 // line to the players in range (AREA_CHAT_WOC) and echoes it to the
-// speaker.
+// speaker. A staff member hidden with @hide is heard too, as rAthena
+// sends its line to the area. The player does not know its entity, so
+// the line comes with from 0 and the speaker's name.
 func (z *Zone) chatEvents(p *Player) []*wathenav1.Event {
 	var events []*wathenav1.Event
 	me := p.entity
 	for _, c := range z.chats {
 		id, ok := p.netIDs.get(c.speaker)
-		if !ok || max(abs(c.speaker.x-me.x), abs(c.speaker.y-me.y)) > ChatRange {
+		if !ok && (!gmHidden(c.speaker) || !z.entities.has(c.speaker)) {
+			continue
+		}
+		if max(abs(c.speaker.x-me.x), abs(c.speaker.y-me.y)) > ChatRange {
 			continue
 		}
 		m := wathenav1.ChatMessage_builder{

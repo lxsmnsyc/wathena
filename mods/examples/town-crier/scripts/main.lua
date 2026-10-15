@@ -34,4 +34,14 @@ return function()
       crier:send(message.player.name .. " joined the crowd.")
     end
   end, { channel = "public" })
+
+  -- Staff planned a restart, or cancelled it. The crier tells the
+  -- channel, so its members can finish what they do.
+  events.on("restart_planned", function(restart)
+    if restart.cancelled then
+      crier:send("The planned restart is off.")
+      return
+    end
+    crier:send("A restart is planned: " .. restart.reason .. ". Finish what you are doing.")
+  end)
 end

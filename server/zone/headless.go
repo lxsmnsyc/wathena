@@ -9,12 +9,14 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/restart"
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/staff"
@@ -1111,6 +1113,25 @@ func (h *Headless) ClearEvent(run int64) { h.z.clearEvent(run) }
 // SetStaffRole gives a test player's account a role of the default
 // staff roles, as if it logged in with a second factor. "" takes the
 // role away.
+// PlanRestart plans a restart minutes from now for world:plan_restart,
+// as the admin screens do (decision 0036): it runs the zone's
+// restart_planned handlers with the time and the reason. Nothing
+// restarts. The minutes and the reason follow the planner's limits: 1
+// to 10,080 minutes, and 1 to 255 characters.
+func (h *Headless) PlanRestart(minutes int64, reason string) error {
+	if minutes < int64(restart.MinLead/time.Minute) || minutes > int64(restart.MaxLead/time.Minute) {
+		return fmt.Errorf("the minutes are %d to %d", restart.MinLead/time.Minute, restart.MaxLead/time.Minute)
+	}
+	if n := utf8.RuneCountInString(reason); n == 0 || n > 255 {
+		return errors.New("the reason is 1 to 255 characters")
+	}
+	h.z.restartPlanned(modscript.RestartPlanned{At: h.Now().Add(time.Duration(minutes) * time.Minute), Reason: reason})
+	// The lines the handlers sent go out, as after world:chat.
+	h.step(0)
+	h.step(0)
+	return nil
+}
+
 func (h *Headless) SetStaffRole(player int64, role string) error {
 	p, err := h.player(player)
 	if err != nil {
