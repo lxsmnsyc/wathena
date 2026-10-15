@@ -989,6 +989,12 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Performance.** 30 FPS on mid-range phones, with the rendering resolution capped at twice the CSS size.
     - **Checks.** Phone and tablet emulation in `pnpm check:browsers` with a scripted touch run, and a test by the user on a real phone against the dev server on the local network.
 
+40. The phase 6 exit check (phase 6 step 8). The user approved these on 2026-10-15. No Lua API or protocol changes:
+    - **Mod text and art in the client.** `/client-data.json` gains the names and descriptions of mod items and the display names of mod monsters, skills and jobs, and its format version becomes 2. The client draws skill icons and effects, monster sounds, worn item sprites and companion art that the server already sends.
+    - **The exit check.** A scripted browser run with three players, on desktop and on a phone profile, in `scripts/check.sh browsers`: walking, fighting, loot, levels, a job change, equipment, skills and NPCs; every tier 1 system of strategy section 11.3; an admin run that finds a player, reads their item history, mutes them and sees the mute in the game; and a mod run where a sample mod's item, monster, skill and job show their own names and art.
+    - **Step 3 changes.** A player's chat line that starts with `@` goes out as normal chat when the player has no permission for any command, as in rAthena. Lifting a permanent ban needs `moderation.ban_permanent`.
+    - **Then** one review of next steps 19 to 25.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
@@ -1249,3 +1255,19 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - Pack sprites: an indexed PNG's index 0 is transparent, a sprite without a frame file is one still frame in 8 directions, and the frame file's limits are 4,096 frames, 64 actions and 256 frames per direction.
    - glTF models must fit the profile already. Ogg and MP3 sounds and pack map folders are rejected for now. Loose RO maps build, but zones do not run mods' maps yet, and the map fields of review decision 38, music and minimap, have no record yet.
    - The client draws mod item icons, dropped items, monster and NPC sprites, and job bodies. Skill icons and effects, monster sounds, view sprites and companions of art are sent, and the client does not draw them yet. Mod items show as `Item <id>`, since the client data has no item names.
+25. Build review decision 39: touch input, with gestures by pointer type, the joystick, on-screen controls, small screen panels, long-press item drags, browser behavior, phone layouts of the account pages and admin screens, and the checks. No Lua API or protocol changes. Done on 2026-10-15 ([decision 0034](../decisions/0034-touch-input.md)). Details to review:
+   - A pen acts as a mouse. Only a finger has the gestures and the joystick.
+   - A long press on a monster, an NPC or an item does nothing, as a right click there does nothing. While a skill waits for its target, a long press anywhere cancels it, as a right click does.
+   - A press on the ground starts a hold, which walks toward the finger, as moving the finger does.
+   - Two fingers: the distance zooms, a twist and a sideways move turn the camera, and an upward move tilts it.
+   - The joystick aims 4 cells ahead, and closer, or 45 degrees to a side, when a wall is in the way. A path more than 2 steps longer than the distance counts as blocked. Walks go out at most every 250 ms and never twice to one cell. A release sends one walk to the cell one step past the next cell, so the player stops within two cells.
+   - The joystick shows at 128 px in the lower left corner, and the option is saved in the browser, not on the account.
+   - The window buttons fold into a Menu button below 600 px wide. The Options button and window are new, with one setting.
+   - Below 600 px wide, panels open under the top bar and above the joystick and hotkey bar. While a trade, storage, cart, mail or store setup is open, the inventory is a bottom sheet over the joystick. A panel's bar moves it up and down only, and the sheet does not move.
+   - Every window has a title bar with its name, also with a mouse on a desktop. A press on a window brings it to the front.
+   - A long press lifted in place does the right click of the row, such as storing or offering the item. Two taps within 450 ms do a double click.
+   - The chat of touch screens opens with the Chat button over the game view, with a Send button. Send on an empty line, or the focus leaving the chat, closes it. While closed, it shows its latest lines and lets touches through.
+   - Text selection is off in touch mode on the whole page except text fields, not only in the game view.
+   - The equipment window and the hotkey bar take no item drops, as with the mouse. An item is equipped by a double tap.
+   - The dev server's `WATHENA_GAME` forwards `/ws`, `/client-data.json` and `/emblems`, and `WATHENA_HTTPS_CERT` and `WATHENA_HTTPS_KEY` serve HTTPS, since `crypto.subtle` needs a secure page.
+   - `check:browsers` runs the touch checks in Chromium only, through the Chrome DevTools Protocol, and prints frame times without failing on them.
