@@ -995,6 +995,16 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Step 3 changes.** A player's chat line that starts with `@` goes out as normal chat when the player has no permission for any command, as in rAthena. Lifting a permanent ban needs `moderation.ban_permanent`.
     - **Then** one review of next steps 19 to 25.
 
+41. Phase 6 review (2026-10-15). The user approved these on 2026-10-15:
+    - **Details accepted as built.** The details to review of next steps 18 to 26 are accepted as built, except as this decision changes them.
+    - **`accounts.staff`.** The column goes. `wactl world new --admin` prints the `staff.owners` line to add to the config.
+    - **`@hide`** lasts across logins, and a hidden staff member's local chat shows to others, as rAthena.
+    - **Bans** also end the account's web sessions.
+    - **Test helper.** `wa.testing` gains `world:plan_restart(minutes, reason)`, which fires `restart_planned`.
+    - **Data export.** Mod variables of the account and its characters join the export. New fields keep format version 1.
+    - **Art.** A protocol field carries companion and mount art, so the client draws them. Weapons and shields get worn sprites through `view_sprite`, as headgear and garments do.
+    - **Later.** Signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones running mods' maps, the inventory expansion voucher window, and the converter review of review decision 32.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
