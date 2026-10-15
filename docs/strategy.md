@@ -13,9 +13,9 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
-## Where work stands (2026-10-14)
+## Where work stands (2026-10-15)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 6 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day. Steps 1 to 7 are built.
 
 Done:
 
@@ -62,6 +62,12 @@ Done:
   - Art fields on items, monsters, NPCs, jobs, skills, companions and mounts, checked by `wactl mod validate`, and `wactl client-data validate` with `docs/client-data.md`.
   - The client loads core's manifest, then each mod's, and draws mod item icons, dropped items, monster and NPC sprites and job bodies, with placeholders for missing art.
   - The lantern sample mod with original art.
+- Phase 6 step 7, touch input ([decision 0034](decisions/0034-touch-input.md)):
+  - Gestures chosen by pointer type: tap, hold to walk, a long press for the player menu, pinch to zoom and two fingers to turn. The mouse and keyboard work as before.
+  - A joystick that walks by cells 4 ahead, at most 4 walks a second, and that the options can hide. A larger hotkey bar, a chat button with Send, and a Cancel skill button.
+  - Long-press drags into every window that takes items or skills, through the mouse's drop handlers. Title bars move windows with any pointer, and windows are full-width panels below 600 pixels.
+  - No double-tap zoom, pull-to-refresh or selection in the game view, the chat above the on-screen keyboard, and account pages and admin screens that fit 375 pixels.
+  - `pnpm check:browsers` plays a scripted touch run on iPhone, Android, tablet and landscape profiles, a mouse run, and prints frame times with CPU throttling.
 
 Open review items:
 
@@ -72,19 +78,20 @@ Open review items:
 - Next step 22's details to review, in proposal 0002, "Next steps".
 - Next step 23's details to review, in proposal 0002, "Next steps".
 - Next step 24's details to review, in proposal 0002, "Next steps".
+- Next step 25's details to review, in proposal 0002, "Next steps".
+- The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
 
 - Go is 1.27.2, which fixes 13 standard library bugs that govulncheck found in 1.27.1. gosec is built from `tools/gosec`, which asks for a newer golang.org/x/tools than gosec's own go.mod. Drop that module once a gosec release reads Go 1.27.2's export data.
-- `TestTradeRefused` (step 6) failed once under full load and passed 3 of 3 times alone. It may be a timing flake.
 - The disk was nearly full on 2026-10-05, and builds failed with "no space left on device". Keep at least 10 GB free. Test PostgreSQL containers that are killed leave unnamed Docker volumes behind. `docker volume prune` removes them.
 - The kRO client is extracted at `data/kro/client` (gitignored), and the original zip is deleted. It is the only copy. Build assets with `wactl assets build` and the source `grf:data/kro/client`.
 - The repository has no CI ([decision 0026](decisions/0026-local-checks.md)). Run `scripts/check.sh quick` before each commit and `scripts/check.sh` before a push.
 
 Next:
 
-1. Phase 6 (section 15, "Phase 6 in full"), with step 7, touch input, once next steps 19 to 24 are reviewed.
+1. Phase 6 (section 15, "Phase 6 in full"), with step 8, the phase 6 exit check, once next steps 19 to 25 are reviewed and the real-phone test is done.
 2. The open review items above, between phase 6 steps.
 3. Phase 7, procedural mode, is the largest phase left.
 
@@ -2746,7 +2753,17 @@ The order from here:
       - Tests: the pack and loose sources with fuzz tests for the frame file, the PNG and `pack.yaml`, loose files from the kRO client with `WATHENA_CLIENT`, the table merge with a fuzz test, the server's checks of corrupt, rehashed, missing, oversized and foreign builds, the serving of folder and `.zip` builds, the client's loading in vitest, and `TestModArt`, which downloads the fixture's icon and monster sprite by the IDs the server gave.
       - Checked in Chrome with a local server, placeholder assets and the lantern mod built with `wactl mod build-art`: the inventory showed the lantern icon for the Paper Lantern and Lantern Oil and the grey checkerboard placeholder for the Unlit Lantern, and the console logged `asset missing: icon/item/2000002` once. Three Lantern Ghosts stood on the placeholder map with their sprite, and screenshots 170 ms apart showed a ghost's body moving up and down in place between its idle frames. The Lamplighter showed its blue coat and lantern pole at 14,14. The network log showed `client-data.json`, then the mod's `manifest.json`, two shards, two WSPR files and one WebP from `/assets/mods/example.lantern/0.1.0/`.
       - Left: converting glTF files that do not fit the profile, Ogg and MP3 sounds, pack map folders (section 8.12), zones on mods' maps with music and minimap fields, drawing skill icons and effects, monster sounds, view sprites and companions of art in the client, and mod items' display names in the client, which show as `Item <id>`.
-   7. Touch input for mobile browsers.
+   7. Touch input for mobile browsers. Done on 2026-10-15 ([decision 0034](decisions/0034-touch-input.md), proposal 0002 review decision 39, and client/README.md, "Touch"):
+      - Gestures chosen by pointer type (`gestures.ts`): a tap does a left click, a finger held on the ground walks toward it, a long press of 500 ms does a right click, and two fingers zoom and turn the camera. OrbitControls keeps the mouse only.
+      - The joystick (`joystick.ts`, `touchControls.ts`) asks for a walk to a cell 4 cells ahead in the pushed direction, turned by the camera, through the client's pathfinder, at most every 250 ms. A release sends one walk to stop within two cells. The gateway has no walk limit of its own, and its zone queue of 1,024 commands stays far away. Options can hide it.
+      - On-screen controls in touch mode: a 3 by 3 hotkey bar of 52 px slots, the window buttons at 44 px and in a Menu below 600 px, a Chat button with Send, and Cancel skill.
+      - Title bars on every window move them with any pointer (`windows.ts`). Below 600 px wide, windows are full-width panels, and the inventory becomes a bottom sheet while a trade, storage, cart, mail or store setup is open.
+      - Long-press drags (`touch.ts`) send the mouse's `dragstart`, `dragover` and `drop` events with a client-made `DataTransfer`, so the inventory, storage, cart, trade, game view and hotkey bar take them. A long press in place does the right click, and two taps the double click.
+      - Browser behavior: `touch-action`, `overscroll-behavior` and no selection in the game view, the chat above the on-screen keyboard through `visualViewport`, 16 px text fields, safe areas, and portrait and landscape. The account pages and admin screens fit 375 px. The rendering resolution was already capped at 2.
+      - The dev server forwards the game with `WATHENA_GAME` and serves HTTPS with `WATHENA_HTTPS_CERT` and `WATHENA_HTTPS_KEY`, for a test on a phone on the local network.
+      - Tests: vitest for the gesture recognizer, the joystick math and the walk limit, and the settings. `pnpm check:browsers` gains `phone` (the admin screens and account pages at 375 px, the pages rendered by `TestPageSamples`) and `touch`: a `waserver --dev` with the fixture mod, an iPhone 13 run of every touch activity with a trade against a Pixel 7, an iPad and a landscape phone, a mouse run, and frame times.
+      - Frame times at Pixel 7 size: 60 FPS at 1×, 4× and 6× CPU throttling in Chrome with the GPU, online and with 40 characters. Playwright's Chromium with SwiftShader, which draws on the CPU, gives 20.6 to 34.5 FPS, and is the check's floor, not a phone.
+      - Left: item drops on the equipment window and items on the hotkey bar, which the mouse lacks too, pen input as touch, and frame times on a real phone in a kRO town.
    8. The phase 6 exit check: a scripted browser run of every tier 1 activity, an admin run that finds a player, reads their item history and applies a sanction, and a mod whose items, monsters, skills and jobs display correctly.
    Left for later: the economy dashboards come with the simulator of phase 7 (section 8.13), and retention jobs and encrypted backups come with phase 8. Each step drafts its admin API and any Lua API for review before it is built.
 

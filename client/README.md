@@ -124,6 +124,19 @@ Map ready after a warp, measured in Chrome on an Apple M2 with `waserver` and th
 | Map already in the page's memory | | | 167 to 183 ms |
 | After a reload, from the Service Worker cache | | 102 to 153 ms | 246 to 283 ms |
 
+## Touch
+
+Phones and tablets play with touch (docs/decisions/0034-touch-input.md). The client follows the pointer last used, so a mouse and a finger work on one device, and the mouse and keyboard work as before. While touch is used:
+
+- A tap does what a left click does. A finger held on the ground walks toward it. A long press of half a second on another player opens the player menu, and cancels a skill that waits for a target. Two fingers zoom by pinching, and turn the camera by a twist or a sideways drag.
+- The joystick in the lower left corner walks the player in the pushed direction, by walks to a cell 4 cells ahead, at most 4 a second. Letting it go stops the player within two cells. Options hides it.
+- The hotkey bar is a 3 by 3 grid of larger slots in the lower right corner. A Chat button opens the chat over the game view with a Send button, above the on-screen keyboard. A Cancel skill button shows while a skill waits for its target.
+- A long press on an item or skill row starts a drag. Lift it over a window that takes it, or the game view to drop an item. A long press lifted in place does the row's right click. Two taps do a double click.
+- Below 600 pixels wide, windows are full-width panels under the top bar, the window buttons fold into a Menu button, and buttons and slots are at least 44 pixels. Every window moves by its title bar, with any pointer.
+- The page does not zoom on a double tap, reload on a pull or select text on a long press.
+
+For a test on a phone, the dev server can forward the game and serve HTTPS: `WATHENA_GAME=http://127.0.0.1:8300` forwards `/ws`, `/client-data.json` and `/emblems` to a game server, and `WATHENA_HTTPS_CERT` and `WATHENA_HTTPS_KEY` name a certificate and its key. The decision's "Test on a real phone" has the steps.
+
 ## Checks
 
 ```text
@@ -135,6 +148,6 @@ pnpm build
 pnpm check:browsers   # render, audio, and cache checks in real browsers
 ```
 
-`check:browsers` builds and serves the placeholder pack, then checks in Chromium that the viewer renders a map without errors, that Opus test sounds decode to their exact length, and that a second visit loads assets from the Service Worker. `BROWSERS=chromium,firefox,webkit` adds the other engines, after `pnpm exec playwright-core install`. CI runs it in Chromium.
+`check:browsers` builds and serves the placeholder pack, then checks in Chromium that the viewer renders a map without errors, that Opus test sounds decode to their exact length, and that a second visit loads assets from the Service Worker. It also checks the admin screens and the account pages at 375 pixels wide, and plays on a `waserver --dev` with the end-to-end fixture mod: a scripted touch run on an iPhone and an Android phone profile, a tablet and a phone held sideways, a mouse run on a desktop page, and frame times at phone size with Chrome's CPU throttling, printed as `info` lines. `CHECKS=touch,phone` runs only the checks named. `SCREENSHOTS` names a folder for screenshots of failed steps. `BROWSERS=chromium,firefox,webkit` adds the other engines, after `pnpm exec playwright-core install`. CI runs it in Chromium.
 
 The WMAP decoder test reads `src/formats/testdata/sample.wmap`, which the Go encoder's tests write. After changing the format, run `go test ./internal/assets/wmap -update` from the repository root.

@@ -10,6 +10,15 @@
 //   screen shows its zones and the restart countdown, the events screen
 //   opens an event's form, and the mods screen shows errors and switches.
 //
+// - phone: the admin screens and the account pages at 375 pixels wide do
+//   not scroll sideways (decision 0034).
+// - touch: game-check.ts plays on a waserver with --dev sessions: phones
+//   and a tablet with touch, a desktop page with the mouse, and frame
+//   times at phone size with the CPU slowed down. Chromium only.
+//
+// CHECKS picks checks by name, such as CHECKS=touch,phone. All run by
+// default.
+//
 // By default it builds the placeholder pack with wactl and serves it, so
 // it needs no game files. Set WATHENA_ASSETS to an asset server, such as
 // `wactl assets serve`, and MAP to a map name to check other builds.
@@ -22,16 +31,38 @@
 // render in.
 
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { type Browser, type Page, chromium, firefox, webkit } from 'playwright-core';
 import { createServer } from 'vite';
+import {
+  checkLandscape,
+  checkMouse,
+  checkPhones,
+  checkTablet,
+  frameTimes,
+  inGame,
+  startGame,
+} from './game-check.ts';
 
 const repo = join(import.meta.dirname, '..', '..');
 const client = join(repo, 'client');
 const map = process.env.MAP ?? 'placeholder/map';
 const browsers = (process.env.BROWSERS ?? 'chromium').split(',');
+const only = process.env.CHECKS?.split(',');
+
+function wanted(name: string): boolean {
+  return only === undefined || only.includes(name);
+}
 
 const failures: string[] = [];
 
@@ -58,33 +89,48 @@ async function waitFor(url: string, seconds: number): Promise<void> {
   throw new Error(`${url} did not answer`);
 }
 
-/** Builds and serves the placeholder pack, unless WATHENA_ASSETS is set. */
-async function assetServer(): Promise<{ url: string; stop: () => void }> {
-  const given = process.env.WATHENA_ASSETS;
-  if (given !== undefined) {
-    return { url: given, stop: () => undefined };
-  }
+/**
+ * Builds wactl and the placeholder pack in a new folder, and serves the
+ * pack unless WATHENA_ASSETS names an asset server.
+ */
+async function assetServer(): Promise<{
+  url: string;
+  dir: string;
+  wactl: string;
+  build: string;
+  stop: () => void;
+}> {
   const dir = mkdtempSync(join(tmpdir(), 'wathena-check-'));
   const wactl = join(dir, 'wactl');
+  const build = join(dir, 'build');
   execFileSync('go', ['build', '-o', wactl, './tools/wactl'], { cwd: repo, stdio: 'inherit' });
-  execFileSync(wactl, ['assets', 'build', '--source', 'placeholder', '--out', join(dir, 'build')], {
+  execFileSync(wactl, ['assets', 'build', '--source', 'placeholder', '--out', build], {
     stdio: 'inherit',
   });
+  const remove = (): void => {
+    rmSync(dir, { recursive: true, force: true });
+  };
+  const given = process.env.WATHENA_ASSETS;
+  if (given !== undefined) {
+    return { url: given, dir, wactl, build, stop: remove };
+  }
   const addr = '127.0.0.1:8299';
-  const server: ChildProcess = spawn(
-    wactl,
-    ['assets', 'serve', '--build', join(dir, 'build'), '--addr', addr],
-    {
-      stdio: 'ignore',
-    },
-  );
+  const server: ChildProcess = spawn(wactl, ['assets', 'serve', '--build', build, '--addr', addr], {
+    stdio: 'ignore',
+  });
+  process.once('exit', () => {
+    server.kill();
+  });
   const url = `http://${addr}`;
   await waitFor(`${url}/manifest.json`, 10);
   return {
     url,
+    dir,
+    wactl,
+    build,
     stop: () => {
       server.kill();
-      rmSync(dir, { recursive: true, force: true });
+      remove();
     },
   };
 }
@@ -653,6 +699,164 @@ async function checkAdmin(name: string, browser: Browser, base: string): Promise
   );
 }
 
+/** The width of a small phone, such as an iPhone SE or mini. */
+const PHONE = { width: 375, height: 667 };
+
+/** Whether a page scrolls sideways. */
+async function sideways(page: Page): Promise<string | undefined> {
+  return page.evaluate(() => {
+    const w = document.documentElement.clientWidth;
+    const sw = document.documentElement.scrollWidth;
+    if (sw <= w) {
+      return undefined;
+    }
+    const wide = [...document.querySelectorAll<HTMLElement>('body *')]
+      .filter((e) => e.getBoundingClientRect().right > w + 1)
+      .map((e) => `${e.tagName.toLowerCase()}${e.className === '' ? '' : `.${e.className}`}`)
+      .slice(0, 3);
+    return `${sw} px wide: ${wide.join(', ')}`;
+  });
+}
+
+/**
+ * The admin screens and the account pages at phone width. The account
+ * pages are rendered with sample data by a Go test.
+ */
+async function checkPhoneWidth(name: string, browser: Browser, base: string): Promise<void> {
+  const context = await browser.newContext({ viewport: PHONE, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  await fakeAdminAPI(page, {
+    account: 'Admin',
+    role: 'admin',
+    permissions: [
+      'staff.assign',
+      'audit.read',
+      'audit.review',
+      'players.read',
+      'items.history',
+      'moderation.reports',
+      'moderation.ban',
+      'world.read',
+      'world.announce',
+      'events.control',
+      'mods.read',
+      'mods.disable',
+    ],
+    twoFactor: true,
+    csrfToken: 't',
+  });
+  await page.goto(`${base}/admin.html`);
+  await page.waitForSelector('.admin-nav button', { timeout: 30_000 });
+  const tabs = await page.locator('.admin-nav button').allTextContents();
+  const wide: string[] = [];
+  for (const tab of tabs) {
+    await page.click(`.admin-nav button:has-text("${tab}")`);
+    await page.waitForTimeout(400);
+    const w = await sideways(page);
+    if (w !== undefined) {
+      wide.push(`${tab}: ${w}`);
+    }
+  }
+  check(
+    name,
+    'phone admin',
+    wide.length === 0 && tabs.length > 3,
+    wide.length === 0 ? `${tabs.length} screens fit ${PHONE.width} px` : wide.join('; '),
+  );
+  const samples = mkdtempSync(join(tmpdir(), 'wathena-pages-'));
+  try {
+    execFileSync('go', ['test', './server/account', '-run', 'TestPageSamples', '-count=1'], {
+      cwd: repo,
+      env: { ...process.env, WATHENA_PAGE_SAMPLES: samples },
+      stdio: 'ignore',
+    });
+    await page.unroute('**/admin/api/v1/**');
+    await page.route('http://account.test/account/**', async (route) => {
+      const file = new URL(route.request().url()).pathname.replace('/account/', '');
+      if (!existsSync(join(samples, file))) {
+        // Such as passkey.js, which the layout checks need not run.
+        await route.fulfill({ status: 404, body: '' });
+        return;
+      }
+      await route.fulfill({
+        body: readFileSync(join(samples, file)),
+        contentType: file.endsWith('.css') ? 'text/css' : 'text/html',
+      });
+    });
+    const bad: string[] = [];
+    let count = 0;
+    for (const file of readdirSync(samples)) {
+      if (!file.endsWith('.html') || file === 'layout.html') {
+        continue;
+      }
+      count++;
+      await page.goto(`http://account.test/account/${file}`);
+      const w = await sideways(page);
+      if (w !== undefined) {
+        bad.push(`${file}: ${w}`);
+      }
+    }
+    check(
+      name,
+      'phone account pages',
+      bad.length === 0 && count > 10,
+      bad.length === 0 ? `${count} pages fit ${PHONE.width} px` : bad.join('; '),
+    );
+  } finally {
+    rmSync(samples, { recursive: true, force: true });
+    await context.close();
+  }
+}
+
+/** The touch, tablet and mouse runs on a game server, and frame times. */
+async function checkGame(
+  name: string,
+  browser: Browser,
+  assets: { dir: string; wactl: string; build: string },
+  viewerBase: string,
+): Promise<void> {
+  if (name !== 'chromium') {
+    console.log(`skip ${name} touch: touch runs through the Chrome DevTools Protocol`);
+    return;
+  }
+  const game = await startGame(repo, client, assets.dir, assets.wactl, assets.build);
+  const c = (label: string, ok: boolean, detail: string): void => {
+    check(name, label, ok, detail);
+  };
+  try {
+    await checkPhones(browser, game.base, c);
+    await checkTablet(browser, game.base, c);
+    await checkLandscape(browser, game.base, c);
+    await checkMouse(browser, game.base, c);
+    for (const rate of [1, 4]) {
+      const online = await frameTimes(
+        browser,
+        `${game.base}/?server=${encodeURIComponent(`${game.base.replace(/^http/, 'ws')}/ws`)}&name=Perf${rate}&nosw`,
+        rate,
+        inGame,
+      );
+      const viewer = await frameTimes(
+        browser,
+        `${viewerBase}/?map=${encodeURIComponent(map)}&characters=40&nosw`,
+        rate,
+        async (page) => {
+          await loaded(page);
+        },
+      );
+      for (const [label, t] of [
+        ['online', online],
+        ['viewer 40 characters', viewer],
+      ] as const) {
+        console.log(
+          `info ${name} frames ${label}, Pixel 7 size, CPU ${rate}x slower: ${t.fps.toFixed(1)} FPS, p50 ${t.p50.toFixed(1)} ms, p95 ${t.p95.toFixed(1)} ms over ${t.frames} frames`,
+        );
+      }
+    }
+  } finally {
+    await game.stop();
+  }
+}
+
 const assets = await assetServer();
 process.env.WATHENA_ASSETS = assets.url;
 const vite = await createServer({
@@ -666,10 +870,24 @@ try {
   for (const name of browsers) {
     const browser = await launch(name);
     try {
-      await checkAudio(name, browser, base);
-      await checkRender(name, browser, base);
-      await checkCache(name, browser, base);
-      await checkAdmin(name, browser, base);
+      if (wanted('audio')) {
+        await checkAudio(name, browser, base);
+      }
+      if (wanted('render')) {
+        await checkRender(name, browser, base);
+      }
+      if (wanted('cache')) {
+        await checkCache(name, browser, base);
+      }
+      if (wanted('admin')) {
+        await checkAdmin(name, browser, base);
+      }
+      if (wanted('phone')) {
+        await checkPhoneWidth(name, browser, base);
+      }
+      if (wanted('touch')) {
+        await checkGame(name, browser, assets, base);
+      }
     } finally {
       await browser.close();
     }

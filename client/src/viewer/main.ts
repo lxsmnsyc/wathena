@@ -22,7 +22,7 @@ import { setArt } from '../assets/art';
 import { loadClientData } from '../data/clientData';
 import { AudioSystem } from '../audio/audio';
 import Soundscape from '../audio/soundscape';
-import { cellHeight } from '../formats/wmap';
+import { cellHeight, walkable } from '../formats/wmap';
 import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
@@ -157,6 +157,19 @@ import {
   skillOf,
 } from './skills';
 import { TargetMode } from './targeting';
+import { type Gesture, GestureRecognizer } from './gestures';
+import {
+  type Ground,
+  type Push,
+  WalkRequests,
+  cellDirection,
+  joystickTarget,
+  stopTarget,
+} from './joystick';
+import { loadSettings, saveSettings } from './settings';
+import { InputMode, installTouchUI } from './touch';
+import { TouchControls } from './touchControls';
+import { makeMovable } from './windows';
 import Online, { type ShopBoard } from './online';
 import Player from './player';
 import Walkers from './walkers';
@@ -270,6 +283,10 @@ let castSkill: (skillId: number, level: number | undefined) => void = () => {};
 let progressBar: { start: number; ms: number } | undefined;
 /** Shows a short message to the player, such as why an action failed. */
 let showMessage: (text: string) => void = () => {};
+/** Shows the touch cancel button while a skill waits, once it exists. */
+let showTargetCancel: (on: boolean) => void = () => {};
+/** Opens or closes the chat of touch screens, once the chat exists. */
+let openChat: () => void = () => {};
 /** Adds a line from the game to the chat log, once the log exists. */
 let logNotice: (text: string) => void = () => {};
 /** The ground item under the pointer, whose name shows. */
@@ -1917,6 +1934,19 @@ if (serverURL === null) {
           return false;
       }
     };
+    /** Sends the input's line, as Enter or the Send button of touch. */
+    const send = (): void => {
+      const action = parseChatInput(chatInput.value);
+      if (action.kind === 'empty') {
+        // Enter on an empty line leaves the input, as in RO.
+        chatInput.value = '';
+        chatInput.blur();
+        return;
+      }
+      if (run(action)) {
+        chatInput.value = '';
+      }
+    };
     chatInput.addEventListener('keydown', (e) => {
       // Keys typed here are text, not game shortcuts.
       e.stopPropagation();
@@ -1928,17 +1958,37 @@ if (serverURL === null) {
         return;
       }
       e.preventDefault();
-      const action = parseChatInput(chatInput.value);
-      if (action.kind === 'empty') {
-        // Enter on an empty line leaves the input, as in RO.
-        chatInput.value = '';
+      send();
+    });
+    const sendButton = document.querySelector<HTMLButtonElement>('#chat-send');
+    // The button keeps the keyboard open: a press would move the focus.
+    sendButton?.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+    });
+    sendButton?.addEventListener('click', () => {
+      if (chatInput.value.trim() === '') {
         chatInput.blur();
+        chatRoot.classList.remove('open');
         return;
       }
-      if (run(action)) {
-        chatInput.value = '';
+      send();
+    });
+    // The chat of touch screens closes when the focus leaves it, as when
+    // the on-screen keyboard is put away.
+    chatRoot.addEventListener('focusout', (e) => {
+      if (!(e.relatedTarget instanceof Node && chatRoot.contains(e.relatedTarget))) {
+        chatRoot.classList.remove('open');
       }
     });
+    openChat = () => {
+      const open = !chatRoot.classList.contains('open');
+      chatRoot.classList.toggle('open', open);
+      if (open) {
+        chatInput.focus();
+      } else {
+        chatInput.blur();
+      }
+    };
     addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !isTyping(e.target) && !e.altKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
@@ -2376,6 +2426,41 @@ if (import.meta.env.DEV) {
     shop: () => shopWindow,
     mapLoads: () => mapLoads,
     map: () => current?.map,
+    // The touch checks of scripts/browser-check.ts find units on the
+    // screen and read the camera and the target mode.
+    units: () => {
+      const o = session?.online;
+      if (o === undefined) {
+        return [];
+      }
+      return o.unitIds().map((id) => {
+        const p = o.position(id);
+        return {
+          id,
+          name: o.nameOf(id),
+          npc: o.isNpc(id),
+          player: o.isPlayer(id),
+          self: id === o.self,
+          cell: p === undefined ? undefined : [Math.floor(p.x), Math.floor(-p.z)],
+        };
+      });
+    },
+    screenOf: (id: number) => {
+      const p = session?.online.position(id)?.clone();
+      if (p === undefined) {
+        return undefined;
+      }
+      p.y += 1;
+      p.project(camera);
+      const rect = canvas.getBoundingClientRect();
+      return [rect.left + ((p.x + 1) / 2) * rect.width, rect.top + ((1 - p.y) / 2) * rect.height];
+    },
+    selfCell: () =>
+      session?.online.selfCell ?? (player === undefined ? undefined : [player.x, player.y]),
+    azimuth: () => controls.getAzimuthalAngle(),
+    distance: () => camera.position.distanceTo(controls.target),
+    targeting: () => targetMode.kind,
+    hotkeys: () => [...Array(9).keys()].map((i) => hotkeyBar?.get(i)),
   });
 }
 
@@ -2388,25 +2473,36 @@ function pan(p: Vector3): number {
 }
 
 // A click on the ground walks the player there. A drag turns the camera
-// instead.
+// instead. Touch has its own gestures, below.
 const raycaster = new Raycaster();
 const pointer = new Vector2();
 let pressed: [number, number] | undefined;
 canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch') {
+    return;
+  }
   pressed = [e.clientX, e.clientY];
 });
 canvas.addEventListener('pointerup', (e) => {
+  if (e.pointerType === 'touch') {
+    return;
+  }
   if (pressed === undefined || Math.hypot(e.clientX - pressed[0], e.clientY - pressed[1]) > 5) {
     return;
   }
+  clickAt(e.clientX, e.clientY, e.button);
+});
+
+/** What a click at a point of the page does: button 0 is left, 2 right. */
+function clickAt(clientX: number, clientY: number, button: number): void {
   const ground = current?.group.getObjectByName('ground');
   if (ground === undefined || (player === undefined && session === undefined) || changingMap) {
     return;
   }
-  const rect = canvas.getBoundingClientRect();
+  const rect = canvas!.getBoundingClientRect();
   pointer.set(
-    ((e.clientX - rect.left) / rect.width) * 2 - 1,
-    -((e.clientY - rect.top) / rect.height) * 2 + 1,
+    ((clientX - rect.left) / rect.width) * 2 - 1,
+    -((clientY - rect.top) / rect.height) * 2 + 1,
   );
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObject(ground, true)[0];
@@ -2414,8 +2510,8 @@ canvas.addEventListener('pointerup', (e) => {
   // and a click on the ground walks there. The server decides the path and
   // sends it back.
   const target = session?.online.pick(
-    e.clientX - rect.left,
-    e.clientY - rect.top,
+    clientX - rect.left,
+    clientY - rect.top,
     camera,
     rect.width,
     rect.height,
@@ -2424,12 +2520,12 @@ canvas.addEventListener('pointerup', (e) => {
   // and support skills, a cell for ground skills. A support skill may
   // target the player itself. A right click cancels it.
   if (session !== undefined && targetMode.kind !== undefined) {
-    if (e.button === 2) {
+    if (button === 2) {
       targetMode.cancel();
     } else if (targetMode.kind === 'entity') {
       const t = session.online.pick(
-        e.clientX - rect.left,
-        e.clientY - rect.top,
+        clientX - rect.left,
+        clientY - rect.top,
         camera,
         rect.width,
         rect.height,
@@ -2453,10 +2549,10 @@ canvas.addEventListener('pointerup', (e) => {
   }
   // A right click on another player opens its menu.
   if (
-    e.button === 2 &&
+    button === 2 &&
     target !== undefined &&
     !target.item &&
-    openPlayerMenu?.(target.id, e.clientX, e.clientY) === true
+    openPlayerMenu?.(target.id, clientX, clientY) === true
   ) {
     return;
   }
@@ -2490,11 +2586,12 @@ canvas.addEventListener('pointerup', (e) => {
       session.connection.walkTo(x, y);
     }
   }
-});
+}
 
 /** Shows the target mode: the cursor, and the cell marker for ground skills. */
 function showTargeting(): void {
   canvas!.style.cursor = targetMode.kind === undefined ? '' : 'crosshair';
+  showTargetCancel(targetMode.kind !== undefined);
   if (targetMode.kind !== 'cell') {
     cellMarker.visible = false;
   }
@@ -2526,7 +2623,7 @@ function markCell(e: PointerEvent): void {
 
 // The name of the ground item under the pointer shows under it, as in RO.
 canvas.addEventListener('pointermove', (e) => {
-  if (session === undefined) {
+  if (session === undefined || e.pointerType === 'touch') {
     hoveredItem = undefined;
     return;
   }
@@ -2544,6 +2641,282 @@ canvas.addEventListener('pointermove', (e) => {
 canvas.addEventListener('pointerleave', () => {
   hoveredItem = undefined;
 });
+
+// Touch on the game view (review decision 39). A tap does what a left
+// click does, a finger held on the ground walks toward it, a long press
+// on a unit does what a right click does, and two fingers zoom and turn
+// the camera. OrbitControls keeps the mouse and leaves touch to this.
+controls.touches = { ONE: null, TWO: null };
+const gestures = new GestureRecognizer();
+let pressTimer: ReturnType<typeof setTimeout> | undefined;
+/** Where a finger held on the ground is, while it walks the player. */
+let holdAt: [number, number] | undefined;
+/** The joystick's push, while it is held. */
+let joystickPushed: Push | undefined;
+/** The last direction the joystick walked, in cells, for the stop. */
+let joystickDir: [number, number] | undefined;
+const walkRequests = new WalkRequests();
+
+/** Asks for a walk to a cell, online or in the map viewer. */
+function walkTo(x: number, y: number): void {
+  if (session === undefined) {
+    player?.moveTo(x, y);
+  } else {
+    session.connection.walkTo(x, y);
+  }
+}
+
+/** Whether the player may walk now: not while a map loads or an NPC talks. */
+function mayWalk(): boolean {
+  return (
+    !changingMap &&
+    (session !== undefined || player !== undefined) &&
+    !(dialogWindow?.open === true && progressBar === undefined)
+  );
+}
+
+/** The cell under a point of the page, if it is on the ground. */
+function cellAt(clientX: number, clientY: number): [number, number] | undefined {
+  const ground = current?.group.getObjectByName('ground');
+  if (ground === undefined) {
+    return undefined;
+  }
+  const rect = canvas!.getBoundingClientRect();
+  pointer.set(
+    ((clientX - rect.left) / rect.width) * 2 - 1,
+    -((clientY - rect.top) / rect.height) * 2 + 1,
+  );
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObject(ground, true)[0];
+  return hit === undefined ? undefined : [Math.floor(hit.point.x), Math.floor(-hit.point.z)];
+}
+
+/** What the joystick's walks know about the map. */
+const joystickGround: Ground = {
+  walkable: (x, y) => current !== undefined && walkable(current.map, x, y),
+  pathLength: (x0, y0, x1, y1) => pathfinder.search(x0, y0, x1, y1)?.length,
+};
+
+/** The player's cell, or the one it steps into now. */
+function walkFrom(): [number, number] | undefined {
+  const me = session?.online.me ?? player;
+  return me?.nextCell;
+}
+
+/** Does what a gesture on the game view asks. */
+function onGesture(g: Gesture): void {
+  switch (g.kind) {
+    case 'tap':
+      clickAt(g.x, g.y, 0);
+      break;
+    case 'press': {
+      // A long press is a right click: it cancels a waiting skill, and
+      // opens another player's menu. On the ground, it walks.
+      if (targetMode.kind !== undefined) {
+        clickAt(g.x, g.y, 2);
+        break;
+      }
+      const rect = canvas!.getBoundingClientRect();
+      const target = session?.online.pick(
+        g.x - rect.left,
+        g.y - rect.top,
+        camera,
+        rect.width,
+        rect.height,
+      );
+      if (target === undefined) {
+        holdAt = [g.x, g.y];
+        walkRequests.reset();
+      } else if (!target.item) {
+        openPlayerMenu?.(target.id, g.x, g.y);
+      }
+      break;
+    }
+    case 'hold':
+      if (g.phase === 'start' && targetMode.kind === undefined) {
+        holdAt = [g.x, g.y];
+        walkRequests.reset();
+      } else if (g.phase === 'move' && holdAt !== undefined) {
+        holdAt = [g.x, g.y];
+      } else if (g.phase === 'end') {
+        holdAt = undefined;
+      }
+      break;
+    case 'pinch':
+      if (g.phase !== 'move') {
+        break;
+      }
+      if (g.scale !== 1) {
+        controls.dollyOut(g.scale);
+      }
+      // A twist and a sideways drag turn the camera; an upward drag tilts it.
+      controls.rotateLeft(g.rotation + (2 * Math.PI * g.dx) / canvas!.clientHeight);
+      controls.rotateUp((2 * Math.PI * g.dy) / canvas!.clientHeight);
+      break;
+    default:
+      break;
+  }
+}
+
+function runGestures(list: Gesture[]): void {
+  for (const g of list) {
+    onGesture(g);
+  }
+  clearTimeout(pressTimer);
+  const at = gestures.pressAt;
+  if (at !== undefined) {
+    pressTimer = setTimeout(
+      () => {
+        runGestures(gestures.tick(performance.now()));
+      },
+      Math.max(0, at - performance.now()),
+    );
+  }
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch') {
+    runGestures(gestures.down(e.pointerId, e.clientX, e.clientY, performance.now()));
+  }
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'touch') {
+    runGestures(gestures.move(e.pointerId, e.clientX, e.clientY, performance.now()));
+  }
+});
+canvas.addEventListener('pointerup', (e) => {
+  if (e.pointerType === 'touch') {
+    runGestures(gestures.up(e.pointerId, e.clientX, e.clientY, performance.now()));
+  }
+});
+canvas.addEventListener('pointercancel', (e) => {
+  if (e.pointerType === 'touch') {
+    runGestures(gestures.cancel());
+  }
+});
+
+/** Sends the walks of a held finger and of the joystick, once a frame. */
+function touchWalk(now: number): void {
+  if (
+    (joystickPushed === undefined && holdAt === undefined) ||
+    !walkRequests.due(now) ||
+    !mayWalk()
+  ) {
+    return;
+  }
+  if (joystickPushed !== undefined) {
+    const from = walkFrom();
+    if (from === undefined) {
+      return;
+    }
+    joystickDir = cellDirection(joystickPushed, controls.getAzimuthalAngle());
+    const cell = walkRequests.next(now, joystickTarget(from, joystickDir, joystickGround));
+    if (cell !== undefined) {
+      walkTo(cell[0], cell[1]);
+    }
+    return;
+  }
+  if (holdAt !== undefined) {
+    const cell = walkRequests.next(now, cellAt(holdAt[0], holdAt[1]));
+    if (cell !== undefined) {
+      walkTo(cell[0], cell[1]);
+    }
+  }
+}
+
+// The on-screen controls of touch, the window buttons' menu on small
+// screens, and the options.
+const inputMode = new InputMode(document.body);
+installTouchUI(inputMode, canvas);
+let settings = loadSettings(() => localStorage);
+const touchControls = new TouchControls(document.body, {
+  push: (p) => {
+    if (p !== undefined && joystickPushed === undefined) {
+      walkRequests.reset();
+    }
+    joystickPushed = p;
+  },
+  release: () => {
+    const from = walkFrom();
+    if (from !== undefined && joystickDir !== undefined && mayWalk()) {
+      const cell = walkRequests.final(
+        performance.now(),
+        stopTarget(from, joystickDir, joystickGround),
+      );
+      if (cell !== undefined) {
+        walkTo(cell[0], cell[1]);
+      }
+    }
+    joystickDir = undefined;
+  },
+  chat: () => {
+    openChat();
+  },
+  cancelTarget: () => {
+    targetMode.cancel();
+    showTargeting();
+  },
+});
+touchControls.joystickShown = settings.joystick;
+showTargetCancel = (on) => {
+  touchControls.targeting = on;
+};
+const optionsRoot = document.querySelector<HTMLElement>('#options-window');
+const joystickOption = document.querySelector<HTMLInputElement>('#joystick-option');
+if (joystickOption !== null) {
+  joystickOption.checked = settings.joystick;
+  joystickOption.addEventListener('change', () => {
+    settings = { ...settings, joystick: joystickOption.checked };
+    saveSettings(() => localStorage, settings);
+    touchControls.joystickShown = settings.joystick;
+  });
+}
+document.querySelector('#options-toggle')?.addEventListener('click', () => {
+  if (optionsRoot !== null) {
+    optionsRoot.hidden = !optionsRoot.hidden;
+  }
+});
+// Panels on small screens open under the top bar, whose height changes
+// with its text and the open menu.
+new ResizeObserver(() => {
+  document.documentElement.style.setProperty('--controls-height', `${form.offsetHeight}px`);
+}).observe(form);
+const menuToggle = document.querySelector<HTMLButtonElement>('#menu-toggle');
+menuToggle?.addEventListener('click', () => {
+  const open = form.classList.toggle('menu-open');
+  menuToggle.setAttribute('aria-expanded', String(open));
+});
+// A window button closes the menu again on small screens.
+form.addEventListener('click', (e) => {
+  if (
+    e.target instanceof HTMLButtonElement &&
+    e.target !== menuToggle &&
+    form.classList.contains('menu-open')
+  ) {
+    form.classList.remove('menu-open');
+    menuToggle?.setAttribute('aria-expanded', 'false');
+  }
+});
+// Windows move by a title bar, with any pointer.
+for (const w of document.querySelectorAll<HTMLElement>(
+  'body > section[aria-label]:not(#world-events)',
+)) {
+  makeMovable(w, w.getAttribute('aria-label') ?? '');
+}
+
+// The chat stays above the on-screen keyboard. The keyboard covers the
+// bottom of the page without making it smaller, and only the visual
+// viewport shows how much it covers.
+const visual = window.visualViewport;
+if (visual !== null) {
+  const keyboard = (): void => {
+    const covered = Math.max(0, innerHeight - visual.height - visual.offsetTop);
+    document.documentElement.style.setProperty('--keyboard', `${Math.round(covered)}px`);
+  };
+  visual.addEventListener('resize', keyboard);
+  visual.addEventListener('scroll', keyboard);
+  keyboard();
+}
 
 const itemLabelView = document.querySelector<HTMLDivElement>('#item-label');
 const itemLabelAt = new Vector3();
@@ -2910,6 +3283,7 @@ renderer.setAnimationLoop((time) => {
       skillWindow.update(stats, (id) => cooldowns.remaining(id, now));
     }
   }
+  touchWalk(performance.now());
   showHotkeys(performance.now());
   showCastBars(performance.now());
   showBubbles(performance.now());

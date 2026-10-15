@@ -191,3 +191,46 @@
 .admin-event-form .admin-row {
   flex-basis: auto;
 }
+
+/* Phones (decision 0034): the page never scrolls sideways. A wide table
+   scrolls inside its own box, and buttons are large enough for a finger. */
+#admin {
+  overflow-wrap: anywhere;
+}
+
+@media (width < 600px) {
+  #admin table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  #admin button,
+  #admin select,
+  #admin input:not([type='checkbox'], [type='radio']) {
+    min-height: 44px;
+  }
+
+  #admin button:not(.admin-link) {
+    min-width: 44px;
+  }
+
+  #admin input,
+  #admin select,
+  #admin textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #admin label {
+    max-width: 100%;
+  }
+
+  #admin header {
+    flex-wrap: wrap;
+  }
+
+  .admin-facts-table th {
+    width: auto;
+  }
+}

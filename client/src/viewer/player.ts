@@ -53,6 +53,16 @@ export default class Player {
     this.place(x + 0.5, y + 0.5);
   }
 
+  /** The cell the player stands on, or the one it steps into now. */
+  get nextCell(): [number, number] {
+    const d = this.path[0];
+    if (d === undefined) {
+      return [this.x, this.y];
+    }
+    const [dx, dy] = step(d);
+    return [this.x + dx, this.y + dy];
+  }
+
   /** What the player draws. */
   get character(): Body {
     return this.body;

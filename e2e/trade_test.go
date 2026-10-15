@@ -205,9 +205,15 @@ func TestTradeRefused(t *testing.T) {
 		t.Errorf("Bob refused Carol: %v", r)
 	}
 
-	// Trade range is 2 cells.
-	v := carol.View()
-	carol.WalkTo(v.X+3, v.Y)
+	// Trade range is 2 cells. Carol stands 3 cells from Alice. The
+	// distance is measured from Alice's cell, since Carol's own cell
+	// says nothing about how far apart they are.
+	a := alice.View()
+	carol.WalkTo(a.X+3, a.Y)
+	// The bot works out its cell from the walk's start time, so it can
+	// see itself arrive before the zone's tick moves it there. Wait one
+	// more second so the request finds Carol on her last cell.
+	time.Sleep(time.Second)
 	if r := carol.RequestTrade(alice); r.GetOutcome() != wathenav1.TradeOutcome_TRADE_OUTCOME_TOO_FAR {
 		t.Errorf("asking from 3 cells away: %v", r)
 	}

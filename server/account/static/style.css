@@ -166,3 +166,48 @@ td {
 .owner {
   white-space: pre-line;
 }
+/* Phones (decision 0034): long names and table cells wrap, so the page
+   never scrolls sideways, and buttons are large enough for a finger. */
+main,
+h1,
+h2,
+h3,
+p,
+li,
+td,
+th {
+  overflow-wrap: anywhere;
+}
+@media (width < 600px) {
+  table {
+    table-layout: fixed;
+  }
+  main {
+    margin: 1rem auto;
+  }
+  button,
+  input[name],
+  select {
+    min-height: 44px;
+  }
+  input[type='radio'],
+  input[type='checkbox'] {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  .pages {
+    gap: 0.25rem 0.75rem;
+  }
+  .pages a {
+    display: inline-block;
+    padding: 0.5rem 0;
+  }
+  th,
+  td {
+    padding-right: 0.25rem;
+    font-size: 0.85rem;
+  }
+  .codes {
+    columns: 1;
+  }
+}

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>wAthena</title>
     <link rel="stylesheet" href="/src/viewer/viewer.css" />
   </head>
@@ -18,6 +18,7 @@
     <div id="event-banner" role="status" hidden></div>
     <section id="world-events" aria-label="World events" hidden></section>
     <form id="controls">
+      <button id="menu-toggle" type="button" aria-expanded="false">Menu</button>
       <label>
         Map
         <input id="map" name="map" autocomplete="off" spellcheck="false" />
@@ -35,6 +36,7 @@
       </button>
       <button id="guild-toggle" type="button" title="Guild (Alt+G)" hidden>Guild</button>
       <button id="mail-toggle" type="button" title="Mail (Alt+M)" hidden>Mail</button>
+      <button id="options-toggle" type="button">Options</button>
       <button id="characters" type="button" hidden>Characters</button>
       <output id="status"></output>
       <output id="hp"></output>
@@ -58,9 +60,17 @@
           spellcheck="false"
           placeholder="Press Enter to chat"
           aria-label="Chat message"
+          enterkeyhint="send"
         />
+        <button id="chat-send" type="button">Send</button>
       </section>
     </div>
+    <section id="options-window" aria-label="Options" hidden>
+      <label
+        ><input id="joystick-option" type="checkbox" checked /> Show the joystick on touch
+        screens</label
+      >
+    </section>
     <section id="status-window" aria-label="Status" hidden></section>
     <section id="inventory-window" aria-label="Items" hidden></section>
     <section id="equipment-window" aria-label="Equipment" hidden></section>

@@ -678,6 +678,11 @@ export default class Online {
     return this.items.info(id);
   }
 
+  /** The IDs of the units in sight, the player's own too. */
+  unitIds(): number[] {
+    return [...this.units.keys()];
+  }
+
   /** Where a unit's feet are, while it is shown. */
   position(id: number): Vector3 | undefined {
     return this.units.get(id)?.character.group.position;

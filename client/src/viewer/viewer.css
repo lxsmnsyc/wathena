@@ -2311,3 +2311,448 @@ body {
 .shop-board[hidden] {
   display: none;
 }
+
+/* Touch input and small screens (review decision 39, docs/decisions/0034-touch-input.md). */
+
+/* No pull-to-refresh, no double-tap zoom, and no text selection or long
+   press menu in the game view. */
+html,
+body {
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#view {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body.touch {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Text stays selectable where it is typed. */
+body.touch input,
+body.touch textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Safari zooms into a field with smaller text when it gets the focus. */
+body.touch input,
+body.touch select,
+body.touch textarea {
+  font-size: 16px;
+}
+
+/* The browser's own drag would start on a long press. touch.ts drags. */
+body.touch [draggable='true'] {
+  -webkit-user-drag: none;
+}
+
+/* Title bars, which move their window with any pointer. */
+.window-bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 18px;
+  margin: 0 0 4px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 8%);
+  color: #bbb;
+  font-size: 11px;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#status-window {
+  flex-wrap: wrap;
+}
+
+#status-window > .window-bar {
+  flex-basis: 100%;
+}
+
+body.touch .window-bar {
+  min-height: 32px;
+  font-size: 13px;
+}
+
+#menu-toggle {
+  display: none;
+}
+
+#options-window {
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+}
+
+#options-window[hidden] {
+  display: none;
+}
+
+#options-window label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 32px;
+}
+
+/* A row that a finger drags, and its copy under the finger. */
+.touch-dragging {
+  opacity: 0.5;
+}
+
+.touch-ghost {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 6px;
+  border: 2px solid rgb(255 255 255 / 40%);
+  border-radius: 6px;
+  background: rgb(20 24 32 / 90%);
+  list-style: none;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.touch-ghost.can-drop {
+  border-color: #5fdc5f;
+}
+
+/* The on-screen controls show while touch is used. */
+#touch-controls {
+  display: none;
+}
+
+body.touch #touch-controls {
+  display: block;
+}
+
+#joystick {
+  position: fixed;
+  z-index: 20;
+  left: calc(16px + env(safe-area-inset-left));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: 128px;
+  height: 128px;
+  border: 2px solid rgb(255 255 255 / 30%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 35%);
+  touch-action: none;
+}
+
+#joystick[hidden] {
+  display: none;
+}
+
+#joystick .joystick-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 45%);
+  pointer-events: none;
+}
+
+#joystick.active .joystick-knob {
+  background: rgb(255 255 255 / 75%);
+}
+
+#chat-button {
+  position: fixed;
+  z-index: 20;
+  left: calc(16px + env(safe-area-inset-left));
+  bottom: calc(156px + env(safe-area-inset-bottom));
+  min-width: 64px;
+  min-height: 44px;
+}
+
+#target-cancel {
+  position: fixed;
+  z-index: 30;
+  top: 50%;
+  left: 50%;
+  min-width: 120px;
+  min-height: 48px;
+  transform: translate(-50%, 80px);
+  border: 1px solid #f88;
+  border-radius: 6px;
+  background: rgb(120 20 20 / 85%);
+  color: #fff;
+  font: inherit;
+}
+
+#target-cancel[hidden] {
+  display: none;
+}
+
+/* The window buttons and a larger hotkey bar, in the lower right. */
+body.touch #controls button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+body.touch #hotkeys {
+  top: auto;
+  right: calc(12px + env(safe-area-inset-right));
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  gap: 6px;
+  transform: none;
+}
+
+body.touch .hotkey {
+  width: 52px;
+  height: 52px;
+}
+
+body.touch .hotkey .badge {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+body.touch .hotkey .key {
+  font-size: 11px;
+}
+
+/* Chat: a few lines over the joystick, and the full chat with its input
+   above the on-screen keyboard while the chat button has it open. */
+#dock {
+  bottom: calc(12px + var(--keyboard, 0px));
+}
+
+#chat-send {
+  display: none;
+}
+
+body.touch #dock {
+  bottom: calc(212px + env(safe-area-inset-bottom));
+  width: min(440px, calc(100% - 200px));
+}
+
+body.touch #chat:not(.open) {
+  background: rgb(0 0 0 / 30%);
+}
+
+body.touch #chat:not(.open) #chat-bar,
+body.touch #chat:not(.open) #chat-input {
+  display: none;
+}
+
+/* The closed chat only shows the latest lines, and lets touches through
+   to the game view. */
+body.touch #chat:not(.open) {
+  pointer-events: none;
+}
+
+body.touch #chat:not(.open) #chat-log {
+  height: auto;
+  max-height: 5em;
+}
+
+body.touch #dock:has(#chat.open) {
+  bottom: calc(8px + var(--keyboard, 0px));
+  width: calc(100% - 24px);
+  z-index: 40;
+}
+
+body.touch #chat.open {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  background: rgb(16 18 24 / 92%);
+}
+
+body.touch #chat:not(.open) #chat-log:empty {
+  display: none;
+}
+
+body.touch #chat.open #chat-bar,
+body.touch #chat.open #chat-log {
+  grid-column: 1 / 3;
+}
+
+body.touch #chat.open #chat-log {
+  height: 7.5em;
+}
+
+body.touch #chat.open #chat-send {
+  display: block;
+  min-width: 64px;
+  min-height: 44px;
+  margin: 4px 6px 6px 0;
+}
+
+body.touch #chat-bar button {
+  min-height: 36px;
+}
+
+/* Below 600 pixels wide: windows are full-width panels at the bottom,
+   buttons and item slots are at least 44 pixels, and the window buttons
+   fold into a menu. */
+@media (width < 600px) {
+  #controls {
+    /* Above the panels, so the menu stays usable. */
+    z-index: 10000;
+    top: 0;
+    left: 0;
+    max-width: none;
+    width: 100%;
+    box-sizing: border-box;
+    padding: calc(4px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 4px
+      calc(8px + env(safe-area-inset-left));
+    border-radius: 0;
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  #menu-toggle {
+    display: inline-block;
+  }
+
+  #controls > button:not(#menu-toggle),
+  #controls > label {
+    display: none;
+  }
+
+  #controls.menu-open > button:not(#menu-toggle, [hidden]),
+  #controls.menu-open > label {
+    display: inline-block;
+  }
+
+  #controls output {
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  .game-window {
+    position: fixed !important;
+    /* Under the window buttons, and above the joystick and the hotkey
+       bar, so items and skills can be dragged onto the bar. */
+    top: var(--panel-top, var(--controls-height, 56px)) !important;
+    right: 0 !important;
+    bottom: var(--panel-bottom, auto) !important;
+    left: 0 !important;
+    box-sizing: border-box;
+    width: auto !important;
+    max-width: none !important;
+    max-height: max(200px, calc(100% - 210px - var(--controls-height, 56px))) !important;
+    background: rgb(16 18 24 / 88%) !important;
+    overflow-y: auto;
+    transform: none !important;
+    border-radius: 0 0 12px 12px !important;
+  }
+
+  /* While items move between the inventory and another window, the
+     inventory is a sheet at the bottom and the other window stays at
+     the top, so both show. */
+  body:has(
+      #trade-window:not([hidden]),
+      .storage-window:not([hidden]),
+      #mail-window:not([hidden]),
+      #vending-setup:not([hidden]),
+      #buying-setup:not([hidden])
+    )
+    #inventory-window {
+    z-index: 60;
+    top: auto !important;
+    bottom: 0 !important;
+    max-height: 40% !important;
+    border-radius: 12px 12px 0 0 !important;
+  }
+
+  #trade-window,
+  .storage-window,
+  #mail-window,
+  #vending-setup,
+  #buying-setup {
+    max-height: calc(60% - var(--controls-height, 56px)) !important;
+  }
+
+  .game-window .window-bar {
+    position: sticky;
+    top: -8px;
+    z-index: 1;
+    min-height: 32px;
+    background: rgb(40 44 52 / 95%);
+  }
+
+  .game-window li,
+  .game-window .worn {
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  button,
+  select,
+  input:not([type='checkbox'], [type='radio']) {
+    min-height: 44px;
+  }
+
+  button {
+    min-width: 44px;
+  }
+
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 24px;
+    height: 24px;
+  }
+
+  .hotkey {
+    width: 48px;
+    height: 48px;
+  }
+
+  #hotkeys {
+    top: auto;
+    bottom: 12px;
+  }
+
+  body.touch #dock {
+    width: calc(100% - 210px);
+  }
+
+  #player-menu button {
+    min-height: 44px;
+  }
+}
+
+/* A phone held sideways is wide but short: shorter panels. */
+@media (height < 500px) {
+  .game-window {
+    max-height: 85vh !important;
+  }
+
+  body.touch #dock {
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    left: 156px;
+    width: min(360px, calc(100% - 340px));
+  }
+
+  body.touch #chat-button {
+    bottom: calc(150px + env(safe-area-inset-bottom));
+  }
+}

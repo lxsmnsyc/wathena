@@ -1,4 +1,5 @@
-import { type Plugin, defineConfig } from 'vite';
+import { readFileSync } from 'node:fs';
+import { type Plugin, type ProxyOptions, defineConfig } from 'vite';
 import { parse } from 'yaml';
 
 /** Imports the client data tables, YAML files in data/, as JSON. */
@@ -43,14 +44,40 @@ function serviceWorker(): Plugin {
 // serves a build the way the game server will.
 const assets = process.env.WATHENA_ASSETS ?? 'http://127.0.0.1:8200';
 
+// For a test on a phone (docs/decisions/0034-touch-input.md),
+// WATHENA_GAME names a game server, such as http://127.0.0.1:8300, and
+// the dev server forwards the game's WebSocket, client data and emblems
+// to it, so the phone needs to reach the dev server alone.
+const game = process.env.WATHENA_GAME;
+const gameProxy: Record<string, ProxyOptions> =
+  game === undefined
+    ? {}
+    : {
+        '/ws': { target: game, ws: true },
+        '/client-data.json': { target: game },
+        '/emblems': { target: game },
+      };
+
+// Browsers give crypto.subtle, which checks every asset, only to secure
+// pages. A phone on the local network needs HTTPS for that:
+// WATHENA_HTTPS_CERT and WATHENA_HTTPS_KEY name a PEM certificate and key.
+const cert = process.env.WATHENA_HTTPS_CERT;
+const key = process.env.WATHENA_HTTPS_KEY;
+const https =
+  cert === undefined || key === undefined
+    ? undefined
+    : { cert: readFileSync(cert), key: readFileSync(key) };
+
 export default defineConfig({
   plugins: [tables(), serviceWorker()],
   server: {
+    ...(https === undefined ? {} : { https }),
     proxy: {
       '/assets': {
         target: assets,
         rewrite: (path) => path.replace(/^\/assets/, ''),
       },
+      ...gameProxy,
     },
   },
   build: {
