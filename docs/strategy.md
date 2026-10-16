@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-16)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and step 1 is built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 and 2 are built.
 
 Done:
 
@@ -90,6 +90,14 @@ Done:
   - The build tag `procedural`. Builds without it run only classic worlds.
   - `wactl world new --mode classic|procedural`, and the world row's mode, generator version and rng version. `waserver` refuses a world it cannot run. `Welcome.world` tells the client, which loads `gen.wasm` only for a procedural world.
   - `gen.wasm`, built with TinyGo and checked in as `path.wasm` is. The golden maps give the same checksums in Go on arm64 and on amd64 under Rosetta, in TinyGo, in Node, and in Chromium, Firefox and WebKit. `scripts/check.sh` has the step `gen`, and runs vet, unit tests and lint with and without the tag.
+- Phase 7 step 2, generated fields ([decision 0039](decisions/0039-generated-fields.md), [generator-v2](specs/generator-v2.md)):
+  - Generator version 2 makes fields from a table of six biomes: warped fractal noise, terraces, water by share, rivers, portal areas on each edge, cliffs, thickets, roads that connect every portal and large area, props by Poisson-disk sampling, and materials. Version 1 stays.
+  - Each field is validated: every portal connected and the walkable share in the biome's range. A failed attempt runs again from `attempt(n)`, and after 8 the field is an error.
+  - The generator writes the field's WMAP with integer math, so the bytes match everywhere. The WMAP names tilesets, and the server's tileset table maps them to assets, with new placeholder ground textures and prop models by default.
+  - The game role reads the key of the seed tree's public branch, which `wactl world new` stores (migration 00030), never the seed. `waserver` generates `--fields` at start, and serves each field's public node and checksum, its WMAP and the tileset table under `/gen/`.
+  - The client generates each field with `gen.wasm` in a Web Worker, compares the checksum, and downloads the WMAP when they differ or it cannot generate it. `waserver --dev --fields 0:0,1:0` runs a procedural world to walk in.
+  - A 400 × 400 field takes about 60 ms in Go, 75 to 111 ms in Chromium, WebKit and Node, and 690 to 735 ms in Firefox, within section 8.5's budget of about a second in a worker. Firefox reaches a second on a busy machine. The golden fields match in Go on arm64 and amd64 under Rosetta, in TinyGo, in Node, and in the three browsers, WMAP bytes included.
+  - The browser check `field` walks a generated field and checks the download. The exit check's Lantern Ghosts stand on fixed cells, so none hides the Training Dummy (decision 0037).
 
 Open review items:
 
@@ -109,7 +117,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Step 1, the generator core, is built. Step 2, fields, is next.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 and 2, the generator core and generated fields, are built. Step 3, dungeons and towns, is next, with its Lua API drafted for review first.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -1499,6 +1507,7 @@ The spec has a version (`rng-v1`). Each world records it. An algorithm never cha
 - **Public branches** (terrain, layout, decoration) are sent to the web client as a seed, so the client can generate the map itself.
 - **Secret branches** (spawns, loot, NPC placement details, quest answers) stay on the server. They use ChaCha8 streams, so players cannot recover the stream state from outcomes they observe.
 - The root world seed is secret. The keyed hash is one-way. Knowing one map's public seed does not reveal another map's seed or any secret branch.
+- The root's first level splits into `public` and `secret`. The game server holds the public branch's key, which yields every map's public seed and nothing secret ([decision 0039](decisions/0039-generated-fields.md)).
 - Combat and drop randomness during play does not come from the tree. Each zone uses a ChaCha8 stream seeded from `crypto/rand` at startup. In test mode, the seed is fixed and logged so runs can be replayed.
 
 ### 8.4 Generator rules
@@ -2809,7 +2818,15 @@ The order from here:
       - `scripts/check.sh`: `vet` with and without the tag, `unit` and `lint` also with the tag on the packages it changes, `tinygo` with the tag, the new default step `gen`, and the check `gen` in `browsers`.
       - Tests: `TestChecksum` against the encoding written out, `TestModes`, `TestVersions`, `TestGolden`, `TestGridV1Order`, `TestGuard` and `TestGuardFinds`, `TestWorldMode` in the store, `TestWorldVersions` in wactl, `TestCheckWorldMode` in waserver, `TestWelcomeWorldMode` in the gateway, and `generator.test.ts` and `worldOf` in vitest.
       - Left: the public node of each map, the server's generation and the download fallback (step 2), a run on a real amd64 machine and in Safari, and a procedural release build.
-   2. Fields: terrain from biome rules, with validation and retries, as WMAP maps (sections 8.5 and 8.12). The client generates a field itself, checks the server's checksum, and downloads the map when they differ.
+   2. Fields: terrain from biome rules, with validation and retries, as WMAP maps (sections 8.5 and 8.12). The client generates a field itself, checks the server's checksum, and downloads the map when they differ. Done on 2026-10-16 ([decision 0039](decisions/0039-generated-fields.md), [generator-v2](specs/generator-v2.md), server/README.md, "Generated fields", and client/README.md, "Procedural worlds"):
+      - Generator version 2 in `shared/gen`, with a biome table of grassland, forest, desert, snow, swamp and beach, the field steps of section 8.5 but places, and the climate that picks a field's biome. Version 1 stays callable.
+      - Validation of portal connectivity and the walkable share, with retries from `attempt(n)`, at most 8, then the error `ErrNoField`.
+      - The field's WMAP, written by the generator with integer math. Its textures and models are `texture/gen/<tileset>/<slot>` and `model/gen/<tileset>/<prop>`, and `/gen/tilesets.json` maps them to the build, to placeholders by default or to the operator's assets with `--tilesets`.
+      - Public nodes: `child(root, "public")` is stored in the world row for the game role, and each field's node is `child(public, "field", x, y)`. Secret branches go under `child(root, "secret")`.
+      - `waserver --fields`, `--field-size` and `--tilesets`, the zones of the fields, `/gen/maps/<id>.json` and `.wmap`, and warps between touching fields for development.
+      - The client's field loader with a Web Worker and the download fallback, and aliases in the asset store.
+      - Tests: golden fields with WMAP hashes on every platform, `TestFieldV2`, `TestFieldV2Retries`, `FuzzFieldV2`, the server's checksum and download tests, the client's fallback tests, and the browser check `field`.
+      - Left: global coordinates across field borders, places and feature tags, the fallback template, material blending, fog, navigation data, caching generated maps, and a run on a real amd64 machine and in Safari.
    3. Dungeons and towns: room and corridor dungeons and caves, floors that get harder, boss rooms, town templates with buildings and roads, and named places through `wa.places` (section 8.6).
    4. World layout: map identity, town naming styles, the map graph and warps, the home area from mod maps, and save and memo points (sections 8.10 and 8.12). Every map is reachable from the home area.
    5. Spawns: monster spawn tags, field and dungeon spawn selection, mini bosses and field bosses (section 8.11).

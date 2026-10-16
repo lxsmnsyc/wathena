@@ -90,18 +90,34 @@ export interface GameOptions {
   mods?: string[];
   /** A name for this server's files in dir, so two servers can share it. */
   name?: string;
+  /**
+   * Generated fields to run, as --fields takes them, with a waserver
+   * built with -tags procedural (decision 0039). The fields start, and
+   * placeholder/map runs beside them.
+   */
+  fields?: string;
+  /** --field-size, with fields. */
+  fieldSize?: number;
 }
 
 /**
- * Builds waserver into dir once, and returns its path.
+ * Builds waserver into dir once, and returns its path. procedural builds
+ * it with -tags procedural.
  */
-function buildServer(repo: string, dir: string): string {
-  const waserver = join(dir, 'waserver');
+function buildServer(repo: string, dir: string, procedural = false): string {
+  const waserver = join(dir, procedural ? 'waserver-procedural' : 'waserver');
   if (!existsSync(waserver)) {
-    execFileSync('go', ['build', '-o', waserver, './server/cmd/waserver'], {
-      cwd: repo,
-      stdio: 'inherit',
-    });
+    execFileSync(
+      'go',
+      [
+        'build',
+        ...(procedural ? ['-tags', 'procedural'] : []),
+        '-o',
+        waserver,
+        './server/cmd/waserver',
+      ],
+      { cwd: repo, stdio: 'inherit' },
+    );
   }
   return waserver;
 }
@@ -144,6 +160,25 @@ function installMods(repo: string, dir: string, wactl: string, extra: readonly s
       throw new Error('the lantern mod has no Lantern Ghost of AI type 1');
     }
     writeFileSync(ghosts, still);
+    // The ghosts stand on fixed cells, clear of the Dummies at y 15, the
+    // Training Dummy that !trainer places at 16,9, the NPCs and the
+    // cells the checks walk to. A ghost at a random cell could stand next
+    // to the only Training Dummy, which then has no clear click
+    // (decision 0037, "Lantern Ghosts on fixed cells").
+    const script = join(mods, 'lantern', 'scripts', 'main.lua');
+    const lua = readFileSync(script, 'utf8');
+    const placed = lua.replace(
+      'spawning.monsters { monster = GHOST, amount = 3, respawn = true }',
+      [
+        'spawning.monsters { monster = GHOST, amount = 1, x = 20, y = 11, respawn = true }',
+        '    spawning.monsters { monster = GHOST, amount = 1, x = 21, y = 13, respawn = true }',
+        '    spawning.monsters { monster = GHOST, amount = 1, x = 19, y = 15, respawn = true }',
+      ].join('\n'),
+    );
+    if (placed === lua) {
+      throw new Error('the lantern mod no longer places its ghosts with one spawn');
+    }
+    writeFileSync(script, placed);
   }
   for (const m of built) {
     execFileSync(wactl, ['mod', 'build-art', m], { stdio: 'ignore' });
@@ -164,7 +199,7 @@ export async function startGame(
   build: string,
   opts: GameOptions = {},
 ): Promise<Game> {
-  const waserver = buildServer(repo, dir);
+  const waserver = buildServer(repo, dir, opts.fields !== undefined);
   const mods = installMods(repo, dir, wactl, opts.mods ?? []);
   const config = join(dir, `waserver-${opts.name ?? 'game'}.yml`);
   writeFileSync(config, CONFIG + (opts.config ?? ''));
@@ -181,6 +216,16 @@ export async function startGame(
       ...['--mode', 'renewal', '--addr', `127.0.0.1:${port}`, '--debug-addr', `127.0.0.1:${debug}`],
       ...['--origins', origin, '--shutdown-countdown', '0', '--mods', mods],
       ...['--start-items', opts.startItems ?? '501:10,909:20,1201:1,2101:1'],
+      ...(opts.fields === undefined
+        ? []
+        : [
+            '--fields',
+            opts.fields,
+            '--field-size',
+            String(opts.fieldSize ?? 160),
+            '--maps',
+            'placeholder/map',
+          ]),
       ...(dev
         ? ['--dev', '--seed', 'browser-check', '--start-job', opts.startJob ?? '1:50:40']
         : ['--play-url', `${origin}/`]),

@@ -19,7 +19,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { AssetStore } from '../assets/store';
 import { setArt } from '../assets/art';
-import { loadClientData } from '../data/clientData';
+import { httpOrigin, loadClientData } from '../data/clientData';
 import { AudioSystem } from '../audio/audio';
 import Soundscape from '../audio/soundscape';
 import { cellHeight, walkable } from '../formats/wmap';
@@ -44,6 +44,8 @@ import { accountPage, accountURL, fetchTicket } from '../net/account';
 import gameServerURL from '../net/server';
 import { Connection, disconnectDelay, disconnectText } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
+import { type LoadedField, isGenerated, loadField, loadTilesets } from '../world/fields';
+import { generateInWorker } from '../world/fieldGenerator';
 import { Bubbles, ChatLog, ChatRate, chatLine, isTyping } from './chat';
 import { type ChatAction, parseChatInput } from './chatCommands';
 import {
@@ -381,6 +383,20 @@ function mb(bytes: number): string {
  * true once the map is ready, or false when a newer load replaced it or
  * it failed.
  */
+/** Loads a generated field, once the server named a procedural world. */
+let fieldLoader: ((id: string) => Promise<LoadedField>) | undefined;
+/** A generated field's load, for the checks and the budget of section 8.5. */
+interface FieldLoad {
+  map: string;
+  biome: string;
+  source: LoadedField['source'];
+  reason?: string;
+  /** Milliseconds the generator took in the worker, and the whole load. */
+  generateMs?: number;
+  ms: number;
+}
+const fieldLoads: FieldLoad[] = [];
+
 async function show(name: string, at?: [number, number]): Promise<boolean> {
   const id = ++loading;
   const start = performance.now();
@@ -400,9 +416,32 @@ async function show(name: string, at?: [number, number]): Promise<boolean> {
     progress('loading');
   }, 200);
   try {
+    // A generated field comes from the generator or the server, not
+    // the asset build (decision 0039).
+    let given: Uint8Array | undefined;
+    if (isGenerated(name)) {
+      if (fieldLoader === undefined) {
+        throw new Error(`${name} is a generated map, and this world is not procedural`);
+      }
+      const f = await fieldLoader(name);
+      given = f.wmap;
+      fieldLoads.push({
+        map: name,
+        biome: f.info.biomeName,
+        source: f.source,
+        ms: f.ms,
+        ...(f.reason === undefined ? {} : { reason: f.reason }),
+        ...(f.generateMs === undefined ? {} : { generateMs: f.generateMs }),
+      });
+      console.info(
+        `field ${name} (${f.info.biomeName}, ${f.info.width}×${f.info.height}): ${f.source} in ${f.ms.toFixed(0)} ms` +
+          (f.generateMs === undefined ? '' : `, generator ${f.generateMs.toFixed(0)} ms`),
+      );
+    }
     const { scene: next, ready } = await MapScene.load(
       store,
-      name.includes('/') ? name : `map/${name}`,
+      name.includes('/') || isGenerated(name) ? name : `map/${name}`,
+      given,
     );
     if (id !== loading) {
       return false;
@@ -603,21 +642,25 @@ if (serverURL === null) {
     },
   });
   view.self = connection.welcome.netId;
-  // A procedural world's maps come from the generator module, which a
-  // classic world never loads (decision 0038). Phase 7 step 2 generates
-  // fields with it.
-  if (connection.world.mode === 'procedural') {
-    const world = connection.world;
-    import('../world/generator')
-      .then(async ({ generatorFor }) => generatorFor(world))
-      .then((g) => {
-        console.info(
-          `map generator ${world.generatorVersion} (${world.rngVersion}) loaded, newest ${g?.latest}`,
-        );
+  // A procedural world's fields come from the generator module in a
+  // worker, which a classic world never loads (decisions 0038 and 0039).
+  // The tileset table names the assets the fields' textures and models
+  // stand for. ?nogen leaves the generator out, so every field
+  // downloads.
+  const origin = httpOrigin(serverURL);
+  if (connection.world.mode === 'procedural' && origin !== undefined) {
+    const tilesets = loadTilesets(origin)
+      .then((aliases) => {
+        store.setAliases(aliases);
       })
       .catch((error: unknown) => {
-        console.error('map generator:', error);
+        console.error('tilesets:', error);
       });
+    const generate = params.has('nogen') ? undefined : generateInWorker;
+    fieldLoader = async (id) => {
+      await tilesets;
+      return loadField(origin, id, generate);
+    };
   }
   // World events: a banner for each start and end, and a panel of the
   // runs that last, on the server's clock.
@@ -2456,6 +2499,7 @@ if (import.meta.env.DEV) {
     dialog: () => dialogWindow,
     shop: () => shopWindow,
     mapLoads: () => mapLoads,
+    fieldLoads: () => fieldLoads,
     map: () => current?.map,
     // The touch checks of scripts/browser-check.ts find units on the
     // screen and read the camera and the target mode.

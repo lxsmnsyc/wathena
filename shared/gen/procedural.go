@@ -11,4 +11,8 @@ const Procedural = true
 // until no world uses it (strategy section 8.4).
 var registry = []Generator{
 	{Version: 1, RNG: rng.Version, Grid: gridV1},
+	{
+		Version: 2, RNG: rng.Version, Grid: gridV2, Field: fieldV2,
+		Biomes: v2BiomeNames(), Tilesets: v2Tilesets(), Climate: climateV2,
+	},
 }

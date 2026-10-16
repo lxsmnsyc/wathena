@@ -47,6 +47,11 @@ Each check waits for a signal that the state changed, and the test world holds s
 - Cause: the lantern mod's three ghosts wander. In the exit check a ghost walked off before a click landed, or stood over a Dummy or an NPC and took the click. `exit mod monster and drop` failed with "the Lantern Ghost did not die".
 - Fix: the checks' copy of the lantern mod gives the ghost `modes: [no_random_walk]`, as the fixture's Dummies already stand still. The ghost still fights back. The mod in `mods/examples` does not change.
 
+### Lantern Ghosts on fixed cells
+
+- Cause: the lantern mod places its three ghosts at random cells. A run after this decision failed `exit mod skill` with "no Training Dummy stands clear in sight": a ghost stood next to the only Training Dummy, which `!trainer` places at 16,9. The check's `kill` picks a target that no other unit stands next to, so it found none.
+- Fix: the checks' copy of the lantern mod places the ghosts on fixed cells, 20,11, 21,13 and 19,15. They are clear of the Dummies at y 15, the Training Dummy, the NPCs and the cells the checks walk to, and at least 2 cells from each other, so each one is clear for a click too. The mod in `mods/examples` does not change. Added on 2026-10-16 with decision 0039.
+
 ### A player stood on a monster's cell
 
 - Cause: a click picks the unit nearest the pointer. Two units on one cell are at one point, so a right click on Bob on a Dummy's cell could pick the Dummy.

@@ -25,13 +25,15 @@ export default class MapScene {
   /**
    * Loads a map. The ground shows as soon as the map file arrives, and
    * textures and models appear as they load. ready resolves when all
-   * have loaded or failed.
+   * have loaded or failed. A generated field gives its WMAP as data
+   * instead of a name in the build.
    */
   static async load(
     store: AssetStore,
     name: string,
+    given?: Uint8Array,
   ): Promise<{ scene: MapScene; ready: Promise<void> }> {
-    const data = await store.bytes(name, 'map');
+    const data = given ?? (await store.bytes(name, 'map'));
     if (data === undefined) {
       throw new Error(`map ${name} is not in the build`);
     }

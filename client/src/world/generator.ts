@@ -20,6 +20,13 @@ export interface GeneratedGrid {
   water: number;
   /** The grid's SHA-256 checksum, as lowercase hex. */
   checksum: string;
+  /**
+   * The field as a WMAP map, for a version with fields
+   * (docs/specs/generator-v2.md). Empty for a version without them.
+   */
+  wmap: Uint8Array<ArrayBuffer>;
+  /** The attempt that made the field, 0 for its own node. */
+  attempt: number;
 }
 
 interface Exports {
@@ -28,11 +35,15 @@ interface Exports {
   key: () => number;
   rng_version: (version: number) => number;
   latest: () => number;
-  generate: (version: number, width: number, height: number) => number;
+  generate: (version: number, width: number, height: number, biome: number) => number;
   types: () => number;
   heights: () => number;
   water: () => number;
   checksum: () => number;
+  biomes: (version: number) => number;
+  wmap: () => number;
+  wmap_size: () => number;
+  attempt: () => number;
 }
 
 const FUNCTIONS = [
@@ -44,6 +55,10 @@ const FUNCTIONS = [
   'heights',
   'water',
   'checksum',
+  'biomes',
+  'wmap',
+  'wmap_size',
+  'attempt',
 ] as const;
 
 function isExports(v: unknown): v is Exports {
@@ -57,7 +72,7 @@ function isExports(v: unknown): v is Exports {
   );
 }
 
-function hex(bytes: Uint8Array): string {
+export function hex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
@@ -97,6 +112,11 @@ export class Generator {
     return new Generator(e);
   }
 
+  /** The module's memory in bytes, which only grows. */
+  get memoryBytes(): number {
+    return this.e.memory.buffer.byteLength;
+  }
+
   /** The newest generator version in the module. */
   get latest(): number {
     return this.e.latest();
@@ -111,18 +131,38 @@ export class Generator {
     return n > 0 && rng === `rng-v${n}`;
   }
 
-  /** Generates a map's grid from its public node key. */
-  generate(version: number, key: Uint8Array, width: number, height: number): GeneratedGrid {
+  /** The number of biomes of a version, 0 for a version without fields. */
+  biomes(version: number): number {
+    return Math.max(this.e.biomes(version), 0);
+  }
+
+  /**
+   * Generates a map from its public node key: a field of the biome for a
+   * version with fields, else a grid.
+   */
+  generate(
+    version: number,
+    key: Uint8Array,
+    width: number,
+    height: number,
+    biome = 0,
+  ): GeneratedGrid {
     if (key.length !== 32) {
       throw new Error('a node key is 32 bytes');
     }
     new Uint8Array(this.e.memory.buffer, this.e.key(), 32).set(key);
-    const code = this.e.generate(version, width, height);
-    if (code === -1) {
-      throw new Error(`gen.wasm: no generator version ${version}`);
-    }
-    if (code !== 0) {
-      throw new Error(`gen.wasm: invalid size ${width} × ${height}`);
+    const code = this.e.generate(version, width, height, biome);
+    switch (code) {
+      case 0:
+        break;
+      case -1:
+        throw new Error(`gen.wasm: no generator version ${version}`);
+      case -3:
+        throw new Error(`gen.wasm: no valid field after every attempt`);
+      case -4:
+        throw new Error(`gen.wasm: no biome ${biome} in version ${version}`);
+      default:
+        throw new Error(`gen.wasm: invalid size ${width} × ${height}`);
     }
     // The memory can grow during generate, so views are made after it.
     const cells = width * height;
@@ -135,6 +175,8 @@ export class Generator {
       heights: new Int32Array(buffer, this.e.heights(), 4 * cells).slice(),
       water: this.e.water(),
       checksum: hex(new Uint8Array(buffer, this.e.checksum(), 32)),
+      wmap: new Uint8Array(buffer, this.e.wmap(), this.e.wmap_size()).slice(),
+      attempt: this.e.attempt(),
     };
   }
 }

@@ -58,6 +58,7 @@ const gameProxy: Record<string, ProxyOptions> =
         '/ws': { target: game, ws: true },
         '/client-data.json': { target: game },
         '/emblems': { target: game },
+        '/gen': { target: game },
         '/account': { target: game },
         '/admin/api': { target: game },
       };

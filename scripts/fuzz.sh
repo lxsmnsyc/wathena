@@ -8,6 +8,8 @@
 #     they use every CPU.
 #   - It prints each test's output when the test ends, and fails when a
 #     test failed.
+#   - It builds with the procedural tag, so the generator's fuzz tests
+#     run too. Other packages build the same either way.
 set -eu
 fuzztime="${1:-10s}"
 jobs="${FUZZ_JOBS:-4}"
@@ -20,7 +22,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
 # One line per fuzz test: the package, then the test's name.
-go list -f '{{.ImportPath}} {{.Dir}} {{join .TestGoFiles " "}} {{join .XTestGoFiles " "}}' ./... |
+go list -tags procedural -f '{{.ImportPath}} {{.Dir}} {{join .TestGoFiles " "}} {{join .XTestGoFiles " "}}' ./... |
 	while read -r pkg dir files; do
 		for f in $files; do
 			sed -n 's/^func \(Fuzz[A-Za-z0-9_]*\)([A-Za-z0-9_]* \*testing\.F).*/\1/p' "$dir/$f"
@@ -38,7 +40,7 @@ xargs -P "$jobs" -L 1 sh -c '
 	pkg=$1 name=$2
 	log=$(mktemp "$work/log.XXXXXX")
 	echo "== $pkg $name" >"$log"
-	if ! go test -run "^\$" -fuzz "^${name}\$" -fuzztime "$fuzztime" -fuzzminimizetime 5s -parallel "$parallel" "$pkg" >>"$log" 2>&1; then
+	if ! go test -tags procedural -run "^\$" -fuzz "^${name}\$" -fuzztime "$fuzztime" -fuzzminimizetime 5s -parallel "$parallel" "$pkg" >>"$log" 2>&1; then
 		echo "$pkg $name" >>"$work/failed"
 	fi
 	cat "$log"

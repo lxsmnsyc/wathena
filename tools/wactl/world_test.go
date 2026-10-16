@@ -88,3 +88,23 @@ func TestWorldVersions(t *testing.T) {
 		t.Errorf("default mode %s", gen.DefaultMode())
 	}
 }
+
+// TestPublicNode: the world row's public node is the public branch of
+// the seed's root, which yields every field's node, and differs from the
+// root (decision 0039).
+func TestPublicNode(t *testing.T) {
+	seed := []byte("a world seed of thirty-two bytes")
+	got, err := publicNode(seed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, _ := rng.NewRoot(seed)
+	want := gen.PublicBranch(root).Key()
+	rootKey := root.Key()
+	if len(got) != 32 || string(got) != string(want[:]) || string(got) == string(rootKey[:]) {
+		t.Errorf("public node %x, want %x", got, want)
+	}
+	if _, err := publicNode(nil); err == nil {
+		t.Error("an empty seed gave a public node")
+	}
+}

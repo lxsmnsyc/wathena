@@ -6,6 +6,7 @@ This spec fixes how a procedural world names its map generator, what a generator
 - The seed tree and random streams are in [rng-v1](rng-v1.md).
 - The golden checksums are in [`shared/gen/testdata`](../../shared/gen/testdata), one file per generator version. Every implementation must match them.
 - Decision [0038](../decisions/0038-generator-core.md) has the reasons.
+- Version 2, generated fields, is in [generator-v2](generator-v2.md). It adds a biome input, the public branch of the seed tree, and the module's field exports.
 
 ## World mode and versions
 
@@ -20,7 +21,7 @@ A world records three values when it is made, and they never change:
 - `Welcome.world` sends them to the client at login ([proposal 0001](../proposals/0001-protocol.md)). A server that sends no mode runs a classic world.
 - A generator version never changes. A change to any output, checksum included, needs a new version number. Old versions stay until no world uses them.
 - Each generator version names the rng spec version it uses. A world's rng version must be the one its generator version names.
-- A client that lacks a world's generator version, or whose module names another rng version for it, does not generate that world's maps. Phase 7 step 2 adds the download of a map from the server for that case.
+- A client that lacks a world's generator version, or whose module names another rng version for it, does not generate that world's maps. It downloads them from the server ([generator-v2](generator-v2.md), "Client").
 
 ## Rules for generators
 
@@ -30,7 +31,7 @@ A world records three values when it is made, and they never change:
 
 ## Inputs
 
-- A public node: a 32-byte key from the seed tree. The server sends a map's public node to the client, never the world root or a secret branch. Which node a map uses is fixed by phase 7 step 2.
+- A public node: a 32-byte key from the seed tree. The server sends a map's public node to the client, never the world root or a secret branch. A field's node is `child(child(root, "public"), "field", x, y)` ([generator-v2](generator-v2.md), "Seed tree").
 - The map's width and height, each from 1 to 1024 cells.
 
 ## Grid
@@ -119,7 +120,7 @@ The maps cover one cell, odd sizes, 400 × 400, a 1024-cell side, region indexes
 | Export | Use |
 |---|---|
 | `key() → ptr` | The 32-byte buffer for the public node's key. |
-| `generate(version, width, height) → code` | Makes the grid: 0, -1 for a version the module lacks, -2 for a size outside 1 to 1024. |
+| `generate(version, width, height, biome) → code` | Makes the grid: 0, -1 for a version the module lacks, -2 for a size outside 1 to 1024. Version 1 ignores the biome. [generator-v2](generator-v2.md) lists the other codes and exports. |
 | `types() → ptr` | Width × height cell types. |
 | `heights() → ptr` | 4 × width × height `i32` corner heights, little-endian. |
 | `water() → i32` | The water level. |

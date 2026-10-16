@@ -26,12 +26,12 @@ func TestFlags(t *testing.T) {
 }
 
 func TestParamsCheck(t *testing.T) {
-	for _, p := range []Params{{1, 1}, {1024, 1024}, {400, 7}} {
+	for _, p := range []Params{{Width: 1, Height: 1}, {Width: 1024, Height: 1024}, {Width: 400, Height: 7}} {
 		if err := p.Check(); err != nil {
 			t.Errorf("%+v: %v", p, err)
 		}
 	}
-	for _, p := range []Params{{0, 1}, {1, 0}, {-1, 5}, {1025, 1}, {1, 1025}} {
+	for _, p := range []Params{{Width: 0, Height: 1}, {Width: 1, Height: 0}, {Width: -1, Height: 5}, {Width: 1025, Height: 1}, {Width: 1, Height: 1025}} {
 		if err := p.Check(); !errors.Is(err, ErrSize) {
 			t.Errorf("%+v: %v, want ErrSize", p, err)
 		}

@@ -23,6 +23,12 @@
 //   WATHENA_TEST_DATABASE_URL, which scripts/check.sh browsers sets.
 //   Chromium only.
 //
+// - field: field-check.ts runs a --dev procedural world with two
+//   generated fields on a waserver built with -tags procedural. A page
+//   generates its field in a worker with the server's checksum, walks it,
+//   and a page with ?nogen downloads the same map (decision 0039).
+//   Chromium only.
+//
 // - gen: the map generator module (src/world/gen.wasm) gives the golden
 //   checksums of shared/gen/testdata in Chromium, Firefox and WebKit,
 //   whatever BROWSERS says (decision 0038). GEN_BROWSERS picks others. A
@@ -66,6 +72,7 @@ import {
   startGame,
 } from './game-check.ts';
 import { checkExit } from './exit-check.ts';
+import { checkFields } from './field-check.ts';
 import type * as GeneratorModule from '../src/world/generator.ts';
 
 const repo = join(import.meta.dirname, '..', '..');
@@ -827,7 +834,9 @@ interface GoldenMap {
   key: string;
   width: number;
   height: number;
+  biome?: number | undefined;
   checksum: string;
+  wmap?: string | undefined;
 }
 
 interface GoldenFile {
@@ -872,7 +881,18 @@ function goldenMaps(): GoldenFile[] {
       if (!isGoldenFile(g)) {
         throw new Error(`${f}: invalid`);
       }
-      return { version: g.version, rng: g.rng, maps: g.maps };
+      return {
+        version: g.version,
+        rng: g.rng,
+        maps: g.maps.map((m) => ({
+          key: m.key,
+          width: m.width,
+          height: m.height,
+          biome: m.biome,
+          checksum: m.checksum,
+          wmap: m.wmap,
+        })),
+      };
     });
 }
 
@@ -901,12 +921,23 @@ async function checkGen(name: string, browser: Browser, base: string): Promise<v
       });
       for (const want of v.maps) {
         const began = performance.now();
-        const grid = g.generate(v.version, m.keyFromHex(want.key), want.width, want.height);
+        const grid = g.generate(
+          v.version,
+          m.keyFromHex(want.key),
+          want.width,
+          want.height,
+          want.biome ?? 0,
+        );
         const took = performance.now() - began;
+        // A field's WMAP must be the same bytes as the server's.
+        const wmap =
+          grid.wmap.length === 0
+            ? undefined
+            : m.hex(new Uint8Array(await crypto.subtle.digest('SHA-256', grid.wmap)));
         out.push({
           label: `gen v${v.version} ${want.key.slice(0, 8)} ${want.width}x${want.height}`,
-          ok: grid.checksum === want.checksum,
-          detail: `${grid.checksum.slice(0, 16)} in ${took.toFixed(1)} ms`,
+          ok: grid.checksum === want.checksum && wmap === want.wmap,
+          detail: `${grid.checksum.slice(0, 16)}${wmap === undefined ? '' : ` wmap ${wmap.slice(0, 16)}`} in ${took.toFixed(1)} ms`,
         });
       }
     }
@@ -998,6 +1029,13 @@ try {
       }
       if (wanted('touch')) {
         await checkGame(name, browser, assets, base);
+      }
+      if (wanted('field')) {
+        if (name === 'chromium') {
+          await checkFields(name, browser, { repo, client, ...assets }, check);
+        } else {
+          console.log(`skip ${name} field: the game checks run in Chromium`);
+        }
       }
       if (wanted('exit')) {
         if (name === 'chromium') {

@@ -27,15 +27,17 @@
 #   lint      golangci-lint, then with the procedural tag on the
 #             packages it changes
 #   security  govulncheck, gosec and sqlcheck.sh
-#   fuzz      every fuzz test for 10 seconds, 4 at once.
+#   fuzz      every fuzz test for 10 seconds, 4 at once, with the
+#             procedural tag.
 #             scripts/fuzz.sh 5m fuzzes longer.
 #   client    pnpm check, lint, format:check, test and build
 #   tinygo    the shared packages under TinyGo, without and with the
 #             procedural tag, and path.wasm and gen.wasm
-#   gen       the map generator's golden checksums in Go on this
-#             machine's architecture and on the other one (amd64 under
-#             Rosetta on an arm64 Mac), and in gen.wasm in Node. The
-#             browsers step checks them in Chromium, Firefox and WebKit.
+#   gen       the map generator's golden checksums, with the WMAP
+#             hashes of generated fields, in Go on this machine's
+#             architecture and on the other one (amd64 under Rosetta on
+#             an arm64 Mac), and in gen.wasm in Node. The browsers step
+#             checks them in Chromium, Firefox and WebKit.
 #   e2e       the e2e package alone, with -race, with the phase 5
 #             exit check for 30 minutes (WATHENA_EXIT_MINUTES=30,
 #             e2e/README.md), and prints its numbers. test runs
@@ -43,9 +45,9 @@
 #             exit check, so it is not a default step.
 #   compose   the Compose stack smoke test. Only with all.
 #   browsers  the client in Chromium, with the phase 6 exit check
-#             (decision 0035) against waserver and PostgreSQL, and the
-#             map generator in Chromium, Firefox and WebKit. Only with
-#             all.
+#             (decision 0035) against waserver and PostgreSQL, a walk on
+#             generated fields (decision 0039), and the map generator in
+#             Chromium, Firefox and WebKit. Only with all.
 #
 # Tool versions. The script runs the tools on PATH and does not install
 # them. These are the versions the checks were written for:
@@ -380,12 +382,15 @@ step_tinygo() {
 
 # The map generator must give the same grid on every platform (strategy
 # section 8.4). Each part generates the golden maps of
-# shared/gen/testdata and compares the checksums.
+# shared/gen/testdata and compares the checksums, and for fields the
+# WMAP's SHA-256 too. The field and f32 tests run on both architectures.
+gen_tests='^TestGolden$|^TestGridV1Order$|^TestFieldV2$|^TestFieldV2Retries$|^TestF32Bits$'
+
 step_gen() {
 	local host other runner=() bin
 	host=$(go env GOARCH)
 	echo "== Go on $(go env GOOS)/$host"
-	go test -count=1 -tags procedural -run '^TestGolden$|^TestGridV1Order$' -v ./shared/gen
+	go test -count=1 -tags procedural -run "$gen_tests" -v ./shared/gen
 	case "$host" in
 	arm64) other=amd64 ;;
 	amd64) other=arm64 ;;
@@ -399,7 +404,7 @@ step_gen() {
 			runner=(arch -x86_64)
 		fi
 		if ${runner[@]+"${runner[@]}"} "$bin" -test.list XXX >/dev/null 2>&1; then
-			(cd shared/gen && ${runner[@]+"${runner[@]}"} "$bin" -test.count=1 -test.run '^TestGolden$|^TestGridV1Order$' -test.v)
+			(cd shared/gen && ${runner[@]+"${runner[@]}"} "$bin" -test.count=1 -test.run "$gen_tests" -test.v)
 		elif [ "$(uname -s)" = Darwin ]; then
 			echo "part skipped: the $other test binary does not run; an arm64 Mac needs Rosetta (softwareupdate --install-rosetta)"
 		else

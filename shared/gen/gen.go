@@ -99,6 +99,9 @@ const MaxSize = 1024
 type Params struct {
 	// Width and Height are the map's size in cells, 1 to MaxSize.
 	Width, Height int
+	// Biome is the index of the field's biome in the generator's biome
+	// table, from 0. Version 1 has no biomes and ignores it.
+	Biome int
 }
 
 // ErrSize is the error for a size outside 1 to MaxSize.
@@ -165,6 +168,45 @@ type Generator struct {
 	RNG string
 	// Grid generates a map's cell grid from its public node.
 	Grid func(node rng.Node, p Params) (Grid, error)
+	// Field generates a field from its public node, or is nil for a
+	// version without fields. Its grid is the one Grid returns.
+	Field func(node rng.Node, p Params) (Field, error)
+	// Biomes names the biomes of the biome table, by index. It is empty
+	// for a version without fields.
+	Biomes []string
+	// Tilesets lists each tileset's texture and model slots, which the
+	// field's WMAP names as texture/gen/<tileset>/<slot> and
+	// model/gen/<tileset>/<slot>. It is empty for a version without
+	// fields.
+	Tilesets []Tileset
+	// Climate picks the biome of field (x, y) from the world's public
+	// branch, or is nil for a version without fields. Only the server
+	// runs it, since clients never get the public branch.
+	Climate func(public rng.Node, x, y int64) int
+}
+
+// Tileset is a tileset's slots: ground textures, with water, and props.
+type Tileset struct {
+	Name     string
+	Textures []string
+	Models   []string
+}
+
+// TextureName and ModelName are the asset names a field's WMAP uses for
+// a tileset's slots. A tileset table maps them to other assets.
+func TextureName(tileset, slot string) string { return "texture/gen/" + tileset + "/" + slot }
+
+// ModelName is the asset name of a tileset's prop.
+func ModelName(tileset, slot string) string { return "model/gen/" + tileset + "/" + slot }
+
+// BiomeIndex returns a biome's index by name.
+func (g Generator) BiomeIndex(name string) (int, bool) {
+	for i, b := range g.Biomes {
+		if b == name {
+			return i, true
+		}
+	}
+	return 0, false
 }
 
 // Versions returns the generator versions this build has, oldest first.

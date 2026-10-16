@@ -20,6 +20,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/secretenv"
 	"github.com/lxsmnsyc/wathena/server/chat"
+	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
@@ -65,6 +66,24 @@ type options struct {
 	Staff staff.Config `yaml:"staff"`
 	// Privacy is the privacy notice at /account/privacy (decision 0032).
 	Privacy privacyOptions `yaml:"privacy"`
+	// Procedural are the generated fields of a procedural world
+	// (decision 0039).
+	Procedural proceduralOptions `yaml:"procedural"`
+}
+
+// proceduralOptions are the generated fields' settings.
+type proceduralOptions struct {
+	// Fields lists the fields to run as x:y or x:y:biome. A procedural
+	// world without it runs 0:0. With dev and no world row, it makes the
+	// world procedural.
+	Fields list `yaml:"fields"`
+	// FieldSize is each field's width and height in cells, 300 by
+	// default, or when 0.
+	FieldSize int `yaml:"field_size"`
+	// Tilesets is a YAML tileset table that maps the generator's
+	// tilesets to the asset build's textures and models. Empty uses the
+	// placeholder pack.
+	Tilesets string `yaml:"tilesets"`
 }
 
 // privacyOptions are the owner's parts of the privacy notice. The page
@@ -150,6 +169,7 @@ func defaultOptions() options {
 		Jail:     jailOptions{Map: "sec_pri", Cells: [][2]int{{49, 75}, {24, 75}}},
 
 		ShutdownCountdown: 10 * time.Second,
+		Procedural:        proceduralOptions{FieldSize: 300},
 	}
 }
 
@@ -228,6 +248,9 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.BoolVar(&f.Mods.Strict, "mods-strict", false, "make data overlay warnings errors, such as two mods setting the same field (mods.strict)")
 	flags.StringVar(&f.TimeZone, "time-zone", o.TimeZone, "the server's time zone, as an IANA name such as Asia/Manila; schedules and world events use it (time_zone)")
 	flags.DurationVar(&f.ShutdownCountdown, "shutdown-countdown", o.ShutdownCountdown, "how long players are warned before the server stops on SIGTERM, such as 10s; 0 stops at once, and a second signal skips the rest (shutdown_countdown)")
+	fieldList := flags.String("fields", "", "generated fields to run, as x:y or x:y:biome, comma-separated; with --dev and no world row they make a procedural world, which needs -tags procedural (procedural.fields)")
+	flags.IntVar(&f.Procedural.FieldSize, "field-size", o.Procedural.FieldSize, "the width and height of each generated field, 32 to 1024 cells (procedural.field_size)")
+	flags.StringVar(&f.Procedural.Tilesets, "tilesets", "", "YAML tileset table that maps the generator's tilesets to the asset build's textures and models; empty uses placeholders (procedural.tilesets)")
 	flags.StringVar(&database, "database", "", "PostgreSQL URL of the game role; prefer the "+databaseEnv+" environment variable, which keeps the password out of process lists")
 	if err := flags.Parse(args); err != nil {
 		return o, "", err
@@ -289,6 +312,12 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.ShutdownCountdown = f.ShutdownCountdown
 		case "time-zone":
 			o.TimeZone = f.TimeZone
+		case "fields":
+			o.Procedural.Fields = splitList(*fieldList)
+		case "field-size":
+			o.Procedural.FieldSize = f.Procedural.FieldSize
+		case "tilesets":
+			o.Procedural.Tilesets = f.Procedural.Tilesets
 		}
 	})
 	return o, database, nil
@@ -485,6 +514,21 @@ func validate(o options, s secrets) (settings, error) {
 	if o.Mods.Dir != "" {
 		if fi, err := os.Stat(o.Mods.Dir); err != nil || !fi.IsDir() {
 			bad("mods.dir", "%s is not a folder", o.Mods.Dir)
+		}
+	}
+	if o.Procedural.FieldSize == 0 {
+		st.Procedural.FieldSize = defaultOptions().Procedural.FieldSize
+	} else if o.Procedural.FieldSize < 32 || o.Procedural.FieldSize > 1024 {
+		bad("procedural.field_size", "must be 32 to 1024 cells")
+	}
+	for _, f := range o.Procedural.Fields {
+		if _, err := fields.ParseSpec(f); err != nil {
+			bad("procedural.fields", "%v", err)
+		}
+	}
+	if o.Procedural.Tilesets != "" {
+		if _, err := os.Stat(o.Procedural.Tilesets); err != nil {
+			bad("procedural.tilesets", "%v", err)
 		}
 	}
 	if o.Mods.MaxAssetMB < 0 || o.Mods.MaxAssetMB > 64<<10 {

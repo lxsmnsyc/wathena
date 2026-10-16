@@ -38,8 +38,8 @@ func (q *Queries) CreateAdminAccount(ctx context.Context, arg CreateAdminAccount
 
 const createWorld = `-- name: CreateWorld :execrows
 
-INSERT INTO world (name, ruleset, seed, mode, generator_version, rng_version)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO world (name, ruleset, seed, mode, generator_version, rng_version, public_node)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT (id) DO NOTHING
 `
 
@@ -50,6 +50,7 @@ type CreateWorldParams struct {
 	Mode             string
 	GeneratorVersion int
 	RngVersion       string
+	PublicNode       []byte
 }
 
 // Queries for the world row and its first account. `wactl world new`
@@ -65,6 +66,7 @@ func (q *Queries) CreateWorld(ctx context.Context, arg CreateWorldParams) (int64
 		arg.Mode,
 		arg.GeneratorVersion,
 		arg.RngVersion,
+		arg.PublicNode,
 	)
 	if err != nil {
 		return 0, err
@@ -73,7 +75,7 @@ func (q *Queries) CreateWorld(ctx context.Context, arg CreateWorldParams) (int64
 }
 
 const world = `-- name: World :one
-SELECT name, ruleset, mode, generator_version, rng_version, created_at FROM world WHERE id = 1
+SELECT name, ruleset, mode, generator_version, rng_version, public_node, created_at FROM world WHERE id = 1
 `
 
 type WorldRow struct {
@@ -82,10 +84,11 @@ type WorldRow struct {
 	Mode             string
 	GeneratorVersion int
 	RngVersion       string
+	PublicNode       []byte
 	CreatedAt        pgtype.Timestamptz
 }
 
-// World returns the world without its seed.
+// World returns the world without its seed, with its public branch.
 func (q *Queries) World(ctx context.Context) (WorldRow, error) {
 	row := q.db.QueryRow(ctx, world)
 	var i WorldRow
@@ -95,6 +98,7 @@ func (q *Queries) World(ctx context.Context) (WorldRow, error) {
 		&i.Mode,
 		&i.GeneratorVersion,
 		&i.RngVersion,
+		&i.PublicNode,
 		&i.CreatedAt,
 	)
 	return i, err

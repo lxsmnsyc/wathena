@@ -1,0 +1,231 @@
+{
+  "version": 2,
+  "rng": "rng-v1",
+  "maps": [
+    {
+      "secret": "golden-0",
+      "field": [
+        0,
+        0
+      ],
+      "key": "96a49e9b05e08531794cdf48923425994a276c82afc80c8a15cfd8db058b0d7e",
+      "width": 64,
+      "height": 64,
+      "water": -131072,
+      "counts": [
+        3241,
+        616,
+        0,
+        239
+      ],
+      "checksum": "e3bdf10add7818ea4341fcf9887a2a8b46fd23ca1f5eb25c257147d5e6a95633",
+      "objects": 54,
+      "wmap": "b4e5ffcbd6b606b322b7bc0a7e65fbbee14374833a68bc53901ae8bf20481f0e"
+    },
+    {
+      "secret": "golden-0",
+      "field": [
+        1,
+        0
+      ],
+      "key": "bf9a1f5da2b50c02fc74ca082da1eb5ec216bff5365f222d658c3bc1759b082a",
+      "width": 64,
+      "height": 64,
+      "biome": 1,
+      "water": -196608,
+      "counts": [
+        2842,
+        935,
+        205,
+        114
+      ],
+      "checksum": "5f2c495a2f6c153011b34831b98c3c4c38d4f5d993646618d2319b4715618d51",
+      "attempt": 1,
+      "objects": 76,
+      "wmap": "b502d6c6b1026c5a64a841a3873cea32e07f860332eee82f94beb99833f06c13"
+    },
+    {
+      "secret": "golden-0",
+      "field": [
+        0,
+        1
+      ],
+      "key": "e3de80abc8c77a4a40d01db8a51a1c793770a50df4d27739042f144b407bd1ee",
+      "width": 96,
+      "height": 80,
+      "biome": 2,
+      "water": -271032,
+      "counts": [
+        7157,
+        414,
+        0,
+        109
+      ],
+      "checksum": "289a7903a25ca52cbbd1fecd792a8f304ad92933d34cbd5a6bbb87a63658ed0b",
+      "objects": 41,
+      "wmap": "95e80d14f0f834c389f08aeef322ad5dea8c28ba6e7de15e55d996244b3fb07b"
+    },
+    {
+      "secret": "golden-1",
+      "field": [
+        -2,
+        5
+      ],
+      "key": "cba95c598b3aa5e058bf2c547447cac21a15b3ab16c93ca8e41ca48c90f73beb",
+      "width": 128,
+      "height": 128,
+      "biome": 3,
+      "water": -198656,
+      "counts": [
+        12019,
+        2241,
+        419,
+        1705
+      ],
+      "checksum": "57fb95a8a85f50b392f59064a98b94b8ee6299288c292f8948cf785af693b576",
+      "objects": 149,
+      "wmap": "cd6a7ec64adfe54de055cf33db4f351284c885f60efb121bee44f5e798d48dc8"
+    },
+    {
+      "secret": "golden-1",
+      "field": [
+        3,
+        -1
+      ],
+      "key": "a145613a1fdc756e49320f2b4d86775b9e3cded42420e3d5a258b4724a13d159",
+      "width": 64,
+      "height": 100,
+      "biome": 4,
+      "water": -7771,
+      "counts": [
+        4229,
+        560,
+        1611,
+        0
+      ],
+      "checksum": "b0749ed898d50ac1e6b2e534a18f6d88bef92d78ecfb8cc255d6f6ffedd12abe",
+      "objects": 72,
+      "wmap": "abfc51b2ecba44e4a166aa4f5d969f65343fdd7e62006578cc5a29218ed09e57"
+    },
+    {
+      "secret": "golden-1",
+      "field": [
+        1099511627776,
+        -1099511627776
+      ],
+      "key": "0606317dc9dff1058f853f89bc2794ea139e6e2e835fd8c20c7c082105b0a316",
+      "width": 80,
+      "height": 64,
+      "biome": 5,
+      "water": -126538,
+      "counts": [
+        3382,
+        1090,
+        648,
+        0
+      ],
+      "checksum": "e95bdb5f533b69fc05912cd936cf6212586eac9aadbc378a7aab77c673ce1940",
+      "objects": 27,
+      "wmap": "3f61c45136661ce62ad871bbb8ae087d62731c4f312f86c476bd40a8a2b516d9"
+    },
+    {
+      "secret": "golden-2",
+      "field": [
+        0,
+        0
+      ],
+      "key": "5c3c93718a5a91b9fe833850a689d6d0a199bbf835018e1ecf9ff3027211e492",
+      "width": 32,
+      "height": 32,
+      "water": -131072,
+      "counts": [
+        781,
+        119,
+        58,
+        66
+      ],
+      "checksum": "f082be8c9418b13488b6d4213db23942135a70c0e699add816d0ca530bde6395",
+      "attempt": 2,
+      "objects": 8,
+      "wmap": "5285f6acf788627f49c99e6f503e6bf33c2d41bdf95730b4483390bac8469f26"
+    },
+    {
+      "secret": "golden-2",
+      "field": [
+        4,
+        4
+      ],
+      "key": "c912b38097f9c3de55b7290ad3678ff811c90bf936c2c723ea82519a6f4925ac",
+      "width": 400,
+      "height": 400,
+      "water": -131360,
+      "counts": [
+        125043,
+        20390,
+        1066,
+        13501
+      ],
+      "checksum": "dda5bdc417f3647f4f3e4f8a387dfcaba0383dca884176a79535244dda0bbfa5",
+      "objects": 1722,
+      "wmap": "4b6c2848b663800ca590f846cac2027e635caaa04281b84bc9d1f4b0518e2cdb"
+    },
+    {
+      "secret": "golden-3",
+      "field": [
+        -7,
+        2
+      ],
+      "key": "12644bf86e1a9a8bbd965a6da9a7a280dbdef92531a533e02e8ad8e2aa4e9281",
+      "width": 400,
+      "height": 400,
+      "biome": 1,
+      "water": -196866,
+      "counts": [
+        89335,
+        51419,
+        467,
+        18779
+      ],
+      "checksum": "dbefaf4dca7c2048ddaf1e1b2a18d1f5cab12a1f8363b0e23f193a7fb0d612ea",
+      "objects": 3035,
+      "wmap": "5e027a407a141c14483471e5302cad4bda8c6195e1d9cfb4414da07e5ded5e8a"
+    },
+    {
+      "secret": "golden-3",
+      "field": [
+        7,
+        7
+      ],
+      "key": "a56454d094ae809d43d541e78b0f856e736357543965d2ec6ab05a4e12c2812c",
+      "width": 1024,
+      "height": 40,
+      "biome": 2,
+      "water": -306093,
+      "counts": [
+        38379,
+        1771,
+        0,
+        810
+      ],
+      "checksum": "368e9526d4b4bce4384fc8cd6a473228a27d1650d3647677e5d0e9744f8a3c71",
+      "objects": 168,
+      "wmap": "2cc518e62235a3d64b4f451e04ecc8c83ea1ca0978b9db96b3e867eb41dbe080"
+    },
+    {
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "width": 48,
+      "height": 48,
+      "biome": 5,
+      "water": -98446,
+      "counts": [
+        1577,
+        477,
+        250,
+        0
+      ],
+      "checksum": "f26e9a8be08071ed7fdcd3280297def789d9a33c67b67db775f27cbb792cd2b1",
+      "objects": 15,
+      "wmap": "cedf8449a718724d636a50c9ea2d307279b269383895fa965e417529d9370619"
+    }
+  ]
+}

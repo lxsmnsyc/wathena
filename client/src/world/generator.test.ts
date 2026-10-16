@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { Generator, generatorFor, keyFromHex } from './generator';
@@ -15,9 +16,12 @@ interface Golden {
     key: string;
     width: number;
     height: number;
+    biome?: number;
     water: number;
     counts: number[];
     checksum: string;
+    attempt?: number;
+    wmap?: string;
   }[];
 }
 
@@ -36,21 +40,36 @@ describe('Generator', () => {
       const want = golden(v);
       expect(g.supports(v, want.rng)).toBe(true);
       for (const m of want.maps) {
-        const grid = g.generate(v, keyFromHex(m.key), m.width, m.height);
+        const began = performance.now();
+        const grid = g.generate(v, keyFromHex(m.key), m.width, m.height, m.biome ?? 0);
+        const took = performance.now() - began;
+        if (m.width * m.height >= 400 * 400) {
+          console.info(`gen v${v} ${m.width}x${m.height} in Node: ${took.toFixed(1)} ms`);
+        }
         const counts = [0, 0, 0, 0];
         for (const t of grid.types) {
           counts[[0, 1, 3, 5].indexOf(t)]! += 1;
         }
-        expect({ checksum: grid.checksum, water: grid.water, counts }).toEqual({
+        const wmap =
+          grid.wmap.length === 0 ? undefined : createHash('sha256').update(grid.wmap).digest('hex');
+        expect({
+          checksum: grid.checksum,
+          water: grid.water,
+          counts,
+          attempt: grid.attempt,
+          wmap,
+        }).toEqual({
           checksum: m.checksum,
           water: m.water,
           counts: m.counts,
+          attempt: m.attempt ?? 0,
+          wmap: m.wmap,
         });
         expect(grid.heights.length).toBe(4 * m.width * m.height);
         checked++;
       }
     }
-    expect(checked).toBeGreaterThanOrEqual(8);
+    expect(checked).toBeGreaterThanOrEqual(19);
   });
 
   it('refuses unknown versions, sizes and keys', async () => {
@@ -62,6 +81,10 @@ describe('Generator', () => {
     expect(() => g.generate(1, key, 0, 4)).toThrow(/invalid size/);
     expect(() => g.generate(1, key, 1025, 4)).toThrow(/invalid size/);
     expect(() => g.generate(1, new Uint8Array(31), 4, 4)).toThrow(/32 bytes/);
+    expect(() => g.generate(2, key, 31, 64)).toThrow(/invalid size/);
+    expect(() => g.generate(2, key, 64, 64, 99)).toThrow(/no biome 99/);
+    expect(g.biomes(1)).toBe(0);
+    expect(g.biomes(2)).toBe(6);
     expect(() => keyFromHex('00')).toThrow(/64 lowercase hex/);
     // A refused call leaves the module usable.
     expect(g.generate(1, key, 4, 4).types.length).toBe(16);

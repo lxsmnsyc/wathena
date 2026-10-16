@@ -15,12 +15,14 @@ import (
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/shared/gen"
+	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
 // worldNew makes a world in a database that roles.sql prepared:
 //  1. It applies pending migrations.
-//  2. It makes the world row with a new secret root seed and the world
-//     mode, with the newest generator for a procedural world.
+//  2. It makes the world row with a new secret root seed, the key of its
+//     public branch, and the world mode, with the newest generator for a
+//     procedural world.
 //  3. It makes the first account with a password.
 //  4. It prints the staff.owners line that makes the account an owner.
 //
@@ -87,6 +89,9 @@ func worldNew(args []string) error {
 		return err
 	}
 	w := store.World{Name: *name, Ruleset: *ruleset, Seed: seed, Mode: *mode, GeneratorVersion: generator, RNGVersion: rngVersion}
+	if w.PublicNode, err = publicNode(seed); err != nil {
+		return err
+	}
 	id, err := store.NewWorld(ctx, pool, w, store.Admin{Name: *admin, Hash: hash})
 	if err != nil {
 		return err
@@ -94,6 +99,17 @@ func worldNew(args []string) error {
 	fmt.Printf("made the %s world %q (%s) and the account %s (id %d)\n", worldModeText(w), *name, *ruleset, *admin, id)
 	fmt.Print(ownersHint(*admin))
 	return nil
+}
+
+// publicNode returns the key of the public branch of the seed tree that
+// seed roots (decision 0039). The game role reads it instead of the seed.
+func publicNode(seed []byte) ([]byte, error) {
+	root, err := rng.NewRoot(seed)
+	if err != nil {
+		return nil, err
+	}
+	key := gen.PublicBranch(root).Key()
+	return key[:], nil
 }
 
 // worldVersions returns the generator and rng versions a new world of

@@ -52,7 +52,7 @@ type Placeholder struct{}
 func (Placeholder) Name() string { return "placeholder" }
 
 func (Placeholder) Items() ([]Item, error) {
-	return []Item{{
+	items := []Item{{
 		Name:     "placeholder/sprite",
 		Ext:      "wspr",
 		CacheKey: placeholderConverter + "|sprite",
@@ -78,7 +78,29 @@ func (Placeholder) Items() ([]Item, error) {
 			_, lm := placeholder.Map()
 			return texture.Encode(lm)
 		},
-	}}, nil
+	}, {
+		Name:     "placeholder/model",
+		Ext:      "glb",
+		CacheKey: placeholderConverter + "|model",
+		Produce:  placeholder.Model,
+	}}
+	for _, m := range placeholder.GroundMaterials {
+		items = append(items, Item{
+			Name:     "placeholder/ground/" + m,
+			Ext:      "webp",
+			CacheKey: fmt.Sprintf("%s|ground|%s|%d", placeholderConverter, m, texture.Level),
+			Produce:  func() ([]byte, error) { return texture.Encode(placeholder.Ground(m)) },
+		})
+	}
+	for _, p := range placeholder.Props {
+		items = append(items, Item{
+			Name:     "placeholder/prop/" + p,
+			Ext:      "glb",
+			CacheKey: placeholderConverter + "|prop|" + p,
+			Produce:  func() ([]byte, error) { return placeholder.Prop(p) },
+		})
+	}
+	return items, nil
 }
 
 // GRF imports from a game client folder.

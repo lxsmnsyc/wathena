@@ -56,10 +56,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/lxsmnsyc/wathena/server/mail"
-	"github.com/lxsmnsyc/wathena/server/market"
 	"io/fs"
 	"log/slog"
+	"maps"
 	"net"
 	"net/http"
 	"os"
@@ -72,6 +71,7 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
 	// The time zone database, for time_zone on systems without one,
 	// such as the distroless image.
 	_ "time/tzdata"
@@ -90,9 +90,12 @@ import (
 	"github.com/lxsmnsyc/wathena/server/adminworld"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
+	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mail"
+	"github.com/lxsmnsyc/wathena/server/market"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modassets"
@@ -258,11 +261,6 @@ func runAll(name string, args []string) error {
 	if cfg.Captcha == "dev" {
 		captchaProvider = account.DevCaptcha{}
 	}
-	name = assetName(cfg.StartMap)
-	names, err := selectMaps(cfg.Assets, name, strings.Join(cfg.Maps, ","))
-	if err != nil {
-		return err
-	}
 	files, err := serve.New(cfg.Assets)
 	if err != nil {
 		return err
@@ -324,6 +322,16 @@ func runAll(name string, args []string) error {
 		if worldRow, err = checkWorld(ctx, pool, cfg); err != nil {
 			return err
 		}
+	}
+	// A procedural world generates its fields now, from its public
+	// branch (decision 0039).
+	proc, err := fieldMaps(cfg, worldRow, log)
+	if err != nil {
+		return err
+	}
+	name, assetMaps, names, err := worldMaps(cfg, proc)
+	if err != nil {
+		return err
 	}
 	itemData, err := loadItemData(statusMode)
 	if err != nil {
@@ -464,9 +472,13 @@ func runAll(name string, args []string) error {
 	reg := metrics.NewRegistry()
 	reg.Log, reg.ProfileDir = log, cfg.ProfileDir
 	started := time.Now()
-	grids, err := world.LoadGrids(cfg.Assets, names)
+	grids, err := world.LoadGrids(cfg.Assets, assetMaps)
 	if err != nil {
 		return err
+	}
+	grids = append(grids, fieldGrids(proc)...)
+	if proc.set != nil {
+		maps.Copy(warps, proc.set.Warps())
 	}
 	// Storages and carts load at login and leave memory after their last
 	// commit (decision 0023). Without a database they stay in memory.
@@ -632,7 +644,7 @@ func runAll(name string, args []string) error {
 	})
 	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: cfg.Origins, Log: log, Metrics: &reg.Conns,
 		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName, Limits: rules.LimitsOrDefault(worldRules), Closed: planner.Closed,
-		Mode: worldMode(worldRow)}
+		Mode: proc.mode}
 	go reg.Conns.Run(ctx)
 	hc := &health{}
 	var st *store.Store
@@ -803,6 +815,9 @@ func runAll(name string, args []string) error {
 	mux.Handle(modassets.Prefix, modArt)
 	mux.Handle(modassets.ClientDataPath, modArt)
 	mux.Handle("/ws", gw)
+	if proc.set != nil {
+		mux.Handle(fields.Prefix, proc.set)
+	}
 	if accounts != nil {
 		mux.Handle(account.Prefix, accounts)
 		mux.Handle(admin.Prefix, adminAPI)

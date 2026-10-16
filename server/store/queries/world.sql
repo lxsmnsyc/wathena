@@ -5,13 +5,13 @@
 -- name: CreateWorld :execrows
 -- CreateWorld makes the world row. It makes nothing when the world
 -- exists.
-INSERT INTO world (name, ruleset, seed, mode, generator_version, rng_version)
-VALUES (@name, @ruleset, @seed, @mode, @generator_version, @rng_version)
+INSERT INTO world (name, ruleset, seed, mode, generator_version, rng_version, public_node)
+VALUES (@name, @ruleset, @seed, @mode, @generator_version, @rng_version, @public_node)
 ON CONFLICT (id) DO NOTHING;
 
 -- name: World :one
--- World returns the world without its seed.
-SELECT name, ruleset, mode, generator_version, rng_version, created_at FROM world WHERE id = 1;
+-- World returns the world without its seed, with its public branch.
+SELECT name, ruleset, mode, generator_version, rng_version, public_node, created_at FROM world WHERE id = 1;
 
 -- name: CreateAdminAccount :one
 -- CreateAdminAccount makes the first account and its password in one

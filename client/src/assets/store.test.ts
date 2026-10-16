@@ -66,6 +66,24 @@ describe('shardOf', () => {
 describe('AssetStore', () => {
   const sprite = encoder.encode('WSPR sprite');
 
+  it('resolves aliases, such as the tileset table, one level deep', async () => {
+    const tex = encoder.encode('texture');
+    const b = await fakeBuild({ 'placeholder/ground/grass': { t: 'texture', data: tex } });
+    const store = await AssetStore.open('/b/', b.fetcher);
+    expect(await store.bytes('texture/gen/forest/grass', 'texture')).toBeUndefined();
+    store.setAliases(
+      new Map([
+        ['texture/gen/forest/grass', 'placeholder/ground/grass'],
+        ['texture/gen/forest/dirt', 'texture/gen/forest/grass'],
+      ]),
+    );
+    expect(await store.bytes('texture/gen/forest/grass', 'texture')).toEqual(tex);
+    expect((await store.entry('texture/gen/forest/grass'))?.t).toBe('texture');
+    expect(store.resolve('map/prontera')).toBe('map/prontera');
+    // An alias of an alias does not resolve further.
+    expect(await store.bytes('texture/gen/forest/dirt', 'texture')).toBeUndefined();
+  });
+
   it('loads and checks assets', async () => {
     const b = await fakeBuild({
       'sprite/mob/poring': { t: 'sprite', data: sprite },

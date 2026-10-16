@@ -176,6 +176,12 @@ When a name is missing, the client uses a placeholder and logs the missing name 
 
 wAthena provides a placeholder pack as the `placeholder` build source. Its art is drawn by code in `internal/assets/placeholder`, so it is original and CC0. It will cover every `placeholder/*` name, plus a minimal body, head, monster, ground texture, and map, so the client runs with no other assets. Each part is added when its format's converter exists. `placeholder/sprite`, `placeholder/texture`, and `placeholder/map` with its lightmap, `placeholder/lightmap`, exist now. The map is 24 × 24 walkable cells of the placeholder texture with a low hill, and CI renders it.
 
+The pack also has art that generated maps use by default:
+
+- `placeholder/model` is a grey box of 1 × 1 × 1 cells.
+- `placeholder/ground/<material>` is a 64 × 64 tiling ground texture for each material: `grass`, `dirt`, `sand`, `rock`, `snow`, `mud`, and `water`.
+- `placeholder/prop/<prop>` is a small untextured model for each prop: `tree`, `pine`, `bush`, `rock`, `cactus`, `palm`, `deadtree`, and `reed`. Its sizes are in cells.
+
 ## Formats
 
 All multi-byte numbers are little-endian. Every binary format starts with a 4-byte magic and a `u16` format version.

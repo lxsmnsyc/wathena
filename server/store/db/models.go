@@ -575,6 +575,7 @@ type World struct {
 	CreatedAt        pgtype.Timestamptz
 	Mode             string
 	RngVersion       string
+	PublicNode       []byte
 }
 
 type WorldEventProgress struct {

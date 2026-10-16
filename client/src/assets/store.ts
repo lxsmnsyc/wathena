@@ -160,6 +160,8 @@ export class AssetStore {
   private readonly mods = new Map<string, AssetStore>();
   /** The mod whose build this is, or undefined for core's. */
   private ownMod: string | undefined;
+  /** Names that stand for other names, such as a tileset table's. */
+  private aliases = new Map<string, string>();
 
   private constructor(
     private readonly base: string,
@@ -197,6 +199,20 @@ export class AssetStore {
     this.mods.set(id, build);
   }
 
+  /**
+   * Sets names that stand for other names: a generated field's
+   * texture/gen/... and model/gen/... names stand for the assets of the
+   * server's tileset table (decision 0039). One level only.
+   */
+  setAliases(aliases: ReadonlyMap<string, string>): void {
+    this.aliases = new Map(aliases);
+  }
+
+  /** The name an alias stands for, or the name itself. */
+  resolve(name: string): string {
+    return this.aliases.get(name) ?? name;
+  }
+
   /** The mods whose builds are loaded. */
   modIds(): string[] {
     return [...this.mods.keys()];
@@ -224,7 +240,12 @@ export class AssetStore {
   }
 
   /** Looks up a name. Undefined means the build does not have it. */
-  async entry(name: string): Promise<Entry | undefined> {
+  async entry(alias: string): Promise<Entry | undefined> {
+    return this.lookup(this.resolve(alias));
+  }
+
+  /** Looks up a name without aliases. */
+  private async lookup(name: string): Promise<Entry | undefined> {
     const owner = this.modStore(name);
     if (owner === 'missing') {
       return undefined;
@@ -246,7 +267,8 @@ export class AssetStore {
    * is an error. An asset's dependency index loads with it, so the names
    * it uses resolve without manifest shards.
    */
-  async bytes(name: string, expected: AssetType): Promise<Uint8Array<ArrayBuffer> | undefined> {
+  async bytes(alias: string, expected: AssetType): Promise<Uint8Array<ArrayBuffer> | undefined> {
+    const name = this.resolve(alias);
     const owner = this.modStore(name);
     if (owner === 'missing') {
       this.logMissing(name);
@@ -255,7 +277,7 @@ export class AssetStore {
     if (owner !== undefined) {
       return owner.bytes(name, expected);
     }
-    const e = await this.entry(name);
+    const e = await this.lookup(name);
     if (e === undefined) {
       this.logMissing(name);
       return undefined;

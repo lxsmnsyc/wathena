@@ -168,8 +168,49 @@ A world is `classic` or `procedural`, chosen by `wactl world new --mode` and kep
 - A build with the tag `procedural` makes procedural worlds by default, with the newest generator. A build without it makes classic worlds, and refuses `--mode procedural`.
 - `waserver` refuses to start on a procedural world when it was built without the tag, or when it lacks the world's generator version or rng spec version.
 - `Welcome.world` tells the client the mode and the versions. The client loads its map generator only for a procedural world.
-- A `--dev` server without a world runs classic.
-- Procedural worlds have no generated maps yet. Phase 7 step 2 adds fields.
+- A `--dev` server without a world runs classic, unless `--fields` is given (below).
+- A procedural world runs generated fields (below, "Generated fields").
+
+### Generated fields
+
+A procedural world runs generated fields (docs/decisions/0039-generated-fields.md, docs/specs/generator-v2.md). They need a `waserver` built with `-tags procedural`.
+
+```text
+go build -tags procedural -o /tmp/waserver ./server/cmd/waserver
+/tmp/waserver --dev --assets /path/to/build --fields 0:0,1:0:desert,0:1
+```
+
+- `--fields` (`procedural.fields`) lists the fields as `x:y` or `x:y:biome`. A biome left out comes from the world's climate. The biomes are grassland, forest, desert, snow, swamp and beach. A procedural world row without the setting runs `0:0`.
+- `--field-size` (`procedural.field_size`) is each field's side, 32 to 1024 cells, 300 by default.
+- Each field runs in a zone named by its map ID, such as `gen:field:1:0`. The first field is the start map unless `--map` names a field. Asset maps run beside the fields only when `--maps` lists them.
+- The fields generate at start, about 50 ms each for 300 × 300 cells. A field that fails validation in all 8 attempts stops the start with an error that names its public node.
+- With `--dev` and no world row, `--fields` makes a procedural world on the newest generator, whose secret follows `--seed`. With a world row, the world's generator and its public node are used. A classic world refuses `--fields`.
+- Fields that touch are linked by warps at their facing portals, for development, until the map graph of phase 7 step 4.
+
+The game role never reads the world seed. `wactl world new` stores the key of the seed tree's public branch in the world row (migration 00030), and `waserver` derives each field's public node from it. A procedural world made before that migration has none, and `waserver` asks to make it again.
+
+The server serves, with no login and to any origin:
+
+| Path | Content |
+|---|---|
+| `/gen/maps/<id>.json` | The field's public node, size, biome, generator version, grid checksum, and its WMAP's path, SHA-256 and length. |
+| `/gen/maps/<id>.wmap` | The field's WMAP, gzip for clients that accept it, with its SHA-256 as the ETag. |
+| `/gen/tilesets.json` | The tileset table. |
+
+The client generates each field itself and compares the checksum. It downloads the WMAP only when they differ or it cannot generate the field.
+
+#### Tileset table
+
+A field's WMAP names textures and models by tileset: `texture/gen/<tileset>/<slot>` and `model/gen/<tileset>/<prop>`. The tileset table maps them to assets of the build. By default each slot shows the placeholder pack's `placeholder/ground/<slot>` or `placeholder/prop/<slot>`. `--tilesets` (`procedural.tilesets`) names a YAML file that points slots at the operator's own build, such as one made from the kRO client:
+
+```yaml
+tilesets:
+  grassland:
+    textures: {grass: texture/my_build/grass01, water: texture/my_build/water00}
+    models: {tree: model/my_build/tree01}
+```
+
+Slots it leaves out stay placeholders. A tileset or slot the generator lacks, or an invalid asset name, stops the start. The tilesets and slots are in `shared/gen/v2biomes.go`. wAthena ships no game art: a public release needs an original or licensed art pack.
 
 ### Running with accounts
 

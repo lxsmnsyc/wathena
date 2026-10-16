@@ -85,18 +85,22 @@ func TestWorldMode(t *testing.T) {
 		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "classic", GeneratorVersion: 1, RNGVersion: "rng-v1"},
 		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "other"},
 		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "procedural", GeneratorVersion: 1, RNGVersion: "rng-1"},
+		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "procedural", GeneratorVersion: 2, RNGVersion: "rng-v1", PublicNode: make([]byte, 31)},
 	} {
 		if _, err := store.NewWorld(ctx, admin, bad, store.Admin{Name: "Admin1", Hash: "x"}); !isCode(err, "23514") {
 			t.Errorf("%+v: %v, want a check violation", bad, err)
 		}
 	}
-	w := store.World{Name: "Gen", Ruleset: "pre-renewal", Seed: seed, Mode: "procedural", GeneratorVersion: 1, RNGVersion: "rng-v1"}
+	// The game role reads the public branch, never the seed (decision
+	// 0039).
+	w := store.World{Name: "Gen", Ruleset: "pre-renewal", Seed: seed, Mode: "procedural", GeneratorVersion: 2, RNGVersion: "rng-v1", PublicNode: bytes.Repeat([]byte{7}, 32)}
 	if _, err := store.NewWorld(ctx, admin, w, store.Admin{Name: "Admin1", Hash: "x"}); err != nil {
 		t.Fatal(err)
 	}
 	got, err := store.LoadWorld(ctx, game)
 	if err != nil || got.Name != w.Name || got.Ruleset != w.Ruleset || got.Seed != nil ||
-		got.Mode != w.Mode || got.GeneratorVersion != w.GeneratorVersion || got.RNGVersion != w.RNGVersion {
+		got.Mode != w.Mode || got.GeneratorVersion != w.GeneratorVersion || got.RNGVersion != w.RNGVersion ||
+		!bytes.Equal(got.PublicNode, w.PublicNode) {
 		t.Errorf("load: %+v, %v, want %+v", got, err, w)
 	}
 }

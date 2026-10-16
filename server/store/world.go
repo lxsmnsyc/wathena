@@ -31,6 +31,10 @@ type World struct {
 	// classic world has 0 and "".
 	GeneratorVersion int
 	RNGVersion       string
+	// PublicNode is the key of the seed tree's public branch, which the
+	// game role may read instead of Seed (decision 0039). It is nil for
+	// worlds made before migration 00030.
+	PublicNode []byte
 }
 
 // Admin is the first account that NewWorld makes. Hash is the
@@ -54,6 +58,7 @@ func NewWorld(ctx context.Context, pool *pgxpool.Pool, w World, admin Admin) (in
 		n, err := q.CreateWorld(ctx, db.CreateWorldParams{
 			Name: w.Name, Ruleset: w.Ruleset, Seed: w.Seed, Mode: mode,
 			GeneratorVersion: w.GeneratorVersion, RngVersion: w.RNGVersion,
+			PublicNode: w.PublicNode,
 		})
 		if err != nil {
 			return err
@@ -70,7 +75,7 @@ func NewWorld(ctx context.Context, pool *pgxpool.Pool, w World, admin Admin) (in
 	return id, err
 }
 
-// LoadWorld reads the world without its seed. The game role runs it. It
+// LoadWorld reads the world without its seed, with its public branch. The game role runs it. It
 // returns ErrNoWorld when `wactl world new` has not run.
 func LoadWorld(ctx context.Context, pool *pgxpool.Pool) (World, error) {
 	row, err := db.New(pool).World(ctx)
@@ -83,5 +88,6 @@ func LoadWorld(ctx context.Context, pool *pgxpool.Pool) (World, error) {
 	return World{
 		Name: row.Name, Ruleset: row.Ruleset, Mode: row.Mode,
 		GeneratorVersion: row.GeneratorVersion, RNGVersion: row.RngVersion,
+		PublicNode: row.PublicNode,
 	}, nil
 }
