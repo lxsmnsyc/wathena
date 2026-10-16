@@ -1005,6 +1005,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Art.** A protocol field carries companion and mount art, so the client draws them. Weapons and shields get worn sprites through `view_sprite`, as headgear and garments do.
     - **Later.** Signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones running mods' maps, the inventory expansion voucher window, and the converter review of review decision 32.
 
+42. Dungeons, towns and named places (phase 7 step 3). The user approved these on 2026-10-16:
+    - **Dungeons.** Caves by cellular automata, and crypts, towers and ruins by rooms joined with a minimum spanning tree plus a few loops (strategy section 8.5). Each floor is a map `gen:dungeon:<id>:<floor>`. The exit to the next floor is in the room farthest from the entrance, and the last floor has a boss room. Each floor carries a level band one step above the floor before it. Styles are records in `data/dungeon_styles.yml`: method, floors, floor size, room sizes, tileset and level step.
+    - **Towns.** A flattened plateau, main roads from each gate to a central square, side roads, plots, buildings, walls, gates, decorations and service NPC spots. Templates are records in `data/town_templates.yml`. A building lists its model, footprint and the named places inside it, such as `blacksmith`, `inn`, `storage` or `shop:tool`. Towns have IDs; names come with step 4.
+    - **Named places.** Every generated map records its places with a tag and a cell: town services, `square`, `gate`, `entrance`, `exit`, `boss_room` and others.
+    - **`wa.places`.** `places.find(scope, tag)` returns every match in a fixed order. `places.nearest(player, tag)` returns the closest by the map graph, then distance. A place has `get_map()`, `get_position()` (x, y), `get_tags()` and `get_area()` (such as `"town:t7"`, `"dungeon:crypt:2"` or `"field:3:-1"`). Scopes: `"town:any"`, `"town:<id>"`, `"dungeon:any"`, `"dungeon:<id>"` and `"map:<id>"`. It needs `game.read`. Classic worlds return no places.
+    - **NPCs at places.** A record in `data/npcs.yml` may give `place: { scope, tag }` in place of `map`, `x` and `y`. It appears at every matching place.
+    - **Mods** add town templates and dungeon styles as data records. Lua generation layers wait for step 6.
+    - **Dev world.** `waserver --dev --towns <n> --dungeons <style>:<floors>` for walking towns and dungeons in the browser.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
