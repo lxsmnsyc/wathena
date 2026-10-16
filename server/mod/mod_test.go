@@ -626,8 +626,21 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 16 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 18 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
+	}
+	// The Market Town's NPCs stand at places, not on a map.
+	placed := 0
+	for _, n := range npcs {
+		if n.Place != nil {
+			placed++
+			if !n.Placed || n.Map != "" || n.Place.Scope.String() != "town:any" {
+				t.Errorf("npc by place %+v", n)
+			}
+		}
+	}
+	if placed != 2 {
+		t.Errorf("%d NPCs by place", placed)
 	}
 	// The cookie stand is a shop that only scripts open.
 	if shop := npcs[7]; shop.Placed || shop.Shop == nil || len(shop.Shop.Items) != 2 || !shop.Shop.Discount || shop.Shop.Items[1].Price != -1 {

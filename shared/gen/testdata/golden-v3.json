@@ -1,0 +1,370 @@
+{
+  "version": 3,
+  "rng": "rng-v1",
+  "maps": [
+    {
+      "secret": "golden-0",
+      "field": [
+        0,
+        0
+      ],
+      "key": "96a49e9b05e08531794cdf48923425994a276c82afc80c8a15cfd8db058b0d7e",
+      "width": 64,
+      "height": 64,
+      "water": -131072,
+      "counts": [
+        3241,
+        616,
+        0,
+        239
+      ],
+      "checksum": "e3bdf10add7818ea4341fcf9887a2a8b46fd23ca1f5eb25c257147d5e6a95633",
+      "objects": 54,
+      "wmap": "b4e5ffcbd6b606b322b7bc0a7e65fbbee14374833a68bc53901ae8bf20481f0e",
+      "places": "2816d25106f553ed57970ecf66b70e6116b70f01983fc3664b0700311d0f35e5"
+    },
+    {
+      "secret": "golden-1",
+      "field": [
+        2,
+        -3
+      ],
+      "key": "54819397b6e0aaa8790f027745ac4557e213e248f867ba75d831e519aa836313",
+      "width": 160,
+      "height": 120,
+      "biome": 1,
+      "water": -196608,
+      "counts": [
+        12518,
+        4703,
+        117,
+        1862
+      ],
+      "checksum": "31251bde6286114aa16aa00af39e19808b310cfc065e2b662b92e9449237f6d7",
+      "objects": 381,
+      "wmap": "207a05ead90702cee21ad9ce443165be9714e8cbdfcb14464a3266f00fffe1a6",
+      "places": "fe27668d92f9b4927d46706f22f16d95a2de400433f8953cc0485c88ad725b9e"
+    },
+    {
+      "secret": "golden-0",
+      "kind": "dungeon",
+      "params": "010100008000800006000c046361766503050103",
+      "dungeon": "cave",
+      "floor": 1,
+      "name": "cave",
+      "key": "ac07ce415c050e0ab46e33911aefa9152e64ce2b98ea16bcc998d4e4f584f3c9",
+      "width": 128,
+      "height": 128,
+      "water": -1048576,
+      "counts": [
+        9484,
+        6900,
+        0,
+        0
+      ],
+      "checksum": "3d4e26f0b53c668e25f0d25b8619d2354b5635148e243e14a3ea6f603310f4c2",
+      "objects": 57,
+      "wmap": "0da556ed659eff3b392ed2d50b35ebb9513c2f73f99bdfbdd555b106f28bb0c2",
+      "places": "56f09ad996f200918707dcadf1a757009effa5bac48e06371bb994643ab6f0d4"
+    },
+    {
+      "secret": "golden-0",
+      "kind": "dungeon",
+      "params": "010100008000800006000c046361766503050303",
+      "dungeon": "cave",
+      "floor": 3,
+      "name": "cave",
+      "key": "81dcce31a2e5d24cc7757d909772569628735d4814620004cf40924a69a32622",
+      "width": 128,
+      "height": 128,
+      "water": -1048576,
+      "counts": [
+        9664,
+        6720,
+        0,
+        0
+      ],
+      "checksum": "609e10675bc3ac18ec2cecc12c29c710547dd3c21d4cbc4ed4ff7c73f01f936d",
+      "objects": 49,
+      "wmap": "7f7ddddfee0986945f262f33eb02278b99c3965086c9f70dcbb10f85a8d251e5",
+      "places": "23d3e8adb4be52bd54add96001d7d3135b1ce228d53f9e5b2b704c4118dc4e12"
+    },
+    {
+      "secret": "golden-1",
+      "kind": "dungeon",
+      "params": "010101008000800008001405637279707403060103",
+      "dungeon": "crypt",
+      "floor": 1,
+      "name": "crypt",
+      "key": "d88b4dad2b09733297df71adb286d8d4a8d27162aaabf8f7c6176a1a6b4d35cc",
+      "width": 128,
+      "height": 128,
+      "water": -1048576,
+      "counts": [
+        3036,
+        13348,
+        0,
+        0
+      ],
+      "checksum": "02dea3a71d9d229d842a62d8676f23132e76de2e156ca2b24939f77b2dbb808a",
+      "objects": 26,
+      "wmap": "536f5f2b293c5b7244ba3ff6f83b393d9c80063dbb70c8e5f7306b3342e08796",
+      "places": "889d3225c1718b40cac3630a88f1951a460da6eade06123c3e57d120804b7111"
+    },
+    {
+      "secret": "golden-1",
+      "kind": "dungeon",
+      "params": "010101008000800008001405637279707403060303",
+      "dungeon": "crypt",
+      "floor": 3,
+      "name": "crypt",
+      "key": "b7a9f2bdd82785bd4e7ff0390487a507fda590f06f72b5e11e42690246bacd08",
+      "width": 128,
+      "height": 128,
+      "water": -1048576,
+      "counts": [
+        2248,
+        14136,
+        0,
+        0
+      ],
+      "checksum": "9f076ef496e0a195e6a6c698c41a6666f697a9dc4166320803e34cada1c1dc3a",
+      "objects": 9,
+      "wmap": "87427b0181dacc44f4449bfd81f98762e29ad9fc6bc0bd81fcbbb8f569d0af34",
+      "places": "1b46be7086281d87b65d85b09c788d20b7925b7660290ca62ccef26d7efcaf6f"
+    },
+    {
+      "secret": "golden-2",
+      "kind": "dungeon",
+      "params": "010101005000500008001005746f77657205040105",
+      "dungeon": "tower",
+      "floor": 1,
+      "name": "tower",
+      "key": "afa47723e4f57f9827c239da00b6ddd3d715c1b633f2238c1643c3b6fa6f8ca9",
+      "width": 80,
+      "height": 80,
+      "water": -1048576,
+      "counts": [
+        1048,
+        5352,
+        0,
+        0
+      ],
+      "checksum": "e57da8b18542c32be7358bb81af93e3a2245672e1b13d1c593744dfe76b5f8c0",
+      "objects": 2,
+      "wmap": "4e2193f5beb8b27669538306abcab0f42a6dd08a85527d582db747ac32d7985d",
+      "places": "cffb67f229b797e0e99885dffca0c25bdbca72a4609ee61fc56d68fd1ee65a32"
+    },
+    {
+      "secret": "golden-2",
+      "kind": "dungeon",
+      "params": "010101005000500008001005746f77657205040505",
+      "dungeon": "tower",
+      "floor": 5,
+      "name": "tower",
+      "key": "249ca488380afd62aa88cf4ba8de5aa0c7e0606757336b2551a9a9550a772d9e",
+      "width": 80,
+      "height": 80,
+      "water": -1048576,
+      "counts": [
+        1160,
+        5240,
+        0,
+        0
+      ],
+      "checksum": "7ddca4fcf37e9b8266d035e365a33f610f07f769cb3a9c48f628f258153ad74a",
+      "objects": 3,
+      "wmap": "d3a411b7d0142fbda9e33a9311b5cb66a06b12c4778c911ad71261625abb3b32",
+      "places": "9e1bccdaea2b1166da45676a522d037bcb6711a230ca752615f56e570052dc8f"
+    },
+    {
+      "secret": "golden-3",
+      "kind": "dungeon",
+      "params": "01010100a000a0000a0018057275696e7302080102",
+      "dungeon": "ruins",
+      "floor": 1,
+      "name": "ruins",
+      "key": "eca7402ade51d82e1a1722462ea7660882eb741e95536994a924c9e2c4edf356",
+      "width": 160,
+      "height": 160,
+      "water": -1048576,
+      "counts": [
+        4712,
+        20888,
+        0,
+        0
+      ],
+      "checksum": "351c2f505d49fb1091347d9755d159ebe99b4b8ff1b374dc85db6816a853665a",
+      "objects": 34,
+      "wmap": "d63a3ffd5b6045b1d8d1c120dcff23efa4bd470ed493b4d2b38ecb558a471143",
+      "places": "2159c90a4113e24501df0b62ac8d06435ecf9d56f151eb78c8620fd72ad6328b"
+    },
+    {
+      "secret": "golden-3",
+      "kind": "dungeon",
+      "params": "01010100a000a0000a0018057275696e7302080202",
+      "dungeon": "ruins",
+      "floor": 2,
+      "name": "ruins",
+      "key": "fc78f7b4a07b8778df94d818b5425361c4b1a0bcc504e3c0afad5caa80184856",
+      "width": 160,
+      "height": 160,
+      "water": -1048576,
+      "counts": [
+        4504,
+        21096,
+        0,
+        0
+      ],
+      "checksum": "42a9f75d2a9e27b16f74e681080a2262fc403051b3a83948319b8a74ccdc9090",
+      "objects": 36,
+      "wmap": "d5d99b39883a3972639eb42fa7cb1150cbc20f83c320a81cedc6c4eff9942d63",
+      "places": "36ca586b9973a836c9ea6e1f65b6ab7820f970760f2f93d63830ce1bc591c729"
+    },
+    {
+      "secret": "golden-4",
+      "kind": "dungeon",
+      "params": "010101010001000008001e0563727970740306090a",
+      "dungeon": "deep",
+      "floor": 9,
+      "name": "crypt 256",
+      "key": "199a75579a64ba63d512cd28482dedcdbe24b005e91e4cdc3f311eb32392e2f0",
+      "width": 256,
+      "height": 256,
+      "water": -1048576,
+      "counts": [
+        14128,
+        51408,
+        0,
+        0
+      ],
+      "checksum": "51584b215ebd9e88ba4c93caacd59d9bd81e09d5a154643fa07528d6ce02c0d2",
+      "objects": 151,
+      "wmap": "5b860849438dca634cdcaed2c1d94fc8ba5334c72fa7a0e0e102facacd878527",
+      "places": "cc0ddcc0b0ef895be8f6bd4fb7681f567b1f398b0a5d2dfd9e3a72b5e16e107d"
+    },
+    {
+      "secret": "golden-0",
+      "kind": "town",
+      "params": "02010060020004746f776e0304747265650477656c6c0563726174650506736d69746879080601010a626c61636b736d69746803696e6e0808010103696e6e0a73746f7265686f757365060601010773746f7261676509746f6f6c5f73686f70060601010973686f703a746f6f6c05686f75736506060a00",
+      "town": 1,
+      "name": "hamlet",
+      "key": "5488ad3cc013ae89ce94c098bddc2accda016dbf18d35b3d21d17c9e1b1d3bf1",
+      "width": 96,
+      "height": 96,
+      "water": -1048576,
+      "counts": [
+        5160,
+        4056,
+        0,
+        0
+      ],
+      "checksum": "450b1b57b23659f72b870c3bafdffe4ff6f016a2176bfcc2071661beafef61aa",
+      "objects": 207,
+      "wmap": "8b82a8042606434b9757b2d9dd373002f44776c2de9fe5199139e97455fc6a4f",
+      "places": "1d99307188a000387c611e74f99633310f621bb83e61b1b2afb6c187618743e0"
+    },
+    {
+      "secret": "golden-1",
+      "kind": "town",
+      "params": "02010080030104746f776e0304747265650477656c6c04627573680906736d69746879080601010a626c61636b736d69746803696e6e0808010103696e6e0a73746f7265686f757365060601010773746f7261676509746f6f6c5f73686f70060601010973686f703a746f6f6c0b776561706f6e5f73686f70060601010b73686f703a776561706f6e0a61726d6f725f73686f70060601010a73686f703a61726d6f720663686170656c080a0101066865616c657205686f7573650606100007636f747461676504040c00",
+      "town": 2,
+      "name": "village",
+      "key": "6ee46a31471e8490f254bd7ad1e934e27f5e3ee417c7a1345501a9a5467d30e5",
+      "width": 128,
+      "height": 128,
+      "water": -1048576,
+      "counts": [
+        10516,
+        5868,
+        0,
+        0
+      ],
+      "checksum": "c1b1dd7dbc693a2a42fb6427fbf0ab2d24eefaab2c5a48db898995730f40af71",
+      "objects": 268,
+      "wmap": "d168ae39fd7b2eb72d17a92c103985acfe42654f7369d9e4c255e25199198379",
+      "places": "d7d2b0f35786cde0b691ae73d8dd9a10554d9f90d9601a6eca178c8e4900f8af"
+    },
+    {
+      "secret": "golden-2",
+      "kind": "town",
+      "params": "020100c0040104746f776e0404747265650477656c6c04627573680563726174650b06736d69746879080601010a626c61636b736d69746803696e6e0808010103696e6e0a73746f7265686f757365060601020773746f726167650d73746f726167653a6775696c6409746f6f6c5f73686f70060601010973686f703a746f6f6c0b776561706f6e5f73686f70060601010b73686f703a776561706f6e0a61726d6f725f73686f70060601010a73686f703a61726d6f720663686170656c080a0101066865616c65720a776172705f746f776572060601010874656c65706f7274056d616e6f720a08060005686f7573650606280007636f747461676504041e00",
+      "town": 3,
+      "name": "city",
+      "key": "5377bf704b0e7dc80b83ebedec37598b3563eddad119b3c6455778d5616e698b",
+      "width": 192,
+      "height": 192,
+      "water": -1048576,
+      "counts": [
+        26540,
+        10324,
+        0,
+        0
+      ],
+      "checksum": "1d29bfd9eb4454dd488c1c5a9e162615dabe5b8a9e0e6e664fb72f2f5574e6d5",
+      "objects": 490,
+      "wmap": "40f98d97e0265e445bb1dcc7e5e4b11249ee66764d26ac2019c029645529964b",
+      "places": "aeb374dc8082125ba02a540f096760f9e2db27c3fab35118a2d294a951879937"
+    },
+    {
+      "secret": "golden-5",
+      "kind": "town",
+      "params": "02010100040104746f776e0404747265650477656c6c04627573680563726174650b06736d69746879080601010a626c61636b736d69746803696e6e0808010103696e6e0a73746f7265686f757365060601020773746f726167650d73746f726167653a6775696c6409746f6f6c5f73686f70060601010973686f703a746f6f6c0b776561706f6e5f73686f70060601010b73686f703a776561706f6e0a61726d6f725f73686f70060601010a73686f703a61726d6f720663686170656c080a0101066865616c65720a776172705f746f776572060601010874656c65706f7274056d616e6f720a08060005686f7573650606280007636f747461676504041e00",
+      "town": 40,
+      "name": "city 256",
+      "key": "75b455f197bdfa19429b7ca62350de5a211fe6c1622e2a873c48b7d10aaf8731",
+      "width": 256,
+      "height": 256,
+      "water": -1048576,
+      "counts": [
+        52212,
+        13324,
+        0,
+        0
+      ],
+      "checksum": "c46e5532162737aa5def0b08105e86faec00b5e487efff7cdf3dfe5ecb58295b",
+      "objects": 698,
+      "wmap": "e2803ffa62c74725737353728c1f9a8626486689492ef3547ed6671ae42559cb",
+      "places": "371bccf1bafbdc12fb2d0b0b8afda6f82dc81abb91a444ef7818b95f556e08c9"
+    },
+    {
+      "kind": "dungeon",
+      "params": "010100008000800006000c046361766503050101",
+      "floor": 1,
+      "name": "cave",
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "width": 128,
+      "height": 128,
+      "water": -1048576,
+      "counts": [
+        9696,
+        6688,
+        0,
+        0
+      ],
+      "checksum": "664bbec2f8f084736d6b3315106789bd3054df7599ed0accd935aa8ea66a3cf8",
+      "objects": 49,
+      "wmap": "af59b535d02481fc0884016a790dc1c941f5586f147ecc69271b7b8b13828e7c",
+      "places": "bfd2fc121e82546114f266450692c380da47c0a1f7630359d843865a4c766b1b"
+    },
+    {
+      "kind": "town",
+      "params": "02010060020004746f776e0304747265650477656c6c0563726174650506736d69746879080601010a626c61636b736d69746803696e6e0808010103696e6e0a73746f7265686f757365060601010773746f7261676509746f6f6c5f73686f70060601010973686f703a746f6f6c05686f75736506060a00",
+      "name": "hamlet",
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "width": 96,
+      "height": 96,
+      "water": -1048576,
+      "counts": [
+        5144,
+        4072,
+        0,
+        0
+      ],
+      "checksum": "0355110fd42fb37271a3a9e6f4767398c85b343d24eb6151332df90f90ef301b",
+      "objects": 196,
+      "wmap": "93bf6147135dcb359861793ff82e40fe51cd040e3e97192457821633bdd0134b",
+      "places": "530f2e2e262f44326461811dec685f954b3c74598b875e0bc13fe5bfa0e315fd"
+    }
+  ]
+}

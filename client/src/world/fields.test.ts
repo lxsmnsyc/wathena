@@ -9,7 +9,8 @@ import {
   loadField,
   loadTilesets,
 } from './fields';
-import { Generator, hex, keyFromHex } from './generator';
+import { Generator, hex, keyFromHex, runRequest } from './generator';
+import { requestOf } from './fieldGenerator';
 
 // The download fallback of decision 0039: the client uses its own field
 // when the checksum matches, and the server's map otherwise.
@@ -123,6 +124,64 @@ describe('loadField', () => {
       /invalid info/,
     );
   });
+});
+
+describe('loadField of a town and a dungeon floor', () => {
+  // Version 3's golden town and floor (decision 0040), as a server sends
+  // them: the node, the kind and the params.
+  const golden = JSON.parse(
+    readFileSync(new URL('shared/gen/testdata/golden-v3.json', repo), 'utf8'),
+  ) as {
+    maps: {
+      key: string;
+      kind?: 'dungeon' | 'town';
+      params?: string;
+      name?: string;
+      width: number;
+      height: number;
+      checksum: string;
+      wmap: string;
+    }[];
+  };
+  const run: FieldGenerator = async (info) =>
+    runRequest(await Generator.fromBytes(wasm), requestOf(0, info));
+
+  for (const kind of ['town', 'dungeon'] as const) {
+    it(`generates the ${kind} from its params`, async () => {
+      const m = golden.maps.find((g) => g.kind === kind)!;
+      const info: FieldInfo = {
+        id: kind === 'town' ? 'gen:town:t1' : 'gen:dungeon:cave:1',
+        kind,
+        params: m.params!,
+        name: m.name!,
+        version: 3,
+        rng: 'rng-v1',
+        key: m.key,
+        width: m.width,
+        height: m.height,
+        biome: 0,
+        biomeName: '',
+        checksum: m.checksum,
+        wmap: `/gen/maps/x.wmap`,
+        wmapSha256: m.wmap,
+        wmapBytes: 1,
+      };
+      const fetcher = async (url: string): Promise<Response> =>
+        Promise.resolve(
+          url.endsWith('.json') ? Response.json(info) : new Response('', { status: 404 }),
+        );
+      const f = await loadField('http://game', info.id, run, fetcher);
+      expect(f.source).toBe('generated');
+      expect(createHash('sha256').update(f.wmap).digest('hex')).toBe(m.wmap);
+      expect(decodeWMap(f.wmap).width).toBe(m.width);
+      // A map of a kind without params is not valid info.
+      const noParams = async (): Promise<Response> =>
+        Promise.resolve(Response.json({ ...info, params: undefined }));
+      await expect(loadField('http://game', info.id, run, noParams)).rejects.toThrow(
+        /invalid info/,
+      );
+    });
+  }
 });
 
 describe('loadTilesets', () => {

@@ -2,7 +2,7 @@
 // to 1024 × 1024 cells never blocks the page (strategy section 8.5,
 // "Performance"). fieldGenerator.ts starts it.
 
-import { Generator, keyFromHex } from './generator';
+import { Generator, runRequest } from './generator';
 import type { FieldRequest, FieldResponse } from './fieldGenerator';
 
 interface WorkerScope {
@@ -23,7 +23,7 @@ scope.addEventListener('message', (e) => {
         throw new Error(`gen.wasm lacks generator ${r.version} with ${r.rng}`);
       }
       const began = performance.now();
-      const out = g.generate(r.version, keyFromHex(r.key), r.width, r.height, r.biome);
+      const out = runRequest(g, r);
       scope.postMessage(
         {
           id: r.id,

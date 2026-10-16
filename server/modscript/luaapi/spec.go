@@ -282,6 +282,18 @@ var Modules = []Module{
 		},
 	},
 	{
+		Name: "wa.places", Local: "places",
+		Doc: "Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil.",
+		Funcs: []Func{
+			{Name: "find", Params: []Param{
+				{"scope", "string", "Where to look: \"town:any\", \"town:<id>\" such as \"town:t7\", \"dungeon:any\", \"dungeon:<id>\" such as \"dungeon:crypt\", or \"map:<id>\" such as \"map:gen:field:3:-1\". Another form raises an error."},
+				{"tag", "string", "A tag, such as \"blacksmith\" or \"shop:tool\": 1 to 64 lowercase letters, digits, _, -, . and :."}},
+				Returns: "wa.Place[]", Doc: "Every place of the scope with the tag, in a fixed order: by map ID, then in the order the generator made them. Empty when none matches.", Permission: "game.read"},
+			{Name: "nearest", Params: []Param{playerParam, {"tag", "string", "A tag, as for find."}}, Returns: "wa.Place?",
+				Doc: "The place with the tag closest to the player: the fewest warps away on the map graph, then the shortest distance. On another map, the distance counts from where the player would arrive. Maps no warp leads to are left out. nil when no place qualifies.", Permission: "game.read"},
+		},
+	},
+	{
 		Name: "wa.variables", Local: "variables",
 		Doc:   "Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID.",
 		Funcs: variableFuncs(),
@@ -620,6 +632,15 @@ var Classes = []Class{
 			{Name: "get_participants", Returns: "wa.Player[]", Doc: "The players on the context's map who did at least the rewards' min_share of the damage to the run's monsters there, 1% by default, sorted by name.", Permission: "game.read"},
 			{Name: "finish", Params: []Param{{"result", `"won"|"lost"`, ""}},
 				Doc: "Ends the run before its time, within a second. An invasion that finishes \"won\" gives its rewards, as when its last wave dies. world_event_end carries the result."},
+		},
+	},
+	{
+		Name: "wa.Place", Handle: "place", Doc: "A named place of a generated map, from wa.places (review decision 42). A place never changes while the server runs.",
+		Methods: []Func{
+			{Name: "get_map", Returns: "string", Doc: "The map's ID, such as \"gen:town:t7\"."},
+			{Name: "get_position", Returns: "integer, integer", Doc: "The place's cell, x and y."},
+			{Name: "get_tags", Returns: "string[]", Doc: "The place's tags, its main tag first, such as { \"gate\", \"gate:south\" }."},
+			{Name: "get_area", Returns: "string", Doc: "The place's area: its map ID without gen:, such as \"town:t7\", \"dungeon:crypt:2\" or \"field:3:-1\"."},
 		},
 	},
 	{

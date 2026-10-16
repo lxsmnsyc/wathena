@@ -388,6 +388,9 @@ let fieldLoader: ((id: string) => Promise<LoadedField>) | undefined;
 /** A generated field's load, for the checks and the budget of section 8.5. */
 interface FieldLoad {
   map: string;
+  /** field, dungeon or town (decision 0040). */
+  kind: string;
+  /** A field's biome, or a floor's style or a town's template. */
   biome: string;
   source: LoadedField['source'];
   reason?: string;
@@ -425,16 +428,19 @@ async function show(name: string, at?: [number, number]): Promise<boolean> {
       }
       const f = await fieldLoader(name);
       given = f.wmap;
+      const kind = f.info.kind ?? 'field';
+      const biome = kind === 'field' ? f.info.biomeName : (f.info.name ?? '');
       fieldLoads.push({
         map: name,
-        biome: f.info.biomeName,
+        kind,
+        biome,
         source: f.source,
         ms: f.ms,
         ...(f.reason === undefined ? {} : { reason: f.reason }),
         ...(f.generateMs === undefined ? {} : { generateMs: f.generateMs }),
       });
       console.info(
-        `field ${name} (${f.info.biomeName}, ${f.info.width}×${f.info.height}): ${f.source} in ${f.ms.toFixed(0)} ms` +
+        `${kind} ${name} (${biome}, ${f.info.width}×${f.info.height}): ${f.source} in ${f.ms.toFixed(0)} ms` +
           (f.generateMs === undefined ? '' : `, generator ${f.generateMs.toFixed(0)} ms`),
       );
     }

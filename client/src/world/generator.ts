@@ -27,7 +27,19 @@ export interface GeneratedGrid {
   wmap: Uint8Array<ArrayBuffer>;
   /** The attempt that made the field, 0 for its own node. */
   attempt: number;
+  /**
+   * The map's named places in their canonical encoding, for version 3
+   * and later (docs/specs/generator-v3.md). The client does not read
+   * them; the checks hash them.
+   */
+  places: Uint8Array<ArrayBuffer>;
 }
+
+/** The kinds of maps generateMap makes, as the module numbers them. */
+export const MAP_KINDS = { dungeon: 1, town: 2 } as const;
+
+/** A kind of map that generateMap makes. */
+export type MapKind = keyof typeof MAP_KINDS;
 
 interface Exports {
   memory: WebAssembly.Memory;
@@ -44,6 +56,12 @@ interface Exports {
   wmap: () => number;
   wmap_size: () => number;
   attempt: () => number;
+  params: () => number;
+  generate_map: (version: number, kind: number, length: number) => number;
+  width: () => number;
+  height: () => number;
+  places: () => number;
+  places_size: () => number;
 }
 
 const FUNCTIONS = [
@@ -59,7 +77,16 @@ const FUNCTIONS = [
   'wmap',
   'wmap_size',
   'attempt',
+  'params',
+  'generate_map',
+  'width',
+  'height',
+  'places',
+  'places_size',
 ] as const;
+
+/** The longest params a dungeon floor or a town takes, gen.MaxParams. */
+const MAX_PARAMS = 16 << 10;
 
 function isExports(v: unknown): v is Exports {
   if (typeof v !== 'object' || v === null) {
@@ -74,6 +101,18 @@ function isExports(v: unknown): v is Exports {
 
 export function hex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Reads bytes from lowercase hex digits. */
+export function bytesFromHex(text: string): Uint8Array {
+  if (!/^(?:[0-9a-f]{2})*$/.test(text)) {
+    throw new Error('want an even number of lowercase hex digits');
+  }
+  const out = new Uint8Array(text.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = Number.parseInt(text.slice(2 * i, 2 * i + 2), 16);
+  }
+  return out;
 }
 
 /** Reads a 32-byte key from 64 hex digits. */
@@ -164,7 +203,43 @@ export class Generator {
       default:
         throw new Error(`gen.wasm: invalid size ${width} × ${height}`);
     }
+    return this.result(version);
+  }
+
+  /**
+   * Generates a dungeon floor or a town from its public node key and its
+   * params, the bytes the server sends as hex (docs/specs/generator-v3.md).
+   */
+  generateMap(version: number, key: Uint8Array, kind: MapKind, params: Uint8Array): GeneratedGrid {
+    if (key.length !== 32) {
+      throw new Error('a node key is 32 bytes');
+    }
+    if (params.length > MAX_PARAMS) {
+      throw new Error('gen.wasm: the params are too long');
+    }
+    new Uint8Array(this.e.memory.buffer, this.e.key(), 32).set(key);
+    new Uint8Array(this.e.memory.buffer, this.e.params(), params.length).set(params);
+    const code = this.e.generate_map(version, MAP_KINDS[kind], params.length);
+    switch (code) {
+      case 0:
+        break;
+      case -1:
+        throw new Error(`gen.wasm: no ${kind} in generator version ${version}`);
+      case -3:
+        throw new Error(`gen.wasm: no valid ${kind} after every attempt`);
+      case -4:
+        throw new Error(`gen.wasm: the ${kind}'s tileset or props are not in version ${version}`);
+      default:
+        throw new Error(`gen.wasm: invalid ${kind} params`);
+    }
+    return this.result(version);
+  }
+
+  /** Copies the last map out of the module's memory. */
+  private result(version: number): GeneratedGrid {
     // The memory can grow during generate, so views are made after it.
+    const width = this.e.width();
+    const height = this.e.height();
     const cells = width * height;
     const buffer = this.e.memory.buffer;
     return {
@@ -177,8 +252,35 @@ export class Generator {
       checksum: hex(new Uint8Array(buffer, this.e.checksum(), 32)),
       wmap: new Uint8Array(buffer, this.e.wmap(), this.e.wmap_size()).slice(),
       attempt: this.e.attempt(),
+      places: new Uint8Array(buffer, this.e.places(), this.e.places_size()).slice(),
     };
   }
+}
+
+/** A map to generate: a field, a dungeon floor or a town. */
+export interface MapRequest {
+  version: number;
+  rng: string;
+  /** The map's public node, 64 hex digits. */
+  key: string;
+  width: number;
+  height: number;
+  biome: number;
+  kind: 'field' | MapKind;
+  /** A dungeon floor's or a town's params, as hex. */
+  params: string;
+}
+
+/** Runs a request on a loaded module. */
+export function runRequest(g: Generator, r: MapRequest): GeneratedGrid {
+  if (r.kind === 'field') {
+    return g.generate(r.version, keyFromHex(r.key), r.width, r.height, r.biome);
+  }
+  const out = g.generateMap(r.version, keyFromHex(r.key), r.kind, bytesFromHex(r.params));
+  if (out.width !== r.width || out.height !== r.height) {
+    throw new Error(`the ${r.kind} is ${out.width} × ${out.height}, not ${r.width} × ${r.height}`);
+  }
+  return out;
 }
 
 /** The world fields generatorFor reads, as the connection's WorldValues. */

@@ -15,4 +15,9 @@ var registry = []Generator{
 		Version: 2, RNG: rng.Version, Grid: gridV2, Field: fieldV2,
 		Biomes: v2BiomeNames(), Tilesets: v2Tilesets(), Climate: climateV2,
 	},
+	{
+		Version: 3, RNG: rng.Version, Grid: gridV2, Field: fieldV3,
+		Biomes: v2BiomeNames(), Tilesets: v3Tilesets(), Climate: climateV2,
+		Map: mapV3, Kinds: []string{KindDungeon, KindTown},
+	},
 }

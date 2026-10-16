@@ -18,7 +18,8 @@
 #             cache.
 #   test      unit, then go test -race ./.... Heavy tests on one
 #             goroutine skip under -race (decision 0022).
-#   mods      generated Lua files, the sample mods, a new mod
+#   mods      generated Lua files, the sample mods with a wactl built
+#             with the procedural tag, a new mod
 #   lua       vendored Lua, lua.wasm, the WebAssembly build,
 #             and the release builds with zig
 #   loadtest  the 50-bot smoke test
@@ -34,7 +35,8 @@
 #   tinygo    the shared packages under TinyGo, without and with the
 #             procedural tag, and path.wasm and gen.wasm
 #   gen       the map generator's golden checksums, with the WMAP
-#             hashes of generated fields, in Go on this machine's
+#             hashes of generated fields, dungeon floors and towns, and
+#             their places' hashes, in Go on this machine's
 #             architecture and on the other one (amd64 under Rosetta on
 #             an arm64 Mac), and in gen.wasm in Node. The browsers step
 #             checks them in Chromium, Firefox and WebKit.
@@ -46,8 +48,9 @@
 #   compose   the Compose stack smoke test. Only with all.
 #   browsers  the client in Chromium, with the phase 6 exit check
 #             (decision 0035) against waserver and PostgreSQL, a walk on
-#             generated fields (decision 0039), and the map generator in
-#             Chromium, Firefox and WebKit. Only with all.
+#             generated fields (decision 0039), a walk from a field into
+#             a town and a dungeon floor (decision 0040), and the map
+#             generator in Chromium, Firefox and WebKit. Only with all.
 #
 # Tool versions. The script runs the tools on PATH and does not install
 # them. These are the versions the checks were written for:
@@ -243,9 +246,11 @@ step_e2e() {
 	return "$code"
 }
 
+# wactl is built with the procedural tag, so the Market Town sample's
+# tests run on the test worlds' generated maps (decision 0040).
 step_mods() {
 	local wactl="$work/wactl"
-	go build -o "$wactl" ./tools/wactl
+	go build -tags procedural -o "$wactl" ./tools/wactl
 	go test -count=1 -run TestGeneratedFiles ./server/modscript/luaapi
 	local m
 	for m in mods/examples/*/; do
@@ -384,7 +389,7 @@ step_tinygo() {
 # section 8.4). Each part generates the golden maps of
 # shared/gen/testdata and compares the checksums, and for fields the
 # WMAP's SHA-256 too. The field and f32 tests run on both architectures.
-gen_tests='^TestGolden$|^TestGridV1Order$|^TestFieldV2$|^TestFieldV2Retries$|^TestF32Bits$'
+gen_tests='^TestGolden$|^TestGridV1Order$|^TestFieldV2$|^TestFieldV2Retries$|^TestF32Bits$|^TestDungeonV3$|^TestTownV3$|^TestFieldV3Places$|^TestMapV3Retries$'
 
 step_gen() {
 	local host other runner=() bin

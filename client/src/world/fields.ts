@@ -1,8 +1,9 @@
-// Generated fields of procedural worlds (decision 0039). The server sends
-// each field's public node and checksum at /gen/maps/<id>.json. The
-// client generates the field with gen.wasm in a Web Worker, compares the
-// checksum, and downloads the server's WMAP when they differ or the
-// module cannot make the field.
+// Generated maps of procedural worlds: fields (decision 0039), dungeon
+// floors and towns (decision 0040). The server sends each map's public
+// node and checksum at /gen/maps/<id>.json, with the params of a floor or
+// a town. The client generates the map with gen.wasm in a Web Worker,
+// compares the checksum, and downloads the server's WMAP when they
+// differ or the module cannot make the map.
 
 import { type Fetch, sha256 } from '../assets/store';
 
@@ -11,9 +12,15 @@ export function isGenerated(name: string): boolean {
   return name.startsWith('gen:');
 }
 
-/** What the server says about a field. */
+/** What the server says about a generated map. */
 export interface FieldInfo {
   id: string;
+  /** field, dungeon or town. A server before version 3 sends none. */
+  kind?: 'field' | 'dungeon' | 'town';
+  /** A dungeon floor's or a town's params, as hex. */
+  params?: string;
+  /** A dungeon floor's style or a town's template. */
+  name?: string;
   version: number;
   rng: string;
   /** The field's public node, 64 hex digits. */
@@ -39,7 +46,13 @@ function isFieldInfo(v: unknown): v is FieldInfo {
   const s = (k: string): unknown => Reflect.get(v, k);
   const num = (k: string): boolean => Number.isInteger(s(k));
   const str = (k: string): boolean => typeof s(k) === 'string';
+  const kind = s('kind');
+  const kindOK =
+    kind === undefined ||
+    kind === 'field' ||
+    ((kind === 'dungeon' || kind === 'town') && /^(?:[0-9a-f]{2})+$/.test(String(s('params'))));
   return (
+    kindOK &&
     str('id') &&
     num('version') &&
     str('rng') &&

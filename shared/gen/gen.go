@@ -183,13 +183,44 @@ type Generator struct {
 	// branch, or is nil for a version without fields. Only the server
 	// runs it, since clients never get the public branch.
 	Climate func(public rng.Node, x, y int64) int
+	// Map generates a dungeon floor or a town from its public node and
+	// its params, or is nil for a version without them. Kinds lists the
+	// kinds it makes, KindDungeon and KindTown.
+	Map   func(node rng.Node, p MapParams) (Field, error)
+	Kinds []string
 }
 
 // Tileset is a tileset's slots: ground textures, with water, and props.
 type Tileset struct {
-	Name     string
+	Name string
+	// Kind is the kind of map that uses it: KindField, KindDungeon or
+	// KindTown.
+	Kind     string
 	Textures []string
 	Models   []string
+}
+
+// Tileset returns a tileset of a kind by name.
+func (g Generator) Tileset(kind, name string) (Tileset, bool) {
+	for _, t := range g.Tilesets {
+		if t.Name == name && (t.Kind == kind || t.Kind == "" && kind == KindField) {
+			return t, true
+		}
+	}
+	return Tileset{}, false
+}
+
+// Makes reports whether the generator makes maps of a kind.
+func (g Generator) Makes(kind string) bool {
+	if kind == KindField {
+		return g.Field != nil
+	}
+	for _, k := range g.Kinds {
+		if k == kind {
+			return true
+		}
+	}
+	return false
 }
 
 // TextureName and ModelName are the asset names a field's WMAP uses for

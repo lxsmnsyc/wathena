@@ -1,0 +1,14 @@
+# NPCs placed by tag. place replaces map, x and y: the NPC stands at
+# every place of the scope with the tag, in every world that has one.
+- name: Lamp Seller
+  place: {scope: "town:any", tag: "shop:lamp"}
+  direction: south
+  sprite: 4_M_02
+  shop:
+    - {item: Red_Potion}
+    - {item: Wing_Of_Fly, price: 60}
+- name: Town Guide
+  place: {scope: "town:any", tag: square}
+  direction: south
+  sprite: 4_F_KAFRA1
+  script: scripts/npc/guide.lua

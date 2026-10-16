@@ -324,12 +324,9 @@ func runAll(name string, args []string) error {
 		}
 	}
 	// A procedural world generates its fields now, from its public
-	// branch (decision 0039).
+	// branch (decision 0039). Its towns and dungeons follow the mods,
+	// which give their templates and styles (decision 0040).
 	proc, err := fieldMaps(cfg, worldRow, log)
-	if err != nil {
-		return err
-	}
-	name, assetMaps, names, err := worldMaps(cfg, proc)
 	if err != nil {
 		return err
 	}
@@ -364,6 +361,13 @@ func runAll(name string, args []string) error {
 	loaded, err := loadMods(ctx, cfg.Mods, rulesetBase(cfg.Mode, worldRow.Ruleset), statusMode, itemData, monsterData, tables, jobs, ids, core, log)
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
+	}
+	if err := addMaps(cfg, &proc, loaded.all.DungeonStyles, loaded.all.TownTemplates, log); err != nil {
+		return err
+	}
+	name, assetMaps, names, err := worldMaps(cfg, proc)
+	if err != nil {
+		return err
 	}
 	// The mods' asset builds are checked now, and served with the client
 	// data (decision 0033).
@@ -478,7 +482,21 @@ func runAll(name string, args []string) error {
 	}
 	grids = append(grids, fieldGrids(proc)...)
 	if proc.set != nil {
-		maps.Copy(warps, proc.set.Warps())
+		// Until the map graph of phase 7 step 4, towns and dungeons link
+		// to the fields' free portals (decision 0040). The places of the
+		// generated maps serve wa.places and the NPCs placed by tag.
+		genWarps, unlinked := proc.set.DevLinks()
+		for _, id := range unlinked {
+			log.Warn("a generated map has no warp to it: add fields with free edges", "map", id)
+		}
+		maps.Copy(warps, genWarps)
+		idx := proc.set.Places(genWarps)
+		loaded.zone.Places = idx
+		for m, list := range placeNPCs(idx, loaded.all.PlaceNPCs, log) {
+			loaded.npcs[m] = append(loaded.npcs[m], list...)
+		}
+	} else if len(loaded.all.PlaceNPCs) > 0 {
+		log.Info("NPCs placed by tag do not appear in a classic world", "npcs", len(loaded.all.PlaceNPCs))
 	}
 	// Storages and carts load at login and leave memory after their last
 	// commit (decision 0023). Without a database they stay in memory.

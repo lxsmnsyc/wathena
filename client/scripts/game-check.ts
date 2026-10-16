@@ -98,6 +98,9 @@ export interface GameOptions {
   fields?: string;
   /** --field-size, with fields. */
   fieldSize?: number;
+  /** --towns and --dungeons, with fields (decision 0040). */
+  towns?: number;
+  dungeons?: string;
 }
 
 /**
@@ -127,7 +130,7 @@ function buildServer(repo: string, dir: string, procedural = false): string {
  * and builds their art.
  */
 function installMods(repo: string, dir: string, wactl: string, extra: readonly string[]): string {
-  const mods = join(dir, `mods-${extra.length}`);
+  const mods = join(dir, `mods-${extra.map((m) => basename(m)).join('-') || 'fixture'}`);
   if (existsSync(mods)) {
     return mods;
   }
@@ -180,7 +183,8 @@ function installMods(repo: string, dir: string, wactl: string, extra: readonly s
     }
     writeFileSync(script, placed);
   }
-  for (const m of built) {
+  // A mod without art, such as the Market Town, has nothing to build.
+  for (const m of built.filter((d) => existsSync(join(d, 'art')))) {
     execFileSync(wactl, ['mod', 'build-art', m], { stdio: 'ignore' });
   }
   return mods;
@@ -225,6 +229,8 @@ export async function startGame(
             String(opts.fieldSize ?? 160),
             '--maps',
             'placeholder/map',
+            ...(opts.towns === undefined ? [] : ['--towns', String(opts.towns)]),
+            ...(opts.dungeons === undefined ? [] : ['--dungeons', opts.dungeons]),
           ]),
       ...(dev
         ? ['--dev', '--seed', 'browser-check', '--start-job', opts.startJob ?? '1:50:40']

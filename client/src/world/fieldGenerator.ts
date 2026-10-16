@@ -3,16 +3,11 @@
 // on the page.
 
 import type { FieldGenerator, FieldInfo, Generated } from './fields';
+import type { MapRequest } from './generator';
 
 /** A request to the worker. */
-export interface FieldRequest {
+export interface FieldRequest extends MapRequest {
   id: number;
-  version: number;
-  rng: string;
-  key: string;
-  width: number;
-  height: number;
-  biome: number;
 }
 
 /** The worker's answer: a field, or an error. */
@@ -34,6 +29,21 @@ export type FieldResponse =
  * a new worker with a new module takes the next field.
  */
 const MAX_WORKER_MEMORY = 256 << 20;
+
+/** The worker's request for a map's info. */
+export function requestOf(id: number, info: FieldInfo): FieldRequest {
+  return {
+    id,
+    version: info.version,
+    rng: info.rng,
+    key: info.key,
+    width: info.width,
+    height: info.height,
+    biome: info.biome,
+    kind: info.kind ?? 'field',
+    params: info.params ?? '',
+  };
+}
 
 let worker: Worker | undefined;
 let next = 0;
@@ -61,26 +71,18 @@ function startWorker(): Worker {
 /** Generates a field in the worker. */
 export const generateInWorker: FieldGenerator = async (info: FieldInfo): Promise<Generated> => {
   if (typeof Worker === 'undefined') {
-    const { Generator, keyFromHex } = await import('./generator');
+    const { Generator, runRequest } = await import('./generator');
     const g = await Generator.load();
     if (!g.supports(info.version, info.rng)) {
       throw new Error(`gen.wasm lacks generator ${info.version} with ${info.rng}`);
     }
-    return g.generate(info.version, keyFromHex(info.key), info.width, info.height, info.biome);
+    return runRequest(g, requestOf(0, info));
   }
   worker ??= startWorker();
   const id = ++next;
   const r = await new Promise<FieldResponse>((resolve) => {
     waiting.set(id, resolve);
-    worker!.postMessage({
-      id,
-      version: info.version,
-      rng: info.rng,
-      key: info.key,
-      width: info.width,
-      height: info.height,
-      biome: info.biome,
-    } satisfies FieldRequest);
+    worker!.postMessage(requestOf(id, info));
   });
   if ('error' in r) {
     throw new Error(r.error);

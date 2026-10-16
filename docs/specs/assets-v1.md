@@ -179,8 +179,9 @@ wAthena provides a placeholder pack as the `placeholder` build source. Its art i
 The pack also has art that generated maps use by default:
 
 - `placeholder/model` is a grey box of 1 × 1 × 1 cells.
-- `placeholder/ground/<material>` is a 64 × 64 tiling ground texture for each material: `grass`, `dirt`, `sand`, `rock`, `snow`, `mud`, and `water`.
-- `placeholder/prop/<prop>` is a small untextured model for each prop: `tree`, `pine`, `bush`, `rock`, `cactus`, `palm`, `deadtree`, and `reed`. Its sizes are in cells.
+- `placeholder/ground/<material>` is a 64 × 64 tiling ground texture for each material: `grass`, `dirt`, `sand`, `rock`, `snow`, `mud`, and `water`, and for dungeons and towns `stone`, `brick`, `moss`, `plank`, `cobble`, and `paving`.
+- `placeholder/prop/<prop>` is a small untextured model for each prop: `tree`, `pine`, `bush`, `rock`, `cactus`, `palm`, `deadtree`, and `reed`, and for dungeons and towns `stalagmite`, `stairs_up`, `stairs_down`, `altar`, `pillar`, `coffin`, `bones`, `brazier`, `crate`, `fountain`, `lamp`, `tower`, `gate`, and `well`. Its sizes are in cells.
+- `placeholder/building/<w>x<d>` is a house with a pitched roof and a door on its south side, +Z, that fills a footprint of w × d cells, for every even w and d from 2 to 12. Generated towns show it for a building without art (decision 0040).
 
 ## Formats
 

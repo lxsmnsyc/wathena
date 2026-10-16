@@ -25,6 +25,8 @@ import (
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
+	"github.com/lxsmnsyc/wathena/shared/gen"
+	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
@@ -168,6 +170,7 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	mods := *l.Zone
 	mods.Testing = true
 	mods.Log = log
+	mods.Places = l.placesOf(log)
 	mods.Server = variables.NewServer(nil, log)
 	id := l.Mod.ID()
 	if !slices.ContainsFunc(mods.Scripts, func(s *mod.Scripts) bool { return s.Mod == id }) {
@@ -220,6 +223,9 @@ func (w *testWorld) bind(name string) error {
 		}
 	}
 	asset := "map/" + strings.TrimPrefix(name, "map/")
+	if gen.IsGenerated(name) {
+		asset = name
+	}
 	if m, ok := w.h.Bound(); ok {
 		if m != asset {
 			return fmt.Errorf("a test world runs one map, and this case runs %s, not %s", strings.TrimPrefix(m, "map/"), name)
@@ -227,11 +233,28 @@ func (w *testWorld) bind(name string) error {
 		return nil
 	}
 	npcs := w.l.NPCs[asset]
-	grid, err := w.env.Grid(asset, npcs)
-	if err != nil {
-		return err
+	warps := w.env.Warps[asset]
+	var grid *path.Grid
+	if gen.IsGenerated(name) {
+		g, err := w.l.generatedMaps()
+		if err != nil {
+			return err
+		}
+		if g == nil {
+			return errNoGenerator
+		}
+		f := g.set.Get(name)
+		if f == nil {
+			return fmt.Errorf("the test world has no generated map %s; it has a field, gen:field:0:0, a town per town template from gen:town:t1, and a dungeon per dungeon style", name)
+		}
+		grid, npcs, warps = f.Grid(), append(slices.Clone(npcs), g.npcs[name]...), g.warps[name]
+	} else {
+		var err error
+		if grid, err = w.env.Grid(asset, npcs); err != nil {
+			return err
+		}
 	}
-	if err := w.h.Bind(asset, grid, npcs, w.env.Warps[asset]); err != nil {
+	if err := w.h.Bind(asset, grid, npcs, warps); err != nil {
 		return fmt.Errorf("the mods' entry scripts failed on %s: %w", name, err)
 	}
 	return w.startEvents(asset)

@@ -3,12 +3,18 @@ package placeholder
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/lxsmnsyc/wathena/internal/assets/model"
 )
 
-// Props are the props with a placeholder model, placeholder/prop/<prop>.
-var Props = []string{"tree", "pine", "bush", "rock", "cactus", "palm", "deadtree", "reed"}
+// Props are the props with a placeholder model, placeholder/prop/<prop>:
+// the field props, then the dungeon and town props (decision 0040).
+var Props = []string{
+	"tree", "pine", "bush", "rock", "cactus", "palm", "deadtree", "reed",
+	"stalagmite", "stairs_up", "stairs_down", "altar", "pillar", "coffin", "bones", "brazier", "crate",
+	"fountain", "lamp", "tower", "gate", "well",
+}
 
 // rgb returns the glTF base color for an sRGB color.
 func rgb(r, g, b uint8) [4]float32 {
@@ -33,6 +39,17 @@ var (
 	frond     = rgb(0x5a, 0xa0, 0x3c)
 	deadBark  = rgb(0x6a, 0x5e, 0x50)
 	reedGreen = rgb(0xa8, 0xb4, 0x5c)
+	masonry   = rgb(0x9a, 0x94, 0x8a)
+	darkStone = rgb(0x5a, 0x56, 0x52)
+	wood      = rgb(0x7a, 0x55, 0x33)
+	darkWood  = rgb(0x4a, 0x34, 0x24)
+	bone      = rgb(0xe8, 0xe0, 0xcc)
+	flame     = rgb(0xff, 0x9a, 0x2a)
+	glow      = rgb(0xff, 0xe0, 0x80)
+	water     = rgb(0x46, 0x86, 0xc8)
+	plaster   = rgb(0xdc, 0xd0, 0xb4)
+	roofTile  = rgb(0x9c, 0x3c, 0x2c)
+	void      = rgb(0x18, 0x14, 0x12)
 )
 
 // column returns a box from (x - r, y0, z - r) to (x + r, y1, z + r).
@@ -122,7 +139,123 @@ func Prop(prop string) ([]byte, error) {
 			parts = append(parts, lean(x, 0, z, x+tilt, h, z+tilt/2, 0.025, 0.004, reedGreen))
 		}
 	default:
-		return nil, fmt.Errorf("placeholder: no prop %q", prop)
+		var ok bool
+		if parts, ok = dungeonProp(prop); !ok {
+			if parts, ok = townProp(prop); !ok {
+				return nil, fmt.Errorf("placeholder: no prop %q", prop)
+			}
+		}
 	}
+	return model.Simple(parts)
+}
+
+// box is a box from (x0, y0, z0) to (x1, y1, z1).
+func box(x0, y0, z0, x1, y1, z1 float32, c [4]float32) model.Part {
+	return model.Box([3]float32{x0, y0, z0}, [3]float32{x1, y1, z1}, c)
+}
+
+// dungeonProp returns the parts of a dungeon prop.
+func dungeonProp(prop string) ([]model.Part, bool) {
+	switch prop {
+	case "stalagmite":
+		return []model.Part{model.Cone([3]float32{0, 0, 0}, 0.45, 1.7, 7, stone), model.Cone([3]float32{0.3, 0, 0.2}, 0.2, 0.8, 6, stone)}, true
+	case "stairs_up":
+		// Three steps that rise toward the north, -Z.
+		return []model.Part{
+			box(-0.8, 0, -0.1, 0.8, 0.2, 0.7, masonry),
+			box(-0.8, 0, -0.4, 0.8, 0.4, -0.1, masonry),
+			box(-0.8, 0, -0.7, 0.8, 0.6, -0.4, masonry),
+		}, true
+	case "stairs_down":
+		// A dark opening with a low rim.
+		return []model.Part{
+			box(-0.8, 0, -0.8, 0.8, 0.02, 0.8, void),
+			box(-0.9, 0, -0.9, 0.9, 0.3, -0.75, masonry),
+			box(-0.9, 0, 0.75, 0.9, 0.3, 0.9, masonry),
+			box(-0.9, 0, -0.75, -0.75, 0.3, 0.75, masonry),
+			box(0.75, 0, -0.75, 0.9, 0.3, 0.75, masonry),
+		}, true
+	case "altar":
+		return []model.Part{box(-0.7, 0, -0.4, 0.7, 0.8, 0.4, darkStone), box(-0.8, 0.8, -0.5, 0.8, 0.95, 0.5, masonry)}, true
+	case "pillar":
+		return []model.Part{box(-0.45, 0, -0.45, 0.45, 0.3, 0.45, masonry), column(0, 0, 0.3, 0.3, 3, masonry), box(-0.45, 3, -0.45, 0.45, 3.2, 0.45, masonry)}, true
+	case "coffin":
+		return []model.Part{box(-0.35, 0, -0.8, 0.35, 0.45, 0.8, darkWood), box(-0.4, 0.45, -0.85, 0.4, 0.55, 0.85, wood)}, true
+	case "bones":
+		return []model.Part{
+			box(-0.4, 0, -0.05, 0.4, 0.08, 0.05, bone),
+			box(-0.1, 0, -0.35, 0, 0.08, 0.3, bone),
+			box(0.15, 0, 0.1, 0.4, 0.32, 0.35, bone),
+		}, true
+	case "brazier":
+		return []model.Part{
+			column(0, 0, 0.06, 0, 0.9, darkStone),
+			box(-0.35, 0.9, -0.35, 0.35, 1.15, 0.35, darkStone),
+			model.Cone([3]float32{0, 1.15, 0}, 0.25, 0.4, 6, flame),
+		}, true
+	case "crate":
+		return []model.Part{box(-0.45, 0, -0.45, 0.45, 0.9, 0.45, wood), box(-0.48, 0.4, -0.48, 0.48, 0.5, 0.48, darkWood)}, true
+	}
+	return nil, false
+}
+
+// townProp returns the parts of a town prop.
+func townProp(prop string) ([]model.Part, bool) {
+	switch prop {
+	case "fountain":
+		return []model.Part{
+			model.Loft(model.Circle([3]float32{0, 0, 0}, 1.8, 8), model.Circle([3]float32{0, 0.5, 0}, 1.8, 8), masonry),
+			model.Loft(model.Circle([3]float32{0, 0.5, 0}, 1.6, 8), model.Circle([3]float32{0, 0.52, 0}, 1.6, 8), water),
+			column(0, 0, 0.3, 0.5, 1.6, masonry),
+			model.Cone([3]float32{0, 1.6, 0}, 0.5, 0.4, 8, water),
+		}, true
+	case "lamp":
+		return []model.Part{column(0, 0, 0.08, 0, 2.4, darkStone), box(-0.2, 2.4, -0.2, 0.2, 2.75, 0.2, glow), box(-0.25, 2.75, -0.25, 0.25, 2.85, 0.25, darkStone)}, true
+	case "tower":
+		return []model.Part{box(-1, 0, -1, 1, 3.6, 1, masonry), box(-1.15, 3.6, -1.15, 1.15, 3.8, 1.15, darkStone), model.Cone([3]float32{0, 3.8, 0}, 1.1, 0.7, 4, roofTile)}, true
+	case "gate":
+		// An arch over a road 4 cells wide, across the X axis.
+		return []model.Part{
+			box(-2.3, 0, -0.4, -1.9, 3.2, 0.4, masonry),
+			box(1.9, 0, -0.4, 2.3, 3.2, 0.4, masonry),
+			box(-2.3, 3.2, -0.4, 2.3, 3.7, 0.4, darkStone),
+		}, true
+	case "well":
+		return []model.Part{
+			model.Loft(model.Circle([3]float32{0, 0, 0}, 0.6, 8), model.Circle([3]float32{0, 0.7, 0}, 0.6, 8), masonry),
+			column(-0.55, 0, 0.05, 0.7, 1.6, wood),
+			column(0.55, 0, 0.05, 0.7, 1.6, wood),
+			box(-0.8, 1.6, -0.5, 0.8, 1.75, 0.5, roofTile),
+		}, true
+	}
+	return nil, false
+}
+
+// BuildingSizes are the footprint sides of the placeholder buildings,
+// placeholder/building/<w>x<d>: even numbers from 2 to 12 cells.
+var BuildingSizes = []int{2, 4, 6, 8, 10, 12}
+
+// Building returns placeholder/building/<w>x<d>: a house that fills a
+// footprint of w × d cells with a margin, with a pitched roof and a door
+// on its south side, +Z. It returns an error for a size that is not in
+// BuildingSizes.
+func Building(w, d int) ([]byte, error) {
+	if !slices.Contains(BuildingSizes, w) || !slices.Contains(BuildingSizes, d) {
+		return nil, fmt.Errorf("placeholder: no building of %d × %d", w, d)
+	}
+	hw, hd := float32(w)/2-0.15, float32(d)/2-0.15
+	h := 2.2 + 0.1*float32(min(w, d))
+	ridge := min(0.3*float32(min(w, d)), 2.5)
+	parts := []model.Part{
+		box(-hw, 0, -hd, hw, h, hd, plaster),
+		box(-0.45, 0, hd, 0.45, 1.5, hd+0.06, darkWood),
+	}
+	// The roof rises from the walls' top to a ridge along X.
+	eave := float32(0.25)
+	parts = append(parts, model.Loft(
+		[][3]float32{{-hw - eave, h, -hd - eave}, {hw + eave, h, -hd - eave}, {hw + eave, h, hd + eave}, {-hw - eave, h, hd + eave}},
+		[][3]float32{{-hw - eave, h + ridge, -0.02}, {hw + eave, h + ridge, -0.02}, {hw + eave, h + ridge, 0.02}, {-hw - eave, h + ridge, 0.02}},
+		roofTile,
+	))
 	return model.Simple(parts)
 }

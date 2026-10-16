@@ -30,6 +30,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.parties`](#waparties) | Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do. |
 | [`wa.guilds`](#waguilds) | Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later. |
 | [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decisions 27 and 32). Read-only. Its calls need no permission. An unknown name raises an error that lists the valid names. |
+| [`wa.places`](#waplaces) | Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil. |
 | [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
 | [`wa.integers`](#waintegers) | Integer division that rounds as C does, toward zero, for scripts converted from rAthena. |
@@ -563,6 +564,36 @@ A limit's base, what a player or guild starts with, and its max, where expansion
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string` | A limit, such as "inventory_slots". |
+
+### wa.places
+
+```lua
+local places = require "wa.places"
+```
+
+Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil.
+
+#### `places.find(scope, tag) → wa.Place[]`
+
+Every place of the scope with the tag, in a fixed order: by map ID, then in the order the generator made them. Empty when none matches.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `scope` | `string` | Where to look: "town:any", "town:<id>" such as "town:t7", "dungeon:any", "dungeon:<id>" such as "dungeon:crypt", or "map:<id>" such as "map:gen:field:3:-1". Another form raises an error. |
+| `tag` | `string` | A tag, such as "blacksmith" or "shop:tool": 1 to 64 lowercase letters, digits, _, -, . and :. |
+
+#### `places.nearest(player, tag) → wa.Place?`
+
+The place with the tag closest to the player: the fewest warps away on the map graph, then the shortest distance. On another map, the distance counts from where the player would arrive. Maps no warp leads to are left out. nil when no place qualifies.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+| `tag` | `string` | A tag, as for find. |
 
 ### wa.variables
 
@@ -1988,6 +2019,26 @@ Ends the run before its time, within a second. An invasion that finishes "won" g
 | Parameter | Type | Meaning |
 |---|---|---|
 | `result` | `"won"\|"lost"` |  |
+
+### wa.Place
+
+A named place of a generated map, from wa.places (review decision 42). A place never changes while the server runs.
+
+#### `place:get_map() → string`
+
+The map's ID, such as "gen:town:t7".
+
+#### `place:get_position() → integer, integer`
+
+The place's cell, x and y.
+
+#### `place:get_tags() → string[]`
+
+The place's tags, its main tag first, such as { "gate", "gate:south" }.
+
+#### `place:get_area() → string`
+
+The place's area: its map ID without gen:, such as "town:t7", "dungeon:crypt:2" or "field:3:-1".
 
 ### wa.Shop
 

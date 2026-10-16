@@ -1309,6 +1309,48 @@ api["wa.guilds"] = readonly("wa.guilds", {
 	end,
 })
 
+-- Named places of generated maps (proposal 0002, review decision 42). A
+-- place handle is the place's index in the world's places, from 1, and
+-- reads its fields with its methods. A classic world has no places.
+local place_ids
+local new_place
+new_place, place_ids = handle_type("place", {
+	get_map = function(self)
+		return (call(H.place_get, place_ids[self], "map"))
+	end,
+	get_position = function(self)
+		return call(H.place_get, place_ids[self], "position")
+	end,
+	get_tags = function(self)
+		return (call(H.place_get, place_ids[self], "tags"))
+	end,
+	get_area = function(self)
+		return (call(H.place_get, place_ids[self], "area"))
+	end,
+}, nil, true)
+
+api["wa.places"] = readonly("wa.places", {
+	find = function(scope, tag)
+		check(type(scope) == "string", "places.find: the scope must be a string, such as \"town:any\"")
+		check(type(tag) == "string", "places.find: the tag must be a string, such as \"blacksmith\"")
+		local out = {}
+		for i, id in ipairs(call(H.places_find, scope, tag)) do
+			out[i] = new_place(id)
+		end
+		return out
+	end,
+	nearest = function(player, tag)
+		local id = player_ids[player]
+		check(id ~= nil, "places.nearest: want a player")
+		check(type(tag) == "string", "places.nearest: the tag must be a string, such as \"blacksmith\"")
+		local p = call(H.places_nearest, id, tag)
+		if p == nil then
+			return nil
+		end
+		return new_place(p)
+	end,
+})
+
 -- The world's ruleset (proposal 0002, review decisions 27 and 32): its
 -- limits, flags and rules, read-only.
 api["wa.rules"] = readonly("wa.rules", {

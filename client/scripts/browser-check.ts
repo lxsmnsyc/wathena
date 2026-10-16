@@ -29,10 +29,18 @@
 //   and a page with ?nogen downloads the same map (decision 0039).
 //   Chromium only.
 //
+// - places: places-check.ts runs a --dev procedural world with a field,
+//   a town and a crypt, and the Market Town sample mod. A player walks
+//   from the field into the town, talks to the Town Guide, which stands
+//   at the square by its place, and walks into the crypt's first floor
+//   (decision 0040). Chromium only.
+//
 // - gen: the map generator module (src/world/gen.wasm) gives the golden
 //   checksums of shared/gen/testdata in Chromium, Firefox and WebKit,
-//   whatever BROWSERS says (decision 0038). GEN_BROWSERS picks others. A
-//   browser that is not installed is skipped with a message.
+//   whatever BROWSERS says (decision 0038): fields, dungeon floors and
+//   towns, with their WMAP and places hashes (decision 0040).
+//   GEN_BROWSERS picks others. A browser that is not installed is
+//   skipped with a message.
 //
 // CHECKS picks checks by name, such as CHECKS=touch,phone. All run by
 // default.
@@ -73,6 +81,7 @@ import {
 } from './game-check.ts';
 import { checkExit } from './exit-check.ts';
 import { checkFields } from './field-check.ts';
+import { checkPlaces } from './places-check.ts';
 import type * as GeneratorModule from '../src/world/generator.ts';
 
 const repo = join(import.meta.dirname, '..', '..');
@@ -837,6 +846,12 @@ interface GoldenMap {
   biome?: number | undefined;
   checksum: string;
   wmap?: string | undefined;
+  /** A dungeon floor or a town, with its params as hex (version 3). */
+  kind?: 'dungeon' | 'town' | undefined;
+  params?: string | undefined;
+  name?: string | undefined;
+  /** The SHA-256 of the places' encoding (version 3). */
+  places?: string | undefined;
 }
 
 interface GoldenFile {
@@ -891,6 +906,10 @@ function goldenMaps(): GoldenFile[] {
           biome: m.biome,
           checksum: m.checksum,
           wmap: m.wmap,
+          kind: m.kind,
+          params: m.params,
+          name: m.name,
+          places: m.places,
         })),
       };
     });
@@ -921,23 +940,35 @@ async function checkGen(name: string, browser: Browser, base: string): Promise<v
       });
       for (const want of v.maps) {
         const began = performance.now();
-        const grid = g.generate(
-          v.version,
-          m.keyFromHex(want.key),
-          want.width,
-          want.height,
-          want.biome ?? 0,
-        );
+        const grid =
+          want.kind === undefined
+            ? g.generate(
+                v.version,
+                m.keyFromHex(want.key),
+                want.width,
+                want.height,
+                want.biome ?? 0,
+              )
+            : g.generateMap(
+                v.version,
+                m.keyFromHex(want.key),
+                want.kind,
+                m.bytesFromHex(want.params ?? ''),
+              );
         const took = performance.now() - began;
-        // A field's WMAP must be the same bytes as the server's.
+        // A map's WMAP and places must be the same bytes as the server's.
         const wmap =
           grid.wmap.length === 0
             ? undefined
             : m.hex(new Uint8Array(await crypto.subtle.digest('SHA-256', grid.wmap)));
+        const places =
+          v.version < 3
+            ? undefined
+            : m.hex(new Uint8Array(await crypto.subtle.digest('SHA-256', grid.places)));
         out.push({
-          label: `gen v${v.version} ${want.key.slice(0, 8)} ${want.width}x${want.height}`,
-          ok: grid.checksum === want.checksum && wmap === want.wmap,
-          detail: `${grid.checksum.slice(0, 16)}${wmap === undefined ? '' : ` wmap ${wmap.slice(0, 16)}`} in ${took.toFixed(1)} ms`,
+          label: `gen v${v.version} ${want.kind ?? 'field'} ${want.name ?? want.key.slice(0, 8)} ${want.width}x${want.height}`,
+          ok: grid.checksum === want.checksum && wmap === want.wmap && places === want.places,
+          detail: `${grid.checksum.slice(0, 16)}${wmap === undefined ? '' : ` wmap ${wmap.slice(0, 16)}`}${places === undefined ? '' : ` places ${places.slice(0, 16)}`} in ${took.toFixed(1)} ms`,
         });
       }
     }
@@ -1035,6 +1066,13 @@ try {
           await checkFields(name, browser, { repo, client, ...assets }, check);
         } else {
           console.log(`skip ${name} field: the game checks run in Chromium`);
+        }
+      }
+      if (wanted('places')) {
+        if (name === 'chromium') {
+          await checkPlaces(name, browser, { repo, client, ...assets }, check);
+        } else {
+          console.log(`skip ${name} places: the game checks run in Chromium`);
         }
       }
       if (wanted('exit')) {

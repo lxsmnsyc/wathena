@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-16)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 and 2 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 3 are built.
 
 Done:
 
@@ -98,10 +98,20 @@ Done:
   - The client generates each field with `gen.wasm` in a Web Worker, compares the checksum, and downloads the WMAP when they differ or it cannot generate it. `waserver --dev --fields 0:0,1:0` runs a procedural world to walk in.
   - A 400 × 400 field takes about 60 ms in Go, 75 to 111 ms in Chromium, WebKit and Node, and 690 to 735 ms in Firefox, within section 8.5's budget of about a second in a worker. Firefox reaches a second on a busy machine. The golden fields match in Go on arm64 and amd64 under Rosetta, in TinyGo, in Node, and in the three browsers, WMAP bytes included.
   - The browser check `field` walks a generated field and checks the download. The exit check's Lantern Ghosts stand on fixed cells, so none hides the Training Dummy (decision 0037).
+- Phase 7 step 3, dungeons, towns and named places ([decision 0040](decisions/0040-dungeons-towns-places.md), [generator-v3](specs/generator-v3.md)), as review decision 42 approved them:
+  - Generator version 3 makes dungeon floors, caves by cellular automata and rooms joined by a minimum spanning tree with loops, with an exit in the room farthest from the entrance and a boss room on the last floor, and towns, with a plateau, main roads from each gate to the square, side roads, lots, buildings, walls, gates, decorations and the named places at the buildings' doors. Its fields are version 2's with places.
+  - Dungeon floors and towns stand on blocks of 2 × 2 cells, so walls stand up with the WMAP's side tiles. Validation with 8 attempts, as for fields.
+  - Dungeon styles and town templates are records of `data/dungeon_styles.yml` and `data/town_templates.yml`, with core's defaults and mods' records. The server sends a floor's or a town's params with its node, so the client generates a mod's town too.
+  - Every generated map records its named places. `wa.places` finds them by scope and tag, and `places.nearest` goes by the map graph, then distance. NPC records with `place` stand at every match. Classic worlds have no places.
+  - `waserver --dev --towns <n> --dungeons <style>:<floors>` runs towns and dungeons beside the fields, linked to the fields' free portals until step 4's map graph. Buildings show placeholder houses of their footprints, and the tileset table maps them to art.
+  - Test worlds of a `wactl` built with the tag have a field, a town per template and a dungeon per style. The Market Town sample adds a template, a style and NPCs placed by tag, with tests.
+  - The golden dungeon floors and towns match in Go on arm64 and amd64 under Rosetta, in TinyGo, in Node, and in the three browsers, WMAP and places included. A town of 192 cells takes about 40 ms in Chromium and WebKit and 262 ms in Firefox, and one of 256 cells 485 ms in Firefox, within section 8.5's budget.
+  - The browser check `places` walks from a field into a town, talks to an NPC placed by tag, and walks into a dungeon floor.
 
 Open review items:
 
 - Next step 27's details to review, in proposal 0002, "Next steps".
+- Next step 28's details to review, and the review items of decision 0040: a `wa.testing` way to pick a test world's template, mods' own tilesets and props, a floor's level band in Lua, and whether an NPC placed by tag without a match is a warning.
 - The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
@@ -117,7 +127,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 and 2, the generator core and generated fields, are built. Step 3, dungeons and towns, is next, with its Lua API drafted for review first.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 3, the generator core, generated fields, and dungeons, towns and named places, are built. Step 4, the world layout with the map graph, town names and the home area, is next, with its Lua API drafted for review first if it needs any.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -1669,7 +1679,7 @@ Every map has a stable ID and a display name.
 - The ID is used by the server, the database, scripts, save points, and memo points. It never changes for a world.
 - The display name is shown to players. It can change without breaking anything.
 - Classic maps keep rAthena's map names as IDs, such as `prontera`. Display names come from locale files.
-- Generated maps get IDs from their place in the seed tree, such as `gen:town:7`, `gen:field:3:-1`, and `gen:dungeon:crypt:2026-10-31:2`.
+- Generated maps get IDs from their place in the seed tree, such as `gen:town:t7`, `gen:field:3:-1`, and `gen:dungeon:crypt:2026-10-31:2`. A town's ID is `t7`, which its map ID carries (decision 0040).
 
 #### Town names
 
@@ -2827,7 +2837,16 @@ The order from here:
       - The client's field loader with a Web Worker and the download fallback, and aliases in the asset store.
       - Tests: golden fields with WMAP hashes on every platform, `TestFieldV2`, `TestFieldV2Retries`, `FuzzFieldV2`, the server's checksum and download tests, the client's fallback tests, and the browser check `field`.
       - Left: global coordinates across field borders, places and feature tags, the fallback template, material blending, fog, navigation data, caching generated maps, and a run on a real amd64 machine and in Safari.
-   3. Dungeons and towns: room and corridor dungeons and caves, floors that get harder, boss rooms, town templates with buildings and roads, and named places through `wa.places` (section 8.6).
+   3. Dungeons and towns: room and corridor dungeons and caves, floors that get harder, boss rooms, town templates with buildings and roads, and named places through `wa.places` (section 8.6). Done on 2026-10-16 ([decision 0040](decisions/0040-dungeons-towns-places.md), [generator-v3](specs/generator-v3.md), proposal 0002, review decision 42 and next step 28, server/README.md, "Towns and dungeons", client/README.md, "Procedural worlds", and mods/README.md, "Places"):
+      - Generator version 3 in `shared/gen`: dungeon floors by the cave and rooms methods, with an entrance, an exit in the room farthest from it, and a boss room on the last floor, and towns with a plateau, gates, main and side roads, lots, buildings, walls, decorations and places. Fields are version 2's with portal and clearing places. Versions 1 and 2 stay.
+      - Floors and towns on blocks of 2 × 2 cells, a WMAP surface each, with walls stood up by side tiles. Validation with retries from `attempt(n)`, at most 8, then `ErrNoMap`.
+      - Params: the canonical encoding of a floor's style or a town's template, which the server sends with the node and the module decodes. `generate_map`, `width`, `height` and `places` in `gen.wasm`.
+      - Records: `data/dungeon_styles.yml` (core's cave, crypt, tower and ruins) and `data/town_templates.yml` (core's hamlet, village and city), which mods change and add. Each floor's level band rises by the style's `level_step`.
+      - Named places on every generated map, an index the zones share (`server/places`), `wa.places` with `find` and `nearest`, and NPC records with `place`.
+      - `waserver --towns` and `--dungeons`, the dev links to the fields' free portals, and `/gen/maps/<id>.json` with the kind, the params, the band and the places. The placeholder pack gains dungeon and town textures and props, and a house per footprint.
+      - Test worlds with a field, a town per template and a dungeon per style in a `wactl` built with the tag, and the Market Town sample mod.
+      - Tests: golden floors and towns with WMAP and places hashes on every platform, `TestDungeonV3`, `TestTownV3`, `TestFieldV3Places`, `TestMapV3Retries`, `FuzzDungeonV3`, `FuzzTownV3`, the places index, the records, the dev links, the Lua tests of `wa.places`, the sample's `wactl mod test` cases, the client's map loads, and the browser check `places`.
+      - Left: the map graph, town names, the home area and the bands of dungeons by place (step 4), spawns in floors and boss rooms (step 5), service NPCs from templates and `wa.generation` (step 6), cave chambers as places, caching generated maps, and a run on a real amd64 machine and in Safari.
    4. World layout: map identity, town naming styles, the map graph and warps, the home area from mod maps, and save and memo points (sections 8.10 and 8.12). Every map is reachable from the home area.
    5. Spawns: monster spawn tags, field and dungeon spawn selection, mini bosses and field bosses (section 8.11).
    6. Content: service NPCs placed from templates, quest templates, procedural job changes and rebirth (section 11.4), and `wa.generation` for mod layers (section 8.7).

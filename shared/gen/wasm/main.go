@@ -22,6 +22,10 @@ var (
 	grid    gen.Grid
 	field   gen.Field
 	sum     [32]byte
+	// input holds a dungeon floor's or a town's params, and places the
+	// encoding of the map's places.
+	input  [gen.MaxParams]byte
+	places []byte
 )
 
 // keyBuffer returns the 32-byte buffer of the node key.
@@ -71,7 +75,7 @@ func biomes(version int32) int32 {
 //
 //export generate
 func generate(version, width, height, biome int32) int32 {
-	grid, field = gen.Grid{}, gen.Field{}
+	grid, field, places = gen.Grid{}, gen.Field{}, nil
 	g, ok := gen.Lookup(int(version))
 	if !ok {
 		return -1
@@ -94,10 +98,80 @@ func generate(version, width, height, biome int32) int32 {
 			return -2
 		}
 		field, grid = out, out.Grid
+		places = gen.EncodePlaces(field.Places)
 	}
 	sum = grid.Checksum()
 	return 0
 }
+
+// paramsBuffer returns the buffer of a dungeon floor's or a town's
+// params, gen.MaxParams bytes.
+//
+//export params
+func paramsBuffer() *byte { return &input[0] }
+
+// generateMap makes a dungeon floor (kind 1) or a town (kind 2) from the
+// node and the first length bytes of the params buffer. It returns 0,
+// or:
+//
+//   - -1 for a version this module lacks, or one without the kind,
+//   - -2 for params that do not decode or check,
+//   - -3 when no attempt made a valid map,
+//   - -4 for a tileset or prop the version lacks.
+//
+//export generate_map
+func generateMap(version, kind, length int32) int32 {
+	grid, field, places = gen.Grid{}, gen.Field{}, nil
+	g, ok := gen.Lookup(int(version))
+	var k string
+	switch kind {
+	case 1:
+		k = gen.KindDungeon
+	case 2:
+		k = gen.KindTown
+	}
+	if !ok || k == "" || !g.Makes(k) {
+		return -1
+	}
+	if length < 0 || int(length) > len(input) {
+		return -2
+	}
+	out, err := g.Map(rng.FromKey(nodeKey), gen.MapParams{Kind: k, Params: input[:length]})
+	switch {
+	case errors.Is(err, gen.ErrNoMap):
+		return -3
+	case errors.Is(err, gen.ErrTileset):
+		return -4
+	case err != nil:
+		return -2
+	}
+	field, grid = out, out.Grid
+	places = gen.EncodePlaces(field.Places)
+	sum = grid.Checksum()
+	return 0
+}
+
+// width and height return the size of the last map.
+//
+//export width
+func width() int32 { return int32(grid.Width) } // #nosec G115 -- at most 1024.
+
+//export height
+func height() int32 { return int32(grid.Height) } // #nosec G115 -- at most 1024.
+
+// placesBuffer returns the encoding of the map's places,
+// places_size bytes (gen.EncodePlaces), or 0 for a map without places.
+//
+//export places
+func placesBuffer() *byte {
+	if len(places) == 0 {
+		return nil
+	}
+	return &places[0]
+}
+
+//export places_size
+func placesSize() int32 { return int32(len(places)) } // #nosec G115 -- a few kilobytes.
 
 // wmap returns the field's WMAP map, wmap_size bytes, or 0 for a grid
 // without one.

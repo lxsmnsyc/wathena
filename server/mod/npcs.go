@@ -9,6 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/lxsmnsyc/wathena/server/places"
+	"github.com/lxsmnsyc/wathena/shared/gen"
 )
 
 // NPCKind is the NPC placement overlay: data/npcs.yml. Core's NPCs are
@@ -47,8 +50,19 @@ type NPC struct {
 	// Shop is what the NPC sells, or nil. A record with a shop and no
 	// map is not placed: scripts open it with player:open_shop.
 	Shop *Shop
-	// Placed is set for an NPC on a map.
+	// Placed is set for an NPC on a map, or at places.
 	Placed bool
+	// Place is set for an NPC that stands at every place of a scope with
+	// a tag, in place of a map and a cell (review decision 42). Map, X
+	// and Y are then unset.
+	Place *NPCPlace
+}
+
+// NPCPlace is where an NPC record with place stands: every place of the
+// scope with the tag, such as {scope: town:any, tag: blacksmith}.
+type NPCPlace struct {
+	Scope places.Scope
+	Tag   string
 }
 
 // Shop is a shop of an NPC record (proposal 0002, review decision 30).
@@ -97,7 +111,7 @@ type ShopCostItem struct {
 }
 
 // npcFields are the fields of an NPC record.
-var npcFields = []string{"map", "x", "y", "direction", "sprite", "script", "display_name", "shop", "discount"}
+var npcFields = []string{"map", "x", "y", "place", "direction", "sprite", "script", "display_name", "shop", "discount"}
 
 // shopFields are the fields of a shop table.
 var shopFields = []string{"items", "buys_from_players", "discount"}
@@ -161,7 +175,8 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 		}
 	}
 	_, hasMap := r.Fields["map"]
-	if !hasMap && n.Shop != nil {
+	_, hasPlace := r.Fields["place"]
+	if !hasMap && !hasPlace && n.Shop != nil {
 		// A shop that scripts open. It has no place.
 		for _, k := range []string{"x", "y", "direction", "sprite", "script", "display_name"} {
 			if _, ok := r.Fields[k]; ok {
@@ -174,18 +189,31 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 		return n, nil
 	}
 	n.Placed = true
-	if m, ok := str("map"); ok && m != "" && !strings.Contains(m, "/") {
-		n.Map = "map/" + m
-	} else if ok && strings.Contains(m, "/") {
-		n.Map = m
+	if hasPlace {
+		for _, k := range []string{"map", "x", "y"} {
+			if _, ok := r.Fields[k]; ok {
+				errs = append(errs, fmt.Sprintf("%s does not go with place: the NPC stands at each place", k))
+			}
+		}
+		p, err := readPlace(r.Fields["place"])
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+		n.Place = p
 	} else {
-		errs = append(errs, "map is required, such as prontera")
-	}
-	var okX, okY bool
-	n.X, okX = num("x")
-	n.Y, okY = num("y")
-	if !okX || !okY || n.X < 0 || n.Y < 0 || n.X > 1023 || n.Y > 1023 {
-		errs = append(errs, "x and y are required: cells from 0 to 1023")
+		if m, ok := str("map"); ok && m != "" && !strings.Contains(m, "/") {
+			n.Map = "map/" + m
+		} else if ok && strings.Contains(m, "/") {
+			n.Map = m
+		} else {
+			errs = append(errs, "map is required, such as prontera, or place, such as {scope: town:any, tag: blacksmith}")
+		}
+		var okX, okY bool
+		n.X, okX = num("x")
+		n.Y, okY = num("y")
+		if !okX || !okY || n.X < 0 || n.Y < 0 || n.X > 1023 || n.Y > 1023 {
+			errs = append(errs, "x and y are required: cells from 0 to 1023")
+		}
 	}
 	if v, ok := r.Fields["direction"]; ok {
 		d, isText := v.(string)
@@ -249,6 +277,24 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 		return NPC{}, errors.New(strings.Join(errs, "; "))
 	}
 	return n, nil
+}
+
+// readPlace reads a place field: {scope, tag}.
+func readPlace(v any) (*NPCPlace, error) {
+	m, ok := v.(map[string]any)
+	scope, okScope := m["scope"].(string)
+	tag, okTag := m["tag"].(string)
+	if !ok || len(m) != 2 || !okScope || !okTag {
+		return nil, errors.New("place is {scope, tag}, such as {scope: town:any, tag: blacksmith}")
+	}
+	sc, err := places.ParseScope(scope)
+	if err != nil {
+		return nil, fmt.Errorf("place: %w", err)
+	}
+	if !gen.ValidTag(tag) {
+		return nil, fmt.Errorf("place: the tag %q is not 1 to 64 lowercase letters, digits and the signs : . - _", tag)
+	}
+	return &NPCPlace{Scope: sc, Tag: tag}, nil
 }
 
 // readShop reads a shop field: a list of items, or a table with items,

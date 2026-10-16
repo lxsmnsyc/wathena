@@ -908,6 +908,26 @@ function wa_EventRun:get_participants() end
 ---@param result "won"|"lost"
 function wa_EventRun:finish(result) end
 
+---A named place of a generated map, from wa.places (review decision 42). A place never changes while the server runs.
+---@class wa.Place
+local wa_Place = {}
+
+---The map's ID, such as "gen:town:t7".
+---@return string
+function wa_Place:get_map() end
+
+---The place's cell, x and y.
+---@return integer, integer
+function wa_Place:get_position() end
+
+---The place's tags, its main tag first, such as { "gate", "gate:south" }.
+---@return string[]
+function wa_Place:get_tags() end
+
+---The place's area: its map ID without gen:, such as "town:t7", "dungeon:crypt:2" or "field:3:-1".
+---@return string
+function wa_Place:get_area() end
+
 ---A shop of data/npcs.yml, from world.get_shop (review decision 30). Its changes hold for the whole world until the server stops: the shop's file sets it again at start. A stock the methods set is saved.
 ---@class wa.Shop
 local wa_Shop = {}

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -33,19 +34,32 @@ type golden struct {
 // the biome, the attempt that passed, the props and the SHA-256 of the
 // WMAP.
 type goldenGrid struct {
-	Secret   string  `json:"secret,omitempty"`
-	Region   []int64 `json:"region,omitempty"`
-	Field    []int64 `json:"field,omitempty"`
-	Key      string  `json:"key"`
-	Width    int     `json:"width"`
-	Height   int     `json:"height"`
-	Biome    int     `json:"biome,omitempty"`
-	Water    int32   `json:"water"`
-	Counts   [4]int  `json:"counts"`
-	Checksum string  `json:"checksum"`
-	Attempt  int     `json:"attempt,omitempty"`
-	Objects  int     `json:"objects,omitempty"`
-	WMAP     string  `json:"wmap,omitempty"`
+	Secret string  `json:"secret,omitempty"`
+	Region []int64 `json:"region,omitempty"`
+	Field  []int64 `json:"field,omitempty"`
+	// Kind is dungeon or town for a map of Generator.Map, with its
+	// params as hex. Town, or Dungeon and Floor, name its node below the
+	// public branch of the secret (version 3).
+	Kind    string `json:"kind,omitempty"`
+	Params  string `json:"params,omitempty"`
+	Town    int64  `json:"town,omitempty"`
+	Dungeon string `json:"dungeon,omitempty"`
+	Floor   int    `json:"floor,omitempty"`
+	// Name names the style or template, for people.
+	Name     string `json:"name,omitempty"`
+	Key      string `json:"key"`
+	Width    int    `json:"width"`
+	Height   int    `json:"height"`
+	Biome    int    `json:"biome,omitempty"`
+	Water    int32  `json:"water"`
+	Counts   [4]int `json:"counts"`
+	Checksum string `json:"checksum"`
+	Attempt  int    `json:"attempt,omitempty"`
+	Objects  int    `json:"objects,omitempty"`
+	WMAP     string `json:"wmap,omitempty"`
+	// Places is the SHA-256 of the map's places (placesHash), for
+	// version 3.
+	Places string `json:"places,omitempty"`
 }
 
 func goldenFile(version int) string {
@@ -53,7 +67,7 @@ func goldenFile(version int) string {
 }
 
 // goldenSeeds are the maps of each version's golden file.
-var goldenSeeds = map[int][]goldenGrid{1: goldenSeedsV1, 2: goldenSeedsV2}
+var goldenSeeds = map[int][]goldenGrid{1: goldenSeedsV1, 2: goldenSeedsV2, 3: goldenSeedsV3()}
 
 // goldenSeedsV1 are sizes from one cell to the largest map side, and a
 // zero key.
@@ -84,6 +98,52 @@ var goldenSeedsV2 = []goldenGrid{
 	{Key: hex.EncodeToString(make([]byte, 32)), Width: 48, Height: 48, Biome: biomeBeach},
 }
 
+// goldenSeedsV3 are two fields, every core dungeon style's first and
+// last floor, a 256 × 256 floor, every core town template, the largest
+// town, and zero keys.
+func goldenSeedsV3() []goldenGrid {
+	dungeon := func(secret, id string, s DungeonStyle, floor, floors int, name string) goldenGrid {
+		b, err := EncodeDungeon(DungeonParams{Style: s, Floor: floor, Floors: floors})
+		if err != nil {
+			panic(err)
+		}
+		return goldenGrid{Secret: secret, Kind: KindDungeon, Dungeon: id, Floor: floor, Params: hex.EncodeToString(b), Name: name,
+			Width: s.Width, Height: s.Height}
+	}
+	town := func(secret string, n int64, t TownTemplate, name string) goldenGrid {
+		b, err := EncodeTown(TownParams{Template: t})
+		if err != nil {
+			panic(err)
+		}
+		return goldenGrid{Secret: secret, Kind: KindTown, Town: n, Params: hex.EncodeToString(b), Name: name, Width: t.Size, Height: t.Size}
+	}
+	out := []goldenGrid{
+		{Secret: "golden-0", Field: []int64{0, 0}, Width: 64, Height: 64, Biome: biomeGrassland},
+		{Secret: "golden-1", Field: []int64{2, -3}, Width: 160, Height: 120, Biome: biomeForest},
+	}
+	for i, c := range testStyles {
+		secret := "golden-" + strconv.Itoa(i)
+		out = append(out,
+			dungeon(secret, c.name, c.style, 1, c.style.Floors, c.name),
+			dungeon(secret, c.name, c.style, c.style.Floors, c.style.Floors, c.name))
+	}
+	big := testStyles[1].style
+	big.Width, big.Height, big.RoomMax = 256, 256, 30
+	out = append(out, dungeon("golden-4", "deep", big, 9, 10, "crypt 256"))
+	for i, c := range testTemplates {
+		out = append(out, town("golden-"+strconv.Itoa(i), int64(i+1), c.template, c.name))
+	}
+	largest := testTemplates[2].template
+	largest.Size = MaxTownSize
+	out = append(out, town("golden-5", 40, largest, "city 256"))
+	zero := make([]byte, 32)
+	for _, m := range []goldenGrid{dungeon("", "", testStyles[0].style, 1, 1, "cave"), town("", 0, testTemplates[0].template, "hamlet")} {
+		m.Secret, m.Key = "", hex.EncodeToString(zero)
+		out = append(out, m)
+	}
+	return out
+}
+
 // goldenKey returns a map's node.
 func goldenKey(t *testing.T, m goldenGrid) rng.Node {
 	t.Helper()
@@ -98,8 +158,13 @@ func goldenKey(t *testing.T, m goldenGrid) rng.Node {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(m.Field) == 2 {
+	switch {
+	case len(m.Field) == 2:
 		return FieldNode(PublicBranch(root), m.Field[0], m.Field[1])
+	case m.Kind == KindTown:
+		return TownNode(PublicBranch(root), m.Town)
+	case m.Kind == KindDungeon:
+		return FloorNode(DungeonNode(PublicBranch(root), m.Dungeon), m.Floor)
 	}
 	return root.Child("region", m.Region...).Child("terrain")
 }
@@ -110,7 +175,20 @@ func result(t *testing.T, g Generator, m goldenGrid) goldenGrid {
 	node := goldenKey(t, m)
 	p := Params{Width: m.Width, Height: m.Height, Biome: m.Biome}
 	var grid Grid
-	if g.Field != nil {
+	if m.Kind != "" {
+		params, err := hex.DecodeString(m.Params)
+		if err != nil {
+			t.Fatal(err)
+		}
+		f, err := g.Map(node, MapParams{Kind: m.Kind, Params: params})
+		if err != nil {
+			t.Fatalf("%s %s: %v", m.Kind, m.Name, err)
+		}
+		grid = f.Grid
+		m.Attempt, m.Objects = f.Attempt, len(f.Objects)
+		sum := sha256.Sum256(f.WMAP)
+		m.WMAP, m.Places = hex.EncodeToString(sum[:]), placesHash(f.Places)
+	} else if g.Field != nil {
 		f, err := g.Field(node, p)
 		if err != nil {
 			t.Fatalf("%dx%d: %v", m.Width, m.Height, err)
@@ -119,6 +197,9 @@ func result(t *testing.T, g Generator, m goldenGrid) goldenGrid {
 		m.Attempt, m.Objects = f.Attempt, len(f.Objects)
 		sum := sha256.Sum256(f.WMAP)
 		m.WMAP = hex.EncodeToString(sum[:])
+		if g.Version >= 3 {
+			m.Places = placesHash(f.Places)
+		}
 	} else {
 		var err error
 		if grid, err = g.Grid(node, p); err != nil {
@@ -185,10 +266,10 @@ func TestGolden(t *testing.T) {
 				t.Errorf("v%d %s %v: key %s, want %s", v, m.Secret, m.Region, got.Key, m.Key)
 			}
 			if got.Checksum != m.Checksum || got.Water != m.Water || got.Counts != m.Counts ||
-				got.Attempt != m.Attempt || got.Objects != m.Objects || got.WMAP != m.WMAP {
-				t.Errorf("v%d %s %v%v %dx%d: checksum %s water %d counts %v attempt %d objects %d wmap %s, want %s %d %v %d %d %s",
-					v, m.Secret, m.Region, m.Field, m.Width, m.Height, got.Checksum, got.Water, got.Counts, got.Attempt, got.Objects, got.WMAP,
-					m.Checksum, m.Water, m.Counts, m.Attempt, m.Objects, m.WMAP)
+				got.Attempt != m.Attempt || got.Objects != m.Objects || got.WMAP != m.WMAP || got.Places != m.Places {
+				t.Errorf("v%d %s %v%v %s %s %dx%d: checksum %s water %d counts %v attempt %d objects %d wmap %s places %s, want %s %d %v %d %d %s %s",
+					v, m.Secret, m.Region, m.Field, m.Kind, m.Name, m.Width, m.Height, got.Checksum, got.Water, got.Counts, got.Attempt, got.Objects, got.WMAP, got.Places,
+					m.Checksum, m.Water, m.Counts, m.Attempt, m.Objects, m.WMAP, m.Places)
 			}
 		}
 		t.Logf("v%d: %d golden maps match on %s/%s", v, len(want.Maps), runtime.GOOS, runtime.GOARCH)

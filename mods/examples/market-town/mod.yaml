@@ -1,0 +1,21 @@
+# A sample mod for procedural worlds (proposal 0002, review decision 42):
+# a town template with a lamp shop, a dungeon style, and NPCs that stand
+# at named places instead of a map and a cell. mods/README.md, "Places",
+# explains each part.
+id: example.market-town
+name: Market Town
+version: 0.1.0
+api: 1.0
+description: Adds a market town with a lamp shop, a small cellar dungeon, a lamp seller at every lamp shop, and a guide on every town square.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - event.listen
+  - game.read

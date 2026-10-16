@@ -87,8 +87,8 @@ type Object struct {
 	Scale rng.Fixed
 }
 
-// Field is a generated field: its cell grid and what a server and a
-// client need besides it.
+// Field is a generated map, a field, a dungeon floor or a town: its cell
+// grid and what a server and a client need besides it.
 type Field struct {
 	Grid
 	// Biome is the biome's index in the generator's biome table.
@@ -98,6 +98,10 @@ type Field struct {
 	Attempt int
 	Portals []Portal
 	Objects []Object
+	// Places are the map's named places, in the order the generator
+	// made them (proposal 0002, review decision 42). Versions before 3
+	// make none.
+	Places []Place
 	// WMAP is the field as a WMAP map (docs/specs/assets-v1.md).
 	WMAP []byte
 }

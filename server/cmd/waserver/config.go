@@ -84,6 +84,12 @@ type proceduralOptions struct {
 	// tilesets to the asset build's textures and models. Empty uses the
 	// placeholder pack.
 	Tilesets string `yaml:"tilesets"`
+	// Towns is how many towns to run, t1 to t<n>, each with the next
+	// town template in record order (decision 0040). Dungeons lists the
+	// dungeons as style or style:floors. Phase 7 step 4's map graph will
+	// place them; until then they link to the fields' free portals.
+	Towns    int  `yaml:"towns"`
+	Dungeons list `yaml:"dungeons"`
 }
 
 // privacyOptions are the owner's parts of the privacy notice. The page
@@ -251,6 +257,8 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	fieldList := flags.String("fields", "", "generated fields to run, as x:y or x:y:biome, comma-separated; with --dev and no world row they make a procedural world, which needs -tags procedural (procedural.fields)")
 	flags.IntVar(&f.Procedural.FieldSize, "field-size", o.Procedural.FieldSize, "the width and height of each generated field, 32 to 1024 cells (procedural.field_size)")
 	flags.StringVar(&f.Procedural.Tilesets, "tilesets", "", "YAML tileset table that maps the generator's tilesets to the asset build's textures and models; empty uses placeholders (procedural.tilesets)")
+	flags.IntVar(&f.Procedural.Towns, "towns", 0, "how many generated towns to run, each with the next town template; with --dev and no world row they make a procedural world (procedural.towns)")
+	dungeonList := flags.String("dungeons", "", "generated dungeons to run, as style or style:floors, comma-separated, such as crypt:3; with --dev and no world row they make a procedural world (procedural.dungeons)")
 	flags.StringVar(&database, "database", "", "PostgreSQL URL of the game role; prefer the "+databaseEnv+" environment variable, which keeps the password out of process lists")
 	if err := flags.Parse(args); err != nil {
 		return o, "", err
@@ -318,6 +326,10 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.Procedural.FieldSize = f.Procedural.FieldSize
 		case "tilesets":
 			o.Procedural.Tilesets = f.Procedural.Tilesets
+		case "towns":
+			o.Procedural.Towns = f.Procedural.Towns
+		case "dungeons":
+			o.Procedural.Dungeons = splitList(*dungeonList)
 		}
 	})
 	return o, database, nil
@@ -529,6 +541,14 @@ func validate(o options, s secrets) (settings, error) {
 	if o.Procedural.Tilesets != "" {
 		if _, err := os.Stat(o.Procedural.Tilesets); err != nil {
 			bad("procedural.tilesets", "%v", err)
+		}
+	}
+	if o.Procedural.Towns < 0 || o.Procedural.Towns > maxTowns {
+		bad("procedural.towns", "must be 0 to %d", maxTowns)
+	}
+	for _, d := range o.Procedural.Dungeons {
+		if _, _, err := fields.ParseDungeonSpec(d); err != nil {
+			bad("procedural.dungeons", "%v", err)
 		}
 	}
 	if o.Mods.MaxAssetMB < 0 || o.Mods.MaxAssetMB > 64<<10 {

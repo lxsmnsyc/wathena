@@ -225,7 +225,13 @@ func TestProps(t *testing.T) {
 			t.Errorf("%s is not deterministic", p)
 		}
 		lo, hi := checkModel(t, p, glb)
-		if hi[1] < 0.3 || hi[1] > 4.5 || hi[0]-lo[0] > 3 || hi[2]-lo[2] > 3 {
+		// The fountain fills 4 cells of a town's square, and the gate
+		// spans a main road of 4 cells.
+		wide := 3.0
+		if p == "fountain" || p == "gate" {
+			wide = 4.6
+		}
+		if hi[1] < 0.3 || hi[1] > 4.5 || hi[0]-lo[0] > wide || hi[2]-lo[2] > wide {
 			t.Errorf("%s has size %v to %v", p, lo, hi)
 		}
 		heights[p] = hi[1]
@@ -235,5 +241,24 @@ func TestProps(t *testing.T) {
 	}
 	if _, err := Prop("castle"); err == nil {
 		t.Error("an unknown prop has a model")
+	}
+}
+
+// TestBuildings: each placeholder building fits its footprint.
+func TestBuildings(t *testing.T) {
+	for _, w := range BuildingSizes {
+		for _, d := range BuildingSizes {
+			glb, err := Building(w, d)
+			if err != nil {
+				t.Fatal(err)
+			}
+			lo, hi := checkModel(t, "building", glb)
+			if hi[0]-lo[0] > float64(w)+0.2 || hi[2]-lo[2] > float64(d)+0.2 || hi[0]-lo[0] < float64(w)-0.5 || hi[1] < 2 || hi[1] > 6.5 {
+				t.Errorf("%d × %d: %v to %v", w, d, lo, hi)
+			}
+		}
+	}
+	if _, err := Building(3, 4); err == nil {
+		t.Error("a 3 × 4 building has a model")
 	}
 }

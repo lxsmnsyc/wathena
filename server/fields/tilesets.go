@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 
 	"go.yaml.in/yaml/v3"
@@ -46,14 +47,36 @@ type Tilesets struct {
 // LoadTilesets builds the tileset table of a generator from a YAML file,
 // or from the placeholders alone when file is "". A tileset or slot the
 // generator lacks, or a name that is not an asset name, is an error.
-func LoadTilesets(g gen.Generator, file string) (Tilesets, error) {
+//
+// The town templates add their buildings' models to their tilesets'
+// slots. A building's placeholder is placeholder/building/<w>x<d>, a
+// house of its footprint (decision 0040).
+func LoadTilesets(g gen.Generator, file string, templates ...Template) (Tilesets, error) {
 	t := Tilesets{Version: 1, Aliases: map[string]string{}}
+	g.Tilesets = slices.Clone(g.Tilesets)
+	for _, tp := range templates {
+		i := slices.IndexFunc(g.Tilesets, func(ts gen.Tileset) bool {
+			return ts.Name == tp.Template.Tileset && ts.Kind == gen.KindTown
+		})
+		if i < 0 {
+			continue
+		}
+		ts := &g.Tilesets[i]
+		for _, b := range tp.Template.Buildings {
+			if !slices.Contains(ts.Models, b.Model) {
+				ts.Models = append(slices.Clip(ts.Models), b.Model)
+				t.Aliases[gen.ModelName(ts.Name, b.Model)] = BuildingPlaceholder(b.Width, b.Depth)
+			}
+		}
+	}
 	for _, ts := range g.Tilesets {
 		for _, s := range ts.Textures {
 			t.Aliases[gen.TextureName(ts.Name, s)] = "placeholder/ground/" + s
 		}
 		for _, s := range ts.Models {
-			t.Aliases[gen.ModelName(ts.Name, s)] = "placeholder/prop/" + s
+			if _, building := t.Aliases[gen.ModelName(ts.Name, s)]; !building {
+				t.Aliases[gen.ModelName(ts.Name, s)] = "placeholder/prop/" + s
+			}
 		}
 	}
 	if file == "" {
@@ -99,6 +122,12 @@ func LoadTilesets(g gen.Generator, file string) (Tilesets, error) {
 		return Tilesets{}, fmt.Errorf("tilesets: %s:\n  %s", file, strings.Join(problems, "\n  "))
 	}
 	return t, nil
+}
+
+// BuildingPlaceholder is the placeholder model of a building's
+// footprint, in cells.
+func BuildingPlaceholder(w, d int) string {
+	return "placeholder/building/" + strconv.Itoa(w) + "x" + strconv.Itoa(d)
 }
 
 // JSON returns the table as /gen/tilesets.json sends it.

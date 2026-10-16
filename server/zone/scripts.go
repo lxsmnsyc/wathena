@@ -19,6 +19,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/places"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/social"
@@ -92,6 +93,9 @@ type Mods struct {
 	// Guilds are the guild tables. Without them the zone uses core's
 	// tables of its base (social.CoreGuildTables).
 	Guilds *social.GuildTables
+	// Places are the named places of the world's generated maps, for
+	// wa.places (review decision 42). A classic world has none.
+	Places *places.Index
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -226,7 +230,7 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 	}
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
 		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location, Rules: z.worldRules(),
-		Off: z.offList(), Errors: z.modErrors}
+		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places}
 	// The job tables are read at each call: a headless zone gets them
 	// after its Lua state is made.
 	opts.Jobs = zoneJobs{z}

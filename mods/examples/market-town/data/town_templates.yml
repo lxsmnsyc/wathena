@@ -1,0 +1,14 @@
+# A town template. Its buildings use the town tileset: a model is a slot
+# of the tileset, such as smithy, which the tileset table maps to art.
+# Without art, a building shows a placeholder house of its footprint.
+- name: market_town
+  size: 96
+  gates: 2
+  walls: true
+  tileset: town
+  decorations: [well, crate, bush]
+  buildings:
+    - {model: lamp_shop, footprint: [6, 6], places: ["shop:lamp"]}
+    - {model: smithy, footprint: [8, 6], places: [blacksmith]}
+    - {model: inn, footprint: [8, 8], places: [inn]}
+    - {model: house, footprint: [6, 6], count: 8}

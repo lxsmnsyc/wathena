@@ -18,6 +18,7 @@ import (
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/places"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
@@ -124,6 +125,9 @@ type Options struct {
 	Off []string
 	// Errors counts the mods' errors in this zone. It may be nil.
 	Errors *ErrorLog
+	// Places are the named places of the world's generated maps, for
+	// wa.places. A classic world has none: every lookup finds nothing.
+	Places *places.Index
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -494,6 +498,9 @@ func (r *Runtime) init() error {
 		{"context_event", r.contextEvent},
 		{"event_run_call", r.eventRunCall},
 		{"world_events_request", r.worldEventsRequest},
+		{"places_find", r.placesFind},
+		{"places_nearest", r.placesNearest},
+		{"place_get", r.placeGet},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {

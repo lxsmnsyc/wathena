@@ -1,12 +1,17 @@
-// Package fields runs the generated fields of a procedural world
-// (strategy section 8.5, decision 0039):
+// Package fields runs the generated maps of a procedural world:
+// fields (strategy section 8.5, decision 0039), and dungeon floors and
+// towns (decision 0040):
 //
-//   - Generate makes each field from its public node at zone start.
-//   - Set serves each field's public node and checksum, so the web client
-//     generates the field itself, and the field's WMAP for a client whose
-//     result differs or that lacks the generator.
+//   - Generate makes each field, and GenerateMaps each floor and town,
+//     from its public node at zone start.
+//   - Set serves each map's public node and checksum, with a floor's or
+//     a town's params, so the web client generates the map itself, and
+//     the map's WMAP for a client whose result differs or that lacks the
+//     generator.
 //   - The tileset table maps the generator's tileset names to asset
 //     names, with placeholders by default.
+//   - The dungeon styles and town templates are records that mods
+//     change and add (records.go).
 package fields
 
 import (
@@ -57,11 +62,26 @@ func ParseSpec(s string) (Spec, error) {
 	return sp, nil
 }
 
-// Field is a generated field that the server runs.
+// Field is a generated map that the server runs: a field, a dungeon
+// floor or a town.
 type Field struct {
-	// ID is the map ID, such as gen:field:3:-1.
-	ID   string
+	// ID is the map ID, such as gen:field:3:-1, gen:town:t1 or
+	// gen:dungeon:crypt:2.
+	ID string
+	// Kind is gen.KindField, gen.KindDungeon or gen.KindTown.
+	Kind string
+	// X and Y are a field's coordinates.
 	X, Y int64
+	// Params are a floor's or a town's params, which clients get with
+	// the node. Name is its style's or template's record name.
+	Params []byte
+	Name   string
+	// Town is a town's number. Dungeon, Floor and Floors name a floor,
+	// and Levels is its level band, the lowest and highest level.
+	Town          int64
+	Dungeon       string
+	Floor, Floors int
+	Levels        [2]int
 	// Version and RNG are the generator version and its rng spec.
 	Version int
 	RNG     string
@@ -156,7 +176,7 @@ func generate(g gen.Generator, public rng.Node, s Spec, size int) (*Field, error
 		return nil, fmt.Errorf("field %s (%s, node %s): %w", id, g.Biomes[biome], hex.EncodeToString(key[:]), err)
 	}
 	return &Field{
-		ID: id, X: s.X, Y: s.Y, Version: g.Version, RNG: g.RNG,
+		ID: id, Kind: gen.KindField, X: s.X, Y: s.Y, Version: g.Version, RNG: g.RNG,
 		Key: node.Key(), Biome: biome, BiomeName: g.Biomes[biome],
 		Field: field, Checksum: field.Checksum(), WMAPSum: sha256.Sum256(field.WMAP),
 	}, nil
@@ -188,9 +208,14 @@ func (s *Set) Get(id string) *Field {
 	return s.fields[i]
 }
 
-// Info is what /gen/maps/<id>.json tells a client about a field.
+// Info is what /gen/maps/<id>.json tells a client about a map.
 type Info struct {
-	ID      string `json:"id"`
+	ID string `json:"id"`
+	// Kind is field, dungeon or town. Params are a floor's or a town's
+	// params as hex, and Name its style or template.
+	Kind    string `json:"kind"`
+	Params  string `json:"params,omitempty"`
+	Name    string `json:"name,omitempty"`
 	Version int    `json:"version"`
 	RNG     string `json:"rng"`
 	// Key is the field's public node, as hex.
@@ -207,17 +232,43 @@ type Info struct {
 	WMAP       string `json:"wmap"`
 	WMAPSHA256 string `json:"wmapSha256"`
 	WMAPBytes  int    `json:"wmapBytes"`
+	// Town is a town's number. Dungeon, Floor, Floors and Levels describe
+	// a floor.
+	Town    int64  `json:"town,omitempty"`
+	Dungeon string `json:"dungeon,omitempty"`
+	Floor   int    `json:"floor,omitempty"`
+	Floors  int    `json:"floors,omitempty"`
+	Levels  []int  `json:"levels,omitempty"`
+	// Places are the map's named places. They are public layout, which
+	// the client can make itself, so the checks may read them here.
+	Places []InfoPlace `json:"places,omitempty"`
+}
+
+// InfoPlace is a named place in Info.
+type InfoPlace struct {
+	Tags []string `json:"tags"`
+	X    int      `json:"x"`
+	Y    int      `json:"y"`
 }
 
 // Info returns a field's info.
 func (f *Field) Info() Info {
-	return Info{
-		ID: f.ID, Version: f.Version, RNG: f.RNG, Key: hex.EncodeToString(f.Key[:]),
+	in := Info{
+		ID: f.ID, Kind: f.Kind, Params: hex.EncodeToString(f.Params), Name: f.Name,
+		Town: f.Town, Dungeon: f.Dungeon, Floor: f.Floor, Floors: f.Floors,
+		Version: f.Version, RNG: f.RNG, Key: hex.EncodeToString(f.Key[:]),
 		Width: f.Field.Width, Height: f.Field.Height, Biome: f.Biome, BiomeName: f.BiomeName,
 		Checksum: hex.EncodeToString(f.Checksum[:]),
 		WMAP:     Prefix + "maps/" + f.ID + ".wmap", WMAPSHA256: hex.EncodeToString(f.WMAPSum[:]),
 		WMAPBytes: len(f.Field.WMAP),
 	}
+	if f.Kind == gen.KindDungeon {
+		in.Levels = f.Levels[:]
+	}
+	for _, p := range f.Field.Places {
+		in.Places = append(in.Places, InfoPlace{Tags: p.Tags, X: p.X, Y: p.Y})
+	}
+	return in
 }
 
 // ServeHTTP serves:

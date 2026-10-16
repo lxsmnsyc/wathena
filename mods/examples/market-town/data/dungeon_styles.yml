@@ -1,0 +1,9 @@
+# A dungeon style: two floors of small rooms. Each floor's level band is
+# 3 levels above the floor before it.
+- name: cellar
+  method: rooms
+  floors: 2
+  floor_size: [64, 64]
+  room_size: [6, 12]
+  tileset: tower
+  level_step: 3

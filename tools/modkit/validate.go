@@ -270,6 +270,11 @@ func longest(name string, ids []string) string {
 // loads its NPC and item scripts and its test files.
 func (e *Env) checkEntries(l *Loaded, rep *Report) {
 	id := l.Mod.ID()
+	// With the procedural tag, the town templates and dungeon styles
+	// must make maps: the test worlds generate one of each.
+	if _, err := l.generatedMaps(); err != nil {
+		rep.Problems = append(rep.Problems, "generated maps: "+err.Error())
+	}
 	logs := &capture{}
 	w, err := e.newWorld(l, slog.New(logs))
 	if err != nil {
@@ -295,6 +300,11 @@ func (e *Env) checkEntries(l *Loaded, rep *Report) {
 			if strings.HasPrefix(n.Script, id+":") && !slices.Contains(entries, n.Script) {
 				entries = append(entries, n.Script)
 			}
+		}
+	}
+	for _, pn := range l.PlaceNPCs {
+		if strings.HasPrefix(pn.NPC.Script, id+":") && !slices.Contains(entries, pn.NPC.Script) {
+			entries = append(entries, pn.NPC.Script)
 		}
 	}
 	for _, d := range l.Items.Data.Items {
@@ -381,6 +391,7 @@ func records(l *Loaded) []Record {
 	}
 	overlays := append([]*mod.Overlay{jobOverlay, l.NPCOverlay, l.MonsterOverlay, l.EventOverlay, l.SkillOverlay}, l.CompanionOverlays...)
 	overlays = append(overlays, l.ChatOverlays...)
+	overlays = append(overlays, l.GeneratedOverlays...)
 	for _, o := range overlays {
 		if o == nil {
 			continue

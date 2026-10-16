@@ -8,7 +8,7 @@ import (
 
 // GroundMaterials are the materials of the placeholder ground textures,
 // placeholder/ground/<material>.
-var GroundMaterials = []string{"grass", "dirt", "sand", "rock", "snow", "mud", "water"}
+var GroundMaterials = []string{"grass", "dirt", "sand", "rock", "snow", "mud", "water", "stone", "brick", "moss", "plank", "cobble", "paving"}
 
 // groundTones are each material's dark and light colors.
 var groundTones = map[string][2]color.NRGBA{
@@ -19,6 +19,13 @@ var groundTones = map[string][2]color.NRGBA{
 	"snow":  {{0xd8, 0xe0, 0xea, 255}, {0xf6, 0xf8, 0xfc, 255}},
 	"mud":   {{0x3a, 0x2a, 0x1c, 255}, {0x56, 0x40, 0x2c, 255}},
 	"water": {{0x24, 0x5a, 0x9c, 255}, {0x46, 0x86, 0xc8, 255}},
+	// Dungeon and town materials (decision 0040).
+	"stone":  {{0x3a, 0x40, 0x50, 255}, {0x56, 0x5e, 0x70, 255}},
+	"brick":  {{0x8a, 0x2e, 0x24, 255}, {0xb8, 0x4c, 0x3c, 255}},
+	"moss":   {{0x2c, 0x5a, 0x1e, 255}, {0x4a, 0x80, 0x32, 255}},
+	"plank":  {{0x96, 0x6c, 0x38, 255}, {0xc4, 0x98, 0x5c, 255}},
+	"cobble": {{0x8c, 0x88, 0x98, 255}, {0xbc, 0xb8, 0xc8, 255}},
+	"paving": {{0xb4, 0x9a, 0x66, 255}, {0xdc, 0xc4, 0x8c, 255}},
 }
 
 // Ground returns placeholder/ground/<material>: a 64 × 64 soft noise of

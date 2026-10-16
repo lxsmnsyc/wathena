@@ -107,8 +107,8 @@ func TestLoadSampleMod(t *testing.T) {
 	if s := m.zone.Shops.Get("example.greeter:Cookie Stand"); s == nil || len(shopItems(s)) != 2 || shopItems(s)[1].Zeny != 10 {
 		t.Errorf("cookie stand %+v", s)
 	}
-	// core and the fifteen sample mods.
-	if len(m.zone.Scripts) != 16 || m.zone.ItemIDs["Red_Potion"] != 501 {
+	// core and the sixteen sample mods.
+	if len(m.zone.Scripts) != 17 || m.zone.ItemIDs["Red_Potion"] != 501 {
 		t.Errorf("zone mods: %d scripts", len(m.zone.Scripts))
 	}
 	// The Halloween mod's monsters, with the IDs of the mod range, and

@@ -140,17 +140,6 @@ func gridV2(node rng.Node, p Params) (Grid, error) {
 	return f.Grid, err
 }
 
-// fieldError is an error with details after a sentinel error.
-type fieldError struct {
-	err    error
-	detail string
-}
-
-func (e *fieldError) Error() string { return e.err.Error() + ": " + e.detail }
-func (e *fieldError) Unwrap() error { return e.err }
-
-func wrapError(err error, detail string) error { return &fieldError{err, detail} }
-
 // newV2Map starts an attempt on the slices of buf. Every slice but mark
 // is written in full before it is read, so only mark is cleared.
 func newV2Map(b *v2Biome, w, h int, buf *v2Buffers) *v2Map {

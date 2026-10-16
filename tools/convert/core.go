@@ -7,6 +7,8 @@ import (
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/currency"
+	gencore "github.com/lxsmnsyc/wathena/server/fields/core"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 )
 
@@ -14,7 +16,8 @@ import (
 // converted: the Job Master, a job change NPC (scripts/npcs/job_master.lua).
 // Core's companions and mounts come from server/companion, its chat
 // channels and chat filter from server/chat, and its currencies from
-// server/currency, and its sample world events from server/worldevent.
+// server/currency, its sample world events from server/worldevent, and
+// its dungeon styles and town templates from server/fields/core.
 //
 //go:embed core
 var coreFiles embed.FS
@@ -47,6 +50,11 @@ func addCoreFiles(out map[string]string) {
 	}
 	if b, err := currency.CoreFiles.ReadFile("core/" + currency.File); err == nil {
 		out[currency.File] = string(b)
+	}
+	for _, f := range []string{mod.DungeonStyleKind.File, mod.TownTemplateKind.File} {
+		if b, err := gencore.Files.ReadFile(f); err == nil {
+			out[f] = string(b)
+		}
 	}
 	if b, err := worldevent.CoreFiles.ReadFile("core/" + worldevent.File); err == nil {
 		out[worldevent.File] = string(b)

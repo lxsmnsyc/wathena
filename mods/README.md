@@ -13,6 +13,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/guild-hall](examples/guild-hall) makes guilds with `wa.guilds`, follows the guild events and reads the guild limits ("Guilds" below).
 - [examples/bank](examples/bank) has a banker who opens the account's storage and an extra storage, a bound Bank Card, and a `trade` hook and event ("Storage, cart and trade" below).
 - [examples/lantern](examples/lantern) has art of its own: item icons, a hat's and a shield's worn sprites, a companion's sprite, a monster sprite with sounds, an NPC sprite, the Lantern Keeper job with body sprites and its skill Lantern Flare with an icon and an effect, and a client data table ("Art" below). It is the phase 6 exit check's mod run.
+- [examples/market-town](examples/market-town) is for procedural worlds: a town template with a lamp shop, a dungeon style, and NPCs that stand at named places instead of a map and a cell ("Places" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -29,6 +30,8 @@ greeter/
     monsters.yml        monster overlay
     npcs.yml            NPC placements and shops
     events.yml          world events
+    town_templates.yml  town templates of procedural worlds
+    dungeon_styles.yml  dungeon styles of procedural worlds
   locales/
     en.yml              text for players, read with wa.text
   scripts/
@@ -331,7 +334,8 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 
 - A name without a prefix is the mod's own NPC: `Greeter#prontera` in `example.greeter` is `example.greeter:Greeter#prontera`. Core's NPCs are named `core:<rAthena's unique name>`, such as `core:kaf_prontera`.
 - Players see the name up to `#`, or `display_name` when it is set. An empty `display_name` shows no name.
-- `map`, `x`, `y` and `sprite` are required. `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, its number, or a sprite of art, such as `mod/example.lantern/sprite/npc/Lamplighter` ("Art" below).
+- `map`, `x`, `y` and `sprite` are required, or `place` in place of `map`, `x` and `y` (below). `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, its number, or a sprite of art, such as `mod/example.lantern/sprite/npc/Lamplighter` ("Art" below).
+- `place: {scope, tag}` puts the NPC at every named place of a generated map that is in the scope and has the tag, such as `{scope: "town:any", tag: blacksmith}` (proposal 0002, review decision 42). The scopes are those of `places.find` ("Places" below). The NPC appears once the server has generated its maps, at each place's cell, with the record's other fields. A shop at several places is one shop, with one stock. A classic world has no places, so the NPC does not appear there, and neither does it in a world where no place matches.
 - `direction` is `south` (the default), `southwest`, `west`, `northwest`, `north`, `northeast`, `east` or `southeast`.
 - `script` names the NPC's entry script. It must exist. Its setup function runs once for each NPC that names it ("NPC scripts" below).
 - `shop` makes the NPC a shop: a list of `{item, price}`, or a table with `items`, `buys_from_players` and `discount` (review decision 30). A price left out, or -1, is the item's `buy` price. A click on a shop without a click handler opens the shop.
@@ -364,6 +368,68 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
         stock: 3
         restock: daily
 ```
+
+```yaml
+# A smith at the door of every town's smithy, and a guard at every gate.
+- name: Smith Helper
+  place: {scope: "town:any", tag: blacksmith}
+  sprite: 4_M_02
+  script: scripts/npc/smith_helper.lua
+- name: Gate Guard
+  place: {scope: "town:any", tag: gate}
+  sprite: 8W_SOLDIER
+```
+
+### Dungeon styles: data/dungeon_styles.yml
+
+A procedural world's dungeons follow a style (strategy section 8.5, proposal 0002, review decision 42, decision 0040). Core has `cave`, `crypt`, `tower` and `ruins`. A mod changes them by name and adds its own, named with its ID.
+
+```yaml
+- name: cellar
+  method: rooms
+  floors: 2
+  floor_size: [64, 64]
+  room_size: [6, 12]
+  tileset: tower
+  level_step: 3
+```
+
+- `method` is `cave`, cellular automata with tunnels, or `rooms`, rooms without overlap joined by corridors with a few loops.
+- `floors` is the floors of a dungeon of the style, 1 to 20. A server may run another count.
+- `floor_size` is a floor's width and height in cells: even, 48 to 512.
+- `room_size` is the smallest and largest side of a room in cells: even, 6 to 40, and the largest at most a third of the floor's smaller side. A cave may leave it out.
+- `tileset` is a dungeon tileset of the map generator: `cave`, `crypt`, `tower` or `ruins` in version 3. It picks the textures, the props and the light.
+- `level_step` is how many levels each floor's level band is above the floor before it, 1 to 50.
+- Each floor has an `entrance`. Every floor but the last has an `exit` in the room farthest from the entrance, and the last floor has a `boss_room` there instead. Rooms have `room` places.
+
+### Town templates: data/town_templates.yml
+
+A procedural world's towns follow a template. Core has `hamlet`, `village` and `city`. A mod changes them by name and adds its own.
+
+```yaml
+- name: market_town
+  size: 96
+  gates: 2
+  walls: true
+  tileset: town
+  decorations: [well, crate, bush]
+  buildings:
+    - {model: lamp_shop, footprint: [6, 6], places: ["shop:lamp"]}
+    - {model: smithy, footprint: [8, 6], places: [blacksmith]}
+    - {model: house, footprint: [6, 6], count: 8}
+```
+
+- `size` is the town map's side in cells: even, 64 to 256. The town stands on a flat plateau inside it, with a margin of rough ground.
+- `gates` is 2 to 4. Each gate has a main road to the central square. `walls` puts a wall around the town, and a hedge of trees stands there without it.
+- `tileset` is a town tileset of the map generator, `town` in version 3. `decorations` are props of the tileset that stand on empty lots: `tree`, `bush`, `well`, `crate`, `lamp`, `fountain`, `tower` or `gate`.
+- `buildings` are placed in order, each with:
+  - `model`: the building's model slot in the tileset, such as `smithy`. The server's tileset table maps it to art, and without art the building shows a placeholder house of its footprint. A model has one footprint in every template, and may not be the name of one of the tileset's props.
+  - `footprint`: its width and depth in cells, facing south: even, 2 to 12.
+  - `count`: how many, 1 to 64, 1 by default.
+  - `places`: the tags of the named places at its door, such as `blacksmith`, `inn`, `storage` or `shop:tool`. Each takes its own cell on the street at the door, so the building's width must have 2 cells per tag. A building with places goes near the square and must fit, or the town is made again. Buildings without places fill the lots that remain.
+- Every town has a `square`, and a `gate` and a `portal` per gate.
+
+A template that cannot make a town in 8 tries stops the server and fails `wactl mod validate`.
 
 ### Monsters: data/monsters.yml
 
@@ -1604,6 +1670,38 @@ Every entity handle also has:
 - `entity:exists()`: false once the entity is removed, has logged out, or has left the zone. It never raises an error, so a timer checks it before it reads a handle.
 - `entity:show_effect(effect)`: plays an effect from `wa.effects` on the entity, for everyone near.
 
+### Places
+
+A procedural world's generated maps record named places: cells with tags, such as `blacksmith`, `square`, `gate`, `entrance`, `exit` or `boss_room` (proposal 0002, review decision 42). Content finds places by tag, not by coordinates.
+
+```lua
+local places = require "wa.places"
+
+-- Every blacksmith of every town, in a fixed order.
+for _, p in ipairs(places.find("town:any", "blacksmith")) do
+  local x, y = p:get_position()
+  print(p:get_map(), x, y, p:get_area())
+end
+
+-- The closest inn to a player: the fewest warps away, then the nearest.
+local inn = places.nearest(player, "inn")
+```
+
+- `places.find(scope, tag)` returns every place of the scope with the tag. The order is fixed: by map ID, then in the order the generator made them. The scopes are `"town:any"`, `"town:<id>"` such as `"town:t7"`, `"dungeon:any"`, `"dungeon:<id>"` such as `"dungeon:crypt"`, and `"map:<id>"` such as `"map:gen:field:3:-1"`. Another scope raises an error.
+- `places.nearest(player, tag)` returns the place with the tag closest to the player: the fewest warps away on the map graph, then the shortest distance. On another map, the distance counts from where the player would arrive. Maps no warp leads to are left out. It returns nil when no place qualifies.
+- A place has `get_map()`, the map ID such as `gen:town:t7`, `get_position()`, its x and y, `get_tags()`, its tags with the main tag first, and `get_area()`, its map ID without `gen:`, such as `town:t7`, `dungeon:crypt:2` or `field:3:-1`.
+- Both calls need `game.read`. A classic world has no places: `find` returns an empty list and `nearest` nil.
+
+The places of each kind of map:
+
+| Map | Tags |
+|---|---|
+| Field | `portal` with `portal:south`, `portal:east`, `portal:north` or `portal:west`, and `clearing` |
+| Dungeon floor | `entrance`, `exit` (not on the last floor), `boss_room` (the last floor only), and `room` |
+| Town | `square`, `gate` and `portal` with their side, such as `gate:north`, and the `places` of the template's buildings |
+
+Town IDs are `t1`, `t2` and on, and a dungeon's ID is its server's name for it, such as `crypt`. Town names come with phase 7 step 4.
+
 ### Spawning monsters
 
 ```lua
@@ -2285,6 +2383,7 @@ end
 - Each case runs in a fresh headless world: the real zone code without a network, with the mod, its dependencies and core loaded, core's converted NPCs and item scripts, a fixed random seed, and no database. A case takes a few milliseconds.
 - A world runs one map: the map of its first `new_player` or `spawn_monster`, or `prontera` when `advance` comes first. Warps to other maps do not happen.
 - Without `--assets`, every cell is walkable. With an asset build, the map's real cells are used.
+- With a `wactl` built with `-tags procedural`, every test world also has generated maps, the same in every case (decision 0040): the field `gen:field:0:0`, 96 cells square, a town per town template from `gen:town:t1`, core's first and then the mods' in load order, and a dungeon per dungeon style, named by the style without its mod prefix, such as `gen:dungeon:cellar:2`. `wa.places` finds their places in any case, and `world:new_player { map = "gen:town:t4", x = 48, y = 45 }` runs the case on one of them, with the NPCs placed by tag. A `wactl` without the tag has no generated maps, and a case that names one fails with a message that says so. The Market Town sample's tests show it.
 - Test code runs as the mod: its calls need the mod's permissions, and the variables it declares are the mod's, so a test reads what the mod's NPCs saved.
 - `wa.testing` exists only in `wactl mod test`. A server never has it, and never loads `tests/`.
 

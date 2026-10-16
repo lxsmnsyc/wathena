@@ -1,0 +1,213 @@
+# Map Generator Version 3, generator-v3
+
+Generator version 3 adds dungeon floors, towns and named places (strategy sections 8.5 and 8.6, proposal 0002, review decision 42). This spec fixes their inputs, their seed tree, what they return, and how the server and the web client share them. A client from strategy section 10.7 that generates maps follows it.
+
+- [generator-v1](generator-v1.md) still holds for world modes, version rules, the grid, its cell types and its checksum. [generator-v2](generator-v2.md) still holds for fields.
+- The Go implementation is `shared/gen` (`maps.go`, `v3*.go`). The web client runs it as `client/src/world/gen.wasm`.
+- The golden file is [`shared/gen/testdata/golden-v3.json`](../../shared/gen/testdata/golden-v3.json).
+- Decision [0040](../decisions/0040-dungeons-towns-places.md) has the reasons.
+
+## Seed tree
+
+```text
+root (secret)
+├── public
+│   ├── climate
+│   ├── field(x, y)                a field's public node
+│   │   ├── version 2's children
+│   │   └── places                 its clearings
+│   ├── town(n)                    a town's public node, n from 1
+│   │   ├── roads, buildings, decorations, heights
+│   │   └── attempt(n)             a retry, n from 1 to 7
+│   └── dungeon
+│       └── <id>                   a dungeon, such as crypt
+│           └── floor(f)           a floor's public node, f from 1
+│               ├── rooms or cave, props, materials, heights
+│               └── attempt(n)
+└── secret
+```
+
+- `town(n) = child(public, "town", n)`. The town's ID is `t<n>` and its map ID `gen:town:t<n>`.
+- `dungeon(id) = child(child(public, "dungeon"), id)`, and `floor(f) = child(dungeon(id), "floor", f)`. A dungeon's ID is 1 to 32 lowercase letters, digits, `_` and `-`. A floor's map ID is `gen:dungeon:<id>:<f>`.
+- A map's area is its map ID without `gen:`: `town:t7`, `dungeon:crypt:2` or `field:3:-1`.
+- A client gets the node of each map it enters, never the public branch, so a floor's node does not reveal another floor's.
+
+## Inputs
+
+A field takes a node, a size and a biome, as in version 2. A dungeon floor or a town takes a node and its params: a byte string that the server encodes from a record and sends as hex. The client passes the bytes to the module unread.
+
+### Dungeon params
+
+```text
+u8 1, u8 1              kind (dungeon) and params version
+u8 method               0 cave, 1 rooms
+u16 width, u16 height   the floor's size in cells, big-endian
+u16 room_min, room_max  room sides in cells
+str tileset             u8 length and bytes
+u8 floors, u8 level_step   the style's values
+u8 floor, u8 of         this floor, from 1, and the dungeon's floors
+```
+
+### Town params
+
+```text
+u8 2, u8 1              kind (town) and params version
+u16 size                the side in cells
+u8 gates, u8 walls      2 to 4; 0 or 1
+str tileset
+u8 n, n × str           the decorations
+u8 n, n × building      the buildings, in order
+building: str model, u8 width, u8 depth, u8 count, u8 k, k × str tag
+```
+
+The params must pass the record checks below. A decoder refuses bytes that are cut short, too long, or fail a check. The longest params are 16 KiB.
+
+| Record | Checks |
+|---|---|
+| Dungeon style | `method` is cave or rooms. `floors` 1 to 20. The floor's sides are even, 48 to 512. Room sides are even, 6 to 40, the smaller first, and the largest at most a third of the floor's smaller side. `tileset` is 1 to 32 lowercase letters, digits and `_`. `level_step` 1 to 50. A floor is 1 to the dungeon's floors, at most 99. |
+| Town template | `size` is even, 64 to 256. `gates` 2 to 4. 1 to 32 buildings, with counts that add up to at most 200, and at most 8 decorations. A building's model is a slot name, its footprint is even, 2 to 12 cells on each side, its count 1 to 64, and it has at most one place per 2 cells of its width. Tags are 1 to 64 lowercase letters, digits, `_`, `-`, `.` and `:`. |
+
+## Blocks
+
+Dungeon floors and towns are built on a grid of blocks of 2 × 2 cells: block (i, j) holds cells 2i to 2i + 1 and 2j to 2j + 1. A block is the size of a WMAP ground surface, so each block is one surface. Each block has:
+
+- whether it is walkable,
+- a flat height, which its 4 cells' corners take,
+- a texture of the tileset,
+- at most one prop.
+
+Every cell is walkable (0) or blocked (1). The water level is -16 cells, below every map.
+
+## Tilesets
+
+| Tileset | Kind | Floor, accent, wall | Props |
+|---|---|---|---|
+| cave | dungeon | dirt, mud, rock | stalagmite, rock |
+| crypt | dungeon | stone, moss, brick | pillar, coffin, bones, brazier |
+| tower | dungeon | plank, stone, brick | pillar, crate, brazier |
+| ruins | dungeon | cobble, grass, rock | pillar, rock, bush |
+| town | town | lots grass, main roads paving, side roads dirt, square cobble, walls stone, outside grass | fountain, lamp, tower, gate, tree, bush, well, crate |
+
+Every dungeon tileset also has the props `stairs_up`, `stairs_down` and `altar`. Walls stand 3 cells high, 2 in ruins and 2.5 in towns. `shared/gen/v3.go` holds the full table, with the clutter weights and the light. A town template's building models join the town tileset's model slots (decision 0040, "Art").
+
+## Dungeon floors
+
+An attempt runs from its node `a`.
+
+### Rooms
+
+1. **Rooms.** The stream of `child(a, "rooms")` draws rooms. Each has sides from `room_min / 2` to `room_max / 2` blocks, then a place with a block of margin from the floor's edge. A room that comes within one block of another is dropped. It aims at `clamp(blocks / (avg² × 6), 4, 40)` rooms, where `avg` is the mean side in blocks, and stops after 30 times that many draws. Fewer than 3 rooms fail the attempt.
+2. **Joins.** Prim's algorithm joins the rooms in a minimum spanning tree from the first room, by the Manhattan distance between the rooms' middle blocks, ties to the lower indexes. Then the other pairs, nearest first, ties by index, each join with a chance of one in three from the stream, up to a fifth of the rooms, at least one, and none longer than three quarters of the floor's width plus height.
+3. **Corridors.** Each join is an L of one block wide between the middle blocks: across then up, or up then across, by the stream.
+4. **Entrance and goal.** The first room holds the entrance. The room whose middle is farthest from it by walkable blocks, ties to the first, holds the exit, or the boss room on the last floor.
+
+### Caves
+
+1. **Fill.** Inside a border of one block, each block starts blocked with a chance of 45 in 100 from the stream of `child(a, "cave")`.
+2. **Rounds.** 5 rounds of the rule: a block becomes blocked when 5 or more of its 8 neighbors are blocked, and a blocked block stays blocked with 4.
+3. **Areas.** Open blocks join along the 4 axes. The largest area stays, ties to the first. Areas below 6 blocks are filled. Each other area gets a tunnel: the way one breadth-first search from the largest area finds to the area's first block.
+4. **Entrance and goal.** The entrance is a block whose 8 neighbors are open, picked by the stream. The goal is the farthest such block, ties to the first. A goal nearer than a sixth of the width plus height in blocks fails the attempt. On the last floor, a circle of radius 4 blocks around the goal opens as the boss chamber.
+
+### Props, textures and heights
+
+- **Places and stairs.** The entrance gets `stairs_up`, and the exit `stairs_down`. Neither blocks. The blocks of the places and their 8 neighbors are kept free of other props.
+- **Props** from the node `child(a, "props")`. Each blocks its block and needs its 8 neighbors open, so no prop splits a walkable area:
+  - On the last floor, an `altar` two blocks north of the boss room's middle.
+  - The tileset's pillar at the four inner corners of rooms of 6 or more blocks on each side.
+  - Clutter on an open block when `hash(props, x, y, 0) mod 100 < 4`, picked by the hash from the tileset's weighted clutter.
+- **Textures.** A blocked block without a prop takes the wall texture. Others take the floor texture, or the accent where a value noise of `child(a, "materials")` with a spacing of 8 blocks is above 0.7.
+- **Heights.** Rooms' floors are flat at 0, and walls stand at the wall height. A cave's blocks roll by a value noise of `child(a, "heights")` times 3/4 of a cell, in steps of 1/8, and its walls stand that much above the wall height.
+
+## Towns
+
+An attempt runs from its node `a`. With B the side in blocks, the margin is 4 blocks and the wall, or a hedge when the template has no walls, is the ring of blocks 4 from the edge. The middle block is `c = B / 2`, and the square's half side `max(2, B / 14)` blocks. Main roads are 1 block wide, or 2 from a side of 64 blocks.
+
+1. **Square.** The square's blocks are paved. A fountain fills the 2 × 2 blocks at the middle. The square's place is the cell (2c, 2c - 3), just south of it.
+2. **Gates** from the stream of `child(a, "roads")`. 4 gates take every side. 3 gates leave out the side the stream picks. 2 gates take south and north, or east and west, by the stream. Each gate's lateral block is `c` plus a draw from minus to plus a sixth of the inner width, kept 2 blocks from the corners.
+3. **Main roads.** Each runs from the map's edge, through its gate, inward. When its lateral block is outside the square's, it turns at a row the stream picks, runs across to the square's columns, and turns inward again to the square.
+4. **Side roads.** Along each main road's straight parts, every `2d + 3` or `2d + 4` blocks by the stream, where `d` is the buildings' mean side in blocks, rounded up, a side road leaves on both sides and runs over empty lots until it meets anything else or the wall.
+5. **Buildings** from the stream of `child(a, "buildings")`, in the template's order, each `count` times. A lot is a rectangle of empty blocks inside the wall, a block away from other buildings, with the whole side its door faces on a street: a main road, a side road or the square. The door faces south, east, north or west, and the footprint turns with it. A building with places takes one of the 6 lots nearest the square, by the stream. One without takes any lot, while lots remain. A building with places that finds no lot fails the attempt.
+6. **Places at doors.** Each of a building's tags is a place on the street cell next to the door: the door's middle first, then 2 cells to one side, 2 to the other, 4 to the first, and on.
+7. **Decorations** from the node `child(a, "decorations")`:
+   - A `lamp` beside the main roads every 4 blocks, on alternate sides.
+   - The template's decorations on half the Poisson-disk points 4 blocks apart, picked by the hash.
+   - `tree` props on the Poisson-disk points 2 blocks apart outside the wall, from `child(child(a, "decorations"), "outside")`.
+   Each lamp and decoration blocks its block and needs its 8 neighbors walkable.
+8. **Walls.** With walls, a `tower` stands at each corner of the ring and a `gate` arch in each gate. Neither blocks: the ring's wall blocks already do.
+9. **Heights.** The plateau inside is flat at 0. Walls stand at the wall height. The ground outside rolls by a value noise of `child(a, "heights")` times 3/4 of a cell, in steps of 1/8, and is blocked but for the roads.
+
+## Named places
+
+| Map | Places, in this order |
+|---|---|
+| Field | each portal, as `portal` and `portal:<edge>` with edge south, east, north or west, then up to 8 `clearing`s: Poisson-disk points 24 cells apart from the stream of `child(a, "places")`, whose 7 × 7 cells are walkable and dry, at least 12 cells from every portal |
+| Dungeon floor | `entrance`, then `exit` or, on the last floor, `boss_room`, then `room` at the middle of each other room |
+| Town | `square`, then for each gate `gate` and `gate:<side>` just inside the wall and `portal` and `portal:<side>` 3 cells from the map's edge, then each building's tags in the order it was placed |
+
+A place's cell is a dungeon block's south-west cell, or the cell the rules above name. The client does not need places, but makes them, so the golden files can hash them. The canonical encoding (`gen.EncodePlaces`) is, for each place: its x and y as big-endian u16 values, its tag count as a u8, and each tag with a u8 length.
+
+## Validation and retries
+
+| Map | An attempt passes when |
+|---|---|
+| Dungeon floor | the walkable share is 10% to 75%, and at least 25% in caves, and every place's block is reached from the entrance's |
+| Town | every building with places has a lot, every place's block is reached from the square's, and at least 25% of the town is walkable |
+
+Attempt 0 uses the map's node, and attempt n uses `child(node, "attempt", n)`. After 8 failed attempts the map is the error `ErrNoMap`, which lists each attempt's problem. The server does not start with such a map and logs its public node.
+
+## Output
+
+- The grid of generator-v1: each block's 4 cells take its walkability and its height on all 4 corners. Its checksum is generator-v1's.
+- The props and the places.
+- The map as WMAP ([assets-v1](assets-v1.md), "Map (WMAP)"), the same bytes on every platform:
+  - `CELL`: the cells.
+  - `GRND`: one surface per block, with all 4 corners at its height. The top tile is the block's texture. The north and east tiles are the side tile, of the wall texture, toward a neighbor at another height. One top tile per texture in use, in the order of the tileset's sorted textures, then the side tile.
+  - `LMAP`: `placeholder/lightmap`. `LGHT`: the tileset's light.
+  - No `WATR`.
+  - `OBJS`: each prop's model `model/gen/<tileset>/<prop>`, turned and scaled, at its point in half cells and the height of the block there. A building stands at its footprint's middle, at scale 1.
+  - `SNDS` and `EFCT` are empty. `DEPS` lists every name, sorted.
+
+## Server endpoints
+
+`GET /gen/maps/<id>.json` gives, besides version 2's fields:
+
+| Field | Content |
+|---|---|
+| `kind` | `field`, `dungeon` or `town`. |
+| `params` | A floor's or a town's params, as hex. |
+| `name` | The style's or the template's record name. |
+| `town` | A town's number. |
+| `dungeon`, `floor`, `floors` | A floor's dungeon ID, its floor and the dungeon's floors. |
+| `levels` | A floor's level band: the lowest and the highest level. |
+| `places` | The map's places, each `{tags, x, y}`. |
+
+The tileset table at `/gen/tilesets.json` holds the dungeon and town tilesets too.
+
+## Client
+
+As for fields, with the kind and params:
+
+1. Fetch the map's JSON.
+2. Generate the map from the node, and for a floor or a town from its params, in a Web Worker.
+3. Use the map's WMAP when the grid's checksum matches the server's, else download it.
+
+## WebAssembly module
+
+The module adds:
+
+| Export | Use |
+|---|---|
+| `params() → ptr` | The 16 KiB buffer for a floor's or a town's params. |
+| `generate_map(version, kind, length) → code` | Makes a dungeon floor (kind 1) or a town (kind 2) from the key and the first `length` bytes of the params. 0, -1 for a version without the kind, -2 for params that do not decode, -3 when every attempt failed, -4 for a tileset or prop the version lacks. |
+| `width() → n`, `height() → n` | The size of the last map. |
+| `places() → ptr`, `places_size() → n` | The last map's places in their canonical encoding, or 0 bytes. |
+
+## Golden file
+
+`golden-v3.json` adds to each map of generator-v2's format:
+
+- `kind`, `params` and `name` for a floor or a town.
+- `town`, or `dungeon` and `floor`: the map's node below the public branch of `secret`.
+- `places`: the SHA-256 of the places' encoding.
+
+The maps cover two fields, the first and the last floor of each core style, a 256 × 256 floor, each core template, a town of the largest size, and a floor and a town from an all-zero key.

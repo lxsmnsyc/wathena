@@ -168,8 +168,8 @@ A world is `classic` or `procedural`, chosen by `wactl world new --mode` and kep
 - A build with the tag `procedural` makes procedural worlds by default, with the newest generator. A build without it makes classic worlds, and refuses `--mode procedural`.
 - `waserver` refuses to start on a procedural world when it was built without the tag, or when it lacks the world's generator version or rng spec version.
 - `Welcome.world` tells the client the mode and the versions. The client loads its map generator only for a procedural world.
-- A `--dev` server without a world runs classic, unless `--fields` is given (below).
-- A procedural world runs generated fields (below, "Generated fields").
+- A `--dev` server without a world runs classic, unless `--fields`, `--towns` or `--dungeons` is given (below).
+- A procedural world runs generated fields, towns and dungeons (below, "Generated fields" and "Towns and dungeons").
 
 ### Generated fields
 
@@ -210,7 +210,23 @@ tilesets:
     models: {tree: model/my_build/tree01}
 ```
 
-Slots it leaves out stay placeholders. A tileset or slot the generator lacks, or an invalid asset name, stops the start. The tilesets and slots are in `shared/gen/v2biomes.go`. wAthena ships no game art: a public release needs an original or licensed art pack.
+Slots it leaves out stay placeholders. A tileset or slot the generator lacks, or an invalid asset name, stops the start. The tilesets and slots are in `shared/gen/v2biomes.go` for fields and `shared/gen/v3.go` for dungeons and towns. A town template's building models are slots of its tileset too: a building shows `placeholder/building/<w>x<d>`, a house of its footprint, until the table maps it, such as `town: {models: {smithy: model/my_build/smithy}}`. wAthena ships no game art: a public release needs an original or licensed art pack.
+
+### Towns and dungeons
+
+A procedural world on generator 3 also runs towns and dungeons (docs/decisions/0040-dungeons-towns-places.md, docs/specs/generator-v3.md):
+
+```text
+/tmp/waserver --dev --assets /path/to/build --fields 0:0 --towns 2 --dungeons crypt:3,cave
+```
+
+- `--towns <n>` (`procedural.towns`) runs towns `t1` to `t<n>`, as `gen:town:t1` and on. Town n takes the n-th town template in record order, core's `hamlet`, `village` and `city` and then the mods', and starts over when they run out.
+- `--dungeons` (`procedural.dungeons`) lists dungeons as `style` or `style:floors`, such as `crypt:3` or `example.market-town:cellar`. Each runs every floor as `gen:dungeon:<id>:<floor>`, where the ID is the style's name without its mod prefix. The floors default to the style's.
+- The towns and dungeons generate after the mods load, since mods add templates and styles: about 10 ms for 2 towns and 5 floors. A map that fails validation in all 8 attempts stops the start and names its public node.
+- A dungeon's first floor has the level band 1 to 10, and each floor after it the style's `level_step` more, until the map graph of phase 7 step 4 places dungeons. The map's JSON shows it.
+- Until that map graph, towns and dungeons link to the fields with warps (`DevLinks`): the portals of fields that touch no other field are free ends. Each town links its first gate's portal to the first free end, and its other gates' portals become the next free ends. Each dungeon's first floor links its entrance to the next free end, and each floor's exit links to the next floor's entrance. A map left without a free end is logged with a warning: add fields.
+- Every generated map records its named places. The zones share their index for `wa.places`, and NPC records with `place` stand at every matching place (mods/README.md, "Places"). In a classic world they do not appear, and the server logs that at info level.
+- `/gen/maps/<id>.json` also gives a map's `kind`, the `params` a client generates a floor or a town from, the record's `name`, a town's number, a floor's dungeon, floor and level band, and the places.
 
 ### Running with accounts
 

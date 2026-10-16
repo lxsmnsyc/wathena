@@ -100,6 +100,17 @@ func (Placeholder) Items() ([]Item, error) {
 			Produce:  func() ([]byte, error) { return placeholder.Prop(p) },
 		})
 	}
+	for _, w := range placeholder.BuildingSizes {
+		for _, d := range placeholder.BuildingSizes {
+			size := fmt.Sprintf("%dx%d", w, d)
+			items = append(items, Item{
+				Name:     "placeholder/building/" + size,
+				Ext:      "glb",
+				CacheKey: placeholderConverter + "|building|" + size,
+				Produce:  func() ([]byte, error) { return placeholder.Building(w, d) },
+			})
+		}
+	}
 	return items, nil
 }
 

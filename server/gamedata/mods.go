@@ -16,6 +16,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/currency"
+	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
@@ -35,6 +36,17 @@ type Mods struct {
 	Items *mod.Items
 	// NPCs are the placed NPCs, by map asset name, such as map/prontera.
 	NPCs map[string][]zone.NPC
+	// PlaceNPCs are the NPCs whose records give a place in place of a
+	// map: each stands at every place of its scope with its tag, which
+	// the server finds once the maps are generated (review decision 42).
+	PlaceNPCs []PlaceNPC
+	// DungeonStyles and TownTemplates are core's dungeon styles and town
+	// templates with the mods' data/dungeon_styles.yml and
+	// data/town_templates.yml, in record order. GeneratedOverlays are
+	// the two merges.
+	DungeonStyles     []fields.Style
+	TownTemplates     []fields.Template
+	GeneratedOverlays []*mod.Overlay
 	// NPCOverlay is the merge of every mod's data/npcs.yml.
 	NPCOverlay *mod.Overlay
 	// Monsters are every monster with the mods' overlays, by ID, and
@@ -90,6 +102,13 @@ type Mods struct {
 	// NPCArt maps the sprite IDs this start gave to NPC sprites of art to
 	// their asset names (decision 0033).
 	NPCArt map[uint32]string
+}
+
+// PlaceNPC is an NPC that stands at places: NPC has every field but the
+// cell, which each place gives.
+type PlaceNPC struct {
+	NPC   zone.NPC
+	Place mod.NPCPlace
 }
 
 // NPCArtSprites is the first sprite ID given to NPC sprites of art. The
@@ -236,7 +255,19 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 		if n.Script != "" {
 			zn.Script = n.ScriptMod + ":" + n.Script
 		}
+		if n.Place != nil {
+			out.PlaceNPCs = append(out.PlaceNPCs, PlaceNPC{NPC: zn, Place: *n.Place})
+			continue
+		}
 		out.NPCs[n.Map] = append(out.NPCs[n.Map], zn)
+	}
+	if out.DungeonStyles, out.TownTemplates, out.GeneratedOverlays, err = fields.LoadRecords(set); err != nil {
+		return nil, err
+	}
+	for _, o := range out.GeneratedOverlays {
+		for _, n := range o.Notes {
+			log.Warn("mods: " + n)
+		}
 	}
 	scripts, err := set.AllScripts()
 	if err != nil {
