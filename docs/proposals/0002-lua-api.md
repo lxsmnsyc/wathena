@@ -1333,3 +1333,15 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - A dungeon floor's level band is server data in the map's JSON, not in Lua.
    - Test worlds of a `wactl` built with `-tags procedural` hold a field, a town per template and a dungeon per style, from a fixed secret, and `world:new_player` accepts their map IDs. No `wa.testing` call changed. A case finds its town with `wa.places`.
    - Review items: a `wa.testing` way to pick a test world's template, mods' own tilesets and props, a floor's level band in Lua, and whether an NPC placed by tag without a match is a warning.
+29. Build review decision 43: the world layout (phase 7 step 4), with `wa.towns`, the handle `wa.Town`, `player:has_visited`, `maps.get_display_name` and `place:get_band`, naming styles as records, home maps in the map folder format, the teleport service, `@go`, `@renametown` and the world map. Done on 2026-10-16 ([decision 0041](../decisions/0041-world-layout.md), [generator-v3](../specs/generator-v3.md), "World layout", [map-folder-v1](../specs/map-folder-v1.md)). Details to review:
+   - Every call needs `game.read`. A town handle is cached per town, so two handles of one town are equal, and its fields are read-only.
+   - `towns.list()` returns towns by number. Its only option is `visited_by`, a player; another option raises an error. `towns.nearest(player)` counts warps on the layout's graph, ties to the lower number, and returns nil when no town is reached. `towns.get(id)` takes `t<n>` only: a map ID or a display name raises an error, and an unknown town returns nil.
+   - `town:get_band()` and `place:get_band()` return the lowest and highest level. A place of a map without a band raises an error; in a layout every map has one.
+   - `player:has_visited(town)` takes a town handle, not a map ID. A player has visited a map once it entered it, also through a warp or at login; the set is saved.
+   - `maps.get_display_name(map)` takes a map ID and returns nil for any map outside the layout, so classic maps have none until locale files exist.
+   - Names change with `@renametown`: `get_name` and `get_display_name` read the current name.
+   - In `wactl mod test`, the test world's layout is the dev layout: its home area is the field, so its towns' bands start above level 1, and it has no home map.
+   - Naming styles are records of `data/naming_styles.yml` with `biome`, `syllables` and `patterns`. The last record of a biome, in load order, is its style. Records are read when a world is made, not at each start.
+   - Home maps are map folders under a mod's `maps/<id>/`, tagged `home`, with a `portal` place and an optional `start` place. Their map ID is `gen:home:<id>`.
+   - The teleport service is the server's: no Lua API reads graph distances or prices, and NPC records cannot set a service.
+   - Review items: a Lua way to read graph distances or teleport prices, a record field for server services on NPCs, a `wa.testing` way to start on a mod's home map, the band formula in small worlds, longer town names for `@renametown`, and entered maps and memo points in the data export.

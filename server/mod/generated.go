@@ -6,7 +6,12 @@ package mod
 // crypt and hamlet, which mods change by name. A mod's records are named
 // with its ID, such as example.market-town:market_town. server/fields
 // reads the fields.
+//
+// NamingStyleKind is data/naming_styles.yml (review decision 43): the
+// naming styles of town names, one per biome. server/layout reads the
+// fields.
 var (
+	NamingStyleKind  = Kind{Name: "naming styles", File: "data/naming_styles.yml", CoreNames: true, LocalNames: true}
 	DungeonStyleKind = Kind{Name: "dungeon styles", File: "data/dungeon_styles.yml", CoreNames: true, LocalNames: true}
 	TownTemplateKind = Kind{Name: "town templates", File: "data/town_templates.yml", CoreNames: true, LocalNames: true}
 )

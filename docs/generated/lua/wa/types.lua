@@ -567,6 +567,13 @@ function wa_Player:get_staff_role() end
 ---@return boolean
 function wa_Player:has_staff_permission(permission) end
 
+---Whether the player's character entered the town, as the teleport service lists it (review decision 43).
+---
+---Needs the permission `game.read`.
+---@param town wa.Town
+---@return boolean
+function wa_Player:has_visited(town) end
+
 ---Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
 ---
 ---Needs the permission `player.sanction`.
@@ -927,6 +934,45 @@ function wa_Place:get_tags() end
 ---The place's area: its map ID without gen:, such as "town:t7", "dungeon:crypt:2" or "field:3:-1".
 ---@return string
 function wa_Place:get_area() end
+
+---The level band of the place's map, its lowest and highest level (review decision 43). A place of a map without a band raises an error.
+---
+---Needs the permission `game.read`.
+---@return integer, integer
+function wa_Place:get_band() end
+
+---A town of the world layout, from wa.towns (review decision 43). Two handles of one town are equal.
+---@class wa.Town
+local wa_Town = {}
+
+---The town's ID, such as "t7", which places.find's scope "town:t7" names.
+---
+---Needs the permission `game.read`.
+---@return string
+function wa_Town:get_id() end
+
+---The town's display name, such as "Valheim". It changes when staff rename the town.
+---
+---Needs the permission `game.read`.
+---@return string
+function wa_Town:get_name() end
+
+---The town's map ID, such as "gen:town:t7".
+---
+---Needs the permission `game.read`.
+---@return string
+function wa_Town:get_map() end
+
+---The town's level band: its lowest and highest level. Bands rise with the warps from the home area.
+---
+---Needs the permission `game.read`.
+---@return integer, integer
+function wa_Town:get_band() end
+
+---The options of towns.list.
+---@class wa.TownListOptions
+---@field visited_by wa.Player? Only the towns this player entered.
+local wa_TownListOptions = {}
 
 ---A shop of data/npcs.yml, from world.get_shop (review decision 30). Its changes hold for the whole world until the server stops: the shop's file sets it again at start. A stock the methods set is saved.
 ---@class wa.Shop

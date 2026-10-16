@@ -1,5 +1,5 @@
 // The commands a player types in the chat input, such as "/w Name text",
-// "/join #trade", "/p text" or "/g text". A line that is not a command goes to the
+// "/join #trade", "/p text", "/g text" or "/memo". A line that is not a command goes to the
 // active chat tab. A line that starts with @ is a GM command for the
 // server (decision 0030). It goes as a local chat line in any tab.
 
@@ -39,6 +39,8 @@ export type ChatAction =
   | { kind: 'block'; name: string }
   | { kind: 'unblock'; name: string }
   | { kind: 'report'; name: string; reason: string }
+  /** Saves the player's cell as a Warp Portal memo point, as RO's /memo. */
+  | { kind: 'memo' }
   /** A command the client cannot run, with the reason for the player. */
   | { kind: 'error'; message: string };
 
@@ -201,10 +203,13 @@ export function parseChatInput(input: string): ChatAction {
       }
       return { kind: 'report', name, reason: cleanChat(after) ?? '' };
     }
+    case '/memo':
+      // RO's /memo takes no arguments, and the server answers.
+      return { kind: 'memo' };
     default:
       return {
         kind: 'error',
-        message: `Unknown command ${command}. Commands: /w, /p, /g, /join, /leave, /channels, /members, /block, /unblock, /report.`,
+        message: `Unknown command ${command}. Commands: /w, /p, /g, /join, /leave, /channels, /members, /block, /unblock, /report, /memo.`,
       };
   }
 }

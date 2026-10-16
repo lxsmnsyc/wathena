@@ -1,16 +1,23 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/gateway"
+	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/mapfolder"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/places"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/zone"
@@ -20,14 +27,19 @@ import (
 )
 
 // devWorldLabel starts the secret of a --dev procedural world without a
-// database. --seed follows it, so a test gets the same fields each run.
+// database. --seed follows it, so a test gets the same maps each run.
 const devWorldLabel = "wathena-dev-world:"
 
 // maxTowns is the most towns --towns runs.
 const maxTowns = 99
 
+// teleportSprite is the look of the teleport service: rAthena's Kafra,
+// 4_F_KAFRA1.
+const teleportSprite = 112
+
 // proceduralWorld is what a world runs besides its asset maps: nothing
-// for a classic world, generated maps for a procedural one.
+// for a classic world, the maps of its layout for a procedural one
+// (decision 0041).
 type proceduralWorld struct {
 	mode gateway.WorldMode
 	// set holds the generated maps, or is nil for a classic world.
@@ -35,22 +47,37 @@ type proceduralWorld struct {
 	// g is the world's generator and public its public branch.
 	g      gen.Generator
 	public rng.Node
+	// stored is the layout the database keeps, or nil for a dev world.
+	stored *layout.Layout
+	// atlas is the layout while the server runs, and warps the warps of
+	// its links, by map ID.
+	atlas *layout.Atlas
+	warps map[string][]zone.Warp
+	// start is the home area's map, and spawn its start cell.
+	start    string
+	spawn    [2]int
+	hasSpawn bool
 }
 
-// wantsMaps reports whether the config lists generated maps of its own.
-func wantsMaps(p proceduralOptions) bool {
+// wantsDevMaps reports whether the config lists generated maps of its
+// own: --fields, --towns or --dungeons.
+func wantsDevMaps(p proceduralOptions) bool {
 	return len(p.Fields) > 0 || p.Towns > 0 || len(p.Dungeons) > 0
 }
 
-// fieldMaps decides the generated fields of a world (decision 0039):
+// wantsMaps reports whether the config asks for a dev procedural world.
+func wantsMaps(p proceduralOptions) bool { return wantsDevMaps(p) || p.DevLayout }
+
+// fieldMaps decides a world's generator and public branch (decisions
+// 0039 and 0041). The maps follow the mods (addMaps).
 //
 //   - A procedural world row: its generator, and the public branch the
-//     row holds. The game role never reads the seed.
-//   - No world row, with --dev and --fields: a procedural world on the
-//     newest generator, with a secret from --seed. Development only.
-//   - A classic world: no fields, and --fields is an error.
-//
-// It generates each field of --fields, or 0:0 when none is listed.
+//     row holds. The game role never reads the seed. Its layout comes
+//     from the database.
+//   - No world row, with --dev and --fields, --towns, --dungeons or
+//     --layout: a procedural world on the newest generator, with a
+//     secret from --seed. Development only.
+//   - A classic world: no maps, and those flags are errors.
 func fieldMaps(cfg settings, w store.World, log *slog.Logger) (proceduralWorld, error) {
 	var g gen.Generator
 	var public rng.Node
@@ -60,15 +87,18 @@ func fieldMaps(cfg settings, w store.World, log *slog.Logger) (proceduralWorld, 
 		if len(w.PublicNode) != 32 {
 			return proceduralWorld{}, fmt.Errorf("the world %q was made before generated fields and has no public node; make it again with wactl world new", w.Name)
 		}
+		if wantsMaps(cfg.Procedural) {
+			return proceduralWorld{}, fmt.Errorf("the world %q runs the layout it was made with; leave out --fields, --towns, --dungeons and --layout", w.Name)
+		}
 		public = rng.FromKey([32]byte(w.PublicNode))
 	case !wantsMaps(cfg.Procedural):
 		return proceduralWorld{}, nil
 	case w.Name != "":
-		return proceduralWorld{}, fmt.Errorf("--fields, --towns and --dungeons need a procedural world, and the world %q is %s", w.Name, w.Mode)
+		return proceduralWorld{}, fmt.Errorf("--fields, --towns, --dungeons and --layout need a procedural world, and the world %q is %s", w.Name, w.Mode)
 	case !gen.Procedural:
-		return proceduralWorld{}, errors.New("--fields, --towns and --dungeons need a waserver built with -tags procedural")
+		return proceduralWorld{}, errors.New("--fields, --towns, --dungeons and --layout need a waserver built with -tags procedural")
 	case !cfg.Dev:
-		return proceduralWorld{}, errors.New("--fields, --towns and --dungeons without a procedural world need --dev")
+		return proceduralWorld{}, errors.New("--fields, --towns, --dungeons and --layout without a procedural world need --dev")
 	default:
 		g, _ = gen.Latest()
 		root, err := rng.NewRoot([]byte(devWorldLabel + cfg.Seed))
@@ -76,108 +106,190 @@ func fieldMaps(cfg settings, w store.World, log *slog.Logger) (proceduralWorld, 
 			return proceduralWorld{}, err
 		}
 		public = gen.PublicBranch(root)
-		log.Warn("a development procedural world without a database: its fields follow --seed", "generator", g.Version)
+		log.Warn("a development procedural world without a database: its maps follow --seed", "generator", g.Version)
 	}
-	list := cfg.Procedural.Fields
-	if len(list) == 0 {
-		list = []string{"0:0"}
-	}
-	specs := make([]fields.Spec, 0, len(list))
-	for _, s := range list {
-		sp, err := fields.ParseSpec(s)
-		if err != nil {
-			return proceduralWorld{}, err
-		}
-		specs = append(specs, sp)
-	}
-	began := time.Now()
-	made, err := fields.Generate(g, public, specs, cfg.Procedural.FieldSize)
-	if err != nil {
-		return proceduralWorld{}, err
-	}
-	for _, f := range made {
-		log.Info("field generated", "map", f.ID, "biome", f.BiomeName, "size", f.Field.Width, "attempt", f.Field.Attempt,
-			"props", len(f.Field.Objects), "wmap_bytes", len(f.Field.WMAP))
-	}
-	log.Info("fields generated", "fields", len(made), "generator", g.Version, "took", time.Since(began).Round(time.Millisecond))
-	tilesets, err := fields.LoadTilesets(g, cfg.Procedural.Tilesets)
-	if err != nil {
-		return proceduralWorld{}, err
+	if g.Field == nil {
+		return proceduralWorld{}, fmt.Errorf("map generator %d makes no fields; fields need generator 2 or later", g.Version)
 	}
 	mode := worldMode(w)
 	if !mode.Procedural {
 		mode = gateway.WorldMode{Procedural: true, GeneratorVersion: g.Version, RNGVersion: g.RNG}
 	}
-	return proceduralWorld{mode: mode, set: fields.NewSet(made, tilesets.JSON()), g: g, public: public}, nil
+	return proceduralWorld{mode: mode, g: g, public: public}, nil
 }
 
-// addMaps generates the towns and dungeons of the config, once the mods
-// gave the town templates and dungeon styles (decision 0040). Town n
-// takes the template n - 1 modulo their number, in record order: core's
-// first, then the mods'. A dungeon's ID is its style's name without its
-// mod prefix. It replaces the set and the tileset table, which now holds
-// the templates' buildings.
-func addMaps(cfg settings, proc *proceduralWorld, styles []fields.Style, templates []fields.Template, log *slog.Logger) error {
+// loadLayout reads a procedural world's layout from the database.
+func loadLayout(ctx context.Context, pool *pgxpool.Pool, w store.World, proc *proceduralWorld) error {
+	if w.Mode != gen.ModeProcedural || pool == nil {
+		return nil
+	}
+	l, err := store.LoadLayout(ctx, pool)
+	if errors.Is(err, store.ErrNoLayout) {
+		return fmt.Errorf("the world %q was made before the world layout; make it again with wactl world new", w.Name)
+	}
+	if err != nil {
+		return fmt.Errorf("the world layout: %w", err)
+	}
+	proc.stored = l
+	return nil
+}
+
+// addMaps makes the maps of a procedural world once the mods gave their
+// records (decision 0041):
+//
+//   - A world row's layout, from the database.
+//   - A dev world with --layout: a layout built as `wactl world new`
+//     builds one, from procedural.layout and --seed.
+//   - A dev world with --fields, --towns and --dungeons: those maps,
+//     linked as phase 7 step 3's dev links linked them (layout.Dev).
+//     Town n takes the template n - 1 modulo their number, in record
+//     order. A dungeon's ID is its style's name without its mod prefix.
+//
+// It generates every map, puts the warps on the links, and makes the
+// atlas. pool saves renames, or is nil.
+func addMaps(cfg settings, proc *proceduralWorld, set *mod.Set, pool *pgxpool.Pool, log *slog.Logger) error {
 	p := cfg.Procedural
-	if proc.set == nil {
-		if p.Towns > 0 || len(p.Dungeons) > 0 {
-			return errors.New("--towns and --dungeons need a procedural world")
+	if proc.mode.GeneratorVersion == 0 {
+		if wantsMaps(p) {
+			return errors.New("--fields, --towns, --dungeons and --layout need a procedural world")
 		}
 		return nil
 	}
-	if err := fields.CheckRecords(proc.g, styles, templates); err != nil {
+	if !proc.g.Makes(gen.KindTown) {
+		return fmt.Errorf("map generator %d makes no towns; a world layout needs generator 3 or later", proc.g.Version)
+	}
+	recs, err := fields.LoadLayoutRecords(set, proc.g)
+	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
-	var towns []fields.TownSpec
-	if p.Towns > 0 && len(templates) == 0 {
-		return errors.New("--towns needs a town template, and no mod has one")
+	var l *layout.Layout
+	var home *layout.Home
+	switch {
+	case proc.stored != nil:
+		l = proc.stored
+		home, err = recs.HomeOf(l)
+	case p.DevLayout:
+		l, home, err = fields.BuildLayout(recs, proc.g, proc.public, p.Layout, p.FieldSize)
+	default:
+		var unlinked []string
+		l, unlinked, err = devLayout(cfg, proc, recs)
+		for _, id := range unlinked {
+			log.Warn("a generated map has no warp to it: add fields with free edges", "map", id)
+		}
 	}
-	for n := range p.Towns {
-		towns = append(towns, fields.TownSpec{N: int64(n + 1), Template: templates[n%len(templates)]})
+	if err != nil {
+		return err
 	}
-	var dungeons []fields.DungeonSpec
-	ids := map[string]bool{}
-	for _, d := range p.Dungeons {
-		name, floors, err := fields.ParseDungeonSpec(d)
-		if err != nil {
-			return err
-		}
-		st, ok := fields.FindStyle(styles, name)
-		if !ok {
-			return fmt.Errorf("dungeon %q: no dungeon style %q; the styles are %s", d, name, strings.Join(fields.StyleNames(styles), ", "))
-		}
-		if floors == 0 {
-			floors = st.Style.Floors
-		}
-		id := fields.DungeonID(st.Name)
-		if ids[id] {
-			return fmt.Errorf("dungeon %q: two dungeons have the ID %s", d, id)
-		}
-		ids[id] = true
-		dungeons = append(dungeons, fields.DungeonSpec{ID: id, Style: st, Floors: floors, Levels: fields.DevLevels})
+	var homeMap *mapfolder.Map
+	if home != nil {
+		homeMap = home.Map
 	}
 	began := time.Now()
-	made, err := fields.GenerateMaps(proc.g, proc.public, towns, dungeons)
+	made, err := fields.GenerateLayout(proc.g, proc.public, l, homeMap)
 	if err != nil {
 		return err
 	}
 	for _, f := range made {
-		attrs := []any{"map", f.ID, "kind", f.Kind, "record", f.Name, "size", f.Field.Width, "attempt", f.Field.Attempt,
-			"props", len(f.Field.Objects), "places", len(f.Field.Places), "wmap_bytes", len(f.Field.WMAP)}
-		if f.Kind == gen.KindDungeon {
-			attrs = append(attrs, "levels", fmt.Sprintf("%d-%d", f.Levels[0], f.Levels[1]))
+		attrs := []any{"map", f.ID, "name", f.DisplayName, "kind", f.Kind, "size", f.Field.Width, "attempt", f.Field.Attempt,
+			"levels", strconv.Itoa(f.Levels[0])+"-"+strconv.Itoa(f.Levels[1]), "places", len(f.Field.Places), "wmap_bytes", len(f.Field.WMAP)}
+		switch f.Kind {
+		case gen.KindField:
+			attrs = append(attrs, "biome", f.BiomeName)
+		default:
+			attrs = append(attrs, "record", f.Name)
 		}
 		log.Info("map generated", attrs...)
 	}
-	if len(made) > 0 {
-		log.Info("towns and dungeons generated", "maps", len(made), "generator", proc.g.Version, "took", time.Since(began).Round(time.Millisecond))
-	}
-	tilesets, err := fields.LoadTilesets(proc.g, p.Tilesets, templates...)
+	log.Info("world layout generated", "maps", len(made), "links", len(l.Links), "home", l.Home, "generator", proc.g.Version,
+		"took", time.Since(began).Round(time.Millisecond))
+	tilesets, err := fields.LoadTilesets(proc.g, p.Tilesets, fields.TemplatesOf(l)...)
 	if err != nil {
 		return err
 	}
-	proc.set = fields.NewSet(append(slices.Clone(proc.set.Fields()), made...), tilesets.JSON())
+	proc.set = fields.NewSet(made, tilesets.JSON())
+	if proc.warps, err = proc.set.LayoutWarps(l); err != nil {
+		return err
+	}
+	opts := layout.AtlasOptions{Blocked: layout.Blocked(recs.Filter)}
+	if pool != nil && proc.stored != nil {
+		opts.Save = func(ctx context.Context, names []layout.Rename) error { return store.RenameMaps(ctx, pool, names) }
+	}
+	proc.atlas = layout.NewAtlas(l, opts)
+	proc.set.SetNames(proc.atlas.Name)
+	proc.start = l.Home
+	if f := proc.set.Get(l.Home); f != nil {
+		proc.spawn, proc.hasSpawn = spawnOf(f)
+	}
 	return nil
+}
+
+// spawnOf is where new characters start on the home area: the first
+// place tagged start, else a town's square, else none.
+func spawnOf(f *fields.Field) ([2]int, bool) {
+	for _, tag := range []string{"start", "square"} {
+		for _, pl := range f.Field.Places {
+			if pl.HasTag(tag) {
+				return [2]int{pl.X, pl.Y}, true
+			}
+		}
+	}
+	return [2]int{}, false
+}
+
+// devLayout is the layout of --fields, --towns and --dungeons.
+func devLayout(cfg settings, proc *proceduralWorld, recs fields.Records) (*layout.Layout, []string, error) {
+	p := cfg.Procedural
+	list := p.Fields
+	if len(list) == 0 {
+		list = []string{"0:0"}
+	}
+	spec := layout.DevSpec{FieldSize: p.FieldSize, BandWidth: p.Layout.BandWidth, MaxLevel: p.Layout.MaxLevel}
+	for _, s := range list {
+		sp, err := fields.ParseSpec(s)
+		if err != nil {
+			return nil, nil, err
+		}
+		biome := proc.g.Climate(proc.public, sp.X, sp.Y)
+		if sp.Biome != "" {
+			b, ok := proc.g.BiomeIndex(sp.Biome)
+			if !ok {
+				return nil, nil, fmt.Errorf("field %s: unknown biome %q; generator %d has %s", gen.FieldID(sp.X, sp.Y), sp.Biome, proc.g.Version, strings.Join(proc.g.Biomes, ", "))
+			}
+			biome = b
+		}
+		if slices.ContainsFunc(spec.Fields, func(f layout.DevField) bool { return f.X == sp.X && f.Y == sp.Y }) {
+			return nil, nil, fmt.Errorf("field %s is listed twice", gen.FieldID(sp.X, sp.Y))
+		}
+		spec.Fields = append(spec.Fields, layout.DevField{X: sp.X, Y: sp.Y, Biome: biome})
+	}
+	towns, styles := fields.LayoutOf(recs.Styles, recs.Templates)
+	if p.Towns > 0 && len(towns) == 0 {
+		return nil, nil, errors.New("--towns needs a town template, and no mod has one")
+	}
+	for n := range p.Towns {
+		spec.Towns = append(spec.Towns, layout.DevTown{N: int64(n + 1), Record: towns[n%len(towns)]})
+	}
+	ids := map[string]bool{}
+	for _, d := range p.Dungeons {
+		name, floors, err := fields.ParseDungeonSpec(d)
+		if err != nil {
+			return nil, nil, err
+		}
+		i := slices.IndexFunc(styles, func(s layout.StyleRecord) bool { return s.Name == name })
+		if i < 0 {
+			return nil, nil, fmt.Errorf("dungeon %q: no dungeon style %q; the styles are %s", d, name, strings.Join(fields.StyleNames(recs.Styles), ", "))
+		}
+		if floors == 0 {
+			floors = styles[i].Style.Floors
+		}
+		id := fields.DungeonID(styles[i].Name)
+		if ids[id] {
+			return nil, nil, fmt.Errorf("dungeon %q: two dungeons have the ID %s", d, id)
+		}
+		ids[id] = true
+		spec.Dungeons = append(spec.Dungeons, layout.DevDungeon{ID: id, Style: styles[i], Floors: floors})
+	}
+	return layout.Dev(spec, recs.Inputs(proc.g, proc.public, nil))
 }
 
 // placeNPCs puts each NPC whose record gives a place at every place of
@@ -203,25 +315,17 @@ func placeNPCs(idx *places.Index, list []gamedata.PlaceNPC, log *slog.Logger) ma
 
 // worldMaps returns the start map, the asset maps to run and the map
 // names of every zone, asset maps first. In a procedural world, the
-// start map is the first field unless --map names a field, and asset
-// maps run only when --maps lists them.
+// start map is the home area unless --map names a generated map, and
+// asset maps run only when --maps lists them.
 func worldMaps(cfg settings, proc proceduralWorld) (start string, assetMaps, all []string, err error) {
 	start = assetName(cfg.StartMap)
 	if proc.set == nil {
 		assetMaps, err = selectMaps(cfg.Assets, start, joinList(cfg.Maps))
 		return start, assetMaps, assetMaps, err
 	}
+	start = proc.start
 	if proc.set.Get(cfg.StartMap) != nil {
 		start = cfg.StartMap
-	} else {
-		// The first field, else the first map of the set.
-		start = proc.set.Fields()[0].ID
-		for _, f := range proc.set.Fields() {
-			if f.Kind == gen.KindField {
-				start = f.ID
-				break
-			}
-		}
 	}
 	if len(cfg.Maps) > 0 {
 		for _, n := range cfg.Maps {
@@ -240,7 +344,8 @@ func worldMaps(cfg settings, proc proceduralWorld) (start string, assetMaps, all
 	return start, assetMaps, all, nil
 }
 
-// fieldGrids returns the cells of the fields, in the order of the set.
+// fieldGrids returns the cells of the generated maps, in the order of
+// the set.
 func fieldGrids(proc proceduralWorld) []*path.Grid {
 	if proc.set == nil {
 		return nil

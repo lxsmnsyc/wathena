@@ -330,6 +330,9 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := loadLayout(ctx, pool, worldRow, &proc); err != nil {
+		return err
+	}
 	itemData, err := loadItemData(statusMode)
 	if err != nil {
 		return err
@@ -362,7 +365,7 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return fmt.Errorf("mods:\n%w", indent(err))
 	}
-	if err := addMaps(cfg, &proc, loaded.all.DungeonStyles, loaded.all.TownTemplates, log); err != nil {
+	if err := addMaps(cfg, &proc, loaded.set, pool, log); err != nil {
 		return err
 	}
 	name, assetMaps, names, err := worldMaps(cfg, proc)
@@ -482,17 +485,18 @@ func runAll(name string, args []string) error {
 	}
 	grids = append(grids, fieldGrids(proc)...)
 	if proc.set != nil {
-		// Until the map graph of phase 7 step 4, towns and dungeons link
-		// to the fields' free portals (decision 0040). The places of the
-		// generated maps serve wa.places and the NPCs placed by tag.
-		genWarps, unlinked := proc.set.DevLinks()
-		for _, id := range unlinked {
-			log.Warn("a generated map has no warp to it: add fields with free edges", "map", id)
-		}
-		maps.Copy(warps, genWarps)
-		idx := proc.set.Places(genWarps)
-		loaded.zone.Places = idx
+		// The warps of the world layout's links, the places of its maps
+		// for wa.places and the NPCs placed by tag, the atlas, and the
+		// teleport service at each town's teleport place (decision
+		// 0041).
+		maps.Copy(warps, proc.warps)
+		idx := proc.set.Places(proc.warps)
+		loaded.zone.Places, loaded.zone.Atlas = idx, proc.atlas
+		loaded.zone.Teleport = zone.TeleportPrices{Base: int64(cfg.Procedural.TeleportBase), Step: int64(cfg.Procedural.TeleportStep)}
 		for m, list := range placeNPCs(idx, loaded.all.PlaceNPCs, log) {
+			loaded.npcs[m] = append(loaded.npcs[m], list...)
+		}
+		for m, list := range zone.TeleportNPCs(proc.atlas, idx, teleportSprite) {
 			loaded.npcs[m] = append(loaded.npcs[m], list...)
 		}
 	} else if len(loaded.all.PlaceNPCs) > 0 {
@@ -539,6 +543,9 @@ func runAll(name string, args []string) error {
 			z.Start.Job, z.StartBaseLevel, z.StartJobLevel = sj.job, sj.base, sj.jobLevel
 		}
 		z.SaveMap = name
+		if n == name && proc.hasSpawn {
+			z.Spawn, z.HasSpawn = proc.spawn, true
+		}
 		z.Chat, z.Jail, z.Clock, z.Social, z.Storages = hub, jail, clock, socials, storages
 		z.Mail, z.Market, z.Autotraders = mails, stores, autotraders
 		z.Staff = staffRoles

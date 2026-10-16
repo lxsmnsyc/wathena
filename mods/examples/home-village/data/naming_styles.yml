@@ -1,0 +1,11 @@
+# A naming style for grassland towns. It replaces core's norse style for
+# that biome, since it loads after core (mods/README.md, "Naming
+# styles"). A name joins one syllable of each part of a pattern, and has
+# 4 to 12 letters.
+- name: meadow
+  biome: grassland
+  syllables:
+    start: [wil, ash, bram, fern, hay, oak, rush]
+    middle: [a, e, en, er]
+    end: [ford, ley, ton, field, wick, brook]
+  patterns: ["{start}{end}", "{start}{middle}{end}"]

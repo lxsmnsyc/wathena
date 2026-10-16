@@ -3,7 +3,9 @@
 // node and checksum at /gen/maps/<id>.json, with the params of a floor or
 // a town. The client generates the map with gen.wasm in a Web Worker,
 // compares the checksum, and downloads the server's WMAP when they
-// differ or the module cannot make the map.
+// differ or the module cannot make the map. A mod's home map is not
+// generated: the client always downloads its WMAP (proposal 0002, review
+// decision 43).
 
 import { type Fetch, sha256 } from '../assets/store';
 
@@ -15,16 +17,23 @@ export function isGenerated(name: string): boolean {
 /** What the server says about a generated map. */
 export interface FieldInfo {
   id: string;
-  /** field, dungeon or town. A server before version 3 sends none. */
-  kind?: 'field' | 'dungeon' | 'town';
+  /** field, dungeon, town or home. A server before version 3 sends none. */
+  kind?: 'field' | 'dungeon' | 'town' | 'home';
   /** A dungeon floor's or a town's params, as hex. */
   params?: string;
-  /** A dungeon floor's style or a town's template. */
+  /** A dungeon floor's style, a town's template, or a home map's mod:folder. */
   name?: string;
+  /**
+   * The map's name for players, from the world layout. Staff can rename
+   * a town while the server runs, so it can change between loads.
+   */
+  displayName?: string;
+  /** The map's level band, lowest and highest, in a world layout. */
+  levels?: number[];
   version: number;
   rng: string;
-  /** The field's public node, 64 hex digits. */
-  key: string;
+  /** The field's public node, 64 hex digits. A home map has none. */
+  key?: string;
   width: number;
   height: number;
   biome: number;
@@ -50,13 +59,22 @@ function isFieldInfo(v: unknown): v is FieldInfo {
   const kindOK =
     kind === undefined ||
     kind === 'field' ||
+    kind === 'home' ||
     ((kind === 'dungeon' || kind === 'town') && /^(?:[0-9a-f]{2})+$/.test(String(s('params'))));
+  // Only a home map may lack its public node.
+  const keyOK = HEX64.test(String(s('key'))) || (kind === 'home' && s('key') === undefined);
+  const displayName = s('displayName');
+  const levels = s('levels');
+  const extrasOK =
+    (displayName === undefined || typeof displayName === 'string') &&
+    (levels === undefined || (Array.isArray(levels) && levels.every((l) => Number.isInteger(l))));
   return (
     kindOK &&
+    keyOK &&
+    extrasOK &&
     str('id') &&
     num('version') &&
     str('rng') &&
-    HEX64.test(String(s('key'))) &&
     num('width') &&
     num('height') &&
     num('biome') &&
@@ -98,7 +116,8 @@ const MAX_WMAP = 64 << 20;
 /**
  * Loads a field: its info from the server, then its map from the
  * generator, or from the server when the generator fails or its checksum
- * differs. A downloaded map must have the SHA-256 the info gives.
+ * differs. A home map always comes from the server. A downloaded map
+ * must have the SHA-256 the info gives.
  */
 export async function loadField(
   origin: string,
@@ -119,7 +138,9 @@ export async function loadField(
   }
   let reason = 'this client has no map generator';
   let generateMs: number | undefined;
-  if (generate !== undefined) {
+  if (info.kind === 'home') {
+    reason = 'a home map is not generated';
+  } else if (generate !== undefined) {
     const start = performance.now();
     try {
       const g = await generate(info);
@@ -138,7 +159,9 @@ export async function loadField(
       reason = `the generator failed: ${String(error)}`;
     }
   }
-  console.warn(`field ${id}: downloading the map, since ${reason}`);
+  if (info.kind !== 'home') {
+    console.warn(`field ${id}: downloading the map, since ${reason}`);
+  }
   if (info.wmapBytes > MAX_WMAP) {
     throw new Error(`field ${id}: ${info.wmapBytes} bytes is over the limit`);
   }

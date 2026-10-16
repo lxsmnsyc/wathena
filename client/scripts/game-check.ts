@@ -101,6 +101,13 @@ export interface GameOptions {
   /** --towns and --dungeons, with fields (decision 0040). */
   towns?: number;
   dungeons?: string;
+  /**
+   * --layout: a --dev world layout built from the config's
+   * procedural.layout, with a waserver built with -tags procedural
+   * (decision 0041). The home area starts, and placeholder/map runs
+   * beside the layout's maps. fieldSize sets --field-size.
+   */
+  layout?: boolean;
 }
 
 /**
@@ -203,7 +210,7 @@ export async function startGame(
   build: string,
   opts: GameOptions = {},
 ): Promise<Game> {
-  const waserver = buildServer(repo, dir, opts.fields !== undefined);
+  const waserver = buildServer(repo, dir, opts.fields !== undefined || opts.layout === true);
   const mods = installMods(repo, dir, wactl, opts.mods ?? []);
   const config = join(dir, `waserver-${opts.name ?? 'game'}.yml`);
   writeFileSync(config, CONFIG + (opts.config ?? ''));
@@ -232,6 +239,9 @@ export async function startGame(
             ...(opts.towns === undefined ? [] : ['--towns', String(opts.towns)]),
             ...(opts.dungeons === undefined ? [] : ['--dungeons', opts.dungeons]),
           ]),
+      ...(opts.layout === true
+        ? ['--layout', '--field-size', String(opts.fieldSize ?? 160), '--maps', 'placeholder/map']
+        : []),
       ...(dev
         ? ['--dev', '--seed', 'browser-check', '--start-job', opts.startJob ?? '1:50:40']
         : ['--play-url', `${origin}/`]),

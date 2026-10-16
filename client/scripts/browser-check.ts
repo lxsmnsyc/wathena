@@ -35,6 +35,12 @@
 //   at the square by its place, and walks into the crypt's first floor
 //   (decision 0040). Chromium only.
 //
+// - layout: layout-check.ts runs a --dev world layout with the Home
+//   Village sample mod. A player starts on the home map, which the page
+//   downloads, walks through its portal into the first town, sees the
+//   town's display name, and opens the world map, which shows both maps
+//   (decision 0041). Chromium only.
+//
 // - gen: the map generator module (src/world/gen.wasm) gives the golden
 //   checksums of shared/gen/testdata in Chromium, Firefox and WebKit,
 //   whatever BROWSERS says (decision 0038): fields, dungeon floors and
@@ -81,6 +87,7 @@ import {
 } from './game-check.ts';
 import { checkExit } from './exit-check.ts';
 import { checkFields } from './field-check.ts';
+import { checkLayout } from './layout-check.ts';
 import { checkPlaces } from './places-check.ts';
 import type * as GeneratorModule from '../src/world/generator.ts';
 
@@ -1073,6 +1080,13 @@ try {
           await checkPlaces(name, browser, { repo, client, ...assets }, check);
         } else {
           console.log(`skip ${name} places: the game checks run in Chromium`);
+        }
+      }
+      if (wanted('layout')) {
+        if (name === 'chromium') {
+          await checkLayout(name, browser, { repo, client, ...assets }, check);
+        } else {
+          console.log(`skip ${name} layout: the game checks run in Chromium`);
         }
       }
       if (wanted('exit')) {

@@ -30,8 +30,11 @@ export type FieldResponse =
  */
 const MAX_WORKER_MEMORY = 256 << 20;
 
-/** The worker's request for a map's info. */
+/** The worker's request for a map's info. A home map has none. */
 export function requestOf(id: number, info: FieldInfo): FieldRequest {
+  if (info.kind === 'home' || info.key === undefined) {
+    throw new Error(`${info.id} is not a generated map`);
+  }
   return {
     id,
     version: info.version,
@@ -78,11 +81,12 @@ export const generateInWorker: FieldGenerator = async (info: FieldInfo): Promise
     }
     return runRequest(g, requestOf(0, info));
   }
-  worker ??= startWorker();
   const id = ++next;
+  const request = requestOf(id, info);
+  worker ??= startWorker();
   const r = await new Promise<FieldResponse>((resolve) => {
     waiting.set(id, resolve);
-    worker!.postMessage(requestOf(id, info));
+    worker!.postMessage(request);
   });
   if ('error' in r) {
     throw new Error(r.error);

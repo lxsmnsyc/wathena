@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/places"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -59,7 +60,7 @@ func mapSet(t *testing.T) (*Set, rng.Node) {
 	styles, templates := coreStyles(t), coreTemplates(t)
 	towns := []TownSpec{{N: 1, Template: templates[0]}, {N: 2, Template: templates[1]}}
 	dungeons := []DungeonSpec{
-		{ID: "crypt", Style: styles[1], Floors: 2, Levels: DevLevels},
+		{ID: "crypt", Style: styles[1], Floors: 2, Levels: [2]int{1, 10}},
 		{ID: "deep-cave", Style: styles[0], Floors: 1, Levels: [2]int{20, 30}},
 	}
 	ms, err := GenerateMaps(g, public, towns, dungeons)
@@ -112,10 +113,10 @@ func TestGenerateMaps(t *testing.T) {
 	if lv := s.Get("gen:dungeon:deep-cave:1").Levels; lv != [2]int{20, 30} {
 		t.Errorf("cave band %v", lv)
 	}
-	if _, ok := placeOf(c2, "boss_room"); !ok {
+	if _, ok := placeAt(c2, "boss_room", 0); !ok {
 		t.Error("the crypt's last floor has no boss room")
 	}
-	if _, ok := placeOf(c1, "exit"); !ok {
+	if _, ok := placeAt(c1, "exit", 0); !ok {
 		t.Error("the crypt's first floor has no exit")
 	}
 	if _, err := GenerateMaps(g, public, nil, []DungeonSpec{{ID: "Bad", Style: coreStyles(t)[0], Floors: 1}}); err == nil {
@@ -127,15 +128,35 @@ func TestGenerateMaps(t *testing.T) {
 	}
 }
 
-// TestDevLinks: town t1 opens from the first free portal, its other gate
-// leads to the next town, dungeons open from towns' spare gates, and
-// floors link in order. Every warp stands on a walkable cell and lands
-// on one.
-func TestDevLinks(t *testing.T) {
+// devLayout is the dev layout of mapSet's maps, as waserver --dev makes
+// it for --fields 0:0,1:0 --towns 2 --dungeons crypt:2,deep-cave.
+func devLayout(t *testing.T) *layout.Layout {
+	t.Helper()
+	styles, templates := coreStyles(t), coreTemplates(t)
+	towns, recs := LayoutOf(styles, templates)
+	spec := layout.DevSpec{FieldSize: 64,
+		Fields:   []layout.DevField{{X: 0, Y: 0}, {X: 1, Y: 0}},
+		Towns:    []layout.DevTown{{N: 1, Record: towns[0]}, {N: 2, Record: towns[1]}},
+		Dungeons: []layout.DevDungeon{{ID: "crypt", Style: recs[1], Floors: 2}, {ID: "deep-cave", Style: recs[0], Floors: 1}},
+	}
+	l, unlinked, err := layout.Dev(spec, layout.Inputs{})
+	if err != nil || len(unlinked) != 0 {
+		t.Fatalf("dev layout: %v, unlinked %v", err, unlinked)
+	}
+	return l
+}
+
+// TestLayoutWarps: the dev links of step 3 hold as a layout: town t1
+// opens from the first free portal, its other gate leads to the next
+// town, dungeons open from towns' spare gates, and floors link in order.
+// Every warp stands on its place's walkable cell and lands on a walkable
+// cell that no warp covers.
+func TestLayoutWarps(t *testing.T) {
 	s, _ := mapSet(t)
-	warps, unlinked := s.DevLinks()
-	if len(unlinked) != 0 {
-		t.Errorf("unlinked %v", unlinked)
+	l := devLayout(t)
+	warps, err := s.LayoutWarps(l)
+	if err != nil {
+		t.Fatal(err)
 	}
 	links := map[string][]string{}
 	for from, list := range warps {
@@ -145,10 +166,16 @@ func TestDevLinks(t *testing.T) {
 			if f.Grid().NoPass(w.X, w.Y) || dst.Grid().NoPass(w.ToX, w.ToY) {
 				t.Errorf("%s %s: %d,%d to %s %d,%d", from, w.Name, w.X, w.Y, w.To, w.ToX, w.ToY)
 			}
+			for _, o := range warps[w.To] {
+				if w.ToX >= o.X-o.XS && w.ToX <= o.X+o.XS && w.ToY >= o.Y-o.YS && w.ToY <= o.Y+o.YS {
+					t.Errorf("%s %s lands in the warp %s", from, w.Name, o.Name)
+				}
+			}
 		}
 	}
 	for _, c := range [][2]string{
 		{"gen:field:0:0", "gen:field:1:0"},
+		{"gen:field:1:0", "gen:field:0:0"},
 		{"gen:field:0:0", "gen:town:t1"},
 		{"gen:town:t1", "gen:town:t2"},
 		{"gen:town:t2", "gen:dungeon:crypt:1"},
@@ -160,10 +187,10 @@ func TestDevLinks(t *testing.T) {
 			t.Errorf("no warp from %s to %s: %v", c[0], c[1], links[c[0]])
 		}
 	}
-	// Without fields, the towns and dungeons have no free end.
-	alone := NewSet([]*Field{s.Get("gen:town:t1")}, nil)
-	if _, unlinked := alone.DevLinks(); !slices.Equal(unlinked, []string{"gen:town:t1"}) {
-		t.Errorf("a town alone: %v", unlinked)
+	// A link to a place a map lacks is an error.
+	bad := &layout.Layout{Links: []layout.Link{{A: layout.End{Map: "gen:field:0:0", Tag: "moon"}, B: layout.End{Map: "gen:town:t1", Tag: "portal"}}}}
+	if _, err := s.LayoutWarps(bad); err == nil || !strings.Contains(err.Error(), "no such place") {
+		t.Errorf("a missing place: %v", err)
 	}
 }
 
@@ -171,7 +198,10 @@ func TestDevLinks(t *testing.T) {
 // the warps.
 func TestSetPlaces(t *testing.T) {
 	s, _ := mapSet(t)
-	warps, _ := s.DevLinks()
+	warps, err := s.LayoutWarps(devLayout(t))
+	if err != nil {
+		t.Fatal(err)
+	}
 	idx := s.Places(warps)
 	sc, _ := places.ParseScope("town:any")
 	if got := idx.Find(sc, "square"); len(got) != 2 {

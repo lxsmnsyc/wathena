@@ -24,6 +24,7 @@ commands:
   convert monsters convert rAthena monster skills to monster data
   convert random-options convert rAthena random options and groups to data
   dev              run a local server with a mod, and reload it when files change
+  map validate     check map folders with the map generator's checks
   mod new          make a mod from a template
   mod validate     check a mod's manifest, data, permissions, scripts and tests
   mod test         run a mod's tests in a headless world
@@ -92,6 +93,8 @@ func main() {
 		err = modBuildArt(os.Args[3:])
 	case "client-data validate":
 		err = clientDataValidate(os.Args[3:])
+	case "map validate":
+		err = mapValidate(os.Args[3:])
 	case "mod install":
 		err = modInstall(os.Args[3:])
 	case "mod types":

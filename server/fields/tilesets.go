@@ -11,7 +11,6 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/lxsmnsyc/wathena/internal/assets"
-	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 )
 
@@ -143,32 +142,6 @@ func sortedKeys[V any](m map[string]V) []string {
 	}
 	slices.Sort(keys)
 	return keys
-}
-
-// Warps links the portals of fields that touch: the east portal of
-// field (x, y) leads to the west portal of field (x+1, y), and the north
-// portal to the south portal of field (x, y+1). A player arrives 3 cells
-// inside the other portal, off its touch area. The map graph of phase 7
-// step 4 replaces this.
-func (s *Set) Warps() map[string][]zone.Warp {
-	out := map[string][]zone.Warp{}
-	for _, f := range s.fields {
-		for _, p := range f.Field.Portals {
-			dx, dy := edgeStep(p.Edge)
-			to := s.Get(gen.FieldID(f.X+dx, f.Y+dy))
-			if to == nil {
-				continue
-			}
-			q := to.Field.Portals[(p.Edge+2)%4]
-			ix, iy := edgeStep(q.Edge)
-			out[f.ID] = append(out[f.ID], zone.Warp{
-				Name: fmt.Sprintf("gen_%s_%d", f.ID, p.Edge),
-				X:    p.X, Y: p.Y, XS: 1, YS: 1,
-				To: to.ID, ToX: q.X - 3*int(ix), ToY: q.Y - 3*int(iy),
-			})
-		}
-	}
-	return out
 }
 
 // edgeStep is the field step toward an edge's neighbor.

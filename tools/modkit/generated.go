@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"path"
 	"sync"
 
 	"github.com/lxsmnsyc/wathena/server/fields"
+	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/mapfolder"
 	"github.com/lxsmnsyc/wathena/server/places"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/gen"
@@ -22,7 +25,8 @@ import (
 //   - one dungeon per dungeon style, with the style's floors, named by
 //     the style without its mod prefix,
 //
-// all from the secret TestWorldLabel, joined as waserver --dev joins them.
+// all from the secret TestWorldLabel, joined as waserver --dev joins them
+// (layout.Dev), with town names from the naming styles.
 // NPC records with a place stand at their places.
 
 // TestWorldLabel is the world secret of the test worlds' generated maps.
@@ -38,6 +42,8 @@ type generated struct {
 	places *places.Index
 	warps  map[string][]zone.Warp
 	npcs   map[string][]zone.NPC
+	// atlas is the test world's layout, for wa.towns.
+	atlas *layout.Atlas
 }
 
 type genResult struct {
@@ -70,25 +76,26 @@ func (l *Loaded) makeGenerated() (*generated, error) {
 	if err := fields.CheckRecords(g, l.DungeonStyles, l.TownTemplates); err != nil {
 		return nil, err
 	}
-	made, err := fields.Generate(g, public, []fields.Spec{{X: 0, Y: 0}}, testFieldSize)
-	if err != nil {
-		return nil, err
+	towns, styles := fields.LayoutOf(l.DungeonStyles, l.TownTemplates)
+	spec := layout.DevSpec{FieldSize: testFieldSize, Fields: []layout.DevField{{X: 0, Y: 0, Biome: g.Climate(public, 0, 0)}}}
+	for i, t := range towns {
+		spec.Towns = append(spec.Towns, layout.DevTown{N: int64(i + 1), Record: t})
 	}
-	var towns []fields.TownSpec
-	for i, t := range l.TownTemplates {
-		towns = append(towns, fields.TownSpec{N: int64(i + 1), Template: t})
-	}
-	var dungeons []fields.DungeonSpec
 	ids := map[string]bool{}
-	for _, s := range l.DungeonStyles {
+	for _, s := range styles {
 		id := fields.DungeonID(s.Name)
 		for n := 2; ids[id]; n++ {
 			id = fmt.Sprintf("%s-%d", fields.DungeonID(s.Name), n)
 		}
 		ids[id] = true
-		dungeons = append(dungeons, fields.DungeonSpec{ID: id, Style: s, Floors: s.Style.Floors, Levels: fields.DevLevels})
+		spec.Dungeons = append(spec.Dungeons, layout.DevDungeon{ID: id, Style: s, Floors: s.Style.Floors})
 	}
-	maps, err := fields.GenerateMaps(g, public, towns, dungeons)
+	in := layout.Inputs{Generator: g, Public: public, Naming: l.Naming}
+	lay, _, err := layout.Dev(spec, in)
+	if err != nil {
+		return nil, err
+	}
+	made, err := fields.GenerateLayout(g, public, lay, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -96,10 +103,13 @@ func (l *Loaded) makeGenerated() (*generated, error) {
 	if err != nil {
 		return nil, err
 	}
-	set := fields.NewSet(append(made, maps...), tilesets.JSON())
-	warps, _ := set.DevLinks()
+	set := fields.NewSet(made, tilesets.JSON())
+	warps, err := set.LayoutWarps(lay)
+	if err != nil {
+		return nil, err
+	}
 	idx := set.Places(warps)
-	out := &generated{set: set, places: idx, warps: warps, npcs: map[string][]zone.NPC{}}
+	out := &generated{set: set, places: idx, warps: warps, npcs: map[string][]zone.NPC{}, atlas: layout.NewAtlas(lay, layout.AtlasOptions{})}
 	for _, pn := range l.PlaceNPCs {
 		for _, i := range idx.Find(pn.Place.Scope, pn.Place.Tag) {
 			p := idx.Place(i)
@@ -128,4 +138,43 @@ func (l *Loaded) placesOf(log *slog.Logger) *places.Index {
 		return nil
 	}
 	return g.places
+}
+
+// checkMaps checks the mod's map folders under maps/ (strategy section
+// 8.12): their files, the generator's checks, and that each folder's
+// name is its id. With the procedural tag, its naming styles must name
+// biomes of the generator too.
+func (l *Loaded) checkMaps() []string {
+	var out []string
+	fsys, closeFS, err := l.Mod.Open()
+	if err != nil {
+		return []string{err.Error()}
+	}
+	defer func() { _ = closeFS() }()
+	dirs, err := mapfolder.Find(fsys)
+	if err != nil {
+		out = append(out, err.Error())
+	}
+	for _, d := range dirs {
+		m, err := mapfolder.Read(fsys, d)
+		if err != nil {
+			out = append(out, err.Error())
+			continue
+		}
+		if base := path.Base(d); base != m.ID {
+			out = append(out, fmt.Sprintf("%s: map.yaml's id %q is not the folder's name", d, m.ID))
+		}
+		for _, p := range m.Check() {
+			out = append(out, d+": "+p)
+		}
+		if _, err := m.WMAP(); err != nil {
+			out = append(out, d+": "+err.Error())
+		}
+	}
+	if g, ok := gen.Latest(); ok && l.Naming != nil {
+		if err := layout.CheckNaming(g.Biomes, l.Naming.Styles()); err != nil {
+			out = append(out, err.Error())
+		}
+	}
+	return out
 }

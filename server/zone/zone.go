@@ -144,6 +144,10 @@ type Player struct {
 	// currencies are the character's own currencies of
 	// data/currencies.yml, by ID (currency.go).
 	currencies map[uint32]int64
+	// visited are the generated maps the character entered, and memos
+	// its Warp Portal memo points (worldmap.go).
+	visited []string
+	memos   []character.Memo
 	// prevend is the most lines of the vending setup the Vending skill
 	// opened, or 0; vend is the player's open shop. buySetup is the
 	// slots of the buying store setup, or 0; buying is the open store.
@@ -367,6 +371,8 @@ type command struct {
 	vending *wathenav1.VendingCommand
 	buying  *wathenav1.BuyingStoreCommand
 	search  *wathenav1.StoreSearchCommand
+	// memo is the /memo command (worldmap.go).
+	memo bool
 }
 
 type useSkillCommand struct {
@@ -450,6 +456,12 @@ type Zone struct {
 	// yet, so it is the start map. Butterfly Wings go to its start cell.
 	// Set it before Run.
 	SaveMap string
+	// Spawn is the cell where new characters start and where a save
+	// point without a cell of its own puts players, when HasSpawn is set,
+	// such as a home map's start place. Otherwise the start cell is the
+	// walkable cell nearest the map's middle. Set it before Run.
+	Spawn    [2]int
+	HasSpawn bool
 	// Metrics measures the zone's ticks. New makes it.
 	Metrics *metrics.Zone
 	// Mods are the mods' scripts and item names. Without them, no
@@ -938,6 +950,7 @@ func (z *Zone) join(p *Player) joinResult {
 	p.record = c.Info
 	p.blocks, p.sanctions = slices.Clone(c.Blocks), slices.Clone(c.Sanctions)
 	p.currencies = maps.Clone(c.Currencies)
+	p.visited, p.memos = slices.Clone(c.Visited), slices.Clone(c.Memos)
 	z.restoreCompanions(p, c)
 	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), bodyOptions(p))), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
@@ -1041,6 +1054,9 @@ func (z *Zone) join(p *Player) joinResult {
 	p.sendPages(z.inventoryPages(p))
 	z.sendCart(p)
 	z.sendPlayerLimits(p)
+	// The map joins the character's visited maps, and the world map
+	// comes at login and with each new map.
+	z.visit(p, h == nil)
 	// CurrencyUpdate comes at login, as its message says, when the
 	// player has a currency: the client starts with none.
 	z.sendCurrenciesHeld(p)
@@ -1089,6 +1105,9 @@ func (z *Zone) join(p *Player) joinResult {
 }
 
 func (z *Zone) startCell() (int, int) {
+	if z.HasSpawn && !z.grid.NoPass(z.Spawn[0], z.Spawn[1]) {
+		return z.Spawn[0], z.Spawn[1]
+	}
 	cx, cy := z.grid.Width/2, z.grid.Height/2
 	for r := range max(z.grid.Width, z.grid.Height) {
 		for dy := -r; dy <= r; dy++ {
@@ -1258,6 +1277,9 @@ func (z *Zone) handle(c command) {
 	}
 	if c.search != nil {
 		z.searchCommand(p, c.search)
+	}
+	if c.memo {
+		z.memo(p)
 	}
 	me := p.entity
 	if me.dead {

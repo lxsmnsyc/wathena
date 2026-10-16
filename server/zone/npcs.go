@@ -60,6 +60,9 @@ type talk struct {
 	// ended is set when the script finished and the window shows its
 	// Close button. The player still talks until it presses it.
 	ended bool
+	// teleport is set for a talk with the teleport service, which the
+	// server runs without a script, and conv is nil then (worldmap.go).
+	teleport *teleportTalk
 }
 
 type npcEmotion struct {
@@ -152,6 +155,12 @@ func (z *Zone) click(p *Player, netID uint32) {
 	n := e.npc
 	if n.hint != 0 {
 		z.hintTalk(p, e)
+		return
+	}
+	if n.Service == ServiceTeleport && z.atlas() != nil {
+		z.closeShop(p, false)
+		p.entity.target, p.entity.pickItem = nil, nil
+		z.startTeleport(p, e)
 		return
 	}
 	if n.script != nil && n.script.Clickable() {
@@ -294,7 +303,7 @@ func (z *Zone) closeTalk(p *Player) {
 	if t == nil {
 		return
 	}
-	if t.ended || t.conv.Done {
+	if t.ended || t.conv == nil || t.conv.Done {
 		z.dialog(p, t, func(b *wathenav1.NpcDialog_builder) { b.End = new(true) })
 		p.talk = nil
 		return
@@ -388,6 +397,11 @@ func (z *Zone) reply(p *Player, r *wathenav1.NpcReply) {
 		return
 	}
 	t.waiting, t.deadline = false, 0
+	if t.teleport != nil {
+		n, _ := answer.AsInt()
+		z.teleportReply(p, t, int(n))
+		return
+	}
 	z.scripts.ResumeConversation(t.conv, answer)
 	z.afterTalk(p)
 }
@@ -418,7 +432,7 @@ func (z *Zone) talkTimers() {
 			continue
 		}
 		switch {
-		case t.wake > 0 && z.now >= t.wake:
+		case t.wake > 0 && z.now >= t.wake && t.conv != nil:
 			t.wake, t.waiting = 0, false
 			z.scripts.ResumeConversation(t.conv, script.Nil)
 			z.afterTalk(p)

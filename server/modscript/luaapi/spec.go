@@ -216,6 +216,8 @@ var Modules = []Module{
 			{Name: "announce", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of a map, as mapannounce."},
 			{Name: "find_entities", Params: []Param{{"query", "wa.EntityQuery", "One area, filters, and an order."}}, Returns: "(wa.Player|wa.Monster|wa.Npc)[]",
 				Doc: "The entities of an area of the context's map that pass every filter, sorted, and cut to the limit. Ties sort by kind, then by entity. A query with no area, two areas, or a field it does not know raises an error.", Permission: "game.read"},
+			{Name: "get_display_name", Params: []Param{{"map", "string", "A map ID, such as \"gen:town:t7\"."}}, Returns: "string?",
+				Doc: "The name players see for a map of the world layout (review decision 43), such as \"North Valheim Fields 2\". It changes when staff rename a town. nil for another map, and for every map of a classic world until locale files exist.", Permission: "game.read"},
 		},
 	},
 	{
@@ -291,6 +293,18 @@ var Modules = []Module{
 				Returns: "wa.Place[]", Doc: "Every place of the scope with the tag, in a fixed order: by map ID, then in the order the generator made them. Empty when none matches.", Permission: "game.read"},
 			{Name: "nearest", Params: []Param{playerParam, {"tag", "string", "A tag, as for find."}}, Returns: "wa.Place?",
 				Doc: "The place with the tag closest to the player: the fewest warps away on the map graph, then the shortest distance. On another map, the distance counts from where the player would arrive. Maps no warp leads to are left out. nil when no place qualifies.", Permission: "game.read"},
+		},
+	},
+	{
+		Name: "wa.towns", Local: "towns",
+		Doc: "The towns of the world layout (review decision 43): each with an ID such as t7, a display name, a map and a level band. A classic world has no towns: list returns an empty list, and nearest and get nil.",
+		Funcs: []Func{
+			{Name: "list", Params: []Param{{"options", "wa.TownListOptions?", ""}}, Returns: "wa.Town[]",
+				Doc: "Every town by number, or with visited_by only the towns that player entered.", Permission: "game.read"},
+			{Name: "nearest", Params: []Param{playerParam}, Returns: "wa.Town?",
+				Doc: "The town the fewest warps from the player's map, ties to the lower number: the player's own town when it stands in one. nil when no town is reached.", Permission: "game.read"},
+			{Name: "get", Params: []Param{{"id", "string", "A town's ID, such as \"t7\". Another form raises an error."}}, Returns: "wa.Town?",
+				Doc: "A town by its ID, or nil when the world has none with it.", Permission: "game.read"},
 		},
 	},
 	{
@@ -506,6 +520,8 @@ var Classes = []Class{
 				Doc: "The player's staff role, such as \"game_master\", or nil. The owner role is \"owner\". A role counts only when the player logged in with a second factor, a TOTP code, a recovery code or a passkey, and the account has TOTP or a passkey on, as on the admin screens."},
 			{Name: "has_staff_permission", Params: []Param{{"permission", "string", "A staff permission, such as \"moderation.mute\". An unknown name raises an error that lists the names."}}, Returns: "boolean", Permission: "game.read",
 				Doc: "Whether the player's staff role has a permission. The owner has every permission. It follows the two-factor rule of get_staff_role."},
+			{Name: "has_visited", Params: []Param{{"town", "wa.Town", ""}}, Returns: "boolean",
+				Doc: "Whether the player's character entered the town, as the teleport service lists it (review decision 43).", Permission: "game.read"},
 			{Name: "mute", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
 				Doc: "Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.", Permission: "player.sanction"},
 			{Name: "jail", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
@@ -641,7 +657,21 @@ var Classes = []Class{
 			{Name: "get_position", Returns: "integer, integer", Doc: "The place's cell, x and y."},
 			{Name: "get_tags", Returns: "string[]", Doc: "The place's tags, its main tag first, such as { \"gate\", \"gate:south\" }."},
 			{Name: "get_area", Returns: "string", Doc: "The place's area: its map ID without gen:, such as \"town:t7\", \"dungeon:crypt:2\" or \"field:3:-1\"."},
+			{Name: "get_band", Returns: "integer, integer", Doc: "The level band of the place's map, its lowest and highest level (review decision 43). A place of a map without a band raises an error.", Permission: "game.read"},
 		},
+	},
+	{
+		Name: "wa.Town", Handle: "town", Doc: "A town of the world layout, from wa.towns (review decision 43). Two handles of one town are equal.",
+		Methods: []Func{
+			{Name: "get_id", Returns: "string", Doc: "The town's ID, such as \"t7\", which places.find's scope \"town:t7\" names.", Permission: "game.read"},
+			{Name: "get_name", Returns: "string", Doc: "The town's display name, such as \"Valheim\". It changes when staff rename the town.", Permission: "game.read"},
+			{Name: "get_map", Returns: "string", Doc: "The town's map ID, such as \"gen:town:t7\".", Permission: "game.read"},
+			{Name: "get_band", Returns: "integer, integer", Doc: "The town's level band: its lowest and highest level. Bands rise with the warps from the home area.", Permission: "game.read"},
+		},
+	},
+	{
+		Name: "wa.TownListOptions", Doc: "The options of towns.list.",
+		Fields: []Field{{"visited_by", "wa.Player?", "Only the towns this player entered."}},
 	},
 	{
 		Name: "wa.Shop", Handle: "shop", Doc: "A shop of data/npcs.yml, from world.get_shop (review decision 30). Its changes hold for the whole world until the server stops: the shop's file sets it again at start. A stock the methods set is saved.",

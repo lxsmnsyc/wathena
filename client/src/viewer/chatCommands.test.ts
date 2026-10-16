@@ -111,12 +111,21 @@ describe('parseChatInput', () => {
     expect(parseChatInput('@')).toEqual({ kind: 'empty' });
   });
 
+  it('reads /memo, which takes no arguments', () => {
+    expect(parseChatInput('/memo')).toEqual({ kind: 'memo' });
+    expect(parseChatInput(' /MEMO ')).toEqual({ kind: 'memo' });
+    expect(parseChatInput('/memo here')).toEqual({ kind: 'memo' });
+    // /memos is not /memo.
+    expect(parseChatInput('/memos').kind).toBe('error');
+  });
+
   it('names unknown commands', () => {
     const action = parseChatInput('/dance now');
     expect(action.kind).toBe('error');
     expect(action.kind === 'error' && action.message.startsWith('Unknown command /dance.')).toBe(
       true,
     );
+    expect(action.kind === 'error' && action.message.includes('/memo')).toBe(true);
   });
 
   it('cleans the text it sends', () => {

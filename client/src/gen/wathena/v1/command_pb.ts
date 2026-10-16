@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/command.proto.
  */
 export const file_wathena_v1_command: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEivgoKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIABIpCgVndWlsZBgYIAEoCzIYLndhdGhlbmEudjEuR3VpbGRDb21tYW5kSAASLQoHc3RvcmFnZRgZIAEoCzIaLndhdGhlbmEudjEuU3RvcmFnZUNvbW1hbmRIABIpCgV0cmFkZRgaIAEoCzIYLndhdGhlbmEudjEuVHJhZGVDb21tYW5kSAASJwoEbWFpbBgbIAEoCzIXLndhdGhlbmEudjEuTWFpbENvbW1hbmRIABItCgd2ZW5kaW5nGBwgASgLMhoud2F0aGVuYS52MS5WZW5kaW5nQ29tbWFuZEgAEjYKDGJ1eWluZ19zdG9yZRgdIAEoCzIeLndhdGhlbmEudjEuQnV5aW5nU3RvcmVDb21tYW5kSAASNgoMc3RvcmVfc2VhcmNoGB4gASgLMh4ud2F0aGVuYS52MS5TdG9yZVNlYXJjaENvbW1hbmRIAEIGCgRib2R5Ih4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIeCgpMZWFyblNraWxsEhAKCHNraWxsX2lkGAEgASgNIhwKBENlbGwSCQoBeBgBIAEoDRIJCgF5GAIgASgNImAKBENoYXQSKAoHY2hhbm5lbBgBIAEoDjIXLndhdGhlbmEudjEuQ2hhdENoYW5uZWwSDAoEdGV4dBgCIAEoCRIKCgJ0bxgDIAEoCRIUCgxjaGFubmVsX25hbWUYBCABKAkiSQoOQ2hhbm5lbENvbW1hbmQSKQoGYWN0aW9uGAEgASgOMhkud2F0aGVuYS52MS5DaGFubmVsQWN0aW9uEgwKBG5hbWUYAiABKAkiJgoFQmxvY2sSDAoEbmFtZRgBIAEoCRIPCgd1bmJsb2NrGAIgASgIIlkKBlJlcG9ydBIMCgRuYW1lGAEgASgJEg8KB2xpbmVfaWQYAiABKAwSDgoGcmVhc29uGAMgASgJEhAKCGd1aWxkX2lkGAQgASgEEg4KBmVtYmxlbRgFIAEoCCIXCghOcGNDbGljaxILCgNucGMYASABKA0igwEKCE5wY1JlcGx5Eg4KBmRpYWxvZxgBIAEoDRIOCgRuZXh0GAIgASgISAASDgoEbWVudRgDIAEoDUgAEhQKCmlucHV0X3RleHQYBCABKAlIABIWCgxpbnB1dF9udW1iZXIYBSABKANIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFuc3dlciI+CgdTaG9wQnV5EgsKA25wYxgBIAEoDRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuU2hvcEJ1eUxpbmUiLgoLU2hvcEJ1eUxpbmUSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0iQAoIU2hvcFNlbGwSCwoDbnBjGAEgASgNEicKBWl0ZW1zGAIgAygLMhgud2F0aGVuYS52MS5TaG9wU2VsbExpbmUiLAoMU2hvcFNlbGxMaW5lEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhgKCVNob3BDbG9zZRILCgNucGMYASABKA0iFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIigKCERyb3BJdGVtEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0iKwoJRXF1aXBJdGVtEgwKBHNsb3QYASABKA0SEAoIcG9zaXRpb24YAiABKA0iGwoLVW5lcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDSIzCgpJbnNlcnRDYXJkEhEKCWNhcmRfc2xvdBgBIAEoDRISCgplcXVpcF9zbG90GAIgASgNIuMBCgxQYXJ0eUNvbW1hbmQSKQoGY3JlYXRlGAEgASgLMhcud2F0aGVuYS52MS5QYXJ0eUNyZWF0ZUgAEhAKBmludml0ZRgCIAEoCUgAEicKBXJlcGx5GAMgASgLMhYud2F0aGVuYS52MS5QYXJ0eVJlcGx5SAASDwoFbGVhdmUYBCABKAhIABIPCgVleHBlbBgFIAEoCUgAEhQKCnNldF9sZWFkZXIYBiABKAlIABIrCgdvcHRpb25zGAcgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnNIAEIICgZhY3Rpb24iRgoLUGFydHlDcmVhdGUSDAoEbmFtZRgBIAEoCRIpCgdvcHRpb25zGAIgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnMiLgoKUGFydHlSZXBseRIQCghwYXJ0eV9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiSgoMUGFydHlPcHRpb25zEhAKCGV4cF9ldmVuGAEgASgIEhEKCWl0ZW1fZXZlbhgCIAEoCBIVCg1waWNrdXBfc2hhcmVkGAMgASgIImQKDUZyaWVuZENvbW1hbmQSDQoDYWRkGAEgASgJSAASKAoFcmVwbHkYAiABKAsyFy53YXRoZW5hLnYxLkZyaWVuZFJlcGx5SAASEAoGcmVtb3ZlGAMgASgJSABCCAoGYWN0aW9uIisKC0ZyaWVuZFJlcGx5EgwKBG5hbWUYASABKAkSDgoGYWNjZXB0GAIgASgIIpMBChNQYXJ0eUJvb2tpbmdDb21tYW5kEi4KCHJlZ2lzdGVyGAEgASgLMhoud2F0aGVuYS52MS5QYXJ0eUJvb2tpbmdBZEgAEjAKBnNlYXJjaBgCIAEoCzIeLndhdGhlbmEudjEuUGFydHlCb29raW5nU2VhcmNoSAASEAoGZGVsZXRlGAMgASgISABCCAoGYWN0aW9uIkgKDlBhcnR5Qm9va2luZ0FkEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRIMCgRqb2JzGAMgAygNEgwKBG5vdGUYBCABKAkiPQoSUGFydHlCb29raW5nU2VhcmNoEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRILCgNqb2IYAyABKA0i4wMKDEd1aWxkQ29tbWFuZBIQCgZjcmVhdGUYASABKAlIABIQCgZpbnZpdGUYAiABKAlIABInCgVyZXBseRgDIAEoCzIWLndhdGhlbmEudjEuR3VpbGRSZXBseUgAEg8KBWxlYXZlGAQgASgJSAASJwoFZXhwZWwYBSABKAsyFi53YXRoZW5hLnYxLkd1aWxkRXhwZWxIABIvCglwb3NpdGlvbnMYBiABKAsyGi53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb25zSAASOgoPbWVtYmVyX3Bvc2l0aW9uGAcgASgLMh8ud2F0aGVuYS52MS5HdWlsZE1lbWJlclBvc2l0aW9uSAASKQoGbm90aWNlGAggASgLMhcud2F0aGVuYS52MS5HdWlsZE5vdGljZUgAEhIKCHNraWxsX3VwGAkgASgNSAASDgoEYWxseRgKIAEoCUgAEiwKCmFsbHlfcmVwbHkYCyABKAsyFi53YXRoZW5hLnYxLkd1aWxkUmVwbHlIABIPCgVlbmVteRgMIAEoCUgAEjQKDGVuZF9yZWxhdGlvbhgNIAEoCzIcLndhdGhlbmEudjEuR3VpbGRSZWxhdGlvbkVuZEgAEhEKB2Rpc2JhbmQYDiABKAlIAEIICgZhY3Rpb24iLgoKR3VpbGRSZXBseRIQCghndWlsZF9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiKgoKR3VpbGRFeHBlbBIMCgRuYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSI+Cg5HdWlsZFBvc2l0aW9ucxIsCglwb3NpdGlvbnMYASADKAsyGS53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb24ifQoNR3VpbGRQb3NpdGlvbhINCgVpbmRleBgBIAEoDRIMCgRuYW1lGAIgASgJEhIKCmNhbl9pbnZpdGUYAyABKAgSEQoJY2FuX2V4cGVsGAQgASgIEhcKD2Nhbl91c2Vfc3RvcmFnZRgFIAEoCBIPCgdleHBfdGF4GAYgASgNIjUKE0d1aWxkTWVtYmVyUG9zaXRpb24SDAoEbmFtZRgBIAEoCRIQCghwb3NpdGlvbhgCIAEoDSIqCgtHdWlsZE5vdGljZRINCgV0aXRsZRgBIAEoCRIMCgR0ZXh0GAIgASgJIjMKEEd1aWxkUmVsYXRpb25FbmQSEAoIZ3VpbGRfaWQYASABKAQSDQoFZW5lbXkYAiABKAgizgIKDlN0b3JhZ2VDb21tYW5kEiYKA3B1dBgBIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABInCgR0YWtlGAIgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEg8KBWNsb3NlGAMgASgISAASDQoDbG9nGAQgASgISAASKwoIY2FydF9wdXQYBSABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASLAoJY2FydF90YWtlGAYgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEjIKD2NhcnRfdG9fc3RvcmFnZRgHIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABIyCg9zdG9yYWdlX3RvX2NhcnQYCCABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSABCCAoGYWN0aW9uIisKC1N0b3JhZ2VNb3ZlEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIrQBCgxUcmFkZUNvbW1hbmQSEQoHcmVxdWVzdBgBIAEoDUgAEhEKB3Jlc3BvbmQYAiABKAhIABIrCghhZGRfaXRlbRgDIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABISCghhZGRfemVueRgEIAEoDUgAEg4KBGxvY2sYBSABKAhIABIRCgdjb25maXJtGAYgASgISAASEAoGY2FuY2VsGAcgASgISABCCAoGYWN0aW9uIqYBCgtNYWlsQ29tbWFuZBIOCgRvcGVuGAEgASgISAASDgoEcmVhZBgCIAEoBEgAEiQKBHNlbmQYAyABKAsyFC53YXRoZW5hLnYxLk1haWxTZW5kSAASJAoEdGFrZRgEIAEoCzIULndhdGhlbmEudjEuTWFpbFRha2VIABIQCgZkZWxldGUYBSABKARIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFjdGlvbiJpCghNYWlsU2VuZBIKCgJ0bxgBIAEoCRINCgV0aXRsZRgCIAEoCRIMCgRib2R5GAMgASgJEgwKBHplbnkYBCABKA0SJgoFaXRlbXMYBSADKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlIjUKCE1haWxUYWtlEgwKBG1haWwYASABKAQSDAoEemVueRgCIAEoCBINCgVpdGVtcxgDIAEoCCKfAQoOVmVuZGluZ0NvbW1hbmQSJwoEb3BlbhgBIAEoCzIXLndhdGhlbmEudjEuVmVuZGluZ09wZW5IABIPCgVjbG9zZRgCIAEoCEgAEhAKBmJyb3dzZRgDIAEoDUgAEiUKA2J1eRgEIAEoCzIWLndhdGhlbmEudjEuVmVuZGluZ0J1eUgAEhAKBmNhbmNlbBgFIAEoCEgAQggKBmFjdGlvbiJECgtWZW5kaW5nT3BlbhINCgV0aXRsZRgBIAEoCRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuVmVuZGluZ0xpbmUiPwoLVmVuZGluZ0xpbmUSEQoJY2FydF9zbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDRINCgVwcmljZRgDIAEoDSJVCgpWZW5kaW5nQnV5Eg4KBnZlbmRvchgBIAEoDRIMCgRzaG9wGAIgASgNEikKBWl0ZW1zGAMgAygLMhoud2F0aGVuYS52MS5WZW5kaW5nQnV5TGluZSIvCg5WZW5kaW5nQnV5TGluZRINCgVpbmRleBgBIAEoDRIOCgZhbW91bnQYAiABKA0irQEKEkJ1eWluZ1N0b3JlQ29tbWFuZBIrCgRvcGVuGAEgASgLMhsud2F0aGVuYS52MS5CdXlpbmdTdG9yZU9wZW5IABIPCgVjbG9zZRgCIAEoCEgAEhAKBmJyb3dzZRgDIAEoDUgAEisKBHNlbGwYBCABKAsyGy53YXRoZW5hLnYxLkJ1eWluZ1N0b3JlU2VsbEgAEhAKBmNhbmNlbBgFIAEoCEgAQggKBmFjdGlvbiJgCg9CdXlpbmdTdG9yZU9wZW4SDQoFdGl0bGUYASABKAkSEgoKemVueV9saW1pdBgCIAEoDRIqCgVpdGVtcxgDIAMoCzIbLndhdGhlbmEudjEuQnV5aW5nU3RvcmVMaW5lIkEKD0J1eWluZ1N0b3JlTGluZRIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDRINCgVwcmljZRgDIAEoDSJfCg9CdXlpbmdTdG9yZVNlbGwSDQoFYnV5ZXIYASABKA0SDQoFc3RvcmUYAiABKA0SLgoFaXRlbXMYAyADKAsyHy53YXRoZW5hLnYxLkJ1eWluZ1N0b3JlU2VsbExpbmUiRAoTQnV5aW5nU3RvcmVTZWxsTGluZRIMCgRzbG90GAEgASgNEg8KB2l0ZW1faWQYAiABKA0SDgoGYW1vdW50GAMgASgNIn8KElN0b3JlU2VhcmNoQ29tbWFuZBItCgVxdWVyeRgBIAEoCzIcLndhdGhlbmEudjEuU3RvcmVTZWFyY2hRdWVyeUgAEg4KBG5leHQYAiABKAhIABIPCgVjbGljaxgDIAEoDUgAEg8KBWNsb3NlGAQgASgISABCCAoGYWN0aW9uIsYBChBTdG9yZVNlYXJjaFF1ZXJ5Eg4KBmJ1eWluZxgBIAEoCBIQCghpdGVtX2lkcxgCIAMoDRIQCghjYXJkX2lkcxgDIAMoDRIRCgltaW5fcHJpY2UYBCABKA0SEQoJbWF4X3ByaWNlGAUgASgNEioKBXJvbGxzGAYgAygLMhsud2F0aGVuYS52MS5TdG9yZVNlYXJjaFJvbGwSLAoHb3B0aW9ucxgHIAMoCzIbLndhdGhlbmEudjEuU3RvcmVTZWFyY2hSb2xsIjkKD1N0b3JlU2VhcmNoUm9sbBIMCgRuYW1lGAEgASgJEgsKA21pbhgCIAEoBRILCgNtYXgYAyABKAUq9QEKC0NoYXRDaGFubmVsEhwKGENIQVRfQ0hBTk5FTF9VTlNQRUNJRklFRBAAEhYKEkNIQVRfQ0hBTk5FTF9MT0NBTBABEhYKEkNIQVRfQ0hBTk5FTF9QQVJUWRACEhYKEkNIQVRfQ0hBTk5FTF9HVUlMRBADEhgKFENIQVRfQ0hBTk5FTF9XSElTUEVSEAQSFgoSQ0hBVF9DSEFOTkVMX1dPUkxEEAUSFwoTQ0hBVF9DSEFOTkVMX1NZU1RFTRAGEh0KGUNIQVRfQ0hBTk5FTF9BTk5PVU5DRU1FTlQQBxIWChJDSEFUX0NIQU5ORUxfTkFNRUQQCCqXAQoNQ2hhbm5lbEFjdGlvbhIeChpDSEFOTkVMX0FDVElPTl9VTlNQRUNJRklFRBAAEhcKE0NIQU5ORUxfQUNUSU9OX0pPSU4QARIYChRDSEFOTkVMX0FDVElPTl9MRUFWRRACEhcKE0NIQU5ORUxfQUNUSU9OX0xJU1QQAxIaChZDSEFOTkVMX0FDVElPTl9NRU1CRVJTEAQqlwEKCEJhc2VTdGF0EhkKFUJBU0VfU1RBVF9VTlNQRUNJRklFRBAAEhEKDUJBU0VfU1RBVF9TVFIQARIRCg1CQVNFX1NUQVRfQUdJEAISEQoNQkFTRV9TVEFUX1ZJVBADEhEKDUJBU0VfU1RBVF9JTlQQBBIRCg1CQVNFX1NUQVRfREVYEAUSEQoNQkFTRV9TVEFUX0xVSxAGQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
+  fileDesc("Chh3YXRoZW5hL3YxL2NvbW1hbmQucHJvdG8SCndhdGhlbmEudjEi4AoKB0NvbW1hbmQSJQoHd2Fsa190bxgBIAEoCzISLndhdGhlbmEudjEuV2Fsa1RvSAASJAoGYXR0YWNrGAIgASgLMhIud2F0aGVuYS52MS5BdHRhY2tIABIpCgl1c2Vfc2tpbGwYAyABKAsyFC53YXRoZW5hLnYxLlVzZVNraWxsSAASIAoEY2hhdBgEIAEoCzIQLndhdGhlbmEudjEuQ2hhdEgAEikKCW5wY19jbGljaxgFIAEoCzIULndhdGhlbmEudjEuTnBjQ2xpY2tIABIpCglucGNfcmVwbHkYBiABKAsyFC53YXRoZW5hLnYxLk5wY1JlcGx5SAASJwoIdXNlX2l0ZW0YByABKAsyEy53YXRoZW5hLnYxLlVzZUl0ZW1IABIlCgdwaWNrX3VwGAggASgLMhIud2F0aGVuYS52MS5QaWNrVXBIABIrCgpyYWlzZV9zdGF0GAkgASgLMhUud2F0aGVuYS52MS5SYWlzZVN0YXRIABIpCglkcm9wX2l0ZW0YCiABKAsyFC53YXRoZW5hLnYxLkRyb3BJdGVtSAASJwoIc2hvcF9idXkYCyABKAsyEy53YXRoZW5hLnYxLlNob3BCdXlIABIpCglzaG9wX3NlbGwYDCABKAsyFC53YXRoZW5hLnYxLlNob3BTZWxsSAASKwoKc2hvcF9jbG9zZRgNIAEoCzIVLndhdGhlbmEudjEuU2hvcENsb3NlSAASKwoKZXF1aXBfaXRlbRgOIAEoCzIVLndhdGhlbmEudjEuRXF1aXBJdGVtSAASLwoMdW5lcXVpcF9pdGVtGA8gASgLMhcud2F0aGVuYS52MS5VbmVxdWlwSXRlbUgAEi0KC2luc2VydF9jYXJkGBAgASgLMhYud2F0aGVuYS52MS5JbnNlcnRDYXJkSAASLQoLbGVhcm5fc2tpbGwYESABKAsyFi53YXRoZW5hLnYxLkxlYXJuU2tpbGxIABItCgdjaGFubmVsGBIgASgLMhoud2F0aGVuYS52MS5DaGFubmVsQ29tbWFuZEgAEiIKBWJsb2NrGBMgASgLMhEud2F0aGVuYS52MS5CbG9ja0gAEiQKBnJlcG9ydBgUIAEoCzISLndhdGhlbmEudjEuUmVwb3J0SAASKQoFcGFydHkYFSABKAsyGC53YXRoZW5hLnYxLlBhcnR5Q29tbWFuZEgAEisKBmZyaWVuZBgWIAEoCzIZLndhdGhlbmEudjEuRnJpZW5kQ29tbWFuZEgAEjgKDXBhcnR5X2Jvb2tpbmcYFyABKAsyHy53YXRoZW5hLnYxLlBhcnR5Qm9va2luZ0NvbW1hbmRIABIpCgVndWlsZBgYIAEoCzIYLndhdGhlbmEudjEuR3VpbGRDb21tYW5kSAASLQoHc3RvcmFnZRgZIAEoCzIaLndhdGhlbmEudjEuU3RvcmFnZUNvbW1hbmRIABIpCgV0cmFkZRgaIAEoCzIYLndhdGhlbmEudjEuVHJhZGVDb21tYW5kSAASJwoEbWFpbBgbIAEoCzIXLndhdGhlbmEudjEuTWFpbENvbW1hbmRIABItCgd2ZW5kaW5nGBwgASgLMhoud2F0aGVuYS52MS5WZW5kaW5nQ29tbWFuZEgAEjYKDGJ1eWluZ19zdG9yZRgdIAEoCzIeLndhdGhlbmEudjEuQnV5aW5nU3RvcmVDb21tYW5kSAASNgoMc3RvcmVfc2VhcmNoGB4gASgLMh4ud2F0aGVuYS52MS5TdG9yZVNlYXJjaENvbW1hbmRIABIgCgRtZW1vGB8gASgLMhAud2F0aGVuYS52MS5NZW1vSABCBgoEYm9keSIGCgRNZW1vIh4KBldhbGtUbxIJCgF4GAEgASgNEgkKAXkYAiABKA0iKAoGQXR0YWNrEg4KBnRhcmdldBgBIAEoDRIOCgZyZXBlYXQYAiABKAgiaQoIVXNlU2tpbGwSEAoIc2tpbGxfaWQYASABKA0SDQoFbGV2ZWwYAiABKA0SEAoGZW50aXR5GAMgASgNSAASIAoEY2VsbBgEIAEoCzIQLndhdGhlbmEudjEuQ2VsbEgAQggKBnRhcmdldCIeCgpMZWFyblNraWxsEhAKCHNraWxsX2lkGAEgASgNIhwKBENlbGwSCQoBeBgBIAEoDRIJCgF5GAIgASgNImAKBENoYXQSKAoHY2hhbm5lbBgBIAEoDjIXLndhdGhlbmEudjEuQ2hhdENoYW5uZWwSDAoEdGV4dBgCIAEoCRIKCgJ0bxgDIAEoCRIUCgxjaGFubmVsX25hbWUYBCABKAkiSQoOQ2hhbm5lbENvbW1hbmQSKQoGYWN0aW9uGAEgASgOMhkud2F0aGVuYS52MS5DaGFubmVsQWN0aW9uEgwKBG5hbWUYAiABKAkiJgoFQmxvY2sSDAoEbmFtZRgBIAEoCRIPCgd1bmJsb2NrGAIgASgIIlkKBlJlcG9ydBIMCgRuYW1lGAEgASgJEg8KB2xpbmVfaWQYAiABKAwSDgoGcmVhc29uGAMgASgJEhAKCGd1aWxkX2lkGAQgASgEEg4KBmVtYmxlbRgFIAEoCCIXCghOcGNDbGljaxILCgNucGMYASABKA0igwEKCE5wY1JlcGx5Eg4KBmRpYWxvZxgBIAEoDRIOCgRuZXh0GAIgASgISAASDgoEbWVudRgDIAEoDUgAEhQKCmlucHV0X3RleHQYBCABKAlIABIWCgxpbnB1dF9udW1iZXIYBSABKANIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFuc3dlciI+CgdTaG9wQnV5EgsKA25wYxgBIAEoDRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuU2hvcEJ1eUxpbmUiLgoLU2hvcEJ1eUxpbmUSDwoHaXRlbV9pZBgBIAEoDRIOCgZhbW91bnQYAiABKA0iQAoIU2hvcFNlbGwSCwoDbnBjGAEgASgNEicKBWl0ZW1zGAIgAygLMhgud2F0aGVuYS52MS5TaG9wU2VsbExpbmUiLAoMU2hvcFNlbGxMaW5lEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhgKCVNob3BDbG9zZRILCgNucGMYASABKA0iFwoHVXNlSXRlbRIMCgRzbG90GAEgASgNIigKCERyb3BJdGVtEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIhYKBlBpY2tVcBIMCgRpdGVtGAEgASgNIj8KCVJhaXNlU3RhdBIiCgRzdGF0GAEgASgOMhQud2F0aGVuYS52MS5CYXNlU3RhdBIOCgZhbW91bnQYAiABKA0iKwoJRXF1aXBJdGVtEgwKBHNsb3QYASABKA0SEAoIcG9zaXRpb24YAiABKA0iGwoLVW5lcXVpcEl0ZW0SDAoEc2xvdBgBIAEoDSIzCgpJbnNlcnRDYXJkEhEKCWNhcmRfc2xvdBgBIAEoDRISCgplcXVpcF9zbG90GAIgASgNIuMBCgxQYXJ0eUNvbW1hbmQSKQoGY3JlYXRlGAEgASgLMhcud2F0aGVuYS52MS5QYXJ0eUNyZWF0ZUgAEhAKBmludml0ZRgCIAEoCUgAEicKBXJlcGx5GAMgASgLMhYud2F0aGVuYS52MS5QYXJ0eVJlcGx5SAASDwoFbGVhdmUYBCABKAhIABIPCgVleHBlbBgFIAEoCUgAEhQKCnNldF9sZWFkZXIYBiABKAlIABIrCgdvcHRpb25zGAcgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnNIAEIICgZhY3Rpb24iRgoLUGFydHlDcmVhdGUSDAoEbmFtZRgBIAEoCRIpCgdvcHRpb25zGAIgASgLMhgud2F0aGVuYS52MS5QYXJ0eU9wdGlvbnMiLgoKUGFydHlSZXBseRIQCghwYXJ0eV9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiSgoMUGFydHlPcHRpb25zEhAKCGV4cF9ldmVuGAEgASgIEhEKCWl0ZW1fZXZlbhgCIAEoCBIVCg1waWNrdXBfc2hhcmVkGAMgASgIImQKDUZyaWVuZENvbW1hbmQSDQoDYWRkGAEgASgJSAASKAoFcmVwbHkYAiABKAsyFy53YXRoZW5hLnYxLkZyaWVuZFJlcGx5SAASEAoGcmVtb3ZlGAMgASgJSABCCAoGYWN0aW9uIisKC0ZyaWVuZFJlcGx5EgwKBG5hbWUYASABKAkSDgoGYWNjZXB0GAIgASgIIpMBChNQYXJ0eUJvb2tpbmdDb21tYW5kEi4KCHJlZ2lzdGVyGAEgASgLMhoud2F0aGVuYS52MS5QYXJ0eUJvb2tpbmdBZEgAEjAKBnNlYXJjaBgCIAEoCzIeLndhdGhlbmEudjEuUGFydHlCb29raW5nU2VhcmNoSAASEAoGZGVsZXRlGAMgASgISABCCAoGYWN0aW9uIkgKDlBhcnR5Qm9va2luZ0FkEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRIMCgRqb2JzGAMgAygNEgwKBG5vdGUYBCABKAkiPQoSUGFydHlCb29raW5nU2VhcmNoEg0KBWxldmVsGAEgASgNEgsKA21hcBgCIAEoCRILCgNqb2IYAyABKA0i4wMKDEd1aWxkQ29tbWFuZBIQCgZjcmVhdGUYASABKAlIABIQCgZpbnZpdGUYAiABKAlIABInCgVyZXBseRgDIAEoCzIWLndhdGhlbmEudjEuR3VpbGRSZXBseUgAEg8KBWxlYXZlGAQgASgJSAASJwoFZXhwZWwYBSABKAsyFi53YXRoZW5hLnYxLkd1aWxkRXhwZWxIABIvCglwb3NpdGlvbnMYBiABKAsyGi53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb25zSAASOgoPbWVtYmVyX3Bvc2l0aW9uGAcgASgLMh8ud2F0aGVuYS52MS5HdWlsZE1lbWJlclBvc2l0aW9uSAASKQoGbm90aWNlGAggASgLMhcud2F0aGVuYS52MS5HdWlsZE5vdGljZUgAEhIKCHNraWxsX3VwGAkgASgNSAASDgoEYWxseRgKIAEoCUgAEiwKCmFsbHlfcmVwbHkYCyABKAsyFi53YXRoZW5hLnYxLkd1aWxkUmVwbHlIABIPCgVlbmVteRgMIAEoCUgAEjQKDGVuZF9yZWxhdGlvbhgNIAEoCzIcLndhdGhlbmEudjEuR3VpbGRSZWxhdGlvbkVuZEgAEhEKB2Rpc2JhbmQYDiABKAlIAEIICgZhY3Rpb24iLgoKR3VpbGRSZXBseRIQCghndWlsZF9pZBgBIAEoBBIOCgZhY2NlcHQYAiABKAgiKgoKR3VpbGRFeHBlbBIMCgRuYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSI+Cg5HdWlsZFBvc2l0aW9ucxIsCglwb3NpdGlvbnMYASADKAsyGS53YXRoZW5hLnYxLkd1aWxkUG9zaXRpb24ifQoNR3VpbGRQb3NpdGlvbhINCgVpbmRleBgBIAEoDRIMCgRuYW1lGAIgASgJEhIKCmNhbl9pbnZpdGUYAyABKAgSEQoJY2FuX2V4cGVsGAQgASgIEhcKD2Nhbl91c2Vfc3RvcmFnZRgFIAEoCBIPCgdleHBfdGF4GAYgASgNIjUKE0d1aWxkTWVtYmVyUG9zaXRpb24SDAoEbmFtZRgBIAEoCRIQCghwb3NpdGlvbhgCIAEoDSIqCgtHdWlsZE5vdGljZRINCgV0aXRsZRgBIAEoCRIMCgR0ZXh0GAIgASgJIjMKEEd1aWxkUmVsYXRpb25FbmQSEAoIZ3VpbGRfaWQYASABKAQSDQoFZW5lbXkYAiABKAgizgIKDlN0b3JhZ2VDb21tYW5kEiYKA3B1dBgBIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABInCgR0YWtlGAIgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEg8KBWNsb3NlGAMgASgISAASDQoDbG9nGAQgASgISAASKwoIY2FydF9wdXQYBSABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSAASLAoJY2FydF90YWtlGAYgASgLMhcud2F0aGVuYS52MS5TdG9yYWdlTW92ZUgAEjIKD2NhcnRfdG9fc3RvcmFnZRgHIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABIyCg9zdG9yYWdlX3RvX2NhcnQYCCABKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlSABCCAoGYWN0aW9uIisKC1N0b3JhZ2VNb3ZlEgwKBHNsb3QYASABKA0SDgoGYW1vdW50GAIgASgNIrQBCgxUcmFkZUNvbW1hbmQSEQoHcmVxdWVzdBgBIAEoDUgAEhEKB3Jlc3BvbmQYAiABKAhIABIrCghhZGRfaXRlbRgDIAEoCzIXLndhdGhlbmEudjEuU3RvcmFnZU1vdmVIABISCghhZGRfemVueRgEIAEoDUgAEg4KBGxvY2sYBSABKAhIABIRCgdjb25maXJtGAYgASgISAASEAoGY2FuY2VsGAcgASgISABCCAoGYWN0aW9uIqYBCgtNYWlsQ29tbWFuZBIOCgRvcGVuGAEgASgISAASDgoEcmVhZBgCIAEoBEgAEiQKBHNlbmQYAyABKAsyFC53YXRoZW5hLnYxLk1haWxTZW5kSAASJAoEdGFrZRgEIAEoCzIULndhdGhlbmEudjEuTWFpbFRha2VIABIQCgZkZWxldGUYBSABKARIABIPCgVjbG9zZRgGIAEoCEgAQggKBmFjdGlvbiJpCghNYWlsU2VuZBIKCgJ0bxgBIAEoCRINCgV0aXRsZRgCIAEoCRIMCgRib2R5GAMgASgJEgwKBHplbnkYBCABKA0SJgoFaXRlbXMYBSADKAsyFy53YXRoZW5hLnYxLlN0b3JhZ2VNb3ZlIjUKCE1haWxUYWtlEgwKBG1haWwYASABKAQSDAoEemVueRgCIAEoCBINCgVpdGVtcxgDIAEoCCKfAQoOVmVuZGluZ0NvbW1hbmQSJwoEb3BlbhgBIAEoCzIXLndhdGhlbmEudjEuVmVuZGluZ09wZW5IABIPCgVjbG9zZRgCIAEoCEgAEhAKBmJyb3dzZRgDIAEoDUgAEiUKA2J1eRgEIAEoCzIWLndhdGhlbmEudjEuVmVuZGluZ0J1eUgAEhAKBmNhbmNlbBgFIAEoCEgAQggKBmFjdGlvbiJECgtWZW5kaW5nT3BlbhINCgV0aXRsZRgBIAEoCRImCgVpdGVtcxgCIAMoCzIXLndhdGhlbmEudjEuVmVuZGluZ0xpbmUiPwoLVmVuZGluZ0xpbmUSEQoJY2FydF9zbG90GAEgASgNEg4KBmFtb3VudBgCIAEoDRINCgVwcmljZRgDIAEoDSJVCgpWZW5kaW5nQnV5Eg4KBnZlbmRvchgBIAEoDRIMCgRzaG9wGAIgASgNEikKBWl0ZW1zGAMgAygLMhoud2F0aGVuYS52MS5WZW5kaW5nQnV5TGluZSIvCg5WZW5kaW5nQnV5TGluZRINCgVpbmRleBgBIAEoDRIOCgZhbW91bnQYAiABKA0irQEKEkJ1eWluZ1N0b3JlQ29tbWFuZBIrCgRvcGVuGAEgASgLMhsud2F0aGVuYS52MS5CdXlpbmdTdG9yZU9wZW5IABIPCgVjbG9zZRgCIAEoCEgAEhAKBmJyb3dzZRgDIAEoDUgAEisKBHNlbGwYBCABKAsyGy53YXRoZW5hLnYxLkJ1eWluZ1N0b3JlU2VsbEgAEhAKBmNhbmNlbBgFIAEoCEgAQggKBmFjdGlvbiJgCg9CdXlpbmdTdG9yZU9wZW4SDQoFdGl0bGUYASABKAkSEgoKemVueV9saW1pdBgCIAEoDRIqCgVpdGVtcxgDIAMoCzIbLndhdGhlbmEudjEuQnV5aW5nU3RvcmVMaW5lIkEKD0J1eWluZ1N0b3JlTGluZRIPCgdpdGVtX2lkGAEgASgNEg4KBmFtb3VudBgCIAEoDRINCgVwcmljZRgDIAEoDSJfCg9CdXlpbmdTdG9yZVNlbGwSDQoFYnV5ZXIYASABKA0SDQoFc3RvcmUYAiABKA0SLgoFaXRlbXMYAyADKAsyHy53YXRoZW5hLnYxLkJ1eWluZ1N0b3JlU2VsbExpbmUiRAoTQnV5aW5nU3RvcmVTZWxsTGluZRIMCgRzbG90GAEgASgNEg8KB2l0ZW1faWQYAiABKA0SDgoGYW1vdW50GAMgASgNIn8KElN0b3JlU2VhcmNoQ29tbWFuZBItCgVxdWVyeRgBIAEoCzIcLndhdGhlbmEudjEuU3RvcmVTZWFyY2hRdWVyeUgAEg4KBG5leHQYAiABKAhIABIPCgVjbGljaxgDIAEoDUgAEg8KBWNsb3NlGAQgASgISABCCAoGYWN0aW9uIsYBChBTdG9yZVNlYXJjaFF1ZXJ5Eg4KBmJ1eWluZxgBIAEoCBIQCghpdGVtX2lkcxgCIAMoDRIQCghjYXJkX2lkcxgDIAMoDRIRCgltaW5fcHJpY2UYBCABKA0SEQoJbWF4X3ByaWNlGAUgASgNEioKBXJvbGxzGAYgAygLMhsud2F0aGVuYS52MS5TdG9yZVNlYXJjaFJvbGwSLAoHb3B0aW9ucxgHIAMoCzIbLndhdGhlbmEudjEuU3RvcmVTZWFyY2hSb2xsIjkKD1N0b3JlU2VhcmNoUm9sbBIMCgRuYW1lGAEgASgJEgsKA21pbhgCIAEoBRILCgNtYXgYAyABKAUq9QEKC0NoYXRDaGFubmVsEhwKGENIQVRfQ0hBTk5FTF9VTlNQRUNJRklFRBAAEhYKEkNIQVRfQ0hBTk5FTF9MT0NBTBABEhYKEkNIQVRfQ0hBTk5FTF9QQVJUWRACEhYKEkNIQVRfQ0hBTk5FTF9HVUlMRBADEhgKFENIQVRfQ0hBTk5FTF9XSElTUEVSEAQSFgoSQ0hBVF9DSEFOTkVMX1dPUkxEEAUSFwoTQ0hBVF9DSEFOTkVMX1NZU1RFTRAGEh0KGUNIQVRfQ0hBTk5FTF9BTk5PVU5DRU1FTlQQBxIWChJDSEFUX0NIQU5ORUxfTkFNRUQQCCqXAQoNQ2hhbm5lbEFjdGlvbhIeChpDSEFOTkVMX0FDVElPTl9VTlNQRUNJRklFRBAAEhcKE0NIQU5ORUxfQUNUSU9OX0pPSU4QARIYChRDSEFOTkVMX0FDVElPTl9MRUFWRRACEhcKE0NIQU5ORUxfQUNUSU9OX0xJU1QQAxIaChZDSEFOTkVMX0FDVElPTl9NRU1CRVJTEAQqlwEKCEJhc2VTdGF0EhkKFUJBU0VfU1RBVF9VTlNQRUNJRklFRBAAEhEKDUJBU0VfU1RBVF9TVFIQARIRCg1CQVNFX1NUQVRfQUdJEAISEQoNQkFTRV9TVEFUX1ZJVBADEhEKDUJBU0VfU1RBVF9JTlQQBBIRCg1CQVNFX1NUQVRfREVYEAUSEQoNQkFTRV9TVEFUX0xVSxAGQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
 
 /**
  * Command is a player action. The server checks every command against its
@@ -202,6 +202,12 @@ export type Command = Message<"wathena.v1.Command"> & {
      */
     value: StoreSearchCommand;
     case: "storeSearch";
+  } | {
+    /**
+     * @generated from field: wathena.v1.Memo memo = 31;
+     */
+    value: Memo;
+    case: "memo";
   } | { case: undefined; value?: undefined };
 };
 
@@ -211,6 +217,26 @@ export type Command = Message<"wathena.v1.Command"> & {
  */
 export const CommandSchema: GenMessage<Command> = /*@__PURE__*/
   messageDesc(file_wathena_v1_command, 0);
+
+/**
+ * Memo saves the player's cell as a Warp Portal memo point, as the
+ * client's /memo and rAthena's pc_memo (proposal 0002, review decision
+ * 43). The newest memo is the first of 3, and a memo of the same map
+ * replaces the older one. It needs Warp Portal at level 2 or higher, a
+ * slot per level above 1, and a map without the nomemo flag. The answer
+ * is a system message.
+ *
+ * @generated from message wathena.v1.Memo
+ */
+export type Memo = Message<"wathena.v1.Memo"> & {
+};
+
+/**
+ * Describes the message wathena.v1.Memo.
+ * Use `create(MemoSchema)` to create a new message.
+ */
+export const MemoSchema: GenMessage<Memo> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_command, 1);
 
 /**
  * @generated from message wathena.v1.WalkTo
@@ -232,7 +258,7 @@ export type WalkTo = Message<"wathena.v1.WalkTo"> & {
  * Use `create(WalkToSchema)` to create a new message.
  */
 export const WalkToSchema: GenMessage<WalkTo> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 1);
+  messageDesc(file_wathena_v1_command, 2);
 
 /**
  * @generated from message wathena.v1.Attack
@@ -256,7 +282,7 @@ export type Attack = Message<"wathena.v1.Attack"> & {
  * Use `create(AttackSchema)` to create a new message.
  */
 export const AttackSchema: GenMessage<Attack> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 2);
+  messageDesc(file_wathena_v1_command, 3);
 
 /**
  * UseSkill casts a skill the player knows, at a level up to the one it
@@ -300,7 +326,7 @@ export type UseSkill = Message<"wathena.v1.UseSkill"> & {
  * Use `create(UseSkillSchema)` to create a new message.
  */
 export const UseSkillSchema: GenMessage<UseSkill> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 3);
+  messageDesc(file_wathena_v1_command, 4);
 
 /**
  * LearnSkill spends a skill point on a skill of the player's skill list,
@@ -320,7 +346,7 @@ export type LearnSkill = Message<"wathena.v1.LearnSkill"> & {
  * Use `create(LearnSkillSchema)` to create a new message.
  */
 export const LearnSkillSchema: GenMessage<LearnSkill> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 4);
+  messageDesc(file_wathena_v1_command, 5);
 
 /**
  * @generated from message wathena.v1.Cell
@@ -342,7 +368,7 @@ export type Cell = Message<"wathena.v1.Cell"> & {
  * Use `create(CellSchema)` to create a new message.
  */
 export const CellSchema: GenMessage<Cell> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 5);
+  messageDesc(file_wathena_v1_command, 6);
 
 /**
  * Chat says a line. The server checks the sender's mute, the chat filter
@@ -384,7 +410,7 @@ export type Chat = Message<"wathena.v1.Chat"> & {
  * Use `create(ChatSchema)` to create a new message.
  */
 export const ChatSchema: GenMessage<Chat> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 6);
+  messageDesc(file_wathena_v1_command, 7);
 
 /**
  * ChannelCommand joins or leaves a chat channel, or asks for the list of
@@ -412,7 +438,7 @@ export type ChannelCommand = Message<"wathena.v1.ChannelCommand"> & {
  * Use `create(ChannelCommandSchema)` to create a new message.
  */
 export const ChannelCommandSchema: GenMessage<ChannelCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 7);
+  messageDesc(file_wathena_v1_command, 8);
 
 /**
  * Block adds a character name to the player's block list, or removes
@@ -441,7 +467,7 @@ export type Block = Message<"wathena.v1.Block"> & {
  * Use `create(BlockSchema)` to create a new message.
  */
 export const BlockSchema: GenMessage<Block> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 8);
+  messageDesc(file_wathena_v1_command, 9);
 
 /**
  * Report reports a player, or one chat line, to the staff (strategy
@@ -493,7 +519,7 @@ export type Report = Message<"wathena.v1.Report"> & {
  * Use `create(ReportSchema)` to create a new message.
  */
 export const ReportSchema: GenMessage<Report> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 9);
+  messageDesc(file_wathena_v1_command, 10);
 
 /**
  * NpcClick talks to an NPC, or opens its shop, as rAthena's npc_click.
@@ -513,7 +539,7 @@ export type NpcClick = Message<"wathena.v1.NpcClick"> & {
  * Use `create(NpcClickSchema)` to create a new message.
  */
 export const NpcClickSchema: GenMessage<NpcClick> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 10);
+  messageDesc(file_wathena_v1_command, 11);
 
 /**
  * NpcReply answers the open NPC dialog step.
@@ -582,7 +608,7 @@ export type NpcReply = Message<"wathena.v1.NpcReply"> & {
  * Use `create(NpcReplySchema)` to create a new message.
  */
 export const NpcReplySchema: GenMessage<NpcReply> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 11);
+  messageDesc(file_wathena_v1_command, 12);
 
 /**
  * ShopBuy buys items from the shop that ShopOpen showed, in one step,
@@ -611,7 +637,7 @@ export type ShopBuy = Message<"wathena.v1.ShopBuy"> & {
  * Use `create(ShopBuySchema)` to create a new message.
  */
 export const ShopBuySchema: GenMessage<ShopBuy> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 12);
+  messageDesc(file_wathena_v1_command, 13);
 
 /**
  * @generated from message wathena.v1.ShopBuyLine
@@ -636,7 +662,7 @@ export type ShopBuyLine = Message<"wathena.v1.ShopBuyLine"> & {
  * Use `create(ShopBuyLineSchema)` to create a new message.
  */
 export const ShopBuyLineSchema: GenMessage<ShopBuyLine> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 13);
+  messageDesc(file_wathena_v1_command, 14);
 
 /**
  * ShopSell sells inventory slots to the shop that ShopOpen showed, as
@@ -663,7 +689,7 @@ export type ShopSell = Message<"wathena.v1.ShopSell"> & {
  * Use `create(ShopSellSchema)` to create a new message.
  */
 export const ShopSellSchema: GenMessage<ShopSell> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 14);
+  messageDesc(file_wathena_v1_command, 15);
 
 /**
  * @generated from message wathena.v1.ShopSellLine
@@ -689,7 +715,7 @@ export type ShopSellLine = Message<"wathena.v1.ShopSellLine"> & {
  * Use `create(ShopSellLineSchema)` to create a new message.
  */
 export const ShopSellLineSchema: GenMessage<ShopSellLine> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 15);
+  messageDesc(file_wathena_v1_command, 16);
 
 /**
  * ShopClose closes the shop window without buying or selling.
@@ -708,7 +734,7 @@ export type ShopClose = Message<"wathena.v1.ShopClose"> & {
  * Use `create(ShopCloseSchema)` to create a new message.
  */
 export const ShopCloseSchema: GenMessage<ShopClose> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 16);
+  messageDesc(file_wathena_v1_command, 17);
 
 /**
  * UseItem uses the item in an inventory slot, as rAthena's pc_useitem.
@@ -731,7 +757,7 @@ export type UseItem = Message<"wathena.v1.UseItem"> & {
  * Use `create(UseItemSchema)` to create a new message.
  */
 export const UseItemSchema: GenMessage<UseItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 17);
+  messageDesc(file_wathena_v1_command, 18);
 
 /**
  * DropItem drops an amount from an inventory slot on the ground near the
@@ -761,7 +787,7 @@ export type DropItem = Message<"wathena.v1.DropItem"> & {
  * Use `create(DropItemSchema)` to create a new message.
  */
 export const DropItemSchema: GenMessage<DropItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 18);
+  messageDesc(file_wathena_v1_command, 19);
 
 /**
  * PickUp walks next to a ground item and picks it up.
@@ -780,7 +806,7 @@ export type PickUp = Message<"wathena.v1.PickUp"> & {
  * Use `create(PickUpSchema)` to create a new message.
  */
 export const PickUpSchema: GenMessage<PickUp> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 19);
+  messageDesc(file_wathena_v1_command, 20);
 
 /**
  * RaiseStat spends status points to raise a stat, as rAthena's
@@ -808,7 +834,7 @@ export type RaiseStat = Message<"wathena.v1.RaiseStat"> & {
  * Use `create(RaiseStatSchema)` to create a new message.
  */
 export const RaiseStatSchema: GenMessage<RaiseStat> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 20);
+  messageDesc(file_wathena_v1_command, 21);
 
 /**
  * EquipItem puts on the item in an inventory slot, as rAthena's
@@ -837,7 +863,7 @@ export type EquipItem = Message<"wathena.v1.EquipItem"> & {
  * Use `create(EquipItemSchema)` to create a new message.
  */
 export const EquipItemSchema: GenMessage<EquipItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 21);
+  messageDesc(file_wathena_v1_command, 22);
 
 /**
  * UnequipItem takes off the item in an inventory slot, as rAthena's
@@ -857,7 +883,7 @@ export type UnequipItem = Message<"wathena.v1.UnequipItem"> & {
  * Use `create(UnequipItemSchema)` to create a new message.
  */
 export const UnequipItemSchema: GenMessage<UnequipItem> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 22);
+  messageDesc(file_wathena_v1_command, 23);
 
 /**
  * InsertCard puts one card from a slot into the first free card slot of
@@ -883,7 +909,7 @@ export type InsertCard = Message<"wathena.v1.InsertCard"> & {
  * Use `create(InsertCardSchema)` to create a new message.
  */
 export const InsertCardSchema: GenMessage<InsertCard> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 23);
+  messageDesc(file_wathena_v1_command, 24);
 
 /**
  * PartyCommand is a party action, as rAthena's party packets. The server
@@ -967,7 +993,7 @@ export type PartyCommand = Message<"wathena.v1.PartyCommand"> & {
  * Use `create(PartyCommandSchema)` to create a new message.
  */
 export const PartyCommandSchema: GenMessage<PartyCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 24);
+  messageDesc(file_wathena_v1_command, 25);
 
 /**
  * @generated from message wathena.v1.PartyCreate
@@ -994,7 +1020,7 @@ export type PartyCreate = Message<"wathena.v1.PartyCreate"> & {
  * Use `create(PartyCreateSchema)` to create a new message.
  */
 export const PartyCreateSchema: GenMessage<PartyCreate> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 25);
+  messageDesc(file_wathena_v1_command, 26);
 
 /**
  * @generated from message wathena.v1.PartyReply
@@ -1018,7 +1044,7 @@ export type PartyReply = Message<"wathena.v1.PartyReply"> & {
  * Use `create(PartyReplySchema)` to create a new message.
  */
 export const PartyReplySchema: GenMessage<PartyReply> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 26);
+  messageDesc(file_wathena_v1_command, 27);
 
 /**
  * PartyOptions are a party's sharing options, as rAthena's party.exp and
@@ -1057,7 +1083,7 @@ export type PartyOptions = Message<"wathena.v1.PartyOptions"> & {
  * Use `create(PartyOptionsSchema)` to create a new message.
  */
 export const PartyOptionsSchema: GenMessage<PartyOptions> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 27);
+  messageDesc(file_wathena_v1_command, 28);
 
 /**
  * FriendCommand changes the friend list, as rAthena's friend packets. The
@@ -1103,7 +1129,7 @@ export type FriendCommand = Message<"wathena.v1.FriendCommand"> & {
  * Use `create(FriendCommandSchema)` to create a new message.
  */
 export const FriendCommandSchema: GenMessage<FriendCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 28);
+  messageDesc(file_wathena_v1_command, 29);
 
 /**
  * @generated from message wathena.v1.FriendReply
@@ -1127,7 +1153,7 @@ export type FriendReply = Message<"wathena.v1.FriendReply"> & {
  * Use `create(FriendReplySchema)` to create a new message.
  */
 export const FriendReplySchema: GenMessage<FriendReply> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 29);
+  messageDesc(file_wathena_v1_command, 30);
 
 /**
  * PartyBookingCommand registers, searches or deletes a party booking ad,
@@ -1167,7 +1193,7 @@ export type PartyBookingCommand = Message<"wathena.v1.PartyBookingCommand"> & {
  * Use `create(PartyBookingCommandSchema)` to create a new message.
  */
 export const PartyBookingCommandSchema: GenMessage<PartyBookingCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 30);
+  messageDesc(file_wathena_v1_command, 31);
 
 /**
  * PartyBookingAd is an ad for a party: the level it is for, the map, and
@@ -1211,7 +1237,7 @@ export type PartyBookingAd = Message<"wathena.v1.PartyBookingAd"> & {
  * Use `create(PartyBookingAdSchema)` to create a new message.
  */
 export const PartyBookingAdSchema: GenMessage<PartyBookingAd> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 31);
+  messageDesc(file_wathena_v1_command, 32);
 
 /**
  * @generated from message wathena.v1.PartyBookingSearch
@@ -1245,7 +1271,7 @@ export type PartyBookingSearch = Message<"wathena.v1.PartyBookingSearch"> & {
  * Use `create(PartyBookingSearchSchema)` to create a new message.
  */
 export const PartyBookingSearchSchema: GenMessage<PartyBookingSearch> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 32);
+  messageDesc(file_wathena_v1_command, 33);
 
 /**
  * GuildCommand is a guild action, as rAthena's guild packets. The server
@@ -1392,7 +1418,7 @@ export type GuildCommand = Message<"wathena.v1.GuildCommand"> & {
  * Use `create(GuildCommandSchema)` to create a new message.
  */
 export const GuildCommandSchema: GenMessage<GuildCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 33);
+  messageDesc(file_wathena_v1_command, 34);
 
 /**
  * @generated from message wathena.v1.GuildReply
@@ -1416,7 +1442,7 @@ export type GuildReply = Message<"wathena.v1.GuildReply"> & {
  * Use `create(GuildReplySchema)` to create a new message.
  */
 export const GuildReplySchema: GenMessage<GuildReply> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 34);
+  messageDesc(file_wathena_v1_command, 35);
 
 /**
  * @generated from message wathena.v1.GuildExpel
@@ -1440,7 +1466,7 @@ export type GuildExpel = Message<"wathena.v1.GuildExpel"> & {
  * Use `create(GuildExpelSchema)` to create a new message.
  */
 export const GuildExpelSchema: GenMessage<GuildExpel> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 35);
+  messageDesc(file_wathena_v1_command, 36);
 
 /**
  * @generated from message wathena.v1.GuildPositions
@@ -1457,7 +1483,7 @@ export type GuildPositions = Message<"wathena.v1.GuildPositions"> & {
  * Use `create(GuildPositionsSchema)` to create a new message.
  */
 export const GuildPositionsSchema: GenMessage<GuildPositions> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 36);
+  messageDesc(file_wathena_v1_command, 37);
 
 /**
  * GuildPosition is one of a guild's positions, as rAthena's
@@ -1509,7 +1535,7 @@ export type GuildPosition = Message<"wathena.v1.GuildPosition"> & {
  * Use `create(GuildPositionSchema)` to create a new message.
  */
 export const GuildPositionSchema: GenMessage<GuildPosition> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 37);
+  messageDesc(file_wathena_v1_command, 38);
 
 /**
  * @generated from message wathena.v1.GuildMemberPosition
@@ -1531,7 +1557,7 @@ export type GuildMemberPosition = Message<"wathena.v1.GuildMemberPosition"> & {
  * Use `create(GuildMemberPositionSchema)` to create a new message.
  */
 export const GuildMemberPositionSchema: GenMessage<GuildMemberPosition> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 38);
+  messageDesc(file_wathena_v1_command, 39);
 
 /**
  * GuildNotice is the guild notice, as rAthena's mes1 and mes2.
@@ -1557,7 +1583,7 @@ export type GuildNotice = Message<"wathena.v1.GuildNotice"> & {
  * Use `create(GuildNoticeSchema)` to create a new message.
  */
 export const GuildNoticeSchema: GenMessage<GuildNotice> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 39);
+  messageDesc(file_wathena_v1_command, 40);
 
 /**
  * @generated from message wathena.v1.GuildRelationEnd
@@ -1581,7 +1607,7 @@ export type GuildRelationEnd = Message<"wathena.v1.GuildRelationEnd"> & {
  * Use `create(GuildRelationEndSchema)` to create a new message.
  */
 export const GuildRelationEndSchema: GenMessage<GuildRelationEnd> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 40);
+  messageDesc(file_wathena_v1_command, 41);
 
 /**
  * StorageCommand moves items between the inventory, the open storage
@@ -1676,7 +1702,7 @@ export type StorageCommand = Message<"wathena.v1.StorageCommand"> & {
  * Use `create(StorageCommandSchema)` to create a new message.
  */
 export const StorageCommandSchema: GenMessage<StorageCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 41);
+  messageDesc(file_wathena_v1_command, 42);
 
 /**
  * @generated from message wathena.v1.StorageMove
@@ -1702,7 +1728,7 @@ export type StorageMove = Message<"wathena.v1.StorageMove"> & {
  * Use `create(StorageMoveSchema)` to create a new message.
  */
 export const StorageMoveSchema: GenMessage<StorageMove> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 42);
+  messageDesc(file_wathena_v1_command, 43);
 
 /**
  * TradeCommand is one step of a trade between two players, as rAthena's
@@ -1783,7 +1809,7 @@ export type TradeCommand = Message<"wathena.v1.TradeCommand"> & {
  * Use `create(TradeCommandSchema)` to create a new message.
  */
 export const TradeCommandSchema: GenMessage<TradeCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 43);
+  messageDesc(file_wathena_v1_command, 44);
 
 /**
  * MailCommand is one step of mail (RODEX), as rAthena's mail.cpp and
@@ -1856,7 +1882,7 @@ export type MailCommand = Message<"wathena.v1.MailCommand"> & {
  * Use `create(MailCommandSchema)` to create a new message.
  */
 export const MailCommandSchema: GenMessage<MailCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 44);
+  messageDesc(file_wathena_v1_command, 45);
 
 /**
  * MailSend is a new mail. The attachments are checked as mail_setitem
@@ -1905,7 +1931,7 @@ export type MailSend = Message<"wathena.v1.MailSend"> & {
  * Use `create(MailSendSchema)` to create a new message.
  */
 export const MailSendSchema: GenMessage<MailSend> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 45);
+  messageDesc(file_wathena_v1_command, 46);
 
 /**
  * MailTake takes the zeny, the items, or both, of one mail.
@@ -1934,7 +1960,7 @@ export type MailTake = Message<"wathena.v1.MailTake"> & {
  * Use `create(MailTakeSchema)` to create a new message.
  */
 export const MailTakeSchema: GenMessage<MailTake> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 46);
+  messageDesc(file_wathena_v1_command, 47);
 
 /**
  * VendingCommand is one step of a vending shop, as rAthena's vending.cpp.
@@ -1997,7 +2023,7 @@ export type VendingCommand = Message<"wathena.v1.VendingCommand"> & {
  * Use `create(VendingCommandSchema)` to create a new message.
  */
 export const VendingCommandSchema: GenMessage<VendingCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 47);
+  messageDesc(file_wathena_v1_command, 48);
 
 /**
  * @generated from message wathena.v1.VendingOpen
@@ -2023,7 +2049,7 @@ export type VendingOpen = Message<"wathena.v1.VendingOpen"> & {
  * Use `create(VendingOpenSchema)` to create a new message.
  */
 export const VendingOpenSchema: GenMessage<VendingOpen> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 48);
+  messageDesc(file_wathena_v1_command, 49);
 
 /**
  * @generated from message wathena.v1.VendingLine
@@ -2052,7 +2078,7 @@ export type VendingLine = Message<"wathena.v1.VendingLine"> & {
  * Use `create(VendingLineSchema)` to create a new message.
  */
 export const VendingLineSchema: GenMessage<VendingLine> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 49);
+  messageDesc(file_wathena_v1_command, 50);
 
 /**
  * @generated from message wathena.v1.VendingBuy
@@ -2084,7 +2110,7 @@ export type VendingBuy = Message<"wathena.v1.VendingBuy"> & {
  * Use `create(VendingBuySchema)` to create a new message.
  */
 export const VendingBuySchema: GenMessage<VendingBuy> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 50);
+  messageDesc(file_wathena_v1_command, 51);
 
 /**
  * @generated from message wathena.v1.VendingBuyLine
@@ -2108,7 +2134,7 @@ export type VendingBuyLine = Message<"wathena.v1.VendingBuyLine"> & {
  * Use `create(VendingBuyLineSchema)` to create a new message.
  */
 export const VendingBuyLineSchema: GenMessage<VendingBuyLine> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 51);
+  messageDesc(file_wathena_v1_command, 52);
 
 /**
  * BuyingStoreCommand is one step of a buying store, as rAthena's
@@ -2170,7 +2196,7 @@ export type BuyingStoreCommand = Message<"wathena.v1.BuyingStoreCommand"> & {
  * Use `create(BuyingStoreCommandSchema)` to create a new message.
  */
 export const BuyingStoreCommandSchema: GenMessage<BuyingStoreCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 52);
+  messageDesc(file_wathena_v1_command, 53);
 
 /**
  * @generated from message wathena.v1.BuyingStoreOpen
@@ -2204,7 +2230,7 @@ export type BuyingStoreOpen = Message<"wathena.v1.BuyingStoreOpen"> & {
  * Use `create(BuyingStoreOpenSchema)` to create a new message.
  */
 export const BuyingStoreOpenSchema: GenMessage<BuyingStoreOpen> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 53);
+  messageDesc(file_wathena_v1_command, 54);
 
 /**
  * @generated from message wathena.v1.BuyingStoreLine
@@ -2235,7 +2261,7 @@ export type BuyingStoreLine = Message<"wathena.v1.BuyingStoreLine"> & {
  * Use `create(BuyingStoreLineSchema)` to create a new message.
  */
 export const BuyingStoreLineSchema: GenMessage<BuyingStoreLine> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 54);
+  messageDesc(file_wathena_v1_command, 55);
 
 /**
  * @generated from message wathena.v1.BuyingStoreSell
@@ -2267,7 +2293,7 @@ export type BuyingStoreSell = Message<"wathena.v1.BuyingStoreSell"> & {
  * Use `create(BuyingStoreSellSchema)` to create a new message.
  */
 export const BuyingStoreSellSchema: GenMessage<BuyingStoreSell> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 55);
+  messageDesc(file_wathena_v1_command, 56);
 
 /**
  * @generated from message wathena.v1.BuyingStoreSellLine
@@ -2296,7 +2322,7 @@ export type BuyingStoreSellLine = Message<"wathena.v1.BuyingStoreSellLine"> & {
  * Use `create(BuyingStoreSellLineSchema)` to create a new message.
  */
 export const BuyingStoreSellLineSchema: GenMessage<BuyingStoreSellLine> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 56);
+  messageDesc(file_wathena_v1_command, 57);
 
 /**
  * StoreSearchCommand searches vending shops and buying stores, as
@@ -2350,7 +2376,7 @@ export type StoreSearchCommand = Message<"wathena.v1.StoreSearchCommand"> & {
  * Use `create(StoreSearchCommandSchema)` to create a new message.
  */
 export const StoreSearchCommandSchema: GenMessage<StoreSearchCommand> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 57);
+  messageDesc(file_wathena_v1_command, 58);
 
 /**
  * @generated from message wathena.v1.StoreSearchQuery
@@ -2408,7 +2434,7 @@ export type StoreSearchQuery = Message<"wathena.v1.StoreSearchQuery"> & {
  * Use `create(StoreSearchQuerySchema)` to create a new message.
  */
 export const StoreSearchQuerySchema: GenMessage<StoreSearchQuery> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 58);
+  messageDesc(file_wathena_v1_command, 59);
 
 /**
  * StoreSearchRoll bounds one rolled value: a roll by its name, or a
@@ -2438,7 +2464,7 @@ export type StoreSearchRoll = Message<"wathena.v1.StoreSearchRoll"> & {
  * Use `create(StoreSearchRollSchema)` to create a new message.
  */
 export const StoreSearchRollSchema: GenMessage<StoreSearchRoll> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_command, 59);
+  messageDesc(file_wathena_v1_command, 60);
 
 /**
  * @generated from enum wathena.v1.ChatChannel

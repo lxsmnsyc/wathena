@@ -1,0 +1,12 @@
+# The home area of the Home Village sample (strategy section 8.12,
+# docs/specs/map-folder-v1.md). New characters start here, and the world
+# layout links its portal to the first town.
+format: 1
+id: village
+name: Willow Village
+size: [48, 48]
+biome: grassland
+tags: [home]
+materials:
+  - texture/gen/grassland/grass
+  - texture/gen/town/paving

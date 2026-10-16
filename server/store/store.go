@@ -287,6 +287,9 @@ func (s *Store) loadSession(ctx context.Context, x *Session) (*character.Charact
 		if err := loadCurrencies(ctx, q, c); err != nil {
 			return err
 		}
+		if err := loadMaps(ctx, q, c); err != nil {
+			return err
+		}
 		return loadVariables(ctx, q, c)
 	})
 	if err != nil {
@@ -545,6 +548,9 @@ func writeCharacter(ctx context.Context, q *db.Queries, id, version int64, base,
 		return err
 	}
 	if err := writeCharacterCurrencies(ctx, q, id, base.Currencies, c.Currencies); err != nil {
+		return err
+	}
+	if err := writeMaps(ctx, q, id, base, c); err != nil {
 		return err
 	}
 	return writeVariables(ctx, q, c, base.Variables, c.Variables)

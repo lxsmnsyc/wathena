@@ -1,0 +1,20 @@
+# A sample mod for procedural worlds (proposal 0002, review decision 43):
+# a home map in the map folder format, where new characters start, and a
+# naming style for grassland towns. mods/README.md, "Home maps" and
+# "Naming styles", explains each part.
+id: example.home-village
+name: Home Village
+version: 0.1.0
+api: 1.0
+description: Adds Willow Village, a home area where new characters start, linked to the world's first town, and English village names for grassland towns.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - game.read

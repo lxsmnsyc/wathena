@@ -46,6 +46,14 @@ type Character struct {
 	// One at 0 is not in the map. An account's currencies are with its
 	// storage (server/storage).
 	Currencies map[uint32]int64
+	// Visited are the map IDs of the generated maps the character
+	// entered, in the order it first entered them (proposal 0002, review
+	// decision 43). The teleport service lists the towns among them, and
+	// the world map draws them.
+	Visited []string
+	// Memos are the character's Warp Portal memo points, the newest
+	// first, at most MaxMemos, as rAthena's memo_point.
+	Memos []Memo
 	// Staff is how the player logged in, for its staff role (decision
 	// 0028). The gateway sets it from the game ticket. It is not saved.
 	Staff staff.Login
@@ -210,6 +218,18 @@ func (it *Item) Equal(o *Item) bool {
 		it.Equip == o.Equip && it.Refine == o.Refine && slices.Equal(it.Cards, o.Cards) && it.Extra.Equal(&o.Extra)
 }
 
+// MaxMemos is MAX_MEMOPOINTS, the most memo points of a character.
+const MaxMemos = 3
+
+// Memo is a Warp Portal memo point: a map ID and a cell.
+type Memo struct {
+	Map  string
+	X, Y int
+}
+
+// HasVisited reports whether the character entered a map.
+func (c *Character) HasVisited(mapID string) bool { return slices.Contains(c.Visited, mapID) }
+
 // Equal reports whether two characters hold the same data.
 func (c *Character) Equal(o *Character) bool {
 	return c.equal(&o.Info) && slices.EqualFunc(c.Items, o.Items, func(a, b Item) bool { return a.Equal(&b) }) &&
@@ -217,14 +237,14 @@ func (c *Character) Equal(o *Character) bool {
 		slices.EqualFunc(c.TimedBonuses, o.TimedBonuses, func(a, b TimedBonus) bool { return a.Equal(&b) }) &&
 		maps.Equal(c.Skills, o.Skills) && slices.Equal(c.Blocks, o.Blocks) &&
 		slices.EqualFunc(c.Sanctions, o.Sanctions, func(a, b Sanction) bool { return a.Equal(&b) }) &&
-		maps.Equal(c.Currencies, o.Currencies)
+		maps.Equal(c.Currencies, o.Currencies) && slices.Equal(c.Visited, o.Visited) && slices.Equal(c.Memos, o.Memos)
 }
 
 // Clone returns a copy of c that shares no slices or maps with it.
 func (c *Character) Clone() *Character {
 	out := &Character{Info: c.Info, Variables: maps.Clone(c.Variables), Statuses: slices.Clone(c.Statuses),
 		Skills: maps.Clone(c.Skills), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions), Friends: slices.Clone(c.Friends),
-		Currencies: maps.Clone(c.Currencies)}
+		Currencies: maps.Clone(c.Currencies), Visited: slices.Clone(c.Visited), Memos: slices.Clone(c.Memos)}
 	for _, it := range c.Items {
 		it.Cards = slices.Clone(it.Cards)
 		it.Extra = it.Clone()

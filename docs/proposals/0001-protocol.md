@@ -159,6 +159,11 @@ Server to client, in `ServerMessage`:
   - Other players on the old map see the player vanish with `VANISH_REASON_OUT_OF_SIGHT`, as rAthena's `pc_setpos` with `CLR_OUTSIGHT`.
   - A warp within the same map sends no `MapChange`. The player's own `EntityAppear` comes again at the new cell, as after a revive.
 - **World mode.** `Welcome.world` is a `WorldInfo`: the world's `mode`, `WORLD_MODE_CLASSIC` or `WORLD_MODE_PROCEDURAL`, and for a procedural world its `generator_version` and `rng_version`, such as 1 and `rng-v1` (strategy section 8.1, [generator-v1](../specs/generator-v1.md), [decision 0038](../decisions/0038-generator-core.md)). The client loads its map generator module only for a procedural world. A client takes a `Welcome` without `world`, or with `WORLD_MODE_UNSPECIFIED`, as a classic world. The protocol version stays 1, since `v1` can change freely before the first public release.
+- **World layout.** A procedural world sends `WorldMap` after login and each time the character enters a map for the first time (proposal 0002, review decision 43, [decision 0041](../decisions/0041-world-layout.md)):
+  - It holds the maps the character visited, with their display names and level bands, and the maps their warps lead to, without them. `links` are the warps between those maps, each pair once.
+  - Each `WorldMap` replaces the one before. A classic world sends none.
+  - Display names of generated maps also come with each map's info at `/gen/maps/<id>.json`, over HTTP.
+  - The command `Memo` saves a Warp Portal memo point at the player's cell, as the client's `/memo`. Its answer is a system line.
 
 ### Limits
 

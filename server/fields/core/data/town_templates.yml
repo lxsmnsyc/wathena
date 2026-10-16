@@ -2,7 +2,9 @@
 # these by name and add their own (mods/README.md, "Town templates").
 # size and footprint are in cells. A building's places are the tags of
 # the named places at its door, where NPC records with a place stand.
-# A building with places must fit, or the town is made again.
+# A building with places must fit, or the town is made again. Every core
+# template has a teleport place, where the teleport service stands
+# (review decision 43).
 - name: hamlet
   size: 96
   gates: 2
@@ -12,7 +14,7 @@
   buildings:
     - {model: smithy, footprint: [8, 6], places: [blacksmith]}
     - {model: inn, footprint: [8, 8], places: [inn]}
-    - {model: storehouse, footprint: [6, 6], places: [storage]}
+    - {model: storehouse, footprint: [6, 6], places: [storage, teleport]}
     - {model: tool_shop, footprint: [6, 6], places: ["shop:tool"]}
     - {model: house, footprint: [6, 6], count: 10}
 - name: village
@@ -24,7 +26,7 @@
   buildings:
     - {model: smithy, footprint: [8, 6], places: [blacksmith]}
     - {model: inn, footprint: [8, 8], places: [inn]}
-    - {model: storehouse, footprint: [6, 6], places: [storage]}
+    - {model: storehouse, footprint: [6, 6], places: [storage, teleport]}
     - {model: tool_shop, footprint: [6, 6], places: ["shop:tool"]}
     - {model: weapon_shop, footprint: [6, 6], places: ["shop:weapon"]}
     - {model: armor_shop, footprint: [6, 6], places: ["shop:armor"]}

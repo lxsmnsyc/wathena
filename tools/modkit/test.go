@@ -171,6 +171,9 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	mods.Testing = true
 	mods.Log = log
 	mods.Places = l.placesOf(log)
+	if g, err := l.generatedMaps(); err == nil && g != nil {
+		mods.Atlas = g.atlas
+	}
 	mods.Server = variables.NewServer(nil, log)
 	id := l.Mod.ID()
 	if !slices.ContainsFunc(mods.Scripts, func(s *mod.Scripts) bool { return s.Mod == id }) {

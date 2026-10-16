@@ -108,3 +108,59 @@ func TestPublicNode(t *testing.T) {
 		t.Error("an empty seed gave a public node")
 	}
 }
+
+// TestWorldLayout: a procedural world's layout comes from core's
+// records, or from the mods and procedural.layout of --config, with a
+// mod's home map and naming style (decision 0041).
+func TestWorldLayout(t *testing.T) {
+	g, ok := gen.Latest()
+	if !ok {
+		if _, err := worldLayout("", "renewal", make([]byte, 32), 3); err == nil {
+			t.Error("a layout without the generator")
+		}
+		return
+	}
+	root, _ := rng.NewRoot([]byte("wactl-layout"))
+	key := gen.PublicBranch(root).Key()
+	l, err := worldLayout("", "renewal", key[:], g.Version)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(l.Towns()) != 5 || l.Home != "gen:town:t1" || len(l.Maps) < 24+5+6 {
+		t.Errorf("core's layout: %d towns, home %s, %d maps", len(l.Towns()), l.Home, len(l.Maps))
+	}
+	if !strings.Contains(layoutText(l), "towns 5,") {
+		t.Errorf("text %q", layoutText(l))
+	}
+	mods := t.TempDir()
+	src, err := filepath.Abs(filepath.Join("..", "..", "mods", "examples", "home-village"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(src, filepath.Join(mods, "home-village")); err != nil {
+		t.Fatal(err)
+	}
+	cfg := filepath.Join(t.TempDir(), "waserver.yml")
+	b, _ := yaml.Marshal(map[string]any{
+		"listen":     "127.0.0.1:1", // other keys are left alone
+		"mods":       map[string]any{"dir": mods},
+		"procedural": map[string]any{"field_size": 64, "layout": map[string]any{"grid": []int{2, 2}, "towns": 2, "dungeons": 1}},
+	})
+	if err := os.WriteFile(cfg, b, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	l, err = worldLayout(cfg, "renewal", key[:], g.Version)
+	if err != nil {
+		t.Fatal(err)
+	}
+	home := l.Map("gen:home:village")
+	if home == nil || l.Home != home.ID || home.Name != "Willow Village" || home.Record != "example.home-village:village" || len(l.Towns()) != 2 {
+		t.Fatalf("with the mod: home %+v, %d towns", home, len(l.Towns()))
+	}
+	if f := l.Map("gen:field:1:1"); f == nil || f.Size != 64 {
+		t.Errorf("field 1:1 %+v", f)
+	}
+	if _, err := worldLayout(filepath.Join(t.TempDir(), "none.yml"), "renewal", key[:], g.Version); err == nil {
+		t.Error("a config that does not exist")
+	}
+}

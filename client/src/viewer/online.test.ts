@@ -914,6 +914,44 @@ describe('view sprites', () => {
     expect(look.headgearMid).toBe('sprite/headgear/m/17');
   });
 
+  it('passes the world map on as plain data', () => {
+    const o = online();
+    o.setMap(map());
+    const got: unknown[] = [];
+    o.onWorldMap = (m) => {
+      got.push(m);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'worldMap',
+          value: {
+            maps: [{ id: 'gen:field:0:0', kind: 'field', x: 0, y: -1 }],
+            links: [{ a: 'gen:field:0:0', b: 'gen:town:t1' }],
+          },
+        },
+      }),
+    ]);
+    expect(got).toEqual([
+      {
+        maps: [
+          {
+            id: 'gen:field:0:0',
+            kind: 'field',
+            name: '',
+            x: 0,
+            y: -1,
+            floor: 0,
+            visited: false,
+            minLevel: 0,
+            maxLevel: 0,
+          },
+        ],
+        links: [{ a: 'gen:field:0:0', b: 'gen:town:t1' }],
+      },
+    ]);
+  });
+
   it('draws the view sprites of a weapon and a shield', () => {
     setArt(MOD_DATA);
     const look = lookOf(

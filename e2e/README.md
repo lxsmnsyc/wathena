@@ -19,6 +19,8 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
   - A Red Potion costs 5 tokens.
   - A Jellopy costs 1 Jellopy, so the duplication tests buy with an item cost and keep the totals.
 - Chat commands of the fixture reach the market calls: `!currency <name> <n>` and `!pay <name> <n>` give and take a currency, `!mailbox` opens the mailbox, `!mail <to|self> <item> <amount> [<zeny>]` sends a mail from the "Postmaster", `!buyingstore <slots>` opens the buying store setup, `!search <uses> <show|open>` opens the store search, `!autotrade` puts the speaker on autotrade, and `!stock <item> <n>` sets a stock at the Exchange. The fixture's vend hook refuses Contraband, and its vend and buying_store_sale events tell both players what changed hands. The server's config approves `mail.send`, `currencies.modify` and `shops.modify` for the fixture.
+- `Options.Procedural` runs a procedural world: `waserver` and `wactl` built with `-tags procedural`, and a world that `wactl world new --mode procedural --config` makes in the test's database, with the server's config and the Home Village sample beside the test mods. `Options.Config`'s `procedural.layout` shapes it. It needs `Options.Database`.
+- The fixture's `!slayer` places a Slayer next to the speaker, a monster that attacks on sight and kills in one hit, so a test sees a death and the way back to the save point.
 - The fixture also has the Training Dummy, a Dummy worth a million base and job exp, which `!trainer` places next to the speaker, for a level up in the browser checks' exit check. The Kafra opens the guild storage too, with "Guild storage". The Test Charm has a `description`.
 - The fixture has art in `art/`: the Test Charm's icon, found by its name, and the Dummy's sprite, which its record names. `Start` copies `testdata/mods` to its temporary folder and builds each mod's art there with `wactl mod build-art`'s code, so nothing is written into the repository.
 - [testdata/mods/marketrules](testdata/mods/marketrules) is a ruleset mod, `e2e.marketrules`: renewal without mail fees, for the mail duplication test.
@@ -57,6 +59,7 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestSkillAndJobChange` | A Swordman learns Bash, casts it on a Dummy, and becomes a Knight at the Mentor. |
 | `TestShopAndScriptItems` | A script gives items and zeny, a shop sells and buys, and a script takes items. |
 | `TestWarp` | The Guide warps the player to the other map. |
+| `TestWorldLayout` | A procedural world that `wactl world new` made with the Home Village sample (decision 0041). A new character starts on the home map's start place, walks through its portal into the first town, saves at the teleport service, visits the second town with `@go`, teleports there for its price, dies to a Slayer, and comes back at its save point. Its entered maps are in the database. Needs PostgreSQL. |
 | `TestWhispers` | Two players whisper on one map, then across maps. A whisper to a name that is not online says so. |
 | `TestChannels` | Two players on different maps join `#trade`, talk there, list the members and the channels. A line in a channel the player is not in is refused. |
 | `TestBlocking` | A player blocks another: its whispers are refused and its local chat is hidden, while a third player still hears it. Unblocking shows it again. |

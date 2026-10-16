@@ -71,7 +71,7 @@ async function server(): Promise<{
 /** The module on the page, as the worker runs it. */
 const local: FieldGenerator = async (info) => {
   const g = await Generator.fromBytes(wasm);
-  return g.generate(info.version, keyFromHex(info.key), info.width, info.height, info.biome);
+  return g.generate(info.version, keyFromHex(info.key!), info.width, info.height, info.biome);
 };
 
 describe('loadField', () => {
@@ -182,6 +182,112 @@ describe('loadField of a town and a dungeon floor', () => {
       );
     });
   }
+});
+
+describe('loadField of a home map', () => {
+  // A mod's pre-made home map (proposal 0002, review decision 43): its
+  // info has no public node and no params, and the client downloads it.
+  async function home(): Promise<{
+    info: FieldInfo;
+    wmap: Uint8Array<ArrayBuffer>;
+    fetcher: (url: string) => Promise<Response>;
+    hits: string[];
+  }> {
+    const s = await server();
+    const info: FieldInfo = {
+      id: 'gen:home:village',
+      kind: 'home',
+      name: 'demo:village',
+      displayName: 'Haven',
+      levels: [1, 5],
+      version: 3,
+      rng: 'rng-v1',
+      width: 64,
+      height: 64,
+      biome: -1,
+      biomeName: '',
+      checksum: s.info.checksum,
+      wmap: '/gen/maps/gen:home:village.wmap',
+      wmapSha256: s.info.wmapSha256,
+      wmapBytes: s.info.wmapBytes,
+    };
+    const hits: string[] = [];
+    const fetcher = async (url: string): Promise<Response> => {
+      hits.push(url);
+      if (url === 'http://game/gen/maps/gen%3Ahome%3Avillage.json') {
+        return Promise.resolve(Response.json(info));
+      }
+      if (url === `http://game${info.wmap}`) {
+        return Promise.resolve(new Response(s.wmap));
+      }
+      return Promise.resolve(new Response('', { status: 404 }));
+    };
+    return { info, wmap: s.wmap, fetcher, hits };
+  }
+
+  it('downloads the map without running the generator', async () => {
+    const h = await home();
+    let ran = 0;
+    const counting: FieldGenerator = async (info) => {
+      ran++;
+      return local(info);
+    };
+    const f = await loadField('http://game', h.info.id, counting, h.fetcher);
+    expect(ran).toBe(0);
+    expect(f.source).toBe('downloaded');
+    expect(f.reason).toMatch(/home map/);
+    expect(f.generateMs).toBeUndefined();
+    expect(f.wmap).toEqual(h.wmap);
+    expect(f.info.kind).toBe('home');
+    expect(f.info.key).toBeUndefined();
+    expect(f.info.displayName).toBe('Haven');
+    expect(f.info.levels).toEqual([1, 5]);
+    expect(h.hits).toEqual([
+      'http://game/gen/maps/gen%3Ahome%3Avillage.json',
+      `http://game${h.info.wmap}`,
+    ]);
+  });
+
+  it('checks the SHA-256 of the home map', async () => {
+    const h = await home();
+    const bad = async (url: string): Promise<Response> =>
+      url.endsWith('.wmap') ? new Response(new Uint8Array([1, 2, 3])) : h.fetcher(url);
+    await expect(loadField('http://game', h.info.id, local, bad)).rejects.toThrow(/SHA-256/);
+  });
+
+  it('refuses a generated map without a node, and odd display names or bands', async () => {
+    const s = await server();
+    const { key: _, ...noKey } = s.info;
+    const answer =
+      (info: object) =>
+      async (url: string): Promise<Response> =>
+        url.endsWith('.json') ? Promise.resolve(Response.json(info)) : s.fetcher(url);
+    for (const info of [
+      noKey,
+      { ...s.info, displayName: 7 },
+      { ...s.info, levels: 'one' },
+      { ...s.info, levels: [1.5, 2] },
+    ]) {
+      await expect(loadField('http://game', s.info.id, local, answer(info))).rejects.toThrow(
+        /invalid info/,
+      );
+    }
+    // A field of a world layout carries its display name and band.
+    const named = await loadField(
+      'http://game',
+      s.info.id,
+      local,
+      answer({ ...s.info, displayName: 'North Haven Fields', levels: [3, 8] }),
+    );
+    expect(named.source).toBe('generated');
+    expect(named.info.displayName).toBe('North Haven Fields');
+    expect(named.info.levels).toEqual([3, 8]);
+  });
+
+  it('gives the worker no request for a home map', async () => {
+    const h = await home();
+    expect(() => requestOf(1, h.info)).toThrow(/not a generated map/);
+  });
 });
 
 describe('loadTilesets', () => {

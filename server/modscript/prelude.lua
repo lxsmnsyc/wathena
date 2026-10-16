@@ -125,6 +125,8 @@ end
 -- once the player has left.
 local player_ids
 local new_player
+-- town_ids is set with the town handles below, for player:has_visited.
+local town_ids
 local new_equipped
 
 -- heal_amount reads one amount of item_heal or heal_percent: a number,
@@ -491,6 +493,13 @@ new_player, player_ids = handle_type("player", {
 			error("player:has_staff_permission: the permission must be a string, such as \"moderation.mute\"", 2)
 		end
 		return (call(H.player_staff, player_ids[self], "has", name))
+	end,
+	has_visited = function(self, town)
+		local n = town_ids[town]
+		if n == nil then
+			error("player:has_visited: want a town from wa.towns", 2)
+		end
+		return (call(H.player_has_visited, player_ids[self], n))
 	end,
 }, function(id, key)
 	-- Level 3 is the script line that read the field.
@@ -1040,6 +1049,10 @@ api["wa.maps"] = readonly("wa.maps", {
 	find_entities = function(query)
 		return find_entities("maps.find_entities", query)
 	end,
+	get_display_name = function(map)
+		check(type(map) == "string", "maps.get_display_name: the map must be a map ID, such as gen:town:t7")
+		return (call(H.maps_display_name, map))
+	end,
 })
 
 -- Shops of data/npcs.yml (review decision 30). A shop handle names the
@@ -1327,6 +1340,9 @@ new_place, place_ids = handle_type("place", {
 	get_area = function(self)
 		return (call(H.place_get, place_ids[self], "area"))
 	end,
+	get_band = function(self)
+		return call(H.place_band, place_ids[self])
+	end,
 }, nil, true)
 
 api["wa.places"] = readonly("wa.places", {
@@ -1348,6 +1364,61 @@ api["wa.places"] = readonly("wa.places", {
 			return nil
 		end
 		return new_place(p)
+	end,
+})
+
+-- Towns of the world layout (proposal 0002, review decision 43). A town
+-- handle is the town's number, and reads its fields with its methods. A
+-- classic world has no towns.
+local new_town
+new_town, town_ids = handle_type("town", {
+	get_id = function(self)
+		return (call(H.town_get, town_ids[self], "id"))
+	end,
+	get_name = function(self)
+		return (call(H.town_get, town_ids[self], "name"))
+	end,
+	get_map = function(self)
+		return (call(H.town_get, town_ids[self], "map"))
+	end,
+	get_band = function(self)
+		return call(H.town_get, town_ids[self], "band")
+	end,
+}, nil, true)
+
+api["wa.towns"] = readonly("wa.towns", {
+	list = function(options)
+		local visitor = nil
+		if options ~= nil then
+			check(type(options) == "table", "towns.list: the options must be a table, such as { visited_by = player }")
+			for k in pairs(options) do
+				check(k == "visited_by", "towns.list: unknown option " .. tostring(k) .. "; the option is visited_by")
+			end
+			visitor = player_ids[options.visited_by]
+			check(visitor ~= nil, "towns.list: visited_by must be a player")
+		end
+		local out = {}
+		for i, n in ipairs(call(H.towns_list, visitor)) do
+			out[i] = new_town(n)
+		end
+		return out
+	end,
+	nearest = function(player)
+		local id = player_ids[player]
+		check(id ~= nil, "towns.nearest: want a player")
+		local n = call(H.towns_nearest, id)
+		if n == nil then
+			return nil
+		end
+		return new_town(n)
+	end,
+	get = function(id)
+		check(type(id) == "string", "towns.get: the ID must be a string, such as \"t7\"")
+		local n = call(H.towns_get, id)
+		if n == nil then
+			return nil
+		end
+		return new_town(n)
 	end,
 })
 

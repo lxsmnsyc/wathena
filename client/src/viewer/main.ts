@@ -178,6 +178,7 @@ import Online, { type ShopBoard } from './online';
 import Player from './player';
 import Walkers from './walkers';
 import { WorldEventsView } from './worldEvents';
+import { type WorldMapData, WorldMapWindow, mapDisplayName } from './worldMap';
 
 // Shaders work on stored color values directly, as RO does.
 ColorManagement.enabled = false;
@@ -399,6 +400,22 @@ interface FieldLoad {
   ms: number;
 }
 const fieldLoads: FieldLoad[] = [];
+/** The shown map's ID, and its display name from its map JSON, if any. */
+let shownMap = '';
+let shownInfoName: string | undefined;
+/** The last WorldMap of a procedural world. A classic world has none. */
+let worldMapData: WorldMapData | undefined;
+let worldMapWindow: WorldMapWindow | undefined;
+/** The shown map's name for players: its display name, or its ID. */
+function displayName(): string {
+  return mapDisplayName(shownMap, shownInfoName, worldMapData);
+}
+/** Shows the current map's display name in the map input, online. */
+function showMapName(): void {
+  if (session !== undefined && shownMap !== '') {
+    input!.value = displayName();
+  }
+}
 
 async function show(name: string, at?: [number, number]): Promise<boolean> {
   const id = ++loading;
@@ -422,12 +439,14 @@ async function show(name: string, at?: [number, number]): Promise<boolean> {
     // A generated field comes from the generator or the server, not
     // the asset build (decision 0039).
     let given: Uint8Array | undefined;
+    let infoName: string | undefined;
     if (isGenerated(name)) {
       if (fieldLoader === undefined) {
         throw new Error(`${name} is a generated map, and this world is not procedural`);
       }
       const f = await fieldLoader(name);
       given = f.wmap;
+      infoName = f.info.displayName;
       const kind = f.info.kind ?? 'field';
       const biome = kind === 'field' ? f.info.biomeName : (f.info.name ?? '');
       fieldLoads.push({
@@ -459,6 +478,10 @@ async function show(name: string, at?: [number, number]): Promise<boolean> {
       scene.remove(walkers.group);
     }
     current = next;
+    shownMap = name;
+    shownInfoName = infoName;
+    showMapName();
+    worldMapWindow?.setCurrent(name);
     effectGroup.clear();
     playing = [];
     const views = await Promise.all(effectNames.map(async (n) => effects.get(n)));
@@ -2010,6 +2033,10 @@ if (serverURL === null) {
         case 'report':
           connection.report(action.name, undefined, action.reason);
           return true;
+        case 'memo':
+          // The server answers with a system message.
+          connection.memo();
+          return true;
         default:
           return false;
       }
@@ -2449,6 +2476,36 @@ if (serverURL === null) {
       logNotice(text);
     };
   }
+  // The world map window opens with its button or Ctrl+`, as RO's world
+  // map. It draws the maps of the last WorldMap. A classic world sends
+  // none, and the window says so.
+  const worldMapRoot = document.querySelector<HTMLElement>('#world-map-window');
+  const worldMapToggle = document.querySelector<HTMLButtonElement>('#world-map-toggle');
+  if (worldMapRoot !== null) {
+    const w = new WorldMapWindow(worldMapRoot, connection.world.mode === 'procedural');
+    worldMapWindow = w;
+    const toggle = (): void => {
+      w.toggle();
+    };
+    if (worldMapToggle !== null) {
+      worldMapToggle.hidden = false;
+      worldMapToggle.addEventListener('click', toggle);
+    }
+    addEventListener('keydown', (e) => {
+      if (isTyping(e.target)) {
+        return;
+      }
+      if (e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'Backquote') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  }
+  view.onWorldMap = (m) => {
+    worldMapData = m;
+    worldMapWindow?.set(m);
+    showMapName();
+  };
   // A warp moves the player to another map: the view clears, a loading
   // screen shows, and the new map loads from the asset store, which the
   // Service Worker caches.
@@ -2506,6 +2563,10 @@ if (import.meta.env.DEV) {
     shop: () => shopWindow,
     mapLoads: () => mapLoads,
     fieldLoads: () => fieldLoads,
+    // The last WorldMap as plain data, { maps, links }, or undefined in a
+    // classic world, and the shown map's name for players.
+    worldMap: () => (worldMapData === undefined ? undefined : structuredClone(worldMapData)),
+    displayName: () => displayName(),
     map: () => current?.map,
     // The touch checks of scripts/browser-check.ts find units on the
     // screen and read the camera and the target mode.

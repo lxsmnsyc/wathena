@@ -18,6 +18,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/currency"
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/rules"
@@ -47,6 +48,10 @@ type Mods struct {
 	DungeonStyles     []fields.Style
 	TownTemplates     []fields.Template
 	GeneratedOverlays []*mod.Overlay
+	// Naming is core's naming styles with the mods' data/
+	// naming_styles.yml (review decision 43), as town names use them. Its
+	// overlay joins GeneratedOverlays.
+	Naming *layout.Naming
 	// NPCOverlay is the merge of every mod's data/npcs.yml.
 	NPCOverlay *mod.Overlay
 	// Monsters are every monster with the mods' overlays, by ID, and
@@ -264,6 +269,12 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	if out.DungeonStyles, out.TownTemplates, out.GeneratedOverlays, err = fields.LoadRecords(set); err != nil {
 		return nil, err
 	}
+	naming, namingOverlay, err := layout.LoadNaming(set)
+	if err != nil {
+		return nil, err
+	}
+	out.Naming = layout.NewNaming(naming)
+	out.GeneratedOverlays = append(out.GeneratedOverlays, namingOverlay)
 	for _, o := range out.GeneratedOverlays {
 		for _, n := range o.Notes {
 			log.Warn("mods: " + n)

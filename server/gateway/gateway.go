@@ -608,6 +608,8 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			queued = p.BuyingStore(seq, m.GetCommand().GetBuyingStore())
 		case m.GetCommand().HasStoreSearch():
 			queued = p.StoreSearch(seq, m.GetCommand().GetStoreSearch())
+		case m.GetCommand().HasMemo():
+			queued = p.Memo(seq)
 		case m.GetCommand().HasPickUp():
 			queued = p.PickUp(seq, m.GetCommand().GetPickUp().GetItem())
 		case m.GetCommand().HasRaiseStat():

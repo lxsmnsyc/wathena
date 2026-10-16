@@ -1279,6 +1279,92 @@ body {
   color: #ffd84a;
 }
 
+/* The world map: an SVG that fits the window's width. */
+#world-map-window {
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(560px, calc(100% - 24px));
+  max-height: calc(100% - 140px);
+  padding: 8px 10px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+}
+
+#world-map-window[hidden] {
+  display: none;
+}
+
+#world-map-window .world-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  touch-action: pan-y;
+}
+
+#world-map-window .world-map-empty,
+#world-map-window .world-map-summary {
+  margin: 0;
+  font-size: 13px;
+  color: #c8c8c8;
+}
+
+.world-map-links line {
+  stroke: #8a93a3;
+  stroke-width: 1.5;
+}
+
+.world-map-node circle {
+  fill: #6f9f5a;
+  stroke: #1b1d22;
+  stroke-width: 1.5;
+}
+
+.world-map-node.kind-town circle {
+  fill: #e0b84c;
+}
+
+.world-map-node.kind-home circle {
+  fill: #6fb2e8;
+}
+
+.world-map-node.kind-dungeon circle {
+  fill: #b0705a;
+}
+
+.world-map-node.unvisited circle {
+  fill: #3a3f4a;
+  stroke: #8a93a3;
+  stroke-dasharray: 2 2;
+}
+
+.world-map-node.current circle {
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.world-map-node text {
+  fill: #e8e8e8;
+  paint-order: stroke;
+  stroke: #000;
+  stroke-width: 2.5;
+}
+
+.world-map-node.unvisited text {
+  fill: #c8c8c8;
+  stroke: none;
+}
+
+.world-map-node.current text {
+  fill: #ffe08a;
+  font-weight: bold;
+}
+
 #booking-window {
   position: fixed;
   top: 64px;

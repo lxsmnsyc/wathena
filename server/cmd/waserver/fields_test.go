@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lxsmnsyc/wathena/server/fields"
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -48,8 +50,8 @@ procedural:
 	}
 }
 
-// TestFieldMaps: which worlds run fields, and where their nodes come
-// from (decision 0039).
+// TestFieldMaps: which worlds run generated maps, where their nodes come
+// from (decision 0039), and a world row's stored layout (decision 0041).
 func TestFieldMaps(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	cfg := settings{options: defaultOptions()}
@@ -72,8 +74,11 @@ func TestFieldMaps(t *testing.T) {
 		}
 		return
 	}
-	if err != nil || p.set == nil || len(p.set.Fields()) != 2 || !p.mode.Procedural {
+	if err != nil || !p.mode.Procedural {
 		t.Fatalf("dev fields: %+v %v", p, err)
+	}
+	if err := addMaps(cfg, &p, coreSet(t), nil, log); err != nil || len(p.set.Fields()) != 2 {
+		t.Fatalf("dev fields: %v", err)
 	}
 	latest, _ := gen.Latest()
 	if p.mode.GeneratorVersion != latest.Version || p.mode.RNGVersion != rng.Version {
@@ -89,30 +94,9 @@ func TestFieldMaps(t *testing.T) {
 	if _, err := fieldMaps(noDev, store.World{}, log); err == nil {
 		t.Error("fields without --dev or a world ran")
 	}
-
-	// A procedural world row: fields from its public node, 0:0 by
-	// default. The seed is never read.
-	public := gen.PublicBranch(rng.FromKey([32]byte{4}))
-	key := public.Key()
-	row := store.World{Name: "P", Mode: gen.ModeProcedural, GeneratorVersion: 2, RNGVersion: rng.Version, PublicNode: key[:]}
-	cfg.Procedural.Fields = nil
-	p, err = fieldMaps(cfg, row, log)
-	if err != nil || len(p.set.Fields()) != 1 || p.set.Fields()[0].Key != gen.FieldNode(public, 0, 0).Key() || p.mode.GeneratorVersion != 2 {
-		t.Fatalf("world fields: %+v %v", p, err)
-	}
-	row.PublicNode = nil
-	if _, err := fieldMaps(cfg, row, log); err == nil || !strings.Contains(err.Error(), "public node") {
-		t.Errorf("a world without a public node: %v", err)
-	}
-	row.PublicNode, row.GeneratorVersion = key[:], 1
-	if _, err := fieldMaps(cfg, row, log); err == nil || !strings.Contains(err.Error(), "no fields") {
-		t.Errorf("generator 1: %v", err)
-	}
-
-	// worldMaps: the first field starts unless --map names a field, and
-	// asset maps run only when --maps lists them.
-	cfg.Procedural.Fields = list{"0:0", "1:0"}
-	p, _ = fieldMaps(cfg, store.World{}, log)
+	// worldMaps: the home area starts, here the first field, unless
+	// --map names a generated map, and asset maps run only when --maps
+	// lists them.
 	start, assetMaps, all, err := worldMaps(cfg, p)
 	if err != nil || start != "gen:field:0:0" || len(assetMaps) != 0 || !slices.Equal(all, []string{"gen:field:0:0", "gen:field:1:0"}) {
 		t.Errorf("maps: %s %v %v %v", start, assetMaps, all, err)
@@ -124,5 +108,50 @@ func TestFieldMaps(t *testing.T) {
 	}
 	if g := fieldGrids(p); len(g) != 2 || g[0].Width != 48 || g[1].Height != 48 {
 		t.Error("field grids")
+	}
+
+	// A procedural world row runs the layout it was made with, from its
+	// public node. The seed is never read, and --fields is an error.
+	cfg = settings{options: defaultOptions()}
+	public := gen.PublicBranch(rng.FromKey([32]byte{4}))
+	key := public.Key()
+	row := store.World{Name: "P", Mode: gen.ModeProcedural, GeneratorVersion: latest.Version, RNGVersion: rng.Version, PublicNode: key[:]}
+	p, err = fieldMaps(cfg, row, log)
+	if err != nil || p.set != nil {
+		t.Fatalf("world: %+v %v", p, err)
+	}
+	recs, err := fields.LoadLayoutRecords(coreSet(t), latest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	towns, dungeons := 2, 1
+	p.stored, _, err = fields.BuildLayout(recs, latest, public, layout.Options{Grid: []int{2, 2}, Towns: &towns, Dungeons: &dungeons}, 48)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := addMaps(cfg, &p, coreSet(t), nil, log); err != nil {
+		t.Fatal(err)
+	}
+	if f := p.set.Get("gen:field:1:1"); f == nil || f.Key != gen.FieldNode(public, 1, 1).Key() || f.DisplayName == "" {
+		t.Errorf("the world's field 1:1: %+v", f)
+	}
+	if start, _, all, _ := worldMaps(cfg, p); start != "gen:town:t1" || len(all) != len(p.stored.Maps) || !p.hasSpawn {
+		t.Errorf("the world starts on %s with %d maps, spawn %v", start, len(all), p.hasSpawn)
+	}
+	if p.atlas == nil || len(p.atlas.Towns()) != 2 || len(p.warps["gen:town:t1"]) == 0 {
+		t.Error("the world has no atlas or warps")
+	}
+	cfg.Procedural.Fields = list{"0:0"}
+	if _, err := fieldMaps(cfg, row, log); err == nil || !strings.Contains(err.Error(), "runs the layout") {
+		t.Errorf("--fields in a world: %v", err)
+	}
+	cfg.Procedural.Fields = nil
+	row.PublicNode = nil
+	if _, err := fieldMaps(cfg, row, log); err == nil || !strings.Contains(err.Error(), "public node") {
+		t.Errorf("a world without a public node: %v", err)
+	}
+	row.PublicNode, row.GeneratorVersion = key[:], 1
+	if _, err := fieldMaps(cfg, row, log); err == nil || !strings.Contains(err.Error(), "no fields") {
+		t.Errorf("generator 1: %v", err)
 	}
 }

@@ -100,6 +100,12 @@ type Options struct {
 	// Config is more of waserver's config, in YAML, after the test
 	// config, such as a jail map.
 	Config string
+	// Procedural runs a procedural world (decision 0041): waserver and
+	// wactl built with -tags procedural, and a world that
+	// `wactl world new --mode procedural --config` makes with the same
+	// config, with the Home Village sample mod beside the test mods.
+	// Config's procedural.layout shapes it. It needs Database.
+	Procedural bool
 }
 
 // Server is a running waserver.
@@ -125,8 +131,13 @@ type built struct {
 	dir, assets, mods string
 	err               error
 	// bins are the waserver binaries, built when first needed: without
-	// and with the race detector.
-	bins [2]binary
+	// and with the race detector, and with the procedural tag. wactl is
+	// wactl with the procedural tag.
+	bins  [3]binary
+	wactl binary
+	// homeMods is the mods with the Home Village sample, for procedural
+	// worlds.
+	homeMods string
 }
 
 type binary struct {
@@ -212,17 +223,54 @@ func prepare(race bool) (string, *built, error) {
 			name += "-race"
 			args = append(args, "-race")
 		}
-		if runtime.GOOS == "windows" {
-			name += ".exe"
-		}
-		b.path = filepath.Join(shared.dir, name)
-		args = append(args, "-o", b.path, "github.com/lxsmnsyc/wathena/server/cmd/waserver")
-		gobuild := exec.Command("go", args...) // #nosec G204 -- fixed arguments.
-		if out, err := gobuild.CombinedOutput(); err != nil {
-			b.err = fmt.Errorf("go build waserver: %w\n%s", err, out)
-		}
+		b.path, b.err = goBuild(name, args, "github.com/lxsmnsyc/wathena/server/cmd/waserver")
 	})
 	return b.path, &shared, b.err
+}
+
+// prepareProcedural builds waserver and wactl with the procedural tag,
+// and copies the mods with the Home Village sample, once.
+func prepareProcedural() (waserver, wactl string, b *built, err error) {
+	if _, _, err := prepare(false); err != nil {
+		return "", "", nil, err
+	}
+	w := &shared.bins[2]
+	w.once.Do(func() {
+		w.path, w.err = goBuild("waserver-procedural", []string{"build", "-tags", "procedural"}, "github.com/lxsmnsyc/wathena/server/cmd/waserver")
+		if w.err != nil {
+			return
+		}
+		src, err := filepath.Abs(filepath.Join("..", "mods", "examples", "home-village"))
+		if err != nil {
+			w.err = err
+			return
+		}
+		shared.homeMods = filepath.Join(shared.dir, "home-mods")
+		if err := os.CopyFS(shared.homeMods, os.DirFS(shared.mods)); err != nil {
+			w.err = err
+			return
+		}
+		w.err = os.CopyFS(filepath.Join(shared.homeMods, "home-village"), os.DirFS(src))
+	})
+	c := &shared.wactl
+	c.once.Do(func() {
+		c.path, c.err = goBuild("wactl-procedural", []string{"build", "-tags", "procedural"}, "github.com/lxsmnsyc/wathena/tools/wactl")
+	})
+	return w.path, c.path, &shared, errors.Join(w.err, c.err)
+}
+
+// goBuild builds a command into the shared folder.
+func goBuild(name string, args []string, pkg string) (string, error) {
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+	out := filepath.Join(shared.dir, name)
+	args = append(args, "-o", out, pkg)
+	gobuild := exec.Command("go", args...) // #nosec G204 -- fixed arguments.
+	if b, err := gobuild.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("go build %s: %w\n%s", name, err, b)
+	}
+	return out, nil
 }
 
 // fieldSource adds a copy of the placeholder map as map/e2e_field, so
@@ -270,6 +318,17 @@ func Start(t testing.TB, o Options) *Server {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var wactl string
+	mods := b.mods
+	if o.Procedural {
+		if !o.Database {
+			t.Fatal("Options.Procedural needs Options.Database")
+		}
+		if bin, wactl, b, err = prepareProcedural(); err != nil {
+			t.Fatal(err)
+		}
+		mods = b.homeMods
+	}
 	// A server waits for a free place, and frees it when the test ends.
 	places := servers
 	if race {
@@ -288,14 +347,21 @@ func Start(t testing.TB, o Options) *Server {
 	}
 	dir := t.TempDir()
 	config := filepath.Join(dir, "waserver.yml")
-	if err := os.WriteFile(config, []byte(configYAML+o.Config), 0o600); err != nil {
+	text := configYAML
+	if o.Procedural {
+		text = strings.Replace(text, "mods:\n", "mods:\n  dir: "+mods+"\n", 1)
+	}
+	if err := os.WriteFile(config, []byte(text+o.Config), 0o600); err != nil {
 		t.Fatal(err)
+	}
+	if o.Procedural {
+		newWorld(t, wactl, adminURL(t, admin), config, dir)
 	}
 	addr, debug := freeAddr(t), freeAddr(t)
 	args := []string{"--config", config, "--assets", b.assets, "--map", StartMap,
 		"--maps", StartMap + "," + strings.TrimPrefix(FieldMap, "map/"), "--dev", "--mode", "renewal",
 		"--addr", addr, "--debug-addr", debug, "--origins", "", "--shutdown-countdown", "0",
-		"--seed", o.Seed, "--start-job", o.StartJob, "--start-items", o.StartItems, "--mods", b.mods}
+		"--seed", o.Seed, "--start-job", o.StartJob, "--start-items", o.StartItems, "--mods", mods}
 	if o.Ruleset != "" {
 		args = append(args, "--ruleset", o.Ruleset)
 	}
@@ -376,6 +442,36 @@ chat:
   burst: 100
   refill: 10ms
 `
+
+// newWorld makes a procedural world in the test's database with
+// `wactl world new`, with the server's config for its layout.
+func newWorld(t testing.TB, wactl, dbURL, config, dir string) {
+	t.Helper()
+	pw := filepath.Join(dir, "admin-password")
+	if err := os.WriteFile(pw, []byte("e2e layout password 1\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(wactl, "world", "new", "--mode", "procedural", "--name", "E2E", "--admin", "Owner1", // #nosec G204 -- a binary built by prepareProcedural.
+		"--admin-password-file", pw, "--config", config)
+	cmd.Env = append(os.Environ(), "WATHENA_MIGRATE_DATABASE_URL="+dbURL)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("wactl world new: %v\n%s", err, out)
+	}
+	t.Logf("wactl world new:\n%s", out)
+}
+
+// adminURL is the URL of a test database as the test's admin, which
+// may make the world.
+func adminURL(t testing.TB, admin *pgxpool.Pool) string {
+	t.Helper()
+	u, err := url.Parse(os.Getenv(storetest.Env))
+	if err != nil {
+		t.Fatalf("%s is not a URL", storetest.Env)
+	}
+	u.Path = "/" + admin.Config().ConnConfig.Database
+	return u.String()
+}
 
 // gameURL is the URL of a test database for the server, acting as the
 // game role, as waserver does in production.

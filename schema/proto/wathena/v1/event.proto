@@ -111,7 +111,47 @@ message Event {
     WorldEventNotice world_event_notice = 99;
     WorldEventList world_event_list = 100;
     PlayerLimits player_limits = 101;
+    WorldMap world_map = 102;
   }
+}
+
+// WorldMap is the part of a procedural world's map graph that the
+// player's character has found (proposal 0002, review decision 43): the
+// maps it visited, with their names and bands, and the maps a warp of
+// those leads to, without them. It comes after login and each time the
+// character enters a map for the first time, and replaces the one
+// before. A classic world sends none.
+message WorldMap {
+  repeated WorldMapNode maps = 1;
+  // links are the warps between the maps, each pair once.
+  repeated WorldMapLink links = 2;
+}
+
+// WorldMapNode is one map of the world map.
+message WorldMapNode {
+  // id is the map ID, such as gen:town:t2.
+  string id = 1;
+  // kind is field, town, dungeon or home.
+  string kind = 2;
+  // name is the display name, or empty for a map the character has not
+  // visited.
+  string name = 3;
+  // x and y are the grid cell of a field, of a town's or the home map's
+  // seat, or of a dungeon's entrance field. North is +y.
+  sint32 x = 4;
+  sint32 y = 5;
+  // floor is a dungeon floor's number, from 1.
+  uint32 floor = 6;
+  bool visited = 7;
+  // min_level and max_level are a visited map's level band.
+  uint32 min_level = 8;
+  uint32 max_level = 9;
+}
+
+// WorldMapLink is a warp between two maps of the world map.
+message WorldMapLink {
+  string a = 1;
+  string b = 2;
 }
 
 // JobName names the player's job, from its record's display_name. It

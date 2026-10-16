@@ -82,6 +82,9 @@ type Field struct {
 	Dungeon       string
 	Floor, Floors int
 	Levels        [2]int
+	// DisplayName is the map's name for players, from the world layout
+	// (decision 0041), or empty.
+	DisplayName string
 	// Version and RNG are the generator version and its rng spec.
 	Version int
 	RNG     string
@@ -186,7 +189,14 @@ func generate(g gen.Generator, public rng.Node, s Spec, size int) (*Field, error
 type Set struct {
 	fields   []*Field
 	tilesets []byte
+	// names gives the current display names, which change with
+	// @renametown, or is nil.
+	names func(id string) (string, bool)
 }
+
+// SetNames makes Info read display names from f, such as an atlas's
+// Name, so a renamed map shows its new name. Call it before serving.
+func (s *Set) SetNames(f func(id string) (string, bool)) { s.names = f }
 
 // NewSet makes a set of fields. tilesets is the tileset table as JSON,
 // from Tilesets.
@@ -211,15 +221,19 @@ func (s *Set) Get(id string) *Field {
 // Info is what /gen/maps/<id>.json tells a client about a map.
 type Info struct {
 	ID string `json:"id"`
-	// Kind is field, dungeon or town. Params are a floor's or a town's
-	// params as hex, and Name its style or template.
-	Kind    string `json:"kind"`
-	Params  string `json:"params,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Version int    `json:"version"`
-	RNG     string `json:"rng"`
-	// Key is the field's public node, as hex.
-	Key    string `json:"key"`
+	// Kind is field, dungeon, town or home. Params are a floor's or a
+	// town's params as hex, and Name its style or template, or a home
+	// map's mod:folder.
+	Kind string `json:"kind"`
+	// DisplayName is the map's name for players, from the world layout.
+	DisplayName string `json:"displayName,omitempty"`
+	Params      string `json:"params,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Version     int    `json:"version"`
+	RNG         string `json:"rng"`
+	// Key is the map's public node, as hex. A home map has none: a
+	// client downloads its WMAP.
+	Key    string `json:"key,omitempty"`
 	Width  int    `json:"width"`
 	Height int    `json:"height"`
 	// Biome is the biome's index, BiomeName its name.
@@ -232,8 +246,9 @@ type Info struct {
 	WMAP       string `json:"wmap"`
 	WMAPSHA256 string `json:"wmapSha256"`
 	WMAPBytes  int    `json:"wmapBytes"`
-	// Town is a town's number. Dungeon, Floor, Floors and Levels describe
-	// a floor.
+	// Town is a town's number. Dungeon, Floor and Floors describe a
+	// floor. Levels is the map's level band, for every map of a world
+	// layout and every floor.
 	Town    int64  `json:"town,omitempty"`
 	Dungeon string `json:"dungeon,omitempty"`
 	Floor   int    `json:"floor,omitempty"`
@@ -255,15 +270,18 @@ type InfoPlace struct {
 func (f *Field) Info() Info {
 	in := Info{
 		ID: f.ID, Kind: f.Kind, Params: hex.EncodeToString(f.Params), Name: f.Name,
-		Town: f.Town, Dungeon: f.Dungeon, Floor: f.Floor, Floors: f.Floors,
+		Town: f.Town, Dungeon: f.Dungeon, Floor: f.Floor, Floors: f.Floors, DisplayName: f.DisplayName,
 		Version: f.Version, RNG: f.RNG, Key: hex.EncodeToString(f.Key[:]),
 		Width: f.Field.Width, Height: f.Field.Height, Biome: f.Biome, BiomeName: f.BiomeName,
 		Checksum: hex.EncodeToString(f.Checksum[:]),
 		WMAP:     Prefix + "maps/" + f.ID + ".wmap", WMAPSHA256: hex.EncodeToString(f.WMAPSum[:]),
 		WMAPBytes: len(f.Field.WMAP),
 	}
-	if f.Kind == gen.KindDungeon {
+	if f.Kind == gen.KindDungeon || f.Levels != [2]int{} {
 		in.Levels = f.Levels[:]
+	}
+	if f.Key == [32]byte{} {
+		in.Key = ""
 	}
 	for _, p := range f.Field.Places {
 		in.Places = append(in.Places, InfoPlace{Tags: p.Tags, X: p.X, Y: p.Y})
@@ -309,7 +327,13 @@ func (s *Set) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		h.Set("Content-Type", "application/json")
 		h.Set("Cache-Control", "no-cache")
-		_ = json.NewEncoder(w).Encode(f.Info())
+		in := f.Info()
+		if s.names != nil {
+			if n, ok := s.names(f.ID); ok {
+				in.DisplayName = n
+			}
+		}
+		_ = json.NewEncoder(w).Encode(in)
 		return
 	}
 	if id, ok := strings.CutSuffix(rest, ".wmap"); ok {

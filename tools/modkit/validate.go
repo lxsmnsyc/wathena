@@ -275,6 +275,7 @@ func (e *Env) checkEntries(l *Loaded, rep *Report) {
 	if _, err := l.generatedMaps(); err != nil {
 		rep.Problems = append(rep.Problems, "generated maps: "+err.Error())
 	}
+	rep.Problems = append(rep.Problems, l.checkMaps()...)
 	logs := &capture{}
 	w, err := e.newWorld(l, slog.New(logs))
 	if err != nil {

@@ -541,6 +541,17 @@ export class Connection {
     });
   }
 
+  /**
+   * Saves the player's cell as a Warp Portal memo point, as RO's /memo.
+   * The server answers with a system message.
+   */
+  memo(): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'memo', value: {} } }),
+    });
+  }
+
   /** Adds a character name to the block list, or removes it. The server answers with BlockList. */
   block(name: string, unblock = false): void {
     this.send({

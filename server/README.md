@@ -168,8 +168,8 @@ A world is `classic` or `procedural`, chosen by `wactl world new --mode` and kep
 - A build with the tag `procedural` makes procedural worlds by default, with the newest generator. A build without it makes classic worlds, and refuses `--mode procedural`.
 - `waserver` refuses to start on a procedural world when it was built without the tag, or when it lacks the world's generator version or rng spec version.
 - `Welcome.world` tells the client the mode and the versions. The client loads its map generator only for a procedural world.
-- A `--dev` server without a world runs classic, unless `--fields`, `--towns` or `--dungeons` is given (below).
-- A procedural world runs generated fields, towns and dungeons (below, "Generated fields" and "Towns and dungeons").
+- A `--dev` server without a world runs classic, unless `--fields`, `--towns`, `--dungeons` or `--layout` is given (below).
+- A procedural world runs the maps of its world layout: generated fields, towns and dungeons, and a mod's home map (below, "World layout").
 
 ### Generated fields
 
@@ -180,12 +180,11 @@ go build -tags procedural -o /tmp/waserver ./server/cmd/waserver
 /tmp/waserver --dev --assets /path/to/build --fields 0:0,1:0:desert,0:1
 ```
 
-- `--fields` (`procedural.fields`) lists the fields as `x:y` or `x:y:biome`. A biome left out comes from the world's climate. The biomes are grassland, forest, desert, snow, swamp and beach. A procedural world row without the setting runs `0:0`.
+- `--fields` (`procedural.fields`) lists the fields of a `--dev` world as `x:y` or `x:y:biome`. A biome left out comes from the world's climate. The biomes are grassland, forest, desert, snow, swamp and beach. A world row runs its layout's fields instead, and refuses `--fields`.
 - `--field-size` (`procedural.field_size`) is each field's side, 32 to 1024 cells, 300 by default.
-- Each field runs in a zone named by its map ID, such as `gen:field:1:0`. The first field is the start map unless `--map` names a field. Asset maps run beside the fields only when `--maps` lists them.
+- Each field runs in a zone named by its map ID, such as `gen:field:1:0`. Asset maps run beside the generated maps only when `--maps` lists them.
 - The fields generate at start, about 50 ms each for 300 × 300 cells. A field that fails validation in all 8 attempts stops the start with an error that names its public node.
 - With `--dev` and no world row, `--fields` makes a procedural world on the newest generator, whose secret follows `--seed`. With a world row, the world's generator and its public node are used. A classic world refuses `--fields`.
-- Fields that touch are linked by warps at their facing portals, for development, until the map graph of phase 7 step 4.
 
 The game role never reads the world seed. `wactl world new` stores the key of the seed tree's public branch in the world row (migration 00030), and `waserver` derives each field's public node from it. A procedural world made before that migration has none, and `waserver` asks to make it again.
 
@@ -193,7 +192,7 @@ The server serves, with no login and to any origin:
 
 | Path | Content |
 |---|---|
-| `/gen/maps/<id>.json` | The field's public node, size, biome, generator version, grid checksum, and its WMAP's path, SHA-256 and length. |
+| `/gen/maps/<id>.json` | The map's public node, size, biome, generator version, grid checksum, and its WMAP's path, SHA-256 and length, with its display name and level band in a world layout. |
 | `/gen/maps/<id>.wmap` | The field's WMAP, gzip for clients that accept it, with its SHA-256 as the ETag. |
 | `/gen/tilesets.json` | The tileset table. |
 
@@ -223,10 +222,45 @@ A procedural world on generator 3 also runs towns and dungeons (docs/decisions/0
 - `--towns <n>` (`procedural.towns`) runs towns `t1` to `t<n>`, as `gen:town:t1` and on. Town n takes the n-th town template in record order, core's `hamlet`, `village` and `city` and then the mods', and starts over when they run out.
 - `--dungeons` (`procedural.dungeons`) lists dungeons as `style` or `style:floors`, such as `crypt:3` or `example.market-town:cellar`. Each runs every floor as `gen:dungeon:<id>:<floor>`, where the ID is the style's name without its mod prefix. The floors default to the style's.
 - The towns and dungeons generate after the mods load, since mods add templates and styles: about 10 ms for 2 towns and 5 floors. A map that fails validation in all 8 attempts stops the start and names its public node.
-- A dungeon's first floor has the level band 1 to 10, and each floor after it the style's `level_step` more, until the map graph of phase 7 step 4 places dungeons. The map's JSON shows it.
-- Until that map graph, towns and dungeons link to the fields with warps (`DevLinks`): the portals of fields that touch no other field are free ends. Each town links its first gate's portal to the first free end, and its other gates' portals become the next free ends. Each dungeon's first floor links its entrance to the next free end, and each floor's exit links to the next floor's entrance. A map left without a free end is logged with a warning: add fields.
+- `--towns` and `--dungeons` are a dev shortcut for a world without a row: they run through the world layout's code (`layout.Dev`, below), linked as step 3's dev links did. The portals of fields that touch no other field are free ends, in field ID order. Each town links its first gate's portal to the first free end, and its other gates' portals become the next free ends. Each dungeon's first floor links its entrance to the next free end, and each floor's exit links to the next floor's entrance. A map left without a free end is logged with a warning: add fields. The first field is the home area, and the maps get names and bands as in a layout.
 - Every generated map records its named places. The zones share their index for `wa.places`, and NPC records with `place` stand at every matching place (mods/README.md, "Places"). In a classic world they do not appear, and the server logs that at info level.
-- `/gen/maps/<id>.json` also gives a map's `kind`, the `params` a client generates a floor or a town from, the record's `name`, a town's number, a floor's dungeon, floor and level band, and the places.
+- `/gen/maps/<id>.json` also gives a map's `kind`, the `params` a client generates a floor or a town from, the record's `name`, a town's number, a floor's dungeon and floor, the level band, the `displayName`, and the places.
+
+### World layout
+
+A procedural world has a layout: its map graph, town names and level bands (docs/decisions/0041-world-layout.md, docs/specs/generator-v3.md, "World layout"). `wactl world new --mode procedural --config waserver.yml` makes it from the mods that config loads and `procedural.layout`, and the database keeps it (migration 00031). `waserver` runs it:
+
+- Every map of the layout runs in a zone: by default 24 fields in a 6 × 4 grid, 5 towns, 6 dungeons with their floors, and a mod's home map. They generate at start, about 0.2 s for the default layout on an 8-core Mac.
+- A town or a floor generates from the params the layout keeps, so a mod that changes a template does not change a made world. A home map comes from its mod at each start: removing the mod stops the start with a message.
+- Warps stand at both ends of each link, on the place it names, and a player arrives on a walkable cell near the other end that no warp covers.
+- New characters start on the home area: the home map's `start` place, or the first town's square. That is their save point until they save elsewhere.
+- Each character's entered maps are saved, and the client gets the part of the graph it found as `WorldMap`, after login and with each new map.
+- `/memo` saves a Warp Portal memo point by map ID, as rAthena's `pc_memo`: Warp Portal at level 2 or more, 3 points, one per map. A map with the `nomemo` flag refuses it.
+- The teleport service stands at each town's `teleport` place, with the Kafra's sprite. It saves the point at the player's cell, and teleports to towns the player visited for `procedural.teleport_base` (500) plus `procedural.teleport_step` (100) zeny per warp between the towns.
+- `@go`, `@warp` with display names, and `@renametown` work on the layout ("GM commands" below).
+- A world made before migration 00031 has no layout, and `waserver` asks to make it again.
+
+`procedural.layout` in `waserver.yml`:
+
+```yaml
+procedural:
+  field_size: 300
+  layout:
+    grid: [6, 4]           # fields, width by height
+    towns: 5
+    dungeons: 6
+    band_width: 10         # levels in a map's band
+    max_level: 99          # the top of the highest band
+    home: example.home-village:village   # or none; left out, the only home map of the mods
+  teleport_base: 500
+  teleport_step: 100
+```
+
+`wactl world new` reads `procedural.layout`, `procedural.field_size` and the `mods` section. `waserver` reads it only for `--dev --layout`, which builds a whole layout from `--seed` without a world row, for development:
+
+```text
+/tmp/waserver --dev --assets /path/to/build --layout --mods /path/to/mods --field-size 128
+```
 
 ### Running with accounts
 
@@ -786,7 +820,7 @@ staff:
 ```
 
 - Permission names come from a fixed list, `staff.Catalog`. `group.*` names a whole group. An unknown name stops the server from starting.
-- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). Step 2 uses `audit.review`, `players.read`, `players.read_ip`, `items.history`, `items.restore` and `items.create`. Step 3 uses `moderation.reports`, `moderation.mute`, `moderation.jail`, `moderation.kick`, `moderation.ban`, `moderation.ban_permanent`, `commands.warp`, `commands.recall` and `commands.hide`, and `items.create` for `@item`. Step 4 uses `world.read`, `world.announce`, `world.restart`, `events.control`, `mods.read` and `mods.disable`.
+- Step 1 uses `staff.assign` (the staff list, giving and removing roles) and `audit.read` (the audit log). Step 2 uses `audit.review`, `players.read`, `players.read_ip`, `items.history`, `items.restore` and `items.create`. Step 3 uses `moderation.reports`, `moderation.mute`, `moderation.jail`, `moderation.kick`, `moderation.ban`, `moderation.ban_permanent`, `commands.warp`, `commands.recall` and `commands.hide`, and `items.create` for `@item`. Step 4 uses `world.read`, `world.announce`, `world.restart`, `events.control`, `mods.read` and `mods.disable`. Phase 7 step 4 adds `world.rename`, for `@renametown`.
 - Only `admin` has `moderation.ban_permanent` and `items.create` among the default roles. `game_master` and `moderator` keep the moderation permissions of the table below.
 
 | Role | Moderation and commands | World, events and mods |
@@ -884,7 +918,9 @@ GM commands, typed in the game's chat by a staff member whose role counts for th
 
 | Command | Permission | Does |
 |---|---|---|
-| `@warp <map> [x y]` | `commands.warp` | Goes to a map. A cell that is not walkable becomes a random one. |
+| `@warp <map> [x y]` | `commands.warp` | Goes to a map, by its map ID or a generated map's display name in any case, which may have spaces. A cell that is not walkable becomes a random one. |
+| `@go [town]` | `commands.warp` | Without a town, lists the world layout's towns by number and display name. With one, by number, ID such as `t2`, or display name, goes next to its teleport place, or its square. Audit row `commands.go`. |
+| `@renametown <town> <name>` | `world.rename` | Gives a town a new display name of 4 to 12 letters that no other map has and the chat filter allows, and names the maps named after it again. Saved in one transaction, with the audit row `world.rename`. |
 | `@jumpto <name>` | `commands.warp` | Goes to a player on any map. |
 | `@recall <name>` | `commands.recall` | Brings a player on any map here. |
 | `@hide` | `commands.hide` | Hides from players, staff too, and monsters, as rAthena's `OPTION_INVISIBLE`, until the next `@hide`. The character saves it, so the next login is hidden too while the role still has `commands.hide` and the login used a second factor. Local chat still reaches players in range, by name, without a bubble (decision 0036). |

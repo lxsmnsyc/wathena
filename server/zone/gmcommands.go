@@ -12,8 +12,10 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/transfer"
+	"github.com/lxsmnsyc/wathena/shared/gen"
 )
 
 // GM commands typed in chat (proposal 0002 review decision 35, decision
@@ -87,14 +89,16 @@ type gmCall struct {
 }
 
 var gmCommands = map[string]gmCommand{
-	"warp":   {"commands.warp", "@warp <map> [x y]", (*Zone).commandWarp},
-	"jumpto": {"commands.warp", "@jumpto <name>", (*Zone).commandJumpTo},
-	"recall": {"commands.recall", "@recall <name>", (*Zone).commandRecall},
-	"hide":   {"commands.hide", "@hide", (*Zone).commandHide},
-	"kick":   {"moderation.kick", "@kick <name> <reason>", (*Zone).commandKick},
-	"mute":   {"moderation.mute", "@mute <name> <minutes> <reason>", (*Zone).commandSanction},
-	"jail":   {"moderation.jail", "@jail <name> <minutes> <reason>", (*Zone).commandSanction},
-	"item":   {"items.create", "@item <item> <amount> <reason>", (*Zone).commandItem},
+	"warp":       {"commands.warp", "@warp <map> [x y]", (*Zone).commandWarp},
+	"go":         {"commands.warp", "@go <town>", (*Zone).commandGo},
+	"renametown": {"world.rename", "@renametown <town> <name>", (*Zone).commandRenameTown},
+	"jumpto":     {"commands.warp", "@jumpto <name>", (*Zone).commandJumpTo},
+	"recall":     {"commands.recall", "@recall <name>", (*Zone).commandRecall},
+	"hide":       {"commands.hide", "@hide", (*Zone).commandHide},
+	"kick":       {"moderation.kick", "@kick <name> <reason>", (*Zone).commandKick},
+	"mute":       {"moderation.mute", "@mute <name> <minutes> <reason>", (*Zone).commandSanction},
+	"jail":       {"moderation.jail", "@jail <name> <minutes> <reason>", (*Zone).commandSanction},
+	"item":       {"items.create", "@item <item> <amount> <reason>", (*Zone).commandItem},
 }
 
 // commandUser reports whether the player's role, for this login, has the
@@ -212,13 +216,18 @@ func (z *Zone) findOnline(name string) (chat.Online, *Session, bool) {
 	return f, s, ok
 }
 
-// lookupMap finds the zone of a map by its name, with or without map/.
+// lookupMap finds the zone of a map by its name, with or without map/,
+// or by a generated map's display name in any case (review decision
+// 43).
 func (z *Zone) lookupMap(name string) *Zone {
 	if name == "" {
 		return nil
 	}
 	if to := z.zoneOf(name); to != nil {
 		return to
+	}
+	if m, ok := z.atlas().Find(name); ok {
+		return z.zoneOf(m.ID)
 	}
 	if strings.Contains(name, "/") {
 		return nil
@@ -254,11 +263,30 @@ func (z *Zone) cannotMove(p *Player, who string) string {
 // is outside the map or not walkable becomes a random one.
 func (z *Zone) commandWarp(p *Player, c gmCall) {
 	f := strings.Fields(c.args)
-	if len(f) != 1 && len(f) != 3 {
+	if len(f) == 0 {
 		z.usage(p, c)
 		return
 	}
-	to := z.lookupMap(f[0])
+	// A display name may have spaces: the map is every word before the
+	// cell, or every word when the last two are not numbers.
+	name := strings.Join(f, " ")
+	if len(f) >= 3 {
+		_, errX := strconv.Atoi(f[len(f)-2])
+		_, errY := strconv.Atoi(f[len(f)-1])
+		if errX == nil && errY == nil {
+			name, f = strings.Join(f[:len(f)-2], " "), []string{"", f[len(f)-2], f[len(f)-1]}
+		}
+	}
+	if len(f) != 3 {
+		f = []string{name}
+	}
+	to := z.lookupMap(name)
+	if to == nil && strings.Contains(name, " ") && z.atlas() == nil {
+		// Without display names, a name of several words is a cell
+		// that does not parse.
+		z.usage(p, c)
+		return
+	}
 	if to == nil {
 		z.answer(p, "Map not found.")
 		return
@@ -647,4 +675,104 @@ func DevStaffRole(ctx context.Context, hub *chat.Hub, reg *staff.Registry, name,
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+// commandGo is @go <town>, as atcommand_go: the staff member goes to a
+// town of the world layout, by its number, its ID or its display name.
+// Without a town, it lists the towns.
+func (z *Zone) commandGo(p *Player, c gmCall) {
+	a := z.atlas()
+	towns := a.Towns()
+	if len(towns) == 0 {
+		z.answer(p, "This world has no towns to go to.")
+		return
+	}
+	if c.args == "" {
+		z.usage(p, c)
+		for _, t := range towns {
+			z.answer(p, strconv.FormatInt(t.Town, 10)+": "+t.Name)
+		}
+		return
+	}
+	var town layout.Map
+	found := false
+	if n, err := strconv.ParseInt(c.args, 10, 64); err == nil {
+		town, found = a.Town("t" + strconv.FormatInt(n, 10))
+	}
+	if !found {
+		town, found = a.Town(c.args)
+	}
+	if !found {
+		if m, ok := a.Find(c.args); ok && m.Kind == gen.KindTown {
+			town, found = m, true
+		}
+	}
+	if !found {
+		z.answer(p, "Town not found.")
+		return
+	}
+	to := z.zoneOf(town.ID)
+	if to == nil {
+		z.answer(p, "Map not found.")
+		return
+	}
+	if why := z.cannotMove(p, "You"); why != "" {
+		z.answer(p, why)
+		return
+	}
+	x, y := to.townArrival()
+	z.commandAudit(p, c.role, "commands.go", "", 0, map[string]any{"map": town.ID, "x": x, "y": y}, "", false)
+	z.answer(p, "Warped to "+town.Name+".")
+	z.commandMove(p, to, x, y)
+}
+
+// commandRenameTown is @renametown <town> <name>: it changes a town's
+// display name, and the names of the maps named after it, and saves
+// them (review decision 43). The town is its ID, such as t3, its number
+// or its display name. The name follows the rules of town names: 4 to
+// 12 letters, unique, and no word the chat filter blocks.
+func (z *Zone) commandRenameTown(p *Player, c gmCall) {
+	f := strings.Fields(c.args)
+	if len(f) != 2 {
+		z.usage(p, c)
+		return
+	}
+	a := z.atlas()
+	town, ok := a.Town(f[0])
+	if !ok {
+		if n, err := strconv.ParseInt(f[0], 10, 64); err == nil {
+			town, ok = a.Town("t" + strconv.FormatInt(n, 10))
+		}
+	}
+	if !ok {
+		if m, found := a.Find(f[0]); found && m.Kind == gen.KindTown {
+			town, ok = m, true
+		}
+	}
+	if !ok {
+		z.answer(p, "Town not found.")
+		return
+	}
+	name := f[1]
+	if err := a.CheckRename(town.ID, name); err != nil {
+		z.answer(p, "The town cannot take that name: "+err.Error()+".")
+		return
+	}
+	s, role := p.sess, c.role
+	if s == nil {
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), commandWait)
+		defer cancel()
+		changes, err := a.Rename(ctx, town.ID, name)
+		if err != nil {
+			later(s, "The rename failed: "+err.Error()+".")
+			return
+		}
+		postAsync(s, func(z *Zone, p *Player) {
+			z.commandAudit(p, role, "world.rename", "", 0, map[string]any{"town": town.ID, "from": town.Name, "to": name, "maps": len(changes)}, "", false)
+			z.answer(p, "Renamed "+town.Name+" to "+name+".")
+		})
+	}()
 }

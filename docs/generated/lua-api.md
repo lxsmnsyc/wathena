@@ -31,6 +31,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.guilds`](#waguilds) | Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later. |
 | [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decisions 27 and 32). Read-only. Its calls need no permission. An unknown name raises an error that lists the valid names. |
 | [`wa.places`](#waplaces) | Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil. |
+| [`wa.towns`](#watowns) | The towns of the world layout (review decision 43): each with an ID such as t7, a display name, a map and a level band. A classic world has no towns: list returns an empty list, and nearest and get nil. |
 | [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
 | [`wa.integers`](#waintegers) | Integer division that rounds as C does, toward zero, for scripts converted from rAthena. |
@@ -369,6 +370,16 @@ Permission: `game.read`.
 |---|---|---|
 | `query` | `wa.EntityQuery` | One area, filters, and an order. |
 
+#### `maps.get_display_name(map) → string?`
+
+The name players see for a map of the world layout (review decision 43), such as "North Valheim Fields 2". It changes when staff rename a town. nil for another map, and for every map of a classic world until locale files exist.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map ID, such as "gen:town:t7". |
+
 ### wa.world
 
 ```lua
@@ -594,6 +605,44 @@ Permission: `game.read`.
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
 | `tag` | `string` | A tag, as for find. |
+
+### wa.towns
+
+```lua
+local towns = require "wa.towns"
+```
+
+The towns of the world layout (review decision 43): each with an ID such as t7, a display name, a map and a level band. A classic world has no towns: list returns an empty list, and nearest and get nil.
+
+#### `towns.list(options?) → wa.Town[]`
+
+Every town by number, or with visited_by only the towns that player entered.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `options` | `wa.TownListOptions?` |  |
+
+#### `towns.nearest(player) → wa.Town?`
+
+The town the fewest warps from the player's map, ties to the lower number: the player's own town when it stands in one. nil when no town is reached.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+
+#### `towns.get(id) → wa.Town?`
+
+A town by its ID, or nil when the world has none with it.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `id` | `string` | A town's ID, such as "t7". Another form raises an error. |
 
 ### wa.variables
 
@@ -1531,6 +1580,16 @@ Permission: `game.read`.
 |---|---|---|
 | `permission` | `string` | A staff permission, such as "moderation.mute". An unknown name raises an error that lists the names. |
 
+#### `player:has_visited(town) → boolean`
+
+Whether the player's character entered the town, as the teleport service lists it (review decision 43).
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `town` | `wa.Town` |  |
+
 #### `player:mute(minutes, reason)`
 
 Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
@@ -2039,6 +2098,48 @@ The place's tags, its main tag first, such as { "gate", "gate:south" }.
 #### `place:get_area() → string`
 
 The place's area: its map ID without gen:, such as "town:t7", "dungeon:crypt:2" or "field:3:-1".
+
+#### `place:get_band() → integer, integer`
+
+The level band of the place's map, its lowest and highest level (review decision 43). A place of a map without a band raises an error.
+
+Permission: `game.read`.
+
+### wa.Town
+
+A town of the world layout, from wa.towns (review decision 43). Two handles of one town are equal.
+
+#### `town:get_id() → string`
+
+The town's ID, such as "t7", which places.find's scope "town:t7" names.
+
+Permission: `game.read`.
+
+#### `town:get_name() → string`
+
+The town's display name, such as "Valheim". It changes when staff rename the town.
+
+Permission: `game.read`.
+
+#### `town:get_map() → string`
+
+The town's map ID, such as "gen:town:t7".
+
+Permission: `game.read`.
+
+#### `town:get_band() → integer, integer`
+
+The town's level band: its lowest and highest level. Bands rise with the warps from the home area.
+
+Permission: `game.read`.
+
+### wa.TownListOptions
+
+The options of towns.list.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `visited_by` | `wa.Player?` | Only the towns this player entered. |
 
 ### wa.Shop
 

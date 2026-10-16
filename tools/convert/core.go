@@ -8,6 +8,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/currency"
 	gencore "github.com/lxsmnsyc/wathena/server/fields/core"
+	layoutcore "github.com/lxsmnsyc/wathena/server/layout/core"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 )
@@ -17,7 +18,8 @@ import (
 // Core's companions and mounts come from server/companion, its chat
 // channels and chat filter from server/chat, and its currencies from
 // server/currency, its sample world events from server/worldevent, and
-// its dungeon styles and town templates from server/fields/core.
+// its dungeon styles and town templates from server/fields/core, and its
+// naming styles from server/layout/core.
 //
 //go:embed core
 var coreFiles embed.FS
@@ -55,6 +57,9 @@ func addCoreFiles(out map[string]string) {
 		if b, err := gencore.Files.ReadFile(f); err == nil {
 			out[f] = string(b)
 		}
+	}
+	if b, err := layoutcore.Files.ReadFile(mod.NamingStyleKind.File); err == nil {
+		out[mod.NamingStyleKind.File] = string(b)
 	}
 	if b, err := worldevent.CoreFiles.ReadFile("core/" + worldevent.File); err == nil {
 		out[worldevent.File] = string(b)

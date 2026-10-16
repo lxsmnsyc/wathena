@@ -41,6 +41,19 @@
   job_exp: 1
   ai: 4
 
+# The Slayer of the world layout test: AI type 04 attacks players on
+# sight and hits for far more than they have, so a player dies and goes
+# back to its save point. "!slayer" places one next to the speaker.
+- name: e2e.fixture:SLAYER
+  sprite: PORING
+  display_name: Slayer
+  level: 99
+  hp: 1000
+  attack: 60000
+  base_exp: 1
+  job_exp: 1
+  ai: 4
+
 # The chest of the Hunt event. Its drop is the loot.
 - name: e2e.fixture:CHEST
   sprite: TREASURE_BOX1

@@ -209,35 +209,6 @@ func TestTilesets(t *testing.T) {
 	}
 }
 
-// TestWarps: touching fields link their facing portals, and a player
-// lands on a walkable cell.
-func TestWarps(t *testing.T) {
-	s, _ := testSet(t)
-	warps := s.Warps()
-	east := warps["gen:field:0:0"]
-	if len(east) != 2 {
-		t.Fatalf("warps of 0:0: %+v", east)
-	}
-	for id, list := range warps {
-		for _, w := range list {
-			to := s.Get(w.To)
-			if to == nil {
-				t.Fatalf("%s: warp to %s", id, w.To)
-			}
-			if to.Grid().NoPass(w.ToX, w.ToY) {
-				t.Errorf("%s: %s lands on %d,%d, which is not walkable", id, w.Name, w.ToX, w.ToY)
-			}
-			from := s.Get(id)
-			if from.Grid().NoPass(w.X, w.Y) {
-				t.Errorf("%s: warp %s at a blocked cell", id, w.Name)
-			}
-		}
-	}
-	if len(warps["gen:field:1:0"]) != 1 || warps["gen:field:1:0"][0].To != "gen:field:0:0" {
-		t.Errorf("warps of 1:0: %+v", warps["gen:field:1:0"])
-	}
-}
-
 func TestParseSpec(t *testing.T) {
 	for in, want := range map[string]Spec{"0:0": {}, "3:-1": {X: 3, Y: -1}, " 2:5:desert ": {X: 2, Y: 5, Biome: "desert"}} {
 		if got, err := ParseSpec(in); err != nil || got != want {

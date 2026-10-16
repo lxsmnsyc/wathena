@@ -14,6 +14,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/bank](examples/bank) has a banker who opens the account's storage and an extra storage, a bound Bank Card, and a `trade` hook and event ("Storage, cart and trade" below).
 - [examples/lantern](examples/lantern) has art of its own: item icons, a hat's and a shield's worn sprites, a companion's sprite, a monster sprite with sounds, an NPC sprite, the Lantern Keeper job with body sprites and its skill Lantern Flare with an icon and an effect, and a client data table ("Art" below). It is the phase 6 exit check's mod run.
 - [examples/market-town](examples/market-town) is for procedural worlds: a town template with a lamp shop, a dungeon style, and NPCs that stand at named places instead of a map and a cell ("Places" below).
+- [examples/home-village](examples/home-village) is for procedural worlds: a home map in the map folder format, where new characters start, and a naming style for grassland towns ("Home maps" and "Naming styles" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -32,6 +33,9 @@ greeter/
     events.yml          world events
     town_templates.yml  town templates of procedural worlds
     dungeon_styles.yml  dungeon styles of procedural worlds
+    naming_styles.yml   naming styles of town names
+  maps/
+    village/            a map folder, such as a home map
   locales/
     en.yml              text for players, read with wa.text
   scripts/
@@ -430,6 +434,40 @@ A procedural world's towns follow a template. Core has `hamlet`, `village` and `
 - Every town has a `square`, and a `gate` and a `portal` per gate.
 
 A template that cannot make a town in 8 tries stops the server and fails `wactl mod validate`.
+
+Every core template has a `teleport` place, where the server's teleport service stands (decision 0041). A mod's template needs one for the service to stand in its towns.
+
+### Naming styles: data/naming_styles.yml
+
+A procedural world's towns take their names from a naming style, by the biome of the field they stand near (strategy section 8.10, proposal 0002, review decision 43, decision 0041). Core has `norse` for grassland, `sylvan` for forest, `dune` for desert, `frost` for snow, `marsh` for swamp and `coast` for beach. A mod changes them by name and adds its own. The last record for a biome, in load order, is that biome's style, so a mod's own record replaces core's.
+
+```yaml
+- name: meadow
+  biome: grassland
+  syllables:
+    start: [wil, ash, bram, fern]
+    middle: [a, e, en]
+    end: [ford, ley, ton, brook]
+  patterns: ["{start}{end}", "{start}{middle}{end}"]
+```
+
+- `biome` is a biome of the map generator: `grassland`, `forest`, `desert`, `snow`, `swamp` or `beach`.
+- `syllables` are lists of 1 to 256 syllables by part name. A syllable is 1 to 12 ASCII letters. A part name is lowercase letters, digits and `_`.
+- `patterns` are 1 to 32 patterns of 1 to 8 parts in braces. A name joins one syllable of each part, in lower case but its first letter.
+- A name has 4 to 12 letters, no other town or the home map has it in any case, and the chat filter blocks none of its words. A name that fails is drawn again, up to 100 times. Some pattern must be able to make a name of 4 to 12 letters, or the record is refused.
+- The world keeps its names from the day it was made. A changed style names only new worlds.
+
+### Home maps: maps/<id>/
+
+A mod may ship a home map in the map folder format (strategy section 8.12, [docs/specs/map-folder-v1.md](../docs/specs/map-folder-v1.md)): `map.yaml`, `cells.bin`, `materials.bin`, `objects.yaml` and `places.yaml` under `maps/<id>/`. A map tagged `home` in `map.yaml` is the world's home area when `wactl world new` makes the world with the mod: new characters start at its `start` place, and its first `portal` place links to the first town. Its map ID is `gen:home:<id>`.
+
+- Clients download a home map, since they cannot generate it.
+- `wactl map validate maps/<id>` and `wactl mod validate` check the files and run the generator's checks: every place on a walkable cell and reached from the first place, and a `portal` on a home map.
+- When several mods have a home map, the config's `procedural.layout.home` names one as `mod:id`, or `none` for the first town.
+- The mod must stay installed, since the server reads the map at each start.
+- `flags: [nomemo]` forbids Warp Portal memo points on the map.
+
+`mods/examples/home-village` is a sample with a home map and a naming style.
 
 ### Monsters: data/monsters.yml
 
@@ -1700,7 +1738,34 @@ The places of each kind of map:
 | Dungeon floor | `entrance`, `exit` (not on the last floor), `boss_room` (the last floor only), and `room` |
 | Town | `square`, `gate` and `portal` with their side, such as `gate:north`, and the `places` of the template's buildings |
 
-Town IDs are `t1`, `t2` and on, and a dungeon's ID is its server's name for it, such as `crypt`. Town names come with phase 7 step 4.
+Town IDs are `t1`, `t2` and on. A dungeon's ID is its style's name without the mod prefix, such as `crypt`, then `crypt-2` and on for more of one style. A mod's home map has its own `places.yaml`, and its scope is `"map:gen:home:<id>"`.
+
+- `place:get_band()` returns the lowest and highest level of the place's map (review decision 43).
+
+### Towns
+
+A procedural world's layout has towns, each with an ID such as `t7`, a display name from its naming style, a map, and a level band that rises with the warps from the home area (proposal 0002, review decision 43, decision 0041).
+
+```lua
+local towns = require "wa.towns"
+local maps = require "wa.maps"
+
+for _, town in ipairs(towns.list { visited_by = player }) do
+  local lo, hi = town:get_band()
+  print(town:get_id(), town:get_name(), town:get_map(), lo, hi)
+end
+local here = towns.nearest(player)
+print(player:has_visited(towns.get("t2")), maps.get_display_name(player.map))
+```
+
+- `towns.list()` returns every town by number, and `towns.list { visited_by = player }` the towns the player entered.
+- `towns.nearest(player)` returns the town the fewest warps from the player's map, ties to the lower number, or nil.
+- `towns.get(id)` returns the town with an ID such as `"t7"`, or nil. Another form raises an error.
+- A town has `get_id()`, `get_name()`, `get_map()` and `get_band()`. Two handles of one town are equal.
+- `player:has_visited(town)` tells whether the player entered the town.
+- `maps.get_display_name(map)` returns a generated map's display name, such as `"North Valheim Fields 2"`, or nil for another map. A name changes when staff rename the town with `@renametown`.
+- Every call needs `game.read`. A classic world has no towns: `list` returns an empty list, `nearest` and `get` nil, and display names nil.
+- The teleport service of each town is the server's, not a script's, and mods cannot change it yet.
 
 ### Spawning monsters
 

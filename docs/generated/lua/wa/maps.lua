@@ -17,4 +17,11 @@ function maps.announce(map, text) end
 ---@return (wa.Player|wa.Monster|wa.Npc)[]
 function maps.find_entities(query) end
 
+---The name players see for a map of the world layout (review decision 43), such as "North Valheim Fields 2". It changes when staff rename a town. nil for another map, and for every map of a classic world until locale files exist.
+---
+---Needs the permission `game.read`.
+---@param map string A map ID, such as "gen:town:t7".
+---@return string?
+function maps.get_display_name(map) end
+
 return maps

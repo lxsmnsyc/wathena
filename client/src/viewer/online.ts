@@ -99,6 +99,7 @@ import { appearance } from './options';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
 import type { WorldEventRun } from './worldEvents';
+import { type WorldMapData, worldMapOf } from './worldMap';
 import {
   HEAL_SKILLS,
   HIT_GAP_MS,
@@ -546,6 +547,12 @@ export default class Online {
   onWorldEventNotice: ((run: WorldEventRun, started: boolean, result: string) => void) | undefined;
   /** Called at login with the runs of world events that last. */
   onWorldEventList: ((runs: WorldEventRun[]) => void) | undefined;
+  /**
+   * Called with a procedural world's discovered map graph, after login
+   * and when the character enters a map for the first time. It replaces
+   * the one before. A classic world sends none.
+   */
+  onWorldMap: ((map: WorldMapData) => void) | undefined;
   /** Called with how a mail action went. */
   onMailResult: ((result: MailResult) => void) | undefined;
   /** Called when the vending setup window opens, with the most lines. */
@@ -1380,6 +1387,9 @@ export default class Online {
         }
         case 'worldEventList':
           this.onWorldEventList?.(e.body.value.events.map(worldEventRun));
+          break;
+        case 'worldMap':
+          this.onWorldMap?.(worldMapOf(e.body.value));
           break;
         case 'mailResult':
           this.onMailResult?.(e.body.value);

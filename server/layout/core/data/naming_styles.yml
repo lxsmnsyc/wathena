@@ -1,0 +1,47 @@
+# Core's naming styles (proposal 0002, review decision 43). A town takes
+# the style of its seat's biome. Mods change these by name and add their
+# own; the last record for a biome, in load order, is its style
+# (mods/README.md, "Naming styles"). A pattern joins one syllable of each
+# part it names. A name has 4 to 12 letters.
+- name: norse
+  biome: grassland
+  syllables:
+    start: [val, hrim, skar, eld, grim, thor, ul, hal, rag, sig]
+    middle: [a, e, i, un, ar]
+    end: [heim, gard, vik, stad, holm, by, berg]
+  patterns: ["{start}{end}", "{start}{middle}{end}"]
+- name: sylvan
+  biome: forest
+  syllables:
+    start: [syl, ael, lor, fen, thal, ere, mir, cel, ith]
+    middle: [a, e, i, an, ar, or]
+    end: [wood, dell, glade, wen, dor, las, mere]
+  patterns: ["{start}{end}", "{start}{middle}{end}"]
+- name: dune
+  biome: desert
+  syllables:
+    start: [al, kha, sar, zan, mur, qas, tir, ras]
+    middle: [a, i, u, ad, ir, al]
+    end: [abad, ara, esh, um, ir, an, oun]
+  patterns: ["{start}{end}", "{start}{middle}{end}"]
+- name: frost
+  biome: snow
+  syllables:
+    start: [ys, kal, vor, isk, hjal, nor, brim, sval]
+    middle: [a, e, i, en, ar]
+    end: [mark, fell, hold, vik, fjord, rond]
+  patterns: ["{start}{end}", "{start}{middle}{end}"]
+- name: marsh
+  biome: swamp
+  syllables:
+    start: [mor, fen, sel, wyr, gal, mud, rus, ost]
+    middle: [a, e, o, en, ow]
+    end: [wick, mere, ford, holt, moor, ley]
+  patterns: ["{start}{end}", "{start}{middle}{end}"]
+- name: coast
+  biome: beach
+  syllables:
+    start: [cor, sal, mar, pel, ner, tid, kel, wav]
+    middle: [a, e, i, an, or]
+    end: [haven, port, cove, sand, strand, bay]
+  patterns: ["{start}{end}", "{start}{middle}{end}"]

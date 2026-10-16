@@ -17,6 +17,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/constants"
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/places"
 	"github.com/lxsmnsyc/wathena/server/rules"
@@ -128,6 +129,9 @@ type Options struct {
 	// Places are the named places of the world's generated maps, for
 	// wa.places. A classic world has none: every lookup finds nothing.
 	Places *places.Index
+	// Atlas is the world layout, for wa.towns, display names and the
+	// bands of places (review decision 43). A classic world has none.
+	Atlas *layout.Atlas
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -501,6 +505,13 @@ func (r *Runtime) init() error {
 		{"places_find", r.placesFind},
 		{"places_nearest", r.placesNearest},
 		{"place_get", r.placeGet},
+		{"place_band", r.placeBand},
+		{"towns_list", r.townsList},
+		{"towns_nearest", r.townsNearest},
+		{"towns_get", r.townsGet},
+		{"town_get", r.townGet},
+		{"player_has_visited", r.playerHasVisited},
+		{"maps_display_name", r.mapsDisplayName},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {

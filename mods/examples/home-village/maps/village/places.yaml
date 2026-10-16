@@ -1,0 +1,5 @@
+# Named places of the village. The first place is where the checks start
+# their walk, and every place must be reached from it.
+- {tags: [start], x: 24, y: 21}
+- {tags: [square], x: 22, y: 22}
+- {tags: [portal, "portal:east"], x: 44, y: 24}

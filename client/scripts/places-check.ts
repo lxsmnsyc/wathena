@@ -30,7 +30,7 @@ import type { FieldContext } from './field-check.ts';
 type Check = (browser: string, name: string, ok: boolean, detail: string) => void;
 
 /** A field load as the viewer records it. */
-interface MapLoad {
+export interface MapLoad {
   map: string;
   kind: string;
   biome: string;
@@ -41,18 +41,18 @@ interface MapLoad {
 }
 
 /** A named place of a map's info. */
-interface InfoPlace {
+export interface InfoPlace {
   tags: string[];
   x: number;
   y: number;
 }
 
-async function loads(page: Page): Promise<MapLoad[]> {
+export async function loads(page: Page): Promise<MapLoad[]> {
   return hook<MapLoad[]>(page, 'fieldLoads');
 }
 
 /** Waits until the page has loaded n generated maps, and returns the last. */
-async function nthLoad(page: Page, n: number, timeout = 60_000): Promise<MapLoad> {
+export async function nthLoad(page: Page, n: number, timeout = 60_000): Promise<MapLoad> {
   const end = Date.now() + timeout;
   for (;;) {
     const l = await loads(page).catch(() => []);
@@ -67,7 +67,7 @@ async function nthLoad(page: Page, n: number, timeout = 60_000): Promise<MapLoad
 }
 
 /** The places of a generated map, from the server's map info. */
-async function placesOf(game: string, id: string): Promise<InfoPlace[]> {
+export async function placesOf(game: string, id: string): Promise<InfoPlace[]> {
   const res = await fetch(`${game}/gen/maps/${encodeURIComponent(id)}.json`);
   if (!res.ok) {
     throw new Error(`${id}: HTTP ${res.status}`);

@@ -16,8 +16,12 @@ root (secret)
 │   ├── field(x, y)                a field's public node
 │   │   ├── version 2's children
 │   │   └── places                 its clearings
+│   ├── layout                     the world layout (decision 0041)
+│   │   ├── edges, towns, dungeons
+│   │   └── attempt(n)             a retry, n from 1 to 7
 │   ├── town(n)                    a town's public node, n from 1
 │   │   ├── roads, buildings, decorations, heights
+│   │   ├── name(i)                a name attempt, i from 0 to 99
 │   │   └── attempt(n)             a retry, n from 1 to 7
 │   └── dungeon
 │       └── <id>                   a dungeon, such as crypt
@@ -167,18 +171,54 @@ Attempt 0 uses the map's node, and attempt n uses `child(node, "attempt", n)`. A
   - `OBJS`: each prop's model `model/gen/<tileset>/<prop>`, turned and scaled, at its point in half cells and the height of the block there. A building stands at its footprint's middle, at scale 1.
   - `SNDS` and `EFCT` are empty. `DEPS` lists every name, sorted.
 
+## World layout
+
+`wactl world new` makes a procedural world's layout, the map graph of strategy section 8.10, from the public branch alone (proposal 0002, review decision 43, [decision 0041](../decisions/0041-world-layout.md)). The database keeps it, so a later change to these rules or to a record never changes a made world. The rules below are those of `server/layout`, which only the server runs. They use integer math and slices, and the golden layouts of `server/layout/testdata/golden-layout.json` hold on darwin/arm64 and darwin/amd64. The map generator's version does not change.
+
+### Nodes
+
+- `layout = child(public, "layout")`. Attempt 0 uses it, and attempt n `child(layout, "attempt", n)`, up to 8 attempts, then the error `ErrNoLayout` with each attempt's problem.
+- Each attempt draws from the streams of its children `edges`, `towns` and `dungeons`.
+- Town n's name attempt i is `child(town(n), "name", i)`, from 0 to 99, independent of the layout's attempt.
+- Each field's biome is the climate of generator-v2 at its coordinates.
+
+### Steps of an attempt
+
+The config gives a grid of W × H fields, T towns and D dungeons: 6 × 4, 5 and 6 by default. Field (x, y), for x from 0 to W - 1 and y from 0 to H - 1, has a portal on each edge (generator-v2), named by its place `portal:south`, `portal:east`, `portal:north` or `portal:west`.
+
+1. **Edges.** Each border between neighboring fields opens with a chance of 3 in 4: `IntN(4) != 0` from the `edges` stream. The borders between columns go first, row by row from y = 0, then those between rows. An open border links the two portals that face each other. The other portals are free.
+2. **Towns**, by number from the `towns` stream:
+   - A template: `IntN` over the templates in record order. With a home map, the first town draws among templates with 3 or more gates when one exists.
+   - A seat: `IntN` over the fields, by row then column, at least 2 grid steps from every earlier seat, else 1, else any.
+   - Gates: each gate's portal links to a free portal of a different field, the first free one by edge, taking fields by grid steps from the seat, then by row and column, at most 2 steps away. With a home map, the first town's first gate links to the home map's first `portal` place instead. A town that finds too few free portals fails the attempt.
+3. **Dungeons**, by number from the `dungeons` stream: a style by `IntN` over the styles, then a field by `IntN` among the fields with a free portal and no dungeon and no town seat, else with no dungeon, else any with a free portal. Its first free portal, by edge, links to the first floor's `entrance`, and each floor's `exit` to the next floor's `entrance`. A dungeon's ID is its style's name without the mod prefix, then `-2`, `-3` and on for more of one style. No free portal fails the attempt.
+4. **Reach.** Every map must be reached from the home area over the links, or the attempt fails.
+
+A link's end names a place: the index-th place, from 0, with a tag, such as a town's `portal` 2 or a field's `portal:east` 0.
+
+### Bands and names
+
+- **Bands.** Distances count warps from the home area: the home map, or the first town. With F the largest distance of a field, a town or the home map, and top = max level - band width + 1, a map at distance d starts at level 1 + (top - 1) × d / F, in integer division, and its band spans the band width, 10 levels by default up to level 99. A floor starts at its entrance field's lowest level plus (floor - 1) × the style's `level_step`, at most top.
+- **Town names.** Town n takes the naming style of its seat's biome: the last record for that biome, in load order. Attempt i draws a pattern by `IntN` from the stream of `name(i)`, then a syllable by `IntN` for each part of the pattern. The name is the syllables in lower case but its first letter. It passes with 4 to 12 ASCII letters, no other town or the home map with the same name in any case, and no word the chat filter blocks. After 100 attempts the layout fails with `ErrNoName`.
+- **Other names.** Each field and floor takes the town the fewest warps away, ties to the lower number. A field is "<direction> <town> Fields", with the direction by the larger grid step from the town's seat, north or south on a tie, and none on the seat. A dungeon is "<style> of <town>", with the style's name in words, and each floor adds " F<floor>". Fields or dungeons that share a name get a number in map order. A rename of a town names them again.
+
+### Dev worlds
+
+`waserver --dev` with `--fields`, `--towns` and `--dungeons` makes a layout without a stream, with the links of step 3's dev links: touching fields link, the portals that touch no field are free ends in field ID order, each town by number links its first portal to the first free end and its other portals become the first free ends, and each dungeon by ID opens from the next free end. Its home area is its first field. `waserver --dev --layout` builds a layout as above from `--seed`.
+
 ## Server endpoints
 
 `GET /gen/maps/<id>.json` gives, besides version 2's fields:
 
 | Field | Content |
 |---|---|
-| `kind` | `field`, `dungeon` or `town`. |
+| `kind` | `field`, `dungeon`, `town`, or `home` for a mod's home map ([map-folder-v1](map-folder-v1.md)), which has no `key` and which a client downloads. |
 | `params` | A floor's or a town's params, as hex. |
 | `name` | The style's or the template's record name. |
 | `town` | A town's number. |
 | `dungeon`, `floor`, `floors` | A floor's dungeon ID, its floor and the dungeon's floors. |
-| `levels` | A floor's level band: the lowest and the highest level. |
+| `levels` | The map's level band: the lowest and the highest level. Every map of a world layout has one. |
+| `displayName` | The map's display name, from the world layout. |
 | `places` | The map's places, each `{tags, x, y}`. |
 
 The tileset table at `/gen/tilesets.json` holds the dungeon and town tilesets too.

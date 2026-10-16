@@ -1,0 +1,9 @@
+# Models on the village's map, at a point in cells. The houses stand on
+# blocked cells of cells.bin; models do not block cells themselves.
+- {model: model/gen/town/house, x: 16, y: 30}
+- {model: model/gen/town/house, x: 32, y: 30, rotation: 180}
+- {model: model/gen/town/house, x: 16, y: 16, rotation: 90}
+- {model: model/gen/town/fountain, x: 24, y: 24}
+- {model: model/gen/grassland/tree, x: 6.5, y: 40.5}
+- {model: model/gen/grassland/tree, x: 40.5, y: 40.5, scale: 1.2}
+- {model: model/gen/grassland/tree, x: 6.5, y: 6.5, scale: 0.9}

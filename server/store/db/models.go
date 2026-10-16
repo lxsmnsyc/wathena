@@ -185,6 +185,21 @@ type CharacterFriend struct {
 	Added       pgtype.Int8
 }
 
+type CharacterMap struct {
+	CharacterID int64
+	MapID       string
+	Seq         pgtype.Int8
+	VisitedAt   pgtype.Timestamptz
+}
+
+type CharacterMemo struct {
+	CharacterID int64
+	Slot        int
+	MapID       string
+	X           int
+	Y           int
+}
+
 type CharacterSkill struct {
 	CharacterID int64
 	SkillID     int
@@ -590,6 +605,37 @@ type WorldEventRun struct {
 	ScheduledAt pgtype.Timestamptz
 	StartedAt   pgtype.Timestamptz
 	EndsAt      pgtype.Timestamptz
+}
+
+type WorldLink struct {
+	Ord    int
+	AMap   string
+	ATag   string
+	AIndex int
+	BMap   string
+	BTag   string
+	BIndex int
+}
+
+type WorldMap struct {
+	ID          string
+	Ord         int
+	Kind        string
+	DisplayName string
+	MinLevel    int
+	MaxLevel    int
+	Distance    int
+	X           int
+	Y           int
+	Size        int
+	Biome       int
+	Record      string
+	Params      []byte
+	Town        int
+	Dungeon     string
+	Floor       int
+	Floors      int
+	Nomemo      bool
 }
 
 type ZenyLog struct {

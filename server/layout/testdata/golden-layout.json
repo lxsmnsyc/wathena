@@ -1,0 +1,160 @@
+[
+  {
+    "secret": "golden-layout-1",
+    "width": 6,
+    "height": 4,
+    "towns": 5,
+    "dungeons": 6,
+    "home": false,
+    "checksum": "82c881f329380e0645a43cce8fcc84e17fa0bfccfc74c723a0a4b148a89e52e7",
+    "attempt": 1,
+    "maps": 47,
+    "links": 63,
+    "names": [
+      "Halheim",
+      "Grimheim",
+      "Kalfell",
+      "Brimvik",
+      "Brimmark"
+    ],
+    "bands": [
+      "t1 1-10",
+      "t2 51-60",
+      "t3 77-86",
+      "t4 51-60",
+      "t5 77-86"
+    ]
+  },
+  {
+    "secret": "golden-layout-2",
+    "width": 6,
+    "height": 4,
+    "towns": 5,
+    "dungeons": 6,
+    "home": false,
+    "checksum": "419c3f1941da6aad62163282a7bf399d9fac41777f98c4f7bc95f5df854c96d9",
+    "attempt": 0,
+    "maps": 46,
+    "links": 68,
+    "names": [
+      "Mirwen",
+      "Rusford",
+      "Thaldor",
+      "Erelas",
+      "Aeldell"
+    ],
+    "bands": [
+      "t1 1-10",
+      "t2 90-99",
+      "t3 64-73",
+      "t4 39-48",
+      "t5 39-48"
+    ]
+  },
+  {
+    "secret": "golden-layout-3",
+    "width": 6,
+    "height": 4,
+    "towns": 5,
+    "dungeons": 6,
+    "home": true,
+    "checksum": "b3f8acc4eeaabb81d726f57d2827626bcdffa61510ded0be4b2be4560ab29321",
+    "attempt": 2,
+    "maps": 54,
+    "links": 68,
+    "names": [
+      "Rusewick",
+      "Selmoor",
+      "Fenewen",
+      "Morowmere",
+      "Thalawen",
+      "Willow Village"
+    ],
+    "bands": [
+      "t1 12-21",
+      "t2 34-43",
+      "t3 34-43",
+      "t4 56-65",
+      "t5 67-76"
+    ]
+  },
+  {
+    "secret": "golden-layout-4",
+    "width": 2,
+    "height": 2,
+    "towns": 2,
+    "dungeons": 1,
+    "home": false,
+    "checksum": "3f58c1d37f3f5d61c0f58e932e214b6309855d8d43cc7da66789b5c66264b33f",
+    "attempt": 0,
+    "maps": 11,
+    "links": 16,
+    "names": [
+      "Sigstad",
+      "Halgard"
+    ],
+    "bands": [
+      "t1 1-10",
+      "t2 90-99"
+    ]
+  },
+  {
+    "secret": "golden-layout-5",
+    "width": 10,
+    "height": 8,
+    "towns": 12,
+    "dungeons": 14,
+    "home": false,
+    "checksum": "229374111e1a718f6772be25a473cd831a39bf9fb211a85ed00a22da9fbe4f79",
+    "attempt": 0,
+    "maps": 144,
+    "links": 199,
+    "names": [
+      "Thorheim",
+      "Hrimaheim",
+      "Neranport",
+      "Voremark",
+      "Ragavik",
+      "Fenelas",
+      "Wyreford",
+      "Murum",
+      "Kelport",
+      "Fenewen",
+      "Wavebay",
+      "Nerehaven"
+    ],
+    "bands": [
+      "t1 1-10",
+      "t2 42-51",
+      "t3 62-71",
+      "t4 48-57",
+      "t5 55-64",
+      "t6 42-51",
+      "t7 69-78",
+      "t8 21-30",
+      "t9 76-85",
+      "t10 55-64",
+      "t11 83-92",
+      "t12 62-71"
+    ]
+  },
+  {
+    "secret": "golden-layout-6",
+    "width": 1,
+    "height": 3,
+    "towns": 1,
+    "dungeons": 2,
+    "home": true,
+    "checksum": "ae0fa67cfd2add3e4a03e3b6d85b3bc4870234969f9fafdfeb14046b5eac0206",
+    "attempt": 0,
+    "maps": 13,
+    "links": 13,
+    "names": [
+      "Tiresh",
+      "Willow Village"
+    ],
+    "bands": [
+      "t1 45-54"
+    ]
+  }
+]

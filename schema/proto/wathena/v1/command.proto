@@ -38,8 +38,17 @@ message Command {
     VendingCommand vending = 28;
     BuyingStoreCommand buying_store = 29;
     StoreSearchCommand store_search = 30;
+    Memo memo = 31;
   }
 }
+
+// Memo saves the player's cell as a Warp Portal memo point, as the
+// client's /memo and rAthena's pc_memo (proposal 0002, review decision
+// 43). The newest memo is the first of 3, and a memo of the same map
+// replaces the older one. It needs Warp Portal at level 2 or higher, a
+// slot per level above 1, and a map without the nomemo flag. The answer
+// is a system message.
+message Memo {}
 
 message WalkTo {
   uint32 x = 1;

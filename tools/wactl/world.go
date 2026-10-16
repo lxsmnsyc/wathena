@@ -22,7 +22,9 @@ import (
 //  1. It applies pending migrations.
 //  2. It makes the world row with a new secret root seed, the key of its
 //     public branch, and the world mode, with the newest generator for a
-//     procedural world.
+//     procedural world. A procedural world gets its layout too: the map
+//     graph, town names and level bands (decision 0041), from the mods
+//     and procedural.layout of --config.
 //  3. It makes the first account with a password.
 //  4. It prints the staff.owners line that makes the account an owner.
 //
@@ -35,6 +37,7 @@ func worldNew(args []string) error {
 	mode := fs.String("mode", gen.DefaultMode(), "the world mode: "+strings.Join(gen.Modes(), " or ")+". It cannot change later")
 	admin := fs.String("admin", "", "name of the first account, for the config's staff.owners: 4 to 24 ASCII letters, digits and underscores, starting with a letter")
 	passwordFile := fs.String("admin-password-file", "", "file with the account's password on its first line, or - for standard input")
+	config := fs.String("config", "", "waserver.yml, for a procedural world's layout: its mods section and procedural.layout")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -92,11 +95,21 @@ func worldNew(args []string) error {
 	if w.PublicNode, err = publicNode(seed); err != nil {
 		return err
 	}
+	if w.Mode == gen.ModeProcedural {
+		if w.Layout, err = worldLayout(*config, *ruleset, w.PublicNode, generator); err != nil {
+			return err
+		}
+	} else if *config != "" {
+		return errors.New("--config is for a procedural world's layout; a classic world has none")
+	}
 	id, err := store.NewWorld(ctx, pool, w, store.Admin{Name: *admin, Hash: hash})
 	if err != nil {
 		return err
 	}
 	fmt.Printf("made the %s world %q (%s) and the account %s (id %d)\n", worldModeText(w), *name, *ruleset, *admin, id)
+	if w.Layout != nil {
+		fmt.Print(layoutText(w.Layout))
+	}
 	fmt.Print(ownersHint(*admin))
 	return nil
 }

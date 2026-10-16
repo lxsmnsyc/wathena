@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-16)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 3 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 4 are built.
 
 Done:
 
@@ -107,11 +107,21 @@ Done:
   - Test worlds of a `wactl` built with the tag have a field, a town per template and a dungeon per style. The Market Town sample adds a template, a style and NPCs placed by tag, with tests.
   - The golden dungeon floors and towns match in Go on arm64 and amd64 under Rosetta, in TinyGo, in Node, and in the three browsers, WMAP and places included. A town of 192 cells takes about 40 ms in Chromium and WebKit and 262 ms in Firefox, and one of 256 cells 485 ms in Firefox, within section 8.5's budget.
   - The browser check `places` walks from a field into a town, talks to an NPC placed by tag, and walks into a dungeon floor.
+- Phase 7 step 4, the world layout ([decision 0041](decisions/0041-world-layout.md), [generator-v3](specs/generator-v3.md), "World layout", [map-folder-v1](specs/map-folder-v1.md)), as review decision 43 approved it:
+  - `wactl world new --mode procedural --config waserver.yml` builds the layout from the public branch and the mods' records, and the database keeps it: 6 × 4 fields, 5 towns and 6 dungeons by default, links on shared borders, towns on 2 to 4 fields, dungeon entrances in fields, and retries until every map is reachable from the home area. Towns and floors keep their params.
+  - Town names from naming styles, records of `data/naming_styles.yml`, one per biome, with the chat filter and retries. Other maps take names from the nearest town. `@renametown` with the new permission `world.rename`.
+  - Bands rise with the warps from the home area, and floors build on their entrance field.
+  - The home area is the first town, or a mod's map folder tagged `home`, which links to the first town. New characters start there. `wactl map validate` checks map folders.
+  - Warps from the layout's links, saved entered maps, the `WorldMap` message and the client's World Map window, `/memo` with `nomemo`, the server's teleport service at each town's `teleport` place, `@go`, and `@warp` by display name.
+  - `wa.towns`, `player:has_visited`, `maps.get_display_name` and `place:get_band`.
+  - `--fields`, `--towns` and `--dungeons` stay as a dev shortcut through the layout's code, and `--layout` builds a whole dev layout.
+  - The golden layouts match in Go on arm64 and amd64 under Rosetta. The e2e test `TestWorldLayout` plays a made world with PostgreSQL, and the browser check `layout` walks from the home map into a town and opens the world map. The Home Village sample has a home map and a naming style.
 
 Open review items:
 
 - Next step 27's details to review, in proposal 0002, "Next steps".
 - Next step 28's details to review, and the review items of decision 0040: a `wa.testing` way to pick a test world's template, mods' own tilesets and props, a floor's level band in Lua, and whether an NPC placed by tag without a match is a warning.
+- Next step 29's details to review, and the review items of decision 0041: a Lua way to read graph distances or teleport prices, a record field for server services on NPCs, a `wa.testing` way to start on a mod's home map, the band formula in small worlds, longer names for `@renametown`, and entered maps and memo points in the data export.
 - The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
@@ -127,7 +137,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 3, the generator core, generated fields, and dungeons, towns and named places, are built. Step 4, the world layout with the map graph, town names and the home area, is next, with its Lua API drafted for review first if it needs any.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 4, the generator core, generated fields, dungeons, towns and named places, and the world layout, are built. Step 5, spawns, is next, with its Lua API drafted for review first if it needs any.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -2847,7 +2857,15 @@ The order from here:
       - Test worlds with a field, a town per template and a dungeon per style in a `wactl` built with the tag, and the Market Town sample mod.
       - Tests: golden floors and towns with WMAP and places hashes on every platform, `TestDungeonV3`, `TestTownV3`, `TestFieldV3Places`, `TestMapV3Retries`, `FuzzDungeonV3`, `FuzzTownV3`, the places index, the records, the dev links, the Lua tests of `wa.places`, the sample's `wactl mod test` cases, the client's map loads, and the browser check `places`.
       - Left: the map graph, town names, the home area and the bands of dungeons by place (step 4), spawns in floors and boss rooms (step 5), service NPCs from templates and `wa.generation` (step 6), cave chambers as places, caching generated maps, and a run on a real amd64 machine and in Safari.
-   4. World layout: map identity, town naming styles, the map graph and warps, the home area from mod maps, and save and memo points (sections 8.10 and 8.12). Every map is reachable from the home area.
+   4. World layout: map identity, town naming styles, the map graph and warps, the home area from mod maps, and save and memo points (sections 8.10 and 8.12). Every map is reachable from the home area. Done on 2026-10-16 ([decision 0041](decisions/0041-world-layout.md), [generator-v3](specs/generator-v3.md), "World layout", [map-folder-v1](specs/map-folder-v1.md), proposal 0002, review decision 43 and next step 29, server/README.md, "World layout", client/README.md, "Procedural worlds", and mods/README.md, "Naming styles", "Home maps" and "Towns"):
+      - `server/layout`: the layout from the public node `layout` with retries from `attempt(n)`, at most 8, bands by graph distance, town names from `name(i)` of each town's node, derived names, the dev layout, and the atlas the zones share. `wactl world new --config` builds it with the mods' records, and migration 00031 keeps it with each character's entered maps and memo points.
+      - `server/mapfolder`: the map folder format of section 8.12 with its checks and its WMAP, and `wactl map validate`.
+      - The zones: warps from the links with arrival cells no warp covers, the start on the home area, `WorldMap`, `/memo` and `nomemo`, the teleport service at each `teleport` place with prices by warps, `@go`, `@warp` by display name, and `@renametown` with `world.rename` and an audit row.
+      - Lua: `wa.towns`, `wa.Town`, `player:has_visited`, `maps.get_display_name` and `place:get_band`, with `TestTowns`.
+      - The client: home maps downloaded, display names, and the World Map window with Ctrl+`.
+      - Determinism: the 6 golden layouts match in Go on darwin/arm64 and darwin/amd64 under Rosetta. Only the server makes layouts.
+      - Tests: `TestGoldenLayout`, `TestLayoutRules`, `TestLayoutRetries`, `FuzzLayout`, the naming, atlas and band tests, `FuzzRead` and the map folder tests, the store, zone, waserver and wactl tests, the Home Village sample's cases, the e2e test `TestWorldLayout` with PostgreSQL, and the browser check `layout`.
+      - Left: removable maps and their moves (step 7), Warp Portal itself, locale files for name templates, and a run on a real amd64 machine.
    5. Spawns: monster spawn tags, field and dungeon spawn selection, mini bosses and field bosses (section 8.11).
    6. Content: service NPCs placed from templates, quest templates, procedural job changes and rebirth (section 11.4), and `wa.generation` for mod layers (section 8.7).
    7. Rotation: rotating dungeons and world change events through the scheduler (section 8.8), moving players, save points and memo points when a map goes away.

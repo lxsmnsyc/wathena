@@ -22,6 +22,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 )
@@ -86,10 +87,22 @@ type proceduralOptions struct {
 	Tilesets string `yaml:"tilesets"`
 	// Towns is how many towns to run, t1 to t<n>, each with the next
 	// town template in record order (decision 0040). Dungeons lists the
-	// dungeons as style or style:floors. Phase 7 step 4's map graph will
-	// place them; until then they link to the fields' free portals.
+	// dungeons as style or style:floors. With --dev and no world row, a
+	// dev world links them as phase 7 step 3's dev links did, through
+	// the world layout's code (decision 0041).
 	Towns    int  `yaml:"towns"`
 	Dungeons list `yaml:"dungeons"`
+	// Layout is a new world's layout: `wactl world new --config` reads
+	// it, and so does a dev world with DevLayout (decision 0041).
+	Layout layout.Options `yaml:"layout"`
+	// DevLayout makes a --dev world without a world row build a full
+	// layout from Layout and --seed, as a new world would.
+	DevLayout bool `yaml:"dev_layout"`
+	// TeleportBase and TeleportStep are the teleport service's price:
+	// the base, plus the step for each warp between the towns. 0 takes
+	// the defaults, 500 and 100 zeny.
+	TeleportBase int `yaml:"teleport_base"`
+	TeleportStep int `yaml:"teleport_step"`
 }
 
 // privacyOptions are the owner's parts of the privacy notice. The page
@@ -258,6 +271,7 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.IntVar(&f.Procedural.FieldSize, "field-size", o.Procedural.FieldSize, "the width and height of each generated field, 32 to 1024 cells (procedural.field_size)")
 	flags.StringVar(&f.Procedural.Tilesets, "tilesets", "", "YAML tileset table that maps the generator's tilesets to the asset build's textures and models; empty uses placeholders (procedural.tilesets)")
 	flags.IntVar(&f.Procedural.Towns, "towns", 0, "how many generated towns to run, each with the next town template; with --dev and no world row they make a procedural world (procedural.towns)")
+	flags.BoolVar(&f.Procedural.DevLayout, "layout", false, "with --dev and no world row, build a full world layout from procedural.layout and --seed, as wactl world new does; needs -tags procedural (procedural.dev_layout)")
 	dungeonList := flags.String("dungeons", "", "generated dungeons to run, as style or style:floors, comma-separated, such as crypt:3; with --dev and no world row they make a procedural world (procedural.dungeons)")
 	flags.StringVar(&database, "database", "", "PostgreSQL URL of the game role; prefer the "+databaseEnv+" environment variable, which keeps the password out of process lists")
 	if err := flags.Parse(args); err != nil {
@@ -330,6 +344,8 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.Procedural.Towns = f.Procedural.Towns
 		case "dungeons":
 			o.Procedural.Dungeons = splitList(*dungeonList)
+		case "layout":
+			o.Procedural.DevLayout = f.Procedural.DevLayout
 		}
 	})
 	return o, database, nil
@@ -550,6 +566,15 @@ func validate(o options, s secrets) (settings, error) {
 		if _, _, err := fields.ParseDungeonSpec(d); err != nil {
 			bad("procedural.dungeons", "%v", err)
 		}
+	}
+	if _, err := o.Procedural.Layout.Config(st.Procedural.FieldSize); err != nil {
+		bad("procedural.layout", "%v", err)
+	}
+	if o.Procedural.DevLayout && wantsDevMaps(o.Procedural) {
+		bad("procedural.dev_layout", "a dev layout places its own maps; leave out --fields, --towns and --dungeons")
+	}
+	if o.Procedural.TeleportBase < 0 || o.Procedural.TeleportStep < 0 || o.Procedural.TeleportBase > 1_000_000 || o.Procedural.TeleportStep > 1_000_000 {
+		bad("procedural.teleport_base", "the teleport prices are 0 to 1000000 zeny")
 	}
 	if o.Mods.MaxAssetMB < 0 || o.Mods.MaxAssetMB > 64<<10 {
 		bad("mods.max_asset_mb", "must be 0 for the default of 200, or up to 65536")

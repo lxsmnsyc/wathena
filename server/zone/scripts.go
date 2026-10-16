@@ -17,6 +17,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/currency"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/places"
@@ -96,6 +97,11 @@ type Mods struct {
 	// Places are the named places of the world's generated maps, for
 	// wa.places (review decision 42). A classic world has none.
 	Places *places.Index
+	// Atlas is the world layout (decision 0041): display names, towns,
+	// the map graph, and the world map. A classic world has none.
+	Atlas *layout.Atlas
+	// Teleport is the teleport service's prices.
+	Teleport TeleportPrices
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -114,6 +120,9 @@ type NPC struct {
 	Script string
 	// Shop is the NPC's shop, or nil.
 	Shop *shop.Shop
+	// Service is a service the server runs for the NPC, such as
+	// ServiceTeleport, or "". Mods' records cannot set it.
+	Service string
 }
 
 type npc struct {
@@ -230,7 +239,7 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 	}
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
 		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location, Rules: z.worldRules(),
-		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places}
+		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places, Atlas: z.Mods.Atlas}
 	// The job tables are read at each call: a headless zone gets them
 	// after its Lua state is made.
 	opts.Jobs = zoneJobs{z}

@@ -3,10 +3,12 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/store/db"
 )
 
@@ -35,6 +37,10 @@ type World struct {
 	// game role may read instead of Seed (decision 0039). It is nil for
 	// worlds made before migration 00030.
 	PublicNode []byte
+	// Layout is a procedural world's layout, which NewWorld writes with
+	// the row (decision 0041). LoadWorld leaves it nil: LoadLayout reads
+	// it.
+	Layout *layout.Layout
 }
 
 // Admin is the first account that NewWorld makes. Hash is the
@@ -65,6 +71,11 @@ func NewWorld(ctx context.Context, pool *pgxpool.Pool, w World, admin Admin) (in
 		}
 		if n == 0 {
 			return ErrWorldExists
+		}
+		if w.Layout != nil {
+			if err := insertLayout(ctx, q, w.Layout); err != nil {
+				return fmt.Errorf("the world layout: %w", err)
+			}
 		}
 		id, err = q.CreateAdminAccount(ctx, db.CreateAdminAccountParams{Name: admin.Name, Hash: admin.Hash})
 		if errors.Is(err, pgx.ErrNoRows) {
