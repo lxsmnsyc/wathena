@@ -952,6 +952,90 @@ describe('view sprites', () => {
     ]);
   });
 
+  it('passes quest events on as plain data', () => {
+    const o = online();
+    o.clock = () => 2000;
+    o.setMap(map());
+    const got: unknown[] = [];
+    o.onQuestList = (quests) => {
+      got.push(['list', quests]);
+    };
+    o.onQuestUpdate = (quest) => {
+      got.push(['update', quest]);
+    };
+    o.onQuestRemove = (id) => {
+      got.push(['remove', id]);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'questList',
+          value: { quests: [{ id: 7, title: 'Hunt', active: true, limitMs: -1n }] },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'questUpdate',
+          value: {
+            quest: {
+              id: 7,
+              title: 'Hunt',
+              limitMs: 5000n,
+              objectives: [{ label: 'Poring', monster: 1002, count: 1, goal: 3 }],
+            },
+          },
+        },
+      }),
+      create(EventSchema, { body: { case: 'questRemove', value: { id: 7 } } }),
+    ]);
+    expect(got).toEqual([
+      [
+        'list',
+        [{ id: 7, title: 'Hunt', active: true, limitMs: -1, receivedAt: 2000, objectives: [] }],
+      ],
+      [
+        'update',
+        {
+          id: 7,
+          title: 'Hunt',
+          active: false,
+          limitMs: 5000,
+          receivedAt: 2000,
+          objectives: [
+            { label: 'Poring', monster: 1002, count: 1, goal: 3, minLevel: 0, maxLevel: 0 },
+          ],
+        },
+      ],
+      ['remove', 7],
+    ]);
+  });
+
+  it('keeps quest icons until removed, until the NPC goes, or until the map changes', () => {
+    const o = online();
+    o.setMap(map());
+    const icon = (npc: number, name: string): Event =>
+      create(EventSchema, { body: { case: 'questIcon', value: { npc, icon: name } } });
+    o.handle([icon(5, 'quest'), icon(6, 'job_question'), icon(7, 'warg')]);
+    expect([...o.questIcons()]).toEqual([
+      [5, 'quest'],
+      [6, 'job_question'],
+      [7, 'warg'],
+    ]);
+    // An empty name removes the icon, and a vanish takes it away.
+    o.handle([
+      icon(5, ''),
+      create(EventSchema, { body: { case: 'vanish', value: { id: 6 } } }),
+      icon(7, 'warg_face'),
+    ]);
+    expect([...o.questIcons()]).toEqual([[7, 'warg_face']]);
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'mapChange', value: { map: 'map/b', x: 3, y: 4, netId: 9 } },
+      }),
+    ]);
+    expect(o.questIcons().size).toBe(0);
+  });
+
   it('draws the view sprites of a weapon and a shield', () => {
     setArt(MOD_DATA);
     const look = lookOf(

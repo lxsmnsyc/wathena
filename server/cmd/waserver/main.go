@@ -729,7 +729,7 @@ func runAll(name string, args []string) error {
 		scriptMods = append(scriptMods, sc.Mod)
 	}
 	staffWorld := adminworld.New(adminworld.Config{Staff: staffRoles, World: w, Store: st, Chat: hub, Items: items, Jobs: jobs,
-		StorageRecords: loaded.zone.Storages, Currencies: loaded.zone.Currencies, Storages: storages, Mail: mails, Social: socials,
+		StorageRecords: loaded.zone.Storages, Currencies: loaded.zone.Currencies, Quests: loaded.zone.Quests, Storages: storages, Mail: mails, Social: socials,
 		Kicker: kicker{gw, w}, Clock: clock, Log: log,
 		Tools: adminworld.Tools{Metrics: reg, Started: started, Version: version(), Restart: planner, Scheduler: scheduler, Runs: runs,
 			Events: eventConfig, Overrides: eventOverrides, Mods: loaded.set, ScriptMods: scriptMods, Switches: modSwitches}})

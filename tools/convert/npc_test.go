@@ -15,7 +15,7 @@ import (
 // shop, and two that do not convert yet: one with a clock label and one
 // that spawns monsters. goldenFunctions are the functions they call.
 var goldenNPCs = []string{"kaf_prontera", "Kafra Service", "Woman#payon", "Wayne", "Inn Employee#Ahlma", "Tool Dealer#prt1",
-	"Slot Move Card Sales#slo", "Cursed Spirit#nif"}
+	"Slot Move Card Sales#slo", "Cursed Spirit#nif", "Dancer Kim#fild"}
 
 var goldenFunctions = []string{"f_kafra", "f_kafset", "f_kaftele", "f_kafend", "f_kafinfo", "f_kafstor", "f_canopenstorage", "f_setkafcode", "f_entkafcode", "f_checkkafcode", "f_innmaid"}
 

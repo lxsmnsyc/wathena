@@ -148,6 +148,10 @@ type Player struct {
 	// its Warp Portal memo points (worldmap.go).
 	visited []string
 	memos   []character.Memo
+	// quests are the character's quest log, and questIcons the icons
+	// scripts showed it over NPCs of this map (quests.go).
+	quests     []character.Quest
+	questIcons map[*entity]string
 	// prevend is the most lines of the vending setup the Vending skill
 	// opened, or 0; vend is the player's open shop. buySetup is the
 	// slots of the buying store setup, or 0; buying is the open store.
@@ -373,6 +377,8 @@ type command struct {
 	search  *wathenav1.StoreSearchCommand
 	// memo is the /memo command (worldmap.go).
 	memo bool
+	// questActive is the quest window's active toggle (quests.go).
+	questActive *questActiveCommand
 }
 
 type useSkillCommand struct {
@@ -951,6 +957,7 @@ func (z *Zone) join(p *Player) joinResult {
 	p.blocks, p.sanctions = slices.Clone(c.Blocks), slices.Clone(c.Sanctions)
 	p.currencies = maps.Clone(c.Currencies)
 	p.visited, p.memos = slices.Clone(c.Visited), slices.Clone(c.Memos)
+	p.quests, p.questIcons = slices.Clone(c.Quests), nil
 	z.restoreCompanions(p, c)
 	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), bodyOptions(p))), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
@@ -1060,6 +1067,8 @@ func (z *Zone) join(p *Player) joinResult {
 	// CurrencyUpdate comes at login, as its message says, when the
 	// player has a currency: the client starts with none.
 	z.sendCurrenciesHeld(p)
+	// The quest log comes at login and after each map change.
+	z.sendQuestList(p)
 	// Saved statuses and timed bonuses come back, as chrif_load_scdata
 	// and the bonus_script load. A login fires status_start; a map change
 	// does not, since they never ended.
@@ -1280,6 +1289,9 @@ func (z *Zone) handle(c command) {
 	}
 	if c.memo {
 		z.memo(p)
+	}
+	if c.questActive != nil {
+		z.questActive(p, c.questActive)
 	}
 	me := p.entity
 	if me.dead {
@@ -1582,6 +1594,9 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 					events = append(events, z.appear(id, e))
 					if len(e.path) > 0 {
 						events = append(events, z.move(id, e))
+					}
+					if icon := p.questIcons[e]; icon != "" {
+						events = append(events, questIconEvent(id, icon))
 					}
 					if e.player != nil && e.player.hasStore() {
 						events = append(events, entityShop(id, e.player))

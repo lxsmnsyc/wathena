@@ -1,0 +1,11 @@
+# A hunt quest. Its name becomes example.hunting-board:porings, with an
+# ID from 1,000,000. The script names it "porings".
+- name: porings
+  title: Poring Patrol
+  time_limit: 1h
+  targets:
+    - {monster: PORING, count: 3}
+  drops:
+    # While the quest is in the log, each Poring gives a Jellopy, as
+    # rAthena's quest drops.
+    - {monster: PORING, item: Jellopy, rate: 10000}

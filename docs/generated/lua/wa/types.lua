@@ -45,6 +45,9 @@
 ---| "world_event_start"
 ---| "world_event_end"
 ---| "restart_planned"
+---| "quest_add"
+---| "quest_progress"
+---| "quest_complete"
 
 ---A bonus name of wa.bonuses (proposal 0002a).
 ---@alias wa.BonusName
@@ -232,6 +235,17 @@
 ---| "inventory_slots"
 ---| "storage_slots"
 ---| "cart_slots"
+
+---An icon of npc:show_quest_icon, as rAthena's QTYPE_ values 0 to 6 and 8: ! and ? marks for quests, jobs and events, a warg, and a warg's face.
+---@alias wa.QuestIcon
+---| "quest"
+---| "quest_question"
+---| "job"
+---| "job_question"
+---| "event"
+---| "event_question"
+---| "warg"
+---| "warg_face"
 
 ---A monster's skill state, in the words of rAthena's mob_skill_db.
 ---@alias wa.MonsterState
@@ -575,6 +589,49 @@ function wa_Player:has_staff_permission(permission) end
 ---@return boolean
 function wa_Player:has_visited(town) end
 
+---Adds the quest to the player's quest log as active, with its time limit from now, as setquest. Returns false, and changes nothing, when the log has the quest already, in any state. The quest_add event follows.
+---@param quest integer|string A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error.
+---@return boolean
+function wa_Player:add_quest(quest) end
+
+---Marks an active or inactive quest complete, as completequest. It leaves the quest window, and kills stop counting for it. Returns false when the log lacks the quest or holds it as complete. The quest_complete event follows.
+---@param quest integer|string A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error.
+---@return boolean
+function wa_Player:complete_quest(quest) end
+
+---Takes the quest out of the log, in any state, as erasequest. Returns false when the log lacks it.
+---@param quest integer|string A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error.
+---@return boolean
+function wa_Player:remove_quest(quest) end
+
+---Replaces a quest with another, which starts active with its time limit from now and no kills, as changequest. Returns false, and changes nothing, when the log lacks from, holds it as complete, or has to already. The quest_add event follows for to.
+---@param from integer|string A quest the log holds as active or inactive.
+---@param to integer|string A quest the log lacks.
+---@return boolean
+function wa_Player:change_quest(from, to) end
+
+---The quest's state in the player's log. A quest is inactive when the player marked it so in the quest window.
+---
+---Needs the permission `game.read`.
+---@param quest integer|string A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error.
+---@return "none"|"active"|"inactive"|"complete"
+function wa_Player:get_quest_state(quest) end
+
+---The kills counted for a hunt objective and the kills it asks for, as checkquest with HUNTING reads them. nil when the player lacks the quest or the quest has no such objective. Kills stop counting at the goal.
+---
+---Needs the permission `game.read`.
+---@param quest integer|string A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error.
+---@param objective integer A hunt objective of the quest, from 1.
+---@return integer?, integer?
+function wa_Player:get_quest_progress(quest, objective) end
+
+---Whether the quest's time limit passed, as checkquest with PLAYTIME. false for a quest without a time limit, and for a quest the player lacks.
+---
+---Needs the permission `game.read`.
+---@param quest integer|string A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error.
+---@return boolean
+function wa_Player:quest_timed_out(quest) end
+
 ---Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
 ---
 ---Needs the permission `player.sanction`.
@@ -747,6 +804,11 @@ function wa_Npc:show_emotion(emotion) end
 ---Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it.
 ---@param text string
 function wa_Npc:say_aloud(text) end
+
+---Shows an icon over the NPC to one player, as showevent. It stays while the player is on the map.
+---@param player wa.Player A player handle.
+---@param icon? wa.QuestIcon nil removes the icon.
+function wa_Npc:show_quest_icon(player, icon) end
 
 ---Plays an effect on the NPC for everyone near, as specialeffect.
 ---@param effect integer An effect from wa.effects.
@@ -1506,6 +1568,16 @@ local wa_Death = {}
 ---@field from integer The job before the change.
 ---@field to integer The new job. A male player who changes into a Dancer is a Bard here.
 local wa_JobChange = {}
+
+---The object of the quest_add, quest_progress and quest_complete events.
+---@class wa.QuestEvent
+---@field player wa.Player The player whose quest log changed.
+---@field quest string The quest record's full name, such as example.hunts:wolves, or a core quest's ID as text, such as "7104".
+---@field id integer The quest's ID.
+---@field objective integer? quest_progress: the hunt objective that counted a kill, from 1.
+---@field count integer? quest_progress: the objective's kills now.
+---@field goal integer? quest_progress: the kills the objective asks for.
+local wa_QuestEvent = {}
 
 ---The options of a death handler. Each one narrows the deaths that run it.
 ---@class wa.DeathOptions

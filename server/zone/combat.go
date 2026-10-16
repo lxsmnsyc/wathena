@@ -419,6 +419,9 @@ func (z *Zone) die(e, killer *entity) {
 	if !e.monster.noRewards {
 		z.reward(e, killer)
 	}
+	// mob_dead counts the kill for quests after the rewards, and only
+	// on the final death, whatever its rewards.
+	z.questKill(e, killer)
 	z.eventDied(e, killer)
 	// mob_deleteslave: its slaves die with it.
 	z.killSlaves(e)

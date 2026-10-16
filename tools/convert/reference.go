@@ -32,6 +32,8 @@ type Core struct {
 	MonsterSkills *MonsterResult
 	// RandomOptions are the converted random options and groups.
 	RandomOptions *RandomOptionResult
+	// Quests are the converted quests.
+	Quests *QuestResult
 }
 
 // Reference converts the item scripts of a mode's extracts.
@@ -50,8 +52,8 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 	read := func(name string) ([]byte, error) {
 		return reference.ReadFile("extracts/" + string(mode) + "/" + name + ".json")
 	}
-	var in [9][]byte
-	for i, name := range []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills", "random_options", "shops"} {
+	var in [10][]byte
+	for i, name := range []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills", "random_options", "shops", "quests"} {
 		data, err := read(name)
 		if err != nil {
 			return nil, err
@@ -65,7 +67,11 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 	if err != nil {
 		return nil, err
 	}
-	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in[4]), Constants: bytes.NewReader(in[1]), ClientTables: bytes.NewReader(in[3]), Shops: bytes.NewReader(in[8])})
+	quests, err := ConvertQuests(bytes.NewReader(in[9]))
+	if err != nil {
+		return nil, err
+	}
+	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in[4]), Constants: bytes.NewReader(in[1]), ClientTables: bytes.NewReader(in[3]), Shops: bytes.NewReader(in[8]), Quests: quests})
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +105,12 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 		monsters[strings.ToUpper(m.Sprite)] = m.ID
 	}
 	files := fstest.MapFS{}
-	for _, part := range []map[string]string{res.Files(), npcs.Files(), mobs.Files(), opts.Files()} {
+	for _, part := range []map[string]string{res.Files(), npcs.Files(), mobs.Files(), opts.Files(), quests.Files()} {
 		for path, content := range part {
 			files[path] = &fstest.MapFile{Data: []byte(content), Mode: 0o444}
 		}
 	}
-	return &Core{Result: res, NPCs: npcs, Files: files, Constants: consts, Groups: &groups, Monsters: monsters, MonsterSkills: mobs, RandomOptions: opts}, nil
+	return &Core{Result: res, NPCs: npcs, Files: files, Constants: consts, Groups: &groups, Monsters: monsters, MonsterSkills: mobs, RandomOptions: opts, Quests: quests}, nil
 }
 
 // FS returns the generated files as a read-only file system.

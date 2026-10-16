@@ -552,6 +552,17 @@ export class Connection {
     });
   }
 
+  /**
+   * Marks a quest of the log active or inactive, as RO's quest window.
+   * The server answers with a QuestUpdate.
+   */
+  questActive(id: number, active: boolean): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'questActive', value: { id, active } } }),
+    });
+  }
+
   /** Adds a character name to the block list, or removes it. The server answers with BlockList. */
   block(name: string, unblock = false): void {
     this.send({

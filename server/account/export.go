@@ -138,6 +138,9 @@ type ExportCharacter struct {
 	// Variables are the mods' saved variables of the character (decision
 	// 0036).
 	Variables []ExportVariable `json:"variables"`
+	// Quests are the character's quest log (decision 0043), in the
+	// order it took them.
+	Quests []ExportQuest `json:"quests"`
 }
 
 // ExportVariable is a mod's saved variable (proposal 0002, "Variables"):
@@ -148,6 +151,22 @@ type ExportVariable struct {
 	Mod   string          `json:"mod"`
 	Name  string          `json:"name"`
 	Value json.RawMessage `json:"value"`
+}
+
+// ExportQuest is one quest of a character's quest log (decision 0043).
+type ExportQuest struct {
+	// ID is the quest's ID, and Name and Title its record's name and
+	// title, or "" for a quest whose record is gone, such as a removed
+	// mod's.
+	ID    uint32 `json:"id"`
+	Name  string `json:"name"`
+	Title string `json:"title"`
+	// State is active, inactive or complete.
+	State string `json:"state"`
+	// EndsAt is when the quest's time limit ends, or null without one.
+	EndsAt *time.Time `json:"ends_at"`
+	// Counts are the kills counted for each hunt objective.
+	Counts []int `json:"counts"`
 }
 
 // ExportStats are the raised stats, without bonuses.
@@ -346,6 +365,7 @@ func (s *Service) buildExport(ctx context.Context, account int64) (*Export, erro
 	nonNil(&e.Characters)
 	for i := range e.Characters {
 		nonNil(&e.Characters[i].Variables)
+		nonNil(&e.Characters[i].Quests)
 	}
 	nonNil(&e.Chat)
 	nonNil(&e.ItemLog)

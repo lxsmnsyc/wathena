@@ -12,6 +12,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/quest"
 	"github.com/lxsmnsyc/wathena/server/storage"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/store/db"
@@ -400,7 +401,7 @@ func (w *World) exportCharacter(v *store.OfflineView, skills []db.SkillsRow, blo
 		Position: account.ExportPosition{Map: c.Map, X: c.X, Y: c.Y}, CreatedAt: c.CreatedAt.UTC(), Party: v.Party, Guild: v.Guild,
 		Skills: []account.ExportSkill{}, Inventory: w.exportItems(c.Items), Cart: []account.ExportItem{},
 		Storages: []account.ExportStorage{}, Mail: []account.ExportMail{}, Currencies: w.exportCurrencies(c.Currencies),
-		BlockList: slices.Clone(blocks)}
+		BlockList: slices.Clone(blocks), Quests: w.exportQuests(c.Quests)}
 	if e.BlockList == nil {
 		e.BlockList = []string{}
 	}
@@ -415,6 +416,24 @@ func (w *World) exportCharacter(v *store.OfflineView, skills []db.SkillsRow, blo
 			Zeny: m.Zeny, Read: m.Read, Returned: m.Returned, Items: w.exportItems(m.Items)})
 	}
 	return e
+}
+
+// exportQuests is a character's quest log for the export.
+func (w *World) exportQuests(list []character.Quest) []account.ExportQuest {
+	out := make([]account.ExportQuest, 0, len(list))
+	for _, q := range list {
+		e := account.ExportQuest{ID: q.ID, State: quest.StateName(q.State), Counts: q.Counts[:]}
+		if r := w.cfg.Quests.ByID(q.ID); r != nil {
+			e.Name, e.Title = r.Name, r.Title
+			e.Counts = q.Counts[:len(r.Targets)]
+		}
+		if !q.End.IsZero() {
+			end := q.End.UTC()
+			e.EndsAt = &end
+		}
+		out = append(out, e)
+	}
+	return out
 }
 
 func (w *World) exportItems(list []character.Item) []account.ExportItem {

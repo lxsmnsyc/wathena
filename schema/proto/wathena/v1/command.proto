@@ -39,7 +39,18 @@ message Command {
     BuyingStoreCommand buying_store = 29;
     StoreSearchCommand store_search = 30;
     Memo memo = 31;
+    QuestActive quest_active = 32;
   }
+}
+
+// QuestActive marks a quest of the player's log active or inactive, as
+// the client's quest window does and rAthena's clif_parse_questStateAck
+// (proposal 0002, review decision 45). The answer is a QuestUpdate. A
+// quest the log lacks, or holds as complete, changes nothing and gets no
+// answer.
+message QuestActive {
+  uint32 id = 1;
+  bool active = 2;
 }
 
 // Memo saves the player's cell as a Warp Portal memo point, as the

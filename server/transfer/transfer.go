@@ -192,6 +192,9 @@ const (
 	// ActionCommand is an item a GM command made, such as @item, from
 	// the staff end (decision 0030).
 	ActionCommand Action = "command"
+	// ActionQuest is an item a quest's drop gave to the player who
+	// killed a monster, as rAthena's LOG_TYPE_QUEST (decision 0043).
+	ActionQuest Action = "quest"
 )
 
 // ItemLog is one item move.

@@ -99,6 +99,7 @@ import { appearance } from './options';
 import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
 import type { WorldEventRun } from './worldEvents';
+import { type QuestView, questOf } from './quests';
 import { type WorldMapData, worldMapOf } from './worldMap';
 import {
   HEAL_SKILLS,
@@ -553,6 +554,15 @@ export default class Online {
    * the one before. A classic world sends none.
    */
   onWorldMap: ((map: WorldMapData) => void) | undefined;
+  /**
+   * Called with the player's quest log, after login and after each map
+   * change. It replaces the log before.
+   */
+  onQuestList: ((quests: QuestView[]) => void) | undefined;
+  /** Called with a quest to add to the log, or to replace the quest with its ID. */
+  onQuestUpdate: ((quest: QuestView) => void) | undefined;
+  /** Called with the ID of a quest that left the log. */
+  onQuestRemove: ((id: number) => void) | undefined;
   /** Called with how a mail action went. */
   onMailResult: ((result: MailResult) => void) | undefined;
   /** Called when the vending setup window opens, with the most lines. */
@@ -675,6 +685,8 @@ export default class Online {
   private readonly badges = new Map<number, GuildBadge>();
   /** The shop titles shown over players in sight, by ID, from EntityShop. */
   private readonly boards = new Map<number, ShopBoard>();
+  /** The quest icons over NPCs, by entity ID, from QuestIcon. */
+  private readonly icons = new Map<number, string>();
   private map: WMap | undefined;
 
   constructor(
@@ -762,7 +774,12 @@ export default class Online {
         }
         case 'appear': {
           const a = e.body.value;
+          // A quest icon that came first stays with the entity.
+          const icon = this.icons.get(a.id);
           this.remove(a.id);
+          if (icon !== undefined) {
+            this.icons.set(a.id, icon);
+          }
           if (a.kind === EntityKind.ITEM) {
             if (a.item !== undefined) {
               this.items.add(a.id, this.map, a.x, a.y, a.item);
@@ -1391,6 +1408,31 @@ export default class Online {
         case 'worldMap':
           this.onWorldMap?.(worldMapOf(e.body.value));
           break;
+        case 'questList': {
+          // Timers count from when the list arrived.
+          const now = this.clock?.() ?? performance.now();
+          this.onQuestList?.(e.body.value.quests.map((q) => questOf(q, now)));
+          break;
+        }
+        case 'questUpdate': {
+          const q = e.body.value.quest;
+          if (q !== undefined) {
+            this.onQuestUpdate?.(questOf(q, this.clock?.() ?? performance.now()));
+          }
+          break;
+        }
+        case 'questRemove':
+          this.onQuestRemove?.(e.body.value.id);
+          break;
+        case 'questIcon': {
+          const i = e.body.value;
+          if (i.icon === '') {
+            this.icons.delete(i.npc);
+          } else {
+            this.icons.set(i.npc, i.icon);
+          }
+          break;
+        }
         case 'mailResult':
           this.onMailResult?.(e.body.value);
           break;
@@ -1643,6 +1685,11 @@ export default class Online {
     return this.boards;
   }
 
+  /** The quest icons over NPCs, by entity ID. */
+  questIcons(): ReadonlyMap<number, string> {
+    return this.icons;
+  }
+
   /** Whether an entity is an NPC, which a click talks to. */
   isNpc(id: number): boolean {
     return this.kinds.get(id) === 'npc';
@@ -1656,6 +1703,7 @@ export default class Online {
     this.monsterLooks.delete(id);
     this.badges.delete(id);
     this.boards.delete(id);
+    this.icons.delete(id);
     this.items.remove(id);
     const portal = this.portals.get(id);
     if (portal !== undefined) {
@@ -1722,6 +1770,7 @@ export default class Online {
     this.kinds.clear();
     this.badges.clear();
     this.boards.clear();
+    this.icons.clear();
     this.waiting = [];
   }
 

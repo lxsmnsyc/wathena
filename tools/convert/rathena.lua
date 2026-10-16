@@ -439,4 +439,51 @@ function R.guild_storage_log(conversation, player)
 	m.guild_storage_log(player)
 end
 
+-- checkquest is rAthena's quest_check for the attached player. kind is
+-- 0 (HAVEQUEST), 1 (PLAYTIME) or 2 (HUNTING). timed says whether the
+-- quest has a time limit, or is nil when the converter could not tell:
+-- rAthena counts a quest without one as timed out, as its end time is
+-- 0.
+function R.checkquest(player, quest, kind, timed)
+	local state = player:get_quest_state(quest)
+	if state == "none" then
+		return -1
+	end
+	if kind == 0 then
+		return state == "complete" and 2 or 1
+	end
+	local expired = timed == false or player:quest_timed_out(quest)
+	if kind == 1 then
+		if expired then
+			return 2
+		end
+		return state == "complete" and 1 or 0
+	end
+	if state == "complete" then
+		return 0
+	end
+	local i = 1
+	while true do
+		local count, goal = player:get_quest_progress(quest, i)
+		if count == nil then
+			return 2
+		end
+		if count < goal then
+			break
+		end
+		i = i + 1
+	end
+	return expired and 1 or 0
+end
+
+-- isbegin_quest is 0 without the quest, 1 for an active or inactive
+-- quest, and 2 for a complete one.
+function R.isbegin_quest(player, quest)
+	local state = player:get_quest_state(quest)
+	if state == "none" then
+		return 0
+	end
+	return state == "complete" and 2 or 1
+end
+
 return R

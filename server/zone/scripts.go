@@ -21,6 +21,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/places"
+	"github.com/lxsmnsyc/wathena/server/quest"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/social"
@@ -102,6 +103,9 @@ type Mods struct {
 	Atlas *layout.Atlas
 	// Teleport is the teleport service's prices.
 	Teleport TeleportPrices
+	// Quests are the quests of data/quests.yml (review decision 45).
+	// Without them a zone has no quests.
+	Quests *quest.Table
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.
@@ -187,6 +191,8 @@ type scriptEvent struct {
 	// sale is set for the shop_buy, shop_sell, vend, buying_store_sale
 	// and mail events, which run with FireSale.
 	sale *modscript.SaleEvent
+	// quest is set for the quest events, which run with FireQuest.
+	quest *modscript.QuestEvent
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -239,7 +245,7 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 	}
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
 		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location, Rules: z.worldRules(),
-		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places, Atlas: z.Mods.Atlas}
+		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places, Atlas: z.Mods.Atlas, Quests: z.Mods.Quests}
 	// The job tables are read at each call: a headless zone gets them
 	// after its Lua state is made.
 	opts.Jobs = zoneJobs{z}
@@ -294,6 +300,8 @@ func (z *Zone) runScripts() {
 			z.scripts.FireParty(*ev.party)
 		case ev.guild != nil:
 			z.scripts.FireGuild(*ev.guild)
+		case ev.quest != nil:
+			z.scripts.FireQuest(*ev.quest)
 		default:
 			z.scripts.Fire(ev.name, ev.args...)
 		}

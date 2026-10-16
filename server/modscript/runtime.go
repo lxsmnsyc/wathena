@@ -20,6 +20,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/places"
+	"github.com/lxsmnsyc/wathena/server/quest"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/variables"
 )
@@ -132,6 +133,9 @@ type Options struct {
 	// Atlas is the world layout, for wa.towns, display names and the
 	// bands of places (review decision 43). A classic world has none.
 	Atlas *layout.Atlas
+	// Quests are the quests of data/quests.yml (review decision 45).
+	// Without them every quest call raises an error.
+	Quests *quest.Table
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -516,6 +520,8 @@ func (r *Runtime) init() error {
 		{"town_get", r.townGet},
 		{"player_has_visited", r.playerHasVisited},
 		{"maps_display_name", r.mapsDisplayName},
+		{"player_quest", r.playerQuestCall},
+		{"npc_show_quest_icon", r.npcShowQuestIcon},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -1008,6 +1014,11 @@ var Events = map[string][]string{
 	// A restart was planned or cancelled, in every zone (review decision
 	// 36).
 	"restart_planned": {KindMod, KindNPC, KindEvent},
+	// A player's quest log changed, on the context's map (review
+	// decision 45).
+	"quest_add":      {KindMod, KindNPC, KindEvent},
+	"quest_progress": {KindMod, KindNPC, KindEvent},
+	"quest_complete": {KindMod, KindNPC, KindEvent},
 }
 
 // checkEvent checks an event name for a context kind.

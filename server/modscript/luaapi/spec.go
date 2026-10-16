@@ -522,6 +522,20 @@ var Classes = []Class{
 				Doc: "Whether the player's staff role has a permission. The owner has every permission. It follows the two-factor rule of get_staff_role."},
 			{Name: "has_visited", Params: []Param{{"town", "wa.Town", ""}}, Returns: "boolean",
 				Doc: "Whether the player's character entered the town, as the teleport service lists it (review decision 43).", Permission: "game.read"},
+			{Name: "add_quest", Params: []Param{questParam}, Returns: "boolean",
+				Doc: "Adds the quest to the player's quest log as active, with its time limit from now, as setquest. Returns false, and changes nothing, when the log has the quest already, in any state. The quest_add event follows."},
+			{Name: "complete_quest", Params: []Param{questParam}, Returns: "boolean",
+				Doc: "Marks an active or inactive quest complete, as completequest. It leaves the quest window, and kills stop counting for it. Returns false when the log lacks the quest or holds it as complete. The quest_complete event follows."},
+			{Name: "remove_quest", Params: []Param{questParam}, Returns: "boolean",
+				Doc: "Takes the quest out of the log, in any state, as erasequest. Returns false when the log lacks it."},
+			{Name: "change_quest", Params: []Param{{"from", "integer|string", "A quest the log holds as active or inactive."}, {"to", "integer|string", "A quest the log lacks."}}, Returns: "boolean",
+				Doc: "Replaces a quest with another, which starts active with its time limit from now and no kills, as changequest. Returns false, and changes nothing, when the log lacks from, holds it as complete, or has to already. The quest_add event follows for to."},
+			{Name: "get_quest_state", Params: []Param{questParam}, Returns: `"none"|"active"|"inactive"|"complete"`,
+				Doc: "The quest's state in the player's log. A quest is inactive when the player marked it so in the quest window.", Permission: "game.read"},
+			{Name: "get_quest_progress", Params: []Param{questParam, {"objective", "integer", "A hunt objective of the quest, from 1."}}, Returns: "integer?, integer?",
+				Doc: "The kills counted for a hunt objective and the kills it asks for, as checkquest with HUNTING reads them. nil when the player lacks the quest or the quest has no such objective. Kills stop counting at the goal.", Permission: "game.read"},
+			{Name: "quest_timed_out", Params: []Param{questParam}, Returns: "boolean",
+				Doc: "Whether the quest's time limit passed, as checkquest with PLAYTIME. false for a quest without a time limit, and for a quest the player lacks.", Permission: "game.read"},
 			{Name: "mute", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
 				Doc: "Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.", Permission: "player.sanction"},
 			{Name: "jail", Params: []Param{{"minutes", "integer", "1 to 5,256,000 (ten years)."}, {"reason", "string", "1 to 255 characters. The player sees it."}},
@@ -576,6 +590,8 @@ var Classes = []Class{
 		Methods: append([]Func{
 			{Name: "show_emotion", Params: []Param{{"emotion", "integer", "An emotion from wa.emotions."}}, Doc: "Shows an emotion over the NPC, as emotion."},
 			{Name: "say_aloud", Params: []Param{{"text", "string", ""}}, Doc: "Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it."},
+			{Name: "show_quest_icon", Params: []Param{playerParam, {"icon", "wa.QuestIcon?", "nil removes the icon."}},
+				Doc: "Shows an icon over the NPC to one player, as showevent. It stays while the player is on the map."},
 			showEffect("NPC"), findNearby, existsMethod,
 		}, statusMethods...),
 	},
@@ -958,6 +974,17 @@ var Classes = []Class{
 			{"player", "wa.Player", "The player that changed jobs."},
 			{"from", "integer", "The job before the change."},
 			{"to", "integer", "The new job. A male player who changes into a Dancer is a Bard here."},
+		},
+	},
+	{
+		Name: "wa.QuestEvent", Doc: "The object of the quest_add, quest_progress and quest_complete events.",
+		Fields: []Field{
+			{"player", "wa.Player", "The player whose quest log changed."},
+			{"quest", "string", "The quest record's full name, such as example.hunts:wolves, or a core quest's ID as text, such as \"7104\"."},
+			{"id", "integer", "The quest's ID."},
+			{"objective", "integer?", "quest_progress: the hunt objective that counted a kill, from 1."},
+			{"count", "integer?", "quest_progress: the objective's kills now."},
+			{"goal", "integer?", "quest_progress: the kills the objective asks for."},
 		},
 	},
 	{
@@ -1526,7 +1553,13 @@ var Events = []Event{
 	{Name: "world_event_start", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.WorldEvent", ""}}, Doc: "A run of a world event started, on any map. Every zone's handlers run."},
 	{Name: "world_event_end", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.WorldEvent", ""}}, Doc: "A run of a world event ended, on any map, with its result. Every zone's handlers run."},
 	{Name: "restart_planned", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"restart", "wa.RestartPlan", ""}}, Doc: "Staff planned a server restart from the admin screens, or cancelled it. Every zone's handlers run. At the restart time the server saves every character, disconnects every player and stops, so a handler can end a mod's event in time."},
+	{Name: "quest_add", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.QuestEvent", ""}}, Doc: "A quest joined a player's log on the context's map: player:add_quest, or the new quest of player:change_quest."},
+	{Name: "quest_progress", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.QuestEvent", ""}}, Doc: "A kill raised a hunt objective's count, once per objective. Party members near the kill count it too, as rAthena."},
+	{Name: "quest_complete", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.QuestEvent", ""}}, Doc: "player:complete_quest marked a quest complete."},
 }
+
+// questParam is a quest of data/quests.yml.
+var questParam = Param{"quest", "integer|string", "A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error."}
 
 // currencyParam is the name of a currency.
 var currencyParam = Param{"currency", "string", "A currency of data/currencies.yml: a full name, such as example.arena:tokens, or a plain name, which is the calling mod's record, then core's, such as cash or kafra."}
@@ -1558,6 +1591,7 @@ func Aliases() []Alias {
 		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat", "trade", "vend", "buying_store_sale", "mail", "spawn_table"}, Doc: "A hook name of wa.hooks."},
 		{Name: "wa.Bound", Values: []string{"account", "character", "party", "guild"}, Doc: "Who a bound copy is bound to."},
 		{Name: "wa.ExpandableLimit", Values: rules.ExpandableLimits, Doc: "A limit that one player holds, which player:expand changes."},
+		{Name: "wa.QuestIcon", Values: []string{"quest", "quest_question", "job", "job_question", "event", "event_question", "warg", "warg_face"}, Doc: "An icon of npc:show_quest_icon, as rAthena's QTYPE_ values 0 to 6 and 8: ! and ? marks for quests, jobs and events, a warg, and a warg's face."},
 		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
 	}

@@ -204,6 +204,7 @@ func (z *Zone) snapshot(p *Player) *character.Character {
 	c.Sanctions = slices.Clone(p.sanctions)
 	c.Currencies = savedCurrencies(p)
 	c.Visited, c.Memos = slices.Clone(p.visited), slices.Clone(p.memos)
+	c.Quests = slices.Clone(p.quests)
 	return c
 }
 

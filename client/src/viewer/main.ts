@@ -176,6 +176,14 @@ import { TouchControls } from './touchControls';
 import { makeMovable } from './windows';
 import Online, { type ShopBoard } from './online';
 import Player from './player';
+import {
+  type QuestView,
+  QuestWindow,
+  questIconMark,
+  questRemoved,
+  questUpdated,
+  timeLeft,
+} from './quests';
 import Walkers from './walkers';
 import { WorldEventsView } from './worldEvents';
 import { type WorldMapData, WorldMapWindow, mapDisplayName } from './worldMap';
@@ -406,6 +414,9 @@ let shownInfoName: string | undefined;
 /** The last WorldMap of a procedural world. A classic world has none. */
 let worldMapData: WorldMapData | undefined;
 let worldMapWindow: WorldMapWindow | undefined;
+/** The player's quest log, from QuestList, QuestUpdate and QuestRemove. */
+let questLog: QuestView[] = [];
+let questWindow: QuestWindow | undefined;
 /** The shown map's name for players: its display name, or its ID. */
 function displayName(): string {
   return mapDisplayName(shownMap, shownInfoName, worldMapData);
@@ -2506,6 +2517,46 @@ if (serverURL === null) {
     worldMapWindow?.set(m);
     showMapName();
   };
+  // The quest window opens with its button or Alt+U, as RO's quest
+  // window. Its buttons mark quests active or inactive.
+  const questRoot = document.querySelector<HTMLElement>('#quest-window');
+  const questToggle = document.querySelector<HTMLButtonElement>('#quest-toggle');
+  if (questRoot !== null) {
+    const w = new QuestWindow(questRoot, {
+      setActive: (id, active) => {
+        connection.questActive(id, active);
+      },
+    });
+    questWindow = w;
+    const toggle = (): void => {
+      w.toggle();
+    };
+    if (questToggle !== null) {
+      questToggle.hidden = false;
+      questToggle.addEventListener('click', toggle);
+    }
+    addEventListener('keydown', (e) => {
+      if (isTyping(e.target)) {
+        return;
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyU') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  }
+  view.onQuestList = (quests) => {
+    questLog = quests;
+    questWindow?.set(questLog);
+  };
+  view.onQuestUpdate = (quest) => {
+    questLog = questUpdated(questLog, quest);
+    questWindow?.set(questLog);
+  };
+  view.onQuestRemove = (id) => {
+    questLog = questRemoved(questLog, id);
+    questWindow?.set(questLog);
+  };
   // A warp moves the player to another map: the view clears, a loading
   // screen shows, and the new map loads from the asset store, which the
   // Service Worker caches.
@@ -2566,6 +2617,28 @@ if (import.meta.env.DEV) {
     // The last WorldMap as plain data, { maps, links }, or undefined in a
     // classic world, and the shown map's name for players.
     worldMap: () => (worldMapData === undefined ? undefined : structuredClone(worldMapData)),
+    // The quest log as plain data, in log order: { id, title, active,
+    // limitMs, timeLeftMs, objectives: [{ label, monster, count, goal,
+    // minLevel, maxLevel }] }. timeLeftMs counts down from limitMs, and
+    // is -1 for no limit.
+    quests: () => {
+      const now = performance.now();
+      return questLog.map((q) => ({
+        id: q.id,
+        title: q.title,
+        active: q.active,
+        limitMs: q.limitMs,
+        timeLeftMs: timeLeft(q, now),
+        objectives: structuredClone(q.objectives),
+      }));
+    },
+    // The quest icons over NPCs, one { npc, name, icon } per NPC entity ID.
+    questIcons: () =>
+      [...(session?.online.questIcons() ?? new Map<number, string>())].map(([npc, icon]) => ({
+        npc,
+        name: session?.online.nameOf(npc),
+        icon,
+      })),
     displayName: () => displayName(),
     map: () => current?.map,
     // The touch checks of scripts/browser-check.ts find units on the
@@ -3308,6 +3381,54 @@ function showShopBoards(): void {
   }
 }
 
+const questIconRoot = document.querySelector<HTMLDivElement>('#quest-icons');
+const questIconViews = new Map<number, HTMLDivElement>();
+const questIconAt = new Vector3();
+
+/**
+ * Places the quest icons over their NPCs, as rAthena's showevent. The
+ * asset pack has no quest icon art, so each is a badge with a mark, in
+ * the color of its kind.
+ */
+function showQuestIcons(): void {
+  if (questIconRoot === null) {
+    return;
+  }
+  const icons = session?.online.questIcons() ?? new Map<number, string>();
+  for (const [id, div] of questIconViews) {
+    if (!icons.has(id)) {
+      div.remove();
+      questIconViews.delete(id);
+    }
+  }
+  for (const [id, icon] of icons) {
+    let div = questIconViews.get(id);
+    if (div === undefined) {
+      div = document.createElement('div');
+      div.dataset.npc = String(id);
+      questIconRoot.append(div);
+      questIconViews.set(id, div);
+    }
+    if (div.dataset.icon !== icon) {
+      const { mark, kind } = questIconMark(icon);
+      div.dataset.icon = icon;
+      div.className = `quest-icon kind-${kind}`;
+      div.textContent = mark;
+    }
+    const p = session?.online.position(id);
+    if (p === undefined) {
+      div.hidden = true;
+      continue;
+    }
+    questIconAt.copy(p);
+    questIconAt.y += 3.8;
+    questIconAt.project(camera);
+    div.hidden = questIconAt.z > 1;
+    div.style.left = `${((questIconAt.x + 1) / 2) * 100}%`;
+    div.style.top = `${((1 - questIconAt.y) / 2) * 100}%`;
+  }
+}
+
 const bubbleAt = new Vector3();
 
 /** Places the chat bubbles above their speakers. */
@@ -3503,6 +3624,8 @@ renderer.setAnimationLoop((time) => {
   showItemLabel();
   showGuildLabels();
   showShopBoards();
+  showQuestIcons();
+  questWindow?.tick();
   showProgress(performance.now());
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });

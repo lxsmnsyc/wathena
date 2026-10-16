@@ -54,6 +54,10 @@ type Character struct {
 	// Memos are the character's Warp Portal memo points, the newest
 	// first, at most MaxMemos, as rAthena's memo_point.
 	Memos []Memo
+	// Quests are the character's quest log (proposal 0002, review
+	// decision 45), as rAthena's quest_log: the quests it has, in the
+	// order it took them.
+	Quests []Quest
 	// Staff is how the player logged in, for its staff role (decision
 	// 0028). The gateway sets it from the game ticket. It is not saved.
 	Staff staff.Login
@@ -227,6 +231,37 @@ type Memo struct {
 	X, Y int
 }
 
+// Quest states, as rAthena's e_quest_state.
+const (
+	QuestInactive = 0
+	QuestActive   = 1
+	QuestComplete = 2
+)
+
+// MaxQuestObjectives is MAX_QUEST_OBJECTIVES, the most hunt objectives
+// of a quest.
+const MaxQuestObjectives = 3
+
+// Quest is one quest of a character's quest log, as rAthena's struct
+// quest.
+type Quest struct {
+	// ID is the quest record's ID.
+	ID uint32
+	// State is QuestInactive, QuestActive or QuestComplete.
+	State int
+	// End is when the quest's time limit ends, or the zero time for a
+	// quest without one.
+	End time.Time
+	// Counts are the kills counted for each hunt objective, in order.
+	Counts [MaxQuestObjectives]int
+}
+
+// Equal reports whether two quests are the same. Times compare as
+// instants.
+func (q *Quest) Equal(o *Quest) bool {
+	return q.ID == o.ID && q.State == o.State && q.End.Equal(o.End) && q.Counts == o.Counts
+}
+
 // HasVisited reports whether the character entered a map.
 func (c *Character) HasVisited(mapID string) bool { return slices.Contains(c.Visited, mapID) }
 
@@ -237,14 +272,15 @@ func (c *Character) Equal(o *Character) bool {
 		slices.EqualFunc(c.TimedBonuses, o.TimedBonuses, func(a, b TimedBonus) bool { return a.Equal(&b) }) &&
 		maps.Equal(c.Skills, o.Skills) && slices.Equal(c.Blocks, o.Blocks) &&
 		slices.EqualFunc(c.Sanctions, o.Sanctions, func(a, b Sanction) bool { return a.Equal(&b) }) &&
-		maps.Equal(c.Currencies, o.Currencies) && slices.Equal(c.Visited, o.Visited) && slices.Equal(c.Memos, o.Memos)
+		maps.Equal(c.Currencies, o.Currencies) && slices.Equal(c.Visited, o.Visited) && slices.Equal(c.Memos, o.Memos) &&
+		slices.EqualFunc(c.Quests, o.Quests, func(a, b Quest) bool { return a.Equal(&b) })
 }
 
 // Clone returns a copy of c that shares no slices or maps with it.
 func (c *Character) Clone() *Character {
 	out := &Character{Info: c.Info, Variables: maps.Clone(c.Variables), Statuses: slices.Clone(c.Statuses),
 		Skills: maps.Clone(c.Skills), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions), Friends: slices.Clone(c.Friends),
-		Currencies: maps.Clone(c.Currencies), Visited: slices.Clone(c.Visited), Memos: slices.Clone(c.Memos)}
+		Currencies: maps.Clone(c.Currencies), Visited: slices.Clone(c.Visited), Memos: slices.Clone(c.Memos), Quests: slices.Clone(c.Quests)}
 	for _, it := range c.Items {
 		it.Cards = slices.Clone(it.Cards)
 		it.Extra = it.Clone()

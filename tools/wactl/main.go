@@ -23,6 +23,7 @@ commands:
   convert npcs     convert rAthena NPC scripts and shops to Lua and NPC data
   convert monsters convert rAthena monster skills to monster data
   convert random-options convert rAthena random options and groups to data
+  convert quests         convert rAthena quests to data
   dev              run a local server with a mod, and reload it when files change
   map validate     check map folders with the map generator's checks
   mod new          make a mod from a template
@@ -71,6 +72,8 @@ func main() {
 		err = convertMonsters(os.Args[3:])
 	case "convert random-options":
 		err = convertRandomOptions(os.Args[3:])
+	case "convert quests":
+		err = convertQuests(os.Args[3:])
 	case "migrate status":
 		err = migrate(os.Args[3:], false)
 	case "migrate up":

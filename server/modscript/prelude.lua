@@ -501,6 +501,32 @@ new_player, player_ids = handle_type("player", {
 		end
 		return (call(H.player_has_visited, player_ids[self], n))
 	end,
+	-- Quests (review decision 45). A quest is an ID or a record name of
+	-- data/quests.yml.
+	add_quest = function(self, quest)
+		return (call(H.player_quest, player_ids[self], quest, "add_quest"))
+	end,
+	complete_quest = function(self, quest)
+		return (call(H.player_quest, player_ids[self], quest, "complete_quest"))
+	end,
+	remove_quest = function(self, quest)
+		return (call(H.player_quest, player_ids[self], quest, "remove_quest"))
+	end,
+	change_quest = function(self, from, to)
+		return (call(H.player_quest, player_ids[self], from, to, "change_quest"))
+	end,
+	get_quest_state = function(self, quest)
+		return (call(H.player_quest, player_ids[self], quest, "get_quest_state"))
+	end,
+	get_quest_progress = function(self, quest, objective)
+		if math_type(objective) ~= "integer" then
+			error("player:get_quest_progress: the objective must be an integer from 1", 2)
+		end
+		return call(H.player_quest, player_ids[self], quest, objective, "get_quest_progress")
+	end,
+	quest_timed_out = function(self, quest)
+		return (call(H.player_quest, player_ids[self], quest, "quest_timed_out"))
+	end,
 }, function(id, key)
 	-- Level 3 is the script line that read the field.
 	local ok, value = pcall(H.player_field, id, key)
@@ -600,6 +626,13 @@ new_npc, npc_ids = handle_type("npc", {
 	end,
 	say_aloud = function(self, text)
 		return (call(H.npc_say, npc_ids[self], text))
+	end,
+	show_quest_icon = function(self, player, icon)
+		local id = player_ids[player]
+		if id == nil then
+			error("npc:show_quest_icon: want a player handle", 2)
+		end
+		return (call(H.npc_show_quest_icon, npc_ids[self], id, icon))
 	end,
 }, function(id, key)
 	local ok, value = pcall(H.npc_field, id, key)
@@ -2183,6 +2216,14 @@ function R.invoke(fn, ...)
 			value = readonly("chat message", {
 				player = new_player(value.player), channel = value.channel, text = value.text, to = value.to, map = value.map,
 			})
+		elseif kind == "quest_event" then
+			-- quest_add, quest_progress and quest_complete: player is a
+			-- handle (review decision 45).
+			local fields = { player = new_player(value.player), quest = value.quest, id = value.id }
+			if value.objective ~= nil then
+				fields.objective, fields.count, fields.goal = value.objective, value.count, value.goal
+			end
+			value = readonly("quest event", fields)
 		elseif kind == "world_event" then
 			-- world_event_start and world_event_end: { name, type, result }.
 			value = readonly("world event", value)

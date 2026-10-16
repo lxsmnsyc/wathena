@@ -21,6 +21,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/quest"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -99,6 +100,11 @@ type Mods struct {
 	// data/currencies.yml. CurrencyOverlay is their merge.
 	Currencies      *currency.Table
 	CurrencyOverlay *mod.Overlay
+	// Quests are the quests: core's data/quests.yml, converted from
+	// rAthena's quest_db.yml, with the mods' records (review decision
+	// 45). QuestOverlay is their merge.
+	Quests       *quest.Table
+	QuestOverlay *mod.Overlay
 	// Shops are the shops of the NPC records, which every zone shares.
 	Shops *shop.Registry
 	// Chat are the chat channels and filter: core's with the mods'
@@ -432,8 +438,19 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 			log.Warn("mods: " + n)
 		}
 	}
+	if out.Quests, out.QuestOverlay, err = modQuests(ctx, set, assigned, monsterIDs, merged, core.Constants); err != nil {
+		return nil, err
+	}
+	for _, n := range out.QuestOverlay.Notes {
+		log.Warn("mods: " + n)
+	}
+	for _, a := range assigned.Assigned {
+		if a.Kind == mod.QuestIDs.Kind {
+			log.Info("mods: new ID", "kind", a.Kind, "name", a.Name, "id", a.ID, "mod", a.Mod)
+		}
+	}
 	labelRolls(merged.Data, opts, core.Constants)
-	out.Zone = &zone.Mods{Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
+	out.Zone = &zone.Mods{Quests: out.Quests, Scripts: scripts, IDs: all, ItemIDs: merged.IDs, Log: log,
 		Constants: core.Constants, Groups: groups, MonsterIDs: monsterIDs, Shops: shops, Monsters: templates,
 		RandomOptions: opts, ItemRolls: rl.ItemRolls, Rules: rl, Companions: out.Companions, Chat: out.Chat,
 		Storages: out.Storages, Currencies: out.Currencies, OwnLookJobs: ownLookJobs(jobRecs)}

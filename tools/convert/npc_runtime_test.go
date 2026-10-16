@@ -32,6 +32,8 @@ type npcHost struct {
 	spawned     map[int64]uint32
 	nextMonster int64
 	market      marketHost
+	// questLog is the quest log of every player (npc_quest_test.go).
+	questLog
 }
 
 // marketHost is the MarketHost of the NPC runtime tests: core's
@@ -369,7 +371,7 @@ func npcRuntime(t *testing.T, core *Core, h *npcHost, logs *logRecorder) *modscr
 	t.Helper()
 	sc := coreScripts(t, core)
 	r, err := modscript.New(modscript.Options{Host: h, Mods: []string{"core"}, Constants: core.Constants, Jobs: h.jobs,
-		Log: slog.New(logs), Server: variables.NewServer(nil, nil),
+		Log: slog.New(logs), Server: variables.NewServer(nil, nil), Quests: coreQuests(t, core),
 		Clock: func() time.Time { return testClock }, Location: time.UTC}, sc)
 	if err != nil {
 		t.Fatal(err)

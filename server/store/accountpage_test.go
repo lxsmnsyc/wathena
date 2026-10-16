@@ -85,6 +85,7 @@ func TestDeleteAccountEveryTable(t *testing.T) {
 		exec(`INSERT INTO character_currencies (character_id, currency, amount) VALUES ($1, 1, 10)`, c)
 		exec(`INSERT INTO character_maps (character_id, map_id) VALUES ($1, 'gen:town:t1')`, c)
 		exec(`INSERT INTO character_memos (character_id, slot, map_id, x, y) VALUES ($1, 0, 'gen:town:t1', 5, 6)`, c)
+		exec(`INSERT INTO character_quests (character_id, quest_id, ord, state, count1) VALUES ($1, 1100, 0, 1, 3)`, c)
 	}
 	exec(`INSERT INTO character_blocks (character_id, position, name) VALUES ($1, 0, 'Stayer One'), ($2, 0, 'Leaver One')`, l1, s1)
 	exec(`INSERT INTO character_friends (character_id, friend_id) VALUES ($1, $2), ($2, $1)`, l1, s1)
@@ -202,6 +203,7 @@ func TestDeleteAccountEveryTable(t *testing.T) {
 		"SELECT count(*) FROM character_currencies WHERE character_id = ANY($1)",
 		"SELECT count(*) FROM character_maps WHERE character_id = ANY($1)",
 		"SELECT count(*) FROM character_memos WHERE character_id = ANY($1)",
+		"SELECT count(*) FROM character_quests WHERE character_id = ANY($1)",
 		"SELECT count(*) FROM character_blocks WHERE character_id = ANY($1)",
 		"SELECT count(*) FROM character_friends WHERE character_id = ANY($1) OR friend_id = ANY($1)",
 		"SELECT count(*) FROM storage_items WHERE character_id = ANY($1)",
@@ -247,6 +249,7 @@ func TestDeleteAccountEveryTable(t *testing.T) {
 	for q, want := range map[string]int{
 		"SELECT count(*) FROM character_blocks WHERE character_id = $1 AND name = 'Leaver One'":                              1,
 		"SELECT count(*) FROM inventory WHERE character_id = $1":                                                             1,
+		"SELECT count(*) FROM character_quests WHERE character_id = $1":                                                      1,
 		"SELECT count(*) FROM party_members WHERE character_id = $1 AND party_id = 1":                                        1,
 		"SELECT count(*) FROM guild_members WHERE character_id = $1 AND guild_id = 2":                                        1,
 		"SELECT count(*) FROM mails WHERE id = 2 AND recipient_id = $1 AND sender_id IS NULL AND sender_name = 'Leaver One'": 1,

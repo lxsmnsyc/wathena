@@ -17,6 +17,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/quest"
 	"github.com/lxsmnsyc/wathena/server/mail"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/storage"
@@ -118,7 +119,8 @@ func setup(t *testing.T) *env {
 	})
 	k := &kicker{st: st}
 	cfg := adminworld.Config{World: w, Store: st, Chat: hub, Items: items, Storages: storages, Mail: mails,
-		Social: zones[0].Social, Kicker: k, Log: slog.New(slog.DiscardHandler)}
+		Social: zones[0].Social, Kicker: k, Log: slog.New(slog.DiscardHandler),
+		Quests: quest.NewTable([]*quest.Record{{ID: 1100, Name: "1100", Title: "Porings", Targets: []quest.Target{{Monster: 1002, Count: 3}}}})}
 	return &env{t: t, ctx: ctx, admin: adminPool, st: st, w: w, aw: adminworld.New(cfg), cfg: cfg, items: items, kicker: k}
 }
 

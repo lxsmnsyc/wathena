@@ -45,6 +45,9 @@ type NPCInput struct {
 	ClientTables io.Reader
 	// Shops is shops.json, for barter shops. It may be nil.
 	Shops io.Reader
+	// Quests are the mode's converted quests, which quest commands
+	// check (npcquest.go). They may be nil.
+	Quests *QuestResult
 }
 
 // npcLine is one line of npcs.json.
@@ -181,6 +184,8 @@ type npcConverter struct {
 	currencyVars  map[string]string
 	currencyErr   map[string]string
 	newCurrencies []currencyRecord
+	// quests are the mode's quests, or nil.
+	quests *QuestResult
 }
 
 // monsterInfo is a monster of client_tables.json: its AegisName, and
@@ -237,7 +242,7 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		items: map[uint32]string{}, itemIDs: map[string]uint32{}, sprites: map[string]uint32{}, spriteID: map[uint32]bool{},
 		jobs: map[string]string{}, functions: map[string]*npcLine{}, converted: map[string]*Function{}, paths: map[string]bool{},
 		zeroAmounts: map[string]bool{}, checkedAmounts: map[string]bool{},
-		monsters: map[int64]monsterInfo{}, monsterIDs: map[string]int64{}, shops: map[string]*shopRef{},
+		monsters: map[int64]monsterInfo{}, monsterIDs: map[string]int64{}, shops: map[string]*shopRef{}, quests: in.Quests,
 	}
 	shopsIn, err := readShops(in.Shops)
 	if err != nil {

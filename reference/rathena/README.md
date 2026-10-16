@@ -273,6 +273,28 @@ python3 tools/wathena/extract.py guilds
 
 `extract.py guilds` writes only `guilds.json`, so the other extracts stay as they are.
 
+## Quests
+
+`extracts/<mode>/quests.json` is `quest_db.yml` with its imports for the mode, as `QuestDatabase::parseBodyNode` loads it ([decision 0043](../../docs/decisions/0043-quests.md)). The converter makes core's `data/quests.yml` from it.
+
+- Each quest has its ID and title, its time limit, its targets in order, and its item drops. The file's `note` explains every field.
+- A `TimeLimit` with "+" is `{seconds}`, as `solve_time` adds it without daylight saving. One without is `{at}`, the time of day in seconds, with `days` or `weekday`, as `split_exact_quest_time` reads it.
+- A target with `Mob` names a monster and reads only `Count`. A target without it keeps the level, race, size and element filters, the map, the map's display name, and the `MapMobTargets` that are true. A map the map server does not load counts everywhere, as `map_mapindex2mapid` gives -1.
+- Monsters and items are resolved by AegisName, as rAthena does. A drop of an item that does not stack has a count of 1. An entry that `parseBodyNode` refuses is left out and listed in `skipped`.
+
+| Mode | Quests | With a time limit | With targets | With item drops |
+|---|---:|---:|---:|---:|
+| renewal | 4,821 | 872 | 687 | 52 |
+| pre-renewal | 2,879 | 231 | 349 | 0 |
+
+They come from rAthena fork commit `60bed4ccf`, which adds `build_quests` to `tools/wathena/extract.py`. With it:
+
+```text
+python3 tools/wathena/extract.py quests
+```
+
+`extract.py quests` writes only `quests.json`, so the other extracts stay as they are.
+
 ## Spawns
 
 `extracts/<mode>/spawns.json` holds every map's spawn lines from `npc/<mode>/mobs`, with each map's walkable cells. Classic worlds spawn from it. `tools/spawntags` reads the renewal file to derive core's spawn tags for procedural worlds: each monster's biome weights by map family, its role, and the densities per walkable cell ([decision 0042](../../docs/decisions/0042-spawns.md)). The map families and their biomes are wAthena's, in `tools/spawntags/families.go`, so the extract's own `biome` and `monster_tags` fields are not read.

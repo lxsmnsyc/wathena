@@ -1365,6 +1365,144 @@ body {
   font-weight: bold;
 }
 
+/* The quest log: active quests, then inactive ones. */
+#quest-window {
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(340px, calc(100% - 24px));
+  max-height: calc(100% - 200px);
+  padding: 8px 10px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+  font-variant-numeric: tabular-nums;
+}
+
+#quest-window[hidden] {
+  display: none;
+}
+
+#quest-window .quest-empty {
+  margin: 0;
+  font-size: 13px;
+  color: #c8c8c8;
+}
+
+#quest-window .quest-group {
+  margin: 4px 0 2px;
+  font-size: 13px;
+  color: #b8c8ff;
+}
+
+#quest-window .quest-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#quest-window .quest {
+  padding: 6px 0;
+  border-top: 1px solid rgb(255 255 255 / 15%);
+}
+
+#quest-window .quest.inactive {
+  color: #a0a0a0;
+}
+
+#quest-window .quest-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#quest-window .quest-title {
+  min-width: 0;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+  unicode-bidi: isolate;
+}
+
+#quest-window .quest-state {
+  flex: none;
+}
+
+#quest-window .quest-timer {
+  font-size: 12px;
+  color: #ffe08a;
+}
+
+#quest-window .quest-timer.up {
+  color: #ff8a8a;
+}
+
+#quest-window .quest.inactive .quest-timer {
+  color: inherit;
+}
+
+#quest-window .quest-objectives {
+  margin: 2px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+}
+
+#quest-window .quest-objective {
+  unicode-bidi: isolate;
+}
+
+#quest-window .quest-objective.done {
+  color: #9be59b;
+}
+
+/* Quest icons over NPCs: a badge with a mark, since the asset pack has
+   no quest icon art. */
+#quest-icons {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.quest-icon {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -100%);
+  border: 2px solid #5a4200;
+  border-radius: 50%;
+  background: #ffd84a;
+  color: #3a2a00;
+  font: bold 15px/22px system-ui;
+  text-align: center;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 60%);
+}
+
+.quest-icon.kind-job {
+  border-color: #0b4d16;
+  background: #6fdc7c;
+  color: #06300d;
+}
+
+.quest-icon.kind-event {
+  border-color: #6a1a00;
+  background: #ff9a5a;
+  color: #401000;
+}
+
+.quest-icon.kind-warg {
+  border-color: #2a2a2a;
+  background: #c8c8c8;
+  color: #202020;
+}
+
+.quest-icon[hidden] {
+  display: none;
+}
+
 #booking-window {
   position: fixed;
   top: 64px;

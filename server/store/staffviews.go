@@ -58,6 +58,9 @@ func (s *Store) ReadCharacter(ctx context.Context, id int64) (*OfflineView, erro
 	if err := loadCurrencies(ctx, s.q, c); err != nil {
 		return nil, err
 	}
+	if err := loadQuests(ctx, s.q, c); err != nil {
+		return nil, err
+	}
 	if c.Sanctions, err = s.activeSanctions(ctx, id); err != nil {
 		return nil, err
 	}

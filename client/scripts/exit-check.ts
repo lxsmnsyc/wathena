@@ -51,7 +51,7 @@ export interface ExitContext {
 }
 
 /** A player in a browser: a page with the mouse, or with fingers. */
-class Player {
+export class Player {
   readonly errors: string[] = [];
   /** URLs the page fetched, for the art checks. */
   readonly fetched: string[] = [];
@@ -723,13 +723,13 @@ async function levels(p: Player): Promise<string> {
 }
 
 /** Clicks an NPC and waits for its dialog or shop. */
-async function talk(p: Player, npc: string, opens = '#dialog-window'): Promise<void> {
+export async function talk(p: Player, npc: string, opens = '#dialog-window'): Promise<void> {
   await p.clickUnit((u) => u.npc && u.name === npc);
   await p.page.locator(opens).waitFor({ state: 'visible', timeout: 15_000 });
 }
 
 /** Picks a menu option of the dialog by its whole text. */
-async function choose(p: Player, option: string): Promise<void> {
+export async function choose(p: Player, option: string): Promise<void> {
   const buttons = p.page.locator('#dialog-window .dialog-menu button');
   await buttons.first().waitFor({ timeout: 15_000 });
   const texts = (await buttons.allTextContents()).map((t) => t.trim());
@@ -741,7 +741,7 @@ async function choose(p: Player, option: string): Promise<void> {
 }
 
 /** Presses Next and Close until the dialog ends. */
-async function endDialog(p: Player): Promise<void> {
+export async function endDialog(p: Player): Promise<void> {
   for (let i = 0; i < 8 && (await p.page.locator('#dialog-window').isVisible()); i++) {
     const b = p.page.locator('#dialog-window .dialog-controls button:visible');
     if ((await b.count()) > 0) {
@@ -753,7 +753,7 @@ async function endDialog(p: Player): Promise<void> {
 }
 
 /** Attacks a monster until it dies, and returns where it stood. */
-async function kill(p: Player, monster: string): Promise<[number, number]> {
+export async function kill(p: Player, monster: string): Promise<[number, number]> {
   // The nearest one that no other unit stands next to, so the click
   // finds it.
   let target: UnitView | undefined;

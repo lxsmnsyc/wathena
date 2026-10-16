@@ -15,6 +15,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/lantern](examples/lantern) has art of its own: item icons, a hat's and a shield's worn sprites, a companion's sprite, a monster sprite with sounds, an NPC sprite, the Lantern Keeper job with body sprites and its skill Lantern Flare with an icon and an effect, and a client data table ("Art" below). It is the phase 6 exit check's mod run.
 - [examples/market-town](examples/market-town) is for procedural worlds: a town template with a lamp shop, a dungeon style, and NPCs that stand at named places instead of a map and a cell ("Places" below).
 - [examples/home-village](examples/home-village) is for procedural worlds: a home map in the map folder format, where new characters start, and a naming style for grassland towns ("Home maps" and "Naming styles" below).
+- [examples/hunting-board](examples/hunting-board) has a hunt quest as a record, and the Hunt Master, who gives it, shows a quest icon, counts the kills left and pays for it, in classic and procedural worlds ("Quests" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -937,7 +938,34 @@ Chat records follow proposal 0002, review decision 26. Core's records are files 
 - Case does not matter. A mod's word is the record name after the mod's ID.
 - Every word, whatever its action, refuses new character names that have it. The account pages and `--dev` logins check names.
 
-Kinds not overlaid yet: spawns, quests and achievements.
+### Quests: data/quests.yml
+
+Quests, as rAthena's `quest_db.yml` (proposal 0002, review decision 45). Core's records are rAthena's quests of the mode, converted when the server starts, and named by their IDs, such as `"7104"`.
+
+```yaml
+- name: porings
+  title: Poring Patrol
+  time_limit: 1h
+  targets:
+    - {monster: PORING, count: 3}
+    - {count: 10, min_level: 10, max_level: 20, race: plant, map: prt_fild08, map_name: Prontera Fields}
+  drops:
+    - {monster: PORING, item: Jellopy, rate: 5000}
+- name: "2221"
+  targets:
+    - {monster: NOVUS_, count: 20}
+```
+
+- A record becomes `<mod ID>:<name>`, such as `example.hunting-board:porings`, with an ID from 1,000,000. A core quest is changed by its ID as the name, in quotes.
+- `title` is the name the quest window shows, 1 to 255 characters. It is required.
+- `time_limit` is left out for none. It is a duration, such as `3h`, `2h30m` or `1d`, or a number of seconds: the quest ends that long after it starts. `{ at: "04:00" }` ends it at the next 04:00 on the server's clock, `{ at: "04:00", days: 7 }` seven days after that, and `{ at: "04:00", weekday: monday }` on the next Monday at 04:00, as rAthena's `TimeLimit`. A quest that runs out stays in the log, as in rAthena: scripts check `player:quest_timed_out`.
+- `targets` are at most 3 hunt objectives. Each has `count`, the kills it asks for, 0 to 65,535.
+  - With `monster`, it counts that monster's kills on any map, and takes no filter.
+  - Without it, it counts every kill that passes its filters: `min_level` and `max_level` (a `max_level` alone makes `min_level` 1), `race`, `size` and `element` (names of `wa.races`, `wa.sizes` and `wa.elements`), `map` (the player's map, such as `prt_fild08` or `gen:field:2:3`), and `monsters`, a list that the monster must be in. `map_name` is the text the quest window shows.
+- `drops` are items each kill gives while the quest is active or inactive, straight to the inventory: `monster` (every monster when left out), `item`, `count` (1 by default; more only for items that stack), and `rate` out of 10,000. A drop that does not fit is lost, and the player is told.
+- A field set on a record replaces the whole field, as for other records: setting `targets` replaces every objective.
+
+Kinds not overlaid yet: spawns and achievements.
 
 ## Art
 
@@ -1058,7 +1086,7 @@ greeter:
 
 ## IDs
 
-The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000, monsters at 100,000, skills at 20,000, and jobs, companions and mounts at 10,000. Quests and achievements start at 1,000,000, for when those kinds get overlays.
+The server gives each new record an ID in the mod range of its kind the first time it loads it. Items start at 2,000,000, monsters at 100,000, skills at 20,000, jobs, companions and mounts at 10,000, and quests at 1,000,000. Achievements start at 1,000,000 too, for when that kind gets overlays.
 
 - An ID never changes, and never goes to another name, even when the mod is removed. The item comes back with its ID when the mod is installed again.
 - Scripts find IDs by name: `items.id "example.greeter:Welcome_Cookie"`.
@@ -1807,6 +1835,48 @@ print(player:has_visited(towns.get("t2")), maps.get_display_name(player.map))
 - `maps.get_display_name(map)` returns a generated map's display name, such as `"North Valheim Fields 2"`, or nil for another map. A name changes when staff rename the town with `@renametown`.
 - Every call needs `game.read`. A classic world has no towns: `list` returns an empty list, `nearest` and `get` nil, and display names nil.
 - The teleport service of each town is the server's, not a script's, and mods cannot change it yet.
+
+### Quests
+
+Each character has a quest log, saved with it (proposal 0002, review decision 45, decision 0043). [examples/hunting-board](examples/hunting-board) uses each part.
+
+```lua
+local events = require "wa.events"
+
+return function()
+  events.on("click", function(player, conversation)
+    if player:get_quest_state("porings") == "none" then
+      player:add_quest("porings")
+      return
+    end
+    local count, goal = player:get_quest_progress("porings", 1)
+    if count >= goal and not player:quest_timed_out("porings") then
+      player:complete_quest("porings")
+    end
+  end)
+  events.on("quest_progress", function(event)
+    event.player:send_message(event.count .. " of " .. event.goal)
+  end)
+end
+```
+
+| Call | Permission | Meaning |
+|---|---|---|
+| `player:add_quest(quest)` | None | Adds the quest as active, with its time limit from now, as `setquest`. Returns false when the log has it already, in any state. |
+| `player:complete_quest(quest)` | None | Marks an active or inactive quest complete, as `completequest`. Returns false when the log lacks it or holds it as complete. |
+| `player:remove_quest(quest)` | None | Takes the quest out of the log, in any state, as `erasequest`. |
+| `player:change_quest(from, to)` | None | Replaces an active or inactive quest with a new active one, as `changequest`. Returns false when the log lacks `from`, holds it as complete, or has `to` already. |
+| `player:get_quest_state(quest)` | `game.read` | `"none"`, `"active"`, `"inactive"` or `"complete"`. |
+| `player:get_quest_progress(quest, objective)` | `game.read` | The kills of a hunt objective, from 1, and the kills it asks for, or nil. |
+| `player:quest_timed_out(quest)` | `game.read` | Whether the quest's time limit passed. False without a limit. |
+| `npc:show_quest_icon(player, icon)` | None | Shows an icon over the NPC to one player, as `showevent`, or removes it with nil. |
+
+- A quest is an ID, such as `7104`, or a record name: a full name, or a plain name, which is the calling mod's record first, then core's. An unknown quest raises an error.
+- The icons are rAthena's: `quest` and `quest_question` (the "!" and "?" marks), `job`, `job_question`, `event`, `event_question`, `warg` and `warg_face`. An icon stays while the player is on the map, and shows again when the NPC comes back into view. A map change drops it.
+- A kill counts for the quests of the player that killed the monster. When that player has a party, every member on the map within 14 cells of the monster counts it instead, dead or not, as rAthena. Counts stop at the goal. Complete quests count nothing.
+- The player marks quests active or inactive in the quest window. Inactive quests still count kills, as in rAthena.
+- The events `quest_add` (a new quest, also the new quest of `change_quest`), `quest_progress` (once per objective a kill raised) and `quest_complete` get `{ player, quest, id }`, where `quest` is the record's full name and `id` its ID. `quest_progress` adds `objective`, `count` and `goal`. They run in mod, NPC and event contexts of the player's map.
+- A log entry whose record is gone, such as a removed mod's quest, stays saved and hidden, and comes back with the mod.
 
 ### Spawning monsters
 

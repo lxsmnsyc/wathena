@@ -1,0 +1,15 @@
+# The Hunt Master stands in Prontera in a classic world, and on every
+# town square in a procedural world.
+- name: Hunt Master
+  map: prontera
+  x: 150
+  y: 180
+  direction: south
+  sprite: 4_F_KAFRA2
+  script: scripts/npc/hunt_master.lua
+- name: Hunt Master#town
+  place: {scope: "town:any", tag: square}
+  direction: south
+  sprite: 4_F_KAFRA2
+  display_name: Hunt Master
+  script: scripts/npc/hunt_master.lua

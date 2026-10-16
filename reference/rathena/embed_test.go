@@ -33,7 +33,7 @@ func TestFilesMatchDisk(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if count != 42 {
-		t.Errorf("%d embedded files, want 42", count)
+	if count != 44 {
+		t.Errorf("%d embedded files, want 44", count)
 	}
 }

@@ -30,6 +30,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/currency"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mail"
+	"github.com/lxsmnsyc/wathena/server/quest"
 	"github.com/lxsmnsyc/wathena/server/social"
 	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/status"
@@ -53,6 +54,8 @@ type Config struct {
 	Jobs           *status.Tables
 	StorageRecords []*storage.Record
 	Currencies     *currency.Table
+	// Quests name the quests of the data export.
+	Quests *quest.Table
 	// Storages, Mail and Social are the world's registries, which
 	// restores take items from.
 	Storages *storage.Registry

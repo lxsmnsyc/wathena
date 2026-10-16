@@ -1590,6 +1590,70 @@ Permission: `game.read`.
 |---|---|---|
 | `town` | `wa.Town` |  |
 
+#### `player:add_quest(quest) → boolean`
+
+Adds the quest to the player's quest log as active, with its time limit from now, as setquest. Returns false, and changes nothing, when the log has the quest already, in any state. The quest_add event follows.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `quest` | `integer\|string` | A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error. |
+
+#### `player:complete_quest(quest) → boolean`
+
+Marks an active or inactive quest complete, as completequest. It leaves the quest window, and kills stop counting for it. Returns false when the log lacks the quest or holds it as complete. The quest_complete event follows.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `quest` | `integer\|string` | A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error. |
+
+#### `player:remove_quest(quest) → boolean`
+
+Takes the quest out of the log, in any state, as erasequest. Returns false when the log lacks it.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `quest` | `integer\|string` | A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error. |
+
+#### `player:change_quest(from, to) → boolean`
+
+Replaces a quest with another, which starts active with its time limit from now and no kills, as changequest. Returns false, and changes nothing, when the log lacks from, holds it as complete, or has to already. The quest_add event follows for to.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `from` | `integer\|string` | A quest the log holds as active or inactive. |
+| `to` | `integer\|string` | A quest the log lacks. |
+
+#### `player:get_quest_state(quest) → "none"|"active"|"inactive"|"complete"`
+
+The quest's state in the player's log. A quest is inactive when the player marked it so in the quest window.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `quest` | `integer\|string` | A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error. |
+
+#### `player:get_quest_progress(quest, objective) → integer?, integer?`
+
+The kills counted for a hunt objective and the kills it asks for, as checkquest with HUNTING reads them. nil when the player lacks the quest or the quest has no such objective. Kills stop counting at the goal.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `quest` | `integer\|string` | A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error. |
+| `objective` | `integer` | A hunt objective of the quest, from 1. |
+
+#### `player:quest_timed_out(quest) → boolean`
+
+Whether the quest's time limit passed, as checkquest with PLAYTIME. false for a quest without a time limit, and for a quest the player lacks.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `quest` | `integer\|string` | A quest of data/quests.yml: its ID, such as 7104, or its name: a full name, such as example.hunts:wolves, or a plain name, which is the calling mod's record, then core's. An unknown quest raises an error. |
+
 #### `player:mute(minutes, reason)`
 
 Mutes the player, as rAthena's SC_NOCHAT: it cannot talk until the end. It replaces a mute that has not ended. The player sees the reason and the end time. The mute is saved.
@@ -1836,6 +1900,15 @@ Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it
 | Parameter | Type | Meaning |
 |---|---|---|
 | `text` | `string` |  |
+
+#### `npc:show_quest_icon(player, icon?)`
+
+Shows an icon over the NPC to one player, as showevent. It stays while the player is on the map.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player handle. |
+| `icon` | `wa.QuestIcon?` | nil removes the icon. |
 
 #### `npc:show_effect(effect)`
 
@@ -2891,6 +2964,19 @@ The object of the job_change event.
 | `from` | `integer` | The job before the change. |
 | `to` | `integer` | The new job. A male player who changes into a Dancer is a Bard here. |
 
+### wa.QuestEvent
+
+The object of the quest_add, quest_progress and quest_complete events.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | The player whose quest log changed. |
+| `quest` | `string` | The quest record's full name, such as example.hunts:wolves, or a core quest's ID as text, such as "7104". |
+| `id` | `integer` | The quest's ID. |
+| `objective` | `integer?` | quest_progress: the hunt objective that counted a kill, from 1. |
+| `count` | `integer?` | quest_progress: the objective's kills now. |
+| `goal` | `integer?` | quest_progress: the kills the objective asks for. |
+
 ### wa.DeathOptions
 
 The options of a death handler. Each one narrows the deaths that run it.
@@ -3832,6 +3918,9 @@ Changes the value.
 | `world_event_start` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event started, on any map. Every zone's handlers run. |
 | `world_event_end` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event ended, on any map, with its result. Every zone's handlers run. |
 | `restart_planned` | mod, npc, event | `restart: wa.RestartPlan` | Staff planned a server restart from the admin screens, or cancelled it. Every zone's handlers run. At the restart time the server saves every character, disconnects every player and stops, so a handler can end a mod's event in time. |
+| `quest_add` | mod, npc, event | `event: wa.QuestEvent` | A quest joined a player's log on the context's map: player:add_quest, or the new quest of player:change_quest. |
+| `quest_progress` | mod, npc, event | `event: wa.QuestEvent` | A kill raised a hunt objective's count, once per objective. Party members near the kill count it too, as rAthena. |
+| `quest_complete` | mod, npc, event | `event: wa.QuestEvent` | player:complete_quest marked a quest complete. |
 
 ## Named types
 
@@ -3845,7 +3934,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`, `quest_add`, `quest_progress`, `quest_complete`
 
 ### wa.BonusName
 
@@ -3876,6 +3965,12 @@ Who a bound copy is bound to.
 A limit that one player holds, which player:expand changes.
 
 `inventory_slots`, `storage_slots`, `cart_slots`
+
+### wa.QuestIcon
+
+An icon of npc:show_quest_icon, as rAthena's QTYPE_ values 0 to 6 and 8: ! and ? marks for quests, jobs and events, a warg, and a warg's face.
+
+`quest`, `quest_question`, `job`, `job_question`, `event`, `event_question`, `warg`, `warg_face`
 
 ### wa.MonsterState
 

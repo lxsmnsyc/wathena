@@ -200,6 +200,17 @@ type CharacterMemo struct {
 	Y           int
 }
 
+type CharacterQuest struct {
+	CharacterID int64
+	QuestID     int64
+	Ord         int
+	State       int
+	EndsAt      pgtype.Timestamptz
+	Count1      int
+	Count2      int
+	Count3      int
+}
+
 type CharacterSkill struct {
 	CharacterID int64
 	SkillID     int

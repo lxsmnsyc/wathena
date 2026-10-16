@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -706,6 +707,9 @@ func (b *body) call(e *Call) (val, error) {
 	if v, ok, err := b.shopRead(name); ok {
 		return done(v, err)
 	}
+	if v, err := b.questRead(name, args); !errors.Is(err, errNotQuest) {
+		return done(v, err)
+	}
 	return val{}, unsupported(name, "")
 }
 
@@ -1065,6 +1069,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		if ok, err := b.shopCommand(name, args); ok {
+			return err
+		}
+		if ok, err := b.questCommand(name, args); ok {
 			return err
 		}
 		return unsupported(name, "")

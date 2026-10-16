@@ -13,9 +13,9 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
-## Where work stands (2026-10-16)
+## Where work stands (2026-10-17)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 5 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 5 and step 6a are built.
 
 Done:
 
@@ -116,12 +116,20 @@ Done:
   - `wa.towns`, `player:has_visited`, `maps.get_display_name` and `place:get_band`.
   - `--fields`, `--towns` and `--dungeons` stay as a dev shortcut through the layout's code, and `--layout` builds a whole dev layout.
   - The golden layouts match in Go on arm64 and amd64 under Rosetta. The e2e test `TestWorldLayout` plays a made world with PostgreSQL, and the browser check `layout` walks from the home map into a town and opens the world map. The Home Village sample has a home map and a naming style.
+- Phase 7 step 6a, quests ([decision 0043](decisions/0043-quests.md)), as review decision 45 approved them. Quests were a tier 1 system of section 11.3 that phases 5 and 6 did not build; this step closes that gap, in classic and procedural worlds:
+  - Core's `data/quests.yml` is rAthena's `quest_db.yml` of the mode, converted when the server starts from a new extract, `quests.json` (fork commit `60bed4ccf`): titles, time limits, up to 3 hunt objectives with rAthena's filters, and item drops. Mods add quests and change core's by ID.
+  - Each character's quest log saves with it (migration 00033) and joins the data export. Kills count as `quest_update_objective`, for the killer or for the party members within 14 cells, and roll the quests' drops.
+  - Lua: the player's quest calls, `npc:show_quest_icon`, and the events `quest_add`, `quest_progress` and `quest_complete`. The Hunting Board sample mod.
+  - The client's quest window with timers and objectives, the active toggle, and quest icons over NPCs, with the mouse and touch.
+  - The converter's quest commands: fully converted script NPCs went from 927 to 1,023 in renewal and from 754 to 790 in pre-renewal, and job change NPCs from 80 to 175 and from 63 to 99.
+  - The e2e test `TestQuestFromCoreNPC` takes core's converted Dancer Kim's quest, hunts it across a relog, and turns it in, with PostgreSQL. The browser check `quests` plays the quest window and an NPC icon on a desktop and a phone.
 
 Open review items:
 
 - Next step 27's details to review, in proposal 0002, "Next steps".
 - Next step 28's details to review, and the review items of decision 0040: a `wa.testing` way to pick a test world's template, mods' own tilesets and props, a floor's level band in Lua, and whether an NPC placed by tag without a match is a warning.
 - Next step 29's details to review, and the review items of decision 0041: a Lua way to read graph distances or teleport prices, a record field for server services on NPCs, a `wa.testing` way to start on a mod's home map, the band formula in small worlds, longer names for `@renametown`, and entered maps and memo points in the data export.
+- Next step 31's details to review, and the review items of decision 0043: a Lua way to list a player's quests or read a quest record, a minimap mark for `showevent`, `questinfo`, `setquestinfo` and `open_quest_ui`, options for the quest events, and quest calls for another character.
 - The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
@@ -137,7 +145,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 5, the generator core, generated fields, dungeons, towns and named places, the world layout, and spawns with the level band fix, are built. Step 6, content, is next, with its Lua API drafted for review first.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 5, the generator core, generated fields, dungeons, towns and named places, the world layout, and spawns with the level band fix, are built, and so is step 6a, quests. Step 6b, procedural content, is next, as review decision 46 approved it.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -2874,7 +2882,15 @@ The order from here:
       - Lua: the hook `spawn_table` with the permission `spawns.modify`, and nothing else. Test worlds of `wactl mod test` spawn their generated maps' lists through the hooks. The Mossy Fields sample mod.
       - Tests: `TestGoldenSpawns` on both architectures in `scripts/check.sh gen`, `TestSpawnRules`, `TestPublicSeed`, `FuzzSelect`, `TestCoverage`, the store, zone, waserver, wactl and modkit tests, the Lua tests, the sample's cases, and the e2e test `TestWorldSpawns` with PostgreSQL.
       - Left: better drop rolls in higher bands (step 8), density scaling by player count, bosses from `wa.generation` (step 6), spawns in dev worlds without a database, and a run on a real amd64 machine.
-   6. Content: service NPCs placed from templates, quest templates, procedural job changes and rebirth (section 11.4), and `wa.generation` for mod layers (section 8.7).
+   6. Content: service NPCs placed from templates, quest templates, procedural job changes and rebirth (section 11.4), and `wa.generation` for mod layers (section 8.7). It runs in two parts, as proposal 0002, review decisions 45 and 46, approved them:
+      - 6a. The quest system, which the content builds on. Done on 2026-10-17 ([decision 0043](decisions/0043-quests.md), proposal 0002, review decision 45 and next step 31, server/README.md, "Quests", client/README.md, "Quests", mods/README.md, "Quests: data/quests.yml" and "Quests", and tools/convert/README.md):
+        - Records: `quests.json` from the fork's `build_quests`, converted into core's `data/quests.yml` at start, with mod records from 1,000,000. Quests were a tier 1 gap of section 11.3; they now work in classic and procedural worlds.
+        - The quest log per character with migration 00033 and sqlc, hunt counting with rAthena's filters and party rule, quest drops, time limits on the server clock, and the data export. Account deletion removes it.
+        - Lua: the calls and events of review decision 45, with `docs/generated` regenerated. The protocol messages of the quest log and icons, recorded in proposal 0001. The client's quest window and NPC icons.
+        - The converter's quest commands, with 96 more fully converted script NPCs in renewal and 36 more in pre-renewal.
+        - Tests: the quest package, store, zone, Lua, export, converter and golden tests, the Hunting Board's 6 `wactl mod test` cases, the e2e test `TestQuestFromCoreNPC` with PostgreSQL, and the browser check `quests`.
+        - Left: `questinfo`, `setquestinfo` and `open_quest_ui`, quest icon art, and achievements.
+      - 6b. Procedural content: services, quest templates, job guilds, rebirth and `wa.generation`.
    7. Rotation: rotating dungeons and world change events through the scheduler (section 8.8), moving players, save points and memo points when a map goes away.
    8. The economy simulator and generator checks (section 8.13), bot runs compared with the simulator, the public seed test, and the phase 7 exit check.
    Art: the generator names biome tilesets, and a table maps each tileset to textures and models. Development points the table at the operator's own build, such as one from the kRO client. A public release needs an original or licensed art pack, which is art work outside this phase. Without one, maps use placeholder textures. Steps 3 and 6, and steps 4, 5 and 7 if they need it, draft their Lua API for review before they are built.

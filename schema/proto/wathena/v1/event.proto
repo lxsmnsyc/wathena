@@ -112,7 +112,74 @@ message Event {
     WorldEventList world_event_list = 100;
     PlayerLimits player_limits = 101;
     WorldMap world_map = 102;
+    QuestList quest_list = 103;
+    QuestUpdate quest_update = 104;
+    QuestRemove quest_remove = 105;
+    QuestIcon quest_icon = 106;
   }
+}
+
+// QuestList is the player's quest log: its active and inactive quests,
+// in the order it took them (proposal 0002, review decision 45). It
+// comes after login and after each map change, and replaces the list
+// before. Complete quests are not in it, as in rAthena's quest window.
+message QuestList {
+  repeated QuestInfo quests = 1;
+}
+
+// QuestInfo is one quest of the quest log.
+message QuestInfo {
+  // id is the quest's ID of data/quests.yml.
+  uint32 id = 1;
+  string title = 2;
+  // active is false for a quest the player marked inactive.
+  bool active = 3;
+  // limit_ms is the time left until the quest's time limit ends, 0 once
+  // it passed, or -1 for a quest without a limit.
+  sint64 limit_ms = 4;
+  // objectives are the hunt objectives, in order.
+  repeated QuestObjective objectives = 5;
+}
+
+// QuestObjective is one hunt objective of a quest.
+message QuestObjective {
+  // label is the monster's name, or the text of an objective's
+  // filters, such as "Prontera Fields, Plant, Small", as rAthena's
+  // clif_quest_string.
+  string label = 1;
+  // monster is the monster ID of an objective that counts one monster,
+  // or 0.
+  uint32 monster = 2;
+  // count is the kills counted so far, and goal the kills asked for.
+  uint32 count = 3;
+  uint32 goal = 4;
+  // min_level and max_level bound the monsters' level, 0 for no bound.
+  uint32 min_level = 5;
+  uint32 max_level = 6;
+}
+
+// QuestUpdate adds a quest to the log, or replaces the quest with the
+// same id: a new quest, a kill counted, or a change between active and
+// inactive.
+message QuestUpdate {
+  QuestInfo quest = 1;
+}
+
+// QuestRemove takes a quest out of the log: removed, changed into
+// another quest, or complete.
+message QuestRemove {
+  uint32 id = 1;
+}
+
+// QuestIcon shows an icon over an NPC to this player alone, as rAthena's
+// showevent. icon is a name of npc:show_quest_icon, such as quest or
+// quest_question, or empty to remove the icon. The icon stays while the
+// player is on the map, and shows again when the NPC comes back into
+// view.
+message QuestIcon {
+  // npc is the NPC's entity ID on this connection.
+  uint32 npc = 1;
+  string icon = 2;
 }
 
 // WorldMap is the part of a procedural world's map graph that the

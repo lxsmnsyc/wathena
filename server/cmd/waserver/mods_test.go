@@ -19,16 +19,17 @@ import (
 
 // sampleApprovals approves what the sample mods request.
 var sampleApprovals = map[string][]string{
-	"example.halloween":    {"player.give_items", "player.give_zeny", "world.announce", "events.schedule", "events.control", "rules.override"},
-	"example.wolf-pack":    {"rules.override"},
-	"example.lucky-clover": {"rules.override", "items.modify_rolls", "player.give_items"},
-	"example.town-crier":   {"rules.override"},
-	"example.desperado":    {"player.give_items"},
-	"example.party-hall":   {"party.manage"},
-	"example.guild-hall":   {"guild.manage"},
-	"example.bank":         {"player.give_items", "rules.override", "player.expand_limits"},
-	"example.arena":        {"mail.send", "rules.override"},
-	"example.mossy-fields": {"spawns.modify"},
+	"example.halloween":     {"player.give_items", "player.give_zeny", "world.announce", "events.schedule", "events.control", "rules.override"},
+	"example.wolf-pack":     {"rules.override"},
+	"example.lucky-clover":  {"rules.override", "items.modify_rolls", "player.give_items"},
+	"example.town-crier":    {"rules.override"},
+	"example.desperado":     {"player.give_items"},
+	"example.party-hall":    {"party.manage"},
+	"example.guild-hall":    {"guild.manage"},
+	"example.bank":          {"player.give_items", "rules.override", "player.expand_limits"},
+	"example.arena":         {"mail.send", "rules.override"},
+	"example.mossy-fields":  {"spawns.modify"},
+	"example.hunting-board": {"player.give_items", "player.give_zeny"},
 }
 
 // TestLoadSampleMod loads mods/examples over the renewal reference data,
@@ -78,6 +79,15 @@ func TestLoadSampleMod(t *testing.T) {
 	if m.zone.Groups == nil || m.zone.Constants == nil || m.zone.MonsterIDs["PORING"] != 1002 {
 		t.Error("zone mods lack the groups, constants or monsters")
 	}
+	// Core's converted quests and the Hunting Board's quest (decision
+	// 0043).
+	if q := m.zone.Quests.ByID(1100); q == nil || q.Title != "Solo in the Sphinx Dungeon!" || len(q.Targets) != 1 || q.Targets[0].Count != 20 {
+		t.Errorf("core quest 1100 %+v", q)
+	}
+	if q := m.zone.Quests.Resolve("porings", "example.hunting-board"); q == nil || q.ID < 1_000_000 || q.Title != "Poring Patrol" ||
+		q.Limit.Seconds != 3600 || len(q.Drops) != 1 || q.Targets[0].Monster != 1002 {
+		t.Errorf("the Hunting Board's quest %+v", q)
+	}
 	// Core's converted NPCs and the mod's NPC share the map.
 	var greeter *zone.NPC
 	for i, n := range m.npcs["map/prt_fild08"] {
@@ -108,8 +118,8 @@ func TestLoadSampleMod(t *testing.T) {
 	if s := m.zone.Shops.Get("example.greeter:Cookie Stand"); s == nil || len(shopItems(s)) != 2 || shopItems(s)[1].Zeny != 10 {
 		t.Errorf("cookie stand %+v", s)
 	}
-	// core and the seventeen sample mods with scripts.
-	if len(m.zone.Scripts) != 18 || m.zone.ItemIDs["Red_Potion"] != 501 {
+	// core and the eighteen sample mods with scripts.
+	if len(m.zone.Scripts) != 19 || m.zone.ItemIDs["Red_Potion"] != 501 {
 		t.Errorf("zone mods: %d scripts", len(m.zone.Scripts))
 	}
 	// The Halloween mod's monsters, with the IDs of the mod range, and

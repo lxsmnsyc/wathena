@@ -68,3 +68,10 @@
         cost: {currency: {"e2e.fixture:tokens": 5}}
       - item: Jellopy
         cost: {items: [{item: Jellopy, amount: 1}]}
+# Core's Dancer Kim, converted from rAthena's npc/re/jobs/3-2/wanderer.txt,
+# moves to the start map for the quest scenario (decision 0043). Her
+# quest, 2221, counts Dummies in data/quests.yml.
+- name: "core:Dancer Kim#fild"
+  map: placeholder/map
+  x: 3
+  y: 3

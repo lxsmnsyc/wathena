@@ -1,0 +1,21 @@
+# A sample mod with a quest (proposal 0002, review decision 45): a hunt
+# quest as a record, and an NPC that gives it, shows a quest icon, and
+# rewards it. mods/README.md, "Quests", explains each part.
+id: example.hunting-board
+name: Hunting Board
+version: 0.1.0
+api: 1.0
+description: Adds the Hunt Master, who asks for three Porings within an hour, shows a quest icon to players near her, and pays 500 zeny and an Apple.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - game.read
+  - player.give_items
+  - player.give_zeny

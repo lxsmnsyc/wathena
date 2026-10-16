@@ -132,6 +132,9 @@ func TestAccountPageExport(t *testing.T) {
 	e.exec(`INSERT INTO mod_character_variables (character_id, mod_id, name, value) VALUES
 		($1, 'example.lantern', 'lit', 'true'), ($1, 'example.bank', 'visits', '3')`, id)
 	e.exec(`INSERT INTO mod_account_variables (account_id, mod_id, name, value) VALUES ($1, 'example.bank', 'balance', '{"zeny": 500}')`, acc)
+	// The quest log (decision 0043), with a quest whose record is gone.
+	e.exec(`INSERT INTO character_quests (character_id, quest_id, ord, state, ends_at, count1) VALUES
+		($1, 1100, 0, 1, '2026-10-17 04:00:00+00', 2), ($1, 1000500, 1, 2, NULL, 0)`, id)
 	ex, err := page.Export(e.ctx, acc)
 	if err != nil {
 		t.Fatal(err)
@@ -148,6 +151,11 @@ func TestAccountPageExport(t *testing.T) {
 	if len(c.Variables) != 2 || c.Variables[0].Mod != "example.bank" || c.Variables[0].Name != "visits" || string(c.Variables[0].Value) != "3" ||
 		c.Variables[1].Mod != "example.lantern" || string(c.Variables[1].Value) != "true" {
 		t.Errorf("character variables %+v", c.Variables)
+	}
+	if q := c.Quests; len(q) != 2 || q[0].ID != 1100 || q[0].Name != "1100" || q[0].Title != "Porings" || q[0].State != "active" ||
+		q[0].EndsAt == nil || !q[0].EndsAt.Equal(time.Date(2026, 10, 17, 4, 0, 0, 0, time.UTC)) || !slices.Equal(q[0].Counts, []int{2}) ||
+		q[1].ID != 1000500 || q[1].Name != "" || q[1].State != "complete" || q[1].EndsAt != nil || len(q[1].Counts) != 3 {
+		t.Errorf("character quests %+v", c.Quests)
 	}
 	if len(ex.Variables) != 1 || ex.Variables[0].Name != "balance" || string(ex.Variables[0].Value) != `{"zeny": 500}` {
 		t.Errorf("account variables %+v", ex.Variables)

@@ -329,7 +329,7 @@ Rate limits, session lifetimes and Argon2id parameters are in [decision 0004](..
 Every account page of a logged in player has a menu: Characters, Account settings, Blocks, reports and sanctions, Your data, Guild emblem and Privacy ([decision 0032](../docs/decisions/0032-account-page.md)).
 
 - `/account/safety` lists each character's block list with an Unblock button, which works whether the character plays or not. It lists the reports the characters filed, with Open, Action taken or No action, and the sanctions on the account and its characters, active and past.
-- `/account/data` downloads the data export, a JSON file in the format of decision 0032, with the mods' saved variables of the account and its characters (decision 0036). It needs a login from the last 10 minutes, works once a day, and is refused while a character of the account is in the game or on autotrade. It holds no password, codes, keys or tokens.
+- `/account/data` downloads the data export, a JSON file in the format of decision 0032, with the mods' saved variables of the account and its characters (decision 0036) and each character's quest log (decision 0043). It needs a login from the last 10 minutes, works once a day, and is refused while a character of the account is in the game or on autotrade. It holds no password, codes, keys or tokens.
 - `/account/data` also deletes the account. The player confirms the password if the last login is older than 10 minutes, and types the account name. A request is refused while a character leads a guild with other members, and for an account that `staff.owners` names. A banned account may ask.
 - For 14 days the characters cannot play: their connections close with `DISCONNECT_REASON_ACCOUNT_DELETION`, game tickets and Play answer with the date, and the gateway refuses their logins. A login shows the date and a Cancel button on the characters page.
 - The deletion job runs in `waserver` every hour, on the game role. It takes the characters out of parties, guilds and friend lists in memory, then calls `delete_account`, which deletes the account's personal data, its characters and their chat lines in one transaction. The logs, reports and mails that other players need keep the character IDs, without a link to the account. Decision 0032 lists what each table keeps.
@@ -1037,6 +1037,17 @@ Mail (RODEX), vending with autotrade and store search, buying stores, the one sh
 - **Autotrade.** `player:autotrade()` closes the connection and keeps the store. Stores save in `stores` and `store_items`. With a database and `autotrade_restore`, `waserver` opens autotrade stores again at start, each owner logged in without a connection. A login of the character ends its autotrade first.
 - **Store search.** The package `market` holds a copy of every open store of the world. `StoreSearchCommand` searches it with item, card, price, roll and random option filters, as `searchstore.cpp`. A store opens from a search only on the searcher's map.
 - **Migration 00020** adds the currency tables, `shop_stock`, `mails`, `mail_items`, `stores`, `store_items`, `zeny_log.currency`, the mail counters of `characters`, and the `currency` kind of `mod_ids`.
+
+## Quests
+
+Quests follow rAthena's `quest.cpp` (proposal 0002, review decision 45, [decision 0043](../docs/decisions/0043-quests.md), mods/README.md, "Quests: data/quests.yml" and "Quests").
+
+- **Records.** `waserver` converts the mode's `quest_db.yml` from the `quests.json` extract into core's `data/quests.yml` when it starts, with the item and NPC scripts. A core quest's record name is its ID. Mods add quests with IDs from 1,000,000 and change core's by ID. `wactl convert quests --report docs/generated/quests-<mode>.md` writes the coverage report.
+- **The quest log.** Each character holds each quest once: active, inactive or complete, with the end of its time limit and a kill count per objective. It saves with the character in `character_quests` (migration 00033), as a diff: changed and new quests are written, and quests that left the log are deleted. Deleting a character or its account deletes its rows. The data export lists it.
+- **Kills.** A monster's last death counts for the killer's active and inactive quests whose objectives pass: the monster, or the level, race, size, element, map and monster list filters. With a party, every member on the map within 14 cells of the monster counts it, as `quest_update_objective_sub`. Each kill also rolls the quests' item drops, which go to the inventory through transfers with the action `quest`.
+- **Time limits.** A quest's end time comes from its limit when it starts, on the server's clock and time zone. Nothing happens when it passes: scripts check it, as rAthena's `checkquest` with `PLAYTIME`.
+- **The client.** `QuestList` comes at login and after each map change, then `QuestUpdate` and `QuestRemove` follow each change. `QuestActive` marks a quest active or inactive. `QuestIcon` shows an icon over an NPC to one player, sent again when the NPC comes back into view.
+- **Converted NPCs.** `setquest`, `completequest`, `erasequest`, `changequest`, `checkquest`, `isbegin_quest` and `showevent` convert (tools/convert/README.md).
 
 ## NPCs
 

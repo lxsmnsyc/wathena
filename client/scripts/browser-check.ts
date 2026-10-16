@@ -41,6 +41,13 @@
 //   town's display name, and opens the world map, which shows both maps
 //   (decision 0041). Chromium only.
 //
+// - quests: quests-check.ts runs a --dev world with the Hunting Board
+//   sample mod, whose Hunt Master stands on the start map. A desktop page
+//   with the mouse sees her quest icon, takes her quest, reads it in the
+//   quest window, hunts Dummies for it, marks it inactive and active, and
+//   turns it in. A phone page with touch takes it and marks it inactive
+//   (decision 0043). Chromium only.
+//
 // - gen: the map generator module (src/world/gen.wasm) gives the golden
 //   checksums of shared/gen/testdata in Chromium, Firefox and WebKit,
 //   whatever BROWSERS says (decision 0038): fields, dungeon floors and
@@ -88,6 +95,7 @@ import {
 import { checkExit } from './exit-check.ts';
 import { checkFields } from './field-check.ts';
 import { checkLayout } from './layout-check.ts';
+import { checkQuests } from './quests-check.ts';
 import { checkPlaces } from './places-check.ts';
 import type * as GeneratorModule from '../src/world/generator.ts';
 
@@ -1087,6 +1095,13 @@ try {
           await checkLayout(name, browser, { repo, client, ...assets }, check);
         } else {
           console.log(`skip ${name} layout: the game checks run in Chromium`);
+        }
+      }
+      if (wanted('quests')) {
+        if (name === 'chromium') {
+          await checkQuests(name, browser, { repo, client, ...assets }, check);
+        } else {
+          console.log(`skip ${name} quests: the game checks run in Chromium`);
         }
       }
       if (wanted('exit')) {

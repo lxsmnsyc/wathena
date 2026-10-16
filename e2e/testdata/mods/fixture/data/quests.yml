@@ -1,0 +1,6 @@
+# Core's quest 2221, Dancer Kim's race against 50 Yellow Novus, counts 2
+# of the fixture's Dummies, so the quest scenario hunts fast (decision
+# 0043). A mod changes a core quest by its ID.
+- name: "2221"
+  targets:
+    - {monster: e2e.fixture:DUMMY, count: 2}

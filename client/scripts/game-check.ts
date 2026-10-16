@@ -90,6 +90,8 @@ export interface GameOptions {
   mods?: string[];
   /** A name for this server's files in dir, so two servers can share it. */
   name?: string;
+  /** More lines of mods.approve, such as "    example.a: [player.give_zeny]\n". */
+  approve?: string;
   /**
    * Generated fields to run, as --fields takes them, with a waserver
    * built with -tags procedural (decision 0039). The fields start, and
@@ -190,6 +192,26 @@ function installMods(repo: string, dir: string, wactl: string, extra: readonly s
     }
     writeFileSync(script, placed);
   }
+  // The Hunting Board's Hunt Master stands on the start map, and her
+  // quest counts the fixture's Dummies, which stand still and come back
+  // a second after they die (decision 0043).
+  const board = join(mods, 'hunting-board');
+  if (existsSync(board)) {
+    const npcs = join(board, 'data', 'npcs.yml');
+    const yml = readFileSync(npcs, 'utf8');
+    const moved = yml.replace(
+      '  map: prontera\n  x: 150\n  y: 180\n',
+      '  map: placeholder/map\n  x: 9\n  y: 9\n',
+    );
+    const quests = join(board, 'data', 'quests.yml');
+    const q = readFileSync(quests, 'utf8');
+    const dummies = q.replaceAll('monster: PORING', 'monster: e2e.fixture:DUMMY');
+    if (moved === yml || dummies === q) {
+      throw new Error('the Hunting Board no longer places its NPC in Prontera or hunts Porings');
+    }
+    writeFileSync(npcs, moved);
+    writeFileSync(quests, dummies);
+  }
   // A mod without art, such as the Market Town, has nothing to build.
   for (const m of built.filter((d) => existsSync(join(d, 'art')))) {
     execFileSync(wactl, ['mod', 'build-art', m], { stdio: 'ignore' });
@@ -213,7 +235,10 @@ export async function startGame(
   const waserver = buildServer(repo, dir, opts.fields !== undefined || opts.layout === true);
   const mods = installMods(repo, dir, wactl, opts.mods ?? []);
   const config = join(dir, `waserver-${opts.name ?? 'game'}.yml`);
-  writeFileSync(config, CONFIG + (opts.config ?? ''));
+  writeFileSync(
+    config,
+    CONFIG.replace('  approve:\n', `  approve:\n${opts.approve ?? ''}`) + (opts.config ?? ''),
+  );
   const port = await freePort();
   const debug = await freePort();
   const vitePort = await freePort();
