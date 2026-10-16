@@ -1031,6 +1031,19 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Settings.** `spawns.town_field_boss_chance`, `spawns.town_field_boss_role` and the density, rAthena's by default.
     - Later: better drop rolls in higher bands (step 8), density scaling by player count, and bosses placed by mods through `wa.generation` (step 6).
 
+45. The quest system (phase 7 step 6a). The user approved these on 2026-10-17. Quests are a tier 1 system (strategy section 11.3) that phases 5 and 6 did not build:
+    - **Records.** `data/quests.yml` from rAthena's `quest_db`: title, time limit, hunt objectives (monster and count, with the level, race and size filters of newer `quest_db`) and item objectives. Mods add records.
+    - **Lua.** `player:add_quest(quest)` (`setquest`), `player:get_quest_state(quest)` returning `"none"`, `"active"`, `"inactive"` or `"complete"`, `player:complete_quest(quest)` (`completequest`), `player:remove_quest(quest)` (`erasequest`), `player:change_quest(from, to)` (`changequest`), `player:get_quest_progress(quest, objective)` (`checkquest` with `HUNTING`), `player:quest_timed_out(quest)` (`checkquest` with `PLAYTIME`), and `npc:show_quest_icon(player, icon)` (`showevent`). Events `quest_add`, `quest_progress` and `quest_complete`.
+    - **Behavior.** Kills update hunt counts as rAthena does. Quest state is saved and joins the data export.
+    - **Client.** A quest log window with objectives and timers, and quest icons over NPCs.
+    - **Converter.** `setquest`, `completequest`, `erasequest`, `changequest`, `checkquest`, `isbegin_quest` and `showevent`.
+46. Procedural content (phase 7 step 6b). The user approved these on 2026-10-17:
+    - **Services.** Core ships service NPCs for procedural worlds, placed by tag: Kafra storage, shops stocked by band, a refiner, and an inn with the save point. They load only in procedural worlds.
+    - **Quest templates.** Records in `data/quest_templates.yml` for hunt, collect and delivery quests. Each town's quests are chosen at world creation from its nearby fields' stored spawns, with the secret branch. A quest board NPC in each town offers them.
+    - **Job guilds.** One per class family, placed by tag in towns. A job test is a chain of quest templates: hunt, collect, and a talk with the guild master. The trial dungeon of strategy section 11.4 waits for instanced maps.
+    - **Rebirth.** An NPC in the largest town of the highest band.
+    - **`wa.generation`.** Run at world creation on the server only. `generation.on("map", function(map, node) ... end)` receives a node with `child(label)`, `stream()` and `hash(x, y)`, and returns `{ places, objects, bosses }`. Layers cannot change terrain cells, which the client generates. `generation.quest_template(record)` adds a quest template. It needs a new permission, `world.generate`.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
