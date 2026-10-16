@@ -40,9 +40,9 @@ type goldenCase struct {
 }
 
 var goldenCases = []goldenCase{
-	{Secret: "golden-layout-1", Width: 6, Height: 4, Towns: 5, Dungeons: 6},
-	{Secret: "golden-layout-2", Width: 6, Height: 4, Towns: 5, Dungeons: 6},
-	{Secret: "golden-layout-3", Width: 6, Height: 4, Towns: 5, Dungeons: 6, Home: true},
+	{Secret: "golden-layout-1", Width: 6, Height: 5, Towns: 5, Dungeons: 6},
+	{Secret: "golden-layout-2", Width: 6, Height: 5, Towns: 5, Dungeons: 6},
+	{Secret: "golden-layout-3", Width: 6, Height: 5, Towns: 5, Dungeons: 6, Home: true},
 	{Secret: "golden-layout-4", Width: 2, Height: 2, Towns: 2, Dungeons: 1},
 	{Secret: "golden-layout-5", Width: 10, Height: 8, Towns: 12, Dungeons: 14},
 	{Secret: "golden-layout-6", Width: 1, Height: 3, Towns: 1, Dungeons: 2, Home: true},
@@ -126,10 +126,10 @@ func TestGoldenLayout(t *testing.T) {
 }
 
 // TestLayoutRules: the default layout of several worlds follows review
-// decision 43.
+// decisions 43 and 44.
 func TestLayoutRules(t *testing.T) {
 	for i := range 20 {
-		c := goldenCase{Secret: fmt.Sprintf("rules-%d", i), Width: 6, Height: 4, Towns: 5, Dungeons: 6, Home: i%4 == 0}
+		c := goldenCase{Secret: fmt.Sprintf("rules-%d", i), Width: 6, Height: 5, Towns: 5, Dungeons: 6, Home: i%4 == 0}
 		l := build(t, c)
 		checkRules(t, c, l)
 	}
@@ -146,8 +146,11 @@ func TestLayoutRules(t *testing.T) {
 //     order;
 //   - every map reached from the home area;
 //   - unique town names of 4 to 12 letters;
-//   - bands that rise with distance, start at level 1 at home, and
-//     floors that build on their entrance's band.
+//   - bands that start at level 1 at home and at the nearest fields,
+//     rise 8 levels per further warp up to levels 90 to 99, and floors
+//     that build on their entrance's band;
+//   - on a grid of 30 fields or more, at least 3 fields in each band of
+//     10 levels up to 99.
 func checkRules(t *testing.T, c goldenCase, l *layout.Layout) {
 	t.Helper()
 	count := map[string]int{}
@@ -231,6 +234,33 @@ func checkRules(t *testing.T, c goldenCase, l *layout.Layout) {
 	}
 	if h := at[l.Home]; h.Levels[0] != 1 || h.Distance != 0 {
 		t.Errorf("%s: the home area %s has %v at %d", c.Secret, h.ID, h.Levels, h.Distance)
+	}
+	near := -1
+	for _, m := range l.Maps {
+		if m.Kind == gen.KindField && (near < 0 || m.Distance < near) {
+			near = m.Distance
+		}
+	}
+	for _, m := range l.Maps {
+		if m.Kind == gen.KindDungeon {
+			continue
+		}
+		if want := min(1+layout.DefaultBandStep*max(m.Distance-near, 0), 90); m.Levels != [2]int{want, want + 9} {
+			t.Errorf("%s: %s at %d warps, the nearest field at %d, has %v, want %d to %d", c.Secret, m.ID, m.Distance, near, m.Levels, want, want+9)
+		}
+	}
+	if c.Width*c.Height >= 30 {
+		for lo := 1; lo <= 99; lo += 10 {
+			n := 0
+			for _, m := range l.Maps {
+				if m.Kind == gen.KindField && m.Levels[0] <= min(lo+9, 99) && m.Levels[1] >= lo {
+					n++
+				}
+			}
+			if n < 3 {
+				t.Errorf("%s: levels %d to %d have %d fields", c.Secret, lo, lo+9, n)
+			}
+		}
 	}
 	for _, a := range l.Maps {
 		for _, b := range l.Maps {
@@ -324,7 +354,7 @@ func TestLayoutChecks(t *testing.T) {
 // FuzzLayout: any secret and a small config give a layout that follows
 // the rules, or ErrNoLayout.
 func FuzzLayout(f *testing.F) {
-	f.Add("seed", uint8(6), uint8(4), uint8(5), uint8(6), false)
+	f.Add("seed", uint8(6), uint8(5), uint8(5), uint8(6), false)
 	f.Add("x", uint8(1), uint8(1), uint8(1), uint8(0), true)
 	f.Fuzz(func(t *testing.T, secret string, w, h, towns, dungeons uint8, home bool) {
 		c := goldenCase{Secret: secret, Width: int(w%8) + 1, Height: int(h%8) + 1, Towns: int(towns%8) + 1, Dungeons: int(dungeons % 10), Home: home}
@@ -341,4 +371,52 @@ func FuzzLayout(f *testing.F) {
 		}
 		checkRules(t, c, l)
 	})
+}
+
+// TestCoverage: every band of 10 levels up to 99 has 3 fields in each of
+// 300 default worlds, a layout without them fails the check, and a grid
+// too small for it skips it (review decision 44).
+func TestCoverage(t *testing.T) {
+	cfg := layout.DefaultConfig()
+	if !layout.Covers(cfg) || len(layout.CoverageBands(cfg)) != 10 || layout.CoverageBands(cfg)[9] != [2]int{91, 99} {
+		t.Errorf("bands %v", layout.CoverageBands(cfg))
+	}
+	small := cfg
+	small.Width, small.Height = 5, 5
+	if layout.Covers(small) {
+		t.Error("25 fields cover 10 bands")
+	}
+	low := cfg
+	low.MaxLevel = 50
+	low.Width, low.Height = 5, 3
+	if !layout.Covers(low) || len(layout.CoverageBands(low)) != 5 {
+		t.Errorf("a cap of 50: %v", layout.CoverageBands(low))
+	}
+	flat := &layout.Layout{}
+	for i := range 30 {
+		flat.Maps = append(flat.Maps, layout.Map{ID: gen.FieldID(int64(i%6), int64(i/6)), Kind: gen.KindField, Levels: [2]int{1, 10}})
+	}
+	if p := layout.Coverage(flat, cfg); !strings.Contains(p, "levels 11 to 20 have 0 fields") {
+		t.Errorf("a flat layout: %q", p)
+	}
+	if p := layout.Coverage(flat, small); p != "" {
+		t.Errorf("a small grid: %q", p)
+	}
+	cfg.FieldSize = 64
+	attempts := map[int]int{}
+	for i := range 300 {
+		in := coreInputs(t, fmt.Sprintf("coverage-%d", i))
+		if i%5 == 0 {
+			in.Home = testHome
+		}
+		l, err := layout.Build(cfg, in)
+		if err != nil {
+			t.Fatalf("world %d: %v", i, err)
+		}
+		attempts[l.Attempt]++
+		if p := layout.Coverage(l, cfg); p != "" {
+			t.Errorf("world %d: %s", i, p)
+		}
+	}
+	t.Logf("attempts of 300 worlds: %v", attempts)
 }

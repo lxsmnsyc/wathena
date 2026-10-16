@@ -1,0 +1,23 @@
+# A sample mod for procedural worlds (proposal 0002, review decision 44):
+# monsters with spawn tags, a spawn theme, and a spawn_table hook.
+# mods/README.md, "Spawn tags", "Spawn themes" and "Hooks", explains each
+# part.
+id: example.mossy-fields
+name: Mossy Fields
+version: 0.1.0
+api: 1.0
+description: Adds Moss Porings and Moss Spores to the fields of new procedural worlds, a mossy spawn theme, and a hook that puts a dozen Moss Porings on every field below level 20.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - game.read
+  - spawns.modify
+scripts:
+  - scripts/main.lua

@@ -1,0 +1,931 @@
+# Core's spawn tags (strategy section 8.11, proposal 0002, review
+# decision 44, decision 0042). tools/spawntags writes this file from
+# rAthena's spawn files, as reference/rathena/extracts/renewal/
+# spawns.json holds them. Do not edit it: run go run ./tools/spawntags.
+#
+#   - families: the rAthena map families of each biome, and how many
+#     maps they have.
+#   - density: the median monsters per 10,000 walkable cells of rAthena's
+#     field maps and dungeon maps of those families.
+#   - monsters: each monster that spawns on them, with its role and its
+#     weight per 1,000 of each biome's monsters. Monster records change
+#     them with spawn.
+rathena_git_hash: 3f55343941d66da7805b2e8f2fd2808e9a8876e4
+density:
+  field: 41
+  dungeon: 48
+families:
+  beach: {maps: 10, families: [cmd_fild, gon_fild, harboro]}
+  cave: {maps: 46, families: [abyss_, anthell, arug_dun, ayo_dun, beach_dun, bra_dun, dew_dun, dic_dun, ein_dun, ice_dun, iz_dun, mag_dun, mjo_dun, orcsdun, pay_dun, thor_v, xmas_dun]}
+  crypt: {maps: 53, families: [abbey, ama_dun, gef_dun, gl_cas, gl_church, gl_chyard, gl_dun, gl_in, gl_knt, gl_prison, gl_sew, gl_step, in_sphinx, lou_dun, moc_pryd, prt_sewb, tur_dun]}
+  desert: {maps: 22, families: [dic_fild, moc_fild, ra_fild]}
+  forest: {maps: 49, families: [ama_fild, bif_fild, ecl_fild, gef_fild, lou_fild, man_fild, mjolnir_, mosk_fild, pay_fild, prt_maze, spl_fild, yggdrasil]}
+  grassland: {maps: 44, families: [ein_fild, hu_fild, lhz_fild, prt_fild, rockmi, yuno_fild]}
+  ruins: {maps: 30, families: [ba_2whs, ba_bath, ba_lib, ba_lost, ba_maison, ba_pw, gefenia, glast_, juperos_, lhz_dun, ra_san, treasure]}
+  snow: {maps: 6, families: [ve_fild, xmas_fild]}
+  swamp: {maps: 11, families: [ayo_fild, bra_fild, dew_fild, nif_fild, niflheim, um_fild]}
+  tower: {maps: 33, families: [alde_dun, c_tower, ecl_tdun, gon_dun, kh_dun, odin_tem, tha_t]}
+monsters:
+  - {name: ACIDUS, role: common, biomes: {cave: 11}}
+  - {name: ACIDUS_, role: common, biomes: {cave: 11}}
+  - {name: AGAV, role: common, biomes: {ruins: 17}}
+  - {name: ALARM, role: common, biomes: {tower: 37}}
+  - {name: ALICE, role: common, biomes: {crypt: 1, tower: 12}}
+  - {name: ALICEL, role: common, biomes: {tower: 12}}
+  - {name: ALIOT, role: common, biomes: {tower: 10}}
+  - {name: ALIZA, role: common, biomes: {tower: 18}}
+  - {name: ALLIGATOR, role: common, biomes: {beach: 87}}
+  - {name: ALNOLDI, role: common, biomes: {swamp: 68}}
+  - {name: ALPHOCCIO, role: common, biomes: {ruins: 7}}
+  - {name: AMBERNITE, role: common, biomes: {forest: 3, grassland: 17}}
+  - {name: AMON_RA, role: field_boss, biomes: {crypt: 1}}
+  - {name: AM_MUT, role: uncommon, biomes: {cave: 1}}
+  - {name: ANACONDAQ, role: common, biomes: {desert: 35}}
+  - {name: ANCIENT_MIMIC, role: common, biomes: {cave: 5, tower: 56}}
+  - {name: ANCIENT_MUMMY, role: common, biomes: {crypt: 3}}
+  - {name: ANDRE, role: common, biomes: {beach: 35, cave: 10}}
+  - {name: ANGELING, role: mini_boss, biomes: {cave: 1, forest: 1, grassland: 1}}
+  - {name: ANGRA_MANTIS, role: uncommon, biomes: {forest: 1}}
+  - {name: ANOLIAN, role: common, biomes: {crypt: 17}}
+  - {name: ANOPHELES, role: common, biomes: {beach: 4, desert: 27, ruins: 11}}
+  - {name: ANTIQUE_BOOK, role: common, biomes: {tower: 11}}
+  - {name: ANTIQUE_FIRELOCK, role: common, biomes: {crypt: 15}}
+  - {name: ANTLER_SCARABA, role: common, biomes: {cave: 8}}
+  - {name: ANTLER_SCARABA_EGG, role: plant, biomes: {cave: 2}}
+  - {name: ANT_EGG, role: plant, biomes: {beach: 21, cave: 16}}
+  - {name: ANUBIS, role: common, biomes: {crypt: 5}}
+  - {name: APOCALIPS, role: common, biomes: {ruins: 11}}
+  - {name: ARCHANGELING, role: mini_boss, biomes: {grassland: 1}}
+  - {name: ARCHER_SKELETON, role: common, biomes: {cave: 10, crypt: 4}}
+  - {name: ARCLOUSE, role: common, biomes: {crypt: 12, tower: 21}}
+  - {name: ARC_ELDER, role: rare, biomes: {tower: 1}}
+  - {name: ARGIOPE, role: common, biomes: {forest: 37, swamp: 51}}
+  - {name: ARGOS, role: common, biomes: {desert: 7, forest: 23}}
+  - {name: ARMAIA, role: common, biomes: {ruins: 9}}
+  - {name: ASSULTER, role: common, biomes: {crypt: 10}}
+  - {name: ASTER, role: common, biomes: {beach: 26, grassland: 3}}
+  - {name: ATROCE, role: field_boss, biomes: {desert: 1, snow: 2}}
+  - {name: AUNOE, role: common, biomes: {cave: 3}}
+  - {name: BABY_LEOPARD, role: common, biomes: {beach: 23, tower: 2}}
+  - {name: BACSOJIN_, role: field_boss, biomes: {crypt: 1}}
+  - {name: BANASPATY, role: common, biomes: {cave: 11}}
+  - {name: BANSHEE, role: common, biomes: {crypt: 17}}
+  - {name: BANSHEE_MASTER, role: common, biomes: {cave: 3}}
+  - {name: BAPHOMET, role: field_boss, biomes: {forest: 1}}
+  - {name: BAPHOMET_, role: common, biomes: {forest: 2}}
+  - {name: BATHORY, role: common, biomes: {tower: 15}}
+  - {name: BEELZEBUB, role: mini_boss, biomes: {crypt: 1}}
+  - {name: BEHOLDER, role: uncommon, biomes: {ruins: 4}}
+  - {name: BEHOLDER_MASTER, role: common, biomes: {cave: 3}}
+  - {name: BIGFOOT, role: common, biomes: {forest: 22}}
+  - {name: BIG_BELL, role: common, biomes: {tower: 29}}
+  - {name: BIG_BEN, role: common, biomes: {tower: 15}}
+  - {name: BLACK_MUSHROOM, role: plant, biomes: {beach: 9, cave: 10, crypt: 4, forest: 1, grassland: 1, ruins: 10}}
+  - {name: BLAZZER, role: common, biomes: {cave: 6}}
+  - {name: BLOODY_KNIGHT, role: rare, biomes: {crypt: 1, ruins: 1}}
+  - {name: BLOODY_MURDERER, role: common, biomes: {swamp: 7}}
+  - {name: BLOOD_BUTTERFLY, role: common, biomes: {tower: 23}}
+  - {name: BLUE_PLANT, role: plant, biomes: {beach: 3, cave: 1, crypt: 1, desert: 1, forest: 8, grassland: 2, ruins: 4, snow: 6, swamp: 3, tower: 10}}
+  - {name: BON_GUN, role: common, biomes: {cave: 5}}
+  - {name: BOW_GUARDIAN, role: mini_boss, biomes: {cave: 4}}
+  - {name: BRADIUM_GOLEM, role: common, biomes: {desert: 1, forest: 7}}
+  - {name: BREEZE, role: common, biomes: {grassland: 16, tower: 4}}
+  - {name: BRILIGHT, role: common, biomes: {tower: 5}}
+  - {name: BUTOIJO, role: common, biomes: {cave: 6}}
+  - {name: BYORGUE, role: mini_boss, biomes: {cave: 1}}
+  - {name: B_YGNIZEM, role: field_boss, biomes: {ruins: 1}}
+  - {name: C1_AGAV, role: uncommon, biomes: {ruins: 1}}
+  - {name: C1_ALNOLDI, role: uncommon, biomes: {swamp: 1}}
+  - {name: C1_ANTIQUE_BOOK, role: uncommon, biomes: {tower: 1}}
+  - {name: C1_ARGIOPE, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_BANSHEE, role: uncommon, biomes: {crypt: 1}}
+  - {name: C1_BLOOD_BUTTERFLY, role: uncommon, biomes: {tower: 1}}
+  - {name: C1_CARAMEL, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_CENTIPEDE, role: uncommon, biomes: {desert: 1}}
+  - {name: C1_COCO, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_CREAMY, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_DEATHWORD, role: uncommon, biomes: {tower: 1}}
+  - {name: C1_DRAGON_TAIL, role: uncommon, biomes: {crypt: 1}}
+  - {name: C1_DRYAD, role: uncommon, biomes: {swamp: 1}}
+  - {name: C1_ELDER_WILOW, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_FAKE_ANGEL, role: uncommon, biomes: {ruins: 1}}
+  - {name: C1_FUR_SEAL, role: uncommon, biomes: {beach: 1}}
+  - {name: C1_GEOGRAPHER, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_GOBLIN_1, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_GREATEST_GENERAL, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_HILL_WIND_1, role: uncommon, biomes: {desert: 1}}
+  - {name: C1_HORN_SCARABA, role: uncommon, biomes: {cave: 1}}
+  - {name: C1_ICE_TITAN, role: uncommon, biomes: {cave: 1}}
+  - {name: C1_KARAKASA, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_KOBOLD_ARCHER, role: uncommon, biomes: {desert: 1}}
+  - {name: C1_LOLI_RURI, role: uncommon, biomes: {swamp: 1}}
+  - {name: C1_MAGMARING, role: uncommon, biomes: {snow: 2}}
+  - {name: C1_MANTIS, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_MEDUSA, role: uncommon, biomes: {cave: 1}}
+  - {name: C1_METALLER, role: uncommon, biomes: {beach: 1}}
+  - {name: C1_MINOROUS, role: uncommon, biomes: {crypt: 1}}
+  - {name: C1_MOROCC_1, role: uncommon, biomes: {desert: 1}}
+  - {name: C1_MUMMY, role: uncommon, biomes: {crypt: 1}}
+  - {name: C1_NG_WANDER_MAN, role: uncommon, biomes: {crypt: 1}}
+  - {name: C1_NOVUS, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_ORC_SKELETON, role: uncommon, biomes: {cave: 1}}
+  - {name: C1_PASANA, role: uncommon, biomes: {crypt: 1}}
+  - {name: C1_PETIT, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_PIRANHA, role: uncommon, biomes: {cave: 1}}
+  - {name: C1_POISON_TOAD, role: uncommon, biomes: {crypt: 1}}
+  - {name: C1_PORING, role: uncommon, biomes: {forest: 1, grassland: 1}}
+  - {name: C1_RAFFLESIA, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_RAYDRIC, role: uncommon, biomes: {crypt: 1}}
+  - {name: C1_RETRIBUTION, role: uncommon, biomes: {tower: 1}}
+  - {name: C1_RIDEWORD, role: uncommon, biomes: {tower: 1}}
+  - {name: C1_SAILOR_SKELETON, role: uncommon, biomes: {ruins: 1}}
+  - {name: C1_SAVAGE_BABE, role: uncommon, biomes: {forest: 1}}
+  - {name: C1_SHELLFISH, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_SIROMA, role: uncommon, biomes: {cave: 1}}
+  - {name: C1_SLEEPER, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_SOHEE, role: uncommon, biomes: {cave: 1}}
+  - {name: C1_SPORE, role: uncommon, biomes: {ruins: 1}}
+  - {name: C1_STEM_WORM, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_TEDDY_BEAR, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_VANBERK, role: uncommon, biomes: {ruins: 1}}
+  - {name: C1_VIOLY, role: uncommon, biomes: {ruins: 1}}
+  - {name: C1_WOLF, role: uncommon, biomes: {desert: 1}}
+  - {name: C1_YOYO, role: uncommon, biomes: {grassland: 1}}
+  - {name: C1_ZOMBIE_SLAUGHTER, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_ACIDUS_, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_ALLIGATOR, role: uncommon, biomes: {beach: 1}}
+  - {name: C2_ANDRE, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_ANTIQUE_BOOK, role: uncommon, biomes: {tower: 1}}
+  - {name: C2_ARCLOUSE, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_BANASPATY, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_CENERE, role: uncommon, biomes: {tower: 1}}
+  - {name: C2_COCO, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_CORNUTUS, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_DEATHWORD, role: uncommon, biomes: {tower: 1}}
+  - {name: C2_DEVIRUCHI, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_DROSERA, role: uncommon, biomes: {snow: 2}}
+  - {name: C2_ELDER_WILOW, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_FABRE, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_FREEZER, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_GEOGRAPHER, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_GOAT, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_GRAND_PECO, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_HIGH_ORC, role: uncommon, biomes: {tower: 1}}
+  - {name: C2_HORN, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_IARA, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_ISIS, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_KOBOLD_1, role: uncommon, biomes: {desert: 1}}
+  - {name: C2_LIVE_PEACH_TREE, role: uncommon, biomes: {tower: 1}}
+  - {name: C2_LUNATIC, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_MANDRAGORA, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_MARTIN, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_METALING, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_MINERAL, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_MOLE, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_MUMMY, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_NEPENTHES, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_NOVUS, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_ORC_LADY, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_PARASITE, role: uncommon, biomes: {swamp: 1}}
+  - {name: C2_PETIT, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_PINGUICULA_D, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_POISON_SPORE, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_PORCELLIO, role: uncommon, biomes: {grassland: 1}}
+  - {name: C2_RAYDRIC, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_REQUIEM, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_RIDEWORD, role: uncommon, biomes: {tower: 1}}
+  - {name: C2_ROWEEN, role: uncommon, biomes: {desert: 1}}
+  - {name: C2_SAVAGE, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_SHECIL, role: uncommon, biomes: {ruins: 1}}
+  - {name: C2_SIDE_WINDER, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_SKOGUL, role: uncommon, biomes: {tower: 1}}
+  - {name: C2_SNOWIER, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_SOLIDER, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_STEEL_CHONCHON, role: uncommon, biomes: {desert: 1}}
+  - {name: C2_TATACHO, role: uncommon, biomes: {forest: 1}}
+  - {name: C2_THIEF_BUG, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_VADON, role: uncommon, biomes: {cave: 1}}
+  - {name: C2_VIOLY, role: uncommon, biomes: {ruins: 1}}
+  - {name: C2_WHISPER, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_WIND_GHOST, role: uncommon, biomes: {crypt: 1}}
+  - {name: C2_YOYO, role: uncommon, biomes: {swamp: 1}}
+  - {name: C2_ZOMBIE_PRISONER, role: uncommon, biomes: {crypt: 1}}
+  - {name: C3_ACIDUS_, role: uncommon, biomes: {cave: 1}}
+  - {name: C3_ALIZA, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_ANCIENT_MIMIC, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_ARCLOUSE, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_ASSULTER, role: uncommon, biomes: {crypt: 1}}
+  - {name: C3_BIGFOOT, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_BREEZE, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_CELIA, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_CLOCK, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_COOKIE, role: uncommon, biomes: {cave: 1}}
+  - {name: C3_DEATHWORD, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_DESERT_WOLF_B, role: uncommon, biomes: {desert: 1}}
+  - {name: C3_DOLOMEDES, role: uncommon, biomes: {desert: 1}}
+  - {name: C3_DROPS, role: uncommon, biomes: {desert: 1}}
+  - {name: C3_ECHIO, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_FABRE, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_FREEZER, role: uncommon, biomes: {crypt: 1}}
+  - {name: C3_GARGOYLE, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_GOAT, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_GRAND_PECO, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_HARPY, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_HODREMLIN, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_HYEGUN, role: uncommon, biomes: {crypt: 1}}
+  - {name: C3_ISILLA, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_KNOCKER, role: uncommon, biomes: {cave: 1}}
+  - {name: C3_LEAF_CAT, role: uncommon, biomes: {cave: 1}}
+  - {name: C3_LUNATIC, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_MARIONETTE, role: uncommon, biomes: {crypt: 1}}
+  - {name: C3_METALING, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_MIMING, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_MIYABI_NINGYO, role: uncommon, biomes: {crypt: 1}}
+  - {name: C3_MUKA, role: uncommon, biomes: {desert: 1}}
+  - {name: C3_NECROMANCER, role: uncommon, biomes: {crypt: 1}}
+  - {name: C3_NOVUS, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_OBSERVATION, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_OWL_DUKE, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_PENOMENA, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_PINGUICULA, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_PLASMA_Y, role: uncommon, biomes: {tower: 1}}
+  - {name: C3_POPORING, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_PORING, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_RAWREL, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_REMOVAL, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_RICE_CAKE_BOY, role: uncommon, biomes: {beach: 1}}
+  - {name: C3_RODA_FROG, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_SAVAGE, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_SEE_OTTER, role: uncommon, biomes: {beach: 1}}
+  - {name: C3_SIDE_WINDER, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_SNAKE, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_SOLDIER_SKELETON, role: uncommon, biomes: {cave: 1}}
+  - {name: C3_STAPO, role: uncommon, biomes: {snow: 2}}
+  - {name: C3_TAROU, role: uncommon, biomes: {cave: 1}}
+  - {name: C3_THIEF_BUG, role: uncommon, biomes: {crypt: 1}}
+  - {name: C3_UNGOLIANT, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_VENOMOUS, role: uncommon, biomes: {grassland: 1}}
+  - {name: C3_WEAK_SKELETON, role: uncommon, biomes: {ruins: 1}}
+  - {name: C3_WILOW, role: uncommon, biomes: {forest: 1}}
+  - {name: C3_WORM_TAIL, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_ALICEL, role: uncommon, biomes: {tower: 1}}
+  - {name: C4_ANACONDAQ, role: uncommon, biomes: {desert: 1}}
+  - {name: C4_ANOLIAN, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_APOCALIPS, role: uncommon, biomes: {ruins: 1}}
+  - {name: C4_ARGOS, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_BATHORY, role: uncommon, biomes: {tower: 1}}
+  - {name: C4_BREEZE, role: uncommon, biomes: {grassland: 1}}
+  - {name: C4_CLOCK, role: uncommon, biomes: {tower: 1}}
+  - {name: C4_DARK_PRIEST, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_DESERT_WOLF_B, role: uncommon, biomes: {desert: 1}}
+  - {name: C4_DOKEBI, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_DRILLER, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_DUSTINESS, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_EXPLOSION, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_FERUS_, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_GARGOYLE, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_GOLEM, role: uncommon, biomes: {beach: 1}}
+  - {name: C4_HARPY, role: uncommon, biomes: {grassland: 1}}
+  - {name: C4_HODE, role: uncommon, biomes: {desert: 1}}
+  - {name: C4_HUNTER_FLY, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_INJUSTICE, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_KIND_OF_BEETLE, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_LITTLE_FATUM, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_LUDE, role: uncommon, biomes: {swamp: 1}}
+  - {name: C4_MAJORUROS, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_MARIN, role: uncommon, biomes: {snow: 1}}
+  - {name: C4_MERMAN, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_MIMIC, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_MINOROUS, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_MOROCC_1, role: uncommon, biomes: {desert: 1}}
+  - {name: C4_MYSTCASE, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_NIGHTMARE_TERROR, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_NOXIOUS, role: uncommon, biomes: {grassland: 1}}
+  - {name: C4_ORK_WARRIOR, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_PENOMENA, role: uncommon, biomes: {tower: 1}}
+  - {name: C4_PICKY_, role: uncommon, biomes: {desert: 1}}
+  - {name: C4_PLANKTON, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_POPORING, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_PORING, role: uncommon, biomes: {grassland: 1}}
+  - {name: C4_RAKE_SCARABA, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_RETRIBUTION, role: uncommon, biomes: {tower: 1}}
+  - {name: C4_RODA_FROG, role: uncommon, biomes: {forest: 1}}
+  - {name: C4_SAND_MAN, role: uncommon, biomes: {desert: 1}}
+  - {name: C4_SEDORA, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_SHINOBI, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_SMOKIE, role: uncommon, biomes: {swamp: 1}}
+  - {name: C4_SOLDIER_SKELETON, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_STALACTIC_GOLEM, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_TAMRUAN, role: uncommon, biomes: {cave: 1}}
+  - {name: C4_THIEF_BUG, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_TOUCAN, role: uncommon, biomes: {swamp: 2}}
+  - {name: C4_VENATU_1, role: uncommon, biomes: {ruins: 1}}
+  - {name: C4_WANDER_MAN, role: uncommon, biomes: {crypt: 1}}
+  - {name: C4_WILD_ROSE, role: uncommon, biomes: {swamp: 1}}
+  - {name: C4_WOOTAN_FIGHTER, role: uncommon, biomes: {swamp: 1}}
+  - {name: C4_ZOMBIE, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_ALARM, role: uncommon, biomes: {tower: 1}}
+  - {name: C5_AMBERNITE, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_ANTLER_SCARABA, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_ARGIOPE, role: uncommon, biomes: {forest: 1}}
+  - {name: C5_BANSHEE_MASTER, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_BRADIUM_GOLEM, role: uncommon, biomes: {forest: 1}}
+  - {name: C5_CARAT, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_CHONCHON, role: uncommon, biomes: {forest: 1}}
+  - {name: C5_COMODO, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_DANCING_DRAGON, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_DENIRO, role: uncommon, biomes: {beach: 1, cave: 1}}
+  - {name: C5_DISGUISE, role: uncommon, biomes: {swamp: 1}}
+  - {name: C5_DRAINLIAR, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_EVIL_DRUID, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_FARMILIAR, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_GALION, role: uncommon, biomes: {snow: 1}}
+  - {name: C5_GHOUL, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_GOBLIN_1, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_GREEN_IGUANA, role: uncommon, biomes: {beach: 1}}
+  - {name: C5_HILL_WIND_1, role: uncommon, biomes: {desert: 1}}
+  - {name: C5_HORNET, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_INCREASE_SOIL, role: uncommon, biomes: {forest: 1}}
+  - {name: C5_KASA, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_LI_ME_MANG_RYANG, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_LUCIOLA_VESPA, role: uncommon, biomes: {forest: 1}}
+  - {name: C5_MAGNOLIA, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_MARDUK, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_MENBLATT, role: uncommon, biomes: {forest: 1}}
+  - {name: C5_MIMIC, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_MINOROUS, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_MOROCC_1, role: uncommon, biomes: {desert: 1}}
+  - {name: C5_MUSCIPULAR, role: uncommon, biomes: {snow: 2}}
+  - {name: C5_NG_WRAITH_DEAD, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_NOVUS, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_ORC_ZOMBIE, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_PECOPECO, role: uncommon, biomes: {desert: 1}}
+  - {name: C5_PHEN, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_PITMAN, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_POPORING, role: uncommon, biomes: {forest: 1}}
+  - {name: C5_PORING, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_RAGGLER, role: uncommon, biomes: {beach: 1}}
+  - {name: C5_RETRIBUTION, role: uncommon, biomes: {tower: 1}}
+  - {name: C5_ROCKER, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_SALAMANDER, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_SCORPION, role: uncommon, biomes: {desert: 1}}
+  - {name: C5_SHELTER, role: uncommon, biomes: {tower: 1}}
+  - {name: C5_SKEL_WORKER, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_SLEEPER, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_SOLACE, role: uncommon, biomes: {tower: 1}}
+  - {name: C5_STAINER, role: uncommon, biomes: {grassland: 1}}
+  - {name: C5_STING, role: uncommon, biomes: {crypt: 1}}
+  - {name: C5_THARA_FROG, role: uncommon, biomes: {cave: 1}}
+  - {name: C5_VIOLY, role: uncommon, biomes: {ruins: 1}}
+  - {name: C5_WICKED_NYMPH, role: uncommon, biomes: {tower: 1}}
+  - {name: CARAMEL, role: common, biomes: {forest: 21}}
+  - {name: CARAT, role: common, biomes: {crypt: 7}}
+  - {name: CAT_O_NINE_TAIL, role: mini_boss, biomes: {cave: 1}}
+  - {name: CELIA, role: common, biomes: {ruins: 13}}
+  - {name: CENDRAWASIH, role: common, biomes: {swamp: 11}}
+  - {name: CENERE, role: common, biomes: {tower: 8}}
+  - {name: CENTIPEDE, role: common, biomes: {desert: 19, forest: 8}}
+  - {name: CENTIPEDE_LARVA, role: common, biomes: {desert: 8, forest: 4}}
+  - {name: CHEN, role: common, biomes: {ruins: 7}}
+  - {name: CHEPET, role: uncommon, biomes: {cave: 1}}
+  - {name: CHIMERA, role: mini_boss, biomes: {crypt: 1}}
+  - {name: CHOCO, role: uncommon, biomes: {forest: 1, grassland: 1, swamp: 7}}
+  - {name: CHONCHON, role: common, biomes: {desert: 9, forest: 20}}
+  - {name: CHUNG_E_, role: uncommon, biomes: {crypt: 1}}
+  - {name: CIVIL_SERVANT, role: common, biomes: {crypt: 2}}
+  - {name: CLOCK, role: common, biomes: {tower: 24}}
+  - {name: COCO, role: common, biomes: {forest: 30, grassland: 2, swamp: 27}}
+  - {name: COMODO, role: common, biomes: {cave: 15}}
+  - {name: CONDOR, role: common, biomes: {desert: 40}}
+  - {name: CONSTANT, role: common, biomes: {tower: 8}}
+  - {name: COOKIE, role: common, biomes: {cave: 12}}
+  - {name: COOKIE_XMAS, role: common, biomes: {cave: 12}}
+  - {name: CORNUS, role: common, biomes: {forest: 13}}
+  - {name: CORNUTUS, role: common, biomes: {cave: 12}}
+  - {name: CRAB, role: common, biomes: {beach: 38, grassland: 3}}
+  - {name: CRAMP, role: common, biomes: {cave: 1, crypt: 5, tower: 15}}
+  - {name: CREAMY, role: common, biomes: {forest: 22, grassland: 4}}
+  - {name: CRUISER, role: common, biomes: {cave: 8}}
+  - {name: C_TOWER_MANAGER, role: uncommon, biomes: {tower: 2}}
+  - {name: DANCING_DRAGON, role: common, biomes: {crypt: 5}}
+  - {name: DARK_FRAME, role: common, biomes: {crypt: 6}}
+  - {name: DARK_ILLUSION, role: mini_boss, biomes: {crypt: 1}}
+  - {name: DARK_LORD, role: field_boss, biomes: {crypt: 1}}
+  - {name: DARK_PRIEST, role: common, biomes: {crypt: 13}}
+  - {name: DARK_SNAKE_LORD, role: field_boss, biomes: {tower: 1}}
+  - {name: DEAD_PLANKTON, role: uncommon, biomes: {ruins: 14}}
+  - {name: DEATHWORD, role: common, biomes: {tower: 56}}
+  - {name: DELETER, role: common, biomes: {cave: 6}}
+  - {name: DELETER_, role: common, biomes: {cave: 6}}
+  - {name: DEMON_PUNGUS, role: common, biomes: {grassland: 6}}
+  - {name: DENIRO, role: common, biomes: {beach: 35, cave: 8}}
+  - {name: DESERT_WOLF, role: common, biomes: {desert: 32}}
+  - {name: DESERT_WOLF_B, role: common, biomes: {desert: 44}}
+  - {name: DETALE, role: field_boss, biomes: {cave: 1}}
+  - {name: DEVIACE, role: uncommon, biomes: {cave: 1}}
+  - {name: DEVILING, role: mini_boss, biomes: {forest: 1, grassland: 1}}
+  - {name: DEVIRUCHI, role: common, biomes: {crypt: 6}}
+  - {name: DIABOLIC, role: common, biomes: {cave: 2}}
+  - {name: DIMIK_1, role: common, biomes: {ruins: 2}}
+  - {name: DIMIK_2, role: uncommon, biomes: {ruins: 1}}
+  - {name: DIMIK_3, role: uncommon, biomes: {ruins: 1}}
+  - {name: DIMIK_4, role: uncommon, biomes: {ruins: 1}}
+  - {name: DISGUISE, role: common, biomes: {swamp: 38}}
+  - {name: DOKEBI, role: common, biomes: {cave: 6}}
+  - {name: DOLOMEDES, role: common, biomes: {desert: 20}}
+  - {name: DOPPELGANGER, role: field_boss, biomes: {crypt: 1}}
+  - {name: DRACULA, role: field_boss, biomes: {crypt: 1}}
+  - {name: DRAGON_EGG, role: plant, biomes: {cave: 4, grassland: 7}}
+  - {name: DRAGON_FLY, role: mini_boss, biomes: {desert: 1}}
+  - {name: DRAGON_TAIL, role: common, biomes: {crypt: 3}}
+  - {name: DRAINLIAR, role: common, biomes: {cave: 8, crypt: 24, tower: 27}}
+  - {name: DRAKE, role: field_boss, biomes: {ruins: 1}}
+  - {name: DRILLER, role: common, biomes: {forest: 24}}
+  - {name: DROPS, role: common, biomes: {cave: 2, desert: 48, forest: 2}}
+  - {name: DROSERA, role: common, biomes: {snow: 310}}
+  - {name: DRYAD, role: common, biomes: {swamp: 66}}
+  - {name: DULLAHAN, role: common, biomes: {swamp: 27}}
+  - {name: DUSTINESS, role: common, biomes: {forest: 16, grassland: 5}}
+  - {name: ECHIO, role: common, biomes: {ruins: 15}}
+  - {name: ECLIPSE, role: mini_boss, biomes: {forest: 1, grassland: 1}}
+  - {name: EDDGA, role: field_boss, biomes: {forest: 1}}
+  - {name: EGGYRA, role: common, biomes: {cave: 2}}
+  - {name: ELDER, role: common, biomes: {tower: 22}}
+  - {name: ELDER_WILOW, role: common, biomes: {forest: 20, grassland: 15}}
+  - {name: EP17_2_BELLARE3, role: common, biomes: {ruins: 24}}
+  - {name: EP17_2_BETA_BASIC_NG, role: common, biomes: {ruins: 7}}
+  - {name: EP17_2_BETA_CLEANER_A, role: common, biomes: {ruins: 5}}
+  - {name: EP17_2_BETA_CLEANER_B, role: common, biomes: {ruins: 5}}
+  - {name: EP17_2_BETA_GUARDS_NG, role: common, biomes: {ruins: 18}}
+  - {name: EP17_2_BETA_ITEMKEEPER, role: common, biomes: {ruins: 13}}
+  - {name: EP17_2_BOOKWORM, role: common, biomes: {ruins: 13}}
+  - {name: EP17_2_CRAMP, role: common, biomes: {ruins: 13}}
+  - {name: EP17_2_DOLOR3, role: common, biomes: {ruins: 13}}
+  - {name: EP17_2_GUARDIAN_PARTS, role: plant, biomes: {ruins: 2}}
+  - {name: EP17_2_HEART_HUNTER, role: common, biomes: {ruins: 7}}
+  - {name: EP17_2_HEART_HUNTER_H, role: common, biomes: {ruins: 11}}
+  - {name: EP17_2_MARC, role: common, biomes: {ruins: 8}}
+  - {name: EP17_2_OMEGA_CLEANER, role: uncommon, biomes: {ruins: 1}}
+  - {name: EP17_2_OMEGA_CLEANER_NG, role: common, biomes: {ruins: 18}}
+  - {name: EP17_2_PHEN, role: common, biomes: {ruins: 11}}
+  - {name: EP17_2_PIRANHA, role: common, biomes: {ruins: 11}}
+  - {name: EP17_2_PITAYA_B, role: common, biomes: {ruins: 8}}
+  - {name: EP17_2_PITAYA_BOSS, role: field_boss, biomes: {ruins: 1}}
+  - {name: EP17_2_PITAYA_G, role: common, biomes: {ruins: 5}}
+  - {name: EP17_2_PITAYA_R, role: common, biomes: {ruins: 8}}
+  - {name: EP17_2_PITAYA_V, role: common, biomes: {ruins: 8}}
+  - {name: EP17_2_PITAYA_Y, role: common, biomes: {ruins: 8}}
+  - {name: EP17_2_PLAGA3, role: common, biomes: {ruins: 13}}
+  - {name: EP17_2_PLASMA_R, role: common, biomes: {ruins: 11}}
+  - {name: EP17_2_PLASMA_R2, role: common, biomes: {ruins: 11}}
+  - {name: EP17_2_PLASMA_Y, role: common, biomes: {ruins: 8}}
+  - {name: EP17_2_ROAMING_SPLBOOK, role: common, biomes: {ruins: 12}}
+  - {name: EP17_2_SANARE3, role: common, biomes: {ruins: 13}}
+  - {name: EP17_2_SWORD_FISH, role: common, biomes: {ruins: 8}}
+  - {name: EP17_2_VENENUM3, role: common, biomes: {ruins: 10}}
+  - {name: EP17_2_WATERFALL, role: common, biomes: {ruins: 10}}
+  - {name: EREMES, role: common, biomes: {ruins: 7}}
+  - {name: EREND, role: common, biomes: {ruins: 10}}
+  - {name: EVIL_CLOUD_HERMIT, role: common, biomes: {tower: 18}}
+  - {name: EVIL_DRUID, role: common, biomes: {crypt: 15}}
+  - {name: EXECUTIONER, role: mini_boss, biomes: {ruins: 1}}
+  - {name: EXPLOSION, role: common, biomes: {cave: 5}}
+  - {name: E_COWRAIDERS1, role: common, biomes: {grassland: 1}}
+  - {name: E_COWRAIDERS2, role: common, biomes: {grassland: 2}}
+  - {name: E_COWRAIDERS3, role: common, biomes: {grassland: 3}}
+  - {name: FABRE, role: common, biomes: {forest: 24, grassland: 74}}
+  - {name: FAITHFUL_MANAGER, role: uncommon, biomes: {tower: 1}}
+  - {name: FAKE_ANGEL, role: common, biomes: {ruins: 27}}
+  - {name: FALLINGBISHOP, role: field_boss, biomes: {crypt: 1}}
+  - {name: FANAT, role: uncommon, biomes: {cave: 1}}
+  - {name: FARMILIAR, role: common, biomes: {cave: 16, crypt: 22}}
+  - {name: FERUS, role: common, biomes: {cave: 14}}
+  - {name: FERUS_, role: common, biomes: {cave: 10}}
+  - {name: FLAMEL, role: common, biomes: {ruins: 7}}
+  - {name: FLAME_SKULL, role: common, biomes: {crypt: 9}}
+  - {name: FLORA, role: common, biomes: {beach: 59, forest: 19}}
+  - {name: FREEZER, role: common, biomes: {crypt: 11}}
+  - {name: FRILLDORA, role: common, biomes: {desert: 4}}
+  - {name: FRUS, role: common, biomes: {tower: 14}}
+  - {name: FUR_SEAL, role: common, biomes: {beach: 73}}
+  - {name: GALAPAGO, role: common, biomes: {beach: 34}}
+  - {name: GALION, role: mini_boss, biomes: {snow: 80}}
+  - {name: GARGOYLE, role: common, biomes: {crypt: 32, ruins: 2}}
+  - {name: GARM, role: field_boss, biomes: {snow: 1}}
+  - {name: GARM_BABY, role: uncommon, biomes: {snow: 1}}
+  - {name: GASTER, role: common, biomes: {grassland: 4}}
+  - {name: GAZETI, role: common, biomes: {cave: 9}}
+  - {name: GEMINI, role: mini_boss, biomes: {ruins: 2}}
+  - {name: GEOGRAPHER, role: common, biomes: {forest: 3, grassland: 40}}
+  - {name: GERTIE, role: common, biomes: {ruins: 9}}
+  - {name: GHOSTRING, role: mini_boss, biomes: {forest: 1, ruins: 1}}
+  - {name: GHOUL, role: common, biomes: {cave: 7, crypt: 14}}
+  - {name: GIBBET, role: common, biomes: {swamp: 33}}
+  - {name: GIEARTH, role: common, biomes: {cave: 8}}
+  - {name: GIG, role: common, biomes: {cave: 2}}
+  - {name: GLOOMUNDERNIGHT, role: field_boss, biomes: {ruins: 1}}
+  - {name: GOAT, role: common, biomes: {grassland: 33}}
+  - {name: GOBLIN_1, role: common, biomes: {forest: 6, grassland: 1}}
+  - {name: GOBLIN_2, role: common, biomes: {forest: 6, grassland: 1}}
+  - {name: GOBLIN_3, role: common, biomes: {forest: 6, grassland: 1}}
+  - {name: GOBLIN_4, role: common, biomes: {forest: 6, grassland: 1}}
+  - {name: GOBLIN_5, role: common, biomes: {grassland: 6}}
+  - {name: GOBLIN_ARCHER, role: common, biomes: {grassland: 5}}
+  - {name: GOBLIN_LEADER, role: rare, biomes: {forest: 1}}
+  - {name: GOLDEN_BUG, role: field_boss, biomes: {crypt: 1}}
+  - {name: GOLEM, role: common, biomes: {beach: 75}}
+  - {name: GRAND_PECO, role: common, biomes: {grassland: 40}}
+  - {name: GREATEST_GENERAL, role: common, biomes: {cave: 3, forest: 13}}
+  - {name: GREEN_IGUANA, role: common, biomes: {beach: 91}}
+  - {name: GREEN_PLANT, role: plant, biomes: {beach: 4, cave: 1, crypt: 1, desert: 4, forest: 24, grassland: 22, ruins: 6, swamp: 20, tower: 2}}
+  - {name: GREMLIN, role: common, biomes: {ruins: 5}}
+  - {name: GRIZZLY, role: common, biomes: {cave: 2, crypt: 2}}
+  - {name: GRYPHON, role: mini_boss, biomes: {grassland: 1}}
+  - {name: G_ALPHOCCIO, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_CELIA, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_CHEN, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_CONSTANT, role: uncommon, biomes: {tower: 3}}
+  - {name: G_DARK_PRIEST, role: mini_boss, biomes: {crypt: 1}}
+  - {name: G_EREMES, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_FLAMEL, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_FRUS, role: uncommon, biomes: {tower: 3}}
+  - {name: G_GERTIE, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_HARWORD, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_KATRINN, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_MAGALETA, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_RANDEL, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_RANDGRIS, role: mini_boss, biomes: {tower: 1}}
+  - {name: G_SEYREN, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_SHECIL, role: mini_boss, biomes: {ruins: 1}}
+  - {name: G_SKOGUL, role: uncommon, biomes: {tower: 2}}
+  - {name: G_THA_DESPERO, role: mini_boss, biomes: {tower: 1}}
+  - {name: G_THA_DOLOR, role: mini_boss, biomes: {tower: 1}}
+  - {name: G_THA_MAERO, role: mini_boss, biomes: {tower: 1}}
+  - {name: G_THA_ODIUM, role: mini_boss, biomes: {tower: 1}}
+  - {name: G_TRENTINI, role: mini_boss, biomes: {ruins: 1}}
+  - {name: HARDROCK_MOMMOTH, role: mini_boss, biomes: {forest: 1}}
+  - {name: HARPY, role: common, biomes: {grassland: 39}}
+  - {name: HARWORD, role: common, biomes: {ruins: 7}}
+  - {name: HEATER, role: common, biomes: {crypt: 6}}
+  - {name: HELL_POODLE, role: common, biomes: {crypt: 3}}
+  - {name: HIGH_ORC, role: common, biomes: {tower: 13}}
+  - {name: HILLSRION, role: common, biomes: {forest: 5}}
+  - {name: HILL_WIND_1, role: common, biomes: {desert: 64}}
+  - {name: HODE, role: common, biomes: {desert: 38}}
+  - {name: HODREMLIN, role: common, biomes: {ruins: 21}}
+  - {name: HORN, role: common, biomes: {forest: 24, grassland: 6}}
+  - {name: HORNET, role: common, biomes: {forest: 3, grassland: 19}}
+  - {name: HORN_SCARABA, role: common, biomes: {cave: 8}}
+  - {name: HORN_SCARABA2, role: common, biomes: {cave: 7}}
+  - {name: HORN_SCARABA2_EGG, role: plant, biomes: {cave: 2}}
+  - {name: HORN_SCARABA_EGG, role: plant, biomes: {cave: 2}}
+  - {name: HORONG, role: common, biomes: {cave: 5, crypt: 4}}
+  - {name: HUNTER_FLY, role: common, biomes: {crypt: 9, forest: 7}}
+  - {name: HYDRA, role: uncommon, biomes: {cave: 35, forest: 1, ruins: 14}}
+  - {name: HYDRO, role: mini_boss, biomes: {cave: 1}}
+  - {name: HYEGUN, role: common, biomes: {crypt: 11}}
+  - {name: HYLOZOIST, role: common, biomes: {swamp: 26}}
+  - {name: ICEICLE, role: common, biomes: {cave: 8}}
+  - {name: ICE_TITAN, role: common, biomes: {cave: 12}}
+  - {name: IFRIT, role: field_boss, biomes: {cave: 1}}
+  - {name: IMP, role: common, biomes: {cave: 6}}
+  - {name: INCANTATION_SAMURAI, role: field_boss, biomes: {crypt: 1}}
+  - {name: INCREASE_SOIL, role: common, biomes: {crypt: 2, forest: 6}}
+  - {name: INCUBUS, role: common, biomes: {ruins: 8}}
+  - {name: INJUSTICE, role: common, biomes: {crypt: 9}}
+  - {name: ISILLA, role: common, biomes: {ruins: 25}}
+  - {name: ISIS, role: common, biomes: {crypt: 9}}
+  - {name: I_ANTLER_SCARABA, role: mini_boss, biomes: {cave: 6}}
+  - {name: I_ANTLER_SCARABA_EGG, role: plant, biomes: {cave: 2}}
+  - {name: I_HORN_SCARABA, role: mini_boss, biomes: {cave: 5}}
+  - {name: I_HORN_SCARABA2, role: mini_boss, biomes: {cave: 5}}
+  - {name: I_HORN_SCARABA2_EGG, role: plant, biomes: {cave: 2}}
+  - {name: I_HORN_SCARABA_EGG, role: plant, biomes: {cave: 2}}
+  - {name: I_QUEEN_SCARABA, role: field_boss, biomes: {cave: 1}}
+  - {name: I_RAKE_SCARABA, role: mini_boss, biomes: {cave: 6}}
+  - {name: I_RAKE_SCARABA_EGG, role: plant, biomes: {cave: 2}}
+  - {name: JAKK, role: common, biomes: {crypt: 5}}
+  - {name: JOKER, role: common, biomes: {tower: 3}}
+  - {name: KAHO, role: common, biomes: {cave: 5}}
+  - {name: KAPHA, role: common, biomes: {forest: 6}}
+  - {name: KARAKASA, role: common, biomes: {forest: 7}}
+  - {name: KASA, role: mini_boss, biomes: {cave: 14}}
+  - {name: KATRINN, role: common, biomes: {ruins: 9}}
+  - {name: KAVAC, role: common, biomes: {ruins: 10}}
+  - {name: KHALITZBURG, role: common, biomes: {crypt: 9}}
+  - {name: KIEL_, role: field_boss, biomes: {tower: 1}}
+  - {name: KILLER_MANTIS, role: uncommon, biomes: {forest: 1}}
+  - {name: KIND_OF_BEETLE, role: common, biomes: {forest: 30}}
+  - {name: KING_DRAMOH, role: mini_boss, biomes: {cave: 4}}
+  - {name: KNIGHT_OF_ABYSS, role: common, biomes: {crypt: 4, ruins: 7}}
+  - {name: KNIGHT_OF_WINDSTORM, role: field_boss, biomes: {cave: 1}}
+  - {name: KNOCKER, role: common, biomes: {cave: 8}}
+  - {name: KOBOLD_1, role: common, biomes: {desert: 25}}
+  - {name: KOBOLD_2, role: common, biomes: {desert: 25}}
+  - {name: KOBOLD_3, role: common, biomes: {desert: 25}}
+  - {name: KOBOLD_ARCHER, role: common, biomes: {desert: 17}}
+  - {name: KOBOLD_LEADER, role: rare, biomes: {desert: 1}}
+  - {name: KRABEN, role: common, biomes: {cave: 5, swamp: 6}}
+  - {name: KRAKEN, role: field_boss, biomes: {cave: 1}}
+  - {name: KUKRE, role: common, biomes: {cave: 11, ruins: 5}}
+  - {name: LADY_TANEE, role: field_boss, biomes: {cave: 1}}
+  - {name: LAVA_GOLEM, role: common, biomes: {cave: 3}}
+  - {name: LEAF_CAT, role: common, biomes: {cave: 16, swamp: 43}}
+  - {name: LEAK, role: field_boss, biomes: {cave: 1}}
+  - {name: LEIB_OLMAI, role: uncommon, biomes: {crypt: 1, forest: 1}}
+  - {name: LICHTERN_B, role: uncommon, biomes: {tower: 1}}
+  - {name: LICHTERN_G, role: uncommon, biomes: {tower: 1}}
+  - {name: LICHTERN_R, role: uncommon, biomes: {tower: 1}}
+  - {name: LICHTERN_Y, role: uncommon, biomes: {tower: 4}}
+  - {name: LITTLE_FATUM, role: common, biomes: {forest: 9}}
+  - {name: LITTLE_PORING, role: common, biomes: {grassland: 16}}
+  - {name: LIVE_PEACH_TREE, role: common, biomes: {tower: 17}}
+  - {name: LI_ME_MANG_RYANG, role: common, biomes: {crypt: 7}}
+  - {name: LOLI_RURI, role: common, biomes: {swamp: 14}}
+  - {name: LUCIOLA_VESPA, role: common, biomes: {forest: 15}}
+  - {name: LUDE, role: common, biomes: {swamp: 31}}
+  - {name: LUNATIC, role: common, biomes: {forest: 3, grassland: 77}}
+  - {name: MAGALETA, role: common, biomes: {ruins: 7}}
+  - {name: MAGMARING, role: common, biomes: {cave: 3, snow: 119}}
+  - {name: MAGNOLIA, role: common, biomes: {desert: 3, grassland: 20}}
+  - {name: MAJORUROS, role: common, biomes: {crypt: 7}}
+  - {name: MANDRAGORA, role: common, biomes: {cave: 2, forest: 12}}
+  - {name: MANTIS, role: common, biomes: {forest: 31, grassland: 8}}
+  - {name: MARC, role: common, biomes: {cave: 6}}
+  - {name: MARDUK, role: common, biomes: {crypt: 11}}
+  - {name: MARIN, role: common, biomes: {cave: 4, forest: 3, snow: 55}}
+  - {name: MARINA, role: common, biomes: {cave: 12}}
+  - {name: MARINE_SPHERE, role: plant, biomes: {cave: 5}}
+  - {name: MARIONETTE, role: common, biomes: {crypt: 7, ruins: 1}}
+  - {name: MARSE, role: common, biomes: {cave: 6}}
+  - {name: MARTIN, role: common, biomes: {cave: 15, forest: 1}}
+  - {name: MASTERING, role: mini_boss, biomes: {cave: 1, forest: 1, grassland: 1}}
+  - {name: MATYR, role: common, biomes: {crypt: 15}}
+  - {name: MAYA, role: field_boss, biomes: {cave: 1}}
+  - {name: MECHASPIDER, role: field_boss, biomes: {grassland: 1}}
+  - {name: MEDUSA, role: common, biomes: {cave: 9}}
+  - {name: MEGALITH, role: common, biomes: {cave: 2}}
+  - {name: MEGALODON, role: common, biomes: {cave: 5}}
+  - {name: MENBLATT, role: common, biomes: {forest: 7}}
+  - {name: MERMAN, role: common, biomes: {cave: 10}}
+  - {name: METALING, role: common, biomes: {grassland: 39, ruins: 8}}
+  - {name: METALLER, role: common, biomes: {beach: 94, desert: 3, grassland: 9}}
+  - {name: MIMIC, role: common, biomes: {cave: 5, crypt: 15, ruins: 1, tower: 28}}
+  - {name: MIMING, role: common, biomes: {forest: 9}}
+  - {name: MINERAL, role: common, biomes: {cave: 8}}
+  - {name: MINI_DEMON, role: common, biomes: {ruins: 17}}
+  - {name: MINOROUS, role: common, biomes: {crypt: 21}}
+  - {name: MISTRESS, role: field_boss, biomes: {forest: 1}}
+  - {name: MIYABI_NINGYO, role: common, biomes: {crypt: 13, forest: 1}}
+  - {name: MOBSTER, role: uncommon, biomes: {beach: 1}}
+  - {name: MOLE, role: common, biomes: {grassland: 11}}
+  - {name: MOONLIGHT, role: field_boss, biomes: {cave: 1}}
+  - {name: MOROCC_, role: field_boss, biomes: {desert: 1}}
+  - {name: MOROCC_1, role: mini_boss, biomes: {desert: 29}}
+  - {name: MOROCC_2, role: mini_boss, biomes: {desert: 29}}
+  - {name: MOROCC_3, role: mini_boss, biomes: {desert: 29}}
+  - {name: MOROCC_4, role: mini_boss, biomes: {desert: 21}}
+  - {name: MUKA, role: common, biomes: {desert: 49}}
+  - {name: MUMMY, role: common, biomes: {crypt: 19}}
+  - {name: MUNAK, role: common, biomes: {cave: 7, crypt: 5}}
+  - {name: MUSCIPULAR, role: common, biomes: {cave: 1, snow: 208}}
+  - {name: MUTANT_DRAGON, role: mini_boss, biomes: {beach: 2}}
+  - {name: MYST, role: common, biomes: {cave: 6}}
+  - {name: MYSTCASE, role: common, biomes: {cave: 12}}
+  - {name: MYSTELTAINN, role: mini_boss, biomes: {crypt: 1, ruins: 1}}
+  - {name: NAGA, role: common, biomes: {forest: 11}}
+  - {name: NECROMANCER, role: mini_boss, biomes: {cave: 3, crypt: 9}}
+  - {name: NEO_PUNK, role: common, biomes: {tower: 15}}
+  - {name: NEPENTHES, role: common, biomes: {forest: 14}}
+  - {name: NERAID, role: common, biomes: {cave: 4}}
+  - {name: NG_BAPHOMET, role: field_boss, biomes: {crypt: 1}}
+  - {name: NG_CHIMERA, role: mini_boss, biomes: {crypt: 1}}
+  - {name: NG_EVIL_DRUID, role: common, biomes: {crypt: 3}}
+  - {name: NG_MIMIC, role: common, biomes: {crypt: 7, tower: 3}}
+  - {name: NG_RIDEWORD, role: common, biomes: {crypt: 1, tower: 6}}
+  - {name: NG_WANDER_MAN, role: common, biomes: {crypt: 8}}
+  - {name: NG_WRAITH_DEAD, role: common, biomes: {crypt: 12}}
+  - {name: NIGHTMARE, role: common, biomes: {crypt: 7}}
+  - {name: NIGHTMARE_TERROR, role: common, biomes: {cave: 7}}
+  - {name: NINE_TAIL, role: common, biomes: {cave: 5}}
+  - {name: NOVUS, role: common, biomes: {cave: 2, grassland: 29}}
+  - {name: NOVUS_, role: common, biomes: {cave: 2, grassland: 29}}
+  - {name: NOXIOUS, role: common, biomes: {cave: 5, grassland: 15}}
+  - {name: N_AMON_RA, role: field_boss, biomes: {crypt: 1}}
+  - {name: N_ANCIENT_MUMMY, role: common, biomes: {crypt: 3}}
+  - {name: N_ARCLOUSE, role: common, biomes: {crypt: 3}}
+  - {name: N_MIMIC, role: common, biomes: {crypt: 5}}
+  - {name: N_MINOROUS, role: common, biomes: {crypt: 10}}
+  - {name: N_MUMMY, role: common, biomes: {crypt: 2}}
+  - {name: N_VERIT, role: common, biomes: {crypt: 13}}
+  - {name: OBEAUNE, role: common, biomes: {cave: 6}}
+  - {name: OBSERVATION, role: mini_boss, biomes: {tower: 12}}
+  - {name: OBSIDIAN, role: common, biomes: {cave: 6}}
+  - {name: ORC_ARCHER, role: common, biomes: {cave: 1, tower: 5}}
+  - {name: ORC_BABY, role: common, biomes: {forest: 5}}
+  - {name: ORC_LADY, role: common, biomes: {forest: 21}}
+  - {name: ORC_LORD, role: field_boss, biomes: {forest: 1}}
+  - {name: ORC_SKELETON, role: common, biomes: {cave: 9}}
+  - {name: ORC_ZOMBIE, role: common, biomes: {cave: 12}}
+  - {name: ORK_HERO, role: field_boss, biomes: {forest: 1}}
+  - {name: ORK_WARRIOR, role: common, biomes: {forest: 24}}
+  - {name: OSIRIS, role: field_boss, biomes: {crypt: 1}}
+  - {name: OWL_BARON, role: mini_boss, biomes: {crypt: 1, tower: 19}}
+  - {name: OWL_DUKE, role: mini_boss, biomes: {crypt: 5, tower: 42}}
+  - {name: OWL_MARQUEES, role: mini_boss, biomes: {tower: 1}}
+  - {name: OWL_VISCOUNT, role: mini_boss, biomes: {tower: 1}}
+  - {name: PANZER_GOBLIN, role: rare, biomes: {grassland: 1}}
+  - {name: PARASITE, role: common, biomes: {swamp: 82}}
+  - {name: PASANA, role: common, biomes: {crypt: 15}}
+  - {name: PECOPECO, role: common, biomes: {desert: 47}}
+  - {name: PECOPECO_EGG, role: plant, biomes: {desert: 19}}
+  - {name: PENOMENA, role: common, biomes: {cave: 5, tower: 23}}
+  - {name: PERMETER, role: common, biomes: {crypt: 10}}
+  - {name: PEST, role: common, biomes: {cave: 3, crypt: 4}}
+  - {name: PETAL, role: common, biomes: {forest: 7}}
+  - {name: PETIT, role: common, biomes: {forest: 15}}
+  - {name: PETIT_, role: common, biomes: {forest: 16}}
+  - {name: PHARAOH, role: field_boss, biomes: {crypt: 1}}
+  - {name: PHEN, role: common, biomes: {cave: 7}}
+  - {name: PHENDARK, role: common, biomes: {crypt: 1}}
+  - {name: PHREEONI, role: field_boss, biomes: {desert: 1}}
+  - {name: PICKY, role: common, biomes: {desert: 15}}
+  - {name: PICKY_, role: common, biomes: {desert: 17}}
+  - {name: PIERE, role: common, biomes: {beach: 35, cave: 10}}
+  - {name: PINGUICULA, role: common, biomes: {forest: 13}}
+  - {name: PINGUICULA_D, role: common, biomes: {forest: 9}}
+  - {name: PIRATE_SKEL, role: common, biomes: {ruins: 16}}
+  - {name: PITMAN, role: common, biomes: {cave: 11, grassland: 4}}
+  - {name: PLANKTON, role: common, biomes: {cave: 15, crypt: 1}}
+  - {name: PLASMA_B, role: common, biomes: {tower: 13}}
+  - {name: PLASMA_G, role: common, biomes: {tower: 13}}
+  - {name: PLASMA_P, role: common, biomes: {tower: 12}}
+  - {name: PLASMA_R, role: common, biomes: {tower: 13}}
+  - {name: PLASMA_Y, role: common, biomes: {tower: 17}}
+  - {name: POISON_SPORE, role: common, biomes: {crypt: 5, forest: 10}}
+  - {name: POISON_TOAD, role: common, biomes: {crypt: 5, forest: 1}}
+  - {name: POM_SPIDER, role: uncommon, biomes: {forest: 1}}
+  - {name: POPORING, role: common, biomes: {cave: 8, crypt: 8, forest: 27, grassland: 10}}
+  - {name: PORCELLIO, role: common, biomes: {cave: 5, grassland: 17}}
+  - {name: PORING, role: common, biomes: {cave: 2, forest: 13, grassland: 69}}
+  - {name: POT_DOFLE, role: common, biomes: {cave: 5}}
+  - {name: PUNK, role: common, biomes: {tower: 43}}
+  - {name: PUPA, role: plant, biomes: {forest: 15, grassland: 2}}
+  - {name: PURPLESTONE, role: plant, biomes: {grassland: 3}}
+  - {name: QUEEN_SCARABA, role: field_boss, biomes: {cave: 1}}
+  - {name: QUVE, role: common, biomes: {swamp: 46}}
+  - {name: RAFFLESIA, role: common, biomes: {grassland: 20}}
+  - {name: RAGGED_ZOMBIE, role: common, biomes: {crypt: 14}}
+  - {name: RAGGLER, role: common, biomes: {beach: 52}}
+  - {name: RAKE_SCARABA, role: common, biomes: {cave: 7}}
+  - {name: RAKE_SCARABA_EGG, role: plant, biomes: {cave: 2}}
+  - {name: RANDEL, role: common, biomes: {ruins: 7}}
+  - {name: RANDGRIS, role: field_boss, biomes: {tower: 1}}
+  - {name: RAWREL, role: common, biomes: {ruins: 10}}
+  - {name: RAYDRIC, role: common, biomes: {crypt: 35}}
+  - {name: RAYDRIC_ARCHER, role: common, biomes: {crypt: 11}}
+  - {name: RED_MUSHROOM, role: plant, biomes: {desert: 2, forest: 6, grassland: 6, ruins: 10}}
+  - {name: RED_PLANT, role: plant, biomes: {cave: 9, crypt: 2, desert: 1, forest: 5, grassland: 16, ruins: 3, snow: 25, swamp: 7, tower: 1}}
+  - {name: REMOVAL, role: common, biomes: {ruins: 20}}
+  - {name: REQUIEM, role: common, biomes: {crypt: 16}}
+  - {name: RETRIBUTION, role: mini_boss, biomes: {tower: 20}}
+  - {name: RICE_CAKE_BOY, role: common, biomes: {beach: 31}}
+  - {name: RIDEWORD, role: common, biomes: {crypt: 13, tower: 60}}
+  - {name: ROCKER, role: common, biomes: {forest: 1, grassland: 20}}
+  - {name: RODA_FROG, role: common, biomes: {forest: 13, grassland: 19, ruins: 5}}
+  - {name: ROTAR_ZAIRO, role: common, biomes: {grassland: 5}}
+  - {name: ROWEEN, role: common, biomes: {cave: 1, desert: 75}}
+  - {name: RR_ARCLOUSE, role: common, biomes: {beach: 13}}
+  - {name: RR_CRAMP, role: common, biomes: {beach: 13}}
+  - {name: RSX_0806, role: field_boss, biomes: {cave: 1}}
+  - {name: RYBIO, role: common, biomes: {crypt: 4}}
+  - {name: SAGEWORM, role: common, biomes: {crypt: 5}}
+  - {name: SALAMANDER, role: mini_boss, biomes: {cave: 11}}
+  - {name: SAND_MAN, role: common, biomes: {desert: 32}}
+  - {name: SASQUATCH, role: uncommon, biomes: {forest: 1, snow: 8}}
+  - {name: SAVAGE, role: common, biomes: {forest: 26}}
+  - {name: SAVAGE_BABE, role: common, biomes: {forest: 15, grassland: 9}}
+  - {name: SCORPION, role: common, biomes: {desert: 38}}
+  - {name: SEAANEMONE, role: plant, biomes: {beach: 9}}
+  - {name: SEDORA, role: common, biomes: {cave: 9}}
+  - {name: SEEKER, role: common, biomes: {ruins: 15}}
+  - {name: SEE_OTTER, role: common, biomes: {beach: 67}}
+  - {name: SEYREN, role: common, biomes: {ruins: 7}}
+  - {name: SHECIL, role: common, biomes: {ruins: 13}}
+  - {name: SHELLFISH, role: common, biomes: {beach: 38, grassland: 8}}
+  - {name: SHELTER, role: mini_boss, biomes: {tower: 14}}
+  - {name: SHINING_PLANT, role: rare, biomes: {beach: 2, cave: 1, crypt: 2, forest: 5, grassland: 1, ruins: 1, snow: 1, swamp: 5, tower: 5}}
+  - {name: SHINOBI, role: common, biomes: {crypt: 9}}
+  - {name: SIDE_WINDER, role: common, biomes: {beach: 5, crypt: 4, forest: 30}}
+  - {name: SIROMA, role: common, biomes: {cave: 16}}
+  - {name: SKEGGIOLD, role: mini_boss, biomes: {tower: 5}}
+  - {name: SKEGGIOLD_, role: mini_boss, biomes: {tower: 5}}
+  - {name: SKELETON, role: common, biomes: {cave: 5}}
+  - {name: SKELETON_GENERAL, role: uncommon, biomes: {cave: 1}}
+  - {name: SKEL_PRISONER, role: common, biomes: {crypt: 4}}
+  - {name: SKEL_WORKER, role: common, biomes: {cave: 16}}
+  - {name: SKOGUL, role: common, biomes: {tower: 14}}
+  - {name: SLEEPER, role: common, biomes: {grassland: 38}}
+  - {name: SMOKIE, role: common, biomes: {forest: 9, swamp: 27}}
+  - {name: SNAKE, role: common, biomes: {forest: 20}}
+  - {name: SNOWIER, role: common, biomes: {cave: 13}}
+  - {name: SOHEE, role: common, biomes: {cave: 11}}
+  - {name: SOLACE, role: mini_boss, biomes: {tower: 14}}
+  - {name: SOLDIER_SKELETON, role: common, biomes: {cave: 15, crypt: 4}}
+  - {name: SOLIDER, role: common, biomes: {crypt: 5}}
+  - {name: SPORE, role: common, biomes: {crypt: 3, forest: 20, ruins: 4}}
+  - {name: SPRING_RABBIT, role: common, biomes: {crypt: 3}}
+  - {name: SROPHO, role: common, biomes: {cave: 8}}
+  - {name: STAINER, role: common, biomes: {forest: 7, grassland: 18}}
+  - {name: STALACTIC_GOLEM, role: common, biomes: {cave: 10}}
+  - {name: STAPO, role: common, biomes: {snow: 136}}
+  - {name: STEAM_GOBLIN, role: common, biomes: {grassland: 3}}
+  - {name: STEEL_CHONCHON, role: common, biomes: {cave: 5, desert: 31, forest: 1}}
+  - {name: STEM_WORM, role: common, biomes: {forest: 2, grassland: 16}}
+  - {name: STING, role: common, biomes: {crypt: 19}}
+  - {name: STONE_SHOOTER, role: common, biomes: {swamp: 78}}
+  - {name: STROUF, role: common, biomes: {cave: 9}}
+  - {name: SUCCUBUS, role: common, biomes: {ruins: 8}}
+  - {name: SWORD_FISH, role: common, biomes: {cave: 8}}
+  - {name: SWORD_GUARDIAN, role: mini_boss, biomes: {cave: 4}}
+  - {name: TAMRUAN, role: common, biomes: {cave: 18}}
+  - {name: TAO_GUNKA, role: field_boss, biomes: {cave: 1}}
+  - {name: TAROU, role: common, biomes: {cave: 10, crypt: 12}}
+  - {name: TATACHO, role: common, biomes: {desert: 10, forest: 7}}
+  - {name: TEDDY_BEAR, role: common, biomes: {cave: 5, grassland: 14}}
+  - {name: TENDRILRION, role: mini_boss, biomes: {forest: 1}}
+  - {name: TENGU, role: common, biomes: {crypt: 9}}
+  - {name: THARA_FROG, role: common, biomes: {cave: 8, crypt: 1}}
+  - {name: THA_DESPERO, role: mini_boss, biomes: {tower: 1}}
+  - {name: THA_DOLOR, role: mini_boss, biomes: {tower: 1}}
+  - {name: THA_MAERO, role: mini_boss, biomes: {tower: 1}}
+  - {name: THA_ODIUM, role: mini_boss, biomes: {tower: 1}}
+  - {name: THE_PAPER, role: common, biomes: {crypt: 3}}
+  - {name: THIEF_BUG, role: common, biomes: {beach: 4, crypt: 20, forest: 1, grassland: 5}}
+  - {name: THIEF_BUG_, role: common, biomes: {crypt: 13}}
+  - {name: THIEF_BUG_EGG, role: plant, biomes: {crypt: 19, forest: 1, grassland: 4}}
+  - {name: THIEF_BUG__, role: common, biomes: {crypt: 18}}
+  - {name: TIMEHOLDER, role: field_boss, biomes: {tower: 1}}
+  - {name: TIME_KEEPER, role: uncommon, biomes: {tower: 1}}
+  - {name: TIRFING, role: mini_boss, biomes: {crypt: 1, ruins: 1}}
+  - {name: TOAD, role: mini_boss, biomes: {beach: 1, forest: 1}}
+  - {name: TRENTINI, role: common, biomes: {ruins: 7}}
+  - {name: TRI_JOINT, role: common, biomes: {cave: 3}}
+  - {name: TURTLE_GENERAL, role: field_boss, biomes: {crypt: 1}}
+  - {name: UNGOLIANT, role: rare, biomes: {cave: 1, grassland: 1}}
+  - {name: VADON, role: common, biomes: {cave: 12}}
+  - {name: VAGABOND_WOLF, role: mini_boss, biomes: {forest: 1}}
+  - {name: VANBERK, role: common, biomes: {ruins: 20}}
+  - {name: VENATU_1, role: common, biomes: {ruins: 22}}
+  - {name: VENATU_2, role: common, biomes: {ruins: 22}}
+  - {name: VENATU_3, role: common, biomes: {ruins: 22}}
+  - {name: VENATU_4, role: common, biomes: {ruins: 16}}
+  - {name: VENOMOUS, role: common, biomes: {cave: 2, grassland: 17}}
+  - {name: VERIT, role: common, biomes: {crypt: 16}}
+  - {name: VIOLY, role: common, biomes: {ruins: 23}}
+  - {name: VITATA, role: common, biomes: {cave: 6}}
+  - {name: VOCAL, role: rare, biomes: {forest: 1, grassland: 1}}
+  - {name: V_ALPHOCCIO, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_CELIA, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_CHEN, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_EREMES, role: mini_boss, biomes: {ruins: 3}}
+  - {name: V_FLAMEL, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_GERTIE, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_HARWORD, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_KATRINN, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_MAGALETA, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_RANDEL, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_SEYREN, role: mini_boss, biomes: {ruins: 2}}
+  - {name: V_SHECIL, role: mini_boss, biomes: {ruins: 3}}
+  - {name: V_TRENTINI, role: mini_boss, biomes: {ruins: 2}}
+  - {name: WANDER_MAN, role: common, biomes: {crypt: 6}}
+  - {name: WASTE_STOVE, role: common, biomes: {cave: 5}}
+  - {name: WEAK_SKELETON, role: uncommon, biomes: {ruins: 18}}
+  - {name: WEAK_SKEL_SOLDIER, role: uncommon, biomes: {ruins: 7}}
+  - {name: WHIKEBAIN, role: common, biomes: {ruins: 10}}
+  - {name: WHISPER, role: common, biomes: {cave: 6, crypt: 14, ruins: 2, tower: 4}}
+  - {name: WHISPER_, role: rare, biomes: {cave: 1, crypt: 1}}
+  - {name: WHISPER_BOSS, role: rare, biomes: {cave: 1, crypt: 1}}
+  - {name: WHITE_PLANT, role: plant, biomes: {cave: 4, crypt: 5, forest: 1, ruins: 3, snow: 8, tower: 6}}
+  - {name: WICKED_NYMPH, role: common, biomes: {tower: 18}}
+  - {name: WILD_GINSENG, role: common, biomes: {tower: 7}}
+  - {name: WILD_ROSE, role: common, biomes: {swamp: 26}}
+  - {name: WILOW, role: common, biomes: {forest: 23}}
+  - {name: WIND_GHOST, role: common, biomes: {crypt: 19}}
+  - {name: WOLF, role: common, biomes: {desert: 34, forest: 1}}
+  - {name: WOODEN_GOLEM, role: common, biomes: {swamp: 19}}
+  - {name: WOOTAN_FIGHTER, role: common, biomes: {swamp: 75}}
+  - {name: WOOTAN_SHOOTER, role: common, biomes: {swamp: 40}}
+  - {name: WORM_TAIL, role: common, biomes: {forest: 19}}
+  - {name: WRAITH, role: common, biomes: {crypt: 20}}
+  - {name: WRAITH_DEAD, role: common, biomes: {crypt: 4}}
+  - {name: YELLOW_PLANT, role: plant, biomes: {beach: 6, cave: 1, crypt: 1, desert: 14, forest: 2, grassland: 21, ruins: 3, snow: 34, swamp: 20, tower: 8}}
+  - {name: YGNIZEM, role: common, biomes: {ruins: 9}}
+  - {name: YOYO, role: common, biomes: {forest: 3, grassland: 12, swamp: 83}}
+  - {name: ZENORC, role: common, biomes: {cave: 8}}
+  - {name: ZEROM, role: common, biomes: {crypt: 16}}
+  - {name: ZHERLTHSH, role: rare, biomes: {crypt: 1}}
+  - {name: ZIPPER_BEAR, role: common, biomes: {tower: 9}}
+  - {name: ZOMBIE, role: common, biomes: {cave: 6, crypt: 3, ruins: 4}}
+  - {name: ZOMBIE_PRISONER, role: common, biomes: {crypt: 5}}
+  - {name: ZOMBIE_SLAUGHTER, role: common, biomes: {crypt: 32}}

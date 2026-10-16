@@ -120,6 +120,11 @@ func (h *Headless) Bind(mapName string, grid *path.Grid, npcs []NPC, warps []War
 // Close ends the zone's scripts.
 func (h *Headless) Close() { h.z.stopScripts() }
 
+// AddSpawns places spawn lines after Bind, as a zone does at its start:
+// each line's monsters, which come back after they die. Test worlds
+// place a generated map's spawn list this way (decision 0042).
+func (h *Headless) AddSpawns(list []Spawn) { h.z.spawn(list) }
+
 // step runs one tick at a zone time, or at the current time when at is
 // not later, and reads every player's messages. Only Advance, waits in
 // a conversation, and the item use interval move the clock.

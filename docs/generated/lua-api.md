@@ -103,14 +103,14 @@ Hooks change a game result in a chain ordered by priority. Each hook calls next 
 
 #### `hooks.on(name, hook, options?) → wa.HookHandle`
 
-Adds a hook. Higher priority runs first; equal priorities run in the order they were added.
+Adds a hook. Higher priority runs first; equal priorities run in the order they were added. spawn_table needs spawns.modify in place of rules.override. It runs only when wactl world new makes a procedural world, and in the test worlds of wactl mod test.
 
 Permission: `rules.override`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `wa.HookName` | The hook's name. An unknown name raises an error. |
-| `hook` | `fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice\|wa.ItemRoll\|wa.ChatMessage\|wa.Trade, next: fun(object?: table): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer\|string\|nil): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer\|string\|nil` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message; trade returns true, or false and a message to refuse the trade. |
+| `hook` | `(fun(object: wa.Drop\|wa.Exp\|wa.StatusHook\|wa.SkillHook\|wa.MonsterTargetChoice\|wa.ItemRoll\|wa.ChatMessage\|wa.Trade, next: fun(object?: table): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer\|string\|nil): integer\|boolean\|string\|wa.Player\|wa.Monster\|wa.Npc\|nil, integer\|string\|nil)\|fun(map: wa.SpawnMap, spawns: wa.Spawn[], next: fun(spawns?: wa.Spawn[]): wa.Spawn[]): wa.Spawn[]` | Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message; trade returns true, or false and a message to refuse the trade. spawn_table gets the map, a copy of its spawn list and next, and returns the list: next(spawns) runs the rest of the chain on a list, the hook's own by default. |
 | `options` | `wa.HookOptions?` |  |
 
 ### wa.schedules
@@ -3248,6 +3248,41 @@ The object of restart_planned (review decision 36): { at, reason } when staff pl
 | `reason` | `string?` | Why the server restarts, as staff wrote it. nil when the restart was cancelled. |
 | `cancelled` | `boolean?` | true when staff cancelled the planned restart. |
 
+### wa.SpawnMap
+
+The map of the spawn_table hook: a field or a dungeon floor of a new procedural world (review decision 44). It is read-only.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | `string` | The map ID, such as gen:field:3:1 or gen:dungeon:crypt:2. |
+| `kind` | `"field"\|"dungeon"` |  |
+| `biome` | `string` | A field's biome, such as forest, or a floor's tileset, such as crypt. |
+| `band` | `integer[]` | The level band: the lowest and the highest level. |
+| `features` | `string[]` | The map's features, sorted: water and clearing on fields, room and boss_room on floors. |
+
+### wa.Spawn
+
+One spawn of the spawn_table hook's list. The server keeps aggressive monsters 15 cells from arrivals, and bosses 30 cells from warps to towns, whatever the hook returns.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `monster` | `integer` | A monster from monsters.id. |
+| `count` | `integer` | 1 to 1,000 monsters. |
+| `respawn` | `integer` | Milliseconds before a dead one comes back, 1,000 to 268,435,455. |
+| `role` | `"common"\|"uncommon"\|"plant"\|"rare"\|"mini_boss"\|"field_boss"` | A boss monster that is common or uncommon is left out. |
+| `area` | `wa.SpawnArea?` | Where the monsters appear, or nil for the whole map. |
+
+### wa.SpawnArea
+
+A spawn's area: within w and h cells of x and y.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `x` | `integer` | 0 to 1,024. |
+| `y` | `integer` |  |
+| `w` | `integer` |  |
+| `h` | `integer` |  |
+
 ### wa.Trade
 
 The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.
@@ -3828,7 +3863,7 @@ An equipment slot.
 
 A hook name of wa.hooks.
 
-`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`, `chat`, `trade`, `vend`, `buying_store_sale`, `mail`
+`drop_rate`, `experience`, `status_chance`, `status_duration`, `skill_damage`, `cast_time`, `skill_cost`, `cast_allowed`, `monster_target`, `item_roll`, `chat`, `trade`, `vend`, `buying_store_sale`, `mail`, `spawn_table`
 
 ### wa.Bound
 

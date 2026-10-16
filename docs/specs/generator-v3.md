@@ -1,11 +1,11 @@
 # Map Generator Version 3, generator-v3
 
-Generator version 3 adds dungeon floors, towns and named places (strategy sections 8.5 and 8.6, proposal 0002, review decision 42). This spec fixes their inputs, their seed tree, what they return, and how the server and the web client share them. A client from strategy section 10.7 that generates maps follows it.
+Generator version 3 adds dungeon floors, towns and named places (strategy sections 8.5 and 8.6, proposal 0002, review decision 42). The world layout (review decisions 43 and 44) and the spawns (review decision 44) build on it. This spec fixes their inputs, their seed tree, what they return, and how the server and the web client share them. A client from strategy section 10.7 that generates maps follows it.
 
 - [generator-v1](generator-v1.md) still holds for world modes, version rules, the grid, its cell types and its checksum. [generator-v2](generator-v2.md) still holds for fields.
 - The Go implementation is `shared/gen` (`maps.go`, `v3*.go`). The web client runs it as `client/src/world/gen.wasm`.
 - The golden file is [`shared/gen/testdata/golden-v3.json`](../../shared/gen/testdata/golden-v3.json).
-- Decision [0040](../decisions/0040-dungeons-towns-places.md) has the reasons.
+- Decisions [0040](../decisions/0040-dungeons-towns-places.md), [0041](../decisions/0041-world-layout.md) and [0042](../decisions/0042-spawns.md) have the reasons.
 
 ## Seed tree
 
@@ -28,7 +28,16 @@ root (secret)
 │           └── floor(f)           a floor's public node, f from 1
 │               ├── rooms or cave, props, materials, heights
 │               └── attempt(n)
-└── secret
+└── secret                         only `wactl world new` holds it
+    ├── spawns
+    │   └── <map ID>               a field's or floor's spawns (decision 0042)
+    │       ├── theme, count, species(k), counts, respawn, place
+    │       ├── boss               a boss next to a town, or in a boss room
+    │       └── field_boss         a region's field boss
+    ├── regions
+    │   └── <town ID>              a region's field bosses
+    │       └── bosses
+    └── hooks                      the random stream of the spawn_table hooks
 ```
 
 - `town(n) = child(public, "town", n)`. The town's ID is `t<n>` and its map ID `gen:town:t<n>`.
@@ -184,27 +193,67 @@ Attempt 0 uses the map's node, and attempt n uses `child(node, "attempt", n)`. A
 
 ### Steps of an attempt
 
-The config gives a grid of W × H fields, T towns and D dungeons: 6 × 4, 5 and 6 by default. Field (x, y), for x from 0 to W - 1 and y from 0 to H - 1, has a portal on each edge (generator-v2), named by its place `portal:south`, `portal:east`, `portal:north` or `portal:west`.
+The config gives a grid of W × H fields, T towns and D dungeons: 6 × 5, 5 and 6 by default. Field (x, y), for x from 0 to W - 1 and y from 0 to H - 1, has a portal on each edge (generator-v2), named by its place `portal:south`, `portal:east`, `portal:north` or `portal:west`.
 
-1. **Edges.** Each border between neighboring fields opens with a chance of 3 in 4: `IntN(4) != 0` from the `edges` stream. The borders between columns go first, row by row from y = 0, then those between rows. An open border links the two portals that face each other. The other portals are free.
+1. **Edges** (review decision 44), from the `edges` stream. The streams of this section are xoshiro256\*\*, as all public streams.
+   - The root: `IntN` over the fields, by row then column. It is the first town's seat.
+   - A tree of open borders grows from the root in layers. The root is layer 0. Each next layer draws its size: 3 when `IntN(3) == 0`, else 2. For each pick it lists the fields not yet reached that touch a field of the layer before, keeps those with the fewest neighbors not yet reached, and draws one by `IntN` in row and column order. The picked field opens its border to a neighbor of the layer before, drawn by `IntN` in edge order (south, east, north, west). The growth stops when no field touches the last layer.
+   - Each field still unreached, by row and column, again until none is left, opens its border to its reached neighbor of the highest layer, the first by edge on a tie.
+   - Loops: each closed border whose two fields' layers differ by at most 1 opens when `IntN(2) == 1`. The borders between columns go first, row by row from y = 0, then those between rows.
+   - An open border links the two portals that face each other, the field to the west or south first. The other portals are free.
 2. **Towns**, by number from the `towns` stream:
    - A template: `IntN` over the templates in record order. With a home map, the first town draws among templates with 3 or more gates when one exists.
-   - A seat: `IntN` over the fields, by row then column, at least 2 grid steps from every earlier seat, else 1, else any.
-   - Gates: each gate's portal links to a free portal of a different field, the first free one by edge, taking fields by grid steps from the seat, then by row and column, at most 2 steps away. With a home map, the first town's first gate links to the home map's first `portal` place instead. A town that finds too few free portals fails the attempt.
+   - A seat. The first town's is the root. Each other town shuffles the fields at least 2 grid steps from every earlier seat, else 1, else any, by `Shuffle`, and takes the first whose gates all find fields.
+   - Gates: each gate's portal links to a free portal of a different field, the first free one by edge. The fields come by their warps from the seat over open borders, at most 2, then by row and column. For a town after the first, a field joins only while the town's fields stay within 2 warps of each other from the first town, so a town never shortens a way. With a home map, the first town's first gate links to the home map's first `portal` place instead. A town whose every seat finds too few fields fails the attempt.
 3. **Dungeons**, by number from the `dungeons` stream: a style by `IntN` over the styles, then a field by `IntN` among the fields with a free portal and no dungeon and no town seat, else with no dungeon, else any with a free portal. Its first free portal, by edge, links to the first floor's `entrance`, and each floor's `exit` to the next floor's `entrance`. A dungeon's ID is its style's name without the mod prefix, then `-2`, `-3` and on for more of one style. No free portal fails the attempt.
 4. **Reach.** Every map must be reached from the home area over the links, or the attempt fails.
+5. **Bands**, as below, then **coverage**: with W the band width, the bands of levels 1 to W, W + 1 to 2W and on, up to level 99 or the max level, each need 3 fields whose band overlaps them, or the attempt fails. A grid with fewer than 3 fields per such band skips the check.
 
 A link's end names a place: the index-th place, from 0, with a tag, such as a town's `portal` 2 or a field's `portal:east` 0.
 
 ### Bands and names
 
-- **Bands.** Distances count warps from the home area: the home map, or the first town. With F the largest distance of a field, a town or the home map, and top = max level - band width + 1, a map at distance d starts at level 1 + (top - 1) × d / F, in integer division, and its band spans the band width, 10 levels by default up to level 99. A floor starts at its entrance field's lowest level plus (floor - 1) × the style's `level_step`, at most top.
+- **Bands** (review decision 44). Distances count warps from the home area: the home map, or the first town. With d0 the fewest warps of any field, a field, a town or the home map at distance d starts at level 1 + step × max(0, d − d0), at most top = max level − band width + 1, and its band spans the band width. The defaults are a width of 10, a step of 8 and a max level of 99, so the home area and its nearest fields are levels 1 to 10, and each further warp adds 8 levels up to 90 to 99. A floor starts at its entrance field's lowest level plus (floor − 1) × the style's `level_step`, at most top.
 - **Town names.** Town n takes the naming style of its seat's biome: the last record for that biome, in load order. Attempt i draws a pattern by `IntN` from the stream of `name(i)`, then a syllable by `IntN` for each part of the pattern. The name is the syllables in lower case but its first letter. It passes with 4 to 12 ASCII letters, no other town or the home map with the same name in any case, and no word the chat filter blocks. After 100 attempts the layout fails with `ErrNoName`.
 - **Other names.** Each field and floor takes the town the fewest warps away, ties to the lower number. A field is "<direction> <town> Fields", with the direction by the larger grid step from the town's seat, north or south on a tie, and none on the seat. A dungeon is "<style> of <town>", with the style's name in words, and each floor adds " F<floor>". Fields or dungeons that share a name get a number in map order. A rename of a town names them again.
 
 ### Dev worlds
 
 `waserver --dev` with `--fields`, `--towns` and `--dungeons` makes a layout without a stream, with the links of step 3's dev links: touching fields link, the portals that touch no field are free ends in field ID order, each town by number links its first portal to the first free end and its other portals become the first free ends, and each dungeon by ID opens from the next free end. Its home area is its first field. `waserver --dev --layout` builds a layout as above from `--seed`.
+
+## Spawns
+
+`wactl world new` picks each field's and dungeon floor's spawns from the secret branch, `child(root, "secret")`, after it makes the layout and generates every map (strategy section 8.11, proposal 0002, review decision 44, [decision 0042](../decisions/0042-spawns.md)). The database keeps them. The rules below are those of `server/spawns`, which only `wactl` runs. The streams are ChaCha8 (rng-v1's secret streams), and the golden worlds of `server/spawns/testdata/golden-spawns.json` hold on darwin/arm64 and darwin/amd64.
+
+### Inputs
+
+- Monsters: every monster with stats and spawn tags, by name. Core's tags are `server/spawns/core/data/spawn_tags.yml`, which `tools/spawntags` derives from rAthena's spawn files. A monster record's `spawn` replaces them field by field. A boss, mob_db's boss class or an MVP, is never common or uncommon.
+- Themes: the records of `data/spawn_themes.yml`, by name.
+- Each map: its biome (a field's, or a floor's tileset), band, walkable cells (ground and water), features and feature points (the first water cell of each 32 × 32 block and each `clearing` on fields, each `room` on floors), the arrival cell of every warp to it, the warps on it that lead to a town, its `boss_room`, whether a field is one warp from a town, and its region: the town the fewest warps away, ties to the lower number.
+- Settings: `spawns.town_field_boss_chance` (50), `spawns.town_field_boss_role` (`mini_boss`) and `spawns.density.field` and `.dungeon`, monsters per 10,000 walkable cells (rAthena's medians by default).
+
+### One map
+
+With `m = child(child(secret, "spawns"), <map ID>)`:
+
+1. **Theme.** From `child(m, "theme")`: when `IntN(3) == 0`, a theme by `IntN` among those, by name, whose biomes hold the map's biome or are empty. A monster matches it by race, by element, or by naming it in its tags, and weighs `boost` percent of its weight.
+2. **How many.** `5 + IntN(4)` species, from `child(m, "count")`.
+3. **Species**, from `child(m, "species", k)` for the k-th of 14 tiers: the map's biome within 0, 5 and 10 levels of the band, then any biome within the same, then 15 and 20 levels, the biome first, then 30, then 50. The candidates of a tier are the common, uncommon, plant and rare monsters within it, by name, weighing their biome weight (1 for another biome) times their closeness: 100 inside the band, 4 less per level outside, at least 10. The draw takes 2 commons, then the rest from every candidate, each by `Weighted` without putting back, and skips a draw that would make 4 species of one element, 3 aggressive species in a band below level 30, or 2 rares. A tier that ends with fewer than 2 commons or 5 species passes to the next.
+4. **Counts**, from `child(m, "counts")`: the total is density × walkable cells / 10,000, at least 2 per species. Each rare draws `Range(1, 5)` and each plant `Range(3, 8)`, cut in proportion to a quarter of the total, at least 1 each. Commons and uncommons share the rest: with uncommons, commons take `c / (c + u)` of it for `c = Range(60, 70)` and `u = Range(25, 35)`. Each species of a role draws a part `Range(2, 5)` and takes its share, at least 1, the last the remainder.
+5. **Respawns**, from `child(m, "respawn")`, in whole seconds: common 5, uncommon `Range(5, 60)`, plant `Range(180, 1800)`, rare and mini boss `Range(1800, 3600)`, field boss `Range(3600, 7200)`.
+6. **Areas**, from `child(m, "place")`: a plant spawns within 8 cells of a feature point drawn by `IntN`, others anywhere. An aggressive monster keeps 15 cells from every arrival, by the larger axis distance.
+
+### Bosses
+
+- A field one warp from a town: from `child(m, "boss")`, when `IntN(100)` is below the chance, a boss of the setting's role.
+- A dungeon's last floor: from `child(m, "boss")`, a field boss within 3 cells of its `boss_room`.
+- Each region's other fields, by town number: from `child(child(child(secret, "regions"), <town ID>), "bosses")`, `1 + IntN(2)` of them, the first after a `Shuffle`, each get a field boss from `child(m, "field_boss")`.
+- A mini boss comes from the band's lowest level to 20 above its highest, a field boss from its lowest to 30 above its highest, by `Weighted` on its biome weight plus 1. Without one there, the closest mini boss by level, or the lowest field boss above the band, else the highest. Bosses keep 30 cells from every warp to a town.
+- A list sorts by role (common, uncommon, plant, rare, mini boss, field boss), then by count from the largest, then by name.
+
+### Hooks
+
+Then the mods' `spawn_table` hooks run on each list, in map order, in a Lua state that ran the mods' entry scripts on no map, with the random stream `child(secret, "hooks")`. The server keeps its rules over their lists: each line's clear cells follow its monster and role, and a boss as common or uncommon is left out.
 
 ## Server endpoints
 

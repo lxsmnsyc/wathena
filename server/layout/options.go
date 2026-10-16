@@ -20,8 +20,9 @@ type Options struct {
 	// Towns and Dungeons are how many to place.
 	Towns    *int `yaml:"towns"`
 	Dungeons *int `yaml:"dungeons"`
-	// BandWidth and MaxLevel shape the level bands.
+	// BandWidth, BandStep and MaxLevel shape the level bands.
 	BandWidth int `yaml:"band_width"`
+	BandStep  int `yaml:"band_step"`
 	MaxLevel  int `yaml:"max_level"`
 	// Home picks the home map: a mod's map folder as mod:folder, or
 	// "none" for the first town. Empty takes the one map tagged home of
@@ -51,6 +52,11 @@ func (o Options) Config(fieldSize int) (Config, error) {
 	}
 	if o.BandWidth != 0 {
 		c.BandWidth = o.BandWidth
+	}
+	if o.BandStep != 0 {
+		c.BandStep = o.BandStep
+	} else {
+		c.BandStep = min(c.BandStep, c.BandWidth)
 	}
 	if o.MaxLevel != 0 {
 		c.MaxLevel = o.MaxLevel

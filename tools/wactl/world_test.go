@@ -3,11 +3,14 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
 	"go.yaml.in/yaml/v3"
 
+	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -109,47 +112,69 @@ func TestPublicNode(t *testing.T) {
 	}
 }
 
-// TestWorldLayout: a procedural world's layout comes from core's
-// records, or from the mods and procedural.layout of --config, with a
-// mod's home map and naming style (decision 0041).
-func TestWorldLayout(t *testing.T) {
+// TestProceduralWorld: a procedural world's layout and spawns come from
+// core's records, or from the mods, procedural.layout and spawns of
+// --config, with a mod's home map, naming style, spawn tags and
+// spawn_table hook (decisions 0041 and 0042).
+func TestProceduralWorld(t *testing.T) {
+	seed := []byte("wactl-procedural-world-seed-0001")
 	g, ok := gen.Latest()
 	if !ok {
-		if _, err := worldLayout("", "renewal", make([]byte, 32), 3); err == nil {
+		if _, _, err := proceduralWorld("", "renewal", seed, 3); err == nil {
 			t.Error("a layout without the generator")
 		}
 		return
 	}
-	root, _ := rng.NewRoot([]byte("wactl-layout"))
-	key := gen.PublicBranch(root).Key()
-	l, err := worldLayout("", "renewal", key[:], g.Version)
+	l, planned, err := proceduralWorld("", "renewal", seed, g.Version)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(l.Towns()) != 5 || l.Home != "gen:town:t1" || len(l.Maps) < 24+5+6 {
+	if len(l.Towns()) != 5 || l.Home != "gen:town:t1" || len(l.Maps) < 30+5+6 {
 		t.Errorf("core's layout: %d towns, home %s, %d maps", len(l.Towns()), l.Home, len(l.Maps))
 	}
-	if !strings.Contains(layoutText(l), "towns 5,") {
-		t.Errorf("text %q", layoutText(l))
+	if !strings.Contains(layoutText(l), "towns 5,") || !strings.Contains(spawnText(planned), "bosses") {
+		t.Errorf("text %q %q", layoutText(l), spawnText(planned))
+	}
+	want := 0
+	for _, m := range l.Maps {
+		if m.Kind == gen.KindField || m.Kind == gen.KindDungeon {
+			want++
+		}
+	}
+	if len(planned) != want {
+		t.Fatalf("%d spawn lists for %d fields and floors", len(planned), want)
+	}
+	for _, p := range planned {
+		if len(p.Spawns) < spawns.MinSpecies {
+			t.Errorf("%s: %+v", p.Map, p.Spawns)
+		}
+	}
+	// The same seed gives the same spawns.
+	_, again, err := proceduralWorld("", "renewal", seed, g.Version)
+	if err != nil || !reflect.DeepEqual(again, planned) {
+		t.Errorf("a second run differs: %v", err)
 	}
 	mods := t.TempDir()
-	src, err := filepath.Abs(filepath.Join("..", "..", "mods", "examples", "home-village"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Symlink(src, filepath.Join(mods, "home-village")); err != nil {
-		t.Fatal(err)
+	for _, name := range []string{"home-village", "mossy-fields"} {
+		src, err := filepath.Abs(filepath.Join("..", "..", "mods", "examples", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink(src, filepath.Join(mods, name)); err != nil {
+			t.Fatal(err)
+		}
 	}
 	cfg := filepath.Join(t.TempDir(), "waserver.yml")
 	b, _ := yaml.Marshal(map[string]any{
 		"listen":     "127.0.0.1:1", // other keys are left alone
-		"mods":       map[string]any{"dir": mods},
+		"mods":       map[string]any{"dir": mods, "approve": map[string]any{"example.mossy-fields": []string{"spawns.modify"}}},
 		"procedural": map[string]any{"field_size": 64, "layout": map[string]any{"grid": []int{2, 2}, "towns": 2, "dungeons": 1}},
+		"spawns":     map[string]any{"town_field_boss_chance": 100, "density": map[string]any{"field": 200}},
 	})
 	if err := os.WriteFile(cfg, b, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	l, err = worldLayout(cfg, "renewal", key[:], g.Version)
+	l, planned, err = proceduralWorld(cfg, "renewal", seed, g.Version)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +185,30 @@ func TestWorldLayout(t *testing.T) {
 	if f := l.Map("gen:field:1:1"); f == nil || f.Size != 64 {
 		t.Errorf("field 1:1 %+v", f)
 	}
-	if _, err := worldLayout(filepath.Join(t.TempDir(), "none.yml"), "renewal", key[:], g.Version); err == nil {
+	// The hook puts 12 Moss Porings on each field below level 20.
+	for _, p := range planned {
+		m := l.Map(p.Map)
+		mossy := slices.ContainsFunc(p.Spawns, func(s spawns.Spawn) bool {
+			return s.Monster == "example.mossy-fields:MOSS_PORING" && s.Count == 12
+		})
+		if want := m.Kind == gen.KindField && m.Levels[0] < 20; mossy != want {
+			t.Errorf("%s at %v: Moss Porings %v, want %v: %+v", p.Map, m.Levels, mossy, want, p.Spawns)
+		}
+	}
+	for _, bad := range []map[string]any{
+		{"spawns": map[string]any{"town_field_boss_chance": 101}},
+		{"spawns": map[string]any{"town_field_boss_role": "rare"}},
+		{"spawns": map[string]any{"density": map[string]any{"dungeon": -1}}},
+	} {
+		b, _ := yaml.Marshal(bad)
+		if err := os.WriteFile(cfg, b, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := proceduralWorld(cfg, "renewal", seed, g.Version); err == nil || !strings.Contains(err.Error(), "spawns.") {
+			t.Errorf("%v: %v", bad, err)
+		}
+	}
+	if _, _, err := proceduralWorld(filepath.Join(t.TempDir(), "none.yml"), "renewal", seed, g.Version); err == nil {
 		t.Error("a config that does not exist")
 	}
 }

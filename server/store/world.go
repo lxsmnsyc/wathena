@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/store/db"
 )
 
@@ -41,6 +42,10 @@ type World struct {
 	// the row (decision 0041). LoadWorld leaves it nil: LoadLayout reads
 	// it.
 	Layout *layout.Layout
+	// Spawns are the spawn lists of the layout's fields and dungeon
+	// floors, which NewWorld writes with the layout (decision 0042).
+	// LoadWorld leaves them nil: LoadSpawns reads them.
+	Spawns []spawns.Planned
 }
 
 // Admin is the first account that NewWorld makes. Hash is the
@@ -76,6 +81,9 @@ func NewWorld(ctx context.Context, pool *pgxpool.Pool, w World, admin Admin) (in
 			if err := insertLayout(ctx, q, w.Layout); err != nil {
 				return fmt.Errorf("the world layout: %w", err)
 			}
+		}
+		if err := insertSpawns(ctx, q, w.Spawns); err != nil {
+			return fmt.Errorf("the world's spawns: %w", err)
 		}
 		id, err = q.CreateAdminAccount(ctx, db.CreateAdminAccountParams{Name: admin.Name, Hash: admin.Hash})
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -53,6 +53,8 @@ var Permissions = []Permission{
 	{Name: "events.control", Approval: true, Allows: "start and stop world events at any time"},
 	// player.expand_limits is review decision 32's: player:expand.
 	{Name: "player.expand_limits", Approval: true, Allows: "raise and lower a player's inventory, cart and storage slots within the ruleset's limits"},
+	// spawns.modify is review decision 44's: the spawn_table hook.
+	{Name: "spawns.modify", Approval: true, Allows: "change the monsters a new procedural world spawns on its fields and dungeons"},
 }
 
 // LookupPermission returns a permission by name.

@@ -28,6 +28,7 @@ var sampleApprovals = map[string][]string{
 	"example.guild-hall":   {"guild.manage"},
 	"example.bank":         {"player.give_items", "rules.override", "player.expand_limits"},
 	"example.arena":        {"mail.send", "rules.override"},
+	"example.mossy-fields": {"spawns.modify"},
 }
 
 // TestLoadSampleMod loads mods/examples over the renewal reference data,
@@ -107,8 +108,8 @@ func TestLoadSampleMod(t *testing.T) {
 	if s := m.zone.Shops.Get("example.greeter:Cookie Stand"); s == nil || len(shopItems(s)) != 2 || shopItems(s)[1].Zeny != 10 {
 		t.Errorf("cookie stand %+v", s)
 	}
-	// core and the sixteen sample mods.
-	if len(m.zone.Scripts) != 17 || m.zone.ItemIDs["Red_Potion"] != 501 {
+	// core and the seventeen sample mods with scripts.
+	if len(m.zone.Scripts) != 18 || m.zone.ItemIDs["Red_Potion"] != 501 {
 		t.Errorf("zone mods: %d scripts", len(m.zone.Scripts))
 	}
 	// The Halloween mod's monsters, with the IDs of the mod range, and

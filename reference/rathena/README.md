@@ -273,6 +273,10 @@ python3 tools/wathena/extract.py guilds
 
 `extract.py guilds` writes only `guilds.json`, so the other extracts stay as they are.
 
+## Spawns
+
+`extracts/<mode>/spawns.json` holds every map's spawn lines from `npc/<mode>/mobs`, with each map's walkable cells. Classic worlds spawn from it. `tools/spawntags` reads the renewal file to derive core's spawn tags for procedural worlds: each monster's biome weights by map family, its role, and the densities per walkable cell ([decision 0042](../../docs/decisions/0042-spawns.md)). The map families and their biomes are wAthena's, in `tools/spawntags/families.go`, so the extract's own `biome` and `monster_tags` fields are not read.
+
 ## How random rolls are recorded
 
 rAthena's random number output depends on the C++ standard library, so wAthena cannot reproduce the exact rolls. The recorder uses three methods instead:

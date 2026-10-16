@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-16)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 4 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 5 are built.
 
 Done:
 
@@ -137,7 +137,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 4, the generator core, generated fields, dungeons, towns and named places, and the world layout, are built. Step 5, spawns, is next, with its Lua API drafted for review first if it needs any.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 5, the generator core, generated fields, dungeons, towns and named places, the world layout, and spawns with the level band fix, are built. Step 6, content, is next, with its Lua API drafted for review first.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -2866,7 +2866,14 @@ The order from here:
       - Determinism: the 6 golden layouts match in Go on darwin/arm64 and darwin/amd64 under Rosetta. Only the server makes layouts.
       - Tests: `TestGoldenLayout`, `TestLayoutRules`, `TestLayoutRetries`, `FuzzLayout`, the naming, atlas and band tests, `FuzzRead` and the map folder tests, the store, zone, waserver and wactl tests, the Home Village sample's cases, the e2e test `TestWorldLayout` with PostgreSQL, and the browser check `layout`.
       - Left: removable maps and their moves (step 7), Warp Portal itself, locale files for name templates, and a run on a real amd64 machine.
-   5. Spawns: monster spawn tags, field and dungeon spawn selection, mini bosses and field bosses (section 8.11).
+   5. Spawns: monster spawn tags, field and dungeon spawn selection, mini bosses and field bosses (section 8.11), and the level band fix of review decision 44. Done on 2026-10-16 ([decision 0042](decisions/0042-spawns.md), [generator-v3](specs/generator-v3.md), "World layout" and "Spawns", proposal 0002, review decision 44 and next step 30, server/README.md, "World layout" and "Spawns", and mods/README.md, "Spawn tags", "Spawn themes" and "The spawn_table hook"):
+      - Bands: the home area and its nearest fields are levels 1 to 10, and each further warp adds `procedural.layout.band_step` levels, 8 by default, up to 90 to 99. Every band of 10 levels up to 99 has 3 fields, or the layout retries, and grids under 30 fields skip the check. The default grid is 6 × 5. The borders now grow as a tree in layers from the first town, and towns link only fields close to each other, so 2,000 default layouts all pass. The 6 golden layouts changed.
+      - Spawn tags: `tools/spawntags` derives core's biome weights and roles by map family from the existing renewal spawn extract into `server/spawns/core/data/spawn_tags.yml`, with rAthena's densities of 41 and 48 monsters per 10,000 walkable cells. Monster records take `spawn`, and `data/spawn_themes.yml` holds core's 9 themes and mods' records.
+      - `server/spawns`: selection by section 8.11 from each map's secret node, with 14 widening tiers, the species limits, counts by density, plants near features, aggressive monsters 15 cells from arrivals, mini bosses next to towns at `spawns.town_field_boss_chance`, 1 or 2 field bosses per region, a field boss in each last floor's boss room, and bosses 30 cells from warps to towns.
+      - `wactl world new` loads the game data and the mods, generates the maps, picks the spawns from the secret branch, runs the `spawn_table` hooks, and writes `world_spawns` (migration 00032) with the layout. `waserver` reads the lists as the game role, which never reads the seed. The zones keep the clear cells when monsters come back.
+      - Lua: the hook `spawn_table` with the permission `spawns.modify`, and nothing else. Test worlds of `wactl mod test` spawn their generated maps' lists through the hooks. The Mossy Fields sample mod.
+      - Tests: `TestGoldenSpawns` on both architectures in `scripts/check.sh gen`, `TestSpawnRules`, `TestPublicSeed`, `FuzzSelect`, `TestCoverage`, the store, zone, waserver, wactl and modkit tests, the Lua tests, the sample's cases, and the e2e test `TestWorldSpawns` with PostgreSQL.
+      - Left: better drop rolls in higher bands (step 8), density scaling by player count, bosses from `wa.generation` (step 6), spawns in dev worlds without a database, and a run on a real amd64 machine.
    6. Content: service NPCs placed from templates, quest templates, procedural job changes and rebirth (section 11.4), and `wa.generation` for mod layers (section 8.7).
    7. Rotation: rotating dungeons and world change events through the scheduler (section 8.8), moving players, save points and memo points when a map goes away.
    8. The economy simulator and generator checks (section 8.13), bot runs compared with the simulator, the public seed test, and the phase 7 exit check.

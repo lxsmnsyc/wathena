@@ -602,6 +602,7 @@ func TestSampleMod(t *testing.T) {
 		"example.guild-hall":   {"guild.manage"},
 		"example.bank":         {"player.give_items", "rules.override", "player.expand_limits"},
 		"example.arena":        {"mail.send", "rules.override"},
+		"example.mossy-fields": {"spawns.modify"},
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -651,7 +652,7 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("scripts %+v, %v", sc, err)
 	}
 	monsters, err := s.Monsters(func(name string) bool { return name == "PORING" || name == "JAKK" || name == "WOLF" })
-	if err != nil || len(monsters.Records) != 8 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
+	if err != nil || len(monsters.Records) != 10 || monsters.Records[0].Name != "example.halloween:PUMPKIN_PORING" {
 		t.Errorf("monsters %+v, %v", monsters, err)
 	}
 	events, err := s.Events()

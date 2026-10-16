@@ -2261,6 +2261,86 @@ local hook_messages = {
 	item_roll = "the item_roll hook must return an integer value",
 }
 
+-- Spawns (review decision 44): the spawn_table hook's map and spawns.
+local spawn_roles = { common = true, uncommon = true, plant = true, rare = true, mini_boss = true, field_boss = true }
+local spawn_fields = { monster = true, count = true, respawn = true, role = true, area = true }
+local spawn_area_fields = { x = true, y = true, w = true, h = true }
+
+-- spawn_list checks a list of spawns and copies it as plain tables:
+-- monster, a monster ID that may spawn; count, 1 to 1,000; respawn, the
+-- milliseconds, 1,000 to 268,435,455; role, a role; and area, nil or
+-- { x, y, w, h } from 0 to 1,024.
+local function spawn_list(list)
+	local want = "the spawn_table hook must return a list of spawns, each { monster, count, respawn, role, area }"
+	if type(list) ~= "table" then
+		error(want, 0)
+	end
+	local n = 0
+	for _ in pairs(list) do
+		n = n + 1
+	end
+	if n ~= #list or n > 64 then
+		error(want .. ", at most 64", 0)
+	end
+	local out = {}
+	for i, s in ipairs(list) do
+		if type(s) ~= "table" then
+			error(want, 0)
+		end
+		for k in pairs(s) do
+			if not spawn_fields[k] then
+				error("spawn " .. i .. ": " .. tostring(k) .. " is not a field; a spawn has monster, count, respawn, role and area", 0)
+			end
+		end
+		if math_type(s.monster) ~= "integer" or not H.spawn_known(s.monster) then
+			error("spawn " .. i .. ": monster must be a monster ID from monsters.id", 0)
+		end
+		if math_type(s.count) ~= "integer" or s.count < 1 or s.count > 1000 then
+			error("spawn " .. i .. ": count must be an integer from 1 to 1000", 0)
+		end
+		if math_type(s.respawn) ~= "integer" or s.respawn < 1000 or s.respawn > 0xfffffff then
+			error("spawn " .. i .. ": respawn must be milliseconds from 1000 to 268435455", 0)
+		end
+		if type(s.role) ~= "string" or not spawn_roles[s.role] then
+			error("spawn " .. i .. ": role must be common, uncommon, plant, rare, mini_boss or field_boss", 0)
+		end
+		local area = nil
+		if s.area ~= nil then
+			if type(s.area) ~= "table" then
+				error("spawn " .. i .. ": area must be { x, y, w, h }, or nil for the whole map", 0)
+			end
+			for k in pairs(s.area) do
+				if not spawn_area_fields[k] then
+					error("spawn " .. i .. ": area has x, y, w and h", 0)
+				end
+			end
+			area = {}
+			for k in pairs(spawn_area_fields) do
+				local v = s.area[k]
+				if math_type(v) ~= "integer" or v < 0 or v > 1024 then
+					error("spawn " .. i .. ": area." .. k .. " must be an integer from 0 to 1024", 0)
+				end
+				area[k] = v
+			end
+		end
+		out[i] = { monster = s.monster, count = s.count, respawn = s.respawn, role = s.role, area = area }
+	end
+	return out
+end
+
+-- spawn_map makes the read-only map object of the spawn_table hook.
+local function spawn_map(m)
+	local features = {}
+	for i, f in ipairs(m.features) do
+		features[i] = f
+	end
+	return readonly("spawn map", {
+		id = m.id, kind = m.kind, biome = m.biome,
+		band = readonly("band", { m.band[1], m.band[2] }),
+		features = readonly("features", features),
+	})
+end
+
 -- hook_object makes the read-only object of a hook from Go's fields:
 -- player, monster, target and source become handles.
 local function hook_object(kind, fields)
@@ -2269,6 +2349,9 @@ local function hook_object(kind, fields)
 	end
 	if kind == "vend" or kind == "buying_store_sale" or kind == "mail" then
 		return sale_object(fields)
+	end
+	if kind == "spawn_table" then
+		return spawn_list(fields.spawns)
 	end
 	if kind == "item_roll" then
 		-- The server's roll is not a field: the innermost next returns
@@ -2320,6 +2403,9 @@ end
 -- for experience, true or false for cast_allowed, and an integer for
 -- the others.
 local function hook_result(kind, a, b, o)
+	if kind == "spawn_table" then
+		return spawn_list(a)
+	end
 	if kind == "monster_target" then
 		-- nil, or one of the candidates.
 		if a == nil then
@@ -2373,6 +2459,9 @@ end
 -- innermost is the end of a chain: the object's own value, which is
 -- rAthena's unless a hook passed a changed object.
 local function innermost(kind, o, fields)
+	if kind == "spawn_table" then
+		return spawn_list(o)
+	end
 	if kind == "item_roll" then
 		return hook_result(kind, fields.value)
 	end
@@ -2392,6 +2481,12 @@ end
 -- Go sets with H.hook_enter. A hook that fails is logged, and the chain
 -- goes on as if it were not there.
 local function run_chain(kind, fields, n, fns)
+	-- The spawn_table hook gets the map before its list, and a copy of
+	-- the list it may change.
+	local map = nil
+	if kind == "spawn_table" then
+		map = spawn_map(fields.map)
+	end
 	local function at(i, o)
 		if i > n then
 			return innermost(kind, o, fields)
@@ -2410,7 +2505,12 @@ local function run_chain(kind, fields, n, fns)
 			H.hook_enter(i)
 			return inner_a, inner_b
 		end
-		local ok, a, b = pcall(fns[i], o, next_fn)
+		local ok, a, b
+		if map ~= nil then
+			ok, a, b = pcall(fns[i], map, spawn_list(o), next_fn)
+		else
+			ok, a, b = pcall(fns[i], o, next_fn)
+		end
 		if ok then
 			ok, a, b = pcall(hook_result, kind, a, b, o)
 		end

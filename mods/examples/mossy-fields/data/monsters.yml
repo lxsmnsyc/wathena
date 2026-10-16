@@ -1,0 +1,27 @@
+# Two monsters of the fields. Their spawn tags let a new procedural
+# world pick them: they live in every field biome, with the highest
+# weight, so low fields draw them first.
+- name: example.mossy-fields:MOSS_PORING
+  sprite: PORING
+  display_name: Moss Poring
+  level: 6
+  hp: 90
+  base_exp: 40
+  job_exp: 30
+  element: earth
+  spawn:
+    biomes: {grassland: 1000, forest: 1000, swamp: 1000, desert: 1000, snow: 1000, beach: 1000}
+    role: common
+    themes: [mossy]
+- name: example.mossy-fields:MOSS_SPORE
+  sprite: SPORE
+  display_name: Moss Spore
+  level: 5
+  hp: 70
+  base_exp: 30
+  job_exp: 20
+  element: earth
+  race: plant
+  spawn:
+    biomes: {grassland: 1000, forest: 1000, swamp: 1000, desert: 1000, snow: 1000, beach: 1000}
+    role: uncommon

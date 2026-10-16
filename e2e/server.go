@@ -100,11 +100,12 @@ type Options struct {
 	// Config is more of waserver's config, in YAML, after the test
 	// config, such as a jail map.
 	Config string
-	// Procedural runs a procedural world (decision 0041): waserver and
-	// wactl built with -tags procedural, and a world that
+	// Procedural runs a procedural world (decisions 0041 and 0042):
+	// waserver and wactl built with -tags procedural, the Home Village
+	// and Mossy Fields samples, and a world that
 	// `wactl world new --mode procedural --config` makes with the same
-	// config, with the Home Village sample mod beside the test mods.
-	// Config's procedural.layout shapes it. It needs Database.
+	// config, with those samples beside the test mods. Config's
+	// procedural.layout and spawns shape it. It needs Database.
 	Procedural bool
 }
 
@@ -229,7 +230,8 @@ func prepare(race bool) (string, *built, error) {
 }
 
 // prepareProcedural builds waserver and wactl with the procedural tag,
-// and copies the mods with the Home Village sample, once.
+// and copies the mods with the Home Village and Mossy Fields samples,
+// once.
 func prepareProcedural() (waserver, wactl string, b *built, err error) {
 	if _, _, err := prepare(false); err != nil {
 		return "", "", nil, err
@@ -240,17 +242,21 @@ func prepareProcedural() (waserver, wactl string, b *built, err error) {
 		if w.err != nil {
 			return
 		}
-		src, err := filepath.Abs(filepath.Join("..", "mods", "examples", "home-village"))
-		if err != nil {
-			w.err = err
-			return
-		}
 		shared.homeMods = filepath.Join(shared.dir, "home-mods")
 		if err := os.CopyFS(shared.homeMods, os.DirFS(shared.mods)); err != nil {
 			w.err = err
 			return
 		}
-		w.err = os.CopyFS(filepath.Join(shared.homeMods, "home-village"), os.DirFS(src))
+		for _, name := range []string{"home-village", "mossy-fields"} {
+			src, err := filepath.Abs(filepath.Join("..", "mods", "examples", name))
+			if err != nil {
+				w.err = err
+				return
+			}
+			if w.err = os.CopyFS(filepath.Join(shared.homeMods, name), os.DirFS(src)); w.err != nil {
+				return
+			}
+		}
 	})
 	c := &shared.wactl
 	c.once.Do(func() {
@@ -349,7 +355,10 @@ func Start(t testing.TB, o Options) *Server {
 	config := filepath.Join(dir, "waserver.yml")
 	text := configYAML
 	if o.Procedural {
+		// The Mossy Fields sample's spawn_table hook needs its
+		// permission approved.
 		text = strings.Replace(text, "mods:\n", "mods:\n  dir: "+mods+"\n", 1)
+		text = strings.Replace(text, "    e2e.fixture: [", "    example.mossy-fields: [spawns.modify]\n    e2e.fixture: [", 1)
 	}
 	if err := os.WriteFile(config, []byte(text+o.Config), 0o600); err != nil {
 		t.Fatal(err)

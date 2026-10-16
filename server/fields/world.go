@@ -103,8 +103,9 @@ func BuildLayout(r Records, g gen.Generator, public rng.Node, opts layout.Option
 
 // LayoutCore returns core's files that a layout reads, as a mod.Config's
 // Core: the dungeon styles, town templates, naming styles and chat
-// filter. Tools that only make layouts, such as `wactl world new`, load
-// the mods over them instead of converting core's scripts.
+// filter. Tests that only make layouts load the mods over them instead
+// of converting core's scripts. `wactl world new` loads all of core,
+// since spawns need the monsters (decision 0042).
 func LayoutCore() (fs.FS, error) {
 	out := fstest.MapFS{}
 	add := func(fsys fs.FS, from, to string) error {

@@ -136,10 +136,10 @@ var Modules = []Module{
 		Funcs: []Func{{
 			Name: "on",
 			Params: []Param{{"name", "wa.HookName", "The hook's name. An unknown name raises an error."},
-				{"hook", "fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice|wa.ItemRoll|wa.ChatMessage|wa.Trade, next: fun(object?: table): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer|string|nil): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer|string|nil", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message; trade returns true, or false and a message to refuse the trade."},
+				{"hook", "(fun(object: wa.Drop|wa.Exp|wa.StatusHook|wa.SkillHook|wa.MonsterTargetChoice|wa.ItemRoll|wa.ChatMessage|wa.Trade, next: fun(object?: table): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer|string|nil): integer|boolean|string|wa.Player|wa.Monster|wa.Npc|nil, integer|string|nil)|fun(map: wa.SpawnMap, spawns: wa.Spawn[], next: fun(spawns?: wa.Spawn[]): wa.Spawn[]): wa.Spawn[]", "Gets the object and next. drop_rate returns a rate per 10,000; experience returns base and job exp; status_chance returns a chance per 10,000; status_duration and cast_time return milliseconds; skill_damage returns the damage percentage; skill_cost returns SP; cast_allowed returns true or false; monster_target returns one of the candidates, or nil for none; item_roll returns the value, which the server clamps to the roll's range; chat returns the text, or nil to block the message; trade returns true, or false and a message to refuse the trade. spawn_table gets the map, a copy of its spawn list and next, and returns the list: next(spawns) runs the rest of the chain on a list, the hook's own by default."},
 				{"options", "wa.HookOptions?", ""}},
 			Returns:    "wa.HookHandle",
-			Doc:        "Adds a hook. Higher priority runs first; equal priorities run in the order they were added.",
+			Doc:        "Adds a hook. Higher priority runs first; equal priorities run in the order they were added. spawn_table needs spawns.modify in place of rules.override. It runs only when wactl world new makes a procedural world, and in the test worlds of wactl mod test.",
 			Permission: "rules.override",
 		}},
 	},
@@ -1197,6 +1197,30 @@ var Classes = []Class{
 		},
 	},
 	{
+		Name: "wa.SpawnMap", Doc: "The map of the spawn_table hook: a field or a dungeon floor of a new procedural world (review decision 44). It is read-only.",
+		Fields: []Field{
+			{"id", "string", "The map ID, such as gen:field:3:1 or gen:dungeon:crypt:2."},
+			{"kind", `"field"|"dungeon"`, ""},
+			{"biome", "string", "A field's biome, such as forest, or a floor's tileset, such as crypt."},
+			{"band", "integer[]", "The level band: the lowest and the highest level."},
+			{"features", "string[]", "The map's features, sorted: water and clearing on fields, room and boss_room on floors."},
+		},
+	},
+	{
+		Name: "wa.Spawn", Doc: "One spawn of the spawn_table hook's list. The server keeps aggressive monsters 15 cells from arrivals, and bosses 30 cells from warps to towns, whatever the hook returns.",
+		Fields: []Field{
+			{"monster", "integer", "A monster from monsters.id."},
+			{"count", "integer", "1 to 1,000 monsters."},
+			{"respawn", "integer", "Milliseconds before a dead one comes back, 1,000 to 268,435,455."},
+			{"role", `"common"|"uncommon"|"plant"|"rare"|"mini_boss"|"field_boss"`, "A boss monster that is common or uncommon is left out."},
+			{"area", "wa.SpawnArea?", "Where the monsters appear, or nil for the whole map."},
+		},
+	},
+	{
+		Name: "wa.SpawnArea", Doc: "A spawn's area: within w and h cells of x and y.",
+		Fields: []Field{{"x", "integer", "0 to 1,024."}, {"y", "integer", ""}, {"w", "integer", ""}, {"h", "integer", ""}},
+	},
+	{
 		Name: "wa.Trade", Doc: "The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.",
 		Fields: []Field{
 			{"players", "wa.Player[]", "The two players: the one who confirmed last first."},
@@ -1531,7 +1555,7 @@ func Aliases() []Alias {
 		{Name: "wa.EventName", Values: events, Doc: "An event name of wa.events."},
 		{Name: "wa.BonusName", Values: bonuses, Doc: "A bonus name of wa.bonuses (proposal 0002a)."},
 		{Name: "wa.EquipSlot", Values: EquipSlots, Doc: "An equipment slot."},
-		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat", "trade", "vend", "buying_store_sale", "mail"}, Doc: "A hook name of wa.hooks."},
+		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat", "trade", "vend", "buying_store_sale", "mail", "spawn_table"}, Doc: "A hook name of wa.hooks."},
 		{Name: "wa.Bound", Values: []string{"account", "character", "party", "guild"}, Doc: "Who a bound copy is bound to."},
 		{Name: "wa.ExpandableLimit", Values: rules.ExpandableLimits, Doc: "A limit that one player holds, which player:expand changes."},
 		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},

@@ -13,6 +13,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/skill"
+	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
@@ -30,7 +31,7 @@ var monsterFields = []string{
 	"resistance", "magic_resistance", "str", "agi", "vit", "int", "dex", "luk", "speed", "attack_range",
 	"skill_range", "chase_range", "attack_delay", "attack_motion", "damage_motion", "element", "element_level",
 	"race", "size", "class", "ai", "modes", "base_exp", "job_exp", "mvp_exp", "drops", "mvp_drops",
-	"damage_taken", "skills", "script", "sounds",
+	"damage_taken", "skills", "script", "sounds", "spawn",
 }
 
 // artBaseMonster is the monster a new monster with a sprite of its own
@@ -180,9 +181,9 @@ func monsterOverlay(ctx context.Context, set *mod.Set, base map[uint32]Monster, 
 			m.Def.ID, m.Def.AegisName = id, r.Name
 			m.Def.BaseExp, m.Def.JobExp, m.Def.MvpExp = 0, 0, 0
 		}
-		// A new monster has its own drops and skills, and no race groups
-		// of its own.
-		m.drops, m.mvpDrops, m.Skills, m.Script = nil, nil, nil, ""
+		// A new monster has its own drops, skills and spawn tags, and no
+		// race groups of its own.
+		m.drops, m.mvpDrops, m.Skills, m.Script, m.SpawnTags = nil, nil, nil, "", nil
 		if m.Status != nil {
 			m.Status.Race2 = nil
 		}
@@ -415,6 +416,22 @@ func applyMonster(m *Monster, r *mod.Record, set *mod.Set, consts *constants.Dat
 	}
 	ai, _ := mob.AIModes(d.AI)
 	d.Mode = mob.Modes(ai, m.modesOn, m.modesOff, d.Class)
+	if v, ok := f["spawn"]; ok {
+		t, err := spawns.ParseTags(v, m.SpawnTags)
+		if err != nil {
+			bad("%v", err)
+		} else {
+			if t.Role == "" {
+				t.Role = defaultRole(d)
+			}
+			m.SpawnTags = t
+		}
+	}
+	if m.SpawnTags != nil {
+		if err := (spawns.Monster{Name: r.Name, Boss: bossMonster(d), Tags: m.SpawnTags}).CheckTags(); err != nil {
+			bad("%v", err)
+		}
+	}
 	num64("base_exp", &d.BaseExp)
 	num64("job_exp", &d.JobExp)
 	num64("mvp_exp", &d.MvpExp)
@@ -459,6 +476,22 @@ func applyMonster(m *Monster, r *mod.Record, set *mod.Set, consts *constants.Dat
 		m.fillReward(tables)
 	}
 	return nil
+}
+
+// bossMonster reports whether a monster is a boss for its spawn role:
+// mob_db's boss class, or an MVP.
+func bossMonster(d *mob.Def) bool { return d.Class == 1 || d.Mode&mob.ModeMvp != 0 }
+
+// defaultRole is the role of spawn tags that give none: field_boss for
+// an MVP, mini_boss for another boss, and uncommon for the rest.
+func defaultRole(d *mob.Def) spawns.Role {
+	switch {
+	case d.Mode&mob.ModeMvp != 0:
+		return spawns.FieldBoss
+	case d.Class == 1:
+		return spawns.MiniBoss
+	}
+	return spawns.Uncommon
 }
 
 func listInt(list []any, i int) (int, bool) {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"slices"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/mapfolder"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/places"
+	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/gen"
@@ -57,6 +59,9 @@ type proceduralWorld struct {
 	start    string
 	spawn    [2]int
 	hasSpawn bool
+	// spawns are the stored spawn lists of the fields and dungeon
+	// floors, by map ID (decision 0042). A dev world has none.
+	spawns map[string][]spawns.Spawn
 }
 
 // wantsDevMaps reports whether the config lists generated maps of its
@@ -131,7 +136,32 @@ func loadLayout(ctx context.Context, pool *pgxpool.Pool, w store.World, proc *pr
 		return fmt.Errorf("the world layout: %w", err)
 	}
 	proc.stored = l
+	if proc.spawns, err = store.LoadSpawns(ctx, pool); err != nil {
+		return fmt.Errorf("the world's spawns: %w", err)
+	}
 	return nil
+}
+
+// zoneSpawns adds the stored spawn lists to the zones' spawns, with the
+// stats of the loaded monsters. A line whose monster no longer loads,
+// such as one of a removed mod, is left out with a warning.
+func zoneSpawns(proc proceduralWorld, monsters map[uint32]gamedata.Monster, to map[string][]zone.Spawn, log *slog.Logger) {
+	if len(proc.spawns) == 0 {
+		return
+	}
+	lines, count := 0, 0
+	for _, id := range slices.Sorted(maps.Keys(proc.spawns)) {
+		list, missing := gamedata.ZoneSpawns(proc.spawns[id], monsters)
+		for _, m := range missing {
+			log.Warn("a stored spawn names a monster that does not load; its line is left out", "map", id, "monster", m)
+		}
+		to[id] = append(to[id], list...)
+		lines += len(list)
+		for _, s := range list {
+			count += s.Amount
+		}
+	}
+	log.Info("world spawns loaded", "maps", len(proc.spawns), "lines", lines, "monsters", count)
 }
 
 // addMaps makes the maps of a procedural world once the mods gave their
@@ -191,7 +221,7 @@ func addMaps(cfg settings, proc *proceduralWorld, set *mod.Set, pool *pgxpool.Po
 	}
 	for _, f := range made {
 		attrs := []any{"map", f.ID, "name", f.DisplayName, "kind", f.Kind, "size", f.Field.Width, "attempt", f.Field.Attempt,
-			"levels", strconv.Itoa(f.Levels[0])+"-"+strconv.Itoa(f.Levels[1]), "places", len(f.Field.Places), "wmap_bytes", len(f.Field.WMAP)}
+			"levels", strconv.Itoa(f.Levels[0]) + "-" + strconv.Itoa(f.Levels[1]), "places", len(f.Field.Places), "wmap_bytes", len(f.Field.WMAP)}
 		switch f.Kind {
 		case gen.KindField:
 			attrs = append(attrs, "biome", f.BiomeName)
@@ -243,7 +273,7 @@ func devLayout(cfg settings, proc *proceduralWorld, recs fields.Records) (*layou
 	if len(list) == 0 {
 		list = []string{"0:0"}
 	}
-	spec := layout.DevSpec{FieldSize: p.FieldSize, BandWidth: p.Layout.BandWidth, MaxLevel: p.Layout.MaxLevel}
+	spec := layout.DevSpec{FieldSize: p.FieldSize, BandWidth: p.Layout.BandWidth, BandStep: p.Layout.BandStep, MaxLevel: p.Layout.MaxLevel}
 	for _, s := range list {
 		sp, err := fields.ParseSpec(s)
 		if err != nil {

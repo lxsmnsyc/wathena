@@ -7,9 +7,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/fields"
+	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/store"
+	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
@@ -153,5 +157,75 @@ func TestFieldMaps(t *testing.T) {
 	row.PublicNode, row.GeneratorVersion = key[:], 1
 	if _, err := fieldMaps(cfg, row, log); err == nil || !strings.Contains(err.Error(), "no fields") {
 		t.Errorf("generator 1: %v", err)
+	}
+}
+
+// TestZoneSpawns: a world row's stored spawn lists reach the zones with
+// the loaded monsters' stats, their areas and clear cells, and a line of
+// a monster that no longer loads is left out with a warning (decision
+// 0042).
+func TestZoneSpawns(t *testing.T) {
+	var buf strings.Builder
+	log := slog.New(slog.NewTextHandler(&buf, nil))
+	monsters, err := gamedata.LoadMonsters(reference.Renewal, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proc := proceduralWorld{spawns: map[string][]spawns.Spawn{
+		"gen:field:0:0": {
+			{Monster: "PORING", Count: 40, RespawnMs: 5000, Role: spawns.Common, Avoid: []spawns.Avoid{{X: 10, Y: 20, R: 15}}},
+			{Monster: "example.gone:GHOST", Count: 3, RespawnMs: 5000, Role: spawns.Uncommon},
+			{Monster: "RED_PLANT", Count: 4, RespawnMs: 600000, Role: spawns.Plant, Area: spawns.Area{X: 30, Y: 40, W: 8, H: 8}},
+		},
+	}}
+	to := map[string][]zone.Spawn{"gen:field:0:0": {{Mob: 1, Amount: 1}}}
+	zoneSpawns(proc, monsters, to, log)
+	got := to["gen:field:0:0"]
+	if len(got) != 3 {
+		t.Fatalf("spawns %+v", got)
+	}
+	poring, plant := got[1], got[2]
+	if poring.Mob != 1002 || poring.Amount != 40 || poring.RespawnMs != 5000 || poring.Status == nil ||
+		len(poring.Avoid) != 1 || poring.Avoid[0] != (zone.Clear{X: 10, Y: 20, R: 15}) || poring.X != 0 || poring.Y != 0 {
+		t.Errorf("Poring %+v", poring)
+	}
+	if plant.X != 30 || plant.Y != 40 || plant.W != 8 || plant.H != 8 || plant.Amount != 4 || plant.RespawnMs != 600000 {
+		t.Errorf("Red Plant %+v", plant)
+	}
+	if !strings.Contains(buf.String(), "example.gone:GHOST") || !strings.Contains(buf.String(), "lines=2") {
+		t.Errorf("log: %s", buf.String())
+	}
+}
+
+// TestSpawnsConfig: waserver.yml's spawns section, which wactl world new
+// reads, is checked at start (decision 0042).
+func TestSpawnsConfig(t *testing.T) {
+	assets := assetDir(t)
+	p := writeConfig(t, `
+assets: `+assets+`
+dev: true
+spawns:
+  town_field_boss_chance: 25
+  town_field_boss_role: field_boss
+  density: {field: 60, dungeon: 80}
+`)
+	o, _, err := parseOptions("waserver all", []string{"--config", p}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validate(o, secrets{}); err != nil || *o.Spawns.TownFieldBossChance != 25 || o.Spawns.Density.Dungeon != 80 {
+		t.Errorf("%+v %v", o.Spawns, err)
+	}
+	p = writeConfig(t, `
+assets: `+assets+`
+dev: true
+spawns:
+  town_field_boss_role: rare
+`)
+	if o, _, err = parseOptions("waserver all", []string{"--config", p}, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validate(o, secrets{}); err == nil || !strings.Contains(err.Error(), "town_field_boss_role") {
+		t.Errorf("a bad role: %v", err)
 	}
 }

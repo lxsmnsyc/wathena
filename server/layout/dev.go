@@ -42,8 +42,9 @@ type DevSpec struct {
 	Towns     []DevTown
 	Dungeons  []DevDungeon
 	FieldSize int
-	// BandWidth and MaxLevel are as Config's. 0 takes the defaults.
-	BandWidth, MaxLevel int
+	// BandWidth, BandStep and MaxLevel are as Config's. 0 takes the
+	// defaults.
+	BandWidth, BandStep, MaxLevel int
 }
 
 // Dev makes a dev world's layout:
@@ -63,13 +64,8 @@ type DevSpec struct {
 // is set; without it, a town is named after its ID, such as T1.
 func Dev(spec DevSpec, in Inputs) (l *Layout, unlinked []string, err error) {
 	l = &Layout{}
-	width, maxLevel := spec.BandWidth, spec.MaxLevel
-	if width == 0 {
-		width = DefaultBandWidth
-	}
-	if maxLevel == 0 {
-		maxLevel = DefaultMaxLevel
-	}
+	bc := BandConfig{Width: cmp.Or(spec.BandWidth, DefaultBandWidth), Step: cmp.Or(spec.BandStep, DefaultBandStep),
+		MaxLevel: cmp.Or(spec.MaxLevel, DefaultMaxLevel)}
 	fs := slices.Clone(spec.Fields)
 	slices.SortFunc(fs, func(a, b DevField) int { return strings.Compare(gen.FieldID(a.X, a.Y), gen.FieldID(b.X, b.Y)) })
 	has := func(x, y int64) bool {
@@ -170,7 +166,7 @@ func Dev(spec DevSpec, in Inputs) (l *Layout, unlinked []string, err error) {
 	if len(fs) > 0 {
 		l.Home = gen.FieldID(fs[0].X, fs[0].Y)
 	}
-	Bands(l, width, maxLevel, nil)
+	Bands(l, bc, nil)
 	if in.Naming != nil {
 		if err := nameTowns(l, in); err != nil {
 			return nil, nil, err

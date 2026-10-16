@@ -178,6 +178,9 @@ type Runtime struct {
 	// computing is set while a computed bonus runs: calls that change
 	// the game are refused (strategy section 5.3, rule 3).
 	computing bool
+	// spawnKnown checks the monster IDs of a spawn_table chain while it
+	// runs.
+	spawnKnown func(int64) bool
 	// group is the with_bonuses timer whose function runs now, or nil.
 	group *timer
 	// setups are the setup functions of item entry scripts, by
@@ -408,6 +411,7 @@ func (r *Runtime) init() error {
 		{"items_group", r.itemsGroup},
 		{"skills_id", r.skillsID},
 		{"monsters_id", r.monstersID},
+		{"spawn_known", r.spawnKnownCall},
 		{"random_integer", r.randomInteger},
 		{"random_chance", r.randomChance},
 		{"bonuses_add", r.bonusesAdd},

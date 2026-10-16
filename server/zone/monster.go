@@ -38,6 +38,11 @@ type Spawn struct {
 	// Script is the monster's AI entry script, as mod:path, or "". Its
 	// setup function runs once for each monster that spawns.
 	Script string
+	// Avoid are cells the spawn keeps clear: no monster of it appears
+	// within R cells of each, by the larger axis distance. A procedural
+	// world's stored spawns keep aggressive monsters off arrivals and
+	// bosses off warps to towns (decision 0042).
+	Avoid []Clear
 
 	// owner is the script context that spawned the monsters, or 0.
 	// noRespawn keeps dead monsters from coming back.
@@ -194,21 +199,34 @@ func (z *Zone) monsterSpawned(e *entity) {
 	}
 }
 
+// Clear is a cell a spawn keeps clear, R cells around.
+type Clear struct{ X, Y, R int }
+
+// cleared reports whether a cell is within a spawn's clear cells.
+func (s *Spawn) cleared(x, y int) bool {
+	for _, c := range s.Avoid {
+		if max(abs(x-c.X), abs(y-c.Y)) <= c.R {
+			return true
+		}
+	}
+	return false
+}
+
 // spawnCell picks a random walkable cell in a spawn's area, or anywhere
-// when the area is empty or full.
+// when the area is empty or full, outside the spawn's clear cells.
 func (z *Zone) spawnCell(s *Spawn) (int, int, bool) {
 	if s.X > 0 || s.Y > 0 {
 		for range 50 {
 			x := s.X + z.rand.IntN(2*s.W+1) - s.W
 			y := s.Y + z.rand.IntN(2*s.H+1) - s.H
-			if !z.grid.NoPass(x, y) {
+			if !z.grid.NoPass(x, y) && !s.cleared(x, y) {
 				return x, y, true
 			}
 		}
 	}
 	for range 1000 {
 		x, y := z.rand.IntN(z.grid.Width), z.rand.IntN(z.grid.Height)
-		if !z.grid.NoPass(x, y) {
+		if !z.grid.NoPass(x, y) && !s.cleared(x, y) {
 			return x, y, true
 		}
 	}

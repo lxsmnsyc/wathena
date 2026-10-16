@@ -240,6 +240,7 @@ Each limit has a range:
 | `mail.send`, `currencies.modify`, `shops.modify` | Needs the owner's approval. They send mail with items and zeny, change another mod's currencies, core's too, and change shops (review decision 30). |
 | `events.control` | Needs the owner's approval. It starts and stops world events at any time with `wa.world_events` (review decision 31). |
 | `player.expand_limits` | Needs the owner's approval. It raises and lowers a player's inventory, cart and storage slots with `player:expand`, within the ruleset's limits (review decision 32). |
+| `spawns.modify` | Needs the owner's approval. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -469,6 +470,45 @@ A mod may ship a home map in the map folder format (strategy section 8.12, [docs
 
 `mods/examples/home-village` is a sample with a home map and a naming style.
 
+### Spawn tags
+
+A procedural world picks each field's and dungeon floor's monsters once, when `wactl world new` makes it (strategy section 8.11, proposal 0002, review decision 44, decision 0042). It picks among the monsters with spawn tags, by biome, band and role, with the limits of section 8.11. Core's tags come from rAthena's spawn files: each map family's monsters weigh their share in its biome. A monster record sets or changes them with `spawn`:
+
+```yaml
+- name: example.mossy-fields:MOSS_PORING
+  sprite: PORING
+  level: 6
+  spawn:
+    biomes: {grassland: 1000, forest: 1000}
+    role: common
+    themes: [mossy]
+```
+
+- `biomes` maps biome names to weights from 1 to 1,000. The field biomes are `grassland`, `forest`, `desert`, `snow`, `swamp` and `beach`, and a dungeon floor's biome is its style's tileset: `cave`, `crypt`, `tower` or `ruins`. Core's weights are per 1,000 of a biome's monsters, so 1,000 makes a monster the likeliest of its biome.
+- `role` is `common`, `uncommon`, `plant`, `rare`, `mini_boss` or `field_boss`. Left out, it stays as it was, or is `uncommon`, or `mini_boss` or `field_boss` for a boss. A boss, mob_db's boss class or an MVP, is never `common` or `uncommon`: such a record is an error.
+- `themes` names spawn themes that raise the monster.
+- Each field given replaces the monster's: a record that sets `biomes` replaces all of them. A new mod monster has no tags until it sets them, so it never spawns on generated maps without them.
+- The level, race, element and size come from the monster's data. A level far from a map's band makes a monster unlikely there: within the band it weighs its full weight, and 4% less per level outside.
+- The world keeps its spawns. A mod added later changes only new worlds, and a removed mod's lines are left out, with a warning at each start.
+
+### Spawn themes: data/spawn_themes.yml
+
+A field or floor draws a theme with a chance of 1 in 3. The monsters that match it weigh `boost` percent of their weight there. Core has `undead`, `insect_swarm`, `wild_beasts`, `overgrown`, `demons`, `deep_water`, `constructs`, `embers` and `frost`.
+
+```yaml
+- name: mossy
+  biomes: [grassland, forest, swamp]
+  races: [plant]
+  elements: [earth]
+  boost: 300
+```
+
+- `biomes` are where the theme may apply. Left out, it applies everywhere.
+- A monster matches by `races` (names of `wa.races`), by `elements` (names of `wa.elements`), or by naming the theme in its `spawn.themes`, with or without the mod prefix.
+- `boost` is 100 to 1,000, 300 by default.
+
+`mods/examples/mossy-fields` is a sample with spawn tags, a theme and a `spawn_table` hook.
+
 ### Monsters: data/monsters.yml
 
 ```yaml
@@ -508,7 +548,8 @@ A mod may ship a home map in the map folder format (strategy section 8.12, [docs
 - `script` names the monster's AI script, which runs for each spawned monster (see "Monster AI", below).
 - `base_exp` and `job_exp` are scaled by the exp rates. `drops` is a list of `{item, rate}`, with rates per 10,000, at most 20. The drop rate settings apply to them as to core's. A drop can add `random_option_group`, a group of `data/random_option_groups.yml`: the dropped copy rolls its random options ("Random options" below). `mvp_drops` take it too.
 - `display_name` is the name players see. `id` cannot be set.
-- `monsters.id "example.halloween:PUMPKIN_PORING"` finds a mod's monster. Monsters appear on maps through scripts (`spawning.monsters`, below). There is no `data/spawns.yml` yet.
+- `spawn` sets the monster's spawn tags for procedural worlds ("Spawn tags", above).
+- `monsters.id "example.halloween:PUMPKIN_PORING"` finds a mod's monster. In a classic world, monsters appear on maps through scripts (`spawning.monsters`, below). There is no `data/spawns.yml` yet.
 
 ### World events: data/events.yml
 
@@ -1835,12 +1876,39 @@ end
 | `monster_target` | `choice`: `monster`, `candidates` (the units it may take), `current` (rAthena's choice, or nil), `reason` (`"aggressive"`, `"assist"`, `"hit"` or `"change"`) | One of `candidates`, or nil for none. Anything else counts as a failure of the hook. |
 | `item_roll` | `roll`: `item`, `name` (the roll), `min`, `max`, `default`, `source` (`{ kind = "drop", monster }`, `{ kind = "script" }` or `{ kind = "shop" }`) | The value, clamped to the roll's range. The innermost result is the server's roll ("Rolled item values" below). |
 | `chat` | `message`: `player`, `channel`, `text`, `to`, `map` ("Chat" below) | The text, or nil to stop the line. It runs after the server's chat filter. |
+| `spawn_table` | `map`, `spawns` and `next` ("The spawn_table hook" below) | The spawn list. |
 
 - Hooks run in a chain. Higher priority runs first; equal priorities run in the order they were added. `next(object)` returns the rest of the chain's result. The innermost result is rAthena's value.
 - To pass a changed object, pass a table with the same fields to `next`.
 - A hook only computes: a call that changes the game raises an error in it. A hook that fails is logged and left out.
 - Hooks run in the zone of the kill. A hook of a mod script runs in every zone. A hook of an event run changes kills on the event's map, until the run ends.
-- `hooks.on` needs `rules.override`, which the server owner approves and the server logs at each start. It returns a handle with `remove()`.
+- `hooks.on` needs `rules.override`, which the server owner approves and the server logs at each start, and `spawn_table` needs `spawns.modify` instead. It returns a handle with `remove()`.
+
+#### The spawn_table hook
+
+```lua
+local hooks = require "wa.hooks"
+local monsters = require "wa.monsters"
+
+local MOSS_PORING = monsters.id "example.mossy-fields:MOSS_PORING"
+
+return function()
+  hooks.on("spawn_table", function(map, spawns, next)
+    local list = next(spawns)
+    if map.kind == "field" and map.band[1] < 20 then
+      table.insert(list, { monster = MOSS_PORING, count = 12, respawn = 5000, role = "common" })
+    end
+    return list
+  end)
+end
+```
+
+- It runs only when `wactl world new` makes a procedural world, once per field and dungeon floor, in a Lua state that ran the mods' entry scripts on no map. A server never runs it, since a made world keeps its spawns. In `wactl mod test`, it runs when a case first runs on a generated field or floor.
+- `map` is read-only: `id`, `kind` (`"field"` or `"dungeon"`), `biome`, `band` (`{ lowest, highest }`) and `features` (`water`, `clearing`, `room` and `boss_room`).
+- `spawns` is a copy the hook may change: a list of at most 64 `{ monster, count, respawn, role, area }`. `monster` is from `monsters.id`, `count` 1 to 1,000, `respawn` the milliseconds before a dead monster comes back, 1,000 or more, `role` a role, and `area` `{ x, y, w, h }`, within `w` and `h` cells of `x` and `y`, or nil for the whole map.
+- `next(spawns)` runs the rest of the chain on a list, the hook's own when left out, and returns its list. The innermost list is the one the world drew.
+- A list with a bad entry fails the hook, which is left out. The server keeps its own rules over the result: aggressive monsters stay 15 cells from arrivals and bosses 30 cells from warps to towns, and a boss as `common` or `uncommon` is left out with a warning.
+- It needs `spawns.modify`, and a mod context.
 
 ### Status effects
 

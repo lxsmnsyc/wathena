@@ -265,23 +265,24 @@ func TestAtlas(t *testing.T) {
 	}
 }
 
-// TestBands: bands rise with distance to the farthest, floors build on
-// their entrance by their step, and stop at the top band.
+// TestBands: the home area and the nearest fields are levels 1 to 10,
+// each further warp adds 8 levels, floors build on their entrance by
+// their step, and bands stop at the top band (review decision 44).
 func TestBands(t *testing.T) {
 	l := townLayout(3)
 	l.Maps = append(l.Maps, Map{ID: gen.DungeonMapID("d", 1), Kind: gen.KindDungeon, Dungeon: "d", Floor: 1, Floors: 2, Record: "deep"},
 		Map{ID: gen.DungeonMapID("d", 2), Kind: gen.KindDungeon, Dungeon: "d", Floor: 2, Floors: 2, Record: "deep"})
 	l.Links = append(l.Links, Link{End{gen.FieldID(2, 0), FieldPortal(gen.EdgeNorth), 0}, End{gen.DungeonMapID("d", 1), TagEntrance, 0}},
 		Link{End{gen.DungeonMapID("d", 1), TagExit, 0}, End{gen.DungeonMapID("d", 2), TagEntrance, 0}})
-	Bands(l, 10, 99, []StyleRecord{{Name: "deep", Style: gen.DungeonStyle{LevelStep: 50}}})
+	Bands(l, BandConfig{Width: 10, Step: 8, MaxLevel: 99}, []StyleRecord{{Name: "deep", Style: gen.DungeonStyle{LevelStep: 80}}})
 	got := map[string][2]int{}
 	for _, m := range l.Maps {
 		got[m.ID] = m.Levels
 	}
 	// t1 0, field 0 1, field 1 2, field 2 3, t3 4 warps away.
 	for id, want := range map[string][2]int{
-		"gen:town:t1": {1, 10}, gen.FieldID(0, 0): {23, 32}, gen.FieldID(2, 0): {67, 76}, "gen:town:t3": {90, 99},
-		gen.DungeonMapID("d", 1): {67, 76}, gen.DungeonMapID("d", 2): {90, 99},
+		"gen:town:t1": {1, 10}, gen.FieldID(0, 0): {1, 10}, gen.FieldID(1, 0): {9, 18}, gen.FieldID(2, 0): {17, 26}, "gen:town:t3": {25, 34},
+		gen.DungeonMapID("d", 1): {17, 26}, gen.DungeonMapID("d", 2): {90, 99},
 	} {
 		if got[id] != want {
 			t.Errorf("%s: %v, want %v", id, got[id], want)

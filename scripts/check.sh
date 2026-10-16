@@ -36,12 +36,13 @@
 #             procedural tag, and path.wasm and gen.wasm
 #   gen       the map generator's golden checksums, with the WMAP
 #             hashes of generated fields, dungeon floors and towns, and
-#             their places' hashes, and the golden world layouts, in Go
+#             their places' hashes, the golden world layouts and
+#             spawn lists, in Go
 #             on this machine's
 #             architecture and on the other one (amd64 under Rosetta on
 #             an arm64 Mac), and the maps in gen.wasm in Node. The
 #             browsers step checks the maps in Chromium, Firefox and
-#             WebKit. Only the server makes layouts.
+#             WebKit. Only the server makes layouts and spawns.
 #   e2e       the e2e package alone, with -race, with the phase 5
 #             exit check for 30 minutes (WATHENA_EXIT_MINUTES=30,
 #             e2e/README.md), and prints its numbers. test runs
@@ -396,6 +397,9 @@ step_tinygo() {
 # layout_tests are the world layout's golden layouts and rules (decision
 # 0041), which only the server runs, so no client checks them.
 layout_tests='^TestGoldenLayout$|^TestLayoutRules$|^TestLayoutDeterministic$'
+# spawn_tests are the golden spawn lists of new worlds (decision 0042),
+# which only wactl picks.
+spawn_tests='^TestGoldenSpawns$|^TestSpawnDeterministic$'
 gen_tests='^TestGolden$|^TestGridV1Order$|^TestFieldV2$|^TestFieldV2Retries$|^TestF32Bits$|^TestDungeonV3$|^TestTownV3$|^TestFieldV3Places$|^TestMapV3Retries$'
 
 step_gen() {
@@ -404,6 +408,7 @@ step_gen() {
 	echo "== Go on $(go env GOOS)/$host"
 	go test -count=1 -tags procedural -run "$gen_tests" -v ./shared/gen
 	go test -count=1 -tags procedural -run "$layout_tests" -v ./server/layout
+	go test -count=1 -tags procedural -run "$spawn_tests" -v ./server/spawns
 	case "$host" in
 	arm64) other=amd64 ;;
 	amd64) other=arm64 ;;
@@ -414,12 +419,14 @@ step_gen() {
 		bin="$work/gen-$other.test"
 		GOARCH=$other go test -c -tags procedural -o "$bin" ./shared/gen
 		GOARCH=$other go test -c -tags procedural -o "$work/layout-$other.test" ./server/layout
+		GOARCH=$other go test -c -tags procedural -o "$work/spawns-$other.test" ./server/spawns
 		if [ "$(uname -s)" = Darwin ] && [ "$other" = amd64 ]; then
 			runner=(arch -x86_64)
 		fi
 		if ${runner[@]+"${runner[@]}"} "$bin" -test.list XXX >/dev/null 2>&1; then
 			(cd shared/gen && ${runner[@]+"${runner[@]}"} "$bin" -test.count=1 -test.run "$gen_tests" -test.v)
 			(cd server/layout && ${runner[@]+"${runner[@]}"} "$work/layout-$other.test" -test.count=1 -test.run "$layout_tests" -test.v)
+			(cd server/spawns && ${runner[@]+"${runner[@]}"} "$work/spawns-$other.test" -test.count=1 -test.run "$spawn_tests" -test.v)
 		elif [ "$(uname -s)" = Darwin ]; then
 			echo "part skipped: the $other test binary does not run; an arm64 Mac needs Rosetta (softwareupdate --install-rosetta)"
 		else

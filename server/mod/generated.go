@@ -10,7 +10,12 @@ package mod
 // NamingStyleKind is data/naming_styles.yml (review decision 43): the
 // naming styles of town names, one per biome. server/layout reads the
 // fields.
+//
+// SpawnThemeKind is data/spawn_themes.yml (review decision 44): the
+// spawn themes that raise monsters' weights on generated maps.
+// server/spawns reads the fields.
 var (
+	SpawnThemeKind   = Kind{Name: "spawn themes", File: "data/spawn_themes.yml", CoreNames: true, LocalNames: true}
 	NamingStyleKind  = Kind{Name: "naming styles", File: "data/naming_styles.yml", CoreNames: true, LocalNames: true}
 	DungeonStyleKind = Kind{Name: "dungeon styles", File: "data/dungeon_styles.yml", CoreNames: true, LocalNames: true}
 	TownTemplateKind = Kind{Name: "town templates", File: "data/town_templates.yml", CoreNames: true, LocalNames: true}

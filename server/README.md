@@ -230,7 +230,7 @@ A procedural world on generator 3 also runs towns and dungeons (docs/decisions/0
 
 A procedural world has a layout: its map graph, town names and level bands (docs/decisions/0041-world-layout.md, docs/specs/generator-v3.md, "World layout"). `wactl world new --mode procedural --config waserver.yml` makes it from the mods that config loads and `procedural.layout`, and the database keeps it (migration 00031). `waserver` runs it:
 
-- Every map of the layout runs in a zone: by default 24 fields in a 6 × 4 grid, 5 towns, 6 dungeons with their floors, and a mod's home map. They generate at start, about 0.2 s for the default layout on an 8-core Mac.
+- Every map of the layout runs in a zone: by default 30 fields in a 6 × 5 grid, 5 towns, 6 dungeons with their floors, and a mod's home map. They generate at start, about 0.2 s for the default layout on an 8-core Mac.
 - A town or a floor generates from the params the layout keeps, so a mod that changes a template does not change a made world. A home map comes from its mod at each start: removing the mod stops the start with a message.
 - Warps stand at both ends of each link, on the place it names, and a player arrives on a walkable cell near the other end that no warp covers.
 - New characters start on the home area: the home map's `start` place, or the first town's square. That is their save point until they save elsewhere.
@@ -246,21 +246,46 @@ A procedural world has a layout: its map graph, town names and level bands (docs
 procedural:
   field_size: 300
   layout:
-    grid: [6, 4]           # fields, width by height
+    grid: [6, 5]           # fields, width by height
     towns: 5
     dungeons: 6
-    band_width: 10         # levels in a map's band
+    band_width: 10         # levels in a map's band; the home area is 1 to 10
+    band_step: 8           # levels each warp from the home area adds
     max_level: 99          # the top of the highest band
     home: example.home-village:village   # or none; left out, the only home map of the mods
   teleport_base: 500
   teleport_step: 100
 ```
 
-`wactl world new` reads `procedural.layout`, `procedural.field_size` and the `mods` section. `waserver` reads it only for `--dev --layout`, which builds a whole layout from `--seed` without a world row, for development:
+Bands follow review decision 44: the home area and its nearest fields are levels 1 to 10, and each further warp adds `band_step` levels, up to 90 to 99. Every band of 10 levels up to 99 needs 3 fields, or the layout tries again, so a layout grows its borders as a tree in layers from the first town (docs/specs/generator-v3.md, "World layout"). A grid of fewer than 30 fields skips that check.
+
+`wactl world new` reads `procedural.layout`, `procedural.field_size`, `spawns` and the `mods` section. `waserver` reads `procedural.layout` only for `--dev --layout`, which builds a whole layout from `--seed` without a world row, for development:
 
 ```text
 /tmp/waserver --dev --assets /path/to/build --layout --mods /path/to/mods --field-size 128
 ```
+
+### Spawns
+
+A procedural world's fields and dungeon floors spawn the lists that `wactl world new` picked when it made the world (docs/decisions/0042-spawns.md, docs/specs/generator-v3.md, "Spawns"):
+
+- `wactl world new` holds the world's seed. It picks each list from the seed's secret branch, with the monsters' spawn tags and the spawn themes of the loaded mods, runs the mods' `spawn_table` hooks on them, and writes them to `world_spawns` (migration 00032) with the layout. It loads the game data for this, which takes about 10 seconds.
+- `waserver` runs as the game role, which reads `world.public_node` and `world_spawns` but never `world.seed`, so it cannot pick or predict spawns. At start it makes each stored line a zone spawn with the loaded monster's stats, by name, and logs `world spawns loaded`. A line whose monster no longer loads is left out with a warning.
+- Aggressive monsters never spawn within 15 cells of an arrival, and bosses never within 30 cells of a warp to a town, also when they come back.
+- Dev worlds without a database have no spawns.
+
+The settings, in `waserver.yml`, which `wactl world new` reads and `waserver` checks:
+
+```yaml
+spawns:
+  town_field_boss_chance: 50   # percent of fields next to a town with a boss
+  town_field_boss_role: mini_boss   # or field_boss for stronger bosses
+  density:
+    field: 0     # monsters per 10,000 walkable cells; 0 is rAthena's, 41
+    dungeon: 0   # 0 is rAthena's, 48
+```
+
+`go run ./tools/spawntags` writes core's spawn tags, `server/spawns/core/data/spawn_tags.yml`, from rAthena's spawn files in `reference/rathena`. `go run ./tools/spawntags -check` fails when the file is not current.
 
 ### Running with accounts
 

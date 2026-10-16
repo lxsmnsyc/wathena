@@ -11,6 +11,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mapfolder"
 	"github.com/lxsmnsyc/wathena/server/places"
+	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -27,7 +28,9 @@ import (
 //
 // all from the secret TestWorldLabel, joined as waserver --dev joins them
 // (layout.Dev), with town names from the naming styles.
-// NPC records with a place stand at their places.
+// NPC records with a place stand at their places. Each field and floor
+// has the spawn list of the test world's secret branch, which the mods'
+// spawn_table hooks change when a case first runs on it (decision 0042).
 
 // TestWorldLabel is the world secret of the test worlds' generated maps.
 // It is public on purpose, so every run makes the same maps.
@@ -44,6 +47,10 @@ type generated struct {
 	npcs   map[string][]zone.NPC
 	// atlas is the test world's layout, for wa.towns.
 	atlas *layout.Atlas
+	// spawnMaps and planned are each field's and dungeon floor's spawn
+	// inputs and list, by map ID, before the hooks (decision 0042).
+	spawnMaps map[string]spawns.Map
+	planned   map[string][]spawns.Spawn
 }
 
 type genResult struct {
@@ -109,7 +116,23 @@ func (l *Loaded) makeGenerated() (*generated, error) {
 		return nil, err
 	}
 	idx := set.Places(warps)
-	out := &generated{set: set, places: idx, warps: warps, npcs: map[string][]zone.NPC{}, atlas: layout.NewAtlas(lay, layout.AtlasOptions{})}
+	out := &generated{set: set, places: idx, warps: warps, npcs: map[string][]zone.NPC{}, atlas: layout.NewAtlas(lay, layout.AtlasOptions{}),
+		spawnMaps: map[string]spawns.Map{}, planned: map[string][]spawns.Spawn{}}
+	sm, err := set.SpawnMaps(lay, warps)
+	if err != nil {
+		return nil, err
+	}
+	core, err := spawns.LoadCore()
+	if err != nil {
+		return nil, err
+	}
+	st, err := spawns.Settings{}.Resolve(core.Densities)
+	if err != nil {
+		return nil, err
+	}
+	for i, p := range spawns.Plan(spawns.SecretBranch(root), sm, spawns.NewPool(l.SpawnMonsters, l.SpawnThemes), st) {
+		out.spawnMaps[p.Map], out.planned[p.Map] = sm[i], p.Spawns
+	}
 	for _, pn := range l.PlaceNPCs {
 		for _, i := range idx.Find(pn.Place.Scope, pn.Place.Tag) {
 			p := idx.Place(i)

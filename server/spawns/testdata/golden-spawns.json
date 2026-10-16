@@ -1,0 +1,560 @@
+[
+  {
+    "secret": "golden-spawns-1",
+    "width": 6,
+    "height": 5,
+    "towns": 5,
+    "dungeons": 6,
+    "field_size": 96,
+    "checksum": "eadca4a237a57b224e7f588e13d2ea401ae8c0213b5c54b03eae0e52500c434a",
+    "maps": {
+      "gen:dungeon:cave-2:1": [
+        "common DRAINLIAR x8 5000ms area=0,0,0,0 avoid=[115,3,15 31,73,15]",
+        "common VADON x8 5000ms area=0,0,0,0 avoid=[]",
+        "common MEGALODON x5 5000ms area=0,0,0,0 avoid=[]",
+        "common SKEL_WORKER x5 5000ms area=0,0,0,0 avoid=[115,3,15 31,73,15]",
+        "common WHISPER x5 5000ms area=0,0,0,0 avoid=[115,3,15 31,73,15]",
+        "common KUKRE x3 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon CHEPET x18 12000ms area=0,0,0,0 avoid=[115,3,15 31,73,15]"
+      ],
+      "gen:dungeon:cave-2:2": [
+        "common CORNUTUS x9 5000ms area=0,0,0,0 avoid=[]",
+        "common OBEAUNE x8 5000ms area=0,0,0,0 avoid=[27,13,15 6,95,15]",
+        "common DRAINLIAR x7 5000ms area=0,0,0,0 avoid=[27,13,15 6,95,15]",
+        "common MYST x7 5000ms area=0,0,0,0 avoid=[27,13,15 6,95,15]",
+        "common STEEL_CHONCHON x7 5000ms area=0,0,0,0 avoid=[]",
+        "common ARCHER_SKELETON x3 5000ms area=0,0,0,0 avoid=[27,13,15 6,95,15]",
+        "common ORC_SKELETON x3 5000ms area=0,0,0,0 avoid=[27,13,15 6,95,15]"
+      ],
+      "gen:dungeon:cave-2:3": [
+        "common EGGYRA x9 5000ms area=0,0,0,0 avoid=[]",
+        "common MIMIC x8 5000ms area=0,0,0,0 avoid=[11,111,15]",
+        "common MUNAK x8 5000ms area=0,0,0,0 avoid=[11,111,15]",
+        "common PHEN x8 5000ms area=0,0,0,0 avoid=[]",
+        "common MARC x6 5000ms area=0,0,0,0 avoid=[11,111,15]",
+        "common BON_GUN x3 5000ms area=0,0,0,0 avoid=[11,111,15]",
+        "common OBEAUNE x3 5000ms area=0,0,0,0 avoid=[11,111,15]",
+        "common ORC_ZOMBIE x3 5000ms area=0,0,0,0 avoid=[11,111,15]",
+        "field_boss PHREEONI x1 6350000ms area=90,114,3,3 avoid=[11,111,15]"
+      ],
+      "gen:dungeon:cave:1": [
+        "common SOLDIER_SKELETON x9 5000ms area=0,0,0,0 avoid=[109,4,15 37,89,15]",
+        "common COOKIE x6 5000ms area=0,0,0,0 avoid=[]",
+        "common CRUISER x5 5000ms area=0,0,0,0 avoid=[109,4,15 37,89,15]",
+        "common MARINA x5 5000ms area=0,0,0,0 avoid=[]",
+        "common PLANKTON x4 5000ms area=0,0,0,0 avoid=[]",
+        "common COOKIE_XMAS x2 5000ms area=0,0,0,0 avoid=[]",
+        "common MARTIN x2 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon HYDRA x14 32000ms area=0,0,0,0 avoid=[109,4,15 37,89,15]"
+      ],
+      "gen:dungeon:cave:2": [
+        "common MYSTCASE x11 5000ms area=0,0,0,0 avoid=[]",
+        "common MEGALODON x7 5000ms area=0,0,0,0 avoid=[]",
+        "common PLANKTON x7 5000ms area=0,0,0,0 avoid=[]",
+        "common MARTIN x5 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C2_MARTIN x13 55000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:dungeon:cave:3": [
+        "common SKEL_WORKER x10 5000ms area=0,0,0,0 avoid=[111,25,15]",
+        "common ARCHER_SKELETON x9 5000ms area=0,0,0,0 avoid=[111,25,15]",
+        "common CORNUTUS x8 5000ms area=0,0,0,0 avoid=[]",
+        "common DRAINLIAR x6 5000ms area=0,0,0,0 avoid=[111,25,15]",
+        "common PHEN x6 5000ms area=0,0,0,0 avoid=[]",
+        "common MEGALODON x4 5000ms area=0,0,0,0 avoid=[]",
+        "common WHISPER x4 5000ms area=0,0,0,0 avoid=[111,25,15]",
+        "field_boss GOLDEN_BUG x1 4808000ms area=6,116,3,3 avoid=[]"
+      ],
+      "gen:dungeon:crypt:1": [
+        "common SKEL_PRISONER x4 5000ms area=0,0,0,0 avoid=[115,5,15 55,103,15]",
+        "common FREEZER x2 5000ms area=0,0,0,0 avoid=[115,5,15 55,103,15]",
+        "common SHINOBI x2 5000ms area=0,0,0,0 avoid=[115,5,15 55,103,15]",
+        "common SOLIDER x2 5000ms area=0,0,0,0 avoid=[]",
+        "common DARK_PRIEST x1 5000ms area=0,0,0,0 avoid=[115,5,15 55,103,15]",
+        "common ZOMBIE_PRISONER x1 5000ms area=0,0,0,0 avoid=[115,5,15 55,103,15]"
+      ],
+      "gen:dungeon:crypt:2": [
+        "common FREEZER x5 5000ms area=0,0,0,0 avoid=[55,93,15 19,31,15]",
+        "common DARK_PRIEST x1 5000ms area=0,0,0,0 avoid=[55,93,15 19,31,15]",
+        "common DEVIRUCHI x1 5000ms area=0,0,0,0 avoid=[55,93,15 19,31,15]",
+        "common INJUSTICE x1 5000ms area=0,0,0,0 avoid=[55,93,15 19,31,15]",
+        "common SOLIDER x1 5000ms area=0,0,0,0 avoid=[]",
+        "common TENGU x1 5000ms area=0,0,0,0 avoid=[55,93,15 19,31,15]",
+        "uncommon C4_DARK_PRIEST x4 31000ms area=0,0,0,0 avoid=[55,93,15 19,31,15]"
+      ],
+      "gen:dungeon:crypt:3": [
+        "common DARK_PRIEST x4 5000ms area=0,0,0,0 avoid=[35,79,15]",
+        "common INJUSTICE x3 5000ms area=0,0,0,0 avoid=[35,79,15]",
+        "common TENGU x3 5000ms area=0,0,0,0 avoid=[35,79,15]",
+        "common FREEZER x2 5000ms area=0,0,0,0 avoid=[35,79,15]",
+        "common SKEL_PRISONER x2 5000ms area=0,0,0,0 avoid=[35,79,15]",
+        "field_boss ATROCE x1 7188000ms area=14,20,3,3 avoid=[35,79,15]"
+      ],
+      "gen:dungeon:ruins-2:1": [
+        "common KUKRE x5 5000ms area=0,0,0,0 avoid=[]",
+        "common MIMIC x4 5000ms area=0,0,0,0 avoid=[129,29,15 71,121,15]",
+        "common PIRATE_SKEL x4 5000ms area=0,0,0,0 avoid=[129,29,15 71,121,15]",
+        "common WHISPER x4 5000ms area=0,0,0,0 avoid=[129,29,15 71,121,15]",
+        "uncommon C1_SAILOR_SKELETON x8 48000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:dungeon:ruins-2:2": [
+        "common DRILLER x6 5000ms area=0,0,0,0 avoid=[19,107,15]",
+        "common GRIZZLY x5 5000ms area=0,0,0,0 avoid=[19,107,15]",
+        "common HORONG x5 5000ms area=0,0,0,0 avoid=[19,107,15]",
+        "common GOLEM x2 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_DUSTINESS x8 43000ms area=0,0,0,0 avoid=[]",
+        "field_boss GOLDEN_BUG x1 3628000ms area=142,152,3,3 avoid=[]"
+      ],
+      "gen:dungeon:ruins:1": [
+        "common PIRATE_SKEL x11 5000ms area=0,0,0,0 avoid=[113,25,15 127,135,15]",
+        "common KUKRE x5 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C1_SAILOR_SKELETON x5 30000ms area=0,0,0,0 avoid=[]",
+        "uncommon HYDRA x2 5000ms area=0,0,0,0 avoid=[113,25,15 127,135,15]",
+        "uncommon WEAK_SKEL_SOLDIER x2 47000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:dungeon:ruins:2": [
+        "common KUKRE x6 5000ms area=0,0,0,0 avoid=[]",
+        "common PIRATE_SKEL x6 5000ms area=0,0,0,0 avoid=[133,61,15]",
+        "common MIMIC x5 5000ms area=0,0,0,0 avoid=[133,61,15]",
+        "uncommon C1_SAILOR_SKELETON x5 20000ms area=0,0,0,0 avoid=[]",
+        "uncommon HYDRA x3 25000ms area=0,0,0,0 avoid=[133,61,15]",
+        "field_boss DRACULA x1 6053000ms area=16,132,3,3 avoid=[133,61,15]"
+      ],
+      "gen:dungeon:tower:1": [
+        "common COCO x3 5000ms area=0,0,0,0 avoid=[]",
+        "common COOKIE x1 5000ms area=0,0,0,0 avoid=[]",
+        "common MYSTCASE x1 5000ms area=0,0,0,0 avoid=[]",
+        "common VITATA x1 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_MARIN x4 12000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:dungeon:tower:2": [
+        "common MARIN x3 5000ms area=0,0,0,0 avoid=[]",
+        "common MEGALODON x2 5000ms area=0,0,0,0 avoid=[]",
+        "common THARA_FROG x2 5000ms area=0,0,0,0 avoid=[]",
+        "common YOYO x2 5000ms area=0,0,0,0 avoid=[]",
+        "common CRAB x1 5000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:dungeon:tower:3": [
+        "common CORNUTUS x2 5000ms area=0,0,0,0 avoid=[]",
+        "common GIEARTH x2 5000ms area=0,0,0,0 avoid=[]",
+        "common DRAINLIAR x1 5000ms area=0,0,0,0 avoid=[7,19,15 65,67,15]",
+        "common ORK_WARRIOR x1 5000ms area=0,0,0,0 avoid=[7,19,15 65,67,15]",
+        "uncommon C2_STEEL_CHONCHON x4 60000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:dungeon:tower:4": [
+        "common WHISPER x2 5000ms area=0,0,0,0 avoid=[11,53,15 43,13,15]",
+        "common WOLF x2 5000ms area=0,0,0,0 avoid=[]",
+        "common DRAINLIAR x1 5000ms area=0,0,0,0 avoid=[11,53,15 43,13,15]",
+        "common MAGNOLIA x1 5000ms area=0,0,0,0 avoid=[]",
+        "common PIRATE_SKEL x1 5000ms area=0,0,0,0 avoid=[11,53,15 43,13,15]",
+        "uncommon C5_ORC_ZOMBIE x5 35000ms area=0,0,0,0 avoid=[11,53,15 43,13,15]"
+      ],
+      "gen:dungeon:tower:5": [
+        "common ORC_SKELETON x3 5000ms area=0,0,0,0 avoid=[51,19,15]",
+        "common SHELLFISH x3 5000ms area=0,0,0,0 avoid=[]",
+        "common MIMIC x2 5000ms area=0,0,0,0 avoid=[51,19,15]",
+        "common GOBLIN_ARCHER x1 5000ms area=0,0,0,0 avoid=[51,19,15]",
+        "uncommon C1_METALLER x3 12000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_KIND_OF_BEETLE x1 14000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_MINOROUS x1 28000ms area=0,0,0,0 avoid=[51,19,15]",
+        "field_boss ORC_LORD x1 6606000ms area=22,64,3,3 avoid=[51,19,15]"
+      ],
+      "gen:field:0:0": [
+        "common FABRE x7 5000ms area=0,0,0,0 avoid=[]",
+        "common LUNATIC x6 5000ms area=0,0,0,0 avoid=[]",
+        "common LITTLE_PORING x5 5000ms area=0,0,0,0 avoid=[]",
+        "common PORING x5 5000ms area=0,0,0,0 avoid=[]",
+        "plant GREEN_PLANT x4 370000ms area=32,74,8,8 avoid=[]",
+        "plant YELLOW_PLANT x2 320000ms area=32,74,8,8 avoid=[]",
+        "mini_boss TOAD x1 2659000ms area=0,0,0,0 avoid=[16,88,15 88,35,15 21,7,15 21,4,30]"
+      ],
+      "gen:field:0:1": [
+        "common DROPS x8 5000ms area=0,0,0,0 avoid=[]",
+        "common PICKY x8 5000ms area=0,0,0,0 avoid=[]",
+        "common CHONCHON x7 5000ms area=0,0,0,0 avoid=[]",
+        "common PICKY_ x6 5000ms area=0,0,0,0 avoid=[]",
+        "plant GREEN_PLANT x2 613000ms area=25,63,8,8 avoid=[]",
+        "plant PECOPECO_EGG x2 1676000ms area=25,63,8,8 avoid=[]",
+        "plant YELLOW_PLANT x2 1016000ms area=25,63,8,8 avoid=[]",
+        "mini_boss TOAD x1 3286000ms area=0,0,0,0 avoid=[56,7,15 88,24,15 68,88,15 7,73,15 68,91,30 4,73,30]"
+      ],
+      "gen:field:0:2": [
+        "common DUSTINESS x8 5000ms area=0,0,0,0 avoid=[]",
+        "common GOBLIN_5 x5 5000ms area=0,0,0,0 avoid=[44,88,15 88,43,15]",
+        "common METALLER x5 5000ms area=0,0,0,0 avoid=[]",
+        "common GOBLIN_ARCHER x4 5000ms area=0,0,0,0 avoid=[44,88,15 88,43,15]",
+        "common MAGNOLIA x3 5000ms area=0,0,0,0 avoid=[]",
+        "common MANTIS x3 5000ms area=0,0,0,0 avoid=[44,88,15 88,43,15]",
+        "rare PANZER_GOBLIN x2 3284000ms area=0,0,0,0 avoid=[44,88,15 88,43,15]"
+      ],
+      "gen:field:0:3": [
+        "common SIDE_WINDER x8 5000ms area=0,0,0,0 avoid=[25,7,15 46,88,15]",
+        "common BABY_LEOPARD x5 5000ms area=0,0,0,0 avoid=[25,7,15 46,88,15]",
+        "common RICE_CAKE_BOY x4 5000ms area=0,0,0,0 avoid=[]",
+        "common GOLEM x2 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_RICE_CAKE_BOY x10 7000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:field:0:4": [
+        "common RIDEWORD x9 5000ms area=0,0,0,0 avoid=[34,7,15 88,28,15]",
+        "common COMODO x5 5000ms area=0,0,0,0 avoid=[34,7,15 88,28,15]",
+        "common PASANA x2 5000ms area=0,0,0,0 avoid=[34,7,15 88,28,15]",
+        "common WRAITH x2 5000ms area=0,0,0,0 avoid=[34,7,15 88,28,15]",
+        "uncommon C3_CLOCK x4 40000ms area=0,0,0,0 avoid=[]",
+        "uncommon C2_IARA x3 42000ms area=0,0,0,0 avoid=[]",
+        "uncommon C1_GEOGRAPHER x2 34000ms area=0,0,0,0 avoid=[34,7,15 88,28,15]",
+        "uncommon C1_PIRANHA x1 40000ms area=0,0,0,0 avoid=[34,7,15 88,28,15]"
+      ],
+      "gen:field:1:0": [
+        "common LUNATIC x5 5000ms area=0,0,0,0 avoid=[]",
+        "common LITTLE_PORING x4 5000ms area=0,0,0,0 avoid=[]",
+        "common FABRE x3 5000ms area=0,0,0,0 avoid=[]",
+        "common PORING x2 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C1_PORING x8 14000ms area=0,0,0,0 avoid=[]",
+        "plant BLUE_PLANT x3 757000ms area=64,89,8,8 avoid=[]",
+        "plant RED_PLANT x3 1485000ms area=10,3,8,8 avoid=[]"
+      ],
+      "gen:field:1:1": [
+        "common ROCKER x6 5000ms area=0,0,0,0 avoid=[]",
+        "common HORNET x5 5000ms area=0,0,0,0 avoid=[]",
+        "common RODA_FROG x5 5000ms area=0,0,0,0 avoid=[]",
+        "common SAVAGE_BABE x3 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_RODA_FROG x4 8000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_ROCKER x4 33000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_HORNET x2 52000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:field:1:2": [
+        "common GOBLIN_ARCHER x9 5000ms area=0,0,0,0 avoid=[67,7,15 7,60,15 88,35,15]",
+        "common SHELLFISH x8 5000ms area=0,0,0,0 avoid=[]",
+        "common GOBLIN_5 x4 5000ms area=0,0,0,0 avoid=[67,7,15 7,60,15 88,35,15]",
+        "common MAGNOLIA x4 5000ms area=0,0,0,0 avoid=[]",
+        "common METALLER x4 5000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:field:1:3": [
+        "common BREEZE x4 5000ms area=0,0,0,0 avoid=[62,7,15 47,88,15 88,59,15]",
+        "common DEMON_PUNGUS x4 5000ms area=0,0,0,0 avoid=[62,7,15 47,88,15 88,59,15]",
+        "common NOVUS x4 5000ms area=0,0,0,0 avoid=[62,7,15 47,88,15 88,59,15]",
+        "common TEDDY_BEAR x4 5000ms area=0,0,0,0 avoid=[62,7,15 47,88,15 88,59,15]",
+        "common PITMAN x3 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_NOVUS x6 7000ms area=0,0,0,0 avoid=[62,7,15 47,88,15 88,59,15]",
+        "uncommon C3_UNGOLIANT x4 35000ms area=0,0,0,0 avoid=[62,7,15 47,88,15 88,59,15]",
+        "uncommon C4_BREEZE x2 30000ms area=0,0,0,0 avoid=[62,7,15 47,88,15 88,59,15]"
+      ],
+      "gen:field:1:4": [
+        "common BATHORY x6 5000ms area=0,0,0,0 avoid=[7,51,15 49,7,15]",
+        "common PORCELLIO x6 5000ms area=0,0,0,0 avoid=[]",
+        "common JOKER x4 5000ms area=0,0,0,0 avoid=[7,51,15 49,7,15]",
+        "common NOXIOUS x4 5000ms area=0,0,0,0 avoid=[7,51,15 49,7,15]",
+        "uncommon C2_METALING x5 55000ms area=0,0,0,0 avoid=[]",
+        "uncommon C2_PORCELLIO x2 45000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_NOVUS x2 46000ms area=0,0,0,0 avoid=[7,51,15 49,7,15]"
+      ],
+      "gen:field:2:0": [
+        "common ROCKER x7 5000ms area=0,0,0,0 avoid=[]",
+        "common RODA_FROG x5 5000ms area=0,0,0,0 avoid=[]",
+        "common SAVAGE_BABE x5 5000ms area=0,0,0,0 avoid=[]",
+        "common HORNET x4 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_RODA_FROG x3 33000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_HORNET x3 30000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_ROCKER x2 18000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:field:2:1": [
+        "common CARAMEL x6 5000ms area=0,0,0,0 avoid=[]",
+        "common CREAMY x3 5000ms area=0,0,0,0 avoid=[]",
+        "common WORM_TAIL x3 5000ms area=0,0,0,0 avoid=[]",
+        "common POISON_SPORE x2 5000ms area=0,0,0,0 avoid=[7,24,15 88,49,15 76,7,15]",
+        "common SPORE x2 5000ms area=0,0,0,0 avoid=[]",
+        "common SNAKE x1 5000ms area=0,0,0,0 avoid=[]",
+        "common STAINER x1 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C2_POISON_SPORE x8 47000ms area=0,0,0,0 avoid=[7,24,15 88,49,15 76,7,15]"
+      ],
+      "gen:field:2:2": [
+        "common GOBLIN_2 x5 5000ms area=0,0,0,0 avoid=[7,42,15 88,23,15]",
+        "common GOBLIN_1 x3 5000ms area=0,0,0,0 avoid=[7,42,15 88,23,15]",
+        "common ARGOS x2 5000ms area=0,0,0,0 avoid=[7,42,15 88,23,15]",
+        "common GOBLIN_4 x2 5000ms area=0,0,0,0 avoid=[7,42,15 88,23,15]",
+        "common ORC_LADY x2 5000ms area=0,0,0,0 avoid=[7,42,15 88,23,15]",
+        "common GOBLIN_3 x1 5000ms area=0,0,0,0 avoid=[7,42,15 88,23,15]",
+        "common ORK_WARRIOR x1 5000ms area=0,0,0,0 avoid=[7,42,15 88,23,15]",
+        "uncommon C4_ARGOS x8 30000ms area=0,0,0,0 avoid=[7,42,15 88,23,15]"
+      ],
+      "gen:field:2:3": [
+        "common MIYABI_NINGYO x9 5000ms area=0,0,0,0 avoid=[]",
+        "common PETIT x4 5000ms area=0,0,0,0 avoid=[7,20,15 45,88,15 88,64,15]",
+        "common POISON_TOAD x3 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C1_PETIT x4 21000ms area=0,0,0,0 avoid=[7,20,15 45,88,15 88,64,15]",
+        "uncommon C2_PETIT x4 31000ms area=0,0,0,0 avoid=[7,20,15 45,88,15 88,64,15]"
+      ],
+      "gen:field:2:4": [
+        "common LUDE x8 5000ms area=0,0,0,0 avoid=[17,7,15]",
+        "common DISGUISE x5 5000ms area=0,0,0,0 avoid=[17,7,15]",
+        "common HYLOZOIST x5 5000ms area=0,0,0,0 avoid=[17,7,15]",
+        "common QUVE x5 5000ms area=0,0,0,0 avoid=[17,7,15]",
+        "uncommon C4_LUDE x6 55000ms area=0,0,0,0 avoid=[17,7,15]",
+        "uncommon C5_DISGUISE x6 48000ms area=0,0,0,0 avoid=[17,7,15]"
+      ],
+      "gen:field:3:0": [
+        "common CREAMY x6 5000ms area=0,0,0,0 avoid=[]",
+        "common SNAKE x5 5000ms area=0,0,0,0 avoid=[]",
+        "common SPORE x5 5000ms area=0,0,0,0 avoid=[]",
+        "common WORM_TAIL x5 5000ms area=0,0,0,0 avoid=[]",
+        "common CARAMEL x2 5000ms area=0,0,0,0 avoid=[]",
+        "common POISON_SPORE x2 5000ms area=0,0,0,0 avoid=[7,29,15 71,88,15 88,66,15 29,7,15]",
+        "mini_boss ECLIPSE x1 2486000ms area=0,0,0,0 avoid=[7,29,15 71,88,15 88,66,15 29,7,15 29,4,30]"
+      ],
+      "gen:field:3:1": [
+        "common ELDER_WILOW x9 5000ms area=0,0,0,0 avoid=[7,56,15 35,7,15 43,88,15 88,55,15]",
+        "common CARAMEL x5 5000ms area=0,0,0,0 avoid=[]",
+        "common POPORING x5 5000ms area=0,0,0,0 avoid=[]",
+        "common SMOKIE x4 5000ms area=0,0,0,0 avoid=[]",
+        "common BIGFOOT x2 5000ms area=0,0,0,0 avoid=[]",
+        "field_boss MAYA x1 4242000ms area=0,0,0,0 avoid=[7,56,15 35,7,15 43,88,15 88,55,15]"
+      ],
+      "gen:field:3:2": [
+        "common COCO x6 5000ms area=0,0,0,0 avoid=[]",
+        "common MARIN x4 5000ms area=0,0,0,0 avoid=[]",
+        "common ELDER_WILOW x3 5000ms area=0,0,0,0 avoid=[88,71,15 7,64,15 76,7,15]",
+        "common MARTIN x3 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon HYDRA x5 29000ms area=0,0,0,0 avoid=[88,71,15 7,64,15 76,7,15]",
+        "uncommon C2_COCO x4 54000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:field:3:3": [
+        "common MIYABI_NINGYO x7 5000ms area=0,0,0,0 avoid=[]",
+        "common PETIT x6 5000ms area=0,0,0,0 avoid=[7,56,15 54,88,15]",
+        "common POISON_TOAD x4 5000ms area=0,0,0,0 avoid=[]",
+        "common STEM_WORM x3 5000ms area=0,0,0,0 avoid=[7,56,15 54,88,15]",
+        "uncommon C1_PETIT x5 47000ms area=0,0,0,0 avoid=[7,56,15 54,88,15]",
+        "uncommon C2_PETIT x3 21000ms area=0,0,0,0 avoid=[7,56,15 54,88,15]"
+      ],
+      "gen:field:3:4": [
+        "common STEM_WORM x6 5000ms area=0,0,0,0 avoid=[72,7,15 88,30,15]",
+        "common KAPHA x5 5000ms area=0,0,0,0 avoid=[72,7,15 88,30,15]",
+        "common INCREASE_SOIL x2 5000ms area=0,0,0,0 avoid=[]",
+        "common PETIT x2 5000ms area=0,0,0,0 avoid=[72,7,15 88,30,15]",
+        "uncommon C1_PETIT x9 56000ms area=0,0,0,0 avoid=[72,7,15 88,30,15]",
+        "field_boss BACSOJIN_ x1 5771000ms area=0,0,0,0 avoid=[72,7,15 88,30,15]"
+      ],
+      "gen:field:4:0": [
+        "common BIGFOOT x8 5000ms area=0,0,0,0 avoid=[]",
+        "common SKELETON x7 5000ms area=0,0,0,0 avoid=[]",
+        "common POISON_SPORE x5 5000ms area=0,0,0,0 avoid=[7,25,15 88,67,15]",
+        "uncommon C5_DENIRO x3 43000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_SOLDIER_SKELETON x2 54000ms area=0,0,0,0 avoid=[7,25,15 88,67,15]",
+        "uncommon C3_POPORING x1 52000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_SMOKIE x1 39000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_PECOPECO x1 23000ms area=0,0,0,0 avoid=[]",
+        "field_boss ORC_LORD x1 7149000ms area=0,0,0,0 avoid=[7,25,15 88,67,15]"
+      ],
+      "gen:field:4:1": [
+        "common THARA_FROG x4 5000ms area=0,0,0,0 avoid=[]",
+        "common COCO x3 5000ms area=0,0,0,0 avoid=[]",
+        "common ELDER_WILOW x3 5000ms area=0,0,0,0 avoid=[66,7,15 7,43,15 88,45,15]",
+        "common MYSTCASE x3 5000ms area=0,0,0,0 avoid=[]",
+        "common GIEARTH x2 5000ms area=0,0,0,0 avoid=[]",
+        "common MARIN x2 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C2_COCO x6 11000ms area=0,0,0,0 avoid=[]",
+        "uncommon C2_ELDER_WILOW x4 50000ms area=0,0,0,0 avoid=[66,7,15 7,43,15 88,45,15]",
+        "field_boss EDDGA x1 5819000ms area=0,0,0,0 avoid=[66,7,15 7,43,15 88,45,15]"
+      ],
+      "gen:field:4:2": [
+        "common RICE_CAKE_BOY x6 5000ms area=0,0,0,0 avoid=[]",
+        "common SAND_MAN x6 5000ms area=0,0,0,0 avoid=[56,88,15 88,73,15 32,7,15]",
+        "common BON_GUN x2 5000ms area=0,0,0,0 avoid=[56,88,15 88,73,15 32,7,15]",
+        "common FRILLDORA x2 5000ms area=0,0,0,0 avoid=[56,88,15 88,73,15 32,7,15]",
+        "common HORONG x2 5000ms area=0,0,0,0 avoid=[56,88,15 88,73,15 32,7,15]",
+        "uncommon C1_SOHEE x4 9000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_HUNTER_FLY x3 60000ms area=0,0,0,0 avoid=[56,88,15 88,73,15 32,7,15]",
+        "uncommon MOBSTER x2 58000ms area=0,0,0,0 avoid=[56,88,15 88,73,15 32,7,15]"
+      ],
+      "gen:field:4:3": [
+        "common SAGEWORM x6 5000ms area=0,0,0,0 avoid=[]",
+        "common MANTIS x4 5000ms area=0,0,0,0 avoid=[20,7,15 54,88,15]",
+        "common KARAKASA x3 5000ms area=0,0,0,0 avoid=[]",
+        "common TAMRUAN x3 5000ms area=0,0,0,0 avoid=[20,7,15 54,88,15]",
+        "common BABY_LEOPARD x2 5000ms area=0,0,0,0 avoid=[20,7,15 54,88,15]",
+        "uncommon C1_GEOGRAPHER x5 9000ms area=0,0,0,0 avoid=[20,7,15 54,88,15]",
+        "uncommon C1_RIDEWORD x5 14000ms area=0,0,0,0 avoid=[20,7,15 54,88,15]",
+        "field_boss DRACULA x1 5610000ms area=0,0,0,0 avoid=[20,7,15 54,88,15]"
+      ],
+      "gen:field:4:4": [
+        "common HIGH_ORC x7 5000ms area=0,0,0,0 avoid=[7,16,15 73,7,15 88,69,15]",
+        "common PARASITE x6 5000ms area=0,0,0,0 avoid=[7,16,15 73,7,15 88,69,15]",
+        "common PASANA x5 5000ms area=0,0,0,0 avoid=[7,16,15 73,7,15 88,69,15]",
+        "common GEOGRAPHER x2 5000ms area=0,0,0,0 avoid=[7,16,15 73,7,15 88,69,15]",
+        "uncommon C3_CLOCK x5 40000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_GOAT x2 11000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_ARGIOPE x1 32000ms area=0,0,0,0 avoid=[7,16,15 73,7,15 88,69,15]",
+        "uncommon C5_EVIL_DRUID x1 38000ms area=0,0,0,0 avoid=[7,16,15 73,7,15 88,69,15]"
+      ],
+      "gen:field:5:0": [
+        "common COOKIE x9 5000ms area=0,0,0,0 avoid=[]",
+        "common MYSTCASE x7 5000ms area=0,0,0,0 avoid=[]",
+        "common MARIN x4 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon CHEPET x4 52000ms area=0,0,0,0 avoid=[48,7,15 7,55,15]",
+        "uncommon C1_COCO x1 24000ms area=0,0,0,0 avoid=[]",
+        "uncommon C1_YOYO x1 9000ms area=0,0,0,0 avoid=[]",
+        "uncommon C2_COCO x1 31000ms area=0,0,0,0 avoid=[]",
+        "uncommon C2_ELDER_WILOW x1 20000ms area=0,0,0,0 avoid=[48,7,15 7,55,15]"
+      ],
+      "gen:field:5:1": [
+        "common WHISPER x7 5000ms area=0,0,0,0 avoid=[88,78,15 7,68,15 68,88,15 19,7,15]",
+        "common ORC_BABY x4 5000ms area=0,0,0,0 avoid=[88,78,15 7,68,15 68,88,15 19,7,15]",
+        "common ORK_WARRIOR x4 5000ms area=0,0,0,0 avoid=[88,78,15 7,68,15 68,88,15 19,7,15]",
+        "common SEE_OTTER x3 5000ms area=0,0,0,0 avoid=[88,78,15 7,68,15 68,88,15 19,7,15]",
+        "uncommon C2_STEEL_CHONCHON x5 39000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_ORK_WARRIOR x4 25000ms area=0,0,0,0 avoid=[88,78,15 7,68,15 68,88,15 19,7,15]",
+        "uncommon C1_FUR_SEAL x1 16000ms area=0,0,0,0 avoid=[88,78,15 7,68,15 68,88,15 19,7,15]",
+        "mini_boss MASTERING x1 3350000ms area=0,0,0,0 avoid=[88,78,15 7,68,15 68,88,15 19,7,15 19,4,30]"
+      ],
+      "gen:field:5:2": [
+        "common METALLER x11 5000ms area=0,0,0,0 avoid=[]",
+        "common PHEN x7 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_MIMIC x6 49000ms area=0,0,0,0 avoid=[7,52,15 32,7,15 31,88,15 88,47,15]",
+        "uncommon C1_SHELLFISH x3 43000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_MINOROUS x1 12000ms area=0,0,0,0 avoid=[7,52,15 32,7,15 31,88,15 88,47,15]"
+      ],
+      "gen:field:5:3": [
+        "common HODE x9 5000ms area=0,0,0,0 avoid=[]",
+        "common LEAF_CAT x9 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C1_SOHEE x3 15000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_MERMAN x3 47000ms area=0,0,0,0 avoid=[28,7,15 62,88,15 88,24,15]",
+        "uncommon C4_SAND_MAN x2 42000ms area=0,0,0,0 avoid=[28,7,15 62,88,15 88,24,15]",
+        "mini_boss ANGELING x1 3212000ms area=0,0,0,0 avoid=[28,7,15 62,88,15 88,24,15 91,24,30]"
+      ],
+      "gen:field:5:4": [
+        "common TRI_JOINT x8 5000ms area=0,0,0,0 avoid=[7,44,15 66,7,15 88,77,15]",
+        "common REQUIEM x6 5000ms area=0,0,0,0 avoid=[7,44,15 66,7,15 88,77,15]",
+        "common ZEROM x6 5000ms area=0,0,0,0 avoid=[7,44,15 66,7,15 88,77,15]",
+        "uncommon C3_SIDE_WINDER x5 34000ms area=0,0,0,0 avoid=[7,44,15 66,7,15 88,77,15]",
+        "uncommon C4_STALACTIC_GOLEM x3 58000ms area=0,0,0,0 avoid=[]"
+      ]
+    }
+  },
+  {
+    "secret": "golden-spawns-2",
+    "width": 3,
+    "height": 3,
+    "towns": 2,
+    "dungeons": 2,
+    "field_size": 128,
+    "checksum": "44734b5a70dc45f1ef348e6b7a5098195ddbad137180cfefb9a9d54cb22cb3f0",
+    "maps": {
+      "gen:dungeon:crypt:1": [
+        "common POISON_SPORE x6 5000ms area=0,0,0,0 avoid=[63,111,15 27,51,15]",
+        "common POPORING x3 5000ms area=0,0,0,0 avoid=[]",
+        "common THIEF_BUG_ x3 5000ms area=0,0,0,0 avoid=[]",
+        "common THIEF_BUG__ x2 5000ms area=0,0,0,0 avoid=[63,111,15 27,51,15]",
+        "rare WHISPER_ x2 3245000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:dungeon:crypt:2": [
+        "common POISON_SPORE x3 5000ms area=0,0,0,0 avoid=[97,107,15 95,29,15]",
+        "common POPORING x2 5000ms area=0,0,0,0 avoid=[]",
+        "common THIEF_BUG_ x2 5000ms area=0,0,0,0 avoid=[]",
+        "common SOLDIER_SKELETON x1 5000ms area=0,0,0,0 avoid=[97,107,15 95,29,15]",
+        "common THIEF_BUG__ x1 5000ms area=0,0,0,0 avoid=[97,107,15 95,29,15]",
+        "rare WHISPER_ x3 2627000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:dungeon:crypt:3": [
+        "common THARA_FROG x4 5000ms area=0,0,0,0 avoid=[]",
+        "common ARCHER_SKELETON x2 5000ms area=0,0,0,0 avoid=[25,73,15]",
+        "common WHISPER x2 5000ms area=0,0,0,0 avoid=[25,73,15]",
+        "common DRAINLIAR x1 5000ms area=0,0,0,0 avoid=[25,73,15]",
+        "uncommon C2_WHISPER x5 60000ms area=0,0,0,0 avoid=[25,73,15]",
+        "field_boss AMON_RA x1 4784000ms area=52,8,3,3 avoid=[25,73,15]"
+      ],
+      "gen:dungeon:ruins:1": [
+        "common KUKRE x5 5000ms area=0,0,0,0 avoid=[]",
+        "common PIRATE_SKEL x5 5000ms area=0,0,0,0 avoid=[147,99,15 13,17,15]",
+        "common WHISPER x3 5000ms area=0,0,0,0 avoid=[147,99,15 13,17,15]",
+        "uncommon C1_SAILOR_SKELETON x4 31000ms area=0,0,0,0 avoid=[]",
+        "uncommon WEAK_SKEL_SOLDIER x3 12000ms area=0,0,0,0 avoid=[]",
+        "uncommon HYDRA x1 16000ms area=0,0,0,0 avoid=[147,99,15 13,17,15]"
+      ],
+      "gen:dungeon:ruins:2": [
+        "common WHISPER x8 5000ms area=0,0,0,0 avoid=[73,119,15]",
+        "common KUKRE x4 5000ms area=0,0,0,0 avoid=[]",
+        "common PIRATE_SKEL x4 5000ms area=0,0,0,0 avoid=[73,119,15]",
+        "uncommon HYDRA x5 36000ms area=0,0,0,0 avoid=[73,119,15]",
+        "uncommon C1_SAILOR_SKELETON x3 54000ms area=0,0,0,0 avoid=[]",
+        "field_boss EDDGA x1 5479000ms area=138,68,3,3 avoid=[73,119,15]"
+      ],
+      "gen:field:0:0": [
+        "common CHONCHON x15 5000ms area=0,0,0,0 avoid=[]",
+        "common LITTLE_PORING x15 5000ms area=0,0,0,0 avoid=[]",
+        "common PORING x12 5000ms area=0,0,0,0 avoid=[]",
+        "plant BLACK_MUSHROOM x4 1421000ms area=88,63,8,8 avoid=[]",
+        "plant BLUE_PLANT x3 1574000ms area=25,0,8,8 avoid=[]",
+        "plant YELLOW_PLANT x3 1492000ms area=15,64,8,8 avoid=[]",
+        "plant PURPLESTONE x1 989000ms area=32,0,8,8 avoid=[]",
+        "mini_boss TOAD x1 2127000ms area=0,0,0,0 avoid=[18,120,15 120,77,15 59,7,15 59,4,30]"
+      ],
+      "gen:field:0:1": [
+        "common PICKY x20 5000ms area=0,0,0,0 avoid=[]",
+        "common LUNATIC x8 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_WILOW x11 41000ms area=0,0,0,0 avoid=[]",
+        "plant PURPLESTONE x3 1109000ms area=32,27,8,8 avoid=[]",
+        "plant SEAANEMONE x3 207000ms area=122,32,8,8 avoid=[]",
+        "plant BLACK_MUSHROOM x2 295000ms area=102,93,8,8 avoid=[]",
+        "plant GREEN_PLANT x2 662000ms area=64,26,8,8 avoid=[]",
+        "mini_boss TOAD x1 1977000ms area=0,0,0,0 avoid=[23,7,15 27,120,15 120,45,15 123,45,30]"
+      ],
+      "gen:field:0:2": [
+        "common PICKY x17 5000ms area=0,0,0,0 avoid=[]",
+        "common PICKY_ x11 5000ms area=0,0,0,0 avoid=[]",
+        "common ROCKER x6 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C4_RODA_FROG x5 56000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_HORNET x5 29000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_WEAK_SKELETON x4 60000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_DESERT_WOLF_B x3 17000ms area=0,0,0,0 avoid=[16,7,15 120,21,15]",
+        "uncommon WEAK_SKELETON x2 46000ms area=0,0,0,0 avoid=[]",
+        "field_boss ORK_HERO x1 6935000ms area=0,0,0,0 avoid=[16,7,15 120,21,15]"
+      ],
+      "gen:field:1:0": [
+        "common HORNET x13 5000ms area=0,0,0,0 avoid=[]",
+        "common RODA_FROG x12 5000ms area=0,0,0,0 avoid=[]",
+        "common MANDRAGORA x9 5000ms area=0,0,0,0 avoid=[7,29,15 120,64,15 30,7,15]",
+        "uncommon C3_SNAKE x5 37000ms area=0,0,0,0 avoid=[]",
+        "uncommon C3_RODA_FROG x4 56000ms area=0,0,0,0 avoid=[]",
+        "uncommon WEAK_SKELETON x4 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_HORNET x3 14000ms area=0,0,0,0 avoid=[]"
+      ],
+      "gen:field:1:1": [
+        "common FUR_SEAL x13 5000ms area=0,0,0,0 avoid=[29,7,15 120,45,15]",
+        "common DENIRO x11 5000ms area=0,0,0,0 avoid=[]",
+        "common GALAPAGO x11 5000ms area=0,0,0,0 avoid=[]",
+        "common CRAB x7 5000ms area=0,0,0,0 avoid=[]",
+        "common PIERE x5 5000ms area=0,0,0,0 avoid=[]",
+        "plant ANT_EGG x5 279000ms area=38,119,8,8 avoid=[]"
+      ],
+      "gen:field:1:2": [
+        "common DENIRO x15 5000ms area=0,0,0,0 avoid=[]",
+        "common PIERE x12 5000ms area=0,0,0,0 avoid=[]",
+        "common THIEF_BUG x9 5000ms area=0,0,0,0 avoid=[]",
+        "common ANDRE x6 5000ms area=0,0,0,0 avoid=[]",
+        "plant ANT_EGG x7 453000ms area=96,96,8,8 avoid=[]",
+        "field_boss ORC_LORD x1 6130000ms area=0,0,0,0 avoid=[7,107,15 120,57,15]"
+      ],
+      "gen:field:2:0": [
+        "common STAINER x20 5000ms area=0,0,0,0 avoid=[]",
+        "common AMBERNITE x10 5000ms area=0,0,0,0 avoid=[]",
+        "uncommon C5_AMBERNITE x15 32000ms area=0,0,0,0 avoid=[]",
+        "plant THIEF_BUG_EGG x6 297000ms area=90,110,8,8 avoid=[]",
+        "rare VOCAL x2 3196000ms area=0,0,0,0 avoid=[7,91,15 75,120,15 95,7,15]",
+        "mini_boss ECLIPSE x1 2280000ms area=0,0,0,0 avoid=[7,91,15 75,120,15 95,7,15 95,4,30]"
+      ],
+      "gen:field:2:1": [
+        "common ELDER_WILOW x12 5000ms area=0,0,0,0 avoid=[7,24,15 40,7,15 77,120,15 120,88,15]",
+        "common POPORING x11 5000ms area=0,0,0,0 avoid=[]",
+        "common YOYO x11 5000ms area=0,0,0,0 avoid=[]",
+        "common STAINER x9 5000ms area=0,0,0,0 avoid=[]",
+        "plant THIEF_BUG_EGG x8 606000ms area=44,0,8,8 avoid=[]"
+      ],
+      "gen:field:2:2": [
+        "common THIEF_BUG x16 5000ms area=0,0,0,0 avoid=[]",
+        "common ANDRE x10 5000ms area=0,0,0,0 avoid=[]",
+        "common DENIRO x10 5000ms area=0,0,0,0 avoid=[]",
+        "common PIERE x10 5000ms area=0,0,0,0 avoid=[]",
+        "plant ANT_EGG x5 1678000ms area=20,32,8,8 avoid=[]",
+        "mini_boss ECLIPSE x1 3083000ms area=0,0,0,0 avoid=[49,120,15 7,17,15 47,7,15 120,44,15 123,44,30]"
+      ]
+    }
+  }
+]

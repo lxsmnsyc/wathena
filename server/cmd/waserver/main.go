@@ -392,6 +392,12 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
+	if spawns == nil {
+		spawns = map[string][]zone.Spawn{}
+	}
+	// A procedural world's fields and floors spawn the lists that wactl
+	// world new stored (decision 0042).
+	zoneSpawns(proc, loaded.all.Monsters, spawns, log)
 	// Every event, with whether it is on: the config's settings, which
 	// staff changes from the database go over below (decision 0031).
 	eventConfig, err := worldevent.Settings(loaded.all.Events, cfg.Mods.Events)

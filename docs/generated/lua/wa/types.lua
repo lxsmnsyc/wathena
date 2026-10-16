@@ -218,6 +218,7 @@
 ---| "vend"
 ---| "buying_store_sale"
 ---| "mail"
+---| "spawn_table"
 
 ---Who a bound copy is bound to.
 ---@alias wa.Bound
@@ -1769,6 +1770,32 @@ local wa_WorldEvent = {}
 ---@field reason string? Why the server restarts, as staff wrote it. nil when the restart was cancelled.
 ---@field cancelled boolean? true when staff cancelled the planned restart.
 local wa_RestartPlan = {}
+
+---The map of the spawn_table hook: a field or a dungeon floor of a new procedural world (review decision 44). It is read-only.
+---@class wa.SpawnMap
+---@field id string The map ID, such as gen:field:3:1 or gen:dungeon:crypt:2.
+---@field kind "field"|"dungeon"
+---@field biome string A field's biome, such as forest, or a floor's tileset, such as crypt.
+---@field band integer[] The level band: the lowest and the highest level.
+---@field features string[] The map's features, sorted: water and clearing on fields, room and boss_room on floors.
+local wa_SpawnMap = {}
+
+---One spawn of the spawn_table hook's list. The server keeps aggressive monsters 15 cells from arrivals, and bosses 30 cells from warps to towns, whatever the hook returns.
+---@class wa.Spawn
+---@field monster integer A monster from monsters.id.
+---@field count integer 1 to 1,000 monsters.
+---@field respawn integer Milliseconds before a dead one comes back, 1,000 to 268,435,455.
+---@field role "common"|"uncommon"|"plant"|"rare"|"mini_boss"|"field_boss" A boss monster that is common or uncommon is left out.
+---@field area wa.SpawnArea? Where the monsters appear, or nil for the whole map.
+local wa_Spawn = {}
+
+---A spawn's area: within w and h cells of x and y.
+---@class wa.SpawnArea
+---@field x integer 0 to 1,024.
+---@field y integer
+---@field w integer
+---@field h integer
+local wa_SpawnArea = {}
 
 ---The object of the trade event and the trade hook: a trade between two players. The hook runs before the trade completes, and the event after.
 ---@class wa.Trade

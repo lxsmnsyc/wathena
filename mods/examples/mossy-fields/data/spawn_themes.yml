@@ -1,0 +1,7 @@
+# A spawn theme: a field that draws it weighs its monsters three times:
+# plants, earth monsters, and monsters whose tags name it.
+- name: example.mossy-fields:mossy
+  biomes: [grassland, forest, swamp]
+  races: [plant]
+  elements: [earth]
+  boost: 300

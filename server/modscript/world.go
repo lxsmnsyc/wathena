@@ -102,7 +102,14 @@ var Hooks = map[string][]string{
 	"vend":              {KindMod, KindNPC, KindEvent},
 	"buying_store_sale": {KindMod, KindNPC, KindEvent},
 	"mail":              {KindMod, KindNPC, KindEvent},
+	// Spawns (review decision 44). It runs when `wactl world new` makes
+	// a procedural world, and in the test worlds of wactl mod test.
+	"spawn_table": {KindMod},
 }
+
+// hookPermissions are the permissions of the hooks that do not need
+// rules.override.
+var hookPermissions = map[string]string{"spawn_table": "spawns.modify"}
 
 type scheduled struct {
 	id   int64
@@ -237,10 +244,14 @@ func (r *Runtime) hooksOn(c *script.Call) error {
 	if err := r.mutating("hooks.on"); err != nil {
 		return err
 	}
-	if err := r.need("hooks.on", "rules.override"); err != nil {
+	name := c.String(0)
+	what, permission := "hooks.on", "rules.override"
+	if p, ok := hookPermissions[name]; ok {
+		what, permission = `hooks.on("`+name+`")`, p
+	}
+	if err := r.need(what, permission); err != nil {
 		return err
 	}
-	name := c.String(0)
 	kinds, ok := Hooks[name]
 	if !ok {
 		return fmt.Errorf("hooks.on: there is no hook %q; the hooks are %s", name, strings.Join(sortedKeys(Hooks), ", "))

@@ -13,6 +13,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mob"
 	"github.com/lxsmnsyc/wathena/server/progression"
+	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
@@ -155,6 +156,9 @@ type Monster struct {
 	Skills []mob.Skill
 	// Script is the AI entry script, as mod:path, or "".
 	Script string
+	// SpawnTags are the monster's spawn tags (review decision 44):
+	// core's from server/spawns, changed by records' spawn field, or nil.
+	SpawnTags *spawns.Tags
 	// AI is the AI type number of mob_db's Ai, and modesOn and modesOff
 	// the Modes that mob_db sets and clears over the AI type's modes.
 	// renewal picks the stat formulas.
@@ -218,6 +222,10 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 		}
 	}
 	renewal := mode == reference.Renewal
+	tags, err := spawns.LoadCore()
+	if err != nil {
+		return nil, err
+	}
 	out := make(map[uint32]Monster, len(defs.Monsters))
 	for i := range defs.Monsters {
 		d := defs.Monsters[i]
@@ -230,7 +238,7 @@ func LoadMonsters(mode reference.Mode, tables *progression.Tables, data *progres
 			return nil, fmt.Errorf("monster %d: modes %#x, want %#x", d.ID, got, d.Mode)
 		}
 		m := Monster{Def: &d, AegisName: d.AegisName, Name: cmp.Or(names[d.ID], d.Name),
-			modesOn: d.ModesOn, modesOff: d.ModesOff, renewal: renewal}
+			modesOn: d.ModesOn, modesOff: d.ModesOff, renewal: renewal, SpawnTags: tags.Tags[d.AegisName]}
 		if x := extra[d.ID]; x != nil {
 			m.drops, m.mvpDrops = x.Drops, x.MvpDrops
 		}

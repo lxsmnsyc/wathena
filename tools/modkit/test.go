@@ -17,6 +17,7 @@ import (
 	_ "time/tzdata"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
@@ -260,7 +261,35 @@ func (w *testWorld) bind(name string) error {
 	if err := w.h.Bind(asset, grid, npcs, warps); err != nil {
 		return fmt.Errorf("the mods' entry scripts failed on %s: %w", name, err)
 	}
+	if err := w.spawnGenerated(name); err != nil {
+		return err
+	}
 	return w.startEvents(asset)
+}
+
+// spawnGenerated places a generated field's or floor's spawn list, once
+// its mods' entry scripts ran: the test world's list, changed by the
+// spawn_table hooks (decision 0042).
+func (w *testWorld) spawnGenerated(name string) error {
+	if !gen.IsGenerated(name) {
+		return nil
+	}
+	g, err := w.l.generatedMaps()
+	if err != nil || g == nil {
+		return err
+	}
+	list, ok := g.planned[name]
+	if !ok {
+		return nil
+	}
+	log := w.h.Zone().Mods.Log
+	list = zone.RunSpawnTable(w.h.Runtime(), g.spawnMaps[name], list, gamedata.SpawnIndex(w.l.Monsters, w.l.SpawnMonsters), log)
+	zs, missing := gamedata.ZoneSpawns(list, w.l.Monsters)
+	for _, m := range missing {
+		log.Warn("a spawn names a monster that does not exist", "map", name, "monster", m)
+	}
+	w.h.AddSpawns(zs)
+	return nil
 }
 
 // startEvents starts the world event scheduler for the events of the

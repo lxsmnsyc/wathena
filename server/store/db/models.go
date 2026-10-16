@@ -638,6 +638,22 @@ type WorldMap struct {
 	Nomemo      bool
 }
 
+type WorldSpawn struct {
+	MapID     string
+	Ord       int
+	Monster   string
+	Count     int
+	RespawnMs int
+	Role      string
+	AreaX     int
+	AreaY     int
+	AreaW     int
+	AreaH     int
+	AvoidX    []int
+	AvoidY    []int
+	AvoidR    []int
+}
+
 type ZenyLog struct {
 	ID       int64
 	At       pgtype.Timestamptz

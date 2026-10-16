@@ -23,6 +23,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 )
@@ -70,6 +71,10 @@ type options struct {
 	// Procedural are the generated fields of a procedural world
 	// (decision 0039).
 	Procedural proceduralOptions `yaml:"procedural"`
+	// Spawns are a new procedural world's spawn settings (decision
+	// 0042). `wactl world new --config` reads them; waserver only checks
+	// them, since a made world keeps its spawns.
+	Spawns spawns.Settings `yaml:"spawns"`
 }
 
 // proceduralOptions are the generated fields' settings.
@@ -569,6 +574,11 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if _, err := o.Procedural.Layout.Config(st.Procedural.FieldSize); err != nil {
 		bad("procedural.layout", "%v", err)
+	}
+	if core, err := spawns.LoadCore(); err != nil {
+		bad("spawns", "%v", err)
+	} else if _, err := o.Spawns.Resolve(core.Densities); err != nil {
+		bad("spawns", "%v", err)
 	}
 	if o.Procedural.DevLayout && wantsDevMaps(o.Procedural) {
 		bad("procedural.dev_layout", "a dev layout places its own maps; leave out --fields, --towns and --dungeons")

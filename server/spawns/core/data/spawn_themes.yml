@@ -1,0 +1,44 @@
+# Core's spawn themes (strategy section 8.11, proposal 0002, review
+# decision 44). A field or dungeon floor draws a theme with a chance of
+# 1 in 3, among those whose biomes hold its biome. The monsters that
+# match a theme, by race, by element, or by naming it in their spawn
+# tags, weigh boost percent of their weight. Mods change these by name
+# and add their own (mods/README.md, "Spawn themes").
+- name: undead
+  biomes: [crypt, ruins, swamp, tower]
+  races: [undead]
+  elements: [undead]
+  boost: 400
+- name: insect_swarm
+  biomes: [forest, grassland, swamp, cave, desert]
+  races: [insect]
+  boost: 400
+- name: wild_beasts
+  biomes: [forest, grassland, snow, desert]
+  races: [brute]
+  boost: 300
+- name: overgrown
+  biomes: [forest, grassland, swamp, ruins]
+  races: [plant]
+  boost: 300
+- name: demons
+  biomes: [crypt, tower, ruins, cave]
+  races: [demon]
+  boost: 300
+- name: deep_water
+  biomes: [beach, swamp, cave]
+  races: [fish]
+  elements: [water]
+  boost: 300
+- name: constructs
+  biomes: [tower, ruins, desert]
+  races: [formless]
+  boost: 300
+- name: embers
+  biomes: [desert, cave]
+  elements: [fire]
+  boost: 300
+- name: frost
+  biomes: [snow, cave]
+  elements: [water]
+  boost: 300
