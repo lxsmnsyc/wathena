@@ -104,7 +104,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode, is the largest phase left.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16 with step 1, the generator core.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -2792,6 +2792,16 @@ The order from here:
    - Staff can find a player, view item history, and apply a sanction from the admin tools: Admin, logged in with TOTP, finds Dora, follows her item to its history, and mutes her, and Dora sees the mute in the game.
    - Items, monsters, skills, and jobs added by a mod display correctly: the lantern mod's item, monster, skill and job show their names in the page and their art, checked by the network and by pixels.
    Left for later: the economy dashboards come with the simulator of phase 7 (section 8.13), and retention jobs and encrypted backups come with phase 8. Each step drafts its admin API and any Lua API for review before it is built.
+10. Phase 7 in full. Procedural mode. It runs in these steps, approved on 2026-10-16:
+   1. The generator core on the seed tree of `shared/rng` (rng-v1): versioned generator rules (section 8.4), the world mode setting and the `procedural` build tag (section 8.1), the generator module built with TinyGo, and a determinism check of one cell grid in Go on arm64 and on amd64, and in Chrome, Firefox and WebKit.
+   2. Fields: terrain from biome rules, with validation and retries, as WMAP maps (sections 8.5 and 8.12). The client generates a field itself, checks the server's checksum, and downloads the map when they differ.
+   3. Dungeons and towns: room and corridor dungeons and caves, floors that get harder, boss rooms, town templates with buildings and roads, and named places through `wa.places` (section 8.6).
+   4. World layout: map identity, town naming styles, the map graph and warps, the home area from mod maps, and save and memo points (sections 8.10 and 8.12). Every map is reachable from the home area.
+   5. Spawns: monster spawn tags, field and dungeon spawn selection, mini bosses and field bosses (section 8.11).
+   6. Content: service NPCs placed from templates, quest templates, procedural job changes and rebirth (section 11.4), and `wa.generation` for mod layers (section 8.7).
+   7. Rotation: rotating dungeons and world change events through the scheduler (section 8.8), moving players, save points and memo points when a map goes away.
+   8. The economy simulator and generator checks (section 8.13), bot runs compared with the simulator, the public seed test, and the phase 7 exit check.
+   Art: the generator names biome tilesets, and a table maps each tileset to textures and models. Development points the table at the operator's own build, such as one from the kRO client. A public release needs an original or licensed art pack, which is art work outside this phase. Without one, maps use placeholder textures. Steps 3 and 6, and steps 4, 5 and 7 if they need it, draft their Lua API for review before they are built.
 
 Reasons for this order:
 
